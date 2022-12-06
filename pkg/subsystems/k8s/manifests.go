@@ -81,7 +81,7 @@ func getServiceManifest(name string) *apiv1.Service {
 					TargetPort: intstr.FromInt(int(conf.Env.AppPort)),
 				},
 			},
-			Selector: nil,
+			Selector: map[string]string{manifestLabelName: name},
 		},
 		Status: apiv1.ServiceStatus{},
 	}

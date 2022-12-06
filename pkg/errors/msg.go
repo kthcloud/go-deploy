@@ -1,13 +1,13 @@
 package errors
 
 var MsgFlags = map[int]string{
-	SUCCESS:        "ok",
-	ERROR:          "fail",
-	INVALID_PARAMS: "invalid params",
+	SUCCESS:        "SUCCESS",
+	ERROR:          "ERROR",
+	INVALID_PARAMS: "INVALID_PARAMS",
 
-	ERROR_PROJECT_BEING_CREATED: "project is currently being created",
-	ERROR_PROJECT_BEING_DELETED: "project is currently being deleted",
-	ERROR_PROJECT_EXISTS: "project name already exists",
+	ERROR_PROJECT_BEING_CREATED: "ERROR_PROJECT_BEING_CREATED",
+	ERROR_PROJECT_BEING_DELETED: "ERROR_PROJECT_BEING_DELETED",
+	ERROR_PROJECT_EXISTS:        "ERROR_PROJECT_EXISTS",
 }
 
 // GetMsg get error information based on Code

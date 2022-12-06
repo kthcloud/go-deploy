@@ -44,7 +44,7 @@ func (p *Project) ToDto() dto.Project {
 }
 
 func CreateProject(projectID, name, owner string) error {
-	currentProject, err := GetProjectWithOwner(owner, projectID)
+	currentProject, err := GetProjectByID(projectID)
 	if err != nil {
 		return err
 	}
@@ -89,8 +89,8 @@ func getProject(filter bson.D) (*Project, error) {
 	return &project, err
 }
 
-func GetProjectWithOwner(userId, projectID string) (*Project, error) {
-	return getProject(bson.D{{"owner", userId}, {"id", projectID}})
+func GetProjectByID(projectID string) (*Project, error) {
+	return getProject(bson.D{{"id", projectID}})
 }
 
 func GetProjectByName(userId, name string) (*Project, error) {

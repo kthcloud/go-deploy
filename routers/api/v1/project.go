@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"deploy-api-go/models"
 	"deploy-api-go/models/dto"
 	"deploy-api-go/pkg/app"
 	"deploy-api-go/pkg/errors"
@@ -96,7 +95,7 @@ func GetProject(c *gin.Context) {
 
 	project, _ := project_service.Get(userId, projectId)
 
-	if len(project.ID) == 0 {
+	if project == nil {
 		context.NotFound()
 		return
 	}
@@ -210,7 +209,7 @@ func DeleteProject(c *gin.Context) {
 		return
 	}
 
-	currentProject, err := models.GetProjectWithOwner(userId, projectId)
+	currentProject, err := project_service.Get(userId, projectId)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, errors.ERROR_PROJECT_VALIDATION_FAILED, "Failed to validate currentProject")
 		return
@@ -226,11 +225,8 @@ func DeleteProject(c *gin.Context) {
 		return
 	}
 
-	project_service.MarkBeingDeleted(currentProject.ID)
-
-	if currentProject.BeingDeleted {
-		context.JsonResponse(http.StatusCreated, dto.ProjectCreated{ID: currentProject.ID})
-		return
+	if !currentProject.BeingDeleted {
+		_ = project_service.MarkBeingDeleted(currentProject.ID)
 	}
 
 	project_service.Delete(currentProject.Name)

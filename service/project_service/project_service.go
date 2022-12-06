@@ -20,22 +20,34 @@ func Create(projectID, name, owner string) {
 		err = harbor.Create(name)
 		if err != nil {
 			log.Println(err)
+			return
 		}
 
 		err = npm.Create(name)
 		if err != nil {
 			log.Println(err)
+			return
 		}
 
 		err = k8s.Create(name)
 		if err != nil {
 			log.Println(err)
+			return
 		}
 	}()
 }
 
 func Get(userId, projectID string) (*models.Project, error) {
-	return models.GetProjectWithOwner(userId, projectID)
+	project, err := models.GetProjectByID(projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	if project.Owner != userId {
+		return nil, nil
+	}
+
+	return project, nil
 }
 
 func GetByName(userId, name string) (*models.Project, error) {
@@ -66,24 +78,24 @@ func MarkBeingDeleted(projectID string) error {
 	}})
 }
 
-func Delete(name string) error {
-	err := harbor.Delete(name)
-	if err != nil {
-		log.Println(err)
-		return err
-	}
+func Delete(name string) {
+	go func() {
+		err := harbor.Delete(name)
+		if err != nil {
+			log.Println(err)
+			return
+		}
 
-	err = npm.Delete(name)
-	if err != nil {
-		log.Println(err)
-		return err
-	}
+		err = npm.Delete(name)
+		if err != nil {
+			log.Println(err)
+			return
+		}
 
-	err = k8s.Delete(name)
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-
-	return nil
+		err = k8s.Delete(name)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+	}()
 }
