@@ -43,7 +43,7 @@ func Get(userId, projectID string) (*models.Project, error) {
 		return nil, err
 	}
 
-	if project.Owner != userId {
+	if project != nil && project.Owner != userId {
 		return nil, nil
 	}
 

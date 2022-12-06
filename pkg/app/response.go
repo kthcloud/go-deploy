@@ -1,12 +1,12 @@
 package app
 
 import (
-	deployApiErrors "deploy-api-go/pkg/errors"
+	deployApiErrors "deploy-api-go/pkg/status_codes"
 	"net/http"
 )
 
 type errorResponse struct {
-	Errors []errorPiece `json:"errors"`
+	Errors []errorPiece `json:"status_codes"`
 }
 
 type errorPiece struct {

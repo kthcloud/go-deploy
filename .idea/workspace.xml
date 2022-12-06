@@ -4,10 +4,17 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="bc4da88f-8032-4df4-9bcc-9ca8b4f364d2" name="Changes" comment="fix bugs in user/projects delete route. fix error codes">
+    <list default="true" id="bc4da88f-8032-4df4-9bcc-9ca8b4f364d2" name="Changes" comment="fix harbor projects being private on creation">
+      <change afterPath="$PROJECT_DIR$/models/dto/project_status.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/routers/api/v1/project_status.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/service/project_service/project_status_service.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/create.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/create.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/created.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/created.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/app/response.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/app/response.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/errors/code.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/status_codes/code.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/errors/msg.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/status_codes/msg.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routers/api/v1/project.go" beforeDir="false" afterPath="$PROJECT_DIR$/routers/api/v1/project.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routers/router.go" beforeDir="false" afterPath="$PROJECT_DIR$/routers/router.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/project_service/project_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/project_service/project_service.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -130,7 +137,8 @@
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
     <MESSAGE value="fix bugs in user/projects delete route. fix error codes" />
-    <option name="LAST_COMMIT_MESSAGE" value="fix bugs in user/projects delete route. fix error codes" />
+    <MESSAGE value="fix harbor projects being private on creation" />
+    <option name="LAST_COMMIT_MESSAGE" value="fix harbor projects being private on creation" />
   </component>
   <component name="VgoProject">
     <settings-migrated>true</settings-migrated>

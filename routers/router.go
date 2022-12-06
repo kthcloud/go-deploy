@@ -23,12 +23,17 @@ func NewRouter() *gin.Engine {
 	apiv1User.Use(auth.New(auth.Check(), app.GetKeyCloakConfig()))
 
 	{
+		// Path: /
 		apiv1.GET("/projects", v1.GetAllProjects)
+
+		// Path: /user/:userId/
 		{
 			apiv1User.GET("/projects", v1.GetProjectsByOwnerID)
 			apiv1User.GET("/projects/:projectId", v1.GetProject)
 			apiv1User.POST("/projects", v1.CreateProject)
 			apiv1User.DELETE("/projects/:projectId", v1.DeleteProject)
+
+			apiv1User.GET("/status/:projectId", v1.GetProjectStatus)
 		}
 	}
 

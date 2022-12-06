@@ -3,7 +3,7 @@ package v1
 import (
 	"deploy-api-go/models/dto"
 	"deploy-api-go/pkg/app"
-	"deploy-api-go/pkg/errors"
+	"deploy-api-go/pkg/status_codes"
 	"deploy-api-go/pkg/validator"
 	"deploy-api-go/service/project_service"
 	"fmt"
@@ -40,7 +40,7 @@ func GetProjectsByOwnerID(c *gin.Context) {
 
 	token, err := context.GetKeycloakToken()
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, errors.ERROR, fmt.Sprintf("%s", err))
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
 	}
 
@@ -85,7 +85,7 @@ func GetProject(c *gin.Context) {
 	projectId := context.GinContext.Param("projectId")
 	token, err := context.GetKeycloakToken()
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, errors.ERROR, fmt.Sprintf("%s", err))
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 	}
 
 	if userId != token.Sub {
@@ -142,7 +142,7 @@ func CreateProject(c *gin.Context) {
 	userId := context.GinContext.Param("userId")
 	token, err := context.GetKeycloakToken()
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, errors.ERROR, fmt.Sprintf("%s", err))
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
 	}
 
@@ -153,17 +153,17 @@ func CreateProject(c *gin.Context) {
 
 	exists, project, err := project_service.Exists(requestBody.Name)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, errors.ERROR_PROJECT_VALIDATION_FAILED, "Failed to validate project")
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.ProjectValidationFailed, "Failed to validate project")
 		return
 	}
 
 	if exists {
 		if project.Owner != userId {
-			context.ErrorResponse(http.StatusBadRequest, errors.ERROR_PROJECT_EXISTS, "Project already exists")
+			context.ErrorResponse(http.StatusBadRequest, status_codes.ProjectAlreadyExists, "Project already exists")
 			return
 		}
 		if project.BeingDeleted {
-			context.ErrorResponse(http.StatusLocked, errors.ERROR_PROJECT_BEING_DELETED, "Project is currently being deleted")
+			context.ErrorResponse(http.StatusLocked, status_codes.ProjectBeingDeleted, "Project is currently being deleted")
 			return
 		}
 		project_service.Create(project.ID, requestBody.Name, userId)
@@ -200,7 +200,7 @@ func DeleteProject(c *gin.Context) {
 	projectId := context.GinContext.Param("projectId")
 	token, err := context.GetKeycloakToken()
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, errors.ERROR, fmt.Sprintf("%s", err))
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
 	}
 
@@ -211,7 +211,7 @@ func DeleteProject(c *gin.Context) {
 
 	currentProject, err := project_service.Get(userId, projectId)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, errors.ERROR_PROJECT_VALIDATION_FAILED, "Failed to validate currentProject")
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.ProjectValidationFailed, "Failed to validate currentProject")
 		return
 	}
 
@@ -221,7 +221,7 @@ func DeleteProject(c *gin.Context) {
 	}
 
 	if currentProject.BeingCreated {
-		context.ErrorResponse(http.StatusLocked, errors.ERROR_PROJECT_BEING_CREATED, "Project is currently being created")
+		context.ErrorResponse(http.StatusLocked, status_codes.ProjectBeingCreated, "Project is currently being created")
 		return
 	}
 
