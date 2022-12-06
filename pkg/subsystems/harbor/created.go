@@ -21,7 +21,9 @@ func createdProject(name string) (bool, error) {
 		return false, makeError(err)
 	}
 
-	return project.ProjectID != 0, nil
+	publicProject := project.Metadata.Public == "true"
+
+	return project.ProjectID != 0 && publicProject, nil
 }
 
 func createdRobot(name string) (bool, error) {

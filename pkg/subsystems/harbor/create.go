@@ -31,16 +31,23 @@ func createProject(name string) error {
 		}
 	}
 
-	if project != nil {
-		return nil
-	}
+	if project == nil {
+		requestBody := createProjectRequestBody(subsystemutils.GetPrefixedName(name))
+		err = client.NewProject(context.TODO(), &requestBody)
+		if err != nil {
+			return makeError(err)
+		}
 
-	requestBody := createProjectRequestBody(subsystemutils.GetPrefixedName(name))
-	err = client.NewProject(context.TODO(), &requestBody)
-	if err != nil {
-		return makeError(err)
+		err = client.UpdateProjectMetadata(context.TODO(), prefixedName, "public", "true")
+		if err != nil {
+			return makeError(err)
+		}
+	} else if project.Metadata.Public == "false" {
+		err = client.UpdateProjectMetadata(context.TODO(), prefixedName, "public", "true")
+		if err != nil {
+			return makeError(err)
+		}
 	}
-
 	return nil
 }
 
