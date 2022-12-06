@@ -1,0 +1,75 @@
+package harbor
+
+import (
+	"context"
+	"deploy-api-go/utils/subsystemutils"
+	"fmt"
+	"log"
+	"strings"
+)
+
+func deleteProject(name string) error {
+	prefixedName := subsystemutils.GetPrefixedName(name)
+
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to delete harbor project %s. details: %s", prefixedName, err)
+	}
+
+	client, err := createClient()
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = client.DeleteProject(context.TODO(), prefixedName)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
+}
+
+func deleteRepository(name string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to delete harbor repository %s. details: %s", name, err)
+	}
+
+	client, err := createClient()
+	if err != nil {
+		return makeError(err)
+	}
+
+	exists, project, err := assertProjectExists(client, subsystemutils.GetPrefixedName(name))
+	if !exists {
+		return nil
+	}
+
+	err = client.DeleteRepository(context.TODO(), project.Name, name)
+	if err != nil {
+		errStr := fmt.Sprintf("%s", err)
+		if !strings.Contains(errStr, "deleteRepositoryNotFound") {
+			return makeError(err)
+		}
+	}
+
+	return nil
+}
+
+func Delete(name string) error {
+	log.Println("deleting harbor setup for", name)
+
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to delete harbor setup for project %s. details: %s", name, err)
+	}
+
+	err := deleteRepository(name)
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = deleteProject(name)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
+}
