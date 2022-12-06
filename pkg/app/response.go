@@ -1,7 +1,7 @@
 package app
 
 import (
-	deployApiErrors "deploy-api-go/pkg/status_codes"
+	deployApiErrors "go-deploy/pkg/status_codes"
 	"net/http"
 )
 

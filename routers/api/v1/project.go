@@ -1,11 +1,11 @@
 package v1
 
 import (
-	"deploy-api-go/models/dto"
-	"deploy-api-go/pkg/app"
-	"deploy-api-go/pkg/status_codes"
-	"deploy-api-go/pkg/validator"
-	"deploy-api-go/service/project_service"
+	"go-deploy/models/dto"
+	"go-deploy/pkg/app"
+	"go-deploy/pkg/status_codes"
+	"go-deploy/pkg/validator"
+	"go-deploy/service/project_service"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"

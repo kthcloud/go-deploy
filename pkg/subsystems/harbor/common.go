@@ -2,10 +2,10 @@ package harbor
 
 import (
 	"context"
-	"deploy-api-go/models"
-	"deploy-api-go/pkg/conf"
-	"deploy-api-go/utils/subsystemutils"
 	"fmt"
+	"go-deploy/models"
+	"go-deploy/pkg/conf"
+	"go-deploy/utils/subsystemutils"
 
 	"github.com/mittwald/goharbor-client/v5/apiv2"
 	modelv2 "github.com/mittwald/goharbor-client/v5/apiv2/model"

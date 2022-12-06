@@ -2,8 +2,8 @@ package models
 
 import (
 	"context"
-	"deploy-api-go/pkg/conf"
 	"fmt"
+	"go-deploy/pkg/conf"
 	"log"
 	"time"
 

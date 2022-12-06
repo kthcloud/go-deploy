@@ -1,8 +1,8 @@
 package k8s
 
 import (
-	"deploy-api-go/utils/subsystemutils"
 	"fmt"
+	"go-deploy/utils/subsystemutils"
 )
 
 func deletedNamespace(name string) (bool, error) {

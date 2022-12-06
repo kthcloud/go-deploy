@@ -1,8 +1,8 @@
 package harbor
 
 import (
-	"deploy-api-go/utils/subsystemutils"
 	"github.com/mittwald/goharbor-client/v5/apiv2/model"
+	"go-deploy/utils/subsystemutils"
 )
 
 func createProjectRequestBody(projectName string) model.ProjectReq {

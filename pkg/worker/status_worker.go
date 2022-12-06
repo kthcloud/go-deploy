@@ -1,9 +1,9 @@
 package worker
 
 import (
-	"deploy-api-go/models"
-	"deploy-api-go/pkg/app"
-	"deploy-api-go/pkg/subsystems"
+	"go-deploy/models"
+	"go-deploy/pkg/app"
+	"go-deploy/pkg/subsystems"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
 	"time"

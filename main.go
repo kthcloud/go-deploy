@@ -1,14 +1,14 @@
 package main
 
 import (
-	"deploy-api-go/models"
-	"deploy-api-go/pkg/app"
-	"deploy-api-go/pkg/conf"
-	"deploy-api-go/pkg/subsystems/k8s"
-	"deploy-api-go/pkg/worker"
-	"deploy-api-go/routers"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"go-deploy/models"
+	"go-deploy/pkg/app"
+	"go-deploy/pkg/conf"
+	"go-deploy/pkg/subsystems/k8s"
+	"go-deploy/pkg/worker"
+	"go-deploy/routers"
 	"log"
 	"net/http"
 )

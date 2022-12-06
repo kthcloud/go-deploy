@@ -1,9 +1,9 @@
 package npm
 
 import (
-	"deploy-api-go/pkg/conf"
-	"deploy-api-go/utils/requestutils"
 	"fmt"
+	"go-deploy/pkg/conf"
+	"go-deploy/utils/requestutils"
 )
 
 func makeApiError(body []byte, makeError func(error) error) error {

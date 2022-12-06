@@ -1,9 +1,9 @@
 package npm
 
 import (
-	"deploy-api-go/pkg/conf"
-	"deploy-api-go/utils/subsystemutils"
 	"fmt"
+	"go-deploy/pkg/conf"
+	"go-deploy/utils/subsystemutils"
 )
 
 type createProxyHostRequestBody struct {

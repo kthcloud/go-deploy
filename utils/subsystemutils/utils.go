@@ -1,8 +1,8 @@
 package subsystemutils
 
 import (
-	"deploy-api-go/pkg/conf"
 	"fmt"
+	"go-deploy/pkg/conf"
 	"strings"
 )
 

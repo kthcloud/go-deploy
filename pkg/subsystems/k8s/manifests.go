@@ -1,8 +1,8 @@
 package k8s
 
 import (
-	"deploy-api-go/pkg/conf"
-	"deploy-api-go/utils/subsystemutils"
+	"go-deploy/pkg/conf"
+	"go-deploy/utils/subsystemutils"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

@@ -2,12 +2,12 @@ package harbor
 
 import (
 	"context"
-	"deploy-api-go/utils/subsystemutils"
 	"errors"
 	"fmt"
 	modelv2 "github.com/mittwald/goharbor-client/v5/apiv2/model"
 	"github.com/mittwald/goharbor-client/v5/apiv2/pkg/clients/artifact"
 	harborErrors "github.com/mittwald/goharbor-client/v5/apiv2/pkg/errors"
+	"go-deploy/utils/subsystemutils"
 	"log"
 	"strings"
 )

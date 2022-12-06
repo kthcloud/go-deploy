@@ -1,8 +1,8 @@
 package harbor
 
 import (
-	"deploy-api-go/utils/subsystemutils"
 	"fmt"
+	"go-deploy/utils/subsystemutils"
 )
 
 func getRobotFullName(name string) string {

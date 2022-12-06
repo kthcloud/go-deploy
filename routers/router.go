@@ -1,9 +1,9 @@
 package routers
 
 import (
-	"deploy-api-go/pkg/app"
-	"deploy-api-go/pkg/auth"
-	"deploy-api-go/routers/api/v1"
+	"go-deploy/pkg/app"
+	"go-deploy/pkg/auth"
+	"go-deploy/routers/api/v1"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -34,6 +34,8 @@ func NewRouter() *gin.Engine {
 			apiv1User.DELETE("/projects/:projectId", v1.DeleteProject)
 
 			apiv1User.GET("/status/:projectId", v1.GetProjectStatus)
+
+			apiv1User.GET("/logs/:projectId", v1.GetProjectLogs)
 		}
 	}
 

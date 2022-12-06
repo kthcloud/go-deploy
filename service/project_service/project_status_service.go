@@ -1,8 +1,8 @@
 package project_service
 
 import (
-	"deploy-api-go/models/dto"
-	"deploy-api-go/pkg/status_codes"
+	"go-deploy/models/dto"
+	"go-deploy/pkg/status_codes"
 )
 
 func GetStatusByID(userId, projectId string) (int, *dto.ProjectStatus, error) {

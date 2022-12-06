@@ -1,10 +1,10 @@
 package app
 
 import (
-	"deploy-api-go/pkg/auth"
-	"deploy-api-go/pkg/conf"
 	"encoding/json"
 	"fmt"
+	"go-deploy/pkg/auth"
+	"go-deploy/pkg/conf"
 )
 
 func (context *ClientContext) GetKeycloakToken() (*auth.KeycloakToken, error) {
@@ -35,4 +35,3 @@ func GetKeyCloakConfig() auth.KeycloakConfig {
 		Realm:         conf.Env.Keycloak.Realm,
 		FullCertsPath: &fullCertPath}
 }
-

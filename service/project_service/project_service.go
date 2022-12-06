@@ -1,10 +1,10 @@
 package project_service
 
 import (
-	"deploy-api-go/models"
-	"deploy-api-go/pkg/subsystems/harbor"
-	"deploy-api-go/pkg/subsystems/k8s"
-	"deploy-api-go/pkg/subsystems/npm"
+	"go-deploy/models"
+	"go-deploy/pkg/subsystems/harbor"
+	"go-deploy/pkg/subsystems/k8s"
+	"go-deploy/pkg/subsystems/npm"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
 )

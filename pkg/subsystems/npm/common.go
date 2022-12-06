@@ -1,10 +1,10 @@
 package npm
 
 import (
-	"deploy-api-go/pkg/conf"
-	"deploy-api-go/utils/requestutils"
 	"encoding/json"
 	"fmt"
+	"go-deploy/pkg/conf"
+	"go-deploy/utils/requestutils"
 )
 
 func createToken() (string, error) {

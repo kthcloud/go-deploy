@@ -1,7 +1,7 @@
 package app
 
 import (
-	"deploy-api-go/pkg/validator"
+	"go-deploy/pkg/validator"
 )
 
 func (context *ClientContext) ValidateJSON(rules *validator.MapData, output interface{}) map[string][]string {

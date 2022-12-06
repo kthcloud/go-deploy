@@ -1,9 +1,9 @@
 package k8s
 
 import (
-	"deploy-api-go/pkg/conf"
 	"encoding/base64"
 	"fmt"
+	"go-deploy/pkg/conf"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"log"

@@ -2,8 +2,8 @@ package harbor
 
 import (
 	"context"
-	"deploy-api-go/utils/subsystemutils"
 	"fmt"
+	"go-deploy/utils/subsystemutils"
 	"log"
 	"strings"
 )

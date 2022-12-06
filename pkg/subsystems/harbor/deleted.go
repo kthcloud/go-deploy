@@ -2,10 +2,10 @@ package harbor
 
 import (
 	"context"
-	"deploy-api-go/utils/subsystemutils"
 	"errors"
 	"fmt"
 	harborErrors "github.com/mittwald/goharbor-client/v5/apiv2/pkg/errors"
+	"go-deploy/utils/subsystemutils"
 )
 
 func deletedProject(name string) (bool, error) {

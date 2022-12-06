@@ -1,9 +1,9 @@
 package subsystems
 
 import (
-	"deploy-api-go/pkg/subsystems/harbor"
-	"deploy-api-go/pkg/subsystems/k8s"
-	"deploy-api-go/pkg/subsystems/npm"
+	"go-deploy/pkg/subsystems/harbor"
+	"go-deploy/pkg/subsystems/k8s"
+	"go-deploy/pkg/subsystems/npm"
 )
 
 func getCreatedConfirmers() []func(string) (bool, error) {

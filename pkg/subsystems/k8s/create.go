@@ -2,8 +2,8 @@ package k8s
 
 import (
 	"context"
-	"deploy-api-go/utils/subsystemutils"
 	"fmt"
+	"go-deploy/utils/subsystemutils"
 	"log"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
