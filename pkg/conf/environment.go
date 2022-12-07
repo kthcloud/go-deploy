@@ -61,16 +61,15 @@ func Setup() {
 	}
 
 	deployEnv, found := os.LookupEnv("DEPLOY_ENV_FILE")
-	if !found {
-		deployEnv = ".env"
+	if found {
+		log.Println("using env-file:", deployEnv)
+		err := godotenv.Load(deployEnv)
+		if err != nil {
+			log.Fatalln(makeError(err))
+		}
 	}
 
-	err := godotenv.Load(deployEnv)
-	if err != nil {
-		log.Fatalln(makeError(err))
-	}
-
-	_, err = env.UnmarshalFromEnviron(&Env)
+	_, err := env.UnmarshalFromEnviron(&Env)
 	if err != nil {
 		log.Fatalln(makeError(err))
 	}

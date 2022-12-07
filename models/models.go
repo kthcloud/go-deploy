@@ -36,7 +36,7 @@ func Setup() {
 
 	// Connect to db
 	uri := getUri()
-	log.Println("Connecting to database: ", uri)
+	log.Println("connecting to database")
 	clientResult, err := mongo.NewClient(options.Client().ApplyURI(uri))
 	if err != nil {
 		log.Fatalln(makeError(err))

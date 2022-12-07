@@ -10,7 +10,7 @@ import (
 )
 
 func Setup(ctx *app.Context) {
-	log.Println("Starting worker")
+	log.Println("starting worker")
 	go func() {
 		for {
 			if ctx.Stop {

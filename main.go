@@ -11,6 +11,7 @@ import (
 	"go-deploy/routers"
 	"log"
 	"net/http"
+	"os"
 )
 
 func setup(context *app.Context) {
@@ -30,7 +31,12 @@ func main() {
 	setup(&context)
 	defer shutdown()
 
-	gin.SetMode("debug")
+	ginMode, exists := os.LookupEnv("GIN_MODE")
+	if exists {
+		gin.SetMode(ginMode)
+	} else {
+		gin.SetMode("debug")
+	}
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf("0.0.0.0:%d", conf.Env.Port),
