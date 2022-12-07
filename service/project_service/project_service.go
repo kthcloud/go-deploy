@@ -99,3 +99,7 @@ func Delete(name string) {
 		}
 	}()
 }
+
+func Restart(name string) error {
+	return k8s.Restart(name)
+}

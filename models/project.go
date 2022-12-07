@@ -97,6 +97,10 @@ func GetProjectByName(userId, name string) (*Project, error) {
 	return getProject(bson.D{{"owner", userId}, {"name", name}})
 }
 
+func GetByWebookToken(token string) (*Project, error) {
+	return getProject(bson.D{{"subsystems.harbor.webhookToken", token}})
+}
+
 func ProjectExists(name string) (bool, *Project, error) {
 	project, err := getProject(bson.D{{"name", name}})
 	if err != nil {

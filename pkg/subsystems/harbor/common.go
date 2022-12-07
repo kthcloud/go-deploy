@@ -26,6 +26,17 @@ func updateDatabaseRobot(name string, robotUsername string, robotPassword string
 	return nil
 }
 
+func updateDatabaseWebhook(name string, token string) error {
+	err := models.UpdateProjectByName(name, bson.D{
+		{"subsystems.harbor.webhookToken", token},
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func createClient() (*apiv2.RESTClient, error) {
 	harbor := conf.Env.Harbor
 	return apiv2.NewRESTClientForHost(harbor.Url, harbor.Identity, harbor.Secret, &config.Options{})
@@ -96,4 +107,10 @@ func getRobotByNameV1(client *apiv2.RESTClient, projectName string, name string)
 	}
 
 	return robotResult, nil
+}
+
+func getWebhookEventTypes() []string {
+	return []string{
+		"PUSH_ARTIFACT",
+	}
 }

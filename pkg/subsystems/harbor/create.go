@@ -7,6 +7,8 @@ import (
 	modelv2 "github.com/mittwald/goharbor-client/v5/apiv2/model"
 	"github.com/mittwald/goharbor-client/v5/apiv2/pkg/clients/artifact"
 	harborErrors "github.com/mittwald/goharbor-client/v5/apiv2/pkg/errors"
+	"go-deploy/pkg/conf"
+	"go-deploy/utils"
 	"go-deploy/utils/subsystemutils"
 	"log"
 	"strings"
@@ -150,6 +152,71 @@ func createRepository(name string) error {
 	return nil
 }
 
+func createWebhook(name string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to create harbor webhook for %s. details: %s", name, err)
+	}
+
+	client, err := createClient()
+	if err != nil {
+		return makeError(err)
+	}
+
+	prefixedName := subsystemutils.GetPrefixedName(name)
+	projectExists, project, err := assertProjectExists(client, prefixedName)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if !projectExists {
+		err = fmt.Errorf("no project exists")
+		return makeError(err)
+	}
+
+	webhooks, err := client.ListProjectWebhookPolicies(context.TODO(), int(project.ProjectID))
+	if err != nil {
+		return makeError(err)
+	}
+
+	for _, hook := range webhooks {
+		if hook.Name == name {
+			return nil
+		}
+	}
+
+	webhookToken, err := generateToken(conf.Env.Harbor.WebhookSecret)
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = updateDatabaseWebhook(name, utils.HashString(webhookToken))
+	if err != nil {
+		return makeError(err)
+	}
+
+	webhookTargetAddress := fmt.Sprintf("%s/api/v1/hooks/projects", conf.Env.ExternalUrl)
+
+	err = client.AddProjectWebhookPolicy(context.TODO(), int(project.ProjectID), &modelv2.WebhookPolicy{
+		Enabled:    true,
+		EventTypes: getWebhookEventTypes(),
+		Name:       name,
+		Targets: []*modelv2.WebhookTargetObject{
+			{
+				Address:        webhookTargetAddress,
+				AuthHeader:     createAuthHeader(webhookToken),
+				SkipCertVerify: false,
+				Type:           "http",
+			},
+		},
+	})
+
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
+}
+
 func Create(name string) error {
 	log.Println("creating harbor setup for", name)
 
@@ -168,6 +235,10 @@ func Create(name string) error {
 	}
 
 	err = createRepository(name)
+	if err != nil {
+		return makeError(err)
+	}
+	err = createWebhook(name)
 	if err != nil {
 		return makeError(err)
 	}

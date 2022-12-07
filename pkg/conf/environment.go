@@ -9,7 +9,9 @@ import (
 )
 
 type Environment struct {
-	Port          int    `env:"DEPLOY_PORT,default=8080"`
+	Port        int    `env:"DEPLOY_PORT,default=8080"`
+	ExternalUrl string `env:"DEPLOY_EXTERNAL_URL"`
+
 	SessionSecret string `env:"DEPLOY_SESSION_SECRET,required=true"`
 	ParentDomain  string `env:"DEPLOY_PARENT_DOMAIN,required=true"`
 
@@ -27,7 +29,7 @@ type Environment struct {
 	}
 
 	K8s struct {
-		Config      string `env:"DEPLOY_K8S_CONFIG"`
+		Config string `env:"DEPLOY_K8S_CONFIG"`
 	}
 
 	Npm struct {
@@ -37,9 +39,10 @@ type Environment struct {
 	}
 
 	Harbor struct {
-		Identity string `env:"DEPLOY_HARBOR_ADMIN_IDENTITY,required=true"`
-		Secret   string `env:"DEPLOY_HARBOR_ADMIN_SECRET,required=true"`
-		Url      string `env:"DEPLOY_HARBOR_API_URL,required=true"`
+		Identity      string `env:"DEPLOY_HARBOR_ADMIN_IDENTITY,required=true"`
+		Secret        string `env:"DEPLOY_HARBOR_ADMIN_SECRET,required=true"`
+		Url           string `env:"DEPLOY_HARBOR_API_URL,required=true"`
+		WebhookSecret string `env:"DEPLOY_HARBOR_WEBHOOK_SECRET,required=true"`
 	}
 
 	Db struct {

@@ -62,6 +62,38 @@ func createdRepository(name string) (bool, error) {
 	return repository.ID != 0, nil
 }
 
+func createdWebhook(name string) (bool, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to check if harbor repository %s is created. details: %s", name, err)
+	}
+
+	client, err := createClient()
+	if err != nil {
+		return false, makeError(err)
+	}
+
+	project, err := client.GetProject(context.TODO(), subsystemutils.GetPrefixedName(name))
+	if err != nil {
+		return false, makeError(err)
+	}
+
+	if project == nil {
+		return false, nil
+	}
+
+	webhookPolicies, err := client.ListProjectWebhookPolicies(context.TODO(), int(project.ProjectID))
+	if err != nil {
+		return false, makeError(err)
+	}
+
+	for _, policy := range webhookPolicies {
+		if policy.Name == name {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func Created(name string) (bool, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check if harbor setup is created for project %s. details: %s", name, err)
@@ -86,5 +118,10 @@ func Created(name string) (bool, error) {
 		return false, makeError(err)
 	}
 
-	return robotCreated && repositoryCreated, nil
+	webhookCreated, err := createdWebhook(name)
+	if err != nil {
+		return false, makeError(err)
+	}
+
+	return robotCreated && repositoryCreated && webhookCreated, nil
 }

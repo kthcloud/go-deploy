@@ -1,12 +1,12 @@
 package routers
 
 import (
-	"go-deploy/pkg/app"
-	"go-deploy/pkg/auth"
-	"go-deploy/routers/api/v1"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"go-deploy/pkg/app"
+	"go-deploy/pkg/auth"
+	"go-deploy/routers/api/v1"
 )
 
 func NewRouter() *gin.Engine {
@@ -17,17 +17,23 @@ func NewRouter() *gin.Engine {
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	apiv1 := r.Group("/api/v1")
-	apiv1User := apiv1.Group("/users/:userId")
 
-	apiv1.Use(auth.New(auth.Check(), app.GetKeyCloakConfig()))
+	apiv1User := apiv1.Group("/users/:userId")
 	apiv1User.Use(auth.New(auth.Check(), app.GetKeyCloakConfig()))
 
+	apiv1Hook := apiv1.Group("/hooks/")
+
 	{
-		// Path: /
+		// path: /
 		apiv1.GET("/projects", v1.GetAllProjects)
 
-		// Path: /user/:userId/
 		{
+			// path: /hooks
+			apiv1Hook.POST("/projects", v1.HandleProjectHook)
+		}
+
+		{
+			// path: /user/:userId/
 			apiv1User.GET("/projects", v1.GetProjectsByOwnerID)
 			apiv1User.GET("/projects/:projectId", v1.GetProject)
 			apiv1User.POST("/projects", v1.CreateProject)

@@ -22,6 +22,11 @@ func deleteProject(name string) error {
 
 	err = client.DeleteProject(context.TODO(), prefixedName)
 	if err != nil {
+		errString := fmt.Sprintf("%s", err)
+		if strings.Contains(errString, "deleteProjectPreconditionFailed") {
+			return nil
+		}
+
 		return makeError(err)
 	}
 

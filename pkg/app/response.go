@@ -6,7 +6,7 @@ import (
 )
 
 type errorResponse struct {
-	Errors []errorPiece `json:"status_codes"`
+	Errors []errorPiece `json:"errors"`
 }
 
 type errorPiece struct {
