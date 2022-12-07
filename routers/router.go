@@ -18,7 +18,7 @@ func NewRouter() *gin.Engine {
 	apiv1User := apiv1.Group("/users/:userId")
 	apiv1User.Use(auth.New(auth.Check(), app.GetKeyCloakConfig()))
 
-	apiv1Hook := apiv1.Group("/hooks/")
+	apiv1Hook := r.Group("/v1/hooks")
 
 	{
 		// path: /
