@@ -6,9 +6,11 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"github.com/sethvargo/go-password/password"
 	"go-deploy/utils/subsystemutils"
 	"golang.org/x/crypto/bcrypt"
 	"math/big"
+	"unicode"
 )
 
 func getRobotFullName(name string) string {
@@ -57,4 +59,26 @@ func createAuthHeader(secret string) string {
 	fullSecret := fmt.Sprintf("cloud:%s", secret)
 	encoded := base64.StdEncoding.EncodeToString([]byte(fullSecret))
 	return fmt.Sprintf("Basic %s", encoded)
+}
+
+func createPassword() (string, error) {
+	for {
+		generatedPassword, err := password.Generate(15, 2, 0, false, false)
+		if err != nil {
+			return "", err
+		}
+
+		anyUpper := false
+		anyLower := false
+		for _, letter := range generatedPassword {
+			if unicode.IsLower(letter) {
+				anyLower = true
+			} else if unicode.IsUpper(letter) {
+				anyUpper = true
+			}
+		}
+		if anyLower && anyUpper {
+			return generatedPassword, nil
+		}
+	}
 }

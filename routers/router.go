@@ -41,6 +41,8 @@ func NewRouter() *gin.Engine {
 
 			apiv1User.GET("/status/:projectId", v1.GetProjectStatus)
 
+			apiv1User.GET("/ciConfigs/:projectId/", v1.GetCIConfig)
+
 			apiv1User.GET("/logs/:projectId", v1.GetProjectLogs)
 		}
 	}

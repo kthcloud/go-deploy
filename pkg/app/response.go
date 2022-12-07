@@ -31,7 +31,7 @@ func (context *ClientContext) ErrorResponse(httpCode int, errCode int, message s
 	context.GinContext.JSON(httpCode, errorResponse{Errors: errors})
 }
 
-func (context *ClientContext) JsonResponse(httpCode int, data interface{}) {
+func (context *ClientContext) JSONResponse(httpCode int, data interface{}) {
 	context.GinContext.JSON(httpCode, data)
 }
 

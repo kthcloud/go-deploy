@@ -66,12 +66,6 @@ func Exists(name string) (bool, *models.Project, error) {
 	return models.ProjectExists(name)
 }
 
-func MarkBeingCreated(projectID string) error {
-	return models.UpdateProject(projectID, bson.D{{
-		"beingCreated", true,
-	}})
-}
-
 func MarkBeingDeleted(projectID string) error {
 	return models.UpdateProject(projectID, bson.D{{
 		"beingDeleted", true,

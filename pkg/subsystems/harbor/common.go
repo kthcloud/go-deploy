@@ -2,15 +2,14 @@ package harbor
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"go-deploy/models"
-	"go-deploy/pkg/conf"
-	"go-deploy/utils/subsystemutils"
-
 	"github.com/mittwald/goharbor-client/v5/apiv2"
 	modelv2 "github.com/mittwald/goharbor-client/v5/apiv2/model"
 	"github.com/mittwald/goharbor-client/v5/apiv2/pkg/config"
-	"github.com/sethvargo/go-password/password"
+	"go-deploy/models"
+	"go-deploy/pkg/conf"
+	"go-deploy/utils/requestutils"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -54,38 +53,42 @@ func assertProjectExists(client *apiv2.RESTClient, projectName string) (bool, *m
 	return project.ProjectID != 0, project, nil
 }
 
-func updateRobotCredentials(client *apiv2.RESTClient, name string) error {
-	robotName := getRobotName(name)
-
+// Needed since the harbor client package refuses to return credentials
+func createHarborRobot(name string) (*modelv2.RobotCreated, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to update credentials for harbor robot %s. details: %s", robotName, err)
+		return fmt.Errorf("failed to create harbor robot %s. details: %s", name, err)
 	}
 
-	robot, err := getRobotByNameV1(client, subsystemutils.GetPrefixedName(name), getRobotFullName(name))
+	robotURL := fmt.Sprintf("%s/robots", conf.Env.Harbor.Url)
+
+	username := conf.Env.Harbor.Identity
+	password := conf.Env.Harbor.Secret
+
+	robotRequestBody := createRobotRequestBody(name)
+	robotRequestBodyJson, err := json.Marshal(robotRequestBody)
 	if err != nil {
-		return makeError(err)
+		return nil, makeError(err)
 	}
 
-	generatedSecret, err := password.Generate(10, 2, 2, true, false)
+	res, err := requestutils.DoRequestBasicAuth("POST", robotURL, robotRequestBodyJson, username, password)
 	if err != nil {
-		return makeError(err)
+		return nil, makeError(err)
 	}
 
-	updatedRobot := &modelv2.Robot{
-		Secret: generatedSecret,
-	}
+	defer requestutils.CloseBody(res.Body)
 
-	err = client.UpdateProjectRobotV1(context.TODO(), subsystemutils.GetPrefixedName(name), robot.ID, updatedRobot)
+	body, err := requestutils.ReadBody(res.Body)
 	if err != nil {
-		return makeError(err)
+		return nil, makeError(err)
 	}
 
-	err = updateDatabaseRobot(name, robotName, generatedSecret)
+	var robotCreated modelv2.RobotCreated
+	err = requestutils.ParseJsonBody(body, &robotCreated)
 	if err != nil {
-		return makeError(err)
+		return nil, makeError(err)
 	}
 
-	return nil
+	return &robotCreated, nil
 }
 
 func getRobotByNameV1(client *apiv2.RESTClient, projectName string, name string) (*modelv2.Robot, error) {

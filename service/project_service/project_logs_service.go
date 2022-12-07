@@ -5,13 +5,17 @@ import (
 	"go-deploy/pkg/subsystems/k8s"
 )
 
-func GetLogs(userId, projectId string, handler func(string)) (context.Context, error) {
-	project, err := Get(userId, projectId)
+func GetLogs(userID, projectID string, handler func(string)) (context.Context, error) {
+	project, err := Get(userID, projectID)
 	if err != nil {
 		return nil, err
 	}
 
 	if project == nil {
+		return nil, nil
+	}
+
+	if !project.Ready() {
 		return nil, nil
 	}
 

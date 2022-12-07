@@ -91,13 +91,12 @@ func createRobot(name string) error {
 		return nil
 	}
 
-	robotBody := createRobotRequestBody(name)
-	err = client.NewRobotAccount(context.TODO(), &robotBody)
+	robotCreatedBody, err := createHarborRobot(name)
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = updateRobotCredentials(client, name)
+	err = updateDatabaseRobot(name, robotCreatedBody.Name, robotCreatedBody.Secret)
 	if err != nil {
 		return makeError(err)
 	}

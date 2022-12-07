@@ -5,8 +5,8 @@ import (
 	"go-deploy/pkg/status_codes"
 )
 
-func GetStatusByID(userId, projectId string) (int, *dto.ProjectStatus, error) {
-	project, err := Get(userId, projectId)
+func GetStatusByID(userID, projectID string) (int, *dto.ProjectStatus, error) {
+	project, err := Get(userID, projectID)
 	if err != nil {
 		return -1, nil, err
 	}

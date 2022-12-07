@@ -33,14 +33,19 @@ type SubsystemNpm struct {
 type SubsystemHarbor struct {
 	RobotUsername string `bson:"robotUsername"`
 	RobotPassword string `bson:"robotPassword"`
+	WebhookToken  string `bson:"webhookToken"`
 }
 
-func (p *Project) ToDto() dto.Project {
+func (project *Project) ToDto() dto.Project {
 	return dto.Project{
-		ID:    p.ID,
-		Name:  p.Name,
-		Owner: p.Owner,
+		ID:    project.ID,
+		Name:  project.Name,
+		Owner: project.Owner,
 	}
+}
+
+func (project *Project) Ready() bool {
+	return !project.BeingCreated && !project.BeingDeleted
 }
 
 func CreateProject(projectID, name, owner string) error {

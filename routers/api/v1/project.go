@@ -21,7 +21,7 @@ func GetAllProjects(c *gin.Context) {
 		dtoProjects[i] = project.ToDto()
 	}
 
-	context.JsonResponse(http.StatusOK, dtoProjects)
+	context.JSONResponse(http.StatusOK, dtoProjects)
 }
 
 func GetProjectsByOwnerID(c *gin.Context) {
@@ -54,7 +54,7 @@ func GetProjectsByOwnerID(c *gin.Context) {
 	projects, _ := project_service.GetByOwner(userId)
 
 	if projects == nil {
-		context.JsonResponse(200, []interface{}{})
+		context.JSONResponse(200, []interface{}{})
 		return
 	}
 
@@ -63,7 +63,7 @@ func GetProjectsByOwnerID(c *gin.Context) {
 		dtoProjects[i] = project.ToDto()
 	}
 
-	context.JsonResponse(200, dtoProjects)
+	context.JSONResponse(200, dtoProjects)
 }
 
 func GetProject(c *gin.Context) {
@@ -100,7 +100,7 @@ func GetProject(c *gin.Context) {
 		return
 	}
 
-	context.JsonResponse(200, project.ToDto())
+	context.JSONResponse(200, project.ToDto())
 }
 
 func CreateProject(c *gin.Context) {
@@ -167,13 +167,13 @@ func CreateProject(c *gin.Context) {
 			return
 		}
 		project_service.Create(project.ID, requestBody.Name, userId)
-		context.JsonResponse(http.StatusCreated, dto.ProjectCreated{ID: project.ID})
+		context.JSONResponse(http.StatusCreated, dto.ProjectCreated{ID: project.ID})
 		return
 	}
 
 	projectID := uuid.New().String()
 	project_service.Create(projectID, requestBody.Name, userId)
-	context.JsonResponse(http.StatusCreated, dto.ProjectCreated{ID: projectID})
+	context.JSONResponse(http.StatusCreated, dto.ProjectCreated{ID: projectID})
 }
 
 func DeleteProject(c *gin.Context) {

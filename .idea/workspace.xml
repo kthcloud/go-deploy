@@ -5,22 +5,23 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="bc4da88f-8032-4df4-9bcc-9ca8b4f364d2" name="Changes" comment="change project name. fix websocket support for logs">
-      <change afterPath="$PROJECT_DIR$/models/dto/harbor_webhook.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/k8s/ops.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/routers/api/v1/project_hook.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/service/project_service/project_hook_service.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/utils/utils.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/models/dto/ci_config.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/models/project_action_config.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/routers/api/v1/project_ci_config.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/service/project_service/project_ci_config_service.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/models/project.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/project.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/app/response.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/app/response.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/conf/environment.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/conf/environment.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/common.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/common.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/create.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/create.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/created.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/created.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/delete.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/delete.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/utils.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/utils.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routers/api/v1/project.go" beforeDir="false" afterPath="$PROJECT_DIR$/routers/api/v1/project.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routers/api/v1/project_status.go" beforeDir="false" afterPath="$PROJECT_DIR$/routers/api/v1/project_status.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/routers/router.go" beforeDir="false" afterPath="$PROJECT_DIR$/routers/router.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/project_service/project_logs_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/project_service/project_logs_service.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/service/project_service/project_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/project_service/project_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/project_service/project_status_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/project_service/project_status_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/utils.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/utils.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -85,11 +86,11 @@
       <recent name="C:\repos\deploy-api-go" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\repos\go-deploy\models" />
       <recent name="C:\repos\deploy-api-go\service\project_service" />
       <recent name="C:\repos\deploy-api-go\pkg\subsystems" />
       <recent name="C:\repos\deploy-api-go\models" />
       <recent name="C:\repos\deploy-api-go\pkg\settings" />
-      <recent name="C:\repos\deploy-api-go\models\db" />
     </key>
   </component>
   <component name="RunManager">
@@ -152,6 +153,13 @@
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$USER_HOME$/go/pkg/mod/github.com/mittwald/goharbor-client/v5@v5.1.0/apiv2/pkg/clients/robotv1/robotv1.go</url>
+          <line>91</line>
+          <option name="timeStamp" value="32" />
+        </line-breakpoint>
+      </breakpoints>
       <default-breakpoints>
         <breakpoint type="DlvErrorBreakpoint" />
       </default-breakpoints>

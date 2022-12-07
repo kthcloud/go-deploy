@@ -1,9 +1,12 @@
 package utils
 
-import "crypto/sha256"
+import (
+	"crypto/sha256"
+	"encoding/base64"
+)
 
 func HashString(token string) string {
-	h := sha256.New()
-	h.Write([]byte(token))
-	return string(h.Sum(nil))
+	hasher := sha256.New()
+	hasher.Write([]byte(token))
+	return base64.URLEncoding.EncodeToString(hasher.Sum(nil))
 }

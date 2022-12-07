@@ -10,7 +10,7 @@ import (
 	"net/http"
 )
 
-func GetProjectStatus(c *gin.Context) {
+func GetCIConfig(c *gin.Context) {
 	context := app.NewContext(c)
 
 	rules := validator.MapData{
@@ -25,30 +25,29 @@ func GetProjectStatus(c *gin.Context) {
 		return
 	}
 
-	userId := context.GinContext.Param("userId")
-	projectId := context.GinContext.Param("projectId")
+	userID := context.GinContext.Param("userId")
+	projectID := context.GinContext.Param("projectId")
 	token, err := context.GetKeycloakToken()
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		return
 	}
 
-	if userId != token.Sub {
+	if userID != token.Sub {
 		context.Unauthorized()
 		return
 	}
 
-	statusCode, projectStatus, _ := project_service.GetStatusByID(userId, projectId)
+	config, err := project_service.GetCIConfig(userID, projectID)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		return
+	}
 
-	if projectStatus == nil {
+	if config == nil {
 		context.NotFound()
 		return
 	}
 
-	if statusCode == status_codes.ProjectNotFound {
-		context.JSONResponse(http.StatusNotFound, projectStatus)
-		return
-	}
-
-	context.JSONResponse(http.StatusOK, projectStatus)
-
+	context.JSONResponse(http.StatusOK, config)
 }
