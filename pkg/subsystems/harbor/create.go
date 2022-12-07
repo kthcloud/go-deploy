@@ -193,7 +193,7 @@ func createWebhook(name string) error {
 		return makeError(err)
 	}
 
-	webhookTargetAddress := fmt.Sprintf("%s/api/v1/hooks/projects", conf.Env.ExternalUrl)
+	webhookTargetAddress := fmt.Sprintf("%s/v1/hooks/projects", conf.Env.ExternalUrl)
 
 	err = client.AddProjectWebhookPolicy(context.TODO(), int(project.ProjectID), &modelv2.WebhookPolicy{
 		Enabled:    true,
