@@ -14,7 +14,6 @@ func GetProjectStatus(c *gin.Context) {
 	context := app.NewContext(c)
 
 	rules := validator.MapData{
-		"userId":    []string{"required", "uuid_v4"},
 		"projectId": []string{"required", "uuid_v4"},
 	}
 
@@ -25,20 +24,14 @@ func GetProjectStatus(c *gin.Context) {
 		return
 	}
 
-	userId := context.GinContext.Param("userId")
-	projectId := context.GinContext.Param("projectId")
 	token, err := context.GetKeycloakToken()
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 	}
-
-	if userId != token.Sub {
-		context.Unauthorized()
-		return
-	}
+	projectId := context.GinContext.Param("projectId")
+	userId := token.Sub
 
 	statusCode, projectStatus, _ := project_service.GetStatusByID(userId, projectId)
-
 	if projectStatus == nil {
 		context.NotFound()
 		return

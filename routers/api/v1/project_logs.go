@@ -18,7 +18,6 @@ func GetProjectLogs(c *gin.Context) {
 	context := app.NewContext(c)
 
 	rules := validator.MapData{
-		"userId":    []string{"required", "uuid_v4"},
 		"projectId": []string{"required", "uuid_v4"},
 	}
 
@@ -29,17 +28,12 @@ func GetProjectLogs(c *gin.Context) {
 		return
 	}
 
-	userID := context.GinContext.Param("userId")
-	projectID := context.GinContext.Param("projectId")
 	token, err := context.GetKeycloakToken()
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 	}
-
-	if userID != token.Sub {
-		context.Unauthorized()
-		return
-	}
+	userID := token.Sub
+	projectID := context.GinContext.Param("projectId")
 
 	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {

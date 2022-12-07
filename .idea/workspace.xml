@@ -5,9 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="bc4da88f-8032-4df4-9bcc-9ca8b4f364d2" name="Changes" comment="change project name. fix websocket support for logs">
-      <change afterPath="$PROJECT_DIR$/manifests/deployment.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/manifests/service.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routers/api/v1/project.go" beforeDir="false" afterPath="$PROJECT_DIR$/routers/api/v1/project.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routers/api/v1/project_ci_config.go" beforeDir="false" afterPath="$PROJECT_DIR$/routers/api/v1/project_ci_config.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routers/api/v1/project_logs.go" beforeDir="false" afterPath="$PROJECT_DIR$/routers/api/v1/project_logs.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routers/api/v1/project_status.go" beforeDir="false" afterPath="$PROJECT_DIR$/routers/api/v1/project_status.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/routers/router.go" beforeDir="false" afterPath="$PROJECT_DIR$/routers/router.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />

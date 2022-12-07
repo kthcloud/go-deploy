@@ -13,6 +13,7 @@ func NewRouter() *gin.Engine {
 	r.Use(gin.Recovery())
 
 	apiv1 := r.Group("/v1")
+	apiv1.Use(auth.New(auth.Check(), app.GetKeyCloakConfig()))
 
 	apiv1User := apiv1.Group("/users/:userId")
 	apiv1User.Use(auth.New(auth.Check(), app.GetKeyCloakConfig()))
@@ -23,6 +24,13 @@ func NewRouter() *gin.Engine {
 		// path: /
 		apiv1.GET("/projects", v1.GetAllProjects)
 
+		apiv1.GET("/projects/:projectId", v1.GetProject)
+		apiv1.GET("/projects/:projectId/status", v1.GetProjectStatus)
+		apiv1.GET("/projects/:projectId/ciConfigs", v1.GetCIConfig)
+		apiv1.GET("/projects/:projectId/logs", v1.GetProjectLogs)
+		apiv1.POST("/projects", v1.CreateProject)
+		apiv1.DELETE("/projects/:projectId", v1.DeleteProject)
+
 		{
 			// path: /hooks
 			apiv1Hook.POST("/projects", v1.HandleProjectHook)
@@ -31,15 +39,6 @@ func NewRouter() *gin.Engine {
 		{
 			// path: /user/:userId/
 			apiv1User.GET("/projects", v1.GetProjectsByOwnerID)
-			apiv1User.GET("/projects/:projectId", v1.GetProject)
-			apiv1User.POST("/projects", v1.CreateProject)
-			apiv1User.DELETE("/projects/:projectId", v1.DeleteProject)
-
-			apiv1User.GET("/status/:projectId", v1.GetProjectStatus)
-
-			apiv1User.GET("/ciConfigs/:projectId/", v1.GetCIConfig)
-
-			apiv1User.GET("/logs/:projectId", v1.GetProjectLogs)
 		}
 	}
 

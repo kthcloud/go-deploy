@@ -1,14 +1,14 @@
 package v1
 
 import (
+	"fmt"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"go-deploy/models/dto"
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
 	"go-deploy/pkg/validator"
 	"go-deploy/service/project_service"
-	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"net/http"
 )
 
@@ -70,7 +70,6 @@ func GetProject(c *gin.Context) {
 	context := app.NewContext(c)
 
 	rules := validator.MapData{
-		"userId":    []string{"required", "uuid_v4"},
 		"projectId": []string{"required", "uuid_v4"},
 	}
 
@@ -81,17 +80,12 @@ func GetProject(c *gin.Context) {
 		return
 	}
 
-	userId := context.GinContext.Param("userId")
-	projectId := context.GinContext.Param("projectId")
 	token, err := context.GetKeycloakToken()
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 	}
-
-	if userId != token.Sub {
-		context.Unauthorized()
-		return
-	}
+	projectId := context.GinContext.Param("projectId")
+	userId := token.Sub
 
 	project, _ := project_service.Get(userId, projectId)
 
@@ -115,8 +109,6 @@ func CreateProject(c *gin.Context) {
 		},
 	}
 
-	paramRules := validator.MapData{"userId": []string{"required", "uuid_v4"}}
-
 	messages := validator.MapData{
 		"name": []string{
 			"required:Project name is required",
@@ -126,30 +118,19 @@ func CreateProject(c *gin.Context) {
 		},
 	}
 
-	validationErrors := context.ValidateParams(&paramRules)
-	if len(validationErrors) > 0 {
-		context.ResponseValidationError(validationErrors)
-		return
-	}
-
 	var requestBody dto.ProjectReq
-	validationErrors = context.ValidateJSONCustomMessages(&bodyRules, &messages, &requestBody)
+	validationErrors := context.ValidateJSONCustomMessages(&bodyRules, &messages, &requestBody)
 	if len(validationErrors) > 0 {
 		context.ResponseValidationError(validationErrors)
 		return
 	}
 
-	userId := context.GinContext.Param("userId")
 	token, err := context.GetKeycloakToken()
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
 	}
-
-	if userId != token.Sub {
-		context.Unauthorized()
-		return
-	}
+	userId := token.Sub
 
 	exists, project, err := project_service.Exists(requestBody.Name)
 	if err != nil {
@@ -180,10 +161,6 @@ func DeleteProject(c *gin.Context) {
 	context := app.NewContext(c)
 
 	rules := validator.MapData{
-		"userId": []string{
-			"required",
-			"uuid_v4",
-		},
 		"projectId": []string{
 			"required",
 			"uuid_v4",
@@ -196,18 +173,13 @@ func DeleteProject(c *gin.Context) {
 		return
 	}
 
-	userId := context.GinContext.Param("userId")
-	projectId := context.GinContext.Param("projectId")
 	token, err := context.GetKeycloakToken()
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
 	}
-
-	if userId != token.Sub {
-		context.Unauthorized()
-		return
-	}
+	userId := token.Sub
+	projectId := context.GinContext.Param("projectId")
 
 	currentProject, err := project_service.Get(userId, projectId)
 	if err != nil {
