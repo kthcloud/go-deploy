@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
-	"go-deploy/service/project_service"
+	"go-deploy/service/deployment_service"
 	"go-deploy/utils"
 	"log"
 	"net/http"
@@ -43,7 +43,7 @@ func getTokenFromAuthHeader(context app.ClientContext) (string, error) {
 	return basicAuthSplit[1], nil
 }
 
-func HandleProjectHook(c *gin.Context) {
+func HandleHarborHook(c *gin.Context) {
 	context := app.ClientContext{GinContext: c}
 
 	token, err := getTokenFromAuthHeader(context)
@@ -63,26 +63,26 @@ func HandleProjectHook(c *gin.Context) {
 		return
 	}
 
-	project, err := project_service.GetByWebhookToken(utils.HashString(token))
+	deployment, err := deployment_service.GetByWebhookToken(utils.HashString(token))
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
 	}
 
-	if project == nil {
+	if deployment == nil {
 		context.NotFound()
 		return
 	}
 
-	webook, err := project_service.GetHook(context.GinContext.Request.Body)
+	webook, err := deployment_service.GetHook(context.GinContext.Request.Body)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
 	}
 
 	if webook.Type == "PUSH_ARTIFACT" {
-		log.Printf("restarting project %s due to push\n", project.Name)
-		err = project_service.Restart(project.Name)
+		log.Printf("restarting deployment %s due to push\n", deployment.Name)
+		err = deployment_service.Restart(deployment.Name)
 		if err != nil {
 			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 			return

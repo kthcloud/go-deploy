@@ -14,7 +14,7 @@ import (
 )
 
 func updateDatabaseRobot(name string, robotUsername string, robotPassword string) error {
-	err := models.UpdateProjectByName(name, bson.D{
+	err := models.UpdateDeploymentByName(name, bson.D{
 		{"subsystems.harbor.robotUsername", robotUsername},
 		{"subsystems.harbor.robotPassword", robotPassword},
 	})
@@ -26,7 +26,7 @@ func updateDatabaseRobot(name string, robotUsername string, robotPassword string
 }
 
 func updateDatabaseWebhook(name string, token string) error {
-	err := models.UpdateProjectByName(name, bson.D{
+	err := models.UpdateDeploymentByName(name, bson.D{
 		{"subsystems.harbor.webhookToken", token},
 	})
 	if err != nil {

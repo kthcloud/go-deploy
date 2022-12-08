@@ -17,21 +17,21 @@ func Setup(ctx *app.Context) {
 				break
 			}
 
-			beingCreated, _ := models.GetAllProjectsWithCondition(bson.D{{"beingCreated", true}})
-			for _, project := range beingCreated {
-				created := subsystems.Created(project.Name)
+			beingCreated, _ := models.GetAllDeploymentsWithCondition(bson.D{{"beingCreated", true}})
+			for _, deployment := range beingCreated {
+				created := subsystems.Created(deployment.Name)
 				if created {
-					log.Printf("marking project %s as created\n", project.Name)
-					_ = models.UpdateProject(project.ID, bson.D{{"beingCreated", false}})
+					log.Printf("marking deployment %s as created\n", deployment.Name)
+					_ = models.UpdateDeployment(deployment.ID, bson.D{{"beingCreated", false}})
 				}
 			}
 
-			beingDeleted, _ := models.GetAllProjectsWithCondition(bson.D{{"beingDeleted", true}})
-			for _, project := range beingDeleted {
-				deleted := subsystems.Deleted(project.Name)
+			beingDeleted, _ := models.GetAllDeploymentsWithCondition(bson.D{{"beingDeleted", true}})
+			for _, deployment := range beingDeleted {
+				deleted := subsystems.Deleted(deployment.Name)
 				if deleted {
-					log.Printf("deleting project %s\n", project.Name)
-					_ = models.DeleteProject(project.ID, project.Owner)
+					log.Printf("deleting deployment %s\n", deployment.Name)
+					_ = models.DeleteDeployment(deployment.ID, deployment.Owner)
 				}
 			}
 			time.Sleep(5 * time.Second)

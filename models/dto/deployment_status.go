@@ -1,5 +1,5 @@
 package dto
 
-type ProjectStatus struct {
+type DeploymentStatus struct {
 	Status string `json:"status"`
 }

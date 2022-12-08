@@ -1,4 +1,4 @@
-package project_service
+package deployment_service
 
 import (
 	"go-deploy/models"
@@ -22,6 +22,6 @@ func GetHook(body io.ReadCloser) (*dto.HarborWebook, error) {
 	return &webhook, nil
 }
 
-func GetByWebhookToken(token string) (*models.Project, error) {
+func GetByWebhookToken(token string) (*models.Deployment, error) {
 	return models.GetByWebookToken(token)
 }

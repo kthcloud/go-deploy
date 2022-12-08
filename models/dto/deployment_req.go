@@ -1,5 +1,5 @@
 package dto
 
-type ProjectReq struct {
+type DeploymentReq struct {
 	Name string `json:"name"`
 }

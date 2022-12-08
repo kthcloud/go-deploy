@@ -66,7 +66,7 @@ func createdService(name string) (bool, error) {
 
 func Created(name string) (bool, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if k8s setup is created for project %s. details: %s", name, err)
+		return fmt.Errorf("failed to check if k8s setup is created for deployment %s. details: %s", name, err)
 	}
 
 	namespaceCreated, err := createdNamespace(subsystemutils.GetPrefixedName(name))

@@ -7,18 +7,18 @@ import (
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
 	"go-deploy/pkg/validator"
-	"go-deploy/service/project_service"
+	"go-deploy/service/deployment_service"
 	"log"
 	"net/http"
 )
 
 var upgrader = websocket.Upgrader{}
 
-func GetProjectLogs(c *gin.Context) {
+func GetDeploymentLogs(c *gin.Context) {
 	context := app.NewContext(c)
 
 	rules := validator.MapData{
-		"projectId": []string{"required", "uuid_v4"},
+		"deploymentId": []string{"required", "uuid_v4"},
 	}
 
 	validationErrors := context.ValidateParams(&rules)
@@ -33,7 +33,7 @@ func GetProjectLogs(c *gin.Context) {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 	}
 	userID := token.Sub
-	projectID := context.GinContext.Param("projectId")
+	deploymentID := context.GinContext.Param("deploymentId")
 
 	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
@@ -48,12 +48,12 @@ func GetProjectLogs(c *gin.Context) {
 	handler := func(msg string) {
 		err = ws.WriteMessage(websocket.TextMessage, []byte(msg))
 		if err != nil {
-			fmt.Printf("failed to write websocket message for project %s (%s)", projectID, ws.RemoteAddr())
+			fmt.Printf("failed to write websocket message for deployment %s (%s)", deploymentID, ws.RemoteAddr())
 			_ = ws.Close()
 		}
 	}
 
-	logContext, getLogsErr := project_service.GetLogs(userID, projectID, handler)
+	logContext, getLogsErr := deployment_service.GetLogs(userID, deploymentID, handler)
 	if getLogsErr != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", getLogsErr))
 		return
@@ -71,7 +71,7 @@ func GetProjectLogs(c *gin.Context) {
 			case websocket.CloseNormalClosure,
 				websocket.CloseGoingAway,
 				websocket.CloseNoStatusReceived:
-				log.Printf("closing websocket connection for project %s (%s)\n", projectID, ws.RemoteAddr())
+				log.Printf("closing websocket connection for deployment %s (%s)\n", deploymentID, ws.RemoteAddr())
 				return
 			}
 		}

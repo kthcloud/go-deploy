@@ -12,7 +12,7 @@ func deletedNamespace(name string) (bool, error) {
 
 func Deleted(name string) (bool, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if k8s setup is deleted for project %s. details: %s", name, err)
+		return fmt.Errorf("failed to check if k8s setup is deleted for deployment %s. details: %s", name, err)
 	}
 
 	namespaceDeleted, err := deletedNamespace(subsystemutils.GetPrefixedName(name))

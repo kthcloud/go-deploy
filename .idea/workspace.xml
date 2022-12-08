@@ -6,7 +6,45 @@
   <component name="ChangeListManager">
     <list default="true" id="bc4da88f-8032-4df4-9bcc-9ca8b4f364d2" name="Changes" comment="change project name. fix websocket support for logs">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/dto/project.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/dto/deployment.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/dto/project_created.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/dto/deployment_created.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/dto/project_req.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/dto/deployment_req.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/dto/project_status.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/dto/deployment_status.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/models.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/models.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/project.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/deployment.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/project_action_config.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/deployment_action_config.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/app/request.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/app/request.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/status_codes/code.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/status_codes/code.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/status_codes/msg.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/status_codes/msg.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/common.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/common.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/create.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/create.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/created.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/created.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/delete.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/delete.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/deleted.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/deleted.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/k8s/create.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/k8s/create.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/k8s/created.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/k8s/created.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/k8s/delete.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/k8s/delete.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/k8s/deleted.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/k8s/deleted.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/k8s/logs.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/k8s/logs.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/k8s/ops.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/k8s/ops.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/k8s/utils.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/k8s/utils.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/npm/create.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/npm/create.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/npm/created.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/npm/created.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/npm/delete.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/npm/delete.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/npm/deleted.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/npm/deleted.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/validator/validator.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/validator/validator.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/worker/status_worker.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/worker/status_worker.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routers/api/v1/project.go" beforeDir="false" afterPath="$PROJECT_DIR$/routers/api/v1/deployment.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routers/api/v1/project_ci_config.go" beforeDir="false" afterPath="$PROJECT_DIR$/routers/api/v1/deployment_ci_config.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routers/api/v1/project_hook.go" beforeDir="false" afterPath="$PROJECT_DIR$/routers/api/v1/deployment_hook.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routers/api/v1/project_logs.go" beforeDir="false" afterPath="$PROJECT_DIR$/routers/api/v1/deployment_logs.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routers/api/v1/project_status.go" beforeDir="false" afterPath="$PROJECT_DIR$/routers/api/v1/deployment_status.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routers/router.go" beforeDir="false" afterPath="$PROJECT_DIR$/routers/router.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/project_service/project_ci_config_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/deployment_ci_config_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/project_service/project_hook_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/deployment_hook_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/project_service/project_logs_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/deployment_logs_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/project_service/project_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/deployment_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/project_service/project_status_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/deployment_status_service.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -42,28 +80,28 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_ADD_EXTERNAL_FILES": "true",
-    "DefaultGoTemplateProperty": "Go File",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.go.formatter.settings.were.checked": "true",
-    "RunOnceActivity.go.migrated.go.modules.settings": "true",
-    "RunOnceActivity.go.modules.go.list.on.any.changes.was.set": "true",
-    "RunOnceActivity.go.watchers.conflict.with.on.save.actions.check.performed": "true",
-    "WebServerToolWindowFactoryState": "false",
-    "go.import.settings.migrated": "true",
-    "go.sdk.automatically.set": "true",
-    "last_opened_file_path": "C:/repos/go-deploy",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "goland.project.structure"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;DefaultGoTemplateProperty&quot;: &quot;Go File&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.formatter.settings.were.checked&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.migrated.go.modules.settings&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.modules.go.list.on.any.changes.was.set&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.watchers.conflict.with.on.save.actions.check.performed&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;go.import.settings.migrated&quot;: &quot;true&quot;,
+    &quot;go.sdk.automatically.set&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/repos/go-deploy&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;goland.project.structure&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\repos\deploy-api-go\pkg\auth" />

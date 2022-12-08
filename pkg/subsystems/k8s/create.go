@@ -107,7 +107,7 @@ func Create(name string) error {
 	log.Println("creating k8s for", name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create k8s setup for project %s. details: %s", name, err)
+		return fmt.Errorf("failed to create k8s setup for deployment %s. details: %s", name, err)
 	}
 
 	err := createNamespace(name)

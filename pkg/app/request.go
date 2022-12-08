@@ -25,6 +25,26 @@ func (context *ClientContext) ValidateJSONCustomMessages(rules *validator.MapDat
 	return validationErrs
 }
 
+func (context *ClientContext) ValidateQueryParams(rules *validator.MapData) map[string][]string {
+	dummy := validator.MapData{}
+	return context.ValidateQueryParamsCustomMessages(rules, &dummy)
+}
+
+func (context *ClientContext) ValidateQueryParamsCustomMessages(rules *validator.MapData, messages *validator.MapData) map[string][]string {
+	opts := validator.Options{
+		Request:         context.GinContext.Request,
+		Context:         context.GinContext,
+		Rules:           *rules,
+		RequiredDefault: false,
+		Messages:        *messages,
+	}
+
+	v := validator.New(opts)
+	validationErrs := v.ValidateQueryParams()
+
+	return validationErrs
+}
+
 func (context *ClientContext) ValidateParams(rules *validator.MapData) map[string][]string {
 	dummy := validator.MapData{}
 	return context.ValidateParamsCustomMessages(rules, &dummy)

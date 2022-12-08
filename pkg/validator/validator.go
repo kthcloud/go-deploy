@@ -42,6 +42,32 @@ func New(opts Options) *Validator {
 	return &Validator{Opts: opts}
 }
 
+func (v *Validator) ValidateQueryParams() url.Values {
+	// if request object and rules not passed rise a panic
+	if len(v.Opts.Rules) == 0 || v.Opts.Context == nil {
+		panic(errValidateArgsMismatch)
+	}
+
+	errsBag := url.Values{}
+
+	// get non required rules
+	nr := v.getNonRequiredFields()
+
+	for field, rules := range v.Opts.Rules {
+		for _, rule := range rules {
+			if _, ok := nr[field]; ok {
+				continue
+			}
+
+			msg := v.getCustomMessage(field, rule)
+			reqVal := strings.TrimSpace(v.Opts.Context.Query(field))
+			validateCustomRules(field, rule, msg, reqVal, errsBag)
+		}
+	}
+
+	return errsBag
+}
+
 func (v *Validator) ValidateParams() url.Values {
 	// if request object and rules not passed rise a panic
 	if len(v.Opts.Rules) == 0 || v.Opts.Context == nil {

@@ -6,15 +6,15 @@ import (
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
 	"go-deploy/pkg/validator"
-	"go-deploy/service/project_service"
+	"go-deploy/service/deployment_service"
 	"net/http"
 )
 
-func GetCIConfig(c *gin.Context) {
+func GetDeploymentStatus(c *gin.Context) {
 	context := app.NewContext(c)
 
 	rules := validator.MapData{
-		"projectId": []string{"required", "uuid_v4"},
+		"deploymentId": []string{"required", "uuid_v4"},
 	}
 
 	validationErrors := context.ValidateParams(&rules)
@@ -27,21 +27,21 @@ func GetCIConfig(c *gin.Context) {
 	token, err := context.GetKeycloakToken()
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
-		return
 	}
-	userID := token.Sub
-	projectID := context.GinContext.Param("projectId")
+	deploymentID := context.GinContext.Param("deploymentId")
+	userId := token.Sub
 
-	config, err := project_service.GetCIConfig(userID, projectID)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
-		return
-	}
-
-	if config == nil {
+	statusCode, deploymentStatus, _ := deployment_service.GetStatusByID(userId, deploymentID)
+	if deploymentStatus == nil {
 		context.NotFound()
 		return
 	}
 
-	context.JSONResponse(http.StatusOK, config)
+	if statusCode == status_codes.DeploymentNotFound {
+		context.JSONResponse(http.StatusNotFound, deploymentStatus)
+		return
+	}
+
+	context.JSONResponse(http.StatusOK, deploymentStatus)
+
 }

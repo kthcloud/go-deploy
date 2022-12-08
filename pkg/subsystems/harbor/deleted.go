@@ -31,7 +31,7 @@ func deletedProject(name string) (bool, error) {
 
 func Deleted(name string) (bool, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if harbor setup is created for project %s. details: %s", name, err)
+		return fmt.Errorf("failed to check if harbor setup is created for deployment %s. details: %s", name, err)
 	}
 
 	projectDeleted, err := deletedProject(name)

@@ -1,4 +1,4 @@
-package project_service
+package deployment_service
 
 import (
 	"go-deploy/models"
@@ -9,10 +9,10 @@ import (
 	"log"
 )
 
-func Create(projectID, name, owner string) {
+func Create(deploymentID, name, owner string) {
 
 	go func() {
-		err := models.CreateProject(projectID, name, owner)
+		err := models.CreateDeployment(deploymentID, name, owner)
 		if err != nil {
 			log.Println(err)
 		}
@@ -37,37 +37,37 @@ func Create(projectID, name, owner string) {
 	}()
 }
 
-func Get(userId, projectID string) (*models.Project, error) {
-	project, err := models.GetProjectByID(projectID)
+func Get(userId, deploymentID string) (*models.Deployment, error) {
+	deployment, err := models.GetDeploymentByID(deploymentID)
 	if err != nil {
 		return nil, err
 	}
 
-	if project != nil && project.Owner != userId {
+	if deployment != nil && deployment.Owner != userId {
 		return nil, nil
 	}
 
-	return project, nil
+	return deployment, nil
 }
 
-func GetByName(userId, name string) (*models.Project, error) {
-	return models.GetProjectByName(userId, name)
+func GetByName(userId, name string) (*models.Deployment, error) {
+	return models.GetDeploymentByName(userId, name)
 }
 
-func GetByOwner(owner string) ([]models.Project, error) {
-	return models.GetProjects(owner)
+func GetByOwner(owner string) ([]models.Deployment, error) {
+	return models.GetDeployments(owner)
 }
 
-func GetAll() ([]models.Project, error) {
-	return models.GetAllProjects()
+func GetAll() ([]models.Deployment, error) {
+	return models.GetAllDeployments()
 }
 
-func Exists(name string) (bool, *models.Project, error) {
-	return models.ProjectExists(name)
+func Exists(name string) (bool, *models.Deployment, error) {
+	return models.DeploymentExists(name)
 }
 
-func MarkBeingDeleted(projectID string) error {
-	return models.UpdateProject(projectID, bson.D{{
+func MarkBeingDeleted(deploymentID string) error {
+	return models.UpdateDeployment(deploymentID, bson.D{{
 		"beingDeleted", true,
 	}})
 }

@@ -11,7 +11,7 @@ import (
 
 func Restart(name string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to restart k8s for project %s. details: %s", name, err)
+		return fmt.Errorf("failed to restart k8s for deployment %s. details: %s", name, err)
 	}
 
 	req := client.AppsV1().Deployments(subsystemutils.GetPrefixedName(name))

@@ -1,4 +1,4 @@
-package project_service
+package deployment_service
 
 import (
 	"fmt"
@@ -9,28 +9,28 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func GetCIConfig(userId, projectID string) (*dto.CIConfig, error) {
-	project, err := Get(userId, projectID)
+func GetCIConfig(userId, deploymentID string) (*dto.CIConfig, error) {
+	deployment, err := Get(userId, deploymentID)
 	if err != nil {
 		return nil, err
 	}
 
-	if project == nil {
+	if deployment == nil {
 		return nil, nil
 	}
 
-	if !project.Ready() {
+	if !deployment.Ready() {
 		return nil, nil
 	}
 
 	tag := fmt.Sprintf("%s/%s/%s",
 		conf.Env.DockerRegistry.Url,
-		subsystemutils.GetPrefixedName(project.Name),
-		project.Name,
+		subsystemutils.GetPrefixedName(deployment.Name),
+		deployment.Name,
 	)
 
-	username := project.Subsytems.Harbor.RobotUsername
-	password := project.Subsytems.Harbor.RobotPassword
+	username := deployment.Subsytems.Harbor.RobotUsername
+	password := deployment.Subsytems.Harbor.RobotPassword
 
 	config := models.GithubActionConfig{
 		Name: "kthcloud-ci",

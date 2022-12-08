@@ -66,7 +66,7 @@ func getWildcardCertificateID(token string) (int, error) {
 
 func createProxyHost(name string, token string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create proxy host. details: %s", err)
+		return fmt.Errorf("failed to create npm proxy host. details: %s", err)
 	}
 
 	proxyHostCreated, err := createdProxyHost(name, token)
@@ -113,7 +113,7 @@ func Create(name string) error {
 	log.Println("creating npm for", name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create npm setup for project %s. details: %s", name, err)
+		return fmt.Errorf("failed to create npm setup for deployment %s. details: %s", name, err)
 	}
 
 	token, err := createToken()

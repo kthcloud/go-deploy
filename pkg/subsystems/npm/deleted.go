@@ -6,7 +6,7 @@ import (
 
 func deletedProxyHost(name string, token string) (bool, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check deleted proxy host. details: %s", err)
+		return fmt.Errorf("failed to check deleted npm proxy host. details: %s", err)
 	}
 
 	proxyHost, err := fetchProxyHost(name, token)
@@ -19,7 +19,7 @@ func deletedProxyHost(name string, token string) (bool, error) {
 
 func Deleted(name string) (bool, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if npm setup is deleted for project %s. details: %s", name, err)
+		return fmt.Errorf("failed to check if npm setup is deleted for deployment %s. details: %s", name, err)
 	}
 
 	token, err := createToken()

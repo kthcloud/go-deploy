@@ -106,7 +106,7 @@ func createRobot(name string) error {
 
 func createRepository(name string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create harbor repository for project %s. details: %s", name, err)
+		return fmt.Errorf("failed to create harbor repository for deployment %s. details: %s", name, err)
 	}
 
 	prefixedName := subsystemutils.GetPrefixedName(name)
@@ -193,7 +193,7 @@ func createWebhook(name string) error {
 		return makeError(err)
 	}
 
-	webhookTargetAddress := fmt.Sprintf("%s/v1/hooks/projects", conf.Env.ExternalUrl)
+	webhookTargetAddress := fmt.Sprintf("%s/v1/hooks/deployments/harbor", conf.Env.ExternalUrl)
 
 	err = client.AddProjectWebhookPolicy(context.TODO(), int(project.ProjectID), &modelv2.WebhookPolicy{
 		Enabled:    true,
@@ -220,7 +220,7 @@ func Create(name string) error {
 	log.Println("creating harbor setup for", name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create harbor setup for project %s. details: %s", name, err)
+		return fmt.Errorf("failed to create harbor setup for deployment %s. details: %s", name, err)
 	}
 
 	err := createProject(name)

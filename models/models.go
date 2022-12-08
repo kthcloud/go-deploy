@@ -11,7 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var ProjectCollection *mongo.Collection
+var DeploymentCollection *mongo.Collection
 var client *mongo.Client
 
 func getUri() string {
@@ -49,8 +49,8 @@ func Setup() {
 		log.Fatalln(makeError(err))
 	}
 
-	// Find ProjectCollection
-	ProjectCollection = client.Database("deploy").Collection("projects")
+	// Find DeploymentCollection
+	DeploymentCollection = client.Database("deploy").Collection("deployments")
 	if err != nil {
 		log.Fatalln(makeError(err))
 	}

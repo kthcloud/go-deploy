@@ -63,7 +63,7 @@ func Delete(name string) error {
 	log.Println("deleting harbor setup for", name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete harbor setup for project %s. details: %s", name, err)
+		return fmt.Errorf("failed to delete harbor setup for deployment %s. details: %s", name, err)
 	}
 
 	err := deleteRepository(name)

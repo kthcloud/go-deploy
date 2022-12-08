@@ -1,15 +1,15 @@
 package status_codes
 
 var MsgFlags = map[int]string{
-	Success:       "Success",
-	Error:         "Error",
-	InvalidParams: "InvalidParams",
+	Success:       "success",
+	Error:         "error",
+	InvalidParams: "invalidParams",
 
-	ProjectBeingCreated:  "ProjectBeingCreated",
-	ProjectBeingDeleted:  "ProjectBeingDeleted",
-	ProjectAlreadyExists: "ProjectAlreadyExists",
-	ProjectCreated:       "ProjectCreated",
-	ProjectNotFound:      "ProjectNotFound",
+	DeploymentBeingCreated:  "deploymentBeingCreated",
+	DeploymentBeingDeleted:  "deploymentBeingDeleted",
+	DeploymentAlreadyExists: "deploymentAlreadyExists",
+	DeploymentCreated:       "deploymentCreated",
+	DeploymentNotFound:      "deploymentNotFound",
 }
 
 // GetMsg get error information based on Code

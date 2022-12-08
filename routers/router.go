@@ -15,30 +15,22 @@ func NewRouter() *gin.Engine {
 	apiv1 := r.Group("/v1")
 	apiv1.Use(auth.New(auth.Check(), app.GetKeyCloakConfig()))
 
-	apiv1User := apiv1.Group("/users/:userId")
-	apiv1User.Use(auth.New(auth.Check(), app.GetKeyCloakConfig()))
-
 	apiv1Hook := r.Group("/v1/hooks")
 
 	{
 		// path: /
-		apiv1.GET("/projects", v1.GetAllProjects)
+		apiv1.GET("/deployments", v1.GetDeployments)
 
-		apiv1.GET("/projects/:projectId", v1.GetProject)
-		apiv1.GET("/projects/:projectId/status", v1.GetProjectStatus)
-		apiv1.GET("/projects/:projectId/ciConfigs", v1.GetCIConfig)
-		apiv1.GET("/projects/:projectId/logs", v1.GetProjectLogs)
-		apiv1.POST("/projects", v1.CreateProject)
-		apiv1.DELETE("/projects/:projectId", v1.DeleteProject)
+		apiv1.GET("/deployments/:deploymentId", v1.GetDeployment)
+		apiv1.GET("/deployments/:deploymentId/status", v1.GetDeploymentStatus)
+		apiv1.GET("/deployments/:deploymentId/ciConfig", v1.GetDeploymentCiConfig)
+		apiv1.GET("/deployments/:deploymentId/logs", v1.GetDeploymentLogs)
+		apiv1.POST("/deployments", v1.CreateDeployment)
+		apiv1.DELETE("/deployments/:deploymentId", v1.DeleteDeployment)
 
 		{
 			// path: /hooks
-			apiv1Hook.POST("/projects", v1.HandleProjectHook)
-		}
-
-		{
-			// path: /user/:userId/
-			apiv1User.GET("/projects", v1.GetProjectsByOwnerID)
+			apiv1Hook.POST("/deployments/harbor", v1.HandleHarborHook)
 		}
 	}
 

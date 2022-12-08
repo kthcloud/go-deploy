@@ -5,11 +5,11 @@ const (
 	Error         = 500
 	InvalidParams = 400
 
-	ProjectCreated      = 10001
-	ProjectNotFound     = 10002
-	ProjectBeingCreated = 10003
-	ProjectBeingDeleted = 10004
+	DeploymentCreated      = 10001
+	DeploymentNotFound     = 10002
+	DeploymentBeingCreated = 10003
+	DeploymentBeingDeleted = 10004
 
-	ProjectValidationFailed = 20001
-	ProjectAlreadyExists    = 20002
+	DeploymentValidationFailed = 20001
+	DeploymentAlreadyExists    = 20002
 )
