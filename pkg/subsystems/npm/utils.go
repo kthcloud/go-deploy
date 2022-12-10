@@ -8,7 +8,7 @@ import (
 
 func makeApiError(body []byte, makeError func(error) error) error {
 	apiError := npmApiError{}
-	err := requestutils.ParseJsonBody(body, &apiError)
+	err := requestutils.ParseJson(body, &apiError)
 	if err != nil {
 		return makeError(err)
 	}

@@ -6,6 +6,8 @@ import (
 	"github.com/joho/godotenv"
 	"log"
 	"os"
+	"strconv"
+	"strings"
 )
 
 type Environment struct {
@@ -45,6 +47,16 @@ type Environment struct {
 		WebhookSecret string `env:"DEPLOY_HARBOR_WEBHOOK_SECRET,required=true"`
 	}
 
+	PfSense struct {
+		Identity       string `env:"DEPLOY_PFSENSE_ADMIN_IDENTITY,required=true"`
+		Secret         string `env:"DEPLOY_PFSENSE_ADMIN_SECRET,required=true"`
+		Url            string `env:"DEPLOY_PFSENSE_API_URL,required=true"`
+		PublicIP       string `env:"DEPLOY_PFSENSE_PUBLIC_IP,required=true"`
+		PortRange      string `env:"DEPLOY_PFSENSE_PORT_RANGE,required=true"`
+		PortRangeStart int
+		PortRangeEnd   int
+	}
+
 	Db struct {
 		Url      string `env:"DEPLOY_DB_URL,required=true"`
 		Name     string `env:"DEPLOY_DB_NAME,required=true"`
@@ -54,6 +66,29 @@ type Environment struct {
 }
 
 var Env Environment
+
+func pfsenseSetup() {
+	portRangeSplit := strings.Split(Env.PfSense.PortRange, "-")
+
+	pfsenseRangeError := "pfsense port range must be specified as (start-end]"
+
+	if len(portRangeSplit) != 2 {
+		log.Fatalln(pfsenseRangeError)
+	}
+
+	start, err := strconv.Atoi(portRangeSplit[0])
+	if err != nil {
+		log.Fatalln(pfsenseRangeError)
+	}
+
+	end, err := strconv.Atoi(portRangeSplit[1])
+	if err != nil {
+		log.Fatalln(pfsenseRangeError)
+	}
+
+	Env.PfSense.PortRangeStart = start
+	Env.PfSense.PortRangeEnd = end
+}
 
 func Setup() {
 	makeError := func(err error) error {
@@ -73,4 +108,6 @@ func Setup() {
 	if err != nil {
 		log.Fatalln(makeError(err))
 	}
+
+	pfsenseSetup()
 }

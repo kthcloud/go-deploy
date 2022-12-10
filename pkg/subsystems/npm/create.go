@@ -31,7 +31,7 @@ func getWildcardCertificateID(token string) (int, error) {
 	// check if good request
 	if requestutils.IsGoodStatusCode(res.StatusCode) {
 		certificatesParsed := certificatesBody{}
-		err = requestutils.ParseJsonBody(body, &certificatesParsed)
+		err = requestutils.ParseJson(body, &certificatesParsed)
 		if err != nil {
 			return -1, makeError(err)
 		}
@@ -51,7 +51,7 @@ func getWildcardCertificateID(token string) (int, error) {
 
 	} else {
 		npmApiErrorRequestParsed := npmApiError{}
-		err = requestutils.ParseJsonBody(body, &npmApiErrorRequestParsed)
+		err = requestutils.ParseJson(body, &npmApiErrorRequestParsed)
 		if err != nil {
 			return -1, makeError(err)
 		}

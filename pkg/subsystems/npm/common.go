@@ -37,14 +37,14 @@ func createToken() (string, error) {
 	// check if good request
 	if requestutils.IsGoodStatusCode(res.StatusCode) {
 		tokenParsed := tokenBody{}
-		err = requestutils.ParseJsonBody(body, &tokenParsed)
+		err = requestutils.ParseJson(body, &tokenParsed)
 		if err != nil {
 			return "", makeError(err)
 		}
 		return tokenParsed.Token, nil
 	} else {
 		npmApiErrorRequestParsed := npmApiError{}
-		err = requestutils.ParseJsonBody(body, &npmApiErrorRequestParsed)
+		err = requestutils.ParseJson(body, &npmApiErrorRequestParsed)
 		if err != nil {
 			return "", makeError(err)
 		}
@@ -82,7 +82,7 @@ func fetchProxyHost(name string, token string) (listProxyHostResponseBody, error
 	}
 
 	listProxyHost := listProxyHostsResponseBody{}
-	err = requestutils.ParseJsonBody(body, &listProxyHost)
+	err = requestutils.ParseJson(body, &listProxyHost)
 	if err != nil {
 		return listProxyHostResponseBody{}, makeError(err)
 	}

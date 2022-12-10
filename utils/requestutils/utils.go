@@ -91,10 +91,10 @@ func ReadBody(responseBody io.ReadCloser) ([]byte, error) {
 	return body, nil
 }
 
-func ParseJsonBody[T any](jsonBody []byte, out *T) error {
-	err := json.Unmarshal(jsonBody, out)
+func ParseJson[T any](data []byte, out *T) error {
+	err := json.Unmarshal(data, out)
 	if err != nil {
-		err = fmt.Errorf("failed to parse json body. details: %s", err)
+		err = fmt.Errorf("failed to parse json data. details: %s", err)
 		return err
 	}
 	return nil

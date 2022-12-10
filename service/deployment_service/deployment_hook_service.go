@@ -14,7 +14,7 @@ func GetHook(body io.ReadCloser) (*dto.HarborWebook, error) {
 	}
 
 	var webhook = dto.HarborWebook{}
-	err = requestutils.ParseJsonBody(readBody, &webhook)
+	err = requestutils.ParseJson(readBody, &webhook)
 	if err != nil {
 		return nil, err
 	}

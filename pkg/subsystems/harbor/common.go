@@ -37,8 +37,17 @@ func updateDatabaseWebhook(name string, token string) error {
 }
 
 func createClient() (*apiv2.RESTClient, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to create harbor client. details: %s", err.Error())
+	}
+
 	harbor := conf.Env.Harbor
-	return apiv2.NewRESTClientForHost(harbor.Url, harbor.Identity, harbor.Secret, &config.Options{})
+	client, err := apiv2.NewRESTClientForHost(harbor.Url, harbor.Identity, harbor.Secret, &config.Options{})
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	return client, nil
 }
 
 func assertProjectExists(client *apiv2.RESTClient, projectName string) (bool, *modelv2.Project, error) {
@@ -83,7 +92,7 @@ func createHarborRobot(name string) (*modelv2.RobotCreated, error) {
 	}
 
 	var robotCreated modelv2.RobotCreated
-	err = requestutils.ParseJsonBody(body, &robotCreated)
+	err = requestutils.ParseJson(body, &robotCreated)
 	if err != nil {
 		return nil, makeError(err)
 	}
