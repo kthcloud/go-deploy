@@ -11,6 +11,6 @@ func GetPrefixedName(name string) string {
 }
 
 func GetPlaceholderImage() (string, string) {
-	result := strings.Split(conf.Env.DockerRegistry.PlaceHolderImage, ":")
+	result := strings.Split(conf.Env.DockerRegistry.PlaceHolder, ":")
 	return result[0], result[1]
 }

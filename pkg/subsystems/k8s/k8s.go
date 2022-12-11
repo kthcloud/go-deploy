@@ -17,7 +17,7 @@ type ClientConf struct {
 
 func New(config *ClientConf) (*Client, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create npm client. details: %s", err)
+		return fmt.Errorf("failed to create k8s client. details: %s", err)
 	}
 
 	configData := createConfigFromB64(config.K8sAuth)

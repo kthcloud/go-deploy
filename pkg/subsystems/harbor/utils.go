@@ -7,21 +7,21 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/sethvargo/go-password/password"
-	"go-deploy/utils/subsystemutils"
+	"go-deploy/pkg/subsystems/harbor/models"
+	"go-deploy/utils/requestutils"
 	"golang.org/x/crypto/bcrypt"
+	"io"
 	"math/big"
 	"unicode"
 )
 
-func getRobotFullName(name string) string {
-	return fmt.Sprintf("robot$%s", getRobotName(name))
+func getRobotFullName(projectName, name string) string {
+	return fmt.Sprintf("robot$%s", getRobotName(projectName, name))
 }
 
-func getRobotName(name string) string {
-	return fmt.Sprintf("%s+%s", subsystemutils.GetPrefixedName(name), name)
+func getRobotName(projectName, name string) string {
+	return fmt.Sprintf("%s+%s", projectName, name)
 }
-
-func int64Ptr(i int64) *int64 { return &i }
 
 func generateRandomString(n int) (string, error) {
 	const letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
@@ -81,4 +81,28 @@ func createPassword() (string, error) {
 			return generatedPassword, nil
 		}
 	}
+}
+
+func makeApiError(readCloser io.ReadCloser, makeError func(error) error) error {
+	body, err := requestutils.ReadBody(readCloser)
+	if err != nil {
+		return makeError(err)
+	}
+	defer requestutils.CloseBody(readCloser)
+
+	apiError := models.ApiError{}
+	err = requestutils.ParseJson(body, &apiError)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if len(apiError.Errors) == 0 {
+		requestError := fmt.Errorf("erroneous request. details: unknown")
+		return makeError(requestError)
+	}
+
+	resCode := apiError.Errors[0].Code
+	resMsg := apiError.Errors[0].Message
+	requestError := fmt.Errorf("erroneous request (%s). details: %s", resCode, resMsg)
+	return makeError(requestError)
 }

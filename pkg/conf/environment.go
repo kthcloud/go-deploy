@@ -18,8 +18,10 @@ type Environment struct {
 	ParentDomain  string `env:"DEPLOY_PARENT_DOMAIN,required=true"`
 
 	DockerRegistry struct {
-		Url              string `env:"DEPLOY_DOCKER_REGISTRY_URL,required=true"`
-		PlaceHolderImage string `env:"DEPLOY_PLACEHOLDER_DOCKER_IMAGE,required=true"`
+		Url                   string `env:"DEPLOY_DOCKER_REGISTRY_URL,required=true"`
+		PlaceHolder           string `env:"DEPLOY_PLACEHOLDER_DOCKER_IMAGE,required=true"`
+		PlaceHolderProject    string
+		PlaceHolderRepository string
 	}
 
 	AppPort   int    `env:"DEPLOY_APP_PORT,default=8080"`
@@ -67,6 +69,19 @@ type Environment struct {
 
 var Env Environment
 
+func dockerRegistrySetup() {
+	pfsenseRangeError := "docker registry placeholder image must be specified as project:repository]"
+
+	placeholderImageSplit := strings.Split(Env.DockerRegistry.PlaceHolder, ":")
+
+	if len(placeholderImageSplit) != 2 {
+		log.Fatalln(pfsenseRangeError)
+	}
+
+	Env.DockerRegistry.PlaceHolderProject = placeholderImageSplit[0]
+	Env.DockerRegistry.PlaceHolderRepository = placeholderImageSplit[1]
+}
+
 func pfsenseSetup() {
 	portRangeSplit := strings.Split(Env.PfSense.PortRange, "-")
 
@@ -109,5 +124,6 @@ func Setup() {
 		log.Fatalln(makeError(err))
 	}
 
+	dockerRegistrySetup()
 	pfsenseSetup()
 }

@@ -2,7 +2,6 @@ package deployment_service
 
 import (
 	"go-deploy/models"
-	"go-deploy/pkg/subsystems/harbor"
 	"go-deploy/service/subsystem_service"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
@@ -16,7 +15,7 @@ func Create(deploymentID, name, owner string) {
 			log.Println(err)
 		}
 
-		err = harbor.Create(name)
+		err = subsystem_service.CreateHarbor(name)
 		if err != nil {
 			log.Println(err)
 			return
@@ -73,7 +72,7 @@ func MarkBeingDeleted(deploymentID string) error {
 
 func Delete(name string) {
 	go func() {
-		err := harbor.Delete(name)
+		err := subsystem_service.DeleteHarbor(name)
 		if err != nil {
 			log.Println(err)
 			return

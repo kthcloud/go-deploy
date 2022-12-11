@@ -1,21 +1,12 @@
-package harbor
+package models
 
 import (
 	"github.com/mittwald/goharbor-client/v5/apiv2/model"
-	"go-deploy/utils/subsystemutils"
 )
 
-func createProjectRequestBody(projectName string) model.ProjectReq {
-	return model.ProjectReq{
-		ProjectName:  projectName,
-		StorageLimit: int64Ptr(0),
-	}
-}
-
-func createRobotRequestBody(name string) model.RobotCreate {
-	prefixedName := subsystemutils.GetPrefixedName(name)
+func CreateRobotCreateReq(projectName, name string) model.RobotCreate {
 	return model.RobotCreate{
-		Description: "Robot Account for deploy project",
+		Description: "Automatically created",
 		Disable:     false,
 		Duration:    -1,
 		Level:       "project",
@@ -41,7 +32,7 @@ func createRobotRequestBody(name string) model.RobotCreate {
 					},
 				},
 				Kind:      "project",
-				Namespace: prefixedName,
+				Namespace: projectName,
 			},
 		},
 	}
