@@ -172,11 +172,11 @@ func UpdateDeploymentByName(name string, update bson.D) error {
 }
 
 func GetAllDeployments() ([]Deployment, error) {
-	return GetAllDeploymentsWithCondition(bson.D{})
+	return GetAllDeploymentsWithFilter(bson.D{})
 }
 
-func GetAllDeploymentsWithCondition(condition bson.D) ([]Deployment, error) {
-	cursor, err := DeploymentCollection.Find(context.TODO(), condition)
+func GetAllDeploymentsWithFilter(filter bson.D) ([]Deployment, error) {
+	cursor, err := DeploymentCollection.Find(context.TODO(), filter)
 
 	if err != nil {
 		err = fmt.Errorf("failed to fetch all deployments. details: %s", err)

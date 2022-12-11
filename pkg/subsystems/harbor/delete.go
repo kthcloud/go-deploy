@@ -23,7 +23,7 @@ func deleteProject(name string) error {
 	err = client.DeleteProject(context.TODO(), prefixedName)
 	if err != nil {
 		errString := fmt.Sprintf("%s", err)
-		if strings.Contains(errString, "deleteProjectPreconditionFailed") {
+		if strings.Contains(errString, "id/name pair not found on server side") {
 			return nil
 		}
 

@@ -2,13 +2,20 @@ package npm
 
 import (
 	"fmt"
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/subsystems/npm/models"
 	"go-deploy/utils/requestutils"
+	"io"
 )
 
-func makeApiError(body []byte, makeError func(error) error) error {
-	apiError := npmApiError{}
-	err := requestutils.ParseJson(body, &apiError)
+func makeApiError(readCloser io.ReadCloser, makeError func(error) error) error {
+	body, err := requestutils.ReadBody(readCloser)
+	if err != nil {
+		return makeError(err)
+	}
+	defer requestutils.CloseBody(readCloser)
+
+	apiError := models.ApiError{}
+	err = requestutils.ParseJson(body, &apiError)
 	if err != nil {
 		return makeError(err)
 	}
@@ -17,8 +24,4 @@ func makeApiError(body []byte, makeError func(error) error) error {
 	resMsg := apiError.Error.Message
 	errorMessage := fmt.Sprintf("erroneous request (%d). details: %s", resCode, resMsg)
 	return makeError(fmt.Errorf(errorMessage))
-}
-
-func getFqdn(name string) string {
-	return fmt.Sprintf("%s.%s", name, conf.Env.ParentDomain)
 }

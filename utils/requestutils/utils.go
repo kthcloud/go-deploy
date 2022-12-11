@@ -60,6 +60,21 @@ func DoRequest(method string, url string, requestBody []byte) (*http.Response, e
 	return doRequestInternal(req)
 }
 
+func ParseBody[T any](closer io.ReadCloser, out *T) error {
+	body, err := ReadBody(closer)
+	if err != nil {
+		return err
+	}
+	defer CloseBody(closer)
+
+	err = ParseJson(body, out)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func DoRequestBearer(method string, url string, requestBody []byte, token string) (*http.Response, error) {
 	// prepare request
 	req, _ := http.NewRequest(method, url, bytes.NewBuffer(requestBody))

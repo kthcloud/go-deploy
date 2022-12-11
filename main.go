@@ -7,7 +7,7 @@ import (
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/k8s"
-	"go-deploy/pkg/worker"
+	"go-deploy/pkg/deployment_worker"
 	"go-deploy/routers"
 	"log"
 	"net/http"
@@ -18,7 +18,7 @@ func setup(context *app.Context) {
 	conf.Setup()
 	models.Setup()
 	k8s.Setup()
-	worker.Setup(context)
+	deployment_worker.Setup(context)
 }
 
 func shutdown() {

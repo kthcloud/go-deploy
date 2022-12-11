@@ -5,24 +5,31 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="bc4da88f-8032-4df4-9bcc-9ca8b4f364d2" name="Changes" comment="change project name. fix websocket support for logs">
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/pfsense/common.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/pfsense/models/example.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/pfsense/models/port_forward_rule.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/pfsense/models/port_forward_rule_req.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/pfsense/models/response.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/pfsense/pfsense.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/pfsense/port_forward.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/pfsense/utils.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/deployment_worker/confirmers.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/subsystems/npm/certificate.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/subsystems/npm/models/api_error.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/subsystems/npm/models/certificate.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/subsystems/npm/models/proxy_host.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/subsystems/npm/models/proxy_host_create_req.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/subsystems/npm/models/token.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/subsystems/npm/models/token_req.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/subsystems/npm/npm.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/subsystems/npm/proxy_host.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/service/subsystem_service/npm_service.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/conf/environment.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/conf/environment.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/common.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/common.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/deployment.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/deployment.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/delete.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/delete.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/subsystems/npm/common.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/npm/common.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/npm/create.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/npm/create.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/npm/create.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/npm/created.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/npm/delete.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/npm/deleted.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/npm/dto.go" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/subsystems/npm/utils.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/npm/utils.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/pfsense/create.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/service/deployment_service/deployment_hook_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/deployment_hook_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/subsystems.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/deployment_worker/subsystems.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/worker/status_worker.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/deployment_worker/status_worker.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/deployment_service/deployment_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/deployment_service.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils/requestutils/utils.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/requestutils/utils.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -88,11 +95,11 @@
       <recent name="C:\repos\deploy-api-go" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\repos\go-deploy\pkg\worker" />
+      <recent name="C:\repos\go-deploy\service\subsystem_service" />
       <recent name="C:\repos\go-deploy\pkg\subsystems\pfsense" />
       <recent name="C:\repos\go-deploy\pkg\subsystems\pfsense\models" />
       <recent name="C:\repos\go-deploy\models" />
-      <recent name="C:\repos\deploy-api-go\service\project_service" />
-      <recent name="C:\repos\deploy-api-go\pkg\subsystems" />
     </key>
   </component>
   <component name="RunManager">
@@ -172,6 +179,26 @@
           <url>file://$USER_HOME$/go/pkg/mod/github.com/mittwald/goharbor-client/v5@v5.1.0/apiv2/pkg/clients/robotv1/robotv1.go</url>
           <line>91</line>
           <option name="timeStamp" value="32" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/pkg/deployment_worker/status_worker.go</url>
+          <line>31</line>
+          <option name="timeStamp" value="80" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/pkg/deployment_worker/status_worker.go</url>
+          <line>22</line>
+          <option name="timeStamp" value="81" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/pkg/deployment_worker/status_worker.go</url>
+          <line>20</line>
+          <option name="timeStamp" value="82" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/pkg/deployment_worker/status_worker.go</url>
+          <line>29</line>
+          <option name="timeStamp" value="84" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>

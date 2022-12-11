@@ -4,7 +4,7 @@ import (
 	"go-deploy/models"
 	"go-deploy/pkg/subsystems/harbor"
 	"go-deploy/pkg/subsystems/k8s"
-	"go-deploy/pkg/subsystems/npm"
+	"go-deploy/service/subsystem_service"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
 )
@@ -23,7 +23,7 @@ func Create(deploymentID, name, owner string) {
 			return
 		}
 
-		err = npm.Create(name)
+		err = subsystem_service.CreateNPM(name)
 		if err != nil {
 			log.Println(err)
 			return
@@ -80,7 +80,7 @@ func Delete(name string) {
 			return
 		}
 
-		err = npm.Delete(name)
+		err = subsystem_service.DeleteNPM(name)
 		if err != nil {
 			log.Println(err)
 			return
