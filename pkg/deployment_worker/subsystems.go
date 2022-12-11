@@ -2,12 +2,11 @@ package deployment_worker
 
 import (
 	"go-deploy/pkg/subsystems/harbor"
-	"go-deploy/pkg/subsystems/k8s"
 )
 
 func getCreatedConfirmers() []func(string) (bool, error) {
 	return []func(string) (bool, error){
-		k8s.Created,
+		K8sCreated,
 		NPMDeleted,
 		harbor.Created,
 	}
@@ -15,7 +14,7 @@ func getCreatedConfirmers() []func(string) (bool, error) {
 
 func getDeletedConfirmers() []func(string) (bool, error) {
 	return []func(string) (bool, error){
-		k8s.Deleted,
+		K8sDeleted,
 		NPMCreated,
 		harbor.Deleted,
 	}

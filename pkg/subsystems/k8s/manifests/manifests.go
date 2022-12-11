@@ -1,27 +1,29 @@
-package k8s
+package manifests
 
 import (
-	"go-deploy/pkg/conf"
-	"go-deploy/utils/subsystemutils"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func getNamespaceManifest(name string) *apiv1.Namespace {
+func int32Ptr(i int32) *int32 { return &i }
+
+var manifestLabelName = "app.kubernetes.io/name"
+
+func CreateNamespaceManifest(name string) *apiv1.Namespace {
 	return &apiv1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: subsystemutils.GetPrefixedName(name),
+			Name: name,
 		},
 	}
 }
 
-func getDeploymentManifest(name string) *appsv1.Deployment {
+func CreateDeploymentManifest(namespace, name string, dockerImage string, envs []apiv1.EnvVar) *appsv1.Deployment {
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: subsystemutils.GetPrefixedName(name),
+			Namespace: namespace,
 			Labels: map[string]string{
 				manifestLabelName: name,
 			},
@@ -43,20 +45,8 @@ func getDeploymentManifest(name string) *appsv1.Deployment {
 					Containers: []apiv1.Container{
 						{
 							Name:  name,
-							Image: getDockerImageName(name),
-							Env: []apiv1.EnvVar{
-								{
-									Name:  "DEPLOY_APP_PORT",
-									Value: string(rune(conf.Env.AppPort)),
-								},
-							},
-							Ports: []apiv1.ContainerPort{
-								{
-									Name:          "http",
-									Protocol:      apiv1.ProtocolTCP,
-									ContainerPort: int32(conf.Env.AppPort),
-								},
-							},
+							Image: dockerImage,
+							Env:   envs,
 						},
 					},
 				},
@@ -64,12 +54,11 @@ func getDeploymentManifest(name string) *appsv1.Deployment {
 		},
 	}
 }
-
-func getServiceManifest(name string) *apiv1.Service {
+func CreateServiceManifest(namespace, name string, port, targetPort int) *apiv1.Service {
 	return &apiv1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: subsystemutils.GetPrefixedName(name),
+			Namespace: namespace,
 			Labels:    map[string]string{manifestLabelName: name},
 		},
 		Spec: apiv1.ServiceSpec{
@@ -77,8 +66,8 @@ func getServiceManifest(name string) *apiv1.Service {
 				{
 					Name:       "app-port",
 					Protocol:   "TCP",
-					Port:       int32(conf.Env.AppPort),
-					TargetPort: intstr.FromInt(int(conf.Env.AppPort)),
+					Port:       int32(port),
+					TargetPort: intstr.FromInt(targetPort),
 				},
 			},
 			Selector: map[string]string{manifestLabelName: name},

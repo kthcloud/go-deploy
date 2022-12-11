@@ -3,7 +3,6 @@ package deployment_service
 import (
 	"go-deploy/models"
 	"go-deploy/pkg/subsystems/harbor"
-	"go-deploy/pkg/subsystems/k8s"
 	"go-deploy/service/subsystem_service"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
@@ -29,7 +28,7 @@ func Create(deploymentID, name, owner string) {
 			return
 		}
 
-		err = k8s.Create(name)
+		err = subsystem_service.CreateK8s(name)
 		if err != nil {
 			log.Println(err)
 			return
@@ -86,7 +85,7 @@ func Delete(name string) {
 			return
 		}
 
-		err = k8s.Delete(name)
+		err = subsystem_service.DeleteK8s(name)
 		if err != nil {
 			log.Println(err)
 			return
@@ -95,5 +94,5 @@ func Delete(name string) {
 }
 
 func Restart(name string) error {
-	return k8s.Restart(name)
+	return subsystem_service.RestartK8s(name)
 }

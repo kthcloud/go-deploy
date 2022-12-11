@@ -2,7 +2,9 @@ package deployment_service
 
 import (
 	"context"
+	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/k8s"
+	"go-deploy/utils/subsystemutils"
 )
 
 func GetLogs(userID, deploymentID string, handler func(string)) (context.Context, error) {
@@ -21,7 +23,12 @@ func GetLogs(userID, deploymentID string, handler func(string)) (context.Context
 
 	ctx := context.Background()
 
-	err = k8s.GetLogStream(ctx, deployment.Name, handler)
+	client, err := k8s.New(&k8s.ClientConf{K8sAuth: conf.Env.K8s.Config})
+	if err != nil {
+		return nil, err
+	}
+
+	err = client.GetLogStream(ctx, subsystemutils.GetPrefixedName(deployment.Name), deployment.Name, handler)
 	if err != nil {
 		ctx.Done()
 		return nil, err
