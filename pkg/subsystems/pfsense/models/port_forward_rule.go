@@ -1,7 +1,8 @@
 package models
 
 type PortForwardRule struct {
-	Source struct {
+	CurrentID int `json:"id"`
+	Source    struct {
 		Any string `json:"any"`
 	} `json:"source"`
 	Destination struct {
@@ -16,11 +17,9 @@ type PortForwardRule struct {
 	Descr            string `json:"descr"`
 	AssociatedRuleID string `json:"associated-rule-id"`
 	Created          struct {
-		Time     string `json:"time"`
 		Username string `json:"username"`
 	} `json:"created"`
 	Updated struct {
-		Time     string `json:"time"`
 		Username string `json:"username"`
 	} `json:"updated"`
 }

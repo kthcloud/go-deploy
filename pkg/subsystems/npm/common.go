@@ -9,7 +9,7 @@ import (
 
 func (client *Client) doRequest(method string, relativePath string) (*http.Response, error) {
 	fullURL := fmt.Sprintf("%s%s", client.apiUrl, relativePath)
-	return requestutils.DoRequestBearer(method, fullURL, nil, client.token)
+	return requestutils.DoRequestBearer(method, fullURL, nil, nil, client.token)
 }
 
 func (client *Client) doJSONRequest(method string, relativePath string, requestBody interface{}) (*http.Response, error) {
@@ -19,7 +19,7 @@ func (client *Client) doJSONRequest(method string, relativePath string, requestB
 	}
 
 	fullURL := fmt.Sprintf("%s%s", client.apiUrl, relativePath)
-	return requestutils.DoRequestBearer(method, fullURL, jsonBody, client.token)
+	return requestutils.DoRequestBearer(method, fullURL, jsonBody, nil, client.token)
 }
 
 func (client *Client) doJSONRequestUnauthorized(method string, relativePath string, requestBody interface{}) (*http.Response, error) {
@@ -29,5 +29,5 @@ func (client *Client) doJSONRequestUnauthorized(method string, relativePath stri
 	}
 
 	fullURL := fmt.Sprintf("%s%s", client.apiUrl, relativePath)
-	return requestutils.DoRequest(method, fullURL, jsonBody)
+	return requestutils.DoRequest(method, fullURL, jsonBody, nil)
 }

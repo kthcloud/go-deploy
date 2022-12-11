@@ -19,7 +19,7 @@ func (client *Client) doJSONRequest(method string, relativePath string, requestB
 	}
 
 	fullURL := fmt.Sprintf("%s%s", client.apiUrl, relativePath)
-	return requestutils.DoRequestBasicAuth(method, fullURL, jsonBody, client.username, client.password)
+	return requestutils.DoRequestBasicAuth(method, fullURL, jsonBody, nil, client.username, client.password)
 }
 
 func updateDatabaseRobot(name string, robotUsername string, robotPassword string) error {

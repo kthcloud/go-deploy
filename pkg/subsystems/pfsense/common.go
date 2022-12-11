@@ -11,7 +11,12 @@ import (
 
 func (client *Client) doRequest(method string, relativePath string) (*http.Response, error) {
 	fullURL := fmt.Sprintf("%s%s", client.apiUrl, relativePath)
-	return requestutils.DoRequestBasicAuth(method, fullURL, nil, client.username, client.password)
+	return requestutils.DoRequestBasicAuth(method, fullURL, nil, nil, client.username, client.password)
+}
+
+func (client *Client) doQueryRequest(method string, relativePath string, params map[string]string) (*http.Response, error) {
+	fullURL := fmt.Sprintf("%s%s", client.apiUrl, relativePath)
+	return requestutils.DoRequestBasicAuth(method, fullURL, nil, params, client.username, client.password)
 }
 
 func (client *Client) doJSONRequest(method string, relativePath string, requestBody interface{}) (*http.Response, error) {
@@ -21,7 +26,7 @@ func (client *Client) doJSONRequest(method string, relativePath string, requestB
 	}
 
 	fullURL := fmt.Sprintf("%s%s", client.apiUrl, relativePath)
-	return requestutils.DoRequestBasicAuth(method, fullURL, jsonBody, client.username, client.password)
+	return requestutils.DoRequestBasicAuth(method, fullURL, jsonBody, nil, client.username, client.password)
 }
 
 func ParseResponse(response *http.Response) (*models.Response, error) {

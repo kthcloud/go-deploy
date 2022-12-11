@@ -1,16 +1,15 @@
-package models
+package pfsense
 
 import (
 	"go-deploy/pkg/conf"
-	"go-deploy/pkg/subsystems/pfsense"
 	"log"
 	"net"
 )
 
-func example() {
+func Example() {
 	pfsenseConf := conf.Env.PfSense
 
-	client, _ := pfsense.New(&pfsense.ClientConf{
+	client, _ := New(&ClientConf{
 		ApiUrl:         pfsenseConf.Url,
 		Username:       pfsenseConf.Identity,
 		Password:       pfsenseConf.Secret,
@@ -18,14 +17,24 @@ func example() {
 		PortRangeStart: pfsenseConf.PortRangeStart,
 		PortRangeEnd:   pfsenseConf.PortRangeEnd,
 	})
-	port, err := client.CreatePortForwardRule(net.ParseIP("172.31.1.69"), 22, "deploy test")
 
-	rules, err := client.GetPortForwardRules()
+	name := "demo"
 
+	port, err := client.CreatePortForwardingRule(name, net.ParseIP("172.31.1.69"), 22)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	log.Println(port)
+
+	rules, err := client.GetPortForwardingRules()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	log.Println(rules)
+
+	err = client.DeletePortForwardingRule(name)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	log.Println(rules)
-	log.Println(port)
 }
