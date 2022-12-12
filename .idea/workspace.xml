@@ -5,19 +5,20 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="bc4da88f-8032-4df4-9bcc-9ca8b4f364d2" name="Changes" comment="change project name. fix websocket support for logs">
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/cs/README.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/cs/cs.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/cs/example.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/cs/models/create_vm_req.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/cs/vm.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/terraform/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/terraform/.terraform.lock.hcl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/terraform/.terraform/providers/registry.terraform.io/cloudstack/cloudstack/0.4.0/windows_amd64/CHANGELOG.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/terraform/.terraform/providers/registry.terraform.io/cloudstack/cloudstack/0.4.0/windows_amd64/LICENSE" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/terraform/.terraform/providers/registry.terraform.io/cloudstack/cloudstack/0.4.0/windows_amd64/README.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/terraform/terraform.tfstate" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/terraform/terraform.tfstate.backup" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/terraform/variables.tf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/terraform/vm_normal.tf" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/models.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/models.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/conf/environment.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/conf/environment.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/deployment_worker/confirmers.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/deployment_worker/confirmers.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/service/subsystem_service/npm_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/subsystem_service/npm_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/cs/cs.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/cs/cs.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/cs/example.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/cs/example.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -82,11 +83,11 @@
       <recent name="C:\repos\deploy-api-go" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\repos\go-deploy\terraform" />
       <recent name="C:\repos\go-deploy\pkg\subsystems\pfsense" />
       <recent name="C:\repos\go-deploy\pkg\worker" />
       <recent name="C:\repos\go-deploy\service\subsystem_service" />
       <recent name="C:\repos\go-deploy\pkg\subsystems\pfsense\models" />
-      <recent name="C:\repos\go-deploy\models" />
     </key>
   </component>
   <component name="RunManager">
