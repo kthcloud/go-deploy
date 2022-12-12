@@ -20,9 +20,9 @@ func CreateNPM(name string) error {
 	}
 
 	client, err := npm.New(&npm.ClientConf{
-		ApiUrl:   conf.Env.Npm.Url,
-		Username: conf.Env.Npm.Identity,
-		Password: conf.Env.Npm.Secret,
+		ApiUrl:   conf.Env.NPM.Url,
+		Username: conf.Env.NPM.Identity,
+		Password: conf.Env.NPM.Secret,
 	})
 	if err != nil {
 		return makeError(err)
@@ -50,9 +50,9 @@ func DeleteNPM(name string) error {
 	}
 
 	client, err := npm.New(&npm.ClientConf{
-		ApiUrl:   conf.Env.Npm.Url,
-		Username: conf.Env.Npm.Identity,
-		Password: conf.Env.Npm.Secret,
+		ApiUrl:   conf.Env.NPM.Url,
+		Username: conf.Env.NPM.Identity,
+		Password: conf.Env.NPM.Secret,
 	})
 	if err != nil {
 		return makeError(err)

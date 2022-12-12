@@ -15,7 +15,7 @@ var DeploymentCollection *mongo.Collection
 var client *mongo.Client
 
 func getUri() string {
-	db := conf.Env.Db
+	db := conf.Env.DB
 
 	noCred := len(db.Username) == 0 || len(db.Password) == 0
 

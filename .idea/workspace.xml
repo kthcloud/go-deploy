@@ -5,15 +5,19 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="bc4da88f-8032-4df4-9bcc-9ca8b4f364d2" name="Changes" comment="change project name. fix websocket support for logs">
+      <change afterPath="$PROJECT_DIR$/pkg/subsystems/cs/README.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/subsystems/cs/cs.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/subsystems/cs/example.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/subsystems/cs/models/create_vm_req.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/subsystems/cs/vm.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/common.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/common.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/npm/common.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/npm/common.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/pfsense/common.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/pfsense/common.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/pfsense/models/example.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/pfsense/example.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/pfsense/models/port_forward_rule.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/pfsense/models/port_forward_rule.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/pfsense/port_forward.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/pfsense/port_forward.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/requestutils/utils.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/requestutils/utils.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/models.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/models.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/conf/environment.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/conf/environment.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/deployment_worker/confirmers.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/deployment_worker/confirmers.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/subsystem_service/npm_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/subsystem_service/npm_service.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -162,11 +166,6 @@
           <url>file://$USER_HOME$/go/pkg/mod/github.com/mittwald/goharbor-client/v5@v5.1.0/apiv2/pkg/clients/robotv1/robotv1.go</url>
           <line>91</line>
           <option name="timeStamp" value="32" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
-          <url>file://$PROJECT_DIR$/pkg/subsystems/pfsense/port_forward.go</url>
-          <line>113</line>
-          <option name="timeStamp" value="109" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>

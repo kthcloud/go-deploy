@@ -36,7 +36,7 @@ type Environment struct {
 		Config string `env:"DEPLOY_K8S_CONFIG"`
 	}
 
-	Npm struct {
+	NPM struct {
 		Identity string `env:"DEPLOY_NPM_ADMIN_IDENTITY,required=true"`
 		Secret   string `env:"DEPLOY_NPM_ADMIN_SECRET,required=true"`
 		Url      string `env:"DEPLOY_NPM_API_URL,required=true"`
@@ -59,7 +59,14 @@ type Environment struct {
 		PortRangeEnd   int
 	}
 
-	Db struct {
+	CS struct {
+		Url    string `env:"DEPLOY_CS_API_URL"`
+		Key    string `env:"DEPLOY_CS_API_KEY"`
+		Secret string `env:"DEPLOY_CS_API_SECRET"`
+		ZoneID string `env:"DEPLOY_CS_ZONE_ID"`
+	}
+
+	DB struct {
 		Url      string `env:"DEPLOY_DB_URL,required=true"`
 		Name     string `env:"DEPLOY_DB_NAME,required=true"`
 		Username string `env:"DEPLOY_DB_USERNAME"`

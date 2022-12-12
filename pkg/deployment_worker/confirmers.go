@@ -19,9 +19,9 @@ func NPMCreated(name string) (bool, error) {
 	}
 
 	client, err := npm.New(&npm.ClientConf{
-		ApiUrl:   conf.Env.Npm.Url,
-		Username: conf.Env.Npm.Identity,
-		Password: conf.Env.Npm.Secret,
+		ApiUrl:   conf.Env.NPM.Url,
+		Username: conf.Env.NPM.Identity,
+		Password: conf.Env.NPM.Secret,
 	})
 	if err != nil {
 		return false, makeError(err)
@@ -41,9 +41,9 @@ func NPMDeleted(name string) (bool, error) {
 	}
 
 	client, err := npm.New(&npm.ClientConf{
-		ApiUrl:   conf.Env.Npm.Url,
-		Username: conf.Env.Npm.Identity,
-		Password: conf.Env.Npm.Secret,
+		ApiUrl:   conf.Env.NPM.Url,
+		Username: conf.Env.NPM.Identity,
+		Password: conf.Env.NPM.Secret,
 	})
 	if err != nil {
 		return false, makeError(err)
