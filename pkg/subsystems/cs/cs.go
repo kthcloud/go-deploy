@@ -8,8 +8,30 @@ import (
 	"github.com/hashicorp/hc-install/product"
 	"github.com/hashicorp/hc-install/releases"
 	"github.com/hashicorp/terraform-exec/tfexec"
+	"go-deploy/pkg/conf"
+	"go-deploy/pkg/terraform"
 	"os"
+	"path/filepath"
 )
+
+func CopyToTerraform(external *terraform.External) error {
+	vars, err := filepath.Abs("terraform/subsystems/cs/cs_vars.tf")
+	if err != nil {
+		return err
+	}
+
+	vmSmall, err := filepath.Abs("terraform/subsystems/cs/cs_vm_small.tf")
+	if err != nil {
+		return err
+	}
+
+	external.SetScriptPaths([]string{vars, vmSmall})
+	external.SetEnv("TF_VAR_cloudstack_api_url", conf.Env.CS.Url)
+	external.SetEnv("TF_VAR_cloudstack_api_key", conf.Env.CS.Key)
+	external.SetEnv("TF_VAR_cloudstack_secret_key", conf.Env.CS.Secret)
+
+	return nil
+}
 
 type Client struct {
 	CSClient  *cloudstack.CloudStackClient

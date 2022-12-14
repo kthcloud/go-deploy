@@ -5,20 +5,28 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="bc4da88f-8032-4df4-9bcc-9ca8b4f364d2" name="Changes" comment="change project name. fix websocket support for logs">
-      <change afterPath="$PROJECT_DIR$/terraform/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/terraform/.terraform.lock.hcl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/terraform/.terraform/providers/registry.terraform.io/cloudstack/cloudstack/0.4.0/windows_amd64/CHANGELOG.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/terraform/.terraform/providers/registry.terraform.io/cloudstack/cloudstack/0.4.0/windows_amd64/LICENSE" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/terraform/.terraform/providers/registry.terraform.io/cloudstack/cloudstack/0.4.0/windows_amd64/README.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/terraform/terraform.tfstate" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/terraform/terraform.tfstate.backup" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/terraform/variables.tf" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/terraform/vm_normal.tf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/dataSources.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/terraform/apply.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/terraform/external.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/terraform/terraform.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/terraform/utils.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/terraform/deploy/demo/.terraform/terraform.tfstate" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/terraform/deploy/demo/config.tf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/terraform/subsystems/cs/cs_vars.tf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/terraform/subsystems/cs/cs_vm_small.tf" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/conf/environment.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/conf/environment.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/subsystems/cs/cs.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/cs/cs.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/subsystems/cs/example.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/cs/example.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/terraform/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/terraform/.terraform.lock.hcl" beforeDir="false" afterPath="$PROJECT_DIR$/terraform/deploy/demo/.terraform.lock.hcl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/terraform/.terraform/providers/registry.terraform.io/cloudstack/cloudstack/0.4.0/windows_amd64/CHANGELOG.md" beforeDir="false" afterPath="$PROJECT_DIR$/terraform/deploy/demo/.terraform/providers/registry.terraform.io/cloudstack/cloudstack/0.4.0/windows_amd64/CHANGELOG.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/terraform/.terraform/providers/registry.terraform.io/cloudstack/cloudstack/0.4.0/windows_amd64/LICENSE" beforeDir="false" afterPath="$PROJECT_DIR$/terraform/deploy/demo/.terraform/providers/registry.terraform.io/cloudstack/cloudstack/0.4.0/windows_amd64/LICENSE" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/terraform/.terraform/providers/registry.terraform.io/cloudstack/cloudstack/0.4.0/windows_amd64/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/terraform/deploy/demo/.terraform/providers/registry.terraform.io/cloudstack/cloudstack/0.4.0/windows_amd64/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/terraform/terraform.tfstate" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/terraform/terraform.tfstate.backup" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/terraform/variables.tf" beforeDir="false" afterPath="$PROJECT_DIR$/terraform/deploy/demo/cs_vars.tf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/terraform/vm_normal.tf" beforeDir="false" afterPath="$PROJECT_DIR$/terraform/deploy/demo/cs_vm_small.tf" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -54,28 +62,35 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
-    &quot;DefaultGoTemplateProperty&quot;: &quot;Go File&quot;,
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.go.formatter.settings.were.checked&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.go.migrated.go.modules.settings&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.go.modules.go.list.on.any.changes.was.set&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.go.watchers.conflict.with.on.save.actions.check.performed&quot;: &quot;true&quot;,
-    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
-    &quot;go.import.settings.migrated&quot;: &quot;true&quot;,
-    &quot;go.sdk.automatically.set&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/repos/go-deploy&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;goland.project.structure&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_ADD_EXTERNAL_FILES": "true",
+    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "DefaultGoTemplateProperty": "Go File",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.go.formatter.settings.were.checked": "true",
+    "RunOnceActivity.go.migrated.go.modules.settings": "true",
+    "RunOnceActivity.go.modules.go.list.on.any.changes.was.set": "true",
+    "RunOnceActivity.go.watchers.conflict.with.on.save.actions.check.performed": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "WebServerToolWindowFactoryState": "false",
+    "go.import.settings.migrated": "true",
+    "go.sdk.automatically.set": "true",
+    "last_opened_file_path": "C:/repos/go-deploy",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "goland.project.structure"
+  },
+  "keyToStringList": {
+    "DatabaseDriversLRU": [
+      "postgresql"
+    ]
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\repos\deploy-api-go\pkg\auth" />
@@ -84,10 +99,10 @@
     </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\repos\go-deploy\terraform" />
+      <recent name="C:\repos\go-deploy\pkg\terraform\subsystems\cs" />
       <recent name="C:\repos\go-deploy\pkg\subsystems\pfsense" />
       <recent name="C:\repos\go-deploy\pkg\worker" />
       <recent name="C:\repos\go-deploy\service\subsystem_service" />
-      <recent name="C:\repos\go-deploy\pkg\subsystems\pfsense\models" />
     </key>
   </component>
   <component name="RunManager">
@@ -167,6 +182,16 @@
           <url>file://$USER_HOME$/go/pkg/mod/github.com/mittwald/goharbor-client/v5@v5.1.0/apiv2/pkg/clients/robotv1/robotv1.go</url>
           <line>91</line>
           <option name="timeStamp" value="32" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/pkg/subsystems/cs/example.go</url>
+          <line>18</line>
+          <option name="timeStamp" value="41" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/pkg/subsystems/cs/example.go</url>
+          <line>19</line>
+          <option name="timeStamp" value="42" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
