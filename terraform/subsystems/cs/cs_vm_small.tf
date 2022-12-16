@@ -1,18 +1,3 @@
-terraform {
-  required_providers {
-    cloudstack = {
-      source  = "cloudstack/cloudstack"
-      version = "0.4.0"
-    }
-  }
-}
-
-provider "cloudstack" {
-  api_url    = var.cloudstack_api_url
-  api_key    = var.cloudstack_api_key
-  secret_key = var.cloudstack_secret_key
-}
-
 resource "cloudstack_instance" "web" {
   name             = "deploy-demo"
   service_offering = "Small HA"

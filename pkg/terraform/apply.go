@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/hashicorp/hcl/v2/hclwrite"
 	"github.com/hashicorp/terraform-exec/tfexec"
 	"go-deploy/pkg/conf"
 	"log"
@@ -22,29 +23,42 @@ func (client *Client) Apply() error {
 		return makeError(err)
 	}
 
-	for _, externalGenerator := range client.externalGenerators {
+	var allProviders []Provider
 
-		external := External{
-			envs:        map[string]string{},
-			scriptPaths: []string{},
-		}
-		err = externalGenerator(&external)
+	for _, external := range client.externals {
+		// TODO: Overwrite if not the same file
+
+		err = client.copyScripts(external.ScriptPaths)
 		if err != nil {
 			log.Println("failed to apply external generator. details:", err)
 			continue
 		}
 
-		err = client.copyScripts(external.scriptPaths)
+		err = client.createScripts(external.Scripts)
 		if err != nil {
 			log.Println("failed to apply external generator. details:", err)
 			continue
 		}
 
-		err = applyEnvs(external.envs)
+		err = client.copyScripts(external.ScriptPaths)
+		if err != nil {
+			log.Println("failed to apply external generator. details:", err)
+			continue
+		}
+
+		err = applyEnvs(external.Envs)
 		if err != nil {
 			return makeError(err)
 		}
+
+		allProviders = append(allProviders, external.Provider)
 	}
+
+	//err = client.createSystemConf(allProviders)
+	//if err != nil {
+	//	log.Println("failed to apply external generator. details:", err)
+	//	return err
+	//}
 
 	configStr := fmt.Sprintf(
 		"conn_str=postgres://%s:%s@%s/terraform_backend?sslmode=disable",
@@ -63,6 +77,23 @@ func (client *Client) Apply() error {
 		return makeError(err)
 	}
 
+	return nil
+}
+
+func (client *Client) createScripts(files map[string]*hclwrite.File) error {
+	for tfFilepath, tfFile := range files {
+
+		fullpath := filepath.Join(client.workingDir, tfFilepath)
+		osFile, err := os.Create(fullpath)
+		if err != nil {
+			return err
+		}
+		_, err = osFile.Write(tfFile.Bytes())
+		if err != nil {
+			return err
+		}
+
+	}
 	return nil
 }
 
@@ -99,6 +130,26 @@ func (client *Client) copyScript(from string) error {
 		if copyErr != nil {
 			return makeError(copyErr)
 		}
+	}
+
+	return nil
+}
+
+func (client *Client) createSystemConf(allProviders []Provider) error {
+
+	providerFile, err := CreateTfSystemConf(allProviders)
+	if err != nil {
+		return err
+	}
+
+	fullpath := filepath.Join(client.workingDir, "system-conf.tf")
+	osFile, err := os.Create(fullpath)
+	if err != nil {
+		return err
+	}
+	_, err = osFile.Write(providerFile.Bytes())
+	if err != nil {
+		return err
 	}
 
 	return nil

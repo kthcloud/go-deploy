@@ -1,18 +1,20 @@
 package terraform
 
+import "github.com/hashicorp/hcl/v2/hclwrite"
+
+type Provider struct {
+	Name    string
+	Source  string
+	Version string
+}
+
 type External struct {
-	envs        map[string]string
-	scriptPaths []string
+	Envs        map[string]string
+	ScriptPaths []string
+	Scripts     map[string]*hclwrite.File
+	Provider    Provider
 }
 
-func (modifier *External) SetEnv(key, val string) {
-	modifier.envs[key] = val
-}
-
-func (modifier *External) SetScriptPaths(scriptFilepaths []string) {
-	modifier.scriptPaths = scriptFilepaths
-}
-
-func (client *Client) AddModifier(fn func(*External) error) {
-	client.externalGenerators = append(client.externalGenerators, fn)
+func (client *Client) Add(external *External) {
+	client.externals = append(client.externals, *external)
 }

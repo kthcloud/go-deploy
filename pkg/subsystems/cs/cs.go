@@ -11,27 +11,7 @@ import (
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/terraform"
 	"os"
-	"path/filepath"
 )
-
-func CopyToTerraform(external *terraform.External) error {
-	vars, err := filepath.Abs("terraform/subsystems/cs/cs_vars.tf")
-	if err != nil {
-		return err
-	}
-
-	vmSmall, err := filepath.Abs("terraform/subsystems/cs/cs_vm_small.tf")
-	if err != nil {
-		return err
-	}
-
-	external.SetScriptPaths([]string{vars, vmSmall})
-	external.SetEnv("TF_VAR_cloudstack_api_url", conf.Env.CS.Url)
-	external.SetEnv("TF_VAR_cloudstack_api_key", conf.Env.CS.Key)
-	external.SetEnv("TF_VAR_cloudstack_secret_key", conf.Env.CS.Secret)
-
-	return nil
-}
 
 type Client struct {
 	CSClient  *cloudstack.CloudStackClient
@@ -115,4 +95,30 @@ func setupTerraform(workingDir string, apiUrl, apiKey, secretKey string) (*tfexe
 	}
 
 	return terraformClient, nil
+}
+
+func GetTerraform() *terraform.External {
+	//vars, err := filepath.Abs("terraform/subsystems/cs/cs_vars.tf")
+	//if err != nil {
+	//	log.Fatalln(err)
+	//}
+	//
+	//vmSmall, err := filepath.Abs("terraform/subsystems/cs/cs_vm_small.tf")
+	//if err != nil {
+	//	log.Fatalln(err)
+	//}
+
+	return &terraform.External{
+		Envs: map[string]string{
+			"TF_VAR_cloudstack_api_url":    conf.Env.CS.Url,
+			"TF_VAR_cloudstack_api_key":    conf.Env.CS.Key,
+			"TF_VAR_cloudstack_secret_key": conf.Env.CS.Secret,
+		},
+		//ScriptPaths: []string{vars, vmSmall},
+		Provider: terraform.Provider{
+			Name:    "cloudstack",
+			Source:  "cloudstack/cloudstack",
+			Version: "0.4.0",
+		},
+	}
 }

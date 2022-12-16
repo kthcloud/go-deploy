@@ -9,9 +9,9 @@ import (
 )
 
 type Client struct {
-	workingDir         string
-	execPath           string
-	externalGenerators []func(*External) error
+	workingDir string
+	execPath   string
+	externals  []External
 }
 
 type ClientConf struct {

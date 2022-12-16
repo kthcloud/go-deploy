@@ -1,20 +1,27 @@
-package cs
+package main
 
 import (
+	"go-deploy/pkg/subsystems/cs"
+	"go-deploy/pkg/subsystems/npm"
 	"go-deploy/pkg/terraform"
 	"log"
+	"path/filepath"
 )
 
 func Example() {
 
+	workingDir, _ := filepath.Abs("terraform/deploy/demo")
+
 	client, err := terraform.New(&terraform.ClientConf{
-		WorkingDir: "C:\\repos\\go-deploy\\terraform\\deploy\\demo",
+		WorkingDir: workingDir,
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	client.AddModifier(CopyToTerraform)
+	client.Add(cs.GetTerraform())
+
+	client.Add(npm.GetTerraform())
 
 	err = client.Apply()
 	if err != nil {
