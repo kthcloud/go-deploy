@@ -1,9 +1,10 @@
-package cs
+package main
 
 import (
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/cs/models"
 	"log"
+	"path/filepath"
 )
 
 func Example() {

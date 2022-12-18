@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"go-deploy/models"
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/conf"
@@ -11,6 +10,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/gin-gonic/gin"
 )
 
 func setup(context *app.Context) {

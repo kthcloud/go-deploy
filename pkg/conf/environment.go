@@ -66,9 +66,9 @@ type Environment struct {
 	}
 
 	CS struct {
-		Url    string `env:"DEPLOY_CS_API_URL"`
-		Key    string `env:"DEPLOY_CS_API_KEY"`
-		Secret string `env:"DEPLOY_CS_API_SECRET"`
+		Url    string `env:"DEPLOY_CS_API_URL,required=true"`
+		Key    string `env:"DEPLOY_CS_API_KEY,required=true"`
+		Secret string `env:"DEPLOY_CS_SECRET_KEY,required=true"`
 		ZoneID string `env:"DEPLOY_CS_ZONE_ID"`
 	}
 

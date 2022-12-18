@@ -36,3 +36,11 @@ func New(config *ClientConf) (*Client, error) {
 
 	return &client, nil
 }
+
+func setupTerraform(workingDir string, apiUrl, apiKey, secretKey string) (*tfexec.Terraform, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to setup terraform. details: %s", err)
+	}
+
+	installer := &releases.ExactVersion{
+		Product: product.Terraform,
