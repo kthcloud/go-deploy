@@ -32,12 +32,6 @@ type Environment struct {
 		Realm string `env:"DEPLOY_KEYCLOAK_REALM,required=true"`
 	}
 
-	Terraform struct {
-		Url      string `env:"DEPLOY_TERRAFORM_DB_URL"`
-		Username string `env:"DEPLOY_TERRAFORM_DB_USERNAME"`
-		Password string `env:"DEPLOY_TERRAFORM_DB_PASSWORD"`
-	}
-
 	K8s struct {
 		Config string `env:"DEPLOY_K8S_CONFIG"`
 	}

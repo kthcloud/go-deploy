@@ -4,37 +4,14 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="bc4da88f-8032-4df4-9bcc-9ca8b4f364d2" name="Changes" comment="change project name. fix websocket support for logs">
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/npm/models/proxy_host_created.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/npm/models/proxy_host_public.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/npm/models/proxy_host_update.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    <list default="true" id="bc4da88f-8032-4df4-9bcc-9ca8b4f364d2" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/example.go" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/deployment.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/deployment.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/deployment_worker/confirmers.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/deployment_worker/confirmers.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/deployment_worker/subsystems.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/deployment_worker/subsystems.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/conf/environment.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/conf/environment.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/subsystems/cs/cs.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/cs/cs.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/cs/example.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/cs/example.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/npm/models/proxy_host.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/npm/models/proxy_host_read.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/npm/models/proxy_host_create_req.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/npm/models/proxy_host_create.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/npm/models/token.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/npm/models/token_created.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/npm/models/token_req.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/npm/models/token_create.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/subsystems/npm/npm.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/npm/npm.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/npm/proxy_host.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/npm/proxy_host.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/terraform/apply.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/terraform/external.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/terraform/terraform.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/terraform/utils.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/service/deployment_service/deployment_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/deployment_service.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/service/subsystem_service/npm_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/subsystem_service/npm_service.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/terraform/deploy/demo/.terraform.lock.hcl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/terraform/deploy/demo/config.tf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/terraform/deploy/demo/cs_vars.tf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/terraform/deploy/demo/cs_vm_small.tf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/terraform/subsystems/cs/cs_vars.tf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/terraform/subsystems/cs/cs_vm_small.tf" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
