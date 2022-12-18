@@ -30,8 +30,8 @@ func Created(name string) bool {
 func Deleted(name string) bool {
 	confirmers := getDeletedConfirmers()
 	for _, confirmer := range confirmers {
-		created, _ := confirmer(name)
-		if !created {
+		deleted, _ := confirmer(name)
+		if !deleted {
 			return false
 		}
 	}

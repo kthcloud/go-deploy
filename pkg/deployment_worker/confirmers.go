@@ -2,6 +2,7 @@ package deployment_worker
 
 import (
 	"fmt"
+	"go-deploy/models"
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/harbor"
 	"go-deploy/pkg/subsystems/k8s"
@@ -27,7 +28,13 @@ func NPMCreated(name string) (bool, error) {
 		return false, makeError(err)
 	}
 
-	proxyHostCreated, err := client.ProxyHostCreated(getFQDN(name))
+	deployment, err := models.GetDeploymentByName(name)
+
+	if deployment.Subsytems.Npm.Public.ID == 0 {
+		return false, nil
+	}
+
+	proxyHostCreated, err := client.ProxyHostCreated(deployment.Subsytems.Npm.Public.ID)
 	if err != nil {
 		return false, makeError(err)
 	}
@@ -40,6 +47,12 @@ func NPMDeleted(name string) (bool, error) {
 		return fmt.Errorf("failed to check if npm setup is deleted for deployment %s. details: %s", name, err)
 	}
 
+	deployment, err := models.GetDeploymentByName(name)
+
+	if deployment.Subsytems.Npm.Public.ID == 0 {
+		return true, nil
+	}
+
 	client, err := npm.New(&npm.ClientConf{
 		ApiUrl:   conf.Env.NPM.Url,
 		Username: conf.Env.NPM.Identity,
@@ -49,7 +62,7 @@ func NPMDeleted(name string) (bool, error) {
 		return false, makeError(err)
 	}
 
-	proxyHostDeleted, err := client.ProxyHostDeleted(getFQDN(name))
+	proxyHostDeleted, err := client.ProxyHostDeleted(deployment.Subsytems.Npm.Public.ID)
 	if err != nil {
 		return false, makeError(err)
 	}

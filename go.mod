@@ -4,14 +4,17 @@ go 1.19
 
 require (
 	github.com/Netflix/go-env v0.0.0-20220526054621-78278af1949d
+	github.com/apache/cloudstack-go/v2 v2.13.2
 	github.com/gin-gonic/gin v1.8.1
 	github.com/golang/glog v1.0.0
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.5.0
+	github.com/hashicorp/go-version v1.6.0
+	github.com/hashicorp/hc-install v0.4.0
+	github.com/hashicorp/terraform-exec v0.17.3
 	github.com/joho/godotenv v1.4.0
 	github.com/mittwald/goharbor-client/v5 v5.1.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/saffronjam/pfsense-client v0.0.0-20221208231745-3abcf61d7134
 	github.com/sethvargo/go-password v0.2.0
 	go.mongodb.org/mongo-driver v1.11.0
 	golang.org/x/crypto v0.1.0
@@ -26,11 +29,8 @@ require (
 require (
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
-	github.com/apache/cloudstack-go/v2 v2.13.2 // indirect
-	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/deepmap/oapi-codegen v1.12.4 // indirect
 	github.com/emicklei/go-restful/v3 v3.8.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
@@ -57,9 +57,6 @@ require (
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
-	github.com/hashicorp/go-version v1.6.0 // indirect
-	github.com/hashicorp/hc-install v0.4.0 // indirect
-	github.com/hashicorp/terraform-exec v0.17.3 // indirect
 	github.com/hashicorp/terraform-json v0.14.0 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
@@ -78,6 +75,7 @@ require (
 	github.com/pelletier/go-toml/v2 v2.0.5 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/stretchr/testify v1.8.1 // indirect
 	github.com/ugorji/go/codec v1.2.7 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.1.1 // indirect

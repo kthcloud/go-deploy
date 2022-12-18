@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"go-deploy/models/dto"
+	"go-deploy/pkg/subsystems/npm/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"log"
@@ -28,6 +29,7 @@ type SubsystemK8s struct {
 }
 
 type SubsystemNpm struct {
+	Public models.ProxyHostPublic `bson:"public"`
 }
 
 type SubsystemHarbor struct {
@@ -95,8 +97,8 @@ func GetDeploymentByID(deploymentID string) (*Deployment, error) {
 	return getDeployment(bson.D{{"id", deploymentID}})
 }
 
-func GetDeploymentByName(userId, name string) (*Deployment, error) {
-	return getDeployment(bson.D{{"owner", userId}, {"name", name}})
+func GetDeploymentByName(name string) (*Deployment, error) {
+	return getDeployment(bson.D{{"name", name}})
 }
 
 func GetByWebookToken(token string) (*Deployment, error) {

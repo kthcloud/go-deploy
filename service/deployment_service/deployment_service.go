@@ -49,7 +49,16 @@ func Get(userId, deploymentID string) (*models.Deployment, error) {
 }
 
 func GetByName(userId, name string) (*models.Deployment, error) {
-	return models.GetDeploymentByName(userId, name)
+	deployment, err := models.GetDeploymentByName(name)
+	if err != nil {
+		return nil, err
+	}
+
+	if deployment != nil && deployment.Owner != userId {
+		return nil, nil
+	}
+
+	return deployment, nil
 }
 
 func GetByOwner(owner string) ([]models.Deployment, error) {

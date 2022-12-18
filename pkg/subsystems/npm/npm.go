@@ -41,7 +41,7 @@ func (client *Client) createToken(username, password string) (string, error) {
 		return fmt.Errorf("failed to create token. details: %s", err)
 	}
 
-	tokenReq := models.TokenReq{Identity: username, Secret: password}
+	tokenReq := models.TokenCreate{Identity: username, Secret: password}
 	res, err := client.doJSONRequestUnauthorized("POST", "/tokens", tokenReq)
 
 	// check if good request
@@ -49,7 +49,7 @@ func (client *Client) createToken(username, password string) (string, error) {
 		return "", makeApiError(res.Body, makeError)
 	}
 
-	var token models.Token
+	var token models.TokenCreated
 	err = requestutils.ParseBody(res.Body, &token)
 	if err != nil {
 		return "", makeError(err)
