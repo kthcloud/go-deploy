@@ -4,9 +4,12 @@ import "github.com/mittwald/goharbor-client/v5/apiv2/model"
 
 func int64Ptr(i int64) *int64 { return &i }
 
-func CreateProjectCreateReq(projectName string) model.ProjectReq {
+func CreateProjectCreateBody(public *ProjectPublic) model.ProjectReq {
 	return model.ProjectReq{
-		ProjectName:  projectName,
+		ProjectName:  public.Name,
 		StorageLimit: int64Ptr(0),
+		Metadata: &model.ProjectMetadata{
+			Public: boolToString(public.Public),
+		},
 	}
 }

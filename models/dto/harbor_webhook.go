@@ -1,6 +1,6 @@
 package dto
 
-type HarborWebook struct {
+type HarborWebhook struct {
 	Type      string `json:"type"`
 	OccurAt   int    `json:"occur_at"`
 	Operator  string `json:"operator"`

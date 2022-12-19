@@ -69,14 +69,68 @@ func (client *Client) ReadProxyHost(id int) (*models.ProxyHostPublic, error) {
 		return nil, makeError(err)
 	}
 
-	public := models.CreateProxyHostPublicFromReadBody(proxyHost)
+	public := models.CreateProxyHostPublicFromReadBody(&proxyHost)
 
-	return &public, nil
+	return public, nil
+}
+
+func (client *Client) ReadProxyHostByDomainName(domainName string) (*models.ProxyHostPublic, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to read proxy host with domain name %s. details: %s", domainName, err)
+	}
+
+	res, err := client.doRequest("GET", "/nginx/proxy-hosts/")
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	if res.StatusCode == http.StatusNotFound {
+		return nil, nil
+	}
+
+	if !requestutils.IsGoodStatusCode(res.StatusCode) {
+		return nil, makeApiError(res.Body, makeError)
+	}
+
+	var proxyHosts []models.ProxyHostRead
+	err = requestutils.ParseBody(res.Body, &proxyHosts)
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	var proxyHostResult *models.ProxyHostRead
+	for _, proxyHost := range proxyHosts {
+		for _, name := range proxyHost.DomainNames {
+			if domainName == name {
+				proxyHostResult = &proxyHost
+			}
+		}
+	}
+
+	var public *models.ProxyHostPublic
+	if proxyHostResult != nil {
+		public = models.CreateProxyHostPublicFromReadBody(proxyHostResult)
+	}
+
+	return public, nil
 }
 
 func (client *Client) CreateProxyHost(public *models.ProxyHostPublic) (int, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create proxy host. details: %s", err)
+	}
+
+	if len(public.DomainNames) == 0 {
+		return 0, makeError(fmt.Errorf("no domain names supplied"))
+	}
+
+	result, err := client.ReadProxyHostByDomainName(public.DomainNames[0])
+	if err != nil {
+		return 0, makeError(err)
+	}
+
+	if result != nil {
+		return result.ID, nil
 	}
 
 	requestBody := models.CreateProxyHostCreateBody(public)

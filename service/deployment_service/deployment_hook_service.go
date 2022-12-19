@@ -7,13 +7,13 @@ import (
 	"io"
 )
 
-func GetHook(body io.ReadCloser) (*dto.HarborWebook, error) {
+func GetHook(body io.ReadCloser) (*dto.HarborWebhook, error) {
 	readBody, err := requestutils.ReadBody(body)
 	if err != nil {
 		return nil, err
 	}
 
-	var webhook = dto.HarborWebook{}
+	var webhook = dto.HarborWebhook{}
 	err = requestutils.ParseJson(readBody, &webhook)
 	if err != nil {
 		return nil, err
@@ -23,5 +23,5 @@ func GetHook(body io.ReadCloser) (*dto.HarborWebook, error) {
 }
 
 func GetByWebhookToken(token string) (*models.Deployment, error) {
-	return models.GetByWebookToken(token)
+	return models.GetByWebhookToken(token)
 }

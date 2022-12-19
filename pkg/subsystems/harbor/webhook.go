@@ -4,89 +4,94 @@ import (
 	"context"
 	"fmt"
 	modelv2 "github.com/mittwald/goharbor-client/v5/apiv2/model"
-	"go-deploy/utils"
+	models "go-deploy/pkg/subsystems/harbor/models"
+	"strconv"
 )
 
-func (client *Client) WebhookCreated(projectName, name string) (bool, error) {
+func (client *Client) WebhookCreated(public *models.WebhookPublic) (bool, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if harbor repository %s is created. details: %s", name, err)
+		return fmt.Errorf("failed to check if webhook %s is created. details: %s", public.Name, err)
 	}
 
-	project, err := client.HarborClient.GetProject(context.TODO(), projectName)
-	if err != nil {
-		return false, makeError(err)
-	}
-
-	if project == nil {
-		return false, nil
-	}
-
-	webhookPolicies, err := client.HarborClient.ListProjectWebhookPolicies(context.TODO(), int(project.ProjectID))
+	webhookPolicies, err := client.HarborClient.ListProjectWebhookPolicies(context.TODO(), public.ProjectID)
 	if err != nil {
 		return false, makeError(err)
 	}
 
 	for _, policy := range webhookPolicies {
-		if policy.Name == name {
+		if int(policy.ID) == public.ID {
 			return true, nil
 		}
 	}
 	return false, nil
 }
 
-func (client *Client) CreateWebhook(projectName, name, webhookTarget string) error {
+func (client *Client) ReadWebhook(projectID, id int) (*models.WebhookPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create harbor webhook for %s. details: %s", name, err)
+		return fmt.Errorf("failed to read webhook for %d. details: %s", id, err)
 	}
 
-	projectExists, project, err := client.assertProjectExists(projectName)
+	webhookPolicies, err := client.HarborClient.ListProjectWebhookPolicies(context.TODO(), projectID)
 	if err != nil {
-		return makeError(err)
+		return nil, makeError(err)
 	}
 
-	if !projectExists {
-		err = fmt.Errorf("no project exists")
-		return makeError(err)
+	for _, policy := range webhookPolicies {
+		if int(policy.ID) == id {
+
+			project, err := client.HarborClient.GetProject(context.TODO(), strconv.Itoa(projectID))
+			if err != nil {
+				return nil, makeError(err)
+			}
+
+			public := models.CreateWebhookPublicFromGet(policy, project)
+
+			return public, nil
+		}
+	}
+	return nil, nil
+}
+
+func (client *Client) CreateWebhook(public *models.WebhookPublic) (int, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to create webhook for %s. details: %s", public.Name, err)
 	}
 
-	webhooks, err := client.HarborClient.ListProjectWebhookPolicies(context.TODO(), int(project.ProjectID))
+	if public.ProjectID == 0 {
+		return 0, makeError(fmt.Errorf("project id required"))
+	}
+
+	webhookPolicies, err := client.HarborClient.ListProjectWebhookPolicies(context.TODO(), public.ProjectID)
 	if err != nil {
-		return makeError(err)
+		return 0, makeError(err)
 	}
 
-	for _, hook := range webhooks {
-		if hook.Name == name {
-			return nil
+	var webhookPolicy *modelv2.WebhookPolicy
+	for _, policy := range webhookPolicies {
+		if policy.Name == public.Name {
+			webhookPolicy = policy
 		}
 	}
 
-	webhookToken, err := generateToken(client.webhookSecret)
-	if err != nil {
-		return makeError(err)
+	if webhookPolicy != nil {
+		return int(webhookPolicy.ID), nil
 	}
 
-	err = updateDatabaseWebhook(name, utils.HashString(webhookToken))
+	requestBody := models.CreateWebhookParamsFromPublic(public)
+	err = client.HarborClient.AddProjectWebhookPolicy(context.TODO(), public.ProjectID, requestBody)
 	if err != nil {
-		return makeError(err)
+		return 0, makeError(err)
 	}
 
-	err = client.HarborClient.AddProjectWebhookPolicy(context.TODO(), int(project.ProjectID), &modelv2.WebhookPolicy{
-		Enabled:    true,
-		EventTypes: getWebhookEventTypes(),
-		Name:       name,
-		Targets: []*modelv2.WebhookTargetObject{
-			{
-				Address:        webhookTarget,
-				AuthHeader:     createAuthHeader(webhookToken),
-				SkipCertVerify: false,
-				Type:           "http",
-			},
-		},
-	})
-
+	webhookPolicies, err = client.HarborClient.ListProjectWebhookPolicies(context.TODO(), public.ProjectID)
 	if err != nil {
-		return makeError(err)
+		return 0, makeError(err)
 	}
 
-	return nil
+	for _, policy := range webhookPolicies {
+		if policy.Name == public.Name {
+			return int(policy.ID), nil
+		}
+	}
+	return 0, makeError(fmt.Errorf("webhook not found after creation"))
 }

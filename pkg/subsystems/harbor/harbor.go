@@ -7,18 +7,16 @@ import (
 )
 
 type Client struct {
-	apiUrl        string
-	username      string
-	password      string
-	HarborClient  *apiv2.RESTClient
-	webhookSecret string
+	apiUrl       string
+	username     string
+	password     string
+	HarborClient *apiv2.RESTClient
 }
 
 type ClientConf struct {
-	ApiUrl        string
-	Username      string
-	Password      string
-	WebhookSecret string
+	ApiUrl   string
+	Username string
+	Password string
 }
 
 func New(config *ClientConf) (*Client, error) {
@@ -32,11 +30,10 @@ func New(config *ClientConf) (*Client, error) {
 	}
 
 	client := Client{
-		apiUrl:        config.ApiUrl,
-		username:      config.Username,
-		password:      config.Password,
-		HarborClient:  harborClient,
-		webhookSecret: config.WebhookSecret,
+		apiUrl:       config.ApiUrl,
+		username:     config.Username,
+		password:     config.Password,
+		HarborClient: harborClient,
 	}
 
 	return &client, nil

@@ -50,7 +50,7 @@ func Setup() {
 	}
 
 	// Find DeploymentCollection
-	DeploymentCollection = client.Database("deploy").Collection("deployments")
+	DeploymentCollection = client.Database(conf.Env.DB.Name).Collection("deployments")
 	if err != nil {
 		log.Fatalln(makeError(err))
 	}

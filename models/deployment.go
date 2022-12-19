@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 	"go-deploy/models/dto"
-	"go-deploy/pkg/subsystems/npm/models"
+	harborModels "go-deploy/pkg/subsystems/harbor/models"
+	npmModels "go-deploy/pkg/subsystems/npm/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"log"
@@ -16,7 +17,7 @@ type Deployment struct {
 	Owner        string    `bson:"owner"`
 	BeingCreated bool      `bson:"beingCreated"`
 	BeingDeleted bool      `bson:"beingDeleted"`
-	Subsytems    Subsystem `bson:"subsystems"`
+	Subsystems   Subsystem `bson:"subsystems"`
 }
 
 type Subsystem struct {
@@ -29,13 +30,14 @@ type SubsystemK8s struct {
 }
 
 type SubsystemNpm struct {
-	Public models.ProxyHostPublic `bson:"public"`
+	ProxyHost npmModels.ProxyHostPublic `bson:"proxyHost"`
 }
 
 type SubsystemHarbor struct {
-	RobotUsername string `bson:"robotUsername"`
-	RobotPassword string `bson:"robotPassword"`
-	WebhookToken  string `bson:"webhookToken"`
+	Project    harborModels.ProjectPublic    `bson:"project"`
+	Robot      harborModels.RobotPublic      `bson:"robot"`
+	Repository harborModels.RepositoryPublic `bson:"repository"`
+	Webhook    harborModels.WebhookPublic    `bson:"webhook"`
 }
 
 func (deployment *Deployment) ToDto() dto.Deployment {
@@ -101,8 +103,8 @@ func GetDeploymentByName(name string) (*Deployment, error) {
 	return getDeployment(bson.D{{"name", name}})
 }
 
-func GetByWebookToken(token string) (*Deployment, error) {
-	return getDeployment(bson.D{{"subsystems.harbor.webhookToken", token}})
+func GetByWebhookToken(token string) (*Deployment, error) {
+	return getDeployment(bson.D{{"subsystems.harbor.webhook.token", token}})
 }
 
 func DeploymentExists(name string) (bool, *Deployment, error) {
@@ -171,6 +173,11 @@ func UpdateDeploymentByName(name string, update bson.D) error {
 		return err
 	}
 	return nil
+}
+
+func UpdateSubsystemByName(name, subsystem string, key string, update interface{}) error {
+	subsystemKey := fmt.Sprintf("subsystems.%s.%s", subsystem, key)
+	return UpdateDeploymentByName(name, bson.D{{subsystemKey, update}})
 }
 
 func GetAllDeployments() ([]Deployment, error) {

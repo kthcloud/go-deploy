@@ -12,8 +12,8 @@ type ProxyHostPublic struct {
 	Locations             []Location `json:"locations" bson:"locations"`
 }
 
-func CreateProxyHostPublicFromCreatedBody(created ProxyHostCreated) ProxyHostPublic {
-	return ProxyHostPublic{
+func CreateProxyHostPublicFromCreatedBody(created *ProxyHostCreated) *ProxyHostPublic {
+	return &ProxyHostPublic{
 		ID:                    created.ID,
 		DomainNames:           created.DomainNames,
 		ForwardHost:           created.ForwardHost,
@@ -26,8 +26,8 @@ func CreateProxyHostPublicFromCreatedBody(created ProxyHostCreated) ProxyHostPub
 	}
 }
 
-func CreateProxyHostPublicFromReadBody(read ProxyHostRead) ProxyHostPublic {
-	return ProxyHostPublic{
+func CreateProxyHostPublicFromReadBody(read *ProxyHostRead) *ProxyHostPublic {
+	return &ProxyHostPublic{
 		ID:                    read.ID,
 		DomainNames:           read.DomainNames,
 		ForwardHost:           read.ForwardHost,

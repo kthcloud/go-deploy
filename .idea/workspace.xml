@@ -4,14 +4,52 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="bc4da88f-8032-4df4-9bcc-9ca8b4f364d2" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/example.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/conf/environment.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/conf/environment.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/cs/cs.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/cs/cs.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/npm/npm.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/npm/npm.go" afterDir="false" />
+    <list default="true" id="bc4da88f-8032-4df4-9bcc-9ca8b4f364d2" name="Changes" comment="change project name. fix websocket support for logs">
+      <change afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/models/common.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/models/place_holder_repository.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/models/project_public.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/models/repository_public.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/models/robot_created.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/models/robot_public.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/models/webhook_public.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources.local.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/376ab1f3-e94f-40d1-bcc1-94f520ddc6e7/storage_v2/_src_/database/terraform_backend.KWhKhQ.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/376ab1f3-e94f-40d1-bcc1-94f520ddc6e7/storage_v2/_src_/database/terraform_backend.KWhKhQ/schema/information_schema.FNRwLQ.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/376ab1f3-e94f-40d1-bcc1-94f520ddc6e7/storage_v2/_src_/database/terraform_backend.KWhKhQ/schema/information_schema.FNRwLQ.zip" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/376ab1f3-e94f-40d1-bcc1-94f520ddc6e7/storage_v2/_src_/database/terraform_backend.KWhKhQ/schema/pg_catalog.0S1ZNQ.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/376ab1f3-e94f-40d1-bcc1-94f520ddc6e7/storage_v2/_src_/database/terraform_backend.KWhKhQ/schema/pg_catalog.0S1ZNQ.zip" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/376ab1f3-e94f-40d1-bcc1-94f520ddc6e7/storage_v2/_src_/database/terraform_backend.KWhKhQ/schema/public.abK9xQ.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/376ab1f3-e94f-40d1-bcc1-94f520ddc6e7/storage_v2/_src_/database/terraform_backend.KWhKhQ/schema/terraform_remote_state.46am2Q.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/go-deploy.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/go-deploy.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/deployment.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/deployment.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/dto/harbor_webhook.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/dto/harbor_webhook.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/models.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/models.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/deployment_worker/confirmers.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/deployment_worker/confirmers.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/deployment_worker/status_worker.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/deployment_worker/status_worker.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/deployment_worker/subsystems.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/deployment_worker/subsystems.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/common.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/common.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/harbor.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/harbor.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/models/ApiError.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/models/api_error.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/models/PlaceHolderRepository.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/models/ProjectCreateReq.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/models/project_create.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/models/RobotCreateReq.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/models/robot_create.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/project.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/project.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/repository.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/repository.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/robot.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/robot.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/utils.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/utils.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/webhook.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/webhook.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/npm/models/proxy_host_public.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/npm/models/proxy_host_public.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/npm/proxy_host.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/npm/proxy_host.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/deployment_service/deployment_ci_config_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/deployment_ci_config_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/deployment_service/deployment_hook_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/deployment_hook_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/subsystem_service/harbor_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/subsystem_service/harbor_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/subsystem_service/k8s_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/subsystem_service/k8s_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/subsystem_service/npm_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/subsystem_service/npm_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/terraform/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/terraform/subsystems/npm/npm_vars.tf" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -62,7 +100,7 @@
     &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
     &quot;go.import.settings.migrated&quot;: &quot;true&quot;,
     &quot;go.sdk.automatically.set&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/repos/work/go-deploy/pkg/subsystems/cs&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/repos/work/go-deploy&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,

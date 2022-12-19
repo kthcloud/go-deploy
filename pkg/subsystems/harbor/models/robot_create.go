@@ -4,13 +4,13 @@ import (
 	"github.com/mittwald/goharbor-client/v5/apiv2/model"
 )
 
-func CreateRobotCreateReq(projectName, name string) model.RobotCreate {
+func CreateRobotCreateBody(public *RobotPublic) model.RobotCreate {
 	return model.RobotCreate{
 		Description: "Automatically created",
 		Disable:     false,
 		Duration:    -1,
 		Level:       "project",
-		Name:        name,
+		Name:        public.Name,
 		Permissions: []*model.RobotPermission{
 			{
 				Access: []*model.Access{
@@ -32,7 +32,7 @@ func CreateRobotCreateReq(projectName, name string) model.RobotCreate {
 					},
 				},
 				Kind:      "project",
-				Namespace: projectName,
+				Namespace: public.ProjectName,
 			},
 		},
 	}

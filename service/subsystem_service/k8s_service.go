@@ -11,7 +11,7 @@ import (
 )
 
 func CreateK8s(name string) error {
-	log.Println("creating k8s for", name)
+	log.Println("setting up k8s for", name)
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to setup k8s for deployment %s. details: %s", name, err)

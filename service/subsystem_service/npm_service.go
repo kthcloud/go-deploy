@@ -47,36 +47,27 @@ func CreateNPM(name string) error {
 		return makeError(err)
 	}
 
-	certificateID, err := client.GetWildcardCertificateID(conf.Env.ParentDomain)
-	if err != nil {
-		return makeError(err)
-	}
-
 	deployment, err := models.GetDeploymentByName(name)
 
-	public := createProxyHostPublicBody(name, certificateID)
-	var proxyHost *npmModels.ProxyHostPublic
-
-	if deployment.Subsytems.Npm.Public.ID == 0 {
-		id, err := client.CreateProxyHost(public)
-		if err != nil {
-			return err
-		}
-		deployment.Subsytems.Npm.Public.ID = id
-	} else {
-		public.ID = deployment.Subsytems.Npm.Public.ID
-		err = client.UpdateProxyHost(public)
+	if deployment.Subsystems.Npm.ProxyHost.ID == 0 {
+		certificateID, err := client.GetWildcardCertificateID(conf.Env.ParentDomain)
 		if err != nil {
 			return makeError(err)
 		}
-	}
 
-	proxyHost, err = client.ReadProxyHost(deployment.Subsytems.Npm.Public.ID)
-	deployment.Subsytems.Npm.Public = *proxyHost
+		id, err := client.CreateProxyHost(createProxyHostPublicBody(name, certificateID))
+		if err != nil {
+			return err
+		}
+		deployment.Subsystems.Npm.ProxyHost.ID = id
 
-	err = models.UpdateDeployment(deployment.ID, bson.D{{"subsystems.npm.public", *proxyHost}})
-	if err != nil {
-		return makeError(err)
+		proxyHost, err := client.ReadProxyHost(deployment.Subsystems.Npm.ProxyHost.ID)
+		deployment.Subsystems.Npm.ProxyHost = *proxyHost
+
+		err = models.UpdateSubsystemByName(name, "npm", "proxyHost", *proxyHost)
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	return nil
@@ -100,16 +91,16 @@ func DeleteNPM(name string) error {
 
 	deployment, err := models.GetDeploymentByName(name)
 
-	if deployment.Subsytems.Npm.Public.ID == 0 {
+	if deployment.Subsystems.Npm.ProxyHost.ID == 0 {
 		return nil
 	}
 
-	err = client.DeleteProxyHost(deployment.Subsytems.Npm.Public.ID)
+	err = client.DeleteProxyHost(deployment.Subsystems.Npm.ProxyHost.ID)
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = models.UpdateDeploymentByName(name, bson.D{{"subsystems.npm.public", npmModels.ProxyHostPublic{}}})
+	err = models.UpdateDeploymentByName(name, bson.D{{"subsystems.npm.proxyHost", npmModels.ProxyHostPublic{}}})
 	if err != nil {
 		return makeError(err)
 	}

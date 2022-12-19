@@ -18,7 +18,7 @@ func Setup(ctx *app.Context) {
 
 			beingCreated, _ := models.GetAllDeploymentsWithFilter(bson.D{{"beingCreated", true}})
 			for _, deployment := range beingCreated {
-				created := Created(deployment.Name)
+				created := Created(&deployment)
 				if created {
 					log.Printf("marking deployment %s as created\n", deployment.Name)
 					_ = models.UpdateDeployment(deployment.ID, bson.D{{"beingCreated", false}})
@@ -27,9 +27,9 @@ func Setup(ctx *app.Context) {
 
 			beingDeleted, _ := models.GetAllDeploymentsWithFilter(bson.D{{"beingDeleted", true}})
 			for _, deployment := range beingDeleted {
-				deleted := Deleted(deployment.Name)
+				deleted := Deleted(&deployment)
 				if deleted {
-					log.Printf("deleting deployment %s\n", deployment.Name)
+					log.Printf("marking deployment %s as deleted\n", deployment.Name)
 					_ = models.DeleteDeployment(deployment.ID, deployment.Owner)
 				}
 			}

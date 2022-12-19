@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"go-deploy/models"
 	"go-deploy/pkg/conf"
-	"go-deploy/pkg/subsystems/harbor"
 	"go-deploy/pkg/subsystems/k8s"
-	"go-deploy/pkg/subsystems/npm"
 	"go-deploy/utils/subsystemutils"
 )
 
@@ -14,65 +12,25 @@ func getFQDN(name string) string {
 	return fmt.Sprintf("%s.%s", name, conf.Env.ParentDomain)
 }
 
-func NPMCreated(name string) (bool, error) {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if npm setup is created for deployment %s. details: %s", name, err)
+func NPMCreated(deployment *models.Deployment) (bool, error) {
+	_ = func(err error) error {
+		return fmt.Errorf("failed to check if npm setup is created for deployment %s. details: %s", deployment.Name, err)
 	}
 
-	client, err := npm.New(&npm.ClientConf{
-		ApiUrl:   conf.Env.NPM.Url,
-		Username: conf.Env.NPM.Identity,
-		Password: conf.Env.NPM.Secret,
-	})
-	if err != nil {
-		return false, makeError(err)
-	}
-
-	deployment, err := models.GetDeploymentByName(name)
-
-	if deployment.Subsytems.Npm.Public.ID == 0 {
-		return false, nil
-	}
-
-	proxyHostCreated, err := client.ProxyHostCreated(deployment.Subsytems.Npm.Public.ID)
-	if err != nil {
-		return false, makeError(err)
-	}
-
-	return proxyHostCreated, nil
+	return deployment.Subsystems.Npm.ProxyHost.ID != 0, nil
 }
 
-func NPMDeleted(name string) (bool, error) {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if npm setup is deleted for deployment %s. details: %s", name, err)
+func NPMDeleted(deployment *models.Deployment) (bool, error) {
+	_ = func(err error) error {
+		return fmt.Errorf("failed to check if npm setup is deleted for deployment %s. details: %s", deployment.Name, err)
 	}
 
-	deployment, err := models.GetDeploymentByName(name)
-
-	if deployment.Subsytems.Npm.Public.ID == 0 {
-		return true, nil
-	}
-
-	client, err := npm.New(&npm.ClientConf{
-		ApiUrl:   conf.Env.NPM.Url,
-		Username: conf.Env.NPM.Identity,
-		Password: conf.Env.NPM.Secret,
-	})
-	if err != nil {
-		return false, makeError(err)
-	}
-
-	proxyHostDeleted, err := client.ProxyHostDeleted(deployment.Subsytems.Npm.Public.ID)
-	if err != nil {
-		return false, makeError(err)
-	}
-
-	return proxyHostDeleted, nil
+	return deployment.Subsystems.Npm.ProxyHost.ID == 0, nil
 }
 
-func K8sCreated(name string) (bool, error) {
+func K8sCreated(deployment *models.Deployment) (bool, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if k8s setup is created for deployment %s. details: %s", name, err)
+		return fmt.Errorf("failed to check if k8s setup is created for deployment %s. details: %s", deployment.Name, err)
 	}
 
 	client, err := k8s.New(&k8s.ClientConf{K8sAuth: conf.Env.K8s.Config})
@@ -80,7 +38,7 @@ func K8sCreated(name string) (bool, error) {
 		return false, makeError(err)
 	}
 
-	namespace := subsystemutils.GetPrefixedName(name)
+	namespace := subsystemutils.GetPrefixedName(deployment.Name)
 
 	namespaceCreated, err := client.NamespaceCreated(namespace)
 	if err != nil {
@@ -91,12 +49,12 @@ func K8sCreated(name string) (bool, error) {
 		return false, nil
 	}
 
-	deploymentCreated, err := client.DeploymentCreated(namespace, name)
+	deploymentCreated, err := client.DeploymentCreated(namespace, deployment.Name)
 	if err != nil {
 		return false, makeError(err)
 	}
 
-	serviceCreated, err := client.ServiceCreated(namespace, name)
+	serviceCreated, err := client.ServiceCreated(namespace, deployment.Name)
 	if err != nil {
 		return false, makeError(err)
 	}
@@ -104,9 +62,9 @@ func K8sCreated(name string) (bool, error) {
 	return deploymentCreated && serviceCreated, nil
 }
 
-func K8sDeleted(name string) (bool, error) {
+func K8sDeleted(deployment *models.Deployment) (bool, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if k8s setup is deleted for deployment %s. details: %s", name, err)
+		return fmt.Errorf("failed to check if k8s setup is deleted for deployment %s. details: %s", deployment.Name, err)
 	}
 
 	client, err := k8s.New(&k8s.ClientConf{K8sAuth: conf.Env.K8s.Config})
@@ -114,7 +72,7 @@ func K8sDeleted(name string) (bool, error) {
 		return false, makeError(err)
 	}
 
-	namespaceDeleted, err := client.NamespaceDeleted(subsystemutils.GetPrefixedName(name))
+	namespaceDeleted, err := client.NamespaceDeleted(subsystemutils.GetPrefixedName(deployment.Name))
 	if err != nil {
 		return false, makeError(err)
 	}
@@ -122,69 +80,26 @@ func K8sDeleted(name string) (bool, error) {
 	return namespaceDeleted, nil
 }
 
-func HarborCreated(name string) (bool, error) {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if harbor setup is created for deployment %s. details: %s", name, err)
+func HarborCreated(deployment *models.Deployment) (bool, error) {
+	_ = func(err error) error {
+		return fmt.Errorf("failed to check if harbor setup is created for deployment %s. details: %s", deployment.Name, err)
 	}
 
-	client, err := harbor.New(&harbor.ClientConf{
-		ApiUrl:        conf.Env.Harbor.Url,
-		Username:      conf.Env.Harbor.Identity,
-		Password:      conf.Env.Harbor.Secret,
-		WebhookSecret: conf.Env.Harbor.WebhookSecret,
-	})
-	if err != nil {
-		return false, makeError(err)
-	}
-
-	projectName := subsystemutils.GetPrefixedName(name)
-
-	projectCreated, err := client.ProjectCreated(projectName)
-	if err != nil {
-		return false, makeError(err)
-	}
-
-	if !projectCreated {
-		return false, nil
-	}
-
-	robotCreated, err := client.RobotCreated(projectName, name)
-	if err != nil {
-		return false, makeError(err)
-	}
-
-	repositoryCreated, err := client.RepositoryCreated(projectName, name)
-	if err != nil {
-		return false, makeError(err)
-	}
-
-	webhookCreated, err := client.WebhookCreated(projectName, name)
-	if err != nil {
-		return false, makeError(err)
-	}
-
-	return robotCreated && repositoryCreated && webhookCreated, nil
+	harbor := &deployment.Subsystems.Harbor
+	return harbor.Project.ID != 0 &&
+		harbor.Robot.ID != 0 &&
+		harbor.Repository.ID != 0 &&
+		harbor.Webhook.ID != 0, nil
 }
 
-func HarborDeleted(name string) (bool, error) {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if harbor setup is created for deployment %s. details: %s", name, err)
+func HarborDeleted(deployment *models.Deployment) (bool, error) {
+	_ = func(err error) error {
+		return fmt.Errorf("failed to check if harbor setup is created for deployment %s. details: %s", deployment.Name, err)
 	}
 
-	client, err := harbor.New(&harbor.ClientConf{
-		ApiUrl:        conf.Env.Harbor.Url,
-		Username:      conf.Env.Harbor.Identity,
-		Password:      conf.Env.Harbor.Secret,
-		WebhookSecret: conf.Env.Harbor.WebhookSecret,
-	})
-	if err != nil {
-		return false, makeError(err)
-	}
-
-	projectDeleted, err := client.ProjectDeleted(name)
-	if err != nil {
-		return false, makeError(err)
-	}
-
-	return projectDeleted, nil
+	harbor := &deployment.Subsystems.Harbor
+	return harbor.Project.ID == 0 &&
+		harbor.Robot.ID == 0 &&
+		harbor.Repository.ID == 0 &&
+		harbor.Webhook.ID == 0, nil
 }

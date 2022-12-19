@@ -29,8 +29,8 @@ func GetCIConfig(userId, deploymentID string) (*dto.CIConfig, error) {
 		deployment.Name,
 	)
 
-	username := deployment.Subsytems.Harbor.RobotUsername
-	password := deployment.Subsytems.Harbor.RobotPassword
+	username := deployment.Subsystems.Harbor.Robot.Name
+	password := deployment.Subsystems.Harbor.Robot.Secret
 
 	config := models.GithubActionConfig{
 		Name: "kthcloud-ci",
