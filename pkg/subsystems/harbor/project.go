@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/mittwald/goharbor-client/v5/apiv2/pkg/common"
 	harborErrors "github.com/mittwald/goharbor-client/v5/apiv2/pkg/errors"
 	"go-deploy/pkg/subsystems/harbor/models"
 	"strconv"
@@ -55,10 +56,16 @@ func (client *Client) ReadProject(id int) (*models.ProjectPublic, error) {
 
 	project, err := client.HarborClient.GetProject(context.TODO(), strconv.Itoa(id))
 	if err != nil {
-		return nil, makeError(err)
+		targetErr := &harborErrors.ErrProjectNotFound{}
+		if !errors.As(err, &targetErr) {
+			return nil, makeError(err)
+		}
 	}
 
-	public := models.CreateProjectPublicFromGet(project)
+	var public *models.ProjectPublic
+	if project != nil {
+		public = models.CreateProjectPublicFromGet(project)
+	}
 
 	return public, nil
 }
@@ -102,11 +109,9 @@ func (client *Client) DeleteProject(id int) error {
 	err := client.HarborClient.DeleteProject(context.TODO(), strconv.Itoa(id))
 	if err != nil {
 		errString := fmt.Sprintf("%s", err)
-		if strings.Contains(errString, "id/name pair not found on server side") {
-			return nil
+		if !strings.Contains(errString, "not found on server side") {
+			return makeError(err)
 		}
-
-		return makeError(err)
 	}
 
 	return nil
@@ -121,12 +126,27 @@ func (client *Client) UpdateProject(public *models.ProjectPublic) error {
 	err := client.HarborClient.UpdateProject(context.TODO(), requestBody, nil)
 	if err != nil {
 		errString := fmt.Sprintf("%s", err)
-		if strings.Contains(errString, "id/name pair not found on server side") {
-			return nil
+		if !strings.Contains(errString, "id/name pair not found on server side") {
+			return makeError(err)
 		}
+	}
 
+	err = client.HarborClient.UpdateProjectMetadata(
+		context.TODO(),
+		public.Name,
+		common.ProjectMetadataKeyPublic,
+		boolToString(public.Public),
+	)
+	if err != nil {
 		return makeError(err)
 	}
 
 	return nil
+}
+
+func boolToString(b bool) string {
+	if b {
+		return "true"
+	}
+	return "false"
 }

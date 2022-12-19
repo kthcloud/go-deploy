@@ -6,8 +6,8 @@ import (
 
 func CreateRobotCreateBody(public *RobotPublic) model.RobotCreate {
 	return model.RobotCreate{
-		Description: "Automatically created",
-		Disable:     false,
+		Description: public.Description,
+		Disable:     public.Disable,
 		Duration:    -1,
 		Level:       "project",
 		Name:        public.Name,

@@ -5,51 +5,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="bc4da88f-8032-4df4-9bcc-9ca8b4f364d2" name="Changes" comment="change project name. fix websocket support for logs">
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/models/common.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/models/place_holder_repository.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/models/project_public.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/models/repository_public.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/models/robot_created.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/models/robot_public.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/models/webhook_public.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources.local.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources/376ab1f3-e94f-40d1-bcc1-94f520ddc6e7/storage_v2/_src_/database/terraform_backend.KWhKhQ.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources/376ab1f3-e94f-40d1-bcc1-94f520ddc6e7/storage_v2/_src_/database/terraform_backend.KWhKhQ/schema/information_schema.FNRwLQ.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources/376ab1f3-e94f-40d1-bcc1-94f520ddc6e7/storage_v2/_src_/database/terraform_backend.KWhKhQ/schema/information_schema.FNRwLQ.zip" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources/376ab1f3-e94f-40d1-bcc1-94f520ddc6e7/storage_v2/_src_/database/terraform_backend.KWhKhQ/schema/pg_catalog.0S1ZNQ.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources/376ab1f3-e94f-40d1-bcc1-94f520ddc6e7/storage_v2/_src_/database/terraform_backend.KWhKhQ/schema/pg_catalog.0S1ZNQ.zip" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources/376ab1f3-e94f-40d1-bcc1-94f520ddc6e7/storage_v2/_src_/database/terraform_backend.KWhKhQ/schema/public.abK9xQ.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources/376ab1f3-e94f-40d1-bcc1-94f520ddc6e7/storage_v2/_src_/database/terraform_backend.KWhKhQ/schema/terraform_remote_state.46am2Q.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/go-deploy.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/go-deploy.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" />
+      <change afterPath="$PROJECT_DIR$/test/common.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/test/harbor_test.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/test/npm_test.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/deployment.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/deployment.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/dto/harbor_webhook.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/dto/harbor_webhook.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/models.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/models.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/deployment_worker/confirmers.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/deployment_worker/confirmers.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/deployment_worker/status_worker.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/deployment_worker/status_worker.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/deployment_worker/subsystems.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/deployment_worker/subsystems.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/common.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/common.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/harbor.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/harbor.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/models/ApiError.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/models/api_error.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/models/PlaceHolderRepository.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/models/ProjectCreateReq.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/models/project_create.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/models/RobotCreateReq.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/models/robot_create.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/models/robot_public.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/models/robot_public.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/project.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/project.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/repository.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/repository.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/robot.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/robot.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/utils.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/utils.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/webhook.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/webhook.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/npm/models/proxy_host_public.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/npm/models/proxy_host_public.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/npm/proxy_host.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/npm/proxy_host.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/service/deployment_service/deployment_ci_config_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/deployment_ci_config_service.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/service/deployment_service/deployment_hook_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/deployment_hook_service.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/service/subsystem_service/harbor_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/subsystem_service/harbor_service.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/service/subsystem_service/k8s_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/subsystem_service/k8s_service.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/service/subsystem_service/npm_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/subsystem_service/npm_service.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/terraform/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/terraform/subsystems/npm/npm_vars.tf" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -129,7 +92,7 @@
       <recent name="C:\repos\go-deploy\pkg\worker" />
     </key>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Go Test.TestProjectWithRobot in go-deploy/test">
     <configuration name="Run" type="GoApplicationRunConfiguration" factoryName="Go Application">
       <module name="go-deploy" />
       <working_directory value="$PROJECT_DIR$" />
@@ -151,6 +114,50 @@
       <filePath value="$PROJECT_DIR$" />
       <method v="2" />
     </configuration>
+    <configuration name="Run Test" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true">
+      <module name="go-deploy" />
+      <working_directory value="$PROJECT_DIR$/test" />
+      <envs>
+        <env name="DEPLOY_ENV_FILE" value="$PROJECT_DIR$/../admin/secrets/deploy/kthcloud.env" />
+      </envs>
+      <root_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="go-deploy/test" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestProjectWithRobot in go-deploy/test" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="go-deploy" />
+      <working_directory value="$PROJECT_DIR$/test" />
+      <envs>
+        <env name="DEPLOY_ENV_FILE" value="$PROJECT_DIR$/../admin/secrets/deploy/kthcloud.env" />
+      </envs>
+      <root_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="go-deploy/test" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <pattern value="^\QTestProjectWithRobot\E$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestUpdateProject in go-deploy/test" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="go-deploy" />
+      <working_directory value="$PROJECT_DIR$/test" />
+      <envs>
+        <env name="DEPLOY_ENV_FILE" value="$PROJECT_DIR$/../admin/secrets/deploy/kthcloud.env" />
+      </envs>
+      <root_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="go-deploy/test" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <pattern value="^\QTestUpdateProject\E$" />
+      <method v="2" />
+    </configuration>
     <configuration default="true" type="GoTestRunConfiguration" factoryName="Go Test">
       <module name="go-deploy" />
       <working_directory value="$PROJECT_DIR$" />
@@ -161,6 +168,19 @@
       <framework value="gotest" />
       <method v="2" />
     </configuration>
+    <list>
+      <item itemvalue="Go Build.Run" />
+      <item itemvalue="Go Test.TestUpdateProject in go-deploy/test" />
+      <item itemvalue="Go Test.TestProjectWithRobot in go-deploy/test" />
+      <item itemvalue="Go Test.Run Test" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Go Test.TestProjectWithRobot in go-deploy/test" />
+        <item itemvalue="Go Test.Run Test" />
+        <item itemvalue="Go Test.TestUpdateProject in go-deploy/test" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TypeScriptGeneratedFilesManager">
@@ -206,6 +226,16 @@
           <url>file://$USER_HOME$/go/pkg/mod/github.com/mittwald/goharbor-client/v5@v5.1.0/apiv2/pkg/clients/robotv1/robotv1.go</url>
           <line>91</line>
           <option name="timeStamp" value="32" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/pkg/subsystems/npm/npm.go</url>
+          <line>47</line>
+          <option name="timeStamp" value="49" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/test/harbor_test.go</url>
+          <line>202</line>
+          <option name="timeStamp" value="57" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>

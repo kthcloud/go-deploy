@@ -54,17 +54,24 @@ func (client *Client) ReadRepository(projectName, name string) (*models.Reposito
 	repository, err := client.HarborClient.GetRepository(context.TODO(), projectName, name)
 	if err != nil {
 		errStr := fmt.Sprintf("%s", err)
-		if !strings.Contains(errStr, "getRepositoryNotFound") {
+		if !strings.Contains(errStr, "NotFound") {
 			return nil, makeError(err)
 		}
 	}
-	// for some reason it is returned as name=<project name>/<repo name>
-	// even though it is used as only <repo name> in the api
-	repository.Name = name
 
-	project, err := client.HarborClient.GetProject(context.TODO(), projectName)
+	var public *models.RepositoryPublic
+	if repository != nil {
+		// for some reason it is returned as name=<project name>/<repo name>
+		// even though it is used as only <repo name> in the api
+		repository.Name = name
 
-	public := models.CreateRepositoryPublicFromGet(repository, project)
+		project, err := client.HarborClient.GetProject(context.TODO(), projectName)
+		if err != nil {
+			return nil, makeError(err)
+		}
+
+		public = models.CreateRepositoryPublicFromGet(repository, project)
+	}
 
 	return public, nil
 }

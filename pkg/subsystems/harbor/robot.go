@@ -7,11 +7,12 @@ import (
 	modelv2 "github.com/mittwald/goharbor-client/v5/apiv2/model"
 	harborErrors "github.com/mittwald/goharbor-client/v5/apiv2/pkg/errors"
 	"go-deploy/pkg/subsystems/harbor/models"
+	"strings"
 )
 
 func (client *Client) RobotCreated(public *models.RobotPublic) (bool, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if harbor robot %s is created. details: %s", public.Name, err)
+		return fmt.Errorf("failed to check if robot %s is created. details: %s", public.Name, err)
 	}
 
 	robot, err := client.HarborClient.GetRobotAccountByID(context.TODO(), int64(public.ID))
@@ -24,26 +25,33 @@ func (client *Client) RobotCreated(public *models.RobotPublic) (bool, error) {
 
 func (client *Client) ReadRobot(id int) (*models.RobotPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create harbor robot %d. details: %s", id, err)
+		return fmt.Errorf("failed to create robot %d. details: %s", id, err)
 	}
 
 	robot, err := client.HarborClient.GetRobotAccountByID(context.TODO(), int64(id))
 	if err != nil {
-		return nil, makeError(err)
-	}
-	project, err := client.HarborClient.GetProject(context.TODO(), robot.Permissions[0].Namespace)
-	if err != nil {
-		return nil, makeError(err)
+		errStr := fmt.Sprintf("%s", err)
+		if !strings.Contains(errStr, "NotFound") {
+			return nil, makeError(err)
+		}
 	}
 
-	public := models.CreateRobotPublicFromGet(robot, project)
+	var public *models.RobotPublic
+	if robot != nil {
+		project, err := client.HarborClient.GetProject(context.TODO(), robot.Permissions[0].Namespace)
+		if err != nil {
+			return nil, makeError(err)
+		}
+
+		public = models.CreateRobotPublicFromGet(robot, project)
+	}
 
 	return public, nil
 }
 
 func (client *Client) CreateRobot(public *models.RobotPublic) (*models.RobotCreated, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create harbor robot %s. details: %s", public.Name, err)
+		return fmt.Errorf("failed to create robot %s. details: %s", public.Name, err)
 	}
 
 	if public.ProjectID == 0 {
@@ -85,7 +93,7 @@ func (client *Client) CreateRobot(public *models.RobotPublic) (*models.RobotCrea
 
 func (client *Client) DeleteRobot(id int) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create harbor robot %d. details: %s", id, err)
+		return fmt.Errorf("failed to create robot %d. details: %s", id, err)
 	}
 
 	if id == 0 {
@@ -107,26 +115,16 @@ func (client *Client) DeleteRobot(id int) error {
 
 func (client *Client) UpdateRobot(public *models.RobotPublic) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create harbor robot %s. details: %s", public.Name, err)
+		return fmt.Errorf("failed to update robot %s. details: %s", public.Name, err)
 	}
 
 	if public.ID == 0 {
 		return makeError(fmt.Errorf("id required"))
 	}
 
-	projectExists, _, err := client.assertProjectExists(public.ProjectName)
-	if err != nil {
-		return makeError(err)
-	}
+	requestBody := models.CreateRobotUpdateFromPublic(public)
 
-	if !projectExists {
-		err = fmt.Errorf("no project exists")
-		return makeError(err)
-	}
-
-	requestBody := models.CreateRobotParamsFromPublic(public)
-
-	err = client.HarborClient.UpdateRobotAccount(context.TODO(), requestBody)
+	err := client.HarborClient.UpdateRobotAccount(context.TODO(), requestBody)
 	if err != nil {
 		return makeError(err)
 	}
