@@ -5,21 +5,47 @@ import (
 	"go-deploy/pkg/subsystems/cs/models"
 )
 
-func (client *Client) CreateVM(name string, params *models.CreateVMParams) error {
+func (client *Client) CreateVM(public *models.VMPublic) (string, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create cs vm %s. details: %s", name, err)
+		return fmt.Errorf("failed to create cs vm %s. details: %s", public.Name, err)
 	}
 
 	vmParams := client.CSClient.VirtualMachine.NewDeployVirtualMachineParams(
-		params.ServiceOfferingID,
-		params.TemplateID,
-		client.ZoneID,
+		public.ServiceOfferingID,
+		public.TemplateID,
+		public.ZoneID,
 	)
 
-	vmParams.SetName(name)
-	vmParams.SetDisplayname(name)
+	vmParams.SetName(public.Name)
+	vmParams.SetDisplayname(public.Name)
+	vmParams.SetNetworkids([]string{})
+	vmParams.SetProjectid(public.ProjectID)
+	vmParams.SetExtraconfig(public.ExtraConfig)
 
-	_, err := client.CSClient.VirtualMachine.DeployVirtualMachine(vmParams)
+	vm, err := client.CSClient.VirtualMachine.DeployVirtualMachine(vmParams)
+	if err != nil {
+		return "", makeError(err)
+	}
+
+	return vm.Id, nil
+}
+
+func (client *Client) UpdateVM(public *models.VMPublic) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to create cs vm %s. details: %s", public.Name, err)
+	}
+
+	if public.ID == "" {
+		return fmt.Errorf("id required")
+	}
+
+	vmParams := client.CSClient.VirtualMachine.NewUpdateVirtualMachineParams(public.ID)
+
+	vmParams.SetName(public.Name)
+	vmParams.SetDisplayname(public.Name)
+	vmParams.SetExtraconfig(public.ExtraConfig)
+
+	_, err := client.CSClient.VirtualMachine.UpdateVirtualMachine(vmParams)
 	if err != nil {
 		return makeError(err)
 	}

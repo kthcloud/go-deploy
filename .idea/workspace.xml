@@ -5,14 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="bc4da88f-8032-4df4-9bcc-9ca8b4f364d2" name="Changes" comment="change project name. fix websocket support for logs">
-      <change afterPath="$PROJECT_DIR$/test/common.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test/harbor_test.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test/npm_test.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/subsystems/cs/example.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/models/robot_public.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/models/robot_public.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/project.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/project.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/repository.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/repository.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/harbor/robot.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/harbor/robot.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/cs/models/create_vm_req.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/cs/models/create_vm_req.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/cs/vm.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/cs/vm.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -30,7 +27,7 @@
   <component name="FormatOnSaveOptions">
     <option name="myRunOnSave" value="false" />
   </component>
-  <component name="GOROOT" url="file://$USER_HOME$/sdk/go1.19.3" />
+  <component name="GOROOT" url="file:///usr/lib/golang" />
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
@@ -63,7 +60,7 @@
     &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
     &quot;go.import.settings.migrated&quot;: &quot;true&quot;,
     &quot;go.sdk.automatically.set&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/repos/work/go-deploy&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/emil&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
@@ -92,7 +89,7 @@
       <recent name="C:\repos\go-deploy\pkg\worker" />
     </key>
   </component>
-  <component name="RunManager" selected="Go Test.TestProjectWithRobot in go-deploy/test">
+  <component name="RunManager" selected="Go Build.Run">
     <configuration name="Run" type="GoApplicationRunConfiguration" factoryName="Go Application">
       <module name="go-deploy" />
       <working_directory value="$PROJECT_DIR$" />
@@ -236,6 +233,11 @@
           <url>file://$PROJECT_DIR$/test/harbor_test.go</url>
           <line>202</line>
           <option name="timeStamp" value="57" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/pkg/subsystems/cs/example.go</url>
+          <line>61</line>
+          <option name="timeStamp" value="64" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
