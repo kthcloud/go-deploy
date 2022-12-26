@@ -1,7 +1,7 @@
 package deployment_worker
 
 import (
-	"go-deploy/models"
+	deploymentModel "go-deploy/models/deployment"
 	"go-deploy/pkg/app"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
@@ -16,21 +16,21 @@ func Setup(ctx *app.Context) {
 				break
 			}
 
-			beingCreated, _ := models.GetAllDeploymentsWithFilter(bson.D{{"beingCreated", true}})
+			beingCreated, _ := deploymentModel.GetAllDeploymentsWithFilter(bson.D{{"beingCreated", true}})
 			for _, deployment := range beingCreated {
 				created := Created(&deployment)
 				if created {
 					log.Printf("marking deployment %s as created\n", deployment.Name)
-					_ = models.UpdateDeployment(deployment.ID, bson.D{{"beingCreated", false}})
+					_ = deploymentModel.UpdateDeployment(deployment.ID, bson.D{{"beingCreated", false}})
 				}
 			}
 
-			beingDeleted, _ := models.GetAllDeploymentsWithFilter(bson.D{{"beingDeleted", true}})
+			beingDeleted, _ := deploymentModel.GetAllDeploymentsWithFilter(bson.D{{"beingDeleted", true}})
 			for _, deployment := range beingDeleted {
 				deleted := Deleted(&deployment)
 				if deleted {
 					log.Printf("marking deployment %s as deleted\n", deployment.Name)
-					_ = models.DeleteDeployment(deployment.ID, deployment.Owner)
+					_ = deploymentModel.DeleteDeployment(deployment.ID, deployment.Owner)
 				}
 			}
 			time.Sleep(5 * time.Second)

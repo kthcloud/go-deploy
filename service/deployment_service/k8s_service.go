@@ -1,4 +1,4 @@
-package subsystem_service
+package deployment_service
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ func CreateK8s(name string) error {
 	log.Println("setting up k8s for", name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup k8s for deployment %s. details: %s", name, err)
+		return fmt.Errorf("failed to setup k8s for v1_deployment %s. details: %s", name, err)
 	}
 
 	client, err := k8s.New(&k8s.ClientConf{K8sAuth: conf.Env.K8s.Config})
@@ -54,7 +54,7 @@ func DeleteK8s(name string) error {
 	log.Println("deleting k8s for", name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete k8s for deployment %s. details: %s", name, err)
+		return fmt.Errorf("failed to delete k8s for v1_deployment %s. details: %s", name, err)
 	}
 
 	client, err := k8s.New(&k8s.ClientConf{K8sAuth: conf.Env.K8s.Config})

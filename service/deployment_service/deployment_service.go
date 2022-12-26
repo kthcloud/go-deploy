@@ -1,8 +1,7 @@
 package deployment_service
 
 import (
-	"go-deploy/models"
-	"go-deploy/service/subsystem_service"
+	deploymentModel "go-deploy/models/deployment"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
 )
@@ -10,24 +9,25 @@ import (
 func Create(deploymentID, name, owner string) {
 
 	go func() {
-		err := models.CreateDeployment(deploymentID, name, owner)
-		if err != nil {
-			log.Println(err)
-		}
-
-		err = subsystem_service.CreateHarbor(name)
+		err := deploymentModel.CreateDeployment(deploymentID, name, owner)
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
-		err = subsystem_service.CreateNPM(name)
+		err = CreateHarbor(name)
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
-		err = subsystem_service.CreateK8s(name)
+		err = CreateNPM(name)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		err = CreateK8s(name)
 		if err != nil {
 			log.Println(err)
 			return
@@ -35,8 +35,8 @@ func Create(deploymentID, name, owner string) {
 	}()
 }
 
-func Get(userId, deploymentID string) (*models.Deployment, error) {
-	deployment, err := models.GetDeploymentByID(deploymentID)
+func GetByID(userId, deploymentID string) (*deploymentModel.Deployment, error) {
+	deployment, err := deploymentModel.GetDeploymentByID(deploymentID)
 	if err != nil {
 		return nil, err
 	}
@@ -48,8 +48,8 @@ func Get(userId, deploymentID string) (*models.Deployment, error) {
 	return deployment, nil
 }
 
-func GetByName(userId, name string) (*models.Deployment, error) {
-	deployment, err := models.GetDeploymentByName(name)
+func GetByName(userId, name string) (*deploymentModel.Deployment, error) {
+	deployment, err := deploymentModel.GetDeploymentByName(name)
 	if err != nil {
 		return nil, err
 	}
@@ -61,39 +61,39 @@ func GetByName(userId, name string) (*models.Deployment, error) {
 	return deployment, nil
 }
 
-func GetByOwner(owner string) ([]models.Deployment, error) {
-	return models.GetDeployments(owner)
+func GetByOwnerID(owner string) ([]deploymentModel.Deployment, error) {
+	return deploymentModel.GetDeployments(owner)
 }
 
-func GetAll() ([]models.Deployment, error) {
-	return models.GetAllDeployments()
+func GetAll() ([]deploymentModel.Deployment, error) {
+	return deploymentModel.GetAllDeployments()
 }
 
-func Exists(name string) (bool, *models.Deployment, error) {
-	return models.DeploymentExists(name)
+func Exists(name string) (bool, *deploymentModel.Deployment, error) {
+	return deploymentModel.DeploymentExists(name)
 }
 
 func MarkBeingDeleted(deploymentID string) error {
-	return models.UpdateDeployment(deploymentID, bson.D{{
+	return deploymentModel.UpdateDeployment(deploymentID, bson.D{{
 		"beingDeleted", true,
 	}})
 }
 
 func Delete(name string) {
 	go func() {
-		err := subsystem_service.DeleteHarbor(name)
+		err := DeleteHarbor(name)
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
-		err = subsystem_service.DeleteNPM(name)
+		err = DeleteNPM(name)
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
-		err = subsystem_service.DeleteK8s(name)
+		err = DeleteK8s(name)
 		if err != nil {
 			log.Println(err)
 			return
@@ -102,5 +102,5 @@ func Delete(name string) {
 }
 
 func Restart(name string) error {
-	return subsystem_service.RestartK8s(name)
+	return RestartK8s(name)
 }

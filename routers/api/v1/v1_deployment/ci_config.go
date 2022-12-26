@@ -1,4 +1,4 @@
-package v1
+package v1_deployment
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 	"net/http"
 )
 
-func GetDeploymentStatus(c *gin.Context) {
+func GetCiConfig(c *gin.Context) {
 	context := app.NewContext(c)
 
 	rules := validator.MapData{
@@ -27,21 +27,21 @@ func GetDeploymentStatus(c *gin.Context) {
 	token, err := context.GetKeycloakToken()
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		return
 	}
+	userID := token.Sub
 	deploymentID := context.GinContext.Param("deploymentId")
-	userId := token.Sub
 
-	statusCode, deploymentStatus, _ := deployment_service.GetStatusByID(userId, deploymentID)
-	if deploymentStatus == nil {
+	config, err := deployment_service.GetCIConfig(userID, deploymentID)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		return
+	}
+
+	if config == nil {
 		context.NotFound()
 		return
 	}
 
-	if statusCode == status_codes.DeploymentNotFound {
-		context.JSONResponse(http.StatusNotFound, deploymentStatus)
-		return
-	}
-
-	context.JSONResponse(http.StatusOK, deploymentStatus)
-
+	context.JSONResponse(http.StatusOK, config)
 }

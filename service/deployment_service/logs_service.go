@@ -8,7 +8,7 @@ import (
 )
 
 func GetLogs(userID, deploymentID string, handler func(string)) (context.Context, error) {
-	deployment, err := Get(userID, deploymentID)
+	deployment, err := GetByID(userID, deploymentID)
 	if err != nil {
 		return nil, err
 	}

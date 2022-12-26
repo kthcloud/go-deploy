@@ -1,4 +1,4 @@
-package v1
+package v1_deployment
 
 import (
 	"encoding/base64"
@@ -81,7 +81,7 @@ func HandleHarborHook(c *gin.Context) {
 	}
 
 	if webook.Type == "PUSH_ARTIFACT" {
-		log.Printf("restarting deployment %s due to push\n", deployment.Name)
+		log.Printf("restarting v1_deployment %s due to push\n", deployment.Name)
 		err = deployment_service.Restart(deployment.Name)
 		if err != nil {
 			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))

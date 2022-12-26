@@ -1,4 +1,4 @@
-package v1
+package v1_deployment
 
 import (
 	"fmt"
@@ -13,10 +13,10 @@ import (
 	"strconv"
 )
 
-func getAllDeployments(context *app.ClientContext) {
+func getAll(context *app.ClientContext) {
 	deployments, _ := deployment_service.GetAll()
 
-	dtoDeployments := make([]dto.Deployment, len(deployments))
+	dtoDeployments := make([]dto.DeploymentRead, len(deployments))
 	for i, deployment := range deployments {
 		dtoDeployments[i] = deployment.ToDto()
 	}
@@ -24,7 +24,7 @@ func getAllDeployments(context *app.ClientContext) {
 	context.JSONResponse(http.StatusOK, dtoDeployments)
 }
 
-func GetDeployments(c *gin.Context) {
+func GetMany(c *gin.Context) {
 	context := app.NewContext(c)
 
 	rules := validator.MapData{
@@ -47,17 +47,17 @@ func GetDeployments(c *gin.Context) {
 	// might want to check if userID is allowed to get all...
 	wantAll, _ := strconv.ParseBool(context.GinContext.Query("all"))
 	if wantAll {
-		getAllDeployments(&context)
+		getAll(&context)
 		return
 	}
 
-	deployments, _ := deployment_service.GetByOwner(userID)
+	deployments, _ := deployment_service.GetByOwnerID(userID)
 	if deployments == nil {
 		context.JSONResponse(200, []interface{}{})
 		return
 	}
 
-	dtoDeployments := make([]dto.Deployment, len(deployments))
+	dtoDeployments := make([]dto.DeploymentRead, len(deployments))
 	for i, deployment := range deployments {
 		dtoDeployments[i] = deployment.ToDto()
 	}
@@ -65,7 +65,7 @@ func GetDeployments(c *gin.Context) {
 	context.JSONResponse(200, dtoDeployments)
 }
 
-func GetDeployment(c *gin.Context) {
+func Get(c *gin.Context) {
 	context := app.NewContext(c)
 
 	rules := validator.MapData{
@@ -86,7 +86,7 @@ func GetDeployment(c *gin.Context) {
 	deploymentID := context.GinContext.Param("deploymentId")
 	userId := token.Sub
 
-	deployment, _ := deployment_service.Get(userId, deploymentID)
+	deployment, _ := deployment_service.GetByID(userId, deploymentID)
 
 	if deployment == nil {
 		context.NotFound()
@@ -96,7 +96,7 @@ func GetDeployment(c *gin.Context) {
 	context.JSONResponse(200, deployment.ToDto())
 }
 
-func CreateDeployment(c *gin.Context) {
+func Create(c *gin.Context) {
 	context := app.NewContext(c)
 
 	bodyRules := validator.MapData{
@@ -110,14 +110,14 @@ func CreateDeployment(c *gin.Context) {
 
 	messages := validator.MapData{
 		"name": []string{
-			"required:Deployment name is required",
-			"regexp:Deployment name must be all lowercase",
-			"min:Deployment name must be between 3-10 characters",
-			"max:Deployment name must be between 3-10 characters",
+			"required:Name is required",
+			"regexp:Name must be all lowercase",
+			"min:Name must be between 3-10 characters",
+			"max:Name must be between 3-10 characters",
 		},
 	}
 
-	var requestBody dto.DeploymentReq
+	var requestBody dto.DeploymentCreate
 	validationErrors := context.ValidateJSONCustomMessages(&bodyRules, &messages, &requestBody)
 	if len(validationErrors) > 0 {
 		context.ResponseValidationError(validationErrors)
@@ -133,17 +133,17 @@ func CreateDeployment(c *gin.Context) {
 
 	exists, deployment, err := deployment_service.Exists(requestBody.Name)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.DeploymentValidationFailed, "Failed to validate deployment")
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return
 	}
 
 	if exists {
 		if deployment.Owner != userId {
-			context.ErrorResponse(http.StatusBadRequest, status_codes.DeploymentAlreadyExists, "Deployment already exists")
+			context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceAlreadyExists, "Resource already exists")
 			return
 		}
 		if deployment.BeingDeleted {
-			context.ErrorResponse(http.StatusLocked, status_codes.DeploymentBeingDeleted, "Deployment is currently being deleted")
+			context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingDeleted, "Resource is currently being deleted")
 			return
 		}
 		deployment_service.Create(deployment.ID, requestBody.Name, userId)
@@ -156,7 +156,7 @@ func CreateDeployment(c *gin.Context) {
 	context.JSONResponse(http.StatusCreated, dto.DeploymentCreated{ID: deploymentID})
 }
 
-func DeleteDeployment(c *gin.Context) {
+func Delete(c *gin.Context) {
 	context := app.NewContext(c)
 
 	rules := validator.MapData{
@@ -180,9 +180,9 @@ func DeleteDeployment(c *gin.Context) {
 	userId := token.Sub
 	deploymentID := context.GinContext.Param("deploymentId")
 
-	currentDeployment, err := deployment_service.Get(userId, deploymentID)
+	currentDeployment, err := deployment_service.GetByID(userId, deploymentID)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.DeploymentValidationFailed, "Failed to validate deployment")
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return
 	}
 
@@ -192,7 +192,7 @@ func DeleteDeployment(c *gin.Context) {
 	}
 
 	if currentDeployment.BeingCreated {
-		context.ErrorResponse(http.StatusLocked, status_codes.DeploymentBeingCreated, "Deployment is currently being created")
+		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingCreated, "Resource is currently being created")
 		return
 	}
 

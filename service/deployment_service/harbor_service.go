@@ -1,8 +1,8 @@
-package subsystem_service
+package deployment_service
 
 import (
 	"fmt"
-	"go-deploy/models"
+	deploymentModel "go-deploy/models/deployment"
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/harbor"
 	harborModels "go-deploy/pkg/subsystems/harbor/models"
@@ -55,7 +55,7 @@ func CreateHarbor(name string) error {
 	log.Println("setting up harbor for", name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup harbor for deployment %s. details: %s", name, err)
+		return fmt.Errorf("failed to setup harbor for v1_deployment %s. details: %s", name, err)
 	}
 
 	client, err := harbor.New(&harbor.ClientConf{
@@ -67,7 +67,7 @@ func CreateHarbor(name string) error {
 		return makeError(err)
 	}
 
-	deployment, err := models.GetDeploymentByName(name)
+	deployment, err := deploymentModel.GetDeploymentByName(name)
 	if err != nil {
 		return makeError(err)
 	}
@@ -86,7 +86,7 @@ func CreateHarbor(name string) error {
 			return makeError(err)
 		}
 
-		err = models.UpdateSubsystemByName(name, "harbor", "project", project)
+		err = deploymentModel.UpdateSubsystemByName(name, "harbor", "project", project)
 		if err != nil {
 			return makeError(err)
 		}
@@ -111,7 +111,7 @@ func CreateHarbor(name string) error {
 
 		robot.Secret = created.Secret
 
-		err = models.UpdateSubsystemByName(name, "harbor", "robot", robot)
+		err = deploymentModel.UpdateSubsystemByName(name, "harbor", "robot", robot)
 		if err != nil {
 			return makeError(err)
 		}
@@ -129,7 +129,7 @@ func CreateHarbor(name string) error {
 			return makeError(err)
 		}
 
-		err = models.UpdateSubsystemByName(name, "harbor", "repository", repository)
+		err = deploymentModel.UpdateSubsystemByName(name, "harbor", "repository", repository)
 		if err != nil {
 			return makeError(err)
 		}
@@ -147,7 +147,7 @@ func CreateHarbor(name string) error {
 			return makeError(err)
 		}
 
-		err = models.UpdateSubsystemByName(name, "harbor", "webhook", webhook)
+		err = deploymentModel.UpdateSubsystemByName(name, "harbor", "webhook", webhook)
 		if err != nil {
 			return makeError(err)
 		}
@@ -160,7 +160,7 @@ func DeleteHarbor(name string) error {
 	log.Println("deleting harbor setup for", name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete harbor setup for deployment %s. details: %s", name, err)
+		return fmt.Errorf("failed to delete harbor setup for v1_deployment %s. details: %s", name, err)
 	}
 
 	client, err := harbor.New(&harbor.ClientConf{
@@ -172,10 +172,10 @@ func DeleteHarbor(name string) error {
 		return makeError(err)
 	}
 
-	deployment, err := models.GetDeploymentByName(name)
+	deployment, err := deploymentModel.GetDeploymentByName(name)
 
 	if deployment.Subsystems.Harbor.Webhook.ID != 0 {
-		err = models.UpdateSubsystemByName(name, "harbor", "webhook", harborModels.WebhookPublic{})
+		err = deploymentModel.UpdateSubsystemByName(name, "harbor", "webhook", harborModels.WebhookPublic{})
 		if err != nil {
 			return makeError(err)
 		}
@@ -187,14 +187,14 @@ func DeleteHarbor(name string) error {
 			return makeError(err)
 		}
 
-		err = models.UpdateSubsystemByName(name, "harbor", "repository", harborModels.RepositoryPublic{})
+		err = deploymentModel.UpdateSubsystemByName(name, "harbor", "repository", harborModels.RepositoryPublic{})
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
 	if deployment.Subsystems.Harbor.Robot.ID != 0 {
-		err = models.UpdateSubsystemByName(name, "harbor", "robot", harborModels.RobotPublic{})
+		err = deploymentModel.UpdateSubsystemByName(name, "harbor", "robot", harborModels.RobotPublic{})
 		if err != nil {
 			return makeError(err)
 		}
@@ -206,7 +206,7 @@ func DeleteHarbor(name string) error {
 			return makeError(err)
 		}
 
-		err = models.UpdateSubsystemByName(name, "harbor", "project", harborModels.ProjectPublic{})
+		err = deploymentModel.UpdateSubsystemByName(name, "harbor", "project", harborModels.ProjectPublic{})
 		if err != nil {
 			return makeError(err)
 		}

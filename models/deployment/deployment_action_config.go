@@ -1,4 +1,4 @@
-package models
+package deployment
 
 type GithubActionConfig struct {
 	Name string `yaml:"name"`

@@ -2,7 +2,7 @@ package deployment_service
 
 import (
 	"fmt"
-	"go-deploy/models"
+	deploymentModel "go-deploy/models/deployment"
 	"go-deploy/models/dto"
 	"go-deploy/pkg/conf"
 	"go-deploy/utils/subsystemutils"
@@ -10,7 +10,7 @@ import (
 )
 
 func GetCIConfig(userId, deploymentID string) (*dto.CIConfig, error) {
-	deployment, err := Get(userId, deploymentID)
+	deployment, err := GetByID(userId, deploymentID)
 	if err != nil {
 		return nil, err
 	}
@@ -32,12 +32,12 @@ func GetCIConfig(userId, deploymentID string) (*dto.CIConfig, error) {
 	username := deployment.Subsystems.Harbor.Robot.Name
 	password := deployment.Subsystems.Harbor.Robot.Secret
 
-	config := models.GithubActionConfig{
+	config := deploymentModel.GithubActionConfig{
 		Name: "kthcloud-ci",
-		On:   models.On{Push: models.Push{Branches: []string{"main"}}},
-		Jobs: models.Jobs{Docker: models.Docker{
+		On:   deploymentModel.On{Push: deploymentModel.Push{Branches: []string{"main"}}},
+		Jobs: deploymentModel.Jobs{Docker: deploymentModel.Docker{
 			RunsOn: "ubuntu-latest",
-			Steps: []models.Steps{
+			Steps: []deploymentModel.Steps{
 				{
 					Name: "Set up QEMU",
 					Uses: "docker/setup-qemu-action@v2",
@@ -49,7 +49,7 @@ func GetCIConfig(userId, deploymentID string) (*dto.CIConfig, error) {
 				{
 					Name: "Login to Docker Hub",
 					Uses: "docker/login-action@v2",
-					With: models.With{
+					With: deploymentModel.With{
 						Registry: conf.Env.DockerRegistry.Url,
 						Username: username,
 						Password: password,
@@ -58,7 +58,7 @@ func GetCIConfig(userId, deploymentID string) (*dto.CIConfig, error) {
 				{
 					Name: "Build and push",
 					Uses: "docker/build-push-action@v3",
-					With: models.With{
+					With: deploymentModel.With{
 						Push: true,
 						Tags: tag,
 					},

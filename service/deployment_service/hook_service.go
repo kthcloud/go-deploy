@@ -1,7 +1,7 @@
 package deployment_service
 
 import (
-	"go-deploy/models"
+	"go-deploy/models/deployment"
 	"go-deploy/models/dto"
 	"go-deploy/utils/requestutils"
 	"io"
@@ -22,6 +22,6 @@ func GetHook(body io.ReadCloser) (*dto.HarborWebhook, error) {
 	return &webhook, nil
 }
 
-func GetByWebhookToken(token string) (*models.Deployment, error) {
-	return models.GetByWebhookToken(token)
+func GetByWebhookToken(token string) (*deployment.Deployment, error) {
+	return deployment.GetByWebhookToken(token)
 }

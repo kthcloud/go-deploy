@@ -4,7 +4,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/auth"
-	"go-deploy/routers/api/v1"
+	"go-deploy/routers/api/v1/v1_deployment"
+	"go-deploy/routers/api/v1/v1_vm"
 )
 
 func NewRouter() *gin.Engine {
@@ -17,22 +18,31 @@ func NewRouter() *gin.Engine {
 
 	apiv1Hook := r.Group("/v1/hooks")
 
-	{
-		// path: /
-		apiv1.GET("/deployments", v1.GetDeployments)
-
-		apiv1.GET("/deployments/:deploymentId", v1.GetDeployment)
-		apiv1.GET("/deployments/:deploymentId/status", v1.GetDeploymentStatus)
-		apiv1.GET("/deployments/:deploymentId/ciConfig", v1.GetDeploymentCiConfig)
-		apiv1.GET("/deployments/:deploymentId/logs", v1.GetDeploymentLogs)
-		apiv1.POST("/deployments", v1.CreateDeployment)
-		apiv1.DELETE("/deployments/:deploymentId", v1.DeleteDeployment)
-
-		{
-			// path: /hooks
-			apiv1Hook.POST("/deployments/harbor", v1.HandleHarborHook)
-		}
-	}
+	setupDeploymentRoutes(apiv1, apiv1Hook)
+	setupVMRoutes(apiv1, apiv1Hook)
 
 	return r
+}
+
+func setupDeploymentRoutes(base *gin.RouterGroup, hooks *gin.RouterGroup) {
+	base.GET("/deployments", v1_deployment.GetMany)
+
+	base.GET("/deployments/:deploymentId", v1_deployment.Get)
+	base.GET("/deployments/:deploymentId/status", v1_deployment.GetStatus)
+	base.GET("/deployments/:deploymentId/ciConfig", v1_deployment.GetCiConfig)
+	base.GET("/deployments/:deploymentId/logs", v1_deployment.GetLogs)
+	base.POST("/deployments", v1_deployment.Create)
+	base.DELETE("/deployments/:deploymentId", v1_deployment.Delete)
+
+	hooks.POST("/deployments/harbor", v1_deployment.HandleHarborHook)
+
+}
+
+func setupVMRoutes(base *gin.RouterGroup, _ *gin.RouterGroup) {
+	base.GET("/vms", v1_vm.GetMany)
+
+	base.GET("/vms/:vmId", v1_vm.Get)
+	//base.GET("/vms/:vmId/status", v1_vm.GetStatus)
+	base.POST("/vms", v1_vm.Create)
+	base.DELETE("/vms/:vmId", v1_vm.Delete)
 }

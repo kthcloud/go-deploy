@@ -6,7 +6,6 @@ import (
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/deployment_worker"
-	"go-deploy/pkg/subsystems/cs"
 	"go-deploy/routers"
 	"log"
 	"net/http"
@@ -30,10 +29,6 @@ func main() {
 
 	setup(&context)
 	defer shutdown()
-
-	cs.ExampleUpdate()
-
-	return
 
 	ginMode, exists := os.LookupEnv("GIN_MODE")
 	if exists {

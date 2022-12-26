@@ -11,14 +11,13 @@ func ExampleCreate() {
 		ApiUrl:    conf.Env.CS.Url,
 		ApiKey:    conf.Env.CS.Key,
 		SecretKey: conf.Env.CS.Secret,
-		ZoneID:    conf.Env.CS.ZoneID,
 	})
 
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	id, err := client.CreateVM(&models.VMPublic{
+	id, err := client.CreateVM(&models.VmPublic{
 		Name:              "demo",
 		ServiceOfferingID: "8da28b4d-5fec-4a44-aee7-fb0c5c8265a9", // Small HA
 		TemplateID:        "e1a0479c-76a2-44da-8b38-a3a3fa316287", // Ubuntu Server
@@ -41,14 +40,13 @@ func ExampleUpdate() {
 		ApiUrl:    conf.Env.CS.Url,
 		ApiKey:    conf.Env.CS.Key,
 		SecretKey: conf.Env.CS.Secret,
-		ZoneID:    conf.Env.CS.ZoneID,
 	})
 
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	err = client.UpdateVM(&models.VMPublic{
+	err = client.UpdateVM(&models.VmPublic{
 		ID:                id,
 		Name:              "demo",
 		ServiceOfferingID: "8da28b4d-5fec-4a44-aee7-fb0c5c8265a9", // Small HA

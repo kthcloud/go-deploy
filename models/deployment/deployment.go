@@ -1,8 +1,9 @@
-package models
+package deployment
 
 import (
 	"context"
 	"fmt"
+	"go-deploy/models"
 	"go-deploy/models/dto"
 	harborModels "go-deploy/pkg/subsystems/harbor/models"
 	npmModels "go-deploy/pkg/subsystems/npm/models"
@@ -12,36 +13,36 @@ import (
 )
 
 type Deployment struct {
-	ID           string    `bson:"id"`
-	Name         string    `bson:"name"`
-	Owner        string    `bson:"owner"`
-	BeingCreated bool      `bson:"beingCreated"`
-	BeingDeleted bool      `bson:"beingDeleted"`
-	Subsystems   Subsystem `bson:"subsystems"`
+	ID           string               `bson:"id"`
+	Name         string               `bson:"name"`
+	Owner        string               `bson:"owner"`
+	BeingCreated bool                 `bson:"beingCreated"`
+	BeingDeleted bool                 `bson:"beingDeleted"`
+	Subsystems   DeploymentSubsystems `bson:"subsystems"`
 }
 
-type Subsystem struct {
-	K8s    SubsystemK8s    `bson:"k8s"`
-	Npm    SubsystemNpm    `bson:"npm"`
-	Harbor SubsystemHarbor `bson:"harbor"`
+type DeploymentSubsystems struct {
+	K8s    DeploymentK8s    `bson:"k8s"`
+	Npm    DeploymentNPM    `bson:"npm"`
+	Harbor DeploymentHarbor `bson:"harbor"`
 }
 
-type SubsystemK8s struct {
+type DeploymentK8s struct {
 }
 
-type SubsystemNpm struct {
+type DeploymentNPM struct {
 	ProxyHost npmModels.ProxyHostPublic `bson:"proxyHost"`
 }
 
-type SubsystemHarbor struct {
+type DeploymentHarbor struct {
 	Project    harborModels.ProjectPublic    `bson:"project"`
 	Robot      harborModels.RobotPublic      `bson:"robot"`
 	Repository harborModels.RepositoryPublic `bson:"repository"`
 	Webhook    harborModels.WebhookPublic    `bson:"webhook"`
 }
 
-func (deployment *Deployment) ToDto() dto.Deployment {
-	return dto.Deployment{
+func (deployment *Deployment) ToDto() dto.DeploymentRead {
+	return dto.DeploymentRead{
 		ID:    deployment.ID,
 		Name:  deployment.Name,
 		Owner: deployment.Owner,
@@ -70,9 +71,9 @@ func CreateDeployment(deploymentID, name, owner string) error {
 		BeingDeleted: false,
 	}
 
-	_, err = DeploymentCollection.InsertOne(context.TODO(), deployment)
+	_, err = models.DeploymentCollection.InsertOne(context.TODO(), deployment)
 	if err != nil {
-		err = fmt.Errorf("failed to create deployment %s. details: %s", name, err)
+		err = fmt.Errorf("failed to create v1_deployment %s. details: %s", name, err)
 		return err
 	}
 
@@ -81,13 +82,13 @@ func CreateDeployment(deploymentID, name, owner string) error {
 
 func getDeployment(filter bson.D) (*Deployment, error) {
 	var deployment Deployment
-	err := DeploymentCollection.FindOne(context.TODO(), filter).Decode(&deployment)
+	err := models.DeploymentCollection.FindOne(context.TODO(), filter).Decode(&deployment)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
 		}
 
-		err = fmt.Errorf("failed to fetch deployment. details: %s", err)
+		err = fmt.Errorf("failed to fetch v1_deployment. details: %s", err)
 		invalidDeployment := Deployment{}
 		return &invalidDeployment, err
 	}
@@ -121,7 +122,7 @@ func DeploymentExists(name string) (bool, *Deployment, error) {
 }
 
 func GetDeployments(owner string) ([]Deployment, error) {
-	cursor, err := DeploymentCollection.Find(context.TODO(), bson.D{{"owner", owner}})
+	cursor, err := models.DeploymentCollection.Find(context.TODO(), bson.D{{"owner", owner}})
 
 	if err != nil {
 		err = fmt.Errorf("failed to find deployments from owner %s. details: %s", owner, err)
@@ -135,7 +136,7 @@ func GetDeployments(owner string) ([]Deployment, error) {
 
 		err = cursor.Decode(&deployment)
 		if err != nil {
-			err = fmt.Errorf("failed to fetch deployment when fetching all deployments from owner %s. details: %s", owner, err)
+			err = fmt.Errorf("failed to fetch v1_deployment when fetching all deployments from owner %s. details: %s", owner, err)
 			log.Println(err)
 			return nil, err
 		}
@@ -146,9 +147,9 @@ func GetDeployments(owner string) ([]Deployment, error) {
 }
 
 func DeleteDeployment(deploymentID, userId string) error {
-	_, err := DeploymentCollection.DeleteOne(context.TODO(), bson.D{{"id", deploymentID}, {"owner", userId}})
+	_, err := models.DeploymentCollection.DeleteOne(context.TODO(), bson.D{{"id", deploymentID}, {"owner", userId}})
 	if err != nil {
-		err = fmt.Errorf("failed to delete deployment %s. details: %s", deploymentID, err)
+		err = fmt.Errorf("failed to delete v1_deployment %s. details: %s", deploymentID, err)
 		log.Println(err)
 		return err
 	}
@@ -156,9 +157,9 @@ func DeleteDeployment(deploymentID, userId string) error {
 }
 
 func UpdateDeployment(id string, update bson.D) error {
-	_, err := DeploymentCollection.UpdateOne(context.TODO(), bson.D{{"id", id}}, bson.D{{"$set", update}})
+	_, err := models.DeploymentCollection.UpdateOne(context.TODO(), bson.D{{"id", id}}, bson.D{{"$set", update}})
 	if err != nil {
-		err = fmt.Errorf("failed to update deployment %s. details: %s", id, err)
+		err = fmt.Errorf("failed to update v1_deployment %s. details: %s", id, err)
 		log.Println(err)
 		return err
 	}
@@ -166,9 +167,9 @@ func UpdateDeployment(id string, update bson.D) error {
 }
 
 func UpdateDeploymentByName(name string, update bson.D) error {
-	_, err := DeploymentCollection.UpdateOne(context.TODO(), bson.D{{"name", name}}, bson.D{{"$set", update}})
+	_, err := models.DeploymentCollection.UpdateOne(context.TODO(), bson.D{{"name", name}}, bson.D{{"$set", update}})
 	if err != nil {
-		err = fmt.Errorf("failed to update deployment %s. details: %s", name, err)
+		err = fmt.Errorf("failed to update v1_deployment %s. details: %s", name, err)
 		log.Println(err)
 		return err
 	}
@@ -185,7 +186,7 @@ func GetAllDeployments() ([]Deployment, error) {
 }
 
 func GetAllDeploymentsWithFilter(filter bson.D) ([]Deployment, error) {
-	cursor, err := DeploymentCollection.Find(context.TODO(), filter)
+	cursor, err := models.DeploymentCollection.Find(context.TODO(), filter)
 
 	if err != nil {
 		err = fmt.Errorf("failed to fetch all deployments. details: %s", err)
@@ -199,7 +200,7 @@ func GetAllDeploymentsWithFilter(filter bson.D) ([]Deployment, error) {
 
 		err = cursor.Decode(&deployment)
 		if err != nil {
-			err = fmt.Errorf("failed to decode deployment when fetching all deployment. details: %s", err)
+			err = fmt.Errorf("failed to decode v1_deployment when fetching all v1_deployment. details: %s", err)
 			log.Println(err)
 			return nil, err
 		}

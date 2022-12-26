@@ -8,14 +8,12 @@ import (
 
 type Client struct {
 	CSClient *cloudstack.CloudStackClient
-	ZoneID   string
 }
 
 type ClientConf struct {
 	ApiUrl    string
 	ApiKey    string
 	SecretKey string
-	ZoneID    string
 }
 
 func New(config *ClientConf) (*Client, error) {
@@ -32,7 +30,6 @@ func New(config *ClientConf) (*Client, error) {
 
 	client := Client{
 		CSClient: csClient,
-		ZoneID:   config.ZoneID,
 	}
 
 	return &client, nil

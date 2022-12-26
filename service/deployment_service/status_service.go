@@ -6,7 +6,7 @@ import (
 )
 
 func GetStatusByID(userID, deploymentID string) (int, *dto.DeploymentStatus, error) {
-	deployment, err := Get(userID, deploymentID)
+	deployment, err := GetByID(userID, deploymentID)
 	if err != nil {
 		return -1, nil, err
 	}
@@ -18,14 +18,14 @@ func GetStatusByID(userID, deploymentID string) (int, *dto.DeploymentStatus, err
 	}
 
 	if deployment.BeingDeleted {
-		return status_codes.DeploymentBeingDeleted, &dto.DeploymentStatus{
-			Status: status_codes.GetMsg(status_codes.DeploymentBeingDeleted),
+		return status_codes.ResourceBeingDeleted, &dto.DeploymentStatus{
+			Status: status_codes.GetMsg(status_codes.ResourceBeingDeleted),
 		}, nil
 	}
 
 	if deployment.BeingCreated {
-		return status_codes.DeploymentBeingCreated, &dto.DeploymentStatus{
-			Status: status_codes.GetMsg(status_codes.DeploymentBeingCreated),
+		return status_codes.ResourceBeingCreated, &dto.DeploymentStatus{
+			Status: status_codes.GetMsg(status_codes.ResourceBeingCreated),
 		}, nil
 	}
 

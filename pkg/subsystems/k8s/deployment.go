@@ -12,7 +12,7 @@ import (
 
 func (client *Client) DeploymentCreated(namespace, name string) (bool, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if k8s deployment %s is created. details: %s", name, err)
+		return fmt.Errorf("failed to check if k8s v1_deployment %s is created. details: %s", name, err)
 	}
 
 	deployment, err := client.K8sClient.AppsV1().Deployments(namespace).Get(context.TODO(), name, metav1.GetOptions{})
@@ -27,7 +27,7 @@ func (client *Client) DeploymentCreated(namespace, name string) (bool, error) {
 
 func (client *Client) CreateDeployment(namespace, name string, dockerImage string, envs []apiv1.EnvVar) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create k8s deployment %s. details: %s", name, err)
+		return fmt.Errorf("failed to create k8s v1_deployment %s. details: %s", name, err)
 	}
 
 	deploymentCreated, err := client.DeploymentCreated(namespace, name)
@@ -61,7 +61,7 @@ func (client *Client) CreateDeployment(namespace, name string, dockerImage strin
 
 func (client *Client) RestartDeployment(namespace, name string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to restart k8s deployment %s. details: %s", name, err)
+		return fmt.Errorf("failed to restart k8s v1_deployment %s. details: %s", name, err)
 	}
 
 	req := client.K8sClient.AppsV1().Deployments(namespace)

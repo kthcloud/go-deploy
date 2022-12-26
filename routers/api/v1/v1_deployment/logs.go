@@ -1,4 +1,4 @@
-package v1
+package v1_deployment
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ import (
 
 var upgrader = websocket.Upgrader{}
 
-func GetDeploymentLogs(c *gin.Context) {
+func GetLogs(c *gin.Context) {
 	context := app.NewContext(c)
 
 	rules := validator.MapData{
@@ -71,7 +71,7 @@ func GetDeploymentLogs(c *gin.Context) {
 			case websocket.CloseNormalClosure,
 				websocket.CloseGoingAway,
 				websocket.CloseNoStatusReceived:
-				log.Printf("closing websocket connection for deployment %s (%s)\n", deploymentID, ws.RemoteAddr())
+				log.Printf("closing websocket connection for v1_deployment %s (%s)\n", deploymentID, ws.RemoteAddr())
 				return
 			}
 		}
