@@ -5,21 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="bc4da88f-8032-4df4-9bcc-9ca8b4f364d2" name="Changes" comment="change project name. fix websocket support for logs">
+      <change afterPath="$PROJECT_DIR$/test/cs_test.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/deployment/deployment.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/deployment/deployment.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/deployment_worker/confirmers.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/confirmers/confirmers.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/deployment_worker/status_worker.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/confirmers/status_worker.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/deployment_worker/subsystems.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/confirmers/subsystems.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/cs/vm.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/cs/vm.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/k8s/deployment.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/k8s/deployment.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/k8s/logs.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/k8s/logs.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/routers/api/v1/v1_deployment/logs.go" beforeDir="false" afterPath="$PROJECT_DIR$/routers/api/v1/v1_deployment/logs.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/service/deployment_service/harbor_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/harbor_service.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/service/deployment_service/k8s_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/k8s_service.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/service/deployment_service/npm_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/npm_service.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/service/vm_service/cs_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/vm_service/cs_service.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/service/vm_service/vm_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/vm_service/vm_service.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -100,7 +87,7 @@
       <recent name="$PROJECT_DIR$/models" />
     </key>
   </component>
-  <component name="RunManager" selected="Go Build.Run">
+  <component name="RunManager" selected="Go Test.Run Test">
     <configuration name="Run" type="GoApplicationRunConfiguration" factoryName="Go Application">
       <module name="go-deploy" />
       <working_directory value="$PROJECT_DIR$" />
@@ -136,21 +123,6 @@
       <framework value="gotest" />
       <method v="2" />
     </configuration>
-    <configuration name="TestProjectWithRobot in go-deploy/test" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
-      <module name="go-deploy" />
-      <working_directory value="$PROJECT_DIR$/test" />
-      <envs>
-        <env name="DEPLOY_ENV_FILE" value="$PROJECT_DIR$/../admin/secrets/deploy/kthcloud.env" />
-      </envs>
-      <root_directory value="$PROJECT_DIR$" />
-      <kind value="PACKAGE" />
-      <package value="go-deploy/test" />
-      <directory value="$PROJECT_DIR$" />
-      <filePath value="$PROJECT_DIR$" />
-      <framework value="gotest" />
-      <pattern value="^\QTestProjectWithRobot\E$" />
-      <method v="2" />
-    </configuration>
     <configuration name="TestUpdateProject in go-deploy/test" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
       <module name="go-deploy" />
       <working_directory value="$PROJECT_DIR$/test" />
@@ -166,6 +138,21 @@
       <pattern value="^\QTestUpdateProject\E$" />
       <method v="2" />
     </configuration>
+    <configuration name="TestUpdateVM in go-deploy/test" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="go-deploy" />
+      <working_directory value="$PROJECT_DIR$/test" />
+      <envs>
+        <env name="DEPLOY_ENV_FILE" value="$PROJECT_DIR$/../admin/secrets/deploy/kthcloud.env" />
+      </envs>
+      <root_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="go-deploy/test" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <pattern value="^\QTestUpdateVM\E$" />
+      <method v="2" />
+    </configuration>
     <configuration default="true" type="GoTestRunConfiguration" factoryName="Go Test">
       <module name="go-deploy" />
       <working_directory value="$PROJECT_DIR$" />
@@ -179,13 +166,13 @@
     <list>
       <item itemvalue="Go Build.Run" />
       <item itemvalue="Go Test.TestUpdateProject in go-deploy/test" />
-      <item itemvalue="Go Test.TestProjectWithRobot in go-deploy/test" />
+      <item itemvalue="Go Test.TestUpdateVM in go-deploy/test" />
       <item itemvalue="Go Test.Run Test" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Go Test.TestProjectWithRobot in go-deploy/test" />
         <item itemvalue="Go Test.Run Test" />
+        <item itemvalue="Go Test.TestUpdateVM in go-deploy/test" />
         <item itemvalue="Go Test.TestUpdateProject in go-deploy/test" />
       </list>
     </recent_temporary>
@@ -241,9 +228,9 @@
           <option name="timeStamp" value="57" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
-          <url>file://$PROJECT_DIR$/pkg/subsystems/cs/vm.go</url>
-          <line>102</line>
-          <option name="timeStamp" value="72" />
+          <url>file://$PROJECT_DIR$/test/cs_test.go</url>
+          <line>11</line>
+          <option name="timeStamp" value="73" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
