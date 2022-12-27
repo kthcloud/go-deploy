@@ -13,7 +13,7 @@ func CreateCS(name string) error {
 	log.Println("setting up cs for", name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup k8s for v1_deployment %s. details: %s", name, err)
+		return fmt.Errorf("failed to setup cs for deployment %s. details: %s", name, err)
 	}
 
 	client, err := cs.New(&cs.ClientConf{
@@ -21,13 +21,11 @@ func CreateCS(name string) error {
 		ApiKey:    conf.Env.CS.Key,
 		SecretKey: conf.Env.CS.Secret,
 	})
-
 	if err != nil {
 		return makeError(err)
 	}
 
 	vm, err := vmModel.GetByName(name)
-
 	if err != nil {
 		return makeError(err)
 	}
@@ -65,10 +63,10 @@ func CreateCS(name string) error {
 }
 
 func DeleteCS(name string) error {
-	log.Println("deleting npm for", name)
+	log.Println("deleting cs for", name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup npm for v1_deployment %s. details: %s", name, err)
+		return fmt.Errorf("failed to setup npm for deployment %s. details: %s", name, err)
 	}
 
 	client, err := cs.New(&cs.ClientConf{

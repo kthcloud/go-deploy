@@ -50,7 +50,7 @@ func (client *Client) getPodLogs(cancelCtx context.Context, namespace, podName s
 
 func (client *Client) GetLogStream(context context.Context, namespace, name string, handler func(string)) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create k8s log stream for v1_deployment %s. details: %s", name, err)
+		return fmt.Errorf("failed to create k8s log stream for deployment %s. details: %s", name, err)
 	}
 
 	podName, err := client.getPodName(namespace)

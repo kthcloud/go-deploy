@@ -61,12 +61,17 @@ func Exists(name string) (bool, *vmModel.VM, error) {
 }
 
 func MarkBeingDeleted(vmID string) error {
-	return vmModel.UpdateByName(vmID, bson.D{{
+	return vmModel.UpdateByID(vmID, bson.D{{
 		"beingDeleted", true,
 	}})
 }
 
 func Delete(name string) {
 	go func() {
+		err := DeleteCS(name)
+		if err != nil {
+			log.Println(err)
+			return
+		}
 	}()
 }

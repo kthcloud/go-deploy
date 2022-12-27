@@ -3,6 +3,7 @@ package cs
 import (
 	"fmt"
 	"go-deploy/pkg/subsystems/cs/models"
+	"strings"
 )
 
 func (client *Client) ReadVM(id string) (*models.VmPublic, error) {
@@ -16,7 +17,9 @@ func (client *Client) ReadVM(id string) (*models.VmPublic, error) {
 
 	vm, _, err := client.CSClient.VirtualMachine.GetVirtualMachineByID(id)
 	if err != nil {
-		return nil, makeError(err)
+		if !strings.Contains(err.Error(), "No match found for") {
+			return nil, makeError(err)
+		}
 	}
 
 	var public *models.VmPublic
@@ -32,24 +35,37 @@ func (client *Client) CreateVM(public *models.VmPublic) (string, error) {
 		return fmt.Errorf("failed to create cs vm %s. details: %s", public.Name, err)
 	}
 
-	params := client.CSClient.VirtualMachine.NewDeployVirtualMachineParams(
+	listVmParams := client.CSClient.VirtualMachine.NewListVirtualMachinesParams()
+	listVmParams.SetName(public.Name)
+	listVmParams.SetProjectid(public.ProjectID)
+
+	vm, err := client.CSClient.VirtualMachine.ListVirtualMachines(listVmParams)
+	if err != nil {
+		return "", makeError(err)
+	}
+
+	if vm.Count != 0 {
+		return vm.VirtualMachines[0].Id, nil
+	}
+
+	createVmParams := client.CSClient.VirtualMachine.NewDeployVirtualMachineParams(
 		public.ServiceOfferingID,
 		public.TemplateID,
 		public.ZoneID,
 	)
 
-	params.SetName(public.Name)
-	params.SetDisplayname(public.Name)
-	params.SetNetworkids([]string{})
-	params.SetProjectid(public.ProjectID)
-	params.SetExtraconfig(public.ExtraConfig)
+	createVmParams.SetName(public.Name)
+	createVmParams.SetDisplayname(public.Name)
+	createVmParams.SetNetworkids([]string{})
+	createVmParams.SetProjectid(public.ProjectID)
+	createVmParams.SetExtraconfig(public.ExtraConfig)
 
-	vm, err := client.CSClient.VirtualMachine.DeployVirtualMachine(params)
+	created, err := client.CSClient.VirtualMachine.DeployVirtualMachine(createVmParams)
 	if err != nil {
 		return "", makeError(err)
 	}
 
-	return vm.Id, nil
+	return created.Id, nil
 }
 
 func (client *Client) UpdateVM(public *models.VmPublic) error {
@@ -84,9 +100,26 @@ func (client *Client) DeleteVM(id string) error {
 		return fmt.Errorf("id required")
 	}
 
+	vm, _, err := client.CSClient.VirtualMachine.GetVirtualMachineByID(id)
+	if err != nil {
+		if !strings.Contains(err.Error(), "No match found for") {
+			return makeError(err)
+		}
+	}
+
+	if vm == nil {
+		return nil
+	}
+
+	if vm.State == "Stopping" || vm.State == "DestroyRequested" || vm.State == "Expunging" {
+		return nil
+	}
+
 	params := client.CSClient.VirtualMachine.NewDestroyVirtualMachineParams(id)
 
-	_, err := client.CSClient.VirtualMachine.DestroyVirtualMachine(params)
+	params.SetExpunge(true)
+
+	_, err = client.CSClient.VirtualMachine.DestroyVirtualMachine(params)
 	if err != nil {
 		return makeError(err)
 	}

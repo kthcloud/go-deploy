@@ -73,7 +73,7 @@ func CreateDeployment(deploymentID, name, owner string) error {
 
 	_, err = models.DeploymentCollection.InsertOne(context.TODO(), deployment)
 	if err != nil {
-		err = fmt.Errorf("failed to create v1_deployment %s. details: %s", name, err)
+		err = fmt.Errorf("failed to create deployment %s. details: %s", name, err)
 		return err
 	}
 
@@ -88,7 +88,7 @@ func getDeployment(filter bson.D) (*Deployment, error) {
 			return nil, nil
 		}
 
-		err = fmt.Errorf("failed to fetch v1_deployment. details: %s", err)
+		err = fmt.Errorf("failed to fetch deployment. details: %s", err)
 		invalidDeployment := Deployment{}
 		return &invalidDeployment, err
 	}
@@ -136,7 +136,7 @@ func GetDeployments(owner string) ([]Deployment, error) {
 
 		err = cursor.Decode(&deployment)
 		if err != nil {
-			err = fmt.Errorf("failed to fetch v1_deployment when fetching all deployments from owner %s. details: %s", owner, err)
+			err = fmt.Errorf("failed to fetch deployment when fetching all deployments from owner %s. details: %s", owner, err)
 			log.Println(err)
 			return nil, err
 		}
@@ -149,7 +149,7 @@ func GetDeployments(owner string) ([]Deployment, error) {
 func DeleteDeployment(deploymentID, userId string) error {
 	_, err := models.DeploymentCollection.DeleteOne(context.TODO(), bson.D{{"id", deploymentID}, {"owner", userId}})
 	if err != nil {
-		err = fmt.Errorf("failed to delete v1_deployment %s. details: %s", deploymentID, err)
+		err = fmt.Errorf("failed to delete deployment %s. details: %s", deploymentID, err)
 		log.Println(err)
 		return err
 	}
@@ -159,7 +159,7 @@ func DeleteDeployment(deploymentID, userId string) error {
 func UpdateDeployment(id string, update bson.D) error {
 	_, err := models.DeploymentCollection.UpdateOne(context.TODO(), bson.D{{"id", id}}, bson.D{{"$set", update}})
 	if err != nil {
-		err = fmt.Errorf("failed to update v1_deployment %s. details: %s", id, err)
+		err = fmt.Errorf("failed to update deployment %s. details: %s", id, err)
 		log.Println(err)
 		return err
 	}
@@ -169,7 +169,7 @@ func UpdateDeployment(id string, update bson.D) error {
 func UpdateDeploymentByName(name string, update bson.D) error {
 	_, err := models.DeploymentCollection.UpdateOne(context.TODO(), bson.D{{"name", name}}, bson.D{{"$set", update}})
 	if err != nil {
-		err = fmt.Errorf("failed to update v1_deployment %s. details: %s", name, err)
+		err = fmt.Errorf("failed to update deployment %s. details: %s", name, err)
 		log.Println(err)
 		return err
 	}
@@ -200,7 +200,7 @@ func GetAllDeploymentsWithFilter(filter bson.D) ([]Deployment, error) {
 
 		err = cursor.Decode(&deployment)
 		if err != nil {
-			err = fmt.Errorf("failed to decode v1_deployment when fetching all v1_deployment. details: %s", err)
+			err = fmt.Errorf("failed to decode deployment when fetching all deployment. details: %s", err)
 			log.Println(err)
 			return nil, err
 		}

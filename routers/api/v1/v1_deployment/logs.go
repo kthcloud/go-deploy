@@ -71,7 +71,7 @@ func GetLogs(c *gin.Context) {
 			case websocket.CloseNormalClosure,
 				websocket.CloseGoingAway,
 				websocket.CloseNoStatusReceived:
-				log.Printf("closing websocket connection for v1_deployment %s (%s)\n", deploymentID, ws.RemoteAddr())
+				log.Printf("closing websocket connection for deployment %s (%s)\n", deploymentID, ws.RemoteAddr())
 				return
 			}
 		}

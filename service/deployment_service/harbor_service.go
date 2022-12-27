@@ -55,7 +55,7 @@ func CreateHarbor(name string) error {
 	log.Println("setting up harbor for", name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup harbor for v1_deployment %s. details: %s", name, err)
+		return fmt.Errorf("failed to setup harbor for deployment %s. details: %s", name, err)
 	}
 
 	client, err := harbor.New(&harbor.ClientConf{
@@ -160,7 +160,7 @@ func DeleteHarbor(name string) error {
 	log.Println("deleting harbor setup for", name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete harbor setup for v1_deployment %s. details: %s", name, err)
+		return fmt.Errorf("failed to delete harbor setup for deployment %s. details: %s", name, err)
 	}
 
 	client, err := harbor.New(&harbor.ClientConf{
