@@ -5,23 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="bc4da88f-8032-4df4-9bcc-9ca8b4f364d2" name="Changes" comment="change project name. fix websocket support for logs">
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/k8s/manifests.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/k8s/models/common.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/k8s/models/deployment_public.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/k8s/models/namespace_public.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/k8s/models/service_public.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/test/k8s_test.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/deployment/deployment.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/deployment/deployment.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/confirmers/confirmers.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/confirmers/confirmers.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/k8s/deployment.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/k8s/deployment.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/k8s/logs.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/k8s/logs.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/k8s/manifests/manifests.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/k8s/namespace.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/k8s/namespace.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/k8s/service.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/k8s/service.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/npm/npm.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/npm/npm.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/npm/proxy_host.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/npm/proxy_host.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/service/deployment_service/k8s_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/k8s_service.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/service/deployment_service/logs_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/logs_service.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -102,7 +87,7 @@
       <recent name="$PROJECT_DIR$/models/vm" />
     </key>
   </component>
-  <component name="RunManager" selected="Go Build.Run">
+  <component name="RunManager" selected="Go Test.TestCreateBadK8s in go-deploy/test">
     <configuration name="Run" type="GoApplicationRunConfiguration" factoryName="Go Application">
       <module name="go-deploy" />
       <working_directory value="$PROJECT_DIR$" />
@@ -138,7 +123,7 @@
       <framework value="gotest" />
       <method v="2" />
     </configuration>
-    <configuration name="TestUpdateProject in go-deploy/test" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+    <configuration name="TestCreateBadK8s in go-deploy/test" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
       <module name="go-deploy" />
       <working_directory value="$PROJECT_DIR$/test" />
       <envs>
@@ -150,7 +135,7 @@
       <directory value="$PROJECT_DIR$" />
       <filePath value="$PROJECT_DIR$" />
       <framework value="gotest" />
-      <pattern value="^\QTestUpdateProject\E$" />
+      <pattern value="^\QTestCreateBadK8s\E$" />
       <method v="2" />
     </configuration>
     <configuration name="TestUpdateVM in go-deploy/test" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
@@ -180,15 +165,15 @@
     </configuration>
     <list>
       <item itemvalue="Go Build.Run" />
-      <item itemvalue="Go Test.TestUpdateProject in go-deploy/test" />
+      <item itemvalue="Go Test.TestCreateBadK8s in go-deploy/test" />
       <item itemvalue="Go Test.TestUpdateVM in go-deploy/test" />
       <item itemvalue="Go Test.Run Test" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Go Test.TestCreateBadK8s in go-deploy/test" />
         <item itemvalue="Go Test.Run Test" />
         <item itemvalue="Go Test.TestUpdateVM in go-deploy/test" />
-        <item itemvalue="Go Test.TestUpdateProject in go-deploy/test" />
       </list>
     </recent_temporary>
   </component>
@@ -241,11 +226,6 @@
           <url>file://$PROJECT_DIR$/test/harbor_test.go</url>
           <line>202</line>
           <option name="timeStamp" value="57" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
-          <url>file://$PROJECT_DIR$/test/cs_test.go</url>
-          <line>11</line>
-          <option name="timeStamp" value="73" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
