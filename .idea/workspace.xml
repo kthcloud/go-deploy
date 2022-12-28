@@ -5,8 +5,23 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="bc4da88f-8032-4df4-9bcc-9ca8b4f364d2" name="Changes" comment="change project name. fix websocket support for logs">
-      <change afterPath="$PROJECT_DIR$/test/cs_test.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/subsystems/k8s/manifests.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/subsystems/k8s/models/common.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/subsystems/k8s/models/deployment_public.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/subsystems/k8s/models/namespace_public.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/subsystems/k8s/models/service_public.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/deployment/deployment.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/deployment/deployment.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/confirmers/confirmers.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/confirmers/confirmers.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/k8s/deployment.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/k8s/deployment.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/k8s/logs.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/k8s/logs.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/k8s/manifests/manifests.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/k8s/namespace.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/k8s/namespace.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/k8s/service.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/k8s/service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/npm/npm.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/npm/npm.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/npm/proxy_host.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/npm/proxy_host.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/deployment_service/k8s_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/k8s_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/deployment_service/logs_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/logs_service.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -57,7 +72,7 @@
     "WebServerToolWindowFactoryState": "false",
     "go.import.settings.migrated": "true",
     "go.sdk.automatically.set": "true",
-    "last_opened_file_path": "/home/emil/repos/work/go-deploy/pkg/vm_worker",
+    "last_opened_file_path": "/home/emil/repos/work/go-deploy/pkg/subsystems/k8s/models",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -73,21 +88,21 @@
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/pkg/subsystems/k8s/models" />
       <recent name="$PROJECT_DIR$/pkg/vm_worker" />
       <recent name="$PROJECT_DIR$/models/dto" />
       <recent name="C:\repos\work\go-deploy\pkg\subsystems\cs" />
       <recent name="C:\repos\deploy-api-go\pkg\auth" />
-      <recent name="C:\repos\deploy-api-go\pkg\validator" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/pkg/subsystems/k8s" />
       <recent name="$PROJECT_DIR$/routers/api/v1/v1vms" />
       <recent name="$PROJECT_DIR$/routers/api/v1/deployment" />
       <recent name="$PROJECT_DIR$/models/deployment" />
       <recent name="$PROJECT_DIR$/models/vm" />
-      <recent name="$PROJECT_DIR$/models" />
     </key>
   </component>
-  <component name="RunManager" selected="Go Test.Run Test">
+  <component name="RunManager" selected="Go Build.Run">
     <configuration name="Run" type="GoApplicationRunConfiguration" factoryName="Go Application">
       <module name="go-deploy" />
       <working_directory value="$PROJECT_DIR$" />

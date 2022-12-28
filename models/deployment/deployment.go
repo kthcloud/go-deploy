@@ -6,6 +6,7 @@ import (
 	"go-deploy/models"
 	"go-deploy/models/dto"
 	harborModels "go-deploy/pkg/subsystems/harbor/models"
+	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	npmModels "go-deploy/pkg/subsystems/npm/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -28,6 +29,9 @@ type DeploymentSubsystems struct {
 }
 
 type DeploymentK8s struct {
+	Namespace  k8sModels.NamespacePublic  `bson:"namespace"`
+	Deployment k8sModels.DeploymentPublic `bson:"deployment"`
+	Service    k8sModels.ServicePublic    `bson:"service"`
 }
 
 type DeploymentNPM struct {

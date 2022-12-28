@@ -48,9 +48,9 @@ func (client *Client) getPodLogs(cancelCtx context.Context, namespace, podName s
 	}
 }
 
-func (client *Client) GetLogStream(context context.Context, namespace, name string, handler func(string)) error {
+func (client *Client) GetLogStream(context context.Context, namespace string, handler func(string)) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create k8s log stream for deployment %s. details: %s", name, err)
+		return fmt.Errorf("failed to create k8s log stream for deployment %s. details: %s", namespace, err)
 	}
 
 	podName, err := client.getPodName(namespace)
@@ -59,7 +59,7 @@ func (client *Client) GetLogStream(context context.Context, namespace, name stri
 	}
 
 	if podName == nil {
-		return makeError(fmt.Errorf("failed to find pod name for %s", name))
+		return makeError(fmt.Errorf("failed to find pod name for %s", namespace))
 	}
 
 	go client.getPodLogs(context, namespace, *podName, handler)

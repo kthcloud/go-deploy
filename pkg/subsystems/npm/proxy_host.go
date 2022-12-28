@@ -98,21 +98,16 @@ func (client *Client) ReadProxyHostByDomainName(domainName string) (*models.Prox
 		return nil, makeError(err)
 	}
 
-	var proxyHostResult *models.ProxyHostRead
 	for _, proxyHost := range proxyHosts {
 		for _, name := range proxyHost.DomainNames {
-			if domainName == name {
-				proxyHostResult = &proxyHost
+			if name == domainName {
+				public := models.CreateProxyHostPublicFromReadBody(&proxyHost)
+				return public, nil
 			}
 		}
 	}
 
-	var public *models.ProxyHostPublic
-	if proxyHostResult != nil {
-		public = models.CreateProxyHostPublicFromReadBody(proxyHostResult)
-	}
-
-	return public, nil
+	return nil, nil
 }
 
 func (client *Client) CreateProxyHost(public *models.ProxyHostPublic) (int, error) {

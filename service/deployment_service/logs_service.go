@@ -28,7 +28,7 @@ func GetLogs(userID, deploymentID string, handler func(string)) (context.Context
 		return nil, err
 	}
 
-	err = client.GetLogStream(ctx, subsystemutils.GetPrefixedName(deployment.Name), deployment.Name, handler)
+	err = client.GetLogStream(ctx, subsystemutils.GetPrefixedName(deployment.Name), handler)
 	if err != nil {
 		ctx.Done()
 		return nil, err
