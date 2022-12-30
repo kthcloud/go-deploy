@@ -14,7 +14,12 @@ func Create(vmID, name, owner string) {
 			return
 		}
 
-		err = CreateCS(name)
+		csResult, err := CreateCS(name)
+		if err != nil {
+			log.Println(err)
+		}
+
+		_, err = CreatePfSense(name, csResult.PublicIpAddress.IpAddress)
 		if err != nil {
 			log.Println(err)
 		}
@@ -69,6 +74,12 @@ func MarkBeingDeleted(vmID string) error {
 func Delete(name string) {
 	go func() {
 		err := DeleteCS(name)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		err = DeletePfSense(name)
 		if err != nil {
 			log.Println(err)
 			return

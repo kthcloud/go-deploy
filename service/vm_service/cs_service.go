@@ -9,11 +9,17 @@ import (
 	"log"
 )
 
-func CreateCS(name string) error {
+type CsCreated struct {
+	VM                 *csModels.VmPublic
+	PortForwardingRule *csModels.PortForwardingRulePublic
+	PublicIpAddress    *csModels.PublicIpAddressPublic
+}
+
+func CreateCS(name string) (*CsCreated, error) {
 	log.Println("setting up cs for", name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup cs for deployment %s. details: %s", name, err)
+		return fmt.Errorf("failed to setup cs for vm %s. details: %s", name, err)
 	}
 
 	client, err := cs.New(&cs.ClientConf{
@@ -22,51 +28,143 @@ func CreateCS(name string) error {
 		SecretKey: conf.Env.CS.Secret,
 	})
 	if err != nil {
-		return makeError(err)
+		return nil, makeError(err)
 	}
 
 	vm, err := vmModel.GetByName(name)
 	if err != nil {
-		return makeError(err)
+		return nil, makeError(err)
 	}
 
-	if len(vm.Subsystems.CS.VM.ID) == 0 {
+	// vm
+	var csVM *csModels.VmPublic
+	if vm.Subsystems.CS.VM.ID == "" {
 		id, err := client.CreateVM(&csModels.VmPublic{
 			Name: name,
 			// temporary until vm templates are set up
 			ServiceOfferingID: "8da28b4d-5fec-4a44-aee7-fb0c5c8265a9", // Small HA
-			TemplateID:        "e1a0479c-76a2-44da-8b38-a3a3fa316287", // Ubuntu Server
+			TemplateID:        "cbfca18e-bf29-4019-bb67-c0651412db56", // deploy-template-ubuntu2204
 			NetworkID:         "4a065a52-f290-4d2e-aeb4-6f48d3bd9bfe", // deploy
 			ZoneID:            "3a74db73-6058-4520-8d8c-ab7d9b7955c8", // Flemingsberg
 			ProjectID:         "d1ba382b-e310-445b-a54b-c4e773662af3", // deploy
 		})
 		if err != nil {
-			return makeError(err)
+			return nil, makeError(err)
 		}
 
-		csVM, err := client.ReadVM(id)
+		csVM, err = client.ReadVM(id)
 		if err != nil {
-			return makeError(err)
+			return nil, makeError(err)
 		}
 
 		err = vmModel.UpdateSubsystemByName(name, "cs", "vm", *csVM)
 		if err != nil {
-			return makeError(err)
+			return nil, makeError(err)
+		}
+	} else {
+		csVM = &vm.Subsystems.CS.VM
+	}
+
+	// ip address
+	var publicIpAddress *csModels.PublicIpAddressPublic
+	if vm.Subsystems.CS.PublicIpAddress.ID == "" {
+		public := &csModels.PublicIpAddressPublic{
+			ProjectID: csVM.ProjectID,
+			NetworkID: csVM.NetworkID,
+			ZoneID:    csVM.ZoneID,
+		}
+
+		publicIpAddress, err = client.ReadPublicIpAddressByVmID(csVM.ID, csVM.NetworkID, csVM.ProjectID)
+		if err != nil {
+			return nil, makeError(err)
+		}
+
+		if publicIpAddress == nil {
+			publicIpAddress, err = client.ReadFreePublicIpAddress(csVM.NetworkID, csVM.ProjectID)
+			if err != nil {
+				return nil, makeError(err)
+			}
+		}
+
+		if publicIpAddress == nil {
+			id, err := client.CreatePublicIpAddress(public)
+			if err != nil {
+				return nil, makeError(err)
+			}
+
+			publicIpAddress, err = client.ReadPublicIpAddress(id)
+			if err != nil {
+				return nil, makeError(err)
+			}
+		}
+
+		err = vmModel.UpdateSubsystemByName(name, "cs", "publicIpAddress", *publicIpAddress)
+		if err != nil {
+			return nil, makeError(err)
+		}
+	} else {
+		publicIpAddress = &vm.Subsystems.CS.PublicIpAddress
+	}
+
+	// port-forwarding rule
+	var portForwardingRule *csModels.PortForwardingRulePublic
+	if vm.Subsystems.CS.PortForwardingRule.ID != "" {
+		// make sure this is connected to the ip address above by deleting the one we think we own
+		if vm.Subsystems.CS.PortForwardingRule.IpAddressID != publicIpAddress.ID ||
+			vm.Subsystems.CS.PortForwardingRule.VmID != csVM.ID {
+			err = client.DeletePortForwardingRule(vm.Subsystems.CS.PortForwardingRule.ID)
+			if err != nil {
+				return nil, makeError(err)
+			}
+
+			err = vmModel.UpdateSubsystemByName(name, "cs", "portForwardingRule", csModels.PortForwardingRulePublic{})
+			if err != nil {
+				return nil, makeError(err)
+			}
+
+			vm.Subsystems.CS.PortForwardingRule = csModels.PortForwardingRulePublic{}
 		}
 	}
 
-	if err != nil {
-		return makeError(err)
+	if vm.Subsystems.CS.PortForwardingRule.ID == "" {
+		id, err := client.CreatePortForwardingRule(&csModels.PortForwardingRulePublic{
+			VmID:        csVM.ID,
+			ProjectID:   csVM.ProjectID,
+			NetworkID:   csVM.NetworkID,
+			IpAddressID: publicIpAddress.ID,
+			PublicPort:  22,
+			PrivatePort: 22,
+			Protocol:    "TCP",
+		})
+		if err != nil {
+			return nil, makeError(err)
+		}
+
+		portForwardingRule, err = client.ReadPortForwardingRule(id)
+		if err != nil {
+			return nil, makeError(err)
+		}
+
+		err = vmModel.UpdateSubsystemByName(name, "cs", "portForwardingRule", *portForwardingRule)
+		if err != nil {
+			return nil, makeError(err)
+		}
+	} else {
+		portForwardingRule = &vm.Subsystems.CS.PortForwardingRule
 	}
 
-	return nil
+	return &CsCreated{
+		VM:                 csVM,
+		PortForwardingRule: portForwardingRule,
+		PublicIpAddress:    publicIpAddress,
+	}, nil
 }
 
 func DeleteCS(name string) error {
 	log.Println("deleting cs for", name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup npm for deployment %s. details: %s", name, err)
+		return fmt.Errorf("failed to setup npm for vm %s. details: %s", name, err)
 	}
 
 	client, err := cs.New(&cs.ClientConf{
@@ -80,18 +178,40 @@ func DeleteCS(name string) error {
 
 	vm, err := vmModel.GetByName(name)
 
-	if len(vm.Subsystems.CS.VM.ID) == 0 {
-		return nil
+	if vm.Subsystems.CS.PortForwardingRule.ID != "" {
+		err = client.DeletePortForwardingRule(vm.Subsystems.CS.PortForwardingRule.ID)
+		if err != nil {
+			return makeError(err)
+		}
+
+		err = vmModel.UpdateSubsystemByName(name, "cs", "portForwardingRule", csModels.PortForwardingRulePublic{})
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
-	err = client.DeleteVM(vm.Subsystems.CS.VM.ID)
-	if err != nil {
-		return makeError(err)
+	if vm.Subsystems.CS.PublicIpAddress.ID != "" {
+		err = client.DeletePublicIpAddress(vm.Subsystems.CS.PublicIpAddress.ID)
+		if err != nil {
+			return makeError(err)
+		}
+
+		err = vmModel.UpdateSubsystemByName(name, "cs", "publicIpAddress", csModels.PublicIpAddressPublic{})
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
-	err = vmModel.UpdateSubsystemByName(name, "cs", "vm", csModels.VmPublic{})
-	if err != nil {
-		return makeError(err)
+	if vm.Subsystems.CS.VM.ID != "" {
+		err = client.DeleteVM(vm.Subsystems.CS.VM.ID)
+		if err != nil {
+			return makeError(err)
+		}
+
+		err = vmModel.UpdateSubsystemByName(name, "cs", "vm", csModels.VmPublic{})
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	return nil

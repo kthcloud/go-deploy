@@ -56,7 +56,7 @@ func (client *Client) CreateVM(public *models.VmPublic) (string, error) {
 
 	createVmParams.SetName(public.Name)
 	createVmParams.SetDisplayname(public.Name)
-	createVmParams.SetNetworkids([]string{})
+	createVmParams.SetNetworkids([]string{public.NetworkID})
 	createVmParams.SetProjectid(public.ProjectID)
 	createVmParams.SetExtraconfig(public.ExtraConfig)
 
@@ -70,7 +70,7 @@ func (client *Client) CreateVM(public *models.VmPublic) (string, error) {
 
 func (client *Client) UpdateVM(public *models.VmPublic) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to update cs vm %s. details: %s", public.Name, err)
+		return fmt.Errorf("failed to update vm %s. details: %s", public.Name, err)
 	}
 
 	if public.ID == "" {
@@ -93,7 +93,7 @@ func (client *Client) UpdateVM(public *models.VmPublic) error {
 
 func (client *Client) DeleteVM(id string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete cs vm %s. details: %s", id, err)
+		return fmt.Errorf("failed to delete vm %s. details: %s", id, err)
 	}
 
 	if id == "" {

@@ -1,6 +1,8 @@
 package models
 
-import "github.com/apache/cloudstack-go/v2/cloudstack"
+import (
+	"github.com/apache/cloudstack-go/v2/cloudstack"
+)
 
 type VmPublic struct {
 	ID                string `bson:"id"`

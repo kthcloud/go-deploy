@@ -70,10 +70,28 @@ func HarborDeleted(deployment *deployment.Deployment) (bool, error) {
 
 func CSCreated(vm *vm.VM) (bool, error) {
 	cs := &vm.Subsystems.CS
-	return len(cs.VM.ID) != 0, nil
+
+	return cs.VM.ID != "" &&
+		cs.PublicIpAddress.ID != "" &&
+		cs.PortForwardingRule.ID != "", nil
 }
 
 func CSDeleted(vm *vm.VM) (bool, error) {
 	cs := &vm.Subsystems.CS
-	return len(cs.VM.ID) == 0, nil
+
+	return cs.VM.ID == "" &&
+		cs.PublicIpAddress.ID == "" &&
+		cs.PortForwardingRule.ID == "", nil
+}
+
+func PfSenseCreated(vm *vm.VM) (bool, error) {
+	pfSense := &vm.Subsystems.PfSense
+
+	return pfSense.PortForwardingRule.ID != "", nil
+}
+
+func PfSenseDeleted(vm *vm.VM) (bool, error) {
+	pfSense := &vm.Subsystems.PfSense
+
+	return pfSense.PortForwardingRule.ID == "", nil
 }

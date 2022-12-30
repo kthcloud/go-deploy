@@ -6,7 +6,7 @@ import (
 	"go-deploy/models"
 	"go-deploy/models/dto"
 	csModels "go-deploy/pkg/subsystems/cs/models"
-	npmModels "go-deploy/pkg/subsystems/npm/models"
+	psModels "go-deploy/pkg/subsystems/pfsense/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"log"
@@ -22,19 +22,18 @@ type VM struct {
 }
 
 type Subsystem struct {
-	K8s K8s `bson:"k8s"`
-	CS  CS  `bson:"cs"`
+	CS      CS      `bson:"cs"`
+	PfSense PfSense `bson:"pfSense"`
 }
 
 type CS struct {
-	VM csModels.VmPublic
+	VM                 csModels.VmPublic                 `bson:"vm"`
+	PortForwardingRule csModels.PortForwardingRulePublic `bson:"portForwardingRule"`
+	PublicIpAddress    csModels.PublicIpAddressPublic    `bson:"publicIpAddress"`
 }
 
-type K8s struct {
-}
-
-type Npm struct {
-	ProxyHost npmModels.ProxyHostPublic `bson:"proxyHost"`
+type PfSense struct {
+	PortForwardingRule psModels.PortForwardingRulePublic `bson:"portForwardingRule"`
 }
 
 func (vm *VM) ToDto() dto.VmRead {

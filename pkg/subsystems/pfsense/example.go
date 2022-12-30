@@ -1,7 +1,9 @@
 package pfsense
 
 import (
+	"fmt"
 	"go-deploy/pkg/conf"
+	"go-deploy/pkg/subsystems/pfsense/models"
 	"log"
 	"net"
 )
@@ -20,21 +22,27 @@ func Example() {
 
 	name := "demo"
 
-	port, err := client.CreatePortForwardingRule(name, net.ParseIP("172.31.1.69"), 22)
+	public := models.PortForwardingRulePublic{
+		Name:         name,
+		LocalAddress: net.ParseIP("172.31.1.69"),
+		LocalPort:    22,
+	}
+
+	id, err := client.CreatePortForwardingRule(&public)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	log.Println(port)
+	log.Println("created rule with id ", id)
 
-	rules, err := client.GetPortForwardingRules()
+	rule, err := client.ReadPortForwardingRule(id)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	log.Println(rules)
+	log.Println("result: ")
+	fmt.Println(rule)
 
-	err = client.DeletePortForwardingRule(name)
+	err = client.DeletePortForwardingRule(rule.ID)
 	if err != nil {
 		log.Fatalln(err)
 	}
-
 }

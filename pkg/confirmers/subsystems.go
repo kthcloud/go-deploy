@@ -24,12 +24,14 @@ func getDeploymentDeletedConfirmers() []func(*deployment.Deployment) (bool, erro
 func getVmCreatedConfirmers() []func(*vm.VM) (bool, error) {
 	return []func(*vm.VM) (bool, error){
 		CSCreated,
+		PfSenseCreated,
 	}
 }
 
 func getVmDeletedConfirmers() []func(*vm.VM) (bool, error) {
 	return []func(*vm.VM) (bool, error){
 		CSDeleted,
+		PfSenseDeleted,
 	}
 }
 
