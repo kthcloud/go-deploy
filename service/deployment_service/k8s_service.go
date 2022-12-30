@@ -11,6 +11,12 @@ import (
 	"strconv"
 )
 
+type K8sResult struct {
+	Namespace  *k8sModels.NamespacePublic
+	Deployment *k8sModels.DeploymentPublic
+	Service    *k8sModels.ServicePublic
+}
+
 func createNamespacePublic(name string) *k8sModels.NamespacePublic {
 	return &k8sModels.NamespacePublic{
 		Name: name,
@@ -37,7 +43,7 @@ func createServicePublic(namespace, name string, port, targetPort int) *k8sModel
 	}
 }
 
-func CreateK8s(name string) error {
+func CreateK8s(name string) (*K8sResult, error) {
 	log.Println("setting up k8s for", name)
 
 	makeError := func(err error) error {
@@ -48,36 +54,37 @@ func CreateK8s(name string) error {
 		K8sAuth: conf.Env.K8s.Config,
 	})
 	if err != nil {
-		return makeError(err)
+		return nil, makeError(err)
 	}
 
 	port := conf.Env.AppPort
 
 	deployment, err := deploymentModel.GetDeploymentByName(name)
 	if err != nil {
-		return makeError(err)
+		return nil, makeError(err)
 	}
 
 	// Namespace
-	var namespace k8sModels.NamespacePublic
+	var namespace *k8sModels.NamespacePublic
 	if deployment.Subsystems.K8s.Namespace.Name == "" {
 		prefixedName := subsystemutils.GetPrefixedName(name)
 		err = client.CreateNamespace(createNamespacePublic(prefixedName))
 		if err != nil {
-			return makeError(err)
+			return nil, makeError(err)
 		}
 
 		namespace.Name = prefixedName
 
 		err = deploymentModel.UpdateSubsystemByName(name, "k8s", "namespace", namespace)
 		if err != nil {
-			return makeError(err)
+			return nil, makeError(err)
 		}
 	} else {
-		namespace = deployment.Subsystems.K8s.Namespace
+		namespace = &deployment.Subsystems.K8s.Namespace
 	}
 
 	// Deployment
+	var k8sDeployment *k8sModels.DeploymentPublic
 	if deployment.Subsystems.K8s.Deployment.ID == "" {
 		prefixedName := subsystemutils.GetPrefixedName(name)
 		dockerImage := fmt.Sprintf("%s/%s/%s", conf.Env.DockerRegistry.Url, prefixedName, name)
@@ -86,39 +93,48 @@ func CreateK8s(name string) error {
 			{Name: "DEPLOY_APP_PORT", Value: strconv.Itoa(port)},
 		}))
 		if err != nil {
-			return makeError(err)
+			return nil, makeError(err)
 		}
 
-		k8sDeployment, err := client.ReadDeployment(namespace.Name, id)
+		k8sDeployment, err = client.ReadDeployment(namespace.Name, id)
 		if err != nil {
-			return makeError(err)
+			return nil, makeError(err)
 		}
 
 		err = deploymentModel.UpdateSubsystemByName(name, "k8s", "deployment", k8sDeployment)
 		if err != nil {
-			return makeError(err)
+			return nil, makeError(err)
 		}
+	} else {
+		k8sDeployment = &deployment.Subsystems.K8s.Deployment
 	}
 
 	// Service
+	var service *k8sModels.ServicePublic
 	if deployment.Subsystems.K8s.Service.ID == "" {
 		id, err := client.CreateService(createServicePublic(namespace.Name, name, port, port))
 		if err != nil {
-			return makeError(err)
+			return nil, makeError(err)
 		}
 
-		service, err := client.ReadService(namespace.Name, id)
+		service, err = client.ReadService(namespace.Name, id)
 		if err != nil {
-			return makeError(err)
+			return nil, makeError(err)
 		}
 
 		err = deploymentModel.UpdateSubsystemByName(name, "k8s", "service", service)
 		if err != nil {
-			return makeError(err)
+			return nil, makeError(err)
 		}
+	} else {
+		service = &deployment.Subsystems.K8s.Service
 	}
 
-	return nil
+	return &K8sResult{
+		Namespace:  namespace,
+		Deployment: k8sDeployment,
+		Service:    service,
+	}, nil
 }
 
 func DeleteK8s(name string) error {

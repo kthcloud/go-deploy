@@ -5,28 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="bc4da88f-8032-4df4-9bcc-9ca8b4f364d2" name="Changes" comment="change project name. fix websocket support for logs">
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/cs/ip_address.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/cs/models/ip_address_public.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/cs/models/port_forwarding_rule_public.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/cs/port_forwarding_rule.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/pfsense/models/port_forward_rule_public.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/pfsense/port_forwarding_rule.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/service/vm_service/pfsense_service.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/vm/vm.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/vm/vm.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/confirmers/confirmers.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/confirmers/confirmers.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/confirmers/subsystems.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/confirmers/subsystems.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/cs/models/vm_public.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/cs/models/vm_public.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/cs/vm.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/cs/vm.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/pfsense/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/pfsense/example.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/pfsense/example.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/pfsense/models/port_forward_rule.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/pfsense/models/port_forward_rule_read.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/pfsense/models/port_forward_rule_req.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/pfsense/models/port_forward_rule_create.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/pfsense/port_forward.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/pfsense/utils.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/pfsense/utils.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/service/vm_service/cs_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/vm_service/cs_service.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/service/vm_service/vm_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/vm_service/vm_service.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/subsystemutils/utils.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/subsystemutils/utils.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/k8s/models/service_public.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/k8s/models/service_public.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/deployment_service/deployment_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/deployment_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/deployment_service/k8s_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/k8s_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/deployment_service/npm_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/npm_service.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

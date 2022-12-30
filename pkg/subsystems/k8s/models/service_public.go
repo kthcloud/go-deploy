@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -10,6 +11,11 @@ type ServicePublic struct {
 	Namespace  string `bson:"namespace"`
 	Port       int    `bson:"port"`
 	TargetPort int    `bson:"targetPort"`
+}
+
+func (service *ServicePublic) GetHostName() string {
+	hostName := fmt.Sprintf("%s-%s", service.Name, service.ID)
+	return hostName
 }
 
 func CreateServicePublicFromRead(service *v1.Service) *ServicePublic {

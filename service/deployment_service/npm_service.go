@@ -11,12 +11,12 @@ import (
 	"log"
 )
 
-func getFQDN(name string) string {
-	return fmt.Sprintf("%s.%s", name, conf.Env.ParentDomain)
+func getFQDN(hostName string) string {
+	return fmt.Sprintf("%s.%s", hostName, conf.Env.ParentDomain)
 }
 
-func createProxyHostPublicBody(name string, certificateId int) *npmModels.ProxyHostPublic {
-	forwardHost := fmt.Sprintf("%s.%s.svc.cluster.local", name, subsystemutils.GetPrefixedName(name))
+func createProxyHostPublicBody(name, hostName string, certificateId int) *npmModels.ProxyHostPublic {
+	forwardHost := fmt.Sprintf("%s.%s.svc.cluster.local", hostName, subsystemutils.GetPrefixedName(name))
 
 	return &npmModels.ProxyHostPublic{
 		ID:                    0,
@@ -31,7 +31,7 @@ func createProxyHostPublicBody(name string, certificateId int) *npmModels.ProxyH
 	}
 }
 
-func CreateNPM(name string) error {
+func CreateNPM(name, hostName string) error {
 	log.Println("setting up npm for", name)
 
 	makeError := func(err error) error {
@@ -55,7 +55,7 @@ func CreateNPM(name string) error {
 			return makeError(err)
 		}
 
-		id, err := client.CreateProxyHost(createProxyHostPublicBody(name, certificateID))
+		id, err := client.CreateProxyHost(createProxyHostPublicBody(name, hostName, certificateID))
 		if err != nil {
 			return err
 		}

@@ -7,7 +7,6 @@ import (
 )
 
 func Create(deploymentID, name, owner string) {
-
 	go func() {
 		err := deploymentModel.CreateDeployment(deploymentID, name, owner)
 		if err != nil {
@@ -21,17 +20,18 @@ func Create(deploymentID, name, owner string) {
 			return
 		}
 
-		err = CreateNPM(name)
+		k8sResult, err := CreateK8s(name)
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
-		err = CreateK8s(name)
+		err = CreateNPM(name, k8sResult.Service.GetHostName())
 		if err != nil {
 			log.Println(err)
 			return
 		}
+
 	}()
 }
 
