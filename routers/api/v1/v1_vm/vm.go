@@ -13,12 +13,13 @@ import (
 	"strconv"
 )
 
-func getAllVMs(context *app.ClientContext) {
+func getAllVMs(userID string, context *app.ClientContext) {
 	vms, _ := vm_service.GetAll()
 
 	dtoVMs := make([]dto.VmRead, len(vms))
 	for i, vm := range vms {
-		dtoVMs[i] = vm.ToDto()
+		_, statusMsg, _ := vm_service.GetStatusByID(userID, vm.ID)
+		dtoVMs[i] = vm.ToDto(statusMsg)
 	}
 
 	context.JSONResponse(http.StatusOK, dtoVMs)
@@ -47,7 +48,7 @@ func GetMany(c *gin.Context) {
 	// might want to check if userID is allowed to get all...
 	wantAll, _ := strconv.ParseBool(context.GinContext.Query("all"))
 	if wantAll {
-		getAllVMs(&context)
+		getAllVMs(userID, &context)
 		return
 	}
 
@@ -59,7 +60,8 @@ func GetMany(c *gin.Context) {
 
 	dtoVMs := make([]dto.VmRead, len(vms))
 	for i, vm := range vms {
-		dtoVMs[i] = vm.ToDto()
+		_, statusMsg, _ := vm_service.GetStatusByID(userID, vm.ID)
+		dtoVMs[i] = vm.ToDto(statusMsg)
 	}
 
 	context.JSONResponse(200, dtoVMs)
@@ -84,16 +86,17 @@ func Get(c *gin.Context) {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 	}
 	vmID := context.GinContext.Param("vmId")
-	userId := token.Sub
+	userID := token.Sub
 
-	vm, _ := vm_service.GetByID(userId, vmID)
+	vm, _ := vm_service.GetByID(userID, vmID)
 
 	if vm == nil {
 		context.NotFound()
 		return
 	}
 
-	context.JSONResponse(200, vm.ToDto())
+	_, statusMsg, _ := vm_service.GetStatusByID(userID, vm.ID)
+	context.JSONResponse(200, vm.ToDto(statusMsg))
 }
 
 func Create(c *gin.Context) {

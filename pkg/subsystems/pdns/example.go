@@ -18,7 +18,10 @@ func ExampleCreate() {
 	}
 
 	id, err := client.CreateRecord(&models.RecordPublic{
-		HostName: "test",
+		Hostname:   "test",
+		RecordType: "CNAME",
+		TTL:        60,
+		Content:    []string{client.Zone},
 	})
 
 	if err != nil {

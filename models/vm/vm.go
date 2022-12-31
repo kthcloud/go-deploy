@@ -6,6 +6,7 @@ import (
 	"go-deploy/models"
 	"go-deploy/models/dto"
 	csModels "go-deploy/pkg/subsystems/cs/models"
+	pdnsModels "go-deploy/pkg/subsystems/pdns/models"
 	psModels "go-deploy/pkg/subsystems/pfsense/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -22,8 +23,9 @@ type VM struct {
 }
 
 type Subsystem struct {
-	CS      CS      `bson:"cs"`
-	PfSense PfSense `bson:"pfSense"`
+	CS      CS `bson:"cs"`
+	PfSense PfSense
+	PDNS    PDNS `bson:"pdns"`
 }
 
 type CS struct {
@@ -36,11 +38,16 @@ type PfSense struct {
 	PortForwardingRule psModels.PortForwardingRulePublic `bson:"portForwardingRule"`
 }
 
-func (vm *VM) ToDto() dto.VmRead {
+type PDNS struct {
+	Record pdnsModels.RecordPublic `bson:"record"`
+}
+
+func (vm *VM) ToDto(status string) dto.VmRead {
 	return dto.VmRead{
 		ID:    vm.ID,
 		Name:  vm.Name,
 		Owner: vm.Owner,
+		Status: status,
 	}
 }
 

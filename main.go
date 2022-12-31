@@ -6,7 +6,6 @@ import (
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/confirmers"
-	"go-deploy/pkg/subsystems/pdns"
 	"go-deploy/routers"
 	"log"
 	"net/http"
@@ -30,10 +29,6 @@ func main() {
 
 	setup(&context)
 	defer shutdown()
-
-	pdns.ExampleCreate()
-
-	return
 
 	ginMode, exists := os.LookupEnv("GIN_MODE")
 	if exists {

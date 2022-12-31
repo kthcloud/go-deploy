@@ -6,13 +6,14 @@ require (
 	github.com/Netflix/go-env v0.0.0-20220526054621-78278af1949d
 	github.com/apache/cloudstack-go/v2 v2.13.2
 	github.com/gin-gonic/gin v1.8.1
+	github.com/goharbor/harbor/src v0.0.0-20211025104526-d4affc2eba6d
 	github.com/golang/glog v1.0.0
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.5.0
+	github.com/joeig/go-powerdns/v3 v3.2.0
 	github.com/joho/godotenv v1.4.0
 	github.com/mittwald/goharbor-client/v5 v5.1.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/sethvargo/go-password v0.2.0
 	go.mongodb.org/mongo-driver v1.11.0
 	golang.org/x/crypto v0.1.0
 	golang.org/x/oauth2 v0.0.0-20220309155454-6242fa91716a
@@ -46,7 +47,6 @@ require (
 	github.com/go-playground/validator/v10 v10.11.1 // indirect
 	github.com/goccy/go-json v0.9.11 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/goharbor/harbor/src v0.0.0-20211025104526-d4affc2eba6d // indirect
 	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
@@ -54,7 +54,6 @@ require (
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
-	github.com/joeig/go-powerdns/v3 v3.2.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect

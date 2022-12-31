@@ -5,10 +5,11 @@ const (
 	Error         = 500
 	InvalidParams = 400
 
-	DeploymentCreated    = 10001
-	DeploymentNotFound   = 10002
-	ResourceBeingCreated = 10003
-	ResourceBeingDeleted = 10004
+	ResourceCreated  = 10001
+	ResourceNotFound = 10002
+	ResourceRunning  = 10003
+	ResourceBeingCreated = 10004
+	ResourceBeingDeleted = 10005
 
 	ResourceValidationFailed = 20001
 	ResourceAlreadyExists    = 20002

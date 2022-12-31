@@ -13,12 +13,13 @@ import (
 	"strconv"
 )
 
-func getAll(context *app.ClientContext) {
+func getAll(userID string, context *app.ClientContext) {
 	deployments, _ := deployment_service.GetAll()
 
 	dtoDeployments := make([]dto.DeploymentRead, len(deployments))
 	for i, deployment := range deployments {
-		dtoDeployments[i] = deployment.ToDto()
+		_, statusMsg, _ := deployment_service.GetStatusByID(userID, deployment.ID)
+		dtoDeployments[i] = deployment.ToDto(statusMsg)
 	}
 
 	context.JSONResponse(http.StatusOK, dtoDeployments)
@@ -47,7 +48,7 @@ func GetMany(c *gin.Context) {
 	// might want to check if userID is allowed to get all...
 	wantAll, _ := strconv.ParseBool(context.GinContext.Query("all"))
 	if wantAll {
-		getAll(&context)
+		getAll(userID, &context)
 		return
 	}
 
@@ -59,7 +60,8 @@ func GetMany(c *gin.Context) {
 
 	dtoDeployments := make([]dto.DeploymentRead, len(deployments))
 	for i, deployment := range deployments {
-		dtoDeployments[i] = deployment.ToDto()
+		_, statusMsg, _ := deployment_service.GetStatusByID(userID, deployment.ID)
+		dtoDeployments[i] = deployment.ToDto(statusMsg)
 	}
 
 	context.JSONResponse(200, dtoDeployments)
@@ -84,16 +86,17 @@ func Get(c *gin.Context) {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 	}
 	deploymentID := context.GinContext.Param("deploymentId")
-	userId := token.Sub
+	userID := token.Sub
 
-	deployment, _ := deployment_service.GetByID(userId, deploymentID)
+	deployment, _ := deployment_service.GetByID(userID, deploymentID)
 
 	if deployment == nil {
 		context.NotFound()
 		return
 	}
 
-	context.JSONResponse(200, deployment.ToDto())
+	_, statusMsg, _ := deployment_service.GetStatusByID(userID, deployment.ID)
+	context.JSONResponse(200, deployment.ToDto(statusMsg))
 }
 
 func Create(c *gin.Context) {

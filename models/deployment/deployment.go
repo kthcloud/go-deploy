@@ -45,11 +45,12 @@ type DeploymentHarbor struct {
 	Webhook    harborModels.WebhookPublic    `bson:"webhook"`
 }
 
-func (deployment *Deployment) ToDto() dto.DeploymentRead {
+func (deployment *Deployment) ToDto(status string) dto.DeploymentRead {
 	return dto.DeploymentRead{
-		ID:    deployment.ID,
-		Name:  deployment.Name,
-		Owner: deployment.Owner,
+		ID:     deployment.ID,
+		Name:   deployment.Name,
+		Owner:  deployment.Owner,
+		Status: status,
 	}
 }
 

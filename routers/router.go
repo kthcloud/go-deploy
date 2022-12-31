@@ -28,7 +28,6 @@ func setupDeploymentRoutes(base *gin.RouterGroup, hooks *gin.RouterGroup) {
 	base.GET("/deployments", v1_deployment.GetMany)
 
 	base.GET("/deployments/:deploymentId", v1_deployment.Get)
-	base.GET("/deployments/:deploymentId/status", v1_deployment.GetStatus)
 	base.GET("/deployments/:deploymentId/ciConfig", v1_deployment.GetCiConfig)
 	base.GET("/deployments/:deploymentId/logs", v1_deployment.GetLogs)
 	base.POST("/deployments", v1_deployment.Create)
@@ -42,7 +41,6 @@ func setupVMRoutes(base *gin.RouterGroup, _ *gin.RouterGroup) {
 	base.GET("/vms", v1_vm.GetMany)
 
 	base.GET("/vms/:vmId", v1_vm.Get)
-	//base.GET("/vms/:vmId/status", v1_vm.GetStatus)
 	base.POST("/vms", v1_vm.Create)
 	base.DELETE("/vms/:vmId", v1_vm.Delete)
 }

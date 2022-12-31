@@ -5,11 +5,12 @@ var MsgFlags = map[int]string{
 	Error:         "error",
 	InvalidParams: "invalidParams",
 
-	ResourceBeingCreated:  "deploymentBeingCreated",
-	ResourceBeingDeleted:  "deploymentBeingDeleted",
-	ResourceAlreadyExists: "deploymentAlreadyExists",
-	DeploymentCreated:     "deploymentCreated",
-	DeploymentNotFound:    "deploymentNotFound",
+	ResourceBeingCreated:  "beingCreated",
+	ResourceBeingDeleted:  "beingDeleted",
+	ResourceAlreadyExists: "alreadyExists",
+	ResourceCreated:       "created",
+	ResourceRunning:       "running",
+	ResourceNotFound:      "notFound",
 }
 
 // GetMsg get error information based on Code
