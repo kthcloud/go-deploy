@@ -126,3 +126,16 @@ func (client *Client) DeleteVM(id string) error {
 
 	return nil
 }
+
+func (client *Client) GetVmStatus(id string) (string, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to get vm %s status. details: %s", id, err)
+	}
+
+	vm, _, err := client.CSClient.VirtualMachine.GetVirtualMachineByID(id)
+	if err != nil {
+		return "", makeError(err)
+	}
+
+	return vm.State, nil
+}

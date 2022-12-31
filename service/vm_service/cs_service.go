@@ -4,6 +4,7 @@ import (
 	"fmt"
 	vmModel "go-deploy/models/vm"
 	"go-deploy/pkg/conf"
+	"go-deploy/pkg/status_codes"
 	"go-deploy/pkg/subsystems/cs"
 	csModels "go-deploy/pkg/subsystems/cs/models"
 	"log"
@@ -177,6 +178,9 @@ func DeleteCS(name string) error {
 	}
 
 	vm, err := vmModel.GetByName(name)
+	if err != nil {
+		return makeError(err)
+	}
 
 	if vm.Subsystems.CS.PortForwardingRule.ID != "" {
 		err = client.DeletePortForwardingRule(vm.Subsystems.CS.PortForwardingRule.ID)
@@ -215,5 +219,60 @@ func DeleteCS(name string) error {
 	}
 
 	return nil
+}
 
+func GetStatusCS(name string) (int, string, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to setup npm for vm %s. details: %s", name, err)
+	}
+
+	unknownMsg := status_codes.GetMsg(status_codes.ResourceUnknown)
+
+	client, err := cs.New(&cs.ClientConf{
+		ApiUrl:    conf.Env.CS.Url,
+		ApiKey:    conf.Env.CS.Key,
+		SecretKey: conf.Env.CS.Secret,
+	})
+	if err != nil {
+		return status_codes.ResourceUnknown, unknownMsg, makeError(err)
+	}
+
+	vm, err := vmModel.GetByName(name)
+	if err != nil {
+		return status_codes.ResourceUnknown, unknownMsg, makeError(err)
+	}
+
+	csVmID := vm.Subsystems.CS.VM.ID
+	if csVmID == "" {
+		return status_codes.ResourceNotFound, status_codes.GetMsg(status_codes.ResourceNotFound), nil
+	}
+
+	status, err := client.GetVmStatus(csVmID)
+	if err != nil {
+		return status_codes.ResourceUnknown, unknownMsg, makeError(err)
+	}
+
+	var statusCode int
+	switch status {
+	case "Starting":
+		statusCode = status_codes.ResourceUnknown
+	case "Running":
+		statusCode = status_codes.ResourceRunning
+	case "Stopping":
+		statusCode = status_codes.ResourceStopping
+	case "Stopped":
+		statusCode = status_codes.ResourceStopped
+	case "Migrating":
+		statusCode = status_codes.ResourceRunning
+	case "Error":
+		statusCode = status_codes.ResourceError
+	case "Unknown":
+		statusCode = status_codes.ResourceUnknown
+	case "Shutdowned":
+		statusCode = status_codes.ResourceStopped
+	default:
+		statusCode = status_codes.ResourceUnknown
+	}
+
+	return statusCode, status_codes.GetMsg(statusCode), nil
 }
