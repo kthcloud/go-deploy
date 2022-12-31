@@ -14,8 +14,9 @@ type Environment struct {
 	Port        int    `env:"DEPLOY_PORT,default=8080"`
 	ExternalUrl string `env:"DEPLOY_EXTERNAL_URL"`
 
-	SessionSecret string `env:"DEPLOY_SESSION_SECRET,required=true"`
-	ParentDomain  string `env:"DEPLOY_PARENT_DOMAIN,required=true"`
+	SessionSecret  string `env:"DEPLOY_SESSION_SECRET,required=true"`
+	ParentDomain   string `env:"DEPLOY_PARENT_DOMAIN,required=true"`
+	ParentDomainVM string `env:"DEPLOY_PARENT_DOMAIN_VM,required=true"`
 
 	DockerRegistry struct {
 		Url                   string `env:"DEPLOY_DOCKER_REGISTRY_URL,required=true"`

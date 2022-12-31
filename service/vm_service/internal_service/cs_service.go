@@ -1,4 +1,4 @@
-package vm_service
+package internal_service
 
 import (
 	"fmt"

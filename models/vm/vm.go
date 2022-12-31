@@ -42,12 +42,13 @@ type PDNS struct {
 	Record pdnsModels.RecordPublic `bson:"record"`
 }
 
-func (vm *VM) ToDto(status string) dto.VmRead {
+func (vm *VM) ToDto(status, connectionString string) dto.VmRead {
 	return dto.VmRead{
-		ID:    vm.ID,
-		Name:  vm.Name,
-		Owner: vm.Owner,
-		Status: status,
+		ID:               vm.ID,
+		Name:             vm.Name,
+		Owner:            vm.Owner,
+		Status:           status,
+		ConnectionString: connectionString,
 	}
 }
 

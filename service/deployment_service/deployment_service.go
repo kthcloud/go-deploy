@@ -2,6 +2,7 @@ package deployment_service
 
 import (
 	deploymentModel "go-deploy/models/deployment"
+	"go-deploy/service/deployment_service/internal_service"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
 )
@@ -14,19 +15,19 @@ func Create(deploymentID, name, owner string) {
 			return
 		}
 
-		err = CreateHarbor(name)
+		err = internal_service.CreateHarbor(name)
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
-		k8sResult, err := CreateK8s(name)
+		k8sResult, err := internal_service.CreateK8s(name)
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
-		err = CreateNPM(name, k8sResult.Service.GetHostName())
+		err = internal_service.CreateNPM(name, k8sResult.Service.GetHostName())
 		if err != nil {
 			log.Println(err)
 			return
@@ -81,19 +82,19 @@ func MarkBeingDeleted(deploymentID string) error {
 
 func Delete(name string) {
 	go func() {
-		err := DeleteHarbor(name)
+		err := internal_service.DeleteHarbor(name)
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
-		err = DeleteNPM(name)
+		err = internal_service.DeleteNPM(name)
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
-		err = DeleteK8s(name)
+		err = internal_service.DeleteK8s(name)
 		if err != nil {
 			log.Println(err)
 			return
@@ -102,5 +103,5 @@ func Delete(name string) {
 }
 
 func Restart(name string) error {
-	return RestartK8s(name)
+	return internal_service.RestartK8s(name)
 }

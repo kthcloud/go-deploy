@@ -2,6 +2,7 @@ package vm_service
 
 import (
 	"go-deploy/pkg/status_codes"
+	"go-deploy/service/vm_service/internal_service"
 )
 
 func GetStatusByID(userID, vmID string) (int, string, error) {
@@ -10,7 +11,7 @@ func GetStatusByID(userID, vmID string) (int, string, error) {
 		return -1, "Unknown", err
 	}
 
-	csStatusCode, csStatusMsg, err := GetStatusCS(vm.Name)
+	csStatusCode, csStatusMsg, err := internal_service.GetStatusCS(vm.Name)
 	if err != nil || csStatusCode == status_codes.ResourceUnknown {
 		if vm.BeingDeleted {
 			return status_codes.ResourceBeingDeleted, status_codes.GetMsg(status_codes.ResourceBeingDeleted), nil

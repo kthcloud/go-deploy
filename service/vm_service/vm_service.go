@@ -1,7 +1,10 @@
 package vm_service
 
 import (
+	"fmt"
 	vmModel "go-deploy/models/vm"
+	"go-deploy/pkg/conf"
+	"go-deploy/service/vm_service/internal_service"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
 )
@@ -14,12 +17,12 @@ func Create(vmID, name, owner string) {
 			return
 		}
 
-		csResult, err := CreateCS(name)
+		csResult, err := internal_service.CreateCS(name)
 		if err != nil {
 			log.Println(err)
 		}
 
-		_, err = CreatePfSense(name, csResult.PublicIpAddress.IpAddress)
+		_, err = internal_service.CreatePfSense(name, csResult.PublicIpAddress.IpAddress)
 		if err != nil {
 			log.Println(err)
 		}
@@ -73,16 +76,30 @@ func MarkBeingDeleted(vmID string) error {
 
 func Delete(name string) {
 	go func() {
-		err := DeleteCS(name)
+		err := internal_service.DeleteCS(name)
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
-		err = DeletePfSense(name)
+		err = internal_service.DeletePfSense(name)
 		if err != nil {
 			log.Println(err)
 			return
 		}
 	}()
+}
+
+func GetConnectionStringByID(id string) (string, error) {
+	vm, err := vmModel.GetByID(id)
+	if err != nil {
+		return "", nil
+	}
+
+	domainName := conf.Env.ParentDomainVM
+	port := vm.Subsystems.PfSense.PortForwardingRule.ExternalPort
+
+	connectionString := fmt.Sprintf("ssh cloud@%s -p %d", domainName, port)
+
+	return connectionString, nil
 }

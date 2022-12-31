@@ -5,12 +5,21 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="bc4da88f-8032-4df4-9bcc-9ca8b4f364d2" name="Changes" comment="change project name. fix websocket support for logs">
+      <change afterPath="$PROJECT_DIR$/id_rsa" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/id_rsa.pub" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/status_codes/code.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/status_codes/code.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/status_codes/msg.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/status_codes/msg.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/cs/vm.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/cs/vm.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/service/vm_service/cs_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/vm_service/cs_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/dto/vm_read.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/dto/vm_read.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/vm/vm.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/vm/vm.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/conf/environment.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/conf/environment.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routers/api/v1/v1_vm/vm.go" beforeDir="false" afterPath="$PROJECT_DIR$/routers/api/v1/v1_vm/vm.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/deployment_service/deployment_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/deployment_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/deployment_service/harbor_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/internal_service/harbor_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/deployment_service/k8s_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/internal_service/k8s_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/deployment_service/npm_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/internal_service/npm_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/vm_service/cs_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/vm_service/internal_service/cs_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/vm_service/pfsense_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/vm_service/internal_service/pfsense_service.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/service/vm_service/status_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/vm_service/status_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/vm_service/vm_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/vm_service/vm_service.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -84,11 +93,11 @@
       <recent name="$PROJECT_DIR$/models/dto" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\repos\work\go-deploy\service\deployment_service\internal" />
+      <recent name="C:\repos\work\go-deploy\service\vm_service\internal" />
       <recent name="$PROJECT_DIR$/pkg/subsystems/k8s" />
       <recent name="$PROJECT_DIR$/routers/api/v1/v1vms" />
       <recent name="$PROJECT_DIR$/routers/api/v1/deployment" />
-      <recent name="$PROJECT_DIR$/models/deployment" />
-      <recent name="$PROJECT_DIR$/models/vm" />
     </key>
   </component>
   <component name="RunManager" selected="Go Build.Run">
@@ -235,11 +244,6 @@
           <url>file://$PROJECT_DIR$/pkg/subsystems/pdns/record.go</url>
           <line>48</line>
           <option name="timeStamp" value="60" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
-          <url>file://$PROJECT_DIR$/service/vm_service/status_service.go</url>
-          <line>12</line>
-          <option name="timeStamp" value="64" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
