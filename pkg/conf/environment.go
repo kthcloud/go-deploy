@@ -37,9 +37,9 @@ type Environment struct {
 	}
 
 	NPM struct {
+		Url      string `env:"DEPLOY_NPM_API_URL,required=true"`
 		Identity string `env:"DEPLOY_NPM_ADMIN_IDENTITY,required=true"`
 		Secret   string `env:"DEPLOY_NPM_ADMIN_SECRET,required=true"`
-		Url      string `env:"DEPLOY_NPM_API_URL,required=true"`
 	}
 
 	Harbor struct {
@@ -63,7 +63,12 @@ type Environment struct {
 		Url    string `env:"DEPLOY_CS_API_URL,required=true"`
 		Key    string `env:"DEPLOY_CS_API_KEY,required=true"`
 		Secret string `env:"DEPLOY_CS_SECRET_KEY,required=true"`
-		ZoneID string `env:"DEPLOY_CS_ZONE_ID"`
+	}
+
+	PDNS struct {
+		Url  string `env:"DEPLOY_PDNS_API_URL,required=true"`
+		Key  string `env:"DEPLOY_PDNS_API_KEY,required=true"`
+		Zone string `env:"DEPLOY_PDNS_ZONE"`
 	}
 
 	DB struct {

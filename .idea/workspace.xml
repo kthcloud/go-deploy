@@ -5,11 +5,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="bc4da88f-8032-4df4-9bcc-9ca8b4f364d2" name="Changes" comment="change project name. fix websocket support for logs">
+      <change afterPath="$PROJECT_DIR$/pkg/subsystems/pdns/example.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/subsystems/pdns/models/record_public.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/subsystems/pdns/pdns.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/subsystems/pdns/record.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/k8s/models/service_public.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/k8s/models/service_public.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/service/deployment_service/deployment_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/deployment_service.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/service/deployment_service/k8s_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/k8s_service.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/service/deployment_service/npm_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/npm_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/conf/environment.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/conf/environment.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
