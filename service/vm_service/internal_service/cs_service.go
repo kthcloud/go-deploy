@@ -6,6 +6,7 @@ import (
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/status_codes"
 	"go-deploy/pkg/subsystems/cs"
+	"go-deploy/pkg/subsystems/cs/commands"
 	csModels "go-deploy/pkg/subsystems/cs/models"
 	"log"
 )
@@ -16,6 +17,14 @@ type CsCreated struct {
 	PublicIpAddress    *csModels.PublicIpAddressPublic
 }
 
+func withClient() (*cs.Client, error) {
+	return cs.New(&cs.ClientConf{
+		ApiUrl:    conf.Env.CS.Url,
+		ApiKey:    conf.Env.CS.Key,
+		SecretKey: conf.Env.CS.Secret,
+	})
+}
+
 func CreateCS(name string) (*CsCreated, error) {
 	log.Println("setting up cs for", name)
 
@@ -23,11 +32,7 @@ func CreateCS(name string) (*CsCreated, error) {
 		return fmt.Errorf("failed to setup cs for vm %s. details: %s", name, err)
 	}
 
-	client, err := cs.New(&cs.ClientConf{
-		ApiUrl:    conf.Env.CS.Url,
-		ApiKey:    conf.Env.CS.Key,
-		SecretKey: conf.Env.CS.Secret,
-	})
+	client, err := withClient()
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -168,11 +173,7 @@ func DeleteCS(name string) error {
 		return fmt.Errorf("failed to setup npm for vm %s. details: %s", name, err)
 	}
 
-	client, err := cs.New(&cs.ClientConf{
-		ApiUrl:    conf.Env.CS.Url,
-		ApiKey:    conf.Env.CS.Key,
-		SecretKey: conf.Env.CS.Secret,
-	})
+	client, err := withClient()
 	if err != nil {
 		return makeError(err)
 	}
@@ -228,11 +229,7 @@ func GetStatusCS(name string) (int, string, error) {
 
 	unknownMsg := status_codes.GetMsg(status_codes.ResourceUnknown)
 
-	client, err := cs.New(&cs.ClientConf{
-		ApiUrl:    conf.Env.CS.Url,
-		ApiKey:    conf.Env.CS.Key,
-		SecretKey: conf.Env.CS.Secret,
-	})
+	client, err := withClient()
 	if err != nil {
 		return status_codes.ResourceUnknown, unknownMsg, makeError(err)
 	}
@@ -277,21 +274,35 @@ func GetStatusCS(name string) (int, string, error) {
 	return statusCode, status_codes.GetMsg(statusCode), nil
 }
 
-func AddKeyPairCS(id, publicKey string) error {
+func AddKeyPairCS(vmID, publicKey string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to add ssh key pair for for cs vm %s. details: %s", id, err)
+		return fmt.Errorf("failed to add ssh key pair for cs vm %s. details: %s", vmID, err)
 	}
 
-	client, err := cs.New(&cs.ClientConf{
-		ApiUrl:    conf.Env.CS.Url,
-		ApiKey:    conf.Env.CS.Key,
-		SecretKey: conf.Env.CS.Secret,
-	})
+	client, err := withClient()
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = client.AddKeyPairToVM(id, publicKey)
+	err = client.AddKeyPairToVM(vmID, publicKey)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
+}
+
+func DoCommandCS(vmID, command string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to execute command %s for cs vm %s. details: %s", command, vmID, err)
+	}
+
+	client, err := withClient()
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = client.DoVmCommand(vmID, commands.Command(command))
 	if err != nil {
 		return makeError(err)
 	}

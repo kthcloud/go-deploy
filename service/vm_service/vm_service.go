@@ -5,6 +5,7 @@ import (
 	"fmt"
 	vmModel "go-deploy/models/vm"
 	"go-deploy/pkg/conf"
+	"go-deploy/pkg/status_codes"
 	"go-deploy/service/vm_service/internal_service"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
@@ -91,12 +92,7 @@ func Delete(name string) {
 	}()
 }
 
-func GetConnectionStringByID(vmID string) (string, error) {
-	vm, err := vmModel.GetByID(vmID)
-	if err != nil {
-		return "", err
-	}
-
+func GetConnectionString(vm *vmModel.VM) (string, error) {
 	domainName := conf.Env.ParentDomainVM
 	port := vm.Subsystems.PfSense.PortForwardingRule.ExternalPort
 
@@ -105,17 +101,45 @@ func GetConnectionStringByID(vmID string) (string, error) {
 	return connectionString, nil
 }
 
-func CreateKeyPairByID(vmID, publicKey string) error {
-	vm, err := vmModel.GetByID(vmID)
-	if err != nil {
-		return err
-	}
-
+func CreateKeyPair(vm *vmModel.VM, publicKey string) error {
 	csID := vm.Subsystems.CS.VM.ID
 	if csID == "" {
 		return errors.New("cloudstack vm not created")
 	}
 
-	err = internal_service.AddKeyPairCS(csID, publicKey)
+	err := internal_service.AddKeyPairCS(csID, publicKey)
 	return err
+}
+
+func GetStatus(vm *vmModel.VM) (int, string, error) {
+	csStatusCode, csStatusMsg, err := internal_service.GetStatusCS(vm.Name)
+	if err != nil || csStatusCode == status_codes.ResourceUnknown {
+		if vm.BeingDeleted {
+			return status_codes.ResourceBeingDeleted, status_codes.GetMsg(status_codes.ResourceBeingDeleted), nil
+		}
+
+		if vm.BeingCreated {
+			return status_codes.ResourceBeingCreated, status_codes.GetMsg(status_codes.ResourceBeingCreated), nil
+		}
+
+		return status_codes.ResourceUnknown, status_codes.GetMsg(status_codes.ResourceUnknown), nil
+	}
+
+	return csStatusCode, csStatusMsg, nil
+}
+
+func DoCommand(vm *vmModel.VM, command string) {
+	go func() {
+		csID := vm.Subsystems.CS.VM.ID
+		if csID == "" {
+			log.Println("cannot execute any command when cloudstack vm is not set up")
+			return
+		}
+
+		err := internal_service.DoCommandCS(csID, command)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+	}()
 }

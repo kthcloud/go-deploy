@@ -3,6 +3,7 @@ package cs
 import (
 	"fmt"
 	"github.com/apache/cloudstack-go/v2/cloudstack"
+	"go-deploy/pkg/subsystems/cs/commands"
 	"go-deploy/pkg/subsystems/cs/models"
 	"strings"
 )
@@ -187,6 +188,47 @@ func (client *Client) AddKeyPairToVM(id, publicKey string) error {
 	_, err = client.CsClient.SSH.ResetSSHKeyForVirtualMachine(resetKeyPairParams)
 	if err != nil {
 		return makeError(err)
+	}
+
+	return nil
+}
+
+func (client *Client) DoVmCommand(id string, command commands.Command) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to execute vm command to vm %s. details: %s", id, err)
+	}
+
+	vm, _, err := client.CsClient.VirtualMachine.GetVirtualMachineByID(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	switch command {
+	case commands.Start:
+		if vm.State != "Running" && vm.State != "Starting" && vm.State != "Stopping" && vm.State != "Migrating" {
+
+			params := client.CsClient.VirtualMachine.NewStartVirtualMachineParams(id)
+			_, err = client.CsClient.VirtualMachine.StartVirtualMachine(params)
+			if err != nil {
+				return makeError(err)
+			}
+		}
+	case commands.Stop:
+		if vm.State != "Stopped" && vm.State != "Stopping" && vm.State != "Starting" && vm.State != "Migrating" {
+			params := client.CsClient.VirtualMachine.NewStopVirtualMachineParams(id)
+			_, err = client.CsClient.VirtualMachine.StopVirtualMachine(params)
+			if err != nil {
+				return makeError(err)
+			}
+		}
+	case commands.Reboot:
+		if vm.State != "Stopping" && vm.State != "Starting" && vm.State != "Migrating" {
+			params := client.CsClient.VirtualMachine.NewRebootVirtualMachineParams(id)
+			_, err = client.CsClient.VirtualMachine.RebootVirtualMachine(params)
+			if err != nil {
+				return makeError(err)
+			}
+		}
 	}
 
 	return nil
