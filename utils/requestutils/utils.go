@@ -21,23 +21,22 @@ func IsInternalError(code int) bool {
 	return int(code/100) == 5
 }
 
-func setHeaders(req *http.Request) {
-	req.Header.Set("Content-Type", "application/json")
-}
-
 func setBearerTokenHeaders(req *http.Request, token string) {
-	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 }
 
 func setBasicAuthHeaders(req *http.Request, username string, password string) {
-	req.Header.Set("Content-Type", "application/json")
 	req.SetBasicAuth(username, password)
+}
+
+func setJsonHeader(req *http.Request) {
+	req.Header.Set("Content-Type", "application/json")
 }
 
 func doRequestInternal(req *http.Request) (*http.Response, error) {
 	// do request
 	client := &http.Client{}
+
 	res, err := client.Do(req)
 	if err != nil {
 		err = fmt.Errorf("failed to do http request. details: %s", err)
@@ -53,25 +52,57 @@ func doRequestInternal(req *http.Request) (*http.Response, error) {
 	return res, nil
 }
 
-func DoRequest(method string, url string, requestBody []byte) (*http.Response, error) {
+func addParams(req *http.Request, params map[string]string) {
+	values := req.URL.Query()
+	for key, value := range params {
+		values.Add(key, value)
+	}
+	req.URL.RawQuery = values.Encode()
+}
+
+func DoRequest(method string, url string, requestBody []byte, params map[string]string) (*http.Response, error) {
 	// prepare request
 	req, _ := http.NewRequest(method, url, bytes.NewBuffer(requestBody))
-	setHeaders(req)
+	if params == nil {
+		setJsonHeader(req)
+	}
+	addParams(req, params)
 	return doRequestInternal(req)
 }
 
-func DoRequestBearer(method string, url string, requestBody []byte, token string) (*http.Response, error) {
-	// prepare request
+func DoRequestBearer(method string, url string, requestBody []byte, params map[string]string, token string) (*http.Response, error) {
 	req, _ := http.NewRequest(method, url, bytes.NewBuffer(requestBody))
+	if params == nil {
+		setJsonHeader(req)
+	}
 	setBearerTokenHeaders(req, token)
+	addParams(req, params)
 	return doRequestInternal(req)
 }
 
-func DoRequestBasicAuth(method string, url string, requestBody []byte, username string, password string) (*http.Response, error) {
-	// prepare request
+func DoRequestBasicAuth(method string, url string, requestBody []byte, params map[string]string, username string, password string) (*http.Response, error) {
 	req, _ := http.NewRequest(method, url, bytes.NewBuffer(requestBody))
+	if params == nil {
+		setJsonHeader(req)
+	}
 	setBasicAuthHeaders(req, username, password)
+	addParams(req, params)
 	return doRequestInternal(req)
+}
+
+func ParseBody[T any](closer io.ReadCloser, out *T) error {
+	body, err := ReadBody(closer)
+	if err != nil {
+		return err
+	}
+	defer CloseBody(closer)
+
+	err = ParseJson(body, out)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func CloseBody(Body io.ReadCloser) {
@@ -91,10 +122,10 @@ func ReadBody(responseBody io.ReadCloser) ([]byte, error) {
 	return body, nil
 }
 
-func ParseJsonBody[T any](jsonBody []byte, out *T) error {
-	err := json.Unmarshal(jsonBody, out)
+func ParseJson[T any](data []byte, out *T) error {
+	err := json.Unmarshal(data, out)
 	if err != nil {
-		err = fmt.Errorf("failed to parse json body. details: %s", err)
+		err = fmt.Errorf("failed to parse json data. details: %s", err)
 		return err
 	}
 	return nil

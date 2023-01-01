@@ -1,15 +1,27 @@
 package status_codes
 
 var MsgFlags = map[int]string{
+	Unknown:       "unknown",
 	Success:       "success",
 	Error:         "error",
 	InvalidParams: "invalidParams",
 
-	DeploymentBeingCreated:  "deploymentBeingCreated",
-	DeploymentBeingDeleted:  "deploymentBeingDeleted",
-	DeploymentAlreadyExists: "deploymentAlreadyExists",
-	DeploymentCreated:       "deploymentCreated",
-	DeploymentNotFound:      "deploymentNotFound",
+	ResourceUnknown: "resourceUnknown",
+
+	ResourceCreated:  "resourceCreated",
+	ResourceNotFound: "resourceNotFound",
+
+	ResourceBeingCreated: "resourceBeingCreated",
+	ResourceBeingDeleted: "resourceDeleted",
+
+	ResourceStarting: "resourceStarting",
+	ResourceRunning:  "resourceRunning",
+	ResourceStopping: "resourceStopping",
+	ResourceStopped:  "resourceStopped",
+	ResourceError:    "resourceError",
+
+	ResourceValidationFailed: "resourceValidationFailed",
+	ResourceAlreadyExists:    "resourceAlreadyExists",
 }
 
 // GetMsg get error information based on Code

@@ -1,16 +1,17 @@
 package k8s
 
 import (
-	"fmt"
-	"go-deploy/pkg/conf"
-	"go-deploy/utils/subsystemutils"
+	"errors"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var manifestLabelName = "app.kubernetes.io/name"
-
-func getDockerImageName(name string) string {
-	prefixedName := subsystemutils.GetPrefixedName(name)
-	return fmt.Sprintf("%s/%s/%s", conf.Env.DockerRegistry.Url, prefixedName, name)
+func isNotFoundError(err error) bool {
+	statusError := &k8sErrors.StatusError{}
+	if errors.As(err, &statusError) {
+		if statusError.Status().Reason == metav1.StatusReasonNotFound {
+			return true
+		}
+	}
+	return false
 }
-
-func int32Ptr(i int32) *int32 { return &i }

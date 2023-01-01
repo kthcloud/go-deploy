@@ -5,12 +5,17 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="bc4da88f-8032-4df4-9bcc-9ca8b4f364d2" name="Changes" comment="change project name. fix websocket support for logs">
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/pfsense/README.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/subsystems/pfsense/create.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/models/dto/vm_command.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/subsystems/cs/commands/commands.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/routers/api/v1/v1_vm/command.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/routers/api/v1/v1_vm/keyPair.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/cs/vm.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/cs/vm.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routers/api/v1/v1_vm/vm.go" beforeDir="false" afterPath="$PROJECT_DIR$/routers/api/v1/v1_vm/vm.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routers/router.go" beforeDir="false" afterPath="$PROJECT_DIR$/routers/router.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/vm_service/internal_service/cs_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/vm_service/internal_service/cs_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/vm_service/status_service.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/vm_service/vm_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/vm_service/vm_service.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -28,7 +33,7 @@
   <component name="FormatOnSaveOptions">
     <option name="myRunOnSave" value="false" />
   </component>
-  <component name="GOROOT" url="file://$PROJECT_DIR$/../../Program Files/Go" />
+  <component name="GOROOT" url="file:///usr/lib/golang" />
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
@@ -49,6 +54,7 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "ASKED_ADD_EXTERNAL_FILES": "true",
+    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "DefaultGoTemplateProperty": "Go File",
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
@@ -56,38 +62,46 @@
     "RunOnceActivity.go.migrated.go.modules.settings": "true",
     "RunOnceActivity.go.modules.go.list.on.any.changes.was.set": "true",
     "RunOnceActivity.go.watchers.conflict.with.on.save.actions.check.performed": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "WebServerToolWindowFactoryState": "false",
     "go.import.settings.migrated": "true",
     "go.sdk.automatically.set": "true",
-    "last_opened_file_path": "C:/repos/go-deploy",
+    "last_opened_file_path": "C:/repos/work/go-deploy/models/dto",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
     "settings.editor.selected.configurable": "goland.project.structure"
+  },
+  "keyToStringList": {
+    "DatabaseDriversLRU": [
+      "postgresql"
+    ]
   }
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
-      <recent name="C:\repos\deploy-api-go\pkg\auth" />
-      <recent name="C:\repos\deploy-api-go\pkg\validator" />
-      <recent name="C:\repos\deploy-api-go" />
+      <recent name="C:\repos\work\go-deploy\models\dto" />
+      <recent name="C:\repos\work\go-deploy\service\vm_service" />
+      <recent name="$PROJECT_DIR$/pkg/subsystems/k8s/models" />
+      <recent name="$PROJECT_DIR$/pkg/vm_worker" />
+      <recent name="$PROJECT_DIR$/models/dto" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
-      <recent name="C:\repos\go-deploy\models" />
-      <recent name="C:\repos\deploy-api-go\service\project_service" />
-      <recent name="C:\repos\deploy-api-go\pkg\subsystems" />
-      <recent name="C:\repos\deploy-api-go\models" />
-      <recent name="C:\repos\deploy-api-go\pkg\settings" />
+      <recent name="C:\repos\work\go-deploy\pkg\subsystems\cs\commands" />
+      <recent name="C:\repos\work\go-deploy\service\deployment_service\internal" />
+      <recent name="C:\repos\work\go-deploy\service\vm_service\internal" />
+      <recent name="$PROJECT_DIR$/pkg/subsystems/k8s" />
+      <recent name="$PROJECT_DIR$/routers/api/v1/v1vms" />
     </key>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Go Build.Run">
     <configuration name="Run" type="GoApplicationRunConfiguration" factoryName="Go Application">
-      <module name="deploy-api-go" />
+      <module name="go-deploy" />
       <working_directory value="$PROJECT_DIR$" />
       <envs>
-        <env name="DEPLOY_ENV_FILE" value="kthcloud.env" />
+        <env name="DEPLOY_ENV_FILE" value="$PROJECT_DIR$/../admin/secrets/deploy/kthcloud.env" />
       </envs>
       <kind value="PACKAGE" />
       <package value="go-deploy" />
@@ -96,7 +110,7 @@
       <method v="2" />
     </configuration>
     <configuration default="true" type="GoApplicationRunConfiguration" factoryName="Go Application">
-      <module name="deploy-api-go" />
+      <module name="go-deploy" />
       <working_directory value="$PROJECT_DIR$" />
       <kind value="PACKAGE" />
       <package value="deploy-k8s-worker" />
@@ -104,8 +118,52 @@
       <filePath value="$PROJECT_DIR$" />
       <method v="2" />
     </configuration>
+    <configuration name="Run Test" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true">
+      <module name="go-deploy" />
+      <working_directory value="$PROJECT_DIR$/test" />
+      <envs>
+        <env name="DEPLOY_ENV_FILE" value="$PROJECT_DIR$/../admin/secrets/deploy/kthcloud.env" />
+      </envs>
+      <root_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="go-deploy/test" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestCreateBadK8s in go-deploy/test" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="go-deploy" />
+      <working_directory value="$PROJECT_DIR$/test" />
+      <envs>
+        <env name="DEPLOY_ENV_FILE" value="$PROJECT_DIR$/../admin/secrets/deploy/kthcloud.env" />
+      </envs>
+      <root_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="go-deploy/test" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <pattern value="^\QTestCreateBadK8s\E$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestUpdateVM in go-deploy/test" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="go-deploy" />
+      <working_directory value="$PROJECT_DIR$/test" />
+      <envs>
+        <env name="DEPLOY_ENV_FILE" value="$PROJECT_DIR$/../admin/secrets/deploy/kthcloud.env" />
+      </envs>
+      <root_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="go-deploy/test" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <pattern value="^\QTestUpdateVM\E$" />
+      <method v="2" />
+    </configuration>
     <configuration default="true" type="GoTestRunConfiguration" factoryName="Go Test">
-      <module name="deploy-api-go" />
+      <module name="go-deploy" />
       <working_directory value="$PROJECT_DIR$" />
       <kind value="DIRECTORY" />
       <package value="deploy-k8s-worker" />
@@ -114,6 +172,19 @@
       <framework value="gotest" />
       <method v="2" />
     </configuration>
+    <list>
+      <item itemvalue="Go Build.Run" />
+      <item itemvalue="Go Test.TestCreateBadK8s in go-deploy/test" />
+      <item itemvalue="Go Test.TestUpdateVM in go-deploy/test" />
+      <item itemvalue="Go Test.Run Test" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Go Test.TestCreateBadK8s in go-deploy/test" />
+        <item itemvalue="Go Test.Run Test" />
+        <item itemvalue="Go Test.TestUpdateVM in go-deploy/test" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TypeScriptGeneratedFilesManager">
@@ -124,7 +195,19 @@
       <map>
         <entry key="MAIN">
           <value>
-            <State />
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="dev" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
           </value>
         </entry>
       </map>
@@ -144,19 +227,9 @@
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
-          <url>file://$USER_HOME$/go/pkg/mod/github.com/mittwald/goharbor-client/v5@v5.1.0/apiv2/pkg/clients/robotv1/robotv1.go</url>
-          <line>91</line>
-          <option name="timeStamp" value="32" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
-          <url>file://$PROJECT_DIR$/pkg/subsystems/pfsense/create.go</url>
-          <line>53</line>
-          <option name="timeStamp" value="34" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
-          <url>file://$PROJECT_DIR$/pkg/subsystems/pfsense/create.go</url>
-          <line>52</line>
-          <option name="timeStamp" value="41" />
+          <url>file://$PROJECT_DIR$/pkg/subsystems/cs/vm.go</url>
+          <line>224</line>
+          <option name="timeStamp" value="83" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>

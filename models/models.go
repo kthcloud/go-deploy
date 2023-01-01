@@ -12,10 +12,11 @@ import (
 )
 
 var DeploymentCollection *mongo.Collection
+var VmCollection *mongo.Collection
 var client *mongo.Client
 
 func getUri() string {
-	db := conf.Env.Db
+	db := conf.Env.DB
 
 	noCred := len(db.Username) == 0 || len(db.Password) == 0
 
@@ -49,8 +50,12 @@ func Setup() {
 		log.Fatalln(makeError(err))
 	}
 
-	// Find DeploymentCollection
-	DeploymentCollection = client.Database("deploy").Collection("deployments")
+	DeploymentCollection = client.Database(conf.Env.DB.Name).Collection("deployments")
+	if err != nil {
+		log.Fatalln(makeError(err))
+	}
+
+	VmCollection = client.Database(conf.Env.DB.Name).Collection("vms")
 	if err != nil {
 		log.Fatalln(makeError(err))
 	}
@@ -60,6 +65,9 @@ func Shutdown() {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to shutdown models. details: %s", err)
 	}
+
+	DeploymentCollection = nil
+	VmCollection = nil
 
 	err := client.Disconnect(context.Background())
 	if err != nil {

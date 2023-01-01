@@ -6,18 +6,23 @@ import (
 	"github.com/joho/godotenv"
 	"log"
 	"os"
+	"strconv"
+	"strings"
 )
 
 type Environment struct {
 	Port        int    `env:"DEPLOY_PORT,default=8080"`
 	ExternalUrl string `env:"DEPLOY_EXTERNAL_URL"`
 
-	SessionSecret string `env:"DEPLOY_SESSION_SECRET,required=true"`
-	ParentDomain  string `env:"DEPLOY_PARENT_DOMAIN,required=true"`
+	SessionSecret  string `env:"DEPLOY_SESSION_SECRET,required=true"`
+	ParentDomain   string `env:"DEPLOY_PARENT_DOMAIN,required=true"`
+	ParentDomainVM string `env:"DEPLOY_PARENT_DOMAIN_VM,required=true"`
 
 	DockerRegistry struct {
-		Url              string `env:"DEPLOY_DOCKER_REGISTRY_URL,required=true"`
-		PlaceHolderImage string `env:"DEPLOY_PLACEHOLDER_DOCKER_IMAGE,required=true"`
+		Url                   string `env:"DEPLOY_DOCKER_REGISTRY_URL,required=true"`
+		PlaceHolder           string `env:"DEPLOY_PLACEHOLDER_DOCKER_IMAGE,required=true"`
+		PlaceHolderProject    string
+		PlaceHolderRepository string
 	}
 
 	AppPort   int    `env:"DEPLOY_APP_PORT,default=8080"`
@@ -32,10 +37,10 @@ type Environment struct {
 		Config string `env:"DEPLOY_K8S_CONFIG"`
 	}
 
-	Npm struct {
+	NPM struct {
+		Url      string `env:"DEPLOY_NPM_API_URL,required=true"`
 		Identity string `env:"DEPLOY_NPM_ADMIN_IDENTITY,required=true"`
 		Secret   string `env:"DEPLOY_NPM_ADMIN_SECRET,required=true"`
-		Url      string `env:"DEPLOY_NPM_API_URL,required=true"`
 	}
 
 	Harbor struct {
@@ -45,7 +50,29 @@ type Environment struct {
 		WebhookSecret string `env:"DEPLOY_HARBOR_WEBHOOK_SECRET,required=true"`
 	}
 
-	Db struct {
+	PfSense struct {
+		Identity       string `env:"DEPLOY_PFSENSE_ADMIN_IDENTITY,required=true"`
+		Secret         string `env:"DEPLOY_PFSENSE_ADMIN_SECRET,required=true"`
+		Url            string `env:"DEPLOY_PFSENSE_API_URL,required=true"`
+		PublicIP       string `env:"DEPLOY_PFSENSE_PUBLIC_IP,required=true"`
+		PortRange      string `env:"DEPLOY_PFSENSE_PORT_RANGE,required=true"`
+		PortRangeStart int
+		PortRangeEnd   int
+	}
+
+	CS struct {
+		Url    string `env:"DEPLOY_CS_API_URL,required=true"`
+		Key    string `env:"DEPLOY_CS_API_KEY,required=true"`
+		Secret string `env:"DEPLOY_CS_SECRET_KEY,required=true"`
+	}
+
+	PDNS struct {
+		Url  string `env:"DEPLOY_PDNS_API_URL,required=true"`
+		Key  string `env:"DEPLOY_PDNS_API_KEY,required=true"`
+		Zone string `env:"DEPLOY_PDNS_ZONE"`
+	}
+
+	DB struct {
 		Url      string `env:"DEPLOY_DB_URL,required=true"`
 		Name     string `env:"DEPLOY_DB_NAME,required=true"`
 		Username string `env:"DEPLOY_DB_USERNAME"`
@@ -54,6 +81,42 @@ type Environment struct {
 }
 
 var Env Environment
+
+func dockerRegistrySetup() {
+	pfsenseRangeError := "docker registry placeholder image must be specified as project:repository]"
+
+	placeholderImageSplit := strings.Split(Env.DockerRegistry.PlaceHolder, ":")
+
+	if len(placeholderImageSplit) != 2 {
+		log.Fatalln(pfsenseRangeError)
+	}
+
+	Env.DockerRegistry.PlaceHolderProject = placeholderImageSplit[0]
+	Env.DockerRegistry.PlaceHolderRepository = placeholderImageSplit[1]
+}
+
+func pfsenseSetup() {
+	portRangeSplit := strings.Split(Env.PfSense.PortRange, "-")
+
+	pfsenseRangeError := "pfsense port range must be specified as (start-end]"
+
+	if len(portRangeSplit) != 2 {
+		log.Fatalln(pfsenseRangeError)
+	}
+
+	start, err := strconv.Atoi(portRangeSplit[0])
+	if err != nil {
+		log.Fatalln(pfsenseRangeError)
+	}
+
+	end, err := strconv.Atoi(portRangeSplit[1])
+	if err != nil {
+		log.Fatalln(pfsenseRangeError)
+	}
+
+	Env.PfSense.PortRangeStart = start
+	Env.PfSense.PortRangeEnd = end
+}
 
 func Setup() {
 	makeError := func(err error) error {
@@ -73,4 +136,7 @@ func Setup() {
 	if err != nil {
 		log.Fatalln(makeError(err))
 	}
+
+	dockerRegistrySetup()
+	pfsenseSetup()
 }

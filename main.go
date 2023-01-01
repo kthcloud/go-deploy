@@ -2,23 +2,22 @@ package main
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"go-deploy/models"
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/conf"
-	"go-deploy/pkg/subsystems/k8s"
-	"go-deploy/pkg/worker"
+	"go-deploy/pkg/confirmers"
 	"go-deploy/routers"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/gin-gonic/gin"
 )
 
 func setup(context *app.Context) {
 	conf.Setup()
 	models.Setup()
-	k8s.Setup()
-	worker.Setup(context)
+	confirmers.Setup(context)
 }
 
 func shutdown() {
