@@ -1,6 +1,7 @@
 package vm_service
 
 import (
+	"errors"
 	"fmt"
 	vmModel "go-deploy/models/vm"
 	"go-deploy/pkg/conf"
@@ -90,10 +91,10 @@ func Delete(name string) {
 	}()
 }
 
-func GetConnectionStringByID(id string) (string, error) {
-	vm, err := vmModel.GetByID(id)
+func GetConnectionStringByID(vmID string) (string, error) {
+	vm, err := vmModel.GetByID(vmID)
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 
 	domainName := conf.Env.ParentDomainVM
@@ -102,4 +103,19 @@ func GetConnectionStringByID(id string) (string, error) {
 	connectionString := fmt.Sprintf("ssh cloud@%s -p %d", domainName, port)
 
 	return connectionString, nil
+}
+
+func CreateKeyPairByID(vmID, publicKey string) error {
+	vm, err := vmModel.GetByID(vmID)
+	if err != nil {
+		return err
+	}
+
+	csID := vm.Subsystems.CS.VM.ID
+	if csID == "" {
+		return errors.New("cloudstack vm not created")
+	}
+
+	err = internal_service.AddKeyPairCS(csID, publicKey)
+	return err
 }

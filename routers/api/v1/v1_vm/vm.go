@@ -135,7 +135,7 @@ func Create(c *gin.Context) {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
 	}
-	userId := token.Sub
+	userID := token.Sub
 
 	exists, vm, err := vm_service.Exists(requestBody.Name)
 	if err != nil {
@@ -144,7 +144,7 @@ func Create(c *gin.Context) {
 	}
 
 	if exists {
-		if vm.Owner != userId {
+		if vm.Owner != userID {
 			context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceAlreadyExists, "Resource already exists")
 			return
 		}
@@ -152,13 +152,13 @@ func Create(c *gin.Context) {
 			context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingDeleted, "Resource is currently being deleted")
 			return
 		}
-		vm_service.Create(vm.ID, requestBody.Name, userId)
+		vm_service.Create(vm.ID, requestBody.Name, userID)
 		context.JSONResponse(http.StatusCreated, dto.VmCreated{ID: vm.ID})
 		return
 	}
 
 	vmID := uuid.New().String()
-	vm_service.Create(vmID, requestBody.Name, userId)
+	vm_service.Create(vmID, requestBody.Name, userID)
 	context.JSONResponse(http.StatusCreated, dto.VmCreated{ID: vmID})
 }
 
@@ -183,10 +183,10 @@ func Delete(c *gin.Context) {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
 	}
-	userId := token.Sub
+	userID := token.Sub
 	vmID := context.GinContext.Param("vmId")
 
-	current, err := vm_service.GetByID(userId, vmID)
+	current, err := vm_service.GetByID(userID, vmID)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return
@@ -209,4 +209,82 @@ func Delete(c *gin.Context) {
 	vm_service.Delete(current.Name)
 
 	context.OkDeleted()
+}
+
+func CreateKeyPair(c *gin.Context) {
+	context := app.NewContext(c)
+
+	rules := validator.MapData{
+		"vmId": []string{
+			"required",
+			"uuid_v4",
+		},
+	}
+
+	bodyRules := validator.MapData{
+		"publicKey": []string{
+			"required",
+		},
+	}
+
+	validationErrors := context.ValidateParams(&rules)
+	if len(validationErrors) > 0 {
+		context.ResponseValidationError(validationErrors)
+		return
+	}
+
+	var keyPairCreate dto.VmKeyPairCreate
+	validationErrors = context.ValidateJSON(&bodyRules, &keyPairCreate)
+	if len(validationErrors) > 0 {
+		context.ResponseValidationError(validationErrors)
+		return
+	}
+
+	token, err := context.GetKeycloakToken()
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		return
+	}
+	userID := token.Sub
+	vmID := context.GinContext.Param("vmId")
+
+	current, err := vm_service.GetByID(userID, vmID)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
+		return
+	}
+
+	if current == nil {
+		context.NotFound()
+		return
+	}
+
+	if current.BeingCreated {
+		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingCreated, "Resource is currently being created")
+		return
+	}
+
+	if current.BeingDeleted {
+		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingCreated, "Resource is currently being deleted")
+		return
+	}
+
+	statusCode, _, err := vm_service.GetStatusByID(userID, vmID)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to check status")
+		return
+	}
+
+	if statusCode != status_codes.ResourceStopped {
+		context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceError, "Resource must be in stopped state before setting key pairs")
+		return
+	}
+
+	err = vm_service.CreateKeyPairByID(vmID, keyPairCreate.PublicKey)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		return
+	}
+
+	context.Ok()
 }

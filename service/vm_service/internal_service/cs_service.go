@@ -223,7 +223,7 @@ func DeleteCS(name string) error {
 
 func GetStatusCS(name string) (int, string, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup npm for vm %s. details: %s", name, err)
+		return fmt.Errorf("failed to get status for cs vm %s. details: %s", name, err)
 	}
 
 	unknownMsg := status_codes.GetMsg(status_codes.ResourceUnknown)
@@ -275,4 +275,26 @@ func GetStatusCS(name string) (int, string, error) {
 	}
 
 	return statusCode, status_codes.GetMsg(statusCode), nil
+}
+
+func AddKeyPairCS(id, publicKey string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to add ssh key pair for for cs vm %s. details: %s", id, err)
+	}
+
+	client, err := cs.New(&cs.ClientConf{
+		ApiUrl:    conf.Env.CS.Url,
+		ApiKey:    conf.Env.CS.Key,
+		SecretKey: conf.Env.CS.Secret,
+	})
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = client.AddKeyPairToVM(id, publicKey)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
 }

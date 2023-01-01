@@ -5,20 +5,17 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="bc4da88f-8032-4df4-9bcc-9ca8b4f364d2" name="Changes" comment="change project name. fix websocket support for logs">
-      <change afterPath="$PROJECT_DIR$/id_rsa" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/id_rsa.pub" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/models/dto/vm_key_pair_create.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/dto/vm_read.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/dto/vm_read.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/vm/vm.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/vm/vm.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/conf/environment.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/conf/environment.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/id_rsa" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/id_rsa.pub" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/cs/cs.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/cs/cs.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/cs/ip_address.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/cs/ip_address.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/cs/port_forwarding_rule.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/cs/port_forwarding_rule.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/subsystems/cs/vm.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/cs/vm.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/routers/api/v1/v1_vm/vm.go" beforeDir="false" afterPath="$PROJECT_DIR$/routers/api/v1/v1_vm/vm.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/service/deployment_service/deployment_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/deployment_service.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/service/deployment_service/harbor_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/internal_service/harbor_service.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/service/deployment_service/k8s_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/internal_service/k8s_service.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/service/deployment_service/npm_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/internal_service/npm_service.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/service/vm_service/cs_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/vm_service/internal_service/cs_service.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/service/vm_service/pfsense_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/vm_service/internal_service/pfsense_service.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/service/vm_service/status_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/vm_service/status_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routers/router.go" beforeDir="false" afterPath="$PROJECT_DIR$/routers/router.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/vm_service/internal_service/cs_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/vm_service/internal_service/cs_service.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/service/vm_service/vm_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/vm_service/vm_service.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />

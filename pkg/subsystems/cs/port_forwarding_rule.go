@@ -16,7 +16,7 @@ func (client *Client) ReadPortForwardingRule(id string) (*models.PortForwardingR
 		return nil, fmt.Errorf("id required")
 	}
 
-	portForwardingRule, _, err := client.CSClient.Firewall.GetPortForwardingRuleByID(id)
+	portForwardingRule, _, err := client.CsClient.Firewall.GetPortForwardingRuleByID(id)
 	if err != nil {
 		if !strings.Contains(err.Error(), "No match found for") {
 			return nil, makeError(err)
@@ -24,7 +24,7 @@ func (client *Client) ReadPortForwardingRule(id string) (*models.PortForwardingR
 	}
 
 	// fetch project id
-	vm, _, err := client.CSClient.VirtualMachine.GetVirtualMachineByID(portForwardingRule.Virtualmachineid)
+	vm, _, err := client.CsClient.VirtualMachine.GetVirtualMachineByID(portForwardingRule.Virtualmachineid)
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -54,13 +54,13 @@ func (client *Client) CreatePortForwardingRule(public *models.PortForwardingRule
 		return "", makeError(errors.New("ip address id required"))
 	}
 
-	listRulesParams := client.CSClient.Firewall.NewListPortForwardingRulesParams()
+	listRulesParams := client.CsClient.Firewall.NewListPortForwardingRulesParams()
 	listRulesParams.SetProjectid(public.ProjectID)
 	listRulesParams.SetNetworkid(public.NetworkID)
 	listRulesParams.SetIpaddressid(public.IpAddressID)
 	listRulesParams.SetListall(true)
 
-	portForwardingRulesResponse, err := client.CSClient.Firewall.ListPortForwardingRules(listRulesParams)
+	portForwardingRulesResponse, err := client.CsClient.Firewall.ListPortForwardingRules(listRulesParams)
 	if err != nil {
 		return "", makeError(err)
 	}
@@ -73,7 +73,7 @@ func (client *Client) CreatePortForwardingRule(public *models.PortForwardingRule
 		}
 	}
 
-	createRuleParams := client.CSClient.Firewall.NewCreatePortForwardingRuleParams(
+	createRuleParams := client.CsClient.Firewall.NewCreatePortForwardingRuleParams(
 		public.IpAddressID,
 		public.PrivatePort,
 		public.Protocol,
@@ -81,7 +81,7 @@ func (client *Client) CreatePortForwardingRule(public *models.PortForwardingRule
 		public.VmID,
 	)
 
-	created, err := client.CSClient.Firewall.CreatePortForwardingRule(createRuleParams)
+	created, err := client.CsClient.Firewall.CreatePortForwardingRule(createRuleParams)
 	if err != nil {
 		return "", makeError(err)
 	}
@@ -98,7 +98,7 @@ func (client *Client) DeletePortForwardingRule(id string) error {
 		return fmt.Errorf("id required")
 	}
 
-	portForwardingRule, _, err := client.CSClient.Firewall.GetPortForwardingRuleByID(id)
+	portForwardingRule, _, err := client.CsClient.Firewall.GetPortForwardingRuleByID(id)
 	if err != nil {
 		if !strings.Contains(err.Error(), "No match found for") {
 			return makeError(err)
@@ -109,9 +109,9 @@ func (client *Client) DeletePortForwardingRule(id string) error {
 		return nil
 	}
 
-	params := client.CSClient.Firewall.NewDeletePortForwardingRuleParams(id)
+	params := client.CsClient.Firewall.NewDeletePortForwardingRuleParams(id)
 
-	_, err = client.CSClient.Firewall.DeletePortForwardingRule(params)
+	_, err = client.CsClient.Firewall.DeletePortForwardingRule(params)
 	if err != nil {
 		return makeError(err)
 	}

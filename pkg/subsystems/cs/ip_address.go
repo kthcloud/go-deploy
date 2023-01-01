@@ -16,7 +16,7 @@ func (client *Client) ReadPublicIpAddress(id string) (*models.PublicIpAddressPub
 		return nil, fmt.Errorf("id required")
 	}
 
-	publicIP, _, err := client.CSClient.Address.GetPublicIpAddressByID(id)
+	publicIP, _, err := client.CsClient.Address.GetPublicIpAddressByID(id)
 	if err != nil {
 		if !strings.Contains(err.Error(), "No match found for") {
 			return nil, makeError(err)
@@ -36,12 +36,12 @@ func (client *Client) ReadFreePublicIpAddress(networkID, projectID string) (*mod
 		return fmt.Errorf("failed to read free public ip address. details: %s", err)
 	}
 
-	params := client.CSClient.Address.NewListPublicIpAddressesParams()
+	params := client.CsClient.Address.NewListPublicIpAddressesParams()
 	params.SetProjectid(projectID)
 	params.SetAssociatednetworkid(networkID)
 	params.SetListall(true)
 
-	response, err := client.CSClient.Address.ListPublicIpAddresses(params)
+	response, err := client.CsClient.Address.ListPublicIpAddresses(params)
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -52,13 +52,13 @@ func (client *Client) ReadFreePublicIpAddress(networkID, projectID string) (*mod
 			continue
 		}
 
-		listRulesParams := client.CSClient.Firewall.NewListPortForwardingRulesParams()
+		listRulesParams := client.CsClient.Firewall.NewListPortForwardingRulesParams()
 		listRulesParams.SetIpaddressid(ip.Id)
 		listRulesParams.SetNetworkid(networkID)
 		listRulesParams.SetProjectid(projectID)
 		listRulesParams.SetListall(true)
 
-		rulesResponse, err := client.CSClient.Firewall.ListPortForwardingRules(listRulesParams)
+		rulesResponse, err := client.CsClient.Firewall.ListPortForwardingRules(listRulesParams)
 		if err != nil {
 			return nil, makeError(err)
 		}
@@ -82,12 +82,12 @@ func (client *Client) ReadPublicIpAddressByVmID(vmID, networkID, projectID strin
 		return fmt.Errorf("failed to read free public ip address. details: %s", err)
 	}
 
-	params := client.CSClient.Address.NewListPublicIpAddressesParams()
+	params := client.CsClient.Address.NewListPublicIpAddressesParams()
 	params.SetProjectid(projectID)
 	params.SetAssociatednetworkid(networkID)
 	params.SetListall(true)
 
-	response, err := client.CSClient.Address.ListPublicIpAddresses(params)
+	response, err := client.CsClient.Address.ListPublicIpAddresses(params)
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -101,13 +101,13 @@ func (client *Client) ReadPublicIpAddressByVmID(vmID, networkID, projectID strin
 			continue
 		}
 
-		listRulesParams := client.CSClient.Firewall.NewListPortForwardingRulesParams()
+		listRulesParams := client.CsClient.Firewall.NewListPortForwardingRulesParams()
 		listRulesParams.SetIpaddressid(ip.Id)
 		listRulesParams.SetNetworkid(networkID)
 		listRulesParams.SetProjectid(projectID)
 		listRulesParams.SetListall(true)
 
-		rulesResponse, err := client.CSClient.Firewall.ListPortForwardingRules(listRulesParams)
+		rulesResponse, err := client.CsClient.Firewall.ListPortForwardingRules(listRulesParams)
 		if err != nil {
 			return nil, makeError(err)
 		}
@@ -141,11 +141,11 @@ func (client *Client) CreatePublicIpAddress(public *models.PublicIpAddressPublic
 		return "", fmt.Errorf("network id required")
 	}
 
-	createIpAddressParams := client.CSClient.Address.NewAssociateIpAddressParams()
+	createIpAddressParams := client.CsClient.Address.NewAssociateIpAddressParams()
 	createIpAddressParams.SetNetworkid(public.NetworkID)
 	createIpAddressParams.SetProjectid(public.ProjectID)
 
-	created, err := client.CSClient.Address.AssociateIpAddress(createIpAddressParams)
+	created, err := client.CsClient.Address.AssociateIpAddress(createIpAddressParams)
 	if err != nil {
 		return "", makeError(err)
 	}
@@ -162,7 +162,7 @@ func (client *Client) DeletePublicIpAddress(id string) error {
 		return fmt.Errorf("id required")
 	}
 
-	publicIP, _, err := client.CSClient.Address.GetPublicIpAddressByID(id)
+	publicIP, _, err := client.CsClient.Address.GetPublicIpAddressByID(id)
 	if err != nil {
 		if !strings.Contains(err.Error(), "No match found for") {
 			return makeError(err)
@@ -173,9 +173,9 @@ func (client *Client) DeletePublicIpAddress(id string) error {
 		return nil
 	}
 
-	params := client.CSClient.Address.NewDisassociateIpAddressParams(id)
+	params := client.CsClient.Address.NewDisassociateIpAddressParams(id)
 
-	_, err = client.CSClient.Address.DisassociateIpAddress(params)
+	_, err = client.CsClient.Address.DisassociateIpAddress(params)
 	if err != nil {
 		return makeError(err)
 	}

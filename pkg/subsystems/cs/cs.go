@@ -7,7 +7,7 @@ import (
 )
 
 type Client struct {
-	CSClient *cloudstack.CloudStackClient
+	CsClient *cloudstack.CloudStackClient
 }
 
 type ClientConf struct {
@@ -29,7 +29,7 @@ func New(config *ClientConf) (*Client, error) {
 	)
 
 	client := Client{
-		CSClient: csClient,
+		CsClient: csClient,
 	}
 
 	return &client, nil
