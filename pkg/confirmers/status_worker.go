@@ -57,7 +57,7 @@ func vmConfirmer(ctx *app.Context) {
 			deleted := VmDeleted(&vm)
 			if deleted {
 				log.Printf("marking vm %s as deleted\n", vm.Name)
-				_ = vmModel.DeleteByID(vm.ID, vm.Owner)
+				_ = vmModel.DeleteByID(vm.ID, vm.OwnerID)
 			}
 		}
 		time.Sleep(5 * time.Second)

@@ -143,17 +143,6 @@ func Create(c *gin.Context) {
 
 	userID := token.Sub
 
-	vmCount, err := vm_service.GetCount(userID)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
-		return
-	}
-
-	if vmCount >= token.VmQuota {
-		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, fmt.Sprintf("User is not allowed to create more than %d vms", token.VmQuota))
-		return
-	}
-
 	exists, vm, err := vm_service.Exists(requestBody.Name)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
@@ -161,7 +150,7 @@ func Create(c *gin.Context) {
 	}
 
 	if exists {
-		if vm.Owner != userID {
+		if vm.OwnerID != userID {
 			context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceAlreadyExists, "Resource already exists")
 			return
 		}
@@ -171,6 +160,17 @@ func Create(c *gin.Context) {
 		}
 		vm_service.Create(vm.ID, requestBody.Name, userID)
 		context.JSONResponse(http.StatusCreated, dto.VmCreated{ID: vm.ID})
+		return
+	}
+
+	vmCount, err := vm_service.GetCount(userID)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		return
+	}
+
+	if vmCount >= token.VmQuota {
+		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, fmt.Sprintf("User is not allowed to create more than %d vms", token.VmQuota))
 		return
 	}
 

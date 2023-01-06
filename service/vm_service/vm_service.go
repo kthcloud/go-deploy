@@ -38,7 +38,7 @@ func GetByID(userID, vmID string) (*vmModel.VM, error) {
 		return nil, err
 	}
 
-	if vm != nil && vm.Owner != userID {
+	if vm != nil && vm.OwnerID != userID {
 		return nil, nil
 	}
 
@@ -51,7 +51,7 @@ func GetByName(userId, name string) (*vmModel.VM, error) {
 		return nil, err
 	}
 
-	if vm != nil && vm.Owner != userId {
+	if vm != nil && vm.OwnerID != userId {
 		return nil, nil
 	}
 

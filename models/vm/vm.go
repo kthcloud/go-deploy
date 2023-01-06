@@ -16,7 +16,7 @@ import (
 type VM struct {
 	ID           string    `bson:"id"`
 	Name         string    `bson:"name"`
-	Owner        string    `bson:"owner"`
+	OwnerID      string    `bson:"ownerId"`
 	BeingCreated bool      `bson:"beingCreated"`
 	BeingDeleted bool      `bson:"beingDeleted"`
 	Subsystems   Subsystem `bson:"subsystems"`
@@ -46,7 +46,7 @@ func (vm *VM) ToDto(status, connectionString string) dto.VmRead {
 	return dto.VmRead{
 		ID:               vm.ID,
 		Name:             vm.Name,
-		OwnerID:          vm.Owner,
+		OwnerID:          vm.OwnerID,
 		Status:           status,
 		ConnectionString: connectionString,
 	}
@@ -65,7 +65,7 @@ func Create(vmID, name, owner string) error {
 	vm := VM{
 		ID:           vmID,
 		Name:         name,
-		Owner:        owner,
+		OwnerID:      owner,
 		BeingCreated: true,
 		BeingDeleted: false,
 	}
