@@ -141,7 +141,7 @@ func Create(c *gin.Context) {
 	}
 
 	if exists {
-		if deployment.Owner != userId {
+		if deployment.OwnerID != userId {
 			context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceAlreadyExists, "Resource already exists")
 			return
 		}

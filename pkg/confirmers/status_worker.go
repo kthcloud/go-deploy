@@ -30,7 +30,7 @@ func deploymentConfirmer(ctx *app.Context) {
 			deleted := DeploymentDeleted(&deployment)
 			if deleted {
 				log.Printf("marking deployment %s as deleted\n", deployment.Name)
-				_ = deploymentModel.DeleteDeployment(deployment.ID, deployment.Owner)
+				_ = deploymentModel.DeleteDeployment(deployment.ID, deployment.OwnerID)
 			}
 		}
 		time.Sleep(5 * time.Second)

@@ -66,6 +66,10 @@ func GetAll() ([]vmModel.VM, error) {
 	return vmModel.GetAll()
 }
 
+func GetCount(userID string) (int, error) {
+	return vmModel.CountByOwnerID(userID)
+}
+
 func Exists(name string) (bool, *vmModel.VM, error) {
 	return vmModel.Exists(name)
 }

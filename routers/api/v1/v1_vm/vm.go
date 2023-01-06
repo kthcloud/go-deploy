@@ -135,7 +135,24 @@ func Create(c *gin.Context) {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
 	}
+
+	if token.VmQuota == 0 {
+		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, "User is not allowed to create vms")
+		return
+	}
+
 	userID := token.Sub
+
+	vmCount, err := vm_service.GetCount(userID)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		return
+	}
+
+	if vmCount >= token.VmQuota {
+		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, fmt.Sprintf("User is not allowed to create more than %d vms", token.VmQuota))
+		return
+	}
 
 	exists, vm, err := vm_service.Exists(requestBody.Name)
 	if err != nil {
