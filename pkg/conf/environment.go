@@ -98,20 +98,20 @@ func dockerRegistrySetup() {
 func pfsenseSetup() {
 	portRangeSplit := strings.Split(Env.PfSense.PortRange, "-")
 
-	pfsenseRangeError := "pfsense port range must be specified as (start-end]"
+	pfSenseRangeError := "pfsense port range must be specified as (start-end]"
 
 	if len(portRangeSplit) != 2 {
-		log.Fatalln(pfsenseRangeError)
+		log.Fatalln(pfSenseRangeError)
 	}
 
 	start, err := strconv.Atoi(portRangeSplit[0])
 	if err != nil {
-		log.Fatalln(pfsenseRangeError)
+		log.Fatalln(pfSenseRangeError)
 	}
 
 	end, err := strconv.Atoi(portRangeSplit[1])
 	if err != nil {
-		log.Fatalln(pfsenseRangeError)
+		log.Fatalln(pfSenseRangeError)
 	}
 
 	Env.PfSense.PortRangeStart = start

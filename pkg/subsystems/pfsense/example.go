@@ -9,15 +9,15 @@ import (
 )
 
 func Example() {
-	pfsenseConf := conf.Env.PfSense
+	pfSenseConf := conf.Env.PfSense
 
 	client, _ := New(&ClientConf{
-		ApiUrl:         pfsenseConf.Url,
-		Username:       pfsenseConf.Identity,
-		Password:       pfsenseConf.Secret,
-		PublicIP:       net.ParseIP(pfsenseConf.PublicIP),
-		PortRangeStart: pfsenseConf.PortRangeStart,
-		PortRangeEnd:   pfsenseConf.PortRangeEnd,
+		ApiUrl:         pfSenseConf.Url,
+		Username:       pfSenseConf.Identity,
+		Password:       pfSenseConf.Secret,
+		PublicIP:       net.ParseIP(pfSenseConf.PublicIP),
+		PortRangeStart: pfSenseConf.PortRangeStart,
+		PortRangeEnd:   pfSenseConf.PortRangeEnd,
 	})
 
 	name := "demo"
