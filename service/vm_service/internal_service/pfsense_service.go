@@ -17,15 +17,15 @@ func CreatePfSense(name string, vmIP net.IP) (*psModels.PortForwardingRulePublic
 		return fmt.Errorf("failed to setup pfSense for vm %s. details: %s", name, err)
 	}
 
-	pfsenseConf := conf.Env.PfSense
+	pfSenseConf := conf.Env.PfSense
 
 	client, err := pfsense.New(&pfsense.ClientConf{
-		ApiUrl:         pfsenseConf.Url,
-		Username:       pfsenseConf.Identity,
-		Password:       pfsenseConf.Secret,
-		PublicIP:       net.ParseIP(pfsenseConf.PublicIP),
-		PortRangeStart: pfsenseConf.PortRangeStart,
-		PortRangeEnd:   pfsenseConf.PortRangeEnd,
+		ApiUrl:         pfSenseConf.Url,
+		Username:       pfSenseConf.Identity,
+		Password:       pfSenseConf.Secret,
+		PublicIP:       net.ParseIP(pfSenseConf.PublicIP),
+		PortRangeStart: pfSenseConf.PortRangeStart,
+		PortRangeEnd:   pfSenseConf.PortRangeEnd,
 	})
 	if err != nil {
 		return nil, makeError(err)
@@ -92,15 +92,15 @@ func DeletePfSense(name string) error {
 		return fmt.Errorf("failed to setup pfSense for vm %s. details: %s", name, err)
 	}
 
-	pfsenseConf := conf.Env.PfSense
+	pfSenseConf := conf.Env.PfSense
 
 	client, err := pfsense.New(&pfsense.ClientConf{
-		ApiUrl:         pfsenseConf.Url,
-		Username:       pfsenseConf.Identity,
-		Password:       pfsenseConf.Secret,
-		PublicIP:       net.ParseIP(pfsenseConf.PublicIP),
-		PortRangeStart: pfsenseConf.PortRangeStart,
-		PortRangeEnd:   pfsenseConf.PortRangeEnd,
+		ApiUrl:         pfSenseConf.Url,
+		Username:       pfSenseConf.Identity,
+		Password:       pfSenseConf.Secret,
+		PublicIP:       net.ParseIP(pfSenseConf.PublicIP),
+		PortRangeStart: pfSenseConf.PortRangeStart,
+		PortRangeEnd:   pfSenseConf.PortRangeEnd,
 	})
 	if err != nil {
 		return makeError(err)

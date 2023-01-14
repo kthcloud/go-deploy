@@ -23,9 +23,9 @@ type VM struct {
 }
 
 type Subsystem struct {
-	CS      CS `bson:"cs"`
-	PfSense PfSense
-	PDNS    PDNS `bson:"pdns"`
+	CS      CS      `bson:"cs"`
+	PfSense PfSense `bson:"pfSense"`
+	PDNS    PDNS    `bson:"pdns"`
 }
 
 type CS struct {
