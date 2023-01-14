@@ -117,7 +117,8 @@ func CreateKeyPair(vm *vmModel.VM, publicKey string) error {
 
 func GetStatus(vm *vmModel.VM) (int, string, error) {
 	csStatusCode, csStatusMsg, err := internal_service.GetStatusCS(vm.Name)
-	if err != nil {
+
+	if err != nil || csStatusCode == status_codes.ResourceUnknown || csStatusCode == status_codes.ResourceNotFound {
 		if vm.BeingDeleted {
 			return status_codes.ResourceBeingDeleted, status_codes.GetMsg(status_codes.ResourceBeingDeleted), nil
 		}
@@ -125,10 +126,7 @@ func GetStatus(vm *vmModel.VM) (int, string, error) {
 		if vm.BeingCreated {
 			return status_codes.ResourceBeingCreated, status_codes.GetMsg(status_codes.ResourceBeingCreated), nil
 		}
-
-		return status_codes.ResourceUnknown, status_codes.GetMsg(status_codes.ResourceUnknown), nil
 	}
-
 
 	return csStatusCode, csStatusMsg, nil
 }
