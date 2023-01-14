@@ -153,7 +153,7 @@ func CountByOwnerID(ownerID string) (int, error) {
 }
 
 func DeleteByID(vmID, userID string) error {
-	_, err := models.VmCollection.DeleteOne(context.TODO(), bson.D{{"id", vmID}, {"owner", userID}})
+	_, err := models.VmCollection.DeleteOne(context.TODO(), bson.D{{"id", vmID}, {"ownerId", userID}})
 	if err != nil {
 		err = fmt.Errorf("failed to delete vm %s. details: %s", vmID, err)
 		log.Println(err)

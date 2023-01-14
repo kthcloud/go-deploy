@@ -152,7 +152,7 @@ func GetDeployments(ownerID string) ([]Deployment, error) {
 }
 
 func DeleteDeployment(deploymentID, userId string) error {
-	_, err := models.DeploymentCollection.DeleteOne(context.TODO(), bson.D{{"id", deploymentID}, {"owner", userId}})
+	_, err := models.DeploymentCollection.DeleteOne(context.TODO(), bson.D{{"id", deploymentID}, {"ownerId", userId}})
 	if err != nil {
 		err = fmt.Errorf("failed to delete deployment %s. details: %s", deploymentID, err)
 		log.Println(err)
