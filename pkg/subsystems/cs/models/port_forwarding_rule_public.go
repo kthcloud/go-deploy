@@ -10,7 +10,7 @@ type PortForwardingRulePublic struct {
 	VmID        string `bson:"vmId"`
 	ProjectID   string `bson:"projectID"`
 	NetworkID   string `bson:"networkId"`
-	IpAddressID string `bson:"IpAddressId"`
+	IpAddressID string `bson:"ipAddressId"`
 	PublicPort  int    `bson:"publicPort"`
 	PrivatePort int    `bson:"privatePort"`
 	Protocol    string `bson:"protocol"`
