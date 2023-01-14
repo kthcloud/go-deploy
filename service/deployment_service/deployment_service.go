@@ -42,7 +42,7 @@ func GetByID(userId, deploymentID string) (*deploymentModel.Deployment, error) {
 		return nil, err
 	}
 
-	if deployment != nil && deployment.Owner != userId {
+	if deployment != nil && deployment.OwnerID != userId {
 		return nil, nil
 	}
 
@@ -55,7 +55,7 @@ func GetByName(userId, name string) (*deploymentModel.Deployment, error) {
 		return nil, err
 	}
 
-	if deployment != nil && deployment.Owner != userId {
+	if deployment != nil && deployment.OwnerID != userId {
 		return nil, nil
 	}
 

@@ -16,7 +16,7 @@ import (
 type VM struct {
 	ID           string    `bson:"id"`
 	Name         string    `bson:"name"`
-	Owner        string    `bson:"owner"`
+	OwnerID      string    `bson:"ownerId"`
 	BeingCreated bool      `bson:"beingCreated"`
 	BeingDeleted bool      `bson:"beingDeleted"`
 	Subsystems   Subsystem `bson:"subsystems"`
@@ -46,7 +46,7 @@ func (vm *VM) ToDto(status, connectionString string) dto.VmRead {
 	return dto.VmRead{
 		ID:               vm.ID,
 		Name:             vm.Name,
-		Owner:            vm.Owner,
+		OwnerID:          vm.OwnerID,
 		Status:           status,
 		ConnectionString: connectionString,
 	}
@@ -65,7 +65,7 @@ func Create(vmID, name, owner string) error {
 	vm := VM{
 		ID:           vmID,
 		Name:         name,
-		Owner:        owner,
+		OwnerID:      owner,
 		BeingCreated: true,
 		BeingDeleted: false,
 	}
@@ -116,10 +116,10 @@ func Exists(name string) (bool, *VM, error) {
 }
 
 func GetByOwnerID(ownerID string) ([]VM, error) {
-	cursor, err := models.VmCollection.Find(context.TODO(), bson.D{{"ownerID", ownerID}})
+	cursor, err := models.VmCollection.Find(context.TODO(), bson.D{{"ownerId", ownerID}})
 
 	if err != nil {
-		err = fmt.Errorf("failed to find vms from ownerID %s. details: %s", ownerID, err)
+		err = fmt.Errorf("failed to find vms from owner ID %s. details: %s", ownerID, err)
 		log.Println(err)
 		return nil, err
 	}
@@ -130,7 +130,7 @@ func GetByOwnerID(ownerID string) ([]VM, error) {
 
 		err = cursor.Decode(&vm)
 		if err != nil {
-			err = fmt.Errorf("failed to fetch vm when fetching all vms from ownerID %s. details: %s", ownerID, err)
+			err = fmt.Errorf("failed to fetch vm when fetching all vms from owner ID %s. details: %s", ownerID, err)
 			log.Println(err)
 			return nil, err
 		}
@@ -138,6 +138,18 @@ func GetByOwnerID(ownerID string) ([]VM, error) {
 	}
 
 	return vms, nil
+}
+
+func CountByOwnerID(ownerID string) (int, error) {
+	count, err := models.VmCollection.CountDocuments(context.TODO(), bson.D{{"ownerId", ownerID}})
+
+	if err != nil {
+		err = fmt.Errorf("failed to find vms from owner ID %s. details: %s", ownerID, err)
+		log.Println(err)
+		return 0, err
+	}
+
+	return int(count), nil
 }
 
 func DeleteByID(vmID, userID string) error {

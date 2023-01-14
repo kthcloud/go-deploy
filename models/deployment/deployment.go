@@ -16,7 +16,7 @@ import (
 type Deployment struct {
 	ID           string               `bson:"id"`
 	Name         string               `bson:"name"`
-	Owner        string               `bson:"owner"`
+	OwnerID      string               `bson:"ownerId"`
 	BeingCreated bool                 `bson:"beingCreated"`
 	BeingDeleted bool                 `bson:"beingDeleted"`
 	Subsystems   DeploymentSubsystems `bson:"subsystems"`
@@ -47,10 +47,10 @@ type DeploymentHarbor struct {
 
 func (deployment *Deployment) ToDto(status string) dto.DeploymentRead {
 	return dto.DeploymentRead{
-		ID:     deployment.ID,
-		Name:   deployment.Name,
-		Owner:  deployment.Owner,
-		Status: status,
+		ID:      deployment.ID,
+		Name:    deployment.Name,
+		OwnerID: deployment.OwnerID,
+		Status:  status,
 	}
 }
 
@@ -71,7 +71,7 @@ func CreateDeployment(deploymentID, name, owner string) error {
 	deployment := Deployment{
 		ID:           deploymentID,
 		Name:         name,
-		Owner:        owner,
+		OwnerID:      owner,
 		BeingCreated: true,
 		BeingDeleted: false,
 	}
@@ -126,11 +126,11 @@ func DeploymentExists(name string) (bool, *Deployment, error) {
 	return true, deployment, err
 }
 
-func GetDeployments(owner string) ([]Deployment, error) {
-	cursor, err := models.DeploymentCollection.Find(context.TODO(), bson.D{{"owner", owner}})
+func GetDeployments(ownerID string) ([]Deployment, error) {
+	cursor, err := models.DeploymentCollection.Find(context.TODO(), bson.D{{"ownerId", ownerID}})
 
 	if err != nil {
-		err = fmt.Errorf("failed to find deployments from owner %s. details: %s", owner, err)
+		err = fmt.Errorf("failed to find deployments from owner ID %s. details: %s", ownerID, err)
 		log.Println(err)
 		return nil, err
 	}
@@ -141,7 +141,7 @@ func GetDeployments(owner string) ([]Deployment, error) {
 
 		err = cursor.Decode(&deployment)
 		if err != nil {
-			err = fmt.Errorf("failed to fetch deployment when fetching all deployments from owner %s. details: %s", owner, err)
+			err = fmt.Errorf("failed to fetch deployment when fetching all deployments from owner ID %s. details: %s", ownerID, err)
 			log.Println(err)
 			return nil, err
 		}
