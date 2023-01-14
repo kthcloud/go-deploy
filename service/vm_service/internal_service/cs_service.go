@@ -170,7 +170,7 @@ func DeleteCS(name string) error {
 	log.Println("deleting cs for", name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup npm for vm %s. details: %s", name, err)
+		return fmt.Errorf("failed to delete cs for vm %s. details: %s", name, err)
 	}
 
 	client, err := withClient()
