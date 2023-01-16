@@ -108,18 +108,18 @@ func Create(c *gin.Context) {
 	bodyRules := validator.MapData{
 		"name": []string{
 			"required",
-			"regex:^[a-zA-Z]+$",
+			"regex:^[a-zA-Z]([a-zA-Z0-9-]*[a-zA-Z0-9])?([a-zA-Z]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$",
 			"min:3",
-			"max:10",
+			"max:30",
 		},
 	}
 
 	messages := validator.MapData{
 		"name": []string{
 			"required:Name is required",
-			"regexp:Name must be all lowercase",
-			"min:Name must be between 3-10 characters",
-			"max:Name must be between 3-10 characters",
+			"regexp:Name must follow RFC 1035 and must not include any dots",
+			"min:Name must be between 3-30 characters",
+			"max:Name must be between 3-30 characters",
 		},
 	}
 
