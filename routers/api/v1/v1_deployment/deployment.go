@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"go-deploy/models/dto"
 	"go-deploy/pkg/app"
+	"go-deploy/pkg/conf"
 	"go-deploy/pkg/status_codes"
 	"go-deploy/pkg/validator"
 	"go-deploy/service/deployment_service"
@@ -19,7 +20,7 @@ func getAll(userID string, context *app.ClientContext) {
 	dtoDeployments := make([]dto.DeploymentRead, len(deployments))
 	for i, deployment := range deployments {
 		_, statusMsg, _ := deployment_service.GetStatusByID(userID, deployment.ID)
-		dtoDeployments[i] = deployment.ToDto(statusMsg)
+		dtoDeployments[i] = deployment.ToDto(statusMsg, conf.Env.ParentDomain)
 	}
 
 	context.JSONResponse(http.StatusOK, dtoDeployments)
@@ -61,7 +62,7 @@ func GetMany(c *gin.Context) {
 	dtoDeployments := make([]dto.DeploymentRead, len(deployments))
 	for i, deployment := range deployments {
 		_, statusMsg, _ := deployment_service.GetStatusByID(userID, deployment.ID)
-		dtoDeployments[i] = deployment.ToDto(statusMsg)
+		dtoDeployments[i] = deployment.ToDto(statusMsg, conf.Env.ParentDomain)
 	}
 
 	context.JSONResponse(200, dtoDeployments)
@@ -96,7 +97,7 @@ func Get(c *gin.Context) {
 	}
 
 	_, statusMsg, _ := deployment_service.GetStatusByID(userID, deployment.ID)
-	context.JSONResponse(200, deployment.ToDto(statusMsg))
+	context.JSONResponse(200, deployment.ToDto(statusMsg, conf.Env.ParentDomain))
 }
 
 func Create(c *gin.Context) {
@@ -105,18 +106,18 @@ func Create(c *gin.Context) {
 	bodyRules := validator.MapData{
 		"name": []string{
 			"required",
-			"regex:^[a-zA-Z]+$",
+			"regex:^[a-zA-Z]([a-zA-Z0-9-]*[a-zA-Z0-9])?([a-zA-Z]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$",
 			"min:3",
-			"max:10",
+			"max:30",
 		},
 	}
 
 	messages := validator.MapData{
 		"name": []string{
 			"required:Name is required",
-			"regexp:Name must be all lowercase",
-			"min:Name must be between 3-10 characters",
-			"max:Name must be between 3-10 characters",
+			"regexp:Name must follow RFC 1035 and must not include any dots",
+			"min:Name must be between 3-30 characters",
+			"max:Name must be between 3-30 characters",
 		},
 	}
 

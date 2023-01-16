@@ -45,12 +45,14 @@ type DeploymentHarbor struct {
 	Webhook    harborModels.WebhookPublic    `bson:"webhook"`
 }
 
-func (deployment *Deployment) ToDto(status string) dto.DeploymentRead {
+func (deployment *Deployment) ToDto(status string, baseURL string) dto.DeploymentRead {
+	fullURL := fmt.Sprintf("https://%s.%s", deployment.Name, baseURL)
 	return dto.DeploymentRead{
 		ID:      deployment.ID,
 		Name:    deployment.Name,
 		OwnerID: deployment.OwnerID,
 		Status:  status,
+		URL:     fullURL,
 	}
 }
 
