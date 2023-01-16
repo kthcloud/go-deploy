@@ -32,12 +32,11 @@ func getUri() string {
 
 func Setup() {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup models. details: %s", err)
+		return fmt.Errorf("failed to setup database. details: %s", err)
 	}
 
 	// Connect to db
 	uri := getUri()
-	log.Println("connecting to database")
 	clientResult, err := mongo.NewClient(options.Client().ApplyURI(uri))
 	if err != nil {
 		log.Fatalln(makeError(err))
@@ -50,20 +49,26 @@ func Setup() {
 		log.Fatalln(makeError(err))
 	}
 
+	log.Println("sucessfully connected to database")
+
 	DeploymentCollection = client.Database(conf.Env.DB.Name).Collection("deployments")
 	if err != nil {
 		log.Fatalln(makeError(err))
 	}
 
+	log.Println("found collection deployments")
+
 	VmCollection = client.Database(conf.Env.DB.Name).Collection("vms")
 	if err != nil {
 		log.Fatalln(makeError(err))
 	}
+
+	log.Println("found collection vms")
 }
 
 func Shutdown() {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to shutdown models. details: %s", err)
+		return fmt.Errorf("failed to shutdown database. details: %s", err)
 	}
 
 	DeploymentCollection = nil

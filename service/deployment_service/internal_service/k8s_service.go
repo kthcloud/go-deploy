@@ -73,6 +73,7 @@ func CreateK8s(name string) (*K8sResult, error) {
 			return nil, makeError(err)
 		}
 
+		namespace = &k8sModels.NamespacePublic{}
 		namespace.Name = prefixedName
 
 		err = deploymentModel.UpdateSubsystemByName(name, "k8s", "namespace", namespace)
