@@ -10,8 +10,12 @@ import (
 )
 
 func NewRouter() *gin.Engine {
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowOrigins = []string{"*"}
+	corsConfig.AddAllowHeaders("authorization")
+
 	router := gin.New()
-	router.Use(cors.Default())
+	router.Use(cors.New(corsConfig))
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 
