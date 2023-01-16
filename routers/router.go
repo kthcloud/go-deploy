@@ -8,20 +8,32 @@ import (
 	"go-deploy/routers/api/v1/v1_vm"
 )
 
-func NewRouter() *gin.Engine {
-	r := gin.New()
-	r.Use(gin.Logger())
-	r.Use(gin.Recovery())
+func CORSMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
 
-	apiv1 := r.Group("/v1")
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+
+		c.Next()
+	}
+}
+
+func NewRouter() *gin.Engine {
+	router := gin.Default()
+	router.Use(CORSMiddleware())
+
+	apiv1 := router.Group("/v1")
 	apiv1.Use(auth.New(auth.Check(), app.GetKeyCloakConfig()))
 
-	apiv1Hook := r.Group("/v1/hooks")
+	apiv1Hook := router.Group("/v1/hooks")
 
 	setupDeploymentRoutes(apiv1, apiv1Hook)
 	setupVMRoutes(apiv1, apiv1Hook)
 
-	return r
+	return router
 }
 
 func setupDeploymentRoutes(base *gin.RouterGroup, hooks *gin.RouterGroup) {
