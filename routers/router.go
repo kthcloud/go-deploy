@@ -1,6 +1,7 @@
 package routers
 
 import (
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/auth"
@@ -8,22 +9,11 @@ import (
 	"go-deploy/routers/api/v1/v1_vm"
 )
 
-func CORSMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "*")
-
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
-			return
-		}
-
-		c.Next()
-	}
-}
-
 func NewRouter() *gin.Engine {
-	router := gin.Default()
-	router.Use(CORSMiddleware())
+	router := gin.New()
+	router.Use(cors.Default())
+	router.Use(gin.Logger())
+	router.Use(gin.Recovery())
 
 	apiv1 := router.Group("/v1")
 	apiv1.Use(auth.New(auth.Check(), app.GetKeyCloakConfig()))
