@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"go-deploy/models/dto"
 	"go-deploy/pkg/app"
+	"go-deploy/pkg/conf"
 	"go-deploy/pkg/status_codes"
 	"go-deploy/pkg/validator"
 	"go-deploy/service/deployment_service"
@@ -19,7 +20,7 @@ func getAll(userID string, context *app.ClientContext) {
 	dtoDeployments := make([]dto.DeploymentRead, len(deployments))
 	for i, deployment := range deployments {
 		_, statusMsg, _ := deployment_service.GetStatusByID(userID, deployment.ID)
-		dtoDeployments[i] = deployment.ToDto(statusMsg)
+		dtoDeployments[i] = deployment.ToDto(statusMsg, conf.Env.ParentDomain)
 	}
 
 	context.JSONResponse(http.StatusOK, dtoDeployments)
@@ -61,7 +62,7 @@ func GetMany(c *gin.Context) {
 	dtoDeployments := make([]dto.DeploymentRead, len(deployments))
 	for i, deployment := range deployments {
 		_, statusMsg, _ := deployment_service.GetStatusByID(userID, deployment.ID)
-		dtoDeployments[i] = deployment.ToDto(statusMsg)
+		dtoDeployments[i] = deployment.ToDto(statusMsg, conf.Env.ParentDomain)
 	}
 
 	context.JSONResponse(200, dtoDeployments)
@@ -96,7 +97,7 @@ func Get(c *gin.Context) {
 	}
 
 	_, statusMsg, _ := deployment_service.GetStatusByID(userID, deployment.ID)
-	context.JSONResponse(200, deployment.ToDto(statusMsg))
+	context.JSONResponse(200, deployment.ToDto(statusMsg, conf.Env.ParentDomain))
 }
 
 func Create(c *gin.Context) {
