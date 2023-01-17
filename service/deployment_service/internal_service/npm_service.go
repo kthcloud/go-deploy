@@ -77,7 +77,7 @@ func DeleteNPM(name string) error {
 	log.Println("deleting npm for", name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup npm for deployment %s. details: %s", name, err)
+		return fmt.Errorf("failed to delete npm for deployment %s. details: %s", name, err)
 	}
 
 	client, err := npm.New(&npm.ClientConf{
