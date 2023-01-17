@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: go-deploy-api
-          image: registry.kthcloud.com/system/go-deploy-api
+          image: registry.cloud.cbh.kth.se/system/go-deploy-api
           envFrom:
             - configMapRef:
                 name: go-deploy-api-config
