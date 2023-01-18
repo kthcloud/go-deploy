@@ -36,7 +36,7 @@ func Create(deploymentID, name, owner string) {
 	}()
 }
 
-func GetByID(userId, deploymentID string) (*deploymentModel.Deployment, error) {
+func GetByFullID(userId, deploymentID string) (*deploymentModel.Deployment, error) {
 	deployment, err := deploymentModel.GetDeploymentByID(deploymentID)
 	if err != nil {
 		return nil, err
@@ -44,6 +44,15 @@ func GetByID(userId, deploymentID string) (*deploymentModel.Deployment, error) {
 
 	if deployment != nil && deployment.OwnerID != userId {
 		return nil, nil
+	}
+
+	return deployment, nil
+}
+
+func GetByID(deploymentID string) (*deploymentModel.Deployment, error) {
+	deployment, err := deploymentModel.GetDeploymentByID(deploymentID)
+	if err != nil {
+		return nil, err
 	}
 
 	return deployment, nil

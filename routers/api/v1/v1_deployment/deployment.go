@@ -14,12 +14,12 @@ import (
 	"strconv"
 )
 
-func getAll(userID string, context *app.ClientContext) {
+func getAll(_ string, context *app.ClientContext) {
 	deployments, _ := deployment_service.GetAll()
 
 	dtoDeployments := make([]dto.DeploymentRead, len(deployments))
 	for i, deployment := range deployments {
-		_, statusMsg, _ := deployment_service.GetStatusByID(userID, deployment.ID)
+		_, statusMsg, _ := deployment_service.GetStatusByID(deployment.ID)
 		dtoDeployments[i] = deployment.ToDto(statusMsg, conf.Env.ParentDomain)
 	}
 
@@ -61,7 +61,7 @@ func GetMany(c *gin.Context) {
 
 	dtoDeployments := make([]dto.DeploymentRead, len(deployments))
 	for i, deployment := range deployments {
-		_, statusMsg, _ := deployment_service.GetStatusByID(userID, deployment.ID)
+		_, statusMsg, _ := deployment_service.GetStatusByID(deployment.ID)
 		dtoDeployments[i] = deployment.ToDto(statusMsg, conf.Env.ParentDomain)
 	}
 
@@ -89,14 +89,14 @@ func Get(c *gin.Context) {
 	deploymentID := context.GinContext.Param("deploymentId")
 	userID := token.Sub
 
-	deployment, _ := deployment_service.GetByID(userID, deploymentID)
+	deployment, _ := deployment_service.GetByFullID(userID, deploymentID)
 
 	if deployment == nil {
 		context.NotFound()
 		return
 	}
 
-	_, statusMsg, _ := deployment_service.GetStatusByID(userID, deployment.ID)
+	_, statusMsg, _ := deployment_service.GetStatusByID(deployment.ID)
 	context.JSONResponse(200, deployment.ToDto(statusMsg, conf.Env.ParentDomain))
 }
 
@@ -184,7 +184,7 @@ func Delete(c *gin.Context) {
 	userId := token.Sub
 	deploymentID := context.GinContext.Param("deploymentId")
 
-	currentDeployment, err := deployment_service.GetByID(userId, deploymentID)
+	currentDeployment, err := deployment_service.GetByFullID(userId, deploymentID)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return

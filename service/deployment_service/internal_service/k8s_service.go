@@ -1,6 +1,7 @@
 package internal_service
 
 import (
+	"errors"
 	"fmt"
 	deploymentModel "go-deploy/models/deployment"
 	"go-deploy/pkg/conf"
@@ -178,12 +179,17 @@ func RestartK8s(name string) error {
 		return fmt.Errorf("failed to restart k8s %s. details: %s", name, err)
 	}
 
+	deployment, err := deploymentModel.GetDeploymentByName(name)
+	if deployment.Subsystems.K8s.Deployment.ID == "" {
+		return makeError(errors.New("can't restart deployment that is not yet created"))
+	}
+
 	client, err := k8s.New(&k8s.ClientConf{K8sAuth: conf.Env.K8s.Config})
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = client.RestartDeployment(subsystemutils.GetPrefixedName(name), name)
+	err = client.RestartDeployment(&deployment.Subsystems.K8s.Deployment)
 	if err != nil {
 		return makeError(err)
 	}

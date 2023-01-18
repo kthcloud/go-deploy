@@ -4,8 +4,8 @@ import (
 	"go-deploy/pkg/status_codes"
 )
 
-func GetStatusByID(userID, deploymentID string) (int, string, error) {
-	deployment, err := GetByID(userID, deploymentID)
+func GetStatusByID(deploymentID string) (int, string, error) {
+	deployment, err := GetByID(deploymentID)
 	if err != nil {
 		return -1, "Unknown", err
 	}
