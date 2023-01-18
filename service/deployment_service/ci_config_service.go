@@ -10,7 +10,7 @@ import (
 )
 
 func GetCIConfig(userId, deploymentID string) (*dto.CIConfig, error) {
-	deployment, err := GetByID(userId, deploymentID)
+	deployment, err := GetByFullID(userId, deploymentID)
 	if err != nil {
 		return nil, err
 	}
