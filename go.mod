@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/Netflix/go-env v0.0.0-20220526054621-78278af1949d
 	github.com/apache/cloudstack-go/v2 v2.13.2
+	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.8.1
 	github.com/goharbor/harbor/src v0.0.0-20211025104526-d4affc2eba6d
 	github.com/golang/glog v1.0.0
@@ -30,7 +31,6 @@ require (
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emicklei/go-restful/v3 v3.8.0 // indirect
-	github.com/gin-contrib/cors v1.4.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-openapi/analysis v0.20.1 // indirect

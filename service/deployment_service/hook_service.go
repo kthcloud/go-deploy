@@ -5,6 +5,7 @@ import (
 	"go-deploy/models/dto"
 	"go-deploy/utils/requestutils"
 	"io"
+	"log"
 )
 
 func GetHook(body io.ReadCloser) (*dto.HarborWebhook, error) {
@@ -12,6 +13,8 @@ func GetHook(body io.ReadCloser) (*dto.HarborWebhook, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	log.Println(string(readBody))
 
 	var webhook = dto.HarborWebhook{}
 	err = requestutils.ParseJson(readBody, &webhook)

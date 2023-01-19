@@ -40,7 +40,7 @@ func (client *Client) ReadDeployment(namespace, id string) (*models.DeploymentPu
 	}
 
 	for _, item := range list.Items {
-		if strings.HasSuffix(item.Name, id) && len(item.Name) > len(uuid.New().String())+1{
+		if strings.HasSuffix(item.Name, id) && len(item.Name) > len(uuid.New().String())+1 {
 			return models.CreateDeploymentPublicFromRead(&item), nil
 		}
 	}
@@ -94,25 +94,27 @@ func (client *Client) CreateDeployment(public *models.DeploymentPublic) (string,
 	return public.ID, nil
 }
 
-func (client *Client) RestartDeployment(namespace, name string) error {
+func (client *Client) RestartDeployment(public *models.DeploymentPublic) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to restart deployment %s. details: %s", name, err)
+		return fmt.Errorf("failed to restart deployment %s. details: %s", public.Name, err)
 	}
 
-	namespaceCreated, err := client.NamespaceCreated(namespace)
+	namespaceCreated, err := client.NamespaceCreated(public.Namespace)
 	if err != nil {
 		return makeError(err)
 	}
 
 	if !namespaceCreated {
-		return makeError(fmt.Errorf("no such namespace %s", namespace))
+		return makeError(fmt.Errorf("no such namespace %s", public.Namespace))
 	}
 
-	req := client.K8sClient.AppsV1().Deployments(namespace)
+	req := client.K8sClient.AppsV1().Deployments(public.Namespace)
 
 	data := fmt.Sprintf(`{"spec": {"template": {"metadata": {"annotations": {"kubectl.kubernetes.io/restartedAt": "%s"}}}}}`, time.Now().Format("20060102150405"))
 
-	_, err = req.Patch(context.TODO(), name, types.StrategicMergePatchType, []byte(data), metav1.PatchOptions{})
+	fullname := fmt.Sprintf("%s-%s", public.Name, public.ID)
+
+	_, err = req.Patch(context.TODO(), fullname, types.StrategicMergePatchType, []byte(data), metav1.PatchOptions{})
 	if err != nil {
 		return makeError(err)
 	}
