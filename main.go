@@ -5,7 +5,8 @@ import (
 	"go-deploy/models"
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/conf"
-	"go-deploy/pkg/confirmers"
+	"go-deploy/pkg/workers/confirmers"
+	"go-deploy/pkg/workers/status_updaters"
 	"go-deploy/routers"
 	"log"
 	"net/http"
@@ -18,6 +19,7 @@ func setup(context *app.Context) {
 	conf.Setup()
 	models.Setup()
 	confirmers.Setup(context)
+	status_updaters.Setup(context)
 }
 
 func shutdown() {

@@ -89,7 +89,7 @@ func DeletePfSense(name string) error {
 	log.Println("deleting pfSense for", name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup pfSense for vm %s. details: %s", name, err)
+		return fmt.Errorf("failed to delete pfSense for vm %s. details: %s", name, err)
 	}
 
 	pfSenseConf := conf.Env.PfSense

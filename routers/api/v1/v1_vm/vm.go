@@ -19,9 +19,8 @@ func getAllVMs(context *app.ClientContext) {
 
 	dtoVMs := make([]dto.VmRead, len(vms))
 	for i, vm := range vms {
-		_, statusMsg, _ := vm_service.GetStatus(&vm)
 		connectionString, _ := vm_service.GetConnectionString(&vm)
-		dtoVMs[i] = vm.ToDto(statusMsg, connectionString)
+		dtoVMs[i] = vm.ToDto(vm.StatusMessage, connectionString)
 	}
 
 	context.JSONResponse(http.StatusOK, dtoVMs)
@@ -62,9 +61,8 @@ func GetMany(c *gin.Context) {
 
 	dtoVMs := make([]dto.VmRead, len(vms))
 	for i, vm := range vms {
-		_, statusMsg, _ := vm_service.GetStatus(&vm)
 		connectionString, _ := vm_service.GetConnectionString(&vm)
-		dtoVMs[i] = vm.ToDto(statusMsg, connectionString)
+		dtoVMs[i] = vm.ToDto(vm.StatusMessage, connectionString)
 	}
 
 	context.JSONResponse(200, dtoVMs)
@@ -98,9 +96,8 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	_, statusMsg, _ := vm_service.GetStatus(vm)
 	connectionString, _ := vm_service.GetConnectionString(vm)
-	context.JSONResponse(200, vm.ToDto(statusMsg, connectionString))
+	context.JSONResponse(200, vm.ToDto(vm.StatusMessage, connectionString))
 }
 
 func Create(c *gin.Context) {

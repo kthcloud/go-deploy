@@ -63,9 +63,3 @@ func vmConfirmer(ctx *app.Context) {
 		time.Sleep(5 * time.Second)
 	}
 }
-
-func Setup(ctx *app.Context) {
-	log.Println("starting worker")
-	go deploymentConfirmer(ctx)
-	go vmConfirmer(ctx)
-}
