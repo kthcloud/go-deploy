@@ -16,21 +16,21 @@ func deploymentConfirmer(ctx *app.Context) {
 			break
 		}
 
-		beingCreated, _ := deploymentModel.GetAllDeploymentsWithFilter(bson.D{{"beingCreated", true}})
+		beingCreated, _ := deploymentModel.GetAllWithFilter(bson.D{{"beingCreated", true}})
 		for _, deployment := range beingCreated {
 			created := DeploymentCreated(&deployment)
 			if created {
 				log.Printf("marking deployment %s as created\n", deployment.Name)
-				_ = deploymentModel.UpdateDeployment(deployment.ID, bson.D{{"beingCreated", false}})
+				_ = deploymentModel.UpdateByID(deployment.ID, bson.D{{"beingCreated", false}})
 			}
 		}
 
-		beingDeleted, _ := deploymentModel.GetAllDeploymentsWithFilter(bson.D{{"beingDeleted", true}})
+		beingDeleted, _ := deploymentModel.GetAllWithFilter(bson.D{{"beingDeleted", true}})
 		for _, deployment := range beingDeleted {
 			deleted := DeploymentDeleted(&deployment)
 			if deleted {
 				log.Printf("marking deployment %s as deleted\n", deployment.Name)
-				_ = deploymentModel.DeleteDeployment(deployment.ID, deployment.OwnerID)
+				_ = deploymentModel.DeleteByID(deployment.ID, deployment.OwnerID)
 			}
 		}
 		time.Sleep(5 * time.Second)

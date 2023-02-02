@@ -47,7 +47,7 @@ func CreateNPM(name, hostName string) error {
 		return makeError(err)
 	}
 
-	deployment, err := deploymentModel.GetDeploymentByName(name)
+	deployment, err := deploymentModel.GetByName(name)
 
 	if deployment.Subsystems.Npm.ProxyHost.ID == 0 {
 		certificateID, err := client.GetWildcardCertificateID(conf.Env.ParentDomain)
@@ -89,7 +89,7 @@ func DeleteNPM(name string) error {
 		return makeError(err)
 	}
 
-	deployment, err := deploymentModel.GetDeploymentByName(name)
+	deployment, err := deploymentModel.GetByName(name)
 
 	if deployment.Subsystems.Npm.ProxyHost.ID == 0 {
 		return nil
@@ -100,7 +100,7 @@ func DeleteNPM(name string) error {
 		return makeError(err)
 	}
 
-	err = deploymentModel.UpdateDeploymentByName(name, bson.D{{"subsystems.npm.proxyHost", npmModels.ProxyHostPublic{}}})
+	err = deploymentModel.UpdateByName(name, bson.D{{"subsystems.npm.proxyHost", npmModels.ProxyHostPublic{}}})
 	if err != nil {
 		return makeError(err)
 	}
