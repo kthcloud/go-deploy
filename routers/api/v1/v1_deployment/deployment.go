@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	deploymentModels "go-deploy/models/deployment"
 	"go-deploy/models/dto"
 	"go-deploy/pkg/app"
-	"go-deploy/pkg/conf"
 	"go-deploy/pkg/status_codes"
 	"go-deploy/pkg/validator"
 	"go-deploy/service/deployment_service"
@@ -15,13 +15,26 @@ import (
 	"strconv"
 )
 
+func getURL(deployment *deploymentModels.Deployment) string {
+	var baseURL string
+
+	if len(deployment.Subsystems.Npm.ProxyHost.DomainNames) > 0 {
+		baseURL = deployment.Subsystems.Npm.ProxyHost.DomainNames[0]
+	} else {
+		baseURL = "pending"
+	}
+
+	return baseURL
+}
+
 func getAll(_ string, context *app.ClientContext) {
 	deployments, _ := deployment_service.GetAll()
 
 	dtoDeployments := make([]dto.DeploymentRead, len(deployments))
 	for i, deployment := range deployments {
 		_, statusMsg, _ := deployment_service.GetStatusByID(deployment.ID)
-		dtoDeployments[i] = deployment.ToDto(statusMsg, conf.Env.ParentDomain)
+
+		dtoDeployments[i] = deployment.ToDTO(statusMsg, getURL(&deployment))
 	}
 
 	context.JSONResponse(http.StatusOK, dtoDeployments)
@@ -63,7 +76,7 @@ func GetMany(c *gin.Context) {
 	dtoDeployments := make([]dto.DeploymentRead, len(deployments))
 	for i, deployment := range deployments {
 		_, statusMsg, _ := deployment_service.GetStatusByID(deployment.ID)
-		dtoDeployments[i] = deployment.ToDto(statusMsg, conf.Env.ParentDomain)
+		dtoDeployments[i] = deployment.ToDTO(statusMsg, getURL(&deployment))
 	}
 
 	context.JSONResponse(200, dtoDeployments)
@@ -98,7 +111,7 @@ func Get(c *gin.Context) {
 	}
 
 	_, statusMsg, _ := deployment_service.GetStatusByID(deployment.ID)
-	context.JSONResponse(200, deployment.ToDto(statusMsg, conf.Env.ParentDomain))
+	context.JSONResponse(200, deployment.ToDTO(statusMsg, getURL(deployment)))
 }
 
 func Create(c *gin.Context) {

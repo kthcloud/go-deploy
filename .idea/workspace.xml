@@ -5,20 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="bc4da88f-8032-4df4-9bcc-9ca8b4f364d2" name="Changes" comment="change project name. fix websocket support for logs">
-      <change afterPath="$PROJECT_DIR$/models/user_info/user_info.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/service/user_info_service/user_info_service.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/deployment/deployment.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/deployment/deployment.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/models.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/models.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/vm/vm.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/vm/vm.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/auth/keycloak_token.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/auth/keycloak_token.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/confirmers/status_worker.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/confirmers/status_worker.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/routers/api/v1/v1_deployment/deployment.go" beforeDir="false" afterPath="$PROJECT_DIR$/routers/api/v1/v1_deployment/deployment.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/routers/api/v1/v1_vm/vm.go" beforeDir="false" afterPath="$PROJECT_DIR$/routers/api/v1/v1_vm/vm.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/service/deployment_service/deployment_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/deployment_service.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/service/deployment_service/internal_service/harbor_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/internal_service/harbor_service.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/service/deployment_service/internal_service/k8s_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/internal_service/k8s_service.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/service/deployment_service/internal_service/npm_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/internal_service/npm_service.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
