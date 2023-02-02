@@ -69,13 +69,7 @@ func CreateKeyPair(c *gin.Context) {
 		return
 	}
 
-	statusCode, _, err := vm_service.GetStatus(vm)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to check status")
-		return
-	}
-
-	if statusCode != status_codes.ResourceStopped {
+	if vm.StatusCode != status_codes.ResourceStopped {
 		context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceError, "Resource must be in stopped state before setting key pairs")
 		return
 	}

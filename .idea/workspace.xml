@@ -5,10 +5,21 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="bc4da88f-8032-4df4-9bcc-9ca8b4f364d2" name="Changes" comment="change project name. fix websocket support for logs">
+      <change afterPath="$PROJECT_DIR$/pkg/workers/status_updaters/status_updaters.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/workers/status_updaters/workers.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/user_info/user_info.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/user_info/user_info.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/conf/environment.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/conf/environment.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/routers/api/v1/v1_deployment/deployment.go" beforeDir="false" afterPath="$PROJECT_DIR$/routers/api/v1/v1_deployment/deployment.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/deployment/deployment.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/deployment/deployment.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/vm/vm.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/vm/vm.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/auth/gin_keycloak.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/auth/gin_keycloak.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/confirmers/confirmers.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/workers/confirmers/confirmers.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/confirmers/status_worker.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/workers/confirmers/workers.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/confirmers/subsystems.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/workers/confirmers/subsystems.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routers/api/v1/v1_vm/keyPair.go" beforeDir="false" afterPath="$PROJECT_DIR$/routers/api/v1/v1_vm/keyPair.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routers/api/v1/v1_vm/vm.go" beforeDir="false" afterPath="$PROJECT_DIR$/routers/api/v1/v1_vm/vm.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/vm_service/internal_service/cs_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/vm_service/internal_service/cs_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/vm_service/internal_service/pfsense_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/vm_service/internal_service/pfsense_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/vm_service/vm_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/vm_service/vm_service.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -82,11 +93,11 @@
       <recent name="$PROJECT_DIR$/models/dto" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/pkg/workers/confirmers" />
       <recent name="C:\repos\work\go-deploy\pkg\subsystems\cs\commands" />
       <recent name="C:\repos\work\go-deploy\service\deployment_service\internal" />
       <recent name="C:\repos\work\go-deploy\service\vm_service\internal" />
       <recent name="$PROJECT_DIR$/pkg/subsystems/k8s" />
-      <recent name="$PROJECT_DIR$/routers/api/v1/v1vms" />
     </key>
   </component>
   <component name="RunManager" selected="Go Build.Run">

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"go-deploy/models/deployment"
 	"go-deploy/models/vm"
+	"go-deploy/pkg/app"
+	"log"
 )
 
 func NPMCreated(deployment *deployment.Deployment) (bool, error) {
@@ -94,4 +96,10 @@ func PfSenseDeleted(vm *vm.VM) (bool, error) {
 	pfSense := &vm.Subsystems.PfSense
 
 	return pfSense.PortForwardingRule.ID == "", nil
+}
+
+func Setup(ctx *app.Context) {
+	log.Println("starting confirmers")
+	go deploymentConfirmer(ctx)
+	go vmConfirmer(ctx)
 }

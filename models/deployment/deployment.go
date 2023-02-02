@@ -14,31 +14,31 @@ import (
 )
 
 type Deployment struct {
-	ID           string               `bson:"id"`
-	Name         string               `bson:"name"`
-	OwnerID      string               `bson:"ownerId"`
-	BeingCreated bool                 `bson:"beingCreated"`
-	BeingDeleted bool                 `bson:"beingDeleted"`
-	Subsystems   DeploymentSubsystems `bson:"subsystems"`
+	ID           string     `bson:"id"`
+	Name         string     `bson:"name"`
+	OwnerID      string     `bson:"ownerId"`
+	BeingCreated bool       `bson:"beingCreated"`
+	BeingDeleted bool       `bson:"beingDeleted"`
+	Subsystems   Subsystems `bson:"subsystems"`
 }
 
-type DeploymentSubsystems struct {
-	K8s    DeploymentK8s    `bson:"k8s"`
-	Npm    DeploymentNPM    `bson:"npm"`
-	Harbor DeploymentHarbor `bson:"harbor"`
+type Subsystems struct {
+	K8s    K8s    `bson:"k8s"`
+	Npm    NPM    `bson:"npm"`
+	Harbor Harbor `bson:"harbor"`
 }
 
-type DeploymentK8s struct {
+type K8s struct {
 	Namespace  k8sModels.NamespacePublic  `bson:"namespace"`
 	Deployment k8sModels.DeploymentPublic `bson:"deployment"`
 	Service    k8sModels.ServicePublic    `bson:"service"`
 }
 
-type DeploymentNPM struct {
+type NPM struct {
 	ProxyHost npmModels.ProxyHostPublic `bson:"proxyHost"`
 }
 
-type DeploymentHarbor struct {
+type Harbor struct {
 	Project    harborModels.ProjectPublic    `bson:"project"`
 	Robot      harborModels.RobotPublic      `bson:"robot"`
 	Repository harborModels.RepositoryPublic `bson:"repository"`

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	vmModel "go-deploy/models/vm"
 	"go-deploy/pkg/conf"
-	"go-deploy/pkg/status_codes"
 	"go-deploy/service/vm_service/internal_service"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
@@ -39,19 +38,6 @@ func GetByID(userID, vmID string) (*vmModel.VM, error) {
 	}
 
 	if vm != nil && vm.OwnerID != userID {
-		return nil, nil
-	}
-
-	return vm, nil
-}
-
-func GetByName(userId, name string) (*vmModel.VM, error) {
-	vm, err := vmModel.GetByName(name)
-	if err != nil {
-		return nil, err
-	}
-
-	if vm != nil && vm.OwnerID != userId {
 		return nil, nil
 	}
 
@@ -113,26 +99,6 @@ func CreateKeyPair(vm *vmModel.VM, publicKey string) error {
 
 	err := internal_service.AddKeyPairCS(csID, publicKey)
 	return err
-}
-
-func GetStatus(vm *vmModel.VM) (int, string, error) {
-	csStatusCode, csStatusMsg, err := internal_service.GetStatusCS(vm.Name)
-
-	if err != nil {
-		log.Println(err)
-	}
-
-	if err != nil || csStatusCode == status_codes.ResourceUnknown || csStatusCode == status_codes.ResourceNotFound {
-		if vm.BeingDeleted {
-			return status_codes.ResourceBeingDeleted, status_codes.GetMsg(status_codes.ResourceBeingDeleted), nil
-		}
-
-		if vm.BeingCreated {
-			return status_codes.ResourceBeingCreated, status_codes.GetMsg(status_codes.ResourceBeingCreated), nil
-		}
-	}
-
-	return csStatusCode, csStatusMsg, nil
 }
 
 func DoCommand(vm *vmModel.VM, command string) {

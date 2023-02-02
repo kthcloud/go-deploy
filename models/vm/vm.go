@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go-deploy/models"
 	"go-deploy/models/dto"
+	"go-deploy/pkg/status_codes"
 	csModels "go-deploy/pkg/subsystems/cs/models"
 	pdnsModels "go-deploy/pkg/subsystems/pdns/models"
 	psModels "go-deploy/pkg/subsystems/pfsense/models"
@@ -14,15 +15,17 @@ import (
 )
 
 type VM struct {
-	ID           string    `bson:"id"`
-	Name         string    `bson:"name"`
-	OwnerID      string    `bson:"ownerId"`
-	BeingCreated bool      `bson:"beingCreated"`
-	BeingDeleted bool      `bson:"beingDeleted"`
-	Subsystems   Subsystem `bson:"subsystems"`
+	ID            string     `bson:"id"`
+	Name          string     `bson:"name"`
+	OwnerID       string     `bson:"ownerId"`
+	BeingCreated  bool       `bson:"beingCreated"`
+	BeingDeleted  bool       `bson:"beingDeleted"`
+	Subsystems    Subsystems `bson:"subsystems"`
+	StatusCode    int        `bson:"statusCode"`
+	StatusMessage string     `bson:"statusMessage"`
 }
 
-type Subsystem struct {
+type Subsystems struct {
 	CS      CS      `bson:"cs"`
 	PfSense PfSense `bson:"pfSense"`
 	PDNS    PDNS    `bson:"pdns"`
@@ -63,11 +66,14 @@ func Create(vmID, name, owner string) error {
 	}
 
 	vm := VM{
-		ID:           vmID,
-		Name:         name,
-		OwnerID:      owner,
-		BeingCreated: true,
-		BeingDeleted: false,
+		ID:            vmID,
+		Name:          name,
+		OwnerID:       owner,
+		BeingCreated:  true,
+		BeingDeleted:  false,
+		Subsystems:    Subsystems{},
+		StatusCode:    status_codes.ResourceBeingCreated,
+		StatusMessage: status_codes.GetMsg(status_codes.ResourceBeingCreated),
 	}
 
 	_, err = models.VmCollection.InsertOne(context.TODO(), vm)
