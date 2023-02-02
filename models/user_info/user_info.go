@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go-deploy/models"
 	"go-deploy/pkg/auth"
+	"go-deploy/pkg/conf"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -20,8 +21,8 @@ func createDefaultUserInfo(token *auth.KeycloakToken) UserInfo {
 	return UserInfo{
 		Sub:             token.Sub,
 		CachedUsername:  token.PreferredUsername,
-		VmQuota:         0,
-		DeploymentQuota: 500,
+		VmQuota:         conf.Env.DefaultVmQuota,
+		DeploymentQuota: conf.Env.DefaultDeploymentQuota,
 	}
 }
 
