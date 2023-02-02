@@ -16,15 +16,15 @@ import (
 )
 
 func getURL(deployment *deploymentModels.Deployment) string {
-	var baseURL string
+	var url string
 
 	if len(deployment.Subsystems.Npm.ProxyHost.DomainNames) > 0 {
-		baseURL = deployment.Subsystems.Npm.ProxyHost.DomainNames[0]
+		url = deployment.Subsystems.Npm.ProxyHost.DomainNames[0]
 	} else {
-		baseURL = "pending"
+		url = "notset"
 	}
 
-	return baseURL
+	return url
 }
 
 func getAll(_ string, context *app.ClientContext) {
