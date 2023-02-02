@@ -37,7 +37,7 @@ func Create(deploymentID, name, owner string) {
 }
 
 func GetByFullID(userId, deploymentID string) (*deploymentModel.Deployment, error) {
-	deployment, err := deploymentModel.GetDeploymentByID(deploymentID)
+	deployment, err := deploymentModel.GetByID(deploymentID)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ func GetByFullID(userId, deploymentID string) (*deploymentModel.Deployment, erro
 }
 
 func GetByID(deploymentID string) (*deploymentModel.Deployment, error) {
-	deployment, err := deploymentModel.GetDeploymentByID(deploymentID)
+	deployment, err := deploymentModel.GetByID(deploymentID)
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +59,7 @@ func GetByID(deploymentID string) (*deploymentModel.Deployment, error) {
 }
 
 func GetByName(userId, name string) (*deploymentModel.Deployment, error) {
-	deployment, err := deploymentModel.GetDeploymentByName(name)
+	deployment, err := deploymentModel.GetByName(name)
 	if err != nil {
 		return nil, err
 	}
@@ -72,19 +72,23 @@ func GetByName(userId, name string) (*deploymentModel.Deployment, error) {
 }
 
 func GetByOwnerID(owner string) ([]deploymentModel.Deployment, error) {
-	return deploymentModel.GetDeployments(owner)
+	return deploymentModel.GetMany(owner)
 }
 
 func GetAll() ([]deploymentModel.Deployment, error) {
-	return deploymentModel.GetAllDeployments()
+	return deploymentModel.GetAll()
+}
+
+func GetCount(userID string) (int, error) {
+	return deploymentModel.CountByOwnerID(userID)
 }
 
 func Exists(name string) (bool, *deploymentModel.Deployment, error) {
-	return deploymentModel.DeploymentExists(name)
+	return deploymentModel.Exists(name)
 }
 
 func MarkBeingDeleted(deploymentID string) error {
-	return deploymentModel.UpdateDeployment(deploymentID, bson.D{{
+	return deploymentModel.UpdateByID(deploymentID, bson.D{{
 		"beingDeleted", true,
 	}})
 }

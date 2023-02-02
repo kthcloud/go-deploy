@@ -8,6 +8,7 @@ import (
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
 	"go-deploy/pkg/validator"
+	"go-deploy/service/user_info_service"
 	"go-deploy/service/vm_service"
 	"net/http"
 	"strconv"
@@ -136,7 +137,13 @@ func Create(c *gin.Context) {
 		return
 	}
 
-	if token.VmQuota == 0 {
+	userInfo, err := user_info_service.GetByToken(token)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		return
+	}
+
+	if userInfo.VmQuota == 0 {
 		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, "User is not allowed to create vms")
 		return
 	}
@@ -169,8 +176,8 @@ func Create(c *gin.Context) {
 		return
 	}
 
-	if vmCount >= token.VmQuota {
-		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, fmt.Sprintf("User is not allowed to create more than %d vms", token.VmQuota))
+	if vmCount >= userInfo.VmQuota {
+		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, fmt.Sprintf("User is not allowed to create more than %d vms", userInfo.VmQuota))
 		return
 	}
 

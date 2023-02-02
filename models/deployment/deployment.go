@@ -61,7 +61,7 @@ func (deployment *Deployment) Ready() bool {
 }
 
 func CreateDeployment(deploymentID, name, owner string) error {
-	currentDeployment, err := GetDeploymentByID(deploymentID)
+	currentDeployment, err := GetByID(deploymentID)
 	if err != nil {
 		return err
 	}
@@ -103,11 +103,11 @@ func getDeployment(filter bson.D) (*Deployment, error) {
 	return &deployment, err
 }
 
-func GetDeploymentByID(deploymentID string) (*Deployment, error) {
+func GetByID(deploymentID string) (*Deployment, error) {
 	return getDeployment(bson.D{{"id", deploymentID}})
 }
 
-func GetDeploymentByName(name string) (*Deployment, error) {
+func GetByName(name string) (*Deployment, error) {
 	return getDeployment(bson.D{{"name", name}})
 }
 
@@ -115,7 +115,7 @@ func GetByWebhookToken(token string) (*Deployment, error) {
 	return getDeployment(bson.D{{"subsystems.harbor.webhook.token", token}})
 }
 
-func DeploymentExists(name string) (bool, *Deployment, error) {
+func Exists(name string) (bool, *Deployment, error) {
 	deployment, err := getDeployment(bson.D{{"name", name}})
 	if err != nil {
 		return false, nil, err
@@ -128,7 +128,7 @@ func DeploymentExists(name string) (bool, *Deployment, error) {
 	return true, deployment, err
 }
 
-func GetDeployments(ownerID string) ([]Deployment, error) {
+func GetMany(ownerID string) ([]Deployment, error) {
 	cursor, err := models.DeploymentCollection.Find(context.TODO(), bson.D{{"ownerId", ownerID}})
 
 	if err != nil {
@@ -153,7 +153,7 @@ func GetDeployments(ownerID string) ([]Deployment, error) {
 	return deployments, nil
 }
 
-func DeleteDeployment(deploymentID, userId string) error {
+func DeleteByID(deploymentID, userId string) error {
 	_, err := models.DeploymentCollection.DeleteOne(context.TODO(), bson.D{{"id", deploymentID}, {"ownerId", userId}})
 	if err != nil {
 		err = fmt.Errorf("failed to delete deployment %s. details: %s", deploymentID, err)
@@ -163,7 +163,19 @@ func DeleteDeployment(deploymentID, userId string) error {
 	return nil
 }
 
-func UpdateDeployment(id string, update bson.D) error {
+func CountByOwnerID(ownerID string) (int, error) {
+	count, err := models.DeploymentCollection.CountDocuments(context.TODO(), bson.D{{"ownerId", ownerID}})
+
+	if err != nil {
+		err = fmt.Errorf("failed to count deployments by owner ID %s. details: %s", ownerID, err)
+		log.Println(err)
+		return 0, err
+	}
+
+	return int(count), nil
+}
+
+func UpdateByID(id string, update bson.D) error {
 	_, err := models.DeploymentCollection.UpdateOne(context.TODO(), bson.D{{"id", id}}, bson.D{{"$set", update}})
 	if err != nil {
 		err = fmt.Errorf("failed to update deployment %s. details: %s", id, err)
@@ -173,7 +185,7 @@ func UpdateDeployment(id string, update bson.D) error {
 	return nil
 }
 
-func UpdateDeploymentByName(name string, update bson.D) error {
+func UpdateByName(name string, update bson.D) error {
 	_, err := models.DeploymentCollection.UpdateOne(context.TODO(), bson.D{{"name", name}}, bson.D{{"$set", update}})
 	if err != nil {
 		err = fmt.Errorf("failed to update deployment %s. details: %s", name, err)
@@ -185,14 +197,14 @@ func UpdateDeploymentByName(name string, update bson.D) error {
 
 func UpdateSubsystemByName(name, subsystem string, key string, update interface{}) error {
 	subsystemKey := fmt.Sprintf("subsystems.%s.%s", subsystem, key)
-	return UpdateDeploymentByName(name, bson.D{{subsystemKey, update}})
+	return UpdateByName(name, bson.D{{subsystemKey, update}})
 }
 
-func GetAllDeployments() ([]Deployment, error) {
-	return GetAllDeploymentsWithFilter(bson.D{})
+func GetAll() ([]Deployment, error) {
+	return GetAllWithFilter(bson.D{})
 }
 
-func GetAllDeploymentsWithFilter(filter bson.D) ([]Deployment, error) {
+func GetAllWithFilter(filter bson.D) ([]Deployment, error) {
 	cursor, err := models.DeploymentCollection.Find(context.TODO(), filter)
 
 	if err != nil {

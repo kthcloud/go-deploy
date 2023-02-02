@@ -144,7 +144,7 @@ func CountByOwnerID(ownerID string) (int, error) {
 	count, err := models.VmCollection.CountDocuments(context.TODO(), bson.D{{"ownerId", ownerID}})
 
 	if err != nil {
-		err = fmt.Errorf("failed to find vms from owner ID %s. details: %s", ownerID, err)
+		err = fmt.Errorf("failed to count vms by owner ID %s. details: %s", ownerID, err)
 		log.Println(err)
 		return 0, err
 	}

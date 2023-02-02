@@ -67,7 +67,7 @@ func CreateHarbor(name string) error {
 		return makeError(err)
 	}
 
-	deployment, err := deploymentModel.GetDeploymentByName(name)
+	deployment, err := deploymentModel.GetByName(name)
 	if err != nil {
 		return makeError(err)
 	}
@@ -172,7 +172,7 @@ func DeleteHarbor(name string) error {
 		return makeError(err)
 	}
 
-	deployment, err := deploymentModel.GetDeploymentByName(name)
+	deployment, err := deploymentModel.GetByName(name)
 
 	if deployment.Subsystems.Harbor.Webhook.ID != 0 {
 		err = deploymentModel.UpdateSubsystemByName(name, "harbor", "webhook", harborModels.WebhookPublic{})

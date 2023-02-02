@@ -10,6 +10,7 @@ import (
 	"go-deploy/pkg/status_codes"
 	"go-deploy/pkg/validator"
 	"go-deploy/service/deployment_service"
+	"go-deploy/service/user_info_service"
 	"net/http"
 	"strconv"
 )
@@ -133,7 +134,19 @@ func Create(c *gin.Context) {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
 	}
-	userId := token.Sub
+
+	userInfo, err := user_info_service.GetByToken(token)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		return
+	}
+
+	if userInfo.DeploymentQuota == 0 {
+		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, "User is not allowed to create deployments")
+		return
+	}
+
+	userID := token.Sub
 
 	exists, deployment, err := deployment_service.Exists(requestBody.Name)
 	if err != nil {
@@ -142,7 +155,7 @@ func Create(c *gin.Context) {
 	}
 
 	if exists {
-		if deployment.OwnerID != userId {
+		if deployment.OwnerID != userID {
 			context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceAlreadyExists, "Resource already exists")
 			return
 		}
@@ -150,13 +163,24 @@ func Create(c *gin.Context) {
 			context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingDeleted, "Resource is currently being deleted")
 			return
 		}
-		deployment_service.Create(deployment.ID, requestBody.Name, userId)
+		deployment_service.Create(deployment.ID, requestBody.Name, userID)
 		context.JSONResponse(http.StatusCreated, dto.DeploymentCreated{ID: deployment.ID})
 		return
 	}
 
+	deploymentCount, err := deployment_service.GetCount(userID)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		return
+	}
+
+	if deploymentCount >= userInfo.DeploymentQuota {
+		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, fmt.Sprintf("User is not allowed to create more than %d deployments", userInfo.DeploymentQuota))
+		return
+	}
+
 	deploymentID := uuid.New().String()
-	deployment_service.Create(deploymentID, requestBody.Name, userId)
+	deployment_service.Create(deploymentID, requestBody.Name, userID)
 	context.JSONResponse(http.StatusCreated, dto.DeploymentCreated{ID: deploymentID})
 }
 
@@ -181,10 +205,10 @@ func Delete(c *gin.Context) {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
 	}
-	userId := token.Sub
+	userID := token.Sub
 	deploymentID := context.GinContext.Param("deploymentId")
 
-	currentDeployment, err := deployment_service.GetByFullID(userId, deploymentID)
+	currentDeployment, err := deployment_service.GetByFullID(userID, deploymentID)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return
