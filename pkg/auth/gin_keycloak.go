@@ -186,21 +186,18 @@ func getTokenContainer(ctx *gin.Context, config KeycloakConfig) (*TokenContainer
 	var err error
 
 	if oauthToken, err = extractToken(ctx.Request); err != nil {
-		glog.Errorf("[Gin-OAuth] Can not extract oauth2.Token, caused by: %s", err)
 		return nil, false
 	}
+
 	if !oauthToken.Valid() {
-		glog.Infof("[Gin-OAuth] Invalid Token - nil or expired")
 		return nil, false
 	}
 
 	if tc, err = GetTokenContainer(oauthToken, config); err != nil {
-		glog.Errorf("[Gin-OAuth] Can not extract TokenContainer, caused by: %s", err)
 		return nil, false
 	}
 
 	if isExpired(tc.KeyCloakToken) {
-		glog.Errorf("[Gin-OAuth] Keycloak Token has expired")
 		return nil, false
 	}
 

@@ -1,22 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="AutoImportSettings">
-    <option name="autoReloadType" value="ALL" />
+    <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="bc4da88f-8032-4df4-9bcc-9ca8b4f364d2" name="Changes" comment="change project name. fix websocket support for logs">
+    <list default="true" id="bc4da88f-8032-4df4-9bcc-9ca8b4f364d2" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/models/user_info/user_info.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/workers/status_updaters/status_updaters.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/workers/status_updaters/workers.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/service/user_info_service/user_info_service.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/dto/vm_read.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/dto/vm_read.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/deployment/deployment.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/deployment/deployment.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/models/models.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/models.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/models/vm/vm.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/vm/vm.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/auth/gin_keycloak.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/auth/gin_keycloak.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/auth/keycloak_token.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/auth/keycloak_token.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/conf/environment.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/conf/environment.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/cs/example.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/cs/example.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/cs/models/vm_public.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/cs/models/vm_public.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/subsystems/cs/vm.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/subsystems/cs/vm.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/routers/api/v1/v1_vm/keyPair.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/confirmers/confirmers.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/workers/confirmers/confirmers.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/confirmers/status_worker.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/workers/confirmers/workers.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/confirmers/subsystems.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/workers/confirmers/subsystems.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routers/api/v1/v1_deployment/deployment.go" beforeDir="false" afterPath="$PROJECT_DIR$/routers/api/v1/v1_deployment/deployment.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/routers/api/v1/v1_vm/vm.go" beforeDir="false" afterPath="$PROJECT_DIR$/routers/api/v1/v1_vm/vm.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/routers/router.go" beforeDir="false" afterPath="$PROJECT_DIR$/routers/router.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/service/vm_service/internal_service/cs_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/vm_service/internal_service/cs_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/deployment_service/deployment_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/deployment_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/deployment_service/internal_service/harbor_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/internal_service/harbor_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/deployment_service/internal_service/k8s_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/internal_service/k8s_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/deployment_service/internal_service/npm_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/deployment_service/internal_service/npm_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service/vm_service/internal_service/pfsense_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/vm_service/internal_service/pfsense_service.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/service/vm_service/vm_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/vm_service/vm_service.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -24,234 +34,61 @@
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
-  <component name="FileTemplateManagerImpl">
-    <option name="RECENT_TEMPLATES">
-      <list>
-        <option value="Go Application" />
-        <option value="Go File" />
-      </list>
-    </option>
-  </component>
-  <component name="FormatOnSaveOptions">
-    <option name="myRunOnSave" value="false" />
-  </component>
-  <component name="GOROOT" url="file://$PROJECT_DIR$/../../../Program Files/Go" />
-  <component name="Git.Settings">
-    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
-  </component>
-  <component name="MarkdownSettingsMigration">
-    <option name="stateVersion" value="1" />
-  </component>
-  <component name="OptimizeOnSaveOptions">
-    <option name="myRunOnSave" value="false" />
-  </component>
-  <component name="ProjectId" id="2I0qR5gQZmWR5D9aWwCX3p7JDhA" />
   <component name="ProjectLevelVcsManager">
     <ConfirmationsSetting value="2" id="Add" />
   </component>
-  <component name="ProjectViewState">
-    <option name="hideEmptyMiddlePackages" value="true" />
-    <option name="showLibraryContents" value="true" />
-  </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
-    "ASKED_ADD_EXTERNAL_FILES": "true",
-    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "DefaultGoTemplateProperty": "Go File",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.go.formatter.settings.were.checked": "true",
-    "RunOnceActivity.go.migrated.go.modules.settings": "true",
-    "RunOnceActivity.go.modules.go.list.on.any.changes.was.set": "true",
-    "RunOnceActivity.go.watchers.conflict.with.on.save.actions.check.performed": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "WebServerToolWindowFactoryState": "false",
-    "go.import.settings.migrated": "true",
-    "go.sdk.automatically.set": "true",
-    "last_opened_file_path": "C:/Users/ownem",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "preferences.pluginManager"
-  },
-  "keyToStringList": {
-    "DatabaseDriversLRU": [
-      "postgresql"
-    ]
+    "node.js.selected.package.tslint": "(autodetect)"
   }
 }]]></component>
-  <component name="RecentsManager">
-    <key name="CopyFile.RECENT_KEYS">
-      <recent name="C:\repos\work\go-deploy\models\dto" />
-      <recent name="C:\repos\work\go-deploy\service\vm_service" />
-      <recent name="$PROJECT_DIR$/pkg/subsystems/k8s/models" />
-      <recent name="$PROJECT_DIR$/pkg/vm_worker" />
-      <recent name="$PROJECT_DIR$/models/dto" />
-    </key>
-    <key name="MoveFile.RECENT_KEYS">
-      <recent name="C:\repos\work\go-deploy\pkg\subsystems\cs\commands" />
-      <recent name="C:\repos\work\go-deploy\service\deployment_service\internal" />
-      <recent name="C:\repos\work\go-deploy\service\vm_service\internal" />
-      <recent name="$PROJECT_DIR$/pkg/subsystems/k8s" />
-      <recent name="$PROJECT_DIR$/routers/api/v1/v1vms" />
-    </key>
-  </component>
-  <component name="RunManager" selected="Go Build.Run">
-    <configuration name="Run" type="GoApplicationRunConfiguration" factoryName="Go Application">
+  <component name="RunManager">
+    <configuration default="true" type="GoApplicationRunConfiguration" factoryName="Go Application">
       <module name="go-deploy" />
       <working_directory value="$PROJECT_DIR$" />
-      <envs>
-        <env name="DEPLOY_ENV_FILE" value="$PROJECT_DIR$/../admin/secrets/deploy/kthcloud.env" />
-      </envs>
       <kind value="PACKAGE" />
       <package value="go-deploy" />
       <directory value="$PROJECT_DIR$" />
       <filePath value="$PROJECT_DIR$" />
       <method v="2" />
     </configuration>
-    <configuration default="true" type="GoApplicationRunConfiguration" factoryName="Go Application">
+    <configuration name="go build go-deploy" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true" nameIsGenerated="true">
       <module name="go-deploy" />
       <working_directory value="$PROJECT_DIR$" />
-      <kind value="PACKAGE" />
-      <package value="deploy-k8s-worker" />
-      <directory value="$PROJECT_DIR$" />
-      <filePath value="$PROJECT_DIR$" />
-      <method v="2" />
-    </configuration>
-    <configuration name="Run Test" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true">
-      <module name="go-deploy" />
-      <working_directory value="$PROJECT_DIR$/test" />
       <envs>
-        <env name="DEPLOY_ENV_FILE" value="$PROJECT_DIR$/../admin/secrets/deploy/kthcloud.env" />
+        <env name="DEPLOY_ENV_FILE" value="../admin/secrets/deploy/kthcloud.env" />
       </envs>
-      <root_directory value="$PROJECT_DIR$" />
       <kind value="PACKAGE" />
-      <package value="go-deploy/test" />
+      <package value="go-deploy" />
       <directory value="$PROJECT_DIR$" />
-      <filePath value="$PROJECT_DIR$" />
-      <framework value="gotest" />
-      <method v="2" />
-    </configuration>
-    <configuration name="TestCreateBadK8s in go-deploy/test" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
-      <module name="go-deploy" />
-      <working_directory value="$PROJECT_DIR$/test" />
-      <envs>
-        <env name="DEPLOY_ENV_FILE" value="$PROJECT_DIR$/../admin/secrets/deploy/kthcloud.env" />
-      </envs>
-      <root_directory value="$PROJECT_DIR$" />
-      <kind value="PACKAGE" />
-      <package value="go-deploy/test" />
-      <directory value="$PROJECT_DIR$" />
-      <filePath value="$PROJECT_DIR$" />
-      <framework value="gotest" />
-      <pattern value="^\QTestCreateBadK8s\E$" />
-      <method v="2" />
-    </configuration>
-    <configuration name="TestUpdateVM in go-deploy/test" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
-      <module name="go-deploy" />
-      <working_directory value="$PROJECT_DIR$/test" />
-      <envs>
-        <env name="DEPLOY_ENV_FILE" value="$PROJECT_DIR$/../admin/secrets/deploy/kthcloud.env" />
-      </envs>
-      <root_directory value="$PROJECT_DIR$" />
-      <kind value="PACKAGE" />
-      <package value="go-deploy/test" />
-      <directory value="$PROJECT_DIR$" />
-      <filePath value="$PROJECT_DIR$" />
-      <framework value="gotest" />
-      <pattern value="^\QTestUpdateVM\E$" />
+      <filePath value="$PROJECT_DIR$/main.go" />
       <method v="2" />
     </configuration>
     <configuration default="true" type="GoTestRunConfiguration" factoryName="Go Test">
       <module name="go-deploy" />
       <working_directory value="$PROJECT_DIR$" />
       <kind value="DIRECTORY" />
-      <package value="deploy-k8s-worker" />
+      <package value="go-deploy" />
       <directory value="$PROJECT_DIR$" />
       <filePath value="$PROJECT_DIR$" />
       <framework value="gotest" />
       <method v="2" />
     </configuration>
-    <list>
-      <item itemvalue="Go Build.Run" />
-      <item itemvalue="Go Test.TestCreateBadK8s in go-deploy/test" />
-      <item itemvalue="Go Test.TestUpdateVM in go-deploy/test" />
-      <item itemvalue="Go Test.Run Test" />
-    </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Go Test.TestCreateBadK8s in go-deploy/test" />
-        <item itemvalue="Go Test.Run Test" />
-        <item itemvalue="Go Test.TestUpdateVM in go-deploy/test" />
+        <item itemvalue="Go Build.go build go-deploy" />
       </list>
     </recent_temporary>
-  </component>
-  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
-  <component name="TypeScriptGeneratedFilesManager">
-    <option name="version" value="3" />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
     <option name="TAB_STATES">
       <map>
         <entry key="MAIN">
           <value>
-            <State>
-              <option name="FILTERS">
-                <map>
-                  <entry key="branch">
-                    <value>
-                      <list>
-                        <option value="dev" />
-                      </list>
-                    </value>
-                  </entry>
-                </map>
-              </option>
-            </State>
+            <State />
           </value>
         </entry>
       </map>
     </option>
-  </component>
-  <component name="VcsManagerConfiguration">
-    <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
-    <MESSAGE value="fix bugs in user/projects delete route. fix error codes" />
-    <MESSAGE value="fix harbor projects being private on creation" />
-    <MESSAGE value="change project name. fix websocket support for logs" />
-    <option name="LAST_COMMIT_MESSAGE" value="change project name. fix websocket support for logs" />
-  </component>
-  <component name="VgoProject">
-    <settings-migrated>true</settings-migrated>
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
-          <url>file://$PROJECT_DIR$/pkg/subsystems/k8s/deployment.go</url>
-          <line>114</line>
-          <option name="timeStamp" value="90" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
-          <url>file://$PROJECT_DIR$/pkg/subsystems/cs/vm.go</url>
-          <line>68</line>
-          <option name="timeStamp" value="97" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
-          <url>file://$PROJECT_DIR$/service/vm_service/internal_service/cs_service.go</url>
-          <line>170</line>
-          <option name="timeStamp" value="102" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
-          <url>file://$PROJECT_DIR$/routers/api/v1/v1_vm/vm.go</url>
-          <line>154</line>
-          <option name="timeStamp" value="103" />
-        </line-breakpoint>
-      </breakpoints>
-      <default-breakpoints>
-        <breakpoint type="DlvErrorBreakpoint" />
-      </default-breakpoints>
-    </breakpoint-manager>
   </component>
 </project>

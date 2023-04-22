@@ -28,6 +28,9 @@ type Environment struct {
 	AppPort   int    `env:"DEPLOY_APP_PORT,default=8080"`
 	AppPrefix string `env:"DEPLOY_APP_PREFIX,required=true"`
 
+	DefaultVmQuota         int `env:"DEPLOY_DEFAULT_VM_QUOTA,required=true"`
+	DefaultDeploymentQuota int `env:"DEPLOY_DEFAULT_DEPLOYMENT_QUOTA,required=true"`
+
 	Keycloak struct {
 		Url   string `env:"DEPLOY_KEYCLOAK_URL,required=true"`
 		Realm string `env:"DEPLOY_KEYCLOAK_REALM,required=true"`

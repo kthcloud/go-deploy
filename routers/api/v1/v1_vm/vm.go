@@ -8,6 +8,7 @@ import (
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
 	"go-deploy/pkg/validator"
+	"go-deploy/service/user_info_service"
 	"go-deploy/service/vm_service"
 	"net/http"
 	"strconv"
@@ -18,9 +19,8 @@ func getAllVMs(context *app.ClientContext) {
 
 	dtoVMs := make([]dto.VmRead, len(vms))
 	for i, vm := range vms {
-		_, statusMsg, _ := vm_service.GetStatus(&vm)
 		connectionString, _ := vm_service.GetConnectionString(&vm)
-		dtoVMs[i] = vm.ToDto(statusMsg, connectionString)
+		dtoVMs[i] = vm.ToDto(vm.StatusMessage, connectionString)
 	}
 
 	context.JSONResponse(http.StatusOK, dtoVMs)
@@ -61,9 +61,8 @@ func GetMany(c *gin.Context) {
 
 	dtoVMs := make([]dto.VmRead, len(vms))
 	for i, vm := range vms {
-		_, statusMsg, _ := vm_service.GetStatus(&vm)
 		connectionString, _ := vm_service.GetConnectionString(&vm)
-		dtoVMs[i] = vm.ToDto(statusMsg, connectionString)
+		dtoVMs[i] = vm.ToDto(vm.StatusMessage, connectionString)
 	}
 
 	context.JSONResponse(200, dtoVMs)
@@ -97,9 +96,8 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	_, statusMsg, _ := vm_service.GetStatus(vm)
 	connectionString, _ := vm_service.GetConnectionString(vm)
-	context.JSONResponse(200, vm.ToDto(statusMsg, connectionString))
+	context.JSONResponse(200, vm.ToDto(vm.StatusMessage, connectionString))
 }
 
 func Create(c *gin.Context) {
@@ -136,7 +134,13 @@ func Create(c *gin.Context) {
 		return
 	}
 
-	if token.VmQuota == 0 {
+	userInfo, err := user_info_service.GetByToken(token)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		return
+	}
+
+	if userInfo.VmQuota == 0 {
 		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, "User is not allowed to create vms")
 		return
 	}
@@ -150,7 +154,8 @@ func Create(c *gin.Context) {
 	}
 
 	// temporary, this should be handled by the validator
-	sshPublicKey := "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDHJ+XBsrl/eUIcDHJf8tA22wgocd8+r6zH47VzNl1M9Ri6tlgEeH13O6b6yO7W38wjx+Ftcv+9P93XeAf3N8h78JuvWlb8Q/xPMFZxSePRpiYtDqCR3ClEZ8KkKYgS/APeybZy9fNH8JduuvSAp5FkDVnW8VZfUpKUm0w3Ka32jtAwAOb5ghIdSc35hL37hLnB0PVz9q3f5OD2g1bEx187IunDrQYkp8YVDPxLI0qc7iARFYpEvNfTiRaWMRywAd7ANa4LQYc4KyWZxEsAZ+pjdOsp7WkaHrbeBypLFh+9+3nEYcT4CTj9r0jIM2e8m1Y7t79heMy/AqQF2FsaOvFuow70RjFmrIrC2Z/AylJDkYtcgy8cxafviISwlplgQ0XQsTsc4OAZAGyLvNHgUh3VeArXa4YczlDSK+IlFUwDr87r7MPoLETO9RhraA98ksHUzPQ0/J1NbjwB+vMCAAak1Zv4MIJLdX2XPjzDrUvPdnkyt4OLZD++RVM3EuOqDDM= cloud@se-flem-001"
+	//sshPublicKey := "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDHJ+XBsrl/eUIcDHJf8tA22wgocd8+r6zH47VzNl1M9Ri6tlgEeH13O6b6yO7W38wjx+Ftcv+9P93XeAf3N8h78JuvWlb8Q/xPMFZxSePRpiYtDqCR3ClEZ8KkKYgS/APeybZy9fNH8JduuvSAp5FkDVnW8VZfUpKUm0w3Ka32jtAwAOb5ghIdSc35hL37hLnB0PVz9q3f5OD2g1bEx187IunDrQYkp8YVDPxLI0qc7iARFYpEvNfTiRaWMRywAd7ANa4LQYc4KyWZxEsAZ+pjdOsp7WkaHrbeBypLFh+9+3nEYcT4CTj9r0jIM2e8m1Y7t79heMy/AqQF2FsaOvFuow70RjFmrIrC2Z/AylJDkYtcgy8cxafviISwlplgQ0XQsTsc4OAZAGyLvNHgUh3VeArXa4YczlDSK+IlFUwDr87r7MPoLETO9RhraA98ksHUzPQ0/J1NbjwB+vMCAAak1Zv4MIJLdX2XPjzDrUvPdnkyt4OLZD++RVM3EuOqDDM= cloud@se-flem-001"
+	sshPublicKey := "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDBjv2iP3pR5vZO/ESY6ZZdsk4ZxdtZiQ/OiPbztuShFdj6l7+Azlga9/n7TLTMVl1HjJT1OfJKNV7Dhfh7gzf0LgjM4yPh/Ovcwg3/K1ycGOBFKAo8KhhOq2kpuKOvy0Ug2wFPngZxQfFUM0a1t4MuSjiX4CP5eUPTc8gOcetf8konKjbRk5h/gYzBqH6edpBz4RvgskuCCKJSQ3h7cfEflhvItUQ4yHFihJewPQLLfhZDuMoc9zHJObqOzAhN7NJ0kyNrNo45QtxarTuavKZZZ1hGrNL9tOrebrf1OU2jtMmag12MUcKNa4sBOGe6J3qII8tsIcEumSqtWYywyK9Wa8kNkKItHMLognXKc99bDZRu3yBSAiOsfC8197c0mqGfd4PbILXmOfkEV0aRIL0ElUk6EmKl1+KvQ0lYDb8SIopl5UAyDObwDFfdAKDORGddUqn2onDi+vj+hQwwcbNFTE+H6CCra2JLmIa/XAGpZ26SQTK1/Shp6ALw4ZJv1jc= ownem@Home"
 
 	if exists {
 		if vm.OwnerID != userID {
@@ -172,8 +177,8 @@ func Create(c *gin.Context) {
 		return
 	}
 
-	if vmCount >= token.VmQuota {
-		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, fmt.Sprintf("User is not allowed to create more than %d vms", token.VmQuota))
+	if vmCount >= userInfo.VmQuota {
+		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, fmt.Sprintf("User is not allowed to create more than %d vms", userInfo.VmQuota))
 		return
 	}
 

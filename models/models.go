@@ -13,6 +13,8 @@ import (
 
 var DeploymentCollection *mongo.Collection
 var VmCollection *mongo.Collection
+var UserInfoCollection *mongo.Collection
+
 var client *mongo.Client
 
 func getUri() string {
@@ -64,6 +66,13 @@ func Setup() {
 	}
 
 	log.Println("found collection vms")
+
+	UserInfoCollection = client.Database(conf.Env.DB.Name).Collection("userInfo")
+	if err != nil {
+		log.Fatalln(makeError(err))
+	}
+
+	log.Println("found collection userInfo")
 }
 
 func Shutdown() {

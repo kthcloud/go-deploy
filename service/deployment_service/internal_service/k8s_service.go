@@ -60,7 +60,7 @@ func CreateK8s(name string) (*K8sResult, error) {
 
 	port := conf.Env.AppPort
 
-	deployment, err := deploymentModel.GetDeploymentByName(name)
+	deployment, err := deploymentModel.GetByName(name)
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -179,7 +179,7 @@ func RestartK8s(name string) error {
 		return fmt.Errorf("failed to restart k8s %s. details: %s", name, err)
 	}
 
-	deployment, err := deploymentModel.GetDeploymentByName(name)
+	deployment, err := deploymentModel.GetByName(name)
 	if deployment.Subsystems.K8s.Deployment.ID == "" {
 		return makeError(errors.New("can't restart deployment that is not yet created"))
 	}

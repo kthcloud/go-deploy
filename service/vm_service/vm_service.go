@@ -6,8 +6,9 @@ import (
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/status_codes"
 	"go-deploy/service/vm_service/internal_service"
-	"go.mongodb.org/mongo-driver/bson"
 	"log"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func Create(vmID, name, sshPublicKey, owner string) {
@@ -38,19 +39,6 @@ func GetByID(userID, vmID string) (*vmModel.VM, error) {
 	}
 
 	if vm != nil && vm.OwnerID != userID {
-		return nil, nil
-	}
-
-	return vm, nil
-}
-
-func GetByName(userId, name string) (*vmModel.VM, error) {
-	vm, err := vmModel.GetByName(name)
-	if err != nil {
-		return nil, err
-	}
-
-	if vm != nil && vm.OwnerID != userId {
 		return nil, nil
 	}
 
