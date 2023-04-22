@@ -1,17 +1,16 @@
 package cs
 
 import (
+	"crypto/sha512"
+	"encoding/base64"
 	"fmt"
-	"github.com/apache/cloudstack-go/v2/cloudstack"
 	"go-deploy/pkg/subsystems/cs/commands"
 	"go-deploy/pkg/subsystems/cs/models"
+	"gopkg.in/yaml.v3"
+	"math/rand"
 	"strings"
+	"time"
 )
-
-func getKeyPairName(vmName string) string {
-	name := fmt.Sprintf("%s-pk", vmName)
-	return name
-}
 
 func (client *Client) ReadVM(id string) (*models.VmPublic, error) {
 	makeError := func(err error) error {
@@ -37,7 +36,7 @@ func (client *Client) ReadVM(id string) (*models.VmPublic, error) {
 	return public, nil
 }
 
-func (client *Client) CreateVM(public *models.VmPublic) (string, error) {
+func (client *Client) CreateVM(public *models.VmPublic, userSshPublicKey, adminSshPublicKey string) (string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create cs vm %s. details: %s", public.Name, err)
 	}
@@ -66,6 +65,12 @@ func (client *Client) CreateVM(public *models.VmPublic) (string, error) {
 	createVmParams.SetNetworkids([]string{public.NetworkID})
 	createVmParams.SetProjectid(public.ProjectID)
 	createVmParams.SetExtraconfig(public.ExtraConfig)
+
+	userData := createUserData(public.Name, userSshPublicKey, adminSshPublicKey)
+	userData = "#cloud-config\n" + userData
+	userDataB64 := base64.StdEncoding.EncodeToString([]byte(userData))
+
+	createVmParams.SetUserdata(userDataB64)
 
 	created, err := client.CsClient.VirtualMachine.DeployVirtualMachine(createVmParams)
 	if err != nil {
@@ -118,12 +123,6 @@ func (client *Client) DeleteVM(id string) error {
 		return nil
 	}
 
-	// delete any associated ssh key pair
-	err = client.deleteKeyPairForVM(vm)
-	if err != nil {
-		return makeError(err)
-	}
-
 	if vm.State == "Stopping" || vm.State == "DestroyRequested" || vm.State == "Expunging" {
 		return nil
 	}
@@ -151,46 +150,6 @@ func (client *Client) GetVmStatus(id string) (string, error) {
 	}
 
 	return vm.State, nil
-}
-
-func (client *Client) AddKeyPairToVM(id, publicKey string) error {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to add ssh keypair to vm %s. details: %s", id, err)
-	}
-
-	vm, _, err := client.CsClient.VirtualMachine.GetVirtualMachineByID(id)
-	if err != nil {
-		return makeError(err)
-	}
-
-	keyPairName := getKeyPairName(vm.Name)
-
-	err = client.deleteKeyPairForVM(vm)
-	if err != nil {
-		return makeError(err)
-	}
-
-	registerKeyPairParams := client.CsClient.SSH.NewRegisterSSHKeyPairParams(keyPairName, publicKey)
-	registerKeyPairParams.SetProjectid(vm.Projectid)
-	registeredKeyPair, err := client.CsClient.SSH.RegisterSSHKeyPair(registerKeyPairParams)
-	if err != nil {
-		return makeError(err)
-	}
-
-	keyPair := &cloudstack.SSHKeyPair{
-		Id:   registeredKeyPair.Id,
-		Name: registeredKeyPair.Name,
-	}
-
-	resetKeyPairParams := client.CsClient.SSH.NewResetSSHKeyForVirtualMachineParams(id, keyPair.Name)
-	resetKeyPairParams.SetProjectid(vm.Projectid)
-
-	_, err = client.CsClient.SSH.ResetSSHKeyForVirtualMachine(resetKeyPairParams)
-	if err != nil {
-		return makeError(err)
-	}
-
-	return nil
 }
 
 func (client *Client) DoVmCommand(id string, command commands.Command) error {
@@ -234,26 +193,74 @@ func (client *Client) DoVmCommand(id string, command commands.Command) error {
 	return nil
 }
 
-func (client *Client) deleteKeyPairForVM(vm *cloudstack.VirtualMachine) error {
-	keyPairName := getKeyPairName(vm.Name)
+type cloudInit struct {
+	FQDN            string          `yaml:"fqdn"`
+	Users           []cloudInitUser `yaml:"users"`
+	SshPasswordAuth bool            `yaml:"ssh_pwauth"`
+}
 
-	listKeyPairParams := client.CsClient.SSH.NewListSSHKeyPairsParams()
-	listKeyPairParams.SetProjectid(vm.Projectid)
-	listKeyPairParams.SetName(keyPairName)
+type cloudInitUser struct {
+	Name              string   `yaml:"name"`
+	Sudo              []string `yaml:"sudo"`
+	Passwd            string   `yaml:"passwd"`
+	LockPasswd        bool     `yaml:"lock_passwd"`
+	Shell             string   `yaml:"shell"`
+	SshAuthorizedKeys []string `yaml:"ssh_authorized_keys"`
+}
 
-	keyPairsResponse, err := client.CsClient.SSH.ListSSHKeyPairs(listKeyPairParams)
+func createUserData(vmName, userSshPublicKey, adminSshPublicKey string) string {
+	init := cloudInit{}
+	init.FQDN = vmName
+	init.SshPasswordAuth = false
+
+	// imiate mkpasswd --method=SHA-512 --rounds=4096
+	passwd := hashPassword("root", generateSalt())
+
+	init.Users = append(init.Users, cloudInitUser{
+		Name:              "cloud",
+		Sudo:              []string{"ALL=(ALL) NOPASSWD:ALL"},
+		Passwd:            passwd,
+		LockPasswd:        true,
+		Shell:             "/bin/bash",
+		SshAuthorizedKeys: []string{userSshPublicKey},
+	})
+
+	init.Users = append(init.Users, cloudInitUser{
+		Name:              "deploy",
+		Sudo:              []string{"ALL=(ALL) NOPASSWD:ALL"},
+		Passwd:            passwd,
+		LockPasswd:        true,
+		Shell:             "/bin/bash",
+		SshAuthorizedKeys: []string{adminSshPublicKey},
+	})
+
+	// marshal the struct to yaml
+	data, err := yaml.Marshal(init)
 	if err != nil {
-		return err
+		panic(err)
 	}
 
-	for _, key := range keyPairsResponse.SSHKeyPairs {
-		deleteKeyPairParams := client.CsClient.SSH.NewDeleteSSHKeyPairParams(key.Name)
-		deleteKeyPairParams.SetProjectid(vm.Projectid)
-		_, err = client.CsClient.SSH.DeleteSSHKeyPair(deleteKeyPairParams)
-		if err != nil {
-			return err
-		}
-	}
+	return string(data)
+}
 
-	return nil
+const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+func generateSalt() string {
+	rand.Seed(time.Now().UnixNano())
+	salt := make([]byte, 16)
+	for i := range salt {
+		salt[i] = alphabet[rand.Intn(len(alphabet))]
+	}
+	return string(salt)
+}
+
+func hashPassword(password, salt string) string {
+	rounds := 4096
+	hash := sha512.New()
+	for i := 0; i < rounds; i++ {
+		hash.Write([]byte(salt + password))
+	}
+	hashSum := hash.Sum(nil)
+	encodedHash := base64.StdEncoding.EncodeToString(hashSum)
+	return fmt.Sprintf("$6$rounds=%d$%s$%s", rounds, salt, encodedHash)
 }

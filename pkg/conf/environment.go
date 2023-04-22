@@ -61,9 +61,10 @@ type Environment struct {
 	}
 
 	CS struct {
-		Url    string `env:"DEPLOY_CS_API_URL,required=true"`
-		Key    string `env:"DEPLOY_CS_API_KEY,required=true"`
-		Secret string `env:"DEPLOY_CS_SECRET_KEY,required=true"`
+		Url               string `env:"DEPLOY_CS_API_URL,required=true"`
+		Key               string `env:"DEPLOY_CS_API_KEY,required=true"`
+		Secret            string `env:"DEPLOY_CS_SECRET_KEY,required=true"`
+		AdminSshPublicKey string `env:"DEPLOY_CS_ADMIN_SSH_PUBLIC_KEY,required=true"`
 	}
 
 	PDNS struct {

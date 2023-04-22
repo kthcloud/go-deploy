@@ -149,6 +149,9 @@ func Create(c *gin.Context) {
 		return
 	}
 
+	// temporary, this should be handled by the validator
+	sshPublicKey := "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDHJ+XBsrl/eUIcDHJf8tA22wgocd8+r6zH47VzNl1M9Ri6tlgEeH13O6b6yO7W38wjx+Ftcv+9P93XeAf3N8h78JuvWlb8Q/xPMFZxSePRpiYtDqCR3ClEZ8KkKYgS/APeybZy9fNH8JduuvSAp5FkDVnW8VZfUpKUm0w3Ka32jtAwAOb5ghIdSc35hL37hLnB0PVz9q3f5OD2g1bEx187IunDrQYkp8YVDPxLI0qc7iARFYpEvNfTiRaWMRywAd7ANa4LQYc4KyWZxEsAZ+pjdOsp7WkaHrbeBypLFh+9+3nEYcT4CTj9r0jIM2e8m1Y7t79heMy/AqQF2FsaOvFuow70RjFmrIrC2Z/AylJDkYtcgy8cxafviISwlplgQ0XQsTsc4OAZAGyLvNHgUh3VeArXa4YczlDSK+IlFUwDr87r7MPoLETO9RhraA98ksHUzPQ0/J1NbjwB+vMCAAak1Zv4MIJLdX2XPjzDrUvPdnkyt4OLZD++RVM3EuOqDDM= cloud@se-flem-001"
+
 	if exists {
 		if vm.OwnerID != userID {
 			context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceAlreadyExists, "Resource already exists")
@@ -158,7 +161,7 @@ func Create(c *gin.Context) {
 			context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingDeleted, "Resource is currently being deleted")
 			return
 		}
-		vm_service.Create(vm.ID, requestBody.Name, userID)
+		vm_service.Create(vm.ID, requestBody.Name, sshPublicKey, userID)
 		context.JSONResponse(http.StatusCreated, dto.VmCreated{ID: vm.ID})
 		return
 	}
@@ -175,7 +178,7 @@ func Create(c *gin.Context) {
 	}
 
 	vmID := uuid.New().String()
-	vm_service.Create(vmID, requestBody.Name, userID)
+	vm_service.Create(vmID, requestBody.Name, sshPublicKey, userID)
 	context.JSONResponse(http.StatusCreated, dto.VmCreated{ID: vmID})
 }
 

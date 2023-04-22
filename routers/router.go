@@ -48,7 +48,6 @@ func setupVMRoutes(base *gin.RouterGroup, _ *gin.RouterGroup) {
 
 	base.GET("/vms/:vmId", v1_vm.Get)
 	base.POST("/vms", v1_vm.Create)
-	base.POST("/vms/:vmId/keyPair", v1_vm.CreateKeyPair)
 	base.POST("/vms/:vmId/command", v1_vm.DoCommand)
 	base.DELETE("/vms/:vmId", v1_vm.Delete)
 }

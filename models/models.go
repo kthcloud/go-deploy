@@ -49,7 +49,7 @@ func Setup() {
 		log.Fatalln(makeError(err))
 	}
 
-	log.Println("sucessfully connected to database")
+	log.Println("successfully connected to database")
 
 	DeploymentCollection = client.Database(conf.Env.DB.Name).Collection("deployments")
 	if err != nil {

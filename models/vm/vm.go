@@ -16,6 +16,7 @@ import (
 type VM struct {
 	ID           string    `bson:"id"`
 	Name         string    `bson:"name"`
+	SshPublicKey string    `bson:"sshPublicKey"`
 	OwnerID      string    `bson:"ownerId"`
 	BeingCreated bool      `bson:"beingCreated"`
 	BeingDeleted bool      `bson:"beingDeleted"`
@@ -32,6 +33,7 @@ type CS struct {
 	VM                 csModels.VmPublic                 `bson:"vm"`
 	PortForwardingRule csModels.PortForwardingRulePublic `bson:"portForwardingRule"`
 	PublicIpAddress    csModels.PublicIpAddressPublic    `bson:"publicIpAddress"`
+	SshPublicKey       string                            `bson:"sshPublicKey"`
 }
 
 type PfSense struct {
@@ -46,13 +48,14 @@ func (vm *VM) ToDto(status, connectionString string) dto.VmRead {
 	return dto.VmRead{
 		ID:               vm.ID,
 		Name:             vm.Name,
+		SshPublicKey:     vm.SshPublicKey,
 		OwnerID:          vm.OwnerID,
 		Status:           status,
 		ConnectionString: connectionString,
 	}
 }
 
-func Create(vmID, name, owner string) error {
+func Create(vmID, name, sshPublicKey, owner string) error {
 	currentVM, err := GetByID(vmID)
 	if err != nil {
 		return err
@@ -65,6 +68,7 @@ func Create(vmID, name, owner string) error {
 	vm := VM{
 		ID:           vmID,
 		Name:         name,
+		SshPublicKey: sshPublicKey,
 		OwnerID:      owner,
 		BeingCreated: true,
 		BeingDeleted: false,

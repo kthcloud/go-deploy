@@ -25,8 +25,15 @@ func withClient() (*cs.Client, error) {
 	})
 }
 
-func CreateCS(name string) (*CsCreated, error) {
+func CreateCS(name, sshPublicKey string) (*CsCreated, error) {
 	log.Println("setting up cs for", name)
+
+	if sshPublicKey == "" {
+		return nil, fmt.Errorf("ssh public key is required")
+	}
+
+	userSshPublicKey := sshPublicKey
+	adminSshPublicKey := conf.Env.CS.AdminSshPublicKey
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to setup cs for vm %s. details: %s", name, err)
@@ -49,11 +56,13 @@ func CreateCS(name string) (*CsCreated, error) {
 			Name: name,
 			// temporary until vm templates are set up
 			ServiceOfferingID: "8da28b4d-5fec-4a44-aee7-fb0c5c8265a9", // Small HA
-			TemplateID:        "cbfca18e-bf29-4019-bb67-c0651412db56", // deploy-template-ubuntu2204
+			TemplateID:        "fb6b6b11-6196-42d9-a12d-038bdeecb6f6", // deploy-template-cloud-init-ubuntu2204
 			NetworkID:         "4a065a52-f290-4d2e-aeb4-6f48d3bd9bfe", // deploy
 			ZoneID:            "3a74db73-6058-4520-8d8c-ab7d9b7955c8", // Flemingsberg
 			ProjectID:         "d1ba382b-e310-445b-a54b-c4e773662af3", // deploy
-		})
+		},
+			userSshPublicKey, adminSshPublicKey,
+		)
 		if err != nil {
 			return nil, makeError(err)
 		}
@@ -272,24 +281,6 @@ func GetStatusCS(name string) (int, string, error) {
 	}
 
 	return statusCode, status_codes.GetMsg(statusCode), nil
-}
-
-func AddKeyPairCS(vmID, publicKey string) error {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to add ssh key pair for cs vm %s. details: %s", vmID, err)
-	}
-
-	client, err := withClient()
-	if err != nil {
-		return makeError(err)
-	}
-
-	err = client.AddKeyPairToVM(vmID, publicKey)
-	if err != nil {
-		return makeError(err)
-	}
-
-	return nil
 }
 
 func DoCommandCS(vmID, command string) error {

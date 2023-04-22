@@ -1,7 +1,6 @@
 package vm_service
 
 import (
-	"errors"
 	"fmt"
 	vmModel "go-deploy/models/vm"
 	"go-deploy/pkg/conf"
@@ -11,15 +10,15 @@ import (
 	"log"
 )
 
-func Create(vmID, name, owner string) {
+func Create(vmID, name, sshPublicKey, owner string) {
 	go func() {
-		err := vmModel.Create(vmID, name, owner)
+		err := vmModel.Create(vmID, name, sshPublicKey, owner)
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
-		csResult, err := internal_service.CreateCS(name)
+		csResult, err := internal_service.CreateCS(name, sshPublicKey)
 		if err != nil {
 			log.Println(err)
 		}
@@ -103,16 +102,6 @@ func GetConnectionString(vm *vmModel.VM) (string, error) {
 	connectionString := fmt.Sprintf("ssh cloud@%s -p %d", domainName, port)
 
 	return connectionString, nil
-}
-
-func CreateKeyPair(vm *vmModel.VM, publicKey string) error {
-	csID := vm.Subsystems.CS.VM.ID
-	if csID == "" {
-		return errors.New("cloudstack vm not created")
-	}
-
-	err := internal_service.AddKeyPairCS(csID, publicKey)
-	return err
 }
 
 func GetStatus(vm *vmModel.VM) (int, string, error) {
