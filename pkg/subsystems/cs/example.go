@@ -9,7 +9,7 @@ import (
 func ExampleCreate() {
 	client, err := New(&ClientConf{
 		ApiUrl:    conf.Env.CS.Url,
-		ApiKey:    conf.Env.CS.Key,
+		ApiKey:    conf.Env.CS.ApiKey,
 		SecretKey: conf.Env.CS.Secret,
 	})
 
@@ -40,7 +40,7 @@ func ExampleUpdate() {
 
 	client, err := New(&ClientConf{
 		ApiUrl:    conf.Env.CS.Url,
-		ApiKey:    conf.Env.CS.Key,
+		ApiKey:    conf.Env.CS.ApiKey,
 		SecretKey: conf.Env.CS.Secret,
 	})
 

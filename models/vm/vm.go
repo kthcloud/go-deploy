@@ -7,7 +7,6 @@ import (
 	"go-deploy/models/dto"
 	"go-deploy/pkg/status_codes"
 	csModels "go-deploy/pkg/subsystems/cs/models"
-	pdnsModels "go-deploy/pkg/subsystems/pdns/models"
 	psModels "go-deploy/pkg/subsystems/pfsense/models"
 	"log"
 
@@ -30,7 +29,6 @@ type VM struct {
 type Subsystems struct {
 	CS      CS      `bson:"cs"`
 	PfSense PfSense `bson:"pfSense"`
-	PDNS    PDNS    `bson:"pdns"`
 }
 
 type CS struct {
@@ -42,10 +40,6 @@ type CS struct {
 
 type PfSense struct {
 	PortForwardingRule psModels.PortForwardingRulePublic `bson:"portForwardingRule"`
-}
-
-type PDNS struct {
-	Record pdnsModels.RecordPublic `bson:"record"`
 }
 
 func (vm *VM) ToDto(status, connectionString string) dto.VmRead {

@@ -58,7 +58,7 @@ func CreateK8s(name string) (*K8sResult, error) {
 		return nil, makeError(err)
 	}
 
-	port := conf.Env.AppPort
+	port := conf.Env.App.Port
 
 	deployment, err := deploymentModel.GetByName(name)
 	if err != nil {

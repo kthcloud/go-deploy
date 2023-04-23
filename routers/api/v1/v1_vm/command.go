@@ -7,6 +7,7 @@ import (
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
 	"go-deploy/pkg/validator"
+	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/vm_service"
 	"net/http"
 )
@@ -48,8 +49,9 @@ func DoCommand(c *gin.Context) {
 	}
 	userID := token.Sub
 	vmID := context.GinContext.Param("vmId")
+	isAdmin := v1.IsAdmin(&context)
 
-	vm, err := vm_service.GetByID(userID, vmID)
+	vm, err := vm_service.GetByID(userID, vmID, isAdmin)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return

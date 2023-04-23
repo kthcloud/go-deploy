@@ -20,7 +20,7 @@ type CsCreated struct {
 func withClient() (*cs.Client, error) {
 	return cs.New(&cs.ClientConf{
 		ApiUrl:    conf.Env.CS.Url,
-		ApiKey:    conf.Env.CS.Key,
+		ApiKey:    conf.Env.CS.ApiKey,
 		SecretKey: conf.Env.CS.Secret,
 	})
 }
@@ -33,7 +33,7 @@ func CreateCS(name, sshPublicKey string) (*CsCreated, error) {
 	}
 
 	userSshPublicKey := sshPublicKey
-	adminSshPublicKey := conf.Env.CS.AdminSshPublicKey
+	adminSshPublicKey := conf.Env.VM.AdminSshPublicKey
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to setup cs for vm %s. details: %s", name, err)

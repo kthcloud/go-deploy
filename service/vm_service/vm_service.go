@@ -32,13 +32,13 @@ func Create(vmID, name, sshPublicKey, owner string) {
 	}()
 }
 
-func GetByID(userID, vmID string) (*vmModel.VM, error) {
+func GetByID(userID, vmID string, isAdmin bool) (*vmModel.VM, error) {
 	vm, err := vmModel.GetByID(vmID)
 	if err != nil {
 		return nil, err
 	}
 
-	if vm != nil && vm.OwnerID != userID {
+	if vm != nil && vm.OwnerID != userID && !isAdmin {
 		return nil, nil
 	}
 
@@ -84,7 +84,7 @@ func Delete(name string) {
 }
 
 func GetConnectionString(vm *vmModel.VM) (string, error) {
-	domainName := conf.Env.ParentDomainVM
+	domainName := conf.Env.VM.ParentDomain
 	port := vm.Subsystems.PfSense.PortForwardingRule.ExternalPort
 
 	connectionString := fmt.Sprintf("ssh cloud@%s -p %d", domainName, port)

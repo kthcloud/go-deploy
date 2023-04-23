@@ -21,8 +21,8 @@ func createDefaultUserInfo(token *auth.KeycloakToken) UserInfo {
 	return UserInfo{
 		Sub:             token.Sub,
 		CachedUsername:  token.PreferredUsername,
-		VmQuota:         conf.Env.DefaultVmQuota,
-		DeploymentQuota: conf.Env.DefaultDeploymentQuota,
+		VmQuota:         conf.Env.VM.DefaultQuota,
+		DeploymentQuota: conf.Env.App.DefaultQuota,
 	}
 }
 

@@ -7,14 +7,13 @@ import (
 )
 
 func GetPrefixedName(name string) string {
-	return fmt.Sprintf("%s%s", conf.Env.AppPrefix, name)
+	return fmt.Sprintf("%s%s", conf.Env.App.Prefix, name)
 }
 
 func GetUnprefixedName(prefixedName string) string {
-	return strings.TrimPrefix(prefixedName, conf.Env.AppPrefix)
+	return strings.TrimPrefix(prefixedName, conf.Env.App.Prefix)
 }
 
 func GetPlaceholderImage() (string, string) {
-	result := strings.Split(conf.Env.DockerRegistry.PlaceHolder, ":")
-	return result[0], result[1]
+	return conf.Env.DockerRegistry.PlaceHolder.Project, conf.Env.DockerRegistry.PlaceHolder.Repository
 }

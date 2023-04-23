@@ -18,18 +18,8 @@ var UserInfoCollection *mongo.Collection
 var client *mongo.Client
 
 func getUri() string {
-	db := conf.Env.DB
-
-	noCred := len(db.Username) == 0 || len(db.Password) == 0
-
-	var url string
-	if noCred {
-		url = fmt.Sprintf("mongodb://%s", db.Url)
-	} else {
-		url = fmt.Sprintf("mongodb+srv://%s:%s@%s", db.Username, db.Password, db.Url)
-	}
-
-	return url
+	// this function is kept to allow easy switch from connString -> username + password + url etc.
+	return conf.Env.DB.Url
 }
 
 func Setup() {

@@ -8,8 +8,10 @@ import (
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
 	"go-deploy/pkg/validator"
+	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/user_info_service"
 	"go-deploy/service/vm_service"
+	"golang.org/x/crypto/ssh"
 	"net/http"
 	"strconv"
 )
@@ -88,8 +90,9 @@ func Get(c *gin.Context) {
 	}
 	vmID := context.GinContext.Param("vmId")
 	userID := token.Sub
+	isAdmin := v1.IsAdmin(&context)
 
-	vm, _ := vm_service.GetByID(userID, vmID)
+	vm, _ := vm_service.GetByID(userID, vmID, isAdmin)
 
 	if vm == nil {
 		context.NotFound()
@@ -110,6 +113,9 @@ func Create(c *gin.Context) {
 			"min:3",
 			"max:30",
 		},
+		"sshPublicKey": []string{
+			"required",
+		},
 	}
 
 	messages := validator.MapData{
@@ -118,6 +124,9 @@ func Create(c *gin.Context) {
 			"regexp:Name must follow RFC 1035 and must not include any dots",
 			"min:Name must be between 3-30 characters",
 			"max:Name must be between 3-30 characters",
+		},
+		"sshPublicKey": []string{
+			"required:SSH public key is required",
 		},
 	}
 
@@ -146,16 +155,19 @@ func Create(c *gin.Context) {
 	}
 
 	userID := token.Sub
+	_ = v1.IsAdmin(&context)
+
+	validKey := isValidSshPublicKey(requestBody.SshPublicKey)
+	if !validKey {
+		context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceValidationFailed, "SSH public key is invalid")
+		return
+	}
 
 	exists, vm, err := vm_service.Exists(requestBody.Name)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return
 	}
-
-	// temporary, this should be handled by the validator
-	//sshPublicKey := "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDHJ+XBsrl/eUIcDHJf8tA22wgocd8+r6zH47VzNl1M9Ri6tlgEeH13O6b6yO7W38wjx+Ftcv+9P93XeAf3N8h78JuvWlb8Q/xPMFZxSePRpiYtDqCR3ClEZ8KkKYgS/APeybZy9fNH8JduuvSAp5FkDVnW8VZfUpKUm0w3Ka32jtAwAOb5ghIdSc35hL37hLnB0PVz9q3f5OD2g1bEx187IunDrQYkp8YVDPxLI0qc7iARFYpEvNfTiRaWMRywAd7ANa4LQYc4KyWZxEsAZ+pjdOsp7WkaHrbeBypLFh+9+3nEYcT4CTj9r0jIM2e8m1Y7t79heMy/AqQF2FsaOvFuow70RjFmrIrC2Z/AylJDkYtcgy8cxafviISwlplgQ0XQsTsc4OAZAGyLvNHgUh3VeArXa4YczlDSK+IlFUwDr87r7MPoLETO9RhraA98ksHUzPQ0/J1NbjwB+vMCAAak1Zv4MIJLdX2XPjzDrUvPdnkyt4OLZD++RVM3EuOqDDM= cloud@se-flem-001"
-	sshPublicKey := "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDBjv2iP3pR5vZO/ESY6ZZdsk4ZxdtZiQ/OiPbztuShFdj6l7+Azlga9/n7TLTMVl1HjJT1OfJKNV7Dhfh7gzf0LgjM4yPh/Ovcwg3/K1ycGOBFKAo8KhhOq2kpuKOvy0Ug2wFPngZxQfFUM0a1t4MuSjiX4CP5eUPTc8gOcetf8konKjbRk5h/gYzBqH6edpBz4RvgskuCCKJSQ3h7cfEflhvItUQ4yHFihJewPQLLfhZDuMoc9zHJObqOzAhN7NJ0kyNrNo45QtxarTuavKZZZ1hGrNL9tOrebrf1OU2jtMmag12MUcKNa4sBOGe6J3qII8tsIcEumSqtWYywyK9Wa8kNkKItHMLognXKc99bDZRu3yBSAiOsfC8197c0mqGfd4PbILXmOfkEV0aRIL0ElUk6EmKl1+KvQ0lYDb8SIopl5UAyDObwDFfdAKDORGddUqn2onDi+vj+hQwwcbNFTE+H6CCra2JLmIa/XAGpZ26SQTK1/Shp6ALw4ZJv1jc= ownem@Home"
 
 	if exists {
 		if vm.OwnerID != userID {
@@ -166,7 +178,7 @@ func Create(c *gin.Context) {
 			context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingDeleted, "Resource is currently being deleted")
 			return
 		}
-		vm_service.Create(vm.ID, requestBody.Name, sshPublicKey, userID)
+		vm_service.Create(vm.ID, requestBody.Name, requestBody.SshPublicKey, userID)
 		context.JSONResponse(http.StatusCreated, dto.VmCreated{ID: vm.ID})
 		return
 	}
@@ -183,7 +195,7 @@ func Create(c *gin.Context) {
 	}
 
 	vmID := uuid.New().String()
-	vm_service.Create(vmID, requestBody.Name, sshPublicKey, userID)
+	vm_service.Create(vmID, requestBody.Name, requestBody.SshPublicKey, userID)
 	context.JSONResponse(http.StatusCreated, dto.VmCreated{ID: vmID})
 }
 
@@ -210,8 +222,9 @@ func Delete(c *gin.Context) {
 	}
 	userID := token.Sub
 	vmID := context.GinContext.Param("vmId")
+	isAdmin := v1.IsAdmin(&context)
 
-	current, err := vm_service.GetByID(userID, vmID)
+	current, err := vm_service.GetByID(userID, vmID, isAdmin)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return
@@ -234,4 +247,12 @@ func Delete(c *gin.Context) {
 	vm_service.Delete(current.Name)
 
 	context.OkDeleted()
+}
+
+func isValidSshPublicKey(key string) bool {
+	_, _, _, _, err := ssh.ParseAuthorizedKey([]byte(key))
+	if err != nil {
+		return false
+	}
+	return true
 }
