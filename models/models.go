@@ -13,6 +13,7 @@ import (
 
 var DeploymentCollection *mongo.Collection
 var VmCollection *mongo.Collection
+var GpuCollection *mongo.Collection
 var UserInfoCollection *mongo.Collection
 
 var client *mongo.Client
@@ -43,26 +44,17 @@ func Setup() {
 
 	log.Println("successfully connected to database")
 
-	DeploymentCollection = client.Database(conf.Env.DB.Name).Collection("deployments")
-	if err != nil {
-		log.Fatalln(makeError(err))
-	}
+	// Find collections
+	DeploymentCollection = findCollection("deployments")
+	VmCollection = findCollection("vms")
+	GpuCollection = findCollection("gpus")
+	UserInfoCollection = findCollection("userInfos")
+}
 
-	log.Println("found collection deployments")
-
-	VmCollection = client.Database(conf.Env.DB.Name).Collection("vms")
-	if err != nil {
-		log.Fatalln(makeError(err))
-	}
-
-	log.Println("found collection vms")
-
-	UserInfoCollection = client.Database(conf.Env.DB.Name).Collection("userInfo")
-	if err != nil {
-		log.Fatalln(makeError(err))
-	}
-
-	log.Println("found collection userInfo")
+func findCollection(collectionName string) *mongo.Collection {
+	collection := client.Database(conf.Env.DB.Name).Collection(collectionName)
+	log.Println("found collection " + collectionName)
+	return collection
 }
 
 func Shutdown() {
@@ -72,6 +64,8 @@ func Shutdown() {
 
 	DeploymentCollection = nil
 	VmCollection = nil
+	GpuCollection = nil
+	UserInfoCollection = nil
 
 	err := client.Disconnect(context.Background())
 	if err != nil {

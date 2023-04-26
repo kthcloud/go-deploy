@@ -8,11 +8,11 @@ import (
 )
 
 type Environment struct {
-	Port        int    `yaml:"port"`
-	ExternalUrl string `yaml:"externalUrl"`
-	Manager     string `yaml:"manager"`
-
+	Port          int    `yaml:"port"`
+	ExternalUrl   string `yaml:"externalUrl"`
+	Manager       string `yaml:"manager"`
 	SessionSecret string `yaml:"sessionSecret"`
+	LandingAPI    string `yaml:"landingApi"`
 
 	DockerRegistry struct {
 		Url         string `yaml:"url"`
@@ -63,6 +63,13 @@ type Environment struct {
 		} `yaml:"portRange"`
 	} `yaml:"pfSense"`
 
+	Landing struct {
+		Url      string `yaml:"url"`
+		User     string `yaml:"user"`
+		Password string `yaml:"password"`
+		ClientID string `yaml:"clientId"`
+	} `yaml:"landing"`
+
 	K8s struct {
 		Config string `yaml:"config"`
 	} `yaml:"k8s"`
@@ -103,4 +110,6 @@ func Setup() {
 	if err != nil {
 		log.Fatalf(makeError(err).Error())
 	}
+
+	log.Println("config loaded")
 }

@@ -129,7 +129,7 @@ func (client *Client) CreateProxyHost(public *models.ProxyHostPublic) (int, erro
 	}
 
 	requestBody := models.CreateProxyHostCreateBody(public)
-	res, err := client.doJSONRequest("POST", "/nginx/proxy-hosts", requestBody)
+	res, err := client.doJsonRequest("POST", "/nginx/proxy-hosts", requestBody)
 	if err != nil {
 		return 0, makeError(err)
 	}
@@ -178,7 +178,7 @@ func (client *Client) UpdateProxyHost(public *models.ProxyHostPublic) error {
 	}
 
 	requestBody := models.CreateProxyHostUpdateBody(public)
-	res, err := client.doJSONRequest("PUT", fmt.Sprintf("/nginx/proxy-hosts/%d", public.ID), requestBody)
+	res, err := client.doJsonRequest("PUT", fmt.Sprintf("/nginx/proxy-hosts/%d", public.ID), requestBody)
 	if err != nil {
 		return makeError(err)
 	}
