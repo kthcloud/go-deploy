@@ -25,7 +25,7 @@ func ExampleCreate() {
 		ZoneID:            "3a74db73-6058-4520-8d8c-ab7d9b7955c8", // Flemingsberg
 		ProjectID:         "d1ba382b-e310-445b-a54b-c4e773662af3", // deploy
 	},
-		"public key 1", "public key 2",
+		"test", "public key 1", "public key 2",
 	)
 
 	if err != nil {

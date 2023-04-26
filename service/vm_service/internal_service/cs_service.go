@@ -61,7 +61,7 @@ func CreateCS(name, sshPublicKey string) (*CsCreated, error) {
 			ZoneID:            "3a74db73-6058-4520-8d8c-ab7d9b7955c8", // Flemingsberg
 			ProjectID:         "d1ba382b-e310-445b-a54b-c4e773662af3", // deploy
 		},
-			userSshPublicKey, adminSshPublicKey,
+			conf.Env.Manager, userSshPublicKey, adminSshPublicKey,
 		)
 		if err != nil {
 			return nil, makeError(err)

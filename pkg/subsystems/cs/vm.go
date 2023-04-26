@@ -3,6 +3,7 @@ package cs
 import (
 	"crypto/sha512"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"go-deploy/pkg/subsystems/cs/commands"
 	"go-deploy/pkg/subsystems/cs/models"
@@ -11,6 +12,10 @@ import (
 	"strings"
 	"time"
 )
+
+type ManagedByAnnotation struct {
+	ManagedBy string `json:"managedBy"`
+}
 
 func (client *Client) ReadVM(id string) (*models.VmPublic, error) {
 	makeError := func(err error) error {
@@ -36,7 +41,7 @@ func (client *Client) ReadVM(id string) (*models.VmPublic, error) {
 	return public, nil
 }
 
-func (client *Client) CreateVM(public *models.VmPublic, userSshPublicKey, adminSshPublicKey string) (string, error) {
+func (client *Client) CreateVM(public *models.VmPublic, managedBy, userSshPublicKey, adminSshPublicKey string) (string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create cs vm %s. details: %s", public.Name, err)
 	}
@@ -45,39 +50,74 @@ func (client *Client) CreateVM(public *models.VmPublic, userSshPublicKey, adminS
 	listVmParams.SetName(public.Name)
 	listVmParams.SetProjectid(public.ProjectID)
 
+	var vmID string
+
 	vm, err := client.CsClient.VirtualMachine.ListVirtualMachines(listVmParams)
 	if err != nil {
 		return "", makeError(err)
 	}
 
-	if vm.Count != 0 {
-		return vm.VirtualMachines[0].Id, nil
+	if vm.Count == 0 {
+		createVmParams := client.CsClient.VirtualMachine.NewDeployVirtualMachineParams(
+			public.ServiceOfferingID,
+			public.TemplateID,
+			public.ZoneID,
+		)
+
+		createVmParams.SetName(public.Name)
+		createVmParams.SetDisplayname(public.Name)
+		createVmParams.SetNetworkids([]string{public.NetworkID})
+		createVmParams.SetProjectid(public.ProjectID)
+		createVmParams.SetExtraconfig(public.ExtraConfig)
+
+		userData := createUserData(public.Name, userSshPublicKey, adminSshPublicKey)
+		userData = "#cloud-config\n" + userData
+		userDataB64 := base64.StdEncoding.EncodeToString([]byte(userData))
+
+		createVmParams.SetUserdata(userDataB64)
+
+		created, err := client.CsClient.VirtualMachine.DeployVirtualMachine(createVmParams)
+		if err != nil {
+			return "", makeError(err)
+		}
+
+		vmID = created.Id
+	} else {
+		vmID = vm.VirtualMachines[0].Id
 	}
 
-	createVmParams := client.CsClient.VirtualMachine.NewDeployVirtualMachineParams(
-		public.ServiceOfferingID,
-		public.TemplateID,
-		public.ZoneID,
-	)
+	annotationsParams := client.CsClient.Annotation.NewListAnnotationsParams()
+	annotationsParams.SetEntityid(vmID)
+	annotationsParams.SetEntitytype("VM")
 
-	createVmParams.SetName(public.Name)
-	createVmParams.SetDisplayname(public.Name)
-	createVmParams.SetNetworkids([]string{public.NetworkID})
-	createVmParams.SetProjectid(public.ProjectID)
-	createVmParams.SetExtraconfig(public.ExtraConfig)
-
-	userData := createUserData(public.Name, userSshPublicKey, adminSshPublicKey)
-	userData = "#cloud-config\n" + userData
-	userDataB64 := base64.StdEncoding.EncodeToString([]byte(userData))
-
-	createVmParams.SetUserdata(userDataB64)
-
-	created, err := client.CsClient.VirtualMachine.DeployVirtualMachine(createVmParams)
+	annotations, err := client.CsClient.Annotation.ListAnnotations(annotationsParams)
 	if err != nil {
 		return "", makeError(err)
 	}
 
-	return created.Id, nil
+	if annotations.Count == 0 {
+		managedBy := ManagedByAnnotation{
+			ManagedBy: managedBy,
+		}
+
+		managedByJson, err := json.Marshal(managedBy)
+		if err != nil {
+			return "", makeError(err)
+		}
+
+		annotationParams := client.CsClient.Annotation.NewAddAnnotationParams()
+		annotationParams.SetEntityid(vmID)
+		annotationParams.SetEntitytype("VM")
+		annotationParams.SetAdminsonly(false)
+		annotationParams.SetAnnotation(string(managedByJson))
+
+		_, err = client.CsClient.Annotation.AddAnnotation(annotationParams)
+		if err != nil {
+			return "", makeError(err)
+		}
+	}
+
+	return vmID, nil
 }
 
 func (client *Client) UpdateVM(public *models.VmPublic) error {
@@ -213,7 +253,7 @@ func createUserData(vmName, userSshPublicKey, adminSshPublicKey string) string {
 	init.FQDN = vmName
 	init.SshPasswordAuth = false
 
-	// imiate mkpasswd --method=SHA-512 --rounds=4096
+	// imitate mkpasswd --method=SHA-512 --rounds=4096
 	passwd := hashPassword("root", generateSalt())
 
 	init.Users = append(init.Users, cloudInitUser{
@@ -246,6 +286,7 @@ func createUserData(vmName, userSshPublicKey, adminSshPublicKey string) string {
 const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 func generateSalt() string {
+	//goland:noinspection GoDeprecation
 	rand.Seed(time.Now().UnixNano())
 	salt := make([]byte, 16)
 	for i := range salt {

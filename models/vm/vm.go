@@ -15,8 +15,10 @@ import (
 )
 
 type VM struct {
-	ID            string     `bson:"id"`
-	Name          string     `bson:"name"`
+	ID        string `bson:"id"`
+	Name      string `bson:"name"`
+	ManagedBy string `bson:"managedBy"`
+
 	SshPublicKey  string     `bson:"sshPublicKey"`
 	OwnerID       string     `bson:"ownerId"`
 	BeingCreated  bool       `bson:"beingCreated"`

@@ -10,6 +10,7 @@ import (
 type Environment struct {
 	Port        int    `yaml:"port"`
 	ExternalUrl string `yaml:"externalUrl"`
+	Manager     string `yaml:"manager"`
 
 	SessionSecret string `yaml:"sessionSecret"`
 
