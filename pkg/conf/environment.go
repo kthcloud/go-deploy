@@ -12,7 +12,6 @@ type Environment struct {
 	ExternalUrl   string `yaml:"externalUrl"`
 	Manager       string `yaml:"manager"`
 	SessionSecret string `yaml:"sessionSecret"`
-	LandingAPI    string `yaml:"landingApi"`
 
 	DockerRegistry struct {
 		Url         string `yaml:"url"`
@@ -39,6 +38,7 @@ type Environment struct {
 		Url        string `yaml:"url"`
 		Realm      string `yaml:"realm"`
 		AdminGroup string `yaml:"adminGroup"`
+		GpuGroup   string `yaml:"gpuGroup"`
 	} `yaml:"keycloak"`
 
 	DB struct {

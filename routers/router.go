@@ -25,13 +25,14 @@ func NewRouter() *gin.Engine {
 	apiv1Hook := router.Group("/v1/hooks")
 
 	setupDeploymentRoutes(apiv1, apiv1Hook)
-	setupVMRoutes(apiv1, apiv1Hook)
+	setupVmRoutes(apiv1, apiv1Hook)
+	setupGpuRoutes(apiv1, apiv1Hook)
 
 	return router
 }
 
 func setupDeploymentRoutes(base *gin.RouterGroup, hooks *gin.RouterGroup) {
-	base.GET("/deployments", v1_deployment.GetMany)
+	base.GET("/deployments", v1_deployment.GetList)
 
 	base.GET("/deployments/:deploymentId", v1_deployment.Get)
 	base.GET("/deployments/:deploymentId/ciConfig", v1_deployment.GetCiConfig)
@@ -43,11 +44,15 @@ func setupDeploymentRoutes(base *gin.RouterGroup, hooks *gin.RouterGroup) {
 
 }
 
-func setupVMRoutes(base *gin.RouterGroup, _ *gin.RouterGroup) {
-	base.GET("/vms", v1_vm.GetMany)
+func setupVmRoutes(base *gin.RouterGroup, _ *gin.RouterGroup) {
+	base.GET("/vms", v1_vm.GetList)
 
 	base.GET("/vms/:vmId", v1_vm.Get)
 	base.POST("/vms", v1_vm.Create)
 	base.POST("/vms/:vmId/command", v1_vm.DoCommand)
 	base.DELETE("/vms/:vmId", v1_vm.Delete)
+}
+
+func setupGpuRoutes(base *gin.RouterGroup, _ *gin.RouterGroup) {
+	base.GET("/gpus", v1_vm.GetGpuList)
 }

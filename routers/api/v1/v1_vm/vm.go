@@ -28,7 +28,7 @@ func getAllVMs(context *app.ClientContext) {
 	context.JSONResponse(http.StatusOK, dtoVMs)
 }
 
-func GetMany(c *gin.Context) {
+func GetList(c *gin.Context) {
 	context := app.NewContext(c)
 
 	rules := validator.MapData{
@@ -48,9 +48,9 @@ func GetMany(c *gin.Context) {
 	}
 	userID := token.Sub
 
-	// might want to check if userID is allowed to get all...
+	isAdmin := v1.IsAdmin(&context)
 	wantAll, _ := strconv.ParseBool(context.GinContext.Query("all"))
-	if wantAll {
+	if wantAll && isAdmin {
 		getAllVMs(&context)
 		return
 	}

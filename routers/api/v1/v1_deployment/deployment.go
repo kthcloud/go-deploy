@@ -40,7 +40,7 @@ func getAll(_ string, context *app.ClientContext) {
 	context.JSONResponse(http.StatusOK, dtoDeployments)
 }
 
-func GetMany(c *gin.Context) {
+func GetList(c *gin.Context) {
 	context := app.NewContext(c)
 
 	rules := validator.MapData{

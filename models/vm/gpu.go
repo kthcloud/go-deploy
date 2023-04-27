@@ -2,10 +2,13 @@ package vm
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"go-deploy/models"
+	"go-deploy/models/dto"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"time"
 )
 
 type GpuData struct {
@@ -17,11 +20,37 @@ type GpuData struct {
 	DeviceID string `bson:"deviceId" json:"deviceId"`
 }
 
+type GpuLease struct {
+	VmID string    `bson:"vmId" json:"vmId"`
+	User string    `bson:"user" json:"user"`
+	End  time.Time `bson:"end" json:"end"`
+}
+
 type GPU struct {
-	ID   string  `bson:"id" json:"id"`
-	Host string  `bson:"host" json:"host"`
-	VM   string  `bson:"vm" json:"vm"`
-	Data GpuData `bson:"data" json:"data"`
+	ID    string   `bson:"id" json:"id"`
+	Host  string   `bson:"host" json:"host"`
+	Lease GpuLease `bson:"lease" json:"lease"`
+	Data  GpuData  `bson:"data" json:"data"`
+}
+
+func (gpu *GPU) ToDto() dto.GpuRead {
+	id := base64.StdEncoding.EncodeToString([]byte(gpu.ID))
+
+	var lease *dto.GpuLease
+
+	if gpu.Lease.VmID != "" {
+		lease = &dto.GpuLease{
+			VmID: gpu.Lease.VmID,
+			User: gpu.Lease.User,
+			End:  gpu.Lease.End,
+		}
+	}
+
+	return dto.GpuRead{
+		ID:    id,
+		Name:  gpu.Data.Name,
+		Lease: lease,
+	}
 }
 
 func CreateGPU(id, host string, data GpuData) error {
@@ -37,7 +66,11 @@ func CreateGPU(id, host string, data GpuData) error {
 	vm := GPU{
 		ID:   id,
 		Host: host,
-		VM:   "",
+		Lease: GpuLease{
+			VmID: "",
+			User: "",
+			End:  time.Time{},
+		},
 		Data: data,
 	}
 
@@ -63,4 +96,34 @@ func GetGpuByID(id string) (*GPU, error) {
 	}
 
 	return &gpu, err
+}
+
+func GetAllGPUs() ([]GPU, error) {
+	var gpus []GPU
+	cursor, err := models.GpuCollection.Find(context.Background(), bson.D{})
+	if err != nil {
+		return nil, err
+	}
+
+	err = cursor.All(context.Background(), &gpus)
+	if err != nil {
+		return nil, err
+	}
+
+	return gpus, nil
+}
+
+func GetAllAvailableGPUs() ([]GPU, error) {
+	var gpus []GPU
+	cursor, err := models.GpuCollection.Find(context.Background(), bson.D{{"lease.vmId", ""}})
+	if err != nil {
+		return nil, err
+	}
+
+	err = cursor.All(context.Background(), &gpus)
+	if err != nil {
+		return nil, err
+	}
+
+	return gpus, nil
 }

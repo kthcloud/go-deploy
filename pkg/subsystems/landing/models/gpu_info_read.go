@@ -2,7 +2,7 @@ package models
 
 import "time"
 
-type GpuRead struct {
+type GpuInfoRead struct {
 	GpuInfo struct {
 		Hosts []struct {
 			Name string `json:"name"`

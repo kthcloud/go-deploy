@@ -6,7 +6,7 @@ import (
 	"go-deploy/utils/requestutils"
 )
 
-func (client *Client) ReadGpuInfo() (*models.GpuRead, error) {
+func (client *Client) ReadGpuInfo() (*models.GpuInfoRead, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get gpu info. details: %s", err.Error())
 	}
@@ -21,7 +21,7 @@ func (client *Client) ReadGpuInfo() (*models.GpuRead, error) {
 		return nil, makeError(fmt.Errorf("bad status code: %d", res.StatusCode))
 	}
 
-	var gpus []models.GpuRead
+	var gpus []models.GpuInfoRead
 	err = requestutils.ParseBody(res.Body, &gpus)
 	if err != nil {
 		return nil, makeError(err)
