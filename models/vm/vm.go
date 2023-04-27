@@ -17,10 +17,12 @@ import (
 type VM struct {
 	ID        string `bson:"id"`
 	Name      string `bson:"name"`
+	OwnerID   string `bson:"ownerId"`
 	ManagedBy string `bson:"managedBy"`
 
-	SshPublicKey  string     `bson:"sshPublicKey"`
-	OwnerID       string     `bson:"ownerId"`
+	GpuID        string `bson:"gpuId"`
+	SshPublicKey string `bson:"sshPublicKey"`
+
 	BeingCreated  bool       `bson:"beingCreated"`
 	BeingDeleted  bool       `bson:"beingDeleted"`
 	Subsystems    Subsystems `bson:"subsystems"`

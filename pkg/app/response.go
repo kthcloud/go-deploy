@@ -50,3 +50,7 @@ func (context *ClientContext) Unauthorized() {
 func (context *ClientContext) NotFound() {
 	context.GinContext.Status(http.StatusNotFound)
 }
+
+func (context *ClientContext) NotModified() {
+	context.GinContext.Status(http.StatusNotModified)
+}

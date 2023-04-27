@@ -37,7 +37,7 @@ func GetByID(userID, vmID string, isAdmin bool) (*vmModel.VM, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	
 	if vm != nil && vm.OwnerID != userID && !isAdmin {
 		return nil, nil
 	}

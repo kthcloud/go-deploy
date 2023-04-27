@@ -27,17 +27,12 @@ func GetGpuList(c *gin.Context) {
 	}
 
 	onlyAvailable := context.GinContext.Query("available") == "true"
-
 	isGpuUser := v1.IsGpuUser(&context)
 
 	var gpus []vm.GPU
 	var err error
 
-	if isGpuUser {
-		gpus, err = vm_service.GetAllGPUs(onlyAvailable)
-	} else {
-		gpus, err = vm_service.GetAllBasicGPUs(onlyAvailable)
-	}
+	gpus, err = vm_service.GetAllGPUs(onlyAvailable, isGpuUser)
 
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
