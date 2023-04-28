@@ -21,11 +21,11 @@ func CreatePfSense(name string, vmIP net.IP) (*psModels.PortForwardingRulePublic
 
 	client, err := pfsense.New(&pfsense.ClientConf{
 		ApiUrl:         pfSenseConf.Url,
-		Username:       pfSenseConf.Identity,
-		Password:       pfSenseConf.Secret,
+		Username:       pfSenseConf.User,
+		Password:       pfSenseConf.Password,
 		PublicIP:       net.ParseIP(pfSenseConf.PublicIP),
-		PortRangeStart: pfSenseConf.PortRangeStart,
-		PortRangeEnd:   pfSenseConf.PortRangeEnd,
+		PortRangeStart: pfSenseConf.PortRange.Start,
+		PortRangeEnd:   pfSenseConf.PortRange.End,
 	})
 	if err != nil {
 		return nil, makeError(err)
@@ -96,11 +96,11 @@ func DeletePfSense(name string) error {
 
 	client, err := pfsense.New(&pfsense.ClientConf{
 		ApiUrl:         pfSenseConf.Url,
-		Username:       pfSenseConf.Identity,
-		Password:       pfSenseConf.Secret,
+		Username:       pfSenseConf.User,
+		Password:       pfSenseConf.Password,
 		PublicIP:       net.ParseIP(pfSenseConf.PublicIP),
-		PortRangeStart: pfSenseConf.PortRangeStart,
-		PortRangeEnd:   pfSenseConf.PortRangeEnd,
+		PortRangeStart: pfSenseConf.PortRange.Start,
+		PortRangeEnd:   pfSenseConf.PortRange.End,
 	})
 	if err != nil {
 		return makeError(err)

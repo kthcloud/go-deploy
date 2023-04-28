@@ -13,11 +13,11 @@ func Example() {
 
 	client, _ := New(&ClientConf{
 		ApiUrl:         pfSenseConf.Url,
-		Username:       pfSenseConf.Identity,
-		Password:       pfSenseConf.Secret,
+		Username:       pfSenseConf.User,
+		Password:       pfSenseConf.Password,
 		PublicIP:       net.ParseIP(pfSenseConf.PublicIP),
-		PortRangeStart: pfSenseConf.PortRangeStart,
-		PortRangeEnd:   pfSenseConf.PortRangeEnd,
+		PortRangeStart: pfSenseConf.PortRange.Start,
+		PortRangeEnd:   pfSenseConf.PortRange.End,
 	})
 
 	name := "demo"

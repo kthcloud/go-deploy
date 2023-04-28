@@ -2,144 +2,114 @@ package conf
 
 import (
 	"fmt"
-	env "github.com/Netflix/go-env"
-	"github.com/joho/godotenv"
+	"gopkg.in/yaml.v3"
 	"log"
 	"os"
-	"strconv"
-	"strings"
 )
 
 type Environment struct {
-	Port        int    `env:"DEPLOY_PORT,default=8080"`
-	ExternalUrl string `env:"DEPLOY_EXTERNAL_URL"`
-
-	SessionSecret  string `env:"DEPLOY_SESSION_SECRET,required=true"`
-	ParentDomain   string `env:"DEPLOY_PARENT_DOMAIN,required=true"`
-	ParentDomainVM string `env:"DEPLOY_PARENT_DOMAIN_VM,required=true"`
+	Port          int    `yaml:"port"`
+	ExternalUrl   string `yaml:"externalUrl"`
+	Manager       string `yaml:"manager"`
+	SessionSecret string `yaml:"sessionSecret"`
 
 	DockerRegistry struct {
-		Url                   string `env:"DEPLOY_DOCKER_REGISTRY_URL,required=true"`
-		PlaceHolder           string `env:"DEPLOY_PLACEHOLDER_DOCKER_IMAGE,required=true"`
-		PlaceHolderProject    string
-		PlaceHolderRepository string
-	}
+		Url         string `yaml:"url"`
+		PlaceHolder struct {
+			Project    string `yaml:"project"`
+			Repository string `yaml:"repository"`
+		} `yaml:"placeHolder"`
+	} `yaml:"dockerRegistry"`
 
-	AppPort   int    `env:"DEPLOY_APP_PORT,default=8080"`
-	AppPrefix string `env:"DEPLOY_APP_PREFIX,required=true"`
+	App struct {
+		ParentDomain string `yaml:"parentDomain"`
+		Port         int    `yaml:"port"`
+		Prefix       string `yaml:"prefix"`
+		DefaultQuota int    `yaml:"defaultQuota"`
+	} `yaml:"app"`
 
-	DefaultVmQuota         int `env:"DEPLOY_DEFAULT_VM_QUOTA,required=true"`
-	DefaultDeploymentQuota int `env:"DEPLOY_DEFAULT_DEPLOYMENT_QUOTA,required=true"`
+	VM struct {
+		ParentDomain      string `yaml:"parentDomain"`
+		DefaultQuota      int    `yaml:"defaultQuota"`
+		AdminSshPublicKey string `yaml:"adminSshPublicKey"`
+	} `yaml:"vm"`
 
 	Keycloak struct {
-		Url   string `env:"DEPLOY_KEYCLOAK_URL,required=true"`
-		Realm string `env:"DEPLOY_KEYCLOAK_REALM,required=true"`
-	}
-
-	K8s struct {
-		Config string `env:"DEPLOY_K8S_CONFIG"`
-	}
-
-	NPM struct {
-		Url      string `env:"DEPLOY_NPM_API_URL,required=true"`
-		Identity string `env:"DEPLOY_NPM_ADMIN_IDENTITY,required=true"`
-		Secret   string `env:"DEPLOY_NPM_ADMIN_SECRET,required=true"`
-	}
-
-	Harbor struct {
-		Identity      string `env:"DEPLOY_HARBOR_ADMIN_IDENTITY,required=true"`
-		Secret        string `env:"DEPLOY_HARBOR_ADMIN_SECRET,required=true"`
-		Url           string `env:"DEPLOY_HARBOR_API_URL,required=true"`
-		WebhookSecret string `env:"DEPLOY_HARBOR_WEBHOOK_SECRET,required=true"`
-	}
-
-	PfSense struct {
-		Identity       string `env:"DEPLOY_PFSENSE_ADMIN_IDENTITY,required=true"`
-		Secret         string `env:"DEPLOY_PFSENSE_ADMIN_SECRET,required=true"`
-		Url            string `env:"DEPLOY_PFSENSE_API_URL,required=true"`
-		PublicIP       string `env:"DEPLOY_PFSENSE_PUBLIC_IP,required=true"`
-		PortRange      string `env:"DEPLOY_PFSENSE_PORT_RANGE,required=true"`
-		PortRangeStart int
-		PortRangeEnd   int
-	}
-
-	CS struct {
-		Url    string `env:"DEPLOY_CS_API_URL,required=true"`
-		Key    string `env:"DEPLOY_CS_API_KEY,required=true"`
-		Secret string `env:"DEPLOY_CS_SECRET_KEY,required=true"`
-	}
-
-	PDNS struct {
-		Url  string `env:"DEPLOY_PDNS_API_URL,required=true"`
-		Key  string `env:"DEPLOY_PDNS_API_KEY,required=true"`
-		Zone string `env:"DEPLOY_PDNS_ZONE"`
-	}
+		Url        string `yaml:"url"`
+		Realm      string `yaml:"realm"`
+		AdminGroup string `yaml:"adminGroup"`
+		GpuGroup   string `yaml:"gpuGroup"`
+	} `yaml:"keycloak"`
 
 	DB struct {
-		Url      string `env:"DEPLOY_DB_URL,required=true"`
-		Name     string `env:"DEPLOY_DB_NAME,required=true"`
-		Username string `env:"DEPLOY_DB_USERNAME"`
-		Password string `env:"DEPLOY_DB_PASSWORD"`
-	}
+		Url  string `yaml:"url"`
+		Name string `yaml:"name"`
+	} `yaml:"db"`
+
+	CS struct {
+		Url    string `yaml:"url"`
+		ApiKey string `yaml:"apiKey"`
+		Secret string `yaml:"secret"`
+	} `yaml:"cs"`
+
+	PfSense struct {
+		User      string `yaml:"user"`
+		Password  string `yaml:"password"`
+		Url       string `yaml:"url"`
+		PublicIP  string `yaml:"publicIp"`
+		PortRange struct {
+			Start int `yaml:"start"`
+			End   int `yaml:"end"`
+		} `yaml:"portRange"`
+	} `yaml:"pfSense"`
+
+	Landing struct {
+		Url      string `yaml:"url"`
+		User     string `yaml:"user"`
+		Password string `yaml:"password"`
+		ClientID string `yaml:"clientId"`
+	} `yaml:"landing"`
+
+	K8s struct {
+		Config string `yaml:"config"`
+	} `yaml:"k8s"`
+
+	NPM struct {
+		Url      string `yaml:"url"`
+		User     string `yaml:"user"`
+		Password string `yaml:"password"`
+	} `yaml:"npm"`
+
+	Harbor struct {
+		Url           string `yaml:"url"`
+		User          string `yaml:"user"`
+		Password      string `yaml:"password"`
+		WebhookSecret string `yaml:"webhookSecret"`
+	} `yaml:"harbor"`
 }
 
 var Env Environment
-
-func dockerRegistrySetup() {
-	pfsenseRangeError := "docker registry placeholder image must be specified as project:repository]"
-
-	placeholderImageSplit := strings.Split(Env.DockerRegistry.PlaceHolder, ":")
-
-	if len(placeholderImageSplit) != 2 {
-		log.Fatalln(pfsenseRangeError)
-	}
-
-	Env.DockerRegistry.PlaceHolderProject = placeholderImageSplit[0]
-	Env.DockerRegistry.PlaceHolderRepository = placeholderImageSplit[1]
-}
-
-func pfsenseSetup() {
-	portRangeSplit := strings.Split(Env.PfSense.PortRange, "-")
-
-	pfSenseRangeError := "pfsense port range must be specified as (start-end]"
-
-	if len(portRangeSplit) != 2 {
-		log.Fatalln(pfSenseRangeError)
-	}
-
-	start, err := strconv.Atoi(portRangeSplit[0])
-	if err != nil {
-		log.Fatalln(pfSenseRangeError)
-	}
-
-	end, err := strconv.Atoi(portRangeSplit[1])
-	if err != nil {
-		log.Fatalln(pfSenseRangeError)
-	}
-
-	Env.PfSense.PortRangeStart = start
-	Env.PfSense.PortRangeEnd = end
-}
 
 func Setup() {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to setup environment. details: %s", err)
 	}
 
-	deployEnv, found := os.LookupEnv("DEPLOY_ENV_FILE")
-	if found {
-		log.Println("using env-file:", deployEnv)
-		err := godotenv.Load(deployEnv)
-		if err != nil {
-			log.Fatalln(makeError(err))
-		}
+	filepath, found := os.LookupEnv("DEPLOY_CONFIG_FILE")
+	if !found {
+		log.Fatalln(makeError(fmt.Errorf("config file not found. please set DEPLOY_CONFIG_FILE environment variable")))
 	}
 
-	_, err := env.UnmarshalFromEnviron(&Env)
+	log.Println("reading config from", filepath)
+	yamlFile, err := os.ReadFile(filepath)
 	if err != nil {
-		log.Fatalln(makeError(err))
+		log.Fatalf(makeError(err).Error())
 	}
 
-	dockerRegistrySetup()
-	pfsenseSetup()
+	err = yaml.Unmarshal(yamlFile, &Env)
+	if err != nil {
+		log.Fatalf(makeError(err).Error())
+	}
+
+	log.Println("config loaded")
 }

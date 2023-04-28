@@ -34,8 +34,8 @@ func createRepositoryPublic(projectID int, projectName string, name string) *har
 		ProjectName: projectName,
 		Seeded:      false,
 		Placeholder: &harborModels.PlaceHolder{
-			ProjectName:    conf.Env.DockerRegistry.PlaceHolderProject,
-			RepositoryName: conf.Env.DockerRegistry.PlaceHolderRepository,
+			ProjectName:    conf.Env.DockerRegistry.PlaceHolder.Project,
+			RepositoryName: conf.Env.DockerRegistry.PlaceHolder.Repository,
 		},
 	}
 }
@@ -60,8 +60,8 @@ func CreateHarbor(name string) error {
 
 	client, err := harbor.New(&harbor.ClientConf{
 		ApiUrl:   conf.Env.Harbor.Url,
-		Username: conf.Env.Harbor.Identity,
-		Password: conf.Env.Harbor.Secret,
+		Username: conf.Env.Harbor.User,
+		Password: conf.Env.Harbor.Password,
 	})
 	if err != nil {
 		return makeError(err)
@@ -165,8 +165,8 @@ func DeleteHarbor(name string) error {
 
 	client, err := harbor.New(&harbor.ClientConf{
 		ApiUrl:   conf.Env.Harbor.Url,
-		Username: conf.Env.Harbor.Identity,
-		Password: conf.Env.Harbor.Secret,
+		Username: conf.Env.Harbor.User,
+		Password: conf.Env.Harbor.Password,
 	})
 	if err != nil {
 		return makeError(err)

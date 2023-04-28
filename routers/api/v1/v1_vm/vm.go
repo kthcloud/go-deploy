@@ -8,8 +8,10 @@ import (
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
 	"go-deploy/pkg/validator"
+	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/user_info_service"
 	"go-deploy/service/vm_service"
+	"golang.org/x/crypto/ssh"
 	"net/http"
 	"strconv"
 )
@@ -20,13 +22,21 @@ func getAllVMs(context *app.ClientContext) {
 	dtoVMs := make([]dto.VmRead, len(vms))
 	for i, vm := range vms {
 		connectionString, _ := vm_service.GetConnectionString(&vm)
-		dtoVMs[i] = vm.ToDto(vm.StatusMessage, connectionString)
+
+		var gpuRead *dto.GpuRead
+		if vm.GpuID != "" {
+			gpu, _ := vm_service.GetGpuByID(vm.GpuID, true)
+			gpuDTO := gpu.ToDto()
+			gpuRead = &gpuDTO
+		}
+
+		dtoVMs[i] = vm.ToDto(vm.StatusMessage, connectionString, gpuRead)
 	}
 
 	context.JSONResponse(http.StatusOK, dtoVMs)
 }
 
-func GetMany(c *gin.Context) {
+func GetList(c *gin.Context) {
 	context := app.NewContext(c)
 
 	rules := validator.MapData{
@@ -46,9 +56,9 @@ func GetMany(c *gin.Context) {
 	}
 	userID := token.Sub
 
-	// might want to check if userID is allowed to get all...
+	isAdmin := v1.IsAdmin(&context)
 	wantAll, _ := strconv.ParseBool(context.GinContext.Query("all"))
-	if wantAll {
+	if wantAll && isAdmin {
 		getAllVMs(&context)
 		return
 	}
@@ -62,7 +72,15 @@ func GetMany(c *gin.Context) {
 	dtoVMs := make([]dto.VmRead, len(vms))
 	for i, vm := range vms {
 		connectionString, _ := vm_service.GetConnectionString(&vm)
-		dtoVMs[i] = vm.ToDto(vm.StatusMessage, connectionString)
+
+		var gpuRead *dto.GpuRead
+		if vm.GpuID != "" {
+			gpu, _ := vm_service.GetGpuByID(vm.GpuID, true)
+			gpuDTO := gpu.ToDto()
+			gpuRead = &gpuDTO
+		}
+
+		dtoVMs[i] = vm.ToDto(vm.StatusMessage, connectionString, gpuRead)
 	}
 
 	context.JSONResponse(200, dtoVMs)
@@ -88,8 +106,9 @@ func Get(c *gin.Context) {
 	}
 	vmID := context.GinContext.Param("vmId")
 	userID := token.Sub
+	isAdmin := v1.IsAdmin(&context)
 
-	vm, _ := vm_service.GetByID(userID, vmID)
+	vm, _ := vm_service.GetByID(userID, vmID, isAdmin)
 
 	if vm == nil {
 		context.NotFound()
@@ -97,7 +116,14 @@ func Get(c *gin.Context) {
 	}
 
 	connectionString, _ := vm_service.GetConnectionString(vm)
-	context.JSONResponse(200, vm.ToDto(vm.StatusMessage, connectionString))
+	var gpuRead *dto.GpuRead
+	if vm.GpuID != "" {
+		gpu, _ := vm_service.GetGpuByID(vm.GpuID, true)
+		gpuDTO := gpu.ToDto()
+		gpuRead = &gpuDTO
+	}
+
+	context.JSONResponse(200, vm.ToDto(vm.StatusMessage, connectionString, gpuRead))
 }
 
 func Create(c *gin.Context) {
@@ -110,6 +136,9 @@ func Create(c *gin.Context) {
 			"min:3",
 			"max:30",
 		},
+		"sshPublicKey": []string{
+			"required",
+		},
 	}
 
 	messages := validator.MapData{
@@ -118,6 +147,9 @@ func Create(c *gin.Context) {
 			"regexp:Name must follow RFC 1035 and must not include any dots",
 			"min:Name must be between 3-30 characters",
 			"max:Name must be between 3-30 characters",
+		},
+		"sshPublicKey": []string{
+			"required:SSH public key is required",
 		},
 	}
 
@@ -146,6 +178,13 @@ func Create(c *gin.Context) {
 	}
 
 	userID := token.Sub
+	_ = v1.IsAdmin(&context)
+
+	validKey := isValidSshPublicKey(requestBody.SshPublicKey)
+	if !validKey {
+		context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceValidationFailed, "SSH public key is invalid")
+		return
+	}
 
 	exists, vm, err := vm_service.Exists(requestBody.Name)
 	if err != nil {
@@ -162,7 +201,7 @@ func Create(c *gin.Context) {
 			context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingDeleted, "Resource is currently being deleted")
 			return
 		}
-		vm_service.Create(vm.ID, requestBody.Name, userID)
+		vm_service.Create(vm.ID, requestBody.Name, requestBody.SshPublicKey, userID)
 		context.JSONResponse(http.StatusCreated, dto.VmCreated{ID: vm.ID})
 		return
 	}
@@ -179,7 +218,7 @@ func Create(c *gin.Context) {
 	}
 
 	vmID := uuid.New().String()
-	vm_service.Create(vmID, requestBody.Name, userID)
+	vm_service.Create(vmID, requestBody.Name, requestBody.SshPublicKey, userID)
 	context.JSONResponse(http.StatusCreated, dto.VmCreated{ID: vmID})
 }
 
@@ -206,8 +245,9 @@ func Delete(c *gin.Context) {
 	}
 	userID := token.Sub
 	vmID := context.GinContext.Param("vmId")
+	isAdmin := v1.IsAdmin(&context)
 
-	current, err := vm_service.GetByID(userID, vmID)
+	current, err := vm_service.GetByID(userID, vmID, isAdmin)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return
@@ -230,4 +270,12 @@ func Delete(c *gin.Context) {
 	vm_service.Delete(current.Name)
 
 	context.OkDeleted()
+}
+
+func isValidSshPublicKey(key string) bool {
+	_, _, _, _, err := ssh.ParseAuthorizedKey([]byte(key))
+	if err != nil {
+		return false
+	}
+	return true
 }

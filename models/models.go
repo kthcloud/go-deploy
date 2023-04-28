@@ -13,23 +13,14 @@ import (
 
 var DeploymentCollection *mongo.Collection
 var VmCollection *mongo.Collection
+var GpuCollection *mongo.Collection
 var UserInfoCollection *mongo.Collection
 
 var client *mongo.Client
 
 func getUri() string {
-	db := conf.Env.DB
-
-	noCred := len(db.Username) == 0 || len(db.Password) == 0
-
-	var url string
-	if noCred {
-		url = fmt.Sprintf("mongodb://%s", db.Url)
-	} else {
-		url = fmt.Sprintf("mongodb+srv://%s:%s@%s", db.Username, db.Password, db.Url)
-	}
-
-	return url
+	// this function is kept to allow easy switch from connString -> username + password + url etc.
+	return conf.Env.DB.Url
 }
 
 func Setup() {
@@ -51,28 +42,19 @@ func Setup() {
 		log.Fatalln(makeError(err))
 	}
 
-	log.Println("sucessfully connected to database")
+	log.Println("successfully connected to database")
 
-	DeploymentCollection = client.Database(conf.Env.DB.Name).Collection("deployments")
-	if err != nil {
-		log.Fatalln(makeError(err))
-	}
+	// Find collections
+	DeploymentCollection = findCollection("deployments")
+	VmCollection = findCollection("vms")
+	GpuCollection = findCollection("gpus")
+	UserInfoCollection = findCollection("userInfo")
+}
 
-	log.Println("found collection deployments")
-
-	VmCollection = client.Database(conf.Env.DB.Name).Collection("vms")
-	if err != nil {
-		log.Fatalln(makeError(err))
-	}
-
-	log.Println("found collection vms")
-
-	UserInfoCollection = client.Database(conf.Env.DB.Name).Collection("userInfo")
-	if err != nil {
-		log.Fatalln(makeError(err))
-	}
-
-	log.Println("found collection userInfo")
+func findCollection(collectionName string) *mongo.Collection {
+	collection := client.Database(conf.Env.DB.Name).Collection(collectionName)
+	log.Println("found collection " + collectionName)
+	return collection
 }
 
 func Shutdown() {
@@ -82,6 +64,8 @@ func Shutdown() {
 
 	DeploymentCollection = nil
 	VmCollection = nil
+	GpuCollection = nil
+	UserInfoCollection = nil
 
 	err := client.Disconnect(context.Background())
 	if err != nil {

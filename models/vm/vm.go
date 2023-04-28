@@ -7,7 +7,6 @@ import (
 	"go-deploy/models/dto"
 	"go-deploy/pkg/status_codes"
 	csModels "go-deploy/pkg/subsystems/cs/models"
-	pdnsModels "go-deploy/pkg/subsystems/pdns/models"
 	psModels "go-deploy/pkg/subsystems/pfsense/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -15,9 +14,14 @@ import (
 )
 
 type VM struct {
-	ID            string     `bson:"id"`
-	Name          string     `bson:"name"`
-	OwnerID       string     `bson:"ownerId"`
+	ID        string `bson:"id"`
+	Name      string `bson:"name"`
+	OwnerID   string `bson:"ownerId"`
+	ManagedBy string `bson:"managedBy"`
+
+	GpuID        string `bson:"gpuId"`
+	SshPublicKey string `bson:"sshPublicKey"`
+
 	BeingCreated  bool       `bson:"beingCreated"`
 	BeingDeleted  bool       `bson:"beingDeleted"`
 	Subsystems    Subsystems `bson:"subsystems"`
@@ -28,34 +32,42 @@ type VM struct {
 type Subsystems struct {
 	CS      CS      `bson:"cs"`
 	PfSense PfSense `bson:"pfSense"`
-	PDNS    PDNS    `bson:"pdns"`
 }
 
 type CS struct {
 	VM                 csModels.VmPublic                 `bson:"vm"`
 	PortForwardingRule csModels.PortForwardingRulePublic `bson:"portForwardingRule"`
 	PublicIpAddress    csModels.PublicIpAddressPublic    `bson:"publicIpAddress"`
+	SshPublicKey       string                            `bson:"sshPublicKey"`
 }
 
 type PfSense struct {
 	PortForwardingRule psModels.PortForwardingRulePublic `bson:"portForwardingRule"`
 }
 
-type PDNS struct {
-	Record pdnsModels.RecordPublic `bson:"record"`
-}
+func (vm *VM) ToDto(status, connectionString string, gpu *dto.GpuRead) dto.VmRead {
 
-func (vm *VM) ToDto(status, connectionString string) dto.VmRead {
+	var vmGpu *dto.VmGpu
+	if gpu != nil {
+		vmGpu = &dto.VmGpu{
+			ID:       gpu.ID,
+			Name:     gpu.Name,
+			LeaseEnd: gpu.Lease.End,
+		}
+	}
+
 	return dto.VmRead{
 		ID:               vm.ID,
 		Name:             vm.Name,
+		SshPublicKey:     vm.SshPublicKey,
 		OwnerID:          vm.OwnerID,
 		Status:           status,
 		ConnectionString: connectionString,
+		GPU:              vmGpu,
 	}
 }
 
-func Create(vmID, name, owner string) error {
+func Create(vmID, name, sshPublicKey, owner string) error {
 	currentVM, err := GetByID(vmID)
 	if err != nil {
 		return err
@@ -68,6 +80,7 @@ func Create(vmID, name, owner string) error {
 	vm := VM{
 		ID:            vmID,
 		Name:          name,
+		SshPublicKey:  sshPublicKey,
 		OwnerID:       owner,
 		BeingCreated:  true,
 		BeingDeleted:  false,

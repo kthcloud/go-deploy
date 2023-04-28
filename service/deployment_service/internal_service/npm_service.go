@@ -12,7 +12,7 @@ import (
 )
 
 func getFQDN(hostName string) string {
-	return fmt.Sprintf("%s.%s", hostName, conf.Env.ParentDomain)
+	return fmt.Sprintf("%s.%s", hostName, conf.Env.App.ParentDomain)
 }
 
 func createProxyHostPublicBody(name, hostName string, certificateId int) *npmModels.ProxyHostPublic {
@@ -22,7 +22,7 @@ func createProxyHostPublicBody(name, hostName string, certificateId int) *npmMod
 		ID:                    0,
 		DomainNames:           []string{getFQDN(name)},
 		ForwardHost:           forwardHost,
-		ForwardPort:           conf.Env.AppPort,
+		ForwardPort:           conf.Env.App.Port,
 		CertificateID:         certificateId,
 		AllowWebsocketUpgrade: false,
 		ForwardScheme:         "http",
@@ -40,8 +40,8 @@ func CreateNPM(name, hostName string) error {
 
 	client, err := npm.New(&npm.ClientConf{
 		ApiUrl:   conf.Env.NPM.Url,
-		Username: conf.Env.NPM.Identity,
-		Password: conf.Env.NPM.Secret,
+		Username: conf.Env.NPM.User,
+		Password: conf.Env.NPM.Password,
 	})
 	if err != nil {
 		return makeError(err)
@@ -50,7 +50,7 @@ func CreateNPM(name, hostName string) error {
 	deployment, err := deploymentModel.GetByName(name)
 
 	if deployment.Subsystems.Npm.ProxyHost.ID == 0 {
-		certificateID, err := client.GetWildcardCertificateID(conf.Env.ParentDomain)
+		certificateID, err := client.GetWildcardCertificateID(conf.Env.App.ParentDomain)
 		if err != nil {
 			return makeError(err)
 		}
@@ -82,8 +82,8 @@ func DeleteNPM(name string) error {
 
 	client, err := npm.New(&npm.ClientConf{
 		ApiUrl:   conf.Env.NPM.Url,
-		Username: conf.Env.NPM.Identity,
-		Password: conf.Env.NPM.Secret,
+		Username: conf.Env.NPM.User,
+		Password: conf.Env.NPM.Password,
 	})
 	if err != nil {
 		return makeError(err)

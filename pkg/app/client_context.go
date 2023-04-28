@@ -9,4 +9,3 @@ type ClientContext struct {
 func NewContext(ginContext *gin.Context) ClientContext {
 	return ClientContext{GinContext: ginContext}
 }
-

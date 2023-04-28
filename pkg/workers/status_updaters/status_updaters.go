@@ -13,7 +13,7 @@ import (
 func withClient() (*cs.Client, error) {
 	return cs.New(&cs.ClientConf{
 		ApiUrl:    conf.Env.CS.Url,
-		ApiKey:    conf.Env.CS.Key,
+		ApiKey:    conf.Env.CS.ApiKey,
 		SecretKey: conf.Env.CS.Secret,
 	})
 }

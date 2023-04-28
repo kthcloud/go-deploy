@@ -12,7 +12,7 @@ func (client *Client) doRequest(method string, relativePath string) (*http.Respo
 	return requestutils.DoRequestBearer(method, fullURL, nil, nil, client.token)
 }
 
-func (client *Client) doJSONRequest(method string, relativePath string, requestBody interface{}) (*http.Response, error) {
+func (client *Client) doJsonRequest(method string, relativePath string, requestBody interface{}) (*http.Response, error) {
 	jsonBody, err := json.Marshal(requestBody)
 	if err != nil {
 		return nil, err
@@ -22,7 +22,7 @@ func (client *Client) doJSONRequest(method string, relativePath string, requestB
 	return requestutils.DoRequestBearer(method, fullURL, jsonBody, nil, client.token)
 }
 
-func (client *Client) doJSONRequestUnauthorized(method string, relativePath string, requestBody interface{}) (*http.Response, error) {
+func (client *Client) doJsonRequestUnauthorized(method string, relativePath string, requestBody interface{}) (*http.Response, error) {
 	jsonBody, err := json.Marshal(requestBody)
 	if err != nil {
 		return nil, err

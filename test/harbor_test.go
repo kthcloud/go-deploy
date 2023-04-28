@@ -14,8 +14,8 @@ func TestEmptyProject(t *testing.T) {
 
 	client, err := harbor.New(&harbor.ClientConf{
 		ApiUrl:   conf.Env.Harbor.Url,
-		Username: conf.Env.Harbor.Identity,
-		Password: conf.Env.Harbor.Secret,
+		Username: conf.Env.Harbor.User,
+		Password: conf.Env.Harbor.Password,
 	})
 
 	if err != nil {
@@ -58,8 +58,8 @@ func TestUpdateProject(t *testing.T) {
 
 	client, err := harbor.New(&harbor.ClientConf{
 		ApiUrl:   conf.Env.Harbor.Url,
-		Username: conf.Env.Harbor.Identity,
-		Password: conf.Env.Harbor.Secret,
+		Username: conf.Env.Harbor.User,
+		Password: conf.Env.Harbor.Password,
 	})
 
 	if err != nil {
@@ -116,8 +116,8 @@ func TestUpdateProject(t *testing.T) {
 func withProject() (*harbor.Client, *models.ProjectPublic, error) {
 	client, err := harbor.New(&harbor.ClientConf{
 		ApiUrl:   conf.Env.Harbor.Url,
-		Username: conf.Env.Harbor.Identity,
-		Password: conf.Env.Harbor.Secret,
+		Username: conf.Env.Harbor.User,
+		Password: conf.Env.Harbor.Password,
 	})
 
 	if err != nil {
@@ -146,8 +146,8 @@ func withProject() (*harbor.Client, *models.ProjectPublic, error) {
 func deleteProject(public *models.ProjectPublic) error {
 	client, err := harbor.New(&harbor.ClientConf{
 		ApiUrl:   conf.Env.Harbor.Url,
-		Username: conf.Env.Harbor.Identity,
-		Password: conf.Env.Harbor.Secret,
+		Username: conf.Env.Harbor.User,
+		Password: conf.Env.Harbor.Password,
 	})
 	if err != nil {
 		return err

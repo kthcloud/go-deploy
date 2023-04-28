@@ -12,8 +12,8 @@ func TestProxyHost(t *testing.T) {
 
 	client, err := npm.New(&npm.ClientConf{
 		ApiUrl:   conf.Env.NPM.Url,
-		Username: conf.Env.NPM.Identity,
-		Password: conf.Env.NPM.Secret,
+		Username: conf.Env.NPM.User,
+		Password: conf.Env.NPM.Password,
 	})
 
 	if err != nil {
@@ -62,8 +62,8 @@ func TestProxyHostUpdate(t *testing.T) {
 
 	client, err := npm.New(&npm.ClientConf{
 		ApiUrl:   conf.Env.NPM.Url,
-		Username: conf.Env.NPM.Identity,
-		Password: conf.Env.NPM.Secret,
+		Username: conf.Env.NPM.User,
+		Password: conf.Env.NPM.Password,
 	})
 
 	if err != nil {

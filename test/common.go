@@ -9,7 +9,7 @@ import (
 func setup(t *testing.T) {
 
 	requiredEnvs := []string{
-		"DEPLOY_ENV_FILE",
+		"DEPLOY_CONFIG_FILE",
 	}
 
 	for _, env := range requiredEnvs {
@@ -19,7 +19,7 @@ func setup(t *testing.T) {
 		}
 	}
 
-	_, result := os.LookupEnv("DEPLOY_ENV_FILE")
+	_, result := os.LookupEnv("DEPLOY_CONFIG_FILE")
 	if result {
 		conf.Setup()
 	}

@@ -1,24 +1,25 @@
 package vm_service
 
 import (
-	"errors"
 	"fmt"
 	vmModel "go-deploy/models/vm"
 	"go-deploy/pkg/conf"
+	"go-deploy/pkg/status_codes"
 	"go-deploy/service/vm_service/internal_service"
-	"go.mongodb.org/mongo-driver/bson"
 	"log"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
-func Create(vmID, name, owner string) {
+func Create(vmID, name, sshPublicKey, owner string) {
 	go func() {
-		err := vmModel.Create(vmID, name, owner)
+		err := vmModel.Create(vmID, name, sshPublicKey, owner)
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
-		csResult, err := internal_service.CreateCS(name)
+		csResult, err := internal_service.CreateCS(name, sshPublicKey)
 		if err != nil {
 			log.Println(err)
 		}
@@ -31,13 +32,13 @@ func Create(vmID, name, owner string) {
 	}()
 }
 
-func GetByID(userID, vmID string) (*vmModel.VM, error) {
+func GetByID(userID, vmID string, isAdmin bool) (*vmModel.VM, error) {
 	vm, err := vmModel.GetByID(vmID)
 	if err != nil {
 		return nil, err
 	}
 
-	if vm != nil && vm.OwnerID != userID {
+	if vm != nil && vm.OwnerID != userID && !isAdmin {
 		return nil, nil
 	}
 
@@ -68,12 +69,29 @@ func MarkBeingDeleted(vmID string) error {
 
 func Delete(name string) {
 	go func() {
-		err := internal_service.DeleteCS(name)
+		vm, err := vmModel.GetByName(name)
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
+		err = internal_service.DeleteCS(name)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		detached, err := vmModel.DetachGPU(vm.ID, vm.OwnerID)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		if !detached {
+			log.Println("gpu was not detached from vm", vm.ID)
+			return
+		}
+		
 		err = internal_service.DeletePfSense(name)
 		if err != nil {
 			log.Println(err)
@@ -83,7 +101,7 @@ func Delete(name string) {
 }
 
 func GetConnectionString(vm *vmModel.VM) (string, error) {
-	domainName := conf.Env.ParentDomainVM
+	domainName := conf.Env.VM.ParentDomain
 	port := vm.Subsystems.PfSense.PortForwardingRule.ExternalPort
 
 	connectionString := fmt.Sprintf("ssh cloud@%s -p %d", domainName, port)
@@ -91,14 +109,24 @@ func GetConnectionString(vm *vmModel.VM) (string, error) {
 	return connectionString, nil
 }
 
-func CreateKeyPair(vm *vmModel.VM, publicKey string) error {
-	csID := vm.Subsystems.CS.VM.ID
-	if csID == "" {
-		return errors.New("cloudstack vm not created")
+func GetStatus(vm *vmModel.VM) (int, string, error) {
+	csStatusCode, csStatusMsg, err := internal_service.GetStatusCS(vm.Name)
+
+	if err != nil {
+		log.Println(err)
 	}
 
-	err := internal_service.AddKeyPairCS(csID, publicKey)
-	return err
+	if err != nil || csStatusCode == status_codes.ResourceUnknown || csStatusCode == status_codes.ResourceNotFound {
+		if vm.BeingDeleted {
+			return status_codes.ResourceBeingDeleted, status_codes.GetMsg(status_codes.ResourceBeingDeleted), nil
+		}
+
+		if vm.BeingCreated {
+			return status_codes.ResourceBeingCreated, status_codes.GetMsg(status_codes.ResourceBeingCreated), nil
+		}
+	}
+
+	return csStatusCode, csStatusMsg, nil
 }
 
 func DoCommand(vm *vmModel.VM, command string) {
@@ -109,7 +137,12 @@ func DoCommand(vm *vmModel.VM, command string) {
 			return
 		}
 
-		err := internal_service.DoCommandCS(csID, command)
+		var gpuID *string
+		if vm.GpuID != "" {
+			gpuID = &vm.GpuID
+		}
+
+		err := internal_service.DoCommandCS(csID, gpuID, command)
 		if err != nil {
 			log.Println(err)
 			return
