@@ -38,7 +38,6 @@ type CS struct {
 	VM                 csModels.VmPublic                 `bson:"vm"`
 	PortForwardingRule csModels.PortForwardingRulePublic `bson:"portForwardingRule"`
 	PublicIpAddress    csModels.PublicIpAddressPublic    `bson:"publicIpAddress"`
-	SshPublicKey       string                            `bson:"sshPublicKey"`
 }
 
 type PfSense struct {
