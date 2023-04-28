@@ -125,7 +125,7 @@ func AttachGPU(c *gin.Context) {
 
 	vm_service.AttachGPU(gpu.ID, current.ID, userID)
 
-	context.OkCreated()
+	context.JSONResponse(http.StatusCreated, gpu.ToDto())
 }
 
 func DetachGPU(c *gin.Context) {
