@@ -9,6 +9,7 @@ import (
 	"go-deploy/pkg/subsystems/cs/commands"
 	csModels "go-deploy/pkg/subsystems/cs/models"
 	"log"
+	"strings"
 )
 
 type CsCreated struct {
@@ -283,7 +284,125 @@ func GetStatusCS(name string) (int, string, error) {
 	return statusCode, status_codes.GetMsg(statusCode), nil
 }
 
-func DoCommandCS(vmID, command string) error {
+func AttachGPU(gpuID, vmID string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to attach gpu %s to cs vm %s. details: %s", gpuID, vmID, err)
+	}
+
+	client, err := withClient()
+	if err != nil {
+		return makeError(err)
+	}
+
+	vm, err := vmModel.GetByID(vmID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if vm == nil {
+		return makeError(fmt.Errorf("vm %s not found", vmID))
+	}
+
+	if vm.Subsystems.CS.VM.ID == "" {
+		return makeError(fmt.Errorf("vm is not created yet"))
+	}
+
+	gpu, err := vmModel.GetGpuByID(gpuID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	// turn it off if it is on, but remember the status
+	status, err := client.GetVmStatus(vm.Subsystems.CS.VM.ID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if status == "Running" {
+		err = client.DoVmCommand(vm.Subsystems.CS.VM.ID, nil, "stop")
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	vm.Subsystems.CS.VM.ExtraConfig = createExtraConfig(gpu)
+
+	err = client.UpdateVM(&vm.Subsystems.CS.VM)
+	if err != nil {
+		return makeError(err)
+	}
+
+	requiredHost, err := getRequiredHost(gpuID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	// turn it on if it was on
+	if status == "Running" {
+		err = client.DoVmCommand(vm.Subsystems.CS.VM.ID, requiredHost, "start")
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	return nil
+}
+
+func DetachGPU(vmID string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to detach gpu from cs vm %s. details: %s", vmID, err)
+	}
+
+	client, err := withClient()
+	if err != nil {
+		return makeError(err)
+	}
+
+	vm, err := vmModel.GetByID(vmID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if vm == nil {
+		return makeError(fmt.Errorf("vm %s not found", vmID))
+	}
+
+	if vm.Subsystems.CS.VM.ID == "" {
+		return makeError(fmt.Errorf("vm is not created yet"))
+	}
+
+	// turn it off if it is on, but remember the status
+	status, err := client.GetVmStatus(vm.Subsystems.CS.VM.ID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if status == "Running" {
+		err = client.DoVmCommand(vm.Subsystems.CS.VM.ID, nil, "stop")
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	vm.Subsystems.CS.VM.ExtraConfig = ""
+
+	err = client.UpdateVM(&vm.Subsystems.CS.VM)
+	if err != nil {
+		return makeError(err)
+	}
+
+	// turn it on if it was on
+	if status == "Running" {
+		err = client.DoVmCommand(vm.Subsystems.CS.VM.ID, nil, "start")
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	return nil
+}
+
+func DoCommandCS(vmID string, gpuID *string, command string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to execute command %s for cs vm %s. details: %s", command, vmID, err)
 	}
@@ -293,10 +412,44 @@ func DoCommandCS(vmID, command string) error {
 		return makeError(err)
 	}
 
-	err = client.DoVmCommand(vmID, commands.Command(command))
+	var requiredHost *string
+	if gpuID != nil {
+		requiredHost, err = getRequiredHost(*gpuID)
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	err = client.DoVmCommand(vmID, requiredHost, commands.Command(command))
 	if err != nil {
 		return makeError(err)
 	}
 
 	return nil
+}
+
+func createExtraConfig(gpu *vmModel.GPU) string {
+	data := fmt.Sprintf(`
+<devices> <hostdev mode='subsystem' type='pci' managed='yes'> <driver name='vfio' />
+	<source> <address domain='0x0000' bus='0x%s' slot='0x00' function='0x0' /> </source> 
+	<alias name='nvidia0' /> <address type='pci' domain='0x0000' bus='0x00' slot='0x00' function='0x0' /> 
+</hostdev> </devices>`, gpu.Data.Bus)
+
+	data = strings.Replace(data, "\n", "", -1)
+	data = strings.Replace(data, "\t", "", -1)
+
+	return data
+}
+
+func getRequiredHost(gpuID string) (*string, error) {
+	gpu, err := vmModel.GetGpuByID(gpuID)
+	if err != nil {
+		return nil, err
+	}
+
+	if gpu.Host == "" {
+		return nil, fmt.Errorf("no host found for gpu %s", gpu.ID)
+	}
+
+	return &gpu.Host, nil
 }

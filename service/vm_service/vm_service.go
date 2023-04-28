@@ -37,7 +37,7 @@ func GetByID(userID, vmID string, isAdmin bool) (*vmModel.VM, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if vm != nil && vm.OwnerID != userID && !isAdmin {
 		return nil, nil
 	}
@@ -69,12 +69,29 @@ func MarkBeingDeleted(vmID string) error {
 
 func Delete(name string) {
 	go func() {
-		err := internal_service.DeleteCS(name)
+		vm, err := vmModel.GetByName(name)
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
+		err = internal_service.DeleteCS(name)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		detached, err := vmModel.DetachGPU(vm.ID, vm.OwnerID)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		if !detached {
+			log.Println("gpu was not detached from vm", vm.ID)
+			return
+		}
+		
 		err = internal_service.DeletePfSense(name)
 		if err != nil {
 			log.Println(err)
@@ -120,7 +137,12 @@ func DoCommand(vm *vmModel.VM, command string) {
 			return
 		}
 
-		err := internal_service.DoCommandCS(csID, command)
+		var gpuID *string
+		if vm.GpuID != "" {
+			gpuID = &vm.GpuID
+		}
+
+		err := internal_service.DoCommandCS(csID, gpuID, command)
 		if err != nil {
 			log.Println(err)
 			return

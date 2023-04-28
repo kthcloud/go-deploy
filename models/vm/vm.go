@@ -8,10 +8,9 @@ import (
 	"go-deploy/pkg/status_codes"
 	csModels "go-deploy/pkg/subsystems/cs/models"
 	psModels "go-deploy/pkg/subsystems/pfsense/models"
-	"log"
-
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"log"
 )
 
 type VM struct {
@@ -46,7 +45,17 @@ type PfSense struct {
 	PortForwardingRule psModels.PortForwardingRulePublic `bson:"portForwardingRule"`
 }
 
-func (vm *VM) ToDto(status, connectionString string) dto.VmRead {
+func (vm *VM) ToDto(status, connectionString string, gpu *dto.GpuRead) dto.VmRead {
+
+	var vmGpu *dto.VmGpu
+	if gpu != nil {
+		vmGpu = &dto.VmGpu{
+			ID:       gpu.ID,
+			Name:     gpu.Name,
+			LeaseEnd: gpu.Lease.End,
+		}
+	}
+
 	return dto.VmRead{
 		ID:               vm.ID,
 		Name:             vm.Name,
@@ -54,6 +63,7 @@ func (vm *VM) ToDto(status, connectionString string) dto.VmRead {
 		OwnerID:          vm.OwnerID,
 		Status:           status,
 		ConnectionString: connectionString,
+		GPU:              vmGpu,
 	}
 }
 

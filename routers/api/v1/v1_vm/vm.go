@@ -1,7 +1,6 @@
 package v1_vm
 
 import (
-	"encoding/base64"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -23,7 +22,15 @@ func getAllVMs(context *app.ClientContext) {
 	dtoVMs := make([]dto.VmRead, len(vms))
 	for i, vm := range vms {
 		connectionString, _ := vm_service.GetConnectionString(&vm)
-		dtoVMs[i] = vm.ToDto(vm.StatusMessage, connectionString)
+
+		var gpuRead *dto.GpuRead
+		if vm.GpuID != "" {
+			gpu, _ := vm_service.GetGpuByID(vm.GpuID, true)
+			gpuDTO := gpu.ToDto()
+			gpuRead = &gpuDTO
+		}
+
+		dtoVMs[i] = vm.ToDto(vm.StatusMessage, connectionString, gpuRead)
 	}
 
 	context.JSONResponse(http.StatusOK, dtoVMs)
@@ -65,7 +72,15 @@ func GetList(c *gin.Context) {
 	dtoVMs := make([]dto.VmRead, len(vms))
 	for i, vm := range vms {
 		connectionString, _ := vm_service.GetConnectionString(&vm)
-		dtoVMs[i] = vm.ToDto(vm.StatusMessage, connectionString)
+
+		var gpuRead *dto.GpuRead
+		if vm.GpuID != "" {
+			gpu, _ := vm_service.GetGpuByID(vm.GpuID, true)
+			gpuDTO := gpu.ToDto()
+			gpuRead = &gpuDTO
+		}
+
+		dtoVMs[i] = vm.ToDto(vm.StatusMessage, connectionString, gpuRead)
 	}
 
 	context.JSONResponse(200, dtoVMs)
@@ -101,7 +116,14 @@ func Get(c *gin.Context) {
 	}
 
 	connectionString, _ := vm_service.GetConnectionString(vm)
-	context.JSONResponse(200, vm.ToDto(vm.StatusMessage, connectionString))
+	var gpuRead *dto.GpuRead
+	if vm.GpuID != "" {
+		gpu, _ := vm_service.GetGpuByID(vm.GpuID, true)
+		gpuDTO := gpu.ToDto()
+		gpuRead = &gpuDTO
+	}
+
+	context.JSONResponse(200, vm.ToDto(vm.StatusMessage, connectionString, gpuRead))
 }
 
 func Create(c *gin.Context) {
@@ -250,104 +272,10 @@ func Delete(c *gin.Context) {
 	context.OkDeleted()
 }
 
-func AttachGPU(c *gin.Context) {
-	context := app.NewContext(c)
-
-	rules := validator.MapData{
-		"vmId": []string{
-			"required",
-			"uuid_v4",
-		},
-		"gpuId": []string{
-			"required",
-		},
-	}
-
-	validationErrors := context.ValidateParams(&rules)
-	if len(validationErrors) > 0 {
-		context.ResponseValidationError(validationErrors)
-		return
-	}
-
-	token, err := context.GetKeycloakToken()
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
-		return
-	}
-	userID := token.Sub
-	vmID := context.GinContext.Param("vmId")
-	gpuID, err := decodeGpuID(context.GinContext.Param("gpuId"))
-	if err != nil {
-		context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceValidationFailed, "Invalid gpuId")
-		return
-	}
-
-	isAdmin := v1.IsAdmin(&context)
-	isGpuUser := v1.IsGpuUser(&context)
-
-	current, err := vm_service.GetByID(userID, vmID, isAdmin)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
-		return
-	}
-
-	if current == nil {
-		context.NotFound()
-		return
-	}
-
-	if current.BeingCreated {
-		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingCreated, "Resource is currently being created")
-		return
-	}
-
-	if current.BeingDeleted {
-		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingCreated, "Resource is currently being deleted")
-		return
-	}
-
-	if current.GpuID != "" {
-		context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceAlreadyExists, "Resource already has a GPU attached")
-		return
-	}
-
-	gpu, err := vm_service.GetGpuByID(gpuID, isGpuUser)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
-		return
-	}
-
-	if gpu == nil {
-		context.NotFound()
-		return
-	}
-
-	attached, err := vm_service.AttachGpuToVM(gpu.ID, current.ID, userID)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
-		return
-	}
-
-	if !attached {
-		context.NotModified()
-		return
-	}
-
-	context.Ok()
-}
-
 func isValidSshPublicKey(key string) bool {
 	_, _, _, _, err := ssh.ParseAuthorizedKey([]byte(key))
 	if err != nil {
 		return false
 	}
 	return true
-}
-
-func decodeGpuID(gpuID string) (string, error) {
-	res, err := base64.StdEncoding.DecodeString(gpuID)
-	if err != nil {
-		return "", err
-	}
-	return string(res), nil
 }

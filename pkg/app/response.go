@@ -54,3 +54,7 @@ func (context *ClientContext) NotFound() {
 func (context *ClientContext) NotModified() {
 	context.GinContext.Status(http.StatusNotModified)
 }
+
+func (context *ClientContext) OkCreated() {
+	context.GinContext.Status(http.StatusCreated)
+}

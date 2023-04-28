@@ -9,6 +9,7 @@ import (
 	"go-deploy/pkg/subsystems/cs/models"
 	"gopkg.in/yaml.v3"
 	"math/rand"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -130,10 +131,14 @@ func (client *Client) UpdateVM(public *models.VmPublic) error {
 	}
 
 	params := client.CsClient.VirtualMachine.NewUpdateVirtualMachineParams(public.ID)
-
 	params.SetName(public.Name)
 	params.SetDisplayname(public.Name)
-	params.SetExtraconfig(public.ExtraConfig)
+
+	if public.ExtraConfig == "" {
+		params.SetExtraconfig(url.QueryEscape("none"))
+	} else {
+		params.SetExtraconfig(url.QueryEscape(public.ExtraConfig))
+	}
 
 	_, err := client.CsClient.VirtualMachine.UpdateVirtualMachine(params)
 	if err != nil {
@@ -192,28 +197,37 @@ func (client *Client) GetVmStatus(id string) (string, error) {
 	return vm.State, nil
 }
 
-func (client *Client) DoVmCommand(id string, command commands.Command) error {
+func (client *Client) DoVmCommand(id string, requiredHost *string, command commands.Command) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to execute vm command to vm %s. details: %s", id, err)
+		return fmt.Errorf("failed to execute csVM command to csVM %s. details: %s", id, err)
 	}
 
-	vm, _, err := client.CsClient.VirtualMachine.GetVirtualMachineByID(id)
+	csVM, _, err := client.CsClient.VirtualMachine.GetVirtualMachineByID(id)
 	if err != nil {
 		return makeError(err)
 	}
 
 	switch command {
 	case commands.Start:
-		if vm.State != "Running" && vm.State != "Starting" && vm.State != "Stopping" && vm.State != "Migrating" {
+		if csVM.State != "Running" && csVM.State != "Starting" && csVM.State != "Stopping" && csVM.State != "Migrating" {
 
 			params := client.CsClient.VirtualMachine.NewStartVirtualMachineParams(id)
+			if requiredHost != nil {
+				host, _, err := client.CsClient.Host.GetHostByName(*requiredHost)
+				if err != nil {
+					return makeError(fmt.Errorf("failed to get host %s. details: %s", *requiredHost, err))
+				}
+
+				params.SetHostid(host.Id)
+			}
+
 			_, err = client.CsClient.VirtualMachine.StartVirtualMachine(params)
 			if err != nil {
 				return makeError(err)
 			}
 		}
 	case commands.Stop:
-		if vm.State != "Stopped" && vm.State != "Stopping" && vm.State != "Starting" && vm.State != "Migrating" {
+		if csVM.State != "Stopped" && csVM.State != "Stopping" && csVM.State != "Starting" && csVM.State != "Migrating" {
 			params := client.CsClient.VirtualMachine.NewStopVirtualMachineParams(id)
 			_, err = client.CsClient.VirtualMachine.StopVirtualMachine(params)
 			if err != nil {
@@ -221,7 +235,7 @@ func (client *Client) DoVmCommand(id string, command commands.Command) error {
 			}
 		}
 	case commands.Reboot:
-		if vm.State != "Stopping" && vm.State != "Starting" && vm.State != "Migrating" {
+		if csVM.State != "Stopping" && csVM.State != "Starting" && csVM.State != "Migrating" {
 			params := client.CsClient.VirtualMachine.NewRebootVirtualMachineParams(id)
 			_, err = client.CsClient.VirtualMachine.RebootVirtualMachine(params)
 			if err != nil {

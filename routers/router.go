@@ -51,7 +51,9 @@ func setupVmRoutes(base *gin.RouterGroup, _ *gin.RouterGroup) {
 	base.POST("/vms", v1_vm.Create)
 	base.POST("/vms/:vmId/command", v1_vm.DoCommand)
 	base.DELETE("/vms/:vmId", v1_vm.Delete)
+	base.POST("/vms/:vmId/attachGpu", v1_vm.AttachGPU)
 	base.POST("/vms/:vmId/attachGpu/:gpuId", v1_vm.AttachGPU)
+	base.POST("/vms/:vmId/detachGpu", v1_vm.DetachGPU)
 }
 
 func setupGpuRoutes(base *gin.RouterGroup, _ *gin.RouterGroup) {

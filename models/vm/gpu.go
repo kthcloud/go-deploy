@@ -100,6 +100,21 @@ func GetGpuByID(id string) (*GPU, error) {
 	return &gpu, err
 }
 
+// TODO: filter on privileged GPUs
+func GetAnyAvailableGPU() (*GPU, error) {
+	var gpu GPU
+	err := models.GpuCollection.FindOne(context.Background(), bson.D{{"lease.vmId", ""}}).Decode(&gpu)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
+
+		log.Errorf("failed to fetch gpu. details: %s", err)
+	}
+
+	return &gpu, nil
+}
+
 func GetAllGPUs() ([]GPU, error) {
 	var gpus []GPU
 	cursor, err := models.GpuCollection.Find(context.Background(), bson.D{})
@@ -130,7 +145,7 @@ func GetAllAvailableGPUs() ([]GPU, error) {
 	return gpus, nil
 }
 
-func AttachGpuToVM(gpuID, vmID, user string, end time.Time) (bool, error) {
+func AttachGPU(gpuID, vmID, user string, end time.Time) (bool, error) {
 	vm, err := GetByID(vmID)
 	if err != nil {
 		return false, err
@@ -190,6 +205,76 @@ func AttachGpuToVM(gpuID, vmID, user string, end time.Time) (bool, error) {
 		)
 		log.Error("failed to remove lease after vm update failed. system is now in an inconsistent state. please fix manually. vm id:", vmID, " gpu id:", gpuID, ". details: %s", err)
 		return false, err
+	}
+
+	return true, nil
+}
+
+func DetachGPU(vmID, userID string) (bool, error) {
+	vm, err := GetByID(vmID)
+	if err != nil {
+		return false, err
+	}
+
+	if vm == nil {
+		return false, fmt.Errorf("vm not found")
+	}
+
+	if vm.GpuID == "" {
+		return true, nil
+	}
+
+	gpu, err := GetGpuByID(vm.GpuID)
+	if err != nil {
+		return false, err
+	}
+
+	if gpu == nil {
+		return false, fmt.Errorf("gpu not found")
+	}
+
+	if gpu.Lease.VmID != vmID {
+		return false, fmt.Errorf("vm is not attached to this gpu")
+	}
+
+	if gpu.Lease.User != userID {
+		return false, fmt.Errorf("vm is not attached to this user")
+	}
+
+	filter := bson.D{
+		{"id", gpu.ID},
+		{"lease.vmId", vmID},
+		{"lease.user", userID},
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"lease.vmId": "",
+			"lease.user": "",
+			"lease.end":  time.Time{},
+		},
+	}
+
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+
+	err = models.GpuCollection.FindOneAndUpdate(context.Background(), filter, update, opts).Decode(&gpu)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			// this is not treated as an error, just another instance snatched the gpu before this one
+			return false, nil
+		}
+		return false, err
+	}
+
+	err = UpdateByID(vmID, bson.D{{"gpuId", ""}})
+	if err != nil {
+		// remove lease, if this also fails, we are in a bad state...
+		_, _ = models.GpuCollection.UpdateOne(
+			context.TODO(),
+			bson.D{{"id", gpu.ID}},
+			bson.M{"$set": bson.M{"lease": GpuLease{}}},
+		)
+		log.Error("failed to remove lease after vm update failed. system is now in an inconsistent state. please fix manually. vm id:", vmID, " gpu id:", gpu.ID, ". details: %s", err)
 	}
 
 	return true, nil
