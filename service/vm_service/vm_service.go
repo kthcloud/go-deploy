@@ -28,6 +28,7 @@ func Create(vmID, name, sshPublicKey, owner string) {
 		_, err = internal_service.CreatePfSense(name, csResult.PublicIpAddress.IpAddress)
 		if err != nil {
 			log.Println(err)
+			return
 		}
 
 	}()
