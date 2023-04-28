@@ -125,6 +125,7 @@ func AttachGPU(c *gin.Context) {
 
 	vm_service.AttachGPU(gpu.ID, current.ID, userID)
 
+	// the returned gpu might not actually get attached, but it will work in most cases
 	context.JSONResponse(http.StatusCreated, gpu.ToDto())
 }
 

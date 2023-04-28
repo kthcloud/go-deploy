@@ -13,6 +13,8 @@ type Environment struct {
 	Manager       string `yaml:"manager"`
 	SessionSecret string `yaml:"sessionSecret"`
 
+	GpuConfFilepath string `yaml:"gpuMetaFilepath"`
+
 	DockerRegistry struct {
 		Url         string `yaml:"url"`
 		PlaceHolder struct {
@@ -90,7 +92,7 @@ type Environment struct {
 
 var Env Environment
 
-func Setup() {
+func SetupEnvironment() {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to setup environment. details: %s", err)
 	}

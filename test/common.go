@@ -21,6 +21,6 @@ func setup(t *testing.T) {
 
 	_, result := os.LookupEnv("DEPLOY_CONFIG_FILE")
 	if result {
-		conf.Setup()
+		conf.SetupEnvironment()
 	}
 }
