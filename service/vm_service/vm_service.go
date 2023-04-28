@@ -22,6 +22,7 @@ func Create(vmID, name, sshPublicKey, owner string) {
 		csResult, err := internal_service.CreateCS(name, sshPublicKey)
 		if err != nil {
 			log.Println(err)
+			return
 		}
 
 		_, err = internal_service.CreatePfSense(name, csResult.PublicIpAddress.IpAddress)
@@ -91,7 +92,7 @@ func Delete(name string) {
 			log.Println("gpu was not detached from vm", vm.ID)
 			return
 		}
-		
+
 		err = internal_service.DeletePfSense(name)
 		if err != nil {
 			log.Println(err)

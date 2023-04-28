@@ -8,6 +8,7 @@ import (
 	"go-deploy/pkg/subsystems/cs"
 	"go-deploy/pkg/subsystems/cs/commands"
 	csModels "go-deploy/pkg/subsystems/cs/models"
+	"go.mongodb.org/mongo-driver/bson"
 	"log"
 	"strings"
 )
@@ -328,6 +329,14 @@ func AttachGPU(gpuID, vmID string) error {
 	vm.Subsystems.CS.VM.ExtraConfig = createExtraConfig(gpu)
 
 	err = client.UpdateVM(&vm.Subsystems.CS.VM)
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = vmModel.UpdateByID(
+		vmID,
+		bson.D{{"$set", bson.D{{"subsystems.cs.vm.extraConfig", vm.Subsystems.CS.VM.ExtraConfig}}}},
+	)
 	if err != nil {
 		return makeError(err)
 	}

@@ -17,7 +17,9 @@ import (
 )
 
 func setup(context *app.Context) {
-	conf.Setup()
+	conf.SetupEnvironment()
+	conf.SetupGPU()
+
 	models.Setup()
 	confirmers.Setup(context)
 	status_updaters.Setup(context)
