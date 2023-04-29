@@ -13,7 +13,10 @@ type Environment struct {
 	Manager       string `yaml:"manager"`
 	SessionSecret string `yaml:"sessionSecret"`
 
-	GpuConfFilepath string `yaml:"gpuMetaFilepath"`
+	GPU struct {
+		PrivilegedGPUs []string `yaml:"privilegedGpus"`
+		ExcludedHosts  []string `yaml:"excludedHosts"`
+	} `yaml:"gpu"`
 
 	DockerRegistry struct {
 		Url         string `yaml:"url"`

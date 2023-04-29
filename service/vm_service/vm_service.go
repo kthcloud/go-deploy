@@ -120,11 +120,11 @@ func GetStatus(vm *vmModel.VM) (int, string, error) {
 
 	if err != nil || csStatusCode == status_codes.ResourceUnknown || csStatusCode == status_codes.ResourceNotFound {
 		if vm.BeingDeleted {
-			return status_codes.ResourceBeingDeleted, status_codes.GetMsg(status_codes.ResourceBeingDeleted), nil
+			return status_codes.ResourceNotReady, status_codes.GetMsg(status_codes.ResourceNotReady), nil
 		}
 
 		if vm.BeingCreated {
-			return status_codes.ResourceBeingCreated, status_codes.GetMsg(status_codes.ResourceBeingCreated), nil
+			return status_codes.ResourceNotReady, status_codes.GetMsg(status_codes.ResourceNotReady), nil
 		}
 	}
 

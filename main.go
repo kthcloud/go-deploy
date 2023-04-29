@@ -18,7 +18,6 @@ import (
 
 func setup(context *app.Context) {
 	conf.SetupEnvironment()
-	conf.SetupGPU()
 
 	models.Setup()
 	confirmers.Setup(context)

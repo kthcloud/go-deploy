@@ -100,21 +100,6 @@ func GetGpuByID(id string) (*GPU, error) {
 	return &gpu, err
 }
 
-// TODO: filter on privileged GPUs
-func GetAnyAvailableGPU() (*GPU, error) {
-	var gpu GPU
-	err := models.GpuCollection.FindOne(context.Background(), bson.D{{"lease.vmId", ""}}).Decode(&gpu)
-	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			return nil, nil
-		}
-
-		log.Errorf("failed to fetch gpu. details: %s", err)
-	}
-
-	return &gpu, nil
-}
-
 func GetAllGPUs() ([]GPU, error) {
 	var gpus []GPU
 	cursor, err := models.GpuCollection.Find(context.Background(), bson.D{})
@@ -130,9 +115,26 @@ func GetAllGPUs() ([]GPU, error) {
 	return gpus, nil
 }
 
-func GetAllAvailableGPUs() ([]GPU, error) {
+func GetAllAvailableGPUs(excludedHosts, excludedGPUs []string) ([]GPU, error) {
+	if excludedHosts == nil {
+		excludedHosts = make([]string, 0)
+	}
+
+	if excludedGPUs == nil {
+		excludedGPUs = make([]string, 0)
+	}
+
+	filter := bson.D{
+		{"$or", []interface{}{
+			bson.M{"lease.vmId": ""},
+			bson.M{"lease": bson.M{"$exists": false}},
+		}},
+		{"host", bson.M{"$nin": excludedHosts}},
+		{"id", bson.M{"$nin": excludedGPUs}},
+	}
+
 	var gpus []GPU
-	cursor, err := models.GpuCollection.Find(context.Background(), bson.D{{"lease.vmId", ""}})
+	cursor, err := models.GpuCollection.Find(context.Background(), filter)
 	if err != nil {
 		return nil, err
 	}

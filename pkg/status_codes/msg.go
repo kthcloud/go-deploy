@@ -8,9 +8,14 @@ var MsgFlags = map[int]string{
 
 	ResourceUnknown: "resourceUnknown",
 
-	ResourceCreated:  "resourceCreated",
-	ResourceNotFound: "resourceNotFound",
+	ResourceCreated: "resourceCreated",
+	ResourceUpdated: "resourceUpdated",
 
+	ResourceNotCreated:   "resourceNotCreated",
+	ResourceNotFound:     "resourceNotFound",
+	ResourceNotUpdated:   "resourceNotModified",
+	ResourceNotReady:     "resourceNotReady",
+	ResourceNotAvailable: "resourceNotAvailable",
 	ResourceBeingCreated: "resourceBeingCreated",
 	ResourceBeingDeleted: "resourceBeingDeleted",
 
@@ -21,7 +26,6 @@ var MsgFlags = map[int]string{
 	ResourceError:    "resourceError",
 
 	ResourceValidationFailed: "resourceValidationFailed",
-	ResourceAlreadyExists:    "resourceAlreadyExists",
 }
 
 // GetMsg get error information based on Code
