@@ -335,7 +335,7 @@ func AttachGPU(gpuID, vmID string) error {
 
 	err = vmModel.UpdateByID(
 		vmID,
-		bson.D{{"$set", bson.D{{"subsystems.cs.vm.extraConfig", vm.Subsystems.CS.VM.ExtraConfig}}}},
+		bson.D{{"subsystems.cs.vm.extraConfig", vm.Subsystems.CS.VM.ExtraConfig}},
 	)
 	if err != nil {
 		return makeError(err)
@@ -409,6 +409,38 @@ func DetachGPU(vmID string) error {
 	}
 
 	return nil
+}
+
+func IsGpuAttachedCS(host string, bus string) (bool, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to check if gpu %s:%s is attached to any cs vm. details: %s", host, bus, err)
+	}
+
+	client, err := withClient()
+	if err != nil {
+		return false, makeError(err)
+	}
+
+	params := client.CsClient.VirtualMachine.NewListVirtualMachinesParams()
+	params.SetListall(true)
+
+	vms, err := client.CsClient.VirtualMachine.ListVirtualMachines(params)
+	if err != nil {
+		return false, makeError(err)
+	}
+
+	for _, vm := range vms.VirtualMachines {
+		if vm.Details != nil {
+			extraConfig, ok := vm.Details["extraconfig-1"]
+			if ok {
+				if strings.Contains(extraConfig, fmt.Sprintf("bus='0x%s'", bus)) {
+					return true, nil
+				}
+			}
+		}
+	}
+
+	return false, nil
 }
 
 func DoCommandCS(vmID string, gpuID *string, command string) error {

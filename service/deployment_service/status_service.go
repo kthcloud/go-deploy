@@ -15,11 +15,11 @@ func GetStatusByID(deploymentID string) (int, string, error) {
 	}
 
 	if deployment.BeingDeleted {
-		return status_codes.ResourceBeingDeleted, status_codes.GetMsg(status_codes.ResourceBeingDeleted), nil
+		return status_codes.ResourceNotReady, status_codes.GetMsg(status_codes.ResourceNotReady), nil
 	}
 
 	if deployment.BeingCreated {
-		return status_codes.ResourceBeingCreated, status_codes.GetMsg(status_codes.ResourceBeingCreated), nil
+		return status_codes.ResourceNotReady, status_codes.GetMsg(status_codes.ResourceNotReady), nil
 	}
 
 	// TODO: fetch status from k8s

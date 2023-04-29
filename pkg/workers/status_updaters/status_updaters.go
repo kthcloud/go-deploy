@@ -56,7 +56,7 @@ func fetchCsStatus(vm *vm.VM) (int, string, error) {
 		statusCode = status_codes.ResourceError
 	case "Unknown":
 		statusCode = status_codes.ResourceUnknown
-	case "Shutdowned":
+	case "Shutdown":
 		statusCode = status_codes.ResourceStopped
 	default:
 		statusCode = status_codes.ResourceUnknown

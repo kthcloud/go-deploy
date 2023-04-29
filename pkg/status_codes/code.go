@@ -8,11 +8,17 @@ const (
 
 	ResourceUnknown = 10000
 
-	ResourceCreated  = 10010
-	ResourceNotFound = 10011
+	ResourceCreated = 10010
+	ResourceUpdated = 10011
+	ResourceDeleted = 10012
 
-	ResourceBeingCreated = 10020
-	ResourceBeingDeleted = 10021
+	ResourceNotCreated   = 10020
+	ResourceNotFound     = 10021
+	ResourceNotUpdated   = 10022
+	ResourceNotReady     = 10023
+	ResourceNotAvailable = 10024
+	ResourceBeingCreated = 10025
+	ResourceBeingDeleted = 10026
 
 	ResourceStarting = 10031
 	ResourceRunning  = 10032
@@ -21,5 +27,4 @@ const (
 	ResourceError    = 10035
 
 	ResourceValidationFailed = 20001
-	ResourceAlreadyExists    = 20002
 )

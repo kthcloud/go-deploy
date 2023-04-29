@@ -169,11 +169,11 @@ func Create(c *gin.Context) {
 
 	if exists {
 		if deployment.OwnerID != userID {
-			context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceAlreadyExists, "Resource already exists")
+			context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceNotCreated, "Resource already exists")
 			return
 		}
 		if deployment.BeingDeleted {
-			context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingDeleted, "Resource is currently being deleted")
+			context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotReady, "Resource is currently being deleted")
 			return
 		}
 		deployment_service.Create(deployment.ID, requestBody.Name, userID)
@@ -233,7 +233,7 @@ func Delete(c *gin.Context) {
 	}
 
 	if currentDeployment.BeingCreated {
-		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingCreated, "Resource is currently being created")
+		context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotReady, "Resource is currently being created")
 		return
 	}
 

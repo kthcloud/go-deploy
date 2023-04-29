@@ -74,7 +74,7 @@ func AttachGPU(c *gin.Context) {
 	vmID := context.GinContext.Param("vmId")
 	gpuID, err := getGpuID(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceValidationFailed, "Invalid gpuId")
+		context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceValidationFailed, "Invalid GPU ID")
 		return
 	}
 
@@ -93,12 +93,12 @@ func AttachGPU(c *gin.Context) {
 	}
 
 	if current.BeingCreated {
-		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingCreated, "Resource is currently being created")
+		context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotReady, "Resource is currently being created")
 		return
 	}
 
 	if current.BeingDeleted {
-		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingCreated, "Resource is currently being deleted")
+		context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotReady, "Resource is currently being deleted")
 		return
 	}
 
@@ -108,19 +108,33 @@ func AttachGPU(c *gin.Context) {
 	}
 
 	if current.GpuID != "" && current.GpuID != gpuID {
-		context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceAlreadyExists, "Resource already has a GPU attached")
+		context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceNotCreated, "Resource already has a GPU attached")
 		return
 	}
 
-	gpu, err := vm_service.GetGpuByID(gpuID, isGpuUser)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
-		return
-	}
+	var gpu *vm.GPU
+	if gpuID == "any" {
+		gpu, err = vm_service.GetAnyAvailableGPU(isGpuUser)
+		if err != nil {
+			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+			return
+		}
 
-	if gpu == nil {
-		context.NotFound()
-		return
+		if gpu == nil {
+			context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotAvailable, "No available GPUs")
+			return
+		}
+	} else {
+		gpu, err = vm_service.GetGpuByID(gpuID, isGpuUser)
+		if err != nil {
+			context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
+			return
+		}
+
+		if gpu == nil {
+			context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, "GPU not found")
+			return
+		}
 	}
 
 	vm_service.AttachGPU(gpu.ID, current.ID, userID)
@@ -153,7 +167,7 @@ func DetachGPU(c *gin.Context) {
 	userID := token.Sub
 	vmID := context.GinContext.Param("vmId")
 	if err != nil {
-		context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceValidationFailed, "Invalid gpuId")
+		context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceValidationFailed, "Invalid GPU ID")
 		return
 	}
 
@@ -166,22 +180,22 @@ func DetachGPU(c *gin.Context) {
 	}
 
 	if current == nil {
-		context.NotFound()
+		context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, "Resource not found")
 		return
 	}
 
 	if current.BeingCreated {
-		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingCreated, "Resource is currently being created")
+		context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotReady, "Resource is currently being created")
 		return
 	}
 
 	if current.BeingDeleted {
-		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingCreated, "Resource is currently being deleted")
+		context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotReady, "Resource is currently being deleted")
 		return
 	}
 
 	if current.GpuID == "" {
-		context.NotModified()
+		context.ErrorResponse(http.StatusNotModified, status_codes.ResourceNotUpdated, "Resource does not have a GPU attached")
 		return
 	}
 

@@ -17,7 +17,11 @@ import (
 )
 
 func getAllVMs(context *app.ClientContext) {
-	vms, _ := vm_service.GetAll()
+	vms, err := vm_service.GetAll()
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		return
+	}
 
 	dtoVMs := make([]dto.VmRead, len(vms))
 	for i, vm := range vms {
@@ -182,7 +186,7 @@ func Create(c *gin.Context) {
 
 	validKey := isValidSshPublicKey(requestBody.SshPublicKey)
 	if !validKey {
-		context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceValidationFailed, "SSH public key is invalid")
+		context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceValidationFailed, "Invalid SSH public key")
 		return
 	}
 
@@ -194,11 +198,11 @@ func Create(c *gin.Context) {
 
 	if exists {
 		if vm.OwnerID != userID {
-			context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceAlreadyExists, "Resource already exists")
+			context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceNotCreated, "Resource already exists")
 			return
 		}
 		if vm.BeingDeleted {
-			context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingDeleted, "Resource is currently being deleted")
+			context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotReady, "Resource is currently being deleted")
 			return
 		}
 		vm_service.Create(vm.ID, requestBody.Name, requestBody.SshPublicKey, userID)
@@ -254,12 +258,12 @@ func Delete(c *gin.Context) {
 	}
 
 	if current == nil {
-		context.NotFound()
+		context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, "Resource not found")
 		return
 	}
 
 	if current.BeingCreated {
-		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingCreated, "Resource is currently being created")
+		context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotReady, "Resource is currently being created")
 		return
 	}
 

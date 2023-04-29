@@ -84,8 +84,8 @@ func Create(vmID, name, sshPublicKey, owner string) error {
 		BeingCreated:  true,
 		BeingDeleted:  false,
 		Subsystems:    Subsystems{},
-		StatusCode:    status_codes.ResourceBeingCreated,
-		StatusMessage: status_codes.GetMsg(status_codes.ResourceBeingCreated),
+		StatusCode:    status_codes.ResourceNotReady,
+		StatusMessage: status_codes.GetMsg(status_codes.ResourceNotReady),
 	}
 
 	_, err = models.VmCollection.InsertOne(context.TODO(), vm)
