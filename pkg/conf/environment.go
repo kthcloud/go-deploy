@@ -25,10 +25,10 @@ type Environment struct {
 
 	DockerRegistry struct {
 		Url         string `yaml:"url"`
-		PlaceHolder struct {
+		Placeholder struct {
 			Project    string `yaml:"project"`
 			Repository string `yaml:"repository"`
-		} `yaml:"placeHolder"`
+		} `yaml:"placeholder"`
 	} `yaml:"dockerRegistry"`
 
 	App struct {

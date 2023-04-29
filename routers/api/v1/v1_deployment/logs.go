@@ -7,6 +7,7 @@ import (
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
 	"go-deploy/pkg/validator"
+	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/deployment_service"
 	"log"
 	"net/http"
@@ -34,6 +35,7 @@ func GetLogs(c *gin.Context) {
 	}
 	userID := token.Sub
 	deploymentID := context.GinContext.Param("deploymentId")
+	isAdmin := v1.IsAdmin(&context)
 
 	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
@@ -53,7 +55,7 @@ func GetLogs(c *gin.Context) {
 		}
 	}
 
-	logContext, getLogsErr := deployment_service.GetLogs(userID, deploymentID, handler)
+	logContext, getLogsErr := deployment_service.GetLogs(userID, deploymentID, handler, isAdmin)
 	if getLogsErr != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", getLogsErr))
 		return

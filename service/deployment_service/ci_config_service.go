@@ -9,8 +9,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func GetCIConfig(userId, deploymentID string) (*dto.CIConfig, error) {
-	deployment, err := GetByFullID(userId, deploymentID)
+func GetCIConfig(userId, deploymentID string, isAdmin bool) (*dto.CIConfig, error) {
+	deployment, err := GetByID(userId, deploymentID, isAdmin)
 	if err != nil {
 		return nil, err
 	}

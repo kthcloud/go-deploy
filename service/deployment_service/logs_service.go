@@ -7,8 +7,8 @@ import (
 	"go-deploy/utils/subsystemutils"
 )
 
-func GetLogs(userID, deploymentID string, handler func(string)) (context.Context, error) {
-	deployment, err := GetByFullID(userID, deploymentID)
+func GetLogs(userID, deploymentID string, handler func(string), isAdmin bool) (context.Context, error) {
+	deployment, err := GetByID(userID, deploymentID, isAdmin)
 	if err != nil {
 		return nil, err
 	}

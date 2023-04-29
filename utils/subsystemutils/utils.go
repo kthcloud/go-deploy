@@ -15,5 +15,5 @@ func GetUnprefixedName(prefixedName string) string {
 }
 
 func GetPlaceholderImage() (string, string) {
-	return conf.Env.DockerRegistry.PlaceHolder.Project, conf.Env.DockerRegistry.PlaceHolder.Repository
+	return conf.Env.DockerRegistry.Placeholder.Project, conf.Env.DockerRegistry.Placeholder.Repository
 }

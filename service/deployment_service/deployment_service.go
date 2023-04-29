@@ -36,23 +36,14 @@ func Create(deploymentID, name, owner string) {
 	}()
 }
 
-func GetByFullID(userId, deploymentID string) (*deploymentModel.Deployment, error) {
+func GetByID(userId, deploymentID string, isAdmin bool) (*deploymentModel.Deployment, error) {
 	deployment, err := deploymentModel.GetByID(deploymentID)
 	if err != nil {
 		return nil, err
 	}
 
-	if deployment != nil && deployment.OwnerID != userId {
+	if deployment != nil && deployment.OwnerID != userId && !isAdmin {
 		return nil, nil
-	}
-
-	return deployment, nil
-}
-
-func GetByID(deploymentID string) (*deploymentModel.Deployment, error) {
-	deployment, err := deploymentModel.GetByID(deploymentID)
-	if err != nil {
-		return nil, err
 	}
 
 	return deployment, nil

@@ -34,8 +34,8 @@ func createRepositoryPublic(projectID int, projectName string, name string) *har
 		ProjectName: projectName,
 		Seeded:      false,
 		Placeholder: &harborModels.PlaceHolder{
-			ProjectName:    conf.Env.DockerRegistry.PlaceHolder.Project,
-			RepositoryName: conf.Env.DockerRegistry.PlaceHolder.Repository,
+			ProjectName:    conf.Env.DockerRegistry.Placeholder.Project,
+			RepositoryName: conf.Env.DockerRegistry.Placeholder.Repository,
 		},
 	}
 }

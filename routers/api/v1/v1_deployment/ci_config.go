@@ -6,6 +6,7 @@ import (
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
 	"go-deploy/pkg/validator"
+	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/deployment_service"
 	"net/http"
 )
@@ -31,8 +32,9 @@ func GetCiConfig(c *gin.Context) {
 	}
 	userID := token.Sub
 	deploymentID := context.GinContext.Param("deploymentId")
+	isAdmin := v1.IsAdmin(&context)
 
-	config, err := deployment_service.GetCIConfig(userID, deploymentID)
+	config, err := deployment_service.GetCIConfig(userID, deploymentID, isAdmin)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
