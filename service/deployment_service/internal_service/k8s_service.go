@@ -51,9 +51,7 @@ func CreateK8s(name string) (*K8sResult, error) {
 		return fmt.Errorf("failed to setup k8s for deployment %s. details: %s", name, err)
 	}
 
-	client, err := k8s.New(&k8s.ClientConf{
-		K8sAuth: conf.Env.K8s.Config,
-	})
+	client, err := k8s.New(conf.Env.K8s.Client)
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -146,7 +144,7 @@ func DeleteK8s(name string) error {
 		return fmt.Errorf("failed to delete k8s for deployment %s. details: %s", name, err)
 	}
 
-	client, err := k8s.New(&k8s.ClientConf{K8sAuth: conf.Env.K8s.Config})
+	client, err := k8s.New(conf.Env.K8s.Client)
 	if err != nil {
 		return makeError(err)
 	}
@@ -184,7 +182,7 @@ func RestartK8s(name string) error {
 		return makeError(errors.New("can't restart deployment that is not yet created"))
 	}
 
-	client, err := k8s.New(&k8s.ClientConf{K8sAuth: conf.Env.K8s.Config})
+	client, err := k8s.New(conf.Env.K8s.Client)
 	if err != nil {
 		return makeError(err)
 	}
