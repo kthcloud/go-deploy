@@ -202,7 +202,7 @@ func Create(c *gin.Context) {
 			return
 		}
 		if vm.BeingDeleted {
-			context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotReady, "Resource is currently being deleted")
+			context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingDeleted, "Resource is currently being deleted")
 			return
 		}
 		vm_service.Create(vm.ID, requestBody.Name, requestBody.SshPublicKey, userID)
@@ -263,7 +263,7 @@ func Delete(c *gin.Context) {
 	}
 
 	if current.BeingCreated {
-		context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotReady, "Resource is currently being created")
+		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingCreated, "Resource is currently being created")
 		return
 	}
 

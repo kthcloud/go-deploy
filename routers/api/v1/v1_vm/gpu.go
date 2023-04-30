@@ -93,12 +93,12 @@ func AttachGPU(c *gin.Context) {
 	}
 
 	if current.BeingCreated {
-		context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotReady, "Resource is currently being created")
+		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingCreated, "Resource is currently being created")
 		return
 	}
 
 	if current.BeingDeleted {
-		context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotReady, "Resource is currently being deleted")
+		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingDeleted, "Resource is currently being deleted")
 		return
 	}
 
@@ -185,12 +185,12 @@ func DetachGPU(c *gin.Context) {
 	}
 
 	if current.BeingCreated {
-		context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotReady, "Resource is currently being created")
+		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingCreated, "Resource is currently being created")
 		return
 	}
 
 	if current.BeingDeleted {
-		context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotReady, "Resource is currently being deleted")
+		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingDeleted, "Resource is currently being deleted")
 		return
 	}
 
