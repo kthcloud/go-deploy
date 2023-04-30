@@ -75,6 +75,10 @@ func (client *Client) CreateProject(public *models.ProjectPublic) (int, error) {
 		return fmt.Errorf("failed to create project %s. details: %s", public.Name, err.Error())
 	}
 
+	if public.Name == "" {
+		return 0, makeError(errors.New("project name is empty"))
+	}
+
 	project, err := client.HarborClient.GetProject(context.TODO(), public.Name)
 	if err != nil {
 		targetErr := &harborErrors.ErrProjectNotFound{}
@@ -105,7 +109,7 @@ func (client *Client) DeleteProject(id int) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete project %d. details: %s", id, err)
 	}
-
+	
 	err := client.HarborClient.DeleteProject(context.TODO(), strconv.Itoa(id))
 	if err != nil {
 		errString := fmt.Sprintf("%s", err)

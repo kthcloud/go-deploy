@@ -1,6 +1,7 @@
 package internal_service
 
 import (
+	"context"
 	"fmt"
 	deploymentModel "go-deploy/models/deployment"
 	"go-deploy/pkg/conf"
@@ -51,7 +52,7 @@ func createWebhookPublic(projectID int, projectName, name string) *harborModels.
 	}
 }
 
-func CreateHarbor(name string) error {
+func CreateHarbor(name, userID string) error {
 	log.Println("setting up harbor for", name)
 
 	makeError := func(err error) error {
@@ -75,7 +76,7 @@ func CreateHarbor(name string) error {
 	// Project
 	var project *harborModels.ProjectPublic
 	if deployment.Subsystems.Harbor.Project.ID == 0 {
-		projectName := subsystemutils.GetPrefixedName(name)
+		projectName := subsystemutils.GetPrefixedName(userID)
 		id, err := client.CreateProject(createProjectPublic(projectName))
 		if err != nil {
 			return makeError(err)
@@ -201,9 +202,16 @@ func DeleteHarbor(name string) error {
 	}
 
 	if deployment.Subsystems.Harbor.Project.ID != 0 {
-		err = client.DeleteProject(deployment.Subsystems.Harbor.Project.ID)
+		repositories, err := client.HarborClient.ListRepositories(context.TODO(), deployment.Subsystems.Harbor.Project.Name)
 		if err != nil {
 			return makeError(err)
+		}
+
+		if len(repositories) == 0 {
+			err = client.DeleteProject(deployment.Subsystems.Harbor.Project.ID)
+			if err != nil {
+				return makeError(err)
+			}
 		}
 
 		err = deploymentModel.UpdateSubsystemByName(name, "harbor", "project", harborModels.ProjectPublic{})
