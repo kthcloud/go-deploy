@@ -412,7 +412,7 @@ func (s *VPCService) NewCreateStaticRouteParams(cidr string, gatewayid string) *
 	return p
 }
 
-// Creates a static route
+// Creates a keys route
 func (s *VPCService) CreateStaticRoute(p *CreateStaticRouteParams) (*CreateStaticRouteResponse, error) {
 	resp, err := s.cs.newRequest("createStaticRoute", p.toURLValues())
 	if err != nil {
@@ -1279,7 +1279,7 @@ func (s *VPCService) NewDeleteStaticRouteParams(id string) *DeleteStaticRoutePar
 	return p
 }
 
-// Deletes a static route
+// Deletes a keys route
 func (s *VPCService) DeleteStaticRoute(p *DeleteStaticRouteParams) (*DeleteStaticRouteResponse, error) {
 	resp, err := s.cs.newRequest("deleteStaticRoute", p.toURLValues())
 	if err != nil {
@@ -2101,7 +2101,7 @@ func (s *VPCService) GetStaticRouteByID(id string, opts ...OptionFunc) (*StaticR
 	return nil, l.Count, fmt.Errorf("There is more then one result for StaticRoute UUID: %s!", id)
 }
 
-// Lists all static routes
+// Lists all keys routes
 func (s *VPCService) ListStaticRoutes(p *ListStaticRoutesParams) (*ListStaticRoutesResponse, error) {
 	resp, err := s.cs.newRequest("listStaticRoutes", p.toURLValues())
 	if err != nil {

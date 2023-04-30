@@ -348,7 +348,7 @@ func (s *NATService) NewDisableStaticNatParams(ipaddressid string) *DisableStati
 	return p
 }
 
-// Disables static rule for given IP address
+// Disables keys rule for given IP address
 func (s *NATService) DisableStaticNat(p *DisableStaticNatParams) (*DisableStaticNatResponse, error) {
 	resp, err := s.cs.newRequest("disableStaticNat", p.toURLValues())
 	if err != nil {
@@ -479,7 +479,7 @@ func (s *NATService) NewEnableStaticNatParams(ipaddressid string, virtualmachine
 	return p
 }
 
-// Enables static NAT for given IP address
+// Enables keys NAT for given IP address
 func (s *NATService) EnableStaticNat(p *EnableStaticNatParams) (*EnableStaticNatResponse, error) {
 	resp, err := s.cs.newRequest("enableStaticNat", p.toURLValues())
 	if err != nil {

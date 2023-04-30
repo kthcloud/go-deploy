@@ -1,7 +1,7 @@
 package k8s
 
 import (
-	"fmt"
+	"go-deploy/pkg/subsystems/k8s/keys"
 	"go-deploy/pkg/subsystems/k8s/models"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
@@ -11,22 +11,19 @@ import (
 
 func int32Ptr(i int32) *int32 { return &i }
 
-var manifestLabelName = "app.kubernetes.io/name"
-
 func CreateNamespaceManifest(public *models.NamespacePublic) *apiv1.Namespace {
 	return &apiv1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: public.Name,
+			Name: public.FullName,
 			Labels: map[string]string{
-				manifestLabelName: public.Name,
+				keys.ManifestLabelID:   public.ID,
+				keys.ManifestLabelName: public.Name,
 			},
 		},
 	}
 }
 
 func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deployment {
-	fullName := fmt.Sprintf("%s-%s", public.Name, public.ID)
-
 	var envs []apiv1.EnvVar
 	for _, env := range public.EnvVars {
 		envs = append(envs, env.ToK8sEnvVar())
@@ -34,25 +31,25 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fullName,
+			Name:      public.Name,
 			Namespace: public.Namespace,
 			Labels: map[string]string{
-				"id":              public.ID,
-				manifestLabelName: public.Name,
+				keys.ManifestLabelID:   public.ID,
+				keys.ManifestLabelName: public.Name,
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: int32Ptr(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					manifestLabelName: public.Name,
+					keys.ManifestLabelID: public.ID,
 				},
 			},
 			Template: apiv1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"deployId":        public.ID,
-						manifestLabelName: public.Name,
+						keys.ManifestLabelID:   public.ID,
+						keys.ManifestLabelName: public.Name,
 					},
 				},
 				Spec: apiv1.PodSpec{
@@ -69,15 +66,13 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 	}
 }
 func CreateServiceManifest(public *models.ServicePublic) *apiv1.Service {
-	fullName := fmt.Sprintf("%s-%s", public.Name, public.ID)
-
 	return &apiv1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fullName,
+			Name:      public.Name,
 			Namespace: public.Namespace,
 			Labels: map[string]string{
-				"deployId":        public.ID,
-				manifestLabelName: public.Name,
+				keys.ManifestLabelID:   public.ID,
+				keys.ManifestLabelName: public.Name,
 			},
 		},
 		Spec: apiv1.ServiceSpec{
@@ -90,7 +85,7 @@ func CreateServiceManifest(public *models.ServicePublic) *apiv1.Service {
 				},
 			},
 			Selector: map[string]string{
-				manifestLabelName: public.Name,
+				keys.ManifestLabelID: public.ID,
 			},
 		},
 		Status: apiv1.ServiceStatus{},
