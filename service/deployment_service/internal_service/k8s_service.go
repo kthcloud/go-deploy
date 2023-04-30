@@ -1,6 +1,7 @@
 package internal_service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	deploymentModel "go-deploy/models/deployment"
@@ -8,6 +9,7 @@ import (
 	"go-deploy/pkg/subsystems/k8s"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/utils/subsystemutils"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
 	"strconv"
 )
@@ -164,24 +166,54 @@ func DeleteK8s(name string) error {
 		return makeError(err)
 	}
 
-	err = client.DeleteNamespace(subsystemutils.GetPrefixedName(name))
+	// delete everything in the opposite order of creation
+	deployment, err := deploymentModel.GetByName(name)
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = deploymentModel.UpdateSubsystemByName(name, "k8s", "service", k8sModels.ServicePublic{})
-	if err != nil {
-		return makeError(err)
+	if deployment.Subsystems.K8s.Service.ID != "" {
+		err = client.DeleteService(deployment.Subsystems.K8s.Service.Namespace, deployment.Subsystems.K8s.Service.ID)
+		if err != nil {
+			return makeError(err)
+		}
+
+		err = deploymentModel.UpdateSubsystemByName(name, "k8s", "service", nil)
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
-	err = deploymentModel.UpdateSubsystemByName(name, "k8s", "deployment", k8sModels.DeploymentPublic{})
-	if err != nil {
-		return makeError(err)
+	if deployment.Subsystems.K8s.Deployment.ID != "" {
+		err = client.DeleteDeployment(deployment.Subsystems.K8s.Deployment.Namespace, deployment.Subsystems.K8s.Deployment.ID)
+		if err != nil {
+			return makeError(err)
+		}
+
+		err = deploymentModel.UpdateSubsystemByName(name, "k8s", "deployment", nil)
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
-	err = deploymentModel.UpdateSubsystemByName(name, "k8s", "namespace", k8sModels.NamespacePublic{})
-	if err != nil {
-		return makeError(err)
+	// only delete namespace if it contains no other deployments and services in k8s
+	if deployment.Subsystems.K8s.Namespace.ID != "" {
+		emptyNamespace, err := isNamespaceEmpty(client, deployment.Subsystems.K8s.Namespace.FullName)
+		if err != nil {
+			return makeError(err)
+		}
+
+		if emptyNamespace {
+			err = client.DeleteNamespace(deployment.Subsystems.K8s.Namespace.FullName)
+			if err != nil {
+				return makeError(err)
+			}
+		}
+
+		err = deploymentModel.UpdateSubsystemByName(name, "k8s", "namespace", nil)
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	return nil
@@ -208,4 +240,18 @@ func RestartK8s(name string) error {
 	}
 
 	return nil
+}
+
+func isNamespaceEmpty(client *k8s.Client, namespace string) (bool, error) {
+	deployments, err := client.K8sClient.AppsV1().Deployments(namespace).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return false, err
+	}
+
+	services, err := client.K8sClient.CoreV1().Services(namespace).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return false, err
+	}
+
+	return len(deployments.Items) == 0 && len(services.Items) == 0, nil
 }

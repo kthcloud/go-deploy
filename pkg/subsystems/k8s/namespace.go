@@ -13,7 +13,7 @@ import (
 )
 
 func (client *Client) createNamespaceWatcher(ctx context.Context, resourceName string) (watch.Interface, error) {
-	labelSelector := fmt.Sprintf("%s=%s", keys.ManifestLabelName, resourceName)
+	labelSelector := fmt.Sprintf("%s=%s", "kubernetes.io/metadata.name", resourceName)
 
 	opts := metav1.ListOptions{
 		TypeMeta:      metav1.TypeMeta{},
@@ -55,12 +55,18 @@ func (client *Client) NamespaceCreated(name string) (bool, error) {
 		return false, makeError(errors.New("name required"))
 	}
 
-	namespace, err := client.K8sClient.CoreV1().Namespaces().Get(context.TODO(), name, metav1.GetOptions{})
+	list, err := client.K8sClient.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return false, err
 	}
 
-	return namespace != nil, nil
+	for _, item := range list.Items {
+		if item.Name == name {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 func (client *Client) NamespaceDeleted(name string) (bool, error) {
