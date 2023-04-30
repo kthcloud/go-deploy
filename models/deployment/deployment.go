@@ -14,12 +14,14 @@ import (
 )
 
 type Deployment struct {
-	ID           string     `bson:"id"`
-	Name         string     `bson:"name"`
-	OwnerID      string     `bson:"ownerId"`
-	BeingCreated bool       `bson:"beingCreated"`
-	BeingDeleted bool       `bson:"beingDeleted"`
-	Subsystems   Subsystems `bson:"subsystems"`
+	ID            string     `bson:"id"`
+	Name          string     `bson:"name"`
+	OwnerID       string     `bson:"ownerId"`
+	BeingCreated  bool       `bson:"beingCreated"`
+	BeingDeleted  bool       `bson:"beingDeleted"`
+	Subsystems    Subsystems `bson:"subsystems"`
+	StatusCode    int        `bson:"statusCode"`
+	StatusMessage string     `bson:"statusMessage"`
 }
 
 type Subsystems struct {
@@ -45,13 +47,18 @@ type Harbor struct {
 	Webhook    harborModels.WebhookPublic    `bson:"webhook"`
 }
 
-func (deployment *Deployment) ToDTO(status string, url string) dto.DeploymentRead {
-	fullURL := fmt.Sprintf("https://%s", url)
+func (deployment *Deployment) ToDTO(url string) dto.DeploymentRead {
+	var fullURL *string
+	if url != "" {
+		res := fmt.Sprintf("https://%s", url)
+		fullURL = &res
+	}
+
 	return dto.DeploymentRead{
 		ID:      deployment.ID,
 		Name:    deployment.Name,
 		OwnerID: deployment.OwnerID,
-		Status:  status,
+		Status:  deployment.StatusMessage,
 		URL:     fullURL,
 	}
 }

@@ -21,13 +21,13 @@ func Create(deploymentID, name, owner string) {
 			return
 		}
 
-		k8sResult, err := internal_service.CreateK8s(name)
+		k8sResult, err := internal_service.CreateK8s(name, owner)
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
-		err = internal_service.CreateNPM(name, k8sResult.Service.GetHostName())
+		err = internal_service.CreateNPM(name, k8sResult.Service.GetFQDN())
 		if err != nil {
 			log.Println(err)
 			return
@@ -36,23 +36,14 @@ func Create(deploymentID, name, owner string) {
 	}()
 }
 
-func GetByFullID(userId, deploymentID string) (*deploymentModel.Deployment, error) {
+func GetByID(userId, deploymentID string, isAdmin bool) (*deploymentModel.Deployment, error) {
 	deployment, err := deploymentModel.GetByID(deploymentID)
 	if err != nil {
 		return nil, err
 	}
 
-	if deployment != nil && deployment.OwnerID != userId {
+	if deployment != nil && deployment.OwnerID != userId && !isAdmin {
 		return nil, nil
-	}
-
-	return deployment, nil
-}
-
-func GetByID(deploymentID string) (*deploymentModel.Deployment, error) {
-	deployment, err := deploymentModel.GetByID(deploymentID)
-	if err != nil {
-		return nil, err
 	}
 
 	return deployment, nil

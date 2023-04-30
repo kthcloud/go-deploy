@@ -6,7 +6,6 @@ import (
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/npm"
 	npmModels "go-deploy/pkg/subsystems/npm/models"
-	"go-deploy/utils/subsystemutils"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
 )
@@ -15,8 +14,7 @@ func getFQDN(hostName string) string {
 	return fmt.Sprintf("%s.%s", hostName, conf.Env.App.ParentDomain)
 }
 
-func createProxyHostPublicBody(name, hostName string, certificateId int) *npmModels.ProxyHostPublic {
-	forwardHost := fmt.Sprintf("%s.%s.svc.cluster.local", hostName, subsystemutils.GetPrefixedName(name))
+func createProxyHostPublicBody(name, forwardHost string, certificateId int) *npmModels.ProxyHostPublic {
 
 	return &npmModels.ProxyHostPublic{
 		ID:                    0,
@@ -31,7 +29,7 @@ func createProxyHostPublicBody(name, hostName string, certificateId int) *npmMod
 	}
 }
 
-func CreateNPM(name, hostName string) error {
+func CreateNPM(name, forwardHost string) error {
 	log.Println("setting up npm for", name)
 
 	makeError := func(err error) error {
@@ -55,7 +53,7 @@ func CreateNPM(name, hostName string) error {
 			return makeError(err)
 		}
 
-		id, err := client.CreateProxyHost(createProxyHostPublicBody(name, hostName, certificateID))
+		id, err := client.CreateProxyHost(createProxyHostPublicBody(name, forwardHost, certificateID))
 		if err != nil {
 			return err
 		}

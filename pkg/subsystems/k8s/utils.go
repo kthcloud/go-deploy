@@ -15,3 +15,23 @@ func isNotFoundError(err error) bool {
 	}
 	return false
 }
+
+func FindLabel(labels map[string]string, key, value string) bool {
+	if labels == nil {
+		return false
+	}
+	if v, ok := labels[key]; ok {
+		return v == value
+	}
+	return false
+}
+
+func GetLabel(labels map[string]string, key string) string {
+	if labels == nil {
+		return ""
+	}
+	if v, ok := labels[key]; ok {
+		return v
+	}
+	return ""
+}

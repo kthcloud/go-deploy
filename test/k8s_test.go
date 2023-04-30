@@ -33,7 +33,7 @@ func TestCreateGoodK8s(t *testing.T) {
 	deploymentPublic := &models.DeploymentPublic{
 		Name:        "acc-test",
 		Namespace:   namespacePublic.Name,
-		DockerImage: conf.Env.DockerRegistry.PlaceHolder,
+		DockerImage: conf.Env.DockerRegistry.Placeholder,
 		EnvVars:     nil,
 	}
 
@@ -101,14 +101,14 @@ func TestCreateBadK8s(t *testing.T) {
 	deploymentPublic := &models.DeploymentPublic{
 		Name:        "acc-test",
 		Namespace:   namespacePublic.Name,
-		DockerImage: conf.Env.DockerRegistry.PlaceHolder,
+		DockerImage: conf.Env.DockerRegistry.Placeholder,
 		EnvVars:     nil,
 	}
 
 	deploymentPublicBad := &models.DeploymentPublic{
 		Name:        "acc_test",
 		Namespace:   namespacePublic.Name,
-		DockerImage: conf.Env.DockerRegistry.PlaceHolder,
+		DockerImage: conf.Env.DockerRegistry.Placeholder,
 		EnvVars:     nil,
 	}
 

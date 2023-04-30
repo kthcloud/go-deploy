@@ -2,7 +2,7 @@ package cs
 
 import (
 	"fmt"
-	"github.com/apache/cloudstack-go/v2/cloudstack"
+	"go-deploy/pkg/imp/cloudstack"
 	"go-deploy/pkg/subsystems/cs/models"
 	"strings"
 )

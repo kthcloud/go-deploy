@@ -9,6 +9,7 @@ import (
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
 	"go-deploy/pkg/validator"
+	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/deployment_service"
 	"go-deploy/service/user_info_service"
 	"net/http"
@@ -32,9 +33,7 @@ func getAll(_ string, context *app.ClientContext) {
 
 	dtoDeployments := make([]dto.DeploymentRead, len(deployments))
 	for i, deployment := range deployments {
-		_, statusMsg, _ := deployment_service.GetStatusByID(deployment.ID)
-
-		dtoDeployments[i] = deployment.ToDTO(statusMsg, getURL(&deployment))
+		dtoDeployments[i] = deployment.ToDTO(getURL(&deployment))
 	}
 
 	context.JSONResponse(http.StatusOK, dtoDeployments)
@@ -59,10 +58,10 @@ func GetList(c *gin.Context) {
 		return
 	}
 	userID := token.Sub
+	isAdmin := v1.IsAdmin(&context)
 
-	// might want to check if userID is allowed to get all...
 	wantAll, _ := strconv.ParseBool(context.GinContext.Query("all"))
-	if wantAll {
+	if wantAll && isAdmin {
 		getAll(userID, &context)
 		return
 	}
@@ -75,8 +74,7 @@ func GetList(c *gin.Context) {
 
 	dtoDeployments := make([]dto.DeploymentRead, len(deployments))
 	for i, deployment := range deployments {
-		_, statusMsg, _ := deployment_service.GetStatusByID(deployment.ID)
-		dtoDeployments[i] = deployment.ToDTO(statusMsg, getURL(&deployment))
+		dtoDeployments[i] = deployment.ToDTO(getURL(&deployment))
 	}
 
 	context.JSONResponse(200, dtoDeployments)
@@ -102,16 +100,22 @@ func Get(c *gin.Context) {
 	}
 	deploymentID := context.GinContext.Param("deploymentId")
 	userID := token.Sub
+	isAdmin := v1.IsAdmin(&context)
 
-	deployment, _ := deployment_service.GetByFullID(userID, deploymentID)
+	var deployment *deploymentModels.Deployment
+	deployment, err = deployment_service.GetByID(userID, deploymentID, isAdmin)
+
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		return
+	}
 
 	if deployment == nil {
 		context.NotFound()
 		return
 	}
 
-	_, statusMsg, _ := deployment_service.GetStatusByID(deployment.ID)
-	context.JSONResponse(200, deployment.ToDTO(statusMsg, getURL(deployment)))
+	context.JSONResponse(200, deployment.ToDTO(getURL(deployment)))
 }
 
 func Create(c *gin.Context) {
@@ -220,15 +224,16 @@ func Delete(c *gin.Context) {
 	}
 	userID := token.Sub
 	deploymentID := context.GinContext.Param("deploymentId")
+	isAdmin := v1.IsAdmin(&context)
 
-	currentDeployment, err := deployment_service.GetByFullID(userID, deploymentID)
+	currentDeployment, err := deployment_service.GetByID(userID, deploymentID, isAdmin)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return
 	}
 
 	if currentDeployment == nil {
-		context.NotFound()
+		context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, "Resource not found")
 		return
 	}
 

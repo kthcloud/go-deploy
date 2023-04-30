@@ -7,8 +7,8 @@ import (
 	"go-deploy/utils/subsystemutils"
 )
 
-func GetLogs(userID, deploymentID string, handler func(string)) (context.Context, error) {
-	deployment, err := GetByFullID(userID, deploymentID)
+func GetLogs(userID, deploymentID string, handler func(string), isAdmin bool) (context.Context, error) {
+	deployment, err := GetByID(userID, deploymentID, isAdmin)
 	if err != nil {
 		return nil, err
 	}
@@ -23,7 +23,7 @@ func GetLogs(userID, deploymentID string, handler func(string)) (context.Context
 
 	ctx := context.Background()
 
-	client, err := k8s.New(&k8s.ClientConf{K8sAuth: conf.Env.K8s.Config})
+	client, err := k8s.New(conf.Env.K8s.Client)
 	if err != nil {
 		return nil, err
 	}

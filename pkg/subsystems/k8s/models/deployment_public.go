@@ -1,6 +1,7 @@
 package models
 
 import (
+	"go-deploy/pkg/subsystems/k8s/keys"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 )
@@ -39,14 +40,9 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 		envs = append(envs, EnvVarFromK8s(&env))
 	}
 
-	idAndName, err := GetIdAndName(deployment.Name)
-	if err != nil {
-		panic(err)
-	}
-
 	return &DeploymentPublic{
-		ID:          idAndName[0],
-		Name:        idAndName[1],
+		ID:          deployment.Labels[keys.ManifestLabelID],
+		Name:        deployment.Labels[keys.ManifestLabelName],
 		Namespace:   deployment.Namespace,
 		DockerImage: deployment.Spec.Template.Spec.Containers[0].Image,
 		EnvVars:     envs,

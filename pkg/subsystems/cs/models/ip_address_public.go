@@ -1,7 +1,7 @@
 package models
 
 import (
-	"github.com/apache/cloudstack-go/v2/cloudstack"
+	"go-deploy/pkg/imp/cloudstack"
 	"net"
 )
 
