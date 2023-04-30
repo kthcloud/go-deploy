@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"go-deploy/pkg/subsystems/k8s/keys"
 	v1 "k8s.io/api/core/v1"
 )
@@ -13,8 +14,8 @@ type ServicePublic struct {
 	TargetPort int    `bson:"targetPort"`
 }
 
-func (service *ServicePublic) GetHostName() string {
-	return service.Name
+func (service *ServicePublic) GetFQDN() string {
+	return fmt.Sprintf("%s.%s.svc.cluster.local", service.Name, service.Namespace)
 }
 
 func CreateServicePublicFromRead(service *v1.Service) *ServicePublic {

@@ -21,13 +21,13 @@ func Create(deploymentID, name, owner string) {
 			return
 		}
 
-		k8sResult, err := internal_service.CreateK8s(name)
+		k8sResult, err := internal_service.CreateK8s(name, owner)
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
-		err = internal_service.CreateNPM(name, k8sResult.Service.GetHostName())
+		err = internal_service.CreateNPM(name, k8sResult.Service.GetFQDN())
 		if err != nil {
 			log.Println(err)
 			return

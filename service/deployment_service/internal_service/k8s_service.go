@@ -18,10 +18,10 @@ type K8sResult struct {
 	Service    *k8sModels.ServicePublic
 }
 
-func createNamespacePublic(name string) *k8sModels.NamespacePublic {
+func createNamespacePublic(userID string) *k8sModels.NamespacePublic {
 	return &k8sModels.NamespacePublic{
 		ID:       "",
-		Name:     name,
+		Name:     userID,
 		FullName: "",
 	}
 }
@@ -46,7 +46,7 @@ func createServicePublic(namespace, name string, port, targetPort int) *k8sModel
 	}
 }
 
-func CreateK8s(name string) (*K8sResult, error) {
+func CreateK8s(name, userID string) (*K8sResult, error) {
 	log.Println("setting up k8s for", name)
 
 	makeError := func(err error) error {
@@ -68,7 +68,7 @@ func CreateK8s(name string) (*K8sResult, error) {
 	// Namespace
 	var namespace *k8sModels.NamespacePublic
 	if deployment.Subsystems.K8s.Namespace.ID == "" {
-		id, err := client.CreateNamespace(createNamespacePublic(name))
+		id, err := client.CreateNamespace(createNamespacePublic(userID))
 		if err != nil {
 			return nil, makeError(err)
 		}

@@ -85,7 +85,7 @@ func CreateServiceManifest(public *models.ServicePublic) *apiv1.Service {
 				},
 			},
 			Selector: map[string]string{
-				keys.ManifestLabelID: public.ID,
+				keys.ManifestLabelName: public.Name,
 			},
 		},
 		Status: apiv1.ServiceStatus{},
