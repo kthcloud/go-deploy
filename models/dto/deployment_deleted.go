@@ -1,6 +1,6 @@
 package dto
 
-type VmCreated struct {
+type DeploymentDeleted struct {
 	ID    string `json:"id"`
 	JobID string `json:"jobId"`
 }

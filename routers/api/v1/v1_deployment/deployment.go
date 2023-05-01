@@ -193,8 +193,10 @@ func Create(c *gin.Context) {
 			return
 		}
 
-		//deployment_service.Create(deployment.ID, requestBody.Name, userID)
-		context.JSONResponse(http.StatusCreated, dto.DeploymentCreated{ID: deployment.ID})
+		context.JSONResponse(http.StatusCreated, dto.DeploymentCreated{
+			ID:    deployment.ID,
+			JobID: jobID,
+		})
 		return
 	}
 
@@ -222,8 +224,10 @@ func Create(c *gin.Context) {
 		return
 	}
 
-	//deployment_service.Create(deploymentID, requestBody.Name, userID)
-	context.JSONResponse(http.StatusCreated, dto.DeploymentCreated{ID: deploymentID})
+	context.JSONResponse(http.StatusCreated, dto.DeploymentCreated{
+		ID:    deploymentID,
+		JobID: jobID,
+	})
 }
 
 func Delete(c *gin.Context) {
@@ -271,7 +275,8 @@ func Delete(c *gin.Context) {
 		_ = deployment_service.MarkBeingDeleted(currentDeployment.ID)
 	}
 
-	err = job_service.Create(uuid.New().String(), userID, jobModel.TypeDeleteDeployment, map[string]interface{}{
+	jobID := uuid.New().String()
+	err = job_service.Create(jobID, userID, jobModel.TypeDeleteDeployment, map[string]interface{}{
 		"name": currentDeployment.Name,
 	})
 	if err != nil {
@@ -279,5 +284,8 @@ func Delete(c *gin.Context) {
 		return
 	}
 
-	context.OkDeleted()
+	context.JSONResponse(http.StatusOK, dto.DeploymentDeleted{
+		ID:    currentDeployment.ID,
+		JobID: jobID,
+	})
 }

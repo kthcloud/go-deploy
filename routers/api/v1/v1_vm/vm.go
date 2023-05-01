@@ -238,7 +238,10 @@ func Create(c *gin.Context) {
 			return
 		}
 
-		context.JSONResponse(http.StatusCreated, dto.VmCreated{ID: vm.ID})
+		context.JSONResponse(http.StatusCreated, dto.VmCreated{
+			ID:    vm.ID,
+			JobID: jobID,
+		})
 		return
 	}
 
@@ -262,7 +265,10 @@ func Create(c *gin.Context) {
 		"ownerId":      userID,
 	})
 
-	context.JSONResponse(http.StatusCreated, dto.VmCreated{ID: vmID})
+	context.JSONResponse(http.StatusCreated, dto.VmCreated{
+		ID:    vmID,
+		JobID: jobID,
+	})
 }
 
 func Delete(c *gin.Context) {
@@ -315,7 +321,10 @@ func Delete(c *gin.Context) {
 		"name": current.Name,
 	})
 
-	context.OkDeleted()
+	context.JSONResponse(http.StatusOK, dto.VmDeleted{
+		ID:    current.ID,
+		JobID: jobID,
+	})
 }
 
 func isValidSshPublicKey(key string) bool {
