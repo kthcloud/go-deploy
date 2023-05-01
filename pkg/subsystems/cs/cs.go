@@ -11,9 +11,9 @@ type Client struct {
 }
 
 type ClientConf struct {
-	ApiUrl    string
-	ApiKey    string
-	SecretKey string
+	URL    string
+	ApiKey string
+	Secret string
 }
 
 func New(config *ClientConf) (*Client, error) {
@@ -22,9 +22,9 @@ func New(config *ClientConf) (*Client, error) {
 	}
 
 	csClient := cloudstack.NewAsyncClient(
-		config.ApiUrl,
+		config.URL,
 		config.ApiKey,
-		config.SecretKey,
+		config.Secret,
 		true,
 	)
 

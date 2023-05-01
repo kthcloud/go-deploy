@@ -8,9 +8,9 @@ import (
 
 func ExampleCreate() {
 	client, err := New(&ClientConf{
-		ApiUrl:    conf.Env.CS.Url,
-		ApiKey:    conf.Env.CS.ApiKey,
-		SecretKey: conf.Env.CS.Secret,
+		URL:    conf.Env.CS.URL,
+		ApiKey: conf.Env.CS.ApiKey,
+		Secret: conf.Env.CS.Secret,
 	})
 
 	if err != nil {
@@ -39,9 +39,9 @@ func ExampleUpdate() {
 	id := "77b35b74-8333-4247-849d-ef5bc8555459"
 
 	client, err := New(&ClientConf{
-		ApiUrl:    conf.Env.CS.Url,
-		ApiKey:    conf.Env.CS.ApiKey,
-		SecretKey: conf.Env.CS.Secret,
+		URL:    conf.Env.CS.URL,
+		ApiKey: conf.Env.CS.ApiKey,
+		Secret: conf.Env.CS.Secret,
 	})
 
 	if err != nil {

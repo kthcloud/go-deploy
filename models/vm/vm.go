@@ -66,7 +66,7 @@ func (vm *VM) ToDto(status, connectionString string, gpu *dto.GpuRead) dto.VmRea
 	}
 }
 
-func Create(vmID, name, sshPublicKey, owner string) error {
+func Create(vmID, name, sshPublicKey, owner, managedBy string) error {
 	currentVM, err := GetByID(vmID)
 	if err != nil {
 		return err
@@ -79,6 +79,7 @@ func Create(vmID, name, sshPublicKey, owner string) error {
 	vm := VM{
 		ID:            vmID,
 		Name:          name,
+		ManagedBy:     managedBy,
 		SshPublicKey:  sshPublicKey,
 		OwnerID:       owner,
 		BeingCreated:  true,

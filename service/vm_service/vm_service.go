@@ -13,7 +13,7 @@ import (
 
 func Create(vmID, name, sshPublicKey, owner string) {
 	go func() {
-		err := vmModel.Create(vmID, name, sshPublicKey, owner)
+		err := vmModel.Create(vmID, name, sshPublicKey, owner, conf.Env.Manager)
 		if err != nil {
 			log.Println(err)
 			return

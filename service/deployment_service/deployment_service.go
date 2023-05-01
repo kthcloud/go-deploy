@@ -15,7 +15,7 @@ func Create(deploymentID, name, owner string) {
 			return
 		}
 
-		err = internal_service.CreateHarbor(name)
+		err = internal_service.CreateHarbor(name, owner)
 		if err != nil {
 			log.Println(err)
 			return

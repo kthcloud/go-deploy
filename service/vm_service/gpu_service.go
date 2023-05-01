@@ -1,6 +1,7 @@
 package vm_service
 
 import (
+	"fmt"
 	vmModel "go-deploy/models/vm"
 	"go-deploy/pkg/conf"
 	"go-deploy/service/vm_service/internal_service"
@@ -22,7 +23,6 @@ func GetAllGPUs(showOnlyAvailable bool, isGpuUser bool) ([]vmModel.GPU, error) {
 	return vmModel.GetAllGPUs()
 }
 
-// GetGpuByID TODO: add filter for isGpuUser
 func GetGpuByID(gpuID string, isGpuUser bool) (*vmModel.GPU, error) {
 	gpu, err := vmModel.GetGpuByID(gpuID)
 	if err != nil {
@@ -47,17 +47,21 @@ func GetGpuByID(gpuID string, isGpuUser bool) (*vmModel.GPU, error) {
 		}
 	}
 
+	return gpu, nil
+}
+
+func IsGpuAvailable(gpu *vmModel.GPU) (bool, error) {
 	// check if attached in cloudstack
-	attached, err := internal_service.IsGpuAttachedCS(gpu.Data.Name, gpu.Data.Bus)
+	attached, err := internal_service.IsGpuAttachedCS(gpu.Host, gpu.Data.Bus)
 	if err != nil {
-		return nil, err
+		return false, err
 	}
 
 	if attached {
-		return nil, nil
+		return false, nil
 	}
 
-	return gpu, nil
+	return true, nil
 }
 
 func GetAnyAvailableGPU(isGpuUser bool) (*vmModel.GPU, error) {
@@ -78,7 +82,7 @@ func GetAnyAvailableGPU(isGpuUser bool) (*vmModel.GPU, error) {
 
 	for _, gpu := range availableGPUs {
 		// check if attached in cloudstack
-		inUse, err := isGpuInUse(gpu.Data.Name, gpu.Data.Bus)
+		inUse, err := isGpuInUse(gpu.Host, gpu.Data.Bus)
 		if err != nil {
 			return nil, err
 		}
@@ -118,23 +122,33 @@ func AttachGPU(gpuID, vmID, userID string) {
 
 func DetachGPU(vmID, userID string) {
 	go func() {
-		err := internal_service.DetachGPU(vmID)
+		err := DetachGpuSync(vmID, userID)
 		if err != nil {
 			log.Println(err)
-			return
-		}
-
-		detached, err := vmModel.DetachGPU(vmID, userID)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		if !detached {
-			log.Println("did not detach gpu from vm", vmID)
-			return
 		}
 	}()
+}
+
+func DetachGpuSync(vmID, userID string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to detach gpu from vm %s. details: %s", vmID, err)
+	}
+
+	err := internal_service.DetachGPU(vmID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	detached, err := vmModel.DetachGPU(vmID, userID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if !detached {
+		return makeError(fmt.Errorf("failed to detach gpu from vm %s", vmID))
+	}
+
+	return nil
 }
 
 func isGpuPrivileged(cardName string) bool {

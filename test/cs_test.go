@@ -14,9 +14,9 @@ func TestCreateVM(t *testing.T) {
 	setup(t)
 
 	client, err := cs.New(&cs.ClientConf{
-		ApiUrl:    conf.Env.CS.Url,
-		ApiKey:    conf.Env.CS.ApiKey,
-		SecretKey: conf.Env.CS.Secret,
+		URL:    conf.Env.CS.URL,
+		ApiKey: conf.Env.CS.ApiKey,
+		Secret: conf.Env.CS.Secret,
 	})
 
 	if err != nil {
@@ -65,9 +65,9 @@ func TestUpdateVM(t *testing.T) {
 	setup(t)
 
 	client, err := cs.New(&cs.ClientConf{
-		ApiUrl:    conf.Env.CS.Url,
-		ApiKey:    conf.Env.CS.ApiKey,
-		SecretKey: conf.Env.CS.Secret,
+		URL:    conf.Env.CS.URL,
+		ApiKey: conf.Env.CS.ApiKey,
+		Secret: conf.Env.CS.Secret,
 	})
 
 	if err != nil {
