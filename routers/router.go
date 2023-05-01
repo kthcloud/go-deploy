@@ -6,6 +6,7 @@ import (
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/auth"
 	"go-deploy/routers/api/v1/v1_deployment"
+	"go-deploy/routers/api/v1/v1_job"
 	"go-deploy/routers/api/v1/v1_vm"
 )
 
@@ -27,6 +28,7 @@ func NewRouter() *gin.Engine {
 	setupDeploymentRoutes(apiv1, apiv1Hook)
 	setupVmRoutes(apiv1, apiv1Hook)
 	setupGpuRoutes(apiv1, apiv1Hook)
+	setupJobRoutes(apiv1, apiv1Hook)
 
 	return router
 }
@@ -58,4 +60,8 @@ func setupVmRoutes(base *gin.RouterGroup, _ *gin.RouterGroup) {
 
 func setupGpuRoutes(base *gin.RouterGroup, _ *gin.RouterGroup) {
 	base.GET("/gpus", v1_vm.GetGpuList)
+}
+
+func setupJobRoutes(base *gin.RouterGroup, _ *gin.RouterGroup) {
+	base.GET("/jobs/:jobId", v1_job.Get)
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"go-deploy/models"
+	"go-deploy/models/dto"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -11,10 +12,17 @@ import (
 )
 
 const (
-	JobCreateVM         = "createVm"
-	JobDeleteVM         = "deleteVm"
-	JobCreateDeployment = "createDeployment"
-	JobDeleteDeployment = "deleteDeployment"
+	TypeCreateVM         = "createVm"
+	TypeDeleteVM         = "deleteVm"
+	TypeCreateDeployment = "createDeployment"
+	TypeDeleteDeployment = "deleteDeployment"
+)
+
+const (
+	StatusPending  = "pending"
+	StatusRunning  = "running"
+	StatusFinished = "finished"
+	StatusFailed   = "failed"
 )
 
 type Job struct {
@@ -27,8 +35,21 @@ type Job struct {
 	ErrorLogs []string               `bson:"errorLogs" json:"errorLogs"`
 }
 
+func (job *Job) ToDTO(statusMessage string) dto.JobRead {
+	if job == nil {
+		return dto.JobRead{}
+	}
+
+	return dto.JobRead{
+		ID:     job.ID,
+		UserID: job.UserID,
+		Type:   job.Type,
+		Status: statusMessage,
+	}
+}
+
 func CreateJob(id, userID, jobType string, args map[string]interface{}) error {
-	currentJob, err := GetJobByID(id)
+	currentJob, err := GetByID(id)
 	if err != nil {
 		return err
 	}
@@ -43,7 +64,7 @@ func CreateJob(id, userID, jobType string, args map[string]interface{}) error {
 		Type:      jobType,
 		Args:      args,
 		CreatedAt: time.Now(),
-		Status:    "pending",
+		Status:    StatusPending,
 	}
 
 	_, err = models.JobCollection.InsertOne(context.TODO(), job)
@@ -54,7 +75,7 @@ func CreateJob(id, userID, jobType string, args map[string]interface{}) error {
 	return nil
 }
 
-func GetJobByID(id string) (*Job, error) {
+func GetByID(id string) (*Job, error) {
 	var job Job
 	err := models.JobCollection.FindOne(context.TODO(), bson.D{{"id", id}}).Decode(&job)
 	if err != nil {
@@ -69,10 +90,10 @@ func GetJobByID(id string) (*Job, error) {
 	return &job, err
 }
 
-func GetNextJob() (*Job, error) {
-	filter := bson.D{{"status", "pending"}}
+func GetNext() (*Job, error) {
+	filter := bson.D{{"status", StatusPending}}
 	opts := options.FindOneAndUpdate().SetSort(bson.D{{"createdAt", -1}})
-	update := bson.D{{"$set", bson.D{{"status", "processing"}}}}
+	update := bson.D{{"$set", bson.D{{"status", StatusRunning}}}}
 
 	var job Job
 	err := models.JobCollection.FindOneAndUpdate(context.TODO(), filter, update, opts).Decode(&job)
@@ -83,10 +104,10 @@ func GetNextJob() (*Job, error) {
 	return &job, nil
 }
 
-func GetNextFailedJob() (*Job, error) {
-	filter := bson.D{{"status", "failed"}}
+func GetNextFailed() (*Job, error) {
+	filter := bson.D{{"status", StatusFailed}}
 	opts := options.FindOneAndUpdate().SetSort(bson.D{{"createdAt", -1}})
-	update := bson.D{{"$set", bson.D{{"status", "processing"}}}}
+	update := bson.D{{"$set", bson.D{{"status", StatusRunning}}}}
 
 	var job Job
 	err := models.JobCollection.FindOneAndUpdate(context.TODO(), filter, update, opts).Decode(&job)
@@ -97,9 +118,9 @@ func GetNextFailedJob() (*Job, error) {
 	return &job, nil
 }
 
-func CompleteJob(jobID string) error {
+func MarkCompleted(jobID string) error {
 	filter := bson.D{{"id", jobID}}
-	update := bson.D{{"$set", bson.D{{"status", "completed"}}}}
+	update := bson.D{{"$set", bson.D{{"status", StatusFinished}}}}
 
 	_, err := models.JobCollection.UpdateOne(context.Background(), filter, update)
 	if err != nil {
@@ -109,9 +130,9 @@ func CompleteJob(jobID string) error {
 	return nil
 }
 
-func FailJob(jobID string, errorLogs []string) error {
+func MarkFailed(jobID string, errorLogs []string) error {
 	filter := bson.D{{"id", jobID}}
-	update := bson.D{{"$set", bson.D{{"status", "failed"}, {"errorLogs", errorLogs}}}}
+	update := bson.D{{"$set", bson.D{{"status", StatusFailed}, {"errorLogs", errorLogs}}}}
 
 	_, err := models.JobCollection.UpdateOne(context.Background(), filter, update)
 	if err != nil {
@@ -121,9 +142,9 @@ func FailJob(jobID string, errorLogs []string) error {
 	return nil
 }
 
-func ResetProcessingJobs() error {
-	filter := bson.D{{"status", "processing"}}
-	update := bson.D{{"$set", bson.D{{"status", "pending"}}}}
+func ResetRunning() error {
+	filter := bson.D{{"status", StatusRunning}}
+	update := bson.D{{"$set", bson.D{{"status", StatusPending}}}}
 
 	_, err := models.JobCollection.UpdateMany(context.Background(), filter, update)
 	if err != nil {

@@ -17,3 +17,16 @@ func Create(id, userID, jobType string, args map[string]interface{}) error {
 
 	return nil
 }
+
+func GetByID(userID, jobID string, isAdmin bool) (*jobModel.Job, error) {
+	job, err := jobModel.GetByID(jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	if job != nil && job.UserID != userID && !isAdmin {
+		return nil, nil
+	}
+
+	return job, nil
+}

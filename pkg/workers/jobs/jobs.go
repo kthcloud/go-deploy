@@ -22,7 +22,7 @@ func assertParameters(job *jobModel.Job, params []string) error {
 func createVM(job *jobModel.Job) {
 	err := assertParameters(job, []string{"id", "name", "sshPublicKey", "ownerId"})
 	if err != nil {
-		_ = jobModel.FailJob(job.ID, []string{err.Error()})
+		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
 		return
 	}
 
@@ -33,17 +33,17 @@ func createVM(job *jobModel.Job) {
 
 	err = vm_service.Create(id, name, sshPublicKey, ownerID)
 	if err != nil {
-		_ = jobModel.FailJob(job.ID, []string{err.Error()})
+		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
 		return
 	}
 
-	_ = jobModel.CompleteJob(job.ID)
+	_ = jobModel.MarkCompleted(job.ID)
 }
 
 func deleteVM(job *jobModel.Job) {
 	err := assertParameters(job, []string{"name"})
 	if err != nil {
-		_ = jobModel.FailJob(job.ID, []string{err.Error()})
+		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
 		return
 	}
 
@@ -51,17 +51,17 @@ func deleteVM(job *jobModel.Job) {
 
 	err = vm_service.Delete(name)
 	if err != nil {
-		_ = jobModel.FailJob(job.ID, []string{err.Error()})
+		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
 		return
 	}
 
-	_ = jobModel.CompleteJob(job.ID)
+	_ = jobModel.MarkCompleted(job.ID)
 }
 
 func createDeployment(job *jobModel.Job) {
 	err := assertParameters(job, []string{"id", "name", "ownerId"})
 	if err != nil {
-		_ = jobModel.FailJob(job.ID, []string{err.Error()})
+		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
 		return
 	}
 
@@ -71,17 +71,17 @@ func createDeployment(job *jobModel.Job) {
 
 	err = deployment_service.Create(id, name, ownerID)
 	if err != nil {
-		_ = jobModel.FailJob(job.ID, []string{err.Error()})
+		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
 		return
 	}
 
-	_ = jobModel.CompleteJob(job.ID)
+	_ = jobModel.MarkCompleted(job.ID)
 }
 
 func deleteDeployment(job *jobModel.Job) {
 	err := assertParameters(job, []string{"name"})
 	if err != nil {
-		_ = jobModel.FailJob(job.ID, []string{err.Error()})
+		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
 		return
 	}
 
@@ -89,11 +89,11 @@ func deleteDeployment(job *jobModel.Job) {
 
 	err = deployment_service.Delete(name)
 	if err != nil {
-		_ = jobModel.FailJob(job.ID, []string{err.Error()})
+		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
 		return
 	}
 
-	_ = jobModel.CompleteJob(job.ID)
+	_ = jobModel.MarkCompleted(job.ID)
 }
 
 func Setup(ctx *app.Context) {

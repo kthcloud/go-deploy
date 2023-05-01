@@ -22,9 +22,9 @@ func setup(context *app.Context) {
 	conf.SetupEnvironment()
 
 	models.Setup()
-	err := job.ResetProcessingJobs()
+	err := job.ResetRunning()
 	if err != nil {
-		log.Fatalln("failed to reset processing jobs. details: ", err)
+		log.Fatalln("failed to reset running jobs. details: ", err)
 	}
 
 	confirmers.Setup(context)

@@ -12,7 +12,7 @@ func jobFetcher(ctx *app.Context) {
 			break
 		}
 
-		job, err := jobModel.GetNextJob()
+		job, err := jobModel.GetNext()
 		if err != nil {
 			continue
 		}
@@ -43,7 +43,7 @@ func failedJobFetcher(ctx *app.Context) {
 
 		time.Sleep(30 * time.Second)
 
-		job, err := jobModel.GetNextFailedJob()
+		job, err := jobModel.GetNextFailed()
 		if err != nil {
 			continue
 		}

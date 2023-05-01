@@ -42,7 +42,7 @@ func getAllVMs(context *app.ClientContext) {
 			}
 		}
 
-		dtoVMs[i] = vm.ToDto(vm.StatusMessage, connectionString, gpuRead)
+		dtoVMs[i] = vm.ToDTO(vm.StatusMessage, connectionString, gpuRead)
 	}
 
 	context.JSONResponse(http.StatusOK, dtoVMs)
@@ -96,7 +96,7 @@ func GetList(c *gin.Context) {
 			}
 		}
 
-		dtoVMs[i] = vm.ToDto(vm.StatusMessage, connectionString, gpuRead)
+		dtoVMs[i] = vm.ToDTO(vm.StatusMessage, connectionString, gpuRead)
 	}
 
 	context.JSONResponse(200, dtoVMs)
@@ -124,7 +124,11 @@ func Get(c *gin.Context) {
 	userID := token.Sub
 	isAdmin := v1.IsAdmin(&context)
 
-	vm, _ := vm_service.GetByID(userID, vmID, isAdmin)
+	vm, err := vm_service.GetByID(userID, vmID, isAdmin)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		return
+	}
 
 	if vm == nil {
 		context.NotFound()
@@ -143,7 +147,7 @@ func Get(c *gin.Context) {
 		}
 	}
 
-	context.JSONResponse(200, vm.ToDto(vm.StatusMessage, connectionString, gpuRead))
+	context.JSONResponse(200, vm.ToDTO(vm.StatusMessage, connectionString, gpuRead))
 }
 
 func Create(c *gin.Context) {
@@ -223,7 +227,7 @@ func Create(c *gin.Context) {
 		}
 
 		jobID := uuid.New().String()
-		err = job_service.Create(jobID, userID, jobModel.JobCreateVM, map[string]interface{}{
+		err = job_service.Create(jobID, userID, jobModel.TypeCreateVM, map[string]interface{}{
 			"id":           vm.ID,
 			"name":         requestBody.Name,
 			"sshPublicKey": requestBody.SshPublicKey,
@@ -251,7 +255,7 @@ func Create(c *gin.Context) {
 
 	vmID := uuid.New().String()
 	jobID := uuid.New().String()
-	err = job_service.Create(jobID, userID, jobModel.JobCreateVM, map[string]interface{}{
+	err = job_service.Create(jobID, userID, jobModel.TypeCreateVM, map[string]interface{}{
 		"id":           vmID,
 		"name":         requestBody.Name,
 		"sshPublicKey": requestBody.SshPublicKey,
@@ -307,7 +311,7 @@ func Delete(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = job_service.Create(jobID, userID, jobModel.JobDeleteVM, map[string]interface{}{
+	err = job_service.Create(jobID, userID, jobModel.TypeDeleteVM, map[string]interface{}{
 		"name": current.Name,
 	})
 

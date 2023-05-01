@@ -26,5 +26,10 @@ const (
 	ResourceStopped  = 10034
 	ResourceError    = 10035
 
+	JobPending  = 10040
+	JobFinished = 10041
+	JobFailed   = 10042
+	JobRunning  = 10043
+
 	ResourceValidationFailed = 20001
 )

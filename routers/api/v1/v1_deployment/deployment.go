@@ -183,7 +183,7 @@ func Create(c *gin.Context) {
 			return
 		}
 		jobID := uuid.New().String()
-		err = job_service.Create(jobID, userID, jobModel.JobCreateDeployment, map[string]interface{}{
+		err = job_service.Create(jobID, userID, jobModel.TypeCreateDeployment, map[string]interface{}{
 			"id":      deployment.ID,
 			"name":    requestBody.Name,
 			"ownerId": userID,
@@ -211,7 +211,7 @@ func Create(c *gin.Context) {
 
 	deploymentID := uuid.New().String()
 	jobID := uuid.New().String()
-	err = job_service.Create(jobID, userID, jobModel.JobCreateDeployment, map[string]interface{}{
+	err = job_service.Create(jobID, userID, jobModel.TypeCreateDeployment, map[string]interface{}{
 		"id":      deploymentID,
 		"name":    requestBody.Name,
 		"ownerId": userID,
@@ -271,7 +271,7 @@ func Delete(c *gin.Context) {
 		_ = deployment_service.MarkBeingDeleted(currentDeployment.ID)
 	}
 
-	err = job_service.Create(uuid.New().String(), userID, jobModel.JobDeleteDeployment, map[string]interface{}{
+	err = job_service.Create(uuid.New().String(), userID, jobModel.TypeDeleteDeployment, map[string]interface{}{
 		"name": currentDeployment.Name,
 	})
 	if err != nil {
