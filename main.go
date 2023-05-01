@@ -7,6 +7,7 @@ import (
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/intializer"
 	"go-deploy/pkg/workers/confirmers"
+	"go-deploy/pkg/workers/jobs"
 	"go-deploy/pkg/workers/status_updaters"
 	"go-deploy/routers"
 	"log"
@@ -20,8 +21,10 @@ func setup(context *app.Context) {
 	conf.SetupEnvironment()
 
 	models.Setup()
+
 	confirmers.Setup(context)
 	status_updaters.Setup(context)
+	jobs.Setup(context)
 
 	intializer.SynchronizeGPU()
 }

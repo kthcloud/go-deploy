@@ -67,7 +67,7 @@ func (deployment *Deployment) Ready() bool {
 	return !deployment.BeingCreated && !deployment.BeingDeleted
 }
 
-func CreateDeployment(deploymentID, name, owner string) error {
+func CreateDeployment(deploymentID, name, ownerID string) error {
 	currentDeployment, err := GetByID(deploymentID)
 	if err != nil {
 		return err
@@ -80,7 +80,7 @@ func CreateDeployment(deploymentID, name, owner string) error {
 	deployment := Deployment{
 		ID:           deploymentID,
 		Name:         name,
-		OwnerID:      owner,
+		OwnerID:      ownerID,
 		BeingCreated: true,
 		BeingDeleted: false,
 	}

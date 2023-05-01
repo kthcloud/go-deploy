@@ -4,7 +4,6 @@ import (
 	"fmt"
 	vmModel "go-deploy/models/vm"
 	"go-deploy/pkg/conf"
-	"go-deploy/pkg/status_codes"
 	"go-deploy/service/vm_service/internal_service"
 	"log"
 
@@ -109,26 +108,6 @@ func GetConnectionString(vm *vmModel.VM) (string, error) {
 	connectionString := fmt.Sprintf("ssh cloud@%s -p %d", domainName, port)
 
 	return connectionString, nil
-}
-
-func GetStatus(vm *vmModel.VM) (int, string, error) {
-	csStatusCode, csStatusMsg, err := internal_service.GetStatusCS(vm.Name)
-
-	if err != nil {
-		log.Println(err)
-	}
-
-	if err != nil || csStatusCode == status_codes.ResourceUnknown || csStatusCode == status_codes.ResourceNotFound {
-		if vm.BeingDeleted {
-			return status_codes.ResourceBeingDeleted, status_codes.GetMsg(status_codes.ResourceBeingDeleted), nil
-		}
-
-		if vm.BeingCreated {
-			return status_codes.ResourceBeingCreated, status_codes.GetMsg(status_codes.ResourceBeingCreated), nil
-		}
-	}
-
-	return csStatusCode, csStatusMsg, nil
 }
 
 func DoCommand(vm *vmModel.VM, command string) {
