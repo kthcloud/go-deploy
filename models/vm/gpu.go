@@ -23,9 +23,9 @@ type GpuData struct {
 }
 
 type GpuLease struct {
-	VmID string    `bson:"vmId" json:"vmId"`
-	User string    `bson:"user" json:"user"`
-	End  time.Time `bson:"end" json:"end"`
+	VmID   string    `bson:"vmId" json:"vmId"`
+	UserID string    `bson:"user" json:"userId"`
+	End    time.Time `bson:"end" json:"end"`
 }
 
 type GPU struct {
@@ -43,7 +43,7 @@ func (gpu *GPU) ToDto() dto.GpuRead {
 	if gpu.Lease.VmID != "" {
 		lease = &dto.GpuLease{
 			VmID: gpu.Lease.VmID,
-			User: gpu.Lease.User,
+			User: gpu.Lease.UserID,
 			End:  gpu.Lease.End,
 		}
 	}
@@ -69,9 +69,9 @@ func CreateGPU(id, host string, data GpuData) error {
 		ID:   id,
 		Host: host,
 		Lease: GpuLease{
-			VmID: "",
-			User: "",
-			End:  time.Time{},
+			VmID:   "",
+			UserID: "",
+			End:    time.Time{},
 		},
 		Data: data,
 	}
@@ -103,6 +103,21 @@ func GetGpuByID(id string) (*GPU, error) {
 func GetAllGPUs() ([]GPU, error) {
 	var gpus []GPU
 	cursor, err := models.GpuCollection.Find(context.Background(), bson.D{})
+	if err != nil {
+		return nil, err
+	}
+
+	err = cursor.All(context.Background(), &gpus)
+	if err != nil {
+		return nil, err
+	}
+
+	return gpus, nil
+}
+
+func GetAllLeasedGPUs() ([]GPU, error) {
+	var gpus []GPU
+	cursor, err := models.GpuCollection.Find(context.Background(), bson.D{{"lease.vmId", bson.M{"$ne": ""}}})
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +254,7 @@ func DetachGPU(vmID, userID string) (bool, error) {
 		return false, fmt.Errorf("vm is not attached to this gpu")
 	}
 
-	if gpu.Lease.User != userID {
+	if gpu.Lease.UserID != userID {
 		return false, fmt.Errorf("vm is not attached to this user")
 	}
 
