@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"go-deploy/models"
+	"go-deploy/models/job"
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/intializer"
@@ -21,6 +22,10 @@ func setup(context *app.Context) {
 	conf.SetupEnvironment()
 
 	models.Setup()
+	err := job.ResetProcessingJobs()
+	if err != nil {
+		log.Fatalln("failed to reset processing jobs. details: ", err)
+	}
 
 	confirmers.Setup(context)
 	status_updaters.Setup(context)

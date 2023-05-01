@@ -106,3 +106,15 @@ func FailJob(jobID string, errorLogs []string) error {
 
 	return nil
 }
+
+func ResetProcessingJobs() error {
+	filter := bson.D{{"status", "processing"}}
+	update := bson.D{{"$set", bson.D{{"status", "pending"}}}}
+
+	_, err := models.JobCollection.UpdateMany(context.Background(), filter, update)
+	if err != nil {
+		return fmt.Errorf("failed to update job. details: %s", err)
+	}
+
+	return nil
+}
