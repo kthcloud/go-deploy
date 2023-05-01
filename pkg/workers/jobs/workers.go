@@ -25,6 +25,11 @@ func jobFetcher(ctx *app.Context) {
 		switch job.Type {
 		case "createDeployment":
 			go createDeployment(job)
+		case "deleteDeployment":
+			go deleteDeployment(job)
+		}
+	}
+}
 
 func failedJobFetcher(ctx *app.Context) {
 	for {

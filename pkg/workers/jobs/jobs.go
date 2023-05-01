@@ -38,6 +38,24 @@ func createDeployment(job *jobModel.Job) {
 	_ = jobModel.CompleteJob(job.ID)
 }
 
+func deleteDeployment(job *jobModel.Job) {
+	err := assertParameters(job, []string{"name"})
+	if err != nil {
+		_ = jobModel.FailJob(job.ID, []string{err.Error()})
+		return
+	}
+
+	name := job.Args["name"].(string)
+
+	err = deployment_service.Delete(name)
+	if err != nil {
+		_ = jobModel.FailJob(job.ID, []string{err.Error()})
+		return
+	}
+
+	_ = jobModel.CompleteJob(job.ID)
+}
+
 func Setup(ctx *app.Context) {
 	log.Println("starting job workers")
 	go jobFetcher(ctx)
