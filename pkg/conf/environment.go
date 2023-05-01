@@ -57,7 +57,7 @@ type Environment struct {
 	} `yaml:"db"`
 
 	CS struct {
-		Url    string `yaml:"url"`
+		URL    string `yaml:"url"`
 		ApiKey string `yaml:"apiKey"`
 		Secret string `yaml:"secret"`
 	} `yaml:"cs"`
@@ -139,7 +139,7 @@ func setupK8sClusters() error {
 	log.Println("fetching available k8s clusters")
 
 	csClient := cloudstack.NewAsyncClient(
-		Env.CS.Url,
+		Env.CS.URL,
 		Env.CS.ApiKey,
 		Env.CS.Secret,
 		true,
