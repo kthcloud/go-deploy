@@ -271,7 +271,13 @@ func Delete(c *gin.Context) {
 		_ = deployment_service.MarkBeingDeleted(currentDeployment.ID)
 	}
 
-	deployment_service.Delete(currentDeployment.Name)
+	err = job_service.Create(uuid.New().String(), userID, jobModel.JobDeleteDeployment, map[string]interface{}{
+		"name": currentDeployment.Name,
+	})
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		return
+	}
 
 	context.OkDeleted()
 }
