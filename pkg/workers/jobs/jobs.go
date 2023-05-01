@@ -41,4 +41,5 @@ func createDeployment(job *jobModel.Job) {
 func Setup(ctx *app.Context) {
 	log.Println("starting job workers")
 	go jobFetcher(ctx)
+	go failedJobFetcher(ctx)
 }

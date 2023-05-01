@@ -26,6 +26,32 @@ func jobFetcher(ctx *app.Context) {
 		case "createDeployment":
 			go createDeployment(job)
 
+func failedJobFetcher(ctx *app.Context) {
+	for {
+		if ctx.Stop {
+			break
+		}
+
+		time.Sleep(30 * time.Second)
+
+		job, err := jobModel.GetNextFailedJob()
+		if err != nil {
+			continue
+		}
+
+		if job == nil {
+			continue
+		}
+
+		switch job.Type {
+		case "createVm":
+			go createVM(job)
+		case "deleteVm":
+			go deleteVM(job)
+		case "createDeployment":
+			go createDeployment(job)
+		case "deleteDeployment":
+			go deleteDeployment(job)
 		}
 	}
 }

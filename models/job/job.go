@@ -83,6 +83,20 @@ func GetNextJob() (*Job, error) {
 	return &job, nil
 }
 
+func GetNextFailedJob() (*Job, error) {
+	filter := bson.D{{"status", "failed"}}
+	opts := options.FindOneAndUpdate().SetSort(bson.D{{"createdAt", -1}})
+	update := bson.D{{"$set", bson.D{{"status", "processing"}}}}
+
+	var job Job
+	err := models.JobCollection.FindOneAndUpdate(context.TODO(), filter, update, opts).Decode(&job)
+	if err != nil {
+		return nil, err
+	}
+
+	return &job, nil
+}
+
 func CompleteJob(jobID string) error {
 	filter := bson.D{{"id", jobID}}
 	update := bson.D{{"$set", bson.D{{"status", "completed"}}}}
