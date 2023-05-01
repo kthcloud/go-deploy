@@ -135,6 +135,21 @@ func AttachGPU(c *gin.Context) {
 			context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, "GPU not found")
 			return
 		}
+
+		if gpu.Lease.VmID == "" {
+			// we still need to check if the gpu is available since the database is not guaranteed to know
+			available, err := vm_service.IsGpuAvailable(gpu)
+			if err != nil {
+				context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+				return
+			}
+
+			if !available {
+				context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotAvailable, "GPU not available")
+				return
+			}
+		}
+
 	}
 
 	vm_service.AttachGPU(gpu.ID, current.ID, userID)

@@ -115,9 +115,28 @@ func GetAllGPUs() ([]GPU, error) {
 	return gpus, nil
 }
 
-func GetAllLeasedGPUs() ([]GPU, error) {
+func GetAllLeasedGPUs(excludedHosts, excludedGPUs []string) ([]GPU, error) {
+	// return gpus that are leased
+	if excludedHosts == nil {
+		excludedHosts = make([]string, 0)
+	}
+
+	if excludedGPUs == nil {
+		excludedGPUs = make([]string, 0)
+	}
+
+	// filter lease exist and vmId is not empty
+	filter := bson.D{
+		{"$and", []interface{}{
+			bson.M{"lease.vmId": bson.M{"$ne": ""}},
+			bson.M{"lease": bson.M{"$exists": true}},
+		}},
+		{"host", bson.M{"$nin": excludedHosts}},
+		{"id", bson.M{"$nin": excludedGPUs}},
+	}
+
 	var gpus []GPU
-	cursor, err := models.GpuCollection.Find(context.Background(), bson.D{{"lease.vmId", bson.M{"$ne": ""}}})
+	cursor, err := models.GpuCollection.Find(context.Background(), filter)
 	if err != nil {
 		return nil, err
 	}

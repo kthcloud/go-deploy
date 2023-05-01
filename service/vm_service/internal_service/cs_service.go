@@ -430,7 +430,7 @@ func IsGpuAttachedCS(host string, bus string) (bool, error) {
 	}
 
 	for _, vm := range vms.VirtualMachines {
-		if vm.Details != nil {
+		if vm.Details != nil && vm.Hostname == host {
 			extraConfig, ok := vm.Details["extraconfig-1"]
 			if ok {
 				if strings.Contains(extraConfig, fmt.Sprintf("bus='0x%s'", bus)) {

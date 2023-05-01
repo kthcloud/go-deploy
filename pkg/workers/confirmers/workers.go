@@ -3,11 +3,13 @@ package confirmers
 import (
 	deploymentModel "go-deploy/models/deployment"
 	vmModel "go-deploy/models/vm"
+	"go-deploy/pkg/conf"
 
 	"go-deploy/pkg/app"
-	"go.mongodb.org/mongo-driver/bson"
 	"log"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func deploymentConfirmer(ctx *app.Context) {
@@ -60,6 +62,22 @@ func vmConfirmer(ctx *app.Context) {
 				_ = vmModel.DeleteByID(vm.ID, vm.OwnerID)
 			}
 		}
+
+		excludedHosts := conf.Env.GPU.ExcludedHosts
+
+		// check if gpu lease is expired
+		leased, _ := vmModel.GetAllLeasedGPUs(excludedHosts, nil)
+		for _, gpu := range leased {
+			if gpu.Lease.End.Before(time.Now()) {
+				log.Printf("lease for gpu %s (%s) ran out, returning it...\n", gpu.ID, gpu.Data.Name)
+
+				err := ReturnGPU(&gpu)
+				if err != nil {
+					log.Printf("error returning gpu %s (%s): %s\n", gpu.ID, gpu.Data.Name, err.Error())
+				}
+			}
+		}
+
 		time.Sleep(5 * time.Second)
 	}
 }

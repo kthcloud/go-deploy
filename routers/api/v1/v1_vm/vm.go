@@ -2,8 +2,6 @@ package v1_vm
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"go-deploy/models/dto"
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
@@ -11,9 +9,13 @@ import (
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/user_info_service"
 	"go-deploy/service/vm_service"
-	"golang.org/x/crypto/ssh"
+	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"golang.org/x/crypto/ssh"
 )
 
 func getAllVMs(context *app.ClientContext) {
@@ -29,9 +31,13 @@ func getAllVMs(context *app.ClientContext) {
 
 		var gpuRead *dto.GpuRead
 		if vm.GpuID != "" {
-			gpu, _ := vm_service.GetGpuByID(vm.GpuID, true)
-			gpuDTO := gpu.ToDto()
-			gpuRead = &gpuDTO
+			gpu, err := vm_service.GetGpuByID(vm.GpuID, true)
+			if err != nil {
+				log.Printf("error getting gpu by id: %s", err)
+			} else if gpu != nil {
+				gpuDTO := gpu.ToDto()
+				gpuRead = &gpuDTO
+			}
 		}
 
 		dtoVMs[i] = vm.ToDto(vm.StatusMessage, connectionString, gpuRead)
@@ -79,9 +85,13 @@ func GetList(c *gin.Context) {
 
 		var gpuRead *dto.GpuRead
 		if vm.GpuID != "" {
-			gpu, _ := vm_service.GetGpuByID(vm.GpuID, true)
-			gpuDTO := gpu.ToDto()
-			gpuRead = &gpuDTO
+			gpu, err := vm_service.GetGpuByID(vm.GpuID, true)
+			if err != nil {
+				log.Printf("error getting gpu by id: %s", err)
+			} else if gpu != nil {
+				gpuDTO := gpu.ToDto()
+				gpuRead = &gpuDTO
+			}
 		}
 
 		dtoVMs[i] = vm.ToDto(vm.StatusMessage, connectionString, gpuRead)
@@ -122,9 +132,13 @@ func Get(c *gin.Context) {
 	connectionString, _ := vm_service.GetConnectionString(vm)
 	var gpuRead *dto.GpuRead
 	if vm.GpuID != "" {
-		gpu, _ := vm_service.GetGpuByID(vm.GpuID, true)
-		gpuDTO := gpu.ToDto()
-		gpuRead = &gpuDTO
+		gpu, err := vm_service.GetGpuByID(vm.GpuID, true)
+		if err != nil {
+			log.Printf("error getting gpu by id: %s", err)
+		} else if gpu != nil {
+			gpuDTO := gpu.ToDto()
+			gpuRead = &gpuDTO
+		}
 	}
 
 	context.JSONResponse(200, vm.ToDto(vm.StatusMessage, connectionString, gpuRead))
