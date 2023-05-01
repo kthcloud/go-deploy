@@ -155,7 +155,7 @@ func (client *Client) DeleteService(namespace, id string) error {
 	}
 
 	if !namespaceCreated {
-		return makeError(fmt.Errorf("no such namespace %s", namespace))
+		return nil
 	}
 
 	list, err := client.K8sClient.CoreV1().Services(namespace).List(context.TODO(), metav1.ListOptions{})

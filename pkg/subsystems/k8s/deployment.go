@@ -158,7 +158,7 @@ func (client *Client) DeleteDeployment(namespace, id string) error {
 	}
 
 	if !namespaceCreated {
-		return makeError(fmt.Errorf("no such namespace %s", namespace))
+		return nil
 	}
 
 	list, err := client.K8sClient.AppsV1().Deployments(namespace).List(context.TODO(), metav1.ListOptions{})
