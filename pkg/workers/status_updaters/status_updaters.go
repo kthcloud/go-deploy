@@ -44,7 +44,7 @@ func fetchCsStatus(vm *vm.VM) (int, string, error) {
 	var statusCode int
 	switch status {
 	case "Starting":
-		statusCode = status_codes.ResourceUnknown
+		statusCode = status_codes.ResourceStarting
 	case "Running":
 		statusCode = status_codes.ResourceRunning
 	case "Stopping":
