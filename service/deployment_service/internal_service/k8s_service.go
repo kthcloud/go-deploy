@@ -95,7 +95,7 @@ func CreateK8s(name, userID string) (*K8sResult, error) {
 	// Deployment
 	var k8sDeployment *k8sModels.DeploymentPublic
 	if deployment.Subsystems.K8s.Deployment.ID == "" {
-		dockerRegistryProject := subsystemutils.GetPrefixedName(name)
+		dockerRegistryProject := subsystemutils.GetPrefixedName(userID)
 		dockerImage := fmt.Sprintf("%s/%s/%s", conf.Env.DockerRegistry.Url, dockerRegistryProject, name)
 
 		id, err := client.CreateDeployment(createDeploymentPublic(namespace.FullName, name, dockerImage, []k8sModels.EnvVar{
