@@ -67,6 +67,10 @@ func CreateK8s(name, userID string) (*K8sResult, error) {
 		return nil, makeError(err)
 	}
 
+	if deployment == nil {
+		return nil, nil
+	}
+
 	// Namespace
 	var namespace *k8sModels.NamespacePublic
 	if deployment.Subsystems.K8s.Namespace.ID == "" {
@@ -95,7 +99,7 @@ func CreateK8s(name, userID string) (*K8sResult, error) {
 	// Deployment
 	var k8sDeployment *k8sModels.DeploymentPublic
 	if deployment.Subsystems.K8s.Deployment.ID == "" {
-		dockerRegistryProject := subsystemutils.GetPrefixedName(name)
+		dockerRegistryProject := subsystemutils.GetPrefixedName(userID)
 		dockerImage := fmt.Sprintf("%s/%s/%s", conf.Env.DockerRegistry.Url, dockerRegistryProject, name)
 
 		id, err := client.CreateDeployment(createDeploymentPublic(namespace.FullName, name, dockerImage, []k8sModels.EnvVar{
@@ -170,6 +174,10 @@ func DeleteK8s(name string) error {
 	deployment, err := deploymentModel.GetByName(name)
 	if err != nil {
 		return makeError(err)
+	}
+
+	if deployment == nil {
+		return nil
 	}
 
 	if deployment.Subsystems.K8s.Service.ID != "" {

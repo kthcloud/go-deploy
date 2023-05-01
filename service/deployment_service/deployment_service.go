@@ -1,39 +1,38 @@
 package deployment_service
 
 import (
+	"fmt"
 	deploymentModel "go-deploy/models/deployment"
 	"go-deploy/service/deployment_service/internal_service"
 	"go.mongodb.org/mongo-driver/bson"
-	"log"
 )
 
-func Create(deploymentID, name, owner string) {
-	go func() {
-		err := deploymentModel.CreateDeployment(deploymentID, name, owner)
-		if err != nil {
-			log.Println(err)
-			return
-		}
+func Create(deploymentID, name, ownerID string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to create deployment. details: %s", err)
+	}
 
-		err = internal_service.CreateHarbor(name, owner)
-		if err != nil {
-			log.Println(err)
-			return
-		}
+	err := deploymentModel.CreateDeployment(deploymentID, name, ownerID)
+	if err != nil {
+		return makeError(err)
+	}
 
-		k8sResult, err := internal_service.CreateK8s(name, owner)
-		if err != nil {
-			log.Println(err)
-			return
-		}
+	err = internal_service.CreateHarbor(name, ownerID)
+	if err != nil {
+		return makeError(err)
+	}
 
-		err = internal_service.CreateNPM(name, k8sResult.Service.GetFQDN())
-		if err != nil {
-			log.Println(err)
-			return
-		}
+	k8sResult, err := internal_service.CreateK8s(name, ownerID)
+	if err != nil {
+		return makeError(err)
+	}
 
-	}()
+	err = internal_service.CreateNPM(name, k8sResult.Service.GetFQDN())
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
 }
 
 func GetByID(userId, deploymentID string, isAdmin bool) (*deploymentModel.Deployment, error) {
@@ -84,26 +83,27 @@ func MarkBeingDeleted(deploymentID string) error {
 	}})
 }
 
-func Delete(name string) {
-	go func() {
-		err := internal_service.DeleteHarbor(name)
-		if err != nil {
-			log.Println(err)
-			return
-		}
+func Delete(name string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to delete deployment. details: %s", err)
+	}
 
-		err = internal_service.DeleteNPM(name)
-		if err != nil {
-			log.Println(err)
-			return
-		}
+	err := internal_service.DeleteHarbor(name)
+	if err != nil {
+		return makeError(err)
+	}
 
-		err = internal_service.DeleteK8s(name)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-	}()
+	err = internal_service.DeleteNPM(name)
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = internal_service.DeleteK8s(name)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
 }
 
 func Restart(name string) error {

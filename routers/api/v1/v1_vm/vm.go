@@ -3,10 +3,12 @@ package v1_vm
 import (
 	"fmt"
 	"go-deploy/models/dto"
+	jobModel "go-deploy/models/job"
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
 	"go-deploy/pkg/validator"
 	v1 "go-deploy/routers/api/v1"
+	"go-deploy/service/job_service"
 	"go-deploy/service/user_info_service"
 	"go-deploy/service/vm_service"
 	"log"
@@ -40,7 +42,7 @@ func getAllVMs(context *app.ClientContext) {
 			}
 		}
 
-		dtoVMs[i] = vm.ToDto(vm.StatusMessage, connectionString, gpuRead)
+		dtoVMs[i] = vm.ToDTO(vm.StatusMessage, connectionString, gpuRead)
 	}
 
 	context.JSONResponse(http.StatusOK, dtoVMs)
@@ -94,7 +96,7 @@ func GetList(c *gin.Context) {
 			}
 		}
 
-		dtoVMs[i] = vm.ToDto(vm.StatusMessage, connectionString, gpuRead)
+		dtoVMs[i] = vm.ToDTO(vm.StatusMessage, connectionString, gpuRead)
 	}
 
 	context.JSONResponse(200, dtoVMs)
@@ -122,7 +124,11 @@ func Get(c *gin.Context) {
 	userID := token.Sub
 	isAdmin := v1.IsAdmin(&context)
 
-	vm, _ := vm_service.GetByID(userID, vmID, isAdmin)
+	vm, err := vm_service.GetByID(userID, vmID, isAdmin)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		return
+	}
 
 	if vm == nil {
 		context.NotFound()
@@ -141,7 +147,7 @@ func Get(c *gin.Context) {
 		}
 	}
 
-	context.JSONResponse(200, vm.ToDto(vm.StatusMessage, connectionString, gpuRead))
+	context.JSONResponse(200, vm.ToDTO(vm.StatusMessage, connectionString, gpuRead))
 }
 
 func Create(c *gin.Context) {
@@ -219,8 +225,23 @@ func Create(c *gin.Context) {
 			context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingDeleted, "Resource is currently being deleted")
 			return
 		}
-		vm_service.Create(vm.ID, requestBody.Name, requestBody.SshPublicKey, userID)
-		context.JSONResponse(http.StatusCreated, dto.VmCreated{ID: vm.ID})
+
+		jobID := uuid.New().String()
+		err = job_service.Create(jobID, userID, jobModel.TypeCreateVM, map[string]interface{}{
+			"id":           vm.ID,
+			"name":         requestBody.Name,
+			"sshPublicKey": requestBody.SshPublicKey,
+			"ownerId":      userID,
+		})
+		if err != nil {
+			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+			return
+		}
+
+		context.JSONResponse(http.StatusCreated, dto.VmCreated{
+			ID:    vm.ID,
+			JobID: jobID,
+		})
 		return
 	}
 
@@ -236,8 +257,18 @@ func Create(c *gin.Context) {
 	}
 
 	vmID := uuid.New().String()
-	vm_service.Create(vmID, requestBody.Name, requestBody.SshPublicKey, userID)
-	context.JSONResponse(http.StatusCreated, dto.VmCreated{ID: vmID})
+	jobID := uuid.New().String()
+	err = job_service.Create(jobID, userID, jobModel.TypeCreateVM, map[string]interface{}{
+		"id":           vmID,
+		"name":         requestBody.Name,
+		"sshPublicKey": requestBody.SshPublicKey,
+		"ownerId":      userID,
+	})
+
+	context.JSONResponse(http.StatusCreated, dto.VmCreated{
+		ID:    vmID,
+		JobID: jobID,
+	})
 }
 
 func Delete(c *gin.Context) {
@@ -285,9 +316,15 @@ func Delete(c *gin.Context) {
 		_ = vm_service.MarkBeingDeleted(current.ID)
 	}
 
-	vm_service.Delete(current.Name)
+	jobID := uuid.New().String()
+	err = job_service.Create(jobID, userID, jobModel.TypeDeleteVM, map[string]interface{}{
+		"name": current.Name,
+	})
 
-	context.OkDeleted()
+	context.JSONResponse(http.StatusOK, dto.VmDeleted{
+		ID:    current.ID,
+		JobID: jobID,
+	})
 }
 
 func isValidSshPublicKey(key string) bool {

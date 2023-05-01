@@ -25,6 +25,11 @@ var MsgFlags = map[int]string{
 	ResourceStopped:  "resourceStopped",
 	ResourceError:    "resourceError",
 
+	JobPending:  "jobPending",
+	JobRunning:  "jobRunning",
+	JobFailed:   "jobFailed",
+	JobFinished: "jobFinished",
+
 	ResourceValidationFailed: "resourceValidationFailed",
 }
 

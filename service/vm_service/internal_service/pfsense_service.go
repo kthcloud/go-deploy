@@ -36,6 +36,10 @@ func CreatePfSense(name string, vmIP net.IP) (*psModels.PortForwardingRulePublic
 		return nil, makeError(err)
 	}
 
+	if vm == nil {
+		return nil, nil
+	}
+
 	var portForwardingRule *psModels.PortForwardingRulePublic
 
 	if vm.Subsystems.PfSense.PortForwardingRule.ID != "" {

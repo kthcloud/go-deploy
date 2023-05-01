@@ -46,6 +46,13 @@ func CreateNPM(name, forwardHost string) error {
 	}
 
 	deployment, err := deploymentModel.GetByName(name)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if deployment == nil {
+		return nil
+	}
 
 	if deployment.Subsystems.Npm.ProxyHost.ID == 0 {
 		certificateID, err := client.GetWildcardCertificateID(conf.Env.App.ParentDomain)
@@ -88,6 +95,13 @@ func DeleteNPM(name string) error {
 	}
 
 	deployment, err := deploymentModel.GetByName(name)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if deployment == nil {
+		return nil
+	}
 
 	if deployment.Subsystems.Npm.ProxyHost.ID == 0 {
 		return nil

@@ -65,7 +65,7 @@ func CreateGPU(id, host string, data GpuData) error {
 		return nil
 	}
 
-	vm := GPU{
+	gpu := GPU{
 		ID:   id,
 		Host: host,
 		Lease: GpuLease{
@@ -76,7 +76,7 @@ func CreateGPU(id, host string, data GpuData) error {
 		Data: data,
 	}
 
-	_, err = models.GpuCollection.InsertOne(context.TODO(), vm)
+	_, err = models.GpuCollection.InsertOne(context.TODO(), gpu)
 	if err != nil {
 		err = fmt.Errorf("failed to create gpu. details: %s", err)
 		return err
@@ -93,7 +93,7 @@ func GetGpuByID(id string) (*GPU, error) {
 			return nil, nil
 		}
 
-		err = fmt.Errorf("failed to fetch vm. details: %s", err)
+		err = fmt.Errorf("failed to fetch gpu. details: %s", err)
 		return nil, err
 	}
 

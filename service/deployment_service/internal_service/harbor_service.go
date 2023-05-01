@@ -73,6 +73,10 @@ func CreateHarbor(name, userID string) error {
 		return makeError(err)
 	}
 
+	if deployment == nil {
+		return nil
+	}
+
 	// Project
 	var project *harborModels.ProjectPublic
 	if deployment.Subsystems.Harbor.Project.ID == 0 {
@@ -174,6 +178,13 @@ func DeleteHarbor(name string) error {
 	}
 
 	deployment, err := deploymentModel.GetByName(name)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if deployment == nil {
+		return nil
+	}
 
 	if deployment.Subsystems.Harbor.Webhook.ID != 0 {
 		err = deploymentModel.UpdateSubsystemByName(name, "harbor", "webhook", harborModels.WebhookPublic{})

@@ -161,6 +161,10 @@ func (client *Client) DeleteProxyHost(id int) error {
 		return makeError(err)
 	}
 
+	if res.StatusCode == http.StatusNotFound {
+		return nil
+	}
+
 	if !requestutils.IsGoodStatusCode(res.StatusCode) {
 		return makeApiError(res.Body, makeError)
 	}

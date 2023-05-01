@@ -6,11 +6,13 @@ import (
 	"github.com/google/uuid"
 	deploymentModels "go-deploy/models/deployment"
 	"go-deploy/models/dto"
+	jobModel "go-deploy/models/job"
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
 	"go-deploy/pkg/validator"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/deployment_service"
+	"go-deploy/service/job_service"
 	"go-deploy/service/user_info_service"
 	"net/http"
 	"strconv"
@@ -180,8 +182,21 @@ func Create(c *gin.Context) {
 			context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingDeleted, "Resource is currently being deleted")
 			return
 		}
-		deployment_service.Create(deployment.ID, requestBody.Name, userID)
-		context.JSONResponse(http.StatusCreated, dto.DeploymentCreated{ID: deployment.ID})
+		jobID := uuid.New().String()
+		err = job_service.Create(jobID, userID, jobModel.TypeCreateDeployment, map[string]interface{}{
+			"id":      deployment.ID,
+			"name":    requestBody.Name,
+			"ownerId": userID,
+		})
+		if err != nil {
+			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+			return
+		}
+
+		context.JSONResponse(http.StatusCreated, dto.DeploymentCreated{
+			ID:    deployment.ID,
+			JobID: jobID,
+		})
 		return
 	}
 
@@ -197,8 +212,22 @@ func Create(c *gin.Context) {
 	}
 
 	deploymentID := uuid.New().String()
-	deployment_service.Create(deploymentID, requestBody.Name, userID)
-	context.JSONResponse(http.StatusCreated, dto.DeploymentCreated{ID: deploymentID})
+	jobID := uuid.New().String()
+	err = job_service.Create(jobID, userID, jobModel.TypeCreateDeployment, map[string]interface{}{
+		"id":      deploymentID,
+		"name":    requestBody.Name,
+		"ownerId": userID,
+	})
+
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		return
+	}
+
+	context.JSONResponse(http.StatusCreated, dto.DeploymentCreated{
+		ID:    deploymentID,
+		JobID: jobID,
+	})
 }
 
 func Delete(c *gin.Context) {
@@ -246,7 +275,17 @@ func Delete(c *gin.Context) {
 		_ = deployment_service.MarkBeingDeleted(currentDeployment.ID)
 	}
 
-	deployment_service.Delete(currentDeployment.Name)
+	jobID := uuid.New().String()
+	err = job_service.Create(jobID, userID, jobModel.TypeDeleteDeployment, map[string]interface{}{
+		"name": currentDeployment.Name,
+	})
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		return
+	}
 
-	context.OkDeleted()
+	context.JSONResponse(http.StatusOK, dto.DeploymentDeleted{
+		ID:    currentDeployment.ID,
+		JobID: jobID,
+	})
 }

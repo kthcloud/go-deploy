@@ -4,34 +4,33 @@ import (
 	"fmt"
 	vmModel "go-deploy/models/vm"
 	"go-deploy/pkg/conf"
-	"go-deploy/pkg/status_codes"
 	"go-deploy/service/vm_service/internal_service"
 	"log"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func Create(vmID, name, sshPublicKey, owner string) {
-	go func() {
-		err := vmModel.Create(vmID, name, sshPublicKey, owner, conf.Env.Manager)
-		if err != nil {
-			log.Println(err)
-			return
-		}
+func Create(vmID, name, sshPublicKey, owner string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to create vm. details: %s", err)
+	}
 
-		csResult, err := internal_service.CreateCS(name, sshPublicKey)
-		if err != nil {
-			log.Println(err)
-			return
-		}
+	err := vmModel.Create(vmID, name, sshPublicKey, owner, conf.Env.Manager)
+	if err != nil {
+		return makeError(err)
+	}
 
-		_, err = internal_service.CreatePfSense(name, csResult.PublicIpAddress.IpAddress)
-		if err != nil {
-			log.Println(err)
-			return
-		}
+	csResult, err := internal_service.CreateCS(name, sshPublicKey)
+	if err != nil {
+		return makeError(err)
+	}
 
-	}()
+	_, err = internal_service.CreatePfSense(name, csResult.PublicIpAddress.IpAddress)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
 }
 
 func GetByID(userID, vmID string, isAdmin bool) (*vmModel.VM, error) {
@@ -69,37 +68,36 @@ func MarkBeingDeleted(vmID string) error {
 	}})
 }
 
-func Delete(name string) {
-	go func() {
-		vm, err := vmModel.GetByName(name)
-		if err != nil {
-			log.Println(err)
-			return
-		}
+func Delete(name string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to delete vm. details: %s", err)
+	}
 
-		err = internal_service.DeleteCS(name)
-		if err != nil {
-			log.Println(err)
-			return
-		}
+	vm, err := vmModel.GetByName(name)
+	if err != nil {
+		return makeError(err)
+	}
 
-		detached, err := vmModel.DetachGPU(vm.ID, vm.OwnerID)
-		if err != nil {
-			log.Println(err)
-			return
-		}
+	err = internal_service.DeleteCS(name)
+	if err != nil {
+		return makeError(err)
+	}
 
-		if !detached {
-			log.Println("gpu was not detached from vm", vm.ID)
-			return
-		}
+	detached, err := vmModel.DetachGPU(vm.ID, vm.OwnerID)
+	if err != nil {
+		return makeError(err)
+	}
 
-		err = internal_service.DeletePfSense(name)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-	}()
+	if !detached {
+		return makeError(fmt.Errorf("failed to detach gpu from vm"))
+	}
+
+	err = internal_service.DeletePfSense(name)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
 }
 
 func GetConnectionString(vm *vmModel.VM) (string, error) {
@@ -109,26 +107,6 @@ func GetConnectionString(vm *vmModel.VM) (string, error) {
 	connectionString := fmt.Sprintf("ssh cloud@%s -p %d", domainName, port)
 
 	return connectionString, nil
-}
-
-func GetStatus(vm *vmModel.VM) (int, string, error) {
-	csStatusCode, csStatusMsg, err := internal_service.GetStatusCS(vm.Name)
-
-	if err != nil {
-		log.Println(err)
-	}
-
-	if err != nil || csStatusCode == status_codes.ResourceUnknown || csStatusCode == status_codes.ResourceNotFound {
-		if vm.BeingDeleted {
-			return status_codes.ResourceBeingDeleted, status_codes.GetMsg(status_codes.ResourceBeingDeleted), nil
-		}
-
-		if vm.BeingCreated {
-			return status_codes.ResourceBeingCreated, status_codes.GetMsg(status_codes.ResourceBeingCreated), nil
-		}
-	}
-
-	return csStatusCode, csStatusMsg, nil
 }
 
 func DoCommand(vm *vmModel.VM, command string) {

@@ -44,7 +44,7 @@ type PfSense struct {
 	PortForwardingRule psModels.PortForwardingRulePublic `bson:"portForwardingRule"`
 }
 
-func (vm *VM) ToDto(status, connectionString string, gpu *dto.GpuRead) dto.VmRead {
+func (vm *VM) ToDTO(status, connectionString string, gpu *dto.GpuRead) dto.VmRead {
 
 	var vmGpu *dto.VmGpu
 	if gpu != nil {
