@@ -23,6 +23,10 @@ func jobFetcher(ctx *app.Context) {
 		}
 
 		switch job.Type {
+		case "createVm":
+			go createVM(job)
+		case "deleteVm":
+			go deleteVM(job)
 		case "createDeployment":
 			go createDeployment(job)
 		case "deleteDeployment":

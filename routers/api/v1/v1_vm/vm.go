@@ -3,10 +3,12 @@ package v1_vm
 import (
 	"fmt"
 	"go-deploy/models/dto"
+	jobModel "go-deploy/models/job"
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
 	"go-deploy/pkg/validator"
 	v1 "go-deploy/routers/api/v1"
+	"go-deploy/service/job_service"
 	"go-deploy/service/user_info_service"
 	"go-deploy/service/vm_service"
 	"log"
@@ -219,7 +221,19 @@ func Create(c *gin.Context) {
 			context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingDeleted, "Resource is currently being deleted")
 			return
 		}
-		vm_service.Create(vm.ID, requestBody.Name, requestBody.SshPublicKey, userID)
+
+		jobID := uuid.New().String()
+		err = job_service.Create(jobID, userID, jobModel.JobCreateVM, map[string]interface{}{
+			"id":           vm.ID,
+			"name":         requestBody.Name,
+			"sshPublicKey": requestBody.SshPublicKey,
+			"ownerId":      userID,
+		})
+		if err != nil {
+			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+			return
+		}
+
 		context.JSONResponse(http.StatusCreated, dto.VmCreated{ID: vm.ID})
 		return
 	}
@@ -236,7 +250,14 @@ func Create(c *gin.Context) {
 	}
 
 	vmID := uuid.New().String()
-	vm_service.Create(vmID, requestBody.Name, requestBody.SshPublicKey, userID)
+	jobID := uuid.New().String()
+	err = job_service.Create(jobID, userID, jobModel.JobCreateVM, map[string]interface{}{
+		"id":           vmID,
+		"name":         requestBody.Name,
+		"sshPublicKey": requestBody.SshPublicKey,
+		"ownerId":      userID,
+	})
+
 	context.JSONResponse(http.StatusCreated, dto.VmCreated{ID: vmID})
 }
 
@@ -285,7 +306,10 @@ func Delete(c *gin.Context) {
 		_ = vm_service.MarkBeingDeleted(current.ID)
 	}
 
-	vm_service.Delete(current.Name)
+	jobID := uuid.New().String()
+	err = job_service.Create(jobID, userID, jobModel.JobDeleteVM, map[string]interface{}{
+		"name": current.Name,
+	})
 
 	context.OkDeleted()
 }
