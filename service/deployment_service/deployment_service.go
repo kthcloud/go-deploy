@@ -5,7 +5,6 @@ import (
 	deploymentModel "go-deploy/models/deployment"
 	"go-deploy/service/deployment_service/internal_service"
 	"go.mongodb.org/mongo-driver/bson"
-	"log"
 )
 
 func Create(deploymentID, name, ownerID string) error {
@@ -84,26 +83,27 @@ func MarkBeingDeleted(deploymentID string) error {
 	}})
 }
 
-func Delete(name string) {
-	go func() {
-		err := internal_service.DeleteHarbor(name)
-		if err != nil {
-			log.Println(err)
-			return
-		}
+func Delete(name string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to delete deployment. details: %s", err)
+	}
 
-		err = internal_service.DeleteNPM(name)
-		if err != nil {
-			log.Println(err)
-			return
-		}
+	err := internal_service.DeleteHarbor(name)
+	if err != nil {
+		return makeError(err)
+	}
 
-		err = internal_service.DeleteK8s(name)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-	}()
+	err = internal_service.DeleteNPM(name)
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = internal_service.DeleteK8s(name)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
 }
 
 func Restart(name string) error {
