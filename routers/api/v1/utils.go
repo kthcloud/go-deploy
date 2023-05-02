@@ -70,6 +70,8 @@ func msgForTag(fe validator.FieldError) string {
 		return "Must be true or false"
 	case "alphanum":
 		return "Must be alphanumeric"
+	case "uuid4":
+		return "Must be a valid UUIDv4"
 	}
 	return fe.Error()
 }

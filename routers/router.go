@@ -70,6 +70,6 @@ func setupJobRoutes(base *gin.RouterGroup, _ *gin.RouterGroup) {
 func setupUserRoutes(base *gin.RouterGroup, _ *gin.RouterGroup) {
 	base.GET("/users/:userId", v1_user.Get)
 	base.GET("/users", v1_user.GetList)
-	base.POST("/users", v1_user.Update)
 	base.POST("/users/:userId", v1_user.Update)
+	base.POST("/users", v1_user.Update)
 }

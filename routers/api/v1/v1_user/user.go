@@ -122,19 +122,15 @@ func Get(c *gin.Context) {
 func Update(c *gin.Context) {
 	context := app.NewContext(c)
 
-	rules := validator.MapData{
-		"userId": []string{"uuid_v4"},
-	}
-
-	validationErrors := context.ValidateParams(&rules)
-
-	if len(validationErrors) > 0 {
-		context.ResponseValidationError(validationErrors)
+	var params dto.UserUpdateParams
+	err := context.GinContext.ShouldBindUri(&params)
+	if err != nil {
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&params, err))
 		return
 	}
 
 	var userUpdate dto.UserUpdate
-	err := context.GinContext.ShouldBindJSON(&userUpdate)
+	err = context.GinContext.ShouldBindJSON(&userUpdate)
 	if err != nil {
 		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&userUpdate, err))
 		return
