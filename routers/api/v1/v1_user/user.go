@@ -9,6 +9,7 @@ import (
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/user_service"
 	"net/http"
+	"strconv"
 )
 
 func GetList(c *gin.Context) {
@@ -25,7 +26,7 @@ func GetList(c *gin.Context) {
 	}
 
 	isAdmin := v1.IsAdmin(&context)
-	wantAll := context.GinContext.Query("all") == "true"
+	wantAll, _ := strconv.ParseBool(context.GinContext.Query("all"))
 	if isAdmin && wantAll {
 		users, err := user_service.GetAll()
 		if err != nil {
