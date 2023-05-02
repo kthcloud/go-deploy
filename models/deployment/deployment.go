@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go-deploy/models"
 	"go-deploy/models/dto/body"
+	"go-deploy/pkg/status_codes"
 	harborModels "go-deploy/pkg/subsystems/harbor/models"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	npmModels "go-deploy/pkg/subsystems/npm/models"
@@ -78,11 +79,13 @@ func CreateDeployment(deploymentID, name, ownerID string) error {
 	}
 
 	deployment := Deployment{
-		ID:           deploymentID,
-		Name:         name,
-		OwnerID:      ownerID,
-		BeingCreated: true,
-		BeingDeleted: false,
+		ID:            deploymentID,
+		Name:          name,
+		OwnerID:       ownerID,
+		BeingCreated:  true,
+		BeingDeleted:  false,
+		StatusCode:    status_codes.ResourceBeingCreated,
+		StatusMessage: status_codes.GetMsg(status_codes.ResourceBeingCreated),
 	}
 
 	_, err = models.DeploymentCollection.InsertOne(context.TODO(), deployment)
