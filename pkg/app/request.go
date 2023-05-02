@@ -14,7 +14,7 @@ func (context *ClientContext) ValidateJSONCustomMessages(rules *validator.MapDat
 		Request:         context.GinContext.Request,
 		Context:         context.GinContext,
 		Rules:           *rules,
-		RequiredDefault: true,
+		RequiredDefault: false,
 		Messages:        *messages,
 		Data:            output,
 	}
@@ -55,7 +55,7 @@ func (context *ClientContext) ValidateParamsCustomMessages(rules *validator.MapD
 		Request:         context.GinContext.Request,
 		Context:         context.GinContext,
 		Rules:           *rules,
-		RequiredDefault: true,
+		RequiredDefault: false,
 		Messages:        *messages,
 	}
 

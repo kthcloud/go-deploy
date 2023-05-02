@@ -17,7 +17,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"golang.org/x/crypto/ssh"
 )
 
 func getAllVMs(context *app.ClientContext) {
@@ -203,7 +202,7 @@ func Create(c *gin.Context) {
 		return
 	}
 
-	validKey := isValidSshPublicKey(requestBody.SshPublicKey)
+	validKey := v1.IsValidSshPublicKey(requestBody.SshPublicKey)
 	if !validKey {
 		context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceValidationFailed, "Invalid SSH public key")
 		return
@@ -324,12 +323,4 @@ func Delete(c *gin.Context) {
 		ID:    current.ID,
 		JobID: jobID,
 	})
-}
-
-func isValidSshPublicKey(key string) bool {
-	_, _, _, _, err := ssh.ParseAuthorizedKey([]byte(key))
-	if err != nil {
-		return false
-	}
-	return true
 }

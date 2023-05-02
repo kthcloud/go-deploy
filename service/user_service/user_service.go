@@ -1,6 +1,7 @@
 package user_service
 
 import (
+	"go-deploy/models/dto"
 	userModel "go-deploy/models/user"
 	"go-deploy/pkg/auth"
 )
@@ -37,4 +38,28 @@ func GetOrCreate(token *auth.KeycloakToken) (*userModel.User, error) {
 
 func GetAll() ([]userModel.User, error) {
 	return userModel.GetAll()
+}
+
+func Update(requestedUserID, userID string, isAdmin bool, dtoUserUpdate dto.UserUpdate) error {
+	if !isAdmin && requestedUserID != userID {
+		return nil
+	}
+
+	userUpdate := &userModel.UserUpdate{
+		Username:   dtoUserUpdate.Username,
+		Email:      dtoUserUpdate.Email,
+		PublicKeys: dtoUserUpdate.PublicKeys,
+	}
+
+	if isAdmin {
+		userUpdate.VmQuota = dtoUserUpdate.VmQuota
+		userUpdate.DeploymentQuota = dtoUserUpdate.DeploymentQuota
+	}
+
+	err := userModel.Update(requestedUserID, userUpdate)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -157,10 +157,14 @@ func (v *Validator) internalValidateStruct() url.Values {
 	nr := v.getNonRequiredJSONFields(r.getFlatMap())
 
 	for field, rules := range v.Opts.Rules {
-		if _, ok := nr[field]; ok {
-			continue
-		}
 		value, _ := r.getFlatVal(field)
+		if value == nil {
+			// if we don't have a value, but the field is not required, skip it
+			if _, ok := nr[field]; ok {
+				continue
+			}
+		}
+
 		for _, rule := range rules {
 			if !isRuleExist(rule) {
 				panic(fmt.Errorf("govalidator: %s is not a valid rule", rule))

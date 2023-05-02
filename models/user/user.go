@@ -8,6 +8,7 @@ import (
 	"go-deploy/pkg/conf"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"reflect"
 )
 
 type User struct {
@@ -22,14 +23,22 @@ type User struct {
 }
 
 func (u *User) ToDTO() dto.UserRead {
-	return dto.UserRead{
-		ID:         u.ID,
-		Username:   u.Username,
-		Email:      u.Email,
-		Admin:      u.IsAdmin,
-		PowerUser:  u.IsPowerUser,
-		PublicKeys: u.PublicKeys,
+	userRead := dto.UserRead{
+		ID:              u.ID,
+		Username:        u.Username,
+		Email:           u.Email,
+		Admin:           u.IsAdmin,
+		VmQuota:         u.VmQuota,
+		DeploymentQuota: u.DeploymentQuota,
+		PowerUser:       u.IsPowerUser,
+		PublicKeys:      u.PublicKeys,
 	}
+
+	if userRead.PublicKeys == nil {
+		userRead.PublicKeys = []string{}
+	}
+
+	return userRead
 }
 
 func Create(id, username string) error {
@@ -89,4 +98,35 @@ func GetAll() ([]User, error) {
 	}
 
 	return users, nil
+}
+
+func Update(userID string, update *UserUpdate) error {
+	updateData := bson.M{}
+
+	addIfNotNil(updateData, "username", update.Username)
+	addIfNotNil(updateData, "email", update.Email)
+	addIfNotNil(updateData, "vmQuota", update.VmQuota)
+	addIfNotNil(updateData, "deploymentQuota", update.DeploymentQuota)
+	addIfNotNil(updateData, "publicKeys", update.PublicKeys)
+
+	if len(updateData) == 0 {
+		return nil
+	}
+
+	filter := bson.D{{"id", userID}}
+	updateDoc := bson.D{{"$set", updateData}}
+
+	_, err := models.UserCollection.UpdateOne(context.Background(), filter, updateDoc)
+	if err != nil {
+		return fmt.Errorf("failed to update user info for %s. details: %s", userID, err)
+	}
+
+	return nil
+}
+
+func addIfNotNil(data bson.M, key string, value interface{}) {
+	if value == nil || (reflect.ValueOf(value).Kind() == reflect.Ptr && reflect.ValueOf(value).IsNil()) {
+		return
+	}
+	data[key] = value
 }

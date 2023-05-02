@@ -137,6 +137,35 @@ func (r *roller) traverseStruct(iface interface{}) {
 					if v.CanInterface() {
 						r.traverseMap(v.Interface())
 					}
+				case reflect.Slice:
+					if v.CanInterface() {
+						r.push(rfv.Name, v.Interface())
+					}
+				case reflect.String:
+					if v.CanInterface() {
+						r.push(rfv.Name, v.Interface())
+					}
+				case reflect.Int:
+					if v.CanInterface() {
+						r.push(rfv.Name, v.Interface())
+					}
+				case reflect.Int64:
+					if v.CanInterface() {
+						r.push(rfv.Name, v.Interface())
+					}
+				case reflect.Float32:
+					if v.CanInterface() {
+						r.push(rfv.Name, v.Interface())
+					}
+				case reflect.Float64:
+					if v.CanInterface() {
+						r.push(rfv.Name, v.Interface())
+					}
+				case reflect.Bool:
+					if v.CanInterface() {
+						r.push(rfv.Name, v.Interface())
+					}
+
 				}
 			}
 		default:

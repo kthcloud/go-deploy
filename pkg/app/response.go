@@ -22,10 +22,6 @@ func (context *ClientContext) ResponseValidationError(errors map[string][]string
 	context.GinContext.JSON(400, validationErrorResponse{ValidationErrors: errors})
 }
 
-func (context *ClientContext) MultiErrorResponse(httpCode int, errors []errorPiece) {
-	context.GinContext.JSON(httpCode, errorResponse{Errors: errors})
-}
-
 func (context *ClientContext) ErrorResponse(httpCode int, errCode int, message string) {
 	errors := []errorPiece{{Code: deployApiErrors.GetMsg(errCode), Msg: message}}
 	context.GinContext.JSON(httpCode, errorResponse{Errors: errors})
