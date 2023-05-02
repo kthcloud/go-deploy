@@ -20,7 +20,7 @@ func vmStatusUpdater(ctx *app.Context) {
 			if err != nil {
 				continue
 			}
-			_ = vmModel.UpdateByID(vm.ID, bson.D{{"statusCode", code}, {"statusMessage", message}})
+			_ = vmModel.UpdateWithBsonByID(vm.ID, bson.D{{"statusCode", code}, {"statusMessage", message}})
 		}
 
 		time.Sleep(1 * time.Second)

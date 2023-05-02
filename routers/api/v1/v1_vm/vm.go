@@ -270,3 +270,73 @@ func Delete(c *gin.Context) {
 		JobID: jobID,
 	})
 }
+
+func Update(c *gin.Context) {
+	context := app.NewContext(c)
+
+	var requestURI uri.VmUpdate
+	if err := context.GinContext.BindUri(&requestURI); err != nil {
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestURI, err))
+		return
+	}
+
+	var requestBody body.VmUpdate
+	if err := context.GinContext.BindJSON(&requestBody); err != nil {
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestBody, err))
+		return
+	}
+
+	auth, err := v1.WithAuth(&context)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
+		return
+	}
+
+	current, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, fmt.Sprintf("Failed to get vm: %s", err))
+		return
+	}
+
+	if current == nil {
+		context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, fmt.Sprintf("VM with id %s not found", requestURI.VmID))
+		return
+	}
+
+	if current.BeingCreated {
+		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingCreated, "Resource is currently being created")
+		return
+	}
+
+	if current.BeingDeleted {
+		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingDeleted, "Resource is currently being deleted")
+		return
+	}
+
+	if current.OwnerID != auth.UserID && !auth.IsAdmin {
+		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, "User is not allowed to update this vm")
+		return
+	}
+
+	err = vm_service.Update(current.ID, &requestBody)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to update vm: %s", err))
+		return
+	}
+
+	jobID := uuid.New().String()
+	err = job_service.Create(jobID, auth.UserID, jobModel.TypeUpdateVM, map[string]interface{}{
+		"id":     current.ID,
+		"update": requestBody,
+	})
+
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to create job: %s", err))
+		return
+	}
+
+	context.JSONResponse(http.StatusOK, body.VmUpdated{
+		ID:    current.ID,
+		JobID: jobID,
+	})
+}

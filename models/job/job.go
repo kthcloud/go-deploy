@@ -14,8 +14,10 @@ import (
 const (
 	TypeCreateVM         = "createVm"
 	TypeDeleteVM         = "deleteVm"
+	TypeUpdateVM         = "updateVm"
 	TypeCreateDeployment = "createDeployment"
 	TypeDeleteDeployment = "deleteDeployment"
+	TypeUpdateDeployment = "updateDeployment"
 )
 
 const (

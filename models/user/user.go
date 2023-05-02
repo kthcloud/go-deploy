@@ -8,7 +8,6 @@ import (
 	"go-deploy/pkg/conf"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"reflect"
 )
 
 type User struct {
@@ -103,11 +102,11 @@ func GetAll() ([]User, error) {
 func Update(userID string, update *UserUpdate) error {
 	updateData := bson.M{}
 
-	addIfNotNil(updateData, "username", update.Username)
-	addIfNotNil(updateData, "email", update.Email)
-	addIfNotNil(updateData, "vmQuota", update.VmQuota)
-	addIfNotNil(updateData, "deploymentQuota", update.DeploymentQuota)
-	addIfNotNil(updateData, "publicKeys", update.PublicKeys)
+	models.AddIfNotNil(updateData, "username", update.Username)
+	models.AddIfNotNil(updateData, "email", update.Email)
+	models.AddIfNotNil(updateData, "vmQuota", update.VmQuota)
+	models.AddIfNotNil(updateData, "deploymentQuota", update.DeploymentQuota)
+	models.AddIfNotNil(updateData, "publicKeys", update.PublicKeys)
 
 	if len(updateData) == 0 {
 		return nil
@@ -122,11 +121,4 @@ func Update(userID string, update *UserUpdate) error {
 	}
 
 	return nil
-}
-
-func addIfNotNil(data bson.M, key string, value interface{}) {
-	if value == nil || (reflect.ValueOf(value).Kind() == reflect.Ptr && reflect.ValueOf(value).IsNil()) {
-		return
-	}
-	data[key] = value
 }

@@ -50,7 +50,7 @@ func vmConfirmer(ctx *app.Context) {
 			created := VmCreated(&vm)
 			if created {
 				log.Printf("marking vm %s as created\n", vm.Name)
-				_ = vmModel.UpdateByID(vm.ID, bson.D{{"beingCreated", false}})
+				_ = vmModel.UpdateWithBsonByID(vm.ID, bson.D{{"beingCreated", false}})
 			}
 		}
 

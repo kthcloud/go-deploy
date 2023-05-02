@@ -2,6 +2,7 @@ package jobs
 
 import (
 	"fmt"
+	"go-deploy/models/dto/body"
 	jobModel "go-deploy/models/job"
 	"go-deploy/pkg/app"
 	"go-deploy/service/deployment_service"
@@ -58,6 +59,25 @@ func deleteVM(job *jobModel.Job) {
 	_ = jobModel.MarkCompleted(job.ID)
 }
 
+func updateVM(job *jobModel.Job) {
+	err := assertParameters(job, []string{"name", "update"})
+	if err != nil {
+		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+		return
+	}
+
+	name := job.Args["name"].(string)
+	update := job.Args["update"].(body.VmUpdate)
+
+	err = vm_service.Update(name, &update)
+	if err != nil {
+		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+		return
+	}
+
+	_ = jobModel.MarkCompleted(job.ID)
+}
+
 func createDeployment(job *jobModel.Job) {
 	err := assertParameters(job, []string{"id", "name", "ownerId"})
 	if err != nil {
@@ -92,6 +112,25 @@ func deleteDeployment(job *jobModel.Job) {
 		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
 		return
 	}
+
+	_ = jobModel.MarkCompleted(job.ID)
+}
+
+func updateDeployment(job *jobModel.Job) {
+	err := assertParameters(job, []string{"name", "update"})
+	if err != nil {
+		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+		return
+	}
+
+	//name := job.Args["name"].(string)
+	//update := job.Args["update"].(body.DeploymentUpdate)
+	//
+	//err = deployment_service.Update(name, &update)
+	//if err != nil {
+	//	_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+	//	return
+	//}
 
 	_ = jobModel.MarkCompleted(job.ID)
 }

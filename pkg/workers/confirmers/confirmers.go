@@ -73,9 +73,11 @@ func HarborDeleted(deployment *deployment.Deployment) (bool, error) {
 func CSCreated(vm *vm.VM) (bool, error) {
 	cs := &vm.Subsystems.CS
 
+	_, hasSshRule := cs.PortForwardingRuleMap["ssh"]
+
 	return cs.VM.ID != "" &&
 		cs.PublicIpAddress.ID != "" &&
-		cs.PortForwardingRule.ID != "", nil
+		hasSshRule, nil
 }
 
 func CSDeleted(vm *vm.VM) (bool, error) {
@@ -83,19 +85,21 @@ func CSDeleted(vm *vm.VM) (bool, error) {
 
 	return cs.VM.ID == "" &&
 		cs.PublicIpAddress.ID == "" &&
-		cs.PortForwardingRule.ID == "", nil
+		len(cs.PortForwardingRuleMap) == 0, nil
 }
 
 func PfSenseCreated(vm *vm.VM) (bool, error) {
 	pfSense := &vm.Subsystems.PfSense
 
-	return pfSense.PortForwardingRule.ID != "", nil
+	_, hasSshRule := pfSense.PortForwardingRuleMap["ssh"]
+
+	return hasSshRule, nil
 }
 
 func PfSenseDeleted(vm *vm.VM) (bool, error) {
 	pfSense := &vm.Subsystems.PfSense
 
-	return pfSense.PortForwardingRule.ID == "", nil
+	return len(pfSense.PortForwardingRuleMap) == 0, nil
 }
 
 func Setup(ctx *app.Context) {

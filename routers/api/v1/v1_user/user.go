@@ -153,7 +153,7 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	err = user_service.Update(requestedUserID, auth.UserID, auth.IsAdmin, userUpdate)
+	err = user_service.Update(requestedUserID, auth.UserID, auth.IsAdmin, &userUpdate)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to update user: %s", err))
 		return
