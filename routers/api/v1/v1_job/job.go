@@ -41,7 +41,7 @@ func Get(c *gin.Context) {
 	}
 
 	if job == nil {
-		context.NotFound()
+		context.ErrorResponse(http.StatusNotFound, status_codes.Error, fmt.Sprintf("Job with id %s not found", jobID))
 		return
 	}
 

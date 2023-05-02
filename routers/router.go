@@ -7,6 +7,7 @@ import (
 	"go-deploy/pkg/auth"
 	"go-deploy/routers/api/v1/v1_deployment"
 	"go-deploy/routers/api/v1/v1_job"
+	"go-deploy/routers/api/v1/v1_user"
 	"go-deploy/routers/api/v1/v1_vm"
 )
 
@@ -29,6 +30,7 @@ func NewRouter() *gin.Engine {
 	setupVmRoutes(apiv1, apiv1Hook)
 	setupGpuRoutes(apiv1, apiv1Hook)
 	setupJobRoutes(apiv1, apiv1Hook)
+	setupUserRoutes(apiv1, apiv1Hook)
 
 	return router
 }
@@ -43,7 +45,6 @@ func setupDeploymentRoutes(base *gin.RouterGroup, hooks *gin.RouterGroup) {
 	base.DELETE("/deployments/:deploymentId", v1_deployment.Delete)
 
 	hooks.POST("/deployments/harbor", v1_deployment.HandleHarborHook)
-
 }
 
 func setupVmRoutes(base *gin.RouterGroup, _ *gin.RouterGroup) {
@@ -64,4 +65,9 @@ func setupGpuRoutes(base *gin.RouterGroup, _ *gin.RouterGroup) {
 
 func setupJobRoutes(base *gin.RouterGroup, _ *gin.RouterGroup) {
 	base.GET("/jobs/:jobId", v1_job.Get)
+}
+
+func setupUserRoutes(base *gin.RouterGroup, _ *gin.RouterGroup) {
+	base.GET("/users/:userId", v1_user.Get)
+	base.GET("/users", v1_user.GetList)
 }

@@ -28,12 +28,12 @@ func GetGpuList(c *gin.Context) {
 	}
 
 	onlyAvailable := context.GinContext.Query("available") == "true"
-	isGpuUser := v1.IsGpuUser(&context)
+	isPowerUser := v1.IsPowerUser(&context)
 
 	var gpus []vm.GPU
 	var err error
 
-	gpus, err = vm_service.GetAllGPUs(onlyAvailable, isGpuUser)
+	gpus, err = vm_service.GetAllGPUs(onlyAvailable, isPowerUser)
 
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
@@ -79,7 +79,7 @@ func AttachGPU(c *gin.Context) {
 	}
 
 	isAdmin := v1.IsAdmin(&context)
-	isGpuUser := v1.IsGpuUser(&context)
+	isPowerUser := v1.IsPowerUser(&context)
 
 	current, err := vm_service.GetByID(userID, vmID, isAdmin)
 	if err != nil {
@@ -114,7 +114,7 @@ func AttachGPU(c *gin.Context) {
 
 	var gpu *vm.GPU
 	if gpuID == "any" {
-		gpu, err = vm_service.GetAnyAvailableGPU(isGpuUser)
+		gpu, err = vm_service.GetAnyAvailableGPU(isPowerUser)
 		if err != nil {
 			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 			return
@@ -125,7 +125,7 @@ func AttachGPU(c *gin.Context) {
 			return
 		}
 	} else {
-		gpu, err = vm_service.GetGpuByID(gpuID, isGpuUser)
+		gpu, err = vm_service.GetGpuByID(gpuID, isPowerUser)
 		if err != nil {
 			context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 			return

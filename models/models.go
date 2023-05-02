@@ -14,7 +14,7 @@ import (
 var DeploymentCollection *mongo.Collection
 var VmCollection *mongo.Collection
 var GpuCollection *mongo.Collection
-var UserInfoCollection *mongo.Collection
+var UserCollection *mongo.Collection
 var JobCollection *mongo.Collection
 
 var client *mongo.Client
@@ -49,7 +49,7 @@ func Setup() {
 	DeploymentCollection = findCollection("deployments")
 	VmCollection = findCollection("vms")
 	GpuCollection = findCollection("gpus")
-	UserInfoCollection = findCollection("userInfo")
+	UserCollection = findCollection("users")
 	JobCollection = findCollection("jobs")
 }
 
@@ -67,7 +67,7 @@ func Shutdown() {
 	DeploymentCollection = nil
 	VmCollection = nil
 	GpuCollection = nil
-	UserInfoCollection = nil
+	UserCollection = nil
 	JobCollection = nil
 
 	err := client.Disconnect(context.Background())

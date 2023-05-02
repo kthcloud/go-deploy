@@ -45,10 +45,10 @@ type Environment struct {
 	} `yaml:"vm"`
 
 	Keycloak struct {
-		Url        string `yaml:"url"`
-		Realm      string `yaml:"realm"`
-		AdminGroup string `yaml:"adminGroup"`
-		GpuGroup   string `yaml:"gpuGroup"`
+		Url            string `yaml:"url"`
+		Realm          string `yaml:"realm"`
+		AdminGroup     string `yaml:"adminGroup"`
+		PowerUserGroup string `yaml:"powerUserGroup"`
 	} `yaml:"keycloak"`
 
 	DB struct {

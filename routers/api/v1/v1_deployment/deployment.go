@@ -13,7 +13,7 @@ import (
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/deployment_service"
 	"go-deploy/service/job_service"
-	"go-deploy/service/user_info_service"
+	"go-deploy/service/user_service"
 	"net/http"
 	"strconv"
 )
@@ -134,10 +134,10 @@ func Create(c *gin.Context) {
 
 	messages := validator.MapData{
 		"name": []string{
-			"required:Name is required",
-			"regexp:Name must follow RFC 1035 and must not include any dots",
-			"min:Name must be between 3-30 characters",
-			"max:Name must be between 3-30 characters",
+			"required:Username is required",
+			"regexp:Username must follow RFC 1035 and must not include any dots",
+			"min:Username must be between 3-30 characters",
+			"max:Username must be between 3-30 characters",
 		},
 	}
 
@@ -154,7 +154,10 @@ func Create(c *gin.Context) {
 		return
 	}
 
-	userInfo, err := user_info_service.GetByToken(token)
+	userID := token.Sub
+	_ = v1.IsAdmin(&context)
+
+	userInfo, err := user_service.GetOrCreate(token)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
@@ -164,8 +167,6 @@ func Create(c *gin.Context) {
 		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, "User is not allowed to create deployments")
 		return
 	}
-
-	userID := token.Sub
 
 	exists, deployment, err := deployment_service.Exists(requestBody.Name)
 	if err != nil {
