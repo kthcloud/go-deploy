@@ -2,13 +2,13 @@ package deployment_service
 
 import (
 	"go-deploy/models/deployment"
-	"go-deploy/models/dto"
+	bodyDto "go-deploy/models/dto/body"
 	"go-deploy/utils/requestutils"
 	"io"
 	"log"
 )
 
-func GetHook(body io.ReadCloser) (*dto.HarborWebhook, error) {
+func GetHook(body io.ReadCloser) (*bodyDto.HarborWebhook, error) {
 	readBody, err := requestutils.ReadBody(body)
 	if err != nil {
 		return nil, err
@@ -16,7 +16,7 @@ func GetHook(body io.ReadCloser) (*dto.HarborWebhook, error) {
 
 	log.Println(string(readBody))
 
-	var webhook = dto.HarborWebhook{}
+	var webhook = bodyDto.HarborWebhook{}
 	err = requestutils.ParseJson(readBody, &webhook)
 	if err != nil {
 		return nil, err

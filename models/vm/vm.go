@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"go-deploy/models"
-	"go-deploy/models/dto"
+	"go-deploy/models/dto/body"
 	"go-deploy/pkg/status_codes"
 	csModels "go-deploy/pkg/subsystems/cs/models"
 	psModels "go-deploy/pkg/subsystems/pfsense/models"
@@ -44,18 +44,18 @@ type PfSense struct {
 	PortForwardingRule psModels.PortForwardingRulePublic `bson:"portForwardingRule"`
 }
 
-func (vm *VM) ToDTO(status, connectionString string, gpu *dto.GpuRead) dto.VmRead {
+func (vm *VM) ToDTO(status, connectionString string, gpu *body.GpuRead) body.VmRead {
 
-	var vmGpu *dto.VmGpu
+	var vmGpu *body.VmGpu
 	if gpu != nil {
-		vmGpu = &dto.VmGpu{
+		vmGpu = &body.VmGpu{
 			ID:       gpu.ID,
 			Name:     gpu.Name,
 			LeaseEnd: gpu.Lease.End,
 		}
 	}
 
-	return dto.VmRead{
+	return body.VmRead{
 		ID:               vm.ID,
 		Name:             vm.Name,
 		SshPublicKey:     vm.SshPublicKey,

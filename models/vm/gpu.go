@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/goharbor/harbor/src/lib/log"
 	"go-deploy/models"
-	"go-deploy/models/dto"
+	"go-deploy/models/dto/body"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -35,20 +35,20 @@ type GPU struct {
 	Data  GpuData  `bson:"data" json:"data"`
 }
 
-func (gpu *GPU) ToDto() dto.GpuRead {
+func (gpu *GPU) ToDto() body.GpuRead {
 	id := base64.StdEncoding.EncodeToString([]byte(gpu.ID))
 
-	var lease *dto.GpuLease
+	var lease *body.GpuLease
 
 	if gpu.Lease.VmID != "" {
-		lease = &dto.GpuLease{
+		lease = &body.GpuLease{
 			VmID: gpu.Lease.VmID,
 			User: gpu.Lease.UserID,
 			End:  gpu.Lease.End,
 		}
 	}
 
-	return dto.GpuRead{
+	return body.GpuRead{
 		ID:    id,
 		Name:  gpu.Data.Name,
 		Lease: lease,
@@ -100,9 +100,22 @@ func GetGpuByID(id string) (*GPU, error) {
 	return &gpu, err
 }
 
-func GetAllGPUs() ([]GPU, error) {
+func GetAllGPUs(excludedHosts, excludedGPUs []string) ([]GPU, error) {
+	if excludedHosts == nil {
+		excludedHosts = make([]string, 0)
+	}
+
+	if excludedGPUs == nil {
+		excludedGPUs = make([]string, 0)
+	}
+
+	filter := bson.D{
+		{"host", bson.M{"$nin": excludedHosts}},
+		{"id", bson.M{"$nin": excludedGPUs}},
+	}
+
 	var gpus []GPU
-	cursor, err := models.GpuCollection.Find(context.Background(), bson.D{})
+	cursor, err := models.GpuCollection.Find(context.Background(), filter)
 	if err != nil {
 		return nil, err
 	}

@@ -4,11 +4,12 @@ import (
 	"encoding/base64"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"go-deploy/models/dto"
+	"go-deploy/models/dto/body"
+	"go-deploy/models/dto/query"
+	"go-deploy/models/dto/uri"
 	"go-deploy/models/vm"
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
-	"go-deploy/pkg/validator"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/vm_service"
 	"net/http"
@@ -17,30 +18,25 @@ import (
 func GetGpuList(c *gin.Context) {
 	context := app.NewContext(c)
 
-	rules := validator.MapData{
-		"available": []string{"bool"},
-	}
-
-	validationErrors := context.ValidateQueryParams(&rules)
-	if len(validationErrors) > 0 {
-		context.ResponseValidationError(validationErrors)
+	var requestQuery query.GpuList
+	if err := context.GinContext.Bind(&requestQuery); err != nil {
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestQuery, err))
 		return
 	}
 
-	onlyAvailable := context.GinContext.Query("available") == "true"
-	isGpuUser := v1.IsGpuUser(&context)
+	auth, err := v1.WithAuth(&context)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
+		return
+	}
 
-	var gpus []vm.GPU
-	var err error
-
-	gpus, err = vm_service.GetAllGPUs(onlyAvailable, isGpuUser)
-
+	gpus, err := vm_service.GetAllGPUs(requestQuery.OnlyShowAvailable, auth.IsAdmin)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
 	}
 
-	dtoGPUs := make([]dto.GpuRead, len(gpus))
+	dtoGPUs := make([]body.GpuRead, len(gpus))
 	for i, gpu := range gpus {
 		dtoGPUs[i] = gpu.ToDto()
 	}
@@ -51,44 +47,32 @@ func GetGpuList(c *gin.Context) {
 func AttachGPU(c *gin.Context) {
 	context := app.NewContext(c)
 
-	rules := validator.MapData{
-		"vmId": []string{
-			"required",
-			"uuid_v4",
-		},
-		"gpuId": []string{},
-	}
-
-	validationErrors := context.ValidateParams(&rules)
-	if len(validationErrors) > 0 {
-		context.ResponseValidationError(validationErrors)
+	var requestURI uri.GpuAttach
+	if err := context.GinContext.BindUri(&requestURI); err != nil {
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestURI, err))
 		return
 	}
 
-	token, err := context.GetKeycloakToken()
+	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
 		return
 	}
-	userID := token.Sub
-	vmID := context.GinContext.Param("vmId")
-	gpuID, err := getGpuID(&context)
+
+	gpuID, err := getGpuID(&requestURI)
 	if err != nil {
 		context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceValidationFailed, "Invalid GPU ID")
 		return
 	}
 
-	isAdmin := v1.IsAdmin(&context)
-	isGpuUser := v1.IsGpuUser(&context)
-
-	current, err := vm_service.GetByID(userID, vmID, isAdmin)
+	current, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return
 	}
 
 	if current == nil {
-		context.NotFound()
+		context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, fmt.Sprintf("VM with ID %s not found", requestURI.VmID))
 		return
 	}
 
@@ -114,7 +98,7 @@ func AttachGPU(c *gin.Context) {
 
 	var gpu *vm.GPU
 	if gpuID == "any" {
-		gpu, err = vm_service.GetAnyAvailableGPU(isGpuUser)
+		gpu, err = vm_service.GetAnyAvailableGPU(auth.IsPowerUser)
 		if err != nil {
 			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 			return
@@ -125,7 +109,7 @@ func AttachGPU(c *gin.Context) {
 			return
 		}
 	} else {
-		gpu, err = vm_service.GetGpuByID(gpuID, isGpuUser)
+		gpu, err = vm_service.GetGpuByID(gpuID, auth.IsPowerUser)
 		if err != nil {
 			context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 			return
@@ -152,7 +136,7 @@ func AttachGPU(c *gin.Context) {
 
 	}
 
-	vm_service.AttachGPU(gpu.ID, current.ID, userID)
+	vm_service.AttachGPU(gpu.ID, current.ID, auth.UserID)
 
 	// the returned gpu might not actually get attached, but it will work in most cases
 	context.JSONResponse(http.StatusCreated, gpu.ToDto())
@@ -161,36 +145,21 @@ func AttachGPU(c *gin.Context) {
 func DetachGPU(c *gin.Context) {
 	context := app.NewContext(c)
 
-	rules := validator.MapData{
-		"vmId": []string{
-			"required",
-			"uuid_v4",
-		},
-	}
-
-	validationErrors := context.ValidateParams(&rules)
-	if len(validationErrors) > 0 {
-		context.ResponseValidationError(validationErrors)
+	var requestURI uri.GpuDetach
+	if err := context.GinContext.BindUri(&requestURI); err != nil {
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestURI, err))
 		return
 	}
 
-	token, err := context.GetKeycloakToken()
+	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
-		return
-	}
-	userID := token.Sub
-	vmID := context.GinContext.Param("vmId")
-	if err != nil {
-		context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceValidationFailed, "Invalid GPU ID")
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
 		return
 	}
 
-	isAdmin := v1.IsAdmin(&context)
-
-	current, err := vm_service.GetByID(userID, vmID, isAdmin)
+	current, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, fmt.Sprintf("Failed to get VM: %s", err))
 		return
 	}
 
@@ -214,7 +183,7 @@ func DetachGPU(c *gin.Context) {
 		return
 	}
 
-	vm_service.DetachGPU(current.ID, userID)
+	vm_service.DetachGPU(current.ID, auth.UserID)
 
 	context.OkDeleted()
 }
@@ -227,11 +196,10 @@ func decodeGpuID(gpuID string) (string, error) {
 	return string(res), nil
 }
 
-func getGpuID(context *app.ClientContext) (string, error) {
-	gpuID := context.GinContext.Param("gpuId")
-	if gpuID == "" {
+func getGpuID(requestURI *uri.GpuAttach) (string, error) {
+	if requestURI.GpuID == "" {
 		return "any", nil
 	}
 
-	return decodeGpuID(gpuID)
+	return decodeGpuID(requestURI.GpuID)
 }

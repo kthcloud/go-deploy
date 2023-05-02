@@ -1576,7 +1576,7 @@ func (s *VolumeService) NewGetVolumeiScsiNameParams(volumeid string) *GetVolumei
 	return p
 }
 
-// Get Volume's iSCSI Name
+// Get Volume's iSCSI Username
 func (s *VolumeService) GetVolumeiScsiName(p *GetVolumeiScsiNameParams) (*GetVolumeiScsiNameResponse, error) {
 	resp, err := s.cs.newRequest("getVolumeiScsiName", p.toURLValues())
 	if err != nil {

@@ -3,10 +3,10 @@ package v1_vm
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"go-deploy/models/dto"
+	"go-deploy/models/dto/body"
+	"go-deploy/models/dto/uri"
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
-	"go-deploy/pkg/validator"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/vm_service"
 	"net/http"
@@ -15,50 +15,32 @@ import (
 func DoCommand(c *gin.Context) {
 	context := app.NewContext(c)
 
-	rules := validator.MapData{
-		"vmId": []string{
-			"required",
-			"uuid_v4",
-		},
-	}
-
-	bodyRules := validator.MapData{
-		"command": []string{
-			"required",
-			"in:start,stop,reboot",
-		},
-	}
-
-	validationErrors := context.ValidateParams(&rules)
-	if len(validationErrors) > 0 {
-		context.ResponseValidationError(validationErrors)
+	var requestURI uri.DoCommand
+	if err := context.GinContext.BindUri(&requestURI); err != nil {
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestURI, err))
 		return
 	}
 
-	var commandBody dto.VmCommand
-	validationErrors = context.ValidateJSON(&bodyRules, &commandBody)
-	if len(validationErrors) > 0 {
-		context.ResponseValidationError(validationErrors)
+	var requestBody body.DoCommand
+	if err := context.GinContext.BindJSON(&requestBody); err != nil {
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestBody, err))
 		return
 	}
 
-	token, err := context.GetKeycloakToken()
+	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
 		return
 	}
-	userID := token.Sub
-	vmID := context.GinContext.Param("vmId")
-	isAdmin := v1.IsAdmin(&context)
 
-	vm, err := vm_service.GetByID(userID, vmID, isAdmin)
+	vm, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return
 	}
 
 	if vm == nil {
-		context.NotFound()
+		context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, fmt.Sprintf("VM with id %s not found", requestURI.VmID))
 		return
 	}
 
@@ -72,7 +54,7 @@ func DoCommand(c *gin.Context) {
 		return
 	}
 
-	vm_service.DoCommand(vm, commandBody.Command)
+	vm_service.DoCommand(vm, requestBody.Command)
 
 	context.OkDeleted()
 }

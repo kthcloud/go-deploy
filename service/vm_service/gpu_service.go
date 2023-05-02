@@ -10,20 +10,19 @@ import (
 	"time"
 )
 
-// GetAllGPUs TODO: add filter for isGpuUser
-func GetAllGPUs(showOnlyAvailable bool, isGpuUser bool) ([]vmModel.GPU, error) {
+func GetAllGPUs(showOnlyAvailable bool, isPowerUser bool) ([]vmModel.GPU, error) {
 	var excludedGPUs []string
-	if !isGpuUser {
+	if !isPowerUser {
 		excludedGPUs = conf.Env.GPU.PrivilegedGPUs
 	}
 
 	if showOnlyAvailable {
 		return vmModel.GetAllAvailableGPUs(conf.Env.GPU.ExcludedHosts, excludedGPUs)
 	}
-	return vmModel.GetAllGPUs()
+	return vmModel.GetAllGPUs(conf.Env.GPU.ExcludedHosts, excludedGPUs)
 }
 
-func GetGpuByID(gpuID string, isGpuUser bool) (*vmModel.GPU, error) {
+func GetGpuByID(gpuID string, isPowerUser bool) (*vmModel.GPU, error) {
 	gpu, err := vmModel.GetGpuByID(gpuID)
 	if err != nil {
 		return nil, err
@@ -40,7 +39,7 @@ func GetGpuByID(gpuID string, isGpuUser bool) (*vmModel.GPU, error) {
 		}
 	}
 
-	if !isGpuUser {
+	if !isPowerUser {
 		// check if card is privileged
 		if isGpuPrivileged(gpu.Data.Name) {
 			return nil, nil
@@ -64,9 +63,9 @@ func IsGpuAvailable(gpu *vmModel.GPU) (bool, error) {
 	return true, nil
 }
 
-func GetAnyAvailableGPU(isGpuUser bool) (*vmModel.GPU, error) {
+func GetAnyAvailableGPU(isPowerUser bool) (*vmModel.GPU, error) {
 	var excludedGPUs []string
-	if !isGpuUser {
+	if !isPowerUser {
 		excludedGPUs = conf.Env.GPU.PrivilegedGPUs
 	}
 

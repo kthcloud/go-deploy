@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"go-deploy/models"
-	"go-deploy/models/dto"
+	"go-deploy/models/dto/body"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -35,12 +35,12 @@ type Job struct {
 	ErrorLogs []string               `bson:"errorLogs" json:"errorLogs"`
 }
 
-func (job *Job) ToDTO(statusMessage string) dto.JobRead {
+func (job *Job) ToDTO(statusMessage string) body.JobRead {
 	if job == nil {
-		return dto.JobRead{}
+		return body.JobRead{}
 	}
 
-	return dto.JobRead{
+	return body.JobRead{
 		ID:     job.ID,
 		UserID: job.UserID,
 		Type:   job.Type,
