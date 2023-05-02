@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"go-deploy/models/dto/uri"
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
-	"go-deploy/pkg/validator"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/deployment_service"
 	"log"
@@ -18,24 +18,17 @@ var upgrader = websocket.Upgrader{}
 func GetLogs(c *gin.Context) {
 	context := app.NewContext(c)
 
-	rules := validator.MapData{
-		"deploymentId": []string{"required", "uuid_v4"},
-	}
-
-	validationErrors := context.ValidateParams(&rules)
-
-	if len(validationErrors) > 0 {
-		context.ResponseValidationError(validationErrors)
+	var requestURI uri.LogsGet
+	if err := context.GinContext.BindUri(&requestURI); err != nil {
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestURI, err))
 		return
 	}
 
-	token, err := context.GetKeycloakToken()
+	auth, err := v1.WithAuth(&context)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		return
 	}
-	userID := token.Sub
-	deploymentID := context.GinContext.Param("deploymentId")
-	isAdmin := v1.IsAdmin(&context)
 
 	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
@@ -50,12 +43,12 @@ func GetLogs(c *gin.Context) {
 	handler := func(msg string) {
 		err = ws.WriteMessage(websocket.TextMessage, []byte(msg))
 		if err != nil {
-			fmt.Printf("failed to write websocket message for deployment %s (%s)", deploymentID, ws.RemoteAddr())
+			fmt.Printf("failed to write websocket message for deployment %s (%s)", requestURI.DeploymentID, ws.RemoteAddr())
 			_ = ws.Close()
 		}
 	}
 
-	logContext, getLogsErr := deployment_service.GetLogs(userID, deploymentID, handler, isAdmin)
+	logContext, getLogsErr := deployment_service.GetLogs(auth.UserID, requestURI.DeploymentID, handler, auth.IsAdmin)
 	if getLogsErr != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", getLogsErr))
 		return
@@ -73,7 +66,7 @@ func GetLogs(c *gin.Context) {
 			case websocket.CloseNormalClosure,
 				websocket.CloseGoingAway,
 				websocket.CloseNoStatusReceived:
-				log.Printf("closing websocket connection for deployment %s (%s)\n", deploymentID, ws.RemoteAddr())
+				log.Printf("closing websocket connection for deployment %s (%s)\n", requestURI.DeploymentID, ws.RemoteAddr())
 				return
 			}
 		}

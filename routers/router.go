@@ -3,12 +3,16 @@ package routers
 import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
+	"github.com/go-playground/validator/v10"
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/auth"
 	"go-deploy/routers/api/v1/v1_deployment"
 	"go-deploy/routers/api/v1/v1_job"
 	"go-deploy/routers/api/v1/v1_user"
 	"go-deploy/routers/api/v1/v1_vm"
+	"golang.org/x/crypto/ssh"
+	"regexp"
 )
 
 func NewRouter() *gin.Engine {
@@ -31,6 +35,8 @@ func NewRouter() *gin.Engine {
 	setupGpuRoutes(apiv1, apiv1Hook)
 	setupJobRoutes(apiv1, apiv1Hook)
 	setupUserRoutes(apiv1, apiv1Hook)
+
+	registerCustomValidators()
 
 	return router
 }
@@ -72,4 +78,41 @@ func setupUserRoutes(base *gin.RouterGroup, _ *gin.RouterGroup) {
 	base.GET("/users", v1_user.GetList)
 	base.POST("/users/:userId", v1_user.Update)
 	base.POST("/users", v1_user.Update)
+}
+
+func validateRfc1035(fl validator.FieldLevel) bool {
+	name, ok := fl.Field().Interface().(string)
+	if !ok {
+		return false
+	}
+
+	regex := regexp.MustCompile(`^[a-zA-Z]([a-zA-Z0-9-]*[a-zA-Z0-9])?([a-zA-Z]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$`)
+	return regex.MatchString(name)
+}
+
+func validateSshPublicKey(fl validator.FieldLevel) bool {
+	publicKey, ok := fl.Field().Interface().(string)
+	if !ok {
+		return false
+	}
+
+	_, _, _, _, err := ssh.ParseAuthorizedKey([]byte(publicKey))
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+func registerCustomValidators() {
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		err := v.RegisterValidation("rfc1035", validateRfc1035)
+		if err != nil {
+			panic(err)
+		}
+
+		err = v.RegisterValidation("ssh_public_key", validateSshPublicKey)
+		if err != nil {
+
+		}
+	}
 }

@@ -19,7 +19,7 @@ func GetAllGPUs(showOnlyAvailable bool, isPowerUser bool) ([]vmModel.GPU, error)
 	if showOnlyAvailable {
 		return vmModel.GetAllAvailableGPUs(conf.Env.GPU.ExcludedHosts, excludedGPUs)
 	}
-	return vmModel.GetAllGPUs()
+	return vmModel.GetAllGPUs(conf.Env.GPU.ExcludedHosts, excludedGPUs)
 }
 
 func GetGpuByID(gpuID string, isPowerUser bool) (*vmModel.GPU, error) {

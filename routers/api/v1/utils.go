@@ -4,12 +4,20 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/go-playground/validator/v10"
-	"go-deploy/models/dto"
+	"go-deploy/models/dto/body"
 	"go-deploy/pkg/app"
+	"go-deploy/pkg/auth"
 	"go-deploy/pkg/conf"
 	"golang.org/x/crypto/ssh"
 	"reflect"
 )
+
+type AuthInfo struct {
+	UserID      string              `json:"userId"`
+	JwtToken    *auth.KeycloakToken `json:"jwtToken"`
+	IsAdmin     bool                `json:"isAdmin"`
+	IsPowerUser bool                `json:"isPowerUser"`
+}
 
 func IsAdmin(context *app.ClientContext) bool {
 	return InGroup(context, conf.Env.Keycloak.AdminGroup)
@@ -32,6 +40,28 @@ func InGroup(context *app.ClientContext, group string) bool {
 	}
 
 	return false
+}
+
+func NilOrFalse(b *bool) bool {
+	if b == nil {
+		return false
+	}
+	return *b
+}
+
+func WithAuth(context *app.ClientContext) (*AuthInfo, error) {
+	token, err := context.GetKeycloakToken()
+	if err != nil {
+		return nil, err
+	}
+
+	return &AuthInfo{
+		UserID:      token.Sub,
+		JwtToken:    token,
+		IsAdmin:     IsAdmin(context),
+		IsPowerUser: IsPowerUser(context),
+	}, nil
+
 }
 
 func IsValidSshPublicKey(key string) bool {
@@ -72,12 +102,20 @@ func msgForTag(fe validator.FieldError) string {
 		return "Must be alphanumeric"
 	case "uuid4":
 		return "Must be a valid UUIDv4"
+	case "rfc1035":
+		return "Must be a valid hostname (RFC 1035)"
+	case "ssh_public_key":
+		return "Must be a valid SSH public key"
+	case "oneof":
+		return "Must be one of: " + fe.Param()
+	case "base64":
+		return "Must be a valid base64 encoded string"
 	}
 	return fe.Error()
 }
 
-func CreateBindingError(data interface{}, err error) *dto.BindingError {
-	out := &dto.BindingError{
+func CreateBindingError(data interface{}, err error) *body.BindingError {
+	out := &body.BindingError{
 		ValidationErrors: make(map[string][]string),
 	}
 
@@ -101,8 +139,8 @@ func CreateBindingError(data interface{}, err error) *dto.BindingError {
 	return out
 }
 
-func CreateBindingErrorFromString(fieldName, message string) *dto.BindingError {
-	out := &dto.BindingError{
+func CreateBindingErrorFromString(fieldName, message string) *body.BindingError {
+	out := &body.BindingError{
 		ValidationErrors: make(map[string][]string),
 	}
 

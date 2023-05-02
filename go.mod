@@ -6,6 +6,7 @@ require (
 	github.com/Nerzal/gocloak/v13 v13.3.0
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.9.0
+	github.com/go-playground/validator/v10 v10.13.0
 	github.com/goharbor/harbor/src v0.0.0-20230220075213-6015b3efa7d0
 	github.com/golang/glog v1.0.0
 	github.com/golang/mock v1.6.0
@@ -45,7 +46,6 @@ require (
 	github.com/go-openapi/validate v0.22.1 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
-	github.com/go-playground/validator/v10 v10.13.0 // indirect
 	github.com/go-resty/resty/v2 v2.7.0 // indirect
 	github.com/goccy/go-json v0.10.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect

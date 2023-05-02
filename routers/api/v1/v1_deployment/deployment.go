@@ -5,17 +5,17 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	deploymentModels "go-deploy/models/deployment"
-	"go-deploy/models/dto"
+	"go-deploy/models/dto/body"
+	"go-deploy/models/dto/query"
+	"go-deploy/models/dto/uri"
 	jobModel "go-deploy/models/job"
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
-	"go-deploy/pkg/validator"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/deployment_service"
 	"go-deploy/service/job_service"
 	"go-deploy/service/user_service"
 	"net/http"
-	"strconv"
 )
 
 func getURL(deployment *deploymentModels.Deployment) string {
@@ -33,7 +33,7 @@ func getURL(deployment *deploymentModels.Deployment) string {
 func getAll(_ string, context *app.ClientContext) {
 	deployments, _ := deployment_service.GetAll()
 
-	dtoDeployments := make([]dto.DeploymentRead, len(deployments))
+	dtoDeployments := make([]body.DeploymentRead, len(deployments))
 	for i, deployment := range deployments {
 		dtoDeployments[i] = deployment.ToDTO(getURL(&deployment))
 	}
@@ -44,37 +44,30 @@ func getAll(_ string, context *app.ClientContext) {
 func GetList(c *gin.Context) {
 	context := app.NewContext(c)
 
-	rules := validator.MapData{
-		"all": []string{"bool"},
-	}
-
-	validationErrors := context.ValidateQueryParams(&rules)
-	if len(validationErrors) > 0 {
-		context.ResponseValidationError(validationErrors)
+	var requestQuery query.DeploymentList
+	if err := context.GinContext.BindQuery(&requestQuery); err != nil {
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestQuery, err))
 		return
 	}
 
-	token, err := context.GetKeycloakToken()
+	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
-		return
-	}
-	userID := token.Sub
-	isAdmin := v1.IsAdmin(&context)
-
-	wantAll, _ := strconv.ParseBool(context.GinContext.Query("all"))
-	if wantAll && isAdmin {
-		getAll(userID, &context)
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err.Error()))
 		return
 	}
 
-	deployments, _ := deployment_service.GetByOwnerID(userID)
+	if requestQuery.WantAll && auth.IsAdmin {
+		getAll(auth.UserID, &context)
+		return
+	}
+
+	deployments, _ := deployment_service.GetByOwnerID(auth.UserID)
 	if deployments == nil {
 		context.JSONResponse(200, []interface{}{})
 		return
 	}
 
-	dtoDeployments := make([]dto.DeploymentRead, len(deployments))
+	dtoDeployments := make([]body.DeploymentRead, len(deployments))
 	for i, deployment := range deployments {
 		dtoDeployments[i] = deployment.ToDTO(getURL(&deployment))
 	}
@@ -85,27 +78,19 @@ func GetList(c *gin.Context) {
 func Get(c *gin.Context) {
 	context := app.NewContext(c)
 
-	rules := validator.MapData{
-		"deploymentId": []string{"required", "uuid_v4"},
-	}
-
-	validationErrors := context.ValidateParams(&rules)
-
-	if len(validationErrors) > 0 {
-		context.ResponseValidationError(validationErrors)
+	var requestURI uri.DeploymentGet
+	if err := context.GinContext.BindUri(&requestURI); err != nil {
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestURI, err))
 		return
 	}
 
-	token, err := context.GetKeycloakToken()
+	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
+		return
 	}
-	deploymentID := context.GinContext.Param("deploymentId")
-	userID := token.Sub
-	isAdmin := v1.IsAdmin(&context)
 
-	var deployment *deploymentModels.Deployment
-	deployment, err = deployment_service.GetByID(userID, deploymentID, isAdmin)
+	deployment, err := deployment_service.GetByID(auth.UserID, requestURI.DeploymentID, auth.IsAdmin)
 
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
@@ -123,41 +108,19 @@ func Get(c *gin.Context) {
 func Create(c *gin.Context) {
 	context := app.NewContext(c)
 
-	bodyRules := validator.MapData{
-		"name": []string{
-			"required",
-			"regex:^[a-zA-Z]([a-zA-Z0-9-]*[a-zA-Z0-9])?([a-zA-Z]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$",
-			"min:3",
-			"max:30",
-		},
-	}
-
-	messages := validator.MapData{
-		"name": []string{
-			"required:Username is required",
-			"regexp:Username must follow RFC 1035 and must not include any dots",
-			"min:Username must be between 3-30 characters",
-			"max:Username must be between 3-30 characters",
-		},
-	}
-
-	var requestBody dto.DeploymentCreate
-	validationErrors := context.ValidateJSONCustomMessages(&bodyRules, &messages, &requestBody)
-	if len(validationErrors) > 0 {
-		context.ResponseValidationError(validationErrors)
+	var requestBody body.DeploymentCreate
+	if err := context.GinContext.BindJSON(&requestBody); err != nil {
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestBody, err))
 		return
 	}
 
-	token, err := context.GetKeycloakToken()
+	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
 		return
 	}
 
-	userID := token.Sub
-	_ = v1.IsAdmin(&context)
-
-	userInfo, err := user_service.GetOrCreate(token)
+	userInfo, err := user_service.GetOrCreate(auth.JwtToken)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
@@ -175,7 +138,7 @@ func Create(c *gin.Context) {
 	}
 
 	if exists {
-		if deployment.OwnerID != userID {
+		if deployment.OwnerID != auth.UserID {
 			context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceNotCreated, "Resource already exists")
 			return
 		}
@@ -184,24 +147,24 @@ func Create(c *gin.Context) {
 			return
 		}
 		jobID := uuid.New().String()
-		err = job_service.Create(jobID, userID, jobModel.TypeCreateDeployment, map[string]interface{}{
+		err = job_service.Create(jobID, auth.UserID, jobModel.TypeCreateDeployment, map[string]interface{}{
 			"id":      deployment.ID,
 			"name":    requestBody.Name,
-			"ownerId": userID,
+			"ownerId": auth.UserID,
 		})
 		if err != nil {
 			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 			return
 		}
 
-		context.JSONResponse(http.StatusCreated, dto.DeploymentCreated{
+		context.JSONResponse(http.StatusCreated, body.DeploymentCreated{
 			ID:    deployment.ID,
 			JobID: jobID,
 		})
 		return
 	}
 
-	deploymentCount, err := deployment_service.GetCount(userID)
+	deploymentCount, err := deployment_service.GetCount(auth.UserID)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
@@ -214,10 +177,10 @@ func Create(c *gin.Context) {
 
 	deploymentID := uuid.New().String()
 	jobID := uuid.New().String()
-	err = job_service.Create(jobID, userID, jobModel.TypeCreateDeployment, map[string]interface{}{
+	err = job_service.Create(jobID, auth.UserID, jobModel.TypeCreateDeployment, map[string]interface{}{
 		"id":      deploymentID,
 		"name":    requestBody.Name,
-		"ownerId": userID,
+		"ownerId": auth.UserID,
 	})
 
 	if err != nil {
@@ -225,7 +188,7 @@ func Create(c *gin.Context) {
 		return
 	}
 
-	context.JSONResponse(http.StatusCreated, dto.DeploymentCreated{
+	context.JSONResponse(http.StatusCreated, body.DeploymentCreated{
 		ID:    deploymentID,
 		JobID: jobID,
 	})
@@ -234,29 +197,19 @@ func Create(c *gin.Context) {
 func Delete(c *gin.Context) {
 	context := app.NewContext(c)
 
-	rules := validator.MapData{
-		"deploymentId": []string{
-			"required",
-			"uuid_v4",
-		},
-	}
-
-	validationErrors := context.ValidateParams(&rules)
-	if len(validationErrors) > 0 {
-		context.ResponseValidationError(validationErrors)
+	var requestURI uri.DeploymentDelete
+	if err := context.GinContext.BindUri(&requestURI); err != nil {
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestURI, err))
 		return
 	}
 
-	token, err := context.GetKeycloakToken()
+	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
 		return
 	}
-	userID := token.Sub
-	deploymentID := context.GinContext.Param("deploymentId")
-	isAdmin := v1.IsAdmin(&context)
 
-	currentDeployment, err := deployment_service.GetByID(userID, deploymentID, isAdmin)
+	currentDeployment, err := deployment_service.GetByID(auth.UserID, requestURI.DeploymentID, auth.IsAdmin)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return
@@ -277,7 +230,7 @@ func Delete(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = job_service.Create(jobID, userID, jobModel.TypeDeleteDeployment, map[string]interface{}{
+	err = job_service.Create(jobID, auth.UserID, jobModel.TypeDeleteDeployment, map[string]interface{}{
 		"name": currentDeployment.Name,
 	})
 	if err != nil {
@@ -285,7 +238,7 @@ func Delete(c *gin.Context) {
 		return
 	}
 
-	context.JSONResponse(http.StatusOK, dto.DeploymentDeleted{
+	context.JSONResponse(http.StatusOK, body.DeploymentDeleted{
 		ID:    currentDeployment.ID,
 		JobID: jobID,
 	})

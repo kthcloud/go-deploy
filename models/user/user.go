@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"go-deploy/models"
-	"go-deploy/models/dto"
+	"go-deploy/models/dto/body"
 	"go-deploy/pkg/conf"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -22,8 +22,8 @@ type User struct {
 	PublicKeys      []string `json:"publicKeys" bson:"publicKeys"`
 }
 
-func (u *User) ToDTO() dto.UserRead {
-	userRead := dto.UserRead{
+func (u *User) ToDTO() body.UserRead {
+	userRead := body.UserRead{
 		ID:              u.ID,
 		Username:        u.Username,
 		Email:           u.Email,

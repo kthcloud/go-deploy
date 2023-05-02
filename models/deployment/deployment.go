@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"go-deploy/models"
-	"go-deploy/models/dto"
+	"go-deploy/models/dto/body"
 	harborModels "go-deploy/pkg/subsystems/harbor/models"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	npmModels "go-deploy/pkg/subsystems/npm/models"
@@ -47,14 +47,14 @@ type Harbor struct {
 	Webhook    harborModels.WebhookPublic    `bson:"webhook"`
 }
 
-func (deployment *Deployment) ToDTO(url string) dto.DeploymentRead {
+func (deployment *Deployment) ToDTO(url string) body.DeploymentRead {
 	var fullURL *string
 	if url != "" {
 		res := fmt.Sprintf("https://%s", url)
 		fullURL = &res
 	}
 
-	return dto.DeploymentRead{
+	return body.DeploymentRead{
 		ID:      deployment.ID,
 		Name:    deployment.Name,
 		OwnerID: deployment.OwnerID,

@@ -3,13 +3,13 @@ package deployment_service
 import (
 	"fmt"
 	deploymentModel "go-deploy/models/deployment"
-	"go-deploy/models/dto"
+	"go-deploy/models/dto/body"
 	"go-deploy/pkg/conf"
 	"go-deploy/utils/subsystemutils"
 	"gopkg.in/yaml.v2"
 )
 
-func GetCIConfig(userId, deploymentID string, isAdmin bool) (*dto.CIConfig, error) {
+func GetCIConfig(userId, deploymentID string, isAdmin bool) (*body.CIConfig, error) {
 	deployment, err := GetByID(userId, deploymentID, isAdmin)
 	if err != nil {
 		return nil, err
@@ -72,6 +72,6 @@ func GetCIConfig(userId, deploymentID string, isAdmin bool) (*dto.CIConfig, erro
 		return nil, err
 	}
 
-	ciConfig := dto.CIConfig{Config: string(marshalledConfig)}
+	ciConfig := body.CIConfig{Config: string(marshalledConfig)}
 	return &ciConfig, nil
 }

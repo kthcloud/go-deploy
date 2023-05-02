@@ -3,32 +3,32 @@ package v1_user
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"go-deploy/models/dto"
+	"go-deploy/models/dto/body"
+	"go-deploy/models/dto/query"
+	"go-deploy/models/dto/uri"
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
-	"go-deploy/pkg/validator"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/user_service"
 	"net/http"
-	"strconv"
 )
 
 func GetList(c *gin.Context) {
 	context := app.NewContext(c)
 
-	rules := validator.MapData{
-		"all": []string{"bool"},
-	}
-
-	validationErrors := context.ValidateQueryParams(&rules)
-	if len(validationErrors) > 0 {
-		context.ResponseValidationError(validationErrors)
+	var requestQuery query.UserList
+	if err := context.GinContext.BindQuery(&requestQuery); err != nil {
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestQuery, err))
 		return
 	}
 
-	isAdmin := v1.IsAdmin(&context)
-	wantAll, _ := strconv.ParseBool(context.GinContext.Query("all"))
-	if isAdmin && wantAll {
+	auth, err := v1.WithAuth(&context)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
+		return
+	}
+
+	if requestQuery.WantAll && auth.IsAdmin {
 		users, err := user_service.GetAll()
 		if err != nil {
 			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
@@ -39,22 +39,14 @@ func GetList(c *gin.Context) {
 		return
 	}
 
-	token, err := context.GetKeycloakToken()
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
-		return
-	}
-	userID := token.Sub
-	isAdmin = v1.IsAdmin(&context)
-
-	user, err := user_service.GetByID(userID, userID, isAdmin)
+	user, err := user_service.GetByID(auth.UserID, auth.UserID, auth.IsAdmin)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
 	}
 
 	if user == nil {
-		context.ErrorResponse(http.StatusNotFound, status_codes.Error, fmt.Sprintf("User with id %s not found", userID))
+		context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, fmt.Sprintf("User with id %s not found", auth.UserID))
 		return
 	}
 
@@ -64,44 +56,38 @@ func GetList(c *gin.Context) {
 func Get(c *gin.Context) {
 	context := app.NewContext(c)
 
-	rules := validator.MapData{
-		"userId": []string{"required", "uuid_v4"},
-	}
-
-	validationErrors := context.ValidateParams(&rules)
-
-	if len(validationErrors) > 0 {
-		context.ResponseValidationError(validationErrors)
+	var requestURI uri.UserGet
+	if err := context.GinContext.BindUri(&requestURI); err != nil {
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestURI, err))
 		return
 	}
 
-	token, err := context.GetKeycloakToken()
+	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
+		return
 	}
-	userID := token.Sub
-	isAdmin := v1.IsAdmin(&context)
 
-	requestedUserID := context.GinContext.Param("userId")
+	requestedUserID := requestURI.UserID
 	if requestedUserID == "" {
-		requestedUserID = userID
+		requestedUserID = auth.UserID
 	}
 
-	user, err := user_service.GetByID(requestedUserID, userID, isAdmin)
+	user, err := user_service.GetByID(requestedUserID, auth.UserID, auth.IsAdmin)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
 	}
 
 	if user == nil {
-		if requestedUserID == userID {
-			err = user_service.CreateUser(userID, token.PreferredUsername)
+		if requestedUserID == auth.UserID {
+			err = user_service.CreateUser(auth.UserID, auth.JwtToken.PreferredUsername)
 			if err != nil {
 				context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to create user: %s", err))
 				return
 			}
 
-			createdUser, err := user_service.GetByID(userID, userID, isAdmin)
+			createdUser, err := user_service.GetByID(auth.UserID, auth.UserID, auth.IsAdmin)
 			if err != nil {
 				context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 				return
@@ -122,16 +108,14 @@ func Get(c *gin.Context) {
 func Update(c *gin.Context) {
 	context := app.NewContext(c)
 
-	var params dto.UserUpdateParams
-	err := context.GinContext.ShouldBindUri(&params)
-	if err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&params, err))
+	var requestURI uri.UserUpdate
+	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestURI, err))
 		return
 	}
 
-	var userUpdate dto.UserUpdate
-	err = context.GinContext.ShouldBindJSON(&userUpdate)
-	if err != nil {
+	var userUpdate body.UserUpdate
+	if err := context.GinContext.ShouldBindJSON(&userUpdate); err != nil {
 		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&userUpdate, err))
 		return
 	}
@@ -147,41 +131,35 @@ func Update(c *gin.Context) {
 		}
 	}
 
-	token, err := context.GetKeycloakToken()
+	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
+		return
 	}
-	userID := token.Sub
-	isAdmin := v1.IsAdmin(&context)
 
-	requestedUserID := context.GinContext.Param("userId")
+	requestedUserID := requestURI.UserID
 	if requestedUserID == "" {
-		requestedUserID = userID
+		requestedUserID = auth.UserID
 	}
 
-	user, err := user_service.GetByID(requestedUserID, userID, isAdmin)
+	user, err := user_service.GetByID(requestedUserID, auth.UserID, auth.IsAdmin)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to update user: %s", err))
 		return
 	}
 
 	if user == nil {
-		context.ErrorResponse(http.StatusNotFound, status_codes.Error, fmt.Sprintf("User with id %s not found", requestedUserID))
+		context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, fmt.Sprintf("User with id %s not found", requestedUserID))
 		return
 	}
 
-	if !isAdmin && user.ID != userID {
-		context.ErrorResponse(http.StatusForbidden, status_codes.Error, fmt.Sprintf("You don't have permission to update this user"))
-		return
-	}
-
-	err = user_service.Update(requestedUserID, userID, isAdmin, userUpdate)
+	err = user_service.Update(requestedUserID, auth.UserID, auth.IsAdmin, userUpdate)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to update user: %s", err))
 		return
 	}
 
-	updatedUser, err := user_service.GetByID(requestedUserID, userID, isAdmin)
+	updatedUser, err := user_service.GetByID(requestedUserID, auth.UserID, auth.IsAdmin)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to update user: %s", err))
 		return

@@ -1,7 +1,7 @@
 package user_service
 
 import (
-	"go-deploy/models/dto"
+	"go-deploy/models/dto/body"
 	userModel "go-deploy/models/user"
 	"go-deploy/pkg/auth"
 )
@@ -40,7 +40,7 @@ func GetAll() ([]userModel.User, error) {
 	return userModel.GetAll()
 }
 
-func Update(requestedUserID, userID string, isAdmin bool, dtoUserUpdate dto.UserUpdate) error {
+func Update(requestedUserID, userID string, isAdmin bool, dtoUserUpdate body.UserUpdate) error {
 	if !isAdmin && requestedUserID != userID {
 		return nil
 	}

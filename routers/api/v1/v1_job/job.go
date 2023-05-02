@@ -3,10 +3,10 @@ package v1_job
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"go-deploy/models/dto/uri"
 	jobModel "go-deploy/models/job"
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
-	"go-deploy/pkg/validator"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/job_service"
 	"net/http"
@@ -15,33 +15,26 @@ import (
 func Get(c *gin.Context) {
 	context := app.NewContext(c)
 
-	rules := validator.MapData{
-		"jobId": []string{"required", "uuid_v4"},
-	}
-
-	validationErrors := context.ValidateParams(&rules)
-
-	if len(validationErrors) > 0 {
-		context.ResponseValidationError(validationErrors)
+	var requestURI uri.JobGet
+	if err := context.GinContext.BindUri(&requestURI); err != nil {
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestURI, err))
 		return
 	}
 
-	token, err := context.GetKeycloakToken()
+	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
+		return
 	}
-	jobID := context.GinContext.Param("jobId")
-	userID := token.Sub
-	isAdmin := v1.IsAdmin(&context)
 
-	job, err := job_service.GetByID(userID, jobID, isAdmin)
+	job, err := job_service.GetByID(auth.UserID, requestURI.JobID, auth.IsAdmin)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
 	}
 
 	if job == nil {
-		context.ErrorResponse(http.StatusNotFound, status_codes.Error, fmt.Sprintf("Job with id %s not found", jobID))
+		context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, fmt.Sprintf("Job with id %s not found", requestURI.JobID))
 		return
 	}
 
