@@ -112,7 +112,7 @@ func registerCustomValidators() {
 
 		err = v.RegisterValidation("ssh_public_key", validateSshPublicKey)
 		if err != nil {
-
+			panic(err)
 		}
 	}
 }
