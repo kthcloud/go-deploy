@@ -17,13 +17,13 @@ func DoCommand(c *gin.Context) {
 
 	var requestURI uri.DoCommand
 	if err := context.GinContext.BindUri(&requestURI); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestURI, err))
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
 
 	var requestBody body.DoCommand
 	if err := context.GinContext.BindJSON(&requestBody); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestBody, err))
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
 

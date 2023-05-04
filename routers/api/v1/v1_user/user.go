@@ -18,7 +18,7 @@ func GetList(c *gin.Context) {
 
 	var requestQuery query.UserList
 	if err := context.GinContext.Bind(&requestQuery); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestQuery, err))
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
 
@@ -58,7 +58,7 @@ func Get(c *gin.Context) {
 
 	var requestURI uri.UserGet
 	if err := context.GinContext.BindUri(&requestURI); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestURI, err))
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
 
@@ -110,13 +110,13 @@ func Update(c *gin.Context) {
 
 	var requestURI uri.UserUpdate
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestURI, err))
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
 
 	var userUpdate body.UserUpdate
 	if err := context.GinContext.ShouldBindJSON(&userUpdate); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&userUpdate, err))
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
 

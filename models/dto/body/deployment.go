@@ -14,12 +14,12 @@ type DeploymentPort struct {
 type DeploymentCreate struct {
 	Name    string `json:"name" binding:"required,rfc1035,min=3,max=30"`
 	Private bool   `json:"private" binding:"omitempty,boolean"`
-	Envs    []Env  `json:"envs" binding:"omitempty,dive,min=0,max=1000"`
+	Envs    []Env  `json:"envs" binding:"omitempty,env_list,dive,min=0,max=1000"`
 }
 
 type DeploymentUpdate struct {
 	Private *bool  `json:"private" binding:"omitempty,boolean"`
-	Envs    *[]Env `json:"envs" binding:"omitempty,dive,min=0,max=1000"`
+	Envs    *[]Env `json:"envs" binding:"omitempty,env_list,dive,min=0,max=1000"`
 }
 
 type DeploymentCreated struct {

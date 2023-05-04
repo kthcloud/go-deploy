@@ -46,7 +46,7 @@ func GetList(c *gin.Context) {
 
 	var requestQuery query.DeploymentList
 	if err := context.GinContext.Bind(&requestQuery); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestQuery, err))
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
 
@@ -80,7 +80,7 @@ func Get(c *gin.Context) {
 
 	var requestURI uri.DeploymentGet
 	if err := context.GinContext.BindUri(&requestURI); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestURI, err))
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
 
@@ -110,7 +110,7 @@ func Create(c *gin.Context) {
 
 	var requestBody body.DeploymentCreate
 	if err := context.GinContext.BindJSON(&requestBody); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestBody, err))
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
 
@@ -199,7 +199,7 @@ func Delete(c *gin.Context) {
 
 	var requestURI uri.DeploymentDelete
 	if err := context.GinContext.BindUri(&requestURI); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestURI, err))
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
 
@@ -249,13 +249,13 @@ func Update(c *gin.Context) {
 
 	var requestURI uri.DeploymentUpdate
 	if err := context.GinContext.BindUri(&requestURI); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestURI, err))
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
 
 	var requestBody body.DeploymentUpdate
 	if err := context.GinContext.BindJSON(&requestBody); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestBody, err))
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
 
@@ -293,7 +293,7 @@ func Update(c *gin.Context) {
 
 	jobID := uuid.New().String()
 	err = job_service.Create(jobID, auth.UserID, jobModel.TypeUpdateDeployment, map[string]interface{}{
-		"id":     current.ID,
+		"name":   current.Name,
 		"update": requestBody,
 	})
 

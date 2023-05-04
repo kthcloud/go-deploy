@@ -132,20 +132,20 @@ func deleteDeployment(job *jobModel.Job) {
 }
 
 func updateDeployment(job *jobModel.Job) {
-	err := assertParameters(job, []string{"id", "update"})
+	err := assertParameters(job, []string{"name", "update"})
 	if err != nil {
 		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
 		return
 	}
 
-	id := job.Args["id"].(string)
+	name := job.Args["name"].(string)
 	var update body.DeploymentUpdate
 	err = mapstructure.Decode(job.Args["update"].(map[string]interface{}), &update)
 	if err != nil {
 		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
 		return
 	}
-	err = deployment_service.Update(id, &update)
+	err = deployment_service.Update(name, &update)
 	if err != nil {
 		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
 		return

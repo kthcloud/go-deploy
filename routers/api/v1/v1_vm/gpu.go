@@ -20,7 +20,7 @@ func GetGpuList(c *gin.Context) {
 
 	var requestQuery query.GpuList
 	if err := context.GinContext.Bind(&requestQuery); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestQuery, err))
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
 
@@ -49,7 +49,7 @@ func AttachGPU(c *gin.Context) {
 
 	var requestURI uri.GpuAttach
 	if err := context.GinContext.BindUri(&requestURI); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestURI, err))
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
 
@@ -147,7 +147,7 @@ func DetachGPU(c *gin.Context) {
 
 	var requestURI uri.GpuDetach
 	if err := context.GinContext.BindUri(&requestURI); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestURI, err))
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
 

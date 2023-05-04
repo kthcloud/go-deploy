@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
+	"go-deploy/models/dto/body"
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/auth"
 	"go-deploy/routers/api/v1/v1_deployment"
@@ -143,6 +144,25 @@ func registerCustomValidators() {
 
 			regex := regexp.MustCompile(`[a-zA-Z_]+[a-zA-Z0-9_]*`)
 			return regex.MatchString(name)
+		})
+		if err != nil {
+			panic(err)
+		}
+
+		err = v.RegisterValidation("env_list", func(fl validator.FieldLevel) bool {
+			envList, ok := fl.Field().Interface().([]body.Env)
+			if !ok {
+				return false
+			}
+
+			names := make(map[string]bool)
+			for _, env := range envList {
+				if _, ok := names[env.Name]; ok {
+					return false
+				}
+				names[env.Name] = true
+			}
+			return true
 		})
 		if err != nil {
 			panic(err)

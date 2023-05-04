@@ -110,11 +110,15 @@ func msgForTag(fe validator.FieldError) string {
 		return "Must be one of: " + fe.Param()
 	case "base64":
 		return "Must be a valid base64 encoded string"
+	case "env_name":
+		return "Must be a valid environment name. Ex. ENV, MY_ENV, my_ENV_123"
+	case "env_list":
+		return "Every env name must be unique"
 	}
 	return fe.Error()
 }
 
-func CreateBindingError(data interface{}, err error) *body.BindingError {
+func CreateBindingError(err error) *body.BindingError {
 	out := &body.BindingError{
 		ValidationErrors: make(map[string][]string),
 	}
