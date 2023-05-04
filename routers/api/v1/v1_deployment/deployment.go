@@ -45,7 +45,7 @@ func GetList(c *gin.Context) {
 	context := app.NewContext(c)
 
 	var requestQuery query.DeploymentList
-	if err := context.GinContext.BindQuery(&requestQuery); err != nil {
+	if err := context.GinContext.Bind(&requestQuery); err != nil {
 		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestQuery, err))
 		return
 	}
