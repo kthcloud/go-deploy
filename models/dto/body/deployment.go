@@ -7,11 +7,13 @@ type DeploymentPort struct {
 }
 
 type DeploymentCreate struct {
-	Name string `json:"name" binding:"required,rfc1035,min=3,max=30"`
+	Name    string              `json:"name" binding:"required,rfc1035,min=3,max=30"`
+	Private bool                `json:"private" binding:"omitempty,boolean"`
+	Envs    []map[string]string `json:"envs" binding:"omitempty,max=1000"`
 }
 
 type DeploymentUpdate struct {
-	Ports *[]VmPort `json:"ports"`
+	Envs *[]map[string]string `json:"envs" binding:"omitempty,max=1000"`
 }
 
 type DeploymentCreated struct {

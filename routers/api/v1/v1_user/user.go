@@ -17,7 +17,7 @@ func GetList(c *gin.Context) {
 	context := app.NewContext(c)
 
 	var requestQuery query.UserList
-	if err := context.GinContext.BindQuery(&requestQuery); err != nil {
+	if err := context.GinContext.Bind(&requestQuery); err != nil {
 		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestQuery, err))
 		return
 	}
@@ -118,17 +118,6 @@ func Update(c *gin.Context) {
 	if err := context.GinContext.ShouldBindJSON(&userUpdate); err != nil {
 		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&userUpdate, err))
 		return
-	}
-
-	// check if valid public key
-	if userUpdate.PublicKeys != nil {
-		for i, publicKey := range *userUpdate.PublicKeys {
-			if !v1.IsValidSshPublicKey(publicKey) {
-				bindingError := v1.CreateBindingErrorFromString("publicKeys", fmt.Sprintf("publicKeys[%d] is not a valid ssh public key", i))
-				context.JSONResponse(http.StatusBadRequest, bindingError)
-				return
-			}
-		}
 	}
 
 	auth, err := v1.WithAuth(&context)

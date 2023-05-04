@@ -12,7 +12,9 @@ import (
 	"go-deploy/routers/api/v1/v1_user"
 	"go-deploy/routers/api/v1/v1_vm"
 	"golang.org/x/crypto/ssh"
+	"reflect"
 	"regexp"
+	"strings"
 )
 
 func NewRouter() *gin.Engine {
@@ -109,6 +111,16 @@ func validateSshPublicKey(fl validator.FieldLevel) bool {
 
 func registerCustomValidators() {
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		v.RegisterTagNameFunc(func(fld reflect.StructField) string {
+			name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
+
+			if name == "-" {
+				return ""
+			}
+
+			return name
+		})
+
 		err := v.RegisterValidation("rfc1035", validateRfc1035)
 		if err != nil {
 			panic(err)
