@@ -50,7 +50,7 @@ func setupDeploymentRoutes(base *gin.RouterGroup, hooks *gin.RouterGroup) {
 	base.GET("/deployments/:deploymentId/ciConfig", v1_deployment.GetCiConfig)
 	base.GET("/deployments/:deploymentId/logs", v1_deployment.GetLogs)
 	base.POST("/deployments", v1_deployment.Create)
-	//base.POST("/deployments/:deploymentId", v1_deployment.Update)
+	base.POST("/deployments/:deploymentId", v1_deployment.Update)
 	base.DELETE("/deployments/:deploymentId", v1_deployment.Delete)
 
 	hooks.POST("/deployments/harbor", v1_deployment.HandleHarborHook)
@@ -86,33 +86,18 @@ func setupUserRoutes(base *gin.RouterGroup, _ *gin.RouterGroup) {
 	base.POST("/users", v1_user.Update)
 }
 
-func validateRfc1035(fl validator.FieldLevel) bool {
-	name, ok := fl.Field().Interface().(string)
-	if !ok {
-		return false
-	}
-
-	regex := regexp.MustCompile(`^[a-zA-Z]([a-zA-Z0-9-]*[a-zA-Z0-9])?([a-zA-Z]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$`)
-	return regex.MatchString(name)
-}
-
-func validateSshPublicKey(fl validator.FieldLevel) bool {
-	publicKey, ok := fl.Field().Interface().(string)
-	if !ok {
-		return false
-	}
-
-	_, _, _, _, err := ssh.ParseAuthorizedKey([]byte(publicKey))
-	if err != nil {
-		return false
-	}
-	return true
-}
-
 func registerCustomValidators() {
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		v.RegisterTagNameFunc(func(fld reflect.StructField) string {
 			name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
+
+			if name == "-" {
+				name = strings.SplitN(fld.Tag.Get("uri"), ",", 2)[0]
+			}
+
+			if name == "-" {
+				name = strings.SplitN(fld.Tag.Get("form"), ",", 2)[0]
+			}
 
 			if name == "-" {
 				return ""
@@ -121,12 +106,44 @@ func registerCustomValidators() {
 			return name
 		})
 
-		err := v.RegisterValidation("rfc1035", validateRfc1035)
+		err := v.RegisterValidation("rfc1035", func(fl validator.FieldLevel) bool {
+			name, ok := fl.Field().Interface().(string)
+			if !ok {
+				return false
+			}
+
+			regex := regexp.MustCompile(`^[a-zA-Z]([a-zA-Z0-9-]*[a-zA-Z0-9])?([a-zA-Z]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$`)
+			return regex.MatchString(name)
+		})
 		if err != nil {
 			panic(err)
 		}
 
-		err = v.RegisterValidation("ssh_public_key", validateSshPublicKey)
+		err = v.RegisterValidation("ssh_public_key", func(fl validator.FieldLevel) bool {
+			publicKey, ok := fl.Field().Interface().(string)
+			if !ok {
+				return false
+			}
+
+			_, _, _, _, err := ssh.ParseAuthorizedKey([]byte(publicKey))
+			if err != nil {
+				return false
+			}
+			return true
+		})
+		if err != nil {
+			panic(err)
+		}
+
+		err = v.RegisterValidation("env_name", func(fl validator.FieldLevel) bool {
+			name, ok := fl.Field().Interface().(string)
+			if !ok {
+				return false
+			}
+
+			regex := regexp.MustCompile(`[a-zA-Z_]+[a-zA-Z0-9_]*`)
+			return regex.MatchString(name)
+		})
 		if err != nil {
 			panic(err)
 		}

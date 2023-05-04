@@ -2,32 +2,36 @@ package deployment_service
 
 import (
 	"fmt"
-	deploymentModel "go-deploy/models/deployment"
+	"go-deploy/models/dto/body"
+	"go-deploy/models/sys/deployment"
 	"go-deploy/service/deployment_service/internal_service"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func Create(deploymentID, name, ownerID string) error {
+func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreate) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create deployment. details: %s", err)
 	}
 
-	err := deploymentModel.CreateDeployment(deploymentID, name, ownerID)
+	params := deployment.CreateParams{}
+	params.FromDTO(deploymentCreate)
+
+	err := deployment.CreateDeployment(deploymentID, ownerID, &params)
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = internal_service.CreateHarbor(name, ownerID)
+	err = internal_service.CreateHarbor(params.Name, ownerID)
 	if err != nil {
 		return makeError(err)
 	}
 
-	k8sResult, err := internal_service.CreateK8s(name, ownerID)
+	k8sResult, err := internal_service.CreateK8s(params.Name, ownerID)
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = internal_service.CreateNPM(name, k8sResult.Service.GetFQDN())
+	err = internal_service.CreateNPM(params.Name, k8sResult.Service.GetFQDN())
 	if err != nil {
 		return makeError(err)
 	}
@@ -35,8 +39,8 @@ func Create(deploymentID, name, ownerID string) error {
 	return nil
 }
 
-func GetByID(userId, deploymentID string, isAdmin bool) (*deploymentModel.Deployment, error) {
-	deployment, err := deploymentModel.GetByID(deploymentID)
+func GetByID(userId, deploymentID string, isAdmin bool) (*deployment.Deployment, error) {
+	deployment, err := deployment.GetByID(deploymentID)
 	if err != nil {
 		return nil, err
 	}
@@ -48,8 +52,8 @@ func GetByID(userId, deploymentID string, isAdmin bool) (*deploymentModel.Deploy
 	return deployment, nil
 }
 
-func GetByName(userId, name string) (*deploymentModel.Deployment, error) {
-	deployment, err := deploymentModel.GetByName(name)
+func GetByName(userId, name string) (*deployment.Deployment, error) {
+	deployment, err := deployment.GetByName(name)
 	if err != nil {
 		return nil, err
 	}
@@ -61,24 +65,24 @@ func GetByName(userId, name string) (*deploymentModel.Deployment, error) {
 	return deployment, nil
 }
 
-func GetByOwnerID(owner string) ([]deploymentModel.Deployment, error) {
-	return deploymentModel.GetMany(owner)
+func GetByOwnerID(owner string) ([]deployment.Deployment, error) {
+	return deployment.GetMany(owner)
 }
 
-func GetAll() ([]deploymentModel.Deployment, error) {
-	return deploymentModel.GetAll()
+func GetAll() ([]deployment.Deployment, error) {
+	return deployment.GetAll()
 }
 
 func GetCount(userID string) (int, error) {
-	return deploymentModel.CountByOwnerID(userID)
+	return deployment.CountByOwnerID(userID)
 }
 
-func Exists(name string) (bool, *deploymentModel.Deployment, error) {
-	return deploymentModel.Exists(name)
+func Exists(name string) (bool, *deployment.Deployment, error) {
+	return deployment.Exists(name)
 }
 
 func MarkBeingDeleted(deploymentID string) error {
-	return deploymentModel.UpdateByID(deploymentID, bson.D{{
+	return deployment.UpdateWithBsonByID(deploymentID, bson.D{{
 		"beingDeleted", true,
 	}})
 }
@@ -101,6 +105,18 @@ func Delete(name string) error {
 	err = internal_service.DeleteK8s(name)
 	if err != nil {
 		return makeError(err)
+	}
+
+	return nil
+}
+
+func Update(deploymentID string, deploymentUpdate *body.DeploymentUpdate) error {
+	update := deployment.UpdateParams{}
+	update.FromDTO(deploymentUpdate)
+
+	err := deployment.UpdateByID(deploymentID, &update)
+	if err != nil {
+		return fmt.Errorf("failed to update deployment. details: %s", err)
 	}
 
 	return nil

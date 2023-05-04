@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"go-deploy/models"
-	"go-deploy/models/job"
+	"go-deploy/models/sys/job"
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/intializer"

@@ -1,5 +1,10 @@
 package body
 
+type Env struct {
+	Name  string `json:"name" binding:"required,env_name,min=1,max=100"`
+	Value string `json:"value" binding:"required,min=1,max=10000"`
+}
+
 type DeploymentPort struct {
 	Name     string `json:"name" binding:"required,rfc1035"`
 	Port     int    `json:"port" binding:"required,min=1,max=65535"`
@@ -7,13 +12,14 @@ type DeploymentPort struct {
 }
 
 type DeploymentCreate struct {
-	Name    string              `json:"name" binding:"required,rfc1035,min=3,max=30"`
-	Private bool                `json:"private" binding:"omitempty,boolean"`
-	Envs    []map[string]string `json:"envs" binding:"omitempty,max=1000"`
+	Name    string `json:"name" binding:"required,rfc1035,min=3,max=30"`
+	Private bool   `json:"private" binding:"omitempty,boolean"`
+	Envs    []Env  `json:"envs" binding:"omitempty,dive,min=0,max=1000"`
 }
 
 type DeploymentUpdate struct {
-	Envs *[]map[string]string `json:"envs" binding:"omitempty,max=1000"`
+	Private *bool  `json:"private" binding:"omitempty,boolean"`
+	Envs    *[]Env `json:"envs" binding:"omitempty,dive,min=0,max=1000"`
 }
 
 type DeploymentCreated struct {
@@ -32,6 +38,8 @@ type DeploymentRead struct {
 	OwnerID string  `json:"ownerId"`
 	Status  string  `json:"status"`
 	URL     *string `json:"url,omitempty"`
+	Envs    []Env   `json:"envs"`
+	Private bool    `json:"private"`
 }
 
 type CIConfig struct {

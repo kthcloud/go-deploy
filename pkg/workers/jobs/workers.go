@@ -1,7 +1,7 @@
 package jobs
 
 import (
-	jobModel "go-deploy/models/job"
+	jobModel "go-deploy/models/sys/job"
 	"go-deploy/pkg/app"
 	"time"
 )

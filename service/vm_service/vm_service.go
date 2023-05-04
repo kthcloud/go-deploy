@@ -3,7 +3,8 @@ package vm_service
 import (
 	"fmt"
 	"go-deploy/models/dto/body"
-	vmModel "go-deploy/models/vm"
+	"go-deploy/models/sys/vm"
+	"go-deploy/models/sys/vm/gpu"
 	"go-deploy/pkg/conf"
 	"go-deploy/service/vm_service/internal_service"
 	"log"
@@ -16,7 +17,7 @@ func Create(vmID, name, sshPublicKey, owner string) error {
 		return fmt.Errorf("failed to create vm. details: %s", err)
 	}
 
-	err := vmModel.Create(vmID, name, sshPublicKey, owner, conf.Env.Manager)
+	err := vm.Create(vmID, name, sshPublicKey, owner, conf.Env.Manager)
 	if err != nil {
 		return makeError(err)
 	}
@@ -34,8 +35,8 @@ func Create(vmID, name, sshPublicKey, owner string) error {
 	return nil
 }
 
-func GetByID(userID, vmID string, isAdmin bool) (*vmModel.VM, error) {
-	vm, err := vmModel.GetByID(vmID)
+func GetByID(userID, vmID string, isAdmin bool) (*vm.VM, error) {
+	vm, err := vm.GetByID(vmID)
 	if err != nil {
 		return nil, err
 	}
@@ -47,24 +48,24 @@ func GetByID(userID, vmID string, isAdmin bool) (*vmModel.VM, error) {
 	return vm, nil
 }
 
-func GetByOwnerID(ownerID string) ([]vmModel.VM, error) {
-	return vmModel.GetByOwnerID(ownerID)
+func GetByOwnerID(ownerID string) ([]vm.VM, error) {
+	return vm.GetByOwnerID(ownerID)
 }
 
-func GetAll() ([]vmModel.VM, error) {
-	return vmModel.GetAll()
+func GetAll() ([]vm.VM, error) {
+	return vm.GetAll()
 }
 
 func GetCount(userID string) (int, error) {
-	return vmModel.CountByOwnerID(userID)
+	return vm.CountByOwnerID(userID)
 }
 
-func Exists(name string) (bool, *vmModel.VM, error) {
-	return vmModel.Exists(name)
+func Exists(name string) (bool, *vm.VM, error) {
+	return vm.Exists(name)
 }
 
 func MarkBeingDeleted(vmID string) error {
-	return vmModel.UpdateWithBsonByID(vmID, bson.D{{
+	return vm.UpdateWithBsonByID(vmID, bson.D{{
 		"beingDeleted", true,
 	}})
 }
@@ -74,7 +75,7 @@ func Delete(name string) error {
 		return fmt.Errorf("failed to delete vm. details: %s", err)
 	}
 
-	vm, err := vmModel.GetByName(name)
+	vm, err := vm.GetByName(name)
 	if err != nil {
 		return makeError(err)
 	}
@@ -84,7 +85,7 @@ func Delete(name string) error {
 		return makeError(err)
 	}
 
-	detached, err := vmModel.DetachGPU(vm.ID, vm.OwnerID)
+	detached, err := gpu.DetachGPU(vm.ID, vm.OwnerID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -102,12 +103,12 @@ func Delete(name string) error {
 }
 
 func Update(vmID string, dtoVmUpdate *body.VmUpdate) error {
-	vmUpdate := vmModel.VmUpdate{}
+	vmUpdate := vm.VmUpdate{}
 
 	if dtoVmUpdate.Ports != nil {
-		var ports []vmModel.Port
+		var ports []vm.Port
 		for _, port := range *dtoVmUpdate.Ports {
-			ports = append(ports, vmModel.Port{
+			ports = append(ports, vm.Port{
 				Name:     port.Name,
 				Port:     port.Port,
 				Protocol: port.Protocol,
@@ -116,7 +117,7 @@ func Update(vmID string, dtoVmUpdate *body.VmUpdate) error {
 		vmUpdate.Ports = &ports
 	}
 
-	err := vmModel.UpdateByID(vmID, &vmUpdate)
+	err := vm.UpdateByID(vmID, &vmUpdate)
 	if err != nil {
 		return fmt.Errorf("failed to update vm. details: %s", err)
 	}
@@ -124,7 +125,7 @@ func Update(vmID string, dtoVmUpdate *body.VmUpdate) error {
 	return nil
 }
 
-func GetConnectionString(vm *vmModel.VM) (string, error) {
+func GetConnectionString(vm *vm.VM) (string, error) {
 	domainName := conf.Env.VM.ParentDomain
 	port := vm.Subsystems.PfSense.PortForwardingRuleMap["ssh"].ExternalPort
 
@@ -133,7 +134,7 @@ func GetConnectionString(vm *vmModel.VM) (string, error) {
 	return connectionString, nil
 }
 
-func DoCommand(vm *vmModel.VM, command string) {
+func DoCommand(vm *vm.VM, command string) {
 	go func() {
 		csID := vm.Subsystems.CS.VM.ID
 		if csID == "" {

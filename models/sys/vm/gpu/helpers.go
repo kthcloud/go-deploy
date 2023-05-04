@@ -1,4 +1,4 @@
-package vm
+package gpu
 
 import (
 	"context"
@@ -7,33 +7,13 @@ import (
 	"github.com/goharbor/harbor/src/lib/log"
 	"go-deploy/models"
 	"go-deploy/models/dto/body"
+	vm2 "go-deploy/models/sys/vm"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"time"
 )
 
-type GpuData struct {
-	Name     string `bson:"name" json:"name"`
-	Slot     string `bson:"slot" json:"slot"`
-	Vendor   string `bson:"vendor" json:"vendor"`
-	VendorID string `bson:"vendorId" json:"vendorId"`
-	Bus      string `bson:"bus" json:"bus"`
-	DeviceID string `bson:"deviceId" json:"deviceId"`
-}
-
-type GpuLease struct {
-	VmID   string    `bson:"vmId" json:"vmId"`
-	UserID string    `bson:"user" json:"userId"`
-	End    time.Time `bson:"end" json:"end"`
-}
-
-type GPU struct {
-	ID    string   `bson:"id" json:"id"`
-	Host  string   `bson:"host" json:"host"`
-	Lease GpuLease `bson:"lease" json:"lease"`
-	Data  GpuData  `bson:"data" json:"data"`
-}
 
 func (gpu *GPU) ToDto() body.GpuRead {
 	id := base64.StdEncoding.EncodeToString([]byte(gpu.ID))
@@ -195,7 +175,7 @@ func GetAllAvailableGPUs(excludedHosts, excludedGPUs []string) ([]GPU, error) {
 }
 
 func AttachGPU(gpuID, vmID, user string, end time.Time) (bool, error) {
-	vm, err := GetByID(vmID)
+	vm, err := vm2.GetByID(vmID)
 	if err != nil {
 		return false, err
 	}
@@ -244,7 +224,7 @@ func AttachGPU(gpuID, vmID, user string, end time.Time) (bool, error) {
 		}
 	}
 
-	err = UpdateWithBsonByID(vmID, bson.D{{"gpuId", gpuID}})
+	err = vm2.UpdateWithBsonByID(vmID, bson.D{{"gpuId", gpuID}})
 	if err != nil {
 		// remove lease, if this also fails, we are in a bad state...
 		_, _ = models.GpuCollection.UpdateOne(
@@ -260,7 +240,7 @@ func AttachGPU(gpuID, vmID, user string, end time.Time) (bool, error) {
 }
 
 func DetachGPU(vmID, userID string) (bool, error) {
-	vm, err := GetByID(vmID)
+	vm, err := vm2.GetByID(vmID)
 	if err != nil {
 		return false, err
 	}
@@ -315,7 +295,7 @@ func DetachGPU(vmID, userID string) (bool, error) {
 		return false, err
 	}
 
-	err = UpdateWithBsonByID(vmID, bson.D{{"gpuId", ""}})
+	err = vm2.UpdateWithBsonByID(vmID, bson.D{{"gpuId", ""}})
 	if err != nil {
 		// remove lease, if this also fails, we are in a bad state...
 		_, _ = models.GpuCollection.UpdateOne(

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	deploymentModel "go-deploy/models/deployment"
+	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/k8s"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"

@@ -1,8 +1,9 @@
 package confirmers
 
 import (
-	deploymentModel "go-deploy/models/deployment"
-	vmModel "go-deploy/models/vm"
+	deploymentModel "go-deploy/models/sys/deployment"
+	vmModel "go-deploy/models/sys/vm"
+	"go-deploy/models/sys/vm/gpu"
 	"go-deploy/pkg/conf"
 
 	"go-deploy/pkg/app"
@@ -23,7 +24,7 @@ func deploymentConfirmer(ctx *app.Context) {
 			created := DeploymentCreated(&deployment)
 			if created {
 				log.Printf("marking deployment %s as created\n", deployment.Name)
-				_ = deploymentModel.UpdateByID(deployment.ID, bson.D{{"beingCreated", false}})
+				_ = deploymentModel.UpdateWithBsonByID(deployment.ID, bson.D{{"beingCreated", false}})
 			}
 		}
 
@@ -66,7 +67,7 @@ func vmConfirmer(ctx *app.Context) {
 		excludedHosts := conf.Env.GPU.ExcludedHosts
 
 		// check if gpu lease is expired
-		leased, _ := vmModel.GetAllLeasedGPUs(excludedHosts, nil)
+		leased, _ := gpu.GetAllLeasedGPUs(excludedHosts, nil)
 		for _, gpu := range leased {
 			if gpu.Lease.End.Before(time.Now()) {
 				log.Printf("lease for gpu %s (%s) ran out, returning it...\n", gpu.ID, gpu.Data.Name)

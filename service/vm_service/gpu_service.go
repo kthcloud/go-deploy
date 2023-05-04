@@ -2,7 +2,7 @@ package vm_service
 
 import (
 	"fmt"
-	vmModel "go-deploy/models/vm"
+	"go-deploy/models/sys/vm/gpu"
 	"go-deploy/pkg/conf"
 	"go-deploy/service/vm_service/internal_service"
 	"log"
@@ -10,20 +10,20 @@ import (
 	"time"
 )
 
-func GetAllGPUs(showOnlyAvailable bool, isPowerUser bool) ([]vmModel.GPU, error) {
+func GetAllGPUs(showOnlyAvailable bool, isPowerUser bool) ([]gpu.GPU, error) {
 	var excludedGPUs []string
 	if !isPowerUser {
 		excludedGPUs = conf.Env.GPU.PrivilegedGPUs
 	}
 
 	if showOnlyAvailable {
-		return vmModel.GetAllAvailableGPUs(conf.Env.GPU.ExcludedHosts, excludedGPUs)
+		return gpu.GetAllAvailableGPUs(conf.Env.GPU.ExcludedHosts, excludedGPUs)
 	}
-	return vmModel.GetAllGPUs(conf.Env.GPU.ExcludedHosts, excludedGPUs)
+	return gpu.GetAllGPUs(conf.Env.GPU.ExcludedHosts, excludedGPUs)
 }
 
-func GetGpuByID(gpuID string, isPowerUser bool) (*vmModel.GPU, error) {
-	gpu, err := vmModel.GetGpuByID(gpuID)
+func GetGpuByID(gpuID string, isPowerUser bool) (*gpu.GPU, error) {
+	gpu, err := gpu.GetGpuByID(gpuID)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func GetGpuByID(gpuID string, isPowerUser bool) (*vmModel.GPU, error) {
 	return gpu, nil
 }
 
-func IsGpuAvailable(gpu *vmModel.GPU) (bool, error) {
+func IsGpuAvailable(gpu *gpu.GPU) (bool, error) {
 	// check if attached in cloudstack
 	attached, err := internal_service.IsGpuAttachedCS(gpu.Host, gpu.Data.Bus)
 	if err != nil {
@@ -63,13 +63,13 @@ func IsGpuAvailable(gpu *vmModel.GPU) (bool, error) {
 	return true, nil
 }
 
-func GetAnyAvailableGPU(isPowerUser bool) (*vmModel.GPU, error) {
+func GetAnyAvailableGPU(isPowerUser bool) (*gpu.GPU, error) {
 	var excludedGPUs []string
 	if !isPowerUser {
 		excludedGPUs = conf.Env.GPU.PrivilegedGPUs
 	}
 
-	availableGPUs, err := vmModel.GetAllAvailableGPUs(conf.Env.GPU.ExcludedHosts, excludedGPUs)
+	availableGPUs, err := gpu.GetAllAvailableGPUs(conf.Env.GPU.ExcludedHosts, excludedGPUs)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func AttachGPU(gpuID, vmID, userID string) {
 		// TODO: add check for user's quota
 		oneHourFromNow := time.Now().Add(time.Hour)
 
-		attached, err := vmModel.AttachGPU(gpuID, vmID, userID, oneHourFromNow)
+		attached, err := gpu.AttachGPU(gpuID, vmID, userID, oneHourFromNow)
 		if err != nil {
 			log.Println(err)
 			return
@@ -138,7 +138,7 @@ func DetachGpuSync(vmID, userID string) error {
 		return makeError(err)
 	}
 
-	detached, err := vmModel.DetachGPU(vmID, userID)
+	detached, err := gpu.DetachGPU(vmID, userID)
 	if err != nil {
 		return makeError(err)
 	}

@@ -2,8 +2,8 @@ package confirmers
 
 import (
 	"fmt"
-	"go-deploy/models/deployment"
-	"go-deploy/models/vm"
+	"go-deploy/models/sys/deployment"
+	"go-deploy/models/sys/vm"
 	"go-deploy/pkg/app"
 	"log"
 )

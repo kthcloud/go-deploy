@@ -1,8 +1,8 @@
 package status_updaters
 
 import (
-	deploymentModel "go-deploy/models/deployment"
-	vmModel "go-deploy/models/vm"
+	deploymentModel "go-deploy/models/sys/deployment"
+	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/pkg/app"
 	"go.mongodb.org/mongo-driver/bson"
 	"time"
@@ -39,7 +39,7 @@ func deploymentStatusUpdater(ctx *app.Context) {
 			if err != nil {
 				continue
 			}
-			_ = deploymentModel.UpdateByID(deployment.ID, bson.D{{"statusCode", code}, {"statusMessage", message}})
+			_ = deploymentModel.UpdateWithBsonByID(deployment.ID, bson.D{{"statusCode", code}, {"statusMessage", message}})
 		}
 
 		time.Sleep(1 * time.Second)

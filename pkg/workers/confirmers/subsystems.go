@@ -1,8 +1,8 @@
 package confirmers
 
 import (
-	"go-deploy/models/deployment"
-	"go-deploy/models/vm"
+	"go-deploy/models/sys/deployment"
+	"go-deploy/models/sys/vm"
 )
 
 func getDeploymentCreatedConfirmers() []func(*deployment.Deployment) (bool, error) {

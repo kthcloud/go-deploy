@@ -7,7 +7,7 @@ import (
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
 	"go-deploy/models/dto/uri"
-	"go-deploy/models/vm"
+	"go-deploy/models/sys/vm/gpu"
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
 	v1 "go-deploy/routers/api/v1"
@@ -96,7 +96,7 @@ func AttachGPU(c *gin.Context) {
 		return
 	}
 
-	var gpu *vm.GPU
+	var gpu *gpu.GPU
 	if gpuID == "any" {
 		gpu, err = vm_service.GetAnyAvailableGPU(auth.IsPowerUser)
 		if err != nil {

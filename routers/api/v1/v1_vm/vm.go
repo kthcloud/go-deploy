@@ -7,7 +7,7 @@ import (
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
 	"go-deploy/models/dto/uri"
-	jobModel "go-deploy/models/job"
+	jobModel "go-deploy/models/sys/job"
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
 	v1 "go-deploy/routers/api/v1"
@@ -110,7 +110,7 @@ func Get(c *gin.Context) {
 
 	vm, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get vm: %s", err.Error()))
 		return
 	}
 
@@ -149,17 +149,17 @@ func Create(c *gin.Context) {
 		return
 	}
 
-	userInfo, err := user_service.GetOrCreate(auth.JwtToken)
+	user, err := user_service.GetOrCreate(auth.JwtToken)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get user: %s", err))
 		return
 	}
 
-	if userInfo.ID != auth.UserID {
+	if user.ID != auth.UserID {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Created user id does not match auth user id"))
 	}
 
-	if userInfo.VmQuota == 0 {
+	if user.VmQuota == 0 {
 		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, "User is not allowed to create vms")
 		return
 	}
@@ -182,13 +182,12 @@ func Create(c *gin.Context) {
 
 		jobID := uuid.New().String()
 		err = job_service.Create(jobID, auth.UserID, jobModel.TypeCreateVM, map[string]interface{}{
-			"id":           vm.ID,
-			"name":         requestBody.Name,
-			"sshPublicKey": requestBody.SshPublicKey,
-			"ownerId":      auth.UserID,
+			"id":      vm.ID,
+			"ownerId": auth.UserID,
+			"params":  requestBody,
 		})
 		if err != nil {
-			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to create job: %s", err))
 			return
 		}
 
@@ -201,23 +200,26 @@ func Create(c *gin.Context) {
 
 	vmCount, err := vm_service.GetCount(auth.UserID)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get number of vms: %s", err))
 		return
 	}
 
-	if vmCount >= userInfo.VmQuota {
-		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, fmt.Sprintf("User is not allowed to create more than %d vms", userInfo.VmQuota))
+	if vmCount >= user.VmQuota {
+		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, fmt.Sprintf("User is not allowed to create more than %d vms", user.VmQuota))
 		return
 	}
 
 	vmID := uuid.New().String()
 	jobID := uuid.New().String()
 	err = job_service.Create(jobID, auth.UserID, jobModel.TypeCreateVM, map[string]interface{}{
-		"id":           vmID,
-		"name":         requestBody.Name,
-		"sshPublicKey": requestBody.SshPublicKey,
-		"ownerId":      auth.UserID,
+		"id":      vmID,
+		"ownerId": auth.UserID,
+		"params":  requestBody,
 	})
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to create job: %s", err))
+		return
+	}
 
 	context.JSONResponse(http.StatusCreated, body.VmCreated{
 		ID:    vmID,
@@ -264,6 +266,10 @@ func Delete(c *gin.Context) {
 	err = job_service.Create(jobID, auth.UserID, jobModel.TypeDeleteVM, map[string]interface{}{
 		"name": current.Name,
 	})
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to create job: %s", err))
+		return
+	}
 
 	context.JSONResponse(http.StatusOK, body.VmDeleted{
 		ID:    current.ID,
@@ -314,13 +320,7 @@ func Update(c *gin.Context) {
 	}
 
 	if current.OwnerID != auth.UserID && !auth.IsAdmin {
-		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, "User is not allowed to update this vm")
-		return
-	}
-
-	err = vm_service.Update(current.ID, &requestBody)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to update vm: %s", err))
+		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, "User is not allowed to update this resource")
 		return
 	}
 

@@ -135,13 +135,3 @@ func CreateBindingError(data interface{}, err error) *body.BindingError {
 
 	return out
 }
-
-func CreateBindingErrorFromString(fieldName, message string) *body.BindingError {
-	out := &body.BindingError{
-		ValidationErrors: make(map[string][]string),
-	}
-
-	out.ValidationErrors[fieldName] = append(out.ValidationErrors[fieldName], message)
-
-	return out
-}

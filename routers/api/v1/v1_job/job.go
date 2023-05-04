@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"go-deploy/models/dto/uri"
-	jobModel "go-deploy/models/job"
+	jobModel "go-deploy/models/sys/job"
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
 	v1 "go-deploy/routers/api/v1"
