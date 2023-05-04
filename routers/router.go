@@ -48,6 +48,7 @@ func setupDeploymentRoutes(base *gin.RouterGroup, hooks *gin.RouterGroup) {
 	base.GET("/deployments/:deploymentId/ciConfig", v1_deployment.GetCiConfig)
 	base.GET("/deployments/:deploymentId/logs", v1_deployment.GetLogs)
 	base.POST("/deployments", v1_deployment.Create)
+	//base.POST("/deployments/:deploymentId", v1_deployment.Update)
 	base.DELETE("/deployments/:deploymentId", v1_deployment.Delete)
 
 	hooks.POST("/deployments/harbor", v1_deployment.HandleHarborHook)
@@ -58,8 +59,11 @@ func setupVmRoutes(base *gin.RouterGroup, _ *gin.RouterGroup) {
 
 	base.GET("/vms/:vmId", v1_vm.Get)
 	base.POST("/vms", v1_vm.Create)
-	base.POST("/vms/:vmId/command", v1_vm.DoCommand)
+	base.POST("/vms/:vmId", v1_vm.Update)
 	base.DELETE("/vms/:vmId", v1_vm.Delete)
+
+	base.POST("/vms/:vmId/command", v1_vm.DoCommand)
+
 	base.POST("/vms/:vmId/attachGpu", v1_vm.AttachGPU)
 	base.POST("/vms/:vmId/attachGpu/:gpuId", v1_vm.AttachGPU)
 	base.POST("/vms/:vmId/detachGpu", v1_vm.DetachGPU)

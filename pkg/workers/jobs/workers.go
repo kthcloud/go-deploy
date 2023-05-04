@@ -27,10 +27,14 @@ func jobFetcher(ctx *app.Context) {
 			go createVM(job)
 		case "deleteVm":
 			go deleteVM(job)
+		case "updateVm":
+			go updateVM(job)
 		case "createDeployment":
 			go createDeployment(job)
 		case "deleteDeployment":
 			go deleteDeployment(job)
+		case "updateDeployment":
+			go updateDeployment(job)
 		}
 	}
 }

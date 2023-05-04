@@ -2,6 +2,7 @@ package vm_service
 
 import (
 	"fmt"
+	"go-deploy/models/dto/body"
 	vmModel "go-deploy/models/vm"
 	"go-deploy/pkg/conf"
 	"go-deploy/service/vm_service/internal_service"
@@ -63,7 +64,7 @@ func Exists(name string) (bool, *vmModel.VM, error) {
 }
 
 func MarkBeingDeleted(vmID string) error {
-	return vmModel.UpdateByID(vmID, bson.D{{
+	return vmModel.UpdateWithBsonByID(vmID, bson.D{{
 		"beingDeleted", true,
 	}})
 }
@@ -100,9 +101,32 @@ func Delete(name string) error {
 	return nil
 }
 
+func Update(vmID string, dtoVmUpdate *body.VmUpdate) error {
+	vmUpdate := vmModel.VmUpdate{}
+
+	if dtoVmUpdate.Ports != nil {
+		var ports []vmModel.Port
+		for _, port := range *dtoVmUpdate.Ports {
+			ports = append(ports, vmModel.Port{
+				Name:     port.Name,
+				Port:     port.Port,
+				Protocol: port.Protocol,
+			})
+		}
+		vmUpdate.Ports = &ports
+	}
+
+	err := vmModel.UpdateByID(vmID, &vmUpdate)
+	if err != nil {
+		return fmt.Errorf("failed to update vm. details: %s", err)
+	}
+
+	return nil
+}
+
 func GetConnectionString(vm *vmModel.VM) (string, error) {
 	domainName := conf.Env.VM.ParentDomain
-	port := vm.Subsystems.PfSense.PortForwardingRule.ExternalPort
+	port := vm.Subsystems.PfSense.PortForwardingRuleMap["ssh"].ExternalPort
 
 	connectionString := fmt.Sprintf("ssh cloud@%s -p %d", domainName, port)
 

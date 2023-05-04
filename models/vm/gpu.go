@@ -244,7 +244,7 @@ func AttachGPU(gpuID, vmID, user string, end time.Time) (bool, error) {
 		}
 	}
 
-	err = UpdateByID(vmID, bson.D{{"gpuId", gpuID}})
+	err = UpdateWithBsonByID(vmID, bson.D{{"gpuId", gpuID}})
 	if err != nil {
 		// remove lease, if this also fails, we are in a bad state...
 		_, _ = models.GpuCollection.UpdateOne(
@@ -315,7 +315,7 @@ func DetachGPU(vmID, userID string) (bool, error) {
 		return false, err
 	}
 
-	err = UpdateByID(vmID, bson.D{{"gpuId", ""}})
+	err = UpdateWithBsonByID(vmID, bson.D{{"gpuId", ""}})
 	if err != nil {
 		// remove lease, if this also fails, we are in a bad state...
 		_, _ = models.GpuCollection.UpdateOne(

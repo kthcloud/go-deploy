@@ -42,24 +42,31 @@ func CreatePfSense(name string, vmIP net.IP) (*psModels.PortForwardingRulePublic
 
 	var portForwardingRule *psModels.PortForwardingRulePublic
 
-	if vm.Subsystems.PfSense.PortForwardingRule.ID != "" {
-		// make sure this is up-to-date with the ip address requested
-		if vm.Subsystems.PfSense.PortForwardingRule.LocalAddress.String() != vmIP.String() {
-			err = client.DeletePortForwardingRule(vm.Subsystems.PfSense.PortForwardingRule.ID)
+	ruleMap := vm.Subsystems.PfSense.PortForwardingRuleMap
+	if ruleMap == nil {
+		ruleMap = make(map[string]psModels.PortForwardingRulePublic)
+	}
+
+	rule, hasRule := ruleMap["ssh"]
+	if hasRule && rule.ID != "" {
+		// make sure this is up-to-date with the ip address requested, if not, delete it to trigger creation of a new one
+		if rule.LocalAddress.String() != vmIP.String() {
+			err = client.DeletePortForwardingRule(rule.ID)
 			if err != nil {
 				return nil, makeError(err)
 			}
 
-			err = vmModel.UpdateSubsystemByName(name, "pfSense", "portForwardingRule", psModels.PortForwardingRulePublic{})
+			delete(ruleMap, "ssh")
+
+			err = vmModel.UpdateSubsystemByName(name, "pfSense", "portForwardingRuleMap", ruleMap)
 			if err != nil {
 				return nil, makeError(err)
 			}
-
-			vm.Subsystems.PfSense.PortForwardingRule = psModels.PortForwardingRulePublic{}
 		}
 	}
 
-	if vm.Subsystems.PfSense.PortForwardingRule.ID == "" {
+	rule, hasRule = ruleMap["ssh"]
+	if !hasRule || rule.ID == "" {
 		id, err := client.CreatePortForwardingRule(&psModels.PortForwardingRulePublic{
 			Name:         name,
 			LocalAddress: vmIP,
@@ -74,12 +81,19 @@ func CreatePfSense(name string, vmIP net.IP) (*psModels.PortForwardingRulePublic
 			return nil, makeError(err)
 		}
 
-		err = vmModel.UpdateSubsystemByName(name, "pfSense", "portForwardingRule", *portForwardingRule)
+		if portForwardingRule == nil {
+			return nil, makeError(fmt.Errorf("failed to read port forwarding rule %s after creation", id))
+		}
+
+		ruleMap["ssh"] = *portForwardingRule
+
+		err = vmModel.UpdateSubsystemByName(name, "pfSense", "portForwardingRuleMap", ruleMap)
 		if err != nil {
 			return nil, makeError(err)
 		}
 	} else {
-		portForwardingRule = &vm.Subsystems.PfSense.PortForwardingRule
+		rule := vm.Subsystems.PfSense.PortForwardingRuleMap["ssh"]
+		portForwardingRule = &rule
 	}
 
 	if err != nil {
@@ -112,16 +126,20 @@ func DeletePfSense(name string) error {
 
 	vm, err := vmModel.GetByName(name)
 
-	if len(vm.Subsystems.PfSense.PortForwardingRule.ID) == 0 {
+	ruleMap := vm.Subsystems.PfSense.PortForwardingRuleMap
+	rule, hasRule := ruleMap["ssh"]
+	if !hasRule || rule.ID == "" {
 		return nil
 	}
 
-	err = client.DeletePortForwardingRule(vm.Subsystems.PfSense.PortForwardingRule.ID)
+	err = client.DeletePortForwardingRule(rule.ID)
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = vmModel.UpdateSubsystemByName(name, "pfSense", "portForwardingRule", psModels.PortForwardingRulePublic{})
+	delete(ruleMap, "ssh")
+
+	err = vmModel.UpdateSubsystemByName(name, "pfSense", "portForwardingRuleMap", ruleMap)
 	if err != nil {
 		return makeError(err)
 	}

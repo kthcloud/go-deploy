@@ -13,6 +13,12 @@ import (
 	"log"
 )
 
+type Port struct {
+	Name     string `bson:"name"`
+	Port     int    `bson:"port"`
+	Protocol string `bson:"protocol"`
+}
+
 type VM struct {
 	ID        string `bson:"id"`
 	Name      string `bson:"name"`
@@ -21,6 +27,11 @@ type VM struct {
 
 	GpuID        string `bson:"gpuId"`
 	SshPublicKey string `bson:"sshPublicKey"`
+
+	Ports []struct {
+		Name string `bson:"name"`
+		Port int    `bson:"port"`
+	} `bson:"ports"`
 
 	BeingCreated  bool       `bson:"beingCreated"`
 	BeingDeleted  bool       `bson:"beingDeleted"`
@@ -35,13 +46,13 @@ type Subsystems struct {
 }
 
 type CS struct {
-	VM                 csModels.VmPublic                 `bson:"vm"`
-	PortForwardingRule csModels.PortForwardingRulePublic `bson:"portForwardingRule"`
-	PublicIpAddress    csModels.PublicIpAddressPublic    `bson:"publicIpAddress"`
+	VM                    csModels.VmPublic                            `bson:"vm"`
+	PortForwardingRuleMap map[string]csModels.PortForwardingRulePublic `bson:"portForwardingRuleMap"`
+	PublicIpAddress       csModels.PublicIpAddressPublic               `bson:"publicIpAddress"`
 }
 
 type PfSense struct {
-	PortForwardingRule psModels.PortForwardingRulePublic `bson:"portForwardingRule"`
+	PortForwardingRuleMap map[string]psModels.PortForwardingRulePublic `bson:"portForwardingRuleMap"`
 }
 
 func (vm *VM) ToDTO(status, connectionString string, gpu *body.GpuRead) body.VmRead {
@@ -181,7 +192,27 @@ func DeleteByID(vmID, userID string) error {
 	return nil
 }
 
-func UpdateByID(id string, update bson.D) error {
+func UpdateByID(id string, update *VmUpdate) error {
+	updateData := bson.M{}
+
+	models.AddIfNotNil(updateData, "ports", update.Ports)
+
+	if len(updateData) == 0 {
+		return nil
+	}
+
+	_, err := models.VmCollection.UpdateOne(context.TODO(),
+		bson.D{{"id", id}},
+		bson.D{{"$set", updateData}},
+	)
+	if err != nil {
+		return fmt.Errorf("failed to update vm %s. details: %s", id, err)
+	}
+
+	return nil
+}
+
+func UpdateWithBsonByID(id string, update bson.D) error {
 	_, err := models.VmCollection.UpdateOne(context.TODO(), bson.D{{"id", id}}, bson.D{{"$set", update}})
 	if err != nil {
 		err = fmt.Errorf("failed to update vm %s. details: %s", id, err)

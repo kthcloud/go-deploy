@@ -128,25 +128,32 @@ func CreateCS(name, sshPublicKey string) (*CsCreated, error) {
 
 	// port-forwarding rule
 	var portForwardingRule *csModels.PortForwardingRulePublic
-	if vm.Subsystems.CS.PortForwardingRule.ID != "" {
+
+	ruleMap := vm.Subsystems.CS.PortForwardingRuleMap
+	if ruleMap == nil {
+		ruleMap = map[string]csModels.PortForwardingRulePublic{}
+	}
+
+	rule, hasRule := ruleMap["ssh"]
+	if hasRule && rule.ID != "" {
 		// make sure this is connected to the ip address above by deleting the one we think we own
-		if vm.Subsystems.CS.PortForwardingRule.IpAddressID != publicIpAddress.ID ||
-			vm.Subsystems.CS.PortForwardingRule.VmID != csVM.ID {
-			err = client.DeletePortForwardingRule(vm.Subsystems.CS.PortForwardingRule.ID)
+		if rule.IpAddressID != publicIpAddress.ID || rule.VmID != csVM.ID {
+			err = client.DeletePortForwardingRule(rule.ID)
 			if err != nil {
 				return nil, makeError(err)
 			}
 
-			err = vmModel.UpdateSubsystemByName(name, "cs", "portForwardingRule", csModels.PortForwardingRulePublic{})
+			delete(ruleMap, "ssh")
+
+			err = vmModel.UpdateSubsystemByName(name, "cs", "portForwardingRuleMap", ruleMap)
 			if err != nil {
 				return nil, makeError(err)
 			}
-
-			vm.Subsystems.CS.PortForwardingRule = csModels.PortForwardingRulePublic{}
 		}
 	}
 
-	if vm.Subsystems.CS.PortForwardingRule.ID == "" {
+	rule, hasRule = ruleMap["ssh"]
+	if !hasRule || rule.ID == "" {
 		id, err := client.CreatePortForwardingRule(&csModels.PortForwardingRulePublic{
 			VmID:        csVM.ID,
 			ProjectID:   csVM.ProjectID,
@@ -165,12 +172,15 @@ func CreateCS(name, sshPublicKey string) (*CsCreated, error) {
 			return nil, makeError(err)
 		}
 
-		err = vmModel.UpdateSubsystemByName(name, "cs", "portForwardingRule", *portForwardingRule)
+		ruleMap["ssh"] = *portForwardingRule
+
+		err = vmModel.UpdateSubsystemByName(name, "cs", "portForwardingRuleMap", ruleMap)
 		if err != nil {
 			return nil, makeError(err)
 		}
 	} else {
-		portForwardingRule = &vm.Subsystems.CS.PortForwardingRule
+		rule := vm.Subsystems.CS.PortForwardingRuleMap["ssh"]
+		portForwardingRule = &rule
 	}
 
 	return &CsCreated{
@@ -201,13 +211,15 @@ func DeleteCS(name string) error {
 		return nil
 	}
 
-	if vm.Subsystems.CS.PortForwardingRule.ID != "" {
-		err = client.DeletePortForwardingRule(vm.Subsystems.CS.PortForwardingRule.ID)
+	ruleMap := vm.Subsystems.CS.PortForwardingRuleMap
+	rule, hasRule := ruleMap["ssh"]
+	if hasRule && rule.ID != "" {
+		err = client.DeletePortForwardingRule(rule.ID)
 		if err != nil {
 			return makeError(err)
 		}
 
-		err = vmModel.UpdateSubsystemByName(name, "cs", "portForwardingRule", csModels.PortForwardingRulePublic{})
+		err = vmModel.UpdateSubsystemByName(name, "cs", "portForwardingRuleMap", ruleMap)
 		if err != nil {
 			return makeError(err)
 		}
