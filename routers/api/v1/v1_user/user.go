@@ -120,17 +120,6 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	// check if valid public key
-	if userUpdate.PublicKeys != nil {
-		for i, publicKey := range *userUpdate.PublicKeys {
-			if !v1.IsValidSshPublicKey(publicKey) {
-				bindingError := v1.CreateBindingErrorFromString("publicKeys", fmt.Sprintf("publicKeys[%d] is not a valid ssh public key", i))
-				context.JSONResponse(http.StatusBadRequest, bindingError)
-				return
-			}
-		}
-	}
-
 	auth, err := v1.WithAuth(&context)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))

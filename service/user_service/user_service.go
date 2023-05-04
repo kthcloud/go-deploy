@@ -45,10 +45,22 @@ func Update(requestedUserID, userID string, isAdmin bool, dtoUserUpdate *body.Us
 		return nil
 	}
 
+	if dtoUserUpdate.PublicKeys == nil {
+		dtoUserUpdate.PublicKeys = &[]body.PublicKey{}
+	}
+
+	publicKeys := make([]userModel.PublicKey, len(*dtoUserUpdate.PublicKeys))
+	for i, key := range *dtoUserUpdate.PublicKeys {
+		publicKeys[i] = userModel.PublicKey{
+			Name: key.Name,
+			Key:  key.Key,
+		}
+	}
+
 	userUpdate := &userModel.UserUpdate{
 		Username:   dtoUserUpdate.Username,
 		Email:      dtoUserUpdate.Email,
-		PublicKeys: dtoUserUpdate.PublicKeys,
+		PublicKeys: &publicKeys,
 	}
 
 	if isAdmin {

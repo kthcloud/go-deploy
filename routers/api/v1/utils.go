@@ -123,10 +123,7 @@ func CreateBindingError(data interface{}, err error) *body.BindingError {
 	if errors.As(err, &ve) {
 		for _, fe := range ve {
 			fieldName := fe.Field()
-			field, _ := reflect.TypeOf(data).Elem().FieldByName(fieldName)
-			fieldJSONName, _ := field.Tag.Lookup("json")
-
-			out.ValidationErrors[fieldJSONName] = append(out.ValidationErrors[fieldJSONName], msgForTag(fe))
+			out.ValidationErrors[fieldName] = append(out.ValidationErrors[fieldName], msgForTag(fe))
 		}
 	}
 

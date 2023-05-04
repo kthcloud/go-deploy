@@ -15,11 +15,14 @@ import (
 )
 
 type Deployment struct {
-	ID            string     `bson:"id"`
-	Name          string     `bson:"name"`
-	OwnerID       string     `bson:"ownerId"`
-	BeingCreated  bool       `bson:"beingCreated"`
-	BeingDeleted  bool       `bson:"beingDeleted"`
+	ID      string            `bson:"id"`
+	Name    string            `bson:"name"`
+	OwnerID string            `bson:"ownerId"`
+	Envs    map[string]string `bson:"envs"`
+
+	BeingCreated bool `bson:"beingCreated"`
+	BeingDeleted bool `bson:"beingDeleted"`
+
 	Subsystems    Subsystems `bson:"subsystems"`
 	StatusCode    int        `bson:"statusCode"`
 	StatusMessage string     `bson:"statusMessage"`
