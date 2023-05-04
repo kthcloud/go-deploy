@@ -2,32 +2,36 @@ package deployment_service
 
 import (
 	"fmt"
-	deploymentModel "go-deploy/models/deployment"
+	"go-deploy/models/dto/body"
+	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/service/deployment_service/internal_service"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func Create(deploymentID, name, ownerID string) error {
+func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreate) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create deployment. details: %s", err)
 	}
 
-	err := deploymentModel.CreateDeployment(deploymentID, name, ownerID)
+	params := deploymentModel.CreateParams{}
+	params.FromDTO(deploymentCreate)
+
+	err := deploymentModel.CreateDeployment(deploymentID, ownerID, &params)
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = internal_service.CreateHarbor(name, ownerID)
+	err = internal_service.CreateHarbor(params.Name, ownerID)
 	if err != nil {
 		return makeError(err)
 	}
 
-	k8sResult, err := internal_service.CreateK8s(name, ownerID)
+	k8sResult, err := internal_service.CreateK8s(params.Name, ownerID, params.Envs)
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = internal_service.CreateNPM(name, k8sResult.Service.GetFQDN())
+	err = internal_service.CreateNPM(params.Name, k8sResult.Service.GetFQDN())
 	if err != nil {
 		return makeError(err)
 	}
@@ -78,7 +82,7 @@ func Exists(name string) (bool, *deploymentModel.Deployment, error) {
 }
 
 func MarkBeingDeleted(deploymentID string) error {
-	return deploymentModel.UpdateByID(deploymentID, bson.D{{
+	return deploymentModel.UpdateWithBsonByID(deploymentID, bson.D{{
 		"beingDeleted", true,
 	}})
 }
@@ -99,6 +103,27 @@ func Delete(name string) error {
 	}
 
 	err = internal_service.DeleteK8s(name)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
+}
+
+func Update(name string, deploymentUpdate *body.DeploymentUpdate) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to update deployment. details: %s", err)
+	}
+
+	update := deploymentModel.UpdateParams{}
+	update.FromDTO(deploymentUpdate)
+
+	err := deploymentModel.UpdateByID(name, &update)
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = internal_service.UpdateK8s(name, update.Envs)
 	if err != nil {
 		return makeError(err)
 	}

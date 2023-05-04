@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"go-deploy/models/dto/uri"
-	jobModel "go-deploy/models/job"
+	jobModel "go-deploy/models/sys/job"
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
 	v1 "go-deploy/routers/api/v1"
@@ -17,7 +17,7 @@ func Get(c *gin.Context) {
 
 	var requestURI uri.JobGet
 	if err := context.GinContext.BindUri(&requestURI); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestURI, err))
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
 

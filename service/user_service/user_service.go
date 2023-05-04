@@ -2,16 +2,16 @@ package user_service
 
 import (
 	"go-deploy/models/dto/body"
-	userModel "go-deploy/models/user"
+	"go-deploy/models/sys/user"
 	"go-deploy/pkg/auth"
 )
 
 func CreateUser(userID, username string) error {
-	return userModel.Create(userID, username)
+	return user.Create(userID, username)
 }
 
-func GetByID(requestedUserID, userID string, isAdmin bool) (*userModel.User, error) {
-	user, err := userModel.GetByID(requestedUserID)
+func GetByID(requestedUserID, userID string, isAdmin bool) (*user.User, error) {
+	user, err := user.GetByID(requestedUserID)
 	if err != nil {
 		return nil, err
 	}
@@ -27,17 +27,17 @@ func GetByID(requestedUserID, userID string, isAdmin bool) (*userModel.User, err
 	return user, nil
 }
 
-func GetOrCreate(token *auth.KeycloakToken) (*userModel.User, error) {
-	err := userModel.Create(token.Sub, token.PreferredUsername)
+func GetOrCreate(token *auth.KeycloakToken) (*user.User, error) {
+	err := user.Create(token.Sub, token.PreferredUsername)
 	if err != nil {
 		return nil, err
 	}
 
-	return userModel.GetByID(token.Sub)
+	return user.GetByID(token.Sub)
 }
 
-func GetAll() ([]userModel.User, error) {
-	return userModel.GetAll()
+func GetAll() ([]user.User, error) {
+	return user.GetAll()
 }
 
 func Update(requestedUserID, userID string, isAdmin bool, dtoUserUpdate *body.UserUpdate) error {
@@ -49,15 +49,15 @@ func Update(requestedUserID, userID string, isAdmin bool, dtoUserUpdate *body.Us
 		dtoUserUpdate.PublicKeys = &[]body.PublicKey{}
 	}
 
-	publicKeys := make([]userModel.PublicKey, len(*dtoUserUpdate.PublicKeys))
+	publicKeys := make([]user.PublicKey, len(*dtoUserUpdate.PublicKeys))
 	for i, key := range *dtoUserUpdate.PublicKeys {
-		publicKeys[i] = userModel.PublicKey{
+		publicKeys[i] = user.PublicKey{
 			Name: key.Name,
 			Key:  key.Key,
 		}
 	}
 
-	userUpdate := &userModel.UserUpdate{
+	userUpdate := &user.UserUpdate{
 		Username:   dtoUserUpdate.Username,
 		Email:      dtoUserUpdate.Email,
 		PublicKeys: &publicKeys,
@@ -68,7 +68,7 @@ func Update(requestedUserID, userID string, isAdmin bool, dtoUserUpdate *body.Us
 		userUpdate.DeploymentQuota = dtoUserUpdate.DeploymentQuota
 	}
 
-	err := userModel.Update(requestedUserID, userUpdate)
+	err := user.Update(requestedUserID, userUpdate)
 	if err != nil {
 		return err
 	}

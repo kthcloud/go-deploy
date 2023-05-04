@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	deploymentModels "go-deploy/models/deployment"
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
 	"go-deploy/models/dto/uri"
-	jobModel "go-deploy/models/job"
+	deploymentModels "go-deploy/models/sys/deployment"
+	jobModel "go-deploy/models/sys/job"
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
 	v1 "go-deploy/routers/api/v1"
@@ -46,7 +46,7 @@ func GetList(c *gin.Context) {
 
 	var requestQuery query.DeploymentList
 	if err := context.GinContext.Bind(&requestQuery); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestQuery, err))
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
 
@@ -80,7 +80,7 @@ func Get(c *gin.Context) {
 
 	var requestURI uri.DeploymentGet
 	if err := context.GinContext.BindUri(&requestURI); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestURI, err))
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
 
@@ -110,7 +110,7 @@ func Create(c *gin.Context) {
 
 	var requestBody body.DeploymentCreate
 	if err := context.GinContext.BindJSON(&requestBody); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestBody, err))
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
 
@@ -120,13 +120,13 @@ func Create(c *gin.Context) {
 		return
 	}
 
-	userInfo, err := user_service.GetOrCreate(auth.JwtToken)
+	user, err := user_service.GetOrCreate(auth.JwtToken)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get user: %s", err))
 		return
 	}
 
-	if userInfo.DeploymentQuota == 0 {
+	if user.DeploymentQuota == 0 {
 		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, "User is not allowed to create deployments")
 		return
 	}
@@ -149,11 +149,11 @@ func Create(c *gin.Context) {
 		jobID := uuid.New().String()
 		err = job_service.Create(jobID, auth.UserID, jobModel.TypeCreateDeployment, map[string]interface{}{
 			"id":      deployment.ID,
-			"name":    requestBody.Name,
 			"ownerId": auth.UserID,
+			"params":  requestBody,
 		})
 		if err != nil {
-			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to create job: %s", err))
 			return
 		}
 
@@ -170,8 +170,8 @@ func Create(c *gin.Context) {
 		return
 	}
 
-	if deploymentCount >= userInfo.DeploymentQuota {
-		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, fmt.Sprintf("User is not allowed to create more than %d deployments", userInfo.DeploymentQuota))
+	if deploymentCount >= user.DeploymentQuota {
+		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, fmt.Sprintf("User is not allowed to create more than %d deployments", user.DeploymentQuota))
 		return
 	}
 
@@ -179,12 +179,12 @@ func Create(c *gin.Context) {
 	jobID := uuid.New().String()
 	err = job_service.Create(jobID, auth.UserID, jobModel.TypeCreateDeployment, map[string]interface{}{
 		"id":      deploymentID,
-		"name":    requestBody.Name,
 		"ownerId": auth.UserID,
+		"params":  requestBody,
 	})
 
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to create job: %s", err))
 		return
 	}
 
@@ -199,7 +199,7 @@ func Delete(c *gin.Context) {
 
 	var requestURI uri.DeploymentDelete
 	if err := context.GinContext.BindUri(&requestURI); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(&requestURI, err))
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
 
@@ -234,7 +234,7 @@ func Delete(c *gin.Context) {
 		"name": currentDeployment.Name,
 	})
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to create job: %s", err))
 		return
 	}
 
@@ -242,4 +242,69 @@ func Delete(c *gin.Context) {
 		ID:    currentDeployment.ID,
 		JobID: jobID,
 	})
+}
+
+func Update(c *gin.Context) {
+	context := app.NewContext(c)
+
+	var requestURI uri.DeploymentUpdate
+	if err := context.GinContext.BindUri(&requestURI); err != nil {
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		return
+	}
+
+	var requestBody body.DeploymentUpdate
+	if err := context.GinContext.BindJSON(&requestBody); err != nil {
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		return
+	}
+
+	auth, err := v1.WithAuth(&context)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
+		return
+	}
+
+	current, err := deployment_service.GetByID(auth.UserID, requestURI.DeploymentID, auth.IsAdmin)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, fmt.Sprintf("Failed to get vm: %s", err))
+		return
+	}
+
+	if current == nil {
+		context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, fmt.Sprintf("Deployment with id %s not found", requestURI.DeploymentID))
+		return
+	}
+
+	if current.BeingCreated {
+		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingCreated, "Resource is currently being created")
+		return
+	}
+
+	if current.BeingDeleted {
+		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingDeleted, "Resource is currently being deleted")
+		return
+	}
+
+	if current.OwnerID != auth.UserID && !auth.IsAdmin {
+		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, "User is not allowed to update this resource")
+		return
+	}
+
+	jobID := uuid.New().String()
+	err = job_service.Create(jobID, auth.UserID, jobModel.TypeUpdateDeployment, map[string]interface{}{
+		"name":   current.Name,
+		"update": requestBody,
+	})
+
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to create job: %s", err))
+		return
+	}
+
+	context.JSONResponse(http.StatusOK, body.VmUpdated{
+		ID:    current.ID,
+		JobID: jobID,
+	})
+
 }

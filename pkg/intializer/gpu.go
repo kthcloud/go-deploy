@@ -2,7 +2,7 @@ package intializer
 
 import (
 	"fmt"
-	vmModel "go-deploy/models/vm"
+	gpu2 "go-deploy/models/sys/vm/gpu"
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/landing"
 	"log"
@@ -41,7 +41,7 @@ func SynchronizeGPU() {
 
 			id := createGpuID(host.Name, gpu.Name, gpu.Slot)
 
-			current, err := vmModel.GetGpuByID(id)
+			current, err := gpu2.GetGpuByID(id)
 			if err != nil {
 				log.Println("failed to fetch gpu by id. details: ", err)
 				continue
@@ -52,7 +52,7 @@ func SynchronizeGPU() {
 				continue
 			}
 
-			err = vmModel.CreateGPU(id, host.Name, vmModel.GpuData{
+			err = gpu2.CreateGPU(id, host.Name, gpu2.GpuData{
 				Name:     gpu.Name,
 				Slot:     gpu.Slot,
 				Vendor:   gpu.Vendor,

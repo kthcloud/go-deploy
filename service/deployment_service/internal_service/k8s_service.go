@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	deploymentModel "go-deploy/models/deployment"
+	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/k8s"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
@@ -48,7 +48,7 @@ func createServicePublic(namespace, name string, port, targetPort int) *k8sModel
 	}
 }
 
-func CreateK8s(name, userID string) (*K8sResult, error) {
+func CreateK8s(name, userID string, envs []deploymentModel.Env) (*K8sResult, error) {
 	log.Println("setting up k8s for", name)
 
 	makeError := func(err error) error {
@@ -102,9 +102,18 @@ func CreateK8s(name, userID string) (*K8sResult, error) {
 		dockerRegistryProject := subsystemutils.GetPrefixedName(userID)
 		dockerImage := fmt.Sprintf("%s/%s/%s", conf.Env.DockerRegistry.Url, dockerRegistryProject, name)
 
-		id, err := client.CreateDeployment(createDeploymentPublic(namespace.FullName, name, dockerImage, []k8sModels.EnvVar{
+		k8sEnvs := []k8sModels.EnvVar{
 			{Name: "DEPLOY_APP_PORT", Value: strconv.Itoa(port)},
-		}))
+		}
+
+		for _, env := range envs {
+			k8sEnvs = append(k8sEnvs, k8sModels.EnvVar{
+				Name:  env.Name,
+				Value: env.Value,
+			})
+		}
+
+		id, err := client.CreateDeployment(createDeploymentPublic(namespace.FullName, name, dockerImage, k8sEnvs))
 		if err != nil {
 			return nil, makeError(err)
 		}
@@ -219,6 +228,57 @@ func DeleteK8s(name string) error {
 		}
 
 		err = deploymentModel.UpdateSubsystemByName(name, "k8s", "namespace", nil)
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	return nil
+}
+
+func UpdateK8s(name string, envs *[]deploymentModel.Env) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to update k8s for deployment %s. details: %s", name, err)
+	}
+
+	if envs == nil {
+		return nil
+	}
+
+	deployment, err := deploymentModel.GetByName(name)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if deployment == nil {
+		return nil
+	}
+
+	client, err := k8s.New(conf.Env.K8s.Client)
+	if err != nil {
+		return makeError(err)
+	}
+
+	// update deployment
+	if deployment.Subsystems.K8s.Deployment.ID != "" {
+		k8sEnvs := []k8sModels.EnvVar{
+			{Name: "DEPLOY_APP_PORT", Value: strconv.Itoa(conf.Env.App.Port)},
+		}
+		for _, env := range *envs {
+			k8sEnvs = append(k8sEnvs, k8sModels.EnvVar{
+				Name:  env.Name,
+				Value: env.Value,
+			})
+		}
+
+		deployment.Subsystems.K8s.Deployment.EnvVars = k8sEnvs
+
+		err = client.UpdateDeployment(&deployment.Subsystems.K8s.Deployment)
+		if err != nil {
+			return makeError(err)
+		}
+
+		err = deploymentModel.UpdateSubsystemByName(name, "k8s", "deployment", &deployment.Subsystems.K8s.Deployment)
 		if err != nil {
 			return makeError(err)
 		}

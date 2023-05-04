@@ -8,6 +8,10 @@ type DeploymentDelete struct {
 	DeploymentID string `uri:"deploymentId" binding:"required,uuid4"`
 }
 
+type DeploymentUpdate struct {
+	DeploymentID string `uri:"deploymentId" binding:"required,uuid4"`
+}
+
 type CiConfigGet struct {
 	DeploymentID string `uri:"deploymentId" binding:"required,uuid4"`
 }

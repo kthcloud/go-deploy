@@ -3,7 +3,7 @@ package internal_service
 import (
 	"context"
 	"fmt"
-	deploymentModel "go-deploy/models/deployment"
+	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/harbor"
 	harborModels "go-deploy/pkg/subsystems/harbor/models"

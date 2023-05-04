@@ -2,7 +2,8 @@ package internal_service
 
 import (
 	"fmt"
-	vmModel "go-deploy/models/vm"
+	vmModel "go-deploy/models/sys/vm"
+	gpu2 "go-deploy/models/sys/vm/gpu"
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/cs"
 	"go-deploy/pkg/subsystems/cs/commands"
@@ -275,7 +276,7 @@ func AttachGPU(gpuID, vmID string) error {
 		return makeError(fmt.Errorf("vm is not created yet"))
 	}
 
-	gpu, err := vmModel.GetGpuByID(gpuID)
+	gpu, err := gpu2.GetGpuByID(gpuID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -438,7 +439,7 @@ func DoCommandCS(vmID string, gpuID *string, command string) error {
 	return nil
 }
 
-func createExtraConfig(gpu *vmModel.GPU) string {
+func createExtraConfig(gpu *gpu2.GPU) string {
 	data := fmt.Sprintf(`
 <devices> <hostdev mode='subsystem' type='pci' managed='yes'> <driver name='vfio' />
 	<source> <address domain='0x0000' bus='0x%s' slot='0x00' function='0x0' /> </source> 
@@ -452,7 +453,7 @@ func createExtraConfig(gpu *vmModel.GPU) string {
 }
 
 func getRequiredHost(gpuID string) (*string, error) {
-	gpu, err := vmModel.GetGpuByID(gpuID)
+	gpu, err := gpu2.GetGpuByID(gpuID)
 	if err != nil {
 		return nil, err
 	}

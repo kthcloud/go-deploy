@@ -2,7 +2,7 @@ package internal_service
 
 import (
 	"fmt"
-	deploymentModel "go-deploy/models/deployment"
+	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/npm"
 	npmModels "go-deploy/pkg/subsystems/npm/models"

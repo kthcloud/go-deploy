@@ -2,11 +2,11 @@ package confirmers
 
 import (
 	"fmt"
-	"go-deploy/models/vm"
+	"go-deploy/models/sys/vm/gpu"
 	"go-deploy/service/vm_service"
 )
 
-func ReturnGPU(gpu *vm.GPU) error {
+func ReturnGPU(gpu *gpu.GPU) error {
 	if gpu.Lease.VmID == "" {
 		return nil
 	}

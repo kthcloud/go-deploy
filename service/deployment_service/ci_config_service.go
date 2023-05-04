@@ -2,8 +2,8 @@ package deployment_service
 
 import (
 	"fmt"
-	deploymentModel "go-deploy/models/deployment"
 	"go-deploy/models/dto/body"
+	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/pkg/conf"
 	"go-deploy/utils/subsystemutils"
 	"gopkg.in/yaml.v2"

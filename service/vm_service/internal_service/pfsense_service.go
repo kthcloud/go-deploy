@@ -2,7 +2,7 @@ package internal_service
 
 import (
 	"fmt"
-	vmModel "go-deploy/models/vm"
+	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/pfsense"
 	psModels "go-deploy/pkg/subsystems/pfsense/models"

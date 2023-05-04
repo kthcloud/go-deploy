@@ -4,74 +4,17 @@ import (
 	"context"
 	"fmt"
 	"go-deploy/models"
-	"go-deploy/models/dto/body"
 	"go-deploy/pkg/status_codes"
-	harborModels "go-deploy/pkg/subsystems/harbor/models"
-	k8sModels "go-deploy/pkg/subsystems/k8s/models"
-	npmModels "go-deploy/pkg/subsystems/npm/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"log"
 )
 
-type Deployment struct {
-	ID      string            `bson:"id"`
-	Name    string            `bson:"name"`
-	OwnerID string            `bson:"ownerId"`
-	Envs    map[string]string `bson:"envs"`
-
-	BeingCreated bool `bson:"beingCreated"`
-	BeingDeleted bool `bson:"beingDeleted"`
-
-	Subsystems    Subsystems `bson:"subsystems"`
-	StatusCode    int        `bson:"statusCode"`
-	StatusMessage string     `bson:"statusMessage"`
-}
-
-type Subsystems struct {
-	K8s    K8s    `bson:"k8s"`
-	Npm    NPM    `bson:"npm"`
-	Harbor Harbor `bson:"harbor"`
-}
-
-type K8s struct {
-	Namespace  k8sModels.NamespacePublic  `bson:"namespace"`
-	Deployment k8sModels.DeploymentPublic `bson:"deployment"`
-	Service    k8sModels.ServicePublic    `bson:"service"`
-}
-
-type NPM struct {
-	ProxyHost npmModels.ProxyHostPublic `bson:"proxyHost"`
-}
-
-type Harbor struct {
-	Project    harborModels.ProjectPublic    `bson:"project"`
-	Robot      harborModels.RobotPublic      `bson:"robot"`
-	Repository harborModels.RepositoryPublic `bson:"repository"`
-	Webhook    harborModels.WebhookPublic    `bson:"webhook"`
-}
-
-func (deployment *Deployment) ToDTO(url string) body.DeploymentRead {
-	var fullURL *string
-	if url != "" {
-		res := fmt.Sprintf("https://%s", url)
-		fullURL = &res
-	}
-
-	return body.DeploymentRead{
-		ID:      deployment.ID,
-		Name:    deployment.Name,
-		OwnerID: deployment.OwnerID,
-		Status:  deployment.StatusMessage,
-		URL:     fullURL,
-	}
-}
-
 func (deployment *Deployment) Ready() bool {
 	return !deployment.BeingCreated && !deployment.BeingDeleted
 }
 
-func CreateDeployment(deploymentID, name, ownerID string) error {
+func CreateDeployment(deploymentID, ownerID string, params *CreateParams) error {
 	currentDeployment, err := GetByID(deploymentID)
 	if err != nil {
 		return err
@@ -82,18 +25,23 @@ func CreateDeployment(deploymentID, name, ownerID string) error {
 	}
 
 	deployment := Deployment{
-		ID:            deploymentID,
-		Name:          name,
-		OwnerID:       ownerID,
-		BeingCreated:  true,
-		BeingDeleted:  false,
+		ID:      deploymentID,
+		Name:    params.Name,
+		OwnerID: ownerID,
+
+		Private: params.Private,
+		Envs:    params.Envs,
+
+		BeingCreated: true,
+		BeingDeleted: false,
+
 		StatusCode:    status_codes.ResourceBeingCreated,
 		StatusMessage: status_codes.GetMsg(status_codes.ResourceBeingCreated),
 	}
 
 	_, err = models.DeploymentCollection.InsertOne(context.TODO(), deployment)
 	if err != nil {
-		err = fmt.Errorf("failed to create deployment %s. details: %s", name, err)
+		err = fmt.Errorf("failed to create deployment %s. details: %s", params.Name, err)
 		return err
 	}
 
@@ -188,7 +136,29 @@ func CountByOwnerID(ownerID string) (int, error) {
 	return int(count), nil
 }
 
-func UpdateByID(id string, update bson.D) error {
+func UpdateByID(id string, update *UpdateParams) error {
+	updateData := bson.M{}
+
+	models.AddIfNotNil(updateData, "envs", update.Envs)
+	models.AddIfNotNil(updateData, "private", update.Private)
+
+	if len(updateData) == 0 {
+		return nil
+	}
+
+	_, err := models.DeploymentCollection.UpdateOne(context.TODO(),
+		bson.D{{"id", id}},
+		bson.D{{"$set", updateData}},
+	)
+	if err != nil {
+		return fmt.Errorf("failed to update deployment %s. details: %s", id, err)
+	}
+
+	return nil
+
+}
+
+func UpdateWithBsonByID(id string, update bson.D) error {
 	_, err := models.DeploymentCollection.UpdateOne(context.TODO(), bson.D{{"id", id}}, bson.D{{"$set", update}})
 	if err != nil {
 		err = fmt.Errorf("failed to update deployment %s. details: %s", id, err)
