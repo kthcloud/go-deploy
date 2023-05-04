@@ -1,103 +1,27 @@
-# go-deploy
+# 🚀 go-deploy
 
-[![ci](https://github.com/kthcloud/go-deploy/actions/workflows/docker-image.yml/badge.svg)](https://github.com/kthcloud/go-deploy/actions/workflows/docker-image.yml)
+go-deploy is a simple API to create deployments similar to Heroku and spin up virtual machines built on top of kthcloud.
 
-A simple API to create deployments similar to Heroku and spin up virtual machines built on top of kthcloud
+## 🤝 Contributing
 
-To start the project, the following envs must be defined
+Thank you for considering contributing to go-deploy! Please follow these guidelines to contribute:
 
-```
-DEPLOY_SESSION_SECRET
-User generated secret
+1. Fork the repository.
+2. Create a new branch for your feature or bug fix.
+3. Ensure your code passes all tests and linting.
+4. Submit a pull request.
 
-DEPLOY_EXTERNAL_URL
-External URL of the API
+## 🚀 Getting Started
 
-DEPLOY_PARENT_DOMAIN
-Base URL for deployments
+1. Clone the repository: `git clone https://github.com/kthcloud/go-deploy/edit/main/README.md.git`
+2. Build the project: `go build`
+3. Run the tests: `go test ./...`
+4. Start the API server: `./go-deploy`
 
-DEPLOY_PARENT_DOMAIN_VM
-Base URL for virtual machines
+## 📝 License
 
-DEPLOY_DOCKER_REGISTRY_URL
-URL to push Docker images to
+go-deploy is open-source software licensed under the [MIT license](https://opensource.org/licenses/MIT).
 
-DEPLOY_PLACEHOLDER_DOCKER_IMAGE
-Image for newly created deployments
+## 📧 Contact
 
-DEPLOY_APP_PORT
-Internal port for deployments
-
-DEPLOY_APP_PREFIX
-Internal prefix for deployment names
-
-DEPLOY_KEYCLOAK_URL
-Keycloak URL (only domain name)
-
-DEPLOY_KEYCLOAK_REALM
-Keycloak Realm to use for authentication
-
-DEPLOY_DB_URL
-URL for MongoDB (only domain name)
-
-DEPLOY_DB_NAME
-Database name where a collection 'deploy' will be put
-
-DEPLOY_DB_USERNAME
-Username for database authentication
-
-DEPLOY_DB_PASSWORD
-Password for database authentication
-
-DEPLOY_K8S_CONFIG
-Base64-encoded kube config to a cluster where deployments will be hosted
-
-DEPLOY_NPM_API_URL
-URL to NPM (usually under /api)
-
-DEPLOY_NPM_ADMIN_IDENTITY
-Username for NPM authentication
-
-DEPLOY_NPM_ADMIN_SECRET
-Password for NPM authentication
-
-DEPLOY_HARBOR_API_URL
-URL to Harbor API (usually under /api/v2.0)
-
-DEPLOY_HARBOR_WEBHOOK_SECRET
-Secret used to authenticate webhook requests
-
-DEPLOY_HARBOR_ADMIN_IDENTITY
-Username for Harbor authentication
-
-DEPLOY_HARBOR_ADMIN_SECRET
-Password for Harbor authentication
-
-DEPLOY_CS_API_URL
-URL to CloudStack API (usually under /client/api)
-
-DEPLOY_CS_API_KEY
-API key for CloudStack authentication
-
-DEPLOY_CS_SECRET_KEY
-Secret key for CloudStack authentication
-
-DEPLOY_CS_VM_PASSWORD
-Password for newly created virtual machines (temporary solution)
-
-DEPLOY_PFSENSE_API_URL
-URL to pfSense API (usually under /api/v1)
-
-DEPLOY_PFSENSE_ADMIN_IDENTITY
-Username for pfSense authentication
-
-DEPLOY_PFSENSE_ADMIN_SECRET
-Password for pfSense authentication
-
-DEPLOY_PFSENSE_PUBLIC_IP
-Public IP to access virtual machines through
-
-DEPLOY_PFSENSE_PORT_RANGE
-Port range to sample virtual machine ports from
-```
-
+If you have any questions or feedback, please feel free to contact us at [email@example.com](mailto:email@example.com).
