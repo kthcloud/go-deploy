@@ -15,6 +15,18 @@ import (
 	"net/http"
 )
 
+// GetGpuList
+// @Summary Get list of GPUs
+// @Description Get list of GPUs
+// @Tags VM
+// @Accept  json
+// @Produce  json
+// @Param onlyShowAvailable query bool false "Only show available GPUs"
+// @Success 200 {array} body.GpuRead
+// @Failure 400 {object} app.ErrorResponse
+// @Failure 404 {object} app.ErrorResponse
+// @Failure 423 {object} app.ErrorResponse
+// @Failure 500 {object} app.ErrorResponse
 func GetGpuList(c *gin.Context) {
 	context := app.NewContext(c)
 
@@ -44,6 +56,20 @@ func GetGpuList(c *gin.Context) {
 	context.JSONResponse(200, dtoGPUs)
 }
 
+// AttachGPU
+// @Summary Attach GPU to VM
+// @Description Attach GPU to VM
+// @Tags VM
+// @Accept  json
+// @Produce  json
+// @Param vmId path string true "VM ID"
+// @Param gpuId path string true "GPU ID"
+// @Success 200 {object} body.VmRead
+// @Failure 400 {object} app.ErrorResponse
+// @Failure 404 {object} app.ErrorResponse
+// @Failure 423 {object} app.ErrorResponse
+// @Failure 500 {object} app.ErrorResponse
+// @Router /api/v1/vms/{vmId}/gpu [post]
 func AttachGPU(c *gin.Context) {
 	context := app.NewContext(c)
 
@@ -142,6 +168,19 @@ func AttachGPU(c *gin.Context) {
 	context.JSONResponse(http.StatusCreated, gpu.ToDto())
 }
 
+// DetachGPU
+// @Summary Detach GPU from VM
+// @Description Detach GPU from VM
+// @Tags VM
+// @Accept  json
+// @Produce  json
+// @Param vmId path string true "VM ID"
+// @Success 200 {object} body.VmRead
+// @Failure 400 {object} app.ErrorResponse
+// @Failure 404 {object} app.ErrorResponse
+// @Failure 423 {object} app.ErrorResponse
+// @Failure 500 {object} app.ErrorResponse
+// @Router /api/v1/vms/{vmId}/gpu [delete]
 func DetachGPU(c *gin.Context) {
 	context := app.NewContext(c)
 

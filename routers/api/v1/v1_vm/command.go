@@ -12,6 +12,20 @@ import (
 	"net/http"
 )
 
+// DoCommand
+// @Summary Do command
+// @Description Do command
+// @Tags VM
+// @Accept  json
+// @Produce  json
+// @Param vmId path string true "VM ID"
+// @Param body body body.DoCommand true "Command body"
+// @Success 200 {empty} empty
+// @Failure 400 {object} app.ErrorResponse
+// @Failure 404 {object} app.ErrorResponse
+// @Failure 423 {object} app.ErrorResponse
+// @Failure 500 {object} app.ErrorResponse
+// @Router /api/v1/vms/{vmId}/command [post]
 func DoCommand(c *gin.Context) {
 	context := app.NewContext(c)
 

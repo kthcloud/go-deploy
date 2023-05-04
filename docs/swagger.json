@@ -1,0 +1,1275 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "contact": {}
+    },
+    "paths": {
+        "/api/v1/deployments": {
+            "get": {
+                "description": "Get list of deployments",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Deployment"
+                ],
+                "summary": "Get list of deployments",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "With the bearer started",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Get all deployments",
+                        "name": "wantAll",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/body.DeploymentRead"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create deployment",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Deployment"
+                ],
+                "summary": "Create deployment",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "With the bearer started",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Deployment body",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/body.DeploymentCreate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.DeploymentRead"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/deployments/{deploymentId}": {
+            "put": {
+                "description": "Update deployment",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Deployment"
+                ],
+                "summary": "Update deployment",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "With the bearer started",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Deployment ID",
+                        "name": "deploymentId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Deployment update",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/body.DeploymentUpdate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.DeploymentUpdated"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete deployment",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Deployment"
+                ],
+                "summary": "Delete deployment",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "With the bearer started",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Deployment ID",
+                        "name": "deploymentId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.DeploymentCreated"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/deployments/{deploymentId}/ci-config": {
+            "get": {
+                "description": "Get CI config",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Deployment"
+                ],
+                "summary": "Get CI config",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Deployment ID",
+                        "name": "deploymentId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.CiConfig"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/deployments/{deployment_id}": {
+            "get": {
+                "description": "Get deployment by id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Deployment"
+                ],
+                "summary": "Get deployment by id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "With the bearer started",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Deployment ID",
+                        "name": "deploymentId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.DeploymentRead"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/jobs/{id}": {
+            "get": {
+                "description": "Get job by id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Job"
+                ],
+                "summary": "Get job by id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Job ID",
+                        "name": "jobId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.JobRead"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/users": {
+            "get": {
+                "description": "Get user list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Get user list",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "Want all users",
+                        "name": "wantAll",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/body.UserRead"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/users/{userId}": {
+            "get": {
+                "description": "Get user by id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Get user by id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.UserRead"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/vm": {
+            "get": {
+                "description": "Get list of VMs",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "VM"
+                ],
+                "summary": "Get list of VMs",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "Want all VMs",
+                        "name": "wantAll",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/body.VmRead"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create VM",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "VM"
+                ],
+                "summary": "Create VM",
+                "parameters": [
+                    {
+                        "description": "VM body",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/body.VmCreate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.VmCreated"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "423": {
+                        "description": "Locked",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/vm/{vmId}": {
+            "get": {
+                "description": "Get VM by id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "VM"
+                ],
+                "summary": "Get VM by id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "VM ID",
+                        "name": "vmId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.VmRead"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update VM",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "VM"
+                ],
+                "summary": "Update VM",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "VM ID",
+                        "name": "vmId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "VM update",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/body.VmUpdate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.VmUpdated"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "423": {
+                        "description": "Locked",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete VM",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "VM"
+                ],
+                "summary": "Delete VM",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "VM ID",
+                        "name": "vmId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.VmDeleted"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "423": {
+                        "description": "Locked",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/vms/{vmId}/command": {
+            "post": {
+                "description": "Do command",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "VM"
+                ],
+                "summary": "Do command",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "VM ID",
+                        "name": "vmId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Command body",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/body.DoCommand"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "empty"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "423": {
+                        "description": "Locked",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/vms/{vmId}/gpu": {
+            "post": {
+                "description": "Attach GPU to VM",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "VM"
+                ],
+                "summary": "Attach GPU to VM",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "VM ID",
+                        "name": "vmId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "GPU ID",
+                        "name": "gpuId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.VmRead"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "423": {
+                        "description": "Locked",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Detach GPU from VM",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "VM"
+                ],
+                "summary": "Detach GPU from VM",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "VM ID",
+                        "name": "vmId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.VmRead"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "423": {
+                        "description": "Locked",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "app.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/app.errorPiece"
+                    }
+                }
+            }
+        },
+        "app.errorPiece": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "msg": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.CiConfig": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.DeploymentCreate": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "envs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/body.Env"
+                    }
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 30,
+                    "minLength": 3
+                },
+                "private": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "body.DeploymentCreated": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "jobId": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.DeploymentRead": {
+            "type": "object",
+            "properties": {
+                "envs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/body.Env"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "ownerId": {
+                    "type": "string"
+                },
+                "private": {
+                    "type": "boolean"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.DeploymentUpdate": {
+            "type": "object",
+            "properties": {
+                "envs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/body.Env"
+                    }
+                },
+                "private": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "body.DeploymentUpdated": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "jobId": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.DoCommand": {
+            "type": "object",
+            "required": [
+                "command"
+            ],
+            "properties": {
+                "command": {
+                    "type": "string",
+                    "enum": [
+                        "start",
+                        "stop",
+                        "reboot"
+                    ]
+                }
+            }
+        },
+        "body.Env": {
+            "type": "object",
+            "required": [
+                "name",
+                "value"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                },
+                "value": {
+                    "type": "string",
+                    "maxLength": 10000,
+                    "minLength": 1
+                }
+            }
+        },
+        "body.GpuLease": {
+            "type": "object",
+            "properties": {
+                "end": {
+                    "type": "string"
+                },
+                "user": {
+                    "type": "string"
+                },
+                "vmId": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.GpuRead": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "lease": {
+                    "$ref": "#/definitions/body.GpuLease"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.JobRead": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "userId": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.PublicKey": {
+            "type": "object",
+            "required": [
+                "key",
+                "name"
+            ],
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 30,
+                    "minLength": 1
+                }
+            }
+        },
+        "body.UserRead": {
+            "type": "object",
+            "properties": {
+                "admin": {
+                    "type": "boolean"
+                },
+                "deploymentQuota": {
+                    "type": "integer"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "powerUser": {
+                    "type": "boolean"
+                },
+                "publicKeys": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/body.PublicKey"
+                    }
+                },
+                "username": {
+                    "type": "string"
+                },
+                "vmQuota": {
+                    "type": "integer"
+                }
+            }
+        },
+        "body.VmCreate": {
+            "type": "object",
+            "required": [
+                "name",
+                "sshPublicKey"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 30,
+                    "minLength": 3
+                },
+                "sshPublicKey": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.VmCreated": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "jobId": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.VmDeleted": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "jobId": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.VmGpu": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "leaseEnd": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.VmPort": {
+            "type": "object",
+            "required": [
+                "name",
+                "port",
+                "protocol"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "port": {
+                    "type": "integer",
+                    "maximum": 65535,
+                    "minimum": 1
+                },
+                "protocol": {
+                    "type": "string",
+                    "enum": [
+                        "tcp",
+                        "udp"
+                    ]
+                }
+            }
+        },
+        "body.VmRead": {
+            "type": "object",
+            "properties": {
+                "connectionString": {
+                    "type": "string"
+                },
+                "gpu": {
+                    "$ref": "#/definitions/body.VmGpu"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "ownerId": {
+                    "type": "string"
+                },
+                "sshPublicKey": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.VmUpdate": {
+            "type": "object",
+            "properties": {
+                "ports": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/body.VmPort"
+                    }
+                }
+            }
+        },
+        "body.VmUpdated": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "jobId": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

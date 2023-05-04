@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-type errorResponse struct {
+type ErrorResponse struct {
 	Errors []errorPiece `json:"errors"`
 }
 
@@ -24,7 +24,7 @@ func (context *ClientContext) ResponseValidationError(errors map[string][]string
 
 func (context *ClientContext) ErrorResponse(httpCode int, errCode int, message string) {
 	errors := []errorPiece{{Code: deployApiErrors.GetMsg(errCode), Msg: message}}
-	context.GinContext.JSON(httpCode, errorResponse{Errors: errors})
+	context.GinContext.JSON(httpCode, ErrorResponse{Errors: errors})
 }
 
 func (context *ClientContext) JSONResponse(httpCode int, data interface{}) {

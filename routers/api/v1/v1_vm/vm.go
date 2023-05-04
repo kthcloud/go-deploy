@@ -46,6 +46,16 @@ func getAllVMs(context *app.ClientContext) {
 	context.JSONResponse(http.StatusOK, dtoVMs)
 }
 
+// GetList
+// @Summary Get list of VMs
+// @Description Get list of VMs
+// @Tags VM
+// @Accept  json
+// @Produce  json
+// @Param wantAll query bool false "Want all VMs"
+// @Success 200 {array} body.VmRead
+// @Failure 500 {object} app.ErrorResponse
+// @Router /api/v1/vm [get]
 func GetList(c *gin.Context) {
 	context := app.NewContext(c)
 
@@ -93,6 +103,18 @@ func GetList(c *gin.Context) {
 	context.JSONResponse(200, dtoVMs)
 }
 
+// Get
+// @Summary Get VM by id
+// @Description Get VM by id
+// @Tags VM
+// @Accept  json
+// @Produce  json
+// @Param vmId path string true "VM ID"
+// @Success 200 {object} body.VmRead
+// @Failure 400 {object} app.ErrorResponse
+// @Failure 404 {object} app.ErrorResponse
+// @Failure 500 {object} app.ErrorResponse
+// @Router /api/v1/vm/{vmId} [get]
 func Get(c *gin.Context) {
 	context := app.NewContext(c)
 
@@ -134,6 +156,20 @@ func Get(c *gin.Context) {
 	context.JSONResponse(200, vm.ToDTO(vm.StatusMessage, connectionString, gpuRead))
 }
 
+// Create
+// @Summary Create VM
+// @Description Create VM
+// @Tags VM
+// @Accept  json
+// @Produce  json
+// @Param body body body.VmCreate true "VM body"
+// @Success 200 {object} body.VmCreated
+// @Failure 400 {object} app.ErrorResponse
+// @Failure 401 {object} app.ErrorResponse
+// @Failure 404 {object} app.ErrorResponse
+// @Failure 423 {object} app.ErrorResponse
+// @Failure 500 {object} app.ErrorResponse
+// @Router /api/v1/vm [post]
 func Create(c *gin.Context) {
 	context := app.NewContext(c)
 
@@ -227,6 +263,20 @@ func Create(c *gin.Context) {
 	})
 }
 
+// Delete
+// @Summary Delete VM
+// @Description Delete VM
+// @Tags VM
+// @Accept  json
+// @Produce  json
+// @Param vmId path string true "VM ID"
+// @Success 200 {object} body.VmDeleted
+// @Failure 400 {object} app.ErrorResponse
+// @Failure 401 {object} app.ErrorResponse
+// @Failure 404 {object} app.ErrorResponse
+// @Failure 423 {object} app.ErrorResponse
+// @Failure 500 {object} app.ErrorResponse
+// @Router /api/v1/vm/{vmId} [delete]
 func Delete(c *gin.Context) {
 	context := app.NewContext(c)
 
@@ -277,6 +327,21 @@ func Delete(c *gin.Context) {
 	})
 }
 
+// Update
+// @Summary Update VM
+// @Description Update VM
+// @Tags VM
+// @Accept  json
+// @Produce  json
+// @Param vmId path string true "VM ID"
+// @Param body body body.VmUpdate true "VM update"
+// @Success 200 {object} body.VmUpdated
+// @Failure 400 {object} app.ErrorResponse
+// @Failure 401 {object} app.ErrorResponse
+// @Failure 404 {object} app.ErrorResponse
+// @Failure 423 {object} app.ErrorResponse
+// @Failure 500 {object} app.ErrorResponse
+// @Router /api/v1/vm/{vmId} [put]
 func Update(c *gin.Context) {
 	context := app.NewContext(c)
 

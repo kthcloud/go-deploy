@@ -11,6 +11,17 @@ import (
 	"net/http"
 )
 
+// GetCiConfig
+// @Summary Get CI config
+// @Description Get CI config
+// @Tags Deployment
+// @Accept  json
+// @Produce  json
+// @Param deploymentId path string true "Deployment ID"
+// @Success 200 {object} body.CiConfig
+// @Failure 400 {object} app.ErrorResponse
+// @Failure 500 {object} app.ErrorResponse
+// @Router /api/v1/deployments/{deploymentId}/ci-config [get]
 func GetCiConfig(c *gin.Context) {
 	context := app.NewContext(c)
 

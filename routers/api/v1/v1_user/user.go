@@ -13,6 +13,17 @@ import (
 	"net/http"
 )
 
+// GetList
+// @Summary Get user list
+// @Description Get user list
+// @Tags User
+// @Accept  json
+// @Produce  json
+// @Param wantAll query bool false "Want all users"
+// @Success 200 {array}  body.UserRead
+// @Failure 400 {object} app.ErrorResponse
+// @Failure 500 {object} app.ErrorResponse
+// @Router /api/v1/users [get]
 func GetList(c *gin.Context) {
 	context := app.NewContext(c)
 
@@ -53,6 +64,17 @@ func GetList(c *gin.Context) {
 	context.JSONResponse(200, user.ToDTO())
 }
 
+// Get
+// @Summary Get user by id
+// @Description Get user by id
+// @Tags User
+// @Accept  json
+// @Produce  json
+// @Param userId path string true "User ID"
+// @Success 200 {object}  body.UserRead
+// @Failure 400 {object} app.ErrorResponse
+// @Failure 500 {object} app.ErrorResponse
+// @Router /api/v1/users/{userId} [get]
 func Get(c *gin.Context) {
 	context := app.NewContext(c)
 

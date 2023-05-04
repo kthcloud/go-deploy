@@ -9,7 +9,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func GetCIConfig(userId, deploymentID string, isAdmin bool) (*body.CIConfig, error) {
+func GetCIConfig(userId, deploymentID string, isAdmin bool) (*body.CiConfig, error) {
 	deployment, err := GetByID(userId, deploymentID, isAdmin)
 	if err != nil {
 		return nil, err
@@ -72,6 +72,6 @@ func GetCIConfig(userId, deploymentID string, isAdmin bool) (*body.CIConfig, err
 		return nil, err
 	}
 
-	ciConfig := body.CIConfig{Config: string(marshalledConfig)}
+	ciConfig := body.CiConfig{Config: string(marshalledConfig)}
 	return &ciConfig, nil
 }
