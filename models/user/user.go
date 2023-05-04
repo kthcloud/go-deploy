@@ -11,14 +11,14 @@ import (
 )
 
 type User struct {
-	ID              string   `json:"id" bson:"id"`
-	Username        string   `json:"username" bson:"username"`
-	Email           string   `json:"email" bson:"email"`
-	VmQuota         int      `json:"vmQuota" bson:"vmQuota"`
-	DeploymentQuota int      `json:"deploymentQuota" bson:"deploymentQuota"`
-	IsAdmin         bool     `json:"isAdmin" bson:"isAdmin"`
-	IsPowerUser     bool     `json:"isPowerUser" bson:"isPowerUser"`
-	PublicKeys      []string `json:"publicKeys" bson:"publicKeys"`
+	ID              string            `json:"id" bson:"id"`
+	Username        string            `json:"username" bson:"username"`
+	Email           string            `json:"email" bson:"email"`
+	VmQuota         int               `json:"vmQuota" bson:"vmQuota"`
+	DeploymentQuota int               `json:"deploymentQuota" bson:"deploymentQuota"`
+	IsAdmin         bool              `json:"isAdmin" bson:"isAdmin"`
+	IsPowerUser     bool              `json:"isPowerUser" bson:"isPowerUser"`
+	PublicKeys      map[string]string `json:"publicKeys" bson:"publicKeys"`
 }
 
 func (u *User) ToDTO() body.UserRead {
@@ -34,7 +34,7 @@ func (u *User) ToDTO() body.UserRead {
 	}
 
 	if userRead.PublicKeys == nil {
-		userRead.PublicKeys = []string{}
+		userRead.PublicKeys = map[string]string{}
 	}
 
 	return userRead
@@ -58,7 +58,7 @@ func Create(id, username string) error {
 		DeploymentQuota: conf.Env.App.DefaultQuota,
 		IsAdmin:         false,
 		IsPowerUser:     false,
-		PublicKeys:      []string{},
+		PublicKeys:      map[string]string{},
 	})
 
 	if err != nil {
@@ -69,9 +69,9 @@ func Create(id, username string) error {
 }
 
 func GetByID(id string) (*User, error) {
-	var userInfo User
+	var user User
 	filter := bson.D{{"id", id}}
-	err := models.UserCollection.FindOne(context.TODO(), filter).Decode(&userInfo)
+	err := models.UserCollection.FindOne(context.TODO(), filter).Decode(&user)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
@@ -81,7 +81,7 @@ func GetByID(id string) (*User, error) {
 		return nil, err
 	}
 
-	return &userInfo, err
+	return &user, err
 }
 
 func GetAll() ([]User, error) {
