@@ -12,6 +12,15 @@ import (
 	"net/http"
 )
 
+// Get
+// @Summary Get job by id
+// @Description Get job by id
+// @Tags Job
+// @Accept  json
+// @Produce  json
+// @Param jobId path string true "Job ID"
+// @Success 200 {object} body.JobRead
+// @Router /api/v1/jobs/{id} [get]
 func Get(c *gin.Context) {
 	context := app.NewContext(c)
 

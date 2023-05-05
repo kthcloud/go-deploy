@@ -41,6 +41,19 @@ func getAll(_ string, context *app.ClientContext) {
 	context.JSONResponse(http.StatusOK, dtoDeployments)
 }
 
+// GetList
+// @Summary Get list of deployments
+// @Description Get list of deployments
+// @BasePath /api/v1
+// @Tags Deployment
+// @Accept  json
+// @Produce  json
+// @Param Authorization header string true "With the bearer started"
+// @Param wantAll query bool false "Get all deployments"
+// @Success 200 {array} body.DeploymentRead
+// @Failure 400 {object} app.ErrorResponse
+// @Failure 500 {object} app.ErrorResponse
+// @Router /api/v1/deployments [get]
 func GetList(c *gin.Context) {
 	context := app.NewContext(c)
 
@@ -75,6 +88,19 @@ func GetList(c *gin.Context) {
 	context.JSONResponse(200, dtoDeployments)
 }
 
+// Get
+// @Summary Get deployment by id
+// @Description Get deployment by id
+// @BasePath /api/v1
+// @Tags Deployment
+// @Accept  json
+// @Produce  json
+// @Param Authorization header string true "With the bearer started"
+// @Param deploymentId path string true "Deployment ID"
+// @Success 200 {object} body.DeploymentRead
+// @Failure 400 {object} app.ErrorResponse
+// @Failure 500 {object} app.ErrorResponse
+// @Router /api/v1/deployments/{deployment_id} [get]
 func Get(c *gin.Context) {
 	context := app.NewContext(c)
 
@@ -105,6 +131,19 @@ func Get(c *gin.Context) {
 	context.JSONResponse(200, deployment.ToDTO(getURL(deployment)))
 }
 
+// Create
+// @Summary Create deployment
+// @Description Create deployment
+// @BasePath /api/v1
+// @Tags Deployment
+// @Accept  json
+// @Produce  json
+// @Param Authorization header string true "With the bearer started"
+// @Param body body body.DeploymentCreate true "Deployment body"
+// @Success 200 {object} body.DeploymentRead
+// @Failure 400 {object} app.ErrorResponse
+// @Failure 500 {object} app.ErrorResponse
+// @Router /api/v1/deployments [post]
 func Create(c *gin.Context) {
 	context := app.NewContext(c)
 
@@ -194,6 +233,19 @@ func Create(c *gin.Context) {
 	})
 }
 
+// Delete
+// @Summary Delete deployment
+// @Description Delete deployment
+// @BasePath /api/v1
+// @Tags Deployment
+// @Accept  json
+// @Produce  json
+// @Param Authorization header string true "With the bearer started"
+// @Param deploymentId path string true "Deployment ID"
+// @Success 200 {object} body.DeploymentCreated
+// @Failure 400 {object} app.ErrorResponse
+// @Failure 500 {object} app.ErrorResponse
+// @Router /api/v1/deployments/{deploymentId} [delete]
 func Delete(c *gin.Context) {
 	context := app.NewContext(c)
 
@@ -244,6 +296,20 @@ func Delete(c *gin.Context) {
 	})
 }
 
+// Update
+// @Summary Update deployment
+// @Description Update deployment
+// @BasePath /api/v1
+// @Tags Deployment
+// @Accept  json
+// @Produce  json
+// @Param Authorization header string true "With the bearer started"
+// @Param deploymentId path string true "Deployment ID"
+// @Param body body body.DeploymentUpdate true "Deployment update"
+// @Success 200 {object} body.DeploymentUpdated
+// @Failure 400 {object} app.ErrorResponse
+// @Failure 500 {object} app.ErrorResponse
+// @Router /api/v1/deployments/{deploymentId} [put]
 func Update(c *gin.Context) {
 	context := app.NewContext(c)
 
@@ -302,7 +368,7 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	context.JSONResponse(http.StatusOK, body.VmUpdated{
+	context.JSONResponse(http.StatusOK, body.DeploymentUpdated{
 		ID:    current.ID,
 		JobID: jobID,
 	})

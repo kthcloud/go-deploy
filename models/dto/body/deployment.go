@@ -32,6 +32,11 @@ type DeploymentDeleted struct {
 	JobID string `json:"jobId"`
 }
 
+type DeploymentUpdated struct {
+	ID    string `json:"id"`
+	JobID string `json:"jobId"`
+}
+
 type DeploymentRead struct {
 	ID      string  `json:"id"`
 	Name    string  `json:"name"`
@@ -42,6 +47,7 @@ type DeploymentRead struct {
 	Private bool    `json:"private"`
 }
 
-type CIConfig struct {
+type CiConfig struct {
 	Config string `json:"config"`
 }
+

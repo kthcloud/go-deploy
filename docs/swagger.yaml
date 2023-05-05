@@ -1,0 +1,844 @@
+definitions:
+  app.ErrorResponse:
+    properties:
+      errors:
+        items:
+          $ref: '#/definitions/app.errorPiece'
+        type: array
+    type: object
+  app.errorPiece:
+    properties:
+      code:
+        type: string
+      msg:
+        type: string
+    type: object
+  body.CiConfig:
+    properties:
+      config:
+        type: string
+    type: object
+  body.DeploymentCreate:
+    properties:
+      envs:
+        items:
+          $ref: '#/definitions/body.Env'
+        type: array
+      name:
+        maxLength: 30
+        minLength: 3
+        type: string
+      private:
+        type: boolean
+    required:
+    - name
+    type: object
+  body.DeploymentCreated:
+    properties:
+      id:
+        type: string
+      jobId:
+        type: string
+    type: object
+  body.DeploymentRead:
+    properties:
+      envs:
+        items:
+          $ref: '#/definitions/body.Env'
+        type: array
+      id:
+        type: string
+      name:
+        type: string
+      ownerId:
+        type: string
+      private:
+        type: boolean
+      status:
+        type: string
+      url:
+        type: string
+    type: object
+  body.DeploymentUpdate:
+    properties:
+      envs:
+        items:
+          $ref: '#/definitions/body.Env'
+        type: array
+      private:
+        type: boolean
+    type: object
+  body.DeploymentUpdated:
+    properties:
+      id:
+        type: string
+      jobId:
+        type: string
+    type: object
+  body.DoCommand:
+    properties:
+      command:
+        enum:
+        - start
+        - stop
+        - reboot
+        type: string
+    required:
+    - command
+    type: object
+  body.Env:
+    properties:
+      name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      value:
+        maxLength: 10000
+        minLength: 1
+        type: string
+    required:
+    - name
+    - value
+    type: object
+  body.GpuLease:
+    properties:
+      end:
+        type: string
+      user:
+        type: string
+      vmId:
+        type: string
+    type: object
+  body.GpuRead:
+    properties:
+      id:
+        type: string
+      lease:
+        $ref: '#/definitions/body.GpuLease'
+      name:
+        type: string
+    type: object
+  body.JobRead:
+    properties:
+      id:
+        type: string
+      status:
+        type: string
+      type:
+        type: string
+      userId:
+        type: string
+    type: object
+  body.PublicKey:
+    properties:
+      key:
+        type: string
+      name:
+        maxLength: 30
+        minLength: 1
+        type: string
+    required:
+    - key
+    - name
+    type: object
+  body.UserRead:
+    properties:
+      admin:
+        type: boolean
+      deploymentQuota:
+        type: integer
+      email:
+        type: string
+      id:
+        type: string
+      powerUser:
+        type: boolean
+      publicKeys:
+        items:
+          $ref: '#/definitions/body.PublicKey'
+        type: array
+      username:
+        type: string
+      vmQuota:
+        type: integer
+    type: object
+  body.VmCreate:
+    properties:
+      name:
+        maxLength: 30
+        minLength: 3
+        type: string
+      sshPublicKey:
+        type: string
+    required:
+    - name
+    - sshPublicKey
+    type: object
+  body.VmCreated:
+    properties:
+      id:
+        type: string
+      jobId:
+        type: string
+    type: object
+  body.VmDeleted:
+    properties:
+      id:
+        type: string
+      jobId:
+        type: string
+    type: object
+  body.VmGpu:
+    properties:
+      id:
+        type: string
+      leaseEnd:
+        type: string
+      name:
+        type: string
+    type: object
+  body.VmPort:
+    properties:
+      name:
+        type: string
+      port:
+        maximum: 65535
+        minimum: 1
+        type: integer
+      protocol:
+        enum:
+        - tcp
+        - udp
+        type: string
+    required:
+    - name
+    - port
+    - protocol
+    type: object
+  body.VmRead:
+    properties:
+      connectionString:
+        type: string
+      gpu:
+        $ref: '#/definitions/body.VmGpu'
+      id:
+        type: string
+      name:
+        type: string
+      ownerId:
+        type: string
+      sshPublicKey:
+        type: string
+      status:
+        type: string
+    type: object
+  body.VmUpdate:
+    properties:
+      ports:
+        items:
+          $ref: '#/definitions/body.VmPort'
+        type: array
+    type: object
+  body.VmUpdated:
+    properties:
+      id:
+        type: string
+      jobId:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /api/v1/deployments:
+    get:
+      consumes:
+      - application/json
+      description: Get list of deployments
+      parameters:
+      - description: With the bearer started
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Get all deployments
+        in: query
+        name: wantAll
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/body.DeploymentRead'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+      summary: Get list of deployments
+      tags:
+      - Deployment
+    post:
+      consumes:
+      - application/json
+      description: Create deployment
+      parameters:
+      - description: With the bearer started
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Deployment body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/body.DeploymentCreate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.DeploymentRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+      summary: Create deployment
+      tags:
+      - Deployment
+  /api/v1/deployments/{deployment_id}:
+    get:
+      consumes:
+      - application/json
+      description: Get deployment by id
+      parameters:
+      - description: With the bearer started
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Deployment ID
+        in: path
+        name: deploymentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.DeploymentRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+      summary: Get deployment by id
+      tags:
+      - Deployment
+  /api/v1/deployments/{deploymentId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete deployment
+      parameters:
+      - description: With the bearer started
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Deployment ID
+        in: path
+        name: deploymentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.DeploymentCreated'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+      summary: Delete deployment
+      tags:
+      - Deployment
+    put:
+      consumes:
+      - application/json
+      description: Update deployment
+      parameters:
+      - description: With the bearer started
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Deployment ID
+        in: path
+        name: deploymentId
+        required: true
+        type: string
+      - description: Deployment update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/body.DeploymentUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.DeploymentUpdated'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+      summary: Update deployment
+      tags:
+      - Deployment
+  /api/v1/deployments/{deploymentId}/ci-config:
+    get:
+      consumes:
+      - application/json
+      description: Get CI config
+      parameters:
+      - description: Deployment ID
+        in: path
+        name: deploymentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.CiConfig'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+      summary: Get CI config
+      tags:
+      - Deployment
+  /api/v1/jobs/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get job by id
+      parameters:
+      - description: Job ID
+        in: path
+        name: jobId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.JobRead'
+      summary: Get job by id
+      tags:
+      - Job
+  /api/v1/users:
+    get:
+      consumes:
+      - application/json
+      description: Get user list
+      parameters:
+      - description: Want all users
+        in: query
+        name: wantAll
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/body.UserRead'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+      summary: Get user list
+      tags:
+      - User
+  /api/v1/users/{userId}:
+    get:
+      consumes:
+      - application/json
+      description: Get user by id
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.UserRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+      summary: Get user by id
+      tags:
+      - User
+  /api/v1/vm:
+    get:
+      consumes:
+      - application/json
+      description: Get list of VMs
+      parameters:
+      - description: Want all VMs
+        in: query
+        name: wantAll
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/body.VmRead'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+      summary: Get list of VMs
+      tags:
+      - VM
+    post:
+      consumes:
+      - application/json
+      description: Create VM
+      parameters:
+      - description: VM body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/body.VmCreate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.VmCreated'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "423":
+          description: Locked
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+      summary: Create VM
+      tags:
+      - VM
+  /api/v1/vm/{vmId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete VM
+      parameters:
+      - description: VM ID
+        in: path
+        name: vmId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.VmDeleted'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "423":
+          description: Locked
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+      summary: Delete VM
+      tags:
+      - VM
+    get:
+      consumes:
+      - application/json
+      description: Get VM by id
+      parameters:
+      - description: VM ID
+        in: path
+        name: vmId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.VmRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+      summary: Get VM by id
+      tags:
+      - VM
+    put:
+      consumes:
+      - application/json
+      description: Update VM
+      parameters:
+      - description: VM ID
+        in: path
+        name: vmId
+        required: true
+        type: string
+      - description: VM update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/body.VmUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.VmUpdated'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "423":
+          description: Locked
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+      summary: Update VM
+      tags:
+      - VM
+  /api/v1/vms/{vmId}/command:
+    post:
+      consumes:
+      - application/json
+      description: Do command
+      parameters:
+      - description: VM ID
+        in: path
+        name: vmId
+        required: true
+        type: string
+      - description: Command body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/body.DoCommand'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: empty
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "423":
+          description: Locked
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+      summary: Do command
+      tags:
+      - VM
+  /api/v1/vms/{vmId}/gpu:
+    delete:
+      consumes:
+      - application/json
+      description: Detach GPU from VM
+      parameters:
+      - description: VM ID
+        in: path
+        name: vmId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.VmRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "423":
+          description: Locked
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+      summary: Detach GPU from VM
+      tags:
+      - VM
+    post:
+      consumes:
+      - application/json
+      description: Attach GPU to VM
+      parameters:
+      - description: VM ID
+        in: path
+        name: vmId
+        required: true
+        type: string
+      - description: GPU ID
+        in: path
+        name: gpuId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.VmRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "423":
+          description: Locked
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+      summary: Attach GPU to VM
+      tags:
+      - VM
+swagger: "2.0"
