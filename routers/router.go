@@ -32,7 +32,7 @@ func NewRouter() *gin.Engine {
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 
-	docs.SwaggerInfo.BasePath = "/api/v1"
+	docs.SwaggerInfo.BasePath = "/v1"
 	apiv1 := router.Group("/v1")
 	apiv1.Use(auth.New(auth.Check(), app.GetKeyCloakConfig()))
 
