@@ -38,7 +38,7 @@ func NewRouter() *gin.Engine {
 
 	apiv1Hook := router.Group("/v1/hooks")
 
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+	router.GET("/v1/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
 	setupDeploymentRoutes(apiv1, apiv1Hook)
 	setupVmRoutes(apiv1, apiv1Hook)
