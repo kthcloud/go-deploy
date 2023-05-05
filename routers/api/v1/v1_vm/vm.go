@@ -333,6 +333,7 @@ func Delete(c *gin.Context) {
 // @Tags VM
 // @Accept  json
 // @Produce  json
+// @Param Authorization header string true "With the bearer started"
 // @Param vmId path string true "VM ID"
 // @Param body body body.VmUpdate true "VM update"
 // @Success 200 {object} body.VmUpdated
