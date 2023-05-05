@@ -5,7 +5,6 @@ import (
 	"go-deploy/models/dto/body"
 	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/service/deployment_service/internal_service"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreate) error {
@@ -81,10 +80,38 @@ func Exists(name string) (bool, *deploymentModel.Deployment, error) {
 	return deploymentModel.Exists(name)
 }
 
-func MarkBeingDeleted(deploymentID string) error {
-	return deploymentModel.UpdateWithBsonByID(deploymentID, bson.D{{
-		"beingDeleted", true,
-	}})
+func AddActivity(deploymentID, activity string) (bool, string, error) {
+	canAdd, reason := CanAddActivity(deploymentID, activity)
+	if !canAdd {
+		return false, reason, nil
+	}
+
+	err := deploymentModel.AddActivity(deploymentID, activity)
+	if err != nil {
+		return false, "", err
+	}
+
+	return true, "", nil
+}
+
+func CanAddActivity(deploymentID, activity string) (bool, string) {
+	deployment, err := deploymentModel.GetByID(deploymentID)
+	if err != nil {
+		return false, "Failed to get deployment"
+	}
+
+	if deployment == nil {
+		return false, "Deployment not found"
+	}
+
+	switch activity {
+	case deploymentModel.ActivityBeingCreated:
+		return !deployment.BeingDeleted(), "It is being deleted"
+	case deploymentModel.ActivityBeingDeleted:
+		return !deployment.BeingCreated(), "It is being created"
+	}
+
+	return false, fmt.Sprintf("Unknown activity %s", activity)
 }
 
 func Delete(name string) error {

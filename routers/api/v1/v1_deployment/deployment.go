@@ -181,7 +181,7 @@ func Create(c *gin.Context) {
 			context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceNotCreated, "Resource already exists")
 			return
 		}
-		if deployment.BeingDeleted {
+		if deployment.BeingDeleted() {
 			context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingDeleted, "Resource is currently being deleted")
 			return
 		}
@@ -272,13 +272,20 @@ func Delete(c *gin.Context) {
 		return
 	}
 
-	if currentDeployment.BeingCreated {
+	if currentDeployment.BeingCreated() {
 		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingCreated, "Resource is currently being created")
 		return
 	}
 
-	if !currentDeployment.BeingDeleted {
-		_ = deployment_service.MarkBeingDeleted(currentDeployment.ID)
+	added, reason, err := deployment_service.AddActivity(currentDeployment.ID, deploymentModels.ActivityBeingDeleted)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to add activity: %s", err))
+		return
+	}
+
+	if !added {
+		context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotUpdated, fmt.Sprintf("Could not transition to delete state: %s", reason))
+		return
 	}
 
 	jobID := uuid.New().String()
@@ -342,12 +349,12 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	if current.BeingCreated {
+	if current.BeingCreated() {
 		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingCreated, "Resource is currently being created")
 		return
 	}
 
-	if current.BeingDeleted {
+	if current.BeingDeleted() {
 		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingDeleted, "Resource is currently being deleted")
 		return
 	}

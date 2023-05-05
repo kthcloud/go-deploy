@@ -92,11 +92,11 @@ func fetchDeploymentStatus(deployment *deployment.Deployment) (int, string, erro
 		return status_codes.ResourceNotFound, status_codes.GetMsg(status_codes.ResourceNotFound), nil
 	}
 
-	if deployment.BeingDeleted {
+	if deployment.BeingDeleted() {
 		return status_codes.ResourceBeingDeleted, status_codes.GetMsg(status_codes.ResourceBeingDeleted), nil
 	}
 
-	if deployment.BeingCreated {
+	if deployment.BeingCreated() {
 		return status_codes.ResourceBeingCreated, status_codes.GetMsg(status_codes.ResourceBeingCreated), nil
 	}
 

@@ -6,6 +6,11 @@ import (
 	npmModels "go-deploy/pkg/subsystems/npm/models"
 )
 
+const (
+	ActivityBeingCreated = "beingCreated"
+	ActivityBeingDeleted = "beingDeleted"
+)
+
 type Deployment struct {
 	ID      string `bson:"id"`
 	Name    string `bson:"name"`
@@ -14,8 +19,7 @@ type Deployment struct {
 	Private bool  `bson:"private"`
 	Envs    []Env `bson:"envs"`
 
-	BeingCreated bool `bson:"beingCreated"`
-	BeingDeleted bool `bson:"beingDeleted"`
+	Activities []string `bson:"activities"`
 
 	Subsystems    Subsystems `bson:"subsystems"`
 	StatusCode    int        `bson:"statusCode"`
@@ -88,7 +92,7 @@ type Jobs struct {
 }
 
 type UpdateParams struct {
-	Private *bool   `json:"private" bson:"private"`
+	Private *bool  `json:"private" bson:"private"`
 	Envs    *[]Env `json:"envs" bson:"envs"`
 }
 

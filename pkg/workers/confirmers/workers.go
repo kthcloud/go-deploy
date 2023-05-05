@@ -19,16 +19,16 @@ func deploymentConfirmer(ctx *app.Context) {
 			break
 		}
 
-		beingCreated, _ := deploymentModel.GetAllWithFilter(bson.D{{"beingCreated", true}})
+		beingCreated, _ := deploymentModel.GetByActivity(deploymentModel.ActivityBeingCreated)
 		for _, deployment := range beingCreated {
 			created := DeploymentCreated(&deployment)
 			if created {
 				log.Printf("marking deployment %s as created\n", deployment.Name)
-				_ = deploymentModel.UpdateWithBsonByID(deployment.ID, bson.D{{"beingCreated", false}})
+				_ = deploymentModel.RemoveActivity(deployment.ID, deploymentModel.ActivityBeingCreated)
 			}
 		}
 
-		beingDeleted, _ := deploymentModel.GetAllWithFilter(bson.D{{"beingDeleted", true}})
+		beingDeleted, _ := deploymentModel.GetByActivity(deploymentModel.ActivityBeingDeleted)
 		for _, deployment := range beingDeleted {
 			deleted := DeploymentDeleted(&deployment)
 			if deleted {
