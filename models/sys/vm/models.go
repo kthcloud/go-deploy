@@ -8,6 +8,7 @@ import (
 const (
 	ActivityBeingCreated = "beingCreated"
 	ActivityBeingDeleted = "beingDeleted"
+	ActivityBeingUpdated = "beingUpdated"
 	ActivityAttachingGPU = "attachingGpu"
 	ActivityDetachingGPU = "detachingGpu"
 )
@@ -28,7 +29,7 @@ type VM struct {
 	SshPublicKey string   `bson:"sshPublicKey"`
 	Ports        []Port   `bson:"ports"`
 	Activities   []string `bson:"activities"`
-	
+
 	Subsystems    Subsystems `bson:"subsystems"`
 	StatusCode    int        `bson:"statusCode"`
 	StatusMessage string     `bson:"statusMessage"`
@@ -49,6 +50,12 @@ type PfSense struct {
 	PortForwardingRuleMap map[string]psModels.PortForwardingRulePublic `bson:"portForwardingRuleMap"`
 }
 
-type VmUpdate struct {
+type CreateParams struct {
+	Name         string `json:"name"`
+	SshPublicKey string `json:"sshPublicKey"`
+	Ports        []Port `json:"ports"`
+}
+
+type UpdateParams struct {
 	Ports *[]Port `json:"ports"`
 }

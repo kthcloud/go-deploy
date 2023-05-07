@@ -3,7 +3,6 @@ package cs
 import (
 	"crypto/sha512"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"go-deploy/pkg/subsystems/cs/commands"
 	"go-deploy/pkg/subsystems/cs/models"
@@ -42,33 +41,32 @@ func (client *Client) ReadVM(id string) (*models.VmPublic, error) {
 	return public, nil
 }
 
-func (client *Client) CreateVM(public *models.VmPublic, managedBy, userSshPublicKey, adminSshPublicKey string) (string, error) {
+func (client *Client) CreateVM(public *models.VmPublic, userSshPublicKey, adminSshPublicKey string) (string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create cs vm %s. details: %s", public.Name, err)
 	}
 
 	listVmParams := client.CsClient.VirtualMachine.NewListVirtualMachinesParams()
 	listVmParams.SetName(public.Name)
-	listVmParams.SetProjectid(public.ProjectID)
+	listVmParams.SetProjectid(client.ProjectID)
 
-	var vmID string
-
-	vm, err := client.CsClient.VirtualMachine.ListVirtualMachines(listVmParams)
+	listVms, err := client.CsClient.VirtualMachine.ListVirtualMachines(listVmParams)
 	if err != nil {
 		return "", makeError(err)
 	}
 
-	if vm.Count == 0 {
+	var vmID string
+	if listVms.Count == 0 {
 		createVmParams := client.CsClient.VirtualMachine.NewDeployVirtualMachineParams(
 			public.ServiceOfferingID,
 			public.TemplateID,
-			public.ZoneID,
+			client.ZoneID,
 		)
 
 		createVmParams.SetName(public.Name)
 		createVmParams.SetDisplayname(public.Name)
-		createVmParams.SetNetworkids([]string{public.NetworkID})
-		createVmParams.SetProjectid(public.ProjectID)
+		createVmParams.SetNetworkids([]string{client.NetworkID})
+		createVmParams.SetProjectid(client.ProjectID)
 		createVmParams.SetExtraconfig(public.ExtraConfig)
 
 		userData := createUserData(public.Name, userSshPublicKey, adminSshPublicKey)
@@ -84,38 +82,12 @@ func (client *Client) CreateVM(public *models.VmPublic, managedBy, userSshPublic
 
 		vmID = created.Id
 	} else {
-		vmID = vm.VirtualMachines[0].Id
+		vmID = listVms.VirtualMachines[0].Id
 	}
 
-	annotationsParams := client.CsClient.Annotation.NewListAnnotationsParams()
-	annotationsParams.SetEntityid(vmID)
-	annotationsParams.SetEntitytype("VM")
-
-	annotations, err := client.CsClient.Annotation.ListAnnotations(annotationsParams)
+	err = client.AssertVirtualMachineTags(vmID, public.Tags)
 	if err != nil {
 		return "", makeError(err)
-	}
-
-	if annotations.Count == 0 {
-		managedBy := ManagedByAnnotation{
-			ManagedBy: managedBy,
-		}
-
-		managedByJson, err := json.Marshal(managedBy)
-		if err != nil {
-			return "", makeError(err)
-		}
-
-		annotationParams := client.CsClient.Annotation.NewAddAnnotationParams()
-		annotationParams.SetEntityid(vmID)
-		annotationParams.SetEntitytype("VM")
-		annotationParams.SetAdminsonly(false)
-		annotationParams.SetAnnotation(string(managedByJson))
-
-		_, err = client.CsClient.Annotation.AddAnnotation(annotationParams)
-		if err != nil {
-			return "", makeError(err)
-		}
 	}
 
 	return vmID, nil

@@ -37,7 +37,7 @@ func createVM(job *jobModel.Job) {
 		return
 	}
 
-	err = vm_service.Create(id, params.Name, params.SshPublicKey, ownerID)
+	err = vm_service.Create(id, ownerID, &params)
 	if err != nil {
 		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
 		return
@@ -65,13 +65,13 @@ func deleteVM(job *jobModel.Job) {
 }
 
 func updateVM(job *jobModel.Job) {
-	err := assertParameters(job, []string{"name", "update"})
+	err := assertParameters(job, []string{"id", "update"})
 	if err != nil {
 		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
 		return
 	}
 
-	name := job.Args["name"].(string)
+	id := job.Args["id"].(string)
 	var update body.VmUpdate
 	err = mapstructure.Decode(job.Args["update"].(map[string]interface{}), &update)
 	if err != nil {
@@ -79,7 +79,7 @@ func updateVM(job *jobModel.Job) {
 		return
 	}
 
-	err = vm_service.Update(name, &update)
+	err = vm_service.Update(id, &update)
 	if err != nil {
 		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
 		return

@@ -5,12 +5,6 @@ type Env struct {
 	Value string `json:"value" binding:"required,min=1,max=10000"`
 }
 
-type DeploymentPort struct {
-	Name     string `json:"name" binding:"required,rfc1035"`
-	Port     int    `json:"port" binding:"required,min=1,max=65535"`
-	Protocol string `json:"protocol" binding:"required,oneof=tcp udp"`
-}
-
 type DeploymentCreate struct {
 	Name    string `json:"name" binding:"required,rfc1035,min=3,max=30"`
 	Private bool   `json:"private" binding:"omitempty,boolean"`
@@ -50,4 +44,3 @@ type DeploymentRead struct {
 type CiConfig struct {
 	Config string `json:"config"`
 }
-

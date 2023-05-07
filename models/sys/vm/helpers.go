@@ -4,34 +4,11 @@ import (
 	"context"
 	"fmt"
 	"go-deploy/models"
-	"go-deploy/models/dto/body"
 	"go-deploy/pkg/status_codes"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"log"
 )
-
-func (vm *VM) ToDTO(status, connectionString string, gpu *body.GpuRead) body.VmRead {
-
-	var vmGpu *body.VmGpu
-	if gpu != nil {
-		vmGpu = &body.VmGpu{
-			ID:       gpu.ID,
-			Name:     gpu.Name,
-			LeaseEnd: gpu.Lease.End,
-		}
-	}
-
-	return body.VmRead{
-		ID:               vm.ID,
-		Name:             vm.Name,
-		SshPublicKey:     vm.SshPublicKey,
-		OwnerID:          vm.OwnerID,
-		Status:           status,
-		ConnectionString: connectionString,
-		GPU:              vmGpu,
-	}
-}
 
 func (vm *VM) Ready() bool {
 	return !vm.DoingActivity(ActivityBeingCreated) && !vm.DoingActivity(ActivityBeingDeleted)
@@ -179,7 +156,7 @@ func DeleteByID(vmID, userID string) error {
 	return nil
 }
 
-func UpdateByID(id string, update *VmUpdate) error {
+func UpdateByID(id string, update *UpdateParams) error {
 	updateData := bson.M{}
 
 	models.AddIfNotNil(updateData, "ports", update.Ports)

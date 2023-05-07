@@ -60,6 +60,10 @@ type Environment struct {
 		URL    string `yaml:"url"`
 		ApiKey string `yaml:"apiKey"`
 		Secret string `yaml:"secret"`
+
+		NetworkID string `yaml:"networkId"`
+		ProjectID string `yaml:"projectId"`
+		ZoneID    string `yaml:"zoneId"`
 	} `yaml:"cs"`
 
 	PfSense struct {

@@ -171,6 +171,27 @@ func registerCustomValidators() {
 			}
 			return true
 		})
+
+		err = v.RegisterValidation("port_list", func(fl validator.FieldLevel) bool {
+			portList, ok := fl.Field().Interface().([]body.Port)
+			if !ok {
+				return false
+			}
+
+			names := make(map[string]bool)
+			ports := make(map[int]bool)
+			for _, port := range portList {
+				if _, ok := names[port.Name]; ok {
+					return false
+				}
+				names[port.Name] = true
+				if _, ok := ports[port.Port]; ok {
+					return false
+				}
+				ports[port.Port] = true
+			}
+			return true
+		})
 		if err != nil {
 			panic(err)
 		}

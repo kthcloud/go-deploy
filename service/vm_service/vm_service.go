@@ -8,26 +8,27 @@ import (
 	"go-deploy/pkg/conf"
 	"go-deploy/service/vm_service/internal_service"
 	"log"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
-func Create(vmID, name, sshPublicKey, owner string) error {
+func Create(vmID, owner string, vmCreate *body.VmCreate) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create vm. details: %s", err)
 	}
 
-	err := vmModel.Create(vmID, name, sshPublicKey, owner, conf.Env.Manager)
+	params := vmModel.CreateParams{}
+	params.FromDTO(vmCreate)
+
+	err := vmModel.Create(vmID, params.Name, params.SshPublicKey, owner, conf.Env.Manager)
 	if err != nil {
 		return makeError(err)
 	}
 
-	csResult, err := internal_service.CreateCS(name, sshPublicKey)
+	csResult, err := internal_service.CreateCS(params.Name, params.SshPublicKey, params.Ports)
 	if err != nil {
 		return makeError(err)
 	}
 
-	_, err = internal_service.CreatePfSense(name, csResult.PublicIpAddress.IpAddress)
+	_, err = internal_service.CreatePfSense(params.Name, csResult.PublicIpAddress.IpAddress)
 	if err != nil {
 		return makeError(err)
 	}
@@ -62,12 +63,6 @@ func GetCount(userID string) (int, error) {
 
 func Exists(name string) (bool, *vmModel.VM, error) {
 	return vmModel.Exists(name)
-}
-
-func MarkBeingDeleted(vmID string) error {
-	return vmModel.UpdateWithBsonByID(vmID, bson.D{{
-		"beingDeleted", true,
-	}})
 }
 
 func Delete(name string) error {
@@ -107,23 +102,26 @@ func Delete(name string) error {
 }
 
 func Update(vmID string, dtoVmUpdate *body.VmUpdate) error {
-	vmUpdate := vmModel.VmUpdate{}
-
-	if dtoVmUpdate.Ports != nil {
-		var ports []vmModel.Port
-		for _, port := range *dtoVmUpdate.Ports {
-			ports = append(ports, vmModel.Port{
-				Name:     port.Name,
-				Port:     port.Port,
-				Protocol: port.Protocol,
-			})
-		}
-		vmUpdate.Ports = &ports
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to update vm. details: %s", err)
 	}
 
-	err := vmModel.UpdateByID(vmID, &vmUpdate)
+	vmUpdate := vmModel.UpdateParams{}
+	vmUpdate.FromDTO(dtoVmUpdate)
+
+	err := internal_service.UpdateCS(vmID, vmUpdate.Ports)
 	if err != nil {
-		return fmt.Errorf("failed to update vm. details: %s", err)
+		return makeError(err)
+	}
+
+	err = vmModel.UpdateByID(vmID, &vmUpdate)
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = vmModel.RemoveActivity(vmID, vmModel.ActivityBeingUpdated)
+	if err != nil {
+		return makeError(err)
 	}
 
 	return nil
@@ -192,6 +190,17 @@ func CanAddActivity(deploymentID, activity string) (bool, string, error) {
 		return !vm.BeingDeleted(), "It is being deleted", nil
 	case vmModel.ActivityBeingDeleted:
 		return !vm.BeingCreated(), "It is being created", nil
+	case vmModel.ActivityBeingUpdated:
+		if vm.DoingOnOfActivities([]string{
+			vmModel.ActivityBeingCreated,
+			vmModel.ActivityBeingDeleted,
+			vmModel.ActivityBeingUpdated,
+			vmModel.ActivityAttachingGPU,
+			vmModel.ActivityDetachingGPU,
+		}) {
+			return false, "It should not be in creation, deletion, or updating, and should not be attaching or detaching a GPU", nil
+		}
+		return true, "", nil
 	case vmModel.ActivityAttachingGPU:
 		if vm.DoingOnOfActivities([]string{
 			vmModel.ActivityBeingCreated,

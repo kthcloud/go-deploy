@@ -73,7 +73,7 @@ func HarborDeleted(deployment *deployment.Deployment) (bool, error) {
 func CSCreated(vm *vm.VM) (bool, error) {
 	cs := &vm.Subsystems.CS
 
-	_, hasSshRule := cs.PortForwardingRuleMap["ssh"]
+	_, hasSshRule := cs.PortForwardingRuleMap["__ssh"]
 
 	return cs.VM.ID != "" &&
 		cs.PublicIpAddress.ID != "" &&

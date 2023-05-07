@@ -14,9 +14,12 @@ func TestCreateVM(t *testing.T) {
 	setup(t)
 
 	client, err := cs.New(&cs.ClientConf{
-		URL:    conf.Env.CS.URL,
-		ApiKey: conf.Env.CS.ApiKey,
-		Secret: conf.Env.CS.Secret,
+		URL:       conf.Env.CS.URL,
+		ApiKey:    conf.Env.CS.ApiKey,
+		Secret:    conf.Env.CS.Secret,
+		NetworkID: conf.Env.CS.NetworkID,
+		ProjectID: conf.Env.CS.ProjectID,
+		ZoneID:    conf.Env.CS.ZoneID,
 	})
 
 	if err != nil {
@@ -27,9 +30,6 @@ func TestCreateVM(t *testing.T) {
 		Name:              "acc-test-" + uuid.New().String(),
 		ServiceOfferingID: "8da28b4d-5fec-4a44-aee7-fb0c5c8265a9", // Small HA
 		TemplateID:        "fb6b6b11-6196-42d9-a12d-038bdeecb6f6", // Ubuntu Server
-		NetworkID:         "4a065a52-f290-4d2e-aeb4-6f48d3bd9bfe", // deploy
-		ZoneID:            "3a74db73-6058-4520-8d8c-ab7d9b7955c8", // Flemingsberg
-		ProjectID:         "d1ba382b-e310-445b-a54b-c4e773662af3", // deploy
 	}
 
 	id, err := client.CreateVM(public, "test", sshPublicKey, conf.Env.VM.AdminSshPublicKey)
@@ -65,9 +65,12 @@ func TestUpdateVM(t *testing.T) {
 	setup(t)
 
 	client, err := cs.New(&cs.ClientConf{
-		URL:    conf.Env.CS.URL,
-		ApiKey: conf.Env.CS.ApiKey,
-		Secret: conf.Env.CS.Secret,
+		URL:       conf.Env.CS.URL,
+		ApiKey:    conf.Env.CS.ApiKey,
+		Secret:    conf.Env.CS.Secret,
+		NetworkID: conf.Env.CS.NetworkID,
+		ProjectID: conf.Env.CS.ProjectID,
+		ZoneID:    conf.Env.CS.ZoneID,
 	})
 
 	if err != nil {
@@ -78,9 +81,6 @@ func TestUpdateVM(t *testing.T) {
 		Name:              "acc-test-" + uuid.New().String(),
 		ServiceOfferingID: "8da28b4d-5fec-4a44-aee7-fb0c5c8265a9", // Small HA
 		TemplateID:        "fb6b6b11-6196-42d9-a12d-038bdeecb6f6", // Ubuntu Server
-		NetworkID:         "4a065a52-f290-4d2e-aeb4-6f48d3bd9bfe", // deploy
-		ZoneID:            "3a74db73-6058-4520-8d8c-ab7d9b7955c8", // Flemingsberg
-		ProjectID:         "d1ba382b-e310-445b-a54b-c4e773662af3", // deploy
 	}
 
 	id, err := client.CreateVM(public, "test", sshPublicKey, conf.Env.VM.AdminSshPublicKey)

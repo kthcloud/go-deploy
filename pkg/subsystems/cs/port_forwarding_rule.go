@@ -4,8 +4,44 @@ import (
 	"errors"
 	"fmt"
 	"go-deploy/pkg/subsystems/cs/models"
+	"strconv"
 	"strings"
 )
+
+func (client *Client) ReadPortForwardingRules(vmID string) ([]models.PortForwardingRulePublic, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to read port forwarding rules for vm %s. details: %s", vmID, err)
+	}
+
+	if vmID == "" {
+		return nil, makeError(errors.New("vm id required"))
+	}
+
+	vm, _, err := client.CsClient.VirtualMachine.GetVirtualMachineByID(vmID)
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	listRulesParams := client.CsClient.Firewall.NewListPortForwardingRulesParams()
+	listRulesParams.SetProjectid(vm.Projectid)
+	listRulesParams.SetListall(true)
+
+	portForwardingRulesResponse, err := client.CsClient.Firewall.ListPortForwardingRules(listRulesParams)
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	var publicRules []models.PortForwardingRulePublic
+	for _, rule := range portForwardingRulesResponse.PortForwardingRules {
+		if rule.Virtualmachineid != vmID {
+			continue
+		}
+
+		publicRules = append(publicRules, *models.CreatePortForwardingRulePublicFromGet(rule))
+	}
+
+	return publicRules, nil
+}
 
 func (client *Client) ReadPortForwardingRule(id string) (*models.PortForwardingRulePublic, error) {
 	makeError := func(err error) error {
@@ -23,15 +59,9 @@ func (client *Client) ReadPortForwardingRule(id string) (*models.PortForwardingR
 		}
 	}
 
-	// fetch project id
-	vm, _, err := client.CsClient.VirtualMachine.GetVirtualMachineByID(portForwardingRule.Virtualmachineid)
-	if err != nil {
-		return nil, makeError(err)
-	}
-
 	var public *models.PortForwardingRulePublic
 	if portForwardingRule != nil {
-		public = models.CreatePortForwardingRulePublicFromGet(portForwardingRule, vm.Projectid)
+		public = models.CreatePortForwardingRulePublicFromGet(portForwardingRule)
 	}
 
 	return public, nil
@@ -46,47 +76,57 @@ func (client *Client) CreatePortForwardingRule(public *models.PortForwardingRule
 		return "", makeError(errors.New("vm id required"))
 	}
 
-	if public.NetworkID == "" {
-		return "", makeError(errors.New("network id required"))
-	}
-
 	if public.IpAddressID == "" {
 		return "", makeError(errors.New("ip address id required"))
 	}
 
 	listRulesParams := client.CsClient.Firewall.NewListPortForwardingRulesParams()
-	listRulesParams.SetProjectid(public.ProjectID)
-	listRulesParams.SetNetworkid(public.NetworkID)
+	listRulesParams.SetProjectid(client.ProjectID)
+	listRulesParams.SetNetworkid(client.NetworkID)
 	listRulesParams.SetIpaddressid(public.IpAddressID)
 	listRulesParams.SetListall(true)
 
-	portForwardingRulesResponse, err := client.CsClient.Firewall.ListPortForwardingRules(listRulesParams)
+	listRules, err := client.CsClient.Firewall.ListPortForwardingRules(listRulesParams)
 	if err != nil {
 		return "", makeError(err)
 	}
 
-	if portForwardingRulesResponse.Count != 0 {
-		for _, rule := range portForwardingRulesResponse.PortForwardingRules {
-			if rule.Virtualmachineid == public.VmID {
-				return rule.Id, nil
-			}
+	publicPortStr := strconv.Itoa(public.PublicPort)
+	privatePortStr := strconv.Itoa(public.PrivatePort)
+
+	var ruleID string
+
+	for _, rule := range listRules.PortForwardingRules {
+		if rule.Virtualmachineid == public.VmID &&
+			rule.Publicport == publicPortStr && rule.Privateport == privatePortStr &&
+			strings.ToLower(rule.Protocol) == strings.ToLower(public.Protocol) {
+			ruleID = rule.Id
 		}
 	}
 
-	createRuleParams := client.CsClient.Firewall.NewCreatePortForwardingRuleParams(
-		public.IpAddressID,
-		public.PrivatePort,
-		public.Protocol,
-		public.PublicPort,
-		public.VmID,
-	)
+	if ruleID == "" {
+		createRuleParams := client.CsClient.Firewall.NewCreatePortForwardingRuleParams(
+			public.IpAddressID,
+			public.PrivatePort,
+			public.Protocol,
+			public.PublicPort,
+			public.VmID,
+		)
 
-	created, err := client.CsClient.Firewall.CreatePortForwardingRule(createRuleParams)
+		created, err := client.CsClient.Firewall.CreatePortForwardingRule(createRuleParams)
+		if err != nil {
+			return "", makeError(err)
+		}
+
+		ruleID = created.Id
+	}
+
+	err = client.AssertPortForwardingRulesTags(ruleID, public.Tags)
 	if err != nil {
 		return "", makeError(err)
 	}
 
-	return created.Id, nil
+	return ruleID, nil
 }
 
 func (client *Client) DeletePortForwardingRule(id string) error {
@@ -117,4 +157,15 @@ func (client *Client) DeletePortForwardingRule(id string) error {
 	}
 
 	return nil
+}
+
+func getTag(rule *models.PortForwardingRulePublic, tag string) string {
+	var name string
+	for _, tag := range rule.Tags {
+		if tag.Key == "Name" {
+			name = tag.Value
+			break
+		}
+	}
+	return name
 }

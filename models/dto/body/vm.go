@@ -2,7 +2,7 @@ package body
 
 import "time"
 
-type VmPort struct {
+type Port struct {
 	Name     string `json:"name,omitempty" bson:"name" binding:"required,rfc1035"`
 	Port     int    `json:"port,omitempty" bson:"port" binding:"required,min=1,max=65535"`
 	Protocol string `json:"protocol,omitempty" bson:"protocol" binding:"required,oneof=tcp udp"`
@@ -27,10 +27,11 @@ type VmRead struct {
 type VmCreate struct {
 	Name         string `json:"name" binding:"required,rfc1035,min=3,max=30"`
 	SshPublicKey string `json:"sshPublicKey" binding:"required,ssh_public_key"`
+	Ports        []Port `json:"ports" binding:"omitempty,port_list,dive,min=0,max=1000"`
 }
 
 type VmUpdate struct {
-	Ports *[]VmPort `json:"ports" bson:"ports" binding:"omitempty,dive"`
+	Ports *[]Port `json:"ports" bson:"ports" binding:"omitempty,port_list,dive,min=0,max=1000"`
 }
 
 type VmCreated struct {

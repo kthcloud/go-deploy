@@ -390,8 +390,14 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	if !current.Ready() {
-		context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotReady, fmt.Sprintf("Resource %s is not ready", requestURI.VmID))
+	started, reason, err := vm_service.StartActivity(current.ID, vmModel.ActivityBeingUpdated)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to start activity: %s", err))
+		return
+	}
+
+	if !started {
+		context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotReady, reason)
 		return
 	}
 
