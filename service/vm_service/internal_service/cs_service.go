@@ -213,17 +213,17 @@ func DeleteCS(name string) error {
 	}
 
 	ruleMap := vm.Subsystems.CS.PortForwardingRuleMap
-	rule, hasRule := ruleMap["ssh"]
-	if hasRule && rule.ID != "" {
+
+	for _, rule := range ruleMap {
 		err = client.DeletePortForwardingRule(rule.ID)
 		if err != nil {
 			return makeError(err)
 		}
+	}
 
-		err = vmModel.UpdateSubsystemByName(name, "cs", "portForwardingRuleMap", ruleMap)
-		if err != nil {
-			return makeError(err)
-		}
+	err = vmModel.UpdateSubsystemByName(name, "cs", "portForwardingRuleMap", map[string]csModels.PortForwardingRulePublic{})
+	if err != nil {
+		return makeError(err)
 	}
 
 	if vm.Subsystems.CS.PublicIpAddress.ID != "" {

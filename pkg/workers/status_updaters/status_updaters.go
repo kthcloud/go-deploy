@@ -70,16 +70,16 @@ func fetchVmStatus(vm *vm.VM) (int, string, error) {
 	csStatusCode, csStatusMessage, err := fetchCsStatus(vm)
 
 	if csStatusCode == status_codes.ResourceUnknown || csStatusCode == status_codes.ResourceNotFound {
-		if vm.BeingDeleted {
+		if vm.BeingDeleted() {
 			return status_codes.ResourceBeingDeleted, status_codes.GetMsg(status_codes.ResourceBeingDeleted), nil
 		}
 
-		if vm.BeingCreated {
+		if vm.BeingCreated() {
 			return status_codes.ResourceBeingCreated, status_codes.GetMsg(status_codes.ResourceBeingCreated), nil
 		}
 	}
 
-	if csStatusCode == status_codes.ResourceRunning && vm.BeingCreated {
+	if csStatusCode == status_codes.ResourceRunning && vm.BeingCreated() {
 		return status_codes.ResourceBeingCreated, status_codes.GetMsg(status_codes.ResourceBeingCreated), nil
 	}
 

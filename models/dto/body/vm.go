@@ -48,6 +48,16 @@ type VmUpdated struct {
 	JobID string `json:"jobId"`
 }
 
+type GpuAttached struct {
+	ID    string `json:"id"`
+	JobID string `json:"jobId"`
+}
+
+type GpuDetached struct {
+	ID    string `json:"id"`
+	JobID string `json:"jobId"`
+}
+
 type GpuLease struct {
 	VmID string    `bson:"vmId" json:"vmId"`
 	User string    `bson:"user" json:"user"`

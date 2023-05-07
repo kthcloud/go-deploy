@@ -9,12 +9,14 @@ import (
 	"go-deploy/models/dto/uri"
 	deploymentModels "go-deploy/models/sys/deployment"
 	jobModel "go-deploy/models/sys/job"
+	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/deployment_service"
 	"go-deploy/service/job_service"
 	"go-deploy/service/user_service"
+	"go-deploy/service/vm_service"
 	"net/http"
 )
 
@@ -181,10 +183,18 @@ func Create(c *gin.Context) {
 			context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceNotCreated, "Resource already exists")
 			return
 		}
-		if deployment.BeingDeleted() {
-			context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingDeleted, "Resource is currently being deleted")
+
+		started, reason, err := vm_service.StartActivity(deployment.ID, vmModel.ActivityBeingCreated)
+		if err != nil {
+			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to start activity: %s", err))
 			return
 		}
+
+		if !started {
+			context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotReady, reason)
+			return
+		}
+
 		jobID := uuid.New().String()
 		err = job_service.Create(jobID, auth.UserID, jobModel.TypeCreateDeployment, map[string]interface{}{
 			"id":      deployment.ID,
@@ -272,14 +282,9 @@ func Delete(c *gin.Context) {
 		return
 	}
 
-	if currentDeployment.BeingCreated() {
-		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingCreated, "Resource is currently being created")
-		return
-	}
-
-	added, reason, err := deployment_service.AddActivity(currentDeployment.ID, deploymentModels.ActivityBeingDeleted)
+	added, reason, err := deployment_service.StartActivity(currentDeployment.ID, deploymentModels.ActivityBeingDeleted)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to add activity: %s", err))
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to start activity: %s", err))
 		return
 	}
 

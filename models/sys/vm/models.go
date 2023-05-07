@@ -5,6 +5,13 @@ import (
 	psModels "go-deploy/pkg/subsystems/pfsense/models"
 )
 
+const (
+	ActivityBeingCreated = "beingCreated"
+	ActivityBeingDeleted = "beingDeleted"
+	ActivityAttachingGPU = "attachingGpu"
+	ActivityDetachingGPU = "detachingGpu"
+)
+
 type Port struct {
 	Name     string `bson:"name"`
 	Port     int    `bson:"port"`
@@ -17,18 +24,13 @@ type VM struct {
 	OwnerID   string `bson:"ownerId"`
 	ManagedBy string `bson:"managedBy"`
 
-	GpuID        string `bson:"gpuId"`
-	SshPublicKey string `bson:"sshPublicKey"`
-
-	Ports []struct {
-		Name string `bson:"name"`
-		Port int    `bson:"port"`
-	} `bson:"ports"`
-
-	BeingCreated  bool       `bson:"beingCreated"`
-	BeingDeleted bool       `bson:"beingDeleted"`
-	Subsystems   Subsystems `bson:"subsystems"`
-	StatusCode   int        `bson:"statusCode"`
+	GpuID        string   `bson:"gpuId"`
+	SshPublicKey string   `bson:"sshPublicKey"`
+	Ports        []Port   `bson:"ports"`
+	Activities   []string `bson:"activities"`
+	
+	Subsystems    Subsystems `bson:"subsystems"`
+	StatusCode    int        `bson:"statusCode"`
 	StatusMessage string     `bson:"statusMessage"`
 }
 
@@ -46,7 +48,6 @@ type CS struct {
 type PfSense struct {
 	PortForwardingRuleMap map[string]psModels.PortForwardingRulePublic `bson:"portForwardingRuleMap"`
 }
-
 
 type VmUpdate struct {
 	Ports *[]Port `json:"ports"`

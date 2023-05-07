@@ -3,14 +3,12 @@ package confirmers
 import (
 	deploymentModel "go-deploy/models/sys/deployment"
 	vmModel "go-deploy/models/sys/vm"
-	"go-deploy/models/sys/vm/gpu"
+	gpuModel "go-deploy/models/sys/vm/gpu"
 	"go-deploy/pkg/conf"
 
 	"go-deploy/pkg/app"
 	"log"
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func deploymentConfirmer(ctx *app.Context) {
@@ -46,16 +44,16 @@ func vmConfirmer(ctx *app.Context) {
 			break
 		}
 
-		beingCreated, _ := vmModel.GetAllWithFilter(bson.D{{"beingCreated", true}})
+		beingCreated, _ := vmModel.GetByActivity(vmModel.ActivityBeingCreated)
 		for _, vm := range beingCreated {
 			created := VmCreated(&vm)
 			if created {
 				log.Printf("marking vm %s as created\n", vm.Name)
-				_ = vmModel.UpdateWithBsonByID(vm.ID, bson.D{{"beingCreated", false}})
+				_ = vmModel.RemoveActivity(vm.ID, vmModel.ActivityBeingCreated)
 			}
 		}
 
-		beingDeleted, _ := vmModel.GetAllWithFilter(bson.D{{"beingDeleted", true}})
+		beingDeleted, _ := vmModel.GetByActivity(vmModel.ActivityBeingDeleted)
 		for _, vm := range beingDeleted {
 			deleted := VmDeleted(&vm)
 			if deleted {
@@ -67,7 +65,7 @@ func vmConfirmer(ctx *app.Context) {
 		excludedHosts := conf.Env.GPU.ExcludedHosts
 
 		// check if gpu lease is expired
-		leased, _ := gpu.GetAllLeasedGPUs(excludedHosts, nil)
+		leased, _ := gpuModel.GetAllLeasedGPUs(excludedHosts, nil)
 		for _, gpu := range leased {
 			if gpu.Lease.End.Before(time.Now()) {
 				log.Printf("lease for gpu %s (%s) ran out, returning it...\n", gpu.ID, gpu.Data.Name)

@@ -3,7 +3,7 @@ package vm_service
 import (
 	"fmt"
 	"go-deploy/models/dto/body"
-	"go-deploy/models/sys/vm"
+	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/models/sys/vm/gpu"
 	"go-deploy/pkg/conf"
 	"go-deploy/service/vm_service/internal_service"
@@ -17,7 +17,7 @@ func Create(vmID, name, sshPublicKey, owner string) error {
 		return fmt.Errorf("failed to create vm. details: %s", err)
 	}
 
-	err := vm.Create(vmID, name, sshPublicKey, owner, conf.Env.Manager)
+	err := vmModel.Create(vmID, name, sshPublicKey, owner, conf.Env.Manager)
 	if err != nil {
 		return makeError(err)
 	}
@@ -35,8 +35,8 @@ func Create(vmID, name, sshPublicKey, owner string) error {
 	return nil
 }
 
-func GetByID(userID, vmID string, isAdmin bool) (*vm.VM, error) {
-	vm, err := vm.GetByID(vmID)
+func GetByID(userID, vmID string, isAdmin bool) (*vmModel.VM, error) {
+	vm, err := vmModel.GetByID(vmID)
 	if err != nil {
 		return nil, err
 	}
@@ -48,24 +48,24 @@ func GetByID(userID, vmID string, isAdmin bool) (*vm.VM, error) {
 	return vm, nil
 }
 
-func GetByOwnerID(ownerID string) ([]vm.VM, error) {
-	return vm.GetByOwnerID(ownerID)
+func GetByOwnerID(ownerID string) ([]vmModel.VM, error) {
+	return vmModel.GetByOwnerID(ownerID)
 }
 
-func GetAll() ([]vm.VM, error) {
-	return vm.GetAll()
+func GetAll() ([]vmModel.VM, error) {
+	return vmModel.GetAll()
 }
 
 func GetCount(userID string) (int, error) {
-	return vm.CountByOwnerID(userID)
+	return vmModel.CountByOwnerID(userID)
 }
 
-func Exists(name string) (bool, *vm.VM, error) {
-	return vm.Exists(name)
+func Exists(name string) (bool, *vmModel.VM, error) {
+	return vmModel.Exists(name)
 }
 
 func MarkBeingDeleted(vmID string) error {
-	return vm.UpdateWithBsonByID(vmID, bson.D{{
+	return vmModel.UpdateWithBsonByID(vmID, bson.D{{
 		"beingDeleted", true,
 	}})
 }
@@ -75,9 +75,13 @@ func Delete(name string) error {
 		return fmt.Errorf("failed to delete vm. details: %s", err)
 	}
 
-	vm, err := vm.GetByName(name)
+	vm, err := vmModel.GetByName(name)
 	if err != nil {
 		return makeError(err)
+	}
+
+	if vm == nil {
+		return nil
 	}
 
 	err = internal_service.DeleteCS(name)
@@ -103,12 +107,12 @@ func Delete(name string) error {
 }
 
 func Update(vmID string, dtoVmUpdate *body.VmUpdate) error {
-	vmUpdate := vm.VmUpdate{}
+	vmUpdate := vmModel.VmUpdate{}
 
 	if dtoVmUpdate.Ports != nil {
-		var ports []vm.Port
+		var ports []vmModel.Port
 		for _, port := range *dtoVmUpdate.Ports {
-			ports = append(ports, vm.Port{
+			ports = append(ports, vmModel.Port{
 				Name:     port.Name,
 				Port:     port.Port,
 				Protocol: port.Protocol,
@@ -117,7 +121,7 @@ func Update(vmID string, dtoVmUpdate *body.VmUpdate) error {
 		vmUpdate.Ports = &ports
 	}
 
-	err := vm.UpdateByID(vmID, &vmUpdate)
+	err := vmModel.UpdateByID(vmID, &vmUpdate)
 	if err != nil {
 		return fmt.Errorf("failed to update vm. details: %s", err)
 	}
@@ -125,7 +129,7 @@ func Update(vmID string, dtoVmUpdate *body.VmUpdate) error {
 	return nil
 }
 
-func GetConnectionString(vm *vm.VM) (string, error) {
+func GetConnectionString(vm *vmModel.VM) (string, error) {
 	domainName := conf.Env.VM.ParentDomain
 	port := vm.Subsystems.PfSense.PortForwardingRuleMap["ssh"].ExternalPort
 
@@ -134,7 +138,7 @@ func GetConnectionString(vm *vm.VM) (string, error) {
 	return connectionString, nil
 }
 
-func DoCommand(vm *vm.VM, command string) {
+func DoCommand(vm *vmModel.VM, command string) {
 	go func() {
 		csID := vm.Subsystems.CS.VM.ID
 		if csID == "" {
@@ -153,4 +157,61 @@ func DoCommand(vm *vm.VM, command string) {
 			return
 		}
 	}()
+}
+
+func StartActivity(vmID, activity string) (bool, string, error) {
+	canAdd, reason, err := CanAddActivity(vmID, activity)
+	if err != nil {
+		return false, "", err
+	}
+
+	if !canAdd {
+		return false, reason, nil
+	}
+
+	err = vmModel.AddActivity(vmID, activity)
+	if err != nil {
+		return false, "", err
+	}
+
+	return true, "", nil
+}
+
+func CanAddActivity(deploymentID, activity string) (bool, string, error) {
+	vm, err := vmModel.GetByID(deploymentID)
+	if err != nil {
+		return false, "", err
+	}
+
+	if vm == nil {
+		return false, "", err
+	}
+
+	switch activity {
+	case vmModel.ActivityBeingCreated:
+		return !vm.BeingDeleted(), "It is being deleted", nil
+	case vmModel.ActivityBeingDeleted:
+		return !vm.BeingCreated(), "It is being created", nil
+	case vmModel.ActivityAttachingGPU:
+		if vm.DoingOnOfActivities([]string{
+			vmModel.ActivityBeingCreated,
+			vmModel.ActivityBeingDeleted,
+			vmModel.ActivityAttachingGPU,
+			vmModel.ActivityDetachingGPU,
+		}) {
+			return false, "It should not be in creation or deletion, and should not be attaching or detaching a GPU", nil
+		}
+		return true, "", nil
+	case vmModel.ActivityDetachingGPU:
+		if vm.DoingOnOfActivities([]string{
+			vmModel.ActivityBeingCreated,
+			vmModel.ActivityBeingDeleted,
+			vmModel.ActivityAttachingGPU,
+		}) {
+			return false, "It should not be in creation or deletion, and should not be attaching a GPU", nil
+		}
+		return true, "", nil
+	}
+
+	return false, "", fmt.Errorf("unknown activity %s", activity)
 }

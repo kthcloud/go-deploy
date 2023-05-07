@@ -2,28 +2,28 @@ package vm_service
 
 import (
 	"fmt"
-	"go-deploy/models/sys/vm/gpu"
+	vmModel "go-deploy/models/sys/vm"
+	gpuModel "go-deploy/models/sys/vm/gpu"
 	"go-deploy/pkg/conf"
 	"go-deploy/service/vm_service/internal_service"
-	"log"
 	"sort"
 	"time"
 )
 
-func GetAllGPUs(showOnlyAvailable bool, isPowerUser bool) ([]gpu.GPU, error) {
+func GetAllGPUs(showOnlyAvailable bool, isPowerUser bool) ([]gpuModel.GPU, error) {
 	var excludedGPUs []string
 	if !isPowerUser {
 		excludedGPUs = conf.Env.GPU.PrivilegedGPUs
 	}
 
 	if showOnlyAvailable {
-		return gpu.GetAllAvailableGPUs(conf.Env.GPU.ExcludedHosts, excludedGPUs)
+		return gpuModel.GetAllAvailableGPUs(conf.Env.GPU.ExcludedHosts, excludedGPUs)
 	}
-	return gpu.GetAllGPUs(conf.Env.GPU.ExcludedHosts, excludedGPUs)
+	return gpuModel.GetAllGPUs(conf.Env.GPU.ExcludedHosts, excludedGPUs)
 }
 
-func GetGpuByID(gpuID string, isPowerUser bool) (*gpu.GPU, error) {
-	gpu, err := gpu.GetGpuByID(gpuID)
+func GetGpuByID(gpuID string, isPowerUser bool) (*gpuModel.GPU, error) {
+	gpu, err := gpuModel.GetGpuByID(gpuID)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func GetGpuByID(gpuID string, isPowerUser bool) (*gpu.GPU, error) {
 	return gpu, nil
 }
 
-func IsGpuAvailable(gpu *gpu.GPU) (bool, error) {
+func IsGpuAvailable(gpu *gpuModel.GPU) (bool, error) {
 	// check if attached in cloudstack
 	attached, err := internal_service.IsGpuAttachedCS(gpu.Host, gpu.Data.Bus)
 	if err != nil {
@@ -63,13 +63,13 @@ func IsGpuAvailable(gpu *gpu.GPU) (bool, error) {
 	return true, nil
 }
 
-func GetAnyAvailableGPU(isPowerUser bool) (*gpu.GPU, error) {
+func GetAnyAvailableGPU(isPowerUser bool) (*gpuModel.GPU, error) {
 	var excludedGPUs []string
 	if !isPowerUser {
 		excludedGPUs = conf.Env.GPU.PrivilegedGPUs
 	}
 
-	availableGPUs, err := gpu.GetAllAvailableGPUs(conf.Env.GPU.ExcludedHosts, excludedGPUs)
+	availableGPUs, err := gpuModel.GetAllAvailableGPUs(conf.Env.GPU.ExcludedHosts, excludedGPUs)
 	if err != nil {
 		return nil, err
 	}
@@ -94,38 +94,57 @@ func GetAnyAvailableGPU(isPowerUser bool) (*gpu.GPU, error) {
 	return nil, nil
 }
 
-func AttachGPU(gpuID, vmID, userID string) {
-	go func() {
-		// TODO: add check for user's quota
-		oneHourFromNow := time.Now().Add(time.Hour)
+func AttachGPU(gpuID, vmID, userID string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to attach gpu %s to vm %s. details: %s", gpuID, vmID, err)
+	}
 
-		attached, err := gpu.AttachGPU(gpuID, vmID, userID, oneHourFromNow)
-		if err != nil {
-			log.Println(err)
-			return
-		}
+	// TODO: add check for user's quota
+	oneHourFromNow := time.Now().Add(time.Hour)
 
-		if !attached {
-			log.Println("did not attach gpu", gpuID, "to vm", vmID)
-			return
-		}
+	attached, err := gpuModel.AttachGPU(gpuID, vmID, userID, oneHourFromNow)
+	if err != nil {
+		return makeError(err)
+	}
 
-		err = internal_service.AttachGPU(gpuID, vmID)
-		if err != nil {
-			log.Println(err)
-			return
-		}
+	if !attached {
+		// this is an edge case where we don't want to fail the method, since a retry will probably not help
+		//
+		// this is probably caused by a race condition where two users requested the same gpu, where the first one
+		// got it, and the second one failed. we don't want to fail the second user, since that would mean that a
+		// job would get stuck. instead the user is not granted the gpu, and will need to request a new one manually
+		return nil
+	}
 
-	}()
+	err = internal_service.AttachGPU(gpuID, vmID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = vmModel.RemoveActivity(vmID, vmModel.ActivityAttachingGPU)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
 }
 
-func DetachGPU(vmID, userID string) {
-	go func() {
-		err := DetachGpuSync(vmID, userID)
-		if err != nil {
-			log.Println(err)
-		}
-	}()
+func DetachGPU(vmID, userID string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to detach gpu from vm %s. details: %s", vmID, err)
+	}
+
+	err := DetachGpuSync(vmID, userID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = vmModel.RemoveActivity(vmID, vmModel.ActivityDetachingGPU)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
 }
 
 func DetachGpuSync(vmID, userID string) error {
@@ -138,7 +157,7 @@ func DetachGpuSync(vmID, userID string) error {
 		return makeError(err)
 	}
 
-	detached, err := gpu.DetachGPU(vmID, userID)
+	detached, err := gpuModel.DetachGPU(vmID, userID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -153,16 +172,6 @@ func DetachGpuSync(vmID, userID string) error {
 func isGpuPrivileged(cardName string) bool {
 	for _, privilegedCard := range conf.Env.GPU.PrivilegedGPUs {
 		if cardName == privilegedCard {
-			return true
-		}
-	}
-
-	return false
-}
-
-func isHostExcluded(hostName string) bool {
-	for _, excludedHost := range conf.Env.GPU.ExcludedHosts {
-		if hostName == excludedHost {
 			return true
 		}
 	}

@@ -80,7 +80,7 @@ func Exists(name string) (bool, *deploymentModel.Deployment, error) {
 	return deploymentModel.Exists(name)
 }
 
-func AddActivity(deploymentID, activity string) (bool, string, error) {
+func StartActivity(deploymentID, activity string) (bool, string, error) {
 	canAdd, reason := CanAddActivity(deploymentID, activity)
 	if !canAdd {
 		return false, reason, nil

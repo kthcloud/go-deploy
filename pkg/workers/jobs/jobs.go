@@ -88,6 +88,45 @@ func updateVM(job *jobModel.Job) {
 	_ = jobModel.MarkCompleted(job.ID)
 }
 
+func attachGpuToVM(job *jobModel.Job) {
+	err := assertParameters(job, []string{"id", "gpuId", "userId"})
+	if err != nil {
+		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+		return
+	}
+
+	vmID := job.Args["id"].(string)
+	gpuID := job.Args["gpuId"].(string)
+	userID := job.Args["userId"].(string)
+
+	err = vm_service.AttachGPU(gpuID, vmID, userID)
+	if err != nil {
+		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+		return
+	}
+
+	_ = jobModel.MarkCompleted(job.ID)
+}
+
+func detachGpuFromVM(job *jobModel.Job) {
+	err := assertParameters(job, []string{"id", "userId"})
+	if err != nil {
+		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+		return
+	}
+
+	vmID := job.Args["id"].(string)
+	userID := job.Args["userId"].(string)
+
+	err = vm_service.DetachGPU(vmID, userID)
+	if err != nil {
+		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+		return
+	}
+
+	_ = jobModel.MarkCompleted(job.ID)
+}
+
 func createDeployment(job *jobModel.Job) {
 	err := assertParameters(job, []string{"id", "ownerId", "params"})
 	if err != nil {
