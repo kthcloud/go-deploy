@@ -10,7 +10,6 @@ type PortForwardingRulePublic struct {
 	Name string `bson:"name"`
 
 	VmID        string `bson:"vmId"`
-	IpAddressID string `bson:"ipAddressId"`
 	PublicPort  int    `bson:"publicPort"`
 	PrivatePort int    `bson:"privatePort"`
 	Protocol    string `bson:"protocol"`
@@ -33,7 +32,6 @@ func CreatePortForwardingRulePublicFromGet(rule *cloudstack.PortForwardingRule) 
 	return &PortForwardingRulePublic{
 		ID:          rule.Id,
 		Name:        name,
-		IpAddressID: rule.Ipaddressid,
 		VmID:        rule.Virtualmachineid,
 		PublicPort:  publicPort,
 		PrivatePort: privatePort,

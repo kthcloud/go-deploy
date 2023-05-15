@@ -13,19 +13,18 @@ import (
 )
 
 type CsCreated struct {
-	VM                 *csModels.VmPublic
-	PortForwardingRule *csModels.PortForwardingRulePublic
-	PublicIpAddress    *csModels.PublicIpAddressPublic
+	VM *csModels.VmPublic
 }
 
 func withClient() (*cs.Client, error) {
 	return cs.New(&cs.ClientConf{
-		URL:       conf.Env.CS.URL,
-		ApiKey:    conf.Env.CS.ApiKey,
-		Secret:    conf.Env.CS.Secret,
-		NetworkID: conf.Env.CS.NetworkID,
-		ProjectID: conf.Env.CS.ProjectID,
-		ZoneID:    conf.Env.CS.ZoneID,
+		URL:         conf.Env.CS.URL,
+		ApiKey:      conf.Env.CS.ApiKey,
+		Secret:      conf.Env.CS.Secret,
+		IpAddressID: conf.Env.CS.IpAddressID,
+		NetworkID:   conf.Env.CS.NetworkID,
+		ProjectID:   conf.Env.CS.ProjectID,
+		ZoneID:      conf.Env.CS.ZoneID,
 	})
 }
 
@@ -65,7 +64,7 @@ func CreateCS(name, sshPublicKey string, ports []vmModel.Port) (*CsCreated, erro
 			Name: name,
 			// temporary until vm templates are set up
 			ServiceOfferingID: "8da28b4d-5fec-4a44-aee7-fb0c5c8265a9", // Small HA
-			TemplateID:        "fb6b6b11-6196-42d9-a12d-038bdeecb6f6", // deploy-template-cloud-init-ubuntu2204
+			TemplateID:        "20563f12-9176-4581-9a1c-9f840234b513", // deploy-template-cloud-init-ubuntu2204
 			Tags: []csModels.Tag{
 				{Key: "name", Value: name},
 				{Key: "managedBy", Value: conf.Env.Manager},
@@ -91,39 +90,7 @@ func CreateCS(name, sshPublicKey string, ports []vmModel.Port) (*CsCreated, erro
 		csVM = &vm.Subsystems.CS.VM
 	}
 
-	// ip address
-	var publicIpAddress *csModels.PublicIpAddressPublic
-	if vm.Subsystems.CS.PublicIpAddress.ID == "" {
-		public := &csModels.PublicIpAddressPublic{
-			Name: name,
-			Tags: []csModels.Tag{
-				{Key: "name", Value: "main"},
-				{Key: "managedBy", Value: conf.Env.Manager},
-				{Key: "deployName", Value: name},
-			},
-		}
-
-		id, err := client.CreatePublicIpAddress(public)
-		if err != nil {
-			return nil, makeError(err)
-		}
-
-		publicIpAddress, err = client.ReadPublicIpAddress(id)
-		if err != nil {
-			return nil, makeError(err)
-		}
-
-		err = vmModel.UpdateSubsystemByName(name, "cs", "publicIpAddress", *publicIpAddress)
-		if err != nil {
-			return nil, makeError(err)
-		}
-	} else {
-		publicIpAddress = &vm.Subsystems.CS.PublicIpAddress
-	}
-
-	// port-forwarding rule
-	var portForwardingRule *csModels.PortForwardingRulePublic
-
+	// port-forwarding rule map
 	addDeploySshToPortMap(&ports)
 
 	ruleMap := vm.Subsystems.CS.PortForwardingRuleMap
@@ -133,31 +100,21 @@ func CreateCS(name, sshPublicKey string, ports []vmModel.Port) (*CsCreated, erro
 
 	for _, port := range ports {
 		rule, hasRule := ruleMap[port.Name]
-		if hasRule && rule.ID != "" {
-			// make sure this is connected to the ip address above by deleting the one we think we own
-			if rule.IpAddressID != publicIpAddress.ID || rule.VmID != csVM.ID {
-				err = client.DeletePortForwardingRule(rule.ID)
-				if err != nil {
-					return nil, makeError(err)
-				}
-
-				delete(ruleMap, port.Name)
-
-				err = vmModel.UpdateSubsystemByName(name, "cs", "portForwardingRuleMap", ruleMap)
-				if err != nil {
-					return nil, makeError(err)
-				}
-			}
-		}
-
-		rule, hasRule = ruleMap[port.Name]
 		if !hasRule || rule.ID == "" {
+			freePort, err := client.GetFreePort(conf.Env.CS.PortRange.Start, conf.Env.CS.PortRange.End)
+			if err != nil {
+				return nil, makeError(err)
+			}
+
+			if freePort == -1 {
+				return nil, makeError(fmt.Errorf("no free port found"))
+			}
+
 			id, err := client.CreatePortForwardingRule(&csModels.PortForwardingRulePublic{
 				VmID:        csVM.ID,
 				Name:        name,
-				IpAddressID: publicIpAddress.ID,
 				Protocol:    port.Protocol,
-				PublicPort:  port.Port,
+				PublicPort:  freePort,
 				PrivatePort: port.Port,
 				Tags: []csModels.Tag{
 					{Key: "name", Value: port.Name},
@@ -188,9 +145,7 @@ func CreateCS(name, sshPublicKey string, ports []vmModel.Port) (*CsCreated, erro
 	}
 
 	return &CsCreated{
-		VM:                 csVM,
-		PortForwardingRule: portForwardingRule,
-		PublicIpAddress:    publicIpAddress,
+		VM: csVM,
 	}, nil
 }
 
@@ -227,18 +182,6 @@ func DeleteCS(name string) error {
 	err = vmModel.UpdateSubsystemByName(name, "cs", "portForwardingRuleMap", map[string]csModels.PortForwardingRulePublic{})
 	if err != nil {
 		return makeError(err)
-	}
-
-	if vm.Subsystems.CS.PublicIpAddress.ID != "" {
-		err = client.DeletePublicIpAddress(vm.Subsystems.CS.PublicIpAddress.ID)
-		if err != nil {
-			return makeError(err)
-		}
-
-		err = vmModel.UpdateSubsystemByName(name, "cs", "publicIpAddress", csModels.PublicIpAddressPublic{})
-		if err != nil {
-			return makeError(err)
-		}
 	}
 
 	if vm.Subsystems.CS.VM.ID != "" {
@@ -279,10 +222,6 @@ func UpdateCS(vmID string, ports *[]vmModel.Port) error {
 		return makeError(fmt.Errorf("vm is not created yet"))
 	}
 
-	if vm.Subsystems.CS.PublicIpAddress.ID == "" {
-		return makeError(fmt.Errorf("public ip address is not created yet"))
-	}
-
 	// port-forwarding rule
 	if ports == nil {
 		return nil
@@ -318,13 +257,20 @@ func UpdateCS(vmID string, ports *[]vmModel.Port) error {
 	}
 
 	for _, port := range *ports {
+		freePort, err := client.GetFreePort(conf.Env.CS.PortRange.Start, conf.Env.CS.PortRange.End)
+		if err != nil {
+			return makeError(err)
+		}
+
+		if freePort == -1 {
+			return makeError(fmt.Errorf("no free port found"))
+		}
+
 		id, err := client.CreatePortForwardingRule(&csModels.PortForwardingRulePublic{
-			Name:        port.Name,
-			VmID:        vm.Subsystems.CS.VM.ID,
-			IpAddressID: vm.Subsystems.CS.PublicIpAddress.ID,
-			Protocol:    port.Protocol,
-			PublicPort:  port.Port,
-			PrivatePort: port.Port,
+			Name:       port.Name,
+			VmID:       vm.Subsystems.CS.VM.ID,
+			Protocol:   port.Protocol,
+			PublicPort: freePort,
 			Tags: []csModels.Tag{
 				{Key: "name", Value: port.Name},
 				{Key: "managedBy", Value: conf.Env.Manager},

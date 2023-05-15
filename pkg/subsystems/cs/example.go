@@ -8,12 +8,13 @@ import (
 
 func ExampleCreate() {
 	client, err := New(&ClientConf{
-		URL:       conf.Env.CS.URL,
-		ApiKey:    conf.Env.CS.ApiKey,
-		Secret:    conf.Env.CS.Secret,
-		NetworkID: conf.Env.CS.NetworkID,
-		ProjectID: conf.Env.CS.ProjectID,
-		ZoneID:    conf.Env.CS.ZoneID,
+		URL:         conf.Env.CS.URL,
+		ApiKey:      conf.Env.CS.ApiKey,
+		Secret:      conf.Env.CS.Secret,
+		IpAddressID: conf.Env.CS.IpAddressID,
+		NetworkID:   conf.Env.CS.NetworkID,
+		ProjectID:   conf.Env.CS.ProjectID,
+		ZoneID:      conf.Env.CS.ZoneID,
 	})
 
 	if err != nil {
@@ -40,12 +41,13 @@ func ExampleUpdate() {
 	id := "77b35b74-8333-4247-849d-ef5bc8555459"
 
 	client, err := New(&ClientConf{
-		URL:       conf.Env.CS.URL,
-		ApiKey:    conf.Env.CS.ApiKey,
-		Secret:    conf.Env.CS.Secret,
-		NetworkID: conf.Env.CS.NetworkID,
-		ProjectID: conf.Env.CS.ProjectID,
-		ZoneID:    conf.Env.CS.ZoneID,
+		URL:         conf.Env.CS.URL,
+		ApiKey:      conf.Env.CS.ApiKey,
+		Secret:      conf.Env.CS.Secret,
+		IpAddressID: conf.Env.CS.IpAddressID,
+		NetworkID:   conf.Env.CS.NetworkID,
+		ProjectID:   conf.Env.CS.ProjectID,
+		ZoneID:      conf.Env.CS.ZoneID,
 	})
 
 	if err != nil {

@@ -23,12 +23,7 @@ func Create(vmID, owner string, vmCreate *body.VmCreate) error {
 		return makeError(err)
 	}
 
-	csResult, err := internal_service.CreateCS(params.Name, params.SshPublicKey, params.Ports)
-	if err != nil {
-		return makeError(err)
-	}
-
-	_, err = internal_service.CreatePfSense(params.Name, csResult.PublicIpAddress.IpAddress)
+	_, err = internal_service.CreateCS(params.Name, params.SshPublicKey, params.Ports)
 	if err != nil {
 		return makeError(err)
 	}
@@ -93,11 +88,6 @@ func Delete(name string) error {
 		return makeError(fmt.Errorf("failed to detach gpu from vm"))
 	}
 
-	err = internal_service.DeletePfSense(name)
-	if err != nil {
-		return makeError(err)
-	}
-
 	return nil
 }
 
@@ -129,7 +119,7 @@ func Update(vmID string, dtoVmUpdate *body.VmUpdate) error {
 
 func GetConnectionString(vm *vmModel.VM) (string, error) {
 	domainName := conf.Env.VM.ParentDomain
-	port := vm.Subsystems.PfSense.PortForwardingRuleMap["ssh"].ExternalPort
+	port := vm.Subsystems.CS.PortForwardingRuleMap["__ssh"].PublicPort
 
 	connectionString := fmt.Sprintf("ssh cloud@%s -p %d", domainName, port)
 

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"go-deploy/pkg/subsystems/cs/models"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -76,14 +77,10 @@ func (client *Client) CreatePortForwardingRule(public *models.PortForwardingRule
 		return "", makeError(errors.New("vm id required"))
 	}
 
-	if public.IpAddressID == "" {
-		return "", makeError(errors.New("ip address id required"))
-	}
-
 	listRulesParams := client.CsClient.Firewall.NewListPortForwardingRulesParams()
 	listRulesParams.SetProjectid(client.ProjectID)
 	listRulesParams.SetNetworkid(client.NetworkID)
-	listRulesParams.SetIpaddressid(public.IpAddressID)
+	listRulesParams.SetIpaddressid(client.IpAddressID)
 	listRulesParams.SetListall(true)
 
 	listRules, err := client.CsClient.Firewall.ListPortForwardingRules(listRulesParams)
@@ -106,7 +103,7 @@ func (client *Client) CreatePortForwardingRule(public *models.PortForwardingRule
 
 	if ruleID == "" {
 		createRuleParams := client.CsClient.Firewall.NewCreatePortForwardingRuleParams(
-			public.IpAddressID,
+			client.IpAddressID,
 			public.PrivatePort,
 			public.Protocol,
 			public.PublicPort,
@@ -159,13 +156,50 @@ func (client *Client) DeletePortForwardingRule(id string) error {
 	return nil
 }
 
-func getTag(rule *models.PortForwardingRulePublic, tag string) string {
-	var name string
-	for _, tag := range rule.Tags {
-		if tag.Key == "Name" {
-			name = tag.Value
+func (client *Client) GetFreePort(startPort, endPort int) (int, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to get free port. details: %s", err)
+	}
+
+	listRulesParams := client.CsClient.Firewall.NewListPortForwardingRulesParams()
+	listRulesParams.SetProjectid(client.ProjectID)
+	listRulesParams.SetNetworkid(client.NetworkID)
+	listRulesParams.SetListall(true)
+
+	listRules, err := client.CsClient.Firewall.ListPortForwardingRules(listRulesParams)
+	if err != nil {
+		return -1, nil
+	}
+
+	var ports []int
+	for _, rule := range listRules.PortForwardingRules {
+		port, err := strconv.Atoi(rule.Publicport)
+		if err != nil {
+			return 0, makeError(err)
+		}
+
+		ports = append(ports, port)
+	}
+
+	sort.Ints(ports)
+
+	var freePort int
+	for i := startPort; i < len(ports); i++ {
+		if ports[i]-ports[i-1] > 1 {
+			freePort = ports[i-1] + 1
 			break
 		}
 	}
-	return name
+
+	if len(ports) == 0 {
+		freePort = startPort
+	} else if freePort == 0 {
+		freePort = ports[len(ports)-1] + 1
+	}
+
+	if freePort > endPort {
+		return -1, nil
+	}
+
+	return freePort, nil
 }

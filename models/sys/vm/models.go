@@ -2,7 +2,6 @@ package vm
 
 import (
 	csModels "go-deploy/pkg/subsystems/cs/models"
-	psModels "go-deploy/pkg/subsystems/pfsense/models"
 )
 
 const (
@@ -36,18 +35,12 @@ type VM struct {
 }
 
 type Subsystems struct {
-	CS      CS      `bson:"cs"`
-	PfSense PfSense `bson:"pfSense"`
+	CS CS `bson:"cs"`
 }
 
 type CS struct {
 	VM                    csModels.VmPublic                            `bson:"vm"`
 	PortForwardingRuleMap map[string]csModels.PortForwardingRulePublic `bson:"portForwardingRuleMap"`
-	PublicIpAddress       csModels.PublicIpAddressPublic               `bson:"publicIpAddress"`
-}
-
-type PfSense struct {
-	PortForwardingRuleMap map[string]psModels.PortForwardingRulePublic `bson:"portForwardingRuleMap"`
 }
 
 type CreateParams struct {

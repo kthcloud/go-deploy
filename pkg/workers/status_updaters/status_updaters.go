@@ -13,12 +13,13 @@ import (
 
 func withClient() (*cs.Client, error) {
 	return cs.New(&cs.ClientConf{
-		URL:       conf.Env.CS.URL,
-		ApiKey:    conf.Env.CS.ApiKey,
-		Secret:    conf.Env.CS.Secret,
-		NetworkID: conf.Env.CS.NetworkID,
-		ProjectID: conf.Env.CS.ProjectID,
-		ZoneID:    conf.Env.CS.ZoneID,
+		URL:         conf.Env.CS.URL,
+		ApiKey:      conf.Env.CS.ApiKey,
+		Secret:      conf.Env.CS.Secret,
+		IpAddressID: conf.Env.CS.IpAddressID,
+		NetworkID:   conf.Env.CS.NetworkID,
+		ProjectID:   conf.Env.CS.ProjectID,
+		ZoneID:      conf.Env.CS.ZoneID,
 	})
 }
 
