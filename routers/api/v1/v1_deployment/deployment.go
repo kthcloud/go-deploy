@@ -71,7 +71,7 @@ func GetList(c *gin.Context) {
 		return
 	}
 
-	if requestQuery.WantAll && auth.IsAdmin {
+	if requestQuery.WantAll && auth.IsAdmin() {
 		getAll(auth.UserID, &context)
 		return
 	}
@@ -118,7 +118,7 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	deployment, err := deployment_service.GetByID(auth.UserID, requestURI.DeploymentID, auth.IsAdmin)
+	deployment, err := deployment_service.GetByID(auth.UserID, requestURI.DeploymentID, auth.IsAdmin())
 
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
@@ -161,13 +161,19 @@ func Create(c *gin.Context) {
 		return
 	}
 
-	user, err := user_service.GetOrCreate(auth.JwtToken)
+	user, err := user_service.GetOrCreate(auth.UserID, auth.JwtToken.PreferredUsername, auth.Roles)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get user: %s", err))
 		return
 	}
 
-	if user.DeploymentQuota == 0 {
+	quota, err := user_service.GetQuotaByUserID(user.ID)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get user quota: %s", err))
+		return
+	}
+
+	if quota.Deployment <= 0 {
 		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, "User is not allowed to create deployments")
 		return
 	}
@@ -219,8 +225,8 @@ func Create(c *gin.Context) {
 		return
 	}
 
-	if deploymentCount >= user.DeploymentQuota {
-		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, fmt.Sprintf("User is not allowed to create more than %d deployments", user.DeploymentQuota))
+	if deploymentCount >= quota.Deployment {
+		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, fmt.Sprintf("User is not allowed to create more than %d deployments", quota.Deployment))
 		return
 	}
 
@@ -271,7 +277,7 @@ func Delete(c *gin.Context) {
 		return
 	}
 
-	currentDeployment, err := deployment_service.GetByID(auth.UserID, requestURI.DeploymentID, auth.IsAdmin)
+	currentDeployment, err := deployment_service.GetByID(auth.UserID, requestURI.DeploymentID, auth.IsAdmin())
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return
@@ -343,7 +349,7 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	current, err := deployment_service.GetByID(auth.UserID, requestURI.DeploymentID, auth.IsAdmin)
+	current, err := deployment_service.GetByID(auth.UserID, requestURI.DeploymentID, auth.IsAdmin())
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, fmt.Sprintf("Failed to get vm: %s", err))
 		return
@@ -364,7 +370,7 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	if current.OwnerID != auth.UserID && !auth.IsAdmin {
+	if current.OwnerID != auth.UserID && !auth.IsAdmin() {
 		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, "User is not allowed to update this resource")
 		return
 	}

@@ -47,7 +47,7 @@ func DoCommand(c *gin.Context) {
 		return
 	}
 
-	vm, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin)
+	vm, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin())
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return

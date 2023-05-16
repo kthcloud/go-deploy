@@ -5,14 +5,11 @@ import (
 	"fmt"
 	"go-deploy/models"
 	"go-deploy/models/dto/body"
-	"go-deploy/pkg/conf"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-
-
-func (u *User) ToDTO() body.UserRead {
+func (u *User) ToDTO(quota *Quota) body.UserRead {
 	publicKeys := make([]body.PublicKey, len(u.PublicKeys))
 	for i, key := range u.PublicKeys {
 		publicKeys[i] = body.PublicKey{
@@ -21,39 +18,53 @@ func (u *User) ToDTO() body.UserRead {
 		}
 	}
 
+	if quota == nil {
+		quota = &Quota{}
+	}
+
 	userRead := body.UserRead{
-		ID:              u.ID,
-		Username:        u.Username,
-		Email:           u.Email,
-		Admin:           u.IsAdmin,
-		VmQuota:         u.VmQuota,
-		DeploymentQuota: u.DeploymentQuota,
-		PowerUser:       u.IsPowerUser,
-		PublicKeys:      publicKeys,
+		ID:       u.ID,
+		Username: u.Username,
+		Email:    u.Email,
+		Roles:    u.Roles,
+		Quota: body.Quota{
+			Deployment: quota.Deployment,
+			CPU:        quota.CPU,
+			Memory:     quota.Memory,
+			Disk:       quota.Disk,
+		},
+		PublicKeys: publicKeys,
 	}
 
 	return userRead
 }
 
-func Create(id, username string) error {
+func Create(id, username string, roles []string) error {
 	current, err := GetByID(id)
 	if err != nil {
 		return err
 	}
 
 	if current != nil {
+		// update roles
+		filter := bson.D{{"id", id}}
+		update := bson.D{{"$set", bson.D{
+			{"roles", roles},
+		}}}
+		_, err = models.UserCollection.UpdateOne(context.Background(), filter, update)
+		if err != nil {
+			return fmt.Errorf("failed to update user info for %s. details: %s", username, err)
+		}
+
 		return nil
 	}
 
 	_, err = models.UserCollection.InsertOne(context.TODO(), User{
-		ID:              id,
-		Username:        username,
-		Email:           "",
-		VmQuota:         conf.Env.VM.DefaultQuota,
-		DeploymentQuota: conf.Env.App.DefaultQuota,
-		IsAdmin:         false,
-		IsPowerUser:     false,
-		PublicKeys:      []PublicKey{},
+		ID:         id,
+		Username:   username,
+		Email:      "",
+		Roles:      roles,
+		PublicKeys: []PublicKey{},
 	})
 
 	if err != nil {
@@ -99,8 +110,6 @@ func Update(userID string, update *UserUpdate) error {
 
 	models.AddIfNotNil(updateData, "username", update.Username)
 	models.AddIfNotNil(updateData, "email", update.Email)
-	models.AddIfNotNil(updateData, "vmQuota", update.VmQuota)
-	models.AddIfNotNil(updateData, "deploymentQuota", update.DeploymentQuota)
 	models.AddIfNotNil(updateData, "publicKeys", update.PublicKeys)
 
 	if len(updateData) == 0 {
@@ -116,4 +125,22 @@ func Update(userID string, update *UserUpdate) error {
 	}
 
 	return nil
+}
+
+func (u *User) HasRole(role string) bool {
+	for _, userRole := range u.Roles {
+		if userRole == role {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (u *User) IsPowerUser() bool {
+	return u.HasRole("powerUser")
+}
+
+func (u *User) IsAdmin() bool {
+	return u.HasRole("admin")
 }

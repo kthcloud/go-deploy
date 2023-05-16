@@ -2,16 +2,16 @@ package user_service
 
 import (
 	"go-deploy/models/dto/body"
-	"go-deploy/models/sys/user"
-	"go-deploy/pkg/auth"
+	userModel "go-deploy/models/sys/user"
+	"go-deploy/pkg/conf"
 )
 
-func CreateUser(userID, username string) error {
-	return user.Create(userID, username)
+func CreateUser(userID, username string, roles []string) error {
+	return userModel.Create(userID, username, roles)
 }
 
-func GetByID(requestedUserID, userID string, isAdmin bool) (*user.User, error) {
-	user, err := user.GetByID(requestedUserID)
+func GetByID(requestedUserID, userID string, isAdmin bool) (*userModel.User, error) {
+	user, err := userModel.GetByID(requestedUserID)
 	if err != nil {
 		return nil, err
 	}
@@ -27,17 +27,17 @@ func GetByID(requestedUserID, userID string, isAdmin bool) (*user.User, error) {
 	return user, nil
 }
 
-func GetOrCreate(token *auth.KeycloakToken) (*user.User, error) {
-	err := user.Create(token.Sub, token.PreferredUsername)
+func GetOrCreate(userID, username string, roles []string) (*userModel.User, error) {
+	err := userModel.Create(userID, username, roles)
 	if err != nil {
 		return nil, err
 	}
 
-	return user.GetByID(token.Sub)
+	return userModel.GetByID(userID)
 }
 
-func GetAll() ([]user.User, error) {
-	return user.GetAll()
+func GetAll() ([]userModel.User, error) {
+	return userModel.GetAll()
 }
 
 func Update(requestedUserID, userID string, isAdmin bool, dtoUserUpdate *body.UserUpdate) error {
@@ -49,29 +49,48 @@ func Update(requestedUserID, userID string, isAdmin bool, dtoUserUpdate *body.Us
 		dtoUserUpdate.PublicKeys = &[]body.PublicKey{}
 	}
 
-	publicKeys := make([]user.PublicKey, len(*dtoUserUpdate.PublicKeys))
+	publicKeys := make([]userModel.PublicKey, len(*dtoUserUpdate.PublicKeys))
 	for i, key := range *dtoUserUpdate.PublicKeys {
-		publicKeys[i] = user.PublicKey{
+		publicKeys[i] = userModel.PublicKey{
 			Name: key.Name,
 			Key:  key.Key,
 		}
 	}
 
-	userUpdate := &user.UserUpdate{
+	userUpdate := &userModel.UserUpdate{
 		Username:   dtoUserUpdate.Username,
 		Email:      dtoUserUpdate.Email,
 		PublicKeys: &publicKeys,
 	}
 
-	if isAdmin {
-		userUpdate.VmQuota = dtoUserUpdate.VmQuota
-		userUpdate.DeploymentQuota = dtoUserUpdate.DeploymentQuota
-	}
-
-	err := user.Update(requestedUserID, userUpdate)
+	err := userModel.Update(requestedUserID, userUpdate)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func GetQuotaByUserID(id string) (*userModel.Quota, error) {
+	user, err := userModel.GetByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if user == nil {
+		return nil, nil
+	}
+
+	quota := conf.Env.GetQuota(user.Roles)
+
+	if quota == nil {
+		return nil, nil
+	}
+
+	return &userModel.Quota{
+		Deployment: quota.Deployment,
+		CPU:        quota.CPU,
+		Memory:     quota.Memory,
+		Disk:       quota.Disk,
+	}, nil
 }

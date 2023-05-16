@@ -31,18 +31,24 @@ type Environment struct {
 		} `yaml:"placeholder"`
 	} `yaml:"dockerRegistry"`
 
-	App struct {
+	Deployment struct {
 		ParentDomain string `yaml:"parentDomain"`
 		Port         int    `yaml:"port"`
 		Prefix       string `yaml:"prefix"`
-		DefaultQuota int    `yaml:"defaultQuota"`
-	} `yaml:"app"`
+	} `yaml:"deployment"`
 
 	VM struct {
 		ParentDomain      string `yaml:"parentDomain"`
-		DefaultQuota      int    `yaml:"defaultQuota"`
 		AdminSshPublicKey string `yaml:"adminSshPublicKey"`
 	} `yaml:"vm"`
+
+	Quotas []struct {
+		Role       string `yaml:"role"`
+		Deployment int    `yaml:"deployment"`
+		CPU        int    `yaml:"cpu"`
+		Memory     int    `yaml:"memory"`
+		Disk       int    `yaml:"disk"`
+	} `yaml:"quotas"`
 
 	Keycloak struct {
 		Url            string `yaml:"url"`
@@ -98,6 +104,7 @@ type Environment struct {
 		WebhookSecret string `yaml:"webhookSecret"`
 	} `yaml:"harbor"`
 }
+
 
 var Env Environment
 

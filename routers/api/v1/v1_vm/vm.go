@@ -72,7 +72,7 @@ func GetList(c *gin.Context) {
 		return
 	}
 
-	if requestQuery.WantAll && auth.IsAdmin {
+	if requestQuery.WantAll && auth.IsAdmin() {
 		getAllVMs(&context)
 		return
 	}
@@ -131,7 +131,7 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	vm, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin)
+	vm, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin())
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get vm: %s", err.Error()))
 		return
@@ -186,7 +186,7 @@ func Create(c *gin.Context) {
 		return
 	}
 
-	user, err := user_service.GetOrCreate(auth.JwtToken)
+	user, err := user_service.GetOrCreate(auth.UserID, auth.JwtToken.PreferredUsername, auth.Roles)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get user: %s", err))
 		return
@@ -196,8 +196,14 @@ func Create(c *gin.Context) {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Created user id does not match auth user id"))
 	}
 
-	if user.VmQuota == 0 {
-		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, "User is not allowed to create vms")
+	quota, err := user_service.GetQuotaByUserID(auth.UserID)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get quota: %s", err))
+		return
+	}
+
+	if quota == nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Quota is not set for user"))
 		return
 	}
 
@@ -247,16 +253,7 @@ func Create(c *gin.Context) {
 		return
 	}
 
-	vmCount, err := vm_service.GetCount(auth.UserID)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get number of vms: %s", err))
-		return
-	}
-
-	if vmCount >= user.VmQuota {
-		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, fmt.Sprintf("User is not allowed to create more than %d vms", user.VmQuota))
-		return
-	}
+	// TODO: Add quota validation with cpu, memory, disk, gpu...
 
 	vmID := uuid.New().String()
 	jobID := uuid.New().String()
@@ -305,7 +302,7 @@ func Delete(c *gin.Context) {
 		return
 	}
 
-	current, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin)
+	current, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin())
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, fmt.Sprintf("VM with id %s not found", requestURI.VmID))
 		return
@@ -379,7 +376,7 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	current, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin)
+	current, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin())
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, fmt.Sprintf("Failed to get vm: %s", err))
 		return
@@ -401,7 +398,7 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	if current.OwnerID != auth.UserID && !auth.IsAdmin {
+	if current.OwnerID != auth.UserID && !auth.IsAdmin() {
 		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, "User is not allowed to update this resource")
 		return
 	}
