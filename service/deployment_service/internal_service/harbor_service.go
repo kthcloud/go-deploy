@@ -206,6 +206,11 @@ func DeleteHarbor(name string) error {
 	}
 
 	if deployment.Subsystems.Harbor.Robot.ID != 0 {
+		err = client.DeleteRobot(deployment.Subsystems.Harbor.Robot.ID)
+		if err != nil {
+			return makeError(err)
+		}
+
 		err = deploymentModel.UpdateSubsystemByName(name, "harbor", "robot", harborModels.RobotPublic{})
 		if err != nil {
 			return makeError(err)

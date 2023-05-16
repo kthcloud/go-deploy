@@ -23,17 +23,21 @@ func jobFetcher(ctx *app.Context) {
 		}
 
 		switch job.Type {
-		case "createVm":
+		case jobModel.TypeCreateVM:
 			go createVM(job)
-		case "deleteVm":
+		case jobModel.TypeDeleteVM:
 			go deleteVM(job)
-		case "updateVm":
+		case jobModel.TypeUpdateVM:
 			go updateVM(job)
-		case "createDeployment":
+		case jobModel.TypeAttachGpuToVM:
+			go attachGpuToVM(job)
+		case jobModel.TypeDetachGpuFromVM:
+			go detachGpuFromVM(job)
+		case jobModel.TypeCreateDeployment:
 			go createDeployment(job)
-		case "deleteDeployment":
+		case jobModel.TypeDeleteDeployment:
 			go deleteDeployment(job)
-		case "updateDeployment":
+		case jobModel.TypeUpdateDeployment:
 			go updateDeployment(job)
 		}
 	}

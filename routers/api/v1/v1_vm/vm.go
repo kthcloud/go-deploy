@@ -8,6 +8,7 @@ import (
 	"go-deploy/models/dto/query"
 	"go-deploy/models/dto/uri"
 	jobModel "go-deploy/models/sys/job"
+	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
 	v1 "go-deploy/routers/api/v1"
@@ -211,7 +212,19 @@ func Create(c *gin.Context) {
 			context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceNotCreated, "Resource already exists")
 			return
 		}
-		if vm.BeingDeleted {
+
+		started, reason, err := vm_service.StartActivity(vm.ID, vmModel.ActivityBeingCreated)
+		if err != nil {
+			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to start activity: %s", err))
+			return
+		}
+
+		if !started {
+			context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotReady, reason)
+			return
+		}
+
+		if vm.BeingDeleted() {
 			context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingDeleted, "Resource is currently being deleted")
 			return
 		}
@@ -303,13 +316,15 @@ func Delete(c *gin.Context) {
 		return
 	}
 
-	if current.BeingCreated {
-		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingCreated, "Resource is currently being created")
+	started, reason, err := vm_service.StartActivity(current.ID, vmModel.ActivityBeingDeleted)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to start activity: %s", err))
 		return
 	}
 
-	if !current.BeingDeleted {
-		_ = vm_service.MarkBeingDeleted(current.ID)
+	if !started {
+		context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotReady, reason)
+		return
 	}
 
 	jobID := uuid.New().String()
@@ -375,13 +390,14 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	if current.BeingCreated {
-		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingCreated, "Resource is currently being created")
+	started, reason, err := vm_service.StartActivity(current.ID, vmModel.ActivityBeingUpdated)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to start activity: %s", err))
 		return
 	}
 
-	if current.BeingDeleted {
-		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingDeleted, "Resource is currently being deleted")
+	if !started {
+		context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotReady, reason)
 		return
 	}
 

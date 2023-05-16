@@ -5,14 +5,13 @@ import (
 )
 
 type VmPublic struct {
-	ID                string `bson:"id"`
-	Name              string `bson:"name"`
+	ID   string `bson:"id"`
+	Name string `bson:"name"`
+
 	ServiceOfferingID string `bson:"serviceOfferingId"`
 	TemplateID        string `bson:"templateId"`
-	NetworkID         string `bson:"networkId"`
-	ZoneID            string `bson:"zoneId"`
-	ProjectID         string `bson:"projectId"`
 	ExtraConfig       string `bson:"extraConfig"`
+	Tags              []Tag  `bson:"tags"`
 }
 
 func CreateVmPublicFromGet(vm *cloudstack.VirtualMachine) *VmPublic {
@@ -21,14 +20,21 @@ func CreateVmPublicFromGet(vm *cloudstack.VirtualMachine) *VmPublic {
 		extraConfig = value
 	}
 
+	tags := FromCsTags(vm.Tags)
+
+	var name string
+	for _, tag := range tags {
+		if tag.Key == "deployName" {
+			name = tag.Value
+		}
+	}
+
 	return &VmPublic{
 		ID:                vm.Id,
-		Name:              vm.Name,
+		Name:              name,
 		ServiceOfferingID: vm.Serviceofferingid,
 		TemplateID:        vm.Templateid,
-		NetworkID:         vm.Nic[0].Networkid,
-		ZoneID:            vm.Zoneid,
-		ProjectID:         vm.Projectid,
 		ExtraConfig:       extraConfig,
+		Tags:              tags,
 	}
 }

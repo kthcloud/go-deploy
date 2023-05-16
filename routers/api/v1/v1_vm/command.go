@@ -58,13 +58,8 @@ func DoCommand(c *gin.Context) {
 		return
 	}
 
-	if vm.BeingCreated {
-		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingCreated, "Resource is currently being created")
-		return
-	}
-
-	if vm.BeingDeleted {
-		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingDeleted, "Resource is currently being deleted")
+	if !vm.Ready() {
+		context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotReady, fmt.Sprintf("Resource %s is not ready", requestURI.VmID))
 		return
 	}
 

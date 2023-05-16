@@ -114,6 +114,8 @@ func msgForTag(fe validator.FieldError) string {
 		return "Must be a valid environment name. Ex. ENV, MY_ENV, my_ENV_123"
 	case "env_list":
 		return "Every env name must be unique"
+	case "port_list":
+		return "Every port name and number must be unique"
 	}
 	return fe.Error()
 }

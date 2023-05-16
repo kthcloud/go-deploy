@@ -11,21 +11,7 @@ import (
 	"time"
 )
 
-const (
-	TypeCreateVM         = "createVm"
-	TypeDeleteVM         = "deleteVm"
-	TypeUpdateVM         = "updateVm"
-	TypeCreateDeployment = "createDeployment"
-	TypeDeleteDeployment = "deleteDeployment"
-	TypeUpdateDeployment = "updateDeployment"
-)
 
-const (
-	StatusPending  = "pending"
-	StatusRunning  = "running"
-	StatusFinished = "finished"
-	StatusFailed   = "failed"
-)
 
 func (job *Job) ToDTO(statusMessage string) body.JobRead {
 	if job == nil {

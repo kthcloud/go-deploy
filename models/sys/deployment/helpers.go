@@ -11,7 +11,24 @@ import (
 )
 
 func (deployment *Deployment) Ready() bool {
-	return !deployment.BeingCreated && !deployment.BeingDeleted
+	return !deployment.DoingActivity(ActivityBeingCreated) && !deployment.DoingActivity(ActivityBeingDeleted)
+}
+
+func (deployment *Deployment) DoingActivity(activity string) bool {
+	for _, a := range deployment.Activities {
+		if a == activity {
+			return true
+		}
+	}
+	return false
+}
+
+func (deployment *Deployment) BeingCreated() bool {
+	return deployment.DoingActivity(ActivityBeingCreated)
+}
+
+func (deployment *Deployment) BeingDeleted() bool {
+	return deployment.DoingActivity(ActivityBeingDeleted)
 }
 
 func CreateDeployment(deploymentID, ownerID string, params *CreateParams) error {
@@ -29,11 +46,9 @@ func CreateDeployment(deploymentID, ownerID string, params *CreateParams) error 
 		Name:    params.Name,
 		OwnerID: ownerID,
 
-		Private: params.Private,
-		Envs:    params.Envs,
-
-		BeingCreated: true,
-		BeingDeleted: false,
+		Private:    params.Private,
+		Envs:       params.Envs,
+		Activities: []string{ActivityBeingCreated},
 
 		StatusCode:    status_codes.ResourceBeingCreated,
 		StatusMessage: status_codes.GetMsg(status_codes.ResourceBeingCreated),
@@ -94,7 +109,6 @@ func GetMany(ownerID string) ([]Deployment, error) {
 
 	if err != nil {
 		err = fmt.Errorf("failed to find deployments from owner ID %s. details: %s", ownerID, err)
-		log.Println(err)
 		return nil, err
 	}
 
@@ -105,7 +119,6 @@ func GetMany(ownerID string) ([]Deployment, error) {
 		err = cursor.Decode(&deployment)
 		if err != nil {
 			err = fmt.Errorf("failed to fetch deployment when fetching all deployments from owner ID %s. details: %s", ownerID, err)
-			log.Println(err)
 			return nil, err
 		}
 		deployments = append(deployments, deployment)
@@ -129,7 +142,6 @@ func CountByOwnerID(ownerID string) (int, error) {
 
 	if err != nil {
 		err = fmt.Errorf("failed to count deployments by owner ID %s. details: %s", ownerID, err)
-		log.Println(err)
 		return 0, err
 	}
 
@@ -162,7 +174,6 @@ func UpdateWithBsonByID(id string, update bson.D) error {
 	_, err := models.DeploymentCollection.UpdateOne(context.TODO(), bson.D{{"id", id}}, bson.D{{"$set", update}})
 	if err != nil {
 		err = fmt.Errorf("failed to update deployment %s. details: %s", id, err)
-		log.Println(err)
 		return err
 	}
 	return nil
@@ -172,7 +183,6 @@ func UpdateByName(name string, update bson.D) error {
 	_, err := models.DeploymentCollection.UpdateOne(context.TODO(), bson.D{{"name", name}}, bson.D{{"$set", update}})
 	if err != nil {
 		err = fmt.Errorf("failed to update deployment %s. details: %s", name, err)
-		log.Println(err)
 		return err
 	}
 	return nil
@@ -203,11 +213,46 @@ func GetAllWithFilter(filter bson.D) ([]Deployment, error) {
 		err = cursor.Decode(&deployment)
 		if err != nil {
 			err = fmt.Errorf("failed to decode deployment when fetching all deployment. details: %s", err)
-			log.Println(err)
 			return nil, err
 		}
 		deployments = append(deployments, deployment)
 	}
 
 	return deployments, nil
+}
+
+func GetByActivity(activity string) ([]Deployment, error) {
+	filter := bson.D{
+		{
+			"activities", bson.M{
+				"$in": bson.A{activity},
+			},
+		},
+	}
+
+	return GetAllWithFilter(filter)
+}
+
+func AddActivity(deploymentID, activity string) error {
+	_, err := models.DeploymentCollection.UpdateOne(context.TODO(),
+		bson.D{{"id", deploymentID}},
+		bson.D{{"$addToSet", bson.D{{"activities", activity}}}},
+	)
+	if err != nil {
+		err = fmt.Errorf("failed to add activity %s to deployment %s. details: %s", activity, deploymentID, err)
+		return err
+	}
+	return nil
+}
+
+func RemoveActivity(deploymentID, activity string) error {
+	_, err := models.DeploymentCollection.UpdateOne(context.TODO(),
+		bson.D{{"id", deploymentID}},
+		bson.D{{"$pull", bson.D{{"activities", activity}}}},
+	)
+	if err != nil {
+		err = fmt.Errorf("failed to remove activity %s from deployment %s. details: %s", activity, deploymentID, err)
+		return err
+	}
+	return nil
 }

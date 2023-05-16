@@ -6,19 +6,27 @@ import (
 )
 
 type PublicIpAddressPublic struct {
-	ID        string `bson:"id"`
-	NetworkID string `bson:"networkId"`
-	ZoneID    string `bson:"zoneId"`
-	ProjectID string `bson:"projectId"`
+	ID   string `bson:"id"`
+	Name string `bson:"name"`
+
 	IpAddress net.IP `bson:"ipAddress"`
+	Tags      []Tag  `bson:"tags"`
 }
 
 func CreatePublicIpAddressPublicFromGet(ipAddress *cloudstack.PublicIpAddress) *PublicIpAddressPublic {
+	tags := FromCsTags(ipAddress.Tags)
+
+	var name string
+	for _, tag := range tags {
+		if tag.Key == "deployName" {
+			name = tag.Value
+		}
+	}
+
 	return &PublicIpAddressPublic{
 		ID:        ipAddress.Id,
-		NetworkID: ipAddress.Networkid,
-		ZoneID:    ipAddress.Zoneid,
-		ProjectID: ipAddress.Projectid,
+		Name:      name,
 		IpAddress: net.ParseIP(ipAddress.Ipaddress),
+		Tags:      tags,
 	}
 }

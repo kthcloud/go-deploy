@@ -38,7 +38,7 @@ func NewRouter() *gin.Engine {
 
 	apiv1Hook := router.Group("/v1/hooks")
 
-	router.GET("/v1/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+	router.GET("/v1/docs/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
 	setupDeploymentRoutes(apiv1, apiv1Hook)
 	setupVmRoutes(apiv1, apiv1Hook)
@@ -168,6 +168,27 @@ func registerCustomValidators() {
 					return false
 				}
 				names[env.Name] = true
+			}
+			return true
+		})
+
+		err = v.RegisterValidation("port_list", func(fl validator.FieldLevel) bool {
+			portList, ok := fl.Field().Interface().([]body.Port)
+			if !ok {
+				return false
+			}
+
+			names := make(map[string]bool)
+			ports := make(map[int]bool)
+			for _, port := range portList {
+				if _, ok := names[port.Name]; ok {
+					return false
+				}
+				names[port.Name] = true
+				if _, ok := ports[port.Port]; ok {
+					return false
+				}
+				ports[port.Port] = true
 			}
 			return true
 		})

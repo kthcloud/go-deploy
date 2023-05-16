@@ -60,18 +60,17 @@ type Environment struct {
 		URL    string `yaml:"url"`
 		ApiKey string `yaml:"apiKey"`
 		Secret string `yaml:"secret"`
-	} `yaml:"cs"`
 
-	PfSense struct {
-		User      string `yaml:"user"`
-		Password  string `yaml:"password"`
-		Url       string `yaml:"url"`
-		PublicIP  string `yaml:"publicIp"`
+		IpAddressID string `yaml:"ipAddressId"`
+		NetworkID   string `yaml:"networkId"`
+		ProjectID   string `yaml:"projectId"`
+		ZoneID      string `yaml:"zoneId"`
+
 		PortRange struct {
 			Start int `yaml:"start"`
 			End   int `yaml:"end"`
 		} `yaml:"portRange"`
-	} `yaml:"pfSense"`
+	} `yaml:"cs"`
 
 	Landing struct {
 		Url      string `yaml:"url"`

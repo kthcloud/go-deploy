@@ -8,9 +8,13 @@ import (
 
 func ExampleCreate() {
 	client, err := New(&ClientConf{
-		URL:    conf.Env.CS.URL,
-		ApiKey: conf.Env.CS.ApiKey,
-		Secret: conf.Env.CS.Secret,
+		URL:         conf.Env.CS.URL,
+		ApiKey:      conf.Env.CS.ApiKey,
+		Secret:      conf.Env.CS.Secret,
+		IpAddressID: conf.Env.CS.IpAddressID,
+		NetworkID:   conf.Env.CS.NetworkID,
+		ProjectID:   conf.Env.CS.ProjectID,
+		ZoneID:      conf.Env.CS.ZoneID,
 	})
 
 	if err != nil {
@@ -21,11 +25,9 @@ func ExampleCreate() {
 		Name:              "demo",
 		ServiceOfferingID: "8da28b4d-5fec-4a44-aee7-fb0c5c8265a9", // Small HA
 		TemplateID:        "e1a0479c-76a2-44da-8b38-a3a3fa316287", // Ubuntu Server
-		NetworkID:         "4a065a52-f290-4d2e-aeb4-6f48d3bd9bfe", // deploy
-		ZoneID:            "3a74db73-6058-4520-8d8c-ab7d9b7955c8", // Flemingsberg
-		ProjectID:         "d1ba382b-e310-445b-a54b-c4e773662af3", // deploy
+		Tags:              []models.Tag{{Key: "managedBy", Value: "test"}},
 	},
-		"test", "public key 1", "public key 2",
+		"public key 1", "public key 2",
 	)
 
 	if err != nil {
@@ -39,9 +41,13 @@ func ExampleUpdate() {
 	id := "77b35b74-8333-4247-849d-ef5bc8555459"
 
 	client, err := New(&ClientConf{
-		URL:    conf.Env.CS.URL,
-		ApiKey: conf.Env.CS.ApiKey,
-		Secret: conf.Env.CS.Secret,
+		URL:         conf.Env.CS.URL,
+		ApiKey:      conf.Env.CS.ApiKey,
+		Secret:      conf.Env.CS.Secret,
+		IpAddressID: conf.Env.CS.IpAddressID,
+		NetworkID:   conf.Env.CS.NetworkID,
+		ProjectID:   conf.Env.CS.ProjectID,
+		ZoneID:      conf.Env.CS.ZoneID,
 	})
 
 	if err != nil {
@@ -53,9 +59,6 @@ func ExampleUpdate() {
 		Name:              "demo",
 		ServiceOfferingID: "8da28b4d-5fec-4a44-aee7-fb0c5c8265a9", // Small HA
 		TemplateID:        "e1a0479c-76a2-44da-8b38-a3a3fa316287", // Ubuntu Server
-		NetworkID:         "4a065a52-f290-4d2e-aeb4-6f48d3bd9bfe", // deploy
-		ZoneID:            "3a74db73-6058-4520-8d8c-ab7d9b7955c8", // Flemingsberg
-		ProjectID:         "d1ba382b-e310-445b-a54b-c4e773662af3", // deploy
 		ExtraConfig:       "extra config",
 	})
 

@@ -13,9 +13,13 @@ import (
 
 func withClient() (*cs.Client, error) {
 	return cs.New(&cs.ClientConf{
-		URL:    conf.Env.CS.URL,
-		ApiKey: conf.Env.CS.ApiKey,
-		Secret: conf.Env.CS.Secret,
+		URL:         conf.Env.CS.URL,
+		ApiKey:      conf.Env.CS.ApiKey,
+		Secret:      conf.Env.CS.Secret,
+		IpAddressID: conf.Env.CS.IpAddressID,
+		NetworkID:   conf.Env.CS.NetworkID,
+		ProjectID:   conf.Env.CS.ProjectID,
+		ZoneID:      conf.Env.CS.ZoneID,
 	})
 }
 
@@ -70,16 +74,16 @@ func fetchVmStatus(vm *vm.VM) (int, string, error) {
 	csStatusCode, csStatusMessage, err := fetchCsStatus(vm)
 
 	if csStatusCode == status_codes.ResourceUnknown || csStatusCode == status_codes.ResourceNotFound {
-		if vm.BeingDeleted {
+		if vm.BeingDeleted() {
 			return status_codes.ResourceBeingDeleted, status_codes.GetMsg(status_codes.ResourceBeingDeleted), nil
 		}
 
-		if vm.BeingCreated {
+		if vm.BeingCreated() {
 			return status_codes.ResourceBeingCreated, status_codes.GetMsg(status_codes.ResourceBeingCreated), nil
 		}
 	}
 
-	if csStatusCode == status_codes.ResourceRunning && vm.BeingCreated {
+	if csStatusCode == status_codes.ResourceRunning && vm.BeingCreated() {
 		return status_codes.ResourceBeingCreated, status_codes.GetMsg(status_codes.ResourceBeingCreated), nil
 	}
 
@@ -92,11 +96,11 @@ func fetchDeploymentStatus(deployment *deployment.Deployment) (int, string, erro
 		return status_codes.ResourceNotFound, status_codes.GetMsg(status_codes.ResourceNotFound), nil
 	}
 
-	if deployment.BeingDeleted {
+	if deployment.BeingDeleted() {
 		return status_codes.ResourceBeingDeleted, status_codes.GetMsg(status_codes.ResourceBeingDeleted), nil
 	}
 
-	if deployment.BeingCreated {
+	if deployment.BeingCreated() {
 		return status_codes.ResourceBeingCreated, status_codes.GetMsg(status_codes.ResourceBeingCreated), nil
 	}
 
