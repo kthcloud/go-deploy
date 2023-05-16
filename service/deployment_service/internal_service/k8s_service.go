@@ -60,7 +60,7 @@ func CreateK8s(name, userID string, envs []deploymentModel.Env) (*K8sResult, err
 		return nil, makeError(err)
 	}
 
-	port := conf.Env.App.Port
+	port := conf.Env.Deployment.Port
 
 	deployment, err := deploymentModel.GetByName(name)
 	if err != nil {
@@ -262,7 +262,7 @@ func UpdateK8s(name string, envs *[]deploymentModel.Env) error {
 	// update deployment
 	if deployment.Subsystems.K8s.Deployment.ID != "" {
 		k8sEnvs := []k8sModels.EnvVar{
-			{Name: "DEPLOY_APP_PORT", Value: strconv.Itoa(conf.Env.App.Port)},
+			{Name: "DEPLOY_APP_PORT", Value: strconv.Itoa(conf.Env.Deployment.Port)},
 		}
 		for _, env := range *envs {
 			k8sEnvs = append(k8sEnvs, k8sModels.EnvVar{

@@ -6,6 +6,7 @@ import (
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
 	"go-deploy/models/dto/uri"
+	userModel "go-deploy/models/sys/user"
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
 	v1 "go-deploy/routers/api/v1"
@@ -39,7 +40,7 @@ func GetList(c *gin.Context) {
 		return
 	}
 
-	if requestQuery.WantAll && auth.IsAdmin {
+	if requestQuery.WantAll && auth.IsAdmin() {
 		users, err := user_service.GetAll()
 		if err != nil {
 			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
@@ -50,7 +51,7 @@ func GetList(c *gin.Context) {
 		return
 	}
 
-	user, err := user_service.GetByID(auth.UserID, auth.UserID, auth.IsAdmin)
+	user, err := user_service.GetByID(auth.UserID, auth.UserID, auth.IsAdmin())
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
@@ -61,7 +62,13 @@ func GetList(c *gin.Context) {
 		return
 	}
 
-	context.JSONResponse(200, user.ToDTO())
+	quota, err := user_service.GetQuotaByUserID(user.ID)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to update user: %s", err))
+		return
+	}
+
+	context.JSONResponse(200, user.ToDTO(quota))
 }
 
 // Get
@@ -95,36 +102,33 @@ func Get(c *gin.Context) {
 		requestedUserID = auth.UserID
 	}
 
-	user, err := user_service.GetByID(requestedUserID, auth.UserID, auth.IsAdmin)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
-		return
-	}
+	var user *userModel.User
+	if requestedUserID == auth.UserID {
+		user, err = user_service.GetOrCreate(auth.UserID, auth.JwtToken.PreferredUsername, auth.Roles)
+		if err != nil {
+			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get user: %s", err))
+			return
+		}
+	} else {
+		user, err = user_service.GetByID(requestedUserID, auth.UserID, auth.IsAdmin())
+		if err != nil {
+			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get user: %s", err))
+			return
+		}
 
-	if user == nil {
-		if requestedUserID == auth.UserID {
-			err = user_service.CreateUser(auth.UserID, auth.JwtToken.PreferredUsername)
-			if err != nil {
-				context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to create user: %s", err))
-				return
-			}
-
-			createdUser, err := user_service.GetByID(auth.UserID, auth.UserID, auth.IsAdmin)
-			if err != nil {
-				context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
-				return
-			}
-
-			if createdUser == nil {
-				context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to create user: %s", err))
-				return
-			}
-
-			user = createdUser
+		if user == nil {
+			context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, fmt.Sprintf("User with id %s not found", requestedUserID))
+			return
 		}
 	}
 
-	context.JSONResponse(200, user.ToDTO())
+	quota, err := user_service.GetQuotaByUserID(user.ID)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to update user: %s", err))
+		return
+	}
+
+	context.JSONResponse(200, user.ToDTO(quota))
 }
 
 func Update(c *gin.Context) {
@@ -153,7 +157,7 @@ func Update(c *gin.Context) {
 		requestedUserID = auth.UserID
 	}
 
-	user, err := user_service.GetByID(requestedUserID, auth.UserID, auth.IsAdmin)
+	user, err := user_service.GetByID(requestedUserID, auth.UserID, auth.IsAdmin())
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to update user: %s", err))
 		return
@@ -164,13 +168,13 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	err = user_service.Update(requestedUserID, auth.UserID, auth.IsAdmin, &userUpdate)
+	err = user_service.Update(requestedUserID, auth.UserID, auth.IsAdmin(), &userUpdate)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to update user: %s", err))
 		return
 	}
 
-	updatedUser, err := user_service.GetByID(requestedUserID, auth.UserID, auth.IsAdmin)
+	updatedUser, err := user_service.GetByID(requestedUserID, auth.UserID, auth.IsAdmin())
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to update user: %s", err))
 		return
@@ -181,5 +185,11 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	context.JSONResponse(200, updatedUser.ToDTO())
+	quota, err := user_service.GetQuotaByUserID(updatedUser.ID)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to update user: %s", err))
+		return
+	}
+
+	context.JSONResponse(200, updatedUser.ToDTO(quota))
 }

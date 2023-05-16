@@ -11,7 +11,7 @@ import (
 )
 
 func getFQDN(hostName string) string {
-	return fmt.Sprintf("%s.%s", hostName, conf.Env.App.ParentDomain)
+	return fmt.Sprintf("%s.%s", hostName, conf.Env.Deployment.ParentDomain)
 }
 
 func createProxyHostPublicBody(name, forwardHost string, certificateId int) *npmModels.ProxyHostPublic {
@@ -20,7 +20,7 @@ func createProxyHostPublicBody(name, forwardHost string, certificateId int) *npm
 		ID:                    0,
 		DomainNames:           []string{getFQDN(name)},
 		ForwardHost:           forwardHost,
-		ForwardPort:           conf.Env.App.Port,
+		ForwardPort:           conf.Env.Deployment.Port,
 		CertificateID:         certificateId,
 		AllowWebsocketUpgrade: false,
 		ForwardScheme:         "http",
@@ -55,7 +55,7 @@ func CreateNPM(name, forwardHost string) error {
 	}
 
 	if deployment.Subsystems.Npm.ProxyHost.ID == 0 {
-		certificateID, err := client.GetWildcardCertificateID(conf.Env.App.ParentDomain)
+		certificateID, err := client.GetWildcardCertificateID(conf.Env.Deployment.ParentDomain)
 		if err != nil {
 			return makeError(err)
 		}

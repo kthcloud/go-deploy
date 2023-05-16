@@ -6,6 +6,7 @@ import (
 	modelv2 "github.com/mittwald/goharbor-client/v5/apiv2/model"
 	models "go-deploy/pkg/subsystems/harbor/models"
 	"strconv"
+	"strings"
 )
 
 func (client *Client) WebhookCreated(public *models.WebhookPublic) (bool, error) {
@@ -94,4 +95,22 @@ func (client *Client) CreateWebhook(public *models.WebhookPublic) (int, error) {
 		}
 	}
 	return 0, makeError(fmt.Errorf("webhook not found after creation"))
+}
+
+func (client *Client) DeleteWebhook(projectID, id int) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to delete webhook for %d. details: %s", id, err)
+	}
+
+	err := client.HarborClient.DeleteProjectWebhookPolicy(context.TODO(), projectID, int64(id))
+	if err != nil {
+		errMsg := err.Error()
+		if strings.Contains(errMsg, "[404] deleteWebhookPolicyOfProjectNotFound") {
+			return nil
+		}
+
+		return makeError(err)
+	}
+
+	return nil
 }

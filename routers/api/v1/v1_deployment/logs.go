@@ -48,7 +48,7 @@ func GetLogs(c *gin.Context) {
 		}
 	}
 
-	logContext, getLogsErr := deployment_service.GetLogs(auth.UserID, requestURI.DeploymentID, handler, auth.IsAdmin)
+	logContext, getLogsErr := deployment_service.GetLogs(auth.UserID, requestURI.DeploymentID, handler, auth.IsAdmin())
 	if getLogsErr != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", getLogsErr))
 		return

@@ -46,7 +46,7 @@ func GetGpuList(c *gin.Context) {
 		return
 	}
 
-	gpus, err := vm_service.GetAllGPUs(requestQuery.OnlyShowAvailable, auth.IsAdmin)
+	gpus, err := vm_service.GetAllGPUs(requestQuery.OnlyShowAvailable, auth.IsAdmin())
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
@@ -95,7 +95,7 @@ func AttachGPU(c *gin.Context) {
 		return
 	}
 
-	current, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin)
+	current, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin())
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return
@@ -118,7 +118,7 @@ func AttachGPU(c *gin.Context) {
 
 	var gpu *gpuModel.GPU
 	if gpuID == "any" {
-		gpu, err = vm_service.GetAnyAvailableGPU(auth.IsPowerUser)
+		gpu, err = vm_service.GetAnyAvailableGPU(auth.IsPowerUser())
 		if err != nil {
 			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get available GPU: %s", err))
 			return
@@ -129,7 +129,7 @@ func AttachGPU(c *gin.Context) {
 			return
 		}
 	} else {
-		gpu, err = vm_service.GetGpuByID(gpuID, auth.IsPowerUser)
+		gpu, err = vm_service.GetGpuByID(gpuID, auth.IsPowerUser())
 		if err != nil {
 			context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 			return
@@ -212,7 +212,7 @@ func DetachGPU(c *gin.Context) {
 		return
 	}
 
-	current, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin)
+	current, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin())
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, fmt.Sprintf("Failed to get VM: %s", err))
 		return

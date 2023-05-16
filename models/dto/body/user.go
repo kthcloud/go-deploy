@@ -5,21 +5,24 @@ type PublicKey struct {
 	Key  string `json:"key" binding:"required,ssh_public_key"`
 }
 
+type Quota struct {
+	Deployment int `json:"deployment"`
+	CPU        int `json:"cpu"`
+	Memory     int `json:"memory"`
+	Disk       int `json:"disk"`
+}
+
 type UserRead struct {
-	ID              string      `json:"id"`
-	Username        string      `json:"username"`
-	Email           string      `json:"email"`
-	Admin           bool        `json:"admin"`
-	VmQuota         int         `json:"vmQuota"`
-	DeploymentQuota int         `json:"deploymentQuota"`
-	PowerUser       bool        `json:"powerUser"`
-	PublicKeys      []PublicKey `json:"publicKeys"`
+	ID         string      `json:"id"`
+	Username   string      `json:"username"`
+	Email      string      `json:"email"`
+	Roles      []string    `json:"roles"`
+	Quota      Quota       `json:"quota"`
+	PublicKeys []PublicKey `json:"publicKeys"`
 }
 
 type UserUpdate struct {
-	Username        *string      `json:"username" binding:"omitempty,min=3,max=32"`
-	Email           *string      `json:"email" binding:"omitempty,email"`
-	VmQuota         *int         `json:"vmQuota" binding:"omitempty,min=0,max=1000"`
-	DeploymentQuota *int         `json:"deploymentQuota" binding:"omitempty,min=0,max=1000"`
-	PublicKeys      *[]PublicKey `json:"publicKeys" binding:"omitempty,dive,min=0,max=1000"`
+	Username   *string      `json:"username" binding:"omitempty,min=3,max=32"`
+	Email      *string      `json:"email" binding:"omitempty,email"`
+	PublicKeys *[]PublicKey `json:"publicKeys" binding:"omitempty,dive,min=0,max=1000"`
 }
