@@ -187,6 +187,11 @@ func DeleteHarbor(name string) error {
 	}
 
 	if deployment.Subsystems.Harbor.Webhook.ID != 0 {
+		err = client.DeleteWebhook(deployment.Subsystems.Harbor.Webhook.ProjectID, deployment.Subsystems.Harbor.Webhook.ID)
+		if err != nil {
+			return makeError(err)
+		}
+
 		err = deploymentModel.UpdateSubsystemByName(name, "harbor", "webhook", harborModels.WebhookPublic{})
 		if err != nil {
 			return makeError(err)
