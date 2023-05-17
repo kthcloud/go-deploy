@@ -99,20 +99,44 @@ func (client *Client) UpdateVM(public *models.VmPublic) error {
 	}
 
 	if public.ID == "" {
-		return fmt.Errorf("id required")
+		return nil
 	}
 
-	params := client.CsClient.VirtualMachine.NewUpdateVirtualMachineParams(public.ID)
-	params.SetName(public.Name)
-	params.SetDisplayname(public.Name)
-
-	if public.ExtraConfig == "" {
-		params.SetExtraconfig(url.QueryEscape("none"))
-	} else {
-		params.SetExtraconfig(url.QueryEscape(public.ExtraConfig))
+	vm, err := client.ReadVM(public.ID)
+	if err != nil {
+		return makeError(err)
 	}
 
-	_, err := client.CsClient.VirtualMachine.UpdateVirtualMachine(params)
+	if vm == nil {
+		return nil
+	}
+
+	if vm.Name != public.Name || vm.ExtraConfig != public.ExtraConfig {
+		params := client.CsClient.VirtualMachine.NewUpdateVirtualMachineParams(public.ID)
+		params.SetName(public.Name)
+		params.SetDisplayname(public.Name)
+
+		if public.ExtraConfig == "" {
+			params.SetExtraconfig(url.QueryEscape("none"))
+		} else {
+			params.SetExtraconfig(url.QueryEscape(public.ExtraConfig))
+		}
+
+		_, err = client.CsClient.VirtualMachine.UpdateVirtualMachine(params)
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	if vm.ServiceOfferingID != public.ServiceOfferingID {
+		params := client.CsClient.VirtualMachine.NewChangeServiceForVirtualMachineParams(public.ID, public.ServiceOfferingID)
+		_, err = client.CsClient.VirtualMachine.ChangeServiceForVirtualMachine(params)
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	err = client.AssertVirtualMachineTags(public.ID, public.Tags)
 	if err != nil {
 		return makeError(err)
 	}

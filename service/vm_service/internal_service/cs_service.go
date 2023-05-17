@@ -239,7 +239,7 @@ func DeleteCS(name string) error {
 	return nil
 }
 
-func UpdateCS(vmID string, ports *[]vmModel.Port) error {
+func UpdateCS(vmID string, updateParams *vmModel.UpdateParams) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update cs for vm %s. details: %s", vmID, err)
 	}
@@ -259,78 +259,161 @@ func UpdateCS(vmID string, ports *[]vmModel.Port) error {
 	}
 
 	if vm.Subsystems.CS.VM.ID == "" {
-		return makeError(fmt.Errorf("vm is not created yet"))
-	}
-
-	// port-forwarding rule
-	if ports == nil {
 		return nil
 	}
 
-	removeDeploySshFromPortMap(ports)
+	// port-forwarding rule
+	if updateParams.Ports != nil {
+		removeDeploySshFromPortMap(updateParams.Ports)
 
-	/// delete old rules and create new ones
-	ruleMap := vm.Subsystems.CS.PortForwardingRuleMap
+		/// delete old rules and create new ones
+		ruleMap := vm.Subsystems.CS.PortForwardingRuleMap
 
-	currentPortForwardingRules, err := client.ReadPortForwardingRules(vm.Subsystems.CS.VM.ID)
-	if err != nil {
-		return makeError(err)
+		currentPortForwardingRules, err := client.ReadPortForwardingRules(vm.Subsystems.CS.VM.ID)
+		if err != nil {
+			return makeError(err)
+		}
+
+		currentPorts := convertToPorts(currentPortForwardingRules)
+		for i, port := range currentPorts {
+			if port.Name == "__ssh" || port.Port == 22 {
+				continue
+			}
+
+			err = client.DeletePortForwardingRule(currentPortForwardingRules[i].ID)
+			if err != nil {
+				return makeError(err)
+			}
+
+			delete(ruleMap, port.Name)
+
+			err = vmModel.UpdateSubsystemByName(vm.Name, "cs", "portForwardingRuleMap", ruleMap)
+			if err != nil {
+				return makeError(err)
+			}
+		}
+
+		for _, port := range *updateParams.Ports {
+			freePort, err := client.GetFreePort(conf.Env.CS.PortRange.Start, conf.Env.CS.PortRange.End)
+			if err != nil {
+				return makeError(err)
+			}
+
+			if freePort == -1 {
+				return makeError(fmt.Errorf("no free port found"))
+			}
+
+			id, err := client.CreatePortForwardingRule(&csModels.PortForwardingRulePublic{
+				Name:        port.Name,
+				VmID:        vm.Subsystems.CS.VM.ID,
+				Protocol:    port.Protocol,
+				PrivatePort: port.Port,
+				PublicPort:  freePort,
+				Tags: []csModels.Tag{
+					{Key: "name", Value: port.Name},
+					{Key: "managedBy", Value: conf.Env.Manager},
+					{Key: "deployName", Value: vm.Name},
+				},
+			})
+			if err != nil {
+				return makeError(err)
+			}
+
+			rule, err := client.ReadPortForwardingRule(id)
+			if err != nil {
+				return makeError(err)
+			}
+
+			ruleMap[port.Name] = *rule
+
+			err = vmModel.UpdateSubsystemByName(vm.Name, "cs", "portForwardingRuleMap", ruleMap)
+			if err != nil {
+				return makeError(err)
+			}
+		}
 	}
 
-	currentPorts := convertToPorts(currentPortForwardingRules)
-	for i, port := range currentPorts {
-		if port.Name == "__ssh" || port.Port == 22 {
-			continue
+	// service offering
+	var serviceOffering *csModels.ServiceOfferingPublic
+	if vm.Subsystems.CS.ServiceOffering.ID != "" {
+		requiresUpdate := updateParams.CpuCores != nil && updateParams.RAM != nil
+
+		if requiresUpdate {
+			err = client.DeleteServiceOffering(vm.Subsystems.CS.ServiceOffering.ID)
+			if err != nil {
+				return makeError(err)
+			}
+
+			id, err := client.CreateServiceOffering(&csModels.ServiceOfferingPublic{
+				Name:        vm.Name,
+				Description: vm.Subsystems.CS.ServiceOffering.Description,
+				CpuCores:    *updateParams.CpuCores,
+				RAM:         *updateParams.RAM,
+				DiskSize:    vm.Subsystems.CS.ServiceOffering.DiskSize,
+			})
+			if err != nil {
+				return makeError(err)
+			}
+
+			serviceOffering, err = client.ReadServiceOffering(id)
+			if err != nil {
+				return makeError(err)
+			}
+
+			if serviceOffering == nil {
+				return makeError(fmt.Errorf("failed to read service offering after creation"))
+			}
+
+			err = vmModel.UpdateSubsystemByName(vm.Name, "cs", "serviceOffering", *serviceOffering)
+			if err != nil {
+				return makeError(err)
+			}
 		}
 
-		err = client.DeletePortForwardingRule(currentPortForwardingRules[i].ID)
-		if err != nil {
-			return makeError(err)
-		}
+		// make sure the vm is using the latest service offering
+		if vm.Subsystems.CS.VM.ServiceOfferingID != serviceOffering.ID {
+			vm.Subsystems.CS.VM.ServiceOfferingID = serviceOffering.ID
 
-		delete(ruleMap, port.Name)
+			// turn it off if it is on, but remember the status
+			status, err := client.GetVmStatus(vm.Subsystems.CS.VM.ID)
+			if err != nil {
+				return makeError(err)
+			}
 
-		err = vmModel.UpdateSubsystemByName(vm.Name, "cs", "portForwardingRuleMap", ruleMap)
-		if err != nil {
-			return makeError(err)
-		}
-	}
+			if status == "Running" {
+				err = client.DoVmCommand(vm.Subsystems.CS.VM.ID, nil, "stop")
+				if err != nil {
+					return makeError(err)
+				}
+			}
 
-	for _, port := range *ports {
-		freePort, err := client.GetFreePort(conf.Env.CS.PortRange.Start, conf.Env.CS.PortRange.End)
-		if err != nil {
-			return makeError(err)
-		}
+			// update the service offering
+			err = client.UpdateVM(&vm.Subsystems.CS.VM)
+			if err != nil {
+				return makeError(err)
+			}
 
-		if freePort == -1 {
-			return makeError(fmt.Errorf("no free port found"))
-		}
+			err = vmModel.UpdateSubsystemByName(vm.Name, "cs", "vm", vm.Subsystems.CS.VM)
+			if err != nil {
+				return makeError(err)
+			}
 
-		id, err := client.CreatePortForwardingRule(&csModels.PortForwardingRulePublic{
-			Name:       port.Name,
-			VmID:       vm.Subsystems.CS.VM.ID,
-			Protocol:   port.Protocol,
-			PublicPort: freePort,
-			Tags: []csModels.Tag{
-				{Key: "name", Value: port.Name},
-				{Key: "managedBy", Value: conf.Env.Manager},
-				{Key: "deployName", Value: vm.Name},
-			},
-		})
-		if err != nil {
-			return makeError(err)
-		}
+			// turn it on if it was on
+			if status == "Running" {
+				var requiredHost *string
+				if vm.GpuID != "" {
+					requiredHost, err = getRequiredHost(vm.GpuID)
+					if err != nil {
+						return makeError(err)
+					}
+				}
 
-		rule, err := client.ReadPortForwardingRule(id)
-		if err != nil {
-			return makeError(err)
-		}
+				err = client.DoVmCommand(vm.Subsystems.CS.VM.ID, requiredHost, "start")
+				if err != nil {
+					return makeError(err)
+				}
+			}
 
-		ruleMap[port.Name] = *rule
-
-		err = vmModel.UpdateSubsystemByName(vm.Name, "cs", "portForwardingRuleMap", ruleMap)
-		if err != nil {
-			return makeError(err)
 		}
 	}
 
@@ -390,13 +473,13 @@ func AttachGPU(gpuID, vmID string) error {
 		return makeError(err)
 	}
 
-	requiredHost, err := getRequiredHost(gpuID)
-	if err != nil {
-		return makeError(err)
-	}
-
 	// turn it on if it was on
 	if status == "Running" {
+		requiredHost, err := getRequiredHost(gpuID)
+		if err != nil {
+			return makeError(err)
+		}
+
 		err = client.DoVmCommand(vm.Subsystems.CS.VM.ID, requiredHost, "start")
 		if err != nil {
 			return makeError(err)

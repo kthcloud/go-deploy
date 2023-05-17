@@ -28,13 +28,16 @@ type VmCreate struct {
 	Name         string `json:"name" binding:"required,rfc1035,min=3,max=30"`
 	SshPublicKey string `json:"sshPublicKey" binding:"required,ssh_public_key"`
 	Ports        []Port `json:"ports" binding:"omitempty,port_list,dive,min=0,max=1000"`
-	CpuCores  int `json:"cpuCores" binding:"required,min=1"`
-	RAM      int `json:"ram" binding:"required,min=1"`
-	DiskSize int `json:"diskSize" binding:"required,min=20"`
+	CpuCores     int    `json:"cpuCores" binding:"required,min=1"`
+	RAM          int    `json:"ram" binding:"required,min=1"`
+	DiskSize     int    `json:"diskSize" binding:"required,min=20"`
 }
 
 type VmUpdate struct {
-	Ports *[]Port `json:"ports" bson:"ports" binding:"omitempty,port_list,dive,min=0,max=1000"`
+	Ports    *[]Port `json:"ports" bson:"ports" binding:"omitempty,port_list,dive,min=0,max=1000"`
+	CpuCores *int    `json:"cpuCores" binding:"omitempty,min=1"`
+	RAM      *int    `json:"ram" binding:"omitempty,min=1"`
+	DiskSize *int    `json:"diskSize" binding:"omitempty,min=20"`
 }
 
 type VmCreated struct {

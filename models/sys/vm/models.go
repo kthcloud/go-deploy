@@ -53,9 +53,9 @@ type CS struct {
 }
 
 type Usage struct {
-	CpuCores  int `json:"cpuCores"`
-	RAM       int `json:"ram"`
-	DiskSpace int `json:"diskSpace"`
+	CpuCores int `json:"cpuCores"`
+	RAM      int `json:"ram"`
+	DiskSize int `json:"diskSize"`
 }
 
 type CreateParams struct {
@@ -68,5 +68,7 @@ type CreateParams struct {
 }
 
 type UpdateParams struct {
-	Ports *[]Port `json:"ports"`
+	Ports    *[]Port `json:"ports"`
+	CpuCores *int    `json:"cpuCores"`
+	RAM      *int    `json:"ram"`
 }

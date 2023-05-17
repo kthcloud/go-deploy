@@ -87,6 +87,6 @@ func GetQuotaByUserID(id string) (*userModel.Quota, error) {
 		Deployments: quota.Deployments,
 		CpuCores:    quota.CpuCores,
 		RAM:         quota.RAM,
-		DiskSpace:   quota.DiskSpace,
+		DiskSize:    quota.DiskSize,
 	}, nil
 }
