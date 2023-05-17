@@ -75,6 +75,6 @@ type GpuRead struct {
 	Lease *GpuLease `json:"lease,omitempty"`
 }
 
-type DoCommand struct {
+type VmCommand struct {
 	Command string `json:"command" binding:"required,oneof=start stop reboot"`
 }

@@ -61,6 +61,8 @@ func setupDeploymentRoutes(base *gin.RouterGroup, hooks *gin.RouterGroup) {
 	base.POST("/deployments/:deploymentId", v1_deployment.Update)
 	base.DELETE("/deployments/:deploymentId", v1_deployment.Delete)
 
+	base.POST("/deployments/:deploymentId/command", v1_deployment.DoCommand)
+
 	hooks.POST("/deployments/harbor", v1_deployment.HandleHarborHook)
 }
 

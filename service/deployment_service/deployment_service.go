@@ -109,6 +109,8 @@ func CanAddActivity(deploymentID, activity string) (bool, string) {
 		return !deployment.BeingDeleted(), "It is being deleted"
 	case deploymentModel.ActivityBeingDeleted:
 		return !deployment.BeingCreated(), "It is being created"
+	case deploymentModel.ActivityRestarting:
+		return !deployment.BeingCreated() && !deployment.BeingDeleted(), "It is not ready"
 	}
 
 	return false, fmt.Sprintf("Unknown activity %s", activity)
@@ -159,7 +161,48 @@ func Update(name string, deploymentUpdate *body.DeploymentUpdate) error {
 }
 
 func Restart(name string) error {
-	return internal_service.RestartK8s(name)
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to restart deployment. details: %s", err)
+	}
+
+	deployment, err := deploymentModel.GetByName(name)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if deployment == nil {
+		return nil
+	}
+
+	started, reason, err := StartActivity(deployment.ID, deploymentModel.ActivityRestarting)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if !started {
+		return fmt.Errorf("failed to restart deployment. details: %s", reason)
+	}
+
+	err = internal_service.RestartK8s(name)
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = deploymentModel.RemoveActivity(deployment.ID, deploymentModel.ActivityRestarting)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
+}
+
+func DoCommand(vm *deploymentModel.Deployment, command string) {
+	go func() {
+		switch command {
+		case "restart":
+			_ = Restart(vm.Name)
+		}
+	}()
 }
 
 func GetUsageByUserID(userID string) (*deploymentModel.Usage, error) {

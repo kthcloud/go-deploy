@@ -7,10 +7,61 @@ import (
 	"github.com/google/uuid"
 	"go-deploy/pkg/subsystems/k8s/keys"
 	"go-deploy/pkg/subsystems/k8s/models"
+	v1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/watch"
+	"log"
 	"time"
 )
+
+func (client *Client) createDeploymentWatcher(ctx context.Context, namespace, deployment string) (watch.Interface, error) {
+	labelSelector := fmt.Sprintf("%s=%s", "app.kubernetes.io/name", deployment)
+
+	opts := metav1.ListOptions{
+		TypeMeta:      metav1.TypeMeta{},
+		LabelSelector: labelSelector,
+		FieldSelector: "",
+	}
+
+	return client.K8sClient.AppsV1().Deployments(namespace).Watch(ctx, opts)
+}
+
+func (client *Client) waitDeploymentReady(ctx context.Context, namespace, deployment string) error {
+	watcher, err := client.createDeploymentWatcher(ctx, namespace, deployment)
+	if err != nil {
+		return err
+	}
+
+	defer watcher.Stop()
+
+	wasDown := false
+
+	for {
+		select {
+		case event := <-watcher.ResultChan():
+			if event.Type == watch.Modified {
+				if event.Object == nil {
+					continue
+				}
+
+				deployment := event.Object.(*v1.Deployment)
+
+				if deployment.Status.UnavailableReplicas > 0 {
+					wasDown = true
+					continue
+				}
+
+				if deployment.Status.UnavailableReplicas == 0 && deployment.Status.ReadyReplicas > 0 && wasDown {
+					return nil
+				}
+			}
+
+		case <-ctx.Done():
+			return nil
+		}
+	}
+}
 
 func (client *Client) ReadDeployment(namespace, id string) (*models.DeploymentPublic, error) {
 	makeError := func(err error) error {
@@ -199,12 +250,17 @@ func (client *Client) RestartDeployment(public *models.DeploymentPublic) error {
 
 	data := fmt.Sprintf(`{"spec": {"template": {"metadata": {"annotations": {"kubectl.kubernetes.io/restartedAt": "%s"}}}}}`, time.Now().Format("20060102150405"))
 
-	fullname := fmt.Sprintf("%s-%s", public.Name, public.ID)
-
-	_, err = req.Patch(context.TODO(), fullname, types.StrategicMergePatchType, []byte(data), metav1.PatchOptions{})
+	_, err = req.Patch(context.TODO(), public.Name, types.StrategicMergePatchType, []byte(data), metav1.PatchOptions{})
 	if err != nil {
 		return makeError(err)
 	}
+
+	err = client.waitDeploymentReady(context.TODO(), public.Namespace, public.Name)
+	if err != nil {
+		return makeError(err)
+	}
+
+	log.Println("deployment", public.Name, "restarted")
 
 	return nil
 }

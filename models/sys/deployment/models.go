@@ -9,6 +9,7 @@ import (
 const (
 	ActivityBeingCreated = "beingCreated"
 	ActivityBeingDeleted = "beingDeleted"
+	ActivityRestarting   = "restarting"
 )
 
 type Deployment struct {
