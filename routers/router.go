@@ -151,8 +151,9 @@ func registerCustomValidators() {
 				return false
 			}
 
-			regex := regexp.MustCompile(`[a-zA-Z_]+[a-zA-Z0-9_]*`)
-			return regex.MatchString(name)
+			regex := regexp.MustCompile(`^[a-zA-Z]([a-zA-Z0-9-_]*[a-zA-Z0-9])?([a-zA-Z]([a-zA-Z0-9-_]*[a-zA-Z0-9])?)*$`)
+			match := regex.MatchString(name)
+			return match
 		})
 		if err != nil {
 			panic(err)
