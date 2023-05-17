@@ -164,6 +164,7 @@ func (client *Client) GetFreePort(startPort, endPort int) (int, error) {
 	listRulesParams := client.CsClient.Firewall.NewListPortForwardingRulesParams()
 	listRulesParams.SetProjectid(client.ProjectID)
 	listRulesParams.SetNetworkid(client.NetworkID)
+	listRulesParams.SetIpaddressid(client.IpAddressID)
 	listRulesParams.SetListall(true)
 
 	listRules, err := client.CsClient.Firewall.ListPortForwardingRules(listRulesParams)

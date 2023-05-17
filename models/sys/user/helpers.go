@@ -22,6 +22,10 @@ func (u *User) ToDTO(quota *Quota) body.UserRead {
 		quota = &Quota{}
 	}
 
+	if u.Roles == nil {
+		u.Roles = []string{}
+	}
+
 	userRead := body.UserRead{
 		ID:       u.ID,
 		Username: u.Username,
@@ -29,9 +33,9 @@ func (u *User) ToDTO(quota *Quota) body.UserRead {
 		Roles:    u.Roles,
 		Quota: body.Quota{
 			Deployment: quota.Deployment,
-			CPU:        quota.CPU,
-			Memory:     quota.Memory,
-			Disk:       quota.Disk,
+			CpuCores:   quota.CpuCores,
+			RAM:        quota.RAM,
+			DiskSpace:  quota.DiskSpace,
 		},
 		PublicKeys: publicKeys,
 	}

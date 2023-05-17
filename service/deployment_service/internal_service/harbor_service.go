@@ -2,6 +2,7 @@ package internal_service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/pkg/conf"
@@ -91,6 +92,10 @@ func CreateHarbor(name, userID string) error {
 			return makeError(err)
 		}
 
+		if project == nil {
+			return makeError(errors.New("failed to read project after creation"))
+		}
+
 		err = deploymentModel.UpdateSubsystemByName(name, "harbor", "project", project)
 		if err != nil {
 			return makeError(err)
@@ -114,6 +119,10 @@ func CreateHarbor(name, userID string) error {
 			return makeError(err)
 		}
 
+		if robot == nil {
+			return makeError(errors.New("failed to read robot after creation"))
+		}
+
 		robot.Secret = created.Secret
 
 		err = deploymentModel.UpdateSubsystemByName(name, "harbor", "robot", robot)
@@ -134,6 +143,10 @@ func CreateHarbor(name, userID string) error {
 			return makeError(err)
 		}
 
+		if repository == nil {
+			return makeError(errors.New("failed to read repository after creation"))
+		}
+
 		err = deploymentModel.UpdateSubsystemByName(name, "harbor", "repository", repository)
 		if err != nil {
 			return makeError(err)
@@ -150,6 +163,10 @@ func CreateHarbor(name, userID string) error {
 		webhook, err := client.ReadWebhook(project.ID, id)
 		if err != nil {
 			return makeError(err)
+		}
+
+		if webhook == nil {
+			return makeError(errors.New("failed to read webhook after creation"))
 		}
 
 		err = deploymentModel.UpdateSubsystemByName(name, "harbor", "webhook", webhook)

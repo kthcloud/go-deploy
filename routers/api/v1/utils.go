@@ -41,7 +41,7 @@ func WithAuth(context *app.ClientContext) (*AuthInfo, error) {
 		return nil, err
 	}
 
-	var roles []string
+	roles := make([]string, 0)
 	for _, group := range token.Groups {
 		roles = append(roles, group)
 	}

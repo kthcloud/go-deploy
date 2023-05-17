@@ -49,4 +49,7 @@ func (p *CreateParams) FromDTO(dto *body.VmCreate) {
 			Protocol: port.Protocol,
 		}
 	}
+	p.CpuCores = dto.CpuCores
+	p.RAM = dto.RAM
+	p.DiskSize = dto.DiskSize
 }

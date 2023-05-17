@@ -64,9 +64,16 @@ func CreateNPM(name, forwardHost string) error {
 		if err != nil {
 			return err
 		}
-		deployment.Subsystems.Npm.ProxyHost.ID = id
 
-		proxyHost, err := client.ReadProxyHost(deployment.Subsystems.Npm.ProxyHost.ID)
+		proxyHost, err := client.ReadProxyHost(id)
+		if err != nil {
+			return makeError(err)
+		}
+
+		if proxyHost == nil {
+			return makeError(fmt.Errorf("failed to read proxy host after creation"))
+		}
+
 		deployment.Subsystems.Npm.ProxyHost = *proxyHost
 
 		err = deploymentModel.UpdateSubsystemByName(name, "npm", "proxyHost", *proxyHost)

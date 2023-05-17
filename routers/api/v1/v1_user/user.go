@@ -47,7 +47,17 @@ func GetList(c *gin.Context) {
 			return
 		}
 
-		context.JSONResponse(200, users)
+		usersDto := make([]body.UserRead, 0)
+		for _, user := range users {
+			quota, err := user_service.GetQuotaByUserID(user.ID)
+			if err != nil {
+				quota = &userModel.Quota{}
+			}
+
+			usersDto = append(usersDto, user.ToDTO(quota))
+		}
+
+		context.JSONResponse(200, usersDto)
 		return
 	}
 

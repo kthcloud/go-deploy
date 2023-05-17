@@ -6,10 +6,6 @@ import (
 	"go-deploy/pkg/conf"
 )
 
-func CreateUser(userID, username string, roles []string) error {
-	return userModel.Create(userID, username, roles)
-}
-
 func GetByID(requestedUserID, userID string, isAdmin bool) (*userModel.User, error) {
 	user, err := userModel.GetByID(requestedUserID)
 	if err != nil {
@@ -89,8 +85,8 @@ func GetQuotaByUserID(id string) (*userModel.Quota, error) {
 
 	return &userModel.Quota{
 		Deployment: quota.Deployment,
-		CPU:        quota.CPU,
-		Memory:     quota.Memory,
-		Disk:       quota.Disk,
+		CpuCores:   quota.CpuCores,
+		RAM:        quota.RAM,
+		DiskSpace:  quota.DiskSpace,
 	}, nil
 }
