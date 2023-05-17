@@ -13,7 +13,7 @@ func (vm *VM) ToDTO(status, connectionString string, gpu *body.GpuRead) body.VmR
 		}
 	}
 
-	var ports []body.Port
+	ports := make([]body.Port, 0)
 	if vm.Ports != nil {
 		for _, port := range vm.Ports {
 			ports = append(ports, body.Port{
