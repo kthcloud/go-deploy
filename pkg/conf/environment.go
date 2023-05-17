@@ -45,9 +45,9 @@ type Environment struct {
 	Quotas []struct {
 		Role       string `yaml:"role"`
 		Deployment int    `yaml:"deployment"`
-		CPU        int    `yaml:"cpu"`
-		Memory     int    `yaml:"memory"`
-		Disk       int    `yaml:"disk"`
+		CpuCores   int    `yaml:"cpuCores"`
+		RAM        int    `yaml:"ram"`
+		DiskSpace  int    `yaml:"diskSpace"`
 	} `yaml:"quotas"`
 
 	Keycloak struct {
@@ -104,7 +104,6 @@ type Environment struct {
 		WebhookSecret string `yaml:"webhookSecret"`
 	} `yaml:"harbor"`
 }
-
 
 var Env Environment
 

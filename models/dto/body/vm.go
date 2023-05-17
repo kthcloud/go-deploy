@@ -30,8 +30,8 @@ type VmCreate struct {
 	Ports        []Port `json:"ports" binding:"omitempty,port_list,dive,min=0,max=1000"`
 
 	CpuCores  int `json:"cpuCores" binding:"required,min=1"`
-	RAM       int `json:"ram" binding:"required,min=1"`
-	DiskSpace int `json:"diskSpace" binding:"required,min=5"`
+	RAM      int `json:"ram" binding:"required,min=1"`
+	DiskSize int `json:"diskSize" binding:"required,min=5"`
 }
 
 type VmUpdate struct {

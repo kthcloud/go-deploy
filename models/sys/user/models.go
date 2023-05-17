@@ -7,9 +7,9 @@ type PublicKey struct {
 
 type Quota struct {
 	Deployment int `json:"deployment" bson:"deployment"`
-	CPU        int `json:"cpu" bson:"cpu"`
-	Memory     int `json:"memory" bson:"memory"`
-	Disk       int `json:"disk" bson:"disk"`
+	CpuCores   int `json:"cpuCores" bson:"cpuCores"`
+	RAM        int `json:"ram" bson:"ram"`
+	DiskSpace  int `json:"diskSpace" bson:"diskSpace"`
 }
 
 type User struct {
@@ -21,7 +21,7 @@ type User struct {
 }
 
 type UserUpdate struct {
-	Username        *string      `json:"username" bson:"username"`
-	Email           *string      `json:"email" bson:"email"`
-	PublicKeys      *[]PublicKey `json:"publicKeys" bson:"publicKeys"`
+	Username   *string      `json:"username" bson:"username"`
+	Email      *string      `json:"email" bson:"email"`
+	PublicKeys *[]PublicKey `json:"publicKeys" bson:"publicKeys"`
 }

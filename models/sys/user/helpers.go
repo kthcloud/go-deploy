@@ -29,9 +29,9 @@ func (u *User) ToDTO(quota *Quota) body.UserRead {
 		Roles:    u.Roles,
 		Quota: body.Quota{
 			Deployment: quota.Deployment,
-			CPU:        quota.CPU,
-			Memory:     quota.Memory,
-			Disk:       quota.Disk,
+			CpuCores:   quota.CpuCores,
+			RAM:        quota.RAM,
+			DiskSpace:  quota.DiskSpace,
 		},
 		PublicKeys: publicKeys,
 	}

@@ -253,7 +253,16 @@ func Create(c *gin.Context) {
 		return
 	}
 
-	// TODO: Add quota validation with cpu, memory, disk, gpu...
+	ok, reason, err := vm_service.CheckQuota(auth.UserID, quota, requestBody)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to check quota: %s", err))
+		return
+	}
+
+	if !ok {
+		context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceValidationFailed, reason)
+		return
+	}
 
 	vmID := uuid.New().String()
 	jobID := uuid.New().String()

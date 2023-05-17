@@ -3,6 +3,7 @@ package vm_service
 import (
 	"fmt"
 	"go-deploy/models/dto/body"
+	"go-deploy/models/sys/user"
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/models/sys/vm/gpu"
 	"go-deploy/pkg/conf"
@@ -213,4 +214,41 @@ func CanAddActivity(deploymentID, activity string) (bool, string, error) {
 	}
 
 	return false, "", fmt.Errorf("unknown activity %s", activity)
+}
+
+func CheckQuota(userID string, quota *user.Quota, createParams body.VmCreate) (bool, string, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to check quota. details: %s", err)
+	}
+
+	currentVms, err := vmModel.GetByOwnerID(userID)
+	if err != nil {
+		return false, "", makeError(err)
+	}
+
+	totalCpuCores := createParams.CpuCores
+	totalRam := createParams.RAM
+	totalDiskSize := createParams.DiskSize
+
+	for _, vm := range currentVms {
+		so := vm.Subsystems.CS.ServiceOffering
+
+		totalCpuCores += so.CpuCores
+		totalRam += so.RAM
+		totalDiskSize += 0
+	}
+
+	if totalCpuCores > quota.CpuCores {
+		return false, fmt.Sprintf("CPU cores quota exceeded. Current: %d, Quota: %d", totalCpuCores, quota.CpuCores), nil
+	}
+
+	if totalRam > quota.RAM {
+		return false, fmt.Sprintf("RAM quota exceeded. Current: %d, Quota: %d", totalRam, quota.RAM), nil
+	}
+
+	if totalDiskSize > quota.DiskSpace {
+		return false, fmt.Sprintf("Disk space quota exceeded. Current: %d, Quota: %d", totalDiskSize, quota.DiskSpace), nil
+	}
+
+	return true, "", nil
 }

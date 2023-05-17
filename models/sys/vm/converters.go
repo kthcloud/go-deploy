@@ -51,5 +51,5 @@ func (p *CreateParams) FromDTO(dto *body.VmCreate) {
 	}
 	p.CpuCores = dto.CpuCores
 	p.RAM = dto.RAM
-	p.DiskSpace = dto.DiskSpace
+	p.DiskSize = dto.DiskSize
 }
