@@ -18,6 +18,7 @@ type VmRead struct {
 	ID               string `json:"id"`
 	Name             string `json:"name"`
 	SshPublicKey     string `json:"sshPublicKey"`
+	Ports            []Port `json:"ports"`
 	OwnerID          string `json:"ownerId"`
 	Status           string `json:"status"`
 	ConnectionString string `json:"connectionString"`

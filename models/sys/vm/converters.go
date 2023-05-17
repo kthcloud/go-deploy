@@ -13,10 +13,22 @@ func (vm *VM) ToDTO(status, connectionString string, gpu *body.GpuRead) body.VmR
 		}
 	}
 
+	var ports []body.Port
+	if vm.Ports != nil {
+		for _, port := range vm.Ports {
+			ports = append(ports, body.Port{
+				Name:     port.Name,
+				Port:     port.Port,
+				Protocol: port.Protocol,
+			})
+		}
+	}
+
 	return body.VmRead{
 		ID:               vm.ID,
 		Name:             vm.Name,
 		SshPublicKey:     vm.SshPublicKey,
+		Ports:            ports,
 		OwnerID:          vm.OwnerID,
 		Status:           status,
 		ConnectionString: connectionString,
