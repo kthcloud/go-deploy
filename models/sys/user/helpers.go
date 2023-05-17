@@ -22,6 +22,10 @@ func (u *User) ToDTO(quota *Quota) body.UserRead {
 		quota = &Quota{}
 	}
 
+	if u.Roles == nil {
+		u.Roles = []string{}
+	}
+
 	userRead := body.UserRead{
 		ID:       u.ID,
 		Username: u.Username,

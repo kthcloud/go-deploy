@@ -6,10 +6,6 @@ import (
 	"go-deploy/pkg/conf"
 )
 
-func CreateUser(userID, username string, roles []string) error {
-	return userModel.Create(userID, username, roles)
-}
-
 func GetByID(requestedUserID, userID string, isAdmin bool) (*userModel.User, error) {
 	user, err := userModel.GetByID(requestedUserID)
 	if err != nil {
