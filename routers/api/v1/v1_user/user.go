@@ -49,6 +49,17 @@ func GetList(c *gin.Context) {
 
 		usersDto := make([]body.UserRead, 0)
 		for _, user := range users {
+			if user.ID == auth.UserID {
+				updatedUser, err := user_service.GetOrCreate(auth.UserID, auth.JwtToken.PreferredUsername, auth.Roles)
+				if err != nil {
+					continue
+				}
+
+				if updatedUser != nil {
+					user = *updatedUser
+				}
+			}
+
 			quota, err := user_service.GetQuotaByUserID(user.ID)
 			if err != nil {
 				quota = &userModel.Quota{}
