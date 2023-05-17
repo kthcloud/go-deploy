@@ -10,9 +10,34 @@ import (
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
 	v1 "go-deploy/routers/api/v1"
+	"go-deploy/service/deployment_service"
 	"go-deploy/service/user_service"
+	"go-deploy/service/vm_service"
 	"net/http"
 )
+
+func collectUsage(context *app.ClientContext, userID string) (bool, *userModel.Usage) {
+	vmUsage, err := vm_service.GetUsageByUserID(userID)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get quota for user: %s", err))
+		return false, nil
+	}
+
+	deploymentUsage, err := deployment_service.GetUsageByUserID(userID)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get quota for user: %s", err))
+		return false, nil
+	}
+
+	usage := &userModel.Usage{
+		Deployments: deploymentUsage.Count,
+		CpuCores:    vmUsage.CpuCores,
+		RAM:         vmUsage.RAM,
+		DiskSpace:   vmUsage.DiskSpace,
+	}
+
+	return true, usage
+}
 
 // GetList
 // @Summary Get user list
@@ -65,7 +90,12 @@ func GetList(c *gin.Context) {
 				quota = &userModel.Quota{}
 			}
 
-			usersDto = append(usersDto, user.ToDTO(quota))
+			ok, usage := collectUsage(&context, user.ID)
+			if !ok {
+				usage = &userModel.Usage{}
+			}
+
+			usersDto = append(usersDto, user.ToDTO(quota, usage))
 		}
 
 		context.JSONResponse(200, usersDto)
@@ -85,11 +115,16 @@ func GetList(c *gin.Context) {
 
 	quota, err := user_service.GetQuotaByUserID(user.ID)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to update user: %s", err))
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get quota for user: %s", err))
 		return
 	}
 
-	context.JSONResponse(200, user.ToDTO(quota))
+	ok, usage := collectUsage(&context, user.ID)
+	if !ok {
+		return
+	}
+
+	context.JSONResponse(200, user.ToDTO(quota, usage))
 }
 
 // Get
@@ -149,7 +184,12 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	context.JSONResponse(200, user.ToDTO(quota))
+	ok, usage := collectUsage(&context, user.ID)
+	if !ok {
+		return
+	}
+
+	context.JSONResponse(200, user.ToDTO(quota, usage))
 }
 
 func Update(c *gin.Context) {
@@ -212,5 +252,10 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	context.JSONResponse(200, updatedUser.ToDTO(quota))
+	ok, usage := collectUsage(&context, updatedUser.ID)
+	if !ok {
+		return
+	}
+
+	context.JSONResponse(200, updatedUser.ToDTO(quota, usage))
 }

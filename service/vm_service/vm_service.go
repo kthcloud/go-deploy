@@ -221,22 +221,14 @@ func CheckQuota(userID string, quota *user.Quota, createParams body.VmCreate) (b
 		return fmt.Errorf("failed to check quota. details: %s", err)
 	}
 
-	currentVms, err := vmModel.GetByOwnerID(userID)
+	usage, err := GetUsageByUserID(userID)
 	if err != nil {
 		return false, "", makeError(err)
 	}
 
-	totalCpuCores := createParams.CpuCores
-	totalRam := createParams.RAM
-	totalDiskSize := createParams.DiskSize
-
-	for _, vm := range currentVms {
-		so := vm.Subsystems.CS.ServiceOffering
-
-		totalCpuCores += so.CpuCores
-		totalRam += so.RAM
-		totalDiskSize += 0
-	}
+	totalCpuCores := usage.CpuCores + createParams.CpuCores
+	totalRam := usage.RAM + createParams.RAM
+	totalDiskSize := usage.DiskSpace + createParams.DiskSize
 
 	if totalCpuCores > quota.CpuCores {
 		return false, fmt.Sprintf("CPU cores quota exceeded. Current: %d, Quota: %d", totalCpuCores, quota.CpuCores), nil
@@ -251,4 +243,27 @@ func CheckQuota(userID string, quota *user.Quota, createParams body.VmCreate) (b
 	}
 
 	return true, "", nil
+}
+
+func GetUsageByUserID(id string) (*vmModel.Usage, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to check quota. details: %s", err)
+	}
+
+	usage := &vmModel.Usage{}
+
+	currentVms, err := vmModel.GetByOwnerID(id)
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	for _, vm := range currentVms {
+		so := vm.Subsystems.CS.ServiceOffering
+
+		usage.CpuCores += so.CpuCores
+		usage.RAM += so.RAM
+		usage.DiskSpace += 0
+	}
+
+	return usage, nil
 }

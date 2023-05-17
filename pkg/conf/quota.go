@@ -1,8 +1,8 @@
 package conf
 
 type Quota struct {
-	Deployment int `json:"deployment"`
-	CpuCores   int `json:"cpuCores"`
+	Deployments int `json:"deployments"`
+	CpuCores    int `json:"cpuCores"`
 	RAM        int `json:"ram"`
 	DiskSpace  int `json:"diskSpace"`
 }
@@ -36,10 +36,10 @@ func (e *Environment) FindQuota(role string) *Quota {
 	for _, quota := range Env.Quotas {
 		if quota.Role == role {
 			return &Quota{
-				Deployment: quota.Deployment,
-				CpuCores:   quota.CpuCores,
-				RAM:        quota.RAM,
-				DiskSpace:  quota.DiskSpace,
+				Deployments: quota.Deployments,
+				CpuCores:    quota.CpuCores,
+				RAM:         quota.RAM,
+				DiskSpace:   quota.DiskSpace,
 			}
 		}
 	}

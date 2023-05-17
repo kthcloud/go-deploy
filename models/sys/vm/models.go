@@ -44,6 +44,12 @@ type CS struct {
 	PortForwardingRuleMap map[string]csModels.PortForwardingRulePublic `bson:"portForwardingRuleMap"`
 }
 
+type Usage struct {
+	CpuCores  int `json:"cpuCores"`
+	RAM       int `json:"ram"`
+	DiskSpace int `json:"diskSpace"`
+}
+
 type CreateParams struct {
 	Name         string `json:"name"`
 	SshPublicKey string `json:"sshPublicKey"`
