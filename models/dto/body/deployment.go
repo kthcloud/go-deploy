@@ -44,3 +44,7 @@ type DeploymentRead struct {
 type CiConfig struct {
 	Config string `json:"config"`
 }
+
+type DeploymentCommand struct {
+	Command string `json:"command" binding:"required,oneof=restart"`
+}

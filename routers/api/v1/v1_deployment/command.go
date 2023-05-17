@@ -1,4 +1,4 @@
-package v1_vm
+package v1_deployment
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
 	v1 "go-deploy/routers/api/v1"
-	"go-deploy/service/vm_service"
+	"go-deploy/service/deployment_service"
 	"net/http"
 )
 
@@ -29,13 +29,13 @@ import (
 func DoCommand(c *gin.Context) {
 	context := app.NewContext(c)
 
-	var requestURI uri.VmCommand
+	var requestURI uri.DeploymentCommand
 	if err := context.GinContext.BindUri(&requestURI); err != nil {
 		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
 
-	var requestBody body.VmCommand
+	var requestBody body.DeploymentCommand
 	if err := context.GinContext.BindJSON(&requestBody); err != nil {
 		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
@@ -47,23 +47,23 @@ func DoCommand(c *gin.Context) {
 		return
 	}
 
-	vm, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin())
+	deployment, err := deployment_service.GetByID(auth.UserID, requestURI.DeploymentID, auth.IsAdmin())
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return
 	}
 
-	if vm == nil {
-		context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, fmt.Sprintf("VM with id %s not found", requestURI.VmID))
+	if deployment == nil {
+		context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, fmt.Sprintf("Resource with id %s not found", requestURI.DeploymentID))
 		return
 	}
 
-	if !vm.Ready() {
-		context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotReady, fmt.Sprintf("Resource %s is not ready", requestURI.VmID))
+	if !deployment.Ready() {
+		context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotReady, fmt.Sprintf("Resource %s is not ready", requestURI.DeploymentID))
 		return
 	}
 
-	vm_service.DoCommand(vm, requestBody.Command)
+	deployment_service.DoCommand(deployment, requestBody.Command)
 
 	context.OkDeleted()
 }

@@ -2,7 +2,7 @@ package status_updaters
 
 import (
 	"fmt"
-	"go-deploy/models/sys/deployment"
+	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/models/sys/vm"
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/conf"
@@ -90,7 +90,7 @@ func fetchVmStatus(vm *vm.VM) (int, string, error) {
 	return csStatusCode, csStatusMessage, err
 }
 
-func fetchDeploymentStatus(deployment *deployment.Deployment) (int, string, error) {
+func fetchDeploymentStatus(deployment *deploymentModel.Deployment) (int, string, error) {
 
 	if deployment == nil {
 		return status_codes.ResourceNotFound, status_codes.GetMsg(status_codes.ResourceNotFound), nil
@@ -104,7 +104,9 @@ func fetchDeploymentStatus(deployment *deployment.Deployment) (int, string, erro
 		return status_codes.ResourceBeingCreated, status_codes.GetMsg(status_codes.ResourceBeingCreated), nil
 	}
 
-	// TODO: fetch status from k8s
+	if deployment.DoingActivity(deploymentModel.ActivityRestarting) {
+		return status_codes.ResourceRestarting, status_codes.GetMsg(status_codes.ResourceRestarting), nil
+	}
 
 	return status_codes.ResourceCreated, status_codes.GetMsg(status_codes.ResourceRunning), nil
 }

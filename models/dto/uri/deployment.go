@@ -16,8 +16,8 @@ type CiConfigGet struct {
 	DeploymentID string `uri:"deploymentId" binding:"required,uuid4"`
 }
 
-type DoCommand struct {
-	VmID string `uri:"vmId" binding:"required,uuid4"`
+type DeploymentCommand struct {
+	DeploymentID string `uri:"deploymentId" binding:"required,uuid4"`
 }
 
 type LogsGet struct {

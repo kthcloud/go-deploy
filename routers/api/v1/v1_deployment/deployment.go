@@ -16,7 +16,6 @@ import (
 	"go-deploy/service/deployment_service"
 	"go-deploy/service/job_service"
 	"go-deploy/service/user_service"
-	"go-deploy/service/vm_service"
 	"net/http"
 )
 
@@ -190,7 +189,7 @@ func Create(c *gin.Context) {
 			return
 		}
 
-		started, reason, err := vm_service.StartActivity(deployment.ID, vmModel.ActivityBeingCreated)
+		started, reason, err := deployment_service.StartActivity(deployment.ID, vmModel.ActivityBeingCreated)
 		if err != nil {
 			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to start activity: %s", err))
 			return
