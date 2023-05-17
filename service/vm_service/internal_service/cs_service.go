@@ -350,7 +350,7 @@ func UpdateCS(vmID string, updateParams *vmModel.UpdateParams) error {
 				Description: vm.Subsystems.CS.ServiceOffering.Description,
 				CpuCores:    *updateParams.CpuCores,
 				RAM:         *updateParams.RAM,
-				DiskSize:    vm.Subsystems.CS.ServiceOffering.DiskSize,
+				DiskSize:    vm.Specs.DiskSize,
 			})
 			if err != nil {
 				return makeError(err)

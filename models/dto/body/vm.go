@@ -46,7 +46,6 @@ type VmUpdate struct {
 	Ports    *[]Port `json:"ports" bson:"ports" binding:"omitempty,port_list,dive,min=0,max=1000"`
 	CpuCores *int    `json:"cpuCores" binding:"omitempty,min=1"`
 	RAM      *int    `json:"ram" binding:"omitempty,min=1"`
-	DiskSize *int    `json:"diskSize" binding:"omitempty,min=20"`
 }
 
 type VmCreated struct {

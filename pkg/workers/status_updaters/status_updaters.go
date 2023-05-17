@@ -87,6 +87,10 @@ func fetchVmStatus(vm *vm.VM) (int, string, error) {
 		return status_codes.ResourceBeingCreated, status_codes.GetMsg(status_codes.ResourceBeingCreated), nil
 	}
 
+	if csStatusCode == status_codes.ResourceRunning && vm.BeingDeleted() {
+		return status_codes.ResourceStopping, status_codes.GetMsg(status_codes.ResourceStopping), nil
+	}
+
 	return csStatusCode, csStatusMessage, err
 }
 
