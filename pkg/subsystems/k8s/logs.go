@@ -10,8 +10,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (client *Client) getPodName(namespace string) (*string, error) {
-	pods, err := client.K8sClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
+func (client *Client) getPodName(namespace, deployment string) (*string, error) {
+	pods, err := client.K8sClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("%s=%s", "app.kubernetes.io/name", deployment),
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -48,12 +50,12 @@ func (client *Client) getPodLogs(cancelCtx context.Context, namespace, podName s
 	}
 }
 
-func (client *Client) GetLogStream(context context.Context, namespace string, handler func(string)) error {
+func (client *Client) GetLogStream(context context.Context, namespace, deployment string, handler func(string)) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create k8s log stream for deployment %s. details: %s", namespace, err)
+		return fmt.Errorf("failed to create k8s log stream for deployment %s. details: %s", deployment, err)
 	}
 
-	podName, err := client.getPodName(namespace)
+	podName, err := client.getPodName(namespace, deployment)
 	if err != nil {
 		return makeError(err)
 	}

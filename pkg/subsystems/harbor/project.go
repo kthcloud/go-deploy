@@ -109,7 +109,7 @@ func (client *Client) DeleteProject(id int) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete project %d. details: %s", id, err)
 	}
-	
+
 	err := client.HarborClient.DeleteProject(context.TODO(), strconv.Itoa(id))
 	if err != nil {
 		errString := fmt.Sprintf("%s", err)
@@ -146,6 +146,31 @@ func (client *Client) UpdateProject(public *models.ProjectPublic) error {
 	}
 
 	return nil
+}
+
+func (client *Client) IsProjectEmpty(id int) (bool, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to check if project %d is empty. details: %s", id, err)
+	}
+
+	project, err := client.HarborClient.GetProject(context.TODO(), strconv.Itoa(id))
+	if err != nil {
+		errString := fmt.Sprintf("%s", err)
+		if !strings.Contains(errString, "project not found on server side") {
+			return false, makeError(err)
+		}
+	}
+
+	if project == nil {
+		return true, nil
+	}
+
+	repositories, err := client.HarborClient.ListRepositories(context.TODO(), project.Name)
+	if err != nil {
+		return false, makeError(err)
+	}
+
+	return len(repositories) == 0, nil
 }
 
 func boolToString(b bool) string {

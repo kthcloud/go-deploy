@@ -48,7 +48,7 @@ func K8sDeleted(deployment *deployment.Deployment) (bool, error) {
 
 func HarborCreated(deployment *deployment.Deployment) (bool, error) {
 	_ = func(err error) error {
-		return fmt.Errorf("failed to check if harbor setup is created for deployment %s. details: %s", deployment.Name, err)
+		return fmt.Errorf("failed to check if harbor is created for deployment %s. details: %s", deployment.Name, err)
 	}
 
 	harbor := &deployment.Subsystems.Harbor
@@ -60,7 +60,7 @@ func HarborCreated(deployment *deployment.Deployment) (bool, error) {
 
 func HarborDeleted(deployment *deployment.Deployment) (bool, error) {
 	_ = func(err error) error {
-		return fmt.Errorf("failed to check if harbor setup is created for deployment %s. details: %s", deployment.Name, err)
+		return fmt.Errorf("failed to check if harbor is created for deployment %s. details: %s", deployment.Name, err)
 	}
 
 	harbor := &deployment.Subsystems.Harbor
