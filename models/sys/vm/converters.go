@@ -2,7 +2,7 @@ package vm
 
 import "go-deploy/models/dto/body"
 
-func (vm *VM) ToDTO(status, connectionString string, gpu *body.GpuRead) body.VmRead {
+func (vm *VM) ToDTO(status, connectionString string, gpu *body.GpuRead, externalPortMapper map[string]int) body.VmRead {
 
 	var vmGpu *body.VmGpu
 	if gpu != nil {
@@ -14,12 +14,18 @@ func (vm *VM) ToDTO(status, connectionString string, gpu *body.GpuRead) body.VmR
 	}
 
 	ports := make([]body.Port, 0)
-	if vm.Ports != nil {
+	if vm.Ports != nil && externalPortMapper != nil {
 		for _, port := range vm.Ports {
+			externalPort, ok := externalPortMapper[port.Name]
+			if !ok {
+				continue
+			}
+
 			ports = append(ports, body.Port{
-				Name:     port.Name,
-				Port:     port.Port,
-				Protocol: port.Protocol,
+				Name:         port.Name,
+				Port:         port.Port,
+				ExternalPort: externalPort,
+				Protocol:     port.Protocol,
 			})
 		}
 	}
@@ -33,6 +39,11 @@ func (vm *VM) ToDTO(status, connectionString string, gpu *body.GpuRead) body.VmR
 		Status:           status,
 		ConnectionString: connectionString,
 		GPU:              vmGpu,
+		Specs: body.Specs{
+			CpuCores: vm.Specs.CpuCores,
+			RAM:      vm.Specs.RAM,
+			DiskSize: vm.Specs.DiskSize,
+		},
 	}
 }
 

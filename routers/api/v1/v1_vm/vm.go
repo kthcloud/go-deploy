@@ -41,7 +41,13 @@ func getAllVMs(context *app.ClientContext) {
 			}
 		}
 
-		dtoVMs[i] = vm.ToDTO(vm.StatusMessage, connectionString, gpuRead)
+		mapper, err := vm_service.GetExternalPortMapper(vm.ID)
+		if err != nil {
+			log.Printf("error getting external port mapper: %s", err)
+			continue
+		}
+
+		dtoVMs[i] = vm.ToDTO(vm.StatusMessage, connectionString, gpuRead, mapper)
 	}
 
 	context.JSONResponse(http.StatusOK, dtoVMs)
@@ -98,7 +104,13 @@ func GetList(c *gin.Context) {
 			}
 		}
 
-		dtoVMs[i] = vm.ToDTO(vm.StatusMessage, connectionString, gpuRead)
+		mapper, err := vm_service.GetExternalPortMapper(vm.ID)
+		if err != nil {
+			log.Printf("error getting external port mapper: %s", err)
+			continue
+		}
+
+		dtoVMs[i] = vm.ToDTO(vm.StatusMessage, connectionString, gpuRead, mapper)
 	}
 
 	context.JSONResponse(200, dtoVMs)
@@ -154,7 +166,12 @@ func Get(c *gin.Context) {
 		}
 	}
 
-	context.JSONResponse(200, vm.ToDTO(vm.StatusMessage, connectionString, gpuRead))
+	mapper, err := vm_service.GetExternalPortMapper(vm.ID)
+	if err != nil {
+		log.Printf("error getting external port mapper: %s", err)
+	}
+
+	context.JSONResponse(200, vm.ToDTO(vm.StatusMessage, connectionString, gpuRead, mapper))
 }
 
 // Create

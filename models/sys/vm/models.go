@@ -13,9 +13,9 @@ const (
 )
 
 type Port struct {
-	Name     string `bson:"name"`
-	Port     int    `bson:"port"`
-	Protocol string `bson:"protocol"`
+	Name         string `bson:"name"`
+	Port         int    `bson:"port"`
+	Protocol     string `bson:"protocol"`
 }
 
 type Specs struct {
