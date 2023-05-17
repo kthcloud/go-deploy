@@ -258,11 +258,11 @@ func GetUsageByUserID(id string) (*vmModel.Usage, error) {
 	}
 
 	for _, vm := range currentVms {
-		so := vm.Subsystems.CS.ServiceOffering
+		specs := vm.Specs
 
-		usage.CpuCores += so.CpuCores
-		usage.RAM += so.RAM
-		usage.DiskSpace += so.DiskSize
+		usage.CpuCores += specs.CpuCores
+		usage.RAM += specs.RAM
+		usage.DiskSpace += specs.DiskSize
 	}
 
 	return usage, nil

@@ -18,6 +18,12 @@ type Port struct {
 	Protocol string `bson:"protocol"`
 }
 
+type Specs struct {
+	CpuCores int `json:"cpuCores"`
+	RAM      int `json:"ram"`
+	DiskSize int `json:"diskSize"`
+}
+
 type VM struct {
 	ID        string `bson:"id"`
 	Name      string `bson:"name"`
@@ -29,9 +35,11 @@ type VM struct {
 	Ports        []Port   `bson:"ports"`
 	Activities   []string `bson:"activities"`
 
-	Subsystems    Subsystems `bson:"subsystems"`
-	StatusCode    int        `bson:"statusCode"`
-	StatusMessage string     `bson:"statusMessage"`
+	Subsystems Subsystems `bson:"subsystems"`
+	Specs      Specs      `bson:"specs"`
+
+	StatusCode    int    `bson:"statusCode"`
+	StatusMessage string `bson:"statusMessage"`
 }
 
 type Subsystems struct {
