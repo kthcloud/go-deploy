@@ -51,15 +51,20 @@ func Create(vmID, owner, manager string, params *CreateParams) error {
 	}
 
 	vm := VM{
-		ID:            vmID,
-		Name:          params.Name,
-		ManagedBy:     manager,
-		GpuID:         "",
-		SshPublicKey:  params.SshPublicKey,
-		OwnerID:       owner,
-		Ports:         []Port{},
-		Activities:    []string{ActivityBeingCreated},
-		Subsystems:    Subsystems{},
+		ID:           vmID,
+		Name:         params.Name,
+		ManagedBy:    manager,
+		GpuID:        "",
+		SshPublicKey: params.SshPublicKey,
+		OwnerID:      owner,
+		Ports:        []Port{},
+		Activities:   []string{ActivityBeingCreated},
+		Subsystems:   Subsystems{},
+		Specs: Specs{
+			CpuCores: params.CpuCores,
+			RAM:      params.RAM,
+			DiskSize: params.DiskSize,
+		},
 		StatusCode:    status_codes.ResourceBeingCreated,
 		StatusMessage: status_codes.GetMsg(status_codes.ResourceBeingCreated),
 	}
@@ -160,6 +165,8 @@ func UpdateByID(id string, update *UpdateParams) error {
 	updateData := bson.M{}
 
 	models.AddIfNotNil(updateData, "ports", update.Ports)
+	models.AddIfNotNil(updateData, "specs.cpuCores", update.CpuCores)
+	models.AddIfNotNil(updateData, "specs.ram", update.RAM)
 
 	if len(updateData) == 0 {
 		return nil

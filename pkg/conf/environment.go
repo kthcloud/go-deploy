@@ -46,8 +46,8 @@ type Environment struct {
 		Role        string `yaml:"role"`
 		Deployments int    `yaml:"deployments"`
 		CpuCores    int    `yaml:"cpuCores"`
-		RAM         int    `yaml:"ram"`
-		DiskSpace   int    `yaml:"diskSpace"`
+		RAM      int `yaml:"ram"`
+		DiskSize int `yaml:"diskSize"`
 	} `yaml:"quotas"`
 
 	Keycloak struct {

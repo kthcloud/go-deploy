@@ -13,10 +13,22 @@ func (vm *VM) ToDTO(status, connectionString string, gpu *body.GpuRead) body.VmR
 		}
 	}
 
+	var ports []body.Port
+	if vm.Ports != nil {
+		for _, port := range vm.Ports {
+			ports = append(ports, body.Port{
+				Name:     port.Name,
+				Port:     port.Port,
+				Protocol: port.Protocol,
+			})
+		}
+	}
+
 	return body.VmRead{
 		ID:               vm.ID,
 		Name:             vm.Name,
 		SshPublicKey:     vm.SshPublicKey,
+		Ports:            ports,
 		OwnerID:          vm.OwnerID,
 		Status:           status,
 		ConnectionString: connectionString,
@@ -25,17 +37,23 @@ func (vm *VM) ToDTO(status, connectionString string, gpu *body.GpuRead) body.VmR
 }
 
 func (p *UpdateParams) FromDTO(dto *body.VmUpdate) {
-	ports := make([]Port, len(*dto.Ports))
 	if dto.Ports != nil {
-		for i, port := range *dto.Ports {
-			ports[i] = Port{
-				Name:     port.Name,
-				Port:     port.Port,
-				Protocol: port.Protocol,
+		ports := make([]Port, len(*dto.Ports))
+		if dto.Ports != nil {
+			for i, port := range *dto.Ports {
+				ports[i] = Port{
+					Name:     port.Name,
+					Port:     port.Port,
+					Protocol: port.Protocol,
+				}
 			}
 		}
+		p.Ports = &ports
+	} else {
+		p.Ports = nil
 	}
-	p.Ports = &ports
+	p.CpuCores = dto.CpuCores
+	p.RAM = dto.RAM
 }
 
 func (p *CreateParams) FromDTO(dto *body.VmCreate) {

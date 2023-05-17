@@ -33,7 +33,7 @@ func collectUsage(context *app.ClientContext, userID string) (bool, *userModel.U
 		Deployments: deploymentUsage.Count,
 		CpuCores:    vmUsage.CpuCores,
 		RAM:         vmUsage.RAM,
-		DiskSpace:   vmUsage.DiskSpace,
+		DiskSize:    vmUsage.DiskSize,
 	}
 
 	return true, usage

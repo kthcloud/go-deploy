@@ -18,6 +18,12 @@ type Port struct {
 	Protocol string `bson:"protocol"`
 }
 
+type Specs struct {
+	CpuCores int `json:"cpuCores"`
+	RAM      int `json:"ram"`
+	DiskSize int `json:"diskSize"`
+}
+
 type VM struct {
 	ID        string `bson:"id"`
 	Name      string `bson:"name"`
@@ -29,9 +35,11 @@ type VM struct {
 	Ports        []Port   `bson:"ports"`
 	Activities   []string `bson:"activities"`
 
-	Subsystems    Subsystems `bson:"subsystems"`
-	StatusCode    int        `bson:"statusCode"`
-	StatusMessage string     `bson:"statusMessage"`
+	Subsystems Subsystems `bson:"subsystems"`
+	Specs      Specs      `bson:"specs"`
+
+	StatusCode    int    `bson:"statusCode"`
+	StatusMessage string `bson:"statusMessage"`
 }
 
 type Subsystems struct {
@@ -45,21 +53,22 @@ type CS struct {
 }
 
 type Usage struct {
-	CpuCores  int `json:"cpuCores"`
-	RAM       int `json:"ram"`
-	DiskSpace int `json:"diskSpace"`
+	CpuCores int `json:"cpuCores"`
+	RAM      int `json:"ram"`
+	DiskSize int `json:"diskSize"`
 }
 
 type CreateParams struct {
 	Name         string `json:"name"`
 	SshPublicKey string `json:"sshPublicKey"`
 	Ports        []Port `json:"ports"`
-
-	CpuCores int `json:"cpuCores"`
-	RAM      int `json:"ram"`
-	DiskSize int `json:"diskSize"`
+	CpuCores     int    `json:"cpuCores"`
+	RAM          int    `json:"ram"`
+	DiskSize     int    `json:"diskSize"`
 }
 
 type UpdateParams struct {
-	Ports *[]Port `json:"ports"`
+	Ports    *[]Port `json:"ports"`
+	CpuCores *int    `json:"cpuCores"`
+	RAM      *int    `json:"ram"`
 }

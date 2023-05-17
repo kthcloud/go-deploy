@@ -6,9 +6,9 @@ type ServiceOfferingPublic struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
-
-	CpuCores int `json:"cpuCores"`
-	RAM      int `json:"ram"`
+	CpuCores    int    `json:"cpuCores"`
+	RAM         int    `json:"ram"`
+	DiskSize    int    `json:"diskSize"`
 }
 
 func CreateServiceOfferingPublicFromGet(serviceOffering *cloudstack.ServiceOffering) *ServiceOfferingPublic {
@@ -18,5 +18,6 @@ func CreateServiceOfferingPublicFromGet(serviceOffering *cloudstack.ServiceOffer
 		Description: serviceOffering.Displaytext,
 		CpuCores:    serviceOffering.Cpunumber,
 		RAM:         serviceOffering.Memory / 1024,
+		DiskSize:    int(serviceOffering.Rootdisksize),
 	}
 }

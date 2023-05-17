@@ -97,15 +97,15 @@ func Update(vmID string, dtoVmUpdate *body.VmUpdate) error {
 		return fmt.Errorf("failed to update vm. details: %s", err)
 	}
 
-	vmUpdate := vmModel.UpdateParams{}
+	vmUpdate := &vmModel.UpdateParams{}
 	vmUpdate.FromDTO(dtoVmUpdate)
 
-	err := internal_service.UpdateCS(vmID, vmUpdate.Ports)
+	err := internal_service.UpdateCS(vmID, vmUpdate)
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = vmModel.UpdateByID(vmID, &vmUpdate)
+	err = vmModel.UpdateByID(vmID, vmUpdate)
 	if err != nil {
 		return makeError(err)
 	}
@@ -185,11 +185,10 @@ func CanAddActivity(deploymentID, activity string) (bool, string, error) {
 		if vm.DoingOnOfActivities([]string{
 			vmModel.ActivityBeingCreated,
 			vmModel.ActivityBeingDeleted,
-			vmModel.ActivityBeingUpdated,
 			vmModel.ActivityAttachingGPU,
 			vmModel.ActivityDetachingGPU,
 		}) {
-			return false, "It should not be in creation, deletion, or updating, and should not be attaching or detaching a GPU", nil
+			return false, "It should not be in creation, deletion, and should not be attaching or detaching a GPU", nil
 		}
 		return true, "", nil
 	case vmModel.ActivityAttachingGPU:
@@ -216,7 +215,7 @@ func CanAddActivity(deploymentID, activity string) (bool, string, error) {
 	return false, "", fmt.Errorf("unknown activity %s", activity)
 }
 
-func CheckQuota(userID string, quota *user.Quota, createParams body.VmCreate) (bool, string, error) {
+func CheckQuotaCreate(userID string, quota *user.Quota, createParams body.VmCreate) (bool, string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check quota. details: %s", err)
 	}
@@ -228,7 +227,7 @@ func CheckQuota(userID string, quota *user.Quota, createParams body.VmCreate) (b
 
 	totalCpuCores := usage.CpuCores + createParams.CpuCores
 	totalRam := usage.RAM + createParams.RAM
-	totalDiskSize := usage.DiskSpace + createParams.DiskSize
+	totalDiskSize := usage.DiskSize + createParams.DiskSize
 
 	if totalCpuCores > quota.CpuCores {
 		return false, fmt.Sprintf("CPU cores quota exceeded. Current: %d, Quota: %d", totalCpuCores, quota.CpuCores), nil
@@ -238,8 +237,39 @@ func CheckQuota(userID string, quota *user.Quota, createParams body.VmCreate) (b
 		return false, fmt.Sprintf("RAM quota exceeded. Current: %d, Quota: %d", totalRam, quota.RAM), nil
 	}
 
-	if totalDiskSize > quota.DiskSpace {
-		return false, fmt.Sprintf("Disk space quota exceeded. Current: %d, Quota: %d", totalDiskSize, quota.DiskSpace), nil
+	if totalDiskSize > quota.DiskSize {
+		return false, fmt.Sprintf("Disk size quota exceeded. Current: %d, Quota: %d", totalDiskSize, quota.DiskSize), nil
+	}
+
+	return true, "", nil
+}
+
+func CheckQuotaUpdate(userID string, quota *user.Quota, updateParams body.VmUpdate) (bool, string, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to check quota. details: %s", err)
+	}
+
+	usage, err := GetUsageByUserID(userID)
+	if err != nil {
+		return false, "", makeError(err)
+	}
+
+	totalCpuCores := usage.CpuCores
+	if updateParams.CpuCores != nil {
+		totalCpuCores += *updateParams.CpuCores
+	}
+
+	totalRam := usage.RAM
+	if updateParams.RAM != nil {
+		totalRam += *updateParams.RAM
+	}
+
+	if totalCpuCores > quota.CpuCores {
+		return false, fmt.Sprintf("CPU cores quota exceeded. Current: %d, Quota: %d", totalCpuCores, quota.CpuCores), nil
+	}
+
+	if totalRam > quota.RAM {
+		return false, fmt.Sprintf("RAM quota exceeded. Current: %d, Quota: %d", totalRam, quota.RAM), nil
 	}
 
 	return true, "", nil
@@ -258,11 +288,11 @@ func GetUsageByUserID(id string) (*vmModel.Usage, error) {
 	}
 
 	for _, vm := range currentVms {
-		so := vm.Subsystems.CS.ServiceOffering
+		specs := vm.Specs
 
-		usage.CpuCores += so.CpuCores
-		usage.RAM += so.RAM
-		usage.DiskSpace += 0
+		usage.CpuCores += specs.CpuCores
+		usage.RAM += specs.RAM
+		usage.DiskSize += specs.DiskSize
 	}
 
 	return usage, nil

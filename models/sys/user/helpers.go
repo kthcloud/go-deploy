@@ -39,13 +39,13 @@ func (u *User) ToDTO(quota *Quota, usage *Usage) body.UserRead {
 			Deployments: quota.Deployments,
 			CpuCores:    quota.CpuCores,
 			RAM:         quota.RAM,
-			DiskSpace:   quota.DiskSpace,
+			DiskSize:    quota.DiskSize,
 		},
 		Usage: body.Quota{
 			Deployments: usage.Deployments,
 			CpuCores:    usage.CpuCores,
 			RAM:         usage.RAM,
-			DiskSpace:   usage.DiskSpace,
+			DiskSize:    usage.DiskSize,
 		},
 		PublicKeys: publicKeys,
 	}

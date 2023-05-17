@@ -1,7 +1,6 @@
 package internal_service
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	deploymentModel "go-deploy/models/sys/deployment"
@@ -179,10 +178,10 @@ func CreateHarbor(name, userID string) error {
 }
 
 func DeleteHarbor(name string) error {
-	log.Println("deleting harbor setup for", name)
+	log.Println("deleting harbor for", name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete harbor setup for deployment %s. details: %s", name, err)
+		return fmt.Errorf("failed to delete harbor for deployment %s. details: %s", name, err)
 	}
 
 	client, err := harbor.New(&harbor.ClientConf{
@@ -240,12 +239,12 @@ func DeleteHarbor(name string) error {
 	}
 
 	if deployment.Subsystems.Harbor.Project.ID != 0 {
-		repositories, err := client.HarborClient.ListRepositories(context.TODO(), deployment.Subsystems.Harbor.Project.Name)
+		empty, err := client.IsProjectEmpty(deployment.Subsystems.Harbor.Project.ID)
 		if err != nil {
 			return makeError(err)
 		}
 
-		if len(repositories) == 0 {
+		if empty {
 			err = client.DeleteProject(deployment.Subsystems.Harbor.Project.ID)
 			if err != nil {
 				return makeError(err)

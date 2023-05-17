@@ -253,7 +253,7 @@ func Create(c *gin.Context) {
 		return
 	}
 
-	ok, reason, err := vm_service.CheckQuota(auth.UserID, quota, requestBody)
+	ok, reason, err := vm_service.CheckQuotaCreate(auth.UserID, quota, requestBody)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to check quota: %s", err))
 		return
@@ -409,6 +409,28 @@ func Update(c *gin.Context) {
 
 	if current.OwnerID != auth.UserID && !auth.IsAdmin() {
 		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, "User is not allowed to update this resource")
+		return
+	}
+
+	quota, err := user_service.GetQuotaByUserID(auth.UserID)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get quota: %s", err))
+		return
+	}
+
+	if quota == nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Quota is not set for user"))
+		return
+	}
+
+	ok, reason, err := vm_service.CheckQuotaUpdate(auth.UserID, quota, requestBody)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to check quota: %s", err))
+		return
+	}
+
+	if !ok {
+		context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceValidationFailed, reason)
 		return
 	}
 

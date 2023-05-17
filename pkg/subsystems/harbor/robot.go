@@ -25,7 +25,7 @@ func (client *Client) RobotCreated(public *models.RobotPublic) (bool, error) {
 
 func (client *Client) ReadRobot(id int) (*models.RobotPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create robot %d. details: %s", id, err)
+		return fmt.Errorf("failed to read robot %d. details: %s", id, err)
 	}
 
 	robot, err := client.HarborClient.GetRobotAccountByID(context.TODO(), int64(id))
@@ -93,7 +93,7 @@ func (client *Client) CreateRobot(public *models.RobotPublic) (*models.RobotCrea
 
 func (client *Client) DeleteRobot(id int) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create robot %d. details: %s", id, err)
+		return fmt.Errorf("failed to delete robot %d. details: %s", id, err)
 	}
 
 	if id == 0 {
@@ -104,7 +104,7 @@ func (client *Client) DeleteRobot(id int) error {
 	if err != nil {
 		if err != nil {
 			targetErr := &harborErrors.ErrRobotAccountUnknownResource{}
-			if !errors.As(err, &targetErr) {
+			if !errors.As(err, &targetErr) && !strings.Contains(err.Error(), "[404] deleteRobotNotFound") {
 				return makeError(err)
 			}
 		}
