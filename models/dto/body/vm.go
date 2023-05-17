@@ -3,9 +3,10 @@ package body
 import "time"
 
 type Port struct {
-	Name     string `json:"name,omitempty" bson:"name" binding:"required,rfc1035"`
-	Port     int    `json:"port,omitempty" bson:"port" binding:"required,min=1,max=65535"`
-	Protocol string `json:"protocol,omitempty" bson:"protocol" binding:"required,oneof=tcp udp"`
+	Name         string `json:"name,omitempty" bson:"name" binding:"required,rfc1035"`
+	Port         int    `json:"port,omitempty" bson:"port" binding:"required,min=1,max=65535"`
+	ExternalPort int    `json:"externalPort,omitempty" bson:"externalPort"`
+	Protocol     string `json:"protocol,omitempty" bson:"protocol" binding:"required,oneof=tcp udp"`
 }
 
 type VmGpu struct {

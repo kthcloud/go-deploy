@@ -297,3 +297,25 @@ func GetUsageByUserID(id string) (*vmModel.Usage, error) {
 
 	return usage, nil
 }
+
+func GetExternalPortMapper(vmID string) (map[string]int, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to get external port mapper. details: %s", err)
+	}
+
+	vm, err := vmModel.GetByID(vmID)
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	if vm == nil {
+		return nil, nil
+	}
+
+	mapper := make(map[string]int)
+	for name, port := range vm.Subsystems.CS.PortForwardingRuleMap {
+		mapper[name] = port.PublicPort
+	}
+
+	return mapper, nil
+}
