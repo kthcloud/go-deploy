@@ -39,6 +39,7 @@ type Subsystems struct {
 }
 
 type CS struct {
+	ServiceOffering       csModels.ServiceOfferingPublic               `bson:"serviceOffering"`
 	VM                    csModels.VmPublic                            `bson:"vm"`
 	PortForwardingRuleMap map[string]csModels.PortForwardingRulePublic `bson:"portForwardingRuleMap"`
 }
@@ -47,6 +48,10 @@ type CreateParams struct {
 	Name         string `json:"name"`
 	SshPublicKey string `json:"sshPublicKey"`
 	Ports        []Port `json:"ports"`
+
+	CpuCores  int `json:"cpuCores"`
+	RAM       int `json:"ram"`
+	DiskSpace int `json:"diskSpace"`
 }
 
 type UpdateParams struct {

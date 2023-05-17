@@ -15,15 +15,15 @@ func Create(vmID, owner string, vmCreate *body.VmCreate) error {
 		return fmt.Errorf("failed to create vm. details: %s", err)
 	}
 
-	params := vmModel.CreateParams{}
+	params := &vmModel.CreateParams{}
 	params.FromDTO(vmCreate)
 
-	err := vmModel.Create(vmID, params.Name, params.SshPublicKey, owner, conf.Env.Manager)
+	err := vmModel.Create(vmID, owner, conf.Env.Manager, params)
 	if err != nil {
 		return makeError(err)
 	}
 
-	_, err = internal_service.CreateCS(params.Name, params.SshPublicKey, params.Ports)
+	_, err = internal_service.CreateCS(params)
 	if err != nil {
 		return makeError(err)
 	}

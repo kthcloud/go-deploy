@@ -40,7 +40,7 @@ func (vm *VM) BeingDeleted() bool {
 	return vm.DoingActivity(ActivityBeingDeleted)
 }
 
-func Create(vmID, name, sshPublicKey, owner, managedBy string) error {
+func Create(vmID, owner, manager string, params *CreateParams) error {
 	currentVM, err := GetByID(vmID)
 	if err != nil {
 		return err
@@ -52,10 +52,10 @@ func Create(vmID, name, sshPublicKey, owner, managedBy string) error {
 
 	vm := VM{
 		ID:            vmID,
-		Name:          name,
-		ManagedBy:     managedBy,
+		Name:          params.Name,
+		ManagedBy:     manager,
 		GpuID:         "",
-		SshPublicKey:  sshPublicKey,
+		SshPublicKey:  params.SshPublicKey,
 		OwnerID:       owner,
 		Ports:         []Port{},
 		Activities:    []string{ActivityBeingCreated},
@@ -66,7 +66,7 @@ func Create(vmID, name, sshPublicKey, owner, managedBy string) error {
 
 	_, err = models.VmCollection.InsertOne(context.TODO(), vm)
 	if err != nil {
-		err = fmt.Errorf("failed to create vm %s. details: %s", name, err)
+		err = fmt.Errorf("failed to create vm %s. details: %s", params.Name, err)
 		return err
 	}
 
