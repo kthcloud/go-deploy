@@ -30,9 +30,16 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 		return makeError(err)
 	}
 
-	err = internal_service.CreateNPM(params.Name, k8sResult.Service.GetFQDN())
-	if err != nil {
-		return makeError(err)
+	if !params.Private {
+		err = internal_service.CreateNPM(params.Name, k8sResult.Service.GetFQDN())
+		if err != nil {
+			return makeError(err)
+		}
+	} else {
+		err := internal_service.CreateFakeNPM(params.Name)
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	return nil
@@ -147,12 +154,36 @@ func Update(name string, deploymentUpdate *body.DeploymentUpdate) error {
 	update := deploymentModel.UpdateParams{}
 	update.FromDTO(deploymentUpdate)
 
-	err := deploymentModel.UpdateByID(name, &update)
+	deployment, err := deploymentModel.GetByName(name)
 	if err != nil {
 		return makeError(err)
 	}
 
 	err = internal_service.UpdateK8s(name, update.Envs)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if update.Private != nil {
+		if *update.Private && !deployment.Private {
+			err = internal_service.DeleteNPM(name)
+			if err != nil {
+				return makeError(err)
+			}
+		} else if !*update.Private && deployment.Private {
+			err = internal_service.DeleteNPM(name)
+			if err != nil {
+				return makeError(err)
+			}
+
+			err = internal_service.CreateNPM(name, deployment.Subsystems.K8s.Service.GetFQDN())
+			if err != nil {
+				return makeError(err)
+			}
+		}
+	}
+
+	err = deploymentModel.UpdateByID(deployment.ID, &update)
 	if err != nil {
 		return makeError(err)
 	}

@@ -85,6 +85,21 @@ func CreateNPM(name, forwardHost string) error {
 	return nil
 }
 
+func CreateFakeNPM(name string) error {
+	log.Println("setting up placeholder npm")
+
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to setup placeholder npm. details: %s", err)
+	}
+
+	err := deploymentModel.UpdateSubsystemByName(name, "npm", "proxyHost.id", 1)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
+}
+
 func DeleteNPM(name string) error {
 	log.Println("deleting npm for", name)
 
