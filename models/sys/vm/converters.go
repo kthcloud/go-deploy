@@ -39,6 +39,11 @@ func (vm *VM) ToDTO(status, connectionString string, gpu *body.GpuRead, external
 		Status:           status,
 		ConnectionString: connectionString,
 		GPU:              vmGpu,
+		Specs: body.Specs{
+			CpuCores: vm.Specs.CpuCores,
+			RAM:      vm.Specs.RAM,
+			DiskSize: vm.Specs.DiskSize,
+		},
 	}
 }
 

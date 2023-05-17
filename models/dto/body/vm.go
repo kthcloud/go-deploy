@@ -9,6 +9,12 @@ type Port struct {
 	Protocol     string `json:"protocol,omitempty" bson:"protocol" binding:"required,oneof=tcp udp"`
 }
 
+type Specs struct {
+	CpuCores int `json:"cpuCores,omitempty" bson:"cpuCores"`
+	RAM      int `json:"ram,omitempty" bson:"ram"`
+	DiskSize int `json:"diskSize,omitempty" bson:"diskSize"`
+}
+
 type VmGpu struct {
 	ID       string    `json:"id"`
 	Name     string    `json:"name"`
@@ -24,6 +30,7 @@ type VmRead struct {
 	Status           string `json:"status"`
 	ConnectionString string `json:"connectionString"`
 	GPU              *VmGpu `json:"gpu,omitempty"`
+	Specs            Specs  `json:"specs,omitempty"`
 }
 
 type VmCreate struct {
