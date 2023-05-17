@@ -6,8 +6,15 @@ type PublicKey struct {
 }
 
 type Quota struct {
-	Deployment int `json:"deployment" bson:"deployment"`
-	CpuCores   int `json:"cpuCores" bson:"cpuCores"`
+	Deployments int `json:"deployments" bson:"deployments"`
+	CpuCores    int `json:"cpuCores" bson:"cpuCores"`
+	RAM        int `json:"ram" bson:"ram"`
+	DiskSpace  int `json:"diskSpace" bson:"diskSpace"`
+}
+
+type Usage struct {
+	Deployments int `json:"deployments" bson:"deployments"`
+	CpuCores    int `json:"cpuCores" bson:"cpuCores"`
 	RAM        int `json:"ram" bson:"ram"`
 	DiskSpace  int `json:"diskSpace" bson:"diskSpace"`
 }

@@ -91,6 +91,10 @@ type Jobs struct {
 	Docker Docker `yaml:"docker"`
 }
 
+type Usage struct {
+	Count int `json:"deployments"`
+}
+
 type UpdateParams struct {
 	Private *bool  `json:"private" bson:"private"`
 	Envs    *[]Env `json:"envs" bson:"envs"`

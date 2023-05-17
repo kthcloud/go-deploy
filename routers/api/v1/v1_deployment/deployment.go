@@ -173,7 +173,7 @@ func Create(c *gin.Context) {
 		return
 	}
 
-	if quota.Deployment <= 0 {
+	if quota.Deployments <= 0 {
 		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, "User is not allowed to create deployments")
 		return
 	}
@@ -225,8 +225,8 @@ func Create(c *gin.Context) {
 		return
 	}
 
-	if deploymentCount >= quota.Deployment {
-		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, fmt.Sprintf("User is not allowed to create more than %d deployments", quota.Deployment))
+	if deploymentCount >= quota.Deployments {
+		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, fmt.Sprintf("User is not allowed to create more than %d deployments", quota.Deployments))
 		return
 	}
 

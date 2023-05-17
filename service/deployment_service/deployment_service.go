@@ -161,3 +161,18 @@ func Update(name string, deploymentUpdate *body.DeploymentUpdate) error {
 func Restart(name string) error {
 	return internal_service.RestartK8s(name)
 }
+
+func GetUsageByUserID(userID string) (*deploymentModel.Usage, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to get usage. details: %s", err)
+	}
+
+	count, err := deploymentModel.CountByOwnerID(userID)
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	return &deploymentModel.Usage{
+		Count: count,
+	}, nil
+}

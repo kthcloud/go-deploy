@@ -6,8 +6,8 @@ type PublicKey struct {
 }
 
 type Quota struct {
-	Deployment int `json:"deployment"`
-	CpuCores   int `json:"cpuCores"`
+	Deployments int `json:"deployments"`
+	CpuCores    int `json:"cpuCores"`
 	RAM        int `json:"ram"`
 	DiskSpace  int `json:"diskSpace"`
 }
@@ -18,6 +18,7 @@ type UserRead struct {
 	Email      string      `json:"email"`
 	Roles      []string    `json:"roles"`
 	Quota      Quota       `json:"quota"`
+	Usage      Quota       `json:"usage"`
 	PublicKeys []PublicKey `json:"publicKeys"`
 }
 

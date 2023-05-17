@@ -9,7 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func (u *User) ToDTO(quota *Quota) body.UserRead {
+func (u *User) ToDTO(quota *Quota, usage *Usage) body.UserRead {
 	publicKeys := make([]body.PublicKey, len(u.PublicKeys))
 	for i, key := range u.PublicKeys {
 		publicKeys[i] = body.PublicKey{
@@ -22,6 +22,10 @@ func (u *User) ToDTO(quota *Quota) body.UserRead {
 		quota = &Quota{}
 	}
 
+	if usage == nil {
+		usage = &Usage{}
+	}
+
 	if u.Roles == nil {
 		u.Roles = []string{}
 	}
@@ -32,10 +36,16 @@ func (u *User) ToDTO(quota *Quota) body.UserRead {
 		Email:    u.Email,
 		Roles:    u.Roles,
 		Quota: body.Quota{
-			Deployment: quota.Deployment,
-			CpuCores:   quota.CpuCores,
-			RAM:        quota.RAM,
-			DiskSpace:  quota.DiskSpace,
+			Deployments: quota.Deployments,
+			CpuCores:    quota.CpuCores,
+			RAM:         quota.RAM,
+			DiskSpace:   quota.DiskSpace,
+		},
+		Usage: body.Quota{
+			Deployments: usage.Deployments,
+			CpuCores:    usage.CpuCores,
+			RAM:         usage.RAM,
+			DiskSpace:   usage.DiskSpace,
 		},
 		PublicKeys: publicKeys,
 	}

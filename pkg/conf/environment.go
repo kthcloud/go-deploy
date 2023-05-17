@@ -43,11 +43,11 @@ type Environment struct {
 	} `yaml:"vm"`
 
 	Quotas []struct {
-		Role       string `yaml:"role"`
-		Deployment int    `yaml:"deployment"`
-		CpuCores   int    `yaml:"cpuCores"`
-		RAM        int    `yaml:"ram"`
-		DiskSpace  int    `yaml:"diskSpace"`
+		Role        string `yaml:"role"`
+		Deployments int    `yaml:"deployments"`
+		CpuCores    int    `yaml:"cpuCores"`
+		RAM         int    `yaml:"ram"`
+		DiskSpace   int    `yaml:"diskSpace"`
 	} `yaml:"quotas"`
 
 	Keycloak struct {
