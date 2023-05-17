@@ -336,7 +336,8 @@ func UpdateCS(vmID string, updateParams *vmModel.UpdateParams) error {
 	// service offering
 	var serviceOffering *csModels.ServiceOfferingPublic
 	if vm.Subsystems.CS.ServiceOffering.ID != "" {
-		requiresUpdate := updateParams.CpuCores != nil && updateParams.RAM != nil
+		requiresUpdate := updateParams.CpuCores != nil && *updateParams.CpuCores != vm.Subsystems.CS.ServiceOffering.CpuCores ||
+			updateParams.RAM != nil && *updateParams.RAM != vm.Subsystems.CS.ServiceOffering.RAM
 
 		if requiresUpdate {
 			err = client.DeleteServiceOffering(vm.Subsystems.CS.ServiceOffering.ID)
@@ -368,6 +369,8 @@ func UpdateCS(vmID string, updateParams *vmModel.UpdateParams) error {
 			if err != nil {
 				return makeError(err)
 			}
+		} else {
+			serviceOffering = &vm.Subsystems.CS.ServiceOffering
 		}
 
 		// make sure the vm is using the latest service offering

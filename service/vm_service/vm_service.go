@@ -215,7 +215,7 @@ func CanAddActivity(deploymentID, activity string) (bool, string, error) {
 	return false, "", fmt.Errorf("unknown activity %s", activity)
 }
 
-func CheckQuota(userID string, quota *user.Quota, createParams body.VmCreate) (bool, string, error) {
+func CheckQuotaCreate(userID string, quota *user.Quota, createParams body.VmCreate) (bool, string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check quota. details: %s", err)
 	}
@@ -239,6 +239,37 @@ func CheckQuota(userID string, quota *user.Quota, createParams body.VmCreate) (b
 
 	if totalDiskSize > quota.DiskSize {
 		return false, fmt.Sprintf("Disk size quota exceeded. Current: %d, Quota: %d", totalDiskSize, quota.DiskSize), nil
+	}
+
+	return true, "", nil
+}
+
+func CheckQuotaUpdate(userID string, quota *user.Quota, updateParams body.VmUpdate) (bool, string, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to check quota. details: %s", err)
+	}
+
+	usage, err := GetUsageByUserID(userID)
+	if err != nil {
+		return false, "", makeError(err)
+	}
+
+	totalCpuCores := usage.CpuCores
+	if updateParams.CpuCores != nil {
+		totalCpuCores += *updateParams.CpuCores
+	}
+
+	totalRam := usage.RAM
+	if updateParams.RAM != nil {
+		totalRam += *updateParams.RAM
+	}
+
+	if totalCpuCores > quota.CpuCores {
+		return false, fmt.Sprintf("CPU cores quota exceeded. Current: %d, Quota: %d", totalCpuCores, quota.CpuCores), nil
+	}
+
+	if totalRam > quota.RAM {
+		return false, fmt.Sprintf("RAM quota exceeded. Current: %d, Quota: %d", totalRam, quota.RAM), nil
 	}
 
 	return true, "", nil

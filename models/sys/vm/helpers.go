@@ -165,6 +165,8 @@ func UpdateByID(id string, update *UpdateParams) error {
 	updateData := bson.M{}
 
 	models.AddIfNotNil(updateData, "ports", update.Ports)
+	models.AddIfNotNil(updateData, "specs.cpuCores", update.CpuCores)
+	models.AddIfNotNil(updateData, "specs.ram", update.RAM)
 
 	if len(updateData) == 0 {
 		return nil

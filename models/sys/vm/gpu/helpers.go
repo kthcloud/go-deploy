@@ -246,7 +246,7 @@ func DetachGPU(vmID, userID string) (bool, error) {
 	}
 
 	if vm == nil {
-		return false, fmt.Errorf("vm not found")
+		return true, nil
 	}
 
 	if vm.GpuID == "" {
