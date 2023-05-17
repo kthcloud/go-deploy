@@ -54,6 +54,7 @@ func (client *Client) CreateServiceOffering(public *models.ServiceOfferingPublic
 	createParams.SetMemory(public.RAM * 1024)
 	createParams.SetOfferha(false)
 	createParams.SetLimitcpuuse(false)
+	createParams.SetRootdisksize(int64(public.DiskSize))
 
 	serviceOffering, err := client.CsClient.ServiceOffering.CreateServiceOffering(&createParams)
 	if err != nil {

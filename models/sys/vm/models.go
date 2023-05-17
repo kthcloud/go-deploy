@@ -54,10 +54,9 @@ type CreateParams struct {
 	Name         string `json:"name"`
 	SshPublicKey string `json:"sshPublicKey"`
 	Ports        []Port `json:"ports"`
-
-	CpuCores int `json:"cpuCores"`
-	RAM      int `json:"ram"`
-	DiskSize int `json:"diskSize"`
+	CpuCores     int    `json:"cpuCores"`
+	RAM          int    `json:"ram"`
+	DiskSize     int    `json:"diskSize"`
 }
 
 type UpdateParams struct {

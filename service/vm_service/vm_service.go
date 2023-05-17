@@ -262,7 +262,7 @@ func GetUsageByUserID(id string) (*vmModel.Usage, error) {
 
 		usage.CpuCores += so.CpuCores
 		usage.RAM += so.RAM
-		usage.DiskSpace += 0
+		usage.DiskSpace += so.DiskSize
 	}
 
 	return usage, nil
