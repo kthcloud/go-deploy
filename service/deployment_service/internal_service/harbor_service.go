@@ -42,7 +42,7 @@ func createRepositoryPublic(projectID int, projectName string, name string) *har
 }
 
 func createWebhookPublic(projectID int, projectName, name string) *harborModels.WebhookPublic {
-	webhookTarget := fmt.Sprintf("%s/hooks/deployments/harbor", conf.Env.ExternalUrl)
+	webhookTarget := fmt.Sprintf("%s/v1/hooks/deployments/harbor", conf.Env.ExternalUrl)
 	return &harborModels.WebhookPublic{
 		Name:        name,
 		ProjectID:   projectID,

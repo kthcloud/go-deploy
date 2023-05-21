@@ -12,10 +12,10 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 		return fmt.Errorf("failed to create deployment. details: %s", err)
 	}
 
-	params := deploymentModel.CreateParams{}
+	params := &deploymentModel.CreateParams{}
 	params.FromDTO(deploymentCreate)
 
-	err := deploymentModel.CreateDeployment(deploymentID, ownerID, &params)
+	err := deploymentModel.CreateDeployment(deploymentID, ownerID, params)
 	if err != nil {
 		return makeError(err)
 	}
@@ -37,6 +37,13 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 		}
 	} else {
 		err := internal_service.CreateFakeNPM(params.Name)
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	if params.GitHub != nil {
+		err := internal_service.CreateGitHub(params.Name, params)
 		if err != nil {
 			return makeError(err)
 		}
@@ -143,6 +150,11 @@ func Delete(name string) error {
 		return makeError(err)
 	}
 
+	err = internal_service.DeleteGitHub(name, nil)
+	if err != nil {
+		return makeError(err)
+	}
+
 	return nil
 }
 
@@ -165,17 +177,11 @@ func Update(name string, deploymentUpdate *body.DeploymentUpdate) error {
 	}
 
 	if update.Private != nil {
-		if *update.Private && !deployment.Private {
-			err = internal_service.DeleteNPM(name)
-			if err != nil {
-				return makeError(err)
-			}
-		} else if !*update.Private && deployment.Private {
-			err = internal_service.DeleteNPM(name)
-			if err != nil {
-				return makeError(err)
-			}
-
+		err = internal_service.DeleteNPM(name)
+		if err != nil {
+			return makeError(err)
+		}
+		if !*update.Private && deployment.Private {
 			err = internal_service.CreateNPM(name, deployment.Subsystems.K8s.Service.GetFQDN())
 			if err != nil {
 				return makeError(err)

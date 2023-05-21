@@ -1,6 +1,7 @@
 package deployment
 
 import (
+	githubModels "go-deploy/pkg/subsystems/github/models"
 	harborModels "go-deploy/pkg/subsystems/harbor/models"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	npmModels "go-deploy/pkg/subsystems/npm/models"
@@ -31,6 +32,7 @@ type Subsystems struct {
 	K8s    K8s    `bson:"k8s"`
 	Npm    NPM    `bson:"npm"`
 	Harbor Harbor `bson:"harbor"`
+	GitHub GitHub `bson:"github"`
 }
 
 type K8s struct {
@@ -48,6 +50,10 @@ type Harbor struct {
 	Robot      harborModels.RobotPublic      `bson:"robot"`
 	Repository harborModels.RepositoryPublic `bson:"repository"`
 	Webhook    harborModels.WebhookPublic    `bson:"webhook"`
+}
+
+type GitHub struct {
+	Webhook githubModels.WebhookPublic `bson:"webhook"`
 }
 
 type Env struct {
@@ -101,8 +107,14 @@ type UpdateParams struct {
 	Envs    *[]Env `json:"envs" bson:"envs"`
 }
 
+type GitHubCreateParams struct {
+	Token        string `json:"token" bson:"token"`
+	RepositoryID int64  `json:"repositoryId" bson:"repositoryId"`
+}
+
 type CreateParams struct {
-	Name    string `json:"name" bson:"name"`
-	Private bool   `json:"private" bson:"private"`
-	Envs    []Env  `json:"envs" bson:"envs"`
+	Name    string              `json:"name" bson:"name"`
+	Private bool                `json:"private" bson:"private"`
+	Envs    []Env               `json:"envs" bson:"envs"`
+	GitHub  *GitHubCreateParams `json:"omitempty,github" bson:"omitempty,github"`
 }

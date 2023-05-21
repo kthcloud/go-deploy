@@ -64,6 +64,7 @@ func setupDeploymentRoutes(base *gin.RouterGroup, hooks *gin.RouterGroup) {
 	base.POST("/deployments/:deploymentId/command", v1_deployment.DoCommand)
 
 	hooks.POST("/deployments/harbor", v1_deployment.HandleHarborHook)
+	hooks.POST("/deployments/github", v1_deployment.HandleGitHubHook)
 }
 
 func setupVmRoutes(base *gin.RouterGroup, _ *gin.RouterGroup) {

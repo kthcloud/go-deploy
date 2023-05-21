@@ -10,6 +10,7 @@ func getDeploymentCreatedConfirmers() []func(*deployment.Deployment) (bool, erro
 		K8sCreated,
 		NPMCreated,
 		HarborCreated,
+		GitHubCreated,
 	}
 }
 
@@ -18,6 +19,7 @@ func getDeploymentDeletedConfirmers() []func(*deployment.Deployment) (bool, erro
 		K8sDeleted,
 		NPMDeleted,
 		HarborDeleted,
+		GitHubDeleted,
 	}
 }
 

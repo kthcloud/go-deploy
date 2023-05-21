@@ -2,13 +2,13 @@ package deployment_service
 
 import (
 	bodyDto "go-deploy/models/dto/body"
-	deployment2 "go-deploy/models/sys/deployment"
+	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/utils/requestutils"
 	"io"
 	"log"
 )
 
-func GetHook(body io.ReadCloser) (*bodyDto.HarborWebhook, error) {
+func ParseHarborWebhook(body io.ReadCloser) (*bodyDto.HarborWebhook, error) {
 	readBody, err := requestutils.ReadBody(body)
 	if err != nil {
 		return nil, err
@@ -25,6 +25,10 @@ func GetHook(body io.ReadCloser) (*bodyDto.HarborWebhook, error) {
 	return &webhook, nil
 }
 
-func GetByWebhookToken(token string) (*deployment2.Deployment, error) {
-	return deployment2.GetByWebhookToken(token)
+func GetByHarborWebhookToken(token string) (*deploymentModel.Deployment, error) {
+	return deploymentModel.GetByHarborWebhookToken(token)
+}
+
+func GetByGitHubWebhookID(id int64) (*deploymentModel.Deployment, error) {
+	return deploymentModel.GetByGitHubWebhookID(id)
 }

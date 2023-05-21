@@ -1,15 +1,20 @@
 package v1_deployment
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
 	"go-deploy/service/deployment_service"
 	"go-deploy/utils"
+	"go-deploy/utils/requestutils"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -63,7 +68,7 @@ func HandleHarborHook(c *gin.Context) {
 		return
 	}
 
-	deployment, err := deployment_service.GetByWebhookToken(utils.HashString(token))
+	deployment, err := deployment_service.GetByHarborWebhookToken(utils.HashString(token))
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
@@ -74,13 +79,13 @@ func HandleHarborHook(c *gin.Context) {
 		return
 	}
 
-	webook, err := deployment_service.GetHook(context.GinContext.Request.Body)
+	webhook, err := deployment_service.ParseHarborWebhook(context.GinContext.Request.Body)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
 	}
 
-	if webook.Type == "PUSH_ARTIFACT" {
+	if webhook.Type == "PUSH_ARTIFACT" {
 		log.Printf("restarting v1_deployment %s due to push\n", deployment.Name)
 		err = deployment_service.Restart(deployment.Name)
 		if err != nil {
@@ -90,4 +95,88 @@ func HandleHarborHook(c *gin.Context) {
 	}
 
 	context.Ok()
+}
+
+func HandleGitHubHook(c *gin.Context) {
+	context := app.ClientContext{GinContext: c}
+
+	event := context.GinContext.GetHeader("x-github-event")
+	if len(event) == 0 {
+		context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "missing x-github-event header")
+		return
+	}
+
+	if event == "ping" {
+		context.Ok()
+		return
+	}
+
+	if event != "push" {
+		context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "unsupported event type")
+		return
+	}
+
+	hookIdStr := context.GinContext.GetHeader("X-Github-Hook-Id")
+	if len(hookIdStr) == 0 {
+		context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "missing x-github-delivery header")
+		return
+	}
+
+	hookID, err := strconv.ParseInt(hookIdStr, 10, 64)
+	if err != nil {
+		context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "invalid x-github-delivery header")
+		return
+	}
+
+	signature := context.GinContext.GetHeader("x-hub-signature-256")
+	if len(signature) == 0 {
+		context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "missing x-hub-signature-256 header")
+		return
+	}
+
+	body, err := requestutils.ReadBody(context.GinContext.Request.Body)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		return
+	}
+
+	deployment, err := deployment_service.GetByGitHubWebhookID(hookID)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		return
+	}
+
+	if !checkSignature(signature, body, deployment.Subsystems.GitHub.Webhook.Secret) {
+		context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "invalid signature")
+		return
+	}
+
+	// TODO: trigger gitlab
+
+	context.Ok()
+}
+
+func checkSignature(signature string, payload []byte, secret string) bool {
+	const signaturePrefix = "sha256="
+	const prefixLength = len(signaturePrefix)
+	const signatureLength = prefixLength + (sha256.Size * 2)
+
+	if len(signature) != signatureLength || !strings.HasPrefix(signature, signaturePrefix) {
+		return false
+	}
+
+	actual := make([]byte, sha256.Size)
+	_, _ = hex.Decode(actual, []byte(signature[prefixLength:]))
+
+	byteStringSecret := []byte(secret)
+
+	expected := getSignature(byteStringSecret, payload)
+
+	return hmac.Equal(expected, actual)
+}
+
+func getSignature(secret, body []byte) []byte {
+	computed := hmac.New(sha256.New, secret)
+	computed.Write(body)
+	return []byte(computed.Sum(nil))
 }

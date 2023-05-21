@@ -60,4 +60,11 @@ func (p *CreateParams) FromDTO(dto *body.DeploymentCreate) {
 			Value: env.Value,
 		}
 	}
+
+	if dto.GitHub != nil {
+		p.GitHub = &GitHubCreateParams{
+			Token:        dto.GitHub.Token,
+			RepositoryID: dto.GitHub.RepositoryID,
+		}
+	}
 }
