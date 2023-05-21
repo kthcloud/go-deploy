@@ -125,6 +125,8 @@ func CanAddActivity(deploymentID, activity string) (bool, string) {
 		return !deployment.BeingCreated(), "It is being created"
 	case deploymentModel.ActivityRestarting:
 		return !deployment.BeingCreated() && !deployment.BeingDeleted(), "It is not ready"
+	case deploymentModel.ActivityBuilding:
+		return !deployment.BeingCreated() && !deployment.BeingDeleted() && !deployment.DoingActivity(deploymentModel.ActivityRestarting), "It is not ready"
 	}
 
 	return false, fmt.Sprintf("Unknown activity %s", activity)
@@ -226,6 +228,45 @@ func Restart(name string) error {
 	}
 
 	err = deploymentModel.RemoveActivity(deployment.ID, deploymentModel.ActivityRestarting)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
+}
+
+func Build(id string, buildParams *body.DeploymentBuild) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to build deployment. details: %s", err)
+	}
+
+	deployment, err := deploymentModel.GetByID(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if deployment == nil {
+		return nil
+	}
+
+	params := &deploymentModel.BuildParams{}
+	params.FromDTO(buildParams)
+
+	started, reason, err := StartActivity(deployment.ID, deploymentModel.ActivityBuilding)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if !started {
+		return fmt.Errorf("failed to build deployment. details: %s", reason)
+	}
+
+	err = internal_service.CreateBuild(deployment.ID, params)
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = deploymentModel.RemoveActivity(deployment.ID, deploymentModel.ActivityBuilding)
 	if err != nil {
 		return makeError(err)
 	}

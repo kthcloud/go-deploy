@@ -193,6 +193,30 @@ func updateDeployment(job *jobModel.Job) {
 	_ = jobModel.MarkCompleted(job.ID)
 }
 
+func buildDeployment(job *jobModel.Job) {
+	err := assertParameters(job, []string{"id", "build"})
+	if err != nil {
+		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+		return
+	}
+
+	id := job.Args["id"].(string)
+	var params body.DeploymentBuild
+	err = mapstructure.Decode(job.Args["build"].(map[string]interface{}), &params)
+	if err != nil {
+		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+		return
+	}
+
+	err = deployment_service.Build(id, &params)
+	if err != nil {
+		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+		return
+	}
+
+	_ = jobModel.MarkCompleted(job.ID)
+}
+
 func Setup(ctx *app.Context) {
 	log.Println("starting job workers")
 	go jobFetcher(ctx)

@@ -68,3 +68,9 @@ func (p *CreateParams) FromDTO(dto *body.DeploymentCreate) {
 		}
 	}
 }
+
+func (p *BuildParams) FromDTO(dto *body.DeploymentBuild) {
+	p.Tag = dto.Tag
+	p.Branch = dto.Branch
+	p.ImportURL = dto.ImportURL
+}

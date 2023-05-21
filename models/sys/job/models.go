@@ -11,6 +11,7 @@ const (
 	TypeCreateDeployment = "createDeployment"
 	TypeDeleteDeployment = "deleteDeployment"
 	TypeUpdateDeployment = "updateDeployment"
+	TypeBuildDeployment  = "buildDeployment"
 )
 
 const (

@@ -5,11 +5,16 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"go-deploy/models/dto/body"
+	"go-deploy/models/sys/job"
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
 	"go-deploy/service/deployment_service"
+	"go-deploy/service/job_service"
 	"go-deploy/utils"
 	"go-deploy/utils/requestutils"
 	"log"
@@ -134,7 +139,7 @@ func HandleGitHubHook(c *gin.Context) {
 		return
 	}
 
-	body, err := requestutils.ReadBody(context.GinContext.Request.Body)
+	requestBodyRaw, err := requestutils.ReadBody(context.GinContext.Request.Body)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
@@ -146,12 +151,33 @@ func HandleGitHubHook(c *gin.Context) {
 		return
 	}
 
-	if !checkSignature(signature, body, deployment.Subsystems.GitHub.Webhook.Secret) {
+	if !checkSignature(signature, requestBodyRaw, deployment.Subsystems.GitHub.Webhook.Secret) {
 		context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "invalid signature")
 		return
 	}
 
-	// TODO: trigger gitlab
+	var requestBodyParsed body.GithubWebhookPayloadPush
+	err = json.Unmarshal(requestBodyRaw, &requestBodyParsed)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		return
+	}
+
+	pushedBranch := strings.Split(requestBodyParsed.Ref, "/")[2]
+	if pushedBranch != requestBodyParsed.Repository.DefaultBranch {
+		context.Ok()
+		return
+	}
+
+	jobID := uuid.NewString()
+	err = job_service.Create(jobID, deployment.OwnerID, job.TypeBuildDeployment, map[string]interface{}{
+		"id": deployment.ID,
+		"build": body.DeploymentBuild{
+			Tag:       "latest",
+			Branch:    pushedBranch,
+			ImportURL: requestBodyParsed.Repository.CloneURL,
+		},
+	})
 
 	context.Ok()
 }

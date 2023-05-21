@@ -3,7 +3,9 @@ package gitlab
 import (
 	"fmt"
 	"github.com/xanzy/go-gitlab"
+	"go-deploy/models/sys/deployment"
 	"go-deploy/pkg/subsystems/gitlab/models"
+	"gopkg.in/yaml.v3"
 )
 
 func (client *Client) CreateProject(public *models.ProjectPublic) (int, error) {
@@ -37,16 +39,23 @@ func (client *Client) DeleteProject(id int) error {
 	return nil
 }
 
-func (client *Client) AttachCiFile(projectID int) error {
+func (client *Client) AttachCiFile(projectID int, branch string, content deployment.GitLabCiConfig) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to attach ci file to project. details: %s", err)
 	}
 
-	_, _, err := client.GitLabClient.RepositoryFiles.CreateFile(projectID, ".gitlab-ci.yml", &gitlab.CreateFileOptions{
-		Branch:        gitlab.String("main"),
-		Content:       gitlab.String("image: alpine:latest\n\nstages:\n  - deploy\n\ndeploy:\n  stage: deploy\n  script:\n    - echo \"Deploying\"\n  only:\n    - main\n"),
+	contentBytes, err := yaml.Marshal(content)
+	if err != nil {
+		return makeError(err)
+	}
+
+	contentString := string(contentBytes)
+
+	_, _, err = client.GitLabClient.RepositoryFiles.CreateFile(projectID, ".gitlab-ci.yml", &gitlab.CreateFileOptions{
+		Branch:        gitlab.String(branch),
+		Content:       gitlab.String(contentString),
 		AuthorEmail:   gitlab.String("deploy@cloud.cbh.kth.se"),
-		AuthorName:    gitlab.String("go-deploy"),
+		AuthorName:    gitlab.String("deploy"),
 		CommitMessage: gitlab.String("Add .gitlab-ci.yml"),
 	}, nil)
 
@@ -55,4 +64,17 @@ func (client *Client) AttachCiFile(projectID int) error {
 	}
 
 	return nil
+}
+
+func (client *Client) GetJobs(projectID int) ([]*gitlab.Job, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to get jobs for project %s. details: %s", projectID, err)
+	}
+
+	jobs, _, err := client.GitLabClient.Jobs.ListProjectJobs(projectID, nil)
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	return jobs, nil
 }

@@ -43,6 +43,7 @@ type GitHubWebhookPing struct {
 }
 
 type GithubWebhookPayloadPush struct {
+	Ref        string `json:"ref" binding:"required"`
 	Repository struct {
 		ID    int64  `json:"id" binding:"required"`
 		Name  string `json:"name" binding:"required"`
@@ -50,7 +51,8 @@ type GithubWebhookPayloadPush struct {
 			ID    int64  `json:"id" binding:"required"`
 			Login string `json:"login" binding:"required"`
 		}
-		CloneURL string `json:"clone_url" binding:"required"`
+		CloneURL      string `json:"clone_url" binding:"required"`
+		DefaultBranch string `json:"default_branch" binding:"required"`
 	} `json:"repository" binding:"required"`
 }
 

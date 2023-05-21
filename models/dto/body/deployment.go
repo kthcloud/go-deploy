@@ -20,6 +20,12 @@ type DeploymentUpdate struct {
 	Envs    *[]Env `json:"envs" binding:"omitempty,env_list,dive,min=0,max=1000"`
 }
 
+type DeploymentBuild struct {
+	Tag       string `json:"tag" binding:"required,rfc1035,min=1,max=50"`
+	Branch    string `json:"branch" binding:"required,min=1,max=50"`
+	ImportURL string `json:"importUrl" binding:"required,min=1,max=1000"`
+}
+
 type DeploymentCreated struct {
 	ID    string `json:"id"`
 	JobID string `json:"jobId"`
