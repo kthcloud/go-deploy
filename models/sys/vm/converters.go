@@ -2,7 +2,7 @@ package vm
 
 import "go-deploy/models/dto/body"
 
-func (vm *VM) ToDTO(status, connectionString string, gpu *body.GpuRead, externalPortMapper map[string]int) body.VmRead {
+func (vm *VM) ToDTO(status string, connectionString *string, gpu *body.GpuRead, externalPortMapper map[string]int) body.VmRead {
 
 	var vmGpu *body.VmGpu
 	if gpu != nil {

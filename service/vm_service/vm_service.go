@@ -114,13 +114,17 @@ func Update(vmID string, dtoVmUpdate *body.VmUpdate) error {
 	return nil
 }
 
-func GetConnectionString(vm *vmModel.VM) (string, error) {
+func GetConnectionString(vm *vmModel.VM) (*string, error) {
 	domainName := conf.Env.VM.ParentDomain
 	port := vm.Subsystems.CS.PortForwardingRuleMap["__ssh"].PublicPort
 
+	if domainName == "" || port == 0 {
+		return nil, nil
+	}
+
 	connectionString := fmt.Sprintf("ssh cloud@%s -p %d", domainName, port)
 
-	return connectionString, nil
+	return &connectionString, nil
 }
 
 func DoCommand(vm *vmModel.VM, command string) {

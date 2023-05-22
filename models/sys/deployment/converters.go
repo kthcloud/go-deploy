@@ -5,10 +5,10 @@ import (
 	"go-deploy/models/dto/body"
 )
 
-func (deployment *Deployment) ToDTO(url string) body.DeploymentRead {
+func (deployment *Deployment) ToDTO(url *string) body.DeploymentRead {
 	var fullURL *string
-	if url != "" {
-		res := fmt.Sprintf("https://%s", url)
+	if url != nil {
+		res := fmt.Sprintf("https://%s", *url)
 		fullURL = &res
 	}
 

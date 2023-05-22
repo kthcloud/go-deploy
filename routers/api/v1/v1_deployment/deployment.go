@@ -19,16 +19,11 @@ import (
 	"net/http"
 )
 
-func getURL(deployment *deploymentModels.Deployment) string {
-	var url string
-
+func getURL(deployment *deploymentModels.Deployment) *string {
 	if len(deployment.Subsystems.Npm.ProxyHost.DomainNames) > 0 {
-		url = deployment.Subsystems.Npm.ProxyHost.DomainNames[0]
-	} else {
-		url = "notset"
+		return &deployment.Subsystems.Npm.ProxyHost.DomainNames[0]
 	}
-
-	return url
+	return nil
 }
 
 func getAll(_ string, context *app.ClientContext) {
