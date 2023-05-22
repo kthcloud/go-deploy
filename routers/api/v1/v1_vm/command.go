@@ -19,7 +19,7 @@ import (
 // @Accept  json
 // @Produce  json
 // @Param vmId path string true "VM ID"
-// @Param body body body.DoCommand true "Command body"
+// @Param body body body.VmCommand true "Command body"
 // @Success 200 {empty} empty
 // @Failure 400 {object} app.ErrorResponse
 // @Failure 404 {object} app.ErrorResponse

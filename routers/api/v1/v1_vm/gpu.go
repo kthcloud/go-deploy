@@ -67,13 +67,13 @@ func GetGpuList(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param vmId path string true "VM ID"
-// @Param gpuId path string true "GPU ID"
+// @Param gpuId path string false "GPU ID"
 // @Success 200 {object} body.VmRead
 // @Failure 400 {object} app.ErrorResponse
 // @Failure 404 {object} app.ErrorResponse
 // @Failure 423 {object} app.ErrorResponse
 // @Failure 500 {object} app.ErrorResponse
-// @Router /api/v1/vms/{vmId}/gpu [post]
+// @Router /api/v1/vms/{vmId}/attachGpu/{gpuId} [post]
 func AttachGPU(c *gin.Context) {
 	context := app.NewContext(c)
 
@@ -196,7 +196,7 @@ func AttachGPU(c *gin.Context) {
 // @Failure 404 {object} app.ErrorResponse
 // @Failure 423 {object} app.ErrorResponse
 // @Failure 500 {object} app.ErrorResponse
-// @Router /api/v1/vms/{vmId}/gpu [delete]
+// @Router /api/v1/vms/{vmId}/detachGpu [post]
 func DetachGPU(c *gin.Context) {
 	context := app.NewContext(c)
 

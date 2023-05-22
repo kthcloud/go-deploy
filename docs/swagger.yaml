@@ -18,12 +18,33 @@ definitions:
       config:
         type: string
     type: object
+  body.DeploymentCommand:
+    properties:
+      command:
+        enum:
+        - restart
+        type: string
+    required:
+    - command
+    type: object
   body.DeploymentCreate:
     properties:
       envs:
         items:
           $ref: '#/definitions/body.Env'
         type: array
+      github:
+        properties:
+          repositoryId:
+            type: integer
+          token:
+            maxLength: 1000
+            minLength: 1
+            type: string
+        required:
+        - repositoryId
+        - token
+        type: object
       name:
         maxLength: 30
         minLength: 3
@@ -75,17 +96,6 @@ definitions:
       jobId:
         type: string
     type: object
-  body.DoCommand:
-    properties:
-      command:
-        enum:
-        - start
-        - stop
-        - reboot
-        type: string
-    required:
-    - command
-    type: object
   body.Env:
     properties:
       name:
@@ -129,6 +139,26 @@ definitions:
       userId:
         type: string
     type: object
+  body.Port:
+    properties:
+      externalPort:
+        type: integer
+      name:
+        type: string
+      port:
+        maximum: 65535
+        minimum: 1
+        type: integer
+      protocol:
+        enum:
+        - tcp
+        - udp
+        type: string
+    required:
+    - name
+    - port
+    - protocol
+    type: object
   body.PublicKey:
     properties:
       key:
@@ -141,37 +171,84 @@ definitions:
     - key
     - name
     type: object
+  body.Quota:
+    properties:
+      cpuCores:
+        type: integer
+      deployments:
+        type: integer
+      diskSize:
+        type: integer
+      ram:
+        type: integer
+    type: object
+  body.Specs:
+    properties:
+      cpuCores:
+        type: integer
+      diskSize:
+        type: integer
+      ram:
+        type: integer
+    type: object
   body.UserRead:
     properties:
-      admin:
-        type: boolean
-      deploymentQuota:
-        type: integer
       email:
         type: string
       id:
         type: string
-      powerUser:
-        type: boolean
       publicKeys:
         items:
           $ref: '#/definitions/body.PublicKey'
         type: array
+      quota:
+        $ref: '#/definitions/body.Quota'
+      roles:
+        items:
+          type: string
+        type: array
+      usage:
+        $ref: '#/definitions/body.Quota'
       username:
         type: string
-      vmQuota:
-        type: integer
+    type: object
+  body.VmCommand:
+    properties:
+      command:
+        enum:
+        - start
+        - stop
+        - reboot
+        type: string
+    required:
+    - command
     type: object
   body.VmCreate:
     properties:
+      cpuCores:
+        minimum: 1
+        type: integer
+      diskSize:
+        minimum: 20
+        type: integer
       name:
         maxLength: 30
         minLength: 3
         type: string
+      ports:
+        items:
+          $ref: '#/definitions/body.Port'
+        type: array
+      ram:
+        minimum: 1
+        type: integer
       sshPublicKey:
         type: string
     required:
+    - cpuCores
+    - diskSize
     - name
+    - ram
     - sshPublicKey
     type: object
   body.VmCreated:
@@ -197,24 +274,6 @@ definitions:
       name:
         type: string
     type: object
-  body.VmPort:
-    properties:
-      name:
-        type: string
-      port:
-        maximum: 65535
-        minimum: 1
-        type: integer
-      protocol:
-        enum:
-        - tcp
-        - udp
-        type: string
-    required:
-    - name
-    - port
-    - protocol
-    type: object
   body.VmRead:
     properties:
       connectionString:
@@ -227,6 +286,12 @@ definitions:
         type: string
       ownerId:
         type: string
+      ports:
+        items:
+          $ref: '#/definitions/body.Port'
+        type: array
+      specs:
+        $ref: '#/definitions/body.Specs'
       sshPublicKey:
         type: string
       status:
@@ -234,10 +299,16 @@ definitions:
     type: object
   body.VmUpdate:
     properties:
+      cpuCores:
+        minimum: 1
+        type: integer
       ports:
         items:
-          $ref: '#/definitions/body.VmPort'
+          $ref: '#/definitions/body.Port'
         type: array
+      ram:
+        minimum: 1
+        type: integer
     type: object
   body.VmUpdated:
     properties:
@@ -452,6 +523,49 @@ paths:
           schema:
             $ref: '#/definitions/app.ErrorResponse'
       summary: Get CI config
+      tags:
+      - Deployment
+  /api/v1/deployments/{deploymentId}/command:
+    post:
+      consumes:
+      - application/json
+      description: Do command
+      parameters:
+      - description: Deployment ID
+        in: path
+        name: deploymentId
+        required: true
+        type: string
+      - description: Command body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/body.DeploymentCommand'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: empty
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "423":
+          description: Locked
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+      summary: Do command
       tags:
       - Deployment
   /api/v1/jobs/{id}:
@@ -679,6 +793,11 @@ paths:
       - application/json
       description: Update VM
       parameters:
+      - description: With the bearer started
+        in: header
+        name: Authorization
+        required: true
+        type: string
       - description: VM ID
         in: path
         name: vmId
@@ -720,6 +839,47 @@ paths:
       summary: Update VM
       tags:
       - VM
+  /api/v1/vms/{vmId}/attachGpu/{gpuId}:
+    post:
+      consumes:
+      - application/json
+      description: Attach GPU to VM
+      parameters:
+      - description: VM ID
+        in: path
+        name: vmId
+        required: true
+        type: string
+      - description: GPU ID
+        in: path
+        name: gpuId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.VmRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "423":
+          description: Locked
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/app.ErrorResponse'
+      summary: Attach GPU to VM
+      tags:
+      - VM
   /api/v1/vms/{vmId}/command:
     post:
       consumes:
@@ -736,7 +896,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/body.DoCommand'
+          $ref: '#/definitions/body.VmCommand'
       produces:
       - application/json
       responses:
@@ -763,8 +923,8 @@ paths:
       summary: Do command
       tags:
       - VM
-  /api/v1/vms/{vmId}/gpu:
-    delete:
+  /api/v1/vms/{vmId}/detachGpu:
+    post:
       consumes:
       - application/json
       description: Detach GPU from VM
@@ -798,47 +958,6 @@ paths:
           schema:
             $ref: '#/definitions/app.ErrorResponse'
       summary: Detach GPU from VM
-      tags:
-      - VM
-    post:
-      consumes:
-      - application/json
-      description: Attach GPU to VM
-      parameters:
-      - description: VM ID
-        in: path
-        name: vmId
-        required: true
-        type: string
-      - description: GPU ID
-        in: path
-        name: gpuId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/body.VmRead'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/app.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/app.ErrorResponse'
-        "423":
-          description: Locked
-          schema:
-            $ref: '#/definitions/app.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/app.ErrorResponse'
-      summary: Attach GPU to VM
       tags:
       - VM
 swagger: "2.0"
