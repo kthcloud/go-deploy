@@ -15,17 +15,17 @@ import (
 // DoCommand
 // @Summary Do command
 // @Description Do command
-// @Tags VM
+// @Tags Deployment
 // @Accept  json
 // @Produce  json
-// @Param vmId path string true "VM ID"
-// @Param body body body.DoCommand true "Command body"
+// @Param deploymentId path string true "Deployment ID"
+// @Param body body body.DeploymentCommand true "Command body"
 // @Success 200 {empty} empty
 // @Failure 400 {object} app.ErrorResponse
 // @Failure 404 {object} app.ErrorResponse
 // @Failure 423 {object} app.ErrorResponse
 // @Failure 500 {object} app.ErrorResponse
-// @Router /api/v1/vms/{vmId}/command [post]
+// @Router /api/v1/deployments/{deploymentId}/command [post]
 func DoCommand(c *gin.Context) {
 	context := app.NewContext(c)
 

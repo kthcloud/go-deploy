@@ -273,6 +273,71 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/deployments/{deploymentId}/command": {
+            "post": {
+                "description": "Do command",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Deployment"
+                ],
+                "summary": "Do command",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Deployment ID",
+                        "name": "deploymentId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Command body",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/body.DeploymentCommand"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "empty"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "423": {
+                        "description": "Locked",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/deployments/{deployment_id}": {
             "get": {
                 "description": "Get deployment by id",
@@ -612,6 +677,13 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "With the bearer started",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
                         "description": "VM ID",
                         "name": "vmId",
                         "in": "path",
@@ -727,6 +799,68 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/vms/{vmId}/attachGpu/{gpuId}": {
+            "post": {
+                "description": "Attach GPU to VM",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "VM"
+                ],
+                "summary": "Attach GPU to VM",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "VM ID",
+                        "name": "vmId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "GPU ID",
+                        "name": "gpuId",
+                        "in": "path"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.VmRead"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "423": {
+                        "description": "Locked",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/app.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/vms/{vmId}/command": {
             "post": {
                 "description": "Do command",
@@ -754,7 +888,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/body.DoCommand"
+                            "$ref": "#/definitions/body.VmCommand"
                         }
                     }
                 ],
@@ -792,69 +926,8 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/vms/{vmId}/gpu": {
+        "/api/v1/vms/{vmId}/detachGpu": {
             "post": {
-                "description": "Attach GPU to VM",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "VM"
-                ],
-                "summary": "Attach GPU to VM",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "VM ID",
-                        "name": "vmId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "GPU ID",
-                        "name": "gpuId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/body.VmRead"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
-                        }
-                    },
-                    "423": {
-                        "description": "Locked",
-                        "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "delete": {
                 "description": "Detach GPU from VM",
                 "consumes": [
                     "application/json"
@@ -941,6 +1014,20 @@ const docTemplate = `{
                 }
             }
         },
+        "body.DeploymentCommand": {
+            "type": "object",
+            "required": [
+                "command"
+            ],
+            "properties": {
+                "command": {
+                    "type": "string",
+                    "enum": [
+                        "restart"
+                    ]
+                }
+            }
+        },
         "body.DeploymentCreate": {
             "type": "object",
             "required": [
@@ -951,6 +1038,23 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/body.Env"
+                    }
+                },
+                "github": {
+                    "type": "object",
+                    "required": [
+                        "repositoryId",
+                        "token"
+                    ],
+                    "properties": {
+                        "repositoryId": {
+                            "type": "integer"
+                        },
+                        "token": {
+                            "type": "string",
+                            "maxLength": 1000,
+                            "minLength": 1
+                        }
                     }
                 },
                 "name": {
@@ -1028,22 +1132,6 @@ const docTemplate = `{
                 }
             }
         },
-        "body.DoCommand": {
-            "type": "object",
-            "required": [
-                "command"
-            ],
-            "properties": {
-                "command": {
-                    "type": "string",
-                    "enum": [
-                        "start",
-                        "stop",
-                        "reboot"
-                    ]
-                }
-            }
-        },
         "body.Env": {
             "type": "object",
             "required": [
@@ -1108,6 +1196,34 @@ const docTemplate = `{
                 }
             }
         },
+        "body.Port": {
+            "type": "object",
+            "required": [
+                "name",
+                "port",
+                "protocol"
+            ],
+            "properties": {
+                "externalPort": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "port": {
+                    "type": "integer",
+                    "maximum": 65535,
+                    "minimum": 1
+                },
+                "protocol": {
+                    "type": "string",
+                    "enum": [
+                        "tcp",
+                        "udp"
+                    ]
+                }
+            }
+        },
         "body.PublicKey": {
             "type": "object",
             "required": [
@@ -1125,23 +1241,45 @@ const docTemplate = `{
                 }
             }
         },
+        "body.Quota": {
+            "type": "object",
+            "properties": {
+                "cpuCores": {
+                    "type": "integer"
+                },
+                "deployments": {
+                    "type": "integer"
+                },
+                "diskSize": {
+                    "type": "integer"
+                },
+                "ram": {
+                    "type": "integer"
+                }
+            }
+        },
+        "body.Specs": {
+            "type": "object",
+            "properties": {
+                "cpuCores": {
+                    "type": "integer"
+                },
+                "diskSize": {
+                    "type": "integer"
+                },
+                "ram": {
+                    "type": "integer"
+                }
+            }
+        },
         "body.UserRead": {
             "type": "object",
             "properties": {
-                "admin": {
-                    "type": "boolean"
-                },
-                "deploymentQuota": {
-                    "type": "integer"
-                },
                 "email": {
                     "type": "string"
                 },
                 "id": {
                     "type": "string"
-                },
-                "powerUser": {
-                    "type": "boolean"
                 },
                 "publicKeys": {
                     "type": "array",
@@ -1149,25 +1287,71 @@ const docTemplate = `{
                         "$ref": "#/definitions/body.PublicKey"
                     }
                 },
+                "quota": {
+                    "$ref": "#/definitions/body.Quota"
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "usage": {
+                    "$ref": "#/definitions/body.Quota"
+                },
                 "username": {
                     "type": "string"
-                },
-                "vmQuota": {
-                    "type": "integer"
+                }
+            }
+        },
+        "body.VmCommand": {
+            "type": "object",
+            "required": [
+                "command"
+            ],
+            "properties": {
+                "command": {
+                    "type": "string",
+                    "enum": [
+                        "start",
+                        "stop",
+                        "reboot"
+                    ]
                 }
             }
         },
         "body.VmCreate": {
             "type": "object",
             "required": [
+                "cpuCores",
+                "diskSize",
                 "name",
+                "ram",
                 "sshPublicKey"
             ],
             "properties": {
+                "cpuCores": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "diskSize": {
+                    "type": "integer",
+                    "minimum": 20
+                },
                 "name": {
                     "type": "string",
                     "maxLength": 30,
                     "minLength": 3
+                },
+                "ports": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/body.Port"
+                    }
+                },
+                "ram": {
+                    "type": "integer",
+                    "minimum": 1
                 },
                 "sshPublicKey": {
                     "type": "string"
@@ -1210,31 +1394,6 @@ const docTemplate = `{
                 }
             }
         },
-        "body.VmPort": {
-            "type": "object",
-            "required": [
-                "name",
-                "port",
-                "protocol"
-            ],
-            "properties": {
-                "name": {
-                    "type": "string"
-                },
-                "port": {
-                    "type": "integer",
-                    "maximum": 65535,
-                    "minimum": 1
-                },
-                "protocol": {
-                    "type": "string",
-                    "enum": [
-                        "tcp",
-                        "udp"
-                    ]
-                }
-            }
-        },
         "body.VmRead": {
             "type": "object",
             "properties": {
@@ -1253,6 +1412,15 @@ const docTemplate = `{
                 "ownerId": {
                     "type": "string"
                 },
+                "ports": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/body.Port"
+                    }
+                },
+                "specs": {
+                    "$ref": "#/definitions/body.Specs"
+                },
                 "sshPublicKey": {
                     "type": "string"
                 },
@@ -1264,11 +1432,19 @@ const docTemplate = `{
         "body.VmUpdate": {
             "type": "object",
             "properties": {
+                "cpuCores": {
+                    "type": "integer",
+                    "minimum": 1
+                },
                 "ports": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/body.VmPort"
+                        "$ref": "#/definitions/body.Port"
                     }
+                },
+                "ram": {
+                    "type": "integer",
+                    "minimum": 1
                 }
             }
         },
