@@ -1,12 +1,14 @@
 package vm_service
 
 import (
+	"errors"
 	"fmt"
 	vmModel "go-deploy/models/sys/vm"
 	gpuModel "go-deploy/models/sys/vm/gpu"
 	"go-deploy/pkg/conf"
 	"go-deploy/service/vm_service/internal_service"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -94,31 +96,91 @@ func GetAnyAvailableGPU(isPowerUser bool) (*gpuModel.GPU, error) {
 	return nil, nil
 }
 
-func AttachGPU(gpuID, vmID, userID string) error {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to attach gpu %s to vm %s. details: %s", gpuID, vmID, err)
+func GetAllAvailableGPU(isPowerUser bool) ([]gpuModel.GPU, error) {
+	var excludedGPUs []string
+	if !isPowerUser {
+		excludedGPUs = conf.Env.GPU.PrivilegedGPUs
 	}
+
+	availableGPUs, err := gpuModel.GetAllAvailableGPUs(conf.Env.GPU.ExcludedHosts, excludedGPUs)
+	if err != nil {
+		return nil, err
+	}
+
+	// sort available gpus by host
+	sort.Slice(availableGPUs, func(i, j int) bool {
+		return availableGPUs[i].Host < availableGPUs[j].Host
+	})
+
+	var notInUseGPUs []gpuModel.GPU
+	for _, gpu := range availableGPUs {
+		// check if attached in cloudstack
+		inUse, err := isGpuInUse(gpu.Host, gpu.Data.Bus)
+		if err != nil {
+			return nil, err
+		}
+
+		if !inUse {
+			notInUseGPUs = append(notInUseGPUs, gpu)
+		}
+	}
+
+	return notInUseGPUs, nil
+}
+
+func AttachGPU(gpuIDs []string, vmID, userID string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to attach gpu to vm %s. details: %s", vmID, err)
+	}
+	csInsufficientCapacityError := "host has capacity? false"
 
 	// TODO: add check for user's quota
 	oneHourFromNow := time.Now().Add(time.Hour)
 
-	attached, err := gpuModel.AttachGPU(gpuID, vmID, userID, oneHourFromNow)
-	if err != nil {
-		return makeError(err)
-	}
+	var err error
+	for idx, gpuID := range gpuIDs {
+		var attached bool
+		attached, err = gpuModel.AttachGPU(gpuID, vmID, userID, oneHourFromNow)
+		if err != nil {
+			return makeError(err)
+		}
 
-	if !attached {
-		// this is an edge case where we don't want to fail the method, since a retry will probably not help
-		//
-		// this is probably caused by a race condition where two users requested the same gpu, where the first one
-		// got it, and the second one failed. we don't want to fail the second user, since that would mean that a
-		// job would get stuck. instead the user is not granted the gpu, and will need to request a new one manually
-		return nil
-	}
+		if !attached {
+			// this is an edge case where we don't want to fail the method, since a retry will probably not help
+			//
+			// this is probably caused by a race condition where two users requested the same gpu, where the first one
+			// got it, and the second one failed. we don't want to fail the second user, since that would mean that a
+			// job would get stuck. instead the user is not granted the gpu, and will need to request a new one manually
+			continue
+		}
 
-	err = internal_service.AttachGPU(gpuID, vmID)
-	if err != nil {
-		return makeError(err)
+		err = internal_service.AttachGPU(gpuID, vmID)
+		if err == nil {
+			break
+		}
+
+		errString := err.Error()
+		if strings.Contains(errString, csInsufficientCapacityError) {
+			// if the host has insufficient capacity, we need to detach the gpu from the vm
+			// and attempt to attach it to another gpu, if we have any left to try
+
+			if idx == len(gpuIDs)-1 {
+				err = makeError(errors.New("insufficient capacity on host"))
+				break
+			}
+
+			err = gpuModel.DetachGPU(vmID, userID)
+			if err != nil {
+				return makeError(err)
+			}
+
+			err = internal_service.DetachGPU(vmID)
+			if err != nil {
+				return makeError(err)
+			}
+		} else {
+			return makeError(err)
+		}
 	}
 
 	err = vmModel.RemoveActivity(vmID, vmModel.ActivityAttachingGPU)
@@ -157,13 +219,9 @@ func DetachGpuSync(vmID, userID string) error {
 		return makeError(err)
 	}
 
-	detached, err := gpuModel.DetachGPU(vmID, userID)
+	err = gpuModel.DetachGPU(vmID, userID)
 	if err != nil {
 		return makeError(err)
-	}
-
-	if !detached {
-		return makeError(fmt.Errorf("failed to detach gpu from vm %s", vmID))
 	}
 
 	return nil

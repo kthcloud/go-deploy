@@ -451,7 +451,6 @@ func AttachGPU(gpuID, vmID string) error {
 		return makeError(err)
 	}
 
-	// turn it off if it is on, but remember the status
 	status, err := client.GetVmStatus(vm.Subsystems.CS.VM.ID)
 	if err != nil {
 		return makeError(err)
@@ -476,17 +475,15 @@ func AttachGPU(gpuID, vmID string) error {
 		return makeError(err)
 	}
 
-	// turn it on if it was on
-	if status == "Running" {
-		requiredHost, err := getRequiredHost(gpuID)
-		if err != nil {
-			return makeError(err)
-		}
+	// always start the vm after attaching gpu, to make sure the vm can be started on the host
+	requiredHost, err := getRequiredHost(gpuID)
+	if err != nil {
+		return makeError(err)
+	}
 
-		err = client.DoVmCommand(vm.Subsystems.CS.VM.ID, requiredHost, "start")
-		if err != nil {
-			return makeError(err)
-		}
+	err = client.DoVmCommand(vm.Subsystems.CS.VM.ID, requiredHost, "start")
+	if err != nil {
+		return makeError(err)
 	}
 
 	return nil

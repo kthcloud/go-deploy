@@ -80,7 +80,7 @@ type CreateParams struct {
 	Name    string              `json:"name" bson:"name"`
 	Private bool                `json:"private" bson:"private"`
 	Envs    []Env               `json:"envs" bson:"envs"`
-	GitHub  *GitHubCreateParams `json:"omitempty,github" bson:"omitempty,github"`
+	GitHub  *GitHubCreateParams `json:"github,omitempty" bson:"github,omitempty"`
 }
 
 type BuildParams struct {
