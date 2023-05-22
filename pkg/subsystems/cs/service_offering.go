@@ -54,7 +54,7 @@ func (client *Client) CreateServiceOffering(public *models.ServiceOfferingPublic
 	createParams.SetName(subsystemutils.GetPrefixedName(public.Name))
 	createParams.SetDisplaytext(public.Name)
 	createParams.SetCpunumber(public.CpuCores)
-	createParams.SetCpuspeed(2048)
+	createParams.SetCpuspeed(1)
 	createParams.SetMemory(public.RAM * 1024)
 	createParams.SetOfferha(false)
 	createParams.SetLimitcpuuse(false)

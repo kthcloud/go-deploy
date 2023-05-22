@@ -24,7 +24,7 @@ func GetCIConfig(userId, deploymentID string, isAdmin bool) (*body.CiConfig, err
 	}
 
 	tag := fmt.Sprintf("%s/%s/%s",
-		conf.Env.DockerRegistry.Url,
+		conf.Env.DockerRegistry.URL,
 		subsystemutils.GetPrefixedName(deployment.Name),
 		deployment.Name,
 	)
@@ -50,7 +50,7 @@ func GetCIConfig(userId, deploymentID string, isAdmin bool) (*body.CiConfig, err
 					Name: "Login to Docker Hub",
 					Uses: "docker/login-action@v2",
 					With: deploymentModel.With{
-						Registry: conf.Env.DockerRegistry.Url,
+						Registry: conf.Env.DockerRegistry.URL,
 						Username: username,
 						Password: password,
 					},

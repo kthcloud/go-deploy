@@ -70,6 +70,24 @@ func HarborDeleted(deployment *deployment.Deployment) (bool, error) {
 		harbor.Webhook.ID == 0, nil
 }
 
+func GitHubCreated(deployment *deployment.Deployment) (bool, error) {
+	_ = func(err error) error {
+		return fmt.Errorf("failed to check if github is created for deployment %s. details: %s", deployment.Name, err)
+	}
+
+	github := &deployment.Subsystems.GitHub
+	return github.Webhook.ID != 0, nil
+}
+
+func GitHubDeleted(deployment *deployment.Deployment) (bool, error) {
+	_ = func(err error) error {
+		return fmt.Errorf("failed to check if github is created for deployment %s. details: %s", deployment.Name, err)
+	}
+
+	github := &deployment.Subsystems.GitHub
+	return github.Webhook.ID == 0, nil
+}
+
 func CSCreated(vm *vm.VM) (bool, error) {
 	cs := &vm.Subsystems.CS
 

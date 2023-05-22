@@ -100,7 +100,7 @@ func CreateK8s(name, userID string, envs []deploymentModel.Env) (*K8sResult, err
 	var k8sDeployment *k8sModels.DeploymentPublic
 	if deployment.Subsystems.K8s.Deployment.ID == "" {
 		dockerRegistryProject := subsystemutils.GetPrefixedName(userID)
-		dockerImage := fmt.Sprintf("%s/%s/%s", conf.Env.DockerRegistry.Url, dockerRegistryProject, name)
+		dockerImage := fmt.Sprintf("%s/%s/%s", conf.Env.DockerRegistry.URL, dockerRegistryProject, name)
 
 		k8sEnvs := []k8sModels.EnvVar{
 			{Name: "DEPLOY_APP_PORT", Value: strconv.Itoa(port)},

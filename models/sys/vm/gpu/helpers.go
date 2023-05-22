@@ -14,7 +14,6 @@ import (
 	"time"
 )
 
-
 func (gpu *GPU) ToDto() body.GpuRead {
 	id := base64.StdEncoding.EncodeToString([]byte(gpu.ID))
 
@@ -181,7 +180,7 @@ func AttachGPU(gpuID, vmID, user string, end time.Time) (bool, error) {
 	}
 
 	if vm == nil {
-		return false, fmt.Errorf("vm not found")
+		return false, nil
 	}
 
 	gpu, err := GetGpuByID(gpuID)

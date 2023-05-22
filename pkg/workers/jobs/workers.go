@@ -39,6 +39,8 @@ func jobFetcher(ctx *app.Context) {
 			go deleteDeployment(job)
 		case jobModel.TypeUpdateDeployment:
 			go updateDeployment(job)
+		case jobModel.TypeBuildDeployment:
+			go buildDeployment(job)
 		}
 	}
 }

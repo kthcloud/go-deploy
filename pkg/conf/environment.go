@@ -24,7 +24,7 @@ type Environment struct {
 	} `yaml:"gpu"`
 
 	DockerRegistry struct {
-		Url         string `yaml:"url"`
+		URL         string `yaml:"url"`
 		Placeholder struct {
 			Project    string `yaml:"project"`
 			Repository string `yaml:"repository"`
@@ -46,8 +46,8 @@ type Environment struct {
 		Role        string `yaml:"role"`
 		Deployments int    `yaml:"deployments"`
 		CpuCores    int    `yaml:"cpuCores"`
-		RAM      int `yaml:"ram"`
-		DiskSize int `yaml:"diskSize"`
+		RAM         int    `yaml:"ram"`
+		DiskSize    int    `yaml:"diskSize"`
 	} `yaml:"quotas"`
 
 	Keycloak struct {
@@ -103,6 +103,11 @@ type Environment struct {
 		Password      string `yaml:"password"`
 		WebhookSecret string `yaml:"webhookSecret"`
 	} `yaml:"harbor"`
+
+	GitLab struct {
+		URL   string `yaml:"url"`
+		Token string `yaml:"token"`
+	}
 }
 
 var Env Environment

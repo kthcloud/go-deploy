@@ -11,8 +11,6 @@ import (
 	"time"
 )
 
-
-
 func (job *Job) ToDTO(statusMessage string) body.JobRead {
 	if job == nil {
 		return body.JobRead{}

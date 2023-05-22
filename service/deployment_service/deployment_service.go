@@ -12,10 +12,10 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 		return fmt.Errorf("failed to create deployment. details: %s", err)
 	}
 
-	params := deploymentModel.CreateParams{}
+	params := &deploymentModel.CreateParams{}
 	params.FromDTO(deploymentCreate)
 
-	err := deploymentModel.CreateDeployment(deploymentID, ownerID, &params)
+	err := deploymentModel.CreateDeployment(deploymentID, ownerID, params)
 	if err != nil {
 		return makeError(err)
 	}
@@ -37,6 +37,13 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 		}
 	} else {
 		err := internal_service.CreateFakeNPM(params.Name)
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	if params.GitHub != nil {
+		err := internal_service.CreateGitHub(params.Name, params)
 		if err != nil {
 			return makeError(err)
 		}
@@ -118,6 +125,8 @@ func CanAddActivity(deploymentID, activity string) (bool, string) {
 		return !deployment.BeingCreated(), "It is being created"
 	case deploymentModel.ActivityRestarting:
 		return !deployment.BeingCreated() && !deployment.BeingDeleted(), "It is not ready"
+	case deploymentModel.ActivityBuilding:
+		return !deployment.BeingCreated() && !deployment.BeingDeleted() && !deployment.DoingActivity(deploymentModel.ActivityRestarting), "It is not ready"
 	}
 
 	return false, fmt.Sprintf("Unknown activity %s", activity)
@@ -139,6 +148,11 @@ func Delete(name string) error {
 	}
 
 	err = internal_service.DeleteK8s(name)
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = internal_service.DeleteGitHub(name, nil)
 	if err != nil {
 		return makeError(err)
 	}
@@ -165,17 +179,11 @@ func Update(name string, deploymentUpdate *body.DeploymentUpdate) error {
 	}
 
 	if update.Private != nil {
-		if *update.Private && !deployment.Private {
-			err = internal_service.DeleteNPM(name)
-			if err != nil {
-				return makeError(err)
-			}
-		} else if !*update.Private && deployment.Private {
-			err = internal_service.DeleteNPM(name)
-			if err != nil {
-				return makeError(err)
-			}
-
+		err = internal_service.DeleteNPM(name)
+		if err != nil {
+			return makeError(err)
+		}
+		if !*update.Private && deployment.Private {
 			err = internal_service.CreateNPM(name, deployment.Subsystems.K8s.Service.GetFQDN())
 			if err != nil {
 				return makeError(err)
@@ -220,6 +228,45 @@ func Restart(name string) error {
 	}
 
 	err = deploymentModel.RemoveActivity(deployment.ID, deploymentModel.ActivityRestarting)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
+}
+
+func Build(id string, buildParams *body.DeploymentBuild) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to build deployment. details: %s", err)
+	}
+
+	deployment, err := deploymentModel.GetByID(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if deployment == nil {
+		return nil
+	}
+
+	params := &deploymentModel.BuildParams{}
+	params.FromDTO(buildParams)
+
+	started, reason, err := StartActivity(deployment.ID, deploymentModel.ActivityBuilding)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if !started {
+		return fmt.Errorf("failed to build deployment. details: %s", reason)
+	}
+
+	err = internal_service.CreateBuild(deployment.ID, params)
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = deploymentModel.RemoveActivity(deployment.ID, deploymentModel.ActivityBuilding)
 	if err != nil {
 		return makeError(err)
 	}
