@@ -80,13 +80,9 @@ func Delete(name string) error {
 		return makeError(err)
 	}
 
-	detached, err := gpu.DetachGPU(vm.ID, vm.OwnerID)
+	err = gpu.DetachGPU(vm.ID, vm.OwnerID)
 	if err != nil {
 		return makeError(err)
-	}
-
-	if !detached {
-		return makeError(fmt.Errorf("failed to detach gpu from vm"))
 	}
 
 	return nil

@@ -116,20 +116,20 @@ func AttachGPU(c *gin.Context) {
 		return
 	}
 
-	var gpu *gpuModel.GPU
+	var gpus []gpuModel.GPU
 	if gpuID == "any" {
-		gpu, err = vm_service.GetAnyAvailableGPU(auth.IsPowerUser())
+		gpus, err = vm_service.GetAllAvailableGPU(auth.IsPowerUser())
 		if err != nil {
 			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get available GPU: %s", err))
 			return
 		}
 
-		if gpu == nil {
+		if gpus == nil {
 			context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotAvailable, "No available GPUs")
 			return
 		}
 	} else {
-		gpu, err = vm_service.GetGpuByID(gpuID, auth.IsPowerUser())
+		gpu, err := vm_service.GetGpuByID(gpuID, auth.IsPowerUser())
 		if err != nil {
 			context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 			return
@@ -153,6 +153,18 @@ func AttachGPU(c *gin.Context) {
 				return
 			}
 		}
+
+		gpus = []gpuModel.GPU{*gpu}
+	}
+
+	if len(gpus) == 0 {
+		context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotAvailable, "No available GPUs")
+		return
+	}
+
+	gpuIds := make([]string, len(gpus))
+	for i, gpu := range gpus {
+		gpuIds[i] = gpu.ID
 	}
 
 	started, reason, err := vm_service.StartActivity(current.ID, vmModel.ActivityAttachingGPU)
@@ -169,7 +181,7 @@ func AttachGPU(c *gin.Context) {
 	jobID := uuid.New().String()
 	err = job_service.Create(jobID, auth.UserID, jobModel.TypeAttachGpuToVM, map[string]interface{}{
 		"id":     current.ID,
-		"gpuId":  gpu.ID,
+		"gpuIds": gpuIds,
 		"userId": auth.UserID,
 	})
 

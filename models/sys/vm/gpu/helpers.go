@@ -238,35 +238,35 @@ func AttachGPU(gpuID, vmID, user string, end time.Time) (bool, error) {
 	return true, nil
 }
 
-func DetachGPU(vmID, userID string) (bool, error) {
+func DetachGPU(vmID, userID string) error {
 	vm, err := vm2.GetByID(vmID)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	if vm == nil {
-		return true, nil
+		return nil
 	}
 
 	if vm.GpuID == "" {
-		return true, nil
+		return nil
 	}
 
 	gpu, err := GetGpuByID(vm.GpuID)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	if gpu == nil {
-		return false, fmt.Errorf("gpu not found")
+		return fmt.Errorf("gpu not found")
 	}
 
 	if gpu.Lease.VmID != vmID {
-		return false, fmt.Errorf("vm is not attached to this gpu")
+		return fmt.Errorf("vm is not attached to this gpu")
 	}
 
 	if gpu.Lease.UserID != userID {
-		return false, fmt.Errorf("vm is not attached to this user")
+		return fmt.Errorf("vm is not attached to this user")
 	}
 
 	filter := bson.D{
@@ -289,9 +289,9 @@ func DetachGPU(vmID, userID string) (bool, error) {
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			// this is not treated as an error, just another instance snatched the gpu before this one
-			return false, nil
+			return nil
 		}
-		return false, err
+		return err
 	}
 
 	err = vm2.UpdateWithBsonByID(vmID, bson.D{{"gpuId", ""}})
@@ -305,5 +305,5 @@ func DetachGPU(vmID, userID string) (bool, error) {
 		log.Error("failed to remove lease after vm update failed. system is now in an inconsistent state. please fix manually. vm id:", vmID, " gpu id:", gpu.ID, ". details: %s", err)
 	}
 
-	return true, nil
+	return nil
 }
