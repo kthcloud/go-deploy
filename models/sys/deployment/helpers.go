@@ -87,10 +87,6 @@ func GetByName(name string) (*Deployment, error) {
 	return getDeployment(bson.D{{"name", name}})
 }
 
-func GetByHarborWebhookToken(token string) (*Deployment, error) {
-	return getDeployment(bson.D{{"subsystems.harbor.webhook.token", token}})
-}
-
 func GetByGitHubWebhookID(id int64) (*Deployment, error) {
 	return getDeployment(bson.D{{"subsystems.github.webhook.id", id}})
 }

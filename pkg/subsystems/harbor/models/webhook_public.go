@@ -7,7 +7,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	modelv2 "github.com/mittwald/goharbor-client/v5/apiv2/model"
-	"go-deploy/utils"
 	"golang.org/x/crypto/bcrypt"
 	"math/big"
 	"strings"
@@ -23,11 +22,6 @@ type WebhookPublic struct {
 }
 
 func CreateWebhookParamsFromPublic(public *WebhookPublic) *modelv2.WebhookPolicy {
-	webhookToken, err := generateWebhookToken(public.Token)
-	if err != nil {
-		webhookToken = ""
-	}
-
 	return &modelv2.WebhookPolicy{
 		Enabled:    true,
 		EventTypes: getWebhookEventTypes(),
@@ -35,7 +29,7 @@ func CreateWebhookParamsFromPublic(public *WebhookPublic) *modelv2.WebhookPolicy
 		Targets: []*modelv2.WebhookTargetObject{
 			{
 				Address:        public.Target,
-				AuthHeader:     createWebhookAuthHeader(webhookToken),
+				AuthHeader:     createWebhookAuthHeader(public.Token),
 				SkipCertVerify: false,
 				Type:           "http",
 			},
@@ -44,8 +38,7 @@ func CreateWebhookParamsFromPublic(public *WebhookPublic) *modelv2.WebhookPolicy
 }
 
 func CreateWebhookPublicFromGet(webhookPolicy *modelv2.WebhookPolicy, project *modelv2.Project) *WebhookPublic {
-	token, _ := getTokenFromAuthHeader(webhookPolicy.Targets[0].AuthHeader)
-	hashedToken := utils.HashString(token)
+	token := getTokenFromAuthHeader(webhookPolicy.Targets[0].AuthHeader)
 
 	return &WebhookPublic{
 		ID:          int(webhookPolicy.ID),
@@ -53,7 +46,7 @@ func CreateWebhookPublicFromGet(webhookPolicy *modelv2.WebhookPolicy, project *m
 		ProjectID:   int(project.ProjectID),
 		ProjectName: project.Name,
 		Target:      webhookPolicy.Targets[0].Address,
-		Token:       hashedToken,
+		Token:       token,
 	}
 }
 
@@ -69,31 +62,31 @@ func createWebhookAuthHeader(secret string) string {
 	return fmt.Sprintf("Basic %s", encoded)
 }
 
-func getTokenFromAuthHeader(authHeader string) (string, error) {
+func getTokenFromAuthHeader(authHeader string) string {
 	if len(authHeader) == 0 {
-		return "", nil
+		return ""
 	}
 
 	headerSplit := strings.Split(authHeader, " ")
 	if len(headerSplit) != 2 {
-		return "", nil
+		return ""
 	}
 
 	if headerSplit[0] != "Basic" {
-		return "", nil
+		return ""
 	}
 
 	decodedHeader, err := base64.StdEncoding.DecodeString(headerSplit[1])
 	if err != nil {
-		return "", err
+		return ""
 	}
 
 	basicAuthSplit := strings.Split(string(decodedHeader), ":")
 	if len(basicAuthSplit) != 2 {
-		return "", nil
+		return ""
 	}
 
-	return basicAuthSplit[1], nil
+	return basicAuthSplit[1]
 }
 
 func generateWebhookToken(secret string) (string, error) {

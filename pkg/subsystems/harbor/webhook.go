@@ -69,7 +69,7 @@ func (client *Client) CreateWebhook(public *models.WebhookPublic) (int, error) {
 
 	var webhookPolicy *modelv2.WebhookPolicy
 	for _, policy := range webhookPolicies {
-		if policy.Name == public.Name {
+		if len(policy.Targets) > 0 && policy.Targets[0].Address == public.Target {
 			webhookPolicy = policy
 		}
 	}

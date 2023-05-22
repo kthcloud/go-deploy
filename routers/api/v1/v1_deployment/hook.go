@@ -15,9 +15,7 @@ import (
 	"go-deploy/pkg/status_codes"
 	"go-deploy/service/deployment_service"
 	"go-deploy/service/job_service"
-	"go-deploy/utils"
 	"go-deploy/utils/requestutils"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -68,35 +66,43 @@ func HandleHarborHook(c *gin.Context) {
 		return
 	}
 
+	if !deployment_service.ValidateHarborToken(token) {
+		context.Unauthorized()
+		return
+	}
+
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
 	}
 
-	deployment, err := deployment_service.GetByHarborWebhookToken(utils.HashString(token))
+	var webhook body.HarborWebhook
+	err = context.GinContext.BindJSON(&webhook)
+	if err != nil {
+		context.ErrorResponse(http.StatusBadRequest, status_codes.Error, fmt.Sprintf("%s", err))
+		return
+	}
+
+	deployment, err := deployment_service.GetByHarborWebhook(&webhook)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
 	}
 
 	if deployment == nil {
-		context.NotFound()
+		context.ErrorResponse(http.StatusNotFound, status_codes.Error, fmt.Sprintf("deployment %s not found", deployment.Name))
 		return
 	}
 
-	webhook, err := deployment_service.ParseHarborWebhook(context.GinContext.Request.Body)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
-		return
-	}
-
-	if webhook.Type == "PUSH_ARTIFACT" && webhook.EventData.Repository.Name == deployment.Subsystems.Harbor.Repository.Name {
-		log.Printf("restarting deployment %s due to push\n", deployment.Name)
-		err = deployment_service.Restart(deployment.Name)
-		if err != nil {
-			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
-			return
+	if webhook.Type == "PUSH_ARTIFACT" {
+		if deployment.Ready() {
+			err = deployment_service.Restart(deployment.Name)
+			if err != nil {
+				context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+				return
+			}
 		}
+
 	}
 
 	context.Ok()

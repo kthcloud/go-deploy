@@ -3,6 +3,7 @@ package internal_service
 import (
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
 	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/harbor"
@@ -41,10 +42,10 @@ func createRepositoryPublic(projectID int, projectName string, name string) *har
 	}
 }
 
-func createWebhookPublic(projectID int, projectName, name string) *harborModels.WebhookPublic {
+func createWebhookPublic(projectID int, projectName string) *harborModels.WebhookPublic {
 	webhookTarget := fmt.Sprintf("%s/v1/hooks/deployments/harbor", conf.Env.ExternalUrl)
 	return &harborModels.WebhookPublic{
-		Name:        name,
+		Name:        uuid.NewString(),
 		ProjectID:   projectID,
 		ProjectName: projectName,
 		Target:      webhookTarget,
@@ -154,7 +155,7 @@ func CreateHarbor(name, userID string) error {
 
 	// Webhook
 	if deployment.Subsystems.Harbor.Webhook.ID == 0 {
-		id, err := client.CreateWebhook(createWebhookPublic(project.ID, project.Name, name))
+		id, err := client.CreateWebhook(createWebhookPublic(project.ID, project.Name))
 		if err != nil {
 			return makeError(err)
 		}
@@ -202,18 +203,6 @@ func DeleteHarbor(name string) error {
 		return nil
 	}
 
-	if deployment.Subsystems.Harbor.Webhook.ID != 0 {
-		err = client.DeleteWebhook(deployment.Subsystems.Harbor.Webhook.ProjectID, deployment.Subsystems.Harbor.Webhook.ID)
-		if err != nil {
-			return makeError(err)
-		}
-
-		err = deploymentModel.UpdateSubsystemByName(name, "harbor", "webhook", harborModels.WebhookPublic{})
-		if err != nil {
-			return makeError(err)
-		}
-	}
-
 	if deployment.Subsystems.Harbor.Repository.ID != 0 {
 		err = client.DeleteRepository(deployment.Subsystems.Harbor.Repository.ProjectName, deployment.Subsystems.Harbor.Repository.Name)
 		if err != nil {
@@ -238,19 +227,14 @@ func DeleteHarbor(name string) error {
 		}
 	}
 
-	if deployment.Subsystems.Harbor.Project.ID != 0 {
-		empty, err := client.IsProjectEmpty(deployment.Subsystems.Harbor.Project.ID)
+	if deployment.Subsystems.Harbor.Webhook.ID != 0 {
+		err = deploymentModel.UpdateSubsystemByName(name, "harbor", "webhook", harborModels.WebhookPublic{})
 		if err != nil {
 			return makeError(err)
 		}
+	}
 
-		if empty {
-			err = client.DeleteProject(deployment.Subsystems.Harbor.Project.ID)
-			if err != nil {
-				return makeError(err)
-			}
-		}
-
+	if deployment.Subsystems.Harbor.Project.ID != 0 {
 		err = deploymentModel.UpdateSubsystemByName(name, "harbor", "project", harborModels.ProjectPublic{})
 		if err != nil {
 			return makeError(err)
