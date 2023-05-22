@@ -36,7 +36,7 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 			return makeError(err)
 		}
 	} else {
-		err := internal_service.CreateFakeNPM(params.Name)
+		err = internal_service.CreateFakeNPM(params.Name)
 		if err != nil {
 			return makeError(err)
 		}
