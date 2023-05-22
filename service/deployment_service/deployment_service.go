@@ -47,6 +47,11 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 		if err != nil {
 			return makeError(err)
 		}
+	} else {
+		err := internal_service.CreateFakeGitHub(params.Name)
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	return nil

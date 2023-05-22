@@ -114,3 +114,18 @@ func DeleteGitHub(name string, githubToken *string) error {
 
 	return nil
 }
+
+func CreateFakeGitHub(name string) error {
+	log.Println("setting up placeholder github")
+
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to setup placeholder github. details: %s", err)
+	}
+
+	err := deploymentModel.UpdateSubsystemByName(name, "github", "webhook.id", 1)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
+}
