@@ -90,7 +90,7 @@ func HandleHarborHook(c *gin.Context) {
 		return
 	}
 
-	if webhook.Type == "PUSH_ARTIFACT" {
+	if webhook.Type == "PUSH_ARTIFACT" && webhook.EventData.Repository.Name == deployment.Subsystems.Harbor.Repository.Name {
 		log.Printf("restarting v1_deployment %s due to push\n", deployment.Name)
 		err = deployment_service.Restart(deployment.Name)
 		if err != nil {
