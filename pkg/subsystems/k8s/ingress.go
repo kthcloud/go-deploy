@@ -9,7 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (client *Client) ReadService(namespace, id string) (*models.ServicePublic, error) {
+func (client *Client) ReadIngress(namespace, id string) (*models.IngressPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to read deployment %s. details: %s", id, err)
 	}
@@ -31,7 +31,7 @@ func (client *Client) ReadService(namespace, id string) (*models.ServicePublic, 
 		return nil, makeError(fmt.Errorf("no such namespace %s", namespace))
 	}
 
-	list, err := client.K8sClient.CoreV1().Services(namespace).List(context.TODO(), metav1.ListOptions{})
+	list, err := client.K8sClient.NetworkingV1().Ingresses(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -39,16 +39,16 @@ func (client *Client) ReadService(namespace, id string) (*models.ServicePublic, 
 	for _, item := range list.Items {
 		idLabel := GetLabel(item.ObjectMeta.Labels, keys.ManifestLabelID)
 		if idLabel == id {
-			return models.CreateServicePublicFromRead(&item), nil
+			return models.CreateIngressPublicFromRead(&item), nil
 		}
 	}
 
 	return nil, nil
 }
 
-func (client *Client) CreateService(public *models.ServicePublic) (string, error) {
+func (client *Client) CreateIngress(public *models.IngressPublic) (string, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to k8s service %s. details: %s", public.Name, err)
+		return fmt.Errorf("failed to k8s ingress %s. details: %s", public.Name, err)
 	}
 
 	if public.Name == "" {
@@ -68,7 +68,7 @@ func (client *Client) CreateService(public *models.ServicePublic) (string, error
 		return "", makeError(fmt.Errorf("no such namespace %s", public.Namespace))
 	}
 
-	list, err := client.K8sClient.CoreV1().Services(public.Namespace).List(context.TODO(), metav1.ListOptions{})
+	list, err := client.K8sClient.NetworkingV1().Ingresses(public.Namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return "", err
 	}
@@ -83,8 +83,8 @@ func (client *Client) CreateService(public *models.ServicePublic) (string, error
 	}
 
 	public.ID = uuid.New().String()
-	manifest := CreateServiceManifest(public)
-	_, err = client.K8sClient.CoreV1().Services(public.Namespace).Create(context.TODO(), manifest, metav1.CreateOptions{})
+	manifest := CreateIngressManifest(public)
+	_, err = client.K8sClient.NetworkingV1().Ingresses(public.Namespace).Create(context.TODO(), manifest, metav1.CreateOptions{})
 	if err != nil {
 		return "", makeError(err)
 	}
@@ -92,9 +92,9 @@ func (client *Client) CreateService(public *models.ServicePublic) (string, error
 	return public.ID, nil
 }
 
-func (client *Client) UpdateService(public *models.ServicePublic) error {
+func (client *Client) UpdateIngress(public *models.IngressPublic) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to update k8s service %s. details: %s", public.Name, err)
+		return fmt.Errorf("failed to update k8s ingress %s. details: %s", public.Name, err)
 	}
 
 	if public.ID == "" {
@@ -114,7 +114,7 @@ func (client *Client) UpdateService(public *models.ServicePublic) error {
 		return makeError(fmt.Errorf("no such namespace %s", public.Namespace))
 	}
 
-	list, err := client.K8sClient.CoreV1().Services(public.Namespace).List(context.TODO(), metav1.ListOptions{})
+	list, err := client.K8sClient.NetworkingV1().Ingresses(public.Namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
@@ -122,8 +122,8 @@ func (client *Client) UpdateService(public *models.ServicePublic) error {
 	for _, item := range list.Items {
 		idLabel := GetLabel(item.ObjectMeta.Labels, keys.ManifestLabelID)
 		if idLabel == public.ID {
-			manifest := CreateServiceManifest(public)
-			_, err = client.K8sClient.CoreV1().Services(public.Namespace).Update(context.TODO(), manifest, metav1.UpdateOptions{})
+			manifest := CreateIngressManifest(public)
+			_, err = client.K8sClient.NetworkingV1().Ingresses(public.Namespace).Update(context.TODO(), manifest, metav1.UpdateOptions{})
 			if err != nil {
 				return makeError(err)
 			}
@@ -132,12 +132,12 @@ func (client *Client) UpdateService(public *models.ServicePublic) error {
 		}
 	}
 
-	return makeError(fmt.Errorf("no such service %s", public.Name))
+	return makeError(fmt.Errorf("no such ingress %s", public.Name))
 }
 
-func (client *Client) DeleteService(namespace, id string) error {
+func (client *Client) DeleteIngress(namespace, id string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete k8s service %s. details: %s", id, err)
+		return fmt.Errorf("failed to delete k8s ingress %s. details: %s", id, err)
 	}
 
 	if id == "" {
@@ -157,7 +157,7 @@ func (client *Client) DeleteService(namespace, id string) error {
 		return nil
 	}
 
-	list, err := client.K8sClient.CoreV1().Services(namespace).List(context.TODO(), metav1.ListOptions{})
+	list, err := client.K8sClient.NetworkingV1().Ingresses(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
@@ -165,7 +165,7 @@ func (client *Client) DeleteService(namespace, id string) error {
 	for _, item := range list.Items {
 		idLabel := GetLabel(item.ObjectMeta.Labels, keys.ManifestLabelID)
 		if idLabel == id {
-			err = client.K8sClient.CoreV1().Services(namespace).Delete(context.TODO(), item.Name, metav1.DeleteOptions{})
+			err = client.K8sClient.NetworkingV1().Ingresses(namespace).Delete(context.TODO(), item.Name, metav1.DeleteOptions{})
 			if err != nil {
 				return makeError(err)
 			}
@@ -174,5 +174,5 @@ func (client *Client) DeleteService(namespace, id string) error {
 		}
 	}
 
-	return makeError(fmt.Errorf("no such service %s", id))
+	return makeError(fmt.Errorf("no such ingress %s", id))
 }

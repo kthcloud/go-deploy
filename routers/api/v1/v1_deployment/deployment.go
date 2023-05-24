@@ -20,8 +20,8 @@ import (
 )
 
 func getURL(deployment *deploymentModels.Deployment) *string {
-	if len(deployment.Subsystems.Npm.ProxyHost.DomainNames) > 0 {
-		return &deployment.Subsystems.Npm.ProxyHost.DomainNames[0]
+	if len(deployment.Subsystems.K8s.Ingress.Host) > 0 {
+		return &deployment.Subsystems.K8s.Ingress.Host
 	}
 	return nil
 }

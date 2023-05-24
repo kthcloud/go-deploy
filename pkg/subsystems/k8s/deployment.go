@@ -2,7 +2,6 @@ package k8s
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	"go-deploy/pkg/subsystems/k8s/keys"
@@ -69,11 +68,11 @@ func (client *Client) ReadDeployment(namespace, id string) (*models.DeploymentPu
 	}
 
 	if id == "" {
-		return nil, makeError(errors.New("id required"))
+		return nil, nil
 	}
 
 	if namespace == "" {
-		return nil, makeError(errors.New("namespace required"))
+		return nil, nil
 	}
 
 	namespaceCreated, err := client.NamespaceCreated(namespace)
@@ -106,11 +105,11 @@ func (client *Client) CreateDeployment(public *models.DeploymentPublic) (string,
 	}
 
 	if public.Name == "" {
-		return "", makeError(errors.New("name required"))
+		return "", nil
 	}
 
 	if public.Namespace == "" {
-		return "", makeError(errors.New("namespace required"))
+		return "", nil
 	}
 
 	namespaceCreated, err := client.NamespaceCreated(public.Namespace)
@@ -152,11 +151,11 @@ func (client *Client) UpdateDeployment(public *models.DeploymentPublic) error {
 	}
 
 	if public.ID == "" {
-		return makeError(errors.New("name required"))
+		return nil
 	}
 
 	if public.Namespace == "" {
-		return makeError(errors.New("namespace required"))
+		return nil
 	}
 
 	namespaceCreated, err := client.NamespaceCreated(public.Namespace)
@@ -196,11 +195,11 @@ func (client *Client) DeleteDeployment(namespace, id string) error {
 	}
 
 	if id == "" {
-		return makeError(errors.New("id required"))
+		return nil
 	}
 
 	if namespace == "" {
-		return makeError(errors.New("namespace required"))
+		return nil
 	}
 
 	namespaceCreated, err := client.NamespaceCreated(namespace)
@@ -243,7 +242,7 @@ func (client *Client) RestartDeployment(public *models.DeploymentPublic) error {
 	}
 
 	if !namespaceCreated {
-		return makeError(fmt.Errorf("no such namespace %s", public.Namespace))
+		return nil
 	}
 
 	req := client.K8sClient.AppsV1().Deployments(public.Namespace)

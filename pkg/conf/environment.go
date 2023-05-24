@@ -91,12 +91,6 @@ type Environment struct {
 		Client *kubernetes.Clientset
 	} `yaml:"k8s"`
 
-	NPM struct {
-		Url      string `yaml:"url"`
-		User     string `yaml:"user"`
-		Password string `yaml:"password"`
-	} `yaml:"npm"`
-
 	Harbor struct {
 		Url           string `yaml:"url"`
 		User          string `yaml:"user"`
