@@ -173,6 +173,15 @@ func GetAllAvailableGPUs(excludedHosts, excludedGPUs []string) ([]GPU, error) {
 	return gpus, nil
 }
 
+func DeleteGPU(gpuID string) error {
+	err := models.GpuCollection.FindOneAndDelete(context.Background(), bson.D{{"id", gpuID}}).Err()
+	if err != nil {
+		return fmt.Errorf("failed to delete gpu. details: %s", err)
+	}
+
+	return nil
+}
+
 func AttachGPU(gpuID, vmID, user string, end time.Time) (bool, error) {
 	vm, err := vm2.GetByID(vmID)
 	if err != nil {
