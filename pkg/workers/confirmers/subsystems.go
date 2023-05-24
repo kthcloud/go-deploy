@@ -8,7 +8,6 @@ import (
 func getDeploymentCreatedConfirmers() []func(*deployment.Deployment) (bool, error) {
 	return []func(*deployment.Deployment) (bool, error){
 		K8sCreated,
-		NPMCreated,
 		HarborCreated,
 		GitHubCreated,
 	}
@@ -17,7 +16,6 @@ func getDeploymentCreatedConfirmers() []func(*deployment.Deployment) (bool, erro
 func getDeploymentDeletedConfirmers() []func(*deployment.Deployment) (bool, error) {
 	return []func(*deployment.Deployment) (bool, error){
 		K8sDeleted,
-		NPMDeleted,
 		HarborDeleted,
 		GitHubDeleted,
 	}

@@ -11,9 +11,7 @@ import (
 func TestCreateGoodK8s(t *testing.T) {
 	setup(t)
 
-	client, err := k8s.New(&k8s.ClientConf{
-		K8sAuth: conf.Env.K8s.Config,
-	})
+	client, err := k8s.New(conf.Env.K8s.Client)
 
 	if err != nil {
 		t.Fatalf(err.Error())
@@ -33,13 +31,13 @@ func TestCreateGoodK8s(t *testing.T) {
 	deploymentPublic := &models.DeploymentPublic{
 		Name:        "acc-test",
 		Namespace:   namespacePublic.Name,
-		DockerImage: conf.Env.DockerRegistry.Placeholder,
+		DockerImage: conf.Env.DockerRegistry.Placeholder.Project + "/" + conf.Env.DockerRegistry.Placeholder.Repository,
 		EnvVars:     nil,
 	}
 
 	// Create phase
 
-	err = client.CreateNamespace(namespacePublic)
+	_, err = client.CreateNamespace(namespacePublic)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -86,10 +84,7 @@ func TestCreateGoodK8s(t *testing.T) {
 func TestCreateBadK8s(t *testing.T) {
 	setup(t)
 
-	client, err := k8s.New(&k8s.ClientConf{
-		K8sAuth: conf.Env.K8s.Config,
-	})
-
+	client, err := k8s.New(conf.Env.K8s.Client)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -101,14 +96,14 @@ func TestCreateBadK8s(t *testing.T) {
 	deploymentPublic := &models.DeploymentPublic{
 		Name:        "acc-test",
 		Namespace:   namespacePublic.Name,
-		DockerImage: conf.Env.DockerRegistry.Placeholder,
+		DockerImage: conf.Env.DockerRegistry.Placeholder.Project + "/" + conf.Env.DockerRegistry.Placeholder.Repository,
 		EnvVars:     nil,
 	}
 
 	deploymentPublicBad := &models.DeploymentPublic{
 		Name:        "acc_test",
 		Namespace:   namespacePublic.Name,
-		DockerImage: conf.Env.DockerRegistry.Placeholder,
+		DockerImage: conf.Env.DockerRegistry.Placeholder.Project + "/" + conf.Env.DockerRegistry.Placeholder.Repository,
 		EnvVars:     nil,
 	}
 
@@ -140,12 +135,12 @@ func TestCreateBadK8s(t *testing.T) {
 	}
 
 	// create namespace twice
-	err = client.CreateNamespace(namespacePublic)
+	_, err = client.CreateNamespace(namespacePublic)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
 
-	err = client.CreateNamespace(namespacePublic)
+	_, err = client.CreateNamespace(namespacePublic)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}

@@ -2,7 +2,6 @@ package k8s
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	"go-deploy/pkg/subsystems/k8s/keys"
@@ -47,12 +46,12 @@ func (client *Client) waitNamespaceDeleted(ctx context.Context, resourceName str
 }
 
 func (client *Client) NamespaceCreated(name string) (bool, error) {
-	makeError := func(err error) error {
+	_ = func(err error) error {
 		return fmt.Errorf("failed to check if namespace %s is created. details: %s", name, err)
 	}
 
 	if name == "" {
-		return false, makeError(errors.New("name required"))
+		return false, nil
 	}
 
 	list, err := client.K8sClient.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
@@ -75,12 +74,12 @@ func (client *Client) NamespaceDeleted(name string) (bool, error) {
 }
 
 func (client *Client) ReadNamespace(id string) (*models.NamespacePublic, error) {
-	makeError := func(err error) error {
+	_ = func(err error) error {
 		return fmt.Errorf("failed to read namespace %s. details: %s", id, err)
 	}
 
 	if id == "" {
-		return nil, makeError(errors.New("id required"))
+		return nil, nil
 	}
 
 	list, err := client.K8sClient.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
@@ -99,12 +98,12 @@ func (client *Client) ReadNamespace(id string) (*models.NamespacePublic, error) 
 }
 
 func (client *Client) CreateNamespace(public *models.NamespacePublic) (string, error) {
-	makeError := func(err error) error {
+	_ = func(err error) error {
 		return fmt.Errorf("failed to create namespace %s. details: %s", public.Name, err)
 	}
 
 	if public.Name == "" {
-		return "", makeError(errors.New("name required"))
+		return "", nil
 	}
 
 	// find if namespace already exists by name label

@@ -25,21 +25,9 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 		return makeError(err)
 	}
 
-	k8sResult, err := internal_service.CreateK8s(params.Name, ownerID, params.Envs)
+	_, err = internal_service.CreateK8s(params.Name, ownerID, params.Envs)
 	if err != nil {
 		return makeError(err)
-	}
-
-	if !params.Private {
-		err = internal_service.CreateNPM(params.Name, k8sResult.Service.GetFQDN())
-		if err != nil {
-			return makeError(err)
-		}
-	} else {
-		err = internal_service.CreateFakeNPM(params.Name)
-		if err != nil {
-			return makeError(err)
-		}
 	}
 
 	if params.GitHub != nil {
@@ -147,11 +135,6 @@ func Delete(name string) error {
 		return makeError(err)
 	}
 
-	err = internal_service.DeleteNPM(name)
-	if err != nil {
-		return makeError(err)
-	}
-
 	err = internal_service.DeleteK8s(name)
 	if err != nil {
 		return makeError(err)
@@ -170,33 +153,20 @@ func Update(name string, deploymentUpdate *body.DeploymentUpdate) error {
 		return fmt.Errorf("failed to update deployment. details: %s", err)
 	}
 
-	update := deploymentModel.UpdateParams{}
-	update.FromDTO(deploymentUpdate)
+	params := &deploymentModel.UpdateParams{}
+	params.FromDTO(deploymentUpdate)
 
 	deployment, err := deploymentModel.GetByName(name)
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = internal_service.UpdateK8s(name, update.Envs)
+	err = internal_service.UpdateK8s(name, params)
 	if err != nil {
 		return makeError(err)
 	}
 
-	if update.Private != nil {
-		err = internal_service.DeleteNPM(name)
-		if err != nil {
-			return makeError(err)
-		}
-		if !*update.Private && deployment.Private {
-			err = internal_service.CreateNPM(name, deployment.Subsystems.K8s.Service.GetFQDN())
-			if err != nil {
-				return makeError(err)
-			}
-		}
-	}
-
-	err = deploymentModel.UpdateByID(deployment.ID, &update)
+	err = deploymentModel.UpdateByID(deployment.ID, params)
 	if err != nil {
 		return makeError(err)
 	}

@@ -8,22 +8,6 @@ import (
 	"log"
 )
 
-func NPMCreated(deployment *deployment.Deployment) (bool, error) {
-	_ = func(err error) error {
-		return fmt.Errorf("failed to check if npm setup is created for deployment %s. details: %s", deployment.Name, err)
-	}
-
-	return deployment.Subsystems.Npm.ProxyHost.ID != 0, nil
-}
-
-func NPMDeleted(deployment *deployment.Deployment) (bool, error) {
-	_ = func(err error) error {
-		return fmt.Errorf("failed to check if npm setup is deleted for deployment %s. details: %s", deployment.Name, err)
-	}
-
-	return deployment.Subsystems.Npm.ProxyHost.ID == 0, nil
-}
-
 func K8sCreated(deployment *deployment.Deployment) (bool, error) {
 	_ = func(err error) error {
 		return fmt.Errorf("failed to check if k8s setup is created for deployment %s. details: %s", deployment.Name, err)
@@ -32,7 +16,8 @@ func K8sCreated(deployment *deployment.Deployment) (bool, error) {
 	k8s := &deployment.Subsystems.K8s
 	return k8s.Namespace.Name != "" &&
 		k8s.Deployment.ID != "" &&
-		k8s.Service.ID != "", nil
+		k8s.Service.ID != "" &&
+		k8s.Ingress.ID != "", nil
 }
 
 func K8sDeleted(deployment *deployment.Deployment) (bool, error) {
@@ -43,7 +28,8 @@ func K8sDeleted(deployment *deployment.Deployment) (bool, error) {
 	k8s := &deployment.Subsystems.K8s
 	return k8s.Namespace.Name == "" &&
 		k8s.Deployment.ID == "" &&
-		k8s.Service.ID == "", nil
+		k8s.Service.ID == "" &&
+		k8s.Ingress.ID == "", nil
 }
 
 func HarborCreated(deployment *deployment.Deployment) (bool, error) {
