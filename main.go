@@ -31,7 +31,7 @@ func setup(context *app.Context) {
 	status_updaters.Setup(context)
 	jobs.Setup(context)
 
-	intializer.SynchronizeGPU()
+	intializer.SynchronizeGPUs()
 }
 
 func shutdown() {
