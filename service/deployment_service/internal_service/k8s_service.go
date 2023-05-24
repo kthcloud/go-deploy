@@ -213,20 +213,7 @@ func DeleteK8s(name string) error {
 		}
 	}
 
-	// only delete namespace if it contains no other deployments and services in k8s
 	if deployment.Subsystems.K8s.Namespace.ID != "" {
-		emptyNamespace, err := isNamespaceEmpty(client, deployment.Subsystems.K8s.Namespace.FullName)
-		if err != nil {
-			return makeError(err)
-		}
-
-		if emptyNamespace {
-			err = client.DeleteNamespace(deployment.Subsystems.K8s.Namespace.FullName)
-			if err != nil {
-				return makeError(err)
-			}
-		}
-
 		err = deploymentModel.UpdateSubsystemByName(name, "k8s", "namespace", nil)
 		if err != nil {
 			return makeError(err)
