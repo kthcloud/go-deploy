@@ -274,10 +274,6 @@ func DetachGPU(vmID, userID string) error {
 		return fmt.Errorf("vm is not attached to this gpu")
 	}
 
-	if gpu.Lease.UserID != userID {
-		return fmt.Errorf("vm is not attached to this user")
-	}
-
 	filter := bson.D{
 		{"id", gpu.ID},
 		{"lease.vmId", vmID},
