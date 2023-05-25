@@ -227,6 +227,32 @@ func DetachGpuSync(vmID, userID string) error {
 	return nil
 }
 
+func CanStartOnHost(vmID, host string) (bool, string, error) {
+	vm, err := vmModel.GetByID(vmID)
+	if err != nil {
+		return false, "", err
+	}
+
+	if vm == nil {
+		return false, "", fmt.Errorf("vm %s not found", vmID)
+	}
+
+	if vm.Subsystems.CS.VM.ID == "" {
+		return false, "", nil
+	}
+
+	canStart, err := internal_service.CanStartCS(vm.Subsystems.CS.VM.ID, host)
+	if err != nil {
+		return false, "", err
+	}
+
+	if !canStart {
+		return false, "Could not start VM with GPU: host has insufficient capacity", nil
+	}
+
+	return canStart, "", nil
+}
+
 func isGpuPrivileged(cardName string) bool {
 	for _, privilegedCard := range conf.Env.GPU.PrivilegedGPUs {
 		if cardName == privilegedCard {

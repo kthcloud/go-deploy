@@ -606,6 +606,24 @@ func DoCommandCS(vmID string, gpuID *string, command string) error {
 	return nil
 }
 
+func CanStartCS(vmID, host string) (bool, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to check if cs vm %s can be started on host %s. details: %s", vmID, host, err)
+	}
+
+	client, err := withClient()
+	if err != nil {
+		return false, makeError(err)
+	}
+
+	canStart, err := client.CanStartOn(vmID, host)
+	if err != nil {
+		return false, err
+	}
+
+	return canStart, nil
+}
+
 func createExtraConfig(gpu *gpu2.GPU) string {
 	data := fmt.Sprintf(`
 <devices> <hostdev mode='subsystem' type='pci' managed='yes'> <driver name='vfio' />

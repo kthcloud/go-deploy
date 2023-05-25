@@ -243,6 +243,35 @@ func (client *Client) DoVmCommand(id string, requiredHost *string, command comma
 	return nil
 }
 
+func (client *Client) CanStartOn(vmID, hostName string) (bool, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to check if vm %s can start on host %s. details: %s", vmID, hostName, err)
+	}
+
+	vm, _, err := client.CsClient.VirtualMachine.GetVirtualMachineByID(vmID)
+	if err != nil {
+		return false, makeError(err)
+	}
+
+	host, _, err := client.CsClient.Host.GetHostByName(hostName)
+	if err != nil {
+		return false, makeError(err)
+	}
+
+	vmMemoryByes := int64(vm.Memory) * 1024 * 1024
+
+	if host.Memoryallocatedbytes+vmMemoryByes > host.Memorytotal {
+		return false, nil
+	}
+
+	// this check SHOULD not be needed since over provisioning is allowed
+	//if host.Cpunumber+vm.Cpunumber > host.Cputotal {
+	//	return false, nil
+	//}
+
+	return true, nil
+}
+
 type cloudInit struct {
 	FQDN            string          `yaml:"fqdn"`
 	Users           []cloudInitUser `yaml:"users"`

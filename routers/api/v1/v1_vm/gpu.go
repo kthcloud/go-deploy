@@ -95,23 +95,23 @@ func AttachGPU(c *gin.Context) {
 		return
 	}
 
-	current, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin())
+	vm, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin())
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return
 	}
 
-	if current == nil {
+	if vm == nil {
 		context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, fmt.Sprintf("VM with ID %s not found", requestURI.VmID))
 		return
 	}
 
 	// if a request for "any" comes in while already attached to a gpu, assume it's a request to reattach
-	if gpuID == "any" && current.GpuID != "" {
-		gpuID = current.GpuID
+	if gpuID == "any" && vm.GpuID != "" {
+		gpuID = vm.GpuID
 	}
 
-	if current.GpuID != "" && current.GpuID != gpuID {
+	if vm.GpuID != "" && vm.GpuID != gpuID {
 		context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceNotCreated, "Resource already has a GPU attached")
 		return
 	}
@@ -162,12 +162,31 @@ func AttachGPU(c *gin.Context) {
 		return
 	}
 
+	// do this check to give a nice error to the user if the gpu cannot be attached
+	// otherwise it will be silently ignored
+	if len(gpus) == 1 {
+		canStartOnHost, reason, err := vm_service.CanStartOnHost(vm.ID, gpus[0].Host)
+		if err != nil {
+			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to check if VM can start on host: %s", err))
+			return
+		}
+
+		if !canStartOnHost {
+			if reason == "" {
+				reason = "VM cannot start on host"
+			}
+
+			context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceNotUpdated, reason)
+			return
+		}
+	}
+
 	gpuIds := make([]string, len(gpus))
 	for i, gpu := range gpus {
 		gpuIds[i] = gpu.ID
 	}
 
-	started, reason, err := vm_service.StartActivity(current.ID, vmModel.ActivityAttachingGPU)
+	started, reason, err := vm_service.StartActivity(vm.ID, vmModel.ActivityAttachingGPU)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to start activity: %s", err))
 		return
@@ -180,7 +199,7 @@ func AttachGPU(c *gin.Context) {
 
 	jobID := uuid.New().String()
 	err = job_service.Create(jobID, auth.UserID, jobModel.TypeAttachGpuToVM, map[string]interface{}{
-		"id":     current.ID,
+		"id":     vm.ID,
 		"gpuIds": gpuIds,
 		"userId": auth.UserID,
 	})
@@ -191,7 +210,7 @@ func AttachGPU(c *gin.Context) {
 	}
 
 	context.JSONResponse(http.StatusOK, body.GpuAttached{
-		ID:    current.ID,
+		ID:    vm.ID,
 		JobID: jobID,
 	})
 }
