@@ -273,9 +273,11 @@ func (client *Client) CanStartOn(vmID, hostName string) (bool, error) {
 }
 
 type cloudInit struct {
-	FQDN            string          `yaml:"fqdn"`
-	Users           []cloudInitUser `yaml:"users"`
-	SshPasswordAuth bool            `yaml:"ssh_pwauth"`
+	FQDN            string            `yaml:"fqdn"`
+	Users           []cloudInitUser   `yaml:"users"`
+	SshPasswordAuth bool              `yaml:"ssh_pwauth"`
+	RunCMD          []string          `yaml:"bootcmd"`
+	GrowPart        cloudInitGrowPart `yaml:"growpart"`
 }
 
 type cloudInitUser struct {
@@ -287,10 +289,19 @@ type cloudInitUser struct {
 	SshAuthorizedKeys []string `yaml:"ssh_authorized_keys"`
 }
 
+type cloudInitGrowPart struct {
+	Mode                   string   `yaml:"mode"`
+	Devices                []string `yaml:"devices"`
+	IgnoreGrowRootPassword bool     `yaml:"ignore_growroot_password"`
+}
+
 func createUserData(vmName, userSshPublicKey, adminSshPublicKey string) string {
 	init := cloudInit{}
 	init.FQDN = vmName
 	init.SshPasswordAuth = false
+	init.RunCMD = []string{
+		"sudo lvextend -r -l +100%FREE /dev/mapper/ubuntu--vg-ubuntu--lv",
+	}
 
 	// imitate mkpasswd --method=SHA-512 --rounds=4096
 	passwd := hashPassword("root", generateSalt())
@@ -312,6 +323,11 @@ func createUserData(vmName, userSshPublicKey, adminSshPublicKey string) string {
 		Shell:             "/bin/bash",
 		SshAuthorizedKeys: []string{adminSshPublicKey},
 	})
+
+	init.GrowPart = cloudInitGrowPart{
+		Mode:    "auto",
+		Devices: []string{"/dev/vda3"},
+	}
 
 	// marshal the struct to yaml
 	data, err := yaml.Marshal(init)
