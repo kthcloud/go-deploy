@@ -1,7 +1,6 @@
 package vm_service
 
 import (
-	"errors"
 	"fmt"
 	vmModel "go-deploy/models/sys/vm"
 	gpuModel "go-deploy/models/sys/vm/gpu"
@@ -138,7 +137,7 @@ func AttachGPU(gpuIDs []string, vmID, userID string) error {
 	oneHourFromNow := time.Now().Add(time.Hour)
 
 	var err error
-	for idx, gpuID := range gpuIDs {
+	for _, gpuID := range gpuIDs {
 		var attached bool
 		attached, err = gpuModel.Attach(gpuID, vmID, userID, oneHourFromNow)
 		if err != nil {
@@ -162,12 +161,7 @@ func AttachGPU(gpuIDs []string, vmID, userID string) error {
 		errString := err.Error()
 		if strings.Contains(errString, csInsufficientCapacityError) {
 			// if the host has insufficient capacity, we need to detach the gpu from the vm
-			// and attempt to attach it to another gpu, if we have any left to try
-
-			if idx == len(gpuIDs)-1 {
-				err = makeError(errors.New("insufficient capacity on host"))
-				break
-			}
+			// and attempt to attach it to another gpu
 
 			err = gpuModel.Detach(vmID, userID)
 			if err != nil {
