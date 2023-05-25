@@ -19,13 +19,13 @@ func GetAllGPUs(showOnlyAvailable bool, isPowerUser bool) ([]gpuModel.GPU, error
 	}
 
 	if showOnlyAvailable {
-		return gpuModel.GetAllAvailableGPUs(conf.Env.GPU.ExcludedHosts, excludedGPUs)
+		return gpuModel.GetAllAvailable(conf.Env.GPU.ExcludedHosts, excludedGPUs)
 	}
-	return gpuModel.GetAllGPUs(conf.Env.GPU.ExcludedHosts, excludedGPUs)
+	return gpuModel.GetAll(conf.Env.GPU.ExcludedHosts, excludedGPUs)
 }
 
 func GetGpuByID(gpuID string, isPowerUser bool) (*gpuModel.GPU, error) {
-	gpu, err := gpuModel.GetGpuByID(gpuID)
+	gpu, err := gpuModel.GetByID(gpuID)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func GetAnyAvailableGPU(isPowerUser bool) (*gpuModel.GPU, error) {
 		excludedGPUs = conf.Env.GPU.PrivilegedGPUs
 	}
 
-	availableGPUs, err := gpuModel.GetAllAvailableGPUs(conf.Env.GPU.ExcludedHosts, excludedGPUs)
+	availableGPUs, err := gpuModel.GetAllAvailable(conf.Env.GPU.ExcludedHosts, excludedGPUs)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func GetAllAvailableGPU(isPowerUser bool) ([]gpuModel.GPU, error) {
 		excludedGPUs = conf.Env.GPU.PrivilegedGPUs
 	}
 
-	availableGPUs, err := gpuModel.GetAllAvailableGPUs(conf.Env.GPU.ExcludedHosts, excludedGPUs)
+	availableGPUs, err := gpuModel.GetAllAvailable(conf.Env.GPU.ExcludedHosts, excludedGPUs)
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +140,7 @@ func AttachGPU(gpuIDs []string, vmID, userID string) error {
 	var err error
 	for idx, gpuID := range gpuIDs {
 		var attached bool
-		attached, err = gpuModel.AttachGPU(gpuID, vmID, userID, oneHourFromNow)
+		attached, err = gpuModel.Attach(gpuID, vmID, userID, oneHourFromNow)
 		if err != nil {
 			return makeError(err)
 		}
@@ -169,7 +169,7 @@ func AttachGPU(gpuIDs []string, vmID, userID string) error {
 				break
 			}
 
-			err = gpuModel.DetachGPU(vmID, userID)
+			err = gpuModel.Detach(vmID, userID)
 			if err != nil {
 				return makeError(err)
 			}
@@ -219,7 +219,7 @@ func DetachGpuSync(vmID, userID string) error {
 		return makeError(err)
 	}
 
-	err = gpuModel.DetachGPU(vmID, userID)
+	err = gpuModel.Detach(vmID, userID)
 	if err != nil {
 		return makeError(err)
 	}

@@ -80,7 +80,7 @@ func Delete(name string) error {
 		return makeError(err)
 	}
 
-	err = gpu.DetachGPU(vm.ID, vm.OwnerID)
+	err = gpu.Detach(vm.ID, vm.OwnerID)
 	if err != nil {
 		return makeError(err)
 	}

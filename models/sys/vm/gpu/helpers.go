@@ -7,7 +7,7 @@ import (
 	"github.com/goharbor/harbor/src/lib/log"
 	"go-deploy/models"
 	"go-deploy/models/dto/body"
-	vm2 "go-deploy/models/sys/vm"
+	vmModel "go-deploy/models/sys/vm"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -34,8 +34,8 @@ func (gpu *GPU) ToDto() body.GpuRead {
 	}
 }
 
-func CreateGPU(id, host string, data GpuData) error {
-	currentGPU, err := GetGpuByID(id)
+func Create(id, host string, data GpuData) error {
+	currentGPU, err := GetByID(id)
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func CreateGPU(id, host string, data GpuData) error {
 	return nil
 }
 
-func GetGpuByID(id string) (*GPU, error) {
+func GetByID(id string) (*GPU, error) {
 	var gpu GPU
 	err := models.GpuCollection.FindOne(context.TODO(), bson.D{{"id", id}}).Decode(&gpu)
 	if err != nil {
@@ -79,7 +79,7 @@ func GetGpuByID(id string) (*GPU, error) {
 	return &gpu, err
 }
 
-func GetAllGPUs(excludedHosts, excludedGPUs []string) ([]GPU, error) {
+func GetAll(excludedHosts, excludedGPUs []string) ([]GPU, error) {
 	if excludedHosts == nil {
 		excludedHosts = make([]string, 0)
 	}
@@ -107,7 +107,7 @@ func GetAllGPUs(excludedHosts, excludedGPUs []string) ([]GPU, error) {
 	return gpus, nil
 }
 
-func GetAllLeasedGPUs(excludedHosts, excludedGPUs []string) ([]GPU, error) {
+func GetAllLeased(excludedHosts, excludedGPUs []string) ([]GPU, error) {
 	// return gpus that are leased
 	if excludedHosts == nil {
 		excludedHosts = make([]string, 0)
@@ -141,7 +141,7 @@ func GetAllLeasedGPUs(excludedHosts, excludedGPUs []string) ([]GPU, error) {
 	return gpus, nil
 }
 
-func GetAllAvailableGPUs(excludedHosts, excludedGPUs []string) ([]GPU, error) {
+func GetAllAvailable(excludedHosts, excludedGPUs []string) ([]GPU, error) {
 	if excludedHosts == nil {
 		excludedHosts = make([]string, 0)
 	}
@@ -173,7 +173,7 @@ func GetAllAvailableGPUs(excludedHosts, excludedGPUs []string) ([]GPU, error) {
 	return gpus, nil
 }
 
-func DeleteGPU(gpuID string) error {
+func Delete(gpuID string) error {
 	err := models.GpuCollection.FindOneAndDelete(context.Background(), bson.D{{"id", gpuID}}).Err()
 	if err != nil {
 		return fmt.Errorf("failed to delete gpu. details: %s", err)
@@ -182,8 +182,8 @@ func DeleteGPU(gpuID string) error {
 	return nil
 }
 
-func AttachGPU(gpuID, vmID, user string, end time.Time) (bool, error) {
-	vm, err := vm2.GetByID(vmID)
+func Attach(gpuID, vmID, user string, end time.Time) (bool, error) {
+	vm, err := vmModel.GetByID(vmID)
 	if err != nil {
 		return false, err
 	}
@@ -192,7 +192,7 @@ func AttachGPU(gpuID, vmID, user string, end time.Time) (bool, error) {
 		return false, nil
 	}
 
-	gpu, err := GetGpuByID(gpuID)
+	gpu, err := GetByID(gpuID)
 	if err != nil {
 		return false, err
 	}
@@ -232,7 +232,7 @@ func AttachGPU(gpuID, vmID, user string, end time.Time) (bool, error) {
 		}
 	}
 
-	err = vm2.UpdateWithBsonByID(vmID, bson.D{{"gpuId", gpuID}})
+	err = vmModel.UpdateWithBsonByID(vmID, bson.D{{"gpuId", gpuID}})
 	if err != nil {
 		// remove lease, if this also fails, we are in a bad state...
 		_, _ = models.GpuCollection.UpdateOne(
@@ -247,8 +247,8 @@ func AttachGPU(gpuID, vmID, user string, end time.Time) (bool, error) {
 	return true, nil
 }
 
-func DetachGPU(vmID, userID string) error {
-	vm, err := vm2.GetByID(vmID)
+func Detach(vmID, userID string) error {
+	vm, err := vmModel.GetByID(vmID)
 	if err != nil {
 		return err
 	}
@@ -261,7 +261,7 @@ func DetachGPU(vmID, userID string) error {
 		return nil
 	}
 
-	gpu, err := GetGpuByID(vm.GpuID)
+	gpu, err := GetByID(vm.GpuID)
 	if err != nil {
 		return err
 	}
@@ -299,7 +299,7 @@ func DetachGPU(vmID, userID string) error {
 		return err
 	}
 
-	err = vm2.UpdateWithBsonByID(vmID, bson.D{{"gpuId", ""}})
+	err = vmModel.UpdateWithBsonByID(vmID, bson.D{{"gpuId", ""}})
 	if err != nil {
 		// remove lease, if this also fails, we are in a bad state...
 		_, _ = models.GpuCollection.UpdateOne(

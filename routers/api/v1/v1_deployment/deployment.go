@@ -282,14 +282,14 @@ func Delete(c *gin.Context) {
 		return
 	}
 
-	added, reason, err := deployment_service.StartActivity(currentDeployment.ID, deploymentModels.ActivityBeingDeleted)
+	started, reason, err := deployment_service.StartActivity(currentDeployment.ID, deploymentModels.ActivityBeingDeleted)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to start activity: %s", err))
 		return
 	}
 
-	if !added {
-		context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotUpdated, fmt.Sprintf("Could not transition to delete state: %s", reason))
+	if !started {
+		context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotUpdated, fmt.Sprintf("Could not delete resource: %s", reason))
 		return
 	}
 

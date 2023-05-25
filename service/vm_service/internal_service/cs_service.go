@@ -446,7 +446,7 @@ func AttachGPU(gpuID, vmID string) error {
 		return makeError(fmt.Errorf("vm is not created yet"))
 	}
 
-	gpu, err := gpu2.GetGpuByID(gpuID)
+	gpu, err := gpu2.GetByID(gpuID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -638,7 +638,7 @@ func createExtraConfig(gpu *gpu2.GPU) string {
 }
 
 func getRequiredHost(gpuID string) (*string, error) {
-	gpu, err := gpu2.GetGpuByID(gpuID)
+	gpu, err := gpu2.GetByID(gpuID)
 	if err != nil {
 		return nil, err
 	}
