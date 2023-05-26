@@ -75,6 +75,10 @@ func GetNext() (*Job, error) {
 	var job Job
 	err := models.JobCollection.FindOneAndUpdate(context.TODO(), filter, update, opts).Decode(&job)
 	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
+
 		return nil, err
 	}
 
@@ -89,6 +93,10 @@ func GetNextFailed() (*Job, error) {
 	var job Job
 	err := models.JobCollection.FindOneAndUpdate(context.TODO(), filter, update, opts).Decode(&job)
 	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
+
 		return nil, err
 	}
 
