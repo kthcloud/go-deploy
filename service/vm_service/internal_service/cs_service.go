@@ -505,11 +505,11 @@ func DetachGPU(vmID string) error {
 	}
 
 	if vm == nil {
-		return makeError(fmt.Errorf("vm %s not found", vmID))
+		return nil
 	}
 
 	if vm.Subsystems.CS.VM.ID == "" {
-		return makeError(fmt.Errorf("vm is not created yet"))
+		return nil
 	}
 
 	// turn it off if it is on, but remember the status
