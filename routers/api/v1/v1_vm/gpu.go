@@ -173,7 +173,7 @@ func AttachGPU(c *gin.Context) {
 
 		if !canStartOnHost {
 			if reason == "" {
-				reason = "VM cannot start on host"
+				reason = "VM could not on the host"
 			}
 
 			context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceNotUpdated, reason)

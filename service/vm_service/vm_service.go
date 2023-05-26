@@ -75,6 +75,11 @@ func Delete(name string) error {
 		return nil
 	}
 
+	err = vmModel.AddActivity(vm.ID, vmModel.ActivityBeingDeleted)
+	if err != nil {
+		return makeError(err)
+	}
+
 	err = internal_service.DeleteCS(name)
 	if err != nil {
 		return makeError(err)

@@ -92,7 +92,7 @@ func CreateCS(params *vmModel.CreateParams) (*CsCreated, error) {
 		id, err := client.CreateVM(&csModels.VmPublic{
 			Name:              params.Name,
 			ServiceOfferingID: csServiceOffering.ID,
-			TemplateID:        "fb6b6b11-6196-42d9-a12d-038bdeecb6f6", // deploy-template-cloud-init-ubuntu2204, temporary
+			TemplateID:        "e1eeb88b-e4d8-49e9-b064-fb4e82fa4bc8", // deploy-template-cloud-init-ubuntu2204, temporary
 			Tags: []csModels.Tag{
 				{Key: "name", Value: params.Name},
 				{Key: "managedBy", Value: conf.Env.Manager},
@@ -606,22 +606,61 @@ func DoCommandCS(vmID string, gpuID *string, command string) error {
 	return nil
 }
 
-func CanStartCS(vmID, host string) (bool, error) {
+func CanStartCS(vmID, hostName string) (bool, string, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if cs vm %s can be started on host %s. details: %s", vmID, host, err)
+		return fmt.Errorf("failed to check if cs vm %s can be started on host %s. details: %s", vmID, hostName, err)
 	}
 
 	client, err := withClient()
 	if err != nil {
-		return false, makeError(err)
+		return false, "", makeError(err)
 	}
 
-	canStart, err := client.CanStartOn(vmID, host)
+	hasCapacity, err := client.HasCapacity(vmID, hostName)
 	if err != nil {
-		return false, err
+		return false, "", err
 	}
 
-	return canStart, nil
+	if !hasCapacity {
+		return false, "Host doesn't have capacity", nil
+	}
+
+	correctState, reason, err := HostInCorrectState(hostName)
+	if err != nil {
+		return false, "", err
+	}
+
+	if !correctState {
+		return false, reason, nil
+	}
+
+	return true, "", nil
+}
+
+func HostInCorrectState(hostName string) (bool, string, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to check if host %s is in correct state. details: %s", hostName, err)
+	}
+
+	client, err := withClient()
+	if err != nil {
+		return false, "", makeError(err)
+	}
+
+	host, err := client.ReadHostByName(hostName)
+	if err != nil {
+		return false, "", makeError(err)
+	}
+
+	if host.State != "Up" {
+		return false, "Host is not up", nil
+	}
+
+	if host.ResourceState != "Enabled" {
+		return false, "Host is not enabled", nil
+	}
+
+	return true, "", nil
 }
 
 func createExtraConfig(gpu *gpu2.GPU) string {

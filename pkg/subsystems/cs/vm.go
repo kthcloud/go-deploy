@@ -243,7 +243,7 @@ func (client *Client) DoVmCommand(id string, requiredHost *string, command comma
 	return nil
 }
 
-func (client *Client) CanStartOn(vmID, hostName string) (bool, error) {
+func (client *Client) HasCapacity(vmID, hostName string) (bool, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check if vm %s can start on host %s. details: %s", vmID, hostName, err)
 	}
@@ -276,7 +276,7 @@ type cloudInit struct {
 	FQDN            string            `yaml:"fqdn"`
 	Users           []cloudInitUser   `yaml:"users"`
 	SshPasswordAuth bool              `yaml:"ssh_pwauth"`
-	RunCMD          []string          `yaml:"bootcmd"`
+	RunCMD          []string          `yaml:"runcmd"`
 	GrowPart        cloudInitGrowPart `yaml:"growpart"`
 }
 
@@ -300,7 +300,8 @@ func createUserData(vmName, userSshPublicKey, adminSshPublicKey string) string {
 	init.FQDN = vmName
 	init.SshPasswordAuth = false
 	init.RunCMD = []string{
-		"sudo lvextend -r -l +100%FREE /dev/mapper/ubuntu--vg-ubuntu--lv",
+		"sudo mkdir /home/deploy",
+		"sudo /usr/sbin/deploy-init.sh | /home/deploy/deploy-init-result",
 	}
 
 	// imitate mkpasswd --method=SHA-512 --rounds=4096
