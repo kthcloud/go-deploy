@@ -6,6 +6,7 @@ import (
 	gpuModel "go-deploy/models/sys/vm/gpu"
 	"go-deploy/pkg/conf"
 	"go-deploy/service/vm_service/internal_service"
+	"log"
 	"sort"
 	"strings"
 	"time"
@@ -26,11 +27,18 @@ func GetAllGPUs(showOnlyAvailable bool, isPowerUser bool) ([]gpuModel.GPU, error
 		// check if attached in cloudstack
 		availableGPUs := make([]gpuModel.GPU, 0)
 		for _, gpu := range dbAvailableGPUs {
-			inUse, err := isGpuInUse(gpu.Host, gpu.Data.Bus)
-			if !inUse && err == nil {
+			available, err := isGpuAvailable(gpu.Host, gpu.Data.Bus)
+			if err != nil {
+				log.Println("error checking if gpu is in use. details: ", err)
+				continue
+			}
+
+			if available {
 				availableGPUs = append(availableGPUs, gpu)
 			}
 		}
+
+		return availableGPUs, nil
 	}
 	return gpuModel.GetAll(conf.Env.GPU.ExcludedHosts, excludedGPUs)
 }
@@ -63,8 +71,7 @@ func GetGpuByID(gpuID string, isPowerUser bool) (*gpuModel.GPU, error) {
 }
 
 func IsGpuAvailable(gpu *gpuModel.GPU) (bool, error) {
-	inUse, err := isGpuInUse(gpu.Host, gpu.Data.Bus)
-	return !inUse, err
+	return isGpuAvailable(gpu.Host, gpu.Data.Bus)
 }
 
 func GetAnyAvailableGPU(isPowerUser bool) (*gpuModel.GPU, error) {
@@ -85,12 +92,12 @@ func GetAnyAvailableGPU(isPowerUser bool) (*gpuModel.GPU, error) {
 
 	for _, gpu := range availableGPUs {
 		// check if attached in cloudstack
-		inUse, err := isGpuInUse(gpu.Host, gpu.Data.Bus)
+		available, err := isGpuAvailable(gpu.Host, gpu.Data.Bus)
 		if err != nil {
 			return nil, err
 		}
 
-		if !inUse {
+		if available {
 			return &gpu, nil
 		}
 	}
@@ -104,30 +111,29 @@ func GetAllAvailableGPU(isPowerUser bool) ([]gpuModel.GPU, error) {
 		excludedGPUs = conf.Env.GPU.PrivilegedGPUs
 	}
 
-	availableGPUs, err := gpuModel.GetAllAvailable(conf.Env.GPU.ExcludedHosts, excludedGPUs)
+	dbAvailableGPUs, err := gpuModel.GetAllAvailable(conf.Env.GPU.ExcludedHosts, excludedGPUs)
 	if err != nil {
 		return nil, err
 	}
 
 	// sort available gpus by host
-	sort.Slice(availableGPUs, func(i, j int) bool {
-		return availableGPUs[i].Host < availableGPUs[j].Host
+	sort.Slice(dbAvailableGPUs, func(i, j int) bool {
+		return dbAvailableGPUs[i].Host < dbAvailableGPUs[j].Host
 	})
 
-	var notInUseGPUs []gpuModel.GPU
-	for _, gpu := range availableGPUs {
-		// check if attached in cloudstack
-		inUse, err := isGpuInUse(gpu.Host, gpu.Data.Bus)
+	var availableGPUs []gpuModel.GPU
+	for _, gpu := range dbAvailableGPUs {
+		available, err := isGpuAvailable(gpu.Host, gpu.Data.Bus)
 		if err != nil {
 			return nil, err
 		}
 
-		if !inUse {
-			notInUseGPUs = append(notInUseGPUs, gpu)
+		if available {
+			availableGPUs = append(availableGPUs, gpu)
 		}
 	}
 
-	return notInUseGPUs, nil
+	return availableGPUs, nil
 }
 
 func AttachGPU(gpuIDs []string, vmID, userID string) error {
@@ -141,6 +147,24 @@ func AttachGPU(gpuIDs []string, vmID, userID string) error {
 
 	var err error
 	for _, gpuID := range gpuIDs {
+		gpu, err := gpuModel.GetByID(gpuID)
+		if err != nil {
+			return makeError(err)
+		}
+
+		if gpu == nil {
+			continue
+		}
+
+		available, err := isGpuAvailable(gpu.Host, gpu.Data.Bus)
+		if err != nil {
+			return makeError(err)
+		}
+
+		if !available {
+			continue
+		}
+
 		var attached bool
 		attached, err = gpuModel.Attach(gpuID, vmID, userID, oneHourFromNow)
 		if err != nil {
@@ -238,16 +262,16 @@ func CanStartOnHost(vmID, host string) (bool, string, error) {
 		return false, "", nil
 	}
 
-	canStart, err := internal_service.CanStartCS(vm.Subsystems.CS.VM.ID, host)
+	canStart, reason, err := internal_service.CanStartCS(vm.Subsystems.CS.VM.ID, host)
 	if err != nil {
 		return false, "", err
 	}
 
 	if !canStart {
-		return false, "Could not start VM with GPU: host has insufficient capacity", nil
+		return false, reason, nil
 	}
 
-	return canStart, "", nil
+	return true, "", nil
 }
 
 func isGpuPrivileged(cardName string) bool {
@@ -260,15 +284,16 @@ func isGpuPrivileged(cardName string) bool {
 	return false
 }
 
-func isGpuInUse(hostName, bus string) (bool, error) {
+func isGpuAvailable(hostName, bus string) (bool, error) {
 	attached, err := internal_service.IsGpuAttachedCS(hostName, bus)
 	if err != nil {
 		return false, err
 	}
 
-	if attached {
-		return true, nil
+	correctState, _, err := internal_service.HostInCorrectState(hostName)
+	if err != nil {
+		return false, err
 	}
 
-	return false, nil
+	return !attached && correctState, nil
 }

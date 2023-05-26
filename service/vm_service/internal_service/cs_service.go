@@ -606,40 +606,61 @@ func DoCommandCS(vmID string, gpuID *string, command string) error {
 	return nil
 }
 
-func CanStartCS(vmID, host string) (bool, error) {
+func CanStartCS(vmID, hostName string) (bool, string, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if cs vm %s can be started on host %s. details: %s", vmID, host, err)
+		return fmt.Errorf("failed to check if cs vm %s can be started on host %s. details: %s", vmID, hostName, err)
 	}
 
 	client, err := withClient()
 	if err != nil {
-		return false, makeError(err)
+		return false, "", makeError(err)
 	}
 
-	canStart, err := client.CanStartOn(vmID, host)
+	hasCapacity, err := client.HasCapacity(vmID, hostName)
 	if err != nil {
-		return false, err
+		return false, "", err
 	}
 
-	return canStart, nil
+	if !hasCapacity {
+		return false, "Host doesn't have capacity", nil
+	}
+
+	correctState, reason, err := HostInCorrectState(hostName)
+	if err != nil {
+		return false, "", err
+	}
+
+	if !correctState {
+		return false, reason, nil
+	}
+
+	return true, "", nil
 }
 
-func GetHostStateCS(host string) (string, error) {
+func HostInCorrectState(hostName string) (bool, string, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to get status of host %s. details: %s", host, err)
+		return fmt.Errorf("failed to check if host %s is in correct state. details: %s", hostName, err)
 	}
 
 	client, err := withClient()
 	if err != nil {
-		return "", makeError(err)
+		return false, "", makeError(err)
 	}
 
-	resourceState, err := client.GetHostResourceState(host)
+	host, err := client.ReadHostByName(hostName)
 	if err != nil {
-		return "", err
+		return false, "", makeError(err)
 	}
 
-	return resourceState, nil
+	if host.State != "Up" {
+		return false, "Host is not up", nil
+	}
+
+	if host.ResourceState != "Enabled" {
+		return false, "Host is not enabled", nil
+	}
+
+	return true, "", nil
 }
 
 func createExtraConfig(gpu *gpu2.GPU) string {

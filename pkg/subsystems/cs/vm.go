@@ -243,7 +243,7 @@ func (client *Client) DoVmCommand(id string, requiredHost *string, command comma
 	return nil
 }
 
-func (client *Client) CanStartOn(vmID, hostName string) (bool, error) {
+func (client *Client) HasCapacity(vmID, hostName string) (bool, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check if vm %s can start on host %s. details: %s", vmID, hostName, err)
 	}
