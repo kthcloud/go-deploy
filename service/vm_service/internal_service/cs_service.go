@@ -92,7 +92,7 @@ func CreateCS(params *vmModel.CreateParams) (*CsCreated, error) {
 		id, err := client.CreateVM(&csModels.VmPublic{
 			Name:              params.Name,
 			ServiceOfferingID: csServiceOffering.ID,
-			TemplateID:        "fb6b6b11-6196-42d9-a12d-038bdeecb6f6", // deploy-template-cloud-init-ubuntu2204, temporary
+			TemplateID:        "e1eeb88b-e4d8-49e9-b064-fb4e82fa4bc8", // deploy-template-cloud-init-ubuntu2204, temporary
 			Tags: []csModels.Tag{
 				{Key: "name", Value: params.Name},
 				{Key: "managedBy", Value: conf.Env.Manager},
@@ -622,6 +622,24 @@ func CanStartCS(vmID, host string) (bool, error) {
 	}
 
 	return canStart, nil
+}
+
+func GetHostStateCS(host string) (string, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to get status of host %s. details: %s", host, err)
+	}
+
+	client, err := withClient()
+	if err != nil {
+		return "", makeError(err)
+	}
+
+	resourceState, err := client.GetHostResourceState(host)
+	if err != nil {
+		return "", err
+	}
+
+	return resourceState, nil
 }
 
 func createExtraConfig(gpu *gpu2.GPU) string {
