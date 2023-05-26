@@ -161,6 +161,10 @@ func Update(name string, deploymentUpdate *body.DeploymentUpdate) error {
 		return makeError(err)
 	}
 
+	if deployment == nil {
+		return nil
+	}
+
 	err = internal_service.UpdateK8s(name, params)
 	if err != nil {
 		return makeError(err)
