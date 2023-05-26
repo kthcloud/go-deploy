@@ -1,15 +1,15 @@
 package body
 
 type PublicKey struct {
-	Name string `json:"name" binding:"required,rfc1035,min=1,max=30"`
+	Name string `json:"name" binding:"required,min=1,max=30"`
 	Key  string `json:"key" binding:"required,ssh_public_key"`
 }
 
 type Quota struct {
 	Deployments int `json:"deployments"`
 	CpuCores    int `json:"cpuCores"`
-	RAM      int `json:"ram"`
-	DiskSize int `json:"diskSize"`
+	RAM         int `json:"ram"`
+	DiskSize    int `json:"diskSize"`
 }
 
 type UserRead struct {

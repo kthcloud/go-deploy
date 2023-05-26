@@ -65,7 +65,7 @@ func vmConfirmer(ctx *app.Context) {
 		excludedHosts := conf.Env.GPU.ExcludedHosts
 
 		// check if gpu lease is expired
-		leased, _ := gpuModel.GetAllLeasedGPUs(excludedHosts, nil)
+		leased, _ := gpuModel.GetAllLeased(excludedHosts, nil)
 		for _, gpu := range leased {
 			if gpu.Lease.End.Before(time.Now()) {
 				log.Printf("lease for gpu %s (%s) ran out, returning it...\n", gpu.ID, gpu.Data.Name)

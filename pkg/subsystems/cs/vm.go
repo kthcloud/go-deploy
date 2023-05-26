@@ -243,10 +243,41 @@ func (client *Client) DoVmCommand(id string, requiredHost *string, command comma
 	return nil
 }
 
+func (client *Client) CanStartOn(vmID, hostName string) (bool, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to check if vm %s can start on host %s. details: %s", vmID, hostName, err)
+	}
+
+	vm, _, err := client.CsClient.VirtualMachine.GetVirtualMachineByID(vmID)
+	if err != nil {
+		return false, makeError(err)
+	}
+
+	host, _, err := client.CsClient.Host.GetHostByName(hostName)
+	if err != nil {
+		return false, makeError(err)
+	}
+
+	vmMemoryByes := int64(vm.Memory) * 1024 * 1024
+
+	if host.Memoryallocatedbytes+vmMemoryByes > host.Memorytotal {
+		return false, nil
+	}
+
+	// this check SHOULD not be needed since over provisioning is allowed
+	//if host.Cpunumber+vm.Cpunumber > host.Cputotal {
+	//	return false, nil
+	//}
+
+	return true, nil
+}
+
 type cloudInit struct {
-	FQDN            string          `yaml:"fqdn"`
-	Users           []cloudInitUser `yaml:"users"`
-	SshPasswordAuth bool            `yaml:"ssh_pwauth"`
+	FQDN            string            `yaml:"fqdn"`
+	Users           []cloudInitUser   `yaml:"users"`
+	SshPasswordAuth bool              `yaml:"ssh_pwauth"`
+	RunCMD          []string          `yaml:"bootcmd"`
+	GrowPart        cloudInitGrowPart `yaml:"growpart"`
 }
 
 type cloudInitUser struct {
@@ -258,10 +289,19 @@ type cloudInitUser struct {
 	SshAuthorizedKeys []string `yaml:"ssh_authorized_keys"`
 }
 
+type cloudInitGrowPart struct {
+	Mode                   string   `yaml:"mode"`
+	Devices                []string `yaml:"devices"`
+	IgnoreGrowRootPassword bool     `yaml:"ignore_growroot_password"`
+}
+
 func createUserData(vmName, userSshPublicKey, adminSshPublicKey string) string {
 	init := cloudInit{}
 	init.FQDN = vmName
 	init.SshPasswordAuth = false
+	init.RunCMD = []string{
+		"sudo lvextend -r -l +100%FREE /dev/mapper/ubuntu--vg-ubuntu--lv",
+	}
 
 	// imitate mkpasswd --method=SHA-512 --rounds=4096
 	passwd := hashPassword("root", generateSalt())
@@ -283,6 +323,11 @@ func createUserData(vmName, userSshPublicKey, adminSshPublicKey string) string {
 		Shell:             "/bin/bash",
 		SshAuthorizedKeys: []string{adminSshPublicKey},
 	})
+
+	init.GrowPart = cloudInitGrowPart{
+		Mode:    "auto",
+		Devices: []string{"/dev/vda3"},
+	}
 
 	// marshal the struct to yaml
 	data, err := yaml.Marshal(init)

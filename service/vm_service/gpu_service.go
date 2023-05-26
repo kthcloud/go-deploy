@@ -1,7 +1,6 @@
 package vm_service
 
 import (
-	"errors"
 	"fmt"
 	vmModel "go-deploy/models/sys/vm"
 	gpuModel "go-deploy/models/sys/vm/gpu"
@@ -19,13 +18,25 @@ func GetAllGPUs(showOnlyAvailable bool, isPowerUser bool) ([]gpuModel.GPU, error
 	}
 
 	if showOnlyAvailable {
-		return gpuModel.GetAllAvailableGPUs(conf.Env.GPU.ExcludedHosts, excludedGPUs)
+		dbAvailableGPUs, err := gpuModel.GetAllAvailable(conf.Env.GPU.ExcludedHosts, excludedGPUs)
+		if err != nil {
+			return nil, err
+		}
+
+		// check if attached in cloudstack
+		availableGPUs := make([]gpuModel.GPU, 0)
+		for _, gpu := range dbAvailableGPUs {
+			inUse, err := isGpuInUse(gpu.Host, gpu.Data.Bus)
+			if !inUse && err == nil {
+				availableGPUs = append(availableGPUs, gpu)
+			}
+		}
 	}
-	return gpuModel.GetAllGPUs(conf.Env.GPU.ExcludedHosts, excludedGPUs)
+	return gpuModel.GetAll(conf.Env.GPU.ExcludedHosts, excludedGPUs)
 }
 
 func GetGpuByID(gpuID string, isPowerUser bool) (*gpuModel.GPU, error) {
-	gpu, err := gpuModel.GetGpuByID(gpuID)
+	gpu, err := gpuModel.GetByID(gpuID)
 	if err != nil {
 		return nil, err
 	}
@@ -52,17 +63,8 @@ func GetGpuByID(gpuID string, isPowerUser bool) (*gpuModel.GPU, error) {
 }
 
 func IsGpuAvailable(gpu *gpuModel.GPU) (bool, error) {
-	// check if attached in cloudstack
-	attached, err := internal_service.IsGpuAttachedCS(gpu.Host, gpu.Data.Bus)
-	if err != nil {
-		return false, err
-	}
-
-	if attached {
-		return false, nil
-	}
-
-	return true, nil
+	inUse, err := isGpuInUse(gpu.Host, gpu.Data.Bus)
+	return !inUse, err
 }
 
 func GetAnyAvailableGPU(isPowerUser bool) (*gpuModel.GPU, error) {
@@ -71,7 +73,7 @@ func GetAnyAvailableGPU(isPowerUser bool) (*gpuModel.GPU, error) {
 		excludedGPUs = conf.Env.GPU.PrivilegedGPUs
 	}
 
-	availableGPUs, err := gpuModel.GetAllAvailableGPUs(conf.Env.GPU.ExcludedHosts, excludedGPUs)
+	availableGPUs, err := gpuModel.GetAllAvailable(conf.Env.GPU.ExcludedHosts, excludedGPUs)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +104,7 @@ func GetAllAvailableGPU(isPowerUser bool) ([]gpuModel.GPU, error) {
 		excludedGPUs = conf.Env.GPU.PrivilegedGPUs
 	}
 
-	availableGPUs, err := gpuModel.GetAllAvailableGPUs(conf.Env.GPU.ExcludedHosts, excludedGPUs)
+	availableGPUs, err := gpuModel.GetAllAvailable(conf.Env.GPU.ExcludedHosts, excludedGPUs)
 	if err != nil {
 		return nil, err
 	}
@@ -138,9 +140,9 @@ func AttachGPU(gpuIDs []string, vmID, userID string) error {
 	oneHourFromNow := time.Now().Add(time.Hour)
 
 	var err error
-	for idx, gpuID := range gpuIDs {
+	for _, gpuID := range gpuIDs {
 		var attached bool
-		attached, err = gpuModel.AttachGPU(gpuID, vmID, userID, oneHourFromNow)
+		attached, err = gpuModel.Attach(gpuID, vmID, userID, oneHourFromNow)
 		if err != nil {
 			return makeError(err)
 		}
@@ -162,14 +164,9 @@ func AttachGPU(gpuIDs []string, vmID, userID string) error {
 		errString := err.Error()
 		if strings.Contains(errString, csInsufficientCapacityError) {
 			// if the host has insufficient capacity, we need to detach the gpu from the vm
-			// and attempt to attach it to another gpu, if we have any left to try
+			// and attempt to attach it to another gpu
 
-			if idx == len(gpuIDs)-1 {
-				err = makeError(errors.New("insufficient capacity on host"))
-				break
-			}
-
-			err = gpuModel.DetachGPU(vmID, userID)
+			err = gpuModel.Detach(vmID, userID)
 			if err != nil {
 				return makeError(err)
 			}
@@ -219,12 +216,38 @@ func DetachGpuSync(vmID, userID string) error {
 		return makeError(err)
 	}
 
-	err = gpuModel.DetachGPU(vmID, userID)
+	err = gpuModel.Detach(vmID, userID)
 	if err != nil {
 		return makeError(err)
 	}
 
 	return nil
+}
+
+func CanStartOnHost(vmID, host string) (bool, string, error) {
+	vm, err := vmModel.GetByID(vmID)
+	if err != nil {
+		return false, "", err
+	}
+
+	if vm == nil {
+		return false, "", fmt.Errorf("vm %s not found", vmID)
+	}
+
+	if vm.Subsystems.CS.VM.ID == "" {
+		return false, "", nil
+	}
+
+	canStart, err := internal_service.CanStartCS(vm.Subsystems.CS.VM.ID, host)
+	if err != nil {
+		return false, "", err
+	}
+
+	if !canStart {
+		return false, "Could not start VM with GPU: host has insufficient capacity", nil
+	}
+
+	return canStart, "", nil
 }
 
 func isGpuPrivileged(cardName string) bool {
