@@ -41,6 +41,7 @@ func CreateJob(id, userID, jobType string, args map[string]interface{}) error {
 		Args:      args,
 		CreatedAt: time.Now(),
 		Status:    StatusPending,
+		ErrorLogs: make([]string, 0),
 	}
 
 	_, err = models.JobCollection.InsertOne(context.TODO(), job)
