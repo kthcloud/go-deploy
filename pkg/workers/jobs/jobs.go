@@ -96,10 +96,6 @@ func attachGpuToVM(job *jobModel.Job) {
 	}
 
 	vmID := job.Args["id"].(string)
-
-	test := job.Args["gpuIds"]
-	log.Println(test)
-
 	var gpuIDs []string
 	err = mapstructure.Decode(job.Args["gpuIds"].(interface{}), &gpuIDs)
 	if err != nil {
