@@ -82,6 +82,7 @@ func CreateK8s(name, userID string, envs []deploymentModel.Env) (*K8sResult, err
 	}
 
 	if deployment == nil {
+		log.Println("deployment", name, "not found for k8s setup assuming it was deleted")
 		return nil, nil
 	}
 
@@ -206,6 +207,7 @@ func DeleteK8s(name string) error {
 	}
 
 	if deployment == nil {
+		log.Println("deployment", name, "not found for k8s deletion. assuming it was deleted")
 		return nil
 	}
 
@@ -270,6 +272,7 @@ func UpdateK8s(name string, params *deploymentModel.UpdateParams) error {
 	}
 
 	if deployment == nil {
+		log.Println("deployment", name, "not found for k8s update assuming it was deleted")
 		return nil
 	}
 

@@ -75,6 +75,7 @@ func CreateHarbor(name, userID string) error {
 	}
 
 	if deployment == nil {
+		log.Println("deployment", name, "not found for harbor setup. assuming it was deleted")
 		return nil
 	}
 
@@ -200,6 +201,7 @@ func DeleteHarbor(name string) error {
 	}
 
 	if deployment == nil {
+		log.Println("deployment", name, "not found for harbor deletion. assuming it was deleted")
 		return nil
 	}
 

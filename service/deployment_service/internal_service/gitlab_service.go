@@ -24,6 +24,7 @@ func CreateBuild(id string, params *deploymentModel.BuildParams) error {
 	}
 
 	if deployment == nil {
+		log.Println("deployment", id, "not found for gitlab build. assuming it was deleted")
 		return nil
 	}
 

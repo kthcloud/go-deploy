@@ -327,6 +327,7 @@ func GetExternalPortMapper(vmID string) (map[string]int, error) {
 	}
 
 	if vm == nil {
+		log.Println("vm", vmID, "not found for when detaching getting external port mapper. assuming it was deleted")
 		return nil, nil
 	}
 
