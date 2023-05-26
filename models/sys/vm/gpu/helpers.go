@@ -14,16 +14,19 @@ import (
 	"time"
 )
 
-func (gpu *GPU) ToDto() body.GpuRead {
+func (gpu *GPU) ToDto(addUserInfo bool) body.GpuRead {
 	id := base64.StdEncoding.EncodeToString([]byte(gpu.ID))
 
 	var lease *body.GpuLease
 
 	if gpu.Lease.VmID != "" {
 		lease = &body.GpuLease{
-			VmID: gpu.Lease.VmID,
-			User: gpu.Lease.UserID,
-			End:  gpu.Lease.End,
+			End: gpu.Lease.End,
+		}
+
+		if addUserInfo {
+			lease.User = &gpu.Lease.UserID
+			lease.VmID = &gpu.Lease.VmID
 		}
 	}
 

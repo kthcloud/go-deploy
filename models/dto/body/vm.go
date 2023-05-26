@@ -74,8 +74,8 @@ type GpuDetached struct {
 }
 
 type GpuLease struct {
-	VmID string    `bson:"vmId" json:"vmId"`
-	User string    `bson:"user" json:"user"`
+	VmID *string   `bson:"vmId" json:"vmId,omitempty"`
+	User *string   `bson:"user" json:"user,omitempty"`
 	End  time.Time `bson:"end" json:"end"`
 }
 

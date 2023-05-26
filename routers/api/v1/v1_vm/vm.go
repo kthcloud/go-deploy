@@ -36,7 +36,7 @@ func getAllVMs(context *app.ClientContext) {
 			if err != nil {
 				log.Printf("error getting gpu by id: %s", err)
 			} else if gpu != nil {
-				gpuDTO := gpu.ToDto()
+				gpuDTO := gpu.ToDto(true)
 				gpuRead = &gpuDTO
 			}
 		}
@@ -74,7 +74,7 @@ func GetList(c *gin.Context) {
 
 	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err.Error()))
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
 		return
 	}
 
@@ -99,7 +99,7 @@ func GetList(c *gin.Context) {
 			if err != nil {
 				log.Printf("error getting gpu by id: %s", err)
 			} else if gpu != nil {
-				gpuDTO := gpu.ToDto()
+				gpuDTO := gpu.ToDto(true)
 				gpuRead = &gpuDTO
 			}
 		}
@@ -161,7 +161,7 @@ func Get(c *gin.Context) {
 		if err != nil {
 			log.Printf("error getting gpu by id: %s", err)
 		} else if gpu != nil {
-			gpuDTO := gpu.ToDto()
+			gpuDTO := gpu.ToDto(true)
 			gpuRead = &gpuDTO
 		}
 	}

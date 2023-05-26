@@ -54,7 +54,7 @@ func GetGpuList(c *gin.Context) {
 
 	dtoGPUs := make([]body.GpuRead, len(gpus))
 	for i, gpu := range gpus {
-		dtoGPUs[i] = gpu.ToDto()
+		dtoGPUs[i] = gpu.ToDto(false)
 	}
 
 	context.JSONResponse(200, dtoGPUs)
