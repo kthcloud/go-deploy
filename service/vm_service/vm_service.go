@@ -249,7 +249,7 @@ func CheckQuotaCreate(userID string, quota *user.Quota, createParams body.VmCrea
 	return true, "", nil
 }
 
-func CheckQuotaUpdate(userID string, quota *user.Quota, updateParams body.VmUpdate) (bool, string, error) {
+func CheckQuotaUpdate(userID, vmID string, quota *user.Quota, updateParams body.VmUpdate) (bool, string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check quota. details: %s", err)
 	}
@@ -259,14 +259,27 @@ func CheckQuotaUpdate(userID string, quota *user.Quota, updateParams body.VmUpda
 		return false, "", makeError(err)
 	}
 
+	if usage == nil {
+		return false, "", makeError(fmt.Errorf("usage not found"))
+	}
+
+	vm, err := vmModel.GetByID(vmID)
+	if err != nil {
+		return false, "", makeError(err)
+	}
+
+	if vm == nil {
+		return false, "", makeError(fmt.Errorf("vm not found"))
+	}
+
 	totalCpuCores := usage.CpuCores
 	if updateParams.CpuCores != nil {
-		totalCpuCores += *updateParams.CpuCores
+		totalCpuCores += *updateParams.CpuCores - vm.Specs.CpuCores
 	}
 
 	totalRam := usage.RAM
 	if updateParams.RAM != nil {
-		totalRam += *updateParams.RAM
+		totalRam += *updateParams.RAM - vm.Specs.RAM
 	}
 
 	if totalCpuCores > quota.CpuCores {

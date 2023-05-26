@@ -402,29 +402,18 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	current, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin())
+	vm, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin())
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, fmt.Sprintf("Failed to get vm: %s", err))
 		return
 	}
 
-	if current == nil {
+	if vm == nil {
 		context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, fmt.Sprintf("VM with id %s not found", requestURI.VmID))
 		return
 	}
 
-	started, reason, err := vm_service.StartActivity(current.ID, vmModel.ActivityBeingUpdated)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to start activity: %s", err))
-		return
-	}
-
-	if !started {
-		context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotReady, reason)
-		return
-	}
-
-	if current.OwnerID != auth.UserID && !auth.IsAdmin() {
+	if vm.OwnerID != auth.UserID && !auth.IsAdmin() {
 		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, "User is not allowed to update this resource")
 		return
 	}
@@ -440,7 +429,7 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	ok, reason, err := vm_service.CheckQuotaUpdate(auth.UserID, quota, requestBody)
+	ok, reason, err := vm_service.CheckQuotaUpdate(auth.UserID, vm.ID, quota, requestBody)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to check quota: %s", err))
 		return
@@ -451,9 +440,20 @@ func Update(c *gin.Context) {
 		return
 	}
 
+	started, reason, err := vm_service.StartActivity(vm.ID, vmModel.ActivityBeingUpdated)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to start activity: %s", err))
+		return
+	}
+
+	if !started {
+		context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotReady, reason)
+		return
+	}
+
 	jobID := uuid.New().String()
 	err = job_service.Create(jobID, auth.UserID, jobModel.TypeUpdateVM, map[string]interface{}{
-		"id":     current.ID,
+		"id":     vm.ID,
 		"update": requestBody,
 	})
 
@@ -463,7 +463,7 @@ func Update(c *gin.Context) {
 	}
 
 	context.JSONResponse(http.StatusOK, body.VmUpdated{
-		ID:    current.ID,
+		ID:    vm.ID,
 		JobID: jobID,
 	})
 }
