@@ -45,6 +45,10 @@ func fetchCsStatus(vm *vm.VM) (int, string, error) {
 		return status_codes.ResourceUnknown, unknownMsg, makeError(err)
 	}
 
+	if status == "" {
+		return status_codes.ResourceNotFound, status_codes.GetMsg(status_codes.ResourceNotFound), nil
+	}
+
 	var statusCode int
 	switch status {
 	case "Starting":

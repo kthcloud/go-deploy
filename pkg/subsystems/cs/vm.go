@@ -23,7 +23,7 @@ func (client *Client) ReadVM(id string) (*models.VmPublic, error) {
 	}
 
 	if id == "" {
-		return nil, fmt.Errorf("id required")
+		return nil, nil
 	}
 
 	vm, _, err := client.CsClient.VirtualMachine.GetVirtualMachineByID(id)
@@ -187,7 +187,12 @@ func (client *Client) GetVmStatus(id string) (string, error) {
 
 	vm, _, err := client.CsClient.VirtualMachine.GetVirtualMachineByID(id)
 	if err != nil {
-		return "", makeError(err)
+		errString := err.Error()
+		if !strings.Contains(errString, "not found") {
+			return "", makeError(err)
+		}
+
+		return "", nil
 	}
 
 	return vm.State, nil
