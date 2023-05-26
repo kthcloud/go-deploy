@@ -18,7 +18,19 @@ func GetAllGPUs(showOnlyAvailable bool, isPowerUser bool) ([]gpuModel.GPU, error
 	}
 
 	if showOnlyAvailable {
-		return gpuModel.GetAllAvailable(conf.Env.GPU.ExcludedHosts, excludedGPUs)
+		dbAvailableGPUs, err := gpuModel.GetAllAvailable(conf.Env.GPU.ExcludedHosts, excludedGPUs)
+		if err != nil {
+			return nil, err
+		}
+
+		// check if attached in cloudstack
+		availableGPUs := make([]gpuModel.GPU, 0)
+		for _, gpu := range dbAvailableGPUs {
+			inUse, err := isGpuInUse(gpu.Host, gpu.Data.Bus)
+			if !inUse && err == nil {
+				availableGPUs = append(availableGPUs, gpu)
+			}
+		}
 	}
 	return gpuModel.GetAll(conf.Env.GPU.ExcludedHosts, excludedGPUs)
 }
@@ -51,17 +63,8 @@ func GetGpuByID(gpuID string, isPowerUser bool) (*gpuModel.GPU, error) {
 }
 
 func IsGpuAvailable(gpu *gpuModel.GPU) (bool, error) {
-	// check if attached in cloudstack
-	attached, err := internal_service.IsGpuAttachedCS(gpu.Host, gpu.Data.Bus)
-	if err != nil {
-		return false, err
-	}
-
-	if attached {
-		return false, nil
-	}
-
-	return true, nil
+	inUse, err := isGpuInUse(gpu.Host, gpu.Data.Bus)
+	return !inUse, err
 }
 
 func GetAnyAvailableGPU(isPowerUser bool) (*gpuModel.GPU, error) {
