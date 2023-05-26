@@ -24,7 +24,7 @@ func assertParameters(job *jobModel.Job, params []string) error {
 func createVM(job *jobModel.Job) {
 	err := assertParameters(job, []string{"id", "ownerId", "params"})
 	if err != nil {
-		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+		_ = jobModel.MarkTerminated(job.ID, err.Error())
 		return
 	}
 
@@ -33,13 +33,13 @@ func createVM(job *jobModel.Job) {
 	var params body.VmCreate
 	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
 	if err != nil {
-		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+		_ = jobModel.MarkTerminated(job.ID, err.Error())
 		return
 	}
 
 	err = vm_service.Create(id, ownerID, &params)
 	if err != nil {
-		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+		_ = jobModel.MarkFailed(job.ID, err.Error())
 		return
 	}
 
@@ -49,7 +49,7 @@ func createVM(job *jobModel.Job) {
 func deleteVM(job *jobModel.Job) {
 	err := assertParameters(job, []string{"name"})
 	if err != nil {
-		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+		_ = jobModel.MarkTerminated(job.ID, err.Error())
 		return
 	}
 
@@ -57,7 +57,7 @@ func deleteVM(job *jobModel.Job) {
 
 	err = vm_service.Delete(name)
 	if err != nil {
-		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+		_ = jobModel.MarkFailed(job.ID, err.Error())
 		return
 	}
 
@@ -67,7 +67,7 @@ func deleteVM(job *jobModel.Job) {
 func updateVM(job *jobModel.Job) {
 	err := assertParameters(job, []string{"id", "update"})
 	if err != nil {
-		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+		_ = jobModel.MarkTerminated(job.ID, err.Error())
 		return
 	}
 
@@ -75,13 +75,13 @@ func updateVM(job *jobModel.Job) {
 	var update body.VmUpdate
 	err = mapstructure.Decode(job.Args["update"].(map[string]interface{}), &update)
 	if err != nil {
-		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+		_ = jobModel.MarkTerminated(job.ID, err.Error())
 		return
 	}
 
 	err = vm_service.Update(id, &update)
 	if err != nil {
-		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+		_ = jobModel.MarkFailed(job.ID, err.Error())
 		return
 	}
 
@@ -91,7 +91,7 @@ func updateVM(job *jobModel.Job) {
 func attachGpuToVM(job *jobModel.Job) {
 	err := assertParameters(job, []string{"id", "gpuIds", "userId"})
 	if err != nil {
-		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+		_ = jobModel.MarkTerminated(job.ID, err.Error())
 		return
 	}
 
@@ -103,14 +103,14 @@ func attachGpuToVM(job *jobModel.Job) {
 	var gpuIDs []string
 	err = mapstructure.Decode(job.Args["gpuIds"].(interface{}), &gpuIDs)
 	if err != nil {
-		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+		_ = jobModel.MarkTerminated(job.ID, err.Error())
 		return
 	}
 	userID := job.Args["userId"].(string)
 
 	err = vm_service.AttachGPU(gpuIDs, vmID, userID)
 	if err != nil {
-		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+		_ = jobModel.MarkFailed(job.ID, err.Error())
 		return
 	}
 
@@ -120,7 +120,7 @@ func attachGpuToVM(job *jobModel.Job) {
 func detachGpuFromVM(job *jobModel.Job) {
 	err := assertParameters(job, []string{"id", "userId"})
 	if err != nil {
-		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+		_ = jobModel.MarkTerminated(job.ID, err.Error())
 		return
 	}
 
@@ -129,7 +129,7 @@ func detachGpuFromVM(job *jobModel.Job) {
 
 	err = vm_service.DetachGPU(vmID, userID)
 	if err != nil {
-		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+		_ = jobModel.MarkFailed(job.ID, err.Error())
 		return
 	}
 
@@ -139,7 +139,7 @@ func detachGpuFromVM(job *jobModel.Job) {
 func createDeployment(job *jobModel.Job) {
 	err := assertParameters(job, []string{"id", "ownerId", "params"})
 	if err != nil {
-		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+		_ = jobModel.MarkTerminated(job.ID, err.Error())
 		return
 	}
 
@@ -148,13 +148,13 @@ func createDeployment(job *jobModel.Job) {
 	var params body.DeploymentCreate
 	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
 	if err != nil {
-		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+		_ = jobModel.MarkTerminated(job.ID, err.Error())
 		return
 	}
 
 	err = deployment_service.Create(id, ownerID, &params)
 	if err != nil {
-		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+		_ = jobModel.MarkFailed(job.ID, err.Error())
 		return
 	}
 
@@ -164,7 +164,7 @@ func createDeployment(job *jobModel.Job) {
 func deleteDeployment(job *jobModel.Job) {
 	err := assertParameters(job, []string{"name"})
 	if err != nil {
-		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+		_ = jobModel.MarkTerminated(job.ID, err.Error())
 		return
 	}
 
@@ -172,7 +172,7 @@ func deleteDeployment(job *jobModel.Job) {
 
 	err = deployment_service.Delete(name)
 	if err != nil {
-		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+		_ = jobModel.MarkFailed(job.ID, err.Error())
 		return
 	}
 
@@ -182,7 +182,7 @@ func deleteDeployment(job *jobModel.Job) {
 func updateDeployment(job *jobModel.Job) {
 	err := assertParameters(job, []string{"name", "update"})
 	if err != nil {
-		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+		_ = jobModel.MarkTerminated(job.ID, err.Error())
 		return
 	}
 
@@ -190,12 +190,13 @@ func updateDeployment(job *jobModel.Job) {
 	var update body.DeploymentUpdate
 	err = mapstructure.Decode(job.Args["update"].(map[string]interface{}), &update)
 	if err != nil {
-		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+		_ = jobModel.MarkTerminated(job.ID, err.Error())
 		return
 	}
+
 	err = deployment_service.Update(name, &update)
 	if err != nil {
-		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+		_ = jobModel.MarkFailed(job.ID, err.Error())
 		return
 	}
 
@@ -205,7 +206,7 @@ func updateDeployment(job *jobModel.Job) {
 func buildDeployment(job *jobModel.Job) {
 	err := assertParameters(job, []string{"id", "build"})
 	if err != nil {
-		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+		_ = jobModel.MarkTerminated(job.ID, err.Error())
 		return
 	}
 
@@ -213,13 +214,13 @@ func buildDeployment(job *jobModel.Job) {
 	var params body.DeploymentBuild
 	err = mapstructure.Decode(job.Args["build"].(map[string]interface{}), &params)
 	if err != nil {
-		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+		_ = jobModel.MarkTerminated(job.ID, err.Error())
 		return
 	}
 
 	err = deployment_service.Build(id, &params)
 	if err != nil {
-		_ = jobModel.MarkFailed(job.ID, []string{err.Error()})
+		_ = jobModel.MarkFailed(job.ID, err.Error())
 		return
 	}
 

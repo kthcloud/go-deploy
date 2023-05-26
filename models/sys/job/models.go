@@ -15,10 +15,11 @@ const (
 )
 
 const (
-	StatusPending  = "pending"
-	StatusRunning  = "running"
-	StatusFinished = "finished"
-	StatusFailed   = "failed"
+	StatusPending    = "pending"
+	StatusRunning    = "running"
+	StatusFinished   = "finished"
+	StatusFailed     = "failed"
+	StatusTerminated = "terminated"
 )
 
 type Job struct {
@@ -27,6 +28,7 @@ type Job struct {
 	Type      string                 `bson:"type" json:"type"`
 	Args      map[string]interface{} `bson:"args" json:"args"`
 	CreatedAt time.Time              `bson:"createdAt" json:"createdAt"`
+	LastRunAt time.Time              `bson:"lastRunAt" json:"lastRunAt"`
 	Status    string                 `bson:"status" json:"status"`
 	ErrorLogs []string               `bson:"errorLogs" json:"errorLogs"`
 }
