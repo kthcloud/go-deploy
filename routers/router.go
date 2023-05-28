@@ -33,68 +33,74 @@ func NewRouter() *gin.Engine {
 	router.Use(gin.Recovery())
 
 	docs.SwaggerInfo.BasePath = "/v1"
-	apiv1 := router.Group("/v1")
-	apiv1.Use(auth.New(auth.Check(), app.GetKeyCloakConfig()))
-
+	privateApiv1 := router.Group("/v1")
+	privateApiv1.Use(auth.New(auth.Check(), app.GetKeyCloakConfig()))
+	publicApiv1 := router.Group("/v1")
 	apiv1Hook := router.Group("/v1/hooks")
 
 	router.GET("/v1/docs/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
-	setupDeploymentRoutes(apiv1, apiv1Hook)
-	setupVmRoutes(apiv1, apiv1Hook)
-	setupGpuRoutes(apiv1, apiv1Hook)
-	setupJobRoutes(apiv1, apiv1Hook)
-	setupUserRoutes(apiv1, apiv1Hook)
+	setupAuthCheckRoutes(privateApiv1)
+	setupDeploymentRoutes(privateApiv1, publicApiv1, apiv1Hook)
+	setupVmRoutes(privateApiv1, apiv1Hook)
+	setupGpuRoutes(privateApiv1, apiv1Hook)
+	setupJobRoutes(privateApiv1, apiv1Hook)
+	setupUserRoutes(privateApiv1, apiv1Hook)
 
 	registerCustomValidators()
 
 	return router
 }
 
-func setupDeploymentRoutes(base *gin.RouterGroup, hooks *gin.RouterGroup) {
-	base.GET("/deployments", v1_deployment.GetList)
+func setupAuthCheckRoutes(private *gin.RouterGroup) {
+	private.GET("/authCheck", v1_user.AuthCheck)
+}
 
-	base.GET("/deployments/:deploymentId", v1_deployment.Get)
-	base.GET("/deployments/:deploymentId/ciConfig", v1_deployment.GetCiConfig)
-	base.GET("/deployments/:deploymentId/logs", v1_deployment.GetLogs)
-	base.POST("/deployments", v1_deployment.Create)
-	base.POST("/deployments/:deploymentId", v1_deployment.Update)
-	base.DELETE("/deployments/:deploymentId", v1_deployment.Delete)
+func setupDeploymentRoutes(private *gin.RouterGroup, public *gin.RouterGroup, hooks *gin.RouterGroup) {
+	private.GET("/deployments", v1_deployment.GetList)
 
-	base.POST("/deployments/:deploymentId/command", v1_deployment.DoCommand)
+	private.GET("/deployments/:deploymentId", v1_deployment.Get)
+	private.GET("/deployments/:deploymentId/ciConfig", v1_deployment.GetCiConfig)
+	private.POST("/deployments", v1_deployment.Create)
+	private.POST("/deployments/:deploymentId", v1_deployment.Update)
+	private.DELETE("/deployments/:deploymentId", v1_deployment.Delete)
+
+	private.POST("/deployments/:deploymentId/command", v1_deployment.DoCommand)
+
+	public.GET("/deployments/:deploymentId/logs", v1_deployment.GetLogs)
 
 	hooks.POST("/deployments/harbor", v1_deployment.HandleHarborHook)
 	hooks.POST("/deployments/github", v1_deployment.HandleGitHubHook)
 }
 
-func setupVmRoutes(base *gin.RouterGroup, _ *gin.RouterGroup) {
-	base.GET("/vms", v1_vm.GetList)
+func setupVmRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
+	private.GET("/vms", v1_vm.GetList)
 
-	base.GET("/vms/:vmId", v1_vm.Get)
-	base.POST("/vms", v1_vm.Create)
-	base.POST("/vms/:vmId", v1_vm.Update)
-	base.DELETE("/vms/:vmId", v1_vm.Delete)
+	private.GET("/vms/:vmId", v1_vm.Get)
+	private.POST("/vms", v1_vm.Create)
+	private.POST("/vms/:vmId", v1_vm.Update)
+	private.DELETE("/vms/:vmId", v1_vm.Delete)
 
-	base.POST("/vms/:vmId/command", v1_vm.DoCommand)
+	private.POST("/vms/:vmId/command", v1_vm.DoCommand)
 
-	base.POST("/vms/:vmId/attachGpu", v1_vm.AttachGPU)
-	base.POST("/vms/:vmId/attachGpu/:gpuId", v1_vm.AttachGPU)
-	base.POST("/vms/:vmId/detachGpu", v1_vm.DetachGPU)
+	private.POST("/vms/:vmId/attachGpu", v1_vm.AttachGPU)
+	private.POST("/vms/:vmId/attachGpu/:gpuId", v1_vm.AttachGPU)
+	private.POST("/vms/:vmId/detachGpu", v1_vm.DetachGPU)
 }
 
-func setupGpuRoutes(base *gin.RouterGroup, _ *gin.RouterGroup) {
-	base.GET("/gpus", v1_vm.GetGpuList)
+func setupGpuRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
+	private.GET("/gpus", v1_vm.GetGpuList)
 }
 
-func setupJobRoutes(base *gin.RouterGroup, _ *gin.RouterGroup) {
-	base.GET("/jobs/:jobId", v1_job.Get)
+func setupJobRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
+	private.GET("/jobs/:jobId", v1_job.Get)
 }
 
-func setupUserRoutes(base *gin.RouterGroup, _ *gin.RouterGroup) {
-	base.GET("/users/:userId", v1_user.Get)
-	base.GET("/users", v1_user.GetList)
-	base.POST("/users/:userId", v1_user.Update)
-	base.POST("/users", v1_user.Update)
+func setupUserRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
+	private.GET("/users/:userId", v1_user.Get)
+	private.GET("/users", v1_user.GetList)
+	private.POST("/users/:userId", v1_user.Update)
+	private.POST("/users", v1_user.Update)
 }
 
 func registerCustomValidators() {
@@ -123,8 +129,8 @@ func registerCustomValidators() {
 				return false
 			}
 
-			regex := regexp.MustCompile(`^[a-zA-Z]([a-zA-Z0-9-]*[a-zA-Z0-9])?([a-zA-Z]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$`)
-			return regex.MatchString(name)
+			rfc1035 := regexp.MustCompile(`^[a-zA-Z]([a-zA-Z0-9-]*[a-zA-Z0-9])?([a-zA-Z]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$`)
+			return rfc1035.MatchString(name)
 		})
 		if err != nil {
 			panic(err)
@@ -175,6 +181,9 @@ func registerCustomValidators() {
 			}
 			return true
 		})
+		if err != nil {
+			panic(err)
+		}
 
 		err = v.RegisterValidation("port_list", func(fl validator.FieldLevel) bool {
 			portList, ok := fl.Field().Interface().([]body.Port)
@@ -193,6 +202,38 @@ func registerCustomValidators() {
 					return false
 				}
 				ports[port.Port] = true
+			}
+			return true
+		})
+		if err != nil {
+			panic(err)
+		}
+
+		err = v.RegisterValidation("domain_list", func(fl validator.FieldLevel) bool {
+			domainList, ok := fl.Field().Interface().([]string)
+			if !ok {
+				return false
+			}
+
+			rfc1035 := regexp.MustCompile(`^[a-zA-Z]([a-zA-Z0-9-]*[a-zA-Z0-9])?([a-zA-Z]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$`)
+
+			names := make(map[string]bool)
+			for _, domain := range domainList {
+				if _, ok := names[domain]; ok {
+					return false
+				}
+				names[domain] = true
+
+				splitByDots := strings.Split(domain, ".")
+				for _, split := range splitByDots {
+					if len(split) > 63 {
+						return false
+					}
+
+					if !rfc1035.MatchString(split) {
+						return false
+					}
+				}
 			}
 			return true
 		})
