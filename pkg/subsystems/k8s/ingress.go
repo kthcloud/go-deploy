@@ -7,6 +7,7 @@ import (
 	"go-deploy/pkg/subsystems/k8s/keys"
 	"go-deploy/pkg/subsystems/k8s/models"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"log"
 )
 
 func (client *Client) ReadIngress(namespace, id string) (*models.IngressPublic, error) {
@@ -132,7 +133,8 @@ func (client *Client) UpdateIngress(public *models.IngressPublic) error {
 		}
 	}
 
-	return makeError(fmt.Errorf("no such ingress %s", public.Name))
+	log.Println("k8s ingress", public.Name, "not found when updating. assuming it was deleted")
+	return nil
 }
 
 func (client *Client) DeleteIngress(namespace, id string) error {
@@ -174,5 +176,6 @@ func (client *Client) DeleteIngress(namespace, id string) error {
 		}
 	}
 
+	log.Println("k8s ingress", id, "not found when deleting. assuming it was deleted")
 	return nil
 }

@@ -7,6 +7,7 @@ import (
 	"go-deploy/pkg/subsystems/k8s/keys"
 	"go-deploy/pkg/subsystems/k8s/models"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"log"
 )
 
 func (client *Client) ReadService(namespace, id string) (*models.ServicePublic, error) {
@@ -132,7 +133,8 @@ func (client *Client) UpdateService(public *models.ServicePublic) error {
 		}
 	}
 
-	return makeError(fmt.Errorf("no such service %s", public.Name))
+	log.Println("k8s service", public.Name, "not found when updating. assuming it was deleted")
+	return nil
 }
 
 func (client *Client) DeleteService(namespace, id string) error {
@@ -174,5 +176,6 @@ func (client *Client) DeleteService(namespace, id string) error {
 		}
 	}
 
-	return makeError(fmt.Errorf("no such service %s", id))
+	log.Println("k8s service", id, "not found when deleting. assuming it was deleted")
+	return nil
 }

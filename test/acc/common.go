@@ -1,4 +1,4 @@
-package test
+package acc
 
 import (
 	"go-deploy/pkg/conf"
