@@ -46,9 +46,10 @@ func CreateDeployment(deploymentID, ownerID string, params *CreateParams) error 
 		Name:    params.Name,
 		OwnerID: ownerID,
 
-		Private:    params.Private,
-		Envs:       params.Envs,
-		Activities: []string{ActivityBeingCreated},
+		Private:      params.Private,
+		Envs:         params.Envs,
+		ExtraDomains: make([]string, 0),
+		Activities:   []string{ActivityBeingCreated},
 
 		StatusCode:    status_codes.ResourceBeingCreated,
 		StatusMessage: status_codes.GetMsg(status_codes.ResourceBeingCreated),
@@ -153,6 +154,7 @@ func UpdateByID(id string, update *UpdateParams) error {
 
 	models.AddIfNotNil(updateData, "envs", update.Envs)
 	models.AddIfNotNil(updateData, "private", update.Private)
+	models.AddIfNotNil(updateData, "extraDomains", update.ExtraDomains)
 
 	if len(updateData) == 0 {
 		return nil

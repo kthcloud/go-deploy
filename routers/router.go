@@ -8,6 +8,7 @@ import (
 	"go-deploy/models/dto/body"
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/auth"
+	v1 "go-deploy/routers/api/v1"
 	"go-deploy/routers/api/v1/v1_deployment"
 	"go-deploy/routers/api/v1/v1_job"
 	"go-deploy/routers/api/v1/v1_user"
@@ -209,7 +210,7 @@ func registerCustomValidators() {
 			panic(err)
 		}
 
-		err = v.RegisterValidation("domain_list", func(fl validator.FieldLevel) bool {
+		err = v.RegisterValidation("extra_domain_list", func(fl validator.FieldLevel) bool {
 			domainList, ok := fl.Field().Interface().([]string)
 			if !ok {
 				return false
@@ -234,7 +235,13 @@ func registerCustomValidators() {
 						return false
 					}
 				}
+
+				valid := v1.IsValidDomain(domain)
+				if !valid {
+					return false
+				}
 			}
+
 			return true
 		})
 		if err != nil {

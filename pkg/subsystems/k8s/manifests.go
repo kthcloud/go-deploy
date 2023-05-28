@@ -94,6 +94,31 @@ func CreateServiceManifest(public *models.ServicePublic) *apiv1.Service {
 }
 
 func CreateIngressManifest(public *models.IngressPublic) *networkingv1.Ingress {
+	rules := make([]networkingv1.IngressRule, len(public.Hosts))
+	for idx, host := range public.Hosts {
+		rules[idx] = networkingv1.IngressRule{
+			Host: host,
+			IngressRuleValue: networkingv1.IngressRuleValue{
+				HTTP: &networkingv1.HTTPIngressRuleValue{
+					Paths: []networkingv1.HTTPIngressPath{
+						{
+							Path:     "/",
+							PathType: pathTypeAddr("Prefix"),
+							Backend: networkingv1.IngressBackend{
+								Service: &networkingv1.IngressServiceBackend{
+									Name: public.ServiceName,
+									Port: networkingv1.ServiceBackendPort{
+										Number: int32(public.ServicePort),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+	}
+
 	return &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      public.Name,
@@ -104,29 +129,7 @@ func CreateIngressManifest(public *models.IngressPublic) *networkingv1.Ingress {
 			},
 		},
 		Spec: networkingv1.IngressSpec{
-			Rules: []networkingv1.IngressRule{
-				{
-					Host: public.Host,
-					IngressRuleValue: networkingv1.IngressRuleValue{
-						HTTP: &networkingv1.HTTPIngressRuleValue{
-							Paths: []networkingv1.HTTPIngressPath{
-								{
-									Path:     "/",
-									PathType: pathTypeAddr("Prefix"),
-									Backend: networkingv1.IngressBackend{
-										Service: &networkingv1.IngressServiceBackend{
-											Name: public.ServiceName,
-											Port: networkingv1.ServiceBackendPort{
-												Number: int32(public.ServicePort),
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
+			Rules: rules,
 		},
 	}
 }

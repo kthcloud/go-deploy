@@ -163,6 +163,7 @@ func Update(name string, deploymentUpdate *body.DeploymentUpdate) error {
 	}
 
 	if deployment == nil {
+		log.Println("deployment", name, "not found when updating. assuming it was deleted")
 		return nil
 	}
 

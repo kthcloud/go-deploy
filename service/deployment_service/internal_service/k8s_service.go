@@ -46,7 +46,7 @@ func createServicePublic(namespace, name string, port, targetPort int) *k8sModel
 	}
 }
 
-func createIngressPublic(namespace, name, host, serviceName string, servicePort int) *k8sModels.IngressPublic {
+func createIngressPublic(namespace, name string, hosts []string, serviceName string, servicePort int) *k8sModels.IngressPublic {
 	return &k8sModels.IngressPublic{
 		ID:               "",
 		Name:             name,
@@ -54,7 +54,7 @@ func createIngressPublic(namespace, name, host, serviceName string, servicePort 
 		ServiceName:      serviceName,
 		ServicePort:      servicePort,
 		IngressClassName: "caddy",
-		Host:             host,
+		Hosts:            hosts,
 	}
 }
 
@@ -176,7 +176,7 @@ func CreateK8s(name, userID string, envs []deploymentModel.Env) (*K8sResult, err
 	}
 
 	// Ingress
-	err = createIngress(client, deployment, namespace.FullName, service.Name, service.Port)
+	err = createIngress(client, deployment, namespace.FullName, service.Name, service.Port, []string{getExternalFQDN(name)})
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -307,6 +307,47 @@ func UpdateK8s(name string, params *deploymentModel.UpdateParams) error {
 		}
 	}
 
+	if params.ExtraDomains != nil {
+		if !isPlaceholderOrEmpty(deployment.Subsystems.K8s.Ingress.ID) {
+			ingress := deployment.Subsystems.K8s.Ingress
+			if ingress.ID == "" {
+				return nil
+			}
+
+			err = client.DeleteIngress(ingress.Namespace, ingress.ID)
+			if err != nil {
+				return makeError(err)
+			}
+
+			err = deploymentModel.UpdateSubsystemByName(name, "k8s", "ingress", k8sModels.IngressPublic{})
+			if err != nil {
+				return makeError(err)
+			}
+
+			deployment, err = deploymentModel.GetByName(name)
+			if err != nil {
+				return makeError(err)
+			}
+
+			namespace := deployment.Subsystems.K8s.Namespace
+			if namespace.ID == "" {
+				return nil
+			}
+
+			service := deployment.Subsystems.K8s.Service
+			if service.ID == "" {
+				return nil
+			}
+
+			domains := getAllDomainNames(deployment, *params.ExtraDomains)
+
+			err = createIngress(client, deployment, namespace.FullName, service.Name, service.Port, domains)
+			if err != nil {
+				return makeError(err)
+			}
+		}
+	}
+
 	if params.Private != nil {
 		emptyOrPlaceHolder := isPlaceholderOrEmpty(deployment.Subsystems.K8s.Ingress.ID)
 
@@ -347,16 +388,21 @@ func UpdateK8s(name string, params *deploymentModel.UpdateParams) error {
 					return nil
 				}
 
-				err = createIngress(client, deployment, deployment.Subsystems.K8s.Namespace.FullName, service.Name, service.Port)
+				var domains []string
+				if params.ExtraDomains == nil {
+					domains = getAllDomainNames(deployment, deployment.ExtraDomains)
+				} else {
+					domains = getAllDomainNames(deployment, *params.ExtraDomains)
+				}
+
+				err = createIngress(client, deployment, deployment.Subsystems.K8s.Namespace.FullName, service.Name, service.Port, domains)
 				if err != nil {
 					return makeError(err)
 				}
 
 			}
 		}
-
 	}
-
 	return nil
 }
 
@@ -383,10 +429,10 @@ func RestartK8s(name string) error {
 	return nil
 }
 
-func createIngress(client *k8s.Client, deployment *deploymentModel.Deployment, namespace, serviceName string, servicePort int) error {
+func createIngress(client *k8s.Client, deployment *deploymentModel.Deployment, namespace, serviceName string, servicePort int, hosts []string) error {
 	var ingress *k8sModels.IngressPublic
 	if deployment.Subsystems.K8s.Ingress.ID == "" {
-		id, err := client.CreateIngress(createIngressPublic(namespace, deployment.Name, getExternalFQDN(deployment.Name), serviceName, servicePort))
+		id, err := client.CreateIngress(createIngressPublic(namespace, deployment.Name, hosts, serviceName, servicePort))
 		if err != nil {
 			return err
 		}
@@ -411,4 +457,11 @@ func createIngress(client *k8s.Client, deployment *deploymentModel.Deployment, n
 
 func isPlaceholderOrEmpty(id string) bool {
 	return id == "" || id == "placeholder"
+}
+
+func getAllDomainNames(deployment *deploymentModel.Deployment, extraDomains []string) []string {
+	domains := make([]string, len(extraDomains)+1)
+	domains[0] = getExternalFQDN(deployment.Name)
+	copy(domains[1:], extraDomains)
+	return domains
 }
