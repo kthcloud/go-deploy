@@ -5,6 +5,7 @@ import (
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/k8s"
 	"go-deploy/utils/subsystemutils"
+	"log"
 )
 
 func GetLogs(userID, deploymentID string, handler func(string), isAdmin bool) (context.Context, error) {
@@ -14,10 +15,12 @@ func GetLogs(userID, deploymentID string, handler func(string), isAdmin bool) (c
 	}
 
 	if deployment == nil {
+		log.Println("deployment", deploymentID, "not found when getting logs. assuming it was deleted")
 		return nil, nil
 	}
 
 	if !deployment.Ready() {
+		log.Println("deployment", deploymentID, "not ready when getting logs")
 		return nil, nil
 	}
 

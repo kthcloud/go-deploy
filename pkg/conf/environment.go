@@ -32,9 +32,10 @@ type Environment struct {
 	} `yaml:"dockerRegistry"`
 
 	Deployment struct {
-		ParentDomain string `yaml:"parentDomain"`
-		Port         int    `yaml:"port"`
-		Prefix       string `yaml:"prefix"`
+		ParentDomain  string `yaml:"parentDomain"`
+		Port          int    `yaml:"port"`
+		Prefix        string `yaml:"prefix"`
+		ExtraDomainIP string `yaml:"extraDomainIp"`
 	} `yaml:"deployment"`
 
 	VM struct {

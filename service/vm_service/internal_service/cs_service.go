@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	vmModel "go-deploy/models/sys/vm"
-	gpu2 "go-deploy/models/sys/vm/gpu"
+	gpuModel "go-deploy/models/sys/vm/gpu"
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/cs"
 	"go-deploy/pkg/subsystems/cs/commands"
@@ -50,7 +50,7 @@ func CreateCS(params *vmModel.CreateParams) (*CsCreated, error) {
 	}
 
 	if vm == nil {
-		// if vm does not exist, don't treat as error, don't create -> job will not fail
+		log.Println("vm", params.Name, "not found for cs setup. assuming it was deleted")
 		return nil, nil
 	}
 
@@ -195,6 +195,7 @@ func DeleteCS(name string) error {
 	}
 
 	if vm == nil {
+		log.Println("vm", name, "not found for cs deletion. assuming it was deleted")
 		return nil
 	}
 
@@ -255,6 +256,7 @@ func UpdateCS(vmID string, updateParams *vmModel.UpdateParams) error {
 	}
 
 	if vm == nil {
+		log.Println("vm", vmID, "not found for cs update. assuming it was deleted")
 		return nil
 	}
 
@@ -446,7 +448,7 @@ func AttachGPU(gpuID, vmID string) error {
 		return makeError(fmt.Errorf("vm is not created yet"))
 	}
 
-	gpu, err := gpu2.GetByID(gpuID)
+	gpu, err := gpuModel.GetByID(gpuID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -505,6 +507,7 @@ func DetachGPU(vmID string) error {
 	}
 
 	if vm == nil {
+		log.Println("vm", vmID, "not found for when detaching gpu in cs. assuming it was deleted")
 		return nil
 	}
 
@@ -663,7 +666,7 @@ func HostInCorrectState(hostName string) (bool, string, error) {
 	return true, "", nil
 }
 
-func createExtraConfig(gpu *gpu2.GPU) string {
+func createExtraConfig(gpu *gpuModel.GPU) string {
 	data := fmt.Sprintf(`
 <devices> <hostdev mode='subsystem' type='pci' managed='yes'> <driver name='vfio' />
 	<source> <address domain='0x0000' bus='0x%s' slot='0x00' function='0x0' /> </source> 
@@ -677,7 +680,7 @@ func createExtraConfig(gpu *gpu2.GPU) string {
 }
 
 func getRequiredHost(gpuID string) (*string, error) {
-	gpu, err := gpu2.GetByID(gpuID)
+	gpu, err := gpuModel.GetByID(gpuID)
 	if err != nil {
 		return nil, err
 	}

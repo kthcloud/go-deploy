@@ -5,6 +5,7 @@ import (
 	"go-deploy/models/dto/body"
 	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/service/deployment_service/internal_service"
+	"log"
 )
 
 func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreate) error {
@@ -162,6 +163,7 @@ func Update(name string, deploymentUpdate *body.DeploymentUpdate) error {
 	}
 
 	if deployment == nil {
+		log.Println("deployment", name, "not found when updating. assuming it was deleted")
 		return nil
 	}
 
@@ -189,6 +191,7 @@ func Restart(name string) error {
 	}
 
 	if deployment == nil {
+		log.Println("deployment", name, "not found when restarting. assuming it was deleted")
 		return nil
 	}
 
@@ -225,6 +228,7 @@ func Build(id string, buildParams *body.DeploymentBuild) error {
 	}
 
 	if deployment == nil {
+		log.Println("deployment", id, "not found when building. assuming it was deleted")
 		return nil
 	}
 

@@ -48,6 +48,7 @@ func (p *UpdateParams) FromDTO(dto *body.DeploymentUpdate) {
 	}
 
 	p.Private = dto.Private
+	p.ExtraDomains = dto.ExtraDomains
 }
 
 func (p *CreateParams) FromDTO(dto *body.DeploymentCreate) {

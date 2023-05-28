@@ -9,8 +9,10 @@ import (
 	"go-deploy/pkg/status_codes"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/deployment_service"
+	"go-deploy/utils/requestutils"
 	"log"
 	"net/http"
+	"strings"
 )
 
 var upgrader = websocket.Upgrader{}
@@ -21,12 +23,6 @@ func GetLogs(c *gin.Context) {
 	var requestURI uri.LogsGet
 	if err := context.GinContext.BindUri(&requestURI); err != nil {
 		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
-		return
-	}
-
-	auth, err := v1.WithAuth(&context)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
 	}
 
@@ -43,24 +39,33 @@ func GetLogs(c *gin.Context) {
 	handler := func(msg string) {
 		err = ws.WriteMessage(websocket.TextMessage, []byte(msg))
 		if err != nil {
-			fmt.Printf("failed to write websocket message for deployment %s (%s)", requestURI.DeploymentID, ws.RemoteAddr())
+			fmt.Printf("failed to write websocket message for deployment %s (%s)\n", requestURI.DeploymentID, ws.RemoteAddr())
 			_ = ws.Close()
 		}
 	}
 
-	logContext, getLogsErr := deployment_service.GetLogs(auth.UserID, requestURI.DeploymentID, handler, auth.IsAdmin())
-	if getLogsErr != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", getLogsErr))
-		return
-	}
-
-	if logContext == nil {
-		context.NotFound()
-		return
-	}
-
+	didAuth := false
 	for {
-		_, _, readMsgErr := ws.ReadMessage()
+		_, data, readMsgErr := ws.ReadMessage()
+		msg := string(data)
+		if strings.HasPrefix(msg, "Bearer ") && !didAuth {
+			auth := validateBearerToken(msg)
+			if auth != nil {
+				didAuth = true
+
+				logContext, getLogsErr := deployment_service.GetLogs(auth.UserID, requestURI.DeploymentID, handler, auth.IsAdmin())
+				if getLogsErr != nil {
+					context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", getLogsErr))
+					return
+				}
+
+				if logContext == nil {
+					context.NotFound()
+					return
+				}
+			}
+		}
+
 		if ce, ok := readMsgErr.(*websocket.CloseError); ok {
 			switch ce.Code {
 			case websocket.CloseNormalClosure,
@@ -71,4 +76,30 @@ func GetLogs(c *gin.Context) {
 			}
 		}
 	}
+}
+
+func validateBearerToken(bearer string) *v1.AuthInfo {
+	req, err := http.NewRequest("GET", "http://localhost:8080/v1/authCheck", nil)
+	req.Header.Add("Authorization", bearer)
+	if err != nil {
+		return nil
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil
+	}
+
+	var authInfo v1.AuthInfo
+	err = requestutils.ParseBody(resp.Body, &authInfo)
+	if err != nil {
+		return nil
+	}
+
+	return &authInfo
 }

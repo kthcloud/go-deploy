@@ -6,13 +6,13 @@ import (
 )
 
 type IngressPublic struct {
-	ID               string `json:"id" bson:"id"`
-	Name             string `bson:"name"`
-	Namespace        string `bson:"namespace"`
-	ServiceName      string `bson:"serviceName"`
-	ServicePort      int    `bson:"servicePort"`
-	IngressClassName string `bson:"ingressClassName"`
-	Host             string `bson:"host"`
+	ID               string   `json:"id" bson:"id"`
+	Name             string   `bson:"name"`
+	Namespace        string   `bson:"namespace"`
+	ServiceName      string   `bson:"serviceName"`
+	ServicePort      int      `bson:"servicePort"`
+	IngressClassName string   `bson:"ingressClassName"`
+	Hosts            []string `bson:"host"`
 }
 
 func CreateIngressPublicFromRead(ingress *v1.Ingress) *IngressPublic {
@@ -31,6 +31,11 @@ func CreateIngressPublicFromRead(ingress *v1.Ingress) *IngressPublic {
 		ingressClassName = *ingress.Spec.IngressClassName
 	}
 
+	hosts := make([]string, 0)
+	for _, rule := range ingress.Spec.Rules {
+		hosts = append(hosts, rule.Host)
+	}
+
 	return &IngressPublic{
 		ID:               ingress.Labels[keys.ManifestLabelID],
 		Name:             ingress.Labels[keys.ManifestLabelName],
@@ -38,6 +43,6 @@ func CreateIngressPublicFromRead(ingress *v1.Ingress) *IngressPublic {
 		ServiceName:      serviceName,
 		ServicePort:      servicePort,
 		IngressClassName: ingressClassName,
-		Host:             ingress.Spec.Rules[0].Host,
+		Hosts:            hosts,
 	}
 }

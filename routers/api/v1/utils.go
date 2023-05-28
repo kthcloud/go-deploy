@@ -8,6 +8,7 @@ import (
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/auth"
 	"go-deploy/pkg/conf"
+	"net"
 	"reflect"
 )
 
@@ -98,6 +99,8 @@ func msgForTag(fe validator.FieldError) string {
 		return "Every env name must be unique"
 	case "port_list":
 		return "Every port name and number must be unique"
+	case "extra_domain_list":
+		return "Every domain name must be unique and be a valid hostname (RFC 1035). And must point to " + conf.Env.Deployment.ExtraDomainIP
 	}
 	return fe.Error()
 }
@@ -122,4 +125,18 @@ func CreateBindingError(err error) *body.BindingError {
 	}
 
 	return out
+}
+
+func IsValidDomain(domainName string) bool {
+	mustPointAt := conf.Env.Deployment.ExtraDomainIP
+
+	ips, _ := net.LookupIP(domainName)
+	for _, ip := range ips {
+		if ipv4 := ip.To4(); ipv4 != nil {
+			if ipv4.String() == mustPointAt {
+				return true
+			}
+		}
+	}
+	return false
 }

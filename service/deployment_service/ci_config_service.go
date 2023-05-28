@@ -7,6 +7,7 @@ import (
 	"go-deploy/pkg/conf"
 	"go-deploy/utils/subsystemutils"
 	"gopkg.in/yaml.v2"
+	"log"
 )
 
 func GetCIConfig(userId, deploymentID string, isAdmin bool) (*body.CiConfig, error) {
@@ -16,6 +17,7 @@ func GetCIConfig(userId, deploymentID string, isAdmin bool) (*body.CiConfig, err
 	}
 
 	if deployment == nil {
+		log.Println("deployment", deploymentID, "not found for ci config fetch. assuming it was deleted")
 		return nil, nil
 	}
 

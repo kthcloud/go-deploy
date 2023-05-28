@@ -20,8 +20,8 @@ import (
 )
 
 func getURL(deployment *deploymentModels.Deployment) *string {
-	if len(deployment.Subsystems.K8s.Ingress.Host) > 0 {
-		return &deployment.Subsystems.K8s.Ingress.Host
+	if len(deployment.Subsystems.K8s.Ingress.Hosts) > 0 && len(deployment.Subsystems.K8s.Ingress.Hosts[0]) > 0 {
+		return &deployment.Subsystems.K8s.Ingress.Hosts[0]
 	}
 	return nil
 }

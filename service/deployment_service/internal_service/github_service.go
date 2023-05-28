@@ -31,6 +31,7 @@ func CreateGitHub(name string, params *deploymentModel.CreateParams) error {
 	}
 
 	if deployment == nil {
+		log.Println("deployment", name, "not found for github setup. assuming it was deleted")
 		return nil
 	}
 
@@ -97,6 +98,7 @@ func DeleteGitHub(name string, githubToken *string) error {
 	}
 
 	if deployment == nil {
+		log.Println("deployment", name, "not found for github deletion. assuming it was deleted")
 		return nil
 	}
 

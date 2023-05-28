@@ -18,8 +18,9 @@ type Deployment struct {
 	Name    string `bson:"name"`
 	OwnerID string `bson:"ownerId"`
 
-	Private bool  `bson:"private"`
-	Envs    []Env `bson:"envs"`
+	Private      bool     `bson:"private"`
+	Envs         []Env    `bson:"envs"`
+	ExtraDomains []string `bson:"extraDomains"`
 
 	Activities []string `bson:"activities"`
 
@@ -62,8 +63,9 @@ type Usage struct {
 }
 
 type UpdateParams struct {
-	Private *bool  `json:"private" bson:"private"`
-	Envs    *[]Env `json:"envs" bson:"envs"`
+	Private      *bool     `json:"private" bson:"private"`
+	Envs         *[]Env    `json:"envs" bson:"envs"`
+	ExtraDomains *[]string `json:"extraDomains" bson:"extraDomains"`
 }
 
 type GitHubCreateParams struct {

@@ -16,8 +16,9 @@ type DeploymentCreate struct {
 }
 
 type DeploymentUpdate struct {
-	Private *bool  `json:"private" binding:"omitempty,boolean"`
-	Envs    *[]Env `json:"envs" binding:"omitempty,env_list,dive,min=0,max=1000"`
+	Private      *bool     `json:"private" binding:"omitempty,boolean"`
+	Envs         *[]Env    `json:"envs" binding:"omitempty,env_list,dive,min=0,max=1000"`
+	ExtraDomains *[]string `json:"extraDomains" binding:"omitempty,extra_domain_list,dive,min=0,max=1000"`
 }
 
 type DeploymentBuild struct {

@@ -174,5 +174,5 @@ func (client *Client) DeleteIngress(namespace, id string) error {
 		}
 	}
 
-	return makeError(fmt.Errorf("no such ingress %s", id))
+	return nil
 }
