@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"go-deploy/pkg/conf"
 	"io/ioutil"
 	"math/big"
 	"net/http"
@@ -204,6 +205,39 @@ func getTokenContainer(ctx *gin.Context, config KeycloakConfig) (*TokenContainer
 	return tc, true
 }
 
+func getTestTokenContainer() (*TokenContainer, bool) {
+	tc := &TokenContainer{}
+
+	userID := "955f0f87-37fd-4792-90eb-9bf6989e698e"
+
+	tc.KeyCloakToken = &KeycloakToken{
+		Jti:               "",
+		Exp:               time.Now().Add(time.Hour * 24).Unix(),
+		Nbf:               0,
+		Iat:               0,
+		Iss:               "http://localhost",
+		Sub:               userID,
+		Typ:               "Bearer",
+		Azp:               "deploy",
+		Nonce:             "",
+		AuthTime:          0,
+		SessionState:      "",
+		Acr:               "",
+		ClientSession:     "",
+		AllowedOrigins:    nil,
+		ResourceAccess:    nil,
+		Name:              "tester",
+		PreferredUsername: "tester",
+		GivenName:         "tester",
+		FamilyName:        "tester",
+		Email:             "test@example.com",
+		RealmAccess:       ServiceRole{},
+		Groups:            []string{},
+	}
+
+	return tc, true
+}
+
 func (t *TokenContainer) Valid() bool {
 	if t.Token == nil {
 		return false
@@ -230,6 +264,16 @@ func authChain(config KeycloakConfig, accessCheckFunctions ...AccessCheckFunctio
 		go func() {
 			tokenContainer, ok := getTokenContainer(ctx, config)
 			if !ok {
+				if conf.Env.TestMode {
+					testTokenContainer, _ := getTestTokenContainer()
+					for _, fn := range accessCheckFunctions {
+						if fn(testTokenContainer, ctx) {
+							varianceControl <- true
+							return
+						}
+					}
+				}
+
 				_ = ctx.AbortWithError(http.StatusUnauthorized, errors.New("no token in context"))
 				varianceControl <- false
 				return

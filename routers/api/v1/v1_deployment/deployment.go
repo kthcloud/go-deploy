@@ -167,6 +167,11 @@ func Create(c *gin.Context) {
 		return
 	}
 
+	if quota == nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get user quota: %s", err))
+		return
+	}
+
 	if quota.Deployments <= 0 {
 		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, "User is not allowed to create deployments")
 		return
