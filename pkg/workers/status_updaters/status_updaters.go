@@ -116,7 +116,7 @@ func fetchDeploymentStatus(deployment *deploymentModel.Deployment) (int, string,
 		return status_codes.ResourceRestarting, status_codes.GetMsg(status_codes.ResourceRestarting), nil
 	}
 
-	return status_codes.ResourceCreated, status_codes.GetMsg(status_codes.ResourceRunning), nil
+	return status_codes.ResourceRunning, status_codes.GetMsg(status_codes.ResourceRunning), nil
 }
 
 func Setup(ctx *app.Context) {
