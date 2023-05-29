@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"go-deploy/models"
 	"go-deploy/models/sys/job"
 	"go-deploy/pkg/app"
@@ -14,8 +16,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-
-	"github.com/gin-gonic/gin"
+	"time"
 )
 
 func setup(context *app.Context) {
@@ -39,9 +40,9 @@ func shutdown() {
 }
 
 func main() {
-	context := app.Context{}
+	appContext := app.Context{}
 
-	setup(&context)
+	setup(&appContext)
 	defer shutdown()
 
 	ginMode, exists := os.LookupEnv("GIN_MODE")
@@ -56,9 +57,27 @@ func main() {
 		Handler: routers.NewRouter(),
 	}
 
-	err := server.ListenAndServe()
-	if err != nil {
-		log.Fatalf("failed to start http server. details: %s\n", err)
+	go func() {
+		err := server.ListenAndServe()
+		if err != nil {
+			log.Fatalf("failed to start http server. details: %s\n", err)
+		}
+	}()
+
+	quit := make(chan os.Signal)
+	<-quit
+	log.Println("shutting down server...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := server.Shutdown(ctx); err != nil {
+		log.Fatalf("failed to shutdown server. details: %s\n", err)
 	}
 
+	select {
+	case <-ctx.Done():
+		log.Println("waiting for server to shutdown...")
+	}
+
+	log.Println("server exited successfully")
 }
