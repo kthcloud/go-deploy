@@ -15,7 +15,14 @@ func vmStatusUpdater(ctx *app.Context) {
 			break
 		}
 
-		allVms, _ := vmModel.GetAll()
+		time.Sleep(1 * time.Second)
+
+		allVms, err := vmModel.GetAll()
+		if err != nil {
+			log.Println("error fetching vms: ", err)
+			continue
+		}
+
 		for _, vm := range allVms {
 			code, message, err := fetchVmStatus(&vm)
 			if err != nil {
@@ -24,8 +31,6 @@ func vmStatusUpdater(ctx *app.Context) {
 			}
 			_ = vmModel.UpdateWithBsonByID(vm.ID, bson.D{{"statusCode", code}, {"statusMessage", message}})
 		}
-
-		time.Sleep(1 * time.Second)
 	}
 }
 
@@ -34,8 +39,14 @@ func deploymentStatusUpdater(ctx *app.Context) {
 		if ctx.Stop {
 			break
 		}
+		time.Sleep(1 * time.Second)
 
-		allDeployments, _ := deploymentModel.GetAll()
+		allDeployments, err := deploymentModel.GetAll()
+		if err != nil {
+			log.Println("error fetching deployments: ", err)
+			continue
+		}
+
 		for _, deployment := range allDeployments {
 			code, message, err := fetchDeploymentStatus(&deployment)
 			if err != nil {
@@ -44,7 +55,5 @@ func deploymentStatusUpdater(ctx *app.Context) {
 			}
 			_ = deploymentModel.UpdateWithBsonByID(deployment.ID, bson.D{{"statusCode", code}, {"statusMessage", message}})
 		}
-
-		time.Sleep(1 * time.Second)
 	}
 }
