@@ -3,11 +3,13 @@ package models
 import (
 	"fmt"
 	modelv2 "github.com/mittwald/goharbor-client/v5/apiv2/model"
+	"strings"
 )
 
 type RobotPublic struct {
 	ID          int    `json:"id" bson:"id"`
 	Name        string `json:"name" bson:"name"`
+	HarborName  string `json:"harborName" bson:"harborName"`
 	ProjectID   int    `json:"projectId" bson:"projectId"`
 	ProjectName string `json:"projectName" bson:"projectName"`
 	Description string `json:"description" bson:"description"`
@@ -31,7 +33,8 @@ func CreateRobotUpdateFromPublic(public *RobotPublic) *modelv2.Robot {
 func CreateRobotPublicFromGet(robot *modelv2.Robot, project *modelv2.Project) *RobotPublic {
 	return &RobotPublic{
 		ID:          int(robot.ID),
-		Name:        robot.Name,
+		Name:        extractRobotRealName(robot.Name),
+		HarborName:  robot.Name,
 		ProjectName: project.Name,
 		ProjectID:   int(project.ProjectID),
 		Description: robot.Description,
@@ -41,6 +44,20 @@ func CreateRobotPublicFromGet(robot *modelv2.Robot, project *modelv2.Project) *R
 
 func getRobotFullName(projectName, name string) string {
 	return fmt.Sprintf("robot$%s", getRobotName(projectName, name))
+}
+
+func extractRobotRealName(name string) string {
+	robotAndProject := strings.Split(name, "$")
+	if len(robotAndProject) != 2 {
+		return ""
+	}
+
+	onlyRobot := strings.Split(robotAndProject[1], "+")
+	if len(onlyRobot) != 2 {
+		return ""
+	}
+
+	return onlyRobot[1]
 }
 
 func getRobotName(projectName, name string) string {

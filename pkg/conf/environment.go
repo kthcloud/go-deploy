@@ -17,6 +17,7 @@ type Environment struct {
 	ExternalUrl   string `yaml:"externalUrl"`
 	Manager       string `yaml:"manager"`
 	SessionSecret string `yaml:"sessionSecret"`
+	TestMode      bool   `yaml:"testMode"`
 
 	GPU struct {
 		PrivilegedGPUs []string `yaml:"privilegedGpus"`

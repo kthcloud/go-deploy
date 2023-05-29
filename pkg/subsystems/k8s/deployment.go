@@ -186,7 +186,8 @@ func (client *Client) UpdateDeployment(public *models.DeploymentPublic) error {
 
 	}
 
-	return makeError(fmt.Errorf("no such deployment %s", public.Name))
+	log.Println("k8s deployment", public.Name, "not found when updating. assuming it was deleted")
+	return nil
 }
 
 func (client *Client) DeleteDeployment(namespace, id string) error {
@@ -228,7 +229,8 @@ func (client *Client) DeleteDeployment(namespace, id string) error {
 		}
 	}
 
-	return makeError(fmt.Errorf("no such deployment %s", id))
+	log.Println("k8s deployment", id, "not found when deleting. assuming it was deleted")
+	return nil
 }
 
 func (client *Client) RestartDeployment(public *models.DeploymentPublic) error {

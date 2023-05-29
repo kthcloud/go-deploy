@@ -112,22 +112,3 @@ func (client *Client) DeleteRobot(id int) error {
 
 	return nil
 }
-
-func (client *Client) UpdateRobot(public *models.RobotPublic) error {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to update robot %s. details: %s", public.Name, err)
-	}
-
-	if public.ID == 0 {
-		return makeError(fmt.Errorf("id required"))
-	}
-
-	requestBody := models.CreateRobotUpdateFromPublic(public)
-
-	err := client.HarborClient.UpdateRobotAccount(context.TODO(), requestBody)
-	if err != nil {
-		return makeError(err)
-	}
-
-	return nil
-}
