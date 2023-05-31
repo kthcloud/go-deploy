@@ -139,6 +139,11 @@ func HandleGitHubHook(c *gin.Context) {
 		return
 	}
 
+	if hookID == 0 {
+		context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "invalid x-github-delivery header")
+		return
+	}
+
 	signature := context.GinContext.GetHeader("x-hub-signature-256")
 	if len(signature) == 0 {
 		context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "missing x-hub-signature-256 header")
@@ -151,9 +156,19 @@ func HandleGitHubHook(c *gin.Context) {
 		return
 	}
 
+	if len(requestBodyRaw) == 0 {
+		context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "missing request body")
+		return
+	}
+
 	deployment, err := deployment_service.GetByGitHubWebhookID(hookID)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		return
+	}
+
+	if deployment == nil {
+		context.ErrorResponse(http.StatusNotFound, status_codes.Error, "deployment not found")
 		return
 	}
 
@@ -169,7 +184,13 @@ func HandleGitHubHook(c *gin.Context) {
 		return
 	}
 
-	pushedBranch := strings.Split(requestBodyParsed.Ref, "/")[2]
+	refSplit := strings.Split(requestBodyParsed.Ref, "/")
+	if len(refSplit) != 3 {
+		context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "invalid ref")
+		return
+	}
+
+	pushedBranch := refSplit[2]
 	if pushedBranch != requestBodyParsed.Repository.DefaultBranch {
 		context.Ok()
 		return
