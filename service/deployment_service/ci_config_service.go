@@ -27,7 +27,7 @@ func GetCIConfig(userId, deploymentID string, isAdmin bool) (*body.CiConfig, err
 
 	tag := fmt.Sprintf("%s/%s/%s",
 		conf.Env.DockerRegistry.URL,
-		subsystemutils.GetPrefixedName(deployment.Name),
+		subsystemutils.GetPrefixedName(userId),
 		deployment.Name,
 	)
 
