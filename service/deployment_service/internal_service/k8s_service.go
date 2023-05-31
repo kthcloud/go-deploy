@@ -48,13 +48,13 @@ func createServicePublic(namespace, name string, port, targetPort int) *k8sModel
 
 func createIngressPublic(namespace, name string, hosts []string, serviceName string, servicePort int) *k8sModels.IngressPublic {
 	return &k8sModels.IngressPublic{
-		ID:               "",
-		Name:             name,
-		Namespace:        namespace,
-		ServiceName:      serviceName,
-		ServicePort:      servicePort,
-		IngressClassName: "caddy",
-		Hosts:            hosts,
+		ID:           "",
+		Name:         name,
+		Namespace:    namespace,
+		ServiceName:  serviceName,
+		ServicePort:  servicePort,
+		IngressClass: conf.Env.Deployment.IngressClass,
+		Hosts:        hosts,
 	}
 }
 

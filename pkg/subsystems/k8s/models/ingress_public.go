@@ -10,9 +10,9 @@ type IngressPublic struct {
 	Name             string   `bson:"name"`
 	Namespace        string   `bson:"namespace"`
 	ServiceName      string   `bson:"serviceName"`
-	ServicePort      int      `bson:"servicePort"`
-	IngressClassName string   `bson:"ingressClassName"`
-	Hosts            []string `bson:"host"`
+	ServicePort  int      `bson:"servicePort"`
+	IngressClass string   `bson:"ingressClassName"`
+	Hosts        []string `bson:"host"`
 }
 
 func CreateIngressPublicFromRead(ingress *v1.Ingress) *IngressPublic {
@@ -37,12 +37,12 @@ func CreateIngressPublicFromRead(ingress *v1.Ingress) *IngressPublic {
 	}
 
 	return &IngressPublic{
-		ID:               ingress.Labels[keys.ManifestLabelID],
-		Name:             ingress.Labels[keys.ManifestLabelName],
-		Namespace:        ingress.Namespace,
-		ServiceName:      serviceName,
-		ServicePort:      servicePort,
-		IngressClassName: ingressClassName,
-		Hosts:            hosts,
+		ID:           ingress.Labels[keys.ManifestLabelID],
+		Name:         ingress.Labels[keys.ManifestLabelName],
+		Namespace:    ingress.Namespace,
+		ServiceName:  serviceName,
+		ServicePort:  servicePort,
+		IngressClass: ingressClassName,
+		Hosts:        hosts,
 	}
 }

@@ -9,6 +9,7 @@ import (
 	"go-deploy/pkg/subsystems/gitlab/models"
 	"go-deploy/utils/subsystemutils"
 	"log"
+	"strings"
 )
 
 func CreateBuild(id string, params *deploymentModel.BuildParams) error {
@@ -47,6 +48,8 @@ func CreateBuild(id string, params *deploymentModel.BuildParams) error {
 		return makeError(err)
 	}
 
+	escapedHarborName := strings.Replace(deployment.Subsystems.Harbor.Robot.HarborName, "$", "$$", -1)
+
 	err = client.AttachCiFile(projectID,
 		params.Branch,
 		deploymentModel.GitLabCiConfig{
@@ -58,9 +61,9 @@ func CreateBuild(id string, params *deploymentModel.BuildParams) error {
 				},
 				Variables: map[string]string{
 					"CI_REGISTRY":          conf.Env.DockerRegistry.URL,
-					"CI_REGISTRY_IMAGE":    conf.Env.DockerRegistry.URL + "/" + deployment.OwnerID + "/" + subsystemutils.GetPrefixedName(deployment.Name),
+					"CI_REGISTRY_IMAGE":    conf.Env.DockerRegistry.URL + "/" + subsystemutils.GetPrefixedName(deployment.OwnerID) + "/" + deployment.Name,
 					"CI_COMMIT_REF_SLUG":   params.Tag,
-					"CI_REGISTRY_USER":     deployment.Subsystems.Harbor.Robot.Name,
+					"CI_REGISTRY_USER":     escapedHarborName,
 					"CI_REGISTRY_PASSWORD": deployment.Subsystems.Harbor.Robot.Secret,
 				},
 				Script: []string{

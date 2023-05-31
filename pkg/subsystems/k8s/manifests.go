@@ -127,6 +127,9 @@ func CreateIngressManifest(public *models.IngressPublic) *networkingv1.Ingress {
 				keys.ManifestLabelID:   public.ID,
 				keys.ManifestLabelName: public.Name,
 			},
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.class": public.IngressClass,
+			},
 		},
 		Spec: networkingv1.IngressSpec{
 			Rules: rules,
