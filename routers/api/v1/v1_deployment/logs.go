@@ -32,50 +32,53 @@ func GetLogs(c *gin.Context) {
 		return
 	}
 
-	defer func(ws *websocket.Conn) {
-		_ = ws.Close()
-	}(ws)
-
-	handler := func(msg string) {
-		err = ws.WriteMessage(websocket.TextMessage, []byte(msg))
-		if err != nil {
-			fmt.Printf("failed to write websocket message for deployment %s (%s)\n", requestURI.DeploymentID, ws.RemoteAddr())
+	go func() {
+		defer func(ws *websocket.Conn) {
 			_ = ws.Close()
+		}(ws)
+
+		handler := func(msg string) {
+			err = ws.WriteMessage(websocket.TextMessage, []byte(msg))
+			if err != nil {
+				log.Println("error writing message to websocket for deployment ", requestURI.DeploymentID, ". details:", err)
+				_ = ws.Close()
+			}
 		}
-	}
 
-	didAuth := false
-	for {
-		_, data, readMsgErr := ws.ReadMessage()
-		msg := string(data)
-		if strings.HasPrefix(msg, "Bearer ") && !didAuth {
-			auth := validateBearerToken(msg)
-			if auth != nil {
-				didAuth = true
+		didAuth := false
 
-				logContext, getLogsErr := deployment_service.GetLogs(auth.UserID, requestURI.DeploymentID, handler, auth.IsAdmin())
-				if getLogsErr != nil {
-					context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", getLogsErr))
-					return
+		for {
+			_, data, readMsgErr := ws.ReadMessage()
+			msg := string(data)
+			if strings.HasPrefix(msg, "Bearer ") && !didAuth {
+				auth := validateBearerToken(msg)
+				if auth != nil {
+					didAuth = true
+
+					logContext, getLogsErr := deployment_service.GetLogs(auth.UserID, requestURI.DeploymentID, handler, auth.IsAdmin())
+					if getLogsErr != nil {
+						context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", getLogsErr))
+						return
+					}
+
+					if logContext == nil {
+						context.NotFound()
+						return
+					}
 				}
+			}
 
-				if logContext == nil {
-					context.NotFound()
+			if ce, ok := readMsgErr.(*websocket.CloseError); ok {
+				switch ce.Code {
+				case websocket.CloseNormalClosure,
+					websocket.CloseGoingAway,
+					websocket.CloseNoStatusReceived:
+					log.Println("websocket closed for deployment ", requestURI.DeploymentID)
 					return
 				}
 			}
 		}
-
-		if ce, ok := readMsgErr.(*websocket.CloseError); ok {
-			switch ce.Code {
-			case websocket.CloseNormalClosure,
-				websocket.CloseGoingAway,
-				websocket.CloseNoStatusReceived:
-				log.Printf("closing websocket connection for deployment %s (%s)\n", requestURI.DeploymentID, ws.RemoteAddr())
-				return
-			}
-		}
-	}
+	}()
 }
 
 func validateBearerToken(bearer string) *v1.AuthInfo {
