@@ -1,4 +1,4 @@
-package jobs
+package job_execute
 
 import (
 	"fmt"
@@ -90,6 +90,8 @@ func startJob(job *jobModel.Job) error {
 		go updateDeployment(job)
 	case jobModel.TypeBuildDeployment:
 		go buildDeployment(job)
+	case jobModel.TypeRepairDeployment:
+		go repairDeployment(job)
 	default:
 		return fmt.Errorf("unknown job type: %s", job.Type)
 	}

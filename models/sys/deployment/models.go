@@ -4,6 +4,7 @@ import (
 	githubModels "go-deploy/pkg/subsystems/github/models"
 	harborModels "go-deploy/pkg/subsystems/harbor/models"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
+	"time"
 )
 
 const (
@@ -11,6 +12,7 @@ const (
 	ActivityBeingDeleted = "beingDeleted"
 	ActivityRestarting   = "restarting"
 	ActivityBuilding     = "building"
+	ActivityRepairing    = "repairing"
 )
 
 type Deployment struct {
@@ -22,7 +24,8 @@ type Deployment struct {
 	Envs         []Env    `bson:"envs"`
 	ExtraDomains []string `bson:"extraDomains"`
 
-	Activities []string `bson:"activities"`
+	Activities []string  `bson:"activities"`
+	RepairedAt time.Time `bson:"repairedAt"`
 
 	Subsystems    Subsystems `bson:"subsystems"`
 	StatusCode    int        `bson:"statusCode"`

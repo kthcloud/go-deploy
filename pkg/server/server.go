@@ -9,9 +9,10 @@ import (
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/intializer"
-	"go-deploy/pkg/workers/confirmers"
-	"go-deploy/pkg/workers/jobs"
-	"go-deploy/pkg/workers/status_updaters"
+	"go-deploy/pkg/workers/confirm"
+	"go-deploy/pkg/workers/job_execute"
+	"go-deploy/pkg/workers/repair"
+	"go-deploy/pkg/workers/status_update"
 	"go-deploy/routers"
 	"log"
 	"net/http"
@@ -25,12 +26,13 @@ func setup(context *app.Context) {
 	models.Setup()
 	err := job.ResetRunning()
 	if err != nil {
-		log.Fatalln("failed to reset running jobs. details: ", err)
+		log.Fatalln("failed to reset running job. details: ", err)
 	}
 
-	confirmers.Setup(context)
-	status_updaters.Setup(context)
-	jobs.Setup(context)
+	confirm.Setup(context)
+	status_update.Setup(context)
+	job_execute.Setup(context)
+	repair.Setup(context)
 
 	intializer.SynchronizeGPUs()
 }

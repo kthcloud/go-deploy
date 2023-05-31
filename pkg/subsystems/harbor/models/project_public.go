@@ -8,6 +8,10 @@ type ProjectPublic struct {
 	Public bool   `json:"public,omitempty" bson:"public,omitempty"`
 }
 
+func (p *ProjectPublic) Created() bool {
+	return p.ID != 0
+}
+
 func CreateProjectUpdateParamsFromPublic(public *ProjectPublic) *modelv2.Project {
 	return &modelv2.Project{
 		Metadata: &modelv2.ProjectMetadata{

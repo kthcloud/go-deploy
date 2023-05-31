@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"log"
+	"time"
 )
 
 func (deployment *Deployment) Ready() bool {
@@ -49,7 +50,9 @@ func CreateDeployment(deploymentID, ownerID string, params *CreateParams) error 
 		Private:      params.Private,
 		Envs:         params.Envs,
 		ExtraDomains: make([]string, 0),
-		Activities:   []string{ActivityBeingCreated},
+
+		Activities: []string{ActivityBeingCreated},
+		RepairedAt: time.Now(),
 
 		StatusCode:    status_codes.ResourceBeingCreated,
 		StatusMessage: status_codes.GetMsg(status_codes.ResourceBeingCreated),
@@ -235,6 +238,18 @@ func GetByActivity(activity string) ([]Deployment, error) {
 	return GetAllWithFilter(filter)
 }
 
+func GetWithNoActivities() ([]Deployment, error) {
+	filter := bson.D{
+		{
+			"activities", bson.M{
+				"$size": 0,
+			},
+		},
+	}
+
+	return GetAllWithFilter(filter)
+}
+
 func AddActivity(deploymentID, activity string) error {
 	_, err := models.DeploymentCollection.UpdateOne(context.TODO(),
 		bson.D{{"id", deploymentID}},
@@ -257,4 +272,29 @@ func RemoveActivity(deploymentID, activity string) error {
 		return err
 	}
 	return nil
+}
+
+func (deployment *Deployment) Created() bool {
+	return deployment.ID != "" &&
+		deployment.Subsystems.GitHub.Created() &&
+		deployment.Subsystems.Harbor.Created() &&
+		deployment.Subsystems.K8s.Created()
+}
+
+func (k8s *K8s) Created() bool {
+	return k8s.Namespace.Created() &&
+		k8s.Deployment.Created() &&
+		k8s.Service.Created() &&
+		k8s.Ingress.Created()
+}
+
+func (harbor *Harbor) Created() bool {
+	return harbor.Project.Created() &&
+		harbor.Repository.Created() &&
+		harbor.Robot.Created() &&
+		harbor.Webhook.Created()
+}
+
+func (gitHub *GitHub) Created() bool {
+	return gitHub.Webhook.Created()
 }

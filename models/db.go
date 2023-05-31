@@ -50,7 +50,7 @@ func Setup() {
 	VmCollection = findCollection("vms")
 	GpuCollection = findCollection("gpus")
 	UserCollection = findCollection("users")
-	JobCollection = findCollection("jobs")
+	JobCollection = findCollection("job")
 }
 
 func findCollection(collectionName string) *mongo.Collection {

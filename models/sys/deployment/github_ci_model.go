@@ -3,7 +3,7 @@ package deployment
 type GithubActionConfig struct {
 	Name string `yaml:"name"`
 	On   On     `yaml:"on"`
-	Jobs Jobs   `yaml:"jobs"`
+	Jobs Jobs   `yaml:"job"`
 }
 
 type Push struct {

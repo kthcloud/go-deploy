@@ -11,6 +11,10 @@ type RepositoryPublic struct {
 	Placeholder *PlaceHolder `json:"placeholder" bson:"placeholder"`
 }
 
+func (r *RepositoryPublic) Created() bool {
+	return r.ID != 0
+}
+
 func CreateRepositoryPublicFromGet(repository *modelv2.Repository, project *modelv2.Project) *RepositoryPublic {
 	return &RepositoryPublic{
 		ID:          int(repository.ID),

@@ -94,7 +94,7 @@ func setupGpuRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
 }
 
 func setupJobRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
-	private.GET("/jobs/:jobId", v1_job.Get)
+	private.GET("/job/:jobId", v1_job.Get)
 }
 
 func setupUserRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {

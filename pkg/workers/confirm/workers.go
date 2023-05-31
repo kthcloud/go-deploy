@@ -1,4 +1,4 @@
-package confirmers
+package confirm
 
 import (
 	deploymentModel "go-deploy/models/sys/deployment"

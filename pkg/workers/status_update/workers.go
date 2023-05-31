@@ -1,4 +1,4 @@
-package status_updaters
+package status_update
 
 import (
 	deploymentModel "go-deploy/models/sys/deployment"

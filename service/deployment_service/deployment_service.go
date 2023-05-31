@@ -121,6 +121,8 @@ func CanAddActivity(deploymentID, activity string) (bool, string) {
 		return !deployment.BeingCreated() && !deployment.BeingDeleted(), "It is not ready"
 	case deploymentModel.ActivityBuilding:
 		return !deployment.BeingCreated() && !deployment.BeingDeleted() && !deployment.DoingActivity(deploymentModel.ActivityRestarting), "It is not ready"
+	case deploymentModel.ActivityRepairing:
+		return !deployment.BeingCreated() && !deployment.BeingDeleted() && !deployment.DoingActivity(deploymentModel.ActivityRestarting), "It is not ready"
 	}
 
 	return false, fmt.Sprintf("Unknown activity %s", activity)
@@ -244,12 +246,14 @@ func Build(id string, buildParams *body.DeploymentBuild) error {
 		return fmt.Errorf("failed to build deployment. details: %s", reason)
 	}
 
-	err = internal_service.CreateBuild(deployment.ID, params)
-	if err != nil {
-		return makeError(err)
-	}
+	defer func() {
+		err = deploymentModel.RemoveActivity(deployment.ID, deploymentModel.ActivityBuilding)
+		if err != nil {
+			log.Println("failed to remove activity", deploymentModel.ActivityBuilding, "from deployment", deployment.Name, "details:", err)
+		}
+	}()
 
-	err = deploymentModel.RemoveActivity(deployment.ID, deploymentModel.ActivityBuilding)
+	err = internal_service.CreateBuild(deployment.ID, params)
 	if err != nil {
 		return makeError(err)
 	}
@@ -279,4 +283,49 @@ func GetUsageByUserID(userID string) (*deploymentModel.Usage, error) {
 	return &deploymentModel.Usage{
 		Count: count,
 	}, nil
+}
+
+func Repair(id string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to repair deployment %s. details: %s", id, err)
+	}
+
+	deployment, err := deploymentModel.GetByID(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if deployment == nil {
+		log.Println("deployment", id, "not found when repairing. assuming it was deleted")
+		return nil
+	}
+
+	if !deployment.Ready() {
+		log.Println("deployment", id, "not ready when repairing.")
+		return nil
+	}
+
+	started, reason, err := StartActivity(deployment.ID, deploymentModel.ActivityRepairing)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if !started {
+		return fmt.Errorf("failed to repair deployment. details: %s", reason)
+	}
+
+	defer func() {
+		err = deploymentModel.RemoveActivity(deployment.ID, deploymentModel.ActivityRepairing)
+		if err != nil {
+			log.Println("failed to remove activity", deploymentModel.ActivityRepairing, "from deployment", deployment.Name, "details:", err)
+		}
+	}()
+
+	err = internal_service.RepairK8s(deployment.Name)
+	if err != nil {
+		return makeError(err)
+	}
+
+	log.Println("successfully repaired deployment", deployment.Name)
+	return nil
 }

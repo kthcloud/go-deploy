@@ -17,6 +17,10 @@ type RobotPublic struct {
 	Secret      string `json:"secret" bson:"secret" `
 }
 
+func (r *RobotPublic) Created() bool {
+	return r.ID != 0
+}
+
 func CreateRobotUpdateFromPublic(public *RobotPublic) *modelv2.Robot {
 	return &modelv2.Robot{
 		ID:          int64(public.ID),

@@ -20,7 +20,7 @@ import (
 // @Produce  json
 // @Param jobId path string true "Job ID"
 // @Success 200 {object} body.JobRead
-// @Router /api/v1/jobs/{id} [get]
+// @Router /api/v1/job/{id} [get]
 func Get(c *gin.Context) {
 	context := app.NewContext(c)
 
