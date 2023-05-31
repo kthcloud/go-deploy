@@ -60,7 +60,7 @@ func CreateBuild(id string, params *deploymentModel.BuildParams) error {
 					"CI_REGISTRY":          conf.Env.DockerRegistry.URL,
 					"CI_REGISTRY_IMAGE":    conf.Env.DockerRegistry.URL + "/" + deployment.OwnerID + "/" + subsystemutils.GetPrefixedName(deployment.Name),
 					"CI_COMMIT_REF_SLUG":   params.Tag,
-					"CI_REGISTRY_USER":     deployment.Subsystems.Harbor.Robot.Name,
+					"CI_REGISTRY_USER":     deployment.Subsystems.Harbor.Robot.HarborName,
 					"CI_REGISTRY_PASSWORD": deployment.Subsystems.Harbor.Robot.Secret,
 				},
 				Script: []string{

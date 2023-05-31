@@ -31,7 +31,7 @@ func GetCIConfig(userId, deploymentID string, isAdmin bool) (*body.CiConfig, err
 		deployment.Name,
 	)
 
-	username := deployment.Subsystems.Harbor.Robot.Name
+	username := deployment.Subsystems.Harbor.Robot.HarborName
 	password := deployment.Subsystems.Harbor.Robot.Secret
 
 	config := deploymentModel.GithubActionConfig{
