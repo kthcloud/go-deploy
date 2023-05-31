@@ -88,12 +88,12 @@ func withK8sIngress(t *testing.T, namespace *models.NamespacePublic, service *mo
 	client := withK8sClient(t)
 
 	ingressPublic := &models.IngressPublic{
-		Name:             "acc-test-" + uuid.New().String(),
-		Namespace:        namespace.FullName,
-		ServiceName:      service.Name,
-		ServicePort:      service.Port,
-		IngressClassName: "nginx",
-		Hosts:            []string{"acc-test-" + uuid.New().String() + ".example.com"},
+		Name:         "acc-test-" + uuid.New().String(),
+		Namespace:    namespace.FullName,
+		ServiceName:  service.Name,
+		ServicePort:  service.Port,
+		IngressClass: "nginx",
+		Hosts:        []string{"acc-test-" + uuid.New().String() + ".example.com"},
 	}
 
 	id, err := client.CreateIngress(ingressPublic)
@@ -106,7 +106,7 @@ func withK8sIngress(t *testing.T, namespace *models.NamespacePublic, service *mo
 
 	ingressPublic.ID = id
 	// for safety reasons, we don't compare the ingress class name
-	createdIngress.IngressClassName = "nginx"
+	createdIngress.IngressClass = "nginx"
 	assert.EqualValues(t, ingressPublic, createdIngress, "ingress does not match")
 
 	return ingressPublic
