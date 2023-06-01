@@ -137,8 +137,17 @@ func MarkFailed(jobID string, reason string) error {
 }
 
 func MarkTerminated(jobID string, reason string) error {
-	filter := bson.D{{"id", jobID}}
-	update := bson.D{{"$set", bson.D{{"status", StatusTerminated}, {"$push", bson.D{{"errorLogs", reason}}}}}}
+	filter := bson.D{
+		{"id", jobID},
+	}
+	update := bson.D{
+		{"$set",
+			bson.D{{"status", StatusTerminated}},
+		},
+		{"$push",
+			bson.D{{"errorLogs", reason}},
+		},
+	}
 
 	_, err := models.JobCollection.UpdateOne(context.Background(), filter, update)
 	if err != nil {

@@ -47,12 +47,13 @@ func CreateDeployment(deploymentID, ownerID string, params *CreateParams) error 
 		Name:    params.Name,
 		OwnerID: ownerID,
 
+		CreatedAt: time.Now(),
+
 		Private:      params.Private,
 		Envs:         params.Envs,
 		ExtraDomains: make([]string, 0),
 
 		Activities: []string{ActivityBeingCreated},
-		RepairedAt: time.Now(),
 
 		StatusCode:    status_codes.ResourceBeingCreated,
 		StatusMessage: status_codes.GetMsg(status_codes.ResourceBeingCreated),
@@ -279,6 +280,21 @@ func MarkRepaired(deploymentID string) error {
 	update := bson.D{
 		{"$set", bson.D{{"repairedAt", time.Now()}}},
 		{"$pull", bson.D{{"activities", "repairing"}}},
+	}
+
+	_, err := models.DeploymentCollection.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func MarkUpdated(deploymentID string) error {
+	filter := bson.D{{"id", deploymentID}}
+	update := bson.D{
+		{"$set", bson.D{{"updatedAt", time.Now()}}},
+		{"$pull", bson.D{{"activities", "updating"}}},
 	}
 
 	_, err := models.DeploymentCollection.UpdateOne(context.TODO(), filter, update)

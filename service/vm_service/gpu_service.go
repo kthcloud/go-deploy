@@ -147,7 +147,8 @@ func AttachGPU(gpuIDs []string, vmID, userID string) error {
 
 	var err error
 	for _, gpuID := range gpuIDs {
-		gpu, err := gpuModel.GetByID(gpuID)
+		var gpu *gpuModel.GPU
+		gpu, err = gpuModel.GetByID(gpuID)
 		if err != nil {
 			return makeError(err)
 		}
@@ -156,7 +157,8 @@ func AttachGPU(gpuIDs []string, vmID, userID string) error {
 			continue
 		}
 
-		available, err := isGpuAvailable(gpu.Host, gpu.Data.Bus)
+		var available bool
+		available, err = isGpuAvailable(gpu.Host, gpu.Data.Bus)
 		if err != nil {
 			return makeError(err)
 		}

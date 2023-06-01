@@ -221,7 +221,25 @@ func repairDeployment(job *jobModel.Job) {
 
 	err = deployment_service.Repair(id)
 	if err != nil {
-		_ = jobModel.MarkFailed(job.ID, err.Error())
+		_ = jobModel.MarkTerminated(job.ID, err.Error())
+		return
+	}
+
+	_ = jobModel.MarkCompleted(job.ID)
+}
+
+func repairVM(job *jobModel.Job) {
+	err := assertParameters(job, []string{"id"})
+	if err != nil {
+		_ = jobModel.MarkTerminated(job.ID, err.Error())
+		return
+	}
+
+	id := job.Args["id"].(string)
+
+	err = vm_service.Repair(id)
+	if err != nil {
+		_ = jobModel.MarkTerminated(job.ID, err.Error())
 		return
 	}
 

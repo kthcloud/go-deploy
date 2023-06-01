@@ -7,5 +7,6 @@ import (
 
 func Setup(ctx *app.Context) {
 	log.Println("starting repairer")
-	go repairer(ctx)
+	go deploymentRepairer(ctx)
+	go vmRepairer(ctx)
 }

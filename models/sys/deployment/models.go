@@ -20,12 +20,15 @@ type Deployment struct {
 	Name    string `bson:"name"`
 	OwnerID string `bson:"ownerId"`
 
+	CreatedAt  time.Time `bson:"createdAt"`
+	UpdatedAt  time.Time `bson:"updatedAt"`
+	RepairedAt time.Time `bson:"repairedAt"`
+
 	Private      bool     `bson:"private"`
 	Envs         []Env    `bson:"envs"`
 	ExtraDomains []string `bson:"extraDomains"`
 
-	Activities []string  `bson:"activities"`
-	RepairedAt time.Time `bson:"repairedAt"`
+	Activities []string `bson:"activities"`
 
 	Subsystems    Subsystems `bson:"subsystems"`
 	StatusCode    int        `bson:"statusCode"`
