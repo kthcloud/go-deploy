@@ -3,7 +3,9 @@ package job_execute
 import (
 	"github.com/mitchellh/mapstructure"
 	"go-deploy/models/dto/body"
+	deploymentModel "go-deploy/models/sys/deployment"
 	jobModel "go-deploy/models/sys/job"
+	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/service/deployment_service"
 	"go-deploy/service/vm_service"
 )
@@ -69,6 +71,12 @@ func updateVM(job *jobModel.Job) {
 	err = vm_service.Update(id, &update)
 	if err != nil {
 		_ = jobModel.MarkFailed(job.ID, err.Error())
+		return
+	}
+
+	err = vmModel.MarkUpdated(id)
+	if err != nil {
+		_ = jobModel.MarkTerminated(job.ID, err.Error())
 		return
 	}
 
@@ -163,13 +171,13 @@ func deleteDeployment(job *jobModel.Job) {
 }
 
 func updateDeployment(job *jobModel.Job) {
-	err := assertParameters(job, []string{"name", "update"})
+	err := assertParameters(job, []string{"id", "update"})
 	if err != nil {
 		_ = jobModel.MarkTerminated(job.ID, err.Error())
 		return
 	}
 
-	name := job.Args["name"].(string)
+	id := job.Args["id"].(string)
 	var update body.DeploymentUpdate
 	err = mapstructure.Decode(job.Args["update"].(map[string]interface{}), &update)
 	if err != nil {
@@ -177,9 +185,15 @@ func updateDeployment(job *jobModel.Job) {
 		return
 	}
 
-	err = deployment_service.Update(name, &update)
+	err = deployment_service.Update(id, &update)
 	if err != nil {
 		_ = jobModel.MarkFailed(job.ID, err.Error())
+		return
+	}
+
+	err = deploymentModel.MarkUpdated(id)
+	if err != nil {
+		_ = jobModel.MarkTerminated(job.ID, err.Error())
 		return
 	}
 
@@ -238,6 +252,22 @@ func repairVM(job *jobModel.Job) {
 	id := job.Args["id"].(string)
 
 	err = vm_service.Repair(id)
+	if err != nil {
+		_ = jobModel.MarkTerminated(job.ID, err.Error())
+		return
+	}
+
+	_ = jobModel.MarkCompleted(job.ID)
+}
+
+func repairGPUs(job *jobModel.Job) {
+	err := assertParameters(job, []string{})
+	if err != nil {
+		_ = jobModel.MarkTerminated(job.ID, err.Error())
+		return
+	}
+
+	err = vm_service.RepairGPUs()
 	if err != nil {
 		_ = jobModel.MarkTerminated(job.ID, err.Error())
 		return

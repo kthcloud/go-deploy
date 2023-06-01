@@ -29,12 +29,12 @@ func setup(context *app.Context) {
 		log.Fatalln("failed to reset running job. details: ", err)
 	}
 
+	intializer.SynchronizeGPUs()
+
 	confirm.Setup(context)
 	status_update.Setup(context)
 	job_execute.Setup(context)
 	repair.Setup(context)
-
-	intializer.SynchronizeGPUs()
 }
 
 func shutdown() {

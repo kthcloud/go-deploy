@@ -14,6 +14,7 @@ const (
 	TypeBuildDeployment  = "buildDeployment"
 	TypeRepairVM         = "repairVm"
 	TypeRepairDeployment = "repairDeployment"
+	TypeRepairGPUs       = "repairGpus"
 )
 
 const (

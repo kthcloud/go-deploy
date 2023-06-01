@@ -151,7 +151,7 @@ func Delete(name string) error {
 	return nil
 }
 
-func Update(name string, deploymentUpdate *body.DeploymentUpdate) error {
+func Update(id string, deploymentUpdate *body.DeploymentUpdate) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update deployment. details: %s", err)
 	}
@@ -159,22 +159,22 @@ func Update(name string, deploymentUpdate *body.DeploymentUpdate) error {
 	params := &deploymentModel.UpdateParams{}
 	params.FromDTO(deploymentUpdate)
 
-	deployment, err := deploymentModel.GetByName(name)
+	deployment, err := deploymentModel.GetByID(id)
 	if err != nil {
 		return makeError(err)
 	}
 
 	if deployment == nil {
-		log.Println("deployment", name, "not found when updating. assuming it was deleted")
+		log.Println("deployment", id, "not found when updating. assuming it was deleted")
 		return nil
 	}
 
-	err = internal_service.UpdateK8s(name, params)
+	err = internal_service.UpdateK8s(deployment.Name, params)
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = deploymentModel.UpdateByID(deployment.ID, params)
+	err = deploymentModel.UpdateByID(id, params)
 	if err != nil {
 		return makeError(err)
 	}

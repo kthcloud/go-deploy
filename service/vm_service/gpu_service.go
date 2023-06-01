@@ -143,7 +143,7 @@ func AttachGPU(gpuIDs []string, vmID, userID string) error {
 	csInsufficientCapacityError := "host has capacity? false"
 
 	// TODO: add check for user's quota
-	oneHourFromNow := time.Now().Add(time.Hour)
+	oneHourFromNow := time.Now().Add(time.Hour * 24)
 
 	var err error
 	for _, gpuID := range gpuIDs {
@@ -211,6 +211,79 @@ func AttachGPU(gpuIDs []string, vmID, userID string) error {
 		return makeError(err)
 	}
 
+	return nil
+}
+
+func RepairGPUs() error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to repair gpus. details: %s", err)
+	}
+
+	// get all gpus that are attached to a vm
+	attachedGPUs, err := gpuModel.GetAllLeased(nil, nil)
+	if err != nil {
+		return makeError(err)
+	}
+
+	// get all vms with an assigned gpu
+	vmsWithGPU, err := vmModel.GetWithGPU()
+	if err != nil {
+		return makeError(err)
+	}
+
+	// find vm with same gpu
+	gpuToVM := make(map[string]*vmModel.VM)
+	for _, vm := range vmsWithGPU {
+		_, ok := gpuToVM[vm.GpuID]
+		if ok {
+			vm1 := gpuToVM[vm.GpuID]
+			vm2 := vm
+			log.Println("found two vms with the same gpu. vm1:", vm1.ID, "(", vm1.Name, ")  vm2:", vm2.ID, "(", vm2.Name, "), gpu: ", vm.GpuID, ". detaching gpu from vm2")
+			err = DetachGPU(vm2.ID, vm2.OwnerID)
+			if err != nil {
+				return makeError(err)
+			}
+		}
+
+		gpuToVM[vm.GpuID] = &vm
+	}
+
+	// find gpus that are attached to a vm, but not in the gpuToVM map
+	for _, gpu := range attachedGPUs {
+		_, ok := gpuToVM[gpu.ID]
+		if !ok {
+			log.Println("found gpu that is attached to a vm, but not in the gpuToVM map. clearing lease. vm:", gpu.Lease.VmID, "gpu:", gpu.ID, "("+gpu.Data.Name+")")
+			err = gpuModel.ClearLease(gpu.ID)
+			if err != nil {
+				return makeError(err)
+			}
+		}
+	}
+
+	// find vms that have a gpu assigned, but the gpu has no lease
+	for _, vm := range vmsWithGPU {
+		_, ok := gpuToVM[vm.GpuID]
+		if ok {
+			matched := false
+			for _, gpu := range attachedGPUs {
+				if gpu.ID == vm.GpuID {
+					matched = true
+					break
+				}
+			}
+			if matched {
+				continue
+			}
+
+			log.Println("found vm that has a gpu assigned, but not in the gpuToVM map. trying to attach gpu to vm. vm:", vm.ID, "("+vm.Name+") gpu:", vm.GpuID)
+			err = AttachGPU([]string{vm.GpuID}, vm.ID, vm.OwnerID)
+			if err != nil {
+				log.Println("failed to repair gpu attachment to vm. vm:", vm.ID, "("+vm.Name+") gpu:", vm.GpuID, ". details:", err.Error())
+			}
+		}
+	}
+
+	log.Println("successfully repaired gpus")
 	return nil
 }
 

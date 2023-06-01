@@ -359,35 +359,35 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	current, err := deployment_service.GetByID(auth.UserID, requestURI.DeploymentID, auth.IsAdmin())
+	deployment, err := deployment_service.GetByID(auth.UserID, requestURI.DeploymentID, auth.IsAdmin())
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, fmt.Sprintf("Failed to get vm: %s", err))
 		return
 	}
 
-	if current == nil {
+	if deployment == nil {
 		context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, fmt.Sprintf("Deployment with id %s not found", requestURI.DeploymentID))
 		return
 	}
 
-	if current.BeingCreated() {
+	if deployment.BeingCreated() {
 		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingCreated, "Resource is currently being created")
 		return
 	}
 
-	if current.BeingDeleted() {
+	if deployment.BeingDeleted() {
 		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingDeleted, "Resource is currently being deleted")
 		return
 	}
 
-	if current.OwnerID != auth.UserID && !auth.IsAdmin() {
+	if deployment.OwnerID != auth.UserID && !auth.IsAdmin() {
 		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, "User is not allowed to update this resource")
 		return
 	}
 
 	jobID := uuid.New().String()
 	err = job_service.Create(jobID, auth.UserID, jobModel.TypeUpdateDeployment, map[string]interface{}{
-		"name":   current.Name,
+		"id":     deployment.ID,
 		"update": requestBody,
 	})
 
@@ -397,7 +397,7 @@ func Update(c *gin.Context) {
 	}
 
 	context.JSONResponse(http.StatusOK, body.DeploymentUpdated{
-		ID:    current.ID,
+		ID:    deployment.ID,
 		JobID: jobID,
 	})
 

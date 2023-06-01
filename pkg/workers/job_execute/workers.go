@@ -94,6 +94,8 @@ func startJob(job *jobModel.Job) error {
 		go repairDeployment(job)
 	case jobModel.TypeRepairVM:
 		go repairVM(job)
+	case jobModel.TypeRepairGPUs:
+		go repairGPUs(job)
 	default:
 		return fmt.Errorf("unknown job type: %s", job.Type)
 	}

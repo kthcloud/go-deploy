@@ -500,32 +500,31 @@ func AttachGPU(gpuID, vmID string) error {
 
 	requiredExtraConfig := createExtraConfig(gpu)
 	currentExtraConfig := vm.Subsystems.CS.VM.ExtraConfig
-	if requiredExtraConfig == currentExtraConfig {
-		return nil
-	}
-
-	status, err := client.GetVmStatus(vm.Subsystems.CS.VM.ID)
-	if err != nil {
-		return makeError(err)
-	}
-
-	if status == "Running" {
-		err = client.DoVmCommand(vm.Subsystems.CS.VM.ID, nil, "stop")
+	if requiredExtraConfig != currentExtraConfig {
+		var status string
+		status, err = client.GetVmStatus(vm.Subsystems.CS.VM.ID)
 		if err != nil {
 			return makeError(err)
 		}
-	}
 
-	vm.Subsystems.CS.VM.ExtraConfig = requiredExtraConfig
+		if status == "Running" {
+			err = client.DoVmCommand(vm.Subsystems.CS.VM.ID, nil, "stop")
+			if err != nil {
+				return makeError(err)
+			}
+		}
 
-	err = client.UpdateVM(&vm.Subsystems.CS.VM)
-	if err != nil {
-		return makeError(err)
-	}
+		vm.Subsystems.CS.VM.ExtraConfig = requiredExtraConfig
 
-	err = vmModel.UpdateSubsystemByName(vm.Name, "cs", "vm.extraConfig", vm.Subsystems.CS.VM.ExtraConfig)
-	if err != nil {
-		return makeError(err)
+		err = client.UpdateVM(&vm.Subsystems.CS.VM)
+		if err != nil {
+			return makeError(err)
+		}
+
+		err = vmModel.UpdateSubsystemByName(vm.Name, "cs", "vm.extraConfig", vm.Subsystems.CS.VM.ExtraConfig)
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	// always start the vm after attaching gpu, to make sure the vm can be started on the host

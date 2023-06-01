@@ -283,13 +283,7 @@ func Detach(vmID, userID string) error {
 		{"lease.user", userID},
 	}
 
-	update := bson.M{
-		"$set": bson.M{
-			"lease.vmId": "",
-			"lease.user": "",
-			"lease.end":  time.Time{},
-		},
-	}
+	update := createClearedLeaseFilter
 
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
 
@@ -314,4 +308,29 @@ func Detach(vmID, userID string) error {
 	}
 
 	return nil
+}
+
+func ClearLease(gpuID string) error {
+	filter := bson.D{
+		{"id", gpuID},
+	}
+
+	update := createClearedLeaseFilter()
+
+	err := models.GpuCollection.FindOneAndUpdate(context.Background(), filter, update, nil).Err()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func createClearedLeaseFilter() bson.M {
+	return bson.M{
+		"$set": bson.M{
+			"lease.vmId": "",
+			"lease.user": "",
+			"lease.end":  time.Time{},
+		},
+	}
 }

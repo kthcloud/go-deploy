@@ -90,3 +90,28 @@ func vmRepairer(ctx *app.Context) {
 		}
 	}
 }
+
+func gpuRepairer(ctx *app.Context) {
+	firstLoop := true
+	for {
+		if ctx.Stop {
+			break
+		}
+
+		if !firstLoop {
+			time.Sleep(6 * time.Minute)
+		} else {
+			time.Sleep(1 * time.Second)
+			firstLoop = false
+		}
+
+		log.Println("repairing gpus")
+
+		jobID := uuid.New().String()
+		err := job_service.Create(jobID, "system", jobModel.TypeRepairGPUs, map[string]interface{}{})
+		if err != nil {
+			log.Println("failed to create repair job for gpus: ", err.Error())
+			continue
+		}
+	}
+}

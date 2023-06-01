@@ -268,6 +268,19 @@ func GetWithNoActivities() ([]VM, error) {
 	return GetAllWithFilter(filter)
 }
 
+func GetWithGPU() ([]VM, error) {
+	// create a filter that checks if the gpuID field is not empty
+	filter := bson.D{
+		{
+			"gpuId", bson.M{
+				"$ne": "",
+			},
+		},
+	}
+
+	return GetAllWithFilter(filter)
+}
+
 func AddActivity(vmID, activity string) error {
 	_, err := models.VmCollection.UpdateOne(context.TODO(),
 		bson.D{{"id", vmID}},
