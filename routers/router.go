@@ -8,6 +8,7 @@ import (
 	"go-deploy/models/dto/body"
 	"go-deploy/pkg/app"
 	"go-deploy/pkg/auth"
+	"go-deploy/pkg/conf"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/routers/api/v1/v1_deployment"
 	"go-deploy/routers/api/v1/v1_job"
@@ -236,7 +237,7 @@ func registerCustomValidators() {
 					}
 				}
 
-				valid := v1.IsValidDomain(domain)
+				valid := v1.IsValidDomain(domain) && !strings.HasSuffix(domain, conf.Env.Deployment.ParentDomain)
 				if !valid {
 					return false
 				}
