@@ -34,15 +34,17 @@ func repairer(ctx *app.Context) {
 			now := time.Now()
 			if now.Sub(deployment.RepairedAt) > 5*time.Minute {
 				log.Printf("repairing deployment %s\n", deployment.Name)
-				deployment.RepairedAt = now
+
 				jobID := uuid.New().String()
-				err := job_service.Create(jobID, deployment.OwnerID, jobModel.TypeRepairDeployment, map[string]interface{}{
+				err = job_service.Create(jobID, deployment.OwnerID, jobModel.TypeRepairDeployment, map[string]interface{}{
 					"id": deployment.ID,
 				})
 				if err != nil {
 					log.Printf("failed to create repair job for deployment %s: %s\n", deployment.Name, err.Error())
 					continue
 				}
+
+				err = deploymentModel.MarkRepaired(deployment.ID)
 			}
 		}
 	}

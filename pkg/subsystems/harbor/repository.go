@@ -123,3 +123,23 @@ func (client *Client) DeleteRepository(projectName, name string) error {
 
 	return nil
 }
+
+func (client *Client) DeleteAllRepositories(projectName string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to delete all repositories. details: %s", err)
+	}
+
+	repositories, err := client.HarborClient.ListRepositories(context.TODO(), projectName)
+	if err != nil {
+		return makeError(err)
+	}
+
+	for _, repository := range repositories {
+		err = client.DeleteRepository(projectName, repository.Name)
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	return nil
+}

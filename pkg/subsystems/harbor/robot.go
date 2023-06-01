@@ -55,7 +55,7 @@ func (client *Client) CreateRobot(public *models.RobotPublic) (*models.RobotCrea
 	}
 
 	if public.ProjectID == 0 {
-		return nil, makeError(fmt.Errorf("project id required"))
+		return nil, nil
 	}
 
 	robots, err := client.HarborClient.ListProjectRobotsV1(context.TODO(), public.ProjectName)
@@ -97,7 +97,7 @@ func (client *Client) DeleteRobot(id int) error {
 	}
 
 	if id == 0 {
-		return makeError(fmt.Errorf("id required"))
+		return nil
 	}
 
 	err := client.HarborClient.DeleteRobotAccountByID(context.TODO(), int64(id))
@@ -107,6 +107,30 @@ func (client *Client) DeleteRobot(id int) error {
 			if !errors.As(err, &targetErr) && !strings.Contains(err.Error(), "[404] deleteRobotNotFound") {
 				return makeError(err)
 			}
+		}
+	}
+
+	return nil
+}
+
+func (client *Client) DeleteAllRobots(projectID int) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to delete all robots for project %d. details: %s", projectID, err)
+	}
+
+	if projectID == 0 {
+		return nil
+	}
+
+	robots, err := client.HarborClient.ListProjectRobotsV1(context.TODO(), fmt.Sprintf("%d", projectID))
+	if err != nil {
+		return makeError(err)
+	}
+
+	for _, robot := range robots {
+		err = client.DeleteRobot(int(robot.ID))
+		if err != nil {
+			return makeError(err)
 		}
 	}
 

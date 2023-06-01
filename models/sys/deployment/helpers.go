@@ -274,6 +274,21 @@ func RemoveActivity(deploymentID, activity string) error {
 	return nil
 }
 
+func MarkRepaired(deploymentID string) error {
+	filter := bson.D{{"id", deploymentID}}
+	update := bson.D{
+		{"$set", bson.D{{"repairedAt", time.Now()}}},
+		{"$pull", bson.D{{"activities", "repairing"}}},
+	}
+
+	_, err := models.DeploymentCollection.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (deployment *Deployment) Created() bool {
 	return deployment.ID != "" &&
 		deployment.Subsystems.GitHub.Created() &&

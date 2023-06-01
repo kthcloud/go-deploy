@@ -326,6 +326,11 @@ func Repair(id string) error {
 		return makeError(err)
 	}
 
+	err = internal_service.RepairHarbor(deployment.Name)
+	if err != nil {
+		return makeError(err)
+	}
+
 	log.Println("successfully repaired deployment", deployment.Name)
 	return nil
 }
