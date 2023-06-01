@@ -36,7 +36,13 @@ func CreateDeployment(deploymentID, ownerID string, params *CreateParams) error 
 
 		Subsystems: Subsystems{
 			GitLab: GitLab{
-				Builds: make([]GitLabBuild, 0),
+				LastBuild: GitLabBuild{
+					ID:        0,
+					Trace:     "created by go-deploy",
+					Status:    "initialized",
+					Stage:     "initialization",
+					CreatedAt: time.Now(),
+				},
 			},
 		},
 
@@ -290,47 +296,15 @@ func MarkUpdated(deploymentID string) error {
 	return nil
 }
 
-func CreateEmptyGitLabBuild(deploymentID string, buildID int) error {
+func UpdateGitLabBuild(deploymentID string, build GitLabBuild) error {
 	filter := bson.D{
 		{"id", deploymentID},
-	}
-
-	update := bson.D{
-		{
-			"$addToSet",
-			bson.D{
-				{"subsystems.gitlab.builds",
-					bson.D{
-						{"id", buildID},
-					},
-				},
-			},
-		},
-	}
-
-	_, err := models.DeploymentCollection.UpdateOne(context.TODO(), filter, update)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func UpdateGitLabBuild(deploymentID string, buildID int, status, stage, trace string) error {
-	filter := bson.D{
-		{"id", deploymentID},
-		{"subsystems.gitlab.builds", bson.D{
-			{"$elemMatch", bson.D{
-				{"id", buildID},
-			}},
-		}},
+		{"subsystems.gitlab.lastBuild.createdAt", bson.M{"$lte": build.CreatedAt}},
 	}
 
 	update := bson.D{
 		{"$set", bson.D{
-			{"subsystems.gitlab.builds.$.trace", trace},
-			{"subsystems.gitlab.builds.$.status", status},
-			{"subsystems.gitlab.builds.$.stage", stage},
+			{"subsystems.gitlab.lastBuild", build},
 		}},
 	}
 

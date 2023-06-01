@@ -4,6 +4,7 @@ import (
 	githubModels "go-deploy/pkg/subsystems/github/models"
 	harborModels "go-deploy/pkg/subsystems/harbor/models"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
+	"time"
 )
 
 type Subsystems struct {
@@ -33,14 +34,15 @@ type GitHub struct {
 }
 
 type GitLab struct {
-	Builds []GitLabBuild `bson:"builds"`
+	LastBuild GitLabBuild `bson:"lastBuild"`
 }
 
 type GitLabBuild struct {
-	ID     int    `bson:"id"`
-	Trace  string `bson:"trace"`
-	Status string `bson:"status"`
-	Stage  string `bson:"stage"`
+	ID        int       `bson:"id"`
+	Trace     string    `bson:"trace"`
+	Status    string    `bson:"status"`
+	Stage     string    `bson:"stage"`
+	CreatedAt time.Time `bson:"createdAt"`
 }
 
 type Env struct {
