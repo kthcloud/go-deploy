@@ -183,6 +183,17 @@ func Create(c *gin.Context) {
 		return
 	}
 
+	validGhToken, reason, err := deployment_service.ValidGitHubToken(requestBody.GitHub.Token)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
+		return
+	}
+
+	if !validGhToken {
+		context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceValidationFailed, reason)
+		return
+	}
+
 	if exists {
 		if deployment.OwnerID != auth.UserID {
 			context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceNotCreated, "Resource already exists")

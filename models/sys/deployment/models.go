@@ -53,7 +53,8 @@ type Harbor struct {
 }
 
 type GitHub struct {
-	Webhook githubModels.WebhookPublic `bson:"webhook"`
+	Webhook     githubModels.WebhookPublic `bson:"webhook"`
+	Placeholder bool                       `bson:"placeholder"`
 }
 
 type Env struct {

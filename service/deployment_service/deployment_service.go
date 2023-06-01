@@ -32,12 +32,12 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 	}
 
 	if params.GitHub != nil {
-		err := internal_service.CreateGitHub(params.Name, params)
+		err = internal_service.CreateGitHub(params.Name, params)
 		if err != nil {
 			return makeError(err)
 		}
 	} else {
-		err := internal_service.CreateFakeGitHub(params.Name)
+		err = internal_service.CreatePlaceholderGitHub(params.Name)
 		if err != nil {
 			return makeError(err)
 		}
@@ -333,4 +333,8 @@ func Repair(id string) error {
 
 	log.Println("successfully repaired deployment", deployment.Name)
 	return nil
+}
+
+func ValidGitHubToken(token string) (bool, string, error) {
+	return internal_service.ValidateGitHubToken(token)
 }

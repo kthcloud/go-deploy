@@ -53,7 +53,7 @@ func createWebhookPublic(projectID int, projectName string) *harborModels.Webhoo
 	}
 }
 
-func withClient() (*harbor.Client, error) {
+func withHarborClient() (*harbor.Client, error) {
 	return harbor.New(&harbor.ClientConf{
 		ApiUrl:   conf.Env.Harbor.Url,
 		Username: conf.Env.Harbor.User,
@@ -68,7 +68,7 @@ func CreateHarbor(name, userID string) error {
 		return fmt.Errorf("failed to setup harbor for deployment %s. details: %s", name, err)
 	}
 
-	client, err := withClient()
+	client, err := withHarborClient()
 	if err != nil {
 		return makeError(err)
 	}
@@ -129,7 +129,7 @@ func DeleteHarbor(name string) error {
 		return fmt.Errorf("failed to delete harbor for deployment %s. details: %s", name, err)
 	}
 
-	client, err := withClient()
+	client, err := withHarborClient()
 	if err != nil {
 		return makeError(err)
 	}
@@ -200,7 +200,7 @@ func RepairHarbor(name string) error {
 		return nil
 	}
 
-	client, err := withClient()
+	client, err := withHarborClient()
 	if err != nil {
 		return makeError(err)
 	}
