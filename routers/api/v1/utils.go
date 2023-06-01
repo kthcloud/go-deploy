@@ -5,9 +5,9 @@ import (
 	"errors"
 	"github.com/go-playground/validator/v10"
 	"go-deploy/models/dto/body"
-	"go-deploy/pkg/app"
 	"go-deploy/pkg/auth"
 	"go-deploy/pkg/conf"
+	"go-deploy/pkg/sys"
 	"net"
 	"reflect"
 )
@@ -36,7 +36,7 @@ func (authInfo *AuthInfo) InRole(group string) bool {
 	return false
 }
 
-func WithAuth(context *app.ClientContext) (*AuthInfo, error) {
+func WithAuth(context *sys.ClientContext) (*AuthInfo, error) {
 	token, err := context.GetKeycloakToken()
 	if err != nil {
 		return nil, err

@@ -6,9 +6,9 @@ import (
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
 	"go-deploy/models/dto/body"
-	"go-deploy/pkg/app"
 	"go-deploy/pkg/auth"
 	"go-deploy/pkg/conf"
+	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/routers/api/v1/v1_deployment"
 	"go-deploy/routers/api/v1/v1_job"
@@ -36,7 +36,7 @@ func NewRouter() *gin.Engine {
 
 	docs.SwaggerInfo.BasePath = "/v1"
 	privateApiv1 := router.Group("/v1")
-	privateApiv1.Use(auth.New(auth.Check(), app.GetKeyCloakConfig()))
+	privateApiv1.Use(auth.New(auth.Check(), sys.GetKeyCloakConfig()))
 	publicApiv1 := router.Group("/v1")
 	apiv1Hook := router.Group("/v1/hooks")
 

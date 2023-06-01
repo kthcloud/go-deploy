@@ -11,27 +11,6 @@ import (
 	"time"
 )
 
-func (deployment *Deployment) Ready() bool {
-	return !deployment.DoingActivity(ActivityBeingCreated) && !deployment.DoingActivity(ActivityBeingDeleted)
-}
-
-func (deployment *Deployment) DoingActivity(activity string) bool {
-	for _, a := range deployment.Activities {
-		if a == activity {
-			return true
-		}
-	}
-	return false
-}
-
-func (deployment *Deployment) BeingCreated() bool {
-	return deployment.DoingActivity(ActivityBeingCreated)
-}
-
-func (deployment *Deployment) BeingDeleted() bool {
-	return deployment.DoingActivity(ActivityBeingDeleted)
-}
-
 func CreateDeployment(deploymentID, ownerID string, params *CreateParams) error {
 	currentDeployment, err := GetByID(deploymentID)
 	if err != nil {
@@ -54,6 +33,12 @@ func CreateDeployment(deploymentID, ownerID string, params *CreateParams) error 
 		ExtraDomains: make([]string, 0),
 
 		Activities: []string{ActivityBeingCreated},
+
+		Subsystems: Subsystems{
+			GitLab: GitLab{
+				Builds: make([]GitLabBuild, 0),
+			},
+		},
 
 		StatusCode:    status_codes.ResourceBeingCreated,
 		StatusMessage: status_codes.GetMsg(status_codes.ResourceBeingCreated),
@@ -231,8 +216,8 @@ func GetByActivity(activity string) ([]Deployment, error) {
 	filter := bson.D{
 		{
 			"activities", bson.M{
-				"$in": bson.A{activity},
-			},
+			"$in": bson.A{activity},
+		},
 		},
 	}
 
@@ -243,8 +228,8 @@ func GetWithNoActivities() ([]Deployment, error) {
 	filter := bson.D{
 		{
 			"activities", bson.M{
-				"$size": 0,
-			},
+			"$size": 0,
+		},
 		},
 	}
 
@@ -305,27 +290,54 @@ func MarkUpdated(deploymentID string) error {
 	return nil
 }
 
-func (deployment *Deployment) Created() bool {
-	return deployment.ID != "" &&
-		deployment.Subsystems.GitHub.Created() &&
-		deployment.Subsystems.Harbor.Created() &&
-		deployment.Subsystems.K8s.Created()
+func CreateEmptyGitLabBuild(deploymentID string, buildID int) error {
+	filter := bson.D{
+		{"id", deploymentID},
+	}
+
+	update := bson.D{
+		{
+			"$addToSet",
+			bson.D{
+				{"subsystems.gitlab.builds",
+					bson.D{
+						{"id", buildID},
+					},
+				},
+			},
+		},
+	}
+
+	_, err := models.DeploymentCollection.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (k8s *K8s) Created() bool {
-	return k8s.Namespace.Created() &&
-		k8s.Deployment.Created() &&
-		k8s.Service.Created() &&
-		k8s.Ingress.Created()
-}
+func UpdateGitLabBuild(deploymentID string, buildID int, status, stage, trace string) error {
+	filter := bson.D{
+		{"id", deploymentID},
+		{"subsystems.gitlab.builds", bson.D{
+			{"$elemMatch", bson.D{
+				{"id", buildID},
+			}},
+		}},
+	}
 
-func (harbor *Harbor) Created() bool {
-	return harbor.Project.Created() &&
-		harbor.Repository.Created() &&
-		harbor.Robot.Created() &&
-		harbor.Webhook.Created()
-}
+	update := bson.D{
+		{"$set", bson.D{
+			{"subsystems.gitlab.builds.$.trace", trace},
+			{"subsystems.gitlab.builds.$.status", status},
+			{"subsystems.gitlab.builds.$.stage", stage},
+		}},
+	}
 
-func (gitHub *GitHub) Created() bool {
-	return gitHub.Webhook.Created()
+	_, err := models.DeploymentCollection.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -1,4 +1,4 @@
-package server
+package app
 
 import (
 	"context"
@@ -6,9 +6,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"go-deploy/models"
 	"go-deploy/models/sys/job"
-	"go-deploy/pkg/app"
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/intializer"
+	"go-deploy/pkg/sys"
 	"go-deploy/pkg/workers/confirm"
 	"go-deploy/pkg/workers/job_execute"
 	"go-deploy/pkg/workers/repair"
@@ -20,7 +20,7 @@ import (
 	"time"
 )
 
-func setup(context *app.Context) {
+func setup(context *sys.Context) {
 	conf.SetupEnvironment()
 
 	models.Setup()
@@ -42,7 +42,7 @@ func shutdown() {
 }
 
 func Start() *http.Server {
-	appContext := app.Context{}
+	appContext := sys.Context{}
 
 	setup(&appContext)
 

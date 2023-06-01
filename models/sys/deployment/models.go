@@ -4,41 +4,13 @@ import (
 	githubModels "go-deploy/pkg/subsystems/github/models"
 	harborModels "go-deploy/pkg/subsystems/harbor/models"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
-	"time"
 )
-
-const (
-	ActivityBeingCreated = "beingCreated"
-	ActivityBeingDeleted = "beingDeleted"
-	ActivityRestarting   = "restarting"
-	ActivityBuilding     = "building"
-	ActivityRepairing    = "repairing"
-)
-
-type Deployment struct {
-	ID      string `bson:"id"`
-	Name    string `bson:"name"`
-	OwnerID string `bson:"ownerId"`
-
-	CreatedAt  time.Time `bson:"createdAt"`
-	UpdatedAt  time.Time `bson:"updatedAt"`
-	RepairedAt time.Time `bson:"repairedAt"`
-
-	Private      bool     `bson:"private"`
-	Envs         []Env    `bson:"envs"`
-	ExtraDomains []string `bson:"extraDomains"`
-
-	Activities []string `bson:"activities"`
-
-	Subsystems    Subsystems `bson:"subsystems"`
-	StatusCode    int        `bson:"statusCode"`
-	StatusMessage string     `bson:"statusMessage"`
-}
 
 type Subsystems struct {
 	K8s    K8s    `bson:"k8s"`
 	Harbor Harbor `bson:"harbor"`
 	GitHub GitHub `bson:"github"`
+	GitLab GitLab `bson:"gitlab"`
 }
 
 type K8s struct {
@@ -58,6 +30,17 @@ type Harbor struct {
 type GitHub struct {
 	Webhook     githubModels.WebhookPublic `bson:"webhook"`
 	Placeholder bool                       `bson:"placeholder"`
+}
+
+type GitLab struct {
+	Builds []GitLabBuild `bson:"builds"`
+}
+
+type GitLabBuild struct {
+	ID     int    `bson:"id"`
+	Trace  string `bson:"trace"`
+	Status string `bson:"status"`
+	Stage  string `bson:"stage"`
 }
 
 type Env struct {

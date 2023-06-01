@@ -10,8 +10,8 @@ import (
 	deploymentModels "go-deploy/models/sys/deployment"
 	jobModel "go-deploy/models/sys/job"
 	vmModel "go-deploy/models/sys/vm"
-	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
+	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/deployment_service"
 	"go-deploy/service/job_service"
@@ -26,7 +26,7 @@ func getURL(deployment *deploymentModels.Deployment) *string {
 	return nil
 }
 
-func getAll(_ string, context *app.ClientContext) {
+func getAll(_ string, context *sys.ClientContext) {
 	deployments, _ := deployment_service.GetAll()
 
 	dtoDeployments := make([]body.DeploymentRead, len(deployments))
@@ -47,11 +47,11 @@ func getAll(_ string, context *app.ClientContext) {
 // @Param Authorization header string true "With the bearer started"
 // @Param wantAll query bool false "Get all deployments"
 // @Success 200 {array} body.DeploymentRead
-// @Failure 400 {object} app.ErrorResponse
-// @Failure 500 {object} app.ErrorResponse
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
 // @Router /api/v1/deployments [get]
 func GetList(c *gin.Context) {
-	context := app.NewContext(c)
+	context := sys.NewContext(c)
 
 	var requestQuery query.DeploymentList
 	if err := context.GinContext.Bind(&requestQuery); err != nil {
@@ -94,11 +94,11 @@ func GetList(c *gin.Context) {
 // @Param Authorization header string true "With the bearer started"
 // @Param deploymentId path string true "Deployment ID"
 // @Success 200 {object} body.DeploymentRead
-// @Failure 400 {object} app.ErrorResponse
-// @Failure 500 {object} app.ErrorResponse
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
 // @Router /api/v1/deployments/{deployment_id} [get]
 func Get(c *gin.Context) {
-	context := app.NewContext(c)
+	context := sys.NewContext(c)
 
 	var requestURI uri.DeploymentGet
 	if err := context.GinContext.BindUri(&requestURI); err != nil {
@@ -137,11 +137,11 @@ func Get(c *gin.Context) {
 // @Param Authorization header string true "With the bearer started"
 // @Param body body body.DeploymentCreate true "Deployment body"
 // @Success 200 {object} body.DeploymentRead
-// @Failure 400 {object} app.ErrorResponse
-// @Failure 500 {object} app.ErrorResponse
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
 // @Router /api/v1/deployments [post]
 func Create(c *gin.Context) {
-	context := app.NewContext(c)
+	context := sys.NewContext(c)
 
 	var requestBody body.DeploymentCreate
 	if err := context.GinContext.BindJSON(&requestBody); err != nil {
@@ -269,11 +269,11 @@ func Create(c *gin.Context) {
 // @Param Authorization header string true "With the bearer started"
 // @Param deploymentId path string true "Deployment ID"
 // @Success 200 {object} body.DeploymentCreated
-// @Failure 400 {object} app.ErrorResponse
-// @Failure 500 {object} app.ErrorResponse
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
 // @Router /api/v1/deployments/{deploymentId} [delete]
 func Delete(c *gin.Context) {
-	context := app.NewContext(c)
+	context := sys.NewContext(c)
 
 	var requestURI uri.DeploymentDelete
 	if err := context.GinContext.BindUri(&requestURI); err != nil {
@@ -335,11 +335,11 @@ func Delete(c *gin.Context) {
 // @Param deploymentId path string true "Deployment ID"
 // @Param body body body.DeploymentUpdate true "Deployment update"
 // @Success 200 {object} body.DeploymentUpdated
-// @Failure 400 {object} app.ErrorResponse
-// @Failure 500 {object} app.ErrorResponse
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
 // @Router /api/v1/deployments/{deploymentId} [put]
 func Update(c *gin.Context) {
-	context := app.NewContext(c)
+	context := sys.NewContext(c)
 
 	var requestURI uri.DeploymentUpdate
 	if err := context.GinContext.BindUri(&requestURI); err != nil {

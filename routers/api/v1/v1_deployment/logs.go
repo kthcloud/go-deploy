@@ -5,8 +5,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"go-deploy/models/dto/uri"
-	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
+	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/deployment_service"
 	"go-deploy/utils/requestutils"
@@ -22,7 +22,7 @@ var upgrader = websocket.Upgrader{
 }
 
 func GetLogs(c *gin.Context) {
-	context := app.NewContext(c)
+	context := sys.NewContext(c)
 
 	var requestURI uri.LogsGet
 	if err := context.GinContext.BindUri(&requestURI); err != nil {

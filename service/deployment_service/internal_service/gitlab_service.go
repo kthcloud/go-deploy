@@ -10,6 +10,7 @@ import (
 	"go-deploy/utils/subsystemutils"
 	"log"
 	"strings"
+	"time"
 )
 
 func CreateBuild(id string, params *deploymentModel.BuildParams) error {
@@ -75,6 +76,56 @@ func CreateBuild(id string, params *deploymentModel.BuildParams) error {
 		},
 	)
 
+	var lastJob *models.JobPublic
+	for {
+		lastJob, err = client.ReadLastJob(projectID)
+		if err != nil {
+			return makeError(err)
+		}
+
+		if lastJob != nil {
+			break
+		}
+	}
+
+	err = deploymentModel.CreateEmptyGitLabBuild(id, lastJob.ID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	for {
+		if lastJob.Status == "success" {
+			break
+		}
+
+		if lastJob.Status == "failed" {
+			break
+		}
+
+		var trace string
+		trace, err = client.GetJobTrace(projectID, lastJob.ID)
+		if err != nil {
+			return makeError(err)
+		}
+
+		err = deploymentModel.UpdateGitLabBuild(id, lastJob.ID, lastJob.Status, lastJob.Stage, trace)
+		if err != nil {
+			return makeError(err)
+		}
+
+		lastJob, err = client.ReadLastJob(projectID)
+		if err != nil {
+			return makeError(err)
+		}
+		if lastJob == nil {
+			log.Println("build job disappeared in gitlab. assuming it was deleted")
+			break
+		}
+
+		time.Sleep(1 * time.Second)
+	}
+
+	err = client.DeleteProject(projectID)
 	if err != nil {
 		return makeError(err)
 	}

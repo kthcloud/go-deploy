@@ -3,12 +3,12 @@ package job_execute
 import (
 	"fmt"
 	jobModel "go-deploy/models/sys/job"
-	"go-deploy/pkg/app"
+	"go-deploy/pkg/sys"
 	"log"
 	"time"
 )
 
-func jobFetcher(ctx *app.Context) {
+func jobFetcher(ctx *sys.Context) {
 	for {
 		if ctx.Stop {
 			break
@@ -39,7 +39,7 @@ func jobFetcher(ctx *app.Context) {
 	}
 }
 
-func failedJobFetcher(ctx *app.Context) {
+func failedJobFetcher(ctx *sys.Context) {
 	for {
 		if ctx.Stop {
 			break

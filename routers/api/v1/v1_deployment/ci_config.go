@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"go-deploy/models/dto/uri"
-	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
+	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/deployment_service"
 	"net/http"
@@ -19,11 +19,11 @@ import (
 // @Produce  json
 // @Param deploymentId path string true "Deployment ID"
 // @Success 200 {object} body.CiConfig
-// @Failure 400 {object} app.ErrorResponse
-// @Failure 500 {object} app.ErrorResponse
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
 // @Router /api/v1/deployments/{deploymentId}/ci-config [get]
 func GetCiConfig(c *gin.Context) {
-	context := app.NewContext(c)
+	context := sys.NewContext(c)
 
 	var requestURI uri.CiConfigGet
 	if err := context.GinContext.BindUri(&requestURI); err != nil {

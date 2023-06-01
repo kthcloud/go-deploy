@@ -118,11 +118,11 @@ func CanAddActivity(deploymentID, activity string) (bool, string) {
 	case deploymentModel.ActivityBeingDeleted:
 		return !deployment.BeingCreated(), "It is being created"
 	case deploymentModel.ActivityRestarting:
-		return !deployment.BeingCreated() && !deployment.BeingDeleted(), "It is not ready"
+		return deployment.Ready(), "It is not ready"
 	case deploymentModel.ActivityBuilding:
-		return !deployment.BeingCreated() && !deployment.BeingDeleted() && !deployment.DoingActivity(deploymentModel.ActivityRestarting), "It is not ready"
+		return deployment.Ready(), "It is not ready"
 	case deploymentModel.ActivityRepairing:
-		return !deployment.BeingCreated() && !deployment.BeingDeleted() && !deployment.DoingActivity(deploymentModel.ActivityRestarting), "It is not ready"
+		return deployment.Ready(), "It is not ready"
 	}
 
 	return false, fmt.Sprintf("Unknown activity %s", activity)

@@ -3,13 +3,13 @@ package status_update
 import (
 	deploymentModel "go-deploy/models/sys/deployment"
 	vmModel "go-deploy/models/sys/vm"
-	"go-deploy/pkg/app"
+	"go-deploy/pkg/sys"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
 	"time"
 )
 
-func vmStatusUpdater(ctx *app.Context) {
+func vmStatusUpdater(ctx *sys.Context) {
 	for {
 		if ctx.Stop {
 			break
@@ -34,7 +34,7 @@ func vmStatusUpdater(ctx *app.Context) {
 	}
 }
 
-func deploymentStatusUpdater(ctx *app.Context) {
+func deploymentStatusUpdater(ctx *sys.Context) {
 	for {
 		if ctx.Stop {
 			break

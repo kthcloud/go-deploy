@@ -5,13 +5,13 @@ import (
 	deploymentModel "go-deploy/models/sys/deployment"
 	jobModel "go-deploy/models/sys/job"
 	vmModel "go-deploy/models/sys/vm"
-	"go-deploy/pkg/app"
+	"go-deploy/pkg/sys"
 	"go-deploy/service/job_service"
 	"log"
 	"time"
 )
 
-func deploymentRepairer(ctx *app.Context) {
+func deploymentRepairer(ctx *sys.Context) {
 	firstLoop := true
 	for {
 		if ctx.Stop {
@@ -51,7 +51,7 @@ func deploymentRepairer(ctx *app.Context) {
 	}
 }
 
-func vmRepairer(ctx *app.Context) {
+func vmRepairer(ctx *sys.Context) {
 	firstLoop := true
 	for {
 		if ctx.Stop {
@@ -91,7 +91,7 @@ func vmRepairer(ctx *app.Context) {
 	}
 }
 
-func gpuRepairer(ctx *app.Context) {
+func gpuRepairer(ctx *sys.Context) {
 	firstLoop := true
 	for {
 		if ctx.Stop {

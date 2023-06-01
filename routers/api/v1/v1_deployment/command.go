@@ -5,8 +5,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/uri"
-	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
+	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/deployment_service"
 	"net/http"
@@ -21,13 +21,13 @@ import (
 // @Param deploymentId path string true "Deployment ID"
 // @Param body body body.DeploymentCommand true "Command body"
 // @Success 200 {empty} empty
-// @Failure 400 {object} app.ErrorResponse
-// @Failure 404 {object} app.ErrorResponse
-// @Failure 423 {object} app.ErrorResponse
-// @Failure 500 {object} app.ErrorResponse
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 404 {object} sys.ErrorResponse
+// @Failure 423 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
 // @Router /api/v1/deployments/{deploymentId}/command [post]
 func DoCommand(c *gin.Context) {
-	context := app.NewContext(c)
+	context := sys.NewContext(c)
 
 	var requestURI uri.DeploymentCommand
 	if err := context.GinContext.BindUri(&requestURI); err != nil {

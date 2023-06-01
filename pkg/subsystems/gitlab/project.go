@@ -6,6 +6,7 @@ import (
 	"go-deploy/models/sys/deployment"
 	"go-deploy/pkg/subsystems/gitlab/models"
 	"gopkg.in/yaml.v3"
+	"strings"
 )
 
 func (client *Client) CreateProject(public *models.ProjectPublic) (int, error) {
@@ -31,8 +32,10 @@ func (client *Client) DeleteProject(id int) error {
 	}
 
 	_, err := client.GitLabClient.Projects.DeleteProject(id)
-
 	if err != nil {
+		if strings.Contains(err.Error(), "Project Not Found") {
+			return nil
+		}
 		return makeError(err)
 	}
 

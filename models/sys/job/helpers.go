@@ -105,7 +105,16 @@ func GetNextFailed() (*Job, error) {
 
 func MarkCompleted(jobID string) error {
 	filter := bson.D{{"id", jobID}}
-	update := bson.D{{"$set", bson.D{{"status", StatusFinished}}}}
+
+	// update status and finishedAt
+	update := bson.D{
+		{"$set",
+			bson.D{
+				{"status", StatusCompleted},
+				{"finishedAt", time.Now()},
+			},
+		},
+	}
 
 	_, err := models.JobCollection.UpdateOne(context.Background(), filter, update)
 	if err != nil {
@@ -121,7 +130,10 @@ func MarkFailed(jobID string, reason string) error {
 	}
 	update := bson.D{
 		{"$set",
-			bson.D{{"status", StatusFailed}},
+			bson.D{
+				{"status", StatusFailed},
+				{"finishedAt", time.Now()},
+			},
 		},
 		{"$push",
 			bson.D{{"errorLogs", reason}},
@@ -142,7 +154,10 @@ func MarkTerminated(jobID string, reason string) error {
 	}
 	update := bson.D{
 		{"$set",
-			bson.D{{"status", StatusTerminated}},
+			bson.D{
+				{"status", StatusTerminated},
+				{"finishedAt", time.Now()},
+			},
 		},
 		{"$push",
 			bson.D{{"errorLogs", reason}},

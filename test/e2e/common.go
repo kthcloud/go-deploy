@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"github.com/helloyi/go-sshclient"
 	"github.com/stretchr/testify/assert"
+	"go-deploy/pkg/app"
 	"go-deploy/pkg/conf"
-	"go-deploy/pkg/server"
 	"net/http"
 	"os"
 	"strings"
@@ -37,9 +37,9 @@ func setup(t *testing.T) {
 func withServer(t *testing.T) *http.Server {
 	t.Helper()
 
-	httpServer := server.Start()
+	httpServer := app.Start()
 	t.Cleanup(func() {
-		server.Stop(httpServer)
+		app.Stop(httpServer)
 	})
 
 	time.Sleep(3 * time.Second)
