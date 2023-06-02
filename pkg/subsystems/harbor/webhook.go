@@ -114,3 +114,28 @@ func (client *Client) DeleteWebhook(projectID, id int) error {
 
 	return nil
 }
+
+func (client *Client) DeleteAllWebhooks(projectID int) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to delete all webhook for %d. details: %s", projectID, err)
+	}
+
+	webhookPolicies, err := client.HarborClient.ListProjectWebhookPolicies(context.TODO(), projectID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	for _, policy := range webhookPolicies {
+		err = client.HarborClient.DeleteProjectWebhookPolicy(context.TODO(), projectID, int64(policy.ID))
+		if err != nil {
+			errMsg := err.Error()
+			if strings.Contains(errMsg, "[404] deleteWebhookPolicyOfProjectNotFound") {
+				continue
+			}
+
+			return makeError(err)
+		}
+	}
+
+	return nil
+}

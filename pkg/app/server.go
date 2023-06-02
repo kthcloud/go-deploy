@@ -1,4 +1,4 @@
-package server
+package app
 
 import (
 	"context"
@@ -6,12 +6,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"go-deploy/models"
 	"go-deploy/models/sys/job"
-	"go-deploy/pkg/app"
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/intializer"
-	"go-deploy/pkg/workers/confirmers"
-	"go-deploy/pkg/workers/jobs"
-	"go-deploy/pkg/workers/status_updaters"
+	"go-deploy/pkg/sys"
+	"go-deploy/pkg/workers/confirm"
+	"go-deploy/pkg/workers/job_execute"
+	"go-deploy/pkg/workers/repair"
+	"go-deploy/pkg/workers/status_update"
 	"go-deploy/routers"
 	"log"
 	"net/http"
@@ -19,20 +20,21 @@ import (
 	"time"
 )
 
-func setup(context *app.Context) {
+func setup(context *sys.Context) {
 	conf.SetupEnvironment()
 
 	models.Setup()
 	err := job.ResetRunning()
 	if err != nil {
-		log.Fatalln("failed to reset running jobs. details: ", err)
+		log.Fatalln("failed to reset running job. details: ", err)
 	}
 
-	confirmers.Setup(context)
-	status_updaters.Setup(context)
-	jobs.Setup(context)
-
 	intializer.SynchronizeGPUs()
+
+	confirm.Setup(context)
+	status_update.Setup(context)
+	job_execute.Setup(context)
+	repair.Setup(context)
 }
 
 func shutdown() {
@@ -40,7 +42,7 @@ func shutdown() {
 }
 
 func Start() *http.Server {
-	appContext := app.Context{}
+	appContext := sys.Context{}
 
 	setup(&appContext)
 

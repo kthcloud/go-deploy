@@ -11,8 +11,8 @@ import (
 	jobModel "go-deploy/models/sys/job"
 	vmModel "go-deploy/models/sys/vm"
 	gpuModel "go-deploy/models/sys/vm/gpu"
-	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
+	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/job_service"
 	"go-deploy/service/vm_service"
@@ -27,12 +27,12 @@ import (
 // @Produce  json
 // @Param onlyShowAvailable query bool false "Only show available GPUs"
 // @Success 200 {array} body.GpuRead
-// @Failure 400 {object} app.ErrorResponse
-// @Failure 404 {object} app.ErrorResponse
-// @Failure 423 {object} app.ErrorResponse
-// @Failure 500 {object} app.ErrorResponse
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 404 {object} sys.ErrorResponse
+// @Failure 423 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
 func GetGpuList(c *gin.Context) {
-	context := app.NewContext(c)
+	context := sys.NewContext(c)
 
 	var requestQuery query.GpuList
 	if err := context.GinContext.Bind(&requestQuery); err != nil {
@@ -69,13 +69,13 @@ func GetGpuList(c *gin.Context) {
 // @Param vmId path string true "VM ID"
 // @Param gpuId path string false "GPU ID"
 // @Success 200 {object} body.VmRead
-// @Failure 400 {object} app.ErrorResponse
-// @Failure 404 {object} app.ErrorResponse
-// @Failure 423 {object} app.ErrorResponse
-// @Failure 500 {object} app.ErrorResponse
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 404 {object} sys.ErrorResponse
+// @Failure 423 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
 // @Router /api/v1/vms/{vmId}/attachGpu/{gpuId} [post]
 func AttachGPU(c *gin.Context) {
-	context := app.NewContext(c)
+	context := sys.NewContext(c)
 
 	var requestURI uri.GpuAttach
 	if err := context.GinContext.BindUri(&requestURI); err != nil {
@@ -223,13 +223,13 @@ func AttachGPU(c *gin.Context) {
 // @Produce  json
 // @Param vmId path string true "VM ID"
 // @Success 200 {object} body.VmRead
-// @Failure 400 {object} app.ErrorResponse
-// @Failure 404 {object} app.ErrorResponse
-// @Failure 423 {object} app.ErrorResponse
-// @Failure 500 {object} app.ErrorResponse
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 404 {object} sys.ErrorResponse
+// @Failure 423 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
 // @Router /api/v1/vms/{vmId}/detachGpu [post]
 func DetachGPU(c *gin.Context) {
-	context := app.NewContext(c)
+	context := sys.NewContext(c)
 
 	var requestURI uri.GpuDetach
 	if err := context.GinContext.BindUri(&requestURI); err != nil {

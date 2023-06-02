@@ -1,17 +1,19 @@
 package main
 
 import (
-	"go-deploy/pkg/server"
+	"go-deploy/pkg/app"
 	"log"
 	"os"
 )
 
 func main() {
-	httpServer := server.Start()
+	server := app.Start()
+	defer func() {
+		app.Stop(server)
+	}()
 
 	quit := make(chan os.Signal)
 	<-quit
 	log.Println("received shutdown signal")
 
-	server.Stop(httpServer)
 }

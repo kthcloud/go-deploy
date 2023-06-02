@@ -16,6 +16,10 @@ type PortForwardingRulePublic struct {
 	Tags        []Tag  `bson:"tags"`
 }
 
+func (rule *PortForwardingRulePublic) Created() bool {
+	return rule.ID != ""
+}
+
 func CreatePortForwardingRulePublicFromGet(rule *cloudstack.PortForwardingRule) *PortForwardingRulePublic {
 	publicPort, _ := strconv.Atoi(rule.Publicport)
 	privatePort, _ := strconv.Atoi(rule.Privateport)

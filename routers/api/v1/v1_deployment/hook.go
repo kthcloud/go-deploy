@@ -11,8 +11,8 @@ import (
 	"github.com/google/uuid"
 	"go-deploy/models/dto/body"
 	"go-deploy/models/sys/job"
-	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
+	"go-deploy/pkg/sys"
 	"go-deploy/service/deployment_service"
 	"go-deploy/service/job_service"
 	"go-deploy/utils/requestutils"
@@ -21,7 +21,7 @@ import (
 	"strings"
 )
 
-func getTokenFromAuthHeader(context app.ClientContext) (string, error) {
+func getTokenFromAuthHeader(context sys.ClientContext) (string, error) {
 	const authHeaderName = "Authorization"
 
 	authHeader := context.GinContext.GetHeader(authHeaderName)
@@ -52,7 +52,7 @@ func getTokenFromAuthHeader(context app.ClientContext) (string, error) {
 }
 
 func HandleHarborHook(c *gin.Context) {
-	context := app.ClientContext{GinContext: c}
+	context := sys.ClientContext{GinContext: c}
 
 	token, err := getTokenFromAuthHeader(context)
 
@@ -109,7 +109,7 @@ func HandleHarborHook(c *gin.Context) {
 }
 
 func HandleGitHubHook(c *gin.Context) {
-	context := app.ClientContext{GinContext: c}
+	context := sys.ClientContext{GinContext: c}
 
 	event := context.GinContext.GetHeader("x-github-event")
 	if len(event) == 0 {

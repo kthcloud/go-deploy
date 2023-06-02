@@ -14,6 +14,10 @@ type VmPublic struct {
 	Tags              []Tag  `bson:"tags"`
 }
 
+func (vm *VmPublic) Created() bool {
+	return vm.ID != ""
+}
+
 func CreateVmPublicFromGet(vm *cloudstack.VirtualMachine) *VmPublic {
 	extraConfig := ""
 	if value, found := vm.Details["extraconfig-1"]; found {

@@ -119,6 +119,51 @@ func Update(vmID string, dtoVmUpdate *body.VmUpdate) error {
 	return nil
 }
 
+func Repair(id string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to repair vm %s. details: %s", id, err)
+	}
+
+	vm, err := vmModel.GetByID(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if vm == nil {
+		log.Println("vm", id, "not found when repairing. assuming it was deleted")
+		return nil
+	}
+
+	if !vm.Ready() {
+		log.Println("vm", id, "not ready when repairing.")
+		return nil
+	}
+
+	started, reason, err := StartActivity(vm.ID, vmModel.ActivityRepairing)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if !started {
+		return fmt.Errorf("failed to repair vm. details: %s", reason)
+	}
+
+	defer func() {
+		err = vmModel.RemoveActivity(vm.ID, vmModel.ActivityRepairing)
+		if err != nil {
+			log.Println("failed to remove activity", vmModel.ActivityRepairing, "from vm", vm.Name, "details:", err)
+		}
+	}()
+
+	err = internal_service.RepairCS(vm.Name)
+	if err != nil {
+		return makeError(err)
+	}
+
+	log.Println("successfully repaired vm", vm.Name)
+	return nil
+}
+
 func GetConnectionString(vm *vmModel.VM) (*string, error) {
 	domainName := conf.Env.VM.ParentDomain
 	port := vm.Subsystems.CS.PortForwardingRuleMap["__ssh"].PublicPort
@@ -171,8 +216,8 @@ func StartActivity(vmID, activity string) (bool, string, error) {
 	return true, "", nil
 }
 
-func CanAddActivity(deploymentID, activity string) (bool, string, error) {
-	vm, err := vmModel.GetByID(deploymentID)
+func CanAddActivity(vmID, activity string) (bool, string, error) {
+	vm, err := vmModel.GetByID(vmID)
 	if err != nil {
 		return false, "", err
 	}
@@ -213,6 +258,16 @@ func CanAddActivity(deploymentID, activity string) (bool, string, error) {
 			vmModel.ActivityAttachingGPU,
 		}) {
 			return false, "It should not be in creation or deletion, and should not be attaching a GPU", nil
+		}
+		return true, "", nil
+	case vmModel.ActivityRepairing:
+		if vm.DoingOnOfActivities([]string{
+			vmModel.ActivityBeingCreated,
+			vmModel.ActivityBeingDeleted,
+			vmModel.ActivityAttachingGPU,
+			vmModel.ActivityDetachingGPU,
+		}) {
+			return false, "It should not be in creation or deletion, and should not be attaching or detaching a GPU", nil
 		}
 		return true, "", nil
 	}

@@ -10,8 +10,8 @@ import (
 	deploymentModels "go-deploy/models/sys/deployment"
 	jobModel "go-deploy/models/sys/job"
 	vmModel "go-deploy/models/sys/vm"
-	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
+	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/deployment_service"
 	"go-deploy/service/job_service"
@@ -26,7 +26,7 @@ func getURL(deployment *deploymentModels.Deployment) *string {
 	return nil
 }
 
-func getAll(_ string, context *app.ClientContext) {
+func getAll(_ string, context *sys.ClientContext) {
 	deployments, _ := deployment_service.GetAll()
 
 	dtoDeployments := make([]body.DeploymentRead, len(deployments))
@@ -47,11 +47,11 @@ func getAll(_ string, context *app.ClientContext) {
 // @Param Authorization header string true "With the bearer started"
 // @Param wantAll query bool false "Get all deployments"
 // @Success 200 {array} body.DeploymentRead
-// @Failure 400 {object} app.ErrorResponse
-// @Failure 500 {object} app.ErrorResponse
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
 // @Router /api/v1/deployments [get]
 func GetList(c *gin.Context) {
-	context := app.NewContext(c)
+	context := sys.NewContext(c)
 
 	var requestQuery query.DeploymentList
 	if err := context.GinContext.Bind(&requestQuery); err != nil {
@@ -94,11 +94,11 @@ func GetList(c *gin.Context) {
 // @Param Authorization header string true "With the bearer started"
 // @Param deploymentId path string true "Deployment ID"
 // @Success 200 {object} body.DeploymentRead
-// @Failure 400 {object} app.ErrorResponse
-// @Failure 500 {object} app.ErrorResponse
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
 // @Router /api/v1/deployments/{deployment_id} [get]
 func Get(c *gin.Context) {
-	context := app.NewContext(c)
+	context := sys.NewContext(c)
 
 	var requestURI uri.DeploymentGet
 	if err := context.GinContext.BindUri(&requestURI); err != nil {
@@ -137,11 +137,11 @@ func Get(c *gin.Context) {
 // @Param Authorization header string true "With the bearer started"
 // @Param body body body.DeploymentCreate true "Deployment body"
 // @Success 200 {object} body.DeploymentRead
-// @Failure 400 {object} app.ErrorResponse
-// @Failure 500 {object} app.ErrorResponse
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
 // @Router /api/v1/deployments [post]
 func Create(c *gin.Context) {
-	context := app.NewContext(c)
+	context := sys.NewContext(c)
 
 	var requestBody body.DeploymentCreate
 	if err := context.GinContext.BindJSON(&requestBody); err != nil {
@@ -180,6 +180,17 @@ func Create(c *gin.Context) {
 	exists, deployment, err := deployment_service.Exists(requestBody.Name)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
+		return
+	}
+
+	validGhToken, reason, err := deployment_service.ValidGitHubToken(requestBody.GitHub.Token)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
+		return
+	}
+
+	if !validGhToken {
+		context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceValidationFailed, reason)
 		return
 	}
 
@@ -258,11 +269,11 @@ func Create(c *gin.Context) {
 // @Param Authorization header string true "With the bearer started"
 // @Param deploymentId path string true "Deployment ID"
 // @Success 200 {object} body.DeploymentCreated
-// @Failure 400 {object} app.ErrorResponse
-// @Failure 500 {object} app.ErrorResponse
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
 // @Router /api/v1/deployments/{deploymentId} [delete]
 func Delete(c *gin.Context) {
-	context := app.NewContext(c)
+	context := sys.NewContext(c)
 
 	var requestURI uri.DeploymentDelete
 	if err := context.GinContext.BindUri(&requestURI); err != nil {
@@ -324,11 +335,11 @@ func Delete(c *gin.Context) {
 // @Param deploymentId path string true "Deployment ID"
 // @Param body body body.DeploymentUpdate true "Deployment update"
 // @Success 200 {object} body.DeploymentUpdated
-// @Failure 400 {object} app.ErrorResponse
-// @Failure 500 {object} app.ErrorResponse
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
 // @Router /api/v1/deployments/{deploymentId} [put]
 func Update(c *gin.Context) {
-	context := app.NewContext(c)
+	context := sys.NewContext(c)
 
 	var requestURI uri.DeploymentUpdate
 	if err := context.GinContext.BindUri(&requestURI); err != nil {
@@ -348,35 +359,35 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	current, err := deployment_service.GetByID(auth.UserID, requestURI.DeploymentID, auth.IsAdmin())
+	deployment, err := deployment_service.GetByID(auth.UserID, requestURI.DeploymentID, auth.IsAdmin())
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, fmt.Sprintf("Failed to get vm: %s", err))
 		return
 	}
 
-	if current == nil {
+	if deployment == nil {
 		context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, fmt.Sprintf("Deployment with id %s not found", requestURI.DeploymentID))
 		return
 	}
 
-	if current.BeingCreated() {
+	if deployment.BeingCreated() {
 		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingCreated, "Resource is currently being created")
 		return
 	}
 
-	if current.BeingDeleted() {
+	if deployment.BeingDeleted() {
 		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingDeleted, "Resource is currently being deleted")
 		return
 	}
 
-	if current.OwnerID != auth.UserID && !auth.IsAdmin() {
+	if deployment.OwnerID != auth.UserID && !auth.IsAdmin() {
 		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, "User is not allowed to update this resource")
 		return
 	}
 
 	jobID := uuid.New().String()
 	err = job_service.Create(jobID, auth.UserID, jobModel.TypeUpdateDeployment, map[string]interface{}{
-		"name":   current.Name,
+		"id":     deployment.ID,
 		"update": requestBody,
 	})
 
@@ -386,7 +397,7 @@ func Update(c *gin.Context) {
 	}
 
 	context.JSONResponse(http.StatusOK, body.DeploymentUpdated{
-		ID:    current.ID,
+		ID:    deployment.ID,
 		JobID: jobID,
 	})
 

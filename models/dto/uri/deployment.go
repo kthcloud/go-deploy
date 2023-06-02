@@ -23,3 +23,7 @@ type DeploymentCommand struct {
 type LogsGet struct {
 	DeploymentID string `uri:"deploymentId" bind:"required,uuid4"`
 }
+
+type BuildGet struct {
+	DeploymentID string `uri:"deploymentId" binding:"required,uuid4"`
+}

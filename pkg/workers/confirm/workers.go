@@ -1,4 +1,4 @@
-package confirmers
+package confirm
 
 import (
 	deploymentModel "go-deploy/models/sys/deployment"
@@ -6,12 +6,12 @@ import (
 	gpuModel "go-deploy/models/sys/vm/gpu"
 	"go-deploy/pkg/conf"
 
-	"go-deploy/pkg/app"
+	"go-deploy/pkg/sys"
 	"log"
 	"time"
 )
 
-func deploymentConfirmer(ctx *app.Context) {
+func deploymentConfirmer(ctx *sys.Context) {
 	for {
 		if ctx.Stop {
 			break
@@ -38,7 +38,7 @@ func deploymentConfirmer(ctx *app.Context) {
 	}
 }
 
-func vmConfirmer(ctx *app.Context) {
+func vmConfirmer(ctx *sys.Context) {
 	for {
 		if ctx.Stop {
 			break

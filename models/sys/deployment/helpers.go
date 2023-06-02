@@ -8,28 +8,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"log"
+	"time"
 )
-
-func (deployment *Deployment) Ready() bool {
-	return !deployment.DoingActivity(ActivityBeingCreated) && !deployment.DoingActivity(ActivityBeingDeleted)
-}
-
-func (deployment *Deployment) DoingActivity(activity string) bool {
-	for _, a := range deployment.Activities {
-		if a == activity {
-			return true
-		}
-	}
-	return false
-}
-
-func (deployment *Deployment) BeingCreated() bool {
-	return deployment.DoingActivity(ActivityBeingCreated)
-}
-
-func (deployment *Deployment) BeingDeleted() bool {
-	return deployment.DoingActivity(ActivityBeingDeleted)
-}
 
 func CreateDeployment(deploymentID, ownerID string, params *CreateParams) error {
 	currentDeployment, err := GetByID(deploymentID)
@@ -46,10 +26,25 @@ func CreateDeployment(deploymentID, ownerID string, params *CreateParams) error 
 		Name:    params.Name,
 		OwnerID: ownerID,
 
+		CreatedAt: time.Now(),
+
 		Private:      params.Private,
 		Envs:         params.Envs,
 		ExtraDomains: make([]string, 0),
-		Activities:   []string{ActivityBeingCreated},
+
+		Activities: []string{ActivityBeingCreated},
+
+		Subsystems: Subsystems{
+			GitLab: GitLab{
+				LastBuild: GitLabBuild{
+					ID:        0,
+					Trace:     "created by go-deploy",
+					Status:    "initialized",
+					Stage:     "initialization",
+					CreatedAt: time.Now(),
+				},
+			},
+		},
 
 		StatusCode:    status_codes.ResourceBeingCreated,
 		StatusMessage: status_codes.GetMsg(status_codes.ResourceBeingCreated),
@@ -227,8 +222,20 @@ func GetByActivity(activity string) ([]Deployment, error) {
 	filter := bson.D{
 		{
 			"activities", bson.M{
-				"$in": bson.A{activity},
-			},
+			"$in": bson.A{activity},
+		},
+		},
+	}
+
+	return GetAllWithFilter(filter)
+}
+
+func GetWithNoActivities() ([]Deployment, error) {
+	filter := bson.D{
+		{
+			"activities", bson.M{
+			"$size": 0,
+		},
 		},
 	}
 
@@ -256,5 +263,55 @@ func RemoveActivity(deploymentID, activity string) error {
 		err = fmt.Errorf("failed to remove activity %s from deployment %s. details: %s", activity, deploymentID, err)
 		return err
 	}
+	return nil
+}
+
+func MarkRepaired(deploymentID string) error {
+	filter := bson.D{{"id", deploymentID}}
+	update := bson.D{
+		{"$set", bson.D{{"repairedAt", time.Now()}}},
+		{"$pull", bson.D{{"activities", "repairing"}}},
+	}
+
+	_, err := models.DeploymentCollection.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func MarkUpdated(deploymentID string) error {
+	filter := bson.D{{"id", deploymentID}}
+	update := bson.D{
+		{"$set", bson.D{{"updatedAt", time.Now()}}},
+		{"$pull", bson.D{{"activities", "updating"}}},
+	}
+
+	_, err := models.DeploymentCollection.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func UpdateGitLabBuild(deploymentID string, build GitLabBuild) error {
+	filter := bson.D{
+		{"id", deploymentID},
+		{"subsystems.gitlab.lastBuild.createdAt", bson.M{"$lte": build.CreatedAt}},
+	}
+
+	update := bson.D{
+		{"$set", bson.D{
+			{"subsystems.gitlab.lastBuild", build},
+		}},
+	}
+
+	_, err := models.DeploymentCollection.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

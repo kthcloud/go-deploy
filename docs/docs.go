@@ -389,7 +389,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/jobs/{id}": {
+        "/api/v1/job/{id}": {
             "get": {
                 "description": "Get job by id",
                 "consumes": [

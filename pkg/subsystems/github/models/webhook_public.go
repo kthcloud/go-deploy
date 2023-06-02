@@ -12,6 +12,10 @@ type WebhookPublic struct {
 	Secret       string   `bson:"secret"`
 }
 
+func (w *WebhookPublic) Created() bool {
+	return w.ID != 0
+}
+
 func CreateWebhookPublicFromGet(webhook *github.Hook, repositoryID int64) *WebhookPublic {
 	return &WebhookPublic{
 		ID:           *webhook.ID,

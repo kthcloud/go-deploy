@@ -1,4 +1,4 @@
-package confirmers
+package confirm
 
 import (
 	"go-deploy/models/sys/deployment"
@@ -7,29 +7,29 @@ import (
 
 func getDeploymentCreatedConfirmers() []func(*deployment.Deployment) (bool, error) {
 	return []func(*deployment.Deployment) (bool, error){
-		K8sCreated,
-		HarborCreated,
-		GitHubCreated,
+		k8sCreated,
+		harborCreated,
+		gitHubCreated,
 	}
 }
 
 func getDeploymentDeletedConfirmers() []func(*deployment.Deployment) (bool, error) {
 	return []func(*deployment.Deployment) (bool, error){
-		K8sDeleted,
-		HarborDeleted,
-		GitHubDeleted,
+		k8sDeleted,
+		harborDeleted,
+		gitHubDeleted,
 	}
 }
 
 func getVmCreatedConfirmers() []func(*vm.VM) (bool, error) {
 	return []func(*vm.VM) (bool, error){
-		CSCreated,
+		csCreated,
 	}
 }
 
 func getVmDeletedConfirmers() []func(*vm.VM) (bool, error) {
 	return []func(*vm.VM) (bool, error){
-		CSDeleted,
+		csDeleted,
 	}
 }
 

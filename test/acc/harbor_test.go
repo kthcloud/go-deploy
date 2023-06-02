@@ -27,7 +27,6 @@ func withHarborProject(t *testing.T) *models.ProjectPublic {
 
 	project := &models.ProjectPublic{
 		Name:   "acc-test-" + uuid.New().String(),
-		Public: false,
 	}
 
 	id, err := client.CreateProject(project)
@@ -163,8 +162,6 @@ func TestUpdateProject(t *testing.T) {
 	setup(t)
 	client := withHarborClient(t)
 	project := withHarborProject(t)
-
-	project.Public = true
 
 	err := client.UpdateProject(project)
 	assert.NoError(t, err, "failed to update harbor project")

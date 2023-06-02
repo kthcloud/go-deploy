@@ -10,12 +10,12 @@ import (
 	harborModels "go-deploy/pkg/subsystems/harbor/models"
 	"go-deploy/utils/subsystemutils"
 	"log"
+	"reflect"
 )
 
 func createProjectPublic(projectName string) *harborModels.ProjectPublic {
 	return &harborModels.ProjectPublic{
-		Name:   projectName,
-		Public: true,
+		Name: projectName,
 	}
 }
 
@@ -53,6 +53,14 @@ func createWebhookPublic(projectID int, projectName string) *harborModels.Webhoo
 	}
 }
 
+func withHarborClient() (*harbor.Client, error) {
+	return harbor.New(&harbor.ClientConf{
+		ApiUrl:   conf.Env.Harbor.Url,
+		Username: conf.Env.Harbor.User,
+		Password: conf.Env.Harbor.Password,
+	})
+}
+
 func CreateHarbor(name, userID string) error {
 	log.Println("setting up harbor for", name)
 
@@ -60,11 +68,7 @@ func CreateHarbor(name, userID string) error {
 		return fmt.Errorf("failed to setup harbor for deployment %s. details: %s", name, err)
 	}
 
-	client, err := harbor.New(&harbor.ClientConf{
-		ApiUrl:   conf.Env.Harbor.Url,
-		Username: conf.Env.Harbor.User,
-		Password: conf.Env.Harbor.Password,
-	})
+	client, err := withHarborClient()
 	if err != nil {
 		return makeError(err)
 	}
@@ -80,97 +84,36 @@ func CreateHarbor(name, userID string) error {
 	}
 
 	// Project
-	var project *harborModels.ProjectPublic
-	if deployment.Subsystems.Harbor.Project.ID == 0 {
-		projectName := subsystemutils.GetPrefixedName(userID)
-		id, err := client.CreateProject(createProjectPublic(projectName))
-		if err != nil {
-			return makeError(err)
-		}
-
-		project, err = client.ReadProject(id)
-		if err != nil {
-			return makeError(err)
-		}
-
-		if project == nil {
-			return makeError(errors.New("failed to read project after creation"))
-		}
-
-		err = deploymentModel.UpdateSubsystemByName(name, "harbor", "project", project)
-		if err != nil {
-			return makeError(err)
-		}
-	} else {
-		project, err = client.ReadProject(deployment.Subsystems.Harbor.Project.ID)
+	project := &deployment.Subsystems.Harbor.Project
+	if !project.Created() {
+		project, err = createProject(client, deployment, createProjectPublic(subsystemutils.GetPrefixedName(userID)))
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
 	// Robot
-	if deployment.Subsystems.Harbor.Robot.ID == 0 {
-		created, err := client.CreateRobot(createRobotPublic(project.ID, project.Name, name))
-		if err != nil {
-			return makeError(err)
-		}
-
-		robot, err := client.ReadRobot(created.ID)
-		if err != nil {
-			return makeError(err)
-		}
-
-		if robot == nil {
-			return makeError(errors.New("failed to read robot after creation"))
-		}
-
-		robot.Secret = created.Secret
-
-		err = deploymentModel.UpdateSubsystemByName(name, "harbor", "robot", robot)
+	robot := &deployment.Subsystems.Harbor.Robot
+	if !robot.Created() {
+		robot, err = createRobot(client, deployment, createRobotPublic(project.ID, project.Name, name))
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
 	// Repository
-	if deployment.Subsystems.Harbor.Repository.ID == 0 {
-		_, err := client.CreateRepository(createRepositoryPublic(project.ID, project.Name, name))
-		if err != nil {
-			return makeError(err)
-		}
-
-		repository, err := client.ReadRepository(project.Name, name)
-		if err != nil {
-			return makeError(err)
-		}
-
-		if repository == nil {
-			return makeError(errors.New("failed to read repository after creation"))
-		}
-
-		err = deploymentModel.UpdateSubsystemByName(name, "harbor", "repository", repository)
+	repository := &deployment.Subsystems.Harbor.Repository
+	if !repository.Created() {
+		repository, err = createRepository(client, deployment, createRepositoryPublic(project.ID, project.Name, name))
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
 	// Webhook
-	if deployment.Subsystems.Harbor.Webhook.ID == 0 {
-		id, err := client.CreateWebhook(createWebhookPublic(project.ID, project.Name))
-		if err != nil {
-			return makeError(err)
-		}
-
-		webhook, err := client.ReadWebhook(project.ID, id)
-		if err != nil {
-			return makeError(err)
-		}
-
-		if webhook == nil {
-			return makeError(errors.New("failed to read webhook after creation"))
-		}
-
-		err = deploymentModel.UpdateSubsystemByName(name, "harbor", "webhook", webhook)
+	webhook := &deployment.Subsystems.Harbor.Webhook
+	if !webhook.Created() {
+		webhook, err = createWebhook(client, deployment, createWebhookPublic(project.ID, project.Name))
 		if err != nil {
 			return makeError(err)
 		}
@@ -186,11 +129,7 @@ func DeleteHarbor(name string) error {
 		return fmt.Errorf("failed to delete harbor for deployment %s. details: %s", name, err)
 	}
 
-	client, err := harbor.New(&harbor.ClientConf{
-		ApiUrl:   conf.Env.Harbor.Url,
-		Username: conf.Env.Harbor.User,
-		Password: conf.Env.Harbor.Password,
-	})
+	client, err := withHarborClient()
 	if err != nil {
 		return makeError(err)
 	}
@@ -205,7 +144,7 @@ func DeleteHarbor(name string) error {
 		return nil
 	}
 
-	if deployment.Subsystems.Harbor.Repository.ID != 0 {
+	if deployment.Subsystems.Harbor.Repository.Created() {
 		err = client.DeleteRepository(deployment.Subsystems.Harbor.Repository.ProjectName, deployment.Subsystems.Harbor.Repository.Name)
 		if err != nil {
 			return makeError(err)
@@ -217,7 +156,7 @@ func DeleteHarbor(name string) error {
 		}
 	}
 
-	if deployment.Subsystems.Harbor.Robot.ID != 0 {
+	if deployment.Subsystems.Harbor.Robot.Created() {
 		err = client.DeleteRobot(deployment.Subsystems.Harbor.Robot.ID)
 		if err != nil {
 			return makeError(err)
@@ -229,14 +168,14 @@ func DeleteHarbor(name string) error {
 		}
 	}
 
-	if deployment.Subsystems.Harbor.Webhook.ID != 0 {
+	if deployment.Subsystems.Harbor.Webhook.Created() {
 		err = deploymentModel.UpdateSubsystemByName(name, "harbor", "webhook", harborModels.WebhookPublic{})
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
-	if deployment.Subsystems.Harbor.Project.ID != 0 {
+	if deployment.Subsystems.Harbor.Project.Created() {
 		err = deploymentModel.UpdateSubsystemByName(name, "harbor", "project", harborModels.ProjectPublic{})
 		if err != nil {
 			return makeError(err)
@@ -244,4 +183,263 @@ func DeleteHarbor(name string) error {
 	}
 
 	return nil
+}
+
+func RepairHarbor(name string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to repair harbor %s. details: %s", name, err)
+	}
+
+	deployment, err := deploymentModel.GetByName(name)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if deployment == nil {
+		log.Println("deployment", name, "not found when repairing harbor, assuming it was deleted")
+		return nil
+	}
+
+	client, err := withHarborClient()
+	if err != nil {
+		return makeError(err)
+	}
+
+	ss := deployment.Subsystems.Harbor
+
+	// project
+	project, err := client.ReadProject(ss.Project.ID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if project == nil || !reflect.DeepEqual(ss.Project, *project) {
+		err = recreateProject(client, deployment, &ss.Project)
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	// robot
+	robot, err := client.ReadRobot(ss.Robot.ID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	// robot.Secret is not returned by the API, so we need to set it manually
+	robot.Secret = ss.Robot.Secret
+
+	if robot == nil || !reflect.DeepEqual(ss.Robot, *robot) {
+		err = recreateRobot(client, deployment, &ss.Robot)
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	// repository
+	repository, err := client.ReadRepository(ss.Repository.ProjectName, ss.Repository.Name)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if repository == nil || !reflect.DeepEqual(ss.Repository, *repository) {
+		err = recreateRepository(client, deployment, &ss.Repository)
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	// webhook
+	webhook, err := client.ReadWebhook(ss.Webhook.ProjectID, ss.Webhook.ID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if webhook == nil || !reflect.DeepEqual(ss.Webhook, *webhook) {
+		err = recreateWebhook(client, deployment, &ss.Webhook)
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	return nil
+}
+
+func recreateProject(client *harbor.Client, deployment *deploymentModel.Deployment, public *harborModels.ProjectPublic) error {
+	// we need to delete sub-objects first
+	// otherwise harbor will complain about the project still having sub-objects
+
+	id := deployment.Subsystems.Harbor.Project.ID
+	name := deployment.Subsystems.Harbor.Project.Name
+
+	err := client.DeleteAllRobots(id)
+	if err != nil {
+		return err
+	}
+
+	err = client.DeleteAllRepositories(name)
+	if err != nil {
+		return err
+	}
+
+	err = client.DeleteAllWebhooks(id)
+	if err != nil {
+		return err
+	}
+
+	err = client.DeleteProject(deployment.Subsystems.Harbor.Project.ID)
+	if err != nil {
+		return err
+	}
+
+	_, err = createProject(client, deployment, public)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func recreateRobot(client *harbor.Client, deployment *deploymentModel.Deployment, public *harborModels.RobotPublic) error {
+	err := client.DeleteRobot(deployment.Subsystems.Harbor.Robot.ID)
+	if err != nil {
+		return err
+	}
+
+	_, err = createRobot(client, deployment, public)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func recreateRepository(client *harbor.Client, deployment *deploymentModel.Deployment, public *harborModels.RepositoryPublic) error {
+	err := client.DeleteRepository(deployment.Subsystems.Harbor.Repository.ProjectName, deployment.Subsystems.Harbor.Repository.Name)
+	if err != nil {
+		return err
+	}
+
+	_, err = createRepository(client, deployment, public)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func recreateWebhook(client *harbor.Client, deployment *deploymentModel.Deployment, public *harborModels.WebhookPublic) error {
+	err := client.DeleteWebhook(deployment.Subsystems.Harbor.Webhook.ProjectID, deployment.Subsystems.Harbor.Webhook.ID)
+	if err != nil {
+		return err
+	}
+
+	_, err = createWebhook(client, deployment, public)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func createProject(client *harbor.Client, deployment *deploymentModel.Deployment, public *harborModels.ProjectPublic) (*harborModels.ProjectPublic, error) {
+	id, err := client.CreateProject(public)
+	if err != nil {
+		return nil, err
+	}
+
+	project, err := client.ReadProject(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if project == nil {
+		return nil, errors.New("failed to read project after creation")
+	}
+
+	err = deploymentModel.UpdateSubsystemByName(deployment.Name, "harbor", "project", project)
+	if err != nil {
+		return nil, err
+	}
+
+	deployment.Subsystems.Harbor.Project = *project
+
+	return project, nil
+}
+
+func createRobot(client *harbor.Client, deployment *deploymentModel.Deployment, public *harborModels.RobotPublic) (*harborModels.RobotPublic, error) {
+	created, err := client.CreateRobot(public)
+	if err != nil {
+		return nil, err
+	}
+
+	robot, err := client.ReadRobot(created.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	if robot == nil {
+		return nil, errors.New("failed to read robot after creation")
+	}
+
+	robot.Secret = created.Secret
+
+	err = deploymentModel.UpdateSubsystemByName(deployment.Name, "harbor", "robot", robot)
+	if err != nil {
+		return nil, err
+	}
+
+	deployment.Subsystems.Harbor.Robot = *robot
+
+	return robot, nil
+}
+
+func createRepository(client *harbor.Client, deployment *deploymentModel.Deployment, public *harborModels.RepositoryPublic) (*harborModels.RepositoryPublic, error) {
+	_, err := client.CreateRepository(public)
+	if err != nil {
+		return nil, err
+	}
+
+	repository, err := client.ReadRepository(public.ProjectName, public.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	if repository == nil {
+		return nil, errors.New("failed to read repository after creation")
+	}
+
+	err = deploymentModel.UpdateSubsystemByName(deployment.Name, "harbor", "repository", repository)
+	if err != nil {
+		return nil, err
+	}
+
+	deployment.Subsystems.Harbor.Repository = *repository
+
+	return repository, nil
+}
+
+func createWebhook(client *harbor.Client, deployment *deploymentModel.Deployment, public *harborModels.WebhookPublic) (*harborModels.WebhookPublic, error) {
+	id, err := client.CreateWebhook(public)
+	if err != nil {
+		return nil, err
+	}
+
+	webhook, err := client.ReadWebhook(public.ProjectID, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if webhook == nil {
+		return nil, errors.New("failed to read webhook after creation")
+	}
+
+	err = deploymentModel.UpdateSubsystemByName(deployment.Name, "harbor", "webhook", webhook)
+	if err != nil {
+		return nil, err
+	}
+
+	deployment.Subsystems.Harbor.Webhook = *webhook
+
+	return webhook, nil
 }

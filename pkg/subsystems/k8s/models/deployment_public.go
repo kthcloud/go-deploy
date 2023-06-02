@@ -34,6 +34,10 @@ type DeploymentPublic struct {
 	EnvVars     []EnvVar `bson:"envVars"`
 }
 
+func (d *DeploymentPublic) Created() bool {
+	return d.ID != ""
+}
+
 func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPublic {
 	var envs []EnvVar
 	for _, env := range deployment.Spec.Template.Spec.Containers[0].Env {

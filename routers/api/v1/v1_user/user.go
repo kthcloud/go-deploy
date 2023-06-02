@@ -7,8 +7,8 @@ import (
 	"go-deploy/models/dto/query"
 	"go-deploy/models/dto/uri"
 	userModel "go-deploy/models/sys/user"
-	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
+	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/deployment_service"
 	"go-deploy/service/user_service"
@@ -16,7 +16,7 @@ import (
 	"net/http"
 )
 
-func collectUsage(context *app.ClientContext, userID string) (bool, *userModel.Usage) {
+func collectUsage(context *sys.ClientContext, userID string) (bool, *userModel.Usage) {
 	vmUsage, err := vm_service.GetUsageByUserID(userID)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get quota for user: %s", err))
@@ -47,11 +47,11 @@ func collectUsage(context *app.ClientContext, userID string) (bool, *userModel.U
 // @Produce  json
 // @Param wantAll query bool false "Want all users"
 // @Success 200 {array}  body.UserRead
-// @Failure 400 {object} app.ErrorResponse
-// @Failure 500 {object} app.ErrorResponse
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
 // @Router /api/v1/users [get]
 func GetList(c *gin.Context) {
-	context := app.NewContext(c)
+	context := sys.NewContext(c)
 
 	var requestQuery query.UserList
 	if err := context.GinContext.Bind(&requestQuery); err != nil {
@@ -135,11 +135,11 @@ func GetList(c *gin.Context) {
 // @Produce  json
 // @Param userId path string true "User ID"
 // @Success 200 {object}  body.UserRead
-// @Failure 400 {object} app.ErrorResponse
-// @Failure 500 {object} app.ErrorResponse
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
 // @Router /api/v1/users/{userId} [get]
 func Get(c *gin.Context) {
-	context := app.NewContext(c)
+	context := sys.NewContext(c)
 
 	var requestURI uri.UserGet
 	if err := context.GinContext.BindUri(&requestURI); err != nil {
@@ -193,7 +193,7 @@ func Get(c *gin.Context) {
 }
 
 func Update(c *gin.Context) {
-	context := app.NewContext(c)
+	context := sys.NewContext(c)
 
 	var requestURI uri.UserUpdate
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {

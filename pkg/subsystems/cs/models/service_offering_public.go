@@ -11,6 +11,10 @@ type ServiceOfferingPublic struct {
 	DiskSize    int    `json:"diskSize"`
 }
 
+func (serviceOffering *ServiceOfferingPublic) Created() bool {
+	return serviceOffering.ID != ""
+}
+
 func CreateServiceOfferingPublicFromGet(serviceOffering *cloudstack.ServiceOffering) *ServiceOfferingPublic {
 	return &ServiceOfferingPublic{
 		ID:          serviceOffering.Id,

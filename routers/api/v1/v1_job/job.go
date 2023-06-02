@@ -5,8 +5,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"go-deploy/models/dto/uri"
 	jobModel "go-deploy/models/sys/job"
-	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
+	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/job_service"
 	"net/http"
@@ -20,9 +20,9 @@ import (
 // @Produce  json
 // @Param jobId path string true "Job ID"
 // @Success 200 {object} body.JobRead
-// @Router /api/v1/jobs/{id} [get]
+// @Router /api/v1/job/{id} [get]
 func Get(c *gin.Context) {
-	context := app.NewContext(c)
+	context := sys.NewContext(c)
 
 	var requestURI uri.JobGet
 	if err := context.GinContext.BindUri(&requestURI); err != nil {
@@ -56,7 +56,7 @@ func jobStatusMessage(status string) string {
 		return status_codes.GetMsg(status_codes.JobPending)
 	case jobModel.StatusRunning:
 		return status_codes.GetMsg(status_codes.JobRunning)
-	case jobModel.StatusFinished:
+	case jobModel.StatusCompleted:
 		return status_codes.GetMsg(status_codes.JobFinished)
 	case jobModel.StatusFailed:
 		return status_codes.GetMsg(status_codes.JobFailed)

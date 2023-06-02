@@ -10,6 +10,7 @@ import (
 	"go-deploy/utils/subsystemutils"
 	"log"
 	"strings"
+	"time"
 )
 
 func CreateBuild(id string, params *deploymentModel.BuildParams) error {
@@ -48,6 +49,13 @@ func CreateBuild(id string, params *deploymentModel.BuildParams) error {
 		return makeError(err)
 	}
 
+	defer func() {
+		err = client.DeleteProject(projectID)
+		if err != nil {
+			log.Println("failed to delete gitlab project", projectID, "after build. details:", err)
+		}
+	}()
+
 	escapedHarborName := strings.Replace(deployment.Subsystems.Harbor.Robot.HarborName, "$", "$$", -1)
 
 	err = client.AttachCiFile(projectID,
@@ -75,9 +83,57 @@ func CreateBuild(id string, params *deploymentModel.BuildParams) error {
 		},
 	)
 
-	if err != nil {
-		return makeError(err)
+	var lastJob *models.JobPublic
+	for {
+		lastJob, err = client.ReadLastJob(projectID)
+		if err != nil {
+			return makeError(err)
+		}
+
+		if lastJob != nil {
+			break
+		}
 	}
+
+	for {
+		var trace string
+		trace, err = client.GetJobTrace(projectID, lastJob.ID)
+		if err != nil {
+			return makeError(err)
+		}
+
+		err = deploymentModel.UpdateGitLabBuild(id, deploymentModel.GitLabBuild{
+			ID:        lastJob.ID,
+			Trace:     trace,
+			Status:    lastJob.Status,
+			Stage:     lastJob.Stage,
+			CreatedAt: lastJob.CreatedAt,
+		})
+		if err != nil {
+			return makeError(err)
+		}
+
+		lastJob, err = client.ReadLastJob(projectID)
+		if err != nil {
+			return makeError(err)
+		}
+		if lastJob == nil {
+			log.Println("build job disappeared in gitlab. assuming it was deleted")
+			break
+		}
+
+		if lastJob.Status == "success" {
+			break
+		}
+
+		if lastJob.Status == "failed" {
+			break
+		}
+
+		time.Sleep(1 * time.Second)
+	}
+
+	log.Println("build finished with gitlab")
 
 	return nil
 }

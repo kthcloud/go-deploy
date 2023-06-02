@@ -14,8 +14,12 @@ type ServicePublic struct {
 	TargetPort int    `bson:"targetPort"`
 }
 
-func (service *ServicePublic) GetFQDN() string {
-	return fmt.Sprintf("%s.%s.svc.cluster.local", service.Name, service.Namespace)
+func (s *ServicePublic) Created() bool {
+	return s.ID != ""
+}
+
+func (s *ServicePublic) GetFQDN() string {
+	return fmt.Sprintf("%s.%s.svc.cluster.local", s.Name, s.Namespace)
 }
 
 func CreateServicePublicFromRead(service *v1.Service) *ServicePublic {

@@ -6,6 +6,7 @@ import (
 	"go-deploy/models/sys/deployment"
 	"go-deploy/pkg/subsystems/gitlab/models"
 	"gopkg.in/yaml.v3"
+	"strings"
 )
 
 func (client *Client) CreateProject(public *models.ProjectPublic) (int, error) {
@@ -31,8 +32,10 @@ func (client *Client) DeleteProject(id int) error {
 	}
 
 	_, err := client.GitLabClient.Projects.DeleteProject(id)
-
 	if err != nil {
+		if strings.Contains(err.Error(), "Project Not Found") {
+			return nil
+		}
 		return makeError(err)
 	}
 
@@ -68,7 +71,7 @@ func (client *Client) AttachCiFile(projectID int, branch string, content deploym
 
 func (client *Client) GetJobs(projectID int) ([]*gitlab.Job, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to get jobs for project %s. details: %s", projectID, err)
+		return fmt.Errorf("failed to get job for project %s. details: %s", projectID, err)
 	}
 
 	jobs, _, err := client.GitLabClient.Jobs.ListProjectJobs(projectID, nil)

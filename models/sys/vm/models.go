@@ -2,6 +2,7 @@ package vm
 
 import (
 	csModels "go-deploy/pkg/subsystems/cs/models"
+	"time"
 )
 
 const (
@@ -10,12 +11,13 @@ const (
 	ActivityBeingUpdated = "beingUpdated"
 	ActivityAttachingGPU = "attachingGpu"
 	ActivityDetachingGPU = "detachingGpu"
+	ActivityRepairing    = "repairing"
 )
 
 type Port struct {
-	Name         string `bson:"name"`
-	Port         int    `bson:"port"`
-	Protocol     string `bson:"protocol"`
+	Name     string `bson:"name"`
+	Port     int    `bson:"port"`
+	Protocol string `bson:"protocol"`
 }
 
 type Specs struct {
@@ -29,6 +31,10 @@ type VM struct {
 	Name      string `bson:"name"`
 	OwnerID   string `bson:"ownerId"`
 	ManagedBy string `bson:"managedBy"`
+
+	CreatedAt  time.Time `bson:"createdAt"`
+	UpdatedAt  time.Time `bson:"updatedAt"`
+	RepairedAt time.Time `bson:"repairedAt"`
 
 	GpuID        string   `bson:"gpuId"`
 	SshPublicKey string   `bson:"sshPublicKey"`

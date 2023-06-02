@@ -12,6 +12,10 @@ type NamespacePublic struct {
 	FullName string `bson:"fullName"`
 }
 
+func (n *NamespacePublic) Created() bool {
+	return n.ID != ""
+}
+
 func CreateNamespacePublicFromRead(namespace *v1.Namespace) *NamespacePublic {
 	return &NamespacePublic{
 		ID:       namespace.Labels[keys.ManifestLabelID],

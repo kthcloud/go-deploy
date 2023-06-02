@@ -21,6 +21,10 @@ type WebhookPublic struct {
 	Token       string `json:"token" bson:"token"`
 }
 
+func (w *WebhookPublic) Created() bool {
+	return w.ID != 0
+}
+
 func CreateWebhookParamsFromPublic(public *WebhookPublic) *modelv2.WebhookPolicy {
 	return &modelv2.WebhookPolicy{
 		Enabled:    true,

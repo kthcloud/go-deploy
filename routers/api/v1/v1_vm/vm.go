@@ -9,8 +9,8 @@ import (
 	"go-deploy/models/dto/uri"
 	jobModel "go-deploy/models/sys/job"
 	vmModel "go-deploy/models/sys/vm"
-	"go-deploy/pkg/app"
 	"go-deploy/pkg/status_codes"
+	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/job_service"
 	"go-deploy/service/user_service"
@@ -19,7 +19,7 @@ import (
 	"net/http"
 )
 
-func getAllVMs(context *app.ClientContext) {
+func getAllVMs(context *sys.ClientContext) {
 	vms, err := vm_service.GetAll()
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
@@ -61,10 +61,10 @@ func getAllVMs(context *app.ClientContext) {
 // @Produce  json
 // @Param wantAll query bool false "Want all VMs"
 // @Success 200 {array} body.VmRead
-// @Failure 500 {object} app.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
 // @Router /api/v1/vm [get]
 func GetList(c *gin.Context) {
-	context := app.NewContext(c)
+	context := sys.NewContext(c)
 
 	var requestQuery query.VmList
 	if err := context.GinContext.Bind(&requestQuery); err != nil {
@@ -124,12 +124,12 @@ func GetList(c *gin.Context) {
 // @Produce  json
 // @Param vmId path string true "VM ID"
 // @Success 200 {object} body.VmRead
-// @Failure 400 {object} app.ErrorResponse
-// @Failure 404 {object} app.ErrorResponse
-// @Failure 500 {object} app.ErrorResponse
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 404 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
 // @Router /api/v1/vm/{vmId} [get]
 func Get(c *gin.Context) {
-	context := app.NewContext(c)
+	context := sys.NewContext(c)
 
 	var requestURI uri.VmGet
 	if err := context.GinContext.BindUri(&requestURI); err != nil {
@@ -182,14 +182,14 @@ func Get(c *gin.Context) {
 // @Produce  json
 // @Param body body body.VmCreate true "VM body"
 // @Success 200 {object} body.VmCreated
-// @Failure 400 {object} app.ErrorResponse
-// @Failure 401 {object} app.ErrorResponse
-// @Failure 404 {object} app.ErrorResponse
-// @Failure 423 {object} app.ErrorResponse
-// @Failure 500 {object} app.ErrorResponse
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 401 {object} sys.ErrorResponse
+// @Failure 404 {object} sys.ErrorResponse
+// @Failure 423 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
 // @Router /api/v1/vm [post]
 func Create(c *gin.Context) {
-	context := app.NewContext(c)
+	context := sys.NewContext(c)
 
 	var requestBody body.VmCreate
 	if err := context.GinContext.BindJSON(&requestBody); err != nil {
@@ -307,14 +307,14 @@ func Create(c *gin.Context) {
 // @Produce  json
 // @Param vmId path string true "VM ID"
 // @Success 200 {object} body.VmDeleted
-// @Failure 400 {object} app.ErrorResponse
-// @Failure 401 {object} app.ErrorResponse
-// @Failure 404 {object} app.ErrorResponse
-// @Failure 423 {object} app.ErrorResponse
-// @Failure 500 {object} app.ErrorResponse
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 401 {object} sys.ErrorResponse
+// @Failure 404 {object} sys.ErrorResponse
+// @Failure 423 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
 // @Router /api/v1/vm/{vmId} [delete]
 func Delete(c *gin.Context) {
-	context := app.NewContext(c)
+	context := sys.NewContext(c)
 
 	var requestURI uri.VmDelete
 	if err := context.GinContext.BindUri(&requestURI); err != nil {
@@ -375,14 +375,14 @@ func Delete(c *gin.Context) {
 // @Param vmId path string true "VM ID"
 // @Param body body body.VmUpdate true "VM update"
 // @Success 200 {object} body.VmUpdated
-// @Failure 400 {object} app.ErrorResponse
-// @Failure 401 {object} app.ErrorResponse
-// @Failure 404 {object} app.ErrorResponse
-// @Failure 423 {object} app.ErrorResponse
-// @Failure 500 {object} app.ErrorResponse
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 401 {object} sys.ErrorResponse
+// @Failure 404 {object} sys.ErrorResponse
+// @Failure 423 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
 // @Router /api/v1/vm/{vmId} [put]
 func Update(c *gin.Context) {
-	context := app.NewContext(c)
+	context := sys.NewContext(c)
 
 	var requestURI uri.VmUpdate
 	if err := context.GinContext.BindUri(&requestURI); err != nil {

@@ -9,7 +9,7 @@ func CreateProjectCreateBody(public *ProjectPublic) model.ProjectReq {
 		ProjectName:  public.Name,
 		StorageLimit: int64Ptr(0),
 		Metadata: &model.ProjectMetadata{
-			Public: boolToString(public.Public),
+			Public: "true",
 		},
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"log"
+	"time"
 )
 
 func (vm *VM) Ready() bool {
@@ -51,20 +52,26 @@ func Create(vmID, owner, manager string, params *CreateParams) error {
 	}
 
 	vm := VM{
-		ID:           vmID,
-		Name:         params.Name,
-		ManagedBy:    manager,
+		ID:        vmID,
+		Name:      params.Name,
+		OwnerID:   owner,
+		ManagedBy: manager,
+
+		CreatedAt: time.Now(),
+
 		GpuID:        "",
 		SshPublicKey: params.SshPublicKey,
-		OwnerID:      owner,
 		Ports:        []Port{},
-		Activities:   []string{ActivityBeingCreated},
-		Subsystems:   Subsystems{},
+
+		Activities: []string{ActivityBeingCreated},
+		Subsystems: Subsystems{},
+
 		Specs: Specs{
 			CpuCores: params.CpuCores,
 			RAM:      params.RAM,
 			DiskSize: params.DiskSize,
 		},
+
 		StatusCode:    status_codes.ResourceBeingCreated,
 		StatusMessage: status_codes.GetMsg(status_codes.ResourceBeingCreated),
 	}
@@ -249,13 +256,38 @@ func GetByActivity(activity string) ([]VM, error) {
 	return GetAllWithFilter(filter)
 }
 
+func GetWithNoActivities() ([]VM, error) {
+	filter := bson.D{
+		{
+			"activities", bson.M{
+				"$size": 0,
+			},
+		},
+	}
+
+	return GetAllWithFilter(filter)
+}
+
+func GetWithGPU() ([]VM, error) {
+	// create a filter that checks if the gpuID field is not empty
+	filter := bson.D{
+		{
+			"gpuId", bson.M{
+				"$ne": "",
+			},
+		},
+	}
+
+	return GetAllWithFilter(filter)
+}
+
 func AddActivity(vmID, activity string) error {
 	_, err := models.VmCollection.UpdateOne(context.TODO(),
 		bson.D{{"id", vmID}},
 		bson.D{{"$addToSet", bson.D{{"activities", activity}}}},
 	)
 	if err != nil {
-		err = fmt.Errorf("failed to add activity %s to deployment %s. details: %s", activity, vmID, err)
+		err = fmt.Errorf("failed to add activity %s to vm %s. details: %s", activity, vmID, err)
 		return err
 	}
 	return nil
@@ -267,8 +299,38 @@ func RemoveActivity(vmID, activity string) error {
 		bson.D{{"$pull", bson.D{{"activities", activity}}}},
 	)
 	if err != nil {
-		err = fmt.Errorf("failed to remove activity %s from deployment %s. details: %s", activity, vmID, err)
+		err = fmt.Errorf("failed to remove activity %s from vm %s. details: %s", activity, vmID, err)
 		return err
 	}
+	return nil
+}
+
+func MarkRepaired(vmID string) error {
+	filter := bson.D{{"id", vmID}}
+	update := bson.D{
+		{"$set", bson.D{{"repairedAt", time.Now()}}},
+		{"$pull", bson.D{{"activities", "repairing"}}},
+	}
+
+	_, err := models.VmCollection.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func MarkUpdated(vmID string) error {
+	filter := bson.D{{"id", vmID}}
+	update := bson.D{
+		{"$set", bson.D{{"updatedAt", time.Now()}}},
+		{"$pull", bson.D{{"activities", "updating"}}},
+	}
+
+	_, err := models.VmCollection.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

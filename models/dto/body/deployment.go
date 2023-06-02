@@ -1,5 +1,7 @@
 package body
 
+import "time"
+
 type Env struct {
 	Name  string `json:"name" binding:"required,env_name,min=1,max=100"`
 	Value string `json:"value" binding:"required,min=1,max=10000"`
@@ -49,7 +51,15 @@ type DeploymentRead struct {
 	Status  string  `json:"status"`
 	URL     *string `json:"url,omitempty"`
 	Envs    []Env   `json:"envs"`
+	Build   *Build  `json:"build,omitempty"`
 	Private bool    `json:"private"`
+}
+
+type Build struct {
+	Trace     string    `json:"trace"`
+	Status    string    `bson:"status"`
+	Stage     string    `bson:"stage"`
+	CreatedAt time.Time `json:"createdAt"`
 }
 
 type CiConfig struct {

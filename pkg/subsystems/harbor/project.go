@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/mittwald/goharbor-client/v5/apiv2/pkg/common"
 	harborErrors "github.com/mittwald/goharbor-client/v5/apiv2/pkg/errors"
 	"go-deploy/pkg/subsystems/harbor/models"
 	"strconv"
@@ -133,16 +132,6 @@ func (client *Client) UpdateProject(public *models.ProjectPublic) error {
 		if !strings.Contains(errString, "id/name pair not found on server side") {
 			return makeError(err)
 		}
-	}
-
-	err = client.HarborClient.UpdateProjectMetadata(
-		context.TODO(),
-		public.Name,
-		common.ProjectMetadataKeyPublic,
-		boolToString(public.Public),
-	)
-	if err != nil {
-		return makeError(err)
 	}
 
 	return nil

@@ -1,14 +1,12 @@
-package confirmers
+package confirm
 
 import (
 	"fmt"
 	"go-deploy/models/sys/deployment"
 	"go-deploy/models/sys/vm"
-	"go-deploy/pkg/app"
-	"log"
 )
 
-func K8sCreated(deployment *deployment.Deployment) (bool, error) {
+func k8sCreated(deployment *deployment.Deployment) (bool, error) {
 	_ = func(err error) error {
 		return fmt.Errorf("failed to check if k8s setup is created for deployment %s. details: %s", deployment.Name, err)
 	}
@@ -17,10 +15,10 @@ func K8sCreated(deployment *deployment.Deployment) (bool, error) {
 	return k8s.Namespace.Name != "" &&
 		k8s.Deployment.ID != "" &&
 		k8s.Service.ID != "" &&
-		k8s.Ingress.ID != "", nil
+		k8s.Ingress.ID != "" || k8s.Ingress.Placeholder, nil
 }
 
-func K8sDeleted(deployment *deployment.Deployment) (bool, error) {
+func k8sDeleted(deployment *deployment.Deployment) (bool, error) {
 	_ = func(err error) error {
 		return fmt.Errorf("failed to check if k8s setup is deleted for deployment %s. details: %s", deployment.Name, err)
 	}
@@ -29,10 +27,10 @@ func K8sDeleted(deployment *deployment.Deployment) (bool, error) {
 	return k8s.Namespace.Name == "" &&
 		k8s.Deployment.ID == "" &&
 		k8s.Service.ID == "" &&
-		k8s.Ingress.ID == "", nil
+		k8s.Ingress.ID == "" && !k8s.Ingress.Placeholder, nil
 }
 
-func HarborCreated(deployment *deployment.Deployment) (bool, error) {
+func harborCreated(deployment *deployment.Deployment) (bool, error) {
 	_ = func(err error) error {
 		return fmt.Errorf("failed to check if harbor is created for deployment %s. details: %s", deployment.Name, err)
 	}
@@ -44,7 +42,7 @@ func HarborCreated(deployment *deployment.Deployment) (bool, error) {
 		harbor.Webhook.ID != 0, nil
 }
 
-func HarborDeleted(deployment *deployment.Deployment) (bool, error) {
+func harborDeleted(deployment *deployment.Deployment) (bool, error) {
 	_ = func(err error) error {
 		return fmt.Errorf("failed to check if harbor is created for deployment %s. details: %s", deployment.Name, err)
 	}
@@ -56,25 +54,31 @@ func HarborDeleted(deployment *deployment.Deployment) (bool, error) {
 		harbor.Webhook.ID == 0, nil
 }
 
-func GitHubCreated(deployment *deployment.Deployment) (bool, error) {
+func gitHubCreated(deployment *deployment.Deployment) (bool, error) {
 	_ = func(err error) error {
 		return fmt.Errorf("failed to check if github is created for deployment %s. details: %s", deployment.Name, err)
 	}
 
 	github := &deployment.Subsystems.GitHub
+	if github.Placeholder {
+		return true, nil
+	}
+
 	return github.Webhook.ID != 0, nil
 }
 
-func GitHubDeleted(deployment *deployment.Deployment) (bool, error) {
+func gitHubDeleted(deployment *deployment.Deployment) (bool, error) {
 	_ = func(err error) error {
 		return fmt.Errorf("failed to check if github is created for deployment %s. details: %s", deployment.Name, err)
 	}
 
 	github := &deployment.Subsystems.GitHub
-	return github.Webhook.ID == 0, nil
+
+	return !github.Placeholder &&
+		github.Webhook.ID == 0, nil
 }
 
-func CSCreated(vm *vm.VM) (bool, error) {
+func csCreated(vm *vm.VM) (bool, error) {
 	cs := &vm.Subsystems.CS
 
 	_, hasSshRule := cs.PortForwardingRuleMap["__ssh"]
@@ -82,14 +86,8 @@ func CSCreated(vm *vm.VM) (bool, error) {
 	return cs.VM.ID != "" && hasSshRule, nil
 }
 
-func CSDeleted(vm *vm.VM) (bool, error) {
+func csDeleted(vm *vm.VM) (bool, error) {
 	cs := &vm.Subsystems.CS
 
 	return cs.VM.ID == "" && len(cs.PortForwardingRuleMap) == 0, nil
-}
-
-func Setup(ctx *app.Context) {
-	log.Println("starting confirmers")
-	go deploymentConfirmer(ctx)
-	go vmConfirmer(ctx)
 }

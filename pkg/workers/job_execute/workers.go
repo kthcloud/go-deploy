@@ -1,14 +1,14 @@
-package jobs
+package job_execute
 
 import (
 	"fmt"
 	jobModel "go-deploy/models/sys/job"
-	"go-deploy/pkg/app"
+	"go-deploy/pkg/sys"
 	"log"
 	"time"
 )
 
-func jobFetcher(ctx *app.Context) {
+func jobFetcher(ctx *sys.Context) {
 	for {
 		if ctx.Stop {
 			break
@@ -39,7 +39,7 @@ func jobFetcher(ctx *app.Context) {
 	}
 }
 
-func failedJobFetcher(ctx *app.Context) {
+func failedJobFetcher(ctx *sys.Context) {
 	for {
 		if ctx.Stop {
 			break
@@ -90,6 +90,12 @@ func startJob(job *jobModel.Job) error {
 		go updateDeployment(job)
 	case jobModel.TypeBuildDeployment:
 		go buildDeployment(job)
+	case jobModel.TypeRepairDeployment:
+		go repairDeployment(job)
+	case jobModel.TypeRepairVM:
+		go repairVM(job)
+	case jobModel.TypeRepairGPUs:
+		go repairGPUs(job)
 	default:
 		return fmt.Errorf("unknown job type: %s", job.Type)
 	}

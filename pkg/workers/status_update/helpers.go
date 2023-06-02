@@ -1,14 +1,12 @@
-package status_updaters
+package status_update
 
 import (
 	"fmt"
 	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/models/sys/vm"
-	"go-deploy/pkg/app"
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/status_codes"
 	"go-deploy/pkg/subsystems/cs"
-	"log"
 )
 
 func withClient() (*cs.Client, error) {
@@ -117,10 +115,4 @@ func fetchDeploymentStatus(deployment *deploymentModel.Deployment) (int, string,
 	}
 
 	return status_codes.ResourceRunning, status_codes.GetMsg(status_codes.ResourceRunning), nil
-}
-
-func Setup(ctx *app.Context) {
-	log.Println("starting status updaters")
-	go vmStatusUpdater(ctx)
-	go deploymentStatusUpdater(ctx)
 }
