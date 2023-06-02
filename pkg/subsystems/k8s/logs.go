@@ -8,24 +8,49 @@ import (
 	"io"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"log"
+	"strings"
 )
 
-func (client *Client) getPodName(namespace, deployment string) (*string, error) {
+func (client *Client) getPodName(namespace, deployment string) (string, error) {
 	pods, err := client.K8sClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: fmt.Sprintf("%s=%s", "app.kubernetes.io/name", deployment),
 	})
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	// Only one pod is allowed
 	for _, pod := range pods.Items {
-		return &pod.Name, nil
+		return pod.Name, nil
 	}
-	return nil, errors.New("no pods in namespace")
+	return "", errors.New("no pods in namespace")
 }
 
-func (client *Client) getPodLogs(cancelCtx context.Context, namespace, podName string, handler func(string)) {
+func (client *Client) getPodLogs(cancelCtx context.Context, namespace, deployment string, handler func(string)) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to create k8s log stream for deployment %s. details: %s", deployment, err)
+	}
+
+	for {
+		podName, err := client.getPodName(namespace, deployment)
+		if err != nil {
+			log.Println(makeError(err))
+			return
+		}
+
+		if podName == "" {
+			return
+		}
+
+		finished := client.readLogs(cancelCtx, namespace, podName, handler)
+		if finished {
+			return
+		}
+	}
+}
+
+func (client *Client) readLogs(cancelCtx context.Context, namespace, podName string, handler func(string)) bool {
 	podLogsConnection := client.K8sClient.CoreV1().Pods(namespace).GetLogs(podName, &v1.PodLogOptions{
 		Follow:    true,
 		TailLines: &[]int64{int64(10)}[0],
@@ -40,31 +65,27 @@ func (client *Client) getPodLogs(cancelCtx context.Context, namespace, podName s
 	for {
 		select {
 		case <-cancelCtx.Done():
-			break
+			return true
 		default:
 			for reader.Scan() {
 				line = reader.Text()
-				handler(line)
+				if isExitLine(line) {
+					return false
+				} else {
+					handler(line)
+				}
 			}
 		}
 	}
 }
 
+func isExitLine(line string) bool {
+	firstPart := strings.Contains(line, "rpc error: code = NotFound desc = an error occurred when try to find container")
+	lastPart := strings.Contains(line, "not found")
+	return firstPart && lastPart
+}
+
 func (client *Client) GetLogStream(context context.Context, namespace, deployment string, handler func(string)) error {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to create k8s log stream for deployment %s. details: %s", deployment, err)
-	}
-
-	podName, err := client.getPodName(namespace, deployment)
-	if err != nil {
-		return makeError(err)
-	}
-
-	if podName == nil {
-		return makeError(fmt.Errorf("failed to find pod name for %s", namespace))
-	}
-
-	go client.getPodLogs(context, namespace, *podName, handler)
-
+	go client.getPodLogs(context, namespace, deployment, handler)
 	return nil
 }

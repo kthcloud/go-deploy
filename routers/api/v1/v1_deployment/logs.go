@@ -1,6 +1,7 @@
 package v1_deployment
 
 import (
+	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -22,17 +23,17 @@ var upgrader = websocket.Upgrader{
 }
 
 func GetLogs(c *gin.Context) {
-	context := sys.NewContext(c)
+	httpContext := sys.NewContext(c)
 
 	var requestURI uri.LogsGet
-	if err := context.GinContext.BindUri(&requestURI); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+	if err := httpContext.GinContext.BindUri(&requestURI); err != nil {
+		httpContext.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
 
 	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		httpContext.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
 	}
 
@@ -40,6 +41,9 @@ func GetLogs(c *gin.Context) {
 		defer func(ws *websocket.Conn) {
 			_ = ws.Close()
 		}(ws)
+
+		var logContext context.Context
+		var auth *v1.AuthInfo
 
 		handler := func(msg string) {
 			err = ws.WriteMessage(websocket.TextMessage, []byte(msg))
@@ -49,24 +53,21 @@ func GetLogs(c *gin.Context) {
 			}
 		}
 
-		didAuth := false
-
 		for {
 			_, data, readMsgErr := ws.ReadMessage()
 			msg := string(data)
-			if strings.HasPrefix(msg, "Bearer ") && !didAuth {
-				auth := validateBearerToken(msg)
-				if auth != nil {
-					didAuth = true
 
-					logContext, getLogsErr := deployment_service.GetLogs(auth.UserID, requestURI.DeploymentID, handler, auth.IsAdmin())
-					if getLogsErr != nil {
-						context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", getLogsErr))
+			if strings.HasPrefix(msg, "Bearer ") && auth == nil {
+				auth = validateBearerToken(msg)
+				if auth != nil {
+					logContext, err = deployment_service.GetLogs(auth.UserID, requestURI.DeploymentID, handler, auth.IsAdmin())
+					if err != nil {
+						httpContext.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 						return
 					}
 
 					if logContext == nil {
-						context.NotFound()
+						httpContext.NotFound()
 						return
 					}
 				}
