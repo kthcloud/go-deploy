@@ -88,16 +88,31 @@ func (client *Client) CreatePortForwardingRule(public *models.PortForwardingRule
 		return "", makeError(err)
 	}
 
-	publicPortStr := strconv.Itoa(public.PublicPort)
-	privatePortStr := strconv.Itoa(public.PrivatePort)
+	var nameTag string
+	for _, tag := range public.Tags {
+		if tag.Key == "name" {
+			nameTag = tag.Value
+			break
+		}
+	}
 
 	var ruleID string
-
 	for _, rule := range listRules.PortForwardingRules {
 		if rule.Virtualmachineid == public.VmID &&
-			rule.Publicport == publicPortStr && rule.Privateport == privatePortStr &&
-			strings.ToLower(rule.Protocol) == strings.ToLower(public.Protocol) {
-			ruleID = rule.Id
+			rule.Tags != nil {
+
+			foundMatch := false
+			for _, tag := range rule.Tags {
+				if tag.Key == "name" && tag.Value == nameTag {
+					ruleID = rule.Id
+					foundMatch = true
+					break
+				}
+			}
+
+			if foundMatch {
+				break
+			}
 		}
 	}
 
