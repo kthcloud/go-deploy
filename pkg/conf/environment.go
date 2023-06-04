@@ -33,9 +33,9 @@ type Environment struct {
 	} `yaml:"dockerRegistry"`
 
 	Deployment struct {
-		ParentDomain     string `yaml:"parentDomain"`
-		Port             int    `yaml:"port"`
-		Prefix           string `yaml:"prefix"`
+		ParentDomain  string `yaml:"parentDomain"`
+		Port          int    `yaml:"port"`
+		Prefix        string `yaml:"prefix"`
 		ExtraDomainIP string `yaml:"extraDomainIp"`
 		IngressClass  string `yaml:"ingressClass"`
 	} `yaml:"deployment"`
@@ -104,6 +104,10 @@ type Environment struct {
 	GitLab struct {
 		URL   string `yaml:"url"`
 		Token string `yaml:"token"`
+	}
+
+	GitHub struct {
+		ClientSecretProd string `yaml:"clientSecretProd"`
 	}
 }
 

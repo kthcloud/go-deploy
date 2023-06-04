@@ -283,7 +283,7 @@ func Detach(vmID, userID string) error {
 		{"lease.user", userID},
 	}
 
-	update := createClearedLeaseFilter
+	update := createClearedLeaseFilter()
 
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
 
