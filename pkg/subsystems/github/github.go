@@ -13,6 +13,7 @@ type Client struct {
 
 type ClientConf struct {
 	Token string
+	Code  string
 }
 
 func New(config *ClientConf) (*Client, error) {

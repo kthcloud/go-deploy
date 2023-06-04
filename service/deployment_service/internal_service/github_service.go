@@ -2,6 +2,7 @@ package internal_service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	githubThirdParty "github.com/google/go-github/github"
 	"github.com/google/uuid"
@@ -9,8 +10,9 @@ import (
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/github"
 	githubModels "go-deploy/pkg/subsystems/github/models"
-
+	"go-deploy/utils/requestutils"
 	"log"
+	"net/url"
 	"strings"
 )
 
@@ -172,6 +174,53 @@ func ValidateGitHubToken(token string) (bool, string, error) {
 	}
 
 	return true, "", nil
+}
+
+func GetGitHubAccessTokenByCode(code string) (string, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to get github access token. details: %s", err)
+	}
+
+	apiRoute := "https://github.com/login/oauth/access_token"
+
+	body := map[string]string{
+		"client_id":     "6c3a489177c7833cc639",
+		"client_secret": conf.Env.GitHub.ClientSecretProd,
+		"code":          code,
+	}
+
+	bodyData, err := json.Marshal(body)
+	if err != nil {
+		return "", makeError(err)
+	}
+
+	res, err := requestutils.DoRequest("POST", apiRoute, bodyData, nil)
+	if err != nil {
+		return "", err
+	}
+
+	if res.StatusCode != 200 {
+		return "", fmt.Errorf("failed to get github access token. status code: %d", res.StatusCode)
+	}
+
+	readBody, err := requestutils.ReadBody(res.Body)
+	if err != nil {
+		return "", err
+	}
+
+	paramsStrings := string(readBody)
+
+	params, err := url.ParseQuery(paramsStrings)
+	if err != nil {
+		return "", err
+	}
+
+	accessToken := params.Get("access_token")
+	if accessToken == "" {
+		return "", fmt.Errorf("failed to get github access token. access token is empty")
+	}
+
+	return accessToken, nil
 }
 
 func createGitHubWebhook(client *github.Client, deployment *deploymentModel.Deployment, public *githubModels.WebhookPublic) (*githubModels.WebhookPublic, error) {

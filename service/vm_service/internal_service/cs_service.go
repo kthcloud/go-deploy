@@ -116,8 +116,11 @@ func CreateCS(params *vmModel.CreateParams) (*CsCreated, error) {
 
 	for _, port := range params.Ports {
 		var rule *csModels.PortForwardingRulePublic
-		var hasRule bool
-		*rule, hasRule = ruleMap[port.Name]
+		ruleInMap, hasRule := ruleMap[port.Name]
+		if hasRule {
+			rule = &ruleInMap
+		}
+
 		if !hasRule || !rule.Created() {
 			freePort, err := client.GetFreePort(conf.Env.CS.PortRange.Start, conf.Env.CS.PortRange.End)
 			if err != nil {
@@ -810,7 +813,15 @@ func createPortForwardingRule(client *cs.Client, vm *vmModel.VM, name string, pu
 		return nil, errors.New("failed to read port forwarding rule after creation")
 	}
 
+	if vm.Subsystems.CS.PortForwardingRuleMap == nil {
+		vm.Subsystems.CS.PortForwardingRuleMap = make(map[string]csModels.PortForwardingRulePublic)
+	}
 	vm.Subsystems.CS.PortForwardingRuleMap[name] = *portForwardingRule
+
+	err = vmModel.UpdateSubsystemByName(vm.Name, "cs", "portForwardingRuleMap", vm.Subsystems.CS.PortForwardingRuleMap)
+	if err != nil {
+		return nil, err
+	}
 
 	return portForwardingRule, nil
 }

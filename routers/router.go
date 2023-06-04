@@ -11,6 +11,7 @@ import (
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/routers/api/v1/v1_deployment"
+	"go-deploy/routers/api/v1/v1_github"
 	"go-deploy/routers/api/v1/v1_job"
 	"go-deploy/routers/api/v1/v1_user"
 	"go-deploy/routers/api/v1/v1_vm"
@@ -48,6 +49,7 @@ func NewRouter() *gin.Engine {
 	setupGpuRoutes(privateApiv1, apiv1Hook)
 	setupJobRoutes(privateApiv1, apiv1Hook)
 	setupUserRoutes(privateApiv1, apiv1Hook)
+	setupGitHubRoutes(privateApiv1, apiv1Hook)
 
 	registerCustomValidators()
 
@@ -103,6 +105,10 @@ func setupUserRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
 	private.GET("/users", v1_user.GetList)
 	private.POST("/users/:userId", v1_user.Update)
 	private.POST("/users", v1_user.Update)
+}
+
+func setupGitHubRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
+	private.GET("/github/repositories/:code", v1_github.ListGitHubRepositories)
 }
 
 func registerCustomValidators() {

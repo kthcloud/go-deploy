@@ -338,3 +338,7 @@ func Repair(id string) error {
 func ValidGitHubToken(token string) (bool, string, error) {
 	return internal_service.ValidateGitHubToken(token)
 }
+
+func GetGitHubAccessTokenByCode(code string) (string, error) {
+	return internal_service.GetGitHubAccessTokenByCode(code)
+}
