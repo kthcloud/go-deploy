@@ -97,8 +97,10 @@ func msgForTag(fe validator.FieldError) string {
 		return "Must be a valid environment name. Ex. ENV, MY_ENV, my_ENV_123"
 	case "env_list":
 		return "Every env name must be unique"
-	case "port_list":
-		return "Every port name and number must be unique"
+	case "port_list_names":
+		return "Every port name must be unique"
+	case "port_list_numbers":
+		return "Every port number must be unique per protocol"
 	case "extra_domain_list":
 		return "Every domain name must be unique and be a valid hostname (RFC 1035). And must point to " + conf.Env.Deployment.ExtraDomainIP
 	}
