@@ -18,6 +18,7 @@ import (
 	"golang.org/x/crypto/ssh"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 
 	swaggerfiles "github.com/swaggo/files"
@@ -193,23 +194,38 @@ func registerCustomValidators() {
 			panic(err)
 		}
 
-		err = v.RegisterValidation("port_list", func(fl validator.FieldLevel) bool {
+		err = v.RegisterValidation("port_list_names", func(fl validator.FieldLevel) bool {
 			portList, ok := fl.Field().Interface().([]body.Port)
 			if !ok {
 				return false
 			}
 
 			names := make(map[string]bool)
-			ports := make(map[int]bool)
 			for _, port := range portList {
 				if _, ok := names[port.Name]; ok {
 					return false
 				}
 				names[port.Name] = true
-				if _, ok := ports[port.Port]; ok {
+			}
+			return true
+		})
+		if err != nil {
+			panic(err)
+		}
+
+		err = v.RegisterValidation("port_list_numbers", func(fl validator.FieldLevel) bool {
+			portList, ok := fl.Field().Interface().([]body.Port)
+			if !ok {
+				return false
+			}
+
+			ports := make(map[string]bool)
+			for _, port := range portList {
+				identifier := strconv.Itoa(port.Port) + "/" + port.Protocol
+				if _, ok := ports[identifier]; ok {
 					return false
 				}
-				ports[port.Port] = true
+				ports[identifier] = true
 			}
 			return true
 		})
