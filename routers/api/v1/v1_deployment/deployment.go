@@ -183,15 +183,17 @@ func Create(c *gin.Context) {
 		return
 	}
 
-	validGhToken, reason, err := deployment_service.ValidGitHubToken(requestBody.GitHub.Token)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
-		return
-	}
+	if requestBody.GitHub != nil {
+		validGhToken, reason, err := deployment_service.ValidGitHubToken(requestBody.GitHub.Token)
+		if err != nil {
+			context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate GitHub token")
+			return
+		}
 
-	if !validGhToken {
-		context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceValidationFailed, reason)
-		return
+		if !validGhToken {
+			context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceValidationFailed, reason)
+			return
+		}
 	}
 
 	if exists {
