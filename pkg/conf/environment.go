@@ -107,7 +107,14 @@ type Environment struct {
 	}
 
 	GitHub struct {
-		ClientSecretProd string `yaml:"clientSecretProd"`
+		DevClient struct {
+			ID     string `yaml:"id"`
+			Secret string `yaml:"secret"`
+		} `yaml:"devClient"`
+		ProdClient struct {
+			ID     string `yaml:"id"`
+			Secret string `yaml:"secret"`
+		} `yaml:"prodClient"`
 	}
 }
 
