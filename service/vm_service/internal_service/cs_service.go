@@ -235,35 +235,48 @@ func UpdateCS(vmID string, updateParams *vmModel.UpdateParams) error {
 	if updateParams.Ports != nil {
 		removeDeploySshFromPortMap(updateParams.Ports)
 
-		/// delete old rules and create new ones
+		// delete the ones that are not in the new list
 		ruleMap := vm.Subsystems.CS.PortForwardingRuleMap
-
-		currentPortForwardingRules, err := client.ReadPortForwardingRules(vm.Subsystems.CS.VM.ID)
-		if err != nil {
-			return makeError(err)
-		}
-
-		currentPorts := convertToPorts(currentPortForwardingRules)
-		for i, port := range currentPorts {
-			if port.Name == "__ssh" || port.Port == 22 {
+		createNewRuleMap := make(map[string]csModels.PortForwardingRulePublic)
+		newRuleMap := make(map[string]csModels.PortForwardingRulePublic)
+		for _, port := range *updateParams.Ports {
+			cmp1 := createPortForwardingRulePublic(port.Name, vm.Subsystems.CS.VM.ID, 0, port.Port, port.Protocol, createDeployTags(port.Name, vm.Name))
+			cmp2, ok := ruleMap[port.Name]
+			if !ok {
+				// new rule
+				createNewRuleMap[port.Name] = *cmp1
+				delete(ruleMap, port.Name)
 				continue
 			}
 
-			err = client.DeletePortForwardingRule(currentPortForwardingRules[i].ID)
-			if err != nil {
-				return makeError(err)
+			if cmp1.PrivatePort != cmp2.PrivatePort ||
+				cmp1.Protocol != cmp2.Protocol ||
+				cmp1.VmID != cmp2.VmID {
+				// rule changed
+				err = client.DeletePortForwardingRule(cmp2.ID)
+				if err != nil {
+					return makeError(err)
+				}
+
+				createNewRuleMap[port.Name] = *cmp1
+			} else {
+				// rule not changed
+				newRuleMap[port.Name] = cmp2
 			}
-
 			delete(ruleMap, port.Name)
+		}
 
-			err = vmModel.UpdateSubsystemByName(vm.Name, "cs", "portForwardingRuleMap", ruleMap)
+		// delete any remaining rules
+		for _, rule := range ruleMap {
+			err = client.DeletePortForwardingRule(rule.ID)
 			if err != nil {
 				return makeError(err)
 			}
 		}
 
-		for _, port := range *updateParams.Ports {
-			freePort, err := client.GetFreePort(conf.Env.CS.PortRange.Start, conf.Env.CS.PortRange.End)
+		for name, public := range createNewRuleMap {
+			var freePort int
+			freePort, err = client.GetFreePort(conf.Env.CS.PortRange.Start, conf.Env.CS.PortRange.End)
 			if err != nil {
 				return makeError(err)
 			}
@@ -272,34 +285,20 @@ func UpdateCS(vmID string, updateParams *vmModel.UpdateParams) error {
 				return makeError(fmt.Errorf("no free port found"))
 			}
 
-			id, err := client.CreatePortForwardingRule(&csModels.PortForwardingRulePublic{
-				Name:        port.Name,
-				VmID:        vm.Subsystems.CS.VM.ID,
-				Protocol:    port.Protocol,
-				PrivatePort: port.Port,
-				PublicPort:  freePort,
-				Tags: []csModels.Tag{
-					{Key: "name", Value: port.Name},
-					{Key: "managedBy", Value: conf.Env.Manager},
-					{Key: "deployName", Value: vm.Name},
-				},
-			})
-			if err != nil {
-				return makeError(err)
-			}
+			public.PublicPort = freePort
 
-			rule, err := client.ReadPortForwardingRule(id)
-			if err != nil {
-				return makeError(err)
-			}
-
-			ruleMap[port.Name] = *rule
-
-			err = vmModel.UpdateSubsystemByName(vm.Name, "cs", "portForwardingRuleMap", ruleMap)
+			_, err = createPortForwardingRule(client, vm, name, &public)
 			if err != nil {
 				return makeError(err)
 			}
 		}
+
+		// merge the new and the old ones
+		for name, public := range createNewRuleMap {
+			newRuleMap[name] = public
+		}
+
+		err = vmModel.UpdateSubsystemByName(vm.Name, "cs", "portForwardingRuleMap", newRuleMap)
 	}
 
 	// service offering

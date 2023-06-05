@@ -28,7 +28,7 @@ func CreatePortForwardingRulePublicFromGet(rule *cloudstack.PortForwardingRule) 
 
 	var name string
 	for _, tag := range tags {
-		if tag.Key == "deployName" {
+		if tag.Key == "name" {
 			name = tag.Value
 		}
 	}
