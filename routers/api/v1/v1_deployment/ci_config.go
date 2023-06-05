@@ -44,7 +44,7 @@ func GetCiConfig(c *gin.Context) {
 	}
 
 	if config == nil {
-		context.NotFound()
+		context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceNotReady, fmt.Sprintf("CI config is not ready"))
 		return
 	}
 
