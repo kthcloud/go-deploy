@@ -41,14 +41,6 @@ func GetCIConfig(userId, deploymentID string, isAdmin bool) (*body.CiConfig, err
 			RunsOn: "ubuntu-latest",
 			Steps: []deploymentModel.Steps{
 				{
-					Name: "Set up QEMU",
-					Uses: "docker/setup-qemu-action@v2",
-				},
-				{
-					Name: "Set up Docker Buildx",
-					Uses: "docker/setup-buildx-action@v2",
-				},
-				{
 					Name: "Login to Docker Hub",
 					Uses: "docker/login-action@v2",
 					With: deploymentModel.With{
