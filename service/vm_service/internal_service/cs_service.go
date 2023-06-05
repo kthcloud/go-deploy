@@ -106,9 +106,6 @@ func CreateCS(params *vmModel.CreateParams) (*CsCreated, error) {
 		}
 	}
 
-	// port-forwarding rule map
-	addDeploySshToPortMap(&params.Ports)
-
 	ruleMap := vm.Subsystems.CS.PortForwardingRuleMap
 	if ruleMap == nil {
 		ruleMap = map[string]csModels.PortForwardingRulePublic{}
@@ -233,12 +230,14 @@ func UpdateCS(vmID string, updateParams *vmModel.UpdateParams) error {
 
 	// port-forwarding rule
 	if updateParams.Ports != nil {
-		removeDeploySshFromPortMap(updateParams.Ports)
-
-		// delete the ones that are not in the new list
 		ruleMap := vm.Subsystems.CS.PortForwardingRuleMap
-		createNewRuleMap := make(map[string]csModels.PortForwardingRulePublic)
+		if ruleMap == nil {
+			ruleMap = make(map[string]csModels.PortForwardingRulePublic)
+		}
+
 		newRuleMap := make(map[string]csModels.PortForwardingRulePublic)
+		createNewRuleMap := make(map[string]csModels.PortForwardingRulePublic)
+
 		for _, port := range *updateParams.Ports {
 			cmp1 := createPortForwardingRulePublic(port.Name, vm.Subsystems.CS.VM.ID, 0, port.Port, port.Protocol, createDeployTags(port.Name, vm.Name))
 			cmp2, ok := ruleMap[port.Name]
@@ -251,8 +250,9 @@ func UpdateCS(vmID string, updateParams *vmModel.UpdateParams) error {
 
 			if cmp1.PrivatePort != cmp2.PrivatePort ||
 				cmp1.Protocol != cmp2.Protocol ||
-				cmp1.VmID != cmp2.VmID {
-				// rule changed
+				cmp1.VmID != cmp2.VmID ||
+				cmp2.ID == "" ||
+				cmp2.PublicPort == 0 {
 				err = client.DeletePortForwardingRule(cmp2.ID)
 				if err != nil {
 					return makeError(err)
@@ -260,7 +260,6 @@ func UpdateCS(vmID string, updateParams *vmModel.UpdateParams) error {
 
 				createNewRuleMap[port.Name] = *cmp1
 			} else {
-				// rule not changed
 				newRuleMap[port.Name] = cmp2
 			}
 			delete(ruleMap, port.Name)
@@ -287,10 +286,12 @@ func UpdateCS(vmID string, updateParams *vmModel.UpdateParams) error {
 
 			public.PublicPort = freePort
 
-			_, err = createPortForwardingRule(client, vm, name, &public)
+			rule, err := createPortForwardingRule(client, vm, name, &public)
 			if err != nil {
 				return makeError(err)
 			}
+
+			createNewRuleMap[name] = *rule
 		}
 
 		// merge the new and the old ones
@@ -857,50 +858,4 @@ func getRequiredHost(gpuID string) (*string, error) {
 	}
 
 	return &gpu.Host, nil
-}
-
-func addDeploySshToPortMap(portMap *[]vmModel.Port) {
-	for i, port := range *portMap {
-		if (port.Port == 22 || port.Name == "__ssh") && port.Protocol == "tcp" {
-			*portMap = append((*portMap)[:i], (*portMap)[i+1:]...)
-			break
-		}
-	}
-
-	*portMap = append(*portMap, vmModel.Port{
-		Port:     22,
-		Name:     "__ssh",
-		Protocol: "tcp",
-	})
-}
-
-func removeDeploySshFromPortMap(portMap *[]vmModel.Port) {
-	for i, port := range *portMap {
-		if (port.Port == 22 || port.Name == "__ssh") && port.Protocol == "tcp" {
-			*portMap = append((*portMap)[:i], (*portMap)[i+1:]...)
-			break
-		}
-	}
-}
-
-func convertToPorts(rules []csModels.PortForwardingRulePublic) []vmModel.Port {
-	var ports []vmModel.Port
-
-	for _, rule := range rules {
-		var name string
-		for _, tag := range rule.Tags {
-			if tag.Key == "name" {
-				name = tag.Value
-				break
-			}
-		}
-
-		ports = append(ports, vmModel.Port{
-			Port:     rule.PublicPort,
-			Name:     name,
-			Protocol: rule.Protocol,
-		})
-	}
-
-	return ports
 }

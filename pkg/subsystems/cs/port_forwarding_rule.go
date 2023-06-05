@@ -15,7 +15,7 @@ func (client *Client) ReadPortForwardingRule(id string) (*models.PortForwardingR
 	}
 
 	if id == "" {
-		log.Println("cs port forwarding rule", id, "not supplied when reading. assuming it was deleted")
+		log.Println("cs port forwarding rule not supplied when reading. assuming it was deleted")
 		return nil, nil
 	}
 

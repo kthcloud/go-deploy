@@ -19,6 +19,12 @@ func Create(vmID, owner string, vmCreate *body.VmCreate) error {
 	params := &vmModel.CreateParams{}
 	params.FromDTO(vmCreate)
 
+	// clear any potentially ill-formed ssh rules
+	if params.Ports != nil {
+		removeDeploySshFromPortMap(&params.Ports)
+		addDeploySshToPortMap(&params.Ports)
+	}
+
 	err := vmModel.Create(vmID, owner, conf.Env.Manager, params)
 	if err != nil {
 		return makeError(err)
@@ -100,6 +106,12 @@ func Update(vmID string, dtoVmUpdate *body.VmUpdate) error {
 
 	vmUpdate := &vmModel.UpdateParams{}
 	vmUpdate.FromDTO(dtoVmUpdate)
+
+	if vmUpdate.Ports != nil {
+		// clear any potentially ill-formed ssh rules
+		removeDeploySshFromPortMap(vmUpdate.Ports)
+		addDeploySshToPortMap(vmUpdate.Ports)
+	}
 
 	err := internal_service.UpdateCS(vmID, vmUpdate)
 	if err != nil {
@@ -392,4 +404,28 @@ func GetExternalPortMapper(vmID string) (map[string]int, error) {
 	}
 
 	return mapper, nil
+}
+
+func addDeploySshToPortMap(portMap *[]vmModel.Port) {
+	for i, port := range *portMap {
+		if (port.Port == 22 || port.Name == "__ssh") && port.Protocol == "tcp" {
+			*portMap = append((*portMap)[:i], (*portMap)[i+1:]...)
+			break
+		}
+	}
+
+	*portMap = append(*portMap, vmModel.Port{
+		Port:     22,
+		Name:     "__ssh",
+		Protocol: "tcp",
+	})
+}
+
+func removeDeploySshFromPortMap(portMap *[]vmModel.Port) {
+	for i, port := range *portMap {
+		if (port.Port == 22 || port.Name == "__ssh") && port.Protocol == "tcp" {
+			*portMap = append((*portMap)[:i], (*portMap)[i+1:]...)
+			break
+		}
+	}
 }

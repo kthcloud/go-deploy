@@ -16,6 +16,10 @@ func (vm *VM) ToDTO(status string, connectionString *string, gpu *body.GpuRead, 
 	ports := make([]body.Port, 0)
 	if vm.Ports != nil && externalPortMapper != nil {
 		for _, port := range vm.Ports {
+			if port.Name == "__ssh" {
+				continue
+			}
+
 			externalPort, ok := externalPortMapper[port.Name]
 			if !ok {
 				continue

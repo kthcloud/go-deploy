@@ -11,35 +11,6 @@ import (
 	"time"
 )
 
-func (vm *VM) Ready() bool {
-	return !vm.DoingActivity(ActivityBeingCreated) && !vm.DoingActivity(ActivityBeingDeleted)
-}
-
-func (vm *VM) DoingActivity(activity string) bool {
-	for _, a := range vm.Activities {
-		if a == activity {
-			return true
-		}
-	}
-	return false
-}
-
-func (vm *VM) DoingOnOfActivities(activities []string) bool {
-	for _, a := range activities {
-		if vm.DoingActivity(a) {
-			return true
-		}
-	}
-	return false
-}
-
-func (vm *VM) BeingCreated() bool {
-	return vm.DoingActivity(ActivityBeingCreated)
-}
-
-func (vm *VM) BeingDeleted() bool {
-	return vm.DoingActivity(ActivityBeingDeleted)
-}
 
 func Create(vmID, owner, manager string, params *CreateParams) error {
 	currentVM, err := GetByID(vmID)
