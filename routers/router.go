@@ -109,7 +109,7 @@ func setupUserRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
 }
 
 func setupGitHubRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
-	private.GET("/github/repositories/:code", v1_github.ListGitHubRepositories)
+	private.GET("/github/repositories", v1_github.ListGitHubRepositories)
 }
 
 func registerCustomValidators() {

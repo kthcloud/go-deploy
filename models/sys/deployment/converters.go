@@ -47,6 +47,13 @@ func (deployment *Deployment) ToDTO(url *string) body.DeploymentRead {
 	}
 }
 
+func (g *GitHubRepository) ToDTO() body.GitHubRepository {
+	return body.GitHubRepository{
+		ID:   g.ID,
+		Name: g.Name,
+	}
+}
+
 func (p *UpdateParams) FromDTO(dto *body.DeploymentUpdate) {
 	if dto.Envs != nil {
 		envs := make([]Env, len(*dto.Envs))

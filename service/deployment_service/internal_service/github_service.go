@@ -169,8 +169,10 @@ func ValidateGitHubToken(token string) (bool, string, error) {
 	}
 
 	scopes := resp.Header.Get("X-OAuth-Scopes")
-	if !strings.Contains(scopes, "admin:repo_hook") {
-		return false, "Missing admin:repo_hook scope", nil
+	if !strings.Contains(scopes, "admin:repo_hook") &&
+		!strings.Contains(scopes, "repo") &&
+		!strings.Contains(scopes, "user") {
+		return false, "Requires scope to be one of: admin:repo_hook, repo, user", nil
 	}
 
 	return true, "", nil
@@ -221,6 +223,43 @@ func GetGitHubAccessTokenByCode(code string) (string, error) {
 	}
 
 	return accessToken, nil
+}
+
+func GetGitHubRepositories(token string) ([]deploymentModel.GitHubRepository, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to get github repositories. details: %s", err)
+	}
+
+	client, err := withGitHubClient(token)
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	user, _, err := client.GitHubClient.Users.Get(context.Background(), "")
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	if user.Login == nil {
+		return nil, makeError(fmt.Errorf("failed to get github repositories. user login is nil"))
+	}
+
+	repos, _, err := client.GitHubClient.Repositories.List(context.Background(), *user.Login, nil)
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	gitHubRepos := make([]deploymentModel.GitHubRepository, 0)
+	for _, repo := range repos {
+		if repo.ID != nil && repo.Name != nil {
+			gitHubRepos = append(gitHubRepos, deploymentModel.GitHubRepository{
+				ID:   *repo.ID,
+				Name: *repo.Name,
+			})
+		}
+	}
+
+	return gitHubRepos, nil
 }
 
 func createGitHubWebhook(client *github.Client, deployment *deploymentModel.Deployment, public *githubModels.WebhookPublic) (*githubModels.WebhookPublic, error) {

@@ -77,3 +77,8 @@ type BuildParams struct {
 	Branch    string `json:"branch" bson:"branch"`
 	ImportURL string `json:"importUrl" bson:"importUrl"`
 }
+
+type GitHubRepository struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+}
