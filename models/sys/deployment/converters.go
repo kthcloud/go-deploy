@@ -24,17 +24,6 @@ func (deployment *Deployment) ToDTO(url *string) body.DeploymentRead {
 		}
 	}
 
-	var build *body.Build
-	if deployment.Subsystems.GitLab.LastBuild.ID != 0 {
-		lb := &deployment.Subsystems.GitLab.LastBuild
-		build = &body.Build{
-			Trace:     lb.Trace,
-			Status:    lb.Status,
-			Stage:     lb.Stage,
-			CreatedAt: lb.CreatedAt,
-		}
-	}
-
 	return body.DeploymentRead{
 		ID:      deployment.ID,
 		Name:    deployment.Name,
@@ -42,8 +31,14 @@ func (deployment *Deployment) ToDTO(url *string) body.DeploymentRead {
 		Status:  deployment.StatusMessage,
 		URL:     fullURL,
 		Envs:    envs,
-		Build:   build,
 		Private: deployment.Private,
+	}
+}
+
+func (g *GitHubRepository) ToDTO() body.GitHubRepository {
+	return body.GitHubRepository{
+		ID:   g.ID,
+		Name: g.Name,
 	}
 }
 

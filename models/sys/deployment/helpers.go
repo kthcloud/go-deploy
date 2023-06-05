@@ -7,6 +7,7 @@ import (
 	"go-deploy/pkg/status_codes"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
 	"time"
 )
@@ -38,7 +39,8 @@ func CreateDeployment(deploymentID, ownerID string, params *CreateParams) error 
 			GitLab: GitLab{
 				LastBuild: GitLabBuild{
 					ID:        0,
-					Trace:     "created by go-deploy",
+					ProjectID: 0,
+					Trace:     []string{"created by go-deploy"},
 					Status:    "initialized",
 					Stage:     "initialization",
 					CreatedAt: time.Now(),
@@ -222,8 +224,8 @@ func GetByActivity(activity string) ([]Deployment, error) {
 	filter := bson.D{
 		{
 			"activities", bson.M{
-			"$in": bson.A{activity},
-		},
+				"$in": bson.A{activity},
+			},
 		},
 	}
 
@@ -234,8 +236,8 @@ func GetWithNoActivities() ([]Deployment, error) {
 	filter := bson.D{
 		{
 			"activities", bson.M{
-			"$size": 0,
-		},
+				"$size": 0,
+			},
 		},
 	}
 
@@ -314,4 +316,22 @@ func UpdateGitLabBuild(deploymentID string, build GitLabBuild) error {
 	}
 
 	return nil
+}
+
+func GetLastGitLabBuild(deploymentID string) (*GitLabBuild, error) {
+	// fetch only subsystem.gitlab.lastBuild
+	projection := bson.D{
+		{"subsystems.gitlab.lastBuild", 1},
+	}
+
+	var deployment Deployment
+	err := models.DeploymentCollection.FindOne(context.TODO(),
+		bson.D{{"id", deploymentID}},
+		options.FindOne().SetProjection(projection),
+	).Decode(&deployment)
+	if err != nil {
+		return &GitLabBuild{}, err
+	}
+
+	return &deployment.Subsystems.GitLab.LastBuild, nil
 }

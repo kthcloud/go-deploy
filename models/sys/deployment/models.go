@@ -39,7 +39,8 @@ type GitLab struct {
 
 type GitLabBuild struct {
 	ID        int       `bson:"id"`
-	Trace     string    `bson:"trace"`
+	ProjectID int       `bson:"projectId"`
+	Trace     []string  `bson:"trace"`
 	Status    string    `bson:"status"`
 	Stage     string    `bson:"stage"`
 	CreatedAt time.Time `bson:"createdAt"`
@@ -76,4 +77,9 @@ type BuildParams struct {
 	Tag       string `json:"tag" bson:"tag"`
 	Branch    string `json:"branch" bson:"branch"`
 	ImportURL string `json:"importUrl" bson:"importUrl"`
+}
+
+type GitHubRepository struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
 }

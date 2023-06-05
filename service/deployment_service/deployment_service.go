@@ -342,3 +342,7 @@ func ValidGitHubToken(token string) (bool, string, error) {
 func GetGitHubAccessTokenByCode(code string) (string, error) {
 	return internal_service.GetGitHubAccessTokenByCode(code)
 }
+
+func GetGitHubRepositories(token string) ([]deploymentModel.GitHubRepository, error) {
+	return internal_service.GetGitHubRepositories(token)
+}
