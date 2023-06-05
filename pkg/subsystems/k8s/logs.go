@@ -27,7 +27,7 @@ func (client *Client) getPodName(namespace, deployment string) (string, error) {
 	return "", errors.New("no pods in namespace")
 }
 
-func (client *Client) getPodLogs(cancelCtx context.Context, namespace, deployment string, handler func(string)) {
+func (client *Client) setupPodLogStreamer(cancelCtx context.Context, namespace, deployment string, handler func(string)) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create k8s log stream for deployment %s. details: %s", deployment, err)
 	}
@@ -85,7 +85,7 @@ func isExitLine(line string) bool {
 	return firstPart && lastPart
 }
 
-func (client *Client) GetLogStream(context context.Context, namespace, deployment string, handler func(string)) error {
-	go client.getPodLogs(context, namespace, deployment, handler)
+func (client *Client) SetupLogStream(context context.Context, namespace, deployment string, handler func(string)) error {
+	go client.setupPodLogStreamer(context, namespace, deployment, handler)
 	return nil
 }

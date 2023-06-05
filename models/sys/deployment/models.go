@@ -39,7 +39,8 @@ type GitLab struct {
 
 type GitLabBuild struct {
 	ID        int       `bson:"id"`
-	Trace     string    `bson:"trace"`
+	ProjectID int       `bson:"projectId"`
+	Trace     []string  `bson:"trace"`
 	Status    string    `bson:"status"`
 	Stage     string    `bson:"stage"`
 	CreatedAt time.Time `bson:"createdAt"`

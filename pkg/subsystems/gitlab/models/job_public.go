@@ -7,6 +7,7 @@ import (
 
 type JobPublic struct {
 	ID        int       `json:"id"`
+	ProjectID int       `json:"projectId"`
 	Status    string    `json:"status"`
 	Stage     string    `json:"stage"`
 	CreatedAt time.Time `json:"createdAt"`
@@ -18,8 +19,14 @@ func CreateJobPublicFromGet(job *gitlab.Job) *JobPublic {
 		createdAt = *job.CreatedAt
 	}
 
+	var projectID int
+	if job.Project != nil {
+		projectID = job.Project.ID
+	}
+
 	return &JobPublic{
 		ID:        job.ID,
+		ProjectID: projectID,
 		Status:    job.Status,
 		Stage:     job.Stage,
 		CreatedAt: createdAt,

@@ -102,13 +102,9 @@ func CreateBuild(id string, params *deploymentModel.BuildParams) error {
 			return makeError(err)
 		}
 
-		err = deploymentModel.UpdateGitLabBuild(id, deploymentModel.GitLabBuild{
-			ID:        lastJob.ID,
-			Trace:     trace,
-			Status:    lastJob.Status,
-			Stage:     lastJob.Stage,
-			CreatedAt: lastJob.CreatedAt,
-		})
+		traceSlice := strings.Split(trace, "\n")
+
+		err = updateGitLabBuild(id, lastJob, traceSlice)
 		if err != nil {
 			return makeError(err)
 		}
@@ -122,11 +118,11 @@ func CreateBuild(id string, params *deploymentModel.BuildParams) error {
 			break
 		}
 
-		if lastJob.Status == "success" {
-			break
-		}
-
-		if lastJob.Status == "failed" {
+		if lastJob.Status == "success" || lastJob.Status == "failed" {
+			err = updateGitLabBuild(id, lastJob, traceSlice)
+			if err != nil {
+				return makeError(err)
+			}
 			break
 		}
 
@@ -136,4 +132,15 @@ func CreateBuild(id string, params *deploymentModel.BuildParams) error {
 	log.Println("build finished with gitlab")
 
 	return nil
+}
+
+func updateGitLabBuild(deploymentID string, lastJob *models.JobPublic, trace []string) error {
+	return deploymentModel.UpdateGitLabBuild(deploymentID, deploymentModel.GitLabBuild{
+		ID:        lastJob.ID,
+		ProjectID: lastJob.ProjectID,
+		Trace:     trace,
+		Status:    lastJob.Status,
+		Stage:     lastJob.Stage,
+		CreatedAt: lastJob.CreatedAt,
+	})
 }
