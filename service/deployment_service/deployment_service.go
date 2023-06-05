@@ -6,6 +6,7 @@ import (
 	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/service/deployment_service/internal_service"
 	"log"
+	"strings"
 )
 
 func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreate) error {
@@ -34,7 +35,16 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 	if params.GitHub != nil {
 		err = internal_service.CreateGitHub(params.Name, params)
 		if err != nil {
-			return makeError(err)
+			errString := err.Error()
+			if strings.Contains(errString, "/hooks: 404 Not Found") {
+				log.Println(makeError(fmt.Errorf("webhook api not found. assuming github is not supported, inserting placeholder instead")))
+				err = internal_service.CreatePlaceholderGitHub(params.Name)
+				if err != nil {
+					return makeError(err)
+				}
+			} else {
+				return makeError(err)
+			}
 		}
 	} else {
 		err = internal_service.CreatePlaceholderGitHub(params.Name)

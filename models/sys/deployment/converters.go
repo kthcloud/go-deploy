@@ -24,14 +24,20 @@ func (deployment *Deployment) ToDTO(url *string) body.DeploymentRead {
 		}
 	}
 
+	integrations := make([]string, 0)
+	if deployment.Subsystems.GitHub.Created() {
+		integrations = append(integrations, "github")
+	}
+
 	return body.DeploymentRead{
-		ID:      deployment.ID,
-		Name:    deployment.Name,
-		OwnerID: deployment.OwnerID,
-		Status:  deployment.StatusMessage,
-		URL:     fullURL,
-		Envs:    envs,
-		Private: deployment.Private,
+		ID:           deployment.ID,
+		Name:         deployment.Name,
+		OwnerID:      deployment.OwnerID,
+		Status:       deployment.StatusMessage,
+		URL:          fullURL,
+		Envs:         envs,
+		Private:      deployment.Private,
+		Integrations: integrations,
 	}
 }
 

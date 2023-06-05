@@ -169,10 +169,8 @@ func ValidateGitHubToken(token string) (bool, string, error) {
 	}
 
 	scopes := resp.Header.Get("X-OAuth-Scopes")
-	if !strings.Contains(scopes, "admin:repo_hook") &&
-		!strings.Contains(scopes, "repo") &&
-		!strings.Contains(scopes, "user") {
-		return false, "Requires scope to be one of: admin:repo_hook, repo, user", nil
+	if !strings.Contains(scopes, "admin:repo_hook") {
+		return false, "Requires scope to be one of: admin:repo_hook", nil
 	}
 
 	return true, "", nil
@@ -183,46 +181,17 @@ func GetGitHubAccessTokenByCode(code string) (string, error) {
 		return fmt.Errorf("failed to get github access token. details: %s", err)
 	}
 
-	apiRoute := "https://github.com/login/oauth/access_token"
-
-	body := map[string]string{
-		"client_id":     "6c3a489177c7833cc639",
-		"client_secret": conf.Env.GitHub.ClientSecretProd,
-		"code":          code,
+	token, prodErr := fetchAccessToken(code, conf.Env.GitHub.ProdClient.ID, conf.Env.GitHub.ProdClient.Secret)
+	if prodErr == nil {
+		return token, nil
 	}
 
-	bodyData, err := json.Marshal(body)
-	if err != nil {
-		return "", makeError(err)
+	token, devErr := fetchAccessToken(code, conf.Env.GitHub.DevClient.ID, conf.Env.GitHub.DevClient.Secret)
+	if devErr == nil {
+		return token, nil
 	}
 
-	res, err := requestutils.DoRequest("POST", apiRoute, bodyData, nil)
-	if err != nil {
-		return "", err
-	}
-
-	if res.StatusCode != 200 {
-		return "", fmt.Errorf("failed to get github access token. status code: %d", res.StatusCode)
-	}
-
-	readBody, err := requestutils.ReadBody(res.Body)
-	if err != nil {
-		return "", err
-	}
-
-	paramsStrings := string(readBody)
-
-	params, err := url.ParseQuery(paramsStrings)
-	if err != nil {
-		return "", err
-	}
-
-	accessToken := params.Get("access_token")
-	if accessToken == "" {
-		return "", fmt.Errorf("failed to get github access token. access token is empty")
-	}
-
-	return accessToken, nil
+	return "", makeError(fmt.Errorf("failed to get github access token. prod err details: %s. dev err details: %s", prodErr, devErr))
 }
 
 func GetGitHubRepositories(token string) ([]deploymentModel.GitHubRepository, error) {
@@ -283,4 +252,47 @@ func createGitHubWebhook(client *github.Client, deployment *deploymentModel.Depl
 	}
 
 	return webhook, nil
+}
+
+func fetchAccessToken(code, clientId string, clientSecret string) (string, error) {
+	apiRoute := "https://github.com/login/oauth/access_token"
+
+	body := map[string]string{
+		"client_id":     clientId,
+		"client_secret": clientSecret,
+		"code":          code,
+	}
+
+	bodyData, err := json.Marshal(body)
+	if err != nil {
+		return "", err
+	}
+
+	res, err := requestutils.DoRequest("POST", apiRoute, bodyData, nil)
+	if err != nil {
+		return "", err
+	}
+
+	if res.StatusCode != 200 {
+		return "", fmt.Errorf("failed to get github access token. status code: %d", res.StatusCode)
+	}
+
+	readBody, err := requestutils.ReadBody(res.Body)
+	if err != nil {
+		return "", err
+	}
+
+	paramsStrings := string(readBody)
+
+	params, err := url.ParseQuery(paramsStrings)
+	if err != nil {
+		return "", err
+	}
+
+	accessToken := params.Get("access_token")
+	if accessToken == "" {
+		return "", fmt.Errorf("failed to get github access token. access token is empty")
+	}
+
+	return accessToken, nil
 }
