@@ -12,7 +12,6 @@ type RobotPublic struct {
 	HarborName  string `json:"harborName" bson:"harborName"`
 	ProjectID   int    `json:"projectId" bson:"projectId"`
 	ProjectName string `json:"projectName" bson:"projectName"`
-	Description string `json:"description" bson:"description"`
 	Disable     bool   `json:"disable" bson:"disable"`
 	Secret      string `json:"secret" bson:"secret" `
 }
@@ -26,7 +25,6 @@ func CreateRobotUpdateFromPublic(public *RobotPublic) *modelv2.Robot {
 		ID:          int64(public.ID),
 		Name:        getRobotFullName(public.ProjectName, public.Name),
 		Level:       "project",
-		Description: public.Description,
 		Disable:     public.Disable,
 		Editable:    true,
 		ExpiresAt:   -1,
@@ -41,8 +39,8 @@ func CreateRobotPublicFromGet(robot *modelv2.Robot, project *modelv2.Project) *R
 		HarborName:  robot.Name,
 		ProjectName: project.Name,
 		ProjectID:   int(project.ProjectID),
-		Description: robot.Description,
 		Disable:     robot.Disable,
+		Secret:      robot.Description,
 	}
 }
 

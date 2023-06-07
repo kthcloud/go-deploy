@@ -19,12 +19,11 @@ func createProjectPublic(projectName string) *harborModels.ProjectPublic {
 	}
 }
 
-func createRobotPublic(projectID int, projectName, name string) *harborModels.RobotPublic {
+func createRobotPublic(projectID int, projectName string) *harborModels.RobotPublic {
 	return &harborModels.RobotPublic{
-		Name:        name,
+		Name:        "robot",
 		ProjectID:   projectID,
 		ProjectName: projectName,
-		Description: "Auto created with Go Deploy",
 		Disable:     false,
 	}
 }
@@ -95,7 +94,7 @@ func CreateHarbor(name, userID string) error {
 	// Robot
 	robot := &deployment.Subsystems.Harbor.Robot
 	if !robot.Created() {
-		robot, err = createRobot(client, deployment, createRobotPublic(project.ID, project.Name, name))
+		robot, err = createRobot(client, deployment, createRobotPublic(project.ID, project.Name))
 		if err != nil {
 			return makeError(err)
 		}
@@ -157,11 +156,6 @@ func DeleteHarbor(name string) error {
 	}
 
 	if deployment.Subsystems.Harbor.Robot.Created() {
-		err = client.DeleteRobot(deployment.Subsystems.Harbor.Robot.ID)
-		if err != nil {
-			return makeError(err)
-		}
-
 		err = deploymentModel.UpdateSubsystemByName(name, "harbor", "robot", harborModels.RobotPublic{})
 		if err != nil {
 			return makeError(err)
@@ -230,6 +224,9 @@ func RepairHarbor(name string) error {
 	robot.Secret = ss.Robot.Secret
 
 	if robot == nil || !reflect.DeepEqual(ss.Robot, *robot) {
+		// reset the secret to not cause confusion, since it won't be used anyway
+		ss.Robot.Secret = ""
+
 		err = recreateRobot(client, deployment, &ss.Robot)
 		if err != nil {
 			return makeError(err)
@@ -368,12 +365,12 @@ func createProject(client *harbor.Client, deployment *deploymentModel.Deployment
 }
 
 func createRobot(client *harbor.Client, deployment *deploymentModel.Deployment, public *harborModels.RobotPublic) (*harborModels.RobotPublic, error) {
-	created, err := client.CreateRobot(public)
+	id, err := client.CreateRobot(public)
 	if err != nil {
 		return nil, err
 	}
 
-	robot, err := client.ReadRobot(created.ID)
+	robot, err := client.ReadRobot(id)
 	if err != nil {
 		return nil, err
 	}
@@ -381,8 +378,6 @@ func createRobot(client *harbor.Client, deployment *deploymentModel.Deployment, 
 	if robot == nil {
 		return nil, errors.New("failed to read robot after creation")
 	}
-
-	robot.Secret = created.Secret
 
 	err = deploymentModel.UpdateSubsystemByName(deployment.Name, "harbor", "robot", robot)
 	if err != nil {

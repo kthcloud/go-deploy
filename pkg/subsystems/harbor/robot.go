@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	modelv2 "github.com/mittwald/goharbor-client/v5/apiv2/model"
+	harborModelsV2 "github.com/mittwald/goharbor-client/v5/apiv2/model"
 	harborErrors "github.com/mittwald/goharbor-client/v5/apiv2/pkg/errors"
 	"go-deploy/pkg/subsystems/harbor/models"
 	"strings"
@@ -49,46 +49,48 @@ func (client *Client) ReadRobot(id int) (*models.RobotPublic, error) {
 	return public, nil
 }
 
-func (client *Client) CreateRobot(public *models.RobotPublic) (*models.RobotCreated, error) {
+func (client *Client) CreateRobot(public *models.RobotPublic) (int, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create robot %s. details: %s", public.Name, err)
 	}
 
 	if public.ProjectID == 0 {
-		return nil, nil
+		return 0, nil
 	}
 
 	robots, err := client.HarborClient.ListProjectRobotsV1(context.TODO(), public.ProjectName)
 	if err != nil {
-		return nil, makeError(err)
+		return 0, makeError(err)
 	}
 
-	var robotResult *modelv2.Robot
-	for _, robot := range robots {
-		if robot.Name == getRobotFullName(public.ProjectName, public.Name) {
-			robotResult = robot
-			break
+	var robot *harborModelsV2.Robot
+	for _, r := range robots {
+		if r.Name == getRobotFullName(public.ProjectName, public.Name) {
+			robot = r
 		}
 	}
 
-	if robotResult != nil {
-		// delete this robot, since it would not have been requested if credentials was known
-		// we could also just refresh the robot credentials
-		err = client.DeleteRobot(int(robotResult.ID))
+	if robot == nil {
+		created, err := client.createHarborRobot(public)
 		if err != nil {
-			return nil, makeError(err)
+			return 0, makeError(err)
+		}
+		robot, err = client.HarborClient.GetRobotAccountByID(context.TODO(), created.ID)
+		if err != nil {
+			return 0, makeError(err)
 		}
 	}
 
-	robotCreatedBody, err := client.createHarborRobot(public)
-	if err != nil {
-		return nil, makeError(err)
+	if robot.Description == "" {
+		robot.Description = robot.Secret
+
+		err = client.HarborClient.UpdateRobotAccount(context.TODO(), robot)
+		if err != nil {
+			return 0, makeError(err)
+		}
 	}
 
-	return &models.RobotCreated{
-		ID:     int(robotCreatedBody.ID),
-		Secret: robotCreatedBody.Secret,
-	}, nil
+	return int(robot.ID), nil
 }
 
 func (client *Client) DeleteRobot(id int) error {
