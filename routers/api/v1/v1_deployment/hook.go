@@ -90,7 +90,7 @@ func HandleHarborHook(c *gin.Context) {
 	}
 
 	if deployment == nil {
-		context.ErrorResponse(http.StatusNotFound, status_codes.Error, fmt.Sprintf("deployment %s not found", deployment.Name))
+		context.ErrorResponse(http.StatusNotFound, status_codes.Error, fmt.Sprintf("deployment not found"))
 		return
 	}
 

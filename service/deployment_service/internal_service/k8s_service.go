@@ -397,6 +397,7 @@ func RepairK8s(name string) error {
 	}
 
 	if namespace == nil || !reflect.DeepEqual(ss.Namespace, *namespace) {
+		log.Println("recreating namespace for deployment", name)
 		err = recreateNamespace(client, deployment, &ss.Namespace)
 		if err != nil {
 			return makeError(err)
@@ -410,6 +411,7 @@ func RepairK8s(name string) error {
 	}
 
 	if k8sDeployment == nil || !reflect.DeepEqual(ss.Deployment, *k8sDeployment) {
+		log.Println("recreating deployment for deployment", name)
 		err = recreateK8sDeployment(client, deployment, &ss.Deployment)
 		if err != nil {
 			return makeError(err)
@@ -423,6 +425,7 @@ func RepairK8s(name string) error {
 	}
 
 	if service == nil || !reflect.DeepEqual(ss.Service, *service) {
+		log.Println("recreating service for deployment", name)
 		err = recreateService(client, deployment, &ss.Service)
 		if err != nil {
 			return makeError(err)
@@ -436,6 +439,7 @@ func RepairK8s(name string) error {
 	}
 
 	if ingress == nil || !reflect.DeepEqual(ss.Ingress, *ingress) {
+		log.Println("recreating ingress for deployment", name)
 		err = recreateIngress(client, deployment, &ss.Ingress)
 		if err != nil {
 			return makeError(err)
