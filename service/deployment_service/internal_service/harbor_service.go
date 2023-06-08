@@ -220,9 +220,6 @@ func RepairHarbor(name string) error {
 		return makeError(err)
 	}
 
-	// robot.Secret is not returned by the API, so we need to set it manually
-	robot.Secret = ss.Robot.Secret
-
 	if robot == nil || !reflect.DeepEqual(ss.Robot, *robot) {
 		// reset the secret to not cause confusion, since it won't be used anyway
 		ss.Robot.Secret = ""
