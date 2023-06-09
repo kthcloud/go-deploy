@@ -231,6 +231,24 @@ func GetGitHubRepositories(token string) ([]deploymentModel.GitHubRepository, er
 	return gitHubRepos, nil
 }
 
+func GetGitHubRepository(token string, repositoryID int64) (*githubThirdParty.Repository, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to get repository. details: %s", err)
+	}
+
+	client, err := withGitHubClient(token)
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	repo, _, err := client.GitHubClient.Repositories.GetByID(context.Background(), repositoryID)
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	return repo, nil
+}
+
 func createGitHubWebhook(client *github.Client, deployment *deploymentModel.Deployment, public *githubModels.WebhookPublic) (*githubModels.WebhookPublic, error) {
 	id, err := client.CreateWebhook(public)
 	if err != nil {

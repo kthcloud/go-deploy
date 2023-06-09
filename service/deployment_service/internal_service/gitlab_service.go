@@ -14,7 +14,7 @@ import (
 )
 
 func CreateBuild(id string, params *deploymentModel.BuildParams) error {
-	log.Println("creating build with gitlab")
+	log.Println("creating build with gitlab for deployment", id)
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to build deployment with gitlab. details: %s", err)
