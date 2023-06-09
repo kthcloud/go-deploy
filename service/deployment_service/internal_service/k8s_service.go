@@ -433,16 +433,18 @@ func RepairK8s(name string) error {
 	}
 
 	// ingress
-	ingress, err := client.ReadIngress(ss.Namespace.FullName, ss.Ingress.ID)
-	if err != nil {
-		return makeError(err)
-	}
-
-	if ingress == nil || !reflect.DeepEqual(ss.Ingress, *ingress) {
-		log.Println("recreating ingress for deployment", name)
-		err = recreateIngress(client, deployment, &ss.Ingress)
+	if !ss.Ingress.Placeholder {
+		ingress, err := client.ReadIngress(ss.Namespace.FullName, ss.Ingress.ID)
 		if err != nil {
 			return makeError(err)
+		}
+
+		if ingress == nil || !reflect.DeepEqual(ss.Ingress, *ingress) {
+			log.Println("recreating ingress for deployment", name)
+			err = recreateIngress(client, deployment, &ss.Ingress)
+			if err != nil {
+				return makeError(err)
+			}
 		}
 	}
 
