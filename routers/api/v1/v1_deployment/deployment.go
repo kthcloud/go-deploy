@@ -194,6 +194,17 @@ func Create(c *gin.Context) {
 			context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceValidationFailed, reason)
 			return
 		}
+
+		validGitHubRepository, reason, err := deployment_service.ValidGitHubRepository(requestBody.GitHub.Token, requestBody.GitHub.RepositoryID)
+		if err != nil {
+			context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate GitHub repository")
+			return
+		}
+
+		if !validGitHubRepository {
+			context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceValidationFailed, reason)
+			return
+		}
 	}
 
 	if exists {

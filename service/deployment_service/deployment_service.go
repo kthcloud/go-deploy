@@ -73,25 +73,25 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 			return nil
 		}
 
-		if repo.GetDefaultBranch() == "" {
+		if repo.DefaultBranch == "" {
 			log.Println("github repository has no default branch. assuming it was deleted")
 			return nil
 		}
 
-		if repo.CloneURL == nil || *repo.CloneURL == "" {
+		if repo.CloneURL == "" {
 			log.Println("github repository has no clone url. assuming it was deleted")
 			return nil
 		}
 
-		if repo.DefaultBranch == nil || *repo.DefaultBranch == "" {
+		if repo.DefaultBranch == "" {
 			log.Println("github repository has no default branch. assuming it was deleted")
 			return nil
 		}
 
 		err = build(deployment, &deploymentModel.BuildParams{
 			Tag:       "latest",
-			Branch:    *repo.DefaultBranch,
-			ImportURL: *repo.CloneURL,
+			Branch:    repo.DefaultBranch,
+			ImportURL: repo.CloneURL,
 		})
 		if err != nil {
 			return makeError(err)
@@ -384,6 +384,41 @@ func GetGitHubAccessTokenByCode(code string) (string, error) {
 
 func GetGitHubRepositories(token string) ([]deploymentModel.GitHubRepository, error) {
 	return internal_service.GetGitHubRepositories(token)
+}
+
+func ValidGitHubRepository(token string, repositoryID int64) (bool, string, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to get github repository. details: %s", err)
+	}
+
+	repo, err := internal_service.GetGitHubRepository(token, repositoryID)
+	if err != nil {
+		return false, "", makeError(err)
+	}
+
+	if repo == nil {
+		return false, "Repository not found", nil
+	}
+
+	webhooks, err := internal_service.GetGitHubWebhooks(token, repo.Owner, repo.Name)
+	if err != nil {
+		return false, "", makeError(err)
+	}
+
+	webhooksWithPushEvent := make([]*deploymentModel.GitHubWebhook, 0)
+	for _, webhook := range webhooks {
+		for _, event := range webhook.Events {
+			if event == "push" {
+				webhooksWithPushEvent = append(webhooksWithPushEvent, &webhook)
+			}
+		}
+	}
+
+	if len(webhooksWithPushEvent) >= 20 {
+		return false, "Too many webhooks with push event", nil
+	}
+
+	return true, "", nil
 }
 
 func build(deployment *deploymentModel.Deployment, params *deploymentModel.BuildParams) error {
