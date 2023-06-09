@@ -17,13 +17,28 @@ func (w *WebhookPublic) Created() bool {
 }
 
 func CreateWebhookPublicFromGet(webhook *github.Hook, repositoryID int64) *WebhookPublic {
+	contentType := ""
+	if webhook.Config["content_type"] != nil {
+		contentType = webhook.Config["content_type"].(string)
+	}
+
+	webhookURL := ""
+	if webhook.Config["url"] != nil {
+		webhookURL = webhook.Config["url"].(string)
+	}
+
+	secret := ""
+	if webhook.Config["token"] != nil {
+		secret = webhook.Config["token"].(string)
+	}
+
 	return &WebhookPublic{
 		ID:           *webhook.ID,
 		RepositoryID: repositoryID,
 		Events:       webhook.Events,
 		Active:       *webhook.Active,
-		ContentType:  webhook.Config["content_type"].(string),
-		WebhookURL:   webhook.Config["url"].(string),
-		Secret:       webhook.Config["token"].(string),
+		ContentType:  contentType,
+		WebhookURL:   webhookURL,
+		Secret:       secret,
 	}
 }
