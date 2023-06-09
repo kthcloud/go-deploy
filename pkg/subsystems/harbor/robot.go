@@ -67,6 +67,7 @@ func (client *Client) CreateRobot(public *models.RobotPublic) (int, error) {
 	for _, r := range robots {
 		if r.Name == getRobotFullName(public.ProjectName, public.Name) {
 			robot = r
+			break
 		}
 	}
 
@@ -79,10 +80,8 @@ func (client *Client) CreateRobot(public *models.RobotPublic) (int, error) {
 		if err != nil {
 			return 0, makeError(err)
 		}
-	}
 
-	if robot.Description == "" {
-		robot.Description = robot.Secret
+		robot.Description = created.Secret
 
 		err = client.HarborClient.UpdateRobotAccount(context.TODO(), robot)
 		if err != nil {
