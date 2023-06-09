@@ -19,9 +19,9 @@ func createProjectPublic(projectName string) *harborModels.ProjectPublic {
 	}
 }
 
-func createRobotPublic(projectID int, projectName string) *harborModels.RobotPublic {
+func createRobotPublic(name string, projectID int, projectName string) *harborModels.RobotPublic {
 	return &harborModels.RobotPublic{
-		Name:        "robot",
+		Name:        name,
 		ProjectID:   projectID,
 		ProjectName: projectName,
 		Disable:     false,
@@ -94,7 +94,7 @@ func CreateHarbor(name, userID string) error {
 	// Robot
 	robot := &deployment.Subsystems.Harbor.Robot
 	if !robot.Created() {
-		robot, err = createRobot(client, deployment, createRobotPublic(project.ID, project.Name))
+		robot, err = createRobot(client, deployment, createRobotPublic(name, project.ID, project.Name))
 		if err != nil {
 			return makeError(err)
 		}
