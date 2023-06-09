@@ -220,15 +220,79 @@ func GetGitHubRepositories(token string) ([]deploymentModel.GitHubRepository, er
 
 	gitHubRepos := make([]deploymentModel.GitHubRepository, 0)
 	for _, repo := range repos {
-		if repo.ID != nil && repo.Name != nil {
-			gitHubRepos = append(gitHubRepos, deploymentModel.GitHubRepository{
-				ID:   *repo.ID,
-				Name: *repo.Name,
+		if repo.ID == nil || repo.Name == nil || repo.CloneURL == nil || repo.DefaultBranch == nil {
+			continue
+		}
+
+		gitHubRepos = append(gitHubRepos, deploymentModel.GitHubRepository{
+			ID:            *repo.ID,
+			Name:          *repo.Name,
+			Owner:         *user.Login,
+			CloneURL:      *repo.CloneURL,
+			DefaultBranch: *repo.DefaultBranch,
+		})
+	}
+
+	return gitHubRepos, nil
+}
+
+func GetGitHubRepository(token string, repositoryID int64) (*deploymentModel.GitHubRepository, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to get repository. details: %s", err)
+	}
+
+	client, err := withGitHubClient(token)
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	repo, _, err := client.GitHubClient.Repositories.GetByID(context.Background(), repositoryID)
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	if repo.ID == nil || repo.Name == nil || repo.CloneURL == nil || repo.DefaultBranch == nil {
+		log.Println("failed to get repository. one of the fields is nil. assuming it was deleted")
+		return nil, nil
+	}
+
+	gitHubRepository := &deploymentModel.GitHubRepository{
+		ID:            *repo.ID,
+		Name:          *repo.Name,
+		Owner:         *repo.Owner.Login,
+		CloneURL:      *repo.CloneURL,
+		DefaultBranch: *repo.DefaultBranch,
+	}
+
+	return gitHubRepository, nil
+}
+
+func GetGitHubWebhooks(token, owner, repository string) ([]deploymentModel.GitHubWebhook, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to get repository webhooks. details: %s", err)
+	}
+
+	client, err := withGitHubClient(token)
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	webhooksRes, _, err := client.GitHubClient.Repositories.ListHooks(context.Background(), owner, repository, nil)
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	webhooks := make([]deploymentModel.GitHubWebhook, 0)
+	for _, webhook := range webhooksRes {
+		if webhook.ID != nil {
+			webhooks = append(webhooks, deploymentModel.GitHubWebhook{
+				ID:     *webhook.ID,
+				Events: webhook.Events,
 			})
 		}
 	}
 
-	return gitHubRepos, nil
+	return webhooks, nil
 }
 
 func createGitHubWebhook(client *github.Client, deployment *deploymentModel.Deployment, public *githubModels.WebhookPublic) (*githubModels.WebhookPublic, error) {

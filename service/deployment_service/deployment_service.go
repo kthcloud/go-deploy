@@ -53,6 +53,51 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 		}
 	}
 
+	deployment, err := deploymentModel.GetByID(deploymentID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if deployment == nil {
+		return makeError(fmt.Errorf("deployment not found after creation"))
+	}
+
+	if deployment.Subsystems.GitHub.Created() && params.GitHub != nil {
+		repo, err := internal_service.GetGitHubRepository(params.GitHub.Token, params.GitHub.RepositoryID)
+		if err != nil {
+			return makeError(err)
+		}
+
+		if repo == nil {
+			log.Println("github repository not found. assuming it was deleted")
+			return nil
+		}
+
+		if repo.DefaultBranch == "" {
+			log.Println("github repository has no default branch. assuming it was deleted")
+			return nil
+		}
+
+		if repo.CloneURL == "" {
+			log.Println("github repository has no clone url. assuming it was deleted")
+			return nil
+		}
+
+		if repo.DefaultBranch == "" {
+			log.Println("github repository has no default branch. assuming it was deleted")
+			return nil
+		}
+
+		err = build(deployment, &deploymentModel.BuildParams{
+			Tag:       "latest",
+			Branch:    repo.DefaultBranch,
+			ImportURL: repo.CloneURL,
+		})
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
 	return nil
 }
 
@@ -128,9 +173,9 @@ func CanAddActivity(deploymentID, activity string) (bool, string) {
 	case deploymentModel.ActivityBeingDeleted:
 		return !deployment.BeingCreated(), "It is being created"
 	case deploymentModel.ActivityRestarting:
-		return deployment.Ready(), "It is not ready"
+		return !deployment.BeingDeleted(), "It is being deleted"
 	case deploymentModel.ActivityBuilding:
-		return deployment.Ready(), "It is not ready"
+		return !deployment.BeingDeleted(), "It is being deleted"
 	case deploymentModel.ActivityRepairing:
 		return deployment.Ready(), "It is not ready"
 	}
@@ -247,23 +292,7 @@ func Build(id string, buildParams *body.DeploymentBuild) error {
 	params := &deploymentModel.BuildParams{}
 	params.FromDTO(buildParams)
 
-	started, reason, err := StartActivity(deployment.ID, deploymentModel.ActivityBuilding)
-	if err != nil {
-		return makeError(err)
-	}
-
-	if !started {
-		return fmt.Errorf("failed to build deployment. details: %s", reason)
-	}
-
-	defer func() {
-		err = deploymentModel.RemoveActivity(deployment.ID, deploymentModel.ActivityBuilding)
-		if err != nil {
-			log.Println("failed to remove activity", deploymentModel.ActivityBuilding, "from deployment", deployment.Name, "details:", err)
-		}
-	}()
-
-	err = internal_service.CreateBuild(deployment.ID, params)
+	err = build(deployment, params)
 	if err != nil {
 		return makeError(err)
 	}
@@ -355,4 +384,65 @@ func GetGitHubAccessTokenByCode(code string) (string, error) {
 
 func GetGitHubRepositories(token string) ([]deploymentModel.GitHubRepository, error) {
 	return internal_service.GetGitHubRepositories(token)
+}
+
+func ValidGitHubRepository(token string, repositoryID int64) (bool, string, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to get github repository. details: %s", err)
+	}
+
+	repo, err := internal_service.GetGitHubRepository(token, repositoryID)
+	if err != nil {
+		return false, "", makeError(err)
+	}
+
+	if repo == nil {
+		return false, "Repository not found", nil
+	}
+
+	webhooks, err := internal_service.GetGitHubWebhooks(token, repo.Owner, repo.Name)
+	if err != nil {
+		return false, "", makeError(err)
+	}
+
+	webhooksWithPushEvent := make([]*deploymentModel.GitHubWebhook, 0)
+	for _, webhook := range webhooks {
+		for _, event := range webhook.Events {
+			if event == "push" {
+				webhooksWithPushEvent = append(webhooksWithPushEvent, &webhook)
+			}
+		}
+	}
+
+	if len(webhooksWithPushEvent) >= 20 {
+		return false, "Too many webhooks with push event", nil
+	}
+
+	return true, "", nil
+}
+
+func build(deployment *deploymentModel.Deployment, params *deploymentModel.BuildParams) error {
+	started, reason, err := StartActivity(deployment.ID, deploymentModel.ActivityBuilding)
+	if err != nil {
+		return err
+	}
+
+	if !started {
+		return fmt.Errorf("failed to build deployment. details: %s", reason)
+	}
+
+	defer func() {
+		err = deploymentModel.RemoveActivity(deployment.ID, deploymentModel.ActivityBuilding)
+		if err != nil {
+			log.Println("failed to remove activity", deploymentModel.ActivityBuilding, "for deployment", deployment.Name, "details:", err)
+		}
+	}()
+
+	err = internal_service.CreateBuild(deployment.ID, params)
+	if err != nil {
+		// we treat building as a non-critical activity, so we don't return an error here
+		log.Println("failed to create build for deployment", deployment.Name, "details:", err)
+	}
+
+	return nil
 }

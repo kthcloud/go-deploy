@@ -80,6 +80,14 @@ type BuildParams struct {
 }
 
 type GitHubRepository struct {
-	ID   int64  `json:"id"`
-	Name string `json:"name"`
+	ID            int64  `json:"id"`
+	Name          string `json:"name"`
+	Owner         string `json:"owner"`
+	CloneURL      string `json:"clone_url"`
+	DefaultBranch string `json:"default_branch"`
+}
+
+type GitHubWebhook struct {
+	ID     int64    `json:"id"`
+	Events []string `json:"events"`
 }
