@@ -128,9 +128,9 @@ func CanAddActivity(deploymentID, activity string) (bool, string) {
 	case deploymentModel.ActivityBeingDeleted:
 		return !deployment.BeingCreated(), "It is being created"
 	case deploymentModel.ActivityRestarting:
-		return deployment.Ready(), "It is not ready"
+		return !deployment.BeingDeleted(), "It is being deleted"
 	case deploymentModel.ActivityBuilding:
-		return deployment.Ready(), "It is not ready"
+		return !deployment.BeingDeleted(), "It is being deleted"
 	case deploymentModel.ActivityRepairing:
 		return deployment.Ready(), "It is not ready"
 	}

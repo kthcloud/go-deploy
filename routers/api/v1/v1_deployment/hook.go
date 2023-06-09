@@ -95,14 +95,11 @@ func HandleHarborHook(c *gin.Context) {
 	}
 
 	if webhook.Type == "PUSH_ARTIFACT" {
-		if deployment.Ready() {
-			err = deployment_service.Restart(deployment.Name)
-			if err != nil {
-				context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
-				return
-			}
+		err = deployment_service.Restart(deployment.Name)
+		if err != nil {
+			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+			return
 		}
-
 	}
 
 	context.Ok()
