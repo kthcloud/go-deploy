@@ -158,50 +158,52 @@ func HandleGitHubHook(c *gin.Context) {
 		return
 	}
 
-	deployment, err := deployment_service.GetByGitHubWebhookID(hookID)
+	deployments, err := deployment_service.GetAllByGitHubWebhookID(hookID)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
 	}
 
-	if deployment == nil {
+	if len(deployments) == 0 {
 		context.ErrorResponse(http.StatusNotFound, status_codes.Error, "deployment not found")
 		return
 	}
 
-	if !checkSignature(signature, requestBodyRaw, deployment.Subsystems.GitHub.Webhook.Secret) {
-		context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "invalid signature")
-		return
-	}
+	for _, deployment := range deployments {
+		if !checkSignature(signature, requestBodyRaw, deployment.Subsystems.GitHub.Webhook.Secret) {
+			context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "invalid signature")
+			return
+		}
 
-	var requestBodyParsed body.GithubWebhookPayloadPush
-	err = json.Unmarshal(requestBodyRaw, &requestBodyParsed)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
-		return
-	}
+		var requestBodyParsed body.GithubWebhookPayloadPush
+		err = json.Unmarshal(requestBodyRaw, &requestBodyParsed)
+		if err != nil {
+			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+			return
+		}
 
-	refSplit := strings.Split(requestBodyParsed.Ref, "/")
-	if len(refSplit) != 3 {
-		context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "invalid ref")
-		return
-	}
+		refSplit := strings.Split(requestBodyParsed.Ref, "/")
+		if len(refSplit) != 3 {
+			context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "invalid ref")
+			return
+		}
 
-	pushedBranch := refSplit[2]
-	if pushedBranch != requestBodyParsed.Repository.DefaultBranch {
-		context.Ok()
-		return
-	}
+		pushedBranch := refSplit[2]
+		if pushedBranch != requestBodyParsed.Repository.DefaultBranch {
+			context.Ok()
+			return
+		}
 
-	jobID := uuid.NewString()
-	err = job_service.Create(jobID, deployment.OwnerID, job.TypeBuildDeployment, map[string]interface{}{
-		"id": deployment.ID,
-		"build": body.DeploymentBuild{
-			Tag:       "latest",
-			Branch:    pushedBranch,
-			ImportURL: requestBodyParsed.Repository.CloneURL,
-		},
-	})
+		jobID := uuid.NewString()
+		err = job_service.Create(jobID, deployment.OwnerID, job.TypeBuildDeployment, map[string]interface{}{
+			"id": deployment.ID,
+			"build": body.DeploymentBuild{
+				Tag:       "latest",
+				Branch:    pushedBranch,
+				ImportURL: requestBodyParsed.Repository.CloneURL,
+			},
+		})
+	}
 
 	context.Ok()
 }

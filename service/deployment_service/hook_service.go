@@ -6,8 +6,8 @@ import (
 	"go-deploy/pkg/conf"
 )
 
-func GetByGitHubWebhookID(id int64) (*deploymentModel.Deployment, error) {
-	return deploymentModel.GetByGitHubWebhookID(id)
+func GetAllByGitHubWebhookID(id int64) ([]deploymentModel.Deployment, error) {
+	return deploymentModel.GetAllByGitHubWebhookID(id)
 }
 
 func ValidateHarborToken(secret string) bool {

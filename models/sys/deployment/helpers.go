@@ -85,8 +85,29 @@ func GetByName(name string) (*Deployment, error) {
 	return getDeployment(bson.D{{"name", name}})
 }
 
-func GetByGitHubWebhookID(id int64) (*Deployment, error) {
-	return getDeployment(bson.D{{"subsystems.github.webhook.id", id}})
+func GetAllByGitHubWebhookID(id int64) ([]Deployment, error) {
+	filter := bson.D{{"subsystems.github.webhook.id", id}}
+
+	cursor, err := models.DeploymentCollection.Find(context.TODO(), filter)
+	if err != nil {
+		err = fmt.Errorf("failed to find deployments by GitHub webhook ID %d. details: %s", id, err)
+		return nil, err
+	}
+
+	var deployments []Deployment
+	for cursor.Next(context.TODO()) {
+		var deployment Deployment
+
+		err = cursor.Decode(&deployment)
+		if err != nil {
+			err = fmt.Errorf("failed to fetch deployment. details: %s", err)
+			return nil, err
+		}
+
+		deployments = append(deployments, deployment)
+	}
+
+	return deployments, nil
 }
 
 func Exists(name string) (bool, *Deployment, error) {
