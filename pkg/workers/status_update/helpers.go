@@ -114,5 +114,9 @@ func fetchDeploymentStatus(deployment *deploymentModel.Deployment) (int, string,
 		return status_codes.ResourceRestarting, status_codes.GetMsg(status_codes.ResourceRestarting), nil
 	}
 
+	if deployment.DoingActivity(deploymentModel.ActivityBuilding) {
+		return status_codes.ResourceBuilding, status_codes.GetMsg(status_codes.ResourceBuilding), nil
+	}
+
 	return status_codes.ResourceRunning, status_codes.GetMsg(status_codes.ResourceRunning), nil
 }
