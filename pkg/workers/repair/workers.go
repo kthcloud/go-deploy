@@ -5,6 +5,7 @@ import (
 	deploymentModel "go-deploy/models/sys/deployment"
 	jobModel "go-deploy/models/sys/job"
 	vmModel "go-deploy/models/sys/vm"
+	"go-deploy/pkg/conf"
 	"go-deploy/pkg/sys"
 	"go-deploy/service/job_service"
 	"log"
@@ -12,18 +13,12 @@ import (
 )
 
 func deploymentRepairer(ctx *sys.Context) {
-	firstLoop := true
 	for {
 		if ctx.Stop {
 			break
 		}
 
-		if !firstLoop {
-			time.Sleep(30 * time.Second)
-		} else {
-			time.Sleep(1 * time.Second)
-			firstLoop = false
-		}
+		time.Sleep(time.Duration(conf.Env.Deployment.RepairInterval) * time.Second)
 
 		withNoActivities, err := deploymentModel.GetWithNoActivities()
 		if err != nil {
@@ -52,18 +47,12 @@ func deploymentRepairer(ctx *sys.Context) {
 }
 
 func vmRepairer(ctx *sys.Context) {
-	firstLoop := true
 	for {
 		if ctx.Stop {
 			break
 		}
 
-		if !firstLoop {
-			time.Sleep(30 * time.Second)
-		} else {
-			time.Sleep(1 * time.Second)
-			firstLoop = false
-		}
+		time.Sleep(time.Duration(conf.Env.VM.RepairInterval) * time.Second)
 
 		withNoActivities, err := vmModel.GetWithNoActivities()
 		if err != nil {
@@ -92,18 +81,12 @@ func vmRepairer(ctx *sys.Context) {
 }
 
 func gpuRepairer(ctx *sys.Context) {
-	firstLoop := true
 	for {
 		if ctx.Stop {
 			break
 		}
 
-		if !firstLoop {
-			time.Sleep(6 * time.Minute)
-		} else {
-			time.Sleep(1 * time.Second)
-			firstLoop = false
-		}
+		time.Sleep(time.Duration(conf.Env.GPU.RepairInterval) * time.Second)
 
 		log.Println("repairing gpus")
 
