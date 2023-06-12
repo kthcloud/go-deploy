@@ -13,9 +13,9 @@ import (
 )
 
 func GetAllGPUs(showOnlyAvailable bool, isPowerUser bool) ([]gpuModel.GPU, error) {
-	var excludedGPUs []string
+	excludedGPUs := conf.Env.GPU.ExcludedGPUs
 	if !isPowerUser {
-		excludedGPUs = conf.Env.GPU.PrivilegedGPUs
+		excludedGPUs = append(excludedGPUs, conf.Env.GPU.PrivilegedGPUs...)
 	}
 
 	if showOnlyAvailable {
@@ -74,41 +74,10 @@ func IsGpuAvailable(gpu *gpuModel.GPU) (bool, error) {
 	return isGpuAvailable(gpu.Host, gpu.Data.Bus)
 }
 
-func GetAnyAvailableGPU(isPowerUser bool) (*gpuModel.GPU, error) {
-	var excludedGPUs []string
-	if !isPowerUser {
-		excludedGPUs = conf.Env.GPU.PrivilegedGPUs
-	}
-
-	availableGPUs, err := gpuModel.GetAllAvailable(conf.Env.GPU.ExcludedHosts, excludedGPUs)
-	if err != nil {
-		return nil, err
-	}
-
-	// sort available gpus by host
-	sort.Slice(availableGPUs, func(i, j int) bool {
-		return availableGPUs[i].Host < availableGPUs[j].Host
-	})
-
-	for _, gpu := range availableGPUs {
-		// check if attached in cloudstack
-		available, err := isGpuAvailable(gpu.Host, gpu.Data.Bus)
-		if err != nil {
-			return nil, err
-		}
-
-		if available {
-			return &gpu, nil
-		}
-	}
-
-	return nil, nil
-}
-
 func GetAllAvailableGPU(isPowerUser bool) ([]gpuModel.GPU, error) {
-	var excludedGPUs []string
+	excludedGPUs := conf.Env.GPU.ExcludedGPUs
 	if !isPowerUser {
-		excludedGPUs = conf.Env.GPU.PrivilegedGPUs
+		excludedGPUs = append(excludedGPUs, conf.Env.GPU.PrivilegedGPUs...)
 	}
 
 	dbAvailableGPUs, err := gpuModel.GetAllAvailable(conf.Env.GPU.ExcludedHosts, excludedGPUs)

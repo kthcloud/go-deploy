@@ -21,8 +21,8 @@ func SetupLogStream(userID, deploymentID string, handler func(string), isAdmin b
 		return nil, nil
 	}
 
-	if !deployment.Ready() {
-		log.Println("deployment", deploymentID, "not ready when getting logs")
+	if deployment.BeingDeleted() {
+		log.Println("deployment", deploymentID, "is being deleted. not setting up log stream")
 		return nil, nil
 	}
 
