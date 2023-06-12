@@ -60,11 +60,11 @@ func withHarborClient() (*harbor.Client, error) {
 	})
 }
 
-func CreateHarbor(name, userID string) error {
-	log.Println("setting up harbor for", name)
+func CreateHarbor(deploymentID, userID string, params *deploymentModel.CreateParams) error {
+	log.Println("setting up harbor for", params.Name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup harbor for deployment %s. details: %s", name, err)
+		return fmt.Errorf("failed to setup harbor for deployment %s. details: %s", params.Name, err)
 	}
 
 	client, err := withHarborClient()
@@ -72,13 +72,13 @@ func CreateHarbor(name, userID string) error {
 		return makeError(err)
 	}
 
-	deployment, err := deploymentModel.GetByName(name)
+	deployment, err := deploymentModel.GetByID(deploymentID)
 	if err != nil {
 		return makeError(err)
 	}
 
 	if deployment == nil {
-		log.Println("deployment", name, "not found for harbor setup. assuming it was deleted")
+		log.Println("deployment", deploymentID, "not found for harbor setup. assuming it was deleted")
 		return nil
 	}
 
@@ -94,7 +94,7 @@ func CreateHarbor(name, userID string) error {
 	// Robot
 	robot := &deployment.Subsystems.Harbor.Robot
 	if !robot.Created() {
-		robot, err = createRobot(client, deployment, createRobotPublic(name, project.ID, project.Name))
+		robot, err = createRobot(client, deployment, createRobotPublic(deployment.Name, project.ID, project.Name))
 		if err != nil {
 			return makeError(err)
 		}
@@ -103,7 +103,7 @@ func CreateHarbor(name, userID string) error {
 	// Repository
 	repository := &deployment.Subsystems.Harbor.Repository
 	if !repository.Created() {
-		repository, err = createRepository(client, deployment, createRepositoryPublic(project.ID, project.Name, name))
+		repository, err = createRepository(client, deployment, createRepositoryPublic(project.ID, project.Name, deployment.Name))
 		if err != nil {
 			return makeError(err)
 		}

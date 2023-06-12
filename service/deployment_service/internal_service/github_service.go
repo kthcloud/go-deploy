@@ -34,11 +34,11 @@ func withGitHubClient(token string) (*github.Client, error) {
 	})
 }
 
-func CreateGitHub(name string, params *deploymentModel.CreateParams) error {
-	log.Println("setting up github for", name)
+func CreateGitHub(deploymentID string, params *deploymentModel.CreateParams) error {
+	log.Println("setting up github for", params.Name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup github for deployment %s. details: %s", name, err)
+		return fmt.Errorf("failed to setup github for deployment %s. details: %s", params.Name, err)
 	}
 
 	client, err := withGitHubClient(params.GitHub.Token)
@@ -46,13 +46,13 @@ func CreateGitHub(name string, params *deploymentModel.CreateParams) error {
 		return makeError(err)
 	}
 
-	deployment, err := deploymentModel.GetByName(name)
+	deployment, err := deploymentModel.GetByID(deploymentID)
 	if err != nil {
 		return makeError(err)
 	}
 
 	if deployment == nil {
-		log.Println("deployment", name, "not found for github setup. assuming it was deleted")
+		log.Println("deployment", deploymentID, "not found for github setup. assuming it was deleted")
 		return nil
 	}
 
