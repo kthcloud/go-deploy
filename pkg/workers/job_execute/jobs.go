@@ -8,6 +8,7 @@ import (
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/service/deployment_service"
 	"go-deploy/service/vm_service"
+	"strings"
 )
 
 func createVM(job *jobModel.Job) {
@@ -28,6 +29,11 @@ func createVM(job *jobModel.Job) {
 
 	err = vm_service.Create(id, ownerID, &params)
 	if err != nil {
+		if strings.HasSuffix(err.Error(), "vm already exists for another user") {
+			_ = jobModel.MarkTerminated(job.ID, err.Error())
+			return
+		}
+
 		_ = jobModel.MarkFailed(job.ID, err.Error())
 		return
 	}
@@ -145,6 +151,11 @@ func createDeployment(job *jobModel.Job) {
 
 	err = deployment_service.Create(id, ownerID, &params)
 	if err != nil {
+		if strings.HasSuffix(err.Error(), "deployment already exists for another user") {
+			_ = jobModel.MarkTerminated(job.ID, err.Error())
+			return
+		}
+
 		_ = jobModel.MarkFailed(job.ID, err.Error())
 		return
 	}

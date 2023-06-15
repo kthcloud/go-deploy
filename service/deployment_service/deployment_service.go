@@ -17,9 +17,13 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 	params := &deploymentModel.CreateParams{}
 	params.FromDTO(deploymentCreate)
 
-	err := deploymentModel.CreateDeployment(deploymentID, ownerID, params)
+	created, err := deploymentModel.CreateDeployment(deploymentID, ownerID, params)
 	if err != nil {
 		return makeError(err)
+	}
+
+	if !created {
+		return makeError(fmt.Errorf("deployment already exists for another user"))
 	}
 
 	err = internal_service.CreateHarbor(params.Name, ownerID)

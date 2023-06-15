@@ -25,9 +25,13 @@ func Create(vmID, owner string, vmCreate *body.VmCreate) error {
 		addDeploySshToPortMap(&params.Ports)
 	}
 
-	err := vmModel.Create(vmID, owner, conf.Env.Manager, params)
+	created, err := vmModel.Create(vmID, owner, conf.Env.Manager, params)
 	if err != nil {
 		return makeError(err)
+	}
+
+	if !created {
+		return makeError(fmt.Errorf("vm already exists for another user"))
 	}
 
 	_, err = internal_service.CreateCS(params)
