@@ -22,6 +22,8 @@ type Environment struct {
 	GPU struct {
 		PrivilegedGPUs []string `yaml:"privilegedGpus"`
 		ExcludedHosts  []string `yaml:"excludedHosts"`
+		ExcludedGPUs   []string `yaml:"excludedGpus"`
+		RepairInterval int      `yaml:"repairInterval"`
 	} `yaml:"gpu"`
 
 	DockerRegistry struct {
@@ -33,16 +35,18 @@ type Environment struct {
 	} `yaml:"dockerRegistry"`
 
 	Deployment struct {
-		ParentDomain  string `yaml:"parentDomain"`
-		Port          int    `yaml:"port"`
-		Prefix        string `yaml:"prefix"`
-		ExtraDomainIP string `yaml:"extraDomainIp"`
-		IngressClass  string `yaml:"ingressClass"`
+		ParentDomain   string `yaml:"parentDomain"`
+		Port           int    `yaml:"port"`
+		Prefix         string `yaml:"prefix"`
+		ExtraDomainIP  string `yaml:"extraDomainIp"`
+		IngressClass   string `yaml:"ingressClass"`
+		RepairInterval int    `yaml:"repairInterval"`
 	} `yaml:"deployment"`
 
 	VM struct {
 		ParentDomain      string `yaml:"parentDomain"`
 		AdminSshPublicKey string `yaml:"adminSshPublicKey"`
+		RepairInterval    int    `yaml:"repairInterval"`
 	} `yaml:"vm"`
 
 	Quotas []struct {

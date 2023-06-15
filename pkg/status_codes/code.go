@@ -25,7 +25,8 @@ const (
 	ResourceStopping   = 10033
 	ResourceStopped    = 10034
 	ResourceRestarting = 10035
-	ResourceError      = 10036
+	ResourceBuilding   = 10036
+	ResourceError      = 10037
 
 	JobPending  = 10040
 	JobFinished = 10041

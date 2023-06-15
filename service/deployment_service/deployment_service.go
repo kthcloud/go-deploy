@@ -26,18 +26,18 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 		return makeError(fmt.Errorf("deployment already exists for another user"))
 	}
 
-	err = internal_service.CreateHarbor(params.Name, ownerID)
+	err = internal_service.CreateHarbor(deploymentID, ownerID, params)
 	if err != nil {
 		return makeError(err)
 	}
 
-	_, err = internal_service.CreateK8s(params.Name, ownerID, params.Envs)
+	_, err = internal_service.CreateK8s(deploymentID, ownerID, params)
 	if err != nil {
 		return makeError(err)
 	}
 
 	if params.GitHub != nil {
-		err = internal_service.CreateGitHub(params.Name, params)
+		err = internal_service.CreateGitHub(deploymentID, params)
 		if err != nil {
 			errString := err.Error()
 			if strings.Contains(errString, "/hooks: 404 Not Found") {
