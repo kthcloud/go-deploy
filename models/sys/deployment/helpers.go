@@ -12,16 +12,7 @@ import (
 	"time"
 )
 
-func CreateDeployment(deploymentID, ownerID string, params *CreateParams) error {
-	currentDeployment, err := GetByID(deploymentID)
-	if err != nil {
-		return err
-	}
-
-	if currentDeployment != nil {
-		return nil
-	}
-
+func CreateDeployment(deploymentID, ownerID string, params *CreateParams) (bool, error) {
 	deployment := Deployment{
 		ID:      deploymentID,
 		Name:    params.Name,
@@ -52,13 +43,18 @@ func CreateDeployment(deploymentID, ownerID string, params *CreateParams) error 
 		StatusMessage: status_codes.GetMsg(status_codes.ResourceBeingCreated),
 	}
 
-	_, err = models.DeploymentCollection.InsertOne(context.TODO(), deployment)
+	result, err := models.DeploymentCollection.UpdateOne(context.TODO(), bson.D{{"name", params.Name}}, bson.D{
+		{"$setOnInsert", deployment},
+	}, options.Update().SetUpsert(true))
 	if err != nil {
-		err = fmt.Errorf("failed to create deployment %s. details: %s", params.Name, err)
-		return err
+		return false, fmt.Errorf("failed to create deployment. details: %s", err)
 	}
 
-	return nil
+	if result.UpsertedCount == 0 {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 func getDeployment(filter bson.D) (*Deployment, error) {
