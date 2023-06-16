@@ -12,7 +12,6 @@ import (
 	"time"
 )
 
-
 func Create(vmID, owner, manager string, params *CreateParams) (bool, error) {
 	vm := VM{
 		ID:        vmID,
@@ -47,6 +46,17 @@ func Create(vmID, owner, manager string, params *CreateParams) (bool, error) {
 	}
 
 	if result.UpsertedCount == 0 {
+		if result.MatchedCount == 1 {
+			fetchedVm, err := getVM(bson.D{{"name", params.Name}})
+			if err != nil {
+				return false, err
+			}
+
+			if fetchedVm.ID == vmID {
+				return true, nil
+			}
+		}
+
 		return false, nil
 	}
 

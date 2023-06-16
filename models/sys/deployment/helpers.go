@@ -51,6 +51,17 @@ func CreateDeployment(deploymentID, ownerID string, params *CreateParams) (bool,
 	}
 
 	if result.UpsertedCount == 0 {
+		if result.MatchedCount == 1 {
+			fetchedDeployment, err := getDeployment(bson.D{{"name", params.Name}})
+			if err != nil {
+				return false, err
+			}
+
+			if fetchedDeployment.ID == deploymentID {
+				return true, nil
+			}
+		}
+
 		return false, nil
 	}
 
