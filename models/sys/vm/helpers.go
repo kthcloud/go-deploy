@@ -7,21 +7,12 @@ import (
 	"go-deploy/pkg/status_codes"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
 	"time"
 )
 
-
-func Create(vmID, owner, manager string, params *CreateParams) error {
-	currentVM, err := GetByID(vmID)
-	if err != nil {
-		return err
-	}
-
-	if currentVM != nil {
-		return nil
-	}
-
+func Create(vmID, owner, manager string, params *CreateParams) (bool, error) {
 	vm := VM{
 		ID:        vmID,
 		Name:      params.Name,
@@ -47,13 +38,29 @@ func Create(vmID, owner, manager string, params *CreateParams) error {
 		StatusMessage: status_codes.GetMsg(status_codes.ResourceBeingCreated),
 	}
 
-	_, err = models.VmCollection.InsertOne(context.TODO(), vm)
+	result, err := models.VmCollection.UpdateOne(context.TODO(), bson.D{{"name", params.Name}}, bson.D{
+		{"$setOnInsert", vm},
+	}, options.Update().SetUpsert(true))
 	if err != nil {
-		err = fmt.Errorf("failed to create vm %s. details: %s", params.Name, err)
-		return err
+		return false, fmt.Errorf("failed to create vm. details: %s", err)
 	}
 
-	return nil
+	if result.UpsertedCount == 0 {
+		if result.MatchedCount == 1 {
+			fetchedVm, err := getVM(bson.D{{"name", params.Name}})
+			if err != nil {
+				return false, err
+			}
+
+			if fetchedVm.ID == vmID {
+				return true, nil
+			}
+		}
+
+		return false, nil
+	}
+
+	return true, nil
 }
 
 func getVM(filter bson.D) (*VM, error) {
