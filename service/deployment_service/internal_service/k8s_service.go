@@ -140,16 +140,16 @@ func CreateK8s(deploymentID string, userID string, params *deploymentModel.Creat
 			if err != nil {
 				return nil, makeError(err)
 			}
-
-			ingress = &k8sModels.IngressPublic{
-				Placeholder: true,
-			}
-
-			err = deploymentModel.UpdateSubsystemByName(deployment.Name, "k8s", "ingress", ingress)
-			if err != nil {
-				return nil, makeError(err)
-			}
 		}
+		ingress = &k8sModels.IngressPublic{
+			Placeholder: true,
+		}
+
+		err = deploymentModel.UpdateSubsystemByName(deployment.Name, "k8s", "ingress", ingress)
+		if err != nil {
+			return nil, makeError(err)
+		}
+
 	} else if !ss.Ingress.Created() {
 		ingress, err = createIngress(client, deployment, createIngressPublic(
 			namespace.FullName,
@@ -202,6 +202,11 @@ func DeleteK8s(name string) error {
 			return makeError(err)
 		}
 
+		err = deploymentModel.UpdateSubsystemByName(name, "k8s", "ingress", k8sModels.IngressPublic{})
+		if err != nil {
+			return makeError(err)
+		}
+	} else if ss.Ingress.Placeholder {
 		err = deploymentModel.UpdateSubsystemByName(name, "k8s", "ingress", k8sModels.IngressPublic{})
 		if err != nil {
 			return makeError(err)
