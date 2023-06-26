@@ -56,6 +56,21 @@ func GetLogs(c *gin.Context) {
 
 		for {
 			_, data, readMsgErr := ws.ReadMessage()
+			if ce, ok := readMsgErr.(*websocket.CloseError); ok {
+				switch ce.Code {
+				case websocket.CloseNormalClosure,
+					websocket.CloseGoingAway,
+					websocket.CloseNoStatusReceived:
+					logContext.Done()
+					log.Println("websocket closed for deployment ", requestURI.DeploymentID)
+					return
+				}
+			} else {
+				log.Println("error reading message from websocket for deployment ", requestURI.DeploymentID, ". details:", readMsgErr)
+				_ = ws.Close()
+				return
+			}
+
 			msg := string(data)
 
 			if strings.HasPrefix(msg, "Bearer ") && auth == nil {
@@ -71,17 +86,6 @@ func GetLogs(c *gin.Context) {
 						httpContext.NotFound()
 						return
 					}
-				}
-			}
-
-			if ce, ok := readMsgErr.(*websocket.CloseError); ok {
-				switch ce.Code {
-				case websocket.CloseNormalClosure,
-					websocket.CloseGoingAway,
-					websocket.CloseNoStatusReceived:
-					logContext.Done()
-					log.Println("websocket closed for deployment ", requestURI.DeploymentID)
-					return
 				}
 			}
 		}
