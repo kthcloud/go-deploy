@@ -55,9 +55,16 @@ func (client *Client) readLogs(cancelCtx context.Context, namespace, podName str
 		Follow:    true,
 		TailLines: &[]int64{int64(10)}[0],
 	})
-	logStream, _ := podLogsConnection.Stream(context.Background())
+	logStream, err := podLogsConnection.Stream(context.Background())
+	if err != nil {
+		log.Println(fmt.Errorf("failed to create k8s log stream for pod %s. details: %s", podName, err))
+		return true
+	}
+
 	defer func(logStream io.ReadCloser) {
-		_ = logStream.Close()
+		if logStream != nil {
+			_ = logStream.Close()
+		}
 	}(logStream)
 
 	reader := bufio.NewScanner(logStream)
