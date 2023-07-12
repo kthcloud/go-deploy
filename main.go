@@ -10,7 +10,6 @@ import (
 func isFlagPassed(name string) bool {
 	found := false
 	flag.Visit(func(f *flag.Flag) {
-		println(f.Name)
 		if f.Name == name {
 			found = true
 		}
