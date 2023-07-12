@@ -41,13 +41,15 @@ func main() {
 			JobExecutor:   jobExecutor,
 			Repairer:      repairer,
 		}
-	}
 
-	log.Println("api: ", options.API)
-	log.Println("confirmer: ", options.Confirmer)
-	log.Println("status-updater: ", options.StatusUpdater)
-	log.Println("job-executor: ", options.JobExecutor)
-	log.Println("repairer: ", options.Repairer)
+		log.Println("api: ", options.API)
+		log.Println("confirmer: ", options.Confirmer)
+		log.Println("status-updater: ", options.StatusUpdater)
+		log.Println("job-executor: ", options.JobExecutor)
+		log.Println("repairer: ", options.Repairer)
+	} else {
+		log.Println("no workers specified, starting all")
+	}
 
 	server := app.Start(options)
 	if server != nil {
