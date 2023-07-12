@@ -6,7 +6,7 @@ import (
 )
 
 func Setup(ctx *sys.Context) {
-	log.Println("starting confirm")
+	log.Println("starting confirmers")
 	go deploymentConfirmer(ctx)
 	go vmConfirmer(ctx)
 }

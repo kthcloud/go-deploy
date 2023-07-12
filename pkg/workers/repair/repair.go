@@ -6,7 +6,7 @@ import (
 )
 
 func Setup(ctx *sys.Context) {
-	log.Println("starting repairer")
+	log.Println("starting repairers")
 	go deploymentRepairer(ctx)
 	go vmRepairer(ctx)
 	go gpuRepairer(ctx)

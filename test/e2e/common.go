@@ -37,7 +37,7 @@ func setup(t *testing.T) {
 func withServer(t *testing.T) *http.Server {
 	t.Helper()
 
-	httpServer := app.Start()
+	httpServer := app.Start(nil)
 	t.Cleanup(func() {
 		app.Stop(httpServer)
 	})

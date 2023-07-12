@@ -20,7 +20,21 @@ import (
 	"time"
 )
 
-func setup(context *sys.Context) {
+type StartOptions struct {
+	API           bool
+	Confirmer     bool
+	StatusUpdater bool
+	JobExecutor   bool
+	Repairer      bool
+}
+
+func shutdown() {
+	models.Shutdown()
+}
+
+func Start(options *StartOptions) *http.Server {
+	c := &sys.Context{}
+
 	conf.SetupEnvironment()
 
 	models.Setup()
@@ -31,41 +45,52 @@ func setup(context *sys.Context) {
 
 	intializer.SynchronizeGPUs()
 
-	confirm.Setup(context)
-	status_update.Setup(context)
-	job_execute.Setup(context)
-	repair.Setup(context)
-}
-
-func shutdown() {
-	models.Shutdown()
-}
-
-func Start() *http.Server {
-	appContext := sys.Context{}
-
-	setup(&appContext)
-
-	ginMode, exists := os.LookupEnv("GIN_MODE")
-	if exists {
-		gin.SetMode(ginMode)
-	} else {
-		gin.SetMode("debug")
-	}
-
-	server := &http.Server{
-		Addr:    fmt.Sprintf("0.0.0.0:%d", conf.Env.Port),
-		Handler: routers.NewRouter(),
-	}
-
-	go func() {
-		err := server.ListenAndServe()
-		if err != nil && err != http.ErrServerClosed {
-			log.Fatalf("failed to start http server. details: %s\n", err)
+	if options == nil {
+		options = &StartOptions{
+			API:           true,
+			Confirmer:     true,
+			StatusUpdater: true,
+			JobExecutor:   true,
+			Repairer:      true,
 		}
-	}()
+	}
 
-	return server
+	if options.Confirmer {
+		confirm.Setup(c)
+	}
+	if options.StatusUpdater {
+		status_update.Setup(c)
+	}
+	if options.JobExecutor {
+		job_execute.Setup(c)
+	}
+	if options.Repairer {
+		repair.Setup(c)
+	}
+	if options.API {
+		ginMode, exists := os.LookupEnv("GIN_MODE")
+		if exists {
+			gin.SetMode(ginMode)
+		} else {
+			gin.SetMode("debug")
+		}
+
+		server := &http.Server{
+			Addr:    fmt.Sprintf("0.0.0.0:%d", conf.Env.Port),
+			Handler: routers.NewRouter(),
+		}
+
+		go func() {
+			err := server.ListenAndServe()
+			if err != nil && err != http.ErrServerClosed {
+				log.Fatalf("failed to start http server. details: %s\n", err)
+			}
+		}()
+
+		return server
+	}
+
+	return nil
 }
 
 func Stop(server *http.Server) {
