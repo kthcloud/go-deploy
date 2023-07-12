@@ -43,6 +43,12 @@ func main() {
 		}
 	}
 
+	log.Println("api: ", options.API)
+	log.Println("confirmer: ", options.Confirmer)
+	log.Println("status-updater: ", options.StatusUpdater)
+	log.Println("job-executor: ", options.JobExecutor)
+	log.Println("repairer: ", options.Repairer)
+
 	server := app.Start(options)
 	if server != nil {
 		defer func() {
