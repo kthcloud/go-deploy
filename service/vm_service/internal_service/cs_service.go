@@ -98,7 +98,7 @@ func CreateCS(params *vmModel.CreateParams) (*CsCreated, error) {
 	// vm
 	csVM := &vm.Subsystems.CS.VM
 	if !csVM.Created() {
-		public := createCsVmPublic(params.Name, serviceOffering.ID, "e1eeb88b-e4d8-49e9-b064-fb4e82fa4bc8", createDeployTags(params.Name, params.Name))
+		public := createCsVmPublic(params.Name, serviceOffering.ID, "2b17786b-0a4c-4c51-8a59-39c9042b6155", createDeployTags(params.Name, params.Name))
 
 		csVM, err = createCsVM(client, vm, public, userSshPublicKey, adminSshPublicKey)
 		if err != nil {
