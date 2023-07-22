@@ -33,7 +33,7 @@ func main() {
 	repairer := isFlagPassed("repairer")
 
 	var options *app.StartOptions
-	if confirmer || statusUpdater || jobExecutor || repairer {
+	if confirmer || statusUpdater || jobExecutor || repairer || api {
 		options = &app.StartOptions{
 			API:           api,
 			Confirmer:     confirmer,
