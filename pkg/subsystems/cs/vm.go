@@ -278,11 +278,10 @@ func (client *Client) HasCapacity(vmID, hostName string) (bool, error) {
 }
 
 type cloudInit struct {
-	FQDN            string            `yaml:"fqdn"`
-	Users           []cloudInitUser   `yaml:"users"`
-	SshPasswordAuth bool              `yaml:"ssh_pwauth"`
-	RunCMD          []string          `yaml:"runcmd"`
-	GrowPart        cloudInitGrowPart `yaml:"growpart"`
+	FQDN            string          `yaml:"fqdn"`
+	Users           []cloudInitUser `yaml:"users"`
+	SshPasswordAuth bool            `yaml:"ssh_pwauth"`
+	RunCMD          []string        `yaml:"runcmd"`
 }
 
 type cloudInitUser struct {
@@ -294,46 +293,22 @@ type cloudInitUser struct {
 	SshAuthorizedKeys []string `yaml:"ssh_authorized_keys"`
 }
 
-type cloudInitGrowPart struct {
-	Mode                   string   `yaml:"mode"`
-	Devices                []string `yaml:"devices"`
-	IgnoreGrowRootPassword bool     `yaml:"ignore_growroot_password"`
-}
-
 func createUserData(vmName, userSshPublicKey, adminSshPublicKey string) string {
 	init := cloudInit{}
 	init.FQDN = vmName
 	init.SshPasswordAuth = false
-	init.RunCMD = []string{
-		"sudo mkdir /home/deploy",
-		"sudo /usr/sbin/deploy-init.sh | /home/deploy/deploy-init-result",
-	}
 
 	// imitate mkpasswd --method=SHA-512 --rounds=4096
 	passwd := hashPassword("root", generateSalt())
 
 	init.Users = append(init.Users, cloudInitUser{
-		Name:              "cloud",
+		Name:              "root",
 		Sudo:              []string{"ALL=(ALL) NOPASSWD:ALL"},
 		Passwd:            passwd,
 		LockPasswd:        true,
 		Shell:             "/bin/bash",
-		SshAuthorizedKeys: []string{userSshPublicKey},
+		SshAuthorizedKeys: []string{userSshPublicKey, adminSshPublicKey},
 	})
-
-	init.Users = append(init.Users, cloudInitUser{
-		Name:              "deploy",
-		Sudo:              []string{"ALL=(ALL) NOPASSWD:ALL"},
-		Passwd:            passwd,
-		LockPasswd:        true,
-		Shell:             "/bin/bash",
-		SshAuthorizedKeys: []string{adminSshPublicKey},
-	})
-
-	init.GrowPart = cloudInitGrowPart{
-		Mode:    "auto",
-		Devices: []string{"/dev/vda3"},
-	}
 
 	// marshal the struct to yaml
 	data, err := yaml.Marshal(init)
