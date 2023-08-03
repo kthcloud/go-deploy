@@ -188,7 +188,7 @@ func GetConnectionString(vm *vmModel.VM) (*string, error) {
 		return nil, nil
 	}
 
-	connectionString := fmt.Sprintf("ssh cloud@%s -p %d", domainName, port)
+	connectionString := fmt.Sprintf("ssh root@%s -p %d", domainName, port)
 
 	return &connectionString, nil
 }
