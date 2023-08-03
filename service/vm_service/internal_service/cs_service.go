@@ -103,6 +103,13 @@ func CreateCS(params *vmModel.CreateParams) (*CsCreated, error) {
 
 		csVM, err = createCsVM(client, vm, public, userSshPublicKey, adminSshPublicKey)
 		if err != nil {
+			// remove the service offering if the vm creation failed
+			// however, do this as best-effort only to avoid cascading errors
+			if serviceOffering.Created() {
+				_ = client.DeleteServiceOffering(serviceOffering.ID)
+				_ = vmModel.UpdateSubsystemByName(vm.Name, "cs", "serviceOffering", csModels.ServiceOfferingPublic{})
+			}
+
 			return nil, makeError(err)
 		}
 	}
