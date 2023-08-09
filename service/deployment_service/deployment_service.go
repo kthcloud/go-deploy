@@ -36,9 +36,8 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 		return makeError(err)
 	}
 
+	createPlaceHolderInstead := false
 	if params.GitHub != nil {
-		createPlaceHolderInstead := false
-
 		err = internal_service.CreateGitHub(deploymentID, params)
 		if err != nil {
 			errString := err.Error()
@@ -52,12 +51,14 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 				return makeError(err)
 			}
 		}
+	} else {
+		createPlaceHolderInstead = true
+	}
 
-		if createPlaceHolderInstead {
-			err = internal_service.CreatePlaceholderGitHub(params.Name)
-			if err != nil {
-				return makeError(err)
-			}
+	if createPlaceHolderInstead {
+		err = internal_service.CreatePlaceholderGitHub(params.Name)
+		if err != nil {
+			return makeError(err)
 		}
 	}
 

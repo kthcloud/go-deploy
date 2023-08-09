@@ -6,6 +6,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -29,6 +30,9 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 	for _, env := range public.EnvVars {
 		envs = append(envs, env.ToK8sEnvVar())
 	}
+
+	limits := createResourceList(public.Resources.Limits.CPU, public.Resources.Limits.Memory)
+	requests := createResourceList(public.Resources.Requests.CPU, public.Resources.Requests.Memory)
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -59,6 +63,10 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 							Name:  public.Name,
 							Image: public.DockerImage,
 							Env:   envs,
+							Resources: apiv1.ResourceRequirements{
+								Limits:   limits,
+								Requests: requests,
+							},
 						},
 					},
 				},
@@ -139,4 +147,20 @@ func CreateIngressManifest(public *models.IngressPublic) *networkingv1.Ingress {
 
 func pathTypeAddr(s string) *networkingv1.PathType {
 	return (*networkingv1.PathType)(&s)
+}
+
+func createResourceList(cpu, memory string) apiv1.ResourceList {
+	limits := apiv1.ResourceList{}
+
+	cpuQuantity, err := resource.ParseQuantity(cpu)
+	if err == nil {
+		limits[apiv1.ResourceCPU] = cpuQuantity
+	}
+
+	memoryQuantity, err := resource.ParseQuantity(memory)
+	if err == nil {
+		limits[apiv1.ResourceMemory] = memoryQuantity
+	}
+
+	return limits
 }

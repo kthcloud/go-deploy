@@ -41,6 +41,16 @@ type Environment struct {
 		ExtraDomainIP  string `yaml:"extraDomainIp"`
 		IngressClass   string `yaml:"ingressClass"`
 		RepairInterval int    `yaml:"repairInterval"`
+		Resources      struct {
+			Limits struct {
+				CPU    string `yaml:"cpu"`
+				Memory string `yaml:"memory"`
+			} `yaml:"limits"`
+			Requests struct {
+				CPU    string `yaml:"cpu"`
+				Memory string `yaml:"memory"`
+			} `yaml:"requests"`
+		} `yaml:"resources"`
 	} `yaml:"deployment"`
 
 	VM struct {
