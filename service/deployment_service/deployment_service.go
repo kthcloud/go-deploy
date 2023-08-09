@@ -37,23 +37,27 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 	}
 
 	if params.GitHub != nil {
+		createPlaceHolderInstead := false
+
 		err = internal_service.CreateGitHub(deploymentID, params)
 		if err != nil {
 			errString := err.Error()
 			if strings.Contains(errString, "/hooks: 404 Not Found") {
 				log.Println(makeError(fmt.Errorf("webhook api not found. assuming github is not supported, inserting placeholder instead")))
-				err = internal_service.CreatePlaceholderGitHub(params.Name)
-				if err != nil {
-					return makeError(err)
-				}
+				createPlaceHolderInstead = true
+			} else if strings.Contains(errString, "bad credentials") {
+				log.Println(makeError(fmt.Errorf("bad credentials. assuming github credentials expired or were revoked, inserting placeholder instead")))
+				createPlaceHolderInstead = true
 			} else {
 				return makeError(err)
 			}
 		}
-	} else {
-		err = internal_service.CreatePlaceholderGitHub(params.Name)
-		if err != nil {
-			return makeError(err)
+
+		if createPlaceHolderInstead {
+			err = internal_service.CreatePlaceholderGitHub(params.Name)
+			if err != nil {
+				return makeError(err)
+			}
 		}
 	}
 
