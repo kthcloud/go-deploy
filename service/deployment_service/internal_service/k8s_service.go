@@ -42,12 +42,26 @@ func createDeploymentPublic(namespace, name, dockerImage string, envs []deployme
 		})
 	}
 
+	defaultLimits := k8sModels.Limits{
+		CPU:    conf.Env.Deployment.Resources.Limits.CPU,
+		Memory: conf.Env.Deployment.Resources.Limits.Memory,
+	}
+
+	defaultRequests := k8sModels.Requests{
+		CPU:    conf.Env.Deployment.Resources.Requests.CPU,
+		Memory: conf.Env.Deployment.Resources.Requests.Memory,
+	}
+
 	return &k8sModels.DeploymentPublic{
 		ID:          "",
 		Name:        name,
 		Namespace:   namespace,
 		DockerImage: dockerImage,
 		EnvVars:     k8sEnvs,
+		Resources: k8sModels.Resources{
+			Limits:   defaultLimits,
+			Requests: defaultRequests,
+		},
 	}
 }
 
@@ -416,6 +430,17 @@ func RepairK8s(name string) error {
 	}
 
 	ss := deployment.Subsystems.K8s
+
+	// temporary fix for missing resource limits and requests
+	if ss.Deployment.Created() {
+		res := &ss.Deployment.Resources
+		if res.Limits.Memory == "" && res.Limits.CPU == "" && res.Requests.Memory == "" && res.Requests.CPU == "" {
+			res.Limits.Memory = conf.Env.Deployment.Resources.Limits.Memory
+			res.Limits.CPU = conf.Env.Deployment.Resources.Limits.CPU
+			res.Requests.Memory = conf.Env.Deployment.Resources.Requests.Memory
+			res.Requests.CPU = conf.Env.Deployment.Resources.Requests.CPU
+		}
+	}
 
 	// namespace
 	namespace, err := client.ReadNamespace(ss.Namespace.ID)
