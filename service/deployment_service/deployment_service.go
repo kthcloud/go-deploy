@@ -44,7 +44,7 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 			if strings.Contains(errString, "/hooks: 404 Not Found") {
 				log.Println(makeError(fmt.Errorf("webhook api not found. assuming github is not supported, inserting placeholder instead")))
 				createPlaceHolderInstead = true
-			} else if strings.Contains(errString, "bad credentials") {
+			} else if strings.Contains(errString, "401 Bad credentials") {
 				log.Println(makeError(fmt.Errorf("bad credentials. assuming github credentials expired or were revoked, inserting placeholder instead")))
 				createPlaceHolderInstead = true
 			} else {
