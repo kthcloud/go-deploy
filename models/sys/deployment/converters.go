@@ -29,6 +29,11 @@ func (deployment *Deployment) ToDTO(url *string) body.DeploymentRead {
 		integrations = append(integrations, "github")
 	}
 
+	var pingResult *int
+	if deployment.PingResult != 0 {
+		pingResult = &deployment.PingResult
+	}
+
 	return body.DeploymentRead{
 		ID:           deployment.ID,
 		Name:         deployment.Name,
@@ -38,6 +43,7 @@ func (deployment *Deployment) ToDTO(url *string) body.DeploymentRead {
 		Envs:         envs,
 		Private:      deployment.Private,
 		Integrations: integrations,
+		PingResult:   pingResult,
 	}
 }
 

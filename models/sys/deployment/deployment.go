@@ -6,7 +6,7 @@ type Deployment struct {
 	ID      string `bson:"id"`
 	Name    string `bson:"name"`
 	OwnerID string `bson:"ownerId"`
-	
+
 	CreatedAt  time.Time `bson:"createdAt"`
 	UpdatedAt  time.Time `bson:"updatedAt"`
 	RepairedAt time.Time `bson:"repairedAt"`
@@ -20,6 +20,8 @@ type Deployment struct {
 	Subsystems    Subsystems `bson:"subsystems"`
 	StatusCode    int        `bson:"statusCode"`
 	StatusMessage string     `bson:"statusMessage"`
+
+	PingResult int `bson:"pingResult"`
 }
 
 func (deployment *Deployment) Ready() bool {

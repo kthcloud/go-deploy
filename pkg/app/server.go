@@ -11,6 +11,7 @@ import (
 	"go-deploy/pkg/sys"
 	"go-deploy/pkg/workers/confirm"
 	"go-deploy/pkg/workers/job_execute"
+	"go-deploy/pkg/workers/ping"
 	"go-deploy/pkg/workers/repair"
 	"go-deploy/pkg/workers/status_update"
 	"go-deploy/routers"
@@ -26,6 +27,7 @@ type StartOptions struct {
 	StatusUpdater bool
 	JobExecutor   bool
 	Repairer      bool
+	Pinger        bool
 }
 
 func shutdown() {
@@ -52,6 +54,7 @@ func Start(options *StartOptions) *http.Server {
 			StatusUpdater: true,
 			JobExecutor:   true,
 			Repairer:      true,
+			Pinger:        true,
 		}
 	}
 
@@ -66,6 +69,9 @@ func Start(options *StartOptions) *http.Server {
 	}
 	if options.Repairer {
 		repair.Setup(c)
+	}
+	if options.Pinger {
+		ping.Setup(c)
 	}
 	if options.API {
 		ginMode, exists := os.LookupEnv("GIN_MODE")

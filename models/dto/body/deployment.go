@@ -51,6 +51,7 @@ type DeploymentRead struct {
 	Envs         []Env    `json:"envs"`
 	Private      bool     `json:"private"`
 	Integrations []string `json:"integrations"`
+	PingResult   *int     `json:"pingResult,omitempty"`
 }
 
 type CiConfig struct {
