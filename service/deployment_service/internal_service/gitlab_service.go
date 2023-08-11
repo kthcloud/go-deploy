@@ -129,7 +129,7 @@ func CreateBuild(id string, params *deploymentModel.BuildParams) error {
 		time.Sleep(1 * time.Second)
 	}
 
-	log.Println("build finished with gitlab")
+	log.Println("build finished with gitlab for deployment", id)
 
 	return nil
 }

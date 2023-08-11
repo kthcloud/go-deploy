@@ -6,10 +6,11 @@ type Deployment struct {
 	ID      string `bson:"id"`
 	Name    string `bson:"name"`
 	OwnerID string `bson:"ownerId"`
-	
-	CreatedAt  time.Time `bson:"createdAt"`
-	UpdatedAt  time.Time `bson:"updatedAt"`
-	RepairedAt time.Time `bson:"repairedAt"`
+
+	CreatedAt   time.Time `bson:"createdAt"`
+	UpdatedAt   time.Time `bson:"updatedAt"`
+	RepairedAt  time.Time `bson:"repairedAt"`
+	RestartedAt time.Time `bson:"restartedAt"`
 
 	Private      bool     `bson:"private"`
 	Envs         []Env    `bson:"envs"`
