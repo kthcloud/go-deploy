@@ -2,6 +2,7 @@ package ping
 
 import (
 	deploymentModels "go-deploy/models/sys/deployment"
+	"go-deploy/pkg/conf"
 	"go-deploy/pkg/sys"
 	"go-deploy/service/deployment_service"
 	"log"
@@ -17,12 +18,14 @@ func deploymentPingUpdater(ctx *sys.Context) {
 		}
 
 		updateAllDeploymentPings()
-		time.Sleep(30 * time.Second)
+		time.Sleep(time.Duration(conf.Env.Deployment.PingInterval) * time.Second)
 	}
 }
 
 func updateAllDeploymentPings() {
 	deployments, _ := deployment_service.GetAll()
+
+	log.Println("pinging", len(deployments), "deployments")
 
 	for _, deployment := range deployments {
 
