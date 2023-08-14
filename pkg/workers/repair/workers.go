@@ -20,6 +20,24 @@ func deploymentRepairer(ctx *sys.Context) {
 
 		time.Sleep(time.Duration(conf.Env.Deployment.RepairInterval) * time.Second)
 
+		restarting, err := deploymentModel.GetByActivity(deploymentModel.ActivityRestarting)
+		if err != nil {
+			log.Println("error fetching restarting deployments. details: ", err)
+			continue
+		}
+
+		for _, deployment := range restarting {
+			// remove activity if it has been restarting for more than 5 minutes
+			now := time.Now()
+			if now.Sub(deployment.RestartedAt) > 5*time.Minute {
+				log.Printf("removing restarting activity from deployment %s\n", deployment.Name)
+				err = deploymentModel.RemoveActivity(deployment.ID, deploymentModel.ActivityRestarting)
+				if err != nil {
+					log.Printf("failed to remove restarting activity from deployment %s. details: %s\n", deployment.Name, err.Error())
+				}
+			}
+		}
+
 		withNoActivities, err := deploymentModel.GetWithNoActivities()
 		if err != nil {
 			log.Println("error fetching deployments with no activities. details: ", err)

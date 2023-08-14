@@ -12,6 +12,7 @@ import (
 	"go-deploy/pkg/workers/confirm"
 	"go-deploy/pkg/workers/job_execute"
 	"go-deploy/pkg/workers/ping"
+	"go-deploy/pkg/workers/migrator"
 	"go-deploy/pkg/workers/repair"
 	"go-deploy/pkg/workers/status_update"
 	"go-deploy/routers"
@@ -40,6 +41,9 @@ func Start(options *StartOptions) *http.Server {
 	conf.SetupEnvironment()
 
 	models.Setup()
+
+	migrator.Migrate()
+
 	err := job.ResetRunning()
 	if err != nil {
 		log.Fatalln("failed to reset running job. details: ", err)
