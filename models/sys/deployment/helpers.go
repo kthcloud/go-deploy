@@ -363,3 +363,24 @@ func GetLastGitLabBuild(deploymentID string) (*GitLabBuild, error) {
 
 	return &deployment.Subsystems.GitLab.LastBuild, nil
 }
+
+func SavePing(id string, pingResult int) error {
+	updateData := bson.M{}
+
+	models.AddIfNotNil(updateData, "pingResult", pingResult)
+
+	if len(updateData) == 0 {
+		return nil
+	}
+
+	_, err := models.DeploymentCollection.UpdateOne(context.TODO(),
+		bson.D{{"id", id}},
+		bson.D{{"$set", updateData}},
+	)
+	if err != nil {
+		return fmt.Errorf("failed to update deployment ping result %s. details: %s", id, err)
+	}
+
+	return nil
+
+}

@@ -21,6 +21,8 @@ type Deployment struct {
 	Subsystems    Subsystems `bson:"subsystems"`
 	StatusCode    int        `bson:"statusCode"`
 	StatusMessage string     `bson:"statusMessage"`
+
+	PingResult int `bson:"pingResult"`
 }
 
 func (deployment *Deployment) Ready() bool {

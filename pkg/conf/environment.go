@@ -41,6 +41,7 @@ type Environment struct {
 		ExtraDomainIP  string `yaml:"extraDomainIp"`
 		IngressClass   string `yaml:"ingressClass"`
 		RepairInterval int    `yaml:"repairInterval"`
+		PingInterval   int    `yaml:"pingInterval"`
 		Resources      struct {
 			Limits struct {
 				CPU    string `yaml:"cpu"`

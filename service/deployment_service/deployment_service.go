@@ -455,3 +455,26 @@ func build(deployment *deploymentModel.Deployment, params *deploymentModel.Build
 
 	return nil
 }
+
+func SavePing(id string, pingResult int) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to update deployment with ping result. details: %s", err)
+	}
+
+	deployment, err := deploymentModel.GetByID(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if deployment == nil {
+		log.Println("deployment", id, "not found when updating ping result. assuming it was deleted")
+		return nil
+	}
+
+	err = deploymentModel.SavePing(id, pingResult)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
+}
