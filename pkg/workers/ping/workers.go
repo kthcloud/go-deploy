@@ -32,7 +32,7 @@ func updateAllDeploymentPings() {
 		url := getURL(&deployment)
 
 		if url == nil {
-			log.Println("deployment has no url")
+			log.Println("deployment", deployment.Name, "has no url")
 			continue
 		}
 
