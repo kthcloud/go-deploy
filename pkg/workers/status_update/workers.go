@@ -34,6 +34,30 @@ func vmStatusUpdater(ctx *sys.Context) {
 	}
 }
 
+func vmSnapshotUpdater(ctx *sys.Context) {
+	for {
+		if ctx.Stop {
+			break
+		}
+		time.Sleep(5 * time.Second)
+
+		allVms, err := vmModel.GetAll()
+		if err != nil {
+			log.Println("error fetching vms: ", err)
+			continue
+		}
+
+		for _, vm := range allVms {
+			snapshotMap := fetchSnapshotStatus(&vm)
+			if snapshotMap == nil {
+				continue
+			}
+
+			_ = vmModel.UpdateSubsystemByName(vm.Name, "cs", "snapshotMap", snapshotMap)
+		}
+	}
+}
+
 func deploymentStatusUpdater(ctx *sys.Context) {
 	for {
 		if ctx.Stop {

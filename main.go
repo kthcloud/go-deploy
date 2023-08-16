@@ -24,6 +24,7 @@ func main() {
 	_ = flag.Bool("job-executor", false, "start job executor")
 	_ = flag.Bool("repairer", false, "start repairer")
 	_ = flag.Bool("pinger", false, "start pinger")
+	_ = flag.Bool("snapshotter", false, "start snapshotter")
 
 	flag.Parse()
 
@@ -33,9 +34,10 @@ func main() {
 	jobExecutor := isFlagPassed("job-executor")
 	repairer := isFlagPassed("repairer")
 	pinger := isFlagPassed("pinger")
+	snapshotter := isFlagPassed("snapshotter")
 
 	var options *app.StartOptions
-	if confirmer || statusUpdater || jobExecutor || repairer || api || pinger {
+	if confirmer || statusUpdater || jobExecutor || repairer || api || pinger || snapshotter {
 		options = &app.StartOptions{
 			API:           api,
 			Confirmer:     confirmer,
@@ -43,6 +45,7 @@ func main() {
 			JobExecutor:   jobExecutor,
 			Repairer:      repairer,
 			Pinger:        pinger,
+			Snapshotter:   snapshotter,
 		}
 
 		log.Println("api: ", options.API)
@@ -51,6 +54,7 @@ func main() {
 		log.Println("job-executor: ", options.JobExecutor)
 		log.Println("repairer: ", options.Repairer)
 		log.Println("pinger: ", options.Pinger)
+		log.Println("snapshotter: ", options.Snapshotter)
 	} else {
 		log.Println("no workers specified, starting all")
 	}

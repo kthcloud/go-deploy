@@ -111,23 +111,30 @@ func Update(vmID string, dtoVmUpdate *body.VmUpdate) error {
 	vmUpdate := &vmModel.UpdateParams{}
 	vmUpdate.FromDTO(dtoVmUpdate)
 
-	if vmUpdate.Ports != nil {
-		// clear any potentially ill-formed ssh rules
-		removeDeploySshFromPortMap(vmUpdate.Ports)
-		addDeploySshToPortMap(vmUpdate.Ports)
+	if vmUpdate.SnapshotID != nil {
+		err := ApplySnapshot(vmID, *vmUpdate.SnapshotID)
+		if err != nil {
+			return makeError(err)
+		}
+	} else {
+		if vmUpdate.Ports != nil {
+			// clear any potentially ill-formed ssh rules
+			removeDeploySshFromPortMap(vmUpdate.Ports)
+			addDeploySshToPortMap(vmUpdate.Ports)
+		}
+
+		err := internal_service.UpdateCS(vmID, vmUpdate)
+		if err != nil {
+			return makeError(err)
+		}
+
+		err = vmModel.UpdateByID(vmID, vmUpdate)
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
-	err := internal_service.UpdateCS(vmID, vmUpdate)
-	if err != nil {
-		return makeError(err)
-	}
-
-	err = vmModel.UpdateByID(vmID, vmUpdate)
-	if err != nil {
-		return makeError(err)
-	}
-
-	err = vmModel.RemoveActivity(vmID, vmModel.ActivityBeingUpdated)
+	err := vmModel.RemoveActivity(vmID, vmModel.ActivityBeingUpdated)
 	if err != nil {
 		return makeError(err)
 	}
@@ -277,6 +284,26 @@ func CanAddActivity(vmID, activity string) (bool, string, error) {
 		}
 		return true, "", nil
 	case vmModel.ActivityRepairing:
+		if vm.DoingOnOfActivities([]string{
+			vmModel.ActivityBeingCreated,
+			vmModel.ActivityBeingDeleted,
+			vmModel.ActivityAttachingGPU,
+			vmModel.ActivityDetachingGPU,
+		}) {
+			return false, "It should not be in creation or deletion, and should not be attaching or detaching a GPU", nil
+		}
+		return true, "", nil
+	case vmModel.ActivityCreatingSnapshot:
+		if vm.DoingOnOfActivities([]string{
+			vmModel.ActivityBeingCreated,
+			vmModel.ActivityBeingDeleted,
+			vmModel.ActivityAttachingGPU,
+			vmModel.ActivityDetachingGPU,
+		}) {
+			return false, "It should not be in creation or deletion, and should not be attaching or detaching a GPU", nil
+		}
+		return true, "", nil
+	case vmModel.ActivityApplyingSnapshot:
 		if vm.DoingOnOfActivities([]string{
 			vmModel.ActivityBeingCreated,
 			vmModel.ActivityBeingDeleted,

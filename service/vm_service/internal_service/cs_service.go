@@ -12,6 +12,7 @@ import (
 	"log"
 	"reflect"
 	"strings"
+	"time"
 )
 
 type CsCreated struct {
@@ -644,6 +645,52 @@ func IsGpuAttachedCS(host string, bus string) (bool, error) {
 	return false, nil
 }
 
+func CreateSnapshotCS(id string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to create snapshot for cs vm %s. details: %s", id, err)
+	}
+
+	client, err := withCsClient()
+	if err != nil {
+		return makeError(err)
+	}
+
+	vm, err := vmModel.GetByID(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if vm == nil {
+		log.Println("vm", id, "not found for when creating snapshot in cs. assuming it was deleted")
+		return nil
+	}
+
+	snapshotMap := vm.Subsystems.CS.SnapshotMap
+	if snapshotMap == nil {
+		snapshotMap = map[string]csModels.SnapshotPublic{}
+	}
+
+	name := fmt.Sprintf("snapshot-%s", time.Now().Format("20060102150405"))
+	if _, ok := snapshotMap[name]; ok {
+		log.Println("snapshot", name, "already exists for vm", id)
+		return nil
+	}
+
+	public := &csModels.SnapshotPublic{
+		Name: name,
+		VmID: vm.Subsystems.CS.VM.ID,
+	}
+
+	snapshot, err := createSnapshot(client, vm, public)
+	if err != nil {
+		return makeError(err)
+	}
+
+	log.Println("created snapshot", snapshot.Name, "for vm", id)
+
+	return nil
+}
+
 func DoCommandCS(vmID string, gpuID *string, command string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to execute command %s for cs vm %s. details: %s", command, vmID, err)
@@ -832,6 +879,34 @@ func createPortForwardingRule(client *cs.Client, vm *vmModel.VM, name string, pu
 	}
 
 	return portForwardingRule, nil
+}
+
+func createSnapshot(client *cs.Client, vm *vmModel.VM, public *csModels.SnapshotPublic) (*csModels.SnapshotPublic, error) {
+	id, err := client.CreateSnapshot(public)
+	if err != nil {
+		return nil, err
+	}
+
+	snapshot, err := client.ReadSnapshot(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if snapshot == nil {
+		return nil, errors.New("failed to read snapshot after creation")
+	}
+
+	if vm.Subsystems.CS.SnapshotMap == nil {
+		vm.Subsystems.CS.SnapshotMap = make(map[string]csModels.SnapshotPublic)
+	}
+	vm.Subsystems.CS.SnapshotMap[public.Name] = *snapshot
+
+	err = vmModel.UpdateSubsystemByName(vm.Name, "cs", "snapshotMap", vm.Subsystems.CS.SnapshotMap)
+	if err != nil {
+		return nil, err
+	}
+
+	return snapshot, nil
 }
 
 func createDeployTags(name string, deployName string) []csModels.Tag {

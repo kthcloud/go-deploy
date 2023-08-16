@@ -25,6 +25,10 @@ func (job *Job) ToDTO(statusMessage string) body.JobRead {
 }
 
 func CreateJob(id, userID, jobType string, args map[string]interface{}) error {
+	return CreateScheduledJob(id, userID, jobType, time.Now(), args)
+}
+
+func CreateScheduledJob(id, userID, jobType string, runAfter time.Time, args map[string]interface{}) error {
 	currentJob, err := GetByID(id)
 	if err != nil {
 		return err
@@ -40,6 +44,7 @@ func CreateJob(id, userID, jobType string, args map[string]interface{}) error {
 		Type:      jobType,
 		Args:      args,
 		CreatedAt: time.Now(),
+		RunAfter:  runAfter,
 		Status:    StatusPending,
 		ErrorLogs: make([]string, 0),
 	}
@@ -50,6 +55,20 @@ func CreateJob(id, userID, jobType string, args map[string]interface{}) error {
 	}
 
 	return nil
+}
+
+func Exists(jobType string, args map[string]interface{}) (bool, error) {
+	filter := bson.D{
+		{"type", jobType},
+		{"args", args},
+		{"status", bson.D{{"$ne", StatusTerminated}}},
+	}
+	count, err := models.JobCollection.CountDocuments(context.TODO(), filter)
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
 }
 
 func GetByID(id string) (*Job, error) {
@@ -68,7 +87,11 @@ func GetByID(id string) (*Job, error) {
 }
 
 func GetNext() (*Job, error) {
-	filter := bson.D{{"status", StatusPending}}
+	now := time.Now()
+	filter := bson.D{
+		{"status", StatusPending},
+		{"runAfter", bson.D{{"$lte", now}}},
+	}
 	opts := options.FindOneAndUpdate().SetSort(bson.D{{"createdAt", -1}})
 	update := bson.D{{"$set", bson.D{{"status", StatusRunning}, {"lastRunAt", time.Now()}}}}
 
@@ -86,7 +109,11 @@ func GetNext() (*Job, error) {
 }
 
 func GetNextFailed() (*Job, error) {
-	filter := bson.D{{"status", StatusFailed}}
+	now := time.Now()
+	filter := bson.D{
+		{"status", StatusFailed},
+		{"runAfter", bson.D{{"$lte", now}}},
+	}
 	opts := options.FindOneAndUpdate().SetSort(bson.D{{"createdAt", -1}})
 	update := bson.D{{"$set", bson.D{{"status", StatusRunning}, {"lastRunAt", time.Now()}}}}
 

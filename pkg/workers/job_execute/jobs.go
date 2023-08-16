@@ -8,6 +8,7 @@ import (
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/service/deployment_service"
 	"go-deploy/service/vm_service"
+	"log"
 	"strings"
 )
 
@@ -280,6 +281,45 @@ func repairGPUs(job *jobModel.Job) {
 
 	err = vm_service.RepairGPUs()
 	if err != nil {
+		_ = jobModel.MarkTerminated(job.ID, err.Error())
+		return
+	}
+
+	_ = jobModel.MarkCompleted(job.ID)
+}
+
+func createSnapshot(job *jobModel.Job) {
+	err := assertParameters(job, []string{"id"})
+	if err != nil {
+		_ = jobModel.MarkTerminated(job.ID, err.Error())
+		return
+	}
+
+	id := job.Args["id"].(string)
+
+	err = vm_service.CreateSnapshot(id)
+	if err != nil {
+		log.Println("failed to create snapshot. details:", err)
+		_ = jobModel.MarkTerminated(job.ID, err.Error())
+		return
+	}
+
+	_ = jobModel.MarkCompleted(job.ID)
+}
+
+func applySnapshot(job *jobModel.Job) {
+	err := assertParameters(job, []string{"id", "snapshotId"})
+	if err != nil {
+		_ = jobModel.MarkTerminated(job.ID, err.Error())
+		return
+	}
+
+	id := job.Args["id"].(string)
+	snapshotID := job.Args["snapshotId"].(string)
+
+	err = vm_service.ApplySnapshot(id, snapshotID)
+	if err != nil {
+		log.Println("failed to apply snapshot. details:", err)
 		_ = jobModel.MarkTerminated(job.ID, err.Error())
 		return
 	}

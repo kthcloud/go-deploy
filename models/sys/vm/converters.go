@@ -52,6 +52,7 @@ func (vm *VM) ToDTO(status string, connectionString *string, gpu *body.GpuRead, 
 }
 
 func (p *UpdateParams) FromDTO(dto *body.VmUpdate) {
+	p.SnapshotID = dto.SnapshotID
 	if dto.Ports != nil {
 		ports := make([]Port, len(*dto.Ports))
 		if dto.Ports != nil {

@@ -43,9 +43,10 @@ type VmCreate struct {
 }
 
 type VmUpdate struct {
-	Ports    *[]Port `json:"ports" bson:"ports" binding:"omitempty,port_list_names,port_list_numbers,dive,min=0,max=1000"`
-	CpuCores *int    `json:"cpuCores" binding:"omitempty,min=1"`
-	RAM      *int    `json:"ram" binding:"omitempty,min=1"`
+	SnapshotID *string `json:"snapshotId" binding:"omitempty,uuid4"`
+	Ports      *[]Port `json:"ports" bson:"ports" binding:"omitempty,port_list_names,port_list_numbers,dive,min=0,max=1000"`
+	CpuCores   *int    `json:"cpuCores" binding:"omitempty,min=1"`
+	RAM        *int    `json:"ram" binding:"omitempty,min=1"`
 }
 
 type VmCreated struct {
@@ -87,4 +88,14 @@ type GpuRead struct {
 
 type VmCommand struct {
 	Command string `json:"command" binding:"required,oneof=start stop reboot"`
+}
+
+type VmSnapshotRead struct {
+	ID         string    `json:"id"`
+	VmID       string    `json:"vmId"`
+	Name       string    `json:"displayname"`
+	ParentName *string   `json:"parentName,omitempty"`
+	CreatedAt  time.Time `json:"created"`
+	State      string    `json:"state"`
+	Current    bool      `json:"current"`
 }
