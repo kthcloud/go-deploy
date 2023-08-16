@@ -3,10 +3,11 @@ package status_update
 import (
 	"fmt"
 	deploymentModel "go-deploy/models/sys/deployment"
-	"go-deploy/models/sys/vm"
+	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/status_codes"
 	"go-deploy/pkg/subsystems/cs"
+	csModels "go-deploy/pkg/subsystems/cs/models"
 )
 
 func withClient() (*cs.Client, error) {
@@ -21,7 +22,7 @@ func withClient() (*cs.Client, error) {
 	})
 }
 
-func fetchCsStatus(vm *vm.VM) (int, string, error) {
+func fetchCsStatus(vm *vmModel.VM) (int, string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get status for cs vm %s. details: %s", vm.Name, err)
 	}
@@ -72,7 +73,15 @@ func fetchCsStatus(vm *vm.VM) (int, string, error) {
 	return statusCode, status_codes.GetMsg(statusCode), nil
 }
 
-func fetchVmStatus(vm *vm.VM) (int, string, error) {
+func fetchVmStatus(vm *vmModel.VM) (int, string, error) {
+	if vm.DoingActivity(vmModel.ActivityCreatingSnapshot) {
+		return status_codes.ResourceCreatingSnapshot, status_codes.GetMsg(status_codes.ResourceCreatingSnapshot), nil
+	}
+
+	if vm.DoingActivity(vmModel.ActivityApplyingSnapshot) {
+		return status_codes.ResourceApplyingSnapshot, status_codes.GetMsg(status_codes.ResourceApplyingSnapshot), nil
+	}
+
 	csStatusCode, csStatusMessage, err := fetchCsStatus(vm)
 
 	if csStatusCode == status_codes.ResourceUnknown || csStatusCode == status_codes.ResourceNotFound {
@@ -94,6 +103,25 @@ func fetchVmStatus(vm *vm.VM) (int, string, error) {
 	}
 
 	return csStatusCode, csStatusMessage, err
+}
+
+func fetchSnapshotStatus(vm *vmModel.VM) map[string]csModels.SnapshotPublic {
+	client, err := withClient()
+	if err != nil {
+		return nil
+	}
+
+	snapshots, err := client.ReadAllSnapshots(vm.ID)
+	if err != nil {
+		return nil
+	}
+
+	snapshotMap := make(map[string]csModels.SnapshotPublic)
+	for _, snapshot := range snapshots {
+		snapshotMap[snapshot.ID] = snapshot
+	}
+
+	return snapshotMap
 }
 
 func fetchDeploymentStatus(deployment *deploymentModel.Deployment) (int, string, error) {

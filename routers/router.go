@@ -86,6 +86,8 @@ func setupVmRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
 	private.POST("/vms/:vmId", v1_vm.Update)
 	private.DELETE("/vms/:vmId", v1_vm.Delete)
 
+	private.GET("/vms/:vmId/snapshots", v1_vm.GetSnapshotList)
+
 	private.POST("/vms/:vmId/command", v1_vm.DoCommand)
 
 	private.POST("/vms/:vmId/attachGpu", v1_vm.AttachGPU)

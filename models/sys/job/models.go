@@ -15,6 +15,8 @@ const (
 	TypeRepairVM         = "repairVm"
 	TypeRepairDeployment = "repairDeployment"
 	TypeRepairGPUs       = "repairGpus"
+	TypeCreateSnapshot   = "createSnapshot"
+	TypeApplySnapshot    = "applySnapshot"
 )
 
 const (
@@ -33,6 +35,7 @@ type Job struct {
 	CreatedAt  time.Time              `bson:"createdAt" json:"createdAt"`
 	LastRunAt  time.Time              `bson:"lastRunAt" json:"lastRunAt"`
 	FinishedAt time.Time              `bson:"finishedAt" json:"finishedAt"`
+	RunAfter   time.Time              `bson:"runAfter" json:"runAfter"`
 	Status     string                 `bson:"status" json:"status"`
 	ErrorLogs  []string               `bson:"errorLogs" json:"errorLogs"`
 }

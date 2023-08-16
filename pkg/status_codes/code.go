@@ -12,13 +12,15 @@ const (
 	ResourceUpdated = 10011
 	ResourceDeleted = 10012
 
-	ResourceNotCreated   = 10020
-	ResourceNotFound     = 10021
-	ResourceNotUpdated   = 10022
-	ResourceNotReady     = 10023
-	ResourceNotAvailable = 10024
-	ResourceBeingCreated = 10025
-	ResourceBeingDeleted = 10026
+	ResourceNotCreated       = 10020
+	ResourceNotFound         = 10021
+	ResourceNotUpdated       = 10022
+	ResourceNotReady         = 10023
+	ResourceNotAvailable     = 10024
+	ResourceBeingCreated     = 10025
+	ResourceBeingDeleted     = 10026
+	ResourceCreatingSnapshot = 10027
+	ResourceApplyingSnapshot = 10028
 
 	ResourceStarting   = 10031
 	ResourceRunning    = 10032
