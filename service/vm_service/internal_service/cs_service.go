@@ -685,6 +685,10 @@ func CreateSnapshotCS(id string) error {
 		return fmt.Errorf("vm %s is not running", id)
 	}
 
+	if vm.Subsystems.CS.VM.ExtraConfig != "" {
+		return fmt.Errorf("vm %s has a graphics card attached", id)
+	}
+
 	public := &csModels.SnapshotPublic{
 		Name: name,
 		VmID: vm.Subsystems.CS.VM.ID,
