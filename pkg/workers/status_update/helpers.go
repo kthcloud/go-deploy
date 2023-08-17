@@ -111,14 +111,14 @@ func fetchSnapshotStatus(vm *vmModel.VM) map[string]csModels.SnapshotPublic {
 		return nil
 	}
 
-	snapshots, err := client.ReadAllSnapshots(vm.ID)
+	snapshots, err := client.ReadAllSnapshots(vm.Subsystems.CS.VM.ID)
 	if err != nil {
 		return nil
 	}
 
 	snapshotMap := make(map[string]csModels.SnapshotPublic)
 	for _, snapshot := range snapshots {
-		snapshotMap[snapshot.ID] = snapshot
+		snapshotMap[snapshot.Name] = snapshot
 	}
 
 	return snapshotMap
