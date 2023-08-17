@@ -676,6 +676,15 @@ func CreateSnapshotCS(id string) error {
 		return nil
 	}
 
+	vmStatus, err := client.GetVmStatus(vm.Subsystems.CS.VM.ID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if vmStatus != "Running" {
+		return fmt.Errorf("vm %s is not running", id)
+	}
+
 	public := &csModels.SnapshotPublic{
 		Name: name,
 		VmID: vm.Subsystems.CS.VM.ID,
