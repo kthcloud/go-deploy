@@ -91,3 +91,7 @@ func csDeleted(vm *vm.VM) (bool, error) {
 
 	return cs.VM.ID == "" && len(cs.PortForwardingRuleMap) == 0, nil
 }
+
+func gpuCleared(vm *vm.VM) (bool, error) {
+	return vm.GpuID == "", nil
+}

@@ -14,14 +14,15 @@ import (
 	"time"
 )
 
-func (gpu *GPU) ToDto(addUserInfo bool) body.GpuRead {
+func (gpu *GPU) ToDTO(addUserInfo bool) body.GpuRead {
 	id := base64.StdEncoding.EncodeToString([]byte(gpu.ID))
 
 	var lease *body.GpuLease
 
 	if gpu.Lease.VmID != "" {
 		lease = &body.GpuLease{
-			End: gpu.Lease.End,
+			End:     gpu.Lease.End,
+			Expired: gpu.Lease.IsExpired(),
 		}
 
 		if addUserInfo {
@@ -153,10 +154,13 @@ func GetAllAvailable(excludedHosts, excludedGPUs []string) ([]GPU, error) {
 		excludedGPUs = make([]string, 0)
 	}
 
+	now := time.Now()
+
 	filter := bson.D{
 		{"$or", []interface{}{
-			bson.M{"lease.vmId": ""},
 			bson.M{"lease": bson.M{"$exists": false}},
+			bson.M{"lease.vmId": ""},
+			bson.M{"lease.end": bson.M{"$lte": now}},
 		}},
 		{"host", bson.M{"$nin": excludedHosts}},
 		{"id", bson.M{"$nin": excludedGPUs}},
@@ -208,6 +212,39 @@ func Attach(gpuID, vmID, user string, end time.Time) (bool, error) {
 		return false, fmt.Errorf("gpu is already attached to another vm")
 	}
 
+	// first check if the gpu is already attached to this vm
+	if gpu.Lease.VmID == vmID {
+		if gpu.Lease.IsExpired() {
+			// renew lease
+			filter := bson.D{
+				{"id", gpuID},
+				{"lease.vmId", vmID},
+			}
+			update := bson.M{
+				"$set": bson.M{
+					"lease.end": end,
+				},
+			}
+
+			opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+
+			err = models.GpuCollection.FindOneAndUpdate(context.Background(), filter, update, opts).Decode(&gpu)
+			if err != nil {
+				if err == mongo.ErrNoDocuments {
+					// this is not treated as an error, just another instance snatched the gpu before this one
+					return false, nil
+				}
+
+				err = fmt.Errorf("failed to update gpu. details: %s", err)
+				return false, err
+			}
+		}
+
+		// either way return true, since a renewal succeeded or nothing happened (still attached)
+		return true, nil
+	}
+
+	// if this is not a renewal, try to attach the gpu to the vm
 	if gpu.Lease.VmID == "" {
 		filter := bson.D{
 			{"id", gpuID},

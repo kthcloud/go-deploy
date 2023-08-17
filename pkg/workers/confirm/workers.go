@@ -3,9 +3,6 @@ package confirm
 import (
 	deploymentModel "go-deploy/models/sys/deployment"
 	vmModel "go-deploy/models/sys/vm"
-	gpuModel "go-deploy/models/sys/vm/gpu"
-	"go-deploy/pkg/conf"
-
 	"go-deploy/pkg/sys"
 	"log"
 	"time"
@@ -59,21 +56,6 @@ func vmConfirmer(ctx *sys.Context) {
 			if deleted {
 				log.Printf("marking vm %s as deleted\n", vm.Name)
 				_ = vmModel.DeleteByID(vm.ID, vm.OwnerID)
-			}
-		}
-
-		excludedHosts := conf.Env.GPU.ExcludedHosts
-
-		// check if gpu lease is expired
-		leased, _ := gpuModel.GetAllLeased(excludedHosts, nil)
-		for _, gpu := range leased {
-			if gpu.Lease.End.Before(time.Now()) {
-				log.Printf("lease for gpu %s (%s) ran out, returning it...\n", gpu.ID, gpu.Data.Name)
-
-				err := ReturnGPU(&gpu)
-				if err != nil {
-					log.Printf("error returning gpu %s (%s): %s\n", gpu.ID, gpu.Data.Name, err.Error())
-				}
 			}
 		}
 

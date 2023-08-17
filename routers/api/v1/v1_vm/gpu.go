@@ -54,7 +54,7 @@ func GetGpuList(c *gin.Context) {
 
 	dtoGPUs := make([]body.GpuRead, len(gpus))
 	for i, gpu := range gpus {
-		dtoGPUs[i] = gpu.ToDto(false)
+		dtoGPUs[i] = gpu.ToDTO(false)
 	}
 
 	context.JSONResponse(200, dtoGPUs)
@@ -140,18 +140,20 @@ func AttachGPU(c *gin.Context) {
 			return
 		}
 
-		if gpu.Lease.VmID == "" {
-			// we still need to check if the gpu is available since the database is not guaranteed to know
-			available, err := vm_service.IsGpuAvailable(gpu)
-			if err != nil {
-				context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to check if GPU is available: %s", err))
-				return
-			}
+		hardwareAvailable, err := vm_service.IsGpuHardwareAvailable(gpu)
+		if err != nil {
+			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to check if GPU is available: %s", err))
+			return
+		}
 
-			if !available {
-				context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotAvailable, "GPU not available")
-				return
-			}
+		if !hardwareAvailable {
+			context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotAvailable, "GPU not available")
+			return
+		}
+
+		if (gpu.IsAttached() && gpu.Lease.VmID != vm.ID) && !gpu.Lease.IsExpired() {
+			context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceNotCreated, "GPU not available")
+			return
 		}
 
 		gpus = []gpuModel.GPU{*gpu}
@@ -199,9 +201,10 @@ func AttachGPU(c *gin.Context) {
 
 	jobID := uuid.New().String()
 	err = job_service.Create(jobID, auth.UserID, jobModel.TypeAttachGpuToVM, map[string]interface{}{
-		"id":     vm.ID,
-		"gpuIds": gpuIds,
-		"userId": auth.UserID,
+		"id":          vm.ID,
+		"gpuIds":      gpuIds,
+		"userId":      auth.UserID,
+		"isPowerUser": auth.IsPowerUser(),
 	})
 
 	if err != nil {
