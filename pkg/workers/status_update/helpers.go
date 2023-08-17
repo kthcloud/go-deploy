@@ -118,7 +118,7 @@ func fetchSnapshotStatus(vm *vmModel.VM) map[string]csModels.SnapshotPublic {
 
 	snapshotMap := make(map[string]csModels.SnapshotPublic)
 	for _, snapshot := range snapshots {
-		snapshotMap[snapshot.Name] = snapshot
+		snapshotMap[snapshot.ID] = snapshot
 	}
 
 	return snapshotMap

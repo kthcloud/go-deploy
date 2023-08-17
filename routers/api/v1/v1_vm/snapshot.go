@@ -47,7 +47,7 @@ func GetSnapshotList(c *gin.Context) {
 			ParentName: snapshot.ParentName,
 			CreatedAt:  snapshot.CreatedAt,
 			State:      snapshot.State,
-			Current:    false,
+			Current:    snapshot.Current,
 		}
 	}
 

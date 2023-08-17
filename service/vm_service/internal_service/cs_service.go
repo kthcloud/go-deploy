@@ -676,6 +676,19 @@ func CreateSnapshotCS(id string) error {
 		return nil
 	}
 
+	vmStatus, err := client.GetVmStatus(vm.Subsystems.CS.VM.ID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if vmStatus != "Running" {
+		return fmt.Errorf("vm %s is not running", id)
+	}
+
+	if vm.Subsystems.CS.VM.ExtraConfig != "" {
+		return fmt.Errorf("vm %s has a graphics card attached", id)
+	}
+
 	public := &csModels.SnapshotPublic{
 		Name: name,
 		VmID: vm.Subsystems.CS.VM.ID,
@@ -687,6 +700,50 @@ func CreateSnapshotCS(id string) error {
 	}
 
 	log.Println("created snapshot", snapshotID, "for vm", id)
+
+	return nil
+}
+
+func ApplySnapshotCS(id string, snapshotID string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to apply snapshot %s for cs vm %s. details: %s", snapshotID, id, err)
+	}
+
+	client, err := withCsClient()
+	if err != nil {
+		return makeError(err)
+	}
+
+	vm, err := vmModel.GetByID(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if vm == nil {
+		log.Println("vm", id, "not found for when applying snapshot in cs. assuming it was deleted")
+		return nil
+	}
+
+	snapshotMap := vm.Subsystems.CS.SnapshotMap
+	if snapshotMap == nil {
+		snapshotMap = map[string]csModels.SnapshotPublic{}
+	}
+
+	snapshot, ok := snapshotMap[snapshotID]
+	if !ok {
+		return fmt.Errorf("snapshot %s not found for vm %s", snapshotID, id)
+	}
+
+	if vm.Subsystems.CS.VM.ExtraConfig != "" {
+		return fmt.Errorf("vm %s has a graphics card attached", id)
+	}
+
+	err = client.ApplySnapshot(&snapshot)
+	if err != nil {
+		return makeError(err)
+	}
+
+	log.Println("applied snapshot", snapshotID, "for vm", id)
 
 	return nil
 }
