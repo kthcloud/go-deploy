@@ -5,7 +5,6 @@ import (
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/service/vm_service/internal_service"
 	"log"
-	"time"
 )
 
 func GetSnapshotsByVM(vmID string) ([]vmModel.Snapshot, error) {
@@ -77,12 +76,28 @@ func CreateSnapshot(id string) error {
 }
 
 func ApplySnapshot(id, snapshotID string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to apply snapshot %s to vm %s. details: %s", snapshotID, id, err)
+	}
+
 	log.Println("applying snapshot", snapshotID, "to vm", id)
-	_, _, _ = StartActivity(id, vmModel.ActivityApplyingSnapshot)
+	started, reason, err := StartActivity(id, vmModel.ActivityApplyingSnapshot)
+	if err != nil {
+		return makeError(err)
+	}
 
-	time.Sleep(10 * time.Second)
+	if !started {
+		return fmt.Errorf("failed to apply snapshot %s to vm %s. details: %s", snapshotID, id, reason)
+	}
 
-	_ = vmModel.RemoveActivity(id, vmModel.ActivityApplyingSnapshot)
+	defer func() {
+		_ = vmModel.RemoveActivity(id, vmModel.ActivityApplyingSnapshot)
+	}()
+
+	err = internal_service.ApplySnapshotCS(id, snapshotID)
+	if err != nil {
+		return makeError(err)
+	}
 
 	return nil
 }
