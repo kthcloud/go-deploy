@@ -47,10 +47,6 @@ func SynchronizeGPUs() {
 	}
 
 	for _, host := range gpuInfo.GpuInfo.Hosts {
-		if len(host.GPUs) == 0 {
-			continue
-		}
-
 		for _, gpu := range host.GPUs {
 
 			id := createGpuID(host.Name, gpu.Name, gpu.Slot)

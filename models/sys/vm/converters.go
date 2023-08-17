@@ -7,9 +7,10 @@ func (vm *VM) ToDTO(status string, connectionString *string, gpu *body.GpuRead, 
 	var vmGpu *body.VmGpu
 	if gpu != nil {
 		vmGpu = &body.VmGpu{
-			ID:       gpu.ID,
-			Name:     gpu.Name,
-			LeaseEnd: gpu.Lease.End,
+			ID:           gpu.ID,
+			Name:         gpu.Name,
+			LeaseEnd:     gpu.Lease.End,
+			LeaseExpired: gpu.Lease.Expired,
 		}
 	}
 

@@ -450,7 +450,8 @@ func RepairCS(name string) error {
 		return nil
 	}
 
-	if csVM.ServiceOfferingID != ss.ServiceOffering.ID ||
+	if csVM.ExtraConfig != ss.VM.ExtraConfig ||
+		csVM.ServiceOfferingID != ss.ServiceOffering.ID ||
 		!reflect.DeepEqual(csVM.Tags, ss.VM.Tags) ||
 		csVM.Name != ss.VM.Name {
 		err = client.UpdateVM(&ss.VM)

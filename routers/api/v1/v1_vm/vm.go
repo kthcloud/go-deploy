@@ -36,7 +36,7 @@ func getAllVMs(context *sys.ClientContext) {
 			if err != nil {
 				log.Printf("error getting gpu by id: %s", err)
 			} else if gpu != nil {
-				gpuDTO := gpu.ToDto(true)
+				gpuDTO := gpu.ToDTO(true)
 				gpuRead = &gpuDTO
 			}
 		}
@@ -99,7 +99,7 @@ func GetList(c *gin.Context) {
 			if err != nil {
 				log.Printf("error getting gpu by id: %s", err)
 			} else if gpu != nil {
-				gpuDTO := gpu.ToDto(true)
+				gpuDTO := gpu.ToDTO(true)
 				gpuRead = &gpuDTO
 			}
 		}
@@ -161,7 +161,7 @@ func Get(c *gin.Context) {
 		if err != nil {
 			log.Printf("error getting gpu by id: %s", err)
 		} else if gpu != nil {
-			gpuDTO := gpu.ToDto(true)
+			gpuDTO := gpu.ToDTO(true)
 			gpuRead = &gpuDTO
 		}
 	}

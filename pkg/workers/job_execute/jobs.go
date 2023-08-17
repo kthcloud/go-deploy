@@ -91,7 +91,7 @@ func updateVM(job *jobModel.Job) {
 }
 
 func attachGpuToVM(job *jobModel.Job) {
-	err := assertParameters(job, []string{"id", "gpuIds", "userId"})
+	err := assertParameters(job, []string{"id", "gpuIds", "userId", "isPowerUser"})
 	if err != nil {
 		_ = jobModel.MarkTerminated(job.ID, err.Error())
 		return
@@ -105,8 +105,9 @@ func attachGpuToVM(job *jobModel.Job) {
 		return
 	}
 	userID := job.Args["userId"].(string)
+	isPowerUser := job.Args["isPowerUser"].(bool)
 
-	err = vm_service.AttachGPU(gpuIDs, vmID, userID)
+	err = vm_service.AttachGPU(gpuIDs, vmID, userID, isPowerUser)
 	if err != nil {
 		_ = jobModel.MarkFailed(job.ID, err.Error())
 		return

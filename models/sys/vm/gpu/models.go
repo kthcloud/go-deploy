@@ -17,9 +17,17 @@ type GpuLease struct {
 	End    time.Time `bson:"end" json:"end"`
 }
 
+func (gpuLease *GpuLease) IsExpired() bool {
+	return gpuLease.End.Before(time.Now())
+}
+
 type GPU struct {
 	ID    string   `bson:"id" json:"id"`
 	Host  string   `bson:"host" json:"host"`
 	Lease GpuLease `bson:"lease" json:"lease"`
 	Data  GpuData  `bson:"data" json:"data"`
+}
+
+func (gpu *GPU) IsAttached() bool {
+	return gpu.Lease.VmID != ""
 }

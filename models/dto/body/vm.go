@@ -16,9 +16,10 @@ type Specs struct {
 }
 
 type VmGpu struct {
-	ID       string    `json:"id"`
-	Name     string    `json:"name"`
-	LeaseEnd time.Time `json:"leaseEnd"`
+	ID           string    `json:"id"`
+	Name         string    `json:"name"`
+	LeaseEnd     time.Time `json:"leaseEnd"`
+	LeaseExpired bool      `json:"expired"`
 }
 
 type VmRead struct {
@@ -75,9 +76,10 @@ type GpuDetached struct {
 }
 
 type GpuLease struct {
-	VmID *string   `bson:"vmId" json:"vmId,omitempty"`
-	User *string   `bson:"user" json:"user,omitempty"`
-	End  time.Time `bson:"end" json:"end"`
+	VmID    *string   `bson:"vmId" json:"vmId,omitempty"`
+	User    *string   `bson:"user" json:"user,omitempty"`
+	End     time.Time `bson:"end" json:"end"`
+	Expired bool      `json:"expired"`
 }
 
 type GpuRead struct {

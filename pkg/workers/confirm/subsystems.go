@@ -30,6 +30,7 @@ func getVmCreatedConfirmers() []func(*vm.VM) (bool, error) {
 func getVmDeletedConfirmers() []func(*vm.VM) (bool, error) {
 	return []func(*vm.VM) (bool, error){
 		csDeleted,
+		gpuCleared,
 	}
 }
 
