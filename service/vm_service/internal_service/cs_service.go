@@ -681,12 +681,12 @@ func CreateSnapshotCS(id string) error {
 		VmID: vm.Subsystems.CS.VM.ID,
 	}
 
-	snapshot, err := createSnapshot(client, vm, public)
+	snapshotID, err := client.CreateSnapshot(public)
 	if err != nil {
 		return makeError(err)
 	}
 
-	log.Println("created snapshot", snapshot.Name, "for vm", id)
+	log.Println("created snapshot", snapshotID, "for vm", id)
 
 	return nil
 }
@@ -879,34 +879,6 @@ func createPortForwardingRule(client *cs.Client, vm *vmModel.VM, name string, pu
 	}
 
 	return portForwardingRule, nil
-}
-
-func createSnapshot(client *cs.Client, vm *vmModel.VM, public *csModels.SnapshotPublic) (*csModels.SnapshotPublic, error) {
-	id, err := client.CreateSnapshot(public)
-	if err != nil {
-		return nil, err
-	}
-
-	snapshot, err := client.ReadSnapshot(id)
-	if err != nil {
-		return nil, err
-	}
-
-	if snapshot == nil {
-		return nil, errors.New("failed to read snapshot after creation")
-	}
-
-	if vm.Subsystems.CS.SnapshotMap == nil {
-		vm.Subsystems.CS.SnapshotMap = make(map[string]csModels.SnapshotPublic)
-	}
-	vm.Subsystems.CS.SnapshotMap[public.Name] = *snapshot
-
-	err = vmModel.UpdateSubsystemByName(vm.Name, "cs", "snapshotMap", vm.Subsystems.CS.SnapshotMap)
-	if err != nil {
-		return nil, err
-	}
-
-	return snapshot, nil
 }
 
 func createDeployTags(name string, deployName string) []csModels.Tag {
