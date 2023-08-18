@@ -1,6 +1,7 @@
 package snapshot
 
 import (
+	"fmt"
 	"github.com/google/uuid"
 	"go-deploy/models/sys/job"
 	vmModel "go-deploy/models/sys/vm"
@@ -41,7 +42,9 @@ func snapshotter(ctx *sys.Context) {
 				runAt := time.Date(now.Year(), now.Month(), now.Day()+1, 3, 0, 0, 0, time.UTC)
 
 				jobCreateErr := job.CreateScheduledJob(jobID, vm.OwnerID, job.TypeCreateSnapshot, runAt, map[string]interface{}{
-					"id": vm.ID,
+					"id":          vm.ID,
+					"name":        fmt.Sprintf("snapshot-%s", time.Now().Format("20060102150405")),
+					"userCreated": false,
 				})
 
 				if jobCreateErr != nil {

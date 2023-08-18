@@ -101,3 +101,7 @@ type VmSnapshotRead struct {
 	State      string    `json:"state"`
 	Current    bool      `json:"current"`
 }
+
+type VmSnapshotCreate struct {
+	Name string `json:"name" binding:"required,rfc1035,min=3,max=30"`
+}

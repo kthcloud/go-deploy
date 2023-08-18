@@ -2,9 +2,11 @@ package vm_service
 
 import (
 	"fmt"
+	"go-deploy/models/sys/user"
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/service/vm_service/internal_service"
 	"log"
+	"sort"
 )
 
 func GetSnapshotsByVM(vmID string) ([]vmModel.Snapshot, error) {
@@ -30,10 +32,14 @@ func GetSnapshotsByVM(vmID string) ([]vmModel.Snapshot, error) {
 		})
 	}
 
+	sort.Slice(snapshots, func(i, j int) bool {
+		return snapshots[i].CreatedAt.Before(snapshots[j].CreatedAt)
+	})
+
 	return snapshots, nil
 }
 
-func CreateSnapshot(id string) error {
+func CreateSnapshot(id, name string, userCreated bool) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create snapshot for vm %s. details: %s", id, err)
 	}
@@ -44,7 +50,8 @@ func CreateSnapshot(id string) error {
 	}
 
 	if vm == nil {
-		return fmt.Errorf("vm %s not found", id)
+		log.Println("vm", id, "not found when creating snapshot. assuming it was deleted")
+		return nil
 	}
 
 	if !vm.Ready() {
@@ -67,7 +74,7 @@ func CreateSnapshot(id string) error {
 		}
 	}()
 
-	err = internal_service.CreateSnapshotCS(vm.ID)
+	err = internal_service.CreateSnapshotCS(vm.ID, name, userCreated)
 	if err != nil {
 		return makeError(err)
 	}
@@ -100,4 +107,21 @@ func ApplySnapshot(id, snapshotID string) error {
 	}
 
 	return nil
+}
+
+func CheckQuotaCreateSnapshot(userID string, quota *user.Quota) (bool, string, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to check quota. details: %s", err)
+	}
+
+	usage, err := GetUsageByUserID(userID)
+	if err != nil {
+		return false, "", makeError(err)
+	}
+
+	if usage.Snapshots >= quota.Snapshots {
+		return false, fmt.Sprintf("Snapshot count quota exceeded. Current: %d, Quota: %d", usage.Snapshots, quota.Snapshots), nil
+	}
+
+	return true, "", nil
 }

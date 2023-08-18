@@ -5,6 +5,7 @@ type Quota struct {
 	CpuCores    int `json:"cpuCores"`
 	RAM         int `json:"ram"`
 	DiskSize    int `json:"diskSize"`
+	Snapshots   int `json:"snapshots"`
 }
 
 func (e *Environment) GetQuota(roles []string) *Quota {
@@ -36,6 +37,7 @@ func (e *Environment) FindQuota(role string) *Quota {
 				CpuCores:    quota.CpuCores,
 				RAM:         quota.RAM,
 				DiskSize:    quota.DiskSize,
+				Snapshots:   quota.Snapshots,
 			}
 		}
 	}

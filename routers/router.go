@@ -87,6 +87,7 @@ func setupVmRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
 	private.DELETE("/vms/:vmId", v1_vm.Delete)
 
 	private.GET("/vms/:vmId/snapshots", v1_vm.GetSnapshotList)
+	private.POST("/vms/:vmId/snapshots", v1_vm.CreateSnapshot)
 
 	private.POST("/vms/:vmId/command", v1_vm.DoCommand)
 

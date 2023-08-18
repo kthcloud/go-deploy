@@ -10,6 +10,7 @@ type Quota struct {
 	CpuCores    int `json:"cpuCores" bson:"cpuCores"`
 	RAM         int `json:"ram" bson:"ram"`
 	DiskSize    int `json:"diskSize" bson:"diskSize"`
+	Snapshots   int `json:"snapshots" bson:"snapshots"`
 }
 
 type Usage struct {
@@ -17,6 +18,7 @@ type Usage struct {
 	CpuCores    int `json:"cpuCores" bson:"cpuCores"`
 	RAM         int `json:"ram" bson:"ram"`
 	DiskSize    int `json:"diskSize" bson:"diskSize"`
+	Snapshots   int `json:"snapshots" bson:"snapshots"`
 }
 
 type User struct {

@@ -66,6 +66,7 @@ type Environment struct {
 		CpuCores    int    `yaml:"cpuCores"`
 		RAM         int    `yaml:"ram"`
 		DiskSize    int    `yaml:"diskSize"`
+		Snapshots   int    `yaml:"snapshots"`
 	} `yaml:"quotas"`
 
 	Keycloak struct {

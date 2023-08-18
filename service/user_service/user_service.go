@@ -88,5 +88,6 @@ func GetQuotaByUserID(id string) (*userModel.Quota, error) {
 		CpuCores:    quota.CpuCores,
 		RAM:         quota.RAM,
 		DiskSize:    quota.DiskSize,
+		Snapshots:   quota.Snapshots,
 	}, nil
 }

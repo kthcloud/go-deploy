@@ -28,3 +28,7 @@ type GpuGet struct {
 type VmCommand struct {
 	VmID string `uri:"vmId" binding:"required,uuid4"`
 }
+
+type VmSnapshotCreate struct {
+	VmID string `uri:"vmId" binding:"required,uuid4"`
+}

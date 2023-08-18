@@ -290,15 +290,17 @@ func repairGPUs(job *jobModel.Job) {
 }
 
 func createSnapshot(job *jobModel.Job) {
-	err := assertParameters(job, []string{"id"})
+	err := assertParameters(job, []string{"id", "name", "userCreated"})
 	if err != nil {
 		_ = jobModel.MarkTerminated(job.ID, err.Error())
 		return
 	}
 
 	id := job.Args["id"].(string)
+	name := job.Args["name"].(string)
+	userCreated := job.Args["userCreated"].(bool)
 
-	err = vm_service.CreateSnapshot(id)
+	err = vm_service.CreateSnapshot(id, name, userCreated)
 	if err != nil {
 		log.Println("failed to create snapshot. details:", err)
 		_ = jobModel.MarkTerminated(job.ID, err.Error())

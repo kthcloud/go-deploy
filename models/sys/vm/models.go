@@ -34,9 +34,10 @@ type CS struct {
 }
 
 type Usage struct {
-	CpuCores int `json:"cpuCores"`
-	RAM      int `json:"ram"`
-	DiskSize int `json:"diskSize"`
+	CpuCores  int `json:"cpuCores"`
+	RAM       int `json:"ram"`
+	DiskSize  int `json:"diskSize"`
+	Snapshots int `json:"snapshots"`
 }
 
 type CreateParams struct {
