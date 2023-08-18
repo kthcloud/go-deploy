@@ -12,7 +12,6 @@ import (
 	"log"
 	"reflect"
 	"strings"
-	"time"
 )
 
 type CsCreated struct {
@@ -646,7 +645,7 @@ func IsGpuAttachedCS(host string, bus string) (bool, error) {
 	return false, nil
 }
 
-func CreateSnapshotCS(id string) error {
+func CreateSnapshotCS(id, name string, userCreated bool) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create snapshot for cs vm %s. details: %s", id, err)
 	}
@@ -671,7 +670,6 @@ func CreateSnapshotCS(id string) error {
 		snapshotMap = map[string]csModels.SnapshotPublic{}
 	}
 
-	name := fmt.Sprintf("snapshot-%s", time.Now().Format("20060102150405"))
 	if _, ok := snapshotMap[name]; ok {
 		log.Println("snapshot", name, "already exists for vm", id)
 		return nil
@@ -686,13 +684,21 @@ func CreateSnapshotCS(id string) error {
 		return fmt.Errorf("vm %s is not running", id)
 	}
 
-	if vm.Subsystems.CS.VM.ExtraConfig != "" {
+	if hasExtraConfig(vm) {
 		return fmt.Errorf("vm %s has a graphics card attached", id)
 	}
 
+	var description string
+	if userCreated {
+		description = "go-deploy user"
+	} else {
+		description = "go-deploy system"
+	}
+
 	public := &csModels.SnapshotPublic{
-		Name: name,
-		VmID: vm.Subsystems.CS.VM.ID,
+		Name:        name,
+		VmID:        vm.Subsystems.CS.VM.ID,
+		Description: description,
 	}
 
 	snapshotID, err := client.CreateSnapshot(public)
@@ -958,6 +964,10 @@ func createExtraConfig(gpu *gpuModel.GPU) string {
 	data = strings.Replace(data, "\t", "", -1)
 
 	return data
+}
+
+func hasExtraConfig(vm *vmModel.VM) bool {
+	return vm.Subsystems.CS.VM.ExtraConfig != "" && vm.Subsystems.CS.VM.ExtraConfig != "none"
 }
 
 func getRequiredHost(gpuID string) (*string, error) {

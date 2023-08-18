@@ -6,13 +6,14 @@ import (
 )
 
 type SnapshotPublic struct {
-	ID         string    `json:"id"`
-	VmID       string    `json:"vmId"`
-	Name       string    `json:"displayname"`
-	ParentName *string   `json:"parentName"`
-	CreatedAt  time.Time `json:"created"`
-	State      string    `json:"state"`
-	Current    bool      `json:"current"`
+	ID          string    `json:"id"`
+	VmID        string    `json:"vmId"`
+	Name        string    `json:"displayname"`
+	Description string    `json:"description"`
+	ParentName  *string   `json:"parentName"`
+	CreatedAt   time.Time `json:"created"`
+	State       string    `json:"state"`
+	Current     bool      `json:"current"`
 }
 
 func CreateSnapshotPublicFromGet(snapshot *cloudstack.VMSnapshot) *SnapshotPublic {

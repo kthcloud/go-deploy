@@ -9,6 +9,7 @@ import (
 	"go-deploy/pkg/conf"
 	"go-deploy/service/vm_service/internal_service"
 	"log"
+	"strings"
 )
 
 func Create(vmID, owner string, vmCreate *body.VmCreate) error {
@@ -409,6 +410,12 @@ func GetUsageByUserID(id string) (*vmModel.Usage, error) {
 		usage.CpuCores += specs.CpuCores
 		usage.RAM += specs.RAM
 		usage.DiskSize += specs.DiskSize
+
+		for _, snapshot := range vm.Subsystems.CS.SnapshotMap {
+			if strings.Contains(snapshot.Description, "user") {
+				usage.Snapshots++
+			}
+		}
 	}
 
 	return usage, nil

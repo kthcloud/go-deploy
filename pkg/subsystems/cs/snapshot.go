@@ -67,7 +67,7 @@ func (client *Client) CreateSnapshot(public *models.SnapshotPublic) (string, err
 	params.SetSnapshotmemory(true) // required by KVM
 	params.SetVirtualmachineid(public.VmID)
 	params.SetName(public.Name)
-	params.SetDescription("created by go-deploy")
+	params.SetDescription(public.Description)
 	params.SetQuiescevm(false)
 
 	createResponse, err := client.CsClient.Snapshot.CreateVMSnapshot(params)
