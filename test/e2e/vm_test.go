@@ -4,6 +4,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"go-deploy/models/dto/body"
+	"go-deploy/pkg/conf"
 	"go-deploy/pkg/status_codes"
 	"net/http"
 	"os"
@@ -83,6 +84,11 @@ func TestCreateVm(t *testing.T) {
 	withServer(t)
 	publicKey := withSshPublicKey(t)
 
+	zone := conf.Env.CS.GetZoneByName("Flemingsberg")
+	if zone == nil {
+		t.Fatal("zone not found")
+	}
+
 	requestBody := body.VmCreate{
 		Name:         "e2e-" + strings.ReplaceAll(uuid.NewString()[:10], "-", ""),
 		SshPublicKey: publicKey,
@@ -96,6 +102,7 @@ func TestCreateVm(t *testing.T) {
 		CpuCores: 2,
 		RAM:      2,
 		DiskSize: 20,
+		ZoneID:   &zone.ID,
 	}
 
 	resp := doPostRequest(t, "/vms", requestBody)

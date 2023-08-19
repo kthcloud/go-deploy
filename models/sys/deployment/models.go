@@ -71,6 +71,7 @@ type CreateParams struct {
 	Private bool                `json:"private" bson:"private"`
 	Envs    []Env               `json:"envs" bson:"envs"`
 	GitHub  *GitHubCreateParams `json:"github,omitempty" bson:"github,omitempty"`
+	ZoneID  string              `json:"zoneId,omitempty" bson:"zoneId,omitempty"`
 }
 
 type BuildParams struct {

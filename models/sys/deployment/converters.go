@@ -70,7 +70,7 @@ func (p *UpdateParams) FromDTO(dto *body.DeploymentUpdate) {
 	p.ExtraDomains = dto.ExtraDomains
 }
 
-func (p *CreateParams) FromDTO(dto *body.DeploymentCreate) {
+func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZoneID *string) {
 	p.Name = dto.Name
 	p.Private = dto.Private
 	p.Envs = make([]Env, len(dto.Envs))
@@ -86,6 +86,12 @@ func (p *CreateParams) FromDTO(dto *body.DeploymentCreate) {
 			Token:        dto.GitHub.Token,
 			RepositoryID: dto.GitHub.RepositoryID,
 		}
+	}
+
+	if dto.ZoneID != nil {
+		p.ZoneID = *dto.ZoneID
+	} else {
+		p.ZoneID = *fallbackZoneID
 	}
 }
 

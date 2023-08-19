@@ -1,11 +1,11 @@
 package ping
 
 import (
-	"go-deploy/pkg/sys"
+	"context"
 	"log"
 )
 
-func Setup(ctx *sys.Context) {
-	log.Println("starting status updaters")
+func Setup(ctx context.Context) {
+	log.Println("starting ping updaters")
 	go deploymentPingUpdater(ctx)
 }

@@ -100,11 +100,6 @@ func CreateK8s(deploymentID string, userID string, params *deploymentModel.Creat
 		return fmt.Errorf("failed to setup k8s for deployment %s. details: %s", params.Name, err)
 	}
 
-	client, err := k8s.New(conf.Env.K8s.Client)
-	if err != nil {
-		return nil, makeError(err)
-	}
-
 	deployment, err := deploymentModel.GetByID(deploymentID)
 	if err != nil {
 		return nil, makeError(err)
@@ -113,6 +108,16 @@ func CreateK8s(deploymentID string, userID string, params *deploymentModel.Creat
 	if deployment == nil {
 		log.Println("deployment", deploymentID, "not found for k8s setup assuming it was deleted")
 		return nil, nil
+	}
+
+	zone := conf.Env.CS.GetZoneByID(deployment.ZoneID)
+	if zone == nil {
+		return nil, makeError(errors.New("zone not found"))
+	}
+
+	client, err := k8s.New(zone.K8s.Client)
+	if err != nil {
+		return nil, makeError(err)
 	}
 
 	ss := &deployment.Subsystems.K8s
@@ -192,12 +197,6 @@ func DeleteK8s(name string) error {
 		return fmt.Errorf("failed to delete k8s for deployment %s. details: %s", name, err)
 	}
 
-	client, err := k8s.New(conf.Env.K8s.Client)
-	if err != nil {
-		return makeError(err)
-	}
-
-	// delete everything in the opposite order of creation
 	deployment, err := deploymentModel.GetByName(name)
 	if err != nil {
 		return makeError(err)
@@ -206,6 +205,16 @@ func DeleteK8s(name string) error {
 	if deployment == nil {
 		log.Println("deployment", name, "not found for k8s deletion. assuming it was deleted")
 		return nil
+	}
+
+	zone := conf.Env.CS.GetZoneByID(deployment.ZoneID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	client, err := k8s.New(zone.K8s.Client)
+	if err != nil {
+		return makeError(err)
 	}
 
 	ss := &deployment.Subsystems.K8s
@@ -280,7 +289,12 @@ func UpdateK8s(name string, params *deploymentModel.UpdateParams) error {
 		return nil
 	}
 
-	client, err := k8s.New(conf.Env.K8s.Client)
+	zone := conf.Env.CS.GetZoneByID(deployment.ZoneID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	client, err := k8s.New(zone.K8s.Client)
 	if err != nil {
 		return makeError(err)
 	}
@@ -396,7 +410,12 @@ func RestartK8s(name string) error {
 		return makeError(errors.New("can't restart deployment that is not yet created"))
 	}
 
-	client, err := k8s.New(conf.Env.K8s.Client)
+	zone := conf.Env.CS.GetZoneByID(deployment.ZoneID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	client, err := k8s.New(zone.K8s.Client)
 	if err != nil {
 		return makeError(err)
 	}
@@ -424,7 +443,12 @@ func RepairK8s(name string) error {
 		return nil
 	}
 
-	client, err := k8s.New(conf.Env.K8s.Client)
+	zone := conf.Env.CS.GetZoneByID(deployment.ZoneID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	client, err := k8s.New(zone.K8s.Client)
 	if err != nil {
 		return makeError(err)
 	}

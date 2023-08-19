@@ -6,18 +6,25 @@ import (
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/cs"
 	"go-deploy/pkg/subsystems/cs/models"
+	"sort"
 	"testing"
 )
 
 func withCsClient(t *testing.T) *cs.Client {
+	zoneName := "Flemingsberg"
+	zone := conf.Env.CS.GetZoneByName(zoneName)
+	if zone == nil {
+		t.Fatalf("no zone with name %s found", zoneName)
+	}
+
 	client, err := cs.New(&cs.ClientConf{
 		URL:         conf.Env.CS.URL,
 		ApiKey:      conf.Env.CS.ApiKey,
 		Secret:      conf.Env.CS.Secret,
-		IpAddressID: conf.Env.CS.IpAddressID,
-		NetworkID:   conf.Env.CS.NetworkID,
 		ProjectID:   conf.Env.CS.ProjectID,
-		ZoneID:      conf.Env.CS.ZoneID,
+		ZoneID:      zone.ID,
+		IpAddressID: zone.IpAddressID,
+		NetworkID:   zone.NetworkID,
 	})
 	assert.NoError(t, err, "failed to create cs client")
 	assert.NotNil(t, client, "cs client is nil")
@@ -76,7 +83,7 @@ func withVM(t *testing.T, so *models.ServiceOfferingPublic) *models.VmPublic {
 	vm := &models.VmPublic{
 		Name:              name,
 		ServiceOfferingID: so.ID,
-		TemplateID:        "fb6b6b11-6196-42d9-a12d-038bdeecb6f6", // Ubuntu Server
+		TemplateID:        "cbac58b6-336b-49ab-b4d7-341586dfefcc", // ubuntu-2204-cloudstack-ready-v1.2
 		ExtraConfig:       "",
 		Tags: []models.Tag{
 			{Key: "name", Value: name},
@@ -210,6 +217,15 @@ func TestUpdateVM(t *testing.T) {
 	assert.NoError(t, err, "failed to update vm")
 
 	updated, err := client.ReadVM(vm.ID)
+
+	// sort tags
+	sort.Slice(vm.Tags, func(i, j int) bool {
+		return vm.Tags[i].Key < vm.Tags[j].Key
+	})
+	sort.Slice(updated.Tags, func(i, j int) bool {
+		return updated.Tags[i].Key < updated.Tags[j].Key
+	})
+
 	assert.NoError(t, err, "failed to read vm after update")
 	assert.NotNil(t, updated, "vm is nil after update")
 	assert.EqualValues(t, vm, updated, "vm is not updated")

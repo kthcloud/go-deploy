@@ -22,10 +22,11 @@ func (gpuLease *GpuLease) IsExpired() bool {
 }
 
 type GPU struct {
-	ID    string   `bson:"id" json:"id"`
-	Host  string   `bson:"host" json:"host"`
-	Lease GpuLease `bson:"lease" json:"lease"`
-	Data  GpuData  `bson:"data" json:"data"`
+	ID     string   `bson:"id" json:"id"`
+	Host   string   `bson:"host" json:"host"`
+	Lease  GpuLease `bson:"lease" json:"lease"`
+	Data   GpuData  `bson:"data" json:"data"`
+	ZoneID string   `bson:"zone" json:"zoneId"`
 }
 
 func (gpu *GPU) IsAttached() bool {

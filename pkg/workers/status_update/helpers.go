@@ -10,15 +10,20 @@ import (
 	csModels "go-deploy/pkg/subsystems/cs/models"
 )
 
-func withClient() (*cs.Client, error) {
+func withClient(zoneID string) (*cs.Client, error) {
+	zone := conf.Env.CS.GetZoneByID(zoneID)
+	if zone == nil {
+		return nil, fmt.Errorf("zone with id %s not found", zoneID)
+	}
+
 	return cs.New(&cs.ClientConf{
 		URL:         conf.Env.CS.URL,
 		ApiKey:      conf.Env.CS.ApiKey,
 		Secret:      conf.Env.CS.Secret,
-		IpAddressID: conf.Env.CS.IpAddressID,
-		NetworkID:   conf.Env.CS.NetworkID,
 		ProjectID:   conf.Env.CS.ProjectID,
-		ZoneID:      conf.Env.CS.ZoneID,
+		ZoneID:      zone.ID,
+		IpAddressID: zone.IpAddressID,
+		NetworkID:   zone.NetworkID,
 	})
 }
 
@@ -29,7 +34,7 @@ func fetchCsStatus(vm *vmModel.VM) (int, string, error) {
 
 	unknownMsg := status_codes.GetMsg(status_codes.ResourceUnknown)
 
-	client, err := withClient()
+	client, err := withClient(vm.ZoneID)
 	if err != nil {
 		return status_codes.ResourceUnknown, unknownMsg, makeError(err)
 	}
@@ -106,7 +111,7 @@ func fetchVmStatus(vm *vmModel.VM) (int, string, error) {
 }
 
 func fetchSnapshotStatus(vm *vmModel.VM) map[string]csModels.SnapshotPublic {
-	client, err := withClient()
+	client, err := withClient(vm.ZoneID)
 	if err != nil {
 		return nil
 	}

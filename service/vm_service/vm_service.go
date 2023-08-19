@@ -17,8 +17,11 @@ func Create(vmID, owner string, vmCreate *body.VmCreate) error {
 		return fmt.Errorf("failed to create vm. details: %s", err)
 	}
 
+	// temporary hard-coded fallback
+	fallback := "3a74db73-6058-4520-8d8c-ab7d9b7955c8"
+
 	params := &vmModel.CreateParams{}
-	params.FromDTO(vmCreate)
+	params.FromDTO(vmCreate, &fallback)
 
 	// clear any potentially ill-formed ssh rules
 	if params.Ports != nil {

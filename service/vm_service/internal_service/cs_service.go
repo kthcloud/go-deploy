@@ -18,15 +18,17 @@ type CsCreated struct {
 	VM *csModels.VmPublic
 }
 
-func withCsClient() (*cs.Client, error) {
+func withCsClient(zoneID string) (*cs.Client, error) {
+	zone := conf.Env.CS.GetZoneByID(zoneID)
+
 	return cs.New(&cs.ClientConf{
 		URL:         conf.Env.CS.URL,
 		ApiKey:      conf.Env.CS.ApiKey,
 		Secret:      conf.Env.CS.Secret,
-		IpAddressID: conf.Env.CS.IpAddressID,
-		NetworkID:   conf.Env.CS.NetworkID,
 		ProjectID:   conf.Env.CS.ProjectID,
-		ZoneID:      conf.Env.CS.ZoneID,
+		IpAddressID: zone.IpAddressID,
+		NetworkID:   zone.NetworkID,
+		ZoneID:      zone.ID,
 	})
 }
 
@@ -71,7 +73,9 @@ func CreateCS(params *vmModel.CreateParams) (*CsCreated, error) {
 		return fmt.Errorf("failed to setup cs for vm %s. details: %s", params.Name, err)
 	}
 
-	client, err := withCsClient()
+	zone := conf.Env.CS.GetZoneByID(params.ZoneID)
+
+	client, err := withCsClient(zone.ID)
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -127,7 +131,7 @@ func CreateCS(params *vmModel.CreateParams) (*CsCreated, error) {
 		}
 
 		if !hasRule || !rule.Created() {
-			freePort, err := client.GetFreePort(conf.Env.CS.PortRange.Start, conf.Env.CS.PortRange.End)
+			freePort, err := client.GetFreePort(zone.PortRange.Start, zone.PortRange.End)
 			if err != nil {
 				return nil, makeError(err)
 			}
@@ -156,11 +160,6 @@ func DeleteCS(name string) error {
 		return fmt.Errorf("failed to delete cs for vm %s. details: %s", name, err)
 	}
 
-	client, err := withCsClient()
-	if err != nil {
-		return makeError(err)
-	}
-
 	vm, err := vmModel.GetByName(name)
 	if err != nil {
 		return makeError(err)
@@ -169,6 +168,16 @@ func DeleteCS(name string) error {
 	if vm == nil {
 		log.Println("vm", name, "not found for cs deletion. assuming it was deleted")
 		return nil
+	}
+
+	zone := conf.Env.CS.GetZoneByID(vm.ZoneID)
+	if zone == nil {
+		return makeError(fmt.Errorf("zone %s not found", vm.ZoneID))
+	}
+
+	client, err := withCsClient(zone.ID)
+	if err != nil {
+		return makeError(err)
 	}
 
 	ruleMap := vm.Subsystems.CS.PortForwardingRuleMap
@@ -217,11 +226,6 @@ func UpdateCS(vmID string, updateParams *vmModel.UpdateParams) error {
 		return fmt.Errorf("failed to update cs for vm %s. details: %s", vmID, err)
 	}
 
-	client, err := withCsClient()
-	if err != nil {
-		return makeError(err)
-	}
-
 	vm, err := vmModel.GetByID(vmID)
 	if err != nil {
 		return makeError(err)
@@ -230,6 +234,16 @@ func UpdateCS(vmID string, updateParams *vmModel.UpdateParams) error {
 	if vm == nil {
 		log.Println("vm", vmID, "not found for cs update. assuming it was deleted")
 		return nil
+	}
+
+	zone := conf.Env.CS.GetZoneByID(vm.ZoneID)
+	if zone == nil {
+		return makeError(fmt.Errorf("zone %s not found", vm.ZoneID))
+	}
+
+	client, err := withCsClient(zone.ID)
+	if err != nil {
+		return makeError(err)
 	}
 
 	if vm.Subsystems.CS.VM.ID == "" {
@@ -283,7 +297,7 @@ func UpdateCS(vmID string, updateParams *vmModel.UpdateParams) error {
 
 		for name, public := range createNewRuleMap {
 			var freePort int
-			freePort, err = client.GetFreePort(conf.Env.CS.PortRange.Start, conf.Env.CS.PortRange.End)
+			freePort, err = client.GetFreePort(zone.PortRange.Start, zone.PortRange.End)
 			if err != nil {
 				return makeError(err)
 			}
@@ -415,7 +429,12 @@ func RepairCS(name string) error {
 		return nil
 	}
 
-	client, err := withCsClient()
+	zone := conf.Env.CS.GetZoneByID(vm.ZoneID)
+	if zone == nil {
+		return makeError(fmt.Errorf("zone %s not found", vm.ZoneID))
+	}
+
+	client, err := withCsClient(zone.ID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -485,11 +504,6 @@ func AttachGPU(gpuID, vmID string) error {
 		return fmt.Errorf("failed to attach gpu %s to cs vm %s. details: %s", gpuID, vmID, err)
 	}
 
-	client, err := withCsClient()
-	if err != nil {
-		return makeError(err)
-	}
-
 	vm, err := vmModel.GetByID(vmID)
 	if err != nil {
 		return makeError(err)
@@ -503,6 +517,16 @@ func AttachGPU(gpuID, vmID string) error {
 	if vm.Subsystems.CS.VM.ID == "" {
 		log.Println("vm", vmID, "has no cs vm id when attaching gpu", gpuID, "to cs vm, assuming it was deleted")
 		return nil
+	}
+
+	zone := conf.Env.CS.GetZoneByID(vm.ZoneID)
+	if zone == nil {
+		return makeError(fmt.Errorf("zone %s not found", vm.ZoneID))
+	}
+
+	client, err := withCsClient(zone.ID)
+	if err != nil {
+		return makeError(err)
 	}
 
 	gpu, err := gpuModel.GetByID(gpuID)
@@ -558,11 +582,6 @@ func DetachGPU(vmID string) error {
 		return fmt.Errorf("failed to detach gpu from cs vm %s. details: %s", vmID, err)
 	}
 
-	client, err := withCsClient()
-	if err != nil {
-		return makeError(err)
-	}
-
 	vm, err := vmModel.GetByID(vmID)
 	if err != nil {
 		return makeError(err)
@@ -575,6 +594,16 @@ func DetachGPU(vmID string) error {
 
 	if vm.Subsystems.CS.VM.ID == "" {
 		return nil
+	}
+
+	zone := conf.Env.CS.GetZoneByID(vm.ZoneID)
+	if zone == nil {
+		return makeError(fmt.Errorf("zone %s not found", vm.ZoneID))
+	}
+
+	client, err := withCsClient(zone.ID)
+	if err != nil {
+		return makeError(err)
 	}
 
 	// turn it off if it is on, but remember the status
@@ -613,12 +642,12 @@ func DetachGPU(vmID string) error {
 	return nil
 }
 
-func IsGpuAttachedCS(host string, bus string) (bool, error) {
+func IsGpuAttachedCS(gpu *gpuModel.GPU) (bool, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if gpu %s:%s is attached to any cs vm. details: %s", host, bus, err)
+		return fmt.Errorf("failed to check if gpu %s:%s is attached to any cs vm. details: %s", gpu.Host, gpu.Data.Bus, err)
 	}
 
-	client, err := withCsClient()
+	client, err := withCsClient(gpu.ZoneID)
 	if err != nil {
 		return false, makeError(err)
 	}
@@ -632,10 +661,10 @@ func IsGpuAttachedCS(host string, bus string) (bool, error) {
 	}
 
 	for _, vm := range vms.VirtualMachines {
-		if vm.Details != nil && vm.Hostname == host {
+		if vm.Details != nil && vm.Hostname == gpu.Host {
 			extraConfig, ok := vm.Details["extraconfig-1"]
 			if ok {
-				if strings.Contains(extraConfig, fmt.Sprintf("bus='0x%s'", bus)) {
+				if strings.Contains(extraConfig, fmt.Sprintf("bus='0x%s'", gpu.Data.Bus)) {
 					return true, nil
 				}
 			}
@@ -650,11 +679,6 @@ func CreateSnapshotCS(id, name string, userCreated bool) error {
 		return fmt.Errorf("failed to create snapshot for cs vm %s. details: %s", id, err)
 	}
 
-	client, err := withCsClient()
-	if err != nil {
-		return makeError(err)
-	}
-
 	vm, err := vmModel.GetByID(id)
 	if err != nil {
 		return makeError(err)
@@ -663,6 +687,16 @@ func CreateSnapshotCS(id, name string, userCreated bool) error {
 	if vm == nil {
 		log.Println("vm", id, "not found for when creating snapshot in cs. assuming it was deleted")
 		return nil
+	}
+
+	zone := conf.Env.CS.GetZoneByID(vm.ZoneID)
+	if zone == nil {
+		return makeError(fmt.Errorf("zone %s not found", vm.ZoneID))
+	}
+
+	client, err := withCsClient(zone.ID)
+	if err != nil {
+		return makeError(err)
 	}
 
 	snapshotMap := vm.Subsystems.CS.SnapshotMap
@@ -716,11 +750,6 @@ func ApplySnapshotCS(id string, snapshotID string) error {
 		return fmt.Errorf("failed to apply snapshot %s for cs vm %s. details: %s", snapshotID, id, err)
 	}
 
-	client, err := withCsClient()
-	if err != nil {
-		return makeError(err)
-	}
-
 	vm, err := vmModel.GetByID(id)
 	if err != nil {
 		return makeError(err)
@@ -729,6 +758,16 @@ func ApplySnapshotCS(id string, snapshotID string) error {
 	if vm == nil {
 		log.Println("vm", id, "not found for when applying snapshot in cs. assuming it was deleted")
 		return nil
+	}
+
+	zone := conf.Env.CS.GetZoneByID(vm.ZoneID)
+	if zone == nil {
+		return makeError(fmt.Errorf("zone %s not found", vm.ZoneID))
+	}
+
+	client, err := withCsClient(zone.ID)
+	if err != nil {
+		return makeError(err)
 	}
 
 	snapshotMap := vm.Subsystems.CS.SnapshotMap
@@ -760,7 +799,17 @@ func DoCommandCS(vmID string, gpuID *string, command string) error {
 		return fmt.Errorf("failed to execute command %s for cs vm %s. details: %s", command, vmID, err)
 	}
 
-	client, err := withCsClient()
+	vm, err := vmModel.GetByID(vmID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	zone := conf.Env.CS.GetZoneByID(vm.ZoneID)
+	if zone == nil {
+		return makeError(fmt.Errorf("zone %s not found", vm.ZoneID))
+	}
+
+	client, err := withCsClient(zone.ID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -786,7 +835,22 @@ func CanStartCS(vmID, hostName string) (bool, string, error) {
 		return fmt.Errorf("failed to check if cs vm %s can be started on host %s. details: %s", vmID, hostName, err)
 	}
 
-	client, err := withCsClient()
+	vm, err := vmModel.GetByID(vmID)
+	if err != nil {
+		return false, "", makeError(err)
+	}
+
+	if vm == nil {
+		log.Println("vm", vmID, "not found for when checking if it can be started in cs. assuming it was deleted")
+		return false, "", nil
+	}
+
+	zone := conf.Env.CS.GetZoneByID(vm.ZoneID)
+	if zone == nil {
+		return false, "", makeError(fmt.Errorf("zone %s not found", vm.ZoneID))
+	}
+
+	client, err := withCsClient(zone.ID)
 	if err != nil {
 		return false, "", makeError(err)
 	}
@@ -800,7 +864,7 @@ func CanStartCS(vmID, hostName string) (bool, string, error) {
 		return false, "Host doesn't have capacity", nil
 	}
 
-	correctState, reason, err := HostInCorrectState(hostName)
+	correctState, reason, err := HostInCorrectState(hostName, zone.ID)
 	if err != nil {
 		return false, "", err
 	}
@@ -812,12 +876,12 @@ func CanStartCS(vmID, hostName string) (bool, string, error) {
 	return true, "", nil
 }
 
-func HostInCorrectState(hostName string) (bool, string, error) {
+func HostInCorrectState(hostName, zoneID string) (bool, string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check if host %s is in correct state. details: %s", hostName, err)
 	}
 
-	client, err := withCsClient()
+	client, err := withCsClient(zoneID)
 	if err != nil {
 		return false, "", makeError(err)
 	}

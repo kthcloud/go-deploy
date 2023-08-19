@@ -36,6 +36,8 @@ func Create(vmID, owner, manager string, params *CreateParams) (bool, error) {
 
 		StatusCode:    status_codes.ResourceBeingCreated,
 		StatusMessage: status_codes.GetMsg(status_codes.ResourceBeingCreated),
+
+		ZoneID: params.ZoneID,
 	}
 
 	result, err := models.VmCollection.UpdateOne(context.TODO(), bson.D{{"name", params.Name}}, bson.D{
@@ -266,6 +268,18 @@ func AddActivity(vmID, activity string) error {
 	)
 	if err != nil {
 		err = fmt.Errorf("failed to add activity %s to vm %s. details: %s", activity, vmID, err)
+		return err
+	}
+	return nil
+}
+
+func ClearActivities(vmID string) error {
+	_, err := models.VmCollection.UpdateOne(context.TODO(),
+		bson.D{{"id", vmID}},
+		bson.D{{"$set", bson.D{{"activities", bson.A{}}}}},
+	)
+	if err != nil {
+		err = fmt.Errorf("failed to clear activities of vm %s. details: %s", vmID, err)
 		return err
 	}
 	return nil

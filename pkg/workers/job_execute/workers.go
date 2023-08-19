@@ -1,71 +1,74 @@
 package job_execute
 
 import (
+	"context"
 	"fmt"
 	jobModel "go-deploy/models/sys/job"
-	"go-deploy/pkg/sys"
 	"log"
 	"time"
 )
 
-func jobFetcher(ctx *sys.Context) {
+func jobFetcher(ctx context.Context) {
+	defer log.Println("jobFetcher stopped")
+
 	for {
-		if ctx.Stop {
-			break
-		}
-
-		time.Sleep(100 * time.Millisecond)
-
-		job, err := jobModel.GetNext()
-		if err != nil {
-			log.Println("error fetching next job. details: ", err)
-			continue
-		}
-
-		if job == nil {
-			continue
-		}
-
-		err = startJob(job)
-		if err != nil {
-			log.Println("error starting failed job. details: ", err)
-			err = jobModel.MarkTerminated(job.ID, err.Error())
+		select {
+		case <-time.After(100 * time.Millisecond):
+			job, err := jobModel.GetNext()
 			if err != nil {
-				log.Println("error marking failed job as terminated. details: ", err)
-				return
+				log.Println("error fetching next job. details: ", err)
+				continue
 			}
-			continue
+
+			if job == nil {
+				continue
+			}
+
+			err = startJob(job)
+			if err != nil {
+				log.Println("error starting failed job. details: ", err)
+				err = jobModel.MarkTerminated(job.ID, err.Error())
+				if err != nil {
+					log.Println("error marking failed job as terminated. details: ", err)
+					return
+				}
+				continue
+			}
+
+		case <-ctx.Done():
+			return
 		}
 	}
 }
 
-func failedJobFetcher(ctx *sys.Context) {
+func failedJobFetcher(ctx context.Context) {
+	defer log.Println("failedJobFetcher stopped")
+
 	for {
-		if ctx.Stop {
-			break
-		}
-
-		time.Sleep(30 * time.Second)
-
-		job, err := jobModel.GetNextFailed()
-		if err != nil {
-			log.Println("error fetching next failed job. details: ", err)
-			continue
-		}
-
-		if job == nil {
-			continue
-		}
-
-		err = startJob(job)
-		if err != nil {
-			log.Println("error starting failed job. details: ", err)
-			err = jobModel.MarkTerminated(job.ID, err.Error())
+		select {
+		case <-time.After(30 * time.Second):
+			job, err := jobModel.GetNextFailed()
 			if err != nil {
-				log.Println("error marking failed job as terminated. details: ", err)
-				return
+				log.Println("error fetching next failed job. details: ", err)
+				continue
 			}
-			continue
+
+			if job == nil {
+				continue
+			}
+
+			err = startJob(job)
+			if err != nil {
+				log.Println("error starting failed job. details: ", err)
+				err = jobModel.MarkTerminated(job.ID, err.Error())
+				if err != nil {
+					log.Println("error marking failed job as terminated. details: ", err)
+					return
+				}
+				continue
+			}
+		case <-ctx.Done():
+			return
 		}
 	}
 }

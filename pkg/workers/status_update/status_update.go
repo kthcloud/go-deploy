@@ -1,11 +1,11 @@
 package status_update
 
 import (
-	"go-deploy/pkg/sys"
+	"context"
 	"log"
 )
 
-func Setup(ctx *sys.Context) {
+func Setup(ctx context.Context) {
 	log.Println("starting status updaters")
 	go vmStatusUpdater(ctx)
 	go vmSnapshotUpdater(ctx)

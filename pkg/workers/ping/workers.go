@@ -1,24 +1,25 @@
 package ping
 
 import (
+	"context"
 	deploymentModels "go-deploy/models/sys/deployment"
 	"go-deploy/pkg/conf"
-	"go-deploy/pkg/sys"
 	"go-deploy/service/deployment_service"
 	"log"
 	"net/http"
 	"time"
 )
 
-func deploymentPingUpdater(ctx *sys.Context) {
-	log.Println("starting deployment ping updater")
-	for {
-		if ctx.Stop {
-			break
-		}
+func deploymentPingUpdater(ctx context.Context) {
+	defer log.Println("deployment ping updater stopped")
 
-		updateAllDeploymentPings()
-		time.Sleep(time.Duration(conf.Env.Deployment.PingInterval) * time.Second)
+	for {
+		select {
+		case <-time.After(time.Duration(conf.Env.Deployment.PingInterval) * time.Second):
+			updateAllDeploymentPings()
+		case <-ctx.Done():
+			return
+		}
 	}
 }
 

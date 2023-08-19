@@ -10,7 +10,13 @@ import (
 )
 
 func withK8sClient(t *testing.T) *k8s.Client {
-	client, err := k8s.New(conf.Env.K8s.Client)
+	zoneName := "Flemingsberg"
+	zone := conf.Env.CS.GetZoneByName(zoneName)
+	if zone == nil {
+		t.Fatalf("no zone with name %s found", zoneName)
+	}
+
+	client, err := k8s.New(zone.K8s.Client)
 
 	if err != nil {
 		t.Fatalf(err.Error())

@@ -2,15 +2,63 @@ package conf
 
 import (
 	"fmt"
+	"go-deploy/pkg/imp/cloudstack"
 	"gopkg.in/yaml.v3"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"log"
 	"os"
 	"regexp"
-
-	"go-deploy/pkg/imp/cloudstack"
 )
+
+type CloudstackZone struct {
+	ID   string `yaml:"zoneId"`
+	Name string `yaml:"name"`
+
+	IpAddressID string `yaml:"ipAddressId"`
+	NetworkID   string `yaml:"networkId"`
+
+	PortRange struct {
+		Start int `yaml:"start"`
+		End   int `yaml:"end"`
+	} `yaml:"portRange"`
+
+	K8s struct {
+		Name   string `yaml:"name"`
+		URL    string `yaml:"url"`
+		Client *kubernetes.Clientset
+	} `yaml:"k8s"`
+}
+
+type CloudStack struct {
+	URL    string `yaml:"url"`
+	ApiKey string `yaml:"apiKey"`
+	Secret string `yaml:"secret"`
+
+	ProjectID string `yaml:"projectId"`
+
+	Zones []CloudstackZone `yaml:"zones"`
+}
+
+func (cs *CloudStack) GetZoneByName(name string) *CloudstackZone {
+	for _, zone := range cs.Zones {
+		if zone.Name == name {
+			return &zone
+		}
+	}
+
+	return nil
+}
+
+func (cs *CloudStack) GetZoneByID(id string) *CloudstackZone {
+	for _, zone := range cs.Zones {
+		if zone.ID == id {
+			return &zone
+		}
+	}
+
+	return nil
+}
 
 type Environment struct {
 	Port          int    `yaml:"port"`
@@ -81,21 +129,7 @@ type Environment struct {
 		Name string `yaml:"name"`
 	} `yaml:"db"`
 
-	CS struct {
-		URL    string `yaml:"url"`
-		ApiKey string `yaml:"apiKey"`
-		Secret string `yaml:"secret"`
-
-		IpAddressID string `yaml:"ipAddressId"`
-		NetworkID   string `yaml:"networkId"`
-		ProjectID   string `yaml:"projectId"`
-		ZoneID      string `yaml:"zoneId"`
-
-		PortRange struct {
-			Start int `yaml:"start"`
-			End   int `yaml:"end"`
-		} `yaml:"portRange"`
-	} `yaml:"cs"`
+	CS CloudStack `yaml:"cs"`
 
 	Landing struct {
 		Url      string `yaml:"url"`
@@ -103,12 +137,6 @@ type Environment struct {
 		Password string `yaml:"password"`
 		ClientID string `yaml:"clientId"`
 	} `yaml:"landing"`
-
-	K8s struct {
-		Name   string `yaml:"name"`
-		URL    string `yaml:"url"`
-		Client *kubernetes.Clientset
-	} `yaml:"k8s"`
 
 	Harbor struct {
 		Url           string `yaml:"url"`
@@ -211,21 +239,23 @@ func setupK8sClusters() error {
 			log.Fatalln(makeError(err))
 		}
 
-		// use regex to replace the private ip in config.ConffigData 172.31.1.* with the public ip
+		// use regex to replace the private ip in config.ConfigData 172.31.1.* with the public ip
 		regex := regexp.MustCompile(`https://172.31.1.[0-9]+:6443`)
 		config.Configdata = regex.ReplaceAllString(config.Configdata, publicUrl)
 
 		return config.Configdata
 	}
 
-	configData := fetchConfig(Env.K8s.Name, Env.K8s.URL)
-	if configData == "" {
-		return makeError(fmt.Errorf("failed to fetch k8s cluster config"))
-	}
+	for idx, zone := range Env.CS.Zones {
+		configData := fetchConfig(zone.K8s.Name, zone.K8s.URL)
+		if configData == "" {
+			return makeError(fmt.Errorf("failed to fetch k8s cluster config"))
+		}
 
-	Env.K8s.Client, err = createClient([]byte(configData))
-	if err != nil {
-		return makeError(err)
+		Env.CS.Zones[idx].K8s.Client, err = createClient([]byte(configData))
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	log.Println("k8s clusters setup done")

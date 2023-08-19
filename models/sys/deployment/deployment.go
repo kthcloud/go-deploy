@@ -6,6 +6,7 @@ type Deployment struct {
 	ID      string `bson:"id"`
 	Name    string `bson:"name"`
 	OwnerID string `bson:"ownerId"`
+	ZoneID  string `bson:"zoneId"`
 
 	CreatedAt   time.Time `bson:"createdAt"`
 	UpdatedAt   time.Time `bson:"updatedAt"`

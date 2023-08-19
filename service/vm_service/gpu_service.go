@@ -337,12 +337,12 @@ func CanStartOnHost(vmID, host string) (bool, string, error) {
 }
 
 func IsGpuHardwareAvailable(gpu *gpuModel.GPU) (bool, error) {
-	cloudstackAttached, err := internal_service.IsGpuAttachedCS(gpu.Host, gpu.Data.Bus)
+	cloudstackAttached, err := internal_service.IsGpuAttachedCS(gpu)
 	if err != nil {
 		return false, err
 	}
 
-	correctState, _, err := internal_service.HostInCorrectState(gpu.Host)
+	correctState, _, err := internal_service.HostInCorrectState(gpu.Host, gpu.ZoneID)
 	if err != nil {
 		return false, err
 	}

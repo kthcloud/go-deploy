@@ -1,11 +1,11 @@
 package confirm
 
 import (
-	"go-deploy/pkg/sys"
+	"context"
 	"log"
 )
 
-func Setup(ctx *sys.Context) {
+func Setup(ctx context.Context) {
 	log.Println("starting confirmers")
 	go deploymentConfirmer(ctx)
 	go vmConfirmer(ctx)
