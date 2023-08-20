@@ -18,15 +18,15 @@ type CsCreated struct {
 	VM *csModels.VmPublic
 }
 
-func withCsClient(zoneID string) (*cs.Client, error) {
-	zone := conf.Env.CS.GetZoneByID(zoneID)
+func withCsClient(zoneName string) (*cs.Client, error) {
+	zone := conf.Env.VM.GetZone(zoneName)
 
 	return cs.New(&cs.ClientConf{
 		URL:         conf.Env.CS.URL,
 		ApiKey:      conf.Env.CS.ApiKey,
 		Secret:      conf.Env.CS.Secret,
-		ProjectID:   conf.Env.CS.ProjectID,
 		IpAddressID: zone.IpAddressID,
+		ProjectID:   zone.ProjectID,
 		NetworkID:   zone.NetworkID,
 		ZoneID:      zone.ID,
 	})
@@ -73,7 +73,7 @@ func CreateCS(params *vmModel.CreateParams) (*CsCreated, error) {
 		return fmt.Errorf("failed to setup cs for vm %s. details: %s", params.Name, err)
 	}
 
-	zone := conf.Env.CS.GetZoneByID(params.ZoneID)
+	zone := conf.Env.VM.GetZone(params.Zone)
 
 	client, err := withCsClient(zone.ID)
 	if err != nil {
@@ -170,9 +170,9 @@ func DeleteCS(name string) error {
 		return nil
 	}
 
-	zone := conf.Env.CS.GetZoneByID(vm.ZoneID)
+	zone := conf.Env.VM.GetZone(vm.Zone)
 	if zone == nil {
-		return makeError(fmt.Errorf("zone %s not found", vm.ZoneID))
+		return makeError(fmt.Errorf("zone %s not found", vm.Zone))
 	}
 
 	client, err := withCsClient(zone.ID)
@@ -236,9 +236,9 @@ func UpdateCS(vmID string, updateParams *vmModel.UpdateParams) error {
 		return nil
 	}
 
-	zone := conf.Env.CS.GetZoneByID(vm.ZoneID)
+	zone := conf.Env.VM.GetZone(vm.Zone)
 	if zone == nil {
-		return makeError(fmt.Errorf("zone %s not found", vm.ZoneID))
+		return makeError(fmt.Errorf("zone %s not found", vm.Zone))
 	}
 
 	client, err := withCsClient(zone.ID)
@@ -429,9 +429,9 @@ func RepairCS(name string) error {
 		return nil
 	}
 
-	zone := conf.Env.CS.GetZoneByID(vm.ZoneID)
+	zone := conf.Env.VM.GetZone(vm.Zone)
 	if zone == nil {
-		return makeError(fmt.Errorf("zone %s not found", vm.ZoneID))
+		return makeError(fmt.Errorf("zone %s not found", vm.Zone))
 	}
 
 	client, err := withCsClient(zone.ID)
@@ -519,9 +519,9 @@ func AttachGPU(gpuID, vmID string) error {
 		return nil
 	}
 
-	zone := conf.Env.CS.GetZoneByID(vm.ZoneID)
+	zone := conf.Env.VM.GetZone(vm.Zone)
 	if zone == nil {
-		return makeError(fmt.Errorf("zone %s not found", vm.ZoneID))
+		return makeError(fmt.Errorf("zone %s not found", vm.Zone))
 	}
 
 	client, err := withCsClient(zone.ID)
@@ -596,9 +596,9 @@ func DetachGPU(vmID string) error {
 		return nil
 	}
 
-	zone := conf.Env.CS.GetZoneByID(vm.ZoneID)
+	zone := conf.Env.VM.GetZone(vm.Zone)
 	if zone == nil {
-		return makeError(fmt.Errorf("zone %s not found", vm.ZoneID))
+		return makeError(fmt.Errorf("zone %s not found", vm.Zone))
 	}
 
 	client, err := withCsClient(zone.ID)
@@ -647,7 +647,7 @@ func IsGpuAttachedCS(gpu *gpuModel.GPU) (bool, error) {
 		return fmt.Errorf("failed to check if gpu %s:%s is attached to any cs vm. details: %s", gpu.Host, gpu.Data.Bus, err)
 	}
 
-	client, err := withCsClient(gpu.ZoneID)
+	client, err := withCsClient(gpu.Zone)
 	if err != nil {
 		return false, makeError(err)
 	}
@@ -689,9 +689,9 @@ func CreateSnapshotCS(id, name string, userCreated bool) error {
 		return nil
 	}
 
-	zone := conf.Env.CS.GetZoneByID(vm.ZoneID)
+	zone := conf.Env.VM.GetZone(vm.Zone)
 	if zone == nil {
-		return makeError(fmt.Errorf("zone %s not found", vm.ZoneID))
+		return makeError(fmt.Errorf("zone %s not found", vm.Zone))
 	}
 
 	client, err := withCsClient(zone.ID)
@@ -760,9 +760,9 @@ func ApplySnapshotCS(id string, snapshotID string) error {
 		return nil
 	}
 
-	zone := conf.Env.CS.GetZoneByID(vm.ZoneID)
+	zone := conf.Env.VM.GetZone(vm.Zone)
 	if zone == nil {
-		return makeError(fmt.Errorf("zone %s not found", vm.ZoneID))
+		return makeError(fmt.Errorf("zone %s not found", vm.Zone))
 	}
 
 	client, err := withCsClient(zone.ID)
@@ -804,9 +804,9 @@ func DoCommandCS(vmID string, gpuID *string, command string) error {
 		return makeError(err)
 	}
 
-	zone := conf.Env.CS.GetZoneByID(vm.ZoneID)
+	zone := conf.Env.VM.GetZone(vm.Zone)
 	if zone == nil {
-		return makeError(fmt.Errorf("zone %s not found", vm.ZoneID))
+		return makeError(fmt.Errorf("zone %s not found", vm.Zone))
 	}
 
 	client, err := withCsClient(zone.ID)
@@ -845,9 +845,9 @@ func CanStartCS(vmID, hostName string) (bool, string, error) {
 		return false, "", nil
 	}
 
-	zone := conf.Env.CS.GetZoneByID(vm.ZoneID)
+	zone := conf.Env.VM.GetZone(vm.Zone)
 	if zone == nil {
-		return false, "", makeError(fmt.Errorf("zone %s not found", vm.ZoneID))
+		return false, "", makeError(fmt.Errorf("zone %s not found", vm.Zone))
 	}
 
 	client, err := withCsClient(zone.ID)

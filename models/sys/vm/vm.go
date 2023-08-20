@@ -7,7 +7,7 @@ type VM struct {
 	Name      string `bson:"name"`
 	OwnerID   string `bson:"ownerId"`
 	ManagedBy string `bson:"managedBy"`
-	ZoneID    string `bson:"zoneId"`
+	Zone      string `bson:"zone"`
 
 	CreatedAt  time.Time `bson:"createdAt"`
 	UpdatedAt  time.Time `bson:"updatedAt"`

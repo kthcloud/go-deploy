@@ -41,7 +41,7 @@ type VmCreate struct {
 	CpuCores     int     `json:"cpuCores" binding:"required,min=1"`
 	RAM          int     `json:"ram" binding:"required,min=1"`
 	DiskSize     int     `json:"diskSize" binding:"required,min=20"`
-	ZoneID       *string `json:"zoneId" binding:"omitempty,uuid4"`
+	Zone         *string `json:"zone" binding:"omitempty,uuid4"`
 }
 
 type VmUpdate struct {

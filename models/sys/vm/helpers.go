@@ -37,7 +37,7 @@ func Create(vmID, owner, manager string, params *CreateParams) (bool, error) {
 		StatusCode:    status_codes.ResourceBeingCreated,
 		StatusMessage: status_codes.GetMsg(status_codes.ResourceBeingCreated),
 
-		ZoneID: params.ZoneID,
+		Zone: params.Zone,
 	}
 
 	result, err := models.VmCollection.UpdateOne(context.TODO(), bson.D{{"name", params.Name}}, bson.D{

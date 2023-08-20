@@ -110,12 +110,12 @@ func CreateK8s(deploymentID string, userID string, params *deploymentModel.Creat
 		return nil, nil
 	}
 
-	zone := conf.Env.CS.GetZoneByID(deployment.ZoneID)
+	zone := conf.Env.Deployment.GetZone(deployment.Zone)
 	if zone == nil {
-		return nil, makeError(errors.New("zone not found"))
+		return nil, fmt.Errorf("zone %s not found", deployment.Zone)
 	}
 
-	client, err := k8s.New(zone.K8s.Client)
+	client, err := k8s.New(zone.Client)
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -207,12 +207,12 @@ func DeleteK8s(name string) error {
 		return nil
 	}
 
-	zone := conf.Env.CS.GetZoneByID(deployment.ZoneID)
-	if err != nil {
-		return makeError(err)
+	zone := conf.Env.Deployment.GetZone(deployment.Zone)
+	if zone == nil {
+		return fmt.Errorf("zone %s not found", deployment.Zone)
 	}
 
-	client, err := k8s.New(zone.K8s.Client)
+	client, err := k8s.New(zone.Client)
 	if err != nil {
 		return makeError(err)
 	}
@@ -289,12 +289,12 @@ func UpdateK8s(name string, params *deploymentModel.UpdateParams) error {
 		return nil
 	}
 
-	zone := conf.Env.CS.GetZoneByID(deployment.ZoneID)
-	if err != nil {
-		return makeError(err)
+	zone := conf.Env.Deployment.GetZone(deployment.Zone)
+	if zone == nil {
+		return fmt.Errorf("zone %s not found", deployment.Zone)
 	}
 
-	client, err := k8s.New(zone.K8s.Client)
+	client, err := k8s.New(zone.Client)
 	if err != nil {
 		return makeError(err)
 	}
@@ -410,12 +410,12 @@ func RestartK8s(name string) error {
 		return makeError(errors.New("can't restart deployment that is not yet created"))
 	}
 
-	zone := conf.Env.CS.GetZoneByID(deployment.ZoneID)
-	if err != nil {
-		return makeError(err)
+	zone := conf.Env.Deployment.GetZone(deployment.Zone)
+	if zone == nil {
+		return fmt.Errorf("zone %s not found", deployment.Zone)
 	}
 
-	client, err := k8s.New(zone.K8s.Client)
+	client, err := k8s.New(zone.Client)
 	if err != nil {
 		return makeError(err)
 	}
@@ -443,12 +443,12 @@ func RepairK8s(name string) error {
 		return nil
 	}
 
-	zone := conf.Env.CS.GetZoneByID(deployment.ZoneID)
-	if err != nil {
-		return makeError(err)
+	zone := conf.Env.Deployment.GetZone(deployment.Zone)
+	if zone == nil {
+		return fmt.Errorf("zone %s not found", deployment.Zone)
 	}
 
-	client, err := k8s.New(zone.K8s.Client)
+	client, err := k8s.New(zone.Client)
 	if err != nil {
 		return makeError(err)
 	}

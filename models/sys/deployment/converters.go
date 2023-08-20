@@ -70,7 +70,7 @@ func (p *UpdateParams) FromDTO(dto *body.DeploymentUpdate) {
 	p.ExtraDomains = dto.ExtraDomains
 }
 
-func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZoneID *string) {
+func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZone *string) {
 	p.Name = dto.Name
 	p.Private = dto.Private
 	p.Envs = make([]Env, len(dto.Envs))
@@ -88,10 +88,10 @@ func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZoneID *strin
 		}
 	}
 
-	if dto.ZoneID != nil {
-		p.ZoneID = *dto.ZoneID
+	if dto.Zone != nil {
+		p.Zone = *dto.Zone
 	} else {
-		p.ZoneID = *fallbackZoneID
+		p.Zone = *fallbackZone
 	}
 }
 

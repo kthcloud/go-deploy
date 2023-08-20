@@ -27,7 +27,7 @@ func Migrate() {
 		panic(err)
 	}
 
-	zone := conf.Env.CS.GetZoneByName("Flemingsberg")
+	zone := conf.Env.VM.GetZone("Flemingsberg")
 	if zone == nil {
 		panic("zone with name Flemingsberg not found")
 	}
@@ -36,14 +36,14 @@ func Migrate() {
 	for _, deployment := range deployments {
 		// set deployment.ZoneID to
 
-		if deployment.ZoneID != "" {
+		if deployment.Zone != "" {
 			continue
 		}
 
-		deployment.ZoneID = zone.ID
+		deployment.Zone = zone.Name
 
 		err := deploymentModel.UpdateByName(deployment.Name, bson.D{
-			{"zoneId", zone.ID},
+			{"zone", zone.Name},
 		})
 		if err != nil {
 			panic(err)
@@ -56,14 +56,14 @@ func Migrate() {
 	for _, vm := range vms {
 		// set vm.ZoneID and vm.Subsystems.CS.VM.ZoneID to vm.ZoneID
 
-		if vm.ZoneID != "" {
+		if vm.Zone != "" {
 			continue
 		}
 
-		vm.ZoneID = zone.ID
+		vm.Zone = zone.Name
 
 		err := vmModel.UpdateByName(vm.Name, bson.D{
-			{"zoneId", zone.ID},
+			{"zone", zone.Name},
 		})
 
 		if err != nil {

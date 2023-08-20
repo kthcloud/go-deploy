@@ -47,7 +47,7 @@ type CreateParams struct {
 	CpuCores     int    `json:"cpuCores"`
 	RAM          int    `json:"ram"`
 	DiskSize     int    `json:"diskSize"`
-	ZoneID       string `json:"zoneId"`
+	Zone         string `json:"zone"`
 }
 
 type UpdateParams struct {

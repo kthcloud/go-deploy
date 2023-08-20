@@ -73,7 +73,7 @@ func (p *UpdateParams) FromDTO(dto *body.VmUpdate) {
 	p.RAM = dto.RAM
 }
 
-func (p *CreateParams) FromDTO(dto *body.VmCreate, fallbackZoneID *string) {
+func (p *CreateParams) FromDTO(dto *body.VmCreate, fallbackZone *string) {
 	p.Name = dto.Name
 	p.SshPublicKey = dto.SshPublicKey
 	p.Ports = make([]Port, len(dto.Ports))
@@ -88,9 +88,9 @@ func (p *CreateParams) FromDTO(dto *body.VmCreate, fallbackZoneID *string) {
 	p.RAM = dto.RAM
 	p.DiskSize = dto.DiskSize
 
-	if dto.ZoneID != nil {
-		p.ZoneID = *dto.ZoneID
+	if dto.Zone != nil {
+		p.Zone = *dto.Zone
 	} else {
-		p.ZoneID = *fallbackZoneID
+		p.Zone = *fallbackZone
 	}
 }

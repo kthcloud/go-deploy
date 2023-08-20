@@ -91,7 +91,7 @@ func TestCreateDeployment(t *testing.T) {
 			},
 		},
 		GitHub: nil,
-		ZoneID: &zone.ID,
+		Zone:   &zone.ID,
 	}
 
 	resp := doPostRequest(t, "/deployments", requestBody)

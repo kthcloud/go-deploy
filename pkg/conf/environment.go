@@ -2,6 +2,7 @@ package conf
 
 import (
 	"fmt"
+	"github.com/mitchellh/mapstructure"
 	"go-deploy/pkg/imp/cloudstack"
 	"gopkg.in/yaml.v3"
 	"k8s.io/client-go/kubernetes"
@@ -10,6 +11,60 @@ import (
 	"os"
 	"regexp"
 )
+
+type CloudStackConfigSource struct {
+	ClusterID   string `yaml:"clusterId"`
+	ExternalURL string `yaml:"externalUrl"`
+}
+
+type DeploymentZone struct {
+	Name          string      `yaml:"name"`
+	ParentDomain  string      `yaml:"parentDomain"`
+	ExtraDomainIP string      `yaml:"extraDomainIp"`
+	ConfigSource  interface{} `yaml:"configSource"`
+	Client        *kubernetes.Clientset
+}
+
+type VmZone struct {
+	Name         string `yaml:"name"`
+	ID           string `yaml:"zoneId"`
+	ProjectID    string `yaml:"projectId"`
+	NetworkID    string `yaml:"networkId"`
+	IpAddressID  string `yaml:"ipAddressId"`
+	ParentDomain string `yaml:"parentDomain"`
+	PortRange    struct {
+		Start int `yaml:"start"`
+		End   int `yaml:"end"`
+	}
+}
+
+type Deployment struct {
+	ParentDomain   string `yaml:"parentDomain"`
+	Port           int    `yaml:"port"`
+	Prefix         string `yaml:"prefix"`
+	ExtraDomainIP  string `yaml:"extraDomainIp"`
+	IngressClass   string `yaml:"ingressClass"`
+	RepairInterval int    `yaml:"repairInterval"`
+	PingInterval   int    `yaml:"pingInterval"`
+	Resources      struct {
+		Limits struct {
+			CPU    string `yaml:"cpu"`
+			Memory string `yaml:"memory"`
+		} `yaml:"limits"`
+		Requests struct {
+			CPU    string `yaml:"cpu"`
+			Memory string `yaml:"memory"`
+		} `yaml:"requests"`
+	} `yaml:"resources"`
+	Zones []DeploymentZone `yaml:"zones"`
+}
+
+type VM struct {
+	ParentDomain      string   `yaml:"parentDomain"`
+	AdminSshPublicKey string   `yaml:"adminSshPublicKey"`
+	RepairInterval    int      `yaml:"repairInterval"`
+	Zones             []VmZone `yaml:"zones"`
+}
 
 type CloudstackZone struct {
 	ID   string `yaml:"zoneId"`
@@ -28,36 +83,6 @@ type CloudstackZone struct {
 		URL    string `yaml:"url"`
 		Client *kubernetes.Clientset
 	} `yaml:"k8s"`
-}
-
-type CloudStack struct {
-	URL    string `yaml:"url"`
-	ApiKey string `yaml:"apiKey"`
-	Secret string `yaml:"secret"`
-
-	ProjectID string `yaml:"projectId"`
-
-	Zones []CloudstackZone `yaml:"zones"`
-}
-
-func (cs *CloudStack) GetZoneByName(name string) *CloudstackZone {
-	for _, zone := range cs.Zones {
-		if zone.Name == name {
-			return &zone
-		}
-	}
-
-	return nil
-}
-
-func (cs *CloudStack) GetZoneByID(id string) *CloudstackZone {
-	for _, zone := range cs.Zones {
-		if zone.ID == id {
-			return &zone
-		}
-	}
-
-	return nil
 }
 
 type Environment struct {
@@ -82,31 +107,9 @@ type Environment struct {
 		} `yaml:"placeholder"`
 	} `yaml:"dockerRegistry"`
 
-	Deployment struct {
-		ParentDomain   string `yaml:"parentDomain"`
-		Port           int    `yaml:"port"`
-		Prefix         string `yaml:"prefix"`
-		ExtraDomainIP  string `yaml:"extraDomainIp"`
-		IngressClass   string `yaml:"ingressClass"`
-		RepairInterval int    `yaml:"repairInterval"`
-		PingInterval   int    `yaml:"pingInterval"`
-		Resources      struct {
-			Limits struct {
-				CPU    string `yaml:"cpu"`
-				Memory string `yaml:"memory"`
-			} `yaml:"limits"`
-			Requests struct {
-				CPU    string `yaml:"cpu"`
-				Memory string `yaml:"memory"`
-			} `yaml:"requests"`
-		} `yaml:"resources"`
-	} `yaml:"deployment"`
+	Deployment Deployment `yaml:"deployment"`
 
-	VM struct {
-		ParentDomain      string `yaml:"parentDomain"`
-		AdminSshPublicKey string `yaml:"adminSshPublicKey"`
-		RepairInterval    int    `yaml:"repairInterval"`
-	} `yaml:"vm"`
+	VM VM `yaml:"vm"`
 
 	Quotas []struct {
 		Role        string `yaml:"role"`
@@ -129,7 +132,11 @@ type Environment struct {
 		Name string `yaml:"name"`
 	} `yaml:"db"`
 
-	CS CloudStack `yaml:"cs"`
+	CS struct {
+		URL    string `yaml:"url"`
+		ApiKey string `yaml:"apiKey"`
+		Secret string `yaml:"secret"`
+	} `yaml:"cs"`
 
 	Landing struct {
 		Url      string `yaml:"url"`
@@ -185,6 +192,8 @@ func SetupEnvironment() {
 		log.Fatalf(makeError(err).Error())
 	}
 
+	assertCorrectConfig()
+
 	err = setupK8sClusters()
 	if err != nil {
 		log.Fatalln(makeError(err))
@@ -193,12 +202,71 @@ func SetupEnvironment() {
 	log.Println("config loaded")
 }
 
+func assertCorrectConfig() {
+	uniqueNames := make(map[string]bool)
+	for _, zone := range Env.Deployment.Zones {
+		if uniqueNames[zone.Name] {
+			log.Fatalln("deployment zone names must be unique")
+		}
+		uniqueNames[zone.Name] = true
+	}
+
+	uniqueNames = make(map[string]bool)
+	for _, zone := range Env.VM.Zones {
+		if uniqueNames[zone.Name] {
+			log.Fatalln("vm zone names must be unique")
+		}
+		uniqueNames[zone.Name] = true
+	}
+
+	log.Println("config checks passed")
+}
+
 func setupK8sClusters() error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to setup k8s clusters. details: %s", err)
 	}
 
-	log.Println("fetching available k8s clusters")
+	for idx, zone := range Env.Deployment.Zones {
+		sourceType, ok := zone.ConfigSource.(map[string]interface{})
+		if !ok {
+			log.Fatalln("failed to parse type of config source for zone", zone.Name)
+		}
+
+		configType, ok := sourceType["type"].(string)
+		if !ok {
+			log.Fatalln("failed to parse type of config source for zone", zone.Name)
+		}
+
+		switch configType {
+		case "cloudstack":
+			{
+				var zoneConfig CloudStackConfigSource
+				err := mapstructure.Decode(sourceType, &zoneConfig)
+				if err != nil {
+					log.Fatalln("failed to parse cloudstack config source for zone", zone.Name)
+				}
+
+				client, err := createClientFromCloudStackConfig(zone.Name, &zoneConfig)
+				if err != nil {
+					return makeError(err)
+				}
+
+				Env.Deployment.Zones[idx].Client = client
+			}
+		}
+	}
+
+	log.Println("k8s clusters setup done")
+	return nil
+}
+
+func createClientFromCloudStackConfig(name string, config *CloudStackConfigSource) (*kubernetes.Clientset, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to create k8s client from cloudstack config. details: %s", err)
+	}
+
+	log.Println("fetching k8s cluster for deployment zone", name)
 
 	csClient := cloudstack.NewAsyncClient(
 		Env.CS.URL,
@@ -209,60 +277,36 @@ func setupK8sClusters() error {
 
 	listClusterParams := csClient.Kubernetes.NewListKubernetesClustersParams()
 	listClusterParams.SetListall(true)
+	listClusterParams.SetId(config.ClusterID)
 	clusters, err := csClient.Kubernetes.ListKubernetesClusters(listClusterParams)
 	if err != nil {
 		log.Fatalln(makeError(err))
 	}
 
-	fetchConfig := func(name string, publicUrl string) string {
-
-		log.Println("fetching k8s cluster config for", name)
-
-		clusterIdx := -1
-		for idx, cluster := range clusters.KubernetesClusters {
-			if cluster.Name == name {
-				clusterIdx = idx
-				break
-			}
-		}
-
-		if clusterIdx == -1 {
-			log.Println("cluster", name, "not found")
-			return ""
-		}
-
-		params := csClient.Kubernetes.NewGetKubernetesClusterConfigParams()
-		params.SetId(clusters.KubernetesClusters[clusterIdx].Id)
-
-		config, err := csClient.Kubernetes.GetKubernetesClusterConfig(params)
-		if err != nil {
-			log.Fatalln(makeError(err))
-		}
-
-		// use regex to replace the private ip in config.ConfigData 172.31.1.* with the public ip
-		regex := regexp.MustCompile(`https://172.31.1.[0-9]+:6443`)
-		config.Configdata = regex.ReplaceAllString(config.Configdata, publicUrl)
-
-		return config.Configdata
+	if len(clusters.KubernetesClusters) == 0 {
+		log.Fatalln("cluster for deployment zone", name, "not found")
 	}
 
-	for idx, zone := range Env.CS.Zones {
-		configData := fetchConfig(zone.K8s.Name, zone.K8s.URL)
-		if configData == "" {
-			return makeError(fmt.Errorf("failed to fetch k8s cluster config"))
-		}
-
-		Env.CS.Zones[idx].K8s.Client, err = createClient([]byte(configData))
-		if err != nil {
-			return makeError(err)
-		}
+	if len(clusters.KubernetesClusters) > 1 {
+		log.Fatalln("multiple clusters for deployment zone", name, "found")
 	}
 
-	log.Println("k8s clusters setup done")
-	return nil
+	params := csClient.Kubernetes.NewGetKubernetesClusterConfigParams()
+	params.SetId(clusters.KubernetesClusters[0].Id)
+
+	clusterConfig, err := csClient.Kubernetes.GetKubernetesClusterConfig(params)
+	if err != nil {
+		log.Fatalln(makeError(err))
+	}
+
+	// use regex to replace the private ip in config.ConfigData 172.31.1.* with the public ip
+	regex := regexp.MustCompile(`https://172.31.1.[0-9]+:6443`)
+	clusterConfig.Configdata = regex.ReplaceAllString(clusterConfig.Configdata, config.ExternalURL)
+
+	return createK8sClient([]byte(clusterConfig.Configdata))
 }
 
-func createClient(configData []byte) (*kubernetes.Clientset, error) {
+func createK8sClient(configData []byte) (*kubernetes.Clientset, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create k8s client. details: %s", err)
 	}
@@ -278,4 +322,22 @@ func createClient(configData []byte) (*kubernetes.Clientset, error) {
 	}
 
 	return k8sClient, nil
+}
+
+func (d *Deployment) GetZone(name string) *DeploymentZone {
+	for _, zone := range d.Zones {
+		if zone.Name == name {
+			return &zone
+		}
+	}
+	return nil
+}
+
+func (v *VM) GetZone(name string) *VmZone {
+	for _, zone := range v.Zones {
+		if zone.Name == name {
+			return &zone
+		}
+	}
+	return nil
 }

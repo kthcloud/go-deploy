@@ -102,7 +102,7 @@ func TestCreateVm(t *testing.T) {
 		CpuCores: 2,
 		RAM:      2,
 		DiskSize: 20,
-		ZoneID:   &zone.ID,
+		Zone:     &zone.ID,
 	}
 
 	resp := doPostRequest(t, "/vms", requestBody)

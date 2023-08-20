@@ -27,14 +27,14 @@ func SetupLogStream(userID, deploymentID string, handler func(string), isAdmin b
 		return nil, nil
 	}
 
-	zone := conf.Env.CS.GetZoneByID(deployment.ZoneID)
+	zone := conf.Env.Deployment.GetZone(deployment.Zone)
 	if zone == nil {
-		return nil, fmt.Errorf("zone %s not found", deployment.ZoneID)
+		return nil, fmt.Errorf("zone %s not found", deployment.Zone)
 	}
 
 	ctx := context.Background()
 
-	k8sClient, err := k8s.New(zone.K8s.Client)
+	k8sClient, err := k8s.New(zone.Client)
 	if err != nil {
 		return nil, err
 	}

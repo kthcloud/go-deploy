@@ -13,7 +13,7 @@ type DeploymentCreate struct {
 		Token        string `json:"token" binding:"required,min=1,max=1000"`
 		RepositoryID int64  `json:"repositoryId" binding:"required"`
 	} `json:"github" binding:"omitempty,dive"`
-	ZoneID *string `json:"zoneId" binding:"omitempty,uuid4"`
+	Zone *string `json:"zone" binding:"omitempty,uuid4"`
 }
 
 type DeploymentUpdate struct {

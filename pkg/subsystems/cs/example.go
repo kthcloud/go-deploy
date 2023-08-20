@@ -8,14 +8,14 @@ import (
 
 func ExampleCreate() {
 	zoneName := "Flemingsberg"
-	zone := conf.Env.CS.GetZoneByName(zoneName)
+	zone := conf.Env.VM.GetZone(zoneName)
 
 	client, err := New(&ClientConf{
 		URL:         conf.Env.CS.URL,
 		ApiKey:      conf.Env.CS.ApiKey,
 		Secret:      conf.Env.CS.Secret,
-		ProjectID:   conf.Env.CS.ProjectID,
 		ZoneID:      zone.ID,
+		ProjectID:   zone.ProjectID,
 		IpAddressID: zone.IpAddressID,
 		NetworkID:   zone.NetworkID,
 	})
@@ -43,14 +43,14 @@ func ExampleCreate() {
 func ExampleUpdate() {
 	id := "77b35b74-8333-4247-849d-ef5bc8555459"
 	zoneName := "Flemingsberg"
-	zone := conf.Env.CS.GetZoneByName(zoneName)
+	zone := conf.Env.VM.GetZone(zoneName)
 
 	client, err := New(&ClientConf{
 		URL:         conf.Env.CS.URL,
 		ApiKey:      conf.Env.CS.ApiKey,
 		Secret:      conf.Env.CS.Secret,
-		ProjectID:   conf.Env.CS.ProjectID,
 		ZoneID:      zone.ID,
+		ProjectID:   zone.ProjectID,
 		IpAddressID: zone.IpAddressID,
 		NetworkID:   zone.NetworkID,
 	})

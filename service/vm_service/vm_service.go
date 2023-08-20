@@ -18,7 +18,7 @@ func Create(vmID, owner string, vmCreate *body.VmCreate) error {
 	}
 
 	// temporary hard-coded fallback
-	fallback := "3a74db73-6058-4520-8d8c-ab7d9b7955c8"
+	fallback := "Flemingsberg"
 
 	params := &vmModel.CreateParams{}
 	params.FromDTO(vmCreate, &fallback)

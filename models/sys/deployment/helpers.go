@@ -42,7 +42,7 @@ func CreateDeployment(deploymentID, ownerID string, params *CreateParams) (bool,
 		StatusCode:    status_codes.ResourceBeingCreated,
 		StatusMessage: status_codes.GetMsg(status_codes.ResourceBeingCreated),
 
-		ZoneID: params.ZoneID,
+		Zone: params.Zone,
 	}
 
 	result, err := models.DeploymentCollection.UpdateOne(context.TODO(), bson.D{{"name", params.Name}}, bson.D{
