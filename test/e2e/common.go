@@ -25,13 +25,17 @@ func setup(t *testing.T) {
 	for _, env := range requiredEnvs {
 		_, result := os.LookupEnv(env)
 		if !result {
-			t.Fatalf("%s must be set for acceptance test", env)
+			t.Fatalf("%s must be set for e2e test", env)
 		}
 	}
 
 	_, result := os.LookupEnv("DEPLOY_CONFIG_FILE")
 	if result {
 		conf.SetupEnvironment()
+	}
+
+	if !conf.Env.TestMode {
+		t.Fatalf("test mode must be enabled for e2e tests")
 	}
 }
 

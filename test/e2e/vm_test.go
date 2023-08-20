@@ -84,10 +84,7 @@ func TestCreateVm(t *testing.T) {
 	withServer(t)
 	publicKey := withSshPublicKey(t)
 
-	zone := conf.Env.CS.GetZoneByName("Flemingsberg")
-	if zone == nil {
-		t.Fatal("zone not found")
-	}
+	zone := conf.Env.VM.Zones[0]
 
 	requestBody := body.VmCreate{
 		Name:         "e2e-" + strings.ReplaceAll(uuid.NewString()[:10], "-", ""),
@@ -102,7 +99,7 @@ func TestCreateVm(t *testing.T) {
 		CpuCores: 2,
 		RAM:      2,
 		DiskSize: 20,
-		Zone:     &zone.ID,
+		Zone:     &zone.Name,
 	}
 
 	resp := doPostRequest(t, "/vms", requestBody)

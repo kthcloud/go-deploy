@@ -74,10 +74,7 @@ func TestCreateDeployment(t *testing.T) {
 	setup(t)
 	withServer(t)
 
-	zone := conf.Env.CS.GetZoneByName("Flemingsberg")
-	if zone == nil {
-		t.Fatal("zone not found")
-	}
+	zone := conf.Env.VM.Zones[0]
 
 	envValue := uuid.NewString()
 
@@ -91,7 +88,7 @@ func TestCreateDeployment(t *testing.T) {
 			},
 		},
 		GitHub: nil,
-		Zone:   &zone.ID,
+		Zone:   &zone.Name,
 	}
 
 	resp := doPostRequest(t, "/deployments", requestBody)
