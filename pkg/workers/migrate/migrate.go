@@ -14,8 +14,7 @@ import (
 
 // Migrate will  run as early as possible in the program, and it will never be called again.
 func Migrate() {
-
-	log.Println("running migrations for deployments and vms without a ZoneID")
+	log.Println("running migrations for deployments and vms without a zone")
 
 	deployments, err := deploymentModel.GetAll()
 	if err != nil {
@@ -27,9 +26,14 @@ func Migrate() {
 		panic(err)
 	}
 
-	zone := conf.Env.VM.GetZone("Flemingsberg")
-	if zone == nil {
-		panic("zone with name Flemingsberg not found")
+	deploymentZone := conf.Env.Deployment.GetZone("se-flem")
+	if deploymentZone == nil {
+		panic("deployment zone with name se-flem not found")
+	}
+	
+	vmZone := conf.Env.VM.GetZone("se-flem")
+	if vmZone == nil {
+		panic("zone with name se-flem not found")
 	}
 
 	migratedDeployments := 0
@@ -40,10 +44,10 @@ func Migrate() {
 			continue
 		}
 
-		deployment.Zone = zone.Name
+		deployment.Zone = deploymentZone.Name
 
 		err := deploymentModel.UpdateByName(deployment.Name, bson.D{
-			{"zone", zone.Name},
+			{"zone", vmZone.Name},
 		})
 		if err != nil {
 			panic(err)
@@ -60,10 +64,10 @@ func Migrate() {
 			continue
 		}
 
-		vm.Zone = zone.Name
+		vm.Zone = vmZone.Name
 
 		err := vmModel.UpdateByName(vm.Name, bson.D{
-			{"zone", zone.Name},
+			{"zone", vmZone.Name},
 		})
 
 		if err != nil {

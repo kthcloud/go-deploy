@@ -15,6 +15,7 @@ import (
 	"go-deploy/routers/api/v1/v1_job"
 	"go-deploy/routers/api/v1/v1_user"
 	"go-deploy/routers/api/v1/v1_vm"
+	"go-deploy/routers/api/v1/v1_zone"
 	"golang.org/x/crypto/ssh"
 	"reflect"
 	"regexp"
@@ -47,6 +48,7 @@ func NewRouter() *gin.Engine {
 	setupAuthCheckRoutes(privateApiv1)
 	setupDeploymentRoutes(privateApiv1, publicApiv1, apiv1Hook)
 	setupVmRoutes(privateApiv1, apiv1Hook)
+	setupZoneRoutes(privateApiv1, apiv1Hook)
 	setupGpuRoutes(privateApiv1, apiv1Hook)
 	setupJobRoutes(privateApiv1, apiv1Hook)
 	setupUserRoutes(privateApiv1, apiv1Hook)
@@ -94,6 +96,10 @@ func setupVmRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
 	private.POST("/vms/:vmId/attachGpu", v1_vm.AttachGPU)
 	private.POST("/vms/:vmId/attachGpu/:gpuId", v1_vm.AttachGPU)
 	private.POST("/vms/:vmId/detachGpu", v1_vm.DetachGPU)
+}
+
+func setupZoneRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
+	private.GET("/zones", v1_zone.GetList)
 }
 
 func setupGpuRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
@@ -262,8 +268,18 @@ func registerCustomValidators() {
 					}
 				}
 
-				valid := v1.IsValidDomain(domain) && !strings.HasSuffix(domain, conf.Env.Deployment.ParentDomain)
-				if !valid {
+				illegalSuffixes := make([]string, len(conf.Env.Deployment.Zones))
+				for idx, zone := range conf.Env.Deployment.Zones {
+					illegalSuffixes[idx] = zone.ParentDomain
+				}
+
+				for _, suffix := range illegalSuffixes {
+					if strings.HasSuffix(domain, suffix) {
+						return false
+					}
+				}
+
+				if !v1.IsValidDomain(domain) {
 					return false
 				}
 			}

@@ -15,7 +15,7 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 	}
 
 	// temporary hard-coded fallback
-	fallback := "3a74db73-6058-4520-8d8c-ab7d9b7955c8"
+	fallback := "se-flem"
 
 	params := &deploymentModel.CreateParams{}
 	params.FromDTO(deploymentCreate, &fallback)

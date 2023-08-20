@@ -35,15 +35,19 @@ func (deployment *Deployment) ToDTO(url *string) body.DeploymentRead {
 	}
 
 	return body.DeploymentRead{
-		ID:           deployment.ID,
-		Name:         deployment.Name,
-		OwnerID:      deployment.OwnerID,
-		Status:       deployment.StatusMessage,
-		URL:          fullURL,
-		Envs:         envs,
-		Private:      deployment.Private,
+		ID:      deployment.ID,
+		Name:    deployment.Name,
+		OwnerID: deployment.OwnerID,
+		Zone:    deployment.Zone,
+
+		URL:     fullURL,
+		Envs:    envs,
+		Private: deployment.Private,
+
+		Status:     deployment.StatusMessage,
+		PingResult: pingResult,
+
 		Integrations: integrations,
-		PingResult:   pingResult,
 	}
 }
 

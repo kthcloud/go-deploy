@@ -89,8 +89,8 @@ func createIngressPublic(namespace, name string, serviceName string, servicePort
 	}
 }
 
-func getExternalFQDN(name string) string {
-	return fmt.Sprintf("%s.%s", name, conf.Env.Deployment.ParentDomain)
+func getExternalFQDN(name string, zone *conf.DeploymentZone) string {
+	return fmt.Sprintf("%s.%s", name, zone.ParentDomain)
 }
 
 func CreateK8s(deploymentID string, userID string, params *deploymentModel.CreateParams) (*K8sResult, error) {
@@ -175,7 +175,7 @@ func CreateK8s(deploymentID string, userID string, params *deploymentModel.Creat
 			deployment.Name,
 			service.Name,
 			service.Port,
-			[]string{getExternalFQDN(deployment.Name)},
+			[]string{getExternalFQDN(deployment.Name, zone)},
 		))
 		if err != nil {
 			return nil, makeError(err)
@@ -383,9 +383,9 @@ func UpdateK8s(name string, params *deploymentModel.UpdateParams) error {
 
 				var domains []string
 				if params.ExtraDomains == nil {
-					domains = getAllDomainNames(deployment.Name, deployment.ExtraDomains)
+					domains = getAllDomainNames(deployment.Name, deployment.ExtraDomains, zone)
 				} else {
-					domains = getAllDomainNames(deployment.Name, *params.ExtraDomains)
+					domains = getAllDomainNames(deployment.Name, *params.ExtraDomains, zone)
 				}
 
 				public := createIngressPublic(namespace.FullName, name, service.Name, service.Port, domains)
@@ -530,7 +530,7 @@ func RepairK8s(name string) error {
 				deployment.Name,
 				deployment.Subsystems.K8s.Service.Name,
 				deployment.Subsystems.K8s.Service.Port,
-				getAllDomainNames(deployment.Name, deployment.ExtraDomains),
+				getAllDomainNames(deployment.Name, deployment.ExtraDomains, zone),
 			))
 			if err != nil {
 				return makeError(err)
@@ -710,9 +710,9 @@ func createIngress(client *k8s.Client, deployment *deploymentModel.Deployment, p
 	return ingress, nil
 }
 
-func getAllDomainNames(name string, extraDomains []string) []string {
+func getAllDomainNames(name string, extraDomains []string, zone *conf.DeploymentZone) []string {
 	domains := make([]string, len(extraDomains)+1)
-	domains[0] = getExternalFQDN(name)
+	domains[0] = getExternalFQDN(name, zone)
 	copy(domains[1:], extraDomains)
 	return domains
 }

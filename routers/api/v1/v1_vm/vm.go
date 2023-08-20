@@ -9,12 +9,14 @@ import (
 	"go-deploy/models/dto/uri"
 	jobModel "go-deploy/models/sys/job"
 	vmModel "go-deploy/models/sys/vm"
+	zoneModel "go-deploy/models/sys/zone"
 	"go-deploy/pkg/status_codes"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/job_service"
 	"go-deploy/service/user_service"
 	"go-deploy/service/vm_service"
+	"go-deploy/service/zone_service"
 	"log"
 	"net/http"
 )
@@ -222,6 +224,14 @@ func Create(c *gin.Context) {
 	if quota == nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Quota is not set for user"))
 		return
+	}
+
+	if requestBody.Zone != nil {
+		zone := zone_service.GetZone(*requestBody.Zone, zoneModel.ZoneTypeVM)
+		if zone == nil {
+			context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, "Zone not found")
+			return
+		}
 	}
 
 	exists, vm, err := vm_service.Exists(requestBody.Name)

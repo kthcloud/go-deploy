@@ -20,7 +20,7 @@ func withClient(zoneName string) (*cs.Client, error) {
 		URL:         conf.Env.CS.URL,
 		ApiKey:      conf.Env.CS.ApiKey,
 		Secret:      conf.Env.CS.Secret,
-		ZoneID:      zone.ID,
+		ZoneID:      zone.ZoneID,
 		ProjectID:   zone.ProjectID,
 		IpAddressID: zone.IpAddressID,
 		NetworkID:   zone.NetworkID,

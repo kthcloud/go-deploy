@@ -18,7 +18,7 @@ func Create(vmID, owner string, vmCreate *body.VmCreate) error {
 	}
 
 	// temporary hard-coded fallback
-	fallback := "Flemingsberg"
+	fallback := "se-flem"
 
 	params := &vmModel.CreateParams{}
 	params.FromDTO(vmCreate, &fallback)
@@ -192,7 +192,16 @@ func Repair(id string) error {
 }
 
 func GetConnectionString(vm *vmModel.VM) (*string, error) {
-	domainName := conf.Env.VM.ParentDomain
+	if vm == nil {
+		return nil, nil
+	}
+
+	zone := conf.Env.VM.GetZone(vm.Zone)
+	if zone == nil {
+		return nil, fmt.Errorf("zone %s not found", vm.Zone)
+	}
+
+	domainName := zone.ParentDomain
 	port := vm.Subsystems.CS.PortForwardingRuleMap["__ssh"].PublicPort
 
 	if domainName == "" || port == 0 {

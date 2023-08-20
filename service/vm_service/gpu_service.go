@@ -342,7 +342,12 @@ func IsGpuHardwareAvailable(gpu *gpuModel.GPU) (bool, error) {
 		return false, err
 	}
 
-	correctState, _, err := internal_service.HostInCorrectState(gpu.Host, gpu.Zone)
+	zone := conf.Env.VM.GetZone(gpu.Zone)
+	if zone == nil {
+		return false, fmt.Errorf("zone %s not found", gpu.Zone)
+	}
+
+	correctState, _, err := internal_service.HostInCorrectState(gpu.Host, zone)
 	if err != nil {
 		return false, err
 	}

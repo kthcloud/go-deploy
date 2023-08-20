@@ -18,9 +18,7 @@ type CsCreated struct {
 	VM *csModels.VmPublic
 }
 
-func withCsClient(zoneName string) (*cs.Client, error) {
-	zone := conf.Env.VM.GetZone(zoneName)
-
+func withCsClient(zone *conf.VmZone) (*cs.Client, error) {
 	return cs.New(&cs.ClientConf{
 		URL:         conf.Env.CS.URL,
 		ApiKey:      conf.Env.CS.ApiKey,
@@ -28,7 +26,7 @@ func withCsClient(zoneName string) (*cs.Client, error) {
 		IpAddressID: zone.IpAddressID,
 		ProjectID:   zone.ProjectID,
 		NetworkID:   zone.NetworkID,
-		ZoneID:      zone.ID,
+		ZoneID:      zone.ZoneID,
 	})
 }
 
@@ -75,7 +73,7 @@ func CreateCS(params *vmModel.CreateParams) (*CsCreated, error) {
 
 	zone := conf.Env.VM.GetZone(params.Zone)
 
-	client, err := withCsClient(zone.ID)
+	client, err := withCsClient(zone)
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -175,7 +173,7 @@ func DeleteCS(name string) error {
 		return makeError(fmt.Errorf("zone %s not found", vm.Zone))
 	}
 
-	client, err := withCsClient(zone.ID)
+	client, err := withCsClient(zone)
 	if err != nil {
 		return makeError(err)
 	}
@@ -241,7 +239,7 @@ func UpdateCS(vmID string, updateParams *vmModel.UpdateParams) error {
 		return makeError(fmt.Errorf("zone %s not found", vm.Zone))
 	}
 
-	client, err := withCsClient(zone.ID)
+	client, err := withCsClient(zone)
 	if err != nil {
 		return makeError(err)
 	}
@@ -434,7 +432,7 @@ func RepairCS(name string) error {
 		return makeError(fmt.Errorf("zone %s not found", vm.Zone))
 	}
 
-	client, err := withCsClient(zone.ID)
+	client, err := withCsClient(zone)
 	if err != nil {
 		return makeError(err)
 	}
@@ -524,7 +522,7 @@ func AttachGPU(gpuID, vmID string) error {
 		return makeError(fmt.Errorf("zone %s not found", vm.Zone))
 	}
 
-	client, err := withCsClient(zone.ID)
+	client, err := withCsClient(zone)
 	if err != nil {
 		return makeError(err)
 	}
@@ -601,7 +599,7 @@ func DetachGPU(vmID string) error {
 		return makeError(fmt.Errorf("zone %s not found", vm.Zone))
 	}
 
-	client, err := withCsClient(zone.ID)
+	client, err := withCsClient(zone)
 	if err != nil {
 		return makeError(err)
 	}
@@ -647,7 +645,12 @@ func IsGpuAttachedCS(gpu *gpuModel.GPU) (bool, error) {
 		return fmt.Errorf("failed to check if gpu %s:%s is attached to any cs vm. details: %s", gpu.Host, gpu.Data.Bus, err)
 	}
 
-	client, err := withCsClient(gpu.Zone)
+	zone := conf.Env.VM.GetZone(gpu.Zone)
+	if zone == nil {
+		return false, makeError(fmt.Errorf("zone %s not found", gpu.Zone))
+	}
+
+	client, err := withCsClient(zone)
 	if err != nil {
 		return false, makeError(err)
 	}
@@ -694,7 +697,7 @@ func CreateSnapshotCS(id, name string, userCreated bool) error {
 		return makeError(fmt.Errorf("zone %s not found", vm.Zone))
 	}
 
-	client, err := withCsClient(zone.ID)
+	client, err := withCsClient(zone)
 	if err != nil {
 		return makeError(err)
 	}
@@ -765,7 +768,7 @@ func ApplySnapshotCS(id string, snapshotID string) error {
 		return makeError(fmt.Errorf("zone %s not found", vm.Zone))
 	}
 
-	client, err := withCsClient(zone.ID)
+	client, err := withCsClient(zone)
 	if err != nil {
 		return makeError(err)
 	}
@@ -809,7 +812,7 @@ func DoCommandCS(vmID string, gpuID *string, command string) error {
 		return makeError(fmt.Errorf("zone %s not found", vm.Zone))
 	}
 
-	client, err := withCsClient(zone.ID)
+	client, err := withCsClient(zone)
 	if err != nil {
 		return makeError(err)
 	}
@@ -850,7 +853,7 @@ func CanStartCS(vmID, hostName string) (bool, string, error) {
 		return false, "", makeError(fmt.Errorf("zone %s not found", vm.Zone))
 	}
 
-	client, err := withCsClient(zone.ID)
+	client, err := withCsClient(zone)
 	if err != nil {
 		return false, "", makeError(err)
 	}
@@ -864,7 +867,7 @@ func CanStartCS(vmID, hostName string) (bool, string, error) {
 		return false, "Host doesn't have capacity", nil
 	}
 
-	correctState, reason, err := HostInCorrectState(hostName, zone.ID)
+	correctState, reason, err := HostInCorrectState(hostName, zone)
 	if err != nil {
 		return false, "", err
 	}
@@ -876,12 +879,12 @@ func CanStartCS(vmID, hostName string) (bool, string, error) {
 	return true, "", nil
 }
 
-func HostInCorrectState(hostName, zoneID string) (bool, string, error) {
+func HostInCorrectState(hostName string, zone *conf.VmZone) (bool, string, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if host %s is in correct state. details: %s", hostName, err)
+		return fmt.Errorf("failed to check if host %s is in correct state. details: %s", zone.Name, err)
 	}
 
-	client, err := withCsClient(zoneID)
+	client, err := withCsClient(zone)
 	if err != nil {
 		return false, "", makeError(err)
 	}

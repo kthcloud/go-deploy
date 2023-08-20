@@ -19,6 +19,7 @@ type CloudStackConfigSource struct {
 
 type DeploymentZone struct {
 	Name          string      `yaml:"name"`
+	Description   string      `yaml:"description"`
 	ParentDomain  string      `yaml:"parentDomain"`
 	ExtraDomainIP string      `yaml:"extraDomainIp"`
 	ConfigSource  interface{} `yaml:"configSource"`
@@ -27,19 +28,21 @@ type DeploymentZone struct {
 
 type VmZone struct {
 	Name         string `yaml:"name"`
-	ID           string `yaml:"zoneId"`
-	ProjectID    string `yaml:"projectId"`
-	NetworkID    string `yaml:"networkId"`
-	IpAddressID  string `yaml:"ipAddressId"`
+	Description  string `yaml:"description"`
 	ParentDomain string `yaml:"parentDomain"`
 	PortRange    struct {
 		Start int `yaml:"start"`
 		End   int `yaml:"end"`
-	}
+	} `yaml:"portRange"`
+
+	// cloudstack ids
+	ZoneID      string `yaml:"zoneId"`
+	ProjectID   string `yaml:"projectId"`
+	NetworkID   string `yaml:"networkId"`
+	IpAddressID string `yaml:"ipAddressId"`
 }
 
 type Deployment struct {
-	ParentDomain   string `yaml:"parentDomain"`
 	Port           int    `yaml:"port"`
 	Prefix         string `yaml:"prefix"`
 	ExtraDomainIP  string `yaml:"extraDomainIp"`
@@ -60,29 +63,9 @@ type Deployment struct {
 }
 
 type VM struct {
-	ParentDomain      string   `yaml:"parentDomain"`
 	AdminSshPublicKey string   `yaml:"adminSshPublicKey"`
 	RepairInterval    int      `yaml:"repairInterval"`
 	Zones             []VmZone `yaml:"zones"`
-}
-
-type CloudstackZone struct {
-	ID   string `yaml:"zoneId"`
-	Name string `yaml:"name"`
-
-	IpAddressID string `yaml:"ipAddressId"`
-	NetworkID   string `yaml:"networkId"`
-
-	PortRange struct {
-		Start int `yaml:"start"`
-		End   int `yaml:"end"`
-	} `yaml:"portRange"`
-
-	K8s struct {
-		Name   string `yaml:"name"`
-		URL    string `yaml:"url"`
-		Client *kubernetes.Clientset
-	} `yaml:"k8s"`
 }
 
 type Environment struct {

@@ -10,12 +10,14 @@ import (
 	deploymentModels "go-deploy/models/sys/deployment"
 	jobModel "go-deploy/models/sys/job"
 	vmModel "go-deploy/models/sys/vm"
+	zoneModel "go-deploy/models/sys/zone"
 	"go-deploy/pkg/status_codes"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/deployment_service"
 	"go-deploy/service/job_service"
 	"go-deploy/service/user_service"
+	"go-deploy/service/zone_service"
 	"net/http"
 )
 
@@ -175,6 +177,14 @@ func Create(c *gin.Context) {
 	if quota.Deployments <= 0 {
 		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, "User is not allowed to create deployments")
 		return
+	}
+
+	if requestBody.Zone != nil {
+		zone := zone_service.GetZone(*requestBody.Zone, zoneModel.ZoneTypeDeployment)
+		if zone == nil {
+			context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, "Zone not found")
+			return
+		}
 	}
 
 	exists, deployment, err := deployment_service.Exists(requestBody.Name)
