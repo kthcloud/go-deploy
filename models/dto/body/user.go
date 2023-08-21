@@ -10,6 +10,7 @@ type Quota struct {
 	CpuCores    int `json:"cpuCores"`
 	RAM         int `json:"ram"`
 	DiskSize    int `json:"diskSize"`
+	Snapshots   int `json:"snapshots"`
 }
 
 type Role struct {

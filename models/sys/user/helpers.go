@@ -45,12 +45,14 @@ func (u *User) ToDTO(effectiveRole *roleModel.Role, usage *Usage) body.UserRead 
 			CpuCores:    effectiveRole.Quotas.CpuCores,
 			RAM:         effectiveRole.Quotas.RAM,
 			DiskSize:    effectiveRole.Quotas.DiskSize,
+			Snapshots:   effectiveRole.Quotas.Snapshots,
 		},
 		Usage: body.Quota{
 			Deployments: usage.Deployments,
 			CpuCores:    usage.CpuCores,
 			RAM:         usage.RAM,
 			DiskSize:    usage.DiskSize,
+			Snapshots:   usage.Snapshots,
 		},
 		PublicKeys: publicKeys,
 	}
