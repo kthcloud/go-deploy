@@ -2,6 +2,7 @@ package deployment_service
 
 import (
 	"context"
+	"fmt"
 	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/k8s"
@@ -26,9 +27,14 @@ func SetupLogStream(userID, deploymentID string, handler func(string), isAdmin b
 		return nil, nil
 	}
 
+	zone := conf.Env.Deployment.GetZone(deployment.Zone)
+	if zone == nil {
+		return nil, fmt.Errorf("zone %s not found", deployment.Zone)
+	}
+
 	ctx := context.Background()
 
-	k8sClient, err := k8s.New(conf.Env.K8s.Client)
+	k8sClient, err := k8s.New(zone.Client)
 	if err != nil {
 		return nil, err
 	}

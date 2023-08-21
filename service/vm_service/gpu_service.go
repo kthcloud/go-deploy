@@ -12,9 +12,9 @@ import (
 	"time"
 )
 
-func GetAllGPUs(onlyAvailable bool, isPowerUser bool) ([]gpuModel.GPU, error) {
+func GetAllGPUs(onlyAvailable bool, usePrivilegedGPUs bool) ([]gpuModel.GPU, error) {
 	excludedGPUs := conf.Env.GPU.ExcludedGPUs
-	if !isPowerUser {
+	if !usePrivilegedGPUs {
 		excludedGPUs = append(excludedGPUs, conf.Env.GPU.PrivilegedGPUs...)
 	}
 
@@ -42,7 +42,7 @@ func GetAllGPUs(onlyAvailable bool, isPowerUser bool) ([]gpuModel.GPU, error) {
 	return gpuModel.GetAll(conf.Env.GPU.ExcludedHosts, excludedGPUs)
 }
 
-func GetGpuByID(gpuID string, isPowerUser bool) (*gpuModel.GPU, error) {
+func GetGpuByID(gpuID string, usePrivilegedGPUs bool) (*gpuModel.GPU, error) {
 	gpu, err := gpuModel.GetByID(gpuID)
 	if err != nil {
 		return nil, err
@@ -59,7 +59,7 @@ func GetGpuByID(gpuID string, isPowerUser bool) (*gpuModel.GPU, error) {
 		}
 	}
 
-	if !isPowerUser {
+	if !usePrivilegedGPUs {
 		// check if card is privileged
 		if isGpuPrivileged(gpu.Data.Name) {
 			return nil, nil
@@ -69,9 +69,9 @@ func GetGpuByID(gpuID string, isPowerUser bool) (*gpuModel.GPU, error) {
 	return gpu, nil
 }
 
-func GetAllAvailableGPU(isPowerUser bool) ([]gpuModel.GPU, error) {
+func GetAllAvailableGPU(usePrivilegedGPUs bool) ([]gpuModel.GPU, error) {
 	excludedGPUs := conf.Env.GPU.ExcludedGPUs
-	if !isPowerUser {
+	if !usePrivilegedGPUs {
 		excludedGPUs = append(excludedGPUs, conf.Env.GPU.PrivilegedGPUs...)
 	}
 
@@ -100,20 +100,13 @@ func GetAllAvailableGPU(isPowerUser bool) ([]gpuModel.GPU, error) {
 	return availableGPUs, nil
 }
 
-func AttachGPU(gpuIDs []string, vmID, userID string, isPowerUser bool) error {
+func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to attach gpu to vm %s. details: %s", vmID, err)
 	}
 	csInsufficientCapacityError := "host has capacity? false"
 
-	var endLease time.Time
-	if isPowerUser {
-		// 1 week
-		endLease = time.Now().Add(time.Hour * 24 * 7)
-	} else {
-		// 1 day
-		endLease = time.Now().Add(time.Hour * 24)
-	}
+	endLease := time.Now().Add(time.Duration(leaseDuration) * time.Hour)
 
 	var err error
 	for _, gpuID := range gpuIDs {
@@ -262,10 +255,11 @@ func RepairGPUs() error {
 				continue
 			}
 
-			log.Println("found vm that has a gpu assigned, but not in the gpuToVM map. trying to attach gpu to vm. vm:", vm.ID, "("+vm.Name+") gpu:", vm.GpuID)
-			err = AttachGPU([]string{vm.GpuID}, vm.ID, vm.OwnerID, true)
+			// detach gpu from vm since we don't know how long it should be leased for
+			log.Println("found vm that has a gpu assigned, but the gpu has no lease. detaching gpu from vm:", vm.ID, "(", vm.Name, ")")
+			err = DetachGPU(vm.ID, vm.OwnerID)
 			if err != nil {
-				log.Println("failed to repair gpu attachment to vm. vm:", vm.ID, "("+vm.Name+") gpu:", vm.GpuID, ". details:", err.Error())
+				return makeError(err)
 			}
 		}
 	}
@@ -337,12 +331,17 @@ func CanStartOnHost(vmID, host string) (bool, string, error) {
 }
 
 func IsGpuHardwareAvailable(gpu *gpuModel.GPU) (bool, error) {
-	cloudstackAttached, err := internal_service.IsGpuAttachedCS(gpu.Host, gpu.Data.Bus)
+	cloudstackAttached, err := internal_service.IsGpuAttachedCS(gpu)
 	if err != nil {
 		return false, err
 	}
 
-	correctState, _, err := internal_service.HostInCorrectState(gpu.Host)
+	zone := conf.Env.VM.GetZone(gpu.Zone)
+	if zone == nil {
+		return false, fmt.Errorf("zone %s not found", gpu.Zone)
+	}
+
+	correctState, _, err := internal_service.HostInCorrectState(gpu.Host, zone)
 	if err != nil {
 		return false, err
 	}

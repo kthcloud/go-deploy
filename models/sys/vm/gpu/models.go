@@ -26,6 +26,7 @@ type GPU struct {
 	Host  string   `bson:"host" json:"host"`
 	Lease GpuLease `bson:"lease" json:"lease"`
 	Data  GpuData  `bson:"data" json:"data"`
+	Zone  string   `bson:"zone" json:"zone"`
 }
 
 func (gpu *GPU) IsAttached() bool {

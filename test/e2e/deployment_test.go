@@ -4,6 +4,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"go-deploy/models/dto/body"
+	"go-deploy/pkg/conf"
 	"go-deploy/pkg/status_codes"
 	"net/http"
 	"strings"
@@ -73,6 +74,8 @@ func TestCreateDeployment(t *testing.T) {
 	setup(t)
 	withServer(t)
 
+	zone := conf.Env.VM.Zones[0]
+
 	envValue := uuid.NewString()
 
 	requestBody := body.DeploymentCreate{
@@ -85,6 +88,7 @@ func TestCreateDeployment(t *testing.T) {
 			},
 		},
 		GitHub: nil,
+		Zone:   &zone.Name,
 	}
 
 	resp := doPostRequest(t, "/deployments", requestBody)

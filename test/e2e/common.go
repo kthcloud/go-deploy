@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/helloyi/go-sshclient"
@@ -22,9 +23,9 @@ func setup(t *testing.T) {
 	}
 
 	for _, env := range requiredEnvs {
-		env, result := os.LookupEnv(env)
+		_, result := os.LookupEnv(env)
 		if !result {
-			t.Fatalf("%s must be set for acceptance test", env)
+			t.Fatalf("%s must be set for e2e test", env)
 		}
 	}
 
@@ -32,13 +33,20 @@ func setup(t *testing.T) {
 	if result {
 		conf.SetupEnvironment()
 	}
+
+	if !conf.Env.TestMode {
+		t.Fatalf("test mode must be enabled for e2e tests")
+	}
 }
 
 func withServer(t *testing.T) *http.Server {
 	t.Helper()
 
-	httpServer := app.Start(nil)
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	httpServer := app.Start(ctx, nil)
 	t.Cleanup(func() {
+		cancel()
 		app.Stop(httpServer)
 	})
 

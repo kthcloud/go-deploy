@@ -60,18 +60,18 @@ func findCollection(collectionName string) *mongo.Collection {
 }
 
 func Shutdown() {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to shutdown database. details: %s", err)
-	}
-
-	DeploymentCollection = nil
-	VmCollection = nil
-	GpuCollection = nil
-	UserCollection = nil
-	JobCollection = nil
-
-	err := client.Disconnect(context.Background())
-	if err != nil {
-		log.Fatalln(makeError(err))
-	}
+	//makeError := func(err error) error {
+	//	return fmt.Errorf("failed to shutdown database. details: %s", err)
+	//}
+	//
+	//DeploymentCollection = nil
+	//VmCollection = nil
+	//GpuCollection = nil
+	//UserCollection = nil
+	//JobCollection = nil
+	//
+	//err := client.Disconnect(context.Background())
+	//if err != nil {
+	//	log.Fatalln(makeError(err))
+	//}
 }

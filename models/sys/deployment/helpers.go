@@ -41,6 +41,8 @@ func CreateDeployment(deploymentID, ownerID string, params *CreateParams) (bool,
 
 		StatusCode:    status_codes.ResourceBeingCreated,
 		StatusMessage: status_codes.GetMsg(status_codes.ResourceBeingCreated),
+
+		Zone: params.Zone,
 	}
 
 	result, err := models.DeploymentCollection.UpdateOne(context.TODO(), bson.D{{"name", params.Name}}, bson.D{
@@ -293,6 +295,19 @@ func RemoveActivity(deploymentID, activity string) error {
 		err = fmt.Errorf("failed to remove activity %s from deployment %s. details: %s", activity, deploymentID, err)
 		return err
 	}
+	return nil
+}
+
+func ClearActivities(deploymentID string) error {
+	_, err := models.DeploymentCollection.UpdateOne(context.TODO(),
+		bson.D{{"id", deploymentID}},
+		bson.D{{"$set", bson.D{{"activities", bson.A{}}}}},
+	)
+	if err != nil {
+		err = fmt.Errorf("failed to clear activities from deployment %s. details: %s", deploymentID, err)
+		return err
+	}
+
 	return nil
 }
 

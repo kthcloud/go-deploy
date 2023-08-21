@@ -14,8 +14,11 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 		return fmt.Errorf("failed to create deployment. details: %s", err)
 	}
 
+	// temporary hard-coded fallback
+	fallback := "se-flem"
+
 	params := &deploymentModel.CreateParams{}
-	params.FromDTO(deploymentCreate)
+	params.FromDTO(deploymentCreate, &fallback)
 
 	created, err := deploymentModel.CreateDeployment(deploymentID, ownerID, params)
 	if err != nil {

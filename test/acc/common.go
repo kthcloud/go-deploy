@@ -13,7 +13,7 @@ func setup(t *testing.T) {
 	}
 
 	for _, env := range requiredEnvs {
-		env, result := os.LookupEnv(env)
+		_, result := os.LookupEnv(env)
 		if !result {
 			t.Fatalf("%s must be set for acceptance test", env)
 		}

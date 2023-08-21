@@ -2,139 +2,18 @@ package conf
 
 import (
 	"fmt"
+	"github.com/mitchellh/mapstructure"
+	"go-deploy/models/sys/enviroment"
+	"go-deploy/pkg/imp/cloudstack"
 	"gopkg.in/yaml.v3"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"log"
 	"os"
 	"regexp"
-
-	"go-deploy/pkg/imp/cloudstack"
 )
 
-type Environment struct {
-	Port          int    `yaml:"port"`
-	ExternalUrl   string `yaml:"externalUrl"`
-	Manager       string `yaml:"manager"`
-	SessionSecret string `yaml:"sessionSecret"`
-	TestMode      bool   `yaml:"testMode"`
-
-	GPU struct {
-		PrivilegedGPUs []string `yaml:"privilegedGpus"`
-		ExcludedHosts  []string `yaml:"excludedHosts"`
-		ExcludedGPUs   []string `yaml:"excludedGpus"`
-		RepairInterval int      `yaml:"repairInterval"`
-	} `yaml:"gpu"`
-
-	DockerRegistry struct {
-		URL         string `yaml:"url"`
-		Placeholder struct {
-			Project    string `yaml:"project"`
-			Repository string `yaml:"repository"`
-		} `yaml:"placeholder"`
-	} `yaml:"dockerRegistry"`
-
-	Deployment struct {
-		ParentDomain   string `yaml:"parentDomain"`
-		Port           int    `yaml:"port"`
-		Prefix         string `yaml:"prefix"`
-		ExtraDomainIP  string `yaml:"extraDomainIp"`
-		IngressClass   string `yaml:"ingressClass"`
-		RepairInterval int    `yaml:"repairInterval"`
-		PingInterval   int    `yaml:"pingInterval"`
-		Resources      struct {
-			Limits struct {
-				CPU    string `yaml:"cpu"`
-				Memory string `yaml:"memory"`
-			} `yaml:"limits"`
-			Requests struct {
-				CPU    string `yaml:"cpu"`
-				Memory string `yaml:"memory"`
-			} `yaml:"requests"`
-		} `yaml:"resources"`
-	} `yaml:"deployment"`
-
-	VM struct {
-		ParentDomain      string `yaml:"parentDomain"`
-		AdminSshPublicKey string `yaml:"adminSshPublicKey"`
-		RepairInterval    int    `yaml:"repairInterval"`
-	} `yaml:"vm"`
-
-	Quotas []struct {
-		Role        string `yaml:"role"`
-		Deployments int    `yaml:"deployments"`
-		CpuCores    int    `yaml:"cpuCores"`
-		RAM         int    `yaml:"ram"`
-		DiskSize    int    `yaml:"diskSize"`
-		Snapshots   int    `yaml:"snapshots"`
-	} `yaml:"quotas"`
-
-	Keycloak struct {
-		Url            string `yaml:"url"`
-		Realm          string `yaml:"realm"`
-		AdminGroup     string `yaml:"adminGroup"`
-		PowerUserGroup string `yaml:"powerUserGroup"`
-	} `yaml:"keycloak"`
-
-	DB struct {
-		Url  string `yaml:"url"`
-		Name string `yaml:"name"`
-	} `yaml:"db"`
-
-	CS struct {
-		URL    string `yaml:"url"`
-		ApiKey string `yaml:"apiKey"`
-		Secret string `yaml:"secret"`
-
-		IpAddressID string `yaml:"ipAddressId"`
-		NetworkID   string `yaml:"networkId"`
-		ProjectID   string `yaml:"projectId"`
-		ZoneID      string `yaml:"zoneId"`
-
-		PortRange struct {
-			Start int `yaml:"start"`
-			End   int `yaml:"end"`
-		} `yaml:"portRange"`
-	} `yaml:"cs"`
-
-	Landing struct {
-		Url      string `yaml:"url"`
-		User     string `yaml:"user"`
-		Password string `yaml:"password"`
-		ClientID string `yaml:"clientId"`
-	} `yaml:"landing"`
-
-	K8s struct {
-		Name   string `yaml:"name"`
-		URL    string `yaml:"url"`
-		Client *kubernetes.Clientset
-	} `yaml:"k8s"`
-
-	Harbor struct {
-		Url           string `yaml:"url"`
-		User          string `yaml:"user"`
-		Password      string `yaml:"password"`
-		WebhookSecret string `yaml:"webhookSecret"`
-	} `yaml:"harbor"`
-
-	GitLab struct {
-		URL   string `yaml:"url"`
-		Token string `yaml:"token"`
-	}
-
-	GitHub struct {
-		DevClient struct {
-			ID     string `yaml:"id"`
-			Secret string `yaml:"secret"`
-		} `yaml:"devClient"`
-		ProdClient struct {
-			ID     string `yaml:"id"`
-			Secret string `yaml:"secret"`
-		} `yaml:"prodClient"`
-	}
-}
-
-var Env Environment
+var Env enviroment.Environment
 
 func SetupEnvironment() {
 	makeError := func(err error) error {
@@ -157,6 +36,8 @@ func SetupEnvironment() {
 		log.Fatalf(makeError(err).Error())
 	}
 
+	assertCorrectConfig()
+
 	err = setupK8sClusters()
 	if err != nil {
 		log.Fatalln(makeError(err))
@@ -165,12 +46,71 @@ func SetupEnvironment() {
 	log.Println("config loaded")
 }
 
+func assertCorrectConfig() {
+	uniqueNames := make(map[string]bool)
+	for _, zone := range Env.Deployment.Zones {
+		if uniqueNames[zone.Name] {
+			log.Fatalln("deployment zone names must be unique")
+		}
+		uniqueNames[zone.Name] = true
+	}
+
+	uniqueNames = make(map[string]bool)
+	for _, zone := range Env.VM.Zones {
+		if uniqueNames[zone.Name] {
+			log.Fatalln("vm zone names must be unique")
+		}
+		uniqueNames[zone.Name] = true
+	}
+
+	log.Println("config checks passed")
+}
+
 func setupK8sClusters() error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to setup k8s clusters. details: %s", err)
 	}
 
-	log.Println("fetching available k8s clusters")
+	for idx, zone := range Env.Deployment.Zones {
+		sourceType, ok := zone.ConfigSource.(map[string]interface{})
+		if !ok {
+			log.Fatalln("failed to parse type of config source for zone", zone.Name)
+		}
+
+		configType, ok := sourceType["type"].(string)
+		if !ok {
+			log.Fatalln("failed to parse type of config source for zone", zone.Name)
+		}
+
+		switch configType {
+		case "cloudstack":
+			{
+				var zoneConfig enviroment.CloudStackConfigSource
+				err := mapstructure.Decode(sourceType, &zoneConfig)
+				if err != nil {
+					log.Fatalln("failed to parse cloudstack config source for zone", zone.Name)
+				}
+
+				client, err := createClientFromCloudStackConfig(zone.Name, &zoneConfig)
+				if err != nil {
+					return makeError(err)
+				}
+
+				Env.Deployment.Zones[idx].Client = client
+			}
+		}
+	}
+
+	log.Println("k8s clusters setup done")
+	return nil
+}
+
+func createClientFromCloudStackConfig(name string, config *enviroment.CloudStackConfigSource) (*kubernetes.Clientset, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to create k8s client from cloudstack config. details: %s", err)
+	}
+
+	log.Println("fetching k8s cluster for deployment zone", name)
 
 	csClient := cloudstack.NewAsyncClient(
 		Env.CS.URL,
@@ -181,58 +121,36 @@ func setupK8sClusters() error {
 
 	listClusterParams := csClient.Kubernetes.NewListKubernetesClustersParams()
 	listClusterParams.SetListall(true)
+	listClusterParams.SetId(config.ClusterID)
 	clusters, err := csClient.Kubernetes.ListKubernetesClusters(listClusterParams)
 	if err != nil {
 		log.Fatalln(makeError(err))
 	}
 
-	fetchConfig := func(name string, publicUrl string) string {
-
-		log.Println("fetching k8s cluster config for", name)
-
-		clusterIdx := -1
-		for idx, cluster := range clusters.KubernetesClusters {
-			if cluster.Name == name {
-				clusterIdx = idx
-				break
-			}
-		}
-
-		if clusterIdx == -1 {
-			log.Println("cluster", name, "not found")
-			return ""
-		}
-
-		params := csClient.Kubernetes.NewGetKubernetesClusterConfigParams()
-		params.SetId(clusters.KubernetesClusters[clusterIdx].Id)
-
-		config, err := csClient.Kubernetes.GetKubernetesClusterConfig(params)
-		if err != nil {
-			log.Fatalln(makeError(err))
-		}
-
-		// use regex to replace the private ip in config.ConffigData 172.31.1.* with the public ip
-		regex := regexp.MustCompile(`https://172.31.1.[0-9]+:6443`)
-		config.Configdata = regex.ReplaceAllString(config.Configdata, publicUrl)
-
-		return config.Configdata
+	if len(clusters.KubernetesClusters) == 0 {
+		log.Fatalln("cluster for deployment zone", name, "not found")
 	}
 
-	configData := fetchConfig(Env.K8s.Name, Env.K8s.URL)
-	if configData == "" {
-		return makeError(fmt.Errorf("failed to fetch k8s cluster config"))
+	if len(clusters.KubernetesClusters) > 1 {
+		log.Fatalln("multiple clusters for deployment zone", name, "found")
 	}
 
-	Env.K8s.Client, err = createClient([]byte(configData))
+	params := csClient.Kubernetes.NewGetKubernetesClusterConfigParams()
+	params.SetId(clusters.KubernetesClusters[0].Id)
+
+	clusterConfig, err := csClient.Kubernetes.GetKubernetesClusterConfig(params)
 	if err != nil {
-		return makeError(err)
+		log.Fatalln(makeError(err))
 	}
 
-	log.Println("k8s clusters setup done")
-	return nil
+	// use regex to replace the private ip in config.ConfigData 172.31.1.* with the public ip
+	regex := regexp.MustCompile(`https://172.31.1.[0-9]+:6443`)
+	clusterConfig.Configdata = regex.ReplaceAllString(clusterConfig.Configdata, config.ExternalURL)
+
+	return createK8sClient([]byte(clusterConfig.Configdata))
 }
 
-func createClient(configData []byte) (*kubernetes.Clientset, error) {
+func createK8sClient(configData []byte) (*kubernetes.Clientset, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create k8s client. details: %s", err)
 	}

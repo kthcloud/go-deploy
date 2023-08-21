@@ -17,4 +17,5 @@ type GpuInfoRead struct {
 		} `json:"hosts"`
 	} `json:"gpuInfo"`
 	Timestamp time.Time `json:"timestamp"`
+	ZoneID    string    `json:"zoneId"`
 }

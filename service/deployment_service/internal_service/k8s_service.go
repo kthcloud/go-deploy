@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	deploymentModel "go-deploy/models/sys/deployment"
+	"go-deploy/models/sys/enviroment"
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/k8s"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
@@ -89,8 +90,8 @@ func createIngressPublic(namespace, name string, serviceName string, servicePort
 	}
 }
 
-func getExternalFQDN(name string) string {
-	return fmt.Sprintf("%s.%s", name, conf.Env.Deployment.ParentDomain)
+func getExternalFQDN(name string, zone *enviroment.DeploymentZone) string {
+	return fmt.Sprintf("%s.%s", name, zone.ParentDomain)
 }
 
 func CreateK8s(deploymentID string, userID string, params *deploymentModel.CreateParams) (*K8sResult, error) {
@@ -98,11 +99,6 @@ func CreateK8s(deploymentID string, userID string, params *deploymentModel.Creat
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to setup k8s for deployment %s. details: %s", params.Name, err)
-	}
-
-	client, err := k8s.New(conf.Env.K8s.Client)
-	if err != nil {
-		return nil, makeError(err)
 	}
 
 	deployment, err := deploymentModel.GetByID(deploymentID)
@@ -113,6 +109,16 @@ func CreateK8s(deploymentID string, userID string, params *deploymentModel.Creat
 	if deployment == nil {
 		log.Println("deployment", deploymentID, "not found for k8s setup assuming it was deleted")
 		return nil, nil
+	}
+
+	zone := conf.Env.Deployment.GetZone(deployment.Zone)
+	if zone == nil {
+		return nil, fmt.Errorf("zone %s not found", deployment.Zone)
+	}
+
+	client, err := k8s.New(zone.Client)
+	if err != nil {
+		return nil, makeError(err)
 	}
 
 	ss := &deployment.Subsystems.K8s
@@ -170,7 +176,7 @@ func CreateK8s(deploymentID string, userID string, params *deploymentModel.Creat
 			deployment.Name,
 			service.Name,
 			service.Port,
-			[]string{getExternalFQDN(deployment.Name)},
+			[]string{getExternalFQDN(deployment.Name, zone)},
 		))
 		if err != nil {
 			return nil, makeError(err)
@@ -192,12 +198,6 @@ func DeleteK8s(name string) error {
 		return fmt.Errorf("failed to delete k8s for deployment %s. details: %s", name, err)
 	}
 
-	client, err := k8s.New(conf.Env.K8s.Client)
-	if err != nil {
-		return makeError(err)
-	}
-
-	// delete everything in the opposite order of creation
 	deployment, err := deploymentModel.GetByName(name)
 	if err != nil {
 		return makeError(err)
@@ -206,6 +206,16 @@ func DeleteK8s(name string) error {
 	if deployment == nil {
 		log.Println("deployment", name, "not found for k8s deletion. assuming it was deleted")
 		return nil
+	}
+
+	zone := conf.Env.Deployment.GetZone(deployment.Zone)
+	if zone == nil {
+		return fmt.Errorf("zone %s not found", deployment.Zone)
+	}
+
+	client, err := k8s.New(zone.Client)
+	if err != nil {
+		return makeError(err)
 	}
 
 	ss := &deployment.Subsystems.K8s
@@ -280,7 +290,12 @@ func UpdateK8s(name string, params *deploymentModel.UpdateParams) error {
 		return nil
 	}
 
-	client, err := k8s.New(conf.Env.K8s.Client)
+	zone := conf.Env.Deployment.GetZone(deployment.Zone)
+	if zone == nil {
+		return fmt.Errorf("zone %s not found", deployment.Zone)
+	}
+
+	client, err := k8s.New(zone.Client)
 	if err != nil {
 		return makeError(err)
 	}
@@ -369,9 +384,9 @@ func UpdateK8s(name string, params *deploymentModel.UpdateParams) error {
 
 				var domains []string
 				if params.ExtraDomains == nil {
-					domains = getAllDomainNames(deployment.Name, deployment.ExtraDomains)
+					domains = getAllDomainNames(deployment.Name, deployment.ExtraDomains, zone)
 				} else {
-					domains = getAllDomainNames(deployment.Name, *params.ExtraDomains)
+					domains = getAllDomainNames(deployment.Name, *params.ExtraDomains, zone)
 				}
 
 				public := createIngressPublic(namespace.FullName, name, service.Name, service.Port, domains)
@@ -396,7 +411,12 @@ func RestartK8s(name string) error {
 		return makeError(errors.New("can't restart deployment that is not yet created"))
 	}
 
-	client, err := k8s.New(conf.Env.K8s.Client)
+	zone := conf.Env.Deployment.GetZone(deployment.Zone)
+	if zone == nil {
+		return fmt.Errorf("zone %s not found", deployment.Zone)
+	}
+
+	client, err := k8s.New(zone.Client)
 	if err != nil {
 		return makeError(err)
 	}
@@ -424,7 +444,12 @@ func RepairK8s(name string) error {
 		return nil
 	}
 
-	client, err := k8s.New(conf.Env.K8s.Client)
+	zone := conf.Env.Deployment.GetZone(deployment.Zone)
+	if zone == nil {
+		return fmt.Errorf("zone %s not found", deployment.Zone)
+	}
+
+	client, err := k8s.New(zone.Client)
 	if err != nil {
 		return makeError(err)
 	}
@@ -506,7 +531,7 @@ func RepairK8s(name string) error {
 				deployment.Name,
 				deployment.Subsystems.K8s.Service.Name,
 				deployment.Subsystems.K8s.Service.Port,
-				getAllDomainNames(deployment.Name, deployment.ExtraDomains),
+				getAllDomainNames(deployment.Name, deployment.ExtraDomains, zone),
 			))
 			if err != nil {
 				return makeError(err)
@@ -686,9 +711,9 @@ func createIngress(client *k8s.Client, deployment *deploymentModel.Deployment, p
 	return ingress, nil
 }
 
-func getAllDomainNames(name string, extraDomains []string) []string {
+func getAllDomainNames(name string, extraDomains []string, zone *enviroment.DeploymentZone) []string {
 	domains := make([]string, len(extraDomains)+1)
-	domains[0] = getExternalFQDN(name)
+	domains[0] = getExternalFQDN(name, zone)
 	copy(domains[1:], extraDomains)
 	return domains
 }

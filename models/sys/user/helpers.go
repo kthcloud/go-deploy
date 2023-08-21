@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"go-deploy/models"
 	"go-deploy/models/dto/body"
+	roleModel "go-deploy/models/sys/enviroment/role"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"log"
 )
 
-func (u *User) ToDTO(quota *Quota, usage *Usage) body.UserRead {
+func (u *User) ToDTO(effectiveRole *roleModel.Role, usage *Usage) body.UserRead {
 	publicKeys := make([]body.PublicKey, len(u.PublicKeys))
 	for i, key := range u.PublicKeys {
 		publicKeys[i] = body.PublicKey{
@@ -18,34 +20,39 @@ func (u *User) ToDTO(quota *Quota, usage *Usage) body.UserRead {
 		}
 	}
 
-	if quota == nil {
-		quota = &Quota{}
-	}
-
 	if usage == nil {
 		usage = &Usage{}
 	}
 
-	if u.Roles == nil {
-		u.Roles = []string{}
+	if effectiveRole == nil {
+		log.Println("effective role is nil when creating user read for user", u.Username)
+		effectiveRole = &roleModel.Role{
+			Name:        "unknown",
+			Description: "unknown",
+		}
 	}
 
 	userRead := body.UserRead{
 		ID:       u.ID,
 		Username: u.Username,
 		Email:    u.Email,
-		Roles:    u.Roles,
+		Role: body.Role{
+			Name:        effectiveRole.Name,
+			Description: effectiveRole.Description,
+		},
 		Quota: body.Quota{
-			Deployments: quota.Deployments,
-			CpuCores:    quota.CpuCores,
-			RAM:         quota.RAM,
-			DiskSize:    quota.DiskSize,
+			Deployments: effectiveRole.Quotas.Deployments,
+			CpuCores:    effectiveRole.Quotas.CpuCores,
+			RAM:         effectiveRole.Quotas.RAM,
+			DiskSize:    effectiveRole.Quotas.DiskSize,
+			Snapshots:   effectiveRole.Quotas.Snapshots,
 		},
 		Usage: body.Quota{
 			Deployments: usage.Deployments,
 			CpuCores:    usage.CpuCores,
 			RAM:         usage.RAM,
 			DiskSize:    usage.DiskSize,
+			Snapshots:   usage.Snapshots,
 		},
 		PublicKeys: publicKeys,
 	}
@@ -53,17 +60,24 @@ func (u *User) ToDTO(quota *Quota, usage *Usage) body.UserRead {
 	return userRead
 }
 
-func Create(id, username string, roles []string) error {
+func Create(id, username string, effectiveRole *EffectiveRole) error {
 	current, err := GetByID(id)
 	if err != nil {
 		return err
+	}
+
+	if effectiveRole == nil {
+		effectiveRole = &EffectiveRole{
+			Name:        "default",
+			Description: "Default role for new users",
+		}
 	}
 
 	if current != nil {
 		// update roles
 		filter := bson.D{{"id", id}}
 		update := bson.D{{"$set", bson.D{
-			{"roles", roles},
+			{"effectiveRole", effectiveRole},
 		}}}
 		_, err = models.UserCollection.UpdateOne(context.Background(), filter, update)
 		if err != nil {
@@ -74,11 +88,11 @@ func Create(id, username string, roles []string) error {
 	}
 
 	_, err = models.UserCollection.InsertOne(context.TODO(), User{
-		ID:         id,
-		Username:   username,
-		Email:      "",
-		Roles:      roles,
-		PublicKeys: []PublicKey{},
+		ID:            id,
+		Username:      username,
+		Email:         "",
+		EffectiveRole: *effectiveRole,
+		PublicKeys:    []PublicKey{},
 	})
 
 	if err != nil {
@@ -139,22 +153,4 @@ func Update(userID string, update *UserUpdate) error {
 	}
 
 	return nil
-}
-
-func (u *User) HasRole(role string) bool {
-	for _, userRole := range u.Roles {
-		if userRole == role {
-			return true
-		}
-	}
-
-	return false
-}
-
-func (u *User) IsPowerUser() bool {
-	return u.HasRole("powerUser")
-}
-
-func (u *User) IsAdmin() bool {
-	return u.HasRole("admin")
 }

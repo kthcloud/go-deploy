@@ -26,7 +26,7 @@ func withHarborProject(t *testing.T) *models.ProjectPublic {
 	client := withHarborClient(t)
 
 	project := &models.ProjectPublic{
-		Name:   "acc-test-" + uuid.New().String(),
+		Name: "acc-test-" + uuid.New().String(),
 	}
 
 	id, err := client.CreateProject(project)
@@ -51,18 +51,17 @@ func withHarborRobot(t *testing.T, project *models.ProjectPublic) *models.RobotP
 		Name:        "acc-test-" + uuid.New().String(),
 		ProjectID:   project.ID,
 		ProjectName: project.Name,
-		Description: "Test robot",
 		Disable:     false,
 		Secret:      "some secret",
 	}
 
-	robotResult, err := client.CreateRobot(robot)
+	id, err := client.CreateRobot(robot)
 	assert.NoError(t, err, "failed to create harbor robot")
 
-	createdRobot, err := client.ReadRobot(robotResult.ID)
+	createdRobot, err := client.ReadRobot(id)
 	assert.NoError(t, err, "failed to read harbor robot")
 
-	robot.ID = robotResult.ID
+	robot.ID = id
 	assert.NotZero(t, robot.ID, "no id received from client")
 
 	robot.HarborName = createdRobot.HarborName
@@ -72,9 +71,13 @@ func withHarborRobot(t *testing.T, project *models.ProjectPublic) *models.RobotP
 	secret := robot.Secret
 	robot.Secret = ""
 
+	createdSecret := createdRobot.Secret
+	createdRobot.Secret = ""
+
 	assert.EqualValues(t, robot, createdRobot, "created robot does not match")
 
 	robot.Secret = secret
+	createdRobot.Secret = createdSecret
 
 	return robot
 }

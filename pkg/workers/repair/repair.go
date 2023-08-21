@@ -1,11 +1,11 @@
 package repair
 
 import (
-	"go-deploy/pkg/sys"
+	"context"
 	"log"
 )
 
-func Setup(ctx *sys.Context) {
+func Setup(ctx context.Context) {
 	log.Println("starting repairers")
 	go deploymentRepairer(ctx)
 	go vmRepairer(ctx)

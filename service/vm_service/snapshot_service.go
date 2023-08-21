@@ -2,7 +2,7 @@ package vm_service
 
 import (
 	"fmt"
-	"go-deploy/models/sys/user"
+	roleModel "go-deploy/models/sys/enviroment/role"
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/service/vm_service/internal_service"
 	"log"
@@ -37,6 +37,32 @@ func GetSnapshotsByVM(vmID string) ([]vmModel.Snapshot, error) {
 	})
 
 	return snapshots, nil
+}
+
+func GetSnapshotByName(vmID, snapshotName string) (*vmModel.Snapshot, error) {
+	vm, err := vmModel.GetByID(vmID)
+	if err != nil {
+		return nil, err
+	}
+
+	if vm == nil {
+		return nil, nil
+	}
+
+	snapshot, ok := vm.Subsystems.CS.SnapshotMap[snapshotName]
+	if !ok {
+		return nil, nil
+	}
+
+	return &vmModel.Snapshot{
+		ID:         snapshot.ID,
+		VmID:       vmID,
+		Name:       snapshot.Name,
+		ParentName: snapshot.ParentName,
+		CreatedAt:  snapshot.CreatedAt,
+		State:      snapshot.State,
+		Current:    snapshot.Current,
+	}, nil
 }
 
 func CreateSnapshot(id, name string, userCreated bool) error {
@@ -109,7 +135,7 @@ func ApplySnapshot(id, snapshotID string) error {
 	return nil
 }
 
-func CheckQuotaCreateSnapshot(userID string, quota *user.Quota) (bool, string, error) {
+func CheckQuotaCreateSnapshot(userID string, quota *roleModel.Quotas) (bool, string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check quota. details: %s", err)
 	}

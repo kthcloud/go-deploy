@@ -1,11 +1,11 @@
 package snapshot
 
 import (
-	"go-deploy/pkg/sys"
+	"context"
 	"log"
 )
 
-func Setup(ctx *sys.Context) {
+func Setup(ctx context.Context) {
 	log.Println("starting snapshot workers")
 	go snapshotter(ctx)
 }

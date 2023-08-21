@@ -13,6 +13,7 @@ type DeploymentCreate struct {
 		Token        string `json:"token" binding:"required,min=1,max=1000"`
 		RepositoryID int64  `json:"repositoryId" binding:"required"`
 	} `json:"github" binding:"omitempty,dive"`
+	Zone *string `json:"zone" binding:"omitempty"`
 }
 
 type DeploymentUpdate struct {
@@ -43,15 +44,19 @@ type DeploymentUpdated struct {
 }
 
 type DeploymentRead struct {
-	ID           string   `json:"id"`
-	Name         string   `json:"name"`
-	OwnerID      string   `json:"ownerId"`
-	Status       string   `json:"status"`
-	URL          *string  `json:"url,omitempty"`
-	Envs         []Env    `json:"envs"`
-	Private      bool     `json:"private"`
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	OwnerID string `json:"ownerId"`
+	Zone    string `json:"zone"`
+
+	URL     *string `json:"url,omitempty"`
+	Envs    []Env   `json:"envs"`
+	Private bool    `json:"private"`
+
+	Status     string `json:"status"`
+	PingResult *int   `json:"pingResult,omitempty"`
+
 	Integrations []string `json:"integrations"`
-	PingResult   *int     `json:"pingResult,omitempty"`
 }
 
 type CiConfig struct {

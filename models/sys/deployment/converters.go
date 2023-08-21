@@ -35,15 +35,19 @@ func (deployment *Deployment) ToDTO(url *string) body.DeploymentRead {
 	}
 
 	return body.DeploymentRead{
-		ID:           deployment.ID,
-		Name:         deployment.Name,
-		OwnerID:      deployment.OwnerID,
-		Status:       deployment.StatusMessage,
-		URL:          fullURL,
-		Envs:         envs,
-		Private:      deployment.Private,
+		ID:      deployment.ID,
+		Name:    deployment.Name,
+		OwnerID: deployment.OwnerID,
+		Zone:    deployment.Zone,
+
+		URL:     fullURL,
+		Envs:    envs,
+		Private: deployment.Private,
+
+		Status:     deployment.StatusMessage,
+		PingResult: pingResult,
+
 		Integrations: integrations,
-		PingResult:   pingResult,
 	}
 }
 
@@ -70,7 +74,7 @@ func (p *UpdateParams) FromDTO(dto *body.DeploymentUpdate) {
 	p.ExtraDomains = dto.ExtraDomains
 }
 
-func (p *CreateParams) FromDTO(dto *body.DeploymentCreate) {
+func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZone *string) {
 	p.Name = dto.Name
 	p.Private = dto.Private
 	p.Envs = make([]Env, len(dto.Envs))
@@ -86,6 +90,12 @@ func (p *CreateParams) FromDTO(dto *body.DeploymentCreate) {
 			Token:        dto.GitHub.Token,
 			RepositoryID: dto.GitHub.RepositoryID,
 		}
+	}
+
+	if dto.Zone != nil {
+		p.Zone = *dto.Zone
+	} else {
+		p.Zone = *fallbackZone
 	}
 }
 

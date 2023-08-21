@@ -36,7 +36,7 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	job, err := job_service.GetByID(auth.UserID, requestURI.JobID, auth.IsAdmin())
+	job, err := job_service.GetByID(auth.UserID, requestURI.JobID, auth.IsAdmin)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return

@@ -1,11 +1,11 @@
 package job_execute
 
 import (
-	"go-deploy/pkg/sys"
+	"context"
 	"log"
 )
 
-func Setup(ctx *sys.Context) {
+func Setup(ctx context.Context) {
 	log.Println("starting job workers")
 	go jobFetcher(ctx)
 	go failedJobFetcher(ctx)

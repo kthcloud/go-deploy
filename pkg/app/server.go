@@ -8,7 +8,6 @@ import (
 	"go-deploy/models/sys/job"
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/intializer"
-	"go-deploy/pkg/sys"
 	"go-deploy/pkg/workers/confirm"
 	"go-deploy/pkg/workers/job_execute"
 	"go-deploy/pkg/workers/migrate"
@@ -37,9 +36,7 @@ func shutdown() {
 	models.Shutdown()
 }
 
-func Start(options *StartOptions) *http.Server {
-	c := &sys.Context{}
-
+func Start(ctx context.Context, options *StartOptions) *http.Server {
 	conf.SetupEnvironment()
 
 	models.Setup()
@@ -52,6 +49,7 @@ func Start(options *StartOptions) *http.Server {
 	}
 
 	intializer.SynchronizeGPUs()
+	intializer.CleanUpOldTests()
 
 	if options == nil {
 		options = &StartOptions{
@@ -66,22 +64,22 @@ func Start(options *StartOptions) *http.Server {
 	}
 
 	if options.Confirmer {
-		confirm.Setup(c)
+		confirm.Setup(ctx)
 	}
 	if options.StatusUpdater {
-		status_update.Setup(c)
+		status_update.Setup(ctx)
 	}
 	if options.JobExecutor {
-		job_execute.Setup(c)
+		job_execute.Setup(ctx)
 	}
 	if options.Repairer {
-		repair.Setup(c)
+		repair.Setup(ctx)
 	}
 	if options.Pinger {
-		ping.Setup(c)
+		ping.Setup(ctx)
 	}
 	if options.Snapshotter {
-		snapshot.Setup(c)
+		snapshot.Setup(ctx)
 	}
 	if options.API {
 		ginMode, exists := os.LookupEnv("GIN_MODE")

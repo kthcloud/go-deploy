@@ -3,7 +3,7 @@ package vm_service
 import (
 	"fmt"
 	"go-deploy/models/dto/body"
-	"go-deploy/models/sys/user"
+	roleModel "go-deploy/models/sys/enviroment/role"
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/models/sys/vm/gpu"
 	"go-deploy/pkg/conf"
@@ -17,8 +17,11 @@ func Create(vmID, owner string, vmCreate *body.VmCreate) error {
 		return fmt.Errorf("failed to create vm. details: %s", err)
 	}
 
+	// temporary hard-coded fallback
+	fallback := "se-flem"
+
 	params := &vmModel.CreateParams{}
-	params.FromDTO(vmCreate)
+	params.FromDTO(vmCreate, &fallback)
 
 	// clear any potentially ill-formed ssh rules
 	if params.Ports != nil {
@@ -189,7 +192,16 @@ func Repair(id string) error {
 }
 
 func GetConnectionString(vm *vmModel.VM) (*string, error) {
-	domainName := conf.Env.VM.ParentDomain
+	if vm == nil {
+		return nil, nil
+	}
+
+	zone := conf.Env.VM.GetZone(vm.Zone)
+	if zone == nil {
+		return nil, fmt.Errorf("zone %s not found", vm.Zone)
+	}
+
+	domainName := zone.ParentDomain
 	port := vm.Subsystems.CS.PortForwardingRuleMap["__ssh"].PublicPort
 
 	if domainName == "" || port == 0 {
@@ -319,7 +331,7 @@ func CanAddActivity(vmID, activity string) (bool, string, error) {
 	return false, "", fmt.Errorf("unknown activity %s", activity)
 }
 
-func CheckQuotaCreate(userID string, quota *user.Quota, createParams body.VmCreate) (bool, string, error) {
+func CheckQuotaCreate(userID string, quota *roleModel.Quotas, createParams body.VmCreate) (bool, string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check quota. details: %s", err)
 	}
@@ -348,7 +360,7 @@ func CheckQuotaCreate(userID string, quota *user.Quota, createParams body.VmCrea
 	return true, "", nil
 }
 
-func CheckQuotaUpdate(userID, vmID string, quota *user.Quota, updateParams body.VmUpdate) (bool, string, error) {
+func CheckQuotaUpdate(userID, vmID string, quota *roleModel.Quotas, updateParams body.VmUpdate) (bool, string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check quota. details: %s", err)
 	}
