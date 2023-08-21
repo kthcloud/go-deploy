@@ -17,7 +17,8 @@ type SnapshotPublic struct {
 }
 
 func CreateSnapshotPublicFromGet(snapshot *cloudstack.VMSnapshot) *SnapshotPublic {
-	createdAt, err := time.Parse(time.RFC3339, snapshot.Created)
+	iso8601 := "2006-01-02T15:04:05Z0700"
+	createdAt, err := time.Parse(iso8601, snapshot.Created)
 	if err != nil {
 		createdAt = time.Now()
 	}
