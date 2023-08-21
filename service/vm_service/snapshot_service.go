@@ -39,6 +39,32 @@ func GetSnapshotsByVM(vmID string) ([]vmModel.Snapshot, error) {
 	return snapshots, nil
 }
 
+func GetSnapshotByName(vmID, snapshotName string) (*vmModel.Snapshot, error) {
+	vm, err := vmModel.GetByID(vmID)
+	if err != nil {
+		return nil, err
+	}
+
+	if vm == nil {
+		return nil, nil
+	}
+
+	snapshot, ok := vm.Subsystems.CS.SnapshotMap[snapshotName]
+	if !ok {
+		return nil, nil
+	}
+
+	return &vmModel.Snapshot{
+		ID:         snapshot.ID,
+		VmID:       vmID,
+		Name:       snapshot.Name,
+		ParentName: snapshot.ParentName,
+		CreatedAt:  snapshot.CreatedAt,
+		State:      snapshot.State,
+		Current:    snapshot.Current,
+	}, nil
+}
+
 func CreateSnapshot(id, name string, userCreated bool) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create snapshot for vm %s. details: %s", id, err)

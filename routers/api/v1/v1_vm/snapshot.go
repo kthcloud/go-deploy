@@ -91,6 +91,17 @@ func CreateSnapshot(c *gin.Context) {
 		return
 	}
 
+	current, err := vm_service.GetSnapshotByName(requestURI.VmID, requestBody.Name)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to check if a snapshot with same name exists: %s", err))
+		return
+	}
+
+	if current != nil {
+		context.ErrorResponse(http.StatusConflict, status_codes.Error, "Snapshot already exists with given name")
+		return
+	}
+
 	vm, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get vm: %s", err))
