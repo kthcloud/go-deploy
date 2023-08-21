@@ -9,6 +9,7 @@ import (
 	"go-deploy/pkg/status_codes"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
+	"go-deploy/service"
 	"go-deploy/service/deployment_service"
 	"go-deploy/utils/requestutils"
 	"log"
@@ -44,7 +45,7 @@ func GetLogs(c *gin.Context) {
 		}(ws)
 
 		var logContext context.Context
-		var auth *v1.AuthInfo
+		var auth *service.AuthInfo
 
 		handler := func(msg string) {
 			err = ws.WriteMessage(websocket.TextMessage, []byte(msg))
@@ -76,7 +77,7 @@ func GetLogs(c *gin.Context) {
 			if strings.HasPrefix(msg, "Bearer ") && auth == nil {
 				auth = validateBearerToken(msg)
 				if auth != nil {
-					logContext, err = deployment_service.SetupLogStream(auth.UserID, requestURI.DeploymentID, handler, auth.IsAdmin())
+					logContext, err = deployment_service.SetupLogStream(auth.UserID, requestURI.DeploymentID, handler, auth.IsAdmin)
 					if err != nil {
 						httpContext.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 						return
@@ -92,7 +93,7 @@ func GetLogs(c *gin.Context) {
 	}()
 }
 
-func validateBearerToken(bearer string) *v1.AuthInfo {
+func validateBearerToken(bearer string) *service.AuthInfo {
 	req, err := http.NewRequest("GET", "http://localhost:8080/v1/authCheck", nil)
 	req.Header.Add("Authorization", bearer)
 	if err != nil {
@@ -109,7 +110,7 @@ func validateBearerToken(bearer string) *v1.AuthInfo {
 		return nil
 	}
 
-	var authInfo v1.AuthInfo
+	var authInfo service.AuthInfo
 	err = requestutils.ParseBody(resp.Body, &authInfo)
 	if err != nil {
 		return nil

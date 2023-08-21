@@ -3,6 +3,7 @@ package conf
 import (
 	"fmt"
 	"github.com/mitchellh/mapstructure"
+	"go-deploy/models/sys/enviroment"
 	"go-deploy/pkg/imp/cloudstack"
 	"gopkg.in/yaml.v3"
 	"k8s.io/client-go/kubernetes"
@@ -12,147 +13,7 @@ import (
 	"regexp"
 )
 
-type CloudStackConfigSource struct {
-	ClusterID   string `yaml:"clusterId"`
-	ExternalURL string `yaml:"externalUrl"`
-}
-
-type DeploymentZone struct {
-	Name          string      `yaml:"name"`
-	Description   string      `yaml:"description"`
-	ParentDomain  string      `yaml:"parentDomain"`
-	ExtraDomainIP string      `yaml:"extraDomainIp"`
-	ConfigSource  interface{} `yaml:"configSource"`
-	Client        *kubernetes.Clientset
-}
-
-type VmZone struct {
-	Name         string `yaml:"name"`
-	Description  string `yaml:"description"`
-	ParentDomain string `yaml:"parentDomain"`
-	PortRange    struct {
-		Start int `yaml:"start"`
-		End   int `yaml:"end"`
-	} `yaml:"portRange"`
-
-	// cloudstack ids
-	ZoneID      string `yaml:"zoneId"`
-	ProjectID   string `yaml:"projectId"`
-	NetworkID   string `yaml:"networkId"`
-	IpAddressID string `yaml:"ipAddressId"`
-}
-
-type Deployment struct {
-	Port           int    `yaml:"port"`
-	Prefix         string `yaml:"prefix"`
-	ExtraDomainIP  string `yaml:"extraDomainIp"`
-	IngressClass   string `yaml:"ingressClass"`
-	RepairInterval int    `yaml:"repairInterval"`
-	PingInterval   int    `yaml:"pingInterval"`
-	Resources      struct {
-		Limits struct {
-			CPU    string `yaml:"cpu"`
-			Memory string `yaml:"memory"`
-		} `yaml:"limits"`
-		Requests struct {
-			CPU    string `yaml:"cpu"`
-			Memory string `yaml:"memory"`
-		} `yaml:"requests"`
-	} `yaml:"resources"`
-	Zones []DeploymentZone `yaml:"zones"`
-}
-
-type VM struct {
-	AdminSshPublicKey string   `yaml:"adminSshPublicKey"`
-	RepairInterval    int      `yaml:"repairInterval"`
-	Zones             []VmZone `yaml:"zones"`
-}
-
-type Environment struct {
-	Port          int    `yaml:"port"`
-	ExternalUrl   string `yaml:"externalUrl"`
-	Manager       string `yaml:"manager"`
-	SessionSecret string `yaml:"sessionSecret"`
-	TestMode      bool   `yaml:"testMode"`
-
-	GPU struct {
-		PrivilegedGPUs []string `yaml:"privilegedGpus"`
-		ExcludedHosts  []string `yaml:"excludedHosts"`
-		ExcludedGPUs   []string `yaml:"excludedGpus"`
-		RepairInterval int      `yaml:"repairInterval"`
-	} `yaml:"gpu"`
-
-	DockerRegistry struct {
-		URL         string `yaml:"url"`
-		Placeholder struct {
-			Project    string `yaml:"project"`
-			Repository string `yaml:"repository"`
-		} `yaml:"placeholder"`
-	} `yaml:"dockerRegistry"`
-
-	Deployment Deployment `yaml:"deployment"`
-
-	VM VM `yaml:"vm"`
-
-	Quotas []struct {
-		Role        string `yaml:"role"`
-		Deployments int    `yaml:"deployments"`
-		CpuCores    int    `yaml:"cpuCores"`
-		RAM         int    `yaml:"ram"`
-		DiskSize    int    `yaml:"diskSize"`
-		Snapshots   int    `yaml:"snapshots"`
-	} `yaml:"quotas"`
-
-	Keycloak struct {
-		Url            string `yaml:"url"`
-		Realm          string `yaml:"realm"`
-		AdminGroup     string `yaml:"adminGroup"`
-		PowerUserGroup string `yaml:"powerUserGroup"`
-	} `yaml:"keycloak"`
-
-	DB struct {
-		Url  string `yaml:"url"`
-		Name string `yaml:"name"`
-	} `yaml:"db"`
-
-	CS struct {
-		URL    string `yaml:"url"`
-		ApiKey string `yaml:"apiKey"`
-		Secret string `yaml:"secret"`
-	} `yaml:"cs"`
-
-	Landing struct {
-		Url      string `yaml:"url"`
-		User     string `yaml:"user"`
-		Password string `yaml:"password"`
-		ClientID string `yaml:"clientId"`
-	} `yaml:"landing"`
-
-	Harbor struct {
-		Url           string `yaml:"url"`
-		User          string `yaml:"user"`
-		Password      string `yaml:"password"`
-		WebhookSecret string `yaml:"webhookSecret"`
-	} `yaml:"harbor"`
-
-	GitLab struct {
-		URL   string `yaml:"url"`
-		Token string `yaml:"token"`
-	}
-
-	GitHub struct {
-		DevClient struct {
-			ID     string `yaml:"id"`
-			Secret string `yaml:"secret"`
-		} `yaml:"devClient"`
-		ProdClient struct {
-			ID     string `yaml:"id"`
-			Secret string `yaml:"secret"`
-		} `yaml:"prodClient"`
-	}
-}
-
-var Env Environment
+var Env enviroment.Environment
 
 func SetupEnvironment() {
 	makeError := func(err error) error {
@@ -224,7 +85,7 @@ func setupK8sClusters() error {
 		switch configType {
 		case "cloudstack":
 			{
-				var zoneConfig CloudStackConfigSource
+				var zoneConfig enviroment.CloudStackConfigSource
 				err := mapstructure.Decode(sourceType, &zoneConfig)
 				if err != nil {
 					log.Fatalln("failed to parse cloudstack config source for zone", zone.Name)
@@ -244,7 +105,7 @@ func setupK8sClusters() error {
 	return nil
 }
 
-func createClientFromCloudStackConfig(name string, config *CloudStackConfigSource) (*kubernetes.Clientset, error) {
+func createClientFromCloudStackConfig(name string, config *enviroment.CloudStackConfigSource) (*kubernetes.Clientset, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create k8s client from cloudstack config. details: %s", err)
 	}
@@ -305,22 +166,4 @@ func createK8sClient(configData []byte) (*kubernetes.Clientset, error) {
 	}
 
 	return k8sClient, nil
-}
-
-func (d *Deployment) GetZone(name string) *DeploymentZone {
-	for _, zone := range d.Zones {
-		if zone.Name == name {
-			return &zone
-		}
-	}
-	return nil
-}
-
-func (v *VM) GetZone(name string) *VmZone {
-	for _, zone := range v.Zones {
-		if zone.Name == name {
-			return &zone
-		}
-	}
-	return nil
 }

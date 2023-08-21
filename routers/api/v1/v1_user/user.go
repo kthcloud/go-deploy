@@ -65,7 +65,9 @@ func GetList(c *gin.Context) {
 		return
 	}
 
-	if requestQuery.WantAll && auth.IsAdmin() {
+	quotas := &auth.GetEffectiveRole().Quotas
+
+	if requestQuery.WantAll && auth.IsAdmin {
 		users, err := user_service.GetAll()
 		if err != nil {
 			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
@@ -75,7 +77,7 @@ func GetList(c *gin.Context) {
 		usersDto := make([]body.UserRead, 0)
 		for _, user := range users {
 			if user.ID == auth.UserID {
-				updatedUser, err := user_service.GetOrCreate(auth.UserID, auth.JwtToken.PreferredUsername, auth.Roles)
+				updatedUser, err := user_service.GetOrCreate(auth)
 				if err != nil {
 					continue
 				}
@@ -85,24 +87,19 @@ func GetList(c *gin.Context) {
 				}
 			}
 
-			quota, err := user_service.GetQuotaByUserID(user.ID)
-			if err != nil {
-				quota = &userModel.Quota{}
-			}
-
 			ok, usage := collectUsage(&context, user.ID)
 			if !ok {
 				usage = &userModel.Usage{}
 			}
 
-			usersDto = append(usersDto, user.ToDTO(quota, usage))
+			usersDto = append(usersDto, user.ToDTO(quotas, usage))
 		}
 
 		context.JSONResponse(200, usersDto)
 		return
 	}
 
-	user, err := user_service.GetByID(auth.UserID, auth.UserID, auth.IsAdmin())
+	user, err := user_service.GetByID(auth.UserID, auth.UserID, auth.IsAdmin)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
@@ -113,18 +110,12 @@ func GetList(c *gin.Context) {
 		return
 	}
 
-	quota, err := user_service.GetQuotaByUserID(user.ID)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get quota for user: %s", err))
-		return
-	}
-
 	ok, usage := collectUsage(&context, user.ID)
 	if !ok {
 		return
 	}
 
-	context.JSONResponse(200, user.ToDTO(quota, usage))
+	context.JSONResponse(200, user.ToDTO(quotas, usage))
 }
 
 // Get
@@ -160,13 +151,13 @@ func Get(c *gin.Context) {
 
 	var user *userModel.User
 	if requestedUserID == auth.UserID {
-		user, err = user_service.GetOrCreate(auth.UserID, auth.JwtToken.PreferredUsername, auth.Roles)
+		user, err = user_service.GetOrCreate(auth)
 		if err != nil {
 			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get user: %s", err))
 			return
 		}
 	} else {
-		user, err = user_service.GetByID(requestedUserID, auth.UserID, auth.IsAdmin())
+		user, err = user_service.GetByID(requestedUserID, auth.UserID, auth.IsAdmin)
 		if err != nil {
 			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get user: %s", err))
 			return
@@ -178,18 +169,12 @@ func Get(c *gin.Context) {
 		}
 	}
 
-	quota, err := user_service.GetQuotaByUserID(user.ID)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to update user: %s", err))
-		return
-	}
-
 	ok, usage := collectUsage(&context, user.ID)
 	if !ok {
 		return
 	}
 
-	context.JSONResponse(200, user.ToDTO(quota, usage))
+	context.JSONResponse(200, user.ToDTO(&auth.GetEffectiveRole().Quotas, usage))
 }
 
 func Update(c *gin.Context) {
@@ -218,7 +203,7 @@ func Update(c *gin.Context) {
 		requestedUserID = auth.UserID
 	}
 
-	user, err := user_service.GetByID(requestedUserID, auth.UserID, auth.IsAdmin())
+	user, err := user_service.GetByID(requestedUserID, auth.UserID, auth.IsAdmin)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to update user: %s", err))
 		return
@@ -229,13 +214,13 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	err = user_service.Update(requestedUserID, auth.UserID, auth.IsAdmin(), &userUpdate)
+	err = user_service.Update(requestedUserID, auth.UserID, auth.IsAdmin, &userUpdate)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to update user: %s", err))
 		return
 	}
 
-	updatedUser, err := user_service.GetByID(requestedUserID, auth.UserID, auth.IsAdmin())
+	updatedUser, err := user_service.GetByID(requestedUserID, auth.UserID, auth.IsAdmin)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to update user: %s", err))
 		return
@@ -246,16 +231,10 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	quota, err := user_service.GetQuotaByUserID(updatedUser.ID)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to update user: %s", err))
-		return
-	}
-
 	ok, usage := collectUsage(&context, updatedUser.ID)
 	if !ok {
 		return
 	}
 
-	context.JSONResponse(200, updatedUser.ToDTO(quota, usage))
+	context.JSONResponse(200, updatedUser.ToDTO(&auth.GetEffectiveRole().Quotas, usage))
 }

@@ -3,7 +3,7 @@ package user_service
 import (
 	"go-deploy/models/dto/body"
 	userModel "go-deploy/models/sys/user"
-	"go-deploy/pkg/conf"
+	"go-deploy/service"
 )
 
 func GetByID(requestedUserID, userID string, isAdmin bool) (*userModel.User, error) {
@@ -23,13 +23,18 @@ func GetByID(requestedUserID, userID string, isAdmin bool) (*userModel.User, err
 	return user, nil
 }
 
-func GetOrCreate(userID, username string, roles []string) (*userModel.User, error) {
-	err := userModel.Create(userID, username, roles)
+func GetOrCreate(auth *service.AuthInfo) (*userModel.User, error) {
+	roleNames := make([]string, len(auth.Roles))
+	for i, role := range auth.Roles {
+		roleNames[i] = role.Name
+	}
+
+	err := userModel.Create(auth.UserID, auth.GetUsername(), roleNames)
 	if err != nil {
 		return nil, err
 	}
 
-	return userModel.GetByID(userID)
+	return userModel.GetByID(auth.UserID)
 }
 
 func GetAll() ([]userModel.User, error) {
@@ -65,29 +70,4 @@ func Update(requestedUserID, userID string, isAdmin bool, dtoUserUpdate *body.Us
 	}
 
 	return nil
-}
-
-func GetQuotaByUserID(id string) (*userModel.Quota, error) {
-	user, err := userModel.GetByID(id)
-	if err != nil {
-		return nil, err
-	}
-
-	if user == nil {
-		return nil, nil
-	}
-
-	quota := conf.Env.GetQuota(user.Roles)
-
-	if quota == nil {
-		return nil, nil
-	}
-
-	return &userModel.Quota{
-		Deployments: quota.Deployments,
-		CpuCores:    quota.CpuCores,
-		RAM:         quota.RAM,
-		DiskSize:    quota.DiskSize,
-		Snapshots:   quota.Snapshots,
-	}, nil
 }

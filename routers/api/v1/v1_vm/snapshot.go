@@ -11,7 +11,6 @@ import (
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/job_service"
-	"go-deploy/service/user_service"
 	"go-deploy/service/vm_service"
 	"net/http"
 )
@@ -81,18 +80,7 @@ func CreateSnapshot(c *gin.Context) {
 		return
 	}
 
-	quota, err := user_service.GetQuotaByUserID(auth.UserID)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get quota: %s", err))
-		return
-	}
-
-	if quota == nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Quota is not set for user"))
-		return
-	}
-
-	ok, reason, err := vm_service.CheckQuotaCreateSnapshot(auth.UserID, quota)
+	ok, reason, err := vm_service.CheckQuotaCreateSnapshot(auth.UserID, &auth.GetEffectiveRole().Quotas)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to check quota: %s", err))
 		return
@@ -103,7 +91,7 @@ func CreateSnapshot(c *gin.Context) {
 		return
 	}
 
-	vm, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin())
+	vm, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get vm: %s", err))
 		return

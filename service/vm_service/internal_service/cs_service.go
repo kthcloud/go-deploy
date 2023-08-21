@@ -3,6 +3,7 @@ package internal_service
 import (
 	"errors"
 	"fmt"
+	"go-deploy/models/sys/enviroment"
 	vmModel "go-deploy/models/sys/vm"
 	gpuModel "go-deploy/models/sys/vm/gpu"
 	"go-deploy/pkg/conf"
@@ -18,7 +19,7 @@ type CsCreated struct {
 	VM *csModels.VmPublic
 }
 
-func withCsClient(zone *conf.VmZone) (*cs.Client, error) {
+func withCsClient(zone *enviroment.VmZone) (*cs.Client, error) {
 	return cs.New(&cs.ClientConf{
 		URL:         conf.Env.CS.URL,
 		ApiKey:      conf.Env.CS.ApiKey,
@@ -879,7 +880,7 @@ func CanStartCS(vmID, hostName string) (bool, string, error) {
 	return true, "", nil
 }
 
-func HostInCorrectState(hostName string, zone *conf.VmZone) (bool, string, error) {
+func HostInCorrectState(hostName string, zone *enviroment.VmZone) (bool, string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check if host %s is in correct state. details: %s", zone.Name, err)
 	}

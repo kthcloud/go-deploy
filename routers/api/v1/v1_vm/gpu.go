@@ -46,7 +46,7 @@ func GetGpuList(c *gin.Context) {
 		return
 	}
 
-	gpus, err := vm_service.GetAllGPUs(requestQuery.OnlyShowAvailable, auth.IsAdmin())
+	gpus, err := vm_service.GetAllGPUs(requestQuery.OnlyShowAvailable, auth.GetEffectiveRole().Permissions.UsePrivilegedGPUs)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
@@ -95,7 +95,7 @@ func AttachGPU(c *gin.Context) {
 		return
 	}
 
-	vm, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin())
+	vm, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return
@@ -118,7 +118,7 @@ func AttachGPU(c *gin.Context) {
 
 	var gpus []gpuModel.GPU
 	if gpuID == "any" {
-		gpus, err = vm_service.GetAllAvailableGPU(auth.IsPowerUser())
+		gpus, err = vm_service.GetAllAvailableGPU(auth.GetEffectiveRole().Permissions.UsePrivilegedGPUs)
 		if err != nil {
 			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get available GPU: %s", err))
 			return
@@ -129,7 +129,7 @@ func AttachGPU(c *gin.Context) {
 			return
 		}
 	} else {
-		gpu, err := vm_service.GetGpuByID(gpuID, auth.IsPowerUser())
+		gpu, err := vm_service.GetGpuByID(gpuID, auth.GetEffectiveRole().Permissions.UsePrivilegedGPUs)
 		if err != nil {
 			context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 			return
@@ -201,10 +201,10 @@ func AttachGPU(c *gin.Context) {
 
 	jobID := uuid.New().String()
 	err = job_service.Create(jobID, auth.UserID, jobModel.TypeAttachGpuToVM, map[string]interface{}{
-		"id":          vm.ID,
-		"gpuIds":      gpuIds,
-		"userId":      auth.UserID,
-		"isPowerUser": auth.IsPowerUser(),
+		"id":            vm.ID,
+		"gpuIds":        gpuIds,
+		"userId":        auth.UserID,
+		"leaseDuration": auth.GetEffectiveRole().Permissions.GpuLeaseDuration,
 	})
 
 	if err != nil {
@@ -246,7 +246,7 @@ func DetachGPU(c *gin.Context) {
 		return
 	}
 
-	current, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin())
+	current, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, fmt.Sprintf("Failed to get VM: %s", err))
 		return

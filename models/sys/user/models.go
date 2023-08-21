@@ -5,14 +5,6 @@ type PublicKey struct {
 	Key  string `json:"key" bson:"key"`
 }
 
-type Quota struct {
-	Deployments int `json:"deployments" bson:"deployments"`
-	CpuCores    int `json:"cpuCores" bson:"cpuCores"`
-	RAM         int `json:"ram" bson:"ram"`
-	DiskSize    int `json:"diskSize" bson:"diskSize"`
-	Snapshots   int `json:"snapshots" bson:"snapshots"`
-}
-
 type Usage struct {
 	Deployments int `json:"deployments" bson:"deployments"`
 	CpuCores    int `json:"cpuCores" bson:"cpuCores"`

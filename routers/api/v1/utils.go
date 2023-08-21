@@ -5,54 +5,20 @@ import (
 	"errors"
 	"github.com/go-playground/validator/v10"
 	"go-deploy/models/dto/body"
-	"go-deploy/pkg/auth"
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/sys"
+	"go-deploy/service"
 	"net"
 	"reflect"
 )
 
-type AuthInfo struct {
-	UserID   string              `json:"userId"`
-	JwtToken *auth.KeycloakToken `json:"jwtToken"`
-	Roles    []string            `json:"roles"`
-}
-
-func (authInfo *AuthInfo) IsAdmin() bool {
-	return authInfo.InRole(conf.Env.Keycloak.AdminGroup)
-}
-
-func (authInfo *AuthInfo) IsPowerUser() bool {
-	return authInfo.InRole(conf.Env.Keycloak.PowerUserGroup)
-}
-
-func (authInfo *AuthInfo) InRole(group string) bool {
-	for _, role := range authInfo.Roles {
-		if role == group {
-			return true
-		}
-	}
-
-	return false
-}
-
-func WithAuth(context *sys.ClientContext) (*AuthInfo, error) {
+func WithAuth(context *sys.ClientContext) (*service.AuthInfo, error) {
 	token, err := context.GetKeycloakToken()
 	if err != nil {
 		return nil, err
 	}
 
-	roles := make([]string, 0)
-	for _, group := range token.Groups {
-		roles = append(roles, group)
-	}
-
-	return &AuthInfo{
-		UserID:   token.Sub,
-		JwtToken: token,
-		Roles:    roles,
-	}, nil
-
+	return service.CreateAuthInfo(token.Sub, token, token.Groups), nil
 }
 
 func msgForTag(fe validator.FieldError) string {

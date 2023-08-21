@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	deploymentModel "go-deploy/models/sys/deployment"
+	"go-deploy/models/sys/enviroment"
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/k8s"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
@@ -89,7 +90,7 @@ func createIngressPublic(namespace, name string, serviceName string, servicePort
 	}
 }
 
-func getExternalFQDN(name string, zone *conf.DeploymentZone) string {
+func getExternalFQDN(name string, zone *enviroment.DeploymentZone) string {
 	return fmt.Sprintf("%s.%s", name, zone.ParentDomain)
 }
 
@@ -710,7 +711,7 @@ func createIngress(client *k8s.Client, deployment *deploymentModel.Deployment, p
 	return ingress, nil
 }
 
-func getAllDomainNames(name string, extraDomains []string, zone *conf.DeploymentZone) []string {
+func getAllDomainNames(name string, extraDomains []string, zone *enviroment.DeploymentZone) []string {
 	domains := make([]string, len(extraDomains)+1)
 	domains[0] = getExternalFQDN(name, zone)
 	copy(domains[1:], extraDomains)

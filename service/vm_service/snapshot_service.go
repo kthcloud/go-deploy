@@ -2,7 +2,7 @@ package vm_service
 
 import (
 	"fmt"
-	"go-deploy/models/sys/user"
+	roleModel "go-deploy/models/sys/enviroment/role"
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/service/vm_service/internal_service"
 	"log"
@@ -109,7 +109,7 @@ func ApplySnapshot(id, snapshotID string) error {
 	return nil
 }
 
-func CheckQuotaCreateSnapshot(userID string, quota *user.Quota) (bool, string, error) {
+func CheckQuotaCreateSnapshot(userID string, quota *roleModel.Quotas) (bool, string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check quota. details: %s", err)
 	}

@@ -37,7 +37,7 @@ func GetCiConfig(c *gin.Context) {
 		return
 	}
 
-	config, err := deployment_service.GetCIConfig(auth.UserID, requestURI.DeploymentID, auth.IsAdmin())
+	config, err := deployment_service.GetCIConfig(auth.UserID, requestURI.DeploymentID, auth.IsAdmin)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return

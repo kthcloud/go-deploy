@@ -80,7 +80,7 @@ func GetList(c *gin.Context) {
 		return
 	}
 
-	if requestQuery.WantAll && auth.IsAdmin() {
+	if requestQuery.WantAll && auth.IsAdmin {
 		getAllVMs(&context)
 		return
 	}
@@ -145,7 +145,7 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	vm, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin())
+	vm, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get vm: %s", err.Error()))
 		return
@@ -205,7 +205,7 @@ func Create(c *gin.Context) {
 		return
 	}
 
-	user, err := user_service.GetOrCreate(auth.UserID, auth.JwtToken.PreferredUsername, auth.Roles)
+	user, err := user_service.GetOrCreate(auth)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get user: %s", err))
 		return
@@ -213,17 +213,6 @@ func Create(c *gin.Context) {
 
 	if user.ID != auth.UserID {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Created user id does not match auth user id"))
-	}
-
-	quota, err := user_service.GetQuotaByUserID(auth.UserID)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get quota: %s", err))
-		return
-	}
-
-	if quota == nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Quota is not set for user"))
-		return
 	}
 
 	if requestBody.Zone != nil {
@@ -280,7 +269,7 @@ func Create(c *gin.Context) {
 		return
 	}
 
-	ok, reason, err := vm_service.CheckQuotaCreate(auth.UserID, quota, requestBody)
+	ok, reason, err := vm_service.CheckQuotaCreate(auth.UserID, &auth.GetEffectiveRole().Quotas, requestBody)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to check quota: %s", err))
 		return
@@ -338,7 +327,7 @@ func Delete(c *gin.Context) {
 		return
 	}
 
-	current, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin())
+	current, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, fmt.Sprintf("VM with id %s not found", requestURI.VmID))
 		return
@@ -412,7 +401,7 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	vm, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin())
+	vm, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, fmt.Sprintf("Failed to get vm: %s", err))
 		return
@@ -423,23 +412,12 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	if vm.OwnerID != auth.UserID && !auth.IsAdmin() {
+	if vm.OwnerID != auth.UserID && !auth.IsAdmin {
 		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, "User is not allowed to update this resource")
 		return
 	}
 
-	quota, err := user_service.GetQuotaByUserID(auth.UserID)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get quota: %s", err))
-		return
-	}
-
-	if quota == nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Quota is not set for user"))
-		return
-	}
-
-	ok, reason, err := vm_service.CheckQuotaUpdate(auth.UserID, vm.ID, quota, requestBody)
+	ok, reason, err := vm_service.CheckQuotaUpdate(auth.UserID, vm.ID, &auth.GetEffectiveRole().Quotas, requestBody)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to check quota: %s", err))
 		return

@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"go-deploy/models"
 	"go-deploy/models/dto/body"
+	roleModel "go-deploy/models/sys/enviroment/role"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func (u *User) ToDTO(quota *Quota, usage *Usage) body.UserRead {
+func (u *User) ToDTO(quotas *roleModel.Quotas, usage *Usage) body.UserRead {
 	publicKeys := make([]body.PublicKey, len(u.PublicKeys))
 	for i, key := range u.PublicKeys {
 		publicKeys[i] = body.PublicKey{
@@ -18,8 +19,8 @@ func (u *User) ToDTO(quota *Quota, usage *Usage) body.UserRead {
 		}
 	}
 
-	if quota == nil {
-		quota = &Quota{}
+	if quotas == nil {
+		quotas = &roleModel.Quotas{}
 	}
 
 	if usage == nil {
@@ -36,10 +37,10 @@ func (u *User) ToDTO(quota *Quota, usage *Usage) body.UserRead {
 		Email:    u.Email,
 		Roles:    u.Roles,
 		Quota: body.Quota{
-			Deployments: quota.Deployments,
-			CpuCores:    quota.CpuCores,
-			RAM:         quota.RAM,
-			DiskSize:    quota.DiskSize,
+			Deployments: quotas.Deployments,
+			CpuCores:    quotas.CpuCores,
+			RAM:         quotas.RAM,
+			DiskSize:    quotas.DiskSize,
 		},
 		Usage: body.Quota{
 			Deployments: usage.Deployments,
@@ -139,22 +140,4 @@ func Update(userID string, update *UserUpdate) error {
 	}
 
 	return nil
-}
-
-func (u *User) HasRole(role string) bool {
-	for _, userRole := range u.Roles {
-		if userRole == role {
-			return true
-		}
-	}
-
-	return false
-}
-
-func (u *User) IsPowerUser() bool {
-	return u.HasRole("powerUser")
-}
-
-func (u *User) IsAdmin() bool {
-	return u.HasRole("admin")
 }

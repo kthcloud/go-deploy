@@ -30,7 +30,7 @@ func Migrate() {
 	if deploymentZone == nil {
 		panic("deployment zone with name se-flem not found")
 	}
-	
+
 	vmZone := conf.Env.VM.GetZone("se-flem")
 	if vmZone == nil {
 		panic("zone with name se-flem not found")
