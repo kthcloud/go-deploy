@@ -95,9 +95,13 @@ func setupVmRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
 
 	private.POST("/vms/:vmId/command", v1_vm.DoCommand)
 
-	private.POST("/vms/:vmId/attachGpu", v1_vm.AttachGPU)
-	private.POST("/vms/:vmId/attachGpu/:gpuId", v1_vm.AttachGPU)
-	private.POST("/vms/:vmId/detachGpu", v1_vm.DetachGPU)
+	gpuRoutes := private.Group("/vms/:vmId")
+	gpuRoutes.Use(v1_vm.AccessGpuRoutes)
+	gpuRoutes.POST("/attachGpu", v1_vm.AttachGPU)
+	gpuRoutes.POST("/attachGpu/:gpuId", v1_vm.AttachGPU)
+
+	// always allow to detach in case of permission changes
+	private.POST("/detachGpu", v1_vm.DetachGPU)
 }
 
 func setupZoneRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
@@ -105,7 +109,9 @@ func setupZoneRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
 }
 
 func setupGpuRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
-	private.GET("/gpus", v1_vm.GetGpuList)
+	gpuRoutes := private.Group("/")
+	gpuRoutes.Use(v1_vm.AccessGpuRoutes)
+	gpuRoutes.GET("/gpus", v1_vm.GetGpuList)
 }
 
 func setupJobRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
