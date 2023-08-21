@@ -40,6 +40,8 @@ func NewRouter() *gin.Engine {
 	docs.SwaggerInfo.BasePath = "/v1"
 	privateApiv1 := router.Group("/v1")
 	privateApiv1.Use(auth.New(auth.Check(), sys.GetKeyCloakConfig()))
+	privateApiv1.Use(v1_user.SynchronizeUser)
+
 	publicApiv1 := router.Group("/v1")
 	apiv1Hook := router.Group("/v1/hooks")
 

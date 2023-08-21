@@ -65,7 +65,7 @@ func GetList(c *gin.Context) {
 		return
 	}
 
-	quotas := &auth.GetEffectiveRole().Quotas
+	effectiveRole := auth.GetEffectiveRole()
 
 	if requestQuery.WantAll && auth.IsAdmin {
 		users, err := user_service.GetAll()
@@ -92,7 +92,7 @@ func GetList(c *gin.Context) {
 				usage = &userModel.Usage{}
 			}
 
-			usersDto = append(usersDto, user.ToDTO(quotas, usage))
+			usersDto = append(usersDto, user.ToDTO(effectiveRole, usage))
 		}
 
 		context.JSONResponse(200, usersDto)
@@ -115,7 +115,7 @@ func GetList(c *gin.Context) {
 		return
 	}
 
-	context.JSONResponse(200, user.ToDTO(quotas, usage))
+	context.JSONResponse(200, user.ToDTO(effectiveRole, usage))
 }
 
 // Get
@@ -174,7 +174,7 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	context.JSONResponse(200, user.ToDTO(&auth.GetEffectiveRole().Quotas, usage))
+	context.JSONResponse(200, user.ToDTO(auth.GetEffectiveRole(), usage))
 }
 
 func Update(c *gin.Context) {
@@ -236,5 +236,5 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	context.JSONResponse(200, updatedUser.ToDTO(&auth.GetEffectiveRole().Quotas, usage))
+	context.JSONResponse(200, updatedUser.ToDTO(auth.GetEffectiveRole(), usage))
 }

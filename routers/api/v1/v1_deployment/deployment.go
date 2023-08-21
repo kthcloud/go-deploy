@@ -16,7 +16,6 @@ import (
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/deployment_service"
 	"go-deploy/service/job_service"
-	"go-deploy/service/user_service"
 	"go-deploy/service/zone_service"
 	"net/http"
 )
@@ -160,12 +159,6 @@ func Create(c *gin.Context) {
 	effectiveRole := auth.GetEffectiveRole()
 	if effectiveRole == nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get effective role"))
-		return
-	}
-
-	_, err = user_service.GetOrCreate(auth)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get user: %s", err))
 		return
 	}
 

@@ -12,11 +12,17 @@ type Quota struct {
 	DiskSize    int `json:"diskSize"`
 }
 
+type Role struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
 type UserRead struct {
 	ID         string      `json:"id"`
 	Username   string      `json:"username"`
 	Email      string      `json:"email"`
-	Roles      []string    `json:"roles"`
+	Role       Role        `json:"role"`
+	Admin      bool        `json:"admin"`
 	Quota      Quota       `json:"quota"`
 	Usage      Quota       `json:"usage"`
 	PublicKeys []PublicKey `json:"publicKeys"`

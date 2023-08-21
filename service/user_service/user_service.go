@@ -29,7 +29,12 @@ func GetOrCreate(auth *service.AuthInfo) (*userModel.User, error) {
 		roleNames[i] = role.Name
 	}
 
-	err := userModel.Create(auth.UserID, auth.GetUsername(), roleNames)
+	effectiveRole := auth.GetEffectiveRole()
+
+	err := userModel.Create(auth.UserID, auth.GetUsername(), &userModel.EffectiveRole{
+		Name:        effectiveRole.Name,
+		Description: effectiveRole.Description,
+	})
 	if err != nil {
 		return nil, err
 	}

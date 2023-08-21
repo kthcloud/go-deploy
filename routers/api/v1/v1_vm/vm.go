@@ -14,7 +14,6 @@ import (
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/job_service"
-	"go-deploy/service/user_service"
 	"go-deploy/service/vm_service"
 	"go-deploy/service/zone_service"
 	"log"
@@ -203,16 +202,6 @@ func Create(c *gin.Context) {
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
 		return
-	}
-
-	user, err := user_service.GetOrCreate(auth)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get user: %s", err))
-		return
-	}
-
-	if user.ID != auth.UserID {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Created user id does not match auth user id"))
 	}
 
 	if requestBody.Zone != nil {
