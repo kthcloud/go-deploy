@@ -38,7 +38,7 @@ func (gpu *GPU) ToDTO(addUserInfo bool) body.GpuRead {
 	}
 }
 
-func Create(id, host string, data GpuData) error {
+func Create(id, host string, data GpuData, zone string) error {
 	currentGPU, err := GetByID(id)
 	if err != nil {
 		return err
@@ -57,6 +57,7 @@ func Create(id, host string, data GpuData) error {
 			End:    time.Time{},
 		},
 		Data: data,
+		Zone: zone,
 	}
 
 	_, err = models.GpuCollection.InsertOne(context.TODO(), gpu)

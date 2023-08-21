@@ -15,6 +15,7 @@ type Role struct {
 	Permissions struct {
 		ChooseZone        bool `yaml:"chooseZone"`
 		ChooseGPU         bool `yaml:"chooseGpu"`
+		UseGPUs           bool `yaml:"useGpus"`
 		UsePrivilegedGPUs bool `yaml:"seePrivilegedGpus"`
 		// in hours
 		GpuLeaseDuration float64 `yaml:"gpuLeaseDuration"`
