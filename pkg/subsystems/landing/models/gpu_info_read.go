@@ -5,8 +5,9 @@ import "time"
 type GpuInfoRead struct {
 	GpuInfo struct {
 		Hosts []struct {
-			Name string `json:"name"`
-			GPUs []struct {
+			Name   string `json:"name"`
+			ZoneID string `json:"zoneId"`
+			GPUs   []struct {
 				Name     string `json:"name"`
 				Slot     string `json:"slot"`
 				Vendor   string `json:"vendor"`
