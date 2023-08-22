@@ -1,40 +1,18 @@
-package internal_service
+package github_service
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	githubThirdParty "github.com/google/go-github/github"
-	"github.com/google/uuid"
 	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/github"
 	githubModels "go-deploy/pkg/subsystems/github/models"
-	"go-deploy/utils/requestutils"
 	"log"
-	"net/url"
 	"strings"
 )
 
-func createGitHubWebhookPublic(repositoryID int64) *githubModels.WebhookPublic {
-	webhookTarget := fmt.Sprintf("%s/v1/hooks/deployments/github", conf.Env.ExternalUrl)
-	return &githubModels.WebhookPublic{
-		RepositoryID: repositoryID,
-		Events:       nil,
-		Active:       false,
-		ContentType:  "json",
-		WebhookURL:   webhookTarget,
-		Secret:       uuid.NewString(),
-	}
-}
-
-func withGitHubClient(token string) (*github.Client, error) {
-	return github.New(&github.ClientConf{
-		Token: token,
-	})
-}
-
-func CreateGitHub(deploymentID string, params *deploymentModel.CreateParams) error {
+func Create(deploymentID string, params *deploymentModel.CreateParams) error {
 	log.Println("setting up github for", params.Name)
 
 	makeError := func(err error) error {
@@ -67,7 +45,7 @@ func CreateGitHub(deploymentID string, params *deploymentModel.CreateParams) err
 	return nil
 }
 
-func DeleteGitHub(name string, githubToken *string) error {
+func Delete(name string, githubToken *string) error {
 	log.Println("deleting github for", name)
 
 	makeError := func(err error) error {
@@ -121,7 +99,7 @@ func DeleteGitHub(name string, githubToken *string) error {
 	return nil
 }
 
-func CreatePlaceholderGitHub(name string) error {
+func CreatePlaceholder(name string) error {
 	log.Println("setting up placeholder github")
 
 	makeError := func(err error) error {
@@ -136,7 +114,7 @@ func CreatePlaceholderGitHub(name string) error {
 	return nil
 }
 
-func ValidateGitHubToken(token string) (bool, string, error) {
+func ValidateToken(token string) (bool, string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to validate github token. details: %s", err)
 	}
@@ -176,7 +154,7 @@ func ValidateGitHubToken(token string) (bool, string, error) {
 	return true, "", nil
 }
 
-func GetGitHubAccessTokenByCode(code string) (string, error) {
+func GetAccessTokenByCode(code string) (string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get github access token. details: %s", err)
 	}
@@ -194,7 +172,7 @@ func GetGitHubAccessTokenByCode(code string) (string, error) {
 	return "", makeError(fmt.Errorf("failed to get github access token. prod err details: %s. dev err details: %s", prodErr, devErr))
 }
 
-func GetGitHubRepositories(token string) ([]deploymentModel.GitHubRepository, error) {
+func GetRepositories(token string) ([]deploymentModel.GitHubRepository, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get github repositories. details: %s", err)
 	}
@@ -236,7 +214,7 @@ func GetGitHubRepositories(token string) ([]deploymentModel.GitHubRepository, er
 	return gitHubRepos, nil
 }
 
-func GetGitHubRepository(token string, repositoryID int64) (*deploymentModel.GitHubRepository, error) {
+func GetRepository(token string, repositoryID int64) (*deploymentModel.GitHubRepository, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get repository. details: %s", err)
 	}
@@ -267,7 +245,7 @@ func GetGitHubRepository(token string, repositoryID int64) (*deploymentModel.Git
 	return gitHubRepository, nil
 }
 
-func GetGitHubWebhooks(token, owner, repository string) ([]deploymentModel.GitHubWebhook, error) {
+func GetWebhooks(token, owner, repository string) ([]deploymentModel.GitHubWebhook, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get repository webhooks. details: %s", err)
 	}
@@ -293,70 +271,4 @@ func GetGitHubWebhooks(token, owner, repository string) ([]deploymentModel.GitHu
 	}
 
 	return webhooks, nil
-}
-
-func createGitHubWebhook(client *github.Client, deployment *deploymentModel.Deployment, public *githubModels.WebhookPublic) (*githubModels.WebhookPublic, error) {
-	id, err := client.CreateWebhook(public)
-	if err != nil {
-		return nil, err
-	}
-
-	webhook, err := client.ReadWebhook(id, public.RepositoryID)
-	if err != nil {
-		return nil, err
-	}
-
-	if webhook == nil {
-		return nil, fmt.Errorf("failed to read webhook after creation")
-	}
-
-	err = deploymentModel.UpdateSubsystemByName(deployment.Name, "github", "webhook", webhook)
-	if err != nil {
-		return nil, err
-	}
-
-	return webhook, nil
-}
-
-func fetchAccessToken(code, clientId string, clientSecret string) (string, error) {
-	apiRoute := "https://github.com/login/oauth/access_token"
-
-	body := map[string]string{
-		"client_id":     clientId,
-		"client_secret": clientSecret,
-		"code":          code,
-	}
-
-	bodyData, err := json.Marshal(body)
-	if err != nil {
-		return "", err
-	}
-
-	res, err := requestutils.DoRequest("POST", apiRoute, bodyData, nil)
-	if err != nil {
-		return "", err
-	}
-
-	if res.StatusCode != 200 {
-		return "", fmt.Errorf("failed to get github access token. status code: %d", res.StatusCode)
-	}
-
-	readBody, err := requestutils.ReadBody(res.Body)
-	if err != nil {
-		return "", err
-	}
-
-	paramsStrings := string(readBody)
-
-	params, err := url.ParseQuery(paramsStrings)
-	if err != nil {
-		return "", err
-	}
-
-	accessToken := params.Get("access_token")
-	if accessToken == "" {
-		return "", fmt.Errorf("failed to get github access token. access token is empty")
-	}
-
-	return accessToken, nil
 }

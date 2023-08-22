@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"go-deploy/models"
+	"go-deploy/models/sys/deployment/subsystems"
 	"go-deploy/pkg/status_codes"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -27,8 +28,8 @@ func CreateDeployment(deploymentID, ownerID string, params *CreateParams) (bool,
 		Activities: []string{ActivityBeingCreated},
 
 		Subsystems: Subsystems{
-			GitLab: GitLab{
-				LastBuild: GitLabBuild{
+			GitLab: subsystems.GitLab{
+				LastBuild: subsystems.GitLabBuild{
 					ID:        0,
 					ProjectID: 0,
 					Trace:     []string{"created by go-deploy"},
@@ -176,7 +177,7 @@ func CountByOwnerID(ownerID string) (int, error) {
 	return int(count), nil
 }
 
-func UpdateByID(id string, update *UpdateParams) error {
+func UpdateWithParamsByID(id string, update *UpdateParams) error {
 	updateData := bson.M{}
 
 	models.AddIfNotNil(updateData, "envs", update.Envs)
@@ -217,9 +218,23 @@ func UpdateByName(name string, update bson.D) error {
 	return nil
 }
 
+func UpdateByID(id string, update bson.D) error {
+	_, err := models.DeploymentCollection.UpdateOne(context.TODO(), bson.D{{"id", id}}, bson.D{{"$set", update}})
+	if err != nil {
+		err = fmt.Errorf("failed to update deployment %s. details: %s", id, err)
+		return err
+	}
+	return nil
+}
+
 func UpdateSubsystemByName(name, subsystem string, key string, update interface{}) error {
 	subsystemKey := fmt.Sprintf("subsystems.%s.%s", subsystem, key)
 	return UpdateByName(name, bson.D{{subsystemKey, update}})
+}
+
+func UpdateSubsystemByID(id, subsystem string, key string, update interface{}) error {
+	subsystemKey := fmt.Sprintf("subsystems.%s.%s", subsystem, key)
+	return UpdateByID(id, bson.D{{subsystemKey, update}})
 }
 
 func GetAll() ([]Deployment, error) {
@@ -341,7 +356,7 @@ func MarkUpdated(deploymentID string) error {
 	return nil
 }
 
-func UpdateGitLabBuild(deploymentID string, build GitLabBuild) error {
+func UpdateGitLabBuild(deploymentID string, build subsystems.GitLabBuild) error {
 	filter := bson.D{
 		{"id", deploymentID},
 		{"subsystems.gitlab.lastBuild.createdAt", bson.M{"$lte": build.CreatedAt}},
@@ -361,7 +376,7 @@ func UpdateGitLabBuild(deploymentID string, build GitLabBuild) error {
 	return nil
 }
 
-func GetLastGitLabBuild(deploymentID string) (*GitLabBuild, error) {
+func GetLastGitLabBuild(deploymentID string) (*subsystems.GitLabBuild, error) {
 	// fetch only subsystem.gitlab.lastBuild
 	projection := bson.D{
 		{"subsystems.gitlab.lastBuild", 1},
@@ -373,7 +388,7 @@ func GetLastGitLabBuild(deploymentID string) (*GitLabBuild, error) {
 		options.FindOne().SetProjection(projection),
 	).Decode(&deployment)
 	if err != nil {
-		return &GitLabBuild{}, err
+		return &subsystems.GitLabBuild{}, err
 	}
 
 	return &deployment.Subsystems.GitLab.LastBuild, nil

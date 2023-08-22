@@ -11,12 +11,13 @@ type CloudStackConfigSource struct {
 }
 
 type DeploymentZone struct {
-	Name          string      `yaml:"name"`
-	Description   string      `yaml:"description"`
-	ParentDomain  string      `yaml:"parentDomain"`
-	ExtraDomainIP string      `yaml:"extraDomainIp"`
-	ConfigSource  interface{} `yaml:"configSource"`
-	Client        *kubernetes.Clientset
+	Name                string      `yaml:"name"`
+	Description         string      `yaml:"description"`
+	ParentDomain        string      `yaml:"parentDomain"`
+	StorageParentDomain string      `yaml:"storageParentDomain"`
+	ExtraDomainIP       string      `yaml:"extraDomainIp"`
+	ConfigSource        interface{} `yaml:"configSource"`
+	Client              *kubernetes.Clientset
 }
 
 type VmZone struct {

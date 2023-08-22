@@ -1,6 +1,16 @@
 package deployment
 
-import "time"
+import (
+	"go-deploy/models/sys/deployment/subsystems"
+	"time"
+)
+
+type Subsystems struct {
+	K8s    subsystems.K8s    `bson:"k8s"`
+	Harbor subsystems.Harbor `bson:"harbor"`
+	GitHub subsystems.GitHub `bson:"github"`
+	GitLab subsystems.GitLab `bson:"gitlab"`
+}
 
 type Deployment struct {
 	ID      string `bson:"id"`
@@ -52,22 +62,4 @@ func (deployment *Deployment) Created() bool {
 		deployment.Subsystems.GitHub.Created() &&
 		deployment.Subsystems.Harbor.Created() &&
 		deployment.Subsystems.K8s.Created()
-}
-
-func (k8s *K8s) Created() bool {
-	return k8s.Namespace.Created() &&
-		k8s.Deployment.Created() &&
-		k8s.Service.Created() &&
-		k8s.Ingress.Created()
-}
-
-func (harbor *Harbor) Created() bool {
-	return harbor.Project.Created() &&
-		harbor.Repository.Created() &&
-		harbor.Robot.Created() &&
-		harbor.Webhook.Created()
-}
-
-func (gitHub *GitHub) Created() bool {
-	return gitHub.Webhook.Created()
 }
