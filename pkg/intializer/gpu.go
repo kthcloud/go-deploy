@@ -62,8 +62,11 @@ func SynchronizeGPUs() {
 				continue
 			}
 
-			// temporary fix until we have zone info in gpu
-			zone := "se-flem"
+			zone := conf.Env.VM.GetZoneByID(host.ZoneID)
+			if zone == nil {
+				log.Println("graphics card zone not found. zone id: ", host.ZoneID, ". skipping gpu: ", id)
+				continue
+			}
 
 			err = gpuModel.Create(id, host.Name, gpuModel.GpuData{
 				Name:     gpu.Name,
@@ -72,7 +75,7 @@ func SynchronizeGPUs() {
 				VendorID: gpu.VendorID,
 				Bus:      gpu.Bus,
 				DeviceID: gpu.DeviceID,
-			}, zone)
+			}, zone.Name)
 
 			if err != nil {
 				log.Println("failed to create gpu. details: ", err)

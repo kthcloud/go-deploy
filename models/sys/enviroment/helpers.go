@@ -43,3 +43,12 @@ func (v *VM) GetZone(name string) *VmZone {
 	}
 	return nil
 }
+
+func (v *VM) GetZoneByID(id string) *VmZone {
+	for _, zone := range v.Zones {
+		if zone.ZoneID == id {
+			return &zone
+		}
+	}
+	return nil
+}
