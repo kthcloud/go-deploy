@@ -237,6 +237,7 @@ func Delete(name string) error {
 			return makeError(err)
 		}
 	}
+	err = deploymentModel.UpdateSubsystemByName(name, "k8s", "pvcMap", map[string]k8sModels.PvcPublic{})
 
 	for _, pv := range ss.PvMap {
 		err = client.DeletePV(pv.ID)
@@ -244,6 +245,7 @@ func Delete(name string) error {
 			return makeError(err)
 		}
 	}
+	err = deploymentModel.UpdateSubsystemByName(name, "k8s", "pvMap", map[string]k8sModels.PvPublic{})
 
 	if ss.Namespace.Created() {
 		err = deploymentModel.UpdateSubsystemByName(name, "k8s", "namespace", k8sModels.NamespacePublic{})
