@@ -95,6 +95,12 @@ func startJob(job *jobModel.Job) error {
 		go buildDeployment(job)
 	case jobModel.TypeRepairDeployment:
 		go repairDeployment(job)
+	case jobModel.TypeCreateStorageManager:
+		go createStorageManager(job)
+	case jobModel.TypeDeleteStorageManager:
+		go deleteStorageManager(job)
+	case jobModel.TypeRepairStorageManager:
+		go repairStorageManager(job)
 	case jobModel.TypeRepairVM:
 		go repairVM(job)
 	case jobModel.TypeRepairGPUs:

@@ -23,6 +23,8 @@ func CreateDeployment(deploymentID, ownerID string, params *CreateParams) (bool,
 
 		Private:      params.Private,
 		Envs:         params.Envs,
+		Volumes:      params.Volumes,
+		InitCommands: params.InitCommands,
 		ExtraDomains: make([]string, 0),
 
 		Activities: []string{ActivityBeingCreated},

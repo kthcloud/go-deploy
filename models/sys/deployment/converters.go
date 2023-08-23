@@ -24,9 +24,22 @@ func (deployment *Deployment) ToDTO(url *string) body.DeploymentRead {
 		}
 	}
 
+	volumes := make([]body.Volume, len(deployment.Volumes))
+	for i, volume := range deployment.Volumes {
+		volumes[i] = body.Volume{
+			Name:       volume.Name,
+			AppPath:    volume.AppPath,
+			ServerPath: volume.ServerPath,
+		}
+	}
+
 	integrations := make([]string, 0)
 	if deployment.Subsystems.GitHub.Created() {
 		integrations = append(integrations, "github")
+	}
+
+	if deployment.InitCommands == nil {
+		deployment.InitCommands = make([]string, 0)
 	}
 
 	var pingResult *int
@@ -40,9 +53,11 @@ func (deployment *Deployment) ToDTO(url *string) body.DeploymentRead {
 		OwnerID: deployment.OwnerID,
 		Zone:    deployment.Zone,
 
-		URL:     fullURL,
-		Envs:    envs,
-		Private: deployment.Private,
+		URL:          fullURL,
+		Envs:         envs,
+		Volumes:      volumes,
+		InitCommands: deployment.InitCommands,
+		Private:      deployment.Private,
 
 		Status:     deployment.StatusMessage,
 		PingResult: pingResult,
@@ -84,6 +99,16 @@ func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZone *string)
 			Value: env.Value,
 		}
 	}
+	p.Volumes = make([]Volume, len(dto.Volumes))
+	for i, volume := range dto.Volumes {
+		p.Volumes[i] = Volume{
+			Name:       volume.Name,
+			AppPath:    volume.AppPath,
+			ServerPath: volume.ServerPath,
+			Init:       false,
+		}
+	}
+	p.InitCommands = dto.InitCommands
 
 	if dto.GitHub != nil {
 		p.GitHub = &GitHubCreateParams{

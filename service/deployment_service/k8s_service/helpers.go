@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	deploymentModel "go-deploy/models/sys/deployment"
+	"go-deploy/models/sys/deployment/storage_manager"
 	"go-deploy/models/sys/deployment/subsystems"
 	"go-deploy/models/sys/enviroment"
 	"go-deploy/pkg/conf"
@@ -22,7 +23,7 @@ func createNamespacePublic(name string) *k8sModels.NamespacePublic {
 	}
 }
 
-func createDeploymentPublic(namespace, name, dockerImage string, envs []deploymentModel.Env) *k8sModels.DeploymentPublic {
+func createDeploymentPublic(namespace, name, dockerImage string, envs []deploymentModel.Env, volumes []deploymentModel.Volume, initCommands []string) *k8sModels.DeploymentPublic {
 	port := conf.Env.Deployment.Port
 
 	k8sEnvs := []k8sModels.EnvVar{
@@ -36,6 +37,16 @@ func createDeploymentPublic(namespace, name, dockerImage string, envs []deployme
 		})
 	}
 
+	k8sVolumes := make([]k8sModels.Volume, len(volumes))
+	for i, volume := range volumes {
+		k8sVolumes[i] = k8sModels.Volume{
+			Name:      volume.Name,
+			PvcName:   fmt.Sprintf("%s-%s", name, volume.Name),
+			MountPath: volume.AppPath,
+			Init:      volume.Init,
+		}
+	}
+
 	defaultLimits := k8sModels.Limits{
 		CPU:    conf.Env.Deployment.Resources.Limits.CPU,
 		Memory: conf.Env.Deployment.Resources.Limits.Memory,
@@ -47,11 +58,14 @@ func createDeploymentPublic(namespace, name, dockerImage string, envs []deployme
 	}
 
 	return &k8sModels.DeploymentPublic{
-		ID:          "",
-		Name:        name,
-		Namespace:   namespace,
-		DockerImage: dockerImage,
-		EnvVars:     k8sEnvs,
+		ID:             "",
+		Name:           name,
+		Namespace:      namespace,
+		DockerImage:    dockerImage,
+		EnvVars:        k8sEnvs,
+		Volumes:        k8sVolumes,
+		InitCommands:   initCommands,
+		InitContainers: nil,
 		Resources: k8sModels.Resources{
 			Limits:   defaultLimits,
 			Requests: defaultRequests,
@@ -59,17 +73,50 @@ func createDeploymentPublic(namespace, name, dockerImage string, envs []deployme
 	}
 }
 
-func createServicePublic(namespace, name string, port *int) *k8sModels.ServicePublic {
-	if port == nil {
-		port = &conf.Env.Deployment.Port
+func createStorageManagerDeploymentPublic(namespace, name string, volumes []storage_manager.Volume, initCommands []string) *k8sModels.DeploymentPublic {
+	k8sVolumes := make([]k8sModels.Volume, len(volumes))
+	for i, volume := range volumes {
+		k8sVolumes[i] = k8sModels.Volume{
+			Name:      volume.Name,
+			PvcName:   volume.Name,
+			MountPath: volume.AppPath,
+			Init:      volume.Init,
+		}
 	}
 
+	defaultLimits := k8sModels.Limits{
+		CPU:    conf.Env.Deployment.Resources.Limits.CPU,
+		Memory: conf.Env.Deployment.Resources.Limits.Memory,
+	}
+
+	defaultRequests := k8sModels.Requests{
+		CPU:    conf.Env.Deployment.Resources.Requests.CPU,
+		Memory: conf.Env.Deployment.Resources.Requests.Memory,
+	}
+
+	return &k8sModels.DeploymentPublic{
+		ID:             "",
+		Name:           name,
+		Namespace:      namespace,
+		DockerImage:    "filebrowser/filebrowser",
+		EnvVars:        nil,
+		Volumes:        k8sVolumes,
+		InitCommands:   initCommands,
+		InitContainers: nil,
+		Resources: k8sModels.Resources{
+			Limits:   defaultLimits,
+			Requests: defaultRequests,
+		},
+	}
+}
+
+func createServicePublic(namespace, name string, port int) *k8sModels.ServicePublic {
 	return &k8sModels.ServicePublic{
 		ID:         "",
 		Name:       name,
 		Namespace:  namespace,
-		Port:       *port,
-		TargetPort: *port,
+		Port:       port,
+		TargetPort: port,
 	}
 }
 
@@ -85,12 +132,54 @@ func createIngressPublic(namespace, name string, serviceName string, servicePort
 	}
 }
 
+func createPvPublic(name string, capacity, nfsPath, nfsServer string) *k8sModels.PvPublic {
+	return &k8sModels.PvPublic{
+		ID:        "",
+		Name:      name,
+		Capacity:  capacity,
+		NfsPath:   nfsPath,
+		NfsServer: nfsServer,
+	}
+}
+
+func createPvcPublic(namespace, name, capacity, pvName string) *k8sModels.PvcPublic {
+	return &k8sModels.PvcPublic{
+		ID:        "",
+		Name:      name,
+		Namespace: namespace,
+		Capacity:  capacity,
+		PvName:    pvName,
+	}
+}
+
+func createJobPublic(namespace, name, image string, command, args []string, volumes []storage_manager.Volume) *k8sModels.JobPublic {
+	k8sVolumes := make([]k8sModels.Volume, len(volumes))
+	for i, volume := range volumes {
+		k8sVolumes[i] = k8sModels.Volume{
+			Name:      volume.Name,
+			PvcName:   volume.Name,
+			MountPath: volume.AppPath,
+			Init:      volume.Init,
+		}
+	}
+
+	return &k8sModels.JobPublic{
+		ID:        "",
+		Name:      name,
+		Image:     image,
+		Namespace: namespace,
+		Command:   command,
+		Args:      args,
+		Volumes:   k8sVolumes,
+	}
+}
+
 func getExternalFQDN(name string, zone *enviroment.DeploymentZone) string {
 	return fmt.Sprintf("%s.%s", name, zone.ParentDomain)
 }
 
 func getStorageManagerExternalFQDN(name string, zone *enviroment.DeploymentZone) string {
-	return fmt.Sprintf("%s.%s", name, zone.StorageParentDomain)
+	return fmt.Sprintf("%s.%s", name, zone.Storage.ParentDomain)
 }
 
 func recreateNamespace(client *k8s.Client, id string, k8s *subsystems.K8s, newPublic *k8sModels.NamespacePublic, updateDb UpdateDbSubsystem) error {
@@ -142,6 +231,40 @@ func recreateIngress(client *k8s.Client, id string, k8s *subsystems.K8s, newPubl
 	}
 
 	_, err = createIngress(client, id, k8s, newPublic, updateDb)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func recreatePV(client *k8s.Client, id, name string, k8s *subsystems.K8s, newPublic *k8sModels.PvPublic, updateDb UpdateDbSubsystem) error {
+	pv, ok := k8s.PvMap[name]
+	if ok {
+		err := client.DeletePV(pv.ID)
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err := createPV(client, id, name, k8s, newPublic, updateDb)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func recreatePVC(client *k8s.Client, id, name string, k8s *subsystems.K8s, newPublic *k8sModels.PvcPublic, updateDb UpdateDbSubsystem) error {
+	pvc, ok := k8s.PvcMap[name]
+	if ok {
+		err := client.DeletePVC(pvc.Namespace, pvc.ID)
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err := createPVC(client, id, name, k8s, newPublic, updateDb)
 	if err != nil {
 		return err
 	}
@@ -247,6 +370,99 @@ func createIngress(client *k8s.Client, id string, k8s *subsystems.K8s, public *k
 	k8s.Ingress = *ingress
 
 	return ingress, nil
+}
+
+func createPV(client *k8s.Client, id, name string, k8s *subsystems.K8s, public *k8sModels.PvPublic, updateDb UpdateDbSubsystem) (*k8sModels.PvPublic, error) {
+	createdID, err := client.CreatePV(public)
+	if err != nil {
+		return nil, err
+	}
+
+	pv, err := client.ReadPV(createdID)
+	if err != nil {
+		return nil, err
+	}
+
+	if pv == nil {
+		return nil, errors.New("failed to read persistent volume after creation")
+	}
+
+	newPvMap := make(map[string]k8sModels.PvPublic)
+	for k, v := range k8s.PvMap {
+		newPvMap[k] = v
+	}
+	newPvMap[name] = *pv
+
+	err = updateDb(id, "k8s", "pvMap", newPvMap)
+	if err != nil {
+		return nil, err
+	}
+
+	k8s.PvMap[name] = *pv
+
+	return pv, nil
+}
+
+func createPVC(client *k8s.Client, id, name string, k8s *subsystems.K8s, public *k8sModels.PvcPublic, updateDb UpdateDbSubsystem) (*k8sModels.PvcPublic, error) {
+	createdID, err := client.CreatePVC(public)
+	if err != nil {
+		return nil, err
+	}
+
+	pvc, err := client.ReadPVC(public.Namespace, createdID)
+	if err != nil {
+		return nil, err
+	}
+
+	if pvc == nil {
+		return nil, errors.New("failed to read persistent volume claim after creation")
+	}
+
+	newPvcMap := make(map[string]k8sModels.PvcPublic)
+	for k, v := range k8s.PvcMap {
+		newPvcMap[k] = v
+	}
+	newPvcMap[name] = *pvc
+
+	err = updateDb(id, "k8s", "pvcMap", newPvcMap)
+	if err != nil {
+		return nil, err
+	}
+
+	k8s.PvcMap[name] = *pvc
+
+	return pvc, nil
+}
+
+func createJob(client *k8s.Client, id, name string, k8s *subsystems.K8s, public *k8sModels.JobPublic, updateDb UpdateDbSubsystem) (*k8sModels.JobPublic, error) {
+	createdID, err := client.CreateJob(public)
+	if err != nil {
+		return nil, err
+	}
+
+	job, err := client.ReadJob(public.Namespace, createdID)
+	if err != nil {
+		return nil, err
+	}
+
+	if job == nil {
+		return nil, errors.New("failed to read job after creation")
+	}
+
+	newJobMap := make(map[string]k8sModels.JobPublic)
+	for k, v := range k8s.JobMap {
+		newJobMap[k] = v
+	}
+	newJobMap[name] = *job
+
+	err = updateDb(id, "k8s", "jobMap", newJobMap)
+	if err != nil {
+		return nil, err
+	}
+
+	k8s.JobMap[name] = *job
+
+	return job, nil
 }
 
 func getAllDomainNames(name string, extraDomains []string, zone *enviroment.DeploymentZone) []string {

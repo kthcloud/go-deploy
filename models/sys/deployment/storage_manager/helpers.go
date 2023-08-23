@@ -10,22 +10,22 @@ import (
 	"time"
 )
 
-func CreateStorageManager(id, ownerID, zone string) (string, error) {
+func CreateStorageManager(id string, params *CreateParams) (string, error) {
 	storageManager := StorageManager{
 		ID:        id,
-		OwnerID:   ownerID,
+		OwnerID:   params.UserID,
 		CreatedAt: time.Now(),
-		Zone:      zone,
+		Zone:      params.Zone,
 	}
 
-	_, err := models.DeploymentCollection.UpdateOne(context.TODO(), bson.D{{"ownerId", ownerID}}, bson.D{
+	_, err := models.StorageManagerCollection.UpdateOne(context.TODO(), bson.D{{"ownerId", params.UserID}}, bson.D{
 		{"$setOnInsert", storageManager},
 	}, options.Update().SetUpsert(true))
 	if err != nil {
 		return "", fmt.Errorf("failed to create storage manager. details: %s", err)
 	}
 
-	manager, err := getStorageManager(bson.D{{"ownerId", ownerID}})
+	manager, err := getStorageManager(bson.D{{"ownerId", params.UserID}})
 	if err != nil {
 		return "", fmt.Errorf("failed to fetch storage manager. details: %s", err)
 	}
@@ -35,7 +35,7 @@ func CreateStorageManager(id, ownerID, zone string) (string, error) {
 
 func getStorageManager(filter bson.D) (*StorageManager, error) {
 	var storageManager StorageManager
-	err := models.DeploymentCollection.FindOne(context.TODO(), filter).Decode(&storageManager)
+	err := models.StorageManagerCollection.FindOne(context.TODO(), filter).Decode(&storageManager)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
@@ -56,7 +56,7 @@ func GetByID(id string) (*StorageManager, error) {
 func UpdateByID(id string, update bson.D) error {
 	_, err := models.StorageManagerCollection.UpdateOne(context.TODO(), bson.D{{"id", id}}, bson.D{{"$set", update}})
 	if err != nil {
-		err = fmt.Errorf("failed to update deployment %s. details: %s", id, err)
+		err = fmt.Errorf("failed to update storage manager %s. details: %s", id, err)
 		return err
 	}
 	return nil

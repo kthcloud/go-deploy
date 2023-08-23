@@ -1,16 +1,8 @@
 package deployment
 
 import (
-	"go-deploy/models/sys/deployment/subsystems"
 	"time"
 )
-
-type Subsystems struct {
-	K8s    subsystems.K8s    `bson:"k8s"`
-	Harbor subsystems.Harbor `bson:"harbor"`
-	GitHub subsystems.GitHub `bson:"github"`
-	GitLab subsystems.GitLab `bson:"gitlab"`
-}
 
 type Deployment struct {
 	ID      string `bson:"id"`
@@ -25,6 +17,8 @@ type Deployment struct {
 
 	Private      bool     `bson:"private"`
 	Envs         []Env    `bson:"envs"`
+	Volumes      []Volume `bson:"volumes"`
+	InitCommands []string `bson:"initCommands"`
 	ExtraDomains []string `bson:"extraDomains"`
 
 	Activities []string `bson:"activities"`

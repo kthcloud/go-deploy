@@ -15,7 +15,7 @@ func CreateStorageManager(id string, params *storage_manager.CreateParams) error
 		return makeErr(fmt.Errorf("params is nil"))
 	}
 
-	id, err := storage_manager.CreateStorageManager(id, params.UserID, params.Zone)
+	id, err := storage_manager.CreateStorageManager(id, params)
 	if err != nil {
 		return makeErr(err)
 	}

@@ -922,7 +922,7 @@ func recreateServiceOffering(client *cs.Client, vm *vmModel.VM, public *csModels
 
 func recreatePortForwardingRule(client *cs.Client, vm *vmModel.VM, name string, public *csModels.PortForwardingRulePublic) error {
 	rule, ok := vm.Subsystems.CS.PortForwardingRuleMap[name]
-	if !ok {
+	if ok {
 		err := client.DeletePortForwardingRule(rule.ID)
 		if err != nil {
 			return err

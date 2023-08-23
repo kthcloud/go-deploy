@@ -5,6 +5,8 @@ import (
 	storageManagerModel "go-deploy/models/sys/deployment/storage_manager"
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/k8s"
+	k8sModels "go-deploy/pkg/subsystems/k8s/models"
+	"path"
 )
 
 func CreateStorageManager(id string, params *storageManagerModel.CreateParams) error {
@@ -38,20 +40,111 @@ func CreateStorageManager(id string, params *storageManagerModel.CreateParams) e
 
 	appName := "storage-manager"
 
+	initVolumes := []storageManagerModel.Volume{
+		{
+			Name:       fmt.Sprintf("%s-%s", appName, "init"),
+			Init:       false,
+			AppPath:    "/exports",
+			ServerPath: "",
+		},
+	}
+
+	volumes := []storageManagerModel.Volume{
+		{
+			Name:       fmt.Sprintf("%s-%s", appName, "data"),
+			Init:       false,
+			AppPath:    "/data",
+			ServerPath: path.Join(storageManager.OwnerID, "data"),
+		},
+		{
+			Name:       fmt.Sprintf("%s-%s", appName, "user"),
+			Init:       false,
+			AppPath:    "/deploy",
+			ServerPath: path.Join(storageManager.OwnerID, "user"),
+		},
+	}
+
+	jobs := []storageManagerModel.Job{
+		{
+			Name:    "init",
+			Image:   "busybox",
+			Command: []string{"/bin/mkdir"},
+			Args: []string{
+				"-p",
+				path.Join("/exports", params.UserID, "data"),
+				path.Join("/exports", params.UserID, "user"),
+			},
+		},
+	}
+
 	// Namespace
 	namespace := &ss.Namespace
 	if !ss.Namespace.Created() {
-		name := fmt.Sprintf("storage-%s", storageManager.OwnerID)
+		name := fmt.Sprintf("system-%s", storageManager.OwnerID)
 		namespace, err = createNamespace(client, storageManager.ID, ss, createNamespacePublic(name), updateDb)
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
+	// PersistentVolume
+	if ss.PvMap == nil {
+		ss.PvMap = make(map[string]k8sModels.PvPublic)
+	}
+
+	for _, volume := range volumes {
+		pv, exists := ss.PvMap[volume.Name]
+		k8sName := fmt.Sprintf("%s-%s", volume.Name, params.UserID)
+		if !pv.Created() || !exists {
+			capacity := conf.Env.Deployment.Resources.Limits.Storage
+			nfsPath := path.Join(zone.Storage.NfsParentPath, volume.ServerPath)
+
+			public := createPvPublic(k8sName, capacity, nfsPath, zone.Storage.NfsServer)
+			_, err = createPV(client, storageManager.ID, volume.Name, ss, public, updateDb)
+			if err != nil {
+				return makeError(err)
+			}
+		}
+	}
+
+	// PersistentVolumeClaim
+	if ss.PvcMap == nil {
+		ss.PvcMap = make(map[string]k8sModels.PvcPublic)
+	}
+
+	for _, volume := range volumes {
+		pvc, exists := ss.PvcMap[volume.Name]
+		pvName := fmt.Sprintf("%s-%s", volume.Name, params.UserID)
+		if !pvc.Created() || !exists {
+			capacity := conf.Env.Deployment.Resources.Limits.Storage
+			public := createPvcPublic(namespace.FullName, volume.Name, capacity, pvName)
+			_, err = createPVC(client, storageManager.ID, volume.Name, ss, public, updateDb)
+			if err != nil {
+				return makeError(err)
+			}
+		}
+	}
+
+	// Job
+	if ss.JobMap == nil {
+		ss.JobMap = make(map[string]k8sModels.JobPublic)
+	}
+
+	for _, j := range jobs {
+		job, exists := ss.JobMap[j.Name]
+		if !job.Created() || !exists {
+			public := createJobPublic(namespace.FullName, j.Name, j.Image, j.Command, j.Args, initVolumes)
+			_, err = createJob(client, storageManager.ID, j.Name, ss, public, updateDb)
+			if err != nil {
+				return makeError(err)
+			}
+		}
+	}
+
 	// Deployment
 	if !ss.Deployment.Created() {
-		dockerImage := "filebrowser/filebrowser"
-		_, err = createK8sDeployment(client, storageManager.ID, ss, createDeploymentPublic(namespace.FullName, appName, dockerImage, nil), updateDb)
+		public := createStorageManagerDeploymentPublic(namespace.FullName, appName, volumes, nil)
+		_, err = createK8sDeployment(client, storageManager.ID, ss, public, updateDb)
 		if err != nil {
 			return makeError(err)
 		}
@@ -61,7 +154,7 @@ func CreateStorageManager(id string, params *storageManagerModel.CreateParams) e
 	port := 80
 	service := &ss.Service
 	if !ss.Service.Created() {
-		service, err = createService(client, storageManager.ID, ss, createServicePublic(namespace.FullName, appName, &port), updateDb)
+		service, err = createService(client, storageManager.ID, ss, createServicePublic(namespace.FullName, appName, port), updateDb)
 		if err != nil {
 			return makeError(err)
 		}
@@ -71,10 +164,10 @@ func CreateStorageManager(id string, params *storageManagerModel.CreateParams) e
 	if !ss.Ingress.Created() {
 		_, err = createIngress(client, storageManager.ID, ss, createIngressPublic(
 			namespace.FullName,
-			storageManager.OwnerID,
+			appName,
 			service.Name,
 			service.Port,
-			[]string{getExternalFQDN(storageManager.OwnerID, zone)},
+			[]string{getStorageManagerExternalFQDN(storageManager.OwnerID, zone)},
 		), updateDb)
 		if err != nil {
 			return makeError(err)

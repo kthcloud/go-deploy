@@ -4,6 +4,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"go-deploy/models/dto/body"
 	deploymentModel "go-deploy/models/sys/deployment"
+	"go-deploy/models/sys/deployment/storage_manager"
 	jobModel "go-deploy/models/sys/job"
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/service/deployment_service"
@@ -251,6 +252,70 @@ func repairDeployment(job *jobModel.Job) {
 		_ = jobModel.MarkTerminated(job.ID, err.Error())
 		return
 	}
+
+	_ = jobModel.MarkCompleted(job.ID)
+}
+
+func createStorageManager(job *jobModel.Job) {
+	err := assertParameters(job, []string{"id", "params"})
+	if err != nil {
+		_ = jobModel.MarkTerminated(job.ID, err.Error())
+		return
+	}
+
+	id := job.Args["id"].(string)
+	var params storage_manager.CreateParams
+	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
+	if err != nil {
+		_ = jobModel.MarkTerminated(job.ID, err.Error())
+		return
+	}
+
+	err = deployment_service.CreateStorageManager(id, &params)
+	if err != nil {
+		_ = jobModel.MarkFailed(job.ID, err.Error())
+		return
+	}
+
+	_ = jobModel.MarkCompleted(job.ID)
+}
+
+func deleteStorageManager(job *jobModel.Job) {
+	err := assertParameters(job, []string{"id"})
+	if err != nil {
+		_ = jobModel.MarkTerminated(job.ID, err.Error())
+		return
+	}
+
+	//// not yet implemented
+
+	//id := job.Args["id"].(string)
+
+	//err = deployment_service.DeleteStorageManager(id)
+	//if err != nil {
+	//	_ = jobModel.MarkFailed(job.ID, err.Error())
+	//	return
+	//}
+
+	_ = jobModel.MarkCompleted(job.ID)
+}
+
+func repairStorageManager(job *jobModel.Job) {
+	err := assertParameters(job, []string{"id"})
+	if err != nil {
+		_ = jobModel.MarkTerminated(job.ID, err.Error())
+		return
+	}
+
+	//// not yet implemented
+	
+	//id := job.Args["id"].(string)
+	//
+	//err = deployment_service.RepairStorageManager(id)
+	//if err != nil {
+	//	_ = jobModel.MarkTerminated(job.ID, err.Error())
+	//	return
+	//}
 
 	_ = jobModel.MarkCompleted(job.ID)
 }

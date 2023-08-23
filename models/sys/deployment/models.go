@@ -1,8 +1,24 @@
 package deployment
 
+import "go-deploy/models/sys/deployment/subsystems"
+
+type Subsystems struct {
+	K8s    subsystems.K8s    `bson:"k8s"`
+	Harbor subsystems.Harbor `bson:"harbor"`
+	GitHub subsystems.GitHub `bson:"github"`
+	GitLab subsystems.GitLab `bson:"gitlab"`
+}
+
 type Env struct {
 	Name  string `json:"name" bson:"name"`
 	Value string `json:"value" bson:"value"`
+}
+
+type Volume struct {
+	Name       string `bson:"name"`
+	Init       bool   `bson:"init"`
+	AppPath    string `bson:"appPath"`
+	ServerPath string `bson:"serverPath"`
 }
 
 type Usage struct {
@@ -12,6 +28,8 @@ type Usage struct {
 type UpdateParams struct {
 	Private      *bool     `json:"private" bson:"private"`
 	Envs         *[]Env    `json:"envs" bson:"envs"`
+	Volumes      *[]Volume `json:"volumes" bson:"volumes"`
+	InitCommands *[]string `json:"initCommands" bson:"initCommands"`
 	ExtraDomains *[]string `json:"extraDomains" bson:"extraDomains"`
 }
 
@@ -21,11 +39,13 @@ type GitHubCreateParams struct {
 }
 
 type CreateParams struct {
-	Name    string              `json:"name" bson:"name"`
-	Private bool                `json:"private" bson:"private"`
-	Envs    []Env               `json:"envs" bson:"envs"`
-	GitHub  *GitHubCreateParams `json:"github,omitempty" bson:"github,omitempty"`
-	Zone    string              `json:"zone,omitempty" bson:"zoneId,omitempty"`
+	Name         string              `json:"name" bson:"name"`
+	Private      bool                `json:"private" bson:"private"`
+	Envs         []Env               `json:"envs" bson:"envs"`
+	Volumes      []Volume            `json:"volumes" bson:"volumes"`
+	InitCommands []string            `json:"initCommands" bson:"initCommands"`
+	GitHub       *GitHubCreateParams `json:"github,omitempty" bson:"github,omitempty"`
+	Zone         string              `json:"zone,omitempty" bson:"zoneId,omitempty"`
 }
 
 type BuildParams struct {

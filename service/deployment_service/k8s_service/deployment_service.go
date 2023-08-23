@@ -9,6 +9,7 @@ import (
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/utils/subsystemutils"
 	"log"
+	"path"
 	"reflect"
 	"strconv"
 )
@@ -61,12 +62,51 @@ func Create(deploymentID string, userID string, params *deploymentModel.CreatePa
 		}
 	}
 
+	// PersistentVolume
+	if ss.PvMap == nil {
+		ss.PvMap = make(map[string]k8sModels.PvPublic)
+	}
+
+	for _, volume := range params.Volumes {
+		k8sName := fmt.Sprintf("%s-%s", deployment.Name, volume.Name)
+		pv, exists := ss.PvMap[volume.Name]
+		if !pv.Created() || !exists {
+			capacity := conf.Env.Deployment.Resources.Limits.Storage
+			nfsPath := path.Join(zone.Storage.NfsParentPath, deployment.OwnerID, "user", volume.ServerPath)
+
+			public := createPvPublic(k8sName, capacity, nfsPath, zone.Storage.NfsServer)
+			_, err := createPV(client, deployment.ID, volume.Name, ss, public, updateDb)
+			if err != nil {
+				return nil, makeError(err)
+			}
+		}
+	}
+
+	// PersistentVolumeClaim
+	if ss.PvcMap == nil {
+		ss.PvcMap = make(map[string]k8sModels.PvcPublic)
+	}
+
+	for _, volume := range params.Volumes {
+		k8sName := fmt.Sprintf("%s-%s", deployment.Name, volume.Name)
+		pvc, exists := ss.PvcMap[volume.Name]
+		if !pvc.Created() || !exists {
+			capacity := conf.Env.Deployment.Resources.Limits.Storage
+			public := createPvcPublic(namespace.FullName, k8sName, capacity, k8sName)
+			_, err := createPVC(client, deployment.ID, volume.Name, ss, public, updateDb)
+			if err != nil {
+				return nil, makeError(err)
+			}
+		}
+	}
+
 	// Deployment
 	k8sDeployment := &ss.Deployment
 	if !ss.Deployment.Created() {
 		dockerRegistryProject := subsystemutils.GetPrefixedName(userID)
 		dockerImage := fmt.Sprintf("%s/%s/%s", conf.Env.DockerRegistry.URL, dockerRegistryProject, deployment.Name)
-		k8sDeployment, err = createK8sDeployment(client, deployment.ID, ss, createDeploymentPublic(namespace.FullName, deployment.Name, dockerImage, params.Envs), updateDb)
+		public := createDeploymentPublic(namespace.FullName, deployment.Name, dockerImage, params.Envs, params.Volumes, params.InitCommands)
+		k8sDeployment, err = createK8sDeployment(client, deployment.ID, ss, public, updateDb)
 		if err != nil {
 			return nil, makeError(err)
 		}
@@ -75,7 +115,8 @@ func Create(deploymentID string, userID string, params *deploymentModel.CreatePa
 	// Service
 	service := &ss.Service
 	if !ss.Service.Created() {
-		service, err = createService(client, deployment.ID, ss, createServicePublic(namespace.FullName, deployment.Name, nil), updateDb)
+		port := conf.Env.Deployment.Port
+		service, err = createService(client, deployment.ID, ss, createServicePublic(namespace.FullName, deployment.Name, port), updateDb)
 		if err != nil {
 			return nil, makeError(err)
 		}
@@ -185,6 +226,20 @@ func Delete(name string) error {
 		}
 
 		err = deploymentModel.UpdateSubsystemByName(name, "k8s", "deployment", k8sModels.DeploymentPublic{})
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	for _, pvc := range ss.PvcMap {
+		err = client.DeletePVC(pvc.Namespace, pvc.ID)
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	for _, pv := range ss.PvMap {
+		err = client.DeletePV(pv.ID)
 		if err != nil {
 			return makeError(err)
 		}

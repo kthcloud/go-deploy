@@ -2,12 +2,16 @@ package deployment_service
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"go-deploy/models/dto/body"
 	deploymentModel "go-deploy/models/sys/deployment"
+	"go-deploy/models/sys/deployment/storage_manager"
+	jobModel "go-deploy/models/sys/job"
 	"go-deploy/service/deployment_service/github_service"
 	"go-deploy/service/deployment_service/gitlab_service"
 	"go-deploy/service/deployment_service/harbor_service"
 	"go-deploy/service/deployment_service/k8s_service"
+	"go-deploy/service/job_service"
 	"log"
 	"strings"
 )
@@ -22,6 +26,22 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 
 	params := &deploymentModel.CreateParams{}
 	params.FromDTO(deploymentCreate, &fallback)
+
+	if len(params.Volumes) > 0 {
+		storageManagerID := uuid.New().String()
+		jobID := uuid.New().String()
+		err := job_service.Create(jobID, ownerID, jobModel.TypeCreateStorageManager, map[string]interface{}{
+			"id": storageManagerID,
+			"params": storage_manager.CreateParams{
+				UserID: ownerID,
+				Zone:   params.Zone,
+			},
+		})
+
+		if err != nil {
+			return makeError(err)
+		}
+	}
 
 	created, err := deploymentModel.CreateDeployment(deploymentID, ownerID, params)
 	if err != nil {
