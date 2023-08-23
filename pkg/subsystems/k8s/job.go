@@ -75,6 +75,10 @@ func (client *Client) DeleteJob(namespace, id string) error {
 		return nil
 	}
 
+	if namespace == "" {
+		return nil
+	}
+
 	list, err := client.K8sClient.BatchV1().Jobs(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return makeError(err)
