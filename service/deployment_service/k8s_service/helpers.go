@@ -58,18 +58,20 @@ func createDeploymentPublic(namespace, name, dockerImage string, envs []deployme
 	}
 
 	return &k8sModels.DeploymentPublic{
-		ID:             "",
-		Name:           name,
-		Namespace:      namespace,
-		DockerImage:    dockerImage,
-		EnvVars:        k8sEnvs,
-		Volumes:        k8sVolumes,
-		InitCommands:   initCommands,
-		InitContainers: nil,
+		ID:          "",
+		Name:        name,
+		Namespace:   namespace,
+		DockerImage: dockerImage,
+		EnvVars:     k8sEnvs,
 		Resources: k8sModels.Resources{
 			Limits:   defaultLimits,
 			Requests: defaultRequests,
 		},
+		Command:        nil,
+		Args:           nil,
+		InitCommands:   initCommands,
+		InitContainers: nil,
+		Volumes:        k8sVolumes,
 	}
 }
 
@@ -94,19 +96,28 @@ func createStorageManagerDeploymentPublic(namespace, name string, volumes []stor
 		Memory: conf.Env.Deployment.Resources.Requests.Memory,
 	}
 
+	args := []string{
+		"--noauth",
+		"--root=/deploy",
+		"--database=/data/database.db",
+		"--port=80",
+	}
+
 	return &k8sModels.DeploymentPublic{
-		ID:             "",
-		Name:           name,
-		Namespace:      namespace,
-		DockerImage:    "filebrowser/filebrowser",
-		EnvVars:        nil,
-		Volumes:        k8sVolumes,
-		InitCommands:   initCommands,
-		InitContainers: nil,
+		ID:          "",
+		Name:        name,
+		Namespace:   namespace,
+		DockerImage: "filebrowser/filebrowser",
+		EnvVars:     nil,
 		Resources: k8sModels.Resources{
 			Limits:   defaultLimits,
 			Requests: defaultRequests,
 		},
+		Command:        nil,
+		Args:           args,
+		InitCommands:   initCommands,
+		InitContainers: nil,
+		Volumes:        k8sVolumes,
 	}
 }
 

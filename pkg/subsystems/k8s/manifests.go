@@ -113,9 +113,11 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 					Volumes: volumes,
 					Containers: []apiv1.Container{
 						{
-							Name:  public.Name,
-							Image: public.DockerImage,
-							Env:   envs,
+							Name:    public.Name,
+							Image:   public.DockerImage,
+							Command: public.Command,
+							Args:    public.Args,
+							Env:     envs,
 							Resources: apiv1.ResourceRequirements{
 								Limits:   limits,
 								Requests: requests,

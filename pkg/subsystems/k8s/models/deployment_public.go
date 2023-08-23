@@ -12,6 +12,8 @@ type DeploymentPublic struct {
 	DockerImage    string          `bson:"dockerImage"`
 	EnvVars        []EnvVar        `bson:"envVars"`
 	Resources      Resources       `bson:"resources"`
+	Command        []string        `bson:"command"`
+	Args           []string        `bson:"args"`
 	InitCommands   []string        `bson:"initCommands"`
 	InitContainers []InitContainer `bson:"initContainers"`
 	Volumes        []Volume        `bson:"volumes"`
@@ -30,6 +32,8 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 	var limits = Limits{}
 	var requests = Requests{}
 	var initCommands []string
+	var command []string
+	var args []string
 	var volumes []Volume
 
 	for _, k8sVolume := range deployment.Spec.Template.Spec.Volumes {
@@ -44,6 +48,9 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 		resources := firstContainer.Resources
 		lifecycle := firstContainer.Lifecycle
 		volumeMounts := firstContainer.VolumeMounts
+
+		command = firstContainer.Command
+		args = firstContainer.Args
 
 		if resources.Limits != nil {
 			if resources.Limits.Cpu() != nil {
@@ -77,6 +84,16 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 		}
 	}
 
+	initContainers := make([]InitContainer, len(deployment.Spec.Template.Spec.InitContainers))
+	for _, initContainer := range deployment.Spec.Template.Spec.InitContainers {
+		initContainers = append(initContainers, InitContainer{
+			Name:    initContainer.Name,
+			Image:   initContainer.Image,
+			Command: initContainer.Command,
+			Args:    initContainer.Args,
+		})
+	}
+
 	// delete any k8sVolumes that does not have a mount path, they need to be recreated
 	for i := len(volumes) - 1; i >= 0; i-- {
 		if volumes[i].MountPath == "" {
@@ -94,7 +111,10 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 			Limits:   limits,
 			Requests: requests,
 		},
-		InitCommands: initCommands,
-		Volumes:      volumes,
+		Command:        command,
+		Args:           args,
+		InitCommands:   initCommands,
+		InitContainers: initContainers,
+		Volumes:        volumes,
 	}
 }
