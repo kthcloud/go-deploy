@@ -287,15 +287,13 @@ func deleteStorageManager(job *jobModel.Job) {
 		return
 	}
 
-	//// not yet implemented
+	id := job.Args["id"].(string)
 
-	//id := job.Args["id"].(string)
-
-	//err = deployment_service.DeleteStorageManager(id)
-	//if err != nil {
-	//	_ = jobModel.MarkFailed(job.ID, err.Error())
-	//	return
-	//}
+	err = deployment_service.DeleteStorageManager(id)
+	if err != nil {
+		_ = jobModel.MarkFailed(job.ID, err.Error())
+		return
+	}
 
 	_ = jobModel.MarkCompleted(job.ID)
 }
@@ -306,16 +304,14 @@ func repairStorageManager(job *jobModel.Job) {
 		_ = jobModel.MarkTerminated(job.ID, err.Error())
 		return
 	}
-
-	//// not yet implemented
 	
-	//id := job.Args["id"].(string)
-	//
-	//err = deployment_service.RepairStorageManager(id)
-	//if err != nil {
-	//	_ = jobModel.MarkTerminated(job.ID, err.Error())
-	//	return
-	//}
+	id := job.Args["id"].(string)
+
+	err = deployment_service.RepairStorageManager(id)
+	if err != nil {
+		_ = jobModel.MarkTerminated(job.ID, err.Error())
+		return
+	}
 
 	_ = jobModel.MarkCompleted(job.ID)
 }

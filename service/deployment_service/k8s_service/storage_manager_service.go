@@ -6,6 +6,7 @@ import (
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/k8s"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
+	"log"
 	"path"
 )
 
@@ -20,7 +21,8 @@ func CreateStorageManager(id string, params *storageManagerModel.CreateParams) e
 	}
 
 	if storageManager == nil {
-		return makeError(fmt.Errorf("storage manager not found, assuming it was deleted"))
+		log.Println("storage manager", id, "not found when creating, assuming it was deleted")
+		return nil
 	}
 
 	zone := conf.Env.Deployment.GetZone(storageManager.Zone)
@@ -34,9 +36,6 @@ func CreateStorageManager(id string, params *storageManagerModel.CreateParams) e
 	}
 
 	ss := &storageManager.Subsystems.K8s
-	updateDb := func(id, subsystem, key string, update interface{}) error {
-		return storageManagerModel.UpdateSubsystemByID(id, subsystem, key, update)
-	}
 
 	appName := "storage-manager"
 
@@ -81,7 +80,7 @@ func CreateStorageManager(id string, params *storageManagerModel.CreateParams) e
 	namespace := &ss.Namespace
 	if !ss.Namespace.Created() {
 		name := fmt.Sprintf("system-%s", storageManager.OwnerID)
-		namespace, err = createNamespace(client, storageManager.ID, ss, createNamespacePublic(name), updateDb)
+		namespace, err = createNamespace(client, storageManager.ID, ss, createNamespacePublic(name), storageManagerModel.UpdateSubsystemByID)
 		if err != nil {
 			return makeError(err)
 		}
@@ -102,7 +101,7 @@ func CreateStorageManager(id string, params *storageManagerModel.CreateParams) e
 			nfsPath := path.Join(zone.Storage.NfsParentPath, volume.ServerPath)
 
 			public := createPvPublic(k8sName, capacity, nfsPath, zone.Storage.NfsServer)
-			_, err = createPV(client, storageManager.ID, volume.Name, ss, public, updateDb)
+			_, err = createPV(client, storageManager.ID, volume.Name, ss, public, storageManagerModel.UpdateSubsystemByID)
 			if err != nil {
 				return makeError(err)
 			}
@@ -120,7 +119,7 @@ func CreateStorageManager(id string, params *storageManagerModel.CreateParams) e
 		if !pvc.Created() || !exists {
 			capacity := conf.Env.Deployment.Resources.Limits.Storage
 			public := createPvcPublic(namespace.FullName, volume.Name, capacity, pvName)
-			_, err = createPVC(client, storageManager.ID, volume.Name, ss, public, updateDb)
+			_, err = createPVC(client, storageManager.ID, volume.Name, ss, public, storageManagerModel.UpdateSubsystemByID)
 			if err != nil {
 				return makeError(err)
 			}
@@ -136,7 +135,7 @@ func CreateStorageManager(id string, params *storageManagerModel.CreateParams) e
 		job, exists := ss.JobMap[j.Name]
 		if !job.Created() || !exists {
 			public := createJobPublic(namespace.FullName, j.Name, j.Image, j.Command, j.Args, initVolumes)
-			_, err = createJob(client, storageManager.ID, j.Name, ss, public, updateDb)
+			_, err = createJob(client, storageManager.ID, j.Name, ss, public, storageManagerModel.UpdateSubsystemByID)
 			if err != nil {
 				return makeError(err)
 			}
@@ -147,7 +146,7 @@ func CreateStorageManager(id string, params *storageManagerModel.CreateParams) e
 	port := 80
 	if !ss.Deployment.Created() {
 		public := createStorageManagerDeploymentPublic(namespace.FullName, appName, volumes, nil)
-		_, err = createK8sDeployment(client, storageManager.ID, ss, public, updateDb)
+		_, err = createK8sDeployment(client, storageManager.ID, ss, public, storageManagerModel.UpdateSubsystemByID)
 		if err != nil {
 			return makeError(err)
 		}
@@ -156,7 +155,8 @@ func CreateStorageManager(id string, params *storageManagerModel.CreateParams) e
 	// Service
 	service := &ss.Service
 	if !ss.Service.Created() {
-		service, err = createService(client, storageManager.ID, ss, createServicePublic(namespace.FullName, appName, port), updateDb)
+		public := createServicePublic(namespace.FullName, appName, port)
+		service, err = createService(client, storageManager.ID, ss, public, storageManagerModel.UpdateSubsystemByID)
 		if err != nil {
 			return makeError(err)
 		}
@@ -164,16 +164,151 @@ func CreateStorageManager(id string, params *storageManagerModel.CreateParams) e
 
 	// Ingress
 	if !ss.Ingress.Created() {
-		_, err = createIngress(client, storageManager.ID, ss, createIngressPublic(
+		public := createIngressPublic(
 			namespace.FullName,
 			appName,
 			service.Name,
 			service.Port,
 			[]string{getStorageManagerExternalFQDN(storageManager.OwnerID, zone)},
-		), updateDb)
+		)
+		_, err = createIngress(client, storageManager.ID, ss, public, storageManagerModel.UpdateSubsystemByID)
 		if err != nil {
 			return makeError(err)
 		}
+	}
+
+	return nil
+}
+
+func DeleteStorageManager(id string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to delete storage manager in k8s. details: %s", err)
+	}
+
+	log.Println("deleting k8s for storage manager", id)
+
+	storageManager, err := storageManagerModel.GetByID(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if storageManager == nil {
+		log.Println("storage manager", id, "not found when deleting, assuming it was deleted")
+		return nil
+	}
+
+	zone := conf.Env.Deployment.GetZone(storageManager.Zone)
+	if zone == nil {
+		return makeError(fmt.Errorf("zone not found"))
+	}
+
+	client, err := k8s.New(zone.Client)
+	if err != nil {
+		return makeError(err)
+	}
+
+	ss := &storageManager.Subsystems.K8s
+
+	// Deployment
+	if ss.Deployment.Created() {
+		err = deleteDeployment(client, storageManager.ID, ss, storageManagerModel.UpdateSubsystemByID)
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	// Service
+	if ss.Service.Created() {
+		err = deleteService(client, storageManager.ID, ss, storageManagerModel.UpdateSubsystemByID)
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	// Ingress
+	if ss.Ingress.Created() {
+		err = deleteIngress(client, storageManager.ID, ss, storageManagerModel.UpdateSubsystemByID)
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	// Job
+	for jobName, job := range ss.JobMap {
+		if job.Created() {
+			err = deleteJob(client, storageManager.ID, jobName, ss, storageManagerModel.UpdateSubsystemByID)
+			if err != nil {
+				return makeError(err)
+			}
+		}
+	}
+
+	// PersistentVolumeClaim
+	for pvcName, pvc := range ss.PvcMap {
+		if pvc.Created() {
+			err = deletePVC(client, storageManager.ID, pvcName, ss, storageManagerModel.UpdateSubsystemByID)
+			if err != nil {
+				return makeError(err)
+			}
+		}
+	}
+
+	// PersistentVolume
+	for pvName, pv := range ss.PvMap {
+		if pv.Created() {
+			err = deletePV(client, storageManager.ID, pvName, ss, storageManagerModel.UpdateSubsystemByID)
+			if err != nil {
+				return makeError(err)
+			}
+		}
+	}
+
+	return nil
+}
+
+func RepairStorageManager(id string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to repair storage manager in k8s. details: %s", err)
+	}
+
+	storageManager, err := storageManagerModel.GetByID(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if storageManager == nil {
+		log.Println("storage manager", id, "not found when repairing, assuming it was deleted")
+		return nil
+	}
+
+	zone := conf.Env.Deployment.GetZone(storageManager.Zone)
+	if zone == nil {
+		return makeError(fmt.Errorf("zone not found"))
+	}
+
+	client, err := k8s.New(zone.Client)
+	if err != nil {
+		return makeError(err)
+	}
+
+	ss := &storageManager.Subsystems.K8s
+
+	// deployment
+	err = repairDeployment(client, storageManager.ID, ss, storageManagerModel.UpdateSubsystemByID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	// service
+	err = repairService(client, storageManager.ID, ss, storageManagerModel.UpdateSubsystemByID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	// ingres
+	err = repairIngress(client, storageManager.ID, ss, storageManagerModel.UpdateSubsystemByID)
+	if err != nil {
+		return makeError(err)
 	}
 
 	return nil
