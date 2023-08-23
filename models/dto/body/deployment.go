@@ -1,5 +1,7 @@
 package body
 
+import "time"
+
 type Env struct {
 	Name  string `json:"name" binding:"required,env_name,min=1,max=100"`
 	Value string `json:"value" binding:"required,min=1,max=10000"`
@@ -80,4 +82,16 @@ type CiConfig struct {
 
 type DeploymentCommand struct {
 	Command string `json:"command" binding:"required,oneof=restart"`
+}
+
+type StorageManagerDeleted struct {
+	ID    string `json:"id"`
+	JobID string `json:"jobId"`
+}
+
+type StorageManagerRead struct {
+	ID        string    `json:"id"`
+	OwnerID   string    `json:"ownerId"`
+	CreatedAt time.Time `json:"createdAt"`
+	Zone      string    `json:"zone"`
 }
