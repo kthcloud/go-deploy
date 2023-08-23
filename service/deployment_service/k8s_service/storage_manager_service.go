@@ -92,7 +92,9 @@ func CreateStorageManager(id string, params *storageManagerModel.CreateParams) e
 		ss.PvMap = make(map[string]k8sModels.PvPublic)
 	}
 
-	for _, volume := range volumes {
+	allVolumes := append(volumes, initVolumes...)
+
+	for _, volume := range allVolumes {
 		pv, exists := ss.PvMap[volume.Name]
 		k8sName := fmt.Sprintf("%s-%s", volume.Name, params.UserID)
 		if !pv.Created() || !exists {
@@ -112,7 +114,7 @@ func CreateStorageManager(id string, params *storageManagerModel.CreateParams) e
 		ss.PvcMap = make(map[string]k8sModels.PvcPublic)
 	}
 
-	for _, volume := range volumes {
+	for _, volume := range allVolumes {
 		pvc, exists := ss.PvcMap[volume.Name]
 		pvName := fmt.Sprintf("%s-%s", volume.Name, params.UserID)
 		if !pvc.Created() || !exists {
@@ -142,6 +144,7 @@ func CreateStorageManager(id string, params *storageManagerModel.CreateParams) e
 	}
 
 	// Deployment
+	port := 80
 	if !ss.Deployment.Created() {
 		public := createStorageManagerDeploymentPublic(namespace.FullName, appName, volumes, nil)
 		_, err = createK8sDeployment(client, storageManager.ID, ss, public, updateDb)
@@ -151,7 +154,6 @@ func CreateStorageManager(id string, params *storageManagerModel.CreateParams) e
 	}
 
 	// Service
-	port := 80
 	service := &ss.Service
 	if !ss.Service.Created() {
 		service, err = createService(client, storageManager.ID, ss, createServicePublic(namespace.FullName, appName, port), updateDb)
