@@ -12,7 +12,7 @@ import (
 
 func (client *Client) ReadService(namespace, id string) (*models.ServicePublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to read deployment %s. details: %s", id, err)
+		return fmt.Errorf("failed to read k8s service %s. details: %s", id, err)
 	}
 
 	if id == "" {
@@ -34,7 +34,7 @@ func (client *Client) ReadService(namespace, id string) (*models.ServicePublic, 
 
 	list, err := client.K8sClient.CoreV1().Services(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		return nil, err
+		return nil, makeError(err)
 	}
 
 	for _, item := range list.Items {

@@ -49,6 +49,7 @@ func NewRouter() *gin.Engine {
 
 	setupAuthCheckRoutes(privateApiv1)
 	setupDeploymentRoutes(privateApiv1, publicApiv1, apiv1Hook)
+	setupStorageManagerRoutes(privateApiv1, apiv1Hook)
 	setupVmRoutes(privateApiv1, apiv1Hook)
 	setupZoneRoutes(privateApiv1, apiv1Hook)
 	setupGpuRoutes(privateApiv1, apiv1Hook)
@@ -80,6 +81,13 @@ func setupDeploymentRoutes(private *gin.RouterGroup, public *gin.RouterGroup, ho
 
 	hooks.POST("/deployments/harbor", v1_deployment.HandleHarborHook)
 	hooks.POST("/deployments/github", v1_deployment.HandleGitHubHook)
+}
+
+func setupStorageManagerRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
+	private.GET("/storageManagers", v1_deployment.GetStorageManagerList)
+
+	private.GET("/storageManagers/:storageManagerId", v1_deployment.GetStorageManager)
+	private.DELETE("/storageManagers/:storageManagerId", v1_deployment.DeleteStorageManager)
 }
 
 func setupVmRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {

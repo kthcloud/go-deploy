@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"go-deploy/models"
+	"go-deploy/models/sys/deployment/subsystems"
 	"go-deploy/pkg/status_codes"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -13,22 +14,35 @@ import (
 )
 
 func CreateDeployment(deploymentID, ownerID string, params *CreateParams) (bool, error) {
-	deployment := Deployment{
-		ID:      deploymentID,
-		Name:    params.Name,
-		OwnerID: ownerID,
+	appName := "main"
 
-		CreatedAt: time.Now(),
-
+	mainApp := App{
+		Name:         appName,
 		Private:      params.Private,
 		Envs:         params.Envs,
+		Volumes:      params.Volumes,
+		InitCommands: params.InitCommands,
 		ExtraDomains: make([]string, 0),
+	}
 
-		Activities: []string{ActivityBeingCreated},
-
+	deployment := Deployment{
+		ID:           deploymentID,
+		Name:         params.Name,
+		OwnerID:      ownerID,
+		Zone:         params.Zone,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Time{},
+		RepairedAt:   time.Time{},
+		RestartedAt:  time.Time{},
+		Private:      false,
+		Envs:         make([]Env, 0),
+		Volumes:      make([]Volume, 0),
+		InitCommands: make([]string, 0),
+		Apps:         map[string]App{appName: mainApp},
+		Activities:   []string{ActivityBeingCreated},
 		Subsystems: Subsystems{
-			GitLab: GitLab{
-				LastBuild: GitLabBuild{
+			GitLab: subsystems.GitLab{
+				LastBuild: subsystems.GitLabBuild{
 					ID:        0,
 					ProjectID: 0,
 					Trace:     []string{"created by go-deploy"},
@@ -38,11 +52,9 @@ func CreateDeployment(deploymentID, ownerID string, params *CreateParams) (bool,
 				},
 			},
 		},
-
 		StatusCode:    status_codes.ResourceBeingCreated,
 		StatusMessage: status_codes.GetMsg(status_codes.ResourceBeingCreated),
-
-		Zone: params.Zone,
+		PingResult:    0,
 	}
 
 	result, err := models.DeploymentCollection.UpdateOne(context.TODO(), bson.D{{"name", params.Name}}, bson.D{
@@ -176,20 +188,35 @@ func CountByOwnerID(ownerID string) (int, error) {
 	return int(count), nil
 }
 
-func UpdateByID(id string, update *UpdateParams) error {
-	updateData := bson.M{}
+func UpdateWithParamsByID(id string, update *UpdateParams) error {
+	deployment, err := GetByID(id)
+	if err != nil {
+		return err
+	}
 
-	models.AddIfNotNil(updateData, "envs", update.Envs)
-	models.AddIfNotNil(updateData, "private", update.Private)
-	models.AddIfNotNil(updateData, "extraDomains", update.ExtraDomains)
-
-	if len(updateData) == 0 {
+	mainApp := deployment.GetMainApp()
+	if mainApp == nil {
+		log.Println("main app not found when updating deployment", id, ". assuming it was deleted")
 		return nil
 	}
 
-	_, err := models.DeploymentCollection.UpdateOne(context.TODO(),
+	if update.Envs != nil {
+		mainApp.Envs = *update.Envs
+	}
+
+	if update.Private != nil {
+		mainApp.Private = *update.Private
+	}
+
+	if update.ExtraDomains != nil {
+		mainApp.ExtraDomains = *update.ExtraDomains
+	}
+
+	deployment.Apps["main"] = *mainApp
+
+	_, err = models.DeploymentCollection.UpdateOne(context.TODO(),
 		bson.D{{"id", id}},
-		bson.D{{"$set", updateData}},
+		bson.D{{"$set", bson.D{{"apps", deployment.Apps}}}},
 	)
 	if err != nil {
 		return fmt.Errorf("failed to update deployment %s. details: %s", id, err)
@@ -217,9 +244,23 @@ func UpdateByName(name string, update bson.D) error {
 	return nil
 }
 
+func UpdateByID(id string, update bson.D) error {
+	_, err := models.DeploymentCollection.UpdateOne(context.TODO(), bson.D{{"id", id}}, bson.D{{"$set", update}})
+	if err != nil {
+		err = fmt.Errorf("failed to update deployment %s. details: %s", id, err)
+		return err
+	}
+	return nil
+}
+
 func UpdateSubsystemByName(name, subsystem string, key string, update interface{}) error {
 	subsystemKey := fmt.Sprintf("subsystems.%s.%s", subsystem, key)
 	return UpdateByName(name, bson.D{{subsystemKey, update}})
+}
+
+func UpdateSubsystemByID(id, subsystem string, key string, update interface{}) error {
+	subsystemKey := fmt.Sprintf("subsystems.%s.%s", subsystem, key)
+	return UpdateByID(id, bson.D{{subsystemKey, update}})
 }
 
 func GetAll() ([]Deployment, error) {
@@ -341,7 +382,7 @@ func MarkUpdated(deploymentID string) error {
 	return nil
 }
 
-func UpdateGitLabBuild(deploymentID string, build GitLabBuild) error {
+func UpdateGitLabBuild(deploymentID string, build subsystems.GitLabBuild) error {
 	filter := bson.D{
 		{"id", deploymentID},
 		{"subsystems.gitlab.lastBuild.createdAt", bson.M{"$lte": build.CreatedAt}},
@@ -361,7 +402,7 @@ func UpdateGitLabBuild(deploymentID string, build GitLabBuild) error {
 	return nil
 }
 
-func GetLastGitLabBuild(deploymentID string) (*GitLabBuild, error) {
+func GetLastGitLabBuild(deploymentID string) (*subsystems.GitLabBuild, error) {
 	// fetch only subsystem.gitlab.lastBuild
 	projection := bson.D{
 		{"subsystems.gitlab.lastBuild", 1},
@@ -373,7 +414,7 @@ func GetLastGitLabBuild(deploymentID string) (*GitLabBuild, error) {
 		options.FindOne().SetProjection(projection),
 	).Decode(&deployment)
 	if err != nil {
-		return &GitLabBuild{}, err
+		return &subsystems.GitLabBuild{}, err
 	}
 
 	return &deployment.Subsystems.GitLab.LastBuild, nil
@@ -397,5 +438,4 @@ func SavePing(id string, pingResult int) error {
 	}
 
 	return nil
-
 }

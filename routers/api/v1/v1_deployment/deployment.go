@@ -21,8 +21,13 @@ import (
 )
 
 func getURL(deployment *deploymentModels.Deployment) *string {
-	if len(deployment.Subsystems.K8s.Ingress.Hosts) > 0 && len(deployment.Subsystems.K8s.Ingress.Hosts[0]) > 0 {
-		return &deployment.Subsystems.K8s.Ingress.Hosts[0]
+	ingress, ok := deployment.Subsystems.K8s.IngressMap["main"]
+	if !ok || !ingress.Created() {
+		return nil
+	}
+
+	if len(ingress.Hosts) > 0 && len(ingress.Hosts[0]) > 0 {
+		return &ingress.Hosts[0]
 	}
 	return nil
 }
@@ -114,7 +119,6 @@ func Get(c *gin.Context) {
 	}
 
 	deployment, err := deployment_service.GetByID(auth.UserID, requestURI.DeploymentID, auth.IsAdmin)
-
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
@@ -281,6 +285,8 @@ func Create(c *gin.Context) {
 // @Param deploymentId path string true "Deployment ID"
 // @Success 200 {object} body.DeploymentCreated
 // @Failure 400 {object} sys.ErrorResponse
+// @Failure 401 {object} sys.ErrorResponse
+// @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /api/v1/deployments/{deploymentId} [delete]
 func Delete(c *gin.Context) {

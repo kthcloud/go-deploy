@@ -1,6 +1,8 @@
 package deployment
 
-import "time"
+import (
+	"time"
+)
 
 type Deployment struct {
 	ID      string `bson:"id"`
@@ -13,9 +15,13 @@ type Deployment struct {
 	RepairedAt  time.Time `bson:"repairedAt"`
 	RestartedAt time.Time `bson:"restartedAt"`
 
+	// keep until migrated
 	Private      bool     `bson:"private"`
 	Envs         []Env    `bson:"envs"`
-	ExtraDomains []string `bson:"extraDomains"`
+	Volumes      []Volume `bson:"volumes"`
+	InitCommands []string `bson:"initCommands"`
+
+	Apps map[string]App `bson:"apps"`
 
 	Activities []string `bson:"activities"`
 
@@ -24,6 +30,14 @@ type Deployment struct {
 	StatusMessage string     `bson:"statusMessage"`
 
 	PingResult int `bson:"pingResult"`
+}
+
+func (deployment *Deployment) GetMainApp() *App {
+	app, ok := deployment.Apps["main"]
+	if !ok {
+		return nil
+	}
+	return &app
 }
 
 func (deployment *Deployment) Ready() bool {
@@ -45,29 +59,4 @@ func (deployment *Deployment) BeingCreated() bool {
 
 func (deployment *Deployment) BeingDeleted() bool {
 	return deployment.DoingActivity(ActivityBeingDeleted)
-}
-
-func (deployment *Deployment) Created() bool {
-	return deployment.ID != "" &&
-		deployment.Subsystems.GitHub.Created() &&
-		deployment.Subsystems.Harbor.Created() &&
-		deployment.Subsystems.K8s.Created()
-}
-
-func (k8s *K8s) Created() bool {
-	return k8s.Namespace.Created() &&
-		k8s.Deployment.Created() &&
-		k8s.Service.Created() &&
-		k8s.Ingress.Created()
-}
-
-func (harbor *Harbor) Created() bool {
-	return harbor.Project.Created() &&
-		harbor.Repository.Created() &&
-		harbor.Robot.Created() &&
-		harbor.Webhook.Created()
-}
-
-func (gitHub *GitHub) Created() bool {
-	return gitHub.Webhook.Created()
 }

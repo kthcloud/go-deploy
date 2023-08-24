@@ -16,7 +16,13 @@ type DeploymentZone struct {
 	ParentDomain  string      `yaml:"parentDomain"`
 	ExtraDomainIP string      `yaml:"extraDomainIp"`
 	ConfigSource  interface{} `yaml:"configSource"`
-	Client        *kubernetes.Clientset
+	Storage       struct {
+		ParentDomain  string `yaml:"parentDomain"`
+		NfsServer     string `yaml:"nfsServer"`
+		NfsParentPath string `yaml:"nfsParentPath"`
+	} `yaml:"storage"`
+
+	Client *kubernetes.Clientset
 }
 
 type VmZone struct {
@@ -44,8 +50,9 @@ type Deployment struct {
 	PingInterval   int    `yaml:"pingInterval"`
 	Resources      struct {
 		Limits struct {
-			CPU    string `yaml:"cpu"`
-			Memory string `yaml:"memory"`
+			CPU     string `yaml:"cpu"`
+			Memory  string `yaml:"memory"`
+			Storage string `yaml:"storage"`
 		} `yaml:"limits"`
 		Requests struct {
 			CPU    string `yaml:"cpu"`

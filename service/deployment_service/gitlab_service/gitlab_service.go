@@ -1,4 +1,4 @@
-package internal_service
+package gitlab_service
 
 import (
 	"fmt"
@@ -132,15 +132,4 @@ func CreateBuild(id string, params *deploymentModel.BuildParams) error {
 	log.Println("build finished with gitlab for deployment", id)
 
 	return nil
-}
-
-func updateGitLabBuild(deploymentID string, lastJob *models.JobPublic, trace []string) error {
-	return deploymentModel.UpdateGitLabBuild(deploymentID, deploymentModel.GitLabBuild{
-		ID:        lastJob.ID,
-		ProjectID: lastJob.ProjectID,
-		Trace:     trace,
-		Status:    lastJob.Status,
-		Stage:     lastJob.Stage,
-		CreatedAt: lastJob.CreatedAt,
-	})
 }

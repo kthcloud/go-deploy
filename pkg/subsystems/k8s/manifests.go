@@ -4,6 +4,7 @@ import (
 	"go-deploy/pkg/subsystems/k8s/keys"
 	"go-deploy/pkg/subsystems/k8s/models"
 	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/batch/v1"
 	apiv1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -34,6 +35,57 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 	limits := createResourceList(public.Resources.Limits.CPU, public.Resources.Limits.Memory)
 	requests := createResourceList(public.Resources.Requests.CPU, public.Resources.Requests.Memory)
 
+	var lifecycle *apiv1.Lifecycle
+	if len(public.InitCommands) > 0 {
+		lifecycle = &apiv1.Lifecycle{
+			PostStart: &apiv1.LifecycleHandler{
+				Exec: &apiv1.ExecAction{
+					Command: public.InitCommands,
+				},
+			},
+		}
+	}
+
+	volumes := make([]apiv1.Volume, len(public.Volumes))
+	for i, volume := range public.Volumes {
+		volumes[i] = apiv1.Volume{
+			Name: volume.Name,
+			VolumeSource: apiv1.VolumeSource{
+				PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
+					ClaimName: volume.PvcName,
+				},
+			},
+		}
+	}
+
+	normalContainerMounts := make([]apiv1.VolumeMount, 0)
+	initContainerMounts := make([]apiv1.VolumeMount, 0)
+
+	for _, volume := range public.Volumes {
+		if volume.Init {
+			initContainerMounts = append(initContainerMounts, apiv1.VolumeMount{
+				Name:      volume.Name,
+				MountPath: volume.MountPath,
+			})
+		} else {
+			normalContainerMounts = append(normalContainerMounts, apiv1.VolumeMount{
+				Name:      volume.Name,
+				MountPath: volume.MountPath,
+			})
+		}
+	}
+
+	initContainers := make([]apiv1.Container, len(public.InitContainers))
+	for i, initContainer := range public.InitContainers {
+		initContainers[i] = apiv1.Container{
+			Name:         initContainer.Name,
+			Image:        initContainer.Image,
+			Command:      initContainer.Command,
+			Args:         initContainer.Args,
+			VolumeMounts: initContainerMounts,
+		}
+	}
+
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      public.Name,
@@ -58,17 +110,23 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 					},
 				},
 				Spec: apiv1.PodSpec{
+					Volumes: volumes,
 					Containers: []apiv1.Container{
 						{
-							Name:  public.Name,
-							Image: public.DockerImage,
-							Env:   envs,
+							Name:    public.Name,
+							Image:   public.DockerImage,
+							Command: public.Command,
+							Args:    public.Args,
+							Env:     envs,
 							Resources: apiv1.ResourceRequirements{
 								Limits:   limits,
 								Requests: requests,
 							},
+							Lifecycle:    lifecycle,
+							VolumeMounts: normalContainerMounts,
 						},
 					},
+					InitContainers: initContainers,
 				},
 			},
 		},
@@ -141,6 +199,119 @@ func CreateIngressManifest(public *models.IngressPublic) *networkingv1.Ingress {
 		},
 		Spec: networkingv1.IngressSpec{
 			Rules: rules,
+		},
+	}
+}
+
+func CreatePvManifest(public *models.PvPublic) *apiv1.PersistentVolume {
+	return &apiv1.PersistentVolume{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: public.Name,
+			Labels: map[string]string{
+				keys.ManifestLabelID:   public.ID,
+				keys.ManifestLabelName: public.Name,
+			},
+		},
+		Spec: apiv1.PersistentVolumeSpec{
+			AccessModes: []apiv1.PersistentVolumeAccessMode{
+				apiv1.ReadWriteMany,
+			},
+			Capacity: apiv1.ResourceList{
+				apiv1.ResourceStorage: resource.MustParse(public.Capacity),
+			},
+			PersistentVolumeSource: apiv1.PersistentVolumeSource{
+				NFS: &apiv1.NFSVolumeSource{
+					Server:   public.NfsServer,
+					Path:     public.NfsPath,
+					ReadOnly: false,
+				},
+			},
+		},
+	}
+}
+
+func CreatePvcManifest(public *models.PvcPublic) *apiv1.PersistentVolumeClaim {
+	return &apiv1.PersistentVolumeClaim{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      public.Name,
+			Namespace: public.Namespace,
+			Labels: map[string]string{
+				keys.ManifestLabelID:   public.ID,
+				keys.ManifestLabelName: public.Name,
+			},
+		},
+		Spec: apiv1.PersistentVolumeClaimSpec{
+			AccessModes: []apiv1.PersistentVolumeAccessMode{
+				apiv1.ReadWriteMany,
+			},
+			Resources: apiv1.ResourceRequirements{
+				Requests: apiv1.ResourceList{
+					apiv1.ResourceStorage: resource.MustParse(public.Capacity),
+				},
+				Limits: apiv1.ResourceList{
+					apiv1.ResourceStorage: resource.MustParse(public.Capacity),
+				},
+			},
+			VolumeName: public.PvName,
+		},
+	}
+}
+
+func CreateJobManifest(public *models.JobPublic) *v1.Job {
+	volumes := make([]apiv1.Volume, len(public.Volumes))
+	for i, volume := range public.Volumes {
+		volumes[i] = apiv1.Volume{
+			Name: volume.Name,
+			VolumeSource: apiv1.VolumeSource{
+				PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
+					ClaimName: volume.PvcName,
+				},
+			},
+		}
+	}
+
+	volumeMounts := make([]apiv1.VolumeMount, 0)
+	for _, volume := range public.Volumes {
+		if !volume.Init {
+			volumeMounts = append(volumeMounts, apiv1.VolumeMount{
+				Name:      volume.Name,
+				MountPath: volume.MountPath,
+			})
+		}
+	}
+
+	return &v1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      public.Name,
+			Namespace: public.Namespace,
+			Labels: map[string]string{
+				keys.ManifestLabelID:   public.ID,
+				keys.ManifestLabelName: public.Name,
+			},
+		},
+		Spec: v1.JobSpec{
+			Template: apiv1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						keys.ManifestLabelID:   public.ID,
+						keys.ManifestLabelName: public.Name,
+					},
+				},
+				Spec: apiv1.PodSpec{
+					RestartPolicy: apiv1.RestartPolicyNever,
+					Volumes:       volumes,
+					Containers: []apiv1.Container{
+						{
+							Name:            public.Name,
+							Image:           public.Image,
+							ImagePullPolicy: apiv1.PullIfNotPresent,
+							Command:         public.Command,
+							Args:            public.Args,
+							VolumeMounts:    volumeMounts,
+						},
+					},
+				},
+			},
 		},
 	}
 }

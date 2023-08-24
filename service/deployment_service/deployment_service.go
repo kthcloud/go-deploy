@@ -2,9 +2,16 @@ package deployment_service
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"go-deploy/models/dto/body"
 	deploymentModel "go-deploy/models/sys/deployment"
-	"go-deploy/service/deployment_service/internal_service"
+	"go-deploy/models/sys/deployment/storage_manager"
+	jobModel "go-deploy/models/sys/job"
+	"go-deploy/service/deployment_service/github_service"
+	"go-deploy/service/deployment_service/gitlab_service"
+	"go-deploy/service/deployment_service/harbor_service"
+	"go-deploy/service/deployment_service/k8s_service"
+	"go-deploy/service/job_service"
 	"log"
 	"strings"
 )
@@ -20,6 +27,22 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 	params := &deploymentModel.CreateParams{}
 	params.FromDTO(deploymentCreate, &fallback)
 
+	if len(params.Volumes) > 0 {
+		storageManagerID := uuid.New().String()
+		jobID := uuid.New().String()
+		err := job_service.Create(jobID, ownerID, jobModel.TypeCreateStorageManager, map[string]interface{}{
+			"id": storageManagerID,
+			"params": storage_manager.CreateParams{
+				UserID: ownerID,
+				Zone:   params.Zone,
+			},
+		})
+
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
 	created, err := deploymentModel.CreateDeployment(deploymentID, ownerID, params)
 	if err != nil {
 		return makeError(err)
@@ -29,19 +52,19 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 		return makeError(fmt.Errorf("deployment already exists for another user"))
 	}
 
-	err = internal_service.CreateHarbor(deploymentID, ownerID, params)
+	err = harbor_service.Create(deploymentID, ownerID, params)
 	if err != nil {
 		return makeError(err)
 	}
 
-	_, err = internal_service.CreateK8s(deploymentID, ownerID, params)
+	err = k8s_service.Create(deploymentID, ownerID, params)
 	if err != nil {
 		return makeError(err)
 	}
 
 	createPlaceHolderInstead := false
 	if params.GitHub != nil {
-		err = internal_service.CreateGitHub(deploymentID, params)
+		err = github_service.Create(deploymentID, params)
 		if err != nil {
 			errString := err.Error()
 			if strings.Contains(errString, "/hooks: 404 Not Found") {
@@ -59,7 +82,7 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 	}
 
 	if createPlaceHolderInstead {
-		err = internal_service.CreatePlaceholderGitHub(params.Name)
+		err = github_service.CreatePlaceholder(params.Name)
 		if err != nil {
 			return makeError(err)
 		}
@@ -75,7 +98,7 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 	}
 
 	if deployment.Subsystems.GitHub.Created() && params.GitHub != nil {
-		repo, err := internal_service.GetGitHubRepository(params.GitHub.Token, params.GitHub.RepositoryID)
+		repo, err := github_service.GetRepository(params.GitHub.Token, params.GitHub.RepositoryID)
 		if err != nil {
 			return makeError(err)
 		}
@@ -200,17 +223,17 @@ func Delete(name string) error {
 		return fmt.Errorf("failed to delete deployment. details: %s", err)
 	}
 
-	err := internal_service.DeleteHarbor(name)
+	err := harbor_service.Delete(name)
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = internal_service.DeleteK8s(name)
+	err = k8s_service.Delete(name)
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = internal_service.DeleteGitHub(name, nil)
+	err = github_service.Delete(name, nil)
 	if err != nil {
 		return makeError(err)
 	}
@@ -236,12 +259,12 @@ func Update(id string, deploymentUpdate *body.DeploymentUpdate) error {
 		return nil
 	}
 
-	err = internal_service.UpdateK8s(deployment.Name, params)
+	err = k8s_service.Update(deployment.Name, params)
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = deploymentModel.UpdateByID(id, params)
+	err = deploymentModel.UpdateWithParamsByID(id, params)
 	if err != nil {
 		return makeError(err)
 	}
@@ -273,7 +296,7 @@ func Restart(name string) error {
 		return fmt.Errorf("failed to restart deployment. details: %s", reason)
 	}
 
-	err = internal_service.RestartK8s(name)
+	err = k8s_service.Restart(name)
 	if err != nil {
 		return makeError(err)
 	}
@@ -372,12 +395,12 @@ func Repair(id string) error {
 		}
 	}()
 
-	err = internal_service.RepairK8s(deployment.Name)
+	err = k8s_service.Repair(deployment.Name)
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = internal_service.RepairHarbor(deployment.Name)
+	err = harbor_service.Repair(deployment.Name)
 	if err != nil {
 		return makeError(err)
 	}
@@ -387,15 +410,15 @@ func Repair(id string) error {
 }
 
 func ValidGitHubToken(token string) (bool, string, error) {
-	return internal_service.ValidateGitHubToken(token)
+	return github_service.ValidateToken(token)
 }
 
 func GetGitHubAccessTokenByCode(code string) (string, error) {
-	return internal_service.GetGitHubAccessTokenByCode(code)
+	return github_service.GetAccessTokenByCode(code)
 }
 
 func GetGitHubRepositories(token string) ([]deploymentModel.GitHubRepository, error) {
-	return internal_service.GetGitHubRepositories(token)
+	return github_service.GetRepositories(token)
 }
 
 func ValidGitHubRepository(token string, repositoryID int64) (bool, string, error) {
@@ -403,7 +426,7 @@ func ValidGitHubRepository(token string, repositoryID int64) (bool, string, erro
 		return fmt.Errorf("failed to get github repository. details: %s", err)
 	}
 
-	repo, err := internal_service.GetGitHubRepository(token, repositoryID)
+	repo, err := github_service.GetRepository(token, repositoryID)
 	if err != nil {
 		return false, "", makeError(err)
 	}
@@ -412,7 +435,7 @@ func ValidGitHubRepository(token string, repositoryID int64) (bool, string, erro
 		return false, "Repository not found", nil
 	}
 
-	webhooks, err := internal_service.GetGitHubWebhooks(token, repo.Owner, repo.Name)
+	webhooks, err := github_service.GetWebhooks(token, repo.Owner, repo.Name)
 	if err != nil {
 		return false, "", makeError(err)
 	}
@@ -450,7 +473,7 @@ func build(deployment *deploymentModel.Deployment, params *deploymentModel.Build
 		}
 	}()
 
-	err = internal_service.CreateBuild(deployment.ID, params)
+	err = gitlab_service.CreateBuild(deployment.ID, params)
 	if err != nil {
 		// we treat building as a non-critical activity, so we don't return an error here
 		log.Println("failed to create build for deployment", deployment.Name, "details:", err)

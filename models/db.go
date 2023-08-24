@@ -12,6 +12,7 @@ import (
 )
 
 var DeploymentCollection *mongo.Collection
+var StorageManagerCollection *mongo.Collection
 var VmCollection *mongo.Collection
 var GpuCollection *mongo.Collection
 var UserCollection *mongo.Collection
@@ -43,10 +44,16 @@ func Setup() {
 		log.Fatalln(makeError(err))
 	}
 
+	err = client.Ping(context.Background(), nil)
+	if err != nil {
+		log.Fatalln(makeError(err))
+	}
+
 	log.Println("successfully connected to database")
 
 	// Find collections
 	DeploymentCollection = findCollection("deployments")
+	StorageManagerCollection = findCollection("storageManagers")
 	VmCollection = findCollection("vms")
 	GpuCollection = findCollection("gpus")
 	UserCollection = findCollection("users")
@@ -60,18 +67,18 @@ func findCollection(collectionName string) *mongo.Collection {
 }
 
 func Shutdown() {
-	//makeError := func(err error) error {
-	//	return fmt.Errorf("failed to shutdown database. details: %s", err)
-	//}
-	//
-	//DeploymentCollection = nil
-	//VmCollection = nil
-	//GpuCollection = nil
-	//UserCollection = nil
-	//JobCollection = nil
-	//
-	//err := client.Disconnect(context.Background())
-	//if err != nil {
-	//	log.Fatalln(makeError(err))
-	//}
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to shutdown database. details: %s", err)
+	}
+
+	DeploymentCollection = nil
+	VmCollection = nil
+	GpuCollection = nil
+	UserCollection = nil
+	JobCollection = nil
+
+	err := client.Disconnect(context.Background())
+	if err != nil {
+		log.Fatalln(makeError(err))
+	}
 }

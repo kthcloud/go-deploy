@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/google/uuid"
 	deploymentModel "go-deploy/models/sys/deployment"
+	storageManagerModel "go-deploy/models/sys/deployment/storage_manager"
 	jobModel "go-deploy/models/sys/job"
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/pkg/conf"
@@ -65,6 +66,41 @@ func deploymentRepairer(ctx context.Context) {
 			return
 		}
 
+	}
+}
+
+func storageManagerRepairer(ctx context.Context) {
+	defer log.Println("storageManagerRepairer stopped")
+
+	for {
+		select {
+		case <-time.After(time.Duration(conf.Env.Deployment.RepairInterval) * time.Second):
+			withNoActivities, err := storageManagerModel.GetWithNoActivities()
+			if err != nil {
+				log.Println("error fetching storage managers with no activities. details: ", err)
+				continue
+			}
+
+			for _, storageManager := range withNoActivities {
+				now := time.Now()
+				if now.Sub(storageManager.RepairedAt) > 5*time.Minute {
+					log.Println("repairing storage manager", storageManager.ID)
+
+					jobID := uuid.New().String()
+					err = job_service.Create(jobID, storageManager.OwnerID, jobModel.TypeRepairStorageManager, map[string]interface{}{
+						"id": storageManager.ID,
+					})
+					if err != nil {
+						log.Println("failed to create repair job for storage manager", storageManager.ID, ". details:", err.Error())
+						continue
+					}
+
+					err = deploymentModel.MarkRepaired(storageManager.ID)
+				}
+			}
+		case <-ctx.Done():
+			return
+		}
 	}
 }
 

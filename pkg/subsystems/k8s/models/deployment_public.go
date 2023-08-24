@@ -3,51 +3,20 @@ package models
 import (
 	"go-deploy/pkg/subsystems/k8s/keys"
 	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/core/v1"
 )
 
-type EnvVar struct {
-	Name  string `bson:"name"`
-	Value string `bson:"value"`
-}
-
-type Limits struct {
-	CPU    string `bson:"cpu"`
-	Memory string `bson:"memory"`
-}
-
-type Requests struct {
-	CPU    string `bson:"cpu"`
-	Memory string `bson:"memory"`
-}
-
-type Resources struct {
-	Limits   Limits   `bson:"limits"`
-	Requests Requests `bson:"requests"`
-}
-
-func (envVar *EnvVar) ToK8sEnvVar() v1.EnvVar {
-	return v1.EnvVar{
-		Name:      envVar.Name,
-		Value:     envVar.Value,
-		ValueFrom: nil,
-	}
-}
-
-func EnvVarFromK8s(envVar *v1.EnvVar) EnvVar {
-	return EnvVar{
-		Name:  envVar.Name,
-		Value: envVar.Value,
-	}
-}
-
 type DeploymentPublic struct {
-	ID          string    `bson:"id"`
-	Name        string    `bson:"name"`
-	Namespace   string    `bson:"namespace"`
-	DockerImage string    `bson:"dockerImage"`
-	EnvVars     []EnvVar  `bson:"envVars"`
-	Resources   Resources `bson:"resources"`
+	ID             string          `bson:"id"`
+	Name           string          `bson:"name"`
+	Namespace      string          `bson:"namespace"`
+	DockerImage    string          `bson:"dockerImage"`
+	EnvVars        []EnvVar        `bson:"envVars"`
+	Resources      Resources       `bson:"resources"`
+	Command        []string        `bson:"command"`
+	Args           []string        `bson:"args"`
+	InitCommands   []string        `bson:"initCommands"`
+	InitContainers []InitContainer `bson:"initContainers"`
+	Volumes        []Volume        `bson:"volumes"`
 }
 
 func (d *DeploymentPublic) Created() bool {
@@ -60,27 +29,75 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 		envs = append(envs, EnvVarFromK8s(&env))
 	}
 
-	limits := Limits{}
+	var limits = Limits{}
+	var requests = Requests{}
+	var initCommands []string
+	var command []string
+	var args []string
+	var volumes []Volume
+
+	for _, k8sVolume := range deployment.Spec.Template.Spec.Volumes {
+		volumes = append(volumes, Volume{
+			Name:    k8sVolume.Name,
+			PvcName: k8sVolume.PersistentVolumeClaim.ClaimName,
+		})
+	}
+
 	if len(deployment.Spec.Template.Spec.Containers) > 0 {
-		if deployment.Spec.Template.Spec.Containers[0].Resources.Limits != nil {
-			if deployment.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu() != nil {
-				limits.CPU = deployment.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu().String()
+		firstContainer := deployment.Spec.Template.Spec.Containers[0]
+		resources := firstContainer.Resources
+		lifecycle := firstContainer.Lifecycle
+		volumeMounts := firstContainer.VolumeMounts
+
+		command = firstContainer.Command
+		args = firstContainer.Args
+
+		if resources.Limits != nil {
+			if resources.Limits.Cpu() != nil {
+				limits.CPU = resources.Limits.Cpu().String()
 			}
-			if deployment.Spec.Template.Spec.Containers[0].Resources.Limits.Memory() != nil {
-				limits.Memory = deployment.Spec.Template.Spec.Containers[0].Resources.Limits.Memory().String()
+			if resources.Limits.Memory() != nil {
+				limits.Memory = resources.Limits.Memory().String()
+			}
+		}
+
+		if resources.Requests != nil {
+			if resources.Requests.Cpu() != nil {
+				requests.CPU = resources.Requests.Cpu().String()
+			}
+			if resources.Requests.Memory() != nil {
+				requests.Memory = resources.Requests.Memory().String()
+			}
+		}
+
+		if lifecycle != nil && lifecycle.PostStart != nil && lifecycle.PostStart.Exec != nil {
+			initCommands = append(initCommands, lifecycle.PostStart.Exec.Command...)
+		}
+
+		for _, volumeMount := range volumeMounts {
+			// if we cannot find the volume mount in the volumes list, then it is not a volume we care about
+			for _, volume := range volumes {
+				if volume.Name == volumeMount.Name {
+					volume.MountPath = volumeMount.MountPath
+				}
 			}
 		}
 	}
 
-	requests := Requests{}
-	if len(deployment.Spec.Template.Spec.Containers) > 0 {
-		if deployment.Spec.Template.Spec.Containers[0].Resources.Requests != nil {
-			if deployment.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu() != nil {
-				requests.CPU = deployment.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu().String()
-			}
-			if deployment.Spec.Template.Spec.Containers[0].Resources.Requests.Memory() != nil {
-				requests.Memory = deployment.Spec.Template.Spec.Containers[0].Resources.Requests.Memory().String()
-			}
+	initContainers := make([]InitContainer, len(deployment.Spec.Template.Spec.InitContainers))
+	for _, initContainer := range deployment.Spec.Template.Spec.InitContainers {
+		initContainers = append(initContainers, InitContainer{
+			Name:    initContainer.Name,
+			Image:   initContainer.Image,
+			Command: initContainer.Command,
+			Args:    initContainer.Args,
+		})
+	}
+
+	// delete any k8sVolumes that does not have a mount path, they need to be recreated
+	for i := len(volumes) - 1; i >= 0; i-- {
+		if volumes[i].MountPath == "" {
+			volumes = append(volumes[:i], volumes[i+1:]...)
 		}
 	}
 
@@ -94,5 +111,10 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 			Limits:   limits,
 			Requests: requests,
 		},
+		Command:        command,
+		Args:           args,
+		InitCommands:   initCommands,
+		InitContainers: initContainers,
+		Volumes:        volumes,
 	}
 }
