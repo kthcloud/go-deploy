@@ -478,6 +478,19 @@ func createJob(client *k8s.Client, id, name string, k8s *subsystems.K8s, public 
 	return job, nil
 }
 
+func deleteNamespace(client *k8s.Client, id string, k8s *subsystems.K8s, updateDb UpdateDbSubsystem) error {
+	// never actually deleted the namespace to prevent race conditions
+
+	err := updateDb(id, "k8s", "namespace", nil)
+	if err != nil {
+		return err
+	}
+
+	k8s.Namespace = k8sModels.NamespacePublic{}
+
+	return nil
+}
+
 func deleteDeployment(client *k8s.Client, id string, k8s *subsystems.K8s, updateDb UpdateDbSubsystem) error {
 	err := client.DeleteDeployment(k8s.Namespace.FullName, k8s.Deployment.ID)
 	if err != nil {

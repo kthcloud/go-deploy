@@ -248,6 +248,14 @@ func Delete(name string) error {
 		}
 	}
 
+	// Namespace
+	if ss.Namespace.Created() {
+		err = deleteNamespace(client, deployment.ID, ss, deploymentModel.UpdateSubsystemByID)
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
 	return nil
 }
 
