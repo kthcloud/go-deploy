@@ -37,11 +37,11 @@ func updateAllDeploymentPings() {
 			continue
 		}
 
-		go updateOneDeploymentPing(&deployment, *url)
+		go updateOneDeploymentPing(deployment, *url)
 	}
 }
 
-func updateOneDeploymentPing(deployment *deploymentModels.Deployment, url string) {
+func updateOneDeploymentPing(deployment deploymentModels.Deployment, url string) {
 	code, err := ping(url)
 
 	if err != nil {
