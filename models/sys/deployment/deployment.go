@@ -50,10 +50,3 @@ func (deployment *Deployment) BeingCreated() bool {
 func (deployment *Deployment) BeingDeleted() bool {
 	return deployment.DoingActivity(ActivityBeingDeleted)
 }
-
-func (deployment *Deployment) Created() bool {
-	return deployment.ID != "" &&
-		deployment.Subsystems.GitHub.Created() &&
-		deployment.Subsystems.Harbor.Created() &&
-		deployment.Subsystems.K8s.Created()
-}
