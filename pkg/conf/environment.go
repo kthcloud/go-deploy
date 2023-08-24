@@ -36,6 +36,11 @@ func SetupEnvironment() {
 		log.Fatalf(makeError(err).Error())
 	}
 
+	log.Println("loaded", len(Env.Roles), "roles in order:")
+	for _, role := range Env.Roles {
+		log.Println("\t", role.Name)
+	}
+
 	assertCorrectConfig()
 
 	err = setupK8sClusters()
@@ -43,7 +48,7 @@ func SetupEnvironment() {
 		log.Fatalln(makeError(err))
 	}
 
-	log.Println("config loaded")
+	log.Println("config loading finished")
 }
 
 func assertCorrectConfig() {
