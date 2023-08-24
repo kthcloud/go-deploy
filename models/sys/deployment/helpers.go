@@ -14,21 +14,32 @@ import (
 )
 
 func CreateDeployment(deploymentID, ownerID string, params *CreateParams) (bool, error) {
-	deployment := Deployment{
-		ID:      deploymentID,
-		Name:    params.Name,
-		OwnerID: ownerID,
+	appName := "main"
 
-		CreatedAt: time.Now(),
-
+	mainApp := App{
+		Name:         appName,
 		Private:      params.Private,
 		Envs:         params.Envs,
 		Volumes:      params.Volumes,
 		InitCommands: params.InitCommands,
 		ExtraDomains: make([]string, 0),
+	}
 
-		Activities: []string{ActivityBeingCreated},
-
+	deployment := Deployment{
+		ID:           deploymentID,
+		Name:         params.Name,
+		OwnerID:      ownerID,
+		Zone:         params.Zone,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Time{},
+		RepairedAt:   time.Time{},
+		RestartedAt:  time.Time{},
+		Private:      false,
+		Envs:         make([]Env, 0),
+		Volumes:      make([]Volume, 0),
+		InitCommands: make([]string, 0),
+		Apps:         map[string]App{appName: mainApp},
+		Activities:   []string{ActivityBeingCreated},
 		Subsystems: Subsystems{
 			GitLab: subsystems.GitLab{
 				LastBuild: subsystems.GitLabBuild{
@@ -41,11 +52,9 @@ func CreateDeployment(deploymentID, ownerID string, params *CreateParams) (bool,
 				},
 			},
 		},
-
 		StatusCode:    status_codes.ResourceBeingCreated,
 		StatusMessage: status_codes.GetMsg(status_codes.ResourceBeingCreated),
-
-		Zone: params.Zone,
+		PingResult:    0,
 	}
 
 	result, err := models.DeploymentCollection.UpdateOne(context.TODO(), bson.D{{"name", params.Name}}, bson.D{
@@ -180,19 +189,34 @@ func CountByOwnerID(ownerID string) (int, error) {
 }
 
 func UpdateWithParamsByID(id string, update *UpdateParams) error {
-	updateData := bson.M{}
+	deployment, err := GetByID(id)
+	if err != nil {
+		return err
+	}
 
-	models.AddIfNotNil(updateData, "envs", update.Envs)
-	models.AddIfNotNil(updateData, "private", update.Private)
-	models.AddIfNotNil(updateData, "extraDomains", update.ExtraDomains)
-
-	if len(updateData) == 0 {
+	mainApp := deployment.GetMainApp()
+	if mainApp == nil {
+		log.Println("main app not found when updating deployment", id, ". assuming it was deleted")
 		return nil
 	}
 
-	_, err := models.DeploymentCollection.UpdateOne(context.TODO(),
+	if update.Envs != nil {
+		mainApp.Envs = *update.Envs
+	}
+
+	if update.Private != nil {
+		mainApp.Private = *update.Private
+	}
+
+	if update.ExtraDomains != nil {
+		mainApp.ExtraDomains = *update.ExtraDomains
+	}
+
+	deployment.Apps["main"] = *mainApp
+
+	_, err = models.DeploymentCollection.UpdateOne(context.TODO(),
 		bson.D{{"id", id}},
-		bson.D{{"$set", updateData}},
+		bson.D{{"$set", bson.D{{"apps", deployment.Apps}}}},
 	)
 	if err != nil {
 		return fmt.Errorf("failed to update deployment %s. details: %s", id, err)
@@ -414,5 +438,4 @@ func SavePing(id string, pingResult int) error {
 	}
 
 	return nil
-
 }

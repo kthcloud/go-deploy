@@ -6,35 +6,93 @@ import (
 	"go-deploy/models/sys/vm"
 )
 
+func appCreatedK8s(deployment *deployment.Deployment, app *deployment.App) bool {
+	for _, volume := range app.Volumes {
+		pv, ok := deployment.Subsystems.K8s.PvMap[volume.Name]
+		if !pv.Created() || !ok {
+			return false
+		}
+
+		pvc, ok := deployment.Subsystems.K8s.PvcMap[volume.Name]
+		if !pvc.Created() || !ok {
+			return false
+		}
+	}
+
+	deploymentCreated := false
+	for mapName, k8sDeployment := range deployment.Subsystems.K8s.DeploymentMap {
+		if k8sDeployment.Created() && mapName == app.Name {
+			deploymentCreated = true
+		}
+	}
+
+	serviceCreated := false
+	for mapName, service := range deployment.Subsystems.K8s.ServiceMap {
+		if service.Created() && mapName == app.Name {
+			serviceCreated = true
+		}
+	}
+
+	ingressCreated := false
+	for mapName, ingress := range deployment.Subsystems.K8s.IngressMap {
+		if ingress.Created() && mapName == app.Name {
+			ingressCreated = true
+		}
+	}
+
+	return deploymentCreated && serviceCreated && ingressCreated
+}
+
+func appDeletedK8s(deployment *deployment.Deployment, app *deployment.App) bool {
+	for _, volume := range app.Volumes {
+		pv := deployment.Subsystems.K8s.PvMap[volume.Name]
+		if pv.Created() {
+			return false
+		}
+
+		pvc := deployment.Subsystems.K8s.PvcMap[volume.Name]
+		if pvc.Created() {
+			return false
+		}
+	}
+
+	deploymentDeleted := true
+	for mapName, k8sDeployment := range deployment.Subsystems.K8s.DeploymentMap {
+		if k8sDeployment.Created() && mapName == app.Name {
+			deploymentDeleted = false
+		}
+	}
+
+	serviceDeleted := true
+	for mapName, service := range deployment.Subsystems.K8s.ServiceMap {
+		if service.Created() && mapName == app.Name {
+			serviceDeleted = false
+		}
+	}
+
+	ingressDeleted := true
+	for mapName, ingress := range deployment.Subsystems.K8s.IngressMap {
+		if ingress.Created() && mapName == app.Name {
+			ingressDeleted = false
+		}
+	}
+
+	return deploymentDeleted && serviceDeleted && ingressDeleted
+}
+
 func k8sCreated(deployment *deployment.Deployment) (bool, error) {
 	_ = func(err error) error {
 		return fmt.Errorf("failed to check if k8s setup is created for deployment %s. details: %s", deployment.Name, err)
 	}
 
-	pvCreated := true
-	pvcCreated := true
-
-	for _, volume := range deployment.Volumes {
-		pv, ok := deployment.Subsystems.K8s.PvMap[volume.Name]
-		if !pv.Created() || !ok {
-			pvCreated = false
-			break
-		}
-
-		pvc, ok := deployment.Subsystems.K8s.PvcMap[volume.Name]
-		if !pvc.Created() || !ok {
-			pvcCreated = false
-			break
+	for _, app := range deployment.Apps {
+		if !appCreatedK8s(deployment, &app) {
+			return false, nil
 		}
 	}
 
 	k8s := &deployment.Subsystems.K8s
-	return k8s.Namespace.Name != "" &&
-		k8s.Deployment.ID != "" &&
-		k8s.Service.ID != "" &&
-		k8s.Ingress.ID != "" || k8s.Ingress.Placeholder &&
-		pvCreated &&
-		pvcCreated, nil
+	return k8s.Namespace.Created(), nil
 }
 
 func k8sDeleted(deployment *deployment.Deployment) (bool, error) {
@@ -42,30 +100,14 @@ func k8sDeleted(deployment *deployment.Deployment) (bool, error) {
 		return fmt.Errorf("failed to check if k8s setup is deleted for deployment %s. details: %s", deployment.Name, err)
 	}
 
-	pvDeleted := true
-	pvcDeleted := true
-
-	for _, volume := range deployment.Volumes {
-		pv, _ := deployment.Subsystems.K8s.PvMap[volume.Name]
-		if pv.Created() {
-			pvDeleted = false
-			break
-		}
-
-		pvc, _ := deployment.Subsystems.K8s.PvcMap[volume.Name]
-		if pvc.Created() {
-			pvcDeleted = false
-			break
+	for _, app := range deployment.Apps {
+		if !appDeletedK8s(deployment, &app) {
+			return false, nil
 		}
 	}
 
 	k8s := &deployment.Subsystems.K8s
-	return k8s.Namespace.Name == "" &&
-		k8s.Deployment.ID == "" &&
-		k8s.Service.ID == "" &&
-		k8s.Ingress.ID == "" && !k8s.Ingress.Placeholder &&
-		pvDeleted &&
-		pvcDeleted, nil
+	return k8s.Namespace.ID == "", nil
 }
 
 func harborCreated(deployment *deployment.Deployment) (bool, error) {

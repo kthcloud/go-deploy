@@ -20,6 +20,10 @@ func (i *IngressPublic) Created() bool {
 	return i.ID != ""
 }
 
+func (i *IngressPublic) IsPlaceholder() bool {
+	return i.Placeholder
+}
+
 func CreateIngressPublicFromRead(ingress *v1.Ingress) *IngressPublic {
 	var serviceName string
 	var servicePort int

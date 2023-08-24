@@ -77,7 +77,7 @@ func createDeploymentPublic(namespace, name, dockerImage string, envs []deployme
 	}
 }
 
-func createStorageManagerDeploymentPublic(namespace, name string, volumes []storage_manager.Volume, initCommands []string) *k8sModels.DeploymentPublic {
+func createFileBrowserDeploymentPublic(namespace, name string, volumes []storage_manager.Volume, initCommands []string) *k8sModels.DeploymentPublic {
 	k8sVolumes := make([]k8sModels.Volume, len(volumes))
 	for i, volume := range volumes {
 		k8sVolumes[i] = k8sModels.Volume{
@@ -196,7 +196,7 @@ func getStorageManagerExternalFQDN(name string, zone *enviroment.DeploymentZone)
 }
 
 func recreateNamespace(client *k8s.Client, id string, k8s *subsystems.K8s, newPublic *k8sModels.NamespacePublic, updateDb UpdateDbSubsystem) error {
-	err := client.DeleteNamespace(k8s.Namespace.ID)
+	err := deleteNamespace(client, id, k8s, updateDb)
 	if err != nil {
 		return err
 	}
@@ -209,27 +209,13 @@ func recreateNamespace(client *k8s.Client, id string, k8s *subsystems.K8s, newPu
 	return nil
 }
 
-func recreateK8sDeployment(client *k8s.Client, id string, k8s *subsystems.K8s, newPublic *k8sModels.DeploymentPublic, updateDb UpdateDbSubsystem) error {
-	err := client.DeleteDeployment(k8s.Namespace.FullName, k8s.Deployment.ID)
+func recreateK8sDeployment(client *k8s.Client, id, name string, k8s *subsystems.K8s, newPublic *k8sModels.DeploymentPublic, updateDb UpdateDbSubsystem) error {
+	err := deleteK8sDeployment(client, id, name, k8s, updateDb)
 	if err != nil {
 		return err
 	}
 
-	_, err = createK8sDeployment(client, id, k8s, newPublic, updateDb)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func recreateService(client *k8s.Client, id string, k8s *subsystems.K8s, newPublic *k8sModels.ServicePublic, updateDb UpdateDbSubsystem) error {
-	err := client.DeleteService(k8s.Namespace.FullName, k8s.Service.ID)
-	if err != nil {
-		return err
-	}
-
-	_, err = createService(client, id, k8s, newPublic, updateDb)
+	_, err = createK8sDeployment(client, id, name, k8s, newPublic, updateDb)
 	if err != nil {
 		return err
 	}
@@ -237,13 +223,27 @@ func recreateService(client *k8s.Client, id string, k8s *subsystems.K8s, newPubl
 	return nil
 }
 
-func recreateIngress(client *k8s.Client, id string, k8s *subsystems.K8s, newPublic *k8sModels.IngressPublic, updateDb UpdateDbSubsystem) error {
-	err := client.DeleteIngress(k8s.Namespace.FullName, k8s.Ingress.ID)
+func recreateService(client *k8s.Client, id, name string, k8s *subsystems.K8s, newPublic *k8sModels.ServicePublic, updateDb UpdateDbSubsystem) error {
+	err := deleteService(client, id, name, k8s, updateDb)
 	if err != nil {
 		return err
 	}
 
-	_, err = createIngress(client, id, k8s, newPublic, updateDb)
+	_, err = createService(client, id, name, k8s, newPublic, updateDb)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func recreateIngress(client *k8s.Client, id, name string, k8s *subsystems.K8s, newPublic *k8sModels.IngressPublic, updateDb UpdateDbSubsystem) error {
+	err := deleteIngress(client, id, name, k8s, updateDb)
+	if err != nil {
+		return err
+	}
+
+	_, err = createIngress(client, id, name, k8s, newPublic, updateDb)
 	if err != nil {
 		return err
 	}
@@ -310,32 +310,39 @@ func createNamespace(client *k8s.Client, id string, k8s *subsystems.K8s, public 
 	return namespace, nil
 }
 
-func createK8sDeployment(client *k8s.Client, id string, k8s *subsystems.K8s, public *k8sModels.DeploymentPublic, updateDb UpdateDbSubsystem) (*k8sModels.DeploymentPublic, error) {
+func createK8sDeployment(client *k8s.Client, id, name string, k8s *subsystems.K8s, public *k8sModels.DeploymentPublic, updateDb UpdateDbSubsystem) (*k8sModels.DeploymentPublic, error) {
 	createdID, err := client.CreateDeployment(public)
 	if err != nil {
 		return nil, err
 	}
 
-	k8sDeployment, err := client.ReadDeployment(k8s.Namespace.FullName, createdID)
+	deployment, err := client.ReadDeployment(public.Namespace, createdID)
 	if err != nil {
 		return nil, err
 	}
 
-	if k8sDeployment == nil {
-		return nil, errors.New("failed to read deployment after creation")
+	if deployment == nil {
+		log.Printf("failed to read deployment after creation. assuming it was deleted")
+		return nil, nil
 	}
 
-	err = updateDb(id, "k8s", "deployment", k8sDeployment)
+	newMap := make(map[string]k8sModels.DeploymentPublic)
+	for k, v := range k8s.DeploymentMap {
+		newMap[k] = v
+	}
+	newMap[name] = *deployment
+
+	err = updateDb(id, "k8s", "deploymentMap", newMap)
 	if err != nil {
 		return nil, err
 	}
 
-	k8s.Deployment = *k8sDeployment
+	k8s.DeploymentMap = newMap
 
-	return k8sDeployment, nil
+	return deployment, nil
 }
 
-func createService(client *k8s.Client, id string, k8s *subsystems.K8s, public *k8sModels.ServicePublic, updateDb UpdateDbSubsystem) (*k8sModels.ServicePublic, error) {
+func createService(client *k8s.Client, id, name string, k8s *subsystems.K8s, public *k8sModels.ServicePublic, updateDb UpdateDbSubsystem) (*k8sModels.ServicePublic, error) {
 	createdID, err := client.CreateService(public)
 	if err != nil {
 		return nil, err
@@ -347,20 +354,27 @@ func createService(client *k8s.Client, id string, k8s *subsystems.K8s, public *k
 	}
 
 	if service == nil {
-		return nil, errors.New("failed to read service after creation")
+		log.Printf("failed to read service after creation. assuming it was deleted")
+		return nil, nil
 	}
 
-	err = updateDb(id, "k8s", "service", service)
+	newMap := make(map[string]k8sModels.ServicePublic)
+	for k, v := range k8s.ServiceMap {
+		newMap[k] = v
+	}
+	newMap[name] = *service
+
+	err = updateDb(id, "k8s", "serviceMap", newMap)
 	if err != nil {
 		return nil, err
 	}
 
-	k8s.Service = *service
+	k8s.ServiceMap = newMap
 
 	return service, nil
 }
 
-func createIngress(client *k8s.Client, id string, k8s *subsystems.K8s, public *k8sModels.IngressPublic, updateDb UpdateDbSubsystem) (*k8sModels.IngressPublic, error) {
+func createIngress(client *k8s.Client, id, name string, k8s *subsystems.K8s, public *k8sModels.IngressPublic, updateDb UpdateDbSubsystem) (*k8sModels.IngressPublic, error) {
 	createdID, err := client.CreateIngress(public)
 	if err != nil {
 		return nil, err
@@ -375,12 +389,18 @@ func createIngress(client *k8s.Client, id string, k8s *subsystems.K8s, public *k
 		return nil, errors.New("failed to read ingress after creation")
 	}
 
-	err = updateDb(id, "k8s", "ingress", ingress)
+	newMap := make(map[string]k8sModels.IngressPublic)
+	for k, v := range k8s.IngressMap {
+		newMap[k] = v
+	}
+	newMap[name] = *ingress
+
+	err = updateDb(id, "k8s", "ingressMap", newMap)
 	if err != nil {
 		return nil, err
 	}
 
-	k8s.Ingress = *ingress
+	k8s.IngressMap = newMap
 
 	return ingress, nil
 }
@@ -400,18 +420,18 @@ func createPV(client *k8s.Client, id, name string, k8s *subsystems.K8s, public *
 		return nil, errors.New("failed to read persistent volume after creation")
 	}
 
-	newPvMap := make(map[string]k8sModels.PvPublic)
+	newMap := make(map[string]k8sModels.PvPublic)
 	for k, v := range k8s.PvMap {
-		newPvMap[k] = v
+		newMap[k] = v
 	}
-	newPvMap[name] = *pv
+	newMap[name] = *pv
 
-	err = updateDb(id, "k8s", "pvMap", newPvMap)
+	err = updateDb(id, "k8s", "pvMap", newMap)
 	if err != nil {
 		return nil, err
 	}
 
-	k8s.PvMap[name] = *pv
+	k8s.PvMap = newMap
 
 	return pv, nil
 }
@@ -431,18 +451,18 @@ func createPVC(client *k8s.Client, id, name string, k8s *subsystems.K8s, public 
 		return nil, errors.New("failed to read persistent volume claim after creation")
 	}
 
-	newPvcMap := make(map[string]k8sModels.PvcPublic)
+	newMap := make(map[string]k8sModels.PvcPublic)
 	for k, v := range k8s.PvcMap {
-		newPvcMap[k] = v
+		newMap[k] = v
 	}
-	newPvcMap[name] = *pvc
+	newMap[name] = *pvc
 
-	err = updateDb(id, "k8s", "pvcMap", newPvcMap)
+	err = updateDb(id, "k8s", "pvcMap", newMap)
 	if err != nil {
 		return nil, err
 	}
 
-	k8s.PvcMap[name] = *pvc
+	k8s.PvcMap = newMap
 
 	return pvc, nil
 }
@@ -462,18 +482,18 @@ func createJob(client *k8s.Client, id, name string, k8s *subsystems.K8s, public 
 		return nil, errors.New("failed to read job after creation")
 	}
 
-	newJobMap := make(map[string]k8sModels.JobPublic)
+	newMap := make(map[string]k8sModels.JobPublic)
 	for k, v := range k8s.JobMap {
-		newJobMap[k] = v
+		newMap[k] = v
 	}
-	newJobMap[name] = *job
+	newMap[name] = *job
 
-	err = updateDb(id, "k8s", "jobMap", newJobMap)
+	err = updateDb(id, "k8s", "jobMap", newMap)
 	if err != nil {
 		return nil, err
 	}
 
-	k8s.JobMap[name] = *job
+	k8s.JobMap = newMap
 
 	return job, nil
 }
@@ -491,50 +511,80 @@ func deleteNamespace(client *k8s.Client, id string, k8s *subsystems.K8s, updateD
 	return nil
 }
 
-func deleteDeployment(client *k8s.Client, id string, k8s *subsystems.K8s, updateDb UpdateDbSubsystem) error {
-	err := client.DeleteDeployment(k8s.Namespace.FullName, k8s.Deployment.ID)
+func deleteK8sDeployment(client *k8s.Client, id, name string, k8s *subsystems.K8s, updateDb UpdateDbSubsystem) error {
+	deployment, ok := k8s.DeploymentMap[name]
+	if ok {
+		err := client.DeleteDeployment(k8s.Namespace.FullName, deployment.ID)
+		if err != nil {
+			return err
+		}
+	}
+
+	newMap := make(map[string]k8sModels.DeploymentPublic)
+	for k, v := range k8s.DeploymentMap {
+		if k != name {
+			newMap[k] = v
+		}
+	}
+
+	err := updateDb(id, "k8s", "deploymentMap", newMap)
 	if err != nil {
 		return err
 	}
 
-	err = updateDb(id, "k8s", "deployment", nil)
-	if err != nil {
-		return err
-	}
-
-	k8s.Deployment = k8sModels.DeploymentPublic{}
+	k8s.DeploymentMap = newMap
 
 	return nil
 }
 
-func deleteService(client *k8s.Client, id string, k8s *subsystems.K8s, updateDb UpdateDbSubsystem) error {
-	err := client.DeleteService(k8s.Namespace.FullName, k8s.Service.ID)
+func deleteService(client *k8s.Client, id, name string, k8s *subsystems.K8s, updateDb UpdateDbSubsystem) error {
+	service, ok := k8s.ServiceMap[name]
+	if ok {
+		err := client.DeleteService(k8s.Namespace.FullName, service.ID)
+		if err != nil {
+			return err
+		}
+	}
+
+	newMap := make(map[string]k8sModels.ServicePublic)
+	for k, v := range k8s.ServiceMap {
+		if k != name {
+			newMap[k] = v
+		}
+	}
+
+	err := updateDb(id, "k8s", "serviceMap", nil)
 	if err != nil {
 		return err
 	}
 
-	err = updateDb(id, "k8s", "service", nil)
-	if err != nil {
-		return err
-	}
-
-	k8s.Service = k8sModels.ServicePublic{}
+	k8s.ServiceMap = newMap
 
 	return nil
 }
 
-func deleteIngress(client *k8s.Client, id string, k8s *subsystems.K8s, updateDb UpdateDbSubsystem) error {
-	err := client.DeleteIngress(k8s.Namespace.FullName, k8s.Ingress.ID)
+func deleteIngress(client *k8s.Client, id, name string, k8s *subsystems.K8s, updateDb UpdateDbSubsystem) error {
+	ingress, ok := k8s.IngressMap[name]
+	if ok {
+		err := client.DeleteIngress(k8s.Namespace.FullName, ingress.ID)
+		if err != nil {
+			return err
+		}
+	}
+
+	newMap := make(map[string]k8sModels.IngressPublic)
+	for k, v := range k8s.IngressMap {
+		if k != name {
+			newMap[k] = v
+		}
+	}
+
+	err := updateDb(id, "k8s", "ingressMap", nil)
 	if err != nil {
 		return err
 	}
 
-	err = updateDb(id, "k8s", "ingress", nil)
-	if err != nil {
-		return err
-	}
-
-	k8s.Ingress = k8sModels.IngressPublic{}
+	k8s.IngressMap = newMap
 
 	return nil
 }
@@ -548,19 +598,19 @@ func deletePV(client *k8s.Client, id, name string, k8s *subsystems.K8s, updateDb
 		}
 	}
 
-	newPvMap := make(map[string]k8sModels.PvPublic)
+	newMap := make(map[string]k8sModels.PvPublic)
 	for k, v := range k8s.PvMap {
 		if k != name {
-			newPvMap[k] = v
+			newMap[k] = v
 		}
 	}
 
-	err := updateDb(id, "k8s", "pvMap", newPvMap)
+	err := updateDb(id, "k8s", "pvMap", newMap)
 	if err != nil {
 		return err
 	}
 
-	k8s.PvMap = newPvMap
+	k8s.PvMap = newMap
 
 	return nil
 }
@@ -574,19 +624,19 @@ func deletePVC(client *k8s.Client, id, name string, k8s *subsystems.K8s, updateD
 		}
 	}
 
-	newPvcMap := make(map[string]k8sModels.PvcPublic)
+	newMap := make(map[string]k8sModels.PvcPublic)
 	for k, v := range k8s.PvcMap {
 		if k != name {
-			newPvcMap[k] = v
+			newMap[k] = v
 		}
 	}
 
-	err := updateDb(id, "k8s", "pvcMap", newPvcMap)
+	err := updateDb(id, "k8s", "pvcMap", newMap)
 	if err != nil {
 		return err
 	}
 
-	k8s.PvcMap = newPvcMap
+	k8s.PvcMap = newMap
 
 	return nil
 }
@@ -600,32 +650,41 @@ func deleteJob(client *k8s.Client, id, name string, k8s *subsystems.K8s, updateD
 		}
 	}
 
-	newJobMap := make(map[string]k8sModels.JobPublic)
+	newMap := make(map[string]k8sModels.JobPublic)
 	for k, v := range k8s.JobMap {
 		if k != name {
-			newJobMap[k] = v
+			newMap[k] = v
 		}
 	}
 
-	err := updateDb(id, "k8s", "jobMap", newJobMap)
+	err := updateDb(id, "k8s", "jobMap", newMap)
 	if err != nil {
 		return err
 	}
 
-	k8s.JobMap = newJobMap
+	k8s.JobMap = newMap
 
 	return nil
 }
 
-func repairDeployment(client *k8s.Client, id string, k8s *subsystems.K8s, updateDb UpdateDbSubsystem) error {
-	deployment, err := client.ReadDeployment(k8s.Namespace.FullName, k8s.Deployment.ID)
+func repairDeployment(client *k8s.Client, id, name string, k8s *subsystems.K8s, updateDb UpdateDbSubsystem) error {
+	dbDeployment, ok := k8s.DeploymentMap[name]
+	if !ok {
+		return nil
+	}
+
+	installedDeployment, err := client.ReadDeployment(k8s.Namespace.FullName, dbDeployment.ID)
 	if err != nil {
 		return err
 	}
 
-	if deployment == nil || !reflect.DeepEqual(k8s.Deployment, *deployment) {
+	if installedDeployment == nil {
+		return nil
+	}
+
+	if !ok || !reflect.DeepEqual(dbDeployment, *installedDeployment) {
 		log.Println("recreating deployment for deployment", id)
-		err = recreateK8sDeployment(client, id, k8s, &k8s.Deployment, updateDb)
+		err = recreateK8sDeployment(client, id, name, k8s, &dbDeployment, updateDb)
 		if err != nil {
 			return err
 		}
@@ -634,15 +693,24 @@ func repairDeployment(client *k8s.Client, id string, k8s *subsystems.K8s, update
 	return nil
 }
 
-func repairService(client *k8s.Client, id string, k8s *subsystems.K8s, updateDb UpdateDbSubsystem) error {
-	service, err := client.ReadService(k8s.Namespace.FullName, k8s.Service.ID)
+func repairService(client *k8s.Client, id, name string, k8s *subsystems.K8s, updateDb UpdateDbSubsystem) error {
+	dbService, ok := k8s.ServiceMap[name]
+	if !ok {
+		return nil
+	}
+
+	installedService, err := client.ReadService(k8s.Namespace.FullName, dbService.ID)
 	if err != nil {
 		return err
 	}
 
-	if service == nil || !reflect.DeepEqual(k8s.Service, *service) {
-		log.Println("recreating service for storage manager", id)
-		err = recreateService(client, id, k8s, &k8s.Service, updateDb)
+	if installedService == nil {
+		return nil
+	}
+
+	if !ok || !reflect.DeepEqual(dbService, *installedService) {
+		log.Println("recreating service for deployment", id)
+		err = recreateService(client, id, name, k8s, &dbService, updateDb)
 		if err != nil {
 			return err
 		}
@@ -651,15 +719,24 @@ func repairService(client *k8s.Client, id string, k8s *subsystems.K8s, updateDb 
 	return nil
 }
 
-func repairIngress(client *k8s.Client, id string, k8s *subsystems.K8s, updateDb UpdateDbSubsystem) error {
-	ingress, err := client.ReadIngress(k8s.Namespace.FullName, k8s.Ingress.ID)
+func repairIngress(client *k8s.Client, id, name string, k8s *subsystems.K8s, updateDb UpdateDbSubsystem) error {
+	dbIngress, ok := k8s.IngressMap[name]
+	if !ok {
+		return nil
+	}
+
+	installedService, err := client.ReadIngress(k8s.Namespace.FullName, dbIngress.ID)
 	if err != nil {
 		return err
 	}
 
-	if ingress == nil || !reflect.DeepEqual(k8s.Ingress, *ingress) {
-		log.Println("recreating ingress for storage manager", id)
-		err = recreateIngress(client, id, k8s, &k8s.Ingress, updateDb)
+	if installedService == nil {
+		return nil
+	}
+
+	if !ok || !reflect.DeepEqual(dbIngress, *installedService) {
+		log.Println("recreating service for deployment", id)
+		err = recreateIngress(client, id, name, k8s, &dbIngress, updateDb)
 		if err != nil {
 			return err
 		}

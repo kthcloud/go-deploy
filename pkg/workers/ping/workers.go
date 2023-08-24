@@ -61,8 +61,13 @@ func ping(url string) (int, error) {
 }
 
 func getURL(deployment *deploymentModels.Deployment) *string {
-	if len(deployment.Subsystems.K8s.Ingress.Hosts) > 0 && len(deployment.Subsystems.K8s.Ingress.Hosts[0]) > 0 {
-		return &deployment.Subsystems.K8s.Ingress.Hosts[0]
+	ingress, ok := deployment.Subsystems.K8s.IngressMap["main"]
+	if !ok || !ingress.Created() {
+		return nil
+	}
+
+	if len(ingress.Hosts) > 0 && len(ingress.Hosts[0]) > 0 {
+		return &ingress.Hosts[0]
 	}
 	return nil
 }

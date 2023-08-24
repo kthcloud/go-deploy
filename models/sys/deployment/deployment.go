@@ -15,11 +15,13 @@ type Deployment struct {
 	RepairedAt  time.Time `bson:"repairedAt"`
 	RestartedAt time.Time `bson:"restartedAt"`
 
+	// keep until migrated
 	Private      bool     `bson:"private"`
 	Envs         []Env    `bson:"envs"`
 	Volumes      []Volume `bson:"volumes"`
 	InitCommands []string `bson:"initCommands"`
-	ExtraDomains []string `bson:"extraDomains"`
+
+	Apps map[string]App `bson:"apps"`
 
 	Activities []string `bson:"activities"`
 
@@ -28,6 +30,14 @@ type Deployment struct {
 	StatusMessage string     `bson:"statusMessage"`
 
 	PingResult int `bson:"pingResult"`
+}
+
+func (deployment *Deployment) GetMainApp() *App {
+	app, ok := deployment.Apps["main"]
+	if !ok {
+		return nil
+	}
+	return &app
 }
 
 func (deployment *Deployment) Ready() bool {

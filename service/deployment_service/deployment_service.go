@@ -57,7 +57,7 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 		return makeError(err)
 	}
 
-	_, err = k8s_service.Create(deploymentID, ownerID, params)
+	err = k8s_service.Create(deploymentID, ownerID, params)
 	if err != nil {
 		return makeError(err)
 	}

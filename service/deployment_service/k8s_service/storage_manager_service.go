@@ -144,34 +144,39 @@ func CreateStorageManager(id string, params *storageManagerModel.CreateParams) e
 
 	// Deployment
 	port := 80
-	if !ss.Deployment.Created() {
-		public := createStorageManagerDeploymentPublic(namespace.FullName, appName, volumes, nil)
-		_, err = createK8sDeployment(client, storageManager.ID, ss, public, storageManagerModel.UpdateSubsystemByID)
+
+	filebrowserAppName := "filebrowser"
+
+	filebrowserDeployment, ok := ss.DeploymentMap[filebrowserAppName]
+	if !ok || !filebrowserDeployment.Created() {
+		public := createFileBrowserDeploymentPublic(namespace.FullName, appName, volumes, nil)
+		_, err = createK8sDeployment(client, storageManager.ID, filebrowserAppName, ss, public, storageManagerModel.UpdateSubsystemByID)
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
 	// Service
-	service := &ss.Service
-	if !ss.Service.Created() {
+	filebrowserService, ok := ss.ServiceMap[filebrowserAppName]
+	if !ok || !filebrowserService.Created() {
 		public := createServicePublic(namespace.FullName, appName, port)
-		service, err = createService(client, storageManager.ID, ss, public, storageManagerModel.UpdateSubsystemByID)
+		_, err = createService(client, storageManager.ID, filebrowserAppName, ss, public, storageManagerModel.UpdateSubsystemByID)
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
 	// Ingress
-	if !ss.Ingress.Created() {
+	filebrowserIngress, ok := ss.IngressMap[filebrowserAppName]
+	if !ok || filebrowserIngress.Created() {
 		public := createIngressPublic(
 			namespace.FullName,
 			appName,
-			service.Name,
-			service.Port,
+			filebrowserService.Name,
+			filebrowserService.Port,
 			[]string{getStorageManagerExternalFQDN(storageManager.OwnerID, zone)},
 		)
-		_, err = createIngress(client, storageManager.ID, ss, public, storageManagerModel.UpdateSubsystemByID)
+		_, err = createIngress(client, storageManager.ID, filebrowserAppName, ss, public, storageManagerModel.UpdateSubsystemByID)
 		if err != nil {
 			return makeError(err)
 		}
@@ -210,33 +215,39 @@ func DeleteStorageManager(id string) error {
 	ss := &storageManager.Subsystems.K8s
 
 	// Deployment
-	if ss.Deployment.Created() {
-		err = deleteDeployment(client, storageManager.ID, ss, storageManagerModel.UpdateSubsystemByID)
-		if err != nil {
-			return makeError(err)
+	for mapName, deployment := range ss.DeploymentMap {
+		if deployment.Created() {
+			err = deleteK8sDeployment(client, storageManager.ID, mapName, ss, storageManagerModel.UpdateSubsystemByID)
+			if err != nil {
+				return makeError(err)
+			}
 		}
 	}
 
 	// Service
-	if ss.Service.Created() {
-		err = deleteService(client, storageManager.ID, ss, storageManagerModel.UpdateSubsystemByID)
-		if err != nil {
-			return makeError(err)
+	for mapName, service := range ss.ServiceMap {
+		if service.Created() {
+			err = deleteService(client, storageManager.ID, mapName, ss, storageManagerModel.UpdateSubsystemByID)
+			if err != nil {
+				return makeError(err)
+			}
 		}
 	}
 
 	// Ingress
-	if ss.Ingress.Created() {
-		err = deleteIngress(client, storageManager.ID, ss, storageManagerModel.UpdateSubsystemByID)
-		if err != nil {
-			return makeError(err)
+	for mapName, ingress := range ss.IngressMap {
+		if ingress.Created() {
+			err = deleteIngress(client, storageManager.ID, mapName, ss, storageManagerModel.UpdateSubsystemByID)
+			if err != nil {
+				return makeError(err)
+			}
 		}
 	}
 
 	// Job
-	for jobName, job := range ss.JobMap {
+	for mapName, job := range ss.JobMap {
 		if job.Created() {
-			err = deleteJob(client, storageManager.ID, jobName, ss, storageManagerModel.UpdateSubsystemByID)
+			err = deleteJob(client, storageManager.ID, mapName, ss, storageManagerModel.UpdateSubsystemByID)
 			if err != nil {
 				return makeError(err)
 			}
@@ -244,9 +255,9 @@ func DeleteStorageManager(id string) error {
 	}
 
 	// PersistentVolumeClaim
-	for pvcName, pvc := range ss.PvcMap {
+	for mapName, pvc := range ss.PvcMap {
 		if pvc.Created() {
-			err = deletePVC(client, storageManager.ID, pvcName, ss, storageManagerModel.UpdateSubsystemByID)
+			err = deletePVC(client, storageManager.ID, mapName, ss, storageManagerModel.UpdateSubsystemByID)
 			if err != nil {
 				return makeError(err)
 			}
@@ -254,9 +265,9 @@ func DeleteStorageManager(id string) error {
 	}
 
 	// PersistentVolume
-	for pvName, pv := range ss.PvMap {
+	for mapName, pv := range ss.PvMap {
 		if pv.Created() {
-			err = deletePV(client, storageManager.ID, pvName, ss, storageManagerModel.UpdateSubsystemByID)
+			err = deletePV(client, storageManager.ID, mapName, ss, storageManagerModel.UpdateSubsystemByID)
 			if err != nil {
 				return makeError(err)
 			}
@@ -294,21 +305,27 @@ func RepairStorageManager(id string) error {
 	ss := &storageManager.Subsystems.K8s
 
 	// deployment
-	err = repairDeployment(client, storageManager.ID, ss, storageManagerModel.UpdateSubsystemByID)
-	if err != nil {
-		return makeError(err)
+	for mapName, _ := range ss.DeploymentMap {
+		err = repairDeployment(client, storageManager.ID, mapName, ss, storageManagerModel.UpdateSubsystemByID)
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	// service
-	err = repairService(client, storageManager.ID, ss, storageManagerModel.UpdateSubsystemByID)
-	if err != nil {
-		return makeError(err)
+	for mapName, _ := range ss.ServiceMap {
+		err = repairService(client, storageManager.ID, mapName, ss, storageManagerModel.UpdateSubsystemByID)
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
-	// ingres
-	err = repairIngress(client, storageManager.ID, ss, storageManagerModel.UpdateSubsystemByID)
-	if err != nil {
-		return makeError(err)
+	// ingress
+	for mapName, _ := range ss.IngressMap {
+		err = repairIngress(client, storageManager.ID, mapName, ss, storageManagerModel.UpdateSubsystemByID)
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	return nil

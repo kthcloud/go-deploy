@@ -3,6 +3,7 @@ package deployment
 import (
 	"fmt"
 	"go-deploy/models/dto/body"
+	"log"
 )
 
 func (deployment *Deployment) ToDTO(url *string) body.DeploymentRead {
@@ -12,20 +13,26 @@ func (deployment *Deployment) ToDTO(url *string) body.DeploymentRead {
 		fullURL = &res
 	}
 
-	if deployment.Envs == nil {
-		deployment.Envs = []Env{}
+	app := deployment.GetMainApp()
+	if app == nil {
+		log.Println("main app not found in deployment", deployment.ID)
+		app = &App{}
 	}
 
-	envs := make([]body.Env, len(deployment.Envs))
-	for i, env := range deployment.Envs {
+	if app.Envs == nil {
+		app.Envs = []Env{}
+	}
+
+	envs := make([]body.Env, len(app.Envs))
+	for i, env := range app.Envs {
 		envs[i] = body.Env{
 			Name:  env.Name,
 			Value: env.Value,
 		}
 	}
 
-	volumes := make([]body.Volume, len(deployment.Volumes))
-	for i, volume := range deployment.Volumes {
+	volumes := make([]body.Volume, len(app.Volumes))
+	for i, volume := range app.Volumes {
 		volumes[i] = body.Volume{
 			Name:       volume.Name,
 			AppPath:    volume.AppPath,
@@ -38,8 +45,8 @@ func (deployment *Deployment) ToDTO(url *string) body.DeploymentRead {
 		integrations = append(integrations, "github")
 	}
 
-	if deployment.InitCommands == nil {
-		deployment.InitCommands = make([]string, 0)
+	if app.InitCommands == nil {
+		app.InitCommands = make([]string, 0)
 	}
 
 	var pingResult *int
@@ -56,8 +63,8 @@ func (deployment *Deployment) ToDTO(url *string) body.DeploymentRead {
 		URL:          fullURL,
 		Envs:         envs,
 		Volumes:      volumes,
-		InitCommands: deployment.InitCommands,
-		Private:      deployment.Private,
+		InitCommands: app.InitCommands,
+		Private:      app.Private,
 
 		Status:     deployment.StatusMessage,
 		PingResult: pingResult,

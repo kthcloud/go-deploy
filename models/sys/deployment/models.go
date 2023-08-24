@@ -2,6 +2,15 @@ package deployment
 
 import "go-deploy/models/sys/deployment/subsystems"
 
+type App struct {
+	Name         string   `bson:"name"`
+	Private      bool     `bson:"private"`
+	Envs         []Env    `bson:"envs"`
+	Volumes      []Volume `bson:"volumes"`
+	InitCommands []string `bson:"initCommands"`
+	ExtraDomains []string `bson:"extraDomains"`
+}
+
 type Subsystems struct {
 	K8s    subsystems.K8s    `bson:"k8s"`
 	Harbor subsystems.Harbor `bson:"harbor"`
