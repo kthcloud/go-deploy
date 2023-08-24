@@ -21,15 +21,13 @@ type Deployment struct {
 	Volumes      []Volume `bson:"volumes"`
 	InitCommands []string `bson:"initCommands"`
 
-	Apps map[string]App `bson:"apps"`
-
 	Activities []string `bson:"activities"`
 
-	Subsystems    Subsystems `bson:"subsystems"`
-	StatusCode    int        `bson:"statusCode"`
-	StatusMessage string     `bson:"statusMessage"`
+	Apps       map[string]App `bson:"apps"`
+	Subsystems Subsystems     `bson:"subsystems"`
 
-	PingResult int `bson:"pingResult"`
+	StatusMessage string `bson:"statusMessage"`
+	StatusCode    int    `bson:"statusCode"`
 }
 
 func (deployment *Deployment) GetMainApp() *App {

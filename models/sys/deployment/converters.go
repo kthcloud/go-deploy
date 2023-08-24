@@ -50,8 +50,8 @@ func (deployment *Deployment) ToDTO(url *string) body.DeploymentRead {
 	}
 
 	var pingResult *int
-	if deployment.PingResult != 0 {
-		pingResult = &deployment.PingResult
+	if app.PingResult != 0 {
+		pingResult = &app.PingResult
 	}
 
 	return body.DeploymentRead{

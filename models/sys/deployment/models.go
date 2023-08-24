@@ -9,6 +9,7 @@ type App struct {
 	Volumes      []Volume `bson:"volumes"`
 	InitCommands []string `bson:"initCommands"`
 	ExtraDomains []string `bson:"extraDomains"`
+	PingResult   int      `bson:"pingResult"`
 }
 
 type Subsystems struct {

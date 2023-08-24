@@ -15,7 +15,6 @@ import (
 
 func CreateDeployment(deploymentID, ownerID string, params *CreateParams) (bool, error) {
 	appName := "main"
-
 	mainApp := App{
 		Name:         appName,
 		Private:      params.Private,
@@ -23,6 +22,7 @@ func CreateDeployment(deploymentID, ownerID string, params *CreateParams) (bool,
 		Volumes:      params.Volumes,
 		InitCommands: params.InitCommands,
 		ExtraDomains: make([]string, 0),
+		PingResult:   0,
 	}
 
 	deployment := Deployment{
@@ -54,7 +54,6 @@ func CreateDeployment(deploymentID, ownerID string, params *CreateParams) (bool,
 		},
 		StatusCode:    status_codes.ResourceBeingCreated,
 		StatusMessage: status_codes.GetMsg(status_codes.ResourceBeingCreated),
-		PingResult:    0,
 	}
 
 	result, err := models.DeploymentCollection.UpdateOne(context.TODO(), bson.D{{"name", params.Name}}, bson.D{
@@ -421,17 +420,23 @@ func GetLastGitLabBuild(deploymentID string) (*subsystems.GitLabBuild, error) {
 }
 
 func SavePing(id string, pingResult int) error {
-	updateData := bson.M{}
-
-	models.AddIfNotNil(updateData, "pingResult", pingResult)
-
-	if len(updateData) == 0 {
-		return nil
+	deployment, err := GetByID(id)
+	if err != nil {
+		return err
 	}
 
-	_, err := models.DeploymentCollection.UpdateOne(context.TODO(),
+	app := deployment.GetMainApp()
+	if app == nil {
+		return fmt.Errorf("failed to find main app for deployment %s", id)
+	}
+
+	app.PingResult = pingResult
+
+	deployment.Apps["main"] = *app
+
+	_, err = models.DeploymentCollection.UpdateOne(context.TODO(),
 		bson.D{{"id", id}},
-		bson.D{{"$set", updateData}},
+		bson.D{{"$set", bson.D{{"apps.main.pingResult", pingResult}}}},
 	)
 	if err != nil {
 		return fmt.Errorf("failed to update deployment ping result %s. details: %s", id, err)
