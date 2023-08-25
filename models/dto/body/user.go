@@ -31,6 +31,5 @@ type UserRead struct {
 
 type UserUpdate struct {
 	Username   *string      `json:"username" binding:"omitempty,min=3,max=32"`
-	Email      *string      `json:"email" binding:"omitempty,email"`
 	PublicKeys *[]PublicKey `json:"publicKeys" binding:"omitempty,dive,min=0,max=1000"`
 }

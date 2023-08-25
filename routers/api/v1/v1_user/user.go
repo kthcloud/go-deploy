@@ -69,8 +69,8 @@ func GetList(c *gin.Context) {
 
 	effectiveRole := auth.GetEffectiveRole()
 
-	if requestQuery.WantAll && auth.IsAdmin {
-		users, err := user_service.GetAll()
+	if requestQuery.WantAll {
+		users, err := user_service.GetAll(auth)
 		if err != nil {
 			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 			return
@@ -103,7 +103,7 @@ func GetList(c *gin.Context) {
 		return
 	}
 
-	user, err := user_service.GetByID(auth.UserID, auth.UserID, auth.IsAdmin)
+	user, err := user_service.GetByID(auth.UserID, auth)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
@@ -154,7 +154,7 @@ func Get(c *gin.Context) {
 	}
 
 	var user *userModel.User
-	user, err = user_service.GetByID(requestedUserID, auth.UserID, auth.IsAdmin)
+	user, err = user_service.GetByID(requestedUserID, auth)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get user: %s", err))
 		return
@@ -206,7 +206,7 @@ func Update(c *gin.Context) {
 		requestedUserID = auth.UserID
 	}
 
-	user, err := user_service.GetByID(requestedUserID, auth.UserID, auth.IsAdmin)
+	user, err := user_service.GetByID(requestedUserID, auth)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to update user: %s", err))
 		return
@@ -217,13 +217,13 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	err = user_service.Update(requestedUserID, auth.UserID, auth.IsAdmin, &userUpdate)
+	err = user_service.Update(requestedUserID, &userUpdate, auth)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to update user: %s", err))
 		return
 	}
 
-	updatedUser, err := user_service.GetByID(requestedUserID, auth.UserID, auth.IsAdmin)
+	updatedUser, err := user_service.GetByID(requestedUserID, auth)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to update user: %s", err))
 		return

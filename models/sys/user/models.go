@@ -29,6 +29,5 @@ type User struct {
 
 type UserUpdate struct {
 	Username   *string      `json:"username" bson:"username"`
-	Email      *string      `json:"email" bson:"email"`
 	PublicKeys *[]PublicKey `json:"publicKeys" bson:"publicKeys"`
 }

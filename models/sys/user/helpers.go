@@ -142,7 +142,6 @@ func Update(userID string, update *UserUpdate) error {
 	updateData := bson.M{}
 
 	models.AddIfNotNil(updateData, "username", update.Username)
-	models.AddIfNotNil(updateData, "email", update.Email)
 	models.AddIfNotNil(updateData, "publicKeys", update.PublicKeys)
 
 	if len(updateData) == 0 {
