@@ -1,20 +1,14 @@
 package v1_vm
 
 import (
-	"encoding/base64"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
 	"go-deploy/models/dto/uri"
-	jobModel "go-deploy/models/sys/job"
-	vmModel "go-deploy/models/sys/vm"
-	gpuModel "go-deploy/models/sys/vm/gpu"
 	"go-deploy/pkg/status_codes"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
-	"go-deploy/service/job_service"
 	"go-deploy/service/vm_service"
 	"net/http"
 )
@@ -89,133 +83,27 @@ func AttachGPU(c *gin.Context) {
 		return
 	}
 
-	gpuID, err := getGpuID(&requestURI)
+	gpuID, err := decodeGpuID(requestURI.GpuID)
 	if err != nil {
 		context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceValidationFailed, "Invalid GPU ID")
 		return
 	}
 
-	vm, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin)
+	current, err := vm_service.GetByIdAuth(requestURI.VmID, auth)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, fmt.Sprintf("Failed to get VM: %s", err))
 		return
 	}
 
-	if vm == nil {
-		context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, fmt.Sprintf("VM with ID %s not found", requestURI.VmID))
+	if current == nil {
+		context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, "Resource not found")
 		return
 	}
 
-	// if a request for "any" comes in while already attached to a gpu, assume it's a request to reattach
-	if gpuID == "any" && vm.GpuID != "" {
-		gpuID = vm.GpuID
-	}
+	attachGPU(&context, &body.VmUpdate{
+		GpuID: &gpuID,
+	}, auth, current)
 
-	if vm.GpuID != "" && vm.GpuID != gpuID {
-		context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceNotCreated, "Resource already has a GPU attached")
-		return
-	}
-
-	var gpus []gpuModel.GPU
-	if gpuID == "any" {
-		gpus, err = vm_service.GetAllAvailableGPU(auth.GetEffectiveRole().Permissions.UsePrivilegedGPUs)
-		if err != nil {
-			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get available GPU: %s", err))
-			return
-		}
-
-		if gpus == nil {
-			context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotAvailable, "No available GPUs")
-			return
-		}
-	} else {
-		gpu, err := vm_service.GetGpuByID(gpuID, auth.GetEffectiveRole().Permissions.UsePrivilegedGPUs)
-		if err != nil {
-			context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
-			return
-		}
-
-		if gpu == nil {
-			context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, "GPU not found")
-			return
-		}
-
-		hardwareAvailable, err := vm_service.IsGpuHardwareAvailable(gpu)
-		if err != nil {
-			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to check if GPU is available: %s", err))
-			return
-		}
-
-		if !hardwareAvailable {
-			context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotAvailable, "GPU not available")
-			return
-		}
-
-		if (gpu.IsAttached() && gpu.Lease.VmID != vm.ID) && !gpu.Lease.IsExpired() {
-			context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceNotCreated, "GPU not available")
-			return
-		}
-
-		gpus = []gpuModel.GPU{*gpu}
-	}
-
-	if len(gpus) == 0 {
-		context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotAvailable, "No available GPUs")
-		return
-	}
-
-	// do this check to give a nice error to the user if the gpu cannot be attached
-	// otherwise it will be silently ignored
-	if len(gpus) == 1 {
-		canStartOnHost, reason, err := vm_service.CanStartOnHost(vm.ID, gpus[0].Host)
-		if err != nil {
-			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to check if VM can start on host: %s", err))
-			return
-		}
-
-		if !canStartOnHost {
-			if reason == "" {
-				reason = "VM could not be started on host"
-			}
-
-			context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceNotUpdated, reason)
-			return
-		}
-	}
-
-	gpuIds := make([]string, len(gpus))
-	for i, gpu := range gpus {
-		gpuIds[i] = gpu.ID
-	}
-
-	started, reason, err := vm_service.StartActivity(vm.ID, vmModel.ActivityAttachingGPU)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to start activity: %s", err))
-		return
-	}
-
-	if !started {
-		context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotReady, reason)
-		return
-	}
-
-	jobID := uuid.New().String()
-	err = job_service.Create(jobID, auth.UserID, jobModel.TypeAttachGpuToVM, map[string]interface{}{
-		"id":            vm.ID,
-		"gpuIds":        gpuIds,
-		"userId":        auth.UserID,
-		"leaseDuration": auth.GetEffectiveRole().Permissions.GpuLeaseDuration,
-	})
-
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to create job: %s", err))
-		return
-	}
-
-	context.JSONResponse(http.StatusOK, body.GpuAttached{
-		ID:    vm.ID,
-		JobID: jobID,
-	})
 }
 
 // DetachGPU
@@ -246,7 +134,7 @@ func DetachGPU(c *gin.Context) {
 		return
 	}
 
-	current, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin)
+	current, err := vm_service.GetByIdAuth(requestURI.VmID, auth)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, fmt.Sprintf("Failed to get VM: %s", err))
 		return
@@ -257,50 +145,5 @@ func DetachGPU(c *gin.Context) {
 		return
 	}
 
-	if current.GpuID == "" {
-		context.ErrorResponse(http.StatusNotModified, status_codes.ResourceNotUpdated, "Resource does not have a GPU attached")
-		return
-	}
-
-	started, reason, err := vm_service.StartActivity(current.ID, vmModel.ActivityDetachingGPU)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to start activity: %s", err))
-		return
-	}
-
-	if !started {
-		context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotReady, reason)
-		return
-	}
-
-	jobID := uuid.New().String()
-	err = job_service.Create(jobID, auth.UserID, jobModel.TypeDetachGpuFromVM, map[string]interface{}{
-		"id":     current.ID,
-		"userId": auth.UserID,
-	})
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to create job: %s", err))
-		return
-	}
-
-	context.JSONResponse(http.StatusOK, body.GpuDetached{
-		ID:    current.ID,
-		JobID: jobID,
-	})
-}
-
-func decodeGpuID(gpuID string) (string, error) {
-	res, err := base64.StdEncoding.DecodeString(gpuID)
-	if err != nil {
-		return "", err
-	}
-	return string(res), nil
-}
-
-func getGpuID(requestURI *uri.GpuAttach) (string, error) {
-	if requestURI.GpuID == "" {
-		return "any", nil
-	}
-
-	return decodeGpuID(requestURI.GpuID)
+	detachGPU(&context, auth, current)
 }

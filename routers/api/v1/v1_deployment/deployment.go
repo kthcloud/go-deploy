@@ -104,7 +104,7 @@ func GetList(c *gin.Context) {
 		return
 	}
 
-	deployments, _ := deployment_service.GetByOwnerID(auth.UserID, auth)
+	deployments, _ := deployment_service.GetByOwnerIdAuth(auth.UserID, auth)
 	if deployments == nil {
 		context.JSONResponse(200, []interface{}{})
 		return
@@ -151,7 +151,7 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	deployment, err := deployment_service.GetByIDAuth(requestURI.DeploymentID, auth)
+	deployment, err := deployment_service.GetByIdAuth(requestURI.DeploymentID, auth)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
@@ -205,7 +205,7 @@ func Create(c *gin.Context) {
 	}
 
 	if effectiveRole.Quotas.Deployments <= 0 {
-		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, "User is not allowed to create deployments")
+		context.ErrorResponse(http.StatusForbidden, status_codes.Error, "User is not allowed to create deployments")
 		return
 	}
 
@@ -289,7 +289,7 @@ func Create(c *gin.Context) {
 	}
 
 	if deploymentCount >= effectiveRole.Quotas.Deployments {
-		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, fmt.Sprintf("User is not allowed to create more than %d deployments", effectiveRole.Quotas.Deployments))
+		context.ErrorResponse(http.StatusForbidden, status_codes.Error, fmt.Sprintf("User is not allowed to create more than %d deployments", effectiveRole.Quotas.Deployments))
 		return
 	}
 
@@ -342,7 +342,7 @@ func Delete(c *gin.Context) {
 		return
 	}
 
-	currentDeployment, err := deployment_service.GetByIDAuth(requestURI.DeploymentID, auth)
+	currentDeployment, err := deployment_service.GetByIdAuth(requestURI.DeploymentID, auth)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return
@@ -360,7 +360,7 @@ func Delete(c *gin.Context) {
 	}
 
 	if !started {
-		context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotUpdated, fmt.Sprintf("Could not delete resource: %s", reason))
+		context.ErrorResponse(http.StatusNotModified, status_codes.ResourceNotUpdated, fmt.Sprintf("Could not delete resource: %s", reason))
 		return
 	}
 
@@ -414,7 +414,7 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	deployment, err := deployment_service.GetByIDAuth(requestURI.DeploymentID, auth)
+	deployment, err := deployment_service.GetByIdAuth(requestURI.DeploymentID, auth)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, fmt.Sprintf("Failed to get vm: %s", err))
 		return
@@ -432,11 +432,6 @@ func Update(c *gin.Context) {
 
 	if deployment.BeingDeleted() {
 		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingDeleted, "Resource is currently being deleted")
-		return
-	}
-
-	if deployment.OwnerID != auth.UserID && !auth.IsAdmin {
-		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, "User is not allowed to update this resource")
 		return
 	}
 

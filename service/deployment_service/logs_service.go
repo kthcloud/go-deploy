@@ -13,7 +13,7 @@ import (
 )
 
 func SetupLogStream(deploymentID string, handler func(string), auth *service.AuthInfo) (context.Context, error) {
-	deployment, err := GetByIDAuth(deploymentID, auth)
+	deployment, err := GetByIdAuth(deploymentID, auth)
 	if err != nil {
 		return nil, err
 	}

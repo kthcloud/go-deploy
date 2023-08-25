@@ -7,6 +7,7 @@ import (
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/models/sys/vm/gpu"
 	"go-deploy/pkg/conf"
+	"go-deploy/service"
 	"go-deploy/service/vm_service/internal_service"
 	"log"
 	"strings"
@@ -46,33 +47,54 @@ func Create(vmID, owner string, vmCreate *body.VmCreate) error {
 	return nil
 }
 
-func GetByID(userID, vmID string, isAdmin bool) (*vmModel.VM, error) {
+func GetByIdAuth(vmID string, auth *service.AuthInfo) (*vmModel.VM, error) {
 	vm, err := vmModel.GetByID(vmID)
 	if err != nil {
 		return nil, err
 	}
 
-	if vm != nil && vm.OwnerID != userID && !isAdmin {
+	if vm == nil {
+		return nil, nil
+	}
+
+	if vm.OwnerID != auth.UserID && !auth.IsAdmin {
 		return nil, nil
 	}
 
 	return vm, nil
 }
 
-func GetByOwnerID(ownerID string) ([]vmModel.VM, error) {
+func GetByOwnerIdAuth(ownerID string, auth *service.AuthInfo) ([]vmModel.VM, error) {
+	if ownerID != auth.UserID && !auth.IsAdmin {
+		return nil, nil
+	}
+
 	return vmModel.GetByOwnerID(ownerID)
+}
+
+func GetAllAuth(auth *service.AuthInfo) ([]vmModel.VM, error) {
+	if auth.IsAdmin {
+		return vmModel.GetAll()
+	}
+
+	self, err := vmModel.GetByOwnerID(auth.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	if self == nil {
+		return nil, nil
+	}
+
+	return self, nil
 }
 
 func GetAll() ([]vmModel.VM, error) {
 	return vmModel.GetAll()
 }
 
-func GetCount(userID string) (int, error) {
-	return vmModel.CountByOwnerID(userID)
-}
-
 func Exists(name string) (bool, *vmModel.VM, error) {
-	return vmModel.Exists(name)
+	return vmModel.ExistsByName(name)
 }
 
 func Delete(name string) error {
@@ -283,6 +305,8 @@ func CanAddActivity(vmID, activity string) (bool, string, error) {
 			vmModel.ActivityBeingDeleted,
 			vmModel.ActivityAttachingGPU,
 			vmModel.ActivityDetachingGPU,
+			vmModel.ActivityCreatingSnapshot,
+			vmModel.ActivityApplyingSnapshot,
 		}) {
 			return false, "It should not be in creation or deletion, and should not be attaching or detaching a GPU", nil
 		}
@@ -292,6 +316,8 @@ func CanAddActivity(vmID, activity string) (bool, string, error) {
 			vmModel.ActivityBeingCreated,
 			vmModel.ActivityBeingDeleted,
 			vmModel.ActivityAttachingGPU,
+			vmModel.ActivityCreatingSnapshot,
+			vmModel.ActivityApplyingSnapshot,
 		}) {
 			return false, "It should not be in creation or deletion, and should not be attaching a GPU", nil
 		}

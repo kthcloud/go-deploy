@@ -12,7 +12,7 @@ import (
 )
 
 func GetCIConfig(deploymentID string, auth *service.AuthInfo) (*body.CiConfig, error) {
-	deployment, err := GetByIDAuth(deploymentID, auth)
+	deployment, err := GetByIdAuth(deploymentID, auth)
 	if err != nil {
 		return nil, err
 	}

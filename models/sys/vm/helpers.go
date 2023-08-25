@@ -88,7 +88,7 @@ func GetByName(name string) (*VM, error) {
 	return getVM(bson.D{{"name", name}})
 }
 
-func Exists(name string) (bool, *VM, error) {
+func ExistsByName(name string) (bool, *VM, error) {
 	vm, err := getVM(bson.D{{"name", name}})
 	if err != nil {
 		return false, nil, err

@@ -100,6 +100,25 @@ func GetAllAvailableGPU(usePrivilegedGPUs bool) ([]gpuModel.GPU, error) {
 	return availableGPUs, nil
 }
 
+func IsGpuPrivileged(gpuID string) (bool, error) {
+	gpu, err := gpuModel.GetByID(gpuID)
+	if err != nil {
+		return false, err
+	}
+
+	if gpu == nil {
+		return false, nil
+	}
+
+	for _, privilegedGPU := range conf.Env.GPU.PrivilegedGPUs {
+		if privilegedGPU == gpu.Data.Name {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to attach gpu to vm %s. details: %s", vmID, err)
@@ -133,7 +152,7 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 		if gpu.Lease.VmID != vmID && gpu.IsAttached() {
 			// if it is attached but expired, take over the card by first detaching it
 			if gpu.Lease.IsExpired() {
-				err = internal_service.DetachGPU(gpu.Lease.VmID)
+				err = internal_service.DetachGPU(gpu.Lease.VmID, internal_service.CsDetachGpuAfterStateRestore)
 				if err != nil {
 					return makeError(err)
 				}
@@ -172,7 +191,7 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 			// if the host has insufficient capacity, we need to detach the gpu from the vm
 			// and attempt to attach it to another gpu
 
-			err = internal_service.DetachGPU(vmID)
+			err = internal_service.DetachGPU(vmID, internal_service.CsDetachGpuAfterStateRestore)
 			if err != nil {
 				return makeError(err)
 			}
@@ -264,6 +283,16 @@ func RepairGPUs() error {
 		}
 	}
 
+	// find vms that have a gpu assigned, but cs is not setup to use it
+	for _, vm := range vmsWithGPU {
+		if !hasExtraConfig(&vm) {
+			err := internal_service.AttachGPU(vm.GpuID, vm.ID)
+			if err != nil {
+				return makeError(err)
+			}
+		}
+	}
+
 	log.Println("successfully repaired gpus")
 	return nil
 }
@@ -291,7 +320,7 @@ func DetachGpuSync(vmID, userID string) error {
 		return fmt.Errorf("failed to detach gpu from vm %s. details: %s", vmID, err)
 	}
 
-	err := internal_service.DetachGPU(vmID)
+	err := internal_service.DetachGPU(vmID, internal_service.CsDetachGpuAfterStateRestore)
 	if err != nil {
 		return makeError(err)
 	}
@@ -315,7 +344,7 @@ func CanStartOnHost(vmID, host string) (bool, string, error) {
 	}
 
 	if vm.Subsystems.CS.VM.ID == "" {
-		return false, "", nil
+		return false, "VM not fully created", nil
 	}
 
 	canStart, reason, err := internal_service.CanStartCS(vm.Subsystems.CS.VM.ID, host, vm.Zone)
@@ -361,4 +390,13 @@ func isGpuPrivileged(cardName string) bool {
 	}
 
 	return false
+}
+
+func hasExtraConfig(vm *vmModel.VM) bool {
+	if vm.Subsystems.CS.VM.ID == "" {
+		log.Println("cs vm not found when checking for extra config when repairing gpus for vm", vm.ID, ". assuming it was deleted")
+		return false
+	}
+
+	return vm.Subsystems.CS.VM.ExtraConfig != "" && vm.Subsystems.CS.VM.ExtraConfig != "none"
 }
