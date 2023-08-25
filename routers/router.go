@@ -105,6 +105,11 @@ func setupVmRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
 
 	gpuRoutes := private.Group("/vms/:vmId")
 	gpuRoutes.Use(v1_vm.AccessGpuRoutes)
+	gpuRoutes.POST("/attachGpu", v1_vm.AttachGPU)
+	gpuRoutes.POST("/attachGpu/:gpuId", v1_vm.AttachGPU)
+
+	// always allow to detach in case of permission changes
+	private.POST("/vms/:vmId/detachGpu", v1_vm.DetachGPU)
 }
 
 func setupZoneRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
