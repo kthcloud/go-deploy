@@ -137,7 +137,7 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 	return nil
 }
 
-func GetByIDAuth(deploymentID string, auth *service.AuthInfo) (*deploymentModel.Deployment, error) {
+func GetByIdAuth(deploymentID string, auth *service.AuthInfo) (*deploymentModel.Deployment, error) {
 	deployment, err := deploymentModel.GetByID(deploymentID)
 	if err != nil {
 		return nil, err
@@ -154,7 +154,7 @@ func GetByIDAuth(deploymentID string, auth *service.AuthInfo) (*deploymentModel.
 	return deployment, nil
 }
 
-func GetByOwnerID(ownerID string, auth *service.AuthInfo) ([]deploymentModel.Deployment, error) {
+func GetByOwnerIdAuth(ownerID string, auth *service.AuthInfo) ([]deploymentModel.Deployment, error) {
 	if ownerID != auth.UserID && !auth.IsAdmin {
 		return nil, nil
 	}

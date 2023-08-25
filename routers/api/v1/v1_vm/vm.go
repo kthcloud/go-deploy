@@ -84,7 +84,7 @@ func GetList(c *gin.Context) {
 		return
 	}
 
-	vms, _ := vm_service.GetByOwnerID(auth.UserID)
+	vms, _ := vm_service.GetByOwnerIdAuth(auth.UserID, auth)
 	if vms == nil {
 		context.JSONResponse(200, []interface{}{})
 		return
@@ -144,7 +144,7 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	vm, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin)
+	vm, err := vm_service.GetByIdAuth(requestURI.VmID, auth)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get vm: %s", err.Error()))
 		return
@@ -316,7 +316,7 @@ func Delete(c *gin.Context) {
 		return
 	}
 
-	current, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin)
+	current, err := vm_service.GetByIdAuth(requestURI.VmID, auth)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, fmt.Sprintf("VM with id %s not found", requestURI.VmID))
 		return
@@ -390,7 +390,7 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	vm, err := vm_service.GetByID(auth.UserID, requestURI.VmID, auth.IsAdmin)
+	vm, err := vm_service.GetByIdAuth(requestURI.VmID, auth)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, fmt.Sprintf("Failed to get vm: %s", err))
 		return

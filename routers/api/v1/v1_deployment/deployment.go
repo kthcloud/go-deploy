@@ -104,7 +104,7 @@ func GetList(c *gin.Context) {
 		return
 	}
 
-	deployments, _ := deployment_service.GetByOwnerID(auth.UserID, auth)
+	deployments, _ := deployment_service.GetByOwnerIdAuth(auth.UserID, auth)
 	if deployments == nil {
 		context.JSONResponse(200, []interface{}{})
 		return
@@ -151,7 +151,7 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	deployment, err := deployment_service.GetByIDAuth(requestURI.DeploymentID, auth)
+	deployment, err := deployment_service.GetByIdAuth(requestURI.DeploymentID, auth)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
@@ -342,7 +342,7 @@ func Delete(c *gin.Context) {
 		return
 	}
 
-	currentDeployment, err := deployment_service.GetByIDAuth(requestURI.DeploymentID, auth)
+	currentDeployment, err := deployment_service.GetByIdAuth(requestURI.DeploymentID, auth)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return
@@ -414,7 +414,7 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	deployment, err := deployment_service.GetByIDAuth(requestURI.DeploymentID, auth)
+	deployment, err := deployment_service.GetByIdAuth(requestURI.DeploymentID, auth)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, fmt.Sprintf("Failed to get vm: %s", err))
 		return
