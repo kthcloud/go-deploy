@@ -65,8 +65,8 @@ func GetByID(id string) (*StorageManager, error) {
 	return getStorageManager(bson.D{{"id", id}})
 }
 
-func GetByOwnerID(ownerID string) ([]StorageManager, error) {
-	return GetAllWithFilter(bson.D{{"ownerId", ownerID}})
+func GetByOwnerID(ownerID string) (*StorageManager, error) {
+	return getStorageManager(bson.D{{"ownerId", ownerID}})
 }
 
 func GetAll() ([]StorageManager, error) {
@@ -115,8 +115,8 @@ func GetWithNoActivities() ([]StorageManager, error) {
 	filter := bson.D{
 		{
 			"activities", bson.M{
-			"$size": 0,
-		},
+				"$size": 0,
+			},
 		},
 	}
 

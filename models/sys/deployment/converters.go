@@ -6,11 +6,17 @@ import (
 	"log"
 )
 
-func (deployment *Deployment) ToDTO(url *string) body.DeploymentRead {
+func (deployment *Deployment) ToDTO(url *string, storageManagerURL *string) body.DeploymentRead {
 	var fullURL *string
 	if url != nil {
 		res := fmt.Sprintf("https://%s", *url)
 		fullURL = &res
+	}
+
+	var fullStorageManagerURL *string
+	if storageManagerURL != nil {
+		res := fmt.Sprintf("https://%s", *storageManagerURL)
+		fullStorageManagerURL = &res
 	}
 
 	app := deployment.GetMainApp()
@@ -70,6 +76,8 @@ func (deployment *Deployment) ToDTO(url *string) body.DeploymentRead {
 		PingResult: pingResult,
 
 		Integrations: integrations,
+
+		StorageURL: fullStorageManagerURL,
 	}
 }
 

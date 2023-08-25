@@ -12,11 +12,34 @@ func GetAllStorageManagers(auth *service.AuthInfo) ([]storage_manager.StorageMan
 	if auth.IsAdmin {
 		return storage_manager.GetAll()
 	}
-	return GetStorageManagerByOwnerID(auth)
+
+	ownerStorageManager, err := storage_manager.GetByOwnerID(auth.UserID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch storage manager. details: %s", err)
+	}
+
+	if ownerStorageManager == nil {
+		return nil, nil
+	}
+
+	return []storage_manager.StorageManager{*ownerStorageManager}, nil
 }
 
-func GetStorageManagerByOwnerID(auth *service.AuthInfo) ([]storage_manager.StorageManager, error) {
-	return storage_manager.GetByOwnerID(auth.UserID)
+func GetStorageManagerByOwnerID(ownerID string, auth *service.AuthInfo) (*storage_manager.StorageManager, error) {
+	if ownerID != auth.UserID && !auth.IsAdmin {
+		return nil, nil
+	}
+
+	storageManager, err := storage_manager.GetByOwnerID(ownerID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch storage manager. details: %s", err)
+	}
+
+	if storageManager == nil {
+		return nil, nil
+	}
+
+	return storageManager, nil
 }
 
 func GetStorageManagerByID(id string, auth *service.AuthInfo) (*storage_manager.StorageManager, error) {

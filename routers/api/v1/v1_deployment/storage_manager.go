@@ -16,7 +16,6 @@ import (
 	"net/http"
 )
 
-
 // GetStorageManagerList
 // @Summary Get storage manager list
 // @Description Get storage manager list
@@ -57,18 +56,13 @@ func GetStorageManagerList(c *gin.Context) {
 		return
 	}
 
-	storageManagers, _ := deployment_service.GetStorageManagerByOwnerID(auth)
-	if storageManagers == nil {
+	storageManager, _ := deployment_service.GetStorageManagerByOwnerID(auth.UserID, auth)
+	if storageManager == nil {
 		context.JSONResponse(200, []interface{}{})
 		return
 	}
 
-	dtoDeployments := make([]body.StorageManagerRead, len(storageManagers))
-	for i, storageManager := range storageManagers {
-		dtoDeployments[i] = storageManager.ToDTO()
-	}
-
-	context.JSONResponse(200, dtoDeployments)
+	context.JSONResponse(200, []body.StorageManagerRead{storageManager.ToDTO()})
 }
 
 // GetStorageManager

@@ -74,6 +74,8 @@ type DeploymentRead struct {
 	PingResult *int   `json:"pingResult,omitempty"`
 
 	Integrations []string `json:"integrations"`
+
+	StorageURL *string `json:"storageUrl,omitempty"`
 }
 
 type CiConfig struct {
