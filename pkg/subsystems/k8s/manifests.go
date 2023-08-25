@@ -311,6 +311,8 @@ func CreateJobManifest(public *models.JobPublic) *v1.Job {
 		}
 	}
 
+	ttl := int32(100)
+
 	return &v1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      public.Name,
@@ -321,6 +323,7 @@ func CreateJobManifest(public *models.JobPublic) *v1.Job {
 			},
 		},
 		Spec: v1.JobSpec{
+			TTLSecondsAfterFinished: &ttl,
 			Template: apiv1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
