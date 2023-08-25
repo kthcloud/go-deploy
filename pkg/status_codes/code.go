@@ -30,10 +30,11 @@ const (
 	ResourceBuilding   = 10036
 	ResourceError      = 10037
 
-	JobPending  = 10040
-	JobFinished = 10041
-	JobFailed   = 10042
-	JobRunning  = 10043
+	JobPending    = 10040
+	JobFinished   = 10041
+	JobFailed     = 10042
+	JobRunning    = 10043
+	JobTerminated = 10044
 
 	ResourceValidationFailed = 20001
 )
