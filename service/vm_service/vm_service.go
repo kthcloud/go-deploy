@@ -226,7 +226,7 @@ func DoCommand(vm *vmModel.VM, command string) {
 			gpuID = &vm.GpuID
 		}
 
-		err := internal_service.DoCommandCS(csID, gpuID, command)
+		err := internal_service.DoCommandCS(csID, gpuID, command, vm.Zone)
 		if err != nil {
 			log.Println(err)
 			return

@@ -12,10 +12,6 @@ import (
 )
 
 func (job *Job) ToDTO(statusMessage string) body.JobRead {
-	if job == nil {
-		return body.JobRead{}
-	}
-
 	var lastError *string
 	if len(job.ErrorLogs) > 0 {
 		lastError = &job.ErrorLogs[len(job.ErrorLogs)-1]

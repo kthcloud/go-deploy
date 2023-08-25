@@ -7,6 +7,7 @@ import (
 	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/models/sys/deployment/storage_manager"
 	jobModel "go-deploy/models/sys/job"
+	"go-deploy/service"
 	"go-deploy/service/deployment_service/github_service"
 	"go-deploy/service/deployment_service/gitlab_service"
 	"go-deploy/service/deployment_service/harbor_service"
@@ -136,46 +137,62 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 	return nil
 }
 
-func GetByID(userId, deploymentID string, isAdmin bool) (*deploymentModel.Deployment, error) {
+func GetByIDAuth(deploymentID string, auth *service.AuthInfo) (*deploymentModel.Deployment, error) {
 	deployment, err := deploymentModel.GetByID(deploymentID)
 	if err != nil {
 		return nil, err
 	}
 
-	if deployment != nil && deployment.OwnerID != userId && !isAdmin {
+	if deployment == nil {
+		return nil, nil
+	}
+
+	if deployment.OwnerID != auth.UserID && !auth.IsAdmin {
 		return nil, nil
 	}
 
 	return deployment, nil
 }
 
-func GetByName(userId, name string) (*deploymentModel.Deployment, error) {
-	deployment, err := deploymentModel.GetByName(name)
+func GetByOwnerID(ownerID string, auth *service.AuthInfo) ([]deploymentModel.Deployment, error) {
+	if ownerID != auth.UserID && !auth.IsAdmin {
+		return nil, nil
+	}
+
+	return deploymentModel.GetByOwnerID(ownerID)
+}
+
+func GetAllAuth(auth *service.AuthInfo) ([]deploymentModel.Deployment, error) {
+	if auth.IsAdmin {
+		return deploymentModel.GetAll()
+	}
+
+	self, err := deploymentModel.GetByOwnerID(auth.UserID)
 	if err != nil {
 		return nil, err
 	}
 
-	if deployment != nil && deployment.OwnerID != userId {
+	if self == nil {
 		return nil, nil
 	}
 
-	return deployment, nil
-}
-
-func GetByOwnerID(owner string) ([]deploymentModel.Deployment, error) {
-	return deploymentModel.GetMany(owner)
+	return self, nil
 }
 
 func GetAll() ([]deploymentModel.Deployment, error) {
 	return deploymentModel.GetAll()
 }
 
-func GetCount(userID string) (int, error) {
+func GetCountAuth(userID string, auth *service.AuthInfo) (int, error) {
+	if userID != auth.UserID && !auth.IsAdmin {
+		return 0, nil
+	}
+
 	return deploymentModel.CountByOwnerID(userID)
 }
 
 func Exists(name string) (bool, *deploymentModel.Deployment, error) {
-	return deploymentModel.Exists(name)
+	return deploymentModel.ExistsByName(name)
 }
 
 func StartActivity(deploymentID, activity string) (bool, string, error) {

@@ -22,12 +22,12 @@ type User struct {
 	ID            string        `json:"id" bson:"id"`
 	Username      string        `json:"username" bson:"username"`
 	Email         string        `json:"email" bson:"email"`
+	IsAdmin       bool          `json:"isAdmin" bson:"isAdmin"`
 	EffectiveRole EffectiveRole `json:"effectiveRole" bson:"effectiveRole"`
 	PublicKeys    []PublicKey   `json:"publicKeys" bson:"publicKeys"`
 }
 
 type UserUpdate struct {
 	Username   *string      `json:"username" bson:"username"`
-	Email      *string      `json:"email" bson:"email"`
 	PublicKeys *[]PublicKey `json:"publicKeys" bson:"publicKeys"`
 }

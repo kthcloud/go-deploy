@@ -6,7 +6,9 @@ import (
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
 	"go-deploy/models/dto/uri"
+	roleModel "go-deploy/models/sys/enviroment/role"
 	userModel "go-deploy/models/sys/user"
+	"go-deploy/pkg/conf"
 	"go-deploy/pkg/status_codes"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
@@ -67,8 +69,8 @@ func GetList(c *gin.Context) {
 
 	effectiveRole := auth.GetEffectiveRole()
 
-	if requestQuery.WantAll && auth.IsAdmin {
-		users, err := user_service.GetAll()
+	if requestQuery.WantAll {
+		users, err := user_service.GetAll(auth)
 		if err != nil {
 			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 			return
@@ -87,19 +89,21 @@ func GetList(c *gin.Context) {
 				}
 			}
 
+			role := conf.Env.GetRole(user.EffectiveRole.Name)
+
 			ok, usage := collectUsage(&context, user.ID)
 			if !ok {
 				usage = &userModel.Usage{}
 			}
 
-			usersDto = append(usersDto, user.ToDTO(effectiveRole, usage))
+			usersDto = append(usersDto, user.ToDTO(role, usage))
 		}
 
 		context.JSONResponse(200, usersDto)
 		return
 	}
 
-	user, err := user_service.GetByID(auth.UserID, auth.UserID, auth.IsAdmin)
+	user, err := user_service.GetByID(auth.UserID, auth)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
@@ -150,23 +154,15 @@ func Get(c *gin.Context) {
 	}
 
 	var user *userModel.User
-	if requestedUserID == auth.UserID {
-		user, err = user_service.GetOrCreate(auth)
-		if err != nil {
-			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get user: %s", err))
-			return
-		}
-	} else {
-		user, err = user_service.GetByID(requestedUserID, auth.UserID, auth.IsAdmin)
-		if err != nil {
-			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get user: %s", err))
-			return
-		}
+	user, err = user_service.GetByID(requestedUserID, auth)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get user: %s", err))
+		return
+	}
 
-		if user == nil {
-			context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, fmt.Sprintf("User with id %s not found", requestedUserID))
-			return
-		}
+	if user == nil {
+		context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, fmt.Sprintf("User with id %s not found", requestedUserID))
+		return
 	}
 
 	ok, usage := collectUsage(&context, user.ID)
@@ -174,7 +170,14 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	context.JSONResponse(200, user.ToDTO(auth.GetEffectiveRole(), usage))
+	var effectiveRole *roleModel.Role
+	if user.ID == auth.UserID {
+		effectiveRole = auth.GetEffectiveRole()
+	} else {
+		effectiveRole = conf.Env.GetRole(user.EffectiveRole.Name)
+	}
+
+	context.JSONResponse(200, user.ToDTO(effectiveRole, usage))
 }
 
 func Update(c *gin.Context) {
@@ -203,7 +206,7 @@ func Update(c *gin.Context) {
 		requestedUserID = auth.UserID
 	}
 
-	user, err := user_service.GetByID(requestedUserID, auth.UserID, auth.IsAdmin)
+	user, err := user_service.GetByID(requestedUserID, auth)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to update user: %s", err))
 		return
@@ -214,13 +217,13 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	err = user_service.Update(requestedUserID, auth.UserID, auth.IsAdmin, &userUpdate)
+	err = user_service.Update(requestedUserID, &userUpdate, auth)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to update user: %s", err))
 		return
 	}
 
-	updatedUser, err := user_service.GetByID(requestedUserID, auth.UserID, auth.IsAdmin)
+	updatedUser, err := user_service.GetByID(requestedUserID, auth)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to update user: %s", err))
 		return

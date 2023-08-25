@@ -6,21 +6,12 @@ import (
 	"go-deploy/service"
 )
 
-func GetByID(requestedUserID, userID string, isAdmin bool) (*userModel.User, error) {
-	user, err := userModel.GetByID(requestedUserID)
-	if err != nil {
-		return nil, err
-	}
-
-	if user == nil {
+func GetByID(userID string, auth *service.AuthInfo) (*userModel.User, error) {
+	if userID != auth.UserID && !auth.IsAdmin {
 		return nil, nil
 	}
 
-	if !isAdmin && user.ID != userID {
-		return nil, nil
-	}
-
-	return user, nil
+	return userModel.GetByID(userID)
 }
 
 func GetOrCreate(auth *service.AuthInfo) (*userModel.User, error) {
@@ -31,7 +22,7 @@ func GetOrCreate(auth *service.AuthInfo) (*userModel.User, error) {
 
 	effectiveRole := auth.GetEffectiveRole()
 
-	err := userModel.Create(auth.UserID, auth.GetUsername(), auth.GetEmail(), &userModel.EffectiveRole{
+	err := userModel.Create(auth.UserID, auth.GetUsername(), auth.GetEmail(), auth.IsAdmin, &userModel.EffectiveRole{
 		Name:        effectiveRole.Name,
 		Description: effectiveRole.Description,
 	})
@@ -42,12 +33,25 @@ func GetOrCreate(auth *service.AuthInfo) (*userModel.User, error) {
 	return userModel.GetByID(auth.UserID)
 }
 
-func GetAll() ([]userModel.User, error) {
-	return userModel.GetAll()
+func GetAll(auth *service.AuthInfo) ([]userModel.User, error) {
+	if auth.IsAdmin {
+		return userModel.GetAll()
+	}
+
+	self, err := userModel.GetByID(auth.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	if self == nil {
+		return nil, nil
+	}
+
+	return []userModel.User{*self}, nil
 }
 
-func Update(requestedUserID, userID string, isAdmin bool, dtoUserUpdate *body.UserUpdate) error {
-	if !isAdmin && requestedUserID != userID {
+func Update(userID string, dtoUserUpdate *body.UserUpdate, auth *service.AuthInfo) error {
+	if userID != auth.UserID && !auth.IsAdmin {
 		return nil
 	}
 
@@ -65,11 +69,10 @@ func Update(requestedUserID, userID string, isAdmin bool, dtoUserUpdate *body.Us
 
 	userUpdate := &userModel.UserUpdate{
 		Username:   dtoUserUpdate.Username,
-		Email:      dtoUserUpdate.Email,
 		PublicKeys: &publicKeys,
 	}
 
-	err := userModel.Update(requestedUserID, userUpdate)
+	err := userModel.Update(userID, userUpdate)
 	if err != nil {
 		return err
 	}

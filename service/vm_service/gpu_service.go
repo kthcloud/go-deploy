@@ -318,7 +318,7 @@ func CanStartOnHost(vmID, host string) (bool, string, error) {
 		return false, "", nil
 	}
 
-	canStart, reason, err := internal_service.CanStartCS(vm.Subsystems.CS.VM.ID, host)
+	canStart, reason, err := internal_service.CanStartCS(vm.Subsystems.CS.VM.ID, host, vm.Zone)
 	if err != nil {
 		return false, "", err
 	}

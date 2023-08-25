@@ -36,6 +36,7 @@ func (u *User) ToDTO(effectiveRole *roleModel.Role, usage *Usage) body.UserRead 
 		ID:       u.ID,
 		Username: u.Username,
 		Email:    u.Email,
+		Admin:    u.IsAdmin,
 		Role: body.Role{
 			Name:        effectiveRole.Name,
 			Description: effectiveRole.Description,
@@ -60,7 +61,7 @@ func (u *User) ToDTO(effectiveRole *roleModel.Role, usage *Usage) body.UserRead 
 	return userRead
 }
 
-func Create(id, username, email string, effectiveRole *EffectiveRole) error {
+func Create(id, username, email string, isAdmin bool, effectiveRole *EffectiveRole) error {
 	current, err := GetByID(id)
 	if err != nil {
 		return err
@@ -80,6 +81,7 @@ func Create(id, username, email string, effectiveRole *EffectiveRole) error {
 			{"username", username},
 			{"email", email},
 			{"effectiveRole", effectiveRole},
+			{"isAdmin", isAdmin},
 		}}}
 		_, err = models.UserCollection.UpdateOne(context.Background(), filter, update)
 		if err != nil {
@@ -94,6 +96,7 @@ func Create(id, username, email string, effectiveRole *EffectiveRole) error {
 		Username:      username,
 		Email:         email,
 		EffectiveRole: *effectiveRole,
+		IsAdmin:       isAdmin,
 		PublicKeys:    []PublicKey{},
 	})
 
@@ -139,7 +142,6 @@ func Update(userID string, update *UserUpdate) error {
 	updateData := bson.M{}
 
 	models.AddIfNotNil(updateData, "username", update.Username)
-	models.AddIfNotNil(updateData, "email", update.Email)
 	models.AddIfNotNil(updateData, "publicKeys", update.PublicKeys)
 
 	if len(updateData) == 0 {

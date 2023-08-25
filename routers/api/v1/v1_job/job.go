@@ -60,6 +60,8 @@ func jobStatusMessage(status string) string {
 		return status_codes.GetMsg(status_codes.JobFinished)
 	case jobModel.StatusFailed:
 		return status_codes.GetMsg(status_codes.JobFailed)
+	case jobModel.StatusTerminated:
+		return status_codes.GetMsg(status_codes.JobTerminated)
 	default:
 		return status_codes.GetMsg(status_codes.Unknown)
 	}
