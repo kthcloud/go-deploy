@@ -7,6 +7,7 @@ import (
 	"go-deploy/models/sys/deployment/storage_manager"
 	"go-deploy/models/sys/deployment/subsystems"
 	"go-deploy/models/sys/enviroment"
+	userModel "go-deploy/models/sys/user"
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/k8s"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
@@ -41,9 +42,10 @@ func createDeploymentPublic(namespace, name, dockerImage string, envs []deployme
 
 	k8sVolumes := make([]k8sModels.Volume, len(volumes))
 	for i, volume := range volumes {
+		pvcName := fmt.Sprintf("%s-%s", name, volume.Name)
 		k8sVolumes[i] = k8sModels.Volume{
 			Name:      volume.Name,
-			PvcName:   fmt.Sprintf("%s-%s", name, volume.Name),
+			PvcName:   &pvcName,
 			MountPath: volume.AppPath,
 			Init:      volume.Init,
 		}
@@ -82,7 +84,7 @@ func createFileBrowserDeploymentPublic(namespace, name string, volumes []storage
 	for i, volume := range volumes {
 		k8sVolumes[i] = k8sModels.Volume{
 			Name:      volume.Name,
-			PvcName:   volume.Name,
+			PvcName:   &volume.Name,
 			MountPath: volume.AppPath,
 			Init:      volume.Init,
 		}
@@ -120,6 +122,98 @@ func createFileBrowserDeploymentPublic(namespace, name string, volumes []storage
 		InitCommands:   initCommands,
 		InitContainers: nil,
 		Volumes:        k8sVolumes,
+	}
+}
+
+func createOAuthProxyDeploymentPublic(namespace, name, userID string, zone *enviroment.DeploymentZone) *k8sModels.DeploymentPublic {
+
+	defaultLimits := k8sModels.Limits{
+		CPU:    conf.Env.Deployment.Resources.Limits.CPU,
+		Memory: conf.Env.Deployment.Resources.Limits.Memory,
+	}
+
+	defaultRequests := k8sModels.Requests{
+		CPU:    conf.Env.Deployment.Resources.Requests.CPU,
+		Memory: conf.Env.Deployment.Resources.Requests.Memory,
+	}
+
+	user, err := userModel.GetByID(userID)
+	if err != nil {
+		log.Println("failed to get user by id when creating oauth proxy deployment public. details:", err)
+		return nil
+	}
+
+	volumes := []k8sModels.Volume{
+		{
+			Name:      "oauth-proxy-config",
+			PvcName:   nil,
+			MountPath: "/mnt/config",
+			Init:      true,
+		},
+		{
+			Name:      "oauth-proxy-config",
+			PvcName:   nil,
+			MountPath: "/mnt",
+			Init:      false,
+		},
+	}
+
+	issuer := conf.Env.Keycloak.Url + "/realms/" + conf.Env.Keycloak.Realm
+	redirectURL := fmt.Sprintf("https://%s.%s/oauth2/callback", userID, zone.Storage.ParentDomain)
+	upstream := "http://storage-manager"
+
+	args := []string{
+		"--http-address=0.0.0.0:4180",
+		"--reverse-proxy=true",
+		"--provider=oidc",
+		"--redirect-url=" + redirectURL,
+		"--oidc-issuer-url=" + issuer,
+		"--cookie-expire=168h",
+		"--cookie-refresh=1h",
+		"--pass-authorization-header=true",
+		"--scope=openid email",
+		"--upstream=" + upstream,
+		"--client-id=" + conf.Env.Keycloak.StorageClient.ClientID,
+		"--client-secret=" + conf.Env.Keycloak.StorageClient.ClientSecret,
+		"--cookie-secret=qHKgjlAFQBZOnGcdH5jIKV0Auzx5r8jzZenxhJnlZJg=",
+		"--cookie-secure=true",
+		"--ssl-insecure-skip-verify=true",
+		"--insecure-oidc-allow-unverified-email=true",
+		"--skip-provider-button=true",
+		"--pass-authorization-header=true",
+		"--ssl-upstream-insecure-skip-verify=true",
+		//"--session-store-type=redis",
+		//"--redis-connection-url=redis://redis-master:6379",
+		"--code-challenge-method=S256",
+		"--oidc-groups-claim=groups",
+		"--allowed-group=" + conf.Env.Keycloak.AdminGroup,
+		"--authenticated-emails-file=/mnt/authenticated-emails-list",
+	}
+
+	initContainers := []k8sModels.InitContainer{
+		{
+			Name:    "oauth-proxy-config-init",
+			Image:   "busybox",
+			Command: []string{"sh", "-c", fmt.Sprintf("mkdir -p /mnt/config && echo %s > /mnt/config/authenticated-emails-list", user.Email)},
+			Args:    nil,
+		},
+	}
+
+	return &k8sModels.DeploymentPublic{
+		ID:          "",
+		Name:        name,
+		Namespace:   namespace,
+		DockerImage: "quay.io/oauth2-proxy/oauth2-proxy:latest",
+		EnvVars:     nil,
+		Resources: k8sModels.Resources{
+			Limits:   defaultLimits,
+			Requests: defaultRequests,
+		},
+		Command:        nil,
+		Args:           args,
+		InitCommands:   nil,
+		InitContainers: initContainers,
+		Volumes:        volumes,
 	}
 }
 
@@ -170,7 +264,7 @@ func createJobPublic(namespace, name, image string, command, args []string, volu
 	for i, volume := range volumes {
 		k8sVolumes[i] = k8sModels.Volume{
 			Name:      volume.Name,
-			PvcName:   volume.Name,
+			PvcName:   &volume.Name,
 			MountPath: volume.AppPath,
 			Init:      volume.Init,
 		}

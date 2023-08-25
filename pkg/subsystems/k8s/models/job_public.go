@@ -24,9 +24,14 @@ func CreateJobPublicFromRead(job *v1.Job) *JobPublic {
 	var volumes []Volume
 
 	for _, k8sVolume := range job.Spec.Template.Spec.Volumes {
+		var pvcName *string
+		if k8sVolume.PersistentVolumeClaim != nil {
+			pvcName = &k8sVolume.PersistentVolumeClaim.ClaimName
+		}
+		
 		volumes = append(volumes, Volume{
 			Name:    k8sVolume.Name,
-			PvcName: k8sVolume.PersistentVolumeClaim.ClaimName,
+			PvcName: pvcName,
 		})
 	}
 

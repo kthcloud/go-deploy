@@ -60,7 +60,7 @@ func (u *User) ToDTO(effectiveRole *roleModel.Role, usage *Usage) body.UserRead 
 	return userRead
 }
 
-func Create(id, username string, effectiveRole *EffectiveRole) error {
+func Create(id, username, email string, effectiveRole *EffectiveRole) error {
 	current, err := GetByID(id)
 	if err != nil {
 		return err
@@ -77,6 +77,8 @@ func Create(id, username string, effectiveRole *EffectiveRole) error {
 		// update roles
 		filter := bson.D{{"id", id}}
 		update := bson.D{{"$set", bson.D{
+			{"username", username},
+			{"email", email},
 			{"effectiveRole", effectiveRole},
 		}}}
 		_, err = models.UserCollection.UpdateOne(context.Background(), filter, update)
@@ -90,7 +92,7 @@ func Create(id, username string, effectiveRole *EffectiveRole) error {
 	_, err = models.UserCollection.InsertOne(context.TODO(), User{
 		ID:            id,
 		Username:      username,
-		Email:         "",
+		Email:         email,
 		EffectiveRole: *effectiveRole,
 		PublicKeys:    []PublicKey{},
 	})

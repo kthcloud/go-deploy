@@ -8,10 +8,10 @@ type EnvVar struct {
 }
 
 type Volume struct {
-	Name      string `bson:"name"`
-	PvcName   string `bson:"pvcName"`
-	MountPath string `bson:"mountPath"`
-	Init      bool   `bson:"init"`
+	Name      string  `bson:"name"`
+	PvcName   *string `bson:"pvcName"`
+	MountPath string  `bson:"mountPath"`
+	Init      bool    `bson:"init"`
 }
 
 type InitContainer struct {
