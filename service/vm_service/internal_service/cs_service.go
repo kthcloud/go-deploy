@@ -678,18 +678,18 @@ func IsGpuAttachedCS(gpu *gpuModel.GPU) (bool, error) {
 	return false, nil
 }
 
-func CreateSnapshotCS(id, name string, userCreated bool) error {
+func CreateSnapshotCS(vmID, name string, userCreated bool) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create snapshot for cs vm %s. details: %s", id, err)
+		return fmt.Errorf("failed to create snapshot for cs vm %s. details: %s", vmID, err)
 	}
 
-	vm, err := vmModel.GetByID(id)
+	vm, err := vmModel.GetByID(vmID)
 	if err != nil {
 		return makeError(err)
 	}
 
 	if vm == nil {
-		log.Println("vm", id, "not found for when creating snapshot in cs. assuming it was deleted")
+		log.Println("vm", vmID, "not found for when creating snapshot in cs. assuming it was deleted")
 		return nil
 	}
 
@@ -709,7 +709,7 @@ func CreateSnapshotCS(id, name string, userCreated bool) error {
 	}
 
 	if _, ok := snapshotMap[name]; ok {
-		log.Println("snapshot", name, "already exists for vm", id)
+		log.Println("snapshot", name, "already exists for vm", vmID)
 		return nil
 	}
 
@@ -719,11 +719,11 @@ func CreateSnapshotCS(id, name string, userCreated bool) error {
 	}
 
 	if vmStatus != "Running" {
-		return fmt.Errorf("vm %s is not running", id)
+		return fmt.Errorf("cs vm %s is not running", vm.Subsystems.CS.VM.ID)
 	}
 
 	if hasExtraConfig(vm) {
-		return fmt.Errorf("vm %s has a graphics card attached", id)
+		return fmt.Errorf("cs vm %s has a graphics card attached", vm.Subsystems.CS.VM.ID)
 	}
 
 	var description string
@@ -744,23 +744,23 @@ func CreateSnapshotCS(id, name string, userCreated bool) error {
 		return makeError(err)
 	}
 
-	log.Println("created snapshot", snapshotID, "for vm", id)
+	log.Println("created snapshot", snapshotID, "for vm", vmID)
 
 	return nil
 }
 
-func ApplySnapshotCS(id string, snapshotID string) error {
+func ApplySnapshotCS(vmID, snapshotID string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to apply snapshot %s for cs vm %s. details: %s", snapshotID, id, err)
+		return fmt.Errorf("failed to apply snapshot %s for vm %s. details: %s", snapshotID, vmID, err)
 	}
 
-	vm, err := vmModel.GetByID(id)
+	vm, err := vmModel.GetByID(vmID)
 	if err != nil {
 		return makeError(err)
 	}
 
 	if vm == nil {
-		log.Println("vm", id, "not found for when applying snapshot in cs. assuming it was deleted")
+		log.Println("vm", vmID, "not found for when applying snapshot in cs. assuming it was deleted")
 		return nil
 	}
 
@@ -781,11 +781,11 @@ func ApplySnapshotCS(id string, snapshotID string) error {
 
 	snapshot, ok := snapshotMap[snapshotID]
 	if !ok {
-		return fmt.Errorf("snapshot %s not found for vm %s", snapshotID, id)
+		return fmt.Errorf("snapshot %s not found for vm %s", snapshotID, vmID)
 	}
 
 	if vm.Subsystems.CS.VM.ExtraConfig != "" {
-		return fmt.Errorf("vm %s has a graphics card attached", id)
+		return fmt.Errorf("vm %s has a graphics card attached", vmID)
 	}
 
 	err = client.ApplySnapshot(&snapshot)
@@ -793,24 +793,19 @@ func ApplySnapshotCS(id string, snapshotID string) error {
 		return makeError(err)
 	}
 
-	log.Println("applied snapshot", snapshotID, "for vm", id)
+	log.Println("applied snapshot", snapshotID, "for vm", vmID)
 
 	return nil
 }
 
-func DoCommandCS(vmID string, gpuID *string, command string) error {
+func DoCommandCS(csVmID string, gpuID *string, command, zoneName string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to execute command %s for cs vm %s. details: %s", command, vmID, err)
+		return fmt.Errorf("failed to execute command %s for cs vm %s. details: %s", command, csVmID, err)
 	}
 
-	vm, err := vmModel.GetByID(vmID)
-	if err != nil {
-		return makeError(err)
-	}
-
-	zone := conf.Env.VM.GetZone(vm.Zone)
+	zone := conf.Env.VM.GetZone(zoneName)
 	if zone == nil {
-		return makeError(fmt.Errorf("zone %s not found", vm.Zone))
+		return makeError(fmt.Errorf("zone %s not found", zoneName))
 	}
 
 	client, err := withCsClient(zone)
@@ -826,7 +821,7 @@ func DoCommandCS(vmID string, gpuID *string, command string) error {
 		}
 	}
 
-	err = client.DoVmCommand(vmID, requiredHost, commands.Command(command))
+	err = client.DoVmCommand(csVmID, requiredHost, commands.Command(command))
 	if err != nil {
 		return makeError(err)
 	}
@@ -834,24 +829,14 @@ func DoCommandCS(vmID string, gpuID *string, command string) error {
 	return nil
 }
 
-func CanStartCS(vmID, hostName string) (bool, string, error) {
+func CanStartCS(csVmID, hostName, zoneName string) (bool, string, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if cs vm %s can be started on host %s. details: %s", vmID, hostName, err)
+		return fmt.Errorf("failed to check if cs vm %s can be started on host %s. details: %s", csVmID, hostName, err)
 	}
 
-	vm, err := vmModel.GetByID(vmID)
-	if err != nil {
-		return false, "", makeError(err)
-	}
-
-	if vm == nil {
-		log.Println("vm", vmID, "not found for when checking if it can be started in cs. assuming it was deleted")
-		return false, "", nil
-	}
-
-	zone := conf.Env.VM.GetZone(vm.Zone)
+	zone := conf.Env.VM.GetZone(zoneName)
 	if zone == nil {
-		return false, "", makeError(fmt.Errorf("zone %s not found", vm.Zone))
+		return false, "", makeError(fmt.Errorf("zone %s not found", zoneName))
 	}
 
 	client, err := withCsClient(zone)
@@ -859,7 +844,7 @@ func CanStartCS(vmID, hostName string) (bool, string, error) {
 		return false, "", makeError(err)
 	}
 
-	hasCapacity, err := client.HasCapacity(vmID, hostName)
+	hasCapacity, err := client.HasCapacity(csVmID, hostName)
 	if err != nil {
 		return false, "", err
 	}
