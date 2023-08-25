@@ -13,6 +13,7 @@ import (
 	"go-deploy/pkg/status_codes"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
+	"go-deploy/service"
 	"go-deploy/service/job_service"
 	"go-deploy/service/vm_service"
 	"go-deploy/service/zone_service"
@@ -20,8 +21,8 @@ import (
 	"net/http"
 )
 
-func getAllVMs(context *sys.ClientContext) {
-	vms, err := vm_service.GetAll()
+func getAllVMs(context *sys.ClientContext, auth *service.AuthInfo) {
+	vms, err := vm_service.GetAllAuth(auth)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
@@ -80,7 +81,7 @@ func GetList(c *gin.Context) {
 	}
 
 	if requestQuery.WantAll && auth.IsAdmin {
-		getAllVMs(&context)
+		getAllVMs(&context, auth)
 		return
 	}
 
