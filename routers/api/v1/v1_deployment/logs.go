@@ -77,7 +77,7 @@ func GetLogs(c *gin.Context) {
 			if strings.HasPrefix(msg, "Bearer ") && auth == nil {
 				auth = validateBearerToken(msg)
 				if auth != nil {
-					logContext, err = deployment_service.SetupLogStream(auth.UserID, requestURI.DeploymentID, handler, auth.IsAdmin)
+					logContext, err = deployment_service.SetupLogStream(requestURI.DeploymentID, handler, auth)
 					if err != nil {
 						httpContext.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 						return

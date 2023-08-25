@@ -130,7 +130,7 @@ func GetAllByGitHubWebhookID(id int64) ([]Deployment, error) {
 	return deployments, nil
 }
 
-func Exists(name string) (bool, *Deployment, error) {
+func ExistsByName(name string) (bool, *Deployment, error) {
 	deployment, err := getDeployment(bson.D{{"name", name}})
 	if err != nil {
 		return false, nil, err
@@ -143,7 +143,7 @@ func Exists(name string) (bool, *Deployment, error) {
 	return true, deployment, err
 }
 
-func GetMany(ownerID string) ([]Deployment, error) {
+func GetByOwnerID(ownerID string) ([]Deployment, error) {
 	cursor, err := models.DeploymentCollection.Find(context.TODO(), bson.D{{"ownerId", ownerID}})
 
 	if err != nil {

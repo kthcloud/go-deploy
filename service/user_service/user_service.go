@@ -34,8 +34,8 @@ func GetOrCreate(auth *service.AuthInfo) (*userModel.User, error) {
 }
 
 func GetAll(auth *service.AuthInfo) ([]userModel.User, error) {
-	if !auth.IsAdmin {
-		return nil, nil
+	if auth.IsAdmin {
+		return userModel.GetAll()
 	}
 
 	self, err := userModel.GetByID(auth.UserID)

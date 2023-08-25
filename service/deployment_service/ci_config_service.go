@@ -5,13 +5,14 @@ import (
 	"go-deploy/models/dto/body"
 	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/pkg/conf"
+	"go-deploy/service"
 	"go-deploy/utils/subsystemutils"
 	"gopkg.in/yaml.v2"
 	"log"
 )
 
-func GetCIConfig(userId, deploymentID string, isAdmin bool) (*body.CiConfig, error) {
-	deployment, err := GetByID(userId, deploymentID, isAdmin)
+func GetCIConfig(deploymentID string, auth *service.AuthInfo) (*body.CiConfig, error) {
+	deployment, err := GetByIDAuth(deploymentID, auth)
 	if err != nil {
 		return nil, err
 	}
@@ -27,7 +28,7 @@ func GetCIConfig(userId, deploymentID string, isAdmin bool) (*body.CiConfig, err
 
 	tag := fmt.Sprintf("%s/%s/%s",
 		conf.Env.DockerRegistry.URL,
-		subsystemutils.GetPrefixedName(userId),
+		subsystemutils.GetPrefixedName(auth.UserID),
 		deployment.Name,
 	)
 
