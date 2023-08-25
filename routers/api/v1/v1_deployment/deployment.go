@@ -14,6 +14,7 @@ import (
 	"go-deploy/pkg/status_codes"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
+	"go-deploy/service"
 	"go-deploy/service/deployment_service"
 	"go-deploy/service/job_service"
 	"go-deploy/service/zone_service"
@@ -32,12 +33,39 @@ func getURL(deployment *deploymentModels.Deployment) *string {
 	return nil
 }
 
-func getAll(_ string, context *sys.ClientContext) {
+func getStorageManagerURL(auth *service.AuthInfo) *string {
+	storageManager, err := deployment_service.GetStorageManagerByOwnerID(auth.UserID, auth)
+	if err != nil {
+		return nil
+	}
+
+	if storageManager == nil {
+		return nil
+	}
+
+	ingress, ok := storageManager.Subsystems.K8s.IngressMap["oauth-proxy"]
+	if !ok || !ingress.Created() {
+		return nil
+	}
+
+	if len(ingress.Hosts) > 0 && len(ingress.Hosts[0]) > 0 {
+		return &ingress.Hosts[0]
+	}
+
+	return nil
+}
+
+func getAll(context *sys.ClientContext, auth *service.AuthInfo) {
 	deployments, _ := deployment_service.GetAll()
 
 	dtoDeployments := make([]body.DeploymentRead, len(deployments))
 	for i, deployment := range deployments {
-		dtoDeployments[i] = deployment.ToDTO(getURL(&deployment))
+		var storageManagerURL *string
+		if mainApp := deployment.GetMainApp(); mainApp != nil && len(mainApp.Volumes) > 0 {
+			storageManagerURL = getStorageManagerURL(auth)
+		}
+
+		dtoDeployments[i] = deployment.ToDTO(getURL(&deployment), storageManagerURL)
 	}
 
 	context.JSONResponse(http.StatusOK, dtoDeployments)
@@ -72,7 +100,7 @@ func GetList(c *gin.Context) {
 	}
 
 	if requestQuery.WantAll && auth.IsAdmin {
-		getAll(auth.UserID, &context)
+		getAll(&context, auth)
 		return
 	}
 
@@ -84,7 +112,12 @@ func GetList(c *gin.Context) {
 
 	dtoDeployments := make([]body.DeploymentRead, len(deployments))
 	for i, deployment := range deployments {
-		dtoDeployments[i] = deployment.ToDTO(getURL(&deployment))
+		var storageManagerURL *string
+		if mainApp := deployment.GetMainApp(); mainApp != nil && len(mainApp.Volumes) > 0 {
+			storageManagerURL = getStorageManagerURL(auth)
+		}
+
+		dtoDeployments[i] = deployment.ToDTO(getURL(&deployment), storageManagerURL)
 	}
 
 	context.JSONResponse(200, dtoDeployments)
@@ -129,7 +162,12 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	context.JSONResponse(200, deployment.ToDTO(getURL(deployment)))
+	var storageManagerURL *string
+	if len(deployment.GetMainApp().Volumes) > 0 {
+		storageManagerURL = getStorageManagerURL(auth)
+	}
+
+	context.JSONResponse(200, deployment.ToDTO(getURL(deployment), storageManagerURL))
 }
 
 // Create

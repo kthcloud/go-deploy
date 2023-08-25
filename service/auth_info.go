@@ -44,3 +44,7 @@ func (authInfo *AuthInfo) GetEffectiveRole() *roleModel.Role {
 func (authInfo *AuthInfo) GetUsername() string {
 	return authInfo.JwtToken.PreferredUsername
 }
+
+func (authInfo *AuthInfo) GetEmail() string {
+	return authInfo.JwtToken.Email
+}

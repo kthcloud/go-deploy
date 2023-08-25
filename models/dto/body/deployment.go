@@ -74,6 +74,8 @@ type DeploymentRead struct {
 	PingResult *int   `json:"pingResult,omitempty"`
 
 	Integrations []string `json:"integrations"`
+
+	StorageURL *string `json:"storageUrl,omitempty"`
 }
 
 type CiConfig struct {
@@ -94,4 +96,5 @@ type StorageManagerRead struct {
 	OwnerID   string    `json:"ownerId"`
 	CreatedAt time.Time `json:"createdAt"`
 	Zone      string    `json:"zone"`
+	URL       *string   `json:"url,omitempty"`
 }

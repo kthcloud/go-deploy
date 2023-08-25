@@ -142,8 +142,8 @@ func Create(deploymentID string, userID string, params *deploymentModel.CreatePa
 			_, err = createIngress(client, deployment.ID, appName, ss, createIngressPublic(
 				namespace.FullName,
 				deployment.Name,
-				service.Name,
-				service.Port,
+				ss.ServiceMap[appName].Name,
+				ss.ServiceMap[appName].Port,
 				[]string{getExternalFQDN(deployment.Name, zone)},
 			), deploymentModel.UpdateSubsystemByID)
 			if err != nil {

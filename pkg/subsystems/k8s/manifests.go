@@ -46,16 +46,31 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 		}
 	}
 
-	volumes := make([]apiv1.Volume, len(public.Volumes))
-	for i, volume := range public.Volumes {
-		volumes[i] = apiv1.Volume{
-			Name: volume.Name,
-			VolumeSource: apiv1.VolumeSource{
-				PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
-					ClaimName: volume.PvcName,
-				},
-			},
+	volumes := make([]apiv1.Volume, 0)
+	usedNames := make(map[string]bool)
+	for _, volume := range public.Volumes {
+		if usedNames[volume.Name] {
+			continue
 		}
+		usedNames[volume.Name] = true
+
+		var volumeSource apiv1.VolumeSource
+		if volume.PvcName != nil {
+			volumeSource = apiv1.VolumeSource{
+				PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
+					ClaimName: *volume.PvcName,
+				},
+			}
+		} else {
+			volumeSource = apiv1.VolumeSource{
+				EmptyDir: &apiv1.EmptyDirVolumeSource{},
+			}
+		}
+
+		volumes = append(volumes, apiv1.Volume{
+			Name:         volume.Name,
+			VolumeSource: volumeSource,
+		})
 	}
 
 	normalContainerMounts := make([]apiv1.VolumeMount, 0)
@@ -259,14 +274,30 @@ func CreatePvcManifest(public *models.PvcPublic) *apiv1.PersistentVolumeClaim {
 
 func CreateJobManifest(public *models.JobPublic) *v1.Job {
 	volumes := make([]apiv1.Volume, len(public.Volumes))
+
+	usedNames := make(map[string]bool)
 	for i, volume := range public.Volumes {
-		volumes[i] = apiv1.Volume{
-			Name: volume.Name,
-			VolumeSource: apiv1.VolumeSource{
+		if usedNames[volume.Name] {
+			continue
+		}
+		usedNames[volume.Name] = true
+
+		var volumeSource apiv1.VolumeSource
+		if volume.PvcName != nil {
+			volumeSource = apiv1.VolumeSource{
 				PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
-					ClaimName: volume.PvcName,
+					ClaimName: *volume.PvcName,
 				},
-			},
+			}
+		} else {
+			volumeSource = apiv1.VolumeSource{
+				EmptyDir: &apiv1.EmptyDirVolumeSource{},
+			}
+		}
+
+		volumes[i] = apiv1.Volume{
+			Name:         volume.Name,
+			VolumeSource: volumeSource,
 		}
 	}
 
@@ -280,6 +311,8 @@ func CreateJobManifest(public *models.JobPublic) *v1.Job {
 		}
 	}
 
+	ttl := int32(100)
+
 	return &v1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      public.Name,
@@ -290,6 +323,7 @@ func CreateJobManifest(public *models.JobPublic) *v1.Job {
 			},
 		},
 		Spec: v1.JobSpec{
+			TTLSecondsAfterFinished: &ttl,
 			Template: apiv1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{

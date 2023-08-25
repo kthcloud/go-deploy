@@ -96,9 +96,13 @@ type Environment struct {
 	Roles []role.Role `yaml:"roles"`
 
 	Keycloak struct {
-		Url        string `yaml:"url"`
-		Realm      string `yaml:"realm"`
-		AdminGroup string `yaml:"adminGroup"`
+		Url           string `yaml:"url"`
+		Realm         string `yaml:"realm"`
+		AdminGroup    string `yaml:"adminGroup"`
+		StorageClient struct {
+			ClientID     string `yaml:"clientId"`
+			ClientSecret string `yaml:"clientSecret"`
+		} `yaml:"storageClient"`
 	} `yaml:"keycloak"`
 
 	DB struct {

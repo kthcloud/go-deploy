@@ -38,6 +38,7 @@ func CreateStorageManager(id string, params *storageManagerModel.CreateParams) e
 	ss := &storageManager.Subsystems.K8s
 
 	appName := "storage-manager"
+	appNameAuth := "storage-manager-auth"
 
 	initVolumes := []storageManagerModel.Volume{
 		{
@@ -143,9 +144,11 @@ func CreateStorageManager(id string, params *storageManagerModel.CreateParams) e
 	}
 
 	// Deployment
-	port := 80
-
 	filebrowserAppName := "filebrowser"
+	oauthProxyAppName := "oauth-proxy"
+
+	filebrowserPort := 80
+	oauthProxyPort := 4180
 
 	filebrowserDeployment, ok := ss.DeploymentMap[filebrowserAppName]
 	if !ok || !filebrowserDeployment.Created() {
@@ -156,27 +159,45 @@ func CreateStorageManager(id string, params *storageManagerModel.CreateParams) e
 		}
 	}
 
+	oauthProxyDeployment, ok := ss.DeploymentMap[oauthProxyAppName]
+	if !ok || !oauthProxyDeployment.Created() {
+		public := createOAuthProxyDeploymentPublic(namespace.FullName, appNameAuth, params.UserID, zone)
+		_, err = createK8sDeployment(client, storageManager.ID, oauthProxyAppName, ss, public, storageManagerModel.UpdateSubsystemByID)
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
 	// Service
 	filebrowserService, ok := ss.ServiceMap[filebrowserAppName]
 	if !ok || !filebrowserService.Created() {
-		public := createServicePublic(namespace.FullName, appName, port)
+		public := createServicePublic(namespace.FullName, appName, filebrowserPort)
 		_, err = createService(client, storageManager.ID, filebrowserAppName, ss, public, storageManagerModel.UpdateSubsystemByID)
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
+	oauthProxyService, ok := ss.ServiceMap[oauthProxyAppName]
+	if !ok || !oauthProxyService.Created() {
+		public := createServicePublic(namespace.FullName, appNameAuth, oauthProxyPort)
+		_, err = createService(client, storageManager.ID, oauthProxyAppName, ss, public, storageManagerModel.UpdateSubsystemByID)
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
 	// Ingress
-	filebrowserIngress, ok := ss.IngressMap[filebrowserAppName]
-	if !ok || filebrowserIngress.Created() {
+	oauthProxyIngress, ok := ss.IngressMap[oauthProxyAppName]
+	if !ok || oauthProxyIngress.Created() {
 		public := createIngressPublic(
 			namespace.FullName,
-			appName,
-			filebrowserService.Name,
-			filebrowserService.Port,
+			appNameAuth,
+			ss.ServiceMap[oauthProxyAppName].Name,
+			ss.ServiceMap[oauthProxyAppName].Port,
 			[]string{getStorageManagerExternalFQDN(storageManager.OwnerID, zone)},
 		)
-		_, err = createIngress(client, storageManager.ID, filebrowserAppName, ss, public, storageManagerModel.UpdateSubsystemByID)
+		_, err = createIngress(client, storageManager.ID, oauthProxyAppName, ss, public, storageManagerModel.UpdateSubsystemByID)
 		if err != nil {
 			return makeError(err)
 		}
