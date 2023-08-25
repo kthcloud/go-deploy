@@ -46,6 +46,7 @@ type VmCreate struct {
 
 type VmUpdate struct {
 	SnapshotID *string `json:"snapshotId" binding:"omitempty,uuid4"`
+	GpuID      *string `json:"gpuId" binding:"omitempty,min=0,max=100"`
 	Ports      *[]Port `json:"ports" bson:"ports" binding:"omitempty,port_list_names,port_list_numbers,dive,min=0,max=1000"`
 	CpuCores   *int    `json:"cpuCores" binding:"omitempty,min=1"`
 	RAM        *int    `json:"ram" binding:"omitempty,min=1"`

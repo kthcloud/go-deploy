@@ -205,7 +205,7 @@ func Create(c *gin.Context) {
 	}
 
 	if effectiveRole.Quotas.Deployments <= 0 {
-		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, "User is not allowed to create deployments")
+		context.ErrorResponse(http.StatusForbidden, status_codes.Error, "User is not allowed to create deployments")
 		return
 	}
 
@@ -289,7 +289,7 @@ func Create(c *gin.Context) {
 	}
 
 	if deploymentCount >= effectiveRole.Quotas.Deployments {
-		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, fmt.Sprintf("User is not allowed to create more than %d deployments", effectiveRole.Quotas.Deployments))
+		context.ErrorResponse(http.StatusForbidden, status_codes.Error, fmt.Sprintf("User is not allowed to create more than %d deployments", effectiveRole.Quotas.Deployments))
 		return
 	}
 
@@ -360,7 +360,7 @@ func Delete(c *gin.Context) {
 	}
 
 	if !started {
-		context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotUpdated, fmt.Sprintf("Could not delete resource: %s", reason))
+		context.ErrorResponse(http.StatusNotModified, status_codes.ResourceNotUpdated, fmt.Sprintf("Could not delete resource: %s", reason))
 		return
 	}
 
@@ -432,11 +432,6 @@ func Update(c *gin.Context) {
 
 	if deployment.BeingDeleted() {
 		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingDeleted, "Resource is currently being deleted")
-		return
-	}
-
-	if deployment.OwnerID != auth.UserID && !auth.IsAdmin {
-		context.ErrorResponse(http.StatusUnauthorized, status_codes.Error, "User is not allowed to update this resource")
 		return
 	}
 

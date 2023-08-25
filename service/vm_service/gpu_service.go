@@ -100,6 +100,25 @@ func GetAllAvailableGPU(usePrivilegedGPUs bool) ([]gpuModel.GPU, error) {
 	return availableGPUs, nil
 }
 
+func IsGpuPrivileged(gpuID string) (bool, error) {
+	gpu, err := gpuModel.GetByID(gpuID)
+	if err != nil {
+		return false, err
+	}
+
+	if gpu == nil {
+		return false, nil
+	}
+
+	for _, privilegedGPU := range conf.Env.GPU.PrivilegedGPUs {
+		if privilegedGPU == gpu.Data.Name {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to attach gpu to vm %s. details: %s", vmID, err)
@@ -315,7 +334,7 @@ func CanStartOnHost(vmID, host string) (bool, string, error) {
 	}
 
 	if vm.Subsystems.CS.VM.ID == "" {
-		return false, "", nil
+		return false, "VM not fully created", nil
 	}
 
 	canStart, reason, err := internal_service.CanStartCS(vm.Subsystems.CS.VM.ID, host, vm.Zone)
