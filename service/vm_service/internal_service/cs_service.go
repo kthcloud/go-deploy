@@ -15,6 +15,12 @@ import (
 	"strings"
 )
 
+const (
+	CsDetachGpuAfterStateRestore = "restore"
+	CsDetachGpuAfterStateOff     = "off"
+	CsDetachGpuAfterStateOn      = "on"
+)
+
 type CsCreated struct {
 	VM *csModels.VmPublic
 }
@@ -576,7 +582,7 @@ func AttachGPU(gpuID, vmID string) error {
 	return nil
 }
 
-func DetachGPU(vmID string) error {
+func DetachGPU(vmID string, afterState string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to detach gpu from cs vm %s. details: %s", vmID, err)
 	}
@@ -605,7 +611,6 @@ func DetachGPU(vmID string) error {
 		return makeError(err)
 	}
 
-	// turn it off if it is on, but remember the status
 	status, err := client.GetVmStatus(vm.Subsystems.CS.VM.ID)
 	if err != nil {
 		return makeError(err)
@@ -631,7 +636,7 @@ func DetachGPU(vmID string) error {
 	}
 
 	// turn it on if it was on
-	if status == "Running" {
+	if (status == "Running" && afterState == CsDetachGpuAfterStateRestore) || afterState == CsDetachGpuAfterStateOn {
 		err = client.DoVmCommand(vm.Subsystems.CS.VM.ID, nil, "start")
 		if err != nil {
 			return makeError(err)
@@ -722,10 +727,6 @@ func CreateSnapshotCS(vmID, name string, userCreated bool) error {
 		return fmt.Errorf("cs vm %s is not running", vm.Subsystems.CS.VM.ID)
 	}
 
-	if hasExtraConfig(vm) {
-		return fmt.Errorf("cs vm %s has a graphics card attached", vm.Subsystems.CS.VM.ID)
-	}
-
 	var description string
 	if userCreated {
 		description = "go-deploy user"
@@ -739,9 +740,31 @@ func CreateSnapshotCS(vmID, name string, userCreated bool) error {
 		Description: description,
 	}
 
+	var gpuID *string
+	if hasExtraConfig(vm) {
+		gpuID = &vm.GpuID
+		err := DetachGPU(vm.ID, CsDetachGpuAfterStateOn)
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	// make sure vm is on
+	err = client.DoVmCommand(vm.Subsystems.CS.VM.ID, nil, "start")
+	if err != nil {
+		return makeError(err)
+	}
+
 	snapshotID, err := client.CreateSnapshot(public)
 	if err != nil {
 		return makeError(err)
+	}
+
+	if gpuID != nil {
+		err := AttachGPU(*gpuID, vmID)
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	log.Println("created snapshot", snapshotID, "for vm", vmID)
@@ -781,16 +804,38 @@ func ApplySnapshotCS(vmID, snapshotID string) error {
 
 	snapshot, ok := snapshotMap[snapshotID]
 	if !ok {
-		return fmt.Errorf("snapshot %s not found for vm %s", snapshotID, vmID)
+		return fmt.Errorf("snapshot %s not found", snapshotID)
 	}
 
-	if vm.Subsystems.CS.VM.ExtraConfig != "" {
-		return fmt.Errorf("vm %s has a graphics card attached", vmID)
+	if snapshot.State != "Ready" {
+		return fmt.Errorf("snapshot %s is not ready", snapshotID)
+	}
+
+	var gpuID *string
+	if hasExtraConfig(vm) {
+		gpuID = &vm.GpuID
+		err := DetachGPU(vm.ID, CsDetachGpuAfterStateOn)
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	// make sure vm is on
+	err = client.DoVmCommand(vm.Subsystems.CS.VM.ID, nil, "start")
+	if err != nil {
+		return makeError(err)
 	}
 
 	err = client.ApplySnapshot(&snapshot)
 	if err != nil {
 		return makeError(err)
+	}
+
+	if gpuID != nil {
+		err := AttachGPU(*gpuID, vmID)
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	log.Println("applied snapshot", snapshotID, "for vm", vmID)

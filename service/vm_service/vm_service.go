@@ -305,6 +305,8 @@ func CanAddActivity(vmID, activity string) (bool, string, error) {
 			vmModel.ActivityBeingDeleted,
 			vmModel.ActivityAttachingGPU,
 			vmModel.ActivityDetachingGPU,
+			vmModel.ActivityCreatingSnapshot,
+			vmModel.ActivityApplyingSnapshot,
 		}) {
 			return false, "It should not be in creation or deletion, and should not be attaching or detaching a GPU", nil
 		}
@@ -314,6 +316,8 @@ func CanAddActivity(vmID, activity string) (bool, string, error) {
 			vmModel.ActivityBeingCreated,
 			vmModel.ActivityBeingDeleted,
 			vmModel.ActivityAttachingGPU,
+			vmModel.ActivityCreatingSnapshot,
+			vmModel.ActivityApplyingSnapshot,
 		}) {
 			return false, "It should not be in creation or deletion, and should not be attaching a GPU", nil
 		}
