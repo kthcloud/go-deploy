@@ -96,4 +96,5 @@ type StorageManagerRead struct {
 	OwnerID   string    `json:"ownerId"`
 	CreatedAt time.Time `json:"createdAt"`
 	Zone      string    `json:"zone"`
+	URL       *string   `json:"url,omitempty"`
 }
