@@ -244,7 +244,7 @@ func DoCommand(vm *vmModel.VM, command string) {
 		}
 
 		var gpuID *string
-		if vm.GpuID != "" {
+		if vm.HasGPU() {
 			gpuID = &vm.GpuID
 		}
 

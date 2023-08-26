@@ -100,6 +100,10 @@ func AttachGPU(c *gin.Context) {
 		return
 	}
 
+	if gpuID == "" {
+		gpuID = "any"
+	}
+
 	attachGPU(&context, &body.VmUpdate{
 		GpuID: &gpuID,
 	}, auth, current)

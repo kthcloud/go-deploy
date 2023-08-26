@@ -2,6 +2,7 @@ package storage_manager
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"go-deploy/models"
 	"go.mongodb.org/mongo-driver/bson"
@@ -49,7 +50,7 @@ func getStorageManager(filter bson.D) (*StorageManager, error) {
 	var storageManager StorageManager
 	err := models.StorageManagerCollection.FindOne(context.TODO(), filter).Decode(&storageManager)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, nil
 		}
 
@@ -115,8 +116,8 @@ func GetWithNoActivities() ([]StorageManager, error) {
 	filter := bson.D{
 		{
 			"activities", bson.M{
-				"$size": 0,
-			},
+			"$size": 0,
+		},
 		},
 	}
 

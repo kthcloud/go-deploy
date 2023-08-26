@@ -44,6 +44,10 @@ func (vm *VM) DoingActivity(activity string) bool {
 	return false
 }
 
+func (vm *VM) HasGPU() bool {
+	return vm.GpuID != ""
+}
+
 func (vm *VM) DoingOnOfActivities(activities []string) bool {
 	for _, a := range activities {
 		if vm.DoingActivity(a) {
