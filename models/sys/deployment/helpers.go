@@ -2,6 +2,7 @@ package deployment
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"go-deploy/models"
 	"go-deploy/models/sys/deployment/subsystems"
@@ -85,7 +86,7 @@ func getDeployment(filter bson.D) (*Deployment, error) {
 	var deployment Deployment
 	err := models.DeploymentCollection.FindOne(context.TODO(), filter).Decode(&deployment)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, nil
 		}
 

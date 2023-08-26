@@ -2,6 +2,7 @@ package vm
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"go-deploy/models"
 	"go-deploy/pkg/status_codes"
@@ -69,7 +70,7 @@ func getVM(filter bson.D) (*VM, error) {
 	var vm VM
 	err := models.VmCollection.FindOne(context.TODO(), filter).Decode(&vm)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, nil
 		}
 

@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"go-deploy/models"
 	"go-deploy/models/dto/body"
@@ -112,7 +113,7 @@ func GetByID(id string) (*User, error) {
 	filter := bson.D{{"id", id}}
 	err := models.UserCollection.FindOne(context.TODO(), filter).Decode(&user)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, nil
 		}
 

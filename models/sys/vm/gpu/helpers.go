@@ -3,6 +3,7 @@ package gpu
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"github.com/goharbor/harbor/src/lib/log"
 	"go-deploy/models"
@@ -265,7 +266,7 @@ func Attach(gpuID, vmID, user string, end time.Time) (bool, error) {
 
 		err = models.GpuCollection.FindOneAndUpdate(context.Background(), filter, update, opts).Decode(&gpu)
 		if err != nil {
-			if err == mongo.ErrNoDocuments {
+			if errors.Is(err, mongo.ErrNoDocuments) {
 				// this is not treated as an error, just another instance snatched the gpu before this one
 				return false, nil
 			}
@@ -327,7 +328,7 @@ func Detach(vmID, userID string) error {
 
 	err = models.GpuCollection.FindOneAndUpdate(context.Background(), filter, update, opts).Decode(&gpu)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			// this is not treated as an error, just another instance snatched the gpu before this one
 			return nil
 		}
