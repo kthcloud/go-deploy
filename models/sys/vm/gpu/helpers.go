@@ -247,7 +247,7 @@ func Attach(gpuID, vmID, user string, end time.Time) (bool, error) {
 	}
 
 	// if this is not a renewal, try to attach the gpu to the vm
-	if gpu.Lease.VmID == "" {
+	if !gpu.IsAttached() {
 		filter := bson.D{
 			{"id", gpuID},
 			{"$or", []interface{}{

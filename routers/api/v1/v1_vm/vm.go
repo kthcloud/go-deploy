@@ -35,7 +35,7 @@ func getAllVMs(context *sys.ClientContext, auth *service.AuthInfo) {
 		connectionString, _ := vm_service.GetConnectionString(&vm)
 
 		var gpuRead *body.GpuRead
-		if vm.GpuID != "" {
+		if vm.HasGPU() {
 			gpu, err := vm_service.GetGpuByID(vm.GpuID, true)
 			if err != nil {
 				log.Printf("error getting gpu by id: %s", err)
@@ -98,7 +98,7 @@ func GetList(c *gin.Context) {
 		connectionString, _ := vm_service.GetConnectionString(&vm)
 
 		var gpuRead *body.GpuRead
-		if vm.GpuID != "" {
+		if vm.HasGPU() {
 			gpu, err := vm_service.GetGpuByID(vm.GpuID, true)
 			if err != nil {
 				log.Printf("error getting gpu by id: %s", err)
@@ -160,7 +160,7 @@ func Get(c *gin.Context) {
 
 	connectionString, _ := vm_service.GetConnectionString(vm)
 	var gpuRead *body.GpuRead
-	if vm.GpuID != "" {
+	if vm.HasGPU() {
 		gpu, err := vm_service.GetGpuByID(vm.GpuID, true)
 		if err != nil {
 			log.Printf("error getting gpu by id: %s", err)

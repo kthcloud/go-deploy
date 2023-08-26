@@ -400,7 +400,7 @@ func UpdateCS(vmID string, updateParams *vmModel.UpdateParams) error {
 			// turn it on if it was on
 			if status == "Running" {
 				var requiredHost *string
-				if vm.GpuID != "" {
+				if vm.HasGPU() {
 					requiredHost, err = getRequiredHost(vm.GpuID)
 					if err != nil {
 						return makeError(err)
