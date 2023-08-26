@@ -506,7 +506,40 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *ser
 	}
 
 	var gpus []gpuModel.GPU
-	if *requestBody.GpuID != "any" {
+	if *requestBody.GpuID == "any" {
+		if vm.HasGPU() {
+			gpu, err := vm_service.GetGpuByID(vm.GpuID, false)
+			if err != nil {
+				context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get gpu: %s", err))
+				return
+			}
+
+			if gpu == nil {
+				context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, fmt.Sprintf("GPU with id %s not found", vm.GpuID))
+				return
+			}
+
+			if !gpu.Lease.IsExpired() {
+				context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceNotCreated, "GPU lease not expired")
+				return
+			}
+
+			gpus = []gpuModel.GPU{*gpu}
+		} else {
+			availableGpus, err := vm_service.GetAllAvailableGPU(auth.GetEffectiveRole().Permissions.UsePrivilegedGPUs)
+			if err != nil {
+				context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get available GPUs: %s", err))
+				return
+			}
+
+			if availableGpus == nil {
+				context.ErrorResponse(http.StatusNotModified, status_codes.ResourceNotAvailable, "No available GPUs")
+				return
+			}
+
+			gpus = availableGpus
+		}
+	} else {
 		if !auth.GetEffectiveRole().Permissions.ChooseGPU {
 			context.ErrorResponse(http.StatusForbidden, status_codes.Error, "Tier does not include GPU selection")
 			return
@@ -534,7 +567,7 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *ser
 			return
 		}
 
-		if vm.GpuID != "" && vm.GpuID != *requestBody.GpuID {
+		if vm.HasGPU() && vm.GpuID != *requestBody.GpuID {
 			context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "VM already has a GPU attached")
 			return
 		}
@@ -556,39 +589,6 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *ser
 		}
 
 		gpus = []gpuModel.GPU{*gpu}
-	} else {
-		// if requesting a renewal but only able to use "any"
-		if vm.GpuID != "" {
-			gpu, err := vm_service.GetGpuByID(vm.GpuID, false)
-			if err != nil {
-				context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get gpu: %s", err))
-				return
-			}
-
-			if gpu == nil {
-				context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, fmt.Sprintf("GPU with id %s not found", vm.GpuID))
-				return
-			}
-
-			if !gpu.Lease.IsExpired() {
-				context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceNotCreated, "GPU lease not expired")
-				return
-			}
-
-		} else {
-			availableGpus, err := vm_service.GetAllAvailableGPU(auth.GetEffectiveRole().Permissions.UsePrivilegedGPUs)
-			if err != nil {
-				context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get available GPUs: %s", err))
-				return
-			}
-
-			if availableGpus == nil {
-				context.ErrorResponse(http.StatusNotModified, status_codes.ResourceNotAvailable, "No available GPUs")
-				return
-			}
-
-			gpus = availableGpus
-		}
 	}
 
 	if len(gpus) == 0 {
