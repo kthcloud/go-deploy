@@ -116,8 +116,8 @@ func GetWithNoActivities() ([]StorageManager, error) {
 	filter := bson.D{
 		{
 			"activities", bson.M{
-			"$size": 0,
-		},
+				"$size": 0,
+			},
 		},
 	}
 

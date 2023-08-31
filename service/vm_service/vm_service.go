@@ -391,6 +391,10 @@ func CheckQuotaUpdate(userID, vmID string, quota *roleModel.Quotas, updateParams
 		return fmt.Errorf("failed to check quota. details: %s", err)
 	}
 
+	if updateParams.CpuCores == nil && updateParams.RAM == nil {
+		return true, "", nil
+	}
+
 	usage, err := GetUsageByUserID(userID)
 	if err != nil {
 		return false, "", makeError(err)
@@ -409,22 +413,26 @@ func CheckQuotaUpdate(userID, vmID string, quota *roleModel.Quotas, updateParams
 		return false, "", makeError(fmt.Errorf("vm not found"))
 	}
 
-	totalCpuCores := usage.CpuCores
 	if updateParams.CpuCores != nil {
-		totalCpuCores += *updateParams.CpuCores - vm.Specs.CpuCores
+		totalCpuCores := usage.CpuCores
+		if updateParams.CpuCores != nil {
+			totalCpuCores += *updateParams.CpuCores - vm.Specs.CpuCores
+		}
+
+		if totalCpuCores > quota.CpuCores {
+			return false, fmt.Sprintf("CPU cores quota exceeded. Current: %d, Quota: %d", totalCpuCores, quota.CpuCores), nil
+		}
 	}
 
-	totalRam := usage.RAM
 	if updateParams.RAM != nil {
-		totalRam += *updateParams.RAM - vm.Specs.RAM
-	}
+		totalRam := usage.RAM
+		if updateParams.RAM != nil {
+			totalRam += *updateParams.RAM - vm.Specs.RAM
+		}
 
-	if totalCpuCores > quota.CpuCores {
-		return false, fmt.Sprintf("CPU cores quota exceeded. Current: %d, Quota: %d", totalCpuCores, quota.CpuCores), nil
-	}
-
-	if totalRam > quota.RAM {
-		return false, fmt.Sprintf("RAM quota exceeded. Current: %d, Quota: %d", totalRam, quota.RAM), nil
+		if totalRam > quota.RAM {
+			return false, fmt.Sprintf("RAM quota exceeded. Current: %d, Quota: %d", totalRam, quota.RAM), nil
+		}
 	}
 
 	return true, "", nil
