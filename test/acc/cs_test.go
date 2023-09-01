@@ -11,8 +11,8 @@ import (
 )
 
 func withCsClient(t *testing.T) *cs.Client {
-	zoneName := "Flemingsberg"
-	zone := conf.Env.CS.GetZoneByName(zoneName)
+	zoneName := "se-flem"
+	zone := conf.Env.VM.GetZone(zoneName)
 	if zone == nil {
 		t.Fatalf("no zone with name %s found", zoneName)
 	}
@@ -21,8 +21,8 @@ func withCsClient(t *testing.T) *cs.Client {
 		URL:         conf.Env.CS.URL,
 		ApiKey:      conf.Env.CS.ApiKey,
 		Secret:      conf.Env.CS.Secret,
-		ProjectID:   conf.Env.CS.ProjectID,
-		ZoneID:      zone.ID,
+		ZoneID:      zone.ZoneID,
+		ProjectID:   zone.ProjectID,
 		IpAddressID: zone.IpAddressID,
 		NetworkID:   zone.NetworkID,
 	})

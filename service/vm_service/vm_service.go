@@ -9,13 +9,14 @@ import (
 	"go-deploy/pkg/conf"
 	"go-deploy/service"
 	"go-deploy/service/vm_service/internal_service"
+	"go-deploy/utils"
 	"log"
 	"strings"
 )
 
 func Create(vmID, owner string, vmCreate *body.VmCreate) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create vm. details: %s", err)
+		return fmt.Errorf("failed to create vm. details: %w", err)
 	}
 
 	// temporary hard-coded fallback
@@ -99,7 +100,7 @@ func Exists(name string) (bool, *vmModel.VM, error) {
 
 func Delete(name string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete vm. details: %s", err)
+		return fmt.Errorf("failed to delete vm. details: %w", err)
 	}
 
 	vm, err := vmModel.GetByName(name)
@@ -131,7 +132,7 @@ func Delete(name string) error {
 
 func Update(vmID string, dtoVmUpdate *body.VmUpdate) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to update vm. details: %s", err)
+		return fmt.Errorf("failed to update vm. details: %w", err)
 	}
 
 	vmUpdate := &vmModel.UpdateParams{}
@@ -170,7 +171,7 @@ func Update(vmID string, dtoVmUpdate *body.VmUpdate) error {
 
 func Repair(id string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to repair vm %s. details: %s", id, err)
+		return fmt.Errorf("failed to repair vm %s. details: %w", id, err)
 	}
 
 	vm, err := vmModel.GetByID(id)
@@ -200,7 +201,7 @@ func Repair(id string) error {
 	defer func() {
 		err = vmModel.RemoveActivity(vm.ID, vmModel.ActivityRepairing)
 		if err != nil {
-			log.Println("failed to remove activity", vmModel.ActivityRepairing, "from vm", vm.Name, "details:", err)
+			utils.PrettyPrintError(fmt.Errorf("failed to remove activity %s from vm %s details: %w", vmModel.ActivityRepairing, vm.Name, err))
 		}
 	}()
 
@@ -250,7 +251,7 @@ func DoCommand(vm *vmModel.VM, command string) {
 
 		err := internal_service.DoCommandCS(csID, gpuID, command, vm.Zone)
 		if err != nil {
-			log.Println(err)
+			utils.PrettyPrintError(err)
 			return
 		}
 	}()
@@ -359,7 +360,7 @@ func CanAddActivity(vmID, activity string) (bool, string, error) {
 
 func CheckQuotaCreate(userID string, quota *roleModel.Quotas, createParams body.VmCreate) (bool, string, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check quota. details: %s", err)
+		return fmt.Errorf("failed to check quota. details: %w", err)
 	}
 
 	usage, err := GetUsageByUserID(userID)
@@ -388,7 +389,7 @@ func CheckQuotaCreate(userID string, quota *roleModel.Quotas, createParams body.
 
 func CheckQuotaUpdate(userID, vmID string, quota *roleModel.Quotas, updateParams body.VmUpdate) (bool, string, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check quota. details: %s", err)
+		return fmt.Errorf("failed to check quota. details: %w", err)
 	}
 
 	if updateParams.CpuCores == nil && updateParams.RAM == nil {
@@ -440,7 +441,7 @@ func CheckQuotaUpdate(userID, vmID string, quota *roleModel.Quotas, updateParams
 
 func GetUsageByUserID(id string) (*vmModel.Usage, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check quota. details: %s", err)
+		return fmt.Errorf("failed to check quota. details: %w", err)
 	}
 
 	usage := &vmModel.Usage{}
@@ -469,7 +470,7 @@ func GetUsageByUserID(id string) (*vmModel.Usage, error) {
 
 func GetExternalPortMapper(vmID string) (map[string]int, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to get external port mapper. details: %s", err)
+		return fmt.Errorf("failed to get external port mapper. details: %w", err)
 	}
 
 	vm, err := vmModel.GetByID(vmID)

@@ -9,7 +9,7 @@ import (
 
 func (c *Client) ReadWebhook(id int64, repositoryID int64) (*models.WebhookPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to read github webhook. details: %s", err)
+		return fmt.Errorf("failed to read github webhook. details: %w", err)
 	}
 
 	repository, _, err := c.GitHubClient.Repositories.GetByID(context.TODO(), repositoryID)
@@ -36,7 +36,7 @@ func (c *Client) ReadWebhook(id int64, repositoryID int64) (*models.WebhookPubli
 
 func (c *Client) CreateWebhook(public *models.WebhookPublic) (int64, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create github webhook. details: %s", err)
+		return fmt.Errorf("failed to create github webhook. details: %w", err)
 	}
 
 	repository, _, err := c.GitHubClient.Repositories.GetByID(context.TODO(), public.RepositoryID)
@@ -95,7 +95,7 @@ func (c *Client) CreateWebhook(public *models.WebhookPublic) (int64, error) {
 
 func (c *Client) DeleteWebhook(id int64, repositoryId int64) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete github webhook. details: %s", err)
+		return fmt.Errorf("failed to delete github webhook. details: %w", err)
 	}
 
 	repository, _, err := c.GitHubClient.Repositories.GetByID(context.TODO(), repositoryId)

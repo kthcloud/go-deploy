@@ -16,7 +16,7 @@ func Create(deploymentID string, params *deploymentModel.CreateParams) error {
 	log.Println("setting up github for", params.Name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup github for deployment %s. details: %s", params.Name, err)
+		return fmt.Errorf("failed to setup github for deployment %s. details: %w", params.Name, err)
 	}
 
 	client, err := withGitHubClient(params.GitHub.Token)
@@ -49,7 +49,7 @@ func Delete(name string, githubToken *string) error {
 	log.Println("deleting github for", name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete github for deployment %s. details: %s", name, err)
+		return fmt.Errorf("failed to delete github for deployment %s. details: %w", name, err)
 	}
 
 	if githubToken == nil {
@@ -103,7 +103,7 @@ func CreatePlaceholder(name string) error {
 	log.Println("setting up placeholder github")
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup placeholder github. details: %s", err)
+		return fmt.Errorf("failed to setup placeholder github. details: %w", err)
 	}
 
 	err := deploymentModel.UpdateSubsystemByName(name, "github", "placeholder", true)
@@ -116,7 +116,7 @@ func CreatePlaceholder(name string) error {
 
 func ValidateToken(token string) (bool, string, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to validate github token. details: %s", err)
+		return fmt.Errorf("failed to validate github token. details: %w", err)
 	}
 
 	client, err := withGitHubClient(token)
@@ -156,7 +156,7 @@ func ValidateToken(token string) (bool, string, error) {
 
 func GetAccessTokenByCode(code string) (string, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to get github access token. details: %s", err)
+		return fmt.Errorf("failed to get github access token. details: %w", err)
 	}
 
 	token, prodErr := fetchAccessToken(code, conf.Env.GitHub.ProdClient.ID, conf.Env.GitHub.ProdClient.Secret)
@@ -169,12 +169,12 @@ func GetAccessTokenByCode(code string) (string, error) {
 		return token, nil
 	}
 
-	return "", makeError(fmt.Errorf("failed to get github access token. prod err details: %s. dev err details: %s", prodErr, devErr))
+	return "", makeError(fmt.Errorf("failed to get github access token. prod err details: %w. dev err details: %w", prodErr, devErr))
 }
 
 func GetRepositories(token string) ([]deploymentModel.GitHubRepository, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to get github repositories. details: %s", err)
+		return fmt.Errorf("failed to get github repositories. details: %w", err)
 	}
 
 	client, err := withGitHubClient(token)
@@ -216,7 +216,7 @@ func GetRepositories(token string) ([]deploymentModel.GitHubRepository, error) {
 
 func GetRepository(token string, repositoryID int64) (*deploymentModel.GitHubRepository, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to get repository. details: %s", err)
+		return fmt.Errorf("failed to get repository. details: %w", err)
 	}
 
 	client, err := withGitHubClient(token)
@@ -247,7 +247,7 @@ func GetRepository(token string, repositoryID int64) (*deploymentModel.GitHubRep
 
 func GetWebhooks(token, owner, repository string) ([]deploymentModel.GitHubWebhook, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to get repository webhooks. details: %s", err)
+		return fmt.Errorf("failed to get repository webhooks. details: %w", err)
 	}
 
 	client, err := withGitHubClient(token)

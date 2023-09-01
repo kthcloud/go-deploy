@@ -19,7 +19,7 @@ type ManagedByAnnotation struct {
 
 func (client *Client) ReadVM(id string) (*models.VmPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create cs vm %s. details: %s", id, err)
+		return fmt.Errorf("failed to create cs vm %s. details: %w", id, err)
 	}
 
 	if id == "" {
@@ -43,7 +43,7 @@ func (client *Client) ReadVM(id string) (*models.VmPublic, error) {
 
 func (client *Client) CreateVM(public *models.VmPublic, userSshPublicKey, adminSshPublicKey string) (string, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create cs vm %s. details: %s", public.Name, err)
+		return fmt.Errorf("failed to create cs vm %s. details: %w", public.Name, err)
 	}
 
 	listVmParams := client.CsClient.VirtualMachine.NewListVirtualMachinesParams()
@@ -95,7 +95,7 @@ func (client *Client) CreateVM(public *models.VmPublic, userSshPublicKey, adminS
 
 func (client *Client) UpdateVM(public *models.VmPublic) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to update vm %s. details: %s", public.Name, err)
+		return fmt.Errorf("failed to update vm %s. details: %w", public.Name, err)
 	}
 
 	if public.ID == "" {
@@ -146,7 +146,7 @@ func (client *Client) UpdateVM(public *models.VmPublic) error {
 
 func (client *Client) DeleteVM(id string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete vm %s. details: %s", id, err)
+		return fmt.Errorf("failed to delete vm %s. details: %w", id, err)
 	}
 
 	if id == "" {
@@ -182,7 +182,7 @@ func (client *Client) DeleteVM(id string) error {
 
 func (client *Client) GetVmStatus(id string) (string, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to get vm %s status. details: %s", id, err)
+		return fmt.Errorf("failed to get vm %s status. details: %w", id, err)
 	}
 
 	vm, _, err := client.CsClient.VirtualMachine.GetVirtualMachineByID(id)
@@ -200,7 +200,7 @@ func (client *Client) GetVmStatus(id string) (string, error) {
 
 func (client *Client) DoVmCommand(id string, requiredHost *string, command commands.Command) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to execute csVM command to csVM %s. details: %s", id, err)
+		return fmt.Errorf("failed to execute csVM command to csVM %s. details: %w", id, err)
 	}
 
 	csVM, _, err := client.CsClient.VirtualMachine.GetVirtualMachineByID(id)
@@ -216,7 +216,7 @@ func (client *Client) DoVmCommand(id string, requiredHost *string, command comma
 			if requiredHost != nil {
 				host, _, err := client.CsClient.Host.GetHostByName(*requiredHost)
 				if err != nil {
-					return makeError(fmt.Errorf("failed to get host %s. details: %s", *requiredHost, err))
+					return makeError(fmt.Errorf("failed to get host %s. details: %w", *requiredHost, err))
 				}
 
 				params.SetHostid(host.Id)
@@ -250,7 +250,7 @@ func (client *Client) DoVmCommand(id string, requiredHost *string, command comma
 
 func (client *Client) HasCapacity(vmID, hostName string) (bool, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if vm %s can start on host %s. details: %s", vmID, hostName, err)
+		return fmt.Errorf("failed to check if vm %s can start on host %s. details: %w", vmID, hostName, err)
 	}
 
 	vm, _, err := client.CsClient.VirtualMachine.GetVirtualMachineByID(vmID)

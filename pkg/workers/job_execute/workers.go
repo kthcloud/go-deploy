@@ -2,9 +2,12 @@ package job_execute
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	jobModel "go-deploy/models/sys/job"
+	"go-deploy/utils"
 	"log"
+	"strings"
 	"time"
 )
 
@@ -16,7 +19,7 @@ func jobFetcher(ctx context.Context) {
 		case <-time.After(100 * time.Millisecond):
 			job, err := jobModel.GetNext()
 			if err != nil {
-				log.Println("error fetching next job. details: ", err)
+				utils.PrettyPrintError(fmt.Errorf("error fetching next job. details: %w", err))
 				continue
 			}
 
@@ -26,10 +29,10 @@ func jobFetcher(ctx context.Context) {
 
 			err = startJob(job)
 			if err != nil {
-				log.Println("error starting failed job. details: ", err)
+				utils.PrettyPrintError(fmt.Errorf("error starting failed job. details: %w", err))
 				err = jobModel.MarkTerminated(job.ID, err.Error())
 				if err != nil {
-					log.Println("error marking failed job as terminated. details: ", err)
+					utils.PrettyPrintError(fmt.Errorf("error marking failed job as terminated. details: %w", err))
 					return
 				}
 				continue
@@ -49,7 +52,7 @@ func failedJobFetcher(ctx context.Context) {
 		case <-time.After(30 * time.Second):
 			job, err := jobModel.GetNextFailed()
 			if err != nil {
-				log.Println("error fetching next failed job. details: ", err)
+				utils.PrettyPrintError(fmt.Errorf("error fetching next failed job. details: %w", err))
 				continue
 			}
 
@@ -59,10 +62,10 @@ func failedJobFetcher(ctx context.Context) {
 
 			err = startJob(job)
 			if err != nil {
-				log.Println("error starting failed job. details: ", err)
+				utils.PrettyPrintError(fmt.Errorf("error starting failed job. details: %w", err))
 				err = jobModel.MarkTerminated(job.ID, err.Error())
 				if err != nil {
-					log.Println("error marking failed job as terminated. details: ", err)
+					utils.PrettyPrintError(fmt.Errorf("error marking failed job as terminated. details: %w", err))
 					return
 				}
 				continue
@@ -76,41 +79,80 @@ func failedJobFetcher(ctx context.Context) {
 func startJob(job *jobModel.Job) error {
 	switch job.Type {
 	case jobModel.TypeCreateVM:
-		go createVM(job)
+		go wrapper(createVM, job)
 	case jobModel.TypeDeleteVM:
-		go deleteVM(job)
+		go wrapper(deleteVM, job)
 	case jobModel.TypeUpdateVM:
-		go updateVM(job)
+		go wrapper(updateVM, job)
 	case jobModel.TypeAttachGpuToVM:
-		go attachGpuToVM(job)
+		go wrapper(attachGpuToVM, job)
 	case jobModel.TypeDetachGpuFromVM:
-		go detachGpuFromVM(job)
+		go wrapper(detachGpuFromVM, job)
 	case jobModel.TypeCreateDeployment:
-		go createDeployment(job)
+		go wrapper(createDeployment, job)
 	case jobModel.TypeDeleteDeployment:
-		go deleteDeployment(job)
+		go wrapper(deleteDeployment, job)
 	case jobModel.TypeUpdateDeployment:
-		go updateDeployment(job)
+		go wrapper(updateDeployment, job)
 	case jobModel.TypeBuildDeployment:
-		go buildDeployment(job)
+		go wrapper(buildDeployment, job)
 	case jobModel.TypeRepairDeployment:
-		go repairDeployment(job)
+		go wrapper(repairDeployment, job)
 	case jobModel.TypeCreateStorageManager:
-		go createStorageManager(job)
+		go wrapper(createStorageManager, job)
 	case jobModel.TypeDeleteStorageManager:
-		go deleteStorageManager(job)
+		go wrapper(deleteStorageManager, job)
 	case jobModel.TypeRepairStorageManager:
-		go repairStorageManager(job)
+		go wrapper(repairStorageManager, job)
 	case jobModel.TypeRepairVM:
-		go repairVM(job)
+		go wrapper(repairVM, job)
 	case jobModel.TypeRepairGPUs:
-		go repairGPUs(job)
+		go wrapper(repairGPUs, job)
 	case jobModel.TypeCreateSnapshot:
-		go createSnapshot(job)
+		go wrapper(createSnapshot, job)
 	case jobModel.TypeApplySnapshot:
-		go applySnapshot(job)
+		go wrapper(applySnapshot, job)
 	default:
 		return fmt.Errorf("unknown job type: %s", job.Type)
 	}
 	return nil
+}
+
+func wrapper(fn func(job *jobModel.Job) error, job *jobModel.Job) {
+	err := fn(job)
+	if err != nil {
+		if strings.HasPrefix(err.Error(), "failed") {
+			err = errors.Unwrap(err)
+			utils.PrettyPrintError(fmt.Errorf("failed job (%s). details: %w", job.Type, err))
+
+			err := jobModel.MarkFailed(job.ID, err.Error())
+			if err != nil {
+				utils.PrettyPrintError(fmt.Errorf("error marking job as failed. details: %w", err))
+				return
+			}
+		} else if strings.HasPrefix(err.Error(), "terminated") {
+			err = errors.Unwrap(err)
+			utils.PrettyPrintError(fmt.Errorf("terminated job (%s). details: %w", job.Type, err))
+
+			err := jobModel.MarkTerminated(job.ID, err.Error())
+			if err != nil {
+				utils.PrettyPrintError(fmt.Errorf("error marking job as terminated. details: %w", err))
+				return
+			}
+		} else {
+			utils.PrettyPrintError(fmt.Errorf("error executing job (%s). details: %w", job.Type, err))
+
+			err := jobModel.MarkFailed(job.ID, err.Error())
+			if err != nil {
+				utils.PrettyPrintError(fmt.Errorf("error marking job as failed. details: %w", err))
+				return
+			}
+		}
+	} else {
+		err := jobModel.MarkCompleted(job.ID)
+		if err != nil {
+			utils.PrettyPrintError(fmt.Errorf("error marking job as completed. details: %w", err))
+			return
+		}
+	}
 }

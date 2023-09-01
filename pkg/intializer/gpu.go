@@ -5,6 +5,7 @@ import (
 	gpuModel "go-deploy/models/sys/vm/gpu"
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/landing"
+	"go-deploy/utils"
 	"log"
 	"strings"
 )
@@ -41,7 +42,7 @@ func SynchronizeGPUs() {
 		if gpu.Lease.VmID == "" {
 			err = gpuModel.Delete(gpu.ID)
 			if err != nil {
-				log.Println("failed to delete gpu. details: ", err)
+				utils.PrettyPrintError(fmt.Errorf("failed to delete gpu. details: %w", err))
 			}
 		}
 	}
@@ -53,7 +54,7 @@ func SynchronizeGPUs() {
 
 			current, err := gpuModel.GetByID(id)
 			if err != nil {
-				log.Println("failed to fetch gpu by id. details: ", err)
+				utils.PrettyPrintError(fmt.Errorf("failed to fetch gpu by id. details: %w", err))
 				continue
 			}
 
@@ -78,7 +79,7 @@ func SynchronizeGPUs() {
 			}, zone.Name)
 
 			if err != nil {
-				log.Println("failed to create gpu. details: ", err)
+				utils.PrettyPrintError(fmt.Errorf("failed to create gpu. details: %w", err))
 			}
 
 			configured++

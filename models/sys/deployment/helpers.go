@@ -61,7 +61,7 @@ func CreateDeployment(deploymentID, ownerID string, params *CreateParams) (bool,
 		{"$setOnInsert", deployment},
 	}, options.Update().SetUpsert(true))
 	if err != nil {
-		return false, fmt.Errorf("failed to create deployment. details: %s", err)
+		return false, fmt.Errorf("failed to create deployment. details: %w", err)
 	}
 
 	if result.UpsertedCount == 0 {
@@ -90,7 +90,7 @@ func getDeployment(filter bson.D) (*Deployment, error) {
 			return nil, nil
 		}
 
-		err = fmt.Errorf("failed to fetch deployment. details: %s", err)
+		err = fmt.Errorf("failed to fetch deployment. details: %w", err)
 		invalidDeployment := Deployment{}
 		return &invalidDeployment, err
 	}
@@ -111,7 +111,7 @@ func GetAllByGitHubWebhookID(id int64) ([]Deployment, error) {
 
 	cursor, err := models.DeploymentCollection.Find(context.TODO(), filter)
 	if err != nil {
-		err = fmt.Errorf("failed to find deployments by GitHub webhook ID %d. details: %s", id, err)
+		err = fmt.Errorf("failed to find deployments by GitHub webhook ID %d. details: %w", id, err)
 		return nil, err
 	}
 
@@ -121,7 +121,7 @@ func GetAllByGitHubWebhookID(id int64) ([]Deployment, error) {
 
 		err = cursor.Decode(&deployment)
 		if err != nil {
-			err = fmt.Errorf("failed to fetch deployment. details: %s", err)
+			err = fmt.Errorf("failed to fetch deployment. details: %w", err)
 			return nil, err
 		}
 
@@ -148,7 +148,7 @@ func GetByOwnerID(ownerID string) ([]Deployment, error) {
 	cursor, err := models.DeploymentCollection.Find(context.TODO(), bson.D{{"ownerId", ownerID}})
 
 	if err != nil {
-		err = fmt.Errorf("failed to find deployments from owner ID %s. details: %s", ownerID, err)
+		err = fmt.Errorf("failed to find deployments from owner ID %s. details: %w", ownerID, err)
 		return nil, err
 	}
 
@@ -158,7 +158,7 @@ func GetByOwnerID(ownerID string) ([]Deployment, error) {
 
 		err = cursor.Decode(&deployment)
 		if err != nil {
-			err = fmt.Errorf("failed to fetch deployment when fetching all deployments from owner ID %s. details: %s", ownerID, err)
+			err = fmt.Errorf("failed to fetch deployment when fetching all deployments from owner ID %s. details: %w", ownerID, err)
 			return nil, err
 		}
 		deployments = append(deployments, deployment)
@@ -170,8 +170,7 @@ func GetByOwnerID(ownerID string) ([]Deployment, error) {
 func DeleteByID(deploymentID, userId string) error {
 	_, err := models.DeploymentCollection.DeleteOne(context.TODO(), bson.D{{"id", deploymentID}, {"ownerId", userId}})
 	if err != nil {
-		err = fmt.Errorf("failed to delete deployment %s. details: %s", deploymentID, err)
-		log.Println(err)
+		err = fmt.Errorf("failed to delete deployment %s. details: %w", deploymentID, err)
 		return err
 	}
 	return nil
@@ -181,7 +180,7 @@ func CountByOwnerID(ownerID string) (int, error) {
 	count, err := models.DeploymentCollection.CountDocuments(context.TODO(), bson.D{{"ownerId", ownerID}})
 
 	if err != nil {
-		err = fmt.Errorf("failed to count deployments by owner ID %s. details: %s", ownerID, err)
+		err = fmt.Errorf("failed to count deployments by owner ID %s. details: %w", ownerID, err)
 		return 0, err
 	}
 
@@ -219,7 +218,7 @@ func UpdateWithParamsByID(id string, update *UpdateParams) error {
 		bson.D{{"$set", bson.D{{"apps", deployment.Apps}}}},
 	)
 	if err != nil {
-		return fmt.Errorf("failed to update deployment %s. details: %s", id, err)
+		return fmt.Errorf("failed to update deployment %s. details: %w", id, err)
 	}
 
 	return nil
@@ -229,7 +228,7 @@ func UpdateWithParamsByID(id string, update *UpdateParams) error {
 func UpdateWithBsonByID(id string, update bson.D) error {
 	_, err := models.DeploymentCollection.UpdateOne(context.TODO(), bson.D{{"id", id}}, bson.D{{"$set", update}})
 	if err != nil {
-		err = fmt.Errorf("failed to update deployment %s. details: %s", id, err)
+		err = fmt.Errorf("failed to update deployment %s. details: %w", id, err)
 		return err
 	}
 	return nil
@@ -238,7 +237,7 @@ func UpdateWithBsonByID(id string, update bson.D) error {
 func UpdateByName(name string, update bson.D) error {
 	_, err := models.DeploymentCollection.UpdateOne(context.TODO(), bson.D{{"name", name}}, bson.D{{"$set", update}})
 	if err != nil {
-		err = fmt.Errorf("failed to update deployment %s. details: %s", name, err)
+		err = fmt.Errorf("failed to update deployment %s. details: %w", name, err)
 		return err
 	}
 	return nil
@@ -247,7 +246,7 @@ func UpdateByName(name string, update bson.D) error {
 func UpdateByID(id string, update bson.D) error {
 	_, err := models.DeploymentCollection.UpdateOne(context.TODO(), bson.D{{"id", id}}, bson.D{{"$set", update}})
 	if err != nil {
-		err = fmt.Errorf("failed to update deployment %s. details: %s", id, err)
+		err = fmt.Errorf("failed to update deployment %s. details: %w", id, err)
 		return err
 	}
 	return nil
@@ -271,8 +270,7 @@ func GetAllWithFilter(filter bson.D) ([]Deployment, error) {
 	cursor, err := models.DeploymentCollection.Find(context.TODO(), filter)
 
 	if err != nil {
-		err = fmt.Errorf("failed to fetch all deployments. details: %s", err)
-		log.Println(err)
+		err = fmt.Errorf("failed to fetch all deployments. details: %w", err)
 		return nil, err
 	}
 
@@ -282,7 +280,7 @@ func GetAllWithFilter(filter bson.D) ([]Deployment, error) {
 
 		err = cursor.Decode(&deployment)
 		if err != nil {
-			err = fmt.Errorf("failed to decode deployment when fetching all deployment. details: %s", err)
+			err = fmt.Errorf("failed to decode deployment when fetching all deployment. details: %w", err)
 			return nil, err
 		}
 		deployments = append(deployments, deployment)
@@ -321,7 +319,7 @@ func AddActivity(deploymentID, activity string) error {
 		bson.D{{"$addToSet", bson.D{{"activities", activity}}}},
 	)
 	if err != nil {
-		err = fmt.Errorf("failed to add activity %s to deployment %s. details: %s", activity, deploymentID, err)
+		err = fmt.Errorf("failed to add activity %s to deployment %s. details: %w", activity, deploymentID, err)
 		return err
 	}
 	return nil
@@ -333,7 +331,7 @@ func RemoveActivity(deploymentID, activity string) error {
 		bson.D{{"$pull", bson.D{{"activities", activity}}}},
 	)
 	if err != nil {
-		err = fmt.Errorf("failed to remove activity %s from deployment %s. details: %s", activity, deploymentID, err)
+		err = fmt.Errorf("failed to remove activity %s from deployment %s. details: %w", activity, deploymentID, err)
 		return err
 	}
 	return nil
@@ -345,7 +343,7 @@ func ClearActivities(deploymentID string) error {
 		bson.D{{"$set", bson.D{{"activities", bson.A{}}}}},
 	)
 	if err != nil {
-		err = fmt.Errorf("failed to clear activities from deployment %s. details: %s", deploymentID, err)
+		err = fmt.Errorf("failed to clear activities from deployment %s. details: %w", deploymentID, err)
 		return err
 	}
 
@@ -440,7 +438,7 @@ func SavePing(id string, pingResult int) error {
 		bson.D{{"$set", bson.D{{"apps.main.pingResult", pingResult}}}},
 	)
 	if err != nil {
-		return fmt.Errorf("failed to update deployment ping result %s. details: %s", id, err)
+		return fmt.Errorf("failed to update deployment ping result %s. details: %w", id, err)
 	}
 
 	return nil

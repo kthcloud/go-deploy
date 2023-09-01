@@ -12,7 +12,7 @@ import (
 
 func (client *Client) ReadPVC(namespace string, id string) (*models.PvcPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to read k8s persistent volume claim %s. details: %s", id, err)
+		return fmt.Errorf("failed to read k8s persistent volume claim %s. details: %w", id, err)
 	}
 
 	if id == "" {
@@ -40,7 +40,7 @@ func (client *Client) ReadPVC(namespace string, id string) (*models.PvcPublic, e
 
 func (client *Client) CreatePVC(public *models.PvcPublic) (string, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to k8s persistent volume claim %s. details: %s", public.Name, err)
+		return fmt.Errorf("failed to k8s persistent volume claim %s. details: %w", public.Name, err)
 	}
 
 	if public.Name == "" {
@@ -77,7 +77,7 @@ func (client *Client) CreatePVC(public *models.PvcPublic) (string, error) {
 
 func (client *Client) DeletePVC(namespace, id string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete k8s persistent volume claim %s. details: %s", id, err)
+		return fmt.Errorf("failed to delete k8s persistent volume claim %s. details: %w", id, err)
 	}
 
 	if id == "" {

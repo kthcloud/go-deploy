@@ -8,7 +8,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"log"
 	"time"
 )
 
@@ -24,12 +23,12 @@ func CreateStorageManager(id string, params *CreateParams) (string, error) {
 		{"$setOnInsert", storageManager},
 	}, options.Update().SetUpsert(true))
 	if err != nil {
-		return "", fmt.Errorf("failed to create storage manager. details: %s", err)
+		return "", fmt.Errorf("failed to create storage manager. details: %w", err)
 	}
 
 	manager, err := getStorageManager(bson.D{{"ownerId", params.UserID}})
 	if err != nil {
-		return "", fmt.Errorf("failed to fetch storage manager. details: %s", err)
+		return "", fmt.Errorf("failed to fetch storage manager. details: %w", err)
 	}
 
 	return manager.ID, nil
@@ -40,7 +39,7 @@ func DeleteStorageManager(id string) error {
 		{"id", id},
 	})
 	if err != nil {
-		return fmt.Errorf("failed to delete storage manager. details: %s", err)
+		return fmt.Errorf("failed to delete storage manager. details: %w", err)
 	}
 
 	return nil
@@ -54,7 +53,7 @@ func getStorageManager(filter bson.D) (*StorageManager, error) {
 			return nil, nil
 		}
 
-		err = fmt.Errorf("failed to fetch storage manager. details: %s", err)
+		err = fmt.Errorf("failed to fetch storage manager. details: %w", err)
 		invalidStorageManager := StorageManager{}
 		return &invalidStorageManager, err
 	}
@@ -77,7 +76,7 @@ func GetAll() ([]StorageManager, error) {
 func UpdateByID(id string, update bson.D) error {
 	_, err := models.StorageManagerCollection.UpdateOne(context.TODO(), bson.D{{"id", id}}, bson.D{{"$set", update}})
 	if err != nil {
-		err = fmt.Errorf("failed to update storage manager %s. details: %s", id, err)
+		err = fmt.Errorf("failed to update storage manager %s. details: %w", id, err)
 		return err
 	}
 	return nil
@@ -92,8 +91,7 @@ func GetAllWithFilter(filter bson.D) ([]StorageManager, error) {
 	cursor, err := models.StorageManagerCollection.Find(context.TODO(), filter)
 
 	if err != nil {
-		err = fmt.Errorf("failed to fetch all storage manager. details: %s", err)
-		log.Println(err)
+		err = fmt.Errorf("failed to fetch all storage manager. details: %w", err)
 		return nil, err
 	}
 
@@ -103,7 +101,7 @@ func GetAllWithFilter(filter bson.D) ([]StorageManager, error) {
 
 		err = cursor.Decode(&storageManager)
 		if err != nil {
-			err = fmt.Errorf("failed to decode storage manager when fetching all storage managers. details: %s", err)
+			err = fmt.Errorf("failed to decode storage manager when fetching all storage managers. details: %w", err)
 			return nil, err
 		}
 		storageManagers = append(storageManagers, storageManager)
@@ -116,8 +114,8 @@ func GetWithNoActivities() ([]StorageManager, error) {
 	filter := bson.D{
 		{
 			"activities", bson.M{
-				"$size": 0,
-			},
+			"$size": 0,
+		},
 		},
 	}
 
@@ -130,7 +128,7 @@ func AddActivity(storageManagerID, activity string) error {
 		bson.D{{"$addToSet", bson.D{{"activities", activity}}}},
 	)
 	if err != nil {
-		err = fmt.Errorf("failed to add activity %s to storage manager %s. details: %s", activity, storageManagerID, err)
+		err = fmt.Errorf("failed to add activity %s to storage manager %s. details: %w", activity, storageManagerID, err)
 		return err
 	}
 	return nil
@@ -142,7 +140,7 @@ func RemoveActivity(storageManagerID, activity string) error {
 		bson.D{{"$pull", bson.D{{"activities", activity}}}},
 	)
 	if err != nil {
-		err = fmt.Errorf("failed to remove activity %s from storage manager %s. details: %s", activity, storageManagerID, err)
+		err = fmt.Errorf("failed to remove activity %s from storage manager %s. details: %w", activity, storageManagerID, err)
 		return err
 	}
 	return nil

@@ -2,6 +2,7 @@ package job
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"go-deploy/models"
 	"go-deploy/models/dto/body"
@@ -53,7 +54,7 @@ func CreateScheduledJob(id, userID, jobType string, runAfter time.Time, args map
 
 	_, err = models.JobCollection.InsertOne(context.TODO(), job)
 	if err != nil {
-		return fmt.Errorf("failed to create job. details: %s", err)
+		return fmt.Errorf("failed to create job. details: %w", err)
 	}
 
 	return nil
@@ -77,11 +78,11 @@ func GetByID(id string) (*Job, error) {
 	var job Job
 	err := models.JobCollection.FindOne(context.TODO(), bson.D{{"id", id}}).Decode(&job)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, nil
 		}
 
-		err = fmt.Errorf("failed to fetch vm. details: %s", err)
+		err = fmt.Errorf("failed to fetch vm. details: %w", err)
 		return nil, err
 	}
 
@@ -100,7 +101,7 @@ func GetNext() (*Job, error) {
 	var job Job
 	err := models.JobCollection.FindOneAndUpdate(context.TODO(), filter, update, opts).Decode(&job)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, nil
 		}
 
@@ -122,7 +123,7 @@ func GetNextFailed() (*Job, error) {
 	var job Job
 	err := models.JobCollection.FindOneAndUpdate(context.TODO(), filter, update, opts).Decode(&job)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, nil
 		}
 
@@ -147,7 +148,7 @@ func MarkCompleted(jobID string) error {
 
 	_, err := models.JobCollection.UpdateOne(context.Background(), filter, update)
 	if err != nil {
-		return fmt.Errorf("failed to update job. details: %s", err)
+		return fmt.Errorf("failed to update job. details: %w", err)
 	}
 
 	return nil
@@ -171,7 +172,7 @@ func MarkFailed(jobID string, reason string) error {
 
 	_, err := models.JobCollection.UpdateOne(context.Background(), filter, update)
 	if err != nil {
-		return fmt.Errorf("failed to update job. details: %s", err)
+		return fmt.Errorf("failed to update job. details: %w", err)
 	}
 
 	return nil
@@ -195,7 +196,7 @@ func MarkTerminated(jobID string, reason string) error {
 
 	_, err := models.JobCollection.UpdateOne(context.Background(), filter, update)
 	if err != nil {
-		return fmt.Errorf("failed to update job. details: %s", err)
+		return fmt.Errorf("failed to update job. details: %w", err)
 	}
 
 	return nil
@@ -207,12 +208,12 @@ func ResetRunning() error {
 
 	_, err := models.JobCollection.UpdateMany(context.Background(), filter, update)
 	if err != nil {
-		return fmt.Errorf("failed to update job. details: %s", err)
+		return fmt.Errorf("failed to update job. details: %w", err)
 	}
 
 	err = CleanUp()
 	if err != nil {
-		return fmt.Errorf("failed to clean up job. details: %s", err)
+		return fmt.Errorf("failed to clean up job. details: %w", err)
 	}
 
 	return nil
@@ -224,7 +225,7 @@ func CleanUp() error {
 
 	_, err := models.JobCollection.UpdateMany(context.Background(), filter, update)
 	if err != nil {
-		return fmt.Errorf("failed to update job. details: %s", err)
+		return fmt.Errorf("failed to update job. details: %w", err)
 	}
 
 	return nil

@@ -12,7 +12,7 @@ import (
 
 func (client *Client) RobotCreated(public *models.RobotPublic) (bool, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if robot %s is created. details: %s", public.Name, err)
+		return fmt.Errorf("failed to check if robot %s is created. details: %w", public.Name, err)
 	}
 
 	robot, err := client.HarborClient.GetRobotAccountByID(context.TODO(), int64(public.ID))
@@ -25,7 +25,7 @@ func (client *Client) RobotCreated(public *models.RobotPublic) (bool, error) {
 
 func (client *Client) ReadRobot(id int) (*models.RobotPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to read robot %d. details: %s", id, err)
+		return fmt.Errorf("failed to read robot %d. details: %w", id, err)
 	}
 
 	robot, err := client.HarborClient.GetRobotAccountByID(context.TODO(), int64(id))
@@ -51,7 +51,7 @@ func (client *Client) ReadRobot(id int) (*models.RobotPublic, error) {
 
 func (client *Client) CreateRobot(public *models.RobotPublic) (int, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create robot %s. details: %s", public.Name, err)
+		return fmt.Errorf("failed to create robot %s. details: %w", public.Name, err)
 	}
 
 	if public.ProjectID == 0 {
@@ -94,7 +94,7 @@ func (client *Client) CreateRobot(public *models.RobotPublic) (int, error) {
 
 func (client *Client) DeleteRobot(id int) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete robot %d. details: %s", id, err)
+		return fmt.Errorf("failed to delete robot %d. details: %w", id, err)
 	}
 
 	if id == 0 {
@@ -116,7 +116,7 @@ func (client *Client) DeleteRobot(id int) error {
 
 func (client *Client) DeleteAllRobots(projectID int) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete all robots for project %d. details: %s", projectID, err)
+		return fmt.Errorf("failed to delete all robots for project %d. details: %w", projectID, err)
 	}
 
 	if projectID == 0 {

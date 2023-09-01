@@ -7,6 +7,7 @@ import (
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/k8s"
 	"go-deploy/service"
+	"go-deploy/utils"
 	"go-deploy/utils/subsystemutils"
 	"log"
 	"time"
@@ -75,7 +76,7 @@ func setupContinuousGitLabLogStream(ctx context.Context, deploymentID string, ha
 			default:
 				build, err := deploymentModel.GetLastGitLabBuild(deploymentID)
 				if err != nil {
-					log.Println("failed to get last gitlab build when setting up continuous log stream. details:", err)
+					utils.PrettyPrintError(fmt.Errorf("failed to get last gitlab build when setting up continuous log stream. details: %w", err))
 					return
 				}
 

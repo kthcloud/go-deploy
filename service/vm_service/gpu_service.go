@@ -6,6 +6,7 @@ import (
 	gpuModel "go-deploy/models/sys/vm/gpu"
 	"go-deploy/pkg/conf"
 	"go-deploy/service/vm_service/internal_service"
+	"go-deploy/utils"
 	"log"
 	"sort"
 	"strings"
@@ -28,7 +29,7 @@ func GetAllGPUs(onlyAvailable bool, usePrivilegedGPUs bool) ([]gpuModel.GPU, err
 		for _, gpu := range dbAvailableGPUs {
 			hardwareAvailable, err := IsGpuHardwareAvailable(&gpu)
 			if err != nil {
-				log.Println("error checking if gpu is in use. details: ", err)
+				utils.PrettyPrintError(fmt.Errorf("error checking if gpu is in use. details: %w", err))
 				continue
 			}
 
@@ -121,7 +122,7 @@ func IsGpuPrivileged(gpuID string) (bool, error) {
 
 func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to attach gpu to vm %s. details: %s", vmID, err)
+		return fmt.Errorf("failed to attach gpu to vm %s. details: %w", vmID, err)
 	}
 	csInsufficientCapacityError := "host has capacity? false"
 
@@ -215,7 +216,7 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 
 func RepairGPUs() error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to repair gpus. details: %s", err)
+		return fmt.Errorf("failed to repair gpus. details: %w", err)
 	}
 
 	// get all gpus that are attached to a vm
@@ -299,7 +300,7 @@ func RepairGPUs() error {
 
 func DetachGPU(vmID, userID string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to detach gpu from vm %s. details: %s", vmID, err)
+		return fmt.Errorf("failed to detach gpu from vm %s. details: %w", vmID, err)
 	}
 
 	err := DetachGpuSync(vmID, userID)
@@ -317,7 +318,7 @@ func DetachGPU(vmID, userID string) error {
 
 func DetachGpuSync(vmID, userID string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to detach gpu from vm %s. details: %s", vmID, err)
+		return fmt.Errorf("failed to detach gpu from vm %s. details: %w", vmID, err)
 	}
 
 	err := internal_service.DetachGPU(vmID, internal_service.CsDetachGpuAfterStateRestore)

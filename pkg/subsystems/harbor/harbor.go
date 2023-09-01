@@ -21,7 +21,7 @@ type ClientConf struct {
 
 func New(config *ClientConf) (*Client, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create harbor client. details: %s", err)
+		return fmt.Errorf("failed to create harbor client. details: %w", err)
 	}
 
 	harborClient, err := createHarborClient(config.ApiUrl, config.Username, config.Password)
@@ -41,7 +41,7 @@ func New(config *ClientConf) (*Client, error) {
 
 func createHarborClient(apiUrl, username, password string) (*apiv2.RESTClient, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create harbor client. details: %s", err.Error())
+		return fmt.Errorf("failed to create harbor client. details: %w", err.Error())
 	}
 
 	client, err := apiv2.NewRESTClientForHost(apiUrl, username, password, &config.Options{})

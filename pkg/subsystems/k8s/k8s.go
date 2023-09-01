@@ -15,7 +15,7 @@ type ClientConf struct {
 
 func New(k8sClient *kubernetes.Clientset) (*Client, error) {
 	//makeError := func(err error) error {
-	//	return fmt.Errorf("failed to create k8s client. details: %s", err)
+	//	return fmt.Errorf("failed to create k8s client. details: %w", err)
 	//}
 
 	client := Client{

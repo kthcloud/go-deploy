@@ -86,7 +86,7 @@ func Create(id, username, email string, isAdmin bool, effectiveRole *EffectiveRo
 		}}}
 		_, err = models.UserCollection.UpdateOne(context.Background(), filter, update)
 		if err != nil {
-			return fmt.Errorf("failed to update user info for %s. details: %s", username, err)
+			return fmt.Errorf("failed to update user info for %s. details: %w", username, err)
 		}
 
 		return nil
@@ -102,7 +102,7 @@ func Create(id, username, email string, isAdmin bool, effectiveRole *EffectiveRo
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to create user info for %s. details: %s", username, err)
+		return fmt.Errorf("failed to create user info for %s. details: %w", username, err)
 	}
 
 	return nil
@@ -117,7 +117,7 @@ func GetByID(id string) (*User, error) {
 			return nil, nil
 		}
 
-		err = fmt.Errorf("failed to fetch user info by id %s. details: %s", id, err)
+		err = fmt.Errorf("failed to fetch user info by id %s. details: %w", id, err)
 		return nil, err
 	}
 
@@ -154,7 +154,7 @@ func Update(userID string, update *UserUpdate) error {
 
 	_, err := models.UserCollection.UpdateOne(context.Background(), filter, updateDoc)
 	if err != nil {
-		return fmt.Errorf("failed to update user info for %s. details: %s", userID, err)
+		return fmt.Errorf("failed to update user info for %s. details: %w", userID, err)
 	}
 
 	return nil

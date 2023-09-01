@@ -75,7 +75,7 @@ func CreateCS(params *vmModel.CreateParams) (*CsCreated, error) {
 	adminSshPublicKey := conf.Env.VM.AdminSshPublicKey
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup cs for vm %s. details: %s", params.Name, err)
+		return fmt.Errorf("failed to setup cs for vm %s. details: %w", params.Name, err)
 	}
 
 	zone := conf.Env.VM.GetZone(params.Zone)
@@ -162,7 +162,7 @@ func DeleteCS(name string) error {
 	log.Println("deleting cs for", name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete cs for vm %s. details: %s", name, err)
+		return fmt.Errorf("failed to delete cs for vm %s. details: %w", name, err)
 	}
 
 	vm, err := vmModel.GetByName(name)
@@ -228,7 +228,7 @@ func DeleteCS(name string) error {
 
 func UpdateCS(vmID string, updateParams *vmModel.UpdateParams) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to update cs for vm %s. details: %s", vmID, err)
+		return fmt.Errorf("failed to update cs for vm %s. details: %w", vmID, err)
 	}
 
 	vm, err := vmModel.GetByID(vmID)
@@ -421,7 +421,7 @@ func UpdateCS(vmID string, updateParams *vmModel.UpdateParams) error {
 
 func RepairCS(name string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to repair cs %s. details: %s", name, err)
+		return fmt.Errorf("failed to repair cs %s. details: %w", name, err)
 	}
 
 	vm, err := vmModel.GetByName(name)
@@ -506,7 +506,7 @@ func RepairCS(name string) error {
 
 func AttachGPU(gpuID, vmID string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to attach gpu %s to cs vm %s. details: %s", gpuID, vmID, err)
+		return fmt.Errorf("failed to attach gpu %s to cs vm %s. details: %w", gpuID, vmID, err)
 	}
 
 	vm, err := vmModel.GetByID(vmID)
@@ -584,7 +584,7 @@ func AttachGPU(gpuID, vmID string) error {
 
 func DetachGPU(vmID string, afterState string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to detach gpu from cs vm %s. details: %s", vmID, err)
+		return fmt.Errorf("failed to detach gpu from cs vm %s. details: %w", vmID, err)
 	}
 
 	vm, err := vmModel.GetByID(vmID)
@@ -648,7 +648,7 @@ func DetachGPU(vmID string, afterState string) error {
 
 func IsGpuAttachedCS(gpu *gpuModel.GPU) (bool, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if gpu %s:%s is attached to any cs vm. details: %s", gpu.Host, gpu.Data.Bus, err)
+		return fmt.Errorf("failed to check if gpu %s:%s is attached to any cs vm. details: %w", gpu.Host, gpu.Data.Bus, err)
 	}
 
 	zone := conf.Env.VM.GetZone(gpu.Zone)
@@ -685,7 +685,7 @@ func IsGpuAttachedCS(gpu *gpuModel.GPU) (bool, error) {
 
 func CreateSnapshotCS(vmID, name string, userCreated bool) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create snapshot for cs vm %s. details: %s", vmID, err)
+		return fmt.Errorf("failed to create snapshot for cs vm %s. details: %w", vmID, err)
 	}
 
 	vm, err := vmModel.GetByID(vmID)
@@ -774,7 +774,7 @@ func CreateSnapshotCS(vmID, name string, userCreated bool) error {
 
 func ApplySnapshotCS(vmID, snapshotID string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to apply snapshot %s for vm %s. details: %s", snapshotID, vmID, err)
+		return fmt.Errorf("failed to apply snapshot %s for vm %s. details: %w", snapshotID, vmID, err)
 	}
 
 	vm, err := vmModel.GetByID(vmID)
@@ -845,7 +845,7 @@ func ApplySnapshotCS(vmID, snapshotID string) error {
 
 func DoCommandCS(csVmID string, gpuID *string, command, zoneName string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to execute command %s for cs vm %s. details: %s", command, csVmID, err)
+		return fmt.Errorf("failed to execute command %s for cs vm %s. details: %w", command, csVmID, err)
 	}
 
 	zone := conf.Env.VM.GetZone(zoneName)
@@ -876,7 +876,7 @@ func DoCommandCS(csVmID string, gpuID *string, command, zoneName string) error {
 
 func CanStartCS(csVmID, hostName, zoneName string) (bool, string, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if cs vm %s can be started on host %s. details: %s", csVmID, hostName, err)
+		return fmt.Errorf("failed to check if cs vm %s can be started on host %s. details: %w", csVmID, hostName, err)
 	}
 
 	zone := conf.Env.VM.GetZone(zoneName)
@@ -912,7 +912,7 @@ func CanStartCS(csVmID, hostName, zoneName string) (bool, string, error) {
 
 func HostInCorrectState(hostName string, zone *enviroment.VmZone) (bool, string, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if host %s is in correct state. details: %s", zone.Name, err)
+		return fmt.Errorf("failed to check if host %s is in correct state. details: %w", zone.Name, err)
 	}
 
 	client, err := withCsClient(zone)

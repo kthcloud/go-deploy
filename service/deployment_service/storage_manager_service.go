@@ -15,7 +15,7 @@ func GetAllStorageManagers(auth *service.AuthInfo) ([]storage_manager.StorageMan
 
 	ownerStorageManager, err := storage_manager.GetByOwnerID(auth.UserID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch storage manager. details: %s", err)
+		return nil, fmt.Errorf("failed to fetch storage manager. details: %w", err)
 	}
 
 	if ownerStorageManager == nil {
@@ -32,7 +32,7 @@ func GetStorageManagerByOwnerID(ownerID string, auth *service.AuthInfo) (*storag
 
 	storageManager, err := storage_manager.GetByOwnerID(ownerID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch storage manager. details: %s", err)
+		return nil, fmt.Errorf("failed to fetch storage manager. details: %w", err)
 	}
 
 	if storageManager == nil {
@@ -45,7 +45,7 @@ func GetStorageManagerByOwnerID(ownerID string, auth *service.AuthInfo) (*storag
 func GetStorageManagerByID(id string, auth *service.AuthInfo) (*storage_manager.StorageManager, error) {
 	storageManager, err := storage_manager.GetByID(id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch storage manager. details: %s", err)
+		return nil, fmt.Errorf("failed to fetch storage manager. details: %w", err)
 	}
 
 	if storageManager == nil || (storageManager.OwnerID != auth.UserID && !auth.IsAdmin) {
@@ -57,7 +57,7 @@ func GetStorageManagerByID(id string, auth *service.AuthInfo) (*storage_manager.
 
 func CreateStorageManager(id string, params *storage_manager.CreateParams) error {
 	makeErr := func(err error) error {
-		return fmt.Errorf("failed to create storage manager. details: %s", err)
+		return fmt.Errorf("failed to create storage manager. details: %w", err)
 	}
 
 	if params == nil {
@@ -79,7 +79,7 @@ func CreateStorageManager(id string, params *storage_manager.CreateParams) error
 
 func DeleteStorageManager(id string) error {
 	makeErr := func(err error) error {
-		return fmt.Errorf("failed to delete storage manager. details: %s", err)
+		return fmt.Errorf("failed to delete storage manager. details: %w", err)
 	}
 
 	log.Println("deleting storage manager", id)
@@ -104,7 +104,7 @@ func DeleteStorageManager(id string) error {
 
 func RepairStorageManager(id string) error {
 	makeErr := func(err error) error {
-		return fmt.Errorf("failed to repair storage manager. details: %s", err)
+		return fmt.Errorf("failed to repair storage manager. details: %w", err)
 	}
 
 	storageManager, err := storage_manager.GetByID(id)

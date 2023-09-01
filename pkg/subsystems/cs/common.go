@@ -19,7 +19,7 @@ func (client *Client) AssertPublicIPAddressTags(resourceID string, tags []models
 
 func (client *Client) AssertTags(resourceID, resourceType string, tags []models.Tag) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create tags for resource %s. details: %s", resourceID, err)
+		return fmt.Errorf("failed to create tags for resource %s. details: %w", resourceID, err)
 	}
 
 	listTagsParams := client.CsClient.Resourcetags.NewListTagsParams()

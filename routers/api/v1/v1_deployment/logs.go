@@ -2,6 +2,7 @@ package v1_deployment
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -11,6 +12,7 @@ import (
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
 	"go-deploy/service/deployment_service"
+	"go-deploy/utils"
 	"go-deploy/utils/requestutils"
 	"log"
 	"net/http"
@@ -50,14 +52,15 @@ func GetLogs(c *gin.Context) {
 		handler := func(msg string) {
 			err = ws.WriteMessage(websocket.TextMessage, []byte(msg))
 			if err != nil {
-				log.Println("error writing message to websocket for deployment ", requestURI.DeploymentID, ". details:", err)
+				utils.PrettyPrintError(fmt.Errorf("error writing message to websocket for deployment %s. details: %w", requestURI.DeploymentID, err))
 				_ = ws.Close()
 			}
 		}
 
 		for {
 			_, data, readMsgErr := ws.ReadMessage()
-			if ce, ok := readMsgErr.(*websocket.CloseError); ok {
+			var ce *websocket.CloseError
+			if errors.As(readMsgErr, &ce) {
 				switch ce.Code {
 				case websocket.CloseNormalClosure,
 					websocket.CloseGoingAway,
@@ -66,10 +69,6 @@ func GetLogs(c *gin.Context) {
 					log.Println("websocket closed for deployment ", requestURI.DeploymentID)
 					return
 				}
-			} else {
-				log.Println("error reading message from websocket for deployment ", requestURI.DeploymentID, ". details:", readMsgErr)
-				_ = ws.Close()
-				return
 			}
 
 			msg := string(data)

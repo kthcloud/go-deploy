@@ -35,6 +35,6 @@ func makeApiError(readCloser io.ReadCloser, makeError func(error) error) error {
 
 	resCode := apiError.Errors[0].Code
 	resMsg := apiError.Errors[0].Message
-	requestError := fmt.Errorf("erroneous request (%s). details: %s", resCode, resMsg)
+	requestError := fmt.Errorf("erroneous request (%s). details: %w", resCode, resMsg)
 	return makeError(requestError)
 }

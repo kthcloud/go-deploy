@@ -13,13 +13,14 @@ import (
 	"go-deploy/service/deployment_service/harbor_service"
 	"go-deploy/service/deployment_service/k8s_service"
 	"go-deploy/service/job_service"
+	"go-deploy/utils"
 	"log"
 	"strings"
 )
 
 func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreate) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create deployment. details: %s", err)
+		return fmt.Errorf("failed to create deployment. details: %w", err)
 	}
 
 	// temporary hard-coded fallback
@@ -69,10 +70,10 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 		if err != nil {
 			errString := err.Error()
 			if strings.Contains(errString, "/hooks: 404 Not Found") {
-				log.Println(makeError(fmt.Errorf("webhook api not found. assuming github is not supported, inserting placeholder instead")))
+				utils.PrettyPrintError(makeError(fmt.Errorf("webhook api not found. assuming github is not supported, inserting placeholder instead")))
 				createPlaceHolderInstead = true
 			} else if strings.Contains(errString, "401 Bad credentials") {
-				log.Println(makeError(fmt.Errorf("bad credentials. assuming github credentials expired or were revoked, inserting placeholder instead")))
+				utils.PrettyPrintError(makeError(fmt.Errorf("bad credentials. assuming github credentials expired or were revoked, inserting placeholder instead")))
 				createPlaceHolderInstead = true
 			} else {
 				return makeError(err)
@@ -237,7 +238,7 @@ func CanAddActivity(deploymentID, activity string) (bool, string) {
 
 func Delete(name string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete deployment. details: %s", err)
+		return fmt.Errorf("failed to delete deployment. details: %w", err)
 	}
 
 	err := harbor_service.Delete(name)
@@ -260,7 +261,7 @@ func Delete(name string) error {
 
 func Update(id string, deploymentUpdate *body.DeploymentUpdate) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to update deployment. details: %s", err)
+		return fmt.Errorf("failed to update deployment. details: %w", err)
 	}
 
 	params := &deploymentModel.UpdateParams{}
@@ -291,7 +292,7 @@ func Update(id string, deploymentUpdate *body.DeploymentUpdate) error {
 
 func Restart(name string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to restart deployment. details: %s", err)
+		return fmt.Errorf("failed to restart deployment. details: %w", err)
 	}
 
 	deployment, err := deploymentModel.GetByName(name)
@@ -328,7 +329,7 @@ func Restart(name string) error {
 
 func Build(id string, buildParams *body.DeploymentBuild) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to build deployment. details: %s", err)
+		return fmt.Errorf("failed to build deployment. details: %w", err)
 	}
 
 	deployment, err := deploymentModel.GetByID(id)
@@ -363,7 +364,7 @@ func DoCommand(vm *deploymentModel.Deployment, command string) {
 
 func GetUsageByUserID(userID string) (*deploymentModel.Usage, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to get usage. details: %s", err)
+		return fmt.Errorf("failed to get usage. details: %w", err)
 	}
 
 	count, err := deploymentModel.CountByOwnerID(userID)
@@ -378,7 +379,7 @@ func GetUsageByUserID(userID string) (*deploymentModel.Usage, error) {
 
 func Repair(id string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to repair deployment %s. details: %s", id, err)
+		return fmt.Errorf("failed to repair deployment %s. details: %w", id, err)
 	}
 
 	deployment, err := deploymentModel.GetByID(id)
@@ -408,7 +409,7 @@ func Repair(id string) error {
 	defer func() {
 		err = deploymentModel.RemoveActivity(deployment.ID, deploymentModel.ActivityRepairing)
 		if err != nil {
-			log.Println("failed to remove activity", deploymentModel.ActivityRepairing, "from deployment", deployment.Name, "details:", err)
+			utils.PrettyPrintError(fmt.Errorf("failed to remove activity %s from deployment %s. details: %w", deploymentModel.ActivityRepairing, deployment.Name, err))
 		}
 	}()
 
@@ -440,7 +441,7 @@ func GetGitHubRepositories(token string) ([]deploymentModel.GitHubRepository, er
 
 func ValidGitHubRepository(token string, repositoryID int64) (bool, string, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to get github repository. details: %s", err)
+		return fmt.Errorf("failed to get github repository. details: %w", err)
 	}
 
 	repo, err := github_service.GetRepository(token, repositoryID)
@@ -486,14 +487,14 @@ func build(deployment *deploymentModel.Deployment, params *deploymentModel.Build
 	defer func() {
 		err = deploymentModel.RemoveActivity(deployment.ID, deploymentModel.ActivityBuilding)
 		if err != nil {
-			log.Println("failed to remove activity", deploymentModel.ActivityBuilding, "for deployment", deployment.Name, "details:", err)
+			utils.PrettyPrintError(fmt.Errorf("failed to remove activity %s for deployment %s. details: %w", deploymentModel.ActivityBuilding, deployment.Name, err))
 		}
 	}()
 
 	err = gitlab_service.CreateBuild(deployment.ID, params)
 	if err != nil {
 		// we treat building as a non-critical activity, so we don't return an error here
-		log.Println("failed to create build for deployment", deployment.Name, "details:", err)
+		utils.PrettyPrintError(fmt.Errorf("failed to create build for deployment %s details: %w", deployment.Name, err))
 	}
 
 	return nil
@@ -501,7 +502,7 @@ func build(deployment *deploymentModel.Deployment, params *deploymentModel.Build
 
 func SavePing(id string, pingResult int) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to update deployment with ping result. details: %s", err)
+		return fmt.Errorf("failed to update deployment with ping result. details: %w", err)
 	}
 
 	deployment, err := deploymentModel.GetByID(id)

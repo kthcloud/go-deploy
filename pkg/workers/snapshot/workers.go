@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"go-deploy/models/sys/job"
 	vmModel "go-deploy/models/sys/vm"
+	"go-deploy/utils"
 	"log"
 	"time"
 )
@@ -18,7 +19,7 @@ func snapshotter(ctx context.Context) {
 		case <-time.After(1 * time.Hour):
 			vms, err := vmModel.GetAll()
 			if err != nil {
-				log.Println("failed to get all vms. details: ", err)
+				utils.PrettyPrintError(fmt.Errorf("failed to get all vms. details: %w", err))
 				continue
 			}
 
@@ -28,7 +29,7 @@ func snapshotter(ctx context.Context) {
 				})
 
 				if jobExistsErr != nil {
-					log.Println("failed to check if snapshot job exists. details: ", jobExistsErr)
+					utils.PrettyPrintError(fmt.Errorf("failed to check if snapshot job exists. details: %w", jobExistsErr))
 					continue
 				}
 
@@ -46,7 +47,7 @@ func snapshotter(ctx context.Context) {
 					})
 
 					if jobCreateErr != nil {
-						log.Println("failed to create snapshot job. details: ", err)
+						utils.PrettyPrintError(fmt.Errorf("failed to create snapshot job. details: %w", err))
 						continue
 					}
 				}

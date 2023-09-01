@@ -13,7 +13,7 @@ func Create(deploymentID, userID string, params *deploymentModel.CreateParams) e
 	log.Println("setting up harbor for", params.Name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup harbor for deployment %s. details: %s", params.Name, err)
+		return fmt.Errorf("failed to setup harbor for deployment %s. details: %w", params.Name, err)
 	}
 
 	client, err := withHarborClient()
@@ -74,7 +74,7 @@ func Delete(name string) error {
 	log.Println("deleting harbor for", name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete harbor for deployment %s. details: %s", name, err)
+		return fmt.Errorf("failed to delete harbor for deployment %s. details: %w", name, err)
 	}
 
 	client, err := withHarborClient()
@@ -130,7 +130,7 @@ func Delete(name string) error {
 
 func Repair(name string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to repair harbor %s. details: %s", name, err)
+		return fmt.Errorf("failed to repair harbor %s. details: %w", name, err)
 	}
 
 	deployment, err := deploymentModel.GetByName(name)

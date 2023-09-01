@@ -16,7 +16,7 @@ type ClientConf struct {
 
 func New(config *ClientConf) (*Client, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create gitlab client. details: %s", err)
+		return fmt.Errorf("failed to create gitlab client. details: %w", err)
 	}
 
 	gitlabClient, err := gitlab.NewClient(config.Token, gitlab.WithBaseURL(config.URL))

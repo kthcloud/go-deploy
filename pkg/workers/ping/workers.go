@@ -2,9 +2,11 @@ package ping
 
 import (
 	"context"
+	"fmt"
 	deploymentModels "go-deploy/models/sys/deployment"
 	"go-deploy/pkg/conf"
 	"go-deploy/service/deployment_service"
+	"go-deploy/utils"
 	"log"
 	"net/http"
 	"time"
@@ -45,7 +47,7 @@ func updateOneDeploymentPing(deployment deploymentModels.Deployment, url string)
 	code, err := ping(url)
 
 	if err != nil {
-		log.Println("error fetching deployment status ping. details:", err)
+		utils.PrettyPrintError(fmt.Errorf("error fetching deployment status ping. details: %w", err))
 	}
 
 	_ = deployment_service.SavePing(deployment.ID, code)

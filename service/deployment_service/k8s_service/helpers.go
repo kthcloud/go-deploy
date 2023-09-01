@@ -11,6 +11,7 @@ import (
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/k8s"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
+	"go-deploy/utils"
 	"log"
 	"reflect"
 	"strconv"
@@ -139,7 +140,7 @@ func createOAuthProxyDeploymentPublic(namespace, name, userID string, zone *envi
 
 	user, err := userModel.GetByID(userID)
 	if err != nil {
-		log.Println("failed to get user by id when creating oauth proxy deployment public. details:", err)
+		utils.PrettyPrintError(fmt.Errorf("failed to get user by id when creating oauth proxy deployment public. details: %w", err))
 		return nil
 	}
 

@@ -64,7 +64,7 @@ func (client *Client) waitDeploymentReady(ctx context.Context, namespace, deploy
 
 func (client *Client) ReadDeployment(namespace, id string) (*models.DeploymentPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to read deployment %s. details: %s", id, err)
+		return fmt.Errorf("failed to read deployment %s. details: %w", id, err)
 	}
 
 	if id == "" {
@@ -101,7 +101,7 @@ func (client *Client) ReadDeployment(namespace, id string) (*models.DeploymentPu
 
 func (client *Client) CreateDeployment(public *models.DeploymentPublic) (string, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create deployment %s. details: %s", public.Name, err)
+		return fmt.Errorf("failed to create deployment %s. details: %w", public.Name, err)
 	}
 
 	if public.Name == "" {
@@ -147,7 +147,7 @@ func (client *Client) CreateDeployment(public *models.DeploymentPublic) (string,
 
 func (client *Client) UpdateDeployment(public *models.DeploymentPublic) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to update deployment %s. details: %s", public.Name, err)
+		return fmt.Errorf("failed to update deployment %s. details: %w", public.Name, err)
 	}
 
 	if public.ID == "" {
@@ -192,7 +192,7 @@ func (client *Client) UpdateDeployment(public *models.DeploymentPublic) error {
 
 func (client *Client) DeleteDeployment(namespace, id string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete deployment %s. details: %s", id, err)
+		return fmt.Errorf("failed to delete deployment %s. details: %w", id, err)
 	}
 
 	if id == "" {
@@ -235,7 +235,7 @@ func (client *Client) DeleteDeployment(namespace, id string) error {
 
 func (client *Client) RestartDeployment(public *models.DeploymentPublic) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to restart deployment %s. details: %s", public.Name, err)
+		return fmt.Errorf("failed to restart deployment %s. details: %w", public.Name, err)
 	}
 
 	namespaceCreated, err := client.NamespaceCreated(public.Namespace)

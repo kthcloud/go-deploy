@@ -2,6 +2,7 @@ package repair
 
 import (
 	"context"
+	"fmt"
 	"github.com/google/uuid"
 	deploymentModel "go-deploy/models/sys/deployment"
 	storageManagerModel "go-deploy/models/sys/deployment/storage_manager"
@@ -9,6 +10,7 @@ import (
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/pkg/conf"
 	"go-deploy/service/job_service"
+	"go-deploy/utils"
 	"log"
 	"time"
 )
@@ -22,7 +24,7 @@ func deploymentRepairer(ctx context.Context) {
 		case <-time.After(time.Duration(conf.Env.Deployment.RepairInterval) * time.Second):
 			restarting, err := deploymentModel.GetByActivity(deploymentModel.ActivityRestarting)
 			if err != nil {
-				log.Println("error fetching restarting deployments. details: ", err)
+				utils.PrettyPrintError(fmt.Errorf("error fetching restarting deployments. details: %w", err))
 				continue
 			}
 
@@ -33,14 +35,14 @@ func deploymentRepairer(ctx context.Context) {
 					log.Printf("removing restarting activity from deployment %s\n", deployment.Name)
 					err = deploymentModel.RemoveActivity(deployment.ID, deploymentModel.ActivityRestarting)
 					if err != nil {
-						log.Printf("failed to remove restarting activity from deployment %s. details: %s\n", deployment.Name, err.Error())
+						log.Printf("failed to remove restarting activity from deployment %s. details: %w\n", deployment.Name, err)
 					}
 				}
 			}
 
 			withNoActivities, err := deploymentModel.GetWithNoActivities()
 			if err != nil {
-				log.Println("error fetching deployments with no activities. details: ", err)
+				utils.PrettyPrintError(fmt.Errorf("error fetching deployments with no activities. details: %w", err))
 				continue
 			}
 
@@ -77,7 +79,7 @@ func storageManagerRepairer(ctx context.Context) {
 		case <-time.After(time.Duration(conf.Env.Deployment.RepairInterval) * time.Second):
 			withNoActivities, err := storageManagerModel.GetWithNoActivities()
 			if err != nil {
-				log.Println("error fetching storage managers with no activities. details: ", err)
+				utils.PrettyPrintError(fmt.Errorf("error fetching storage managers with no activities. details: %w", err))
 				continue
 			}
 
@@ -91,7 +93,7 @@ func storageManagerRepairer(ctx context.Context) {
 						"id": storageManager.ID,
 					})
 					if err != nil {
-						log.Println("failed to create repair job for storage manager", storageManager.ID, ". details:", err.Error())
+						utils.PrettyPrintError(fmt.Errorf("failed to create repair job for storage manager %s. details: %w", storageManager.ID, err))
 						continue
 					}
 
@@ -112,7 +114,7 @@ func vmRepairer(ctx context.Context) {
 		case <-time.After(time.Duration(conf.Env.VM.RepairInterval) * time.Second):
 			withNoActivities, err := vmModel.GetWithNoActivities()
 			if err != nil {
-				log.Println("error fetching vms with no activities. details: ", err)
+				utils.PrettyPrintError(fmt.Errorf("error fetching vms with no activities. details: %w", err))
 				continue
 			}
 

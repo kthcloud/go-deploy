@@ -9,7 +9,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"log"
 	"time"
 )
 
@@ -45,7 +44,7 @@ func Create(vmID, owner, manager string, params *CreateParams) (bool, error) {
 		{"$setOnInsert", vm},
 	}, options.Update().SetUpsert(true))
 	if err != nil {
-		return false, fmt.Errorf("failed to create vm. details: %s", err)
+		return false, fmt.Errorf("failed to create vm. details: %w", err)
 	}
 
 	if result.UpsertedCount == 0 {
@@ -74,7 +73,7 @@ func getVM(filter bson.D) (*VM, error) {
 			return nil, nil
 		}
 
-		err = fmt.Errorf("failed to fetch vm. details: %s", err)
+		err = fmt.Errorf("failed to fetch vm. details: %w", err)
 		return nil, err
 	}
 
@@ -106,8 +105,7 @@ func GetByOwnerID(ownerID string) ([]VM, error) {
 	cursor, err := models.VmCollection.Find(context.TODO(), bson.D{{"ownerId", ownerID}})
 
 	if err != nil {
-		err = fmt.Errorf("failed to find vms from owner ID %s. details: %s", ownerID, err)
-		log.Println(err)
+		err = fmt.Errorf("failed to find vms from owner ID %s. details: %w", ownerID, err)
 		return nil, err
 	}
 
@@ -117,8 +115,7 @@ func GetByOwnerID(ownerID string) ([]VM, error) {
 
 		err = cursor.Decode(&vm)
 		if err != nil {
-			err = fmt.Errorf("failed to fetch vm when fetching all vms from owner ID %s. details: %s", ownerID, err)
-			log.Println(err)
+			err = fmt.Errorf("failed to fetch vm when fetching all vms from owner ID %s. details: %w", ownerID, err)
 			return nil, err
 		}
 		vms = append(vms, vm)
@@ -131,8 +128,7 @@ func CountByOwnerID(ownerID string) (int, error) {
 	count, err := models.VmCollection.CountDocuments(context.TODO(), bson.D{{"ownerId", ownerID}})
 
 	if err != nil {
-		err = fmt.Errorf("failed to count vms by owner ID %s. details: %s", ownerID, err)
-		log.Println(err)
+		err = fmt.Errorf("failed to count vms by owner ID %s. details: %w", ownerID, err)
 		return 0, err
 	}
 
@@ -142,8 +138,7 @@ func CountByOwnerID(ownerID string) (int, error) {
 func DeleteByID(vmID, userID string) error {
 	_, err := models.VmCollection.DeleteOne(context.TODO(), bson.D{{"id", vmID}, {"ownerId", userID}})
 	if err != nil {
-		err = fmt.Errorf("failed to delete vm %s. details: %s", vmID, err)
-		log.Println(err)
+		err = fmt.Errorf("failed to delete vm %s. details: %w", vmID, err)
 		return err
 	}
 	return nil
@@ -165,7 +160,7 @@ func UpdateByID(id string, update *UpdateParams) error {
 		bson.D{{"$set", updateData}},
 	)
 	if err != nil {
-		return fmt.Errorf("failed to update vm %s. details: %s", id, err)
+		return fmt.Errorf("failed to update vm %s. details: %w", id, err)
 	}
 
 	return nil
@@ -174,8 +169,7 @@ func UpdateByID(id string, update *UpdateParams) error {
 func UpdateWithBsonByID(id string, update bson.D) error {
 	_, err := models.VmCollection.UpdateOne(context.TODO(), bson.D{{"id", id}}, bson.D{{"$set", update}})
 	if err != nil {
-		err = fmt.Errorf("failed to update vm %s. details: %s", id, err)
-		log.Println(err)
+		err = fmt.Errorf("failed to update vm %s. details: %w", id, err)
 		return err
 	}
 	return nil
@@ -184,8 +178,7 @@ func UpdateWithBsonByID(id string, update bson.D) error {
 func UpdateByName(name string, update bson.D) error {
 	_, err := models.VmCollection.UpdateOne(context.TODO(), bson.D{{"name", name}}, bson.D{{"$set", update}})
 	if err != nil {
-		err = fmt.Errorf("failed to update vm %s. details: %s", name, err)
-		log.Println(err)
+		err = fmt.Errorf("failed to update vm %s. details: %w", name, err)
 		return err
 	}
 	return nil
@@ -204,8 +197,7 @@ func GetAllWithFilter(filter bson.D) ([]VM, error) {
 	cursor, err := models.VmCollection.Find(context.TODO(), filter)
 
 	if err != nil {
-		err = fmt.Errorf("failed to fetch all vms. details: %s", err)
-		log.Println(err)
+		err = fmt.Errorf("failed to fetch all vms. details: %w", err)
 		return nil, err
 	}
 
@@ -215,8 +207,7 @@ func GetAllWithFilter(filter bson.D) ([]VM, error) {
 
 		err = cursor.Decode(&vm)
 		if err != nil {
-			err = fmt.Errorf("failed to decode vm when fetching all vm. details: %s", err)
-			log.Println(err)
+			err = fmt.Errorf("failed to decode vm when fetching all vm. details: %w", err)
 			return nil, err
 		}
 		vms = append(vms, vm)
@@ -229,8 +220,8 @@ func GetByActivity(activity string) ([]VM, error) {
 	filter := bson.D{
 		{
 			"activities", bson.M{
-				"$in": bson.A{activity},
-			},
+			"$in": bson.A{activity},
+		},
 		},
 	}
 
@@ -241,8 +232,8 @@ func GetWithNoActivities() ([]VM, error) {
 	filter := bson.D{
 		{
 			"activities", bson.M{
-				"$size": 0,
-			},
+			"$size": 0,
+		},
 		},
 	}
 
@@ -254,8 +245,8 @@ func GetWithGPU() ([]VM, error) {
 	filter := bson.D{
 		{
 			"gpuId", bson.M{
-				"$ne": "",
-			},
+			"$ne": "",
+		},
 		},
 	}
 
@@ -268,7 +259,7 @@ func AddActivity(vmID, activity string) error {
 		bson.D{{"$addToSet", bson.D{{"activities", activity}}}},
 	)
 	if err != nil {
-		err = fmt.Errorf("failed to add activity %s to vm %s. details: %s", activity, vmID, err)
+		err = fmt.Errorf("failed to add activity %s to vm %s. details: %w", activity, vmID, err)
 		return err
 	}
 	return nil
@@ -280,7 +271,7 @@ func ClearActivities(vmID string) error {
 		bson.D{{"$set", bson.D{{"activities", bson.A{}}}}},
 	)
 	if err != nil {
-		err = fmt.Errorf("failed to clear activities of vm %s. details: %s", vmID, err)
+		err = fmt.Errorf("failed to clear activities of vm %s. details: %w", vmID, err)
 		return err
 	}
 	return nil
@@ -292,7 +283,7 @@ func RemoveActivity(vmID, activity string) error {
 		bson.D{{"$pull", bson.D{{"activities", activity}}}},
 	)
 	if err != nil {
-		err = fmt.Errorf("failed to remove activity %s from vm %s. details: %s", activity, vmID, err)
+		err = fmt.Errorf("failed to remove activity %s from vm %s. details: %w", activity, vmID, err)
 		return err
 	}
 	return nil

@@ -9,7 +9,7 @@ import (
 
 func (client *Client) ReadLastJob(projectID int) (*models.JobPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to read last job. details: %s", err)
+		return fmt.Errorf("failed to read last job. details: %w", err)
 	}
 
 	jobs, _, err := client.GitLabClient.Jobs.ListProjectJobs(projectID, &gitlab.ListJobsOptions{})
@@ -26,7 +26,7 @@ func (client *Client) ReadLastJob(projectID int) (*models.JobPublic, error) {
 
 func (client *Client) GetJobTrace(projectID int, jobID int) (string, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to get job trace. details: %s", err)
+		return fmt.Errorf("failed to get job trace. details: %w", err)
 	}
 
 	reader, _, err := client.GitLabClient.Jobs.GetTraceFile(projectID, jobID, nil)

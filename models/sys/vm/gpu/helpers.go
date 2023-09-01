@@ -5,10 +5,10 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/goharbor/harbor/src/lib/log"
 	"go-deploy/models"
 	"go-deploy/models/dto/body"
 	vmModel "go-deploy/models/sys/vm"
+	"go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -63,7 +63,7 @@ func Create(id, host string, data GpuData, zone string) error {
 
 	_, err = models.GpuCollection.InsertOne(context.TODO(), gpu)
 	if err != nil {
-		err = fmt.Errorf("failed to create gpu. details: %s", err)
+		err = fmt.Errorf("failed to create gpu. details: %w", err)
 		return err
 	}
 
@@ -74,11 +74,11 @@ func GetByID(id string) (*GPU, error) {
 	var gpu GPU
 	err := models.GpuCollection.FindOne(context.TODO(), bson.D{{"id", id}}).Decode(&gpu)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, nil
 		}
 
-		err = fmt.Errorf("failed to fetch gpu. details: %s", err)
+		err = fmt.Errorf("failed to fetch gpu. details: %w", err)
 		return nil, err
 	}
 
@@ -185,7 +185,7 @@ func GetAllAvailable(excludedHosts, excludedGPUs []string) ([]GPU, error) {
 func Delete(gpuID string) error {
 	err := models.GpuCollection.FindOneAndDelete(context.Background(), bson.D{{"id", gpuID}}).Err()
 	if err != nil {
-		return fmt.Errorf("failed to delete gpu. details: %s", err)
+		return fmt.Errorf("failed to delete gpu. details: %w", err)
 	}
 
 	return nil
@@ -232,12 +232,12 @@ func Attach(gpuID, vmID, user string, end time.Time) (bool, error) {
 
 			err = models.GpuCollection.FindOneAndUpdate(context.Background(), filter, update, opts).Decode(&gpu)
 			if err != nil {
-				if err == mongo.ErrNoDocuments {
+				if errors.Is(err, mongo.ErrNoDocuments) {
 					// this is not treated as an error, just another instance snatched the gpu before this one
 					return false, nil
 				}
 
-				err = fmt.Errorf("failed to update gpu. details: %s", err)
+				err = fmt.Errorf("failed to update gpu. details: %w", err)
 				return false, err
 			}
 		}
@@ -282,7 +282,8 @@ func Attach(gpuID, vmID, user string, end time.Time) (bool, error) {
 			bson.D{{"id", gpuID}},
 			bson.M{"$set": bson.M{"lease": GpuLease{}}},
 		)
-		log.Error("failed to remove lease after vm update failed. system is now in an inconsistent state. please fix manually. vm id:", vmID, " gpu id:", gpuID, ". details: %s", err)
+		err := fmt.Errorf("failed to remove lease after vm update failed. system is now in an inconsistent state. please fix manually. vm id: %s gpu id: %s. details: %w", vmID, gpuID, err)
+		utils.PrettyPrintError(err)
 		return false, err
 	}
 
@@ -343,7 +344,8 @@ func Detach(vmID, userID string) error {
 			bson.D{{"id", gpu.ID}},
 			bson.M{"$set": bson.M{"lease": GpuLease{}}},
 		)
-		log.Error("failed to remove lease after vm update failed. system is now in an inconsistent state. please fix manually. vm id:", vmID, " gpu id:", gpu.ID, ". details: %s", err)
+		err := fmt.Errorf("failed to remove lease after vm update failed. system is now in an inconsistent state. please fix manually. vm id: %s gpu id: %s. details: %w", vmID, gpu.ID, err)
+		utils.PrettyPrintError(err)
 	}
 
 	return nil

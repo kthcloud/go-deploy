@@ -82,7 +82,7 @@ func appDeletedK8s(deployment *deployment.Deployment, app *deployment.App) bool 
 
 func k8sCreated(deployment *deployment.Deployment) (bool, error) {
 	_ = func(err error) error {
-		return fmt.Errorf("failed to check if k8s setup is created for deployment %s. details: %s", deployment.Name, err)
+		return fmt.Errorf("failed to check if k8s setup is created for deployment %s. details: %w", deployment.Name, err)
 	}
 
 	for _, app := range deployment.Apps {
@@ -97,7 +97,7 @@ func k8sCreated(deployment *deployment.Deployment) (bool, error) {
 
 func k8sDeleted(deployment *deployment.Deployment) (bool, error) {
 	_ = func(err error) error {
-		return fmt.Errorf("failed to check if k8s setup is deleted for deployment %s. details: %s", deployment.Name, err)
+		return fmt.Errorf("failed to check if k8s setup is deleted for deployment %s. details: %w", deployment.Name, err)
 	}
 
 	for _, app := range deployment.Apps {
@@ -112,7 +112,7 @@ func k8sDeleted(deployment *deployment.Deployment) (bool, error) {
 
 func harborCreated(deployment *deployment.Deployment) (bool, error) {
 	_ = func(err error) error {
-		return fmt.Errorf("failed to check if harbor is created for deployment %s. details: %s", deployment.Name, err)
+		return fmt.Errorf("failed to check if harbor is created for deployment %s. details: %w", deployment.Name, err)
 	}
 
 	harbor := &deployment.Subsystems.Harbor
@@ -124,7 +124,7 @@ func harborCreated(deployment *deployment.Deployment) (bool, error) {
 
 func harborDeleted(deployment *deployment.Deployment) (bool, error) {
 	_ = func(err error) error {
-		return fmt.Errorf("failed to check if harbor is created for deployment %s. details: %s", deployment.Name, err)
+		return fmt.Errorf("failed to check if harbor is created for deployment %s. details: %w", deployment.Name, err)
 	}
 
 	harbor := &deployment.Subsystems.Harbor
@@ -136,7 +136,7 @@ func harborDeleted(deployment *deployment.Deployment) (bool, error) {
 
 func gitHubCreated(deployment *deployment.Deployment) (bool, error) {
 	_ = func(err error) error {
-		return fmt.Errorf("failed to check if github is created for deployment %s. details: %s", deployment.Name, err)
+		return fmt.Errorf("failed to check if github is created for deployment %s. details: %w", deployment.Name, err)
 	}
 
 	github := &deployment.Subsystems.GitHub
@@ -149,7 +149,7 @@ func gitHubCreated(deployment *deployment.Deployment) (bool, error) {
 
 func gitHubDeleted(deployment *deployment.Deployment) (bool, error) {
 	_ = func(err error) error {
-		return fmt.Errorf("failed to check if github is created for deployment %s. details: %s", deployment.Name, err)
+		return fmt.Errorf("failed to check if github is created for deployment %s. details: %w", deployment.Name, err)
 	}
 
 	github := &deployment.Subsystems.GitHub

@@ -7,6 +7,7 @@ import (
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/gitlab"
 	"go-deploy/pkg/subsystems/gitlab/models"
+	"go-deploy/utils"
 	"go-deploy/utils/subsystemutils"
 	"log"
 	"strings"
@@ -17,7 +18,7 @@ func CreateBuild(id string, params *deploymentModel.BuildParams) error {
 	log.Println("creating build with gitlab for deployment", id)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to build deployment with gitlab. details: %s", err)
+		return fmt.Errorf("failed to build deployment with gitlab. details: %w", err)
 	}
 
 	deployment, err := deploymentModel.GetByID(id)
@@ -52,7 +53,7 @@ func CreateBuild(id string, params *deploymentModel.BuildParams) error {
 	defer func() {
 		err = client.DeleteProject(projectID)
 		if err != nil {
-			log.Println("failed to delete gitlab project", projectID, "after build. details:", err)
+			utils.PrettyPrintError(fmt.Errorf("failed to delete gitlab project %d after build. details: %w", projectID, err))
 		}
 	}()
 

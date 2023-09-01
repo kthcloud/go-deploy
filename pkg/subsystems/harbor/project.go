@@ -12,7 +12,7 @@ import (
 
 func (client *Client) ProjectCreated(id int) (bool, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if project %d is created. details: %s", id, err)
+		return fmt.Errorf("failed to check if project %d is created. details: %w", id, err)
 	}
 
 	project, err := client.HarborClient.GetProject(context.TODO(), strconv.Itoa(id))
@@ -34,7 +34,7 @@ func (client *Client) ProjectCreated(id int) (bool, error) {
 
 func (client *Client) ProjectDeleted(id int) (bool, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if project %d is created. details: %s", id, err)
+		return fmt.Errorf("failed to check if project %d is created. details: %w", id, err)
 	}
 
 	_, err := client.HarborClient.GetProject(context.TODO(), strconv.Itoa(id))
@@ -50,7 +50,7 @@ func (client *Client) ProjectDeleted(id int) (bool, error) {
 
 func (client *Client) ReadProject(id int) (*models.ProjectPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to read project %d. details: %s", id, err.Error())
+		return fmt.Errorf("failed to read project %d. details: %w", id, err.Error())
 	}
 
 	project, err := client.HarborClient.GetProject(context.TODO(), strconv.Itoa(id))
@@ -71,7 +71,7 @@ func (client *Client) ReadProject(id int) (*models.ProjectPublic, error) {
 
 func (client *Client) CreateProject(public *models.ProjectPublic) (int, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create project %s. details: %s", public.Name, err.Error())
+		return fmt.Errorf("failed to create project %s. details: %w", public.Name, err.Error())
 	}
 
 	if public.Name == "" {
@@ -106,7 +106,7 @@ func (client *Client) CreateProject(public *models.ProjectPublic) (int, error) {
 
 func (client *Client) DeleteProject(id int) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete project %d. details: %s", id, err)
+		return fmt.Errorf("failed to delete project %d. details: %w", id, err)
 	}
 
 	err := client.HarborClient.DeleteProject(context.TODO(), strconv.Itoa(id))
@@ -122,7 +122,7 @@ func (client *Client) DeleteProject(id int) error {
 
 func (client *Client) UpdateProject(public *models.ProjectPublic) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to update project %s. details: %s", public.Name, err)
+		return fmt.Errorf("failed to update project %s. details: %w", public.Name, err)
 	}
 
 	requestBody := models.CreateProjectUpdateParamsFromPublic(public)
@@ -139,7 +139,7 @@ func (client *Client) UpdateProject(public *models.ProjectPublic) error {
 
 func (client *Client) IsProjectEmpty(id int) (bool, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if project %d is empty. details: %s", id, err)
+		return fmt.Errorf("failed to check if project %d is empty. details: %w", id, err)
 	}
 
 	project, err := client.HarborClient.GetProject(context.TODO(), strconv.Itoa(id))

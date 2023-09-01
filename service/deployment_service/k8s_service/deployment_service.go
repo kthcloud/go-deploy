@@ -17,7 +17,7 @@ func Create(deploymentID string, userID string, params *deploymentModel.CreatePa
 	log.Println("setting up k8s for", params.Name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup k8s for deployment %s. details: %s", params.Name, err)
+		return fmt.Errorf("failed to setup k8s for deployment %s. details: %w", params.Name, err)
 	}
 
 	deployment, err := deploymentModel.GetByID(deploymentID)
@@ -159,7 +159,7 @@ func Delete(name string) error {
 	log.Println("deleting k8s for", name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete k8s for deployment %s. details: %s", name, err)
+		return fmt.Errorf("failed to delete k8s for deployment %s. details: %w", name, err)
 	}
 
 	deployment, err := deploymentModel.GetByName(name)
@@ -257,7 +257,7 @@ func Delete(name string) error {
 
 func Update(name string, params *deploymentModel.UpdateParams) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to update k8s for deployment %s. details: %s", name, err)
+		return fmt.Errorf("failed to update k8s for deployment %s. details: %w", name, err)
 	}
 
 	if params == nil || (params.Envs == nil && params.Private == nil) {
@@ -391,7 +391,7 @@ func Update(name string, params *deploymentModel.UpdateParams) error {
 
 func Restart(name string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to restart k8s %s. details: %s", name, err)
+		return fmt.Errorf("failed to restart k8s %s. details: %w", name, err)
 	}
 
 	deployment, err := deploymentModel.GetByName(name)
@@ -430,7 +430,7 @@ func Restart(name string) error {
 
 func Repair(name string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to repair k8s %s. details: %s", name, err)
+		return fmt.Errorf("failed to repair k8s %s. details: %w", name, err)
 	}
 
 	deployment, err := deploymentModel.GetByName(name)

@@ -7,7 +7,7 @@ import (
 
 func Create(id, userID, jobType string, args map[string]interface{}) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create job. details: %s", err)
+		return fmt.Errorf("failed to create job. details: %w", err)
 	}
 
 	err := jobModel.CreateJob(id, userID, jobType, args)

@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"go-deploy/utils"
 	"io"
-	"log"
 	"net/http"
 )
 
@@ -39,7 +39,7 @@ func doRequestInternal(req *http.Request) (*http.Response, error) {
 
 	res, err := client.Do(req)
 	if err != nil {
-		err = fmt.Errorf("failed to do http request. details: %s", err)
+		err = fmt.Errorf("failed to do http request. details: %w", err)
 		return nil, err
 	}
 
@@ -108,7 +108,7 @@ func ParseBody[T any](closer io.ReadCloser, out *T) error {
 func CloseBody(Body io.ReadCloser) {
 	err := Body.Close()
 	if err != nil {
-		log.Println("failed to close response body. details: ", err)
+		utils.PrettyPrintError(fmt.Errorf("failed to close response body. details: %w", err))
 	}
 }
 
@@ -116,7 +116,7 @@ func ReadBody(responseBody io.ReadCloser) ([]byte, error) {
 	// read body
 	body, err := io.ReadAll(responseBody)
 	if err != nil {
-		err = fmt.Errorf("failed to read response body. details: %s", err)
+		err = fmt.Errorf("failed to read response body. details: %w", err)
 		return nil, err
 	}
 	return body, nil
@@ -125,7 +125,7 @@ func ReadBody(responseBody io.ReadCloser) ([]byte, error) {
 func ParseJson[T any](data []byte, out *T) error {
 	err := json.Unmarshal(data, out)
 	if err != nil {
-		err = fmt.Errorf("failed to parse json data. details: %s", err)
+		err = fmt.Errorf("failed to parse json data. details: %w", err)
 		return err
 	}
 	return nil

@@ -27,7 +27,7 @@ func getUri() string {
 
 func Setup() {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup database. details: %s", err)
+		return fmt.Errorf("failed to setup database. details: %w", err)
 	}
 
 	// Connect to db
@@ -68,7 +68,7 @@ func findCollection(collectionName string) *mongo.Collection {
 
 func Shutdown() {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to shutdown database. details: %s", err)
+		return fmt.Errorf("failed to shutdown database. details: %w", err)
 	}
 
 	DeploymentCollection = nil

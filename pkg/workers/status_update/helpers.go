@@ -29,7 +29,7 @@ func withClient(zoneName string) (*cs.Client, error) {
 
 func fetchCsStatus(vm *vmModel.VM) (int, string, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to get status for cs vm %s. details: %s", vm.Name, err)
+		return fmt.Errorf("failed to get status for cs vm %s. details: %w", vm.Name, err)
 	}
 
 	unknownMsg := status_codes.GetMsg(status_codes.ResourceUnknown)
