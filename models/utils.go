@@ -82,3 +82,16 @@ func CountResources(collection *mongo.Collection, filter bson.D, includeDeleted 
 	}
 	return int(count), nil
 }
+
+func UpdateOneResource(collection *mongo.Collection, filter bson.D, update bson.D, includeDeleted bool) error {
+	if !includeDeleted {
+		filter = addExcludeDeleted(filter)
+	}
+
+	_, err := collection.UpdateOne(context.Background(), filter, update)
+	if err != nil {
+		return fmt.Errorf("failed to update resource. details: %w", err)
+	}
+
+	return nil
+}

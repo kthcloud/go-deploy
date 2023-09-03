@@ -29,21 +29,11 @@ func (client *ResourceClient[T]) ExistsByID(id string) (bool, error) {
 	return count > 0, nil
 }
 func (client *ResourceClient[T]) UpdateWithBsonByID(id string, update bson.D) error {
-	_, err := client.Collection.UpdateOne(context.TODO(), bson.D{{"id", id}}, bson.D{{"$set", update}})
-	if err != nil {
-		err = fmt.Errorf("failed to update deployment %s. details: %w", id, err)
-		return err
-	}
-	return nil
+	return models.UpdateOneResource(client.Collection, bson.D{{"id", id}}, bson.D{{"$set", update}}, client.IncludeDeleted)
 }
 
 func (client *ResourceClient[T]) UpdateWithBsonByName(name string, update bson.D) error {
-	_, err := client.Collection.UpdateOne(context.TODO(), bson.D{{"name", name}}, bson.D{{"$set", update}})
-	if err != nil {
-		err = fmt.Errorf("failed to update deployment %s. details: %w", name, err)
-		return err
-	}
-	return nil
+	return models.UpdateOneResource(client.Collection, bson.D{{"name", name}}, bson.D{{"$set", update}}, client.IncludeDeleted)
 }
 
 func (client *ResourceClient[T]) DeleteByID(id string) error {
