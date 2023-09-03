@@ -67,19 +67,19 @@ func migrateToK8sMaps() {
 		}
 
 		if migrated {
-			err := deploymentModel.UpdateByID(deployment.ID, bson.D{
+			err := deploymentModel.New().UpdateWithBsonByID(deployment.ID, bson.D{
 				{"subsystems.k8s.deploymentMap", deployment.Subsystems.K8s.DeploymentMap},
 			})
 			if err != nil {
 				panic(err)
 			}
-			err = deploymentModel.UpdateByID(deployment.ID, bson.D{
+			err = deploymentModel.New().UpdateWithBsonByID(deployment.ID, bson.D{
 				{"subsystems.k8s.serviceMap", deployment.Subsystems.K8s.ServiceMap},
 			})
 			if err != nil {
 				panic(err)
 			}
-			err = deploymentModel.UpdateByID(deployment.ID, bson.D{
+			err = deploymentModel.New().UpdateWithBsonByID(deployment.ID, bson.D{
 				{"subsystems.k8s.ingressMap", deployment.Subsystems.K8s.IngressMap},
 			})
 			if err != nil {
@@ -120,7 +120,7 @@ func migrateToDeploymentApps() {
 			InitCommands: deployment.InitCommands,
 		}
 
-		err = deploymentModel.UpdateByID(deployment.ID, bson.D{
+		err = deploymentModel.New().UpdateWithBsonByID(deployment.ID, bson.D{
 			{"apps", deployment.Apps},
 		})
 		if err != nil {

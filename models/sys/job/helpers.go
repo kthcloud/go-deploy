@@ -27,12 +27,12 @@ func (job *Job) ToDTO(statusMessage string) body.JobRead {
 	}
 }
 
-func CreateJob(id, userID, jobType string, args map[string]interface{}) error {
-	return CreateScheduledJob(id, userID, jobType, time.Now(), args)
+func (client *Client) Create(id, userID, jobType string, args map[string]interface{}) error {
+	return client.CreateScheduled(id, userID, jobType, time.Now(), args)
 }
 
-func CreateScheduledJob(id, userID, jobType string, runAfter time.Time, args map[string]interface{}) error {
-	currentJob, err := GetByID(id)
+func (client *Client) CreateScheduled(id, userID, jobType string, runAfter time.Time, args map[string]interface{}) error {
+	currentJob, err := client.GetByID(id)
 	if err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func CreateScheduledJob(id, userID, jobType string, runAfter time.Time, args map
 	return nil
 }
 
-func Exists(jobType string, args map[string]interface{}) (bool, error) {
+func (client *Client) Exists(jobType string, args map[string]interface{}) (bool, error) {
 	filter := bson.D{
 		{"type", jobType},
 		{"args", args},
@@ -74,22 +74,7 @@ func Exists(jobType string, args map[string]interface{}) (bool, error) {
 	return count > 0, nil
 }
 
-func GetByID(id string) (*Job, error) {
-	var job Job
-	err := models.JobCollection.FindOne(context.TODO(), bson.D{{"id", id}}).Decode(&job)
-	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, nil
-		}
-
-		err = fmt.Errorf("failed to fetch vm. details: %w", err)
-		return nil, err
-	}
-
-	return &job, err
-}
-
-func GetNext() (*Job, error) {
+func (client *Client) GetNext() (*Job, error) {
 	now := time.Now()
 	filter := bson.D{
 		{"status", StatusPending},
@@ -111,7 +96,7 @@ func GetNext() (*Job, error) {
 	return &job, nil
 }
 
-func GetNextFailed() (*Job, error) {
+func (client *Client) GetNextFailed() (*Job, error) {
 	now := time.Now()
 	filter := bson.D{
 		{"status", StatusFailed},
@@ -133,7 +118,7 @@ func GetNextFailed() (*Job, error) {
 	return &job, nil
 }
 
-func MarkCompleted(jobID string) error {
+func (client *Client) MarkCompleted(jobID string) error {
 	filter := bson.D{{"id", jobID}}
 
 	// update status and finishedAt
@@ -154,7 +139,7 @@ func MarkCompleted(jobID string) error {
 	return nil
 }
 
-func MarkFailed(jobID string, reason string) error {
+func (client *Client) MarkFailed(jobID string, reason string) error {
 	filter := bson.D{
 		{"id", jobID},
 	}
@@ -178,7 +163,7 @@ func MarkFailed(jobID string, reason string) error {
 	return nil
 }
 
-func MarkTerminated(jobID string, reason string) error {
+func (client *Client) MarkTerminated(jobID string, reason string) error {
 	filter := bson.D{
 		{"id", jobID},
 	}
@@ -202,7 +187,7 @@ func MarkTerminated(jobID string, reason string) error {
 	return nil
 }
 
-func ResetRunning() error {
+func (client *Client) ResetRunning() error {
 	filter := bson.D{{"status", StatusRunning}}
 	update := bson.D{{"$set", bson.D{{"status", StatusPending}}}}
 
@@ -211,7 +196,7 @@ func ResetRunning() error {
 		return fmt.Errorf("failed to update job. details: %w", err)
 	}
 
-	err = CleanUp()
+	err = client.CleanUp()
 	if err != nil {
 		return fmt.Errorf("failed to clean up job. details: %w", err)
 	}
@@ -219,7 +204,7 @@ func ResetRunning() error {
 	return nil
 }
 
-func CleanUp() error {
+func (client *Client) CleanUp() error {
 	filter := bson.D{{"errorLogs", nil}}
 	update := bson.D{{"$set", bson.D{{"errorLogs", make([]string, 0)}}}}
 

@@ -21,7 +21,7 @@ func Create(deploymentID, userID string, params *deploymentModel.CreateParams) e
 		return makeError(err)
 	}
 
-	deployment, err := deploymentModel.GetByID(deploymentID)
+	deployment, err := deploymentModel.New().GetByID(deploymentID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -82,7 +82,7 @@ func Delete(name string) error {
 		return makeError(err)
 	}
 
-	deployment, err := deploymentModel.GetByName(name)
+	deployment, err := deploymentModel.New().GetByName(name)
 	if err != nil {
 		return makeError(err)
 	}
@@ -98,28 +98,28 @@ func Delete(name string) error {
 			return makeError(err)
 		}
 
-		err = deploymentModel.UpdateSubsystemByName(name, "harbor", "repository", harborModels.RepositoryPublic{})
+		err = deploymentModel.New().UpdateSubsystemByName(name, "harbor", "repository", harborModels.RepositoryPublic{})
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
 	if deployment.Subsystems.Harbor.Robot.Created() {
-		err = deploymentModel.UpdateSubsystemByName(name, "harbor", "robot", harborModels.RobotPublic{})
+		err = deploymentModel.New().UpdateSubsystemByName(name, "harbor", "robot", harborModels.RobotPublic{})
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
 	if deployment.Subsystems.Harbor.Webhook.Created() {
-		err = deploymentModel.UpdateSubsystemByName(name, "harbor", "webhook", harborModels.WebhookPublic{})
+		err = deploymentModel.New().UpdateSubsystemByName(name, "harbor", "webhook", harborModels.WebhookPublic{})
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
 	if deployment.Subsystems.Harbor.Project.Created() {
-		err = deploymentModel.UpdateSubsystemByName(name, "harbor", "project", harborModels.ProjectPublic{})
+		err = deploymentModel.New().UpdateSubsystemByName(name, "harbor", "project", harborModels.ProjectPublic{})
 		if err != nil {
 			return makeError(err)
 		}
@@ -133,7 +133,7 @@ func Repair(name string) error {
 		return fmt.Errorf("failed to repair harbor %s. details: %w", name, err)
 	}
 
-	deployment, err := deploymentModel.GetByName(name)
+	deployment, err := deploymentModel.New().GetByName(name)
 	if err != nil {
 		return makeError(err)
 	}

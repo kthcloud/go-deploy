@@ -44,7 +44,7 @@ func Start(ctx context.Context, options *StartOptions) *http.Server {
 
 	migrator.Migrate()
 
-	err := job.ResetRunning()
+	err := job.New().ResetRunning()
 	if err != nil {
 		log.Fatalln(fmt.Errorf("failed to reset running job. details: %w", err))
 	}

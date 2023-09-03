@@ -21,7 +21,7 @@ func CreateBuild(id string, params *deploymentModel.BuildParams) error {
 		return fmt.Errorf("failed to build deployment with gitlab. details: %w", err)
 	}
 
-	deployment, err := deploymentModel.GetByID(id)
+	deployment, err := deploymentModel.New().GetByID(id)
 	if err != nil {
 		return makeError(err)
 	}

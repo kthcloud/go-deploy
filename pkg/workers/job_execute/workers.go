@@ -17,7 +17,7 @@ func jobFetcher(ctx context.Context) {
 	for {
 		select {
 		case <-time.After(100 * time.Millisecond):
-			job, err := jobModel.GetNext()
+			job, err := jobModel.New().GetNext()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching next job. details: %w", err))
 				continue
@@ -30,7 +30,7 @@ func jobFetcher(ctx context.Context) {
 			err = startJob(job)
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error starting failed job. details: %w", err))
-				err = jobModel.MarkTerminated(job.ID, err.Error())
+				err = jobModel.New().MarkTerminated(job.ID, err.Error())
 				if err != nil {
 					utils.PrettyPrintError(fmt.Errorf("error marking failed job as terminated. details: %w", err))
 					return
@@ -50,7 +50,7 @@ func failedJobFetcher(ctx context.Context) {
 	for {
 		select {
 		case <-time.After(30 * time.Second):
-			job, err := jobModel.GetNextFailed()
+			job, err := jobModel.New().GetNextFailed()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching next failed job. details: %w", err))
 				continue
@@ -63,7 +63,7 @@ func failedJobFetcher(ctx context.Context) {
 			err = startJob(job)
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error starting failed job. details: %w", err))
-				err = jobModel.MarkTerminated(job.ID, err.Error())
+				err = jobModel.New().MarkTerminated(job.ID, err.Error())
 				if err != nil {
 					utils.PrettyPrintError(fmt.Errorf("error marking failed job as terminated. details: %w", err))
 					return
@@ -125,7 +125,7 @@ func wrapper(fn func(job *jobModel.Job) error, job *jobModel.Job) {
 			err = errors.Unwrap(err)
 			utils.PrettyPrintError(fmt.Errorf("failed job (%s). details: %w", job.Type, err))
 
-			err := jobModel.MarkFailed(job.ID, err.Error())
+			err := jobModel.New().MarkFailed(job.ID, err.Error())
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error marking job as failed. details: %w", err))
 				return
@@ -134,7 +134,7 @@ func wrapper(fn func(job *jobModel.Job) error, job *jobModel.Job) {
 			err = errors.Unwrap(err)
 			utils.PrettyPrintError(fmt.Errorf("terminated job (%s). details: %w", job.Type, err))
 
-			err := jobModel.MarkTerminated(job.ID, err.Error())
+			err := jobModel.New().MarkTerminated(job.ID, err.Error())
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error marking job as terminated. details: %w", err))
 				return
@@ -142,14 +142,14 @@ func wrapper(fn func(job *jobModel.Job) error, job *jobModel.Job) {
 		} else {
 			utils.PrettyPrintError(fmt.Errorf("error executing job (%s). details: %w", job.Type, err))
 
-			err := jobModel.MarkFailed(job.ID, err.Error())
+			err := jobModel.New().MarkFailed(job.ID, err.Error())
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error marking job as failed. details: %w", err))
 				return
 			}
 		}
 	} else {
-		err := jobModel.MarkCompleted(job.ID)
+		err := jobModel.New().MarkCompleted(job.ID)
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("error marking job as completed. details: %w", err))
 			return

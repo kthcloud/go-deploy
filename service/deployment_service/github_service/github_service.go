@@ -2,6 +2,7 @@ package github_service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	githubThirdParty "github.com/google/go-github/github"
 	deploymentModel "go-deploy/models/sys/deployment"
@@ -24,7 +25,7 @@ func Create(deploymentID string, params *deploymentModel.CreateParams) error {
 		return makeError(err)
 	}
 
-	deployment, err := deploymentModel.GetByID(deploymentID)
+	deployment, err := deploymentModel.New().GetByID(deploymentID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -54,12 +55,12 @@ func Delete(name string, githubToken *string) error {
 
 	if githubToken == nil {
 		// assume token is not attainable and that the webhook can remain active
-		err := deploymentModel.UpdateSubsystemByName(name, "github", "placeholder", false)
+		err := deploymentModel.New().UpdateSubsystemByName(name, "github", "placeholder", false)
 		if err != nil {
 			return makeError(err)
 		}
 
-		err = deploymentModel.UpdateSubsystemByName(name, "github", "webhook", githubModels.WebhookPublic{})
+		err = deploymentModel.New().UpdateSubsystemByName(name, "github", "webhook", githubModels.WebhookPublic{})
 		if err != nil {
 			return makeError(err)
 		}
@@ -74,7 +75,7 @@ func Delete(name string, githubToken *string) error {
 		return makeError(err)
 	}
 
-	deployment, err := deploymentModel.GetByName(name)
+	deployment, err := deploymentModel.New().GetByName(name)
 	if err != nil {
 		return makeError(err)
 	}
@@ -90,7 +91,7 @@ func Delete(name string, githubToken *string) error {
 			return makeError(err)
 		}
 
-		err = deploymentModel.UpdateSubsystemByName(name, "github", "webhook", githubModels.WebhookPublic{})
+		err = deploymentModel.New().UpdateSubsystemByName(name, "github", "webhook", githubModels.WebhookPublic{})
 		if err != nil {
 			return makeError(err)
 		}
@@ -106,7 +107,7 @@ func CreatePlaceholder(name string) error {
 		return fmt.Errorf("failed to setup placeholder github. details: %w", err)
 	}
 
-	err := deploymentModel.UpdateSubsystemByName(name, "github", "placeholder", true)
+	err := deploymentModel.New().UpdateSubsystemByName(name, "github", "placeholder", true)
 	if err != nil {
 		return makeError(err)
 	}
@@ -126,8 +127,8 @@ func ValidateToken(token string) (bool, string, error) {
 
 	limits, resp, err := client.GitHubClient.RateLimits(context.TODO())
 	if err != nil {
-		githubError := err.(*githubThirdParty.ErrorResponse)
-		if githubError != nil && githubError.Message == "Bad credentials" {
+		var githubError *githubThirdParty.ErrorResponse
+		if errors.As(err, &githubError) && githubError.Message == "Bad credentials" {
 			return false, "Invalid token", nil
 		}
 

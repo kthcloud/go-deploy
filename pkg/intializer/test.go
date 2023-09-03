@@ -16,7 +16,7 @@ func CleanUpOldTests() {
 	now := time.Now()
 	oneHourAgo := now.Add(-1 * time.Second)
 
-	oldE2eDeployments, err := deploymentModel.GetAllWithFilter(bson.D{
+	oldE2eDeployments, err := deploymentModel.New().GetAllWithFilter(bson.D{
 		{"ownerId", testerID},
 		{"createdAt", bson.D{{"$lt", oneHourAgo}}},
 	})
@@ -26,7 +26,7 @@ func CleanUpOldTests() {
 
 	deploymentsDeleted := 0
 	for _, deployment := range oldE2eDeployments {
-		err = deploymentModel.ClearActivities(deployment.ID)
+		err = deploymentModel.New().ClearActivities(deployment.ID)
 		if err != nil {
 			panic(err)
 		}
@@ -39,7 +39,7 @@ func CleanUpOldTests() {
 		deploymentsDeleted++
 	}
 
-	oldE2eVms, err := vmModel.GetAllWithFilter(bson.D{
+	oldE2eVms, err := vmModel.New().GetAllWithFilter(bson.D{
 		{"ownerId", testerID},
 		{"createdAt", bson.D{{"$lt", oneHourAgo}}},
 	})
@@ -50,7 +50,7 @@ func CleanUpOldTests() {
 
 	vmsDeleted := 0
 	for _, vm := range oldE2eVms {
-		err = vmModel.ClearActivities(vm.ID)
+		err = vmModel.New().ClearActivities(vm.ID)
 		if err != nil {
 			panic(err)
 		}

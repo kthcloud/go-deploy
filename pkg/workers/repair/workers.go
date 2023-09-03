@@ -22,7 +22,7 @@ func deploymentRepairer(ctx context.Context) {
 
 		select {
 		case <-time.After(time.Duration(conf.Env.Deployment.RepairInterval) * time.Second):
-			restarting, err := deploymentModel.GetByActivity(deploymentModel.ActivityRestarting)
+			restarting, err := deploymentModel.New().GetByActivity(deploymentModel.ActivityRestarting)
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching restarting deployments. details: %w", err))
 				continue
@@ -33,14 +33,14 @@ func deploymentRepairer(ctx context.Context) {
 				now := time.Now()
 				if now.Sub(deployment.RestartedAt) > 5*time.Minute {
 					log.Printf("removing restarting activity from deployment %s\n", deployment.Name)
-					err = deploymentModel.RemoveActivity(deployment.ID, deploymentModel.ActivityRestarting)
+					err = deploymentModel.New().RemoveActivity(deployment.ID, deploymentModel.ActivityRestarting)
 					if err != nil {
 						log.Printf("failed to remove restarting activity from deployment %s. details: %w\n", deployment.Name, err)
 					}
 				}
 			}
 
-			withNoActivities, err := deploymentModel.GetWithNoActivities()
+			withNoActivities, err := deploymentModel.New().GetWithNoActivities()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching deployments with no activities. details: %w", err))
 				continue
@@ -60,7 +60,7 @@ func deploymentRepairer(ctx context.Context) {
 						continue
 					}
 
-					err = deploymentModel.MarkRepaired(deployment.ID)
+					err = deploymentModel.New().MarkRepaired(deployment.ID)
 				}
 			}
 
@@ -97,7 +97,7 @@ func storageManagerRepairer(ctx context.Context) {
 						continue
 					}
 
-					err = deploymentModel.MarkRepaired(storageManager.ID)
+					err = deploymentModel.New().MarkRepaired(storageManager.ID)
 				}
 			}
 		case <-ctx.Done():
@@ -112,7 +112,7 @@ func vmRepairer(ctx context.Context) {
 	for {
 		select {
 		case <-time.After(time.Duration(conf.Env.VM.RepairInterval) * time.Second):
-			withNoActivities, err := vmModel.GetWithNoActivities()
+			withNoActivities, err := vmModel.New().GetWithNoActivities()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching vms with no activities. details: %w", err))
 				continue
@@ -132,7 +132,7 @@ func vmRepairer(ctx context.Context) {
 						continue
 					}
 
-					err = vmModel.MarkRepaired(vm.ID)
+					err = vmModel.New().MarkRepaired(vm.ID)
 				}
 			}
 		case <-ctx.Done():

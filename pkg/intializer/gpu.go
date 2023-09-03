@@ -31,7 +31,7 @@ func SynchronizeGPUs() {
 	}
 
 	configured := 0
-	currentGPUs, err := gpuModel.GetAll(nil, nil)
+	currentGPUs, err := gpuModel.New().GetAll()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -40,7 +40,7 @@ func SynchronizeGPUs() {
 		// clear non-leased gpus
 		// this is safe since an admin must delete the lease before removing the gpu from the system
 		if gpu.Lease.VmID == "" {
-			err = gpuModel.Delete(gpu.ID)
+			err = gpuModel.New().Delete(gpu.ID)
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("failed to delete gpu. details: %w", err))
 			}
@@ -52,7 +52,7 @@ func SynchronizeGPUs() {
 
 			id := createGpuID(host.Name, gpu.Name, gpu.Slot)
 
-			current, err := gpuModel.GetByID(id)
+			current, err := gpuModel.New().GetByID(id)
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("failed to fetch gpu by id. details: %w", err))
 				continue
@@ -69,7 +69,7 @@ func SynchronizeGPUs() {
 				continue
 			}
 
-			err = gpuModel.Create(id, host.Name, gpuModel.GpuData{
+			err = gpuModel.New().Create(id, host.Name, gpuModel.GpuData{
 				Name:     gpu.Name,
 				Slot:     gpu.Slot,
 				Vendor:   gpu.Vendor,

@@ -138,7 +138,7 @@ func createOAuthProxyDeploymentPublic(namespace, name, userID string, zone *envi
 		Memory: conf.Env.Deployment.Resources.Requests.Memory,
 	}
 
-	user, err := userModel.GetByID(userID)
+	user, err := userModel.New().GetByID(userID)
 	if err != nil {
 		utils.PrettyPrintError(fmt.Errorf("failed to get user by id when creating oauth proxy deployment public. details: %w", err))
 		return nil

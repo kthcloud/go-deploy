@@ -17,14 +17,14 @@ func snapshotter(ctx context.Context) {
 	for {
 		select {
 		case <-time.After(1 * time.Hour):
-			vms, err := vmModel.GetAll()
+			vms, err := vmModel.New().GetAll()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("failed to get all vms. details: %w", err))
 				continue
 			}
 
 			for _, vm := range vms {
-				exists, jobExistsErr := job.Exists(job.TypeCreateSnapshot, map[string]interface{}{
+				exists, jobExistsErr := job.New().Exists(job.TypeCreateSnapshot, map[string]interface{}{
 					"id": vm.ID,
 				})
 
@@ -40,7 +40,7 @@ func snapshotter(ctx context.Context) {
 					now := time.Now()
 					runAt := time.Date(now.Year(), now.Month(), now.Day()+1, 3, 0, 0, 0, time.UTC)
 
-					jobCreateErr := job.CreateScheduledJob(jobID, vm.OwnerID, job.TypeCreateSnapshot, runAt, map[string]interface{}{
+					jobCreateErr := job.New().CreateScheduled(jobID, vm.OwnerID, job.TypeCreateSnapshot, runAt, map[string]interface{}{
 						"id":          vm.ID,
 						"name":        fmt.Sprintf("snapshot-%s", time.Now().Format("20060102150405")),
 						"userCreated": false,

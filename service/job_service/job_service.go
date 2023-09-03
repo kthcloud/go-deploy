@@ -10,7 +10,7 @@ func Create(id, userID, jobType string, args map[string]interface{}) error {
 		return fmt.Errorf("failed to create job. details: %w", err)
 	}
 
-	err := jobModel.CreateJob(id, userID, jobType, args)
+	err := jobModel.New().Create(id, userID, jobType, args)
 	if err != nil {
 		return makeError(err)
 	}
@@ -19,7 +19,7 @@ func Create(id, userID, jobType string, args map[string]interface{}) error {
 }
 
 func GetByID(userID, jobID string, isAdmin bool) (*jobModel.Job, error) {
-	job, err := jobModel.GetByID(jobID)
+	job, err := jobModel.New().GetByID(jobID)
 	if err != nil {
 		return nil, err
 	}

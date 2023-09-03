@@ -149,7 +149,7 @@ func createProject(client *harbor.Client, deployment *deploymentModel.Deployment
 		return nil, errors.New("failed to read project after creation")
 	}
 
-	err = deploymentModel.UpdateSubsystemByName(deployment.Name, "harbor", "project", project)
+	err = deploymentModel.New().UpdateSubsystemByName(deployment.Name, "harbor", "project", project)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +174,7 @@ func createRobot(client *harbor.Client, deployment *deploymentModel.Deployment, 
 		return nil, errors.New("failed to read robot after creation")
 	}
 
-	err = deploymentModel.UpdateSubsystemByName(deployment.Name, "harbor", "robot", robot)
+	err = deploymentModel.New().UpdateSubsystemByName(deployment.Name, "harbor", "robot", robot)
 	if err != nil {
 		return nil, err
 	}
@@ -199,7 +199,7 @@ func createRepository(client *harbor.Client, deployment *deploymentModel.Deploym
 		return nil, errors.New("failed to read repository after creation")
 	}
 
-	err = deploymentModel.UpdateSubsystemByName(deployment.Name, "harbor", "repository", repository)
+	err = deploymentModel.New().UpdateSubsystemByName(deployment.Name, "harbor", "repository", repository)
 	if err != nil {
 		return nil, err
 	}
@@ -224,7 +224,7 @@ func createWebhook(client *harbor.Client, deployment *deploymentModel.Deployment
 		return nil, errors.New("failed to read webhook after creation")
 	}
 
-	err = deploymentModel.UpdateSubsystemByName(deployment.Name, "harbor", "webhook", webhook)
+	err = deploymentModel.New().UpdateSubsystemByName(deployment.Name, "harbor", "webhook", webhook)
 	if err != nil {
 		return nil, err
 	}

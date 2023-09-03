@@ -20,7 +20,7 @@ func GetAllGPUs(onlyAvailable bool, usePrivilegedGPUs bool) ([]gpuModel.GPU, err
 	}
 
 	if onlyAvailable {
-		dbAvailableGPUs, err := gpuModel.GetAllAvailable(conf.Env.GPU.ExcludedHosts, excludedGPUs)
+		dbAvailableGPUs, err := gpuModel.NewWithExclusion(conf.Env.GPU.ExcludedHosts, excludedGPUs).GetAllAvailable()
 		if err != nil {
 			return nil, err
 		}
@@ -40,11 +40,11 @@ func GetAllGPUs(onlyAvailable bool, usePrivilegedGPUs bool) ([]gpuModel.GPU, err
 
 		return availableGPUs, nil
 	}
-	return gpuModel.GetAll(conf.Env.GPU.ExcludedHosts, excludedGPUs)
+	return gpuModel.NewWithExclusion(conf.Env.GPU.ExcludedHosts, excludedGPUs).GetAll()
 }
 
 func GetGpuByID(gpuID string, usePrivilegedGPUs bool) (*gpuModel.GPU, error) {
-	gpu, err := gpuModel.GetByID(gpuID)
+	gpu, err := gpuModel.New().GetByID(gpuID)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func GetAllAvailableGPU(usePrivilegedGPUs bool) ([]gpuModel.GPU, error) {
 		excludedGPUs = append(excludedGPUs, conf.Env.GPU.PrivilegedGPUs...)
 	}
 
-	dbAvailableGPUs, err := gpuModel.GetAllAvailable(conf.Env.GPU.ExcludedHosts, excludedGPUs)
+	dbAvailableGPUs, err := gpuModel.NewWithExclusion(conf.Env.GPU.ExcludedHosts, excludedGPUs).GetAllAvailable()
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func GetAllAvailableGPU(usePrivilegedGPUs bool) ([]gpuModel.GPU, error) {
 }
 
 func IsGpuPrivileged(gpuID string) (bool, error) {
-	gpu, err := gpuModel.GetByID(gpuID)
+	gpu, err := gpuModel.New().GetByID(gpuID)
 	if err != nil {
 		return false, err
 	}
@@ -131,7 +131,7 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 	var err error
 	for _, gpuID := range gpuIDs {
 		var gpu *gpuModel.GPU
-		gpu, err = gpuModel.GetByID(gpuID)
+		gpu, err = gpuModel.New().GetByID(gpuID)
 		if err != nil {
 			return makeError(err)
 		}
@@ -158,7 +158,7 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 					return makeError(err)
 				}
 
-				err = gpuModel.Detach(gpu.Lease.VmID, gpu.Lease.UserID)
+				err = gpuModel.New().Detach(gpu.Lease.VmID, gpu.Lease.UserID)
 				if err != nil {
 					return makeError(err)
 				}
@@ -168,7 +168,7 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 		}
 
 		var attached bool
-		attached, err = gpuModel.Attach(gpuID, vmID, userID, endLease)
+		attached, err = gpuModel.New().Attach(gpuID, vmID, userID, endLease)
 		if err != nil {
 			return makeError(err)
 		}
@@ -197,7 +197,7 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 				return makeError(err)
 			}
 
-			err = gpuModel.Detach(vmID, userID)
+			err = gpuModel.New().Detach(vmID, userID)
 			if err != nil {
 				return makeError(err)
 			}
@@ -206,7 +206,7 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 		}
 	}
 
-	err = vmModel.RemoveActivity(vmID, vmModel.ActivityAttachingGPU)
+	err = vmModel.New().RemoveActivity(vmID, vmModel.ActivityAttachingGPU)
 	if err != nil {
 		return makeError(err)
 	}
@@ -220,13 +220,13 @@ func RepairGPUs() error {
 	}
 
 	// get all gpus that are attached to a vm
-	attachedGPUs, err := gpuModel.GetAllLeased(nil, nil)
+	attachedGPUs, err := gpuModel.New().GetAllLeased()
 	if err != nil {
 		return makeError(err)
 	}
 
 	// get all vms with an assigned gpu
-	vmsWithGPU, err := vmModel.GetWithGPU()
+	vmsWithGPU, err := vmModel.New().GetWithGPU()
 	if err != nil {
 		return makeError(err)
 	}
@@ -253,7 +253,7 @@ func RepairGPUs() error {
 		_, ok := gpuToVM[gpu.ID]
 		if !ok {
 			log.Println("found gpu that is attached to a vm, but not in the gpuToVM map. clearing lease. vm:", gpu.Lease.VmID, "gpu:", gpu.ID, "("+gpu.Data.Name+")")
-			err = gpuModel.ClearLease(gpu.ID)
+			err = gpuModel.New().ClearLease(gpu.ID)
 			if err != nil {
 				return makeError(err)
 			}
@@ -308,7 +308,7 @@ func DetachGPU(vmID, userID string) error {
 		return makeError(err)
 	}
 
-	err = vmModel.RemoveActivity(vmID, vmModel.ActivityDetachingGPU)
+	err = vmModel.New().RemoveActivity(vmID, vmModel.ActivityDetachingGPU)
 	if err != nil {
 		return makeError(err)
 	}
@@ -326,7 +326,7 @@ func DetachGpuSync(vmID, userID string) error {
 		return makeError(err)
 	}
 
-	err = gpuModel.Detach(vmID, userID)
+	err = gpuModel.New().Detach(vmID, userID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -335,7 +335,7 @@ func DetachGpuSync(vmID, userID string) error {
 }
 
 func CanStartOnHost(vmID, host string) (bool, string, error) {
-	vm, err := vmModel.GetByID(vmID)
+	vm, err := vmModel.New().GetByID(vmID)
 	if err != nil {
 		return false, "", err
 	}

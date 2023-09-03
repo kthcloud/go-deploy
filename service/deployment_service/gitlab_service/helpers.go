@@ -7,7 +7,7 @@ import (
 )
 
 func updateGitLabBuild(deploymentID string, lastJob *models.JobPublic, trace []string) error {
-	return deploymentModel.UpdateGitLabBuild(deploymentID, subsystems.GitLabBuild{
+	return deploymentModel.New().UpdateGitLabBuild(deploymentID, subsystems.GitLabBuild{
 		ID:        lastJob.ID,
 		ProjectID: lastJob.ProjectID,
 		Trace:     trace,

@@ -215,13 +215,13 @@ func Create(c *gin.Context) {
 		}
 	}
 
-	exists, vm, err := vm_service.Exists(requestBody.Name)
+	vm, err := vm_service.GetByName(requestBody.Name)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return
 	}
 
-	if exists {
+	if vm != nil {
 		if vm.OwnerID != auth.UserID {
 			context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceNotCreated, "Resource already exists")
 			return

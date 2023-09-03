@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"go-deploy/models"
 	"go-deploy/models/dto/body"
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/utils"
@@ -39,8 +38,8 @@ func (gpu *GPU) ToDTO(addUserInfo bool) body.GpuRead {
 	}
 }
 
-func Create(id, host string, data GpuData, zone string) error {
-	currentGPU, err := GetByID(id)
+func (client *Client) Create(id, host string, data GpuData, zone string) error {
+	currentGPU, err := client.GetByID(id)
 	if err != nil {
 		return err
 	}
@@ -61,7 +60,7 @@ func Create(id, host string, data GpuData, zone string) error {
 		Zone: zone,
 	}
 
-	_, err = models.GpuCollection.InsertOne(context.TODO(), gpu)
+	_, err = client.Collection.InsertOne(context.TODO(), gpu)
 	if err != nil {
 		err = fmt.Errorf("failed to create gpu. details: %w", err)
 		return err
@@ -70,9 +69,9 @@ func Create(id, host string, data GpuData, zone string) error {
 	return nil
 }
 
-func GetByID(id string) (*GPU, error) {
+func (client *Client) GetByID(id string) (*GPU, error) {
 	var gpu GPU
-	err := models.GpuCollection.FindOne(context.TODO(), bson.D{{"id", id}}).Decode(&gpu)
+	err := client.Collection.FindOne(context.TODO(), bson.D{{"id", id}}).Decode(&gpu)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, nil
@@ -85,22 +84,14 @@ func GetByID(id string) (*GPU, error) {
 	return &gpu, err
 }
 
-func GetAll(excludedHosts, excludedGPUs []string) ([]GPU, error) {
-	if excludedHosts == nil {
-		excludedHosts = make([]string, 0)
-	}
-
-	if excludedGPUs == nil {
-		excludedGPUs = make([]string, 0)
-	}
-
+func (client *Client) GetAll() ([]GPU, error) {
 	filter := bson.D{
-		{"host", bson.M{"$nin": excludedHosts}},
-		{"id", bson.M{"$nin": excludedGPUs}},
+		{"host", bson.M{"$nin": client.ExcludedHosts}},
+		{"id", bson.M{"$nin": client.ExcludedGPUs}},
 	}
 
 	var gpus []GPU
-	cursor, err := models.GpuCollection.Find(context.Background(), filter)
+	cursor, err := client.Collection.Find(context.Background(), filter)
 	if err != nil {
 		return nil, err
 	}
@@ -113,28 +104,19 @@ func GetAll(excludedHosts, excludedGPUs []string) ([]GPU, error) {
 	return gpus, nil
 }
 
-func GetAllLeased(excludedHosts, excludedGPUs []string) ([]GPU, error) {
-	// return gpus that are leased
-	if excludedHosts == nil {
-		excludedHosts = make([]string, 0)
-	}
-
-	if excludedGPUs == nil {
-		excludedGPUs = make([]string, 0)
-	}
-
+func (client *Client) GetAllLeased() ([]GPU, error) {
 	// filter lease exist and vmId is not empty
 	filter := bson.D{
 		{"$and", []interface{}{
 			bson.M{"lease.vmId": bson.M{"$ne": ""}},
 			bson.M{"lease": bson.M{"$exists": true}},
 		}},
-		{"host", bson.M{"$nin": excludedHosts}},
-		{"id", bson.M{"$nin": excludedGPUs}},
+		{"host", bson.M{"$nin": client.ExcludedHosts}},
+		{"id", bson.M{"$nin": client.ExcludedGPUs}},
 	}
 
 	var gpus []GPU
-	cursor, err := models.GpuCollection.Find(context.Background(), filter)
+	cursor, err := client.Collection.Find(context.Background(), filter)
 	if err != nil {
 		return nil, err
 	}
@@ -147,15 +129,7 @@ func GetAllLeased(excludedHosts, excludedGPUs []string) ([]GPU, error) {
 	return gpus, nil
 }
 
-func GetAllAvailable(excludedHosts, excludedGPUs []string) ([]GPU, error) {
-	if excludedHosts == nil {
-		excludedHosts = make([]string, 0)
-	}
-
-	if excludedGPUs == nil {
-		excludedGPUs = make([]string, 0)
-	}
-
+func (client *Client) GetAllAvailable() ([]GPU, error) {
 	now := time.Now()
 
 	filter := bson.D{
@@ -164,12 +138,12 @@ func GetAllAvailable(excludedHosts, excludedGPUs []string) ([]GPU, error) {
 			bson.M{"lease.vmId": ""},
 			bson.M{"lease.end": bson.M{"$lte": now}},
 		}},
-		{"host", bson.M{"$nin": excludedHosts}},
-		{"id", bson.M{"$nin": excludedGPUs}},
+		{"host", bson.M{"$nin": client.ExcludedHosts}},
+		{"id", bson.M{"$nin": client.ExcludedGPUs}},
 	}
 
 	var gpus []GPU
-	cursor, err := models.GpuCollection.Find(context.Background(), filter)
+	cursor, err := client.Collection.Find(context.Background(), filter)
 	if err != nil {
 		return nil, err
 	}
@@ -182,8 +156,8 @@ func GetAllAvailable(excludedHosts, excludedGPUs []string) ([]GPU, error) {
 	return gpus, nil
 }
 
-func Delete(gpuID string) error {
-	err := models.GpuCollection.FindOneAndDelete(context.Background(), bson.D{{"id", gpuID}}).Err()
+func (client *Client) Delete(gpuID string) error {
+	err := client.Collection.FindOneAndDelete(context.Background(), bson.D{{"id", gpuID}}).Err()
 	if err != nil {
 		return fmt.Errorf("failed to delete gpu. details: %w", err)
 	}
@@ -191,8 +165,8 @@ func Delete(gpuID string) error {
 	return nil
 }
 
-func Attach(gpuID, vmID, user string, end time.Time) (bool, error) {
-	vm, err := vmModel.GetByID(vmID)
+func (client *Client) Attach(gpuID, vmID, user string, end time.Time) (bool, error) {
+	vm, err := vmModel.New().GetByID(vmID)
 	if err != nil {
 		return false, err
 	}
@@ -201,7 +175,7 @@ func Attach(gpuID, vmID, user string, end time.Time) (bool, error) {
 		return false, nil
 	}
 
-	gpu, err := GetByID(gpuID)
+	gpu, err := client.GetByID(gpuID)
 	if err != nil {
 		return false, err
 	}
@@ -230,7 +204,7 @@ func Attach(gpuID, vmID, user string, end time.Time) (bool, error) {
 
 			opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
 
-			err = models.GpuCollection.FindOneAndUpdate(context.Background(), filter, update, opts).Decode(&gpu)
+			err = client.Collection.FindOneAndUpdate(context.Background(), filter, update, opts).Decode(&gpu)
 			if err != nil {
 				if errors.Is(err, mongo.ErrNoDocuments) {
 					// this is not treated as an error, just another instance snatched the gpu before this one
@@ -264,7 +238,7 @@ func Attach(gpuID, vmID, user string, end time.Time) (bool, error) {
 
 		opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
 
-		err = models.GpuCollection.FindOneAndUpdate(context.Background(), filter, update, opts).Decode(&gpu)
+		err = client.Collection.FindOneAndUpdate(context.Background(), filter, update, opts).Decode(&gpu)
 		if err != nil {
 			if errors.Is(err, mongo.ErrNoDocuments) {
 				// this is not treated as an error, just another instance snatched the gpu before this one
@@ -274,10 +248,10 @@ func Attach(gpuID, vmID, user string, end time.Time) (bool, error) {
 		}
 	}
 
-	err = vmModel.UpdateWithBsonByID(vmID, bson.D{{"gpuId", gpuID}})
+	err = vmModel.New().UpdateWithBsonByID(vmID, bson.D{{"gpuId", gpuID}})
 	if err != nil {
 		// remove lease, if this also fails, we are in a bad state...
-		_, _ = models.GpuCollection.UpdateOne(
+		_, _ = client.Collection.UpdateOne(
 			context.TODO(),
 			bson.D{{"id", gpuID}},
 			bson.M{"$set": bson.M{"lease": GpuLease{}}},
@@ -290,8 +264,8 @@ func Attach(gpuID, vmID, user string, end time.Time) (bool, error) {
 	return true, nil
 }
 
-func Detach(vmID, userID string) error {
-	vm, err := vmModel.GetByID(vmID)
+func (client *Client) Detach(vmID, userID string) error {
+	vm, err := vmModel.New().GetByID(vmID)
 	if err != nil {
 		return err
 	}
@@ -304,7 +278,7 @@ func Detach(vmID, userID string) error {
 		return nil
 	}
 
-	gpu, err := GetByID(vm.GpuID)
+	gpu, err := client.GetByID(vm.GpuID)
 	if err != nil {
 		return err
 	}
@@ -327,7 +301,7 @@ func Detach(vmID, userID string) error {
 
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
 
-	err = models.GpuCollection.FindOneAndUpdate(context.Background(), filter, update, opts).Decode(&gpu)
+	err = client.Collection.FindOneAndUpdate(context.Background(), filter, update, opts).Decode(&gpu)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			// this is not treated as an error, just another instance snatched the gpu before this one
@@ -336,10 +310,10 @@ func Detach(vmID, userID string) error {
 		return err
 	}
 
-	err = vmModel.UpdateWithBsonByID(vmID, bson.D{{"gpuId", ""}})
+	err = vmModel.New().UpdateWithBsonByID(vmID, bson.D{{"gpuId", ""}})
 	if err != nil {
 		// remove lease, if this also fails, we are in a bad state...
-		_, _ = models.GpuCollection.UpdateOne(
+		_, _ = client.Collection.UpdateOne(
 			context.TODO(),
 			bson.D{{"id", gpu.ID}},
 			bson.M{"$set": bson.M{"lease": GpuLease{}}},
@@ -351,14 +325,14 @@ func Detach(vmID, userID string) error {
 	return nil
 }
 
-func ClearLease(gpuID string) error {
+func (client *Client) ClearLease(gpuID string) error {
 	filter := bson.D{
 		{"id", gpuID},
 	}
 
 	update := createClearedLeaseFilter()
 
-	err := models.GpuCollection.FindOneAndUpdate(context.Background(), filter, update, nil).Err()
+	err := client.Collection.FindOneAndUpdate(context.Background(), filter, update, nil).Err()
 	if err != nil {
 		return err
 	}

@@ -45,7 +45,7 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 		}
 	}
 
-	created, err := deploymentModel.CreateDeployment(deploymentID, ownerID, params)
+	created, err := deploymentModel.New().Create(deploymentID, ownerID, params)
 	if err != nil {
 		return makeError(err)
 	}
@@ -90,7 +90,7 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 		}
 	}
 
-	deployment, err := deploymentModel.GetByID(deploymentID)
+	deployment, err := deploymentModel.New().GetByID(deploymentID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -139,7 +139,7 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 }
 
 func GetByIdAuth(deploymentID string, auth *service.AuthInfo) (*deploymentModel.Deployment, error) {
-	deployment, err := deploymentModel.GetByID(deploymentID)
+	deployment, err := deploymentModel.New().GetByID(deploymentID)
 	if err != nil {
 		return nil, err
 	}
@@ -160,15 +160,15 @@ func GetByOwnerIdAuth(ownerID string, auth *service.AuthInfo) ([]deploymentModel
 		return nil, nil
 	}
 
-	return deploymentModel.GetByOwnerID(ownerID)
+	return deploymentModel.New().GetByOwnerID(ownerID)
 }
 
 func GetAllAuth(auth *service.AuthInfo) ([]deploymentModel.Deployment, error) {
 	if auth.IsAdmin {
-		return deploymentModel.GetAll()
+		return deploymentModel.New().GetAll()
 	}
 
-	self, err := deploymentModel.GetByOwnerID(auth.UserID)
+	self, err := deploymentModel.New().GetByOwnerID(auth.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +181,7 @@ func GetAllAuth(auth *service.AuthInfo) ([]deploymentModel.Deployment, error) {
 }
 
 func GetAll() ([]deploymentModel.Deployment, error) {
-	return deploymentModel.GetAll()
+	return deploymentModel.New().GetAll()
 }
 
 func GetCountAuth(userID string, auth *service.AuthInfo) (int, error) {
@@ -189,11 +189,11 @@ func GetCountAuth(userID string, auth *service.AuthInfo) (int, error) {
 		return 0, nil
 	}
 
-	return deploymentModel.CountByOwnerID(userID)
+	return deploymentModel.New().CountByOwnerID(userID)
 }
 
-func Exists(name string) (bool, *deploymentModel.Deployment, error) {
-	return deploymentModel.ExistsByName(name)
+func GetByName(name string) (*deploymentModel.Deployment, error) {
+	return deploymentModel.New().GetByName(name)
 }
 
 func StartActivity(deploymentID, activity string) (bool, string, error) {
@@ -202,7 +202,7 @@ func StartActivity(deploymentID, activity string) (bool, string, error) {
 		return false, reason, nil
 	}
 
-	err := deploymentModel.AddActivity(deploymentID, activity)
+	err := deploymentModel.New().AddActivity(deploymentID, activity)
 	if err != nil {
 		return false, "", err
 	}
@@ -211,7 +211,7 @@ func StartActivity(deploymentID, activity string) (bool, string, error) {
 }
 
 func CanAddActivity(deploymentID, activity string) (bool, string) {
-	deployment, err := deploymentModel.GetByID(deploymentID)
+	deployment, err := deploymentModel.New().GetByID(deploymentID)
 	if err != nil {
 		return false, "Failed to get deployment"
 	}
@@ -224,7 +224,7 @@ func CanAddActivity(deploymentID, activity string) (bool, string) {
 	case deploymentModel.ActivityBeingCreated:
 		return !deployment.BeingDeleted(), "It is being deleted"
 	case deploymentModel.ActivityBeingDeleted:
-		return !deployment.BeingCreated(), "It is being created"
+		return true, ""
 	case deploymentModel.ActivityRestarting:
 		return !deployment.BeingDeleted(), "It is being deleted"
 	case deploymentModel.ActivityBuilding:
@@ -267,7 +267,7 @@ func Update(id string, deploymentUpdate *body.DeploymentUpdate) error {
 	params := &deploymentModel.UpdateParams{}
 	params.FromDTO(deploymentUpdate)
 
-	deployment, err := deploymentModel.GetByID(id)
+	deployment, err := deploymentModel.New().GetByID(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -282,7 +282,7 @@ func Update(id string, deploymentUpdate *body.DeploymentUpdate) error {
 		return makeError(err)
 	}
 
-	err = deploymentModel.UpdateWithParamsByID(id, params)
+	err = deploymentModel.New().UpdateWithParamsByID(id, params)
 	if err != nil {
 		return makeError(err)
 	}
@@ -295,7 +295,7 @@ func Restart(name string) error {
 		return fmt.Errorf("failed to restart deployment. details: %w", err)
 	}
 
-	deployment, err := deploymentModel.GetByName(name)
+	deployment, err := deploymentModel.New().GetByName(name)
 	if err != nil {
 		return makeError(err)
 	}
@@ -319,7 +319,7 @@ func Restart(name string) error {
 		return makeError(err)
 	}
 
-	err = deploymentModel.RemoveActivity(deployment.ID, deploymentModel.ActivityRestarting)
+	err = deploymentModel.New().RemoveActivity(deployment.ID, deploymentModel.ActivityRestarting)
 	if err != nil {
 		return makeError(err)
 	}
@@ -332,7 +332,7 @@ func Build(id string, buildParams *body.DeploymentBuild) error {
 		return fmt.Errorf("failed to build deployment. details: %w", err)
 	}
 
-	deployment, err := deploymentModel.GetByID(id)
+	deployment, err := deploymentModel.New().GetByID(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -367,7 +367,7 @@ func GetUsageByUserID(userID string) (*deploymentModel.Usage, error) {
 		return fmt.Errorf("failed to get usage. details: %w", err)
 	}
 
-	count, err := deploymentModel.CountByOwnerID(userID)
+	count, err := deploymentModel.New().CountByOwnerID(userID)
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -382,7 +382,7 @@ func Repair(id string) error {
 		return fmt.Errorf("failed to repair deployment %s. details: %w", id, err)
 	}
 
-	deployment, err := deploymentModel.GetByID(id)
+	deployment, err := deploymentModel.New().GetByID(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -407,7 +407,7 @@ func Repair(id string) error {
 	}
 
 	defer func() {
-		err = deploymentModel.RemoveActivity(deployment.ID, deploymentModel.ActivityRepairing)
+		err = deploymentModel.New().RemoveActivity(deployment.ID, deploymentModel.ActivityRepairing)
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to remove activity %s from deployment %s. details: %w", deploymentModel.ActivityRepairing, deployment.Name, err))
 		}
@@ -485,7 +485,7 @@ func build(deployment *deploymentModel.Deployment, params *deploymentModel.Build
 	}
 
 	defer func() {
-		err = deploymentModel.RemoveActivity(deployment.ID, deploymentModel.ActivityBuilding)
+		err = deploymentModel.New().RemoveActivity(deployment.ID, deploymentModel.ActivityBuilding)
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to remove activity %s for deployment %s. details: %w", deploymentModel.ActivityBuilding, deployment.Name, err))
 		}
@@ -505,7 +505,7 @@ func SavePing(id string, pingResult int) error {
 		return fmt.Errorf("failed to update deployment with ping result. details: %w", err)
 	}
 
-	deployment, err := deploymentModel.GetByID(id)
+	deployment, err := deploymentModel.New().GetByID(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -515,7 +515,7 @@ func SavePing(id string, pingResult int) error {
 		return nil
 	}
 
-	err = deploymentModel.SavePing(id, pingResult)
+	err = deploymentModel.New().SavePing(id, pingResult)
 	if err != nil {
 		return makeError(err)
 	}

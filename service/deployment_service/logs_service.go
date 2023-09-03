@@ -74,7 +74,7 @@ func setupContinuousGitLabLogStream(ctx context.Context, deploymentID string, ha
 			case <-ctx.Done():
 				return
 			default:
-				build, err := deploymentModel.GetLastGitLabBuild(deploymentID)
+				build, err := deploymentModel.New().GetLastGitLabBuild(deploymentID)
 				if err != nil {
 					utils.PrettyPrintError(fmt.Errorf("failed to get last gitlab build when setting up continuous log stream. details: %w", err))
 					return

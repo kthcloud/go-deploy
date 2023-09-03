@@ -11,7 +11,7 @@ import (
 )
 
 func GetSnapshotsByVM(vmID string) ([]vmModel.Snapshot, error) {
-	vm, err := vmModel.GetByID(vmID)
+	vm, err := vmModel.New().GetByID(vmID)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ func GetSnapshotsByVM(vmID string) ([]vmModel.Snapshot, error) {
 }
 
 func GetSnapshotByName(vmID, snapshotName string) (*vmModel.Snapshot, error) {
-	vm, err := vmModel.GetByID(vmID)
+	vm, err := vmModel.New().GetByID(vmID)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func CreateSnapshot(id, name string, userCreated bool) error {
 		return fmt.Errorf("failed to create snapshot for vm %s. details: %w", id, err)
 	}
 
-	vm, err := vmModel.GetByID(id)
+	vm, err := vmModel.New().GetByID(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -95,7 +95,7 @@ func CreateSnapshot(id, name string, userCreated bool) error {
 	}
 
 	defer func() {
-		err = vmModel.RemoveActivity(vm.ID, vmModel.ActivityCreatingSnapshot)
+		err = vmModel.New().RemoveActivity(vm.ID, vmModel.ActivityCreatingSnapshot)
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to remove activity %s from vm %s. details: %w", vmModel.ActivityCreatingSnapshot, vm.Name, err))
 		}
@@ -125,7 +125,7 @@ func ApplySnapshot(id, snapshotID string) error {
 	}
 
 	defer func() {
-		_ = vmModel.RemoveActivity(id, vmModel.ActivityApplyingSnapshot)
+		_ = vmModel.New().RemoveActivity(id, vmModel.ActivityApplyingSnapshot)
 	}()
 
 	err = internal_service.ApplySnapshotCS(id, snapshotID)
