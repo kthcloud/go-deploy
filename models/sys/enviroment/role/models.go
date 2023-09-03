@@ -16,7 +16,7 @@ type Role struct {
 		ChooseZone        bool `yaml:"chooseZone"`
 		ChooseGPU         bool `yaml:"chooseGpu"`
 		UseGPUs           bool `yaml:"useGpus"`
-		UsePrivilegedGPUs bool `yaml:"seePrivilegedGpus"`
+		UsePrivilegedGPUs bool `yaml:"usePrivilegedGpus"`
 		// in hours
 		GpuLeaseDuration float64 `yaml:"gpuLeaseDuration"`
 	}
