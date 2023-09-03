@@ -18,16 +18,6 @@ func AddIfNotNil(data bson.M, key string, value interface{}) {
 	data[key] = value
 }
 
-func addIncludeDeleted(filter bson.D) bson.D {
-	if filter == nil {
-		filter = bson.D{}
-	}
-
-	filter = append(filter, bson.E{Key: "deletedAt", Value: bson.D{{"$ne", time.Time{}}}})
-
-	return filter
-}
-
 func addExcludeDeleted(filter bson.D) bson.D {
 	if filter == nil {
 		filter = bson.D{}
@@ -39,9 +29,7 @@ func addExcludeDeleted(filter bson.D) bson.D {
 }
 
 func GetResource[T any](collection *mongo.Collection, filter bson.D, includeDeleted bool) (*T, error) {
-	if includeDeleted {
-		filter = addIncludeDeleted(filter)
-	} else {
+	if !includeDeleted {
 		filter = addExcludeDeleted(filter)
 	}
 
@@ -58,9 +46,7 @@ func GetResource[T any](collection *mongo.Collection, filter bson.D, includeDele
 }
 
 func GetManyResources[T any](collection *mongo.Collection, filter bson.D, includeDeleted bool) ([]T, error) {
-	if includeDeleted {
-		filter = addIncludeDeleted(filter)
-	} else {
+	if !includeDeleted {
 		filter = addExcludeDeleted(filter)
 	}
 
@@ -86,9 +72,7 @@ func GetManyResources[T any](collection *mongo.Collection, filter bson.D, includ
 }
 
 func CountResources(collection *mongo.Collection, filter bson.D, includeDeleted bool) (int, error) {
-	if includeDeleted {
-		filter = addIncludeDeleted(filter)
-	} else {
+	if !includeDeleted {
 		filter = addExcludeDeleted(filter)
 	}
 
