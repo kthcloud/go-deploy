@@ -83,9 +83,10 @@ func createDeploymentPublic(namespace, name, dockerImage string, envs []deployme
 func createFileBrowserDeploymentPublic(namespace, name string, volumes []storage_manager.Volume, initCommands []string) *k8sModels.DeploymentPublic {
 	k8sVolumes := make([]k8sModels.Volume, len(volumes))
 	for i, volume := range volumes {
+		pvcName := volume.Name
 		k8sVolumes[i] = k8sModels.Volume{
 			Name:      volume.Name,
-			PvcName:   &volume.Name,
+			PvcName:   &pvcName,
 			MountPath: volume.AppPath,
 			Init:      volume.Init,
 		}
