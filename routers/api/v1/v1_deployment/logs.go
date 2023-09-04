@@ -65,7 +65,9 @@ func GetLogs(c *gin.Context) {
 				case websocket.CloseNormalClosure,
 					websocket.CloseGoingAway,
 					websocket.CloseNoStatusReceived:
-					logContext.Done()
+					if logContext != nil {
+						logContext.Done()
+					}
 					log.Println("websocket closed for deployment ", requestURI.DeploymentID)
 					return
 				}
