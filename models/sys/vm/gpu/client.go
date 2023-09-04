@@ -23,6 +23,14 @@ func New() *Client {
 }
 
 func NewWithExclusion(excludedHosts []string, excludedGPUs []string) *Client {
+	if excludedHosts == nil {
+		excludedHosts = make([]string, 0)
+	}
+
+	if excludedGPUs == nil {
+		excludedGPUs = make([]string, 0)
+	}
+
 	return &Client{
 		ExcludedHosts: excludedHosts,
 		ExcludedGPUs:  excludedGPUs,
