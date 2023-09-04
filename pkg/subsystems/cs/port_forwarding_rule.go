@@ -11,7 +11,7 @@ import (
 
 func (client *Client) ReadPortForwardingRule(id string) (*models.PortForwardingRulePublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to read port forwarding rule %s. details: %s", id, err)
+		return fmt.Errorf("failed to read port forwarding rule %s. details: %w", id, err)
 	}
 
 	if id == "" {
@@ -36,7 +36,7 @@ func (client *Client) ReadPortForwardingRule(id string) (*models.PortForwardingR
 
 func (client *Client) CreatePortForwardingRule(public *models.PortForwardingRulePublic) (string, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create port forwarding rule for vm %s. details: %s", public.VmID, err)
+		return fmt.Errorf("failed to create port forwarding rule for vm %s. details: %w", public.VmID, err)
 	}
 
 	if public.VmID == "" {
@@ -110,7 +110,7 @@ func (client *Client) CreatePortForwardingRule(public *models.PortForwardingRule
 
 func (client *Client) DeletePortForwardingRule(id string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete port forwarding rule %s. details: %s", id, err)
+		return fmt.Errorf("failed to delete port forwarding rule %s. details: %w", id, err)
 	}
 
 	if id == "" {
@@ -141,7 +141,7 @@ func (client *Client) DeletePortForwardingRule(id string) error {
 
 func (client *Client) GetFreePort(startPort, endPort int) (int, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to get free port. details: %s", err)
+		return fmt.Errorf("failed to get free port. details: %w", err)
 	}
 
 	listRulesParams := client.CsClient.Firewall.NewListPortForwardingRulesParams()

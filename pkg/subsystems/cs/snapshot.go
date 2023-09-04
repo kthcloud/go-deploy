@@ -8,7 +8,7 @@ import (
 
 func (client *Client) ReadSnapshot(id string) (*models.SnapshotPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to read snapshot %s. details: %s", id, err)
+		return fmt.Errorf("failed to read snapshot %s. details: %w", id, err)
 	}
 
 	if id == "" {
@@ -37,7 +37,7 @@ func (client *Client) ReadSnapshot(id string) (*models.SnapshotPublic, error) {
 
 func (client *Client) ReadAllSnapshots(vmID string) ([]models.SnapshotPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to read all snapshots. details: %s", err)
+		return fmt.Errorf("failed to read all snapshots. details: %w", err)
 	}
 
 	params := client.CsClient.Snapshot.NewListVMSnapshotParams()
@@ -60,7 +60,7 @@ func (client *Client) ReadAllSnapshots(vmID string) ([]models.SnapshotPublic, er
 
 func (client *Client) CreateSnapshot(public *models.SnapshotPublic) (string, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create snapshot %s. details: %s", public.Name, err)
+		return fmt.Errorf("failed to create snapshot %s. details: %w", public.Name, err)
 	}
 
 	params := client.CsClient.Snapshot.NewCreateVMSnapshotParams(public.VmID)
@@ -80,7 +80,7 @@ func (client *Client) CreateSnapshot(public *models.SnapshotPublic) (string, err
 
 func (client *Client) ApplySnapshot(public *models.SnapshotPublic) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to apply snapshot %s. details: %s", public.Name, err)
+		return fmt.Errorf("failed to apply snapshot %s. details: %w", public.Name, err)
 	}
 
 	params := client.CsClient.Snapshot.NewRevertToVMSnapshotParams(public.ID)

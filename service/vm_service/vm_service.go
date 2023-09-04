@@ -9,13 +9,14 @@ import (
 	"go-deploy/pkg/conf"
 	"go-deploy/service"
 	"go-deploy/service/vm_service/internal_service"
+	"go-deploy/utils"
 	"log"
 	"strings"
 )
 
 func Create(vmID, owner string, vmCreate *body.VmCreate) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create vm. details: %s", err)
+		return fmt.Errorf("failed to create vm. details: %w", err)
 	}
 
 	// temporary hard-coded fallback
@@ -30,7 +31,7 @@ func Create(vmID, owner string, vmCreate *body.VmCreate) error {
 		addDeploySshToPortMap(&params.Ports)
 	}
 
-	created, err := vmModel.Create(vmID, owner, conf.Env.Manager, params)
+	created, err := vmModel.New().Create(vmID, owner, conf.Env.Manager, params)
 	if err != nil {
 		return makeError(err)
 	}
@@ -48,7 +49,7 @@ func Create(vmID, owner string, vmCreate *body.VmCreate) error {
 }
 
 func GetByIdAuth(vmID string, auth *service.AuthInfo) (*vmModel.VM, error) {
-	vm, err := vmModel.GetByID(vmID)
+	vm, err := vmModel.New().GetByID(vmID)
 	if err != nil {
 		return nil, err
 	}
@@ -64,20 +65,24 @@ func GetByIdAuth(vmID string, auth *service.AuthInfo) (*vmModel.VM, error) {
 	return vm, nil
 }
 
+func GetByName(name string) (*vmModel.VM, error) {
+	return vmModel.New().GetByName(name)
+}
+
 func GetByOwnerIdAuth(ownerID string, auth *service.AuthInfo) ([]vmModel.VM, error) {
 	if ownerID != auth.UserID && !auth.IsAdmin {
 		return nil, nil
 	}
 
-	return vmModel.GetByOwnerID(ownerID)
+	return vmModel.New().GetByOwnerID(ownerID)
 }
 
 func GetAllAuth(auth *service.AuthInfo) ([]vmModel.VM, error) {
 	if auth.IsAdmin {
-		return vmModel.GetAll()
+		return vmModel.New().GetAll()
 	}
 
-	self, err := vmModel.GetByOwnerID(auth.UserID)
+	self, err := vmModel.New().GetByOwnerID(auth.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -90,19 +95,15 @@ func GetAllAuth(auth *service.AuthInfo) ([]vmModel.VM, error) {
 }
 
 func GetAll() ([]vmModel.VM, error) {
-	return vmModel.GetAll()
-}
-
-func Exists(name string) (bool, *vmModel.VM, error) {
-	return vmModel.ExistsByName(name)
+	return vmModel.New().GetAll()
 }
 
 func Delete(name string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete vm. details: %s", err)
+		return fmt.Errorf("failed to delete vm. details: %w", err)
 	}
 
-	vm, err := vmModel.GetByName(name)
+	vm, err := vmModel.New().GetByName(name)
 	if err != nil {
 		return makeError(err)
 	}
@@ -111,7 +112,7 @@ func Delete(name string) error {
 		return nil
 	}
 
-	err = vmModel.AddActivity(vm.ID, vmModel.ActivityBeingDeleted)
+	err = vmModel.New().AddActivity(vm.ID, vmModel.ActivityBeingDeleted)
 	if err != nil {
 		return makeError(err)
 	}
@@ -121,7 +122,7 @@ func Delete(name string) error {
 		return makeError(err)
 	}
 
-	err = gpu.Detach(vm.ID, vm.OwnerID)
+	err = gpu.New().Detach(vm.ID, vm.OwnerID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -131,7 +132,7 @@ func Delete(name string) error {
 
 func Update(vmID string, dtoVmUpdate *body.VmUpdate) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to update vm. details: %s", err)
+		return fmt.Errorf("failed to update vm. details: %w", err)
 	}
 
 	vmUpdate := &vmModel.UpdateParams{}
@@ -154,13 +155,13 @@ func Update(vmID string, dtoVmUpdate *body.VmUpdate) error {
 			return makeError(err)
 		}
 
-		err = vmModel.UpdateByID(vmID, vmUpdate)
+		err = vmModel.New().UpdateWithParamsByID(vmID, vmUpdate)
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
-	err := vmModel.RemoveActivity(vmID, vmModel.ActivityBeingUpdated)
+	err := vmModel.New().RemoveActivity(vmID, vmModel.ActivityBeingUpdated)
 	if err != nil {
 		return makeError(err)
 	}
@@ -170,10 +171,10 @@ func Update(vmID string, dtoVmUpdate *body.VmUpdate) error {
 
 func Repair(id string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to repair vm %s. details: %s", id, err)
+		return fmt.Errorf("failed to repair vm %s. details: %w", id, err)
 	}
 
-	vm, err := vmModel.GetByID(id)
+	vm, err := vmModel.New().GetByID(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -198,9 +199,9 @@ func Repair(id string) error {
 	}
 
 	defer func() {
-		err = vmModel.RemoveActivity(vm.ID, vmModel.ActivityRepairing)
+		err = vmModel.New().RemoveActivity(vm.ID, vmModel.ActivityRepairing)
 		if err != nil {
-			log.Println("failed to remove activity", vmModel.ActivityRepairing, "from vm", vm.Name, "details:", err)
+			utils.PrettyPrintError(fmt.Errorf("failed to remove activity %s from vm %s details: %w", vmModel.ActivityRepairing, vm.Name, err))
 		}
 	}()
 
@@ -250,7 +251,7 @@ func DoCommand(vm *vmModel.VM, command string) {
 
 		err := internal_service.DoCommandCS(csID, gpuID, command, vm.Zone)
 		if err != nil {
-			log.Println(err)
+			utils.PrettyPrintError(err)
 			return
 		}
 	}()
@@ -266,7 +267,7 @@ func StartActivity(vmID, activity string) (bool, string, error) {
 		return false, reason, nil
 	}
 
-	err = vmModel.AddActivity(vmID, activity)
+	err = vmModel.New().AddActivity(vmID, activity)
 	if err != nil {
 		return false, "", err
 	}
@@ -275,7 +276,7 @@ func StartActivity(vmID, activity string) (bool, string, error) {
 }
 
 func CanAddActivity(vmID, activity string) (bool, string, error) {
-	vm, err := vmModel.GetByID(vmID)
+	vm, err := vmModel.New().GetByID(vmID)
 	if err != nil {
 		return false, "", err
 	}
@@ -288,7 +289,7 @@ func CanAddActivity(vmID, activity string) (bool, string, error) {
 	case vmModel.ActivityBeingCreated:
 		return !vm.BeingDeleted(), "It is being deleted", nil
 	case vmModel.ActivityBeingDeleted:
-		return !vm.BeingCreated(), "It is being created", nil
+		return true, "", nil
 	case vmModel.ActivityBeingUpdated:
 		if vm.DoingOnOfActivities([]string{
 			vmModel.ActivityBeingCreated,
@@ -359,7 +360,7 @@ func CanAddActivity(vmID, activity string) (bool, string, error) {
 
 func CheckQuotaCreate(userID string, quota *roleModel.Quotas, createParams body.VmCreate) (bool, string, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check quota. details: %s", err)
+		return fmt.Errorf("failed to check quota. details: %w", err)
 	}
 
 	usage, err := GetUsageByUserID(userID)
@@ -388,7 +389,7 @@ func CheckQuotaCreate(userID string, quota *roleModel.Quotas, createParams body.
 
 func CheckQuotaUpdate(userID, vmID string, quota *roleModel.Quotas, updateParams body.VmUpdate) (bool, string, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check quota. details: %s", err)
+		return fmt.Errorf("failed to check quota. details: %w", err)
 	}
 
 	if updateParams.CpuCores == nil && updateParams.RAM == nil {
@@ -404,7 +405,7 @@ func CheckQuotaUpdate(userID, vmID string, quota *roleModel.Quotas, updateParams
 		return false, "", makeError(fmt.Errorf("usage not found"))
 	}
 
-	vm, err := vmModel.GetByID(vmID)
+	vm, err := vmModel.New().GetByID(vmID)
 	if err != nil {
 		return false, "", makeError(err)
 	}
@@ -440,12 +441,12 @@ func CheckQuotaUpdate(userID, vmID string, quota *roleModel.Quotas, updateParams
 
 func GetUsageByUserID(id string) (*vmModel.Usage, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check quota. details: %s", err)
+		return fmt.Errorf("failed to check quota. details: %w", err)
 	}
 
 	usage := &vmModel.Usage{}
 
-	currentVms, err := vmModel.GetByOwnerID(id)
+	currentVms, err := vmModel.New().GetByOwnerID(id)
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -469,10 +470,10 @@ func GetUsageByUserID(id string) (*vmModel.Usage, error) {
 
 func GetExternalPortMapper(vmID string) (map[string]int, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to get external port mapper. details: %s", err)
+		return fmt.Errorf("failed to get external port mapper. details: %w", err)
 	}
 
-	vm, err := vmModel.GetByID(vmID)
+	vm, err := vmModel.New().GetByID(vmID)
 	if err != nil {
 		return nil, makeError(err)
 	}

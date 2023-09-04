@@ -11,6 +11,7 @@ import (
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/k8s"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
+	"go-deploy/utils"
 	"log"
 	"reflect"
 	"strconv"
@@ -82,9 +83,10 @@ func createDeploymentPublic(namespace, name, dockerImage string, envs []deployme
 func createFileBrowserDeploymentPublic(namespace, name string, volumes []storage_manager.Volume, initCommands []string) *k8sModels.DeploymentPublic {
 	k8sVolumes := make([]k8sModels.Volume, len(volumes))
 	for i, volume := range volumes {
+		pvcName := volume.Name
 		k8sVolumes[i] = k8sModels.Volume{
 			Name:      volume.Name,
-			PvcName:   &volume.Name,
+			PvcName:   &pvcName,
 			MountPath: volume.AppPath,
 			Init:      volume.Init,
 		}
@@ -137,9 +139,9 @@ func createOAuthProxyDeploymentPublic(namespace, name, userID string, zone *envi
 		Memory: conf.Env.Deployment.Resources.Requests.Memory,
 	}
 
-	user, err := userModel.GetByID(userID)
+	user, err := userModel.New().GetByID(userID)
 	if err != nil {
-		log.Println("failed to get user by id when creating oauth proxy deployment public. details:", err)
+		utils.PrettyPrintError(fmt.Errorf("failed to get user by id when creating oauth proxy deployment public. details: %w", err))
 		return nil
 	}
 

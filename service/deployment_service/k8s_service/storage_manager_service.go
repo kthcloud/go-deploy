@@ -12,7 +12,7 @@ import (
 
 func CreateStorageManager(id string, params *storageManagerModel.CreateParams) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create storage manager in k8s. details: %s", err)
+		return fmt.Errorf("failed to create storage manager in k8s. details: %w", err)
 	}
 
 	storageManager, err := storageManagerModel.GetByID(id)
@@ -208,7 +208,7 @@ func CreateStorageManager(id string, params *storageManagerModel.CreateParams) e
 
 func DeleteStorageManager(id string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete storage manager in k8s. details: %s", err)
+		return fmt.Errorf("failed to delete storage manager in k8s. details: %w", err)
 	}
 
 	log.Println("deleting k8s for storage manager", id)
@@ -300,7 +300,7 @@ func DeleteStorageManager(id string) error {
 
 func RepairStorageManager(id string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to repair storage manager in k8s. details: %s", err)
+		return fmt.Errorf("failed to repair storage manager in k8s. details: %w", err)
 	}
 
 	storageManager, err := storageManagerModel.GetByID(id)

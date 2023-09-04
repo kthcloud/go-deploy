@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"go-deploy/models"
@@ -43,9 +44,9 @@ func Start(ctx context.Context, options *StartOptions) *http.Server {
 
 	migrator.Migrate()
 
-	err := job.ResetRunning()
+	err := job.New().ResetRunning()
 	if err != nil {
-		log.Fatalln("failed to reset running job. details: ", err)
+		log.Fatalln(fmt.Errorf("failed to reset running job. details: %w", err))
 	}
 
 	intializer.SynchronizeGPUs()
@@ -96,8 +97,8 @@ func Start(ctx context.Context, options *StartOptions) *http.Server {
 
 		go func() {
 			err := server.ListenAndServe()
-			if err != nil && err != http.ErrServerClosed {
-				log.Fatalf("failed to start http server. details: %s\n", err)
+			if err != nil && !errors.Is(err, http.ErrServerClosed) {
+				log.Fatalln(fmt.Errorf("failed to start http server. details: %w", err))
 			}
 		}()
 
@@ -111,7 +112,7 @@ func Stop(server *http.Server) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := server.Shutdown(ctx); err != nil {
-		log.Fatalf("failed to shutdown server. details: %s\n", err)
+		log.Fatalf("failed to shutdown server. details: %w\n", err)
 	}
 
 	select {

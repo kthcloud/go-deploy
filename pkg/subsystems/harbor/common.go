@@ -22,7 +22,7 @@ func (client *Client) doJSONRequest(method string, relativePath string, requestB
 
 func (client *Client) assertProjectExists(name string) (bool, *modelv2.Project, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to assert harbor project %s exists. details: %s", name, err)
+		return fmt.Errorf("failed to assert harbor project %s exists. details: %w", name, err)
 	}
 
 	project, err := client.HarborClient.GetProject(context.TODO(), name)
@@ -35,7 +35,7 @@ func (client *Client) assertProjectExists(name string) (bool, *modelv2.Project, 
 // Needed since the harbor client package refuses to return credentials
 func (client *Client) createHarborRobot(public *models.RobotPublic) (*modelv2.RobotCreated, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create harbor robot %s. details: %s", public.Name, err)
+		return fmt.Errorf("failed to create harbor robot %s. details: %w", public.Name, err)
 	}
 
 	robotRequestBody := models.CreateRobotCreateBody(public)
@@ -59,7 +59,7 @@ func (client *Client) createHarborRobot(public *models.RobotPublic) (*modelv2.Ro
 
 func (client *Client) getRobotByNameV1(projectName string, name string) (*modelv2.Robot, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to fetch harbor robot %s by name. details: %s", name, err)
+		return fmt.Errorf("failed to fetch harbor robot %s by name. details: %w", name, err)
 	}
 
 	robots, err := client.HarborClient.ListProjectRobotsV1(context.TODO(), projectName)

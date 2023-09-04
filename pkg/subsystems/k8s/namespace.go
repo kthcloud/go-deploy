@@ -47,7 +47,7 @@ func (client *Client) waitNamespaceDeleted(ctx context.Context, resourceName str
 
 func (client *Client) NamespaceCreated(name string) (bool, error) {
 	_ = func(err error) error {
-		return fmt.Errorf("failed to check if namespace %s is created. details: %s", name, err)
+		return fmt.Errorf("failed to check if namespace %s is created. details: %w", name, err)
 	}
 
 	if name == "" {
@@ -75,7 +75,7 @@ func (client *Client) NamespaceDeleted(name string) (bool, error) {
 
 func (client *Client) ReadNamespace(id string) (*models.NamespacePublic, error) {
 	_ = func(err error) error {
-		return fmt.Errorf("failed to read namespace %s. details: %s", id, err)
+		return fmt.Errorf("failed to read namespace %s. details: %w", id, err)
 	}
 
 	if id == "" {
@@ -99,7 +99,7 @@ func (client *Client) ReadNamespace(id string) (*models.NamespacePublic, error) 
 
 func (client *Client) CreateNamespace(public *models.NamespacePublic) (string, error) {
 	_ = func(err error) error {
-		return fmt.Errorf("failed to create namespace %s. details: %s", public.Name, err)
+		return fmt.Errorf("failed to create namespace %s. details: %w", public.Name, err)
 	}
 
 	if public.Name == "" {
@@ -135,7 +135,7 @@ func (client *Client) CreateNamespace(public *models.NamespacePublic) (string, e
 
 func (client *Client) DeleteNamespace(name string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete namespace %s. details: %s", name, err)
+		return fmt.Errorf("failed to delete namespace %s. details: %w", name, err)
 	}
 
 	namespaceDeleted, err := client.NamespaceDeleted(name)

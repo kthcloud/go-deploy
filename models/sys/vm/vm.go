@@ -12,6 +12,7 @@ type VM struct {
 	CreatedAt  time.Time `bson:"createdAt"`
 	UpdatedAt  time.Time `bson:"updatedAt"`
 	RepairedAt time.Time `bson:"repairedAt"`
+	DeletedAt  time.Time `bson:"deletedAt"`
 
 	GpuID        string   `bson:"gpuId"`
 	SshPublicKey string   `bson:"sshPublicKey"`

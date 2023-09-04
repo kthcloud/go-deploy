@@ -11,7 +11,7 @@ import (
 
 func (client *Client) WebhookCreated(public *models.WebhookPublic) (bool, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if webhook %s is created. details: %s", public.Name, err)
+		return fmt.Errorf("failed to check if webhook %s is created. details: %w", public.Name, err)
 	}
 
 	webhookPolicies, err := client.HarborClient.ListProjectWebhookPolicies(context.TODO(), public.ProjectID)
@@ -29,7 +29,7 @@ func (client *Client) WebhookCreated(public *models.WebhookPublic) (bool, error)
 
 func (client *Client) ReadWebhook(projectID, id int) (*models.WebhookPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to read webhook for %d. details: %s", id, err)
+		return fmt.Errorf("failed to read webhook for %d. details: %w", id, err)
 	}
 
 	webhookPolicies, err := client.HarborClient.ListProjectWebhookPolicies(context.TODO(), projectID)
@@ -55,7 +55,7 @@ func (client *Client) ReadWebhook(projectID, id int) (*models.WebhookPublic, err
 
 func (client *Client) CreateWebhook(public *models.WebhookPublic) (int, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create webhook for %s. details: %s", public.Name, err)
+		return fmt.Errorf("failed to create webhook for %s. details: %w", public.Name, err)
 	}
 
 	if public.ProjectID == 0 {
@@ -99,7 +99,7 @@ func (client *Client) CreateWebhook(public *models.WebhookPublic) (int, error) {
 
 func (client *Client) DeleteWebhook(projectID, id int) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete webhook for %d. details: %s", id, err)
+		return fmt.Errorf("failed to delete webhook for %d. details: %w", id, err)
 	}
 
 	err := client.HarborClient.DeleteProjectWebhookPolicy(context.TODO(), projectID, int64(id))
@@ -117,7 +117,7 @@ func (client *Client) DeleteWebhook(projectID, id int) error {
 
 func (client *Client) DeleteAllWebhooks(projectID int) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete all webhook for %d. details: %s", projectID, err)
+		return fmt.Errorf("failed to delete all webhook for %d. details: %w", projectID, err)
 	}
 
 	webhookPolicies, err := client.HarborClient.ListProjectWebhookPolicies(context.TODO(), projectID)

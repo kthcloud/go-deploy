@@ -14,6 +14,7 @@ type Deployment struct {
 	UpdatedAt   time.Time `bson:"updatedAt"`
 	RepairedAt  time.Time `bson:"repairedAt"`
 	RestartedAt time.Time `bson:"restartedAt"`
+	DeletedAt   time.Time `bson:"deletedAt"`
 
 	// keep until migrated
 	Private      bool     `bson:"private"`
@@ -33,7 +34,7 @@ type Deployment struct {
 func (deployment *Deployment) GetMainApp() *App {
 	app, ok := deployment.Apps["main"]
 	if !ok {
-		return nil
+		return &App{}
 	}
 	return &app
 }
@@ -57,4 +58,8 @@ func (deployment *Deployment) BeingCreated() bool {
 
 func (deployment *Deployment) BeingDeleted() bool {
 	return deployment.DoingActivity(ActivityBeingDeleted)
+}
+
+func (deployment *Deployment) Deleted() bool {
+	return deployment.DeletedAt.After(time.Time{})
 }

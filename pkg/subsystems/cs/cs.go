@@ -27,7 +27,7 @@ type ClientConf struct {
 
 func New(config *ClientConf) (*Client, error) {
 	_ = func(err error) error {
-		return fmt.Errorf("failed to create cloudstack client. details: %s", err)
+		return fmt.Errorf("failed to create cloudstack client. details: %w", err)
 	}
 
 	csClient := cloudstack.NewAsyncClient(

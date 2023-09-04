@@ -10,7 +10,7 @@ import (
 
 func (client *Client) ReadServiceOffering(id string) (*models.ServiceOfferingPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to read service offering %s. details: %s", id, err)
+		return fmt.Errorf("failed to read service offering %s. details: %w", id, err)
 	}
 
 	if id == "" {
@@ -34,7 +34,7 @@ func (client *Client) ReadServiceOffering(id string) (*models.ServiceOfferingPub
 
 func (client *Client) CreateServiceOffering(public *models.ServiceOfferingPublic) (string, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create service offering. details: %s", err)
+		return fmt.Errorf("failed to create service offering. details: %w", err)
 	}
 
 	params := client.CsClient.ServiceOffering.NewListServiceOfferingsParams()
@@ -70,7 +70,7 @@ func (client *Client) CreateServiceOffering(public *models.ServiceOfferingPublic
 
 func (client *Client) DeleteServiceOffering(id string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete service offering %s. details: %s", id, err)
+		return fmt.Errorf("failed to delete service offering %s. details: %w", id, err)
 	}
 
 	if id == "" {

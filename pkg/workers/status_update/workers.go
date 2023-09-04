@@ -15,7 +15,7 @@ func vmStatusUpdater(ctx context.Context) {
 	for {
 		select {
 		case <-time.After(1 * time.Second):
-			allVms, err := vmModel.GetAll()
+			allVms, err := vmModel.New().GetAll()
 			if err != nil {
 				log.Println("error fetching vms: ", err)
 				continue
@@ -27,7 +27,7 @@ func vmStatusUpdater(ctx context.Context) {
 					log.Println("error fetching vm status: ", err)
 					continue
 				}
-				_ = vmModel.UpdateWithBsonByID(vm.ID, bson.D{{"statusCode", code}, {"statusMessage", message}})
+				_ = vmModel.New().UpdateWithBsonByID(vm.ID, bson.D{{"statusCode", code}, {"statusMessage", message}})
 			}
 		case <-ctx.Done():
 			return
@@ -41,7 +41,7 @@ func vmSnapshotUpdater(ctx context.Context) {
 	for {
 		select {
 		case <-time.After(5 * time.Second):
-			allVms, err := vmModel.GetAll()
+			allVms, err := vmModel.New().GetAll()
 			if err != nil {
 				log.Println("error fetching vms: ", err)
 				continue
@@ -53,7 +53,7 @@ func vmSnapshotUpdater(ctx context.Context) {
 					continue
 				}
 
-				_ = vmModel.UpdateSubsystemByName(vm.Name, "cs", "snapshotMap", snapshotMap)
+				_ = vmModel.New().UpdateSubsystemByName(vm.Name, "cs", "snapshotMap", snapshotMap)
 			}
 		case <-ctx.Done():
 			return
@@ -67,7 +67,7 @@ func deploymentStatusUpdater(ctx context.Context) {
 	for {
 		select {
 		case <-time.After(1 * time.Second):
-			allDeployments, err := deploymentModel.GetAll()
+			allDeployments, err := deploymentModel.New().GetAll()
 			if err != nil {
 				log.Println("error fetching deployments: ", err)
 				continue
@@ -79,7 +79,7 @@ func deploymentStatusUpdater(ctx context.Context) {
 					log.Println("error fetching deployment status: ", err)
 					continue
 				}
-				_ = deploymentModel.UpdateWithBsonByID(deployment.ID, bson.D{{"statusCode", code}, {"statusMessage", message}})
+				_ = deploymentModel.New().UpdateWithBsonByID(deployment.ID, bson.D{{"statusCode", code}, {"statusMessage", message}})
 			}
 		case <-ctx.Done():
 			return

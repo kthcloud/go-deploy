@@ -10,7 +10,7 @@ import (
 
 func (client *Client) insertPlaceholder(public *models.RepositoryPublic) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to insert placeholder repository %d. details: %s", public.ID, err)
+		return fmt.Errorf("failed to insert placeholder repository %d. details: %w", public.ID, err)
 	}
 
 	fromArtifact, err := client.HarborClient.GetArtifact(context.TODO(), public.Placeholder.ProjectName, public.Placeholder.RepositoryName, "latest")
@@ -35,7 +35,7 @@ func (client *Client) insertPlaceholder(public *models.RepositoryPublic) error {
 
 func (client *Client) RepositoryCreated(public *models.RepositoryPublic) (bool, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if repository %s is created. details: %s", public.Name, err)
+		return fmt.Errorf("failed to check if repository %s is created. details: %w", public.Name, err)
 	}
 
 	repository, err := client.HarborClient.GetRepository(context.TODO(), public.ProjectName, public.Name)
@@ -48,7 +48,7 @@ func (client *Client) RepositoryCreated(public *models.RepositoryPublic) (bool, 
 
 func (client *Client) ReadRepository(projectName, name string) (*models.RepositoryPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to read repository %s. details: %s", name, err)
+		return fmt.Errorf("failed to read repository %s. details: %w", name, err)
 	}
 
 	repository, err := client.HarborClient.GetRepository(context.TODO(), projectName, name)
@@ -78,7 +78,7 @@ func (client *Client) ReadRepository(projectName, name string) (*models.Reposito
 
 func (client *Client) CreateRepository(public *models.RepositoryPublic) (int, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create repository %s. details: %s", public.Name, err)
+		return fmt.Errorf("failed to create repository %s. details: %w", public.Name, err)
 	}
 
 	repository, err := client.HarborClient.GetRepository(context.TODO(), public.ProjectName, public.Name)
@@ -110,7 +110,7 @@ func (client *Client) CreateRepository(public *models.RepositoryPublic) (int, er
 
 func (client *Client) DeleteRepository(projectName, name string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete repository %s. details: %s", name, err)
+		return fmt.Errorf("failed to delete repository %s. details: %w", name, err)
 	}
 
 	err := client.HarborClient.DeleteRepository(context.TODO(), projectName, name)
@@ -126,7 +126,7 @@ func (client *Client) DeleteRepository(projectName, name string) error {
 
 func (client *Client) DeleteAllRepositories(projectName string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete all repositories. details: %s", err)
+		return fmt.Errorf("failed to delete all repositories. details: %w", err)
 	}
 
 	repositories, err := client.HarborClient.ListRepositories(context.TODO(), projectName)

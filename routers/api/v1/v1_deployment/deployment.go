@@ -217,7 +217,7 @@ func Create(c *gin.Context) {
 		}
 	}
 
-	exists, deployment, err := deployment_service.Exists(requestBody.Name)
+	deployment, err := deployment_service.GetByName(requestBody.Name)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return
@@ -247,7 +247,7 @@ func Create(c *gin.Context) {
 		}
 	}
 
-	if exists {
+	if deployment != nil {
 		if deployment.OwnerID != auth.UserID {
 			context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceNotCreated, "Resource already exists")
 			return

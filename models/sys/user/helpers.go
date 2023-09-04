@@ -2,13 +2,11 @@ package user
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"go-deploy/models"
 	"go-deploy/models/dto/body"
 	roleModel "go-deploy/models/sys/enviroment/role"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 	"log"
 )
 
@@ -62,8 +60,8 @@ func (u *User) ToDTO(effectiveRole *roleModel.Role, usage *Usage) body.UserRead 
 	return userRead
 }
 
-func Create(id, username, email string, isAdmin bool, effectiveRole *EffectiveRole) error {
-	current, err := GetByID(id)
+func (client *Client) Create(id, username, email string, isAdmin bool, effectiveRole *EffectiveRole) error {
+	current, err := client.GetByID(id)
 	if err != nil {
 		return err
 	}
@@ -86,7 +84,7 @@ func Create(id, username, email string, isAdmin bool, effectiveRole *EffectiveRo
 		}}}
 		_, err = models.UserCollection.UpdateOne(context.Background(), filter, update)
 		if err != nil {
-			return fmt.Errorf("failed to update user info for %s. details: %s", username, err)
+			return fmt.Errorf("failed to update user info for %s. details: %w", username, err)
 		}
 
 		return nil
@@ -102,44 +100,13 @@ func Create(id, username, email string, isAdmin bool, effectiveRole *EffectiveRo
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to create user info for %s. details: %s", username, err)
+		return fmt.Errorf("failed to create user info for %s. details: %w", username, err)
 	}
 
 	return nil
 }
 
-func GetByID(id string) (*User, error) {
-	var user User
-	filter := bson.D{{"id", id}}
-	err := models.UserCollection.FindOne(context.TODO(), filter).Decode(&user)
-	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, nil
-		}
-
-		err = fmt.Errorf("failed to fetch user info by id %s. details: %s", id, err)
-		return nil, err
-	}
-
-	return &user, err
-}
-
-func GetAll() ([]User, error) {
-	var users []User
-	cursor, err := models.UserCollection.Find(context.Background(), bson.D{})
-	if err != nil {
-		return nil, err
-	}
-
-	err = cursor.All(context.Background(), &users)
-	if err != nil {
-		return nil, err
-	}
-
-	return users, nil
-}
-
-func Update(userID string, update *UserUpdate) error {
+func (client *Client) Update(userID string, update *UserUpdate) error {
 	updateData := bson.M{}
 
 	models.AddIfNotNil(updateData, "username", update.Username)
@@ -152,9 +119,9 @@ func Update(userID string, update *UserUpdate) error {
 	filter := bson.D{{"id", userID}}
 	updateDoc := bson.D{{"$set", updateData}}
 
-	_, err := models.UserCollection.UpdateOne(context.Background(), filter, updateDoc)
+	_, err := client.Collection.UpdateOne(context.Background(), filter, updateDoc)
 	if err != nil {
-		return fmt.Errorf("failed to update user info for %s. details: %s", userID, err)
+		return fmt.Errorf("failed to update user info for %s. details: %w", userID, err)
 	}
 
 	return nil

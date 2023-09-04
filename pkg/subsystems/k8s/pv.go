@@ -12,7 +12,7 @@ import (
 
 func (client *Client) ReadPV(id string) (*models.PvPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to read k8s persistent volume %s. details: %s", id, err)
+		return fmt.Errorf("failed to read k8s persistent volume %s. details: %w", id, err)
 	}
 
 	if id == "" {
@@ -36,7 +36,7 @@ func (client *Client) ReadPV(id string) (*models.PvPublic, error) {
 
 func (client *Client) CreatePV(public *models.PvPublic) (string, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to k8s persistent volume %s. details: %s", public.Name, err)
+		return fmt.Errorf("failed to k8s persistent volume %s. details: %w", public.Name, err)
 	}
 
 	if public.Name == "" {
@@ -69,7 +69,7 @@ func (client *Client) CreatePV(public *models.PvPublic) (string, error) {
 
 func (client *Client) DeletePV(id string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete k8s persistent volume %s. details: %s", id, err)
+		return fmt.Errorf("failed to delete k8s persistent volume %s. details: %w", id, err)
 	}
 
 	if id == "" {

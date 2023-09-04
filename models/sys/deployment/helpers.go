@@ -2,19 +2,17 @@ package deployment
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"go-deploy/models"
 	"go-deploy/models/sys/deployment/subsystems"
 	"go-deploy/pkg/status_codes"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
 	"time"
 )
 
-func CreateDeployment(deploymentID, ownerID string, params *CreateParams) (bool, error) {
+func (client *Client) Create(deploymentID, ownerID string, params *CreateParams) (bool, error) {
 	appName := "main"
 	mainApp := App{
 		Name:         appName,
@@ -57,18 +55,24 @@ func CreateDeployment(deploymentID, ownerID string, params *CreateParams) (bool,
 		StatusMessage: status_codes.GetMsg(status_codes.ResourceBeingCreated),
 	}
 
-	result, err := models.DeploymentCollection.UpdateOne(context.TODO(), bson.D{{"name", params.Name}}, bson.D{
+	filter := bson.D{{"name", params.Name}, {"deletedAt", bson.D{{"$in", []interface{}{time.Time{}, nil}}}}}
+	result, err := client.Collection.UpdateOne(context.TODO(), filter, bson.D{
 		{"$setOnInsert", deployment},
 	}, options.Update().SetUpsert(true))
 	if err != nil {
-		return false, fmt.Errorf("failed to create deployment. details: %s", err)
+		return false, fmt.Errorf("failed to create deployment. details: %w", err)
 	}
 
 	if result.UpsertedCount == 0 {
 		if result.MatchedCount == 1 {
-			fetchedDeployment, err := getDeployment(bson.D{{"name", params.Name}})
+			fetchedDeployment, err := client.GetByName(params.Name)
 			if err != nil {
 				return false, err
+			}
+
+			if fetchedDeployment == nil {
+				log.Println(fmt.Errorf("failed to fetch deployment %s after creation. assuming it was deleted", params.Name))
+				return false, nil
 			}
 
 			if fetchedDeployment.ID == deploymentID {
@@ -82,116 +86,42 @@ func CreateDeployment(deploymentID, ownerID string, params *CreateParams) (bool,
 	return true, nil
 }
 
-func getDeployment(filter bson.D) (*Deployment, error) {
-	var deployment Deployment
-	err := models.DeploymentCollection.FindOne(context.TODO(), filter).Decode(&deployment)
+func (client *Client) GetAllByGitHubWebhookID(id int64) ([]Deployment, error) {
+	return models.GetManyResources[Deployment](client.Collection, bson.D{{"subsystems.github.webhookId", id}}, false)
+}
+
+func (client *Client) GetByOwnerID(ownerID string) ([]Deployment, error) {
+	return models.GetManyResources[Deployment](client.Collection, bson.D{{"ownerId", ownerID}}, false)
+}
+
+func (client *Client) DeleteByID(deploymentID string) error {
+	_, err := client.Collection.UpdateOne(context.TODO(),
+		bson.D{{"id", deploymentID}},
+		bson.D{
+			{"$set", bson.D{{"deletedAt", time.Now()}}},
+			{"$pull", bson.D{{"activities", ActivityBeingDeleted}}},
+		},
+	)
 	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, nil
-		}
-
-		err = fmt.Errorf("failed to fetch deployment. details: %s", err)
-		invalidDeployment := Deployment{}
-		return &invalidDeployment, err
+		return fmt.Errorf("failed to delete deployment %s. details: %w", deploymentID, err)
 	}
 
-	return &deployment, err
-}
-
-func GetByID(deploymentID string) (*Deployment, error) {
-	return getDeployment(bson.D{{"id", deploymentID}})
-}
-
-func GetByName(name string) (*Deployment, error) {
-	return getDeployment(bson.D{{"name", name}})
-}
-
-func GetAllByGitHubWebhookID(id int64) ([]Deployment, error) {
-	filter := bson.D{{"subsystems.github.webhook.id", id}}
-
-	cursor, err := models.DeploymentCollection.Find(context.TODO(), filter)
-	if err != nil {
-		err = fmt.Errorf("failed to find deployments by GitHub webhook ID %d. details: %s", id, err)
-		return nil, err
-	}
-
-	var deployments []Deployment
-	for cursor.Next(context.TODO()) {
-		var deployment Deployment
-
-		err = cursor.Decode(&deployment)
-		if err != nil {
-			err = fmt.Errorf("failed to fetch deployment. details: %s", err)
-			return nil, err
-		}
-
-		deployments = append(deployments, deployment)
-	}
-
-	return deployments, nil
-}
-
-func ExistsByName(name string) (bool, *Deployment, error) {
-	deployment, err := getDeployment(bson.D{{"name", name}})
-	if err != nil {
-		return false, nil, err
-	}
-
-	if deployment == nil {
-		return false, nil, nil
-	}
-
-	return true, deployment, err
-}
-
-func GetByOwnerID(ownerID string) ([]Deployment, error) {
-	cursor, err := models.DeploymentCollection.Find(context.TODO(), bson.D{{"ownerId", ownerID}})
-
-	if err != nil {
-		err = fmt.Errorf("failed to find deployments from owner ID %s. details: %s", ownerID, err)
-		return nil, err
-	}
-
-	var deployments []Deployment
-	for cursor.Next(context.TODO()) {
-		var deployment Deployment
-
-		err = cursor.Decode(&deployment)
-		if err != nil {
-			err = fmt.Errorf("failed to fetch deployment when fetching all deployments from owner ID %s. details: %s", ownerID, err)
-			return nil, err
-		}
-		deployments = append(deployments, deployment)
-	}
-
-	return deployments, nil
-}
-
-func DeleteByID(deploymentID, userId string) error {
-	_, err := models.DeploymentCollection.DeleteOne(context.TODO(), bson.D{{"id", deploymentID}, {"ownerId", userId}})
-	if err != nil {
-		err = fmt.Errorf("failed to delete deployment %s. details: %s", deploymentID, err)
-		log.Println(err)
-		return err
-	}
 	return nil
 }
 
-func CountByOwnerID(ownerID string) (int, error) {
-	count, err := models.DeploymentCollection.CountDocuments(context.TODO(), bson.D{{"ownerId", ownerID}})
-
-	if err != nil {
-		err = fmt.Errorf("failed to count deployments by owner ID %s. details: %s", ownerID, err)
-		return 0, err
-	}
-
-	return int(count), nil
+func (client *Client) CountByOwnerID(ownerID string) (int, error) {
+	return models.CountResources(client.Collection, bson.D{{"ownerId", ownerID}}, false)
 }
 
-func UpdateWithParamsByID(id string, update *UpdateParams) error {
-	deployment, err := GetByID(id)
+func (client *Client) UpdateWithParamsByID(id string, update *UpdateParams) error {
+	deployment, err := client.GetByID(id)
 	if err != nil {
 		return err
+	}
+
+	if deployment == nil {
+		log.Println("deployment not found when updating deployment", id, ". assuming it was deleted")
+		return nil
 	}
 
 	mainApp := deployment.GetMainApp()
@@ -214,152 +144,36 @@ func UpdateWithParamsByID(id string, update *UpdateParams) error {
 
 	deployment.Apps["main"] = *mainApp
 
-	_, err = models.DeploymentCollection.UpdateOne(context.TODO(),
+	_, err = client.Collection.UpdateOne(context.TODO(),
 		bson.D{{"id", id}},
 		bson.D{{"$set", bson.D{{"apps", deployment.Apps}}}},
 	)
 	if err != nil {
-		return fmt.Errorf("failed to update deployment %s. details: %s", id, err)
+		return fmt.Errorf("failed to update deployment %s. details: %w", id, err)
 	}
 
 	return nil
 
 }
 
-func UpdateWithBsonByID(id string, update bson.D) error {
-	_, err := models.DeploymentCollection.UpdateOne(context.TODO(), bson.D{{"id", id}}, bson.D{{"$set", update}})
-	if err != nil {
-		err = fmt.Errorf("failed to update deployment %s. details: %s", id, err)
-		return err
-	}
-	return nil
-}
-
-func UpdateByName(name string, update bson.D) error {
-	_, err := models.DeploymentCollection.UpdateOne(context.TODO(), bson.D{{"name", name}}, bson.D{{"$set", update}})
-	if err != nil {
-		err = fmt.Errorf("failed to update deployment %s. details: %s", name, err)
-		return err
-	}
-	return nil
-}
-
-func UpdateByID(id string, update bson.D) error {
-	_, err := models.DeploymentCollection.UpdateOne(context.TODO(), bson.D{{"id", id}}, bson.D{{"$set", update}})
-	if err != nil {
-		err = fmt.Errorf("failed to update deployment %s. details: %s", id, err)
-		return err
-	}
-	return nil
-}
-
-func UpdateSubsystemByName(name, subsystem string, key string, update interface{}) error {
+func (client *Client) UpdateSubsystemByName(name, subsystem string, key string, update interface{}) error {
 	subsystemKey := fmt.Sprintf("subsystems.%s.%s", subsystem, key)
-	return UpdateByName(name, bson.D{{subsystemKey, update}})
+	return client.UpdateWithBsonByName(name, bson.D{{subsystemKey, update}})
 }
 
-func UpdateSubsystemByID(id, subsystem string, key string, update interface{}) error {
+func (client *Client) UpdateSubsystemByID(id, subsystem string, key string, update interface{}) error {
 	subsystemKey := fmt.Sprintf("subsystems.%s.%s", subsystem, key)
-	return UpdateByID(id, bson.D{{subsystemKey, update}})
+	return client.UpdateWithBsonByID(id, bson.D{{subsystemKey, update}})
 }
 
-func GetAll() ([]Deployment, error) {
-	return GetAllWithFilter(bson.D{})
-}
-
-func GetAllWithFilter(filter bson.D) ([]Deployment, error) {
-	cursor, err := models.DeploymentCollection.Find(context.TODO(), filter)
-
-	if err != nil {
-		err = fmt.Errorf("failed to fetch all deployments. details: %s", err)
-		log.Println(err)
-		return nil, err
-	}
-
-	var deployments []Deployment
-	for cursor.Next(context.TODO()) {
-		var deployment Deployment
-
-		err = cursor.Decode(&deployment)
-		if err != nil {
-			err = fmt.Errorf("failed to decode deployment when fetching all deployment. details: %s", err)
-			return nil, err
-		}
-		deployments = append(deployments, deployment)
-	}
-
-	return deployments, nil
-}
-
-func GetByActivity(activity string) ([]Deployment, error) {
-	filter := bson.D{
-		{
-			"activities", bson.M{
-				"$in": bson.A{activity},
-			},
-		},
-	}
-
-	return GetAllWithFilter(filter)
-}
-
-func GetWithNoActivities() ([]Deployment, error) {
-	filter := bson.D{
-		{
-			"activities", bson.M{
-				"$size": 0,
-			},
-		},
-	}
-
-	return GetAllWithFilter(filter)
-}
-
-func AddActivity(deploymentID, activity string) error {
-	_, err := models.DeploymentCollection.UpdateOne(context.TODO(),
-		bson.D{{"id", deploymentID}},
-		bson.D{{"$addToSet", bson.D{{"activities", activity}}}},
-	)
-	if err != nil {
-		err = fmt.Errorf("failed to add activity %s to deployment %s. details: %s", activity, deploymentID, err)
-		return err
-	}
-	return nil
-}
-
-func RemoveActivity(deploymentID, activity string) error {
-	_, err := models.DeploymentCollection.UpdateOne(context.TODO(),
-		bson.D{{"id", deploymentID}},
-		bson.D{{"$pull", bson.D{{"activities", activity}}}},
-	)
-	if err != nil {
-		err = fmt.Errorf("failed to remove activity %s from deployment %s. details: %s", activity, deploymentID, err)
-		return err
-	}
-	return nil
-}
-
-func ClearActivities(deploymentID string) error {
-	_, err := models.DeploymentCollection.UpdateOne(context.TODO(),
-		bson.D{{"id", deploymentID}},
-		bson.D{{"$set", bson.D{{"activities", bson.A{}}}}},
-	)
-	if err != nil {
-		err = fmt.Errorf("failed to clear activities from deployment %s. details: %s", deploymentID, err)
-		return err
-	}
-
-	return nil
-}
-
-func MarkRepaired(deploymentID string) error {
-	filter := bson.D{{"id", deploymentID}}
+func (client *Client) MarkRepaired(id string) error {
+	filter := bson.D{{"id", id}}
 	update := bson.D{
 		{"$set", bson.D{{"repairedAt", time.Now()}}},
 		{"$pull", bson.D{{"activities", "repairing"}}},
 	}
 
-	_, err := models.DeploymentCollection.UpdateOne(context.TODO(), filter, update)
+	_, err := client.Collection.UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		return err
 	}
@@ -367,14 +181,14 @@ func MarkRepaired(deploymentID string) error {
 	return nil
 }
 
-func MarkUpdated(deploymentID string) error {
-	filter := bson.D{{"id", deploymentID}}
+func (client *Client) MarkUpdated(id string) error {
+	filter := bson.D{{"id", id}}
 	update := bson.D{
 		{"$set", bson.D{{"updatedAt", time.Now()}}},
 		{"$pull", bson.D{{"activities", "updating"}}},
 	}
 
-	_, err := models.DeploymentCollection.UpdateOne(context.TODO(), filter, update)
+	_, err := client.Collection.UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		return err
 	}
@@ -382,7 +196,7 @@ func MarkUpdated(deploymentID string) error {
 	return nil
 }
 
-func UpdateGitLabBuild(deploymentID string, build subsystems.GitLabBuild) error {
+func (client *Client) UpdateGitLabBuild(deploymentID string, build subsystems.GitLabBuild) error {
 	filter := bson.D{
 		{"id", deploymentID},
 		{"subsystems.gitlab.lastBuild.createdAt", bson.M{"$lte": build.CreatedAt}},
@@ -394,7 +208,7 @@ func UpdateGitLabBuild(deploymentID string, build subsystems.GitLabBuild) error 
 		}},
 	}
 
-	_, err := models.DeploymentCollection.UpdateOne(context.TODO(), filter, update)
+	_, err := client.Collection.UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		return err
 	}
@@ -402,14 +216,14 @@ func UpdateGitLabBuild(deploymentID string, build subsystems.GitLabBuild) error 
 	return nil
 }
 
-func GetLastGitLabBuild(deploymentID string) (*subsystems.GitLabBuild, error) {
+func (client *Client) GetLastGitLabBuild(deploymentID string) (*subsystems.GitLabBuild, error) {
 	// fetch only subsystem.gitlab.lastBuild
 	projection := bson.D{
 		{"subsystems.gitlab.lastBuild", 1},
 	}
 
 	var deployment Deployment
-	err := models.DeploymentCollection.FindOne(context.TODO(),
+	err := client.Collection.FindOne(context.TODO(),
 		bson.D{{"id", deploymentID}},
 		options.FindOne().SetProjection(projection),
 	).Decode(&deployment)
@@ -420,10 +234,15 @@ func GetLastGitLabBuild(deploymentID string) (*subsystems.GitLabBuild, error) {
 	return &deployment.Subsystems.GitLab.LastBuild, nil
 }
 
-func SavePing(id string, pingResult int) error {
-	deployment, err := GetByID(id)
+func (client *Client) SavePing(id string, pingResult int) error {
+	deployment, err := client.GetByID(id)
 	if err != nil {
 		return err
+	}
+
+	if deployment == nil {
+		log.Println("deployment not found when saving ping result", id, ". assuming it was deleted")
+		return nil
 	}
 
 	app := deployment.GetMainApp()
@@ -435,12 +254,12 @@ func SavePing(id string, pingResult int) error {
 
 	deployment.Apps["main"] = *app
 
-	_, err = models.DeploymentCollection.UpdateOne(context.TODO(),
+	_, err = client.Collection.UpdateOne(context.TODO(),
 		bson.D{{"id", id}},
 		bson.D{{"$set", bson.D{{"apps.main.pingResult", pingResult}}}},
 	)
 	if err != nil {
-		return fmt.Errorf("failed to update deployment ping result %s. details: %s", id, err)
+		return fmt.Errorf("failed to update deployment ping result %s. details: %w", id, err)
 	}
 
 	return nil

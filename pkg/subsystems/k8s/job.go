@@ -11,7 +11,7 @@ import (
 
 func (client *Client) ReadJob(namespace, id string) (*models.JobPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to read k8s job %s. details: %s", id, err)
+		return fmt.Errorf("failed to read k8s job %s. details: %w", id, err)
 	}
 
 	if id == "" {
@@ -35,7 +35,7 @@ func (client *Client) ReadJob(namespace, id string) (*models.JobPublic, error) {
 
 func (client *Client) CreateJob(public *models.JobPublic) (string, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to k8s job %s. details: %s", public.Name, err)
+		return fmt.Errorf("failed to k8s job %s. details: %w", public.Name, err)
 	}
 
 	if public.Namespace == "" {
@@ -68,7 +68,7 @@ func (client *Client) CreateJob(public *models.JobPublic) (string, error) {
 
 func (client *Client) DeleteJob(namespace, id string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete k8s job %s. details: %s", id, err)
+		return fmt.Errorf("failed to delete k8s job %s. details: %w", id, err)
 	}
 
 	if id == "" {

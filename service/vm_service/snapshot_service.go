@@ -5,12 +5,13 @@ import (
 	roleModel "go-deploy/models/sys/enviroment/role"
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/service/vm_service/internal_service"
+	"go-deploy/utils"
 	"log"
 	"sort"
 )
 
 func GetSnapshotsByVM(vmID string) ([]vmModel.Snapshot, error) {
-	vm, err := vmModel.GetByID(vmID)
+	vm, err := vmModel.New().GetByID(vmID)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +41,7 @@ func GetSnapshotsByVM(vmID string) ([]vmModel.Snapshot, error) {
 }
 
 func GetSnapshotByName(vmID, snapshotName string) (*vmModel.Snapshot, error) {
-	vm, err := vmModel.GetByID(vmID)
+	vm, err := vmModel.New().GetByID(vmID)
 	if err != nil {
 		return nil, err
 	}
@@ -67,10 +68,10 @@ func GetSnapshotByName(vmID, snapshotName string) (*vmModel.Snapshot, error) {
 
 func CreateSnapshot(id, name string, userCreated bool) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create snapshot for vm %s. details: %s", id, err)
+		return fmt.Errorf("failed to create snapshot for vm %s. details: %w", id, err)
 	}
 
-	vm, err := vmModel.GetByID(id)
+	vm, err := vmModel.New().GetByID(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -94,9 +95,9 @@ func CreateSnapshot(id, name string, userCreated bool) error {
 	}
 
 	defer func() {
-		err = vmModel.RemoveActivity(vm.ID, vmModel.ActivityCreatingSnapshot)
+		err = vmModel.New().RemoveActivity(vm.ID, vmModel.ActivityCreatingSnapshot)
 		if err != nil {
-			log.Println("failed to remove activity", vmModel.ActivityCreatingSnapshot, "from vm", vm.Name, "details:", err)
+			utils.PrettyPrintError(fmt.Errorf("failed to remove activity %s from vm %s. details: %w", vmModel.ActivityCreatingSnapshot, vm.Name, err))
 		}
 	}()
 
@@ -110,7 +111,7 @@ func CreateSnapshot(id, name string, userCreated bool) error {
 
 func ApplySnapshot(id, snapshotID string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to apply snapshot %s to vm %s. details: %s", snapshotID, id, err)
+		return fmt.Errorf("failed to apply snapshot %s to vm %s. details: %w", snapshotID, id, err)
 	}
 
 	log.Println("applying snapshot", snapshotID, "to vm", id)
@@ -124,7 +125,7 @@ func ApplySnapshot(id, snapshotID string) error {
 	}
 
 	defer func() {
-		_ = vmModel.RemoveActivity(id, vmModel.ActivityApplyingSnapshot)
+		_ = vmModel.New().RemoveActivity(id, vmModel.ActivityApplyingSnapshot)
 	}()
 
 	err = internal_service.ApplySnapshotCS(id, snapshotID)
@@ -137,7 +138,7 @@ func ApplySnapshot(id, snapshotID string) error {
 
 func CheckQuotaCreateSnapshot(userID string, quota *roleModel.Quotas) (bool, string, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check quota. details: %s", err)
+		return fmt.Errorf("failed to check quota. details: %w", err)
 	}
 
 	usage, err := GetUsageByUserID(userID)

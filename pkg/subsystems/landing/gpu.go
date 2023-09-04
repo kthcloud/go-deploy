@@ -8,7 +8,7 @@ import (
 
 func (client *Client) ReadGpuInfo() (*models.GpuInfoRead, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to get gpu info. details: %s", err.Error())
+		return fmt.Errorf("failed to get gpu info. details: %w", err.Error())
 	}
 
 	res, err := client.doRequest("GET", "/internal/gpuInfo")

@@ -14,24 +14,24 @@ func deploymentConfirmer(ctx context.Context) {
 	for {
 		select {
 		case <-time.After(5 * time.Second):
-			beingCreated, _ := deploymentModel.GetByActivity(deploymentModel.ActivityBeingCreated)
+			beingCreated, _ := deploymentModel.New().GetByActivity(deploymentModel.ActivityBeingCreated)
 			for _, deployment := range beingCreated {
 				created := DeploymentCreated(&deployment)
 				if created {
 					log.Printf("marking deployment %s as created\n", deployment.Name)
-					_ = deploymentModel.RemoveActivity(deployment.ID, deploymentModel.ActivityBeingCreated)
+					_ = deploymentModel.New().RemoveActivity(deployment.ID, deploymentModel.ActivityBeingCreated)
 				}
 			}
 
-			beingDeleted, _ := deploymentModel.GetByActivity(deploymentModel.ActivityBeingDeleted)
+			beingDeleted, _ := deploymentModel.New().GetByActivity(deploymentModel.ActivityBeingDeleted)
 			for _, deployment := range beingDeleted {
 				deleted := DeploymentDeleted(&deployment)
 				if deleted {
 					log.Printf("marking deployment %s as deleted\n", deployment.Name)
-					_ = deploymentModel.DeleteByID(deployment.ID, deployment.OwnerID)
+					_ = deploymentModel.New().DeleteByID(deployment.ID)
 				}
 			}
-			
+
 		case <-ctx.Done():
 			return
 		}
@@ -44,21 +44,21 @@ func vmConfirmer(ctx context.Context) {
 	for {
 		select {
 		case <-time.After(5 * time.Second):
-			beingCreated, _ := vmModel.GetByActivity(vmModel.ActivityBeingCreated)
+			beingCreated, _ := vmModel.New().GetByActivity(vmModel.ActivityBeingCreated)
 			for _, vm := range beingCreated {
 				created := VmCreated(&vm)
 				if created {
 					log.Printf("marking vm %s as created\n", vm.Name)
-					_ = vmModel.RemoveActivity(vm.ID, vmModel.ActivityBeingCreated)
+					_ = vmModel.New().RemoveActivity(vm.ID, vmModel.ActivityBeingCreated)
 				}
 			}
 
-			beingDeleted, _ := vmModel.GetByActivity(vmModel.ActivityBeingDeleted)
+			beingDeleted, _ := vmModel.New().GetByActivity(vmModel.ActivityBeingDeleted)
 			for _, vm := range beingDeleted {
 				deleted := VmDeleted(&vm)
 				if deleted {
 					log.Printf("marking vm %s as deleted\n", vm.Name)
-					_ = vmModel.DeleteByID(vm.ID, vm.OwnerID)
+					_ = vmModel.New().DeleteByID(vm.ID)
 				}
 			}
 

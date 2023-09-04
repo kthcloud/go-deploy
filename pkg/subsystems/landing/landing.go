@@ -25,7 +25,7 @@ type ClientConf struct {
 
 func New(config *ClientConf) (*Client, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create landing oauth2Client. details: %s", err)
+		return fmt.Errorf("failed to create landing oauth2Client. details: %w", err)
 	}
 
 	kcClient := gocloak.NewClient(config.OidcProvider)

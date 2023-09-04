@@ -5,10 +5,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go-deploy/utils"
 	"io"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"log"
 	"strings"
 )
 
@@ -29,13 +29,13 @@ func (client *Client) getPodName(namespace, deployment string) (string, error) {
 
 func (client *Client) setupPodLogStreamer(cancelCtx context.Context, namespace, deployment string, handler func(string)) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create k8s log stream for deployment %s. details: %s", deployment, err)
+		return fmt.Errorf("failed to create k8s log stream for deployment %s. details: %w", deployment, err)
 	}
 
 	for {
 		podName, err := client.getPodName(namespace, deployment)
 		if err != nil {
-			log.Println(makeError(err))
+			utils.PrettyPrintError(makeError(err))
 			return
 		}
 
@@ -57,7 +57,7 @@ func (client *Client) readLogs(cancelCtx context.Context, namespace, podName str
 	})
 	logStream, err := podLogsConnection.Stream(context.Background())
 	if err != nil {
-		log.Println(fmt.Errorf("failed to create k8s log stream for pod %s. details: %s", podName, err))
+		utils.PrettyPrintError(fmt.Errorf("failed to create k8s log stream for pod %s. details: %w", podName, err))
 		return true
 	}
 

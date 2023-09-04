@@ -17,10 +17,10 @@ func Create(deploymentID string, userID string, params *deploymentModel.CreatePa
 	log.Println("setting up k8s for", params.Name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup k8s for deployment %s. details: %s", params.Name, err)
+		return fmt.Errorf("failed to setup k8s for deployment %s. details: %w", params.Name, err)
 	}
 
-	deployment, err := deploymentModel.GetByID(deploymentID)
+	deployment, err := deploymentModel.New().GetByID(deploymentID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -46,7 +46,7 @@ func Create(deploymentID string, userID string, params *deploymentModel.CreatePa
 	namespace := &ss.Namespace
 	if !ss.Namespace.Created() {
 		public := createNamespacePublic(userID)
-		namespace, err = createNamespace(client, deployment.ID, ss, public, deploymentModel.UpdateSubsystemByID)
+		namespace, err = createNamespace(client, deployment.ID, ss, public, deploymentModel.New().UpdateSubsystemByID)
 		if err != nil {
 			return makeError(err)
 		}
@@ -65,7 +65,7 @@ func Create(deploymentID string, userID string, params *deploymentModel.CreatePa
 			nfsPath := path.Join(zone.Storage.NfsParentPath, deployment.OwnerID, "user", volume.ServerPath)
 
 			public := createPvPublic(k8sName, capacity, nfsPath, zone.Storage.NfsServer)
-			_, err = createPV(client, deployment.ID, volume.Name, ss, public, deploymentModel.UpdateSubsystemByID)
+			_, err = createPV(client, deployment.ID, volume.Name, ss, public, deploymentModel.New().UpdateSubsystemByID)
 			if err != nil {
 				return makeError(err)
 			}
@@ -83,7 +83,7 @@ func Create(deploymentID string, userID string, params *deploymentModel.CreatePa
 		if !pvc.Created() || !exists {
 			capacity := conf.Env.Deployment.Resources.Limits.Storage
 			public := createPvcPublic(namespace.FullName, k8sName, capacity, k8sName)
-			_, err = createPVC(client, deployment.ID, volume.Name, ss, public, deploymentModel.UpdateSubsystemByID)
+			_, err = createPVC(client, deployment.ID, volume.Name, ss, public, deploymentModel.New().UpdateSubsystemByID)
 			if err != nil {
 				return makeError(err)
 			}
@@ -102,7 +102,7 @@ func Create(deploymentID string, userID string, params *deploymentModel.CreatePa
 		dockerRegistryProject := subsystemutils.GetPrefixedName(userID)
 		dockerImage := fmt.Sprintf("%s/%s/%s", conf.Env.DockerRegistry.URL, dockerRegistryProject, deployment.Name)
 		public := createDeploymentPublic(namespace.FullName, deployment.Name, dockerImage, params.Envs, params.Volumes, params.InitCommands)
-		_, err = createK8sDeployment(client, deployment.ID, appName, ss, public, deploymentModel.UpdateSubsystemByID)
+		_, err = createK8sDeployment(client, deployment.ID, appName, ss, public, deploymentModel.New().UpdateSubsystemByID)
 		if err != nil {
 			return makeError(err)
 		}
@@ -112,7 +112,7 @@ func Create(deploymentID string, userID string, params *deploymentModel.CreatePa
 	service, ok := ss.ServiceMap[appName]
 	if !ok || !service.Created() {
 		public := createServicePublic(namespace.FullName, deployment.Name, conf.Env.Deployment.Port)
-		_, err = createService(client, deployment.ID, appName, ss, public, deploymentModel.UpdateSubsystemByID)
+		_, err = createService(client, deployment.ID, appName, ss, public, deploymentModel.New().UpdateSubsystemByID)
 		if err != nil {
 			return makeError(err)
 		}
@@ -123,7 +123,7 @@ func Create(deploymentID string, userID string, params *deploymentModel.CreatePa
 	if !ok || (!ingress.Created() && !ingress.IsPlaceholder()) {
 		if params.Private {
 			if ingress.Created() {
-				err = deleteIngress(client, deployment.ID, appName, ss, deploymentModel.UpdateSubsystemByID)
+				err = deleteIngress(client, deployment.ID, appName, ss, deploymentModel.New().UpdateSubsystemByID)
 				if err != nil {
 					return makeError(err)
 				}
@@ -133,7 +133,7 @@ func Create(deploymentID string, userID string, params *deploymentModel.CreatePa
 				Placeholder: true,
 			}
 
-			err = deploymentModel.UpdateSubsystemByName(deployment.Name, "k8s", "ingressMap", ss.IngressMap)
+			err = deploymentModel.New().UpdateSubsystemByName(deployment.Name, "k8s", "ingressMap", ss.IngressMap)
 			if err != nil {
 				return makeError(err)
 			}
@@ -145,7 +145,7 @@ func Create(deploymentID string, userID string, params *deploymentModel.CreatePa
 				ss.ServiceMap[appName].Name,
 				ss.ServiceMap[appName].Port,
 				[]string{getExternalFQDN(deployment.Name, zone)},
-			), deploymentModel.UpdateSubsystemByID)
+			), deploymentModel.New().UpdateSubsystemByID)
 			if err != nil {
 				return makeError(err)
 			}
@@ -159,10 +159,10 @@ func Delete(name string) error {
 	log.Println("deleting k8s for", name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete k8s for deployment %s. details: %s", name, err)
+		return fmt.Errorf("failed to delete k8s for deployment %s. details: %w", name, err)
 	}
 
-	deployment, err := deploymentModel.GetByName(name)
+	deployment, err := deploymentModel.New().GetByName(name)
 	if err != nil {
 		return makeError(err)
 	}
@@ -187,7 +187,7 @@ func Delete(name string) error {
 	// Ingress
 	for mapName, ingress := range ss.IngressMap {
 		if ingress.Created() {
-			err = deleteIngress(client, deployment.ID, mapName, ss, deploymentModel.UpdateSubsystemByID)
+			err = deleteIngress(client, deployment.ID, mapName, ss, deploymentModel.New().UpdateSubsystemByID)
 			if err != nil {
 				return makeError(err)
 			}
@@ -197,7 +197,7 @@ func Delete(name string) error {
 	// Service
 	for mapName, service := range ss.ServiceMap {
 		if service.Created() {
-			err = deleteService(client, deployment.ID, mapName, ss, deploymentModel.UpdateSubsystemByID)
+			err = deleteService(client, deployment.ID, mapName, ss, deploymentModel.New().UpdateSubsystemByID)
 			if err != nil {
 				return makeError(err)
 			}
@@ -207,7 +207,7 @@ func Delete(name string) error {
 	// Deployment
 	for mapName, k8sDeployment := range ss.DeploymentMap {
 		if k8sDeployment.Created() {
-			err = deleteK8sDeployment(client, deployment.ID, mapName, ss, deploymentModel.UpdateSubsystemByID)
+			err = deleteK8sDeployment(client, deployment.ID, mapName, ss, deploymentModel.New().UpdateSubsystemByID)
 			if err != nil {
 				return makeError(err)
 			}
@@ -217,7 +217,7 @@ func Delete(name string) error {
 	// PersistentVolumeClaim
 	for pvcName, pvc := range ss.PvcMap {
 		if pvc.Created() {
-			err = deletePVC(client, deployment.ID, pvcName, ss, deploymentModel.UpdateSubsystemByID)
+			err = deletePVC(client, deployment.ID, pvcName, ss, deploymentModel.New().UpdateSubsystemByID)
 			if err != nil {
 				return makeError(err)
 			}
@@ -227,7 +227,7 @@ func Delete(name string) error {
 	// PersistentVolume
 	for mapName, pv := range ss.PvMap {
 		if pv.Created() {
-			err = deletePV(client, deployment.ID, mapName, ss, deploymentModel.UpdateSubsystemByID)
+			err = deletePV(client, deployment.ID, mapName, ss, deploymentModel.New().UpdateSubsystemByID)
 			if err != nil {
 				return makeError(err)
 			}
@@ -237,7 +237,7 @@ func Delete(name string) error {
 	// Job
 	for mapName, job := range ss.JobMap {
 		if job.Created() {
-			err = deleteJob(client, deployment.ID, mapName, ss, deploymentModel.UpdateSubsystemByID)
+			err = deleteJob(client, deployment.ID, mapName, ss, deploymentModel.New().UpdateSubsystemByID)
 			if err != nil {
 				return makeError(err)
 			}
@@ -246,7 +246,7 @@ func Delete(name string) error {
 
 	// Namespace
 	if ss.Namespace.Created() {
-		err = deleteNamespace(client, deployment.ID, ss, deploymentModel.UpdateSubsystemByID)
+		err = deleteNamespace(client, deployment.ID, ss, deploymentModel.New().UpdateSubsystemByID)
 		if err != nil {
 			return makeError(err)
 		}
@@ -257,14 +257,14 @@ func Delete(name string) error {
 
 func Update(name string, params *deploymentModel.UpdateParams) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to update k8s for deployment %s. details: %s", name, err)
+		return fmt.Errorf("failed to update k8s for deployment %s. details: %w", name, err)
 	}
 
 	if params == nil || (params.Envs == nil && params.Private == nil) {
 		return nil
 	}
 
-	deployment, err := deploymentModel.GetByName(name)
+	deployment, err := deploymentModel.New().GetByName(name)
 	if err != nil {
 		return makeError(err)
 	}
@@ -286,7 +286,7 @@ func Update(name string, params *deploymentModel.UpdateParams) error {
 
 	ss := &deployment.Subsystems
 	updateDb := func(id, subsystem, key string, update interface{}) error {
-		return deploymentModel.UpdateSubsystemByID(id, subsystem, key, update)
+		return deploymentModel.New().UpdateSubsystemByID(id, subsystem, key, update)
 	}
 
 	appName := "main"
@@ -314,7 +314,7 @@ func Update(name string, params *deploymentModel.UpdateParams) error {
 
 			ss.K8s.DeploymentMap[appName] = k8sDeployment
 
-			err = deploymentModel.UpdateSubsystemByName(name, "k8s", "deploymentMap", &ss.K8s.DeploymentMap)
+			err = deploymentModel.New().UpdateSubsystemByName(name, "k8s", "deploymentMap", &ss.K8s.DeploymentMap)
 			if err != nil {
 				return makeError(err)
 			}
@@ -355,7 +355,7 @@ func Update(name string, params *deploymentModel.UpdateParams) error {
 					Placeholder: true,
 				}
 
-				err = deploymentModel.UpdateSubsystemByName(name, "k8s", "ingressMap", ss.K8s.IngressMap)
+				err = deploymentModel.New().UpdateSubsystemByName(name, "k8s", "ingressMap", ss.K8s.IngressMap)
 				if err != nil {
 					return makeError(err)
 				}
@@ -391,10 +391,10 @@ func Update(name string, params *deploymentModel.UpdateParams) error {
 
 func Restart(name string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to restart k8s %s. details: %s", name, err)
+		return fmt.Errorf("failed to restart k8s %s. details: %w", name, err)
 	}
 
-	deployment, err := deploymentModel.GetByName(name)
+	deployment, err := deploymentModel.New().GetByName(name)
 	if err != nil {
 		return makeError(err)
 	}
@@ -430,10 +430,10 @@ func Restart(name string) error {
 
 func Repair(name string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to repair k8s %s. details: %s", name, err)
+		return fmt.Errorf("failed to repair k8s %s. details: %w", name, err)
 	}
 
-	deployment, err := deploymentModel.GetByName(name)
+	deployment, err := deploymentModel.New().GetByName(name)
 	if err != nil {
 		return makeError(err)
 	}
@@ -465,23 +465,23 @@ func Repair(name string) error {
 
 	if namespace == nil || !reflect.DeepEqual(ss.Namespace, *namespace) {
 		log.Println("recreating namespace for deployment", name)
-		err = recreateNamespace(client, deployment.ID, ss, &ss.Namespace, deploymentModel.UpdateSubsystemByID)
+		err = recreateNamespace(client, deployment.ID, ss, &ss.Namespace, deploymentModel.New().UpdateSubsystemByID)
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
 	// deployment
-	for mapName, _ := range ss.DeploymentMap {
-		err = repairDeployment(client, deployment.ID, mapName, ss, deploymentModel.UpdateSubsystemByName)
+	for mapName := range ss.DeploymentMap {
+		err = repairDeployment(client, deployment.ID, mapName, ss, deploymentModel.New().UpdateSubsystemByID)
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
 	// service
-	for mapName, _ := range ss.ServiceMap {
-		err = repairService(client, deployment.ID, mapName, ss, deploymentModel.UpdateSubsystemByName)
+	for mapName := range ss.ServiceMap {
+		err = repairService(client, deployment.ID, mapName, ss, deploymentModel.New().UpdateSubsystemByID)
 		if err != nil {
 			return makeError(err)
 		}
@@ -504,7 +504,7 @@ func Repair(name string) error {
 		log.Println("recreating ingress for deployment due to mismatch with the private field", name)
 
 		if mainApp.Private {
-			err = deleteIngress(client, deployment.ID, appName, ss, deploymentModel.UpdateSubsystemByName)
+			err = deleteIngress(client, deployment.ID, appName, ss, deploymentModel.New().UpdateSubsystemByID)
 			if err != nil {
 				return makeError(err)
 			}
@@ -521,13 +521,13 @@ func Repair(name string) error {
 				mainService.Name,
 				mainService.Port,
 				getAllDomainNames(deployment.Name, mainApp.ExtraDomains, zone),
-			), deploymentModel.UpdateSubsystemByID)
+			), deploymentModel.New().UpdateSubsystemByID)
 			if err != nil {
 				return makeError(err)
 			}
 		}
 	} else if !mainIngress.Placeholder {
-		err = repairIngress(client, deployment.ID, name, ss, deploymentModel.UpdateSubsystemByName)
+		err = repairIngress(client, deployment.ID, name, ss, deploymentModel.New().UpdateSubsystemByID)
 		if err != nil {
 			return makeError(err)
 		}

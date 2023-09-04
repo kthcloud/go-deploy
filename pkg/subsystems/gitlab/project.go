@@ -11,7 +11,7 @@ import (
 
 func (client *Client) CreateProject(public *models.ProjectPublic) (int, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create gitlab project. details: %s", err)
+		return fmt.Errorf("failed to create gitlab project. details: %w", err)
 	}
 
 	project, _, err := client.GitLabClient.Projects.CreateProject(&gitlab.CreateProjectOptions{
@@ -28,7 +28,7 @@ func (client *Client) CreateProject(public *models.ProjectPublic) (int, error) {
 
 func (client *Client) DeleteProject(id int) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete gitlab project. details: %s", err)
+		return fmt.Errorf("failed to delete gitlab project. details: %w", err)
 	}
 
 	_, err := client.GitLabClient.Projects.DeleteProject(id)
@@ -44,7 +44,7 @@ func (client *Client) DeleteProject(id int) error {
 
 func (client *Client) AttachCiFile(projectID int, branch string, content deployment.GitLabCiConfig) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to attach ci file to project. details: %s", err)
+		return fmt.Errorf("failed to attach ci file to project. details: %w", err)
 	}
 
 	contentBytes, err := yaml.Marshal(content)
@@ -71,7 +71,7 @@ func (client *Client) AttachCiFile(projectID int, branch string, content deploym
 
 func (client *Client) GetJobs(projectID int) ([]*gitlab.Job, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to get job for project %s. details: %s", projectID, err)
+		return fmt.Errorf("failed to get job for project %s. details: %w", projectID, err)
 	}
 
 	jobs, _, err := client.GitLabClient.Jobs.ListProjectJobs(projectID, nil)
