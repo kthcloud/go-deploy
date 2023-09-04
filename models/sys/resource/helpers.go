@@ -53,7 +53,7 @@ func (client *ResourceClient[T]) DeleteByID(id string) error {
 func (client *ResourceClient[T]) Deleted(id string) (bool, error) {
 	count, err := models.CountResources(client.Collection, bson.D{
 		{"id", id},
-		{"deletedAt", bson.M{"$ne": time.Time{}}},
+		{"deletedAt", bson.M{"$nin": []interface{}{nil, time.Time{}}}},
 	}, true)
 	if err != nil {
 		return false, err
