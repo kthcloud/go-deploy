@@ -54,7 +54,16 @@ func updateOneDeploymentPing(deployment deploymentModels.Deployment, url string)
 }
 
 func ping(url string) (int, error) {
-	resp, err := http.Get("https://" + url)
+	req, err := http.NewRequest("GET", "https://"+url, nil)
+	if err != nil {
+		return 0, err
+	}
+
+	req.Header.Set("User-Agent", "kthcloud")
+
+	client := &http.Client{}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return 0, err
 	}

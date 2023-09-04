@@ -100,8 +100,21 @@ func (p *UpdateParams) FromDTO(dto *body.DeploymentUpdate) {
 		p.Envs = &envs
 	}
 
+	if dto.Volumes != nil {
+		volumes := make([]Volume, len(*dto.Volumes))
+		for i, volume := range *dto.Volumes {
+			volumes[i] = Volume{
+				Name:       volume.Name,
+				AppPath:    volume.AppPath,
+				ServerPath: volume.ServerPath,
+			}
+		}
+		p.Volumes = &volumes
+	}
+
 	p.Private = dto.Private
 	p.ExtraDomains = dto.ExtraDomains
+	p.InitCommands = dto.InitCommands
 }
 
 func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZone *string) {
