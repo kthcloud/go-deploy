@@ -85,7 +85,7 @@ func GetLogs(c *gin.Context) {
 					}
 
 					if logContext == nil {
-						httpContext.NotFound()
+						utils.PrettyPrintError(fmt.Errorf("deployment not found when trying to setup log stream %s", requestURI.DeploymentID))
 						return
 					}
 				}

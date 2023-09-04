@@ -20,7 +20,6 @@ func SetupLogStream(deploymentID string, handler func(string), auth *service.Aut
 	}
 
 	if deployment == nil {
-		log.Println("deployment", deploymentID, "not found when getting logs. assuming it was deleted")
 		return nil, nil
 	}
 
