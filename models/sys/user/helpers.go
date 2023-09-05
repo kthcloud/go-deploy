@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"fmt"
+	"github.com/fatih/structs"
 	"go-deploy/models"
 	"go-deploy/models/dto/body"
 	roleModel "go-deploy/models/sys/enviroment/role"
@@ -31,6 +32,15 @@ func (u *User) ToDTO(effectiveRole *roleModel.Role, usage *Usage) body.UserRead 
 		}
 	}
 
+	permissionsStructMap := structs.Map(effectiveRole.Permissions)
+	permissions := make([]string, 0)
+	for name, value := range permissionsStructMap {
+		hasPermission, ok := value.(bool)
+		if ok && hasPermission {
+			permissions = append(permissions, name)
+		}
+	}
+
 	userRead := body.UserRead{
 		ID:       u.ID,
 		Username: u.Username,
@@ -39,6 +49,7 @@ func (u *User) ToDTO(effectiveRole *roleModel.Role, usage *Usage) body.UserRead 
 		Role: body.Role{
 			Name:        effectiveRole.Name,
 			Description: effectiveRole.Description,
+			Permissions: permissions,
 		},
 		Quota: body.Quota{
 			Deployments: effectiveRole.Quotas.Deployments,
