@@ -14,19 +14,22 @@ type Quota struct {
 }
 
 type Role struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	Permissions []string `json:"permissions"`
 }
 
 type UserRead struct {
 	ID         string      `json:"id"`
 	Username   string      `json:"username"`
 	Email      string      `json:"email"`
-	Role       Role        `json:"role"`
-	Admin      bool        `json:"admin"`
-	Quota      Quota       `json:"quota"`
-	Usage      Quota       `json:"usage"`
 	PublicKeys []PublicKey `json:"publicKeys"`
+
+	Role  Role `json:"role"`
+	Admin bool `json:"admin"`
+
+	Quota Quota `json:"quota"`
+	Usage Quota `json:"usage"`
 }
 
 type UserUpdate struct {

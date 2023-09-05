@@ -8,17 +8,19 @@ type Quotas struct {
 	Snapshots   int `yaml:"snapshots"`
 }
 
+type Permissions struct {
+	ChooseZone        bool `yaml:"chooseZone" structs:"chooseZone"`
+	ChooseGPU         bool `yaml:"chooseGpu" structs:"chooseGpu"`
+	UseGPUs           bool `yaml:"useGpus" structs:"useGpus"`
+	UsePrivilegedGPUs bool `yaml:"usePrivilegedGpus" structs:"usePrivilegedGpus"`
+	// in hours
+	GpuLeaseDuration float64 `yaml:"gpuLeaseDuration" structs:"gpuLeaseDuration"`
+}
+
 type Role struct {
-	Name        string `yaml:"name"`
-	Description string `yaml:"description"`
-	IamGroup    string `yaml:"iamGroup"`
-	Permissions struct {
-		ChooseZone        bool `yaml:"chooseZone"`
-		ChooseGPU         bool `yaml:"chooseGpu"`
-		UseGPUs           bool `yaml:"useGpus"`
-		UsePrivilegedGPUs bool `yaml:"usePrivilegedGpus"`
-		// in hours
-		GpuLeaseDuration float64 `yaml:"gpuLeaseDuration"`
-	}
-	Quotas Quotas `yaml:"quotas"`
+	Name        string      `yaml:"name"`
+	Description string      `yaml:"description"`
+	IamGroup    string      `yaml:"iamGroup"`
+	Permissions Permissions `yaml:"permissions"`
+	Quotas      Quotas      `yaml:"quotas"`
 }

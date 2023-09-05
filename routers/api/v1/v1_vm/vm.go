@@ -556,7 +556,7 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *ser
 			return
 		}
 
-		gpu, err := vm_service.GetGpuByID(*requestBody.GpuID, false)
+		gpu, err := vm_service.GetGpuByID(*requestBody.GpuID, true)
 		if err != nil {
 			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get gpu: %s", err))
 			return
