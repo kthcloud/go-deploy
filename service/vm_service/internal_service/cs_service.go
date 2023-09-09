@@ -13,6 +13,7 @@ import (
 	"log"
 	"reflect"
 	"strings"
+	"time"
 )
 
 const (
@@ -1048,6 +1049,7 @@ func createDeployTags(name string, deployName string) []csModels.Tag {
 		{Key: "name", Value: name},
 		{Key: "managedBy", Value: conf.Env.Manager},
 		{Key: "deployName", Value: deployName},
+		{Key: "createdAt", Value: time.Now().Format(time.RFC3339)},
 	}
 }
 

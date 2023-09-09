@@ -4,32 +4,22 @@ import (
 	"fmt"
 	modelv2 "github.com/mittwald/goharbor-client/v5/apiv2/model"
 	"strings"
+	"time"
 )
 
 type RobotPublic struct {
-	ID          int    `json:"id" bson:"id"`
-	Name        string `json:"name" bson:"name"`
-	HarborName  string `json:"harborName" bson:"harborName"`
-	ProjectID   int    `json:"projectId" bson:"projectId"`
-	ProjectName string `json:"projectName" bson:"projectName"`
-	Disable     bool   `json:"disable" bson:"disable"`
-	Secret      string `json:"secret" bson:"secret" `
+	ID          int       `bson:"id"`
+	Name        string    `bson:"name"`
+	HarborName  string    `bson:"harborName"`
+	ProjectID   int       `bson:"projectId"`
+	ProjectName string    `bson:"projectName"`
+	Disable     bool      `bson:"disable"`
+	Secret      string    `bson:"secret" `
+	CreatedAt   time.Time `bson:"createdAt"`
 }
 
 func (r *RobotPublic) Created() bool {
 	return r.ID != 0
-}
-
-func CreateRobotUpdateFromPublic(public *RobotPublic) *modelv2.Robot {
-	return &modelv2.Robot{
-		ID:          int64(public.ID),
-		Name:        getRobotFullName(public.ProjectName, public.Name),
-		Level:       "project",
-		Disable:     public.Disable,
-		Editable:    true,
-		ExpiresAt:   -1,
-		Permissions: getPermissions(public.Name),
-	}
 }
 
 func CreateRobotPublicFromGet(robot *modelv2.Robot, project *modelv2.Project) *RobotPublic {
@@ -41,6 +31,7 @@ func CreateRobotPublicFromGet(robot *modelv2.Robot, project *modelv2.Project) *R
 		ProjectID:   int(project.ProjectID),
 		Disable:     robot.Disable,
 		Secret:      robot.Description,
+		CreatedAt:   time.Time(robot.CreationTime),
 	}
 }
 

@@ -1,12 +1,16 @@
 package models
 
-import "go-deploy/pkg/imp/cloudstack"
+import (
+	"go-deploy/pkg/imp/cloudstack"
+	"time"
+)
 
 type HostPublic struct {
-	ID            string `json:"id"`
-	Name          string `json:"name"`
-	State         string `json:"state"`
-	ResourceState string `json:"resourceState"`
+	ID            string    `bson:"id"`
+	Name          string    `bson:"name"`
+	State         string    `bson:"state"`
+	ResourceState string    `bson:"resourceState"`
+	CreatedAt     time.Time `bson:"createdAt"`
 }
 
 func CreatePublicFromGet(host *cloudstack.Host) *HostPublic {
@@ -15,5 +19,6 @@ func CreatePublicFromGet(host *cloudstack.Host) *HostPublic {
 		Name:          host.Name,
 		State:         host.State,
 		ResourceState: host.Resourcestate,
+		CreatedAt:     formatCreatedAt(host.Created),
 	}
 }
