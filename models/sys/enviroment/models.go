@@ -124,7 +124,7 @@ type Environment struct {
 	} `yaml:"landing"`
 
 	Harbor struct {
-		Url           string `yaml:"url"`
+		URL           string `yaml:"url"`
 		User          string `yaml:"user"`
 		Password      string `yaml:"password"`
 		WebhookSecret string `yaml:"webhookSecret"`

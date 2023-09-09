@@ -1,4 +1,4 @@
-package acc
+package harbor
 
 import (
 	"github.com/google/uuid"
@@ -11,7 +11,7 @@ import (
 
 func withHarborClient(t *testing.T) *harbor.Client {
 	client, err := harbor.New(&harbor.ClientConf{
-		ApiUrl:   conf.Env.Harbor.Url,
+		ApiUrl:   conf.Env.Harbor.URL,
 		Username: conf.Env.Harbor.User,
 		Password: conf.Env.Harbor.Password,
 	})
@@ -153,61 +153,4 @@ func cleanUpHarborWebhook(t *testing.T, id int, projectID int) {
 	// should not return error if webhook is already deleted
 	err = client.DeleteWebhook(id, projectID)
 	assert.NoError(t, err, "failed to delete harbor webhook")
-}
-
-func TestEmptyProject(t *testing.T) {
-	setup(t)
-	project := withHarborProject(t)
-	cleanUpHarborProject(t, project.ID)
-}
-
-func TestUpdateProject(t *testing.T) {
-	setup(t)
-	client := withHarborClient(t)
-	project := withHarborProject(t)
-
-	err := client.UpdateProject(project)
-	assert.NoError(t, err, "failed to update harbor project")
-
-	updatedProject, err := client.ReadProject(project.ID)
-	assert.NoError(t, err, "failed to read harbor project")
-	assert.EqualValues(t, project, updatedProject, "updated project does not match")
-
-	cleanUpHarborProject(t, project.ID)
-}
-
-func TestCreateRobot(t *testing.T) {
-	setup(t)
-	project := withHarborProject(t)
-	robot := withHarborRobot(t, project)
-	cleanUpHarborRobot(t, robot.ID)
-	cleanUpHarborProject(t, project.ID)
-}
-
-func TestProjectWithWebhook(t *testing.T) {
-	setup(t)
-	project := withHarborProject(t)
-	webhook := withHarborWebhook(t, project)
-	cleanUpHarborWebhook(t, webhook.ID, project.ID)
-	cleanUpHarborProject(t, project.ID)
-}
-
-func TestProjectWithBadWebhook(t *testing.T) {
-	setup(t)
-
-	client := withHarborClient(t)
-	project := withHarborProject(t)
-
-	public := &models.WebhookPublic{
-		Name:        project.Name + "-webhook",
-		ProjectID:   project.ID,
-		ProjectName: project.Name,
-		Target:      "not http",
-		Token:       "some token",
-	}
-
-	_, err := client.CreateWebhook(public)
-	assert.Error(t, err, "expected error when creating webhook with bad target")
-
-	cleanUpHarborProject(t, project.ID)
 }

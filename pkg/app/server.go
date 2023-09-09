@@ -33,11 +33,17 @@ type StartOptions struct {
 	Snapshotter   bool
 }
 
+type App struct {
+	httpServer *http.Server
+	ctx        context.Context
+	cancel     context.CancelFunc
+}
+
 func shutdown() {
 	models.Shutdown()
 }
 
-func Start(ctx context.Context, options *StartOptions) *http.Server {
+func Create(options *StartOptions) *App {
 	conf.SetupEnvironment()
 
 	models.Setup()
@@ -63,6 +69,8 @@ func Start(ctx context.Context, options *StartOptions) *http.Server {
 			Snapshotter:   true,
 		}
 	}
+
+	ctx, cancel := context.WithCancel(context.Background())
 
 	if options.Confirmer {
 		confirm.Setup(ctx)
@@ -102,22 +110,34 @@ func Start(ctx context.Context, options *StartOptions) *http.Server {
 			}
 		}()
 
-		return server
+		return &App{
+			httpServer: server,
+			ctx:        ctx,
+			cancel:     cancel,
+		}
 	}
 
-	return nil
+	return &App{
+		ctx:    ctx,
+		cancel: cancel,
+	}
 }
 
-func Stop(server *http.Server) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := server.Shutdown(ctx); err != nil {
-		log.Fatalf("failed to shutdown server. details: %w\n", err)
-	}
+func (app *App) Stop() {
+	app.cancel()
 
-	select {
-	case <-ctx.Done():
-		log.Println("waiting for server to shutdown...")
+	if app.httpServer != nil {
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := app.httpServer.Shutdown(ctx); err != nil {
+			log.Fatalln(fmt.Errorf("failed to shutdown server. details: %w", err))
+		}
+
+		select {
+		case <-ctx.Done():
+			log.Println("waiting for http server to shutdown...")
+		}
 	}
 
 	shutdown()

@@ -2,11 +2,19 @@ package acc
 
 import (
 	"go-deploy/pkg/conf"
+	"log"
 	"os"
 	"testing"
 )
 
-func setup(t *testing.T) {
+func TestMain(m *testing.M) {
+	Setup()
+	code := m.Run()
+	Shutdown()
+	os.Exit(code)
+}
+
+func Setup() {
 
 	requiredEnvs := []string{
 		"DEPLOY_CONFIG_FILE",
@@ -15,7 +23,7 @@ func setup(t *testing.T) {
 	for _, env := range requiredEnvs {
 		_, result := os.LookupEnv(env)
 		if !result {
-			t.Fatalf("%s must be set for acceptance test", env)
+			log.Fatalln("required environment variable not set: " + env)
 		}
 	}
 
@@ -23,4 +31,11 @@ func setup(t *testing.T) {
 	if result {
 		conf.SetupEnvironment()
 	}
+
+	conf.Env.TestMode = true
+	conf.Env.DB.Name = conf.Env.DB.Name + "-test"
+}
+
+func Shutdown() {
+
 }

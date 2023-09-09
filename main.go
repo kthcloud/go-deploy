@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"go-deploy/pkg/app"
 	"log"
@@ -60,15 +59,11 @@ func main() {
 		log.Println("no workers specified, starting all")
 	}
 
-	ctx := context.Background()
-	ctx, cancel := context.WithCancel(ctx)
-	server := app.Start(ctx, options)
-	if server != nil {
-		defer func() {
-			cancel()
-			app.Stop(server)
-		}()
+	deployApp := app.Create(options)
+	if deployApp == nil {
+		log.Fatalln("failed to start app")
 	}
+	defer deployApp.Stop()
 
 	quit := make(chan os.Signal)
 	<-quit
