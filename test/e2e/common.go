@@ -8,6 +8,8 @@ import (
 	"testing"
 )
 
+const TestUserID = "955f0f87-37fd-4792-90eb-9bf6989e698e"
+
 func DoGetRequest(t *testing.T, subPath string) *http.Response {
 	t.Helper()
 

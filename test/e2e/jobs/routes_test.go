@@ -1,4 +1,4 @@
-package deployments
+package jobs
 
 import (
 	"github.com/google/uuid"
@@ -11,12 +11,11 @@ import (
 	"testing"
 )
 
-func TestGetDeployments(t *testing.T) {
-	resp := e2e.DoGetRequest(t, "/deployments")
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-}
+func TestFetchJobs(t *testing.T) {
 
-func TestCreateDeployment(t *testing.T) {
+	// we can't create a job with the api, so we need to trigger a job
+	// simplest way is to just create a deployment
+
 	zone := conf.Env.VM.Zones[0]
 
 	envValue := uuid.NewString()
@@ -49,17 +48,18 @@ func TestCreateDeployment(t *testing.T) {
 		if !assert.Equal(t, http.StatusOK, resp.StatusCode, "deployment was not deleted") {
 			assert.FailNow(t, "deployment was not deleted")
 		}
-
-		waitForDeploymentDeleted(t, deploymentCreated.ID, func() bool {
-			return true
-		})
 	})
 
-	waitForDeploymentCreated(t, deploymentCreated.ID, func(deploymentRead *body.DeploymentRead) bool {
-		//make sure it is accessible
-		if deploymentRead.URL != nil {
-			return checkUpDeployment(t, *deploymentRead.URL)
-		}
-		return false
-	})
+	jobID := deploymentCreated.JobID
+
+	resp = e2e.DoGetRequest(t, "/jobs/"+jobID)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var jobRead body.JobRead
+	err = e2e.ReadResponseBody(t, resp, &jobRead)
+	assert.NoError(t, err, "job was not fetched")
+
+	assert.Equal(t, jobID, jobRead.ID)
+	assert.Equal(t, jobRead.Type, "createDeployment")
+	assert.Equal(t, jobRead.UserID, e2e.TestUserID)
 }
