@@ -2,7 +2,7 @@ package job
 
 import (
 	"go-deploy/models"
-	"go-deploy/models/sys/resource"
+	"go-deploy/models/sys/base/resource"
 )
 
 type Client struct {
