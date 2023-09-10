@@ -182,6 +182,8 @@ func TestUpdateDeployment(t *testing.T) {
 			return checkUpURL(t, *deploymentRead.URL)
 		}
 
+		if deploymentRead.Private {
+			return true
 		}
 		return false
 	})
