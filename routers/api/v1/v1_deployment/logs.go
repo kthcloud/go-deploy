@@ -52,7 +52,7 @@ func GetLogs(c *gin.Context) {
 		handler := func(msg string) {
 			err = ws.WriteMessage(websocket.TextMessage, []byte(msg))
 			if err != nil {
-				if strings.Contains(err.Error(), "closed network connection") {
+				if strings.Contains(err.Error(), "closed network connection") || strings.Contains(err.Error(), "connection reset by peer") {
 					return
 				}
 
@@ -128,3 +128,5 @@ func validateBearerToken(bearer string) *service.AuthInfo {
 
 	return &authInfo
 }
+
+//mhuaaaaaaaaaaaah, i love you i love you i love you
