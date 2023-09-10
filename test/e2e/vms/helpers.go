@@ -65,7 +65,7 @@ func waitForVmDeleted(t *testing.T, id string, callback func() bool) {
 }
 
 func withSshPublicKey(t *testing.T) string {
-	content, err := os.ReadFile("../ssh/id_rsa.pub")
+	content, err := os.ReadFile("../../ssh/id_rsa.pub")
 	if err != nil {
 		assert.FailNow(t, err.Error())
 	}
@@ -86,7 +86,7 @@ func checkUpVM(t *testing.T, connectionString string) bool {
 	address := addrParts[1]
 	port := connectionStringParts[3]
 
-	client, err := sshclient.DialWithKey(fmt.Sprintf("%s:%s", address, port), user, "../ssh/id_rsa")
+	client, err := sshclient.DialWithKey(fmt.Sprintf("%s:%s", address, port), user, "../../ssh/id_rsa")
 	if err != nil {
 		return false
 	}
