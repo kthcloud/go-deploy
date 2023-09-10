@@ -180,7 +180,9 @@ func TestUpdateDeployment(t *testing.T) {
 	waitForDeploymentRunning(t, deploymentRead.ID, func(deploymentRead *body.DeploymentRead) bool {
 		//make sure it is accessible
 		if deploymentRead.URL != nil {
-			return checkUpDeployment(t, *deploymentRead.URL)
+			return checkUpURL(t, *deploymentRead.URL)
+		}
+
 		}
 		return false
 	})
@@ -213,7 +215,7 @@ func TestDeploymentCommand(t *testing.T) {
 		waitForDeploymentRunning(t, deployment.ID, func(deploymentRead *body.DeploymentRead) bool {
 			//make sure it is accessible
 			if deploymentRead.URL != nil {
-				return checkUpDeployment(t, *deploymentRead.URL)
+				return checkUpURL(t, *deploymentRead.URL)
 			}
 			return false
 		})
@@ -323,6 +325,11 @@ func TestCreateStorageManager(t *testing.T) {
 	assert.NotEmpty(t, storageManager.OwnerID, "storage manager owner id was empty")
 	assert.NotEmpty(t, storageManager.URL, "storage manager url was empty")
 
-	resp := e2e.DoPlainGetRequest(t, *storageManager.URL)
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	waitForStorageManagerRunning(t, storageManager.ID, func(storageManagerRead *body.StorageManagerRead) bool {
+		//make sure it is accessible
+		if storageManager.URL != nil {
+			return checkUpURL(t, *storageManager.URL)
+		}
+		return false
+	})
 }

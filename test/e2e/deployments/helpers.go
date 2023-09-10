@@ -39,6 +39,33 @@ func waitForDeploymentRunning(t *testing.T, id string, callback func(*body.Deplo
 	}
 }
 
+func waitForStorageManagerRunning(t *testing.T, id string, callback func(read *body.StorageManagerRead) bool) {
+	loops := 0
+	for {
+		time.Sleep(10 * time.Second)
+
+		resp := e2e.DoGetRequest(t, "/storageManagers/"+id)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		var storageManagerRead body.StorageManagerRead
+		err := e2e.ReadResponseBody(t, resp, &storageManagerRead)
+		if err != nil {
+			continue
+		}
+
+		finished := callback(&storageManagerRead)
+		if finished {
+			break
+		}
+
+		loops++
+		if !assert.LessOrEqual(t, loops, 30, "storage manager did not start in time") {
+			assert.FailNow(t, "storage manager did not start in time")
+			break
+		}
+	}
+}
+
 func waitForDeploymentDeleted(t *testing.T, id string, callback func() bool) {
 	loops := 0
 	for {
@@ -60,7 +87,7 @@ func waitForDeploymentDeleted(t *testing.T, id string, callback func() bool) {
 	}
 }
 
-func checkUpDeployment(t *testing.T, url string) bool {
+func checkUpURL(t *testing.T, url string) bool {
 	t.Helper()
 
 	resp, err := http.Get(url)
@@ -98,7 +125,7 @@ func withDeployment(t *testing.T, requestBody body.DeploymentCreate) body.Deploy
 	waitForDeploymentRunning(t, deploymentCreated.ID, func(deploymentRead *body.DeploymentRead) bool {
 		//make sure it is accessible
 		if deploymentRead.URL != nil {
-			return checkUpDeployment(t, *deploymentRead.URL)
+			return checkUpURL(t, *deploymentRead.URL)
 		}
 		return false
 	})
