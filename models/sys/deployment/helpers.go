@@ -138,6 +138,10 @@ func (client *Client) UpdateWithParamsByID(id string, update *UpdateParams) erro
 		mainApp.ExtraDomains = *update.ExtraDomains
 	}
 
+	if update.Volumes != nil {
+		mainApp.Volumes = *update.Volumes
+	}
+
 	deployment.Apps["main"] = *mainApp
 
 	_, err = client.Collection.UpdateOne(context.TODO(),
