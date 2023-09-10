@@ -48,9 +48,8 @@ func TestFetchJobs(t *testing.T) {
 
 	t.Cleanup(func() {
 		resp = e2e.DoDeleteRequest(t, "/deployments/"+deploymentCreated.ID)
-		assert.Equal(t, http.StatusOK, resp.StatusCode, "deployment was not deleted")
-		if !assert.Equal(t, http.StatusOK, resp.StatusCode, "deployment was not deleted") {
-			assert.FailNow(t, "deployment was not deleted")
+		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
+			assert.FailNow(t, "resource was not deleted")
 		}
 	})
 

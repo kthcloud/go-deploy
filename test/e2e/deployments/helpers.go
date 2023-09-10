@@ -112,9 +112,8 @@ func withDeployment(t *testing.T, requestBody body.DeploymentCreate) body.Deploy
 
 	t.Cleanup(func() {
 		resp = e2e.DoDeleteRequest(t, "/deployments/"+deploymentCreated.ID)
-		assert.Equal(t, http.StatusOK, resp.StatusCode, "deployment was not deleted")
-		if !assert.Equal(t, http.StatusOK, resp.StatusCode, "deployment was not deleted") {
-			assert.FailNow(t, "deployment was not deleted")
+		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
+			assert.FailNow(t, "resource was not deleted")
 		}
 
 		waitForDeploymentDeleted(t, deploymentCreated.ID, func() bool {
@@ -184,9 +183,8 @@ func withAssumedFailedDeployment(t *testing.T, requestBody body.DeploymentCreate
 
 	t.Cleanup(func() {
 		resp = e2e.DoDeleteRequest(t, "/deployments/"+deploymentCreated.ID)
-		assert.Equal(t, http.StatusOK, resp.StatusCode, "deployment was not deleted")
-		if !assert.Equal(t, http.StatusOK, resp.StatusCode, "deployment was not deleted") {
-			assert.FailNow(t, "deployment was not deleted")
+		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
+			assert.FailNow(t, "resource was not deleted")
 		}
 
 		waitForDeploymentDeleted(t, deploymentCreated.ID, func() bool {

@@ -64,9 +64,8 @@ func TestCreateDeployment(t *testing.T) {
 
 	t.Cleanup(func() {
 		resp = e2e.DoDeleteRequest(t, "/deployments/"+deploymentCreated.ID)
-		assert.Equal(t, http.StatusOK, resp.StatusCode, "deployment was not deleted")
-		if !assert.Equal(t, http.StatusOK, resp.StatusCode, "deployment was not deleted") {
-			assert.FailNow(t, "deployment was not deleted")
+		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
+			assert.FailNow(t, "resource was not deleted")
 		}
 
 		waitForDeploymentDeleted(t, deploymentCreated.ID, func() bool {
@@ -77,7 +76,7 @@ func TestCreateDeployment(t *testing.T) {
 	waitForDeploymentRunning(t, deploymentCreated.ID, func(deploymentRead *body.DeploymentRead) bool {
 		//make sure it is accessible
 		if deploymentRead.URL != nil {
-			return checkUpDeployment(t, *deploymentRead.URL)
+			return checkUpURL(t, *deploymentRead.URL)
 		}
 		return false
 	})

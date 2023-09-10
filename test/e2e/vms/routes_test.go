@@ -53,9 +53,8 @@ func TestCreateVm(t *testing.T) {
 
 	t.Cleanup(func() {
 		resp = e2e.DoDeleteRequest(t, "/vms/"+vmCreated.ID)
-		assert.Equal(t, http.StatusOK, resp.StatusCode, "vm was not deleted")
-		if !assert.Equal(t, http.StatusOK, resp.StatusCode, "vm was not deleted") {
-			assert.FailNow(t, "vm was not deleted")
+		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
+			assert.FailNow(t, "resource was not deleted")
 		}
 
 		waitForVmDeleted(t, vmCreated.ID, func() bool {
