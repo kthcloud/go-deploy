@@ -16,11 +16,6 @@ type Deployment struct {
 	RestartedAt time.Time `bson:"restartedAt"`
 	DeletedAt   time.Time `bson:"deletedAt"`
 
-	// keep until migrated
-	Private      bool     `bson:"private"`
-	Envs         []Env    `bson:"envs"`
-	Volumes      []Volume `bson:"volumes"`
-	InitCommands []string `bson:"initCommands"`
 
 	Activities []string `bson:"activities"`
 

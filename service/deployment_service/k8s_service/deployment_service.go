@@ -438,7 +438,7 @@ func Update(name string, params *deploymentModel.UpdateParams) error {
 			}
 		}
 
-		public := createMainAppDeploymentPublic(ss.K8s.Namespace.FullName, deployment.Name, deployment.OwnerID, deployment.Envs, *params.Volumes, deployment.InitCommands)
+		public := createMainAppDeploymentPublic(ss.K8s.Namespace.FullName, deployment.Name, deployment.OwnerID, mainApp.Envs, *params.Volumes, mainApp.InitCommands)
 		_, err = createK8sDeployment(client, deployment.ID, appName, &ss.K8s, public, deploymentModel.New().UpdateSubsystemByID)
 		if err != nil {
 			return makeError(err)
