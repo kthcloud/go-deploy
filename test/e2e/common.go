@@ -3,17 +3,86 @@ package e2e
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"go-deploy/pkg/app"
+	"go-deploy/pkg/conf"
+	"log"
 	"net/http"
+	"os"
+	"strings"
 	"testing"
+	"time"
 )
 
 const TestUserID = "955f0f87-37fd-4792-90eb-9bf6989e698e"
 
+var deployApp *app.App
+
+func Setup() {
+	requiredEnvs := []string{
+		"DEPLOY_CONFIG_FILE",
+	}
+
+	for _, env := range requiredEnvs {
+		_, result := os.LookupEnv(env)
+		if !result {
+			log.Fatalln("required environment variable not set: " + env)
+		}
+	}
+
+	_, result := os.LookupEnv("DEPLOY_CONFIG_FILE")
+	if result {
+		conf.SetupEnvironment()
+	}
+
+	conf.Env.TestMode = true
+	conf.Env.DB.Name = conf.Env.DB.Name + "-test"
+
+	deployApp = app.Create(nil)
+	if deployApp == nil {
+		log.Fatalln("failed to create app")
+	}
+
+	// TODO: wait for server to start instead of using this "hack"
+	time.Sleep(3 * time.Second)
+}
+
+func Shutdown() {
+	if deployApp != nil {
+		deployApp.Stop()
+	}
+}
+
+func GenName(base string) string {
+	return base + "-" + strings.ReplaceAll(uuid.NewString()[:10], "-", "")
+}
+
+func DoPlainGetRequest(t *testing.T, path string) *http.Response {
+	t.Helper()
+
+	req, err := http.NewRequest("GET", path, nil)
+	assert.NoError(t, err)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	assert.NoError(t, err)
+
+	return resp
+}
+
+func CreateServerURL(subPath string) string {
+	return CreateServerUrlWithProtocol("http", subPath)
+}
+
+func CreateServerUrlWithProtocol(protocol, subPath string) string {
+	return protocol + "://localhost:8080/v1" + subPath
+}
+
 func DoGetRequest(t *testing.T, subPath string) *http.Response {
 	t.Helper()
 
-	req, err := http.NewRequest("GET", "http://localhost:8080/v1"+subPath, nil)
+	req, err := http.NewRequest("GET", CreateServerURL(subPath), nil)
 	assert.NoError(t, err)
 
 	client := &http.Client{}
@@ -30,7 +99,7 @@ func DoPostRequest(t *testing.T, subPath string, body interface{}) *http.Respons
 	assert.NoError(t, err)
 	assert.NotEmpty(t, jsonBody)
 
-	req, err := http.NewRequest("POST", "http://localhost:8080/v1"+subPath, bytes.NewBuffer(jsonBody))
+	req, err := http.NewRequest("POST", CreateServerURL(subPath), bytes.NewBuffer(jsonBody))
 	assert.NoError(t, err)
 
 	req.Header.Set("Content-Type", "application/json")
@@ -45,7 +114,7 @@ func DoPostRequest(t *testing.T, subPath string, body interface{}) *http.Respons
 func DoDeleteRequest(t *testing.T, subPath string) *http.Response {
 	t.Helper()
 
-	req, err := http.NewRequest("DELETE", "http://localhost:8080/v1"+subPath, nil)
+	req, err := http.NewRequest("DELETE", CreateServerURL(subPath), nil)
 	assert.NoError(t, err)
 
 	client := &http.Client{}

@@ -5,8 +5,16 @@ import (
 	"go-deploy/models/dto/body"
 	"go-deploy/test/e2e"
 	"net/http"
+	"os"
 	"testing"
 )
+
+func TestMain(m *testing.M) {
+	e2e.Setup()
+	code := m.Run()
+	e2e.Shutdown()
+	os.Exit(code)
+}
 
 func TestFetchRepositories(t *testing.T) {
 	// if you want to test this, you need to set the code below.

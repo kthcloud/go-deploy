@@ -4,8 +4,16 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go-deploy/service"
 	"go-deploy/test/e2e"
+	"os"
 	"testing"
 )
+
+func TestMain(m *testing.M) {
+	e2e.Setup()
+	code := m.Run()
+	e2e.Shutdown()
+	os.Exit(code)
+}
 
 func TestFetchAuthInfo(t *testing.T) {
 	resp := e2e.DoGetRequest(t, "/authInfo")

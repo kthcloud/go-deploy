@@ -13,18 +13,20 @@ type Volume struct {
 	ServerPath string `json:"serverPath" binding:"required,min=1,max=100"`
 }
 
+type GitHub struct {
+	Token        string `json:"token" binding:"required,min=1,max=1000"`
+	RepositoryID int64  `json:"repositoryId" binding:"required"`
+}
+
 type DeploymentCreate struct {
 	Name string `json:"name" binding:"required,rfc1035,min=3,max=30"`
 
 	Private      bool     `json:"private" binding:"omitempty,boolean"`
-	Envs         []Env    `json:"envs" binding:"omitempty,env_list,dive,min=0,max=1000"`
-	Volumes      []Volume `json:"volumes" binding:"omitempty,dive,min=0,max=100"`
-	InitCommands []string `json:"initCommands" binding:"omitempty,dive,min=0,max=100"`
+	Envs         []Env    `json:"envs" binding:"omitempty,env_list,min=0,max=1000,dive"`
+	Volumes      []Volume `json:"volumes" binding:"omitempty,min=0,max=100,dive"`
+	InitCommands []string `json:"initCommands" binding:"omitempty,min=0,max=100,dive,min=0,max=100"`
 
-	GitHub *struct {
-		Token        string `json:"token" binding:"required,min=1,max=1000"`
-		RepositoryID int64  `json:"repositoryId" binding:"required"`
-	} `json:"github" binding:"omitempty,dive"`
+	GitHub *GitHub `json:"github" binding:"omitempty,dive"`
 
 	Zone *string `json:"zone" binding:"omitempty"`
 }

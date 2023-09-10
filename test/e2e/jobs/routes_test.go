@@ -7,10 +7,17 @@ import (
 	"go-deploy/pkg/conf"
 	"go-deploy/test/e2e"
 	"net/http"
+	"os"
 	"strings"
 	"testing"
 )
 
+func TestMain(m *testing.M) {
+	e2e.Setup()
+	code := m.Run()
+	e2e.Shutdown()
+	os.Exit(code)
+}
 func TestFetchJobs(t *testing.T) {
 
 	// we can't create a job with the api, so we need to trigger a job
