@@ -6,13 +6,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"go-deploy/pkg/app"
-	"go-deploy/pkg/conf"
 	"log"
 	"net/http"
 	"os"
 	"strings"
 	"testing"
-	"time"
 )
 
 const TestUserID = "955f0f87-37fd-4792-90eb-9bf6989e698e"
@@ -20,9 +18,8 @@ const TestUserID = "955f0f87-37fd-4792-90eb-9bf6989e698e"
 var deployApp *app.App
 
 func Setup() {
-	requiredEnvs := []string{
-		"DEPLOY_CONFIG_FILE",
-	}
+	//goland:noinspection ALL
+	requiredEnvs := []string{}
 
 	for _, env := range requiredEnvs {
 		_, result := os.LookupEnv(env)
@@ -30,31 +27,6 @@ func Setup() {
 			log.Fatalln("required environment variable not set: " + env)
 		}
 	}
-
-	_, result := os.LookupEnv("DEPLOY_CONFIG_FILE")
-	if result {
-		conf.SetupEnvironment()
-	}
-
-	conf.Env.TestMode = true
-	conf.Env.DB.Name = conf.Env.DB.Name + "-test"
-
-	deployApp = app.Create(&app.Options{
-		API:           true,
-		Confirmer:     true,
-		StatusUpdater: true,
-		JobExecutor:   true,
-		Repairer:      true,
-		Pinger:        true,
-		Snapshotter:   true,
-		TestMode:      true,
-	})
-	if deployApp == nil {
-		log.Fatalln("failed to create app")
-	}
-
-	// TODO: wait for server to start instead of using this "hack"
-	time.Sleep(3 * time.Second)
 }
 
 func Shutdown() {

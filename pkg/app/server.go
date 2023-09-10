@@ -23,7 +23,7 @@ import (
 	"time"
 )
 
-type Options struct {
+type Workers struct {
 	API           bool
 	Confirmer     bool
 	StatusUpdater bool
@@ -31,7 +31,10 @@ type Options struct {
 	Repairer      bool
 	Pinger        bool
 	Snapshotter   bool
+}
 
+type Options struct {
+	Workers  Workers
 	TestMode bool
 }
 
@@ -45,9 +48,12 @@ func shutdown() {
 	models.Shutdown()
 }
 
-func Create(options *Options) *App {
-	if options == nil || !options.TestMode {
-		conf.SetupEnvironment()
+func Create(options Options) *App {
+	conf.SetupEnvironment()
+
+	if options.TestMode {
+		conf.Env.TestMode = true
+		conf.Env.DB.Name = conf.Env.DB.Name + "-test"
 	}
 
 	models.Setup()
@@ -62,39 +68,29 @@ func Create(options *Options) *App {
 	intializer.SynchronizeGPUs()
 	intializer.CleanUpOldTests()
 
-	if options == nil {
-		options = &Options{
-			API:           true,
-			Confirmer:     true,
-			StatusUpdater: true,
-			JobExecutor:   true,
-			Repairer:      true,
-			Pinger:        true,
-			Snapshotter:   true,
-		}
-	}
-
 	ctx, cancel := context.WithCancel(context.Background())
 
-	if options.Confirmer {
+	workers := &options.Workers
+
+	if workers.Confirmer {
 		confirm.Setup(ctx)
 	}
-	if options.StatusUpdater {
+	if workers.StatusUpdater {
 		status_update.Setup(ctx)
 	}
-	if options.JobExecutor {
+	if workers.JobExecutor {
 		job_execute.Setup(ctx)
 	}
-	if options.Repairer {
+	if workers.Repairer {
 		repair.Setup(ctx)
 	}
-	if options.Pinger {
+	if workers.Pinger {
 		ping.Setup(ctx)
 	}
-	if options.Snapshotter {
+	if workers.Snapshotter {
 		snapshot.Setup(ctx)
 	}
-	if options.API {
+	if workers.API {
 		ginMode, exists := os.LookupEnv("GIN_MODE")
 		if exists {
 			gin.SetMode(ginMode)
