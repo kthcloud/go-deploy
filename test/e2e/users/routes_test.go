@@ -15,14 +15,14 @@ func TestMain(m *testing.M) {
 	e2e.Shutdown()
 	os.Exit(code)
 }
+
 func TestFetchUsers(t *testing.T) {
-	resp := e2e.DoGetRequest(t, "/users")
+	resp := e2e.DoGetRequest(t, "/users?all=true")
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	var users []body.UserRead
 	err := e2e.ReadResponseBody(t, resp, &users)
 	assert.NoError(t, err, "users were not fetched")
-
 	assert.NotEmpty(t, users, "users were not fetched. it should have at least one user (test user)")
 
 	for _, user := range users {
@@ -31,7 +31,7 @@ func TestFetchUsers(t *testing.T) {
 }
 
 func TestFetchUser(t *testing.T) {
-	resp := e2e.DoGetRequest(t, "/users/test")
+	resp := e2e.DoGetRequest(t, "/users/"+e2e.TestUserID)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	var userRead body.UserRead
