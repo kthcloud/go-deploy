@@ -36,9 +36,9 @@ func main() {
 	pinger := isFlagPassed("pinger")
 	snapshotter := isFlagPassed("snapshotter")
 
-	var options *app.StartOptions
+	var options *app.Options
 	if confirmer || statusUpdater || jobExecutor || repairer || api || pinger || snapshotter {
-		options = &app.StartOptions{
+		options = &app.Options{
 			API:           api,
 			Confirmer:     confirmer,
 			StatusUpdater: statusUpdater,
@@ -46,6 +46,7 @@ func main() {
 			Repairer:      repairer,
 			Pinger:        pinger,
 			Snapshotter:   snapshotter,
+			TestMode:      false,
 		}
 
 		log.Println("api: ", options.API)

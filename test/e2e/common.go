@@ -39,7 +39,16 @@ func Setup() {
 	conf.Env.TestMode = true
 	conf.Env.DB.Name = conf.Env.DB.Name + "-test"
 
-	deployApp = app.Create(nil)
+	deployApp = app.Create(&app.Options{
+		API:           true,
+		Confirmer:     true,
+		StatusUpdater: true,
+		JobExecutor:   true,
+		Repairer:      true,
+		Pinger:        true,
+		Snapshotter:   true,
+		TestMode:      true,
+	})
 	if deployApp == nil {
 		log.Fatalln("failed to create app")
 	}

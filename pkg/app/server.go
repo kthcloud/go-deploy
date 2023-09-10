@@ -23,7 +23,7 @@ import (
 	"time"
 )
 
-type StartOptions struct {
+type Options struct {
 	API           bool
 	Confirmer     bool
 	StatusUpdater bool
@@ -31,6 +31,8 @@ type StartOptions struct {
 	Repairer      bool
 	Pinger        bool
 	Snapshotter   bool
+
+	TestMode bool
 }
 
 type App struct {
@@ -43,8 +45,10 @@ func shutdown() {
 	models.Shutdown()
 }
 
-func Create(options *StartOptions) *App {
-	conf.SetupEnvironment()
+func Create(options *Options) *App {
+	if options == nil || !options.TestMode {
+		conf.SetupEnvironment()
+	}
 
 	models.Setup()
 
@@ -59,7 +63,7 @@ func Create(options *StartOptions) *App {
 	intializer.CleanUpOldTests()
 
 	if options == nil {
-		options = &StartOptions{
+		options = &Options{
 			API:           true,
 			Confirmer:     true,
 			StatusUpdater: true,
