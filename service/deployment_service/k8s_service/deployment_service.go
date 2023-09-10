@@ -420,6 +420,16 @@ func Update(name string, params *deploymentModel.UpdateParams) error {
 		ss.K8s.PvcMap = make(map[string]k8sModels.PvcPublic)
 		ss.K8s.PvMap = make(map[string]k8sModels.PvPublic)
 
+		// since we depend on the namespace, we must ensure it is actually created here
+		if !ss.K8s.Namespace.Created() {
+			public := createNamespacePublic(deployment.OwnerID)
+			namespace, err := createNamespace(client, deployment.ID, &ss.K8s, public, updateDb)
+			if err != nil {
+				return makeError(err)
+			}
+			ss.K8s.Namespace = *namespace
+		}
+
 		for _, volume := range *params.Volumes {
 			k8sName := fmt.Sprintf("%s-%s", deployment.Name, volume.Name)
 			capacity := conf.Env.Deployment.Resources.Limits.Storage
