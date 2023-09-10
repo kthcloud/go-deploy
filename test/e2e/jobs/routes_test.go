@@ -4,7 +4,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"go-deploy/models/dto/body"
-	"go-deploy/pkg/conf"
 	"go-deploy/test/e2e"
 	"net/http"
 	"os"
@@ -23,8 +22,6 @@ func TestFetchJobs(t *testing.T) {
 	// we can't create a job with the api, so we need to trigger a job
 	// simplest way is to just create a deployment
 
-	zone := conf.Env.VM.Zones[0]
-
 	envValue := uuid.NewString()
 
 	requestBody := body.DeploymentCreate{
@@ -37,7 +34,7 @@ func TestFetchJobs(t *testing.T) {
 			},
 		},
 		GitHub: nil,
-		Zone:   &zone.Name,
+		Zone:   nil,
 	}
 
 	resp := e2e.DoPostRequest(t, "/deployments", requestBody)

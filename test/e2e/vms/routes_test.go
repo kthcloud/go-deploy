@@ -4,7 +4,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"go-deploy/models/dto/body"
-	"go-deploy/pkg/conf"
 	"go-deploy/test/e2e"
 	"net/http"
 	"os"
@@ -20,15 +19,12 @@ func TestMain(m *testing.M) {
 }
 
 func TestGetVms(t *testing.T) {
-
 	resp := e2e.DoGetRequest(t, "/vms")
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
 func TestCreateVm(t *testing.T) {
 	publicKey := withSshPublicKey(t)
-
-	zone := conf.Env.VM.Zones[0]
 
 	requestBody := body.VmCreate{
 		Name:         "e2e-" + strings.ReplaceAll(uuid.NewString()[:10], "-", ""),
@@ -43,7 +39,7 @@ func TestCreateVm(t *testing.T) {
 		CpuCores: 2,
 		RAM:      2,
 		DiskSize: 20,
-		Zone:     &zone.Name,
+		Zone:     nil,
 	}
 
 	resp := e2e.DoPostRequest(t, "/vms", requestBody)

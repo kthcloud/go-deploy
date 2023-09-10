@@ -5,7 +5,6 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
 	"go-deploy/models/dto/body"
-	"go-deploy/pkg/conf"
 	"go-deploy/test/e2e"
 	"net/http"
 	"os"
@@ -27,8 +26,6 @@ func TestGetDeployments(t *testing.T) {
 }
 
 func TestCreateDeployment(t *testing.T) {
-	zone := conf.Env.VM.Zones[0]
-
 	// in order to test with GitHub, you need to set the following env variables:
 	var token string
 	var repositoryID int64
@@ -53,7 +50,7 @@ func TestCreateDeployment(t *testing.T) {
 			},
 		},
 		GitHub: github,
-		Zone:   &zone.Name,
+		Zone:   nil,
 	}
 
 	resp := e2e.DoPostRequest(t, "/deployments", requestBody)
@@ -142,8 +139,6 @@ func TestCreateDeploymentWithInvalidBody(t *testing.T) {
 }
 
 func TestUpdateDeployment(t *testing.T) {
-	zone := conf.Env.VM.Zones[0]
-
 	envValue := uuid.NewString()
 
 	deploymentRead := withDeployment(t, body.DeploymentCreate{
@@ -156,7 +151,7 @@ func TestUpdateDeployment(t *testing.T) {
 			},
 		},
 		GitHub: nil,
-		Zone:   &zone.Name,
+		Zone:   nil,
 	})
 
 	// update deployment
@@ -274,8 +269,6 @@ func TestFetchDeploymentLogs(t *testing.T) {
 func TestCreateStorageManager(t *testing.T) {
 	// in order to test this, we need to create a deployment with volumes
 
-	zone := conf.Env.VM.Zones[0]
-
 	envValue := uuid.NewString()
 
 	requestBody := body.DeploymentCreate{
@@ -288,7 +281,7 @@ func TestCreateStorageManager(t *testing.T) {
 			},
 		},
 		GitHub: nil,
-		Zone:   &zone.Name,
+		Zone:   nil,
 		Volumes: []body.Volume{
 			{
 				Name:    "e2e-test",
