@@ -23,6 +23,30 @@ func TestMain(m *testing.M) {
 func TestGetDeployments(t *testing.T) {
 	resp := e2e.DoGetRequest(t, "/deployments")
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var deployments []body.DeploymentRead
+	err := e2e.ReadResponseBody(t, resp, &deployments)
+	assert.NoError(t, err, "deployments were not fetched")
+
+	for _, deployment := range deployments {
+		assert.NotEmpty(t, deployment.ID, "deployment id was empty")
+		assert.NotEmpty(t, deployment.Name, "deployment name was empty")
+	}
+}
+
+func TestGetStorageManagers(t *testing.T) {
+	resp := e2e.DoGetRequest(t, "/storageManagers")
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var storageManagers []body.StorageManagerRead
+	err := e2e.ReadResponseBody(t, resp, &storageManagers)
+	assert.NoError(t, err, "storage managers were not fetched")
+
+	for _, storageManager := range storageManagers {
+		assert.NotEmpty(t, storageManager.ID, "storage manager id was empty")
+		assert.NotEmpty(t, storageManager.OwnerID, "storage manager owner id was empty")
+		assert.NotEmpty(t, storageManager.URL, "storage manager url was empty")
+	}
 }
 
 func TestCreateDeployment(t *testing.T) {
@@ -53,33 +77,7 @@ func TestCreateDeployment(t *testing.T) {
 		Zone:   nil,
 	}
 
-	resp := e2e.DoPostRequest(t, "/deployments", requestBody)
-	if !assert.Equal(t, http.StatusCreated, resp.StatusCode, "deployment was not created") {
-		assert.FailNow(t, "deployment was not created")
-	}
-
-	var deploymentCreated body.DeploymentCreated
-	err := e2e.ReadResponseBody(t, resp, &deploymentCreated)
-	assert.NoError(t, err, "deployment was not created")
-
-	t.Cleanup(func() {
-		resp = e2e.DoDeleteRequest(t, "/deployments/"+deploymentCreated.ID)
-		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
-			assert.FailNow(t, "resource was not deleted")
-		}
-
-		waitForDeploymentDeleted(t, deploymentCreated.ID, func() bool {
-			return true
-		})
-	})
-
-	waitForDeploymentRunning(t, deploymentCreated.ID, func(deploymentRead *body.DeploymentRead) bool {
-		//make sure it is accessible
-		if deploymentRead.URL != nil {
-			return checkUpURL(t, *deploymentRead.URL)
-		}
-		return false
-	})
+	_ = withDeployment(t, requestBody)
 }
 
 func TestCreateDeploymentWithInvalidBody(t *testing.T) {
