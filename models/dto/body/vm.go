@@ -3,7 +3,7 @@ package body
 import "time"
 
 type Port struct {
-	Name         string `json:"name,omitempty" bson:"name" binding:"required"`
+	Name         string `json:"name,omitempty" bson:"name" binding:"required,min=1,max=100"`
 	Port         int    `json:"port,omitempty" bson:"port" binding:"required,min=1,max=65535"`
 	ExternalPort int    `json:"externalPort,omitempty" bson:"externalPort"`
 	Protocol     string `json:"protocol,omitempty" bson:"protocol" binding:"required,oneof=tcp udp"`
@@ -37,7 +37,7 @@ type VmRead struct {
 type VmCreate struct {
 	Name         string  `json:"name" binding:"required,rfc1035,min=3,max=30"`
 	SshPublicKey string  `json:"sshPublicKey" binding:"required,ssh_public_key"`
-	Ports        []Port  `json:"ports" binding:"omitempty,port_list_names,port_list_numbers,dive,min=0,max=1000"`
+	Ports        []Port  `json:"ports" binding:"omitempty,port_list_names,port_list_numbers,min=0,max=100,dive"`
 	CpuCores     int     `json:"cpuCores" binding:"required,min=2"`
 	RAM          int     `json:"ram" binding:"required,min=1"`
 	DiskSize     int     `json:"diskSize" binding:"required,min=20"`
