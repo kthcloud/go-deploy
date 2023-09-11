@@ -125,6 +125,7 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 		return fmt.Errorf("failed to attach gpu to vm %s. details: %w", vmID, err)
 	}
 	csInsufficientCapacityError := "host has capacity? false"
+	gpuAlreadyAttachedError := "Unable to create a deployment for VM instance"
 
 	endLease := time.Now().Add(time.Duration(leaseDuration) * time.Hour)
 
@@ -188,9 +189,25 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 		}
 
 		errString := err.Error()
-		if strings.Contains(errString, csInsufficientCapacityError) {
+
+		insufficientCapacityErr := strings.Contains(errString, csInsufficientCapacityError)
+		gpuAlreadyAttached := strings.Contains(errString, gpuAlreadyAttachedError)
+
+		if insufficientCapacityErr {
 			// if the host has insufficient capacity, we need to detach the gpu from the vm
 			// and attempt to attach it to another gpu
+
+			err = internal_service.DetachGPU(vmID, internal_service.CsDetachGpuAfterStateRestore)
+			if err != nil {
+				return makeError(err)
+			}
+
+			err = gpuModel.New().Detach(vmID, userID)
+			if err != nil {
+				return makeError(err)
+			}
+		} else if gpuAlreadyAttached {
+			// if the gpu is already attached, we need to detach it from the vm
 
 			err = internal_service.DetachGPU(vmID, internal_service.CsDetachGpuAfterStateRestore)
 			if err != nil {
