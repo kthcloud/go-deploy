@@ -36,19 +36,20 @@ func (vm *VM) ToDTO(status string, connectionString *string, gpu *body.GpuRead, 
 	}
 
 	return body.VmRead{
-		ID:               vm.ID,
-		Name:             vm.Name,
-		SshPublicKey:     vm.SshPublicKey,
-		Ports:            ports,
-		OwnerID:          vm.OwnerID,
-		Status:           status,
-		ConnectionString: connectionString,
-		GPU:              vmGpu,
+		ID:      vm.ID,
+		Name:    vm.Name,
+		OwnerID: vm.OwnerID,
+		Zone:    vm.Zone,
 		Specs: body.Specs{
 			CpuCores: vm.Specs.CpuCores,
 			RAM:      vm.Specs.RAM,
 			DiskSize: vm.Specs.DiskSize,
 		},
+		Ports:            ports,
+		GPU:              vmGpu,
+		SshPublicKey:     vm.SshPublicKey,
+		Status:           status,
+		ConnectionString: connectionString,
 	}
 }
 
