@@ -125,7 +125,7 @@ func CreateSnapshot(c *gin.Context) {
 		return
 	}
 
-	context.JSONResponse(http.StatusCreated, body.VmCreated{
+	context.JSONResponse(http.StatusCreated, body.VmSnapshotCreated{
 		ID:    vm.ID,
 		JobID: jobID,
 	})
