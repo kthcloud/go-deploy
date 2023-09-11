@@ -23,15 +23,18 @@ type VmGpu struct {
 }
 
 type VmRead struct {
-	ID               string  `json:"id"`
-	Name             string  `json:"name"`
-	SshPublicKey     string  `json:"sshPublicKey"`
-	Ports            []Port  `json:"ports"`
-	OwnerID          string  `json:"ownerId"`
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	OwnerID string `json:"ownerId"`
+	Zone    string `json:"zone"`
+
+	Specs        Specs  `json:"specs,omitempty"`
+	Ports        []Port `json:"ports"`
+	GPU          *VmGpu `json:"gpu,omitempty"`
+	SshPublicKey string `json:"sshPublicKey"`
+
 	Status           string  `json:"status"`
 	ConnectionString *string `json:"connectionString,omitempty"`
-	GPU              *VmGpu  `json:"gpu,omitempty"`
-	Specs            Specs   `json:"specs,omitempty"`
 }
 
 type VmCreate struct {
