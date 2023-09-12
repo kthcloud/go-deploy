@@ -542,7 +542,7 @@ func TestCreateAndRestoreVmSnapshot(t *testing.T) {
 
 	var vmSnapshotRead body.VmSnapshotRead
 	for _, snapshotRead := range vmSnapshotsRead {
-		if snapshotRead.ID == snapshotCreated.ID {
+		if snapshotRead.Name == snapshotCreateBody.Name {
 			vmSnapshotRead = snapshotRead
 			break
 		}

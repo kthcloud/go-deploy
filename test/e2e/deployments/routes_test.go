@@ -174,6 +174,14 @@ func TestUpdateDeployment(t *testing.T) {
 	resp := e2e.DoPostRequest(t, "/deployments/"+deploymentRead.ID, deploymentUpdate)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
+	var deploymentUpdated body.DeploymentUpdated
+	err := e2e.ReadResponseBody(t, resp, &deploymentUpdated)
+	assert.NoError(t, err, "deployment was not updated")
+
+	waitForJobFinished(t, deploymentUpdated.JobID, func(jobRead *body.JobRead) bool {
+		return true
+	})
+
 	waitForDeploymentRunning(t, deploymentRead.ID, func(deploymentRead *body.DeploymentRead) bool {
 		//make sure it is accessible
 		if deploymentRead.URL != nil {
@@ -191,7 +199,7 @@ func TestUpdateDeployment(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	var deploymentReadUpdated body.DeploymentRead
-	err := e2e.ReadResponseBody(t, resp, &deploymentReadUpdated)
+	err = e2e.ReadResponseBody(t, resp, &deploymentReadUpdated)
 	assert.NoError(t, err, "deployment was not created")
 
 	assert.Equal(t, newEnvValue, deploymentReadUpdated.Envs[0].Value)
@@ -295,6 +303,9 @@ func TestCreateStorageManager(t *testing.T) {
 	}
 
 	_ = withDeployment(t, requestBody)
+
+	// make sure the storage manager has to be created
+	time.Sleep(30 * time.Second)
 
 	// now the storage manager should be available
 	// TODO: update this part of the test when storage manager id is exposed in the deployment/user

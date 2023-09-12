@@ -10,6 +10,42 @@ import (
 	"time"
 )
 
+func waitForJobFinished(t *testing.T, id string, callback func(*body.JobRead) bool) {
+	loops := 0
+	for {
+		time.Sleep(10 * time.Second)
+
+		resp := e2e.DoGetRequest(t, "/jobs/"+id)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		var jobRead body.JobRead
+		err := e2e.ReadResponseBody(t, resp, &jobRead)
+		if err != nil {
+			continue
+		}
+
+		if jobRead.Status == status_codes.GetMsg(status_codes.JobFinished) {
+			finished := callback(&jobRead)
+			if finished {
+				break
+			}
+		}
+
+		if jobRead.Status == status_codes.GetMsg(status_codes.JobTerminated) {
+			finished := callback(&jobRead)
+			if finished {
+				break
+			}
+		}
+
+		loops++
+		if !assert.LessOrEqual(t, loops, 30, "job did not finish in time") {
+			assert.FailNow(t, "job did not finish in time")
+			break
+		}
+	}
+}
+
 func waitForDeploymentRunning(t *testing.T, id string, callback func(*body.DeploymentRead) bool) {
 	loops := 0
 	for {
@@ -119,6 +155,10 @@ func withDeployment(t *testing.T, requestBody body.DeploymentCreate) body.Deploy
 		waitForDeploymentDeleted(t, deploymentCreated.ID, func() bool {
 			return true
 		})
+	})
+
+	waitForJobFinished(t, deploymentCreated.JobID, func(jobRead *body.JobRead) bool {
+		return true
 	})
 
 	waitForDeploymentRunning(t, deploymentCreated.ID, func(deploymentRead *body.DeploymentRead) bool {
