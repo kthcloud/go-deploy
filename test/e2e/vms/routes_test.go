@@ -477,7 +477,7 @@ func TestAttachGpuWithAlreadyAttachedID(t *testing.T) {
 }
 
 func TestVmCommand(t *testing.T) {
-	commands := []string{"start", "stop", "reboot"}
+	commands := []string{"stop", "start", "reboot"}
 
 	vm := withVM(t, body.VmCreate{
 		Name:         e2e.GenName("e2e"),
@@ -548,7 +548,9 @@ func TestCreateAndRestoreVmSnapshot(t *testing.T) {
 		}
 	}
 
-	assert.NotEmpty(t, vmSnapshotRead.ID)
+	if !assert.NotEmpty(t, vmSnapshotRead.ID) {
+		assert.FailNow(t, "snapshot was not found")
+	}
 
 	updateSnapshotBody := body.VmUpdate{
 		SnapshotID: &vmSnapshotRead.ID,
