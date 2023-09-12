@@ -115,7 +115,7 @@ func CreateSnapshot(c *gin.Context) {
 
 	jobID := uuid.New().String()
 	err = job_service.Create(jobID, auth.UserID, job.TypeCreateSnapshot, map[string]interface{}{
-		"id":          vm.ID,
+		"vmId":        vm.ID,
 		"name":        requestBody.Name,
 		"userCreated": true,
 	})

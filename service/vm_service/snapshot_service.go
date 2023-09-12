@@ -66,23 +66,23 @@ func GetSnapshotByName(vmID, snapshotName string) (*vmModel.Snapshot, error) {
 	}, nil
 }
 
-func CreateSnapshot(id, name string, userCreated bool) error {
+func CreateSnapshot(vmID, name string, userCreated bool) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create snapshot for vm %s. details: %w", id, err)
+		return fmt.Errorf("failed to create snapshot for vm %s. details: %w", vmID, err)
 	}
 
-	vm, err := vmModel.New().GetByID(id)
+	vm, err := vmModel.New().GetByID(vmID)
 	if err != nil {
 		return makeError(err)
 	}
 
 	if vm == nil {
-		log.Println("vm", id, "not found when creating snapshot. assuming it was deleted")
+		log.Println("vm", vmID, "not found when creating snapshot. assuming it was deleted")
 		return nil
 	}
 
 	if !vm.Ready() {
-		return fmt.Errorf("vm %s not ready", id)
+		return fmt.Errorf("vm %s not ready", vmID)
 	}
 
 	started, reason, err := StartActivity(vm.ID, vmModel.ActivityCreatingSnapshot)
@@ -91,7 +91,7 @@ func CreateSnapshot(id, name string, userCreated bool) error {
 	}
 
 	if !started {
-		return fmt.Errorf("failed to create snapshot for vm %s. details: %s", id, reason)
+		return fmt.Errorf("failed to create snapshot for vm %s. details: %s", vmID, reason)
 	}
 
 	defer func() {
