@@ -4,15 +4,7 @@ import (
 	"go-deploy/pkg/conf"
 	"log"
 	"os"
-	"testing"
 )
-
-func TestMain(m *testing.M) {
-	Setup()
-	code := m.Run()
-	Shutdown()
-	os.Exit(code)
-}
 
 func Setup() {
 
