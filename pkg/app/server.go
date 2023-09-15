@@ -58,6 +58,8 @@ func Create(options Options) *App {
 
 	models.Setup()
 
+	intializer.CleanUpOldTests()
+
 	migrator.Migrate()
 
 	err := job.New().ResetRunning()
@@ -66,7 +68,6 @@ func Create(options Options) *App {
 	}
 
 	intializer.SynchronizeGPUs()
-	intializer.CleanUpOldTests()
 
 	ctx, cancel := context.WithCancel(context.Background())
 
