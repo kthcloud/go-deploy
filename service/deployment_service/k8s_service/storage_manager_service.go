@@ -171,7 +171,7 @@ func CreateStorageManager(id string, params *storageManagerModel.CreateParams) e
 	// Service
 	filebrowserService, ok := ss.ServiceMap[filebrowserAppName]
 	if !ok || !filebrowserService.Created() {
-		public := createServicePublic(namespace.FullName, appName, filebrowserPort)
+		public := createServicePublic(namespace.FullName, appName, filebrowserPort, filebrowserPort)
 		_, err = createService(client, storageManager.ID, filebrowserAppName, ss, public, storageManagerModel.UpdateSubsystemByID)
 		if err != nil {
 			return makeError(err)
@@ -180,7 +180,7 @@ func CreateStorageManager(id string, params *storageManagerModel.CreateParams) e
 
 	oauthProxyService, ok := ss.ServiceMap[oauthProxyAppName]
 	if !ok || !oauthProxyService.Created() {
-		public := createServicePublic(namespace.FullName, appNameAuth, oauthProxyPort)
+		public := createServicePublic(namespace.FullName, appNameAuth, oauthProxyPort, oauthProxyPort)
 		_, err = createService(client, storageManager.ID, oauthProxyAppName, ss, public, storageManagerModel.UpdateSubsystemByID)
 		if err != nil {
 			return makeError(err)

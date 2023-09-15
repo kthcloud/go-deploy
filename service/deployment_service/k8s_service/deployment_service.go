@@ -34,6 +34,11 @@ func Create(deploymentID string, userID string, params *deploymentModel.CreatePa
 		return fmt.Errorf("zone %s not found", deployment.Zone)
 	}
 
+	mainApp := deployment.GetMainApp()
+	if mainApp == nil {
+		return fmt.Errorf("main app not found for deployment %s", deploymentID)
+	}
+
 	client, err := k8s.New(zone.Client)
 	if err != nil {
 		return makeError(err)
@@ -108,7 +113,7 @@ func Create(deploymentID string, userID string, params *deploymentModel.CreatePa
 	// Service
 	service, ok := ss.ServiceMap[appName]
 	if !ok || !service.Created() {
-		public := createServicePublic(namespace.FullName, deployment.Name, conf.Env.Deployment.Port)
+		public := createServicePublic(namespace.FullName, deployment.Name, conf.Env.Deployment.Port, mainApp.InternalPort)
 		_, err = createService(client, deployment.ID, appName, ss, public, deploymentModel.New().UpdateSubsystemByID)
 		if err != nil {
 			return makeError(err)
@@ -293,7 +298,7 @@ func Update(name string, params *deploymentModel.UpdateParams) error {
 		k8sDeployment, ok := ss.K8s.DeploymentMap[appName]
 		if ok && k8sDeployment.Created() {
 			k8sEnvs := []k8sModels.EnvVar{
-				{Name: "DEPLOY_APP_PORT", Value: strconv.Itoa(conf.Env.Deployment.Port)},
+				{Name: "PORT", Value: strconv.Itoa(mainApp.InternalPort)},
 			}
 			for _, env := range *params.Envs {
 				k8sEnvs = append(k8sEnvs, k8sModels.EnvVar{

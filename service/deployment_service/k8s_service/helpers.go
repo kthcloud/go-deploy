@@ -32,7 +32,7 @@ func createMainAppDeploymentPublic(namespace, name, userID string, envs []deploy
 	port := conf.Env.Deployment.Port
 
 	k8sEnvs := []k8sModels.EnvVar{
-		{Name: "DEPLOY_APP_PORT", Value: strconv.Itoa(port)},
+		{Name: "PORT", Value: strconv.Itoa(port)},
 	}
 
 	for _, env := range envs {
@@ -223,13 +223,13 @@ func createOAuthProxyDeploymentPublic(namespace, name, userID string, zone *envi
 	}
 }
 
-func createServicePublic(namespace, name string, port int) *k8sModels.ServicePublic {
+func createServicePublic(namespace, name string, externalPort, internalPort int) *k8sModels.ServicePublic {
 	return &k8sModels.ServicePublic{
 		ID:         "",
 		Name:       name,
 		Namespace:  namespace,
-		Port:       port,
-		TargetPort: port,
+		Port:       externalPort,
+		TargetPort: internalPort,
 	}
 }
 

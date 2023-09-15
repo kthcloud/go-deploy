@@ -16,6 +16,7 @@ func (client *Client) Create(deploymentID, ownerID string, params *CreateParams)
 	appName := "main"
 	mainApp := App{
 		Name:         appName,
+		InternalPort: params.InternalPort,
 		Private:      params.Private,
 		Envs:         params.Envs,
 		Volumes:      params.Volumes,
