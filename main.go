@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"go-deploy/pkg/app"
 	"log"
@@ -26,6 +25,7 @@ func main() {
 	_ = flag.Bool("repairer", false, "start repairer")
 	_ = flag.Bool("pinger", false, "start pinger")
 	_ = flag.Bool("snapshotter", false, "start snapshotter")
+	_ = flag.Bool("test-mode", false, "run in test mode")
 
 	flag.Parse()
 
@@ -36,10 +36,19 @@ func main() {
 	repairer := isFlagPassed("repairer")
 	pinger := isFlagPassed("pinger")
 	snapshotter := isFlagPassed("snapshotter")
+	testMode := isFlagPassed("test-mode")
 
-	var options *app.StartOptions
+	options := app.Options{
+		Workers:  app.Workers{},
+		TestMode: testMode,
+	}
+
+	if testMode {
+		log.Println("RUNNING IN TEST MODE. NO AUTHENTICATION WILL BE REQUIRED.")
+	}
+
 	if confirmer || statusUpdater || jobExecutor || repairer || api || pinger || snapshotter {
-		options = &app.StartOptions{
+		options.Workers = app.Workers{
 			API:           api,
 			Confirmer:     confirmer,
 			StatusUpdater: statusUpdater,
@@ -49,26 +58,34 @@ func main() {
 			Snapshotter:   snapshotter,
 		}
 
-		log.Println("api: ", options.API)
-		log.Println("confirmer: ", options.Confirmer)
-		log.Println("status-updater: ", options.StatusUpdater)
-		log.Println("job-executor: ", options.JobExecutor)
-		log.Println("repairer: ", options.Repairer)
-		log.Println("pinger: ", options.Pinger)
-		log.Println("snapshotter: ", options.Snapshotter)
+		workers := &options.Workers
+
+		log.Println("api: ", workers.API)
+		log.Println("confirmer: ", workers.Confirmer)
+		log.Println("status-updater: ", workers.StatusUpdater)
+		log.Println("job-executor: ", workers.JobExecutor)
+		log.Println("repairer: ", workers.Repairer)
+		log.Println("pinger: ", workers.Pinger)
+		log.Println("snapshotter: ", workers.Snapshotter)
 	} else {
+		options.Workers = app.Workers{
+			API:           true,
+			Confirmer:     true,
+			StatusUpdater: true,
+			JobExecutor:   true,
+			Repairer:      true,
+			Pinger:        true,
+			Snapshotter:   true,
+		}
+
 		log.Println("no workers specified, starting all")
 	}
 
-	ctx := context.Background()
-	ctx, cancel := context.WithCancel(ctx)
-	server := app.Start(ctx, options)
-	if server != nil {
-		defer func() {
-			cancel()
-			app.Stop(server)
-		}()
+	deployApp := app.Create(options)
+	if deployApp == nil {
+		log.Fatalln("failed to start app")
 	}
+	defer deployApp.Stop()
 
 	quit := make(chan os.Signal)
 	<-quit

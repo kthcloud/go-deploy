@@ -12,6 +12,13 @@ import (
 )
 
 func (client *Client) Create(vmID, owner, manager string, params *CreateParams) (bool, error) {
+	var ports []Port
+	if params.Ports != nil {
+		ports = params.Ports
+	} else {
+		ports = make([]Port, 0)
+	}
+
 	vm := VM{
 		ID:        vmID,
 		Name:      params.Name,
@@ -26,7 +33,7 @@ func (client *Client) Create(vmID, owner, manager string, params *CreateParams) 
 
 		GpuID:        "",
 		SshPublicKey: params.SshPublicKey,
-		Ports:        []Port{},
+		Ports:        ports,
 		Activities:   []string{ActivityBeingCreated},
 		Subsystems:   Subsystems{},
 		Specs: Specs{

@@ -34,6 +34,11 @@ func Create(deploymentID string, userID string, params *deploymentModel.CreatePa
 		return fmt.Errorf("zone %s not found", deployment.Zone)
 	}
 
+	mainApp := deployment.GetMainApp()
+	if mainApp == nil {
+		return fmt.Errorf("main app not found for deployment %s", deploymentID)
+	}
+
 	client, err := k8s.New(zone.Client)
 	if err != nil {
 		return makeError(err)
@@ -108,7 +113,7 @@ func Create(deploymentID string, userID string, params *deploymentModel.CreatePa
 	// Service
 	service, ok := ss.ServiceMap[appName]
 	if !ok || !service.Created() {
-		public := createServicePublic(namespace.FullName, deployment.Name, conf.Env.Deployment.Port)
+		public := createServicePublic(namespace.FullName, deployment.Name, conf.Env.Deployment.Port, mainApp.InternalPort)
 		_, err = createService(client, deployment.ID, appName, ss, public, deploymentModel.New().UpdateSubsystemByID)
 		if err != nil {
 			return makeError(err)
@@ -293,7 +298,7 @@ func Update(name string, params *deploymentModel.UpdateParams) error {
 		k8sDeployment, ok := ss.K8s.DeploymentMap[appName]
 		if ok && k8sDeployment.Created() {
 			k8sEnvs := []k8sModels.EnvVar{
-				{Name: "DEPLOY_APP_PORT", Value: strconv.Itoa(conf.Env.Deployment.Port)},
+				{Name: "PORT", Value: strconv.Itoa(mainApp.InternalPort)},
 			}
 			for _, env := range *params.Envs {
 				k8sEnvs = append(k8sEnvs, k8sModels.EnvVar{
@@ -420,6 +425,16 @@ func Update(name string, params *deploymentModel.UpdateParams) error {
 		ss.K8s.PvcMap = make(map[string]k8sModels.PvcPublic)
 		ss.K8s.PvMap = make(map[string]k8sModels.PvPublic)
 
+		// since we depend on the namespace, we must ensure it is actually created here
+		if !ss.K8s.Namespace.Created() {
+			public := createNamespacePublic(deployment.OwnerID)
+			namespace, err := createNamespace(client, deployment.ID, &ss.K8s, public, updateDb)
+			if err != nil {
+				return makeError(err)
+			}
+			ss.K8s.Namespace = *namespace
+		}
+
 		for _, volume := range *params.Volumes {
 			k8sName := fmt.Sprintf("%s-%s", deployment.Name, volume.Name)
 			capacity := conf.Env.Deployment.Resources.Limits.Storage
@@ -438,7 +453,7 @@ func Update(name string, params *deploymentModel.UpdateParams) error {
 			}
 		}
 
-		public := createMainAppDeploymentPublic(ss.K8s.Namespace.FullName, deployment.Name, deployment.OwnerID, deployment.Envs, *params.Volumes, deployment.InitCommands)
+		public := createMainAppDeploymentPublic(ss.K8s.Namespace.FullName, deployment.Name, deployment.OwnerID, mainApp.Envs, *params.Volumes, mainApp.InitCommands)
 		_, err = createK8sDeployment(client, deployment.ID, appName, &ss.K8s, public, deploymentModel.New().UpdateSubsystemByID)
 		if err != nil {
 			return makeError(err)

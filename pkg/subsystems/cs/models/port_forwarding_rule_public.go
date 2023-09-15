@@ -3,17 +3,19 @@ package models
 import (
 	"go-deploy/pkg/imp/cloudstack"
 	"strconv"
+	"time"
 )
 
 type PortForwardingRulePublic struct {
 	ID   string `bson:"id"`
 	Name string `bson:"name"`
 
-	VmID        string `bson:"vmId"`
-	PublicPort  int    `bson:"publicPort"`
-	PrivatePort int    `bson:"privatePort"`
-	Protocol    string `bson:"protocol"`
-	Tags        []Tag  `bson:"tags"`
+	VmID        string    `bson:"vmId"`
+	PublicPort  int       `bson:"publicPort"`
+	PrivatePort int       `bson:"privatePort"`
+	Protocol    string    `bson:"protocol"`
+	Tags        []Tag     `bson:"tags"`
+	CreatedAt   time.Time `bson:"createdAt"`
 }
 
 func (rule *PortForwardingRulePublic) Created() bool {
@@ -27,9 +29,15 @@ func CreatePortForwardingRulePublicFromGet(rule *cloudstack.PortForwardingRule) 
 	tags := FromCsTags(rule.Tags)
 
 	var name string
+	var createdAt time.Time
+
 	for _, tag := range tags {
 		if tag.Key == "name" {
 			name = tag.Value
+		}
+
+		if tag.Key == "createdAt" {
+			createdAt, _ = time.Parse(time.RFC3339, tag.Value)
 		}
 	}
 
@@ -41,5 +49,6 @@ func CreatePortForwardingRulePublicFromGet(rule *cloudstack.PortForwardingRule) 
 		PrivatePort: privatePort,
 		Protocol:    rule.Protocol,
 		Tags:        tags,
+		CreatedAt:   createdAt,
 	}
 }

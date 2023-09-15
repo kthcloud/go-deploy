@@ -6,23 +6,17 @@ import (
 )
 
 type SnapshotPublic struct {
-	ID          string    `json:"id"`
-	VmID        string    `json:"vmId"`
-	Name        string    `json:"displayname"`
-	Description string    `json:"description"`
-	ParentName  *string   `json:"parentName"`
-	CreatedAt   time.Time `json:"created"`
-	State       string    `json:"state"`
-	Current     bool      `json:"current"`
+	ID          string    `bson:"id"`
+	VmID        string    `bson:"vmId"`
+	Name        string    `bson:"name"`
+	Description string    `bson:"description"`
+	ParentName  *string   `bson:"parentName"`
+	CreatedAt   time.Time `bson:"created"`
+	State       string    `bson:"state"`
+	Current     bool      `bson:"createdAt"`
 }
 
 func CreateSnapshotPublicFromGet(snapshot *cloudstack.VMSnapshot) *SnapshotPublic {
-	iso8601 := "2006-01-02T15:04:05Z0700"
-	createdAt, err := time.Parse(iso8601, snapshot.Created)
-	if err != nil {
-		createdAt = time.Now()
-	}
-
 	var parentName *string
 	if snapshot.ParentName != "" {
 		parentName = &snapshot.ParentName
@@ -33,7 +27,7 @@ func CreateSnapshotPublicFromGet(snapshot *cloudstack.VMSnapshot) *SnapshotPubli
 		VmID:       snapshot.Virtualmachineid,
 		Name:       snapshot.Displayname,
 		ParentName: parentName,
-		CreatedAt:  createdAt,
+		CreatedAt:  formatCreatedAt(snapshot.Created),
 		State:      snapshot.State,
 		Current:    snapshot.Current,
 	}

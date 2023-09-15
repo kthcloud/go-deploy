@@ -3,14 +3,16 @@ package models
 import (
 	"go-deploy/pkg/subsystems/k8s/keys"
 	v1 "k8s.io/api/core/v1"
+	"time"
 )
 
 type PvPublic struct {
-	ID        string `bson:"id"`
-	Name      string `bson:"name"`
-	Capacity  string `bson:"capacity"`
-	NfsServer string `bson:"nfsServer"`
-	NfsPath   string `bson:"nfsPath"`
+	ID        string    `bson:"id"`
+	Name      string    `bson:"name"`
+	Capacity  string    `bson:"capacity"`
+	NfsServer string    `bson:"nfsServer"`
+	NfsPath   string    `bson:"nfsPath"`
+	CreatedAt time.Time `bson:"createdAt"`
 }
 
 func (pv *PvPublic) Created() bool {
@@ -37,5 +39,6 @@ func CreatePvPublicFromRead(pv *v1.PersistentVolume) *PvPublic {
 		Capacity:  capacity,
 		NfsServer: nfsServer,
 		NfsPath:   nfsPath,
+		CreatedAt: pv.CreationTimestamp.Time,
 	}
 }

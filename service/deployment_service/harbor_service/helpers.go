@@ -51,7 +51,7 @@ func createWebhookPublic(projectID int, projectName string) *harborModels.Webhoo
 
 func withHarborClient() (*harbor.Client, error) {
 	return harbor.New(&harbor.ClientConf{
-		ApiUrl:   conf.Env.Harbor.Url,
+		ApiUrl:   conf.Env.Harbor.URL,
 		Username: conf.Env.Harbor.User,
 		Password: conf.Env.Harbor.Password,
 	})

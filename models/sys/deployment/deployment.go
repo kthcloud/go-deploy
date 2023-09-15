@@ -9,18 +9,12 @@ type Deployment struct {
 	Name    string `bson:"name"`
 	OwnerID string `bson:"ownerId"`
 	Zone    string `bson:"zone"`
-
+	
 	CreatedAt   time.Time `bson:"createdAt"`
 	UpdatedAt   time.Time `bson:"updatedAt"`
 	RepairedAt  time.Time `bson:"repairedAt"`
 	RestartedAt time.Time `bson:"restartedAt"`
 	DeletedAt   time.Time `bson:"deletedAt"`
-
-	// keep until migrated
-	Private      bool     `bson:"private"`
-	Envs         []Env    `bson:"envs"`
-	Volumes      []Volume `bson:"volumes"`
-	InitCommands []string `bson:"initCommands"`
 
 	Activities []string `bson:"activities"`
 

@@ -1,24 +1,21 @@
 package models
 
 import (
-	"crypto/md5"
-	"crypto/rand"
 	"encoding/base64"
-	"encoding/hex"
 	"fmt"
 	modelv2 "github.com/mittwald/goharbor-client/v5/apiv2/model"
-	"golang.org/x/crypto/bcrypt"
-	"math/big"
 	"strings"
+	"time"
 )
 
 type WebhookPublic struct {
-	ID          int    `json:"id" bson:"id"`
-	Name        string `json:"name" bson:"name"`
-	ProjectID   int    `json:"projectId" bson:"projectId"`
-	ProjectName string `json:"projectName" bson:"projectName"`
-	Target      string `json:"target" bson:"target"`
-	Token       string `json:"token" bson:"token"`
+	ID          int       `bson:"id"`
+	Name        string    `bson:"name"`
+	ProjectID   int       `bson:"projectId"`
+	ProjectName string    `bson:"projectName"`
+	Target      string    `bson:"target"`
+	Token       string    `bson:"token"`
+	CreatedAt   time.Time `bson:"createdAt"`
 }
 
 func (w *WebhookPublic) Created() bool {
@@ -51,6 +48,7 @@ func CreateWebhookPublicFromGet(webhookPolicy *modelv2.WebhookPolicy, project *m
 		ProjectName: project.Name,
 		Target:      webhookPolicy.Targets[0].Address,
 		Token:       token,
+		CreatedAt:   time.Time(webhookPolicy.CreationTime),
 	}
 }
 
@@ -91,36 +89,4 @@ func getTokenFromAuthHeader(authHeader string) string {
 	}
 
 	return basicAuthSplit[1]
-}
-
-func generateWebhookToken(secret string) (string, error) {
-	salt, err := generateRandomString(10)
-	if err != nil {
-		return "", err
-	}
-
-	saltedSecret := fmt.Sprintf("%s%s", secret, salt)
-	hash, err := bcrypt.GenerateFromPassword([]byte(saltedSecret), bcrypt.DefaultCost)
-	if err != nil {
-		return "", err
-	}
-
-	hasher := md5.New()
-	hasher.Write(hash)
-	encoded := hex.EncodeToString(hasher.Sum(nil))
-	return encoded, nil
-}
-
-func generateRandomString(n int) (string, error) {
-	const letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
-	ret := make([]byte, n)
-	for i := 0; i < n; i++ {
-		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(letters))))
-		if err != nil {
-			return "", err
-		}
-		ret[i] = letters[num.Int64()]
-	}
-
-	return string(ret), nil
 }

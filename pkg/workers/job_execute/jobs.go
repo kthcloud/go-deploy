@@ -472,16 +472,16 @@ func repairGPUs(job *jobModel.Job) error {
 }
 
 func createSnapshot(job *jobModel.Job) error {
-	err := assertParameters(job, []string{"id", "name", "userCreated"})
+	err := assertParameters(job, []string{"vmId", "name", "userCreated"})
 	if err != nil {
 		return makeTerminatedError(err)
 	}
 
-	id := job.Args["id"].(string)
+	vmID := job.Args["vmId"].(string)
 	name := job.Args["name"].(string)
 	userCreated := job.Args["userCreated"].(bool)
 
-	deleted, err := vmDeleted(id)
+	deleted, err := vmDeleted(vmID)
 	if err != nil {
 		return makeTerminatedError(err)
 	}
@@ -490,7 +490,7 @@ func createSnapshot(job *jobModel.Job) error {
 		return makeTerminatedError(fmt.Errorf("vm is deleted"))
 	}
 
-	err = vm_service.CreateSnapshot(id, name, userCreated)
+	err = vm_service.CreateSnapshot(vmID, name, userCreated)
 	if err != nil {
 		return makeTerminatedError(err)
 	}

@@ -115,7 +115,7 @@ func CreateSnapshot(c *gin.Context) {
 
 	jobID := uuid.New().String()
 	err = job_service.Create(jobID, auth.UserID, job.TypeCreateSnapshot, map[string]interface{}{
-		"id":          vm.ID,
+		"vmId":        vm.ID,
 		"name":        requestBody.Name,
 		"userCreated": true,
 	})
@@ -125,7 +125,7 @@ func CreateSnapshot(c *gin.Context) {
 		return
 	}
 
-	context.JSONResponse(http.StatusCreated, body.VmCreated{
+	context.JSONResponse(http.StatusCreated, body.VmSnapshotCreated{
 		ID:    vm.ID,
 		JobID: jobID,
 	})

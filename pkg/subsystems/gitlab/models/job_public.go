@@ -6,11 +6,11 @@ import (
 )
 
 type JobPublic struct {
-	ID        int       `json:"id"`
-	ProjectID int       `json:"projectId"`
-	Status    string    `json:"status"`
-	Stage     string    `json:"stage"`
-	CreatedAt time.Time `json:"createdAt"`
+	ID        int       `bson:"id"`
+	ProjectID int       `bson:"projectId"`
+	Status    string    `bson:"status"`
+	Stage     string    `bson:"stage"`
+	CreatedAt time.Time `bson:"createdAt"`
 }
 
 func CreateJobPublicFromGet(job *gitlab.Job) *JobPublic {
@@ -25,7 +25,6 @@ func CreateJobPublicFromGet(job *gitlab.Job) *JobPublic {
 	}
 
 	return &JobPublic{
-
 		ProjectID: projectID,
 		Status:    job.Status,
 		Stage:     job.Stage,

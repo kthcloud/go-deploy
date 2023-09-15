@@ -3,16 +3,18 @@ package models
 import (
 	"go-deploy/pkg/subsystems/k8s/keys"
 	v1 "k8s.io/api/batch/v1"
+	"time"
 )
 
 type JobPublic struct {
-	ID        string   `json:"id" bson:"id"`
-	Name      string   `json:"name" bson:"name"`
-	Namespace string   `json:"namespace" bson:"namespace"`
-	Image     string   `json:"image" bson:"image"`
-	Command   []string `json:"command" bson:"command"`
-	Args      []string `json:"args" bson:"args"`
-	Volumes   []Volume `json:"volumes" bson:"volumes"`
+	ID        string    `bson:"id"`
+	Name      string    `bson:"name"`
+	Namespace string    `bson:"namespace"`
+	Image     string    `bson:"image"`
+	Command   []string  `bson:"command"`
+	Args      []string  `bson:"args"`
+	Volumes   []Volume  `bson:"volumes"`
+	CreatedAt time.Time `bson:"createdAt"`
 }
 
 func (job *JobPublic) Created() bool {
@@ -28,7 +30,7 @@ func CreateJobPublicFromRead(job *v1.Job) *JobPublic {
 		if k8sVolume.PersistentVolumeClaim != nil {
 			pvcName = &k8sVolume.PersistentVolumeClaim.ClaimName
 		}
-		
+
 		volumes = append(volumes, Volume{
 			Name:    k8sVolume.Name,
 			PvcName: pvcName,
@@ -64,5 +66,6 @@ func CreateJobPublicFromRead(job *v1.Job) *JobPublic {
 		Command:   job.Spec.Template.Spec.Containers[0].Command,
 		Args:      job.Spec.Template.Spec.Containers[0].Args,
 		Volumes:   volumes,
+		CreatedAt: job.CreationTimestamp.Time,
 	}
 }

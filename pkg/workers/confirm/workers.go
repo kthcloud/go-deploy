@@ -2,8 +2,10 @@ package confirm
 
 import (
 	"context"
+	"fmt"
 	deploymentModel "go-deploy/models/sys/deployment"
 	vmModel "go-deploy/models/sys/vm"
+	"go-deploy/utils"
 	"log"
 	"time"
 )
@@ -44,7 +46,11 @@ func vmConfirmer(ctx context.Context) {
 	for {
 		select {
 		case <-time.After(5 * time.Second):
-			beingCreated, _ := vmModel.New().GetByActivity(vmModel.ActivityBeingCreated)
+			beingCreated, err := vmModel.New().GetByActivity(vmModel.ActivityBeingCreated)
+			if err != nil {
+				utils.PrettyPrintError(fmt.Errorf("failed to get vms being created. details: %w", err))
+			}
+
 			for _, vm := range beingCreated {
 				created := VmCreated(&vm)
 				if created {
@@ -53,7 +59,11 @@ func vmConfirmer(ctx context.Context) {
 				}
 			}
 
-			beingDeleted, _ := vmModel.New().GetByActivity(vmModel.ActivityBeingDeleted)
+			beingDeleted, err := vmModel.New().GetByActivity(vmModel.ActivityBeingDeleted)
+			if err != nil {
+				utils.PrettyPrintError(fmt.Errorf("failed to get vms being deleted. details: %w", err))
+			}
+
 			for _, vm := range beingDeleted {
 				deleted := VmDeleted(&vm)
 				if deleted {

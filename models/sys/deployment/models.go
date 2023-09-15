@@ -4,6 +4,7 @@ import "go-deploy/models/sys/deployment/subsystems"
 
 type App struct {
 	Name         string   `bson:"name"`
+	InternalPort int      `bson:"internalPort"`
 	Private      bool     `bson:"private"`
 	Envs         []Env    `bson:"envs"`
 	Volumes      []Volume `bson:"volumes"`
@@ -49,13 +50,17 @@ type GitHubCreateParams struct {
 }
 
 type CreateParams struct {
-	Name         string              `json:"name" bson:"name"`
-	Private      bool                `json:"private" bson:"private"`
-	Envs         []Env               `json:"envs" bson:"envs"`
-	Volumes      []Volume            `json:"volumes" bson:"volumes"`
-	InitCommands []string            `json:"initCommands" bson:"initCommands"`
-	GitHub       *GitHubCreateParams `json:"github,omitempty" bson:"github,omitempty"`
-	Zone         string              `json:"zone,omitempty" bson:"zoneId,omitempty"`
+	Name string `json:"name" bson:"name"`
+
+	InternalPort int      `json:"internalPort" bson:"internalPort"`
+	Private      bool     `json:"private" bson:"private"`
+	Envs         []Env    `json:"envs" bson:"envs"`
+	Volumes      []Volume `json:"volumes" bson:"volumes"`
+	InitCommands []string `json:"initCommands" bson:"initCommands"`
+
+	GitHub *GitHubCreateParams `json:"github,omitempty" bson:"github,omitempty"`
+
+	Zone string `json:"zone,omitempty" bson:"zoneId,omitempty"`
 }
 
 type BuildParams struct {

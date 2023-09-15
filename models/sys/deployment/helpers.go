@@ -16,6 +16,7 @@ func (client *Client) Create(deploymentID, ownerID string, params *CreateParams)
 	appName := "main"
 	mainApp := App{
 		Name:         appName,
+		InternalPort: params.InternalPort,
 		Private:      params.Private,
 		Envs:         params.Envs,
 		Volumes:      params.Volumes,
@@ -25,20 +26,16 @@ func (client *Client) Create(deploymentID, ownerID string, params *CreateParams)
 	}
 
 	deployment := Deployment{
-		ID:           deploymentID,
-		Name:         params.Name,
-		OwnerID:      ownerID,
-		Zone:         params.Zone,
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Time{},
-		RepairedAt:   time.Time{},
-		RestartedAt:  time.Time{},
-		Private:      false,
-		Envs:         make([]Env, 0),
-		Volumes:      make([]Volume, 0),
-		InitCommands: make([]string, 0),
-		Apps:         map[string]App{appName: mainApp},
-		Activities:   []string{ActivityBeingCreated},
+		ID:          deploymentID,
+		Name:        params.Name,
+		OwnerID:     ownerID,
+		Zone:        params.Zone,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Time{},
+		RepairedAt:  time.Time{},
+		RestartedAt: time.Time{},
+		Apps:        map[string]App{appName: mainApp},
+		Activities:  []string{ActivityBeingCreated},
 		Subsystems: Subsystems{
 			GitLab: subsystems.GitLab{
 				LastBuild: subsystems.GitLabBuild{
@@ -140,6 +137,10 @@ func (client *Client) UpdateWithParamsByID(id string, update *UpdateParams) erro
 
 	if update.ExtraDomains != nil {
 		mainApp.ExtraDomains = *update.ExtraDomains
+	}
+
+	if update.Volumes != nil {
+		mainApp.Volumes = *update.Volumes
 	}
 
 	deployment.Apps["main"] = *mainApp

@@ -3,6 +3,7 @@ package models
 import (
 	"go-deploy/pkg/subsystems/k8s/keys"
 	appsv1 "k8s.io/api/apps/v1"
+	"time"
 )
 
 type DeploymentPublic struct {
@@ -17,6 +18,7 @@ type DeploymentPublic struct {
 	InitCommands   []string        `bson:"initCommands"`
 	InitContainers []InitContainer `bson:"initContainers"`
 	Volumes        []Volume        `bson:"volumes"`
+	CreatedAt      time.Time       `bson:"createdAt"`
 }
 
 func (d *DeploymentPublic) Created() bool {
@@ -121,5 +123,6 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 		InitCommands:   initCommands,
 		InitContainers: initContainers,
 		Volumes:        volumes,
+		CreatedAt:      deployment.CreationTimestamp.Time,
 	}
 }

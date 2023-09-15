@@ -2,8 +2,8 @@ package vm
 
 import (
 	"go-deploy/models"
-	"go-deploy/models/sys/activityResource"
-	"go-deploy/models/sys/resource"
+	"go-deploy/models/sys/base/activityResource"
+	"go-deploy/models/sys/base/resource"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 

@@ -7,6 +7,7 @@ import (
 	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/models/sys/deployment/storage_manager"
 	jobModel "go-deploy/models/sys/job"
+	"go-deploy/pkg/conf"
 	"go-deploy/service"
 	"go-deploy/service/deployment_service/github_service"
 	"go-deploy/service/deployment_service/gitlab_service"
@@ -27,7 +28,7 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 	fallback := "se-flem"
 
 	params := &deploymentModel.CreateParams{}
-	params.FromDTO(deploymentCreate, &fallback)
+	params.FromDTO(deploymentCreate, &fallback, conf.Env.Deployment.Port)
 
 	if len(params.Volumes) > 0 {
 		storageManagerID := uuid.New().String()

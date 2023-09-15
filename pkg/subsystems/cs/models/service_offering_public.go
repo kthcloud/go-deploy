@@ -1,14 +1,18 @@
 package models
 
-import "go-deploy/pkg/imp/cloudstack"
+import (
+	"go-deploy/pkg/imp/cloudstack"
+	"time"
+)
 
 type ServiceOfferingPublic struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	CpuCores    int    `json:"cpuCores"`
-	RAM         int    `json:"ram"`
-	DiskSize    int    `json:"diskSize"`
+	ID          string    `bson:"id"`
+	Name        string    `bson:"name"`
+	Description string    `bson:"description"`
+	CpuCores    int       `bson:"cpuCores"`
+	RAM         int       `bson:"ram"`
+	DiskSize    int       `bson:"diskSize"`
+	CreatedAt   time.Time `bson:"createdAt"`
 }
 
 func (serviceOffering *ServiceOfferingPublic) Created() bool {
@@ -23,5 +27,6 @@ func CreateServiceOfferingPublicFromGet(serviceOffering *cloudstack.ServiceOffer
 		CpuCores:    serviceOffering.Cpunumber,
 		RAM:         serviceOffering.Memory / 1024,
 		DiskSize:    int(serviceOffering.Rootdisksize),
+		CreatedAt:   formatCreatedAt(serviceOffering.Created),
 	}
 }

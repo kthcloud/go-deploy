@@ -4,14 +4,16 @@ import (
 	"fmt"
 	"go-deploy/pkg/subsystems/k8s/keys"
 	v1 "k8s.io/api/core/v1"
+	"time"
 )
 
 type ServicePublic struct {
-	ID         string `bson:"id"`
-	Name       string `bson:"name"`
-	Namespace  string `bson:"namespace"`
-	Port       int    `bson:"port"`
-	TargetPort int    `bson:"targetPort"`
+	ID         string    `bson:"id"`
+	Name       string    `bson:"name"`
+	Namespace  string    `bson:"namespace"`
+	Port       int       `bson:"port"`
+	TargetPort int       `bson:"targetPort"`
+	CreatedAt  time.Time `bson:"createdAt"`
 }
 
 func (s *ServicePublic) Created() bool {
@@ -29,5 +31,6 @@ func CreateServicePublicFromRead(service *v1.Service) *ServicePublic {
 		Namespace:  service.Namespace,
 		Port:       int(service.Spec.Ports[0].Port),
 		TargetPort: service.Spec.Ports[0].TargetPort.IntValue(),
+		CreatedAt:  service.CreationTimestamp.Time,
 	}
 }

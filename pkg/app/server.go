@@ -23,7 +23,7 @@ import (
 	"time"
 )
 
-type StartOptions struct {
+type Workers struct {
 	API           bool
 	Confirmer     bool
 	StatusUpdater bool
@@ -33,14 +33,32 @@ type StartOptions struct {
 	Snapshotter   bool
 }
 
+type Options struct {
+	Workers  Workers
+	TestMode bool
+}
+
+type App struct {
+	httpServer *http.Server
+	ctx        context.Context
+	cancel     context.CancelFunc
+}
+
 func shutdown() {
 	models.Shutdown()
 }
 
-func Start(ctx context.Context, options *StartOptions) *http.Server {
+func Create(options Options) *App {
 	conf.SetupEnvironment()
 
+	if options.TestMode {
+		conf.Env.TestMode = true
+		conf.Env.DB.Name = conf.Env.DB.Name + "-test"
+	}
+
 	models.Setup()
+
+	intializer.CleanUpOldTests()
 
 	migrator.Migrate()
 
@@ -50,39 +68,30 @@ func Start(ctx context.Context, options *StartOptions) *http.Server {
 	}
 
 	intializer.SynchronizeGPUs()
-	intializer.CleanUpOldTests()
 
-	if options == nil {
-		options = &StartOptions{
-			API:           true,
-			Confirmer:     true,
-			StatusUpdater: true,
-			JobExecutor:   true,
-			Repairer:      true,
-			Pinger:        true,
-			Snapshotter:   true,
-		}
-	}
+	ctx, cancel := context.WithCancel(context.Background())
 
-	if options.Confirmer {
+	workers := &options.Workers
+
+	if workers.Confirmer {
 		confirm.Setup(ctx)
 	}
-	if options.StatusUpdater {
+	if workers.StatusUpdater {
 		status_update.Setup(ctx)
 	}
-	if options.JobExecutor {
+	if workers.JobExecutor {
 		job_execute.Setup(ctx)
 	}
-	if options.Repairer {
+	if workers.Repairer {
 		repair.Setup(ctx)
 	}
-	if options.Pinger {
+	if workers.Pinger {
 		ping.Setup(ctx)
 	}
-	if options.Snapshotter {
+	if workers.Snapshotter {
 		snapshot.Setup(ctx)
 	}
-	if options.API {
+	if workers.API {
 		ginMode, exists := os.LookupEnv("GIN_MODE")
 		if exists {
 			gin.SetMode(ginMode)
@@ -102,22 +111,34 @@ func Start(ctx context.Context, options *StartOptions) *http.Server {
 			}
 		}()
 
-		return server
+		return &App{
+			httpServer: server,
+			ctx:        ctx,
+			cancel:     cancel,
+		}
 	}
 
-	return nil
+	return &App{
+		ctx:    ctx,
+		cancel: cancel,
+	}
 }
 
-func Stop(server *http.Server) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := server.Shutdown(ctx); err != nil {
-		log.Fatalf("failed to shutdown server. details: %w\n", err)
-	}
+func (app *App) Stop() {
+	app.cancel()
 
-	select {
-	case <-ctx.Done():
-		log.Println("waiting for server to shutdown...")
+	if app.httpServer != nil {
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := app.httpServer.Shutdown(ctx); err != nil {
+			log.Fatalln(fmt.Errorf("failed to shutdown server. details: %w", err))
+		}
+
+		select {
+		case <-ctx.Done():
+			log.Println("waiting for http server to shutdown...")
+		}
 	}
 
 	shutdown()

@@ -52,6 +52,10 @@ func GetLogs(c *gin.Context) {
 		handler := func(msg string) {
 			err = ws.WriteMessage(websocket.TextMessage, []byte(msg))
 			if err != nil {
+				if strings.Contains(err.Error(), "closed network connection") || strings.Contains(err.Error(), "connection reset by peer") {
+					return
+				}
+
 				utils.PrettyPrintError(fmt.Errorf("error writing message to websocket for deployment %s. details: %w", requestURI.DeploymentID, err))
 				_ = ws.Close()
 			}
@@ -71,6 +75,11 @@ func GetLogs(c *gin.Context) {
 					log.Println("websocket closed for deployment ", requestURI.DeploymentID)
 					return
 				}
+			}
+
+			if readMsgErr != nil {
+				utils.PrettyPrintError(fmt.Errorf("error reading message from websocket for deployment %s. details: %w", requestURI.DeploymentID, readMsgErr))
+				return
 			}
 
 			msg := string(data)
@@ -119,3 +128,5 @@ func validateBearerToken(bearer string) *service.AuthInfo {
 
 	return &authInfo
 }
+
+//mhuaaaaaaaaaaaah, i love you i love you i love you

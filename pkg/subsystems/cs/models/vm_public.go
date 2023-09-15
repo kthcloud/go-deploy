@@ -2,16 +2,18 @@ package models
 
 import (
 	"go-deploy/pkg/imp/cloudstack"
+	"time"
 )
 
 type VmPublic struct {
 	ID   string `bson:"id"`
 	Name string `bson:"name"`
 
-	ServiceOfferingID string `bson:"serviceOfferingId"`
-	TemplateID        string `bson:"templateId"`
-	ExtraConfig       string `bson:"extraConfig"`
-	Tags              []Tag  `bson:"tags"`
+	ServiceOfferingID string    `bson:"serviceOfferingId"`
+	TemplateID        string    `bson:"templateId"`
+	ExtraConfig       string    `bson:"extraConfig"`
+	Tags              []Tag     `bson:"tags"`
+	CreatedAt         time.Time `bson:"createdAt"`
 }
 
 func (vm *VmPublic) Created() bool {
@@ -40,5 +42,6 @@ func CreateVmPublicFromGet(vm *cloudstack.VirtualMachine) *VmPublic {
 		TemplateID:        vm.Templateid,
 		ExtraConfig:       extraConfig,
 		Tags:              tags,
+		CreatedAt:         formatCreatedAt(vm.Created),
 	}
 }

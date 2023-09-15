@@ -1,4 +1,4 @@
-package acc
+package k8s
 
 import (
 	"github.com/google/uuid"
@@ -172,36 +172,4 @@ func cleanUpIngress(t *testing.T, namespace *models.NamespacePublic, ingress *mo
 
 	err = client.DeleteIngress(namespace.FullName, ingress.ID)
 	assert.NoError(t, err, "failed to delete ingress again")
-}
-
-func TestCreateNamespace(t *testing.T) {
-	setup(t)
-	namespace := withK8sNamespace(t)
-	cleanUpNamespace(t, namespace)
-}
-
-func TestCreateService(t *testing.T) {
-	setup(t)
-	namespace := withK8sNamespace(t)
-	service := withK8sService(t, namespace)
-	cleanUpService(t, namespace, service)
-	cleanUpNamespace(t, namespace)
-}
-
-func TestCreateIngress(t *testing.T) {
-	setup(t)
-	namespace := withK8sNamespace(t)
-	service := withK8sService(t, namespace)
-	ingress := withK8sIngress(t, namespace, service)
-	cleanUpIngress(t, namespace, ingress)
-	cleanUpService(t, namespace, service)
-	cleanUpNamespace(t, namespace)
-}
-
-func TestCreateDeployment(t *testing.T) {
-	setup(t)
-	namespace := withK8sNamespace(t)
-	deployment := withK8sDeployment(t, namespace)
-	cleanUpDeployment(t, namespace, deployment)
-	cleanUpNamespace(t, namespace)
 }

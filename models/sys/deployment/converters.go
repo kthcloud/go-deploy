@@ -117,8 +117,14 @@ func (p *UpdateParams) FromDTO(dto *body.DeploymentUpdate) {
 	p.InitCommands = dto.InitCommands
 }
 
-func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZone *string) {
+func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZone *string, fallbackPort int) {
 	p.Name = dto.Name
+
+	if dto.InternalPort == nil {
+		p.InternalPort = fallbackPort
+	} else {
+		p.InternalPort = *dto.InternalPort
+	}
 	p.Private = dto.Private
 	p.Envs = make([]Env, len(dto.Envs))
 	for i, env := range dto.Envs {

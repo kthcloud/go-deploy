@@ -232,7 +232,9 @@ func getTestTokenContainer() (*TokenContainer, bool) {
 		FamilyName:        "tester",
 		Email:             "test@example.com",
 		RealmAccess:       ServiceRole{},
-		Groups:            []string{},
+		Groups: []string{
+			"platinum",
+		},
 	}
 
 	return tc, true

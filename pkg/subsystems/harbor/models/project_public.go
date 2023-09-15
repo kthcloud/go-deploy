@@ -1,10 +1,14 @@
 package models
 
-import modelv2 "github.com/mittwald/goharbor-client/v5/apiv2/model"
+import (
+	modelv2 "github.com/mittwald/goharbor-client/v5/apiv2/model"
+	"time"
+)
 
 type ProjectPublic struct {
-	ID     int    `json:"id,omitempty" bson:"id"`
-	Name   string `json:"name,omitempty" bson:"name"`
+	ID        int       `bson:"id"`
+	Name      string    `bson:"name"`
+	CreatedAt time.Time `bson:"createdAt"`
 }
 
 func (p *ProjectPublic) Created() bool {

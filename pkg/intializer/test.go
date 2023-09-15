@@ -31,6 +31,11 @@ func CleanUpOldTests() {
 			panic(err)
 		}
 
+		err = deploymentModel.New().AddActivity(deployment.ID, deploymentModel.ActivityBeingDeleted)
+		if err != nil {
+			panic(err)
+		}
+
 		err = deployment_service.Delete(deployment.Name)
 		if err != nil {
 			panic(err)

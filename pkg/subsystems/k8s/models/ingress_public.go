@@ -3,17 +3,19 @@ package models
 import (
 	"go-deploy/pkg/subsystems/k8s/keys"
 	v1 "k8s.io/api/networking/v1"
+	"time"
 )
 
 type IngressPublic struct {
-	ID           string   `json:"id" bson:"id"`
-	Name         string   `bson:"name"`
-	Namespace    string   `bson:"namespace"`
-	ServiceName  string   `bson:"serviceName"`
-	ServicePort  int      `bson:"servicePort"`
-	IngressClass string   `bson:"ingressClassName"`
-	Hosts        []string `bson:"host"`
-	Placeholder  bool     `bson:"placeholder"`
+	ID           string    `json:"id" bson:"id"`
+	Name         string    `bson:"name"`
+	Namespace    string    `bson:"namespace"`
+	ServiceName  string    `bson:"serviceName"`
+	ServicePort  int       `bson:"servicePort"`
+	IngressClass string    `bson:"ingressClassName"`
+	Hosts        []string  `bson:"host"`
+	Placeholder  bool      `bson:"placeholder"`
+	CreatedAt    time.Time `bson:"createdAt"`
 }
 
 func (i *IngressPublic) Created() bool {
@@ -54,5 +56,6 @@ func CreateIngressPublicFromRead(ingress *v1.Ingress) *IngressPublic {
 		IngressClass: ingressClassName,
 		Hosts:        hosts,
 		Placeholder:  false,
+		CreatedAt:    ingress.CreationTimestamp.Time,
 	}
 }
