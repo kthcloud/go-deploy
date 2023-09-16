@@ -9,7 +9,7 @@ type Deployment struct {
 	Name    string `bson:"name"`
 	OwnerID string `bson:"ownerId"`
 	Zone    string `bson:"zone"`
-	
+
 	CreatedAt   time.Time `bson:"createdAt"`
 	UpdatedAt   time.Time `bson:"updatedAt"`
 	RepairedAt  time.Time `bson:"repairedAt"`
@@ -31,6 +31,24 @@ func (deployment *Deployment) GetMainApp() *App {
 		return &App{}
 	}
 	return &app
+}
+
+func (deployment *Deployment) GetURL() *string {
+	app := deployment.GetMainApp()
+	if app == nil {
+		return nil
+	}
+
+	ingress, ok := deployment.Subsystems.K8s.IngressMap[app.Name]
+	if !ok || !ingress.Created() {
+		return nil
+	}
+
+	if len(ingress.Hosts) > 0 && len(ingress.Hosts[0]) > 0 {
+		return &ingress.Hosts[0]
+	}
+
+	return nil
 }
 
 func (deployment *Deployment) Ready() bool {

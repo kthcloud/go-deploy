@@ -30,6 +30,8 @@ type UserRead struct {
 
 	Quota Quota `json:"quota"`
 	Usage Quota `json:"usage"`
+
+	StorageURL *string `json:"storageUrl,omitempty"`
 }
 
 type UserUpdate struct {
