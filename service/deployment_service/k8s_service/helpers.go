@@ -28,9 +28,7 @@ func createNamespacePublic(name string) *k8sModels.NamespacePublic {
 	}
 }
 
-func createMainAppDeploymentPublic(namespace, name, userID string, envs []deploymentModel.Env, volumes []deploymentModel.Volume, initCommands []string) *k8sModels.DeploymentPublic {
-	port := conf.Env.Deployment.Port
-
+func createMainAppDeploymentPublic(namespace, name, userID string, port int, envs []deploymentModel.Env, volumes []deploymentModel.Volume, initCommands []string) *k8sModels.DeploymentPublic {
 	k8sEnvs := []k8sModels.EnvVar{
 		{Name: "PORT", Value: strconv.Itoa(port)},
 	}
