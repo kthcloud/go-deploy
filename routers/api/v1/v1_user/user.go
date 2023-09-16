@@ -12,9 +12,11 @@ import (
 	"go-deploy/pkg/status_codes"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
+	"go-deploy/service"
 	"go-deploy/service/deployment_service"
 	"go-deploy/service/user_service"
 	"go-deploy/service/vm_service"
+	"go-deploy/utils"
 	"net/http"
 )
 
@@ -39,6 +41,20 @@ func collectUsage(context *sys.ClientContext, userID string) (bool, *userModel.U
 	}
 
 	return true, usage
+}
+
+func getStorageURL(userID string, auth *service.AuthInfo) (*string, error) {
+	storageManager, err := deployment_service.GetStorageManagerByOwnerID(userID, auth)
+	if err != nil {
+		return nil, err
+	}
+
+	var storageURL *string
+	if storageManager != nil {
+		storageURL = storageManager.GetURL()
+	}
+
+	return storageURL, nil
 }
 
 // GetList
@@ -81,12 +97,19 @@ func GetList(c *gin.Context) {
 			if user.ID == auth.UserID {
 				updatedUser, err := user_service.GetOrCreate(auth)
 				if err != nil {
+					utils.PrettyPrintError(fmt.Errorf("failed to get or create a user when listing: %w", err))
 					continue
 				}
 
 				if updatedUser != nil {
 					user = *updatedUser
 				}
+			}
+
+			storageURL, err := getStorageURL(user.ID, auth)
+			if err != nil {
+				utils.PrettyPrintError(fmt.Errorf("failed to get storage url for a user when listing: %w", err))
+				continue
 			}
 
 			role := conf.Env.GetRole(user.EffectiveRole.Name)
@@ -96,7 +119,7 @@ func GetList(c *gin.Context) {
 				usage = &userModel.Usage{}
 			}
 
-			usersDto = append(usersDto, user.ToDTO(role, usage))
+			usersDto = append(usersDto, user.ToDTO(role, usage, storageURL))
 		}
 
 		context.JSONResponse(200, usersDto)
@@ -119,7 +142,13 @@ func GetList(c *gin.Context) {
 		return
 	}
 
-	context.JSONResponse(200, user.ToDTO(effectiveRole, usage))
+	storageURL, err := getStorageURL(user.ID, auth)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get storage url for a user when listing: %s", err))
+		return
+	}
+
+	context.JSONResponse(200, user.ToDTO(effectiveRole, usage, storageURL))
 }
 
 // Get
@@ -177,7 +206,13 @@ func Get(c *gin.Context) {
 		effectiveRole = conf.Env.GetRole(user.EffectiveRole.Name)
 	}
 
-	context.JSONResponse(200, user.ToDTO(effectiveRole, usage))
+	storageURL, err := getStorageURL(user.ID, auth)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get storage url for a user when listing: %s", err))
+		return
+	}
+
+	context.JSONResponse(200, user.ToDTO(effectiveRole, usage, storageURL))
 }
 
 func Update(c *gin.Context) {
@@ -239,5 +274,11 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	context.JSONResponse(200, updatedUser.ToDTO(auth.GetEffectiveRole(), usage))
+	storageURL, err := getStorageURL(user.ID, auth)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get storage url for a user when listing: %s", err))
+		return
+	}
+
+	context.JSONResponse(200, updatedUser.ToDTO(auth.GetEffectiveRole(), usage, storageURL))
 }

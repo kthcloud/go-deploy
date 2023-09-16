@@ -10,18 +10,12 @@ import (
 type K8s struct {
 	Namespace k8sModels.NamespacePublic `bson:"namespace"`
 
-	// keep until migrated
-	Deployment k8sModels.DeploymentPublic `bson:"deployment"`
-	Service    k8sModels.ServicePublic    `bson:"service"`
-	Ingress    k8sModels.IngressPublic    `bson:"ingress"`
-
 	DeploymentMap map[string]k8sModels.DeploymentPublic `bson:"deploymentMap"`
 	ServiceMap    map[string]k8sModels.ServicePublic    `bson:"serviceMap"`
 	IngressMap    map[string]k8sModels.IngressPublic    `bson:"ingressMap"`
-
-	PvMap  map[string]k8sModels.PvPublic  `bson:"pvMap"`
-	PvcMap map[string]k8sModels.PvcPublic `bson:"pvcMap"`
-	JobMap map[string]k8sModels.JobPublic `bson:"jobMap"`
+	PvMap         map[string]k8sModels.PvPublic         `bson:"pvMap"`
+	PvcMap        map[string]k8sModels.PvcPublic        `bson:"pvcMap"`
+	JobMap        map[string]k8sModels.JobPublic        `bson:"jobMap"`
 }
 
 type Harbor struct {

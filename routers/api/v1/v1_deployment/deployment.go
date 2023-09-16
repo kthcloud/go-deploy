@@ -21,18 +21,6 @@ import (
 	"net/http"
 )
 
-func getURL(deployment *deploymentModels.Deployment) *string {
-	ingress, ok := deployment.Subsystems.K8s.IngressMap["main"]
-	if !ok || !ingress.Created() {
-		return nil
-	}
-
-	if len(ingress.Hosts) > 0 && len(ingress.Hosts[0]) > 0 {
-		return &ingress.Hosts[0]
-	}
-	return nil
-}
-
 func getStorageManagerURL(auth *service.AuthInfo) *string {
 	storageManager, err := deployment_service.GetStorageManagerByOwnerID(auth.UserID, auth)
 	if err != nil {
@@ -65,7 +53,7 @@ func getAll(context *sys.ClientContext, auth *service.AuthInfo) {
 			storageManagerURL = getStorageManagerURL(auth)
 		}
 
-		dtoDeployments[i] = deployment.ToDTO(getURL(&deployment), storageManagerURL)
+		dtoDeployments[i] = deployment.ToDTO(storageManagerURL)
 	}
 
 	context.JSONResponse(http.StatusOK, dtoDeployments)
@@ -117,7 +105,7 @@ func GetList(c *gin.Context) {
 			storageManagerURL = getStorageManagerURL(auth)
 		}
 
-		dtoDeployments[i] = deployment.ToDTO(getURL(&deployment), storageManagerURL)
+		dtoDeployments[i] = deployment.ToDTO(storageManagerURL)
 	}
 
 	context.JSONResponse(200, dtoDeployments)
@@ -167,7 +155,7 @@ func Get(c *gin.Context) {
 		storageManagerURL = getStorageManagerURL(auth)
 	}
 
-	context.JSONResponse(200, deployment.ToDTO(getURL(deployment), storageManagerURL))
+	context.JSONResponse(200, deployment.ToDTO(storageManagerURL))
 }
 
 // Create

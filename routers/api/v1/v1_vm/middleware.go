@@ -18,7 +18,7 @@ func AccessGpuRoutes(c *gin.Context) {
 		c.Abort()
 	}
 
-	if !auth.GetEffectiveRole().Permissions.UseGPUs {
+	if !auth.GetEffectiveRole().Permissions.UseGPUs && !auth.IsAdmin {
 		context.ErrorResponse(http.StatusForbidden, status_codes.Error, "Tier does not include GPU access")
 		c.Abort()
 	}

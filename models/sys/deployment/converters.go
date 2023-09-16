@@ -1,24 +1,11 @@
 package deployment
 
 import (
-	"fmt"
 	"go-deploy/models/dto/body"
 	"log"
 )
 
-func (deployment *Deployment) ToDTO(url *string, storageManagerURL *string) body.DeploymentRead {
-	var fullURL *string
-	if url != nil {
-		res := fmt.Sprintf("https://%s", *url)
-		fullURL = &res
-	}
-
-	var fullStorageManagerURL *string
-	if storageManagerURL != nil {
-		res := fmt.Sprintf("https://%s", *storageManagerURL)
-		fullStorageManagerURL = &res
-	}
-
+func (deployment *Deployment) ToDTO(storageManagerURL *string) body.DeploymentRead {
 	app := deployment.GetMainApp()
 	if app == nil {
 		log.Println("main app not found in deployment", deployment.ID)
@@ -66,7 +53,7 @@ func (deployment *Deployment) ToDTO(url *string, storageManagerURL *string) body
 		OwnerID: deployment.OwnerID,
 		Zone:    deployment.Zone,
 
-		URL:          fullURL,
+		URL:          deployment.GetURL(),
 		Envs:         envs,
 		Volumes:      volumes,
 		InitCommands: app.InitCommands,
@@ -77,7 +64,7 @@ func (deployment *Deployment) ToDTO(url *string, storageManagerURL *string) body
 
 		Integrations: integrations,
 
-		StorageURL: fullStorageManagerURL,
+		StorageURL: storageManagerURL,
 	}
 }
 

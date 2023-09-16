@@ -80,6 +80,29 @@ func TestCreateDeployment(t *testing.T) {
 	_ = withDeployment(t, requestBody)
 }
 
+func TestCreateDeploymentWithCustomPort(t *testing.T) {
+	envValue := uuid.NewString()
+
+	// this test assumes that the default port is 8080
+	customPort := 8081
+
+	requestBody := body.DeploymentCreate{
+		Name:    "e2e-" + strings.ReplaceAll(uuid.NewString()[:10], "-", ""),
+		Private: false,
+		Envs: []body.Env{
+			{
+				Name:  "e2e",
+				Value: envValue,
+			},
+		},
+		GitHub:       nil,
+		Zone:         nil,
+		InternalPort: &customPort,
+	}
+
+	_ = withDeployment(t, requestBody)
+}
+
 func TestCreateDeploymentWithInvalidBody(t *testing.T) {
 	longName := body.DeploymentCreate{Name: "e2e-"}
 	for i := 0; i < 1000; i++ {

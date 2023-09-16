@@ -11,7 +11,7 @@ import (
 	"log"
 )
 
-func (u *User) ToDTO(effectiveRole *roleModel.Role, usage *Usage) body.UserRead {
+func (u *User) ToDTO(effectiveRole *roleModel.Role, usage *Usage, storageURL *string) body.UserRead {
 	publicKeys := make([]body.PublicKey, len(u.PublicKeys))
 	for i, key := range u.PublicKeys {
 		publicKeys[i] = body.PublicKey{
@@ -42,15 +42,18 @@ func (u *User) ToDTO(effectiveRole *roleModel.Role, usage *Usage) body.UserRead 
 	}
 
 	userRead := body.UserRead{
-		ID:       u.ID,
-		Username: u.Username,
-		Email:    u.Email,
-		Admin:    u.IsAdmin,
+		ID:         u.ID,
+		Username:   u.Username,
+		Email:      u.Email,
+		PublicKeys: publicKeys,
+
 		Role: body.Role{
 			Name:        effectiveRole.Name,
 			Description: effectiveRole.Description,
 			Permissions: permissions,
 		},
+		Admin: u.IsAdmin,
+
 		Quota: body.Quota{
 			Deployments: effectiveRole.Quotas.Deployments,
 			CpuCores:    effectiveRole.Quotas.CpuCores,
@@ -65,7 +68,8 @@ func (u *User) ToDTO(effectiveRole *roleModel.Role, usage *Usage) body.UserRead 
 			DiskSize:    usage.DiskSize,
 			Snapshots:   usage.Snapshots,
 		},
-		PublicKeys: publicKeys,
+
+		StorageURL: storageURL,
 	}
 
 	return userRead
