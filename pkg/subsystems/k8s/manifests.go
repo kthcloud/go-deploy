@@ -14,6 +14,8 @@ import (
 
 func int32Ptr(i int32) *int32 { return &i }
 
+const timeFormat = "2006-01-02 15:04:05.000 -0700"
+
 func CreateNamespaceManifest(public *models.NamespacePublic) *apiv1.Namespace {
 	return &apiv1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -21,6 +23,9 @@ func CreateNamespaceManifest(public *models.NamespacePublic) *apiv1.Namespace {
 			Labels: map[string]string{
 				keys.ManifestLabelID:   public.ID,
 				keys.ManifestLabelName: public.Name,
+			},
+			Annotations: map[string]string{
+				keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat),
 			},
 		},
 	}
@@ -109,6 +114,9 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 				keys.ManifestLabelID:   public.ID,
 				keys.ManifestLabelName: public.Name,
 			},
+			Annotations: map[string]string{
+				keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat),
+			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: int32Ptr(1),
@@ -122,6 +130,9 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 					Labels: map[string]string{
 						keys.ManifestLabelID:   public.ID,
 						keys.ManifestLabelName: public.Name,
+					},
+					Annotations: map[string]string{
+						keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat),
 					},
 				},
 				Spec: apiv1.PodSpec{
@@ -155,6 +166,9 @@ func CreateServiceManifest(public *models.ServicePublic) *apiv1.Service {
 			Labels: map[string]string{
 				keys.ManifestLabelID:   public.ID,
 				keys.ManifestLabelName: public.Name,
+			},
+			Annotations: map[string]string{
+				keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat),
 			},
 		},
 		Spec: apiv1.ServiceSpec{
@@ -209,7 +223,8 @@ func CreateIngressManifest(public *models.IngressPublic) *networkingv1.Ingress {
 				keys.ManifestLabelName: public.Name,
 			},
 			Annotations: map[string]string{
-				"kubernetes.io/ingress.class": public.IngressClass,
+				keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat),
+				"kubernetes.io/ingress.class":  public.IngressClass,
 			},
 		},
 		Spec: networkingv1.IngressSpec{
@@ -223,8 +238,9 @@ func CreatePvManifest(public *models.PvPublic) *apiv1.PersistentVolume {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: public.Name,
 			Labels: map[string]string{
-				keys.ManifestLabelID:   public.ID,
-				keys.ManifestLabelName: public.Name,
+				keys.ManifestLabelID:           public.ID,
+				keys.ManifestLabelName:         public.Name,
+				keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat),
 			},
 		},
 		Spec: apiv1.PersistentVolumeSpec{
@@ -253,6 +269,9 @@ func CreatePvcManifest(public *models.PvcPublic) *apiv1.PersistentVolumeClaim {
 			Labels: map[string]string{
 				keys.ManifestLabelID:   public.ID,
 				keys.ManifestLabelName: public.Name,
+			},
+			Annotations: map[string]string{
+				keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat),
 			},
 		},
 		Spec: apiv1.PersistentVolumeClaimSpec{
@@ -321,6 +340,9 @@ func CreateJobManifest(public *models.JobPublic) *v1.Job {
 				keys.ManifestLabelID:   public.ID,
 				keys.ManifestLabelName: public.Name,
 			},
+			Annotations: map[string]string{
+				keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat),
+			},
 		},
 		Spec: v1.JobSpec{
 			TTLSecondsAfterFinished: &ttl,
@@ -329,6 +351,9 @@ func CreateJobManifest(public *models.JobPublic) *v1.Job {
 					Labels: map[string]string{
 						keys.ManifestLabelID:   public.ID,
 						keys.ManifestLabelName: public.Name,
+					},
+					Annotations: map[string]string{
+						keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat),
 					},
 				},
 				Spec: apiv1.PodSpec{

@@ -8,9 +8,10 @@ import (
 	"go-deploy/pkg/subsystems/k8s/models"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
+	"time"
 )
 
-func (client *Client) ReadPVC(namespace string, id string) (*models.PvcPublic, error) {
+func (client *Client) ReadPVC(id string) (*models.PvcPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to read k8s persistent volume claim %s. details: %w", id, err)
 	}
@@ -19,11 +20,11 @@ func (client *Client) ReadPVC(namespace string, id string) (*models.PvcPublic, e
 		return nil, nil
 	}
 
-	if namespace == "" {
+	if client.Namespace == "" {
 		return nil, nil
 	}
 
-	list, err := client.K8sClient.CoreV1().PersistentVolumeClaims(namespace).List(context.TODO(), v1.ListOptions{})
+	list, err := client.K8sClient.CoreV1().PersistentVolumeClaims(client.Namespace).List(context.TODO(), v1.ListOptions{})
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -66,6 +67,8 @@ func (client *Client) CreatePVC(public *models.PvcPublic) (string, error) {
 	}
 
 	public.ID = uuid.New().String()
+	public.CreatedAt = time.Now()
+
 	manifest := CreatePvcManifest(public)
 	_, err = client.K8sClient.CoreV1().PersistentVolumeClaims(public.Namespace).Create(context.TODO(), manifest, v1.CreateOptions{})
 	if err != nil {
@@ -75,7 +78,7 @@ func (client *Client) CreatePVC(public *models.PvcPublic) (string, error) {
 	return public.ID, nil
 }
 
-func (client *Client) DeletePVC(namespace, id string) error {
+func (client *Client) DeletePVC(id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete k8s persistent volume claim %s. details: %w", id, err)
 	}
@@ -84,11 +87,11 @@ func (client *Client) DeletePVC(namespace, id string) error {
 		return nil
 	}
 
-	if namespace == "" {
+	if client.Namespace == "" {
 		return nil
 	}
 
-	list, err := client.K8sClient.CoreV1().PersistentVolumeClaims(namespace).List(context.TODO(), v1.ListOptions{})
+	list, err := client.K8sClient.CoreV1().PersistentVolumeClaims(client.Namespace).List(context.TODO(), v1.ListOptions{})
 	if err != nil {
 		return makeError(err)
 	}

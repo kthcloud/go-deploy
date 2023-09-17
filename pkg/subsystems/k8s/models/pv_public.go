@@ -39,6 +39,6 @@ func CreatePvPublicFromRead(pv *v1.PersistentVolume) *PvPublic {
 		Capacity:  capacity,
 		NfsServer: nfsServer,
 		NfsPath:   nfsPath,
-		CreatedAt: pv.CreationTimestamp.Time,
+		CreatedAt: formatCreatedAt(pv.Annotations),
 	}
 }

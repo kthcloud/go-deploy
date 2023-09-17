@@ -35,7 +35,7 @@ func SetupLogStream(deploymentID string, handler func(string), auth *service.Aut
 
 	ctx := context.Background()
 
-	k8sClient, err := k8s.New(zone.Client)
+	k8sClient, err := k8s.New(zone.Client, subsystemutils.GetPrefixedName(deployment.OwnerID))
 	if err != nil {
 		return nil, err
 	}

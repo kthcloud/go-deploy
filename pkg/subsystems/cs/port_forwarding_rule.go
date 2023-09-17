@@ -46,8 +46,8 @@ func (client *Client) CreatePortForwardingRule(public *models.PortForwardingRule
 
 	listRulesParams := client.CsClient.Firewall.NewListPortForwardingRulesParams()
 	listRulesParams.SetProjectid(client.ProjectID)
-	listRulesParams.SetNetworkid(client.NetworkID)
-	listRulesParams.SetIpaddressid(client.IpAddressID)
+	listRulesParams.SetNetworkid(public.NetworkID)
+	listRulesParams.SetIpaddressid(public.IpAddressID)
 	listRulesParams.SetListall(true)
 
 	listRules, err := client.CsClient.Firewall.ListPortForwardingRules(listRulesParams)
@@ -85,7 +85,7 @@ func (client *Client) CreatePortForwardingRule(public *models.PortForwardingRule
 
 	if ruleID == "" {
 		createRuleParams := client.CsClient.Firewall.NewCreatePortForwardingRuleParams(
-			client.IpAddressID,
+			public.IpAddressID,
 			public.PrivatePort,
 			public.Protocol,
 			public.PublicPort,
@@ -146,8 +146,8 @@ func (client *Client) GetFreePort(startPort, endPort int) (int, error) {
 
 	listRulesParams := client.CsClient.Firewall.NewListPortForwardingRulesParams()
 	listRulesParams.SetProjectid(client.ProjectID)
-	listRulesParams.SetNetworkid(client.NetworkID)
-	listRulesParams.SetIpaddressid(client.IpAddressID)
+	listRulesParams.SetNetworkid(client.RootNetworkID)
+	listRulesParams.SetIpaddressid(client.RootIpAddressID)
 	listRulesParams.SetListall(true)
 
 	listRules, err := client.CsClient.Firewall.ListPortForwardingRules(listRulesParams)
@@ -182,7 +182,7 @@ func (client *Client) GetFreePort(startPort, endPort int) (int, error) {
 	}
 
 	if freePort > endPort {
-		return -1, nil
+		return 0, fmt.Errorf("no free port found in range %d-%d", startPort, endPort)
 	}
 
 	return freePort, nil

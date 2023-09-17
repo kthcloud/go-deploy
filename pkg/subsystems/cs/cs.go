@@ -7,11 +7,12 @@ import (
 )
 
 type Client struct {
-	CsClient    *cloudstack.CloudStackClient
-	IpAddressID string
-	NetworkID   string
-	ProjectID   string
-	ZoneID      string
+	CsClient          *cloudstack.CloudStackClient
+	RootIpAddressID   string
+	RootNetworkID     string
+	NetworkOfferingID string
+	ProjectID         string
+	ZoneID            string
 }
 
 type ClientConf struct {
@@ -38,11 +39,11 @@ func New(config *ClientConf) (*Client, error) {
 	)
 
 	client := Client{
-		CsClient:    csClient,
-		IpAddressID: config.IpAddressID,
-		NetworkID:   config.NetworkID,
-		ProjectID:   config.ProjectID,
-		ZoneID:      config.ZoneID,
+		CsClient:        csClient,
+		RootIpAddressID: config.IpAddressID,
+		RootNetworkID:   config.NetworkID,
+		ProjectID:       config.ProjectID,
+		ZoneID:          config.ZoneID,
 	}
 
 	return &client, nil

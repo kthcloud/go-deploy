@@ -7,15 +7,19 @@ import (
 )
 
 type PortForwardingRulePublic struct {
-	ID   string `bson:"id"`
-	Name string `bson:"name"`
+	ID        string    `bson:"id"`
+	Name      string    `bson:"name"`
+	CreatedAt time.Time `bson:"createdAt"`
 
-	VmID        string    `bson:"vmId"`
-	PublicPort  int       `bson:"publicPort"`
-	PrivatePort int       `bson:"privatePort"`
-	Protocol    string    `bson:"protocol"`
-	Tags        []Tag     `bson:"tags"`
-	CreatedAt   time.Time `bson:"createdAt"`
+	VmID        string `bson:"vmId"`
+	NetworkID   string `bson:"networkId"`
+	IpAddressID string `bson:"ipAddressId"`
+
+	PublicPort  int    `bson:"publicPort"`
+	PrivatePort int    `bson:"privatePort"`
+	Protocol    string `bson:"protocol"`
+
+	Tags []Tag `bson:"tags"`
 }
 
 func (rule *PortForwardingRulePublic) Created() bool {
@@ -42,13 +46,17 @@ func CreatePortForwardingRulePublicFromGet(rule *cloudstack.PortForwardingRule) 
 	}
 
 	return &PortForwardingRulePublic{
-		ID:          rule.Id,
-		Name:        name,
-		VmID:        rule.Virtualmachineid,
+		ID:        rule.Id,
+		Name:      name,
+		CreatedAt: createdAt,
+
+		VmID:      rule.Virtualmachineid,
+		NetworkID: rule.Networkid,
+
 		PublicPort:  publicPort,
 		PrivatePort: privatePort,
 		Protocol:    rule.Protocol,
-		Tags:        tags,
-		CreatedAt:   createdAt,
+
+		Tags: tags,
 	}
 }

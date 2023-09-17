@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"go-deploy/pkg/imp/cloudstack"
 	"go-deploy/pkg/subsystems/cs/models"
-	"go-deploy/utils/subsystemutils"
 	"strings"
 )
 
@@ -51,7 +50,7 @@ func (client *Client) CreateServiceOffering(public *models.ServiceOfferingPublic
 	}
 
 	createParams := cloudstack.CreateServiceOfferingParams{}
-	createParams.SetName(subsystemutils.GetPrefixedName(public.Name))
+	createParams.SetName(public.Name)
 	createParams.SetDisplaytext(public.Name)
 	createParams.SetCpunumber(public.CpuCores)
 	createParams.SetCpuspeed(1)

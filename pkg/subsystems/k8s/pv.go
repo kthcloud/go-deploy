@@ -8,6 +8,7 @@ import (
 	"go-deploy/pkg/subsystems/k8s/models"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
+	"time"
 )
 
 func (client *Client) ReadPV(id string) (*models.PvPublic, error) {
@@ -58,6 +59,8 @@ func (client *Client) CreatePV(public *models.PvPublic) (string, error) {
 	}
 
 	public.ID = uuid.New().String()
+	public.CreatedAt = time.Now()
+	
 	manifest := CreatePvManifest(public)
 	_, err = client.K8sClient.CoreV1().PersistentVolumes().Create(context.TODO(), manifest, metav1.CreateOptions{})
 	if err != nil {

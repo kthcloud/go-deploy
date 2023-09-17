@@ -9,6 +9,8 @@ import (
 	"go-deploy/utils/subsystemutils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
+	"log"
+	"time"
 )
 
 func (client *Client) createNamespaceWatcher(ctx context.Context, resourceName string) (watch.Interface, error) {
@@ -123,6 +125,7 @@ func (client *Client) CreateNamespace(public *models.NamespacePublic) (string, e
 
 	public.ID = uuid.New().String()
 	public.FullName = subsystemutils.GetPrefixedName(public.Name)
+	public.CreatedAt = time.Now()
 
 	manifest := CreateNamespaceManifest(public)
 	_, err = client.K8sClient.CoreV1().Namespaces().Create(context.TODO(), manifest, metav1.CreateOptions{})
@@ -131,6 +134,39 @@ func (client *Client) CreateNamespace(public *models.NamespacePublic) (string, e
 	}
 
 	return public.ID, nil
+}
+
+func (client *Client) UpdateNamespace(public *models.NamespacePublic) error {
+	_ = func(err error) error {
+		return fmt.Errorf("failed to update namespace %s. details: %w", public.Name, err)
+	}
+
+	if public.ID == "" {
+		log.Println("no id in namespace when updating. assuming it was deleted")
+		return nil
+	}
+
+	list, err := client.K8sClient.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	for _, item := range list.Items {
+		if FindLabel(item.ObjectMeta.Labels, keys.ManifestLabelName, public.Name) {
+			idLabel := GetLabel(item.ObjectMeta.Labels, keys.ManifestLabelID)
+			if idLabel != "" {
+				manifest := CreateNamespaceManifest(public)
+				_, err = client.K8sClient.CoreV1().Namespaces().Update(context.TODO(), manifest, metav1.UpdateOptions{})
+				if err != nil {
+					return err
+				}
+
+				return nil
+			}
+		}
+	}
+
+	return nil
 }
 
 func (client *Client) DeleteNamespace(name string) error {

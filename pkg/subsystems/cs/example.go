@@ -7,7 +7,7 @@ import (
 )
 
 func ExampleCreate() {
-	zoneName := "Flemingsberg"
+	zoneName := "se-flem"
 	zone := conf.Env.VM.GetZone(zoneName)
 
 	client, err := New(&ClientConf{

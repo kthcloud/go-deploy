@@ -33,6 +33,14 @@ type CS struct {
 	SnapshotMap           map[string]csModels.SnapshotPublic           `bson:"snapshotMap"`
 }
 
+func (cs *CS) GetPortForwardingRuleMap() map[string]csModels.PortForwardingRulePublic {
+	if cs.PortForwardingRuleMap == nil {
+		cs.PortForwardingRuleMap = make(map[string]csModels.PortForwardingRulePublic)
+	}
+	
+	return cs.PortForwardingRuleMap
+}
+
 type Usage struct {
 	CpuCores  int `json:"cpuCores"`
 	RAM       int `json:"ram"`
@@ -41,13 +49,17 @@ type Usage struct {
 }
 
 type CreateParams struct {
-	Name         string `json:"name"`
+	Name string `json:"name"`
+	Zone string `json:"zone"`
+
+	NetworkID *string `json:"networkId"`
+
 	SshPublicKey string `json:"sshPublicKey"`
 	Ports        []Port `json:"ports"`
-	CpuCores     int    `json:"cpuCores"`
-	RAM          int    `json:"ram"`
-	DiskSize     int    `json:"diskSize"`
-	Zone         string `json:"zone"`
+
+	CpuCores int `json:"cpuCores"`
+	RAM      int `json:"ram"`
+	DiskSize int `json:"diskSize"`
 }
 
 type UpdateParams struct {

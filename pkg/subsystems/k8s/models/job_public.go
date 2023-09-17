@@ -66,6 +66,6 @@ func CreateJobPublicFromRead(job *v1.Job) *JobPublic {
 		Command:   job.Spec.Template.Spec.Containers[0].Command,
 		Args:      job.Spec.Template.Spec.Containers[0].Args,
 		Volumes:   volumes,
-		CreatedAt: job.CreationTimestamp.Time,
+		CreatedAt: formatCreatedAt(job.Annotations),
 	}
 }
