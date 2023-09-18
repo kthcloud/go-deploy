@@ -41,7 +41,7 @@ func (client *Client) ReadPVC(id string) (*models.PvcPublic, error) {
 
 func (client *Client) CreatePVC(public *models.PvcPublic) (string, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to k8s persistent volume claim %s. details: %w", public.Name, err)
+		return fmt.Errorf("failed to create k8s persistent volume claim %s. details: %w", public.Name, err)
 	}
 
 	if public.Name == "" {

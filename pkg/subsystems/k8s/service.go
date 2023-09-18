@@ -50,7 +50,7 @@ func (client *Client) ReadService(id string) (*models.ServicePublic, error) {
 
 func (client *Client) CreateService(public *models.ServicePublic) (string, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to k8s service %s. details: %w", public.Name, err)
+		return fmt.Errorf("failed to create k8s service %s. details: %w", public.Name, err)
 	}
 
 	if public.Name == "" {

@@ -50,7 +50,7 @@ func (client *Client) ReadIngress(id string) (*models.IngressPublic, error) {
 
 func (client *Client) CreateIngress(public *models.IngressPublic) (string, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to k8s ingress %s. details: %w", public.Name, err)
+		return fmt.Errorf("failed to create k8s ingress %s. details: %w", public.Name, err)
 	}
 
 	if public.Name == "" {

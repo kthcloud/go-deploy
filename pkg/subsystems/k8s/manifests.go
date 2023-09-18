@@ -238,8 +238,10 @@ func CreatePvManifest(public *models.PvPublic) *apiv1.PersistentVolume {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: public.Name,
 			Labels: map[string]string{
-				keys.ManifestLabelID:           public.ID,
-				keys.ManifestLabelName:         public.Name,
+				keys.ManifestLabelID:   public.ID,
+				keys.ManifestLabelName: public.Name,
+			},
+			Annotations: map[string]string{
 				keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat),
 			},
 		},

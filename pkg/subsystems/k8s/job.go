@@ -40,7 +40,7 @@ func (client *Client) ReadJob(id string) (*models.JobPublic, error) {
 
 func (client *Client) CreateJob(public *models.JobPublic) (string, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to k8s job %s. details: %w", public.Name, err)
+		return fmt.Errorf("failed to create k8s job %s. details: %w", public.Name, err)
 	}
 
 	if public.Namespace == "" {
