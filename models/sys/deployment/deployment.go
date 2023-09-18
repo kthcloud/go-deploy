@@ -1,6 +1,7 @@
 package deployment
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -45,7 +46,8 @@ func (deployment *Deployment) GetURL() *string {
 	}
 
 	if len(ingress.Hosts) > 0 && len(ingress.Hosts[0]) > 0 {
-		return &ingress.Hosts[0]
+		url := fmt.Sprintf("https://%s", ingress.Hosts[0])
+		return &url
 	}
 
 	return nil
