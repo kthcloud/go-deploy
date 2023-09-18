@@ -36,7 +36,7 @@ func withClient(zone *enviroment.DeploymentZone, namespace string) (*k8s.Client,
 
 func notCreated(resource k8sModels.K8sResource) bool {
 	if resource == nil || (reflect.ValueOf(resource).Kind() == reflect.Ptr && reflect.ValueOf(resource).IsNil()) {
-		return false
+		return true
 	}
 
 	return !resource.Created()
