@@ -45,7 +45,6 @@ func CreatePortForwardingRulePublic(name, csVmID, networkID, ipAddressID string,
 func CreateRootPortForwardingRulePublic(name, csVmID string, publicPort, privatePort int, protocol string, tags []csModels.Tag, zone enviroment.VmZone) *csModels.PortForwardingRulePublic {
 	return &csModels.PortForwardingRulePublic{
 		Name:        name,
-		CreatedAt:   time.Time{},
 		VmID:        csVmID,
 		NetworkID:   zone.NetworkID,
 		IpAddressID: zone.IpAddressID,

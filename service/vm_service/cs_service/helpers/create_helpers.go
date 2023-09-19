@@ -2,19 +2,16 @@ package helpers
 
 import (
 	"errors"
-	vmModel "go-deploy/models/sys/vm"
-	"go-deploy/pkg/subsystems/cs"
 	csModels "go-deploy/pkg/subsystems/cs/models"
-	"go-deploy/service"
 )
 
-func CreateServiceOffering(client *cs.Client, vm *vmModel.VM, public *csModels.ServiceOfferingPublic, updateDb service.UpdateDbSubsystem) (*csModels.ServiceOfferingPublic, error) {
-	id, err := client.CreateServiceOffering(public)
+func (client *Client) CreateServiceOffering(id string, public *csModels.ServiceOfferingPublic) (*csModels.ServiceOfferingPublic, error) {
+	createdID, err := client.SsClient.CreateServiceOffering(public)
 	if err != nil {
 		return nil, err
 	}
 
-	serviceOffering, err := client.ReadServiceOffering(id)
+	serviceOffering, err := client.SsClient.ReadServiceOffering(createdID)
 	if err != nil {
 		return nil, err
 	}
@@ -23,21 +20,23 @@ func CreateServiceOffering(client *cs.Client, vm *vmModel.VM, public *csModels.S
 		return nil, errors.New("failed to read service offering after creation")
 	}
 
-	err = updateDb(vm.ID, "cs", "serviceOffering", serviceOffering)
+	err = client.UpdateDB(id, "serviceOffering", serviceOffering)
 	if err != nil {
 		return nil, err
 	}
+
+	client.CS.ServiceOffering = *serviceOffering
 
 	return serviceOffering, nil
 }
 
-func CreateCsVM(client *cs.Client, vm *vmModel.VM, public *csModels.VmPublic, userSshKey, adminSshKey string, updateDb service.UpdateDbSubsystem) (*csModels.VmPublic, error) {
-	id, err := client.CreateVM(public, userSshKey, adminSshKey)
+func (client *Client) CreateCsVM(id string, public *csModels.VmPublic, userSshKey, adminSshKey string) (*csModels.VmPublic, error) {
+	createdID, err := client.SsClient.CreateVM(public, userSshKey, adminSshKey)
 	if err != nil {
 		return nil, err
 	}
 
-	csVM, err := client.ReadVM(id)
+	csVM, err := client.SsClient.ReadVM(createdID)
 	if err != nil {
 		return nil, err
 	}
@@ -46,23 +45,23 @@ func CreateCsVM(client *cs.Client, vm *vmModel.VM, public *csModels.VmPublic, us
 		return nil, errors.New("failed to read vm after creation")
 	}
 
-	err = updateDb(vm.ID, "cs", "vm", csVM)
+	err = client.UpdateDB(id, "vm", csVM)
 	if err != nil {
 		return nil, err
 	}
 
-	vm.Subsystems.CS.VM = *csVM
+	client.CS.VM = *csVM
 
 	return csVM, nil
 }
 
-func CreatePortForwardingRule(client *cs.Client, vm *vmModel.VM, name string, public *csModels.PortForwardingRulePublic, updateDb service.UpdateDbSubsystem) (*csModels.PortForwardingRulePublic, error) {
-	id, err := client.CreatePortForwardingRule(public)
+func (client *Client) CreatePortForwardingRule(id, name string, public *csModels.PortForwardingRulePublic) (*csModels.PortForwardingRulePublic, error) {
+	createdID, err := client.SsClient.CreatePortForwardingRule(public)
 	if err != nil {
 		return nil, err
 	}
 
-	portForwardingRule, err := client.ReadPortForwardingRule(id)
+	portForwardingRule, err := client.SsClient.ReadPortForwardingRule(createdID)
 	if err != nil {
 		return nil, err
 	}
@@ -71,12 +70,12 @@ func CreatePortForwardingRule(client *cs.Client, vm *vmModel.VM, name string, pu
 		return nil, errors.New("failed to read port forwarding rule after creation")
 	}
 
-	vm.Subsystems.CS.GetPortForwardingRuleMap()[name] = *portForwardingRule
-
-	err = updateDb(vm.ID, "cs", "portForwardingRuleMap", vm.Subsystems.CS.GetPortForwardingRuleMap())
+	err = client.UpdateDB(id, "portForwardingRuleMap."+name, *portForwardingRule)
 	if err != nil {
 		return nil, err
 	}
+
+	client.CS.SetPortForwardingRule(name, *portForwardingRule)
 
 	return portForwardingRule, nil
 }

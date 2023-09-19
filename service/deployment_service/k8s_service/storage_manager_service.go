@@ -4,9 +4,9 @@ import (
 	"fmt"
 	storageManagerModel "go-deploy/models/sys/deployment/storage_manager"
 	"go-deploy/pkg/conf"
-	"go-deploy/pkg/subsystems/k8s"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/service"
+	"go-deploy/service/deployment_service/k8s_service/helpers"
 	"go-deploy/utils/subsystemutils"
 	"log"
 	"path"
@@ -18,7 +18,7 @@ const (
 	storageManagerAppNameAuth = "storage-manager-auth"
 )
 
-func getNamespaceName(userID string) string {
+func getStorageManagerNamespaceName(userID string) string {
 	return subsystemutils.GetPrefixedName(fmt.Sprintf("%s-%s", storageManagerNamePrefix, userID))
 }
 
@@ -37,19 +37,14 @@ func CreateStorageManager(id string, params *storageManagerModel.CreateParams) e
 		return nil
 	}
 
-	zone := conf.Env.Deployment.GetZone(storageManager.Zone)
-	if zone == nil {
-		return makeError(fmt.Errorf("zone not found"))
-	}
-
-	client, err := k8s.New(zone.Client, getNamespaceName(storageManager.OwnerID))
+	client, err := helpers.New(&storageManager.Subsystems.K8s, getStorageManagerNamespaceName(storageManager.OwnerID), storageManager.Zone)
 	if err != nil {
 		return makeError(err)
 	}
 
 	ss := &storageManager.Subsystems.K8s
 
-	initVolumes, volumes := getStorageManagerVolumes(storageManager.OwnerID, storageManagerAppName)
+	initVolumes, volumes := GetStorageManagerVolumes(storageManager.OwnerID, storageManagerAppName)
 	allVolumes := append(initVolumes, volumes...)
 
 	jobs := []storageManagerModel.Job{
@@ -67,8 +62,8 @@ func CreateStorageManager(id string, params *storageManagerModel.CreateParams) e
 
 	// Namespace
 	if service.NotCreated(&ss.Namespace) {
-		public := createNamespacePublic(getNamespaceName(params.UserID))
-		_, err = createNamespace(client, storageManager.ID, ss, public, storageManagerModel.UpdateSubsystemByID)
+		public := helpers.CreateNamespacePublic(getStorageManagerNamespaceName(params.UserID))
+		_, err = client.CreateNamespace(storageManager.ID, public)
 		if err != nil {
 			return makeError(err)
 		}
@@ -78,11 +73,11 @@ func CreateStorageManager(id string, params *storageManagerModel.CreateParams) e
 	for _, volume := range allVolumes {
 		if service.NotCreated(ss.GetPV(volume.Name)) {
 			capacity := conf.Env.Deployment.Resources.Limits.Storage
-			nfsPath := path.Join(zone.Storage.NfsParentPath, volume.ServerPath)
+			nfsPath := path.Join(client.Zone.Storage.NfsParentPath, volume.ServerPath)
 			k8sName := fmt.Sprintf("%s-%s", volume.Name, params.UserID)
 
-			public := createPvPublic(k8sName, capacity, nfsPath, zone.Storage.NfsServer)
-			_, err = createPV(client, storageManager.ID, volume.Name, ss, public, storageManagerModel.UpdateSubsystemByID)
+			public := helpers.CreatePvPublic(k8sName, capacity, nfsPath, client.Zone.Storage.NfsServer)
+			_, err = client.CreatePV(storageManager.ID, volume.Name, public)
 			if err != nil {
 				return makeError(err)
 			}
@@ -95,8 +90,8 @@ func CreateStorageManager(id string, params *storageManagerModel.CreateParams) e
 			capacity := conf.Env.Deployment.Resources.Limits.Storage
 			pvName := fmt.Sprintf("%s-%s", volume.Name, params.UserID)
 
-			public := createPvcPublic(client.Namespace, volume.Name, capacity, pvName)
-			_, err = createPVC(client, storageManager.ID, volume.Name, ss, public, storageManagerModel.UpdateSubsystemByID)
+			public := helpers.CreatePvcPublic(client.Namespace, volume.Name, capacity, pvName)
+			_, err = client.CreatePVC(storageManager.ID, volume.Name, public)
 			if err != nil {
 				return makeError(err)
 			}
@@ -106,8 +101,8 @@ func CreateStorageManager(id string, params *storageManagerModel.CreateParams) e
 	// Job
 	for _, job := range jobs {
 		if service.NotCreated(ss.GetJob(job.Name)) {
-			public := createJobPublic(client.Namespace, job.Name, job.Image, job.Command, job.Args, initVolumes)
-			_, err = createJob(client, storageManager.ID, job.Name, ss, public, storageManagerModel.UpdateSubsystemByID)
+			public := helpers.CreateJobPublic(client.Namespace, job.Name, job.Image, job.Command, job.Args, initVolumes)
+			_, err = client.CreateJob(storageManager.ID, job.Name, public)
 			if err != nil {
 				return makeError(err)
 			}
@@ -122,16 +117,16 @@ func CreateStorageManager(id string, params *storageManagerModel.CreateParams) e
 	oauthProxyPort := 4180
 
 	if service.NotCreated(ss.GetDeployment(filebrowserAppName)) {
-		public := createFileBrowserDeploymentPublic(client.Namespace, storageManagerAppName, volumes, nil)
-		_, err = createK8sDeployment(client, storageManager.ID, filebrowserAppName, ss, public, storageManagerModel.UpdateSubsystemByID)
+		public := helpers.CreateFileBrowserDeploymentPublic(client.Namespace, storageManagerAppName, volumes, nil)
+		_, err = client.CreateK8sDeployment(storageManager.ID, filebrowserAppName, public)
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
 	if service.NotCreated(ss.GetDeployment(oauthProxyAppName)) {
-		public := createOAuthProxyDeploymentPublic(client.Namespace, storageManagerAppNameAuth, params.UserID, zone)
-		_, err = createK8sDeployment(client, storageManager.ID, oauthProxyAppName, ss, public, storageManagerModel.UpdateSubsystemByID)
+		public := helpers.CreateOAuthProxyDeploymentPublic(client.Namespace, storageManagerAppNameAuth, params.UserID, client.Zone)
+		_, err = client.CreateK8sDeployment(storageManager.ID, oauthProxyAppName, public)
 		if err != nil {
 			return makeError(err)
 		}
@@ -139,16 +134,16 @@ func CreateStorageManager(id string, params *storageManagerModel.CreateParams) e
 
 	// Service
 	if service.NotCreated(ss.GetService(filebrowserAppName)) {
-		public := createServicePublic(client.Namespace, storageManagerAppName, filebrowserPort, filebrowserPort)
-		_, err = createService(client, storageManager.ID, filebrowserAppName, ss, public, storageManagerModel.UpdateSubsystemByID)
+		public := helpers.CreateServicePublic(client.Namespace, storageManagerAppName, filebrowserPort, filebrowserPort)
+		_, err = client.CreateService(storageManager.ID, filebrowserAppName, public)
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
 	if service.NotCreated(ss.GetService(oauthProxyAppName)) {
-		public := createServicePublic(client.Namespace, storageManagerAppNameAuth, oauthProxyPort, oauthProxyPort)
-		_, err = createService(client, storageManager.ID, oauthProxyAppName, ss, public, storageManagerModel.UpdateSubsystemByID)
+		public := helpers.CreateServicePublic(client.Namespace, storageManagerAppNameAuth, oauthProxyPort, oauthProxyPort)
+		_, err = client.CreateService(storageManager.ID, oauthProxyAppName, public)
 		if err != nil {
 			return makeError(err)
 		}
@@ -156,14 +151,14 @@ func CreateStorageManager(id string, params *storageManagerModel.CreateParams) e
 
 	// Ingress
 	if service.NotCreated(ss.GetIngress(filebrowserAppName)) {
-		public := createIngressPublic(
+		public := helpers.CreateIngressPublic(
 			client.Namespace,
 			storageManagerAppNameAuth,
 			ss.ServiceMap[oauthProxyAppName].Name,
 			ss.ServiceMap[oauthProxyAppName].Port,
-			[]string{getStorageManagerExternalFQDN(storageManager.OwnerID, zone)},
+			[]string{GetStorageManagerExternalFQDN(storageManager.OwnerID, client.Zone)},
 		)
-		_, err = createIngress(client, storageManager.ID, oauthProxyAppName, ss, public, storageManagerModel.UpdateSubsystemByID)
+		_, err = client.CreateIngress(storageManager.ID, oauthProxyAppName, public)
 		if err != nil {
 			return makeError(err)
 		}
@@ -189,12 +184,7 @@ func DeleteStorageManager(id string) error {
 		return nil
 	}
 
-	zone := conf.Env.Deployment.GetZone(storageManager.Zone)
-	if zone == nil {
-		return makeError(fmt.Errorf("zone not found"))
-	}
-
-	client, err := k8s.New(zone.Client, getNamespaceName(storageManager.OwnerID))
+	client, err := helpers.New(&storageManager.Subsystems.K8s, getStorageManagerNamespaceName(storageManager.OwnerID), storageManager.Zone)
 	if err != nil {
 		return makeError(err)
 	}
@@ -202,62 +192,50 @@ func DeleteStorageManager(id string) error {
 	ss := &storageManager.Subsystems.K8s
 
 	// Deployment
-	for mapName, deployment := range ss.DeploymentMap {
-		if deployment.Created() {
-			err = deleteK8sDeployment(client, storageManager.ID, mapName, ss, storageManagerModel.UpdateSubsystemByID)
-			if err != nil {
-				return makeError(err)
-			}
+	for mapName := range ss.DeploymentMap {
+		err = client.DeleteK8sDeployment(storageManager.ID, mapName)
+		if err != nil {
+			return makeError(err)
 		}
 	}
 
 	// Service
-	for mapName, k8sService := range ss.ServiceMap {
-		if k8sService.Created() {
-			err = deleteService(client, storageManager.ID, mapName, ss, storageManagerModel.UpdateSubsystemByID)
-			if err != nil {
-				return makeError(err)
-			}
+	for mapName := range ss.ServiceMap {
+		err = client.DeleteService(storageManager.ID, mapName)
+		if err != nil {
+			return makeError(err)
 		}
 	}
 
 	// Ingress
-	for mapName, ingress := range ss.IngressMap {
-		if ingress.Created() {
-			err = deleteIngress(client, storageManager.ID, mapName, ss, storageManagerModel.UpdateSubsystemByID)
-			if err != nil {
-				return makeError(err)
-			}
+	for mapName := range ss.IngressMap {
+		err = client.DeleteIngress(storageManager.ID, mapName)
+		if err != nil {
+			return makeError(err)
 		}
 	}
 
 	// Job
-	for mapName, job := range ss.JobMap {
-		if job.Created() {
-			err = deleteJob(client, storageManager.ID, mapName, ss, storageManagerModel.UpdateSubsystemByID)
-			if err != nil {
-				return makeError(err)
-			}
+	for mapName := range ss.JobMap {
+		err = client.DeleteJob(storageManager.ID, mapName)
+		if err != nil {
+			return makeError(err)
 		}
 	}
 
 	// PersistentVolumeClaim
-	for mapName, pvc := range ss.PvcMap {
-		if pvc.Created() {
-			err = deletePVC(client, storageManager.ID, mapName, ss, storageManagerModel.UpdateSubsystemByID)
-			if err != nil {
-				return makeError(err)
-			}
+	for mapName := range ss.PvcMap {
+		err = client.DeletePVC(storageManager.ID, mapName)
+		if err != nil {
+			return makeError(err)
 		}
 	}
 
 	// PersistentVolume
-	for mapName, pv := range ss.PvMap {
-		if pv.Created() {
-			err = deletePV(client, storageManager.ID, mapName, ss, storageManagerModel.UpdateSubsystemByID)
-			if err != nil {
-				return makeError(err)
-			}
+	for mapName := range ss.PvMap {
+		err = client.DeletePV(storageManager.ID, mapName)
+		if err != nil {
+			return makeError(err)
 		}
 	}
 
@@ -279,12 +257,7 @@ func RepairStorageManager(id string) error {
 		return nil
 	}
 
-	zone := conf.Env.Deployment.GetZone(storageManager.Zone)
-	if zone == nil {
-		return makeError(fmt.Errorf("zone not found"))
-	}
-
-	client, err := k8s.New(zone.Client, getNamespaceName(storageManager.OwnerID))
+	client, err := helpers.New(&storageManager.Subsystems.K8s, getStorageManagerNamespaceName(storageManager.OwnerID), storageManager.Zone)
 	if err != nil {
 		return makeError(err)
 	}
@@ -293,12 +266,12 @@ func RepairStorageManager(id string) error {
 
 	// deployment
 	for mapName, _ := range ss.DeploymentMap {
-		err = repairDeployment(client, storageManager.ID, mapName, ss, storageManagerModel.UpdateSubsystemByID, func() *k8sModels.DeploymentPublic {
+		err = client.RepairK8sDeployment(storageManager.ID, mapName, func() *k8sModels.DeploymentPublic {
 			if mapName == "filebrowser" {
-				_, volumes := getStorageManagerVolumes(storageManager.OwnerID, storageManagerAppName)
-				return createFileBrowserDeploymentPublic(client.Namespace, mapName, volumes, nil)
+				_, volumes := GetStorageManagerVolumes(storageManager.OwnerID, storageManagerAppName)
+				return helpers.CreateFileBrowserDeploymentPublic(client.Namespace, mapName, volumes, nil)
 			} else if mapName == "oauth-proxy" {
-				return createOAuthProxyDeploymentPublic(client.Namespace, mapName, storageManager.OwnerID, zone)
+				return helpers.CreateOAuthProxyDeploymentPublic(client.Namespace, mapName, storageManager.OwnerID, client.Zone)
 			}
 			return nil
 		})
@@ -309,11 +282,11 @@ func RepairStorageManager(id string) error {
 
 	// service
 	for mapName, _ := range ss.ServiceMap {
-		err = repairService(client, storageManager.ID, mapName, ss, storageManagerModel.UpdateSubsystemByID, func() *k8sModels.ServicePublic {
+		err = client.RepairService(storageManager.ID, mapName, func() *k8sModels.ServicePublic {
 			if mapName == "filebrowser" {
-				return createServicePublic(client.Namespace, mapName, 80, 80)
+				return helpers.CreateServicePublic(client.Namespace, mapName, 80, 80)
 			} else if mapName == "oauth-proxy" {
-				return createServicePublic(client.Namespace, mapName, 4180, 4180)
+				return helpers.CreateServicePublic(client.Namespace, mapName, 4180, 4180)
 			}
 			return nil
 		})
@@ -324,19 +297,19 @@ func RepairStorageManager(id string) error {
 
 	// ingress
 	for mapName, _ := range ss.IngressMap {
-		err = repairIngress(client, storageManager.ID, mapName, ss, storageManagerModel.UpdateSubsystemByID, func() *k8sModels.IngressPublic {
+		err = client.RepairIngress(storageManager.ID, mapName, func() *k8sModels.IngressPublic {
 			if mapName == "oauth-proxy" {
 				k8sService := ss.GetService(mapName)
 				if service.NotCreated(k8sService) {
 					return nil
 				}
 
-				return createIngressPublic(
+				return helpers.CreateIngressPublic(
 					client.Namespace,
 					mapName,
 					k8sService.Name,
 					k8sService.Port,
-					[]string{getStorageManagerExternalFQDN(storageManager.OwnerID, zone)},
+					[]string{GetStorageManagerExternalFQDN(storageManager.OwnerID, client.Zone)},
 				)
 			}
 			return nil

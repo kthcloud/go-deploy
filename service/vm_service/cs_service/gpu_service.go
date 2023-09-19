@@ -25,19 +25,14 @@ func AttachGPU(gpuID, vmID string) error {
 		return nil
 	}
 
-	if vm.Subsystems.CS.VM.ID == "" {
-		log.Println("vm", vmID, "has no cs vm id when attaching gpu", gpuID, "to cs vm, assuming it was deleted")
-		return nil
-	}
-
-	zone := conf.Env.VM.GetZone(vm.Zone)
-	if zone == nil {
-		return makeError(fmt.Errorf("zone %s not found", vm.Zone))
-	}
-
-	client, err := helpers.WithCsClient(zone)
+	client, err := helpers.New(&vm.Subsystems.CS, vm.Zone)
 	if err != nil {
 		return makeError(err)
+	}
+
+	if client.CS.VM.ID == "" {
+		log.Println("vm", vmID, "has no cs vm id when attaching gpu", gpuID, "to cs vm, assuming it was deleted")
+		return nil
 	}
 
 	gpu, err := gpuModel.New().GetByID(gpuID)
@@ -45,42 +40,42 @@ func AttachGPU(gpuID, vmID string) error {
 		return makeError(err)
 	}
 
-	requiredExtraConfig := helpers.CreateExtraConfig(gpu)
-	currentExtraConfig := vm.Subsystems.CS.VM.ExtraConfig
+	requiredExtraConfig := CreateExtraConfig(gpu)
+	currentExtraConfig := client.CS.VM.ExtraConfig
 	if requiredExtraConfig != currentExtraConfig {
 		var status string
-		status, err = client.GetVmStatus(vm.Subsystems.CS.VM.ID)
+		status, err = client.SsClient.GetVmStatus(client.CS.VM.ID)
 		if err != nil {
 			return makeError(err)
 		}
 
 		if status == "Running" {
-			err = client.DoVmCommand(vm.Subsystems.CS.VM.ID, nil, "stop")
+			err = client.SsClient.DoVmCommand(client.CS.VM.ID, nil, "stop")
 			if err != nil {
 				return makeError(err)
 			}
 		}
 
-		vm.Subsystems.CS.VM.ExtraConfig = requiredExtraConfig
+		client.CS.VM.ExtraConfig = requiredExtraConfig
 
-		err = client.UpdateVM(&vm.Subsystems.CS.VM)
+		err = client.SsClient.UpdateVM(&client.CS.VM)
 		if err != nil {
 			return makeError(err)
 		}
 
-		err = vmModel.New().UpdateSubsystemByName(vm.Name, "cs", "vm.extraConfig", vm.Subsystems.CS.VM.ExtraConfig)
+		err = vmModel.New().UpdateSubsystemByName(vm.Name, "cs", "vm.extraConfig", client.CS.VM.ExtraConfig)
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
 	// always start the vm after attaching gpu, to make sure the vm can be started on the host
-	requiredHost, err := helpers.GetRequiredHost(gpuID)
+	requiredHost, err := GetRequiredHost(gpuID)
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = client.DoVmCommand(vm.Subsystems.CS.VM.ID, requiredHost, "start")
+	err = client.SsClient.DoVmCommand(client.CS.VM.ID, requiredHost, "start")
 	if err != nil {
 		return makeError(err)
 	}
@@ -103,47 +98,43 @@ func DetachGPU(vmID string, afterState string) error {
 		return nil
 	}
 
-	if vm.Subsystems.CS.VM.ID == "" {
-		return nil
-	}
-
-	zone := conf.Env.VM.GetZone(vm.Zone)
-	if zone == nil {
-		return makeError(fmt.Errorf("zone %s not found", vm.Zone))
-	}
-
-	client, err := helpers.WithCsClient(zone)
+	client, err := helpers.New(&vm.Subsystems.CS, vm.Zone)
 	if err != nil {
 		return makeError(err)
 	}
 
-	status, err := client.GetVmStatus(vm.Subsystems.CS.VM.ID)
+	if !client.CS.VM.Created() {
+		log.Println("csVM was not created for vm", vmID, "when detaching gpu in cs. assuming it was deleted or not created yet")
+		return nil
+	}
+
+	status, err := client.SsClient.GetVmStatus(client.CS.VM.ID)
 	if err != nil {
 		return makeError(err)
 	}
 
 	if status == "Running" {
-		err = client.DoVmCommand(vm.Subsystems.CS.VM.ID, nil, "stop")
+		err = client.SsClient.DoVmCommand(client.CS.VM.ID, nil, "stop")
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
-	vm.Subsystems.CS.VM.ExtraConfig = ""
+	client.CS.VM.ExtraConfig = ""
 
-	err = client.UpdateVM(&vm.Subsystems.CS.VM)
+	err = client.SsClient.UpdateVM(&client.CS.VM)
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = vmModel.New().UpdateSubsystemByName(vm.Name, "cs", "vm.extraConfig", vm.Subsystems.CS.VM.ExtraConfig)
+	err = vmModel.New().UpdateSubsystemByName(vm.Name, "cs", "vm.extraConfig", client.CS.VM.ExtraConfig)
 	if err != nil {
 		return makeError(err)
 	}
 
 	// turn it on if it was on
 	if (status == "Running" && afterState == CsDetachGpuAfterStateRestore) || afterState == CsDetachGpuAfterStateOn {
-		err = client.DoVmCommand(vm.Subsystems.CS.VM.ID, nil, "start")
+		err = client.SsClient.DoVmCommand(client.CS.VM.ID, nil, "start")
 		if err != nil {
 			return makeError(err)
 		}
@@ -162,15 +153,16 @@ func IsGpuAttachedCS(gpu *gpuModel.GPU) (bool, error) {
 		return false, makeError(fmt.Errorf("zone %s not found", gpu.Zone))
 	}
 
-	client, err := helpers.WithCsClient(zone)
+	client, err := helpers.New(nil, gpu.Zone)
 	if err != nil {
 		return false, makeError(err)
 	}
 
-	params := client.CsClient.VirtualMachine.NewListVirtualMachinesParams()
+	// this should be exposed through the subsystem api, but im too lazy to do it now
+	params := client.SsClient.CsClient.VirtualMachine.NewListVirtualMachinesParams()
 	params.SetListall(true)
 
-	vms, err := client.CsClient.VirtualMachine.ListVirtualMachines(params)
+	vms, err := client.SsClient.CsClient.VirtualMachine.ListVirtualMachines(params)
 	if err != nil {
 		return false, makeError(err)
 	}

@@ -18,3 +18,11 @@ func (cs *CS) GetPortForwardingRule(name string) *csModels.PortForwardingRulePub
 
 	return &resource
 }
+
+func (cs *CS) SetPortForwardingRule(name string, resource csModels.PortForwardingRulePublic) {
+	cs.GetPortForwardingRuleMap()[name] = resource
+}
+
+func (cs *CS) DeletePortForwardingRule(name string) {
+	delete(cs.GetPortForwardingRuleMap(), name)
+}

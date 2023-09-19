@@ -1,31 +1,28 @@
 package helpers
 
 import (
-	vmModel "go-deploy/models/sys/vm"
-	"go-deploy/pkg/subsystems/cs"
 	csModels "go-deploy/pkg/subsystems/cs/models"
-	"go-deploy/service"
 )
 
-func RecreateServiceOffering(client *cs.Client, vm *vmModel.VM, public *csModels.ServiceOfferingPublic, updateDb service.UpdateDbSubsystem) (*csModels.ServiceOfferingPublic, error) {
-	err := client.DeleteServiceOffering(vm.Subsystems.CS.ServiceOffering.ID)
+func (client *Client) RecreateServiceOffering(id string, public *csModels.ServiceOfferingPublic) (*csModels.ServiceOfferingPublic, error) {
+	err := client.DeleteServiceOffering(client.CS.ServiceOffering.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	return CreateServiceOffering(client, vm, public, updateDb)
+	return client.CreateServiceOffering(id, public)
 }
 
-func RecreatePortForwardingRule(client *cs.Client, vm *vmModel.VM, name string, public *csModels.PortForwardingRulePublic, updateDb service.UpdateDbSubsystem) error {
-	rule, ok := vm.Subsystems.CS.GetPortForwardingRuleMap()[name]
-	if ok {
-		err := client.DeletePortForwardingRule(rule.ID)
+func (client *Client) RecreatePortForwardingRule(id, name string, public *csModels.PortForwardingRulePublic) error {
+	rule := client.CS.GetPortForwardingRule(name)
+	if rule != nil {
+		err := client.SsClient.DeletePortForwardingRule(rule.ID)
 		if err != nil {
 			return err
 		}
 	}
 
-	_, err := CreatePortForwardingRule(client, vm, name, public, updateDb)
+	_, err := client.CreatePortForwardingRule(id, name, public)
 	if err != nil {
 		return err
 	}

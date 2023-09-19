@@ -3,7 +3,7 @@ package cs_service
 import (
 	"fmt"
 	vmModel "go-deploy/models/sys/vm"
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/subsystems/cs/commands"
 	csModels "go-deploy/pkg/subsystems/cs/models"
 	"go-deploy/service/vm_service/cs_service/helpers"
 	"log"
@@ -24,12 +24,7 @@ func CreateSnapshotCS(vmID, name string, userCreated bool) error {
 		return nil
 	}
 
-	zone := conf.Env.VM.GetZone(vm.Zone)
-	if zone == nil {
-		return makeError(fmt.Errorf("zone %s not found", vm.Zone))
-	}
-
-	client, err := helpers.WithCsClient(zone)
+	client, err := helpers.New(&vm.Subsystems.CS, vm.Zone)
 	if err != nil {
 		return makeError(err)
 	}
@@ -44,7 +39,7 @@ func CreateSnapshotCS(vmID, name string, userCreated bool) error {
 		return nil
 	}
 
-	vmStatus, err := client.GetVmStatus(vm.Subsystems.CS.VM.ID)
+	vmStatus, err := client.SsClient.GetVmStatus(vm.Subsystems.CS.VM.ID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -67,7 +62,7 @@ func CreateSnapshotCS(vmID, name string, userCreated bool) error {
 	}
 
 	var gpuID *string
-	if helpers.HasExtraConfig(vm) {
+	if HasExtraConfig(vm) {
 		gpuID = &vm.GpuID
 		err := DetachGPU(vm.ID, CsDetachGpuAfterStateOn)
 		if err != nil {
@@ -76,12 +71,12 @@ func CreateSnapshotCS(vmID, name string, userCreated bool) error {
 	}
 
 	// make sure vm is on
-	err = client.DoVmCommand(vm.Subsystems.CS.VM.ID, nil, "start")
+	err = client.SsClient.DoVmCommand(vm.Subsystems.CS.VM.ID, nil, commands.Start)
 	if err != nil {
 		return makeError(err)
 	}
 
-	snapshotID, err := client.CreateSnapshot(public)
+	snapshotID, err := client.SsClient.CreateSnapshot(public)
 	if err != nil {
 		return makeError(err)
 	}
@@ -113,12 +108,7 @@ func ApplySnapshotCS(vmID, snapshotID string) error {
 		return nil
 	}
 
-	zone := conf.Env.VM.GetZone(vm.Zone)
-	if zone == nil {
-		return makeError(fmt.Errorf("zone %s not found", vm.Zone))
-	}
-
-	client, err := helpers.WithCsClient(zone)
+	client, err := helpers.New(&vm.Subsystems.CS, vm.Zone)
 	if err != nil {
 		return makeError(err)
 	}
@@ -138,7 +128,7 @@ func ApplySnapshotCS(vmID, snapshotID string) error {
 	}
 
 	var gpuID *string
-	if helpers.HasExtraConfig(vm) {
+	if HasExtraConfig(vm) {
 		gpuID = &vm.GpuID
 		err := DetachGPU(vm.ID, CsDetachGpuAfterStateOn)
 		if err != nil {
@@ -147,12 +137,12 @@ func ApplySnapshotCS(vmID, snapshotID string) error {
 	}
 
 	// make sure vm is on
-	err = client.DoVmCommand(vm.Subsystems.CS.VM.ID, nil, "start")
+	err = client.SsClient.DoVmCommand(vm.Subsystems.CS.VM.ID, nil, commands.Start)
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = client.ApplySnapshot(&snapshot)
+	err = client.SsClient.ApplySnapshot(&snapshot)
 	if err != nil {
 		return makeError(err)
 	}

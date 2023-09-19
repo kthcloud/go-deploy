@@ -1,51 +1,49 @@
 package helpers
 
 import (
-	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/pkg/conf"
-	"go-deploy/pkg/subsystems/cs"
 	csModels "go-deploy/pkg/subsystems/cs/models"
 	"go-deploy/service"
 	"log"
 )
 
-func RepairServiceOffering(client *cs.Client, vm *vmModel.VM, updateDb service.UpdateDbSubsystem, genPublic func() *csModels.ServiceOfferingPublic) error {
-	dbServiceOffering := &vm.Subsystems.CS.ServiceOffering
+func (client *Client) RepairServiceOffering(id string, genPublic func() *csModels.ServiceOfferingPublic) error {
+	dbServiceOffering := &client.CS.ServiceOffering
 	if service.NotCreated(dbServiceOffering) {
 		public := genPublic()
 		if public == nil {
-			log.Println("no public supplied for service offering when trying to create it in the repair process")
+			log.Println("no public supplied for service offering", id, "when trying to create it in the repair process")
 			return nil
 		}
 
-		_, err := CreateServiceOffering(client, vm, public, updateDb)
+		_, err := client.CreateServiceOffering(id, public)
 		return err
 	}
 
 	return service.UpdateIfDiff(
 		*dbServiceOffering,
 		func() (*csModels.ServiceOfferingPublic, error) {
-			return client.ReadServiceOffering(dbServiceOffering.ID)
+			return client.SsClient.ReadServiceOffering(dbServiceOffering.ID)
 		},
-		client.UpdateServiceOffering,
+		client.SsClient.UpdateServiceOffering,
 		func(serviceOffering *csModels.ServiceOfferingPublic) error {
-			_, err := CreateServiceOffering(client, vm, serviceOffering, updateDb)
+			_, err := client.SsClient.CreateServiceOffering(serviceOffering)
 			return err
 		},
 	)
 }
 
-func RepairVM(client *cs.Client, vm *vmModel.VM, updateDb service.UpdateDbSubsystem, genPublic func() *csModels.VmPublic) error {
-	dbVM := &vm.Subsystems.CS.VM
+func (client *Client) RepairVM(id string, genPublic func() (*csModels.VmPublic, string)) error {
+	dbVM := &client.CS.VM
 	if service.NotCreated(dbVM) {
 		adminSshKey := conf.Env.VM.AdminSshPublicKey
-		public := genPublic()
+		public, userSshKey := genPublic()
 		if public == nil {
-			log.Println("no public supplied for vm", vm.ID, " when trying to create it in the repair process")
+			log.Println("no public supplied for vm", id, "when trying to create it in the repair process")
 			return nil
 		}
 
-		_, err := CreateCsVM(client, vm, public, vm.SshPublicKey, adminSshKey, updateDb)
+		_, err := client.CreateCsVM(id, public, userSshKey, adminSshKey)
 		return err
 	}
 
@@ -54,15 +52,15 @@ func RepairVM(client *cs.Client, vm *vmModel.VM, updateDb service.UpdateDbSubsys
 	return service.UpdateIfDiff(
 		*dbVM,
 		func() (*csModels.VmPublic, error) {
-			return client.ReadVM(dbVM.ID)
+			return client.SsClient.ReadVM(dbVM.ID)
 		},
-		client.UpdateVM,
+		client.SsClient.UpdateVM,
 		func(vm *csModels.VmPublic) error { return nil },
 	)
 }
 
-func RepairPortForwardingRule(client *cs.Client, vm *vmModel.VM, name string, updateDb service.UpdateDbSubsystem, genPublic func() *csModels.PortForwardingRulePublic) error {
-	rule := vm.Subsystems.CS.GetPortForwardingRule(name)
+func (client *Client) RepairPortForwardingRule(id, name string, genPublic func() *csModels.PortForwardingRulePublic) error {
+	rule := client.CS.GetPortForwardingRule(name)
 	if service.NotCreated(rule) {
 		public := genPublic()
 		if public == nil {
@@ -70,18 +68,18 @@ func RepairPortForwardingRule(client *cs.Client, vm *vmModel.VM, name string, up
 			return nil
 		}
 
-		_, err := CreatePortForwardingRule(client, vm, name, public, updateDb)
+		_, err := client.CreatePortForwardingRule(id, name, public)
 		return err
 	}
 
 	return service.UpdateIfDiff(
 		*rule,
 		func() (*csModels.PortForwardingRulePublic, error) {
-			return client.ReadPortForwardingRule(rule.ID)
+			return client.SsClient.ReadPortForwardingRule(rule.ID)
 		},
-		client.UpdatePortForwardingRule,
+		client.SsClient.UpdatePortForwardingRule,
 		func(rule *csModels.PortForwardingRulePublic) error {
-			return RecreatePortForwardingRule(client, vm, name, rule, updateDb)
+			return client.RecreatePortForwardingRule(id, name, rule)
 		},
 	)
 }

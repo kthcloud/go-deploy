@@ -6,6 +6,10 @@ func (gitHub *GitHub) Created() bool {
 	return gitHub.Webhook.Created()
 }
 
+func (k *K8s) GetNamespace() *k8sModels.NamespacePublic {
+	return &k.Namespace
+}
+
 func (k *K8s) GetDeploymentMap() map[string]k8sModels.DeploymentPublic {
 	if k.DeploymentMap == nil {
 		k.DeploymentMap = make(map[string]k8sModels.DeploymentPublic)
@@ -108,6 +112,10 @@ func (k *K8s) GetJob(name string) *k8sModels.JobPublic {
 	return &resource
 }
 
+func (k *K8s) SetNamespace(namespace k8sModels.NamespacePublic) {
+	k.Namespace = namespace
+}
+
 func (k *K8s) SetDeployment(name string, deployment k8sModels.DeploymentPublic) {
 	k.GetDeploymentMap()[name] = deployment
 }
@@ -120,14 +128,38 @@ func (k *K8s) SetIngress(name string, ingress k8sModels.IngressPublic) {
 	k.GetIngressMap()[name] = ingress
 }
 
-func (k *K8s) SetPv(name string, pv k8sModels.PvPublic) {
+func (k *K8s) SetPV(name string, pv k8sModels.PvPublic) {
 	k.GetPvMap()[name] = pv
 }
 
-func (k *K8s) SetPvc(name string, pvc k8sModels.PvcPublic) {
+func (k *K8s) SetPVC(name string, pvc k8sModels.PvcPublic) {
 	k.GetPvcMap()[name] = pvc
 }
 
 func (k *K8s) SetJob(name string, job k8sModels.JobPublic) {
 	k.GetJobMap()[name] = job
+}
+
+func (k *K8s) DeleteDeployment(name string) {
+	delete(k.GetDeploymentMap(), name)
+}
+
+func (k *K8s) DeleteService(name string) {
+	delete(k.GetServiceMap(), name)
+}
+
+func (k *K8s) DeleteIngress(name string) {
+	delete(k.GetIngressMap(), name)
+}
+
+func (k *K8s) DeletePV(name string) {
+	delete(k.GetPvMap(), name)
+}
+
+func (k *K8s) DeletePVC(name string) {
+	delete(k.GetPvcMap(), name)
+}
+
+func (k *K8s) DeleteJob(name string) {
+	delete(k.GetJobMap(), name)
 }

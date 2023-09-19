@@ -6,7 +6,11 @@ import (
 	"time"
 )
 
-type UpdateDbSubsystem func(string, string, string, interface{}) error
+type UpdateDbSubsystem func(string, string, interface{}) error
+
+func Created(resource k8sModels.K8sResource) bool {
+	return !NotCreated(resource)
+}
 
 func NotCreated(resource k8sModels.K8sResource) bool {
 	if resource == nil || (reflect.ValueOf(resource).Kind() == reflect.Ptr && reflect.ValueOf(resource).IsNil()) {
