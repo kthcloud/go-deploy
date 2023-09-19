@@ -108,6 +108,38 @@ func (client *Client) CreatePortForwardingRule(public *models.PortForwardingRule
 	return ruleID, nil
 }
 
+func (client *Client) UpdatePortForwardingRule(public *models.PortForwardingRulePublic) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to create port forwarding rule for vm %s. details: %w", public.VmID, err)
+	}
+
+	if public.ID == "" {
+		log.Println("cs port forwarding rule id not supplied when updating port forwarding rule. assuming it was deleted")
+		return nil
+	}
+
+	if public.VmID == "" {
+		log.Println("cs vm id not supplied when updating port forwarding rule. assuming it was deleted")
+		return nil
+	}
+
+	updateRuleParams := client.CsClient.Firewall.NewUpdatePortForwardingRuleParams(public.ID)
+	updateRuleParams.SetVirtualmachineid(public.VmID)
+	updateRuleParams.SetPrivateport(public.PrivatePort)
+
+	_, err := client.CsClient.Firewall.UpdatePortForwardingRule(updateRuleParams)
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = client.AssertPortForwardingRulesTags(public.ID, public.Tags)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
+}
+
 func (client *Client) DeletePortForwardingRule(id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete port forwarding rule %s. details: %w", id, err)

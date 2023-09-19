@@ -7,11 +7,15 @@ import (
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/k8s"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
+	"go-deploy/service"
 	"go-deploy/utils/subsystemutils"
 	"log"
 	"path"
-	"reflect"
 	"strconv"
+)
+
+const (
+	appName = "main"
 )
 
 func withClient(zone *enviroment.DeploymentZone, namespace string) (*k8s.Client, error) {
@@ -32,14 +36,6 @@ func withClient(zone *enviroment.DeploymentZone, namespace string) (*k8s.Client,
 	}
 
 	return client, nil
-}
-
-func notCreated(resource k8sModels.K8sResource) bool {
-	if resource == nil || (reflect.ValueOf(resource).Kind() == reflect.Ptr && reflect.ValueOf(resource).IsNil()) {
-		return true
-	}
-
-	return !resource.Created()
 }
 
 func Create(deploymentID string, userID string, params *deploymentModel.CreateParams) error {
@@ -77,7 +73,7 @@ func Create(deploymentID string, userID string, params *deploymentModel.CreatePa
 	ss := &deployment.Subsystems.K8s
 
 	// Namespace
-	if notCreated(&ss.Namespace) {
+	if service.NotCreated(&ss.Namespace) {
 		public := createNamespacePublic(userID)
 		_, err = createNamespace(client, deployment.ID, ss, public, deploymentModel.New().UpdateSubsystemByID)
 		if err != nil {
@@ -87,7 +83,7 @@ func Create(deploymentID string, userID string, params *deploymentModel.CreatePa
 
 	// PersistentVolume
 	for _, volume := range params.Volumes {
-		if notCreated(ss.GetPV(volume.Name)) {
+		if service.NotCreated(ss.GetPV(volume.Name)) {
 			k8sName := fmt.Sprintf("%s-%s", deployment.Name, volume.Name)
 			nfsPath := path.Join(zone.Storage.NfsParentPath, deployment.OwnerID, "user", volume.ServerPath)
 
@@ -101,7 +97,7 @@ func Create(deploymentID string, userID string, params *deploymentModel.CreatePa
 
 	// PersistentVolumeClaim
 	for _, volume := range params.Volumes {
-		if notCreated(ss.GetPVC(volume.Name)) {
+		if service.NotCreated(ss.GetPVC(volume.Name)) {
 			k8sName := fmt.Sprintf("%s-%s", deployment.Name, volume.Name)
 
 			public := createPvcPublic(client.Namespace, k8sName, conf.Env.Deployment.Resources.Limits.Storage, k8sName)
@@ -113,9 +109,7 @@ func Create(deploymentID string, userID string, params *deploymentModel.CreatePa
 	}
 
 	// Deployment
-	appName := "main"
-
-	if notCreated(ss.GetDeployment(appName)) {
+	if service.NotCreated(ss.GetDeployment(appName)) {
 		public := createMainAppDeploymentPublic(client.Namespace, deployment.Name, deployment.OwnerID, mainApp.InternalPort, params.Envs, params.Volumes, params.InitCommands)
 		_, err = createK8sDeployment(client, deployment.ID, appName, ss, public, deploymentModel.New().UpdateSubsystemByID)
 		if err != nil {
@@ -124,7 +118,7 @@ func Create(deploymentID string, userID string, params *deploymentModel.CreatePa
 	}
 
 	// Service
-	if notCreated(ss.GetService(appName)) {
+	if service.NotCreated(ss.GetService(appName)) {
 		public := createServicePublic(client.Namespace, deployment.Name, conf.Env.Deployment.Port, mainApp.InternalPort)
 		_, err = createService(client, deployment.ID, appName, ss, public, deploymentModel.New().UpdateSubsystemByID)
 		if err != nil {
@@ -133,7 +127,7 @@ func Create(deploymentID string, userID string, params *deploymentModel.CreatePa
 	}
 
 	// Ingress
-	if ingress := ss.GetIngress(appName); notCreated(ingress) {
+	if ingress := ss.GetIngress(appName); service.NotCreated(ingress) {
 
 		var public *k8sModels.IngressPublic
 		if params.Private {
@@ -144,8 +138,8 @@ func Create(deploymentID string, userID string, params *deploymentModel.CreatePa
 			public = createIngressPublic(
 				client.Namespace,
 				deployment.Name,
-				ss.ServiceMap[appName].Name,
-				ss.ServiceMap[appName].Port,
+				ss.GetService(appName).Name,
+				ss.GetService(appName).Port,
 				[]string{getExternalFQDN(deployment.Name, zone)},
 			)
 		}
@@ -293,7 +287,6 @@ func Update(name string, params *deploymentModel.UpdateParams) error {
 		return deploymentModel.New().UpdateSubsystemByID(id, subsystem, key, update)
 	}
 
-	appName := "main"
 	mainApp := deployment.GetMainApp()
 
 	if params.Envs != nil {
@@ -369,8 +362,8 @@ func Update(name string, params *deploymentModel.UpdateParams) error {
 					return nil
 				}
 
-				service, ok := ss.K8s.ServiceMap[appName]
-				if !ok || !service.Created() {
+				k8sService := ss.K8s.GetService(appName)
+				if service.NotCreated(k8sService) {
 					return nil
 				}
 
@@ -381,7 +374,7 @@ func Update(name string, params *deploymentModel.UpdateParams) error {
 					domains = getAllDomainNames(deployment.Name, *params.ExtraDomains, zone)
 				}
 
-				public := createIngressPublic(namespace.FullName, name, service.Name, service.Port, domains)
+				public := createIngressPublic(namespace.FullName, name, k8sService.Name, k8sService.Port, domains)
 				_, err = createIngress(client, deployment.ID, appName, &ss.K8s, public, updateDb)
 				if err != nil {
 					return makeError(err)
@@ -537,29 +530,53 @@ func Repair(name string) error {
 
 	ss := &deployment.Subsystems.K8s
 
-	appName := "main"
+	err = repairNamespace(client, deployment.ID, ss, deploymentModel.New().UpdateSubsystemByID, func() *k8sModels.NamespacePublic {
+		return createNamespacePublic(deployment.OwnerID)
+	})
 
-	err = repairNamespace(client, deployment.ID, ss, deploymentModel.New().UpdateSubsystemByID)
 	if err != nil {
 		return makeError(err)
 	}
 
 	for mapName := range ss.DeploymentMap {
-		err = repairDeployment(client, deployment.ID, mapName, ss, deploymentModel.New().UpdateSubsystemByID)
+		err = repairDeployment(client, deployment.ID, mapName, ss, deploymentModel.New().UpdateSubsystemByID, func() *k8sModels.DeploymentPublic {
+			if mapName == appName {
+				return createMainAppDeploymentPublic(
+					ss.Namespace.FullName,
+					deployment.Name,
+					deployment.OwnerID,
+					mainApp.InternalPort,
+					mainApp.Envs,
+					mainApp.Volumes,
+					mainApp.InitCommands,
+				)
+			}
+			return nil
+		})
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
 	for mapName := range ss.ServiceMap {
-		err = repairService(client, deployment.ID, mapName, ss, deploymentModel.New().UpdateSubsystemByID)
+		err = repairService(client, deployment.ID, mapName, ss, deploymentModel.New().UpdateSubsystemByID, func() *k8sModels.ServicePublic {
+			if mapName == appName {
+				return createServicePublic(
+					ss.Namespace.FullName,
+					deployment.Name,
+					conf.Env.Deployment.Port,
+					mainApp.InternalPort,
+				)
+			}
+			return nil
+		})
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
 	mainIngress := ss.GetIngress(appName)
-	if notCreated(mainIngress) {
+	if service.NotCreated(mainIngress) {
 		log.Println("main ingress not created when recreating ingress. assuming it was deleted")
 		return nil
 	}
@@ -573,8 +590,8 @@ func Repair(name string) error {
 				return makeError(err)
 			}
 		} else {
-			mainService, ok := ss.ServiceMap[appName]
-			if !ok || !mainService.Created() {
+			k8sService := ss.GetService(appName)
+			if service.NotCreated(k8sService) {
 				log.Println("main service not created when recreating ingress. assuming it was deleted")
 				return nil
 			}
@@ -582,8 +599,8 @@ func Repair(name string) error {
 			_, err = createIngress(client, deployment.ID, appName, ss, createIngressPublic(
 				deployment.Subsystems.K8s.Namespace.FullName,
 				deployment.Name,
-				mainService.Name,
-				mainService.Port,
+				k8sService.Name,
+				k8sService.Port,
 				getAllDomainNames(deployment.Name, mainApp.ExtraDomains, zone),
 			), deploymentModel.New().UpdateSubsystemByID)
 			if err != nil {
@@ -591,7 +608,15 @@ func Repair(name string) error {
 			}
 		}
 	} else if !mainIngress.Placeholder {
-		err = repairIngress(client, deployment.ID, appName, ss, deploymentModel.New().UpdateSubsystemByID)
+		err = repairIngress(client, deployment.ID, appName, ss, deploymentModel.New().UpdateSubsystemByID, func() *k8sModels.IngressPublic {
+			return createIngressPublic(
+				deployment.Subsystems.K8s.Namespace.FullName,
+				deployment.Name,
+				mainIngress.ServiceName,
+				mainIngress.ServicePort,
+				mainIngress.Hosts,
+			)
+		})
 		if err != nil {
 			return makeError(err)
 		}

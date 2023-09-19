@@ -5,6 +5,7 @@ import (
 	"fmt"
 	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/models/sys/deployment/storage_manager"
+	storageManagerModel "go-deploy/models/sys/deployment/storage_manager"
 	"go-deploy/models/sys/deployment/subsystems"
 	"go-deploy/models/sys/enviroment"
 	userModel "go-deploy/models/sys/user"
@@ -15,10 +16,9 @@ import (
 	"go-deploy/utils"
 	"go-deploy/utils/subsystemutils"
 	"log"
+	"path"
 	"strconv"
 )
-
-type UpdateDbSubsystem func(string, string, string, interface{}) error
 
 func createNamespacePublic(name string) *k8sModels.NamespacePublic {
 	return &k8sModels.NamespacePublic{
@@ -285,6 +285,34 @@ func createJobPublic(namespace, name, image string, command, args []string, volu
 	}
 }
 
+func getStorageManagerVolumes(ownerID, appName string) ([]storageManagerModel.Volume, []storageManagerModel.Volume) {
+	initVolumes := []storageManagerModel.Volume{
+		{
+			Name:       fmt.Sprintf("%s-%s", appName, "init"),
+			Init:       false,
+			AppPath:    "/exports",
+			ServerPath: "",
+		},
+	}
+
+	volumes := []storageManagerModel.Volume{
+		{
+			Name:       fmt.Sprintf("%s-%s", appName, "data"),
+			Init:       false,
+			AppPath:    "/data",
+			ServerPath: path.Join(ownerID, "data"),
+		},
+		{
+			Name:       fmt.Sprintf("%s-%s", appName, "user"),
+			Init:       false,
+			AppPath:    "/deploy",
+			ServerPath: path.Join(ownerID, "user"),
+		},
+	}
+
+	return initVolumes, volumes
+}
+
 func getExternalFQDN(name string, zone *enviroment.DeploymentZone) string {
 	return fmt.Sprintf("%s.%s", name, zone.ParentDomain)
 }
@@ -293,7 +321,7 @@ func getStorageManagerExternalFQDN(name string, zone *enviroment.DeploymentZone)
 	return fmt.Sprintf("%s.%s", name, zone.Storage.ParentDomain)
 }
 
-func recreateNamespace(client *k8s.Client, id string, k8s *subsystems.K8s, newPublic *k8sModels.NamespacePublic, updateDb UpdateDbSubsystem) error {
+func recreateNamespace(client *k8s.Client, id string, k8s *subsystems.K8s, newPublic *k8sModels.NamespacePublic, updateDb service.UpdateDbSubsystem) error {
 	err := deleteNamespace(client, id, k8s, updateDb)
 	if err != nil {
 		return err
@@ -307,7 +335,7 @@ func recreateNamespace(client *k8s.Client, id string, k8s *subsystems.K8s, newPu
 	return nil
 }
 
-func recreateK8sDeployment(client *k8s.Client, id, name string, k8s *subsystems.K8s, newPublic *k8sModels.DeploymentPublic, updateDb UpdateDbSubsystem) error {
+func recreateK8sDeployment(client *k8s.Client, id, name string, k8s *subsystems.K8s, newPublic *k8sModels.DeploymentPublic, updateDb service.UpdateDbSubsystem) error {
 	err := deleteK8sDeployment(client, id, name, k8s, updateDb)
 	if err != nil {
 		return err
@@ -321,7 +349,7 @@ func recreateK8sDeployment(client *k8s.Client, id, name string, k8s *subsystems.
 	return nil
 }
 
-func recreateService(client *k8s.Client, id, name string, k8s *subsystems.K8s, newPublic *k8sModels.ServicePublic, updateDb UpdateDbSubsystem) error {
+func recreateService(client *k8s.Client, id, name string, k8s *subsystems.K8s, newPublic *k8sModels.ServicePublic, updateDb service.UpdateDbSubsystem) error {
 	err := deleteService(client, id, name, k8s, updateDb)
 	if err != nil {
 		return err
@@ -335,7 +363,7 @@ func recreateService(client *k8s.Client, id, name string, k8s *subsystems.K8s, n
 	return nil
 }
 
-func recreateIngress(client *k8s.Client, id, name string, k8s *subsystems.K8s, newPublic *k8sModels.IngressPublic, updateDb UpdateDbSubsystem) error {
+func recreateIngress(client *k8s.Client, id, name string, k8s *subsystems.K8s, newPublic *k8sModels.IngressPublic, updateDb service.UpdateDbSubsystem) error {
 	err := deleteIngress(client, id, name, k8s, updateDb)
 	if err != nil {
 		return err
@@ -349,7 +377,7 @@ func recreateIngress(client *k8s.Client, id, name string, k8s *subsystems.K8s, n
 	return nil
 }
 
-func recreatePV(client *k8s.Client, id, name string, k8s *subsystems.K8s, newPublic *k8sModels.PvPublic, updateDb UpdateDbSubsystem) error {
+func recreatePV(client *k8s.Client, id, name string, k8s *subsystems.K8s, newPublic *k8sModels.PvPublic, updateDb service.UpdateDbSubsystem) error {
 	pv, ok := k8s.PvMap[name]
 	if ok {
 		err := client.DeletePV(pv.ID)
@@ -366,7 +394,7 @@ func recreatePV(client *k8s.Client, id, name string, k8s *subsystems.K8s, newPub
 	return nil
 }
 
-func recreatePVC(client *k8s.Client, id, name string, k8s *subsystems.K8s, newPublic *k8sModels.PvcPublic, updateDb UpdateDbSubsystem) error {
+func recreatePVC(client *k8s.Client, id, name string, k8s *subsystems.K8s, newPublic *k8sModels.PvcPublic, updateDb service.UpdateDbSubsystem) error {
 	pvc, ok := k8s.PvcMap[name]
 	if ok {
 		err := client.DeletePVC(pvc.ID)
@@ -383,7 +411,7 @@ func recreatePVC(client *k8s.Client, id, name string, k8s *subsystems.K8s, newPu
 	return nil
 }
 
-func createNamespace(client *k8s.Client, id string, k8s *subsystems.K8s, public *k8sModels.NamespacePublic, updateDb UpdateDbSubsystem) (*k8sModels.NamespacePublic, error) {
+func createNamespace(client *k8s.Client, id string, k8s *subsystems.K8s, public *k8sModels.NamespacePublic, updateDb service.UpdateDbSubsystem) (*k8sModels.NamespacePublic, error) {
 	createdID, err := client.CreateNamespace(public)
 	if err != nil {
 		return nil, err
@@ -408,7 +436,7 @@ func createNamespace(client *k8s.Client, id string, k8s *subsystems.K8s, public 
 	return namespace, nil
 }
 
-func createK8sDeployment(client *k8s.Client, id, name string, k8s *subsystems.K8s, public *k8sModels.DeploymentPublic, updateDb UpdateDbSubsystem) (*k8sModels.DeploymentPublic, error) {
+func createK8sDeployment(client *k8s.Client, id, name string, k8s *subsystems.K8s, public *k8sModels.DeploymentPublic, updateDb service.UpdateDbSubsystem) (*k8sModels.DeploymentPublic, error) {
 	createdID, err := client.CreateDeployment(public)
 	if err != nil {
 		return nil, err
@@ -440,7 +468,7 @@ func createK8sDeployment(client *k8s.Client, id, name string, k8s *subsystems.K8
 	return deployment, nil
 }
 
-func createService(client *k8s.Client, id, name string, k8s *subsystems.K8s, public *k8sModels.ServicePublic, updateDb UpdateDbSubsystem) (*k8sModels.ServicePublic, error) {
+func createService(client *k8s.Client, id, name string, k8s *subsystems.K8s, public *k8sModels.ServicePublic, updateDb service.UpdateDbSubsystem) (*k8sModels.ServicePublic, error) {
 	createdID, err := client.CreateService(public)
 	if err != nil {
 		return nil, err
@@ -472,7 +500,7 @@ func createService(client *k8s.Client, id, name string, k8s *subsystems.K8s, pub
 	return k8sService, nil
 }
 
-func createIngress(client *k8s.Client, id, name string, k8s *subsystems.K8s, public *k8sModels.IngressPublic, updateDb UpdateDbSubsystem) (*k8sModels.IngressPublic, error) {
+func createIngress(client *k8s.Client, id, name string, k8s *subsystems.K8s, public *k8sModels.IngressPublic, updateDb service.UpdateDbSubsystem) (*k8sModels.IngressPublic, error) {
 	var ingress *k8sModels.IngressPublic
 
 	if !public.Placeholder {
@@ -509,7 +537,7 @@ func createIngress(client *k8s.Client, id, name string, k8s *subsystems.K8s, pub
 	return ingress, nil
 }
 
-func createPV(client *k8s.Client, id, name string, k8s *subsystems.K8s, public *k8sModels.PvPublic, updateDb UpdateDbSubsystem) (*k8sModels.PvPublic, error) {
+func createPV(client *k8s.Client, id, name string, k8s *subsystems.K8s, public *k8sModels.PvPublic, updateDb service.UpdateDbSubsystem) (*k8sModels.PvPublic, error) {
 	createdID, err := client.CreatePV(public)
 	if err != nil {
 		return nil, err
@@ -540,7 +568,7 @@ func createPV(client *k8s.Client, id, name string, k8s *subsystems.K8s, public *
 	return pv, nil
 }
 
-func createPVC(client *k8s.Client, id, name string, k8s *subsystems.K8s, public *k8sModels.PvcPublic, updateDb UpdateDbSubsystem) (*k8sModels.PvcPublic, error) {
+func createPVC(client *k8s.Client, id, name string, k8s *subsystems.K8s, public *k8sModels.PvcPublic, updateDb service.UpdateDbSubsystem) (*k8sModels.PvcPublic, error) {
 	createdID, err := client.CreatePVC(public)
 	if err != nil {
 		return nil, err
@@ -571,7 +599,7 @@ func createPVC(client *k8s.Client, id, name string, k8s *subsystems.K8s, public 
 	return pvc, nil
 }
 
-func createJob(client *k8s.Client, id, name string, k8s *subsystems.K8s, public *k8sModels.JobPublic, updateDb UpdateDbSubsystem) (*k8sModels.JobPublic, error) {
+func createJob(client *k8s.Client, id, name string, k8s *subsystems.K8s, public *k8sModels.JobPublic, updateDb service.UpdateDbSubsystem) (*k8sModels.JobPublic, error) {
 	createdID, err := client.CreateJob(public)
 	if err != nil {
 		return nil, err
@@ -602,7 +630,7 @@ func createJob(client *k8s.Client, id, name string, k8s *subsystems.K8s, public 
 	return job, nil
 }
 
-func deleteNamespace(client *k8s.Client, id string, k8s *subsystems.K8s, updateDb UpdateDbSubsystem) error {
+func deleteNamespace(client *k8s.Client, id string, k8s *subsystems.K8s, updateDb service.UpdateDbSubsystem) error {
 	// never actually deleted the namespace to prevent race conditions
 
 	err := updateDb(id, "k8s", "namespace", nil)
@@ -615,7 +643,7 @@ func deleteNamespace(client *k8s.Client, id string, k8s *subsystems.K8s, updateD
 	return nil
 }
 
-func deleteK8sDeployment(client *k8s.Client, id, name string, k8s *subsystems.K8s, updateDb UpdateDbSubsystem) error {
+func deleteK8sDeployment(client *k8s.Client, id, name string, k8s *subsystems.K8s, updateDb service.UpdateDbSubsystem) error {
 	deployment, ok := k8s.DeploymentMap[name]
 	if ok {
 		err := client.DeleteDeployment(deployment.ID)
@@ -641,7 +669,7 @@ func deleteK8sDeployment(client *k8s.Client, id, name string, k8s *subsystems.K8
 	return nil
 }
 
-func deleteService(client *k8s.Client, id, name string, k8s *subsystems.K8s, updateDb UpdateDbSubsystem) error {
+func deleteService(client *k8s.Client, id, name string, k8s *subsystems.K8s, updateDb service.UpdateDbSubsystem) error {
 	k8sService, ok := k8s.ServiceMap[name]
 	if ok {
 		err := client.DeleteService(k8sService.ID)
@@ -667,7 +695,7 @@ func deleteService(client *k8s.Client, id, name string, k8s *subsystems.K8s, upd
 	return nil
 }
 
-func deleteIngress(client *k8s.Client, id, name string, k8s *subsystems.K8s, updateDb UpdateDbSubsystem) error {
+func deleteIngress(client *k8s.Client, id, name string, k8s *subsystems.K8s, updateDb service.UpdateDbSubsystem) error {
 	ingress, ok := k8s.IngressMap[name]
 	if ok {
 		err := client.DeleteIngress(ingress.ID)
@@ -693,7 +721,7 @@ func deleteIngress(client *k8s.Client, id, name string, k8s *subsystems.K8s, upd
 	return nil
 }
 
-func deletePV(client *k8s.Client, id, name string, k8s *subsystems.K8s, updateDb UpdateDbSubsystem) error {
+func deletePV(client *k8s.Client, id, name string, k8s *subsystems.K8s, updateDb service.UpdateDbSubsystem) error {
 	pv, ok := k8s.PvMap[name]
 	if ok {
 		err := client.DeletePV(pv.ID)
@@ -719,7 +747,7 @@ func deletePV(client *k8s.Client, id, name string, k8s *subsystems.K8s, updateDb
 	return nil
 }
 
-func deletePVC(client *k8s.Client, id, name string, k8s *subsystems.K8s, updateDb UpdateDbSubsystem) error {
+func deletePVC(client *k8s.Client, id, name string, k8s *subsystems.K8s, updateDb service.UpdateDbSubsystem) error {
 	pvc, ok := k8s.PvcMap[name]
 	if ok {
 		err := client.DeletePVC(pvc.ID)
@@ -745,7 +773,7 @@ func deletePVC(client *k8s.Client, id, name string, k8s *subsystems.K8s, updateD
 	return nil
 }
 
-func deleteJob(client *k8s.Client, id, name string, k8s *subsystems.K8s, updateDb UpdateDbSubsystem) error {
+func deleteJob(client *k8s.Client, id, name string, k8s *subsystems.K8s, updateDb service.UpdateDbSubsystem) error {
 	job, ok := k8s.JobMap[name]
 	if ok {
 		err := client.DeleteJob(job.ID)
@@ -771,10 +799,16 @@ func deleteJob(client *k8s.Client, id, name string, k8s *subsystems.K8s, updateD
 	return nil
 }
 
-func repairNamespace(client *k8s.Client, id string, k8s *subsystems.K8s, updateDb UpdateDbSubsystem) error {
+func repairNamespace(client *k8s.Client, id string, k8s *subsystems.K8s, updateDb service.UpdateDbSubsystem, genPublic func() *k8sModels.NamespacePublic) error {
 	dbNamespace := k8s.Namespace
-	if notCreated(&dbNamespace) {
-		_, err := createNamespace(client, id, k8s, &dbNamespace, updateDb)
+	if service.NotCreated(&dbNamespace) {
+		public := genPublic()
+		if public == nil {
+			log.Println("no public supplied for k8s namespace when trying to create it in the repair process")
+			return nil
+		}
+
+		_, err := createNamespace(client, id, k8s, public, updateDb)
 		return err
 	}
 
@@ -790,10 +824,16 @@ func repairNamespace(client *k8s.Client, id string, k8s *subsystems.K8s, updateD
 	)
 }
 
-func repairDeployment(client *k8s.Client, id, name string, k8s *subsystems.K8s, updateDb UpdateDbSubsystem) error {
+func repairDeployment(client *k8s.Client, id, name string, k8s *subsystems.K8s, updateDb service.UpdateDbSubsystem, genPublic func() *k8sModels.DeploymentPublic) error {
 	dbDeployment := k8s.GetDeployment(name)
-	if notCreated(dbDeployment) {
-		_, err := createK8sDeployment(client, id, name, k8s, k8s.GetDeployment(name), updateDb)
+	if service.NotCreated(dbDeployment) {
+		public := genPublic()
+		if public == nil {
+			log.Println("no public supplied for k8s deployment", name, " when trying to create it in the repair process")
+			return nil
+		}
+
+		_, err := createK8sDeployment(client, id, name, k8s, public, updateDb)
 		return err
 	}
 
@@ -809,10 +849,16 @@ func repairDeployment(client *k8s.Client, id, name string, k8s *subsystems.K8s, 
 	)
 }
 
-func repairService(client *k8s.Client, id, name string, k8s *subsystems.K8s, updateDb UpdateDbSubsystem) error {
+func repairService(client *k8s.Client, id, name string, k8s *subsystems.K8s, updateDb service.UpdateDbSubsystem, genPublic func() *k8sModels.ServicePublic) error {
 	dbService := k8s.GetService(name)
-	if notCreated(dbService) {
-		_, err := createService(client, id, name, k8s, k8s.GetService(name), updateDb)
+	if service.NotCreated(dbService) {
+		public := genPublic()
+		if public == nil {
+			log.Println("no public supplied for k8s service", name, " when trying to create it in the repair process")
+			return nil
+		}
+
+		_, err := createService(client, id, name, k8s, public, updateDb)
 		return err
 	}
 
@@ -828,10 +874,16 @@ func repairService(client *k8s.Client, id, name string, k8s *subsystems.K8s, upd
 	)
 }
 
-func repairIngress(client *k8s.Client, id, name string, k8s *subsystems.K8s, updateDb UpdateDbSubsystem) error {
+func repairIngress(client *k8s.Client, id, name string, k8s *subsystems.K8s, updateDb service.UpdateDbSubsystem, genPublic func() *k8sModels.IngressPublic) error {
 	dbIngress := k8s.GetIngress(name)
-	if notCreated(dbIngress) {
-		_, err := createIngress(client, id, name, k8s, k8s.GetIngress(name), updateDb)
+	if service.NotCreated(dbIngress) {
+		public := genPublic()
+		if public == nil {
+			log.Println("no public supplied for k8s ingress", name, " when trying to create it in the repair process")
+			return nil
+		}
+
+		_, err := createIngress(client, id, name, k8s, public, updateDb)
 		return err
 	}
 

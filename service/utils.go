@@ -1,42 +1,19 @@
 package service
 
 import (
+	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	"reflect"
 	"time"
 )
 
-func deepEqual[T any](a, b *T) bool {
-	aValue := reflect.ValueOf(*a)
-	bValue := reflect.ValueOf(*b)
+type UpdateDbSubsystem func(string, string, string, interface{}) error
 
-	for i := 0; i < aValue.NumField(); i++ {
-		aField := aValue.Field(i)
-		bField := bValue.Field(i)
-		fieldType := aValue.Type().Field(i)
-
-		if fieldType.PkgPath != "" {
-			continue
-		}
-
-		if fieldType.Type == reflect.TypeOf(time.Time{}) {
-			if !aField.Interface().(time.Time).Equal(bField.Interface().(time.Time)) {
-				return false
-			}
-		} else if fieldType.Type.Kind() == reflect.Struct {
-			aInt := aField.Interface()
-			bInt := bField.Interface()
-
-			if deepEqual(&aInt, &bInt) {
-				return true
-			}
-		} else {
-			if aField.Interface() != bField.Interface() {
-				return false
-			}
-		}
+func NotCreated(resource k8sModels.K8sResource) bool {
+	if resource == nil || (reflect.ValueOf(resource).Kind() == reflect.Ptr && reflect.ValueOf(resource).IsNil()) {
+		return true
 	}
 
-	return true
+	return !resource.Created()
 }
 
 func ResetTimeFields[T any](input T) T {

@@ -8,7 +8,7 @@ import (
 	"go-deploy/models/sys/vm/gpu"
 	"go-deploy/pkg/conf"
 	"go-deploy/service"
-	"go-deploy/service/vm_service/internal_service"
+	"go-deploy/service/vm_service/cs_service"
 	"go-deploy/utils"
 	"log"
 	"strings"
@@ -40,7 +40,7 @@ func Create(vmID, owner string, vmCreate *body.VmCreate) error {
 		return makeError(fmt.Errorf("vm already exists for another user"))
 	}
 
-	_, err = internal_service.CreateCS(params)
+	_, err = cs_service.CreateCS(params)
 	if err != nil {
 		return makeError(err)
 	}
@@ -117,7 +117,7 @@ func Delete(name string) error {
 		return makeError(err)
 	}
 
-	err = internal_service.DeleteCS(name)
+	err = cs_service.DeleteCS(name)
 	if err != nil {
 		return makeError(err)
 	}
@@ -150,7 +150,7 @@ func Update(vmID string, dtoVmUpdate *body.VmUpdate) error {
 			addDeploySshToPortMap(vmUpdate.Ports)
 		}
 
-		err := internal_service.UpdateCS(vmID, vmUpdate)
+		err := cs_service.UpdateCS(vmID, vmUpdate)
 		if err != nil {
 			return makeError(err)
 		}
@@ -205,7 +205,7 @@ func Repair(id string) error {
 		}
 	}()
 
-	err = internal_service.RepairCS(vm.Name)
+	err = cs_service.RepairCS(vm.Name)
 	if err != nil {
 		return makeError(err)
 	}
@@ -249,7 +249,7 @@ func DoCommand(vm *vmModel.VM, command string) {
 			gpuID = &vm.GpuID
 		}
 
-		err := internal_service.DoCommandCS(csID, gpuID, command, vm.Zone)
+		err := cs_service.DoCommandCS(csID, gpuID, command, vm.Zone)
 		if err != nil {
 			utils.PrettyPrintError(err)
 			return

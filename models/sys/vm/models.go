@@ -1,7 +1,7 @@
 package vm
 
 import (
-	csModels "go-deploy/pkg/subsystems/cs/models"
+	"go-deploy/models/sys/vm/subsystems"
 	"time"
 )
 
@@ -23,22 +23,7 @@ type Port struct {
 }
 
 type Subsystems struct {
-	CS CS `bson:"cs"`
-}
-
-type CS struct {
-	ServiceOffering       csModels.ServiceOfferingPublic               `bson:"serviceOffering"`
-	VM                    csModels.VmPublic                            `bson:"vm"`
-	PortForwardingRuleMap map[string]csModels.PortForwardingRulePublic `bson:"portForwardingRuleMap"`
-	SnapshotMap           map[string]csModels.SnapshotPublic           `bson:"snapshotMap"`
-}
-
-func (cs *CS) GetPortForwardingRuleMap() map[string]csModels.PortForwardingRulePublic {
-	if cs.PortForwardingRuleMap == nil {
-		cs.PortForwardingRuleMap = make(map[string]csModels.PortForwardingRulePublic)
-	}
-	
-	return cs.PortForwardingRuleMap
+	CS subsystems.CS `bson:"cs"`
 }
 
 type Usage struct {

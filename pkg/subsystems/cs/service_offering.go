@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go-deploy/pkg/imp/cloudstack"
 	"go-deploy/pkg/subsystems/cs/models"
+	"log"
 	"strings"
 )
 
@@ -13,7 +14,8 @@ func (client *Client) ReadServiceOffering(id string) (*models.ServiceOfferingPub
 	}
 
 	if id == "" {
-		return nil, fmt.Errorf("id required")
+		log.Println("cs service offering id not supplied when updating. assuming it was deleted")
+		return nil, nil
 	}
 
 	serviceOffering, _, err := client.CsClient.ServiceOffering.GetServiceOfferingByID(id)
@@ -67,12 +69,35 @@ func (client *Client) CreateServiceOffering(public *models.ServiceOfferingPublic
 	return serviceOffering.Id, nil
 }
 
+func (client *Client) UpdateServiceOffering(public *models.ServiceOfferingPublic) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to update service offering %s. details: %w", public.ID, err)
+	}
+
+	if public.ID == "" {
+		log.Println("cs service offering id not supplied when updating. assuming it was deleted")
+		return nil
+	}
+
+	updateParams := client.CsClient.ServiceOffering.NewUpdateServiceOfferingParams(public.ID)
+	updateParams.SetName(public.Name)
+	updateParams.SetDisplaytext(public.Name)
+
+	_, err := client.CsClient.ServiceOffering.UpdateServiceOffering(updateParams)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
+}
+
 func (client *Client) DeleteServiceOffering(id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete service offering %s. details: %w", id, err)
 	}
 
 	if id == "" {
+		log.Println("cs service offering id not supplied when updating. assuming it was deleted")
 		return nil
 	}
 
