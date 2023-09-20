@@ -86,6 +86,10 @@ func UpdateIfDiff[T any](dbResource T, fetchFunc func() (*T, error), updateFunc 
 		return nil
 	}
 
+	if liveResource == nil {
+		return recreateFunc(&dbResource)
+	}
+
 	dbResourceCleaned := ResetTimeFields(dbResource)
 	liveResourceCleaned := ResetTimeFields(*liveResource)
 
@@ -102,10 +106,12 @@ func UpdateIfDiff[T any](dbResource T, fetchFunc func() (*T, error), updateFunc 
 	if err != nil {
 		return nil
 	}
-	liveResourceCleaned = ResetTimeFields(*liveResource)
 
-	if liveResource != nil && areTimeFieldsEqual(dbResource, *liveResource) && reflect.DeepEqual(liveResourceCleaned, dbResourceCleaned) {
-		return nil
+	if liveResource != nil {
+		liveResourceCleaned = ResetTimeFields(*liveResource)
+		if liveResource != nil && areTimeFieldsEqual(dbResource, *liveResource) && reflect.DeepEqual(liveResourceCleaned, dbResourceCleaned) {
+			return nil
+		}
 	}
 
 	return recreateFunc(&dbResource)
