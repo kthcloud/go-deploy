@@ -38,6 +38,23 @@ func CreateWebhookParamsFromPublic(public *WebhookPublic) *modelv2.WebhookPolicy
 	}
 }
 
+func CreateWebhookUpdateParamsFromPublic(public *WebhookPublic, current *modelv2.WebhookPolicy) *modelv2.WebhookPolicy {
+	update := *current
+	update.Enabled = true
+	update.Name = public.Name
+	update.EventTypes = getWebhookEventTypes()
+	update.Targets = []*modelv2.WebhookTargetObject{
+		{
+			Address:        public.Target,
+			AuthHeader:     createWebhookAuthHeader(public.Token),
+			SkipCertVerify: false,
+			Type:           "http",
+		},
+	}
+
+	return &update
+}
+
 func CreateWebhookPublicFromGet(webhookPolicy *modelv2.WebhookPolicy, project *modelv2.Project) *WebhookPublic {
 	token := getTokenFromAuthHeader(webhookPolicy.Targets[0].AuthHeader)
 
