@@ -28,7 +28,7 @@ func New(harbor *subsystems.Harbor) (*Client, error) {
 
 	return &Client{
 		UpdateDB: func(id, key string, data interface{}) error {
-			return deploymentModel.New().UpdateSubsystemByID(id, "k8s", key, data)
+			return deploymentModel.New().UpdateSubsystemByID(id, "harbor", key, data)
 		},
 		SsClient: harborClient,
 		SS:       harbor,
