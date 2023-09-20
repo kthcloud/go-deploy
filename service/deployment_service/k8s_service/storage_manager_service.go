@@ -37,7 +37,7 @@ func CreateStorageManager(id string, params *storageManagerModel.CreateParams) e
 		return nil
 	}
 
-	client, err := helpers.New(&storageManager.Subsystems.K8s, getStorageManagerNamespaceName(storageManager.OwnerID), storageManager.Zone)
+	client, err := helpers.New(&storageManager.Subsystems.K8s, storageManager.Zone, getStorageManagerNamespaceName(storageManager.OwnerID))
 	if err != nil {
 		return makeError(err)
 	}
@@ -184,7 +184,7 @@ func DeleteStorageManager(id string) error {
 		return nil
 	}
 
-	client, err := helpers.New(&storageManager.Subsystems.K8s, getStorageManagerNamespaceName(storageManager.OwnerID), storageManager.Zone)
+	client, err := helpers.New(&storageManager.Subsystems.K8s, storageManager.Zone, getStorageManagerNamespaceName(storageManager.OwnerID))
 	if err != nil {
 		return makeError(err)
 	}
@@ -257,7 +257,7 @@ func RepairStorageManager(id string) error {
 		return nil
 	}
 
-	client, err := helpers.New(&storageManager.Subsystems.K8s, getStorageManagerNamespaceName(storageManager.OwnerID), storageManager.Zone)
+	client, err := helpers.New(&storageManager.Subsystems.K8s, storageManager.Zone, getStorageManagerNamespaceName(storageManager.OwnerID))
 	if err != nil {
 		return makeError(err)
 	}
