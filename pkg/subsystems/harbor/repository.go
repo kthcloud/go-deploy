@@ -122,7 +122,7 @@ func (client *Client) UpdateRepository(public *models.RepositoryPublic) error {
 		return makeError(fmt.Errorf("repository %s not found", public.Name))
 	}
 
-	repository.Name = public.Name
+	// this doesn't actually do anything, but the code here is kept in case any field could be updated in the future
 
 	err = client.HarborClient.UpdateRepository(context.TODO(), public.ProjectName, public.Name, repository)
 	if err != nil {
