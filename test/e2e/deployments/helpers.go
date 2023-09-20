@@ -196,6 +196,20 @@ func withDeployment(t *testing.T, requestBody body.DeploymentCreate) body.Deploy
 		assert.Equal(t, requestBody.InitCommands, deploymentRead.InitCommands)
 	}
 
+	// PORT env is generated, so we check for that first, then delete and match exact with the rest
+	assert.NotEmpty(t, deploymentRead.Envs)
+
+	portEnvFound := false
+	for i, env := range deploymentRead.Envs {
+		if env.Name == "PORT" {
+			portEnvFound = true
+			deploymentRead.Envs = append(deploymentRead.Envs[:i], deploymentRead.Envs[i+1:]...)
+			break
+		}
+	}
+
+	assert.True(t, portEnvFound, "PORT env was not found")
+
 	if requestBody.Envs == nil {
 		assert.Empty(t, deploymentRead.Envs)
 	} else {
