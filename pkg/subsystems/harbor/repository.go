@@ -108,6 +108,30 @@ func (client *Client) CreateRepository(public *models.RepositoryPublic) (int, er
 	return int(repository.ID), nil
 }
 
+func (client *Client) UpdateRepository(public *models.RepositoryPublic) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to update repository %s. details: %w", public.Name, err)
+	}
+
+	repository, err := client.HarborClient.GetRepository(context.TODO(), public.ProjectName, public.Name)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if repository == nil {
+		return makeError(fmt.Errorf("repository %s not found", public.Name))
+	}
+
+	repository.Name = public.Name
+
+	err = client.HarborClient.UpdateRepository(context.TODO(), public.ProjectName, public.Name, repository)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
+}
+
 func (client *Client) DeleteRepository(projectName, name string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete repository %s. details: %w", name, err)

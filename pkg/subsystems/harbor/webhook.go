@@ -5,6 +5,7 @@ import (
 	"fmt"
 	modelv2 "github.com/mittwald/goharbor-client/v5/apiv2/model"
 	models "go-deploy/pkg/subsystems/harbor/models"
+	"log"
 	"strconv"
 	"strings"
 )
@@ -95,6 +96,41 @@ func (client *Client) CreateWebhook(public *models.WebhookPublic) (int, error) {
 		}
 	}
 	return 0, makeError(fmt.Errorf("webhook not found after creation"))
+}
+
+func (client *Client) UpdateWebhook(public *models.WebhookPublic) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to update webhook for %s. details: %w", public.Name, err)
+	}
+
+	if public.ProjectID == 0 {
+		return makeError(fmt.Errorf("project id required"))
+	}
+
+	webhookPolicies, err := client.HarborClient.ListProjectWebhookPolicies(context.TODO(), public.ProjectID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	var webhookPolicy *modelv2.WebhookPolicy
+	for _, policy := range webhookPolicies {
+		if int(policy.ID) == public.ID {
+			webhookPolicy = policy
+		}
+	}
+
+	if webhookPolicy == nil {
+		log.Println("webhook", public.Name, "not found when updating. assuming it was deleted")
+		return nil
+	}
+
+	params := models.CreateWebhookUpdateParamsFromPublic(public, webhookPolicy)
+	err = client.HarborClient.UpdateProjectWebhookPolicy(context.TODO(), public.ProjectID, params)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
 }
 
 func (client *Client) DeleteWebhook(projectID, id int) error {

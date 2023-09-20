@@ -7,6 +7,7 @@ import (
 	harborModelsV2 "github.com/mittwald/goharbor-client/v5/apiv2/model"
 	harborErrors "github.com/mittwald/goharbor-client/v5/apiv2/pkg/errors"
 	"go-deploy/pkg/subsystems/harbor/models"
+	"log"
 	"strings"
 )
 
@@ -90,6 +91,43 @@ func (client *Client) CreateRobot(public *models.RobotPublic) (int, error) {
 	}
 
 	return int(robot.ID), nil
+}
+
+func (client *Client) UpdateRobot(public *models.RobotPublic) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to update robot %s. details: %w", public.Name, err)
+	}
+
+	if public.ProjectID == 0 {
+		return nil
+	}
+
+	robots, err := client.HarborClient.ListProjectRobotsV1(context.TODO(), public.ProjectName)
+	if err != nil {
+		return makeError(err)
+	}
+
+	var robot *harborModelsV2.Robot
+	for _, r := range robots {
+		if r.ID == int64(public.ID) {
+			robot = r
+			break
+		}
+	}
+
+	if robot == nil {
+		log.Println("robot", public.Name, "not found when updating. assuming it was deleted")
+		return nil
+	}
+
+	// this doesn't actually do anything, but the code here is kept in case any field could be updated in the future
+
+	err = client.HarborClient.UpdateRobotAccount(context.TODO(), robot)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
 }
 
 func (client *Client) DeleteRobot(id int) error {

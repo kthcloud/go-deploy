@@ -34,6 +34,13 @@ func (deployment *Deployment) GetMainApp() *App {
 	return &app
 }
 
+func (deployment *Deployment) SetMainApp(app *App) {
+	if deployment.Apps == nil {
+		deployment.Apps = map[string]App{}
+	}
+	deployment.Apps["main"] = *app
+}
+
 func (deployment *Deployment) GetURL() *string {
 	app := deployment.GetMainApp()
 	if app == nil {

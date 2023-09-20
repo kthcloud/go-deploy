@@ -23,7 +23,8 @@ func CreateProjectUpdateParamsFromPublic(public *ProjectPublic) *modelv2.Project
 
 func CreateProjectPublicFromGet(project *modelv2.Project) *ProjectPublic {
 	return &ProjectPublic{
-		ID:   int(project.ProjectID),
-		Name: project.Name,
+		ID:        int(project.ProjectID),
+		Name:      project.Name,
+		CreatedAt: time.Time(project.CreationTime),
 	}
 }
