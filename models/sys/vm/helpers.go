@@ -132,6 +132,11 @@ func (client *Client) UpdateSubsystemByName(name, subsystem string, key string, 
 	return client.UpdateWithBsonByName(name, bson.D{{subsystemKey, update}})
 }
 
+func (client *Client) UpdateSubsystemByID(id, subsystem string, key string, update interface{}) error {
+	subsystemKey := fmt.Sprintf("subsystems.%s.%s", subsystem, key)
+	return client.UpdateWithBsonByID(id, bson.D{{subsystemKey, update}})
+}
+
 func (client *Client) GetWithGPU() ([]VM, error) {
 	// create a filter that checks if the gpuID field is not empty
 	filter := bson.D{{

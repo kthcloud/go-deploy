@@ -62,7 +62,7 @@ func (client *Client) waitDeploymentReady(ctx context.Context, namespace, deploy
 	}
 }
 
-func (client *Client) ReadDeployment(namespace, id string) (*models.DeploymentPublic, error) {
+func (client *Client) ReadDeployment(id string) (*models.DeploymentPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to read deployment %s. details: %w", id, err)
 	}
@@ -71,20 +71,20 @@ func (client *Client) ReadDeployment(namespace, id string) (*models.DeploymentPu
 		return nil, nil
 	}
 
-	if namespace == "" {
+	if client.Namespace == "" {
 		return nil, nil
 	}
 
-	namespaceCreated, err := client.NamespaceCreated(namespace)
+	namespaceCreated, err := client.NamespaceCreated(client.Namespace)
 	if err != nil {
 		return nil, makeError(err)
 	}
 
 	if !namespaceCreated {
-		return nil, makeError(fmt.Errorf("no such namespace %s", namespace))
+		return nil, makeError(fmt.Errorf("no such namespace %s", client.Namespace))
 	}
 
-	list, err := client.K8sClient.AppsV1().Deployments(namespace).List(context.TODO(), metav1.ListOptions{})
+	list, err := client.K8sClient.AppsV1().Deployments(client.Namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -136,6 +136,8 @@ func (client *Client) CreateDeployment(public *models.DeploymentPublic) (string,
 	}
 
 	public.ID = uuid.New().String()
+	public.CreatedAt = time.Now()
+
 	manifest := CreateDeploymentManifest(public)
 	_, err = client.K8sClient.AppsV1().Deployments(public.Namespace).Create(context.TODO(), manifest, metav1.CreateOptions{})
 	if err != nil {
@@ -190,7 +192,7 @@ func (client *Client) UpdateDeployment(public *models.DeploymentPublic) error {
 	return nil
 }
 
-func (client *Client) DeleteDeployment(namespace, id string) error {
+func (client *Client) DeleteDeployment(id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete deployment %s. details: %w", id, err)
 	}
@@ -199,11 +201,11 @@ func (client *Client) DeleteDeployment(namespace, id string) error {
 		return nil
 	}
 
-	if namespace == "" {
+	if client.Namespace == "" {
 		return nil
 	}
 
-	namespaceCreated, err := client.NamespaceCreated(namespace)
+	namespaceCreated, err := client.NamespaceCreated(client.Namespace)
 	if err != nil {
 		return makeError(err)
 	}
@@ -212,7 +214,7 @@ func (client *Client) DeleteDeployment(namespace, id string) error {
 		return nil
 	}
 
-	list, err := client.K8sClient.AppsV1().Deployments(namespace).List(context.TODO(), metav1.ListOptions{})
+	list, err := client.K8sClient.AppsV1().Deployments(client.Namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
@@ -220,7 +222,7 @@ func (client *Client) DeleteDeployment(namespace, id string) error {
 	for _, item := range list.Items {
 		idLabel := GetLabel(item.ObjectMeta.Labels, keys.ManifestLabelID)
 		if idLabel == id {
-			err = client.K8sClient.AppsV1().Deployments(namespace).Delete(context.TODO(), item.Name, metav1.DeleteOptions{})
+			err = client.K8sClient.AppsV1().Deployments(client.Namespace).Delete(context.TODO(), item.Name, metav1.DeleteOptions{})
 			if err != nil {
 				return makeError(err)
 			}

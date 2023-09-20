@@ -8,9 +8,10 @@ import (
 	"go-deploy/pkg/subsystems/k8s/models"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
+	"time"
 )
 
-func (client *Client) ReadIngress(namespace, id string) (*models.IngressPublic, error) {
+func (client *Client) ReadIngress(id string) (*models.IngressPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to read deployment %s. details: %w", id, err)
 	}
@@ -19,20 +20,20 @@ func (client *Client) ReadIngress(namespace, id string) (*models.IngressPublic, 
 		return nil, nil
 	}
 
-	if namespace == "" {
+	if client.Namespace == "" {
 		return nil, nil
 	}
 
-	namespaceCreated, err := client.NamespaceCreated(namespace)
+	namespaceCreated, err := client.NamespaceCreated(client.Namespace)
 	if err != nil {
 		return nil, makeError(err)
 	}
 
 	if !namespaceCreated {
-		return nil, makeError(fmt.Errorf("no such namespace %s", namespace))
+		return nil, makeError(fmt.Errorf("no such namespace %s", client.Namespace))
 	}
 
-	list, err := client.K8sClient.NetworkingV1().Ingresses(namespace).List(context.TODO(), metav1.ListOptions{})
+	list, err := client.K8sClient.NetworkingV1().Ingresses(client.Namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +50,7 @@ func (client *Client) ReadIngress(namespace, id string) (*models.IngressPublic, 
 
 func (client *Client) CreateIngress(public *models.IngressPublic) (string, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to k8s ingress %s. details: %w", public.Name, err)
+		return fmt.Errorf("failed to create k8s ingress %s. details: %w", public.Name, err)
 	}
 
 	if public.Name == "" {
@@ -84,6 +85,8 @@ func (client *Client) CreateIngress(public *models.IngressPublic) (string, error
 	}
 
 	public.ID = uuid.New().String()
+	public.CreatedAt = time.Now()
+
 	manifest := CreateIngressManifest(public)
 	_, err = client.K8sClient.NetworkingV1().Ingresses(public.Namespace).Create(context.TODO(), manifest, metav1.CreateOptions{})
 	if err != nil {
@@ -137,7 +140,7 @@ func (client *Client) UpdateIngress(public *models.IngressPublic) error {
 	return nil
 }
 
-func (client *Client) DeleteIngress(namespace, id string) error {
+func (client *Client) DeleteIngress(id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete k8s ingress %s. details: %w", id, err)
 	}
@@ -146,11 +149,11 @@ func (client *Client) DeleteIngress(namespace, id string) error {
 		return nil
 	}
 
-	if namespace == "" {
+	if client.Namespace == "" {
 		return nil
 	}
 
-	namespaceCreated, err := client.NamespaceCreated(namespace)
+	namespaceCreated, err := client.NamespaceCreated(client.Namespace)
 	if err != nil {
 		return makeError(err)
 	}
@@ -159,7 +162,7 @@ func (client *Client) DeleteIngress(namespace, id string) error {
 		return nil
 	}
 
-	list, err := client.K8sClient.NetworkingV1().Ingresses(namespace).List(context.TODO(), metav1.ListOptions{})
+	list, err := client.K8sClient.NetworkingV1().Ingresses(client.Namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
@@ -167,7 +170,7 @@ func (client *Client) DeleteIngress(namespace, id string) error {
 	for _, item := range list.Items {
 		idLabel := GetLabel(item.ObjectMeta.Labels, keys.ManifestLabelID)
 		if idLabel == id {
-			err = client.K8sClient.NetworkingV1().Ingresses(namespace).Delete(context.TODO(), item.Name, metav1.DeleteOptions{})
+			err = client.K8sClient.NetworkingV1().Ingresses(client.Namespace).Delete(context.TODO(), item.Name, metav1.DeleteOptions{})
 			if err != nil {
 				return makeError(err)
 			}

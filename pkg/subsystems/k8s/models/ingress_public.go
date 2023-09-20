@@ -56,6 +56,6 @@ func CreateIngressPublicFromRead(ingress *v1.Ingress) *IngressPublic {
 		IngressClass: ingressClassName,
 		Hosts:        hosts,
 		Placeholder:  false,
-		CreatedAt:    ingress.CreationTimestamp.Time,
+		CreatedAt:    formatCreatedAt(ingress.Annotations),
 	}
 }

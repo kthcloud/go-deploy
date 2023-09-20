@@ -14,6 +14,7 @@ type VM struct {
 	RepairedAt time.Time `bson:"repairedAt"`
 	DeletedAt  time.Time `bson:"deletedAt"`
 
+	NetworkID    *string  `bson:"networkId"`
 	GpuID        string   `bson:"gpuId"`
 	SshPublicKey string   `bson:"sshPublicKey"`
 	Ports        []Port   `bson:"ports"`

@@ -23,6 +23,6 @@ func CreateNamespacePublicFromRead(namespace *v1.Namespace) *NamespacePublic {
 		ID:        namespace.Labels[keys.ManifestLabelID],
 		Name:      namespace.Labels[keys.ManifestLabelName],
 		FullName:  subsystemutils.GetPrefixedName(namespace.Labels[keys.ManifestLabelName]),
-		CreatedAt: namespace.CreationTimestamp.Time,
+		CreatedAt: formatCreatedAt(namespace.Annotations),
 	}
 }

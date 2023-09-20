@@ -1,6 +1,7 @@
 package deployment
 
 import (
+	"fmt"
 	"go-deploy/models/dto/body"
 	"log"
 )
@@ -17,6 +18,12 @@ func (deployment *Deployment) ToDTO(storageManagerURL *string) body.DeploymentRe
 	}
 
 	envs := make([]body.Env, len(app.Envs))
+
+	envs = append(envs, body.Env{
+		Name:  "PORT",
+		Value: fmt.Sprintf("%d", app.InternalPort),
+	})
+
 	for i, env := range app.Envs {
 		envs[i] = body.Env{
 			Name:  env.Name,
@@ -58,6 +65,7 @@ func (deployment *Deployment) ToDTO(storageManagerURL *string) body.DeploymentRe
 		Volumes:      volumes,
 		InitCommands: app.InitCommands,
 		Private:      app.Private,
+		InternalPort: app.InternalPort,
 
 		Status:     deployment.StatusMessage,
 		PingResult: pingResult,
@@ -77,12 +85,16 @@ func (g *GitHubRepository) ToDTO() body.GitHubRepository {
 
 func (p *UpdateParams) FromDTO(dto *body.DeploymentUpdate) {
 	if dto.Envs != nil {
-		envs := make([]Env, len(*dto.Envs))
-		for i, env := range *dto.Envs {
-			envs[i] = Env{
+		envs := make([]Env, 0)
+		for _, env := range *dto.Envs {
+			if env.Name == "PORT" {
+				continue
+			}
+
+			envs = append(envs, Env{
 				Name:  env.Name,
 				Value: env.Value,
-			}
+			})
 		}
 		p.Envs = &envs
 	}
@@ -113,12 +125,16 @@ func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZone *string,
 		p.InternalPort = *dto.InternalPort
 	}
 	p.Private = dto.Private
-	p.Envs = make([]Env, len(dto.Envs))
-	for i, env := range dto.Envs {
-		p.Envs[i] = Env{
+	p.Envs = make([]Env, 0)
+	for _, env := range dto.Envs {
+		if env.Name == "PORT" {
+			continue
+		}
+
+		p.Envs = append(p.Envs, Env{
 			Name:  env.Name,
 			Value: env.Value,
-		}
+		})
 	}
 	p.Volumes = make([]Volume, len(dto.Volumes))
 	for i, volume := range dto.Volumes {

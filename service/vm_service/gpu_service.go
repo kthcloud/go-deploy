@@ -5,7 +5,7 @@ import (
 	vmModel "go-deploy/models/sys/vm"
 	gpuModel "go-deploy/models/sys/vm/gpu"
 	"go-deploy/pkg/conf"
-	"go-deploy/service/vm_service/internal_service"
+	"go-deploy/service/vm_service/cs_service"
 	"go-deploy/utils"
 	"log"
 	"sort"
@@ -154,7 +154,7 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 		if gpu.Lease.VmID != vmID && gpu.IsAttached() {
 			// if it is attached but expired, take over the card by first detaching it
 			if gpu.Lease.IsExpired() {
-				err = internal_service.DetachGPU(gpu.Lease.VmID, internal_service.CsDetachGpuAfterStateRestore)
+				err = cs_service.DetachGPU(gpu.Lease.VmID, cs_service.CsDetachGpuAfterStateRestore)
 				if err != nil {
 					return makeError(err)
 				}
@@ -183,7 +183,7 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 			continue
 		}
 
-		err = internal_service.AttachGPU(gpuID, vmID)
+		err = cs_service.AttachGPU(gpuID, vmID)
 		if err == nil {
 			break
 		}
@@ -197,7 +197,7 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 			// if the host has insufficient capacity, we need to detach the gpu from the vm
 			// and attempt to attach it to another gpu
 
-			err = internal_service.DetachGPU(vmID, internal_service.CsDetachGpuAfterStateRestore)
+			err = cs_service.DetachGPU(vmID, cs_service.CsDetachGpuAfterStateRestore)
 			if err != nil {
 				return makeError(err)
 			}
@@ -209,7 +209,7 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 		} else if gpuAlreadyAttached {
 			// if the gpu is already attached, we need to detach it from the vm
 
-			err = internal_service.DetachGPU(vmID, internal_service.CsDetachGpuAfterStateRestore)
+			err = cs_service.DetachGPU(vmID, cs_service.CsDetachGpuAfterStateRestore)
 			if err != nil {
 				return makeError(err)
 			}
@@ -304,7 +304,7 @@ func RepairGPUs() error {
 	// find vms that have a gpu assigned, but cs is not setup to use it
 	for _, vm := range vmsWithGPU {
 		if !hasExtraConfig(&vm) {
-			err := internal_service.AttachGPU(vm.GpuID, vm.ID)
+			err := cs_service.AttachGPU(vm.GpuID, vm.ID)
 			if err != nil {
 				return makeError(err)
 			}
@@ -338,7 +338,7 @@ func DetachGpuSync(vmID, userID string) error {
 		return fmt.Errorf("failed to detach gpu from vm %s. details: %w", vmID, err)
 	}
 
-	err := internal_service.DetachGPU(vmID, internal_service.CsDetachGpuAfterStateRestore)
+	err := cs_service.DetachGPU(vmID, cs_service.CsDetachGpuAfterStateRestore)
 	if err != nil {
 		return makeError(err)
 	}
@@ -365,7 +365,7 @@ func CanStartOnHost(vmID, host string) (bool, string, error) {
 		return false, "VM not fully created", nil
 	}
 
-	canStart, reason, err := internal_service.CanStartCS(vm.Subsystems.CS.VM.ID, host, vm.Zone)
+	canStart, reason, err := cs_service.CanStartCS(vm.Subsystems.CS.VM.ID, host, vm.Zone)
 	if err != nil {
 		return false, "", err
 	}
@@ -378,7 +378,7 @@ func CanStartOnHost(vmID, host string) (bool, string, error) {
 }
 
 func IsGpuHardwareAvailable(gpu *gpuModel.GPU) (bool, error) {
-	cloudstackAttached, err := internal_service.IsGpuAttachedCS(gpu)
+	cloudstackAttached, err := cs_service.IsGpuAttachedCS(gpu)
 	if err != nil {
 		return false, err
 	}
@@ -388,7 +388,7 @@ func IsGpuHardwareAvailable(gpu *gpuModel.GPU) (bool, error) {
 		return false, fmt.Errorf("zone %s not found", gpu.Zone)
 	}
 
-	correctState, _, err := internal_service.HostInCorrectState(gpu.Host, zone)
+	correctState, _, err := cs_service.HostInCorrectState(gpu.Host, zone)
 	if err != nil {
 		return false, err
 	}

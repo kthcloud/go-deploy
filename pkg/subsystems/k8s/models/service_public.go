@@ -31,6 +31,6 @@ func CreateServicePublicFromRead(service *v1.Service) *ServicePublic {
 		Namespace:  service.Namespace,
 		Port:       int(service.Spec.Ports[0].Port),
 		TargetPort: service.Spec.Ports[0].TargetPort.IntValue(),
-		CreatedAt:  service.CreationTimestamp.Time,
+		CreatedAt:  formatCreatedAt(service.Annotations),
 	}
 }

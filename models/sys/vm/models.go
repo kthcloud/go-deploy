@@ -1,7 +1,7 @@
 package vm
 
 import (
-	csModels "go-deploy/pkg/subsystems/cs/models"
+	"go-deploy/models/sys/vm/subsystems"
 	"time"
 )
 
@@ -23,14 +23,7 @@ type Port struct {
 }
 
 type Subsystems struct {
-	CS CS `bson:"cs"`
-}
-
-type CS struct {
-	ServiceOffering       csModels.ServiceOfferingPublic               `bson:"serviceOffering"`
-	VM                    csModels.VmPublic                            `bson:"vm"`
-	PortForwardingRuleMap map[string]csModels.PortForwardingRulePublic `bson:"portForwardingRuleMap"`
-	SnapshotMap           map[string]csModels.SnapshotPublic           `bson:"snapshotMap"`
+	CS subsystems.CS `bson:"cs"`
 }
 
 type Usage struct {
@@ -41,13 +34,17 @@ type Usage struct {
 }
 
 type CreateParams struct {
-	Name         string `json:"name"`
+	Name string `json:"name"`
+	Zone string `json:"zone"`
+
+	NetworkID *string `json:"networkId"`
+
 	SshPublicKey string `json:"sshPublicKey"`
 	Ports        []Port `json:"ports"`
-	CpuCores     int    `json:"cpuCores"`
-	RAM          int    `json:"ram"`
-	DiskSize     int    `json:"diskSize"`
-	Zone         string `json:"zone"`
+
+	CpuCores int `json:"cpuCores"`
+	RAM      int `json:"ram"`
+	DiskSize int `json:"diskSize"`
 }
 
 type UpdateParams struct {

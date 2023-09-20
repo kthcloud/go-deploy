@@ -1,6 +1,28 @@
 package models
 
-import v1 "k8s.io/api/core/v1"
+import (
+	"go-deploy/pkg/subsystems/k8s/keys"
+	v1 "k8s.io/api/core/v1"
+	"time"
+)
+
+func formatCreatedAt(annotations map[string]string) time.Time {
+	created, ok := annotations[keys.ManifestCreationTimestamp]
+	if !ok {
+		return time.Now()
+	}
+
+	createdAt, err := time.Parse("2006-01-02 15:04:05.000 -0700", created)
+	if err != nil {
+		return time.Now()
+	}
+
+	return createdAt
+}
+
+type K8sResource interface {
+	Created() bool
+}
 
 type EnvVar struct {
 	Name  string `bson:"name"`

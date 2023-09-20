@@ -65,7 +65,7 @@ func (client *Client) CreateVM(public *models.VmPublic, userSshPublicKey, adminS
 
 		createVmParams.SetName(public.Name)
 		createVmParams.SetDisplayname(public.Name)
-		createVmParams.SetNetworkids([]string{client.NetworkID})
+		createVmParams.SetNetworkids([]string{client.RootNetworkID})
 		createVmParams.SetProjectid(client.ProjectID)
 		createVmParams.SetExtraconfig(public.ExtraConfig)
 

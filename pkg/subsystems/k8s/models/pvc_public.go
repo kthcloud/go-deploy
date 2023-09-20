@@ -32,6 +32,6 @@ func CreatePvcPublicFromRead(pvc *v1.PersistentVolumeClaim) *PvcPublic {
 		Namespace: pvc.Namespace,
 		Capacity:  capacity,
 		PvName:    pvc.Spec.VolumeName,
-		CreatedAt: pvc.CreationTimestamp.Time,
+		CreatedAt: formatCreatedAt(pvc.Annotations),
 	}
 }

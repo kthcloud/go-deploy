@@ -72,6 +72,7 @@ type DeploymentRead struct {
 	Volumes      []Volume `json:"volumes"`
 	InitCommands []string `json:"initCommands"`
 	Private      bool     `json:"private"`
+	InternalPort int      `json:"internalPort"`
 
 	Status     string `json:"status"`
 	PingResult *int   `json:"pingResult,omitempty"`

@@ -123,6 +123,6 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 		InitCommands:   initCommands,
 		InitContainers: initContainers,
 		Volumes:        volumes,
-		CreatedAt:      deployment.CreationTimestamp.Time,
+		CreatedAt:      formatCreatedAt(deployment.Annotations),
 	}
 }

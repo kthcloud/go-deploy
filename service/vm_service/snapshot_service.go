@@ -4,7 +4,7 @@ import (
 	"fmt"
 	roleModel "go-deploy/models/sys/enviroment/role"
 	vmModel "go-deploy/models/sys/vm"
-	"go-deploy/service/vm_service/internal_service"
+	"go-deploy/service/vm_service/cs_service"
 	"go-deploy/utils"
 	"log"
 	"sort"
@@ -101,7 +101,7 @@ func CreateSnapshot(vmID, name string, userCreated bool) error {
 		}
 	}()
 
-	err = internal_service.CreateSnapshotCS(vm.ID, name, userCreated)
+	err = cs_service.CreateSnapshotCS(vm.ID, name, userCreated)
 	if err != nil {
 		return makeError(err)
 	}
@@ -128,7 +128,7 @@ func ApplySnapshot(id, snapshotID string) error {
 		_ = vmModel.New().RemoveActivity(id, vmModel.ActivityApplyingSnapshot)
 	}()
 
-	err = internal_service.ApplySnapshotCS(id, snapshotID)
+	err = cs_service.ApplySnapshotCS(id, snapshotID)
 	if err != nil {
 		return makeError(err)
 	}
