@@ -39,6 +39,7 @@ type Usage struct {
 type UpdateParams struct {
 	Private      *bool     `json:"private" bson:"private"`
 	Envs         *[]Env    `json:"envs" bson:"envs"`
+	InternalPort *int      `json:"internalPort" bson:"internalPort"`
 	Volumes      *[]Volume `json:"volumes" bson:"volumes"`
 	InitCommands *[]string `json:"initCommands" bson:"initCommands"`
 	ExtraDomains *[]string `json:"extraDomains" bson:"extraDomains"`
