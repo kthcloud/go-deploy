@@ -78,11 +78,11 @@ func (client *Client) Create(vmID, owner, manager string, params *CreateParams) 
 }
 
 func (client *Client) GetByOwnerID(ownerID string) ([]VM, error) {
-	return models.GetManyResources[VM](client.Collection, bson.D{{"ownerId", ownerID}}, false)
+	return models.GetManyResources[VM](client.Collection, bson.D{{"ownerId", ownerID}}, false, nil, nil)
 }
 
 func (client *Client) CountByOwnerID(ownerID string) (int, error) {
-	count, err := models.CountResources(client.Collection, bson.D{{"ownerId", ownerID}}, false)
+	count, err := models.CountResources(client.Collection, bson.D{{"ownerId", ownerID}}, false, nil)
 	if err != nil {
 		return 0, err
 	}
@@ -145,7 +145,7 @@ func (client *Client) GetWithGPU() ([]VM, error) {
 		},
 	}}
 
-	return models.GetManyResources[VM](client.Collection, filter, false)
+	return models.GetManyResources[VM](client.Collection, filter, false, nil, nil)
 }
 
 func (client *Client) MarkRepaired(vmID string) error {

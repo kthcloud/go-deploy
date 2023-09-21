@@ -55,21 +55,23 @@ func Update(userID string, dtoUserUpdate *body.UserUpdate, auth *service.AuthInf
 		return nil
 	}
 
-	if dtoUserUpdate.PublicKeys == nil {
-		dtoUserUpdate.PublicKeys = &[]body.PublicKey{}
-	}
-
-	publicKeys := make([]userModel.PublicKey, len(*dtoUserUpdate.PublicKeys))
-	for i, key := range *dtoUserUpdate.PublicKeys {
-		publicKeys[i] = userModel.PublicKey{
-			Name: key.Name,
-			Key:  key.Key,
+	var publicKeys *[]userModel.PublicKey
+	if dtoUserUpdate.PublicKeys != nil {
+		k := make([]userModel.PublicKey, len(*dtoUserUpdate.PublicKeys))
+		for i, key := range *dtoUserUpdate.PublicKeys {
+			k[i] = userModel.PublicKey{
+				Name: key.Name,
+				Key:  key.Key,
+			}
 		}
+
+		publicKeys = &k
 	}
 
 	userUpdate := &userModel.UserUpdate{
 		Username:   dtoUserUpdate.Username,
-		PublicKeys: &publicKeys,
+		PublicKeys: publicKeys,
+		Onboarded:  dtoUserUpdate.Onboarded,
 	}
 
 	err := userModel.New().Update(userID, userUpdate)

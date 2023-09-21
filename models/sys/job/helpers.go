@@ -74,6 +74,19 @@ func (client *Client) Exists(jobType string, args map[string]interface{}) (bool,
 	return count > 0, nil
 }
 
+func (client *Client) GetMany(jobType, status *string) ([]Job, error) {
+	filter := bson.D{}
+	if jobType != nil {
+		filter = append(filter, bson.E{Key: "type", Value: jobType})
+	}
+
+	if status != nil {
+		filter = append(filter, bson.E{Key: "status", Value: status})
+	}
+
+	return client.GetAllWithFilter(filter)
+}
+
 func (client *Client) GetNext() (*Job, error) {
 	now := time.Now()
 	filter := bson.D{

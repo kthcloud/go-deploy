@@ -29,11 +29,11 @@ var MsgFlags = map[int]string{
 	ResourceBuilding:   "resourceBuilding",
 	ResourceError:      "resourceError",
 
-	JobPending:    "jobPending",
-	JobRunning:    "jobRunning",
-	JobFailed:     "jobFailed",
-	JobFinished:   "jobFinished",
-	JobTerminated: "jobTerminated",
+	JobPending:    "pending",
+	JobRunning:    "running",
+	JobFailed:     "failed",
+	JobFinished:   "finished",
+	JobTerminated: "terminated",
 
 	ResourceValidationFailed: "resourceValidationFailed",
 }

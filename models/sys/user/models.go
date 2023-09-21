@@ -25,9 +25,11 @@ type User struct {
 	IsAdmin       bool          `json:"isAdmin" bson:"isAdmin"`
 	EffectiveRole EffectiveRole `json:"effectiveRole" bson:"effectiveRole"`
 	PublicKeys    []PublicKey   `json:"publicKeys" bson:"publicKeys"`
+	Onboarded     bool          `json:"onboarded" bson:"onboarded"`
 }
 
 type UserUpdate struct {
 	Username   *string      `json:"username" bson:"username"`
 	PublicKeys *[]PublicKey `json:"publicKeys" bson:"publicKeys"`
+	Onboarded  *bool        `json:"onboarded" bson:"onboarded"`
 }

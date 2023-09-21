@@ -74,12 +74,12 @@ func (client *Client) CreateSnapshot(public *models.SnapshotPublic) (string, err
 	createResponse, err := client.CsClient.Snapshot.CreateVMSnapshot(params)
 	if err != nil {
 		if strings.Contains(err.Error(), "There is other active vm snapshot tasks on the instance") {
-			log.Println(fmt.Errorf("other snapshots are being created. must wait for them to finish first"))
+			log.Println("other snapshots are being created. must wait for them to finish first")
 			return "", nil
 		}
 
 		if strings.Contains(err.Error(), "Domain not found") {
-			log.Println(fmt.Errorf("cs vm not found. assuming it was deleted"))
+			log.Println("cs vm not found. assuming it was deleted")
 			return "", nil
 		}
 

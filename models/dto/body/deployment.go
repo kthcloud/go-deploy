@@ -34,10 +34,10 @@ type DeploymentCreate struct {
 
 type DeploymentUpdate struct {
 	Private      *bool     `json:"private" binding:"omitempty,boolean"`
-	Envs         *[]Env    `json:"envs" binding:"omitempty,env_list,dive,min=0,max=1000"`
-	Volumes      *[]Volume `json:"volumes" binding:"omitempty,dive,min=0,max=100"`
-	InitCommands *[]string `json:"initCommands" binding:"omitempty,dive,min=0,max=100"`
-	ExtraDomains *[]string `json:"extraDomains" binding:"omitempty,extra_domain_list,dive,min=0,max=1000"`
+	Envs         *[]Env    `json:"envs" binding:"omitempty,env_list,min=0,max=1000,dive"`
+	Volumes      *[]Volume `json:"volumes" binding:"omitempty,min=0,max=100,dive"`
+	InitCommands *[]string `json:"initCommands" binding:"omitempty,min=0,max=100,dive"`
+	ExtraDomains *[]string `json:"extraDomains" binding:"omitempty,extra_domain_list,min=0,max=1000,dive"`
 }
 
 type DeploymentBuild struct {

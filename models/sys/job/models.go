@@ -28,6 +28,9 @@ const (
 	StatusCompleted  = "completed"
 	StatusFailed     = "failed"
 	StatusTerminated = "terminated"
+
+	// StatusFinished deprecated
+	StatusFinished = "finished"
 )
 
 type Job struct {
