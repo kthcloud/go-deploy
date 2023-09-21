@@ -14,7 +14,7 @@ func (client ActivityResourceClient[T]) GetByActivity(activity string) ([]T, err
 		},
 	}}
 
-	return models.GetManyResources[T](client.Collection, filter, false)
+	return models.GetManyResources[T](client.Collection, filter, false, client.Pagination, client.ExtraFilter)
 }
 
 func (client ActivityResourceClient[T]) GetWithNoActivities() ([]T, error) {
@@ -24,7 +24,7 @@ func (client ActivityResourceClient[T]) GetWithNoActivities() ([]T, error) {
 		},
 	}}
 
-	return models.GetManyResources[T](client.Collection, filter, false)
+	return models.GetManyResources[T](client.Collection, filter, false, client.Pagination, client.ExtraFilter)
 }
 
 func (client ActivityResourceClient[T]) AddActivity(id, activity string) error {
@@ -70,7 +70,7 @@ func (client ActivityResourceClient[T]) DoingActivity(id, activity string) (bool
 		{"activities", activity},
 	}
 
-	count, err := models.CountResources(client.Collection, filter, false)
+	count, err := models.CountResources(client.Collection, filter, false, client.ExtraFilter)
 	if err != nil {
 		return false, err
 	}

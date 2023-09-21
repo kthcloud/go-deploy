@@ -84,11 +84,11 @@ func (client *Client) Create(deploymentID, ownerID string, params *CreateParams)
 }
 
 func (client *Client) GetAllByGitHubWebhookID(id int64) ([]Deployment, error) {
-	return models.GetManyResources[Deployment](client.Collection, bson.D{{"subsystems.github.webhookId", id}}, false)
+	return models.GetManyResources[Deployment](client.Collection, bson.D{{"subsystems.github.webhookId", id}}, false, nil, nil)
 }
 
 func (client *Client) GetByOwnerID(ownerID string) ([]Deployment, error) {
-	return models.GetManyResources[Deployment](client.Collection, bson.D{{"ownerId", ownerID}}, false)
+	return models.GetManyResources[Deployment](client.Collection, bson.D{{"ownerId", ownerID}}, false, nil, nil)
 }
 
 func (client *Client) DeleteByID(deploymentID string) error {
@@ -107,7 +107,7 @@ func (client *Client) DeleteByID(deploymentID string) error {
 }
 
 func (client *Client) CountByOwnerID(ownerID string) (int, error) {
-	return models.CountResources(client.Collection, bson.D{{"ownerId", ownerID}}, false)
+	return models.CountResources(client.Collection, bson.D{{"ownerId", ownerID}}, false, nil)
 }
 
 func (client *Client) UpdateWithParamsByID(id string, params *UpdateParams) error {

@@ -9,19 +9,19 @@ import (
 )
 
 func (client *ResourceClient[T]) GetByID(id string) (*T, error) {
-	return models.GetResource[T](client.Collection, bson.D{{"id", id}}, client.IncludeDeleted)
+	return models.GetResource[T](client.Collection, bson.D{{"id", id}}, client.IncludeDeleted, client.ExtraFilter)
 }
 
 func (client *ResourceClient[T]) GetByName(name string) (*T, error) {
-	return models.GetResource[T](client.Collection, bson.D{{"name", name}}, client.IncludeDeleted)
+	return models.GetResource[T](client.Collection, bson.D{{"name", name}}, client.IncludeDeleted, client.ExtraFilter)
 }
 
 func (client *ResourceClient[T]) GetAll() ([]T, error) {
-	return models.GetManyResources[T](client.Collection, bson.D{}, client.IncludeDeleted)
+	return models.GetManyResources[T](client.Collection, bson.D{}, client.IncludeDeleted, client.Pagination, client.ExtraFilter)
 }
 
 func (client *ResourceClient[T]) ExistsByID(id string) (bool, error) {
-	count, err := models.CountResources(client.Collection, bson.D{{"id", id}}, false)
+	count, err := models.CountResources(client.Collection, bson.D{{"id", id}}, false, client.ExtraFilter)
 	if err != nil {
 		return false, err
 	}
@@ -29,11 +29,11 @@ func (client *ResourceClient[T]) ExistsByID(id string) (bool, error) {
 	return count > 0, nil
 }
 func (client *ResourceClient[T]) UpdateWithBsonByID(id string, update bson.D) error {
-	return models.UpdateOneResource(client.Collection, bson.D{{"id", id}}, bson.D{{"$set", update}}, client.IncludeDeleted)
+	return models.UpdateOneResource(client.Collection, bson.D{{"id", id}}, bson.D{{"$set", update}}, client.IncludeDeleted, client.ExtraFilter)
 }
 
 func (client *ResourceClient[T]) UpdateWithBsonByName(name string, update bson.D) error {
-	return models.UpdateOneResource(client.Collection, bson.D{{"name", name}}, bson.D{{"$set", update}}, client.IncludeDeleted)
+	return models.UpdateOneResource(client.Collection, bson.D{{"name", name}}, bson.D{{"$set", update}}, client.IncludeDeleted, client.ExtraFilter)
 }
 
 func (client *ResourceClient[T]) DeleteByID(id string) error {
@@ -51,10 +51,11 @@ func (client *ResourceClient[T]) DeleteByID(id string) error {
 }
 
 func (client *ResourceClient[T]) Deleted(id string) (bool, error) {
-	count, err := models.CountResources(client.Collection, bson.D{
+	filter := bson.D{
 		{"id", id},
 		{"deletedAt", bson.M{"$nin": []interface{}{nil, time.Time{}}}},
-	}, true)
+	}
+	count, err := models.CountResources(client.Collection, filter, true, client.ExtraFilter)
 	if err != nil {
 		return false, err
 	}
@@ -63,5 +64,5 @@ func (client *ResourceClient[T]) Deleted(id string) (bool, error) {
 }
 
 func (client *ResourceClient[T]) GetAllWithFilter(filter bson.D) ([]T, error) {
-	return models.GetManyResources[T](client.Collection, filter, client.IncludeDeleted)
+	return models.GetManyResources[T](client.Collection, filter, client.IncludeDeleted, client.Pagination, client.ExtraFilter)
 }
