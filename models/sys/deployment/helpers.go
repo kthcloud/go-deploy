@@ -84,11 +84,15 @@ func (client *Client) Create(deploymentID, ownerID string, params *CreateParams)
 }
 
 func (client *Client) GetAllByGitHubWebhookID(id int64) ([]Deployment, error) {
-	return models.GetManyResources[Deployment](client.Collection, bson.D{{"subsystems.github.webhookId", id}}, false, nil, nil)
+	return client.GetAllWithFilter(bson.D{{"subsystems.github.webhookId", id}})
 }
 
-func (client *Client) GetByOwnerID(ownerID string) ([]Deployment, error) {
-	return models.GetManyResources[Deployment](client.Collection, bson.D{{"ownerId", ownerID}}, false, nil, nil)
+func (client *Client) GetMany() ([]Deployment, error) {
+	filter := bson.D{}
+
+	// this doesn't do anything now, but is kept in case there will be filtering later
+
+	return client.GetAllWithFilter(filter)
 }
 
 func (client *Client) DeleteByID(deploymentID string) error {

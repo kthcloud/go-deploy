@@ -66,3 +66,7 @@ func (client *ResourceClient[T]) Deleted(id string) (bool, error) {
 func (client *ResourceClient[T]) GetAllWithFilter(filter bson.D) ([]T, error) {
 	return models.GetManyResources[T](client.Collection, filter, client.IncludeDeleted, client.Pagination, client.ExtraFilter)
 }
+
+func (client *ResourceClient[T]) CountWithFilter(filter bson.D) (int, error) {
+	return models.CountResources(client.Collection, filter, client.IncludeDeleted, client.ExtraFilter)
+}

@@ -3,6 +3,7 @@ package vm_service
 import (
 	"fmt"
 	"go-deploy/models/dto/body"
+	"go-deploy/models/dto/query"
 	roleModel "go-deploy/models/sys/enviroment/role"
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/models/sys/vm/gpu"
@@ -69,33 +70,23 @@ func GetByName(name string) (*vmModel.VM, error) {
 	return vmModel.New().GetByName(name)
 }
 
-func GetByOwnerIdAuth(ownerID string, auth *service.AuthInfo) ([]vmModel.VM, error) {
-	if ownerID != auth.UserID && !auth.IsAdmin {
-		return nil, nil
+func GetManyAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagination *query.Pagination) ([]vmModel.VM, error) {
+	client := vmModel.New()
+
+	if pagination != nil {
+		client.AddPagination(pagination.Page, pagination.PageSize)
 	}
 
-	return vmModel.New().GetByOwnerID(ownerID)
-}
-
-func GetAllAuth(auth *service.AuthInfo) ([]vmModel.VM, error) {
-	if auth.IsAdmin {
-		return vmModel.New().GetAll()
+	if userID != nil {
+		if *userID != auth.UserID && !auth.IsAdmin {
+			return nil, nil
+		}
+		client.RestrictToUser(userID)
+	} else if !allUsers || (allUsers && !auth.IsAdmin) {
+		client.RestrictToUser(&auth.UserID)
 	}
 
-	self, err := vmModel.New().GetByOwnerID(auth.UserID)
-	if err != nil {
-		return nil, err
-	}
-
-	if self == nil {
-		return nil, nil
-	}
-
-	return self, nil
-}
-
-func GetAll() ([]vmModel.VM, error) {
-	return vmModel.New().GetAll()
+	return client.GetMany()
 }
 
 func Delete(name string) error {
@@ -446,7 +437,7 @@ func GetUsageByUserID(id string) (*vmModel.Usage, error) {
 
 	usage := &vmModel.Usage{}
 
-	currentVms, err := vmModel.New().GetByOwnerID(id)
+	currentVms, err := vmModel.New().RestrictToUser(&id).GetAll()
 	if err != nil {
 		return nil, makeError(err)
 	}

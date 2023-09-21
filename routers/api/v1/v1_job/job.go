@@ -55,7 +55,7 @@ func Get(c *gin.Context) {
 func GetList(c *gin.Context) {
 	context := sys.NewContext(c)
 
-	var requestQuery query.JobGetMany
+	var requestQuery query.JobList
 	if err := context.GinContext.BindQuery(&requestQuery); err != nil {
 		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
