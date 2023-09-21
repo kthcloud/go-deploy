@@ -50,16 +50,5 @@ func withClient(zone *enviroment.DeploymentZone, namespace string) (*k8s.Client,
 		return nil, fmt.Errorf("failed to create k8s client. details: %w", err)
 	}
 
-	if namespace != "" {
-		namespaceCreated, err := client.NamespaceCreated(namespace)
-		if err != nil {
-			return nil, fmt.Errorf("failed to check if namespace %s is created. details: %w", namespace, err)
-		}
-
-		if !namespaceCreated {
-			return nil, fmt.Errorf("no such namespace %s", namespace)
-		}
-	}
-
 	return client, nil
 }
