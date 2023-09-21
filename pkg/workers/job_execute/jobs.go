@@ -23,7 +23,7 @@ func makeFailedError(err error) error {
 }
 
 func deploymentDeleted(deploymentID string) (bool, error) {
-	deleted, err := deploymentModel.NewWithDeleted().Deleted(deploymentID)
+	deleted, err := deploymentModel.New().IncludeDeletedResources().Deleted(deploymentID)
 	if err != nil {
 		return false, err
 	}
@@ -45,7 +45,7 @@ func deploymentDeleted(deploymentID string) (bool, error) {
 }
 
 func vmDeleted(vmID string) (bool, error) {
-	deleted, err := vmModel.NewWithDeleted().Deleted(vmID)
+	deleted, err := vmModel.New().IncludeDeletedResources().Deleted(vmID)
 	if err != nil {
 		return false, err
 	}

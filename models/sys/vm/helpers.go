@@ -77,17 +77,15 @@ func (client *Client) Create(vmID, owner, manager string, params *CreateParams) 
 	return true, nil
 }
 
-func (client *Client) GetByOwnerID(ownerID string) ([]VM, error) {
-	return models.GetManyResources[VM](client.Collection, bson.D{{"ownerId", ownerID}}, false, nil, nil)
+func (client *Client) GetMany() ([]VM, error) {
+	filter := bson.D{}
+
+	// this doesn't do anything now, but is kept in case there will be filtering later
+
+	return client.GetAllWithFilter(filter)
 }
-
 func (client *Client) CountByOwnerID(ownerID string) (int, error) {
-	count, err := models.CountResources(client.Collection, bson.D{{"ownerId", ownerID}}, false, nil)
-	if err != nil {
-		return 0, err
-	}
-
-	return count, nil
+	return client.CountWithFilter(bson.D{{"ownerId", ownerID}})
 }
 
 func (client *Client) DeleteByID(id string) error {

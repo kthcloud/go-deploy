@@ -31,20 +31,6 @@ func New() *Client {
 	}
 }
 
-func NewWithDeleted() *Client {
-	return &Client{
-		Collection: models.DeploymentCollection,
-
-		ActivityResourceClient: activityResource.ActivityResourceClient[Deployment]{
-			Collection: models.DeploymentCollection,
-		},
-		ResourceClient: resource.ResourceClient[Deployment]{
-			Collection:     models.DeploymentCollection,
-			IncludeDeleted: true,
-		},
-	}
-}
-
 func (client *Client) AddPagination(page, pageSize int) *Client {
 	client.ResourceClient.Pagination = &base.Pagination{
 		Page:     page,

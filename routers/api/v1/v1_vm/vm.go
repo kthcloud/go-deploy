@@ -23,40 +23,6 @@ import (
 	"net/http"
 )
 
-func getAllVMs(context *sys.ClientContext, auth *service.AuthInfo) {
-	vms, err := vm_service.GetAllAuth(auth)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
-		return
-	}
-
-	dtoVMs := make([]body.VmRead, len(vms))
-	for i, vm := range vms {
-		connectionString, _ := vm_service.GetConnectionString(&vm)
-
-		var gpuRead *body.GpuRead
-		if vm.HasGPU() {
-			gpu, err := vm_service.GetGpuByID(vm.GpuID, true)
-			if err != nil {
-				log.Printf("error getting gpu by id: %s", err)
-			} else if gpu != nil {
-				gpuDTO := gpu.ToDTO(true)
-				gpuRead = &gpuDTO
-			}
-		}
-
-		mapper, err := vm_service.GetExternalPortMapper(vm.ID)
-		if err != nil {
-			log.Printf("error getting external port mapper: %s", err)
-			continue
-		}
-
-		dtoVMs[i] = vm.ToDTO(vm.StatusMessage, connectionString, gpuRead, mapper)
-	}
-
-	context.JSONResponse(http.StatusOK, dtoVMs)
-}
-
 // GetList
 // @Summary Get list of VMs
 // @Description Get list of VMs
@@ -82,12 +48,12 @@ func GetList(c *gin.Context) {
 		return
 	}
 
-	if requestQuery.WantAll && auth.IsAdmin {
-		getAllVMs(&context, auth)
+	vms, err := vm_service.GetManyAuth(requestQuery.All, requestQuery.UserID, auth, &requestQuery.Pagination)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get VMs: %s", err))
 		return
 	}
 
-	vms, _ := vm_service.GetByOwnerIdAuth(auth.UserID, auth)
 	if vms == nil {
 		context.JSONResponse(200, []interface{}{})
 		return

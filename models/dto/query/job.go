@@ -1,8 +1,8 @@
 package query
 
-type JobGetMany struct {
+type JobList struct {
 	Pagination
-	
+
 	All    bool    `form:"all" binding:"omitempty,boolean"`
 	Status *string `form:"status" binding:"omitempty,oneof=pending running failed terminated finished"`
 	Type   *string `form:"type" binding:"omitempty,ascii"`
