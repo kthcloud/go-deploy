@@ -43,22 +43,6 @@ func getStorageManagerURL(auth *service.AuthInfo) *string {
 	return nil
 }
 
-func getAll(context *sys.ClientContext, auth *service.AuthInfo) {
-	deployments, _ := deployment_service.GetAllAuth(auth)
-
-	dtoDeployments := make([]body.DeploymentRead, len(deployments))
-	for i, deployment := range deployments {
-		var storageManagerURL *string
-		if mainApp := deployment.GetMainApp(); mainApp != nil && len(mainApp.Volumes) > 0 {
-			storageManagerURL = getStorageManagerURL(auth)
-		}
-
-		dtoDeployments[i] = deployment.ToDTO(storageManagerURL)
-	}
-
-	context.JSONResponse(http.StatusOK, dtoDeployments)
-}
-
 // GetList
 // @Summary Get list of deployments
 // @Description Get list of deployments
@@ -87,12 +71,12 @@ func GetList(c *gin.Context) {
 		return
 	}
 
-	if requestQuery.WantAll {
-		getAll(&context, auth)
+	deployments, err := deployment_service.GetManyAuth(requestQuery.All, requestQuery.UserID, auth, &requestQuery.Pagination)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get deployments: %s", err.Error()))
 		return
 	}
 
-	deployments, _ := deployment_service.GetByOwnerIdAuth(auth.UserID, auth)
 	if deployments == nil {
 		context.JSONResponse(200, []interface{}{})
 		return

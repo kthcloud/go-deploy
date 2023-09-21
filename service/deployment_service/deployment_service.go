@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"go-deploy/models/dto/body"
+	"go-deploy/models/dto/query"
 	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/models/sys/deployment/storage_manager"
 	jobModel "go-deploy/models/sys/job"
@@ -156,29 +157,23 @@ func GetByIdAuth(deploymentID string, auth *service.AuthInfo) (*deploymentModel.
 	return deployment, nil
 }
 
-func GetByOwnerIdAuth(ownerID string, auth *service.AuthInfo) ([]deploymentModel.Deployment, error) {
-	if ownerID != auth.UserID && !auth.IsAdmin {
-		return nil, nil
+func GetManyAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagination *query.Pagination) ([]deploymentModel.Deployment, error) {
+	client := deploymentModel.New()
+
+	if pagination != nil {
+		client.AddPagination(pagination.Page, pagination.PageSize)
 	}
 
-	return deploymentModel.New().GetByOwnerID(ownerID)
-}
-
-func GetAllAuth(auth *service.AuthInfo) ([]deploymentModel.Deployment, error) {
-	if auth.IsAdmin {
-		return deploymentModel.New().GetAll()
+	if userID != nil {
+		if *userID != auth.UserID && !auth.IsAdmin {
+			return nil, nil
+		}
+		client.RestrictToUser(userID)
+	} else if !allUsers || (allUsers && !auth.IsAdmin) {
+		client.RestrictToUser(&auth.UserID)
 	}
 
-	self, err := deploymentModel.New().GetByOwnerID(auth.UserID)
-	if err != nil {
-		return nil, err
-	}
-
-	if self == nil {
-		return nil, nil
-	}
-
-	return self, nil
+	return client.GetMany()
 }
 
 func GetAll() ([]deploymentModel.Deployment, error) {
