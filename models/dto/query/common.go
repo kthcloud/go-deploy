@@ -1,6 +1,6 @@
 package query
 
 type Pagination struct {
-	Page     int `form:"page" binding:"omitempty,gte=1"`
-	PageSize int `form:"pageSize" binding:"omitempty,gte=1,lte=1000"`
+	Page     int `form:"page" binding:"omitempty,min=0"`
+	PageSize int `form:"pageSize" binding:"omitempty,min=0,max=10000"`
 }

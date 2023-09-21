@@ -46,6 +46,7 @@ func (u *User) ToDTO(effectiveRole *roleModel.Role, usage *Usage, storageURL *st
 		Username:   u.Username,
 		Email:      u.Email,
 		PublicKeys: publicKeys,
+		Onboarded:  u.Onboarded,
 
 		Role: body.Role{
 			Name:        effectiveRole.Name,
@@ -126,6 +127,7 @@ func (client *Client) Update(userID string, update *UserUpdate) error {
 
 	models.AddIfNotNil(updateData, "username", update.Username)
 	models.AddIfNotNil(updateData, "publicKeys", update.PublicKeys)
+	models.AddIfNotNil(updateData, "onboarded", update.Onboarded)
 
 	if len(updateData) == 0 {
 		return nil

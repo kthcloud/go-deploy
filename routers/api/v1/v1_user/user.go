@@ -215,6 +215,18 @@ func Get(c *gin.Context) {
 	context.JSONResponse(200, user.ToDTO(effectiveRole, usage, storageURL))
 }
 
+// Update
+// @Summary Update user by id
+// @Description Update user by id
+// @Tags User
+// @Accept  json
+// @Produce  json
+// @Param userId path string true "User ID"
+// @Param body body body UserUpdate true "User update"
+// @Success 200 {object} body.UserRead
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
+// @Router /api/v1/users/{userId} [post]
 func Update(c *gin.Context) {
 	context := sys.NewContext(c)
 
