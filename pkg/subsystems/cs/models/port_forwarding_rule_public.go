@@ -50,8 +50,9 @@ func CreatePortForwardingRulePublicFromGet(rule *cloudstack.PortForwardingRule) 
 		Name:      name,
 		CreatedAt: createdAt,
 
-		VmID:      rule.Virtualmachineid,
-		NetworkID: rule.Networkid,
+		VmID:        rule.Virtualmachineid,
+		NetworkID:   rule.Networkid,
+		IpAddressID: rule.Ipaddressid,
 
 		PublicPort:  publicPort,
 		PrivatePort: privatePort,

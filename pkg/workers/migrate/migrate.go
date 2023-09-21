@@ -40,9 +40,50 @@ func Migrate() {
 // the migrations must be **idempotent**.
 func getMigrations() map[string]func() error {
 	return map[string]func() error{
-		"update port is zero for deployments": updatePortIsZeroForDeployments,
-		"fetch creation time for subsystems":  fetchCreationTimeForSubsystems,
+		"add root network id and root id if missing": addRootNetworkIdAndRootIdIfMissing,
+		"update port is zero for deployments":        updatePortIsZeroForDeployments,
+		"fetch creation time for subsystems":         fetchCreationTimeForSubsystems,
 	}
+}
+
+func addRootNetworkIdAndRootIdIfMissing() error {
+	vms, err := vmModel.New().GetAll()
+	if err != nil {
+		return fmt.Errorf("error fetching vms. details: %w", err)
+	}
+
+	for _, vm := range vms {
+		zone := conf.Env.VM.GetZone(vm.Zone)
+		if zone == nil {
+			return fmt.Errorf("zone %s not found", vm.Zone)
+		}
+
+		for mapName, pfr := range vm.Subsystems.CS.GetPortForwardingRuleMap() {
+			if !pfr.Created() {
+				continue
+			}
+
+			if pfr.NetworkID == "" {
+				pfr.NetworkID = zone.NetworkID
+			}
+
+			if pfr.IpAddressID == "" {
+				pfr.IpAddressID = zone.IpAddressID
+			}
+
+			vm.Subsystems.CS.SetPortForwardingRule(mapName, pfr)
+		}
+
+		err = vmModel.New().UpdateWithBsonByID(vm.ID, bson.D{
+			{"subsystems.cs.portForwardingRuleMap", vm.Subsystems.CS.GetPortForwardingRuleMap()},
+		})
+
+		if err != nil {
+			return fmt.Errorf("error updating vm. details: %w", err)
+		}
+	}
+
+	return nil
 }
 
 func updatePortIsZeroForDeployments() error {
