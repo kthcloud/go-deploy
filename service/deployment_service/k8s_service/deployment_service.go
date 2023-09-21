@@ -250,13 +250,39 @@ func Update(name string, params *deploymentModel.UpdateParams) error {
 
 	mainApp := deployment.GetMainApp()
 
-	if params.Envs != nil {
-		k8sDeployment, ok := client.K8s.DeploymentMap[appName]
-		if ok && k8sDeployment.Created() {
-			k8sEnvs := []k8sModels.EnvVar{
-				{Name: "PORT", Value: strconv.Itoa(mainApp.InternalPort)},
+	if params.InternalPort != nil {
+		k8sService := client.K8s.GetService(mainApp.Name)
+		if service.Created(k8sService) {
+			if k8sService.Port != *params.InternalPort {
+				k8sService.TargetPort = *params.InternalPort
+
+				err = client.SsClient.UpdateService(k8sService)
+				if err != nil {
+					return makeError(err)
+				}
 			}
+		}
+	}
+
+	if params.Envs != nil {
+		k8sDeployment := client.K8s.GetDeployment(mainApp.Name)
+		if service.Created(k8sDeployment) {
+			var port int
+			if params.InternalPort != nil {
+				port = *params.InternalPort
+			} else {
+				port = mainApp.InternalPort
+			}
+
+			k8sEnvs := []k8sModels.EnvVar{
+				{Name: "PORT", Value: strconv.Itoa(port)},
+			}
+
 			for _, env := range *params.Envs {
+				if env.Name == "PORT" {
+					continue
+				}
+
 				k8sEnvs = append(k8sEnvs, k8sModels.EnvVar{
 					Name:  env.Name,
 					Value: env.Value,
@@ -265,12 +291,12 @@ func Update(name string, params *deploymentModel.UpdateParams) error {
 
 			k8sDeployment.EnvVars = k8sEnvs
 
-			err = client.SsClient.UpdateDeployment(&k8sDeployment)
+			err = client.SsClient.UpdateDeployment(k8sDeployment)
 			if err != nil {
 				return makeError(err)
 			}
 
-			client.K8s.DeploymentMap[appName] = k8sDeployment
+			client.K8s.SetDeployment(mainApp.Name, *k8sDeployment)
 
 			err = deploymentModel.New().UpdateSubsystemByName(name, "k8s", "deploymentMap", &client.K8s.DeploymentMap)
 			if err != nil {

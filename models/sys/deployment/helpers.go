@@ -110,7 +110,7 @@ func (client *Client) CountByOwnerID(ownerID string) (int, error) {
 	return models.CountResources(client.Collection, bson.D{{"ownerId", ownerID}}, false)
 }
 
-func (client *Client) UpdateWithParamsByID(id string, update *UpdateParams) error {
+func (client *Client) UpdateWithParamsByID(id string, params *UpdateParams) error {
 	deployment, err := client.GetByID(id)
 	if err != nil {
 		return err
@@ -127,20 +127,24 @@ func (client *Client) UpdateWithParamsByID(id string, update *UpdateParams) erro
 		return nil
 	}
 
-	if update.Envs != nil {
-		mainApp.Envs = *update.Envs
+	if params.InternalPort != nil {
+		mainApp.InternalPort = *params.InternalPort
 	}
 
-	if update.Private != nil {
-		mainApp.Private = *update.Private
+	if params.Envs != nil {
+		mainApp.Envs = *params.Envs
 	}
 
-	if update.ExtraDomains != nil {
-		mainApp.ExtraDomains = *update.ExtraDomains
+	if params.Private != nil {
+		mainApp.Private = *params.Private
 	}
 
-	if update.Volumes != nil {
-		mainApp.Volumes = *update.Volumes
+	if params.ExtraDomains != nil {
+		mainApp.ExtraDomains = *params.ExtraDomains
+	}
+
+	if params.Volumes != nil {
+		mainApp.Volumes = *params.Volumes
 	}
 
 	deployment.Apps["main"] = *mainApp

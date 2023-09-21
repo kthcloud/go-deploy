@@ -43,6 +43,8 @@ func (client *Client) RecreatePortForwardingRule(id, name string, public *csMode
 				public.PublicPort = oldPort
 				return withNewPortErr
 			}
+
+			return nil
 		}
 
 		return err

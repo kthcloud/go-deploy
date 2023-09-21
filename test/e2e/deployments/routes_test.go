@@ -8,6 +8,7 @@ import (
 	"go-deploy/test/e2e"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -228,6 +229,51 @@ func TestUpdateDeployment(t *testing.T) {
 	assert.Equal(t, newEnvValue, deploymentReadUpdated.Envs[0].Value)
 	assert.Equal(t, newPrivateValue, deploymentReadUpdated.Private)
 	assert.NotEmpty(t, deploymentReadUpdated.Volumes)
+}
+
+func TestUpdateInternalPort(t *testing.T) {
+	deployment := withDeployment(t, body.DeploymentCreate{Name: e2e.GenName("e2e")})
+
+	customPort := deployment.InternalPort + 1
+
+	deploymentUpdate := body.DeploymentUpdate{
+		Envs: &[]body.Env{
+			{
+				Name:  "PORT",
+				Value: strconv.Itoa(customPort),
+			},
+		},
+	}
+
+	resp := e2e.DoPostRequest(t, "/deployments/"+deployment.ID, deploymentUpdate)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var deploymentUpdated body.DeploymentUpdated
+	err := e2e.ReadResponseBody(t, resp, &deploymentUpdated)
+	assert.NoError(t, err, "deployment was not updated")
+
+	waitForJobFinished(t, deploymentUpdated.JobID, func(jobRead *body.JobRead) bool {
+		return true
+	})
+
+	waitForDeploymentRunning(t, deployment.ID, func(deploymentRead *body.DeploymentRead) bool {
+		//make sure it is accessible
+		if deploymentRead.URL != nil {
+			return checkUpURL(t, *deploymentRead.URL)
+		}
+		return false
+	})
+
+	// check if the deployment was updated
+	resp = e2e.DoGetRequest(t, "/deployments/"+deployment.ID)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var deploymentReadUpdated body.DeploymentRead
+	err = e2e.ReadResponseBody(t, resp, &deploymentReadUpdated)
+	assert.NoError(t, err, "deployment was not created")
+
+	assert.Equal(t, customPort, deploymentReadUpdated.InternalPort)
+	assert.True(t, checkUpURL(t, *deploymentReadUpdated.URL))
 }
 
 func TestDeploymentCommand(t *testing.T) {

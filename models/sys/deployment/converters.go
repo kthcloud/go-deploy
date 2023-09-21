@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go-deploy/models/dto/body"
 	"log"
+	"strconv"
 )
 
 func (deployment *Deployment) ToDTO(storageManagerURL *string) body.DeploymentRead {
@@ -88,6 +89,8 @@ func (p *UpdateParams) FromDTO(dto *body.DeploymentUpdate) {
 		envs := make([]Env, 0)
 		for _, env := range *dto.Envs {
 			if env.Name == "PORT" {
+				port, _ := strconv.Atoi(env.Value)
+				p.InternalPort = &port
 				continue
 			}
 
