@@ -2,6 +2,7 @@ package helpers
 
 import (
 	csModels "go-deploy/pkg/subsystems/cs/models"
+	"strings"
 )
 
 func (client *Client) RecreateServiceOffering(id string, public *csModels.ServiceOfferingPublic) (*csModels.ServiceOfferingPublic, error) {
@@ -24,6 +25,26 @@ func (client *Client) RecreatePortForwardingRule(id, name string, public *csMode
 
 	_, err := client.CreatePortForwardingRule(id, name, public)
 	if err != nil {
+
+		if strings.Contains(err.Error(), "conflicts with rule") {
+			// if we fail here it might be because the port was snatched
+			// by another vm, so we try to recreate the rule with a new port
+
+			freePort, withNewPortErr := client.GetFreePort()
+			if withNewPortErr != nil {
+				return withNewPortErr
+			}
+
+			oldPort := public.PublicPort
+			public.PublicPort = freePort
+
+			_, withNewPortErr = client.CreatePortForwardingRule(id, name, public)
+			if withNewPortErr != nil {
+				public.PublicPort = oldPort
+				return withNewPortErr
+			}
+		}
+
 		return err
 	}
 
