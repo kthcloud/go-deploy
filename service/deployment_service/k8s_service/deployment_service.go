@@ -254,7 +254,7 @@ func Update(name string, params *deploymentModel.UpdateParams) error {
 		k8sService := client.K8s.GetService(mainApp.Name)
 		if service.Created(k8sService) {
 			if k8sService.Port != *params.InternalPort {
-				k8sService.Port = *params.InternalPort
+				k8sService.TargetPort = *params.InternalPort
 
 				err = client.SsClient.UpdateService(k8sService)
 				if err != nil {
