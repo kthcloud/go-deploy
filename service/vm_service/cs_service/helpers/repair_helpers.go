@@ -5,6 +5,7 @@ import (
 	csModels "go-deploy/pkg/subsystems/cs/models"
 	"go-deploy/service"
 	"log"
+	"strings"
 )
 
 func (client *Client) RepairServiceOffering(id string, genPublic func() *csModels.ServiceOfferingPublic) error {
@@ -69,6 +70,29 @@ func (client *Client) RepairPortForwardingRule(id, name string, genPublic func()
 		}
 
 		_, err := client.CreatePortForwardingRule(id, name, public)
+		if err != nil {
+			if strings.Contains(err.Error(), "conflicts with rule") {
+				// if we fail here it might be because the port was snatched
+				// by another vm, so we try to recreate the rule with a new port
+
+				freePort, withNewPortErr := client.GetFreePort()
+				if withNewPortErr != nil {
+					return withNewPortErr
+				}
+
+				oldPort := public.PublicPort
+				public.PublicPort = freePort
+
+				_, withNewPortErr = client.CreatePortForwardingRule(id, name, public)
+				if withNewPortErr != nil {
+					public.PublicPort = oldPort
+					return withNewPortErr
+				}
+
+				return nil
+			}
+		}
+
 		return err
 	}
 
