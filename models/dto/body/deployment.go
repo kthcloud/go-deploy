@@ -75,6 +75,7 @@ type DeploymentRead struct {
 	InitCommands []string `json:"initCommands"`
 	Private      bool     `json:"private"`
 	InternalPort int      `json:"internalPort"`
+	Image        *string  `json:"image,omitempty"`
 
 	Status     string `json:"status"`
 	PingResult *int   `json:"pingResult,omitempty"`

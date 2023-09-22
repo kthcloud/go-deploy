@@ -55,6 +55,11 @@ func (deployment *Deployment) ToDTO(storageManagerURL *string) body.DeploymentRe
 		pingResult = &app.PingResult
 	}
 
+	var image *string
+	if deployment.Type == TypePrebuilt {
+		image = &app.Image
+	}
+
 	return body.DeploymentRead{
 		ID:      deployment.ID,
 		Name:    deployment.Name,
@@ -68,6 +73,7 @@ func (deployment *Deployment) ToDTO(storageManagerURL *string) body.DeploymentRe
 		InitCommands: app.InitCommands,
 		Private:      app.Private,
 		InternalPort: app.InternalPort,
+		Image:        image,
 
 		Status:     deployment.StatusMessage,
 		PingResult: pingResult,
