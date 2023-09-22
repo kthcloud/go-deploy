@@ -16,6 +16,7 @@ import (
 	"go-deploy/service/deployment_service/k8s_service"
 	"go-deploy/service/job_service"
 	"go-deploy/utils"
+	"go-deploy/utils/subsystemutils"
 	"log"
 	"strings"
 )
@@ -26,11 +27,14 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 	}
 
 	// temporary hard-coded fallback
-	fallback := "se-flem"
+	fallbackZone := "se-flem"
+	fallbackImage := fmt.Sprintf("%s/%s/%s", conf.Env.DockerRegistry.URL, subsystemutils.GetPrefixedName(ownerID), deploymentCreate.Name)
+	fallbackPort := conf.Env.Deployment.Port
 
 	params := &deploymentModel.CreateParams{}
-	params.FromDTO(deploymentCreate, &fallback, conf.Env.Deployment.Port)
+	params.FromDTO(deploymentCreate, fallbackZone, fallbackImage, fallbackPort)
 
+	// create storage manager only if needed
 	if len(params.Volumes) > 0 {
 		storageManagerID := uuid.New().String()
 		jobID := uuid.New().String()
@@ -47,25 +51,31 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 		}
 	}
 
-	created, err := deploymentModel.New().Create(deploymentID, ownerID, params)
+	deployment, err := deploymentModel.New().Create(deploymentID, ownerID, params)
 	if err != nil {
 		return makeError(err)
 	}
 
-	if !created {
+	if deployment == nil {
 		return makeError(fmt.Errorf("deployment already exists for another user"))
 	}
 
-	err = harbor_service.Create(deploymentID, ownerID, params)
-	if err != nil {
-		return makeError(err)
+	if deployment.Type == deploymentModel.TypeCustom {
+		err = harbor_service.Create(deploymentID, ownerID, params)
+		if err != nil {
+			return makeError(err)
+		}
+	} else {
+		err = harbor_service.CreatePlaceholder(params.Name)
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	err = k8s_service.Create(deploymentID, ownerID, params)
 	if err != nil {
 		return makeError(err)
 	}
-
 	createPlaceHolderInstead := false
 	if params.GitHub != nil {
 		err = github_service.Create(deploymentID, params)
@@ -92,7 +102,8 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 		}
 	}
 
-	deployment, err := deploymentModel.New().GetByID(deploymentID)
+	// fetch again to make sure all the fields are populated
+	deployment, err = deploymentModel.New().GetByID(deploymentID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -414,9 +425,11 @@ func Repair(id string) error {
 		return makeError(err)
 	}
 
-	err = harbor_service.Repair(deployment.Name)
-	if err != nil {
-		return makeError(err)
+	if !deployment.Subsystems.Harbor.Placeholder {
+		err = harbor_service.Repair(deployment.Name)
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	log.Println("successfully repaired deployment", deployment.Name)

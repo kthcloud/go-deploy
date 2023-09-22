@@ -116,6 +116,10 @@ func harborCreated(deployment *deployment.Deployment) (bool, error) {
 	}
 
 	harbor := &deployment.Subsystems.Harbor
+	if harbor.Placeholder {
+		return true, nil
+	}
+
 	return harbor.Project.ID != 0 &&
 		harbor.Robot.ID != 0 &&
 		harbor.Repository.ID != 0 &&

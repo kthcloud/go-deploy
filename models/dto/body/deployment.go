@@ -21,6 +21,7 @@ type GitHub struct {
 type DeploymentCreate struct {
 	Name string `json:"name" binding:"required,rfc1035,min=3,max=30"`
 
+	Image        *string  `json:"image,omitempty" binding:"omitempty,min=1,max=1000"`
 	InternalPort *int     `json:"internalPort" binding:"omitempty,min=1,max=65535"`
 	Private      bool     `json:"private" binding:"omitempty,boolean"`
 	Envs         []Env    `json:"envs" binding:"omitempty,env_list,min=0,max=1000,dive"`
@@ -64,6 +65,7 @@ type DeploymentUpdated struct {
 type DeploymentRead struct {
 	ID      string `json:"id"`
 	Name    string `json:"name"`
+	Type    string `json:"type"`
 	OwnerID string `json:"ownerId"`
 	Zone    string `json:"zone"`
 

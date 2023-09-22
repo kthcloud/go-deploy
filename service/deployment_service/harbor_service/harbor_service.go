@@ -68,6 +68,31 @@ func Create(deploymentID, userID string, params *deploymentModel.CreateParams) e
 	return nil
 }
 
+func CreatePlaceholder(name string) error {
+	log.Println("setting up placeholder github")
+
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to setup placeholder github. details: %w", err)
+	}
+
+	deployment, err := deploymentModel.New().GetByName(name)
+	if err != nil {
+		return makeError(err)
+	}
+
+	client, err := helpers.New(&deployment.Subsystems.Harbor)
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = client.CreatePlaceholder(deployment.ID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
+}
+
 func Delete(name string) error {
 	log.Println("deleting harbor for", name)
 

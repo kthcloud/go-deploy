@@ -12,10 +12,11 @@ import (
 	"time"
 )
 
-func (client *Client) Create(deploymentID, ownerID string, params *CreateParams) (bool, error) {
+func (client *Client) Create(deploymentID, ownerID string, params *CreateParams) (*Deployment, error) {
 	appName := "main"
 	mainApp := App{
 		Name:         appName,
+		Image:        params.Image,
 		InternalPort: params.InternalPort,
 		Private:      params.Private,
 		Envs:         params.Envs,
@@ -28,14 +29,16 @@ func (client *Client) Create(deploymentID, ownerID string, params *CreateParams)
 	deployment := Deployment{
 		ID:          deploymentID,
 		Name:        params.Name,
+		Type:        params.Type,
 		OwnerID:     ownerID,
 		Zone:        params.Zone,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Time{},
 		RepairedAt:  time.Time{},
 		RestartedAt: time.Time{},
-		Apps:        map[string]App{appName: mainApp},
+		DeletedAt:   time.Time{},
 		Activities:  []string{ActivityBeingCreated},
+		Apps:        map[string]App{appName: mainApp},
 		Subsystems: Subsystems{
 			GitLab: subsystems.GitLab{
 				LastBuild: subsystems.GitLabBuild{
@@ -48,8 +51,8 @@ func (client *Client) Create(deploymentID, ownerID string, params *CreateParams)
 				},
 			},
 		},
-		StatusCode:    status_codes.ResourceBeingCreated,
 		StatusMessage: status_codes.GetMsg(status_codes.ResourceBeingCreated),
+		StatusCode:    status_codes.ResourceBeingCreated,
 	}
 
 	filter := bson.D{{"name", params.Name}, {"deletedAt", bson.D{{"$in", []interface{}{time.Time{}, nil}}}}}
@@ -57,30 +60,35 @@ func (client *Client) Create(deploymentID, ownerID string, params *CreateParams)
 		{"$setOnInsert", deployment},
 	}, options.Update().SetUpsert(true))
 	if err != nil {
-		return false, fmt.Errorf("failed to create deployment. details: %w", err)
+		return nil, fmt.Errorf("failed to create deployment. details: %w", err)
 	}
 
 	if result.UpsertedCount == 0 {
 		if result.MatchedCount == 1 {
 			fetchedDeployment, err := client.GetByName(params.Name)
 			if err != nil {
-				return false, err
+				return nil, err
 			}
 
 			if fetchedDeployment == nil {
 				log.Println(fmt.Errorf("failed to fetch deployment %s after creation. assuming it was deleted", params.Name))
-				return false, nil
+				return nil, nil
 			}
 
 			if fetchedDeployment.ID == deploymentID {
-				return true, nil
+				return fetchedDeployment, nil
 			}
 		}
 
-		return false, nil
+		return nil, nil
 	}
 
-	return true, nil
+	fetchedDeployment, err := client.GetByName(params.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	return fetchedDeployment, nil
 }
 
 func (client *Client) GetAllByGitHubWebhookID(id int64) ([]Deployment, error) {

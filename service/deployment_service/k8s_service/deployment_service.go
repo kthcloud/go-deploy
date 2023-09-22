@@ -91,7 +91,7 @@ func Create(deploymentID string, userID string, params *deploymentModel.CreatePa
 		public := helpers.CreateMainAppDeploymentPublic(
 			client.Namespace,
 			deployment.Name,
-			deployment.OwnerID,
+			mainApp.Image,
 			mainApp.InternalPort,
 			params.Envs,
 			params.Volumes,
@@ -430,7 +430,7 @@ func Update(name string, params *deploymentModel.UpdateParams) error {
 
 		public := helpers.CreateMainAppDeploymentPublic(client.K8s.Namespace.FullName,
 			deployment.Name,
-			deployment.OwnerID,
+			mainApp.Image,
 			mainApp.InternalPort,
 			mainApp.Envs,
 			*params.Volumes,
@@ -521,7 +521,7 @@ func Repair(name string) error {
 				return helpers.CreateMainAppDeploymentPublic(
 					ss.Namespace.FullName,
 					deployment.Name,
-					deployment.OwnerID,
+					mainApp.Image,
 					mainApp.InternalPort,
 					mainApp.Envs,
 					mainApp.Volumes,

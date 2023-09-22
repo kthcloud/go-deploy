@@ -58,6 +58,7 @@ func (deployment *Deployment) ToDTO(storageManagerURL *string) body.DeploymentRe
 	return body.DeploymentRead{
 		ID:      deployment.ID,
 		Name:    deployment.Name,
+		Type:    deployment.Type,
 		OwnerID: deployment.OwnerID,
 		Zone:    deployment.Zone,
 
@@ -119,8 +120,16 @@ func (p *UpdateParams) FromDTO(dto *body.DeploymentUpdate) {
 	p.InitCommands = dto.InitCommands
 }
 
-func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZone *string, fallbackPort int) {
+func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZone, fallbackImage string, fallbackPort int) {
 	p.Name = dto.Name
+
+	if dto.Image == nil {
+		p.Image = fallbackImage
+		p.Type = TypeCustom
+	} else {
+		p.Image = *dto.Image
+		p.Type = TypePrebuilt
+	}
 
 	if dto.InternalPort == nil {
 		p.InternalPort = fallbackPort
@@ -160,7 +169,7 @@ func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZone *string,
 	if dto.Zone != nil {
 		p.Zone = *dto.Zone
 	} else {
-		p.Zone = *fallbackZone
+		p.Zone = fallbackZone
 	}
 }
 
