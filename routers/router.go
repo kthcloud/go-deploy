@@ -117,6 +117,7 @@ func setupGpuRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
 func setupJobRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
 	private.GET("/jobs/:jobId", v1_job.Get)
 	private.GET("/jobs", v1_job.GetList)
+	private.POST("/jobs/:jobId", v1_job.Update)
 }
 
 func setupUserRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {

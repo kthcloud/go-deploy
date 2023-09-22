@@ -86,6 +86,63 @@ func GetList(c *gin.Context) {
 	context.JSONResponse(200, jobsDTO)
 }
 
+func Update(c *gin.Context) {
+	context := sys.NewContext(c)
+
+	var requestURI uri.JobUpdate
+	if err := context.GinContext.BindUri(&requestURI); err != nil {
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		return
+	}
+
+	var request body.JobUpdate
+	if err := context.GinContext.BindJSON(&request); err != nil {
+		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		return
+	}
+
+	auth, err := v1.WithAuth(&context)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
+		return
+	}
+
+	if !auth.IsAdmin {
+		context.ErrorResponse(http.StatusForbidden, status_codes.Error, fmt.Sprintf("Only admin can update job"))
+		return
+	}
+
+	exists, err := job_service.Exists(requestURI.JobID, auth)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to check job existence: %s", err))
+		return
+	}
+
+	if !exists {
+		context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, fmt.Sprintf("Job with id %s not found", requestURI.JobID))
+		return
+	}
+
+	err = job_service.Update(requestURI.JobID, &request, auth)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to update job: %s", err))
+		return
+	}
+
+	updatedJob, err := job_service.GetByID(requestURI.JobID, auth)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get updated job: %s", err))
+		return
+	}
+
+	if updatedJob == nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Job not found after update"))
+		return
+	}
+
+	context.JSONResponse(200, updatedJob.ToDTO(jobStatusMessage(updatedJob.Status)))
+}
+
 func jobStatusMessage(status string) string {
 	switch status {
 	case jobModel.StatusPending:

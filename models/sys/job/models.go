@@ -45,3 +45,7 @@ type Job struct {
 	Status     string                 `bson:"status" json:"status"`
 	ErrorLogs  []string               `bson:"errorLogs" json:"errorLogs"`
 }
+
+type UpdateParams struct {
+	Status *string `bson:"status" json:"status"`
+}

@@ -7,3 +7,7 @@ type JobRead struct {
 	Status    string  `json:"status"`
 	LastError *string `json:"lastError,omitempty"`
 }
+
+type JobUpdate struct {
+	Status *string `json:"status" binding:"omitempty,oneof=pending running failed terminated finished"`
+}

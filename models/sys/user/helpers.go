@@ -122,23 +122,20 @@ func (client *Client) Create(id, username, email string, isAdmin bool, effective
 	return nil
 }
 
-func (client *Client) Update(userID string, update *UserUpdate) error {
-	updateData := bson.M{}
+func (client *Client) UpdateWithParams(id string, params *UserUpdate) error {
+	updateData := bson.D{}
 
-	models.AddIfNotNil(updateData, "username", update.Username)
-	models.AddIfNotNil(updateData, "publicKeys", update.PublicKeys)
-	models.AddIfNotNil(updateData, "onboarded", update.Onboarded)
+	models.AddIfNotNil(&updateData, "username", params.Username)
+	models.AddIfNotNil(&updateData, "publicKeys", params.PublicKeys)
+	models.AddIfNotNil(&updateData, "onboarded", params.Onboarded)
 
 	if len(updateData) == 0 {
 		return nil
 	}
 
-	filter := bson.D{{"id", userID}}
-	updateDoc := bson.D{{"$set", updateData}}
-
-	_, err := client.Collection.UpdateOne(context.Background(), filter, updateDoc)
+	err := client.UpdateWithBsonByID(id, updateData)
 	if err != nil {
-		return fmt.Errorf("failed to update user info for %s. details: %w", userID, err)
+		return fmt.Errorf("failed to update user for %s. details: %w", id, err)
 	}
 
 	return nil

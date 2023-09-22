@@ -228,3 +228,20 @@ func (client *Client) CleanUp() error {
 
 	return nil
 }
+
+func (client *Client) UpdateWithParams(id string, params *UpdateParams) error {
+	updateData := bson.D{}
+
+	models.AddIfNotNil(&updateData, "status", params.Status)
+
+	if len(updateData) == 0 {
+		return nil
+	}
+
+	err := client.UpdateWithBsonByID(id, updateData)
+	if err != nil {
+		return fmt.Errorf("failed to update job %s. details: %w", id, err)
+	}
+
+	return nil
+}
