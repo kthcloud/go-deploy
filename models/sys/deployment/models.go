@@ -2,8 +2,14 @@ package deployment
 
 import "go-deploy/models/sys/deployment/subsystems"
 
+const (
+	TypeCustom   = "custom"
+	TypePrebuilt = "prebuilt"
+)
+
 type App struct {
 	Name         string   `bson:"name"`
+	Image        string   `bson:"image"`
 	InternalPort int      `bson:"internalPort"`
 	Private      bool     `bson:"private"`
 	Envs         []Env    `bson:"envs"`
@@ -43,6 +49,7 @@ type UpdateParams struct {
 	Volumes      *[]Volume `json:"volumes" bson:"volumes"`
 	InitCommands *[]string `json:"initCommands" bson:"initCommands"`
 	ExtraDomains *[]string `json:"extraDomains" bson:"extraDomains"`
+	Image        *string   `json:"image" bson:"image"`
 }
 
 type GitHubCreateParams struct {
@@ -52,7 +59,9 @@ type GitHubCreateParams struct {
 
 type CreateParams struct {
 	Name string `json:"name" bson:"name"`
+	Type string `json:"type" bson:"type"`
 
+	Image        string   `json:"image" bson:"image"`
 	InternalPort int      `json:"internalPort" bson:"internalPort"`
 	Private      bool     `json:"private" bson:"private"`
 	Envs         []Env    `json:"envs" bson:"envs"`

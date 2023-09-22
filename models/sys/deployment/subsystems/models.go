@@ -19,10 +19,11 @@ type K8s struct {
 }
 
 type Harbor struct {
-	Project    harborModels.ProjectPublic    `bson:"project"`
-	Robot      harborModels.RobotPublic      `bson:"robot"`
-	Repository harborModels.RepositoryPublic `bson:"repository"`
-	Webhook    harborModels.WebhookPublic    `bson:"webhook"`
+	Project     harborModels.ProjectPublic    `bson:"project"`
+	Robot       harborModels.RobotPublic      `bson:"robot"`
+	Repository  harborModels.RepositoryPublic `bson:"repository"`
+	Webhook     harborModels.WebhookPublic    `bson:"webhook"`
+	Placeholder bool                          `bson:"placeholder"`
 }
 
 type GitHub struct {

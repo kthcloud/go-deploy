@@ -8,6 +8,7 @@ import (
 type Deployment struct {
 	ID      string `bson:"id"`
 	Name    string `bson:"name"`
+	Type    string `bson:"type"`
 	OwnerID string `bson:"ownerId"`
 	Zone    string `bson:"zone"`
 

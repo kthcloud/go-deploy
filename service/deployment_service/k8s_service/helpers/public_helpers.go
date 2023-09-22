@@ -9,7 +9,6 @@ import (
 	"go-deploy/pkg/conf"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/utils"
-	"go-deploy/utils/subsystemutils"
 	"strconv"
 )
 
@@ -21,7 +20,7 @@ func CreateNamespacePublic(name string) *k8sModels.NamespacePublic {
 	}
 }
 
-func CreateMainAppDeploymentPublic(namespace, name, userID string, port int, envs []deploymentModel.Env, volumes []deploymentModel.Volume, initCommands []string) *k8sModels.DeploymentPublic {
+func CreateMainAppDeploymentPublic(namespace, name, image string, port int, envs []deploymentModel.Env, volumes []deploymentModel.Volume, initCommands []string) *k8sModels.DeploymentPublic {
 	k8sEnvs := []k8sModels.EnvVar{
 		{Name: "PORT", Value: strconv.Itoa(port)},
 	}
@@ -54,14 +53,11 @@ func CreateMainAppDeploymentPublic(namespace, name, userID string, port int, env
 		Memory: conf.Env.Deployment.Resources.Requests.Memory,
 	}
 
-	dockerRegistryProject := subsystemutils.GetPrefixedName(userID)
-	dockerImage := fmt.Sprintf("%s/%s/%s", conf.Env.DockerRegistry.URL, dockerRegistryProject, name)
-
 	return &k8sModels.DeploymentPublic{
 		ID:          "",
 		Name:        name,
 		Namespace:   namespace,
-		DockerImage: dockerImage,
+		DockerImage: image,
 		EnvVars:     k8sEnvs,
 		Resources: k8sModels.Resources{
 			Limits:   defaultLimits,

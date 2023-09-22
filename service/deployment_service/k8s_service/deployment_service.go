@@ -91,7 +91,7 @@ func Create(deploymentID string, userID string, params *deploymentModel.CreatePa
 		public := helpers.CreateMainAppDeploymentPublic(
 			client.Namespace,
 			deployment.Name,
-			deployment.OwnerID,
+			mainApp.Image,
 			mainApp.InternalPort,
 			params.Envs,
 			params.Volumes,
@@ -108,7 +108,7 @@ func Create(deploymentID string, userID string, params *deploymentModel.CreatePa
 		public := helpers.CreateServicePublic(
 			client.Namespace,
 			deployment.Name,
-			conf.Env.Deployment.Port,
+			mainApp.InternalPort,
 			mainApp.InternalPort,
 		)
 		_, err = client.CreateService(deployment.ID, appName, public)
@@ -430,7 +430,7 @@ func Update(name string, params *deploymentModel.UpdateParams) error {
 
 		public := helpers.CreateMainAppDeploymentPublic(client.K8s.Namespace.FullName,
 			deployment.Name,
-			deployment.OwnerID,
+			mainApp.Image,
 			mainApp.InternalPort,
 			mainApp.Envs,
 			*params.Volumes,
@@ -442,6 +442,26 @@ func Update(name string, params *deploymentModel.UpdateParams) error {
 		}
 
 	}
+
+	if params.Image != nil {
+		if *params.Image != mainApp.Image {
+			oldPublic := client.K8s.GetDeployment(appName)
+			if oldPublic.Created() {
+				newPublic := oldPublic
+				newPublic.DockerImage = *params.Image
+
+				err = client.SsClient.UpdateDeployment(newPublic)
+				if err != nil {
+					return makeError(err)
+				}
+
+				client.K8s.SetDeployment(appName, *newPublic)
+
+				err = deploymentModel.New().UpdateSubsystemByName(name, "k8s", "deploymentMap", client.K8s.DeploymentMap)
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -521,7 +541,7 @@ func Repair(name string) error {
 				return helpers.CreateMainAppDeploymentPublic(
 					ss.Namespace.FullName,
 					deployment.Name,
-					deployment.OwnerID,
+					mainApp.Image,
 					mainApp.InternalPort,
 					mainApp.Envs,
 					mainApp.Volumes,
@@ -541,7 +561,7 @@ func Repair(name string) error {
 				return helpers.CreateServicePublic(
 					ss.Namespace.FullName,
 					deployment.Name,
-					conf.Env.Deployment.Port,
+					mainApp.InternalPort,
 					mainApp.InternalPort,
 				)
 			}

@@ -21,7 +21,7 @@ type GitHub struct {
 type DeploymentCreate struct {
 	Name string `json:"name" binding:"required,rfc1035,min=3,max=30"`
 
-	InternalPort *int     `json:"internalPort" binding:"omitempty,min=1,max=65535"`
+	Image        *string  `json:"image,omitempty" binding:"omitempty,min=1,max=1000"`
 	Private      bool     `json:"private" binding:"omitempty,boolean"`
 	Envs         []Env    `json:"envs" binding:"omitempty,env_list,min=0,max=1000,dive"`
 	Volumes      []Volume `json:"volumes" binding:"omitempty,min=0,max=100,dive"`
@@ -38,6 +38,7 @@ type DeploymentUpdate struct {
 	Volumes      *[]Volume `json:"volumes" binding:"omitempty,min=0,max=100,dive"`
 	InitCommands *[]string `json:"initCommands" binding:"omitempty,min=0,max=100,dive"`
 	ExtraDomains *[]string `json:"extraDomains" binding:"omitempty,extra_domain_list,min=0,max=1000,dive"`
+	Image        *string   `json:"image,omitempty" binding:"omitempty,min=1,max=1000"`
 }
 
 type DeploymentBuild struct {
@@ -64,6 +65,7 @@ type DeploymentUpdated struct {
 type DeploymentRead struct {
 	ID      string `json:"id"`
 	Name    string `json:"name"`
+	Type    string `json:"type"`
 	OwnerID string `json:"ownerId"`
 	Zone    string `json:"zone"`
 
@@ -73,6 +75,7 @@ type DeploymentRead struct {
 	InitCommands []string `json:"initCommands"`
 	Private      bool     `json:"private"`
 	InternalPort int      `json:"internalPort"`
+	Image        *string  `json:"image,omitempty"`
 
 	Status     string `json:"status"`
 	PingResult *int   `json:"pingResult,omitempty"`

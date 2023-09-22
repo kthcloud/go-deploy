@@ -55,9 +55,15 @@ func (deployment *Deployment) ToDTO(storageManagerURL *string) body.DeploymentRe
 		pingResult = &app.PingResult
 	}
 
+	var image *string
+	if deployment.Type == TypePrebuilt {
+		image = &app.Image
+	}
+
 	return body.DeploymentRead{
 		ID:      deployment.ID,
 		Name:    deployment.Name,
+		Type:    deployment.Type,
 		OwnerID: deployment.OwnerID,
 		Zone:    deployment.Zone,
 
@@ -67,6 +73,7 @@ func (deployment *Deployment) ToDTO(storageManagerURL *string) body.DeploymentRe
 		InitCommands: app.InitCommands,
 		Private:      app.Private,
 		InternalPort: app.InternalPort,
+		Image:        image,
 
 		Status:     deployment.StatusMessage,
 		PingResult: pingResult,
@@ -84,7 +91,7 @@ func (g *GitHubRepository) ToDTO() body.GitHubRepository {
 	}
 }
 
-func (p *UpdateParams) FromDTO(dto *body.DeploymentUpdate) {
+func (p *UpdateParams) FromDTO(dto *body.DeploymentUpdate, deploymentType string) {
 	if dto.Envs != nil {
 		envs := make([]Env, 0)
 		for _, env := range *dto.Envs {
@@ -117,20 +124,29 @@ func (p *UpdateParams) FromDTO(dto *body.DeploymentUpdate) {
 	p.Private = dto.Private
 	p.ExtraDomains = dto.ExtraDomains
 	p.InitCommands = dto.InitCommands
+
+	if deploymentType == TypePrebuilt {
+		p.Image = dto.Image
+	}
 }
 
-func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZone *string, fallbackPort int) {
+func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZone, fallbackImage string, fallbackPort int) {
 	p.Name = dto.Name
 
-	if dto.InternalPort == nil {
-		p.InternalPort = fallbackPort
+	if dto.Image == nil {
+		p.Image = fallbackImage
+		p.Type = TypeCustom
 	} else {
-		p.InternalPort = *dto.InternalPort
+		p.Image = *dto.Image
+		p.Type = TypePrebuilt
 	}
+
 	p.Private = dto.Private
 	p.Envs = make([]Env, 0)
 	for _, env := range dto.Envs {
 		if env.Name == "PORT" {
+			port, _ := strconv.Atoi(env.Value)
+			p.InternalPort = port
 			continue
 		}
 
@@ -139,6 +155,12 @@ func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZone *string,
 			Value: env.Value,
 		})
 	}
+
+	// if user didn't specify $PORT
+	if p.InternalPort == 0 {
+		p.InternalPort = fallbackPort
+	}
+
 	p.Volumes = make([]Volume, len(dto.Volumes))
 	for i, volume := range dto.Volumes {
 		p.Volumes[i] = Volume{
@@ -160,7 +182,7 @@ func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZone *string,
 	if dto.Zone != nil {
 		p.Zone = *dto.Zone
 	} else {
-		p.Zone = *fallbackZone
+		p.Zone = fallbackZone
 	}
 }
 

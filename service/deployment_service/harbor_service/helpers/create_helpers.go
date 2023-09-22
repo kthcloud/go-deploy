@@ -104,3 +104,14 @@ func (client *Client) CreateWebhook(id string, public *harborModels.WebhookPubli
 
 	return webhook, nil
 }
+
+func (client *Client) CreatePlaceholder(id string) error {
+	err := client.UpdateDB(id, "placeholder", true)
+	if err != nil {
+		return err
+	}
+
+	client.SS.Placeholder = true
+
+	return nil
+}
