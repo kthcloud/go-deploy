@@ -104,11 +104,11 @@ func (client *Client) DeleteByID(id string) error {
 }
 
 func (client *Client) UpdateWithParamsByID(id string, update *UpdateParams) error {
-	updateData := bson.M{}
+	updateData := bson.D{}
 
-	models.AddIfNotNil(updateData, "ports", update.Ports)
-	models.AddIfNotNil(updateData, "specs.cpuCores", update.CpuCores)
-	models.AddIfNotNil(updateData, "specs.ram", update.RAM)
+	models.AddIfNotNil(&updateData, "ports", update.Ports)
+	models.AddIfNotNil(&updateData, "specs.cpuCores", update.CpuCores)
+	models.AddIfNotNil(&updateData, "specs.ram", update.RAM)
 
 	if len(updateData) == 0 {
 		return nil

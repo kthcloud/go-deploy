@@ -13,11 +13,11 @@ import (
 	"time"
 )
 
-func AddIfNotNil(data bson.M, key string, value interface{}) {
+func AddIfNotNil(data *bson.D, key string, value interface{}) {
 	if value == nil || (reflect.ValueOf(value).Kind() == reflect.Ptr && reflect.ValueOf(value).IsNil()) {
 		return
 	}
-	data[key] = value
+	*data = append(*data, bson.E{Key: key, Value: value})
 }
 
 func addExcludeDeleted(filter bson.D) bson.D {

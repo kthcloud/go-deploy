@@ -74,7 +74,7 @@ func Update(userID string, dtoUserUpdate *body.UserUpdate, auth *service.AuthInf
 		Onboarded:  dtoUserUpdate.Onboarded,
 	}
 
-	err := userModel.New().Update(userID, userUpdate)
+	err := userModel.New().UpdateWithParams(userID, userUpdate)
 	if err != nil {
 		return err
 	}
