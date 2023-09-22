@@ -9,6 +9,7 @@ import (
 	"go-deploy/pkg/subsystems/harbor"
 	"go-deploy/pkg/subsystems/harbor/models"
 	"go-deploy/pkg/subsystems/k8s"
+	"go-deploy/utils/subsystemutils"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
 )
@@ -38,15 +39,53 @@ func Migrate() {
 // clear when prod has run it once.
 //
 // the migrations must be **idempotent**.
+//
+// add a date to the migration name to make it easier to identify.
 func getMigrations() map[string]func() error {
 	return map[string]func() error{
-		"add root network id and root id if missing": addRootNetworkIdAndRootIdIfMissing,
-		"update port is zero for deployments":        updatePortIsZeroForDeployments,
-		"fetch creation time for subsystems":         fetchCreationTimeForSubsystems,
+		"add root network id and root id if missing":       addRootNetworkIdAndRootIdIfMissing_2023_09_22,
+		"update port is zero for deployments":              updatePortIsZeroForDeployments_2023_09_22,
+		"fetch creation time for subsystems":               fetchCreationTimeForSubsystems_2023_09_22,
+		"add deployment types and main app image if empty": addDeploymentTypesAndMainAppImageIfEmpty_2023_09_22,
 	}
 }
 
-func addRootNetworkIdAndRootIdIfMissing() error {
+func addDeploymentTypesAndMainAppImageIfEmpty_2023_09_22() error {
+	deployments, err := deploymentModel.New().GetAll()
+	if err != nil {
+		return fmt.Errorf("error getting deployments. details: %w", err)
+	}
+
+	for _, deployment := range deployments {
+		mainApp := deployment.GetMainApp()
+		if mainApp == nil {
+			return fmt.Errorf("main app not found for deployment %s", deployment.Name)
+		}
+
+		if deployment.Type == "" {
+			deployment.Type = deploymentModel.TypeCustom
+		}
+
+		if mainApp.Image == "" {
+			mainApp.Image = fmt.Sprintf("%s/%s/%s", conf.Env.DockerRegistry.URL, subsystemutils.GetPrefixedName(deployment.OwnerID), deployment.Name)
+		}
+
+		deployment.SetMainApp(mainApp)
+
+		update := bson.D{
+			{"type", deployment.Type},
+			{"apps", deployment.Apps},
+		}
+
+		if err := deploymentModel.New().UpdateWithBsonByID(deployment.ID, update); err != nil {
+			return fmt.Errorf("error updating deployment %s. details: %w", deployment.ID, err)
+		}
+	}
+
+	return nil
+}
+
+func addRootNetworkIdAndRootIdIfMissing_2023_09_22() error {
 	vms, err := vmModel.New().GetAll()
 	if err != nil {
 		return fmt.Errorf("error fetching vms. details: %w", err)
@@ -86,7 +125,7 @@ func addRootNetworkIdAndRootIdIfMissing() error {
 	return nil
 }
 
-func updatePortIsZeroForDeployments() error {
+func updatePortIsZeroForDeployments_2023_09_22() error {
 	deployments, err := deploymentModel.New().GetAll()
 	if err != nil {
 		return fmt.Errorf("error fetching deployments. details: %w", err)
@@ -116,7 +155,7 @@ func updatePortIsZeroForDeployments() error {
 	return nil
 }
 
-func fetchCreationTimeForSubsystems() error {
+func fetchCreationTimeForSubsystems_2023_09_22() error {
 
 	deployments, err := deploymentModel.New().GetAll()
 	if err != nil {
