@@ -108,7 +108,7 @@ func Create(deploymentID string, userID string, params *deploymentModel.CreatePa
 		public := helpers.CreateServicePublic(
 			client.Namespace,
 			deployment.Name,
-			conf.Env.Deployment.Port,
+			mainApp.InternalPort,
 			mainApp.InternalPort,
 		)
 		_, err = client.CreateService(deployment.ID, appName, public)
@@ -561,7 +561,7 @@ func Repair(name string) error {
 				return helpers.CreateServicePublic(
 					ss.Namespace.FullName,
 					deployment.Name,
-					conf.Env.Deployment.Port,
+					mainApp.InternalPort,
 					mainApp.InternalPort,
 				)
 			}
