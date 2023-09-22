@@ -271,9 +271,6 @@ func Update(id string, deploymentUpdate *body.DeploymentUpdate) error {
 		return fmt.Errorf("failed to update deployment. details: %w", err)
 	}
 
-	params := &deploymentModel.UpdateParams{}
-	params.FromDTO(deploymentUpdate)
-
 	deployment, err := deploymentModel.New().GetByID(id)
 	if err != nil {
 		return makeError(err)
@@ -283,6 +280,9 @@ func Update(id string, deploymentUpdate *body.DeploymentUpdate) error {
 		log.Println("deployment", id, "not found when updating. assuming it was deleted")
 		return nil
 	}
+
+	params := &deploymentModel.UpdateParams{}
+	params.FromDTO(deploymentUpdate, deployment.Type)
 
 	err = k8s_service.Update(deployment.Name, params)
 	if err != nil {

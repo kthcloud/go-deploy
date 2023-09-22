@@ -91,7 +91,7 @@ func (g *GitHubRepository) ToDTO() body.GitHubRepository {
 	}
 }
 
-func (p *UpdateParams) FromDTO(dto *body.DeploymentUpdate) {
+func (p *UpdateParams) FromDTO(dto *body.DeploymentUpdate, deploymentType string) {
 	if dto.Envs != nil {
 		envs := make([]Env, 0)
 		for _, env := range *dto.Envs {
@@ -124,6 +124,10 @@ func (p *UpdateParams) FromDTO(dto *body.DeploymentUpdate) {
 	p.Private = dto.Private
 	p.ExtraDomains = dto.ExtraDomains
 	p.InitCommands = dto.InitCommands
+
+	if deploymentType == TypePrebuilt {
+		p.Image = dto.Image
+	}
 }
 
 func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZone, fallbackImage string, fallbackPort int) {
@@ -137,15 +141,12 @@ func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZone, fallbac
 		p.Type = TypePrebuilt
 	}
 
-	if dto.InternalPort == nil {
-		p.InternalPort = fallbackPort
-	} else {
-		p.InternalPort = *dto.InternalPort
-	}
 	p.Private = dto.Private
 	p.Envs = make([]Env, 0)
 	for _, env := range dto.Envs {
 		if env.Name == "PORT" {
+			port, _ := strconv.Atoi(env.Value)
+			p.InternalPort = port
 			continue
 		}
 
@@ -154,6 +155,12 @@ func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZone, fallbac
 			Value: env.Value,
 		})
 	}
+
+	// if user didn't specify $PORT
+	if p.InternalPort == 0 {
+		p.InternalPort = fallbackPort
+	}
+
 	p.Volumes = make([]Volume, len(dto.Volumes))
 	for i, volume := range dto.Volumes {
 		p.Volumes[i] = Volume{

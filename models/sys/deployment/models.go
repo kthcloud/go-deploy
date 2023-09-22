@@ -49,6 +49,7 @@ type UpdateParams struct {
 	Volumes      *[]Volume `json:"volumes" bson:"volumes"`
 	InitCommands *[]string `json:"initCommands" bson:"initCommands"`
 	ExtraDomains *[]string `json:"extraDomains" bson:"extraDomains"`
+	Image        *string   `json:"image" bson:"image"`
 }
 
 type GitHubCreateParams struct {

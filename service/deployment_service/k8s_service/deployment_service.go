@@ -442,6 +442,26 @@ func Update(name string, params *deploymentModel.UpdateParams) error {
 		}
 
 	}
+
+	if params.Image != nil {
+		if *params.Image != mainApp.Image {
+			oldPublic := client.K8s.GetDeployment(appName)
+			if oldPublic.Created() {
+				newPublic := oldPublic
+				newPublic.DockerImage = *params.Image
+
+				err = client.SsClient.UpdateDeployment(newPublic)
+				if err != nil {
+					return makeError(err)
+				}
+
+				client.K8s.SetDeployment(appName, *newPublic)
+
+				err = deploymentModel.New().UpdateSubsystemByName(name, "k8s", "deploymentMap", client.K8s.DeploymentMap)
+			}
+		}
+	}
+
 	return nil
 }
 

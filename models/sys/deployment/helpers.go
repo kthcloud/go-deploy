@@ -159,6 +159,14 @@ func (client *Client) UpdateWithParamsByID(id string, params *UpdateParams) erro
 		mainApp.Volumes = *params.Volumes
 	}
 
+	if params.InitCommands != nil {
+		mainApp.InitCommands = *params.InitCommands
+	}
+
+	if params.Image != nil {
+		mainApp.Image = *params.Image
+	}
+
 	deployment.Apps["main"] = *mainApp
 
 	_, err = client.Collection.UpdateOne(context.TODO(),
