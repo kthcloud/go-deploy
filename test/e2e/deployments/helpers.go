@@ -6,6 +6,7 @@ import (
 	"go-deploy/pkg/status_codes"
 	"go-deploy/test/e2e"
 	"net/http"
+	"strconv"
 	"testing"
 	"time"
 )
@@ -199,16 +200,40 @@ func withDeployment(t *testing.T, requestBody body.DeploymentCreate) body.Deploy
 	// PORT env is generated, so we check for that first, then delete and match exact with the rest
 	assert.NotEmpty(t, deploymentRead.Envs)
 
-	portEnvFound := false
-	for i, env := range deploymentRead.Envs {
+	portRequested := 0
+	customPort := false
+	for _, env := range requestBody.Envs {
 		if env.Name == "PORT" {
-			portEnvFound = true
-			deploymentRead.Envs = append(deploymentRead.Envs[:i], deploymentRead.Envs[i+1:]...)
+			portRequested, _ = strconv.Atoi(env.Value)
+			customPort = true
 			break
 		}
 	}
 
-	assert.True(t, portEnvFound, "PORT env was not found")
+	if portRequested == 0 {
+		portRequested = 8080
+	}
+
+	portReceived := 0
+	for _, env := range deploymentRead.Envs {
+		if env.Name == "PORT" {
+			portReceived, _ = strconv.Atoi(env.Value)
+			break
+		}
+	}
+
+	assert.NotZero(t, portReceived)
+	assert.Equal(t, portRequested, portReceived)
+
+	if !customPort {
+		// remove PORT from read, since we won't be able to match the rest of the envs other wise
+		for i, env := range deploymentRead.Envs {
+			if env.Name == "PORT" {
+				deploymentRead.Envs = append(deploymentRead.Envs[:i], deploymentRead.Envs[i+1:]...)
+				break
+			}
+		}
+	}
 
 	if requestBody.Envs == nil {
 		assert.Empty(t, deploymentRead.Envs)

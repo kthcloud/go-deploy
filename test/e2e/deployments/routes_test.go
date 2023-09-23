@@ -82,8 +82,6 @@ func TestCreateDeployment(t *testing.T) {
 }
 
 func TestCreateDeploymentWithCustomPort(t *testing.T) {
-	envValue := uuid.NewString()
-
 	// this test assumes that the default port is 8080
 	customPort := 8081
 
@@ -92,13 +90,34 @@ func TestCreateDeploymentWithCustomPort(t *testing.T) {
 		Private: false,
 		Envs: []body.Env{
 			{
-				Name:  "e2e",
-				Value: envValue,
+				Name:  "PORT",
+				Value: strconv.Itoa(customPort),
 			},
 		},
-		GitHub:       nil,
-		Zone:         nil,
-		InternalPort: &customPort,
+		GitHub: nil,
+		Zone:   nil,
+	}
+
+	_ = withDeployment(t, requestBody)
+}
+
+func TestCreateDeploymentWithCustomImage(t *testing.T) {
+	// choose this setup so that it is reachable (pingable)
+	customImage := "nginx:latest"
+	customPort := 80
+
+	requestBody := body.DeploymentCreate{
+		Name:    "e2e-" + strings.ReplaceAll(uuid.NewString()[:10], "-", ""),
+		Private: false,
+		Envs: []body.Env{
+			{
+				Name:  "PORT",
+				Value: strconv.Itoa(customPort),
+			},
+		},
+		Image:  &customImage,
+		GitHub: nil,
+		Zone:   nil,
 	}
 
 	_ = withDeployment(t, requestBody)
