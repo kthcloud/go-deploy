@@ -250,6 +250,45 @@ func TestUpdateDeployment(t *testing.T) {
 	assert.NotEmpty(t, deploymentReadUpdated.Volumes)
 }
 
+func TestUpdateImage(t *testing.T) {
+	image1 := "nginx"
+	image2 := "httpd"
+
+	deployment := withDeployment(t, body.DeploymentCreate{
+		Name:  e2e.GenName("e2e"),
+		Image: &image1,
+		Envs: []body.Env{
+			{
+				Name:  "PORT",
+				Value: "80",
+			},
+		},
+	})
+
+	deploymentUpdate := body.DeploymentUpdate{
+		Image: &image2,
+	}
+
+	resp := e2e.DoPostRequest(t, "/deployments/"+deployment.ID, deploymentUpdate)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var deploymentUpdated body.DeploymentUpdated
+	err := e2e.ReadResponseBody(t, resp, &deploymentUpdated)
+	assert.NoError(t, err, "deployment was not updated")
+
+	waitForJobFinished(t, deploymentUpdated.JobID, nil)
+
+	// check if the deployment was updated
+	resp = e2e.DoGetRequest(t, "/deployments/"+deploymentUpdated.ID)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var deploymentReadUpdated body.DeploymentRead
+	err = e2e.ReadResponseBody(t, resp, &deploymentReadUpdated)
+	assert.NoError(t, err, "deployment was not updated")
+
+	assert.Equal(t, image2, *deploymentReadUpdated.Image)
+}
+
 func TestUpdateInternalPort(t *testing.T) {
 	deployment := withDeployment(t, body.DeploymentCreate{Name: e2e.GenName("e2e")})
 

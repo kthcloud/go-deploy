@@ -11,10 +11,12 @@ import (
 	"time"
 )
 
+const CheckInterval = 1 * time.Second
+
 func waitForJobFinished(t *testing.T, id string, callback func(*body.JobRead) bool) {
 	loops := 0
 	for {
-		time.Sleep(10 * time.Second)
+		time.Sleep(CheckInterval)
 
 		resp := e2e.DoGetRequest(t, "/jobs/"+id)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -25,16 +27,8 @@ func waitForJobFinished(t *testing.T, id string, callback func(*body.JobRead) bo
 			continue
 		}
 
-		if jobRead.Status == status_codes.GetMsg(status_codes.JobFinished) {
-			finished := callback(&jobRead)
-			if finished {
-				break
-			}
-		}
-
-		if jobRead.Status == status_codes.GetMsg(status_codes.JobTerminated) {
-			finished := callback(&jobRead)
-			if finished {
+		if jobRead.Status == status_codes.GetMsg(status_codes.JobFinished) || jobRead.Status == status_codes.GetMsg(status_codes.JobTerminated) {
+			if callback == nil || callback(&jobRead) {
 				break
 			}
 		}
@@ -50,7 +44,7 @@ func waitForJobFinished(t *testing.T, id string, callback func(*body.JobRead) bo
 func waitForDeploymentRunning(t *testing.T, id string, callback func(*body.DeploymentRead) bool) {
 	loops := 0
 	for {
-		time.Sleep(10 * time.Second)
+		time.Sleep(CheckInterval)
 
 		resp := e2e.DoGetRequest(t, "/deployments/"+id)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -62,8 +56,7 @@ func waitForDeploymentRunning(t *testing.T, id string, callback func(*body.Deplo
 		}
 
 		if deploymentRead.Status == status_codes.GetMsg(status_codes.ResourceRunning) {
-			finished := callback(&deploymentRead)
-			if finished {
+			if callback == nil || callback(&deploymentRead) {
 				break
 			}
 		}
@@ -79,7 +72,7 @@ func waitForDeploymentRunning(t *testing.T, id string, callback func(*body.Deplo
 func waitForStorageManagerRunning(t *testing.T, id string, callback func(read *body.StorageManagerRead) bool) {
 	loops := 0
 	for {
-		time.Sleep(10 * time.Second)
+		time.Sleep(CheckInterval)
 
 		resp := e2e.DoGetRequest(t, "/storageManagers/"+id)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -90,8 +83,7 @@ func waitForStorageManagerRunning(t *testing.T, id string, callback func(read *b
 			continue
 		}
 
-		finished := callback(&storageManagerRead)
-		if finished {
+		if callback == nil || callback(&storageManagerRead) {
 			break
 		}
 
@@ -106,14 +98,13 @@ func waitForStorageManagerRunning(t *testing.T, id string, callback func(read *b
 func waitForDeploymentDeleted(t *testing.T, id string, callback func() bool) {
 	loops := 0
 	for {
-		time.Sleep(10 * time.Second)
+		time.Sleep(CheckInterval)
 
 		resp := e2e.DoGetRequest(t, "/deployments/"+id)
 		if resp.StatusCode == http.StatusNotFound {
-			if callback() {
+			if callback == nil || callback() {
 				break
 			}
-			break
 		}
 
 		loops++
@@ -153,9 +144,7 @@ func withDeployment(t *testing.T, requestBody body.DeploymentCreate) body.Deploy
 			assert.FailNow(t, "resource was not deleted")
 		}
 
-		waitForDeploymentDeleted(t, deploymentCreated.ID, func() bool {
-			return true
-		})
+		waitForDeploymentDeleted(t, deploymentCreated.ID, nil)
 	})
 
 	waitForJobFinished(t, deploymentCreated.JobID, func(jobRead *body.JobRead) bool {
