@@ -234,6 +234,7 @@ func getTestTokenContainer() (*TokenContainer, bool) {
 		RealmAccess:       ServiceRole{},
 		Groups: []string{
 			"platinum",
+			"admin",
 		},
 	}
 

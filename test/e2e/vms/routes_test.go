@@ -19,7 +19,7 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func TestGetVMs(t *testing.T) {
+func TestGetList(t *testing.T) {
 	resp := e2e.DoGetRequest(t, "/vms")
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -33,7 +33,7 @@ func TestGetVMs(t *testing.T) {
 	}
 }
 
-func TestGetGPUs(t *testing.T) {
+func TestGetGpuList(t *testing.T) {
 	resp := e2e.DoGetRequest(t, "/gpus")
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -47,7 +47,7 @@ func TestGetGPUs(t *testing.T) {
 	}
 }
 
-func TestGetAvailableGPUs(t *testing.T) {
+func TestGetAvailableGpuList(t *testing.T) {
 	resp := e2e.DoGetRequest(t, "/gpus?available=true")
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -64,7 +64,7 @@ func TestGetAvailableGPUs(t *testing.T) {
 	}
 }
 
-func TestCreateVM(t *testing.T) {
+func TestCreate(t *testing.T) {
 	publicKey := withSshPublicKey(t)
 
 	requestBody := body.VmCreate{
@@ -83,10 +83,10 @@ func TestCreateVM(t *testing.T) {
 		Zone:     nil,
 	}
 
-	_ = withVM(t, requestBody)
+	_ = e2e.WithVM(t, requestBody)
 }
 
-func TestCreateVmWithInvalidBody(t *testing.T) {
+func TestCreateWithInvalidBody(t *testing.T) {
 	longName := body.VmCreate{
 		Name:     "e2e-",
 		CpuCores: 2,
@@ -96,7 +96,7 @@ func TestCreateVmWithInvalidBody(t *testing.T) {
 	for i := 0; i < 1000; i++ {
 		longName.Name += uuid.NewString()
 	}
-	withAssumedFailedVM(t, longName)
+	e2e.WithAssumedFailedVM(t, longName)
 
 	invalidNames := []string{
 		e2e.GenName("e2e") + "-",
@@ -116,7 +116,7 @@ func TestCreateVmWithInvalidBody(t *testing.T) {
 			RAM:      2,
 			DiskSize: 20,
 		}
-		withAssumedFailedVM(t, requestBody)
+		e2e.WithAssumedFailedVM(t, requestBody)
 	}
 
 	invalidPorts := []body.Port{
@@ -153,7 +153,7 @@ func TestCreateVmWithInvalidBody(t *testing.T) {
 			RAM:      2,
 			DiskSize: 20,
 		}
-		withAssumedFailedVM(t, requestBody)
+		e2e.WithAssumedFailedVM(t, requestBody)
 	}
 
 	invalidCpuCores := []int{
@@ -169,7 +169,7 @@ func TestCreateVmWithInvalidBody(t *testing.T) {
 			RAM:          2,
 			DiskSize:     20,
 		}
-		withAssumedFailedVM(t, requestBody)
+		e2e.WithAssumedFailedVM(t, requestBody)
 	}
 
 	invalidRam := []int{
@@ -185,7 +185,7 @@ func TestCreateVmWithInvalidBody(t *testing.T) {
 			RAM:          ram,
 			DiskSize:     20,
 		}
-		withAssumedFailedVM(t, requestBody)
+		e2e.WithAssumedFailedVM(t, requestBody)
 	}
 
 	invalidDiskSize := []int{
@@ -202,7 +202,7 @@ func TestCreateVmWithInvalidBody(t *testing.T) {
 			RAM:          2,
 			DiskSize:     diskSize,
 		}
-		withAssumedFailedVM(t, requestBody)
+		e2e.WithAssumedFailedVM(t, requestBody)
 	}
 
 	invalidPublicKey := []string{
@@ -219,11 +219,11 @@ func TestCreateVmWithInvalidBody(t *testing.T) {
 			RAM:          2,
 			DiskSize:     20,
 		}
-		withAssumedFailedVM(t, requestBody)
+		e2e.WithAssumedFailedVM(t, requestBody)
 	}
 }
 
-func TestUpdateVm(t *testing.T) {
+func TestUpdate(t *testing.T) {
 	publicKey := withSshPublicKey(t)
 
 	requestBody := body.VmCreate{
@@ -242,7 +242,7 @@ func TestUpdateVm(t *testing.T) {
 		Zone:     nil,
 	}
 
-	vm := withVM(t, requestBody)
+	vm := e2e.WithVM(t, requestBody)
 
 	updatedPorts := []body.Port{
 		{
@@ -275,13 +275,8 @@ func TestUpdateVm(t *testing.T) {
 	// make sure the job is picked up
 	time.Sleep(5)
 
-	waitForJobFinished(t, vmUpdated.JobID, func(jobRead *body.JobRead) bool {
-		return true
-	})
-
-	waitForVmRunning(t, vm.ID, func(vmRead *body.VmRead) bool {
-		return true
-	})
+	e2e.WaitForJobFinished(t, vmUpdated.JobID, nil)
+	e2e.WaitForVmRunning(t, vm.ID, nil)
 
 	var vmRead body.VmRead
 	readResp := e2e.DoGetRequest(t, "/vms/"+vm.ID)
@@ -314,7 +309,7 @@ func TestUpdateVm(t *testing.T) {
 }
 
 func TestAttachAnyGPU(t *testing.T) {
-	vm := withVM(t, body.VmCreate{
+	vm := e2e.WithVM(t, body.VmCreate{
 		Name:         e2e.GenName("e2e"),
 		SshPublicKey: withSshPublicKey(t),
 		CpuCores:     2,
@@ -338,13 +333,8 @@ func TestAttachAnyGPU(t *testing.T) {
 	// make sure the job is picked up
 	time.Sleep(5)
 
-	waitForJobFinished(t, vmUpdated.JobID, func(jobRead *body.JobRead) bool {
-		return true
-	})
-
-	waitForVmRunning(t, vm.ID, func(vmRead *body.VmRead) bool {
-		return true
-	})
+	e2e.WaitForJobFinished(t, vmUpdated.JobID, nil)
+	e2e.WaitForVmRunning(t, vm.ID, nil)
 
 	var vmRead body.VmRead
 	readResp := e2e.DoGetRequest(t, "/vms/"+vm.ID)
@@ -366,7 +356,7 @@ func TestAttachGPU(t *testing.T) {
 		t.Skip("no gpu ID set")
 	}
 
-	vm := withVM(t, body.VmCreate{
+	vm := e2e.WithVM(t, body.VmCreate{
 		Name:         e2e.GenName("e2e"),
 		SshPublicKey: withSshPublicKey(t),
 		CpuCores:     2,
@@ -388,13 +378,8 @@ func TestAttachGPU(t *testing.T) {
 	// make sure the job is picked up
 	time.Sleep(5)
 
-	waitForJobFinished(t, vmUpdated.JobID, func(jobRead *body.JobRead) bool {
-		return true
-	})
-
-	waitForVmRunning(t, vm.ID, func(vmRead *body.VmRead) bool {
-		return true
-	})
+	e2e.WaitForJobFinished(t, vmUpdated.JobID, nil)
+	e2e.WaitForVmRunning(t, vm.ID, nil)
 
 	var vmRead body.VmRead
 	readResp := e2e.DoGetRequest(t, "/vms/"+vm.ID)
@@ -403,7 +388,7 @@ func TestAttachGPU(t *testing.T) {
 }
 
 func TestAttachGPUWithInvalidID(t *testing.T) {
-	vm := withVM(t, body.VmCreate{
+	vm := e2e.WithVM(t, body.VmCreate{
 		Name:         e2e.GenName("e2e"),
 		SshPublicKey: withSshPublicKey(t),
 		CpuCores:     2,
@@ -438,7 +423,7 @@ func TestAttachGpuWithAlreadyAttachedID(t *testing.T) {
 		t.Skip("no another gpu ID set")
 	}
 
-	vm := withVM(t, body.VmCreate{
+	vm := e2e.WithVM(t, body.VmCreate{
 		Name:         e2e.GenName("e2e"),
 		SshPublicKey: withSshPublicKey(t),
 		CpuCores:     2,
@@ -460,13 +445,8 @@ func TestAttachGpuWithAlreadyAttachedID(t *testing.T) {
 	// make sure the job is picked up
 	time.Sleep(5)
 
-	waitForJobFinished(t, vmUpdated.JobID, func(jobRead *body.JobRead) bool {
-		return true
-	})
-
-	waitForVmRunning(t, vm.ID, func(vmRead *body.VmRead) bool {
-		return true
-	})
+	e2e.WaitForJobFinished(t, vmUpdated.JobID, nil)
+	e2e.WaitForVmRunning(t, vm.ID, nil)
 
 	updateGpuBody = body.VmUpdate{
 		GpuID: &anotherGpuID,
@@ -476,10 +456,10 @@ func TestAttachGpuWithAlreadyAttachedID(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
 
-func TestVmCommand(t *testing.T) {
+func TestCommand(t *testing.T) {
 	commands := []string{"stop", "start", "reboot"}
 
-	vm := withVM(t, body.VmCreate{
+	vm := e2e.WithVM(t, body.VmCreate{
 		Name:         e2e.GenName("e2e"),
 		SshPublicKey: withSshPublicKey(t),
 		CpuCores:     2,
@@ -496,7 +476,7 @@ func TestVmCommand(t *testing.T) {
 	}
 }
 
-func TestCreateAndRestoreVmSnapshot(t *testing.T) {
+func TestCreateAndRestoreSnapshot(t *testing.T) {
 	publicKey := withSshPublicKey(t)
 
 	requestBody := body.VmCreate{
@@ -507,7 +487,7 @@ func TestCreateAndRestoreVmSnapshot(t *testing.T) {
 		DiskSize:     20,
 	}
 
-	vm := withVM(t, requestBody)
+	vm := e2e.WithVM(t, requestBody)
 
 	snapshotCreateBody := body.VmSnapshotCreate{
 		Name: e2e.GenName("e2e"),
@@ -526,13 +506,8 @@ func TestCreateAndRestoreVmSnapshot(t *testing.T) {
 	// make sure the job is picked up
 	time.Sleep(5)
 
-	waitForJobFinished(t, snapshotCreated.JobID, func(jobRead *body.JobRead) bool {
-		return true
-	})
-
-	waitForVmRunning(t, vm.ID, func(vmRead *body.VmRead) bool {
-		return true
-	})
+	e2e.WaitForJobFinished(t, snapshotCreated.JobID, nil)
+	e2e.WaitForVmRunning(t, vm.ID, nil)
 
 	var vmSnapshotsRead []body.VmSnapshotRead
 	readResp := e2e.DoGetRequest(t, "/vms/"+vm.ID+"/snapshots")
@@ -548,9 +523,7 @@ func TestCreateAndRestoreVmSnapshot(t *testing.T) {
 		}
 	}
 
-	if !assert.NotEmpty(t, vmSnapshotRead.ID) {
-		assert.FailNow(t, "snapshot was not found")
-	}
+	assert.NotEmpty(t, vmSnapshotRead.ID)
 
 	updateSnapshotBody := body.VmUpdate{
 		SnapshotID: &vmSnapshotRead.ID,
@@ -566,13 +539,8 @@ func TestCreateAndRestoreVmSnapshot(t *testing.T) {
 	// make sure the job is picked up
 	time.Sleep(5)
 
-	waitForJobFinished(t, vmUpdated.JobID, func(jobRead *body.JobRead) bool {
-		return true
-	})
-
-	waitForVmRunning(t, vm.ID, func(vmRead *body.VmRead) bool {
-		return true
-	})
+	e2e.WaitForJobFinished(t, vmUpdated.JobID, nil)
+	e2e.WaitForVmRunning(t, vm.ID, nil)
 
 	var vmRead body.VmRead
 	readResp = e2e.DoGetRequest(t, "/vms/"+vm.ID)
@@ -580,10 +548,10 @@ func TestCreateAndRestoreVmSnapshot(t *testing.T) {
 	assert.NoError(t, err, "vm was not updated")
 }
 
-func TestVmInvalidCommand(t *testing.T) {
+func TestInvalidCommand(t *testing.T) {
 	invalidCommands := []string{"some command", "invalid"}
 
-	vm := withVM(t, body.VmCreate{
+	vm := e2e.WithVM(t, body.VmCreate{
 		Name:         e2e.GenName("e2e"),
 		SshPublicKey: withSshPublicKey(t),
 		CpuCores:     2,
