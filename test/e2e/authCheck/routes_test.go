@@ -15,7 +15,7 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func TestFetchAuthCheck(t *testing.T) {
+func TestGet(t *testing.T) {
 	resp := e2e.DoGetRequest(t, "/authCheck")
 	assert.Equal(t, 200, resp.StatusCode)
 

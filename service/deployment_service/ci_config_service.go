@@ -26,6 +26,10 @@ func GetCIConfig(deploymentID string, auth *service.AuthInfo) (*body.CiConfig, e
 		return nil, nil
 	}
 
+	if deployment.Type != deploymentModel.TypeCustom {
+		return nil, nil
+	}
+
 	tag := fmt.Sprintf("%s/%s/%s",
 		conf.Env.DockerRegistry.URL,
 		subsystemutils.GetPrefixedName(auth.UserID),

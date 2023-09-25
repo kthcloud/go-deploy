@@ -5,33 +5,35 @@ import (
 	"encoding/json"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"go-deploy/pkg/app"
-	"log"
 	"net/http"
-	"os"
 	"strings"
 	"testing"
+	"time"
 )
 
 const TestUserID = "955f0f87-37fd-4792-90eb-9bf6989e698e"
+const CheckInterval = 1 * time.Second
 
-var deployApp *app.App
+func fetchUntil(t *testing.T, subPath string, callback func(*http.Response) bool) {
+	loops := 0
+	for {
+		time.Sleep(CheckInterval)
 
-func Setup() {
-	//goland:noinspection ALL
-	requiredEnvs := []string{}
-
-	for _, env := range requiredEnvs {
-		_, result := os.LookupEnv(env)
-		if !result {
-			log.Fatalln("required environment variable not set: " + env)
+		resp := DoGetRequest(t, subPath)
+		if resp.StatusCode == http.StatusNotFound {
+			if callback == nil || callback(resp) {
+				break
+			}
 		}
-	}
-}
 
-func Shutdown() {
-	if deployApp != nil {
-		deployApp.Stop()
+		if callback == nil || callback(resp) {
+			break
+		}
+
+		loops++
+		if !assert.LessOrEqual(t, loops, 600, "resource fetch timeout") {
+			break
+		}
 	}
 }
 

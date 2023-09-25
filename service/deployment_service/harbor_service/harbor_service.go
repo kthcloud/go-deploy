@@ -69,7 +69,7 @@ func Create(deploymentID, userID string, params *deploymentModel.CreateParams) e
 }
 
 func CreatePlaceholder(name string) error {
-	log.Println("setting up placeholder github")
+	log.Println("setting up placeholder harbor")
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to setup placeholder github. details: %w", err)
