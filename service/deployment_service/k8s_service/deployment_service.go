@@ -130,7 +130,7 @@ func Create(deploymentID string, userID string, params *deploymentModel.CreatePa
 				deployment.Name,
 				ss.GetService(appName).Name,
 				ss.GetService(appName).Port,
-				[]string{GetExternalFQDN(deployment.Name, client.Zone)},
+				GetAllDomainNames(deployment.Name, mainApp.ExtraDomains, client.Zone),
 			)
 		}
 
@@ -607,12 +607,18 @@ func Repair(name string) error {
 		}
 	} else if !mainIngress.Placeholder {
 		err = client.RepairIngress(deployment.ID, appName, func() *k8sModels.IngressPublic {
+			mainService := ss.GetService(appName)
+			if service.NotCreated(mainService) {
+				log.Println("main service not created when recreating ingress. assuming it was deleted")
+				return nil
+			}
+
 			return helpers.CreateIngressPublic(
 				deployment.Subsystems.K8s.Namespace.FullName,
 				deployment.Name,
-				mainIngress.ServiceName,
-				mainIngress.ServicePort,
-				mainIngress.Hosts,
+				mainService.Name,
+				mainService.Port,
+				GetAllDomainNames(deployment.Name, mainApp.ExtraDomains, client.Zone),
 			)
 		})
 		if err != nil {

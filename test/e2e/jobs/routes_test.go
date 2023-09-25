@@ -26,10 +26,10 @@ func TestGetList(t *testing.T) {
 	assert.NoError(t, err, "jobs were not fetched")
 
 	assert.NotEmpty(t, jobsRead, "jobs were empty")
-	for _, job := range jobsRead {
-		assert.NotEmpty(t, job.ID, "job id was empty")
-		assert.NotEmpty(t, job.Type, "job type was empty")
-		assert.NotEmpty(t, job.UserID, "job user id was empty")
+	for _, j := range jobsRead {
+		assert.NotEmpty(t, j.ID, "job id was empty")
+		assert.NotEmpty(t, j.Type, "job type was empty")
+		assert.NotEmpty(t, j.UserID, "job user id was empty")
 	}
 }
 

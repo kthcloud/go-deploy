@@ -22,7 +22,7 @@ func (client *Client) Create(deploymentID, ownerID string, params *CreateParams)
 		Envs:         params.Envs,
 		Volumes:      params.Volumes,
 		InitCommands: params.InitCommands,
-		ExtraDomains: make([]string, 0),
+		ExtraDomains: params.ExtraDomains,
 		PingResult:   0,
 	}
 

@@ -171,6 +171,7 @@ func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZone, fallbac
 		}
 	}
 	p.InitCommands = dto.InitCommands
+	p.ExtraDomains = dto.ExtraDomains
 
 	if dto.GitHub != nil {
 		p.GitHub = &GitHubCreateParams{
