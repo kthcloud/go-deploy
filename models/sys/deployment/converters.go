@@ -171,6 +171,7 @@ func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZone, fallbac
 		}
 	}
 	p.InitCommands = dto.InitCommands
+	p.ExtraDomains = dto.ExtraDomains
 
 	// only allow GitHub on non-prebuilt deployments
 	if p.Type == TypeCustom && dto.GitHub != nil {

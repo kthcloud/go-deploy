@@ -44,7 +44,6 @@ type VmZone struct {
 type Deployment struct {
 	Port           int    `yaml:"port"`
 	Prefix         string `yaml:"prefix"`
-	ExtraDomainIP  string `yaml:"extraDomainIp"`
 	IngressClass   string `yaml:"ingressClass"`
 	RepairInterval int    `yaml:"repairInterval"`
 	PingInterval   int    `yaml:"pingInterval"`
