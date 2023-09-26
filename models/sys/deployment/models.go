@@ -67,6 +67,7 @@ type CreateParams struct {
 	Envs         []Env    `json:"envs" bson:"envs"`
 	Volumes      []Volume `json:"volumes" bson:"volumes"`
 	InitCommands []string `json:"initCommands" bson:"initCommands"`
+	ExtraDomains []string `json:"extraDomains" bson:"extraDomains"`
 
 	GitHub *GitHubCreateParams `json:"github,omitempty" bson:"github,omitempty"`
 

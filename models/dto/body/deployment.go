@@ -26,6 +26,7 @@ type DeploymentCreate struct {
 	Envs         []Env    `json:"envs" binding:"omitempty,env_list,min=0,max=1000,dive"`
 	Volumes      []Volume `json:"volumes" binding:"omitempty,min=0,max=100,dive"`
 	InitCommands []string `json:"initCommands" binding:"omitempty,min=0,max=100,dive,min=0,max=100"`
+	ExtraDomains []string `json:"extraDomains" binding:"omitempty,extra_domain_list,min=0,max=1000,dive"`
 
 	GitHub *GitHub `json:"github" binding:"omitempty,dive"`
 
