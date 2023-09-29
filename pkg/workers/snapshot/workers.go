@@ -41,7 +41,7 @@ func snapshotter(ctx context.Context) {
 					runAt := time.Date(now.Year(), now.Month(), now.Day()+1, 3, 0, 0, 0, time.UTC)
 
 					jobCreateErr := job.New().CreateScheduled(jobID, vm.OwnerID, job.TypeCreateSnapshot, runAt, map[string]interface{}{
-						"id":          vm.ID,
+						"vmId":        vm.ID,
 						"name":        fmt.Sprintf("snapshot-%s", time.Now().Format("20060102150405")),
 						"userCreated": false,
 					})

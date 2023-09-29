@@ -6,16 +6,22 @@ import (
 	"time"
 )
 
+type CustomCert struct {
+	Issuer     string `bson:"issuer"`
+	CommonName string `bson:"commonName"`
+}
+
 type IngressPublic struct {
-	ID           string    `json:"id" bson:"id"`
-	Name         string    `bson:"name"`
-	Namespace    string    `bson:"namespace"`
-	ServiceName  string    `bson:"serviceName"`
-	ServicePort  int       `bson:"servicePort"`
-	IngressClass string    `bson:"ingressClassName"`
-	Hosts        []string  `bson:"host"`
-	Placeholder  bool      `bson:"placeholder"`
-	CreatedAt    time.Time `bson:"createdAt"`
+	ID           string      `json:"id" bson:"id"`
+	Name         string      `bson:"name"`
+	Namespace    string      `bson:"namespace"`
+	ServiceName  string      `bson:"serviceName"`
+	ServicePort  int         `bson:"servicePort"`
+	IngressClass string      `bson:"ingressClassName"`
+	Hosts        []string    `bson:"host"`
+	Placeholder  bool        `bson:"placeholder"`
+	CreatedAt    time.Time   `bson:"createdAt"`
+	CustomCert   *CustomCert `bson:"customCert,omitempty"`
 }
 
 func (i *IngressPublic) Created() bool {
@@ -30,6 +36,7 @@ func CreateIngressPublicFromRead(ingress *v1.Ingress) *IngressPublic {
 	var serviceName string
 	var servicePort int
 	var ingressClassName string
+	var customCert *CustomCert
 
 	if len(ingress.Spec.Rules) > 0 {
 		if len(ingress.Spec.Rules[0].HTTP.Paths) > 0 {
@@ -40,6 +47,16 @@ func CreateIngressPublicFromRead(ingress *v1.Ingress) *IngressPublic {
 
 	if ingress.Annotations != nil {
 		ingressClassName = ingress.Annotations[keys.K8sAnnotationIngressClass]
+
+		clusterIssuer := ingress.Annotations[keys.K8sAnnotationClusterIssuer]
+		commonName := ingress.Annotations[keys.K8sAnnotationCommonName]
+
+		if clusterIssuer != "" && commonName != "" {
+			customCert = &CustomCert{
+				Issuer:     clusterIssuer,
+				CommonName: commonName,
+			}
+		}
 	}
 
 	hosts := make([]string, 0)
@@ -57,5 +74,6 @@ func CreateIngressPublicFromRead(ingress *v1.Ingress) *IngressPublic {
 		Hosts:        hosts,
 		Placeholder:  false,
 		CreatedAt:    formatCreatedAt(ingress.Annotations),
+		CustomCert:   customCert,
 	}
 }

@@ -76,6 +76,7 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 	if err != nil {
 		return makeError(err)
 	}
+
 	createPlaceHolderInstead := false
 	if params.GitHub != nil {
 		err = github_service.Create(deploymentID, params)
@@ -130,11 +131,6 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 
 		if repo.CloneURL == "" {
 			log.Println("github repository has no clone url. assuming it was deleted")
-			return nil
-		}
-
-		if repo.DefaultBranch == "" {
-			log.Println("github repository has no default branch. assuming it was deleted")
 			return nil
 		}
 
