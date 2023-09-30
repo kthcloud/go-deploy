@@ -214,6 +214,21 @@ func CreateIngressManifest(public *models.IngressPublic) *networkingv1.Ingress {
 		}
 	}
 
+	var tls []networkingv1.IngressTLS
+	if public.CustomCert != nil {
+		tls = append(tls, networkingv1.IngressTLS{
+			Hosts:      public.Hosts,
+			SecretName: public.Name,
+		})
+	}
+
+	annotations := map[string]string{keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat)}
+	if public.CustomCert != nil {
+		annotations[keys.K8sAnnotationClusterIssuer] = public.CustomCert.ClusterIssuer
+		annotations[keys.K8sAnnotationCommonName] = public.CustomCert.CommonName
+		annotations[keys.K8sAnnotationAcmeChallengeType] = "http01"
+	}
+
 	return &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      public.Name,
@@ -222,13 +237,12 @@ func CreateIngressManifest(public *models.IngressPublic) *networkingv1.Ingress {
 				keys.ManifestLabelID:   public.ID,
 				keys.ManifestLabelName: public.Name,
 			},
-			Annotations: map[string]string{
-				keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat),
-				"kubernetes.io/ingress.class":  public.IngressClass,
-			},
+			Annotations: annotations,
 		},
 		Spec: networkingv1.IngressSpec{
-			Rules: rules,
+			Rules:            rules,
+			TLS:              tls,
+			IngressClassName: &public.IngressClass,
 		},
 	}
 }

@@ -142,22 +142,15 @@ func Create(deploymentID string, userID string, params *deploymentModel.CreatePa
 	}
 
 	// Ingress extra
-	if len(mainApp.ExtraDomains) > 0 {
+	if len(mainApp.ExtraDomains) > 0 && !params.Private {
 		if ingress := ss.GetIngress(appNameExtra); service.NotCreated(ingress) {
-			var public *k8sModels.IngressPublic
-			if params.Private {
-				public = &k8sModels.IngressPublic{
-					Placeholder: true,
-				}
-			} else {
-				public = helpers.CreateIngressPublic(
-					client.Namespace,
-					deployment.Name,
-					ss.GetService(appName).Name,
-					ss.GetService(appName).Port,
-					mainApp.ExtraDomains,
-				)
-			}
+			public := helpers.CreateExtraIngressPublic(
+				client.Namespace,
+				deployment.Name,
+				ss.GetService(appName).Name,
+				ss.GetService(appName).Port,
+				mainApp.ExtraDomains,
+			)
 
 			_, err = client.CreateIngress(deployment.ID, appNameExtra, public)
 			if err != nil {
@@ -399,7 +392,7 @@ func Update(name string, params *deploymentModel.UpdateParams) error {
 				}
 
 				if len(extraDomains) > 0 {
-					public = helpers.CreateIngressPublic(
+					public = helpers.CreateExtraIngressPublic(
 						client.Namespace,
 						deployment.Name,
 						k8sService.Name,
@@ -653,7 +646,7 @@ func Repair(name string) error {
 				}
 
 				if len(mainApp.ExtraDomains) > 0 {
-					ingressPublic = helpers.CreateIngressPublic(
+					ingressPublic = helpers.CreateExtraIngressPublic(
 						client.Namespace,
 						deployment.Name,
 						k8sService.Name,
@@ -675,23 +668,26 @@ func Repair(name string) error {
 					return nil
 				}
 
-				var domains []string
 				if mapName == appName {
-					domains = []string{GetExternalFQDN(deployment.Name, client.Zone)}
+					return helpers.CreateIngressPublic(
+						deployment.Subsystems.K8s.Namespace.FullName,
+						deployment.Name,
+						mainService.Name,
+						mainService.Port,
+						[]string{GetExternalFQDN(deployment.Name, client.Zone)},
+					)
 				} else if mapName == appNameExtra {
-					domains = mainApp.ExtraDomains
+					return helpers.CreateExtraIngressPublic(
+						deployment.Subsystems.K8s.Namespace.FullName,
+						deployment.Name,
+						mainService.Name,
+						mainService.Port,
+						mainApp.ExtraDomains,
+					)
 				} else {
 					log.Println("found unknown ingress map name when repairing ingress", mapName)
 					return nil
 				}
-
-				return helpers.CreateIngressPublic(
-					deployment.Subsystems.K8s.Namespace.FullName,
-					deployment.Name,
-					mainService.Name,
-					mainService.Port,
-					domains,
-				)
 			})
 			if err != nil {
 				return makeError(err)

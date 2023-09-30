@@ -232,6 +232,22 @@ func CreateIngressPublic(namespace, name string, serviceName string, servicePort
 	}
 }
 
+func CreateExtraIngressPublic(namespace, name string, serviceName string, servicePort int, domains []string) *k8sModels.IngressPublic {
+	return &k8sModels.IngressPublic{
+		ID:           "",
+		Name:         name + "-extra",
+		Namespace:    namespace,
+		ServiceName:  serviceName,
+		ServicePort:  servicePort,
+		IngressClass: conf.Env.Deployment.IngressClass,
+		Hosts:        domains,
+		CustomCert: &k8sModels.CustomCert{
+			ClusterIssuer: "letsencrypt-prod-deploy-http",
+			CommonName:    domains[0],
+		},
+	}
+}
+
 func CreatePvPublic(name string, capacity, nfsPath, nfsServer string) *k8sModels.PvPublic {
 	return &k8sModels.PvPublic{
 		ID:        "",

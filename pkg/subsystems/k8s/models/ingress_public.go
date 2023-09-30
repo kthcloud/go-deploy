@@ -7,8 +7,8 @@ import (
 )
 
 type CustomCert struct {
-	Issuer     string `bson:"issuer"`
-	CommonName string `bson:"commonName"`
+	ClusterIssuer string `bson:"clusterIssuer"`
+	CommonName    string `bson:"commonName"`
 }
 
 type IngressPublic struct {
@@ -38,6 +38,10 @@ func CreateIngressPublicFromRead(ingress *v1.Ingress) *IngressPublic {
 	var ingressClassName string
 	var customCert *CustomCert
 
+	if ingress.Spec.IngressClassName != nil {
+		ingressClassName = *ingress.Spec.IngressClassName
+	}
+
 	if len(ingress.Spec.Rules) > 0 {
 		if len(ingress.Spec.Rules[0].HTTP.Paths) > 0 {
 			serviceName = ingress.Spec.Rules[0].HTTP.Paths[0].Backend.Service.Name
@@ -46,15 +50,13 @@ func CreateIngressPublicFromRead(ingress *v1.Ingress) *IngressPublic {
 	}
 
 	if ingress.Annotations != nil {
-		ingressClassName = ingress.Annotations[keys.K8sAnnotationIngressClass]
-
 		clusterIssuer := ingress.Annotations[keys.K8sAnnotationClusterIssuer]
 		commonName := ingress.Annotations[keys.K8sAnnotationCommonName]
 
 		if clusterIssuer != "" && commonName != "" {
 			customCert = &CustomCert{
-				Issuer:     clusterIssuer,
-				CommonName: commonName,
+				ClusterIssuer: clusterIssuer,
+				CommonName:    commonName,
 			}
 		}
 	}
