@@ -14,6 +14,7 @@ import (
 	"go-deploy/service/deployment_service"
 	"go-deploy/utils"
 	"go-deploy/utils/requestutils"
+	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -23,6 +24,64 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true
 	},
+}
+
+func GetLogsSSE(c *gin.Context) {
+	httpContext := sys.NewContext(c)
+
+	var requestURI uri.LogsGet
+	if err := httpContext.GinContext.BindUri(&requestURI); err != nil {
+		httpContext.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		return
+	}
+
+	auth, err := v1.WithAuth(&httpContext)
+	if err != nil {
+		httpContext.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		return
+	}
+
+	deployment, err := deployment_service.GetByIdAuth(requestURI.DeploymentID, auth)
+	if err != nil {
+		httpContext.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		return
+	}
+
+	if deployment == nil {
+		httpContext.ErrorResponse(http.StatusNotFound, status_codes.Error, fmt.Sprintf("deployment %s not found", requestURI.DeploymentID))
+		return
+	}
+
+	ch := make(chan string)
+
+	handler := func(msg string) {
+		ch <- msg
+	}
+
+	ctx, err := deployment_service.SetupLogStream(requestURI.DeploymentID, handler, auth)
+	if err != nil {
+		httpContext.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		return
+	}
+
+	if ctx == nil {
+		httpContext.ErrorResponse(http.StatusNotFound, status_codes.Error, fmt.Sprintf("deployment %s not found", requestURI.DeploymentID))
+		return
+	}
+
+	c.Stream(func(w io.Writer) bool {
+		select {
+		case <-ctx.Done():
+			return false
+		case msg := <-ch:
+			_, err := fmt.Fprintf(w, "data: %s\n\n", msg)
+			if err != nil {
+				utils.PrettyPrintError(fmt.Errorf("error writing message to SSE for deployment %s. details: %w", requestURI.DeploymentID, err))
+				return false
+			}
+			return true
+		}
+	})
 }
 
 // GetLogs Websocket

@@ -5,6 +5,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+	"go-deploy/docs"
 	"go-deploy/models/dto/body"
 	"go-deploy/pkg/auth"
 	"go-deploy/pkg/conf"
@@ -22,11 +25,17 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-
-	swaggerfiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
-	"go-deploy/docs"
 )
+
+func sseHeaderMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Writer.Header().Set("Content-Type", "text/event-stream")
+		c.Writer.Header().Set("Cache-Control", "no-cache")
+		c.Writer.Header().Set("Connection", "keep-alive")
+		c.Writer.Header().Set("Transfer-Encoding", "chunked")
+		c.Next()
+	}
+}
 
 func NewRouter() *gin.Engine {
 	corsConfig := cors.DefaultConfig()
@@ -79,6 +88,7 @@ func setupDeploymentRoutes(private *gin.RouterGroup, public *gin.RouterGroup, ho
 	private.POST("/deployments/:deploymentId/command", v1_deployment.DoCommand)
 
 	public.GET("/deployments/:deploymentId/logs", v1_deployment.GetLogs)
+	private.GET("/deployments/:deploymentId/logs-sse", sseHeaderMiddleware(), v1_deployment.GetLogsSSE)
 
 	hooks.POST("/deployments/harbor", v1_deployment.HandleHarborHook)
 	hooks.POST("/deployments/github", v1_deployment.HandleGitHubHook)
