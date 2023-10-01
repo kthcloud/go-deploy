@@ -48,8 +48,13 @@ func (deployment *Deployment) GetURL() *string {
 		return nil
 	}
 
-	ingress, ok := deployment.Subsystems.K8s.IngressMap[app.Name]
-	if !ok || !ingress.Created() {
+	if app.CustomDomain != nil && len(*app.CustomDomain) > 0 {
+		url := fmt.Sprintf("https://%s", *app.CustomDomain)
+		return &url
+	}
+
+	ingress := deployment.Subsystems.K8s.GetIngress(app.Name)
+	if ingress == nil || !ingress.Created() {
 		return nil
 	}
 

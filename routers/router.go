@@ -17,6 +17,7 @@ import (
 	"go-deploy/routers/api/v1/v1_vm"
 	"go-deploy/routers/api/v1/v1_zone"
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/net/idna"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -252,46 +253,30 @@ func registerCustomValidators() {
 			panic(err)
 		}
 
-		err = v.RegisterValidation("extra_domain_list", func(fl validator.FieldLevel) bool {
-			domainList, ok := fl.Field().Interface().([]string)
+		err = v.RegisterValidation("custom_domain", func(fl validator.FieldLevel) bool {
+			domain, ok := fl.Field().Interface().(string)
 			if !ok {
 				return false
 			}
 
-			rfc1035 := regexp.MustCompile(`^[a-zA-Z]([a-zA-Z0-9-]*[a-zA-Z0-9])?([a-zA-Z]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$`)
+			illegalSuffixes := make([]string, len(conf.Env.Deployment.Zones))
+			for idx, zone := range conf.Env.Deployment.Zones {
+				illegalSuffixes[idx] = zone.ParentDomain
+			}
 
-			names := make(map[string]bool)
-			for _, domain := range domainList {
-				if _, ok := names[domain]; ok {
+			for _, suffix := range illegalSuffixes {
+				if strings.HasSuffix(domain, suffix) {
 					return false
 				}
-				names[domain] = true
+			}
 
-				splitByDots := strings.Split(domain, ".")
-				for _, split := range splitByDots {
-					if len(split) > 63 {
-						return false
-					}
+			punyEncoded, err := idna.Lookup.ToASCII(domain)
+			if err != nil {
+				return false
+			}
 
-					if !rfc1035.MatchString(split) {
-						return false
-					}
-				}
-
-				illegalSuffixes := make([]string, len(conf.Env.Deployment.Zones))
-				for idx, zone := range conf.Env.Deployment.Zones {
-					illegalSuffixes[idx] = zone.ParentDomain
-				}
-
-				for _, suffix := range illegalSuffixes {
-					if strings.HasSuffix(domain, suffix) {
-						return false
-					}
-				}
-
-				if !v1.IsValidDomain(domain) {
-					return false
-				}
+			if !v1.IsValidDomain(punyEncoded) {
+				return false
 			}
 
 			return true

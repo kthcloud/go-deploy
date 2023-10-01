@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 )
@@ -66,7 +65,7 @@ func TestCreate(t *testing.T) {
 	envValue := uuid.NewString()
 
 	requestBody := body.DeploymentCreate{
-		Name:    "e2e-" + strings.ReplaceAll(uuid.NewString()[:10], "-", ""),
+		Name:    e2e.GenName("e2e"),
 		Private: false,
 		Envs: []body.Env{
 			{
@@ -86,7 +85,7 @@ func TestCreateWithCustomPort(t *testing.T) {
 	customPort := 8081
 
 	requestBody := body.DeploymentCreate{
-		Name:    "e2e-" + strings.ReplaceAll(uuid.NewString()[:10], "-", ""),
+		Name:    e2e.GenName("e2e"),
 		Private: false,
 		Envs: []body.Env{
 			{
@@ -107,7 +106,7 @@ func TestCreateWithCustomImage(t *testing.T) {
 	customPort := 80
 
 	requestBody := body.DeploymentCreate{
-		Name:    "e2e-" + strings.ReplaceAll(uuid.NewString()[:10], "-", ""),
+		Name:    e2e.GenName("e2e"),
 		Private: false,
 		Envs: []body.Env{
 			{
@@ -118,6 +117,18 @@ func TestCreateWithCustomImage(t *testing.T) {
 		Image:  &customImage,
 		GitHub: nil,
 		Zone:   nil,
+	}
+
+	_, _ = e2e.WithDeployment(t, requestBody)
+}
+
+func TestCreateWithCustomDomain(t *testing.T) {
+	customDomain := e2e.TestDomain
+
+	requestBody := body.DeploymentCreate{
+		Name:         e2e.GenName("e2e"),
+		Private:      false,
+		CustomDomain: &customDomain,
 	}
 
 	_, _ = e2e.WithDeployment(t, requestBody)
@@ -411,7 +422,7 @@ func TestCreateStorageManager(t *testing.T) {
 	envValue := uuid.NewString()
 
 	requestBody := body.DeploymentCreate{
-		Name:    "e2e-" + strings.ReplaceAll(uuid.NewString()[:10], "-", ""),
+		Name:    e2e.GenName("e2e"),
 		Private: false,
 		Envs: []body.Env{
 			{

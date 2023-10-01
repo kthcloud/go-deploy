@@ -4,6 +4,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go-deploy/models/dto/body"
 	"go-deploy/pkg/status_codes"
+	"golang.org/x/net/idna"
 	"net/http"
 	"strconv"
 	"testing"
@@ -154,6 +155,12 @@ func WithDeployment(t *testing.T, requestBody body.DeploymentCreate) (body.Deplo
 		assert.Empty(t, deploymentRead.Volumes)
 	} else {
 		assert.Equal(t, requestBody.Volumes, deploymentRead.Volumes)
+	}
+
+	if requestBody.CustomDomain != nil {
+		punyEncoded, err := idna.New().ToASCII("https://" + *requestBody.CustomDomain)
+		assert.NoError(t, err, "custom domain was not puny encoded")
+		assert.Equal(t, punyEncoded, *deploymentRead.URL)
 	}
 
 	return deploymentRead, deploymentCreated.JobID

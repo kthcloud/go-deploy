@@ -15,7 +15,7 @@ type App struct {
 	Envs         []Env    `bson:"envs"`
 	Volumes      []Volume `bson:"volumes"`
 	InitCommands []string `bson:"initCommands"`
-	ExtraDomains []string `bson:"extraDomains"`
+	CustomDomain *string  `bson:"customDomain,omitempty"`
 	PingResult   int      `bson:"pingResult"`
 }
 
@@ -39,56 +39,56 @@ type Volume struct {
 }
 
 type Usage struct {
-	Count int `json:"deployments"`
+	Count int
 }
 
 type UpdateParams struct {
-	Private      *bool     `json:"private" bson:"private"`
-	Envs         *[]Env    `json:"envs" bson:"envs"`
-	InternalPort *int      `json:"internalPort" bson:"internalPort"`
-	Volumes      *[]Volume `json:"volumes" bson:"volumes"`
-	InitCommands *[]string `json:"initCommands" bson:"initCommands"`
-	ExtraDomains *[]string `json:"extraDomains" bson:"extraDomains"`
-	Image        *string   `json:"image" bson:"image"`
+	Private      *bool
+	Envs         *[]Env
+	InternalPort *int
+	Volumes      *[]Volume
+	InitCommands *[]string
+	CustomDomain *string
+	Image        *string
 }
 
 type GitHubCreateParams struct {
-	Token        string `json:"token" bson:"token"`
-	RepositoryID int64  `json:"repositoryId" bson:"repositoryId"`
+	Token        string
+	RepositoryID int64
 }
 
 type CreateParams struct {
-	Name string `json:"name" bson:"name"`
-	Type string `json:"type" bson:"type"`
+	Name string
+	Type string
 
-	Image        string   `json:"image" bson:"image"`
-	InternalPort int      `json:"internalPort" bson:"internalPort"`
-	Private      bool     `json:"private" bson:"private"`
-	Envs         []Env    `json:"envs" bson:"envs"`
-	Volumes      []Volume `json:"volumes" bson:"volumes"`
-	InitCommands []string `json:"initCommands" bson:"initCommands"`
-	ExtraDomains []string `json:"extraDomains" bson:"extraDomains"`
+	Image        string
+	InternalPort int
+	Private      bool
+	Envs         []Env
+	Volumes      []Volume
+	InitCommands []string
+	CustomDomain *string
 
-	GitHub *GitHubCreateParams `json:"github,omitempty" bson:"github,omitempty"`
+	GitHub *GitHubCreateParams
 
-	Zone string `json:"zone,omitempty" bson:"zoneId,omitempty"`
+	Zone string
 }
 
 type BuildParams struct {
-	Tag       string `json:"tag" bson:"tag"`
-	Branch    string `json:"branch" bson:"branch"`
-	ImportURL string `json:"importUrl" bson:"importUrl"`
+	Tag       string
+	Branch    string
+	ImportURL string
 }
 
 type GitHubRepository struct {
-	ID            int64  `json:"id"`
-	Name          string `json:"name"`
-	Owner         string `json:"owner"`
-	CloneURL      string `json:"clone_url"`
-	DefaultBranch string `json:"default_branch"`
+	ID            int64
+	Name          string
+	Owner         string
+	CloneURL      string
+	DefaultBranch string
 }
 
 type GitHubWebhook struct {
-	ID     int64    `json:"id"`
-	Events []string `json:"events"`
+	ID     int64
+	Events []string
 }

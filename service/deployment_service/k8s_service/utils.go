@@ -42,10 +42,3 @@ func GetExternalFQDN(name string, zone *enviroment.DeploymentZone) string {
 func GetStorageManagerExternalFQDN(name string, zone *enviroment.DeploymentZone) string {
 	return fmt.Sprintf("%s.%s", name, zone.Storage.ParentDomain)
 }
-
-func GetAllDomainNames(name string, extraDomains []string, zone *enviroment.DeploymentZone) []string {
-	domains := make([]string, len(extraDomains)+1)
-	domains[0] = GetExternalFQDN(name, zone)
-	copy(domains[1:], extraDomains)
-	return domains
-}

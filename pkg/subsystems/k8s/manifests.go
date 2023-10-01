@@ -3,6 +3,7 @@ package k8s
 import (
 	"go-deploy/pkg/subsystems/k8s/keys"
 	"go-deploy/pkg/subsystems/k8s/models"
+	"go-deploy/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/batch/v1"
 	apiv1 "k8s.io/api/core/v1"
@@ -214,6 +215,21 @@ func CreateIngressManifest(public *models.IngressPublic) *networkingv1.Ingress {
 		}
 	}
 
+	var tls []networkingv1.IngressTLS
+	if public.CustomCert != nil {
+		tls = append(tls, networkingv1.IngressTLS{
+			Hosts:      public.Hosts,
+			SecretName: public.Name + "-" + utils.HashStringRfc1123(public.CustomCert.CommonName),
+		})
+	}
+
+	annotations := map[string]string{keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat)}
+	if public.CustomCert != nil {
+		annotations[keys.K8sAnnotationClusterIssuer] = public.CustomCert.ClusterIssuer
+		annotations[keys.K8sAnnotationCommonName] = public.CustomCert.CommonName
+		annotations[keys.K8sAnnotationAcmeChallengeType] = "http01"
+	}
+
 	return &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      public.Name,
@@ -222,13 +238,12 @@ func CreateIngressManifest(public *models.IngressPublic) *networkingv1.Ingress {
 				keys.ManifestLabelID:   public.ID,
 				keys.ManifestLabelName: public.Name,
 			},
-			Annotations: map[string]string{
-				keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat),
-				"kubernetes.io/ingress.class":  public.IngressClass,
-			},
+			Annotations: annotations,
 		},
 		Spec: networkingv1.IngressSpec{
-			Rules: rules,
+			Rules:            rules,
+			TLS:              tls,
+			IngressClassName: &public.IngressClass,
 		},
 	}
 }

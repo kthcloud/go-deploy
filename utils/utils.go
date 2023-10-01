@@ -15,6 +15,14 @@ func HashString(token string) string {
 	return base64.URLEncoding.EncodeToString(hasher.Sum(nil))
 }
 
+func HashStringRfc1123(token string) string {
+	urlHash := HashString(token)
+	urlHash = strings.ReplaceAll(urlHash, "_", "")
+	urlHash = strings.ReplaceAll(urlHash, "=", "")
+	urlHash = strings.ReplaceAll(urlHash, "-", "")
+	return strings.ToLower(urlHash)
+}
+
 func PrettyPrintError(err error) {
 	all := make([]string, 0)
 
