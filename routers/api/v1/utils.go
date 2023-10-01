@@ -67,8 +67,8 @@ func msgForTag(fe validator.FieldError) string {
 		return "Every port name must be unique"
 	case "port_list_numbers":
 		return "Every port number must be unique per protocol"
-	case "extra_domain_list":
-		return "Every domain name must be unique and be a valid hostname (RFC 1035). And must point to valid IP address"
+	case "custom_domain":
+		return "Custom domain must be a valid domain name and point to the correct IP"
 	}
 	return fe.Error()
 }
@@ -97,7 +97,7 @@ func CreateBindingError(err error) *body.BindingError {
 
 func IsValidDomain(domainName string) bool {
 	for _, zone := range conf.Env.Deployment.Zones {
-		mustPointAt := zone.ExtraDomainIP
+		mustPointAt := zone.CustomDomainIP
 
 		ips, _ := net.LookupIP(domainName)
 		for _, ip := range ips {
