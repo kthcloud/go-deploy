@@ -11,8 +11,11 @@ import (
 	"time"
 )
 
-const TestUserID = "955f0f87-37fd-4792-90eb-9bf6989e698e"
-const CheckInterval = 1 * time.Second
+const (
+	TestUserID    = "955f0f87-37fd-4792-90eb-9bf6989e698e"
+	TestDomain    = "test-deploy.saffronbun.com"
+	CheckInterval = 1 * time.Second
+)
 
 func fetchUntil(t *testing.T, subPath string, callback func(*http.Response) bool) {
 	loops := 0
