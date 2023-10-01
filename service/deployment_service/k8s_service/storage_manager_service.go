@@ -156,7 +156,7 @@ func CreateStorageManager(id string, params *storageManagerModel.CreateParams) e
 			storageManagerAppNameAuth,
 			ss.ServiceMap[oauthProxyAppName].Name,
 			ss.ServiceMap[oauthProxyAppName].Port,
-			[]string{GetStorageManagerExternalFQDN(storageManager.OwnerID, client.Zone)},
+			GetStorageManagerExternalFQDN(storageManager.OwnerID, client.Zone),
 		)
 		_, err = client.CreateIngress(storageManager.ID, oauthProxyAppName, public)
 		if err != nil {
@@ -309,7 +309,7 @@ func RepairStorageManager(id string) error {
 					mapName,
 					k8sService.Name,
 					k8sService.Port,
-					[]string{GetStorageManagerExternalFQDN(storageManager.OwnerID, client.Zone)},
+					GetStorageManagerExternalFQDN(storageManager.OwnerID, client.Zone),
 				)
 			}
 			return nil

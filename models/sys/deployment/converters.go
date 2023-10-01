@@ -3,6 +3,8 @@ package deployment
 import (
 	"fmt"
 	"go-deploy/models/dto/body"
+	"go-deploy/utils"
+	"golang.org/x/net/idna"
 	"log"
 	"strconv"
 )
@@ -122,8 +124,14 @@ func (p *UpdateParams) FromDTO(dto *body.DeploymentUpdate, deploymentType string
 	}
 
 	p.Private = dto.Private
-	p.ExtraDomains = dto.ExtraDomains
-	p.InitCommands = dto.InitCommands
+
+	if dto.CustomDomain != nil {
+		if punyEncoded, err := idna.New().ToASCII(*dto.CustomDomain); err == nil {
+			p.CustomDomain = &punyEncoded
+		} else {
+			utils.PrettyPrintError(fmt.Errorf("failed to puny encode domain %s when creating update params details: %w", *dto.CustomDomain, err))
+		}
+	}
 
 	if deploymentType == TypePrebuilt {
 		p.Image = dto.Image
@@ -171,7 +179,14 @@ func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZone, fallbac
 		}
 	}
 	p.InitCommands = dto.InitCommands
-	p.ExtraDomains = dto.ExtraDomains
+
+	if dto.CustomDomain != nil {
+		if punyEncoded, err := idna.New().ToASCII(*dto.CustomDomain); err == nil {
+			p.CustomDomain = &punyEncoded
+		} else {
+			utils.PrettyPrintError(fmt.Errorf("failed to puny encode domain %s when creating create params details: %w", *dto.CustomDomain, err))
+		}
+	}
 
 	// only allow GitHub on non-prebuilt deployments
 	if p.Type == TypeCustom && dto.GitHub != nil {

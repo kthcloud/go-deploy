@@ -11,12 +11,12 @@ type CloudStackConfigSource struct {
 }
 
 type DeploymentZone struct {
-	Name          string      `yaml:"name"`
-	Description   string      `yaml:"description"`
-	ParentDomain  string      `yaml:"parentDomain"`
-	ExtraDomainIP string      `yaml:"extraDomainIp"`
-	ConfigSource  interface{} `yaml:"configSource"`
-	Storage       struct {
+	Name           string      `yaml:"name"`
+	Description    string      `yaml:"description"`
+	ParentDomain   string      `yaml:"parentDomain"`
+	CustomDomainIP string      `yaml:"customDomainIp"`
+	ConfigSource   interface{} `yaml:"configSource"`
+	Storage        struct {
 		ParentDomain  string `yaml:"parentDomain"`
 		NfsServer     string `yaml:"nfsServer"`
 		NfsParentPath string `yaml:"nfsParentPath"`

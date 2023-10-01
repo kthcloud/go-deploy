@@ -14,9 +14,13 @@ import (
 )
 
 const (
-	appName      = "main"
-	appNameExtra = appName + "-extra"
+	appName             = "main"
+	appNameCustomDomain = "custom-domain"
 )
+
+func withCustomDomainSuffix(name string) string {
+	return fmt.Sprintf("%s-%s", name, appNameCustomDomain)
+}
 
 func getNamespaceName(userID string) string {
 	return subsystemutils.GetPrefixedName(userID)
@@ -131,7 +135,7 @@ func Create(deploymentID string, userID string, params *deploymentModel.CreatePa
 				deployment.Name,
 				ss.GetService(appName).Name,
 				ss.GetService(appName).Port,
-				[]string{GetExternalFQDN(deployment.Name, client.Zone)},
+				GetExternalFQDN(deployment.Name, client.Zone),
 			)
 		}
 
@@ -141,18 +145,18 @@ func Create(deploymentID string, userID string, params *deploymentModel.CreatePa
 		}
 	}
 
-	// Ingress extra
-	if len(mainApp.ExtraDomains) > 0 && !params.Private {
-		if ingress := ss.GetIngress(appNameExtra); service.NotCreated(ingress) {
-			public := helpers.CreateExtraIngressPublic(
+	// Ingress custom domain
+	if mainApp.CustomDomain != nil && !params.Private {
+		if ingress := ss.GetIngress(appNameCustomDomain); service.NotCreated(ingress) {
+			public := helpers.CreateCustomDomainIngressPublic(
 				client.Namespace,
-				deployment.Name,
+				withCustomDomainSuffix(deployment.Name),
 				ss.GetService(appName).Name,
 				ss.GetService(appName).Port,
-				mainApp.ExtraDomains,
+				*mainApp.CustomDomain,
 			)
 
-			_, err = client.CreateIngress(deployment.ID, appNameExtra, public)
+			_, err = client.CreateIngress(deployment.ID, appNameCustomDomain, public)
 			if err != nil {
 				return makeError(err)
 			}
@@ -324,15 +328,15 @@ func Update(name string, params *deploymentModel.UpdateParams) error {
 		}
 	}
 
-	if params.ExtraDomains != nil {
-		if ingress := client.K8s.GetIngress(appName); service.Created(ingress) {
-			if ingress.ID == "" {
-				return nil
+	if params.CustomDomain != nil && (params.Private == nil || !*params.Private) {
+		if ingress := client.K8s.GetIngress(appNameCustomDomain); service.Created(ingress) {
+			ingress.CustomCert = &k8sModels.CustomCert{
+				ClusterIssuer: "letsencrypt-prod-deploy-http",
+				CommonName:    *params.CustomDomain,
 			}
+			ingress.Hosts = []string{*params.CustomDomain}
 
-			ingress.Hosts = *params.ExtraDomains
-
-			err = client.RecreateIngress(deployment.ID, name, ingress)
+			err = client.RecreateIngress(deployment.ID, appNameCustomDomain, ingress)
 			if err != nil {
 				return makeError(err)
 			}
@@ -340,67 +344,40 @@ func Update(name string, params *deploymentModel.UpdateParams) error {
 	}
 
 	if params.Private != nil {
-		ingress := client.K8s.GetIngressMap()[appName]
-
-		emptyOrPlaceHolder := !ingress.Created() || ingress.IsPlaceholder()
-
-		if *params.Private != emptyOrPlaceHolder {
-			if !emptyOrPlaceHolder {
-				err = client.DeleteIngress(deployment.ID, appName)
+		if *params.Private {
+			for mapName := range client.K8s.IngressMap {
+				err = client.DeleteIngress(deployment.ID, mapName)
+				if err != nil {
+					return makeError(err)
+				}
+			}
+		} else {
+			if !service.Created(client.K8s.GetIngress(appName)) {
+				_, err = client.CreateIngress(deployment.ID, appName, helpers.CreateIngressPublic(
+					client.Namespace,
+					deployment.Name,
+					client.K8s.GetService(appName).Name,
+					client.K8s.GetService(appName).Port,
+					GetExternalFQDN(deployment.Name, client.Zone),
+				))
 				if err != nil {
 					return makeError(err)
 				}
 			}
 
-			if *params.Private {
-				client.K8s.SetIngress(appName, k8sModels.IngressPublic{
-					Placeholder: true,
-				})
-
-				err = deploymentModel.New().UpdateSubsystemByName(name, "k8s", "ingressMap", client.K8s.IngressMap)
-				if err != nil {
-					return makeError(err)
-				}
-			} else {
-				namespace := client.K8s.Namespace
-				if !namespace.Created() {
-					return nil
-				}
-
-				k8sService := client.K8s.GetService(appName)
-				if service.NotCreated(k8sService) {
-					return nil
-				}
-
-				public := helpers.CreateIngressPublic(
-					namespace.FullName,
-					name,
-					k8sService.Name,
-					k8sService.Port,
-					[]string{GetExternalFQDN(deployment.Name, client.Zone)},
-				)
-				_, err = client.CreateIngress(deployment.ID, appName, public)
-				if err != nil {
-					return makeError(err)
-				}
-
-				var extraDomains []string
-				if params.ExtraDomains != nil {
-					extraDomains = *params.ExtraDomains
-				} else {
-					extraDomains = mainApp.ExtraDomains
-				}
-
-				if len(extraDomains) > 0 {
-					public = helpers.CreateExtraIngressPublic(
-						client.Namespace,
-						deployment.Name,
-						k8sService.Name,
-						k8sService.Port,
-						mainApp.ExtraDomains,
+			if mainApp.CustomDomain != nil {
+				if !service.Created(client.K8s.GetIngress(appNameCustomDomain)) {
+					_, err = client.CreateIngress(
+						deployment.ID,
+						withCustomDomainSuffix(deployment.Name),
+						helpers.CreateCustomDomainIngressPublic(
+							client.Namespace,
+							withCustomDomainSuffix(deployment.Name),
+							client.K8s.GetService(appName).Name,
+							client.K8s.GetService(appName).Port,
+							*mainApp.CustomDomain,
+						),
 					)
-
-					_, err = client.CreateIngress(deployment.ID, appNameExtra, public)
 					if err != nil {
 						return makeError(err)
 					}
@@ -598,7 +575,7 @@ func Repair(name string) error {
 		err = client.RepairService(deployment.ID, mapName, func() *k8sModels.ServicePublic {
 			if mapName == appName {
 				return helpers.CreateServicePublic(
-					ss.Namespace.FullName,
+					client.Namespace,
 					deployment.Name,
 					mainApp.InternalPort,
 					mainApp.InternalPort,
@@ -617,80 +594,74 @@ func Repair(name string) error {
 		return nil
 	}
 
-	for mapName := range ss.IngressMap {
-		if mainApp.Private != mainIngress.Placeholder {
-			log.Println("recreating ingress for deployment due to mismatch with the private field", name)
+	if mainApp.Private {
+		for mapName := range ss.IngressMap {
+			err = client.DeleteIngress(deployment.ID, mapName)
+			if err != nil {
+				return makeError(err)
+			}
+		}
+	} else {
+		k8sService := ss.GetService(appName)
+		if !service.Created(k8sService) {
+			log.Println("k8s service not created when recreating ingress. assuming it was deleted")
+			return nil
+		}
 
-			if mainApp.Private {
-				err = client.DeleteIngress(deployment.ID, appName)
+		if !service.Created(mainIngress) {
+			ingressPublic := helpers.CreateIngressPublic(
+				client.Namespace,
+				deployment.Name,
+				k8sService.Name,
+				k8sService.Port,
+				GetExternalFQDN(deployment.Name, client.Zone),
+			)
+			_, err = client.CreateIngress(deployment.ID, appName, ingressPublic)
+			if err != nil {
+				return makeError(err)
+			}
+		} else {
+			err = client.RepairIngress(deployment.ID, appName, func() *k8sModels.IngressPublic {
+				return helpers.CreateIngressPublic(
+					client.Namespace,
+					deployment.Name,
+					k8sService.Name,
+					k8sService.Port,
+					GetExternalFQDN(deployment.Name, client.Zone),
+				)
+			})
+			if err != nil {
+				return makeError(err)
+			}
+		}
+
+		if mainApp.CustomDomain != nil {
+			if !service.Created(ss.GetIngress(appNameCustomDomain)) {
+				ingressPublic := helpers.CreateCustomDomainIngressPublic(
+					client.Namespace,
+					withCustomDomainSuffix(deployment.Name),
+					k8sService.Name,
+					k8sService.Port,
+					*mainApp.CustomDomain,
+				)
+
+				_, err = client.CreateIngress(deployment.ID, appNameCustomDomain, ingressPublic)
 				if err != nil {
 					return makeError(err)
 				}
 			} else {
-				k8sService := ss.GetService(appName)
-				if service.NotCreated(k8sService) {
-					log.Println("main service not created when recreating ingress. assuming it was deleted")
-					return nil
-				}
-
-				ingressPublic := helpers.CreateIngressPublic(
-					deployment.Subsystems.K8s.Namespace.FullName,
-					deployment.Name,
-					k8sService.Name,
-					k8sService.Port,
-					[]string{GetExternalFQDN(deployment.Name, client.Zone)},
-				)
-				_, err = client.CreateIngress(deployment.ID, appName, ingressPublic)
+				err = client.RepairIngress(deployment.ID, appNameCustomDomain, func() *k8sModels.IngressPublic {
+					return helpers.CreateCustomDomainIngressPublic(
+						deployment.Subsystems.K8s.Namespace.FullName,
+						withCustomDomainSuffix(deployment.Name),
+						k8sService.Name,
+						k8sService.Port,
+						*mainApp.CustomDomain,
+					)
+				})
 				if err != nil {
 					return makeError(err)
 				}
-
-				if len(mainApp.ExtraDomains) > 0 {
-					ingressPublic = helpers.CreateExtraIngressPublic(
-						client.Namespace,
-						deployment.Name,
-						k8sService.Name,
-						k8sService.Port,
-						mainApp.ExtraDomains,
-					)
-
-					_, err = client.CreateIngress(deployment.ID, appNameExtra, ingressPublic)
-					if err != nil {
-						return makeError(err)
-					}
-				}
-			}
-		} else if !mainIngress.Placeholder {
-			err = client.RepairIngress(deployment.ID, appName, func() *k8sModels.IngressPublic {
-				mainService := ss.GetService(appName)
-				if service.NotCreated(mainService) {
-					log.Println("main service not created when recreating ingress. assuming it was deleted")
-					return nil
-				}
-
-				if mapName == appName {
-					return helpers.CreateIngressPublic(
-						deployment.Subsystems.K8s.Namespace.FullName,
-						deployment.Name,
-						mainService.Name,
-						mainService.Port,
-						[]string{GetExternalFQDN(deployment.Name, client.Zone)},
-					)
-				} else if mapName == appNameExtra {
-					return helpers.CreateExtraIngressPublic(
-						deployment.Subsystems.K8s.Namespace.FullName,
-						deployment.Name,
-						mainService.Name,
-						mainService.Port,
-						mainApp.ExtraDomains,
-					)
-				} else {
-					log.Println("found unknown ingress map name when repairing ingress", mapName)
-					return nil
-				}
-			})
-			if err != nil {
-				return makeError(err)
 			}
 		}
 	}

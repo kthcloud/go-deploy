@@ -26,7 +26,7 @@ type DeploymentCreate struct {
 	Envs         []Env    `json:"envs" binding:"omitempty,env_list,min=0,max=1000,dive"`
 	Volumes      []Volume `json:"volumes" binding:"omitempty,min=0,max=100,dive"`
 	InitCommands []string `json:"initCommands" binding:"omitempty,min=0,max=100,dive,min=0,max=100"`
-	ExtraDomains []string `json:"extraDomains" binding:"omitempty,extra_domain_list,min=0,max=1000,dive"`
+	CustomDomain *string  `json:"customDomain" binding:"omitempty,custom_domain,min=1,max=253"`
 
 	GitHub *GitHub `json:"github" binding:"omitempty,dive"`
 
@@ -38,7 +38,7 @@ type DeploymentUpdate struct {
 	Envs         *[]Env    `json:"envs" binding:"omitempty,env_list,min=0,max=1000,dive"`
 	Volumes      *[]Volume `json:"volumes" binding:"omitempty,min=0,max=100,dive"`
 	InitCommands *[]string `json:"initCommands" binding:"omitempty,min=0,max=100,dive"`
-	ExtraDomains *[]string `json:"extraDomains" binding:"omitempty,extra_domain_list,min=0,max=1000,dive"`
+	CustomDomain *string   `json:"customDomain" binding:"omitempty,custom_domain,min=0,max=253"`
 	Image        *string   `json:"image,omitempty" binding:"omitempty,min=1,max=1000"`
 }
 

@@ -22,7 +22,7 @@ func (client *Client) Create(deploymentID, ownerID string, params *CreateParams)
 		Envs:         params.Envs,
 		Volumes:      params.Volumes,
 		InitCommands: params.InitCommands,
-		ExtraDomains: params.ExtraDomains,
+		CustomDomain: params.CustomDomain,
 		PingResult:   0,
 	}
 
@@ -151,8 +151,8 @@ func (client *Client) UpdateWithParamsByID(id string, params *UpdateParams) erro
 		mainApp.Private = *params.Private
 	}
 
-	if params.ExtraDomains != nil {
-		mainApp.ExtraDomains = *params.ExtraDomains
+	if params.CustomDomain != nil {
+		mainApp.CustomDomain = params.CustomDomain
 	}
 
 	if params.Volumes != nil {
