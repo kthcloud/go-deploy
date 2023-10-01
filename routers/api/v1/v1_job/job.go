@@ -52,6 +52,18 @@ func Get(c *gin.Context) {
 	context.JSONResponse(200, job.ToDTO(jobStatusMessage(job.Status)))
 }
 
+// GetList
+// @Summary Get list of jobs
+// @Description Get list of jobs
+// @Tags Job
+// @Accept  json
+// @Produce  json
+// @Param all query bool false "Get all jobs"
+// @Param userId query string false "User ID"
+// @Param type query string false "Job type"
+// @Param status query string false "Job status"
+// @Success 200 {array} JobRead
+// @Router /api/v1/job [get]
 func GetList(c *gin.Context) {
 	context := sys.NewContext(c)
 
