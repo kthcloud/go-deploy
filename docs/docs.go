@@ -40,7 +40,25 @@ const docTemplate = `{
                     {
                         "type": "boolean",
                         "description": "Get all deployments",
-                        "name": "wantAll",
+                        "name": "all",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Get deployments by user ID",
+                        "name": "userId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page",
+                        "name": "perPage",
                         "in": "query"
                     }
                 ],
@@ -57,13 +75,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     }
                 }
@@ -108,13 +126,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     }
                 }
@@ -168,13 +186,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     }
                 }
@@ -217,19 +235,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     }
                 }
             }
         },
-        "/api/v1/deployments/{deploymentId}/ci-config": {
+        "/api/v1/deployments/{deploymentId}/ciConfig": {
             "get": {
                 "description": "Get CI config",
                 "consumes": [
@@ -261,13 +291,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     }
                 }
@@ -314,25 +344,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "423": {
                         "description": "Locked",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     }
                 }
@@ -377,13 +407,96 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/github/repositories": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GitHub"
+                ],
+                "summary": "Get GitHub repositories",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "code",
+                        "name": "code",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.GitHubRepositoriesRead"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/job": {
+            "get": {
+                "description": "Get list of jobs",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Job"
+                ],
+                "summary": "Get list of jobs",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "Get all jobs",
+                        "name": "all",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Job type",
+                        "name": "type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Job status",
+                        "name": "status",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/body.JobRead"
+                            }
                         }
                     }
                 }
@@ -416,6 +529,247 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/body.JobRead"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Update job",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Job"
+                ],
+                "summary": "Update job",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Job ID",
+                        "name": "jobId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Job update",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/body.JobUpdate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.JobRead"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/storageManager/{storageManagerId}": {
+            "get": {
+                "description": "Delete storage manager",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Deployment"
+                ],
+                "summary": "Delete storage manager",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "With the bearer started",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Storage manager ID",
+                        "name": "storageManagerId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.StorageManagerDeleted"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/storageManagers": {
+            "get": {
+                "description": "Get storage manager list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Deployment"
+                ],
+                "summary": "Get storage manager list",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "With the bearer started",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/body.StorageManagerRead"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/storageManagers/{storageManagerId}": {
+            "get": {
+                "description": "Get storage manager",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Deployment"
+                ],
+                "summary": "Get storage manager",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "With the bearer started",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Storage manager ID",
+                        "name": "storageManagerId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.StorageManagerDeleted"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/user/auth-check": {
+            "get": {
+                "description": "Check auth",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Check auth",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/service.AuthInfo"
                         }
                     }
                 }
@@ -455,13 +809,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     }
                 }
@@ -499,13 +853,64 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Update user by id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Update user by id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "User update",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/body.UserUpdate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.UserRead"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     }
                 }
@@ -527,8 +932,26 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "boolean",
-                        "description": "Want all VMs",
-                        "name": "wantAll",
+                        "description": "Get all VMs",
+                        "name": "all",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Get deployments by user ID",
+                        "name": "userId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page",
+                        "name": "perPage",
                         "in": "query"
                     }
                 ],
@@ -545,7 +968,7 @@ const docTemplate = `{
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     }
                 }
@@ -583,31 +1006,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "423": {
                         "description": "Locked",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     }
                 }
@@ -645,19 +1068,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     }
                 }
@@ -709,31 +1132,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "423": {
                         "description": "Locked",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     }
                 }
@@ -769,39 +1192,39 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "423": {
                         "description": "Locked",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     }
                 }
             }
         },
-        "/api/v1/vms/{vmId}/attachGpu/{gpuId}": {
-            "post": {
-                "description": "Attach GPU to VM",
+        "/api/v1/vms/gpus": {
+            "get": {
+                "description": "Get list of GPUs",
                 "consumes": [
                     "application/json"
                 ],
@@ -811,51 +1234,47 @@ const docTemplate = `{
                 "tags": [
                     "VM"
                 ],
-                "summary": "Attach GPU to VM",
+                "summary": "Get list of GPUs",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "VM ID",
-                        "name": "vmId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "GPU ID",
-                        "name": "gpuId",
-                        "in": "path"
+                        "type": "boolean",
+                        "description": "Only show available GPUs",
+                        "name": "available",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/body.VmRead"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/body.GpuRead"
+                            }
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "423": {
                         "description": "Locked",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     }
                 }
@@ -902,33 +1321,33 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "423": {
                         "description": "Locked",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     }
                 }
             }
         },
-        "/api/v1/vms/{vmId}/detachGpu": {
-            "post": {
-                "description": "Detach GPU from VM",
+        "/api/v1/vms/{vmId}/snapshots": {
+            "get": {
+                "description": "Get snapshot list",
                 "consumes": [
                     "application/json"
                 ],
@@ -938,8 +1357,15 @@ const docTemplate = `{
                 "tags": [
                     "VM"
                 ],
-                "summary": "Detach GPU from VM",
+                "summary": "Get snapshot list",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "With the bearer started",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
                     {
                         "type": "string",
                         "description": "VM ID",
@@ -952,31 +1378,34 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/body.VmRead"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/body.VmSnapshotRead"
+                            }
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "423": {
                         "description": "Locked",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/app.ErrorResponse"
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     }
                 }
@@ -984,25 +1413,94 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "app.ErrorResponse": {
+        "auth.KeycloakToken": {
             "type": "object",
             "properties": {
-                "errors": {
+                "acr": {
+                    "type": "string"
+                },
+                "allowed-origins": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/app.errorPiece"
+                        "type": "string"
                     }
+                },
+                "auth_time": {
+                    "type": "integer"
+                },
+                "azp": {
+                    "type": "string"
+                },
+                "client_session": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "exp": {
+                    "type": "integer"
+                },
+                "family_name": {
+                    "type": "string"
+                },
+                "given_name": {
+                    "type": "string"
+                },
+                "groups": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "iat": {
+                    "type": "integer"
+                },
+                "iss": {
+                    "type": "string"
+                },
+                "jti": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "nbf": {
+                    "type": "integer"
+                },
+                "nonce": {
+                    "type": "string"
+                },
+                "preferred_username": {
+                    "type": "string"
+                },
+                "realm_access": {
+                    "$ref": "#/definitions/auth.ServiceRole"
+                },
+                "resource_access": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/auth.ServiceRole"
+                    }
+                },
+                "session_state": {
+                    "type": "string"
+                },
+                "sub": {
+                    "type": "string"
+                },
+                "typ": {
+                    "type": "string"
                 }
             }
         },
-        "app.errorPiece": {
+        "auth.ServiceRole": {
             "type": "object",
             "properties": {
-                "code": {
-                    "type": "string"
-                },
-                "msg": {
-                    "type": "string"
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -1034,27 +1532,33 @@ const docTemplate = `{
                 "name"
             ],
             "properties": {
+                "customDomain": {
+                    "type": "string",
+                    "maxLength": 253,
+                    "minLength": 1
+                },
                 "envs": {
                     "type": "array",
+                    "maxItems": 1000,
+                    "minItems": 0,
                     "items": {
                         "$ref": "#/definitions/body.Env"
                     }
                 },
                 "github": {
-                    "type": "object",
-                    "required": [
-                        "repositoryId",
-                        "token"
-                    ],
-                    "properties": {
-                        "repositoryId": {
-                            "type": "integer"
-                        },
-                        "token": {
-                            "type": "string",
-                            "maxLength": 1000,
-                            "minLength": 1
-                        }
+                    "$ref": "#/definitions/body.GitHub"
+                },
+                "image": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "minLength": 1
+                },
+                "initCommands": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "minItems": 0,
+                    "items": {
+                        "type": "string"
                     }
                 },
                 "name": {
@@ -1064,6 +1568,17 @@ const docTemplate = `{
                 },
                 "private": {
                     "type": "boolean"
+                },
+                "volumes": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "minItems": 0,
+                    "items": {
+                        "$ref": "#/definitions/body.Volume"
+                    }
+                },
+                "zone": {
+                    "type": "string"
                 }
             }
         },
@@ -1090,11 +1605,32 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "image": {
+                    "type": "string"
+                },
+                "initCommands": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "integrations": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "internalPort": {
+                    "type": "integer"
+                },
                 "name": {
                     "type": "string"
                 },
                 "ownerId": {
                     "type": "string"
+                },
+                "pingResult": {
+                    "type": "integer"
                 },
                 "private": {
                     "type": "boolean"
@@ -1102,7 +1638,22 @@ const docTemplate = `{
                 "status": {
                     "type": "string"
                 },
+                "storageUrl": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
                 "url": {
+                    "type": "string"
+                },
+                "volumes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/body.Volume"
+                    }
+                },
+                "zone": {
                     "type": "string"
                 }
             }
@@ -1110,14 +1661,42 @@ const docTemplate = `{
         "body.DeploymentUpdate": {
             "type": "object",
             "properties": {
+                "customDomain": {
+                    "type": "string",
+                    "maxLength": 253,
+                    "minLength": 0
+                },
                 "envs": {
                     "type": "array",
+                    "maxItems": 1000,
+                    "minItems": 0,
                     "items": {
                         "$ref": "#/definitions/body.Env"
                     }
                 },
+                "image": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "minLength": 1
+                },
+                "initCommands": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "minItems": 0,
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "private": {
                     "type": "boolean"
+                },
+                "volumes": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "minItems": 0,
+                    "items": {
+                        "$ref": "#/definitions/body.Volume"
+                    }
                 }
             }
         },
@@ -1151,11 +1730,56 @@ const docTemplate = `{
                 }
             }
         },
+        "body.GitHub": {
+            "type": "object",
+            "required": [
+                "repositoryId",
+                "token"
+            ],
+            "properties": {
+                "repositoryId": {
+                    "type": "integer"
+                },
+                "token": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "minLength": 1
+                }
+            }
+        },
+        "body.GitHubRepositoriesRead": {
+            "type": "object",
+            "properties": {
+                "accessToken": {
+                    "type": "string"
+                },
+                "repositories": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/body.GitHubRepository"
+                    }
+                }
+            }
+        },
+        "body.GitHubRepository": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "body.GpuLease": {
             "type": "object",
             "properties": {
                 "end": {
                     "type": "string"
+                },
+                "expired": {
+                    "type": "boolean"
                 },
                 "user": {
                     "type": "string"
@@ -1185,6 +1809,9 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "lastError": {
+                    "type": "string"
+                },
                 "status": {
                     "type": "string"
                 },
@@ -1193,6 +1820,21 @@ const docTemplate = `{
                 },
                 "userId": {
                     "type": "string"
+                }
+            }
+        },
+        "body.JobUpdate": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "pending",
+                        "running",
+                        "failed",
+                        "terminated",
+                        "finished"
+                    ]
                 }
             }
         },
@@ -1208,7 +1850,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
                 },
                 "port": {
                     "type": "integer",
@@ -1255,6 +1899,26 @@ const docTemplate = `{
                 },
                 "ram": {
                     "type": "integer"
+                },
+                "snapshots": {
+                    "type": "integer"
+                }
+            }
+        },
+        "body.Role": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "permissions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -1272,14 +1936,51 @@ const docTemplate = `{
                 }
             }
         },
+        "body.StorageManagerDeleted": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "jobId": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.StorageManagerRead": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "ownerId": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                },
+                "zone": {
+                    "type": "string"
+                }
+            }
+        },
         "body.UserRead": {
             "type": "object",
             "properties": {
+                "admin": {
+                    "type": "boolean"
+                },
                 "email": {
                     "type": "string"
                 },
                 "id": {
                     "type": "string"
+                },
+                "onboarded": {
+                    "type": "boolean"
                 },
                 "publicKeys": {
                     "type": "array",
@@ -1290,17 +1991,38 @@ const docTemplate = `{
                 "quota": {
                     "$ref": "#/definitions/body.Quota"
                 },
-                "roles": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                "role": {
+                    "$ref": "#/definitions/body.Role"
+                },
+                "storageUrl": {
+                    "type": "string"
                 },
                 "usage": {
                     "$ref": "#/definitions/body.Quota"
                 },
                 "username": {
                     "type": "string"
+                }
+            }
+        },
+        "body.UserUpdate": {
+            "type": "object",
+            "properties": {
+                "onboarded": {
+                    "type": "boolean"
+                },
+                "publicKeys": {
+                    "type": "array",
+                    "maxItems": 1000,
+                    "minItems": 0,
+                    "items": {
+                        "$ref": "#/definitions/body.PublicKey"
+                    }
+                },
+                "username": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 3
                 }
             }
         },
@@ -1332,7 +2054,7 @@ const docTemplate = `{
             "properties": {
                 "cpuCores": {
                     "type": "integer",
-                    "minimum": 1
+                    "minimum": 2
                 },
                 "diskSize": {
                     "type": "integer",
@@ -1345,6 +2067,8 @@ const docTemplate = `{
                 },
                 "ports": {
                     "type": "array",
+                    "maxItems": 100,
+                    "minItems": 0,
                     "items": {
                         "$ref": "#/definitions/body.Port"
                     }
@@ -1354,6 +2078,9 @@ const docTemplate = `{
                     "minimum": 1
                 },
                 "sshPublicKey": {
+                    "type": "string"
+                },
+                "zone": {
                     "type": "string"
                 }
             }
@@ -1383,6 +2110,9 @@ const docTemplate = `{
         "body.VmGpu": {
             "type": "object",
             "properties": {
+                "expired": {
+                    "type": "boolean"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -1426,6 +2156,35 @@ const docTemplate = `{
                 },
                 "status": {
                     "type": "string"
+                },
+                "zone": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.VmSnapshotRead": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "current": {
+                    "type": "boolean"
+                },
+                "displayname": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "parentName": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string"
+                },
+                "vmId": {
+                    "type": "string"
                 }
             }
         },
@@ -1436,8 +2195,15 @@ const docTemplate = `{
                     "type": "integer",
                     "minimum": 1
                 },
+                "gpuId": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 0
+                },
                 "ports": {
                     "type": "array",
+                    "maxItems": 1000,
+                    "minItems": 0,
                     "items": {
                         "$ref": "#/definitions/body.Port"
                     }
@@ -1445,6 +2211,9 @@ const docTemplate = `{
                 "ram": {
                     "type": "integer",
                     "minimum": 1
+                },
+                "snapshotId": {
+                    "type": "string"
                 }
             }
         },
@@ -1455,6 +2224,151 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "jobId": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.Volume": {
+            "type": "object",
+            "required": [
+                "appPath",
+                "name",
+                "serverPath"
+            ],
+            "properties": {
+                "appPath": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                },
+                "serverPath": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                }
+            }
+        },
+        "body.ZoneRead": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "interface": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "role.Permissions": {
+            "type": "object",
+            "properties": {
+                "chooseGPU": {
+                    "type": "boolean"
+                },
+                "chooseZone": {
+                    "type": "boolean"
+                },
+                "gpuLeaseDuration": {
+                    "description": "in hours",
+                    "type": "number"
+                },
+                "useGPUs": {
+                    "type": "boolean"
+                },
+                "usePrivilegedGPUs": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "role.Quotas": {
+            "type": "object",
+            "properties": {
+                "cpuCores": {
+                    "type": "integer"
+                },
+                "deployments": {
+                    "type": "integer"
+                },
+                "diskSize": {
+                    "type": "integer"
+                },
+                "ram": {
+                    "type": "integer"
+                },
+                "snapshots": {
+                    "type": "integer"
+                }
+            }
+        },
+        "role.Role": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "iamGroup": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "permissions": {
+                    "$ref": "#/definitions/role.Permissions"
+                },
+                "quotas": {
+                    "$ref": "#/definitions/role.Quotas"
+                }
+            }
+        },
+        "service.AuthInfo": {
+            "type": "object",
+            "properties": {
+                "isAdmin": {
+                    "type": "boolean"
+                },
+                "jwtToken": {
+                    "$ref": "#/definitions/auth.KeycloakToken"
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/role.Role"
+                    }
+                },
+                "userId": {
+                    "type": "string"
+                }
+            }
+        },
+        "sys.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/sys.errorPiece"
+                    }
+                }
+            }
+        },
+        "sys.errorPiece": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "msg": {
                     "type": "string"
                 }
             }
