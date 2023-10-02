@@ -222,7 +222,7 @@ func Get(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param userId path string true "User ID"
-// @Param body body body UserUpdate true "User update"
+// @Param body body body.UserUpdate true "User update"
 // @Success 200 {object} body.UserRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse

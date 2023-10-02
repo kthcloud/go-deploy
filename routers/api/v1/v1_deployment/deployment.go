@@ -51,7 +51,10 @@ func getStorageManagerURL(auth *service.AuthInfo) *string {
 // @Accept  json
 // @Produce  json
 // @Param Authorization header string true "With the bearer started"
-// @Param wantAll query bool false "Get all deployments"
+// @Param all query boolean false "Get all deployments"
+// @Param userId query string false "Get deployments by user ID"
+// @Param page query int false "Page number"
+// @Param perPage query int false "Number of items per page"
 // @Success 200 {array} body.DeploymentRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse

@@ -29,7 +29,10 @@ import (
 // @Tags VM
 // @Accept  json
 // @Produce  json
-// @Param wantAll query bool false "Want all VMs"
+// @Param all query bool false "Get all VMs"
+// @Param userId query string false "Get deployments by user ID"
+// @Param page query int false "Page number"
+// @Param perPage query int false "Number of items per page"
 // @Success 200 {array} body.VmRead
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /api/v1/vm [get]

@@ -62,7 +62,7 @@ func Get(c *gin.Context) {
 // @Param userId query string false "User ID"
 // @Param type query string false "Job type"
 // @Param status query string false "Job status"
-// @Success 200 {array} JobRead
+// @Success 200 {array} body.JobRead
 // @Router /api/v1/job [get]
 func GetList(c *gin.Context) {
 	context := sys.NewContext(c)
@@ -98,6 +98,16 @@ func GetList(c *gin.Context) {
 	context.JSONResponse(200, jobsDTO)
 }
 
+// Update
+// @Summary Update job
+// @Description Update job
+// @Tags Job
+// @Accept  json
+// @Produce  json
+// @Param jobId path string true "Job ID"
+// @Param body body body.JobUpdate true "Job update"
+// @Success 200 {object} body.JobRead
+// @Router /api/v1/job/{id} [post]
 func Update(c *gin.Context) {
 	context := sys.NewContext(c)
 
