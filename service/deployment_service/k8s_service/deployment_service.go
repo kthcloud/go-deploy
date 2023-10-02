@@ -329,17 +329,31 @@ func Update(name string, params *deploymentModel.UpdateParams) error {
 	}
 
 	if params.CustomDomain != nil && (params.Private == nil || !*params.Private) {
-		if ingress := client.K8s.GetIngress(appNameCustomDomain); service.Created(ingress) {
-			ingress.CustomCert = &k8sModels.CustomCert{
-				ClusterIssuer: "letsencrypt-prod-deploy-http",
-				CommonName:    *params.CustomDomain,
+		k8sService := client.K8s.GetService(mainApp.Name)
+		if service.Created(k8sService) {
+			ingress := client.K8s.GetIngress(appNameCustomDomain)
+			if service.Created(ingress) {
+				ingress.CustomCert = &k8sModels.CustomCert{
+					ClusterIssuer: "letsencrypt-prod-deploy-http",
+					CommonName:    *params.CustomDomain,
+				}
+				ingress.Hosts = []string{*params.CustomDomain}
+			} else {
+				ingress = helpers.CreateCustomDomainIngressPublic(
+					client.Namespace,
+					withCustomDomainSuffix(deployment.Name),
+					k8sService.Name,
+					k8sService.Port,
+					*params.CustomDomain,
+				)
 			}
-			ingress.Hosts = []string{*params.CustomDomain}
 
 			err = client.RecreateIngress(deployment.ID, appNameCustomDomain, ingress)
 			if err != nil {
 				return makeError(err)
 			}
+		} else {
+			log.Println("k8s service", mainApp.Name, "not found for k8s update assuming it was deleted")
 		}
 	}
 
