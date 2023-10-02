@@ -6,7 +6,8 @@ const (
 )
 
 type Zone struct {
-	Name        string `json:"name" bson:"name"`
-	Description string `json:"description" bson:"description"`
-	Type        string `json:"type" bson:"type"`
+	Name        string  `bson:"name"`
+	Description string  `bson:"description"`
+	Type        string  `bson:"type"`
+	Interface   *string `bson:"interface"`
 }

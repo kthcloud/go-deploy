@@ -18,12 +18,13 @@ import (
 // @Tags VM
 // @Accept  json
 // @Produce  json
-// @Param onlyShowAvailable query bool false "Only show available GPUs"
+// @Param available query bool false "Only show available GPUs"
 // @Success 200 {array} body.GpuRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
+// @Router /api/v1/vms/gpus [get]
 func GetGpuList(c *gin.Context) {
 	context := sys.NewContext(c)
 

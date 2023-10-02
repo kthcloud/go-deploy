@@ -12,6 +12,15 @@ import (
 	"net/http"
 )
 
+// ListGitHubRepositories
+// Get
+// @Summary Get GitHub repositories
+// @Tags GitHub
+// @Accept  json
+// @Produce  json
+// @Param code query string true "code"
+// @Success 200 {object} body.GitHubRepositoriesRead
+// @Router /api/v1/github/repositories [get]
 func ListGitHubRepositories(c *gin.Context) {
 	context := sys.NewContext(c)
 
