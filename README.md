@@ -19,6 +19,11 @@ Thank you for considering contributing to go-deploy! Please follow these guideli
 3. Run the tests: `go test ./...`
 4. Start the API server: `./go-deploy`
 
+## 📚 Docs
+go-deploy's API is documented using Swagger. You can view the API documentation by running the server and visiting [http://localhost:8080/v1/docs/index.html](http://localhost:8080/deploy/v1/docs/index.html). 
+
+Or view the publically hosted documentation [here](https://api.cloud.cbh.kth.se/deploy/v1/docs/index.html).
+
 ## 📝 License
 
 go-deploy is open-source software licensed under the [MIT license](https://opensource.org/licenses/MIT).
