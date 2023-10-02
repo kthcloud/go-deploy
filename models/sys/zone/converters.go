@@ -7,5 +7,6 @@ func (z *Zone) ToDTO() body.ZoneRead {
 		Name:        z.Name,
 		Description: z.Description,
 		Type:        z.Type,
+		Interface:   z.Interface,
 	}
 }

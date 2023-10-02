@@ -13,18 +13,22 @@ func GetAllZones() ([]zoneModel.Zone, error) {
 	zones := make([]zoneModel.Zone, len(deploymentZones)+len(vmZones))
 
 	for i, zone := range deploymentZones {
+		domain := zone.ParentDomain
 		zones[i] = zoneModel.Zone{
 			Name:        zone.Name,
 			Description: zone.Description,
 			Type:        zoneModel.ZoneTypeDeployment,
+			Interface:   &domain,
 		}
 	}
 
 	for i, zone := range vmZones {
+		domain := zone.ParentDomain
 		zones[i+len(deploymentZones)] = zoneModel.Zone{
 			Name:        zone.Name,
 			Description: zone.Description,
 			Type:        zoneModel.ZoneTypeVM,
+			Interface:   &domain,
 		}
 	}
 
