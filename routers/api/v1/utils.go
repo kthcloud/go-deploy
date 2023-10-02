@@ -68,7 +68,7 @@ func msgForTag(fe validator.FieldError) string {
 	case "port_list_numbers":
 		return "Every port number must be unique per protocol"
 	case "custom_domain":
-		return "Custom domain must be a valid domain name and point to the correct IP"
+		return "Custom domain must be a valid domain name and point to the correct interface"
 	}
 	return fe.Error()
 }
