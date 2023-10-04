@@ -16,7 +16,7 @@ func (client *Client) doJSONRequest(method string, relativePath string, requestB
 		return nil, err
 	}
 
-	fullURL := fmt.Sprintf("%s%s", client.apiUrl, relativePath)
+	fullURL := fmt.Sprintf("%s%s", client.url, relativePath)
 	return requestutils.DoRequestBasicAuth(method, fullURL, jsonBody, nil, client.username, client.password)
 }
 

@@ -271,7 +271,7 @@ func fetchCreationTimeForSubsystems_2023_09_22() error {
 			ss := &deployment.Subsystems.Harbor
 
 			harborClient, err := harbor.New(&harbor.ClientConf{
-				ApiUrl:   conf.Env.Harbor.URL,
+				URL:      conf.Env.Harbor.URL,
 				Username: conf.Env.Harbor.User,
 				Password: conf.Env.Harbor.Password,
 			})
