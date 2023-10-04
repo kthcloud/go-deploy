@@ -192,9 +192,8 @@ func Create(c *gin.Context) {
 		}
 	}
 
-	deployment, err := deployment_service.GetByName(requestBody.Name)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
+	if requestBody.CustomDomain != nil && !effectiveRole.Permissions.UseCustomDomain {
+		context.ErrorResponse(http.StatusForbidden, status_codes.Error, "User is not allowed to use custom domains")
 		return
 	}
 

@@ -9,12 +9,12 @@ type Quotas struct {
 }
 
 type Permissions struct {
-	ChooseZone        bool `yaml:"chooseZone" structs:"chooseZone"`
-	ChooseGPU         bool `yaml:"chooseGpu" structs:"chooseGpu"`
-	UseGPUs           bool `yaml:"useGpus" structs:"useGpus"`
-	UsePrivilegedGPUs bool `yaml:"usePrivilegedGpus" structs:"usePrivilegedGpus"`
-	// in hours
-	GpuLeaseDuration float64 `yaml:"gpuLeaseDuration" structs:"gpuLeaseDuration"`
+	ChooseZone        bool    `yaml:"chooseZone" structs:"chooseZone"`
+	ChooseGPU         bool    `yaml:"chooseGpu" structs:"chooseGpu"`
+	UseCustomDomain   bool    `yaml:"useCustomDomain" structs:"useCustomDomain"`
+	UseGPUs           bool    `yaml:"useGpus" structs:"useGpus"`
+	UsePrivilegedGPUs bool    `yaml:"usePrivilegedGpus" structs:"usePrivilegedGpus"`
+	GpuLeaseDuration  float64 `yaml:"gpuLeaseDuration" structs:"gpuLeaseDuration"` // in hours
 }
 
 type Role struct {
