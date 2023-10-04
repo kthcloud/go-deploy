@@ -9,6 +9,7 @@ import (
 	"go-deploy/utils"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -18,29 +19,54 @@ func deploymentPingUpdater(ctx context.Context) {
 	for {
 		select {
 		case <-time.After(time.Duration(conf.Env.Deployment.PingInterval) * time.Second):
-			updateAllDeploymentPings()
+			makeError := func(err error) error {
+				return fmt.Errorf("error fetching deployments. details: %w", err)
+			}
+
+			deployments, err := deployment_service.GetAll()
+			if err != nil {
+				utils.PrettyPrintError(makeError(err))
+				return
+			}
+
+			for _, deployment := range deployments {
+				pingDeployment(&deployment)
+			}
 		case <-ctx.Done():
 			return
 		}
 	}
 }
 
-func updateAllDeploymentPings() {
-	deployments, _ := deployment_service.GetAll()
-
-	log.Println("pinging", len(deployments), "deployments")
-
-	for _, deployment := range deployments {
-
-		url := getURL(&deployment)
-
-		if url == nil {
-			log.Println("deployment", deployment.Name, "has no url")
-			continue
-		}
-
-		go updateOneDeploymentPing(deployment, *url)
+func pingDeployment(deployment *deploymentModels.Deployment) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to ping deployments. details: %w", err)
 	}
+
+	baseURL := getURL(deployment)
+	if baseURL == nil {
+		utils.PrettyPrintError(makeError(fmt.Errorf("deployment %s has no url", deployment.Name)))
+		return
+	}
+
+	mainApp := deployment.GetMainApp()
+	if mainApp == nil {
+		utils.PrettyPrintError(makeError(fmt.Errorf("deployment %s has no main app", deployment.Name)))
+		return
+	}
+
+	subPath := mainApp.PingPath
+	if len(mainApp.PingPath) > 0 && !strings.HasPrefix(mainApp.PingPath, "/") {
+		subPath = "/" + subPath
+	}
+
+	pingURL := *baseURL + subPath
+	if !goodURL(pingURL) {
+		utils.PrettyPrintError(makeError(fmt.Errorf("deployment %s has invalid ping url %s", deployment.Name, pingURL)))
+		return
+	}
+
+	go updateOneDeploymentPing(*deployment, pingURL)
 }
 
 func updateOneDeploymentPing(deployment deploymentModels.Deployment, url string) {
@@ -81,4 +107,14 @@ func getURL(deployment *deploymentModels.Deployment) *string {
 		return &ingress.Hosts[0]
 	}
 	return nil
+}
+
+func goodURL(url string) bool {
+	rfc3986Characters := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~:/?#[]@!$&'()*+,;="
+	for _, c := range url {
+		if !strings.ContainsRune(rfc3986Characters, c) {
+			return false
+		}
+	}
+	return true
 }
