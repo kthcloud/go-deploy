@@ -43,7 +43,7 @@ func pingDeployment(deployment *deploymentModels.Deployment) {
 		return fmt.Errorf("failed to ping deployments. details: %w", err)
 	}
 
-	baseURL := getURL(deployment)
+	baseURL := deployment.GetURL()
 	if baseURL == nil {
 		utils.PrettyPrintError(makeError(fmt.Errorf("deployment %s has no url", deployment.Name)))
 		return
@@ -66,14 +66,15 @@ func pingDeployment(deployment *deploymentModels.Deployment) {
 		return
 	}
 
-	go updateOneDeploymentPing(*deployment, pingURL)
+	go pingAndSave(*deployment, pingURL)
 }
 
-func updateOneDeploymentPing(deployment deploymentModels.Deployment, url string) {
+func pingAndSave(deployment deploymentModels.Deployment, url string) {
 	code, err := ping(url)
 
 	if err != nil {
 		utils.PrettyPrintError(fmt.Errorf("error fetching deployment status ping. details: %w", err))
+		return
 	}
 
 	_ = deployment_service.SavePing(deployment.ID, code)
@@ -95,18 +96,6 @@ func ping(url string) (int, error) {
 	}
 
 	return resp.StatusCode, nil
-}
-
-func getURL(deployment *deploymentModels.Deployment) *string {
-	ingress, ok := deployment.Subsystems.K8s.IngressMap["main"]
-	if !ok || !ingress.Created() {
-		return nil
-	}
-
-	if len(ingress.Hosts) > 0 && len(ingress.Hosts[0]) > 0 {
-		return &ingress.Hosts[0]
-	}
-	return nil
 }
 
 func goodURL(url string) bool {
