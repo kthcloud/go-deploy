@@ -77,7 +77,7 @@ func HandleHarborHook(c *gin.Context) {
 	}
 
 	var webhook body.HarborWebhook
-	err = context.GinContext.BindJSON(&webhook)
+	err = context.GinContext.ShouldBindJSON(&webhook)
 	if err != nil {
 		context.ErrorResponse(http.StatusBadRequest, status_codes.Error, fmt.Sprintf("%s", err))
 		return

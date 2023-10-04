@@ -115,7 +115,7 @@ func Get(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestURI uri.DeploymentGet
-	if err := context.GinContext.BindUri(&requestURI); err != nil {
+	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
 		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
@@ -162,7 +162,7 @@ func Create(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestBody body.DeploymentCreate
-	if err := context.GinContext.BindJSON(&requestBody); err != nil {
+	if err := context.GinContext.ShouldBindJSON(&requestBody); err != nil {
 		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
@@ -306,7 +306,7 @@ func Delete(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestURI uri.DeploymentDelete
-	if err := context.GinContext.BindUri(&requestURI); err != nil {
+	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
 		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
@@ -372,13 +372,13 @@ func Update(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestURI uri.DeploymentUpdate
-	if err := context.GinContext.BindUri(&requestURI); err != nil {
+	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
 		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
 
 	var requestBody body.DeploymentUpdate
-	if err := context.GinContext.BindJSON(&requestBody); err != nil {
+	if err := context.GinContext.ShouldBindJSON(&requestBody); err != nil {
 		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
