@@ -1,6 +1,7 @@
 package deployment_service
 
 import (
+	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	"go-deploy/models/dto/body"
@@ -75,7 +76,16 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 
 	err = k8s_service.Create(deploymentID, ownerID, params)
 	if err != nil {
-		return makeError(err)
+		if errors.Is(err, k8s_service.CustomDomainInUseErr) {
+			log.Println("custom domain in use when creating deployment", params.Name, ". removing it from the deployment and create params")
+			err = deploymentModel.New().RemoveCustomDomain(deploymentID)
+			if err != nil {
+				return makeError(err)
+			}
+			params.CustomDomain = nil
+		} else {
+			return makeError(err)
+		}
 	}
 
 	createPlaceHolderInstead := false
@@ -306,7 +316,12 @@ func Update(id string, deploymentUpdate *body.DeploymentUpdate) error {
 
 	err = k8s_service.Update(deployment.Name, params)
 	if err != nil {
-		return makeError(err)
+		if errors.Is(err, k8s_service.CustomDomainInUseErr) {
+			log.Println("custom domain in use when updating deployment", deployment.Name, ". removing it from the update params")
+			deploymentUpdate.CustomDomain = nil
+		} else {
+			return makeError(err)
+		}
 	}
 
 	err = deploymentModel.New().UpdateWithParamsByID(id, params)
@@ -442,7 +457,15 @@ func Repair(id string) error {
 
 	err = k8s_service.Repair(deployment.Name)
 	if err != nil {
-		return makeError(err)
+		if errors.Is(err, k8s_service.CustomDomainInUseErr) {
+			log.Println("custom domain in use when repairing deployment", deployment.Name, ". removing it from the deployment")
+			err = deploymentModel.New().RemoveCustomDomain(deployment.ID)
+			if err != nil {
+				return makeError(err)
+			}
+		} else {
+			return makeError(err)
+		}
 	}
 
 	if !deployment.Subsystems.Harbor.Placeholder {

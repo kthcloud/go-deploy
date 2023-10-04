@@ -294,3 +294,7 @@ func (client *Client) SavePing(id string, pingResult int) error {
 
 	return nil
 }
+
+func (client *Client) RemoveCustomDomain(deploymentID string) error {
+	return client.UpdateWithBsonByID(deploymentID, bson.D{{"apps.main.customDomain", nil}})
+}
