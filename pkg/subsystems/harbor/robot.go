@@ -9,6 +9,7 @@ import (
 	"go-deploy/pkg/subsystems/harbor/models"
 	"log"
 	"strings"
+	"unicode"
 )
 
 func (client *Client) RobotCreated(public *models.RobotPublic) (bool, error) {
@@ -90,6 +91,13 @@ func (client *Client) CreateRobot(public *models.RobotPublic) (int, error) {
 		}
 	}
 
+	if public.Secret != "" {
+		err = client.assertCorrectRobotSecret(robot, public.Secret)
+		if err != nil {
+			return 0, makeError(err)
+		}
+	}
+
 	return int(robot.ID), nil
 }
 
@@ -120,9 +128,7 @@ func (client *Client) UpdateRobot(public *models.RobotPublic) error {
 		return nil
 	}
 
-	// this doesn't actually do anything, but the code here is kept in case any field could be updated in the future
-
-	err = client.HarborClient.UpdateRobotAccount(context.TODO(), robot)
+	err = client.assertCorrectRobotSecret(robot, public.Secret)
 	if err != nil {
 		return makeError(err)
 	}
@@ -174,4 +180,43 @@ func (client *Client) DeleteAllRobots(projectID int) error {
 	}
 
 	return nil
+}
+
+func (client *Client) assertCorrectRobotSecret(robot *harborModelsV2.Robot, secret string) error {
+	if robot.Description != secret && isValidHarborRobotSecret(secret) {
+		robot.Description = secret
+		robot.Secret = secret
+
+		_, err := client.HarborClient.RefreshRobotAccountSecretByID(context.TODO(), robot.ID, secret)
+		if err != nil {
+			return err
+		}
+
+		err = client.HarborClient.UpdateRobotAccount(context.TODO(), robot)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func isValidHarborRobotSecret(secret string) bool {
+	correctLength := len(secret) >= 8 && len(secret) <= 20
+
+	var atLeastOneNumber bool
+	var atLeastOneUpper bool
+	var atLeastOneLower bool
+
+	for _, c := range secret {
+		if unicode.IsNumber(c) {
+			atLeastOneNumber = true
+		} else if unicode.IsUpper(c) {
+			atLeastOneUpper = true
+		} else if unicode.IsLower(c) {
+			atLeastOneLower = true
+		}
+	}
+
+	return correctLength && atLeastOneNumber && atLeastOneUpper && atLeastOneLower
 }

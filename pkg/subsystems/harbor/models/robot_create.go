@@ -11,6 +11,7 @@ func CreateRobotCreateBody(public *RobotPublic) model.RobotCreate {
 		Duration:    -1,
 		Level:       "project",
 		Name:        public.Name,
+		Secret:      public.Secret,
 		Permissions: []*model.RobotPermission{
 			{
 				Access: []*model.Access{
