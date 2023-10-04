@@ -21,12 +21,13 @@ type GitHub struct {
 type DeploymentCreate struct {
 	Name string `json:"name" binding:"required,rfc1035,min=3,max=30"`
 
-	Image        *string  `json:"image,omitempty" binding:"omitempty,min=1,max=1000"`
-	Private      bool     `json:"private" binding:"omitempty,boolean"`
-	Envs         []Env    `json:"envs" binding:"omitempty,env_list,min=0,max=1000,dive"`
-	Volumes      []Volume `json:"volumes" binding:"omitempty,min=0,max=100,dive"`
-	InitCommands []string `json:"initCommands" binding:"omitempty,min=0,max=100,dive,min=0,max=100"`
-	CustomDomain *string  `json:"customDomain" binding:"omitempty,custom_domain,min=1,max=253"`
+	Image           *string  `json:"image,omitempty" binding:"omitempty,min=1,max=1000"`
+	Private         bool     `json:"private" binding:"omitempty,boolean"`
+	Envs            []Env    `json:"envs" binding:"omitempty,env_list,min=0,max=1000,dive"`
+	Volumes         []Volume `json:"volumes" binding:"omitempty,min=0,max=100,dive"`
+	InitCommands    []string `json:"initCommands" binding:"omitempty,min=0,max=100,dive,min=0,max=100"`
+	HealthCheckPath *string  `json:"healthCheckPath" binding:"omitempty,min=0,max=1000,health_check_path"`
+	CustomDomain    *string  `json:"customDomain" binding:"omitempty,domain_name,custom_domain,min=1,max=253"`
 
 	GitHub *GitHub `json:"github" binding:"omitempty,dive"`
 
@@ -34,12 +35,13 @@ type DeploymentCreate struct {
 }
 
 type DeploymentUpdate struct {
-	Private      *bool     `json:"private" binding:"omitempty,boolean"`
-	Envs         *[]Env    `json:"envs" binding:"omitempty,env_list,min=0,max=1000,dive"`
-	Volumes      *[]Volume `json:"volumes" binding:"omitempty,min=0,max=100,dive"`
-	InitCommands *[]string `json:"initCommands" binding:"omitempty,min=0,max=100,dive"`
-	CustomDomain *string   `json:"customDomain" binding:"omitempty,custom_domain,min=0,max=253"`
-	Image        *string   `json:"image,omitempty" binding:"omitempty,min=1,max=1000"`
+	Private         *bool     `json:"private" binding:"omitempty,boolean"`
+	Envs            *[]Env    `json:"envs" binding:"omitempty,env_list,min=0,max=1000,dive"`
+	Volumes         *[]Volume `json:"volumes" binding:"omitempty,min=0,max=100,dive"`
+	InitCommands    *[]string `json:"initCommands" binding:"omitempty,min=0,max=100,dive"`
+	CustomDomain    *string   `json:"customDomain" binding:"omitempty,domain_name,custom_domain,min=0,max=253"`
+	Image           *string   `json:"image,omitempty" binding:"omitempty,min=1,max=1000"`
+	HealthCheckPath *string   `json:"healthCheckPath" binding:"omitempty,min=0,max=1000,health_check_path"`
 }
 
 type DeploymentBuild struct {
