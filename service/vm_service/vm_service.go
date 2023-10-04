@@ -349,9 +349,13 @@ func CanAddActivity(vmID, activity string) (bool, string, error) {
 	return false, "", fmt.Errorf("unknown activity %s", activity)
 }
 
-func CheckQuotaCreate(userID string, quota *roleModel.Quotas, createParams body.VmCreate) (bool, string, error) {
+func CheckQuotaCreate(userID string, quota *roleModel.Quotas, auth *service.AuthInfo, createParams body.VmCreate) (bool, string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check quota. details: %w", err)
+	}
+
+	if auth.IsAdmin {
+		return true, "", nil
 	}
 
 	usage, err := GetUsageByUserID(userID)
@@ -378,9 +382,13 @@ func CheckQuotaCreate(userID string, quota *roleModel.Quotas, createParams body.
 	return true, "", nil
 }
 
-func CheckQuotaUpdate(userID, vmID string, quota *roleModel.Quotas, updateParams body.VmUpdate) (bool, string, error) {
+func CheckQuotaUpdate(userID, vmID string, quota *roleModel.Quotas, auth *service.AuthInfo, updateParams body.VmUpdate) (bool, string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check quota. details: %w", err)
+	}
+
+	if auth.IsAdmin {
+		return true, "", nil
 	}
 
 	if updateParams.CpuCores == nil && updateParams.RAM == nil {

@@ -166,7 +166,7 @@ func Get(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestURI uri.UserGet
-	if err := context.GinContext.BindUri(&requestURI); err != nil {
+	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
 		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}

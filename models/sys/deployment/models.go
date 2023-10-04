@@ -16,6 +16,7 @@ type App struct {
 	Volumes      []Volume `bson:"volumes"`
 	InitCommands []string `bson:"initCommands"`
 	CustomDomain *string  `bson:"customDomain,omitempty"`
+	PingPath     string   `bson:"pingPath"`
 	PingResult   int      `bson:"pingResult"`
 }
 
@@ -50,6 +51,7 @@ type UpdateParams struct {
 	InitCommands *[]string
 	CustomDomain *string
 	Image        *string
+	PingPath     *string
 }
 
 type GitHubCreateParams struct {
@@ -67,6 +69,7 @@ type CreateParams struct {
 	Envs         []Env
 	Volumes      []Volume
 	InitCommands []string
+	PingPath     string
 	CustomDomain *string
 
 	GitHub *GitHubCreateParams

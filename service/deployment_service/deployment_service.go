@@ -7,6 +7,7 @@ import (
 	"go-deploy/models/dto/query"
 	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/models/sys/deployment/storage_manager"
+	roleModel "go-deploy/models/sys/enviroment/role"
 	jobModel "go-deploy/models/sys/job"
 	"go-deploy/pkg/conf"
 	"go-deploy/service"
@@ -193,6 +194,29 @@ func GetCountAuth(userID string, auth *service.AuthInfo) (int, error) {
 	}
 
 	return deploymentModel.New().CountByOwnerID(userID)
+}
+
+func CheckQuotaCreate(userID string, quota *roleModel.Quotas, auth *service.AuthInfo) (bool, string, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to check quota. details: %w", err)
+	}
+
+	if auth.IsAdmin {
+		return true, "", nil
+	}
+
+	usage, err := GetUsageByUserID(userID)
+	if err != nil {
+		return false, "", makeError(err)
+	}
+
+	totalCount := usage.Count + 1
+
+	if totalCount > quota.Deployments {
+		return false, fmt.Sprintf("Deployment quota exceeded. Current: %d, Quota: %d", totalCount, quota.CpuCores), nil
+	}
+
+	return true, "", nil
 }
 
 func GetByName(name string) (*deploymentModel.Deployment, error) {

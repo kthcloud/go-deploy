@@ -33,7 +33,7 @@ func GetSnapshotList(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestURI uri.VmCommand
-	if err := context.GinContext.BindUri(&requestURI); err != nil {
+	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
 		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
@@ -64,13 +64,13 @@ func CreateSnapshot(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestURI uri.VmSnapshotCreate
-	if err := context.GinContext.BindUri(&requestURI); err != nil {
+	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
 		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
 
 	var requestBody body.VmSnapshotCreate
-	if err := context.GinContext.BindJSON(&requestBody); err != nil {
+	if err := context.GinContext.ShouldBindJSON(&requestBody); err != nil {
 		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
@@ -81,7 +81,7 @@ func CreateSnapshot(c *gin.Context) {
 		return
 	}
 
-	ok, reason, err := vm_service.CheckQuotaCreateSnapshot(auth.UserID, &auth.GetEffectiveRole().Quotas)
+	ok, reason, err := vm_service.CheckQuotaCreateSnapshot(auth.UserID, &auth.GetEffectiveRole().Quotas, auth)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to check quota: %s", err))
 		return

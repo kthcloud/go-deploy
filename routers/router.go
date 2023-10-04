@@ -8,22 +8,16 @@ import (
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"go-deploy/docs"
-	"go-deploy/models/dto/body"
 	"go-deploy/pkg/auth"
-	"go-deploy/pkg/conf"
 	"go-deploy/pkg/sys"
-	v1 "go-deploy/routers/api/v1"
 	"go-deploy/routers/api/v1/v1_deployment"
 	"go-deploy/routers/api/v1/v1_github"
 	"go-deploy/routers/api/v1/v1_job"
 	"go-deploy/routers/api/v1/v1_user"
 	"go-deploy/routers/api/v1/v1_vm"
 	"go-deploy/routers/api/v1/v1_zone"
-	"golang.org/x/crypto/ssh"
-	"golang.org/x/net/idna"
+	"go-deploy/routers/api/validators"
 	"reflect"
-	"regexp"
-	"strconv"
 	"strings"
 )
 
@@ -162,137 +156,23 @@ func registerCustomValidators() {
 			return name
 		})
 
-		err := v.RegisterValidation("rfc1035", func(fl validator.FieldLevel) bool {
-			name, ok := fl.Field().Interface().(string)
-			if !ok {
-				return false
-			}
-
-			rfc1035 := regexp.MustCompile(`^[a-zA-Z]([a-zA-Z0-9-]*[a-zA-Z0-9])?([a-zA-Z]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$`)
-			return rfc1035.MatchString(name)
-		})
-		if err != nil {
-			panic(err)
+		registrations := map[string]func(fl validator.FieldLevel) bool{
+			"rfc1035":           validators.Rfc1035,
+			"ssh_public_key":    validators.SshPublicKey,
+			"env_name":          validators.EnvName,
+			"env_list":          validators.EnvList,
+			"port_list_names":   validators.PortListNames,
+			"port_list_numbers": validators.PortListNumbers,
+			"domain_name":       validators.DomainName,
+			"custom_domain":     validators.CustomDomain,
+			"health_check_path": validators.HealthCheckPath,
 		}
 
-		err = v.RegisterValidation("ssh_public_key", func(fl validator.FieldLevel) bool {
-			publicKey, ok := fl.Field().Interface().(string)
-			if !ok {
-				return false
-			}
-
-			_, _, _, _, err := ssh.ParseAuthorizedKey([]byte(publicKey))
+		for tag, fn := range registrations {
+			err := v.RegisterValidation(tag, fn)
 			if err != nil {
-				return false
+				panic(err)
 			}
-			return true
-		})
-		if err != nil {
-			panic(err)
-		}
-
-		err = v.RegisterValidation("env_name", func(fl validator.FieldLevel) bool {
-			name, ok := fl.Field().Interface().(string)
-			if !ok {
-				return false
-			}
-
-			regex := regexp.MustCompile(`^[a-zA-Z]([a-zA-Z0-9-_]*[a-zA-Z0-9])?([a-zA-Z]([a-zA-Z0-9-_]*[a-zA-Z0-9])?)*$`)
-			match := regex.MatchString(name)
-			return match
-		})
-		if err != nil {
-			panic(err)
-		}
-
-		err = v.RegisterValidation("env_list", func(fl validator.FieldLevel) bool {
-			envList, ok := fl.Field().Interface().([]body.Env)
-			if !ok {
-				return false
-			}
-
-			names := make(map[string]bool)
-			for _, env := range envList {
-				if _, ok := names[env.Name]; ok {
-					return false
-				}
-				names[env.Name] = true
-			}
-			return true
-		})
-		if err != nil {
-			panic(err)
-		}
-
-		err = v.RegisterValidation("port_list_names", func(fl validator.FieldLevel) bool {
-			portList, ok := fl.Field().Interface().([]body.Port)
-			if !ok {
-				return false
-			}
-
-			names := make(map[string]bool)
-			for _, port := range portList {
-				if _, ok := names[port.Name]; ok {
-					return false
-				}
-				names[port.Name] = true
-			}
-			return true
-		})
-		if err != nil {
-			panic(err)
-		}
-
-		err = v.RegisterValidation("port_list_numbers", func(fl validator.FieldLevel) bool {
-			portList, ok := fl.Field().Interface().([]body.Port)
-			if !ok {
-				return false
-			}
-
-			ports := make(map[string]bool)
-			for _, port := range portList {
-				identifier := strconv.Itoa(port.Port) + "/" + port.Protocol
-				if _, ok := ports[identifier]; ok {
-					return false
-				}
-				ports[identifier] = true
-			}
-			return true
-		})
-		if err != nil {
-			panic(err)
-		}
-
-		err = v.RegisterValidation("custom_domain", func(fl validator.FieldLevel) bool {
-			domain, ok := fl.Field().Interface().(string)
-			if !ok {
-				return false
-			}
-
-			illegalSuffixes := make([]string, len(conf.Env.Deployment.Zones))
-			for idx, zone := range conf.Env.Deployment.Zones {
-				illegalSuffixes[idx] = zone.ParentDomain
-			}
-
-			for _, suffix := range illegalSuffixes {
-				if strings.HasSuffix(domain, suffix) {
-					return false
-				}
-			}
-
-			punyEncoded, err := idna.Lookup.ToASCII(domain)
-			if err != nil {
-				return false
-			}
-
-			if !v1.IsValidDomain(punyEncoded) {
-				return false
-			}
-
-			return true
-		})
-		if err != nil {
-			panic(err)
 		}
 	}
 }

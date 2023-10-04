@@ -136,6 +136,8 @@ func (p *UpdateParams) FromDTO(dto *body.DeploymentUpdate, deploymentType string
 	if deploymentType == TypePrebuilt {
 		p.Image = dto.Image
 	}
+
+	p.PingPath = dto.HealthCheckPath
 }
 
 func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZone, fallbackImage string, fallbackPort int) {
@@ -179,6 +181,12 @@ func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZone, fallbac
 		}
 	}
 	p.InitCommands = dto.InitCommands
+
+	if dto.HealthCheckPath == nil {
+		p.PingPath = "/healthz"
+	} else {
+		p.PingPath = *dto.HealthCheckPath
+	}
 
 	if dto.CustomDomain != nil {
 		if punyEncoded, err := idna.New().ToASCII(*dto.CustomDomain); err == nil {

@@ -24,6 +24,7 @@ func (client *Client) Create(deploymentID, ownerID string, params *CreateParams)
 		InitCommands: params.InitCommands,
 		CustomDomain: params.CustomDomain,
 		PingResult:   0,
+		PingPath:     params.PingPath,
 	}
 
 	deployment := Deployment{
@@ -165,6 +166,10 @@ func (client *Client) UpdateWithParamsByID(id string, params *UpdateParams) erro
 
 	if params.Image != nil {
 		mainApp.Image = *params.Image
+	}
+
+	if params.PingPath != nil {
+		mainApp.PingPath = *params.PingPath
 	}
 
 	deployment.Apps["main"] = *mainApp

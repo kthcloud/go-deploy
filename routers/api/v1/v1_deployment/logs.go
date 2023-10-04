@@ -30,7 +30,7 @@ func GetLogsSSE(c *gin.Context) {
 	httpContext := sys.NewContext(c)
 
 	var requestURI uri.LogsGet
-	if err := httpContext.GinContext.BindUri(&requestURI); err != nil {
+	if err := httpContext.GinContext.ShouldBindUri(&requestURI); err != nil {
 		httpContext.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
@@ -89,7 +89,7 @@ func GetLogs(c *gin.Context) {
 	httpContext := sys.NewContext(c)
 
 	var requestURI uri.LogsGet
-	if err := httpContext.GinContext.BindUri(&requestURI); err != nil {
+	if err := httpContext.GinContext.ShouldBindUri(&requestURI); err != nil {
 		httpContext.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}

@@ -5,10 +5,8 @@ import (
 	"errors"
 	"github.com/go-playground/validator/v10"
 	"go-deploy/models/dto/body"
-	"go-deploy/pkg/conf"
 	"go-deploy/pkg/sys"
 	"go-deploy/service"
-	"net"
 	"reflect"
 )
 
@@ -60,15 +58,19 @@ func msgForTag(fe validator.FieldError) string {
 	case "base64":
 		return "Must be a valid base64 encoded string"
 	case "env_name":
-		return "Must be a valid environment name. Ex. ENV, MY_ENV, my_ENV_123"
+		return "Must be a valid environment name, ex. ENV, MY_ENV, my_ENV_123"
 	case "env_list":
 		return "Every env name must be unique"
 	case "port_list_names":
 		return "Every port name must be unique"
 	case "port_list_numbers":
 		return "Every port number must be unique per protocol"
+	case "valid_domain":
+		return "Must be a valid domain name that is convertible to punycode"
 	case "custom_domain":
-		return "Custom domain must be a valid domain name and point to the correct interface"
+		return "Must point to the correct interface, either the zone base domain or its public IP"
+	case "health_check_path":
+		return "Must be a valid path (RFC 3986), ex. /healthz or /ping-me"
 	}
 	return fe.Error()
 }
@@ -93,21 +95,4 @@ func CreateBindingError(err error) *body.BindingError {
 	}
 
 	return out
-}
-
-func IsValidDomain(domainName string) bool {
-	for _, zone := range conf.Env.Deployment.Zones {
-		mustPointAt := zone.CustomDomainIP
-
-		ips, _ := net.LookupIP(domainName)
-		for _, ip := range ips {
-			if ipv4 := ip.To4(); ipv4 != nil {
-				if ipv4.String() == mustPointAt {
-					return true
-				}
-			}
-		}
-
-	}
-	return false
 }

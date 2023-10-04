@@ -27,7 +27,7 @@ func Get(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestURI uri.JobGet
-	if err := context.GinContext.BindUri(&requestURI); err != nil {
+	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
 		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
@@ -112,13 +112,13 @@ func Update(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestURI uri.JobUpdate
-	if err := context.GinContext.BindUri(&requestURI); err != nil {
+	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
 		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
 
 	var request body.JobUpdate
-	if err := context.GinContext.BindJSON(&request); err != nil {
+	if err := context.GinContext.ShouldBindJSON(&request); err != nil {
 		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}

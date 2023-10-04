@@ -26,7 +26,7 @@ func GetCiConfig(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestURI uri.CiConfigGet
-	if err := context.GinContext.BindUri(&requestURI); err != nil {
+	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
 		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
