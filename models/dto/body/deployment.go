@@ -72,13 +72,14 @@ type DeploymentRead struct {
 	OwnerID string `json:"ownerId"`
 	Zone    string `json:"zone"`
 
-	URL          *string  `json:"url,omitempty"`
-	Envs         []Env    `json:"envs"`
-	Volumes      []Volume `json:"volumes"`
-	InitCommands []string `json:"initCommands"`
-	Private      bool     `json:"private"`
-	InternalPort int      `json:"internalPort"`
-	Image        *string  `json:"image,omitempty"`
+	URL             *string  `json:"url,omitempty"`
+	CustomDomainURL *string  `json:"customDomainUrl,omitempty"`
+	Envs            []Env    `json:"envs"`
+	Volumes         []Volume `json:"volumes"`
+	InitCommands    []string `json:"initCommands"`
+	Private         bool     `json:"private"`
+	InternalPort    int      `json:"internalPort"`
+	Image           *string  `json:"image,omitempty"`
 
 	Status     string `json:"status"`
 	PingResult *int   `json:"pingResult,omitempty"`
