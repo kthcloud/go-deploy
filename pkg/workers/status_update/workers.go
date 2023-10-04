@@ -71,7 +71,7 @@ func deploymentStatusUpdater(ctx context.Context) {
 		case <-time.After(1 * time.Second):
 			allDeployments, err := deploymentModel.New().GetAll()
 			if err != nil {
-				utils.PrettyPrintError(fmt.Errorf("error fetching deployments: %w", err))
+				utils.PrettyPrintError(fmt.Errorf("error fetching deployments. details: %w", err))
 				continue
 			}
 
