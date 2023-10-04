@@ -81,7 +81,7 @@ func pingAndSave(deployment deploymentModels.Deployment, url string) {
 }
 
 func ping(url string) (int, error) {
-	req, err := http.NewRequest("GET", "https://"+url, nil)
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return 0, err
 	}
