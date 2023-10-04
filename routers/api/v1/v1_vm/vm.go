@@ -176,14 +176,6 @@ func Create(c *gin.Context) {
 		return
 	}
 
-	if requestBody.Zone != nil {
-		zone := zone_service.GetZone(*requestBody.Zone, zoneModel.ZoneTypeVM)
-		if zone == nil {
-			context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, "Zone not found")
-			return
-		}
-	}
-
 	vm, err := vm_service.GetByName(requestBody.Name)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
@@ -191,43 +183,16 @@ func Create(c *gin.Context) {
 	}
 
 	if vm != nil {
-		if vm.OwnerID != auth.UserID {
-			context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceNotCreated, "Resource already exists")
-			return
-		}
-
-		started, reason, err := vm_service.StartActivity(vm.ID, vmModel.ActivityBeingCreated)
-		if err != nil {
-			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to start activity: %s", err))
-			return
-		}
-
-		if !started {
-			context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotReady, reason)
-			return
-		}
-
-		if vm.BeingDeleted() {
-			context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingDeleted, "Resource is currently being deleted")
-			return
-		}
-
-		jobID := uuid.New().String()
-		err = job_service.Create(jobID, auth.UserID, jobModel.TypeCreateVM, map[string]interface{}{
-			"id":      vm.ID,
-			"ownerId": auth.UserID,
-			"params":  requestBody,
-		})
-		if err != nil {
-			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to create job: %s", err))
-			return
-		}
-
-		context.JSONResponse(http.StatusCreated, body.VmCreated{
-			ID:    vm.ID,
-			JobID: jobID,
-		})
+		context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceNotCreated, "Resource already exists")
 		return
+	}
+
+	if requestBody.Zone != nil {
+		zone := zone_service.GetZone(*requestBody.Zone, zoneModel.ZoneTypeVM)
+		if zone == nil {
+			context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, "Zone not found")
+			return
+		}
 	}
 
 	ok, reason, err := vm_service.CheckQuotaCreate(auth.UserID, &auth.GetEffectiveRole().Quotas, auth, requestBody)
