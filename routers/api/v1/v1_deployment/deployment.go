@@ -202,7 +202,7 @@ func Create(c *gin.Context) {
 		}
 	}
 
-	if requestBody.CustomDomain != nil && !effectiveRole.Permissions.UseCustomDomain {
+	if requestBody.CustomDomain != nil && !effectiveRole.Permissions.UseCustomDomains {
 		context.ErrorResponse(http.StatusForbidden, status_codes.Error, "User is not allowed to use custom domains")
 		return
 	}
