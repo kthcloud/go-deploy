@@ -11,12 +11,15 @@ import (
 	"log"
 	"path"
 	"strconv"
+	"strings"
 )
 
 const (
 	appName             = "main"
 	appNameCustomDomain = "custom-domain"
 )
+
+var CustomDomainInUseErr = fmt.Errorf("custom domain is already in use")
 
 func withCustomDomainSuffix(name string) string {
 	return fmt.Sprintf("%s-%s", name, appNameCustomDomain)
@@ -158,6 +161,10 @@ func Create(deploymentID string, userID string, params *deploymentModel.CreatePa
 
 			_, err = client.CreateIngress(deployment.ID, appNameCustomDomain, public)
 			if err != nil {
+				if strings.Contains(err.Error(), "is already defined in ingress") {
+					return makeError(CustomDomainInUseErr)
+				}
+
 				return makeError(err)
 			}
 		}
@@ -350,6 +357,10 @@ func Update(name string, params *deploymentModel.UpdateParams) error {
 
 			err = client.RecreateIngress(deployment.ID, appNameCustomDomain, ingress)
 			if err != nil {
+				if strings.Contains(err.Error(), "is already defined in ingress") {
+					return makeError(CustomDomainInUseErr)
+				}
+
 				return makeError(err)
 			}
 		} else {
@@ -661,6 +672,10 @@ func Repair(name string) error {
 
 				_, err = client.CreateIngress(deployment.ID, appNameCustomDomain, ingressPublic)
 				if err != nil {
+					if strings.Contains(err.Error(), "is already defined in ingress") {
+						return makeError(CustomDomainInUseErr)
+					}
+
 					return makeError(err)
 				}
 			} else {
@@ -674,6 +689,10 @@ func Repair(name string) error {
 					)
 				})
 				if err != nil {
+					if strings.Contains(err.Error(), "is already defined in ingress") {
+						return makeError(CustomDomainInUseErr)
+					}
+
 					return makeError(err)
 				}
 			}

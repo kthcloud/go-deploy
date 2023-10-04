@@ -9,7 +9,6 @@ import (
 	"go-deploy/models/dto/uri"
 	deploymentModels "go-deploy/models/sys/deployment"
 	jobModel "go-deploy/models/sys/job"
-	vmModel "go-deploy/models/sys/vm"
 	zoneModel "go-deploy/models/sys/zone"
 	"go-deploy/pkg/status_codes"
 	"go-deploy/pkg/sys"
@@ -179,6 +178,17 @@ func Create(c *gin.Context) {
 		return
 	}
 
+	deployment, err := deployment_service.GetByName(requestBody.Name)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
+		return
+	}
+
+	if deployment != nil {
+		context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceNotCreated, "Resource already exists")
+		return
+	}
+
 	if effectiveRole.Quotas.Deployments <= 0 {
 		context.ErrorResponse(http.StatusForbidden, status_codes.Error, "User is not allowed to create deployments")
 		return
@@ -192,9 +202,8 @@ func Create(c *gin.Context) {
 		}
 	}
 
-	deployment, err := deployment_service.GetByName(requestBody.Name)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
+	if requestBody.CustomDomain != nil && !effectiveRole.Permissions.UseCustomDomains {
+		context.ErrorResponse(http.StatusForbidden, status_codes.Error, "User is not allowed to use custom domains")
 		return
 	}
 
@@ -220,41 +229,6 @@ func Create(c *gin.Context) {
 			context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceValidationFailed, reason)
 			return
 		}
-	}
-
-	if deployment != nil {
-		if deployment.OwnerID != auth.UserID {
-			context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceNotCreated, "Resource already exists")
-			return
-		}
-
-		started, reason, err := deployment_service.StartActivity(deployment.ID, vmModel.ActivityBeingCreated)
-		if err != nil {
-			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to start activity: %s", err))
-			return
-		}
-
-		if !started {
-			context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotReady, reason)
-			return
-		}
-
-		jobID := uuid.New().String()
-		err = job_service.Create(jobID, auth.UserID, jobModel.TypeCreateDeployment, map[string]interface{}{
-			"id":      deployment.ID,
-			"ownerId": auth.UserID,
-			"params":  requestBody,
-		})
-		if err != nil {
-			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to create job: %s", err))
-			return
-		}
-
-		context.JSONResponse(http.StatusCreated, body.DeploymentCreated{
-			ID:    deployment.ID,
-			JobID: jobID,
-		})
-		return
 	}
 
 	ok, reason, err := deployment_service.CheckQuotaCreate(auth.UserID, &auth.GetEffectiveRole().Quotas, auth)
