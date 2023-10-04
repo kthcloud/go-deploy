@@ -81,7 +81,7 @@ func CreateSnapshot(c *gin.Context) {
 		return
 	}
 
-	ok, reason, err := vm_service.CheckQuotaCreateSnapshot(auth.UserID, &auth.GetEffectiveRole().Quotas)
+	ok, reason, err := vm_service.CheckQuotaCreateSnapshot(auth.UserID, &auth.GetEffectiveRole().Quotas, auth)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to check quota: %s", err))
 		return

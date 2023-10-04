@@ -230,7 +230,7 @@ func Create(c *gin.Context) {
 		return
 	}
 
-	ok, reason, err := vm_service.CheckQuotaCreate(auth.UserID, &auth.GetEffectiveRole().Quotas, requestBody)
+	ok, reason, err := vm_service.CheckQuotaCreate(auth.UserID, &auth.GetEffectiveRole().Quotas, auth, requestBody)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to check quota: %s", err))
 		return
@@ -378,7 +378,7 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	ok, reason, err := vm_service.CheckQuotaUpdate(auth.UserID, vm.ID, &auth.GetEffectiveRole().Quotas, requestBody)
+	ok, reason, err := vm_service.CheckQuotaUpdate(auth.UserID, vm.ID, &auth.GetEffectiveRole().Quotas, auth, requestBody)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to check quota: %s", err))
 		return

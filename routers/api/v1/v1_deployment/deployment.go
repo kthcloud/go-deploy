@@ -257,14 +257,14 @@ func Create(c *gin.Context) {
 		return
 	}
 
-	deploymentCount, err := deployment_service.GetCountAuth(auth.UserID, auth)
+	ok, reason, err := deployment_service.CheckQuotaCreate(auth.UserID, &auth.GetEffectiveRole().Quotas, auth)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to check quota: %s", err))
 		return
 	}
 
-	if deploymentCount >= effectiveRole.Quotas.Deployments {
-		context.ErrorResponse(http.StatusForbidden, status_codes.Error, fmt.Sprintf("User is not allowed to create more than %d deployments", effectiveRole.Quotas.Deployments))
+	if !ok {
+		context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceValidationFailed, reason)
 		return
 	}
 
