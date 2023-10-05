@@ -19,7 +19,8 @@ func (p *ProjectPublic) Created() bool {
 
 func CreateProjectUpdateParamsFromPublic(public *ProjectPublic) *modelv2.Project {
 	return &modelv2.Project{
-		Name: public.Name,
+		ProjectID: int32(public.ID),
+		Name:      public.Name,
 		Metadata: &modelv2.ProjectMetadata{
 			Public: strconv.FormatBool(public.Public),
 		},
