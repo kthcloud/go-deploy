@@ -65,7 +65,7 @@ func fixTyposInSubsystems_2023_10_05() error {
 			continue
 		}
 
-		update = append(update, bson.E{Key: "repairAt", Value: time.Time{}})
+		update = append(update, bson.E{Key: "repairedAt", Value: time.Time{}})
 
 		err = deploymentModel.New().UpdateWithBsonByID(deployment.ID, update)
 		if err != nil {
@@ -83,14 +83,14 @@ func fixHarborProjectPublicToPrivate_2022_10_05() error {
 	}
 
 	for _, deployment := range deployments {
-		if !deployment.Subsystems.Harbor.Project.Public {
+		if deployment.Subsystems.Harbor.Project.Public {
 			continue
 		}
 
 		update := bson.D{}
 
 		update = append(update, bson.E{Key: "subsystems.harbor.project.public", Value: false})
-		update = append(update, bson.E{Key: "repairAt", Value: time.Time{}})
+		update = append(update, bson.E{Key: "repairedAt", Value: time.Time{}})
 
 		err = deploymentModel.New().UpdateWithBsonByID(deployment.ID, update)
 		if err != nil {
@@ -119,7 +119,7 @@ func addImagePullSecretToDeployments_2022_10_05() error {
 		}
 
 		update = append(update, bson.E{Key: "subsystems.k8s.deploymentMap.main.imagePullSecrets", Value: imagePullSecrets})
-		update = append(update, bson.E{Key: "repairAt", Value: time.Time{}})
+		update = append(update, bson.E{Key: "repairedAt", Value: time.Time{}})
 
 		err = deploymentModel.New().UpdateWithBsonByID(deployment.ID, update)
 		if err != nil {
