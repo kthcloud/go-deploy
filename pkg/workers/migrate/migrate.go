@@ -1,6 +1,9 @@
 package migrator
 
 import (
+	deploymentModel "go-deploy/models/sys/deployment"
+	"go-deploy/service/deployment_service"
+	"go.mongodb.org/mongo-driver/bson"
 	"log"
 )
 
@@ -32,5 +35,34 @@ func Migrate() {
 //
 // add a date to the migration name to make it easier to identify.
 func getMigrations() map[string]func() error {
-	return map[string]func() error{}
+	return map[string]func() error{
+		"2023-10-05 fix typos in subsystems": fixTyposInSubsystems_2023_10_05,
+	}
+}
+
+func fixTyposInSubsystems_2023_10_05() error {
+	deployments, err := deployment_service.GetAll()
+	if err != nil {
+		return err
+	}
+
+	for _, deployment := range deployments {
+		update := bson.D{}
+
+		mainK8sDeployment := deployment.Subsystems.K8s.GetDeployment("main")
+		if mainK8sDeployment != nil {
+			update = append(update, bson.E{Key: "subsystems.k8s.deploymentMap.main.image", Value: mainK8sDeployment.DockerImage})
+		}
+
+		if deployment.Subsystems.Harbor.Repository.ID != 0 {
+			update = append(update, bson.E{Key: "subsystems.harbor.repository.id", Value: deployment.Subsystems.Harbor.Repository.ID})
+		}
+
+		err = deploymentModel.New().UpdateWithBsonByID(deployment.ID, update)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
