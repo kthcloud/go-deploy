@@ -6,7 +6,7 @@ import (
 )
 
 type RepositoryPublic struct {
-	ID          int          `bson:"ID"`
+	ID          int          `bson:"id"`
 	Name        string       `bson:"name"`
 	ProjectID   int          `bson:"projectId"`
 	ProjectName string       `bson:"projectName"`

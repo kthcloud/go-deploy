@@ -148,7 +148,7 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 					Containers: []apiv1.Container{
 						{
 							Name:    public.Name,
-							Image:   public.DockerImage,
+							Image:   public.Image,
 							Command: public.Command,
 							Args:    public.Args,
 							Env:     envs,

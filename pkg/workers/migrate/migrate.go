@@ -54,7 +54,7 @@ func fixTyposInSubsystems_2023_10_05() error {
 
 		mainK8sDeployment := deployment.Subsystems.K8s.GetDeployment("main")
 		if mainK8sDeployment != nil && mainK8sDeployment.Image == "" {
-			update = append(update, bson.E{Key: "subsystems.k8s.deploymentMap.main.image", Value: mainK8sDeployment.DockerImage})
+			update = append(update, bson.E{Key: "subsystems.k8s.deploymentMap.main.image", Value: mainK8sDeployment.Image})
 		}
 
 		if deployment.Subsystems.Harbor.Repository.ID != 0 {
@@ -83,10 +83,6 @@ func fixHarborProjectPublicToPrivate_2022_10_05() error {
 	}
 
 	for _, deployment := range deployments {
-		if deployment.Subsystems.Harbor.Project.Public {
-			continue
-		}
-
 		update := bson.D{}
 
 		update = append(update, bson.E{Key: "subsystems.harbor.project.public", Value: false})
