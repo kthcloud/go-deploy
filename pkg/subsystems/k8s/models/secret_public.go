@@ -13,11 +13,15 @@ type SecretPublic struct {
 	Data        map[string][]byte `json:"data"`
 	Type        string            `json:"type"`
 	CreatedAt   time.Time         `json:"createdAt"`
-	PlaceHolder string            `json:"placeHolder"`
+	Placeholder bool              `json:"placeholder"`
 }
 
 func (secret *SecretPublic) Created() bool {
 	return secret.ID != ""
+}
+
+func (secret *SecretPublic) IsPlaceholder() bool {
+	return secret.Placeholder
 }
 
 func CreateSecretPublicFromRead(secret *v1.Secret) *SecretPublic {
