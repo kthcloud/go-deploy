@@ -51,7 +51,7 @@ func (client *Client) RepairRepository(id string, genPublic func() *harborModels
 		},
 		client.SsClient.UpdateRepository,
 		func(dbResource *harborModels.RepositoryPublic) error {
-			// don't recreate repository since it would mean a new push to the registry by the user
+			// don't recreate the repository since it would mean a new push to the registry by the user
 			return nil
 		},
 	)
@@ -77,8 +77,7 @@ func (client *Client) RepairRobot(id string, genPublic func() *harborModels.Robo
 		},
 		client.SsClient.UpdateRobot,
 		func(dbResource *harborModels.RobotPublic) error {
-			// don't recreate the robot since the credentials mights be used somewhere
-			return nil
+			return client.RecreateRobot(id, dbResource)
 		},
 	)
 }
