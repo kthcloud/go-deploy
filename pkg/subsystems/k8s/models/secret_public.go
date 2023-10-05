@@ -25,6 +25,7 @@ func CreateSecretPublicFromRead(secret *v1.Secret) *SecretPublic {
 		Name:      secret.ObjectMeta.Name,
 		Namespace: secret.ObjectMeta.Namespace,
 		Type:      string(secret.Type),
+		Data:      secret.Data,
 		CreatedAt: formatCreatedAt(secret.Annotations),
 	}
 }
