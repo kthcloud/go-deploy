@@ -100,16 +100,19 @@ func Create(deploymentID string, params *deploymentModel.CreateParams) error {
 	}
 
 	// Secret
-	secret := ss.GetSecret(appName)
-	if service.NotCreated(secret) {
-		registry := conf.Env.DockerRegistry.URL
-		username := deployment.Subsystems.Harbor.Robot.HarborName
-		password := deployment.Subsystems.Harbor.Robot.Secret
+	var pullSecrets []string
+	if deployment.Type == deploymentModel.TypeCustom {
+		if service.NotCreated(ss.GetSecret(appName)) {
+			registry := conf.Env.DockerRegistry.URL
+			username := deployment.Subsystems.Harbor.Robot.HarborName
+			password := deployment.Subsystems.Harbor.Robot.Secret
 
-		public := helpers.CreateImagePullSecretPublic(client.Namespace, withImagePullSecretSuffix(deployment.Name), registry, username, password)
-		secret, err = client.CreateSecret(deployment.ID, appName, public)
-		if err != nil {
-			return makeError(err)
+			public := helpers.CreateImagePullSecretPublic(client.Namespace, withImagePullSecretSuffix(deployment.Name), registry, username, password)
+			secret, err := client.CreateSecret(deployment.ID, appName, public)
+			if err != nil {
+				return makeError(err)
+			}
+			pullSecrets = []string{secret.Name}
 		}
 	}
 
@@ -123,7 +126,7 @@ func Create(deploymentID string, params *deploymentModel.CreateParams) error {
 			params.Envs,
 			params.Volumes,
 			params.InitCommands,
-			[]string{secret.Name},
+			pullSecrets,
 		)
 		_, err = client.CreateK8sDeployment(deployment.ID, appName, public)
 		if err != nil {
@@ -342,7 +345,7 @@ func Update(id string, params *deploymentModel.UpdateParams) error {
 	}
 
 	if params.Image != nil {
-		err := updateImage(client, deployment, *params.Image)
+		err = updateImage(client, deployment, *params.Image)
 		if err != nil {
 			return makeError(err)
 		}
@@ -555,29 +558,38 @@ func Repair(name string) error {
 		}
 	}
 
-	imagePullSecret := ss.GetSecret(appNameImagePullSecret)
-	if !service.Created(imagePullSecret) {
-		registry := conf.Env.DockerRegistry.URL
-		username := deployment.Subsystems.Harbor.Robot.HarborName
-		password := deployment.Subsystems.Harbor.Robot.Secret
-
-		public := helpers.CreateImagePullSecretPublic(client.Namespace, withImagePullSecretSuffix(deployment.Name), registry, username, password)
-		_, err = client.CreateSecret(deployment.ID, appName, public)
-		if err != nil {
-			return makeError(err)
+	if deployment.Type == deploymentModel.TypePrebuilt {
+		if service.Created(ss.GetSecret(appNameImagePullSecret)) {
+			err = client.DeleteSecret(deployment.ID, appNameImagePullSecret)
+			if err != nil {
+				return makeError(err)
+			}
 		}
 	} else {
-		err = client.RepairSecret(deployment.ID, appNameImagePullSecret, func() *k8sModels.SecretPublic {
-			return helpers.CreateImagePullSecretPublic(
-				deployment.Subsystems.K8s.Namespace.FullName,
-				withImagePullSecretSuffix(deployment.Name),
-				conf.Env.DockerRegistry.URL,
-				deployment.Subsystems.Harbor.Robot.HarborName,
-				deployment.Subsystems.Harbor.Robot.Secret,
-			)
-		})
-		if err != nil {
-			return makeError(err)
+		imagePullSecret := ss.GetSecret(appNameImagePullSecret)
+		if !service.Created(imagePullSecret) {
+			registry := conf.Env.DockerRegistry.URL
+			username := deployment.Subsystems.Harbor.Robot.HarborName
+			password := deployment.Subsystems.Harbor.Robot.Secret
+
+			public := helpers.CreateImagePullSecretPublic(client.Namespace, withImagePullSecretSuffix(deployment.Name), registry, username, password)
+			_, err = client.CreateSecret(deployment.ID, appName, public)
+			if err != nil {
+				return makeError(err)
+			}
+		} else {
+			err = client.RepairSecret(deployment.ID, appNameImagePullSecret, func() *k8sModels.SecretPublic {
+				return helpers.CreateImagePullSecretPublic(
+					deployment.Subsystems.K8s.Namespace.FullName,
+					withImagePullSecretSuffix(deployment.Name),
+					conf.Env.DockerRegistry.URL,
+					deployment.Subsystems.Harbor.Robot.HarborName,
+					deployment.Subsystems.Harbor.Robot.Secret,
+				)
+			})
+			if err != nil {
+				return makeError(err)
+			}
 		}
 	}
 
@@ -753,14 +765,9 @@ func updateVolumes(client *helpers.Client, deployment *deploymentModel.Deploymen
 		return nil
 	}
 
-	var pullSecrets []string
-	if !deployment.Subsystems.Harbor.Project.Public {
-		if service.NotCreated(deployment.Subsystems.K8s.GetSecret(appName)) {
-			log.Println("k8s secret not created when updating volumes. assuming it was deleted")
-			return nil
-		} else {
-			pullSecrets = []string{deployment.Subsystems.K8s.GetSecret(appName).Name}
-		}
+	var imagePullSecrets []string
+	if k8sDeployment := deployment.Subsystems.K8s.GetDeployment(appName); service.Created(k8sDeployment) {
+		imagePullSecrets = k8sDeployment.ImagePullSecrets
 	}
 
 	err := client.DeleteK8sDeployment(deployment.ID, appName)
@@ -823,7 +830,7 @@ func updateVolumes(client *helpers.Client, deployment *deploymentModel.Deploymen
 		mainApp.Envs,
 		volumes,
 		mainApp.InitCommands,
-		pullSecrets,
+		imagePullSecrets,
 	)
 	_, err = client.CreateK8sDeployment(deployment.ID, appName, public)
 	if err != nil {
