@@ -58,15 +58,10 @@ func CreateMainAppDeploymentPublic(namespace, name, image string, port int, envs
 	}
 
 	return &k8sModels.DeploymentPublic{
-		ID:        "",
-		Name:      name,
-		Namespace: namespace,
-
-		// old will migrate
-		DockerImage: image,
-		// new will migrate
-		Image: image,
-
+		ID:               "",
+		Name:             name,
+		Namespace:        namespace,
+		Image:            image,
 		ImagePullSecrets: pullSecrets,
 		EnvVars:          k8sEnvs,
 		Resources: k8sModels.Resources{
@@ -112,11 +107,11 @@ func CreateFileBrowserDeploymentPublic(namespace, name string, volumes []storage
 	}
 
 	return &k8sModels.DeploymentPublic{
-		ID:          "",
-		Name:        name,
-		Namespace:   namespace,
-		DockerImage: "filebrowser/filebrowser",
-		EnvVars:     nil,
+		ID:        "",
+		Name:      name,
+		Namespace: namespace,
+		Image:     "filebrowser/filebrowser",
+		EnvVars:   nil,
 		Resources: k8sModels.Resources{
 			Limits:   defaultLimits,
 			Requests: defaultRequests,
@@ -204,11 +199,11 @@ func CreateOAuthProxyDeploymentPublic(namespace, name, userID string, zone *envi
 	}
 
 	return &k8sModels.DeploymentPublic{
-		ID:          "",
-		Name:        name,
-		Namespace:   namespace,
-		DockerImage: "quay.io/oauth2-proxy/oauth2-proxy:latest",
-		EnvVars:     nil,
+		ID:        "",
+		Name:      name,
+		Namespace: namespace,
+		Image:     "quay.io/oauth2-proxy/oauth2-proxy:latest",
+		EnvVars:   nil,
 		Resources: k8sModels.Resources{
 			Limits:   defaultLimits,
 			Requests: defaultRequests,

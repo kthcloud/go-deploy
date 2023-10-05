@@ -7,12 +7,13 @@ import (
 )
 
 type SecretPublic struct {
-	ID        string            `json:"id"`
-	Name      string            `json:"name"`
-	Namespace string            `json:"namespace"`
-	Data      map[string][]byte `json:"data"`
-	Type      string            `json:"type"`
-	CreatedAt time.Time         `json:"createdAt"`
+	ID          string            `json:"id"`
+	Name        string            `json:"name"`
+	Namespace   string            `json:"namespace"`
+	Data        map[string][]byte `json:"data"`
+	Type        string            `json:"type"`
+	CreatedAt   time.Time         `json:"createdAt"`
+	PlaceHolder string            `json:"placeHolder"`
 }
 
 func (secret *SecretPublic) Created() bool {

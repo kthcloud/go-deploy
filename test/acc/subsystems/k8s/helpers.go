@@ -46,17 +46,17 @@ func withK8sDeployment(t *testing.T, namespace *models.NamespacePublic) *models.
 	image := conf.Env.DockerRegistry.Placeholder.Project + "/" + conf.Env.DockerRegistry.Placeholder.Repository
 
 	deploymentPublic := &models.DeploymentPublic{
-		Name:        "acc-test-" + uuid.New().String(),
-		Namespace:   namespace.FullName,
-		DockerImage: registry + "/" + image + ":latest",
-		EnvVars:     nil,
+		Name:      "acc-test-" + uuid.New().String(),
+		Namespace: namespace.FullName,
+		Image:     registry + "/" + image + ":latest",
+		EnvVars:   nil,
 	}
 
 	id, err := client.CreateDeployment(deploymentPublic)
 	assert.NoError(t, err, "failed to create deployment")
 	assert.NotZero(t, id, "no deployment id received from client")
 
-	createdDeployment, err := client.ReadDeployment(namespace.FullName, id)
+	createdDeployment, err := client.ReadDeployment(id)
 	assert.NoError(t, err, "failed to read deployment")
 	assert.NotNil(t, createdDeployment, "deployment is nil")
 
@@ -80,7 +80,7 @@ func withK8sService(t *testing.T, namespace *models.NamespacePublic) *models.Ser
 	assert.NoError(t, err, "failed to create service")
 	assert.NotZero(t, id, "no service id received from client")
 
-	createdService, err := client.ReadService(namespace.FullName, id)
+	createdService, err := client.ReadService(id)
 	assert.NoError(t, err, "failed to read service")
 	assert.NotNil(t, createdService, "service is nil")
 
@@ -106,7 +106,7 @@ func withK8sIngress(t *testing.T, namespace *models.NamespacePublic, service *mo
 	assert.NoError(t, err, "failed to create ingress")
 	assert.NotZero(t, id, "no ingress id received from client")
 
-	createdIngress, err := client.ReadIngress(namespace.FullName, id)
+	createdIngress, err := client.ReadIngress(id)
 	assert.NoError(t, err, "failed to read ingress")
 	assert.NotNil(t, createdIngress, "ingress is nil")
 

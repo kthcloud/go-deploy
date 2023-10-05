@@ -7,25 +7,19 @@ import (
 )
 
 type DeploymentPublic struct {
-	ID        string `bson:"id"`
-	Name      string `bson:"name"`
-	Namespace string `bson:"namespace"`
-
-	// old will migrate
-	DockerImage string `bson:"dockerImage"`
-	// new will migrate
-	Image string `bson:"image"`
-
-	ImagePullSecrets []string `bson:"imagePullSecrets"`
-
-	EnvVars        []EnvVar        `bson:"envVars"`
-	Resources      Resources       `bson:"resources"`
-	Command        []string        `bson:"command"`
-	Args           []string        `bson:"args"`
-	InitCommands   []string        `bson:"initCommands"`
-	InitContainers []InitContainer `bson:"initContainers"`
-	Volumes        []Volume        `bson:"volumes"`
-	CreatedAt      time.Time       `bson:"createdAt"`
+	ID               string          `bson:"id"`
+	Name             string          `bson:"name"`
+	Namespace        string          `bson:"namespace"`
+	Image            string          `bson:"image"`
+	ImagePullSecrets []string        `bson:"imagePullSecrets"`
+	EnvVars          []EnvVar        `bson:"envVars"`
+	Resources        Resources       `bson:"resources"`
+	Command          []string        `bson:"command"`
+	Args             []string        `bson:"args"`
+	InitCommands     []string        `bson:"initCommands"`
+	InitContainers   []InitContainer `bson:"initContainers"`
+	Volumes          []Volume        `bson:"volumes"`
+	CreatedAt        time.Time       `bson:"createdAt"`
 }
 
 func (d *DeploymentPublic) Created() bool {
@@ -123,15 +117,10 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 	}
 
 	return &DeploymentPublic{
-		ID:        deployment.Labels[keys.ManifestLabelID],
-		Name:      deployment.Labels[keys.ManifestLabelName],
-		Namespace: deployment.Namespace,
-
-		// old will migrate
-		DockerImage: image,
-		// new will migrate
-		Image: image,
-
+		ID:               deployment.Labels[keys.ManifestLabelID],
+		Name:             deployment.Labels[keys.ManifestLabelName],
+		Namespace:        deployment.Namespace,
+		Image:            image,
 		ImagePullSecrets: imagePullSecrets,
 		EnvVars:          envs,
 		Resources: Resources{
