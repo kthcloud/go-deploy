@@ -72,13 +72,16 @@ func (client *Client) CreateRobot(public *models.RobotPublic) (int, error) {
 			break
 		}
 	}
-	var appliedSecret string
 
+	var appliedSecret string
 	if robot == nil {
 		created, err := client.createHarborRobot(public)
 		if err != nil {
 			return 0, makeError(err)
 		}
+
+		appliedSecret = created.Secret
+
 		robot, err = client.HarborClient.GetRobotAccountByID(context.TODO(), created.ID)
 		if err != nil {
 			return 0, makeError(err)
@@ -87,9 +90,8 @@ func (client *Client) CreateRobot(public *models.RobotPublic) (int, error) {
 
 	if public.Secret != "" {
 		appliedSecret = public.Secret
-	} else {
-		appliedSecret = robot.Secret
 	}
+
 	err = client.assertCorrectRobotSecret(robot, appliedSecret)
 	if err != nil {
 		return 0, makeError(err)
