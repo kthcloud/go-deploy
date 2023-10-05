@@ -74,7 +74,7 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 		}
 	}
 
-	err = k8s_service.Create(deploymentID, ownerID, params)
+	err = k8s_service.Create(deploymentID, params)
 	if err != nil {
 		if errors.Is(err, k8s_service.CustomDomainInUseErr) {
 			log.Println("custom domain in use when creating deployment", params.Name, ". removing it from the deployment and create params")
@@ -314,7 +314,7 @@ func Update(id string, deploymentUpdate *body.DeploymentUpdate) error {
 	params := &deploymentModel.UpdateParams{}
 	params.FromDTO(deploymentUpdate, deployment.Type)
 
-	err = k8s_service.Update(deployment.Name, params)
+	err = k8s_service.Update(id, params)
 	if err != nil {
 		if errors.Is(err, k8s_service.CustomDomainInUseErr) {
 			log.Println("custom domain in use when updating deployment", deployment.Name, ". removing it from the update params")

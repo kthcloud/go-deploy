@@ -105,3 +105,28 @@ func (client *Client) RepairIngress(id, name string, genPublic func() *k8sModels
 		},
 	)
 }
+
+func (client *Client) RepairSecret(id, name string, genPublic func() *k8sModels.SecretPublic) error {
+	dbSecret := client.K8s.GetSecret(name)
+	if service.NotCreated(dbSecret) {
+		public := genPublic()
+		if public == nil {
+			log.Println("no public supplied for k8s secret", name, " when trying to create it in the repair process")
+			return nil
+		}
+
+		_, err := client.CreateSecret(id, name, public)
+		return err
+	}
+
+	return service.UpdateIfDiff(
+		*dbSecret,
+		func() (*k8sModels.SecretPublic, error) {
+			return client.SsClient.ReadSecret(dbSecret.ID)
+		},
+		client.SsClient.UpdateSecret,
+		func(dbResource *k8sModels.SecretPublic) error {
+			return client.RecreateSecret(id, name, dbResource)
+		},
+	)
+}

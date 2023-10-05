@@ -95,3 +95,16 @@ func (client *Client) DeleteJob(id, name string) error {
 	client.K8s.DeleteJob(name)
 	return client.UpdateDB(id, "jobMap", client.K8s.JobMap)
 }
+
+func (client *Client) DeleteSecret(id, name string) error {
+	secret := client.K8s.GetSecret(name)
+	if service.Created(secret) {
+		err := client.SsClient.DeleteSecret(secret.ID)
+		if err != nil {
+			return err
+		}
+	}
+
+	client.K8s.DeleteSecret(name)
+	return client.UpdateDB(id, "secretMap", client.K8s.SecretMap)
+}

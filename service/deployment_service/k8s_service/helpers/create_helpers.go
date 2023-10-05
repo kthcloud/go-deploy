@@ -188,3 +188,28 @@ func (client *Client) CreateJob(id, name string, public *k8sModels.JobPublic) (*
 
 	return job, nil
 }
+
+func (client *Client) CreateSecret(id, name string, public *k8sModels.SecretPublic) (*k8sModels.SecretPublic, error) {
+	createdID, err := client.SsClient.CreateSecret(public)
+	if err != nil {
+		return nil, err
+	}
+
+	secret, err := client.SsClient.ReadSecret(createdID)
+	if err != nil {
+		return nil, err
+	}
+
+	if secret == nil {
+		return nil, errors.New("failed to read secret after creation")
+	}
+
+	err = client.UpdateDB(id, "secretMap."+name, secret)
+	if err != nil {
+		return nil, err
+	}
+
+	client.K8s.SetSecret(name, *secret)
+
+	return secret, nil
+}

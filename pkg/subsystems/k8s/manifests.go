@@ -107,6 +107,13 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 		}
 	}
 
+	imagePullSecrets := make([]apiv1.LocalObjectReference, len(public.ImagePullSecrets))
+	for i, imagePullSecret := range public.ImagePullSecrets {
+		imagePullSecrets[i] = apiv1.LocalObjectReference{
+			Name: imagePullSecret,
+		}
+	}
+
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      public.Name,
@@ -153,7 +160,8 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 							VolumeMounts: normalContainerMounts,
 						},
 					},
-					InitContainers: initContainers,
+					InitContainers:   initContainers,
+					ImagePullSecrets: imagePullSecrets,
 				},
 			},
 		},
@@ -389,6 +397,24 @@ func CreateJobManifest(public *models.JobPublic) *v1.Job {
 				},
 			},
 		},
+	}
+}
+
+func CreateSecretManifest(public *models.SecretPublic) *apiv1.Secret {
+	return &apiv1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      public.Name,
+			Namespace: public.Namespace,
+			Labels: map[string]string{
+				keys.ManifestLabelID:   public.ID,
+				keys.ManifestLabelName: public.Name,
+			},
+			Annotations: map[string]string{
+				keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat),
+			},
+		},
+		Data: public.Data,
+		Type: apiv1.SecretType(public.Type),
 	}
 }
 
