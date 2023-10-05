@@ -72,6 +72,7 @@ func (client *Client) CreateRobot(public *models.RobotPublic) (int, error) {
 			break
 		}
 	}
+	var appliedSecret string
 
 	if robot == nil {
 		created, err := client.createHarborRobot(public)
@@ -82,20 +83,16 @@ func (client *Client) CreateRobot(public *models.RobotPublic) (int, error) {
 		if err != nil {
 			return 0, makeError(err)
 		}
-
-		robot.Description = created.Secret
-
-		err = client.HarborClient.UpdateRobotAccount(context.TODO(), robot)
-		if err != nil {
-			return 0, makeError(err)
-		}
 	}
 
 	if public.Secret != "" {
-		err = client.assertCorrectRobotSecret(robot, public.Secret)
-		if err != nil {
-			return 0, makeError(err)
-		}
+		appliedSecret = public.Secret
+	} else {
+		appliedSecret = robot.Secret
+	}
+	err = client.assertCorrectRobotSecret(robot, appliedSecret)
+	if err != nil {
+		return 0, makeError(err)
 	}
 
 	return int(robot.ID), nil
@@ -202,7 +199,7 @@ func (client *Client) assertCorrectRobotSecret(robot *harborModelsV2.Robot, secr
 }
 
 func isValidHarborRobotSecret(secret string) bool {
-	correctLength := len(secret) >= 8 && len(secret) <= 20
+	correctLength := len(secret) >= 8 && len(secret) <= 100
 
 	var atLeastOneNumber bool
 	var atLeastOneUpper bool
