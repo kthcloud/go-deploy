@@ -555,23 +555,29 @@ func Repair(name string) error {
 		}
 	}
 
-	for mapName := range ss.SecretMap {
-		if mapName == appName {
-			err = client.RepairSecret(deployment.ID, mapName, func() *k8sModels.SecretPublic {
-				if mapName == appName {
-					return helpers.CreateImagePullSecretPublic(
-						deployment.Subsystems.K8s.Namespace.FullName,
-						withImagePullSecretSuffix(deployment.Name),
-						conf.Env.DockerRegistry.URL,
-						deployment.Subsystems.Harbor.Robot.HarborName,
-						deployment.Subsystems.Harbor.Robot.Secret,
-					)
-				}
-				return nil
-			})
-			if err != nil {
-				return makeError(err)
-			}
+	imagePullSecret := ss.GetSecret(appNameImagePullSecret)
+	if !service.Created(imagePullSecret) {
+		registry := conf.Env.DockerRegistry.URL
+		username := deployment.Subsystems.Harbor.Robot.HarborName
+		password := deployment.Subsystems.Harbor.Robot.Secret
+
+		public := helpers.CreateImagePullSecretPublic(client.Namespace, withImagePullSecretSuffix(deployment.Name), registry, username, password)
+		_, err = client.CreateSecret(deployment.ID, appName, public)
+		if err != nil {
+			return makeError(err)
+		}
+	} else {
+		err = client.RepairSecret(deployment.ID, appNameImagePullSecret, func() *k8sModels.SecretPublic {
+			return helpers.CreateImagePullSecretPublic(
+				deployment.Subsystems.K8s.Namespace.FullName,
+				withImagePullSecretSuffix(deployment.Name),
+				conf.Env.DockerRegistry.URL,
+				deployment.Subsystems.Harbor.Robot.HarborName,
+				deployment.Subsystems.Harbor.Robot.Secret,
+			)
+		})
+		if err != nil {
+			return makeError(err)
 		}
 	}
 
