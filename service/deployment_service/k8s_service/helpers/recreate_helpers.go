@@ -63,3 +63,13 @@ func (client *Client) RecreatePVC(id, name string, newPublic *k8sModels.PvcPubli
 	_, err = client.CreatePVC(id, name, newPublic)
 	return err
 }
+
+func (client *Client) RecreateSecret(id, name string, newPublic *k8sModels.SecretPublic) error {
+	err := client.DeleteSecret(id, name)
+	if err != nil {
+		return err
+	}
+
+	_, err = client.CreateSecret(id, name, newPublic)
+	return err
+}

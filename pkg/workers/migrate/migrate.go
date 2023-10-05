@@ -1,20 +1,14 @@
 package migrator
 
 import (
-	"fmt"
 	deploymentModel "go-deploy/models/sys/deployment"
-	vmModel "go-deploy/models/sys/vm"
-	"go-deploy/pkg/conf"
-	"go-deploy/pkg/subsystems/cs"
-	"go-deploy/pkg/subsystems/harbor"
-	"go-deploy/pkg/subsystems/harbor/models"
-	"go-deploy/pkg/subsystems/k8s"
-	"go-deploy/utils/subsystemutils"
+	"go-deploy/service/deployment_service"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
+	"time"
 )
 
-// Migrate will  run as early as possible in the program, and it will never be called again.
+// Migrate will run as early as possible in the program, and it will never be called again.
 func Migrate() {
 	migrations := getMigrations()
 	if len(migrations) > 0 {
@@ -43,360 +37,93 @@ func Migrate() {
 // add a date to the migration name to make it easier to identify.
 func getMigrations() map[string]func() error {
 	return map[string]func() error{
-		"add root network id and root id if missing":       addRootNetworkIdAndRootIdIfMissing_2023_09_22,
-		"update port is zero for deployments":              updatePortIsZeroForDeployments_2023_09_22,
-		"fetch creation time for subsystems":               fetchCreationTimeForSubsystems_2023_09_22,
-		"add deployment types and main app image if empty": addDeploymentTypesAndMainAppImageIfEmpty_2023_09_22,
+		"2023-10-05 fix typos in subsystems":              fixTyposInSubsystems_2023_10_05,
+		"2022-10-05 fix harbor project public to private": fixHarborProjectPublicToPrivate_2022_10_05,
+		"2022-10-05 add image pull secret to deployments": addImagePullSecretToDeployments_2022_10_05,
 	}
 }
 
-func addDeploymentTypesAndMainAppImageIfEmpty_2023_09_22() error {
-	deployments, err := deploymentModel.New().GetAll()
+func fixTyposInSubsystems_2023_10_05() error {
+	deployments, err := deployment_service.GetAll()
 	if err != nil {
-		return fmt.Errorf("error getting deployments. details: %w", err)
+		return err
 	}
 
 	for _, deployment := range deployments {
-		mainApp := deployment.GetMainApp()
-		if mainApp == nil {
-			return fmt.Errorf("main app not found for deployment %s", deployment.Name)
+		update := bson.D{}
+
+		mainK8sDeployment := deployment.Subsystems.K8s.GetDeployment("main")
+		if mainK8sDeployment != nil && mainK8sDeployment.Image == "" {
+			update = append(update, bson.E{Key: "subsystems.k8s.deploymentMap.main.image", Value: mainK8sDeployment.DockerImage})
 		}
 
-		if deployment.Type == "" {
-			deployment.Type = deploymentModel.TypeCustom
+		if deployment.Subsystems.Harbor.Repository.ID != 0 {
+			update = append(update, bson.E{Key: "subsystems.harbor.repository.id", Value: deployment.Subsystems.Harbor.Repository.ID})
 		}
 
-		if mainApp.Image == "" {
-			mainApp.Image = fmt.Sprintf("%s/%s/%s", conf.Env.DockerRegistry.URL, subsystemutils.GetPrefixedName(deployment.OwnerID), deployment.Name)
-		}
-
-		deployment.SetMainApp(mainApp)
-
-		update := bson.D{
-			{"type", deployment.Type},
-			{"apps", deployment.Apps},
-		}
-
-		if err := deploymentModel.New().UpdateWithBsonByID(deployment.ID, update); err != nil {
-			return fmt.Errorf("error updating deployment %s. details: %w", deployment.ID, err)
-		}
-	}
-
-	return nil
-}
-
-func addRootNetworkIdAndRootIdIfMissing_2023_09_22() error {
-	vms, err := vmModel.New().GetAll()
-	if err != nil {
-		return fmt.Errorf("error fetching vms. details: %w", err)
-	}
-
-	for _, vm := range vms {
-		zone := conf.Env.VM.GetZone(vm.Zone)
-		if zone == nil {
-			return fmt.Errorf("zone %s not found", vm.Zone)
-		}
-
-		for mapName, pfr := range vm.Subsystems.CS.GetPortForwardingRuleMap() {
-			if !pfr.Created() {
-				continue
-			}
-
-			if pfr.NetworkID == "" {
-				pfr.NetworkID = zone.NetworkID
-			}
-
-			if pfr.IpAddressID == "" {
-				pfr.IpAddressID = zone.IpAddressID
-			}
-
-			vm.Subsystems.CS.SetPortForwardingRule(mapName, pfr)
-		}
-
-		err = vmModel.New().UpdateWithBsonByID(vm.ID, bson.D{
-			{"subsystems.cs.portForwardingRuleMap", vm.Subsystems.CS.GetPortForwardingRuleMap()},
-		})
-
-		if err != nil {
-			return fmt.Errorf("error updating vm. details: %w", err)
-		}
-	}
-
-	return nil
-}
-
-func updatePortIsZeroForDeployments_2023_09_22() error {
-	deployments, err := deploymentModel.New().GetAll()
-	if err != nil {
-		return fmt.Errorf("error fetching deployments. details: %w", err)
-	}
-
-	for _, deployment := range deployments {
-		mainApp := deployment.GetMainApp()
-		if mainApp == nil {
+		if len(update) == 0 {
 			continue
 		}
 
-		if mainApp.InternalPort == 0 {
-			mainApp.InternalPort = conf.Env.Deployment.Port
-		}
+		update = append(update, bson.E{Key: "repairAt", Value: time.Time{}})
 
-		deployment.SetMainApp(mainApp)
-
-		err = deploymentModel.New().UpdateWithBsonByID(deployment.ID, bson.D{
-			{"apps", deployment.Apps},
-		})
+		err = deploymentModel.New().UpdateWithBsonByID(deployment.ID, update)
 		if err != nil {
-			return fmt.Errorf("error updating deployment. details: %w", err)
+			return err
 		}
-
 	}
 
 	return nil
 }
 
-func fetchCreationTimeForSubsystems_2023_09_22() error {
-
-	deployments, err := deploymentModel.New().GetAll()
+func fixHarborProjectPublicToPrivate_2022_10_05() error {
+	deployments, err := deployment_service.GetAll()
 	if err != nil {
-		return fmt.Errorf("error fetching deployments. details: %w", err)
+		return err
 	}
 
 	for _, deployment := range deployments {
-
-		zone := conf.Env.Deployment.GetZone(deployment.Zone)
-		if zone == nil {
-			return fmt.Errorf("zone %s not found", deployment.Zone)
+		if !deployment.Subsystems.Harbor.Project.Public {
+			continue
 		}
 
-		{
-			ss := &deployment.Subsystems.K8s
+		update := bson.D{}
 
-			client, err := k8s.New(zone.Client, ss.Namespace.FullName)
-			if err != nil {
-				return fmt.Errorf("error creating k8s client. details: %w", err)
-			}
+		update = append(update, bson.E{Key: "subsystems.harbor.project.public", Value: false})
+		update = append(update, bson.E{Key: "repairAt", Value: time.Time{}})
 
-			if ss.Namespace.Created() {
-				ns, err := client.ReadNamespace(ss.Namespace.ID)
-				if err != nil {
-					return fmt.Errorf("error fetching namespace creation time. details: %w", err)
-				}
-
-				if ns != nil {
-					ss.Namespace.CreatedAt = ns.CreatedAt
-				}
-			}
-
-			for _, k8sDeployment := range ss.GetDeploymentMap() {
-				if k8sDeployment.Created() {
-					dep, err := client.ReadDeployment(k8sDeployment.ID)
-					if err != nil {
-						return fmt.Errorf("error fetching deployment creation time. details: %w", err)
-					}
-
-					if dep != nil {
-						k8sDeployment.CreatedAt = dep.CreatedAt
-					}
-				}
-			}
-
-			for _, k8sService := range ss.GetServiceMap() {
-				if k8sService.Created() {
-					svc, err := client.ReadService(k8sService.ID)
-					if err != nil {
-						return fmt.Errorf("error fetching service creation time. details: %w", err)
-					}
-
-					if svc != nil {
-						k8sService.CreatedAt = svc.CreatedAt
-					}
-				}
-			}
-
-			for _, k8sIngress := range ss.GetIngressMap() {
-				if k8sIngress.Created() {
-					ing, err := client.ReadIngress(k8sIngress.ID)
-					if err != nil {
-						return fmt.Errorf("error fetching ingress creation time. details: %w", err)
-					}
-
-					if ing != nil {
-						k8sIngress.CreatedAt = ing.CreatedAt
-					}
-				}
-			}
-
-			for _, k8sPvc := range ss.GetPvcMap() {
-				if k8sPvc.Created() {
-					pvc, err := client.ReadPVC(k8sPvc.ID)
-					if err != nil {
-						return fmt.Errorf("error fetching pvc creation time. details: %w", err)
-					}
-
-					if pvc != nil {
-						k8sPvc.CreatedAt = pvc.CreatedAt
-					}
-				}
-			}
-
-			for _, k8sPv := range ss.GetPvMap() {
-				if k8sPv.Created() {
-					pv, err := client.ReadPV(k8sPv.ID)
-					if err != nil {
-						return fmt.Errorf("error fetching pv creation time. details: %w", err)
-					}
-
-					if pv != nil {
-						k8sPv.CreatedAt = pv.CreatedAt
-					}
-				}
-			}
-
-			for _, k8sJob := range ss.GetJobMap() {
-				if k8sJob.Created() {
-					job, err := client.ReadJob(k8sJob.ID)
-					if err != nil {
-						return fmt.Errorf("error fetching job creation time. details: %w", err)
-					}
-
-					if job != nil {
-						k8sJob.CreatedAt = job.CreatedAt
-					}
-				}
-			}
-		}
-
-		{
-			ss := &deployment.Subsystems.Harbor
-
-			harborClient, err := harbor.New(&harbor.ClientConf{
-				ApiUrl:   conf.Env.Harbor.URL,
-				Username: conf.Env.Harbor.User,
-				Password: conf.Env.Harbor.Password,
-			})
-
-			if err != nil {
-				return fmt.Errorf("error creating harbor client. details: %w", err)
-			}
-
-			if ss.Project.Created() {
-				project, err := harborClient.ReadProject(ss.Project.ID)
-				if err != nil {
-					return fmt.Errorf("error fetching project creation time. details: %w", err)
-				}
-
-				if project != nil {
-					ss.Project.CreatedAt = project.CreatedAt
-				}
-			}
-
-			if ss.Robot.Created() {
-				robot, err := harborClient.ReadRobot(ss.Robot.ID)
-				if err != nil {
-					return fmt.Errorf("error fetching robot creation time. details: %w", err)
-				}
-
-				if robot != nil {
-					ss.Robot.CreatedAt = robot.CreatedAt
-				}
-			}
-
-			if ss.Repository.Created() {
-				if ss.Repository.Placeholder == nil {
-					ss.Repository.Placeholder = &models.PlaceHolder{
-						ProjectName:    conf.Env.DockerRegistry.Placeholder.Project,
-						RepositoryName: conf.Env.DockerRegistry.Placeholder.Repository,
-					}
-				}
-
-				repo, err := harborClient.ReadRepository(ss.Project.Name, ss.Repository.Name)
-				if err != nil {
-					return fmt.Errorf("error fetching repository creation time. details: %w", err)
-				}
-
-				if repo != nil {
-					ss.Repository.CreatedAt = repo.CreatedAt
-				}
-			}
-
-		}
-
-		err = deploymentModel.New().UpdateWithBsonByID(deployment.ID, bson.D{
-			{"subsystems", deployment.Subsystems},
-		})
-
+		err = deploymentModel.New().UpdateWithBsonByID(deployment.ID, update)
 		if err != nil {
-			return fmt.Errorf("error updating deployment subsystems. details: %w", err)
+			return err
 		}
 	}
 
-	vms, err := vmModel.New().GetAll()
+	return nil
+}
+
+func addImagePullSecretToDeployments_2022_10_05() error {
+	deployments, err := deployment_service.GetAll()
 	if err != nil {
-		return fmt.Errorf("error fetching vms. details: %w", err)
+		return err
 	}
 
-	for _, vm := range vms {
-		zone := conf.Env.VM.GetZone(vm.Zone)
-		if zone == nil {
-			return fmt.Errorf("zone %s not found", vm.Zone)
+	for _, deployment := range deployments {
+		if len(deployment.Subsystems.K8s.GetSecretMap()) > 0 {
+			continue
 		}
 
-		client, err := cs.New(&cs.ClientConf{
-			URL:         conf.Env.CS.URL,
-			ApiKey:      conf.Env.CS.ApiKey,
-			Secret:      conf.Env.CS.Secret,
-			ZoneID:      zone.ZoneID,
-			ProjectID:   zone.ProjectID,
-			IpAddressID: zone.IpAddressID,
-			NetworkID:   zone.NetworkID,
-		})
+		update := bson.D{}
 
+		imagePullSecrets := []string{
+			deployment.Name + "-image-pull-secret",
+		}
+
+		update = append(update, bson.E{Key: "subsystems.k8s.deploymentMap.main.imagePullSecrets", Value: imagePullSecrets})
+		update = append(update, bson.E{Key: "repairAt", Value: time.Time{}})
+
+		err = deploymentModel.New().UpdateWithBsonByID(deployment.ID, update)
 		if err != nil {
-			return fmt.Errorf("error creating cs client. details: %w", err)
-		}
-
-		if vm.Subsystems.CS.VM.Created() {
-			csVM, err := client.ReadVM(vm.Subsystems.CS.VM.ID)
-			if err != nil {
-				return fmt.Errorf("error fetching vm creation time. details: %w", err)
-			}
-
-			if csVM != nil {
-				vm.Subsystems.CS.VM.CreatedAt = csVM.CreatedAt
-			}
-		}
-
-		if vm.Subsystems.CS.ServiceOffering.Created() {
-			so, err := client.ReadServiceOffering(vm.Subsystems.CS.ServiceOffering.ID)
-			if err != nil {
-				return fmt.Errorf("error fetching service offering creation time. details: %w", err)
-			}
-
-			if so != nil {
-				vm.Subsystems.CS.ServiceOffering.CreatedAt = so.CreatedAt
-			}
-		}
-
-		for _, pfr := range vm.Subsystems.CS.GetPortForwardingRuleMap() {
-			if pfr.Created() {
-				csPfr, err := client.ReadPortForwardingRule(pfr.ID)
-				if err != nil {
-					return fmt.Errorf("error fetching port forwarding rule creation time. details: %w", err)
-				}
-
-				if csPfr != nil {
-					pfr.CreatedAt = csPfr.CreatedAt
-				}
-			}
-		}
-
-		err = vmModel.New().UpdateWithBsonByID(vm.ID, bson.D{
-			{"subsystems", vm.Subsystems},
-		})
-
-		if err != nil {
-			return fmt.Errorf("error updating vm subsystems. details: %w", err)
+			return err
 		}
 	}
 

@@ -1,6 +1,8 @@
 package helpers
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/models/sys/deployment/storage_manager"
@@ -9,7 +11,9 @@ import (
 	"go-deploy/pkg/conf"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/utils"
+	v1 "k8s.io/api/core/v1"
 	"strconv"
+	"time"
 )
 
 func CreateNamespacePublic(name string) *k8sModels.NamespacePublic {
@@ -20,7 +24,7 @@ func CreateNamespacePublic(name string) *k8sModels.NamespacePublic {
 	}
 }
 
-func CreateMainAppDeploymentPublic(namespace, name, image string, port int, envs []deploymentModel.Env, volumes []deploymentModel.Volume, initCommands []string) *k8sModels.DeploymentPublic {
+func CreateMainAppDeploymentPublic(namespace, name, image string, port int, envs []deploymentModel.Env, volumes []deploymentModel.Volume, initCommands, pullSecrets []string) *k8sModels.DeploymentPublic {
 	k8sEnvs := []k8sModels.EnvVar{
 		{Name: "PORT", Value: strconv.Itoa(port)},
 	}
@@ -54,11 +58,17 @@ func CreateMainAppDeploymentPublic(namespace, name, image string, port int, envs
 	}
 
 	return &k8sModels.DeploymentPublic{
-		ID:          "",
-		Name:        name,
-		Namespace:   namespace,
+		ID:        "",
+		Name:      name,
+		Namespace: namespace,
+
+		// old will migrate
 		DockerImage: image,
-		EnvVars:     k8sEnvs,
+		// new will migrate
+		Image: image,
+
+		ImagePullSecrets: pullSecrets,
+		EnvVars:          k8sEnvs,
 		Resources: k8sModels.Resources{
 			Limits:   defaultLimits,
 			Requests: defaultRequests,
@@ -68,6 +78,7 @@ func CreateMainAppDeploymentPublic(namespace, name, image string, port int, envs
 		InitCommands:   initCommands,
 		InitContainers: nil,
 		Volumes:        k8sVolumes,
+		CreatedAt:      time.Time{},
 	}
 }
 
@@ -288,4 +299,35 @@ func CreateJobPublic(namespace, name, image string, command, args []string, volu
 		Args:      args,
 		Volumes:   k8sVolumes,
 	}
+}
+
+func CreateImagePullSecretPublic(namespace, name, registry, username, password string) *k8sModels.SecretPublic {
+	return &k8sModels.SecretPublic{
+		ID:        "",
+		Name:      name,
+		Namespace: namespace,
+		Type:      string(v1.SecretTypeDockerConfigJson),
+		Data: map[string][]byte{
+			v1.DockerConfigJsonKey: encodeDockerConfig(registry, username, password),
+		},
+	}
+}
+
+func encodeDockerConfig(registry, username, password string) []byte {
+	dockerConfig := map[string]interface{}{
+		"auths": map[string]interface{}{
+			registry: map[string]interface{}{
+				"username": username,
+				"password": password,
+				"auth":     base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", username, password))),
+			},
+		},
+	}
+
+	jsonData, err := json.Marshal(dockerConfig)
+	if err != nil {
+		jsonData = make([]byte, 0)
+	}
+
+	return jsonData
 }

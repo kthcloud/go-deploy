@@ -7,10 +7,17 @@ import (
 )
 
 type DeploymentPublic struct {
-	ID             string          `bson:"id"`
-	Name           string          `bson:"name"`
-	Namespace      string          `bson:"namespace"`
-	DockerImage    string          `bson:"dockerImage"`
+	ID        string `bson:"id"`
+	Name      string `bson:"name"`
+	Namespace string `bson:"namespace"`
+
+	// old will migrate
+	DockerImage string `bson:"dockerImage"`
+	// new will migrate
+	Image string `bson:"image"`
+
+	ImagePullSecrets []string `bson:"imagePullSecrets"`
+
 	EnvVars        []EnvVar        `bson:"envVars"`
 	Resources      Resources       `bson:"resources"`
 	Command        []string        `bson:"command"`
@@ -37,6 +44,7 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 	var command []string
 	var args []string
 	var volumes []Volume
+	var image string
 
 	for _, k8sVolume := range deployment.Spec.Template.Spec.Volumes {
 		var pvcName *string
@@ -55,6 +63,7 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 		resources := firstContainer.Resources
 		lifecycle := firstContainer.Lifecycle
 		volumeMounts := firstContainer.VolumeMounts
+		image = firstContainer.Image
 
 		command = firstContainer.Command
 		args = firstContainer.Args
@@ -91,6 +100,11 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 		}
 	}
 
+	var imagePullSecrets []string
+	for _, secret := range deployment.Spec.Template.Spec.ImagePullSecrets {
+		imagePullSecrets = append(imagePullSecrets, secret.Name)
+	}
+
 	initContainers := make([]InitContainer, len(deployment.Spec.Template.Spec.InitContainers))
 	for _, initContainer := range deployment.Spec.Template.Spec.InitContainers {
 		initContainers = append(initContainers, InitContainer{
@@ -109,11 +123,17 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 	}
 
 	return &DeploymentPublic{
-		ID:          deployment.Labels[keys.ManifestLabelID],
-		Name:        deployment.Labels[keys.ManifestLabelName],
-		Namespace:   deployment.Namespace,
-		DockerImage: deployment.Spec.Template.Spec.Containers[0].Image,
-		EnvVars:     envs,
+		ID:        deployment.Labels[keys.ManifestLabelID],
+		Name:      deployment.Labels[keys.ManifestLabelName],
+		Namespace: deployment.Namespace,
+
+		// old will migrate
+		DockerImage: image,
+		// new will migrate
+		Image: image,
+
+		ImagePullSecrets: imagePullSecrets,
+		EnvVars:          envs,
 		Resources: Resources{
 			Limits:   limits,
 			Requests: requests,

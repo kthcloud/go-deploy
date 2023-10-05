@@ -7,14 +7,14 @@ import (
 )
 
 type Client struct {
-	apiUrl       string
+	url          string
 	username     string
 	password     string
 	HarborClient *apiv2.RESTClient
 }
 
 type ClientConf struct {
-	ApiUrl   string
+	URL      string
 	Username string
 	Password string
 }
@@ -24,13 +24,13 @@ func New(config *ClientConf) (*Client, error) {
 		return fmt.Errorf("failed to create harbor client. details: %w", err)
 	}
 
-	harborClient, err := createHarborClient(config.ApiUrl, config.Username, config.Password)
+	harborClient, err := createHarborClient(config.URL, config.Username, config.Password)
 	if err != nil {
 		return nil, makeError(err)
 	}
 
 	client := Client{
-		apiUrl:       config.ApiUrl,
+		url:          config.URL,
 		username:     config.Username,
 		password:     config.Password,
 		HarborClient: harborClient,

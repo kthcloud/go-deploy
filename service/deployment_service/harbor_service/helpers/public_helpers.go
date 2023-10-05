@@ -9,7 +9,8 @@ import (
 
 func CreateProjectPublic(projectName string) *harborModels.ProjectPublic {
 	return &harborModels.ProjectPublic{
-		Name: projectName,
+		Name:   projectName,
+		Public: false,
 	}
 }
 

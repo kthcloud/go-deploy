@@ -11,7 +11,7 @@ import (
 
 func withHarborClient(t *testing.T) *harbor.Client {
 	client, err := harbor.New(&harbor.ClientConf{
-		ApiUrl:   conf.Env.Harbor.URL,
+		URL:      conf.Env.Harbor.URL,
 		Username: conf.Env.Harbor.User,
 		Password: conf.Env.Harbor.Password,
 	})
