@@ -1,12 +1,12 @@
 package harbor_service
 
 import (
+	"errors"
 	"fmt"
 	deploymentModel "go-deploy/models/sys/deployment"
-	"go-deploy/pkg/subsystems/harbor/models"
 	"go-deploy/service"
-	"go-deploy/service/deployment_service/harbor_service/helpers"
-	"go-deploy/utils/subsystemutils"
+	"go-deploy/service/deployment_service/base"
+	"go-deploy/service/deployment_service/resources"
 	"log"
 )
 
@@ -17,122 +17,145 @@ func Create(deploymentID, userID string, params *deploymentModel.CreateParams) e
 		return fmt.Errorf("failed to setup harbor for deployment %s. details: %w", params.Name, err)
 	}
 
-	deployment, err := deploymentModel.New().GetByID(deploymentID)
+	context, err := NewContext(deploymentID)
 	if err != nil {
+		if errors.Is(err, base.DeploymentDeletedErr) {
+			return nil
+		}
+
 		return makeError(err)
 	}
 
-	if deployment == nil {
-		log.Println("deployment", deploymentID, "not found for harbor setup. assuming it was deleted")
-		return nil
-	}
-
-	client, err := helpers.New(&deployment.Subsystems.Harbor)
-	if err != nil {
-		return makeError(err)
-	}
+	context.WithCreateParams(params)
 
 	// Project
-	project := &deployment.Subsystems.Harbor.Project
-	if service.NotCreated(project) {
-		project, err = client.CreateProject(deployment.ID, helpers.CreateProjectPublic(subsystemutils.GetPrefixedName(userID)))
-		if err != nil {
-			return makeError(err)
-		}
+	err = resources.SsCreator(context.Client.CreateProject).
+		WithID(context.Deployment.ID).
+		WithPublic(context.Generator.Project()).
+		WithDbKey("harbor.project").
+		Exec()
+
+	if err != nil {
+		return makeError(err)
 	}
 
 	// Robot
-	if service.NotCreated(&deployment.Subsystems.Harbor.Robot) {
-		_, err = client.CreateRobot(deployment.ID, helpers.CreateRobotPublic(deployment.Name, project.ID, project.Name))
-		if err != nil {
-			return makeError(err)
-		}
+	err = resources.SsCreator(context.Client.CreateRobot).
+		WithID(context.Deployment.ID).
+		WithPublic(context.Generator.Robot()).
+		WithDbKey("harbor.robot").
+		Exec()
+
+	if err != nil {
+		return makeError(err)
 	}
 
 	// Repository
-	if service.NotCreated(&deployment.Subsystems.Harbor.Repository) {
-		_, err = client.CreateRepository(deployment.ID, helpers.CreateRepositoryPublic(project.ID, project.Name, deployment.Name))
-		if err != nil {
-			return makeError(err)
-		}
+	err = resources.SsCreator(context.Client.CreateRepository).
+		WithID(context.Deployment.ID).
+		WithPublic(context.Generator.Repository()).
+		WithDbKey("harbor.repository").
+		Exec()
+
+	if err != nil {
+		return makeError(err)
 	}
 
 	// Webhook
-	if service.NotCreated(&deployment.Subsystems.Harbor.Webhook) {
-		_, err = client.CreateWebhook(deployment.ID, helpers.CreateWebhookPublic(project.ID, project.Name))
+	err = resources.SsCreator(context.Client.CreateWebhook).
+		WithID(context.Deployment.ID).
+		WithPublic(context.Generator.Webhook()).
+		WithDbKey("harbor.webhook").
+		Exec()
+
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
+}
+
+func CreatePlaceholder(id string) error {
+	log.Println("setting up placeholder harbor")
+
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to setup placeholder harbor. details: %w", err)
+	}
+
+	context, err := NewContext(id)
+	if err != nil {
+		if errors.Is(err, base.DeploymentDeletedErr) {
+			return nil
+		}
+
+		return makeError(err)
+	}
+
+	return resources.SsPlaceholderCreator().WithID(context.Deployment.ID).WithDbKey("harbor").Exec()
+}
+
+func Delete(id string) error {
+	log.Println("deleting harbor for", id)
+
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to delete harbor for deployment %s. details: %w", id, err)
+	}
+
+	context, err := NewContext(id)
+	if err != nil {
+		if errors.Is(err, base.DeploymentDeletedErr) {
+			return nil
+		}
+
+		return makeError(err)
+	}
+
+	if hook := &context.Deployment.Subsystems.Harbor.Webhook; service.Created(hook) {
+		err = resources.SsDeleter(context.Client.DeleteWebhook).
+			WithID(context.Deployment.ID).
+			WithResourceID(hook.ID).
+			WithDbKey("harbor.webhook").
+			Exec()
+
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
-	return nil
-}
+	if repo := &context.Deployment.Subsystems.Harbor.Repository; service.Created(repo) {
+		err = resources.SsDeleter(context.Client.DeleteRepository).
+			WithID(context.Deployment.ID).
+			WithResourceID(repo.Name).
+			WithDbKey("harbor.repository").
+			Exec()
 
-func CreatePlaceholder(name string) error {
-	log.Println("setting up placeholder harbor")
-
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup placeholder github. details: %w", err)
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
-	deployment, err := deploymentModel.New().GetByName(name)
-	if err != nil {
-		return makeError(err)
+	if robot := &context.Deployment.Subsystems.Harbor.Robot; service.Created(robot) {
+		err = resources.SsDeleter(context.Client.DeleteRobot).
+			WithID(context.Deployment.ID).
+			WithResourceID(robot.ID).
+			WithDbKey("harbor.robot").
+			Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
-	client, err := helpers.New(&deployment.Subsystems.Harbor)
-	if err != nil {
-		return makeError(err)
-	}
+	if project := &context.Deployment.Subsystems.Harbor.Project; service.Created(project) {
+		err = resources.SsDeleter(func(int) error { return nil }).
+			WithID(context.Deployment.ID).
+			WithResourceID(project.ID).
+			WithDbKey("harbor.project").
+			Exec()
 
-	err = client.CreatePlaceholder(deployment.ID)
-	if err != nil {
-		return makeError(err)
-	}
-
-	return nil
-}
-
-func Delete(name string) error {
-	log.Println("deleting harbor for", name)
-
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete harbor for deployment %s. details: %w", name, err)
-	}
-
-	deployment, err := deploymentModel.New().GetByName(name)
-	if err != nil {
-		return makeError(err)
-	}
-
-	if deployment == nil {
-		log.Println("deployment", name, "not found for harbor deletion. assuming it was deleted")
-		return nil
-	}
-
-	client, err := helpers.New(&deployment.Subsystems.Harbor)
-	if err != nil {
-		return makeError(err)
-	}
-
-	err = client.DeleteRepository(deployment.ID)
-	if err != nil {
-		return makeError(err)
-	}
-
-	err = client.DeleteRobot(deployment.ID)
-	if err != nil {
-		return makeError(err)
-	}
-
-	err = client.DeleteProject(deployment.ID)
-	if err != nil {
-		return makeError(err)
-	}
-
-	err = client.DeleteWebhook(deployment.ID)
-	if err != nil {
-		return makeError(err)
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	return nil
@@ -143,36 +166,66 @@ func Repair(name string) error {
 		return fmt.Errorf("failed to repair harbor %s. details: %w", name, err)
 	}
 
-	deployment, err := deploymentModel.New().GetByName(name)
+	context, err := NewContext(name)
 	if err != nil {
+		if errors.Is(err, base.DeploymentDeletedErr) {
+			return nil
+		}
+
 		return makeError(err)
 	}
 
-	if deployment == nil {
-		log.Println("deployment", name, "not found when repairing harbor, assuming it was deleted")
-		return nil
+	if project := &context.Deployment.Subsystems.Harbor.Project; service.Created(project) {
+		err = resources.SsRepairer(
+			context.Client.ReadProject,
+			context.Client.CreateProject,
+			context.Client.UpdateProject,
+			func(int) error { return nil },
+		).WithID(context.Deployment.ID).WithResourceID(project.ID).WithDbKey("harbor.project").Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
-	client, err := helpers.New(&deployment.Subsystems.Harbor)
-	if err != nil {
-		return makeError(err)
+	if robot := &context.Deployment.Subsystems.Harbor.Robot; service.Created(robot) {
+		err = resources.SsRepairer(
+			context.Client.ReadRobot,
+			context.Client.CreateRobot,
+			context.Client.UpdateRobot,
+			context.Client.DeleteRobot,
+		).WithID(context.Deployment.ID).WithResourceID(robot.ID).WithDbKey("harbor.robot").Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
-	err = client.RepairProject(deployment.ID, func() *models.ProjectPublic {
-		return helpers.CreateProjectPublic(subsystemutils.GetPrefixedName(deployment.OwnerID))
-	})
+	if repo := &context.Deployment.Subsystems.Harbor.Repository; service.Created(repo) {
+		err = resources.SsRepairer(
+			context.Client.ReadRepository,
+			context.Client.CreateRepository,
+			context.Client.UpdateRepository,
+			context.Client.DeleteRepository,
+		).WithID(context.Deployment.ID).WithResourceID(repo.Name).WithDbKey("harbor.repository").Exec()
 
-	err = client.RepairRobot(deployment.ID, func() *models.RobotPublic {
-		return helpers.CreateRobotPublic(deployment.Name, client.SS.Project.ID, client.SS.Project.Name)
-	})
+		if err != nil {
+			return makeError(err)
+		}
+	}
 
-	err = client.RepairRepository(deployment.ID, func() *models.RepositoryPublic {
-		return helpers.CreateRepositoryPublic(client.SS.Project.ID, client.SS.Project.Name, deployment.Name)
-	})
+	if hook := &context.Deployment.Subsystems.Harbor.Webhook; service.Created(hook) {
+		err = resources.SsRepairer(
+			context.Client.ReadWebhook,
+			context.Client.CreateWebhook,
+			context.Client.UpdateWebhook,
+			context.Client.DeleteWebhook,
+		).WithID(context.Deployment.ID).WithResourceID(hook.ID).WithDbKey("harbor.webhook").Exec()
 
-	err = client.RepairWebhook(deployment.ID, func() *models.WebhookPublic {
-		return helpers.CreateWebhookPublic(client.SS.Project.ID, client.SS.Project.Name)
-	})
+		if err != nil {
+			return makeError(err)
+		}
+	}
 
 	return nil
 }

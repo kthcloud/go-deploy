@@ -17,6 +17,10 @@ func (p *ProjectPublic) Created() bool {
 	return p.ID != 0
 }
 
+func (p *ProjectPublic) IsPlaceholder() bool {
+	return false
+}
+
 func CreateProjectUpdateParamsFromPublic(public *ProjectPublic) *modelv2.Project {
 	return &modelv2.Project{
 		ProjectID: int32(public.ID),

@@ -6,51 +6,19 @@ import (
 	"fmt"
 	harborErrors "github.com/mittwald/goharbor-client/v5/apiv2/pkg/errors"
 	"go-deploy/pkg/subsystems/harbor/models"
+	"log"
 	"strconv"
 	"strings"
 )
 
-func (client *Client) ProjectCreated(id int) (bool, error) {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if project %d is created. details: %w", id, err)
-	}
-
-	project, err := client.HarborClient.GetProject(context.TODO(), strconv.Itoa(id))
-	if err != nil {
-		targetErr := &harborErrors.ErrProjectNotFound{}
-		if errors.As(err, &targetErr) {
-			return false, nil
-		} else {
-			return false, makeError(err)
-		}
-	}
-
-	if project == nil || project.ProjectID == 0 || project.Metadata.Public == "false" {
-		return false, nil
-	}
-
-	return true, nil
-}
-
-func (client *Client) ProjectDeleted(id int) (bool, error) {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if project %d is created. details: %w", id, err)
-	}
-
-	_, err := client.HarborClient.GetProject(context.TODO(), strconv.Itoa(id))
-	if err != nil {
-		targetErr := &harborErrors.ErrProjectNotFound{}
-		if !errors.As(err, &targetErr) {
-			return false, makeError(err)
-		}
-	}
-
-	return true, nil
-}
-
 func (client *Client) ReadProject(id int) (*models.ProjectPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to read project %d. details: %w", id, err.Error())
+		return fmt.Errorf("failed to read harbor project %d. details: %w", id, err)
+	}
+
+	if id == 0 {
+		log.Println("id not supplied when reading harbor project. assuming it was deleted")
+		return nil, nil
 	}
 
 	project, err := client.HarborClient.GetProject(context.TODO(), strconv.Itoa(id))
@@ -61,52 +29,85 @@ func (client *Client) ReadProject(id int) (*models.ProjectPublic, error) {
 		}
 	}
 
-	var public *models.ProjectPublic
 	if project != nil {
-		public = models.CreateProjectPublicFromGet(project)
+		return models.CreateProjectPublicFromGet(project), nil
 	}
 
-	return public, nil
+	return nil, nil
 }
 
-func (client *Client) CreateProject(public *models.ProjectPublic) (int, error) {
+func (client *Client) CreateProject(public *models.ProjectPublic) (*models.ProjectPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create project %s. details: %w", public.Name, err.Error())
-	}
-
-	if public.Name == "" {
-		return 0, makeError(errors.New("project name is empty"))
+		return fmt.Errorf("failed to create harbor project %s. details: %w", public.Name, err)
 	}
 
 	project, err := client.HarborClient.GetProject(context.TODO(), public.Name)
 	if err != nil {
 		targetErr := &harborErrors.ErrProjectNotFound{}
 		if !errors.As(err, &targetErr) {
-			return 0, makeError(err)
+			return nil, makeError(err)
 		}
 	}
 
 	if project != nil {
-		return int(project.ProjectID), nil
+		return models.CreateProjectPublicFromGet(project), nil
 	}
 
 	requestBody := models.CreateProjectCreateBody(public)
 	err = client.HarborClient.NewProject(context.TODO(), &requestBody)
 	if err != nil {
-		return 0, makeError(err)
+		return nil, makeError(err)
 	}
 
 	project, err = client.HarborClient.GetProject(context.TODO(), public.Name)
 	if err != nil {
-		return 0, makeError(err)
+		return nil, makeError(err)
 	}
 
-	return int(project.ProjectID), nil
+	return models.CreateProjectPublicFromGet(project), nil
+}
+
+func (client *Client) UpdateProject(public *models.ProjectPublic) (*models.ProjectPublic, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to update harbor project %s. details: %w", public.Name, err)
+	}
+
+	if public.ID == 0 {
+		log.Println("id not supplied when updating harbor project. assuming it was deleted")
+		return nil, nil
+	}
+
+	requestBody := models.CreateProjectUpdateParamsFromPublic(public)
+	err := client.HarborClient.UpdateProject(context.TODO(), requestBody, nil)
+	if err != nil {
+		// use ErrProjectMismatchMsg
+		targetErr := &harborErrors.ErrProjectMismatch{}
+		if !errors.As(err, &targetErr) {
+			return nil, makeError(err)
+		}
+	}
+
+	project, err := client.ReadProject(public.ID)
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	if project != nil {
+		return project, nil
+	}
+
+	log.Println("harbor project", public.Name, "not found when updating. assuming it was deleted")
+	return nil, nil
 }
 
 func (client *Client) DeleteProject(id int) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete project %d. details: %w", id, err)
+	}
+
+	if id == 0 {
+		log.Println("id not supplied when deleting harbor project. assuming it was deleted")
+		return nil
 	}
 
 	err := client.HarborClient.DeleteProject(context.TODO(), strconv.Itoa(id))
@@ -118,53 +119,4 @@ func (client *Client) DeleteProject(id int) error {
 	}
 
 	return nil
-}
-
-func (client *Client) UpdateProject(public *models.ProjectPublic) error {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to update project %s. details: %w", public.Name, err)
-	}
-
-	requestBody := models.CreateProjectUpdateParamsFromPublic(public)
-	err := client.HarborClient.UpdateProject(context.TODO(), requestBody, nil)
-	if err != nil {
-		errString := fmt.Sprintf("%s", err)
-		if !strings.Contains(errString, "id/name pair not found on server side") {
-			return makeError(err)
-		}
-	}
-
-	return nil
-}
-
-func (client *Client) IsProjectEmpty(id int) (bool, error) {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if project %d is empty. details: %w", id, err)
-	}
-
-	project, err := client.HarborClient.GetProject(context.TODO(), strconv.Itoa(id))
-	if err != nil {
-		errString := fmt.Sprintf("%s", err)
-		if !strings.Contains(errString, "project not found on server side") {
-			return false, makeError(err)
-		}
-	}
-
-	if project == nil {
-		return true, nil
-	}
-
-	repositories, err := client.HarborClient.ListRepositories(context.TODO(), project.Name)
-	if err != nil {
-		return false, makeError(err)
-	}
-
-	return len(repositories) == 0, nil
-}
-
-func boolToString(b bool) string {
-	if b {
-		return "true"
-	}
-	return "false"
 }

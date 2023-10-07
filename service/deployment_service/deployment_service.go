@@ -108,7 +108,7 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 	}
 
 	if createPlaceHolderInstead {
-		err = github_service.CreatePlaceholder(params.Name)
+		err = github_service.CreatePlaceholder(deploymentID)
 		if err != nil {
 			return makeError(err)
 		}
@@ -273,22 +273,22 @@ func CanAddActivity(deploymentID, activity string) (bool, string) {
 	return false, fmt.Sprintf("Unknown activity %s", activity)
 }
 
-func Delete(name string) error {
+func Delete(id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete deployment. details: %w", err)
 	}
 
-	err := harbor_service.Delete(name)
+	err := harbor_service.Delete(id)
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = k8s_service.Delete(name)
+	err = k8s_service.Delete(id)
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = github_service.Delete(name, nil)
+	err = github_service.Delete(id, nil)
 	if err != nil {
 		return makeError(err)
 	}

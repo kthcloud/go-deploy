@@ -9,17 +9,19 @@ import (
 )
 
 type WebhookPublic struct {
-	ID          int       `bson:"id"`
-	Name        string    `bson:"name"`
-	ProjectID   int       `bson:"projectId"`
-	ProjectName string    `bson:"projectName"`
-	Target      string    `bson:"target"`
-	Token       string    `bson:"token"`
-	CreatedAt   time.Time `bson:"createdAt"`
+	ID        int       `bson:"id"`
+	Name      string    `bson:"name"`
+	Target    string    `bson:"target"`
+	Token     string    `bson:"token"`
+	CreatedAt time.Time `bson:"createdAt"`
 }
 
 func (w *WebhookPublic) Created() bool {
 	return w.ID != 0
+}
+
+func (w *WebhookPublic) IsPlaceholder() bool {
+	return false
 }
 
 func CreateWebhookParamsFromPublic(public *WebhookPublic) *modelv2.WebhookPolicy {
@@ -59,13 +61,11 @@ func CreateWebhookPublicFromGet(webhookPolicy *modelv2.WebhookPolicy, project *m
 	token := getTokenFromAuthHeader(webhookPolicy.Targets[0].AuthHeader)
 
 	return &WebhookPublic{
-		ID:          int(webhookPolicy.ID),
-		Name:        webhookPolicy.Name,
-		ProjectID:   int(project.ProjectID),
-		ProjectName: project.Name,
-		Target:      webhookPolicy.Targets[0].Address,
-		Token:       token,
-		CreatedAt:   time.Time(webhookPolicy.CreationTime),
+		ID:        int(webhookPolicy.ID),
+		Name:      webhookPolicy.Name,
+		Target:    webhookPolicy.Targets[0].Address,
+		Token:     token,
+		CreatedAt: time.Time(webhookPolicy.CreationTime),
 	}
 }
 

@@ -13,89 +13,79 @@ import (
 
 func (client *Client) ReadPV(id string) (*models.PvPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to read k8s persistent volume %s. details: %w", id, err)
+		return fmt.Errorf("failed to read k8s pv %s. details: %w", id, err)
 	}
 
 	if id == "" {
+		log.Println("no id supplied when reading k8s pv. assuming it was deleted")
 		return nil, nil
 	}
 
-	list, err := client.K8sClient.CoreV1().PersistentVolumes().List(context.TODO(), metav1.ListOptions{})
+	list, err := client.K8sClient.CoreV1().PersistentVolumes().List(context.TODO(), metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelID, id),
+	})
 	if err != nil {
 		return nil, makeError(err)
 	}
 
-	for _, item := range list.Items {
-		idLabel := GetLabel(item.ObjectMeta.Labels, keys.ManifestLabelID)
-		if idLabel == id {
-			return models.CreatePvPublicFromRead(&item), nil
-		}
+	if len(list.Items) > 0 {
+		return models.CreatePvPublicFromRead(&list.Items[0]), nil
 	}
 
 	return nil, nil
 }
 
-func (client *Client) CreatePV(public *models.PvPublic) (string, error) {
+func (client *Client) CreatePV(public *models.PvPublic) (*models.PvPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create k8s persistent volume %s. details: %w", public.Name, err)
+		return fmt.Errorf("failed to create k8s pv %s. details: %w", public.Name, err)
 	}
 
-	if public.Name == "" {
-		return "", nil
-	}
-
-	list, err := client.K8sClient.CoreV1().PersistentVolumes().List(context.TODO(), metav1.ListOptions{})
+	list, err := client.K8sClient.CoreV1().PersistentVolumes().List(context.TODO(), metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelID, public.ID),
+	})
 	if err != nil {
-		return "", makeError(err)
+		return nil, makeError(err)
 	}
 
-	for _, item := range list.Items {
-		if FindLabel(item.ObjectMeta.Labels, keys.ManifestLabelName, public.Name) {
-			idLabel := GetLabel(item.ObjectMeta.Labels, keys.ManifestLabelID)
-			if idLabel != "" {
-				return idLabel, nil
-			}
-		}
+	if len(list.Items) > 0 {
+		return models.CreatePvPublicFromRead(&list.Items[0]), nil
 	}
 
 	public.ID = uuid.New().String()
 	public.CreatedAt = time.Now()
 
 	manifest := CreatePvManifest(public)
-	_, err = client.K8sClient.CoreV1().PersistentVolumes().Create(context.TODO(), manifest, metav1.CreateOptions{})
+	res, err := client.K8sClient.CoreV1().PersistentVolumes().Create(context.TODO(), manifest, metav1.CreateOptions{})
 	if err != nil {
-		return "", makeError(err)
+		return nil, makeError(err)
 	}
 
-	return public.ID, nil
+	return models.CreatePvPublicFromRead(res), nil
 }
 
 func (client *Client) DeletePV(id string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete k8s persistent volume %s. details: %w", id, err)
+		return fmt.Errorf("failed to delete k8s pv %s. details: %w", id, err)
 	}
 
 	if id == "" {
+		log.Println("no id supplied when deleting k8s pv. assuming it was deleted")
 		return nil
 	}
 
-	list, err := client.K8sClient.CoreV1().PersistentVolumes().List(context.TODO(), metav1.ListOptions{})
+	list, err := client.K8sClient.CoreV1().PersistentVolumes().List(context.TODO(), metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelID, id),
+	})
 	if err != nil {
 		return makeError(err)
 	}
 
 	for _, item := range list.Items {
-		idLabel := GetLabel(item.ObjectMeta.Labels, keys.ManifestLabelID)
-		if idLabel == id {
-			err = client.K8sClient.CoreV1().PersistentVolumes().Delete(context.TODO(), item.Name, metav1.DeleteOptions{})
-			if err != nil {
-				return makeError(err)
-			}
-
-			return nil
+		err = client.K8sClient.CoreV1().PersistentVolumes().Delete(context.TODO(), item.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return makeError(err)
 		}
 	}
 
-	log.Println("k8s persistent volume", id, "not found when deleting. assuming it was deleted")
 	return nil
 }

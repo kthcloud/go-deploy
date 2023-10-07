@@ -8,8 +8,6 @@ import (
 type RepositoryPublic struct {
 	ID          int          `bson:"id"`
 	Name        string       `bson:"name"`
-	ProjectID   int          `bson:"projectId"`
-	ProjectName string       `bson:"projectName"`
 	Seeded      bool         `bson:"seeded"`
 	Placeholder *PlaceHolder `bson:"placeholder"`
 	CreatedAt   time.Time    `bson:"createdAt"`
@@ -19,6 +17,10 @@ func (r *RepositoryPublic) Created() bool {
 	return r.ID != 0
 }
 
+func (r *RepositoryPublic) IsPlaceholder() bool {
+	return false
+}
+
 func CreateRepositoryPublicFromGet(repository *modelv2.Repository, project *modelv2.Project) *RepositoryPublic {
 	var createdAt time.Time
 	if repository.CreationTime != nil {
@@ -26,11 +28,9 @@ func CreateRepositoryPublicFromGet(repository *modelv2.Repository, project *mode
 	}
 
 	return &RepositoryPublic{
-		ID:          int(repository.ID),
-		Name:        repository.Name,
-		ProjectID:   int(project.ProjectID),
-		ProjectName: project.Name,
-		Seeded:      repository.ArtifactCount > 0,
-		CreatedAt:   createdAt,
+		ID:        int(repository.ID),
+		Name:      repository.Name,
+		Seeded:    repository.ArtifactCount > 0,
+		CreatedAt: createdAt,
 	}
 }

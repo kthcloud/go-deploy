@@ -18,6 +18,10 @@ func (n *NamespacePublic) Created() bool {
 	return n.ID != ""
 }
 
+func (n *NamespacePublic) IsPlaceholder() bool {
+	return false
+}
+
 func CreateNamespacePublicFromRead(namespace *v1.Namespace) *NamespacePublic {
 	return &NamespacePublic{
 		ID:        namespace.Labels[keys.ManifestLabelID],

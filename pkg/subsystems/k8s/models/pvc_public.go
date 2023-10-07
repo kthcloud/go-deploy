@@ -19,6 +19,10 @@ func (pvc *PvcPublic) Created() bool {
 	return pvc.ID != ""
 }
 
+func (pvc *PvcPublic) IsPlaceholder() bool {
+	return false
+}
+
 func CreatePvcPublicFromRead(pvc *v1.PersistentVolumeClaim) *PvcPublic {
 	capacityQuantity, ok := pvc.Spec.Resources.Requests[v1.ResourceStorage]
 	var capacity string

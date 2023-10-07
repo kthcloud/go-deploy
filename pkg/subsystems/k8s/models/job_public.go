@@ -21,6 +21,10 @@ func (job *JobPublic) Created() bool {
 	return job.ID != ""
 }
 
+func (job *JobPublic) IsPlaceholder() bool {
+	return false
+}
+
 func CreateJobPublicFromRead(job *v1.Job) *JobPublic {
 
 	var volumes []Volume

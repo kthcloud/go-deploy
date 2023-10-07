@@ -22,8 +22,16 @@ type DeploymentPublic struct {
 	CreatedAt        time.Time       `bson:"createdAt"`
 }
 
+func (d *DeploymentPublic) GetID() string {
+	return d.ID
+}
+
 func (d *DeploymentPublic) Created() bool {
 	return d.ID != ""
+}
+
+func (d *DeploymentPublic) IsPlaceholder() bool {
+	return false
 }
 
 func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPublic {

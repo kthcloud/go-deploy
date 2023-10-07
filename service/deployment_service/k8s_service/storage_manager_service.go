@@ -6,16 +6,10 @@ import (
 	"go-deploy/pkg/conf"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/service"
-	"go-deploy/service/deployment_service/k8s_service/helpers"
+	"go-deploy/service/vm_service/cs_service/helpers"
 	"go-deploy/utils/subsystemutils"
 	"log"
 	"path"
-)
-
-const (
-	storageManagerNamePrefix  = "system"
-	storageManagerAppName     = "storage-manager"
-	storageManagerAppNameAuth = "storage-manager-auth"
 )
 
 func getStorageManagerNamespaceName(userID string) string {

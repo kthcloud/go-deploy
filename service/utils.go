@@ -1,18 +1,22 @@
 package service
 
 import (
-	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	"reflect"
 	"time"
 )
 
 type UpdateDbSubsystem func(string, string, interface{}) error
 
-func Created(resource k8sModels.K8sResource) bool {
+type SsResource interface {
+	Created() bool
+	IsPlaceholder() bool
+}
+
+func Created(resource SsResource) bool {
 	return !NotCreated(resource)
 }
 
-func NotCreated(resource k8sModels.K8sResource) bool {
+func NotCreated(resource SsResource) bool {
 	if resource == nil || (reflect.ValueOf(resource).Kind() == reflect.Ptr && reflect.ValueOf(resource).IsNil()) {
 		return true
 	}
@@ -80,21 +84,21 @@ func areTimeFieldsEqual(a, b interface{}) bool {
 	return true
 }
 
-func UpdateIfDiff[T any](dbResource T, fetchFunc func() (*T, error), updateFunc func(*T) error, recreateFunc func(*T) error) error {
+func UpdateIfDiff[T SsResource](dbResource T, fetchFunc func() (T, error), updateFunc func(T) (T, error), recreateFunc func(T) error) error {
 	liveResource, err := fetchFunc()
 	if err != nil {
 		return nil
 	}
 
 	if liveResource == nil {
-		return recreateFunc(&dbResource)
+		return recreateFunc(dbResource)
 	}
 
 	dbResourceCleaned := ResetTimeFields(dbResource)
-	liveResourceCleaned := ResetTimeFields(*liveResource)
+	liveResourceCleaned := ResetTimeFields(liveResource)
 
 	if liveResource != nil {
-		timeEqual := areTimeFieldsEqual(dbResource, *liveResource)
+		timeEqual := areTimeFieldsEqual(dbResource, liveResource)
 		restEqual := reflect.DeepEqual(dbResourceCleaned, liveResourceCleaned)
 
 		if timeEqual && restEqual {
@@ -102,22 +106,17 @@ func UpdateIfDiff[T any](dbResource T, fetchFunc func() (*T, error), updateFunc 
 		}
 	}
 
-	err = updateFunc(&dbResource)
+	liveResource, err = updateFunc(dbResource)
 	if err != nil {
 		return err
 	}
 
-	liveResource, err = fetchFunc()
-	if err != nil {
-		return nil
-	}
-
 	if liveResource != nil {
-		liveResourceCleaned = ResetTimeFields(*liveResource)
-		if liveResource != nil && areTimeFieldsEqual(dbResource, *liveResource) && reflect.DeepEqual(liveResourceCleaned, dbResourceCleaned) {
+		liveResourceCleaned = ResetTimeFields(liveResource)
+		if liveResource != nil && areTimeFieldsEqual(dbResource, liveResource) && reflect.DeepEqual(liveResourceCleaned, dbResourceCleaned) {
 			return nil
 		}
 	}
 
-	return recreateFunc(&dbResource)
+	return recreateFunc(dbResource)
 }
