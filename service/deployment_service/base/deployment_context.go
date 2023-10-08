@@ -6,16 +6,15 @@ import (
 	"go-deploy/pkg/conf"
 )
 
-type Context struct {
-	Deployment *deploymentModels.Deployment
-	MainApp    *deploymentModels.App
-	Zone       *enviroment.DeploymentZone
-
+type DeploymentContext struct {
+	Deployment   *deploymentModels.Deployment
+	MainApp      *deploymentModels.App
+	Zone         *enviroment.DeploymentZone
 	CreateParams *deploymentModels.CreateParams
 	UpdateParams *deploymentModels.UpdateParams
 }
 
-func NewBaseContext(deploymentID string) (*Context, error) {
+func NewDeploymentBaseContext(deploymentID string) (*DeploymentContext, error) {
 	deployment, err := deploymentModels.New().GetByID(deploymentID)
 	if err != nil {
 		return nil, err
@@ -35,19 +34,19 @@ func NewBaseContext(deploymentID string) (*Context, error) {
 		return nil, ZoneNotFoundErr
 	}
 
-	return &Context{
+	return &DeploymentContext{
 		Deployment: deployment,
 		MainApp:    mainApp,
 		Zone:       zone,
 	}, nil
 }
 
-func (c *Context) WithCreateParams(params *deploymentModels.CreateParams) *Context {
+func (c *DeploymentContext) WithCreateParams(params *deploymentModels.CreateParams) *DeploymentContext {
 	c.CreateParams = params
 	return c
 }
 
-func (c *Context) WithUpdateParams(params *deploymentModels.UpdateParams) *Context {
+func (c *DeploymentContext) WithUpdateParams(params *deploymentModels.UpdateParams) *DeploymentContext {
 	c.UpdateParams = params
 	return c
 }

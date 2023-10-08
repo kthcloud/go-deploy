@@ -10,10 +10,9 @@ import (
 func GetStorageManagerVolumes(ownerID, appName string) ([]storageManagerModel.Volume, []storageManagerModel.Volume) {
 	initVolumes := []storageManagerModel.Volume{
 		{
-			Name:       fmt.Sprintf("%s-%s", appName, "init"),
-			Init:       false,
-			AppPath:    "/exports",
-			ServerPath: "",
+			Name:    fmt.Sprintf("%s-%s", appName, "init"),
+			Init:    false,
+			AppPath: "/exports",
 		},
 	}
 

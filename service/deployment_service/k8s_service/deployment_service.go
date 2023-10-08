@@ -8,6 +8,7 @@ import (
 	"go-deploy/service"
 	"go-deploy/service/deployment_service/base"
 	"go-deploy/service/deployment_service/resources"
+	"golang.org/x/exp/slices"
 	"log"
 	"strconv"
 	"strings"
@@ -34,7 +35,7 @@ func Create(deploymentID string, params *deploymentModel.CreateParams) error {
 	// Namespace
 	err = resources.SsCreator(context.Client.CreateNamespace).
 		WithID(deploymentID).
-		WithPublic(context.Generator.Namespace()).
+		WithPublic(context.Generator.MainNamespace()).
 		WithDbKey("k8s.namespace").
 		Exec()
 	if err != nil {
@@ -67,57 +68,55 @@ func Create(deploymentID string, params *deploymentModel.CreateParams) error {
 	}
 
 	// Secret
-	if context.Deployment.Type == deploymentModel.TypeCustom {
+	for _, secretPublic := range context.Generator.Secrets() {
 		err = resources.SsCreator(context.Client.CreateSecret).
 			WithID(deploymentID).
-			WithPublic(context.Generator.ImagePullSecret()).
-			WithDbKey("k8s.secretMap." + base.AppName).
+			WithPublic(&secretPublic).
+			WithDbKey("k8s.secretMap." + secretPublic.Name).
 			Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	// Deployment
-	err = resources.SsCreator(context.Client.CreateDeployment).
-		WithID(deploymentID).
-		WithPublic(context.Generator.MainDeployment()).
-		WithDbKey("k8s.deploymentMap." + base.AppName).
-		Exec()
+	for _, deploymentPublic := range context.Generator.Deployments() {
+		err = resources.SsCreator(context.Client.CreateDeployment).
+			WithID(deploymentID).
+			WithPublic(&deploymentPublic).
+			WithDbKey("k8s.deploymentMap." + deploymentPublic.Name).
+			Exec()
 
-	if err != nil {
-		return makeError(err)
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	// Service
-	err = resources.SsCreator(context.Client.CreateService).
-		WithID(deploymentID).
-		WithPublic(context.Generator.MainService()).
-		WithDbKey("k8s.serviceMap." + base.AppName).
-		Exec()
+	for _, servicePublic := range context.Generator.Services() {
+		err = resources.SsCreator(context.Client.CreateService).
+			WithID(deploymentID).
+			WithPublic(&servicePublic).
+			WithDbKey("k8s.serviceMap." + servicePublic.Name).
+			Exec()
 
-	if err != nil {
-		return makeError(err)
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	// Ingress main
-	var ingressPublic *k8sModels.IngressPublic
-	if params.Private {
-		ingressPublic = context.Generator.PrivateIngress()
-	} else {
-		ingressPublic = context.Generator.MainIngress()
-	}
-
-	err = resources.SsCreator(context.Client.CreateIngress).
-		WithID(deploymentID).
-		WithPublic(ingressPublic).
-		WithDbKey("k8s.ingressMap." + base.AppName).
-		Exec()
-
-	// Ingress custom domain
-	if params.CustomDomain != nil && !params.Private {
+	for _, ingressPublic := range context.Generator.Ingresses() {
 		err = resources.SsCreator(context.Client.CreateIngress).
 			WithID(deploymentID).
-			WithPublic(context.Generator.CustomDomainIngress()).
-			WithDbKey("k8s.ingressMap." + base.AppNameCustomDomain).
+			WithPublic(&ingressPublic).
+			WithDbKey("k8s.ingressMap." + ingressPublic.Name).
 			Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	return nil
@@ -325,12 +324,28 @@ func Repair(id string) error {
 	}
 
 	for mapName := range context.Deployment.Subsystems.K8s.DeploymentMap {
+		deployments := context.Generator.Deployments()
+		idx := slices.IndexFunc(deployments, func(d k8sModels.DeploymentPublic) bool { return d.Name == mapName })
+		if idx == -1 {
+			err = resources.SsDeleter(context.Client.DeleteDeployment).
+				WithID(id).
+				WithDbKey("k8s.deploymentMap." + mapName).
+				WithResourceID(context.Deployment.Subsystems.K8s.DeploymentMap[mapName].ID).
+				Exec()
+
+			if err != nil {
+				return makeError(err)
+			}
+
+			continue
+		}
+
 		err = resources.SsRepairer(
 			context.Client.ReadDeployment,
 			context.Client.CreateDeployment,
 			context.Client.UpdateDeployment,
 			context.Client.DeleteDeployment,
-		).WithID(id).WithGenPublicFunc(context.Generator.MainDeployment).WithDbKey("k8s.deploymentMap." + mapName).Exec()
+		).WithID(id).WithGenPublic(&deployments[idx]).WithDbKey("k8s.deploymentMap." + mapName).Exec()
 
 		if err != nil {
 			return makeError(err)
@@ -338,16 +353,34 @@ func Repair(id string) error {
 	}
 
 	for mapName := range context.Deployment.Subsystems.K8s.ServiceMap {
+		services := context.Generator.Services()
+		idx := slices.IndexFunc(services, func(s k8sModels.ServicePublic) bool { return s.Name == mapName })
+		if idx == -1 {
+			err = resources.SsDeleter(context.Client.DeleteService).
+				WithID(id).
+				WithDbKey("k8s.serviceMap." + mapName).
+				WithResourceID(context.Deployment.Subsystems.K8s.ServiceMap[mapName].ID).
+				Exec()
+
+			if err != nil {
+				return makeError(err)
+			}
+
+			continue
+		}
+
 		err = resources.SsRepairer(
 			context.Client.ReadService,
 			context.Client.CreateService,
 			context.Client.UpdateService,
 			context.Client.DeleteService,
-		).WithID(id).WithGenPublicFunc(context.Generator.MainService).WithDbKey("k8s.serviceMap." + mapName).Exec()
+		).WithID(id).WithGenPublic(&services[idx]).WithDbKey("k8s.serviceMap." + mapName).Exec()
 	}
 
-	if context.MainApp.Private {
-		for mapName := range context.Deployment.Subsystems.K8s.IngressMap {
+	for mapName := range context.Deployment.Subsystems.K8s.IngressMap {
+		ingresses := context.Generator.Ingresses()
+		idx := slices.IndexFunc(ingresses, func(i k8sModels.IngressPublic) bool { return i.Name == mapName })
+		if idx == -1 {
 			err = resources.SsDeleter(context.Client.DeleteIngress).
 				WithID(id).
 				WithDbKey("k8s.ingressMap." + mapName).
@@ -357,57 +390,47 @@ func Repair(id string) error {
 			if err != nil {
 				return makeError(err)
 			}
-		}
-	} else {
-		if ingress := context.Deployment.Subsystems.K8s.GetIngress(base.AppName); service.Created(ingress) {
-			err = resources.SsRepairer(
-				context.Client.ReadIngress,
-				context.Client.CreateIngress,
-				context.Client.UpdateIngress,
-				context.Client.DeleteIngress,
-			).WithID(id).WithResourceID(ingress.ID).WithGenPublicFunc(context.Generator.MainIngress).WithDbKey("k8s.ingressMap." + base.AppName).Exec()
-		} else {
-			err = resources.SsCreator(context.Client.CreateIngress).
-				WithID(id).
-				WithPublic(context.Generator.MainIngress()).
-				WithDbKey("k8s.ingressMap." + base.AppName).
-				Exec()
-		}
-		if err != nil {
-			return makeError(err)
+
+			continue
 		}
 
-		if context.MainApp.CustomDomain != nil {
-			if ingress := context.Deployment.Subsystems.K8s.GetIngress(base.AppNameCustomDomain); service.Created(ingress) {
-				err = resources.SsRepairer(
-					context.Client.ReadIngress,
-					context.Client.CreateIngress,
-					context.Client.UpdateIngress,
-					context.Client.DeleteIngress,
-				).WithID(id).WithResourceID(ingress.ID).WithGenPublicFunc(context.Generator.CustomDomainIngress).WithDbKey("k8s.ingressMap." + base.AppNameCustomDomain).Exec()
-			} else {
-				err = resources.SsCreator(context.Client.CreateIngress).
-					WithID(id).
-					WithPublic(context.Generator.CustomDomainIngress()).
-					WithDbKey("k8s.ingressMap." + base.AppNameCustomDomain).
-					Exec()
-			}
-		}
+		err = resources.SsRepairer(
+			context.Client.ReadIngress,
+			context.Client.CreateIngress,
+			context.Client.UpdateIngress,
+			context.Client.DeleteIngress,
+		).WithID(id).WithGenPublic(&ingresses[idx]).WithDbKey("k8s.ingressMap." + mapName).Exec()
 	}
 
 	for mapName := range context.Deployment.Subsystems.K8s.SecretMap {
+		secrets := context.Generator.Secrets()
+		idx := slices.IndexFunc(secrets, func(s k8sModels.SecretPublic) bool { return s.Name == mapName })
+		if idx == -1 {
+			err = resources.SsDeleter(context.Client.DeleteSecret).
+				WithID(id).
+				WithDbKey("k8s.secretMap." + mapName).
+				WithResourceID(context.Deployment.Subsystems.K8s.SecretMap[mapName].ID).
+				Exec()
+
+			if err != nil {
+				return makeError(err)
+			}
+
+			continue
+		}
+
 		err = resources.SsRepairer(
 			context.Client.ReadSecret,
 			context.Client.CreateSecret,
 			context.Client.UpdateSecret,
 			context.Client.DeleteSecret,
-		).WithID(id).WithGenPublicFunc(context.Generator.ImagePullSecret).WithDbKey("k8s.secretMap." + mapName).Exec()
+		).WithID(id).WithGenPublic(&secrets[idx]).WithDbKey("k8s.secretMap." + mapName).Exec()
 	}
 
 	return nil
 }
 
-func updateInternalPort(context *Context) error {
+func updateInternalPort(context *DeploymentContext) error {
 	if k8sService := context.Deployment.Subsystems.K8s.GetService(base.AppName); service.Created(k8sService) {
 		if k8sService.Port != *context.UpdateParams.InternalPort {
 			k8sService.TargetPort = *context.UpdateParams.InternalPort
@@ -427,7 +450,7 @@ func updateInternalPort(context *Context) error {
 	return nil
 }
 
-func updateEnvs(context *Context) error {
+func updateEnvs(context *DeploymentContext) error {
 	if k8sDeployment := context.Deployment.Subsystems.K8s.GetDeployment(base.AppName); service.Created(k8sDeployment) {
 		var port int
 		if context.UpdateParams.InternalPort != nil {
@@ -467,21 +490,16 @@ func updateEnvs(context *Context) error {
 	return nil
 }
 
-func updateCustomDomain(context *Context) error {
-	ingress := context.Deployment.Subsystems.K8s.GetIngress(base.AppNameCustomDomain)
-	if service.Created(ingress) {
-		ingress.CustomCert = &k8sModels.CustomCert{
-			ClusterIssuer: "letsencrypt-prod-deploy-http",
-			CommonName:    *context.UpdateParams.CustomDomain,
-		}
-		ingress.Hosts = []string{*context.UpdateParams.CustomDomain}
-	} else {
-		ingress = context.Generator.CustomDomainIngress()
+func updateCustomDomain(context *DeploymentContext) error {
+	ingresses := context.Generator.Ingresses()
+	idx := slices.IndexFunc(ingresses, func(i k8sModels.IngressPublic) bool { return i.Name == base.AppNameCustomDomain })
+	if idx == -1 {
+		return nil
 	}
 
 	err := resources.SsUpdater(context.Client.UpdateIngress).
 		WithID(context.Deployment.ID).
-		WithPublic(ingress).
+		WithPublic(&ingresses[idx]).
 		WithDbKey("k8s.ingressMap." + base.AppNameCustomDomain).
 		Exec()
 
@@ -496,7 +514,7 @@ func updateCustomDomain(context *Context) error {
 	return nil
 }
 
-func updatePrivate(context *Context) error {
+func updatePrivate(context *DeploymentContext) error {
 	if *context.UpdateParams.Private {
 		for mapName, ingress := range context.Deployment.Subsystems.K8s.IngressMap {
 			err := resources.SsDeleter(context.Client.DeleteIngress).
@@ -510,40 +528,26 @@ func updatePrivate(context *Context) error {
 			}
 		}
 	} else {
-		err := resources.SsCreator(context.Client.CreateIngress).
-			WithID(context.Deployment.ID).
-			WithPublic(context.Generator.MainIngress()).
-			WithDbKey("k8s.ingressMap." + base.AppName).
-			Exec()
-		if err != nil {
-			return err
-		}
-
-		var customDomain *string
-		if context.UpdateParams.CustomDomain != nil {
-			customDomain = context.UpdateParams.CustomDomain
-		} else {
-			customDomain = context.MainApp.CustomDomain
-		}
-
-		if customDomain != nil {
-			err = resources.SsCreator(context.Client.CreateIngress).
+		for _, ingressPublic := range context.Generator.Ingresses() {
+			err := resources.SsCreator(context.Client.CreateIngress).
 				WithID(context.Deployment.ID).
-				WithPublic(context.Generator.CustomDomainIngress()).
-				WithDbKey("k8s.ingressMap." + base.AppNameCustomDomain).
+				WithPublic(&ingressPublic).
+				WithDbKey("k8s.ingressMap." + ingressPublic.Name).
 				Exec()
+
+			if err != nil {
+				return err
+			}
 		}
 	}
 
 	return nil
 }
 
-func updateVolumes(context *Context) error {
+func updateVolumes(context *DeploymentContext) error {
 	// delete deployment, pvcs and pvs
 	// then
 	// create new deployment, pvcs and pvs
-	//
-	// this does NOT support multiple k8s deployments yet, as it will delete all then create only the main one
 
 	if k8sDeployment := context.Deployment.Subsystems.K8s.GetDeployment(base.AppName); service.Created(k8sDeployment) {
 		err := resources.SsDeleter(context.Client.DeleteDeployment).
@@ -604,20 +608,22 @@ func updateVolumes(context *Context) error {
 		}
 	}
 
-	err := resources.SsCreator(context.Client.CreateDeployment).
-		WithID(context.Deployment.ID).
-		WithPublic(context.Generator.MainDeployment()).
-		WithDbKey("k8s.deploymentMap." + base.AppName).
-		Exec()
+	for _, public := range context.Generator.Deployments() {
+		err := resources.SsCreator(context.Client.CreateDeployment).
+			WithID(context.Deployment.ID).
+			WithPublic(&public).
+			WithDbKey("k8s.deploymentMap." + public.Name).
+			Exec()
 
-	if err != nil {
-		return err
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func updateImage(context *Context) error {
+func updateImage(context *DeploymentContext) error {
 	if *context.UpdateParams.Image != context.MainApp.Image {
 		oldPublic := context.Deployment.Subsystems.K8s.GetDeployment(base.AppName)
 		if oldPublic.Created() {

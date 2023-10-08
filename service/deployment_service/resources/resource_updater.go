@@ -7,15 +7,18 @@ import (
 )
 
 type SsUpdaterType[T service.SsResource] struct {
-	id         *string
-	name       *string
-	public     T
-	dbKey      string
+	id     *string
+	public T
+
+	dbKey  string
+	dbFunc func(string, string, interface{}) error
+
 	updateFunc func(T) (T, error)
 }
 
 func SsUpdater[T service.SsResource](updateFunc func(T) (T, error)) *SsUpdaterType[T] {
 	return &SsUpdaterType[T]{
+		dbFunc:     deploymentModel.New().UpdateSubsystemByID_test,
 		updateFunc: updateFunc,
 	}
 }
@@ -25,13 +28,13 @@ func (rc *SsUpdaterType[T]) WithID(id string) *SsUpdaterType[T] {
 	return rc
 }
 
-func (rc *SsUpdaterType[T]) WithName(name string) *SsUpdaterType[T] {
-	rc.name = &name
+func (rc *SsUpdaterType[T]) WithDbKey(dbKey string) *SsUpdaterType[T] {
+	rc.dbKey = dbKey
 	return rc
 }
 
-func (rc *SsUpdaterType[T]) WithDbKey(dbKey string) *SsUpdaterType[T] {
-	rc.dbKey = dbKey
+func (rc *SsUpdaterType[T]) WithDbFunc(dbFunc func(string, string, interface{}) error) *SsUpdaterType[T] {
+	rc.dbFunc = dbFunc
 	return rc
 }
 
@@ -65,11 +68,9 @@ func (rc *SsUpdaterType[T]) Exec() error {
 			log.Println("no db key provided for subsystem creation. did you forget to call WithDbKey?")
 		} else {
 			if rc.id != nil {
-				return deploymentModel.New().UpdateSubsystemByID_test(*rc.id, rc.dbKey, resource)
-			} else if rc.name != nil {
-				return deploymentModel.New().UpdateSubsystemByName_test(*rc.name, rc.dbKey, resource)
+				return rc.dbFunc(*rc.id, rc.dbKey, resource)
 			} else {
-				log.Println("no id or name provided for subsystem update. did you forget to call WithID or WithName?")
+				log.Println("no id or name provided for subsystem update. did you forget to call WithID?")
 			}
 		}
 	}

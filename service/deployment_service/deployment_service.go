@@ -12,6 +12,7 @@ import (
 	jobModel "go-deploy/models/sys/job"
 	"go-deploy/pkg/conf"
 	"go-deploy/service"
+	"go-deploy/service/deployment_service/base"
 	"go-deploy/service/deployment_service/github_service"
 	"go-deploy/service/deployment_service/gitlab_service"
 	"go-deploy/service/deployment_service/harbor_service"
@@ -76,7 +77,7 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 
 	err = k8s_service.Create(deploymentID, params)
 	if err != nil {
-		if errors.Is(err, k8s_service.CustomDomainInUseErr) {
+		if errors.Is(err, base.CustomDomainInUseErr) {
 			log.Println("custom domain in use when creating deployment", params.Name, ". removing it from the deployment and create params")
 			err = deploymentModel.New().RemoveCustomDomain(deploymentID)
 			if err != nil {
@@ -153,6 +154,65 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 		if err != nil {
 			return makeError(err)
 		}
+	}
+
+	return nil
+}
+
+func Update(id string, deploymentUpdate *body.DeploymentUpdate) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to update deployment. details: %w", err)
+	}
+
+	deployment, err := deploymentModel.New().GetByID(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if deployment == nil {
+		log.Println("deployment", id, "not found when updating. assuming it was deleted")
+		return nil
+	}
+
+	params := &deploymentModel.UpdateParams{}
+	params.FromDTO(deploymentUpdate, deployment.Type)
+
+	err = deploymentModel.New().UpdateWithParamsByID(id, params)
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = k8s_service.Update(id, params)
+	if err != nil {
+		if errors.Is(err, base.CustomDomainInUseErr) {
+			log.Println("custom domain in use when updating deployment", deployment.Name, ". removing it from the update params")
+			deploymentUpdate.CustomDomain = nil
+		} else {
+			return makeError(err)
+		}
+	}
+
+	return nil
+}
+
+func Delete(id string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to delete deployment. details: %w", err)
+	}
+
+	err := harbor_service.Delete(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = k8s_service.Delete(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = github_service.Delete(id, nil)
+	if err != nil {
+		return makeError(err)
 	}
 
 	return nil
@@ -271,65 +331,6 @@ func CanAddActivity(deploymentID, activity string) (bool, string) {
 	}
 
 	return false, fmt.Sprintf("Unknown activity %s", activity)
-}
-
-func Delete(id string) error {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete deployment. details: %w", err)
-	}
-
-	err := harbor_service.Delete(id)
-	if err != nil {
-		return makeError(err)
-	}
-
-	err = k8s_service.Delete(id)
-	if err != nil {
-		return makeError(err)
-	}
-
-	err = github_service.Delete(id, nil)
-	if err != nil {
-		return makeError(err)
-	}
-
-	return nil
-}
-
-func Update(id string, deploymentUpdate *body.DeploymentUpdate) error {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to update deployment. details: %w", err)
-	}
-
-	deployment, err := deploymentModel.New().GetByID(id)
-	if err != nil {
-		return makeError(err)
-	}
-
-	if deployment == nil {
-		log.Println("deployment", id, "not found when updating. assuming it was deleted")
-		return nil
-	}
-
-	params := &deploymentModel.UpdateParams{}
-	params.FromDTO(deploymentUpdate, deployment.Type)
-
-	err = k8s_service.Update(id, params)
-	if err != nil {
-		if errors.Is(err, k8s_service.CustomDomainInUseErr) {
-			log.Println("custom domain in use when updating deployment", deployment.Name, ". removing it from the update params")
-			deploymentUpdate.CustomDomain = nil
-		} else {
-			return makeError(err)
-		}
-	}
-
-	err = deploymentModel.New().UpdateWithParamsByID(id, params)
-	if err != nil {
-		return makeError(err)
-	}
-
-	return nil
 }
 
 func Restart(name string) error {
@@ -457,7 +458,7 @@ func Repair(id string) error {
 
 	err = k8s_service.Repair(deployment.Name)
 	if err != nil {
-		if errors.Is(err, k8s_service.CustomDomainInUseErr) {
+		if errors.Is(err, base.CustomDomainInUseErr) {
 			log.Println("custom domain in use when repairing deployment", deployment.Name, ". removing it from the deployment")
 			err = deploymentModel.New().RemoveCustomDomain(deployment.ID)
 			if err != nil {

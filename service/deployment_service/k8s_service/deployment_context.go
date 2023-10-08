@@ -10,19 +10,19 @@ import (
 	"go-deploy/utils/subsystemutils"
 )
 
-type Context struct {
-	base.Context
+type DeploymentContext struct {
+	base.DeploymentContext
 
 	Client    *k8s.Client
 	Generator *resources.K8sGenerator
 }
 
-func NewContext(deploymentID string) (*Context, error) {
+func NewContext(deploymentID string) (*DeploymentContext, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("error creating context in deployment helper client. details: %w", err)
 	}
 
-	baseContext, err := base.NewBaseContext(deploymentID)
+	baseContext, err := base.NewDeploymentBaseContext(deploymentID)
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -32,20 +32,20 @@ func NewContext(deploymentID string) (*Context, error) {
 		return nil, makeError(err)
 	}
 
-	return &Context{
-		BaseContext: *baseContext,
-		Client:      k8sClient,
-		Generator:   resources.PublicGenerator().WithDeployment(baseContext.Deployment).K8s(k8sClient.Namespace),
+	return &DeploymentContext{
+		DeploymentContext: *baseContext,
+		Client:            k8sClient,
+		Generator:         resources.PublicGenerator().WithDeployment(baseContext.Deployment).K8s(k8sClient.Namespace),
 	}, nil
 }
 
-func (c *Context) WithCreateParams(params *deploymentModels.CreateParams) *Context {
+func (c *DeploymentContext) WithCreateParams(params *deploymentModels.CreateParams) *DeploymentContext {
 	c.CreateParams = params
 	c.Generator.WithCreateParams(params)
 	return c
 }
 
-func (c *Context) WithUpdateParams(params *deploymentModels.UpdateParams) *Context {
+func (c *DeploymentContext) WithUpdateParams(params *deploymentModels.UpdateParams) *DeploymentContext {
 	c.UpdateParams = params
 	c.Generator.WithUpdateParams(params)
 	return c

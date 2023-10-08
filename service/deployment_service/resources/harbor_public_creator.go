@@ -7,7 +7,7 @@ import (
 )
 
 type HarborGenerator struct {
-	PublicGeneratorType
+	*PublicGeneratorType
 	project string
 }
 

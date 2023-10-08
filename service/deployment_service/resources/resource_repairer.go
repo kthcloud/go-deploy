@@ -8,10 +8,13 @@ import (
 
 type SsRepairerType[idType any, T service.SsResource] struct {
 	id         *string
-	name       *string
 	resourceID *idType
-	dbKey      string
-	genPublic  func() T
+
+	dbKey  string
+	dbFunc func(string, string, interface{}) error
+
+	genPublic     T
+	genPublicFunc func() T
 
 	fetchFunc  func(idType) (T, error)
 	createFunc func(T) (T, error)
@@ -26,6 +29,7 @@ func SsRepairer[idType any, T service.SsResource](
 	deleteFunc func(idType) error,
 ) *SsRepairerType[idType, T] {
 	return &SsRepairerType[idType, T]{
+		dbFunc:     deploymentModel.New().UpdateSubsystemByID_test,
 		fetchFunc:  fetchFunc,
 		createFunc: createFunc,
 		updateFunc: updateFunc,
@@ -35,11 +39,6 @@ func SsRepairer[idType any, T service.SsResource](
 
 func (rc *SsRepairerType[idType, T]) WithID(id string) *SsRepairerType[idType, T] {
 	rc.id = &id
-	return rc
-}
-
-func (rc *SsRepairerType[idType, T]) WithName(name string) *SsRepairerType[idType, T] {
-	rc.name = &name
 	return rc
 }
 
@@ -53,8 +52,18 @@ func (rc *SsRepairerType[idType, T]) WithDbKey(dbKey string) *SsRepairerType[idT
 	return rc
 }
 
-func (rc *SsRepairerType[idType, T]) WithGenPublicFunc(genPublic func() T) *SsRepairerType[idType, T] {
+func (rc *SsRepairerType[idType, T]) WithDbFunc(dbFunc func(string, string, interface{}) error) *SsRepairerType[idType, T] {
+	rc.dbFunc = dbFunc
+	return rc
+}
+
+func (rc *SsRepairerType[idType, T]) WithGenPublic(genPublic T) *SsRepairerType[idType, T] {
 	rc.genPublic = genPublic
+	return rc
+}
+
+func (rc *SsRepairerType[idType, T]) WithGenPublicFunc(genPublicFunc func() T) *SsRepairerType[idType, T] {
+	rc.genPublicFunc = genPublicFunc
 	return rc
 }
 
@@ -91,19 +100,24 @@ func (rc *SsRepairerType[idType, T]) Exec() error {
 }
 
 func (rc *SsRepairerType[idType, T]) createResourceInstead() error {
-	if rc.genPublic == nil {
-		log.Println("no gen public function for subsystem repair. did you forget to call WithGenPublicFunc?")
-		return nil
-	}
 
 	if rc.createFunc == nil {
 		log.Println("no create function provided for subsystem repair. did you forget to specify it in the constructor?")
 		return nil
 	}
 
-	public := rc.genPublic()
+	var public T
+	if rc.genPublicFunc != nil {
+		public = rc.genPublic()
+	} else if rc.genPublic != nil {
+		public = rc.genPublic
+	} else {
+		log.Println("no genPublic or genPublicFunc provided for subsystem repair. did you forget to call WithGenPublic or WithGenPublicFunc?")
+		return nil
+	}
+
 	if public == nil {
-		log.Println("no public supplied for subsystem repair. assuming it failed to create")
+		log.Println("no public supplied for subsystem repair. assuming it failed to create or was skipped")
 		return nil
 	}
 
@@ -123,13 +137,9 @@ func (rc *SsRepairerType[idType, T]) createResourceInstead() error {
 	}
 
 	if rc.id != nil {
-		return deploymentModel.New().UpdateSubsystemByID_test(*rc.id, rc.dbKey, resource)
+		return rc.dbFunc(*rc.id, rc.dbKey, resource)
 	}
 
-	if rc.name != nil {
-		return deploymentModel.New().UpdateSubsystemByName_test(*rc.name, rc.dbKey, resource)
-	}
-
-	log.Println("no id or name provided for subsystem update. did you forget to call WithID or WithName?")
+	log.Println("no id or name provided for subsystem update. did you forget to call WithID?")
 	return nil
 }

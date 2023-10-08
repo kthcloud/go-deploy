@@ -7,15 +7,17 @@ import (
 
 type SsDeleterType[IdType any] struct {
 	id         *string
-	name       *string
 	resourceID *IdType
 	dbKey      string
+
+	dbFunc     func(string, string, interface{}) error
 	deleteFunc func(IdType) error
 }
 
 func SsDeleter[IdType any](deleteFunc func(IdType) error) *SsDeleterType[IdType] {
 	return &SsDeleterType[IdType]{
 		deleteFunc: deleteFunc,
+		dbFunc:     deploymentModel.New().UpdateSubsystemByID_test,
 	}
 }
 
@@ -24,13 +26,13 @@ func (rc *SsDeleterType[IdType]) WithID(id string) *SsDeleterType[IdType] {
 	return rc
 }
 
-func (rc *SsDeleterType[IdType]) WithName(name string) *SsDeleterType[IdType] {
-	rc.name = &name
+func (rc *SsDeleterType[IdType]) WithResourceID(resourceID IdType) *SsDeleterType[IdType] {
+	rc.resourceID = &resourceID
 	return rc
 }
 
-func (rc *SsDeleterType[IdType]) WithResourceID(resourceID IdType) *SsDeleterType[IdType] {
-	rc.resourceID = &resourceID
+func (rc *SsDeleterType[IdType]) WithDbFunc(dbFunc func(string, string, interface{}) error) *SsDeleterType[IdType] {
+	rc.dbFunc = dbFunc
 	return rc
 }
 
@@ -56,11 +58,9 @@ func (rc *SsDeleterType[IdType]) Exec() error {
 		log.Println("no db key provided for subsystem creation. did you forget to call WithDbKey?")
 	} else {
 		if rc.id != nil {
-			return deploymentModel.New().UpdateSubsystemByID_test(*rc.id, rc.dbKey, nil)
-		} else if rc.name != nil {
-			return deploymentModel.New().UpdateSubsystemByName_test(*rc.name, rc.dbKey, nil)
+			return rc.dbFunc(*rc.id, rc.dbKey, nil)
 		} else {
-			log.Println("no id or name provided for subsystem update. did you forget to call WithID or WithName?")
+			log.Println("no id or name provided for subsystem update. did you forget to call WithID?")
 		}
 	}
 

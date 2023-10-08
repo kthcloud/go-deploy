@@ -9,14 +9,14 @@ import (
 )
 
 type Context struct {
-	base.Context
+	base.DeploymentContext
 
 	Client    *harbor.Client
 	Generator *resources.HarborGenerator
 }
 
 func NewContext(deploymentID string) (*Context, error) {
-	baseContext, err := base.NewBaseContext(deploymentID)
+	baseContext, err := base.NewDeploymentBaseContext(deploymentID)
 	if err != nil {
 		return nil, err
 	}
