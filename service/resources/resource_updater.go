@@ -34,7 +34,7 @@ func (rc *SsUpdaterType[T]) Exec() error {
 		return nil
 	}
 
-	if service.NotCreated(rc.public) {
+	if service.Created(rc.public) {
 		var resource T
 		if rc.updateFunc == nil {
 			log.Println("no update function provided for subsystem update. did you forget to specify it in the constructor?")

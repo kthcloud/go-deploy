@@ -10,5 +10,9 @@ const (
 )
 
 func ImagePullSecretSuffix(appName string) string {
-	return appName + "-image-pull-secret"
+	return appName + "-" + AppNameImagePullSecret
+}
+
+func CustomDomainSuffix(appName string) string {
+	return appName + "-" + AppNameCustomDomain
 }

@@ -54,17 +54,7 @@ func (client *Client) ReadRepository(name string) (*models.RepositoryPublic, err
 
 	var public *models.RepositoryPublic
 	if repository != nil {
-		// for some reason, it is returned as name=<project name>/<repo name>
-		// even though it is used as only <repo name> in the api
-		// lovely harbor api :)
-		repository.Name = name
-
-		project, err := client.HarborClient.GetProject(context.TODO(), client.Project)
-		if err != nil {
-			return nil, makeError(err)
-		}
-
-		public = models.CreateRepositoryPublicFromGet(repository, project)
+		public = models.CreateRepositoryPublicFromGet(repository)
 	}
 
 	return public, nil
@@ -84,7 +74,7 @@ func (client *Client) CreateRepository(public *models.RepositoryPublic) (*models
 	}
 
 	if repository != nil {
-		return models.CreateRepositoryPublicFromGet(repository, nil), nil
+		return models.CreateRepositoryPublicFromGet(repository), nil
 	}
 
 	if public.Placeholder != nil {
@@ -99,7 +89,7 @@ func (client *Client) CreateRepository(public *models.RepositoryPublic) (*models
 		return nil, makeError(err)
 	}
 
-	return models.CreateRepositoryPublicFromGet(repository, nil), nil
+	return models.CreateRepositoryPublicFromGet(repository), nil
 }
 
 func (client *Client) UpdateRepository(public *models.RepositoryPublic) (*models.RepositoryPublic, error) {
@@ -128,7 +118,7 @@ func (client *Client) UpdateRepository(public *models.RepositoryPublic) (*models
 		return nil, makeError(err)
 	}
 
-	return nil, nil
+	return client.ReadRepository(public.Name)
 }
 
 func (client *Client) DeleteRepository(name string) error {

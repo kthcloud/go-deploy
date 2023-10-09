@@ -342,28 +342,41 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 	var res []models.IngressPublic
 	if kg.d.deployment != nil {
 		if !kg.d.deployment.GetMainApp().Private {
-			res = append(res, models.IngressPublic{
-				Name:         kg.d.deployment.Name,
-				Namespace:    kg.namespace,
-				ServiceName:  kg.d.deployment.Name,
-				ServicePort:  kg.d.deployment.GetMainApp().InternalPort,
-				IngressClass: conf.Env.Deployment.IngressClass,
-				Hosts:        []string{getExternalFQDN(kg.d.deployment.Name, kg.d.zone)},
-			})
 
-			if kg.d.deployment.GetMainApp().CustomDomain != nil {
+			if k8sIngress := kg.d.deployment.Subsystems.K8s.GetIngress(kg.d.deployment.Name); service.Created(k8sIngress) {
+				k8sIngress.Hosts = []string{getExternalFQDN(kg.d.deployment.Name, kg.d.zone)}
+
+				res = append(res, *k8sIngress)
+			} else {
 				res = append(res, models.IngressPublic{
-					Name:         fmt.Sprintf("%s-%s", kg.d.deployment.Name, constants.AppNameCustomDomain),
+					Name:         kg.d.deployment.Name,
 					Namespace:    kg.namespace,
 					ServiceName:  kg.d.deployment.Name,
 					ServicePort:  kg.d.deployment.GetMainApp().InternalPort,
 					IngressClass: conf.Env.Deployment.IngressClass,
-					Hosts:        []string{*kg.d.deployment.GetMainApp().CustomDomain},
-					CustomCert: &models.CustomCert{
-						ClusterIssuer: "letsencrypt-prod-deploy-http",
-						CommonName:    *kg.d.deployment.GetMainApp().CustomDomain,
-					},
+					Hosts:        []string{getExternalFQDN(kg.d.deployment.Name, kg.d.zone)},
 				})
+			}
+
+			if customK8sIngress := kg.d.deployment.Subsystems.K8s.GetIngress(constants.CustomDomainSuffix(kg.d.deployment.Name)); service.Created(customK8sIngress) {
+				customK8sIngress.Hosts = []string{*kg.d.deployment.GetMainApp().CustomDomain}
+
+				res = append(res, *customK8sIngress)
+			} else {
+				if kg.d.deployment.GetMainApp().CustomDomain != nil {
+					res = append(res, models.IngressPublic{
+						Name:         fmt.Sprintf(constants.CustomDomainSuffix(kg.d.deployment.Name)),
+						Namespace:    kg.namespace,
+						ServiceName:  kg.d.deployment.Name,
+						ServicePort:  kg.d.deployment.GetMainApp().InternalPort,
+						IngressClass: conf.Env.Deployment.IngressClass,
+						Hosts:        []string{*kg.d.deployment.GetMainApp().CustomDomain},
+						CustomCert: &models.CustomCert{
+							ClusterIssuer: "letsencrypt-prod-deploy-http",
+							CommonName:    *kg.d.deployment.GetMainApp().CustomDomain,
+						},
+					})
+				}
 			}
 		}
 		return res

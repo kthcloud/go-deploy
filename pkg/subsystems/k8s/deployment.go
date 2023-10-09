@@ -138,11 +138,11 @@ func (client *Client) UpdateDeployment(public *models.DeploymentPublic) (*models
 
 	if len(list.Items) > 0 {
 		manifest := CreateDeploymentManifest(public)
-		_, err := client.K8sClient.AppsV1().Deployments(public.Namespace).Update(context.TODO(), manifest, metav1.UpdateOptions{})
+		res, err := client.K8sClient.AppsV1().Deployments(public.Namespace).Update(context.TODO(), manifest, metav1.UpdateOptions{})
 		if err != nil {
 			return nil, makeError(err)
 		}
-		return client.ReadDeployment(public.ID)
+		return models.CreateDeploymentPublicFromRead(res), nil
 	}
 
 	log.Println("k8s deployment", public.Name, "not found when updating. assuming it was deleted")
