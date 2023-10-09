@@ -12,6 +12,10 @@ type SsResource interface {
 	IsPlaceholder() bool
 }
 
+func CopyValue(src, dst SsResource) {
+	reflect.ValueOf(dst).Elem().Set(reflect.ValueOf(src).Elem())
+}
+
 func Nil(resource SsResource) bool {
 	return !NotNil(resource)
 }

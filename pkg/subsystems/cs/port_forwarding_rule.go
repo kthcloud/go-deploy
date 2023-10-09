@@ -65,7 +65,7 @@ func (client *Client) CreatePortForwardingRule(public *models.PortForwardingRule
 		}
 	}
 
-	var res *models.PortForwardingRulePublic
+	var id string
 	for _, rule := range listRules.PortForwardingRules {
 		if rule.Virtualmachineid == public.VmID && rule.Tags != nil {
 			idx := slices.IndexFunc(rule.Tags, func(tag cloudstack.Tags) bool {
@@ -73,13 +73,13 @@ func (client *Client) CreatePortForwardingRule(public *models.PortForwardingRule
 			})
 
 			if idx != -1 {
-				res = models.CreatePortForwardingRulePublicFromGet(rule)
+				id = rule.Id
 				break
 			}
 		}
 	}
 
-	if res == nil {
+	if id == "" {
 		createRuleParams := client.CsClient.Firewall.NewCreatePortForwardingRuleParams(
 			public.IpAddressID,
 			public.PrivatePort,
@@ -93,15 +93,15 @@ func (client *Client) CreatePortForwardingRule(public *models.PortForwardingRule
 			return nil, makeError(err)
 		}
 
-		res = models.CreatePortForwardingRulePublicFromCreate(created)
+		id = created.Id
 	}
 
-	err = client.AssertPortForwardingRulesTags(res.ID, public.Tags)
+	err = client.AssertPortForwardingRulesTags(id, public.Tags)
 	if err != nil {
 		return nil, makeError(err)
 	}
 
-	return res, nil
+	return client.ReadPortForwardingRule(id)
 }
 
 func (client *Client) UpdatePortForwardingRule(public *models.PortForwardingRulePublic) (*models.PortForwardingRulePublic, error) {

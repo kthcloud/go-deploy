@@ -173,7 +173,13 @@ func csCreated(vm *vm.VM) (bool, error) {
 func csDeleted(vm *vm.VM) (bool, error) {
 	cs := &vm.Subsystems.CS
 
-	return cs.VM.ID == "" && len(cs.PortForwardingRuleMap) == 0, nil
+	for _, rule := range cs.PortForwardingRuleMap {
+		if rule.Created() {
+			return false, nil
+		}
+	}
+
+	return cs.VM.ID == "", nil
 }
 
 func gpuCleared(vm *vm.VM) (bool, error) {

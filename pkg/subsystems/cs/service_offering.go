@@ -14,7 +14,7 @@ func (client *Client) ReadServiceOffering(id string) (*models.ServiceOfferingPub
 	}
 
 	if id == "" {
-		log.Println("cs service offering id not supplied when updating. assuming it was deleted")
+		log.Println("cs service offering id not supplied when reading. assuming it was deleted")
 		return nil, nil
 	}
 
@@ -97,7 +97,7 @@ func (client *Client) DeleteServiceOffering(id string) error {
 	}
 
 	if id == "" {
-		log.Println("cs service offering id not supplied when updating. assuming it was deleted")
+		log.Println("cs service offering id not supplied when deleting. assuming it was deleted")
 		return nil
 	}
 

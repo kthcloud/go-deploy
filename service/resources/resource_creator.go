@@ -58,6 +58,7 @@ func (rc *SsCreatorType[T]) Exec() error {
 			return nil
 		}
 
+		service.CopyValue(resource, rc.public)
 		return rc.dbFunc(resource)
 	}
 

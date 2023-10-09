@@ -58,7 +58,7 @@ func (client *Client) CreateVM(public *models.VmPublic) (*models.VmPublic, error
 		return nil, makeError(err)
 	}
 
-	var res *models.VmPublic
+	var id string
 	if listVms.Count == 0 {
 		createVmParams := client.CsClient.VirtualMachine.NewDeployVirtualMachineParams(
 			public.ServiceOfferingID,
@@ -83,17 +83,17 @@ func (client *Client) CreateVM(public *models.VmPublic) (*models.VmPublic, error
 			return nil, makeError(err)
 		}
 
-		res = models.CreateVmPublicFromCreate(created)
+		id = created.Id
 	} else {
-		res = models.CreateVmPublicFromGet(listVms.VirtualMachines[0])
+		id = listVms.VirtualMachines[0].Id
 	}
 
-	err = client.AssertVirtualMachineTags(res.ID, public.Tags)
+	err = client.AssertVirtualMachineTags(id, public.Tags)
 	if err != nil {
 		return nil, makeError(err)
 	}
 
-	return public, nil
+	return client.ReadVM(id)
 }
 
 func (client *Client) UpdateVM(public *models.VmPublic) (*models.VmPublic, error) {

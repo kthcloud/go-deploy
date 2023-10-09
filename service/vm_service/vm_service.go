@@ -89,12 +89,12 @@ func GetManyAuth(allUsers bool, userID *string, auth *service.AuthInfo, paginati
 	return client.GetMany()
 }
 
-func Delete(name string) error {
+func Delete(id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete vm. details: %w", err)
 	}
 
-	vm, err := vmModel.New().GetByName(name)
+	vm, err := vmModel.New().GetByID(id)
 	if err != nil {
 		return makeError(err)
 	}

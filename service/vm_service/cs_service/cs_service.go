@@ -33,7 +33,6 @@ func CreateCS(vmID string, params *vmModel.CreateParams) error {
 
 	context.Client.WithUserSshPublicKey(params.SshPublicKey)
 	context.Client.WithAdminSshPublicKey(conf.Env.VM.AdminSshPublicKey)
-
 	context.WithCreateParams(params)
 
 	// Service offering
@@ -46,6 +45,8 @@ func CreateCS(vmID string, params *vmModel.CreateParams) error {
 		if err != nil {
 			return makeError(err)
 		}
+
+		context.VM.Subsystems.CS.ServiceOffering = soPublic
 	}
 
 	// VM
@@ -62,6 +63,8 @@ func CreateCS(vmID string, params *vmModel.CreateParams) error {
 
 			return makeError(err)
 		}
+
+		context.VM.Subsystems.CS.VM = vmPublic
 	}
 
 	// Port-forwarding rules
