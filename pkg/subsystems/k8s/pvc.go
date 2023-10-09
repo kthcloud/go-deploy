@@ -46,7 +46,9 @@ func (client *Client) CreatePVC(public *models.PvcPublic) (*models.PvcPublic, er
 		return nil, nil
 	}
 
-	list, err := client.K8sClient.CoreV1().PersistentVolumeClaims(public.Namespace).List(context.TODO(), v1.ListOptions{})
+	list, err := client.K8sClient.CoreV1().PersistentVolumeClaims(public.Namespace).List(context.TODO(), v1.ListOptions{
+		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelName, public.Name),
+	})
 	if err != nil {
 		return nil, makeError(err)
 	}

@@ -1,40 +1,25 @@
 package resources
 
 import (
-	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/service"
 	"log"
 )
 
 type SsCreatorType[T service.SsResource] struct {
-	id     *string
 	name   *string
 	public T
 
-	dbKey  string
-	dbFunc func(string, string, interface{}) error
-
+	dbFunc     func(interface{}) error
 	createFunc func(T) (T, error)
 }
 
 func SsCreator[T service.SsResource](createFunc func(T) (T, error)) *SsCreatorType[T] {
 	return &SsCreatorType[T]{
 		createFunc: createFunc,
-		dbFunc:     deploymentModel.New().UpdateSubsystemByID_test,
 	}
 }
 
-func (rc *SsCreatorType[T]) WithID(id string) *SsCreatorType[T] {
-	rc.id = &id
-	return rc
-}
-
-func (rc *SsCreatorType[T]) WithDbKey(dbKey string) *SsCreatorType[T] {
-	rc.dbKey = dbKey
-	return rc
-}
-
-func (rc *SsCreatorType[T]) WithDbFunc(dbFunc func(string, string, interface{}) error) *SsCreatorType[T] {
+func (rc *SsCreatorType[T]) WithDbFunc(dbFunc func(interface{}) error) *SsCreatorType[T] {
 	rc.dbFunc = dbFunc
 	return rc
 }
@@ -45,7 +30,7 @@ func (rc *SsCreatorType[T]) WithPublic(public T) *SsCreatorType[T] {
 }
 
 func (rc *SsCreatorType[T]) Exec() error {
-	if rc.public == nil {
+	if service.Nil(rc.public) {
 		log.Println("no public resource provided for subsystem creation. assuming it failed to create")
 		return nil
 	}
@@ -53,7 +38,8 @@ func (rc *SsCreatorType[T]) Exec() error {
 	if service.NotCreated(rc.public) {
 		var resource T
 		if rc.createFunc == nil {
-			resource = rc.public
+			log.Println("no create function provided for subsystem creation. did you forget to specify it in the constructor?")
+			return nil
 		} else {
 			var err error
 			resource, err = rc.createFunc(rc.public)
@@ -62,17 +48,17 @@ func (rc *SsCreatorType[T]) Exec() error {
 			}
 		}
 
-		if resource == nil {
+		if service.Nil(resource) {
 			log.Println("no resource returned after creation. assuming it failed to create or was skipped")
-		} else if rc.dbKey == "" {
-			log.Println("no db key provided for subsystem creation. did you forget to call WithDbKey?")
-		} else {
-			if rc.id != nil {
-				return rc.dbFunc(*rc.id, rc.dbKey, resource)
-			} else {
-				log.Println("no id or name provided for subsystem creation. did you forget to call WithID?")
-			}
+			return nil
 		}
+
+		if rc.dbFunc == nil {
+			log.Println("no db func provided for subsystem creation. did you forget to call WithDbFunc?")
+			return nil
+		}
+
+		return rc.dbFunc(resource)
 	}
 
 	return nil

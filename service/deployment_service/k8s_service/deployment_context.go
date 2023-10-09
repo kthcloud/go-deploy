@@ -6,7 +6,7 @@ import (
 	"go-deploy/models/sys/enviroment"
 	"go-deploy/pkg/subsystems/k8s"
 	"go-deploy/service/deployment_service/base"
-	"go-deploy/service/deployment_service/resources"
+	"go-deploy/service/resources"
 	"go-deploy/utils/subsystemutils"
 )
 
@@ -35,19 +35,19 @@ func NewContext(deploymentID string) (*DeploymentContext, error) {
 	return &DeploymentContext{
 		DeploymentContext: *baseContext,
 		Client:            k8sClient,
-		Generator:         resources.PublicGenerator().WithDeployment(baseContext.Deployment).K8s(k8sClient.Namespace),
+		Generator:         baseContext.Generator.K8s(k8sClient.Namespace),
 	}, nil
 }
 
 func (c *DeploymentContext) WithCreateParams(params *deploymentModels.CreateParams) *DeploymentContext {
 	c.CreateParams = params
-	c.Generator.WithCreateParams(params)
+	c.Generator.WithDeploymentCreateParams(params)
 	return c
 }
 
 func (c *DeploymentContext) WithUpdateParams(params *deploymentModels.UpdateParams) *DeploymentContext {
 	c.UpdateParams = params
-	c.Generator.WithUpdateParams(params)
+	c.Generator.WithDeploymentUpdateParams(params)
 	return c
 }
 

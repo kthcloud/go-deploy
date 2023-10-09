@@ -1,21 +1,17 @@
 package resources
 
 import (
-	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/service"
 	"log"
 )
 
 type SsRepairerType[idType any, T service.SsResource] struct {
-	id         *string
 	resourceID *idType
-
-	dbKey  string
-	dbFunc func(string, string, interface{}) error
 
 	genPublic     T
 	genPublicFunc func() T
 
+	dbFunc     func(interface{}) error
 	fetchFunc  func(idType) (T, error)
 	createFunc func(T) (T, error)
 	updateFunc func(T) (T, error)
@@ -29,7 +25,6 @@ func SsRepairer[idType any, T service.SsResource](
 	deleteFunc func(idType) error,
 ) *SsRepairerType[idType, T] {
 	return &SsRepairerType[idType, T]{
-		dbFunc:     deploymentModel.New().UpdateSubsystemByID_test,
 		fetchFunc:  fetchFunc,
 		createFunc: createFunc,
 		updateFunc: updateFunc,
@@ -37,22 +32,12 @@ func SsRepairer[idType any, T service.SsResource](
 	}
 }
 
-func (rc *SsRepairerType[idType, T]) WithID(id string) *SsRepairerType[idType, T] {
-	rc.id = &id
-	return rc
-}
-
 func (rc *SsRepairerType[idType, T]) WithResourceID(resourceID idType) *SsRepairerType[idType, T] {
 	rc.resourceID = &resourceID
 	return rc
 }
 
-func (rc *SsRepairerType[idType, T]) WithDbKey(dbKey string) *SsRepairerType[idType, T] {
-	rc.dbKey = dbKey
-	return rc
-}
-
-func (rc *SsRepairerType[idType, T]) WithDbFunc(dbFunc func(string, string, interface{}) error) *SsRepairerType[idType, T] {
+func (rc *SsRepairerType[idType, T]) WithDbFunc(dbFunc func(interface{}) error) *SsRepairerType[idType, T] {
 	rc.dbFunc = dbFunc
 	return rc
 }
@@ -108,15 +93,15 @@ func (rc *SsRepairerType[idType, T]) createResourceInstead() error {
 
 	var public T
 	if rc.genPublicFunc != nil {
-		public = rc.genPublic()
-	} else if rc.genPublic != nil {
+		public = rc.genPublicFunc()
+	} else if service.NotNil(rc.genPublic) {
 		public = rc.genPublic
 	} else {
 		log.Println("no genPublic or genPublicFunc provided for subsystem repair. did you forget to call WithGenPublic or WithGenPublicFunc?")
 		return nil
 	}
 
-	if public == nil {
+	if service.Nil(public) {
 		log.Println("no public supplied for subsystem repair. assuming it failed to create or was skipped")
 		return nil
 	}
@@ -126,20 +111,15 @@ func (rc *SsRepairerType[idType, T]) createResourceInstead() error {
 		return err
 	}
 
-	if resource == nil {
+	if service.Nil(resource) {
 		log.Println("no resource returned after creation. assuming it failed to create or was skipped")
 		return nil
 	}
 
-	if rc.dbKey == "" {
-		log.Println("no db key provided for subsystem creation. did you forget to call WithDbKey?")
+	if rc.dbFunc == nil {
+		log.Println("no db func provided for subsystem repair. did you forget to call WithDbFunc?")
 		return nil
 	}
 
-	if rc.id != nil {
-		return rc.dbFunc(*rc.id, rc.dbKey, resource)
-	}
-
-	log.Println("no id or name provided for subsystem update. did you forget to call WithID?")
-	return nil
+	return rc.dbFunc(resource)
 }

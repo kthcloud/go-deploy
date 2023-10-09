@@ -41,7 +41,7 @@ func (client *Client) CreateIngress(public *models.IngressPublic) (*models.Ingre
 	}
 
 	list, err := client.K8sClient.NetworkingV1().Ingresses(public.Namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelID, public.ID),
+		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelName, public.Name),
 	})
 	if err != nil {
 		return nil, err

@@ -13,6 +13,14 @@ type NetworkPublic struct {
 	Tags        []Tag     `bson:"tags"`
 }
 
+func (n *NetworkPublic) Created() bool {
+	return n.ID != ""
+}
+
+func (n *NetworkPublic) IsPlaceholder() bool {
+	return false
+}
+
 func CreateNetworkPublicFromGet(network *cloudstack.Network) *NetworkPublic {
 	tags := FromCsTags(network.Tags)
 
@@ -29,4 +37,26 @@ func CreateNetworkPublicFromGet(network *cloudstack.Network) *NetworkPublic {
 		Description: network.Displaytext,
 		CreatedAt:   formatCreatedAt(network.Created),
 	}
+}
+
+func CreateNetworkPublicFromCreate(network *cloudstack.CreateNetworkResponse) *NetworkPublic {
+	return CreateNetworkPublicFromGet(
+		&cloudstack.Network{
+			Id:          network.Id,
+			Name:        network.Name,
+			Displaytext: network.Displaytext,
+			Created:     network.Created,
+		},
+	)
+}
+
+func CreateNetworkPublicFromUpdate(network *cloudstack.UpdateNetworkResponse) *NetworkPublic {
+	return CreateNetworkPublicFromGet(
+		&cloudstack.Network{
+			Id:          network.Id,
+			Name:        network.Name,
+			Displaytext: network.Displaytext,
+			Created:     network.Created,
+		},
+	)
 }

@@ -41,7 +41,7 @@ func (client *Client) CreatePV(public *models.PvPublic) (*models.PvPublic, error
 	}
 
 	list, err := client.K8sClient.CoreV1().PersistentVolumes().List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelID, public.ID),
+		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelName, public.Name),
 	})
 	if err != nil {
 		return nil, makeError(err)

@@ -48,7 +48,7 @@ func (client *Client) CreateRobot(public *models.RobotPublic) (*models.RobotPubl
 		return fmt.Errorf("failed to create robot %s. details: %w", public.Name, err)
 	}
 
-	robots, err := client.HarborClient.ListRobotAccounts(context.TODO())
+	robots, err := client.HarborClient.ListProjectRobotsV1(context.TODO(), client.Project)
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -98,7 +98,7 @@ func (client *Client) UpdateRobot(public *models.RobotPublic) (*models.RobotPubl
 		return nil, nil
 	}
 
-	robots, err := client.HarborClient.ListProjectRobotsV1(context.TODO(), public.ProjectName)
+	robots, err := client.HarborClient.ListProjectRobotsV1(context.TODO(), client.Project)
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -128,7 +128,7 @@ func (client *Client) DeleteRobot(id int) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete robot %d. details: %w", id, err)
 	}
-	
+
 	if id == 0 {
 		log.Println("id not supplied when deleting robot. assuming it was deleted")
 		return nil

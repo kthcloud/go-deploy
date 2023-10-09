@@ -10,6 +10,14 @@ func (cs *CS) GetPortForwardingRuleMap() map[string]csModels.PortForwardingRuleP
 	return cs.PortForwardingRuleMap
 }
 
+func (cs *CS) GetSnapshotMap() map[string]csModels.SnapshotPublic {
+	if cs.SnapshotMap == nil {
+		cs.SnapshotMap = make(map[string]csModels.SnapshotPublic)
+	}
+
+	return cs.SnapshotMap
+}
+
 func (cs *CS) GetPortForwardingRule(name string) *csModels.PortForwardingRulePublic {
 	resource, ok := cs.GetPortForwardingRuleMap()[name]
 	if !ok {
@@ -19,8 +27,25 @@ func (cs *CS) GetPortForwardingRule(name string) *csModels.PortForwardingRulePub
 	return &resource
 }
 
+func (cs *CS) GetSnapshot(name string) *csModels.SnapshotPublic {
+	resource, ok := cs.GetSnapshotMap()[name]
+	if !ok {
+		return nil
+	}
+
+	return &resource
+}
+
+func (cs *CS) SetSnapshot(name string, resource csModels.SnapshotPublic) {
+	cs.GetSnapshotMap()[name] = resource
+}
+
 func (cs *CS) SetPortForwardingRule(name string, resource csModels.PortForwardingRulePublic) {
 	cs.GetPortForwardingRuleMap()[name] = resource
+}
+
+func (cs *CS) DeleteSnapshot(name string) {
+	delete(cs.GetSnapshotMap(), name)
 }
 
 func (cs *CS) DeletePortForwardingRule(name string) {

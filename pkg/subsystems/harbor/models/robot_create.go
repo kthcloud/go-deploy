@@ -4,7 +4,7 @@ import (
 	"github.com/mittwald/goharbor-client/v5/apiv2/model"
 )
 
-func CreateRobotCreateBody(public *RobotPublic) model.RobotCreate {
+func CreateRobotCreateBody(public *RobotPublic, projectName string) model.RobotCreate {
 	return model.RobotCreate{
 		Description: "",
 		Disable:     public.Disable,
@@ -33,7 +33,7 @@ func CreateRobotCreateBody(public *RobotPublic) model.RobotCreate {
 					},
 				},
 				Kind:      "project",
-				Namespace: public.ProjectName,
+				Namespace: projectName,
 			},
 		},
 	}

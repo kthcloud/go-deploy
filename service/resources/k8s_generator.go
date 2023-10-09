@@ -11,7 +11,7 @@ import (
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/service"
-	"go-deploy/service/deployment_service/base"
+	"go-deploy/service/deployment_service/constants"
 	"go-deploy/utils"
 	"go-deploy/utils/subsystemutils"
 	"golang.org/x/exp/slices"
@@ -26,25 +26,25 @@ type K8sGenerator struct {
 
 func (kg *K8sGenerator) MainNamespace() *models.NamespacePublic {
 	return &models.NamespacePublic{
-		Name: getNamespaceName(kg.deployment.OwnerID),
+		Name: getNamespaceName(kg.d.deployment.OwnerID),
 	}
 }
 
 func (kg *K8sGenerator) StorageManagerNamespace() *models.NamespacePublic {
 	return &models.NamespacePublic{
-		Name: getStorageManagerNamespaceName(kg.deployment.OwnerID),
+		Name: getStorageManagerNamespaceName(kg.d.deployment.OwnerID),
 	}
 }
 
 func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 	var res []models.DeploymentPublic
 
-	if kg.deployment != nil {
-		if k8sDeployment := kg.deployment.Subsystems.K8s.GetDeployment(base.AppName); service.Created(k8sDeployment) {
-			if kg.updateParams != nil {
-				if kg.updateParams.Volumes != nil {
+	if kg.d.deployment != nil {
+		if k8sDeployment := kg.d.deployment.Subsystems.K8s.GetDeployment(kg.d.deployment.Name); service.Created(k8sDeployment) {
+			if kg.d.updateParams != nil {
+				if kg.d.updateParams.Volumes != nil {
 					var volumes []models.Volume
-					for _, volume := range *kg.updateParams.Volumes {
+					for _, volume := range *kg.d.updateParams.Volumes {
 						volumes = append(volumes, models.Volume{
 							Name:      volume.Name,
 							PvcName:   nil,
@@ -55,42 +55,60 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 					k8sDeployment.Volumes = volumes
 				}
 
-				if kg.updateParams.Envs != nil {
+				if kg.d.updateParams.Envs != nil {
 					var envVars []models.EnvVar
-					for _, env := range *kg.updateParams.Envs {
+					for _, env := range *kg.d.updateParams.Envs {
+						if env.Name == "PORT" {
+							continue
+						}
+
 						envVars = append(envVars, models.EnvVar{
 							Name:  env.Name,
 							Value: env.Value,
 						})
 					}
+					envVars = append(envVars, models.EnvVar{
+						Name:  "PORT",
+						Value: fmt.Sprintf("%d", kg.d.deployment.GetMainApp().InternalPort),
+					})
+
 					k8sDeployment.EnvVars = envVars
 				}
 
-				if kg.updateParams.Image != nil {
-					k8sDeployment.Image = *kg.updateParams.Image
+				if kg.d.updateParams.Image != nil {
+					k8sDeployment.Image = *kg.d.updateParams.Image
 				}
 
-				if kg.updateParams.InitCommands != nil {
-					k8sDeployment.InitCommands = *kg.updateParams.InitCommands
+				if kg.d.updateParams.InitCommands != nil {
+					k8sDeployment.InitCommands = *kg.d.updateParams.InitCommands
 				}
 			}
 
 			res = append(res, *k8sDeployment)
 		} else {
 			var imagePullSecrets []string
-			if kg.deployment.Type == deployment.TypeCustom {
-				imagePullSecrets = []string{base.AppNameImagePullSecret}
+			if kg.d.deployment.Type == deployment.TypeCustom {
+				imagePullSecrets = []string{constants.ImagePullSecretSuffix(kg.d.deployment.Name)}
 			}
 
-			mainApp := kg.deployment.GetMainApp()
+			mainApp := kg.d.deployment.GetMainApp()
 
 			k8sEnvs := make([]models.EnvVar, len(mainApp.Envs))
 			for i, env := range mainApp.Envs {
+				if env.Name == "PORT" {
+					continue
+				}
+
 				k8sEnvs[i] = models.EnvVar{
 					Name:  env.Name,
 					Value: env.Value,
 				}
 			}
+
+			k8sEnvs = append(k8sEnvs, models.EnvVar{
+				Name:  "PORT",
+				Value: fmt.Sprintf("%d", mainApp.InternalPort),
+			})
 
 			defaultLimits := models.Limits{
 				CPU:    conf.Env.Deployment.Resources.Limits.CPU,
@@ -104,7 +122,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 
 			k8sVolumes := make([]models.Volume, len(mainApp.Volumes))
 			for i, volume := range mainApp.Volumes {
-				pvcName := fmt.Sprintf("%s-%s", base.AppName, volume.Name)
+				pvcName := fmt.Sprintf("%s-%s", kg.d.deployment.Name, volume.Name)
 				k8sVolumes[i] = models.Volume{
 					Name:      volume.Name,
 					PvcName:   &pvcName,
@@ -114,7 +132,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 			}
 
 			res = append(res, models.DeploymentPublic{
-				Name:      base.AppName,
+				Name:      kg.d.deployment.Name,
 				Namespace: kg.namespace,
 				Image:     mainApp.Image,
 				EnvVars:   k8sEnvs,
@@ -130,12 +148,12 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		return res
 	}
 
-	if kg.storageManager != nil {
+	if kg.s.storageManager != nil {
 		// filebrowser
-		if filebrowser := kg.deployment.Subsystems.K8s.GetDeployment(base.StorageManagerAppName); service.Created(filebrowser) {
+		if filebrowser := kg.s.storageManager.Subsystems.K8s.GetDeployment(constants.StorageManagerAppName); service.Created(filebrowser) {
 			res = append(res, *filebrowser)
 		} else {
-			_, volumes := getStorageManagerVolumes(kg.storageManager.OwnerID)
+			_, volumes := getStorageManagerVolumes(kg.s.storageManager.OwnerID)
 
 			k8sVolumes := make([]models.Volume, len(volumes))
 			for i, volume := range volumes {
@@ -166,7 +184,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 			}
 
 			res = append(res, models.DeploymentPublic{
-				Name:      base.StorageManagerAppName,
+				Name:      constants.StorageManagerAppName,
 				Namespace: kg.namespace,
 				Image:     "filebrowser/filebrowser",
 				Resources: models.Resources{
@@ -179,7 +197,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		}
 
 		// oauth2-proxy
-		if oauthProxy := kg.deployment.Subsystems.K8s.GetDeployment(base.StorageManagerAppNameAuth); service.Created(oauthProxy) {
+		if oauthProxy := kg.s.storageManager.Subsystems.K8s.GetDeployment(constants.StorageManagerAppNameAuth); service.Created(oauthProxy) {
 			res = append(res, *oauthProxy)
 		} else {
 			defaultLimits := models.Limits{
@@ -192,7 +210,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 				Memory: conf.Env.Deployment.Resources.Requests.Memory,
 			}
 
-			user, err := userModel.New().GetByID(kg.storageManager.OwnerID)
+			user, err := userModel.New().GetByID(kg.s.storageManager.OwnerID)
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("failed to get user by id when creating oauth proxy deployment public. details: %w", err))
 				return nil
@@ -214,7 +232,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 			}
 
 			issuer := conf.Env.Keycloak.Url + "/realms/" + conf.Env.Keycloak.Realm
-			redirectURL := fmt.Sprintf("https://%s.%s/oauth2/callback", kg.storageManager.OwnerID, kg.zone.Storage.ParentDomain)
+			redirectURL := fmt.Sprintf("https://%s.%s/oauth2/callback", kg.s.storageManager.OwnerID, kg.s.zone.Storage.ParentDomain)
 			upstream := "http://storage-manager"
 
 			args := []string{
@@ -253,7 +271,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 			}
 
 			res = append(res, models.DeploymentPublic{
-				Name:      base.StorageManagerAppNameAuth,
+				Name:      constants.StorageManagerAppNameAuth,
 				Namespace: kg.namespace,
 				Image:     "quay.io/oauth2-proxy/oauth2-proxy:latest",
 				EnvVars:   nil,
@@ -275,13 +293,13 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 
 func (kg *K8sGenerator) Services() []models.ServicePublic {
 	var res []models.ServicePublic
-	if kg.deployment != nil {
-		if k8sService := kg.deployment.Subsystems.K8s.GetService(base.AppName); service.Created(k8sService) {
+	if kg.d.deployment != nil {
+		if k8sService := kg.d.deployment.Subsystems.K8s.GetService(kg.d.deployment.Name); service.Created(k8sService) {
 			res = append(res, *k8sService)
 		} else {
-			mainApp := kg.deployment.GetMainApp()
+			mainApp := kg.d.deployment.GetMainApp()
 			res = append(res, models.ServicePublic{
-				Name:       base.AppName,
+				Name:       kg.d.deployment.Name,
 				Namespace:  kg.namespace,
 				Port:       mainApp.InternalPort,
 				TargetPort: mainApp.InternalPort,
@@ -290,13 +308,13 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 		return res
 	}
 
-	if kg.storageManager != nil {
+	if kg.s.storageManager != nil {
 		// filebrowser
-		if filebrowser := kg.deployment.Subsystems.K8s.GetService(base.StorageManagerAppName); service.Created(filebrowser) {
+		if filebrowser := kg.s.storageManager.Subsystems.K8s.GetService(constants.StorageManagerAppName); service.Created(filebrowser) {
 			res = append(res, *filebrowser)
 		} else {
 			res = append(res, models.ServicePublic{
-				Name:       base.StorageManagerAppName,
+				Name:       constants.StorageManagerAppName,
 				Namespace:  kg.namespace,
 				Port:       80,
 				TargetPort: 80,
@@ -304,11 +322,11 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 		}
 
 		// oauth2-proxy
-		if oauthProxy := kg.deployment.Subsystems.K8s.GetService(base.StorageManagerAppNameAuth); service.Created(oauthProxy) {
+		if oauthProxy := kg.s.storageManager.Subsystems.K8s.GetService(constants.StorageManagerAppNameAuth); service.Created(oauthProxy) {
 			res = append(res, *oauthProxy)
 		} else {
 			res = append(res, models.ServicePublic{
-				Name:       base.StorageManagerAppNameAuth,
+				Name:       constants.StorageManagerAppNameAuth,
 				Namespace:  kg.namespace,
 				Port:       4180,
 				TargetPort: 4180,
@@ -322,35 +340,28 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 
 func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 	var res []models.IngressPublic
-	if kg.deployment != nil {
-		if !kg.deployment.GetMainApp().Private {
+	if kg.d.deployment != nil {
+		if !kg.d.deployment.GetMainApp().Private {
 			res = append(res, models.IngressPublic{
-				Name:         kg.deployment.Name,
+				Name:         kg.d.deployment.Name,
 				Namespace:    kg.namespace,
-				ServiceName:  kg.deployment.Name,
-				ServicePort:  kg.deployment.GetMainApp().InternalPort,
+				ServiceName:  kg.d.deployment.Name,
+				ServicePort:  kg.d.deployment.GetMainApp().InternalPort,
 				IngressClass: conf.Env.Deployment.IngressClass,
-				Hosts:        []string{getExternalFQDN(kg.deployment.Name, kg.zone)},
+				Hosts:        []string{getExternalFQDN(kg.d.deployment.Name, kg.d.zone)},
 			})
 
-			var customDomain *string
-			if kg.createParams != nil && kg.createParams.CustomDomain != nil {
-				customDomain = kg.createParams.CustomDomain
-			} else {
-				customDomain = kg.deployment.GetMainApp().CustomDomain
-			}
-
-			if customDomain != nil {
+			if kg.d.deployment.GetMainApp().CustomDomain != nil {
 				res = append(res, models.IngressPublic{
-					Name:         fmt.Sprintf("%s-%s", kg.deployment.Name, base.AppNameCustomDomain),
+					Name:         fmt.Sprintf("%s-%s", kg.d.deployment.Name, constants.AppNameCustomDomain),
 					Namespace:    kg.namespace,
-					ServiceName:  kg.deployment.Name,
-					ServicePort:  kg.deployment.GetMainApp().InternalPort,
+					ServiceName:  kg.d.deployment.Name,
+					ServicePort:  kg.d.deployment.GetMainApp().InternalPort,
 					IngressClass: conf.Env.Deployment.IngressClass,
-					Hosts:        []string{*kg.createParams.CustomDomain},
+					Hosts:        []string{*kg.d.deployment.GetMainApp().CustomDomain},
 					CustomCert: &models.CustomCert{
 						ClusterIssuer: "letsencrypt-prod-deploy-http",
-						CommonName:    *kg.createParams.CustomDomain,
+						CommonName:    *kg.d.deployment.GetMainApp().CustomDomain,
 					},
 				})
 			}
@@ -358,17 +369,17 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 		return res
 	}
 
-	if kg.storageManager != nil {
-		if ingress := kg.deployment.Subsystems.K8s.GetIngress(base.StorageManagerAppName); service.Created(ingress) {
+	if kg.s.storageManager != nil {
+		if ingress := kg.s.storageManager.Subsystems.K8s.GetIngress(constants.StorageManagerAppName); service.Created(ingress) {
 			res = append(res, *ingress)
 		} else {
 			res = append(res, models.IngressPublic{
-				Name:         base.StorageManagerAppName,
+				Name:         constants.StorageManagerAppName,
 				Namespace:    kg.namespace,
-				ServiceName:  base.StorageManagerAppName,
+				ServiceName:  constants.StorageManagerAppName,
 				ServicePort:  80,
 				IngressClass: conf.Env.Deployment.IngressClass,
-				Hosts:        []string{getExternalFQDN(kg.storageManager.OwnerID, kg.zone)},
+				Hosts:        []string{getExternalFQDN(kg.s.storageManager.OwnerID, kg.s.zone)},
 			})
 		}
 
@@ -387,22 +398,22 @@ func (kg *K8sGenerator) PrivateIngress() *models.IngressPublic {
 func (kg *K8sGenerator) PVs() []models.PvPublic {
 	var res []models.PvPublic
 
-	if kg.deployment != nil {
-		volumes := kg.deployment.GetMainApp().Volumes
+	if kg.d.deployment != nil {
+		volumes := kg.d.deployment.GetMainApp().Volumes
 
-		for mapName, pv := range kg.deployment.Subsystems.K8s.PvMap {
+		for mapName, pv := range kg.d.deployment.Subsystems.K8s.PvMap {
 			if slices.IndexFunc(volumes, func(v deployment.Volume) bool { return v.Name == mapName }) != -1 {
 				res = append(res, pv)
 			}
 		}
 
-		for _, volume := range kg.deployment.GetMainApp().Volumes {
-			if _, ok := kg.deployment.Subsystems.K8s.PvMap[volume.Name]; !ok {
+		for _, volume := range kg.d.deployment.GetMainApp().Volumes {
+			if _, ok := kg.d.deployment.Subsystems.K8s.PvMap[volume.Name]; !ok {
 				res = append(res, models.PvPublic{
-					Name:      getPvName(kg.deployment, volume.Name),
+					Name:      getPvName(kg.d.deployment, volume.Name),
 					Capacity:  conf.Env.Deployment.Resources.Limits.Storage,
-					NfsServer: kg.zone.Storage.NfsServer,
-					NfsPath:   path.Join(kg.zone.Storage.NfsParentPath, kg.deployment.OwnerID, "user"),
+					NfsServer: kg.d.zone.Storage.NfsServer,
+					NfsPath:   path.Join(kg.d.zone.Storage.NfsParentPath, kg.d.deployment.OwnerID, "user"),
 				})
 			}
 		}
@@ -410,23 +421,23 @@ func (kg *K8sGenerator) PVs() []models.PvPublic {
 		return res
 	}
 
-	if kg.storageManager != nil {
-		initVolumes, volumes := getStorageManagerVolumes(kg.storageManager.OwnerID)
+	if kg.s.storageManager != nil {
+		initVolumes, volumes := getStorageManagerVolumes(kg.s.storageManager.OwnerID)
 		allVolumes := append(initVolumes, volumes...)
 
-		for mapName, pv := range kg.storageManager.Subsystems.K8s.PvMap {
+		for mapName, pv := range kg.s.storageManager.Subsystems.K8s.PvMap {
 			if slices.IndexFunc(allVolumes, func(v storageManagerModel.Volume) bool { return v.Name == mapName }) != -1 {
 				res = append(res, pv)
 			}
 		}
 
 		for _, volume := range allVolumes {
-			if _, ok := kg.storageManager.Subsystems.K8s.PvMap[volume.Name]; !ok {
+			if _, ok := kg.s.storageManager.Subsystems.K8s.PvMap[volume.Name]; !ok {
 				res = append(res, models.PvPublic{
-					Name:      getStorageManagerPvName(kg.storageManager.OwnerID, volume.Name),
+					Name:      getStorageManagerPvName(kg.s.storageManager.OwnerID, volume.Name),
 					Capacity:  conf.Env.Deployment.Resources.Limits.Storage,
-					NfsServer: kg.zone.Storage.NfsServer,
-					NfsPath:   path.Join(kg.zone.Storage.NfsParentPath, volume.ServerPath),
+					NfsServer: kg.s.zone.Storage.NfsServer,
+					NfsPath:   path.Join(kg.s.zone.Storage.NfsParentPath, volume.ServerPath),
 				})
 			}
 		}
@@ -438,22 +449,22 @@ func (kg *K8sGenerator) PVs() []models.PvPublic {
 func (kg *K8sGenerator) PVCs() []models.PvcPublic {
 	var res []models.PvcPublic
 
-	if kg.deployment != nil {
-		volumes := kg.deployment.GetMainApp().Volumes
+	if kg.d.deployment != nil {
+		volumes := kg.d.deployment.GetMainApp().Volumes
 
-		for mapName, pvc := range kg.deployment.Subsystems.K8s.PvcMap {
+		for mapName, pvc := range kg.d.deployment.Subsystems.K8s.PvcMap {
 			if slices.IndexFunc(volumes, func(v deployment.Volume) bool { return v.Name == mapName }) != -1 {
 				res = append(res, pvc)
 			}
 		}
 
-		for _, volume := range kg.deployment.GetMainApp().Volumes {
-			if _, ok := kg.deployment.Subsystems.K8s.PvcMap[volume.Name]; !ok {
+		for _, volume := range kg.d.deployment.GetMainApp().Volumes {
+			if _, ok := kg.d.deployment.Subsystems.K8s.PvcMap[volume.Name]; !ok {
 				res = append(res, models.PvcPublic{
-					Name:      getPvcName(kg.deployment, volume.Name),
+					Name:      getPvcName(kg.d.deployment, volume.Name),
 					Namespace: kg.namespace,
 					Capacity:  conf.Env.Deployment.Resources.Limits.Storage,
-					PvName:    getPvName(kg.deployment, volume.Name),
+					PvName:    getPvName(kg.d.deployment, volume.Name),
 				})
 			}
 		}
@@ -461,22 +472,22 @@ func (kg *K8sGenerator) PVCs() []models.PvcPublic {
 		return res
 	}
 
-	if kg.storageManager != nil {
-		_, volumes := getStorageManagerVolumes(kg.storageManager.OwnerID)
+	if kg.s.storageManager != nil {
+		_, volumes := getStorageManagerVolumes(kg.s.storageManager.OwnerID)
 
-		for mapName, pvc := range kg.storageManager.Subsystems.K8s.PvcMap {
+		for mapName, pvc := range kg.s.storageManager.Subsystems.K8s.PvcMap {
 			if slices.IndexFunc(volumes, func(v storageManagerModel.Volume) bool { return v.Name == mapName }) != -1 {
 				res = append(res, pvc)
 			}
 		}
 
 		for _, volume := range volumes {
-			if _, ok := kg.storageManager.Subsystems.K8s.PvcMap[volume.Name]; !ok {
+			if _, ok := kg.s.storageManager.Subsystems.K8s.PvcMap[volume.Name]; !ok {
 				res = append(res, models.PvcPublic{
 					Name:      getStorageManagerPvcName(volume.Name),
 					Namespace: kg.namespace,
 					Capacity:  conf.Env.Deployment.Resources.Limits.Storage,
-					PvName:    getStorageManagerPvName(kg.storageManager.OwnerID, volume.Name),
+					PvName:    getStorageManagerPvName(kg.s.storageManager.OwnerID, volume.Name),
 				})
 			}
 		}
@@ -490,14 +501,14 @@ func (kg *K8sGenerator) PVCs() []models.PvcPublic {
 func (kg *K8sGenerator) Secrets() []models.SecretPublic {
 	var res []models.SecretPublic
 
-	if kg.deployment != nil {
-		if !kg.deployment.Subsystems.Harbor.Robot.Created() && kg.deployment.Type == deployment.TypeCustom {
+	if kg.d.deployment != nil {
+		if kg.d.deployment.Subsystems.Harbor.Robot.Created() && kg.d.deployment.Type == deployment.TypeCustom {
 			registry := conf.Env.DockerRegistry.URL
-			username := kg.deployment.Subsystems.Harbor.Robot.HarborName
-			password := kg.deployment.Subsystems.Harbor.Robot.Secret
+			username := kg.d.deployment.Subsystems.Harbor.Robot.HarborName
+			password := kg.d.deployment.Subsystems.Harbor.Robot.Secret
 
 			res = append(res, models.SecretPublic{
-				Name:      kg.deployment.Name,
+				Name:      constants.ImagePullSecretSuffix(kg.d.deployment.Name),
 				Namespace: kg.namespace,
 				Type:      string(v1.SecretTypeDockerConfigJson),
 				Data: map[string][]byte{
@@ -515,17 +526,17 @@ func (kg *K8sGenerator) Secrets() []models.SecretPublic {
 func (kg *K8sGenerator) Jobs() []models.JobPublic {
 	var res []models.JobPublic
 
-	if kg.storageManager != nil {
-		jobs := getStorageManagerJobs(kg.storageManager.OwnerID)
+	if kg.s.storageManager != nil {
+		jobs := getStorageManagerJobs(kg.s.storageManager.OwnerID)
 
-		for mapName, job := range kg.storageManager.Subsystems.K8s.JobMap {
+		for mapName, job := range kg.s.storageManager.Subsystems.K8s.JobMap {
 			if slices.IndexFunc(jobs, func(j storageManagerModel.Job) bool { return j.Name == mapName }) != -1 {
 				res = append(res, job)
 			}
 		}
 
 		for _, job := range jobs {
-			if _, ok := kg.storageManager.Subsystems.K8s.JobMap[job.Name]; !ok {
+			if _, ok := kg.s.storageManager.Subsystems.K8s.JobMap[job.Name]; !ok {
 				res = append(res, models.JobPublic{
 					Name:      job.Name,
 					Namespace: kg.namespace,
@@ -547,7 +558,7 @@ func getNamespaceName(userID string) string {
 }
 
 func getStorageManagerNamespaceName(userID string) string {
-	return subsystemutils.GetPrefixedName(fmt.Sprintf("%s-%s", base.StorageManagerNamePrefix, userID))
+	return subsystemutils.GetPrefixedName(fmt.Sprintf("%s-%s", constants.StorageManagerNamePrefix, userID))
 }
 
 func getExternalFQDN(name string, zone *enviroment.DeploymentZone) string {
@@ -582,7 +593,7 @@ func getPvcName(deployment *deployment.Deployment, volumeName string) string {
 }
 
 func getStorageManagerPvcName(volumeName string) string {
-	return fmt.Sprintf("%s-%s", base.StorageManagerAppName, volumeName)
+	return fmt.Sprintf("%s-%s", constants.StorageManagerAppName, volumeName)
 }
 
 func getStorageManagerPvName(ownerID, volumeName string) string {
@@ -592,7 +603,7 @@ func getStorageManagerPvName(ownerID, volumeName string) string {
 func getStorageManagerVolumes(ownerID string) ([]storageManagerModel.Volume, []storageManagerModel.Volume) {
 	initVolumes := []storageManagerModel.Volume{
 		{
-			Name:       fmt.Sprintf("%s-%s", base.StorageManagerAppName, "init"),
+			Name:       fmt.Sprintf("%s-%s", constants.StorageManagerAppName, "init"),
 			Init:       false,
 			AppPath:    "/exports",
 			ServerPath: "",
@@ -601,13 +612,13 @@ func getStorageManagerVolumes(ownerID string) ([]storageManagerModel.Volume, []s
 
 	volumes := []storageManagerModel.Volume{
 		{
-			Name:       fmt.Sprintf("%s-%s", base.StorageManagerAppName, "data"),
+			Name:       fmt.Sprintf("%s-%s", constants.StorageManagerAppName, "data"),
 			Init:       false,
 			AppPath:    "/data",
 			ServerPath: path.Join(ownerID, "data"),
 		},
 		{
-			Name:       fmt.Sprintf("%s-%s", base.StorageManagerAppName, "user"),
+			Name:       fmt.Sprintf("%s-%s", constants.StorageManagerAppName, "user"),
 			Init:       false,
 			AppPath:    "/deploy",
 			ServerPath: path.Join(ownerID, "user"),

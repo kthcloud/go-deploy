@@ -6,7 +6,6 @@ import (
 	"github.com/google/uuid"
 	"go-deploy/pkg/subsystems/k8s/keys"
 	"go-deploy/pkg/subsystems/k8s/models"
-	"go-deploy/utils/subsystemutils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	"log"
@@ -76,7 +75,9 @@ func (client *Client) CreateNamespace(public *models.NamespacePublic) (*models.N
 		return fmt.Errorf("failed to create namespace %s. details: %w", public.Name, err)
 	}
 
-	list, err := client.K8sClient.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
+	list, err := client.K8sClient.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelName, public.Name),
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +92,6 @@ func (client *Client) CreateNamespace(public *models.NamespacePublic) (*models.N
 	}
 
 	public.ID = uuid.New().String()
-	public.FullName = subsystemutils.GetPrefixedName(public.Name)
 	public.CreatedAt = time.Now()
 
 	manifest := CreateNamespaceManifest(public)

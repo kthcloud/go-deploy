@@ -4,7 +4,7 @@ import (
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/harbor"
 	"go-deploy/service/deployment_service/base"
-	"go-deploy/service/deployment_service/resources"
+	"go-deploy/service/resources"
 	"go-deploy/utils/subsystemutils"
 )
 
@@ -27,9 +27,9 @@ func NewContext(deploymentID string) (*Context, error) {
 	}
 
 	return &Context{
-		BaseContext: *baseContext,
-		Client:      harborClient,
-		Generator:   resources.PublicGenerator().WithDeployment(baseContext.Deployment).Harbor(harborClient.Project),
+		DeploymentContext: *baseContext,
+		Client:            harborClient,
+		Generator:         baseContext.Generator.Harbor(harborClient.Project),
 	}, nil
 }
 

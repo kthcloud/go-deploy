@@ -41,7 +41,7 @@ func (client *Client) CreateJob(public *models.JobPublic) (*models.JobPublic, er
 	}
 
 	list, err := client.K8sClient.BatchV1().Jobs(public.Namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelID, public.ID),
+		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelName, public.Name),
 	})
 	if err != nil {
 		return nil, makeError(err)

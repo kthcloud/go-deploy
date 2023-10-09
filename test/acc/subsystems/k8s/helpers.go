@@ -47,7 +47,7 @@ func withK8sDeployment(t *testing.T, namespace *models.NamespacePublic) *models.
 
 	deploymentPublic := &models.DeploymentPublic{
 		Name:      "acc-test-" + uuid.New().String(),
-		Namespace: namespace.FullName,
+		Namespace: namespace.Name,
 		Image:     registry + "/" + image + ":latest",
 		EnvVars:   nil,
 	}
@@ -71,7 +71,7 @@ func withK8sService(t *testing.T, namespace *models.NamespacePublic) *models.Ser
 
 	servicePublic := &models.ServicePublic{
 		Name:       "acc-test-" + uuid.New().String(),
-		Namespace:  namespace.FullName,
+		Namespace:  namespace.Name,
 		Port:       11111,
 		TargetPort: 22222,
 	}
@@ -95,7 +95,7 @@ func withK8sIngress(t *testing.T, namespace *models.NamespacePublic, service *mo
 
 	ingressPublic := &models.IngressPublic{
 		Name:         "acc-test-" + uuid.New().String(),
-		Namespace:    namespace.FullName,
+		Namespace:    namespace.Name,
 		ServiceName:  service.Name,
 		ServicePort:  service.Port,
 		IngressClass: "nginx",
@@ -121,55 +121,55 @@ func withK8sIngress(t *testing.T, namespace *models.NamespacePublic, service *mo
 func cleanUpNamespace(t *testing.T, namespace *models.NamespacePublic) {
 	client := withK8sClient(t)
 
-	err := client.DeleteNamespace(namespace.FullName)
+	err := client.DeleteNamespace(namespace.Name)
 	assert.NoError(t, err, "failed to delete namespace")
 
-	deletedNamespace, err := client.ReadNamespace(namespace.FullName)
+	deletedNamespace, err := client.ReadNamespace(namespace.Name)
 	assert.NoError(t, err, "failed to read namespace")
 	assert.Nil(t, deletedNamespace, "namespace still exists")
 
-	err = client.DeleteNamespace(namespace.FullName)
+	err = client.DeleteNamespace(namespace.Name)
 	assert.NoError(t, err, "failed to delete namespace again")
 }
 
 func cleanUpDeployment(t *testing.T, namespace *models.NamespacePublic, deployment *models.DeploymentPublic) {
 	client := withK8sClient(t)
 
-	err := client.DeleteDeployment(namespace.FullName, deployment.ID)
+	err := client.DeleteDeployment(namespace.Name, deployment.ID)
 	assert.NoError(t, err, "failed to delete deployment")
 
-	deletedDeployment, err := client.ReadDeployment(namespace.FullName, deployment.ID)
+	deletedDeployment, err := client.ReadDeployment(namespace.Name, deployment.ID)
 	assert.NoError(t, err, "failed to read deployment")
 	assert.Nil(t, deletedDeployment, "deployment still exists")
 
-	err = client.DeleteDeployment(namespace.FullName, deployment.ID)
+	err = client.DeleteDeployment(namespace.Name, deployment.ID)
 	assert.NoError(t, err, "failed to delete deployment again")
 }
 
 func cleanUpService(t *testing.T, namespace *models.NamespacePublic, service *models.ServicePublic) {
 	client := withK8sClient(t)
 
-	err := client.DeleteService(namespace.FullName, service.ID)
+	err := client.DeleteService(namespace.Name, service.ID)
 	assert.NoError(t, err, "failed to delete service")
 
-	deletedService, err := client.ReadService(namespace.FullName, service.ID)
+	deletedService, err := client.ReadService(namespace.Name, service.ID)
 	assert.NoError(t, err, "failed to read service")
 	assert.Nil(t, deletedService, "service still exists")
 
-	err = client.DeleteService(namespace.FullName, service.ID)
+	err = client.DeleteService(namespace.Name, service.ID)
 	assert.NoError(t, err, "failed to delete service again")
 }
 
 func cleanUpIngress(t *testing.T, namespace *models.NamespacePublic, ingress *models.IngressPublic) {
 	client := withK8sClient(t)
 
-	err := client.DeleteIngress(namespace.FullName, ingress.ID)
+	err := client.DeleteIngress(namespace.Name, ingress.ID)
 	assert.NoError(t, err, "failed to delete ingress")
 
-	deletedIngress, err := client.ReadIngress(namespace.FullName, ingress.ID)
+	deletedIngress, err := client.ReadIngress(namespace.Name, ingress.ID)
 	assert.NoError(t, err, "failed to read ingress")
 	assert.Nil(t, deletedIngress, "ingress still exists")
 
-	err = client.DeleteIngress(namespace.FullName, ingress.ID)
+	err = client.DeleteIngress(namespace.Name, ingress.ID)
 	assert.NoError(t, err, "failed to delete ingress again")
 }

@@ -16,6 +16,14 @@ type SnapshotPublic struct {
 	Current     bool      `bson:"createdAt"`
 }
 
+func (s *SnapshotPublic) Created() bool {
+	return s.ID != ""
+}
+
+func (s *SnapshotPublic) IsPlaceholder() bool {
+	return false
+}
+
 func CreateSnapshotPublicFromGet(snapshot *cloudstack.VMSnapshot) *SnapshotPublic {
 	var parentName *string
 	if snapshot.ParentName != "" {

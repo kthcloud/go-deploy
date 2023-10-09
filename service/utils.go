@@ -12,16 +12,23 @@ type SsResource interface {
 	IsPlaceholder() bool
 }
 
+func Nil(resource SsResource) bool {
+	return !NotNil(resource)
+}
+
 func Created(resource SsResource) bool {
 	return !NotCreated(resource)
 }
 
-func NotCreated(resource SsResource) bool {
+func NotNil(resource SsResource) bool {
 	if resource == nil || (reflect.ValueOf(resource).Kind() == reflect.Ptr && reflect.ValueOf(resource).IsNil()) {
-		return true
+		return false
 	}
+	return true
+}
 
-	return !resource.Created()
+func NotCreated(resource SsResource) bool {
+	return Nil(resource) || !resource.Created()
 }
 
 func ResetTimeFields[T any](input T) T {
@@ -90,14 +97,14 @@ func UpdateIfDiff[T SsResource](dbResource T, fetchFunc func() (T, error), updat
 		return nil
 	}
 
-	if liveResource == nil {
+	if Nil(dbResource) {
 		return recreateFunc(dbResource)
 	}
 
 	dbResourceCleaned := ResetTimeFields(dbResource)
 	liveResourceCleaned := ResetTimeFields(liveResource)
 
-	if liveResource != nil {
+	if NotNil(liveResource) {
 		timeEqual := areTimeFieldsEqual(dbResource, liveResource)
 		restEqual := reflect.DeepEqual(dbResourceCleaned, liveResourceCleaned)
 
@@ -111,9 +118,9 @@ func UpdateIfDiff[T SsResource](dbResource T, fetchFunc func() (T, error), updat
 		return err
 	}
 
-	if liveResource != nil {
+	if NotNil(liveResource) {
 		liveResourceCleaned = ResetTimeFields(liveResource)
-		if liveResource != nil && areTimeFieldsEqual(dbResource, liveResource) && reflect.DeepEqual(liveResourceCleaned, dbResourceCleaned) {
+		if NotNil(liveResource) && areTimeFieldsEqual(dbResource, liveResource) && reflect.DeepEqual(liveResourceCleaned, dbResourceCleaned) {
 			return nil
 		}
 	}

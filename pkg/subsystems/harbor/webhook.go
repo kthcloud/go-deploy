@@ -50,7 +50,17 @@ func (client *Client) CreateWebhook(public *models.WebhookPublic) (*models.Webho
 		return fmt.Errorf("failed to create webhook for %s. details: %w", public.Name, err)
 	}
 
-	webhookPolicies, err := client.HarborClient.ListProjectWebhookPolicies(context.TODO(), public.ProjectID)
+	project, err := client.HarborClient.GetProject(context.TODO(), client.Project)
+	if err != nil {
+		if strings.Contains(err.Error(), "project not found on server side") {
+			log.Println("project", client.Project, "not found when deleting webhook. assuming it was deleted")
+			return nil, nil
+		}
+
+		return nil, makeError(err)
+	}
+
+	webhookPolicies, err := client.HarborClient.ListProjectWebhookPolicies(context.TODO(), int(project.ProjectID))
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -67,12 +77,12 @@ func (client *Client) CreateWebhook(public *models.WebhookPublic) (*models.Webho
 	}
 
 	requestBody := models.CreateWebhookParamsFromPublic(public)
-	err = client.HarborClient.AddProjectWebhookPolicy(context.TODO(), public.ProjectID, requestBody)
+	err = client.HarborClient.AddProjectWebhookPolicy(context.TODO(), int(project.ProjectID), requestBody)
 	if err != nil {
 		return nil, makeError(err)
 	}
 
-	webhookPolicies, err = client.HarborClient.ListProjectWebhookPolicies(context.TODO(), public.ProjectID)
+	webhookPolicies, err = client.HarborClient.ListProjectWebhookPolicies(context.TODO(), int(project.ProjectID))
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -91,7 +101,17 @@ func (client *Client) UpdateWebhook(public *models.WebhookPublic) (*models.Webho
 		return fmt.Errorf("failed to update webhook for %s. details: %w", public.Name, err)
 	}
 
-	webhookPolicies, err := client.HarborClient.ListProjectWebhookPolicies(context.TODO(), public.ProjectID)
+	project, err := client.HarborClient.GetProject(context.TODO(), client.Project)
+	if err != nil {
+		if strings.Contains(err.Error(), "project not found on server side") {
+			log.Println("project", client.Project, "not found when deleting webhook. assuming it was deleted")
+			return nil, nil
+		}
+
+		return nil, makeError(err)
+	}
+
+	webhookPolicies, err := client.HarborClient.ListProjectWebhookPolicies(context.TODO(), int(project.ProjectID))
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -109,12 +129,12 @@ func (client *Client) UpdateWebhook(public *models.WebhookPublic) (*models.Webho
 	}
 
 	params := models.CreateWebhookUpdateParamsFromPublic(public, webhookPolicy)
-	err = client.HarborClient.UpdateProjectWebhookPolicy(context.TODO(), public.ProjectID, params)
+	err = client.HarborClient.UpdateProjectWebhookPolicy(context.TODO(), int(project.ProjectID), params)
 	if err != nil {
 		return nil, makeError(err)
 	}
 
-	webhookPolicies, err = client.HarborClient.ListProjectWebhookPolicies(context.TODO(), public.ProjectID)
+	webhookPolicies, err = client.HarborClient.ListProjectWebhookPolicies(context.TODO(), int(project.ProjectID))
 	if err != nil {
 		return nil, makeError(err)
 	}

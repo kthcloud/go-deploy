@@ -20,14 +20,14 @@ func (hg *HarborGenerator) Project() *models.ProjectPublic {
 
 func (hg *HarborGenerator) Robot() *models.RobotPublic {
 	return &models.RobotPublic{
-		Name:    hg.deployment.Name,
+		Name:    hg.d.deployment.Name,
 		Disable: false,
 	}
 }
 
 func (hg *HarborGenerator) Repository() *models.RepositoryPublic {
 	return &models.RepositoryPublic{
-		Name:   hg.deployment.Name,
+		Name:   hg.d.deployment.Name,
 		Seeded: false,
 		Placeholder: &models.PlaceHolder{
 			ProjectName:    conf.Env.DockerRegistry.Placeholder.Project,
@@ -39,7 +39,7 @@ func (hg *HarborGenerator) Repository() *models.RepositoryPublic {
 func (hg *HarborGenerator) Webhook() *models.WebhookPublic {
 	webhookTarget := fmt.Sprintf("%s/v1/hooks/deployments/harbor", conf.Env.ExternalUrl)
 	return &models.WebhookPublic{
-		Name:   hg.deployment.OwnerID,
+		Name:   hg.d.deployment.OwnerID,
 		Target: webhookTarget,
 		Token:  conf.Env.Harbor.WebhookSecret,
 	}

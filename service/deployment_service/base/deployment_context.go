@@ -4,6 +4,7 @@ import (
 	deploymentModels "go-deploy/models/sys/deployment"
 	"go-deploy/models/sys/enviroment"
 	"go-deploy/pkg/conf"
+	"go-deploy/service/resources"
 )
 
 type DeploymentContext struct {
@@ -12,6 +13,7 @@ type DeploymentContext struct {
 	Zone         *enviroment.DeploymentZone
 	CreateParams *deploymentModels.CreateParams
 	UpdateParams *deploymentModels.UpdateParams
+	Generator    *resources.PublicGeneratorType
 }
 
 func NewDeploymentBaseContext(deploymentID string) (*DeploymentContext, error) {
@@ -38,6 +40,7 @@ func NewDeploymentBaseContext(deploymentID string) (*DeploymentContext, error) {
 		Deployment: deployment,
 		MainApp:    mainApp,
 		Zone:       zone,
+		Generator:  resources.PublicGenerator().WithDeploymentZone(zone).WithDeployment(deployment),
 	}, nil
 }
 

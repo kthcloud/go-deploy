@@ -10,7 +10,7 @@ import (
 
 func (client *Client) ReadServiceOffering(id string) (*models.ServiceOfferingPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to read service offering %s. details: %w", id, err)
+		return fmt.Errorf("failed to read cs service offering %s. details: %w", id, err)
 	}
 
 	if id == "" {
@@ -33,7 +33,7 @@ func (client *Client) ReadServiceOffering(id string) (*models.ServiceOfferingPub
 	return models.CreateServiceOfferingPublicFromGet(serviceOffering), nil
 }
 
-func (client *Client) CreateServiceOffering(public *models.ServiceOfferingPublic) (string, error) {
+func (client *Client) CreateServiceOffering(public *models.ServiceOfferingPublic) (*models.ServiceOfferingPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create service offering. details: %w", err)
 	}
@@ -44,11 +44,11 @@ func (client *Client) CreateServiceOffering(public *models.ServiceOfferingPublic
 
 	serviceOfferings, err := client.CsClient.ServiceOffering.ListServiceOfferings(params)
 	if err != nil {
-		return "", makeError(err)
+		return nil, makeError(err)
 	}
 
 	if len(serviceOfferings.ServiceOfferings) > 0 {
-		return serviceOfferings.ServiceOfferings[0].Id, nil
+		return models.CreateServiceOfferingPublicFromGet(serviceOfferings.ServiceOfferings[0]), nil
 	}
 
 	createParams := cloudstack.CreateServiceOfferingParams{}
@@ -63,32 +63,32 @@ func (client *Client) CreateServiceOffering(public *models.ServiceOfferingPublic
 
 	serviceOffering, err := client.CsClient.ServiceOffering.CreateServiceOffering(&createParams)
 	if err != nil {
-		return "", makeError(err)
+		return nil, makeError(err)
 	}
 
-	return serviceOffering.Id, nil
+	return models.CreateServiceOfferingPublicFromCreate(serviceOffering), nil
 }
 
-func (client *Client) UpdateServiceOffering(public *models.ServiceOfferingPublic) error {
+func (client *Client) UpdateServiceOffering(public *models.ServiceOfferingPublic) (*models.ServiceOfferingPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update service offering %s. details: %w", public.ID, err)
 	}
 
 	if public.ID == "" {
 		log.Println("cs service offering id not supplied when updating. assuming it was deleted")
-		return nil
+		return nil, nil
 	}
 
 	updateParams := client.CsClient.ServiceOffering.NewUpdateServiceOfferingParams(public.ID)
 	updateParams.SetName(public.Name)
 	updateParams.SetDisplaytext(public.Name)
 
-	_, err := client.CsClient.ServiceOffering.UpdateServiceOffering(updateParams)
+	serviceOffering, err := client.CsClient.ServiceOffering.UpdateServiceOffering(updateParams)
 	if err != nil {
-		return makeError(err)
+		return nil, makeError(err)
 	}
 
-	return nil
+	return models.CreateServiceOfferingPublicFromUpdate(serviceOffering), nil
 }
 
 func (client *Client) DeleteServiceOffering(id string) error {

@@ -102,12 +102,12 @@ func createVM(job *jobModel.Job) error {
 }
 
 func deleteVM(job *jobModel.Job) error {
-	err := assertParameters(job, []string{"name"})
+	err := assertParameters(job, []string{"id"})
 	if err != nil {
 		return makeTerminatedError(err)
 	}
 
-	name := job.Args["name"].(string)
+	name := job.Args["id"].(string)
 
 	err = vm_service.Delete(name)
 	if err != nil {
@@ -260,12 +260,12 @@ func createDeployment(job *jobModel.Job) error {
 }
 
 func deleteDeployment(job *jobModel.Job) error {
-	err := assertParameters(job, []string{"name"})
+	err := assertParameters(job, []string{"id"})
 	if err != nil {
 		return makeTerminatedError(err)
 	}
 
-	name := job.Args["name"].(string)
+	name := job.Args["id"].(string)
 
 	err = deployment_service.Delete(name)
 	if err != nil {

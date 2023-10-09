@@ -6,7 +6,7 @@ import (
 	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/service"
 	"go-deploy/service/deployment_service/base"
-	"go-deploy/service/deployment_service/resources"
+	"go-deploy/service/resources"
 	"log"
 )
 
@@ -30,9 +30,8 @@ func Create(deploymentID, userID string, params *deploymentModel.CreateParams) e
 
 	// Project
 	err = resources.SsCreator(context.Client.CreateProject).
-		WithID(context.Deployment.ID).
+		WithDbFunc(dbFunc(deploymentID, "project")).
 		WithPublic(context.Generator.Project()).
-		WithDbKey("harbor.project").
 		Exec()
 
 	if err != nil {
@@ -41,9 +40,8 @@ func Create(deploymentID, userID string, params *deploymentModel.CreateParams) e
 
 	// Robot
 	err = resources.SsCreator(context.Client.CreateRobot).
-		WithID(context.Deployment.ID).
+		WithDbFunc(dbFunc(deploymentID, "robot")).
 		WithPublic(context.Generator.Robot()).
-		WithDbKey("harbor.robot").
 		Exec()
 
 	if err != nil {
@@ -52,9 +50,8 @@ func Create(deploymentID, userID string, params *deploymentModel.CreateParams) e
 
 	// Repository
 	err = resources.SsCreator(context.Client.CreateRepository).
-		WithID(context.Deployment.ID).
+		WithDbFunc(dbFunc(deploymentID, "repository")).
 		WithPublic(context.Generator.Repository()).
-		WithDbKey("harbor.repository").
 		Exec()
 
 	if err != nil {
@@ -63,9 +60,8 @@ func Create(deploymentID, userID string, params *deploymentModel.CreateParams) e
 
 	// Webhook
 	err = resources.SsCreator(context.Client.CreateWebhook).
-		WithID(context.Deployment.ID).
+		WithDbFunc(dbFunc(deploymentID, "webhook")).
 		WithPublic(context.Generator.Webhook()).
-		WithDbKey("harbor.webhook").
 		Exec()
 
 	if err != nil {
@@ -82,16 +78,12 @@ func CreatePlaceholder(id string) error {
 		return fmt.Errorf("failed to setup placeholder harbor. details: %w", err)
 	}
 
-	context, err := NewContext(id)
+	err := resources.SsPlaceholderCreator().WithDbFunc(dbFunc(id, "placeholder")).Exec()
 	if err != nil {
-		if errors.Is(err, base.DeploymentDeletedErr) {
-			return nil
-		}
-
 		return makeError(err)
 	}
 
-	return resources.SsPlaceholderCreator().WithID(context.Deployment.ID).WithDbKey("harbor").Exec()
+	return nil
 }
 
 func Delete(id string) error {
@@ -111,10 +103,9 @@ func Delete(id string) error {
 	}
 
 	if hook := &context.Deployment.Subsystems.Harbor.Webhook; service.Created(hook) {
-		err = resources.SsDeleter(context.Client.DeleteWebhook).
-			WithID(context.Deployment.ID).
+		err = resources.SsDeleter(func(int) error { return nil }).
 			WithResourceID(hook.ID).
-			WithDbKey("harbor.webhook").
+			WithDbFunc(dbFunc(id, "webhook")).
 			Exec()
 
 		if err != nil {
@@ -124,9 +115,8 @@ func Delete(id string) error {
 
 	if repo := &context.Deployment.Subsystems.Harbor.Repository; service.Created(repo) {
 		err = resources.SsDeleter(context.Client.DeleteRepository).
-			WithID(context.Deployment.ID).
 			WithResourceID(repo.Name).
-			WithDbKey("harbor.repository").
+			WithDbFunc(dbFunc(id, "repository")).
 			Exec()
 
 		if err != nil {
@@ -136,9 +126,8 @@ func Delete(id string) error {
 
 	if robot := &context.Deployment.Subsystems.Harbor.Robot; service.Created(robot) {
 		err = resources.SsDeleter(context.Client.DeleteRobot).
-			WithID(context.Deployment.ID).
 			WithResourceID(robot.ID).
-			WithDbKey("harbor.robot").
+			WithDbFunc(dbFunc(id, "robot")).
 			Exec()
 
 		if err != nil {
@@ -148,9 +137,8 @@ func Delete(id string) error {
 
 	if project := &context.Deployment.Subsystems.Harbor.Project; service.Created(project) {
 		err = resources.SsDeleter(func(int) error { return nil }).
-			WithID(context.Deployment.ID).
 			WithResourceID(project.ID).
-			WithDbKey("harbor.project").
+			WithDbFunc(dbFunc(id, "project")).
 			Exec()
 
 		if err != nil {
@@ -181,7 +169,7 @@ func Repair(name string) error {
 			context.Client.CreateProject,
 			context.Client.UpdateProject,
 			func(int) error { return nil },
-		).WithID(context.Deployment.ID).WithResourceID(project.ID).WithDbKey("harbor.project").Exec()
+		).WithResourceID(project.ID).WithDbFunc(dbFunc(name, "project")).Exec()
 
 		if err != nil {
 			return makeError(err)
@@ -194,7 +182,7 @@ func Repair(name string) error {
 			context.Client.CreateRobot,
 			context.Client.UpdateRobot,
 			context.Client.DeleteRobot,
-		).WithID(context.Deployment.ID).WithResourceID(robot.ID).WithDbKey("harbor.robot").Exec()
+		).WithResourceID(robot.ID).WithDbFunc(dbFunc(name, "robot")).Exec()
 
 		if err != nil {
 			return makeError(err)
@@ -207,7 +195,7 @@ func Repair(name string) error {
 			context.Client.CreateRepository,
 			context.Client.UpdateRepository,
 			context.Client.DeleteRepository,
-		).WithID(context.Deployment.ID).WithResourceID(repo.Name).WithDbKey("harbor.repository").Exec()
+		).WithResourceID(repo.Name).WithDbFunc(dbFunc(name, "repository")).Exec()
 
 		if err != nil {
 			return makeError(err)
@@ -220,7 +208,7 @@ func Repair(name string) error {
 			context.Client.CreateWebhook,
 			context.Client.UpdateWebhook,
 			context.Client.DeleteWebhook,
-		).WithID(context.Deployment.ID).WithResourceID(hook.ID).WithDbKey("harbor.webhook").Exec()
+		).WithResourceID(hook.ID).WithDbFunc(dbFunc(name, "webhook")).Exec()
 
 		if err != nil {
 			return makeError(err)
@@ -228,4 +216,10 @@ func Repair(name string) error {
 	}
 
 	return nil
+}
+
+func dbFunc(id, key string) func(interface{}) error {
+	return func(data interface{}) error {
+		return deploymentModel.New().UpdateSubsystemByID_test(id, "harbor."+key, data)
+	}
 }

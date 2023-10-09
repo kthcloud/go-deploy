@@ -55,7 +55,7 @@ func vmSnapshotUpdater(ctx context.Context) {
 					continue
 				}
 
-				_ = vmModel.New().UpdateSubsystemByName(vm.Name, "cs", "snapshotMap", snapshotMap)
+				_ = vmModel.New().UpdateSubsystemByID(vm.ID, "cs.snapshotMap", snapshotMap)
 			}
 		case <-ctx.Done():
 			return

@@ -4,12 +4,14 @@ import (
 	"go-deploy/models/sys/deployment/storage_manager"
 	"go-deploy/models/sys/enviroment"
 	"go-deploy/pkg/conf"
+	"go-deploy/service/resources"
 )
 
 type StorageManagerContext struct {
 	StorageManager *storage_manager.StorageManager
 	Zone           *enviroment.DeploymentZone
 	CreateParams   *storage_manager.CreateParams
+	Generator      *resources.PublicGeneratorType
 }
 
 func NewStorageManagerBaseContext(id string) (*StorageManagerContext, error) {
@@ -30,6 +32,7 @@ func NewStorageManagerBaseContext(id string) (*StorageManagerContext, error) {
 	return &StorageManagerContext{
 		StorageManager: storageManager,
 		Zone:           zone,
+		Generator:      resources.PublicGenerator().WithStorageManager(storageManager),
 	}, nil
 }
 

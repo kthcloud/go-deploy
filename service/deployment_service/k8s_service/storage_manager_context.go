@@ -5,7 +5,7 @@ import (
 	"go-deploy/models/sys/deployment/storage_manager"
 	"go-deploy/pkg/subsystems/k8s"
 	"go-deploy/service/deployment_service/base"
-	"go-deploy/service/deployment_service/resources"
+	"go-deploy/service/resources"
 )
 
 type StorageManagerContext struct {
@@ -33,7 +33,7 @@ func NewStorageManagerContext(storageManagerID string) (*StorageManagerContext, 
 	return &StorageManagerContext{
 		StorageManagerContext: *baseContext,
 		Client:                k8sClient,
-		Generator:             resources.PublicGenerator().WithStorageManager(baseContext.StorageManager).K8s(k8sClient.Namespace),
+		Generator:             baseContext.Generator.K8s(k8sClient.Namespace),
 	}, nil
 }
 

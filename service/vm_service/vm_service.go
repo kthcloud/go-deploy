@@ -41,7 +41,7 @@ func Create(vmID, owner string, vmCreate *body.VmCreate) error {
 		return makeError(fmt.Errorf("vm already exists for another user"))
 	}
 
-	_, err = cs_service.CreateCS(params)
+	err = cs_service.CreateCS(vmID, params)
 	if err != nil {
 		return makeError(err)
 	}
@@ -108,7 +108,7 @@ func Delete(name string) error {
 		return makeError(err)
 	}
 
-	err = cs_service.DeleteCS(name)
+	err = cs_service.DeleteCS(vm.ID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -196,12 +196,12 @@ func Repair(id string) error {
 		}
 	}()
 
-	err = cs_service.RepairCS(vm.Name)
+	err = cs_service.RepairCS(id)
 	if err != nil {
 		return makeError(err)
 	}
 
-	log.Println("successfully repaired vm", vm.Name)
+	log.Println("successfully repaired vm", id)
 	return nil
 }
 

@@ -20,7 +20,7 @@ const timeFormat = "2006-01-02 15:04:05.000 -0700"
 func CreateNamespaceManifest(public *models.NamespacePublic) *apiv1.Namespace {
 	return &apiv1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: public.FullName,
+			Name: public.Name,
 			Labels: map[string]string{
 				keys.ManifestLabelID:   public.ID,
 				keys.ManifestLabelName: public.Name,

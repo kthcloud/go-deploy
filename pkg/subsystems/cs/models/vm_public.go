@@ -20,6 +20,10 @@ func (vm *VmPublic) Created() bool {
 	return vm.ID != ""
 }
 
+func (vm *VmPublic) IsPlaceholder() bool {
+	return false
+}
+
 func CreateVmPublicFromGet(vm *cloudstack.VirtualMachine) *VmPublic {
 	extraConfig := ""
 	if value, found := vm.Details["extraconfig-1"]; found {
@@ -44,4 +48,32 @@ func CreateVmPublicFromGet(vm *cloudstack.VirtualMachine) *VmPublic {
 		Tags:              tags,
 		CreatedAt:         formatCreatedAt(vm.Created),
 	}
+}
+
+func CreateVmPublicFromCreate(vm *cloudstack.DeployVirtualMachineResponse) *VmPublic {
+	return CreateVmPublicFromGet(
+		&cloudstack.VirtualMachine{
+			Id:                vm.Id,
+			Name:              vm.Name,
+			Serviceofferingid: vm.Serviceofferingid,
+			Templateid:        vm.Templateid,
+			Details:           vm.Details,
+			Tags:              vm.Tags,
+			Created:           vm.Created,
+		},
+	)
+}
+
+func CreateVmPublicFromUpdate(vm *cloudstack.UpdateVirtualMachineResponse) *VmPublic {
+	return CreateVmPublicFromGet(
+		&cloudstack.VirtualMachine{
+			Id:                vm.Id,
+			Name:              vm.Name,
+			Serviceofferingid: vm.Serviceofferingid,
+			Templateid:        vm.Templateid,
+			Details:           vm.Details,
+			Tags:              vm.Tags,
+			Created:           vm.Created,
+		},
+	)
 }
