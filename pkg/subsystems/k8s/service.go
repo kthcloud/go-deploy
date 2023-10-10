@@ -118,6 +118,5 @@ func (client *Client) DeleteService(id string) error {
 		}
 	}
 
-	log.Println("k8s service", id, "not found when deleting. assuming it was deleted")
 	return nil
 }
