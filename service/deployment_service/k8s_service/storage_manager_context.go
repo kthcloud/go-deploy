@@ -6,6 +6,7 @@ import (
 	"go-deploy/pkg/subsystems/k8s"
 	"go-deploy/service/deployment_service/base"
 	"go-deploy/service/resources"
+	"go-deploy/utils/subsystemutils"
 )
 
 type StorageManagerContext struct {
@@ -25,7 +26,7 @@ func NewStorageManagerContext(storageManagerID string) (*StorageManagerContext, 
 		return nil, makeError(err)
 	}
 
-	k8sClient, err := withClient(baseContext.Zone, getNamespaceName(baseContext.StorageManager.OwnerID))
+	k8sClient, err := withClient(baseContext.Zone, getStorageManagerNamespaceName(baseContext.StorageManager.OwnerID))
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -35,6 +36,10 @@ func NewStorageManagerContext(storageManagerID string) (*StorageManagerContext, 
 		Client:                k8sClient,
 		Generator:             baseContext.Generator.K8s(k8sClient.Namespace),
 	}, nil
+}
+
+func getStorageManagerNamespaceName(userID string) string {
+	return subsystemutils.GetPrefixedName("system-" + userID)
 }
 
 func (c *StorageManagerContext) WithCreateParams(params *storage_manager.CreateParams) *StorageManagerContext {

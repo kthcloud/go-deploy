@@ -8,12 +8,12 @@ import (
 
 func appCreatedK8s(deployment *deployment.Deployment, app *deployment.App) bool {
 	for _, volume := range app.Volumes {
-		pv, ok := deployment.Subsystems.K8s.PvMap[volume.Name]
+		pv, ok := deployment.Subsystems.K8s.GetPvMap()[deployment.Name+"-"+volume.Name]
 		if !pv.Created() || !ok {
 			return false
 		}
 
-		pvc, ok := deployment.Subsystems.K8s.PvcMap[volume.Name]
+		pvc, ok := deployment.Subsystems.K8s.GetPvcMap()[deployment.Name+"-"+volume.Name]
 		if !pvc.Created() || !ok {
 			return false
 		}

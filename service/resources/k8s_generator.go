@@ -32,7 +32,7 @@ func (kg *K8sGenerator) MainNamespace() *models.NamespacePublic {
 
 func (kg *K8sGenerator) StorageManagerNamespace() *models.NamespacePublic {
 	return &models.NamespacePublic{
-		Name: getStorageManagerNamespaceName(kg.d.deployment.OwnerID),
+		Name: getStorageManagerNamespaceName(kg.s.storageManager.OwnerID),
 	}
 }
 
@@ -41,48 +41,39 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 
 	if kg.d.deployment != nil {
 		if k8sDeployment := kg.d.deployment.Subsystems.K8s.GetDeployment(kg.d.deployment.Name); service.Created(k8sDeployment) {
-			if kg.d.updateParams != nil {
-				if kg.d.updateParams.Volumes != nil {
-					var volumes []models.Volume
-					for _, volume := range *kg.d.updateParams.Volumes {
-						volumes = append(volumes, models.Volume{
-							Name:      volume.Name,
-							PvcName:   nil,
-							MountPath: volume.AppPath,
-							Init:      volume.Init,
-						})
-					}
-					k8sDeployment.Volumes = volumes
-				}
+			mainApp := kg.d.deployment.GetMainApp()
 
-				if kg.d.updateParams.Envs != nil {
-					var envVars []models.EnvVar
-					for _, env := range *kg.d.updateParams.Envs {
-						if env.Name == "PORT" {
-							continue
-						}
-
-						envVars = append(envVars, models.EnvVar{
-							Name:  env.Name,
-							Value: env.Value,
-						})
-					}
-					envVars = append(envVars, models.EnvVar{
-						Name:  "PORT",
-						Value: fmt.Sprintf("%d", kg.d.deployment.GetMainApp().InternalPort),
-					})
-
-					k8sDeployment.EnvVars = envVars
-				}
-
-				if kg.d.updateParams.Image != nil {
-					k8sDeployment.Image = *kg.d.updateParams.Image
-				}
-
-				if kg.d.updateParams.InitCommands != nil {
-					k8sDeployment.InitCommands = *kg.d.updateParams.InitCommands
-				}
+			var volumes []models.Volume
+			for _, volume := range mainApp.Volumes {
+				pvcName := getPvcName(kg.d.deployment, volume.Name)
+				volumes = append(volumes, models.Volume{
+					Name:      volume.Name,
+					PvcName:   &pvcName,
+					MountPath: volume.AppPath,
+					Init:      volume.Init,
+				})
 			}
+
+			var envVars []models.EnvVar
+			for _, env := range mainApp.Envs {
+				if env.Name == "PORT" {
+					continue
+				}
+
+				envVars = append(envVars, models.EnvVar{
+					Name:  env.Name,
+					Value: env.Value,
+				})
+			}
+			envVars = append(envVars, models.EnvVar{
+				Name:  "PORT",
+				Value: fmt.Sprintf("%d", kg.d.deployment.GetMainApp().InternalPort),
+			})
+
+			k8sDeployment.Volumes = volumes
+			k8sDeployment.EnvVars = envVars
+			k8sDeployment.Image = mainApp.Image
+			k8sDeployment.InitCommands = mainApp.InitCommands
 
 			res = append(res, *k8sDeployment)
 		} else {
@@ -153,13 +144,14 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		if filebrowser := kg.s.storageManager.Subsystems.K8s.GetDeployment(constants.StorageManagerAppName); service.Created(filebrowser) {
 			res = append(res, *filebrowser)
 		} else {
-			_, volumes := getStorageManagerVolumes(kg.s.storageManager.OwnerID)
+			initVolumes, volumes := getStorageManagerVolumes(kg.s.storageManager.OwnerID)
+			allVolumes := append(initVolumes, volumes...)
 
-			k8sVolumes := make([]models.Volume, len(volumes))
-			for i, volume := range volumes {
-				pvcName := volume.Name
+			k8sVolumes := make([]models.Volume, len(allVolumes))
+			for i, volume := range allVolumes {
+				pvcName := getStorageManagerPvcName(volume.Name)
 				k8sVolumes[i] = models.Volume{
-					Name:      volume.Name,
+					Name:      getStorageManagerPvName(kg.s.storageManager.OwnerID, volume.Name),
 					PvcName:   &pvcName,
 					MountPath: volume.AppPath,
 					Init:      volume.Init,
@@ -486,15 +478,16 @@ func (kg *K8sGenerator) PVCs() []models.PvcPublic {
 	}
 
 	if kg.s.storageManager != nil {
-		_, volumes := getStorageManagerVolumes(kg.s.storageManager.OwnerID)
+		initVolumes, volumes := getStorageManagerVolumes(kg.s.storageManager.OwnerID)
+		allVolumes := append(initVolumes, volumes...)
 
 		for mapName, pvc := range kg.s.storageManager.Subsystems.K8s.PvcMap {
-			if slices.IndexFunc(volumes, func(v storageManagerModel.Volume) bool { return v.Name == mapName }) != -1 {
+			if slices.IndexFunc(allVolumes, func(v storageManagerModel.Volume) bool { return v.Name == mapName }) != -1 {
 				res = append(res, pvc)
 			}
 		}
 
-		for _, volume := range volumes {
+		for _, volume := range allVolumes {
 			if _, ok := kg.s.storageManager.Subsystems.K8s.PvcMap[volume.Name]; !ok {
 				res = append(res, models.PvcPublic{
 					Name:      getStorageManagerPvcName(volume.Name),
@@ -616,7 +609,7 @@ func getStorageManagerPvName(ownerID, volumeName string) string {
 func getStorageManagerVolumes(ownerID string) ([]storageManagerModel.Volume, []storageManagerModel.Volume) {
 	initVolumes := []storageManagerModel.Volume{
 		{
-			Name:       fmt.Sprintf("%s-%s", constants.StorageManagerAppName, "init"),
+			Name:       "init",
 			Init:       false,
 			AppPath:    "/exports",
 			ServerPath: "",
@@ -625,13 +618,13 @@ func getStorageManagerVolumes(ownerID string) ([]storageManagerModel.Volume, []s
 
 	volumes := []storageManagerModel.Volume{
 		{
-			Name:       fmt.Sprintf("%s-%s", constants.StorageManagerAppName, "data"),
+			Name:       "data",
 			Init:       false,
 			AppPath:    "/data",
 			ServerPath: path.Join(ownerID, "data"),
 		},
 		{
-			Name:       fmt.Sprintf("%s-%s", constants.StorageManagerAppName, "user"),
+			Name:       "user",
 			Init:       false,
 			AppPath:    "/deploy",
 			ServerPath: path.Join(ownerID, "user"),

@@ -32,7 +32,7 @@ func NewStorageManagerBaseContext(id string) (*StorageManagerContext, error) {
 	return &StorageManagerContext{
 		StorageManager: storageManager,
 		Zone:           zone,
-		Generator:      resources.PublicGenerator().WithStorageManager(storageManager),
+		Generator:      resources.PublicGenerator().WithStorageManager(storageManager).WithDeploymentZone(zone),
 	}, nil
 }
 

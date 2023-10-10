@@ -145,7 +145,7 @@ func DeleteStorageManager(c *gin.Context) {
 		return
 	}
 
-	if storageManager == nil || storageManager.OwnerID != auth.UserID {
+	if storageManager == nil {
 		context.NotFound()
 		return
 	}

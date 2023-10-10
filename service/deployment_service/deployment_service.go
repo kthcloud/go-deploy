@@ -69,7 +69,7 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 			return makeError(err)
 		}
 	} else {
-		err = harbor_service.CreatePlaceholder(params.Name)
+		err = harbor_service.CreatePlaceholder(deploymentID)
 		if err != nil {
 			return makeError(err)
 		}

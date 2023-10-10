@@ -160,7 +160,7 @@ func WithDeployment(t *testing.T, requestBody body.DeploymentCreate) (body.Deplo
 	if requestBody.CustomDomain != nil {
 		punyEncoded, err := idna.New().ToASCII("https://" + *requestBody.CustomDomain)
 		assert.NoError(t, err, "custom domain was not puny encoded")
-		assert.Equal(t, punyEncoded, *deploymentRead.URL)
+		assert.Equal(t, punyEncoded, *deploymentRead.CustomDomainURL)
 	}
 
 	return deploymentRead, deploymentCreated.JobID

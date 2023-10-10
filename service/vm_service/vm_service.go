@@ -49,78 +49,6 @@ func Create(vmID, owner string, vmCreate *body.VmCreate) error {
 	return nil
 }
 
-func GetByIdAuth(vmID string, auth *service.AuthInfo) (*vmModel.VM, error) {
-	vm, err := vmModel.New().GetByID(vmID)
-	if err != nil {
-		return nil, err
-	}
-
-	if vm == nil {
-		return nil, nil
-	}
-
-	if vm.OwnerID != auth.UserID && !auth.IsAdmin {
-		return nil, nil
-	}
-
-	return vm, nil
-}
-
-func GetByName(name string) (*vmModel.VM, error) {
-	return vmModel.New().GetByName(name)
-}
-
-func GetManyAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagination *query.Pagination) ([]vmModel.VM, error) {
-	client := vmModel.New()
-
-	if pagination != nil {
-		client.AddPagination(pagination.Page, pagination.PageSize)
-	}
-
-	if userID != nil {
-		if *userID != auth.UserID && !auth.IsAdmin {
-			return nil, nil
-		}
-		client.RestrictToUser(userID)
-	} else if !allUsers || (allUsers && !auth.IsAdmin) {
-		client.RestrictToUser(&auth.UserID)
-	}
-
-	return client.GetMany()
-}
-
-func Delete(id string) error {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete vm. details: %w", err)
-	}
-
-	vm, err := vmModel.New().GetByID(id)
-	if err != nil {
-		return makeError(err)
-	}
-
-	if vm == nil {
-		return nil
-	}
-
-	err = vmModel.New().AddActivity(vm.ID, vmModel.ActivityBeingDeleted)
-	if err != nil {
-		return makeError(err)
-	}
-
-	err = cs_service.DeleteCS(vm.ID)
-	if err != nil {
-		return makeError(err)
-	}
-
-	err = gpu.New().Detach(vm.ID, vm.OwnerID)
-	if err != nil {
-		return makeError(err)
-	}
-
-	return nil
-}
-
 func Update(vmID string, dtoVmUpdate *body.VmUpdate) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update vm. details: %w", err)
@@ -153,6 +81,38 @@ func Update(vmID string, dtoVmUpdate *body.VmUpdate) error {
 	}
 
 	err := vmModel.New().RemoveActivity(vmID, vmModel.ActivityBeingUpdated)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
+}
+
+func Delete(id string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to delete vm. details: %w", err)
+	}
+
+	vm, err := vmModel.New().GetByID(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if vm == nil {
+		return nil
+	}
+
+	err = vmModel.New().AddActivity(vm.ID, vmModel.ActivityBeingDeleted)
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = cs_service.DeleteCS(vm.ID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = gpu.New().Detach(vm.ID, vm.OwnerID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -203,6 +163,46 @@ func Repair(id string) error {
 
 	log.Println("successfully repaired vm", id)
 	return nil
+}
+
+func GetByIdAuth(vmID string, auth *service.AuthInfo) (*vmModel.VM, error) {
+	vm, err := vmModel.New().GetByID(vmID)
+	if err != nil {
+		return nil, err
+	}
+
+	if vm == nil {
+		return nil, nil
+	}
+
+	if vm.OwnerID != auth.UserID && !auth.IsAdmin {
+		return nil, nil
+	}
+
+	return vm, nil
+}
+
+func GetByName(name string) (*vmModel.VM, error) {
+	return vmModel.New().GetByName(name)
+}
+
+func GetManyAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagination *query.Pagination) ([]vmModel.VM, error) {
+	client := vmModel.New()
+
+	if pagination != nil {
+		client.AddPagination(pagination.Page, pagination.PageSize)
+	}
+
+	if userID != nil {
+		if *userID != auth.UserID && !auth.IsAdmin {
+			return nil, nil
+		}
+		client.RestrictToUser(userID)
+	} else if !allUsers || (allUsers && !auth.IsAdmin) {
+		client.RestrictToUser(&auth.UserID)
+	}
+
+	return client.GetMany()
 }
 
 func GetConnectionString(vm *vmModel.VM) (*string, error) {

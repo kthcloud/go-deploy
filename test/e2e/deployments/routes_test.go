@@ -379,7 +379,16 @@ func TestInvalidCommand(t *testing.T) {
 func TestFetchCiConfig(t *testing.T) {
 	image := "nginx"
 	deploymentCustom, _ := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName("e2e")})
-	deploymentPrebuilt, _ := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName("e2e"), Image: &image})
+	deploymentPrebuilt, _ := e2e.WithDeployment(t, body.DeploymentCreate{
+		Name:  e2e.GenName("e2e"),
+		Image: &image,
+		Envs: []body.Env{
+			{
+				Name:  "PORT",
+				Value: "80",
+			},
+		},
+	})
 
 	resp := e2e.DoGetRequest(t, "/deployments/"+deploymentCustom.ID+"/ciConfig")
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -391,9 +400,10 @@ func TestFetchCiConfig(t *testing.T) {
 
 	// not ci config for prebuilt deployments
 	resp = e2e.DoGetRequest(t, "/deployments/"+deploymentPrebuilt.ID+"/ciConfig")
-	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
 
+// TODO: Update to SSE once it works
 func TestFetchLogs(t *testing.T) {
 	deployment, _ := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName("e2e")})
 
