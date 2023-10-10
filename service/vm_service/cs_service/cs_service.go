@@ -215,6 +215,7 @@ func UpdateCS(vmID string, updateParams *vmModel.UpdateParams) error {
 				err = resources.SsCreator(context.Client.CreateServiceOffering).
 					WithDbFunc(dbFunc(vmID, "serviceOffering")).
 					WithPublic(&soPublic).
+					WithPublic(&soPublic).
 					Exec()
 
 				if err != nil {
@@ -302,7 +303,7 @@ func RepairCS(id string) error {
 			context.Client.CreateServiceOffering,
 			context.Client.UpdateServiceOffering,
 			context.Client.DeleteServiceOffering,
-		).WithResourceID(so.ID).WithDbFunc(dbFunc(id, "serviceOffering")).Exec()
+		).WithResourceID(so.ID).WithGenPublic(&so).WithDbFunc(dbFunc(id, "serviceOffering")).Exec()
 
 		if err != nil {
 			return makeError(err)
@@ -318,7 +319,7 @@ func RepairCS(id string) error {
 			context.Client.CreateVM,
 			context.Client.UpdateVM,
 			func(id string) error { return nil },
-		).WithResourceID(vm.ID).WithDbFunc(dbFunc(id, "vm")).Exec()
+		).WithResourceID(vm.ID).WithGenPublic(&vm).WithDbFunc(dbFunc(id, "vm")).Exec()
 	}
 
 	if err != nil {
