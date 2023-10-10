@@ -218,6 +218,138 @@ func Delete(id string) error {
 	return nil
 }
 
+func Repair(id string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to repair deployment %s. details: %w", id, err)
+	}
+
+	deployment, err := deploymentModel.New().GetByID(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if deployment == nil {
+		log.Println("deployment", id, "not found when repairing. assuming it was deleted")
+		return nil
+	}
+
+	if !deployment.Ready() {
+		log.Println("deployment", id, "not ready when repairing.")
+		return nil
+	}
+
+	started, reason, err := StartActivity(deployment.ID, deploymentModel.ActivityRepairing)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if !started {
+		return fmt.Errorf("failed to repair deployment. details: %s", reason)
+	}
+
+	defer func() {
+		err = deploymentModel.New().RemoveActivity(deployment.ID, deploymentModel.ActivityRepairing)
+		if err != nil {
+			utils.PrettyPrintError(fmt.Errorf("failed to remove activity %s from deployment %s. details: %w", deploymentModel.ActivityRepairing, deployment.ID, err))
+		}
+	}()
+
+	err = k8s_service.Repair(deployment.ID)
+	if err != nil {
+		if errors.Is(err, base.CustomDomainInUseErr) {
+			log.Println("custom domain in use when repairing deployment", deployment.ID, ". removing it from the deployment")
+			err = deploymentModel.New().RemoveCustomDomain(deployment.ID)
+			if err != nil {
+				return makeError(err)
+			}
+		} else {
+			return makeError(err)
+		}
+	}
+
+	if !deployment.Subsystems.Harbor.Placeholder {
+		err = harbor_service.Repair(deployment.Name)
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	log.Println("successfully repaired deployment", deployment.Name)
+	return nil
+}
+
+func Restart(name string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to restart deployment. details: %w", err)
+	}
+
+	deployment, err := deploymentModel.New().GetByName(name)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if deployment == nil {
+		log.Println("deployment", name, "not found when restarting. assuming it was deleted")
+		return nil
+	}
+
+	started, reason, err := StartActivity(deployment.ID, deploymentModel.ActivityRestarting)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if !started {
+		return fmt.Errorf("failed to restart deployment. details: %s", reason)
+	}
+
+	err = k8s_service.Restart(name)
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = deploymentModel.New().RemoveActivity(deployment.ID, deploymentModel.ActivityRestarting)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
+}
+
+func Build(id string, buildParams *body.DeploymentBuild) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to build deployment. details: %w", err)
+	}
+
+	deployment, err := deploymentModel.New().GetByID(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if deployment == nil {
+		log.Println("deployment", id, "not found when building. assuming it was deleted")
+		return nil
+	}
+
+	params := &deploymentModel.BuildParams{}
+	params.FromDTO(buildParams)
+
+	err = build(deployment, params)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
+}
+
+func DoCommand(vm *deploymentModel.Deployment, command string) {
+	go func() {
+		switch command {
+		case "restart":
+			_ = Restart(vm.Name)
+		}
+	}()
+}
+
 func GetByIdAuth(deploymentID string, auth *service.AuthInfo) (*deploymentModel.Deployment, error) {
 	deployment, err := deploymentModel.New().GetByID(deploymentID)
 	if err != nil {
@@ -333,78 +465,6 @@ func CanAddActivity(deploymentID, activity string) (bool, string) {
 	return false, fmt.Sprintf("Unknown activity %s", activity)
 }
 
-func Restart(name string) error {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to restart deployment. details: %w", err)
-	}
-
-	deployment, err := deploymentModel.New().GetByName(name)
-	if err != nil {
-		return makeError(err)
-	}
-
-	if deployment == nil {
-		log.Println("deployment", name, "not found when restarting. assuming it was deleted")
-		return nil
-	}
-
-	started, reason, err := StartActivity(deployment.ID, deploymentModel.ActivityRestarting)
-	if err != nil {
-		return makeError(err)
-	}
-
-	if !started {
-		return fmt.Errorf("failed to restart deployment. details: %s", reason)
-	}
-
-	err = k8s_service.Restart(name)
-	if err != nil {
-		return makeError(err)
-	}
-
-	err = deploymentModel.New().RemoveActivity(deployment.ID, deploymentModel.ActivityRestarting)
-	if err != nil {
-		return makeError(err)
-	}
-
-	return nil
-}
-
-func Build(id string, buildParams *body.DeploymentBuild) error {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to build deployment. details: %w", err)
-	}
-
-	deployment, err := deploymentModel.New().GetByID(id)
-	if err != nil {
-		return makeError(err)
-	}
-
-	if deployment == nil {
-		log.Println("deployment", id, "not found when building. assuming it was deleted")
-		return nil
-	}
-
-	params := &deploymentModel.BuildParams{}
-	params.FromDTO(buildParams)
-
-	err = build(deployment, params)
-	if err != nil {
-		return makeError(err)
-	}
-
-	return nil
-}
-
-func DoCommand(vm *deploymentModel.Deployment, command string) {
-	go func() {
-		switch command {
-		case "restart":
-			_ = Restart(vm.Name)
-		}
-	}()
-}
-
 func GetUsageByUserID(userID string) (*deploymentModel.Usage, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get usage. details: %w", err)
@@ -418,66 +478,6 @@ func GetUsageByUserID(userID string) (*deploymentModel.Usage, error) {
 	return &deploymentModel.Usage{
 		Count: count,
 	}, nil
-}
-
-func Repair(id string) error {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to repair deployment %s. details: %w", id, err)
-	}
-
-	deployment, err := deploymentModel.New().GetByID(id)
-	if err != nil {
-		return makeError(err)
-	}
-
-	if deployment == nil {
-		log.Println("deployment", id, "not found when repairing. assuming it was deleted")
-		return nil
-	}
-
-	if !deployment.Ready() {
-		log.Println("deployment", id, "not ready when repairing.")
-		return nil
-	}
-
-	started, reason, err := StartActivity(deployment.ID, deploymentModel.ActivityRepairing)
-	if err != nil {
-		return makeError(err)
-	}
-
-	if !started {
-		return fmt.Errorf("failed to repair deployment. details: %s", reason)
-	}
-
-	defer func() {
-		err = deploymentModel.New().RemoveActivity(deployment.ID, deploymentModel.ActivityRepairing)
-		if err != nil {
-			utils.PrettyPrintError(fmt.Errorf("failed to remove activity %s from deployment %s. details: %w", deploymentModel.ActivityRepairing, deployment.Name, err))
-		}
-	}()
-
-	err = k8s_service.Repair(deployment.Name)
-	if err != nil {
-		if errors.Is(err, base.CustomDomainInUseErr) {
-			log.Println("custom domain in use when repairing deployment", deployment.Name, ". removing it from the deployment")
-			err = deploymentModel.New().RemoveCustomDomain(deployment.ID)
-			if err != nil {
-				return makeError(err)
-			}
-		} else {
-			return makeError(err)
-		}
-	}
-
-	if !deployment.Subsystems.Harbor.Placeholder {
-		err = harbor_service.Repair(deployment.Name)
-		if err != nil {
-			return makeError(err)
-		}
-	}
-
-	log.Println("successfully repaired deployment", deployment.Name)
-	return nil
 }
 
 func ValidGitHubToken(token string) (bool, string, error) {
