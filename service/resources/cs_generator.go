@@ -9,13 +9,11 @@ import (
 	"go-deploy/service/vm_service/constants"
 	"go-deploy/utils/subsystemutils"
 	"golang.org/x/exp/slices"
-	"log"
 	"time"
 )
 
 type CsGenerator struct {
 	*PublicGeneratorType
-	freePortFunc func() (int, error)
 }
 
 func (cr *CsGenerator) SOs() []models.ServiceOfferingPublic {
@@ -98,18 +96,12 @@ func (cr *CsGenerator) PFRs() []models.PortForwardingRulePublic {
 
 		for _, port := range ports {
 			if _, ok := cr.v.vm.Subsystems.CS.PortForwardingRuleMap[port.Name]; !ok {
-				freePort, err := cr.freePortFunc()
-				if err != nil {
-					log.Println("failed to get free port when generating prf publics for vm", cr.v.vm.ID, ". details: ", err)
-					continue
-				}
-
 				res = append(res, models.PortForwardingRulePublic{
 					Name:        port.Name,
 					VmID:        cr.v.vm.Subsystems.CS.VM.ID,
 					NetworkID:   cr.v.vmZone.NetworkID,
 					IpAddressID: cr.v.vmZone.IpAddressID,
-					PublicPort:  freePort,
+					PublicPort:  0, // this is set externally
 					PrivatePort: port.Port,
 					Protocol:    port.Protocol,
 					Tags:        createTags(port.Name, cr.v.vm.Name),

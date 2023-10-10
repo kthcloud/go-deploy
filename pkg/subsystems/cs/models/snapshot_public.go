@@ -31,12 +31,13 @@ func CreateSnapshotPublicFromGet(snapshot *cloudstack.VMSnapshot) *SnapshotPubli
 	}
 
 	return &SnapshotPublic{
-		ID:         snapshot.Id,
-		VmID:       snapshot.Virtualmachineid,
-		Name:       snapshot.Displayname,
-		ParentName: parentName,
-		CreatedAt:  formatCreatedAt(snapshot.Created),
-		State:      snapshot.State,
-		Current:    snapshot.Current,
+		ID:          snapshot.Id,
+		VmID:        snapshot.Virtualmachineid,
+		Name:        snapshot.Displayname,
+		Description: snapshot.Description,
+		ParentName:  parentName,
+		CreatedAt:   formatCreatedAt(snapshot.Created),
+		State:       snapshot.State,
+		Current:     snapshot.Current,
 	}
 }

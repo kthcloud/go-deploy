@@ -69,6 +69,17 @@ func CreateCS(vmID string, params *vmModel.CreateParams) error {
 
 	// Port-forwarding rules
 	for _, pfrPublic := range context.Generator.PFRs() {
+		if pfrPublic.PublicPort == 0 {
+			pfrPublic.PublicPort, err = context.Client.GetFreePort(
+				context.Zone.PortRange.Start,
+				context.Zone.PortRange.End,
+			)
+
+			if err != nil {
+				return makeError(err)
+			}
+		}
+
 		err = resources.SsCreator(context.Client.CreatePortForwardingRule).
 			WithDbFunc(dbFunc(vmID, "portForwardingRuleMap."+pfrPublic.Name)).
 			WithPublic(&pfrPublic).
@@ -153,14 +164,27 @@ func UpdateCS(vmID string, updateParams *vmModel.UpdateParams) error {
 			}
 		}
 
-		for _, pfrPublic := range context.Generator.PFRs() {
-			err = resources.SsCreator(context.Client.CreatePortForwardingRule).
-				WithDbFunc(dbFunc(vmID, "portForwardingRuleMap."+pfrPublic.Name)).
-				WithPublic(&pfrPublic).
-				Exec()
+		for _, pfrPublic := range pfrs {
+			if _, ok := context.VM.Subsystems.CS.PortForwardingRuleMap[pfrPublic.Name]; !ok {
+				if pfrPublic.PublicPort == 0 {
+					pfrPublic.PublicPort, err = context.Client.GetFreePort(
+						context.Zone.PortRange.Start,
+						context.Zone.PortRange.End,
+					)
 
-			if err != nil {
-				return makeError(err)
+					if err != nil {
+						return makeError(err)
+					}
+				}
+
+				err = resources.SsCreator(context.Client.CreatePortForwardingRule).
+					WithDbFunc(dbFunc(vmID, "portForwardingRuleMap."+pfrPublic.Name)).
+					WithPublic(&pfrPublic).
+					Exec()
+
+				if err != nil {
+					return makeError(err)
+				}
 			}
 		}
 	}

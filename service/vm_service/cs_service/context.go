@@ -29,9 +29,7 @@ func NewContext(vmID string) (*Context, error) {
 	return &Context{
 		VmContext: *baseContext,
 		Client:    *csClient,
-		Generator: *baseContext.Generator.CS(func() (int, error) {
-			return csClient.GetFreePort(baseContext.Zone.PortRange.Start, baseContext.Zone.PortRange.End)
-		}),
+		Generator: *baseContext.Generator.CS(),
 	}, nil
 }
 
@@ -49,9 +47,7 @@ func NewContextWithoutVM(zoneName string) (*Context, error) {
 	return &Context{
 		VmContext: *baseContext,
 		Client:    *csClient,
-		Generator: *baseContext.Generator.CS(func() (int, error) {
-			return csClient.GetFreePort(baseContext.Zone.PortRange.Start, baseContext.Zone.PortRange.End)
-		}),
+		Generator: *baseContext.Generator.CS(),
 	}, nil
 
 }

@@ -219,7 +219,6 @@ func (client *Client) DoVmCommand(id string, requiredHost *string, command comma
 	switch command {
 	case commands.Start:
 		if csVM.State != "Running" && csVM.State != "Starting" && csVM.State != "Stopping" && csVM.State != "Migrating" {
-
 			params := client.CsClient.VirtualMachine.NewStartVirtualMachineParams(id)
 			if requiredHost != nil {
 				host, _, err := client.CsClient.Host.GetHostByName(*requiredHost)
@@ -244,7 +243,13 @@ func (client *Client) DoVmCommand(id string, requiredHost *string, command comma
 			}
 		}
 	case commands.Reboot:
-		if csVM.State != "Stopping" && csVM.State != "Starting" && csVM.State != "Migrating" {
+		if csVM.State == "Stopped" {
+			params := client.CsClient.VirtualMachine.NewStartVirtualMachineParams(id)
+			_, err = client.CsClient.VirtualMachine.StartVirtualMachine(params)
+			if err != nil {
+				return makeError(err)
+			}
+		} else if csVM.State != "Stopping" && csVM.State != "Starting" && csVM.State != "Migrating" {
 			params := client.CsClient.VirtualMachine.NewRebootVirtualMachineParams(id)
 			_, err = client.CsClient.VirtualMachine.RebootVirtualMachine(params)
 			if err != nil {

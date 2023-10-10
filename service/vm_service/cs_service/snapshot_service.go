@@ -100,12 +100,12 @@ func ApplySnapshotCS(vmID, snapshotID string) error {
 	}
 
 	snapshot := context.VM.Subsystems.CS.GetSnapshot(snapshotID)
-	if service.Created(snapshot) {
-		return fmt.Errorf("snapshot %s not found", snapshotID)
+	if service.NotCreated(snapshot) {
+		return makeError(fmt.Errorf("snapshot %s not found", snapshotID))
 	}
 
 	if snapshot.State != "Ready" {
-		return fmt.Errorf("snapshot %s is not ready", snapshotID)
+		return makeError(fmt.Errorf("snapshot %s is not ready", snapshotID))
 	}
 
 	var gpuID *string

@@ -69,12 +69,12 @@ func Update(vmID string, dtoVmUpdate *body.VmUpdate) error {
 			addDeploySshToPortMap(vmUpdate.Ports)
 		}
 
-		err := cs_service.UpdateCS(vmID, vmUpdate)
+		err := vmModel.New().UpdateWithParamsByID(vmID, vmUpdate)
 		if err != nil {
 			return makeError(err)
 		}
 
-		err = vmModel.New().UpdateWithParamsByID(vmID, vmUpdate)
+		err = cs_service.UpdateCS(vmID, vmUpdate)
 		if err != nil {
 			return makeError(err)
 		}

@@ -102,9 +102,8 @@ func (pc *PublicGeneratorType) Harbor(project string) *HarborGenerator {
 	}
 }
 
-func (pc *PublicGeneratorType) CS(freePortFunc func() (int, error)) *CsGenerator {
+func (pc *PublicGeneratorType) CS() *CsGenerator {
 	return &CsGenerator{
 		PublicGeneratorType: pc,
-		freePortFunc:        freePortFunc,
 	}
 }
