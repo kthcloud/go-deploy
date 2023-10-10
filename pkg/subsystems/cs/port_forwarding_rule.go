@@ -142,7 +142,7 @@ func (client *Client) DeletePortForwardingRule(id string) error {
 	}
 
 	if id == "" {
-		log.Println("cs port forwarding rule", id, "not supplied when deleting. assuming it was deleted")
+		log.Println("cs port forwarding rule not supplied when deleting. assuming it was deleted")
 		return nil
 	}
 
