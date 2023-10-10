@@ -40,15 +40,13 @@ func (client *Client) CreatePV(public *models.PvPublic) (*models.PvPublic, error
 		return fmt.Errorf("failed to create k8s pv %s. details: %w", public.Name, err)
 	}
 
-	list, err := client.K8sClient.CoreV1().PersistentVolumes().List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelName, public.Name),
-	})
-	if err != nil {
+	pv, err := client.K8sClient.CoreV1().PersistentVolumes().Get(context.TODO(), public.Name, metav1.GetOptions{})
+	if err != nil && !IsNotFoundErr(err) {
 		return nil, makeError(err)
 	}
 
-	if len(list.Items) > 0 {
-		return models.CreatePvPublicFromRead(&list.Items[0]), nil
+	if pv != nil {
+		return models.CreatePvPublicFromRead(pv), nil
 	}
 
 	public.ID = uuid.New().String()

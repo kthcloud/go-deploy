@@ -273,7 +273,6 @@ func TestUpdate(t *testing.T) {
 	assert.NoError(t, err, "vm was not updated")
 
 	// make sure the job is picked up
-	time.Sleep(5)
 
 	e2e.WaitForJobFinished(t, vmUpdated.JobID, nil)
 	e2e.WaitForVmRunning(t, vm.ID, nil)

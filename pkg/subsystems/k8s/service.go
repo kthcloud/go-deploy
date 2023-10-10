@@ -40,15 +40,13 @@ func (client *Client) CreateService(public *models.ServicePublic) (*models.Servi
 		return fmt.Errorf("failed to create k8s service %s. details: %w", public.Name, err)
 	}
 
-	list, err := client.K8sClient.CoreV1().Services(public.Namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelName, public.Name),
-	})
-	if err != nil {
-		return nil, err
+	service, err := client.K8sClient.CoreV1().Services(public.Namespace).Get(context.TODO(), public.Name, metav1.GetOptions{})
+	if err != nil && !IsNotFoundErr(err) {
+		return nil, makeError(err)
 	}
 
-	if len(list.Items) > 0 {
-		return models.CreateServicePublicFromRead(&list.Items[0]), nil
+	if service != nil {
+		return models.CreateServicePublicFromRead(service), nil
 	}
 
 	public.ID = uuid.New().String()
@@ -73,20 +71,12 @@ func (client *Client) UpdateService(public *models.ServicePublic) (*models.Servi
 		return nil, nil
 	}
 
-	list, err := client.K8sClient.CoreV1().Services(public.Namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelID, public.ID),
-	})
+	res, err := client.K8sClient.CoreV1().Services(public.Namespace).Update(context.TODO(), CreateServiceManifest(public), metav1.UpdateOptions{})
 	if err != nil {
 		return nil, makeError(err)
 	}
 
-	if len(list.Items) > 0 {
-		manifest := CreateServiceManifest(public)
-		res, err := client.K8sClient.CoreV1().Services(public.Namespace).Update(context.TODO(), manifest, metav1.UpdateOptions{})
-		if err != nil {
-			return nil, makeError(err)
-		}
-
+	if res != nil {
 		return models.CreateServicePublicFromRead(res), nil
 	}
 

@@ -32,7 +32,7 @@ func CreatePvcPublicFromRead(pvc *v1.PersistentVolumeClaim) *PvcPublic {
 
 	return &PvcPublic{
 		ID:        pvc.Labels[keys.ManifestLabelID],
-		Name:      pvc.Labels[keys.ManifestLabelName],
+		Name:      pvc.Name,
 		Namespace: pvc.Namespace,
 		Capacity:  capacity,
 		PvName:    pvc.Spec.VolumeName,

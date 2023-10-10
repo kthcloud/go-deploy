@@ -46,20 +46,13 @@ func (client *Client) CreatePVC(public *models.PvcPublic) (*models.PvcPublic, er
 		return nil, nil
 	}
 
-	list, err := client.K8sClient.CoreV1().PersistentVolumeClaims(public.Namespace).List(context.TODO(), v1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelName, public.Name),
-	})
-	if err != nil {
+	pvc, err := client.K8sClient.CoreV1().PersistentVolumeClaims(public.Namespace).Get(context.TODO(), public.Name, v1.GetOptions{})
+	if err != nil && !IsNotFoundErr(err) {
 		return nil, makeError(err)
 	}
 
-	for _, item := range list.Items {
-		if FindLabel(item.ObjectMeta.Labels, keys.ManifestLabelName, public.Name) {
-			idLabel := GetLabel(item.ObjectMeta.Labels, keys.ManifestLabelID)
-			if idLabel != "" {
-				return models.CreatePvcPublicFromRead(&item), nil
-			}
-		}
+	if pvc != nil {
+		return models.CreatePvcPublicFromRead(pvc), nil
 	}
 
 	public.ID = uuid.New().String()

@@ -40,15 +40,13 @@ func (client *Client) CreateSecret(public *models.SecretPublic) (*models.SecretP
 		return fmt.Errorf("failed to create k8s secret %s. details: %w", public.Name, err)
 	}
 
-	list, err := client.K8sClient.CoreV1().Secrets(public.Namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelName, public.Name),
-	})
-	if err != nil {
+	secret, err := client.K8sClient.CoreV1().Secrets(public.Namespace).Get(context.TODO(), public.Name, metav1.GetOptions{})
+	if err != nil && !IsNotFoundErr(err) {
 		return nil, makeError(err)
 	}
 
-	if len(list.Items) > 0 {
-		return models.CreateSecretPublicFromRead(&list.Items[0]), nil
+	if secret != nil {
+		return models.CreateSecretPublicFromRead(secret), nil
 	}
 
 	public.ID = uuid.New().String()
@@ -73,19 +71,12 @@ func (client *Client) UpdateSecret(public *models.SecretPublic) (*models.SecretP
 		return nil, nil
 	}
 
-	list, err := client.K8sClient.CoreV1().Secrets(public.Namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelID, public.ID),
-	})
-	if err != nil {
+	res, err := client.K8sClient.CoreV1().Secrets(public.Namespace).Update(context.TODO(), CreateSecretManifest(public), metav1.UpdateOptions{})
+	if err != nil && !IsNotFoundErr(err) {
 		return nil, makeError(err)
 	}
 
-	if len(list.Items) > 0 {
-		manifest := CreateSecretManifest(public)
-		res, err := client.K8sClient.CoreV1().Secrets(public.Namespace).Update(context.TODO(), manifest, metav1.UpdateOptions{})
-		if err != nil {
-			return nil, makeError(err)
-		}
+	if res != nil {
 		return models.CreateSecretPublicFromRead(res), nil
 	}
 

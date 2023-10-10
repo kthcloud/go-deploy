@@ -75,20 +75,13 @@ func (client *Client) CreateNamespace(public *models.NamespacePublic) (*models.N
 		return fmt.Errorf("failed to create namespace %s. details: %w", public.Name, err)
 	}
 
-	list, err := client.K8sClient.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelName, public.Name),
-	})
-	if err != nil {
-		return nil, err
+	ns, err := client.K8sClient.CoreV1().Namespaces().Get(context.TODO(), public.Name, metav1.GetOptions{})
+	if err == nil && !IsNotFoundErr(err) {
+		return models.CreateNamespacePublicFromRead(ns), nil
 	}
 
-	for _, item := range list.Items {
-		if FindLabel(item.ObjectMeta.Labels, keys.ManifestLabelName, public.Name) {
-			idLabel := GetLabel(item.ObjectMeta.Labels, keys.ManifestLabelID)
-			if idLabel != "" {
-				return models.CreateNamespacePublicFromRead(&item), nil
-			}
-		}
+	if ns != nil {
+		return models.CreateNamespacePublicFromRead(ns), nil
 	}
 
 	public.ID = uuid.New().String()
@@ -113,7 +106,9 @@ func (client *Client) UpdateNamespace(public *models.NamespacePublic) (*models.N
 		return nil, nil
 	}
 
-	list, err := client.K8sClient.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
+	list, err := client.K8sClient.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelID, public.ID),
+	})
 	if err != nil {
 		return nil, err
 	}
