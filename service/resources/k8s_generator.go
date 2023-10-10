@@ -25,15 +25,31 @@ type K8sGenerator struct {
 }
 
 func (kg *K8sGenerator) MainNamespace() *models.NamespacePublic {
-	return &models.NamespacePublic{
-		Name: getNamespaceName(kg.d.deployment.OwnerID),
+	if kg.d.deployment != nil {
+		if ns := &kg.d.deployment.Subsystems.K8s.Namespace; service.Created(ns) {
+			return ns
+		} else {
+			return &models.NamespacePublic{
+				Name: kg.namespace,
+			}
+		}
 	}
+
+	return nil
 }
 
 func (kg *K8sGenerator) StorageManagerNamespace() *models.NamespacePublic {
-	return &models.NamespacePublic{
-		Name: getStorageManagerNamespaceName(kg.s.storageManager.OwnerID),
+	if kg.s.storageManager != nil {
+		if ns := &kg.s.storageManager.Subsystems.K8s.Namespace; service.Created(ns) {
+			return ns
+		} else {
+			return &models.NamespacePublic{
+				Name: kg.namespace,
+			}
+		}
 	}
+
+	return nil
 }
 
 func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
