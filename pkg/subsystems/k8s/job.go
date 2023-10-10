@@ -45,7 +45,7 @@ func (client *Client) CreateJob(public *models.JobPublic) (*models.JobPublic, er
 		return nil, makeError(err)
 	}
 
-	if job != nil {
+	if err == nil {
 		return models.CreateJobPublicFromRead(job), nil
 	}
 
@@ -84,6 +84,6 @@ func (client *Client) DeleteJob(id string) error {
 			return makeError(err)
 		}
 	}
-	
+
 	return nil
 }

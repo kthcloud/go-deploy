@@ -45,7 +45,7 @@ func (client *Client) CreateSecret(public *models.SecretPublic) (*models.SecretP
 		return nil, makeError(err)
 	}
 
-	if secret != nil {
+	if err == nil {
 		return models.CreateSecretPublicFromRead(secret), nil
 	}
 
@@ -76,7 +76,7 @@ func (client *Client) UpdateSecret(public *models.SecretPublic) (*models.SecretP
 		return nil, makeError(err)
 	}
 
-	if res != nil {
+	if err == nil {
 		return models.CreateSecretPublicFromRead(res), nil
 	}
 

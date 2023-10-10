@@ -45,7 +45,7 @@ func (client *Client) CreateService(public *models.ServicePublic) (*models.Servi
 		return nil, makeError(err)
 	}
 
-	if service != nil {
+	if err == nil {
 		return models.CreateServicePublicFromRead(service), nil
 	}
 
@@ -72,11 +72,11 @@ func (client *Client) UpdateService(public *models.ServicePublic) (*models.Servi
 	}
 
 	res, err := client.K8sClient.CoreV1().Services(public.Namespace).Update(context.TODO(), CreateServiceManifest(public), metav1.UpdateOptions{})
-	if err != nil {
+	if err != nil && !IsNotFoundErr(err) {
 		return nil, makeError(err)
 	}
 
-	if res != nil {
+	if err == nil {
 		return models.CreateServicePublicFromRead(res), nil
 	}
 

@@ -51,7 +51,7 @@ func (client *Client) CreatePVC(public *models.PvcPublic) (*models.PvcPublic, er
 		return nil, makeError(err)
 	}
 
-	if pvc != nil {
+	if err == nil {
 		return models.CreatePvcPublicFromRead(pvc), nil
 	}
 

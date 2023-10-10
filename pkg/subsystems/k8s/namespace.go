@@ -80,7 +80,7 @@ func (client *Client) CreateNamespace(public *models.NamespacePublic) (*models.N
 		return models.CreateNamespacePublicFromRead(ns), nil
 	}
 
-	if ns != nil {
+	if err == nil {
 		return models.CreateNamespacePublicFromRead(ns), nil
 	}
 
@@ -111,7 +111,7 @@ func (client *Client) UpdateNamespace(public *models.NamespacePublic) (*models.N
 		return nil, makeError(err)
 	}
 
-	if ns != nil {
+	if err == nil {
 		return models.CreateNamespacePublicFromRead(ns), nil
 	}
 

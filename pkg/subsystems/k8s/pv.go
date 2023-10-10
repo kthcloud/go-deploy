@@ -45,7 +45,7 @@ func (client *Client) CreatePV(public *models.PvPublic) (*models.PvPublic, error
 		return nil, makeError(err)
 	}
 
-	if pv != nil {
+	if err == nil {
 		return models.CreatePvPublicFromRead(pv), nil
 	}
 

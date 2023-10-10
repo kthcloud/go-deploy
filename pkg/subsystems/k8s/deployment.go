@@ -96,15 +96,13 @@ func (client *Client) CreateDeployment(public *models.DeploymentPublic) (*models
 		return nil, nil
 	}
 
-	list, err := client.K8sClient.AppsV1().Deployments(public.Namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelName, public.Name),
-	})
-	if err != nil {
-		return nil, err
+	deployment, err := client.K8sClient.AppsV1().Deployments(public.Namespace).Get(context.TODO(), public.Name, metav1.GetOptions{})
+	if err != nil && !IsNotFoundErr(err) {
+		return nil, makeError(err)
 	}
 
-	if len(list.Items) > 0 {
-		return models.CreateDeploymentPublicFromRead(&list.Items[0]), nil
+	if err == nil {
+		return models.CreateDeploymentPublicFromRead(deployment), nil
 	}
 
 	public.ID = uuid.New().String()
@@ -134,7 +132,7 @@ func (client *Client) UpdateDeployment(public *models.DeploymentPublic) (*models
 		return nil, makeError(err)
 	}
 
-	if res != nil {
+	if err == nil {
 		return models.CreateDeploymentPublicFromRead(res), nil
 	}
 

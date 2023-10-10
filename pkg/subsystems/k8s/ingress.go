@@ -45,7 +45,7 @@ func (client *Client) CreateIngress(public *models.IngressPublic) (*models.Ingre
 		return nil, makeError(err)
 	}
 
-	if ingress != nil {
+	if err == nil {
 		return models.CreateIngressPublicFromRead(ingress), nil
 	}
 
@@ -72,11 +72,11 @@ func (client *Client) UpdateIngress(public *models.IngressPublic) (*models.Ingre
 	}
 
 	ingress, err := client.K8sClient.NetworkingV1().Ingresses(public.Namespace).Update(context.TODO(), CreateIngressManifest(public), metav1.UpdateOptions{})
-	if err != nil {
+	if err != nil && !IsNotFoundErr(err) {
 		return nil, makeError(err)
 	}
 
-	if ingress != nil {
+	if err == nil {
 		return models.CreateIngressPublicFromRead(ingress), nil
 	}
 
