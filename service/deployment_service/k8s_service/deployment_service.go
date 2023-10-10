@@ -310,8 +310,8 @@ func Repair(id string) error {
 		return makeError(err)
 	}
 
+	deployments := context.Generator.Deployments()
 	for mapName, k8sDeployment := range context.Deployment.Subsystems.K8s.DeploymentMap {
-		deployments := context.Generator.Deployments()
 		idx := slices.IndexFunc(deployments, func(d k8sModels.DeploymentPublic) bool { return d.Name == mapName })
 		if idx == -1 {
 			err = resources.SsDeleter(context.Client.DeleteDeployment).
@@ -322,24 +322,23 @@ func Repair(id string) error {
 			if err != nil {
 				return makeError(err)
 			}
-
-			continue
 		}
-
+	}
+	for _, public := range deployments {
 		err = resources.SsRepairer(
 			context.Client.ReadDeployment,
 			context.Client.CreateDeployment,
 			context.Client.UpdateDeployment,
 			context.Client.DeleteDeployment,
-		).WithResourceID(deployments[idx].ID).WithDbFunc(dbFunc(id, "deploymentMap."+deployments[idx].Name)).WithGenPublic(&deployments[idx]).Exec()
+		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "deploymentMap."+public.Name)).WithGenPublic(&public).Exec()
 
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
+	services := context.Generator.Services()
 	for mapName, k8sService := range context.Deployment.Subsystems.K8s.ServiceMap {
-		services := context.Generator.Services()
 		idx := slices.IndexFunc(services, func(s k8sModels.ServicePublic) bool { return s.Name == mapName })
 		if idx == -1 {
 			err = resources.SsDeleter(context.Client.DeleteService).
@@ -350,20 +349,23 @@ func Repair(id string) error {
 			if err != nil {
 				return makeError(err)
 			}
-
-			continue
 		}
-
+	}
+	for _, public := range services {
 		err = resources.SsRepairer(
 			context.Client.ReadService,
 			context.Client.CreateService,
 			context.Client.UpdateService,
 			context.Client.DeleteService,
-		).WithResourceID(services[idx].ID).WithDbFunc(dbFunc(id, "serviceMap."+services[idx].Name)).WithGenPublic(&services[idx]).Exec()
+		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "serviceMap."+public.Name)).WithGenPublic(&public).Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
+	ingresses := context.Generator.Ingresses()
 	for mapName, ingress := range context.Deployment.Subsystems.K8s.IngressMap {
-		ingresses := context.Generator.Ingresses()
 		idx := slices.IndexFunc(ingresses, func(i k8sModels.IngressPublic) bool { return i.Name == mapName })
 		if idx == -1 {
 			err = resources.SsDeleter(context.Client.DeleteIngress).
@@ -374,16 +376,15 @@ func Repair(id string) error {
 			if err != nil {
 				return makeError(err)
 			}
-
-			continue
 		}
-
+	}
+	for _, public := range ingresses {
 		err = resources.SsRepairer(
 			context.Client.ReadIngress,
 			context.Client.CreateIngress,
 			context.Client.UpdateIngress,
 			context.Client.DeleteIngress,
-		).WithResourceID(ingresses[idx].ID).WithDbFunc(dbFunc(id, "ingressMap."+ingresses[idx].Name)).WithGenPublic(&ingresses[idx]).Exec()
+		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "ingressMap."+public.Name)).WithGenPublic(&public).Exec()
 	}
 
 	for mapName := range context.Deployment.Subsystems.K8s.SecretMap {
@@ -398,16 +399,19 @@ func Repair(id string) error {
 			if err != nil {
 				return makeError(err)
 			}
-
-			continue
 		}
-
+	}
+	for _, public := range context.Generator.Secrets() {
 		err = resources.SsRepairer(
 			context.Client.ReadSecret,
 			context.Client.CreateSecret,
 			context.Client.UpdateSecret,
 			context.Client.DeleteSecret,
-		).WithResourceID(secrets[idx].ID).WithDbFunc(dbFunc(id, "secretMap."+secrets[idx].Name)).WithGenPublic(&secrets[idx]).Exec()
+		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "secretMap."+public.Name)).WithGenPublic(&public).Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	return nil
