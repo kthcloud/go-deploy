@@ -98,7 +98,7 @@ func (client *Client) DeleteService(id string) error {
 		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelID, id),
 	})
 	if err != nil {
-		return err
+		return makeError(err)
 	}
 
 	for _, item := range list.Items {

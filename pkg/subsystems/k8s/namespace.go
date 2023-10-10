@@ -106,26 +106,13 @@ func (client *Client) UpdateNamespace(public *models.NamespacePublic) (*models.N
 		return nil, nil
 	}
 
-	list, err := client.K8sClient.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelID, public.ID),
-	})
-	if err != nil {
-		return nil, err
+	ns, err := client.K8sClient.CoreV1().Namespaces().Update(context.TODO(), CreateNamespaceManifest(public), metav1.UpdateOptions{})
+	if err != nil && !IsNotFoundErr(err) {
+		return nil, makeError(err)
 	}
 
-	for _, item := range list.Items {
-		if FindLabel(item.ObjectMeta.Labels, keys.ManifestLabelName, public.Name) {
-			idLabel := GetLabel(item.ObjectMeta.Labels, keys.ManifestLabelID)
-			if idLabel != "" {
-				manifest := CreateNamespaceManifest(public)
-				_, err = client.K8sClient.CoreV1().Namespaces().Update(context.TODO(), manifest, metav1.UpdateOptions{})
-				if err != nil {
-					return nil, makeError(err)
-				}
-
-				return models.CreateNamespacePublicFromRead(&item), nil
-			}
-		}
+	if ns != nil {
+		return models.CreateNamespacePublicFromRead(ns), nil
 	}
 
 	log.Println("namespace", public.Name, "not found when updating. assuming it was deleted")
@@ -137,22 +124,14 @@ func (client *Client) DeleteNamespace(name string) error {
 		return fmt.Errorf("failed to delete namespace %s. details: %w", name, err)
 	}
 
-	list, err := client.K8sClient.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{
-		TypeMeta:      metav1.TypeMeta{},
-		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelName, name),
-		FieldSelector: "",
-	})
-	if err != nil {
-		return err
+	if name == "" {
+		log.Println("no name supplied when deleting namespace. assuming it was deleted")
+		return nil
 	}
 
-	for _, item := range list.Items {
-		err = client.K8sClient.CoreV1().Namespaces().Delete(context.TODO(), item.Name, metav1.DeleteOptions{
-			TypeMeta: metav1.TypeMeta{},
-		})
-		if err != nil {
-			return makeError(err)
-		}
+	err := client.K8sClient.CoreV1().Namespaces().Delete(context.TODO(), name, metav1.DeleteOptions{})
+	if err != nil && !IsNotFoundErr(err) {
+		return makeError(err)
 	}
 
 	return nil

@@ -84,8 +84,8 @@ func (client *Client) DeletePVC(id string) error {
 		return makeError(err)
 	}
 
-	for _, item := range list.Items {
-		err = client.K8sClient.CoreV1().PersistentVolumeClaims(client.Namespace).Delete(context.TODO(), item.Name, v1.DeleteOptions{})
+	for _, pvc := range list.Items {
+		err = client.K8sClient.CoreV1().PersistentVolumeClaims(client.Namespace).Delete(context.TODO(), pvc.Name, v1.DeleteOptions{})
 		if err != nil {
 			return makeError(err)
 		}

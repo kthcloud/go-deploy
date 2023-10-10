@@ -101,8 +101,8 @@ func (client *Client) DeleteSecret(id string) error {
 		return makeError(err)
 	}
 
-	for _, item := range list.Items {
-		err = client.K8sClient.CoreV1().Secrets(client.Namespace).Delete(context.TODO(), item.Name, metav1.DeleteOptions{})
+	for _, secret := range list.Items {
+		err = client.K8sClient.CoreV1().Secrets(client.Namespace).Delete(context.TODO(), secret.Name, metav1.DeleteOptions{})
 		if err != nil {
 			return makeError(err)
 		}

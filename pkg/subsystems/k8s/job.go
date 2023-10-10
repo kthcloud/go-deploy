@@ -40,15 +40,13 @@ func (client *Client) CreateJob(public *models.JobPublic) (*models.JobPublic, er
 		return fmt.Errorf("failed to create k8s job %s. details: %w", public.Name, err)
 	}
 
-	list, err := client.K8sClient.BatchV1().Jobs(public.Namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelName, public.Name),
-	})
-	if err != nil {
+	job, err := client.K8sClient.BatchV1().Jobs(public.Namespace).Get(context.TODO(), public.Name, metav1.GetOptions{})
+	if err != nil && !IsNotFoundErr(err) {
 		return nil, makeError(err)
 	}
 
-	if len(list.Items) > 0 {
-		return models.CreateJobPublicFromRead(&list.Items[0]), nil
+	if job != nil {
+		return models.CreateJobPublicFromRead(job), nil
 	}
 
 	public.ID = uuid.New().String()
@@ -80,12 +78,12 @@ func (client *Client) DeleteJob(id string) error {
 		return makeError(err)
 	}
 
-	for _, item := range list.Items {
-		err = client.K8sClient.BatchV1().Jobs(client.Namespace).Delete(context.TODO(), item.Name, metav1.DeleteOptions{})
-		if err != nil {
+	for _, job := range list.Items {
+		err := client.K8sClient.BatchV1().Jobs(client.Namespace).Delete(context.TODO(), job.Name, metav1.DeleteOptions{})
+		if err != nil && !IsNotFoundErr(err) {
 			return makeError(err)
 		}
 	}
-
+	
 	return nil
 }

@@ -40,15 +40,13 @@ func (client *Client) CreateIngress(public *models.IngressPublic) (*models.Ingre
 		return fmt.Errorf("failed to create k8s ingress %s. details: %w", public.Name, err)
 	}
 
-	list, err := client.K8sClient.NetworkingV1().Ingresses(public.Namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelName, public.Name),
-	})
-	if err != nil {
-		return nil, err
+	ingress, err := client.K8sClient.NetworkingV1().Ingresses(public.Namespace).Get(context.TODO(), public.Name, metav1.GetOptions{})
+	if err != nil && !IsNotFoundErr(err) {
+		return nil, makeError(err)
 	}
 
-	if len(list.Items) > 0 {
-		return models.CreateIngressPublicFromRead(&list.Items[0]), nil
+	if ingress != nil {
+		return models.CreateIngressPublicFromRead(ingress), nil
 	}
 
 	public.ID = uuid.New().String()
@@ -73,20 +71,13 @@ func (client *Client) UpdateIngress(public *models.IngressPublic) (*models.Ingre
 		return nil, nil
 	}
 
-	list, err := client.K8sClient.NetworkingV1().Ingresses(public.Namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelID, public.ID),
-	})
+	ingress, err := client.K8sClient.NetworkingV1().Ingresses(public.Namespace).Update(context.TODO(), CreateIngressManifest(public), metav1.UpdateOptions{})
 	if err != nil {
 		return nil, makeError(err)
 	}
 
-	if len(list.Items) > 0 {
-		manifest := CreateIngressManifest(public)
-		res, err := client.K8sClient.NetworkingV1().Ingresses(public.Namespace).Update(context.TODO(), manifest, metav1.UpdateOptions{})
-		if err != nil {
-			return nil, makeError(err)
-		}
-		return models.CreateIngressPublicFromRead(res), nil
+	if ingress != nil {
+		return models.CreateIngressPublicFromRead(ingress), nil
 	}
 
 	log.Println("k8s ingress", public.Name, "not found when updating. assuming it was deleted")
@@ -103,20 +94,17 @@ func (client *Client) DeleteIngress(id string) error {
 		return nil
 	}
 
-	list, err := client.K8sClient.NetworkingV1().Ingresses(client.Namespace).List(context.TODO(), metav1.ListOptions{})
+	list, err := client.K8sClient.NetworkingV1().Ingresses(client.Namespace).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelID, id),
+	})
 	if err != nil {
 		return makeError(err)
 	}
 
-	for _, item := range list.Items {
-		idLabel := GetLabel(item.ObjectMeta.Labels, keys.ManifestLabelID)
-		if idLabel == id {
-			err = client.K8sClient.NetworkingV1().Ingresses(client.Namespace).Delete(context.TODO(), item.Name, metav1.DeleteOptions{})
-			if err != nil {
-				return makeError(err)
-			}
-
-			return nil
+	for _, ingress := range list.Items {
+		err = client.K8sClient.NetworkingV1().Ingresses(client.Namespace).Delete(context.TODO(), ingress.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return makeError(err)
 		}
 	}
 

@@ -129,19 +129,12 @@ func (client *Client) UpdateDeployment(public *models.DeploymentPublic) (*models
 		return nil, nil
 	}
 
-	list, err := client.K8sClient.AppsV1().Deployments(public.Namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelID, public.ID),
-	})
-	if err != nil {
-		return nil, err
+	res, err := client.K8sClient.AppsV1().Deployments(public.Namespace).Update(context.TODO(), CreateDeploymentManifest(public), metav1.UpdateOptions{})
+	if err != nil && !IsNotFoundErr(err) {
+		return nil, makeError(err)
 	}
 
-	if len(list.Items) > 0 {
-		manifest := CreateDeploymentManifest(public)
-		res, err := client.K8sClient.AppsV1().Deployments(public.Namespace).Update(context.TODO(), manifest, metav1.UpdateOptions{})
-		if err != nil {
-			return nil, makeError(err)
-		}
+	if res != nil {
 		return models.CreateDeploymentPublicFromRead(res), nil
 	}
 
@@ -163,12 +156,12 @@ func (client *Client) DeleteDeployment(id string) error {
 		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelID, id),
 	})
 	if err != nil {
-		return err
+		return makeError(err)
 	}
 
 	for _, item := range list.Items {
 		err = client.K8sClient.AppsV1().Deployments(client.Namespace).Delete(context.TODO(), item.Name, metav1.DeleteOptions{})
-		if err != nil {
+		if err != nil && !IsNotFoundErr(err) {
 			return makeError(err)
 		}
 	}
