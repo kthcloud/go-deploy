@@ -1,16 +1,38 @@
 package validators
 
 import (
+	"encoding/json"
 	"github.com/go-playground/validator/v10"
 	"go-deploy/models/dto/body"
 	"go-deploy/pkg/conf"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/idna"
-	"net"
+	"io"
+	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
 )
+
+type googleDnsResponse struct {
+	Status   int  `json:"Status,omitempty"`
+	Tc       bool `json:"TC,omitempty"`
+	Rd       bool `json:"RD,omitempty"`
+	Ra       bool `json:"RA,omitempty"`
+	Ad       bool `json:"AD,omitempty"`
+	Cd       bool `json:"CD,omitempty"`
+	Question []struct {
+		Name string `json:"name,omitempty"`
+		Type int    `json:"type,omitempty"`
+	} `json:"Question,omitempty"`
+	Answer []struct {
+		Name string `json:"name,omitempty"`
+		Type int    `json:"type,omitempty"`
+		TTL  int    `json:"TTL,omitempty"`
+		Data string `json:"data,omitempty"`
+	} `json:"Answer,omitempty"`
+	Comment string `json:"Comment,omitempty"`
+}
 
 func Rfc1035(fl validator.FieldLevel) bool {
 	name, ok := fl.Field().Interface().(string)
@@ -158,17 +180,45 @@ func domainPointsToDeploy(domainName string) bool {
 	for _, zone := range conf.Env.Deployment.Zones {
 		mustPointAt := zone.CustomDomainIP
 
-		ips, _ := net.LookupIP(domainName)
-		for _, ip := range ips {
-			if ipv4 := ip.To4(); ipv4 != nil {
-				if ipv4.String() == mustPointAt {
-					return true
-				}
-			}
+		pointsTo := lookUpIP(domainName)
+		if pointsTo == nil {
+			return false
 		}
 
+		if *pointsTo == mustPointAt {
+			return true
+		}
 	}
 	return false
+}
+
+func lookUpIP(domainName string) *string {
+	requestURL := "https://dns.google.com/resolve?name=" + domainName + "&type=A"
+	resp, err := http.Get(requestURL)
+	if err != nil {
+		return nil
+	}
+
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(resp.Body)
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil
+	}
+
+	var response googleDnsResponse
+	err = json.Unmarshal(respBody, &response)
+	if err != nil {
+		return nil
+	}
+
+	if len(response.Answer) == 0 {
+		return nil
+	}
+
+	return &response.Answer[len(response.Answer)-1].Data
 }
 
 func goodURL(url string) bool {
