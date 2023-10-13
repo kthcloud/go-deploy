@@ -7,9 +7,11 @@ import (
 )
 
 type Client struct {
-	url          string
-	username     string
-	password     string
+	url      string
+	username string
+	password string
+
+	Project      string
 	HarborClient *apiv2.RESTClient
 }
 
@@ -17,6 +19,7 @@ type ClientConf struct {
 	URL      string
 	Username string
 	Password string
+	Project  string
 }
 
 func New(config *ClientConf) (*Client, error) {
@@ -33,6 +36,7 @@ func New(config *ClientConf) (*Client, error) {
 		url:          config.URL,
 		username:     config.Username,
 		password:     config.Password,
+		Project:      config.Project,
 		HarborClient: harborClient,
 	}
 

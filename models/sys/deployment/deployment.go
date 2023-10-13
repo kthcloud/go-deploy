@@ -48,7 +48,7 @@ func (deployment *Deployment) GetURL() *string {
 		return nil
 	}
 
-	ingress := deployment.Subsystems.K8s.GetIngress(app.Name)
+	ingress := deployment.Subsystems.K8s.GetIngress(deployment.Name)
 	if ingress == nil || !ingress.Created() {
 		return nil
 	}

@@ -8,12 +8,12 @@ import (
 
 func appCreatedK8s(deployment *deployment.Deployment, app *deployment.App) bool {
 	for _, volume := range app.Volumes {
-		pv, ok := deployment.Subsystems.K8s.PvMap[volume.Name]
+		pv, ok := deployment.Subsystems.K8s.GetPvMap()[deployment.Name+"-"+volume.Name]
 		if !pv.Created() || !ok {
 			return false
 		}
 
-		pvc, ok := deployment.Subsystems.K8s.PvcMap[volume.Name]
+		pvc, ok := deployment.Subsystems.K8s.GetPvcMap()[deployment.Name+"-"+volume.Name]
 		if !pvc.Created() || !ok {
 			return false
 		}
@@ -21,21 +21,21 @@ func appCreatedK8s(deployment *deployment.Deployment, app *deployment.App) bool 
 
 	deploymentCreated := false
 	for mapName, k8sDeployment := range deployment.Subsystems.K8s.DeploymentMap {
-		if k8sDeployment.Created() && mapName == app.Name {
+		if k8sDeployment.Created() && mapName == deployment.Name {
 			deploymentCreated = true
 		}
 	}
 
 	serviceCreated := false
 	for mapName, service := range deployment.Subsystems.K8s.ServiceMap {
-		if service.Created() && mapName == app.Name {
+		if service.Created() && mapName == deployment.Name {
 			serviceCreated = true
 		}
 	}
 
 	ingressCreated := false
 	for mapName, ingress := range deployment.Subsystems.K8s.IngressMap {
-		if ingress.Created() && mapName == app.Name {
+		if ingress.Created() && mapName == deployment.Name {
 			ingressCreated = true
 		}
 	}
@@ -58,21 +58,21 @@ func appDeletedK8s(deployment *deployment.Deployment, app *deployment.App) bool 
 
 	deploymentDeleted := true
 	for mapName, k8sDeployment := range deployment.Subsystems.K8s.DeploymentMap {
-		if k8sDeployment.Created() && mapName == app.Name {
+		if k8sDeployment.Created() && mapName == deployment.Name {
 			deploymentDeleted = false
 		}
 	}
 
 	serviceDeleted := true
 	for mapName, service := range deployment.Subsystems.K8s.ServiceMap {
-		if service.Created() && mapName == app.Name {
+		if service.Created() && mapName == deployment.Name {
 			serviceDeleted = false
 		}
 	}
 
 	ingressDeleted := true
 	for mapName, ingress := range deployment.Subsystems.K8s.IngressMap {
-		if ingress.Created() && mapName == app.Name {
+		if ingress.Created() && mapName == deployment.Name {
 			ingressDeleted = false
 		}
 	}
@@ -173,7 +173,13 @@ func csCreated(vm *vm.VM) (bool, error) {
 func csDeleted(vm *vm.VM) (bool, error) {
 	cs := &vm.Subsystems.CS
 
-	return cs.VM.ID == "" && len(cs.PortForwardingRuleMap) == 0, nil
+	for _, rule := range cs.PortForwardingRuleMap {
+		if rule.Created() {
+			return false, nil
+		}
+	}
+
+	return cs.VM.ID == "", nil
 }
 
 func gpuCleared(vm *vm.VM) (bool, error) {

@@ -6,15 +6,6 @@ import (
 	"go-deploy/pkg/imp/cloudstack"
 )
 
-type Client struct {
-	CsClient          *cloudstack.CloudStackClient
-	RootIpAddressID   string
-	RootNetworkID     string
-	NetworkOfferingID string
-	ProjectID         string
-	ZoneID            string
-}
-
 type ClientConf struct {
 	URL    string
 	ApiKey string
@@ -24,6 +15,18 @@ type ClientConf struct {
 	NetworkID   string
 	ProjectID   string
 	ZoneID      string
+}
+
+type Client struct {
+	CsClient          *cloudstack.CloudStackClient
+	RootIpAddressID   string
+	RootNetworkID     string
+	NetworkOfferingID string
+	ProjectID         string
+	ZoneID            string
+
+	userSshPublicKey  *string
+	adminSshPublicKey *string
 }
 
 func New(config *ClientConf) (*Client, error) {
@@ -47,4 +50,14 @@ func New(config *ClientConf) (*Client, error) {
 	}
 
 	return &client, nil
+}
+
+func (client *Client) WithUserSshPublicKey(key string) *Client {
+	client.userSshPublicKey = &key
+	return client
+}
+
+func (client *Client) WithAdminSshPublicKey(key string) *Client {
+	client.adminSshPublicKey = &key
+	return client
 }

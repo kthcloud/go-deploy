@@ -6,7 +6,6 @@ import (
 	"github.com/google/uuid"
 	"go-deploy/pkg/subsystems/k8s/keys"
 	"go-deploy/pkg/subsystems/k8s/models"
-	"go-deploy/utils/subsystemutils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	"log"
@@ -47,34 +46,6 @@ func (client *Client) waitNamespaceDeleted(ctx context.Context, resourceName str
 	}
 }
 
-func (client *Client) NamespaceCreated(name string) (bool, error) {
-	_ = func(err error) error {
-		return fmt.Errorf("failed to check if namespace %s is created. details: %w", name, err)
-	}
-
-	if name == "" {
-		return false, nil
-	}
-
-	list, err := client.K8sClient.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		return false, err
-	}
-
-	for _, item := range list.Items {
-		if item.Name == name {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
-func (client *Client) NamespaceDeleted(name string) (bool, error) {
-	created, err := client.NamespaceCreated(name)
-	return !created, err
-}
-
 func (client *Client) ReadNamespace(id string) (*models.NamespacePublic, error) {
 	_ = func(err error) error {
 		return fmt.Errorf("failed to read namespace %s. details: %w", id, err)
@@ -99,74 +70,53 @@ func (client *Client) ReadNamespace(id string) (*models.NamespacePublic, error) 
 	return nil, nil
 }
 
-func (client *Client) CreateNamespace(public *models.NamespacePublic) (string, error) {
+func (client *Client) CreateNamespace(public *models.NamespacePublic) (*models.NamespacePublic, error) {
 	_ = func(err error) error {
 		return fmt.Errorf("failed to create namespace %s. details: %w", public.Name, err)
 	}
 
-	if public.Name == "" {
-		return "", nil
+	ns, err := client.K8sClient.CoreV1().Namespaces().Get(context.TODO(), public.Name, metav1.GetOptions{})
+	if err == nil && !IsNotFoundErr(err) {
+		return models.CreateNamespacePublicFromRead(ns), nil
 	}
 
-	// find if namespace already exists by name label
-	list, err := client.K8sClient.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		return "", err
-	}
-
-	for _, item := range list.Items {
-		if FindLabel(item.ObjectMeta.Labels, keys.ManifestLabelName, public.Name) {
-			idLabel := GetLabel(item.ObjectMeta.Labels, keys.ManifestLabelID)
-			if idLabel != "" {
-				return idLabel, nil
-			}
-		}
+	if err == nil {
+		return models.CreateNamespacePublicFromRead(ns), nil
 	}
 
 	public.ID = uuid.New().String()
-	public.FullName = subsystemutils.GetPrefixedName(public.Name)
 	public.CreatedAt = time.Now()
 
 	manifest := CreateNamespaceManifest(public)
-	_, err = client.K8sClient.CoreV1().Namespaces().Create(context.TODO(), manifest, metav1.CreateOptions{})
+	res, err := client.K8sClient.CoreV1().Namespaces().Create(context.TODO(), manifest, metav1.CreateOptions{})
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return public.ID, nil
+	return models.CreateNamespacePublicFromRead(res), nil
 }
 
-func (client *Client) UpdateNamespace(public *models.NamespacePublic) error {
-	_ = func(err error) error {
+func (client *Client) UpdateNamespace(public *models.NamespacePublic) (*models.NamespacePublic, error) {
+	makeError := func(err error) error {
 		return fmt.Errorf("failed to update namespace %s. details: %w", public.Name, err)
 	}
 
 	if public.ID == "" {
 		log.Println("no id in namespace when updating. assuming it was deleted")
-		return nil
+		return nil, nil
 	}
 
-	list, err := client.K8sClient.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		return err
+	ns, err := client.K8sClient.CoreV1().Namespaces().Update(context.TODO(), CreateNamespaceManifest(public), metav1.UpdateOptions{})
+	if err != nil && !IsNotFoundErr(err) {
+		return nil, makeError(err)
 	}
 
-	for _, item := range list.Items {
-		if FindLabel(item.ObjectMeta.Labels, keys.ManifestLabelName, public.Name) {
-			idLabel := GetLabel(item.ObjectMeta.Labels, keys.ManifestLabelID)
-			if idLabel != "" {
-				manifest := CreateNamespaceManifest(public)
-				_, err = client.K8sClient.CoreV1().Namespaces().Update(context.TODO(), manifest, metav1.UpdateOptions{})
-				if err != nil {
-					return err
-				}
-
-				return nil
-			}
-		}
+	if err == nil {
+		return models.CreateNamespacePublicFromRead(ns), nil
 	}
 
-	return nil
+	log.Println("namespace", public.Name, "not found when updating. assuming it was deleted")
+	return nil, nil
 }
 
 func (client *Client) DeleteNamespace(name string) error {
@@ -174,22 +124,13 @@ func (client *Client) DeleteNamespace(name string) error {
 		return fmt.Errorf("failed to delete namespace %s. details: %w", name, err)
 	}
 
-	namespaceDeleted, err := client.NamespaceDeleted(name)
-	if err != nil {
-		return makeError(err)
-	}
-
-	if namespaceDeleted {
+	if name == "" {
+		log.Println("no name supplied when deleting namespace. assuming it was deleted")
 		return nil
 	}
 
-	err = client.K8sClient.CoreV1().Namespaces().Delete(context.TODO(), name, metav1.DeleteOptions{})
-	if err != nil {
-		return makeError(err)
-	}
-
-	err = client.waitNamespaceDeleted(context.TODO(), name)
-	if err != nil {
+	err := client.K8sClient.CoreV1().Namespaces().Delete(context.TODO(), name, metav1.DeleteOptions{})
+	if err != nil && !IsNotFoundErr(err) {
 		return makeError(err)
 	}
 

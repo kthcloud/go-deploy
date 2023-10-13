@@ -277,7 +277,7 @@ func Delete(c *gin.Context) {
 
 	jobID := uuid.New().String()
 	err = job_service.Create(jobID, auth.UserID, jobModel.TypeDeleteVM, map[string]interface{}{
-		"name": current.Name,
+		"id": current.ID,
 	})
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to create job: %s", err))

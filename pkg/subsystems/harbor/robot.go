@@ -12,22 +12,14 @@ import (
 	"unicode"
 )
 
-func (client *Client) RobotCreated(public *models.RobotPublic) (bool, error) {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if robot %s is created. details: %w", public.Name, err)
-	}
-
-	robot, err := client.HarborClient.GetRobotAccountByID(context.TODO(), int64(public.ID))
-	if err != nil {
-		return false, makeError(err)
-	}
-
-	return robot != nil && robot.ID != 0, nil
-}
-
 func (client *Client) ReadRobot(id int) (*models.RobotPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to read robot %d. details: %w", id, err)
+	}
+
+	if id == 0 {
+		log.Println("id not supplied when reading robot. assuming it was deleted")
+		return nil, nil
 	}
 
 	robot, err := client.HarborClient.GetRobotAccountByID(context.TODO(), int64(id))
@@ -51,23 +43,19 @@ func (client *Client) ReadRobot(id int) (*models.RobotPublic, error) {
 	return public, nil
 }
 
-func (client *Client) CreateRobot(public *models.RobotPublic) (int, error) {
+func (client *Client) CreateRobot(public *models.RobotPublic) (*models.RobotPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create robot %s. details: %w", public.Name, err)
 	}
 
-	if public.ProjectID == 0 {
-		return 0, nil
-	}
-
-	robots, err := client.HarborClient.ListProjectRobotsV1(context.TODO(), public.ProjectName)
+	robots, err := client.HarborClient.ListProjectRobotsV1(context.TODO(), client.Project)
 	if err != nil {
-		return 0, makeError(err)
+		return nil, makeError(err)
 	}
 
 	var robot *harborModelsV2.Robot
 	for _, r := range robots {
-		if r.Name == getRobotFullName(public.ProjectName, public.Name) {
+		if r.Name == getRobotFullName(client.Project, public.Name) {
 			robot = r
 			break
 		}
@@ -77,14 +65,14 @@ func (client *Client) CreateRobot(public *models.RobotPublic) (int, error) {
 	if robot == nil {
 		created, err := client.createHarborRobot(public)
 		if err != nil {
-			return 0, makeError(err)
+			return nil, makeError(err)
 		}
 
 		appliedSecret = created.Secret
 
 		robot, err = client.HarborClient.GetRobotAccountByID(context.TODO(), created.ID)
 		if err != nil {
-			return 0, makeError(err)
+			return nil, makeError(err)
 		}
 	}
 
@@ -94,24 +82,25 @@ func (client *Client) CreateRobot(public *models.RobotPublic) (int, error) {
 
 	err = client.assertCorrectRobotSecret(robot, appliedSecret)
 	if err != nil {
-		return 0, makeError(err)
+		return nil, makeError(err)
 	}
 
-	return int(robot.ID), nil
+	return models.CreateRobotPublicFromGet(robot, nil), nil
 }
 
-func (client *Client) UpdateRobot(public *models.RobotPublic) error {
+func (client *Client) UpdateRobot(public *models.RobotPublic) (*models.RobotPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update robot %s. details: %w", public.Name, err)
 	}
 
-	if public.ProjectID == 0 {
-		return nil
+	if public.ID == 0 {
+		log.Println("id not supplied when updating robot. assuming it was deleted")
+		return nil, nil
 	}
 
-	robots, err := client.HarborClient.ListProjectRobotsV1(context.TODO(), public.ProjectName)
+	robots, err := client.HarborClient.ListProjectRobotsV1(context.TODO(), client.Project)
 	if err != nil {
-		return makeError(err)
+		return nil, makeError(err)
 	}
 
 	var robot *harborModelsV2.Robot
@@ -124,15 +113,15 @@ func (client *Client) UpdateRobot(public *models.RobotPublic) error {
 
 	if robot == nil {
 		log.Println("robot", public.Name, "not found when updating. assuming it was deleted")
-		return nil
+		return nil, nil
 	}
 
 	err = client.assertCorrectRobotSecret(robot, public.Secret)
 	if err != nil {
-		return makeError(err)
+		return nil, makeError(err)
 	}
 
-	return nil
+	return models.CreateRobotPublicFromGet(robot, nil), nil
 }
 
 func (client *Client) DeleteRobot(id int) error {
@@ -141,6 +130,7 @@ func (client *Client) DeleteRobot(id int) error {
 	}
 
 	if id == 0 {
+		log.Println("id not supplied when deleting robot. assuming it was deleted")
 		return nil
 	}
 
@@ -151,30 +141,6 @@ func (client *Client) DeleteRobot(id int) error {
 			if !errors.As(err, &targetErr) && !strings.Contains(err.Error(), "[404] deleteRobotNotFound") {
 				return makeError(err)
 			}
-		}
-	}
-
-	return nil
-}
-
-func (client *Client) DeleteAllRobots(projectID int) error {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete all robots for project %d. details: %w", projectID, err)
-	}
-
-	if projectID == 0 {
-		return nil
-	}
-
-	robots, err := client.HarborClient.ListProjectRobotsV1(context.TODO(), fmt.Sprintf("%d", projectID))
-	if err != nil {
-		return makeError(err)
-	}
-
-	for _, robot := range robots {
-		err = client.DeleteRobot(int(robot.ID))
-		if err != nil {
-			return makeError(err)
 		}
 	}
 

@@ -61,14 +61,14 @@ func (client *Client) GetNetworkSourceNatIpAddressID(id string) (string, error) 
 	return ipAddressID, nil
 }
 
-func (client *Client) CreateNetwork(public *models.NetworkPublic) (string, error) {
+func (client *Client) CreateNetwork(public *models.NetworkPublic) (*models.NetworkPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create network %s. details: %w", public.Name, err)
 	}
 
 	if public.Name == "" {
 		log.Println("cs network name not supplied when creating network. assuming it was deleted")
-		return "", nil
+		return nil, nil
 	}
 
 	listNetworkParams := client.CsClient.Network.NewListNetworksParams()
@@ -77,7 +77,7 @@ func (client *Client) CreateNetwork(public *models.NetworkPublic) (string, error
 
 	listNetwork, err := client.CsClient.Network.ListNetworks(listNetworkParams)
 	if err != nil {
-		return "", makeError(err)
+		return nil, makeError(err)
 	}
 
 	var nameTag string
@@ -87,15 +87,10 @@ func (client *Client) CreateNetwork(public *models.NetworkPublic) (string, error
 		}
 	}
 
-	var existingNetwork *models.NetworkPublic
 	for _, network := range listNetwork.Networks {
 		if network.Name == nameTag {
-			existingNetwork = models.CreateNetworkPublicFromGet(network)
+			return models.CreateNetworkPublicFromGet(network), nil
 		}
-	}
-
-	if existingNetwork != nil {
-		return existingNetwork.ID, nil
 	}
 
 	createNetworkParams := client.CsClient.Network.NewCreateNetworkParams(public.Name, client.NetworkOfferingID, client.ZoneID)
@@ -103,12 +98,12 @@ func (client *Client) CreateNetwork(public *models.NetworkPublic) (string, error
 	createNetworkParams.SetDisplaytext(public.Description)
 	createNetworkParams.SetNetworkofferingid(client.NetworkOfferingID)
 
-	createNetwork, err := client.CsClient.Network.CreateNetwork(createNetworkParams)
+	network, err := client.CsClient.Network.CreateNetwork(createNetworkParams)
 	if err != nil {
-		return "", makeError(err)
+		return nil, makeError(err)
 	}
 
-	return createNetwork.Id, nil
+	return models.CreateNetworkPublicFromCreate(network), nil
 }
 
 func DeleteNetwork(client *Client, id string) error {

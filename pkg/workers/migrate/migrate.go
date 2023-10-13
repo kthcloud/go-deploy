@@ -7,6 +7,7 @@ import (
 // Migrate will run as early as possible in the program, and it will never be called again.
 func Migrate() {
 	migrations := getMigrations()
+
 	if len(migrations) > 0 {
 		log.Println("migrating...")
 

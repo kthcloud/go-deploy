@@ -125,13 +125,13 @@ func (client *Client) UpdateWithParamsByID(id string, update *UpdateParams) erro
 	return nil
 }
 
-func (client *Client) UpdateSubsystemByName(name, subsystem string, key string, update interface{}) error {
-	subsystemKey := fmt.Sprintf("subsystems.%s.%s", subsystem, key)
+func (client *Client) UpdateSubsystemByName(name, key string, update interface{}) error {
+	subsystemKey := fmt.Sprintf("subsystems.%s", key)
 	return client.UpdateWithBsonByName(name, bson.D{{subsystemKey, update}})
 }
 
-func (client *Client) UpdateSubsystemByID(id, subsystem string, key string, update interface{}) error {
-	subsystemKey := fmt.Sprintf("subsystems.%s.%s", subsystem, key)
+func (client *Client) UpdateSubsystemByID(id, key string, update interface{}) error {
+	subsystemKey := fmt.Sprintf("subsystems.%s", key)
 	return client.UpdateWithBsonByID(id, bson.D{{subsystemKey, update}})
 }
 

@@ -20,6 +20,10 @@ func (s *ServicePublic) Created() bool {
 	return s.ID != ""
 }
 
+func (s *ServicePublic) IsPlaceholder() bool {
+	return false
+}
+
 func (s *ServicePublic) GetFQDN() string {
 	return fmt.Sprintf("%s.%s.svc.cluster.local", s.Name, s.Namespace)
 }

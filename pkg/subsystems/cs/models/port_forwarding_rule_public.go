@@ -22,8 +22,12 @@ type PortForwardingRulePublic struct {
 	Tags []Tag `bson:"tags"`
 }
 
-func (rule *PortForwardingRulePublic) Created() bool {
-	return rule.ID != ""
+func (pfr *PortForwardingRulePublic) Created() bool {
+	return pfr.ID != ""
+}
+
+func (pfr *PortForwardingRulePublic) IsPlaceholder() bool {
+	return false
 }
 
 func CreatePortForwardingRulePublicFromGet(rule *cloudstack.PortForwardingRule) *PortForwardingRulePublic {
@@ -60,4 +64,34 @@ func CreatePortForwardingRulePublicFromGet(rule *cloudstack.PortForwardingRule) 
 
 		Tags: tags,
 	}
+}
+
+func CreatePortForwardingRulePublicFromCreate(rule *cloudstack.CreatePortForwardingRuleResponse) *PortForwardingRulePublic {
+	return CreatePortForwardingRulePublicFromGet(
+		&cloudstack.PortForwardingRule{
+			Id:               rule.Id,
+			Virtualmachineid: rule.Virtualmachineid,
+			Networkid:        rule.Networkid,
+			Ipaddressid:      rule.Ipaddressid,
+			Publicport:       rule.Publicport,
+			Privateport:      rule.Privateport,
+			Protocol:         rule.Protocol,
+			Tags:             rule.Tags,
+		},
+	)
+}
+
+func CreatePortForwardingRulePublicFromUpdate(rule *cloudstack.UpdatePortForwardingRuleResponse) *PortForwardingRulePublic {
+	return CreatePortForwardingRulePublicFromGet(
+		&cloudstack.PortForwardingRule{
+			Id:               rule.Id,
+			Virtualmachineid: rule.Virtualmachineid,
+			Networkid:        rule.Networkid,
+			Ipaddressid:      rule.Ipaddressid,
+			Publicport:       rule.Publicport,
+			Privateport:      rule.Privateport,
+			Protocol:         rule.Protocol,
+			Tags:             rule.Tags,
+		},
+	)
 }

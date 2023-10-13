@@ -102,20 +102,20 @@ func createVM(job *jobModel.Job) error {
 }
 
 func deleteVM(job *jobModel.Job) error {
-	err := assertParameters(job, []string{"name"})
+	err := assertParameters(job, []string{"id"})
 	if err != nil {
 		return makeTerminatedError(err)
 	}
 
-	name := job.Args["name"].(string)
+	id := job.Args["id"].(string)
 
-	err = vm_service.Delete(name)
+	err = vm_service.Delete(id)
 	if err != nil {
 		return makeFailedError(err)
 	}
 
 	// check if deleted, otherwise mark as failed and return to queue for retry
-	vm, err := vmModel.New().GetByName(name)
+	vm, err := vmModel.New().GetByID(id)
 	if err != nil {
 		return makeFailedError(err)
 	}
@@ -260,20 +260,20 @@ func createDeployment(job *jobModel.Job) error {
 }
 
 func deleteDeployment(job *jobModel.Job) error {
-	err := assertParameters(job, []string{"name"})
+	err := assertParameters(job, []string{"id"})
 	if err != nil {
 		return makeTerminatedError(err)
 	}
 
-	name := job.Args["name"].(string)
+	id := job.Args["id"].(string)
 
-	err = deployment_service.Delete(name)
+	err = deployment_service.Delete(id)
 	if err != nil {
 		return makeFailedError(err)
 	}
 
 	// check if deleted, otherwise mark as failed and return to queue for retry
-	deployment, err := deploymentModel.New().GetByName(name)
+	deployment, err := deploymentModel.New().GetByID(id)
 	if err != nil {
 		return makeFailedError(err)
 	}

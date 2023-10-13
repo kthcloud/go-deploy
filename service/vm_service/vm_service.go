@@ -41,79 +41,7 @@ func Create(vmID, owner string, vmCreate *body.VmCreate) error {
 		return makeError(fmt.Errorf("vm already exists for another user"))
 	}
 
-	_, err = cs_service.CreateCS(params)
-	if err != nil {
-		return makeError(err)
-	}
-
-	return nil
-}
-
-func GetByIdAuth(vmID string, auth *service.AuthInfo) (*vmModel.VM, error) {
-	vm, err := vmModel.New().GetByID(vmID)
-	if err != nil {
-		return nil, err
-	}
-
-	if vm == nil {
-		return nil, nil
-	}
-
-	if vm.OwnerID != auth.UserID && !auth.IsAdmin {
-		return nil, nil
-	}
-
-	return vm, nil
-}
-
-func GetByName(name string) (*vmModel.VM, error) {
-	return vmModel.New().GetByName(name)
-}
-
-func GetManyAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagination *query.Pagination) ([]vmModel.VM, error) {
-	client := vmModel.New()
-
-	if pagination != nil {
-		client.AddPagination(pagination.Page, pagination.PageSize)
-	}
-
-	if userID != nil {
-		if *userID != auth.UserID && !auth.IsAdmin {
-			return nil, nil
-		}
-		client.RestrictToUser(userID)
-	} else if !allUsers || (allUsers && !auth.IsAdmin) {
-		client.RestrictToUser(&auth.UserID)
-	}
-
-	return client.GetMany()
-}
-
-func Delete(name string) error {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete vm. details: %w", err)
-	}
-
-	vm, err := vmModel.New().GetByName(name)
-	if err != nil {
-		return makeError(err)
-	}
-
-	if vm == nil {
-		return nil
-	}
-
-	err = vmModel.New().AddActivity(vm.ID, vmModel.ActivityBeingDeleted)
-	if err != nil {
-		return makeError(err)
-	}
-
-	err = cs_service.DeleteCS(name)
-	if err != nil {
-		return makeError(err)
-	}
-
-	err = gpu.New().Detach(vm.ID, vm.OwnerID)
+	err = cs_service.CreateCS(vmID, params)
 	if err != nil {
 		return makeError(err)
 	}
@@ -141,18 +69,50 @@ func Update(vmID string, dtoVmUpdate *body.VmUpdate) error {
 			addDeploySshToPortMap(vmUpdate.Ports)
 		}
 
-		err := cs_service.UpdateCS(vmID, vmUpdate)
+		err := vmModel.New().UpdateWithParamsByID(vmID, vmUpdate)
 		if err != nil {
 			return makeError(err)
 		}
 
-		err = vmModel.New().UpdateWithParamsByID(vmID, vmUpdate)
+		err = cs_service.UpdateCS(vmID, vmUpdate)
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
 	err := vmModel.New().RemoveActivity(vmID, vmModel.ActivityBeingUpdated)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
+}
+
+func Delete(id string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to delete vm. details: %w", err)
+	}
+
+	vm, err := vmModel.New().GetByID(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if vm == nil {
+		return nil
+	}
+
+	err = vmModel.New().AddActivity(vm.ID, vmModel.ActivityBeingDeleted)
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = cs_service.DeleteCS(vm.ID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = gpu.New().Detach(vm.ID, vm.OwnerID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -196,13 +156,53 @@ func Repair(id string) error {
 		}
 	}()
 
-	err = cs_service.RepairCS(vm.Name)
+	err = cs_service.RepairCS(id)
 	if err != nil {
 		return makeError(err)
 	}
 
-	log.Println("successfully repaired vm", vm.Name)
+	log.Println("successfully repaired vm", id)
 	return nil
+}
+
+func GetByIdAuth(vmID string, auth *service.AuthInfo) (*vmModel.VM, error) {
+	vm, err := vmModel.New().GetByID(vmID)
+	if err != nil {
+		return nil, err
+	}
+
+	if vm == nil {
+		return nil, nil
+	}
+
+	if vm.OwnerID != auth.UserID && !auth.IsAdmin {
+		return nil, nil
+	}
+
+	return vm, nil
+}
+
+func GetByName(name string) (*vmModel.VM, error) {
+	return vmModel.New().GetByName(name)
+}
+
+func GetManyAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagination *query.Pagination) ([]vmModel.VM, error) {
+	client := vmModel.New()
+
+	if pagination != nil {
+		client.AddPagination(pagination.Page, pagination.PageSize)
+	}
+
+	if userID != nil {
+		if *userID != auth.UserID && !auth.IsAdmin {
+			return nil, nil
+		}
+		client.RestrictToUser(userID)
+	} else if !allUsers || (allUsers && !auth.IsAdmin) {
+		client.RestrictToUser(&auth.UserID)
+	}
+
+	return client.GetMany()
 }
 
 func GetConnectionString(vm *vmModel.VM) (*string, error) {

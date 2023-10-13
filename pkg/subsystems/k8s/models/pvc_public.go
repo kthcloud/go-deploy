@@ -19,6 +19,10 @@ func (pvc *PvcPublic) Created() bool {
 	return pvc.ID != ""
 }
 
+func (pvc *PvcPublic) IsPlaceholder() bool {
+	return false
+}
+
 func CreatePvcPublicFromRead(pvc *v1.PersistentVolumeClaim) *PvcPublic {
 	capacityQuantity, ok := pvc.Spec.Resources.Requests[v1.ResourceStorage]
 	var capacity string
@@ -28,7 +32,7 @@ func CreatePvcPublicFromRead(pvc *v1.PersistentVolumeClaim) *PvcPublic {
 
 	return &PvcPublic{
 		ID:        pvc.Labels[keys.ManifestLabelID],
-		Name:      pvc.Labels[keys.ManifestLabelName],
+		Name:      pvc.Name,
 		Namespace: pvc.Namespace,
 		Capacity:  capacity,
 		PvName:    pvc.Spec.VolumeName,

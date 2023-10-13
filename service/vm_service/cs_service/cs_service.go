@@ -1,6 +1,7 @@
 package cs_service
 
 import (
+	"errors"
 	"fmt"
 	"go-deploy/models/sys/enviroment"
 	vmModel "go-deploy/models/sys/vm"
@@ -8,172 +9,127 @@ import (
 	"go-deploy/pkg/subsystems/cs/commands"
 	csModels "go-deploy/pkg/subsystems/cs/models"
 	"go-deploy/service"
-	"go-deploy/service/vm_service/cs_service/helpers"
+	"go-deploy/service/resources"
+	"go-deploy/service/vm_service/base"
+	"golang.org/x/exp/slices"
 	"log"
-	"reflect"
-	"time"
 )
 
-// TemplateID this is a temporary solution until we have template selection
-const TemplateID = "cbac58b6-336b-49ab-b4d7-341586dfefcc"
-
-func CreateCS(params *vmModel.CreateParams) (*CsCreated, error) {
+func CreateCS(vmID string, params *vmModel.CreateParams) error {
 	log.Println("setting up cs for", params.Name)
-
-	userSshPublicKey := params.SshPublicKey
-	adminSshPublicKey := conf.Env.VM.AdminSshPublicKey
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to setup cs for vm %s. details: %w", params.Name, err)
 	}
 
-	vm, err := vmModel.New().GetByName(params.Name)
+	context, err := NewContext(vmID)
 	if err != nil {
-		return nil, makeError(err)
-	}
-
-	client, err := helpers.New(&vm.Subsystems.CS, params.Zone)
-	if err != nil {
-		return nil, makeError(err)
-	}
-
-	if vm == nil {
-		log.Println("vm", params.Name, "not found for cs setup. assuming it was deleted")
-		return nil, nil
-	}
-
-	// service offering
-	serviceOffering := &client.CS.ServiceOffering
-	if !serviceOffering.Created() {
-		public := helpers.CreateServiceOfferingPublic(params.Name, params.CpuCores, params.RAM, params.DiskSize)
-		serviceOffering, err = client.CreateServiceOffering(vm.ID, public)
-		if err != nil {
-			return nil, makeError(err)
-		}
-	}
-
-	// vm
-	csVM := &client.CS.VM
-	if !csVM.Created() {
-		public := helpers.CreateCsVmPublic(params.Name, serviceOffering.ID, TemplateID, CreateDeployTags(params.Name, params.Name))
-
-		csVM, err = client.CreateCsVM(vm.ID, public, userSshPublicKey, adminSshPublicKey)
-		if err != nil {
-			// remove the service offering if the vm creation failed.
-			// however, do this as best-effort only to avoid cascading errors
-			if serviceOffering.Created() {
-				_ = client.DeleteServiceOffering(serviceOffering.ID)
-				_ = vmModel.New().UpdateSubsystemByName(vm.Name, "cs", "serviceOffering", csModels.ServiceOfferingPublic{})
-			}
-
-			return nil, makeError(err)
-		}
-	}
-
-	ruleMap := client.CS.GetPortForwardingRuleMap()
-	if ruleMap == nil {
-		ruleMap = map[string]csModels.PortForwardingRulePublic{}
-	}
-
-	for _, port := range params.Ports {
-		if rule, hasRule := ruleMap[port.Name]; hasRule && rule.Created() {
-			continue
+		if errors.Is(err, base.VmDeletedErr) {
+			return nil
 		}
 
-		freePort, err := client.GetFreePort()
-		if err != nil {
-			return nil, makeError(err)
-		}
-
-		useRootNetwork := params.NetworkID == nil
-		if useRootNetwork {
-			rootPublic := helpers.CreateRootPortForwardingRulePublic(port.Name, csVM.ID, freePort, port.Port, port.Protocol, CreateDeployTags(port.Name, csVM.Name), *client.Zone)
-			_, err = client.CreatePortForwardingRule(vm.ID, port.Name, rootPublic)
-			if err != nil {
-				return nil, makeError(err)
-			}
-		} else {
-			network, err := client.SsClient.ReadNetwork(*params.NetworkID)
-			if err != nil {
-				return nil, makeError(err)
-			}
-
-			rootPublic := helpers.CreateRootPortForwardingRulePublic(
-				port.Name,
-				csVM.ID,
-				freePort,
-				port.Port,
-				port.Protocol,
-				CreateDeployTags(port.Name, csVM.Name),
-				*client.Zone,
-			)
-
-			_, err = client.CreatePortForwardingRule(vm.ID, port.Name, rootPublic)
-			if err != nil {
-				return nil, makeError(err)
-			}
-
-			ipAddressID, err := client.SsClient.GetNetworkSourceNatIpAddressID(*params.NetworkID)
-			if err != nil {
-				return nil, makeError(err)
-			}
-
-			public := helpers.CreatePortForwardingRulePublic(
-				CreateNonRootPortForwardingRuleName(port.Name, network.Name),
-				csVM.ID,
-				*params.NetworkID,
-				ipAddressID,
-				port.Port,
-				port.Protocol,
-				CreateDeployTags(port.Name, csVM.Name),
-			)
-			_, err = client.CreatePortForwardingRule(vm.ID, port.Name, public)
-			if err != nil {
-				return nil, makeError(err)
-			}
-		}
-	}
-
-	return &CsCreated{
-		VM: csVM,
-	}, nil
-}
-
-func DeleteCS(name string) error {
-	log.Println("deleting cs for", name)
-
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete cs for vm %s. details: %w", name, err)
-	}
-
-	vm, err := vmModel.New().GetByName(name)
-	if err != nil {
 		return makeError(err)
 	}
 
-	if vm == nil {
-		log.Println("vm", name, "not found for cs deletion. assuming it was deleted")
-		return nil
+	context.Client.WithUserSshPublicKey(params.SshPublicKey)
+	context.Client.WithAdminSshPublicKey(conf.Env.VM.AdminSshPublicKey)
+	context.WithCreateParams(params)
+
+	// Service offering
+	for _, soPublic := range context.Generator.SOs() {
+		err = resources.SsCreator(context.Client.CreateServiceOffering).
+			WithDbFunc(dbFunc(vmID, "serviceOffering")).
+			WithPublic(&soPublic).
+			Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
+
+		context.VM.Subsystems.CS.ServiceOffering = soPublic
 	}
 
-	client, err := helpers.New(&vm.Subsystems.CS, vm.Zone)
-	if err != nil {
-		return makeError(err)
+	// VM
+	for _, vmPublic := range context.Generator.VMs() {
+		err = resources.SsCreator(context.Client.CreateVM).
+			WithDbFunc(dbFunc(vmID, "vm")).
+			WithPublic(&vmPublic).
+			Exec()
+
+		if err != nil {
+			_ = resources.SsDeleter(context.Client.DeleteServiceOffering).
+				WithDbFunc(dbFunc(vmID, "serviceOffering")).
+				Exec()
+
+			return makeError(err)
+		}
+
+		context.VM.Subsystems.CS.VM = vmPublic
 	}
 
-	for mapName := range client.CS.GetPortForwardingRuleMap() {
-		err = client.DeletePortForwardingRule(vm.ID, mapName)
+	// Port-forwarding rules
+	for _, pfrPublic := range context.Generator.PFRs() {
+		if pfrPublic.PublicPort == 0 {
+			pfrPublic.PublicPort, err = context.Client.GetFreePort(
+				context.Zone.PortRange.Start,
+				context.Zone.PortRange.End,
+			)
+
+			if err != nil {
+				return makeError(err)
+			}
+		}
+
+		err = resources.SsCreator(context.Client.CreatePortForwardingRule).
+			WithDbFunc(dbFunc(vmID, "portForwardingRuleMap."+pfrPublic.Name)).
+			WithPublic(&pfrPublic).
+			Exec()
+
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
-	err = client.DeleteVM(vm.ID)
+	return nil
+}
+
+func DeleteCS(vmID string) error {
+	log.Println("deleting cs for", vmID)
+
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to delete cs for vm %s. details: %w", vmID, err)
+	}
+
+	context, err := NewContext(vmID)
+	if err != nil {
+		if errors.Is(err, base.VmDeletedErr) {
+			return nil
+		}
+
+		return makeError(err)
+	}
+
+	for mapName, pfr := range context.VM.Subsystems.CS.GetPortForwardingRuleMap() {
+		err = resources.SsDeleter(context.Client.DeletePortForwardingRule).
+			WithResourceID(pfr.ID).
+			WithDbFunc(dbFunc(vmID, "portForwardingRuleMap."+mapName)).
+			Exec()
+	}
+
+	err = resources.SsDeleter(context.Client.DeleteVM).
+		WithResourceID(context.VM.Subsystems.CS.VM.ID).
+		WithDbFunc(dbFunc(vmID, "vm")).
+		Exec()
+
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = client.DeleteServiceOffering(vm.ID)
+	err = resources.SsDeleter(context.Client.DeleteServiceOffering).
+		WithResourceID(context.VM.Subsystems.CS.ServiceOffering.ID).
+		WithDbFunc(dbFunc(vmID, "serviceOffering")).
+		Exec()
+
 	if err != nil {
 		return makeError(err)
 	}
@@ -186,268 +142,211 @@ func UpdateCS(vmID string, updateParams *vmModel.UpdateParams) error {
 		return fmt.Errorf("failed to update cs for vm %s. details: %w", vmID, err)
 	}
 
-	vm, err := vmModel.New().GetByID(vmID)
+	context, err := NewContext(vmID)
 	if err != nil {
+		if errors.Is(err, base.VmDeletedErr) {
+			return nil
+		}
+
 		return makeError(err)
-	}
-
-	if vm == nil {
-		log.Println("vm", vmID, "not found for cs update. assuming it was deleted")
-		return nil
-	}
-
-	client, err := helpers.New(&vm.Subsystems.CS, vm.Zone)
-	if err != nil {
-		return makeError(err)
-	}
-
-	if !client.CS.VM.Created() {
-		log.Println("cs vm", vmID, "not created when updating cs. assuming it was deleted or not yet created")
-		return nil
 	}
 
 	// port-forwarding rule
 	if updateParams.Ports != nil {
-		ruleMap := client.CS.GetPortForwardingRuleMap()
+		pfrs := context.Generator.PFRs()
 
-		newRuleMap := make(map[string]csModels.PortForwardingRulePublic)
-		createNewRuleMap := make(map[string]csModels.PortForwardingRulePublic)
-
-		for _, port := range *updateParams.Ports {
-			useRootNetwork := vm.NetworkID == nil
-			cmp1 := helpers.CreateRootPortForwardingRulePublic(
-				port.Name,
-				client.CS.VM.ID,
-				// set this to zero here, in case we don't need a new rule (getting a free port is expensive)
-				0, port.Port,
-				port.Protocol,
-				CreateDeployTags(port.Name, vm.Name),
-				*client.Zone,
-			)
-			cmp2, ok := ruleMap[port.Name]
-			if !ok {
-				// new rule
-				createNewRuleMap[port.Name] = *cmp1
-				delete(ruleMap, port.Name)
-				continue
+		for _, currentPfr := range context.VM.Subsystems.CS.GetPortForwardingRuleMap() {
+			if slices.IndexFunc(pfrs, func(p csModels.PortForwardingRulePublic) bool { return p.Name == currentPfr.Name }) == -1 {
+				err = resources.SsDeleter(context.Client.DeletePortForwardingRule).
+					WithResourceID(currentPfr.ID).
+					WithDbFunc(dbFunc(vmID, "portForwardingRuleMap."+currentPfr.Name)).
+					Exec()
 			}
+		}
 
-			cmp2Cleaned := cmp2
-			cmp2Cleaned.ID = ""
-			cmp2Cleaned.CreatedAt = time.Time{}
+		for _, pfrPublic := range pfrs {
+			if _, ok := context.VM.Subsystems.CS.PortForwardingRuleMap[pfrPublic.Name]; !ok {
+				if pfrPublic.PublicPort == 0 {
+					pfrPublic.PublicPort, err = context.Client.GetFreePort(
+						context.Zone.PortRange.Start,
+						context.Zone.PortRange.End,
+					)
 
-			if !reflect.DeepEqual(cmp1, cmp2Cleaned) {
-				err = client.SsClient.DeletePortForwardingRule(cmp2.ID)
-				if err != nil {
-					return makeError(err)
-				}
-
-				createNewRuleMap[port.Name] = *cmp1
-			} else {
-				createNewRuleMap[port.Name] = cmp2
-			}
-
-			delete(ruleMap, port.Name)
-
-			if !useRootNetwork {
-				network, err := client.SsClient.ReadNetwork(*vm.NetworkID)
-				if err != nil {
-					return makeError(err)
-				}
-
-				ruleName := CreateNonRootPortForwardingRuleName(port.Name, network.Name)
-
-				cmp1 = helpers.CreatePortForwardingRulePublic(
-					ruleName,
-					client.CS.VM.ID,
-					*vm.NetworkID,
-					cmp2.IpAddressID,
-					port.Port,
-					port.Protocol,
-					CreateDeployTags(port.Name, vm.Name),
-				)
-				cmp2, ok = ruleMap[ruleName]
-				if !ok {
-					// new rule
-					createNewRuleMap[ruleName] = *cmp1
-					delete(ruleMap, ruleName)
-					continue
-				}
-
-				cmp2Cleaned = cmp2
-				cmp2Cleaned.ID = ""
-				cmp2Cleaned.CreatedAt = time.Time{}
-
-				if !reflect.DeepEqual(cmp1, cmp2Cleaned) {
-					err = client.SsClient.DeletePortForwardingRule(cmp2.ID)
 					if err != nil {
 						return makeError(err)
 					}
-
-					createNewRuleMap[CreateNonRootPortForwardingRuleName(port.Name, network.Name)] = *cmp1
-				} else {
-					createNewRuleMap[CreateNonRootPortForwardingRuleName(port.Name, network.Name)] = cmp2
 				}
 
-				delete(ruleMap, CreateNonRootPortForwardingRuleName(port.Name, network.Name))
-			}
+				err = resources.SsCreator(context.Client.CreatePortForwardingRule).
+					WithDbFunc(dbFunc(vmID, "portForwardingRuleMap."+pfrPublic.Name)).
+					WithPublic(&pfrPublic).
+					Exec()
 
+				if err != nil {
+					return makeError(err)
+				}
+			}
+		}
+	}
+
+	// service offering
+	var soID *string
+	if so := &context.VM.Subsystems.CS.ServiceOffering; !service.NotCreated(so) {
+		var requiresUpdate bool
+		if updateParams.CpuCores != nil {
+			requiresUpdate = true
 		}
 
-		// delete any remaining rules
-		for _, rule := range ruleMap {
-			err := client.SsClient.DeletePortForwardingRule(rule.ID)
+		if updateParams.RAM != nil {
+			requiresUpdate = true
+		}
+
+		if requiresUpdate {
+			err = resources.SsDeleter(context.Client.DeleteServiceOffering).
+				WithResourceID(so.ID).
+				WithDbFunc(dbFunc(vmID, "serviceOffering")).
+				Exec()
+
 			if err != nil {
 				return makeError(err)
 			}
-		}
 
-		for name, public := range createNewRuleMap {
-			// if the public port is 0 here, it means that request if for a new root rule
-			if public.PublicPort == 0 {
-				freePort, err := client.GetFreePort()
+			for _, soPublic := range context.Generator.SOs() {
+				err = resources.SsCreator(context.Client.CreateServiceOffering).
+					WithDbFunc(dbFunc(vmID, "serviceOffering")).
+					WithPublic(&soPublic).
+					WithPublic(&soPublic).
+					Exec()
+
 				if err != nil {
 					return makeError(err)
 				}
 
-				public.PublicPort = freePort
+				soID = &soPublic.ID
 			}
-
-			rule, err := client.CreatePortForwardingRule(vm.ID, name, &public)
-			if err != nil {
-				return makeError(err)
-			}
-
-			createNewRuleMap[name] = *rule
-		}
-
-		// merge the new and the old ones
-		for name, public := range createNewRuleMap {
-			newRuleMap[name] = public
-		}
-
-		err = vmModel.New().UpdateSubsystemByName(vm.Name, "cs", "portForwardingRuleMap", newRuleMap)
-	}
-
-	// service offering
-	if !service.NotCreated(&client.CS.ServiceOffering) {
-		requiresUpdate := updateParams.CpuCores != nil && *updateParams.CpuCores != client.CS.ServiceOffering.CpuCores ||
-			updateParams.RAM != nil && *updateParams.RAM != client.CS.ServiceOffering.RAM
-
-		if requiresUpdate {
-			public := helpers.CreateServiceOfferingPublic(vm.Name, *updateParams.CpuCores, *updateParams.RAM, vm.Specs.DiskSize)
-			serviceOffering, err := client.RecreateServiceOffering(vm.ID, public)
-			if err != nil {
-				return makeError(err)
-			}
-
-			client.CS.ServiceOffering = *serviceOffering
+		} else {
+			soID = &so.ID
 		}
 	}
 
 	// make sure the vm is using the latest service offering
-	if client.CS.VM.ServiceOfferingID != client.CS.ServiceOffering.ID {
-		client.CS.VM.ServiceOfferingID = client.CS.ServiceOffering.ID
-
+	if soID != nil && context.VM.Subsystems.CS.VM.ServiceOfferingID != *soID {
 		// turn it off if it is on, but remember the status
-		status, err := client.SsClient.GetVmStatus(client.CS.VM.ID)
+		status, err := context.Client.GetVmStatus(context.VM.Subsystems.CS.VM.ID)
 		if err != nil {
 			return makeError(err)
 		}
 
 		if status == "Running" {
-			err = client.SsClient.DoVmCommand(client.CS.VM.ID, nil, commands.Stop)
+			err = context.Client.DoVmCommand(context.VM.Subsystems.CS.VM.ID, nil, commands.Stop)
 			if err != nil {
 				return makeError(err)
 			}
 		}
 
-		// update the service offering
-		err = client.SsClient.UpdateVM(&client.CS.VM)
-		if err != nil {
-			return makeError(err)
-		}
+		defer func() {
+			// turn it on if it was on
+			if status == "Running" {
+				var requiredHost *string
+				if context.VM.HasGPU() {
+					requiredHost, err = GetRequiredHost(context.VM.GpuID)
+					if err != nil {
+						log.Println("failed to get required host for vm", context.VM.Name, "in zone", context.Zone.Name, ". details:", err)
+						return
+					}
+				}
 
-		err = vmModel.New().UpdateSubsystemByName(vm.Name, "cs", "vm.serviceOfferingId", client.CS.ServiceOffering.ID)
-		if err != nil {
-			return makeError(err)
-		}
-
-		// turn it on if it was on
-		if status == "Running" {
-			var requiredHost *string
-			if vm.HasGPU() {
-				requiredHost, err = GetRequiredHost(vm.GpuID)
+				err = context.Client.DoVmCommand(context.VM.Subsystems.CS.VM.ID, requiredHost, commands.Start)
 				if err != nil {
-					return makeError(err)
+					log.Println("failed to start vm", context.VM.Name, "in zone", context.Zone.Name, ". details:", err)
+					return
 				}
 			}
+		}()
 
-			err = client.SsClient.DoVmCommand(client.CS.VM.ID, requiredHost, commands.Start)
+		vms := context.Generator.VMs()
+		for _, vmPublic := range vms {
+			err = resources.SsUpdater(context.Client.UpdateVM).
+				WithPublic(&vmPublic).
+				WithDbFunc(dbFunc(vmID, "vm")).
+				Exec()
+
 			if err != nil {
 				return makeError(err)
 			}
 		}
-
 	}
 
 	return nil
 }
 
-func RepairCS(name string) error {
+func RepairCS(id string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to repair cs %s. details: %w", name, err)
+		return fmt.Errorf("failed to repair cs %s. details: %w", id, err)
 	}
 
-	vm, err := vmModel.New().GetByName(name)
+	context, err := NewContext(id)
 	if err != nil {
-		return makeError(err)
-	}
-
-	if vm == nil {
-		log.Println("vm", name, "not found when repairing cs, assuming it was deleted")
-		return nil
-	}
-
-	client, err := helpers.New(&vm.Subsystems.CS, vm.Zone)
-	if err != nil {
-		return makeError(err)
-	}
-
-	ss := client.CS
-
-	// service offering
-	err = client.RepairServiceOffering(vm.ID, func() *csModels.ServiceOfferingPublic {
-		return helpers.CreateServiceOfferingPublic(name, vm.Specs.CpuCores, vm.Specs.RAM, vm.Specs.DiskSize)
-	})
-
-	// vm
-	err = client.RepairVM(vm.ID, func() (*csModels.VmPublic, string) {
-		if ss.ServiceOffering.Created() {
-			return helpers.CreateCsVmPublic(name, ss.ServiceOffering.ID, TemplateID, CreateDeployTags(name, name)), vm.SshPublicKey
-		}
-		return nil, ""
-	})
-	if err != nil {
-		return makeError(err)
-	}
-
-	// port-forwarding rules
-	for mapName := range ss.GetPortForwardingRuleMap() {
-		err = client.RepairPortForwardingRule(vm.ID, mapName, func() *csModels.PortForwardingRulePublic {
-			// find rules in vm ports
-			for _, port := range vm.Ports {
-				if port.Name == mapName {
-					publicPort, err := client.GetFreePort()
-					if err != nil {
-						log.Println("failed to get free port for port forwarding rule", mapName, "for vm", name, "in zone", client.Zone.Name, ". details:", err)
-						return nil
-					}
-					return helpers.CreateRootPortForwardingRulePublic(mapName, ss.VM.ID, publicPort, port.Port, port.Protocol, CreateDeployTags(mapName, ss.VM.Name), *client.Zone)
-				}
-			}
+		if errors.Is(err, base.VmDeletedErr) {
 			return nil
-		})
+		}
+
+		return makeError(err)
+	}
+
+	// Service offering
+	if service.Created(&context.VM.Subsystems.CS.ServiceOffering) {
+		so := context.Generator.SOs()[0]
+
+		err = resources.SsRepairer(
+			context.Client.ReadServiceOffering,
+			context.Client.CreateServiceOffering,
+			context.Client.UpdateServiceOffering,
+			context.Client.DeleteServiceOffering,
+		).WithResourceID(so.ID).WithGenPublic(&so).WithDbFunc(dbFunc(id, "serviceOffering")).Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	// VM
+	if service.Created(&context.VM.Subsystems.CS.VM) {
+		vm := context.Generator.VMs()[0]
+
+		err = resources.SsRepairer(
+			context.Client.ReadVM,
+			context.Client.CreateVM,
+			context.Client.UpdateVM,
+			func(id string) error { return nil },
+		).WithResourceID(vm.ID).WithGenPublic(&vm).WithDbFunc(dbFunc(id, "vm")).Exec()
+	}
+
+	if err != nil {
+		return makeError(err)
+	}
+
+	// Port-forwarding rules
+	for mapName, pfr := range context.VM.Subsystems.CS.GetPortForwardingRuleMap() {
+		pfrs := context.Generator.PFRs()
+		idx := slices.IndexFunc(pfrs, func(p csModels.PortForwardingRulePublic) bool { return p.Name == mapName })
+		if idx == -1 {
+			err = resources.SsDeleter(context.Client.DeletePortForwardingRule).
+				WithResourceID(pfr.ID).
+				WithDbFunc(dbFunc(id, "portForwardingRuleMap."+pfr.Name)).
+				Exec()
+
+			if err != nil {
+				return makeError(err)
+			}
+		}
+
+		err = resources.SsRepairer(
+			context.Client.ReadPortForwardingRule,
+			context.Client.CreatePortForwardingRule,
+			context.Client.UpdatePortForwardingRule,
+			context.Client.DeletePortForwardingRule,
+		).WithResourceID(pfrs[idx].ID).WithDbFunc(dbFunc(id, "portForwardingRuleMap."+pfrs[idx].Name)).WithGenPublic(&pfrs[idx]).Exec()
 	}
 
 	return nil
@@ -458,7 +357,7 @@ func DoCommandCS(csVmID string, gpuID *string, command, zoneName string) error {
 		return fmt.Errorf("failed to execute command %s for cs vm %s. details: %w", command, csVmID, err)
 	}
 
-	client, err := helpers.New(nil, zoneName)
+	context, err := NewContextWithoutVM(zoneName)
 	if err != nil {
 		return makeError(err)
 	}
@@ -471,7 +370,7 @@ func DoCommandCS(csVmID string, gpuID *string, command, zoneName string) error {
 		}
 	}
 
-	err = client.SsClient.DoVmCommand(csVmID, requiredHost, commands.Command(command))
+	err = context.Client.DoVmCommand(csVmID, requiredHost, commands.Command(command))
 	if err != nil {
 		return makeError(err)
 	}
@@ -484,12 +383,12 @@ func CanStartCS(csVmID, hostName, zoneName string) (bool, string, error) {
 		return fmt.Errorf("failed to check if cs vm %s can be started on host %s. details: %w", csVmID, hostName, err)
 	}
 
-	client, err := helpers.New(nil, zoneName)
+	context, err := NewContextWithoutVM(zoneName)
 	if err != nil {
 		return false, "", makeError(err)
 	}
 
-	hasCapacity, err := client.SsClient.HasCapacity(csVmID, hostName)
+	hasCapacity, err := context.Client.HasCapacity(csVmID, hostName)
 	if err != nil {
 		return false, "", err
 	}
@@ -498,7 +397,7 @@ func CanStartCS(csVmID, hostName, zoneName string) (bool, string, error) {
 		return false, "Host doesn't have capacity", nil
 	}
 
-	correctState, reason, err := HostInCorrectState(hostName, client.Zone)
+	correctState, reason, err := HostInCorrectState(hostName, context.Zone)
 	if err != nil {
 		return false, "", err
 	}
@@ -515,12 +414,12 @@ func HostInCorrectState(hostName string, zone *enviroment.VmZone) (bool, string,
 		return fmt.Errorf("failed to check if host %s is in correct state. details: %w", zone.Name, err)
 	}
 
-	client, err := helpers.New(nil, zone.Name)
+	context, err := NewContextWithoutVM(zone.Name)
 	if err != nil {
 		return false, "", makeError(err)
 	}
 
-	host, err := client.SsClient.ReadHostByName(hostName)
+	host, err := context.Client.ReadHostByName(hostName)
 	if err != nil {
 		return false, "", makeError(err)
 	}
@@ -534,4 +433,10 @@ func HostInCorrectState(hostName string, zone *enviroment.VmZone) (bool, string,
 	}
 
 	return true, "", nil
+}
+
+func dbFunc(vmID, key string) func(interface{}) error {
+	return func(data interface{}) error {
+		return vmModel.New().UpdateSubsystemByID(vmID, "cs."+key, data)
+	}
 }

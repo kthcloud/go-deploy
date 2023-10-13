@@ -15,11 +15,39 @@ type ServiceOfferingPublic struct {
 	CreatedAt   time.Time `bson:"createdAt"`
 }
 
-func (serviceOffering *ServiceOfferingPublic) Created() bool {
-	return serviceOffering.ID != ""
+func (so *ServiceOfferingPublic) Created() bool {
+	return so.ID != ""
+}
+
+func (so *ServiceOfferingPublic) IsPlaceholder() bool {
+	return false
 }
 
 func CreateServiceOfferingPublicFromGet(serviceOffering *cloudstack.ServiceOffering) *ServiceOfferingPublic {
+	return &ServiceOfferingPublic{
+		ID:          serviceOffering.Id,
+		Name:        serviceOffering.Name,
+		Description: serviceOffering.Displaytext,
+		CpuCores:    serviceOffering.Cpunumber,
+		RAM:         serviceOffering.Memory / 1024,
+		DiskSize:    int(serviceOffering.Rootdisksize),
+		CreatedAt:   formatCreatedAt(serviceOffering.Created),
+	}
+}
+
+func CreateServiceOfferingPublicFromCreate(serviceOffering *cloudstack.CreateServiceOfferingResponse) *ServiceOfferingPublic {
+	return &ServiceOfferingPublic{
+		ID:          serviceOffering.Id,
+		Name:        serviceOffering.Name,
+		Description: serviceOffering.Displaytext,
+		CpuCores:    serviceOffering.Cpunumber,
+		RAM:         serviceOffering.Memory / 1024,
+		DiskSize:    int(serviceOffering.Rootdisksize),
+		CreatedAt:   formatCreatedAt(serviceOffering.Created),
+	}
+}
+
+func CreateServiceOfferingPublicFromUpdate(serviceOffering *cloudstack.UpdateServiceOfferingResponse) *ServiceOfferingPublic {
 	return &ServiceOfferingPublic{
 		ID:          serviceOffering.Id,
 		Name:        serviceOffering.Name,

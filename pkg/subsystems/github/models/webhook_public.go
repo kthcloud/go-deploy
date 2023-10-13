@@ -20,6 +20,10 @@ func (w *WebhookPublic) Created() bool {
 	return w.ID != 0
 }
 
+func (w *WebhookPublic) IsPlaceholder() bool {
+	return false
+}
+
 func CreateWebhookPublicFromGet(webhook *github.Hook, repositoryID int64) *WebhookPublic {
 	contentType := ""
 	if webhook.Config["content_type"] != nil {

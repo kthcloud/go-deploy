@@ -64,29 +64,17 @@ func (client *Client) waitDeploymentReady(ctx context.Context, namespace, deploy
 
 func (client *Client) ReadDeployment(id string) (*models.DeploymentPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to read deployment %s. details: %w", id, err)
+		return fmt.Errorf("failed to read k8s deployment %s. details: %w", id, err)
 	}
 
 	if id == "" {
+		log.Println("no id supplied when reading k8s deployment. assuming it was deleted")
 		return nil, nil
-	}
-
-	if client.Namespace == "" {
-		return nil, nil
-	}
-
-	namespaceCreated, err := client.NamespaceCreated(client.Namespace)
-	if err != nil {
-		return nil, makeError(err)
-	}
-
-	if !namespaceCreated {
-		return nil, makeError(fmt.Errorf("no such namespace %s", client.Namespace))
 	}
 
 	list, err := client.K8sClient.AppsV1().Deployments(client.Namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		return nil, err
+		return nil, makeError(err)
 	}
 
 	for _, item := range list.Items {
@@ -99,40 +87,22 @@ func (client *Client) ReadDeployment(id string) (*models.DeploymentPublic, error
 	return nil, nil
 }
 
-func (client *Client) CreateDeployment(public *models.DeploymentPublic) (string, error) {
+func (client *Client) CreateDeployment(public *models.DeploymentPublic) (*models.DeploymentPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create deployment %s. details: %w", public.Name, err)
 	}
 
 	if public.Name == "" {
-		return "", nil
+		return nil, nil
 	}
 
-	if public.Namespace == "" {
-		return "", nil
+	deployment, err := client.K8sClient.AppsV1().Deployments(public.Namespace).Get(context.TODO(), public.Name, metav1.GetOptions{})
+	if err != nil && !IsNotFoundErr(err) {
+		return nil, makeError(err)
 	}
 
-	namespaceCreated, err := client.NamespaceCreated(public.Namespace)
-	if err != nil {
-		return "", makeError(err)
-	}
-
-	if !namespaceCreated {
-		return "", makeError(fmt.Errorf("no such namespace %s", public.Namespace))
-	}
-
-	list, err := client.K8sClient.AppsV1().Deployments(public.Namespace).List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		return "", err
-	}
-
-	for _, item := range list.Items {
-		if FindLabel(item.ObjectMeta.Labels, keys.ManifestLabelName, public.Name) {
-			idLabel := GetLabel(item.ObjectMeta.Labels, keys.ManifestLabelID)
-			if idLabel != "" {
-				return idLabel, nil
-			}
-		}
+	if err == nil {
+		return models.CreateDeploymentPublicFromRead(deployment), nil
 	}
 
 	public.ID = uuid.New().String()
@@ -141,55 +111,33 @@ func (client *Client) CreateDeployment(public *models.DeploymentPublic) (string,
 	manifest := CreateDeploymentManifest(public)
 	_, err = client.K8sClient.AppsV1().Deployments(public.Namespace).Create(context.TODO(), manifest, metav1.CreateOptions{})
 	if err != nil {
-		return "", makeError(err)
+		return nil, makeError(err)
 	}
 
-	return public.ID, nil
+	return client.ReadDeployment(public.ID)
 }
 
-func (client *Client) UpdateDeployment(public *models.DeploymentPublic) error {
+func (client *Client) UpdateDeployment(public *models.DeploymentPublic) (*models.DeploymentPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to update deployment %s. details: %w", public.Name, err)
+		return fmt.Errorf("failed to update k8s deployment %s. details: %w", public.Name, err)
 	}
 
 	if public.ID == "" {
-		return nil
+		log.Println("no id supplied when updating k8s deployment. assuming it was deleted")
+		return nil, nil
 	}
 
-	if public.Namespace == "" {
-		return nil
+	res, err := client.K8sClient.AppsV1().Deployments(public.Namespace).Update(context.TODO(), CreateDeploymentManifest(public), metav1.UpdateOptions{})
+	if err != nil && !IsNotFoundErr(err) {
+		return nil, makeError(err)
 	}
 
-	namespaceCreated, err := client.NamespaceCreated(public.Namespace)
-	if err != nil {
-		return makeError(err)
-	}
-
-	if !namespaceCreated {
-		return makeError(fmt.Errorf("no such namespace %s", public.Namespace))
-	}
-
-	list, err := client.K8sClient.AppsV1().Deployments(public.Namespace).List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
-
-	for _, item := range list.Items {
-		idLabel := GetLabel(item.ObjectMeta.Labels, keys.ManifestLabelID)
-		if idLabel == public.ID {
-			manifest := CreateDeploymentManifest(public)
-			_, err = client.K8sClient.AppsV1().Deployments(public.Namespace).Update(context.TODO(), manifest, metav1.UpdateOptions{})
-			if err != nil {
-				return makeError(err)
-			}
-
-			return nil
-		}
-
+	if err == nil {
+		return models.CreateDeploymentPublicFromRead(res), nil
 	}
 
 	log.Println("k8s deployment", public.Name, "not found when updating. assuming it was deleted")
-	return nil
+	return nil, nil
 }
 
 func (client *Client) DeleteDeployment(id string) error {
@@ -198,72 +146,56 @@ func (client *Client) DeleteDeployment(id string) error {
 	}
 
 	if id == "" {
+		log.Println("no id supplied when deleting k8s deployment. assuming it was deleted")
 		return nil
 	}
 
-	if client.Namespace == "" {
-		return nil
-	}
-
-	namespaceCreated, err := client.NamespaceCreated(client.Namespace)
+	list, err := client.K8sClient.AppsV1().Deployments(client.Namespace).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelID, id),
+	})
 	if err != nil {
 		return makeError(err)
-	}
-
-	if !namespaceCreated {
-		return nil
-	}
-
-	list, err := client.K8sClient.AppsV1().Deployments(client.Namespace).List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		return err
 	}
 
 	for _, item := range list.Items {
-		idLabel := GetLabel(item.ObjectMeta.Labels, keys.ManifestLabelID)
-		if idLabel == id {
-			err = client.K8sClient.AppsV1().Deployments(client.Namespace).Delete(context.TODO(), item.Name, metav1.DeleteOptions{})
-			if err != nil {
-				return makeError(err)
-			}
-
-			return nil
+		err = client.K8sClient.AppsV1().Deployments(client.Namespace).Delete(context.TODO(), item.Name, metav1.DeleteOptions{})
+		if err != nil && !IsNotFoundErr(err) {
+			return makeError(err)
 		}
 	}
 
-	log.Println("k8s deployment", id, "not found when deleting. assuming it was deleted")
 	return nil
 }
 
-func (client *Client) RestartDeployment(public *models.DeploymentPublic) error {
+func (client *Client) RestartDeployment(id string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to restart deployment %s. details: %w", public.Name, err)
+		return fmt.Errorf("failed to restart k8s deployment %s. details: %w", id, err)
 	}
 
-	namespaceCreated, err := client.NamespaceCreated(public.Namespace)
+	deployment, err := client.ReadDeployment(id)
 	if err != nil {
 		return makeError(err)
 	}
 
-	if !namespaceCreated {
+	if deployment == nil {
+		log.Println("no deployment found when restarting. assuming it was deleted")
 		return nil
 	}
 
-	req := client.K8sClient.AppsV1().Deployments(public.Namespace)
-
+	req := client.K8sClient.AppsV1().Deployments(client.Namespace)
 	data := fmt.Sprintf(`{"spec": {"template": {"metadata": {"annotations": {"kubectl.kubernetes.io/restartedAt": "%s"}}}}}`, time.Now().Format("20060102150405"))
 
-	_, err = req.Patch(context.TODO(), public.Name, types.StrategicMergePatchType, []byte(data), metav1.PatchOptions{})
+	_, err = req.Patch(context.TODO(), deployment.Name, types.StrategicMergePatchType, []byte(data), metav1.PatchOptions{})
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = client.waitDeploymentReady(context.TODO(), public.Namespace, public.Name)
+	err = client.waitDeploymentReady(context.TODO(), deployment.Namespace, deployment.Name)
 	if err != nil {
 		return makeError(err)
 	}
 
-	log.Println("deployment", public.Name, "restarted")
+	log.Println("deployment", deployment.Name, "restarted")
 
 	return nil
 }

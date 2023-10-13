@@ -8,30 +8,30 @@ import (
 )
 
 type RobotPublic struct {
-	ID          int       `bson:"id"`
-	Name        string    `bson:"name"`
-	HarborName  string    `bson:"harborName"`
-	ProjectID   int       `bson:"projectId"`
-	ProjectName string    `bson:"projectName"`
-	Disable     bool      `bson:"disable"`
-	Secret      string    `bson:"secret" `
-	CreatedAt   time.Time `bson:"createdAt"`
+	ID         int       `bson:"id"`
+	Name       string    `bson:"name"`
+	HarborName string    `bson:"harborName"`
+	Disable    bool      `bson:"disable"`
+	Secret     string    `bson:"secret" `
+	CreatedAt  time.Time `bson:"createdAt"`
 }
 
 func (r *RobotPublic) Created() bool {
 	return r.ID != 0
 }
 
+func (r *RobotPublic) IsPlaceholder() bool {
+	return false
+}
+
 func CreateRobotPublicFromGet(robot *modelv2.Robot, project *modelv2.Project) *RobotPublic {
 	return &RobotPublic{
-		ID:          int(robot.ID),
-		Name:        extractRobotRealName(robot.Name),
-		HarborName:  robot.Name,
-		ProjectName: project.Name,
-		ProjectID:   int(project.ProjectID),
-		Disable:     robot.Disable,
-		Secret:      robot.Description,
-		CreatedAt:   time.Time(robot.CreationTime),
+		ID:         int(robot.ID),
+		Name:       extractRobotRealName(robot.Name),
+		HarborName: robot.Name,
+		Disable:    robot.Disable,
+		Secret:     robot.Description,
+		CreatedAt:  time.Time(robot.CreationTime),
 	}
 }
 

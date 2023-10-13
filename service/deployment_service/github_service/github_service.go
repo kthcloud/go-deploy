@@ -9,6 +9,7 @@ import (
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/github"
 	githubModels "go-deploy/pkg/subsystems/github/models"
+	"go-deploy/service"
 	"log"
 	"strings"
 )
@@ -35,9 +36,8 @@ func Create(deploymentID string, params *deploymentModel.CreateParams) error {
 		return nil
 	}
 
-	webhook := &deployment.Subsystems.GitHub.Webhook
-	if !webhook.Created() {
-		webhook, err = createGitHubWebhook(client, deployment, createGitHubWebhookPublic(params.GitHub.RepositoryID))
+	if service.NotCreated(&deployment.Subsystems.GitHub.Webhook) {
+		_, err = createGitHubWebhook(client, deployment, createGitHubWebhookPublic(params.GitHub.RepositoryID))
 		if err != nil {
 			return makeError(err)
 		}
@@ -46,21 +46,21 @@ func Create(deploymentID string, params *deploymentModel.CreateParams) error {
 	return nil
 }
 
-func Delete(name string, githubToken *string) error {
-	log.Println("deleting github for", name)
+func Delete(id string, githubToken *string) error {
+	log.Println("deleting github for", id)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete github for deployment %s. details: %w", name, err)
+		return fmt.Errorf("failed to delete github for deployment %s. details: %w", id, err)
 	}
 
 	if githubToken == nil {
 		// assume token is not attainable and that the webhook can remain active
-		err := deploymentModel.New().UpdateSubsystemByName(name, "github", "placeholder", false)
+		err := deploymentModel.New().UpdateSubsystemByID_test(id, "github.placeholder", false)
 		if err != nil {
 			return makeError(err)
 		}
 
-		err = deploymentModel.New().UpdateSubsystemByName(name, "github", "webhook", githubModels.WebhookPublic{})
+		err = deploymentModel.New().UpdateSubsystemByID_test(id, "github.webhook", githubModels.WebhookPublic{})
 		if err != nil {
 			return makeError(err)
 		}
@@ -75,13 +75,13 @@ func Delete(name string, githubToken *string) error {
 		return makeError(err)
 	}
 
-	deployment, err := deploymentModel.New().GetByName(name)
+	deployment, err := deploymentModel.New().GetByID(id)
 	if err != nil {
 		return makeError(err)
 	}
 
 	if deployment == nil {
-		log.Println("deployment", name, "not found for github deletion. assuming it was deleted")
+		log.Println("deployment", id, "not found for github deletion. assuming it was deleted")
 		return nil
 	}
 
@@ -91,7 +91,7 @@ func Delete(name string, githubToken *string) error {
 			return makeError(err)
 		}
 
-		err = deploymentModel.New().UpdateSubsystemByName(name, "github", "webhook", githubModels.WebhookPublic{})
+		err = deploymentModel.New().UpdateSubsystemByID_test(id, "github.webhook", githubModels.WebhookPublic{})
 		if err != nil {
 			return makeError(err)
 		}
@@ -100,14 +100,14 @@ func Delete(name string, githubToken *string) error {
 	return nil
 }
 
-func CreatePlaceholder(name string) error {
+func CreatePlaceholder(id string) error {
 	log.Println("setting up placeholder github")
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to setup placeholder github. details: %w", err)
 	}
 
-	err := deploymentModel.New().UpdateSubsystemByName(name, "github", "placeholder", true)
+	err := deploymentModel.New().UpdateSubsystemByID_test(id, "github.placeholder", true)
 	if err != nil {
 		return makeError(err)
 	}

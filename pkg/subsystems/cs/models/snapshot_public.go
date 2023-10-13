@@ -16,6 +16,14 @@ type SnapshotPublic struct {
 	Current     bool      `bson:"createdAt"`
 }
 
+func (s *SnapshotPublic) Created() bool {
+	return s.ID != ""
+}
+
+func (s *SnapshotPublic) IsPlaceholder() bool {
+	return false
+}
+
 func CreateSnapshotPublicFromGet(snapshot *cloudstack.VMSnapshot) *SnapshotPublic {
 	var parentName *string
 	if snapshot.ParentName != "" {
@@ -23,12 +31,13 @@ func CreateSnapshotPublicFromGet(snapshot *cloudstack.VMSnapshot) *SnapshotPubli
 	}
 
 	return &SnapshotPublic{
-		ID:         snapshot.Id,
-		VmID:       snapshot.Virtualmachineid,
-		Name:       snapshot.Displayname,
-		ParentName: parentName,
-		CreatedAt:  formatCreatedAt(snapshot.Created),
-		State:      snapshot.State,
-		Current:    snapshot.Current,
+		ID:          snapshot.Id,
+		VmID:        snapshot.Virtualmachineid,
+		Name:        snapshot.Displayname,
+		Description: snapshot.Description,
+		ParentName:  parentName,
+		CreatedAt:   formatCreatedAt(snapshot.Created),
+		State:       snapshot.State,
+		Current:     snapshot.Current,
 	}
 }

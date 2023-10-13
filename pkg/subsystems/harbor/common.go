@@ -38,7 +38,7 @@ func (client *Client) createHarborRobot(public *models.RobotPublic) (*modelv2.Ro
 		return fmt.Errorf("failed to create harbor robot %s. details: %w", public.Name, err)
 	}
 
-	robotRequestBody := models.CreateRobotCreateBody(public)
+	robotRequestBody := models.CreateRobotCreateBody(public, client.Project)
 	res, err := client.doJSONRequest("POST", "/robots", robotRequestBody)
 	if err != nil {
 		return nil, makeError(err)

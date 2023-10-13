@@ -82,8 +82,8 @@ func UpdateByID(id string, update bson.D) error {
 	return nil
 }
 
-func UpdateSubsystemByID(id, subsystem string, key string, update interface{}) error {
-	subsystemKey := fmt.Sprintf("subsystems.%s.%s", subsystem, key)
+func UpdateSubsystemByID(id, key string, update interface{}) error {
+	subsystemKey := fmt.Sprintf("subsystems.%s", key)
 	return UpdateByID(id, bson.D{{subsystemKey, update}})
 }
 
@@ -114,8 +114,8 @@ func GetWithNoActivities() ([]StorageManager, error) {
 	filter := bson.D{
 		{
 			"activities", bson.M{
-			"$size": 0,
-		},
+				"$size": 0,
+			},
 		},
 	}
 
