@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go-deploy/pkg/subsystems/k8s/keys"
 	"go-deploy/utils"
 	"io"
 	v1 "k8s.io/api/core/v1"
@@ -12,9 +13,9 @@ import (
 	"strings"
 )
 
-func (client *Client) getPodName(namespace, deployment string) (string, error) {
+func (client *Client) getPodName(namespace, deploymentID string) (string, error) {
 	pods, err := client.K8sClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", "app.kubernetes.io/name", deployment),
+		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelID, deploymentID),
 	})
 	if err != nil {
 		return "", err
@@ -27,13 +28,13 @@ func (client *Client) getPodName(namespace, deployment string) (string, error) {
 	return "", errors.New("no pods in namespace")
 }
 
-func (client *Client) setupPodLogStreamer(cancelCtx context.Context, namespace, deployment string, handler func(string)) {
+func (client *Client) setupPodLogStreamer(cancelCtx context.Context, namespace, deploymentID string, handler func(string)) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create k8s log stream for deployment %s. details: %w", deployment, err)
+		return fmt.Errorf("failed to create k8s log stream for deployment %s. details: %w", deploymentID, err)
 	}
 
 	for {
-		podName, err := client.getPodName(namespace, deployment)
+		podName, err := client.getPodName(namespace, deploymentID)
 		if err != nil {
 			utils.PrettyPrintError(makeError(err))
 			return
@@ -92,7 +93,7 @@ func isExitLine(line string) bool {
 	return firstPart && lastPart
 }
 
-func (client *Client) SetupLogStream(context context.Context, namespace, deployment string, handler func(string)) error {
-	go client.setupPodLogStreamer(context, namespace, deployment, handler)
+func (client *Client) SetupLogStream(context context.Context, namespace, deploymentID string, handler func(string)) error {
+	go client.setupPodLogStreamer(context, namespace, deploymentID, handler)
 	return nil
 }
