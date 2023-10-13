@@ -27,8 +27,8 @@ func (secret *SecretPublic) IsPlaceholder() bool {
 func CreateSecretPublicFromRead(secret *v1.Secret) *SecretPublic {
 	return &SecretPublic{
 		ID:        secret.Labels[keys.ManifestLabelID],
-		Name:      secret.ObjectMeta.Name,
-		Namespace: secret.ObjectMeta.Namespace,
+		Name:      secret.Name,
+		Namespace: secret.Namespace,
 		Type:      string(secret.Type),
 		Data:      secret.Data,
 		CreatedAt: formatCreatedAt(secret.Annotations),

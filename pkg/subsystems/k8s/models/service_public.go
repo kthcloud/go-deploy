@@ -31,7 +31,7 @@ func (s *ServicePublic) GetFQDN() string {
 func CreateServicePublicFromRead(service *v1.Service) *ServicePublic {
 	return &ServicePublic{
 		ID:         service.Labels[keys.ManifestLabelID],
-		Name:       service.Labels[keys.ManifestLabelName],
+		Name:       service.Name,
 		Namespace:  service.Namespace,
 		Port:       int(service.Spec.Ports[0].Port),
 		TargetPort: service.Spec.Ports[0].TargetPort.IntValue(),

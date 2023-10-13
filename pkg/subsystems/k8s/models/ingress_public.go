@@ -68,7 +68,7 @@ func CreateIngressPublicFromRead(ingress *v1.Ingress) *IngressPublic {
 
 	return &IngressPublic{
 		ID:           ingress.Labels[keys.ManifestLabelID],
-		Name:         ingress.Labels[keys.ManifestLabelName],
+		Name:         ingress.Name,
 		Namespace:    ingress.Namespace,
 		ServiceName:  serviceName,
 		ServicePort:  servicePort,

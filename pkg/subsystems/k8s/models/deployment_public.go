@@ -126,7 +126,7 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 
 	return &DeploymentPublic{
 		ID:               deployment.Labels[keys.ManifestLabelID],
-		Name:             deployment.Labels[keys.ManifestLabelName],
+		Name:             deployment.Name,
 		Namespace:        deployment.Namespace,
 		Image:            image,
 		ImagePullSecrets: imagePullSecrets,

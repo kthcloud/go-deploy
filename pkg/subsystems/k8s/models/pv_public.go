@@ -39,7 +39,7 @@ func CreatePvPublicFromRead(pv *v1.PersistentVolume) *PvPublic {
 
 	return &PvPublic{
 		ID:        pv.Labels[keys.ManifestLabelID],
-		Name:      pv.Labels[keys.ManifestLabelName],
+		Name:      pv.Name,
 		Capacity:  capacity,
 		NfsServer: nfsServer,
 		NfsPath:   nfsPath,

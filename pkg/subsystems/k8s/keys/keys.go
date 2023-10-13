@@ -1,7 +1,7 @@
 package keys
 
 const (
-	ManifestLabelName              = "kubernetes.io/metadata.name"
+	ManifestLabelName              = "app.kubernetes.io/deploy-name"
 	ManifestLabelID                = "app.kubernetes.io/deploy-id"
 	ManifestCreationTimestamp      = "app.kubernetes.io/deploy-created-at"
 	K8sAnnotationClusterIssuer     = "cert-manager.io/cluster-issuer"
