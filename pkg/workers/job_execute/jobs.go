@@ -1,6 +1,7 @@
 package job_execute
 
 import (
+	"context"
 	"fmt"
 	"github.com/mitchellh/mapstructure"
 	"go-deploy/models/dto/body"
@@ -11,7 +12,11 @@ import (
 	"go-deploy/pkg/workers/confirm"
 	"go-deploy/service/deployment_service"
 	"go-deploy/service/vm_service"
+	"go.mongodb.org/mongo-driver/bson"
+	"golang.org/x/exp/slices"
+	"log"
 	"strings"
+	"time"
 )
 
 func makeTerminatedError(err error) error {
@@ -20,6 +25,46 @@ func makeTerminatedError(err error) error {
 
 func makeFailedError(err error) error {
 	return fmt.Errorf("failed: %w", err)
+}
+
+func waitForJob(context context.Context, job *jobModel.Job, statuses []string) error {
+	if len(statuses) == 0 {
+		return nil
+	}
+
+	if slices.IndexFunc(statuses, func(s string) bool { return s == job.Status }) != -1 {
+		return nil
+	}
+
+	for {
+		select {
+		case <-context.Done():
+			return context.Err()
+		default:
+			var err error
+			job, err = jobModel.New().GetByID(job.ID)
+			if err != nil {
+				return err
+			}
+
+			if slices.IndexFunc(statuses, func(s string) bool { return s == job.Status }) != -1 {
+				return nil
+			}
+
+			time.Sleep(1 * time.Second)
+		}
+	}
+}
+
+func waitForJobs(context context.Context, jobs []jobModel.Job, statuses []string) error {
+	for _, job := range jobs {
+		err := waitForJob(context, &job, statuses)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func deploymentDeleted(deploymentID string) (bool, error) {
@@ -108,6 +153,33 @@ func deleteVM(job *jobModel.Job) error {
 	}
 
 	id := job.Args["id"].(string)
+
+	err = vmModel.New().AddActivity(id, vmModel.ActivityBeingDeleted)
+	if err != nil {
+		return makeTerminatedError(err)
+	}
+
+	relatedJobs, err := jobModel.New().AddFilter(bson.D{{"id", bson.M{"$ne": job.ID}}}).GetByArgs(map[string]interface{}{"id": id})
+	if err != nil {
+		return makeTerminatedError(err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
+	defer cancel()
+
+	go func() {
+		err = waitForJobs(ctx, relatedJobs, []string{jobModel.StatusCompleted, jobModel.StatusFailed, jobModel.StatusTerminated})
+		if err != nil {
+			log.Println("failed to wait for related jobs", id, ". details:", err)
+		}
+		cancel()
+	}()
+
+	select {
+	case <-time.After(300 * time.Second):
+		return makeTerminatedError(fmt.Errorf("timeout waiting for related jobs to finish"))
+	case <-ctx.Done():
+	}
 
 	err = vm_service.Delete(id)
 	if err != nil {
@@ -266,6 +338,32 @@ func deleteDeployment(job *jobModel.Job) error {
 	}
 
 	id := job.Args["id"].(string)
+
+	err = deploymentModel.New().AddActivity(id, deploymentModel.ActivityBeingDeleted)
+	if err != nil {
+		return makeTerminatedError(err)
+	}
+
+	relatedJobs, err := jobModel.New().GetByArgs(bson.M{"args.id": id})
+	if err != nil {
+		return makeTerminatedError(err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	go func() {
+		err = waitForJobs(ctx, relatedJobs, []string{jobModel.StatusCompleted, jobModel.StatusFailed, jobModel.StatusTerminated})
+		if err != nil {
+			log.Println("failed to wait for related jobs", id, ". details:", err)
+		}
+	}()
+
+	select {
+	case <-time.After(30 * time.Second):
+		return makeTerminatedError(fmt.Errorf("timeout waiting for related jobs to finish"))
+	default:
+	}
 
 	err = deployment_service.Delete(id)
 	if err != nil {

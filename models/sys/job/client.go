@@ -22,6 +22,12 @@ func New() *Client {
 	}
 }
 
+func (client *Client) AddFilter(filter bson.D) *Client {
+	client.ExtraFilter = &filter
+
+	return client
+}
+
 func (client *Client) AddPagination(page, pageSize int) *Client {
 	client.Pagination = &base.Pagination{
 		Page:     page,

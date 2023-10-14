@@ -87,6 +87,20 @@ func (client *Client) GetMany(jobType, status *string) ([]Job, error) {
 	return client.GetAllWithFilter(filter)
 }
 
+func (client *Client) GetByArgs(args map[string]interface{}) ([]Job, error) {
+	fullFilter := bson.D{}
+
+	for key, value := range args {
+		filter := bson.D{
+			{"args." + key, value},
+		}
+
+		fullFilter = append(fullFilter, filter...)
+	}
+
+	return client.GetAllWithFilter(fullFilter)
+}
+
 func (client *Client) GetNext() (*Job, error) {
 	now := time.Now()
 	filter := bson.D{

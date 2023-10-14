@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	deploymentModel "go-deploy/models/sys/deployment"
+	jobModel "go-deploy/models/sys/job"
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/utils"
+	"golang.org/x/exp/slices"
 	"log"
 	"time"
 )
@@ -28,7 +30,26 @@ func deploymentConfirmer(ctx context.Context) {
 			beingDeleted, _ := deploymentModel.New().GetByActivity(deploymentModel.ActivityBeingDeleted)
 			for _, deployment := range beingDeleted {
 				deleted := DeploymentDeleted(&deployment)
-				if deleted {
+				if !deleted {
+					continue
+				}
+
+				relatedJobs, err := jobModel.New().GetByArgs(map[string]interface{}{
+					"id": deployment.ID,
+				})
+
+				if err != nil {
+					utils.PrettyPrintError(fmt.Errorf("failed to get related jobs when confirming deployment deleting. details: %w", err))
+					continue
+				}
+
+				allFinished := slices.IndexFunc(relatedJobs, func(j jobModel.Job) bool {
+					return j.Status != jobModel.StatusCompleted &&
+						j.Status != jobModel.StatusFailed &&
+						j.Status != jobModel.StatusTerminated
+				}) == -1
+
+				if allFinished {
 					log.Printf("marking deployment %s as deleted\n", deployment.Name)
 					_ = deploymentModel.New().DeleteByID(deployment.ID)
 				}
@@ -66,7 +87,26 @@ func vmConfirmer(ctx context.Context) {
 
 			for _, vm := range beingDeleted {
 				deleted := VmDeleted(&vm)
-				if deleted {
+				if !deleted {
+					continue
+				}
+
+				relatedJobs, err := jobModel.New().GetByArgs(map[string]interface{}{
+					"id": vm.ID,
+				})
+
+				if err != nil {
+					utils.PrettyPrintError(fmt.Errorf("failed to get related jobs when confirming vm deleting. details: %w", err))
+					continue
+				}
+
+				allFinished := slices.IndexFunc(relatedJobs, func(j jobModel.Job) bool {
+					return j.Status != jobModel.StatusCompleted &&
+						j.Status != jobModel.StatusFailed &&
+						j.Status != jobModel.StatusTerminated
+				}) == -1
+
+				if allFinished {
 					log.Printf("marking vm %s as deleted\n", vm.Name)
 					_ = vmModel.New().DeleteByID(vm.ID)
 				}
