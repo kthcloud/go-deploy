@@ -220,6 +220,9 @@ func Repair(name string) error {
 
 func dbFunc(id, key string) func(interface{}) error {
 	return func(data interface{}) error {
-		return deploymentModel.New().UpdateSubsystemByID_test(id, "harbor."+key, data)
+		if data == nil {
+			return deploymentModel.New().DeleteSubsystemByID(id, "harbor."+key)
+		}
+		return deploymentModel.New().UpdateSubsystemByID(id, "harbor."+key, data)
 	}
 }

@@ -437,6 +437,9 @@ func HostInCorrectState(hostName string, zone *enviroment.VmZone) (bool, string,
 
 func dbFunc(vmID, key string) func(interface{}) error {
 	return func(data interface{}) error {
+		if data == nil {
+			return vmModel.New().DeleteSubsystemByID(vmID, "cs."+key)
+		}
 		return vmModel.New().UpdateSubsystemByID(vmID, "cs."+key, data)
 	}
 }

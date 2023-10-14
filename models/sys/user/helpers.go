@@ -133,7 +133,7 @@ func (client *Client) UpdateWithParams(id string, params *UserUpdate) error {
 		return nil
 	}
 
-	err := client.UpdateWithBsonByID(id, updateData)
+	err := client.SetWithBsonByID(id, updateData)
 	if err != nil {
 		return fmt.Errorf("failed to update user for %s. details: %w", id, err)
 	}

@@ -45,7 +45,7 @@ func createGitHubWebhook(client *github.Client, deployment *deploymentModel.Depl
 		return nil, fmt.Errorf("failed to read webhook after creation")
 	}
 
-	err = deploymentModel.New().UpdateSubsystemByName(deployment.Name, "github", "webhook", webhook)
+	err = deploymentModel.New().UpdateSubsystemByName(deployment.ID, "github.webhook", webhook)
 	if err != nil {
 		return nil, err
 	}

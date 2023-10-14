@@ -29,7 +29,7 @@ func vmStatusUpdater(ctx context.Context) {
 					utils.PrettyPrintError(fmt.Errorf("error fetching vm status: %w", err))
 					continue
 				}
-				_ = vmModel.New().UpdateWithBsonByID(vm.ID, bson.D{{"statusCode", code}, {"statusMessage", message}})
+				_ = vmModel.New().SetWithBsonByID(vm.ID, bson.D{{"statusCode", code}, {"statusMessage", message}})
 			}
 		case <-ctx.Done():
 			return
@@ -81,7 +81,7 @@ func deploymentStatusUpdater(ctx context.Context) {
 					utils.PrettyPrintError(fmt.Errorf("error fetching deployment status: %w", err))
 					continue
 				}
-				_ = deploymentModel.New().UpdateWithBsonByID(deployment.ID, bson.D{{"statusCode", code}, {"statusMessage", message}})
+				_ = deploymentModel.New().SetWithBsonByID(deployment.ID, bson.D{{"statusCode", code}, {"statusMessage", message}})
 			}
 		case <-ctx.Done():
 			return

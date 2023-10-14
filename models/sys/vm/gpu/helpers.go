@@ -248,7 +248,7 @@ func (client *Client) Attach(gpuID, vmID, user string, end time.Time) (bool, err
 		}
 	}
 
-	err = vmModel.New().UpdateWithBsonByID(vmID, bson.D{{"gpuId", gpuID}})
+	err = vmModel.New().SetWithBsonByID(vmID, bson.D{{"gpuId", gpuID}})
 	if err != nil {
 		// remove lease, if this also fails, we are in a bad state...
 		_, _ = client.Collection.UpdateOne(
@@ -310,7 +310,7 @@ func (client *Client) Detach(vmID, userID string) error {
 		return err
 	}
 
-	err = vmModel.New().UpdateWithBsonByID(vmID, bson.D{{"gpuId", ""}})
+	err = vmModel.New().SetWithBsonByID(vmID, bson.D{{"gpuId", ""}})
 	if err != nil {
 		// remove lease, if this also fails, we are in a bad state...
 		_, _ = client.Collection.UpdateOne(
