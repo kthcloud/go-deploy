@@ -23,7 +23,7 @@ func (n *NamespacePublic) IsPlaceholder() bool {
 func CreateNamespacePublicFromRead(namespace *v1.Namespace) *NamespacePublic {
 	return &NamespacePublic{
 		ID:        namespace.Labels[keys.ManifestLabelID],
-		Name:      namespace.Labels[keys.ManifestLabelName],
+		Name:      namespace.Name,
 		CreatedAt: formatCreatedAt(namespace.Annotations),
 	}
 }

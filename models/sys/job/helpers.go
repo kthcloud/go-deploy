@@ -87,6 +87,20 @@ func (client *Client) GetMany(jobType, status *string) ([]Job, error) {
 	return client.GetAllWithFilter(filter)
 }
 
+func (client *Client) GetByArgs(args map[string]interface{}) ([]Job, error) {
+	fullFilter := bson.D{}
+
+	for key, value := range args {
+		filter := bson.D{
+			{"args." + key, value},
+		}
+
+		fullFilter = append(fullFilter, filter...)
+	}
+
+	return client.GetAllWithFilter(fullFilter)
+}
+
 func (client *Client) GetNext() (*Job, error) {
 	now := time.Now()
 	filter := bson.D{
@@ -238,7 +252,7 @@ func (client *Client) UpdateWithParams(id string, params *UpdateParams) error {
 		return nil
 	}
 
-	err := client.UpdateWithBsonByID(id, updateData)
+	err := client.SetWithBsonByID(id, updateData)
 	if err != nil {
 		return fmt.Errorf("failed to update job %s. details: %w", id, err)
 	}

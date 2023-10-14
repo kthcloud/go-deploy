@@ -64,7 +64,7 @@ func CreateJobPublicFromRead(job *v1.Job) *JobPublic {
 
 	return &JobPublic{
 		ID:        job.Labels[keys.ManifestLabelID],
-		Name:      job.Labels[keys.ManifestLabelName],
+		Name:      job.Name,
 		Namespace: job.Namespace,
 		Image:     job.Spec.Template.Spec.Containers[0].Image,
 		Command:   job.Spec.Template.Spec.Containers[0].Command,

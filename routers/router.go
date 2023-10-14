@@ -34,6 +34,7 @@ func sseHeaderMiddleware() gin.HandlerFunc {
 func NewRouter() *gin.Engine {
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowOrigins = []string{"*"}
+	corsConfig.AllowCredentials = true
 	corsConfig.AddAllowHeaders("authorization")
 
 	router := gin.New()

@@ -41,17 +41,6 @@ func GetLogsSSE(c *gin.Context) {
 		return
 	}
 
-	deployment, err := deployment_service.GetByIdAuth(requestURI.DeploymentID, auth)
-	if err != nil {
-		httpContext.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
-		return
-	}
-
-	if deployment == nil {
-		httpContext.ErrorResponse(http.StatusNotFound, status_codes.Error, fmt.Sprintf("deployment %s not found", requestURI.DeploymentID))
-		return
-	}
-
 	ch := make(chan string)
 
 	handler := func(msg string) {

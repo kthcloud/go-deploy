@@ -635,6 +635,9 @@ func updateImage(context *DeploymentContext) error {
 
 func dbFunc(id, key string) func(interface{}) error {
 	return func(data interface{}) error {
-		return deploymentModel.New().UpdateSubsystemByID_test(id, "k8s."+key, data)
+		if data == nil {
+			return deploymentModel.New().DeleteSubsystemByID(id, "k8s."+key)
+		}
+		return deploymentModel.New().UpdateSubsystemByID(id, "k8s."+key, data)
 	}
 }

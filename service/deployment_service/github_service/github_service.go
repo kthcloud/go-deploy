@@ -55,12 +55,12 @@ func Delete(id string, githubToken *string) error {
 
 	if githubToken == nil {
 		// assume token is not attainable and that the webhook can remain active
-		err := deploymentModel.New().UpdateSubsystemByID_test(id, "github.placeholder", false)
+		err := deploymentModel.New().UpdateSubsystemByID(id, "github.placeholder", false)
 		if err != nil {
 			return makeError(err)
 		}
 
-		err = deploymentModel.New().UpdateSubsystemByID_test(id, "github.webhook", githubModels.WebhookPublic{})
+		err = deploymentModel.New().UpdateSubsystemByID(id, "github.webhook", githubModels.WebhookPublic{})
 		if err != nil {
 			return makeError(err)
 		}
@@ -91,7 +91,7 @@ func Delete(id string, githubToken *string) error {
 			return makeError(err)
 		}
 
-		err = deploymentModel.New().UpdateSubsystemByID_test(id, "github.webhook", githubModels.WebhookPublic{})
+		err = deploymentModel.New().UpdateSubsystemByID(id, "github.webhook", githubModels.WebhookPublic{})
 		if err != nil {
 			return makeError(err)
 		}
@@ -107,7 +107,7 @@ func CreatePlaceholder(id string) error {
 		return fmt.Errorf("failed to setup placeholder github. details: %w", err)
 	}
 
-	err := deploymentModel.New().UpdateSubsystemByID_test(id, "github.placeholder", true)
+	err := deploymentModel.New().UpdateSubsystemByID(id, "github.placeholder", true)
 	if err != nil {
 		return makeError(err)
 	}

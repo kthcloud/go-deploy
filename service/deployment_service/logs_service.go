@@ -40,14 +40,14 @@ func SetupLogStream(deploymentID string, handler func(string), auth *service.Aut
 		return nil, err
 	}
 
-	k8sDeployment, ok := deployment.Subsystems.K8s.DeploymentMap["main"]
-	if !ok || !k8sDeployment.Created() {
+	k8sDeployment := deployment.Subsystems.K8s.GetDeployment(deployment.Name)
+	if service.NotCreated(k8sDeployment) {
 		log.Println("deployment", deploymentID, "not found in k8s when setting up log stream. assuming it was deleted")
 		return nil, nil
 	}
 
 	ssK8s := deployment.Subsystems.K8s
-	err = k8sClient.SetupLogStream(ctx, subsystemutils.GetPrefixedName(ssK8s.Namespace.Name), k8sDeployment.Name, handler)
+	err = k8sClient.SetupLogStream(ctx, ssK8s.Namespace.Name, k8sDeployment.ID, handler)
 	if err != nil {
 		ctx.Done()
 		return nil, err

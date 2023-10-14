@@ -28,12 +28,21 @@ func (client *ResourceClient[T]) ExistsByID(id string) (bool, error) {
 
 	return count > 0, nil
 }
+
 func (client *ResourceClient[T]) UpdateWithBsonByID(id string, update bson.D) error {
-	return models.UpdateOneResource(client.Collection, bson.D{{"id", id}}, bson.D{{"$set", update}}, client.IncludeDeleted, client.ExtraFilter)
+	return models.UpdateOneResource(client.Collection, bson.D{{"id", id}}, update, client.IncludeDeleted, client.ExtraFilter)
 }
 
 func (client *ResourceClient[T]) UpdateWithBsonByName(name string, update bson.D) error {
-	return models.UpdateOneResource(client.Collection, bson.D{{"name", name}}, bson.D{{"$set", update}}, client.IncludeDeleted, client.ExtraFilter)
+	return models.UpdateOneResource(client.Collection, bson.D{{"name", name}}, update, client.IncludeDeleted, client.ExtraFilter)
+}
+
+func (client *ResourceClient[T]) SetWithBsonByID(id string, update bson.D) error {
+	return client.UpdateWithBsonByID(id, bson.D{{"$set", update}})
+}
+
+func (client *ResourceClient[T]) SetWithBsonByName(name string, update bson.D) error {
+	return client.UpdateWithBsonByName(name, bson.D{{"$set", update}})
 }
 
 func (client *ResourceClient[T]) DeleteByID(id string) error {
