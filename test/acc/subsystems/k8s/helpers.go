@@ -42,13 +42,10 @@ func withK8sNamespace(t *testing.T) *models.NamespacePublic {
 func withK8sDeployment(t *testing.T, namespace *models.NamespacePublic) *models.DeploymentPublic {
 	client := withK8sClient(t)
 
-	registry := conf.Env.DockerRegistry.URL
-	image := conf.Env.DockerRegistry.Placeholder.Project + "/" + conf.Env.DockerRegistry.Placeholder.Repository
-
 	deploymentPublic := &models.DeploymentPublic{
 		Name:      "acc-test-" + uuid.New().String(),
 		Namespace: namespace.Name,
-		Image:     registry + "/" + image + ":latest",
+		Image:     conf.Env.DockerRegistry.PlaceholderImage,
 		EnvVars:   nil,
 	}
 

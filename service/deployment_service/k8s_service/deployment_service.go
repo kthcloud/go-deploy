@@ -6,8 +6,8 @@ import (
 	deploymentModel "go-deploy/models/sys/deployment"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/service"
+	"go-deploy/service/constants"
 	"go-deploy/service/deployment_service/base"
-	"go-deploy/service/deployment_service/constants"
 	"go-deploy/service/resources"
 	"golang.org/x/exp/slices"
 	"log"
@@ -35,7 +35,7 @@ func Create(deploymentID string, params *deploymentModel.CreateParams) error {
 	// Namespace
 	err = resources.SsCreator(context.Client.CreateNamespace).
 		WithDbFunc(dbFunc(deploymentID, "namespace")).
-		WithPublic(context.Generator.MainNamespace()).
+		WithPublic(context.Generator.Namespace()).
 		Exec()
 	if err != nil {
 		return makeError(err)
@@ -101,7 +101,7 @@ func Create(deploymentID string, params *deploymentModel.CreateParams) error {
 		}
 	}
 
-	// Ingress main
+	// Ingress
 	for _, ingressPublic := range context.Generator.Ingresses() {
 		err = resources.SsCreator(context.Client.CreateIngress).
 			WithDbFunc(dbFunc(deploymentID, "ingressMap."+ingressPublic.Name)).
@@ -298,7 +298,7 @@ func Repair(id string) error {
 		return makeError(err)
 	}
 
-	namespace := context.Generator.MainNamespace()
+	namespace := context.Generator.Namespace()
 	err = resources.SsRepairer(
 		context.Client.ReadNamespace,
 		context.Client.CreateNamespace,

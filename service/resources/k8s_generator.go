@@ -8,12 +8,12 @@ import (
 	storageManagerModel "go-deploy/models/sys/deployment/storage_manager"
 	"go-deploy/models/sys/enviroment"
 	userModel "go-deploy/models/sys/user"
+	"go-deploy/models/sys/vm"
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/service"
-	"go-deploy/service/deployment_service/constants"
+	"go-deploy/service/constants"
 	"go-deploy/utils"
-	"go-deploy/utils/subsystemutils"
 	"golang.org/x/exp/slices"
 	v1 "k8s.io/api/core/v1"
 	"path"
@@ -24,7 +24,7 @@ type K8sGenerator struct {
 	namespace string
 }
 
-func (kg *K8sGenerator) MainNamespace() *models.NamespacePublic {
+func (kg *K8sGenerator) Namespace() *models.NamespacePublic {
 	if kg.d.deployment != nil {
 		if ns := &kg.d.deployment.Subsystems.K8s.Namespace; service.Created(ns) {
 			return ns
@@ -35,10 +35,28 @@ func (kg *K8sGenerator) MainNamespace() *models.NamespacePublic {
 		}
 	}
 
-	return nil
-}
+	if kg.v.vm != nil {
+		createNamespace := false
+		for _, port := range kg.v.vm.Ports {
+			if port.HttpProxy != nil {
+				createNamespace = true
+				break
+			}
+		}
 
-func (kg *K8sGenerator) StorageManagerNamespace() *models.NamespacePublic {
+		if !createNamespace {
+			return nil
+		}
+
+		if ns := &kg.v.vm.Subsystems.K8s.Namespace; service.Created(ns) {
+			return ns
+		} else {
+			return &models.NamespacePublic{
+				Name: kg.namespace,
+			}
+		}
+	}
+
 	if kg.s.storageManager != nil {
 		if ns := &kg.s.storageManager.Subsystems.K8s.Namespace; service.Created(ns) {
 			return ns
@@ -61,7 +79,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 
 			var volumes []models.Volume
 			for _, volume := range mainApp.Volumes {
-				pvcName := getPvcName(kg.d.deployment, volume.Name)
+				pvcName := getDeploymentPvcName(kg.d.deployment, volume.Name)
 				volumes = append(volumes, models.Volume{
 					Name:      volume.Name,
 					PvcName:   &pvcName,
@@ -150,6 +168,97 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 				Volumes:          k8sVolumes,
 				ImagePullSecrets: imagePullSecrets,
 			})
+		}
+
+		return res
+	}
+
+	if kg.v.vm != nil {
+		ports := kg.v.vm.Ports
+
+		for mapName, k8sDeployment := range kg.v.vm.Subsystems.K8s.GetDeploymentMap() {
+			idx := slices.IndexFunc(ports, func(p vm.Port) bool {
+				if p.HttpProxy == nil {
+					return false
+				}
+
+				return getVmProxyDeploymentName(kg.v.vm, p.HttpProxy.Name) == mapName
+			})
+
+			if idx != -1 {
+				csPort := kg.v.vm.Subsystems.CS.GetPortForwardingRule(ports[idx].Name)
+				if csPort == nil {
+					continue
+				}
+
+				envVars := []models.EnvVar{
+					{
+						Name:  "PORT",
+						Value: "8080",
+					},
+					{
+						Name:  "VM_PORT",
+						Value: fmt.Sprintf("%d", csPort.PublicPort),
+					},
+					{
+						Name:  "URL",
+						Value: getVmProxyExternalURL(ports[idx].HttpProxy.Name, kg.v.deploymentZone),
+					},
+					{
+						Name:  "VM_URL",
+						Value: kg.v.vmZone.ParentDomain,
+					},
+				}
+
+				k8sDeployment.EnvVars = envVars
+
+				res = append(res, k8sDeployment)
+			}
+		}
+
+		for _, port := range ports {
+			if port.HttpProxy == nil {
+				continue
+			}
+
+			csPort := kg.v.vm.Subsystems.CS.GetPortForwardingRule(port.Name)
+			if csPort == nil {
+				continue
+			}
+
+			if _, ok := kg.v.vm.Subsystems.K8s.GetDeploymentMap()[getVmProxyDeploymentName(kg.v.vm, port.HttpProxy.Name)]; !ok {
+				envVars := []models.EnvVar{
+					{
+						Name:  "PORT",
+						Value: "8080",
+					},
+					{
+						Name:  "VM_PORT",
+						Value: fmt.Sprintf("%d", csPort.PublicPort),
+					},
+					{
+						Name:  "VM_URL",
+						Value: kg.v.vmZone.ParentDomain,
+					},
+				}
+
+				res = append(res, models.DeploymentPublic{
+					Name:      getVmProxyDeploymentName(kg.v.vm, port.HttpProxy.Name),
+					Namespace: kg.namespace,
+					Image:     conf.Env.DockerRegistry.VmHttpProxyImage,
+					EnvVars:   envVars,
+					Resources: models.Resources{
+						Limits: models.Limits{
+							CPU:    conf.Env.Deployment.Resources.Limits.CPU,
+							Memory: conf.Env.Deployment.Resources.Limits.Memory,
+						},
+						Requests: models.Requests{
+							CPU:    conf.Env.Deployment.Resources.Requests.CPU,
+							Memory: conf.Env.Deployment.Resources.Requests.Memory,
+						},
+					},
+				})
+			}
 		}
 
 		return res
@@ -316,6 +425,39 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 		return res
 	}
 
+	if kg.v.vm != nil {
+		ports := kg.v.vm.Ports
+
+		for mapName, svc := range kg.v.vm.Subsystems.K8s.GetServiceMap() {
+			if slices.IndexFunc(ports, func(p vm.Port) bool {
+				if p.HttpProxy == nil {
+					return false
+				}
+
+				return getVmProxyServiceName(kg.v.vm, p.HttpProxy.Name) == mapName
+			}) != -1 {
+				res = append(res, svc)
+			}
+		}
+
+		for _, port := range ports {
+			if port.HttpProxy == nil {
+				continue
+			}
+
+			if _, ok := kg.v.vm.Subsystems.K8s.GetServiceMap()[getVmProxyServiceName(kg.v.vm, port.HttpProxy.Name)]; !ok {
+				res = append(res, models.ServicePublic{
+					Name:       getVmProxyServiceName(kg.v.vm, port.HttpProxy.Name),
+					Namespace:  kg.namespace,
+					Port:       8080,
+					TargetPort: 8080,
+				})
+			}
+		}
+
+		return res
+	}
+
 	if kg.s.storageManager != nil {
 		// filebrowser
 		if filebrowser := kg.s.storageManager.Subsystems.K8s.GetService(constants.StorageManagerAppName); service.Created(filebrowser) {
@@ -390,6 +532,41 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 		return res
 	}
 
+	if kg.v.vm != nil {
+		ports := kg.v.vm.Ports
+
+		for mapName, ingress := range kg.v.vm.Subsystems.K8s.GetIngressMap() {
+			if slices.IndexFunc(ports, func(p vm.Port) bool {
+				if p.HttpProxy == nil {
+					return false
+				}
+
+				return getVmProxyIngressName(kg.v.vm, p.HttpProxy.Name) == mapName
+			}) != -1 {
+				res = append(res, ingress)
+			}
+		}
+
+		for _, port := range ports {
+			if port.HttpProxy == nil {
+				continue
+			}
+
+			if _, ok := kg.v.vm.Subsystems.K8s.GetIngressMap()[getVmProxyIngressName(kg.v.vm, port.HttpProxy.Name)]; !ok {
+				res = append(res, models.IngressPublic{
+					Name:         getVmProxyIngressName(kg.v.vm, port.HttpProxy.Name),
+					Namespace:    kg.namespace,
+					ServiceName:  getVmProxyServiceName(kg.v.vm, port.HttpProxy.Name),
+					ServicePort:  8080,
+					IngressClass: conf.Env.Deployment.IngressClass,
+					Hosts:        []string{getVmProxyExternalURL(port.HttpProxy.Name, kg.v.deploymentZone)},
+				})
+			}
+		}
+
+		return res
+	}
+
 	if kg.s.storageManager != nil {
 		if ingress := kg.s.storageManager.Subsystems.K8s.GetIngress(constants.StorageManagerAppName); service.Created(ingress) {
 			res = append(res, *ingress)
@@ -422,16 +599,16 @@ func (kg *K8sGenerator) PVs() []models.PvPublic {
 	if kg.d.deployment != nil {
 		volumes := kg.d.deployment.GetMainApp().Volumes
 
-		for mapName, pv := range kg.d.deployment.Subsystems.K8s.PvMap {
+		for mapName, pv := range kg.d.deployment.Subsystems.K8s.GetPvMap() {
 			if slices.IndexFunc(volumes, func(v deployment.Volume) bool { return v.Name == mapName }) != -1 {
 				res = append(res, pv)
 			}
 		}
 
 		for _, volume := range kg.d.deployment.GetMainApp().Volumes {
-			if _, ok := kg.d.deployment.Subsystems.K8s.PvMap[volume.Name]; !ok {
+			if _, ok := kg.d.deployment.Subsystems.K8s.GetPvMap()[volume.Name]; !ok {
 				res = append(res, models.PvPublic{
-					Name:      getPvName(kg.d.deployment, volume.Name),
+					Name:      getDeploymentPvName(kg.d.deployment, volume.Name),
 					Capacity:  conf.Env.Deployment.Resources.Limits.Storage,
 					NfsServer: kg.d.zone.Storage.NfsServer,
 					NfsPath:   path.Join(kg.d.zone.Storage.NfsParentPath, kg.d.deployment.OwnerID, "user"),
@@ -446,14 +623,14 @@ func (kg *K8sGenerator) PVs() []models.PvPublic {
 		initVolumes, volumes := getStorageManagerVolumes(kg.s.storageManager.OwnerID)
 		allVolumes := append(initVolumes, volumes...)
 
-		for mapName, pv := range kg.s.storageManager.Subsystems.K8s.PvMap {
+		for mapName, pv := range kg.s.storageManager.Subsystems.K8s.GetPvMap() {
 			if slices.IndexFunc(allVolumes, func(v storageManagerModel.Volume) bool { return v.Name == mapName }) != -1 {
 				res = append(res, pv)
 			}
 		}
 
 		for _, volume := range allVolumes {
-			if _, ok := kg.s.storageManager.Subsystems.K8s.PvMap[volume.Name]; !ok {
+			if _, ok := kg.s.storageManager.Subsystems.K8s.GetPvMap()[volume.Name]; !ok {
 				res = append(res, models.PvPublic{
 					Name:      getStorageManagerPvName(kg.s.storageManager.OwnerID, volume.Name),
 					Capacity:  conf.Env.Deployment.Resources.Limits.Storage,
@@ -473,19 +650,19 @@ func (kg *K8sGenerator) PVCs() []models.PvcPublic {
 	if kg.d.deployment != nil {
 		volumes := kg.d.deployment.GetMainApp().Volumes
 
-		for mapName, pvc := range kg.d.deployment.Subsystems.K8s.PvcMap {
+		for mapName, pvc := range kg.d.deployment.Subsystems.K8s.GetPvcMap() {
 			if slices.IndexFunc(volumes, func(v deployment.Volume) bool { return v.Name == mapName }) != -1 {
 				res = append(res, pvc)
 			}
 		}
 
 		for _, volume := range kg.d.deployment.GetMainApp().Volumes {
-			if _, ok := kg.d.deployment.Subsystems.K8s.PvcMap[volume.Name]; !ok {
+			if _, ok := kg.d.deployment.Subsystems.K8s.GetPvcMap()[volume.Name]; !ok {
 				res = append(res, models.PvcPublic{
-					Name:      getPvcName(kg.d.deployment, volume.Name),
+					Name:      getDeploymentPvcName(kg.d.deployment, volume.Name),
 					Namespace: kg.namespace,
 					Capacity:  conf.Env.Deployment.Resources.Limits.Storage,
-					PvName:    getPvName(kg.d.deployment, volume.Name),
+					PvName:    getDeploymentPvName(kg.d.deployment, volume.Name),
 				})
 			}
 		}
@@ -497,14 +674,14 @@ func (kg *K8sGenerator) PVCs() []models.PvcPublic {
 		initVolumes, volumes := getStorageManagerVolumes(kg.s.storageManager.OwnerID)
 		allVolumes := append(initVolumes, volumes...)
 
-		for mapName, pvc := range kg.s.storageManager.Subsystems.K8s.PvcMap {
+		for mapName, pvc := range kg.s.storageManager.Subsystems.K8s.GetPvcMap() {
 			if slices.IndexFunc(allVolumes, func(v storageManagerModel.Volume) bool { return v.Name == mapName }) != -1 {
 				res = append(res, pvc)
 			}
 		}
 
 		for _, volume := range allVolumes {
-			if _, ok := kg.s.storageManager.Subsystems.K8s.PvcMap[volume.Name]; !ok {
+			if _, ok := kg.s.storageManager.Subsystems.K8s.GetPvcMap()[volume.Name]; !ok {
 				res = append(res, models.PvcPublic{
 					Name:      getStorageManagerPvcName(volume.Name),
 					Namespace: kg.namespace,
@@ -551,14 +728,14 @@ func (kg *K8sGenerator) Jobs() []models.JobPublic {
 	if kg.s.storageManager != nil {
 		jobs := getStorageManagerJobs(kg.s.storageManager.OwnerID)
 
-		for mapName, job := range kg.s.storageManager.Subsystems.K8s.JobMap {
+		for mapName, job := range kg.s.storageManager.Subsystems.K8s.GetJobMap() {
 			if slices.IndexFunc(jobs, func(j storageManagerModel.Job) bool { return j.Name == mapName }) != -1 {
 				res = append(res, job)
 			}
 		}
 
 		for _, job := range jobs {
-			if _, ok := kg.s.storageManager.Subsystems.K8s.JobMap[job.Name]; !ok {
+			if _, ok := kg.s.storageManager.Subsystems.K8s.GetJobMap()[job.Name]; !ok {
 				res = append(res, models.JobPublic{
 					Name:      job.Name,
 					Namespace: kg.namespace,
@@ -573,14 +750,6 @@ func (kg *K8sGenerator) Jobs() []models.JobPublic {
 	}
 
 	return nil
-}
-
-func getNamespaceName(userID string) string {
-	return subsystemutils.GetPrefixedName(userID)
-}
-
-func getStorageManagerNamespaceName(userID string) string {
-	return subsystemutils.GetPrefixedName(fmt.Sprintf("%s-%s", constants.StorageManagerNamePrefix, userID))
 }
 
 func getExternalFQDN(name string, zone *enviroment.DeploymentZone) string {
@@ -606,12 +775,28 @@ func encodeDockerConfig(registry, username, password string) []byte {
 	return jsonData
 }
 
-func getPvName(deployment *deployment.Deployment, volumeName string) string {
+func getDeploymentPvName(deployment *deployment.Deployment, volumeName string) string {
 	return fmt.Sprintf("%s-%s", deployment.Name, volumeName)
 }
 
-func getPvcName(deployment *deployment.Deployment, volumeName string) string {
+func getDeploymentPvcName(deployment *deployment.Deployment, volumeName string) string {
 	return fmt.Sprintf("%s-%s", deployment.Name, volumeName)
+}
+
+func getVmProxyDeploymentName(vm *vm.VM, portName string) string {
+	return fmt.Sprintf("%s-%s", vm.Name, portName)
+}
+
+func getVmProxyServiceName(vm *vm.VM, portName string) string {
+	return fmt.Sprintf("%s-%s", vm.Name, portName)
+}
+
+func getVmProxyIngressName(vm *vm.VM, portName string) string {
+	return fmt.Sprintf("%s-%s", vm.Name, portName)
+}
+
+func getVmProxyExternalURL(portName string, zone *enviroment.DeploymentZone) string {
+	return fmt.Sprintf("%s.%s", portName, zone.ParentDomainVM)
 }
 
 func getStorageManagerPvcName(volumeName string) string {

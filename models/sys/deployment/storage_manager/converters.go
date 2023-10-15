@@ -3,7 +3,7 @@ package storage_manager
 import (
 	"fmt"
 	"go-deploy/models/dto/body"
-	"go-deploy/service/deployment_service/constants"
+	"go-deploy/service/constants"
 )
 
 func (storageManager *StorageManager) ToDTO() body.StorageManagerRead {

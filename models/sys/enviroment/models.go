@@ -14,6 +14,7 @@ type DeploymentZone struct {
 	Name           string      `yaml:"name"`
 	Description    string      `yaml:"description"`
 	ParentDomain   string      `yaml:"parentDomain"`
+	ParentDomainVM string      `yaml:"parentDomainVm"`
 	CustomDomainIP string      `yaml:"customDomainIp"`
 	ConfigSource   interface{} `yaml:"configSource"`
 	Storage        struct {
@@ -82,11 +83,9 @@ type Environment struct {
 	} `yaml:"gpu"`
 
 	DockerRegistry struct {
-		URL         string `yaml:"url"`
-		Placeholder struct {
-			Project    string `yaml:"project"`
-			Repository string `yaml:"repository"`
-		} `yaml:"placeholder"`
+		URL              string `yaml:"url"`
+		PlaceholderImage string `yaml:"placeholderImage"`
+		VmHttpProxyImage string `yaml:"vmHttpProxyImage"`
 	} `yaml:"dockerRegistry"`
 
 	Deployment Deployment `yaml:"deployment"`

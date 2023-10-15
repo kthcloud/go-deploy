@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/harbor/models"
+	"strings"
 )
 
 type HarborGenerator struct {
@@ -26,12 +27,16 @@ func (hg *HarborGenerator) Robot() *models.RobotPublic {
 }
 
 func (hg *HarborGenerator) Repository() *models.RepositoryPublic {
+	splits := strings.Split(conf.Env.DockerRegistry.PlaceholderImage, "/")
+	project := splits[len(splits)-2]
+	repository := splits[len(splits)-1]
+
 	return &models.RepositoryPublic{
 		Name:   hg.d.deployment.Name,
 		Seeded: false,
 		Placeholder: &models.PlaceHolder{
-			ProjectName:    conf.Env.DockerRegistry.Placeholder.Project,
-			RepositoryName: conf.Env.DockerRegistry.Placeholder.Repository,
+			ProjectName:    project,
+			RepositoryName: repository,
 		},
 	}
 }

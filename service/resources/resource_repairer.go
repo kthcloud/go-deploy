@@ -53,9 +53,14 @@ func (rc *SsRepairerType[idType, T]) WithGenPublicFunc(genPublicFunc func() T) *
 }
 
 func (rc *SsRepairerType[idType, T]) Exec() error {
-	dbResource, err := rc.fetchFunc(*rc.resourceID)
-	if err != nil {
-		return err
+	var dbResource T
+	if rc.genPublicFunc != nil {
+		dbResource = rc.genPublicFunc()
+	} else if service.NotNil(rc.genPublic) {
+		dbResource = rc.genPublic
+	} else {
+		log.Println("no genPublic or genPublicFunc provided for subsystem repair. did you forget to call WithGenPublic or WithGenPublicFunc?")
+		return nil
 	}
 
 	if service.NotCreated(dbResource) {

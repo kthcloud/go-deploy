@@ -56,15 +56,17 @@ func (vm *VM) ToDTO(status string, connectionString *string, gpu *body.GpuRead, 
 func (p *UpdateParams) FromDTO(dto *body.VmUpdate) {
 	p.SnapshotID = dto.SnapshotID
 	if dto.Ports != nil {
-		ports := make([]Port, len(*dto.Ports))
-		if dto.Ports != nil {
-			for i, port := range *dto.Ports {
-				ports[i] = Port{
-					Name:     port.Name,
-					Port:     port.Port,
-					Protocol: port.Protocol,
-				}
+		var ports []Port
+		for _, port := range *dto.Ports {
+			if port.Name == "__ssh" {
+				continue
 			}
+
+			if port.Port == 22 {
+				continue
+			}
+
+			ports = append(ports, fromDtoPort(&port))
 		}
 		p.Ports = &ports
 	} else {
@@ -74,16 +76,19 @@ func (p *UpdateParams) FromDTO(dto *body.VmUpdate) {
 	p.RAM = dto.RAM
 }
 
-func (p *CreateParams) FromDTO(dto *body.VmCreate, fallbackZone *string) {
+func (p *CreateParams) FromDTO(dto *body.VmCreate, fallbackZone *string, deploymentZone *string) {
 	p.Name = dto.Name
 	p.SshPublicKey = dto.SshPublicKey
-	p.Ports = make([]Port, len(dto.Ports))
-	for i, port := range dto.Ports {
-		p.Ports[i] = Port{
-			Name:     port.Name,
-			Port:     port.Port,
-			Protocol: port.Protocol,
+	for _, port := range dto.Ports {
+		if port.Name == "__ssh" {
+			continue
 		}
+
+		if port.Port == 22 {
+			continue
+		}
+
+		p.Ports = append(p.Ports, fromDtoPort(&port))
 	}
 	p.CpuCores = dto.CpuCores
 	p.RAM = dto.RAM
@@ -93,5 +98,24 @@ func (p *CreateParams) FromDTO(dto *body.VmCreate, fallbackZone *string) {
 		p.Zone = *dto.Zone
 	} else {
 		p.Zone = *fallbackZone
+	}
+
+	p.DeploymentZone = deploymentZone
+}
+
+func fromDtoPort(port *body.Port) Port {
+	var httpProxy *PortHttpProxy
+	if port.HttpProxy != nil {
+		httpProxy = &PortHttpProxy{
+			Name:         port.HttpProxy.Name,
+			CustomDomain: port.HttpProxy.CustomDomain,
+		}
+	}
+
+	return Port{
+		Name:      port.Name,
+		Port:      port.Port,
+		Protocol:  port.Protocol,
+		HttpProxy: httpProxy,
 	}
 }
