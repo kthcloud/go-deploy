@@ -82,11 +82,11 @@ type Environment struct {
 		RepairInterval int      `yaml:"repairInterval"`
 	} `yaml:"gpu"`
 
-	DockerRegistry struct {
+	Registry struct {
 		URL              string `yaml:"url"`
 		PlaceholderImage string `yaml:"placeholderImage"`
 		VmHttpProxyImage string `yaml:"vmHttpProxyImage"`
-	} `yaml:"dockerRegistry"`
+	} `yaml:"registry"`
 
 	Deployment Deployment `yaml:"deployment"`
 	VM         VM         `yaml:"vm"`

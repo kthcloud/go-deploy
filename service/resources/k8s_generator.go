@@ -245,7 +245,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 				res = append(res, models.DeploymentPublic{
 					Name:      getVmProxyDeploymentName(kg.v.vm, port.HttpProxy.Name),
 					Namespace: kg.namespace,
-					Image:     conf.Env.DockerRegistry.VmHttpProxyImage,
+					Image:     conf.Env.Registry.VmHttpProxyImage,
 					EnvVars:   envVars,
 					Resources: models.Resources{
 						Limits: models.Limits{
@@ -702,7 +702,7 @@ func (kg *K8sGenerator) Secrets() []models.SecretPublic {
 
 	if kg.d.deployment != nil {
 		if kg.d.deployment.Subsystems.Harbor.Robot.Created() && kg.d.deployment.Type == deployment.TypeCustom {
-			registry := conf.Env.DockerRegistry.URL
+			registry := conf.Env.Registry.URL
 			username := kg.d.deployment.Subsystems.Harbor.Robot.HarborName
 			password := kg.d.deployment.Subsystems.Harbor.Robot.Secret
 
