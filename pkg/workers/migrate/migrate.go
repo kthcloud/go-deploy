@@ -1,9 +1,6 @@
 package migrator
 
 import (
-	deploymentModels "go-deploy/models/sys/deployment"
-	"go-deploy/service"
-	"go-deploy/utils/subsystemutils"
 	"log"
 )
 
@@ -36,33 +33,5 @@ func Migrate() {
 //
 // add a date to the migration name to make it easier to identify.
 func getMigrations() map[string]func() error {
-	return map[string]func() error{
-		"2023-10-16-set-correct-namespace-name": setCorrectNamespaceName_2023_10_16,
-	}
-}
-
-func setCorrectNamespaceName_2023_10_16() error {
-	deployments, err := deploymentModels.New().GetAll()
-	if err != nil {
-		return err
-	}
-
-	for _, deployment := range deployments {
-		if ns := deployment.Subsystems.K8s.GetNamespace(); service.Created(ns) {
-			correctName := subsystemutils.GetPrefixedName(deployment.OwnerID)
-
-			if ns.Name == correctName {
-				continue
-			}
-
-			ns.Name = correctName
-
-			err = deploymentModels.New().UpdateSubsystemByID(deployment.ID, "k8s.namespace", ns)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
+	return map[string]func() error{}
 }
