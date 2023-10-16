@@ -116,6 +116,25 @@ func PortListNumbers(fl validator.FieldLevel) bool {
 	return true
 }
 
+func PortListHttpProxies(fl validator.FieldLevel) bool {
+	portList, ok := fl.Field().Interface().([]body.Port)
+	if !ok {
+		return false
+	}
+
+	names := make(map[string]bool)
+	for _, port := range portList {
+		if port.HttpProxy != nil {
+			if _, ok := names[port.HttpProxy.Name]; ok {
+				return false
+			}
+			names[port.HttpProxy.Name] = true
+		}
+	}
+
+	return true
+}
+
 func DomainName(fl validator.FieldLevel) bool {
 	domain, ok := fl.Field().Interface().(string)
 	if !ok {

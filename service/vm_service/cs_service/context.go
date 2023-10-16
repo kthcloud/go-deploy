@@ -1,6 +1,7 @@
 package cs_service
 
 import (
+	"fmt"
 	"go-deploy/models/sys/enviroment"
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/cs"
@@ -16,14 +17,18 @@ type Context struct {
 }
 
 func NewContext(vmID string) (*Context, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("error creating cs service context. details: %w", err)
+	}
+
 	baseContext, err := base.NewVmBaseContext(vmID)
 	if err != nil {
-		return nil, err
+		return nil, makeError(err)
 	}
 
 	csClient, err := withCsClient(baseContext.Zone)
 	if err != nil {
-		return nil, err
+		return nil, makeError(err)
 	}
 
 	return &Context{

@@ -9,8 +9,8 @@ import (
 
 type VmContext struct {
 	VM        *vmModel.VM
-	Zone      *enviroment.VmZone
 	Generator *resources.PublicGeneratorType
+	Zone      *enviroment.VmZone
 
 	CreateParams *vmModel.CreateParams
 	UpdateParams *vmModel.UpdateParams
@@ -33,8 +33,8 @@ func NewVmBaseContext(vmID string) (*VmContext, error) {
 
 	return &VmContext{
 		VM:        vm,
-		Zone:      zone,
 		Generator: resources.PublicGenerator().WithVmZone(zone).WithVM(vm),
+		Zone:      zone,
 	}, nil
 }
 

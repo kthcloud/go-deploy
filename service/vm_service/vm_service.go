@@ -10,29 +10,29 @@ import (
 	"go-deploy/pkg/conf"
 	"go-deploy/service"
 	"go-deploy/service/vm_service/cs_service"
+	"go-deploy/service/vm_service/k8s_service"
 	"go-deploy/utils"
 	"log"
 	"strings"
 )
 
-func Create(vmID, owner string, vmCreate *body.VmCreate) error {
+func Create(id, ownerID string, vmCreate *body.VmCreate) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create vm. details: %w", err)
 	}
 
 	// temporary hard-coded fallback
 	fallback := "se-flem"
+	deploymentZone := "se-flem"
 
 	params := &vmModel.CreateParams{}
-	params.FromDTO(vmCreate, &fallback)
+	params.FromDTO(vmCreate, &fallback, &deploymentZone)
 
-	// clear any potentially ill-formed ssh rules
 	if params.Ports != nil {
-		removeDeploySshFromPortMap(&params.Ports)
 		addDeploySshToPortMap(&params.Ports)
 	}
 
-	created, err := vmModel.New().Create(vmID, owner, conf.Env.Manager, params)
+	created, err := vmModel.New().Create(id, ownerID, conf.Env.Manager, params)
 	if err != nil {
 		return makeError(err)
 	}
@@ -41,7 +41,12 @@ func Create(vmID, owner string, vmCreate *body.VmCreate) error {
 		return makeError(fmt.Errorf("vm already exists for another user"))
 	}
 
-	err = cs_service.CreateCS(vmID, params)
+	err = cs_service.CreateCS(id, params)
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = k8s_service.Create(id, params)
 	if err != nil {
 		return makeError(err)
 	}
@@ -64,8 +69,6 @@ func Update(vmID string, dtoVmUpdate *body.VmUpdate) error {
 		}
 	} else {
 		if vmUpdate.Ports != nil {
-			// clear any potentially ill-formed ssh rules
-			removeDeploySshFromPortMap(vmUpdate.Ports)
 			addDeploySshToPortMap(vmUpdate.Ports)
 		}
 
@@ -77,6 +80,13 @@ func Update(vmID string, dtoVmUpdate *body.VmUpdate) error {
 		err = cs_service.UpdateCS(vmID, vmUpdate)
 		if err != nil {
 			return makeError(err)
+		}
+
+		if vmUpdate.Ports != nil {
+			err = k8s_service.Repair(vmID)
+			if err != nil {
+				return makeError(err)
+			}
 		}
 	}
 
@@ -103,6 +113,11 @@ func Delete(id string) error {
 	}
 
 	err = vmModel.New().AddActivity(vm.ID, vmModel.ActivityBeingDeleted)
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = k8s_service.Delete(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -491,13 +506,6 @@ func GetExternalPortMapper(vmID string) (map[string]int, error) {
 }
 
 func addDeploySshToPortMap(portMap *[]vmModel.Port) {
-	for i, port := range *portMap {
-		if (port.Port == 22 || port.Name == "__ssh") && port.Protocol == "tcp" {
-			*portMap = append((*portMap)[:i], (*portMap)[i+1:]...)
-			break
-		}
-	}
-
 	*portMap = append(*portMap, vmModel.Port{
 		Port:     22,
 		Name:     "__ssh",

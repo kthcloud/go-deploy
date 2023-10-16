@@ -6,9 +6,10 @@ import (
 	deploymentModel "go-deploy/models/sys/deployment"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/service"
+	"go-deploy/service/constants"
 	"go-deploy/service/deployment_service/base"
-	"go-deploy/service/deployment_service/constants"
 	"go-deploy/service/resources"
+	"go-deploy/utils"
 	"golang.org/x/exp/slices"
 	"log"
 	"strings"
@@ -35,7 +36,7 @@ func Create(deploymentID string, params *deploymentModel.CreateParams) error {
 	// Namespace
 	err = resources.SsCreator(context.Client.CreateNamespace).
 		WithDbFunc(dbFunc(deploymentID, "namespace")).
-		WithPublic(context.Generator.MainNamespace()).
+		WithPublic(context.Generator.Namespace()).
 		Exec()
 	if err != nil {
 		return makeError(err)
@@ -101,7 +102,7 @@ func Create(deploymentID string, params *deploymentModel.CreateParams) error {
 		}
 	}
 
-	// Ingress main
+	// Ingress
 	for _, ingressPublic := range context.Generator.Ingresses() {
 		err = resources.SsCreator(context.Client.CreateIngress).
 			WithDbFunc(dbFunc(deploymentID, "ingressMap."+ingressPublic.Name)).
@@ -262,12 +263,12 @@ func Update(id string, params *deploymentModel.UpdateParams) error {
 	return nil
 }
 
-func Restart(name string) error {
+func Restart(id string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to restart k8s %s. details: %w", name, err)
+		return fmt.Errorf("failed to restart k8s %s. details: %w", id, err)
 	}
 
-	context, err := NewContext(name)
+	context, err := NewContext(id)
 	if err != nil {
 		if errors.Is(err, base.DeploymentDeletedErr) {
 			return nil
@@ -276,9 +277,13 @@ func Restart(name string) error {
 		return makeError(err)
 	}
 
-	err = context.Client.RestartDeployment(context.Deployment.ID)
-	if err != nil {
-		return makeError(err)
+	if k8sDeployment := context.Deployment.Subsystems.K8s.GetDeployment(context.Deployment.Name); service.Created(k8sDeployment) {
+		err = context.Client.RestartDeployment(k8sDeployment.ID)
+		if err != nil {
+			return makeError(err)
+		}
+	} else {
+		utils.PrettyPrintError(fmt.Errorf("k8s deployment %s not found when restarting, assuming it was deleted", context.Deployment.Name))
 	}
 
 	return nil
@@ -298,7 +303,7 @@ func Repair(id string) error {
 		return makeError(err)
 	}
 
-	namespace := context.Generator.MainNamespace()
+	namespace := context.Generator.Namespace()
 	err = resources.SsRepairer(
 		context.Client.ReadNamespace,
 		context.Client.CreateNamespace,

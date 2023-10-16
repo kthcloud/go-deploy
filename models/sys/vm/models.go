@@ -16,14 +16,21 @@ const (
 	ActivityApplyingSnapshot = "applyingSnapshot"
 )
 
+type PortHttpProxy struct {
+	Name         string  `bson:"name"`
+	CustomDomain *string `bson:"customDomain,omitempty"`
+}
+
 type Port struct {
-	Name     string `bson:"name"`
-	Port     int    `bson:"port"`
-	Protocol string `bson:"protocol"`
+	Name      string         `bson:"name"`
+	Port      int            `bson:"port"`
+	Protocol  string         `bson:"protocol"`
+	HttpProxy *PortHttpProxy `bson:"httpProxy,omitempty"`
 }
 
 type Subsystems struct {
-	CS subsystems.CS `bson:"cs"`
+	CS  subsystems.CS  `bson:"cs"`
+	K8s subsystems.K8s `bson:"k8s"`
 }
 
 type Usage struct {
@@ -34,8 +41,9 @@ type Usage struct {
 }
 
 type CreateParams struct {
-	Name string `json:"name"`
-	Zone string `json:"zone"`
+	Name           string  `json:"name"`
+	Zone           string  `json:"zone"`
+	DeploymentZone *string `json:"deploymentZone,omitempty"`
 
 	NetworkID *string `json:"networkId"`
 

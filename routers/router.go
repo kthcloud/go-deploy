@@ -158,15 +158,16 @@ func registerCustomValidators() {
 		})
 
 		registrations := map[string]func(fl validator.FieldLevel) bool{
-			"rfc1035":           validators.Rfc1035,
-			"ssh_public_key":    validators.SshPublicKey,
-			"env_name":          validators.EnvName,
-			"env_list":          validators.EnvList,
-			"port_list_names":   validators.PortListNames,
-			"port_list_numbers": validators.PortListNumbers,
-			"domain_name":       validators.DomainName,
-			"custom_domain":     validators.CustomDomain,
-			"health_check_path": validators.HealthCheckPath,
+			"rfc1035":                validators.Rfc1035,
+			"ssh_public_key":         validators.SshPublicKey,
+			"env_name":               validators.EnvName,
+			"env_list":               validators.EnvList,
+			"port_list_names":        validators.PortListNames,
+			"port_list_numbers":      validators.PortListNumbers,
+			"port_list_http_proxies": validators.PortListHttpProxies,
+			"domain_name":            validators.DomainName,
+			"custom_domain":          validators.CustomDomain,
+			"health_check_path":      validators.HealthCheckPath,
 		}
 
 		for tag, fn := range registrations {

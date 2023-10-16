@@ -21,10 +21,11 @@ type StorageManager struct {
 }
 
 type VM struct {
-	vm           *vmModels.VM
-	createParams *vmModels.CreateParams
-	updateParams *vmModels.UpdateParams
-	vmZone       *enviroment.VmZone
+	vm             *vmModels.VM
+	createParams   *vmModels.CreateParams
+	updateParams   *vmModels.UpdateParams
+	vmZone         *enviroment.VmZone
+	deploymentZone *enviroment.DeploymentZone
 }
 
 type PublicGeneratorType struct {
@@ -40,6 +41,7 @@ func PublicGenerator() *PublicGeneratorType {
 func (pc *PublicGeneratorType) WithDeploymentZone(zone *enviroment.DeploymentZone) *PublicGeneratorType {
 	pc.d.zone = zone
 	pc.s.zone = zone
+	pc.v.deploymentZone = zone
 	return pc
 }
 
@@ -78,12 +80,12 @@ func (pc *PublicGeneratorType) WithStorageManagerCreateParams(params *storage_ma
 	return pc
 }
 
-func (pc *PublicGeneratorType) WithVMCreateParams(params *vmModels.CreateParams) *PublicGeneratorType {
+func (pc *PublicGeneratorType) WithVmCreateParams(params *vmModels.CreateParams) *PublicGeneratorType {
 	pc.v.createParams = params
 	return pc
 }
 
-func (pc *PublicGeneratorType) WithVMUpdateParams(params *vmModels.UpdateParams) *PublicGeneratorType {
+func (pc *PublicGeneratorType) WithVmUpdateParams(params *vmModels.UpdateParams) *PublicGeneratorType {
 	pc.v.updateParams = params
 	return pc
 }

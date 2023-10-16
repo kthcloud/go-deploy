@@ -30,7 +30,7 @@ func CreateStorageManager(smID string, params *storageManagerModel.CreateParams)
 	// Namespace
 	err = resources.SsCreator(context.Client.CreateNamespace).
 		WithDbFunc(dbFuncSM(smID, "namespace")).
-		WithPublic(context.Generator.StorageManagerNamespace()).
+		WithPublic(context.Generator.Namespace()).
 		Exec()
 
 	if err != nil {

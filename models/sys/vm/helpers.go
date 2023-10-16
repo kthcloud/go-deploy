@@ -24,7 +24,9 @@ func (client *Client) Create(vmID, owner, manager string, params *CreateParams) 
 		Name:      params.Name,
 		OwnerID:   owner,
 		ManagedBy: manager,
-		Zone:      params.Zone,
+
+		Zone:           params.Zone,
+		DeploymentZone: params.DeploymentZone,
 
 		CreatedAt:  time.Now(),
 		UpdatedAt:  time.Time{},
