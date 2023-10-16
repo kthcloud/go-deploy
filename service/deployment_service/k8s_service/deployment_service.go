@@ -262,12 +262,12 @@ func Update(id string, params *deploymentModel.UpdateParams) error {
 	return nil
 }
 
-func Restart(name string) error {
+func Restart(id string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to restart k8s %s. details: %w", name, err)
+		return fmt.Errorf("failed to restart k8s %s. details: %w", id, err)
 	}
 
-	context, err := NewContext(name)
+	context, err := NewContext(id)
 	if err != nil {
 		if errors.Is(err, base.DeploymentDeletedErr) {
 			return nil
