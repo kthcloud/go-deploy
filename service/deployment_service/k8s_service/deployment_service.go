@@ -9,6 +9,7 @@ import (
 	"go-deploy/service/constants"
 	"go-deploy/service/deployment_service/base"
 	"go-deploy/service/resources"
+	"go-deploy/utils"
 	"golang.org/x/exp/slices"
 	"log"
 	"strings"
@@ -276,9 +277,13 @@ func Restart(id string) error {
 		return makeError(err)
 	}
 
-	err = context.Client.RestartDeployment(context.Deployment.ID)
-	if err != nil {
-		return makeError(err)
+	if k8sDeployment := context.Deployment.Subsystems.K8s.GetDeployment(context.Deployment.Name); service.Created(k8sDeployment) {
+		err = context.Client.RestartDeployment(k8sDeployment.ID)
+		if err != nil {
+			return makeError(err)
+		}
+	} else {
+		utils.PrettyPrintError(fmt.Errorf("k8s deployment %s not found when restarting, assuming it was deleted", context.Deployment.Name))
 	}
 
 	return nil
