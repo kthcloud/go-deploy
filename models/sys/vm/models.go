@@ -18,14 +18,14 @@ const (
 
 type PortHttpProxy struct {
 	Name         string  `bson:"name"`
-	CustomDomain *string `bson:"customDomain,omitempty"`
+	CustomDomain *string `bson:"customDomain"`
 }
 
 type Port struct {
 	Name      string         `bson:"name"`
 	Port      int            `bson:"port"`
 	Protocol  string         `bson:"protocol"`
-	HttpProxy *PortHttpProxy `bson:"httpProxy,omitempty"`
+	HttpProxy *PortHttpProxy `bson:"httpProxy"`
 }
 
 type Subsystems struct {

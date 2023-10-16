@@ -94,53 +94,6 @@ func (g *GitHubRepository) ToDTO() body.GitHubRepository {
 	}
 }
 
-func (p *UpdateParams) FromDTO(dto *body.DeploymentUpdate, deploymentType string) {
-	if dto.Envs != nil {
-		envs := make([]Env, 0)
-		for _, env := range *dto.Envs {
-			if env.Name == "PORT" {
-				port, _ := strconv.Atoi(env.Value)
-				p.InternalPort = &port
-				continue
-			}
-
-			envs = append(envs, Env{
-				Name:  env.Name,
-				Value: env.Value,
-			})
-		}
-		p.Envs = &envs
-	}
-
-	if dto.Volumes != nil {
-		volumes := make([]Volume, len(*dto.Volumes))
-		for i, volume := range *dto.Volumes {
-			volumes[i] = Volume{
-				Name:       volume.Name,
-				AppPath:    volume.AppPath,
-				ServerPath: volume.ServerPath,
-			}
-		}
-		p.Volumes = &volumes
-	}
-
-	p.Private = dto.Private
-
-	if dto.CustomDomain != nil {
-		if punyEncoded, err := idna.New().ToASCII(*dto.CustomDomain); err == nil {
-			p.CustomDomain = &punyEncoded
-		} else {
-			utils.PrettyPrintError(fmt.Errorf("failed to puny encode domain %s when creating update params details: %w", *dto.CustomDomain, err))
-		}
-	}
-
-	if deploymentType == TypePrebuilt {
-		p.Image = dto.Image
-	}
-
-	p.PingPath = dto.HealthCheckPath
-}
-
 func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZone, fallbackImage string, fallbackPort int) {
 	p.Name = dto.Name
 
@@ -210,6 +163,53 @@ func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZone, fallbac
 	} else {
 		p.Zone = fallbackZone
 	}
+}
+
+func (p *UpdateParams) FromDTO(dto *body.DeploymentUpdate, deploymentType string) {
+	if dto.Envs != nil {
+		envs := make([]Env, 0)
+		for _, env := range *dto.Envs {
+			if env.Name == "PORT" {
+				port, _ := strconv.Atoi(env.Value)
+				p.InternalPort = &port
+				continue
+			}
+
+			envs = append(envs, Env{
+				Name:  env.Name,
+				Value: env.Value,
+			})
+		}
+		p.Envs = &envs
+	}
+
+	if dto.Volumes != nil {
+		volumes := make([]Volume, len(*dto.Volumes))
+		for i, volume := range *dto.Volumes {
+			volumes[i] = Volume{
+				Name:       volume.Name,
+				AppPath:    volume.AppPath,
+				ServerPath: volume.ServerPath,
+			}
+		}
+		p.Volumes = &volumes
+	}
+
+	p.Private = dto.Private
+
+	if dto.CustomDomain != nil {
+		if punyEncoded, err := idna.New().ToASCII(*dto.CustomDomain); err == nil {
+			p.CustomDomain = &punyEncoded
+		} else {
+			utils.PrettyPrintError(fmt.Errorf("failed to puny encode domain %s when creating update params details: %w", *dto.CustomDomain, err))
+		}
+	}
+
+	if deploymentType == TypePrebuilt {
+		p.Image = dto.Image
+	}
+
+	p.PingPath = dto.HealthCheckPath
 }
 
 func (p *BuildParams) FromDTO(dto *body.DeploymentBuild) {

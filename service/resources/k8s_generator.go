@@ -536,13 +536,24 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 		ports := kg.v.vm.Ports
 
 		for mapName, ingress := range kg.v.vm.Subsystems.K8s.GetIngressMap() {
-			if slices.IndexFunc(ports, func(p vm.Port) bool {
+			idx := slices.IndexFunc(ports, func(p vm.Port) bool {
 				if p.HttpProxy == nil {
 					return false
 				}
 
-				return getVmProxyIngressName(kg.v.vm, p.HttpProxy.Name) == mapName
-			}) != -1 {
+				return getVmProxyIngressName(kg.v.vm, p.HttpProxy.Name) == mapName ||
+					(getVmProxyCustomDomainIngressName(kg.v.vm, p.HttpProxy.Name) == mapName && p.HttpProxy.CustomDomain != nil)
+			})
+
+			if idx != -1 {
+				if getVmProxyCustomDomainIngressName(kg.v.vm, ports[idx].HttpProxy.Name) == mapName {
+					if ports[idx].HttpProxy.CustomDomain != nil {
+						ingress.Hosts = []string{*ports[idx].HttpProxy.CustomDomain}
+					}
+				} else {
+					ingress.Hosts = []string{getVmProxyExternalURL(ports[idx].HttpProxy.Name, kg.v.deploymentZone)}
+				}
+
 				res = append(res, ingress)
 			}
 		}
@@ -561,6 +572,23 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 					IngressClass: conf.Env.Deployment.IngressClass,
 					Hosts:        []string{getVmProxyExternalURL(port.HttpProxy.Name, kg.v.deploymentZone)},
 				})
+			}
+
+			if port.HttpProxy.CustomDomain != nil {
+				if _, ok := kg.v.vm.Subsystems.K8s.GetIngressMap()[getVmProxyCustomDomainIngressName(kg.v.vm, port.HttpProxy.Name)]; !ok {
+					res = append(res, models.IngressPublic{
+						Name:         getVmProxyCustomDomainIngressName(kg.v.vm, port.HttpProxy.Name),
+						Namespace:    kg.namespace,
+						ServiceName:  getVmProxyServiceName(kg.v.vm, port.HttpProxy.Name),
+						ServicePort:  8080,
+						IngressClass: conf.Env.Deployment.IngressClass,
+						Hosts:        []string{*port.HttpProxy.CustomDomain},
+						CustomCert: &models.CustomCert{
+							ClusterIssuer: "letsencrypt-prod-deploy-http",
+							CommonName:    *port.HttpProxy.CustomDomain,
+						},
+					})
+				}
 			}
 		}
 
@@ -793,6 +821,10 @@ func getVmProxyServiceName(vm *vm.VM, portName string) string {
 
 func getVmProxyIngressName(vm *vm.VM, portName string) string {
 	return fmt.Sprintf("%s-%s", vm.Name, portName)
+}
+
+func getVmProxyCustomDomainIngressName(vm *vm.VM, portName string) string {
+	return fmt.Sprintf("%s-%s-custom-domain", vm.Name, portName)
 }
 
 func getVmProxyExternalURL(portName string, zone *enviroment.DeploymentZone) string {
