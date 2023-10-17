@@ -36,12 +36,15 @@ func Create(id string, params *vmModels.CreateParams) error {
 	context.WithCreateParams(params)
 
 	// Namespace
-	err = resources.SsCreator(context.Client.CreateNamespace).
-		WithDbFunc(dbFunc(id, "namespace")).
-		WithPublic(context.Generator.Namespace()).
-		Exec()
-	if err != nil {
-		return makeError(err)
+	namespace := context.Generator.Namespace()
+	if namespace != nil {
+		err = resources.SsCreator(context.Client.CreateNamespace).
+			WithDbFunc(dbFunc(id, "namespace")).
+			WithPublic(namespace).
+			Exec()
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	// Deployment
@@ -147,15 +150,17 @@ func Repair(id string) error {
 	}
 
 	namespace := context.Generator.Namespace()
-	err = resources.SsRepairer(
-		context.Client.ReadNamespace,
-		context.Client.CreateNamespace,
-		context.Client.UpdateNamespace,
-		func(string) error { return nil },
-	).WithResourceID(namespace.ID).WithDbFunc(dbFunc(id, "namespace")).WithGenPublic(namespace).Exec()
+	if namespace != nil {
+		err = resources.SsRepairer(
+			context.Client.ReadNamespace,
+			context.Client.CreateNamespace,
+			context.Client.UpdateNamespace,
+			func(string) error { return nil },
+		).WithResourceID(namespace.ID).WithDbFunc(dbFunc(id, "namespace")).WithGenPublic(namespace).Exec()
 
-	if err != nil {
-		return makeError(err)
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	deployments := context.Generator.Deployments()
