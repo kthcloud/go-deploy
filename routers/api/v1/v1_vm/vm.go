@@ -544,7 +544,7 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *ser
 				reason = "VM could not be started on host"
 			}
 
-			context.ErrorResponse(http.StatusNotModified, status_codes.ResourceNotUpdated, reason)
+			context.ErrorResponse(http.StatusServiceUnavailable, status_codes.ResourceNotUpdated, reason)
 			return
 		}
 	}
