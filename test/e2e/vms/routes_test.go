@@ -70,7 +70,7 @@ func TestCreate(t *testing.T) {
 	requestBody := body.VmCreate{
 		Name:         e2e.GenName("e2e"),
 		SshPublicKey: publicKey,
-		Ports: []body.PortRead{
+		Ports: []body.Port{
 			{
 				Name:     "e2e-test",
 				Port:     100,
@@ -119,7 +119,7 @@ func TestCreateWithInvalidBody(t *testing.T) {
 		e2e.WithAssumedFailedVM(t, requestBody)
 	}
 
-	invalidPorts := []body.PortRead{
+	invalidPorts := []body.Port{
 		{
 			Name:     strings.Repeat(uuid.NewString(), 100),
 			Port:     100,
@@ -146,7 +146,7 @@ func TestCreateWithInvalidBody(t *testing.T) {
 		requestBody := body.VmCreate{
 			Name:         e2e.GenName("e2e"),
 			SshPublicKey: withSshPublicKey(t),
-			Ports: []body.PortRead{
+			Ports: []body.Port{
 				port,
 			},
 			CpuCores: 2,
@@ -229,7 +229,7 @@ func TestUpdate(t *testing.T) {
 	requestBody := body.VmCreate{
 		Name:         e2e.GenName("e2e"),
 		SshPublicKey: publicKey,
-		Ports: []body.PortRead{
+		Ports: []body.Port{
 			{
 				Name:     "e2e-test",
 				Port:     100,
@@ -244,7 +244,7 @@ func TestUpdate(t *testing.T) {
 
 	vm := e2e.WithVM(t, requestBody)
 
-	updatedPorts := []body.PortRead{
+	updatedPorts := []body.Port{
 		{
 			Name:     "e2e-test",
 			Port:     100,

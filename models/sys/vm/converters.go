@@ -17,31 +17,35 @@ func (vm *VM) ToDTO(status string, connectionString *string, gpu *body.GpuRead, 
 		}
 	}
 
-	ports := make([]body.PortRead, 0)
+	ports := make([]body.Port, 0)
 	if vm.Ports != nil && externalPortMapper != nil {
 		for _, port := range vm.Ports {
 			if port.Name == "__ssh" {
 				continue
 			}
 
-			externalPort, ok := externalPortMapper[port.Name]
-			if !ok {
-				continue
+			var externalPort *int
+			if _, ok := externalPortMapper[port.Name]; ok {
+				p := externalPortMapper[port.Name]
+				externalPort = &p
 			}
 
 			var url *string
-			if ingress := vm.Subsystems.K8s.GetIngress(vm.Name + "-" + port.Name); service.Created(ingress) {
-				if len(ingress.Hosts) > 0 {
-					urlStr := "https://" + ingress.Hosts[0]
-					url = &urlStr
-				}
-			}
-
 			var customDomainUrl *string
-			if ingress := vm.Subsystems.K8s.GetIngress(vm.Name + "-" + port.Name + "-custom-domain"); service.Created(ingress) {
-				if len(ingress.Hosts) > 0 {
-					urlStr := "https://" + ingress.Hosts[0]
-					customDomainUrl = &urlStr
+
+			if port.HttpProxy != nil {
+				if ingress := vm.Subsystems.K8s.GetIngress(vm.Name + "-" + port.HttpProxy.Name); service.Created(ingress) {
+					if len(ingress.Hosts) > 0 {
+						urlStr := "https://" + ingress.Hosts[0]
+						url = &urlStr
+					}
+				}
+
+				if ingress := vm.Subsystems.K8s.GetIngress(vm.Name + "-" + port.HttpProxy.Name + "-custom-domain"); service.Created(ingress) {
+					if len(ingress.Hosts) > 0 {
+						urlStr := "https://" + ingress.Hosts[0]
+						customDomainUrl = &urlStr
+					}
 				}
 			}
 
@@ -55,7 +59,7 @@ func (vm *VM) ToDTO(status string, connectionString *string, gpu *body.GpuRead, 
 				}
 			}
 
-			ports = append(ports, body.PortRead{
+			ports = append(ports, body.Port{
 				Name:         port.Name,
 				Port:         port.Port,
 				ExternalPort: externalPort,
@@ -145,7 +149,7 @@ func (p *UpdateParams) FromDTO(dto *body.VmUpdate) {
 	p.RAM = dto.RAM
 }
 
-func fromDtoPort(port *body.PortRead) Port {
+func fromDtoPort(port *body.Port) Port {
 	var httpProxy *PortHttpProxy
 	if port.HttpProxy != nil {
 		httpProxy = &PortHttpProxy{

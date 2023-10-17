@@ -141,6 +141,8 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 			continue
 		}
 
+		requiresCsAttach := gpu.Lease.VmID != vmID || gpu.Lease.VmID == ""
+
 		var hardwareAvailable bool
 		hardwareAvailable, err = IsGpuHardwareAvailable(gpu)
 		if err != nil {
@@ -183,43 +185,45 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 			continue
 		}
 
-		err = cs_service.AttachGPU(gpuID, vmID)
-		if err == nil {
-			break
-		}
-
-		errString := err.Error()
-
-		insufficientCapacityErr := strings.Contains(errString, csInsufficientCapacityError)
-		gpuAlreadyAttached := strings.Contains(errString, gpuAlreadyAttachedError)
-
-		if insufficientCapacityErr {
-			// if the host has insufficient capacity, we need to detach the gpu from the vm
-			// and attempt to attach it to another gpu
-
-			err = cs_service.DetachGPU(vmID, cs_service.CsDetachGpuAfterStateRestore)
-			if err != nil {
-				return makeError(err)
+		if requiresCsAttach {
+			err = cs_service.AttachGPU(gpuID, vmID)
+			if err == nil {
+				break
 			}
 
-			err = gpuModel.New().Detach(vmID, userID)
-			if err != nil {
-				return makeError(err)
-			}
-		} else if gpuAlreadyAttached {
-			// if the gpu is already attached, we need to detach it from the vm
+			errString := err.Error()
 
-			err = cs_service.DetachGPU(vmID, cs_service.CsDetachGpuAfterStateRestore)
-			if err != nil {
-				return makeError(err)
-			}
+			insufficientCapacityErr := strings.Contains(errString, csInsufficientCapacityError)
+			gpuAlreadyAttached := strings.Contains(errString, gpuAlreadyAttachedError)
 
-			err = gpuModel.New().Detach(vmID, userID)
-			if err != nil {
+			if insufficientCapacityErr {
+				// if the host has insufficient capacity, we need to detach the gpu from the vm
+				// and attempt to attach it to another gpu
+
+				err = cs_service.DetachGPU(vmID, cs_service.CsDetachGpuAfterStateRestore)
+				if err != nil {
+					return makeError(err)
+				}
+
+				err = gpuModel.New().Detach(vmID, userID)
+				if err != nil {
+					return makeError(err)
+				}
+			} else if gpuAlreadyAttached {
+				// if the gpu is already attached, we need to detach it from the vm
+
+				err = cs_service.DetachGPU(vmID, cs_service.CsDetachGpuAfterStateRestore)
+				if err != nil {
+					return makeError(err)
+				}
+
+				err = gpuModel.New().Detach(vmID, userID)
+				if err != nil {
+					return makeError(err)
+				}
+			} else {
 				return makeError(err)
 			}
-		} else {
-			return makeError(err)
 		}
 	}
 

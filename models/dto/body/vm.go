@@ -3,19 +3,19 @@ package body
 import "time"
 
 type VmHttpProxy struct {
-	Name         string  `json:"name" binding:"required,rfc1035,min=3,max=30"`
-	CustomDomain *string `json:"customDomain,omitempty" binding:"omitempty,domain_name,min=1,max=253"`
+	Name         string  `json:"name" bson:"name,omitempty" binding:"required,rfc1035,min=3,max=30"`
+	CustomDomain *string `json:"customDomain,omitempty" bson:"customDomain,omitempty" binding:"omitempty,domain_name,min=1,max=253"`
 
-	URL             *string `json:"url,omitempty" `
-	CustomDomainURL *string `json:"customDomainUrl,omitempty" `
+	URL             *string `json:"url,omitempty" bson:"url,omitempty"`
+	CustomDomainURL *string `json:"customDomainUrl,omitempty" bson:"customDomainUrl,omitempty"`
 }
 
-type PortRead struct {
-	Name         string       `json:"name,omitempty" binding:"required,min=1,max=100"`
-	Port         int          `json:"port,omitempty"  binding:"required,min=1,max=65535"`
-	ExternalPort int          `json:"externalPort,omitempty"`
-	Protocol     string       `json:"protocol,omitempty" binding:"required,oneof=tcp udp"`
-	HttpProxy    *VmHttpProxy `json:"httpProxy,omitempty" binding:"omitempty,dive"`
+type Port struct {
+	Name         string       `json:"name,omitempty" bson:"name" binding:"required,min=1,max=100"`
+	Port         int          `json:"port,omitempty" bson:"port" binding:"required,min=1,max=65535"`
+	ExternalPort *int         `json:"externalPort,omitempty" bson:"externalPort,omitempty"`
+	Protocol     string       `json:"protocol,omitempty" bson:"protocol," binding:"required,oneof=tcp udp"`
+	HttpProxy    *VmHttpProxy `json:"httpProxy,omitempty" bson:"httpProxy,omitempty" binding:"omitempty,dive"`
 }
 
 type Specs struct {
@@ -37,31 +37,31 @@ type VmRead struct {
 	OwnerID string `json:"ownerId"`
 	Zone    string `json:"zone"`
 
-	Specs        Specs      `json:"specs,omitempty"`
-	Ports        []PortRead `json:"ports"`
-	GPU          *VmGpu     `json:"gpu,omitempty"`
-	SshPublicKey string     `json:"sshPublicKey"`
+	Specs        Specs  `json:"specs,omitempty"`
+	Ports        []Port `json:"ports"`
+	GPU          *VmGpu `json:"gpu,omitempty"`
+	SshPublicKey string `json:"sshPublicKey"`
 
 	Status           string  `json:"status"`
 	ConnectionString *string `json:"connectionString,omitempty"`
 }
 
 type VmCreate struct {
-	Name         string     `json:"name" binding:"required,rfc1035,min=3,max=30"`
-	SshPublicKey string     `json:"sshPublicKey" binding:"required,ssh_public_key"`
-	Ports        []PortRead `json:"ports" binding:"omitempty,port_list_names,port_list_numbers,port_list_http_proxies,min=0,max=100,dive"`
-	CpuCores     int        `json:"cpuCores" binding:"required,min=2"`
-	RAM          int        `json:"ram" binding:"required,min=1"`
-	DiskSize     int        `json:"diskSize" binding:"required,min=20"`
-	Zone         *string    `json:"zone" binding:"omitempty"`
+	Name         string  `json:"name,omitempty" binding:"required,rfc1035,min=3,max=30"`
+	SshPublicKey string  `json:"sshPublicKey" binding:"required,ssh_public_key"`
+	Ports        []Port  `json:"ports" bson:"ports" binding:"omitempty,port_list_names,port_list_numbers,port_list_http_proxies,min=0,max=100,dive"`
+	CpuCores     int     `json:"cpuCores" bson:"cpuCores" binding:"required,min=2"`
+	RAM          int     `json:"ram" bson:"ram" binding:"required,min=1"`
+	DiskSize     int     `json:"diskSize" bson:"diskSize" binding:"required,min=20"`
+	Zone         *string `json:"zone,omitempty" bson:"zone,omitempty" binding:"omitempty"`
 }
 
 type VmUpdate struct {
-	SnapshotID *string     `json:"snapshotId" binding:"omitempty,uuid4"`
-	GpuID      *string     `json:"gpuId" binding:"omitempty,min=0,max=100"`
-	Ports      *[]PortRead `json:"ports" binding:"omitempty,port_list_names,port_list_numbers,port_list_http_proxies,min=0,max=1000,dive"`
-	CpuCores   *int        `json:"cpuCores" binding:"omitempty,min=1"`
-	RAM        *int        `json:"ram" binding:"omitempty,min=1"`
+	SnapshotID *string `json:"snapshotId,omitempty" bson:"snapshotId,omitempty" binding:"omitempty,uuid4"`
+	GpuID      *string `json:"gpuId,omitempty" bson:"gpuId,omitempty" binding:"omitempty,min=0,max=100"`
+	Ports      *[]Port `json:"ports,omitempty" bson:"ports,omitempty" binding:"omitempty,port_list_names,port_list_numbers,port_list_http_proxies,min=0,max=1000,dive"`
+	CpuCores   *int    `json:"cpuCores,omitempty" bson:"cpuCores,omitempty" binding:"omitempty,min=1"`
+	RAM        *int    `json:"ram,omitempty" bson:"ram,omitempty" binding:"omitempty,min=1"`
 }
 
 type VmCreated struct {
