@@ -17,7 +17,7 @@ func (vm *VM) ToDTO(status string, connectionString *string, gpu *body.GpuRead, 
 		}
 	}
 
-	ports := make([]body.PortRead, 0)
+	ports := make([]body.Port, 0)
 	if vm.Ports != nil && externalPortMapper != nil {
 		for _, port := range vm.Ports {
 			if port.Name == "__ssh" {
@@ -59,7 +59,7 @@ func (vm *VM) ToDTO(status string, connectionString *string, gpu *body.GpuRead, 
 				}
 			}
 
-			ports = append(ports, body.PortRead{
+			ports = append(ports, body.Port{
 				Name:         port.Name,
 				Port:         port.Port,
 				ExternalPort: externalPort,
@@ -149,7 +149,7 @@ func (p *UpdateParams) FromDTO(dto *body.VmUpdate) {
 	p.RAM = dto.RAM
 }
 
-func fromDtoPort(port *body.PortRead) Port {
+func fromDtoPort(port *body.Port) Port {
 	var httpProxy *PortHttpProxy
 	if port.HttpProxy != nil {
 		httpProxy = &PortHttpProxy{

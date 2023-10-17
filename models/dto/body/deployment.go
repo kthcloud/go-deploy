@@ -3,14 +3,14 @@ package body
 import "time"
 
 type Env struct {
-	Name  string `json:"name" binding:"required,env_name,min=1,max=100"`
-	Value string `json:"value" binding:"required,min=1,max=10000"`
+	Name  string `json:"name" bson:"name" binding:"required,env_name,min=1,max=100"`
+	Value string `json:"value" bson:"value" binding:"required,min=1,max=10000"`
 }
 
 type Volume struct {
-	Name       string `json:"name" binding:"required,min=1,max=100"`
-	AppPath    string `json:"appPath" binding:"required,min=1,max=100"`
-	ServerPath string `json:"serverPath" binding:"required,min=1,max=100"`
+	Name       string `json:"name" bson:"name" binding:"required,min=1,max=100"`
+	AppPath    string `json:"appPath" bson:"appPath" binding:"required,min=1,max=100"`
+	ServerPath string `json:"serverPath" bson:"serverPath" binding:"required,min=1,max=100"`
 }
 
 type GitHub struct {
@@ -19,35 +19,35 @@ type GitHub struct {
 }
 
 type DeploymentCreate struct {
-	Name string `json:"name" binding:"required,rfc1035,min=3,max=30"`
+	Name string `json:"name" bson:"name" binding:"required,rfc1035,min=3,max=30"`
 
-	Image           *string  `json:"image,omitempty" binding:"omitempty,min=1,max=1000"`
-	Private         bool     `json:"private" binding:"omitempty,boolean"`
-	Envs            []Env    `json:"envs" binding:"omitempty,env_list,min=0,max=1000,dive"`
-	Volumes         []Volume `json:"volumes" binding:"omitempty,min=0,max=100,dive"`
-	InitCommands    []string `json:"initCommands" binding:"omitempty,min=0,max=100,dive,min=0,max=100"`
-	HealthCheckPath *string  `json:"healthCheckPath" binding:"omitempty,min=0,max=1000,health_check_path"`
-	CustomDomain    *string  `json:"customDomain" binding:"omitempty,domain_name,custom_domain,min=1,max=253"`
+	Image           *string  `json:"image,omitempty" bson:"image,omitempty" binding:"omitempty,min=1,max=1000"`
+	Private         bool     `json:"private" bson:"private" binding:"omitempty,boolean"`
+	Envs            []Env    `json:"envs" bson:"envs" binding:"omitempty,env_list,min=0,max=1000,dive"`
+	Volumes         []Volume `json:"volumes" bson:"volumes" binding:"omitempty,min=0,max=100,dive"`
+	InitCommands    []string `json:"initCommands" bson:"initCommands" binding:"omitempty,min=0,max=100,dive,min=0,max=100"`
+	HealthCheckPath *string  `json:"healthCheckPath" bson:"healthCheckPath,omitempty" binding:"omitempty,min=0,max=1000,health_check_path"`
+	CustomDomain    *string  `json:"customDomain" bson:"customDomain,omitempty" binding:"omitempty,domain_name,custom_domain,min=1,max=253"`
 
-	GitHub *GitHub `json:"github" binding:"omitempty,dive"`
+	GitHub *GitHub `json:"github" bson:"github,omitempty" binding:"omitempty,dive"`
 
-	Zone *string `json:"zone" binding:"omitempty"`
+	Zone *string `json:"zone" bson:"zone,omitempty" binding:"omitempty"`
 }
 
 type DeploymentUpdate struct {
-	Private         *bool     `json:"private" binding:"omitempty,boolean"`
-	Envs            *[]Env    `json:"envs" binding:"omitempty,env_list,min=0,max=1000,dive"`
-	Volumes         *[]Volume `json:"volumes" binding:"omitempty,min=0,max=100,dive"`
-	InitCommands    *[]string `json:"initCommands" binding:"omitempty,min=0,max=100,dive"`
-	CustomDomain    *string   `json:"customDomain" binding:"omitempty,domain_name,custom_domain,min=0,max=253"`
-	Image           *string   `json:"image,omitempty" binding:"omitempty,min=1,max=1000"`
-	HealthCheckPath *string   `json:"healthCheckPath" binding:"omitempty,min=0,max=1000,health_check_path"`
+	Private         *bool     `json:"private,omitempty" bson:"private,omitempty" binding:"omitempty,boolean"`
+	Envs            *[]Env    `json:"envs,omitempty" bson:"envs,omitempty" binding:"omitempty,env_list,min=0,max=1000,dive"`
+	Volumes         *[]Volume `json:"volumes,omitempty" bson:"volumes,omitempty" binding:"omitempty,min=0,max=100,dive"`
+	InitCommands    *[]string `json:"initCommands,omitempty" bson:"initCommands,omitempty" binding:"omitempty,min=0,max=100,dive"`
+	CustomDomain    *string   `json:"customDomain,omitempty" bson:"customDomain,omitempty" binding:"omitempty,domain_name,custom_domain,min=0,max=253"`
+	Image           *string   `json:"image,omitempty,omitempty" bson:"image,omitempty" binding:"omitempty,min=1,max=1000"`
+	HealthCheckPath *string   `json:"healthCheckPath,omitempty" bson:"healthCheckPath,omitempty" binding:"omitempty,min=0,max=1000,health_check_path"`
 }
 
 type DeploymentBuild struct {
-	Tag       string `json:"tag" binding:"required,rfc1035,min=1,max=50"`
-	Branch    string `json:"branch" binding:"required,min=1,max=50"`
-	ImportURL string `json:"importUrl" binding:"required,min=1,max=1000"`
+	Tag       string `json:"tag" bson:"tag" binding:"required,rfc1035,min=1,max=50"`
+	Branch    string `json:"branch" bson:"branch" binding:"required,min=1,max=50"`
+	ImportURL string `json:"importUrl" bson:"importUrl" binding:"required,min=1,max=1000"`
 }
 
 type DeploymentCreated struct {
@@ -94,7 +94,7 @@ type CiConfig struct {
 }
 
 type DeploymentCommand struct {
-	Command string `json:"command" binding:"required,oneof=restart"`
+	Command string `json:"command" bson:"command" binding:"required,oneof=restart"`
 }
 
 type StorageManagerDeleted struct {
