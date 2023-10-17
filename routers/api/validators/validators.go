@@ -84,7 +84,7 @@ func EnvList(fl validator.FieldLevel) bool {
 }
 
 func PortListNames(fl validator.FieldLevel) bool {
-	portList, ok := fl.Field().Interface().([]body.Port)
+	portList, ok := fl.Field().Interface().([]body.PortRead)
 	if !ok {
 		return false
 	}
@@ -100,7 +100,7 @@ func PortListNames(fl validator.FieldLevel) bool {
 }
 
 func PortListNumbers(fl validator.FieldLevel) bool {
-	portList, ok := fl.Field().Interface().([]body.Port)
+	portList, ok := fl.Field().Interface().([]body.PortRead)
 	if !ok {
 		return false
 	}
@@ -117,7 +117,7 @@ func PortListNumbers(fl validator.FieldLevel) bool {
 }
 
 func PortListHttpProxies(fl validator.FieldLevel) bool {
-	portList, ok := fl.Field().Interface().([]body.Port)
+	portList, ok := fl.Field().Interface().([]body.PortRead)
 	if !ok {
 		return false
 	}

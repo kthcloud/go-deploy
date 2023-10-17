@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go-deploy/models/sys/deployment"
 	"go-deploy/models/sys/vm"
+	"go-deploy/service"
 )
 
 func appCreatedK8s(deployment *deployment.Deployment, app *deployment.App) bool {
@@ -27,8 +28,8 @@ func appCreatedK8s(deployment *deployment.Deployment, app *deployment.App) bool 
 	}
 
 	serviceCreated := false
-	for mapName, service := range deployment.Subsystems.K8s.ServiceMap {
-		if service.Created() && mapName == deployment.Name {
+	for mapName, k8sService := range deployment.Subsystems.K8s.ServiceMap {
+		if k8sService.Created() && mapName == deployment.Name {
 			serviceCreated = true
 		}
 	}
@@ -64,8 +65,8 @@ func appDeletedK8s(deployment *deployment.Deployment, app *deployment.App) bool 
 	}
 
 	serviceDeleted := true
-	for mapName, service := range deployment.Subsystems.K8s.ServiceMap {
-		if service.Created() && mapName == deployment.Name {
+	for mapName, k8sService := range deployment.Subsystems.K8s.ServiceMap {
+		if k8sService.Created() && mapName == deployment.Name {
 			serviceDeleted = false
 		}
 	}
@@ -120,10 +121,10 @@ func harborCreated(deployment *deployment.Deployment) (bool, error) {
 		return true, nil
 	}
 
-	return harbor.Project.ID != 0 &&
-		harbor.Robot.ID != 0 &&
-		harbor.Repository.ID != 0 &&
-		harbor.Webhook.ID != 0, nil
+	return harbor.Project.Created() &&
+		harbor.Robot.Created() &&
+		harbor.Repository.Created() &&
+		harbor.Webhook.Created(), nil
 }
 
 func harborDeleted(deployment *deployment.Deployment) (bool, error) {
@@ -148,7 +149,7 @@ func gitHubCreated(deployment *deployment.Deployment) (bool, error) {
 		return true, nil
 	}
 
-	return github.Webhook.ID != 0, nil
+	return github.Webhook.Created(), nil
 }
 
 func gitHubDeleted(deployment *deployment.Deployment) (bool, error) {
@@ -165,9 +166,12 @@ func gitHubDeleted(deployment *deployment.Deployment) (bool, error) {
 func csCreated(vm *vm.VM) (bool, error) {
 	cs := &vm.Subsystems.CS
 
-	_, hasSshRule := cs.PortForwardingRuleMap["__ssh"]
+	sshRule, ok := cs.PortForwardingRuleMap["__ssh"]
+	if !ok {
+		return false, nil
+	}
 
-	return cs.VM.ID != "" && hasSshRule, nil
+	return cs.VM.Created() && sshRule.Created(), nil
 }
 
 func csDeleted(vm *vm.VM) (bool, error) {
@@ -180,6 +184,54 @@ func csDeleted(vm *vm.VM) (bool, error) {
 	}
 
 	return cs.VM.ID == "", nil
+}
+
+func k8sCreatedVM(vm *vm.VM) (bool, error) {
+	k8s := &vm.Subsystems.K8s
+
+	for _, port := range vm.Ports {
+		if port.Name == "__ssh" {
+			continue
+		}
+
+		resourceName := vm.Name + "-" + port.Name
+
+		if service.NotCreated(k8s.GetDeployment(resourceName)) {
+			return false, nil
+		}
+
+		if service.NotCreated(k8s.GetService(resourceName)) {
+			return false, nil
+		}
+
+		if service.NotCreated(k8s.GetIngress(resourceName)) {
+			return false, nil
+		}
+	}
+
+	if len(vm.Ports) > 1 && !k8s.Namespace.Created() {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+func k8sDeletedVM(vm *vm.VM) (bool, error) {
+	k8s := &vm.Subsystems.K8s
+
+	if len(k8s.DeploymentMap) > 0 {
+		return false, nil
+	}
+
+	if len(k8s.ServiceMap) > 0 {
+		return false, nil
+	}
+
+	if len(k8s.IngressMap) > 0 {
+		return false, nil
+	}
+
+	return k8s.Namespace.ID == "", nil
 }
 
 func gpuCleared(vm *vm.VM) (bool, error) {
