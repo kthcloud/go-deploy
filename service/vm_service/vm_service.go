@@ -42,9 +42,14 @@ func Create(id, ownerID string, vmCreate *body.VmCreate) error {
 		return makeError(err)
 	}
 
-	err = k8s_service.Create(id, params)
-	if err != nil {
-		return makeError(err)
+	// there is always at least one port: __ssh
+	if len(params.Ports) > 1 {
+		err = k8s_service.Create(id, params)
+		if err != nil {
+			return makeError(err)
+		}
+	} else {
+		log.Println("skipping k8s setup for vm", id, "since it has no ports")
 	}
 
 	return nil
