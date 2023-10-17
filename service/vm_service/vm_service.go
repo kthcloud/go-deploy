@@ -28,10 +28,6 @@ func Create(id, ownerID string, vmCreate *body.VmCreate) error {
 	params := &vmModel.CreateParams{}
 	params.FromDTO(vmCreate, &fallback, &deploymentZone)
 
-	if params.Ports != nil {
-		addDeploySshToPortMap(&params.Ports)
-	}
-
 	created, err := vmModel.New().Create(id, ownerID, conf.Env.Manager, params)
 	if err != nil {
 		return makeError(err)
@@ -68,10 +64,6 @@ func Update(vmID string, dtoVmUpdate *body.VmUpdate) error {
 			return makeError(err)
 		}
 	} else {
-		if vmUpdate.Ports != nil {
-			addDeploySshToPortMap(vmUpdate.Ports)
-		}
-
 		err := vmModel.New().UpdateWithParamsByID(vmID, vmUpdate)
 		if err != nil {
 			return makeError(err)
@@ -503,14 +495,6 @@ func GetExternalPortMapper(vmID string) (map[string]int, error) {
 	}
 
 	return mapper, nil
-}
-
-func addDeploySshToPortMap(portMap *[]vmModel.Port) {
-	*portMap = append(*portMap, vmModel.Port{
-		Port:     22,
-		Name:     "__ssh",
-		Protocol: "tcp",
-	})
 }
 
 func removeDeploySshFromPortMap(portMap *[]vmModel.Port) {

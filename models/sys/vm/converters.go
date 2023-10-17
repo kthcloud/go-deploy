@@ -67,6 +67,12 @@ func (p *CreateParams) FromDTO(dto *body.VmCreate, fallbackZone *string, deploym
 
 		p.Ports = append(p.Ports, fromDtoPort(&port))
 	}
+	p.Ports = append(p.Ports, Port{
+		Name:     "__ssh",
+		Port:     22,
+		Protocol: "tcp",
+	})
+
 	p.CpuCores = dto.CpuCores
 	p.RAM = dto.RAM
 	p.DiskSize = dto.DiskSize
@@ -95,6 +101,12 @@ func (p *UpdateParams) FromDTO(dto *body.VmUpdate) {
 
 			ports = append(ports, fromDtoPort(&port))
 		}
+		ports = append(ports, Port{
+			Name:     "__ssh",
+			Port:     22,
+			Protocol: "tcp",
+		})
+
 		p.Ports = &ports
 	} else {
 		p.Ports = nil
