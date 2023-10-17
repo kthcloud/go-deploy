@@ -69,8 +69,8 @@ func CreateBuild(id string, params *deploymentModel.BuildParams) error {
 					"docker:20.10.16-dind",
 				},
 				Variables: map[string]string{
-					"CI_REGISTRY":          conf.Env.DockerRegistry.URL,
-					"CI_REGISTRY_IMAGE":    conf.Env.DockerRegistry.URL + "/" + subsystemutils.GetPrefixedName(deployment.OwnerID) + "/" + deployment.Name,
+					"CI_REGISTRY":          conf.Env.Registry.URL,
+					"CI_REGISTRY_IMAGE":    conf.Env.Registry.URL + "/" + subsystemutils.GetPrefixedName(deployment.OwnerID) + "/" + deployment.Name,
 					"CI_COMMIT_REF_SLUG":   params.Tag,
 					"CI_REGISTRY_USER":     escapedHarborName,
 					"CI_REGISTRY_PASSWORD": deployment.Subsystems.Harbor.Robot.Secret,

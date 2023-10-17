@@ -31,7 +31,7 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 
 	// temporary hard-coded fallback
 	fallbackZone := "se-flem"
-	fallbackImage := fmt.Sprintf("%s/%s/%s", conf.Env.DockerRegistry.URL, subsystemutils.GetPrefixedName(ownerID), deploymentCreate.Name)
+	fallbackImage := fmt.Sprintf("%s/%s/%s", conf.Env.Registry.URL, subsystemutils.GetPrefixedName(ownerID), deploymentCreate.Name)
 	fallbackPort := conf.Env.Deployment.Port
 
 	params := &deploymentModel.CreateParams{}
