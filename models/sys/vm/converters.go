@@ -8,7 +8,7 @@ import (
 func (vm *VM) ToDTO(status string, connectionString *string, gpu *body.GpuRead, externalPortMapper map[string]int) body.VmRead {
 
 	var vmGpu *body.VmGpu
-	if gpu != nil {
+	if gpu != nil && gpu.Lease != nil {
 		vmGpu = &body.VmGpu{
 			ID:           gpu.ID,
 			Name:         gpu.Name,
