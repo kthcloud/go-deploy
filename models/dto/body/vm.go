@@ -4,10 +4,13 @@ import "time"
 
 type VmHttpProxy struct {
 	Name         string  `json:"name" binding:"required,rfc1035,min=3,max=30"`
-	CustomDomain *string `json:"customDomain,omitempty" binding:"omitempty,domain_name,custom_domain,min=1,max=253"`
+	CustomDomain *string `json:"customDomain,omitempty" binding:"omitempty,domain_name,min=1,max=253"`
+
+	URL             *string `json:"url,omitempty" `
+	CustomDomainURL *string `json:"customDomainUrl,omitempty" `
 }
 
-type Port struct {
+type PortRead struct {
 	Name         string       `json:"name,omitempty" binding:"required,min=1,max=100"`
 	Port         int          `json:"port,omitempty"  binding:"required,min=1,max=65535"`
 	ExternalPort int          `json:"externalPort,omitempty"`
@@ -34,31 +37,31 @@ type VmRead struct {
 	OwnerID string `json:"ownerId"`
 	Zone    string `json:"zone"`
 
-	Specs        Specs  `json:"specs,omitempty"`
-	Ports        []Port `json:"ports"`
-	GPU          *VmGpu `json:"gpu,omitempty"`
-	SshPublicKey string `json:"sshPublicKey"`
+	Specs        Specs      `json:"specs,omitempty"`
+	Ports        []PortRead `json:"ports"`
+	GPU          *VmGpu     `json:"gpu,omitempty"`
+	SshPublicKey string     `json:"sshPublicKey"`
 
 	Status           string  `json:"status"`
 	ConnectionString *string `json:"connectionString,omitempty"`
 }
 
 type VmCreate struct {
-	Name         string  `json:"name" binding:"required,rfc1035,min=3,max=30"`
-	SshPublicKey string  `json:"sshPublicKey" binding:"required,ssh_public_key"`
-	Ports        []Port  `json:"ports" binding:"omitempty,port_list_names,port_list_numbers,port_list_http_proxies,min=0,max=100,dive"`
-	CpuCores     int     `json:"cpuCores" binding:"required,min=2"`
-	RAM          int     `json:"ram" binding:"required,min=1"`
-	DiskSize     int     `json:"diskSize" binding:"required,min=20"`
-	Zone         *string `json:"zone" binding:"omitempty"`
+	Name         string     `json:"name" binding:"required,rfc1035,min=3,max=30"`
+	SshPublicKey string     `json:"sshPublicKey" binding:"required,ssh_public_key"`
+	Ports        []PortRead `json:"ports" binding:"omitempty,port_list_names,port_list_numbers,port_list_http_proxies,min=0,max=100,dive"`
+	CpuCores     int        `json:"cpuCores" binding:"required,min=2"`
+	RAM          int        `json:"ram" binding:"required,min=1"`
+	DiskSize     int        `json:"diskSize" binding:"required,min=20"`
+	Zone         *string    `json:"zone" binding:"omitempty"`
 }
 
 type VmUpdate struct {
-	SnapshotID *string `json:"snapshotId" binding:"omitempty,uuid4"`
-	GpuID      *string `json:"gpuId" binding:"omitempty,min=0,max=100"`
-	Ports      *[]Port `json:"ports" binding:"omitempty,port_list_names,port_list_numbers,port_list_http_proxies,min=0,max=1000,dive"`
-	CpuCores   *int    `json:"cpuCores" binding:"omitempty,min=1"`
-	RAM        *int    `json:"ram" binding:"omitempty,min=1"`
+	SnapshotID *string     `json:"snapshotId" binding:"omitempty,uuid4"`
+	GpuID      *string     `json:"gpuId" binding:"omitempty,min=0,max=100"`
+	Ports      *[]PortRead `json:"ports" binding:"omitempty,port_list_names,port_list_numbers,port_list_http_proxies,min=0,max=1000,dive"`
+	CpuCores   *int        `json:"cpuCores" binding:"omitempty,min=1"`
+	RAM        *int        `json:"ram" binding:"omitempty,min=1"`
 }
 
 type VmCreated struct {

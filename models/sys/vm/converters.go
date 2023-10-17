@@ -1,6 +1,9 @@
 package vm
 
-import "go-deploy/models/dto/body"
+import (
+	"go-deploy/models/dto/body"
+	"go-deploy/service"
+)
 
 func (vm *VM) ToDTO(status string, connectionString *string, gpu *body.GpuRead, externalPortMapper map[string]int) body.VmRead {
 
@@ -14,7 +17,7 @@ func (vm *VM) ToDTO(status string, connectionString *string, gpu *body.GpuRead, 
 		}
 	}
 
-	ports := make([]body.Port, 0)
+	ports := make([]body.PortRead, 0)
 	if vm.Ports != nil && externalPortMapper != nil {
 		for _, port := range vm.Ports {
 			if port.Name == "__ssh" {
@@ -26,11 +29,38 @@ func (vm *VM) ToDTO(status string, connectionString *string, gpu *body.GpuRead, 
 				continue
 			}
 
-			ports = append(ports, body.Port{
+			var url *string
+			if ingress := vm.Subsystems.K8s.GetIngress(vm.Name + "-" + port.Name); service.Created(ingress) {
+				if len(ingress.Hosts) > 0 {
+					urlStr := "https://" + ingress.Hosts[0]
+					url = &urlStr
+				}
+			}
+
+			var customDomainUrl *string
+			if ingress := vm.Subsystems.K8s.GetIngress(vm.Name + "-" + port.Name + "-custom-domain"); service.Created(ingress) {
+				if len(ingress.Hosts) > 0 {
+					urlStr := "https://" + ingress.Hosts[0]
+					customDomainUrl = &urlStr
+				}
+			}
+
+			var httpProxy *body.VmHttpProxy
+			if port.HttpProxy != nil {
+				httpProxy = &body.VmHttpProxy{
+					Name:            port.HttpProxy.Name,
+					CustomDomain:    port.HttpProxy.CustomDomain,
+					URL:             url,
+					CustomDomainURL: customDomainUrl,
+				}
+			}
+
+			ports = append(ports, body.PortRead{
 				Name:         port.Name,
 				Port:         port.Port,
 				ExternalPort: externalPort,
 				Protocol:     port.Protocol,
+				HttpProxy:    httpProxy,
 			})
 		}
 	}
@@ -115,7 +145,7 @@ func (p *UpdateParams) FromDTO(dto *body.VmUpdate) {
 	p.RAM = dto.RAM
 }
 
-func fromDtoPort(port *body.Port) Port {
+func fromDtoPort(port *body.PortRead) Port {
 	var httpProxy *PortHttpProxy
 	if port.HttpProxy != nil {
 		httpProxy = &PortHttpProxy{
