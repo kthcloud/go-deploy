@@ -24,24 +24,28 @@ func (vm *VM) ToDTO(status string, connectionString *string, gpu *body.GpuRead, 
 				continue
 			}
 
-			externalPort, ok := externalPortMapper[port.Name]
-			if !ok {
-				continue
+			var externalPort *int
+			if _, ok := externalPortMapper[port.Name]; ok {
+				p := externalPortMapper[port.Name]
+				externalPort = &p
 			}
 
 			var url *string
-			if ingress := vm.Subsystems.K8s.GetIngress(vm.Name + "-" + port.Name); service.Created(ingress) {
-				if len(ingress.Hosts) > 0 {
-					urlStr := "https://" + ingress.Hosts[0]
-					url = &urlStr
-				}
-			}
-
 			var customDomainUrl *string
-			if ingress := vm.Subsystems.K8s.GetIngress(vm.Name + "-" + port.Name + "-custom-domain"); service.Created(ingress) {
-				if len(ingress.Hosts) > 0 {
-					urlStr := "https://" + ingress.Hosts[0]
-					customDomainUrl = &urlStr
+
+			if port.HttpProxy != nil {
+				if ingress := vm.Subsystems.K8s.GetIngress(vm.Name + "-" + port.HttpProxy.Name); service.Created(ingress) {
+					if len(ingress.Hosts) > 0 {
+						urlStr := "https://" + ingress.Hosts[0]
+						url = &urlStr
+					}
+				}
+
+				if ingress := vm.Subsystems.K8s.GetIngress(vm.Name + "-" + port.HttpProxy.Name + "-custom-domain"); service.Created(ingress) {
+					if len(ingress.Hosts) > 0 {
+						urlStr := "https://" + ingress.Hosts[0]
+						customDomainUrl = &urlStr
+					}
 				}
 			}
 

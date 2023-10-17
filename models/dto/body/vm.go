@@ -13,7 +13,7 @@ type VmHttpProxy struct {
 type PortRead struct {
 	Name         string       `json:"name,omitempty" binding:"required,min=1,max=100"`
 	Port         int          `json:"port,omitempty"  binding:"required,min=1,max=65535"`
-	ExternalPort int          `json:"externalPort,omitempty"`
+	ExternalPort *int         `json:"externalPort,omitempty"`
 	Protocol     string       `json:"protocol,omitempty" binding:"required,oneof=tcp udp"`
 	HttpProxy    *VmHttpProxy `json:"httpProxy,omitempty" binding:"omitempty,dive"`
 }
