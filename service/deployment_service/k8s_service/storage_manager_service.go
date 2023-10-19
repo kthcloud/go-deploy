@@ -5,6 +5,7 @@ import (
 	"fmt"
 	storageManagerModel "go-deploy/models/sys/deployment/storage_manager"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
+	"go-deploy/service/constants"
 	"go-deploy/service/deployment_service/base"
 	"go-deploy/service/resources"
 	"golang.org/x/exp/slices"
@@ -66,6 +67,18 @@ func CreateStorageManager(smID string, params *storageManagerModel.CreateParams)
 		err = resources.SsCreator(context.Client.CreateJob).
 			WithDbFunc(dbFuncSM(smID, "jobMap."+jobPublic.Name)).
 			WithPublic(&jobPublic).
+			Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	// Secret
+	for _, secret := range context.Generator.Secrets() {
+		err = resources.SsCreator(context.Client.CreateSecret).
+			WithDbFunc(dbFuncSM(smID, "secretMap."+secret.Name)).
+			WithPublic(&secret).
 			Exec()
 
 		if err != nil {
@@ -176,6 +189,21 @@ func DeleteStorageManager(id string) error {
 			Exec()
 	}
 
+	// Secret
+	for mapName, secret := range context.StorageManager.Subsystems.K8s.SecretMap {
+		var deleteFunc func(interface{}) error
+		if mapName == constants.WildcardCertSecretName {
+			deleteFunc = func(interface{}) error { return nil }
+		} else {
+			deleteFunc = dbFunc(id, "secretMap."+mapName)
+		}
+
+		err = resources.SsDeleter(context.Client.DeleteSecret).
+			WithResourceID(secret.ID).
+			WithDbFunc(deleteFunc).
+			Exec()
+	}
+
 	return nil
 }
 
@@ -193,87 +221,116 @@ func RepairStorageManager(id string) error {
 		return makeError(err)
 	}
 
-	// deployment
-	for mapName := range context.StorageManager.Subsystems.K8s.DeploymentMap {
-		deployments := context.Generator.Deployments()
+	namespace := context.Generator.Namespace()
+	err = resources.SsRepairer(
+		context.Client.ReadNamespace,
+		context.Client.CreateNamespace,
+		context.Client.UpdateNamespace,
+		func(string) error { return nil },
+	).WithResourceID(namespace.ID).WithDbFunc(dbFunc(id, "namespace")).WithGenPublic(namespace).Exec()
+
+	if err != nil {
+		return makeError(err)
+	}
+
+	deployments := context.Generator.Deployments()
+	for mapName, k8sDeployment := range context.StorageManager.Subsystems.K8s.DeploymentMap {
 		idx := slices.IndexFunc(deployments, func(d k8sModels.DeploymentPublic) bool { return d.Name == mapName })
 		if idx == -1 {
 			err = resources.SsDeleter(context.Client.DeleteDeployment).
-				WithResourceID(context.StorageManager.Subsystems.K8s.DeploymentMap[mapName].ID).
-				WithDbFunc(dbFuncSM(id, "deploymentMap."+mapName)).
+				WithResourceID(k8sDeployment.ID).
+				WithDbFunc(dbFunc(id, "deploymentMap."+mapName)).
 				Exec()
 
 			if err != nil {
 				return makeError(err)
 			}
-
-			continue
 		}
-
+	}
+	for _, public := range deployments {
 		err = resources.SsRepairer(
 			context.Client.ReadDeployment,
 			context.Client.CreateDeployment,
 			context.Client.UpdateDeployment,
 			context.Client.DeleteDeployment,
-		).WithGenPublic(&deployments[idx]).WithDbFunc(dbFuncSM(id, "deploymentMap."+mapName)).Exec()
+		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "deploymentMap."+public.Name)).WithGenPublic(&public).Exec()
 
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
-	// service
-	for mapName := range context.StorageManager.Subsystems.K8s.ServiceMap {
-		services := context.Generator.Services()
+	services := context.Generator.Services()
+	for mapName, k8sService := range context.StorageManager.Subsystems.K8s.ServiceMap {
 		idx := slices.IndexFunc(services, func(s k8sModels.ServicePublic) bool { return s.Name == mapName })
 		if idx == -1 {
 			err = resources.SsDeleter(context.Client.DeleteService).
-				WithResourceID(context.StorageManager.Subsystems.K8s.ServiceMap[mapName].ID).
-				WithDbFunc(dbFuncSM(id, "k8s.serviceMap."+mapName)).
+				WithResourceID(k8sService.ID).
+				WithDbFunc(dbFunc(id, "serviceMap."+mapName)).
 				Exec()
 
 			if err != nil {
 				return makeError(err)
 			}
-
-			continue
 		}
-
+	}
+	for _, public := range services {
 		err = resources.SsRepairer(
 			context.Client.ReadService,
 			context.Client.CreateService,
 			context.Client.UpdateService,
 			context.Client.DeleteService,
-		).WithGenPublic(&services[idx]).WithDbFunc(dbFuncSM(id, "k8s.serviceMap."+mapName)).Exec()
+		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "serviceMap."+public.Name)).WithGenPublic(&public).Exec()
 
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
-	// ingress
-	for mapName := range context.StorageManager.Subsystems.K8s.IngressMap {
-		ingresses := context.Generator.Ingresses()
+	ingresses := context.Generator.Ingresses()
+	for mapName, ingress := range context.StorageManager.Subsystems.K8s.IngressMap {
 		idx := slices.IndexFunc(ingresses, func(i k8sModels.IngressPublic) bool { return i.Name == mapName })
 		if idx == -1 {
 			err = resources.SsDeleter(context.Client.DeleteIngress).
-				WithResourceID(context.StorageManager.Subsystems.K8s.IngressMap[mapName].ID).
-				WithDbFunc(dbFuncSM(id, "k8s.ingressMap."+mapName)).
+				WithResourceID(ingress.ID).
+				WithDbFunc(dbFunc(id, "ingressMap."+mapName)).
 				Exec()
 
 			if err != nil {
 				return makeError(err)
 			}
-
-			continue
 		}
-
+	}
+	for _, public := range ingresses {
 		err = resources.SsRepairer(
 			context.Client.ReadIngress,
 			context.Client.CreateIngress,
 			context.Client.UpdateIngress,
 			context.Client.DeleteIngress,
-		).WithGenPublic(&ingresses[idx]).WithDbFunc(dbFuncSM(id, "k8s.ingressMap."+mapName)).Exec()
+		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "ingressMap."+public.Name)).WithGenPublic(&public).Exec()
+	}
+
+	for mapName, secret := range context.StorageManager.Subsystems.K8s.SecretMap {
+		secrets := context.Generator.Secrets()
+		idx := slices.IndexFunc(secrets, func(s k8sModels.SecretPublic) bool { return s.Name == mapName })
+		if idx == -1 {
+			err = resources.SsDeleter(context.Client.DeleteSecret).
+				WithResourceID(secret.ID).
+				WithDbFunc(dbFunc(id, "secretMap."+mapName)).
+				Exec()
+
+			if err != nil {
+				return makeError(err)
+			}
+		}
+	}
+	for _, public := range context.Generator.Secrets() {
+		err = resources.SsRepairer(
+			context.Client.ReadSecret,
+			context.Client.CreateSecret,
+			context.Client.UpdateSecret,
+			context.Client.DeleteSecret,
+		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "secretMap."+public.Name)).WithGenPublic(&public).Exec()
 
 		if err != nil {
 			return makeError(err)

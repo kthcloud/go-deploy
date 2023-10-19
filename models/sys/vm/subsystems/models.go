@@ -17,6 +17,7 @@ type K8s struct {
 	DeploymentMap map[string]k8sModels.DeploymentPublic `bson:"deploymentMap,omitempty"`
 	ServiceMap    map[string]k8sModels.ServicePublic    `bson:"serviceMap,omitempty"`
 	IngressMap    map[string]k8sModels.IngressPublic    `bson:"ingressMap,omitempty"`
+	SecretMap     map[string]k8sModels.SecretPublic     `bson:"secretMap,omitempty"`
 }
 
 func (k8s *K8s) GetDeploymentMap() map[string]k8sModels.DeploymentPublic {

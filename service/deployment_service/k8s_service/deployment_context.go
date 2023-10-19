@@ -35,7 +35,7 @@ func NewContext(deploymentID string) (*DeploymentContext, error) {
 	return &DeploymentContext{
 		DeploymentContext: *baseContext,
 		Client:            k8sClient,
-		Generator:         baseContext.Generator.K8s(k8sClient.Namespace),
+		Generator:         baseContext.Generator.K8s(k8sClient),
 	}, nil
 }
 

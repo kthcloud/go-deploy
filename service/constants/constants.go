@@ -8,6 +8,7 @@ const (
 	StorageManagerNamePrefix  = "system"
 	StorageManagerAppName     = "storage-manager"
 	StorageManagerAppNameAuth = "storage-manager-auth"
+	WildcardCertSecretName    = "wildcard-cert"
 )
 
 func ImagePullSecretSuffix(appName string) string {

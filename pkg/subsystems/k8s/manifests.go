@@ -229,6 +229,11 @@ func CreateIngressManifest(public *models.IngressPublic) *networkingv1.Ingress {
 			Hosts:      public.Hosts,
 			SecretName: public.Name + "-" + utils.HashStringRfc1123(public.CustomCert.CommonName),
 		})
+	} else if public.TlsSecret != nil {
+		tls = append(tls, networkingv1.IngressTLS{
+			Hosts:      public.Hosts,
+			SecretName: *public.TlsSecret,
+		})
 	}
 
 	annotations := map[string]string{keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat)}

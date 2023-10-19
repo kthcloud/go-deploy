@@ -34,7 +34,7 @@ func NewStorageManagerContext(storageManagerID string) (*StorageManagerContext, 
 	return &StorageManagerContext{
 		StorageManagerContext: *baseContext,
 		Client:                k8sClient,
-		Generator:             baseContext.Generator.K8s(k8sClient.Namespace),
+		Generator:             baseContext.Generator.K8s(k8sClient),
 	}, nil
 }
 
