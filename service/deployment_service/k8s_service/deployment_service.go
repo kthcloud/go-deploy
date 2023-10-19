@@ -183,9 +183,16 @@ func Delete(id string) error {
 
 	// Secret
 	for mapName, secret := range context.Deployment.Subsystems.K8s.SecretMap {
+		var deleteFunc func(interface{}) error
+		if mapName == constants.WildcardCertSecretName {
+			deleteFunc = func(interface{}) error { return nil }
+		} else {
+			deleteFunc = dbFunc(id, "secretMap."+mapName)
+		}
+
 		err = resources.SsDeleter(context.Client.DeleteSecret).
 			WithResourceID(secret.ID).
-			WithDbFunc(dbFunc(id, "secretMap."+mapName)).
+			WithDbFunc(deleteFunc).
 			Exec()
 	}
 
@@ -392,12 +399,12 @@ func Repair(id string) error {
 		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "ingressMap."+public.Name)).WithGenPublic(&public).Exec()
 	}
 
-	for mapName := range context.Deployment.Subsystems.K8s.SecretMap {
+	for mapName, secret := range context.Deployment.Subsystems.K8s.SecretMap {
 		secrets := context.Generator.Secrets()
 		idx := slices.IndexFunc(secrets, func(s k8sModels.SecretPublic) bool { return s.Name == mapName })
 		if idx == -1 {
 			err = resources.SsDeleter(context.Client.DeleteSecret).
-				WithResourceID(context.Deployment.Subsystems.K8s.SecretMap[mapName].ID).
+				WithResourceID(secret.ID).
 				WithDbFunc(dbFunc(id, "secretMap."+mapName)).
 				Exec()
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	vmModels "go-deploy/models/sys/vm"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
+	"go-deploy/service/constants"
 	"go-deploy/service/resources"
 	"go-deploy/service/vm_service/base"
 	"golang.org/x/exp/slices"
@@ -83,6 +84,18 @@ func Create(id string, params *vmModels.CreateParams) error {
 		}
 	}
 
+	// Secret
+	for _, secretPublic := range context.Generator.Secrets() {
+		err = resources.SsCreator(context.Client.CreateSecret).
+			WithDbFunc(dbFunc(id, "secretMap."+secretPublic.Name)).
+			WithPublic(&secretPublic).
+			Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
 	return nil
 }
 
@@ -123,6 +136,21 @@ func Delete(id string) error {
 		err = resources.SsDeleter(context.Client.DeleteDeployment).
 			WithResourceID(k8sDeployment.ID).
 			WithDbFunc(dbFunc(id, "deploymentMap."+mapName)).
+			Exec()
+	}
+
+	// Secret
+	for mapName, secret := range context.VM.Subsystems.K8s.SecretMap {
+		var deleteFunc func(interface{}) error
+		if mapName == constants.WildcardCertSecretName {
+			deleteFunc = func(interface{}) error { return nil }
+		} else {
+			deleteFunc = dbFunc(id, "secretMap."+mapName)
+		}
+
+		err = resources.SsDeleter(context.Client.DeleteSecret).
+			WithResourceID(secret.ID).
+			WithDbFunc(deleteFunc).
 			Exec()
 	}
 
@@ -238,6 +266,33 @@ func Repair(id string) error {
 			context.Client.UpdateIngress,
 			context.Client.DeleteIngress,
 		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "ingressMap."+public.Name)).WithGenPublic(&public).Exec()
+	}
+
+	secrets := context.Generator.Secrets()
+	for mapName, secret := range context.VM.Subsystems.K8s.SecretMap {
+		idx := slices.IndexFunc(secrets, func(s k8sModels.SecretPublic) bool { return s.Name == mapName })
+		if idx == -1 {
+			err = resources.SsDeleter(context.Client.DeleteSecret).
+				WithResourceID(secret.ID).
+				WithDbFunc(dbFunc(id, "secretMap."+mapName)).
+				Exec()
+
+			if err != nil {
+				return makeError(err)
+			}
+		}
+	}
+	for _, public := range secrets {
+		err = resources.SsRepairer(
+			context.Client.ReadSecret,
+			context.Client.CreateSecret,
+			context.Client.UpdateSecret,
+			context.Client.DeleteSecret,
+		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "secretMap."+public.Name)).WithGenPublic(&public).Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	return nil
