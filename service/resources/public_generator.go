@@ -5,6 +5,7 @@ import (
 	"go-deploy/models/sys/deployment/storage_manager"
 	"go-deploy/models/sys/enviroment"
 	vmModels "go-deploy/models/sys/vm"
+	"go-deploy/pkg/subsystems/k8s"
 )
 
 type Deployment struct {
@@ -90,10 +91,11 @@ func (pc *PublicGeneratorType) WithVmUpdateParams(params *vmModels.UpdateParams)
 	return pc
 }
 
-func (pc *PublicGeneratorType) K8s(namespace string) *K8sGenerator {
+func (pc *PublicGeneratorType) K8s(client *k8s.Client) *K8sGenerator {
 	return &K8sGenerator{
 		PublicGeneratorType: pc,
-		namespace:           namespace,
+		namespace:           client.Namespace,
+		client:              client,
 	}
 }
 

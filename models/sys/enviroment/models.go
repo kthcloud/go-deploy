@@ -43,12 +43,14 @@ type VmZone struct {
 }
 
 type Deployment struct {
-	Port           int    `yaml:"port"`
-	Prefix         string `yaml:"prefix"`
-	IngressClass   string `yaml:"ingressClass"`
-	RepairInterval int    `yaml:"repairInterval"`
-	PingInterval   int    `yaml:"pingInterval"`
-	Resources      struct {
+	Port                        int    `yaml:"port"`
+	Prefix                      string `yaml:"prefix"`
+	WildcardCertSecretNamespace string `yaml:"wildcardCertSecretNamespace"`
+	WildcardCertSecretId        string `yaml:"wildcardCertSecretId"`
+	IngressClass                string `yaml:"ingressClass"`
+	RepairInterval              int    `yaml:"repairInterval"`
+	PingInterval                int    `yaml:"pingInterval"`
+	Resources                   struct {
 		Limits struct {
 			CPU     string `yaml:"cpu"`
 			Memory  string `yaml:"memory"`

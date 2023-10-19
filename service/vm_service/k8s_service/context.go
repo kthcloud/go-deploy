@@ -43,7 +43,7 @@ func NewContext(vmID string) (*Context, error) {
 		VmContext:      *baseContext,
 		DeploymentZone: deploymentZone,
 		Client:         k8sClient,
-		Generator:      baseContext.Generator.WithDeploymentZone(deploymentZone).K8s(k8sClient.Namespace),
+		Generator:      baseContext.Generator.WithDeploymentZone(deploymentZone).K8s(k8sClient),
 	}, nil
 }
 
