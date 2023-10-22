@@ -786,6 +786,31 @@ func (kg *K8sGenerator) Secrets() []models.SecretPublic {
 		return res
 	}
 
+	if kg.v.vm != nil {
+		// wildcard certificate
+		if secret := kg.v.vm.Subsystems.K8s.GetSecret(constants.WildcardCertSecretName); service.Created(secret) {
+			res = append(res, *secret)
+		} else {
+			// swap namespaces temporarily
+			kg.client.Namespace = conf.Env.Deployment.WildcardCertSecretNamespace
+			defer func() { kg.client.Namespace = kg.namespace }()
+
+			copyFrom, err := kg.client.ReadSecret(conf.Env.Deployment.WildcardCertSecretId)
+			if err != nil || copyFrom == nil {
+				utils.PrettyPrintError(fmt.Errorf("failed to read secret %s/%s. details: %w", conf.Env.Deployment.WildcardCertSecretNamespace, conf.Env.Deployment.WildcardCertSecretId, err))
+			} else {
+				res = append(res, models.SecretPublic{
+					Name:      constants.WildcardCertSecretName,
+					Namespace: kg.namespace,
+					Type:      string(v1.SecretTypeOpaque),
+					Data:      copyFrom.Data,
+				})
+			}
+		}
+
+		return res
+	}
+
 	return nil
 }
 
