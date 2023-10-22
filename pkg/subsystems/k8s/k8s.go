@@ -1,6 +1,7 @@
 package k8s
 
 import (
+	"fmt"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -10,9 +11,9 @@ type Client struct {
 }
 
 func New(k8sClient *kubernetes.Clientset, namespace string) (*Client, error) {
-	//makeError := func(err error) error {
-	//	return fmt.Errorf("failed to create k8s client. details: %w", err)
-	//}
+	_ = func(err error) error {
+		return fmt.Errorf("failed to create k8s client. details: %w", err)
+	}
 
 	client := Client{
 		K8sClient: k8sClient,

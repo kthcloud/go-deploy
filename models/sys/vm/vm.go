@@ -10,7 +10,7 @@ type VM struct {
 
 	Zone string `bson:"zone"`
 	// used for port http proxy, set in most cases, but kept as optional if no k8s is available
-	DeploymentZone *string `bson:"deploymentZone,omitempty"`
+	DeploymentZone *string `bson:"deploymentZone"`
 
 	CreatedAt  time.Time `bson:"createdAt"`
 	UpdatedAt  time.Time `bson:"updatedAt"`

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	vmModels "go-deploy/models/sys/vm"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
+	"go-deploy/service/constants"
 	"go-deploy/service/resources"
 	"go-deploy/service/vm_service/base"
 	"golang.org/x/exp/slices"
@@ -36,12 +37,15 @@ func Create(id string, params *vmModels.CreateParams) error {
 	context.WithCreateParams(params)
 
 	// Namespace
-	err = resources.SsCreator(context.Client.CreateNamespace).
-		WithDbFunc(dbFunc(id, "namespace")).
-		WithPublic(context.Generator.Namespace()).
-		Exec()
-	if err != nil {
-		return makeError(err)
+	namespace := context.Generator.Namespace()
+	if namespace != nil {
+		err = resources.SsCreator(context.Client.CreateNamespace).
+			WithDbFunc(dbFunc(id, "namespace")).
+			WithPublic(namespace).
+			Exec()
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	// Deployment
@@ -73,6 +77,18 @@ func Create(id string, params *vmModels.CreateParams) error {
 		err = resources.SsCreator(context.Client.CreateIngress).
 			WithDbFunc(dbFunc(id, "ingressMap."+ingressPublic.Name)).
 			WithPublic(&ingressPublic).
+			Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	// Secret
+	for _, secretPublic := range context.Generator.Secrets() {
+		err = resources.SsCreator(context.Client.CreateSecret).
+			WithDbFunc(dbFunc(id, "secretMap."+secretPublic.Name)).
+			WithPublic(&secretPublic).
 			Exec()
 
 		if err != nil {
@@ -123,6 +139,21 @@ func Delete(id string) error {
 			Exec()
 	}
 
+	// Secret
+	for mapName, secret := range context.VM.Subsystems.K8s.SecretMap {
+		var deleteFunc func(interface{}) error
+		if mapName == constants.WildcardCertSecretName {
+			deleteFunc = func(interface{}) error { return nil }
+		} else {
+			deleteFunc = dbFunc(id, "secretMap."+mapName)
+		}
+
+		err = resources.SsDeleter(context.Client.DeleteSecret).
+			WithResourceID(secret.ID).
+			WithDbFunc(deleteFunc).
+			Exec()
+	}
+
 	// Namespace
 	err = resources.SsDeleter(func(string) error { return nil }).
 		WithResourceID(context.VM.Subsystems.K8s.Namespace.ID).
@@ -147,15 +178,17 @@ func Repair(id string) error {
 	}
 
 	namespace := context.Generator.Namespace()
-	err = resources.SsRepairer(
-		context.Client.ReadNamespace,
-		context.Client.CreateNamespace,
-		context.Client.UpdateNamespace,
-		func(string) error { return nil },
-	).WithResourceID(namespace.ID).WithDbFunc(dbFunc(id, "namespace")).WithGenPublic(namespace).Exec()
+	if namespace != nil {
+		err = resources.SsRepairer(
+			context.Client.ReadNamespace,
+			context.Client.CreateNamespace,
+			context.Client.UpdateNamespace,
+			func(string) error { return nil },
+		).WithResourceID(namespace.ID).WithDbFunc(dbFunc(id, "namespace")).WithGenPublic(namespace).Exec()
 
-	if err != nil {
-		return makeError(err)
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	deployments := context.Generator.Deployments()
@@ -233,6 +266,33 @@ func Repair(id string) error {
 			context.Client.UpdateIngress,
 			context.Client.DeleteIngress,
 		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "ingressMap."+public.Name)).WithGenPublic(&public).Exec()
+	}
+
+	secrets := context.Generator.Secrets()
+	for mapName, secret := range context.VM.Subsystems.K8s.SecretMap {
+		idx := slices.IndexFunc(secrets, func(s k8sModels.SecretPublic) bool { return s.Name == mapName })
+		if idx == -1 {
+			err = resources.SsDeleter(context.Client.DeleteSecret).
+				WithResourceID(secret.ID).
+				WithDbFunc(dbFunc(id, "secretMap."+mapName)).
+				Exec()
+
+			if err != nil {
+				return makeError(err)
+			}
+		}
+	}
+	for _, public := range secrets {
+		err = resources.SsRepairer(
+			context.Client.ReadSecret,
+			context.Client.CreateSecret,
+			context.Client.UpdateSecret,
+			context.Client.DeleteSecret,
+		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "secretMap."+public.Name)).WithGenPublic(&public).Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	return nil

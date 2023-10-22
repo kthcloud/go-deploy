@@ -27,7 +27,7 @@ func (hg *HarborGenerator) Robot() *models.RobotPublic {
 }
 
 func (hg *HarborGenerator) Repository() *models.RepositoryPublic {
-	splits := strings.Split(conf.Env.DockerRegistry.PlaceholderImage, "/")
+	splits := strings.Split(conf.Env.Registry.PlaceholderImage, "/")
 	project := splits[len(splits)-2]
 	repository := splits[len(splits)-1]
 

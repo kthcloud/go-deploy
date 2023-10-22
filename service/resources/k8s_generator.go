@@ -10,6 +10,7 @@ import (
 	userModel "go-deploy/models/sys/user"
 	"go-deploy/models/sys/vm"
 	"go-deploy/pkg/conf"
+	"go-deploy/pkg/subsystems/k8s"
 	"go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/service"
 	"go-deploy/service/constants"
@@ -22,6 +23,7 @@ import (
 type K8sGenerator struct {
 	*PublicGeneratorType
 	namespace string
+	client    *k8s.Client
 }
 
 func (kg *K8sGenerator) Namespace() *models.NamespacePublic {
@@ -249,7 +251,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 				res = append(res, models.DeploymentPublic{
 					Name:      getVmProxyDeploymentName(kg.v.vm, port.HttpProxy.Name),
 					Namespace: kg.namespace,
-					Image:     conf.Env.DockerRegistry.VmHttpProxyImage,
+					Image:     conf.Env.Registry.VmHttpProxyImage,
 					EnvVars:   envVars,
 					Resources: models.Resources{
 						Limits: models.Limits{
@@ -502,6 +504,8 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 
 				res = append(res, *k8sIngress)
 			} else {
+				tlsSecret := constants.WildcardCertSecretName
+
 				res = append(res, models.IngressPublic{
 					Name:         kg.d.deployment.Name,
 					Namespace:    kg.namespace,
@@ -509,12 +513,12 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 					ServicePort:  kg.d.deployment.GetMainApp().InternalPort,
 					IngressClass: conf.Env.Deployment.IngressClass,
 					Hosts:        []string{getExternalFQDN(kg.d.deployment.Name, kg.d.zone)},
+					TlsSecret:    &tlsSecret,
 				})
 			}
 
 			if customK8sIngress := kg.d.deployment.Subsystems.K8s.GetIngress(constants.CustomDomainSuffix(kg.d.deployment.Name)); service.Created(customK8sIngress) {
 				customK8sIngress.Hosts = []string{*kg.d.deployment.GetMainApp().CustomDomain}
-
 				res = append(res, *customK8sIngress)
 			} else {
 				if kg.d.deployment.GetMainApp().CustomDomain != nil {
@@ -540,13 +544,24 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 		ports := kg.v.vm.Ports
 
 		for mapName, ingress := range kg.v.vm.Subsystems.K8s.GetIngressMap() {
-			if slices.IndexFunc(ports, func(p vm.Port) bool {
+			idx := slices.IndexFunc(ports, func(p vm.Port) bool {
 				if p.HttpProxy == nil {
 					return false
 				}
 
-				return getVmProxyIngressName(kg.v.vm, p.HttpProxy.Name) == mapName
-			}) != -1 {
+				return getVmProxyIngressName(kg.v.vm, p.HttpProxy.Name) == mapName ||
+					(getVmProxyCustomDomainIngressName(kg.v.vm, p.HttpProxy.Name) == mapName && p.HttpProxy.CustomDomain != nil)
+			})
+
+			if idx != -1 {
+				if getVmProxyCustomDomainIngressName(kg.v.vm, ports[idx].HttpProxy.Name) == mapName {
+					if ports[idx].HttpProxy.CustomDomain != nil {
+						ingress.Hosts = []string{*ports[idx].HttpProxy.CustomDomain}
+					}
+				} else {
+					ingress.Hosts = []string{getVmProxyExternalURL(ports[idx].HttpProxy.Name, kg.v.deploymentZone)}
+				}
+
 				res = append(res, ingress)
 			}
 		}
@@ -557,6 +572,8 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 			}
 
 			if _, ok := kg.v.vm.Subsystems.K8s.GetIngressMap()[getVmProxyIngressName(kg.v.vm, port.HttpProxy.Name)]; !ok {
+				tlsSecret := constants.WildcardCertSecretName
+
 				res = append(res, models.IngressPublic{
 					Name:         getVmProxyIngressName(kg.v.vm, port.HttpProxy.Name),
 					Namespace:    kg.namespace,
@@ -564,7 +581,25 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 					ServicePort:  8080,
 					IngressClass: conf.Env.Deployment.IngressClass,
 					Hosts:        []string{getVmProxyExternalURL(port.HttpProxy.Name, kg.v.deploymentZone)},
+					TlsSecret:    &tlsSecret,
 				})
+			}
+
+			if port.HttpProxy.CustomDomain != nil {
+				if _, ok := kg.v.vm.Subsystems.K8s.GetIngressMap()[getVmProxyCustomDomainIngressName(kg.v.vm, port.HttpProxy.Name)]; !ok {
+					res = append(res, models.IngressPublic{
+						Name:         getVmProxyCustomDomainIngressName(kg.v.vm, port.HttpProxy.Name),
+						Namespace:    kg.namespace,
+						ServiceName:  getVmProxyServiceName(kg.v.vm, port.HttpProxy.Name),
+						ServicePort:  8080,
+						IngressClass: conf.Env.Deployment.IngressClass,
+						Hosts:        []string{*port.HttpProxy.CustomDomain},
+						CustomCert: &models.CustomCert{
+							ClusterIssuer: "letsencrypt-prod-deploy-http",
+							CommonName:    *port.HttpProxy.CustomDomain,
+						},
+					})
+				}
 			}
 		}
 
@@ -575,6 +610,8 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 		if ingress := kg.s.storageManager.Subsystems.K8s.GetIngress(constants.StorageManagerAppName); service.Created(ingress) {
 			res = append(res, *ingress)
 		} else {
+			tlsSecret := constants.WildcardCertSecretName
+
 			res = append(res, models.IngressPublic{
 				Name:         constants.StorageManagerAppName,
 				Namespace:    kg.namespace,
@@ -582,6 +619,7 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 				ServicePort:  80,
 				IngressClass: conf.Env.Deployment.IngressClass,
 				Hosts:        []string{getExternalFQDN(kg.s.storageManager.OwnerID, kg.s.zone)},
+				TlsSecret:    &tlsSecret,
 			})
 		}
 
@@ -705,19 +743,44 @@ func (kg *K8sGenerator) Secrets() []models.SecretPublic {
 	var res []models.SecretPublic
 
 	if kg.d.deployment != nil {
-		if kg.d.deployment.Subsystems.Harbor.Robot.Created() && kg.d.deployment.Type == deployment.TypeCustom {
-			registry := conf.Env.DockerRegistry.URL
-			username := kg.d.deployment.Subsystems.Harbor.Robot.HarborName
-			password := kg.d.deployment.Subsystems.Harbor.Robot.Secret
+		if kg.d.deployment.Type == deployment.TypeCustom {
+			if secret := kg.d.deployment.Subsystems.K8s.GetSecret(constants.ImagePullSecretSuffix(kg.d.deployment.Name)); service.Created(secret) {
+				res = append(res, *secret)
+			} else if kg.d.deployment.Subsystems.Harbor.Robot.Created() && kg.d.deployment.Type == deployment.TypeCustom {
+				registry := conf.Env.Registry.URL
+				username := kg.d.deployment.Subsystems.Harbor.Robot.HarborName
+				password := kg.d.deployment.Subsystems.Harbor.Robot.Secret
 
-			res = append(res, models.SecretPublic{
-				Name:      constants.ImagePullSecretSuffix(kg.d.deployment.Name),
-				Namespace: kg.namespace,
-				Type:      string(v1.SecretTypeDockerConfigJson),
-				Data: map[string][]byte{
-					v1.DockerConfigJsonKey: encodeDockerConfig(registry, username, password),
-				},
-			})
+				res = append(res, models.SecretPublic{
+					Name:      constants.ImagePullSecretSuffix(kg.d.deployment.Name),
+					Namespace: kg.namespace,
+					Type:      string(v1.SecretTypeDockerConfigJson),
+					Data: map[string][]byte{
+						v1.DockerConfigJsonKey: encodeDockerConfig(registry, username, password),
+					},
+				})
+			}
+		}
+
+		// wildcard certificate
+		if secret := kg.d.deployment.Subsystems.K8s.GetSecret(constants.WildcardCertSecretName); service.Created(secret) {
+			res = append(res, *secret)
+		} else {
+			// swap namespaces temporarily
+			kg.client.Namespace = conf.Env.Deployment.WildcardCertSecretNamespace
+			defer func() { kg.client.Namespace = kg.namespace }()
+
+			copyFrom, err := kg.client.ReadSecret(conf.Env.Deployment.WildcardCertSecretId)
+			if err != nil || copyFrom == nil {
+				utils.PrettyPrintError(fmt.Errorf("failed to read secret %s/%s. details: %w", conf.Env.Deployment.WildcardCertSecretNamespace, conf.Env.Deployment.WildcardCertSecretId, err))
+			} else {
+				res = append(res, models.SecretPublic{
+					Name:      constants.WildcardCertSecretName,
+					Namespace: kg.namespace,
+					Type:      string(v1.SecretTypeOpaque),
+					Data:      copyFrom.Data,
+				})
+			}
 		}
 
 		return res
@@ -797,6 +860,10 @@ func getVmProxyServiceName(vm *vm.VM, portName string) string {
 
 func getVmProxyIngressName(vm *vm.VM, portName string) string {
 	return fmt.Sprintf("%s-%s", vm.Name, portName)
+}
+
+func getVmProxyCustomDomainIngressName(vm *vm.VM, portName string) string {
+	return fmt.Sprintf("%s-%s-custom-domain", vm.Name, portName)
 }
 
 func getVmProxyExternalURL(portName string, zone *enviroment.DeploymentZone) string {

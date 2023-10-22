@@ -45,7 +45,7 @@ func withK8sDeployment(t *testing.T, namespace *models.NamespacePublic) *models.
 	deploymentPublic := &models.DeploymentPublic{
 		Name:      "acc-test-" + uuid.New().String(),
 		Namespace: namespace.Name,
-		Image:     conf.Env.DockerRegistry.PlaceholderImage,
+		Image:     conf.Env.Registry.PlaceholderImage,
 		EnvVars:   nil,
 	}
 

@@ -9,6 +9,7 @@ import (
 	"go-deploy/service/constants"
 	"go-deploy/service/deployment_service/base"
 	"go-deploy/service/resources"
+	"go-deploy/utils"
 	"golang.org/x/exp/slices"
 	"log"
 	"strings"
@@ -182,9 +183,16 @@ func Delete(id string) error {
 
 	// Secret
 	for mapName, secret := range context.Deployment.Subsystems.K8s.SecretMap {
+		var deleteFunc func(interface{}) error
+		if mapName == constants.WildcardCertSecretName {
+			deleteFunc = func(interface{}) error { return nil }
+		} else {
+			deleteFunc = dbFunc(id, "secretMap."+mapName)
+		}
+
 		err = resources.SsDeleter(context.Client.DeleteSecret).
 			WithResourceID(secret.ID).
-			WithDbFunc(dbFunc(id, "secretMap."+mapName)).
+			WithDbFunc(deleteFunc).
 			Exec()
 	}
 
@@ -262,12 +270,12 @@ func Update(id string, params *deploymentModel.UpdateParams) error {
 	return nil
 }
 
-func Restart(name string) error {
+func Restart(id string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to restart k8s %s. details: %w", name, err)
+		return fmt.Errorf("failed to restart k8s %s. details: %w", id, err)
 	}
 
-	context, err := NewContext(name)
+	context, err := NewContext(id)
 	if err != nil {
 		if errors.Is(err, base.DeploymentDeletedErr) {
 			return nil
@@ -276,9 +284,13 @@ func Restart(name string) error {
 		return makeError(err)
 	}
 
-	err = context.Client.RestartDeployment(context.Deployment.ID)
-	if err != nil {
-		return makeError(err)
+	if k8sDeployment := context.Deployment.Subsystems.K8s.GetDeployment(context.Deployment.Name); service.Created(k8sDeployment) {
+		err = context.Client.RestartDeployment(k8sDeployment.ID)
+		if err != nil {
+			return makeError(err)
+		}
+	} else {
+		utils.PrettyPrintError(fmt.Errorf("k8s deployment %s not found when restarting, assuming it was deleted", context.Deployment.Name))
 	}
 
 	return nil
@@ -387,12 +399,12 @@ func Repair(id string) error {
 		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "ingressMap."+public.Name)).WithGenPublic(&public).Exec()
 	}
 
-	for mapName := range context.Deployment.Subsystems.K8s.SecretMap {
+	for mapName, secret := range context.Deployment.Subsystems.K8s.SecretMap {
 		secrets := context.Generator.Secrets()
 		idx := slices.IndexFunc(secrets, func(s k8sModels.SecretPublic) bool { return s.Name == mapName })
 		if idx == -1 {
 			err = resources.SsDeleter(context.Client.DeleteSecret).
-				WithResourceID(context.Deployment.Subsystems.K8s.SecretMap[mapName].ID).
+				WithResourceID(secret.ID).
 				WithDbFunc(dbFunc(id, "secretMap."+mapName)).
 				Exec()
 

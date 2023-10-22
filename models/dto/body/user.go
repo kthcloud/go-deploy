@@ -36,7 +36,7 @@ type UserRead struct {
 }
 
 type UserUpdate struct {
-	Username   *string      `json:"username" binding:"omitempty,min=3,max=32"`
-	PublicKeys *[]PublicKey `json:"publicKeys" binding:"omitempty,min=0,max=1000,dive"`
-	Onboarded  *bool        `json:"onboarded" binding:"omitempty,boolean"`
+	Username   *string      `json:"username,omitempty" bson:"username,omitempty" binding:"omitempty,min=3,max=32"`
+	PublicKeys *[]PublicKey `json:"publicKeys,omitempty" bson:"publicKeys,omitempty" binding:"omitempty,min=0,max=1000,dive"`
+	Onboarded  *bool        `json:"onboarded,omitempty" bson:"onboarded,omitempty" binding:"omitempty,boolean"`
 }

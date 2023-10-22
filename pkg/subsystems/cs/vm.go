@@ -276,6 +276,11 @@ func (client *Client) HasCapacity(vmID, hostName string) (bool, error) {
 		return false, makeError(err)
 	}
 
+	// if vm is running on the host we are comparing with, we can return true immediately
+	if vm.State == "Running" && vm.Hostid == host.Id {
+		return true, nil
+	}
+
 	vmMemoryByes := int64(vm.Memory) * 1024 * 1024
 
 	if host.Memoryallocatedbytes+vmMemoryByes > host.Memorytotal {

@@ -1,11 +1,14 @@
 package vm
 
-import "go-deploy/models/dto/body"
+import (
+	"go-deploy/models/dto/body"
+	"go-deploy/service"
+)
 
 func (vm *VM) ToDTO(status string, connectionString *string, gpu *body.GpuRead, externalPortMapper map[string]int) body.VmRead {
 
 	var vmGpu *body.VmGpu
-	if gpu != nil {
+	if gpu != nil && gpu.Lease != nil {
 		vmGpu = &body.VmGpu{
 			ID:           gpu.ID,
 			Name:         gpu.Name,
@@ -21,9 +24,39 @@ func (vm *VM) ToDTO(status string, connectionString *string, gpu *body.GpuRead, 
 				continue
 			}
 
-			externalPort, ok := externalPortMapper[port.Name]
-			if !ok {
-				continue
+			var externalPort *int
+			if _, ok := externalPortMapper[port.Name]; ok {
+				p := externalPortMapper[port.Name]
+				externalPort = &p
+			}
+
+			var url *string
+			var customDomainUrl *string
+
+			if port.HttpProxy != nil {
+				if ingress := vm.Subsystems.K8s.GetIngress(vm.Name + "-" + port.HttpProxy.Name); service.Created(ingress) {
+					if len(ingress.Hosts) > 0 {
+						urlStr := "https://" + ingress.Hosts[0]
+						url = &urlStr
+					}
+				}
+
+				if ingress := vm.Subsystems.K8s.GetIngress(vm.Name + "-" + port.HttpProxy.Name + "-custom-domain"); service.Created(ingress) {
+					if len(ingress.Hosts) > 0 {
+						urlStr := "https://" + ingress.Hosts[0]
+						customDomainUrl = &urlStr
+					}
+				}
+			}
+
+			var httpProxy *body.VmHttpProxy
+			if port.HttpProxy != nil {
+				httpProxy = &body.VmHttpProxy{
+					Name:            port.HttpProxy.Name,
+					CustomDomain:    port.HttpProxy.CustomDomain,
+					URL:             url,
+					CustomDomainURL: customDomainUrl,
+				}
 			}
 
 			ports = append(ports, body.Port{
@@ -31,6 +64,7 @@ func (vm *VM) ToDTO(status string, connectionString *string, gpu *body.GpuRead, 
 				Port:         port.Port,
 				ExternalPort: externalPort,
 				Protocol:     port.Protocol,
+				HttpProxy:    httpProxy,
 			})
 		}
 	}
@@ -53,6 +87,39 @@ func (vm *VM) ToDTO(status string, connectionString *string, gpu *body.GpuRead, 
 	}
 }
 
+func (p *CreateParams) FromDTO(dto *body.VmCreate, fallbackZone *string, deploymentZone *string) {
+	p.Name = dto.Name
+	p.SshPublicKey = dto.SshPublicKey
+	for _, port := range dto.Ports {
+		if port.Name == "__ssh" {
+			continue
+		}
+
+		if port.Port == 22 {
+			continue
+		}
+
+		p.Ports = append(p.Ports, fromDtoPort(&port))
+	}
+	p.Ports = append(p.Ports, Port{
+		Name:     "__ssh",
+		Port:     22,
+		Protocol: "tcp",
+	})
+
+	p.CpuCores = dto.CpuCores
+	p.RAM = dto.RAM
+	p.DiskSize = dto.DiskSize
+
+	if dto.Zone != nil {
+		p.Zone = *dto.Zone
+	} else {
+		p.Zone = *fallbackZone
+	}
+
+	p.DeploymentZone = deploymentZone
+}
+
 func (p *UpdateParams) FromDTO(dto *body.VmUpdate) {
 	p.SnapshotID = dto.SnapshotID
 	if dto.Ports != nil {
@@ -68,39 +135,18 @@ func (p *UpdateParams) FromDTO(dto *body.VmUpdate) {
 
 			ports = append(ports, fromDtoPort(&port))
 		}
+		ports = append(ports, Port{
+			Name:     "__ssh",
+			Port:     22,
+			Protocol: "tcp",
+		})
+
 		p.Ports = &ports
 	} else {
 		p.Ports = nil
 	}
 	p.CpuCores = dto.CpuCores
 	p.RAM = dto.RAM
-}
-
-func (p *CreateParams) FromDTO(dto *body.VmCreate, fallbackZone *string, deploymentZone *string) {
-	p.Name = dto.Name
-	p.SshPublicKey = dto.SshPublicKey
-	for _, port := range dto.Ports {
-		if port.Name == "__ssh" {
-			continue
-		}
-
-		if port.Port == 22 {
-			continue
-		}
-
-		p.Ports = append(p.Ports, fromDtoPort(&port))
-	}
-	p.CpuCores = dto.CpuCores
-	p.RAM = dto.RAM
-	p.DiskSize = dto.DiskSize
-
-	if dto.Zone != nil {
-		p.Zone = *dto.Zone
-	} else {
-		p.Zone = *fallbackZone
-	}
-
-	p.DeploymentZone = deploymentZone
 }
 
 func fromDtoPort(port *body.Port) Port {

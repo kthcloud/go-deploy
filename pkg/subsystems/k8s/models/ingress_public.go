@@ -22,6 +22,7 @@ type IngressPublic struct {
 	Placeholder  bool        `bson:"placeholder"`
 	CreatedAt    time.Time   `bson:"createdAt"`
 	CustomCert   *CustomCert `bson:"customCert,omitempty"`
+	TlsSecret    *string     `bson:"tlsSecret,omitempty"`
 }
 
 func (i *IngressPublic) Created() bool {
@@ -66,6 +67,11 @@ func CreateIngressPublicFromRead(ingress *v1.Ingress) *IngressPublic {
 		hosts = append(hosts, rule.Host)
 	}
 
+	var tlsSecret *string
+	if customCert == nil && len(ingress.Spec.TLS) > 0 {
+		tlsSecret = &ingress.Spec.TLS[0].SecretName
+	}
+
 	return &IngressPublic{
 		ID:           ingress.Labels[keys.ManifestLabelID],
 		Name:         ingress.Name,
@@ -77,5 +83,6 @@ func CreateIngressPublicFromRead(ingress *v1.Ingress) *IngressPublic {
 		Placeholder:  false,
 		CreatedAt:    formatCreatedAt(ingress.Annotations),
 		CustomCert:   customCert,
+		TlsSecret:    tlsSecret,
 	}
 }

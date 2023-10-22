@@ -95,7 +95,7 @@ func HandleHarborHook(c *gin.Context) {
 	}
 
 	if webhook.Type == "PUSH_ARTIFACT" {
-		err = deployment_service.Restart(deployment.Name)
+		err = deployment_service.Restart(deployment.ID)
 		if err != nil {
 			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 			return

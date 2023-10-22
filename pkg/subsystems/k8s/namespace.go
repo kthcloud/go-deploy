@@ -9,6 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	"log"
+	"strings"
 	"time"
 )
 
@@ -46,8 +47,30 @@ func (client *Client) waitNamespaceDeleted(ctx context.Context, resourceName str
 	}
 }
 
+func (client *Client) ReadAllNamespaces(prefix *string) ([]models.NamespacePublic, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to read namespaces. details: %w", err)
+	}
+
+	list, err := client.K8sClient.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	var result []models.NamespacePublic
+	for _, item := range list.Items {
+		if prefix != nil && !strings.HasPrefix(item.ObjectMeta.Name, *prefix) {
+			continue
+		}
+
+		result = append(result, *models.CreateNamespacePublicFromRead(&item))
+	}
+
+	return result, nil
+}
+
 func (client *Client) ReadNamespace(id string) (*models.NamespacePublic, error) {
-	_ = func(err error) error {
+	makeError := func(err error) error {
 		return fmt.Errorf("failed to read namespace %s. details: %w", id, err)
 	}
 
@@ -57,7 +80,7 @@ func (client *Client) ReadNamespace(id string) (*models.NamespacePublic, error) 
 
 	list, err := client.K8sClient.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		return nil, err
+		return nil, makeError(err)
 	}
 
 	for _, item := range list.Items {

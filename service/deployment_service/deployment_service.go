@@ -31,7 +31,7 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 
 	// temporary hard-coded fallback
 	fallbackZone := "se-flem"
-	fallbackImage := fmt.Sprintf("%s/%s/%s", conf.Env.DockerRegistry.URL, subsystemutils.GetPrefixedName(ownerID), deploymentCreate.Name)
+	fallbackImage := fmt.Sprintf("%s/%s/%s", conf.Env.Registry.URL, subsystemutils.GetPrefixedName(ownerID), deploymentCreate.Name)
 	fallbackPort := conf.Env.Deployment.Port
 
 	params := &deploymentModel.CreateParams{}
@@ -278,18 +278,18 @@ func Repair(id string) error {
 	return nil
 }
 
-func Restart(name string) error {
+func Restart(id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to restart deployment. details: %w", err)
 	}
 
-	deployment, err := deploymentModel.New().GetByName(name)
+	deployment, err := deploymentModel.New().GetByID(id)
 	if err != nil {
 		return makeError(err)
 	}
 
 	if deployment == nil {
-		log.Println("deployment", name, "not found when restarting. assuming it was deleted")
+		log.Println("deployment", id, "not found when restarting. assuming it was deleted")
 		return nil
 	}
 
@@ -302,7 +302,7 @@ func Restart(name string) error {
 		return fmt.Errorf("failed to restart deployment. details: %s", reason)
 	}
 
-	err = k8s_service.Restart(name)
+	err = k8s_service.Restart(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -341,11 +341,14 @@ func Build(id string, buildParams *body.DeploymentBuild) error {
 	return nil
 }
 
-func DoCommand(vm *deploymentModel.Deployment, command string) {
+func DoCommand(deployment *deploymentModel.Deployment, command string) {
 	go func() {
 		switch command {
 		case "restart":
-			_ = Restart(vm.Name)
+			err := Restart(deployment.ID)
+			if err != nil {
+				utils.PrettyPrintError(err)
+			}
 		}
 	}()
 }
