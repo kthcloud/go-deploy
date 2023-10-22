@@ -239,6 +239,10 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 						Value: fmt.Sprintf("%d", csPort.PublicPort),
 					},
 					{
+						Name:  "URL",
+						Value: getVmProxyExternalURL(port.HttpProxy.Name, kg.v.deploymentZone),
+					},
+					{
 						Name:  "VM_URL",
 						Value: kg.v.vmZone.ParentDomain,
 					},
