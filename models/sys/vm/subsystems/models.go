@@ -44,6 +44,14 @@ func (k8s *K8s) GetIngressMap() map[string]k8sModels.IngressPublic {
 	return k8s.IngressMap
 }
 
+func (k8s *K8s) GetSecretMap() map[string]k8sModels.SecretPublic {
+	if k8s.SecretMap == nil {
+		k8s.SecretMap = make(map[string]k8sModels.SecretPublic)
+	}
+
+	return k8s.SecretMap
+}
+
 func (k8s *K8s) GetDeployment(name string) *k8sModels.DeploymentPublic {
 	resources, ok := k8s.GetDeploymentMap()[name]
 	if !ok {
@@ -64,6 +72,15 @@ func (k8s *K8s) GetService(name string) *k8sModels.ServicePublic {
 
 func (k8s *K8s) GetIngress(name string) *k8sModels.IngressPublic {
 	resources, ok := k8s.GetIngressMap()[name]
+	if !ok {
+		return nil
+	}
+
+	return &resources
+}
+
+func (k8s *K8s) GetSecret(name string) *k8sModels.SecretPublic {
+	resources, ok := k8s.GetSecretMap()[name]
 	if !ok {
 		return nil
 	}
