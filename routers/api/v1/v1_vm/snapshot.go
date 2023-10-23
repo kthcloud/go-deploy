@@ -21,14 +21,14 @@ import (
 // @Tags VM
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "With the bearer started"
+// @Param Authorization header string true "Bearer token"
 // @Param vmId path string true "VM ID"
 // @Success 200 {array} body.VmSnapshotRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /api/v1/vms/{vmId}/snapshots [get]
+// @Router /vms/{vmId}/snapshots [get]
 func GetSnapshotList(c *gin.Context) {
 	context := sys.NewContext(c)
 

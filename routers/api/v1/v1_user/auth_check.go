@@ -16,7 +16,7 @@ import (
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} service.AuthInfo
-// @Router /api/v1/user/auth-check [get]
+// @Router /user/auth-check [get]
 func AuthCheck(c *gin.Context) {
 	context := sys.NewContext(c)
 

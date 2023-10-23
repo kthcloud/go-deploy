@@ -29,13 +29,13 @@ import (
 // @Tags VM
 // @Accept  json
 // @Produce  json
-// @Param all query bool false "Get all VMs"
-// @Param userId query string false "Get deployments by user ID"
+// @Param all query bool false "Get all"
+// @Param userId query string false "Filter by user id"
 // @Param page query int false "Page number"
-// @Param perPage query int false "Number of items per page"
+// @Param pageSize query int false "Number of items per page"
 // @Success 200 {array} body.VmRead
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /api/v1/vm [get]
+// @Router /vm [get]
 func GetList(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -100,7 +100,7 @@ func GetList(c *gin.Context) {
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /api/v1/vm/{vmId} [get]
+// @Router /vm/{vmId} [get]
 func Get(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -160,7 +160,7 @@ func Get(c *gin.Context) {
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /api/v1/vm [post]
+// @Router /vm [post]
 func Create(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -237,7 +237,7 @@ func Create(c *gin.Context) {
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /api/v1/vm/{vmId} [delete]
+// @Router /vm/{vmId} [delete]
 func Delete(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -296,7 +296,7 @@ func Delete(c *gin.Context) {
 // @Tags VM
 // @Accept  json
 // @Produce  json
-// @Param Authorization header string true "With the bearer started"
+// @Param Authorization header string true "Bearer token"
 // @Param vmId path string true "VM ID"
 // @Param body body body.VmUpdate true "VM update"
 // @Success 200 {object} body.VmUpdated
@@ -305,7 +305,7 @@ func Delete(c *gin.Context) {
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /api/v1/vm/{vmId} [put]
+// @Router /vm/{vmId} [put]
 func Update(c *gin.Context) {
 	context := sys.NewContext(c)
 

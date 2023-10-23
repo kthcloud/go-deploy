@@ -25,7 +25,7 @@ import (
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /api/v1/vms/{vmId}/command [post]
+// @Router /vms/{vmId}/command [post]
 func DoCommand(c *gin.Context) {
 	context := sys.NewContext(c)
 

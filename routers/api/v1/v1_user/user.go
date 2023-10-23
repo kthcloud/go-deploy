@@ -67,7 +67,7 @@ func getStorageURL(userID string, auth *service.AuthInfo) (*string, error) {
 // @Success 200 {array}  body.UserRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /api/v1/users [get]
+// @Router /users [get]
 func GetList(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -161,7 +161,7 @@ func GetList(c *gin.Context) {
 // @Success 200 {object}  body.UserRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /api/v1/users/{userId} [get]
+// @Router /users/{userId} [get]
 func Get(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -226,7 +226,7 @@ func Get(c *gin.Context) {
 // @Success 200 {object} body.UserRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /api/v1/users/{userId} [post]
+// @Router /users/{userId} [post]
 func Update(c *gin.Context) {
 	context := sys.NewContext(c)
 

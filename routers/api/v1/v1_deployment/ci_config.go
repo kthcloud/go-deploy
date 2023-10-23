@@ -21,7 +21,7 @@ import (
 // @Success 200 {object} body.CiConfig
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /api/v1/deployments/{deploymentId}/ciConfig [get]
+// @Router /deployments/{deploymentId}/ciConfig [get]
 func GetCiConfig(c *gin.Context) {
 	context := sys.NewContext(c)
 
