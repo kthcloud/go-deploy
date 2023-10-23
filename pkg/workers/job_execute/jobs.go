@@ -67,8 +67,8 @@ func waitForJobs(context context.Context, jobs []jobModel.Job, statuses []string
 	return nil
 }
 
-func deploymentDeleted(deploymentID string) (bool, error) {
-	deleted, err := deploymentModel.New().IncludeDeletedResources().Deleted(deploymentID)
+func deploymentDeleted(id string) (bool, error) {
+	deleted, err := deploymentModel.New().IncludeDeletedResources().Deleted(id)
 	if err != nil {
 		return false, err
 	}
@@ -77,7 +77,7 @@ func deploymentDeleted(deploymentID string) (bool, error) {
 		return true, nil
 	}
 
-	beingDeleted, err := deploymentModel.New().DoingActivity(deploymentID, deploymentModel.ActivityBeingDeleted)
+	beingDeleted, err := deploymentModel.New().DoingActivity(id, deploymentModel.ActivityBeingDeleted)
 	if err != nil {
 		return false, err
 	}
@@ -89,8 +89,8 @@ func deploymentDeleted(deploymentID string) (bool, error) {
 	return false, nil
 }
 
-func vmDeleted(vmID string) (bool, error) {
-	deleted, err := vmModel.New().IncludeDeletedResources().Deleted(vmID)
+func vmDeleted(id string) (bool, error) {
+	deleted, err := vmModel.New().IncludeDeletedResources().Deleted(id)
 	if err != nil {
 		return false, err
 	}
@@ -99,7 +99,7 @@ func vmDeleted(vmID string) (bool, error) {
 		return true, nil
 	}
 
-	beingDeleted, err := vmModel.New().DoingActivity(vmID, vmModel.ActivityBeingDeleted)
+	beingDeleted, err := vmModel.New().DoingActivity(id, vmModel.ActivityBeingDeleted)
 	if err != nil {
 		return false, err
 	}

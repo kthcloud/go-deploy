@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func (client *Client) Create(vmID, owner, manager string, params *CreateParams) (bool, error) {
+func (client *Client) Create(id, owner, manager string, params *CreateParams) (bool, error) {
 	var ports []Port
 	if params.Ports != nil {
 		ports = params.Ports
@@ -20,7 +20,7 @@ func (client *Client) Create(vmID, owner, manager string, params *CreateParams) 
 	}
 
 	vm := VM{
-		ID:        vmID,
+		ID:        id,
 		Name:      params.Name,
 		OwnerID:   owner,
 		ManagedBy: manager,
@@ -68,7 +68,7 @@ func (client *Client) Create(vmID, owner, manager string, params *CreateParams) 
 				return false, nil
 			}
 
-			if fetchedVm.ID == vmID {
+			if fetchedVm.ID == id {
 				return true, nil
 			}
 		}
@@ -151,8 +151,8 @@ func (client *Client) GetWithGPU() ([]VM, error) {
 	return models.GetManyResources[VM](client.Collection, filter, false, nil, nil)
 }
 
-func (client *Client) MarkRepaired(vmID string) error {
-	filter := bson.D{{"id", vmID}}
+func (client *Client) MarkRepaired(id string) error {
+	filter := bson.D{{"id", id}}
 	update := bson.D{
 		{"$set", bson.D{{"repairedAt", time.Now()}}},
 		{"$pull", bson.D{{"activities", "repairing"}}},
@@ -166,8 +166,8 @@ func (client *Client) MarkRepaired(vmID string) error {
 	return nil
 }
 
-func (client *Client) MarkUpdated(vmID string) error {
-	filter := bson.D{{"id", vmID}}
+func (client *Client) MarkUpdated(id string) error {
+	filter := bson.D{{"id", id}}
 	update := bson.D{
 		{"$set", bson.D{{"updatedAt", time.Now()}}},
 		{"$pull", bson.D{{"activities", "updating"}}},

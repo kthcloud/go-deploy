@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func (client *Client) Create(deploymentID, ownerID string, params *CreateParams) (*Deployment, error) {
+func (client *Client) Create(id, ownerID string, params *CreateParams) (*Deployment, error) {
 	appName := "main"
 	mainApp := App{
 		Name:         appName,
@@ -28,7 +28,7 @@ func (client *Client) Create(deploymentID, ownerID string, params *CreateParams)
 	}
 
 	deployment := Deployment{
-		ID:          deploymentID,
+		ID:          id,
 		Name:        params.Name,
 		Type:        params.Type,
 		OwnerID:     ownerID,
@@ -76,7 +76,7 @@ func (client *Client) Create(deploymentID, ownerID string, params *CreateParams)
 				return nil, nil
 			}
 
-			if fetchedDeployment.ID == deploymentID {
+			if fetchedDeployment.ID == id {
 				return fetchedDeployment, nil
 			}
 		}
@@ -104,16 +104,16 @@ func (client *Client) GetMany() ([]Deployment, error) {
 	return client.GetAllWithFilter(filter)
 }
 
-func (client *Client) DeleteByID(deploymentID string) error {
+func (client *Client) DeleteByID(id string) error {
 	_, err := client.Collection.UpdateOne(context.TODO(),
-		bson.D{{"id", deploymentID}},
+		bson.D{{"id", id}},
 		bson.D{
 			{"$set", bson.D{{"deletedAt", time.Now()}}},
 			{"$pull", bson.D{{"activities", ActivityBeingDeleted}}},
 		},
 	)
 	if err != nil {
-		return fmt.Errorf("failed to delete deployment %s. details: %w", deploymentID, err)
+		return fmt.Errorf("failed to delete deployment %s. details: %w", id, err)
 	}
 
 	return nil

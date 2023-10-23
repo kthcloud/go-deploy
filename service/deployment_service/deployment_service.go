@@ -353,8 +353,8 @@ func DoCommand(deployment *deploymentModel.Deployment, command string) {
 	}()
 }
 
-func GetByIdAuth(deploymentID string, auth *service.AuthInfo) (*deploymentModel.Deployment, error) {
-	deployment, err := deploymentModel.New().GetByID(deploymentID)
+func GetByIdAuth(id string, auth *service.AuthInfo) (*deploymentModel.Deployment, error) {
+	deployment, err := deploymentModel.New().GetByID(id)
 	if err != nil {
 		return nil, err
 	}

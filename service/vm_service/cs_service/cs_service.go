@@ -93,14 +93,14 @@ func CreateCS(vmID string, params *vmModel.CreateParams) error {
 	return nil
 }
 
-func DeleteCS(vmID string) error {
-	log.Println("deleting cs for", vmID)
+func DeleteCS(id string) error {
+	log.Println("deleting cs for", id)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete cs for vm %s. details: %w", vmID, err)
+		return fmt.Errorf("failed to delete cs for vm %s. details: %w", id, err)
 	}
 
-	context, err := NewContext(vmID)
+	context, err := NewContext(id)
 	if err != nil {
 		if errors.Is(err, base.VmDeletedErr) {
 			return nil
@@ -112,13 +112,13 @@ func DeleteCS(vmID string) error {
 	for mapName, pfr := range context.VM.Subsystems.CS.GetPortForwardingRuleMap() {
 		err = resources.SsDeleter(context.Client.DeletePortForwardingRule).
 			WithResourceID(pfr.ID).
-			WithDbFunc(dbFunc(vmID, "portForwardingRuleMap."+mapName)).
+			WithDbFunc(dbFunc(id, "portForwardingRuleMap."+mapName)).
 			Exec()
 	}
 
 	err = resources.SsDeleter(context.Client.DeleteVM).
 		WithResourceID(context.VM.Subsystems.CS.VM.ID).
-		WithDbFunc(dbFunc(vmID, "vm")).
+		WithDbFunc(dbFunc(id, "vm")).
 		Exec()
 
 	if err != nil {
@@ -127,7 +127,7 @@ func DeleteCS(vmID string) error {
 
 	err = resources.SsDeleter(context.Client.DeleteServiceOffering).
 		WithResourceID(context.VM.Subsystems.CS.ServiceOffering.ID).
-		WithDbFunc(dbFunc(vmID, "serviceOffering")).
+		WithDbFunc(dbFunc(id, "serviceOffering")).
 		Exec()
 
 	if err != nil {
