@@ -79,13 +79,6 @@ func (client *Client) Create(vmID, owner, manager string, params *CreateParams) 
 	return true, nil
 }
 
-func (client *Client) GetMany() ([]VM, error) {
-	filter := bson.D{}
-
-	// this doesn't do anything now, but is kept in case there will be filtering later
-
-	return client.GetAllWithFilter(filter)
-}
 func (client *Client) CountByOwnerID(ownerID string) (int, error) {
 	return client.CountWithFilter(bson.D{{"ownerId", ownerID}})
 }
