@@ -13,6 +13,7 @@ import (
 	"go-deploy/routers/api/v1/v1_deployment"
 	"go-deploy/routers/api/v1/v1_github"
 	"go-deploy/routers/api/v1/v1_job"
+	"go-deploy/routers/api/v1/v1_notification"
 	"go-deploy/routers/api/v1/v1_user"
 	"go-deploy/routers/api/v1/v1_vm"
 	"go-deploy/routers/api/v1/v1_zone"
@@ -60,6 +61,7 @@ func NewRouter() *gin.Engine {
 	setupGpuRoutes(privateApiv1, apiv1Hook)
 	setupJobRoutes(privateApiv1, apiv1Hook)
 	setupUserRoutes(privateApiv1, apiv1Hook)
+	setupNotificationRoutes(privateApiv1, apiv1Hook)
 	setupGitHubRoutes(privateApiv1, apiv1Hook)
 
 	registerCustomValidators()
@@ -131,6 +133,13 @@ func setupUserRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
 	private.GET("/users", v1_user.GetList)
 	private.POST("/users/:userId", v1_user.Update)
 	private.POST("/users", v1_user.Update)
+}
+
+func setupNotificationRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
+	private.GET("/notifications/:notificationId", v1_notification.Get)
+	private.GET("/notifications", v1_notification.GetList)
+	private.POST("/notifications", v1_notification.Update)
+	private.DELETE("/notifications/:notificationId", v1_notification.Delete)
 }
 
 func setupGitHubRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
