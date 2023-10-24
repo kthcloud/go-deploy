@@ -14,7 +14,7 @@ import (
 	"strings"
 )
 
-func Create(deploymentID string, params *deploymentModel.CreateParams) error {
+func Create(id string, params *deploymentModel.CreateParams) error {
 	log.Println("setting up github for", params.Name)
 
 	makeError := func(err error) error {
@@ -26,13 +26,13 @@ func Create(deploymentID string, params *deploymentModel.CreateParams) error {
 		return makeError(err)
 	}
 
-	deployment, err := deploymentModel.New().GetByID(deploymentID)
+	deployment, err := deploymentModel.New().GetByID(id)
 	if err != nil {
 		return makeError(err)
 	}
 
 	if deployment == nil {
-		log.Println("deployment", deploymentID, "not found for github setup. assuming it was deleted")
+		log.Println("deployment", id, "not found for github setup. assuming it was deleted")
 		return nil
 	}
 

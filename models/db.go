@@ -17,6 +17,7 @@ var VmCollection *mongo.Collection
 var GpuCollection *mongo.Collection
 var UserCollection *mongo.Collection
 var JobCollection *mongo.Collection
+var NotificationCollection *mongo.Collection
 
 var client *mongo.Client
 
@@ -58,6 +59,7 @@ func Setup() {
 	GpuCollection = findCollection("gpus")
 	UserCollection = findCollection("users")
 	JobCollection = findCollection("jobs")
+	NotificationCollection = findCollection("notifications")
 }
 
 func findCollection(collectionName string) *mongo.Collection {

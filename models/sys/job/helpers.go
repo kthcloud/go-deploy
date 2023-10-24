@@ -52,7 +52,7 @@ func (client *Client) CreateScheduled(id, userID, jobType string, runAfter time.
 		ErrorLogs: make([]string, 0),
 	}
 
-	_, err = models.JobCollection.InsertOne(context.TODO(), job)
+	_, err = client.Collection.InsertOne(context.TODO(), job)
 	if err != nil {
 		return fmt.Errorf("failed to create job. details: %w", err)
 	}

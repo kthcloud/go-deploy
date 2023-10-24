@@ -37,26 +37,16 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 	params := &deploymentModel.CreateParams{}
 	params.FromDTO(deploymentCreate, fallbackZone, fallbackImage, fallbackPort)
 
-	// create storage manager only if needed
-	if len(params.Volumes) > 0 {
-		storageManagerID := uuid.New().String()
-		jobID := uuid.New().String()
-		err := job_service.Create(jobID, ownerID, jobModel.TypeCreateStorageManager, map[string]interface{}{
-			"id": storageManagerID,
-			"params": storage_manager.CreateParams{
-				UserID: ownerID,
-				Zone:   params.Zone,
-			},
-		})
-
-		if err != nil {
-			return makeError(err)
-		}
-	}
-
 	deployment, err := deploymentModel.New().Create(deploymentID, ownerID, params)
 	if err != nil {
 		return makeError(err)
+	}
+
+	if len(params.Volumes) > 0 {
+		err = createStorageManager(ownerID, params.Zone)
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	if deployment == nil {
@@ -180,6 +170,13 @@ func Update(id string, deploymentUpdate *body.DeploymentUpdate) error {
 	err = deploymentModel.New().UpdateWithParamsByID(id, params)
 	if err != nil {
 		return makeError(err)
+	}
+
+	if params.Volumes != nil && len(*params.Volumes) > 0 {
+		err = createStorageManager(deployment.OwnerID, deployment.Zone)
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	err = k8s_service.Update(id, params)
@@ -353,8 +350,8 @@ func DoCommand(deployment *deploymentModel.Deployment, command string) {
 	}()
 }
 
-func GetByIdAuth(deploymentID string, auth *service.AuthInfo) (*deploymentModel.Deployment, error) {
-	deployment, err := deploymentModel.New().GetByID(deploymentID)
+func GetByIdAuth(id string, auth *service.AuthInfo) (*deploymentModel.Deployment, error) {
+	deployment, err := deploymentModel.New().GetByID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -577,4 +574,18 @@ func SavePing(id string, pingResult int) error {
 	}
 
 	return nil
+}
+
+func createStorageManager(ownerID, zone string) error {
+	storageManagerID := uuid.New().String()
+	jobID := uuid.New().String()
+	err := job_service.Create(jobID, ownerID, jobModel.TypeCreateStorageManager, map[string]interface{}{
+		"id": storageManagerID,
+		"params": storage_manager.CreateParams{
+			UserID: ownerID,
+			Zone:   zone,
+		},
+	})
+
+	return err
 }

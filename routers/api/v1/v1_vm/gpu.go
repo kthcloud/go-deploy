@@ -24,7 +24,7 @@ import (
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /api/v1/vms/gpus [get]
+// @Router /vms/gpus [get]
 func GetGpuList(c *gin.Context) {
 	context := sys.NewContext(c)
 

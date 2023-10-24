@@ -55,7 +55,7 @@ func Create(id, ownerID string, vmCreate *body.VmCreate) error {
 	return nil
 }
 
-func Update(vmID string, dtoVmUpdate *body.VmUpdate) error {
+func Update(id string, dtoVmUpdate *body.VmUpdate) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update vm. details: %w", err)
 	}
@@ -64,30 +64,30 @@ func Update(vmID string, dtoVmUpdate *body.VmUpdate) error {
 	vmUpdate.FromDTO(dtoVmUpdate)
 
 	if vmUpdate.SnapshotID != nil {
-		err := ApplySnapshot(vmID, *vmUpdate.SnapshotID)
+		err := ApplySnapshot(id, *vmUpdate.SnapshotID)
 		if err != nil {
 			return makeError(err)
 		}
 	} else {
-		err := vmModel.New().UpdateWithParamsByID(vmID, vmUpdate)
+		err := vmModel.New().UpdateWithParamsByID(id, vmUpdate)
 		if err != nil {
 			return makeError(err)
 		}
 
-		err = cs_service.UpdateCS(vmID, vmUpdate)
+		err = cs_service.UpdateCS(id, vmUpdate)
 		if err != nil {
 			return makeError(err)
 		}
 
 		if vmUpdate.Ports != nil {
-			err = k8s_service.Repair(vmID)
+			err = k8s_service.Repair(id)
 			if err != nil {
 				return makeError(err)
 			}
 		}
 	}
 
-	err := vmModel.New().RemoveActivity(vmID, vmModel.ActivityBeingUpdated)
+	err := vmModel.New().RemoveActivity(id, vmModel.ActivityBeingUpdated)
 	if err != nil {
 		return makeError(err)
 	}
@@ -177,8 +177,8 @@ func Repair(id string) error {
 	return nil
 }
 
-func GetByIdAuth(vmID string, auth *service.AuthInfo) (*vmModel.VM, error) {
-	vm, err := vmModel.New().GetByID(vmID)
+func GetByIdAuth(id string, auth *service.AuthInfo) (*vmModel.VM, error) {
+	vm, err := vmModel.New().GetByID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -214,7 +214,7 @@ func GetManyAuth(allUsers bool, userID *string, auth *service.AuthInfo, paginati
 		client.RestrictToUser(&auth.UserID)
 	}
 
-	return client.GetMany()
+	return client.GetAll()
 }
 
 func GetConnectionString(vm *vmModel.VM) (*string, error) {

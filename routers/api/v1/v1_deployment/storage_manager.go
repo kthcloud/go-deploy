@@ -23,12 +23,12 @@ import (
 // @Tags Deployment
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "With the bearer started"
+// @Param Authorization header string true "Bearer token"
 // @Success 200 {array} body.StorageManagerRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 401 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /api/v1/storageManagers [get]
+// @Router /storageManagers [get]
 func GetStorageManagerList(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -72,14 +72,14 @@ func GetStorageManagerList(c *gin.Context) {
 // @Tags Deployment
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "With the bearer started"
+// @Param Authorization header string true "Bearer token"
 // @Param storageManagerId path string true "Storage manager ID"
 // @Success 200 {object} body.StorageManagerDeleted
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 401 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /api/v1/storageManagers/{storageManagerId} [get]
+// @Router /storageManagers/{storageManagerId} [get]
 func GetStorageManager(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -116,14 +116,14 @@ func GetStorageManager(c *gin.Context) {
 // @Tags Deployment
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "With the bearer started"
+// @Param Authorization header string true "Bearer token"
 // @Param storageManagerId path string true "Storage manager ID"
 // @Success 200 {object} body.StorageManagerDeleted
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 401 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /api/v1/storageManager/{storageManagerId} [get]
+// @Router /storageManager/{storageManagerId} [get]
 func DeleteStorageManager(c *gin.Context) {
 	context := sys.NewContext(c)
 

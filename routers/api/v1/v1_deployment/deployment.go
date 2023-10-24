@@ -20,8 +20,8 @@ import (
 	"net/http"
 )
 
-func getStorageManagerURL(auth *service.AuthInfo) *string {
-	storageManager, err := deployment_service.GetStorageManagerByOwnerID(auth.UserID, auth)
+func getStorageManagerURL(userID string, auth *service.AuthInfo) *string {
+	storageManager, err := deployment_service.GetStorageManagerByOwnerID(userID, auth)
 	if err != nil {
 		return nil
 	}
@@ -30,16 +30,7 @@ func getStorageManagerURL(auth *service.AuthInfo) *string {
 		return nil
 	}
 
-	ingress, ok := storageManager.Subsystems.K8s.IngressMap["oauth-proxy"]
-	if !ok || !ingress.Created() {
-		return nil
-	}
-
-	if len(ingress.Hosts) > 0 && len(ingress.Hosts[0]) > 0 {
-		return &ingress.Hosts[0]
-	}
-
-	return nil
+	return storageManager.GetURL()
 }
 
 // GetList
@@ -49,15 +40,15 @@ func getStorageManagerURL(auth *service.AuthInfo) *string {
 // @Tags Deployment
 // @Accept  json
 // @Produce  json
-// @Param Authorization header string true "With the bearer started"
-// @Param all query boolean false "Get all deployments"
-// @Param userId query string false "Get deployments by user ID"
+// @Param Authorization header string true "Bearer token"
+// @Param all query bool false "Get all"
+// @Param userId query string false "Filter by user id"
 // @Param page query int false "Page number"
-// @Param perPage query int false "Number of items per page"
+// @Param pageSize query int false "Number of items per page"
 // @Success 200 {array} body.DeploymentRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /api/v1/deployments [get]
+// @Router /deployments [get]
 func GetList(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -88,7 +79,7 @@ func GetList(c *gin.Context) {
 	for i, deployment := range deployments {
 		var storageManagerURL *string
 		if mainApp := deployment.GetMainApp(); mainApp != nil && len(mainApp.Volumes) > 0 {
-			storageManagerURL = getStorageManagerURL(auth)
+			storageManagerURL = getStorageManagerURL(deployment.OwnerID, auth)
 		}
 
 		dtoDeployments[i] = deployment.ToDTO(storageManagerURL)
@@ -104,12 +95,12 @@ func GetList(c *gin.Context) {
 // @Tags Deployment
 // @Accept  json
 // @Produce  json
-// @Param Authorization header string true "With the bearer started"
+// @Param Authorization header string true "Bearer token"
 // @Param deploymentId path string true "Deployment ID"
 // @Success 200 {object} body.DeploymentRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /api/v1/deployments/{deployment_id} [get]
+// @Router /deployments/{deployment_id} [get]
 func Get(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -138,7 +129,7 @@ func Get(c *gin.Context) {
 
 	var storageManagerURL *string
 	if len(deployment.GetMainApp().Volumes) > 0 {
-		storageManagerURL = getStorageManagerURL(auth)
+		storageManagerURL = getStorageManagerURL(deployment.OwnerID, auth)
 	}
 
 	context.JSONResponse(200, deployment.ToDTO(storageManagerURL))
@@ -151,12 +142,12 @@ func Get(c *gin.Context) {
 // @Tags Deployment
 // @Accept  json
 // @Produce  json
-// @Param Authorization header string true "With the bearer started"
+// @Param Authorization header string true "Bearer token"
 // @Param body body body.DeploymentCreate true "Deployment body"
 // @Success 200 {object} body.DeploymentRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /api/v1/deployments [post]
+// @Router /deployments [post]
 func Create(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -268,14 +259,14 @@ func Create(c *gin.Context) {
 // @Tags Deployment
 // @Accept  json
 // @Produce  json
-// @Param Authorization header string true "With the bearer started"
+// @Param Authorization header string true "Bearer token"
 // @Param deploymentId path string true "Deployment ID"
 // @Success 200 {object} body.DeploymentCreated
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 401 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /api/v1/deployments/{deploymentId} [delete]
+// @Router /deployments/{deploymentId} [delete]
 func Delete(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -335,13 +326,13 @@ func Delete(c *gin.Context) {
 // @Tags Deployment
 // @Accept  json
 // @Produce  json
-// @Param Authorization header string true "With the bearer started"
+// @Param Authorization header string true "Bearer token"
 // @Param deploymentId path string true "Deployment ID"
 // @Param body body body.DeploymentUpdate true "Deployment update"
 // @Success 200 {object} body.DeploymentUpdated
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /api/v1/deployments/{deploymentId} [put]
+// @Router /deployments/{deploymentId} [put]
 func Update(c *gin.Context) {
 	context := sys.NewContext(c)
 

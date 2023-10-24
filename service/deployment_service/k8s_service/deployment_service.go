@@ -15,14 +15,14 @@ import (
 	"strings"
 )
 
-func Create(deploymentID string, params *deploymentModel.CreateParams) error {
+func Create(id string, params *deploymentModel.CreateParams) error {
 	log.Println("setting up k8s for", params.Name)
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to setup k8s for deployment %s. details: %w", params.Name, err)
 	}
 
-	context, err := NewContext(deploymentID)
+	context, err := NewContext(id)
 	if err != nil {
 		if errors.Is(err, base.DeploymentDeletedErr) {
 			return nil
@@ -35,7 +35,7 @@ func Create(deploymentID string, params *deploymentModel.CreateParams) error {
 
 	// Namespace
 	err = resources.SsCreator(context.Client.CreateNamespace).
-		WithDbFunc(dbFunc(deploymentID, "namespace")).
+		WithDbFunc(dbFunc(id, "namespace")).
 		WithPublic(context.Generator.Namespace()).
 		Exec()
 	if err != nil {
@@ -45,7 +45,7 @@ func Create(deploymentID string, params *deploymentModel.CreateParams) error {
 	// PersistentVolume
 	for _, pvPublic := range context.Generator.PVs() {
 		err = resources.SsCreator(context.Client.CreatePV).
-			WithDbFunc(dbFunc(deploymentID, "pvMap."+pvPublic.Name)).
+			WithDbFunc(dbFunc(id, "pvMap."+pvPublic.Name)).
 			WithPublic(&pvPublic).
 			Exec()
 
@@ -57,7 +57,7 @@ func Create(deploymentID string, params *deploymentModel.CreateParams) error {
 	// PersistentVolumeClaim
 	for _, pvcPublic := range context.Generator.PVCs() {
 		err = resources.SsCreator(context.Client.CreatePVC).
-			WithDbFunc(dbFunc(deploymentID, "pvcMap."+pvcPublic.Name)).
+			WithDbFunc(dbFunc(id, "pvcMap."+pvcPublic.Name)).
 			WithPublic(&pvcPublic).
 			Exec()
 
@@ -69,7 +69,7 @@ func Create(deploymentID string, params *deploymentModel.CreateParams) error {
 	// Secret
 	for _, secretPublic := range context.Generator.Secrets() {
 		err = resources.SsCreator(context.Client.CreateSecret).
-			WithDbFunc(dbFunc(deploymentID, "secretMap."+secretPublic.Name)).
+			WithDbFunc(dbFunc(id, "secretMap."+secretPublic.Name)).
 			WithPublic(&secretPublic).
 			Exec()
 
@@ -81,7 +81,7 @@ func Create(deploymentID string, params *deploymentModel.CreateParams) error {
 	// Deployment
 	for _, deploymentPublic := range context.Generator.Deployments() {
 		err = resources.SsCreator(context.Client.CreateDeployment).
-			WithDbFunc(dbFunc(deploymentID, "deploymentMap."+deploymentPublic.Name)).
+			WithDbFunc(dbFunc(id, "deploymentMap."+deploymentPublic.Name)).
 			WithPublic(&deploymentPublic).
 			Exec()
 
@@ -93,7 +93,7 @@ func Create(deploymentID string, params *deploymentModel.CreateParams) error {
 	// Service
 	for _, servicePublic := range context.Generator.Services() {
 		err = resources.SsCreator(context.Client.CreateService).
-			WithDbFunc(dbFunc(deploymentID, "serviceMap."+servicePublic.Name)).
+			WithDbFunc(dbFunc(id, "serviceMap."+servicePublic.Name)).
 			WithPublic(&servicePublic).
 			Exec()
 
@@ -105,7 +105,7 @@ func Create(deploymentID string, params *deploymentModel.CreateParams) error {
 	// Ingress
 	for _, ingressPublic := range context.Generator.Ingresses() {
 		err = resources.SsCreator(context.Client.CreateIngress).
-			WithDbFunc(dbFunc(deploymentID, "ingressMap."+ingressPublic.Name)).
+			WithDbFunc(dbFunc(id, "ingressMap."+ingressPublic.Name)).
 			WithPublic(&ingressPublic).
 			Exec()
 
