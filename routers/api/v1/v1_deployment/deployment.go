@@ -30,16 +30,7 @@ func getStorageManagerURL(auth *service.AuthInfo) *string {
 		return nil
 	}
 
-	ingress, ok := storageManager.Subsystems.K8s.IngressMap["oauth-proxy"]
-	if !ok || !ingress.Created() {
-		return nil
-	}
-
-	if len(ingress.Hosts) > 0 && len(ingress.Hosts[0]) > 0 {
-		return &ingress.Hosts[0]
-	}
-
-	return nil
+	return storageManager.GetURL()
 }
 
 // GetList
