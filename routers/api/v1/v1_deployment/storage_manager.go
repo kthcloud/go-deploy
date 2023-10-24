@@ -28,7 +28,7 @@ import (
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 401 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /storageManagers [get]
+// @Router /storageManagers [get]storageManager
 func GetStorageManagerList(c *gin.Context) {
 	context := sys.NewContext(c)
 
