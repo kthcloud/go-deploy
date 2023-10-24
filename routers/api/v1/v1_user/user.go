@@ -85,7 +85,7 @@ func GetList(c *gin.Context) {
 
 	effectiveRole := auth.GetEffectiveRole()
 
-	if requestQuery.WantAll {
+	if requestQuery.All {
 		users, err := user_service.GetAll(auth)
 		if err != nil {
 			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))

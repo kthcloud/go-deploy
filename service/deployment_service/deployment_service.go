@@ -383,7 +383,7 @@ func GetManyAuth(allUsers bool, userID *string, auth *service.AuthInfo, paginati
 		client.RestrictToUser(&auth.UserID)
 	}
 
-	return client.GetMany()
+	return client.GetAll()
 }
 
 func GetAll() ([]deploymentModel.Deployment, error) {

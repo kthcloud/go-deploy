@@ -68,7 +68,7 @@ func Update(userID string, dtoUserUpdate *body.UserUpdate, auth *service.AuthInf
 		publicKeys = &k
 	}
 
-	userUpdate := &userModel.UserUpdate{
+	userUpdate := &userModel.UpdateParams{
 		Username:   dtoUserUpdate.Username,
 		PublicKeys: publicKeys,
 		Onboarded:  dtoUserUpdate.Onboarded,

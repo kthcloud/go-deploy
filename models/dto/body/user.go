@@ -1,5 +1,7 @@
 package body
 
+import "time"
+
 type PublicKey struct {
 	Name string `json:"name" binding:"required,min=1,max=30"`
 	Key  string `json:"key" binding:"required,ssh_public_key"`
@@ -39,4 +41,39 @@ type UserUpdate struct {
 	Username   *string      `json:"username,omitempty" bson:"username,omitempty" binding:"omitempty,min=3,max=32"`
 	PublicKeys *[]PublicKey `json:"publicKeys,omitempty" bson:"publicKeys,omitempty" binding:"omitempty,min=0,max=1000,dive"`
 	Onboarded  *bool        `json:"onboarded,omitempty" bson:"onboarded,omitempty" binding:"omitempty,boolean"`
+}
+
+type TeamMember struct {
+	UserRead
+	TeamRole string    `json:"teamRole"`
+	JoinedAt time.Time `json:"joinedAt"`
+}
+
+type TeamMemberCreate struct {
+	ID       string `json:"id" binding:"required,uuid4"`
+	TeamRole string `json:"teamRole"`
+}
+
+type TeamMemberUpdate struct {
+	ID       string `json:"id" binding:"required,uuid4"`
+	TeamRole string `json:"teamRole"`
+}
+
+type TeamCreate struct {
+	Name        string             `json:"name" binding:"required,min=3,max=32"`
+	Description string             `json:"description" binding:"required,min=3,max=1000"`
+	Members     []TeamMemberCreate `json:"members" binding:"required,min=1,max=1000"`
+}
+
+type TeamUpdate struct {
+	Name        *string             `json:"name,omitempty" binding:"omitempty,min=3,max=32"`
+	Description *string             `json:"description,omitempty" binding:"omitempty,min=3,max=1000"`
+	Members     *[]TeamMemberUpdate `json:"members,omitempty" binding:"omitempty,min=1,max=1000"`
+}
+
+type TeamRead struct {
+	ID          string       `json:"id"`
+	Name        string       `json:"name"`
+	Description string       `json:"description"`
+	Members     []TeamMember `json:"members"`
 }

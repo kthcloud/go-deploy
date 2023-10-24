@@ -133,6 +133,12 @@ func setupUserRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
 	private.GET("/users", v1_user.GetList)
 	private.POST("/users/:userId", v1_user.Update)
 	private.POST("/users", v1_user.Update)
+
+	private.GET("/teams/:teamId", v1_user.GetTeam)
+	private.GET("/teams", v1_user.GetTeamList)
+	private.POST("/teams", v1_user.CreateTeam)
+	private.POST("/teams/:teamId", v1_user.UpdateTeam)
+	private.DELETE("/teams/:teamId", v1_user.DeleteTeam)
 }
 
 func setupNotificationRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {

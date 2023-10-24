@@ -96,14 +96,6 @@ func (client *Client) GetAllByGitHubWebhookID(id int64) ([]Deployment, error) {
 	return client.GetAllWithFilter(bson.D{{"subsystems.github.webhookId", id}})
 }
 
-func (client *Client) GetMany() ([]Deployment, error) {
-	filter := bson.D{}
-
-	// this doesn't do anything now, but is kept in case there will be filtering later
-
-	return client.GetAllWithFilter(filter)
-}
-
 func (client *Client) DeleteByID(id string) error {
 	_, err := client.Collection.UpdateOne(context.TODO(),
 		bson.D{{"id", id}},
