@@ -20,8 +20,8 @@ import (
 	"net/http"
 )
 
-func getStorageManagerURL(auth *service.AuthInfo) *string {
-	storageManager, err := deployment_service.GetStorageManagerByOwnerID(auth.UserID, auth)
+func getStorageManagerURL(userID string, auth *service.AuthInfo) *string {
+	storageManager, err := deployment_service.GetStorageManagerByOwnerID(userID, auth)
 	if err != nil {
 		return nil
 	}
@@ -79,7 +79,7 @@ func GetList(c *gin.Context) {
 	for i, deployment := range deployments {
 		var storageManagerURL *string
 		if mainApp := deployment.GetMainApp(); mainApp != nil && len(mainApp.Volumes) > 0 {
-			storageManagerURL = getStorageManagerURL(auth)
+			storageManagerURL = getStorageManagerURL(deployment.OwnerID, auth)
 		}
 
 		dtoDeployments[i] = deployment.ToDTO(storageManagerURL)
@@ -129,7 +129,7 @@ func Get(c *gin.Context) {
 
 	var storageManagerURL *string
 	if len(deployment.GetMainApp().Volumes) > 0 {
-		storageManagerURL = getStorageManagerURL(auth)
+		storageManagerURL = getStorageManagerURL(deployment.OwnerID, auth)
 	}
 
 	context.JSONResponse(200, deployment.ToDTO(storageManagerURL))
