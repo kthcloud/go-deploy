@@ -25,6 +25,7 @@ func main() {
 	_ = flag.Bool("repairer", false, "start repairer")
 	_ = flag.Bool("pinger", false, "start pinger")
 	_ = flag.Bool("snapshotter", false, "start snapshotter")
+	_ = flag.Bool("metrics-updater", false, "start metrics updater")
 	_ = flag.Bool("test-mode", false, "run in test mode")
 
 	flag.Parse()
@@ -36,6 +37,7 @@ func main() {
 	repairer := isFlagPassed("repairer")
 	pinger := isFlagPassed("pinger")
 	snapshotter := isFlagPassed("snapshotter")
+	metricsUpdater := isFlagPassed("metrics-updater")
 	testMode := isFlagPassed("test-mode")
 
 	options := app.Options{
@@ -49,13 +51,14 @@ func main() {
 
 	if confirmer || statusUpdater || jobExecutor || repairer || api || pinger || snapshotter {
 		options.Workers = app.Workers{
-			API:           api,
-			Confirmer:     confirmer,
-			StatusUpdater: statusUpdater,
-			JobExecutor:   jobExecutor,
-			Repairer:      repairer,
-			Pinger:        pinger,
-			Snapshotter:   snapshotter,
+			API:            api,
+			Confirmer:      confirmer,
+			StatusUpdater:  statusUpdater,
+			JobExecutor:    jobExecutor,
+			Repairer:       repairer,
+			Pinger:         pinger,
+			Snapshotter:    snapshotter,
+			MetricsUpdater: metricsUpdater,
 		}
 
 		workers := &options.Workers
@@ -67,15 +70,17 @@ func main() {
 		log.Println("repairer: ", workers.Repairer)
 		log.Println("pinger: ", workers.Pinger)
 		log.Println("snapshotter: ", workers.Snapshotter)
+
 	} else {
 		options.Workers = app.Workers{
-			API:           true,
-			Confirmer:     true,
-			StatusUpdater: true,
-			JobExecutor:   true,
-			Repairer:      true,
-			Pinger:        true,
-			Snapshotter:   true,
+			API:            true,
+			Confirmer:      true,
+			StatusUpdater:  true,
+			JobExecutor:    true,
+			Repairer:       true,
+			Pinger:         true,
+			Snapshotter:    true,
+			MetricsUpdater: true,
 		}
 
 		log.Println("no workers specified, starting all")

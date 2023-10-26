@@ -9,8 +9,10 @@ import (
 	"go-deploy/models/sys/job"
 	"go-deploy/pkg/conf"
 	"go-deploy/pkg/intializer"
+	"go-deploy/pkg/metrics"
 	"go-deploy/pkg/workers/confirm"
 	"go-deploy/pkg/workers/job_execute"
+	metricsWorker "go-deploy/pkg/workers/metrics"
 	"go-deploy/pkg/workers/migrate"
 	"go-deploy/pkg/workers/ping"
 	"go-deploy/pkg/workers/repair"
@@ -24,13 +26,14 @@ import (
 )
 
 type Workers struct {
-	API           bool
-	Confirmer     bool
-	StatusUpdater bool
-	JobExecutor   bool
-	Repairer      bool
-	Pinger        bool
-	Snapshotter   bool
+	API            bool
+	Confirmer      bool
+	StatusUpdater  bool
+	JobExecutor    bool
+	Repairer       bool
+	Pinger         bool
+	Snapshotter    bool
+	MetricsUpdater bool
 }
 
 type Options struct {
@@ -50,6 +53,7 @@ func shutdown() {
 
 func Create(options Options) *App {
 	conf.SetupEnvironment()
+	metrics.Setup()
 
 	if options.TestMode {
 		conf.Env.TestMode = true
@@ -90,6 +94,9 @@ func Create(options Options) *App {
 	}
 	if workers.Snapshotter {
 		snapshot.Setup(ctx)
+	}
+	if workers.MetricsUpdater {
+		metricsWorker.Setup(ctx)
 	}
 	if workers.API {
 		ginMode, exists := os.LookupEnv("GIN_MODE")

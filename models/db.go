@@ -18,12 +18,13 @@ var GpuCollection *mongo.Collection
 var UserCollection *mongo.Collection
 var JobCollection *mongo.Collection
 var NotificationCollection *mongo.Collection
+var EventCollection *mongo.Collection
 
 var client *mongo.Client
 
 func getUri() string {
 	// this function is kept to allow easy switch from connString -> username + password + url etc.
-	return conf.Env.DB.Url
+	return conf.Env.DB.URL
 }
 
 func Setup() {
@@ -31,7 +32,7 @@ func Setup() {
 		return fmt.Errorf("failed to setup database. details: %w", err)
 	}
 
-	// Connect to db
+	// Connect to mongodb
 	uri := getUri()
 	clientResult, err := mongo.NewClient(options.Client().ApplyURI(uri))
 	if err != nil {
@@ -60,6 +61,7 @@ func Setup() {
 	UserCollection = findCollection("users")
 	JobCollection = findCollection("jobs")
 	NotificationCollection = findCollection("notifications")
+	EventCollection = findCollection("events")
 }
 
 func findCollection(collectionName string) *mongo.Collection {
@@ -74,10 +76,12 @@ func Shutdown() {
 	}
 
 	DeploymentCollection = nil
+	StorageManagerCollection = nil
 	VmCollection = nil
 	GpuCollection = nil
 	UserCollection = nil
 	JobCollection = nil
+	NotificationCollection = nil
 
 	err := client.Disconnect(context.Background())
 	if err != nil {

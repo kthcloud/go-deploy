@@ -112,6 +112,22 @@ func CountResources(collection *mongo.Collection, filter bson.D, includeDeleted 
 	return int(count), nil
 }
 
+func CountDistinctResources(collection *mongo.Collection, field string, filter bson.D, includeDeleted bool, extraFilter *bson.D) (int, error) {
+	if !includeDeleted {
+		filter = addExcludeDeleted(filter)
+	}
+
+	if extraFilter != nil {
+		filter = append(filter, *extraFilter...)
+	}
+
+	count, err := collection.Distinct(context.Background(), field, filter)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count resources. details: %w", err)
+	}
+	return len(count), nil
+}
+
 func UpdateOneResource(collection *mongo.Collection, filter bson.D, update bson.D, includeDeleted bool, extraFilter *bson.D) error {
 	if !includeDeleted {
 		filter = addExcludeDeleted(filter)

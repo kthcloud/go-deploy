@@ -45,6 +45,10 @@ func (client *ResourceClient[T]) SetWithBsonByName(name string, update bson.D) e
 	return client.UpdateWithBsonByName(name, bson.D{{"$set", update}})
 }
 
+func (client *ResourceClient[T]) CountDistinct(field string) (int, error) {
+	return models.CountDistinctResources(client.Collection, field, bson.D{}, client.IncludeDeleted, client.ExtraFilter)
+}
+
 func (client *ResourceClient[T]) DeleteByID(id string) error {
 	_, err := client.Collection.UpdateOne(context.TODO(),
 		bson.D{{"id", id}},
