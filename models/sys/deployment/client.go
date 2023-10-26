@@ -19,13 +19,13 @@ type Client struct {
 
 func New() *Client {
 	return &Client{
-		Collection: models.DeploymentCollection,
+		Collection: models.DB.GetCollection("deployments"),
 
 		ActivityResourceClient: activityResource.ActivityResourceClient[Deployment]{
-			Collection: models.DeploymentCollection,
+			Collection: models.DB.GetCollection("deployments"),
 		},
 		ResourceClient: resource.ResourceClient[Deployment]{
-			Collection:     models.DeploymentCollection,
+			Collection:     models.DB.GetCollection("deployments"),
 			IncludeDeleted: false,
 		},
 	}
@@ -51,13 +51,10 @@ func (client *Client) IncludeDeletedResources() *Client {
 	return client
 }
 
-func (client *Client) RestrictToUser(restrictUserID *string) *Client {
-	if restrictUserID != nil {
-		client.ResourceClient.ExtraFilter = &bson.D{{"ownerId", *restrictUserID}}
-		client.ActivityResourceClient.ExtraFilter = &bson.D{{"ownerId", *restrictUserID}}
-	}
-
-	client.RestrictUserID = restrictUserID
+func (client *Client) RestrictToUser(restrictUserID string) *Client {
+	client.ResourceClient.ExtraFilter = append(client.ResourceClient.ExtraFilter, bson.E{Key: "ownerId", Value: restrictUserID})
+	client.ActivityResourceClient.ExtraFilter = client.ResourceClient.ExtraFilter
+	client.RestrictUserID = &restrictUserID
 
 	return client
 }

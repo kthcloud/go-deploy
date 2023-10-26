@@ -7,7 +7,7 @@ import (
 	"go-deploy/models/dto/query"
 	"go-deploy/models/dto/uri"
 	jobModel "go-deploy/models/sys/job"
-	"go-deploy/pkg/status_codes"
+	status_codes2 "go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/job_service"
@@ -34,18 +34,18 @@ func Get(c *gin.Context) {
 
 	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
+		context.ErrorResponse(http.StatusInternalServerError, status_codes2.Error, fmt.Sprintf("Failed to get auth info: %s", err))
 		return
 	}
 
 	job, err := job_service.GetByID(requestURI.JobID, auth)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		context.ErrorResponse(http.StatusInternalServerError, status_codes2.Error, fmt.Sprintf("%s", err))
 		return
 	}
 
 	if job == nil {
-		context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, fmt.Sprintf("Job with id %s not found", requestURI.JobID))
+		context.ErrorResponse(http.StatusNotFound, status_codes2.ResourceNotFound, fmt.Sprintf("Job with id %s not found", requestURI.JobID))
 		return
 	}
 
@@ -77,13 +77,13 @@ func GetList(c *gin.Context) {
 
 	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
+		context.ErrorResponse(http.StatusInternalServerError, status_codes2.Error, fmt.Sprintf("Failed to get auth info: %s", err))
 		return
 	}
 
 	jobs, err := job_service.GetMany(requestQuery.All, requestQuery.UserID, requestQuery.Type, requestQuery.Status, auth, &requestQuery.Pagination)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		context.ErrorResponse(http.StatusInternalServerError, status_codes2.Error, fmt.Sprintf("%s", err))
 		return
 	}
 
@@ -127,40 +127,40 @@ func Update(c *gin.Context) {
 
 	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
+		context.ErrorResponse(http.StatusInternalServerError, status_codes2.Error, fmt.Sprintf("Failed to get auth info: %s", err))
 		return
 	}
 
 	if !auth.IsAdmin {
-		context.ErrorResponse(http.StatusForbidden, status_codes.Error, fmt.Sprintf("Only admin can update job"))
+		context.ErrorResponse(http.StatusForbidden, status_codes2.Error, fmt.Sprintf("Only admin can update job"))
 		return
 	}
 
 	exists, err := job_service.Exists(requestURI.JobID, auth)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to check job existence: %s", err))
+		context.ErrorResponse(http.StatusInternalServerError, status_codes2.Error, fmt.Sprintf("Failed to check job existence: %s", err))
 		return
 	}
 
 	if !exists {
-		context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, fmt.Sprintf("Job with id %s not found", requestURI.JobID))
+		context.ErrorResponse(http.StatusNotFound, status_codes2.ResourceNotFound, fmt.Sprintf("Job with id %s not found", requestURI.JobID))
 		return
 	}
 
 	err = job_service.Update(requestURI.JobID, &request, auth)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to update job: %s", err))
+		context.ErrorResponse(http.StatusInternalServerError, status_codes2.Error, fmt.Sprintf("Failed to update job: %s", err))
 		return
 	}
 
 	updatedJob, err := job_service.GetByID(requestURI.JobID, auth)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get updated job: %s", err))
+		context.ErrorResponse(http.StatusInternalServerError, status_codes2.Error, fmt.Sprintf("Failed to get updated job: %s", err))
 		return
 	}
 
 	if updatedJob == nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Job not found after update"))
+		context.ErrorResponse(http.StatusInternalServerError, status_codes2.Error, fmt.Sprintf("Job not found after update"))
 		return
 	}
 
@@ -170,20 +170,20 @@ func Update(c *gin.Context) {
 func jobStatusMessage(status string) string {
 	switch status {
 	case jobModel.StatusPending:
-		return status_codes.GetMsg(status_codes.JobPending)
+		return status_codes2.GetMsg(status_codes2.JobPending)
 	case jobModel.StatusRunning:
-		return status_codes.GetMsg(status_codes.JobRunning)
+		return status_codes2.GetMsg(status_codes2.JobRunning)
 	case jobModel.StatusCompleted:
-		return status_codes.GetMsg(status_codes.JobFinished)
+		return status_codes2.GetMsg(status_codes2.JobFinished)
 	case jobModel.StatusFailed:
-		return status_codes.GetMsg(status_codes.JobFailed)
+		return status_codes2.GetMsg(status_codes2.JobFailed)
 	case jobModel.StatusTerminated:
-		return status_codes.GetMsg(status_codes.JobTerminated)
+		return status_codes2.GetMsg(status_codes2.JobTerminated)
 
 		// deprecated
 	case jobModel.StatusFinished:
-		return status_codes.GetMsg(status_codes.JobFinished)
+		return status_codes2.GetMsg(status_codes2.JobFinished)
 	default:
-		return status_codes.GetMsg(status_codes.Unknown)
+		return status_codes2.GetMsg(status_codes2.Unknown)
 	}
 }

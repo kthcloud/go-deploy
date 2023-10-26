@@ -6,11 +6,15 @@ import (
 	"go-deploy/service"
 )
 
-func GetByID(userID string, auth *service.AuthInfo) (*userModel.User, error) {
+func GetByIdAuth(userID string, auth *service.AuthInfo) (*userModel.User, error) {
 	if userID != auth.UserID && !auth.IsAdmin {
 		return nil, nil
 	}
 
+	return userModel.New().GetByID(userID)
+}
+
+func GetByID(userID string) (*userModel.User, error) {
 	return userModel.New().GetByID(userID)
 }
 
@@ -68,7 +72,7 @@ func Update(userID string, dtoUserUpdate *body.UserUpdate, auth *service.AuthInf
 		publicKeys = &k
 	}
 
-	userUpdate := &userModel.UserUpdate{
+	userUpdate := &userModel.UpdateParams{
 		Username:   dtoUserUpdate.Username,
 		PublicKeys: publicKeys,
 		Onboarded:  dtoUserUpdate.Onboarded,

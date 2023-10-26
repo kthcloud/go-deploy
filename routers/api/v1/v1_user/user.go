@@ -8,8 +8,8 @@ import (
 	"go-deploy/models/dto/uri"
 	roleModel "go-deploy/models/sys/enviroment/role"
 	userModel "go-deploy/models/sys/user"
+	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/conf"
-	"go-deploy/pkg/status_codes"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
@@ -85,7 +85,7 @@ func GetList(c *gin.Context) {
 
 	effectiveRole := auth.GetEffectiveRole()
 
-	if requestQuery.WantAll {
+	if requestQuery.All {
 		users, err := user_service.GetAll(auth)
 		if err != nil {
 			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
@@ -126,7 +126,7 @@ func GetList(c *gin.Context) {
 		return
 	}
 
-	user, err := user_service.GetByID(auth.UserID, auth)
+	user, err := user_service.GetByIdAuth(auth.UserID, auth)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
 		return
@@ -183,7 +183,7 @@ func Get(c *gin.Context) {
 	}
 
 	var user *userModel.User
-	user, err = user_service.GetByID(requestedUserID, auth)
+	user, err = user_service.GetByIdAuth(requestedUserID, auth)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get user: %s", err))
 		return
@@ -253,7 +253,7 @@ func Update(c *gin.Context) {
 		requestedUserID = auth.UserID
 	}
 
-	user, err := user_service.GetByID(requestedUserID, auth)
+	user, err := user_service.GetByIdAuth(requestedUserID, auth)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to update user: %s", err))
 		return
@@ -270,7 +270,7 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	updatedUser, err := user_service.GetByID(requestedUserID, auth)
+	updatedUser, err := user_service.GetByIdAuth(requestedUserID, auth)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to update user: %s", err))
 		return

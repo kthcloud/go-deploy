@@ -195,6 +195,38 @@ func HealthCheckPath(fl validator.FieldLevel) bool {
 	return true
 }
 
+func TeamMemberList(fl validator.FieldLevel) bool {
+	memberList, ok := fl.Field().Interface().([]body.TeamMemberUpdate)
+	if !ok {
+		return false
+	}
+
+	id := make(map[string]bool)
+	for _, member := range memberList {
+		if _, ok := id[member.ID]; ok {
+			return false
+		}
+		id[member.ID] = true
+	}
+	return true
+}
+
+func TeamResourceList(fl validator.FieldLevel) bool {
+	resourceList, ok := fl.Field().Interface().([]string)
+	if !ok {
+		return false
+	}
+
+	id := make(map[string]bool)
+	for _, resourceID := range resourceList {
+		if _, ok := id[resourceID]; ok {
+			return false
+		}
+		id[resourceID] = true
+	}
+	return true
+}
+
 func domainPointsToDeploy(domainName string) bool {
 	for _, zone := range conf.Env.Deployment.Zones {
 		mustPointAt := zone.CustomDomainIP

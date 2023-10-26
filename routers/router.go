@@ -5,11 +5,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"go-deploy/docs"
 	"go-deploy/pkg/auth"
 	"go-deploy/pkg/sys"
+	"go-deploy/routers/api/v1/middleware"
 	"go-deploy/routers/api/v1/v1_deployment"
 	"go-deploy/routers/api/v1/v1_github"
 	"go-deploy/routers/api/v1/v1_job"
@@ -63,6 +65,7 @@ func NewRouter() *gin.Engine {
 	setupUserRoutes(privateApiv1, apiv1Hook)
 	setupNotificationRoutes(privateApiv1, apiv1Hook)
 	setupGitHubRoutes(privateApiv1, apiv1Hook)
+	setupMetricsRoutes(privateApiv1, apiv1Hook)
 
 	registerCustomValidators()
 
@@ -76,8 +79,8 @@ func setupAuthCheckRoutes(private *gin.RouterGroup) {
 func setupDeploymentRoutes(private *gin.RouterGroup, public *gin.RouterGroup, hooks *gin.RouterGroup) {
 	private.GET("/deployments", v1_deployment.GetList)
 
-	private.GET("/deployments/:deploymentId", v1_deployment.Get)
-	private.GET("/deployments/:deploymentId/ciConfig", v1_deployment.GetCiConfig)
+	private.GET("/deployments/:deploymentId", v1_deployment.Get, middleware.UserHttpEvent())
+	private.GET("/deployments/:deploymentId/ciConfig", v1_deployment.GetCiConfig, middleware.UserHttpEvent())
 	private.POST("/deployments", v1_deployment.Create)
 	private.POST("/deployments/:deploymentId", v1_deployment.Update)
 	private.DELETE("/deployments/:deploymentId", v1_deployment.Delete)
@@ -133,6 +136,12 @@ func setupUserRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
 	private.GET("/users", v1_user.GetList)
 	private.POST("/users/:userId", v1_user.Update)
 	private.POST("/users", v1_user.Update)
+
+	private.GET("/teams/:teamId", v1_user.GetTeam)
+	private.GET("/teams", v1_user.GetTeamList)
+	private.POST("/teams", v1_user.CreateTeam)
+	private.POST("/teams/:teamId", v1_user.UpdateTeam)
+	private.DELETE("/teams/:teamId", v1_user.DeleteTeam)
 }
 
 func setupNotificationRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
@@ -144,6 +153,12 @@ func setupNotificationRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
 
 func setupGitHubRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
 	private.GET("/github/repositories", v1_github.ListGitHubRepositories)
+}
+
+func setupMetricsRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
+	private.GET("/metrics", func(c *gin.Context) {
+		promhttp.Handler().ServeHTTP(c.Writer, c.Request)
+	})
 }
 
 func registerCustomValidators() {
@@ -177,6 +192,8 @@ func registerCustomValidators() {
 			"domain_name":            validators.DomainName,
 			"custom_domain":          validators.CustomDomain,
 			"health_check_path":      validators.HealthCheckPath,
+			"team_member_list":       validators.TeamMemberList,
+			"team_resource_list":     validators.TeamResourceList,
 		}
 
 		for tag, fn := range registrations {

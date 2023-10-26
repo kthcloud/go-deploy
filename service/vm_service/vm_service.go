@@ -194,6 +194,10 @@ func GetByIdAuth(id string, auth *service.AuthInfo) (*vmModel.VM, error) {
 	return vm, nil
 }
 
+func GetByID(id string) (*vmModel.VM, error) {
+	return vmModel.New().GetByID(id)
+}
+
 func GetByName(name string) (*vmModel.VM, error) {
 	return vmModel.New().GetByName(name)
 }
@@ -209,9 +213,9 @@ func GetManyAuth(allUsers bool, userID *string, auth *service.AuthInfo, paginati
 		if *userID != auth.UserID && !auth.IsAdmin {
 			return nil, nil
 		}
-		client.RestrictToUser(userID)
+		client.RestrictToUser(*userID)
 	} else if !allUsers || (allUsers && !auth.IsAdmin) {
-		client.RestrictToUser(&auth.UserID)
+		client.RestrictToUser(auth.UserID)
 	}
 
 	return client.GetAll()
@@ -457,7 +461,7 @@ func GetUsageByUserID(id string) (*vmModel.Usage, error) {
 
 	usage := &vmModel.Usage{}
 
-	currentVms, err := vmModel.New().RestrictToUser(&id).GetAll()
+	currentVms, err := vmModel.New().RestrictToUser(id).GetAll()
 	if err != nil {
 		return nil, makeError(err)
 	}

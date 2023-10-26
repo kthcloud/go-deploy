@@ -95,6 +95,10 @@ type Environment struct {
 
 	Roles []role.Role `yaml:"roles"`
 
+	Metrics struct {
+		Interval int `yaml:"interval"`
+	}
+
 	Keycloak struct {
 		Url           string `yaml:"url"`
 		Realm         string `yaml:"realm"`
@@ -106,7 +110,7 @@ type Environment struct {
 	} `yaml:"keycloak"`
 
 	DB struct {
-		Url  string `yaml:"url"`
+		URL  string `yaml:"url"`
 		Name string `yaml:"name"`
 	} `yaml:"db"`
 
@@ -117,7 +121,7 @@ type Environment struct {
 	} `yaml:"cs"`
 
 	Landing struct {
-		Url      string `yaml:"url"`
+		URL      string `yaml:"url"`
 		User     string `yaml:"user"`
 		Password string `yaml:"password"`
 		ClientID string `yaml:"clientId"`

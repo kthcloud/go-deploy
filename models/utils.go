@@ -13,11 +13,24 @@ import (
 	"time"
 )
 
+type Resource interface {
+}
+
+type onlyID struct {
+	ID string `bson:"id"`
+}
+
+var UniqueConstraintErr = errors.New("unique constraint error")
+
 func AddIfNotNil(data *bson.D, key string, value interface{}) {
 	if value == nil || (reflect.ValueOf(value).Kind() == reflect.Ptr && reflect.ValueOf(value).IsNil()) {
 		return
 	}
 	*data = append(*data, bson.E{Key: key, Value: value})
+}
+
+func IsDuplicateKeyError(err error) bool {
+	return err != nil && err.Error() == "E11000 duplicate key error"
 }
 
 func addExcludeDeleted(filter bson.D) bson.D {
@@ -30,14 +43,12 @@ func addExcludeDeleted(filter bson.D) bson.D {
 	return filter
 }
 
-func GetResource[T any](collection *mongo.Collection, filter bson.D, includeDeleted bool, extraFilter *bson.D) (*T, error) {
+func GetResource[T Resource](collection *mongo.Collection, filter bson.D, includeDeleted bool, extraFilter bson.D) (*T, error) {
 	if !includeDeleted {
 		filter = addExcludeDeleted(filter)
 	}
 
-	if extraFilter != nil {
-		filter = append(filter, *extraFilter...)
-	}
+	filter = append(filter, extraFilter...)
 
 	var res T
 	err := collection.FindOne(context.TODO(), filter).Decode(&res)
@@ -51,14 +62,12 @@ func GetResource[T any](collection *mongo.Collection, filter bson.D, includeDele
 	return &res, nil
 }
 
-func GetManyResources[T any](collection *mongo.Collection, filter bson.D, includeDeleted bool, pagination *base.Pagination, extraFilter *bson.D) ([]T, error) {
+func GetManyResources[T any](collection *mongo.Collection, filter bson.D, includeDeleted bool, pagination *base.Pagination, extraFilter bson.D) ([]T, error) {
 	if !includeDeleted {
 		filter = addExcludeDeleted(filter)
 	}
 
-	if extraFilter != nil {
-		filter = append(filter, *extraFilter...)
-	}
+	filter = append(filter, extraFilter...)
 
 	var findOptions *options.FindOptions
 	if pagination != nil {
@@ -96,14 +105,12 @@ func GetManyResources[T any](collection *mongo.Collection, filter bson.D, includ
 	return res, nil
 }
 
-func CountResources(collection *mongo.Collection, filter bson.D, includeDeleted bool, extraFilter *bson.D) (int, error) {
+func CountResources(collection *mongo.Collection, filter bson.D, includeDeleted bool, extraFilter bson.D) (int, error) {
 	if !includeDeleted {
 		filter = addExcludeDeleted(filter)
 	}
 
-	if extraFilter != nil {
-		filter = append(filter, *extraFilter...)
-	}
+	filter = append(filter, extraFilter...)
 
 	count, err := collection.CountDocuments(context.Background(), filter)
 	if err != nil {
@@ -112,14 +119,62 @@ func CountResources(collection *mongo.Collection, filter bson.D, includeDeleted 
 	return int(count), nil
 }
 
-func UpdateOneResource(collection *mongo.Collection, filter bson.D, update bson.D, includeDeleted bool, extraFilter *bson.D) error {
+func CountDistinctResources(collection *mongo.Collection, field string, filter bson.D, includeDeleted bool, extraFilter bson.D) (int, error) {
 	if !includeDeleted {
 		filter = addExcludeDeleted(filter)
 	}
 
-	if extraFilter != nil {
-		filter = append(filter, *extraFilter...)
+	filter = append(filter, extraFilter...)
+
+	count, err := collection.Distinct(context.Background(), field, filter)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count resources. details: %w", err)
 	}
+	return len(count), nil
+}
+
+func CreateIfUniqueResource[T Resource](collection *mongo.Collection, id string, data *T, field bson.D, includeDeleted bool, extraFilter bson.D) error {
+	if !includeDeleted {
+		field = addExcludeDeleted(field)
+	}
+
+	field = append(field, extraFilter...)
+	result, err := collection.UpdateOne(context.TODO(), field, bson.D{
+		{"$setOnInsert", data},
+	}, options.Update().SetUpsert(true))
+	if err != nil {
+		return fmt.Errorf("failed to create unique resource. details: %w", err)
+	}
+
+	if result.UpsertedCount == 0 {
+		if result.MatchedCount == 1 {
+			fetched, err := GetResource[onlyID](collection, field, includeDeleted, extraFilter)
+			if err != nil {
+				return err
+			}
+
+			if fetched == nil {
+				utils.PrettyPrintError(fmt.Errorf("failed to fetch resource after creation. assuming it was deleted"))
+				return nil
+			}
+
+			if fetched.ID == id {
+				return nil
+			}
+		}
+
+		return UniqueConstraintErr
+	}
+
+	return nil
+}
+
+func UpdateOneResource(collection *mongo.Collection, filter bson.D, update bson.D, includeDeleted bool, extraFilter bson.D) error {
+	if !includeDeleted {
+		filter = addExcludeDeleted(filter)
+	}
+
+	filter = append(filter, extraFilter...)
 
 	_, err := collection.UpdateOne(context.Background(), filter, update)
 	if err != nil {

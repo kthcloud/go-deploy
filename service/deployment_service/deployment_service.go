@@ -367,6 +367,10 @@ func GetByIdAuth(id string, auth *service.AuthInfo) (*deploymentModel.Deployment
 	return deployment, nil
 }
 
+func GetByID(id string) (*deploymentModel.Deployment, error) {
+	return deploymentModel.New().GetByID(id)
+}
+
 func GetManyAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagination *query.Pagination) ([]deploymentModel.Deployment, error) {
 	client := deploymentModel.New()
 
@@ -378,12 +382,12 @@ func GetManyAuth(allUsers bool, userID *string, auth *service.AuthInfo, paginati
 		if *userID != auth.UserID && !auth.IsAdmin {
 			return nil, nil
 		}
-		client.RestrictToUser(userID)
+		client.RestrictToUser(*userID)
 	} else if !allUsers || (allUsers && !auth.IsAdmin) {
-		client.RestrictToUser(&auth.UserID)
+		client.RestrictToUser(auth.UserID)
 	}
 
-	return client.GetMany()
+	return client.GetAll()
 }
 
 func GetAll() ([]deploymentModel.Deployment, error) {

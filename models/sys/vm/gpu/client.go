@@ -17,7 +17,7 @@ func New() *Client {
 		ExcludedHosts: make([]string, 0),
 		ExcludedGPUs:  make([]string, 0),
 		ResourceClient: resource.ResourceClient[GPU]{
-			Collection: models.GpuCollection,
+			Collection: models.DB.GetCollection("gpus"),
 		},
 	}
 }
@@ -35,7 +35,7 @@ func NewWithExclusion(excludedHosts []string, excludedGPUs []string) *Client {
 		ExcludedHosts: excludedHosts,
 		ExcludedGPUs:  excludedGPUs,
 		ResourceClient: resource.ResourceClient[GPU]{
-			Collection: models.GpuCollection,
+			Collection: models.DB.GetCollection("gpus"),
 		},
 	}
 }

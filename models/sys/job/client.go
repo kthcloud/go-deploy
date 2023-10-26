@@ -15,7 +15,7 @@ type Client struct {
 func New() *Client {
 	return &Client{
 		ResourceClient: resource.ResourceClient[Job]{
-			Collection:     models.JobCollection,
+			Collection:     models.DB.GetCollection("jobs"),
 			IncludeDeleted: false,
 			Pagination:     nil,
 		},
@@ -23,7 +23,7 @@ func New() *Client {
 }
 
 func (client *Client) AddFilter(filter bson.D) *Client {
-	client.ExtraFilter = &filter
+	client.ExtraFilter = filter
 
 	return client
 }
@@ -37,12 +37,9 @@ func (client *Client) AddPagination(page, pageSize int) *Client {
 	return client
 }
 
-func (client *Client) AddRestrictedUser(restrictUserID *string) *Client {
-	if restrictUserID != nil {
-		client.ExtraFilter = &bson.D{{"userId", *restrictUserID}}
-	}
-
-	client.RestrictUserID = restrictUserID
+func (client *Client) RestrictToUser(restrictUserID string) *Client {
+	client.ExtraFilter = append(client.ExtraFilter, bson.E{Key: "userId", Value: restrictUserID})
+	client.RestrictUserID = &restrictUserID
 
 	return client
 }

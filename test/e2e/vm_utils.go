@@ -5,7 +5,7 @@ import (
 	"github.com/helloyi/go-sshclient"
 	"github.com/stretchr/testify/assert"
 	"go-deploy/models/dto/body"
-	"go-deploy/pkg/status_codes"
+	status_codes2 "go-deploy/pkg/app/status_codes"
 	"net/http"
 	"strings"
 	"testing"
@@ -17,7 +17,7 @@ func WaitForVmRunning(t *testing.T, id string, callback func(*body.VmRead) bool)
 		err := ReadResponseBody(t, resp, &vmRead)
 		assert.NoError(t, err, "vm was not fetched")
 
-		if vmRead.Status == status_codes.GetMsg(status_codes.ResourceRunning) {
+		if vmRead.Status == status_codes2.GetMsg(status_codes2.ResourceRunning) {
 			if callback == nil || callback(&vmRead) {
 				return true
 			}

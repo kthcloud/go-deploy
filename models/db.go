@@ -11,19 +11,25 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var DeploymentCollection *mongo.Collection
-var StorageManagerCollection *mongo.Collection
-var VmCollection *mongo.Collection
-var GpuCollection *mongo.Collection
-var UserCollection *mongo.Collection
-var JobCollection *mongo.Collection
-var NotificationCollection *mongo.Collection
+var DB DbType
+
+type DbType struct {
+	CollectionMap map[string]*mongo.Collection
+}
+
+func (db *DbType) GetCollection(collectionName string) *mongo.Collection {
+	if db.CollectionMap == nil || db.CollectionMap[collectionName] == nil {
+		log.Fatalln("collection " + collectionName + " not found")
+	}
+
+	return db.CollectionMap[collectionName]
+}
 
 var client *mongo.Client
 
 func getUri() string {
 	// this function is kept to allow easy switch from connString -> username + password + url etc.
-	return conf.Env.DB.Url
+	return conf.Env.DB.URL
 }
 
 func Setup() {
@@ -31,7 +37,7 @@ func Setup() {
 		return fmt.Errorf("failed to setup database. details: %w", err)
 	}
 
-	// Connect to db
+	// Connect to mongodb
 	uri := getUri()
 	clientResult, err := mongo.NewClient(options.Client().ApplyURI(uri))
 	if err != nil {
@@ -53,19 +59,62 @@ func Setup() {
 	log.Println("successfully connected to database")
 
 	// Find collections
-	DeploymentCollection = findCollection("deployments")
-	StorageManagerCollection = findCollection("storageManagers")
-	VmCollection = findCollection("vms")
-	GpuCollection = findCollection("gpus")
-	UserCollection = findCollection("users")
-	JobCollection = findCollection("jobs")
-	NotificationCollection = findCollection("notifications")
+	DB.CollectionMap = make(map[string]*mongo.Collection)
+
+	collections := []string{
+		"deployments",
+		"storageManagers",
+		"vms",
+		"gpus",
+		"users",
+		"teams",
+		"jobs",
+		"notifications",
+		"events",
+	}
+
+	for _, collectionName := range collections {
+		log.Println("found collection " + collectionName)
+		DB.CollectionMap[collectionName] = client.Database(conf.Env.DB.Name).Collection(collectionName)
+	}
+
+	// create unique indexes
+	uniqueIndexes := map[string][]string{
+		"deployments":     {"id"},
+		"storageManagers": {"id"},
+		"vms":             {"id"},
+		"gpus":            {"id"},
+		"users":           {"id"},
+		"teams":           {"id"},
+		"jobs":            {"id"},
+		"notifications":   {"id"},
+		"events":          {"id"},
+	}
+
+	for collectionName, fieldNames := range uniqueIndexes {
+		for _, fieldName := range fieldNames {
+			err = createUniqueIndex(DB.GetCollection(collectionName), fieldName)
+			if err != nil {
+				log.Fatalln(makeError(err))
+			}
+		}
+	}
 }
 
-func findCollection(collectionName string) *mongo.Collection {
-	collection := client.Database(conf.Env.DB.Name).Collection(collectionName)
-	log.Println("found collection " + collectionName)
-	return collection
+func createUniqueIndex(collection *mongo.Collection, fieldName string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to create unique index on collection %s. details: %w", collection.Name(), err)
+	}
+
+	_, err := collection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
+		Keys:    map[string]int{fieldName: 1},
+		Options: options.Index().SetUnique(true),
+	})
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
 }
 
 func Shutdown() {
@@ -73,11 +122,7 @@ func Shutdown() {
 		return fmt.Errorf("failed to shutdown database. details: %w", err)
 	}
 
-	DeploymentCollection = nil
-	VmCollection = nil
-	GpuCollection = nil
-	UserCollection = nil
-	JobCollection = nil
+	DB.CollectionMap = nil
 
 	err := client.Disconnect(context.Background())
 	if err != nil {

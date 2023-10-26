@@ -12,7 +12,7 @@ import (
 
 func SynchronizeGPUs() {
 	client, err := landing.New(&landing.ClientConf{
-		URL:      conf.Env.Landing.Url,
+		URL:      conf.Env.Landing.URL,
 		Username: conf.Env.Landing.User,
 		Password: conf.Env.Landing.Password,
 

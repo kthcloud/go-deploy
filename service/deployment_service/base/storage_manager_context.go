@@ -15,7 +15,7 @@ type StorageManagerContext struct {
 }
 
 func NewStorageManagerBaseContext(id string) (*StorageManagerContext, error) {
-	storageManager, err := storage_manager.GetByID(id)
+	storageManager, err := storage_manager.New().GetByID(id)
 	if err != nil {
 		return nil, err
 	}

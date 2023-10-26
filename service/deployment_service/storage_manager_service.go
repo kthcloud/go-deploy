@@ -10,10 +10,10 @@ import (
 
 func GetAllStorageManagers(auth *service.AuthInfo) ([]storage_manager.StorageManager, error) {
 	if auth.IsAdmin {
-		return storage_manager.GetAll()
+		return storage_manager.New().GetAll()
 	}
 
-	ownerStorageManager, err := storage_manager.GetByOwnerID(auth.UserID)
+	ownerStorageManager, err := storage_manager.New().RestrictToUser(auth.UserID).GetOne()
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch storage manager. details: %w", err)
 	}
@@ -30,7 +30,7 @@ func GetStorageManagerByOwnerID(ownerID string, auth *service.AuthInfo) (*storag
 		return nil, nil
 	}
 
-	storageManager, err := storage_manager.GetByOwnerID(ownerID)
+	storageManager, err := storage_manager.New().RestrictToUser(ownerID).GetOne()
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch storage manager. details: %w", err)
 	}
@@ -43,7 +43,7 @@ func GetStorageManagerByOwnerID(ownerID string, auth *service.AuthInfo) (*storag
 }
 
 func GetStorageManagerByID(id string, auth *service.AuthInfo) (*storage_manager.StorageManager, error) {
-	storageManager, err := storage_manager.GetByID(id)
+	storageManager, err := storage_manager.New().GetByID(id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch storage manager. details: %w", err)
 	}
@@ -64,7 +64,7 @@ func CreateStorageManager(id string, params *storage_manager.CreateParams) error
 		return makeErr(fmt.Errorf("params is nil"))
 	}
 
-	id, err := storage_manager.CreateStorageManager(id, params)
+	id, err := storage_manager.New().CreateStorageManager(id, params)
 	if err != nil {
 		return makeErr(err)
 	}
@@ -89,7 +89,7 @@ func DeleteStorageManager(id string) error {
 		return makeErr(err)
 	}
 
-	err = storage_manager.DeleteStorageManager(id)
+	err = storage_manager.New().DeleteByID(id)
 	if err != nil {
 		return makeErr(err)
 	}
@@ -107,7 +107,7 @@ func RepairStorageManager(id string) error {
 		return fmt.Errorf("failed to repair storage manager. details: %w", err)
 	}
 
-	storageManager, err := storage_manager.GetByID(id)
+	storageManager, err := storage_manager.New().GetByID(id)
 	if err != nil {
 		return makeErr(err)
 	}

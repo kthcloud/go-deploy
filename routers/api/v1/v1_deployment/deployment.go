@@ -10,7 +10,7 @@ import (
 	deploymentModels "go-deploy/models/sys/deployment"
 	jobModel "go-deploy/models/sys/job"
 	zoneModel "go-deploy/models/sys/zone"
-	"go-deploy/pkg/status_codes"
+	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"

@@ -25,7 +25,7 @@ func Exists(id string, auth *service.AuthInfo) (bool, error) {
 	client := jobModel.New()
 
 	if !auth.IsAdmin {
-		client.AddRestrictedUser(&auth.UserID)
+		client.RestrictToUser(auth.UserID)
 	}
 
 	return client.ExistsByID(id)
@@ -34,7 +34,7 @@ func Exists(id string, auth *service.AuthInfo) (bool, error) {
 func GetByID(jobID string, auth *service.AuthInfo) (*jobModel.Job, error) {
 	client := jobModel.New()
 	if !auth.IsAdmin {
-		client.AddRestrictedUser(&auth.UserID)
+		client.RestrictToUser(auth.UserID)
 	}
 
 	return client.GetByID(jobID)
@@ -51,9 +51,9 @@ func GetMany(allUsers bool, userID, jobType *string, status *string, auth *servi
 		if *userID != auth.UserID && !auth.IsAdmin {
 			return nil, nil
 		}
-		client.AddRestrictedUser(userID)
+		client.RestrictToUser(*userID)
 	} else if !allUsers || (allUsers && !auth.IsAdmin) {
-		client.AddRestrictedUser(&auth.UserID)
+		client.RestrictToUser(auth.UserID)
 	}
 
 	return client.GetMany(jobType, status)
@@ -63,7 +63,7 @@ func Update(id string, jobUpdateDTO *body.JobUpdate, auth *service.AuthInfo) err
 	client := jobModel.New()
 
 	if !auth.IsAdmin {
-		client.AddRestrictedUser(&auth.UserID)
+		client.RestrictToUser(auth.UserID)
 	}
 
 	var params jobModel.UpdateParams

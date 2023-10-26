@@ -8,7 +8,7 @@ import (
 	"go-deploy/models/dto/query"
 	"go-deploy/models/dto/uri"
 	jobModel "go-deploy/models/sys/job"
-	"go-deploy/pkg/status_codes"
+	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/deployment_service"
