@@ -5,22 +5,29 @@ import (
 	"fmt"
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
-	userModel "go-deploy/models/sys/user"
-	teamModel "go-deploy/models/sys/user/team"
+	deploymentModel "go-deploy/models/sys/deployment"
+	userModels "go-deploy/models/sys/user"
+	teamModels "go-deploy/models/sys/user/team"
+	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/service"
+	"go-deploy/utils"
 	"golang.org/x/exp/maps"
+	"time"
 )
 
 var TeamNameTakenErr = fmt.Errorf("team name taken")
+var TeamNotFoundErr = fmt.Errorf("team not found")
 
-func CreateTeam(id string, dtoCreateTeam *body.TeamCreate) (*teamModel.Team, error) {
-	params := &teamModel.CreateParams{}
-	params.FromDTO(dtoCreateTeam)
+func CreateTeam(id, ownerID string, dtoCreateTeam *body.TeamCreate, auth *service.AuthInfo) (*teamModels.Team, error) {
+	params := &teamModels.CreateParams{}
+	params.FromDTO(dtoCreateTeam, func(resourceID string) *teamModels.Resource {
+		return getResourceIfAccessible(ownerID, resourceID, auth)
+	})
 
-	teamClient := teamModel.New()
-	team, err := teamClient.Create(id, params)
+	teamClient := teamModels.New()
+	team, err := teamClient.Create(id, ownerID, params)
 	if err != nil {
-		if errors.Is(err, teamModel.NameTaken) {
+		if errors.Is(err, teamModels.NameTakenErr) {
 			return nil, TeamNameTakenErr
 		}
 		return nil, err
@@ -29,8 +36,8 @@ func CreateTeam(id string, dtoCreateTeam *body.TeamCreate) (*teamModel.Team, err
 	return team, nil
 }
 
-func GetTeamByIdAuth(id string, auth *service.AuthInfo) (*teamModel.Team, error) {
-	teamClient := teamModel.New()
+func GetTeamByIdAuth(id string, auth *service.AuthInfo) (*teamModels.Team, error) {
+	teamClient := teamModels.New()
 	team, err := teamClient.GetByID(id)
 	if err != nil {
 		return nil, err
@@ -47,9 +54,9 @@ func GetTeamByIdAuth(id string, auth *service.AuthInfo) (*teamModel.Team, error)
 	return team, nil
 }
 
-func GetTeamListAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagination *query.Pagination) ([]teamModel.Team, error) {
-	teamClient := teamModel.New()
-	userClient := userModel.New()
+func GetTeamListAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagination *query.Pagination) ([]teamModels.Team, error) {
+	teamClient := teamModels.New()
+	userClient := userModels.New()
 
 	if pagination != nil {
 		teamClient.AddPagination(pagination.Page, pagination.PageSize)
@@ -87,8 +94,8 @@ func GetTeamListAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagi
 	return teamClient.GetAll()
 }
 
-func UpdateTeamAuth(id string, dtoUpdateTeam *body.TeamUpdate, auth *service.AuthInfo) (*teamModel.Team, error) {
-	teamClient := teamModel.New()
+func UpdateTeamAuth(id string, dtoUpdateTeam *body.TeamUpdate, auth *service.AuthInfo) (*teamModels.Team, error) {
+	teamClient := teamModels.New()
 
 	team, err := teamClient.GetByID(id)
 	if err != nil {
@@ -96,26 +103,37 @@ func UpdateTeamAuth(id string, dtoUpdateTeam *body.TeamUpdate, auth *service.Aut
 	}
 
 	if team == nil {
+		return nil, TeamNotFoundErr
+	}
+
+	if team.OwnerID != auth.UserID && !auth.IsAdmin && !team.HasMember(auth.UserID) {
 		return nil, nil
 	}
 
-	if !auth.IsAdmin && !team.HasMember(auth.UserID) {
-		return nil, nil
-	}
-
-	params := &teamModel.UpdateParams{}
-	params.FromDTO(dtoUpdateTeam)
+	params := &teamModels.UpdateParams{}
+	params.FromDTO(dtoUpdateTeam, func(resourceID string) *teamModels.Resource {
+		return getResourceIfAccessible(team.OwnerID, resourceID, auth)
+	})
 
 	err = teamClient.UpdateWithParamsByID(id, params)
 	if err != nil {
 		return nil, err
 	}
 
-	return teamClient.GetByID(id)
+	afterUpdate, err := teamClient.GetByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if afterUpdate == nil {
+		return nil, TeamNotFoundErr
+	}
+
+	return afterUpdate, nil
 }
 
 func DeleteTeamAuth(id string, auth *service.AuthInfo) error {
-	teamClient := teamModel.New()
+	teamClient := teamModels.New()
 
 	team, err := teamClient.GetByID(id)
 	if err != nil {
@@ -131,4 +149,46 @@ func DeleteTeamAuth(id string, auth *service.AuthInfo) error {
 	}
 
 	return teamClient.DeleteByID(id)
+}
+
+func getResourceIfAccessible(userID string, resourceID string, auth *service.AuthInfo) *teamModels.Resource {
+	// try to fetch deployment
+	dClient := deploymentModel.New()
+	vClient := vmModel.New()
+
+	if !auth.IsAdmin {
+		dClient.RestrictToUser(userID)
+		vClient.RestrictToUser(userID)
+	}
+
+	isOwner, err := dClient.ExistsByID(resourceID)
+	if err != nil {
+		utils.PrettyPrintError(fmt.Errorf("failed to fetch deployment when checking user access when creating team: %w", err))
+		return nil
+	}
+
+	if isOwner {
+		return &teamModels.Resource{
+			ID:      resourceID,
+			Type:    teamModels.ResourceTypeDeployment,
+			AddedAt: time.Now(),
+		}
+	}
+
+	// try to fetch vm
+	isOwner, err = vmModel.New().RestrictToUser(userID).ExistsByID(resourceID)
+	if err != nil {
+		utils.PrettyPrintError(fmt.Errorf("failed to fetch vm when checking user access when creating team: %w", err))
+		return nil
+	}
+
+	if isOwner {
+		return &teamModels.Resource{
+			ID:      resourceID,
+			Type:    teamModels.ResourceTypeVM,
+			AddedAt: time.Now(),
+		}
+	}
+
+	return nil
 }

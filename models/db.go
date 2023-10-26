@@ -67,6 +67,7 @@ func Setup() {
 		"vms",
 		"gpus",
 		"users",
+		"teams",
 		"jobs",
 		"notifications",
 		"events",
@@ -76,6 +77,44 @@ func Setup() {
 		log.Println("found collection " + collectionName)
 		DB.CollectionMap[collectionName] = client.Database(conf.Env.DB.Name).Collection(collectionName)
 	}
+
+	// create unique indexes
+	uniqueIndexes := map[string][]string{
+		"deployments":     {"id"},
+		"storageManagers": {"id"},
+		"vms":             {"id"},
+		"gpus":            {"id"},
+		"users":           {"id"},
+		"teams":           {"id"},
+		"jobs":            {"id"},
+		"notifications":   {"id"},
+		"events":          {"id"},
+	}
+
+	for collectionName, fieldNames := range uniqueIndexes {
+		for _, fieldName := range fieldNames {
+			err = createUniqueIndex(DB.GetCollection(collectionName), fieldName)
+			if err != nil {
+				log.Fatalln(makeError(err))
+			}
+		}
+	}
+}
+
+func createUniqueIndex(collection *mongo.Collection, fieldName string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to create unique index on collection %s. details: %w", collection.Name(), err)
+	}
+
+	_, err := collection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
+		Keys:    map[string]int{fieldName: 1},
+		Options: options.Index().SetUnique(true),
+	})
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
 }
 
 func Shutdown() {

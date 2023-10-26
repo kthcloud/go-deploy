@@ -29,6 +29,10 @@ func (client *ResourceClient[T]) ExistsByID(id string) (bool, error) {
 	return count > 0, nil
 }
 
+func (client *ResourceClient[T]) CreateIfUnique(id string, resource *T, field bson.D) error {
+	return models.CreateIfUniqueResource[T](client.Collection, id, resource, field, client.IncludeDeleted, client.ExtraFilter)
+}
+
 func (client *ResourceClient[T]) UpdateWithBsonByID(id string, update bson.D) error {
 	return models.UpdateOneResource(client.Collection, bson.D{{"id", id}}, update, client.IncludeDeleted, client.ExtraFilter)
 }

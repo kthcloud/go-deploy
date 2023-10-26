@@ -6,11 +6,15 @@ import (
 	"go-deploy/service"
 )
 
-func GetByID(userID string, auth *service.AuthInfo) (*userModel.User, error) {
+func GetByIdAuth(userID string, auth *service.AuthInfo) (*userModel.User, error) {
 	if userID != auth.UserID && !auth.IsAdmin {
 		return nil, nil
 	}
 
+	return userModel.New().GetByID(userID)
+}
+
+func GetByID(userID string) (*userModel.User, error) {
 	return userModel.New().GetByID(userID)
 }
 

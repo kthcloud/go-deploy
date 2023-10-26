@@ -194,6 +194,10 @@ func GetByIdAuth(id string, auth *service.AuthInfo) (*vmModel.VM, error) {
 	return vm, nil
 }
 
+func GetByID(id string) (*vmModel.VM, error) {
+	return vmModel.New().GetByID(id)
+}
+
 func GetByName(name string) (*vmModel.VM, error) {
 	return vmModel.New().GetByName(name)
 }

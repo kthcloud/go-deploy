@@ -6,7 +6,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type ResourceClient[T any] struct {
+type Resource interface {
+}
+
+type ResourceClient[T Resource] struct {
 	Collection     *mongo.Collection
 	IncludeDeleted bool
 	Pagination     *base.Pagination
