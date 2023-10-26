@@ -59,6 +59,15 @@ definitions:
           type: string
         type: array
     type: object
+  body.BindingError:
+    properties:
+      validationErrors:
+        additionalProperties:
+          items:
+            type: string
+          type: array
+        type: object
+    type: object
   body.CiConfig:
     properties:
       config:
@@ -87,6 +96,10 @@ definitions:
         type: array
       github:
         $ref: '#/definitions/body.GitHub'
+      healthCheckPath:
+        maxLength: 1000
+        minLength: 0
+        type: string
       image:
         maxLength: 1000
         minLength: 1
@@ -123,6 +136,8 @@ definitions:
     type: object
   body.DeploymentRead:
     properties:
+      customDomainUrl:
+        type: string
       envs:
         items:
           $ref: '#/definitions/body.Env'
@@ -176,6 +191,10 @@ definitions:
         maxItems: 1000
         minItems: 0
         type: array
+      healthCheckPath:
+        maxLength: 1000
+        minLength: 0
+        type: string
       image:
         maxLength: 1000
         minLength: 1
@@ -288,10 +307,29 @@ definitions:
         - finished
         type: string
     type: object
+  body.NotificationRead:
+    properties:
+      content:
+        additionalProperties: true
+        type: object
+      id:
+        type: string
+      readAt:
+        type: string
+      type:
+        type: string
+    type: object
+  body.NotificationUpdate:
+    properties:
+      readAt:
+        type: string
+    type: object
   body.Port:
     properties:
       externalPort:
         type: integer
+      httpProxy:
+        $ref: '#/definitions/body.VmHttpProxy'
       name:
         maxLength: 100
         minLength: 1
@@ -374,6 +412,113 @@ definitions:
         type: string
       zone:
         type: string
+    type: object
+  body.TeamCreate:
+    properties:
+      description:
+        maxLength: 1000
+        type: string
+      members:
+        items:
+          $ref: '#/definitions/body.TeamMemberCreate'
+        maxItems: 10
+        minItems: 0
+        type: array
+      name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      resources:
+        items:
+          type: string
+        maxItems: 10
+        minItems: 0
+        type: array
+    required:
+    - name
+    type: object
+  body.TeamMember:
+    properties:
+      email:
+        type: string
+      id:
+        type: string
+      joinedAt:
+        type: string
+      teamRole:
+        type: string
+      username:
+        type: string
+    type: object
+  body.TeamMemberCreate:
+    properties:
+      id:
+        type: string
+      teamRole:
+        description: default to MemberRoleAdmin right now
+        type: string
+    required:
+    - id
+    type: object
+  body.TeamMemberUpdate:
+    properties:
+      id:
+        type: string
+      teamRole:
+        description: default to MemberRoleAdmin right now
+        type: string
+    required:
+    - id
+    type: object
+  body.TeamRead:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      members:
+        items:
+          $ref: '#/definitions/body.TeamMember'
+        type: array
+      name:
+        type: string
+      ownerId:
+        type: string
+      resources:
+        items:
+          $ref: '#/definitions/body.TeamResource'
+        type: array
+    type: object
+  body.TeamResource:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      type:
+        type: string
+    type: object
+  body.TeamUpdate:
+    properties:
+      description:
+        maxLength: 1000
+        type: string
+      members:
+        items:
+          $ref: '#/definitions/body.TeamMemberUpdate'
+        maxItems: 10
+        minItems: 0
+        type: array
+      name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      resources:
+        items:
+          type: string
+        maxItems: 10
+        minItems: 0
+        type: array
     type: object
   body.UserRead:
     properties:
@@ -482,6 +627,23 @@ definitions:
         type: string
       name:
         type: string
+    type: object
+  body.VmHttpProxy:
+    properties:
+      customDomain:
+        maxLength: 253
+        minLength: 1
+        type: string
+      customDomainUrl:
+        type: string
+      name:
+        maxLength: 30
+        minLength: 3
+        type: string
+      url:
+        type: string
+    required:
+    - name
     type: object
   body.VmRead:
     properties:
@@ -592,6 +754,8 @@ definitions:
       gpuLeaseDuration:
         description: in hours
         type: number
+      useCustomDomains:
+        type: boolean
       useGPUs:
         type: boolean
       usePrivilegedGPUs:
@@ -653,22 +817,22 @@ definitions:
 info:
   contact: {}
 paths:
-  /api/v1/deployments:
+  /deployments:
     get:
       consumes:
       - application/json
       description: Get list of deployments
       parameters:
-      - description: With the bearer started
+      - description: Bearer token
         in: header
         name: Authorization
         required: true
         type: string
-      - description: Get all deployments
+      - description: Get all
         in: query
         name: all
         type: boolean
-      - description: Get deployments by user ID
+      - description: Filter by user id
         in: query
         name: userId
         type: string
@@ -678,7 +842,7 @@ paths:
         type: integer
       - description: Number of items per page
         in: query
-        name: perPage
+        name: pageSize
         type: integer
       produces:
       - application/json
@@ -705,7 +869,7 @@ paths:
       - application/json
       description: Create deployment
       parameters:
-      - description: With the bearer started
+      - description: Bearer token
         in: header
         name: Authorization
         required: true
@@ -734,13 +898,13 @@ paths:
       summary: Create deployment
       tags:
       - Deployment
-  /api/v1/deployments/{deployment_id}:
+  /deployments/{deployment_id}:
     get:
       consumes:
       - application/json
       description: Get deployment by id
       parameters:
-      - description: With the bearer started
+      - description: Bearer token
         in: header
         name: Authorization
         required: true
@@ -768,13 +932,13 @@ paths:
       summary: Get deployment by id
       tags:
       - Deployment
-  /api/v1/deployments/{deploymentId}:
+  /deployments/{deploymentId}:
     delete:
       consumes:
       - application/json
       description: Delete deployment
       parameters:
-      - description: With the bearer started
+      - description: Bearer token
         in: header
         name: Authorization
         required: true
@@ -815,7 +979,7 @@ paths:
       - application/json
       description: Update deployment
       parameters:
-      - description: With the bearer started
+      - description: Bearer token
         in: header
         name: Authorization
         required: true
@@ -849,7 +1013,7 @@ paths:
       summary: Update deployment
       tags:
       - Deployment
-  /api/v1/deployments/{deploymentId}/ciConfig:
+  /deployments/{deploymentId}/ciConfig:
     get:
       consumes:
       - application/json
@@ -878,7 +1042,7 @@ paths:
       summary: Get CI config
       tags:
       - Deployment
-  /api/v1/deployments/{deploymentId}/command:
+  /deployments/{deploymentId}/command:
     post:
       consumes:
       - application/json
@@ -921,7 +1085,7 @@ paths:
       summary: Do command
       tags:
       - Deployment
-  /api/v1/github/repositories:
+  /github/repositories:
     get:
       consumes:
       - application/json
@@ -941,28 +1105,36 @@ paths:
       summary: Get GitHub repositories
       tags:
       - GitHub
-  /api/v1/job:
+  /job:
     get:
       consumes:
       - application/json
       description: Get list of jobs
       parameters:
-      - description: Get all jobs
+      - description: Get all
         in: query
         name: all
         type: boolean
-      - description: User ID
+      - description: Filter by user id
         in: query
         name: userId
         type: string
-      - description: Job type
+      - description: Filter by type
         in: query
         name: type
         type: string
-      - description: Job status
+      - description: Filter by status
         in: query
         name: status
         type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        type: integer
       produces:
       - application/json
       responses:
@@ -975,7 +1147,7 @@ paths:
       summary: Get list of jobs
       tags:
       - Job
-  /api/v1/job/{id}:
+  /job/{id}:
     get:
       consumes:
       - application/json
@@ -1022,13 +1194,126 @@ paths:
       summary: Update job
       tags:
       - Job
-  /api/v1/storageManager/{storageManagerId}:
+  /notifications:
+    get:
+      consumes:
+      - application/json
+      description: Get notifications
+      parameters:
+      - description: Get all notifications
+        in: query
+        name: all
+        type: boolean
+      - description: Get notifications by user id
+        in: query
+        name: userId
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/body.NotificationRead'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: Get notifications
+      tags:
+      - Notification
+  /notifications/{notificationId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete notification
+      parameters:
+      - description: Notification ID
+        in: path
+        name: notificationId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: Delete notification
+      tags:
+      - Notification
+    get:
+      consumes:
+      - application/json
+      description: Get notification
+      parameters:
+      - description: Notification ID
+        in: path
+        name: notificationId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.NotificationRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: Get notification
+      tags:
+      - Notification
+    post:
+      consumes:
+      - application/json
+      description: Update notification
+      parameters:
+      - description: Notification ID
+        in: path
+        name: notificationId
+        required: true
+        type: string
+      - description: Notification update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/body.NotificationUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: Update notification
+      tags:
+      - Notification
+  /storageManager/{storageManagerId}:
     get:
       consumes:
       - application/json
       description: Delete storage manager
       parameters:
-      - description: With the bearer started
+      - description: Bearer token
         in: header
         name: Authorization
         required: true
@@ -1064,13 +1349,13 @@ paths:
       summary: Delete storage manager
       tags:
       - Deployment
-  /api/v1/storageManagers:
+  /storageManagers:
     get:
       consumes:
       - application/json
       description: Get storage manager list
       parameters:
-      - description: With the bearer started
+      - description: Bearer token
         in: header
         name: Authorization
         required: true
@@ -1099,13 +1384,13 @@ paths:
       summary: Get storage manager list
       tags:
       - Deployment
-  /api/v1/storageManagers/{storageManagerId}:
+  /storageManagers/{storageManagerId}:
     get:
       consumes:
       - application/json
       description: Get storage manager
       parameters:
-      - description: With the bearer started
+      - description: Bearer token
         in: header
         name: Authorization
         required: true
@@ -1141,7 +1426,167 @@ paths:
       summary: Get storage manager
       tags:
       - Deployment
-  /api/v1/user/auth-check:
+  /teams:
+    get:
+      consumes:
+      - application/json
+      description: Get team list
+      parameters:
+      - description: All teams
+        in: query
+        name: all
+        type: boolean
+      - description: User ID
+        in: query
+        name: userId
+        type: string
+      - description: Page
+        in: query
+        name: page
+        type: integer
+      - description: Page Size
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/body.TeamRead'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/body.BindingError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: Get team list
+      tags:
+      - Team
+    post:
+      consumes:
+      - application/json
+      description: Create team
+      parameters:
+      - description: Team
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/body.TeamCreate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.TeamRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/body.BindingError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: Create team
+      tags:
+      - Team
+  /teams/{teamId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete team
+      parameters:
+      - description: Team ID
+        in: path
+        name: teamId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/body.BindingError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: Delete team
+      tags:
+      - Team
+    get:
+      consumes:
+      - application/json
+      description: Get team
+      parameters:
+      - description: Team ID
+        in: path
+        name: teamId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.TeamRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/body.BindingError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: Get team
+      tags:
+      - Team
+    put:
+      consumes:
+      - application/json
+      description: Update team
+      parameters:
+      - description: Team ID
+        in: path
+        name: teamId
+        required: true
+        type: string
+      - description: Team
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/body.TeamUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.TeamRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/body.BindingError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: Update team
+      tags:
+      - Team
+  /user/auth-check:
     get:
       consumes:
       - application/json
@@ -1156,7 +1601,7 @@ paths:
       summary: Check auth
       tags:
       - User
-  /api/v1/users:
+  /users:
     get:
       consumes:
       - application/json
@@ -1186,7 +1631,7 @@ paths:
       summary: Get user list
       tags:
       - User
-  /api/v1/users/{userId}:
+  /users/{userId}:
     get:
       consumes:
       - application/json
@@ -1249,17 +1694,17 @@ paths:
       summary: Update user by id
       tags:
       - User
-  /api/v1/vm:
+  /vm:
     get:
       consumes:
       - application/json
       description: Get list of VMs
       parameters:
-      - description: Get all VMs
+      - description: Get all
         in: query
         name: all
         type: boolean
-      - description: Get deployments by user ID
+      - description: Filter by user id
         in: query
         name: userId
         type: string
@@ -1269,7 +1714,7 @@ paths:
         type: integer
       - description: Number of items per page
         in: query
-        name: perPage
+        name: pageSize
         type: integer
       produces:
       - application/json
@@ -1328,7 +1773,7 @@ paths:
       summary: Create VM
       tags:
       - VM
-  /api/v1/vm/{vmId}:
+  /vm/{vmId}:
     delete:
       consumes:
       - application/json
@@ -1406,7 +1851,7 @@ paths:
       - application/json
       description: Update VM
       parameters:
-      - description: With the bearer started
+      - description: Bearer token
         in: header
         name: Authorization
         required: true
@@ -1452,7 +1897,7 @@ paths:
       summary: Update VM
       tags:
       - VM
-  /api/v1/vms/{vmId}/command:
+  /vms/{vmId}/command:
     post:
       consumes:
       - application/json
@@ -1495,13 +1940,13 @@ paths:
       summary: Do command
       tags:
       - VM
-  /api/v1/vms/{vmId}/snapshots:
+  /vms/{vmId}/snapshots:
     get:
       consumes:
       - application/json
       description: Get snapshot list
       parameters:
-      - description: With the bearer started
+      - description: Bearer token
         in: header
         name: Authorization
         required: true
@@ -1539,7 +1984,7 @@ paths:
       summary: Get snapshot list
       tags:
       - VM
-  /api/v1/vms/gpus:
+  /vms/gpus:
     get:
       consumes:
       - application/json

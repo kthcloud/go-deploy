@@ -27,7 +27,9 @@ import (
 // @Produce json
 // @Param teamId path string true "Team ID"
 // @Success 200 {object} body.TeamRead
-// @Failure 400 {object} sys.ErrorResponse
+// @Failure 400 {object} body.BindingError
+// @Failure 500 {object} sys.ErrorResponse
+// @Router /teams/{teamId} [get]
 func GetTeam(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -52,6 +54,20 @@ func GetTeam(c *gin.Context) {
 	context.JSONResponse(http.StatusOK, team.ToDTO(getMember, getResourceName))
 }
 
+// GetTeamList godoc
+// @Summary Get team list
+// @Description Get team list
+// @Tags Team
+// @Accept json
+// @Produce json
+// @Param all query bool false "All teams"
+// @Param userId query string false "User ID"
+// @Param page query int false "Page"
+// @Param pageSize query int false "Page Size"
+// @Success 200 {array} body.TeamRead
+// @Failure 400 {object} body.BindingError
+// @Failure 500 {object} sys.ErrorResponse
+// @Router /teams [get]
 func GetTeamList(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -81,6 +97,17 @@ func GetTeamList(c *gin.Context) {
 	context.JSONResponse(http.StatusOK, teamListDTO)
 }
 
+// CreateTeam godoc
+// @Summary Create team
+// @Description Create team
+// @Tags Team
+// @Accept json
+// @Produce json
+// @Param body body body.TeamCreate true "Team"
+// @Success 200 {object} body.TeamRead
+// @Failure 400 {object} body.BindingError
+// @Failure 500 {object} sys.ErrorResponse
+// @Router /teams [post]
 func CreateTeam(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -110,6 +137,18 @@ func CreateTeam(c *gin.Context) {
 	context.JSONResponse(http.StatusCreated, team.ToDTO(getMember, getResourceName))
 }
 
+// UpdateTeam godoc
+// @Summary Update team
+// @Description Update team
+// @Tags Team
+// @Accept json
+// @Produce json
+// @Param teamId path string true "Team ID"
+// @Param body body body.TeamUpdate true "Team"
+// @Success 200 {object} body.TeamRead
+// @Failure 400 {object} body.BindingError
+// @Failure 500 {object} sys.ErrorResponse
+// @Router /teams/{teamId} [put]
 func UpdateTeam(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -150,6 +189,17 @@ func UpdateTeam(c *gin.Context) {
 	context.JSONResponse(http.StatusOK, team.ToDTO(getMember, getResourceName))
 }
 
+// DeleteTeam godoc
+// @Summary Delete team
+// @Description Delete team
+// @Tags Team
+// @Accept json
+// @Produce json
+// @Param teamId path string true "Team ID"
+// @Success 204 "No Content"
+// @Failure 400 {object} body.BindingError
+// @Failure 500 {object} sys.ErrorResponse
+// @Router /teams/{teamId} [delete]
 func DeleteTeam(c *gin.Context) {
 	context := sys.NewContext(c)
 

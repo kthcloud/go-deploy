@@ -16,7 +16,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/v1/deployments": {
+        "/deployments": {
             "get": {
                 "description": "Get list of deployments",
                 "consumes": [
@@ -32,20 +32,20 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "With the bearer started",
+                        "description": "Bearer token",
                         "name": "Authorization",
                         "in": "header",
                         "required": true
                     },
                     {
                         "type": "boolean",
-                        "description": "Get all deployments",
+                        "description": "Get all",
                         "name": "all",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Get deployments by user ID",
+                        "description": "Filter by user id",
                         "name": "userId",
                         "in": "query"
                     },
@@ -58,7 +58,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Number of items per page",
-                        "name": "perPage",
+                        "name": "pageSize",
                         "in": "query"
                     }
                 ],
@@ -101,7 +101,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "With the bearer started",
+                        "description": "Bearer token",
                         "name": "Authorization",
                         "in": "header",
                         "required": true
@@ -138,7 +138,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/deployments/{deploymentId}": {
+        "/deployments/{deploymentId}": {
             "put": {
                 "description": "Update deployment",
                 "consumes": [
@@ -154,7 +154,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "With the bearer started",
+                        "description": "Bearer token",
                         "name": "Authorization",
                         "in": "header",
                         "required": true
@@ -212,7 +212,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "With the bearer started",
+                        "description": "Bearer token",
                         "name": "Authorization",
                         "in": "header",
                         "required": true
@@ -259,7 +259,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/deployments/{deploymentId}/ciConfig": {
+        "/deployments/{deploymentId}/ciConfig": {
             "get": {
                 "description": "Get CI config",
                 "consumes": [
@@ -303,7 +303,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/deployments/{deploymentId}/command": {
+        "/deployments/{deploymentId}/command": {
             "post": {
                 "description": "Do command",
                 "consumes": [
@@ -368,7 +368,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/deployments/{deployment_id}": {
+        "/deployments/{deployment_id}": {
             "get": {
                 "description": "Get deployment by id",
                 "consumes": [
@@ -384,7 +384,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "With the bearer started",
+                        "description": "Bearer token",
                         "name": "Authorization",
                         "in": "header",
                         "required": true
@@ -419,7 +419,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/github/repositories": {
+        "/github/repositories": {
             "get": {
                 "consumes": [
                     "application/json"
@@ -450,7 +450,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/job": {
+        "/job": {
             "get": {
                 "description": "Get list of jobs",
                 "consumes": [
@@ -466,26 +466,38 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "boolean",
-                        "description": "Get all jobs",
+                        "description": "Get all",
                         "name": "all",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "User ID",
+                        "description": "Filter by user id",
                         "name": "userId",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Job type",
+                        "description": "Filter by type",
                         "name": "type",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Job status",
+                        "description": "Filter by status",
                         "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page",
+                        "name": "pageSize",
                         "in": "query"
                     }
                 ],
@@ -502,7 +514,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/job/{id}": {
+        "/job/{id}": {
             "get": {
                 "description": "Get job by id",
                 "consumes": [
@@ -573,7 +585,178 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/storageManager/{storageManagerId}": {
+        "/notifications": {
+            "get": {
+                "description": "Get notifications",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Notification"
+                ],
+                "summary": "Get notifications",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "Get all notifications",
+                        "name": "all",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Get notifications by user id",
+                        "name": "userId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/body.NotificationRead"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/notifications/{notificationId}": {
+            "get": {
+                "description": "Get notification",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Notification"
+                ],
+                "summary": "Get notification",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Notification ID",
+                        "name": "notificationId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.NotificationRead"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Update notification",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Notification"
+                ],
+                "summary": "Update notification",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Notification ID",
+                        "name": "notificationId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Notification update",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/body.NotificationUpdate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete notification",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Notification"
+                ],
+                "summary": "Delete notification",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Notification ID",
+                        "name": "notificationId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/storageManager/{storageManagerId}": {
             "get": {
                 "description": "Delete storage manager",
                 "consumes": [
@@ -589,7 +772,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "With the bearer started",
+                        "description": "Bearer token",
                         "name": "Authorization",
                         "in": "header",
                         "required": true
@@ -636,7 +819,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/storageManagers": {
+        "/storageManagers": {
             "get": {
                 "description": "Get storage manager list",
                 "consumes": [
@@ -652,7 +835,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "With the bearer started",
+                        "description": "Bearer token",
                         "name": "Authorization",
                         "in": "header",
                         "required": true
@@ -689,7 +872,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/storageManagers/{storageManagerId}": {
+        "/storageManagers/{storageManagerId}": {
             "get": {
                 "description": "Get storage manager",
                 "consumes": [
@@ -705,7 +888,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "With the bearer started",
+                        "description": "Bearer token",
                         "name": "Authorization",
                         "in": "header",
                         "required": true
@@ -752,7 +935,249 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/user/auth-check": {
+        "/teams": {
+            "get": {
+                "description": "Get team list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Team"
+                ],
+                "summary": "Get team list",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "All teams",
+                        "name": "all",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page Size",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/body.TeamRead"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/body.BindingError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create team",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Team"
+                ],
+                "summary": "Create team",
+                "parameters": [
+                    {
+                        "description": "Team",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/body.TeamCreate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.TeamRead"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/body.BindingError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/teams/{teamId}": {
+            "get": {
+                "description": "Get team",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Team"
+                ],
+                "summary": "Get team",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Team ID",
+                        "name": "teamId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.TeamRead"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/body.BindingError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update team",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Team"
+                ],
+                "summary": "Update team",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Team ID",
+                        "name": "teamId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Team",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/body.TeamUpdate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.TeamRead"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/body.BindingError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete team",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Team"
+                ],
+                "summary": "Delete team",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Team ID",
+                        "name": "teamId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/body.BindingError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/auth-check": {
             "get": {
                 "description": "Check auth",
                 "consumes": [
@@ -775,7 +1200,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/users": {
+        "/users": {
             "get": {
                 "description": "Get user list",
                 "consumes": [
@@ -821,7 +1246,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/users/{userId}": {
+        "/users/{userId}": {
             "get": {
                 "description": "Get user by id",
                 "consumes": [
@@ -916,7 +1341,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/vm": {
+        "/vm": {
             "get": {
                 "description": "Get list of VMs",
                 "consumes": [
@@ -932,13 +1357,13 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "boolean",
-                        "description": "Get all VMs",
+                        "description": "Get all",
                         "name": "all",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Get deployments by user ID",
+                        "description": "Filter by user id",
                         "name": "userId",
                         "in": "query"
                     },
@@ -951,7 +1376,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Number of items per page",
-                        "name": "perPage",
+                        "name": "pageSize",
                         "in": "query"
                     }
                 ],
@@ -1036,7 +1461,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/vm/{vmId}": {
+        "/vm/{vmId}": {
             "get": {
                 "description": "Get VM by id",
                 "consumes": [
@@ -1100,7 +1525,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "With the bearer started",
+                        "description": "Bearer token",
                         "name": "Authorization",
                         "in": "header",
                         "required": true
@@ -1222,7 +1647,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/vms/gpus": {
+        "/vms/gpus": {
             "get": {
                 "description": "Get list of GPUs",
                 "consumes": [
@@ -1280,7 +1705,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/vms/{vmId}/command": {
+        "/vms/{vmId}/command": {
             "post": {
                 "description": "Do command",
                 "consumes": [
@@ -1345,7 +1770,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/vms/{vmId}/snapshots": {
+        "/vms/{vmId}/snapshots": {
             "get": {
                 "description": "Get snapshot list",
                 "consumes": [
@@ -1361,7 +1786,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "With the bearer started",
+                        "description": "Bearer token",
                         "name": "Authorization",
                         "in": "header",
                         "required": true
@@ -1504,6 +1929,20 @@ const docTemplate = `{
                 }
             }
         },
+        "body.BindingError": {
+            "type": "object",
+            "properties": {
+                "validationErrors": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "body.CiConfig": {
             "type": "object",
             "properties": {
@@ -1547,6 +1986,11 @@ const docTemplate = `{
                 },
                 "github": {
                     "$ref": "#/definitions/body.GitHub"
+                },
+                "healthCheckPath": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "minLength": 0
                 },
                 "image": {
                     "type": "string",
@@ -1596,6 +2040,9 @@ const docTemplate = `{
         "body.DeploymentRead": {
             "type": "object",
             "properties": {
+                "customDomainUrl": {
+                    "type": "string"
+                },
                 "envs": {
                     "type": "array",
                     "items": {
@@ -1673,6 +2120,11 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/body.Env"
                     }
+                },
+                "healthCheckPath": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "minLength": 0
                 },
                 "image": {
                     "type": "string",
@@ -1838,6 +2290,32 @@ const docTemplate = `{
                 }
             }
         },
+        "body.NotificationRead": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "id": {
+                    "type": "string"
+                },
+                "readAt": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.NotificationUpdate": {
+            "type": "object",
+            "properties": {
+                "readAt": {
+                    "type": "string"
+                }
+            }
+        },
         "body.Port": {
             "type": "object",
             "required": [
@@ -1848,6 +2326,9 @@ const docTemplate = `{
             "properties": {
                 "externalPort": {
                     "type": "integer"
+                },
+                "httpProxy": {
+                    "$ref": "#/definitions/body.VmHttpProxy"
                 },
                 "name": {
                     "type": "string",
@@ -1964,6 +2445,162 @@ const docTemplate = `{
                 },
                 "zone": {
                     "type": "string"
+                }
+            }
+        },
+        "body.TeamCreate": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 1000
+                },
+                "members": {
+                    "type": "array",
+                    "maxItems": 10,
+                    "minItems": 0,
+                    "items": {
+                        "$ref": "#/definitions/body.TeamMemberCreate"
+                    }
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                },
+                "resources": {
+                    "type": "array",
+                    "maxItems": 10,
+                    "minItems": 0,
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "body.TeamMember": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "joinedAt": {
+                    "type": "string"
+                },
+                "teamRole": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.TeamMemberCreate": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "teamRole": {
+                    "description": "default to MemberRoleAdmin right now",
+                    "type": "string"
+                }
+            }
+        },
+        "body.TeamMemberUpdate": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "teamRole": {
+                    "description": "default to MemberRoleAdmin right now",
+                    "type": "string"
+                }
+            }
+        },
+        "body.TeamRead": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "members": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/body.TeamMember"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "ownerId": {
+                    "type": "string"
+                },
+                "resources": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/body.TeamResource"
+                    }
+                }
+            }
+        },
+        "body.TeamResource": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.TeamUpdate": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 1000
+                },
+                "members": {
+                    "type": "array",
+                    "maxItems": 10,
+                    "minItems": 0,
+                    "items": {
+                        "$ref": "#/definitions/body.TeamMemberUpdate"
+                    }
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                },
+                "resources": {
+                    "type": "array",
+                    "maxItems": 10,
+                    "minItems": 0,
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -2120,6 +2757,30 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.VmHttpProxy": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "customDomain": {
+                    "type": "string",
+                    "maxLength": 253,
+                    "minLength": 1
+                },
+                "customDomainUrl": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 30,
+                    "minLength": 3
+                },
+                "url": {
                     "type": "string"
                 }
             }
@@ -2282,6 +2943,9 @@ const docTemplate = `{
                 "gpuLeaseDuration": {
                     "description": "in hours",
                     "type": "number"
+                },
+                "useCustomDomains": {
+                    "type": "boolean"
                 },
                 "useGPUs": {
                     "type": "boolean"
