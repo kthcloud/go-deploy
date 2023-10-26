@@ -3,7 +3,7 @@ package e2e
 import (
 	"github.com/stretchr/testify/assert"
 	"go-deploy/models/dto/body"
-	"go-deploy/pkg/status_codes"
+	status_codes2 "go-deploy/pkg/app/status_codes"
 	"golang.org/x/net/idna"
 	"net/http"
 	"strconv"
@@ -16,7 +16,7 @@ func WaitForDeploymentRunning(t *testing.T, id string, callback func(*body.Deplo
 		err := ReadResponseBody(t, resp, &deploymentRead)
 		assert.NoError(t, err, "deployment was not fetched")
 
-		if deploymentRead.Status == status_codes.GetMsg(status_codes.ResourceRunning) {
+		if deploymentRead.Status == status_codes2.GetMsg(status_codes2.ResourceRunning) {
 			if callback == nil || callback(&deploymentRead) {
 				return true
 			}

@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"go-deploy/models/dto/body"
 	"go-deploy/models/sys/job"
-	"go-deploy/pkg/status_codes"
+	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/sys"
 	"go-deploy/service/deployment_service"
 	"go-deploy/service/job_service"

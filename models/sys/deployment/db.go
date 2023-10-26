@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"go-deploy/models"
 	"go-deploy/models/sys/deployment/subsystems"
-	"go-deploy/pkg/status_codes"
+	status_codes2 "go-deploy/pkg/app/status_codes"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
@@ -52,8 +52,8 @@ func (client *Client) Create(id, ownerID string, params *CreateParams) (*Deploym
 				},
 			},
 		},
-		StatusMessage: status_codes.GetMsg(status_codes.ResourceBeingCreated),
-		StatusCode:    status_codes.ResourceBeingCreated,
+		StatusMessage: status_codes2.GetMsg(status_codes2.ResourceBeingCreated),
+		StatusCode:    status_codes2.ResourceBeingCreated,
 	}
 
 	filter := bson.D{{"name", params.Name}, {"deletedAt", bson.D{{"$in", []interface{}{time.Time{}, nil}}}}}

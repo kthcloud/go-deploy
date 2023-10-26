@@ -3,7 +3,7 @@ package v1_user
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"go-deploy/pkg/status_codes"
+	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/user_service"

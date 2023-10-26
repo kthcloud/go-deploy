@@ -3,7 +3,7 @@ package e2e
 import (
 	"github.com/stretchr/testify/assert"
 	"go-deploy/models/dto/body"
-	"go-deploy/pkg/status_codes"
+	status_codes2 "go-deploy/pkg/app/status_codes"
 	"net/http"
 	"testing"
 )
@@ -14,7 +14,7 @@ func WaitForJobFinished(t *testing.T, id string, callback func(*body.JobRead) bo
 		err := ReadResponseBody(t, resp, &jobRead)
 		assert.NoError(t, err, "job was not fetched")
 
-		if jobRead.Status == status_codes.GetMsg(status_codes.JobFinished) || jobRead.Status == status_codes.GetMsg(status_codes.JobTerminated) {
+		if jobRead.Status == status_codes2.GetMsg(status_codes2.JobFinished) || jobRead.Status == status_codes2.GetMsg(status_codes2.JobTerminated) {
 			if callback == nil || callback(&jobRead) {
 				return true
 			}

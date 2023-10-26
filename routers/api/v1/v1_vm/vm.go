@@ -12,7 +12,7 @@ import (
 	vmModel "go-deploy/models/sys/vm"
 	gpuModel "go-deploy/models/sys/vm/gpu"
 	zoneModel "go-deploy/models/sys/zone"
-	"go-deploy/pkg/status_codes"
+	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"

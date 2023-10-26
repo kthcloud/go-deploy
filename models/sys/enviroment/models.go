@@ -114,11 +114,6 @@ type Environment struct {
 		Name string `yaml:"name"`
 	} `yaml:"db"`
 
-	Redis struct {
-		URL      string `yaml:"url"`
-		Password string `yaml:"password"`
-	} `yaml:"redis"`
-
 	CS struct {
 		URL    string `yaml:"url"`
 		ApiKey string `yaml:"apiKey"`
