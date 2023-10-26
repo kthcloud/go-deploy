@@ -17,10 +17,10 @@ type Client struct {
 
 func New() *Client {
 	return &Client{
-		Collection: models.NotificationCollection,
+		Collection: models.DB.GetCollection("notifications"),
 
 		ResourceClient: resource.ResourceClient[Notification]{
-			Collection:     models.NotificationCollection,
+			Collection:     models.DB.GetCollection("notifications"),
 			IncludeDeleted: false,
 		},
 	}
@@ -35,12 +35,9 @@ func (client *Client) AddPagination(page, pageSize int) *Client {
 	return client
 }
 
-func (client *Client) RestrictToUser(restrictUserID *string) *Client {
-	if restrictUserID != nil {
-		client.ResourceClient.ExtraFilter = &bson.D{{"userId", *restrictUserID}}
-	}
-
-	client.RestrictUserID = restrictUserID
+func (client *Client) RestrictToUser(restrictUserID string) *Client {
+	client.ResourceClient.ExtraFilter = append(client.ResourceClient.ExtraFilter, bson.E{Key: "ownerId", Value: restrictUserID})
+	client.RestrictUserID = &restrictUserID
 
 	return client
 }

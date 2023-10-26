@@ -342,6 +342,6 @@ func RepairStorageManager(id string) error {
 
 func dbFuncSM(id, key string) func(interface{}) error {
 	return func(data interface{}) error {
-		return storageManagerModel.UpdateSubsystemByID(id, "k8s."+key, data)
+		return storageManagerModel.New().UpdateSubsystemByID(id, "k8s."+key, data)
 	}
 }

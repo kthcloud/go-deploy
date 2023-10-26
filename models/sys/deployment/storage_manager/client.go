@@ -1,4 +1,4 @@
-package deployment
+package storage_manager
 
 import (
 	"go-deploy/models"
@@ -13,19 +13,19 @@ type Client struct {
 	Collection     *mongo.Collection
 	RestrictUserID *string
 
-	activityResource.ActivityResourceClient[Deployment]
-	resource.ResourceClient[Deployment]
+	activityResource.ActivityResourceClient[StorageManager]
+	resource.ResourceClient[StorageManager]
 }
 
 func New() *Client {
 	return &Client{
-		Collection: models.DB.GetCollection("deployments"),
+		Collection: models.DB.GetCollection("storageManagers"),
 
-		ActivityResourceClient: activityResource.ActivityResourceClient[Deployment]{
-			Collection: models.DB.GetCollection("deployments"),
+		ActivityResourceClient: activityResource.ActivityResourceClient[StorageManager]{
+			Collection: models.DB.GetCollection("storageManagers"),
 		},
-		ResourceClient: resource.ResourceClient[Deployment]{
-			Collection:     models.DB.GetCollection("deployments"),
+		ResourceClient: resource.ResourceClient[StorageManager]{
+			Collection:     models.DB.GetCollection("storageManagers"),
 			IncludeDeleted: false,
 		},
 	}

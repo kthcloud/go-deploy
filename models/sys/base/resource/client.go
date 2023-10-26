@@ -10,5 +10,5 @@ type ResourceClient[T any] struct {
 	Collection     *mongo.Collection
 	IncludeDeleted bool
 	Pagination     *base.Pagination
-	ExtraFilter    *bson.D
+	ExtraFilter    bson.D
 }

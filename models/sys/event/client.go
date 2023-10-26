@@ -13,7 +13,7 @@ type Client struct {
 func New() *Client {
 	return &Client{
 		ResourceClient: resource.ResourceClient[Event]{
-			Collection:     models.EventCollection,
+			Collection:     models.DB.GetCollection("events"),
 			IncludeDeleted: false,
 			Pagination:     nil,
 		},

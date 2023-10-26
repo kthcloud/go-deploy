@@ -11,14 +11,19 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var DeploymentCollection *mongo.Collection
-var StorageManagerCollection *mongo.Collection
-var VmCollection *mongo.Collection
-var GpuCollection *mongo.Collection
-var UserCollection *mongo.Collection
-var JobCollection *mongo.Collection
-var NotificationCollection *mongo.Collection
-var EventCollection *mongo.Collection
+var DB DbType
+
+type DbType struct {
+	CollectionMap map[string]*mongo.Collection
+}
+
+func (db *DbType) GetCollection(collectionName string) *mongo.Collection {
+	if db.CollectionMap == nil || db.CollectionMap[collectionName] == nil {
+		log.Fatalln("collection " + collectionName + " not found")
+	}
+
+	return db.CollectionMap[collectionName]
+}
 
 var client *mongo.Client
 
@@ -54,20 +59,23 @@ func Setup() {
 	log.Println("successfully connected to database")
 
 	// Find collections
-	DeploymentCollection = findCollection("deployments")
-	StorageManagerCollection = findCollection("storageManagers")
-	VmCollection = findCollection("vms")
-	GpuCollection = findCollection("gpus")
-	UserCollection = findCollection("users")
-	JobCollection = findCollection("jobs")
-	NotificationCollection = findCollection("notifications")
-	EventCollection = findCollection("events")
-}
+	DB.CollectionMap = make(map[string]*mongo.Collection)
 
-func findCollection(collectionName string) *mongo.Collection {
-	collection := client.Database(conf.Env.DB.Name).Collection(collectionName)
-	log.Println("found collection " + collectionName)
-	return collection
+	collections := []string{
+		"deployments",
+		"storageManagers",
+		"vms",
+		"gpus",
+		"users",
+		"jobs",
+		"notifications",
+		"events",
+	}
+
+	for _, collectionName := range collections {
+		log.Println("found collection " + collectionName)
+		DB.CollectionMap[collectionName] = client.Database(conf.Env.DB.Name).Collection(collectionName)
+	}
 }
 
 func Shutdown() {
@@ -75,13 +83,7 @@ func Shutdown() {
 		return fmt.Errorf("failed to shutdown database. details: %w", err)
 	}
 
-	DeploymentCollection = nil
-	StorageManagerCollection = nil
-	VmCollection = nil
-	GpuCollection = nil
-	UserCollection = nil
-	JobCollection = nil
-	NotificationCollection = nil
+	DB.CollectionMap = nil
 
 	err := client.Disconnect(context.Background())
 	if err != nil {

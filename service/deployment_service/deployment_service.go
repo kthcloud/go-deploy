@@ -378,9 +378,9 @@ func GetManyAuth(allUsers bool, userID *string, auth *service.AuthInfo, paginati
 		if *userID != auth.UserID && !auth.IsAdmin {
 			return nil, nil
 		}
-		client.RestrictToUser(userID)
+		client.RestrictToUser(*userID)
 	} else if !allUsers || (allUsers && !auth.IsAdmin) {
-		client.RestrictToUser(&auth.UserID)
+		client.RestrictToUser(auth.UserID)
 	}
 
 	return client.GetAll()

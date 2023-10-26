@@ -77,7 +77,7 @@ func storageManagerRepairer(ctx context.Context) {
 	for {
 		select {
 		case <-time.After(time.Duration(conf.Env.Deployment.RepairInterval) * time.Second):
-			withNoActivities, err := storageManagerModel.GetWithNoActivities()
+			withNoActivities, err := storageManagerModel.New().GetWithNoActivities()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching storage managers with no activities. details: %w", err))
 				continue

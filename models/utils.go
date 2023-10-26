@@ -30,14 +30,12 @@ func addExcludeDeleted(filter bson.D) bson.D {
 	return filter
 }
 
-func GetResource[T any](collection *mongo.Collection, filter bson.D, includeDeleted bool, extraFilter *bson.D) (*T, error) {
+func GetResource[T any](collection *mongo.Collection, filter bson.D, includeDeleted bool, extraFilter bson.D) (*T, error) {
 	if !includeDeleted {
 		filter = addExcludeDeleted(filter)
 	}
 
-	if extraFilter != nil {
-		filter = append(filter, *extraFilter...)
-	}
+	filter = append(filter, extraFilter...)
 
 	var res T
 	err := collection.FindOne(context.TODO(), filter).Decode(&res)
@@ -51,14 +49,12 @@ func GetResource[T any](collection *mongo.Collection, filter bson.D, includeDele
 	return &res, nil
 }
 
-func GetManyResources[T any](collection *mongo.Collection, filter bson.D, includeDeleted bool, pagination *base.Pagination, extraFilter *bson.D) ([]T, error) {
+func GetManyResources[T any](collection *mongo.Collection, filter bson.D, includeDeleted bool, pagination *base.Pagination, extraFilter bson.D) ([]T, error) {
 	if !includeDeleted {
 		filter = addExcludeDeleted(filter)
 	}
 
-	if extraFilter != nil {
-		filter = append(filter, *extraFilter...)
-	}
+	filter = append(filter, extraFilter...)
 
 	var findOptions *options.FindOptions
 	if pagination != nil {
@@ -96,14 +92,12 @@ func GetManyResources[T any](collection *mongo.Collection, filter bson.D, includ
 	return res, nil
 }
 
-func CountResources(collection *mongo.Collection, filter bson.D, includeDeleted bool, extraFilter *bson.D) (int, error) {
+func CountResources(collection *mongo.Collection, filter bson.D, includeDeleted bool, extraFilter bson.D) (int, error) {
 	if !includeDeleted {
 		filter = addExcludeDeleted(filter)
 	}
 
-	if extraFilter != nil {
-		filter = append(filter, *extraFilter...)
-	}
+	filter = append(filter, extraFilter...)
 
 	count, err := collection.CountDocuments(context.Background(), filter)
 	if err != nil {
@@ -112,14 +106,12 @@ func CountResources(collection *mongo.Collection, filter bson.D, includeDeleted 
 	return int(count), nil
 }
 
-func CountDistinctResources(collection *mongo.Collection, field string, filter bson.D, includeDeleted bool, extraFilter *bson.D) (int, error) {
+func CountDistinctResources(collection *mongo.Collection, field string, filter bson.D, includeDeleted bool, extraFilter bson.D) (int, error) {
 	if !includeDeleted {
 		filter = addExcludeDeleted(filter)
 	}
 
-	if extraFilter != nil {
-		filter = append(filter, *extraFilter...)
-	}
+	filter = append(filter, extraFilter...)
 
 	count, err := collection.Distinct(context.Background(), field, filter)
 	if err != nil {
@@ -128,14 +120,12 @@ func CountDistinctResources(collection *mongo.Collection, field string, filter b
 	return len(count), nil
 }
 
-func UpdateOneResource(collection *mongo.Collection, filter bson.D, update bson.D, includeDeleted bool, extraFilter *bson.D) error {
+func UpdateOneResource(collection *mongo.Collection, filter bson.D, update bson.D, includeDeleted bool, extraFilter bson.D) error {
 	if !includeDeleted {
 		filter = addExcludeDeleted(filter)
 	}
 
-	if extraFilter != nil {
-		filter = append(filter, *extraFilter...)
-	}
+	filter = append(filter, extraFilter...)
 
 	_, err := collection.UpdateOne(context.Background(), filter, update)
 	if err != nil {

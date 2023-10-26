@@ -9,5 +9,5 @@ import (
 type ActivityResourceClient[T any] struct {
 	Collection  *mongo.Collection
 	Pagination  *base.Pagination
-	ExtraFilter *bson.D
+	ExtraFilter bson.D
 }

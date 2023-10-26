@@ -29,7 +29,7 @@ func (client *Client) Create(id, username, email string, isAdmin bool, effective
 			{"effectiveRole", effectiveRole},
 			{"isAdmin", isAdmin},
 		}}}
-		_, err = models.UserCollection.UpdateOne(context.Background(), filter, update)
+		_, err = client.Collection.UpdateOne(context.Background(), filter, update)
 		if err != nil {
 			return fmt.Errorf("failed to update user info for %s. details: %w", username, err)
 		}
@@ -37,7 +37,7 @@ func (client *Client) Create(id, username, email string, isAdmin bool, effective
 		return nil
 	}
 
-	_, err = models.UserCollection.InsertOne(context.TODO(), User{
+	_, err = client.Collection.InsertOne(context.TODO(), User{
 		ID:            id,
 		Username:      username,
 		Email:         email,

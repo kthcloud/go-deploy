@@ -13,7 +13,7 @@ type Client struct {
 func New() *Client {
 	return &Client{
 		ResourceClient: resource.ResourceClient[User]{
-			Collection:     models.UserCollection,
+			Collection:     models.DB.GetCollection("users"),
 			IncludeDeleted: false,
 		},
 	}
