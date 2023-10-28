@@ -7,8 +7,9 @@ on:
       - 'dev'
 
 jobs:
-  docker:
+  my-job:
     runs-on: self-hosted
     steps:
-      - name: Login to DockerHub
+      - name: my-step
+        run: echo "Hello World!"
         
