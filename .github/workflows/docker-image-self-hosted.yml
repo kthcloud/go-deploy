@@ -1,15 +1,18 @@
-name: ci-self-hosted
+name: Generate artifacts
 
 on:
-  workflow_dispatch:
   push:
-    branches:
-      - 'dev'
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
 
 jobs:
-  my-job:
+  build:
+
     runs-on: self-hosted
     steps:
       - name: my-step
         run: echo "Hello World!"
-        
