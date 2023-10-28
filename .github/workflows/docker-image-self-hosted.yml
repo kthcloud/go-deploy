@@ -1,0 +1,14 @@
+name: ci-self-hosted
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'dev'
+
+jobs:
+  docker:
+    runs-on: self-hosted
+    steps:
+      - name: Login to DockerHub
+        
