@@ -183,16 +183,16 @@ func Delete(id string) error {
 
 	// Secret
 	for mapName, secret := range context.Deployment.Subsystems.K8s.SecretMap {
-		var deleteFunc func(interface{}) error
+		var deleteFunc func(id string) error
 		if mapName == constants.WildcardCertSecretName {
-			deleteFunc = func(interface{}) error { return nil }
+			deleteFunc = func(string) error { return nil }
 		} else {
-			deleteFunc = dbFunc(id, "secretMap."+mapName)
+			deleteFunc = context.Client.DeleteSecret
 		}
 
-		err = resources.SsDeleter(context.Client.DeleteSecret).
+		err = resources.SsDeleter(deleteFunc).
 			WithResourceID(secret.ID).
-			WithDbFunc(deleteFunc).
+			WithDbFunc(dbFunc(id, "secretMap."+mapName)).
 			Exec()
 	}
 
@@ -486,7 +486,7 @@ func updateEnvs(context *DeploymentContext) error {
 func updateCustomDomain(context *DeploymentContext) error {
 	ingresses := context.Generator.Ingresses()
 	idx := slices.IndexFunc(ingresses, func(i k8sModels.IngressPublic) bool {
-		return i.Name == constants.CustomDomainSuffix(context.Deployment.Name)
+		return i.Name == constants.WithCustomDomainSuffix(context.Deployment.Name)
 	})
 	if idx == -1 {
 		return nil
@@ -496,12 +496,12 @@ func updateCustomDomain(context *DeploymentContext) error {
 
 	if service.NotCreated(&ingresses[idx]) {
 		err = resources.SsCreator(context.Client.CreateIngress).
-			WithDbFunc(dbFunc(context.Deployment.ID, "ingressMap."+constants.CustomDomainSuffix(context.Deployment.Name))).
+			WithDbFunc(dbFunc(context.Deployment.ID, "ingressMap."+constants.WithCustomDomainSuffix(context.Deployment.Name))).
 			WithPublic(&ingresses[idx]).
 			Exec()
 	} else {
 		err = resources.SsUpdater(context.Client.UpdateIngress).
-			WithDbFunc(dbFunc(context.Deployment.ID, "ingressMap."+constants.CustomDomainSuffix(context.Deployment.Name))).
+			WithDbFunc(dbFunc(context.Deployment.ID, "ingressMap."+constants.WithCustomDomainSuffix(context.Deployment.Name))).
 			WithPublic(&ingresses[idx]).
 			Exec()
 	}

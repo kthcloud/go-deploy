@@ -141,16 +141,16 @@ func Delete(id string) error {
 
 	// Secret
 	for mapName, secret := range context.VM.Subsystems.K8s.SecretMap {
-		var deleteFunc func(interface{}) error
+		var deleteFunc func(id string) error
 		if mapName == constants.WildcardCertSecretName {
-			deleteFunc = func(interface{}) error { return nil }
+			deleteFunc = func(string) error { return nil }
 		} else {
-			deleteFunc = dbFunc(id, "secretMap."+mapName)
+			deleteFunc = context.Client.DeleteSecret
 		}
 
-		err = resources.SsDeleter(context.Client.DeleteSecret).
+		err = resources.SsDeleter(deleteFunc).
 			WithResourceID(secret.ID).
-			WithDbFunc(deleteFunc).
+			WithDbFunc(dbFunc(id, "secretMap."+mapName)).
 			Exec()
 	}
 

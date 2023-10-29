@@ -115,7 +115,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		} else {
 			var imagePullSecrets []string
 			if kg.d.deployment.Type == deployment.TypeCustom {
-				imagePullSecrets = []string{constants.ImagePullSecretSuffix(kg.d.deployment.Name)}
+				imagePullSecrets = []string{constants.WithImagePullSecretSuffix(kg.d.deployment.Name)}
 			}
 
 			mainApp := kg.d.deployment.GetMainApp()
@@ -517,13 +517,13 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 				})
 			}
 
-			if customK8sIngress := kg.d.deployment.Subsystems.K8s.GetIngress(constants.CustomDomainSuffix(kg.d.deployment.Name)); service.Created(customK8sIngress) {
+			if customK8sIngress := kg.d.deployment.Subsystems.K8s.GetIngress(constants.WithCustomDomainSuffix(kg.d.deployment.Name)); service.Created(customK8sIngress) {
 				customK8sIngress.Hosts = []string{*kg.d.deployment.GetMainApp().CustomDomain}
 				res = append(res, *customK8sIngress)
 			} else {
 				if kg.d.deployment.GetMainApp().CustomDomain != nil {
 					res = append(res, models.IngressPublic{
-						Name:         fmt.Sprintf(constants.CustomDomainSuffix(kg.d.deployment.Name)),
+						Name:         fmt.Sprintf(constants.WithCustomDomainSuffix(kg.d.deployment.Name)),
 						Namespace:    kg.namespace,
 						ServiceName:  kg.d.deployment.Name,
 						ServicePort:  kg.d.deployment.GetMainApp().InternalPort,
@@ -744,43 +744,68 @@ func (kg *K8sGenerator) Secrets() []models.SecretPublic {
 
 	if kg.d.deployment != nil {
 		if kg.d.deployment.Type == deployment.TypeCustom {
-			if secret := kg.d.deployment.Subsystems.K8s.GetSecret(constants.ImagePullSecretSuffix(kg.d.deployment.Name)); service.Created(secret) {
-				res = append(res, *secret)
-			} else if kg.d.deployment.Subsystems.Harbor.Robot.Created() && kg.d.deployment.Type == deployment.TypeCustom {
+			var imagePullSecret *models.SecretPublic
+
+			if kg.d.deployment.Subsystems.Harbor.Robot.Created() && kg.d.deployment.Type == deployment.TypeCustom {
 				registry := conf.Env.Registry.URL
 				username := kg.d.deployment.Subsystems.Harbor.Robot.HarborName
 				password := kg.d.deployment.Subsystems.Harbor.Robot.Secret
 
-				res = append(res, models.SecretPublic{
-					Name:      constants.ImagePullSecretSuffix(kg.d.deployment.Name),
+				imagePullSecret = &models.SecretPublic{
+					Name:      constants.WithImagePullSecretSuffix(kg.d.deployment.Name),
 					Namespace: kg.namespace,
 					Type:      string(v1.SecretTypeDockerConfigJson),
 					Data: map[string][]byte{
 						v1.DockerConfigJsonKey: encodeDockerConfig(registry, username, password),
 					},
-				})
+				}
+			}
+
+			// if already exists, set the fields that are created in the subsystem
+			if secret := kg.d.deployment.Subsystems.K8s.GetSecret(constants.WithImagePullSecretSuffix(kg.d.deployment.Name)); service.Created(secret) {
+				if imagePullSecret == nil {
+					imagePullSecret = secret
+				} else {
+					imagePullSecret.ID = secret.ID
+					imagePullSecret.CreatedAt = secret.CreatedAt
+				}
+			}
+
+			if imagePullSecret != nil {
+				res = append(res, *imagePullSecret)
 			}
 		}
 
 		// wildcard certificate
-		if secret := kg.d.deployment.Subsystems.K8s.GetSecret(constants.WildcardCertSecretName); service.Created(secret) {
-			res = append(res, *secret)
-		} else {
-			// swap namespaces temporarily
-			kg.client.Namespace = conf.Env.Deployment.WildcardCertSecretNamespace
-			defer func() { kg.client.Namespace = kg.namespace }()
+		/// swap namespaces temporarily
+		var wildcardCertSecret *models.SecretPublic
 
-			copyFrom, err := kg.client.ReadSecret(conf.Env.Deployment.WildcardCertSecretId)
-			if err != nil || copyFrom == nil {
-				utils.PrettyPrintError(fmt.Errorf("failed to read secret %s/%s. details: %w", conf.Env.Deployment.WildcardCertSecretNamespace, conf.Env.Deployment.WildcardCertSecretId, err))
-			} else {
-				res = append(res, models.SecretPublic{
-					Name:      constants.WildcardCertSecretName,
-					Namespace: kg.namespace,
-					Type:      string(v1.SecretTypeOpaque),
-					Data:      copyFrom.Data,
-				})
+		kg.client.Namespace = conf.Env.Deployment.WildcardCertSecretNamespace
+		defer func() { kg.client.Namespace = kg.namespace }()
+
+		copyFrom, err := kg.client.ReadSecret(conf.Env.Deployment.WildcardCertSecretId)
+		if err != nil || copyFrom == nil {
+			utils.PrettyPrintError(fmt.Errorf("failed to read secret %s/%s. details: %w", conf.Env.Deployment.WildcardCertSecretNamespace, conf.Env.Deployment.WildcardCertSecretId, err))
+		} else {
+			wildcardCertSecret = &models.SecretPublic{
+				Name:      constants.WildcardCertSecretName,
+				Namespace: kg.namespace,
+				Type:      string(v1.SecretTypeOpaque),
+				Data:      copyFrom.Data,
 			}
+		}
+
+		if secret := kg.d.deployment.Subsystems.K8s.GetSecret(constants.WildcardCertSecretName); service.Created(secret) {
+			if wildcardCertSecret == nil {
+				wildcardCertSecret = secret
+			} else {
+				wildcardCertSecret.ID = secret.ID
+				wildcardCertSecret.CreatedAt = secret.CreatedAt
+			}
+		}
+
+		if wildcardCertSecret != nil {
+			res = append(res, *wildcardCertSecret)
 		}
 
 		return res
@@ -788,24 +813,35 @@ func (kg *K8sGenerator) Secrets() []models.SecretPublic {
 
 	if kg.v.vm != nil {
 		// wildcard certificate
-		if secret := kg.v.vm.Subsystems.K8s.GetSecret(constants.WildcardCertSecretName); service.Created(secret) {
-			res = append(res, *secret)
-		} else {
-			// swap namespaces temporarily
-			kg.client.Namespace = conf.Env.Deployment.WildcardCertSecretNamespace
-			defer func() { kg.client.Namespace = kg.namespace }()
+		/// swap namespaces temporarily
+		var wildcardCertSecret *models.SecretPublic
 
-			copyFrom, err := kg.client.ReadSecret(conf.Env.Deployment.WildcardCertSecretId)
-			if err != nil || copyFrom == nil {
-				utils.PrettyPrintError(fmt.Errorf("failed to read secret %s/%s. details: %w", conf.Env.Deployment.WildcardCertSecretNamespace, conf.Env.Deployment.WildcardCertSecretId, err))
-			} else {
-				res = append(res, models.SecretPublic{
-					Name:      constants.WildcardCertSecretName,
-					Namespace: kg.namespace,
-					Type:      string(v1.SecretTypeOpaque),
-					Data:      copyFrom.Data,
-				})
+		kg.client.Namespace = conf.Env.Deployment.WildcardCertSecretNamespace
+		defer func() { kg.client.Namespace = kg.namespace }()
+
+		copyFrom, err := kg.client.ReadSecret(conf.Env.Deployment.WildcardCertSecretId)
+		if err != nil || copyFrom == nil {
+			utils.PrettyPrintError(fmt.Errorf("failed to read secret %s/%s. details: %w", conf.Env.Deployment.WildcardCertSecretNamespace, conf.Env.Deployment.WildcardCertSecretId, err))
+		} else {
+			wildcardCertSecret = &models.SecretPublic{
+				Name:      constants.WildcardCertSecretName,
+				Namespace: kg.namespace,
+				Type:      string(v1.SecretTypeOpaque),
+				Data:      copyFrom.Data,
 			}
+		}
+
+		if secret := kg.v.vm.Subsystems.K8s.GetSecret(constants.WildcardCertSecretName); service.Created(secret) {
+			if wildcardCertSecret == nil {
+				wildcardCertSecret = secret
+			} else {
+				wildcardCertSecret.ID = secret.ID
+				wildcardCertSecret.CreatedAt = secret.CreatedAt
+			}
+		}
+
+		if wildcardCertSecret != nil {
+			res = append(res, *wildcardCertSecret)
 		}
 
 		return res
@@ -813,24 +849,35 @@ func (kg *K8sGenerator) Secrets() []models.SecretPublic {
 
 	if kg.s.storageManager != nil {
 		// wildcard certificate
-		if secret := kg.s.storageManager.Subsystems.K8s.GetSecret(constants.WildcardCertSecretName); service.Created(secret) {
-			res = append(res, *secret)
-		} else {
-			// swap namespaces temporarily
-			kg.client.Namespace = conf.Env.Deployment.WildcardCertSecretNamespace
-			defer func() { kg.client.Namespace = kg.namespace }()
+		/// swap namespaces temporarily
+		var wildcardCertSecret *models.SecretPublic
 
-			copyFrom, err := kg.client.ReadSecret(conf.Env.Deployment.WildcardCertSecretId)
-			if err != nil || copyFrom == nil {
-				utils.PrettyPrintError(fmt.Errorf("failed to read secret %s/%s. details: %w", conf.Env.Deployment.WildcardCertSecretNamespace, conf.Env.Deployment.WildcardCertSecretId, err))
-			} else {
-				res = append(res, models.SecretPublic{
-					Name:      constants.WildcardCertSecretName,
-					Namespace: kg.namespace,
-					Type:      string(v1.SecretTypeOpaque),
-					Data:      copyFrom.Data,
-				})
+		kg.client.Namespace = conf.Env.Deployment.WildcardCertSecretNamespace
+		defer func() { kg.client.Namespace = kg.namespace }()
+
+		copyFrom, err := kg.client.ReadSecret(conf.Env.Deployment.WildcardCertSecretId)
+		if err != nil || copyFrom == nil {
+			utils.PrettyPrintError(fmt.Errorf("failed to read secret %s/%s. details: %w", conf.Env.Deployment.WildcardCertSecretNamespace, conf.Env.Deployment.WildcardCertSecretId, err))
+		} else {
+			wildcardCertSecret = &models.SecretPublic{
+				Name:      constants.WildcardCertSecretName,
+				Namespace: kg.namespace,
+				Type:      string(v1.SecretTypeOpaque),
+				Data:      copyFrom.Data,
 			}
+		}
+
+		if secret := kg.s.storageManager.Subsystems.K8s.GetSecret(constants.WildcardCertSecretName); service.Created(secret) {
+			if wildcardCertSecret == nil {
+				wildcardCertSecret = secret
+			} else {
+				wildcardCertSecret.ID = secret.ID
+				wildcardCertSecret.CreatedAt = secret.CreatedAt
+			}
+		}
+
+		if wildcardCertSecret != nil {
+			res = append(res, *wildcardCertSecret)
 		}
 
 		return res

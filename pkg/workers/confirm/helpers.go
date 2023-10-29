@@ -2,12 +2,12 @@ package confirm
 
 import (
 	"fmt"
-	"go-deploy/models/sys/deployment"
+	deploymentModels "go-deploy/models/sys/deployment"
 	"go-deploy/models/sys/vm"
 	"go-deploy/service"
 )
 
-func appCreatedK8s(deployment *deployment.Deployment, app *deployment.App) bool {
+func appCreatedK8s(deployment *deploymentModels.Deployment, app *deploymentModels.App) bool {
 	for _, volume := range app.Volumes {
 		pv, ok := deployment.Subsystems.K8s.GetPvMap()[deployment.Name+"-"+volume.Name]
 		if !pv.Created() || !ok {
@@ -41,10 +41,19 @@ func appCreatedK8s(deployment *deployment.Deployment, app *deployment.App) bool 
 		}
 	}
 
-	return deploymentCreated && serviceCreated && ingressCreated
+	secretCreated := false
+	if deployment.Type == deploymentModels.TypeCustom {
+		for mapName, secret := range deployment.Subsystems.K8s.SecretMap {
+			if secret.Created() && mapName == deployment.Name+"-image-pull-secret" {
+				secretCreated = true
+			}
+		}
+	}
+
+	return deploymentCreated && serviceCreated && ingressCreated && secretCreated
 }
 
-func appDeletedK8s(deployment *deployment.Deployment, app *deployment.App) bool {
+func appDeletedK8s(deployment *deploymentModels.Deployment, app *deploymentModels.App) bool {
 	for _, volume := range app.Volumes {
 		pv := deployment.Subsystems.K8s.PvMap[volume.Name]
 		if pv.Created() {
@@ -78,10 +87,19 @@ func appDeletedK8s(deployment *deployment.Deployment, app *deployment.App) bool 
 		}
 	}
 
-	return deploymentDeleted && serviceDeleted && ingressDeleted
+	secretDeleted := true
+	if deployment.Type == deploymentModels.TypeCustom {
+		for mapName, secret := range deployment.Subsystems.K8s.SecretMap {
+			if secret.Created() && mapName == deployment.Name+"-image-pull-secret" {
+				secretDeleted = false
+			}
+		}
+	}
+
+	return deploymentDeleted && serviceDeleted && ingressDeleted && secretDeleted
 }
 
-func k8sCreated(deployment *deployment.Deployment) (bool, error) {
+func k8sCreated(deployment *deploymentModels.Deployment) (bool, error) {
 	_ = func(err error) error {
 		return fmt.Errorf("failed to check if k8s setup is created for deployment %s. details: %w", deployment.Name, err)
 	}
@@ -92,11 +110,17 @@ func k8sCreated(deployment *deployment.Deployment) (bool, error) {
 		}
 	}
 
+	for mapName, secret := range deployment.Subsystems.K8s.SecretMap {
+		if mapName == "wildcard-cert" && !secret.Created() {
+			return false, nil
+		}
+	}
+
 	k8s := &deployment.Subsystems.K8s
 	return k8s.Namespace.Created(), nil
 }
 
-func k8sDeleted(deployment *deployment.Deployment) (bool, error) {
+func k8sDeleted(deployment *deploymentModels.Deployment) (bool, error) {
 	_ = func(err error) error {
 		return fmt.Errorf("failed to check if k8s setup is deleted for deployment %s. details: %w", deployment.Name, err)
 	}
@@ -107,11 +131,17 @@ func k8sDeleted(deployment *deployment.Deployment) (bool, error) {
 		}
 	}
 
+	for mapName, secret := range deployment.Subsystems.K8s.SecretMap {
+		if mapName == "wildcard-cert" && secret.Created() {
+			return false, nil
+		}
+	}
+
 	k8s := &deployment.Subsystems.K8s
 	return k8s.Namespace.ID == "", nil
 }
 
-func harborCreated(deployment *deployment.Deployment) (bool, error) {
+func harborCreated(deployment *deploymentModels.Deployment) (bool, error) {
 	_ = func(err error) error {
 		return fmt.Errorf("failed to check if harbor is created for deployment %s. details: %w", deployment.Name, err)
 	}
@@ -127,7 +157,7 @@ func harborCreated(deployment *deployment.Deployment) (bool, error) {
 		harbor.Webhook.Created(), nil
 }
 
-func harborDeleted(deployment *deployment.Deployment) (bool, error) {
+func harborDeleted(deployment *deploymentModels.Deployment) (bool, error) {
 	_ = func(err error) error {
 		return fmt.Errorf("failed to check if harbor is created for deployment %s. details: %w", deployment.Name, err)
 	}
@@ -139,7 +169,7 @@ func harborDeleted(deployment *deployment.Deployment) (bool, error) {
 		harbor.Webhook.ID == 0, nil
 }
 
-func gitHubCreated(deployment *deployment.Deployment) (bool, error) {
+func gitHubCreated(deployment *deploymentModels.Deployment) (bool, error) {
 	_ = func(err error) error {
 		return fmt.Errorf("failed to check if github is created for deployment %s. details: %w", deployment.Name, err)
 	}
@@ -152,7 +182,7 @@ func gitHubCreated(deployment *deployment.Deployment) (bool, error) {
 	return github.Webhook.Created(), nil
 }
 
-func gitHubDeleted(deployment *deployment.Deployment) (bool, error) {
+func gitHubDeleted(deployment *deploymentModels.Deployment) (bool, error) {
 	_ = func(err error) error {
 		return fmt.Errorf("failed to check if github is created for deployment %s. details: %w", deployment.Name, err)
 	}
