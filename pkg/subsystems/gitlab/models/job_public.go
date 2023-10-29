@@ -25,6 +25,7 @@ func CreateJobPublicFromGet(job *gitlab.Job) *JobPublic {
 	}
 
 	return &JobPublic{
+		ID:        job.ID,
 		ProjectID: projectID,
 		Status:    job.Status,
 		Stage:     job.Stage,

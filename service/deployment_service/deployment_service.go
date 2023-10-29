@@ -207,7 +207,7 @@ func Delete(id string) error {
 		return makeError(err)
 	}
 
-	err = github_service.Delete(id, nil)
+	err = github_service.Delete(id)
 	if err != nil {
 		return makeError(err)
 	}
