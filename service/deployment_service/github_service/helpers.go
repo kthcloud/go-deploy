@@ -3,54 +3,15 @@ package github_service
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
-	deploymentModel "go-deploy/models/sys/deployment"
-	"go-deploy/pkg/conf"
 	"go-deploy/pkg/subsystems/github"
-	githubModels "go-deploy/pkg/subsystems/github/models"
 	"go-deploy/utils/requestutils"
 	"net/url"
 )
-
-func createGitHubWebhookPublic(repositoryID int64) *githubModels.WebhookPublic {
-	webhookTarget := fmt.Sprintf("%s/v1/hooks/deployments/github", conf.Env.ExternalUrl)
-	return &githubModels.WebhookPublic{
-		RepositoryID: repositoryID,
-		Events:       nil,
-		Active:       false,
-		ContentType:  "json",
-		WebhookURL:   webhookTarget,
-		Secret:       uuid.NewString(),
-	}
-}
 
 func withGitHubClient(token string) (*github.Client, error) {
 	return github.New(&github.ClientConf{
 		Token: token,
 	})
-}
-
-func createGitHubWebhook(client *github.Client, deployment *deploymentModel.Deployment, public *githubModels.WebhookPublic) (*githubModels.WebhookPublic, error) {
-	id, err := client.CreateWebhook(public)
-	if err != nil {
-		return nil, err
-	}
-
-	webhook, err := client.ReadWebhook(id, public.RepositoryID)
-	if err != nil {
-		return nil, err
-	}
-
-	if webhook == nil {
-		return nil, fmt.Errorf("failed to read webhook after creation")
-	}
-
-	err = deploymentModel.New().UpdateSubsystemByName(deployment.ID, "github.webhook", webhook)
-	if err != nil {
-		return nil, err
-	}
-
-	return webhook, nil
 }
 
 func fetchAccessToken(code, clientId string, clientSecret string) (string, error) {

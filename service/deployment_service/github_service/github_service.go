@@ -7,9 +7,8 @@ import (
 	githubThirdParty "github.com/google/go-github/github"
 	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/pkg/conf"
-	"go-deploy/pkg/subsystems/github"
-	githubModels "go-deploy/pkg/subsystems/github/models"
-	"go-deploy/service"
+	"go-deploy/service/resources"
+	"go-deploy/service/vm_service/base"
 	"log"
 	"strings"
 )
@@ -21,80 +20,50 @@ func Create(id string, params *deploymentModel.CreateParams) error {
 		return fmt.Errorf("failed to setup github for deployment %s. details: %w", params.Name, err)
 	}
 
-	client, err := withGitHubClient(params.GitHub.Token)
+	githubCtx, err := NewContext(id, params.GitHub.Token, params.GitHub.RepositoryID)
 	if err != nil {
-		return makeError(err)
-	}
-
-	deployment, err := deploymentModel.New().GetByID(id)
-	if err != nil {
-		return makeError(err)
-	}
-
-	if deployment == nil {
-		log.Println("deployment", id, "not found for github setup. assuming it was deleted")
-		return nil
-	}
-
-	if service.NotCreated(&deployment.Subsystems.GitHub.Webhook) {
-		_, err = createGitHubWebhook(client, deployment, createGitHubWebhookPublic(params.GitHub.RepositoryID))
-		if err != nil {
-			return makeError(err)
+		if errors.Is(err, base.DeploymentDeletedErr) {
+			return nil
 		}
+
+		return makeError(err)
 	}
+
+	githubCtx.WithCreateParams(params)
+
+	// webhook
+	err = resources.SsCreator(githubCtx.Client.CreateWebhook).
+		WithDbFunc(dbFunc(id, "webhook")).
+		WithPublic(githubCtx.Generator.Webhook()).
+		Exec()
 
 	return nil
 }
 
-func Delete(id string, githubToken *string) error {
+func Delete(id string) error {
 	log.Println("deleting github for", id)
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete github for deployment %s. details: %w", id, err)
 	}
 
-	if githubToken == nil {
-		// assume token is not attainable and that the webhook can remain active
-		err := deploymentModel.New().UpdateSubsystemByID(id, "github.placeholder", false)
-		if err != nil {
-			return makeError(err)
-		}
-
-		err = deploymentModel.New().UpdateSubsystemByID(id, "github.webhook", githubModels.WebhookPublic{})
-		if err != nil {
-			return makeError(err)
-		}
-		return nil
-	}
-
-	client, err := github.New(&github.ClientConf{
-		Token: *githubToken,
-	})
-
+	githubCtx, err := NewContext(id, "", 0)
 	if err != nil {
+		if errors.Is(err, base.DeploymentDeletedErr) {
+			return nil
+		}
+
 		return makeError(err)
 	}
 
-	deployment, err := deploymentModel.New().GetByID(id)
+	// webhook
+	err = resources.SsDeleter(func(int64) error { return nil }).
+		WithResourceID(githubCtx.Deployment.Subsystems.GitHub.Webhook.ID).
+		WithDbFunc(dbFunc(id, "webhook")).
+		Exec()
+
 	if err != nil {
 		return makeError(err)
-	}
-
-	if deployment == nil {
-		log.Println("deployment", id, "not found for github deletion. assuming it was deleted")
-		return nil
-	}
-
-	if deployment.Subsystems.GitHub.Webhook.ID != 0 {
-		err = client.DeleteWebhook(deployment.Subsystems.GitHub.Webhook.ID, deployment.Subsystems.GitHub.Webhook.RepositoryID)
-		if err != nil {
-			return makeError(err)
-		}
-
-		err = deploymentModel.New().UpdateSubsystemByID(id, "github.webhook", githubModels.WebhookPublic{})
-		if err != nil {
-			return makeError(err)
-		}
 	}
 
 	return nil
@@ -104,10 +73,10 @@ func CreatePlaceholder(id string) error {
 	log.Println("setting up placeholder github")
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup placeholder github. details: %w", err)
+		return fmt.Errorf("failed to setup placeholder harbor. details: %w", err)
 	}
 
-	err := deploymentModel.New().UpdateSubsystemByID(id, "github.placeholder", true)
+	err := resources.SsPlaceholderCreator().WithDbFunc(dbFunc(id, "placeholder")).Exec()
 	if err != nil {
 		return makeError(err)
 	}
@@ -272,4 +241,13 @@ func GetWebhooks(token, owner, repository string) ([]deploymentModel.GitHubWebho
 	}
 
 	return webhooks, nil
+}
+
+func dbFunc(id, key string) func(interface{}) error {
+	return func(data interface{}) error {
+		if data == nil {
+			return deploymentModel.New().DeleteSubsystemByID(id, "github."+key)
+		}
+		return deploymentModel.New().UpdateSubsystemByID(id, "github."+key, data)
+	}
 }

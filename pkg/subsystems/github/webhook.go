@@ -7,12 +7,12 @@ import (
 	"go-deploy/pkg/subsystems/github/models"
 )
 
-func (c *Client) ReadWebhook(id int64, repositoryID int64) (*models.WebhookPublic, error) {
+func (client *Client) ReadWebhook(id int64, repositoryID int64) (*models.WebhookPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to read github webhook. details: %w", err)
 	}
 
-	repository, _, err := c.GitHubClient.Repositories.GetByID(context.TODO(), repositoryID)
+	repository, _, err := client.GitHubClient.Repositories.GetByID(context.TODO(), repositoryID)
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -21,7 +21,7 @@ func (c *Client) ReadWebhook(id int64, repositoryID int64) (*models.WebhookPubli
 		return nil, makeError(fmt.Errorf("failed to get repository name or owner"))
 	}
 
-	hook, _, err := c.GitHubClient.Repositories.GetHook(context.TODO(), *repository.Owner.Login, *repository.Name, id)
+	hook, _, err := client.GitHubClient.Repositories.GetHook(context.TODO(), *repository.Owner.Login, *repository.Name, id)
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -34,23 +34,23 @@ func (c *Client) ReadWebhook(id int64, repositoryID int64) (*models.WebhookPubli
 	return public, nil
 }
 
-func (c *Client) CreateWebhook(public *models.WebhookPublic) (int64, error) {
+func (client *Client) CreateWebhook(public *models.WebhookPublic) (*models.WebhookPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create github webhook. details: %w", err)
 	}
 
-	repository, _, err := c.GitHubClient.Repositories.GetByID(context.TODO(), public.RepositoryID)
+	repository, _, err := client.GitHubClient.Repositories.GetByID(context.TODO(), public.RepositoryID)
 	if err != nil {
-		return 0, makeError(err)
+		return nil, makeError(err)
 	}
 
 	if repository.Name == nil || repository.Owner == nil || repository.Owner.Login == nil {
-		return 0, makeError(fmt.Errorf("failed to get repository name or owner"))
+		return nil, makeError(fmt.Errorf("failed to get repository name or owner"))
 	}
 
-	currentHooks, _, err := c.GitHubClient.Repositories.ListHooks(context.TODO(), *repository.Owner.Login, *repository.Name, nil)
+	currentHooks, _, err := client.GitHubClient.Repositories.ListHooks(context.TODO(), *repository.Owner.Login, *repository.Name, nil)
 	if err != nil {
-		return 0, makeError(err)
+		return nil, makeError(err)
 	}
 
 	var id *int64
@@ -66,7 +66,7 @@ func (c *Client) CreateWebhook(public *models.WebhookPublic) (int64, error) {
 	}
 
 	if id == nil {
-		created, _, err := c.GitHubClient.Repositories.CreateHook(context.TODO(), *repository.Owner.Login, *repository.Name, &github.Hook{
+		created, _, err := client.GitHubClient.Repositories.CreateHook(context.TODO(), *repository.Owner.Login, *repository.Name, &github.Hook{
 			Name:   github.String("web"),
 			Active: github.Bool(true),
 			Events: []string{"push"},
@@ -80,25 +80,25 @@ func (c *Client) CreateWebhook(public *models.WebhookPublic) (int64, error) {
 		})
 
 		if err != nil {
-			return 0, makeError(err)
+			return nil, makeError(err)
 		}
 
 		if created.ID == nil {
-			return 0, makeError(fmt.Errorf("failed to get webhook id after creation"))
+			return nil, makeError(fmt.Errorf("failed to get webhook id after creation"))
 		}
 
 		id = created.ID
 	}
 
-	return *id, nil
+	return client.ReadWebhook(*id, public.RepositoryID)
 }
 
-func (c *Client) DeleteWebhook(id int64, repositoryId int64) error {
+func (client *Client) DeleteWebhook(id int64, repositoryId int64) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete github webhook. details: %w", err)
 	}
 
-	repository, _, err := c.GitHubClient.Repositories.GetByID(context.TODO(), repositoryId)
+	repository, _, err := client.GitHubClient.Repositories.GetByID(context.TODO(), repositoryId)
 	if err != nil {
 		return makeError(err)
 	}
@@ -111,7 +111,7 @@ func (c *Client) DeleteWebhook(id int64, repositoryId int64) error {
 		return makeError(fmt.Errorf("failed to get repository name or owner"))
 	}
 
-	_, err = c.GitHubClient.Repositories.DeleteHook(context.TODO(), *repository.Owner.Login, *repository.Name, id)
+	_, err = client.GitHubClient.Repositories.DeleteHook(context.TODO(), *repository.Owner.Login, *repository.Name, id)
 	if err != nil {
 		return makeError(err)
 	}

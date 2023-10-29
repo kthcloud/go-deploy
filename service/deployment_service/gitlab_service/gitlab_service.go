@@ -63,11 +63,15 @@ func CreateBuild(id string, params *deploymentModel.BuildParams) error {
 		params.Branch,
 		deploymentModel.GitLabCiConfig{
 			Build: deploymentModel.Build{
-				Image: "docker:20.10.16",
+				Image: "docker:24.0.5",
 				Stage: "build",
 				Services: []string{
-					"docker:20.10.16-dind",
+					"docker:24.0.5-dind",
 				},
+				BeforeScript: []string{
+					"docker info",
+				},
+
 				Variables: map[string]string{
 					"CI_REGISTRY":          conf.Env.Registry.URL,
 					"CI_REGISTRY_IMAGE":    conf.Env.Registry.URL + "/" + subsystemutils.GetPrefixedName(deployment.OwnerID) + "/" + deployment.Name,
