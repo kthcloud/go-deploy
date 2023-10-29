@@ -5,10 +5,10 @@ type GitLabCiConfig struct {
 }
 
 type Build struct {
-	Image        string            `yaml:"image"`
-	Stage        string            `yaml:"stage"`
-	Services     []string          `yaml:"services"`
-	BeforeScript []string          `yaml:"before_script"`
-	Variables    map[string]string `yaml:"variables"`
-	Script       []string          `yaml:"script"`
+	Image        string            `yaml:"image,omitempty"`
+	Stage        string            `yaml:"stage,omitempty"`
+	Services     []string          `yaml:"services,omitempty"`
+	BeforeScript []string          `yaml:"before_script,omitempty"`
+	Variables    map[string]string `yaml:"variables,omitempty"`
+	Script       []string          `yaml:"script,omitempty"`
 }

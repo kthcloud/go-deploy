@@ -14,21 +14,11 @@ import (
 	"time"
 )
 
-func CreateBuild(id string, params *deploymentModel.BuildParams) error {
-	log.Println("creating build with gitlab for deployment", id)
+func CreateBuild(ids []string, params *deploymentModel.BuildParams) error {
+	log.Println("creating build with gitlab for", len(ids), "deployments")
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to build deployment with gitlab. details: %w", err)
-	}
-
-	deployment, err := deploymentModel.New().GetByID(id)
-	if err != nil {
-		return makeError(err)
-	}
-
-	if deployment == nil {
-		log.Println("deployment", id, "not found for gitlab build. assuming it was deleted")
-		return nil
 	}
 
 	client, err := gitlab.New(&gitlab.ClientConf{
@@ -36,12 +26,13 @@ func CreateBuild(id string, params *deploymentModel.BuildParams) error {
 		Token: conf.Env.GitLab.Token,
 	})
 
-	if err != nil {
-		return makeError(err)
+	name := params.Name
+	if name == "" {
+		name = "build"
 	}
 
 	public := &models.ProjectPublic{
-		Name:      deployment.Name + "-" + uuid.NewString(),
+		Name:      fmt.Sprintf("%s-%s", name, uuid.New().String()),
 		ImportURL: params.ImportURL,
 	}
 
@@ -57,7 +48,26 @@ func CreateBuild(id string, params *deploymentModel.BuildParams) error {
 		}
 	}()
 
-	escapedHarborName := strings.Replace(deployment.Subsystems.Harbor.Robot.HarborName, "$", "$$", -1)
+	script := []string{
+		"docker build --pull -t build .",
+	}
+
+	for _, id := range ids {
+		deployment, err := deploymentModel.New().GetByID(id)
+		if err != nil {
+			return makeError(err)
+		}
+
+		// harbor name contains $ which is a special character in gitlab ci, so we need to escape it with $$.
+		user := strings.Replace(deployment.Subsystems.Harbor.Robot.HarborName, "$", "\\$", -1)
+		password := deployment.Subsystems.Harbor.Robot.Secret
+		registry := conf.Env.Registry.URL
+		path := fmt.Sprintf("%s/%s/%s", registry, subsystemutils.GetPrefixedName(deployment.OwnerID), deployment.Name)
+
+		script = append(script, fmt.Sprintf("docker login -u %s -p %s %s", user, password, registry))
+		script = append(script, fmt.Sprintf("docker tag %s %s", "build", path))
+		script = append(script, fmt.Sprintf("docker push %s", path))
+	}
 
 	err = client.AttachCiFile(projectID,
 		params.Branch,
@@ -71,19 +81,7 @@ func CreateBuild(id string, params *deploymentModel.BuildParams) error {
 				BeforeScript: []string{
 					"docker info",
 				},
-
-				Variables: map[string]string{
-					"CI_REGISTRY":          conf.Env.Registry.URL,
-					"CI_REGISTRY_IMAGE":    conf.Env.Registry.URL + "/" + subsystemutils.GetPrefixedName(deployment.OwnerID) + "/" + deployment.Name,
-					"CI_COMMIT_REF_SLUG":   params.Tag,
-					"CI_REGISTRY_USER":     escapedHarborName,
-					"CI_REGISTRY_PASSWORD": deployment.Subsystems.Harbor.Robot.Secret,
-				},
-				Script: []string{
-					"docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY",
-					"docker build --pull -t $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG .",
-					"docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG",
-				},
+				Script: script,
 			},
 		},
 	)
@@ -109,9 +107,11 @@ func CreateBuild(id string, params *deploymentModel.BuildParams) error {
 
 		traceSlice := strings.Split(trace, "\n")
 
-		err = updateGitLabBuild(id, lastJob, traceSlice)
-		if err != nil {
-			return makeError(err)
+		for _, id := range ids {
+			err = updateGitLabBuild(id, lastJob, traceSlice)
+			if err != nil {
+				return makeError(err)
+			}
 		}
 
 		lastJob, err = client.ReadLastJob(projectID)
@@ -124,9 +124,11 @@ func CreateBuild(id string, params *deploymentModel.BuildParams) error {
 		}
 
 		if lastJob.Status == "success" || lastJob.Status == "failed" {
-			err = updateGitLabBuild(id, lastJob, traceSlice)
-			if err != nil {
-				return makeError(err)
+			for _, id := range ids {
+				err = updateGitLabBuild(id, lastJob, traceSlice)
+				if err != nil {
+					return makeError(err)
+				}
 			}
 			break
 		}
@@ -134,7 +136,6 @@ func CreateBuild(id string, params *deploymentModel.BuildParams) error {
 		time.Sleep(1 * time.Second)
 	}
 
-	log.Println("build finished with gitlab for deployment", id)
-
+	log.Println("build finished with gitlab for", len(ids), "deployments")
 	return nil
 }

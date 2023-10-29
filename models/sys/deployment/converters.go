@@ -213,6 +213,7 @@ func (p *UpdateParams) FromDTO(dto *body.DeploymentUpdate, deploymentType string
 }
 
 func (p *BuildParams) FromDTO(dto *body.DeploymentBuild) {
+	p.Name = dto.Name
 	p.Tag = dto.Tag
 	p.Branch = dto.Branch
 	p.ImportURL = dto.ImportURL

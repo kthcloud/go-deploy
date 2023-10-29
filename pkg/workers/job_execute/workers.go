@@ -94,8 +94,8 @@ func startJob(job *jobModel.Job) error {
 		go wrapper(deleteDeployment, job)
 	case jobModel.TypeUpdateDeployment:
 		go wrapper(updateDeployment, job)
-	case jobModel.TypeBuildDeployment:
-		go wrapper(buildDeployment, job)
+	case jobModel.TypeBuildDeployments:
+		go wrapper(buildDeployments, job)
 	case jobModel.TypeRepairDeployment:
 		go wrapper(repairDeployment, job)
 	case jobModel.TypeCreateStorageManager:

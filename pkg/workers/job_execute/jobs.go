@@ -13,6 +13,7 @@ import (
 	"go-deploy/service/deployment_service"
 	"go-deploy/service/vm_service"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/exp/slices"
 	"log"
 	"strings"
@@ -422,29 +423,41 @@ func updateDeployment(job *jobModel.Job) error {
 	return nil
 }
 
-func buildDeployment(job *jobModel.Job) error {
-	err := assertParameters(job, []string{"id", "build"})
+func buildDeployments(job *jobModel.Job) error {
+	err := assertParameters(job, []string{"ids", "build"})
 	if err != nil {
 		return makeTerminatedError(err)
 	}
 
-	id := job.Args["id"].(string)
+	idsInt := job.Args["ids"].(primitive.A)
+	ids := make([]string, len(idsInt))
+	for idx, id := range idsInt {
+		ids[idx] = id.(string)
+	}
+
 	var params body.DeploymentBuild
 	err = mapstructure.Decode(job.Args["build"].(map[string]interface{}), &params)
 	if err != nil {
 		return makeTerminatedError(err)
 	}
 
-	deleted, err := deploymentDeleted(id)
-	if err != nil {
-		return makeTerminatedError(err)
+	var filtered []string
+	for _, id := range ids {
+		deleted, err := deploymentDeleted(id)
+		if err != nil {
+			return makeTerminatedError(err)
+		}
+
+		if !deleted {
+			filtered = append(filtered, id)
+		}
 	}
 
-	if deleted {
-		return makeTerminatedError(fmt.Errorf("deployment is deleted"))
+	if len(filtered) == 0 {
+		return nil
 	}
 
-	err = deployment_service.Build(id, &params)
+	err = deployment_service.Build(filtered, &params)
 	if err != nil {
 		return makeFailedError(err)
 	}

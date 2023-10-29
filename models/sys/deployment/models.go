@@ -78,6 +78,7 @@ type CreateParams struct {
 }
 
 type BuildParams struct {
+	Name      string
 	Tag       string
 	Branch    string
 	ImportURL string
