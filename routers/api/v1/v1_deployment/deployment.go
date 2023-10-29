@@ -43,6 +43,7 @@ func getStorageManagerURL(userID string, auth *service.AuthInfo) *string {
 // @Param Authorization header string true "Bearer token"
 // @Param all query bool false "Get all"
 // @Param userId query string false "Filter by user id"
+// @Param shared query bool false "Include shared"
 // @Param page query int false "Page number"
 // @Param pageSize query int false "Number of items per page"
 // @Success 200 {array} body.DeploymentRead
@@ -64,7 +65,7 @@ func GetList(c *gin.Context) {
 		return
 	}
 
-	deployments, err := deployment_service.GetManyAuth(requestQuery.All, requestQuery.UserID, auth, &requestQuery.Pagination)
+	deployments, err := deployment_service.GetManyAuth(requestQuery.All, requestQuery.UserID, requestQuery.Shared, auth, &requestQuery.Pagination)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get deployments: %s", err.Error()))
 		return

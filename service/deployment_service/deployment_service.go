@@ -10,6 +10,8 @@ import (
 	"go-deploy/models/sys/deployment/storage_manager"
 	roleModel "go-deploy/models/sys/enviroment/role"
 	jobModel "go-deploy/models/sys/job"
+	userModel "go-deploy/models/sys/user"
+	teamModels "go-deploy/models/sys/user/team"
 	"go-deploy/pkg/conf"
 	"go-deploy/service"
 	"go-deploy/service/deployment_service/base"
@@ -362,7 +364,7 @@ func GetByID(id string) (*deploymentModel.Deployment, error) {
 	return deploymentModel.New().GetByID(id)
 }
 
-func GetManyAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagination *query.Pagination) ([]deploymentModel.Deployment, error) {
+func GetManyAuth(allUsers bool, userID *string, shared bool, auth *service.AuthInfo, pagination *query.Pagination) ([]deploymentModel.Deployment, error) {
 	client := deploymentModel.New()
 
 	if pagination != nil {
@@ -378,7 +380,39 @@ func GetManyAuth(allUsers bool, userID *string, auth *service.AuthInfo, paginati
 		client.RestrictToUser(auth.UserID)
 	}
 
-	return client.GetAll()
+	resources, err := client.GetAll()
+	if err != nil {
+		return nil, err
+	}
+
+	if shared {
+		user, err := userModel.New().GetByID(auth.UserID)
+		if err != nil {
+			return nil, err
+		}
+
+		teamMap, err := user.GetTeamMap()
+		if err != nil {
+			return nil, err
+		}
+
+		for _, team := range teamMap {
+			for _, resource := range team.GetResourceMap() {
+				if resource.Type == teamModels.ResourceTypeDeployment {
+					deployment, err := deploymentModel.New().GetByID(resource.ID)
+					if err != nil {
+						return nil, err
+					}
+
+					if deployment != nil {
+						resources = append(resources, *deployment)
+					}
+				}
+			}
+		}
+	}
+
+	return resources, nil
 }
 
 func GetAll() ([]deploymentModel.Deployment, error) {

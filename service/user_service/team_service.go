@@ -3,13 +3,16 @@ package user_service
 import (
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
 	deploymentModel "go-deploy/models/sys/deployment"
+	notificationModel "go-deploy/models/sys/notification"
 	userModels "go-deploy/models/sys/user"
 	teamModels "go-deploy/models/sys/user/team"
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/service"
+	"go-deploy/service/notification_service"
 	"go-deploy/utils"
 	"golang.org/x/exp/maps"
 	"time"
@@ -114,6 +117,49 @@ func UpdateTeamAuth(id string, dtoUpdateTeam *body.TeamUpdate, auth *service.Aut
 	params.FromDTO(dtoUpdateTeam, func(resourceID string) *teamModels.Resource {
 		return getResourceIfAccessible(team.OwnerID, resourceID, auth)
 	})
+
+	// if new user, set timestamp
+	if params.MemberMap != nil {
+		for _, member := range *params.MemberMap {
+			if memberDB, ok := team.GetMemberMap()[member.ID]; ok {
+				member.AddedAt = memberDB.AddedAt
+				member.JoinedAt = memberDB.JoinedAt
+			} else {
+				member.AddedAt = time.Now()
+				if auth.IsAdmin {
+					member.JoinedAt = time.Now()
+					member.MemberStatus = teamModels.MemberStatusJoined
+				} else {
+					member.InviteCode = utils.HashString(uuid.NewString())
+					member.MemberStatus = teamModels.MemberStatusInvited
+					err = notification_service.CreateNotification(uuid.NewString(), member.ID, &notificationModel.CreateParams{
+						Type: notificationModel.TypeTeamInvite,
+						Content: map[string]interface{}{
+							"teamId":     team.ID,
+							"inviteCode": member.InviteCode,
+						},
+					})
+					if err != nil {
+						return nil, err
+					}
+				}
+
+			}
+			(*params.MemberMap)[member.ID] = member
+		}
+	}
+
+	// if new resource, set timestamp
+	if params.ResourceMap != nil {
+		for _, resource := range *params.ResourceMap {
+			if resourceDB, ok := team.GetResourceMap()[resource.ID]; ok {
+				resource.AddedAt = resourceDB.AddedAt
+			} else {
+				resource.AddedAt = time.Now()
+			}
+			(*params.ResourceMap)[resource.ID] = resource
+		}
+	}
 
 	err = teamClient.UpdateWithParamsByID(id, params)
 	if err != nil {
