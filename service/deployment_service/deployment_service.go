@@ -136,7 +136,8 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 			return nil
 		}
 
-		err = build(deployment, &deploymentModel.BuildParams{
+		err = build([]string{deployment.ID}, &deploymentModel.BuildParams{
+			Name:      repo.Name,
 			Tag:       "latest",
 			Branch:    repo.DefaultBranch,
 			ImportURL: repo.CloneURL,
@@ -312,25 +313,15 @@ func Restart(id string) error {
 	return nil
 }
 
-func Build(id string, buildParams *body.DeploymentBuild) error {
+func Build(ids []string, buildParams *body.DeploymentBuild) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to build deployment. details: %w", err)
-	}
-
-	deployment, err := deploymentModel.New().GetByID(id)
-	if err != nil {
-		return makeError(err)
-	}
-
-	if deployment == nil {
-		log.Println("deployment", id, "not found when building. assuming it was deleted")
-		return nil
 	}
 
 	params := &deploymentModel.BuildParams{}
 	params.FromDTO(buildParams)
 
-	err = build(deployment, params)
+	err := build(ids, params)
 	if err != nil {
 		return makeError(err)
 	}
@@ -531,27 +522,33 @@ func ValidGitHubRepository(token string, repositoryID int64) (bool, string, erro
 	return true, "", nil
 }
 
-func build(deployment *deploymentModel.Deployment, params *deploymentModel.BuildParams) error {
-	started, reason, err := StartActivity(deployment.ID, deploymentModel.ActivityBuilding)
-	if err != nil {
-		return err
-	}
-
-	if !started {
-		return fmt.Errorf("failed to build deployment. details: %s", reason)
-	}
-
-	defer func() {
-		err = deploymentModel.New().RemoveActivity(deployment.ID, deploymentModel.ActivityBuilding)
+func build(ids []string, params *deploymentModel.BuildParams) error {
+	var filtered []string
+	for _, id := range ids {
+		started, reason, err := StartActivity(id, deploymentModel.ActivityBuilding)
 		if err != nil {
-			utils.PrettyPrintError(fmt.Errorf("failed to remove activity %s for deployment %s. details: %w", deploymentModel.ActivityBuilding, deployment.Name, err))
+			return err
+		}
+
+		if !started {
+			utils.PrettyPrintError(fmt.Errorf("failed to build deployment. details: %s", reason))
+		}
+
+		filtered = append(filtered, id)
+	}
+	defer func() {
+		for _, id := range filtered {
+			err := deploymentModel.New().RemoveActivity(id, deploymentModel.ActivityBuilding)
+			if err != nil {
+				utils.PrettyPrintError(fmt.Errorf("failed to remove activity %s for deployment %s. details: %w", deploymentModel.ActivityBuilding, id, err))
+			}
 		}
 	}()
 
-	err = gitlab_service.CreateBuild(deployment.ID, params)
+	err := gitlab_service.CreateBuild(filtered, params)
 	if err != nil {
 		// we treat building as a non-critical activity, so we don't return an error here
-		utils.PrettyPrintError(fmt.Errorf("failed to create build for deployment %s details: %w", deployment.Name, err))
+		utils.PrettyPrintError(fmt.Errorf("failed to build image for %d deployments. details: %w", len(filtered), err))
 	}
 
 	return nil

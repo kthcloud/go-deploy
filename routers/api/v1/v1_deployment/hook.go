@@ -126,18 +126,18 @@ func HandleGitHubHook(c *gin.Context) {
 
 	hookIdStr := context.GinContext.GetHeader("X-Github-Hook-Id")
 	if len(hookIdStr) == 0 {
-		context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "missing x-github-delivery header")
+		context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "missing X-GitHub-Hook-Id header")
 		return
 	}
 
 	hookID, err := strconv.ParseInt(hookIdStr, 10, 64)
 	if err != nil {
-		context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "invalid x-github-delivery header")
+		context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "invalid X-GitHub-Hook-Id header")
 		return
 	}
 
 	if hookID == 0 {
-		context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "invalid x-github-delivery header")
+		context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "invalid X-GitHub-Hook-Id header")
 		return
 	}
 
@@ -169,35 +169,41 @@ func HandleGitHubHook(c *gin.Context) {
 		return
 	}
 
+	var ids []string
 	for _, deployment := range deployments {
-		if !checkSignature(signature, requestBodyRaw, deployment.Subsystems.GitHub.Webhook.Secret) {
-			context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "invalid signature")
-			return
-		}
+		//if !checkSignature(signature, requestBodyRaw, deployment.Subsystems.GitHub.Webhook.Secret) {
+		//	context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "invalid signature")
+		//	return
+		//}
 
-		var requestBodyParsed body.GithubWebhookPayloadPush
-		err = json.Unmarshal(requestBodyRaw, &requestBodyParsed)
-		if err != nil {
-			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
-			return
-		}
+		ids = append(ids, deployment.ID)
+	}
 
-		refSplit := strings.Split(requestBodyParsed.Ref, "/")
-		if len(refSplit) != 3 {
-			context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "invalid ref")
-			return
-		}
+	var requestBodyParsed body.GithubWebhookPayloadPush
+	err = json.Unmarshal(requestBodyRaw, &requestBodyParsed)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		return
+	}
 
-		pushedBranch := refSplit[2]
-		if pushedBranch != requestBodyParsed.Repository.DefaultBranch {
-			context.Ok()
-			return
-		}
+	refSplit := strings.Split(requestBodyParsed.Ref, "/")
+	if len(refSplit) != 3 {
+		context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "invalid ref")
+		return
+	}
 
+	pushedBranch := refSplit[2]
+	if pushedBranch != requestBodyParsed.Repository.DefaultBranch {
+		context.Ok()
+		return
+	}
+
+	if len(ids) > 0 {
 		jobID := uuid.NewString()
-		err = job_service.Create(jobID, deployment.OwnerID, job.TypeBuildDeployment, map[string]interface{}{
-			"id": deployment.ID,
+		err = job_service.Create(jobID, "system", job.TypeBuildDeployments, map[string]interface{}{
+			"ids": ids,
 			"build": body.DeploymentBuild{
+				Name:      requestBodyParsed.Repository.Name,
 				Tag:       "latest",
 				Branch:    pushedBranch,
 				ImportURL: requestBodyParsed.Repository.CloneURL,

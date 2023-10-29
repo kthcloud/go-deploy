@@ -93,7 +93,7 @@ func (client *Client) Create(id, ownerID string, params *CreateParams) (*Deploym
 }
 
 func (client *Client) GetAllByGitHubWebhookID(id int64) ([]Deployment, error) {
-	return client.GetAllWithFilter(bson.D{{"subsystems.github.webhookId", id}})
+	return client.GetAllWithFilter(bson.D{{"subsystems.github.webhook.id", id}})
 }
 
 func (client *Client) DeleteByID(id string) error {

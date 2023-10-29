@@ -11,7 +11,7 @@ const (
 	TypeCreateDeployment     = "createDeployment"
 	TypeDeleteDeployment     = "deleteDeployment"
 	TypeUpdateDeployment     = "updateDeployment"
-	TypeBuildDeployment      = "buildDeployment"
+	TypeBuildDeployments     = "buildDeployments"
 	TypeCreateStorageManager = "createStorageManager"
 	TypeDeleteStorageManager = "deleteStorageManager"
 	TypeRepairStorageManager = "repairStorageManager"

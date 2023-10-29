@@ -45,9 +45,10 @@ type DeploymentUpdate struct {
 }
 
 type DeploymentBuild struct {
-	Tag       string `json:"tag" bson:"tag" binding:"required,rfc1035,min=1,max=50"`
-	Branch    string `json:"branch" bson:"branch" binding:"required,min=1,max=50"`
-	ImportURL string `json:"importUrl" bson:"importUrl" binding:"required,min=1,max=1000"`
+	Name      string `bson:"name"`
+	Tag       string `bson:"tag"`
+	Branch    string `bson:"branch"`
+	ImportURL string `bson:"importUrl"`
 }
 
 type DeploymentCreated struct {
