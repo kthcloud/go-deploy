@@ -11,10 +11,10 @@ const (
 	WildcardCertSecretName    = "wildcard-cert"
 )
 
-func ImagePullSecretSuffix(appName string) string {
+func WithImagePullSecretSuffix(appName string) string {
 	return appName + "-" + AppNameImagePullSecret
 }
 
-func CustomDomainSuffix(appName string) string {
+func WithCustomDomainSuffix(appName string) string {
 	return appName + "-" + AppNameCustomDomain
 }
