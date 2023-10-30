@@ -41,10 +41,13 @@ func (client *Client) Create(id string, params *CreateParams) error {
 	_, err = client.Collection.InsertOne(context.TODO(), User{
 		ID:            id,
 		Username:      params.Username,
+		FirstName:     params.FirstName,
+		LastName:      params.LastName,
 		Email:         params.Email,
-		EffectiveRole: *params.EffectiveRole,
 		IsAdmin:       params.IsAdmin,
+		EffectiveRole: *params.EffectiveRole,
 		PublicKeys:    []PublicKey{},
+		Onboarded:     false,
 	})
 
 	if err != nil {

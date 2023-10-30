@@ -41,6 +41,8 @@ func (user *User) ToDTO(effectiveRole *roleModel.Role, usage *Usage, storageURL 
 		ID:         user.ID,
 		Username:   user.Username,
 		Email:      user.Email,
+		FirstName:  user.FirstName,
+		LastName:   user.LastName,
 		PublicKeys: publicKeys,
 		Onboarded:  user.Onboarded,
 

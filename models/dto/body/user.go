@@ -20,16 +20,18 @@ type Role struct {
 }
 
 type SmallUserRead struct {
-	ID       string `json:"id"`
-	Username string `json:"username"`
-	Fullname string `json:"fullname"`
-	Email    string `json:"email"`
+	ID        string `json:"id"`
+	Username  string `json:"username"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	Email     string `json:"email"`
 }
 
 type UserRead struct {
 	ID         string      `json:"id"`
 	Username   string      `json:"username"`
-	Fullname   string      `json:"fullname"`
+	FirstName  string      `json:"firstName"`
+	LastName   string      `json:"lastName"`
 	Email      string      `json:"email"`
 	PublicKeys []PublicKey `json:"publicKeys"`
 	Onboarded  bool        `json:"onboarded"`
