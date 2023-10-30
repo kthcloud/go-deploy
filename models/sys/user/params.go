@@ -1,6 +1,15 @@
 package user
 
+type CreateParams struct {
+	Username      string
+	FirstName     string
+	LastName      string
+	Email         string
+	IsAdmin       bool
+	EffectiveRole *EffectiveRole
+}
+
 type UpdateParams struct {
-	PublicKeys *[]PublicKey `json:"publicKeys" bson:"publicKeys"`
-	Onboarded  *bool        `json:"onboarded" bson:"onboarded"`
+	PublicKeys *[]PublicKey
+	Onboarded  *bool
 }

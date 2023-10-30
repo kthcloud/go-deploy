@@ -26,10 +26,18 @@ func Create(auth *service.AuthInfo) (*userModel.User, error) {
 
 	effectiveRole := auth.GetEffectiveRole()
 
-	err := userModel.New().Create(auth.UserID, auth.GetUsername(), auth.GetEmail(), auth.IsAdmin, &userModel.EffectiveRole{
-		Name:        effectiveRole.Name,
-		Description: effectiveRole.Description,
-	})
+	params := &userModel.CreateParams{
+		Username:  auth.GetUsername(),
+		FirstName: auth.GetFirstName(),
+		LastName:  auth.GetLastName(),
+		Email:     auth.GetEmail(),
+		EffectiveRole: &userModel.EffectiveRole{
+			Name:        effectiveRole.Name,
+			Description: effectiveRole.Description,
+		},
+	}
+
+	err := userModel.New().Create(auth.UserID, params)
 	if err != nil {
 		return nil, err
 	}
