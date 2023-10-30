@@ -1,34 +1,37 @@
 package storage_manager
 
 import (
-	"context"
 	"fmt"
+	"go-deploy/models"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"time"
 )
 
-func (client *Client) CreateStorageManager(id string, params *CreateParams) (string, error) {
-	storageManager := StorageManager{
+var AlreadyExistsErr = fmt.Errorf("storage manager already exists for user")
+
+func (client *Client) CreateStorageManager(id string, params *CreateParams) (*StorageManager, error) {
+	storageManager := &StorageManager{
 		ID:        id,
 		OwnerID:   params.UserID,
 		CreatedAt: time.Now(),
 		Zone:      params.Zone,
 	}
 
-	_, err := client.Collection.UpdateOne(context.TODO(), bson.D{{"ownerId", params.UserID}}, bson.D{
-		{"$setOnInsert", storageManager},
-	}, options.Update().SetUpsert(true))
+	err := client.CreateIfUnique(id, storageManager, bson.D{{"ownerId", params.UserID}})
 	if err != nil {
-		return "", fmt.Errorf("failed to create storage manager. details: %w", err)
+		if err == models.UniqueConstraintErr {
+			return nil, AlreadyExistsErr
+		} else {
+			return nil, err
+		}
 	}
 
-	manager, err := client.GetWithFilter(bson.D{{"ownerId", params.UserID}})
+	fetched, err := client.GetByID(id)
 	if err != nil {
-		return "", fmt.Errorf("failed to fetch storage manager. details: %w", err)
+		return nil, err
 	}
 
-	return manager.ID, nil
+	return fetched, nil
 }
 
 func (client *Client) UpdateSubsystemByID(id, key string, update interface{}) error {

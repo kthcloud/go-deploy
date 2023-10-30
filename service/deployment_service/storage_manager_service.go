@@ -1,11 +1,16 @@
 package deployment_service
 
 import (
+	"errors"
 	"fmt"
 	"go-deploy/models/sys/deployment/storage_manager"
 	"go-deploy/service"
 	"go-deploy/service/deployment_service/k8s_service"
 	"log"
+)
+
+var (
+	StorageManagerAlreadyExistsErr = fmt.Errorf("storage manager already exists for user")
 )
 
 func GetAllStorageManagers(auth *service.AuthInfo) ([]storage_manager.StorageManager, error) {
@@ -60,12 +65,12 @@ func CreateStorageManager(id string, params *storage_manager.CreateParams) error
 		return fmt.Errorf("failed to create storage manager. details: %w", err)
 	}
 
-	if params == nil {
-		return makeErr(fmt.Errorf("params is nil"))
-	}
-
-	id, err := storage_manager.New().CreateStorageManager(id, params)
+	_, err := storage_manager.New().CreateStorageManager(id, params)
 	if err != nil {
+		if errors.Is(err, storage_manager.AlreadyExistsErr) {
+			return StorageManagerAlreadyExistsErr
+		}
+
 		return makeErr(err)
 	}
 
