@@ -14,8 +14,8 @@ type Volume struct {
 }
 
 type GitHub struct {
-	Token        string `json:"token" binding:"required,min=1,max=1000"`
-	RepositoryID int64  `json:"repositoryId" binding:"required"`
+	Token        string `json:"token" bson:"token" binding:"required,min=1,max=1000"`
+	RepositoryID int64  `json:"repositoryId" bson:"repositoryId" binding:"required"`
 }
 
 type DeploymentCreate struct {
@@ -32,6 +32,10 @@ type DeploymentCreate struct {
 	GitHub *GitHub `json:"github" bson:"github,omitempty" binding:"omitempty,dive"`
 
 	Zone *string `json:"zone" bson:"zone,omitempty" binding:"omitempty"`
+}
+
+type DeploymentCreateWithMigrationCode struct {
+	MigrationCode string `json:"migrationCode" bson:"migrationCode" binding:"required,min=1,max=1000"`
 }
 
 type DeploymentUpdate struct {

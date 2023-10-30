@@ -81,7 +81,7 @@ func Setup() {
 	// create unique indexes
 	uniqueIndexes := map[string][]string{
 		"deployments":     {"id"},
-		"storageManagers": {"id", "ownerId"},
+		"storageManagers": {"id"},
 		"vms":             {"id"},
 		"gpus":            {"id"},
 		"users":           {"id"},

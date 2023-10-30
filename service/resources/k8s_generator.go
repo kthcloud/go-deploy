@@ -898,6 +898,19 @@ func (kg *K8sGenerator) Jobs() []models.JobPublic {
 			}
 		}
 
+		initVolumes, _ := getStorageManagerVolumes(kg.s.storageManager.OwnerID)
+
+		k8sVolumes := make([]models.Volume, len(initVolumes))
+		for i, volume := range initVolumes {
+			pvcName := getStorageManagerPvcName(volume.Name)
+			k8sVolumes[i] = models.Volume{
+				Name:      getStorageManagerPvName(kg.s.storageManager.OwnerID, volume.Name),
+				PvcName:   &pvcName,
+				MountPath: volume.AppPath,
+				Init:      volume.Init,
+			}
+		}
+
 		for _, job := range jobs {
 			if _, ok := kg.s.storageManager.Subsystems.K8s.GetJobMap()[job.Name]; !ok {
 				res = append(res, models.JobPublic{
@@ -906,6 +919,7 @@ func (kg *K8sGenerator) Jobs() []models.JobPublic {
 					Image:     job.Image,
 					Command:   job.Command,
 					Args:      job.Args,
+					Volumes:   k8sVolumes,
 				})
 			}
 		}
