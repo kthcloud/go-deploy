@@ -19,9 +19,17 @@ type Role struct {
 	Permissions []string `json:"permissions"`
 }
 
+type SmallUserRead struct {
+	ID       string `json:"id"`
+	Username string `json:"username"`
+	Fullname string `json:"fullname"`
+	Email    string `json:"email"`
+}
+
 type UserRead struct {
 	ID         string      `json:"id"`
 	Username   string      `json:"username"`
+	Fullname   string      `json:"fullname"`
 	Email      string      `json:"email"`
 	PublicKeys []PublicKey `json:"publicKeys"`
 	Onboarded  bool        `json:"onboarded"`
@@ -36,7 +44,6 @@ type UserRead struct {
 }
 
 type UserUpdate struct {
-	Username   *string      `json:"username,omitempty" bson:"username,omitempty" binding:"omitempty,min=3,max=32"`
 	PublicKeys *[]PublicKey `json:"publicKeys,omitempty" bson:"publicKeys,omitempty" binding:"omitempty,min=0,max=1000,dive"`
 	Onboarded  *bool        `json:"onboarded,omitempty" bson:"onboarded,omitempty" binding:"omitempty,boolean"`
 }

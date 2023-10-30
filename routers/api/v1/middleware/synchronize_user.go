@@ -1,4 +1,4 @@
-package v1_user
+package middleware
 
 import (
 	"fmt"
@@ -19,7 +19,7 @@ func SynchronizeUser(c *gin.Context) {
 		return
 	}
 
-	_, err = user_service.GetOrCreate(auth)
+	_, err = user_service.Create(auth)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get user: %s", err))
 		return

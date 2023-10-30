@@ -95,7 +95,7 @@ func GetList(c *gin.Context) {
 		usersDto := make([]body.UserRead, 0)
 		for _, user := range users {
 			if user.ID == auth.UserID {
-				updatedUser, err := user_service.GetOrCreate(auth)
+				updatedUser, err := user_service.Create(auth)
 				if err != nil {
 					utils.PrettyPrintError(fmt.Errorf("failed to get or create a user when listing: %w", err))
 					continue

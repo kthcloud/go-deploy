@@ -18,7 +18,7 @@ func GetByID(userID string) (*userModel.User, error) {
 	return userModel.New().GetByID(userID)
 }
 
-func GetOrCreate(auth *service.AuthInfo) (*userModel.User, error) {
+func Create(auth *service.AuthInfo) (*userModel.User, error) {
 	roleNames := make([]string, len(auth.Roles))
 	for i, role := range auth.Roles {
 		roleNames[i] = role.Name
@@ -73,7 +73,6 @@ func Update(userID string, dtoUserUpdate *body.UserUpdate, auth *service.AuthInf
 	}
 
 	userUpdate := &userModel.UpdateParams{
-		Username:   dtoUserUpdate.Username,
 		PublicKeys: publicKeys,
 		Onboarded:  dtoUserUpdate.Onboarded,
 	}

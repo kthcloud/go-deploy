@@ -56,7 +56,6 @@ func (client *Client) Create(id, username, email string, isAdmin bool, effective
 func (client *Client) UpdateWithParams(id string, params *UpdateParams) error {
 	updateData := bson.D{}
 
-	models.AddIfNotNil(&updateData, "username", params.Username)
 	models.AddIfNotNil(&updateData, "publicKeys", params.PublicKeys)
 	models.AddIfNotNil(&updateData, "onboarded", params.Onboarded)
 
