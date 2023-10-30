@@ -31,6 +31,7 @@ func Create(auth *service.AuthInfo) (*userModel.User, error) {
 		FirstName: auth.GetFirstName(),
 		LastName:  auth.GetLastName(),
 		Email:     auth.GetEmail(),
+		IsAdmin:   auth.IsAdmin,
 		EffectiveRole: &userModel.EffectiveRole{
 			Name:        effectiveRole.Name,
 			Description: effectiveRole.Description,
