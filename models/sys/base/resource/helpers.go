@@ -29,6 +29,15 @@ func (client *ResourceClient[T]) ExistsByID(id string) (bool, error) {
 	return count > 0, nil
 }
 
+func (client *ResourceClient[T]) ExistsAny() (bool, error) {
+	count, err := models.CountResources(client.Collection, bson.D{}, false, client.ExtraFilter)
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}
+
 func (client *ResourceClient[T]) CreateIfUnique(id string, resource *T, field bson.D) error {
 	return models.CreateIfUniqueResource[T](client.Collection, id, resource, field, client.IncludeDeleted, client.ExtraFilter)
 }
@@ -94,4 +103,8 @@ func (client *ResourceClient[T]) GetAllWithFilter(filter bson.D) ([]T, error) {
 
 func (client *ResourceClient[T]) CountWithFilter(filter bson.D) (int, error) {
 	return models.CountResources(client.Collection, filter, client.IncludeDeleted, client.ExtraFilter)
+}
+
+func (client *ResourceClient[T]) Count() (int, error) {
+	return models.CountResources(client.Collection, bson.D{}, client.IncludeDeleted, client.ExtraFilter)
 }

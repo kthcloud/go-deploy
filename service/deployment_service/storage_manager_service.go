@@ -13,7 +13,7 @@ func GetAllStorageManagers(auth *service.AuthInfo) ([]storage_manager.StorageMan
 		return storage_manager.New().GetAll()
 	}
 
-	ownerStorageManager, err := storage_manager.New().RestrictToUser(auth.UserID).GetOne()
+	ownerStorageManager, err := storage_manager.New().RestrictToOwner(auth.UserID).GetOne()
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch storage manager. details: %w", err)
 	}
@@ -30,7 +30,7 @@ func GetStorageManagerByOwnerID(ownerID string, auth *service.AuthInfo) (*storag
 		return nil, nil
 	}
 
-	storageManager, err := storage_manager.New().RestrictToUser(ownerID).GetOne()
+	storageManager, err := storage_manager.New().RestrictToOwner(ownerID).GetOne()
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch storage manager. details: %w", err)
 	}

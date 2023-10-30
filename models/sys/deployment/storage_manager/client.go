@@ -10,8 +10,8 @@ import (
 )
 
 type Client struct {
-	Collection     *mongo.Collection
-	RestrictUserID *string
+	Collection      *mongo.Collection
+	RestrictOwnerID *string
 
 	activityResource.ActivityResourceClient[StorageManager]
 	resource.ResourceClient[StorageManager]
@@ -51,10 +51,10 @@ func (client *Client) IncludeDeletedResources() *Client {
 	return client
 }
 
-func (client *Client) RestrictToUser(restrictUserID string) *Client {
-	client.ResourceClient.ExtraFilter = append(client.ResourceClient.ExtraFilter, bson.E{Key: "ownerId", Value: restrictUserID})
+func (client *Client) RestrictToOwner(ownerID string) *Client {
+	client.ResourceClient.ExtraFilter = append(client.ResourceClient.ExtraFilter, bson.E{Key: "ownerId", Value: ownerID})
 	client.ActivityResourceClient.ExtraFilter = client.ResourceClient.ExtraFilter
-	client.RestrictUserID = &restrictUserID
+	client.RestrictOwnerID = &ownerID
 
 	return client
 }
