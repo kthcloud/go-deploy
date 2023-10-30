@@ -7,9 +7,9 @@ import (
 	"log"
 )
 
-func (u *User) ToDTO(effectiveRole *roleModel.Role, usage *Usage, storageURL *string) body.UserRead {
-	publicKeys := make([]body.PublicKey, len(u.PublicKeys))
-	for i, key := range u.PublicKeys {
+func (user *User) ToDTO(effectiveRole *roleModel.Role, usage *Usage, storageURL *string) body.UserRead {
+	publicKeys := make([]body.PublicKey, len(user.PublicKeys))
+	for i, key := range user.PublicKeys {
 		publicKeys[i] = body.PublicKey{
 			Name: key.Name,
 			Key:  key.Key,
@@ -21,7 +21,7 @@ func (u *User) ToDTO(effectiveRole *roleModel.Role, usage *Usage, storageURL *st
 	}
 
 	if effectiveRole == nil {
-		log.Println("effective role is nil when creating user read for user", u.Username)
+		log.Println("effective role is nil when creating user read for user", user.Username)
 		effectiveRole = &roleModel.Role{
 			Name:        "unknown",
 			Description: "unknown",
@@ -38,18 +38,18 @@ func (u *User) ToDTO(effectiveRole *roleModel.Role, usage *Usage, storageURL *st
 	}
 
 	userRead := body.UserRead{
-		ID:         u.ID,
-		Username:   u.Username,
-		Email:      u.Email,
+		ID:         user.ID,
+		Username:   user.Username,
+		Email:      user.Email,
 		PublicKeys: publicKeys,
-		Onboarded:  u.Onboarded,
+		Onboarded:  user.Onboarded,
 
 		Role: body.Role{
 			Name:        effectiveRole.Name,
 			Description: effectiveRole.Description,
 			Permissions: permissions,
 		},
-		Admin: u.IsAdmin,
+		Admin: user.IsAdmin,
 
 		Quota: body.Quota{
 			Deployments: effectiveRole.Quotas.Deployments,

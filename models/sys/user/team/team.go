@@ -6,14 +6,21 @@ const (
 	ResourceTypeDeployment = "deployment"
 	ResourceTypeVM         = "vm"
 
-	MemberRoleAdmin = "admin"
+	MemberRoleAdmin     = "admin"
+	MemberStatusInvited = "invited"
+	MemberStatusJoined  = "joined"
 )
 
 type Member struct {
 	// ID is UserID
-	ID       string    `bson:"id"`
-	TeamRole string    `bson:"teamRole"`
-	JoinedAt time.Time `bson:"omitempty,joinedAt"`
+	ID           string `bson:"id"`
+	TeamRole     string `bson:"teamRole"`
+	MemberStatus string `bson:"memberStatus"`
+
+	AddedAt  time.Time `bson:"addedAt"`
+	JoinedAt time.Time `bson:"joinedAt"`
+
+	InviteCode string `bson:"inviteCode"`
 }
 
 type Resource struct {

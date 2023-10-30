@@ -48,9 +48,11 @@ func NewRouter() *gin.Engine {
 	docs.SwaggerInfo.BasePath = "/v1"
 	privateApiv1 := router.Group("/v1")
 	privateApiv1.Use(auth.New(auth.Check(), sys.GetKeyCloakConfig()))
-	privateApiv1.Use(v1_user.SynchronizeUser)
+	privateApiv1.Use(middleware.SynchronizeUser)
+	privateApiv1.Use(middleware.UserHttpEvent())
 
 	publicApiv1 := router.Group("/v1")
+
 	apiv1Hook := router.Group("/v1/hooks")
 
 	router.GET("/v1/docs/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
@@ -77,11 +79,11 @@ func setupAuthCheckRoutes(private *gin.RouterGroup) {
 }
 
 func setupDeploymentRoutes(private *gin.RouterGroup, public *gin.RouterGroup, hooks *gin.RouterGroup) {
-	private.GET("/deployments", v1_deployment.GetList)
+	private.GET("/deployments", middleware.CreateStorageManager(), v1_deployment.GetList)
 
-	private.GET("/deployments/:deploymentId", v1_deployment.Get, middleware.UserHttpEvent())
-	private.GET("/deployments/:deploymentId/ciConfig", v1_deployment.GetCiConfig, middleware.UserHttpEvent())
-	private.POST("/deployments", v1_deployment.Create)
+	private.GET("/deployments/:deploymentId", middleware.CreateStorageManager(), v1_deployment.Get)
+	private.GET("/deployments/:deploymentId/ciConfig", v1_deployment.GetCiConfig)
+	private.POST("/deployments", middleware.CreateStorageManager(), v1_deployment.Create)
 	private.POST("/deployments/:deploymentId", v1_deployment.Update)
 	private.DELETE("/deployments/:deploymentId", v1_deployment.Delete)
 

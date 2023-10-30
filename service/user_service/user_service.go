@@ -18,7 +18,7 @@ func GetByID(userID string) (*userModel.User, error) {
 	return userModel.New().GetByID(userID)
 }
 
-func GetOrCreate(auth *service.AuthInfo) (*userModel.User, error) {
+func Create(auth *service.AuthInfo) (*userModel.User, error) {
 	roleNames := make([]string, len(auth.Roles))
 	for i, role := range auth.Roles {
 		roleNames[i] = role.Name
@@ -26,10 +26,18 @@ func GetOrCreate(auth *service.AuthInfo) (*userModel.User, error) {
 
 	effectiveRole := auth.GetEffectiveRole()
 
-	err := userModel.New().Create(auth.UserID, auth.GetUsername(), auth.GetEmail(), auth.IsAdmin, &userModel.EffectiveRole{
-		Name:        effectiveRole.Name,
-		Description: effectiveRole.Description,
-	})
+	params := &userModel.CreateParams{
+		Username:  auth.GetUsername(),
+		FirstName: auth.GetFirstName(),
+		LastName:  auth.GetLastName(),
+		Email:     auth.GetEmail(),
+		EffectiveRole: &userModel.EffectiveRole{
+			Name:        effectiveRole.Name,
+			Description: effectiveRole.Description,
+		},
+	}
+
+	err := userModel.New().Create(auth.UserID, params)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +81,6 @@ func Update(userID string, dtoUserUpdate *body.UserUpdate, auth *service.AuthInf
 	}
 
 	userUpdate := &userModel.UpdateParams{
-		Username:   dtoUserUpdate.Username,
 		PublicKeys: publicKeys,
 		Onboarded:  dtoUserUpdate.Onboarded,
 	}

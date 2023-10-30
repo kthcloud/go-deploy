@@ -81,6 +81,7 @@ type DeploymentRead struct {
 	Private         bool     `json:"private"`
 	InternalPort    int      `json:"internalPort"`
 	Image           *string  `json:"image,omitempty"`
+	HealthCheckPath *string  `json:"healthCheckPath,omitempty"`
 
 	Status     string `json:"status"`
 	PingResult *int   `json:"pingResult,omitempty"`

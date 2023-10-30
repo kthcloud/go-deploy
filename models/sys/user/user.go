@@ -26,6 +26,7 @@ type EffectiveRole struct {
 type User struct {
 	ID            string        `bson:"id"`
 	Username      string        `bson:"username"`
+	Fullname      string        `bson:"fullname"`
 	Email         string        `bson:"email"`
 	IsAdmin       bool          `bson:"isAdmin"`
 	EffectiveRole EffectiveRole `bson:"effectiveRole"`
@@ -33,12 +34,12 @@ type User struct {
 	Onboarded     bool          `bson:"onboarded"`
 }
 
-func (u *User) GetTeamMap() (map[string]teamModels.Team, error) {
+func (user *User) GetTeamMap() (map[string]teamModels.Team, error) {
 	client := teamModels.New()
 
-	teams, err := client.GetByUserID(u.ID)
+	teams, err := client.GetByUserID(user.ID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get teams for user %s. details: %w", u.Username, err)
+		return nil, fmt.Errorf("failed to get teams for user %s. details: %w", user.Username, err)
 	}
 
 	teamsMap := make(map[string]teamModels.Team)

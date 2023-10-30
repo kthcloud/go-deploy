@@ -10,6 +10,8 @@ import (
 	"go-deploy/models/sys/deployment/storage_manager"
 	roleModel "go-deploy/models/sys/enviroment/role"
 	jobModel "go-deploy/models/sys/job"
+	userModel "go-deploy/models/sys/user"
+	teamModels "go-deploy/models/sys/user/team"
 	"go-deploy/pkg/conf"
 	"go-deploy/service"
 	"go-deploy/service/deployment_service/base"
@@ -40,13 +42,6 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 	deployment, err := deploymentModel.New().Create(deploymentID, ownerID, params)
 	if err != nil {
 		return makeError(err)
-	}
-
-	if len(params.Volumes) > 0 {
-		err = createStorageManager(ownerID, params.Zone)
-		if err != nil {
-			return makeError(err)
-		}
 	}
 
 	if deployment == nil {
@@ -171,13 +166,6 @@ func Update(id string, deploymentUpdate *body.DeploymentUpdate) error {
 	err = deploymentModel.New().UpdateWithParamsByID(id, params)
 	if err != nil {
 		return makeError(err)
-	}
-
-	if params.Volumes != nil && len(*params.Volumes) > 0 {
-		err = createStorageManager(deployment.OwnerID, deployment.Zone)
-		if err != nil {
-			return makeError(err)
-		}
 	}
 
 	err = k8s_service.Update(id, params)
@@ -362,7 +350,7 @@ func GetByID(id string) (*deploymentModel.Deployment, error) {
 	return deploymentModel.New().GetByID(id)
 }
 
-func GetManyAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagination *query.Pagination) ([]deploymentModel.Deployment, error) {
+func GetManyAuth(allUsers bool, userID *string, shared bool, auth *service.AuthInfo, pagination *query.Pagination) ([]deploymentModel.Deployment, error) {
 	client := deploymentModel.New()
 
 	if pagination != nil {
@@ -378,7 +366,39 @@ func GetManyAuth(allUsers bool, userID *string, auth *service.AuthInfo, paginati
 		client.RestrictToUser(auth.UserID)
 	}
 
-	return client.GetAll()
+	resources, err := client.GetAll()
+	if err != nil {
+		return nil, err
+	}
+
+	if shared {
+		user, err := userModel.New().GetByID(auth.UserID)
+		if err != nil {
+			return nil, err
+		}
+
+		teamMap, err := user.GetTeamMap()
+		if err != nil {
+			return nil, err
+		}
+
+		for _, team := range teamMap {
+			for _, resource := range team.GetResourceMap() {
+				if resource.Type == teamModels.ResourceTypeDeployment {
+					deployment, err := deploymentModel.New().GetByID(resource.ID)
+					if err != nil {
+						return nil, err
+					}
+
+					if deployment != nil {
+						resources = append(resources, *deployment)
+					}
+				}
+			}
+		}
+	}
+
+	return resources, nil
 }
 
 func GetAll() ([]deploymentModel.Deployment, error) {
@@ -577,10 +597,26 @@ func SavePing(id string, pingResult int) error {
 	return nil
 }
 
-func createStorageManager(ownerID, zone string) error {
+func CreateStorageManagerIfNotExists(ownerID string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to create storage manager (if not exists). details: %w", err)
+	}
+
+	// right now the storage-manager is hosted in se-flem for all users
+	zone := "se-flem"
+
+	exists, err := storage_manager.New().RestrictToOwner(ownerID).ExistsAny()
+	if err != nil {
+		return makeError(err)
+	}
+
+	if exists {
+		return nil
+	}
+
 	storageManagerID := uuid.New().String()
 	jobID := uuid.New().String()
-	err := job_service.Create(jobID, ownerID, jobModel.TypeCreateStorageManager, map[string]interface{}{
+	err = job_service.Create(jobID, ownerID, jobModel.TypeCreateStorageManager, map[string]interface{}{
 		"id": storageManagerID,
 		"params": storage_manager.CreateParams{
 			UserID: ownerID,

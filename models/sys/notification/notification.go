@@ -6,9 +6,9 @@ import (
 )
 
 const (
-	TypeJoinTeam           = "joinTeam"
-	TypeTransferDeployment = "transferDeployment"
-	TypeTransferVM         = "transferVm"
+	TypeTeamInvite         = "teamInvite"
+	TypeDeploymentTransfer = "deploymentTransfer"
+	TypeVmTransfer         = "vmTransfer"
 )
 
 type Notification struct {

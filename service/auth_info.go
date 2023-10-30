@@ -45,6 +45,14 @@ func (authInfo *AuthInfo) GetUsername() string {
 	return authInfo.JwtToken.PreferredUsername
 }
 
+func (authInfo *AuthInfo) GetFirstName() string {
+	return authInfo.JwtToken.GivenName
+}
+
+func (authInfo *AuthInfo) GetLastName() string {
+	return authInfo.JwtToken.FamilyName
+}
+
 func (authInfo *AuthInfo) GetEmail() string {
 	return authInfo.JwtToken.Email
 }

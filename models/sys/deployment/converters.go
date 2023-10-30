@@ -77,6 +77,7 @@ func (deployment *Deployment) ToDTO(storageManagerURL *string) body.DeploymentRe
 		Private:         app.Private,
 		InternalPort:    app.InternalPort,
 		Image:           image,
+		HealthCheckPath: &app.PingPath,
 
 		Status:     deployment.StatusMessage,
 		PingResult: pingResult,

@@ -7,14 +7,14 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func (client *Client) Create(id, username, email string, isAdmin bool, effectiveRole *EffectiveRole) error {
+func (client *Client) Create(id string, params *CreateParams) error {
 	current, err := client.GetByID(id)
 	if err != nil {
 		return err
 	}
 
-	if effectiveRole == nil {
-		effectiveRole = &EffectiveRole{
+	if params.EffectiveRole == nil {
+		params.EffectiveRole = &EffectiveRole{
 			Name:        "default",
 			Description: "Default role for new users",
 		}
@@ -22,16 +22,17 @@ func (client *Client) Create(id, username, email string, isAdmin bool, effective
 
 	if current != nil {
 		// update roles
-		filter := bson.D{{"id", id}}
 		update := bson.D{{"$set", bson.D{
-			{"username", username},
-			{"email", email},
-			{"effectiveRole", effectiveRole},
-			{"isAdmin", isAdmin},
+			{"username", params.Username},
+			{"firstName", params.FirstName},
+			{"lastName", params.LastName},
+			{"email", params.Email},
+			{"effectiveRole", params.EffectiveRole},
+			{"isAdmin", params.IsAdmin},
 		}}}
-		_, err = client.Collection.UpdateOne(context.Background(), filter, update)
+		err = client.UpdateWithBsonByID(id, update)
 		if err != nil {
-			return fmt.Errorf("failed to update user info for %s. details: %w", username, err)
+			return fmt.Errorf("failed to update user info for %s. details: %w", id, err)
 		}
 
 		return nil
@@ -39,15 +40,15 @@ func (client *Client) Create(id, username, email string, isAdmin bool, effective
 
 	_, err = client.Collection.InsertOne(context.TODO(), User{
 		ID:            id,
-		Username:      username,
-		Email:         email,
-		EffectiveRole: *effectiveRole,
-		IsAdmin:       isAdmin,
+		Username:      params.Username,
+		Email:         params.Email,
+		EffectiveRole: *params.EffectiveRole,
+		IsAdmin:       params.IsAdmin,
 		PublicKeys:    []PublicKey{},
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to create user info for %s. details: %w", username, err)
+		return fmt.Errorf("failed to create user info for %s. details: %w", id, err)
 	}
 
 	return nil
@@ -56,7 +57,6 @@ func (client *Client) Create(id, username, email string, isAdmin bool, effective
 func (client *Client) UpdateWithParams(id string, params *UpdateParams) error {
 	updateData := bson.D{}
 
-	models.AddIfNotNil(&updateData, "username", params.Username)
 	models.AddIfNotNil(&updateData, "publicKeys", params.PublicKeys)
 	models.AddIfNotNil(&updateData, "onboarded", params.Onboarded)
 

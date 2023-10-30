@@ -48,22 +48,18 @@ func (client *Client) GetByIdList(ids []string) ([]Team, error) {
 }
 
 func (client *Client) GetByUserID(userID string) ([]Team, error) {
-	filter := bson.D{{"userMap." + userID, bson.D{{"$exists", true}}}}
+	filter := bson.D{
+		{"$or", bson.A{
+			bson.D{{"ownerId", userID}},
+			bson.D{{"memberMap." + userID, bson.D{{"$exists", true}}}},
+		}},
+	}
+
 	return client.GetAllWithFilter(filter)
 }
 
 func (client *Client) UpdateWithParamsByID(id string, params *UpdateParams) error {
 	updateData := bson.D{}
-
-	if params.MemberMap != nil {
-		for _, member := range *params.MemberMap {
-			if member.JoinedAt.IsZero() {
-				member.JoinedAt = time.Now()
-			} else {
-				member.JoinedAt = time.Time{} // reset to zero value so it doesn't get updated
-			}
-		}
-	}
 
 	models.AddIfNotNil(&updateData, "name", params.Name)
 	models.AddIfNotNil(&updateData, "description", params.Description)
