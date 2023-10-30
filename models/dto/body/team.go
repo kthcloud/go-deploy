@@ -7,8 +7,11 @@ type TeamMember struct {
 	Username string `json:"username"`
 	Email    string `json:"email"`
 
-	TeamRole string    `json:"teamRole"`
-	JoinedAt time.Time `json:"joinedAt"`
+	TeamRole     string `json:"teamRole"`
+	MemberStatus string `json:"memberStatus"`
+
+	JoinedAt *time.Time `json:"joinedAt,omitempty"`
+	AddedAt  *time.Time `json:"addedAt,omitempty"`
 }
 
 type TeamResource struct {
@@ -32,6 +35,10 @@ type TeamCreate struct {
 	Description string             `json:"description" binding:"omitempty,max=1000"`
 	Resources   []string           `json:"resources" binding:"omitempty,team_resource_list,min=0,max=10,dive,uuid4"`
 	Members     []TeamMemberCreate `json:"members" binding:"omitempty,team_member_list,min=0,max=10,dive"`
+}
+
+type TeamJoin struct {
+	InvitationCode string `json:"invitationCode" binding:"required,min=1,max=1000"`
 }
 
 type TeamUpdate struct {

@@ -52,6 +52,10 @@ func (params *CreateParams) FromDTO(teamCreateDTO *body.TeamCreate, getResourceF
 	}
 }
 
+func (params *JoinParams) FromDTO(teamJoinDTO *body.TeamJoin) {
+	params.InvitationCode = teamJoinDTO.InvitationCode
+}
+
 func (params *UpdateParams) FromDTO(teamUpdateDTO *body.TeamUpdate, getResourceFunc func(string) *Resource) {
 	params.Name = teamUpdateDTO.Name
 	params.Description = teamUpdateDTO.Description

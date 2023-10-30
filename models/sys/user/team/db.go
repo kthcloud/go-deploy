@@ -58,7 +58,7 @@ func (client *Client) GetByUserID(userID string) ([]Team, error) {
 	return client.GetAllWithFilter(filter)
 }
 
-func (client *Client) UpdateWithParamsByID(id string, params *UpdateParams) error {
+func (client *Client) UpdateWithParams(id string, params *UpdateParams) error {
 	updateData := bson.D{}
 
 	models.AddIfNotNil(&updateData, "name", params.Name)
@@ -70,6 +70,17 @@ func (client *Client) UpdateWithParamsByID(id string, params *UpdateParams) erro
 		return nil
 	}
 
-	err := client.SetWithBsonByID(id, updateData)
-	return err
+	return client.SetWithBsonByID(id, updateData)
+}
+
+func (client *Client) UpdateMember(id string, memberID string, member *Member) error {
+	updateData := bson.D{}
+
+	models.AddIfNotNil(&updateData, "memberMap."+memberID, member)
+
+	if len(updateData) == 0 {
+		return nil
+	}
+
+	return client.SetWithBsonByID(id, updateData)
 }
