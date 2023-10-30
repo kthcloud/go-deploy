@@ -189,8 +189,11 @@ func gitHubDeleted(deployment *deploymentModels.Deployment) (bool, error) {
 
 	github := &deployment.Subsystems.GitHub
 
-	return !github.Placeholder &&
-		github.Webhook.ID == 0, nil
+	if github.Placeholder {
+		return true, nil
+	}
+
+	return github.Webhook.ID == 0, nil
 }
 
 func csCreated(vm *vm.VM) (bool, error) {
