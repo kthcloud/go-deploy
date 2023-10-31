@@ -49,7 +49,7 @@ func main() {
 		log.Println("RUNNING IN TEST MODE. NO AUTHENTICATION WILL BE REQUIRED.")
 	}
 
-	if confirmer || statusUpdater || jobExecutor || repairer || api || pinger || snapshotter {
+	if confirmer || statusUpdater || jobExecutor || repairer || api || pinger || snapshotter || metricsUpdater {
 		options.Workers = app.Workers{
 			API:            api,
 			Confirmer:      confirmer,
@@ -70,6 +70,7 @@ func main() {
 		log.Println("repairer: ", workers.Repairer)
 		log.Println("pinger: ", workers.Pinger)
 		log.Println("snapshotter: ", workers.Snapshotter)
+		log.Println("metrics-updater: ", workers.MetricsUpdater)
 
 	} else {
 		options.Workers = app.Workers{
