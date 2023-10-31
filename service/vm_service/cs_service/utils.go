@@ -4,7 +4,7 @@ import (
 	"fmt"
 	vmModel "go-deploy/models/sys/vm"
 	gpuModel "go-deploy/models/sys/vm/gpu"
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/config"
 	csModels "go-deploy/pkg/subsystems/cs/models"
 	"strings"
 	"time"
@@ -17,7 +17,7 @@ func CreateNonRootPortForwardingRuleName(name, networkName string) string {
 func CreateDeployTags(name string, deployName string) []csModels.Tag {
 	return []csModels.Tag{
 		{Key: "name", Value: name},
-		{Key: "managedBy", Value: conf.Env.Manager},
+		{Key: "managedBy", Value: config.Config.Manager},
 		{Key: "deployName", Value: deployName},
 		{Key: "createdAt", Value: time.Now().Format(time.RFC3339)},
 	}

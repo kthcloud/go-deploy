@@ -2,9 +2,9 @@ package subsystemutils
 
 import (
 	"fmt"
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/config"
 )
 
 func GetPrefixedName(name string) string {
-	return fmt.Sprintf("%s%s", conf.Env.Deployment.Prefix, name)
+	return fmt.Sprintf("%s%s", config.Config.Deployment.Prefix, name)
 }

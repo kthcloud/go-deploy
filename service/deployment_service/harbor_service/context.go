@@ -1,7 +1,7 @@
 package harbor_service
 
 import (
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/harbor"
 	"go-deploy/service/deployment_service/base"
 	"go-deploy/service/resources"
@@ -39,9 +39,9 @@ func getProjectName(userID string) string {
 
 func withClient(project string) (*harbor.Client, error) {
 	return harbor.New(&harbor.ClientConf{
-		URL:      conf.Env.Harbor.URL,
-		Username: conf.Env.Harbor.User,
-		Password: conf.Env.Harbor.Password,
+		URL:      config.Config.Harbor.URL,
+		Username: config.Config.Harbor.User,
+		Password: config.Config.Harbor.Password,
 		Project:  project,
 	})
 }

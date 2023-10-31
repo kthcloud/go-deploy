@@ -2,7 +2,7 @@ package resources
 
 import (
 	"fmt"
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/harbor/models"
 	"strings"
 )
@@ -27,7 +27,7 @@ func (hg *HarborGenerator) Robot() *models.RobotPublic {
 }
 
 func (hg *HarborGenerator) Repository() *models.RepositoryPublic {
-	splits := strings.Split(conf.Env.Registry.PlaceholderImage, "/")
+	splits := strings.Split(config.Config.Registry.PlaceholderImage, "/")
 	project := splits[len(splits)-2]
 	repository := splits[len(splits)-1]
 
@@ -42,10 +42,10 @@ func (hg *HarborGenerator) Repository() *models.RepositoryPublic {
 }
 
 func (hg *HarborGenerator) Webhook() *models.WebhookPublic {
-	webhookTarget := fmt.Sprintf("%s/v1/hooks/deployments/harbor", conf.Env.ExternalUrl)
+	webhookTarget := fmt.Sprintf("%s/v1/hooks/deployments/harbor", config.Config.ExternalUrl)
 	return &models.WebhookPublic{
 		Name:   hg.d.deployment.OwnerID,
 		Target: webhookTarget,
-		Token:  conf.Env.Harbor.WebhookSecret,
+		Token:  config.Config.Harbor.WebhookSecret,
 	}
 }

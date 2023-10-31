@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	deploymentModel "go-deploy/models/sys/deployment"
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/gitlab"
 	"go-deploy/pkg/subsystems/gitlab/models"
 	"go-deploy/utils"
@@ -22,8 +22,8 @@ func CreateBuild(ids []string, params *deploymentModel.BuildParams) error {
 	}
 
 	client, err := gitlab.New(&gitlab.ClientConf{
-		URL:   conf.Env.GitLab.URL,
-		Token: conf.Env.GitLab.Token,
+		URL:   config.Config.GitLab.URL,
+		Token: config.Config.GitLab.Token,
 	})
 
 	name := params.Name
@@ -61,7 +61,7 @@ func CreateBuild(ids []string, params *deploymentModel.BuildParams) error {
 		// harbor name contains $ which is a special character in gitlab ci, so we need to escape it with $$.
 		user := strings.Replace(deployment.Subsystems.Harbor.Robot.HarborName, "$", "\\$", -1)
 		password := deployment.Subsystems.Harbor.Robot.Secret
-		registry := conf.Env.Registry.URL
+		registry := config.Config.Registry.URL
 		path := fmt.Sprintf("%s/%s/%s", registry, subsystemutils.GetPrefixedName(deployment.OwnerID), deployment.Name)
 
 		script = append(script, fmt.Sprintf("docker login -u %s -p %s %s", user, password, registry))

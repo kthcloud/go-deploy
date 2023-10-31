@@ -10,6 +10,7 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"go-deploy/docs"
 	"go-deploy/pkg/auth"
+	"go-deploy/pkg/metrics"
 	"go-deploy/pkg/sys"
 	"go-deploy/routers/api/v1/middleware"
 	"go-deploy/routers/api/v1/v1_deployment"
@@ -159,6 +160,7 @@ func setupGitHubRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
 
 func setupMetricsRoutes(base *gin.RouterGroup, _ *gin.RouterGroup) {
 	base.GET("/metrics", func(c *gin.Context) {
+		metrics.Sync()
 		promhttp.Handler().ServeHTTP(c.Writer, c.Request)
 	})
 }

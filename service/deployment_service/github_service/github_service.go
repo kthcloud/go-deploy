@@ -6,7 +6,7 @@ import (
 	"fmt"
 	githubThirdParty "github.com/google/go-github/github"
 	deploymentModel "go-deploy/models/sys/deployment"
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/config"
 	"go-deploy/service/resources"
 	"go-deploy/service/vm_service/base"
 	"log"
@@ -129,12 +129,12 @@ func GetAccessTokenByCode(code string) (string, error) {
 		return fmt.Errorf("failed to get github access token. details: %w", err)
 	}
 
-	token, prodErr := fetchAccessToken(code, conf.Env.GitHub.ProdClient.ID, conf.Env.GitHub.ProdClient.Secret)
+	token, prodErr := fetchAccessToken(code, config.Config.GitHub.ProdClient.ID, config.Config.GitHub.ProdClient.Secret)
 	if prodErr == nil {
 		return token, nil
 	}
 
-	token, devErr := fetchAccessToken(code, conf.Env.GitHub.DevClient.ID, conf.Env.GitHub.DevClient.Secret)
+	token, devErr := fetchAccessToken(code, config.Config.GitHub.DevClient.ID, config.Config.GitHub.DevClient.Secret)
 	if devErr == nil {
 		return token, nil
 	}

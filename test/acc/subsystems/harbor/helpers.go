@@ -3,7 +3,7 @@ package harbor
 import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/harbor"
 	"go-deploy/pkg/subsystems/harbor/models"
 	"testing"
@@ -11,9 +11,9 @@ import (
 
 func withHarborClient(t *testing.T) *harbor.Client {
 	client, err := harbor.New(&harbor.ClientConf{
-		URL:      conf.Env.Harbor.URL,
-		Username: conf.Env.Harbor.User,
-		Password: conf.Env.Harbor.Password,
+		URL:      config.Config.Harbor.URL,
+		Username: config.Config.Harbor.User,
+		Password: config.Config.Harbor.Password,
 	})
 
 	assert.NoError(t, err, "failed to create harbor client")

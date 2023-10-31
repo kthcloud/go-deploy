@@ -3,7 +3,7 @@ package k8s
 import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/k8s"
 	"go-deploy/pkg/subsystems/k8s/models"
 	"testing"
@@ -11,7 +11,7 @@ import (
 
 func withK8sClient(t *testing.T) *k8s.Client {
 	zoneName := "se-flem"
-	zone := conf.Env.Deployment.GetZone(zoneName)
+	zone := config.Config.Deployment.GetZone(zoneName)
 	if zone == nil {
 		t.Fatalf("no zone with name %s found", zoneName)
 	}
@@ -45,7 +45,7 @@ func withK8sDeployment(t *testing.T, namespace *models.NamespacePublic) *models.
 	deploymentPublic := &models.DeploymentPublic{
 		Name:      "acc-test-" + uuid.New().String(),
 		Namespace: namespace.Name,
-		Image:     conf.Env.Registry.PlaceholderImage,
+		Image:     config.Config.Registry.PlaceholderImage,
 		EnvVars:   nil,
 	}
 

@@ -7,7 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/config"
 	"io/ioutil"
 	"math/big"
 	"net/http"
@@ -258,16 +258,16 @@ func New(accessCheckFunction AccessCheckFunction, endpoints KeycloakConfig) gin.
 	return authChain(endpoints, accessCheckFunction)
 }
 
-func authChain(config KeycloakConfig, accessCheckFunctions ...AccessCheckFunction) gin.HandlerFunc {
+func authChain(kcConfig KeycloakConfig, accessCheckFunctions ...AccessCheckFunction) gin.HandlerFunc {
 	// middleware
 	return func(ctx *gin.Context) {
 		t := time.Now()
 		varianceControl := make(chan bool, 1)
 
 		go func() {
-			tokenContainer, ok := getTokenContainer(ctx, config)
+			tokenContainer, ok := getTokenContainer(ctx, kcConfig)
 			if !ok {
-				if conf.Env.TestMode {
+				if config.Config.TestMode {
 					testTokenContainer, _ := getTestTokenContainer()
 					for _, fn := range accessCheckFunctions {
 						if fn(testTokenContainer, ctx) {

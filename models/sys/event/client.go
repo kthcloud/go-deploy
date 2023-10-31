@@ -1,7 +1,7 @@
 package event
 
 import (
-	"go-deploy/models"
+	"go-deploy/models/db"
 	"go-deploy/models/sys/base"
 	"go-deploy/models/sys/base/resource"
 	"go.mongodb.org/mongo-driver/bson"
@@ -14,7 +14,7 @@ type Client struct {
 func New() *Client {
 	return &Client{
 		ResourceClient: resource.ResourceClient[Event]{
-			Collection:     models.DB.GetCollection("events"),
+			Collection:     db.DB.GetCollection("events"),
 			IncludeDeleted: false,
 			Pagination:     nil,
 		},

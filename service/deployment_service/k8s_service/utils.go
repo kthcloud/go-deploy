@@ -2,8 +2,8 @@ package k8s_service
 
 import (
 	"fmt"
+	"go-deploy/models/config"
 	storageManagerModel "go-deploy/models/sys/deployment/storage_manager"
-	"go-deploy/models/sys/enviroment"
 	"path"
 )
 
@@ -34,10 +34,10 @@ func GetStorageManagerVolumes(ownerID, appName string) ([]storageManagerModel.Vo
 	return initVolumes, volumes
 }
 
-func GetExternalFQDN(name string, zone *enviroment.DeploymentZone) string {
+func GetExternalFQDN(name string, zone *config.DeploymentZone) string {
 	return fmt.Sprintf("%s.%s", name, zone.ParentDomain)
 }
 
-func GetStorageManagerExternalFQDN(name string, zone *enviroment.DeploymentZone) string {
+func GetStorageManagerExternalFQDN(name string, zone *config.DeploymentZone) string {
 	return fmt.Sprintf("%s.%s", name, zone.Storage.ParentDomain)
 }

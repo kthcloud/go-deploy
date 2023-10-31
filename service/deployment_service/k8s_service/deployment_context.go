@@ -2,8 +2,8 @@ package k8s_service
 
 import (
 	"fmt"
+	"go-deploy/models/config"
 	deploymentModels "go-deploy/models/sys/deployment"
-	"go-deploy/models/sys/enviroment"
 	"go-deploy/pkg/subsystems/k8s"
 	"go-deploy/service/deployment_service/base"
 	"go-deploy/service/resources"
@@ -55,7 +55,7 @@ func getNamespaceName(userID string) string {
 	return subsystemutils.GetPrefixedName(userID)
 }
 
-func withClient(zone *enviroment.DeploymentZone, namespace string) (*k8s.Client, error) {
+func withClient(zone *config.DeploymentZone, namespace string) (*k8s.Client, error) {
 	client, err := k8s.New(zone.Client, namespace)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create k8s client. details: %w", err)

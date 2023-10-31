@@ -5,14 +5,18 @@ import (
 	"fmt"
 	"go-deploy/models"
 	"go.mongodb.org/mongo-driver/bson"
+	"time"
 )
 
 func (client *Client) Create(id string, userID string, params *CreateParams) (*Notification, error) {
 	notification := &Notification{
-		ID:      id,
-		UserID:  userID,
-		Type:    params.Type,
-		Content: params.Content,
+		ID:        id,
+		UserID:    userID,
+		Type:      params.Type,
+		Content:   params.Content,
+		CreatedAt: time.Now(),
+		ReadAt:    nil,
+		DeletedAt: nil,
 	}
 
 	_, err := client.Collection.InsertOne(context.TODO(), notification)

@@ -2,12 +2,12 @@ package vm_service
 
 import (
 	"fmt"
+	roleModel "go-deploy/models/config/role"
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
-	roleModel "go-deploy/models/sys/enviroment/role"
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/models/sys/vm/gpu"
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/config"
 	"go-deploy/service"
 	"go-deploy/service/vm_service/cs_service"
 	"go-deploy/service/vm_service/k8s_service"
@@ -28,7 +28,7 @@ func Create(id, ownerID string, vmCreate *body.VmCreate) error {
 	params := &vmModel.CreateParams{}
 	params.FromDTO(vmCreate, &fallback, &deploymentZone)
 
-	created, err := vmModel.New().Create(id, ownerID, conf.Env.Manager, params)
+	created, err := vmModel.New().Create(id, ownerID, config.Config.Manager, params)
 	if err != nil {
 		return makeError(err)
 	}
@@ -226,7 +226,7 @@ func GetConnectionString(vm *vmModel.VM) (*string, error) {
 		return nil, nil
 	}
 
-	zone := conf.Env.VM.GetZone(vm.Zone)
+	zone := config.Config.VM.GetZone(vm.Zone)
 	if zone == nil {
 		return nil, fmt.Errorf("zone %s not found", vm.Zone)
 	}

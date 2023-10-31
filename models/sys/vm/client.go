@@ -1,7 +1,7 @@
 package vm
 
 import (
-	"go-deploy/models"
+	"go-deploy/models/db"
 	"go-deploy/models/sys/base"
 	"go-deploy/models/sys/base/activityResource"
 	"go-deploy/models/sys/base/resource"
@@ -19,13 +19,13 @@ type Client struct {
 
 func New() *Client {
 	return &Client{
-		Collection: models.DB.GetCollection("vms"),
+		Collection: db.DB.GetCollection("vms"),
 
 		ActivityResourceClient: activityResource.ActivityResourceClient[VM]{
-			Collection: models.DB.GetCollection("vms"),
+			Collection: db.DB.GetCollection("vms"),
 		},
 		ResourceClient: resource.ResourceClient[VM]{
-			Collection:     models.DB.GetCollection("vms"),
+			Collection:     db.DB.GetCollection("vms"),
 			IncludeDeleted: false,
 		},
 	}

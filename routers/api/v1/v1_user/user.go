@@ -3,13 +3,13 @@ package v1_user
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	roleModel "go-deploy/models/config/role"
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
 	"go-deploy/models/dto/uri"
-	roleModel "go-deploy/models/sys/enviroment/role"
 	userModel "go-deploy/models/sys/user"
 	"go-deploy/pkg/app/status_codes"
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/config"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
@@ -112,7 +112,7 @@ func GetList(c *gin.Context) {
 				continue
 			}
 
-			role := conf.Env.GetRole(user.EffectiveRole.Name)
+			role := config.Config.GetRole(user.EffectiveRole.Name)
 
 			ok, usage := collectUsage(&context, user.ID)
 			if !ok {
@@ -203,7 +203,7 @@ func Get(c *gin.Context) {
 	if user.ID == auth.UserID {
 		effectiveRole = auth.GetEffectiveRole()
 	} else {
-		effectiveRole = conf.Env.GetRole(user.EffectiveRole.Name)
+		effectiveRole = config.Config.GetRole(user.EffectiveRole.Name)
 	}
 
 	storageURL, err := getStorageURL(user.ID, auth)

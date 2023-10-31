@@ -1,7 +1,7 @@
 package storage_manager
 
 import (
-	"go-deploy/models"
+	"go-deploy/models/db"
 	"go-deploy/models/sys/base"
 	"go-deploy/models/sys/base/activityResource"
 	"go-deploy/models/sys/base/resource"
@@ -19,13 +19,13 @@ type Client struct {
 
 func New() *Client {
 	return &Client{
-		Collection: models.DB.GetCollection("storageManagers"),
+		Collection: db.DB.GetCollection("storageManagers"),
 
 		ActivityResourceClient: activityResource.ActivityResourceClient[StorageManager]{
-			Collection: models.DB.GetCollection("storageManagers"),
+			Collection: db.DB.GetCollection("storageManagers"),
 		},
 		ResourceClient: resource.ResourceClient[StorageManager]{
-			Collection:     models.DB.GetCollection("storageManagers"),
+			Collection:     db.DB.GetCollection("storageManagers"),
 			IncludeDeleted: false,
 		},
 	}

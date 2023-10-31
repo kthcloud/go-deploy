@@ -3,21 +3,15 @@ package app
 import (
 	"context"
 	"errors"
+	argFlag "flag"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"go-deploy/models"
+	"go-deploy/models/db"
 	"go-deploy/models/sys/job"
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/config"
 	"go-deploy/pkg/intializer"
 	"go-deploy/pkg/metrics"
-	"go-deploy/pkg/workers/confirm"
-	"go-deploy/pkg/workers/job_execute"
-	metricsWorker "go-deploy/pkg/workers/metrics"
 	"go-deploy/pkg/workers/migrate"
-	"go-deploy/pkg/workers/ping"
-	"go-deploy/pkg/workers/repair"
-	"go-deploy/pkg/workers/snapshot"
-	"go-deploy/pkg/workers/status_update"
 	"go-deploy/routers"
 	"log"
 	"net/http"
@@ -25,19 +19,8 @@ import (
 	"time"
 )
 
-type Workers struct {
-	API            bool
-	Confirmer      bool
-	StatusUpdater  bool
-	JobExecutor    bool
-	Repairer       bool
-	Pinger         bool
-	Snapshotter    bool
-	MetricsUpdater bool
-}
-
 type Options struct {
-	Workers  Workers
+	Flags    FlagDefinitionList
 	TestMode bool
 }
 
@@ -48,22 +31,20 @@ type App struct {
 }
 
 func shutdown() {
-	models.Shutdown()
+	db.Shutdown()
 }
 
-func Create(options Options) *App {
-	conf.SetupEnvironment()
+func Create(options *Options) *App {
+	config.SetupEnvironment()
 	metrics.Setup()
 
 	if options.TestMode {
-		conf.Env.TestMode = true
-		conf.Env.DB.Name = conf.Env.DB.Name + "-test"
+		config.Config.TestMode = true
+		config.Config.MongoDB.Name = config.Config.MongoDB.Name + "-test"
 	}
 
-	models.Setup()
-
+	db.Setup()
 	intializer.CleanUpOldTests()
-
 	migrator.Migrate()
 
 	err := job.New().ResetRunning()
@@ -75,30 +56,20 @@ func Create(options Options) *App {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	workers := &options.Workers
+	for _, flag := range options.Flags {
+		// handle api worker separately
+		if flag.Name == "api" {
+			continue
+		}
 
-	if workers.Confirmer {
-		confirm.Setup(ctx)
+		if flag.FlagType == "worker" && flag.GetPassedValue().(bool) {
+			go flag.Run(ctx, cancel)
+		}
 	}
-	if workers.StatusUpdater {
-		status_update.Setup(ctx)
-	}
-	if workers.JobExecutor {
-		job_execute.Setup(ctx)
-	}
-	if workers.Repairer {
-		repair.Setup(ctx)
-	}
-	if workers.Pinger {
-		ping.Setup(ctx)
-	}
-	if workers.Snapshotter {
-		snapshot.Setup(ctx)
-	}
-	if workers.MetricsUpdater {
-		metricsWorker.Setup(ctx)
-	}
-	if workers.API {
+
+	var httpServer *http.Server
+
+	if options.Flags.GetPassedValue("api").(bool) {
 		ginMode, exists := os.LookupEnv("GIN_MODE")
 		if exists {
 			gin.SetMode(ginMode)
@@ -106,28 +77,23 @@ func Create(options Options) *App {
 			gin.SetMode("debug")
 		}
 
-		server := &http.Server{
-			Addr:    fmt.Sprintf("0.0.0.0:%d", conf.Env.Port),
+		httpServer = &http.Server{
+			Addr:    fmt.Sprintf("0.0.0.0:%d", config.Config.Port),
 			Handler: routers.NewRouter(),
 		}
 
 		go func() {
-			err := server.ListenAndServe()
+			err := httpServer.ListenAndServe()
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
 				log.Fatalln(fmt.Errorf("failed to start http server. details: %w", err))
 			}
 		}()
-
-		return &App{
-			httpServer: server,
-			ctx:        ctx,
-			cancel:     cancel,
-		}
 	}
 
 	return &App{
-		ctx:    ctx,
-		cancel: cancel,
+		httpServer: httpServer,
+		ctx:        ctx,
+		cancel:     cancel,
 	}
 }
 
@@ -151,4 +117,47 @@ func (app *App) Stop() {
 	shutdown()
 
 	log.Println("server exited successfully")
+}
+
+func ParseFlags() *Options {
+	flags := GetFlags()
+
+	for _, flag := range flags {
+		switch flag.ValueType {
+		case "bool":
+			argFlag.Bool(flag.Name, flag.DefaultValue.(bool), flag.Description)
+		}
+	}
+	argFlag.Parse()
+
+	for _, flag := range flags {
+		switch flag.ValueType {
+		case "bool":
+			if lookedUpVal := argFlag.Lookup(flag.Name); lookedUpVal != nil {
+				flags.SetPassedValue(flag.Name, argFlag.Lookup(flag.Name).Value.(argFlag.Getter).Get().(bool))
+			}
+		}
+	}
+
+	options := Options{
+		Flags:    flags,
+		TestMode: flags.GetPassedValue("test-mode").(bool),
+	}
+
+	if options.TestMode {
+		log.Println("RUNNING IN TEST MODE. NO AUTHENTICATION WILL BE REQUIRED.")
+	}
+
+	if !flags.AnyWorkerFlagsPassed() {
+		log.Println("no workers specified, starting all")
+
+		for _, flag := range flags {
+			switch flag.FlagType {
+			case "worker":
+				flags.SetPassedValue(flag.Name, true)
+			}
+		}
+	}
+
+	return &options
 }

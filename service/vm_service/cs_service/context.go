@@ -2,8 +2,8 @@ package cs_service
 
 import (
 	"fmt"
-	"go-deploy/models/sys/enviroment"
-	"go-deploy/pkg/conf"
+	configModels "go-deploy/models/config"
+	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/cs"
 	"go-deploy/service/resources"
 	"go-deploy/service/vm_service/base"
@@ -57,11 +57,11 @@ func NewContextWithoutVM(zoneName string) (*Context, error) {
 
 }
 
-func withCsClient(zone *enviroment.VmZone) (*cs.Client, error) {
+func withCsClient(zone *configModels.VmZone) (*cs.Client, error) {
 	return cs.New(&cs.ClientConf{
-		URL:         conf.Env.CS.URL,
-		ApiKey:      conf.Env.CS.ApiKey,
-		Secret:      conf.Env.CS.Secret,
+		URL:         config.Config.CS.URL,
+		ApiKey:      config.Config.CS.ApiKey,
+		Secret:      config.Config.CS.Secret,
 		IpAddressID: zone.IpAddressID,
 		ProjectID:   zone.ProjectID,
 		NetworkID:   zone.NetworkID,

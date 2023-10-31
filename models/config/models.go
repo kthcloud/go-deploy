@@ -1,7 +1,7 @@
-package enviroment
+package config
 
 import (
-	"go-deploy/models/sys/enviroment/role"
+	"go-deploy/models/config/role"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -70,7 +70,7 @@ type VM struct {
 	Zones             []VmZone `yaml:"zones"`
 }
 
-type Environment struct {
+type ConfigType struct {
 	Port          int    `yaml:"port"`
 	ExternalUrl   string `yaml:"externalUrl"`
 	Manager       string `yaml:"manager"`
@@ -109,10 +109,15 @@ type Environment struct {
 		} `yaml:"storageClient"`
 	} `yaml:"keycloak"`
 
-	DB struct {
+	MongoDB struct {
 		URL  string `yaml:"url"`
 		Name string `yaml:"name"`
-	} `yaml:"db"`
+	} `yaml:"mongodb"`
+
+	Redis struct {
+		URL      string `yaml:"url"`
+		Password string `yaml:"password"`
+	}
 
 	CS struct {
 		URL    string `yaml:"url"`

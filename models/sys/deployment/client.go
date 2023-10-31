@@ -1,7 +1,7 @@
 package deployment
 
 import (
-	"go-deploy/models"
+	"go-deploy/models/db"
 	"go-deploy/models/sys/base"
 	"go-deploy/models/sys/base/activityResource"
 	"go-deploy/models/sys/base/resource"
@@ -19,13 +19,13 @@ type Client struct {
 
 func New() *Client {
 	return &Client{
-		Collection: models.DB.GetCollection("deployments"),
+		Collection: db.DB.GetCollection("deployments"),
 
 		ActivityResourceClient: activityResource.ActivityResourceClient[Deployment]{
-			Collection: models.DB.GetCollection("deployments"),
+			Collection: db.DB.GetCollection("deployments"),
 		},
 		ResourceClient: resource.ResourceClient[Deployment]{
-			Collection:     models.DB.GetCollection("deployments"),
+			Collection:     db.DB.GetCollection("deployments"),
 			IncludeDeleted: false,
 		},
 	}

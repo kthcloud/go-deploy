@@ -1,7 +1,7 @@
 package team
 
 import (
-	"go-deploy/models"
+	"go-deploy/models/db"
 	"go-deploy/models/sys/base"
 	"go-deploy/models/sys/base/resource"
 )
@@ -13,7 +13,7 @@ type Client struct {
 func New() *Client {
 	return &Client{
 		ResourceClient: resource.ResourceClient[Team]{
-			Collection:     models.DB.GetCollection("teams"),
+			Collection:     db.DB.GetCollection("teams"),
 			IncludeDeleted: false,
 		},
 	}
