@@ -4,6 +4,7 @@ import (
 	"go-deploy/models"
 	"go-deploy/models/sys/base"
 	"go-deploy/models/sys/base/resource"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type Client struct {
@@ -25,6 +26,12 @@ func (client *Client) AddPagination(page, pageSize int) *Client {
 		Page:     page,
 		PageSize: pageSize,
 	}
+
+	return client
+}
+
+func (client *Client) AddExtraFilter(filter bson.D) *Client {
+	client.ExtraFilter = filter
 
 	return client
 }
