@@ -67,7 +67,7 @@ func NewRouter() *gin.Engine {
 	setupUserRoutes(privateApiv1, apiv1Hook)
 	setupNotificationRoutes(privateApiv1, apiv1Hook)
 	setupGitHubRoutes(privateApiv1, apiv1Hook)
-	setupMetricsRoutes(privateApiv1, apiv1Hook)
+	setupMetricsRoutes(publicApiv1, apiv1Hook)
 
 	registerCustomValidators()
 
@@ -157,8 +157,8 @@ func setupGitHubRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
 	private.GET("/github/repositories", v1_github.ListGitHubRepositories)
 }
 
-func setupMetricsRoutes(private *gin.RouterGroup, _ *gin.RouterGroup) {
-	private.GET("/metrics", func(c *gin.Context) {
+func setupMetricsRoutes(base *gin.RouterGroup, _ *gin.RouterGroup) {
+	base.GET("/metrics", func(c *gin.Context) {
 		promhttp.Handler().ServeHTTP(c.Writer, c.Request)
 	})
 }
