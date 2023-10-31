@@ -17,6 +17,7 @@ type Notification struct {
 	Type    string                 `bson:"type"`
 	Content map[string]interface{} `bson:"content"`
 
+	CreatedAt time.Time  `bson:"createdAt"`
 	ReadAt    *time.Time `bson:"readAt,omitempty"`
 	DeletedAt *time.Time `bson:"deletedAt,omitempty"`
 }

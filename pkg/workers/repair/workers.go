@@ -8,7 +8,7 @@ import (
 	storageManagerModel "go-deploy/models/sys/deployment/storage_manager"
 	jobModel "go-deploy/models/sys/job"
 	vmModel "go-deploy/models/sys/vm"
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/config"
 	"go-deploy/service/job_service"
 	"go-deploy/utils"
 	"log"
@@ -21,7 +21,7 @@ func deploymentRepairer(ctx context.Context) {
 	for {
 
 		select {
-		case <-time.After(time.Duration(conf.Env.Deployment.RepairInterval) * time.Second):
+		case <-time.After(time.Duration(config.Config.Deployment.RepairInterval) * time.Second):
 			restarting, err := deploymentModel.New().GetByActivity(deploymentModel.ActivityRestarting)
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching restarting deployments. details: %w", err))
@@ -76,7 +76,7 @@ func storageManagerRepairer(ctx context.Context) {
 
 	for {
 		select {
-		case <-time.After(time.Duration(conf.Env.Deployment.RepairInterval) * time.Second):
+		case <-time.After(time.Duration(config.Config.Deployment.RepairInterval) * time.Second):
 			withNoActivities, err := storageManagerModel.New().GetWithNoActivities()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching storage managers with no activities. details: %w", err))
@@ -111,7 +111,7 @@ func vmRepairer(ctx context.Context) {
 
 	for {
 		select {
-		case <-time.After(time.Duration(conf.Env.VM.RepairInterval) * time.Second):
+		case <-time.After(time.Duration(config.Config.VM.RepairInterval) * time.Second):
 			withNoActivities, err := vmModel.New().GetWithNoActivities()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching vms with no activities. details: %w", err))
@@ -146,7 +146,7 @@ func gpuRepairer(ctx context.Context) {
 
 	for {
 		select {
-		case <-time.After(time.Duration(conf.Env.GPU.RepairInterval) * time.Second):
+		case <-time.After(time.Duration(config.Config.GPU.RepairInterval) * time.Second):
 			log.Println("repairing gpus")
 
 			jobID := uuid.New().String()

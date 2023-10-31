@@ -1,16 +1,16 @@
 package base
 
 import (
+	configModels "go-deploy/models/config"
 	deploymentModels "go-deploy/models/sys/deployment"
-	"go-deploy/models/sys/enviroment"
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/config"
 	"go-deploy/service/resources"
 )
 
 type DeploymentContext struct {
 	Deployment   *deploymentModels.Deployment
 	MainApp      *deploymentModels.App
-	Zone         *enviroment.DeploymentZone
+	Zone         *configModels.DeploymentZone
 	CreateParams *deploymentModels.CreateParams
 	UpdateParams *deploymentModels.UpdateParams
 	Generator    *resources.PublicGeneratorType
@@ -31,7 +31,7 @@ func NewDeploymentBaseContext(deploymentID string) (*DeploymentContext, error) {
 		return nil, MainAppNotFoundErr
 	}
 
-	zone := conf.Env.Deployment.GetZone(deployment.Zone)
+	zone := config.Config.Deployment.GetZone(deployment.Zone)
 	if zone == nil {
 		return nil, ZoneNotFoundErr
 	}

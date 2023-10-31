@@ -5,21 +5,21 @@ import (
 	deploymentModel "go-deploy/models/sys/deployment"
 	vmModel "go-deploy/models/sys/vm"
 	status_codes2 "go-deploy/pkg/app/status_codes"
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/cs"
 	csModels "go-deploy/pkg/subsystems/cs/models"
 )
 
 func withClient(zoneName string) (*cs.Client, error) {
-	zone := conf.Env.VM.GetZone(zoneName)
+	zone := config.Config.VM.GetZone(zoneName)
 	if zone == nil {
 		return nil, fmt.Errorf("zone with id %s not found", zoneName)
 	}
 
 	return cs.New(&cs.ClientConf{
-		URL:         conf.Env.CS.URL,
-		ApiKey:      conf.Env.CS.ApiKey,
-		Secret:      conf.Env.CS.Secret,
+		URL:         config.Config.CS.URL,
+		ApiKey:      config.Config.CS.ApiKey,
+		Secret:      config.Config.CS.Secret,
 		ZoneID:      zone.ZoneID,
 		ProjectID:   zone.ProjectID,
 		IpAddressID: zone.IpAddressID,

@@ -3,7 +3,7 @@ package deployment_service
 import (
 	"go-deploy/models/dto/body"
 	deploymentModel "go-deploy/models/sys/deployment"
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/config"
 )
 
 func GetAllByGitHubWebhookID(id int64) ([]deploymentModel.Deployment, error) {
@@ -11,7 +11,7 @@ func GetAllByGitHubWebhookID(id int64) ([]deploymentModel.Deployment, error) {
 }
 
 func ValidateHarborToken(secret string) bool {
-	return secret == conf.Env.Harbor.WebhookSecret
+	return secret == config.Config.Harbor.WebhookSecret
 }
 
 func GetByHarborWebhook(webhook *body.HarborWebhook) (*deploymentModel.Deployment, error) {

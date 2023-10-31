@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"go-deploy/pkg/auth"
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/config"
 )
 
 func (context *ClientContext) GetKeycloakToken() (*auth.KeycloakToken, error) {
@@ -28,10 +28,10 @@ func (context *ClientContext) GetKeycloakToken() (*auth.KeycloakToken, error) {
 }
 
 func GetKeyCloakConfig() auth.KeycloakConfig {
-	var fullCertPath = fmt.Sprintf("realms/%s/protocol/openid-connect/certs", conf.Env.Keycloak.Realm)
+	var fullCertPath = fmt.Sprintf("realms/%s/protocol/openid-connect/certs", config.Config.Keycloak.Realm)
 
 	return auth.KeycloakConfig{
-		Url:           conf.Env.Keycloak.Url,
-		Realm:         conf.Env.Keycloak.Realm,
+		Url:           config.Config.Keycloak.Url,
+		Realm:         config.Config.Keycloak.Realm,
 		FullCertsPath: &fullCertPath}
 }

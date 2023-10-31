@@ -1,16 +1,16 @@
 package base
 
 import (
-	"go-deploy/models/sys/enviroment"
+	configModels "go-deploy/models/config"
 	vmModel "go-deploy/models/sys/vm"
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/config"
 	"go-deploy/service/resources"
 )
 
 type VmContext struct {
 	VM        *vmModel.VM
 	Generator *resources.PublicGeneratorType
-	Zone      *enviroment.VmZone
+	Zone      *configModels.VmZone
 
 	CreateParams *vmModel.CreateParams
 	UpdateParams *vmModel.UpdateParams
@@ -26,7 +26,7 @@ func NewVmBaseContext(vmID string) (*VmContext, error) {
 		return nil, VmDeletedErr
 	}
 
-	zone := conf.Env.VM.GetZone(vm.Zone)
+	zone := config.Config.VM.GetZone(vm.Zone)
 	if zone == nil {
 		return nil, ZoneNotFoundErr
 	}
@@ -39,7 +39,7 @@ func NewVmBaseContext(vmID string) (*VmContext, error) {
 }
 
 func NewVmBaseContextWithoutVM(zoneName string) (*VmContext, error) {
-	zone := conf.Env.VM.GetZone(zoneName)
+	zone := config.Config.VM.GetZone(zoneName)
 	if zone == nil {
 		return nil, ZoneNotFoundErr
 	}

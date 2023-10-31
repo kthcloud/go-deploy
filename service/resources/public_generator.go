@@ -1,9 +1,9 @@
 package resources
 
 import (
+	"go-deploy/models/config"
 	deploymentModels "go-deploy/models/sys/deployment"
 	"go-deploy/models/sys/deployment/storage_manager"
-	"go-deploy/models/sys/enviroment"
 	vmModels "go-deploy/models/sys/vm"
 	"go-deploy/pkg/subsystems/k8s"
 )
@@ -12,21 +12,21 @@ type Deployment struct {
 	deployment   *deploymentModels.Deployment
 	createParams *deploymentModels.CreateParams
 	updateParams *deploymentModels.UpdateParams
-	zone         *enviroment.DeploymentZone
+	zone         *config.DeploymentZone
 }
 
 type StorageManager struct {
 	storageManager *storage_manager.StorageManager
 	createParams   *storage_manager.CreateParams
-	zone           *enviroment.DeploymentZone
+	zone           *config.DeploymentZone
 }
 
 type VM struct {
 	vm             *vmModels.VM
 	createParams   *vmModels.CreateParams
 	updateParams   *vmModels.UpdateParams
-	vmZone         *enviroment.VmZone
-	deploymentZone *enviroment.DeploymentZone
+	vmZone         *config.VmZone
+	deploymentZone *config.DeploymentZone
 }
 
 type PublicGeneratorType struct {
@@ -39,14 +39,14 @@ func PublicGenerator() *PublicGeneratorType {
 	return &PublicGeneratorType{}
 }
 
-func (pc *PublicGeneratorType) WithDeploymentZone(zone *enviroment.DeploymentZone) *PublicGeneratorType {
+func (pc *PublicGeneratorType) WithDeploymentZone(zone *config.DeploymentZone) *PublicGeneratorType {
 	pc.d.zone = zone
 	pc.s.zone = zone
 	pc.v.deploymentZone = zone
 	return pc
 }
 
-func (pc *PublicGeneratorType) WithVmZone(zone *enviroment.VmZone) *PublicGeneratorType {
+func (pc *PublicGeneratorType) WithVmZone(zone *config.VmZone) *PublicGeneratorType {
 	pc.v.vmZone = zone
 	return pc
 }

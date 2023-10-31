@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	deploymentModel "go-deploy/models/sys/deployment"
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/k8s"
 	"go-deploy/service"
 	"go-deploy/utils"
@@ -28,7 +28,7 @@ func SetupLogStream(deploymentID string, handler func(string), auth *service.Aut
 		return nil, nil
 	}
 
-	zone := conf.Env.Deployment.GetZone(deployment.Zone)
+	zone := config.Config.Deployment.GetZone(deployment.Zone)
 	if zone == nil {
 		return nil, fmt.Errorf("zone %s not found", deployment.Zone)
 	}

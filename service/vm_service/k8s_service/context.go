@@ -2,9 +2,9 @@ package k8s_service
 
 import (
 	"fmt"
-	"go-deploy/models/sys/enviroment"
+	configModels "go-deploy/models/config"
 	vmModels "go-deploy/models/sys/vm"
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/k8s"
 	"go-deploy/service/resources"
 	"go-deploy/service/vm_service/base"
@@ -14,7 +14,7 @@ import (
 type Context struct {
 	base.VmContext
 
-	DeploymentZone *enviroment.DeploymentZone
+	DeploymentZone *configModels.DeploymentZone
 	Client         *k8s.Client
 	Generator      *resources.K8sGenerator
 }
@@ -29,7 +29,7 @@ func NewContext(vmID string) (*Context, error) {
 		return nil, makeError(err)
 	}
 
-	deploymentZone := conf.Env.Deployment.GetZone(baseContext.VM.Zone)
+	deploymentZone := config.Config.Deployment.GetZone(baseContext.VM.Zone)
 	if deploymentZone == nil {
 		return nil, makeError(base.DeploymentZoneNotFoundErr)
 	}
@@ -67,7 +67,7 @@ func getNamespaceName(userID string) string {
 	return subsystemutils.GetPrefixedName(fmt.Sprintf("vm-%s", userID))
 }
 
-func withClient(zone *enviroment.DeploymentZone, namespace string) (*k8s.Client, error) {
+func withClient(zone *configModels.DeploymentZone, namespace string) (*k8s.Client, error) {
 	client, err := k8s.New(zone.Client, namespace)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create k8s client. details: %w", err)

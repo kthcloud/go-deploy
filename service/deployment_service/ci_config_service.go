@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"go-deploy/models/dto/body"
 	deploymentModel "go-deploy/models/sys/deployment"
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/config"
 	"go-deploy/service"
 	"go-deploy/utils/subsystemutils"
 	"gopkg.in/yaml.v2"
@@ -31,7 +31,7 @@ func GetCIConfig(deploymentID string, auth *service.AuthInfo) (*body.CiConfig, e
 	}
 
 	tag := fmt.Sprintf("%s/%s/%s",
-		conf.Env.Registry.URL,
+		config.Config.Registry.URL,
 		subsystemutils.GetPrefixedName(auth.UserID),
 		deployment.Name,
 	)
@@ -49,7 +49,7 @@ func GetCIConfig(deploymentID string, auth *service.AuthInfo) (*body.CiConfig, e
 					Name: "Login to Docker Hub",
 					Uses: "docker/login-action@v2",
 					With: deploymentModel.With{
-						Registry: conf.Env.Registry.URL,
+						Registry: config.Config.Registry.URL,
 						Username: username,
 						Password: password,
 					},

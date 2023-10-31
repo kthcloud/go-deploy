@@ -2,8 +2,8 @@ package user
 
 import (
 	"github.com/fatih/structs"
+	roleModel "go-deploy/models/config/role"
 	"go-deploy/models/dto/body"
-	roleModel "go-deploy/models/sys/enviroment/role"
 	"log"
 )
 

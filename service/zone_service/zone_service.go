@@ -2,13 +2,13 @@ package zone_service
 
 import (
 	zoneModel "go-deploy/models/sys/zone"
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/config"
 )
 
 func GetAllZones() ([]zoneModel.Zone, error) {
 
-	deploymentZones := conf.Env.Deployment.Zones
-	vmZones := conf.Env.VM.Zones
+	deploymentZones := config.Config.Deployment.Zones
+	vmZones := config.Config.VM.Zones
 
 	zones := make([]zoneModel.Zone, len(deploymentZones)+len(vmZones))
 

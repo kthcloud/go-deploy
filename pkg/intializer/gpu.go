@@ -3,7 +3,7 @@ package intializer
 import (
 	"fmt"
 	gpuModel "go-deploy/models/sys/vm/gpu"
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/landing"
 	"go-deploy/utils"
 	"log"
@@ -12,13 +12,13 @@ import (
 
 func SynchronizeGPUs() {
 	client, err := landing.New(&landing.ClientConf{
-		URL:      conf.Env.Landing.URL,
-		Username: conf.Env.Landing.User,
-		Password: conf.Env.Landing.Password,
+		URL:      config.Config.Landing.URL,
+		Username: config.Config.Landing.User,
+		Password: config.Config.Landing.Password,
 
-		OidcProvider: conf.Env.Keycloak.Url,
-		OidcClientID: conf.Env.Landing.ClientID,
-		OidcRealm:    conf.Env.Keycloak.Realm,
+		OidcProvider: config.Config.Keycloak.Url,
+		OidcClientID: config.Config.Landing.ClientID,
+		OidcRealm:    config.Config.Keycloak.Realm,
 	})
 
 	if err != nil {
@@ -63,7 +63,7 @@ func SynchronizeGPUs() {
 				continue
 			}
 
-			zone := conf.Env.VM.GetZoneByID(host.ZoneID)
+			zone := config.Config.VM.GetZoneByID(host.ZoneID)
 			if zone == nil {
 				log.Println("graphics card zone not found. zone id: ", host.ZoneID, ". skipping gpu: ", id)
 				continue

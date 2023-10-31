@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"github.com/go-playground/validator/v10"
 	"go-deploy/models/dto/body"
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/config"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/idna"
 	"io"
@@ -141,8 +141,8 @@ func DomainName(fl validator.FieldLevel) bool {
 		return false
 	}
 
-	illegalSuffixes := make([]string, len(conf.Env.Deployment.Zones))
-	for idx, zone := range conf.Env.Deployment.Zones {
+	illegalSuffixes := make([]string, len(config.Config.Deployment.Zones))
+	for idx, zone := range config.Config.Deployment.Zones {
 		illegalSuffixes[idx] = zone.ParentDomain
 	}
 
@@ -228,7 +228,7 @@ func TeamResourceList(fl validator.FieldLevel) bool {
 }
 
 func domainPointsToDeploy(domainName string) bool {
-	for _, zone := range conf.Env.Deployment.Zones {
+	for _, zone := range config.Config.Deployment.Zones {
 		mustPointAt := zone.CustomDomainIP
 
 		pointsTo := lookUpIP(domainName)

@@ -1,7 +1,7 @@
 package gpu
 
 import (
-	"go-deploy/models"
+	"go-deploy/models/db"
 	"go-deploy/models/sys/base/resource"
 )
 
@@ -17,7 +17,7 @@ func New() *Client {
 		ExcludedHosts: make([]string, 0),
 		ExcludedGPUs:  make([]string, 0),
 		ResourceClient: resource.ResourceClient[GPU]{
-			Collection: models.DB.GetCollection("gpus"),
+			Collection: db.DB.GetCollection("gpus"),
 		},
 	}
 }
@@ -35,7 +35,7 @@ func NewWithExclusion(excludedHosts []string, excludedGPUs []string) *Client {
 		ExcludedHosts: excludedHosts,
 		ExcludedGPUs:  excludedGPUs,
 		ResourceClient: resource.ResourceClient[GPU]{
-			Collection: models.DB.GetCollection("gpus"),
+			Collection: db.DB.GetCollection("gpus"),
 		},
 	}
 }

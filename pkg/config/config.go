@@ -1,9 +1,9 @@
-package conf
+package config
 
 import (
 	"fmt"
 	"github.com/mitchellh/mapstructure"
-	"go-deploy/models/sys/enviroment"
+	"go-deploy/models/config"
 	"go-deploy/pkg/imp/cloudstack"
 	"gopkg.in/yaml.v3"
 	"k8s.io/client-go/kubernetes"
@@ -13,7 +13,7 @@ import (
 	"regexp"
 )
 
-var Env enviroment.Environment
+var Config config.ConfigType
 
 func SetupEnvironment() {
 	makeError := func(err error) error {
@@ -31,13 +31,13 @@ func SetupEnvironment() {
 		log.Fatalf(makeError(err).Error())
 	}
 
-	err = yaml.Unmarshal(yamlFile, &Env)
+	err = yaml.Unmarshal(yamlFile, &Config)
 	if err != nil {
 		log.Fatalf(makeError(err).Error())
 	}
 
-	log.Println("loaded", len(Env.Roles), "roles in order:")
-	for _, role := range Env.Roles {
+	log.Println("loaded", len(Config.Roles), "roles in order:")
+	for _, role := range Config.Roles {
 		log.Println("\t", role.Name)
 	}
 
@@ -53,7 +53,7 @@ func SetupEnvironment() {
 
 func assertCorrectConfig() {
 	uniqueNames := make(map[string]bool)
-	for _, zone := range Env.Deployment.Zones {
+	for _, zone := range Config.Deployment.Zones {
 		if uniqueNames[zone.Name] {
 			log.Fatalln("deployment zone names must be unique")
 		}
@@ -61,7 +61,7 @@ func assertCorrectConfig() {
 	}
 
 	uniqueNames = make(map[string]bool)
-	for _, zone := range Env.VM.Zones {
+	for _, zone := range Config.VM.Zones {
 		if uniqueNames[zone.Name] {
 			log.Fatalln("vm zone names must be unique")
 		}
@@ -76,7 +76,7 @@ func setupK8sClusters() error {
 		return fmt.Errorf("failed to setup k8s clusters. details: %w", err)
 	}
 
-	for idx, zone := range Env.Deployment.Zones {
+	for idx, zone := range Config.Deployment.Zones {
 		sourceType, ok := zone.ConfigSource.(map[string]interface{})
 		if !ok {
 			log.Fatalln("failed to parse type of config source for zone", zone.Name)
@@ -90,7 +90,7 @@ func setupK8sClusters() error {
 		switch configType {
 		case "cloudstack":
 			{
-				var zoneConfig enviroment.CloudStackConfigSource
+				var zoneConfig config.CloudStackConfigSource
 				err := mapstructure.Decode(sourceType, &zoneConfig)
 				if err != nil {
 					log.Fatalln("failed to parse cloudstack config source for zone", zone.Name)
@@ -101,7 +101,7 @@ func setupK8sClusters() error {
 					return makeError(err)
 				}
 
-				Env.Deployment.Zones[idx].Client = client
+				Config.Deployment.Zones[idx].Client = client
 			}
 		}
 	}
@@ -110,7 +110,7 @@ func setupK8sClusters() error {
 	return nil
 }
 
-func createClientFromCloudStackConfig(name string, config *enviroment.CloudStackConfigSource) (*kubernetes.Clientset, error) {
+func createClientFromCloudStackConfig(name string, config *config.CloudStackConfigSource) (*kubernetes.Clientset, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create k8s client from cloudstack config. details: %w", err)
 	}
@@ -118,9 +118,9 @@ func createClientFromCloudStackConfig(name string, config *enviroment.CloudStack
 	log.Println("fetching k8s cluster for deployment zone", name)
 
 	csClient := cloudstack.NewAsyncClient(
-		Env.CS.URL,
-		Env.CS.ApiKey,
-		Env.CS.Secret,
+		Config.CS.URL,
+		Config.CS.ApiKey,
+		Config.CS.Secret,
 		true,
 	)
 

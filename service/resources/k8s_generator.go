@@ -4,12 +4,12 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	configModels "go-deploy/models/config"
 	"go-deploy/models/sys/deployment"
 	storageManagerModel "go-deploy/models/sys/deployment/storage_manager"
-	"go-deploy/models/sys/enviroment"
 	userModel "go-deploy/models/sys/user"
 	"go-deploy/models/sys/vm"
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/k8s"
 	"go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/service"
@@ -138,13 +138,13 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 			})
 
 			defaultLimits := models.Limits{
-				CPU:    conf.Env.Deployment.Resources.Limits.CPU,
-				Memory: conf.Env.Deployment.Resources.Limits.Memory,
+				CPU:    config.Config.Deployment.Resources.Limits.CPU,
+				Memory: config.Config.Deployment.Resources.Limits.Memory,
 			}
 
 			defaultRequests := models.Requests{
-				CPU:    conf.Env.Deployment.Resources.Requests.CPU,
-				Memory: conf.Env.Deployment.Resources.Requests.Memory,
+				CPU:    config.Config.Deployment.Resources.Requests.CPU,
+				Memory: config.Config.Deployment.Resources.Requests.Memory,
 			}
 
 			k8sVolumes := make([]models.Volume, len(mainApp.Volumes))
@@ -251,16 +251,16 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 				res = append(res, models.DeploymentPublic{
 					Name:      getVmProxyDeploymentName(kg.v.vm, port.HttpProxy.Name),
 					Namespace: kg.namespace,
-					Image:     conf.Env.Registry.VmHttpProxyImage,
+					Image:     config.Config.Registry.VmHttpProxyImage,
 					EnvVars:   envVars,
 					Resources: models.Resources{
 						Limits: models.Limits{
-							CPU:    conf.Env.Deployment.Resources.Limits.CPU,
-							Memory: conf.Env.Deployment.Resources.Limits.Memory,
+							CPU:    config.Config.Deployment.Resources.Limits.CPU,
+							Memory: config.Config.Deployment.Resources.Limits.Memory,
 						},
 						Requests: models.Requests{
-							CPU:    conf.Env.Deployment.Resources.Requests.CPU,
-							Memory: conf.Env.Deployment.Resources.Requests.Memory,
+							CPU:    config.Config.Deployment.Resources.Requests.CPU,
+							Memory: config.Config.Deployment.Resources.Requests.Memory,
 						},
 					},
 				})
@@ -290,13 +290,13 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 			}
 
 			defaultLimits := models.Limits{
-				CPU:    conf.Env.Deployment.Resources.Limits.CPU,
-				Memory: conf.Env.Deployment.Resources.Limits.Memory,
+				CPU:    config.Config.Deployment.Resources.Limits.CPU,
+				Memory: config.Config.Deployment.Resources.Limits.Memory,
 			}
 
 			defaultRequests := models.Requests{
-				CPU:    conf.Env.Deployment.Resources.Requests.CPU,
-				Memory: conf.Env.Deployment.Resources.Requests.Memory,
+				CPU:    config.Config.Deployment.Resources.Requests.CPU,
+				Memory: config.Config.Deployment.Resources.Requests.Memory,
 			}
 
 			args := []string{
@@ -324,13 +324,13 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 			res = append(res, *oauthProxy)
 		} else {
 			defaultLimits := models.Limits{
-				CPU:    conf.Env.Deployment.Resources.Limits.CPU,
-				Memory: conf.Env.Deployment.Resources.Limits.Memory,
+				CPU:    config.Config.Deployment.Resources.Limits.CPU,
+				Memory: config.Config.Deployment.Resources.Limits.Memory,
 			}
 
 			defaultRequests := models.Requests{
-				CPU:    conf.Env.Deployment.Resources.Requests.CPU,
-				Memory: conf.Env.Deployment.Resources.Requests.Memory,
+				CPU:    config.Config.Deployment.Resources.Requests.CPU,
+				Memory: config.Config.Deployment.Resources.Requests.Memory,
 			}
 
 			user, err := userModel.New().GetByID(kg.s.storageManager.OwnerID)
@@ -354,7 +354,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 				},
 			}
 
-			issuer := conf.Env.Keycloak.Url + "/realms/" + conf.Env.Keycloak.Realm
+			issuer := config.Config.Keycloak.Url + "/realms/" + config.Config.Keycloak.Realm
 			redirectURL := fmt.Sprintf("https://%s.%s/oauth2/callback", kg.s.storageManager.OwnerID, kg.s.zone.Storage.ParentDomain)
 			upstream := "http://storage-manager"
 
@@ -369,8 +369,8 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 				"--pass-authorization-header=true",
 				"--scope=openid email",
 				"--upstream=" + upstream,
-				"--client-id=" + conf.Env.Keycloak.StorageClient.ClientID,
-				"--client-secret=" + conf.Env.Keycloak.StorageClient.ClientSecret,
+				"--client-id=" + config.Config.Keycloak.StorageClient.ClientID,
+				"--client-secret=" + config.Config.Keycloak.StorageClient.ClientSecret,
 				"--cookie-secret=qHKgjlAFQBZOnGcdH5jIKV0Auzx5r8jzZenxhJnlZJg=",
 				"--cookie-secure=true",
 				"--ssl-insecure-skip-verify=true",
@@ -509,7 +509,7 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 					Namespace:    kg.namespace,
 					ServiceName:  kg.d.deployment.Name,
 					ServicePort:  kg.d.deployment.GetMainApp().InternalPort,
-					IngressClass: conf.Env.Deployment.IngressClass,
+					IngressClass: config.Config.Deployment.IngressClass,
 					Hosts:        []string{getExternalFQDN(kg.d.deployment.Name, kg.d.zone)},
 					TlsSecret:    &tlsSecret,
 				})
@@ -525,7 +525,7 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 						Namespace:    kg.namespace,
 						ServiceName:  kg.d.deployment.Name,
 						ServicePort:  kg.d.deployment.GetMainApp().InternalPort,
-						IngressClass: conf.Env.Deployment.IngressClass,
+						IngressClass: config.Config.Deployment.IngressClass,
 						Hosts:        []string{*kg.d.deployment.GetMainApp().CustomDomain},
 						CustomCert: &models.CustomCert{
 							ClusterIssuer: "letsencrypt-prod-deploy-http",
@@ -577,7 +577,7 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 					Namespace:    kg.namespace,
 					ServiceName:  getVmProxyServiceName(kg.v.vm, port.HttpProxy.Name),
 					ServicePort:  8080,
-					IngressClass: conf.Env.Deployment.IngressClass,
+					IngressClass: config.Config.Deployment.IngressClass,
 					Hosts:        []string{getVmProxyExternalURL(port.HttpProxy.Name, kg.v.deploymentZone)},
 					TlsSecret:    &tlsSecret,
 				})
@@ -590,7 +590,7 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 						Namespace:    kg.namespace,
 						ServiceName:  getVmProxyServiceName(kg.v.vm, port.HttpProxy.Name),
 						ServicePort:  8080,
-						IngressClass: conf.Env.Deployment.IngressClass,
+						IngressClass: config.Config.Deployment.IngressClass,
 						Hosts:        []string{*port.HttpProxy.CustomDomain},
 						CustomCert: &models.CustomCert{
 							ClusterIssuer: "letsencrypt-prod-deploy-http",
@@ -615,7 +615,7 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 				Namespace:    kg.namespace,
 				ServiceName:  constants.StorageManagerAppNameAuth,
 				ServicePort:  4180,
-				IngressClass: conf.Env.Deployment.IngressClass,
+				IngressClass: config.Config.Deployment.IngressClass,
 				Hosts:        []string{getStorageExternalFQDN(kg.s.storageManager.OwnerID, kg.s.zone)},
 				TlsSecret:    &tlsSecret,
 			})
@@ -649,7 +649,7 @@ func (kg *K8sGenerator) PVs() []models.PvPublic {
 			if _, ok := kg.d.deployment.Subsystems.K8s.GetPvMap()[volume.Name]; !ok {
 				res = append(res, models.PvPublic{
 					Name:      getDeploymentPvName(kg.d.deployment, volume.Name),
-					Capacity:  conf.Env.Deployment.Resources.Limits.Storage,
+					Capacity:  config.Config.Deployment.Resources.Limits.Storage,
 					NfsServer: kg.d.zone.Storage.NfsServer,
 					NfsPath:   path.Join(kg.d.zone.Storage.NfsParentPath, kg.d.deployment.OwnerID, "user"),
 				})
@@ -673,7 +673,7 @@ func (kg *K8sGenerator) PVs() []models.PvPublic {
 			if _, ok := kg.s.storageManager.Subsystems.K8s.GetPvMap()[volume.Name]; !ok {
 				res = append(res, models.PvPublic{
 					Name:      getStorageManagerPvName(kg.s.storageManager.OwnerID, volume.Name),
-					Capacity:  conf.Env.Deployment.Resources.Limits.Storage,
+					Capacity:  config.Config.Deployment.Resources.Limits.Storage,
 					NfsServer: kg.s.zone.Storage.NfsServer,
 					NfsPath:   path.Join(kg.s.zone.Storage.NfsParentPath, volume.ServerPath),
 				})
@@ -701,7 +701,7 @@ func (kg *K8sGenerator) PVCs() []models.PvcPublic {
 				res = append(res, models.PvcPublic{
 					Name:      getDeploymentPvcName(kg.d.deployment, volume.Name),
 					Namespace: kg.namespace,
-					Capacity:  conf.Env.Deployment.Resources.Limits.Storage,
+					Capacity:  config.Config.Deployment.Resources.Limits.Storage,
 					PvName:    getDeploymentPvName(kg.d.deployment, volume.Name),
 				})
 			}
@@ -725,7 +725,7 @@ func (kg *K8sGenerator) PVCs() []models.PvcPublic {
 				res = append(res, models.PvcPublic{
 					Name:      getStorageManagerPvcName(volume.Name),
 					Namespace: kg.namespace,
-					Capacity:  conf.Env.Deployment.Resources.Limits.Storage,
+					Capacity:  config.Config.Deployment.Resources.Limits.Storage,
 					PvName:    getStorageManagerPvName(kg.s.storageManager.OwnerID, volume.Name),
 				})
 			}
@@ -745,7 +745,7 @@ func (kg *K8sGenerator) Secrets() []models.SecretPublic {
 			var imagePullSecret *models.SecretPublic
 
 			if kg.d.deployment.Subsystems.Harbor.Robot.Created() && kg.d.deployment.Type == deployment.TypeCustom {
-				registry := conf.Env.Registry.URL
+				registry := config.Config.Registry.URL
 				username := kg.d.deployment.Subsystems.Harbor.Robot.HarborName
 				password := kg.d.deployment.Subsystems.Harbor.Robot.Secret
 
@@ -778,12 +778,12 @@ func (kg *K8sGenerator) Secrets() []models.SecretPublic {
 		/// swap namespaces temporarily
 		var wildcardCertSecret *models.SecretPublic
 
-		kg.client.Namespace = conf.Env.Deployment.WildcardCertSecretNamespace
+		kg.client.Namespace = config.Config.Deployment.WildcardCertSecretNamespace
 		defer func() { kg.client.Namespace = kg.namespace }()
 
-		copyFrom, err := kg.client.ReadSecret(conf.Env.Deployment.WildcardCertSecretId)
+		copyFrom, err := kg.client.ReadSecret(config.Config.Deployment.WildcardCertSecretId)
 		if err != nil || copyFrom == nil {
-			utils.PrettyPrintError(fmt.Errorf("failed to read secret %s/%s. details: %w", conf.Env.Deployment.WildcardCertSecretNamespace, conf.Env.Deployment.WildcardCertSecretId, err))
+			utils.PrettyPrintError(fmt.Errorf("failed to read secret %s/%s. details: %w", config.Config.Deployment.WildcardCertSecretNamespace, config.Config.Deployment.WildcardCertSecretId, err))
 		} else {
 			wildcardCertSecret = &models.SecretPublic{
 				Name:      constants.WildcardCertSecretName,
@@ -814,12 +814,12 @@ func (kg *K8sGenerator) Secrets() []models.SecretPublic {
 		/// swap namespaces temporarily
 		var wildcardCertSecret *models.SecretPublic
 
-		kg.client.Namespace = conf.Env.Deployment.WildcardCertSecretNamespace
+		kg.client.Namespace = config.Config.Deployment.WildcardCertSecretNamespace
 		defer func() { kg.client.Namespace = kg.namespace }()
 
-		copyFrom, err := kg.client.ReadSecret(conf.Env.Deployment.WildcardCertSecretId)
+		copyFrom, err := kg.client.ReadSecret(config.Config.Deployment.WildcardCertSecretId)
 		if err != nil || copyFrom == nil {
-			utils.PrettyPrintError(fmt.Errorf("failed to read secret %s/%s. details: %w", conf.Env.Deployment.WildcardCertSecretNamespace, conf.Env.Deployment.WildcardCertSecretId, err))
+			utils.PrettyPrintError(fmt.Errorf("failed to read secret %s/%s. details: %w", config.Config.Deployment.WildcardCertSecretNamespace, config.Config.Deployment.WildcardCertSecretId, err))
 		} else {
 			wildcardCertSecret = &models.SecretPublic{
 				Name:      constants.WildcardCertSecretName,
@@ -850,12 +850,12 @@ func (kg *K8sGenerator) Secrets() []models.SecretPublic {
 		/// swap namespaces temporarily
 		var wildcardCertSecret *models.SecretPublic
 
-		kg.client.Namespace = conf.Env.Deployment.WildcardCertSecretNamespace
+		kg.client.Namespace = config.Config.Deployment.WildcardCertSecretNamespace
 		defer func() { kg.client.Namespace = kg.namespace }()
 
-		copyFrom, err := kg.client.ReadSecret(conf.Env.Deployment.WildcardCertSecretId)
+		copyFrom, err := kg.client.ReadSecret(config.Config.Deployment.WildcardCertSecretId)
 		if err != nil || copyFrom == nil {
-			utils.PrettyPrintError(fmt.Errorf("failed to read secret %s/%s. details: %w", conf.Env.Deployment.WildcardCertSecretNamespace, conf.Env.Deployment.WildcardCertSecretId, err))
+			utils.PrettyPrintError(fmt.Errorf("failed to read secret %s/%s. details: %w", config.Config.Deployment.WildcardCertSecretNamespace, config.Config.Deployment.WildcardCertSecretId, err))
 		} else {
 			wildcardCertSecret = &models.SecretPublic{
 				Name:      constants.WildcardCertSecretName,
@@ -928,11 +928,11 @@ func (kg *K8sGenerator) Jobs() []models.JobPublic {
 	return nil
 }
 
-func getExternalFQDN(name string, zone *enviroment.DeploymentZone) string {
+func getExternalFQDN(name string, zone *configModels.DeploymentZone) string {
 	return fmt.Sprintf("%s.%s", name, zone.ParentDomain)
 }
 
-func getStorageExternalFQDN(name string, zone *enviroment.DeploymentZone) string {
+func getStorageExternalFQDN(name string, zone *configModels.DeploymentZone) string {
 	return fmt.Sprintf("%s.%s", name, zone.Storage.ParentDomain)
 }
 
@@ -979,7 +979,7 @@ func getVmProxyCustomDomainIngressName(vm *vm.VM, portName string) string {
 	return fmt.Sprintf("%s-%s-custom-domain", vm.Name, portName)
 }
 
-func getVmProxyExternalURL(portName string, zone *enviroment.DeploymentZone) string {
+func getVmProxyExternalURL(portName string, zone *configModels.DeploymentZone) string {
 	return fmt.Sprintf("%s.%s", portName, zone.ParentDomainVM)
 }
 

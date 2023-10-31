@@ -3,7 +3,7 @@ package cs
 import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/cs"
 	"go-deploy/pkg/subsystems/cs/models"
 	"testing"
@@ -11,15 +11,15 @@ import (
 
 func withCsClient(t *testing.T) *cs.Client {
 	zoneName := "se-flem"
-	zone := conf.Env.VM.GetZone(zoneName)
+	zone := config.Config.VM.GetZone(zoneName)
 	if zone == nil {
 		t.Fatalf("no zone with name %s found", zoneName)
 	}
 
 	client, err := cs.New(&cs.ClientConf{
-		URL:         conf.Env.CS.URL,
-		ApiKey:      conf.Env.CS.ApiKey,
-		Secret:      conf.Env.CS.Secret,
+		URL:         config.Config.CS.URL,
+		ApiKey:      config.Config.CS.ApiKey,
+		Secret:      config.Config.CS.Secret,
 		ZoneID:      zone.ZoneID,
 		ProjectID:   zone.ProjectID,
 		IpAddressID: zone.IpAddressID,
@@ -91,7 +91,7 @@ func withVM(t *testing.T, so *models.ServiceOfferingPublic) *models.VmPublic {
 		},
 	}
 
-	id, err := client.CreateVM(vm, sshPublicKey, conf.Env.VM.AdminSshPublicKey)
+	id, err := client.CreateVM(vm, sshPublicKey, config.Config.VM.AdminSshPublicKey)
 	assert.NoError(t, err, "failed to create vm")
 	assert.NotZero(t, id, "no vm id received from client")
 

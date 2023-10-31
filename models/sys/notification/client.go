@@ -1,7 +1,7 @@
 package notification
 
 import (
-	"go-deploy/models"
+	"go-deploy/models/db"
 	"go-deploy/models/sys/base"
 	"go-deploy/models/sys/base/resource"
 	"go.mongodb.org/mongo-driver/bson"
@@ -17,10 +17,10 @@ type Client struct {
 
 func New() *Client {
 	return &Client{
-		Collection: models.DB.GetCollection("notifications"),
+		Collection: db.DB.GetCollection("notifications"),
 
 		ResourceClient: resource.ResourceClient[Notification]{
-			Collection:     models.DB.GetCollection("notifications"),
+			Collection:     db.DB.GetCollection("notifications"),
 			IncludeDeleted: false,
 		},
 	}

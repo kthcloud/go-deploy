@@ -1,15 +1,15 @@
 package base
 
 import (
+	configModels "go-deploy/models/config"
 	"go-deploy/models/sys/deployment/storage_manager"
-	"go-deploy/models/sys/enviroment"
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/config"
 	"go-deploy/service/resources"
 )
 
 type StorageManagerContext struct {
 	StorageManager *storage_manager.StorageManager
-	Zone           *enviroment.DeploymentZone
+	Zone           *configModels.DeploymentZone
 	CreateParams   *storage_manager.CreateParams
 	Generator      *resources.PublicGeneratorType
 }
@@ -24,7 +24,7 @@ func NewStorageManagerBaseContext(id string) (*StorageManagerContext, error) {
 		return nil, StorageManagerDeletedErr
 	}
 
-	zone := conf.Env.Deployment.GetZone(storageManager.Zone)
+	zone := config.Config.Deployment.GetZone(storageManager.Zone)
 	if zone == nil {
 		return nil, ZoneNotFoundErr
 	}

@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/prometheus/client_golang/prometheus"
 	"go-deploy/models/sys/event"
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/config"
 	"go-deploy/pkg/metrics"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
@@ -21,7 +21,7 @@ func metricsWorker(ctx context.Context) {
 
 	for {
 		select {
-		case <-time.After(time.Duration(conf.Env.Metrics.Interval) * time.Second):
+		case <-time.After(time.Duration(config.Config.Metrics.Interval) * time.Second):
 			for name, metric := range metricsFuncMap {
 				if err := metric(); err != nil {
 					log.Printf("error computing metric %s. details: %s", name, err.Error())

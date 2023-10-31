@@ -4,15 +4,15 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	roleModel "go-deploy/models/config/role"
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
 	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/models/sys/deployment/storage_manager"
-	roleModel "go-deploy/models/sys/enviroment/role"
 	jobModel "go-deploy/models/sys/job"
 	userModel "go-deploy/models/sys/user"
 	teamModels "go-deploy/models/sys/user/team"
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/config"
 	"go-deploy/service"
 	"go-deploy/service/deployment_service/base"
 	"go-deploy/service/deployment_service/github_service"
@@ -33,8 +33,8 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 
 	// temporary hard-coded fallback
 	fallbackZone := "se-flem"
-	fallbackImage := fmt.Sprintf("%s/%s/%s", conf.Env.Registry.URL, subsystemutils.GetPrefixedName(ownerID), deploymentCreate.Name)
-	fallbackPort := conf.Env.Deployment.Port
+	fallbackImage := fmt.Sprintf("%s/%s/%s", config.Config.Registry.URL, subsystemutils.GetPrefixedName(ownerID), deploymentCreate.Name)
+	fallbackPort := config.Config.Deployment.Port
 
 	params := &deploymentModel.CreateParams{}
 	params.FromDTO(deploymentCreate, fallbackZone, fallbackImage, fallbackPort)

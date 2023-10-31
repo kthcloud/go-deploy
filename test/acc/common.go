@@ -1,7 +1,7 @@
 package acc
 
 import (
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/config"
 	"log"
 	"os"
 )
@@ -21,11 +21,11 @@ func Setup() {
 
 	_, result := os.LookupEnv("DEPLOY_CONFIG_FILE")
 	if result {
-		conf.SetupEnvironment()
+		config.SetupEnvironment()
 	}
 
-	conf.Env.TestMode = true
-	conf.Env.DB.Name = conf.Env.DB.Name + "-test"
+	config.Config.TestMode = true
+	config.Config.MongoDB.Name = config.Config.MongoDB.Name + "-test"
 }
 
 func Shutdown() {

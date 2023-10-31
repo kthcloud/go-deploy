@@ -2,7 +2,7 @@ package vm_service
 
 import (
 	"fmt"
-	roleModel "go-deploy/models/sys/enviroment/role"
+	roleModel "go-deploy/models/config/role"
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/service"
 	"go-deploy/service/vm_service/cs_service"

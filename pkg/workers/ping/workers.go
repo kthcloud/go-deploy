@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	deploymentModels "go-deploy/models/sys/deployment"
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/config"
 	"go-deploy/service/deployment_service"
 	"go-deploy/utils"
 	"log"
@@ -18,7 +18,7 @@ func deploymentPingUpdater(ctx context.Context) {
 
 	for {
 		select {
-		case <-time.After(time.Duration(conf.Env.Deployment.PingInterval) * time.Second):
+		case <-time.After(time.Duration(config.Config.Deployment.PingInterval) * time.Second):
 			makeError := func(err error) error {
 				return fmt.Errorf("error fetching deployments. details: %w", err)
 			}

@@ -3,9 +3,9 @@ package cs_service
 import (
 	"errors"
 	"fmt"
-	"go-deploy/models/sys/enviroment"
+	configModels "go-deploy/models/config"
 	vmModel "go-deploy/models/sys/vm"
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/cs/commands"
 	csModels "go-deploy/pkg/subsystems/cs/models"
 	"go-deploy/service"
@@ -32,7 +32,7 @@ func CreateCS(vmID string, params *vmModel.CreateParams) error {
 	}
 
 	context.Client.WithUserSshPublicKey(params.SshPublicKey)
-	context.Client.WithAdminSshPublicKey(conf.Env.VM.AdminSshPublicKey)
+	context.Client.WithAdminSshPublicKey(config.Config.VM.AdminSshPublicKey)
 	context.WithCreateParams(params)
 
 	// Service offering
@@ -409,7 +409,7 @@ func CanStartCS(csVmID, hostName, zoneName string) (bool, string, error) {
 	return true, "", nil
 }
 
-func HostInCorrectState(hostName string, zone *enviroment.VmZone) (bool, string, error) {
+func HostInCorrectState(hostName string, zone *configModels.VmZone) (bool, string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check if host %s is in correct state. details: %w", zone.Name, err)
 	}

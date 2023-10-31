@@ -1,7 +1,7 @@
 package job
 
 import (
-	"go-deploy/models"
+	"go-deploy/models/db"
 	"go-deploy/models/sys/base"
 	"go-deploy/models/sys/base/resource"
 	"go.mongodb.org/mongo-driver/bson"
@@ -15,7 +15,7 @@ type Client struct {
 func New() *Client {
 	return &Client{
 		ResourceClient: resource.ResourceClient[Job]{
-			Collection:     models.DB.GetCollection("jobs"),
+			Collection:     db.DB.GetCollection("jobs"),
 			IncludeDeleted: false,
 			Pagination:     nil,
 		},

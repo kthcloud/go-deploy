@@ -4,7 +4,7 @@ import (
 	"fmt"
 	vmModel "go-deploy/models/sys/vm"
 	gpuModel "go-deploy/models/sys/vm/gpu"
-	"go-deploy/pkg/conf"
+	"go-deploy/pkg/config"
 	"go-deploy/service/vm_service/cs_service"
 	"go-deploy/utils"
 	"log"
@@ -14,13 +14,13 @@ import (
 )
 
 func GetAllGPUs(onlyAvailable bool, usePrivilegedGPUs bool) ([]gpuModel.GPU, error) {
-	excludedGPUs := conf.Env.GPU.ExcludedGPUs
+	excludedGPUs := config.Config.GPU.ExcludedGPUs
 	if !usePrivilegedGPUs {
-		excludedGPUs = append(excludedGPUs, conf.Env.GPU.PrivilegedGPUs...)
+		excludedGPUs = append(excludedGPUs, config.Config.GPU.PrivilegedGPUs...)
 	}
 
 	if onlyAvailable {
-		dbAvailableGPUs, err := gpuModel.NewWithExclusion(conf.Env.GPU.ExcludedHosts, excludedGPUs).GetAllAvailable()
+		dbAvailableGPUs, err := gpuModel.NewWithExclusion(config.Config.GPU.ExcludedHosts, excludedGPUs).GetAllAvailable()
 		if err != nil {
 			return nil, err
 		}
@@ -40,7 +40,7 @@ func GetAllGPUs(onlyAvailable bool, usePrivilegedGPUs bool) ([]gpuModel.GPU, err
 
 		return availableGPUs, nil
 	}
-	return gpuModel.NewWithExclusion(conf.Env.GPU.ExcludedHosts, excludedGPUs).GetAll()
+	return gpuModel.NewWithExclusion(config.Config.GPU.ExcludedHosts, excludedGPUs).GetAll()
 }
 
 func GetGpuByID(gpuID string, usePrivilegedGPUs bool) (*gpuModel.GPU, error) {
@@ -54,7 +54,7 @@ func GetGpuByID(gpuID string, usePrivilegedGPUs bool) (*gpuModel.GPU, error) {
 	}
 
 	// check if host is excluded
-	for _, excludedHost := range conf.Env.GPU.ExcludedHosts {
+	for _, excludedHost := range config.Config.GPU.ExcludedHosts {
 		if gpu.Host == excludedHost {
 			return nil, nil
 		}
@@ -71,12 +71,12 @@ func GetGpuByID(gpuID string, usePrivilegedGPUs bool) (*gpuModel.GPU, error) {
 }
 
 func GetAllAvailableGPU(usePrivilegedGPUs bool) ([]gpuModel.GPU, error) {
-	excludedGPUs := conf.Env.GPU.ExcludedGPUs
+	excludedGPUs := config.Config.GPU.ExcludedGPUs
 	if !usePrivilegedGPUs {
-		excludedGPUs = append(excludedGPUs, conf.Env.GPU.PrivilegedGPUs...)
+		excludedGPUs = append(excludedGPUs, config.Config.GPU.PrivilegedGPUs...)
 	}
 
-	dbAvailableGPUs, err := gpuModel.NewWithExclusion(conf.Env.GPU.ExcludedHosts, excludedGPUs).GetAllAvailable()
+	dbAvailableGPUs, err := gpuModel.NewWithExclusion(config.Config.GPU.ExcludedHosts, excludedGPUs).GetAllAvailable()
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +111,7 @@ func IsGpuPrivileged(gpuID string) (bool, error) {
 		return false, nil
 	}
 
-	for _, privilegedGPU := range conf.Env.GPU.PrivilegedGPUs {
+	for _, privilegedGPU := range config.Config.GPU.PrivilegedGPUs {
 		if privilegedGPU == gpu.Data.Name {
 			return true, nil
 		}
@@ -387,7 +387,7 @@ func IsGpuHardwareAvailable(gpu *gpuModel.GPU) (bool, error) {
 		return false, err
 	}
 
-	zone := conf.Env.VM.GetZone(gpu.Zone)
+	zone := config.Config.VM.GetZone(gpu.Zone)
 	if zone == nil {
 		return false, fmt.Errorf("zone %s not found", gpu.Zone)
 	}
@@ -405,7 +405,7 @@ func IsGpuHardwareAvailable(gpu *gpuModel.GPU) (bool, error) {
 }
 
 func isGpuPrivileged(cardName string) bool {
-	for _, privilegedCard := range conf.Env.GPU.PrivilegedGPUs {
+	for _, privilegedCard := range config.Config.GPU.PrivilegedGPUs {
 		if cardName == privilegedCard {
 			return true
 		}
