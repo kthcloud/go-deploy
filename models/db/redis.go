@@ -15,13 +15,13 @@ func (dbCtx *Context) setupRedis() error {
 
 	log.Println("setting up redis")
 
-	dbCtx.redisClient = redis.NewClient(&redis.Options{
+	dbCtx.RedisClient = redis.NewClient(&redis.Options{
 		Addr:     config.Config.Redis.URL,
 		Password: config.Config.Redis.Password,
 		DB:       0, // use default DB
 	})
 
-	_, err := dbCtx.redisClient.Ping(context.TODO()).Result()
+	_, err := dbCtx.RedisClient.Ping(context.TODO()).Result()
 	if err != nil {
 		return makeError(err)
 	}
@@ -36,12 +36,12 @@ func (dbCtx *Context) shutdownRedis() error {
 		return fmt.Errorf("failed to shutdown redis. details: %w", err)
 	}
 
-	err := dbCtx.redisClient.Close()
+	err := dbCtx.RedisClient.Close()
 	if err != nil {
 		return makeError(err)
 	}
 
-	dbCtx.redisClient = nil
+	dbCtx.RedisClient = nil
 
 	return nil
 }

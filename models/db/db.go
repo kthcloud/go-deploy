@@ -10,7 +10,7 @@ var DB Context
 
 type Context struct {
 	mongoClient *mongo.Client
-	redisClient *redis.Client
+	RedisClient *redis.Client
 
 	CollectionMap map[string]*mongo.Collection
 }

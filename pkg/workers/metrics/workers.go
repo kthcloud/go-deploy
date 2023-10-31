@@ -2,10 +2,12 @@ package metrics
 
 import (
 	"context"
-	"github.com/prometheus/client_golang/prometheus"
+	"fmt"
 	"go-deploy/models/sys/event"
+	"go-deploy/models/sys/key_value"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/metrics"
+	"go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
 	"time"
@@ -24,7 +26,7 @@ func metricsWorker(ctx context.Context) {
 		case <-time.After(time.Duration(config.Config.Metrics.Interval) * time.Second):
 			for name, metric := range metricsFuncMap {
 				if err := metric(); err != nil {
-					log.Printf("error computing metric %s. details: %s", name, err.Error())
+					utils.PrettyPrintError(fmt.Errorf("error computing metric %s. details: %w", name, err))
 				}
 			}
 		case <-ctx.Done():
@@ -48,7 +50,7 @@ func setTotalUniqueUserMetrics() error {
 func setUniqueUsersByDate() error {
 	type uniqueUserByDate struct {
 		Filter bson.D
-		Metric prometheus.Gauge
+		Key    string
 	}
 
 	today := time.Now()
@@ -58,31 +60,31 @@ func setUniqueUsersByDate() error {
 			Filter: bson.D{{"createdAt", bson.D{
 				{"$gte", time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, today.Location())},
 			}}},
-			Metric: metrics.UniqueUsersToday,
+			Key: "metrics:unique-users:today",
 		},
 		{
 			Filter: bson.D{{"createdAt", bson.D{
 				{"$gte", time.Now().AddDate(0, 0, -1)},
 			}}},
-			Metric: metrics.UniqueUsersYesterday,
+			Key: "metrics:unique-users:yesterday",
 		},
 		{
 			Filter: bson.D{{"createdAt", bson.D{
 				{"$gte", time.Now().AddDate(0, 0, -7)},
 			}}},
-			Metric: metrics.UniqueUsersThisWeek,
+			Key: "metrics:unique-users:this-week",
 		},
 		{
 			Filter: bson.D{{"createdAt", bson.D{
 				{"$gte", time.Now().AddDate(0, -1, 0)},
 			}}},
-			Metric: metrics.UniqueUsersThisMonth,
+			Key: "metrics:unique-users:this-month",
 		},
 		{
 			Filter: bson.D{{"createdAt", bson.D{
 				{"$gte", time.Now().AddDate(-1, 0, 0)},
 			}}},
-			Metric: metrics.UniqueUsersThisYear,
+			Key: "metrics:unique-users:this-year",
 		},
 	}
 
@@ -92,7 +94,10 @@ func setUniqueUsersByDate() error {
 			return err
 		}
 
-		uniqueUser.Metric.Set(float64(count))
+		err = key_value.New().Set(uniqueUser.Key, count, 0)
+		if err != nil {
+			return fmt.Errorf("failed to set key %s when fetching metrics. details: %w", uniqueUser.Key, err)
+		}
 	}
 
 	return nil
