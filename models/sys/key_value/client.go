@@ -2,6 +2,7 @@ package key_value
 
 import (
 	"context"
+	"errors"
 	"github.com/redis/go-redis/v9"
 	"go-deploy/models/db"
 	"time"
@@ -18,7 +19,16 @@ func New() *Client {
 }
 
 func (client *Client) Get(key string) (string, error) {
-	return client.RedisClient.Get(context.TODO(), key).Result()
+	res, err := client.RedisClient.Get(context.TODO(), key).Result()
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			return "", nil
+		}
+
+		return "", err
+	}
+
+	return res, err
 }
 
 func (client *Client) Set(key string, value interface{}, expiration time.Duration) error {

@@ -9,6 +9,7 @@ import (
 	"go-deploy/pkg/metrics"
 	"go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"log"
 	"time"
 )
@@ -17,16 +18,17 @@ func metricsWorker(ctx context.Context) {
 	defer log.Println("metrics worker stopped")
 
 	metricsFuncMap := map[string]func() error{
-		"total_unique_users":   setTotalUniqueUserMetrics,
-		"unique_users_by_date": setUniqueUsersByDate,
+		"users-total":          usersTotal,
+		"daily-active-users":   dailyActiveUsers,
+		"monthly-active-users": monthlyActiveUsers,
 	}
 
 	for {
 		select {
 		case <-time.After(time.Duration(config.Config.Metrics.Interval) * time.Second):
-			for name, metric := range metricsFuncMap {
+			for metricGroupName, metric := range metricsFuncMap {
 				if err := metric(); err != nil {
-					utils.PrettyPrintError(fmt.Errorf("error computing metric %s. details: %w", name, err))
+					utils.PrettyPrintError(fmt.Errorf("error computing metric %s. details: %w", metricGroupName, err))
 				}
 			}
 		case <-ctx.Done():
@@ -35,70 +37,108 @@ func metricsWorker(ctx context.Context) {
 	}
 }
 
-func setTotalUniqueUserMetrics() error {
-	// get distinct users by userId
-	uniqueUsers, err := event.New().CountDistinct("source.userId")
+func usersTotal() error {
+	total, err := event.New().CountDistinct("source.userId")
 	if err != nil {
-		return err
+		return fmt.Errorf("error counting distinct users when computing metrics. details: %w", err)
 	}
 
-	metrics.UniqueUsers.Set(float64(uniqueUsers))
+	err = key_value.New().Set(metrics.KeyUsersTotal, fmt.Sprintf("%d", total), 0)
+	if err != nil {
+		return fmt.Errorf("error setting value for key %s when computing metrics. details: %w", metrics.KeyUsersTotal, err)
+	}
 
 	return nil
 }
 
-func setUniqueUsersByDate() error {
-	type uniqueUserByDate struct {
-		Filter bson.D
-		Key    string
+func dailyActiveUsers() error {
+	return activeUsers("daily", metrics.KeyDailyActiveUsers, 2)
+}
+
+func monthlyActiveUsers() error {
+	return activeUsers("monthly", metrics.KeyMonthlyActiveUsers, 2)
+}
+
+func activeUsers(frequencyType, key string, count int) error {
+	pipeline := getActiveUserMongoPipeline(frequencyType, count)
+
+	cursor, err := event.New().Collection.Aggregate(context.Background(), pipeline)
+	if err != nil {
+		log.Fatal(err)
 	}
-
-	today := time.Now()
-
-	uniqueUsersByDate := []uniqueUserByDate{
-		{
-			Filter: bson.D{{"createdAt", bson.D{
-				{"$gte", time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, today.Location())},
-			}}},
-			Key: "metrics:unique-users:today",
-		},
-		{
-			Filter: bson.D{{"createdAt", bson.D{
-				{"$gte", time.Now().AddDate(0, 0, -1)},
-			}}},
-			Key: "metrics:unique-users:yesterday",
-		},
-		{
-			Filter: bson.D{{"createdAt", bson.D{
-				{"$gte", time.Now().AddDate(0, 0, -7)},
-			}}},
-			Key: "metrics:unique-users:this-week",
-		},
-		{
-			Filter: bson.D{{"createdAt", bson.D{
-				{"$gte", time.Now().AddDate(0, -1, 0)},
-			}}},
-			Key: "metrics:unique-users:this-month",
-		},
-		{
-			Filter: bson.D{{"createdAt", bson.D{
-				{"$gte", time.Now().AddDate(-1, 0, 0)},
-			}}},
-			Key: "metrics:unique-users:this-year",
-		},
-	}
-
-	for _, uniqueUser := range uniqueUsersByDate {
-		count, err := event.New().AddExtraFilter(uniqueUser.Filter).CountDistinct("source.userId")
+	defer func(cursor *mongo.Cursor, ctx context.Context) {
+		err = cursor.Close(ctx)
 		if err != nil {
-			return err
+			utils.PrettyPrintError(fmt.Errorf("error closing cursor when fetching metrics. details: %w", err))
+		}
+	}(cursor, context.Background())
+
+	// Iterate over the results
+	for cursor.Next(context.Background()) {
+		var result bson.M
+		if err := cursor.Decode(&result); err != nil {
+			log.Fatal(err)
 		}
 
-		err = key_value.New().Set(uniqueUser.Key, count, 0)
+		total := result["total"].(int32)
+		err = key_value.New().Set(key, fmt.Sprintf("%d", total), 0)
 		if err != nil {
-			return fmt.Errorf("failed to set key %s when fetching metrics. details: %w", uniqueUser.Key, err)
+			return fmt.Errorf("error setting value for key %s when computing metrics. details: %w", key, err)
 		}
 	}
 
 	return nil
+}
+
+func getActiveUserMongoPipeline(frequencyType string, count int) mongo.Pipeline {
+	var gte time.Time
+	var dateFormat string
+
+	switch frequencyType {
+	case "daily":
+		gte = time.Now().AddDate(0, 0, -count)
+		dateFormat = "%Y-%m-%d"
+	case "monthly":
+		gte = time.Now().AddDate(0, -count, 0)
+		dateFormat = "%Y-%m"
+	}
+
+	return mongo.Pipeline{
+		bson.D{
+			{"$match", bson.M{
+				"createdAt": bson.M{
+					"$gte": gte,
+				},
+			}},
+		},
+		bson.D{
+			{"$group", bson.M{
+				"_id": bson.M{
+					"userId": "$source.userId",
+					"day": bson.M{
+						"$dateToString": bson.M{
+							"format": dateFormat,
+							"date":   "$createdAt",
+						},
+					},
+				},
+			}},
+		},
+		bson.D{
+			{"$group", bson.M{
+				"_id": "$_id.userId",
+				"count": bson.M{
+					"$sum": 1,
+				},
+			}},
+		},
+		bson.D{
+			{"$match", bson.M{
+				"count": count,
+			}},
+		},
+		bson.D{
+			{"$count", "total"},
+		},
+	}
 }
