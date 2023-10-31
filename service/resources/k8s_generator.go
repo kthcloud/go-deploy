@@ -379,8 +379,6 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 				"--pass-authorization-header=true",
 				"--ssl-upstream-insecure-skip-verify=true",
 				"--code-challenge-method=S256",
-				"--oidc-groups-claim=groups",
-				"--allowed-group=" + conf.Env.Keycloak.AdminGroup,
 				"--authenticated-emails-file=/mnt/authenticated-emails-list",
 			}
 
@@ -615,10 +613,10 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 			res = append(res, models.IngressPublic{
 				Name:         constants.StorageManagerAppName,
 				Namespace:    kg.namespace,
-				ServiceName:  constants.StorageManagerAppName,
-				ServicePort:  80,
+				ServiceName:  constants.StorageManagerAppNameAuth,
+				ServicePort:  4180,
 				IngressClass: conf.Env.Deployment.IngressClass,
-				Hosts:        []string{getExternalFQDN(kg.s.storageManager.OwnerID, kg.s.zone)},
+				Hosts:        []string{getStorageExternalFQDN(kg.s.storageManager.OwnerID, kg.s.zone)},
 				TlsSecret:    &tlsSecret,
 			})
 		}
@@ -898,6 +896,19 @@ func (kg *K8sGenerator) Jobs() []models.JobPublic {
 			}
 		}
 
+		initVolumes, _ := getStorageManagerVolumes(kg.s.storageManager.OwnerID)
+
+		k8sVolumes := make([]models.Volume, len(initVolumes))
+		for i, volume := range initVolumes {
+			pvcName := getStorageManagerPvcName(volume.Name)
+			k8sVolumes[i] = models.Volume{
+				Name:      getStorageManagerPvName(kg.s.storageManager.OwnerID, volume.Name),
+				PvcName:   &pvcName,
+				MountPath: volume.AppPath,
+				Init:      volume.Init,
+			}
+		}
+
 		for _, job := range jobs {
 			if _, ok := kg.s.storageManager.Subsystems.K8s.GetJobMap()[job.Name]; !ok {
 				res = append(res, models.JobPublic{
@@ -906,6 +917,7 @@ func (kg *K8sGenerator) Jobs() []models.JobPublic {
 					Image:     job.Image,
 					Command:   job.Command,
 					Args:      job.Args,
+					Volumes:   k8sVolumes,
 				})
 			}
 		}
@@ -918,6 +930,10 @@ func (kg *K8sGenerator) Jobs() []models.JobPublic {
 
 func getExternalFQDN(name string, zone *enviroment.DeploymentZone) string {
 	return fmt.Sprintf("%s.%s", name, zone.ParentDomain)
+}
+
+func getStorageExternalFQDN(name string, zone *enviroment.DeploymentZone) string {
+	return fmt.Sprintf("%s.%s", name, zone.Storage.ParentDomain)
 }
 
 func encodeDockerConfig(registry, username, password string) []byte {

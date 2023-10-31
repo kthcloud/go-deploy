@@ -20,7 +20,7 @@ type Member struct {
 	AddedAt  time.Time `bson:"addedAt"`
 	JoinedAt time.Time `bson:"joinedAt"`
 
-	InviteCode string `bson:"inviteCode"`
+	InvitationCode string `bson:"invitationCode"`
 }
 
 type Resource struct {

@@ -26,7 +26,8 @@ type EffectiveRole struct {
 type User struct {
 	ID            string        `bson:"id"`
 	Username      string        `bson:"username"`
-	Fullname      string        `bson:"fullname"`
+	FirstName     string        `bson:"firstName"`
+	LastName      string        `bson:"lastName"`
 	Email         string        `bson:"email"`
 	IsAdmin       bool          `bson:"isAdmin"`
 	EffectiveRole EffectiveRole `bson:"effectiveRole"`

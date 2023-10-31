@@ -20,6 +20,8 @@ import (
 
 var TeamNameTakenErr = fmt.Errorf("team name taken")
 var TeamNotFoundErr = fmt.Errorf("team not found")
+var BadInviteCodeErr = fmt.Errorf("bad invite code")
+var NotInvitedErr = fmt.Errorf("not invited")
 
 func CreateTeam(id, ownerID string, dtoCreateTeam *body.TeamCreate, auth *service.AuthInfo) (*teamModels.Team, error) {
 	params := &teamModels.CreateParams{}
@@ -37,6 +39,40 @@ func CreateTeam(id, ownerID string, dtoCreateTeam *body.TeamCreate, auth *servic
 	}
 
 	return team, nil
+}
+
+func JoinTeam(id string, dtoTeamJoin *body.TeamJoin, auth *service.AuthInfo) (*teamModels.Team, error) {
+	params := &teamModels.JoinParams{}
+	params.FromDTO(dtoTeamJoin)
+
+	teamClient := teamModels.New()
+	team, err := teamClient.GetByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if team == nil {
+		return nil, TeamNotFoundErr
+	}
+
+	if team.GetMemberMap()[auth.UserID].MemberStatus != teamModels.MemberStatusInvited {
+		return team, NotInvitedErr
+	}
+
+	if team.GetMemberMap()[auth.UserID].InvitationCode != params.InvitationCode {
+		return nil, BadInviteCodeErr
+	}
+
+	updatedMember := team.GetMemberMap()[auth.UserID]
+	updatedMember.MemberStatus = teamModels.MemberStatusJoined
+	updatedMember.JoinedAt = time.Now()
+
+	err = teamClient.UpdateMember(id, auth.UserID, &updatedMember)
+	if err != nil {
+		return nil, err
+	}
+
+	return teamClient.GetByID(id)
 }
 
 func GetTeamByIdAuth(id string, auth *service.AuthInfo) (*teamModels.Team, error) {
@@ -130,13 +166,14 @@ func UpdateTeamAuth(id string, dtoUpdateTeam *body.TeamUpdate, auth *service.Aut
 					member.JoinedAt = time.Now()
 					member.MemberStatus = teamModels.MemberStatusJoined
 				} else {
-					member.InviteCode = utils.HashString(uuid.NewString())
+					member.InvitationCode = utils.HashString(uuid.NewString())
 					member.MemberStatus = teamModels.MemberStatusInvited
 					err = notification_service.CreateNotification(uuid.NewString(), member.ID, &notificationModel.CreateParams{
 						Type: notificationModel.TypeTeamInvite,
 						Content: map[string]interface{}{
 							"teamId":     team.ID,
-							"inviteCode": member.InviteCode,
+							"teamName":   team.Name,
+							"inviteCode": member.InvitationCode,
 						},
 					})
 					if err != nil {
@@ -161,7 +198,7 @@ func UpdateTeamAuth(id string, dtoUpdateTeam *body.TeamUpdate, auth *service.Aut
 		}
 	}
 
-	err = teamClient.UpdateWithParamsByID(id, params)
+	err = teamClient.UpdateWithParams(id, params)
 	if err != nil {
 		return nil, err
 	}

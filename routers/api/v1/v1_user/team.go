@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 	"github.com/google/uuid"
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
@@ -17,6 +18,7 @@ import (
 	"go-deploy/service/vm_service"
 	"go-deploy/utils"
 	"net/http"
+	"time"
 )
 
 // GetTeam godoc
@@ -158,8 +160,14 @@ func UpdateTeam(c *gin.Context) {
 		return
 	}
 
+	var requestQueryJoin body.TeamJoin
+	if err := context.GinContext.ShouldBindBodyWith(&requestQueryJoin, binding.JSON); err == nil {
+		joinTeam(context, requestURI.TeamID, &requestQueryJoin)
+		return
+	}
+
 	var requestQuery body.TeamUpdate
-	if err := context.GinContext.ShouldBindJSON(&requestQuery); err != nil {
+	if err := context.GinContext.ShouldBindBodyWith(&requestQuery, binding.JSON); err != nil {
 		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
 		return
 	}
@@ -235,12 +243,24 @@ func getMember(member *teamModels.Member) *body.TeamMember {
 		return nil
 	}
 
+	var joinedAt *time.Time
+	if !member.JoinedAt.IsZero() {
+		joinedAt = &member.JoinedAt
+	}
+
+	var addedAt *time.Time
+	if !member.AddedAt.IsZero() {
+		addedAt = &member.AddedAt
+	}
+
 	return &body.TeamMember{
-		ID:       user.ID,
-		Username: user.Username,
-		Email:    user.Email,
-		TeamRole: member.TeamRole,
-		JoinedAt: member.JoinedAt,
+		ID:           user.ID,
+		Username:     user.Username,
+		Email:        user.Email,
+		TeamRole:     member.TeamRole,
+		JoinedAt:     joinedAt,
+		AddedAt:      addedAt,
+		MemberStatus: member.MemberStatus,
 	}
 }
 
@@ -278,4 +298,34 @@ func getResourceName(resource *teamModels.Resource) *string {
 
 	return nil
 
+}
+
+func joinTeam(context sys.ClientContext, id string, requestBody *body.TeamJoin) {
+	auth, err := v1.WithAuth(&context)
+	if err != nil {
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
+	}
+
+	team, err := user_service.JoinTeam(id, requestBody, auth)
+	if err != nil {
+		if errors.Is(err, user_service.TeamNotFoundErr) {
+			context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, "Team not found")
+			return
+		}
+
+		if errors.Is(err, user_service.NotInvitedErr) {
+			context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "User not invited to team")
+			return
+		}
+
+		if errors.Is(err, user_service.BadInviteCodeErr) {
+			context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "Bad invite code")
+			return
+		}
+
+		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to create deployment with invite code: %s", err))
+		return
+	}
+
+	context.JSONResponse(http.StatusCreated, team.ToDTO(getMember, getResourceName))
 }

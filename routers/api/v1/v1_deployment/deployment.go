@@ -151,7 +151,7 @@ func Get(c *gin.Context) {
 // @Router /deployments [post]
 func Create(c *gin.Context) {
 	context := sys.NewContext(c)
-
+	
 	var requestBody body.DeploymentCreate
 	if err := context.GinContext.ShouldBindJSON(&requestBody); err != nil {
 		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))

@@ -2,6 +2,7 @@ package job_execute
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/mitchellh/mapstructure"
 	"go-deploy/models/dto/body"
@@ -505,6 +506,10 @@ func createStorageManager(job *jobModel.Job) error {
 
 	err = deployment_service.CreateStorageManager(id, &params)
 	if err != nil {
+		if errors.Is(err, deployment_service.StorageManagerAlreadyExistsErr) {
+			return makeTerminatedError(err)
+		}
+
 		return makeFailedError(err)
 	}
 
