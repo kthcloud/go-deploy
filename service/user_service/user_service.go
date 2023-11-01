@@ -47,11 +47,15 @@ func Create(auth *service.AuthInfo) (*userModel.User, error) {
 	return userModel.New().GetByID(auth.UserID)
 }
 
-func ListAuth(allUsers bool, auth *service.AuthInfo, pagination *query.Pagination) ([]userModel.User, error) {
+func ListAuth(allUsers bool, search *string, auth *service.AuthInfo, pagination *query.Pagination) ([]userModel.User, error) {
 	client := userModel.New()
 
 	if pagination != nil {
 		client.AddPagination(pagination.Page, pagination.PageSize)
+	}
+
+	if search != nil {
+		client.AddSearch(*search)
 	}
 
 	if !allUsers || (allUsers && !auth.IsAdmin) {

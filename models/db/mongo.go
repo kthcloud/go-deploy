@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"go-deploy/pkg/config"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
@@ -14,6 +15,7 @@ type collectionDefinition struct {
 	Name          string
 	Indexes       []string
 	UniqueIndexes []string
+	TextIndex     []string
 }
 
 func (dbCtx *Context) setupMongo() error {
@@ -58,9 +60,12 @@ func (dbCtx *Context) setupMongo() error {
 	createdCount := 0
 	for _, def := range defs {
 		for _, indexName := range def.Indexes {
-			err = createIndex(DB.GetCollection(def.Name), indexName, false)
+			_, err = DB.GetCollection(def.Name).Indexes().CreateOne(context.Background(), mongo.IndexModel{
+				Keys:    map[string]int{indexName: 1},
+				Options: options.Index().SetUnique(false),
+			})
 			if err != nil {
-				log.Fatalln(makeError(err))
+				return makeError(err)
 			}
 			createdCount++
 		}
@@ -71,15 +76,40 @@ func (dbCtx *Context) setupMongo() error {
 	createdCount = 0
 	for _, def := range defs {
 		for _, indexName := range def.UniqueIndexes {
-			err = createIndex(DB.GetCollection(def.Name), indexName, true)
+			_, err = DB.GetCollection(def.Name).Indexes().CreateOne(context.Background(), mongo.IndexModel{
+				Keys:    map[string]int{indexName: 1},
+				Options: options.Index().SetUnique(true),
+			})
 			if err != nil {
-				log.Fatalln(makeError(err))
+				return makeError(err)
 			}
 			createdCount++
 		}
 	}
 
 	log.Println("ensured", createdCount, "unique indexes")
+
+	createdCount = 0
+	for _, def := range defs {
+		if def.TextIndex == nil {
+			continue
+		}
+
+		keys := bson.D{}
+		for _, indexName := range def.TextIndex {
+			keys = append(keys, bson.E{Key: indexName, Value: "text"})
+		}
+
+		_, err = DB.GetCollection(def.Name).Indexes().CreateOne(context.Background(), mongo.IndexModel{
+			Keys: keys,
+		})
+		if err != nil {
+			return makeError(err)
+		}
+		createdCount++
+	}
+
+	log.Println("ensured", createdCount, "text indexes")
 
 	return nil
 }
@@ -95,26 +125,6 @@ func (dbCtx *Context) shutdownMongo() error {
 	}
 
 	dbCtx.CollectionMap = nil
-
-	return nil
-}
-
-func createIndex(collection *mongo.Collection, fieldName string, unique bool) error {
-	uniqueStr := ""
-	if unique {
-		uniqueStr = "unique "
-	}
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to create %sindex on collection %s. details: %w", uniqueStr, collection.Name(), err)
-	}
-
-	_, err := collection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
-		Keys:    map[string]int{fieldName: 1},
-		Options: options.Index().SetUnique(unique),
-	})
-	if err != nil {
-		return makeError(err)
-	}
 
 	return nil
 }
@@ -145,11 +155,13 @@ func getCollectionDefinitions() []collectionDefinition {
 			Name:          "users",
 			Indexes:       []string{"username", "email", "firstName", "lastName", "effectiveRole.name"},
 			UniqueIndexes: []string{"id"},
+			TextIndex:     []string{"username", "email", "firstName", "lastName"},
 		},
 		{
 			Name:          "teams",
 			Indexes:       []string{"name", "ownerId", "createdAt", "deletedAt"},
 			UniqueIndexes: []string{"id"},
+			TextIndex:     []string{"name"},
 		},
 		{
 			Name:          "jobs",

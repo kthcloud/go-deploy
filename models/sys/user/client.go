@@ -7,6 +7,8 @@ import (
 )
 
 type Client struct {
+	Search *string
+
 	resource.ResourceClient[User]
 }
 
@@ -17,6 +19,12 @@ func New() *Client {
 			IncludeDeleted: false,
 		},
 	}
+}
+
+func (client *Client) AddSearch(search string) *Client {
+	client.Search = &search
+
+	return client
 }
 
 func (client *Client) AddPagination(page, pageSize int) *Client {
