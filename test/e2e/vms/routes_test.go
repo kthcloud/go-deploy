@@ -48,9 +48,6 @@ func TestGetGpuList(t *testing.T) {
 }
 
 func TestGetAvailableGpuList(t *testing.T) {
-	t.Skip()
-	return
-
 	resp := e2e.DoGetRequest(t, "/gpus?available=true")
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 

@@ -80,8 +80,7 @@ func WithVM(t *testing.T, requestBody body.VmCreate) body.VmRead {
 	WaitForVmRunning(t, vmCreated.ID, func(vmRead *body.VmRead) bool {
 		//make sure it is accessible
 		if vmRead.ConnectionString != nil {
-			return true
-			//return checkUpVM(t, *vmRead.ConnectionString)
+			return checkUpVM(t, *vmRead.ConnectionString)
 		}
 		return false
 	})
