@@ -2,6 +2,7 @@ package user_service
 
 import (
 	"go-deploy/models/dto/body"
+	"go-deploy/models/dto/query"
 	userModel "go-deploy/models/sys/user"
 	"go-deploy/service"
 )
@@ -46,26 +47,30 @@ func Create(auth *service.AuthInfo) (*userModel.User, error) {
 	return userModel.New().GetByID(auth.UserID)
 }
 
-func GetAll(auth *service.AuthInfo) ([]userModel.User, error) {
-	if auth.IsAdmin {
-		return userModel.New().GetAll()
+func ListAuth(allUsers bool, auth *service.AuthInfo, pagination *query.Pagination) ([]userModel.User, error) {
+	client := userModel.New()
+
+	if pagination != nil {
+		client.AddPagination(pagination.Page, pagination.PageSize)
 	}
 
-	self, err := userModel.New().GetByID(auth.UserID)
-	if err != nil {
-		return nil, err
+	if !allUsers || (allUsers && !auth.IsAdmin) {
+		user, err := client.GetByID(auth.UserID)
+		if err != nil {
+			return nil, err
+		}
+
+		return []userModel.User{*user}, nil
 	}
 
-	if self == nil {
-		return nil, nil
-	}
-
-	return []userModel.User{*self}, nil
+	return client.GetAll()
 }
 
-func Update(userID string, dtoUserUpdate *body.UserUpdate, auth *service.AuthInfo) error {
+func UpdatedAuth(userID string, dtoUserUpdate *body.UserUpdate, auth *service.AuthInfo) (*userModel.User, error) {
+	client := userModel.New()
+
 	if userID != auth.UserID && !auth.IsAdmin {
-		return nil
+		return nil, nil
 	}
 
 	var publicKeys *[]userModel.PublicKey
@@ -86,10 +91,10 @@ func Update(userID string, dtoUserUpdate *body.UserUpdate, auth *service.AuthInf
 		Onboarded:  dtoUserUpdate.Onboarded,
 	}
 
-	err := userModel.New().UpdateWithParams(userID, userUpdate)
+	err := client.UpdateWithParams(userID, userUpdate)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return client.GetByID(userID)
 }

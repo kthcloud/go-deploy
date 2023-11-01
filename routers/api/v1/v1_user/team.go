@@ -10,7 +10,6 @@ import (
 	"go-deploy/models/dto/query"
 	"go-deploy/models/dto/uri"
 	teamModels "go-deploy/models/sys/user/team"
-	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/deployment_service"
@@ -20,6 +19,49 @@ import (
 	"net/http"
 	"time"
 )
+
+// ListTeams godoc
+// @Summary Get team list
+// @Description Get team list
+// @Tags Team
+// @Accept json
+// @Produce json
+// @Param all query bool false "All teams"
+// @Param userId query string false "User ID"
+// @Param page query int false "Page"
+// @Param pageSize query int false "Page Size"
+// @Success 200 {array} body.TeamRead
+// @Failure 400 {object} body.BindingError
+// @Failure 500 {object} sys.ErrorResponse
+// @Router /teams [get]
+func ListTeams(c *gin.Context) {
+	context := sys.NewContext(c)
+
+	var requestQuery query.TeamList
+	if err := context.GinContext.ShouldBind(&requestQuery); err != nil {
+		context.BindingError(v1.CreateBindingError(err))
+		return
+	}
+
+	auth, err := v1.WithAuth(&context)
+	if err != nil {
+		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		return
+	}
+
+	teamList, err := user_service.ListTeamsAuth(requestQuery.All, requestQuery.UserID, auth, &requestQuery.Pagination)
+	if err != nil {
+		context.ServerError(err, v1.InternalError)
+		return
+	}
+
+	teamListDTO := make([]body.TeamRead, len(teamList))
+	for i, team := range teamList {
+		teamListDTO[i] = team.ToDTO(getMember, getResourceName)
+	}
+
+	context.Ok(teamListDTO)
+}
 
 // GetTeam godoc
 // @Summary Get team
@@ -35,68 +77,25 @@ import (
 func GetTeam(c *gin.Context) {
 	context := sys.NewContext(c)
 
-	var requestURI uri.TeamUpdate
+	var requestURI uri.TeamGet
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
 	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
+		context.ServerError(err, v1.AuthInfoNotAvailableErr)
 		return
 	}
 
 	team, err := user_service.GetTeamByIdAuth(requestURI.TeamID, auth)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get team: %s", err))
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
-	context.JSONResponse(http.StatusOK, team.ToDTO(getMember, getResourceName))
-}
-
-// GetTeamList godoc
-// @Summary Get team list
-// @Description Get team list
-// @Tags Team
-// @Accept json
-// @Produce json
-// @Param all query bool false "All teams"
-// @Param userId query string false "User ID"
-// @Param page query int false "Page"
-// @Param pageSize query int false "Page Size"
-// @Success 200 {array} body.TeamRead
-// @Failure 400 {object} body.BindingError
-// @Failure 500 {object} sys.ErrorResponse
-// @Router /teams [get]
-func GetTeamList(c *gin.Context) {
-	context := sys.NewContext(c)
-
-	var requestQuery query.TeamList
-	if err := context.GinContext.ShouldBind(&requestQuery); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
-		return
-	}
-
-	auth, err := v1.WithAuth(&context)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
-		return
-	}
-
-	teamList, err := user_service.GetTeamListAuth(requestQuery.All, requestQuery.UserID, auth, &requestQuery.Pagination)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get team list: %s", err))
-		return
-	}
-
-	teamListDTO := make([]body.TeamRead, len(teamList))
-	for i, team := range teamList {
-		teamListDTO[i] = team.ToDTO(getMember, getResourceName)
-	}
-
-	context.JSONResponse(http.StatusOK, teamListDTO)
+	context.Ok(team.ToDTO(getMember, getResourceName))
 }
 
 // CreateTeam godoc
@@ -115,24 +114,24 @@ func CreateTeam(c *gin.Context) {
 
 	var requestQuery body.TeamCreate
 	if err := context.GinContext.ShouldBindJSON(&requestQuery); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
 	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
+		context.ServerError(err, v1.AuthInfoNotAvailableErr)
 		return
 	}
 
 	team, err := user_service.CreateTeam(uuid.NewString(), auth.UserID, &requestQuery, auth)
 	if err != nil {
 		if errors.Is(err, user_service.TeamNameTakenErr) {
-			context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceNotAvailable, "Team name is taken")
+			context.UserError("Team name is taken")
 			return
 		}
 
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to create team: %s", err))
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
@@ -156,7 +155,7 @@ func UpdateTeam(c *gin.Context) {
 
 	var requestURI uri.TeamUpdate
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
@@ -168,33 +167,33 @@ func UpdateTeam(c *gin.Context) {
 
 	var requestQuery body.TeamUpdate
 	if err := context.GinContext.ShouldBindBodyWith(&requestQuery, binding.JSON); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
 	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
+		context.ServerError(err, v1.AuthInfoNotAvailableErr)
 		return
 	}
 
-	team, err := user_service.UpdateTeamAuth(requestURI.TeamID, &requestQuery, auth)
+	updated, err := user_service.UpdateTeamAuth(requestURI.TeamID, &requestQuery, auth)
 	if err != nil {
 		if errors.Is(err, user_service.TeamNameTakenErr) {
-			context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceNotAvailable, "Team name is taken")
+			context.UserError("Team name is taken")
 			return
 		}
 
-		if errors.Is(err, user_service.TeamNotFoundErr) {
-			context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, "Team not found")
-			return
-		}
-
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to update team: %s", err))
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
-	context.JSONResponse(http.StatusOK, team.ToDTO(getMember, getResourceName))
+	if updated == nil {
+		context.NotFound("Team not found")
+		return
+	}
+
+	context.JSONResponse(http.StatusOK, updated.ToDTO(getMember, getResourceName))
 }
 
 // DeleteTeam godoc
@@ -213,23 +212,23 @@ func DeleteTeam(c *gin.Context) {
 
 	var requestURI uri.TeamUpdate
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
 	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
+		context.ServerError(err, v1.AuthInfoNotAvailableErr)
 		return
 	}
 
 	err = user_service.DeleteTeamAuth(requestURI.TeamID, auth)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to delete team: %s", err))
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
-	context.OkDeleted()
+	context.OkNoContent()
 }
 
 func getMember(member *teamModels.Member) *body.TeamMember {
@@ -303,27 +302,27 @@ func getResourceName(resource *teamModels.Resource) *string {
 func joinTeam(context sys.ClientContext, id string, requestBody *body.TeamJoin) {
 	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
+		context.ServerError(err, v1.AuthInfoNotAvailableErr)
 	}
 
 	team, err := user_service.JoinTeam(id, requestBody, auth)
 	if err != nil {
-		if errors.Is(err, user_service.TeamNotFoundErr) {
-			context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, "Team not found")
-			return
-		}
-
 		if errors.Is(err, user_service.NotInvitedErr) {
-			context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "User not invited to team")
+			context.UserError("User not invited to team")
 			return
 		}
 
 		if errors.Is(err, user_service.BadInviteCodeErr) {
-			context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "Bad invite code")
+			context.Forbidden("Bad invite code")
 			return
 		}
 
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to create deployment with invite code: %s", err))
+		context.ServerError(err, v1.InternalError)
+		return
+	}
+
+	if team == nil {
+		context.NotFound("Team not found")
 		return
 	}
 

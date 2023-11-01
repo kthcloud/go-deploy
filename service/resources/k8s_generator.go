@@ -810,6 +810,18 @@ func (kg *K8sGenerator) Secrets() []models.SecretPublic {
 	}
 
 	if kg.v.vm != nil {
+		createWildcardSecret := false
+		for _, port := range kg.v.vm.Ports {
+			if port.HttpProxy != nil {
+				createWildcardSecret = true
+				break
+			}
+		}
+
+		if !createWildcardSecret {
+			return nil
+		}
+
 		// wildcard certificate
 		/// swap namespaces temporarily
 		var wildcardCertSecret *models.SecretPublic

@@ -3,13 +3,10 @@ package deployment_service
 import (
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
 	roleModel "go-deploy/models/config/role"
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
 	deploymentModel "go-deploy/models/sys/deployment"
-	"go-deploy/models/sys/deployment/storage_manager"
-	jobModel "go-deploy/models/sys/job"
 	userModel "go-deploy/models/sys/user"
 	teamModels "go-deploy/models/sys/user/team"
 	"go-deploy/pkg/config"
@@ -19,7 +16,6 @@ import (
 	"go-deploy/service/deployment_service/gitlab_service"
 	"go-deploy/service/deployment_service/harbor_service"
 	"go-deploy/service/deployment_service/k8s_service"
-	"go-deploy/service/job_service"
 	"go-deploy/utils"
 	"go-deploy/utils/subsystemutils"
 	"log"
@@ -350,7 +346,11 @@ func GetByID(id string) (*deploymentModel.Deployment, error) {
 	return deploymentModel.New().GetByID(id)
 }
 
-func GetManyAuth(allUsers bool, userID *string, shared bool, auth *service.AuthInfo, pagination *query.Pagination) ([]deploymentModel.Deployment, error) {
+func GetByName(name string) (*deploymentModel.Deployment, error) {
+	return deploymentModel.New().GetByName(name)
+}
+
+func ListAuth(allUsers bool, userID *string, shared bool, auth *service.AuthInfo, pagination *query.Pagination) ([]deploymentModel.Deployment, error) {
 	client := deploymentModel.New()
 
 	if pagination != nil {
@@ -401,16 +401,8 @@ func GetManyAuth(allUsers bool, userID *string, shared bool, auth *service.AuthI
 	return resources, nil
 }
 
-func GetAll() ([]deploymentModel.Deployment, error) {
+func ListAll() ([]deploymentModel.Deployment, error) {
 	return deploymentModel.New().GetAll()
-}
-
-func GetCountAuth(userID string, auth *service.AuthInfo) (int, error) {
-	if userID != auth.UserID && !auth.IsAdmin {
-		return 0, nil
-	}
-
-	return deploymentModel.New().CountByOwnerID(userID)
 }
 
 func CheckQuotaCreate(userID string, quota *roleModel.Quotas, auth *service.AuthInfo) (bool, string, error) {
@@ -434,10 +426,6 @@ func CheckQuotaCreate(userID string, quota *roleModel.Quotas, auth *service.Auth
 	}
 
 	return true, "", nil
-}
-
-func GetByName(name string) (*deploymentModel.Deployment, error) {
-	return deploymentModel.New().GetByName(name)
 }
 
 func StartActivity(deploymentID, activity string) (bool, string, error) {
@@ -466,15 +454,17 @@ func CanAddActivity(deploymentID, activity string) (bool, string) {
 
 	switch activity {
 	case deploymentModel.ActivityBeingCreated:
-		return !deployment.BeingDeleted(), "It is being deleted"
+		return !deployment.BeingDeleted(), "Resource is being deleted"
 	case deploymentModel.ActivityBeingDeleted:
 		return true, ""
+	case deploymentModel.ActivityUpdating:
+		return !deployment.BeingDeleted() && !deployment.BeingCreated(), "Resource is being deleted or created"
 	case deploymentModel.ActivityRestarting:
-		return !deployment.BeingDeleted(), "It is being deleted"
+		return !deployment.BeingDeleted(), "Resource is being deleted"
 	case deploymentModel.ActivityBuilding:
-		return !deployment.BeingDeleted(), "It is being deleted"
+		return !deployment.BeingDeleted(), "Resource is being deleted"
 	case deploymentModel.ActivityRepairing:
-		return deployment.Ready(), "It is not ready"
+		return deployment.Ready(), "Resource is not ready"
 	}
 
 	return false, fmt.Sprintf("Unknown activity %s", activity)
@@ -485,7 +475,7 @@ func GetUsageByUserID(userID string) (*deploymentModel.Usage, error) {
 		return fmt.Errorf("failed to get usage. details: %w", err)
 	}
 
-	count, err := deploymentModel.New().CountByOwnerID(userID)
+	count, err := deploymentModel.New().RestrictToUser(userID).Count()
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -500,7 +490,13 @@ func ValidGitHubToken(token string) (bool, string, error) {
 }
 
 func GetGitHubAccessTokenByCode(code string) (string, error) {
-	return github_service.GetAccessTokenByCode(code)
+	code, err := github_service.GetAccessTokenByCode(code)
+	if err != nil {
+		utils.PrettyPrintError(fmt.Errorf("failed to get github access token. details: %w", err))
+		return "", err
+	}
+
+	return code, nil
 }
 
 func GetGitHubRepositories(token string) ([]deploymentModel.GitHubRepository, error) {
@@ -542,6 +538,29 @@ func ValidGitHubRepository(token string, repositoryID int64) (bool, string, erro
 	return true, "", nil
 }
 
+func SavePing(id string, pingResult int) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to update deployment with ping result. details: %w", err)
+	}
+
+	deployment, err := deploymentModel.New().GetByID(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if deployment == nil {
+		log.Println("deployment", id, "not found when updating ping result. assuming it was deleted")
+		return nil
+	}
+
+	err = deploymentModel.New().SavePing(id, pingResult)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
+}
+
 func build(ids []string, params *deploymentModel.BuildParams) error {
 	var filtered []string
 	for _, id := range ids {
@@ -572,57 +591,4 @@ func build(ids []string, params *deploymentModel.BuildParams) error {
 	}
 
 	return nil
-}
-
-func SavePing(id string, pingResult int) error {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to update deployment with ping result. details: %w", err)
-	}
-
-	deployment, err := deploymentModel.New().GetByID(id)
-	if err != nil {
-		return makeError(err)
-	}
-
-	if deployment == nil {
-		log.Println("deployment", id, "not found when updating ping result. assuming it was deleted")
-		return nil
-	}
-
-	err = deploymentModel.New().SavePing(id, pingResult)
-	if err != nil {
-		return makeError(err)
-	}
-
-	return nil
-}
-
-func CreateStorageManagerIfNotExists(ownerID string) error {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to create storage manager (if not exists). details: %w", err)
-	}
-
-	// right now the storage-manager is hosted in se-flem for all users
-	zone := "se-flem"
-
-	exists, err := storage_manager.New().RestrictToOwner(ownerID).ExistsAny()
-	if err != nil {
-		return makeError(err)
-	}
-
-	if exists {
-		return nil
-	}
-
-	storageManagerID := uuid.New().String()
-	jobID := uuid.New().String()
-	err = job_service.Create(jobID, ownerID, jobModel.TypeCreateStorageManager, map[string]interface{}{
-		"id": storageManagerID,
-		"params": storage_manager.CreateParams{
-			UserID: ownerID,
-			Zone:   zone,
-		},
-	})
-
-	return err
 }

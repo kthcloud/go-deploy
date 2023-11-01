@@ -1,18 +1,64 @@
 package v1_job
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
 	"go-deploy/models/dto/uri"
 	jobModel "go-deploy/models/sys/job"
-	status_codes2 "go-deploy/pkg/app/status_codes"
+	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/job_service"
-	"net/http"
 )
+
+// List
+// @Summary Get list of jobs
+// @Description Get list of jobs
+// @Tags Job
+// @Accept  json
+// @Produce  json
+// @Param all query bool false "Get all"
+// @Param userId query string false "Filter by user id"
+// @Param type query string false "Filter by type"
+// @Param status query string false "Filter by status"
+// @Param page query int false "Page number"
+// @Param pageSize query int false "Number of items per page"
+// @Success 200 {array} body.JobRead
+// @Router /job [get]
+func List(c *gin.Context) {
+	context := sys.NewContext(c)
+
+	var requestQuery query.JobList
+	if err := context.GinContext.BindQuery(&requestQuery); err != nil {
+		context.BindingError(v1.CreateBindingError(err))
+		return
+	}
+
+	auth, err := v1.WithAuth(&context)
+	if err != nil {
+		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		return
+	}
+
+	jobs, err := job_service.ListAuth(requestQuery.All, requestQuery.UserID, requestQuery.Type, requestQuery.Status, auth, &requestQuery.Pagination)
+	if err != nil {
+		context.ServerError(err, v1.InternalError)
+		return
+	}
+
+	if jobs == nil {
+		context.Ok(make([]interface{}, 0))
+		return
+	}
+
+	var jobsDTO []body.JobRead
+	for _, job := range jobs {
+		jobsDTO = append(jobsDTO, job.ToDTO(jobStatusMessage(job.Status)))
+	}
+
+	context.Ok(jobsDTO)
+}
 
 // Get
 // @Summary Get job by id
@@ -28,76 +74,28 @@ func Get(c *gin.Context) {
 
 	var requestURI uri.JobGet
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
 	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes2.Error, fmt.Sprintf("Failed to get auth info: %s", err))
+		context.ServerError(err, v1.AuthInfoNotAvailableErr)
 		return
 	}
 
-	job, err := job_service.GetByID(requestURI.JobID, auth)
+	job, err := job_service.GetByIdAuth(requestURI.JobID, auth)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes2.Error, fmt.Sprintf("%s", err))
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
 	if job == nil {
-		context.ErrorResponse(http.StatusNotFound, status_codes2.ResourceNotFound, fmt.Sprintf("Job with id %s not found", requestURI.JobID))
+		context.NotFound("Job not found")
 		return
 	}
 
 	context.JSONResponse(200, job.ToDTO(jobStatusMessage(job.Status)))
-}
-
-// GetList
-// @Summary Get list of jobs
-// @Description Get list of jobs
-// @Tags Job
-// @Accept  json
-// @Produce  json
-// @Param all query bool false "Get all"
-// @Param userId query string false "Filter by user id"
-// @Param type query string false "Filter by type"
-// @Param status query string false "Filter by status"
-// @Param page query int false "Page number"
-// @Param pageSize query int false "Number of items per page"
-// @Success 200 {array} body.JobRead
-// @Router /job [get]
-func GetList(c *gin.Context) {
-	context := sys.NewContext(c)
-
-	var requestQuery query.JobList
-	if err := context.GinContext.BindQuery(&requestQuery); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
-		return
-	}
-
-	auth, err := v1.WithAuth(&context)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes2.Error, fmt.Sprintf("Failed to get auth info: %s", err))
-		return
-	}
-
-	jobs, err := job_service.GetMany(requestQuery.All, requestQuery.UserID, requestQuery.Type, requestQuery.Status, auth, &requestQuery.Pagination)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes2.Error, fmt.Sprintf("%s", err))
-		return
-	}
-
-	if jobs == nil {
-		context.JSONResponse(200, make([]body.JobRead, 0))
-		return
-	}
-
-	var jobsDTO []body.JobRead
-	for _, job := range jobs {
-		jobsDTO = append(jobsDTO, job.ToDTO(jobStatusMessage(job.Status)))
-	}
-
-	context.JSONResponse(200, jobsDTO)
 }
 
 // Update
@@ -115,75 +113,69 @@ func Update(c *gin.Context) {
 
 	var requestURI uri.JobUpdate
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
 	var request body.JobUpdate
 	if err := context.GinContext.ShouldBindJSON(&request); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
 	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes2.Error, fmt.Sprintf("Failed to get auth info: %s", err))
+		context.ServerError(err, v1.AuthInfoNotAvailableErr)
 		return
 	}
 
 	if !auth.IsAdmin {
-		context.ErrorResponse(http.StatusForbidden, status_codes2.Error, fmt.Sprintf("Only admin can update job"))
+		context.Forbidden("User is not allowed to update jobs")
 		return
 	}
 
-	exists, err := job_service.Exists(requestURI.JobID, auth)
+	exists, err := job_service.ExistsAuth(requestURI.JobID, auth)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes2.Error, fmt.Sprintf("Failed to check job existence: %s", err))
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
 	if !exists {
-		context.ErrorResponse(http.StatusNotFound, status_codes2.ResourceNotFound, fmt.Sprintf("Job with id %s not found", requestURI.JobID))
+		context.NotFound("Job not found")
 		return
 	}
 
-	err = job_service.Update(requestURI.JobID, &request, auth)
+	updated, err := job_service.UpdateAuth(requestURI.JobID, &request, auth)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes2.Error, fmt.Sprintf("Failed to update job: %s", err))
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
-	updatedJob, err := job_service.GetByID(requestURI.JobID, auth)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes2.Error, fmt.Sprintf("Failed to get updated job: %s", err))
+	if updated == nil {
+		context.NotFound("Job not found")
 		return
 	}
 
-	if updatedJob == nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes2.Error, fmt.Sprintf("Job not found after update"))
-		return
-	}
-
-	context.JSONResponse(200, updatedJob.ToDTO(jobStatusMessage(updatedJob.Status)))
+	context.Ok(updated.ToDTO(jobStatusMessage(updated.Status)))
 }
 
 func jobStatusMessage(status string) string {
 	switch status {
 	case jobModel.StatusPending:
-		return status_codes2.GetMsg(status_codes2.JobPending)
+		return status_codes.GetMsg(status_codes.JobPending)
 	case jobModel.StatusRunning:
-		return status_codes2.GetMsg(status_codes2.JobRunning)
+		return status_codes.GetMsg(status_codes.JobRunning)
 	case jobModel.StatusCompleted:
-		return status_codes2.GetMsg(status_codes2.JobFinished)
+		return status_codes.GetMsg(status_codes.JobFinished)
 	case jobModel.StatusFailed:
-		return status_codes2.GetMsg(status_codes2.JobFailed)
+		return status_codes.GetMsg(status_codes.JobFailed)
 	case jobModel.StatusTerminated:
-		return status_codes2.GetMsg(status_codes2.JobTerminated)
+		return status_codes.GetMsg(status_codes.JobTerminated)
 
-		// deprecated
+	// deprecated
 	case jobModel.StatusFinished:
-		return status_codes2.GetMsg(status_codes2.JobFinished)
+		return status_codes.GetMsg(status_codes.JobFinished)
 	default:
-		return status_codes2.GetMsg(status_codes2.Unknown)
+		return status_codes.GetMsg(status_codes.Unknown)
 	}
 }

@@ -79,10 +79,6 @@ func (client *Client) Create(id, owner, manager string, params *CreateParams) (b
 	return true, nil
 }
 
-func (client *Client) CountByOwnerID(ownerID string) (int, error) {
-	return client.CountWithFilter(bson.D{{"ownerId", ownerID}})
-}
-
 func (client *Client) DeleteByID(id string) error {
 	_, err := client.Collection.UpdateOne(context.TODO(),
 		bson.D{{"id", id}},

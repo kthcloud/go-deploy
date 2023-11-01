@@ -5,5 +5,10 @@ import (
 )
 
 var (
-	Gauges map[string]prometheus.Gauge
+	Metrics MetricsType
 )
+
+type MetricsType struct {
+	Registry *prometheus.Registry
+	Gauges   map[string]prometheus.Gauge
+}

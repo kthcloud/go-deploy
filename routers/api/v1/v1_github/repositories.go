@@ -1,15 +1,12 @@
 package v1_github
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
-	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/deployment_service"
-	"net/http"
 )
 
 // ListGitHubRepositories
@@ -26,32 +23,32 @@ func ListGitHubRepositories(c *gin.Context) {
 
 	var requestBody query.GitHubRepositoriesList
 	if err := context.GinContext.Bind(&requestBody); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
 	// fetch access token
 	accessToken, err := deployment_service.GetGitHubAccessTokenByCode(requestBody.Code)
 	if err != nil {
-		context.ErrorResponse(http.StatusBadRequest, status_codes.Error, fmt.Sprintf("Failed to fetch access token. details: %s", err))
+		context.Unauthorized("Failed to get GitHub access token from code")
 		return
 	}
 
 	valid, reason, err := deployment_service.ValidGitHubToken(accessToken)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to validate access token. details: %s", err))
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
 	if !valid {
-		context.ErrorResponse(http.StatusBadRequest, status_codes.Error, fmt.Sprintf("Failed to validate access token. reason: %s", reason))
+		context.Unauthorized(reason)
 		return
 	}
 
 	// fetch repositories
 	repositories, err := deployment_service.GetGitHubRepositories(accessToken)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to fetch repositories. details: %s", err))
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
@@ -60,7 +57,7 @@ func ListGitHubRepositories(c *gin.Context) {
 		repositoriesDTOs = append(repositoriesDTOs, repository.ToDTO())
 	}
 
-	context.JSONResponse(http.StatusOK, body.GitHubRepositoriesRead{
+	context.Ok(body.GitHubRepositoriesRead{
 		AccessToken:  accessToken,
 		Repositories: repositoriesDTOs,
 	})

@@ -12,7 +12,7 @@ func CreateNotification(id, userID string, params *notificationModel.CreateParam
 	return err
 }
 
-func GetByIdAuth(id string, auth *service.AuthInfo) (*notificationModel.Notification, error) {
+func GetByIdWithAuth(id string, auth *service.AuthInfo) (*notificationModel.Notification, error) {
 	client := notificationModel.New()
 
 	if !auth.IsAdmin {
@@ -22,7 +22,7 @@ func GetByIdAuth(id string, auth *service.AuthInfo) (*notificationModel.Notifica
 	return client.GetByID(id)
 }
 
-func GetManyAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagination *query.Pagination) ([]notificationModel.Notification, error) {
+func ListAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagination *query.Pagination) ([]notificationModel.Notification, error) {
 	client := notificationModel.New()
 
 	if pagination != nil {
@@ -41,7 +41,7 @@ func GetManyAuth(allUsers bool, userID *string, auth *service.AuthInfo, paginati
 	return client.GetAll()
 }
 
-func UpdateAuth(id string, dtoNotificationUpdate *body.NotificationUpdate, auth *service.AuthInfo) error {
+func UpdateAuth(id string, dtoNotificationUpdate *body.NotificationUpdate, auth *service.AuthInfo) (*notificationModel.Notification, error) {
 	client := notificationModel.New()
 
 	if !auth.IsAdmin {
@@ -51,7 +51,12 @@ func UpdateAuth(id string, dtoNotificationUpdate *body.NotificationUpdate, auth 
 	params := &notificationModel.UpdateParams{}
 	params.FromDTO(dtoNotificationUpdate)
 
-	return client.UpdateWithParamsByID(id, params)
+	err := client.UpdateWithParamsByID(id, params)
+	if err != nil {
+		return nil, err
+	}
+
+	return client.GetByID(id)
 }
 
 func DeleteAuth(id string, auth *service.AuthInfo) error {

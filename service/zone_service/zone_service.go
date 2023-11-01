@@ -5,7 +5,7 @@ import (
 	"go-deploy/pkg/config"
 )
 
-func GetAllZones() ([]zoneModel.Zone, error) {
+func ListZones() ([]zoneModel.Zone, error) {
 
 	deploymentZones := config.Config.Deployment.Zones
 	vmZones := config.Config.VM.Zones
@@ -36,7 +36,7 @@ func GetAllZones() ([]zoneModel.Zone, error) {
 }
 
 func GetZone(name, zoneType string) *zoneModel.Zone {
-	zones, err := GetAllZones()
+	zones, err := ListZones()
 	if err != nil {
 		return nil
 	}
@@ -51,7 +51,7 @@ func GetZone(name, zoneType string) *zoneModel.Zone {
 }
 
 func GetZonesByType(zoneType string) ([]zoneModel.Zone, error) {
-	zones, err := GetAllZones()
+	zones, err := ListZones()
 	if err != nil {
 		return nil, err
 	}

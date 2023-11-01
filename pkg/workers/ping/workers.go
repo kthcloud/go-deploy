@@ -23,7 +23,7 @@ func deploymentPingUpdater(ctx context.Context) {
 				return fmt.Errorf("error fetching deployments. details: %w", err)
 			}
 
-			deployments, err := deployment_service.GetAll()
+			deployments, err := deployment_service.ListAll()
 			if err != nil {
 				utils.PrettyPrintError(makeError(err))
 				return

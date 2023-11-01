@@ -6,7 +6,7 @@ import (
 	"go-deploy/pkg/config"
 )
 
-func GetAllByGitHubWebhookID(id int64) ([]deploymentModel.Deployment, error) {
+func ListByGitHubWebhookID(id int64) ([]deploymentModel.Deployment, error) {
 	return deploymentModel.New().GetAllByGitHubWebhookID(id)
 }
 

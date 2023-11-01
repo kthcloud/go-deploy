@@ -31,19 +31,19 @@ func DoCommand(c *gin.Context) {
 
 	var requestURI uri.DeploymentCommand
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
 	var requestBody body.DeploymentCommand
 	if err := context.GinContext.ShouldBindJSON(&requestBody); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
 	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
+		context.ServerError(err, v1.AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -65,5 +65,5 @@ func DoCommand(c *gin.Context) {
 
 	deployment_service.DoCommand(deployment, requestBody.Command)
 
-	context.OkDeleted()
+	context.OkNoContent()
 }

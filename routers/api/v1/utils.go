@@ -11,9 +11,13 @@ import (
 )
 
 func WithAuth(context *sys.ClientContext) (*service.AuthInfo, error) {
+	makeError := func(error) error {
+		return errors.New("failed to get auth info")
+	}
+
 	token, err := context.GetKeycloakToken()
 	if err != nil {
-		return nil, err
+		return nil, makeError(err)
 	}
 
 	return service.CreateAuthInfo(token.Sub, token, token.Groups), nil

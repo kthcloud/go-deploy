@@ -1,7 +1,6 @@
 package v1_deployment
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"go-deploy/models/dto/body"
@@ -10,18 +9,16 @@ import (
 	deploymentModels "go-deploy/models/sys/deployment"
 	jobModel "go-deploy/models/sys/job"
 	zoneModel "go-deploy/models/sys/zone"
-	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
 	"go-deploy/service/deployment_service"
 	"go-deploy/service/job_service"
 	"go-deploy/service/zone_service"
-	"net/http"
 )
 
 func getStorageManagerURL(userID string, auth *service.AuthInfo) *string {
-	storageManager, err := deployment_service.GetStorageManagerByOwnerID(userID, auth)
+	storageManager, err := deployment_service.GetStorageManagerByOwnerIdAuth(userID, auth)
 	if err != nil {
 		return nil
 	}
@@ -33,7 +30,7 @@ func getStorageManagerURL(userID string, auth *service.AuthInfo) *string {
 	return storageManager.GetURL()
 }
 
-// GetList
+// List
 // @Summary Get list of deployments
 // @Description Get list of deployments
 // @BasePath /api/v1
@@ -50,24 +47,24 @@ func getStorageManagerURL(userID string, auth *service.AuthInfo) *string {
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /deployments [get]
-func GetList(c *gin.Context) {
+func List(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestQuery query.DeploymentList
 	if err := context.GinContext.Bind(&requestQuery); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
 	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err.Error()))
+		context.ServerError(err, v1.AuthInfoNotAvailableErr)
 		return
 	}
 
-	deployments, err := deployment_service.GetManyAuth(requestQuery.All, requestQuery.UserID, requestQuery.Shared, auth, &requestQuery.Pagination)
+	deployments, err := deployment_service.ListAuth(requestQuery.All, requestQuery.UserID, requestQuery.Shared, auth, &requestQuery.Pagination)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get deployments: %s", err.Error()))
+		context.ServerError(err, v1.AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -107,24 +104,24 @@ func Get(c *gin.Context) {
 
 	var requestURI uri.DeploymentGet
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
 	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
+		context.ServerError(err, v1.AuthInfoNotAvailableErr)
 		return
 	}
 
 	deployment, err := deployment_service.GetByIdAuth(requestURI.DeploymentID, auth)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		context.ServerError(err, v1.AuthInfoNotAvailableErr)
 		return
 	}
 
 	if deployment == nil {
-		context.NotFound()
+		context.NotFound("Deployment not found")
 		return
 	}
 
@@ -133,7 +130,7 @@ func Get(c *gin.Context) {
 		storageManagerURL = getStorageManagerURL(deployment.OwnerID, auth)
 	}
 
-	context.JSONResponse(200, deployment.ToDTO(storageManagerURL))
+	context.Ok(deployment.ToDTO(storageManagerURL))
 }
 
 // Create
@@ -151,86 +148,86 @@ func Get(c *gin.Context) {
 // @Router /deployments [post]
 func Create(c *gin.Context) {
 	context := sys.NewContext(c)
-	
+
 	var requestBody body.DeploymentCreate
 	if err := context.GinContext.ShouldBindJSON(&requestBody); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
 	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
+		context.ServerError(err, v1.AuthInfoNotAvailableErr)
 		return
 	}
 
 	effectiveRole := auth.GetEffectiveRole()
 	if effectiveRole == nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get effective role"))
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
 	deployment, err := deployment_service.GetByName(requestBody.Name)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
 	if deployment != nil {
-		context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceNotCreated, "Resource already exists")
+		context.UserError("Deployment already exists")
 		return
 	}
 
 	if effectiveRole.Quotas.Deployments <= 0 {
-		context.ErrorResponse(http.StatusForbidden, status_codes.Error, "User is not allowed to create deployments")
+		context.Forbidden("User is not allowed to create deployments")
 		return
 	}
 
 	if requestBody.Zone != nil {
 		zone := zone_service.GetZone(*requestBody.Zone, zoneModel.ZoneTypeDeployment)
 		if zone == nil {
-			context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, "Zone not found")
+			context.NotFound("Zone not found")
 			return
 		}
 	}
 
 	if requestBody.CustomDomain != nil && !effectiveRole.Permissions.UseCustomDomains {
-		context.ErrorResponse(http.StatusForbidden, status_codes.Error, "User is not allowed to use custom domains")
+		context.Forbidden("User is not allowed to use custom domains")
 		return
 	}
 
 	if requestBody.GitHub != nil {
 		validGhToken, reason, err := deployment_service.ValidGitHubToken(requestBody.GitHub.Token)
 		if err != nil {
-			context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate GitHub token")
+			context.ServerError(err, v1.InternalError)
 			return
 		}
 
 		if !validGhToken {
-			context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceValidationFailed, reason)
+			context.Unauthorized(reason)
 			return
 		}
 
 		validGitHubRepository, reason, err := deployment_service.ValidGitHubRepository(requestBody.GitHub.Token, requestBody.GitHub.RepositoryID)
 		if err != nil {
-			context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate GitHub repository")
+			context.ServerError(err, v1.InternalError)
 			return
 		}
 
 		if !validGitHubRepository {
-			context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceValidationFailed, reason)
+			context.Unauthorized(reason)
 			return
 		}
 	}
 
 	ok, reason, err := deployment_service.CheckQuotaCreate(auth.UserID, &auth.GetEffectiveRole().Quotas, auth)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to check quota: %s", err))
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
 	if !ok {
-		context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceValidationFailed, reason)
+		context.Forbidden(reason)
 		return
 	}
 
@@ -243,11 +240,11 @@ func Create(c *gin.Context) {
 	})
 
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to create job: %s", err))
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
-	context.JSONResponse(http.StatusCreated, body.DeploymentCreated{
+	context.Ok(body.DeploymentCreated{
 		ID:    deploymentID,
 		JobID: jobID,
 	})
@@ -273,48 +270,48 @@ func Delete(c *gin.Context) {
 
 	var requestURI uri.DeploymentDelete
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
 	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
+		context.ServerError(err, v1.AuthInfoNotAvailableErr)
 		return
 	}
 
 	currentDeployment, err := deployment_service.GetByIdAuth(requestURI.DeploymentID, auth)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
 	if currentDeployment == nil {
-		context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, "Resource not found")
+		context.NotFound("Deployment not found")
 		return
 	}
 
 	started, reason, err := deployment_service.StartActivity(currentDeployment.ID, deploymentModels.ActivityBeingDeleted)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to start activity: %s", err))
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
 	if !started {
-		context.ErrorResponse(http.StatusNotModified, status_codes.ResourceNotUpdated, fmt.Sprintf("Could not delete resource: %s", reason))
+		context.Locked(reason)
 		return
 	}
 
-	jobID := uuid.New().String()
+	jobID := uuid.NewString()
 	err = job_service.Create(jobID, auth.UserID, jobModel.TypeDeleteDeployment, map[string]interface{}{
 		"id": currentDeployment.ID,
 	})
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to create job: %s", err))
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
-	context.JSONResponse(http.StatusOK, body.DeploymentDeleted{
+	context.Ok(body.DeploymentDeleted{
 		ID:    currentDeployment.ID,
 		JobID: jobID,
 	})
@@ -339,40 +336,36 @@ func Update(c *gin.Context) {
 
 	var requestURI uri.DeploymentUpdate
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
 	var requestBody body.DeploymentUpdate
 	if err := context.GinContext.ShouldBindJSON(&requestBody); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
 	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
+		context.ServerError(err, v1.AuthInfoNotAvailableErr)
 		return
 	}
 
 	deployment, err := deployment_service.GetByIdAuth(requestURI.DeploymentID, auth)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, fmt.Sprintf("Failed to get vm: %s", err))
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
 	if deployment == nil {
-		context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, fmt.Sprintf("Deployment with id %s not found", requestURI.DeploymentID))
+		context.NotFound("Deployment not found")
 		return
 	}
 
-	if deployment.BeingCreated() {
-		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingCreated, "Resource is currently being created")
-		return
-	}
-
-	if deployment.BeingDeleted() {
-		context.ErrorResponse(http.StatusLocked, status_codes.ResourceBeingDeleted, "Resource is currently being deleted")
+	canUpdate, reason := deployment_service.CanAddActivity(deployment.ID, deploymentModels.ActivityUpdating)
+	if !canUpdate {
+		context.Locked(reason)
 		return
 	}
 
@@ -383,13 +376,12 @@ func Update(c *gin.Context) {
 	})
 
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to create job: %s", err))
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
-	context.JSONResponse(http.StatusOK, body.DeploymentUpdated{
+	context.Ok(body.DeploymentUpdated{
 		ID:    deployment.ID,
 		JobID: jobID,
 	})
-
 }

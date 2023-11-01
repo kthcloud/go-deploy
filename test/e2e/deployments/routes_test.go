@@ -2,7 +2,6 @@ package deployments
 
 import (
 	"github.com/google/uuid"
-	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
 	"go-deploy/models/dto/body"
 	"go-deploy/test/e2e"
@@ -403,27 +402,11 @@ func TestFetchCiConfig(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
 
-// TODO: Update to SSE once it works
 func TestFetchLogs(t *testing.T) {
 	deployment, _ := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName("e2e")})
 
-	url := e2e.CreateServerUrlWithProtocol("ws", "/deployments/"+deployment.ID+"/logs")
-
-	conn, _, err := websocket.DefaultDialer.Dial(url, nil)
-	assert.NoError(t, err, "websocket connection was not established")
-
-	err = conn.WriteMessage(websocket.TextMessage, []byte("Bearer test user"))
-	assert.NoError(t, err, "websocket bearer token message was not sent")
-
-	err = conn.SetReadDeadline(time.Now().Add(30 * time.Second))
-	assert.NoError(t, err, "websocket read deadline was not set")
-
-	_, message, err := conn.ReadMessage()
-	assert.NoError(t, err, "websocket message was not read")
-	assert.NotEmpty(t, message)
-
-	err = conn.Close()
-	assert.NoError(t, err, "websocket connection was not closed")
+	resp := e2e.DoGetRequest(t, "/deployments/"+deployment.ID+"/logs-sse")
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
 func TestCreateStorageManager(t *testing.T) {

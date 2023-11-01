@@ -3,7 +3,6 @@ package deployment
 import (
 	"context"
 	"fmt"
-	"go-deploy/models"
 	"go-deploy/models/sys/deployment/subsystems"
 	status_codes2 "go-deploy/pkg/app/status_codes"
 	"go.mongodb.org/mongo-driver/bson"
@@ -109,10 +108,6 @@ func (client *Client) DeleteByID(id string) error {
 	}
 
 	return nil
-}
-
-func (client *Client) CountByOwnerID(ownerID string) (int, error) {
-	return models.CountResources(client.Collection, bson.D{{"ownerId", ownerID}}, false, nil)
 }
 
 func (client *Client) UpdateWithParamsByID(id string, params *UpdateParams) error {

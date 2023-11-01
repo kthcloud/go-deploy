@@ -1,16 +1,7 @@
 package status_codes
 
 const (
-	Unknown       = 0
-	Success       = 200
-	Error         = 500
-	InvalidParams = 400
-
-	ResourceUnknown = 10000
-
-	ResourceCreated = 10010
-	ResourceUpdated = 10011
-	ResourceDeleted = 10012
+	Unknown = 0
 
 	ResourceNotCreated       = 10020
 	ResourceNotFound         = 10021
@@ -22,6 +13,7 @@ const (
 	ResourceCreatingSnapshot = 10027
 	ResourceApplyingSnapshot = 10028
 
+	ResourceUnknown    = 10030
 	ResourceStarting   = 10031
 	ResourceRunning    = 10032
 	ResourceStopping   = 10033
@@ -36,5 +28,8 @@ const (
 	JobRunning    = 10043
 	JobTerminated = 10044
 
-	ResourceValidationFailed = 20001
+	Success                  = 20001
+	InvalidParams            = 20002
+	Error                    = 20004
+	ResourceValidationFailed = 20005
 )

@@ -48,6 +48,8 @@ func appCreatedK8s(deployment *deploymentModels.Deployment, app *deploymentModel
 				secretCreated = true
 			}
 		}
+	} else {
+		secretCreated = true
 	}
 
 	return deploymentCreated && serviceCreated && ingressCreated && secretCreated
@@ -222,10 +224,17 @@ func csDeleted(vm *vm.VM) (bool, error) {
 func k8sCreatedVM(vm *vm.VM) (bool, error) {
 	k8s := &vm.Subsystems.K8s
 
+	portsWithHttpProxy := 0
 	for _, port := range vm.Ports {
 		if port.Name == "__ssh" {
 			continue
 		}
+
+		if port.HttpProxy == nil {
+			continue
+		}
+
+		portsWithHttpProxy++
 
 		resourceName := vm.Name + "-" + port.Name
 
@@ -242,7 +251,7 @@ func k8sCreatedVM(vm *vm.VM) (bool, error) {
 		}
 	}
 
-	if len(vm.Ports) > 1 && !k8s.Namespace.Created() {
+	if portsWithHttpProxy > 1 && !k8s.Namespace.Created() {
 		return false, nil
 	}
 
