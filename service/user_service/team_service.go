@@ -93,7 +93,7 @@ func GetTeamByIdAuth(id string, auth *service.AuthInfo) (*teamModels.Team, error
 	return team, nil
 }
 
-func GetTeamListAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagination *query.Pagination) ([]teamModels.Team, error) {
+func ListTeamsAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagination *query.Pagination) ([]teamModels.Team, error) {
 	teamClient := teamModels.New()
 	userClient := userModels.New()
 
@@ -142,7 +142,7 @@ func UpdateTeamAuth(id string, dtoUpdateTeam *body.TeamUpdate, auth *service.Aut
 	}
 
 	if team == nil {
-		return nil, TeamNotFoundErr
+		return nil, nil
 	}
 
 	if team.OwnerID != auth.UserID && !auth.IsAdmin && !team.HasMember(auth.UserID) {

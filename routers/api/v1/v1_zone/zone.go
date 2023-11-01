@@ -8,10 +8,9 @@ import (
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/zone_service"
-	"net/http"
 )
 
-// GetList
+// List
 // @Summary Get list of zones
 // @Description Get list of zones
 // @Tags zone
@@ -19,18 +18,18 @@ import (
 // @Produce json
 // @Param type query string false "Zone type"
 // @Success 200 {array} body.ZoneRead
-func GetList(c *gin.Context) {
+func List(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestQuery query.ZoneList
 	if err := context.GinContext.Bind(&requestQuery); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
 	var zones []zoneModel.Zone
 	if requestQuery.Type == nil {
-		zones, _ = zone_service.GetAllZones()
+		zones, _ = zone_service.ListZones()
 	} else {
 		zones, _ = zone_service.GetZonesByType(*requestQuery.Type)
 	}
@@ -40,5 +39,5 @@ func GetList(c *gin.Context) {
 		dtoZones[i] = zone.ToDTO()
 	}
 
-	context.JSONResponse(http.StatusOK, dtoZones)
+	context.Ok(dtoZones)
 }

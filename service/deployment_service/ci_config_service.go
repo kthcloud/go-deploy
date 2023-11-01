@@ -11,7 +11,7 @@ import (
 	"log"
 )
 
-func GetCIConfig(deploymentID string, auth *service.AuthInfo) (*body.CiConfig, error) {
+func GetCiConfig(deploymentID string, auth *service.AuthInfo) (*body.CiConfig, error) {
 	deployment, err := GetByIdAuth(deploymentID, auth)
 	if err != nil {
 		return nil, err
@@ -39,7 +39,7 @@ func GetCIConfig(deploymentID string, auth *service.AuthInfo) (*body.CiConfig, e
 	username := deployment.Subsystems.Harbor.Robot.HarborName
 	password := deployment.Subsystems.Harbor.Robot.Secret
 
-	config := deploymentModel.GithubActionConfig{
+	githubCiConfig := deploymentModel.GithubActionConfig{
 		Name: "kthcloud-ci",
 		On:   deploymentModel.On{Push: deploymentModel.Push{Branches: []string{"main"}}},
 		Jobs: deploymentModel.Jobs{Docker: deploymentModel.Docker{
@@ -66,7 +66,7 @@ func GetCIConfig(deploymentID string, auth *service.AuthInfo) (*body.CiConfig, e
 		}},
 	}
 
-	marshalledConfig, err := yaml.Marshal(config)
+	marshalledConfig, err := yaml.Marshal(githubCiConfig)
 	if err != nil {
 		return nil, err
 	}

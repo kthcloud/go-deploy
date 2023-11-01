@@ -1,15 +1,12 @@
 package v1_vm
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/uri"
-	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/vm_service"
-	"net/http"
 )
 
 // DoCommand
@@ -27,43 +24,45 @@ import (
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /vms/{vmId}/command [post]
 func DoCommand(c *gin.Context) {
+	// TODO: this route is weird and should be covered in the vm update route with desired states
+
 	context := sys.NewContext(c)
 
 	var requestURI uri.VmCommand
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
 	var requestBody body.VmCommand
 	if err := context.GinContext.ShouldBindJSON(&requestBody); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
 	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
+		context.ServerError(err, v1.AuthInfoNotAvailableErr)
 		return
 	}
 
 	vm, err := vm_service.GetByIdAuth(requestURI.VmID, auth)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
 	if vm == nil {
-		context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, fmt.Sprintf("VM with id %s not found", requestURI.VmID))
+		context.NotFound("VM not found")
 		return
 	}
 
 	if !vm.Ready() {
-		context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotReady, fmt.Sprintf("Resource %s is not ready", requestURI.VmID))
+		context.Locked("VM is not ready")
 		return
 	}
 
 	vm_service.DoCommand(vm, requestBody.Command)
 
-	context.OkDeleted()
+	context.OkNoContent()
 }

@@ -20,19 +20,30 @@ const (
 	KeyUsersTotal         = "metrics:users:total"
 	KeyDailyActiveUsers   = "metrics:users:daily_active"
 	KeyMonthlyActiveUsers = "metrics:users:monthly_active"
+
+	KeyJobsTotal      = "metrics:jobs:total"
+	KeyJobsPending    = "metrics:jobs:pending"
+	KeyJobsRunning    = "metrics:jobs:running"
+	KeyJobsFailed     = "metrics:jobs:failed"
+	KeyJobsTerminated = "metrics:jobs:terminated"
+	KeyJobsFinished   = "metrics:jobs:completed"
+
+	KeyHttpStatus2xx
+	KeyHttpStatus3xx
+	KeyHttpStatus4xx
 )
 
 func Setup() {
-
 	collectors := GetCollectors()
 
-	Gauges = make(map[string]prometheus.Gauge)
+	Metrics.Registry = prometheus.NewRegistry()
+	Metrics.Gauges = make(map[string]prometheus.Gauge)
 
 	for _, def := range collectors {
 		switch def.MetricType {
 		case MetricTypeGauge:
-			prometheus.MustRegister(def.Collector.(prometheus.Gauge))
-			Gauges[def.Key] = def.Collector.(prometheus.Gauge)
+			Metrics.Registry.MustRegister(def.Collector.(prometheus.Gauge))
+			Metrics.Gauges[def.Key] = def.Collector.(prometheus.Gauge)
 		}
 	}
 }
@@ -40,7 +51,7 @@ func Setup() {
 func Sync() {
 	client := key_value.New()
 
-	for key, gauge := range Gauges {
+	for key, gauge := range Metrics.Gauges {
 		valueStr, err := client.Get(key)
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("error getting value for key %s when synchronizing metrics. details: %w", key, err))
@@ -85,6 +96,54 @@ func GetCollectors() []MetricDefinition {
 			Collector: prometheus.NewGauge(prometheus.GaugeOpts{
 				Name: "users_monthly_active",
 				Help: "Number of users active every month the last 2 months",
+			}),
+		},
+		{
+			Key:        KeyJobsTotal,
+			MetricType: MetricTypeGauge,
+			Collector: prometheus.NewGauge(prometheus.GaugeOpts{
+				Name: "jobs_total",
+				Help: "Total number of jobs",
+			}),
+		},
+		{
+			Key:        KeyJobsPending,
+			MetricType: MetricTypeGauge,
+			Collector: prometheus.NewGauge(prometheus.GaugeOpts{
+				Name: "jobs_pending",
+				Help: "Number of jobs pending",
+			}),
+		},
+		{
+			Key:        KeyJobsRunning,
+			MetricType: MetricTypeGauge,
+			Collector: prometheus.NewGauge(prometheus.GaugeOpts{
+				Name: "jobs_running",
+				Help: "Number of jobs running",
+			}),
+		},
+		{
+			Key:        KeyJobsFailed,
+			MetricType: MetricTypeGauge,
+			Collector: prometheus.NewGauge(prometheus.GaugeOpts{
+				Name: "jobs_failed",
+				Help: "Number of jobs failed",
+			}),
+		},
+		{
+			Key:        KeyJobsTerminated,
+			MetricType: MetricTypeGauge,
+			Collector: prometheus.NewGauge(prometheus.GaugeOpts{
+				Name: "jobs_terminated",
+				Help: "Number of jobs terminated",
+			}),
+		},
+		{
+			Key:        KeyJobsFinished,
+			MetricType: MetricTypeGauge,
+			Collector: prometheus.NewGauge(prometheus.GaugeOpts{
+				Name: "jobs_finished",
+				Help: "Number of jobs finished",
 			}),
 		},
 	}

@@ -21,7 +21,7 @@ func Create(id, userID, jobType string, args map[string]interface{}) error {
 	return nil
 }
 
-func Exists(id string, auth *service.AuthInfo) (bool, error) {
+func ExistsAuth(id string, auth *service.AuthInfo) (bool, error) {
 	client := jobModel.New()
 
 	if !auth.IsAdmin {
@@ -31,7 +31,7 @@ func Exists(id string, auth *service.AuthInfo) (bool, error) {
 	return client.ExistsByID(id)
 }
 
-func GetByID(jobID string, auth *service.AuthInfo) (*jobModel.Job, error) {
+func GetByIdAuth(jobID string, auth *service.AuthInfo) (*jobModel.Job, error) {
 	client := jobModel.New()
 	if !auth.IsAdmin {
 		client.RestrictToUser(auth.UserID)
@@ -40,7 +40,7 @@ func GetByID(jobID string, auth *service.AuthInfo) (*jobModel.Job, error) {
 	return client.GetByID(jobID)
 }
 
-func GetMany(allUsers bool, userID, jobType *string, status *string, auth *service.AuthInfo, pagination *query.Pagination) ([]jobModel.Job, error) {
+func ListAuth(allUsers bool, userID, jobType *string, status *string, auth *service.AuthInfo, pagination *query.Pagination) ([]jobModel.Job, error) {
 	client := jobModel.New()
 
 	if pagination != nil {
@@ -59,7 +59,7 @@ func GetMany(allUsers bool, userID, jobType *string, status *string, auth *servi
 	return client.GetMany(jobType, status)
 }
 
-func Update(id string, jobUpdateDTO *body.JobUpdate, auth *service.AuthInfo) error {
+func UpdateAuth(id string, jobUpdateDTO *body.JobUpdate, auth *service.AuthInfo) (*jobModel.Job, error) {
 	client := jobModel.New()
 
 	if !auth.IsAdmin {
@@ -71,8 +71,8 @@ func Update(id string, jobUpdateDTO *body.JobUpdate, auth *service.AuthInfo) err
 
 	err := client.UpdateWithParams(id, &params)
 	if err != nil {
-		return fmt.Errorf("failed to update job. details: %w", err)
+		return nil, fmt.Errorf("failed to update job. details: %w", err)
 	}
 
-	return nil
+	return client.GetByID(id)
 }

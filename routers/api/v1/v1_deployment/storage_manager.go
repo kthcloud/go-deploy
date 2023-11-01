@@ -1,7 +1,6 @@
 package v1_deployment
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"go-deploy/models/dto/body"
@@ -16,7 +15,7 @@ import (
 	"net/http"
 )
 
-// GetStorageManagerList
+// ListStorageManagers
 // @Summary Get storage manager list
 // @Description Get storage manager list
 // @BasePath /api/v1
@@ -29,22 +28,22 @@ import (
 // @Failure 401 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /storageManagers [get]storageManager
-func GetStorageManagerList(c *gin.Context) {
+func ListStorageManagers(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestQuery query.StorageManagerList
 	if err := context.GinContext.Bind(&requestQuery); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
 	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err.Error()))
+		context.ServerError(err, v1.AuthInfoNotAvailableErr)
 		return
 	}
 
-	if requestQuery.WantAll {
+	if requestQuery.All {
 		storageManagers, _ := deployment_service.GetAllStorageManagers(auth)
 
 		dtoStorageManagers := make([]body.StorageManagerRead, len(storageManagers))
@@ -56,13 +55,23 @@ func GetStorageManagerList(c *gin.Context) {
 		return
 	}
 
-	storageManager, _ := deployment_service.GetStorageManagerByOwnerID(auth.UserID, auth)
-	if storageManager == nil {
+	storageManagers, err := deployment_service.ListStorageManagersAuth(requestQuery.All, requestQuery.UserID, auth, &requestQuery.Pagination)
+	if err != nil {
+		context.ServerError(err, v1.InternalError)
+		return
+	}
+
+	if len(storageManagers) == 0 {
 		context.JSONResponse(200, []interface{}{})
 		return
 	}
 
-	context.JSONResponse(200, []body.StorageManagerRead{storageManager.ToDTO()})
+	var storageManagerDTOs []body.StorageManagerRead
+	for _, storageManager := range storageManagers {
+		storageManagerDTOs = append(storageManagerDTOs, storageManager.ToDTO())
+	}
+
+	context.Ok(storageManagerDTOs)
 }
 
 // GetStorageManager
@@ -85,28 +94,28 @@ func GetStorageManager(c *gin.Context) {
 
 	var requestURI uri.StorageManagerGet
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
 	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
+		context.ServerError(err, v1.AuthInfoNotAvailableErr)
 		return
 	}
 
-	storageManager, err := deployment_service.GetStorageManagerByID(requestURI.StorageManagerID, auth)
+	storageManager, err := deployment_service.GetStorageManagerByIdAuth(requestURI.StorageManagerID, auth)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return
 	}
 
 	if storageManager == nil || storageManager.OwnerID != auth.UserID {
-		context.NotFound()
+		context.NotFound("Storage manager not found")
 		return
 	}
 
-	context.JSONResponse(http.StatusOK, storageManager.ToDTO())
+	context.Ok(storageManager.ToDTO())
 }
 
 // DeleteStorageManager
@@ -129,24 +138,24 @@ func DeleteStorageManager(c *gin.Context) {
 
 	var requestURI uri.StorageManagerDelete
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
 	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
+		context.ServerError(err, v1.AuthInfoNotAvailableErr)
 		return
 	}
 
-	storageManager, err := deployment_service.GetStorageManagerByID(requestURI.StorageManagerID, auth)
+	storageManager, err := deployment_service.GetStorageManagerByIdAuth(requestURI.StorageManagerID, auth)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
 	if storageManager == nil {
-		context.NotFound()
+		context.NotFound("Storage manager not found")
 		return
 	}
 
@@ -155,11 +164,11 @@ func DeleteStorageManager(c *gin.Context) {
 		"id": storageManager.ID,
 	})
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to create job: %s", err))
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
-	context.JSONResponse(http.StatusOK, body.StorageManagerDeleted{
+	context.Ok(body.StorageManagerDeleted{
 		ID:    storageManager.ID,
 		JobID: jobID,
 	})

@@ -61,7 +61,7 @@ func CheckUpURL(t *testing.T, url string) bool {
 
 func WithDeployment(t *testing.T, requestBody body.DeploymentCreate) (body.DeploymentRead, string) {
 	resp := DoPostRequest(t, "/deployments", requestBody)
-	assert.Equal(t, http.StatusCreated, resp.StatusCode, "deployment was not created")
+	assert.Equal(t, http.StatusOK, resp.StatusCode, "deployment was not created")
 
 	var deploymentCreated body.DeploymentCreated
 	err := ReadResponseBody(t, resp, &deploymentCreated)

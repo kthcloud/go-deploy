@@ -90,19 +90,11 @@ func (client *ResourceClient[T]) Deleted(id string) (bool, error) {
 }
 
 func (client *ResourceClient[T]) GetOne() (*T, error) {
-	return client.GetWithFilter(bson.D{})
-}
-
-func (client *ResourceClient[T]) GetWithFilter(filter bson.D) (*T, error) {
-	return models.GetResource[T](client.Collection, filter, client.IncludeDeleted, client.ExtraFilter)
+	return models.GetResource[T](client.Collection, bson.D{}, client.IncludeDeleted, client.ExtraFilter)
 }
 
 func (client *ResourceClient[T]) GetAllWithFilter(filter bson.D) ([]T, error) {
 	return models.GetManyResources[T](client.Collection, filter, client.IncludeDeleted, client.Pagination, client.ExtraFilter)
-}
-
-func (client *ResourceClient[T]) CountWithFilter(filter bson.D) (int, error) {
-	return models.CountResources(client.Collection, filter, client.IncludeDeleted, client.ExtraFilter)
 }
 
 func (client *ResourceClient[T]) Count() (int, error) {

@@ -7,7 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"go-deploy/models/dto/uri"
-	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
@@ -27,17 +26,17 @@ var upgrader = websocket.Upgrader{
 }
 
 func GetLogsSSE(c *gin.Context) {
-	httpContext := sys.NewContext(c)
+	sysContext := sys.NewContext(c)
 
 	var requestURI uri.LogsGet
-	if err := httpContext.GinContext.ShouldBindUri(&requestURI); err != nil {
-		httpContext.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+	if err := sysContext.GinContext.ShouldBindUri(&requestURI); err != nil {
+		sysContext.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&httpContext)
+	auth, err := v1.WithAuth(&sysContext)
 	if err != nil {
-		httpContext.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		sysContext.ServerError(err, v1.AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -49,12 +48,11 @@ func GetLogsSSE(c *gin.Context) {
 
 	ctx, err := deployment_service.SetupLogStream(requestURI.DeploymentID, handler, auth)
 	if err != nil {
-		httpContext.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
-		return
-	}
+		if errors.Is(err, deployment_service.DeploymentNotFoundErr) {
+			sysContext.NotFound("Deployment not found")
+		}
 
-	if ctx == nil {
-		httpContext.ErrorResponse(http.StatusNotFound, status_codes.Error, fmt.Sprintf("deployment %s not found", requestURI.DeploymentID))
+		sysContext.ServerError(err, v1.InternalError)
 		return
 	}
 
@@ -75,17 +73,17 @@ func GetLogsSSE(c *gin.Context) {
 
 // GetLogs Websocket
 func GetLogs(c *gin.Context) {
-	httpContext := sys.NewContext(c)
+	sysContext := sys.NewContext(c)
 
 	var requestURI uri.LogsGet
-	if err := httpContext.GinContext.ShouldBindUri(&requestURI); err != nil {
-		httpContext.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+	if err := sysContext.GinContext.ShouldBindUri(&requestURI); err != nil {
+		sysContext.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
 	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
-		httpContext.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		sysContext.ServerError(err, v1.InternalError)
 		return
 	}
 
@@ -137,7 +135,7 @@ func GetLogs(c *gin.Context) {
 				if auth != nil {
 					logContext, err = deployment_service.SetupLogStream(requestURI.DeploymentID, handler, auth)
 					if err != nil {
-						httpContext.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+						sysContext.ServerError(err, v1.InternalError)
 						return
 					}
 

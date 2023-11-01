@@ -1,15 +1,9 @@
 package status_codes
 
 var MsgFlags = map[int]string{
-	Unknown:       "unknown",
-	Success:       "success",
-	Error:         "error",
-	InvalidParams: "invalidParams",
+	Unknown: "unknown",
 
 	ResourceUnknown: "resourceUnknown",
-
-	ResourceCreated: "resourceCreated",
-	ResourceUpdated: "resourceUpdated",
 
 	ResourceNotCreated:       "resourceNotCreated",
 	ResourceNotFound:         "resourceNotFound",
@@ -35,6 +29,9 @@ var MsgFlags = map[int]string{
 	JobFinished:   "finished",
 	JobTerminated: "terminated",
 
+	Success:                  "success",
+	Error:                    "error",
+	InvalidParams:            "invalidParams",
 	ResourceValidationFailed: "resourceValidationFailed",
 }
 

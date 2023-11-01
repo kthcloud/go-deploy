@@ -202,7 +202,7 @@ func GetByName(name string) (*vmModel.VM, error) {
 	return vmModel.New().GetByName(name)
 }
 
-func GetManyAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagination *query.Pagination) ([]vmModel.VM, error) {
+func ListAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagination *query.Pagination) ([]vmModel.VM, error) {
 	client := vmModel.New()
 
 	if pagination != nil {
@@ -294,7 +294,7 @@ func CanAddActivity(vmID, activity string) (bool, string, error) {
 
 	switch activity {
 	case vmModel.ActivityBeingCreated:
-		return !vm.BeingDeleted(), "It is being deleted", nil
+		return !vm.BeingDeleted(), "Resource is being deleted", nil
 	case vmModel.ActivityBeingDeleted:
 		return true, "", nil
 	case vmModel.ActivityBeingUpdated:
@@ -304,7 +304,7 @@ func CanAddActivity(vmID, activity string) (bool, string, error) {
 			vmModel.ActivityAttachingGPU,
 			vmModel.ActivityDetachingGPU,
 		}) {
-			return false, "It should not be in creation, deletion, and should not be attaching or detaching a GPU", nil
+			return false, "Resource should not be in creation, deletion, and should not be attaching or detaching a GPU", nil
 		}
 		return true, "", nil
 	case vmModel.ActivityAttachingGPU:
@@ -316,7 +316,7 @@ func CanAddActivity(vmID, activity string) (bool, string, error) {
 			vmModel.ActivityCreatingSnapshot,
 			vmModel.ActivityApplyingSnapshot,
 		}) {
-			return false, "It should not be in creation or deletion, and should not be attaching or detaching a GPU", nil
+			return false, "Resource should not be in creation or deletion, and should not be attaching or detaching a GPU", nil
 		}
 		return true, "", nil
 	case vmModel.ActivityDetachingGPU:
@@ -327,7 +327,7 @@ func CanAddActivity(vmID, activity string) (bool, string, error) {
 			vmModel.ActivityCreatingSnapshot,
 			vmModel.ActivityApplyingSnapshot,
 		}) {
-			return false, "It should not be in creation or deletion, and should not be attaching a GPU", nil
+			return false, "Resource should not be in creation or deletion, and should not be attaching a GPU", nil
 		}
 		return true, "", nil
 	case vmModel.ActivityRepairing:
@@ -337,7 +337,7 @@ func CanAddActivity(vmID, activity string) (bool, string, error) {
 			vmModel.ActivityAttachingGPU,
 			vmModel.ActivityDetachingGPU,
 		}) {
-			return false, "It should not be in creation or deletion, and should not be attaching or detaching a GPU", nil
+			return false, "Resource should not be in creation or deletion, and should not be attaching or detaching a GPU", nil
 		}
 		return true, "", nil
 	case vmModel.ActivityCreatingSnapshot:
@@ -347,7 +347,7 @@ func CanAddActivity(vmID, activity string) (bool, string, error) {
 			vmModel.ActivityAttachingGPU,
 			vmModel.ActivityDetachingGPU,
 		}) {
-			return false, "It should not be in creation or deletion, and should not be attaching or detaching a GPU", nil
+			return false, "Resource should not be in creation or deletion, and should not be attaching or detaching a GPU", nil
 		}
 		return true, "", nil
 	case vmModel.ActivityApplyingSnapshot:
@@ -357,7 +357,7 @@ func CanAddActivity(vmID, activity string) (bool, string, error) {
 			vmModel.ActivityAttachingGPU,
 			vmModel.ActivityDetachingGPU,
 		}) {
-			return false, "It should not be in creation or deletion, and should not be attaching or detaching a GPU", nil
+			return false, "Resource should not be in creation or deletion, and should not be attaching or detaching a GPU", nil
 		}
 		return true, "", nil
 	}

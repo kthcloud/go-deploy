@@ -1,21 +1,18 @@
 package v1_vm
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/uri"
 	"go-deploy/models/sys/job"
-	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/job_service"
 	"go-deploy/service/vm_service"
-	"net/http"
 )
 
-// GetSnapshotList
+// ListSnapshots
 // @Summary Get snapshot list
 // @Description Get snapshot list
 // @Tags VM
@@ -29,18 +26,18 @@ import (
 // @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /vms/{vmId}/snapshots [get]
-func GetSnapshotList(c *gin.Context) {
+func ListSnapshots(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestURI uri.VmCommand
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
-	snapshots, _ := vm_service.GetSnapshotsByVM(requestURI.VmID)
+	snapshots, _ := vm_service.ListSnapshotsByVM(requestURI.VmID)
 	if snapshots == nil {
-		context.JSONResponse(200, []interface{}{})
+		context.Ok([]interface{}{})
 		return
 	}
 
@@ -57,7 +54,7 @@ func GetSnapshotList(c *gin.Context) {
 		}
 	}
 
-	context.JSONResponse(200, dtoSnapshots)
+	context.Ok(dtoSnapshots)
 }
 
 func CreateSnapshot(c *gin.Context) {
@@ -65,52 +62,52 @@ func CreateSnapshot(c *gin.Context) {
 
 	var requestURI uri.VmSnapshotCreate
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
 	var requestBody body.VmSnapshotCreate
 	if err := context.GinContext.ShouldBindJSON(&requestBody); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
 	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
+		context.ServerError(err, v1.AuthInfoNotAvailableErr)
 		return
 	}
 
 	ok, reason, err := vm_service.CheckQuotaCreateSnapshot(auth.UserID, &auth.GetEffectiveRole().Quotas, auth)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to check quota: %s", err))
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
 	if !ok {
-		context.ErrorResponse(http.StatusForbidden, status_codes.Error, fmt.Sprintf("Failed to create snapshot: %s", reason))
+		context.Forbidden(reason)
 		return
 	}
 
-	current, err := vm_service.GetSnapshotByName(requestURI.VmID, requestBody.Name)
+	current, err := vm_service.ListSnapshotByName(requestURI.VmID, requestBody.Name)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to check if a snapshot with same name exists: %s", err))
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
 	if current != nil {
-		context.ErrorResponse(http.StatusConflict, status_codes.Error, "Snapshot already exists with given name")
+		context.UserError("Snapshot already exists")
 		return
 	}
 
 	vm, err := vm_service.GetByIdAuth(requestURI.VmID, auth)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get vm: %s", err))
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
 	if vm == nil {
-		context.ErrorResponse(http.StatusNotFound, status_codes.Error, fmt.Sprintf("VM %s not found", requestURI.VmID))
+		context.NotFound("VM not found")
 		return
 	}
 
@@ -122,11 +119,11 @@ func CreateSnapshot(c *gin.Context) {
 	})
 
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to create job: %s", err))
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
-	context.JSONResponse(http.StatusCreated, body.VmSnapshotCreated{
+	context.Ok(body.VmSnapshotCreated{
 		ID:    vm.ID,
 		JobID: jobID,
 	})

@@ -24,5 +24,7 @@ func CreateStorageManager() gin.HandlerFunc {
 			utils.PrettyPrintError(fmt.Errorf("failed to create storage manager. details: %w", err))
 			return
 		}
+
+		c.Next()
 	}
 }

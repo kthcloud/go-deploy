@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func GetAllGPUs(onlyAvailable bool, usePrivilegedGPUs bool) ([]gpuModel.GPU, error) {
+func ListGPUs(onlyAvailable bool, usePrivilegedGPUs bool) ([]gpuModel.GPU, error) {
 	excludedGPUs := config.Config.GPU.ExcludedGPUs
 	if !usePrivilegedGPUs {
 		excludedGPUs = append(excludedGPUs, config.Config.GPU.PrivilegedGPUs...)

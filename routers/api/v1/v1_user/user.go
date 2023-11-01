@@ -8,7 +8,6 @@ import (
 	"go-deploy/models/dto/query"
 	"go-deploy/models/dto/uri"
 	userModel "go-deploy/models/sys/user"
-	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
@@ -17,20 +16,19 @@ import (
 	"go-deploy/service/user_service"
 	"go-deploy/service/vm_service"
 	"go-deploy/utils"
-	"net/http"
 )
 
-func collectUsage(context *sys.ClientContext, userID string) (bool, *userModel.Usage) {
+func collectUsage(context *sys.ClientContext, userID string) *userModel.Usage {
 	vmUsage, err := vm_service.GetUsageByUserID(userID)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get quota for user: %s", err))
-		return false, nil
+		context.ServerError(err, v1.InternalError)
+		return nil
 	}
 
 	deploymentUsage, err := deployment_service.GetUsageByUserID(userID)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get quota for user: %s", err))
-		return false, nil
+		context.ServerError(err, v1.InternalError)
+		return nil
 	}
 
 	usage := &userModel.Usage{
@@ -40,11 +38,11 @@ func collectUsage(context *sys.ClientContext, userID string) (bool, *userModel.U
 		DiskSize:    vmUsage.DiskSize,
 	}
 
-	return true, usage
+	return usage
 }
 
 func getStorageURL(userID string, auth *service.AuthInfo) (*string, error) {
-	storageManager, err := deployment_service.GetStorageManagerByOwnerID(userID, auth)
+	storageManager, err := deployment_service.GetStorageManagerByOwnerIdAuth(userID, auth)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +55,7 @@ func getStorageURL(userID string, auth *service.AuthInfo) (*string, error) {
 	return storageURL, nil
 }
 
-// GetList
+// ListUsers
 // @Summary Get user list
 // @Description Get user list
 // @Tags User
@@ -68,87 +66,59 @@ func getStorageURL(userID string, auth *service.AuthInfo) (*string, error) {
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /users [get]
-func GetList(c *gin.Context) {
+func ListUsers(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestQuery query.UserList
 	if err := context.GinContext.Bind(&requestQuery); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
 	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
+		context.ServerError(err, v1.AuthInfoNotAvailableErr)
 		return
 	}
 
-	effectiveRole := auth.GetEffectiveRole()
+	users, err := user_service.ListAuth(requestQuery.All, auth, &requestQuery.Pagination)
+	if err != nil {
+		context.ServerError(err, v1.InternalError)
+		return
+	}
 
-	if requestQuery.All {
-		users, err := user_service.GetAll(auth)
-		if err != nil {
-			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
-			return
-		}
-
-		usersDto := make([]body.UserRead, 0)
-		for _, user := range users {
-			if user.ID == auth.UserID {
-				updatedUser, err := user_service.Create(auth)
-				if err != nil {
-					utils.PrettyPrintError(fmt.Errorf("failed to get or create a user when listing: %w", err))
-					continue
-				}
-
-				if updatedUser != nil {
-					user = *updatedUser
-				}
-			}
-
-			storageURL, err := getStorageURL(user.ID, auth)
+	usersDto := make([]body.UserRead, 0)
+	for _, user := range users {
+		// if we list ourselves, take the opportunity to update our role
+		if user.ID == auth.UserID {
+			updatedUser, err := user_service.Create(auth)
 			if err != nil {
-				utils.PrettyPrintError(fmt.Errorf("failed to get storage url for a user when listing: %w", err))
+				utils.PrettyPrintError(fmt.Errorf("failed to get or create a user when listing: %w", err))
 				continue
 			}
 
-			role := config.Config.GetRole(user.EffectiveRole.Name)
-
-			ok, usage := collectUsage(&context, user.ID)
-			if !ok {
-				usage = &userModel.Usage{}
+			if updatedUser != nil {
+				user = *updatedUser
 			}
-
-			usersDto = append(usersDto, user.ToDTO(role, usage, storageURL))
 		}
 
-		context.JSONResponse(200, usersDto)
-		return
+		storageURL, err := getStorageURL(user.ID, auth)
+		if err != nil {
+			utils.PrettyPrintError(fmt.Errorf("failed to get storage url for a user when listing: %w", err))
+			continue
+		}
+
+		role := config.Config.GetRole(user.EffectiveRole.Name)
+
+		usage := collectUsage(&context, user.ID)
+		if usage == nil {
+			usage = &userModel.Usage{}
+		}
+
+		usersDto = append(usersDto, user.ToDTO(role, usage, storageURL))
 	}
 
-	user, err := user_service.GetByIdAuth(auth.UserID, auth)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
-		return
-	}
-
-	if user == nil {
-		context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, fmt.Sprintf("User with id %s not found", auth.UserID))
-		return
-	}
-
-	ok, usage := collectUsage(&context, user.ID)
-	if !ok {
-		return
-	}
-
-	storageURL, err := getStorageURL(user.ID, auth)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get storage url for a user when listing: %s", err))
-		return
-	}
-
-	context.JSONResponse(200, user.ToDTO(effectiveRole, usage, storageURL))
+	context.Ok(usersDto)
 }
 
 // Get
@@ -167,48 +137,52 @@ func Get(c *gin.Context) {
 
 	var requestURI uri.UserGet
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
 	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
+		context.ServerError(err, v1.AuthInfoNotAvailableErr)
 		return
 	}
 
-	requestedUserID := requestURI.UserID
-	if requestedUserID == "" {
-		requestedUserID = auth.UserID
-	}
-
-	var user *userModel.User
-	user, err = user_service.GetByIdAuth(requestedUserID, auth)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get user: %s", err))
-		return
-	}
-
-	if user == nil {
-		context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, fmt.Sprintf("User with id %s not found", requestedUserID))
-		return
-	}
-
-	ok, usage := collectUsage(&context, user.ID)
-	if !ok {
-		return
+	if requestURI.UserID == "" {
+		requestURI.UserID = auth.UserID
 	}
 
 	var effectiveRole *roleModel.Role
-	if user.ID == auth.UserID {
+	var user *userModel.User
+
+	if requestURI.UserID == auth.UserID {
 		effectiveRole = auth.GetEffectiveRole()
+		user, err = user_service.Create(auth)
+		if err != nil {
+			context.ServerError(err, v1.InternalError)
+			return
+		}
 	} else {
 		effectiveRole = config.Config.GetRole(user.EffectiveRole.Name)
+		user, err = user_service.GetByIdAuth(requestURI.UserID, auth)
+		if err != nil {
+			context.ServerError(err, v1.InternalError)
+			return
+		}
+	}
+
+	if user == nil {
+		context.NotFound("User not found")
+		return
+	}
+
+	usage := collectUsage(&context, user.ID)
+	if usage == nil {
+		return
 	}
 
 	storageURL, err := getStorageURL(user.ID, auth)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get storage url for a user when listing: %s", err))
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
@@ -232,65 +206,58 @@ func Update(c *gin.Context) {
 
 	var requestURI uri.UserUpdate
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
 	var userUpdate body.UserUpdate
 	if err := context.GinContext.ShouldBindJSON(&userUpdate); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
 	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
+		context.ServerError(err, v1.AuthInfoNotAvailableErr)
 		return
 	}
 
-	requestedUserID := requestURI.UserID
-	if requestedUserID == "" {
-		requestedUserID = auth.UserID
+	if requestURI.UserID == "" {
+		requestURI.UserID = auth.UserID
 	}
 
-	user, err := user_service.GetByIdAuth(requestedUserID, auth)
+	var effectiveRole *roleModel.Role
+
+	if requestURI.UserID == auth.UserID {
+		effectiveRole = auth.GetEffectiveRole()
+		_, err = user_service.Create(auth)
+		if err != nil {
+			context.ServerError(err, v1.InternalError)
+			return
+		}
+	}
+
+	updated, err := user_service.UpdatedAuth(requestURI.UserID, &userUpdate, auth)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to update user: %s", err))
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
-	if user == nil {
-		context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, fmt.Sprintf("User with id %s not found", requestedUserID))
+	if updated == nil {
+		context.NotFound("User not found")
 		return
 	}
 
-	err = user_service.Update(requestedUserID, &userUpdate, auth)
+	usage := collectUsage(&context, updated.ID)
+	if usage == nil {
+		return
+	}
+
+	storageURL, err := getStorageURL(updated.ID, auth)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to update user: %s", err))
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
-	updatedUser, err := user_service.GetByIdAuth(requestedUserID, auth)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to update user: %s", err))
-		return
-	}
-
-	if updatedUser == nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("User with id %s not found", requestedUserID))
-		return
-	}
-
-	ok, usage := collectUsage(&context, updatedUser.ID)
-	if !ok {
-		return
-	}
-
-	storageURL, err := getStorageURL(user.ID, auth)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get storage url for a user when listing: %s", err))
-		return
-	}
-
-	context.JSONResponse(200, updatedUser.ToDTO(auth.GetEffectiveRole(), usage, storageURL))
+	context.JSONResponse(200, updated.ToDTO(effectiveRole, usage, storageURL))
 }

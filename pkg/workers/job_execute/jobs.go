@@ -7,7 +7,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"go-deploy/models/dto/body"
 	deploymentModel "go-deploy/models/sys/deployment"
-	"go-deploy/models/sys/deployment/storage_manager"
+	storageManagerModel "go-deploy/models/sys/deployment/storage_manager"
 	jobModel "go-deploy/models/sys/job"
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/pkg/workers/confirm"
@@ -498,7 +498,7 @@ func createStorageManager(job *jobModel.Job) error {
 	}
 
 	id := job.Args["id"].(string)
-	var params storage_manager.CreateParams
+	var params storageManagerModel.CreateParams
 	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
 	if err != nil {
 		return makeTerminatedError(err)

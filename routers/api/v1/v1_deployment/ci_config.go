@@ -1,10 +1,8 @@
 package v1_deployment
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"go-deploy/models/dto/uri"
-	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/deployment_service"
@@ -27,24 +25,24 @@ func GetCiConfig(c *gin.Context) {
 
 	var requestURI uri.CiConfigGet
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
 	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
+		context.ServerError(err, v1.AuthInfoNotAvailableErr)
 		return
 	}
 
-	config, err := deployment_service.GetCIConfig(requestURI.DeploymentID, auth)
+	config, err := deployment_service.GetCiConfig(requestURI.DeploymentID, auth)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
 	if config == nil {
-		context.ErrorResponse(http.StatusBadRequest, status_codes.ResourceNotReady, fmt.Sprintf("CI config is not ready"))
+		context.UserError("CI config is not ready")
 		return
 	}
 

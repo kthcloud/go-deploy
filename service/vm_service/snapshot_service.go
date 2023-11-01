@@ -11,7 +11,7 @@ import (
 	"sort"
 )
 
-func GetSnapshotsByVM(vmID string) ([]vmModel.Snapshot, error) {
+func ListSnapshotsByVM(vmID string) ([]vmModel.Snapshot, error) {
 	vm, err := vmModel.New().GetByID(vmID)
 	if err != nil {
 		return nil, err
@@ -41,7 +41,7 @@ func GetSnapshotsByVM(vmID string) ([]vmModel.Snapshot, error) {
 	return snapshots, nil
 }
 
-func GetSnapshotByName(vmID, snapshotName string) (*vmModel.Snapshot, error) {
+func ListSnapshotByName(vmID, snapshotName string) (*vmModel.Snapshot, error) {
 	vm, err := vmModel.New().GetByID(vmID)
 	if err != nil {
 		return nil, err

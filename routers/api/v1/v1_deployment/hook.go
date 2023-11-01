@@ -5,18 +5,15 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
-	"encoding/json"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"go-deploy/models/dto/body"
 	"go-deploy/models/sys/job"
-	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/sys"
+	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/deployment_service"
 	"go-deploy/service/job_service"
 	"go-deploy/utils/requestutils"
-	"net/http"
 	"strconv"
 	"strings"
 )
@@ -52,149 +49,144 @@ func getTokenFromAuthHeader(context sys.ClientContext) (string, error) {
 }
 
 func HandleHarborHook(c *gin.Context) {
-	context := sys.ClientContext{GinContext: c}
+	context := sys.NewContext(c)
 
 	token, err := getTokenFromAuthHeader(context)
 
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
 	if token == "" {
-		context.Unauthorized()
+		context.Unauthorized("Missing token")
 		return
 	}
 
 	if !deployment_service.ValidateHarborToken(token) {
-		context.Unauthorized()
+		context.Unauthorized("Invalid token")
 		return
 	}
 
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		context.ServerError(err, v1.AuthInfoNotAvailableErr)
 		return
 	}
 
 	var webhook body.HarborWebhook
 	err = context.GinContext.ShouldBindJSON(&webhook)
 	if err != nil {
-		context.ErrorResponse(http.StatusBadRequest, status_codes.Error, fmt.Sprintf("%s", err))
+		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
 	deployment, err := deployment_service.GetByHarborWebhook(&webhook)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
 	if deployment == nil {
-		context.ErrorResponse(http.StatusNotFound, status_codes.Error, fmt.Sprintf("deployment not found"))
+		context.NotFound("Deployment not found")
 		return
 	}
 
 	if webhook.Type == "PUSH_ARTIFACT" {
 		err = deployment_service.Restart(deployment.ID)
 		if err != nil {
-			context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+			context.ServerError(err, v1.InternalError)
 			return
 		}
 	}
 
-	context.Ok()
+	context.OkNoContent()
 }
 
 func HandleGitHubHook(c *gin.Context) {
-	context := sys.ClientContext{GinContext: c}
+	context := sys.NewContext(c)
 
 	event := context.GinContext.GetHeader("x-github-event")
 	if len(event) == 0 {
-		context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "missing x-github-event header")
+		context.UserError("Missing x-github-event header")
 		return
 	}
 
 	if event == "ping" {
-		context.Ok()
+		context.OkNoContent()
 		return
 	}
 
 	if event != "push" {
-		context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "unsupported event type")
+		context.UserError("Unsupported event type")
 		return
 	}
 
 	hookIdStr := context.GinContext.GetHeader("X-Github-Hook-Id")
 	if len(hookIdStr) == 0 {
-		context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "missing X-GitHub-Hook-Id header")
+		context.UserError("Missing X-GitHub-Hook-Id header")
 		return
 	}
 
 	hookID, err := strconv.ParseInt(hookIdStr, 10, 64)
 	if err != nil {
-		context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "invalid X-GitHub-Hook-Id header")
+		context.UserError("Invalid X-GitHub-Hook-Id header")
 		return
 	}
 
 	if hookID == 0 {
-		context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "invalid X-GitHub-Hook-Id header")
+		context.UserError("Invalid X-GitHub-Hook-Id header")
 		return
 	}
 
 	signature := context.GinContext.GetHeader("x-hub-signature-256")
 	if len(signature) == 0 {
-		context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "missing x-hub-signature-256 header")
+		context.UserError("Missing x-hub-signature-256 header")
 		return
 	}
 
 	requestBodyRaw, err := requestutils.ReadBody(context.GinContext.Request.Body)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
-	if len(requestBodyRaw) == 0 {
-		context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "missing request body")
+	var requestBodyParsed body.GithubWebhookPayloadPush
+	if err = context.GinContext.ShouldBindJSON(&requestBodyParsed); err != nil {
+		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
-	deployments, err := deployment_service.GetAllByGitHubWebhookID(hookID)
+	deployments, err := deployment_service.ListByGitHubWebhookID(hookID)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
 	if len(deployments) == 0 {
-		context.ErrorResponse(http.StatusNotFound, status_codes.Error, "deployment not found")
+		context.NotFound("No deployments found for hook ID")
 		return
 	}
 
 	var ids []string
 	for _, deployment := range deployments {
-		//if !checkSignature(signature, requestBodyRaw, deployment.Subsystems.GitHub.Webhook.Secret) {
-		//	context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "invalid signature")
-		//	return
-		//}
+		if !checkSignature(signature, requestBodyRaw, deployment.Subsystems.GitHub.Webhook.Secret) {
+			context.Forbidden("Invalid signature")
+			return
+		}
 
 		ids = append(ids, deployment.ID)
 	}
 
-	var requestBodyParsed body.GithubWebhookPayloadPush
-	err = json.Unmarshal(requestBodyRaw, &requestBodyParsed)
-	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
-		return
-	}
-
 	refSplit := strings.Split(requestBodyParsed.Ref, "/")
 	if len(refSplit) != 3 {
-		context.ErrorResponse(http.StatusBadRequest, status_codes.Error, "invalid ref")
+		context.UserError("Invalid ref field")
 		return
 	}
 
 	pushedBranch := refSplit[2]
 	if pushedBranch != requestBodyParsed.Repository.DefaultBranch {
-		context.Ok()
+		// We only care about the default branch, so this is not an error
+		context.OkNoContent()
 		return
 	}
 
@@ -211,7 +203,7 @@ func HandleGitHubHook(c *gin.Context) {
 		})
 	}
 
-	context.Ok()
+	context.OkNoContent()
 }
 
 func checkSignature(signature string, payload []byte, secret string) bool {

@@ -1,18 +1,15 @@
 package v1_vm
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
-	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/vm_service"
-	"net/http"
 )
 
-// GetGpuList
+// ListGPUs
 // @Summary Get list of GPUs
 // @Description Get list of GPUs
 // @Tags VM
@@ -25,24 +22,24 @@ import (
 // @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /vms/gpus [get]
-func GetGpuList(c *gin.Context) {
+func ListGPUs(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestQuery query.GpuList
 	if err := context.GinContext.Bind(&requestQuery); err != nil {
-		context.JSONResponse(http.StatusBadRequest, v1.CreateBindingError(err))
+		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
 	auth, err := v1.WithAuth(&context)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("Failed to get auth info: %s", err))
+		context.ServerError(err, v1.AuthInfoNotAvailableErr)
 		return
 	}
 
-	gpus, err := vm_service.GetAllGPUs(requestQuery.OnlyShowAvailable, auth.GetEffectiveRole().Permissions.UsePrivilegedGPUs)
+	gpus, err := vm_service.ListGPUs(requestQuery.OnlyShowAvailable, auth.GetEffectiveRole().Permissions.UsePrivilegedGPUs)
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.Error, fmt.Sprintf("%s", err))
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
@@ -51,5 +48,5 @@ func GetGpuList(c *gin.Context) {
 		dtoGPUs[i] = gpu.ToDTO(false)
 	}
 
-	context.JSONResponse(200, dtoGPUs)
+	context.Ok(dtoGPUs)
 }

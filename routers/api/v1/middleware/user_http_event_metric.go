@@ -40,5 +40,7 @@ func UserHttpEvent() gin.HandlerFunc {
 			utils.PrettyPrintError(fmt.Errorf("failed to create user http event. details: %w", err))
 			return
 		}
+
+		c.Next()
 	}
 }
