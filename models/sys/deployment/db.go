@@ -91,8 +91,8 @@ func (client *Client) Create(id, ownerID string, params *CreateParams) (*Deploym
 	return fetchedDeployment, nil
 }
 
-func (client *Client) GetAllByGitHubWebhookID(id int64) ([]Deployment, error) {
-	return client.GetAllWithFilter(bson.D{{"subsystems.github.webhook.id", id}})
+func (client *Client) ListByGitHubWebhookID(id int64) ([]Deployment, error) {
+	return client.ListWithFilter(bson.D{{"subsystems.github.webhook.id", id}})
 }
 
 func (client *Client) DeleteByID(id string) error {
@@ -176,16 +176,6 @@ func (client *Client) UpdateWithParamsByID(id string, params *UpdateParams) erro
 func (client *Client) DeleteSubsystemByID(id, key string) error {
 	subsystemKey := fmt.Sprintf("subsystems.%s", key)
 	return client.UpdateWithBsonByID(id, bson.D{{"$unset", bson.D{{subsystemKey, ""}}}})
-}
-
-func (client *Client) DeleteSubsystemByName(name, key string) error {
-	subsystemKey := fmt.Sprintf("subsystems.%s", key)
-	return client.UpdateWithBsonByName(name, bson.D{{"$unset", bson.D{{subsystemKey, ""}}}})
-}
-
-func (client *Client) UpdateSubsystemByName(name, key string, update interface{}) error {
-	subsystemKey := fmt.Sprintf("subsystems.%s", key)
-	return client.SetWithBsonByName(name, bson.D{{subsystemKey, update}})
 }
 
 func (client *Client) UpdateSubsystemByID(id, key string, update interface{}) error {

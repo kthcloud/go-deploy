@@ -366,7 +366,7 @@ func ListAuth(allUsers bool, userID *string, shared bool, auth *service.AuthInfo
 		client.RestrictToUser(auth.UserID)
 	}
 
-	resources, err := client.GetAll()
+	resources, err := client.ListAll()
 	if err != nil {
 		return nil, err
 	}
@@ -402,7 +402,7 @@ func ListAuth(allUsers bool, userID *string, shared bool, auth *service.AuthInfo
 }
 
 func ListAll() ([]deploymentModel.Deployment, error) {
-	return deploymentModel.New().GetAll()
+	return deploymentModel.New().ListAll()
 }
 
 func CheckQuotaCreate(userID string, quota *roleModel.Quotas, auth *service.AuthInfo) (bool, string, error) {

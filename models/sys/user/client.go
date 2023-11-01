@@ -1,6 +1,7 @@
 package user
 
 import (
+	"go-deploy/models"
 	"go-deploy/models/db"
 	"go-deploy/models/sys/base"
 	"go-deploy/models/sys/base/resource"
@@ -17,6 +18,15 @@ func New() *Client {
 			IncludeDeleted: false,
 		},
 	}
+}
+
+func (client *Client) AddSearch(search string) *Client {
+	client.Search = &models.SearchParams{
+		Query:  search,
+		Fields: db.DB.CollectionDefinitionMap["users"].TextIndexFields,
+	}
+
+	return client
 }
 
 func (client *Client) AddPagination(page, pageSize int) *Client {

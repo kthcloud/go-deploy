@@ -19,7 +19,7 @@ var (
 
 func GetAllStorageManagers(auth *service.AuthInfo) ([]storageManagerModel.StorageManager, error) {
 	if auth.IsAdmin {
-		return storageManagerModel.New().GetAll()
+		return storageManagerModel.New().ListAll()
 	}
 
 	ownerStorageManager, err := storageManagerModel.New().RestrictToOwner(auth.UserID).GetOne()
@@ -50,7 +50,7 @@ func ListStorageManagersAuth(allUsers bool, userID *string, auth *service.AuthIn
 		client.RestrictToOwner(auth.UserID)
 	}
 
-	return client.GetAll()
+	return client.ListAll()
 }
 
 func GetStorageManagerByIdAuth(id string, auth *service.AuthInfo) (*storageManagerModel.StorageManager, error) {

@@ -218,7 +218,7 @@ func ListAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagination 
 		client.RestrictToUser(auth.UserID)
 	}
 
-	return client.GetAll()
+	return client.ListAll()
 }
 
 func GetConnectionString(vm *vmModel.VM) (*string, error) {
@@ -461,7 +461,7 @@ func GetUsageByUserID(id string) (*vmModel.Usage, error) {
 
 	usage := &vmModel.Usage{}
 
-	currentVms, err := vmModel.New().RestrictToUser(id).GetAll()
+	currentVms, err := vmModel.New().RestrictToUser(id).ListAll()
 	if err != nil {
 		return nil, makeError(err)
 	}

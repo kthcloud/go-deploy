@@ -44,7 +44,7 @@ func (client *Client) GetByIdList(ids []string) ([]Team, error) {
 
 	filter := bson.D{{"id", bson.D{{"$in", ids}}}}
 
-	return client.GetAllWithFilter(filter)
+	return client.ListWithFilter(filter)
 }
 
 func (client *Client) GetByUserID(userID string) ([]Team, error) {
@@ -55,7 +55,7 @@ func (client *Client) GetByUserID(userID string) ([]Team, error) {
 		}},
 	}
 
-	return client.GetAllWithFilter(filter)
+	return client.ListWithFilter(filter)
 }
 
 func (client *Client) UpdateWithParams(id string, params *UpdateParams) error {

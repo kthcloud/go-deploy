@@ -7,24 +7,24 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func (client ActivityResourceClient[T]) GetByActivity(activity string) ([]T, error) {
+func (client ActivityResourceClient[T]) ListByActivity(activity string) ([]T, error) {
 	filter := bson.D{{
 		"activities", bson.M{
 			"$in": bson.A{activity},
 		},
 	}}
 
-	return models.GetManyResources[T](client.Collection, filter, false, client.Pagination, client.ExtraFilter)
+	return models.ListResources[T](client.Collection, filter, false, client.Pagination, client.ExtraFilter, client.Search)
 }
 
-func (client ActivityResourceClient[T]) GetWithNoActivities() ([]T, error) {
+func (client ActivityResourceClient[T]) ListWithNoActivities() ([]T, error) {
 	filter := bson.D{{
 		"activities", bson.M{
 			"$size": 0,
 		},
 	}}
 
-	return models.GetManyResources[T](client.Collection, filter, false, client.Pagination, client.ExtraFilter)
+	return models.ListResources[T](client.Collection, filter, false, client.Pagination, client.ExtraFilter, client.Search)
 }
 
 func (client ActivityResourceClient[T]) AddActivity(id, activity string) error {

@@ -121,22 +121,12 @@ func (client *Client) DeleteSubsystemByID(id, key string) error {
 	return client.UpdateWithBsonByID(id, bson.D{{"$unset", bson.D{{subsystemKey, ""}}}})
 }
 
-func (client *Client) DeleteSubsystemByName(name, key string) error {
-	subsystemKey := fmt.Sprintf("subsystems.%s", key)
-	return client.UpdateWithBsonByName(name, bson.D{{"$unset", bson.D{{subsystemKey, ""}}}})
-}
-
-func (client *Client) UpdateSubsystemByName(name, key string, update interface{}) error {
-	subsystemKey := fmt.Sprintf("subsystems.%s", key)
-	return client.SetWithBsonByName(name, bson.D{{subsystemKey, update}})
-}
-
 func (client *Client) UpdateSubsystemByID(id, key string, update interface{}) error {
 	subsystemKey := fmt.Sprintf("subsystems.%s", key)
 	return client.SetWithBsonByID(id, bson.D{{subsystemKey, update}})
 }
 
-func (client *Client) GetWithGPU() ([]VM, error) {
+func (client *Client) ListWithGPU() ([]VM, error) {
 	// create a filter that checks if the gpuID field is not empty
 	filter := bson.D{{
 		"gpuId", bson.M{
@@ -144,7 +134,7 @@ func (client *Client) GetWithGPU() ([]VM, error) {
 		},
 	}}
 
-	return models.GetManyResources[VM](client.Collection, filter, false, nil, nil)
+	return models.ListResources[VM](client.Collection, filter, false, nil, nil, nil)
 }
 
 func (client *Client) MarkRepaired(id string) error {

@@ -7,7 +7,7 @@ import (
 )
 
 func ListByGitHubWebhookID(id int64) ([]deploymentModel.Deployment, error) {
-	return deploymentModel.New().GetAllByGitHubWebhookID(id)
+	return deploymentModel.New().ListByGitHubWebhookID(id)
 }
 
 func ValidateHarborToken(secret string) bool {

@@ -16,7 +16,7 @@ func CleanUpOldTests() {
 	now := time.Now()
 	oneHourAgo := now.Add(-1 * time.Second)
 
-	oldE2eDeployments, err := deploymentModel.New().GetAllWithFilter(bson.D{
+	oldE2eDeployments, err := deploymentModel.New().ListWithFilter(bson.D{
 		{"ownerId", testerID},
 		{"createdAt", bson.D{{"$lt", oneHourAgo}}},
 	})
@@ -44,7 +44,7 @@ func CleanUpOldTests() {
 		deploymentsDeleted++
 	}
 
-	oldE2eVms, err := vmModel.New().GetAllWithFilter(bson.D{
+	oldE2eVms, err := vmModel.New().ListWithFilter(bson.D{
 		{"ownerId", testerID},
 		{"createdAt", bson.D{{"$lt", oneHourAgo}}},
 	})

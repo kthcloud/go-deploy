@@ -5,6 +5,7 @@ import (
 	"go-deploy/models/dto/query"
 	userModel "go-deploy/models/sys/user"
 	"go-deploy/service"
+	"sort"
 )
 
 func GetByIdAuth(userID string, auth *service.AuthInfo) (*userModel.User, error) {
@@ -47,11 +48,49 @@ func Create(auth *service.AuthInfo) (*userModel.User, error) {
 	return userModel.New().GetByID(auth.UserID)
 }
 
-func ListAuth(allUsers bool, auth *service.AuthInfo, pagination *query.Pagination) ([]userModel.User, error) {
+func DiscoverAuth(search *string, auth *service.AuthInfo) ([]body.UserReadDiscovery, error) {
+	client := userModel.New()
+
+	if search != nil {
+		client.AddSearch(*search)
+	}
+
+	users, err := client.ListAll()
+	if err != nil {
+		return nil, err
+	}
+
+	var usersRead []body.UserReadDiscovery
+	for _, user := range users {
+		if user.ID == auth.UserID {
+			continue
+		}
+
+		usersRead = append(usersRead, body.UserReadDiscovery{
+			ID:        user.ID,
+			Username:  user.Username,
+			FirstName: user.FirstName,
+			LastName:  user.LastName,
+			Email:     user.Email,
+		})
+	}
+
+	sort.Slice(usersRead, func(i, j int) bool {
+		return usersRead[i].FirstName < usersRead[j].FirstName
+	})
+
+	return usersRead, nil
+}
+
+func ListAuth(allUsers bool, search *string, auth *service.AuthInfo, pagination *query.Pagination) ([]userModel.User, error) {
 	client := userModel.New()
 
 	if pagination != nil {
 		client.AddPagination(pagination.Page, pagination.PageSize)
+	}
+
+	if search != nil {
+		client.AddSearch(*search)
 	}
 
 	if !allUsers || (allUsers && !auth.IsAdmin) {
@@ -63,7 +102,7 @@ func ListAuth(allUsers bool, auth *service.AuthInfo, pagination *query.Paginatio
 		return []userModel.User{*user}, nil
 	}
 
-	return client.GetAll()
+	return client.ListAll()
 }
 
 func UpdatedAuth(userID string, dtoUserUpdate *body.UserUpdate, auth *service.AuthInfo) (*userModel.User, error) {

@@ -247,7 +247,7 @@ func RepairGPUs() error {
 	}
 
 	// get all vms with an assigned gpu
-	vmsWithGPU, err := vmModel.New().GetWithGPU()
+	vmsWithGPU, err := vmModel.New().ListWithGPU()
 	if err != nil {
 		return makeError(err)
 	}
