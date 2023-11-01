@@ -38,8 +38,8 @@ func (client *ResourceClient[T]) ExistsAny() (bool, error) {
 	return count > 0, nil
 }
 
-func (client *ResourceClient[T]) CreateIfUnique(id string, resource *T, field bson.D) error {
-	return models.CreateIfUniqueResource[T](client.Collection, id, resource, field, client.IncludeDeleted, client.ExtraFilter)
+func (client *ResourceClient[T]) CreateIfUnique(id string, resource *T, filter bson.D) error {
+	return models.CreateIfUniqueResource[T](client.Collection, id, resource, filter, client.IncludeDeleted, client.ExtraFilter)
 }
 
 func (client *ResourceClient[T]) UpdateWithBsonByID(id string, update bson.D) error {

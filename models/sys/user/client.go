@@ -1,14 +1,13 @@
 package user
 
 import (
+	"go-deploy/models"
 	"go-deploy/models/db"
 	"go-deploy/models/sys/base"
 	"go-deploy/models/sys/base/resource"
 )
 
 type Client struct {
-	Search *string
-
 	resource.ResourceClient[User]
 }
 
@@ -22,7 +21,10 @@ func New() *Client {
 }
 
 func (client *Client) AddSearch(search string) *Client {
-	client.Search = &search
+	client.Search = &models.SearchParams{
+		Query:  search,
+		Fields: db.DB.CollectionDefinitionMap["users"].TextIndexFields,
+	}
 
 	return client
 }

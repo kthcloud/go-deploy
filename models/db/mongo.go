@@ -11,11 +11,11 @@ import (
 	"time"
 )
 
-type collectionDefinition struct {
-	Name          string
-	Indexes       []string
-	UniqueIndexes []string
-	TextIndex     []string
+type CollectionDefinition struct {
+	Name            string
+	Indexes         []string
+	UniqueIndexes   []string
+	TextIndexFields []string
 }
 
 func (dbCtx *Context) setupMongo() error {
@@ -49,16 +49,16 @@ func (dbCtx *Context) setupMongo() error {
 	// Find collections
 	DB.CollectionMap = make(map[string]*mongo.Collection)
 
-	defs := getCollectionDefinitions()
+	DB.CollectionDefinitionMap = getCollectionDefinitions()
 
-	for _, def := range defs {
+	for _, def := range DB.CollectionDefinitionMap {
 		DB.CollectionMap[def.Name] = dbCtx.mongoClient.Database(config.Config.MongoDB.Name).Collection(def.Name)
 	}
 
-	log.Println("successfully found", len(defs), "collections")
+	log.Println("successfully found", len(DB.CollectionDefinitionMap), "collections")
 
 	createdCount := 0
-	for _, def := range defs {
+	for _, def := range DB.CollectionDefinitionMap {
 		for _, indexName := range def.Indexes {
 			_, err = DB.GetCollection(def.Name).Indexes().CreateOne(context.Background(), mongo.IndexModel{
 				Keys:    map[string]int{indexName: 1},
@@ -74,7 +74,7 @@ func (dbCtx *Context) setupMongo() error {
 	log.Println("ensured", createdCount, "indexes")
 
 	createdCount = 0
-	for _, def := range defs {
+	for _, def := range DB.CollectionDefinitionMap {
 		for _, indexName := range def.UniqueIndexes {
 			_, err = DB.GetCollection(def.Name).Indexes().CreateOne(context.Background(), mongo.IndexModel{
 				Keys:    map[string]int{indexName: 1},
@@ -90,13 +90,13 @@ func (dbCtx *Context) setupMongo() error {
 	log.Println("ensured", createdCount, "unique indexes")
 
 	createdCount = 0
-	for _, def := range defs {
-		if def.TextIndex == nil {
+	for _, def := range DB.CollectionDefinitionMap {
+		if def.TextIndexFields == nil {
 			continue
 		}
 
 		keys := bson.D{}
-		for _, indexName := range def.TextIndex {
+		for _, indexName := range def.TextIndexFields {
 			keys = append(keys, bson.E{Key: indexName, Value: "text"})
 		}
 
@@ -129,51 +129,51 @@ func (dbCtx *Context) shutdownMongo() error {
 	return nil
 }
 
-func getCollectionDefinitions() []collectionDefinition {
-	return []collectionDefinition{
-		{
+func getCollectionDefinitions() map[string]CollectionDefinition {
+	return map[string]CollectionDefinition{
+		"deployments": {
 			Name:          "deployments",
 			Indexes:       []string{"name", "ownerId", "type", "statusCode", "createdAt", "deletedAt", "repairedAt", "restartedAt", "zone"},
 			UniqueIndexes: []string{"id"},
 		},
-		{
+		"storageManagers": {
 			Name:          "storageManagers",
 			Indexes:       []string{"name", "ownerId", "createdAt", "deletedAt", "repairedAt", "zone"},
 			UniqueIndexes: []string{"id"},
 		},
-		{
+		"vms": {
 			Name:          "vms",
 			Indexes:       []string{"name", "ownerId", "gpuId", "statusCode", "createdAt", "deletedAt", "repairedAt", "restartedAt", "zone"},
 			UniqueIndexes: []string{"id"},
 		},
-		{
+		"gpus": {
 			Name:          "gpus",
 			Indexes:       []string{"name", "host", "lease.vmId", "lease.user", "lease.end"},
 			UniqueIndexes: []string{"id"},
 		},
-		{
-			Name:          "users",
-			Indexes:       []string{"username", "email", "firstName", "lastName", "effectiveRole.name"},
-			UniqueIndexes: []string{"id"},
-			TextIndex:     []string{"username", "email", "firstName", "lastName"},
+		"users": {
+			Name:            "users",
+			Indexes:         []string{"username", "email", "firstName", "lastName", "effectiveRole.name"},
+			UniqueIndexes:   []string{"id"},
+			TextIndexFields: []string{"username", "email", "firstName", "lastName"},
 		},
-		{
-			Name:          "teams",
-			Indexes:       []string{"name", "ownerId", "createdAt", "deletedAt"},
-			UniqueIndexes: []string{"id"},
-			TextIndex:     []string{"name"},
+		"teams": {
+			Name:            "teams",
+			Indexes:         []string{"name", "ownerId", "createdAt", "deletedAt"},
+			UniqueIndexes:   []string{"id"},
+			TextIndexFields: []string{"name"},
 		},
-		{
+		"jobs": {
 			Name:          "jobs",
 			Indexes:       []string{"userId", "type", "args.id", "status", "createdAt", "runAfter"},
 			UniqueIndexes: []string{"id"},
 		},
-		{
+		"notifications": {
 			Name:          "notifications",
 			Indexes:       []string{"userId", "type", "createdAt", "readAt", "deletedAt"},
 			UniqueIndexes: []string{"id"},
 		},
-		{
+		"events": {
 			Name:          "events",
 			Indexes:       []string{"type", "createdAt", "source.userId"},
 			UniqueIndexes: []string{"id"},

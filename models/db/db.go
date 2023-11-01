@@ -12,7 +12,8 @@ type Context struct {
 	mongoClient *mongo.Client
 	RedisClient *redis.Client
 
-	CollectionMap map[string]*mongo.Collection
+	CollectionMap           map[string]*mongo.Collection
+	CollectionDefinitionMap map[string]CollectionDefinition
 }
 
 func (dbCtx *Context) GetCollection(collectionName string) *mongo.Collection {
