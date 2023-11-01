@@ -41,7 +41,7 @@ func getMigrations() map[string]func() error {
 }
 
 func addTlsSecretNameForIngressesWithoutCustomCert_2023_10_19() error {
-	deployments, err := deploymentModel.New().GetAll()
+	deployments, err := deploymentModel.New().ListAll()
 	if err != nil {
 		return err
 	}

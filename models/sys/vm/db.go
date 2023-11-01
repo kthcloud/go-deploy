@@ -136,7 +136,7 @@ func (client *Client) UpdateSubsystemByID(id, key string, update interface{}) er
 	return client.SetWithBsonByID(id, bson.D{{subsystemKey, update}})
 }
 
-func (client *Client) GetWithGPU() ([]VM, error) {
+func (client *Client) ListWithGPU() ([]VM, error) {
 	// create a filter that checks if the gpuID field is not empty
 	filter := bson.D{{
 		"gpuId", bson.M{
@@ -144,7 +144,7 @@ func (client *Client) GetWithGPU() ([]VM, error) {
 		},
 	}}
 
-	return models.GetManyResources[VM](client.Collection, filter, false, nil, nil)
+	return models.ListResources[VM](client.Collection, filter, false, nil, nil, nil)
 }
 
 func (client *Client) MarkRepaired(id string) error {

@@ -38,7 +38,7 @@ func ListAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagination 
 		client.RestrictToUser(auth.UserID)
 	}
 
-	return client.GetAll()
+	return client.ListAll()
 }
 
 func UpdateAuth(id string, dtoNotificationUpdate *body.NotificationUpdate, auth *service.AuthInfo) (*notificationModel.Notification, error) {

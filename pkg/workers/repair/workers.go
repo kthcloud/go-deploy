@@ -22,7 +22,7 @@ func deploymentRepairer(ctx context.Context) {
 
 		select {
 		case <-time.After(time.Duration(config.Config.Deployment.RepairInterval) * time.Second):
-			restarting, err := deploymentModel.New().GetByActivity(deploymentModel.ActivityRestarting)
+			restarting, err := deploymentModel.New().ListByActivity(deploymentModel.ActivityRestarting)
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching restarting deployments. details: %w", err))
 				continue
@@ -40,7 +40,7 @@ func deploymentRepairer(ctx context.Context) {
 				}
 			}
 
-			withNoActivities, err := deploymentModel.New().GetWithNoActivities()
+			withNoActivities, err := deploymentModel.New().ListWithNoActivities()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching deployments with no activities. details: %w", err))
 				continue
@@ -77,7 +77,7 @@ func storageManagerRepairer(ctx context.Context) {
 	for {
 		select {
 		case <-time.After(time.Duration(config.Config.Deployment.RepairInterval) * time.Second):
-			withNoActivities, err := storageManagerModel.New().GetWithNoActivities()
+			withNoActivities, err := storageManagerModel.New().ListWithNoActivities()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching storage managers with no activities. details: %w", err))
 				continue
@@ -112,7 +112,7 @@ func vmRepairer(ctx context.Context) {
 	for {
 		select {
 		case <-time.After(time.Duration(config.Config.VM.RepairInterval) * time.Second):
-			withNoActivities, err := vmModel.New().GetWithNoActivities()
+			withNoActivities, err := vmModel.New().ListWithNoActivities()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching vms with no activities. details: %w", err))
 				continue

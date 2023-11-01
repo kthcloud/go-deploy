@@ -130,7 +130,7 @@ func ListTeamsAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagina
 		return maps.Values(teams), nil
 	}
 
-	return teamClient.GetAll()
+	return teamClient.ListAll()
 }
 
 func UpdateTeamAuth(id string, dtoUpdateTeam *body.TeamUpdate, auth *service.AuthInfo) (*teamModels.Team, error) {

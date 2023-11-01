@@ -67,7 +67,7 @@ func ListAuth(allUsers bool, search *string, auth *service.AuthInfo, pagination 
 		return []userModel.User{*user}, nil
 	}
 
-	return client.GetAll()
+	return client.ListAll()
 }
 
 func UpdatedAuth(userID string, dtoUserUpdate *body.UserUpdate, auth *service.AuthInfo) (*userModel.User, error) {
