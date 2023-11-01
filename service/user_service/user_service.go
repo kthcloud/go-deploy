@@ -5,6 +5,7 @@ import (
 	"go-deploy/models/dto/query"
 	userModel "go-deploy/models/sys/user"
 	"go-deploy/service"
+	"sort"
 )
 
 func GetByIdAuth(userID string, auth *service.AuthInfo) (*userModel.User, error) {
@@ -45,6 +46,40 @@ func Create(auth *service.AuthInfo) (*userModel.User, error) {
 	}
 
 	return userModel.New().GetByID(auth.UserID)
+}
+
+func DiscoverAuth(search *string, auth *service.AuthInfo) ([]body.UserReadDiscovery, error) {
+	client := userModel.New()
+
+	if search != nil {
+		client.AddSearch(*search)
+	}
+
+	users, err := client.ListAll()
+	if err != nil {
+		return nil, err
+	}
+
+	var usersRead []body.UserReadDiscovery
+	for _, user := range users {
+		if user.ID == auth.UserID {
+			continue
+		}
+
+		usersRead = append(usersRead, body.UserReadDiscovery{
+			ID:        user.ID,
+			Username:  user.Username,
+			FirstName: user.FirstName,
+			LastName:  user.LastName,
+			Email:     user.Email,
+		})
+	}
+
+	sort.Slice(usersRead, func(i, j int) bool {
+		return usersRead[i].FirstName < usersRead[j].FirstName
+	})
+
+	return usersRead, nil
 }
 
 func ListAuth(allUsers bool, search *string, auth *service.AuthInfo, pagination *query.Pagination) ([]userModel.User, error) {

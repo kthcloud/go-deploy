@@ -81,6 +81,22 @@ func ListUsers(c *gin.Context) {
 		return
 	}
 
+	if requestQuery.Discover {
+		users, err := user_service.DiscoverAuth(requestQuery.Search, auth)
+		if err != nil {
+			context.ServerError(err, v1.InternalError)
+			return
+		}
+
+		if users == nil {
+			context.Ok([]interface{}{})
+			return
+		}
+
+		context.Ok(users)
+		return
+	}
+
 	users, err := user_service.ListAuth(requestQuery.All, requestQuery.Search, auth, &requestQuery.Pagination)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
