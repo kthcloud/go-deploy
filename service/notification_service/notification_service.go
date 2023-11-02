@@ -16,7 +16,7 @@ func GetByIdWithAuth(id string, auth *service.AuthInfo) (*notificationModel.Noti
 	client := notificationModel.New()
 
 	if !auth.IsAdmin {
-		client.RestrictToUser(auth.UserID)
+		client.RestrictToOwner(auth.UserID)
 	}
 
 	return client.GetByID(id)
@@ -33,9 +33,9 @@ func ListAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagination 
 		if *userID != auth.UserID && !auth.IsAdmin {
 			return nil, nil
 		}
-		client.RestrictToUser(*userID)
+		client.RestrictToOwner(*userID)
 	} else if !allUsers || (allUsers && !auth.IsAdmin) {
-		client.RestrictToUser(auth.UserID)
+		client.RestrictToOwner(auth.UserID)
 	}
 
 	return client.ListAll()
@@ -45,7 +45,7 @@ func UpdateAuth(id string, dtoNotificationUpdate *body.NotificationUpdate, auth 
 	client := notificationModel.New()
 
 	if !auth.IsAdmin {
-		client.RestrictToUser(auth.UserID)
+		client.RestrictToOwner(auth.UserID)
 	}
 
 	params := &notificationModel.UpdateParams{}
@@ -62,7 +62,7 @@ func UpdateAuth(id string, dtoNotificationUpdate *body.NotificationUpdate, auth 
 func DeleteAuth(id string, auth *service.AuthInfo) error {
 	client := notificationModel.New()
 	if !auth.IsAdmin {
-		client.RestrictToUser(auth.UserID)
+		client.RestrictToOwner(auth.UserID)
 	}
 	return client.DeleteByID(id)
 }

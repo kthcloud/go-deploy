@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"go-deploy/models"
-	status_codes2 "go-deploy/pkg/app/status_codes"
+	"go-deploy/pkg/app/status_codes"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
@@ -44,8 +44,8 @@ func (client *Client) Create(id, owner, manager string, params *CreateParams) (b
 			DiskSize: params.DiskSize,
 		},
 
-		StatusCode:    status_codes2.ResourceBeingCreated,
-		StatusMessage: status_codes2.GetMsg(status_codes2.ResourceBeingCreated),
+		StatusCode:    status_codes.ResourceBeingCreated,
+		StatusMessage: status_codes.GetMsg(status_codes.ResourceBeingCreated),
 	}
 
 	filter := bson.D{{"name", params.Name}, {"deletedAt", bson.D{{"$in", []interface{}{time.Time{}, nil}}}}}
@@ -134,7 +134,7 @@ func (client *Client) ListWithGPU() ([]VM, error) {
 		},
 	}}
 
-	return models.ListResources[VM](client.Collection, filter, false, nil, nil, nil)
+	return client.ListWithFilter(filter)
 }
 
 func (client *Client) MarkRepaired(id string) error {

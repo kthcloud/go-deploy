@@ -49,7 +49,7 @@ func List(c *gin.Context) {
 		return
 	}
 
-	vms, err := vm_service.ListAuth(requestQuery.All, requestQuery.UserID, auth, &requestQuery.Pagination)
+	vms, err := vm_service.ListAuth(requestQuery.All, requestQuery.UserID, requestQuery.Shared, auth, &requestQuery.Pagination)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -251,18 +251,23 @@ func Delete(c *gin.Context) {
 		return
 	}
 
-	current, err := vm_service.GetByIdAuth(requestURI.VmID, auth)
+	vm, err := vm_service.GetByIdAuth(requestURI.VmID, auth)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
 	}
 
-	if current == nil {
+	if vm == nil {
 		context.NotFound("VM not found")
 		return
 	}
 
-	started, reason, err := vm_service.StartActivity(current.ID, vmModel.ActivityBeingDeleted)
+	if vm.OwnerID != auth.UserID && !auth.IsAdmin {
+		context.Forbidden("VMs can only be deleted by their owner")
+		return
+	}
+
+	started, reason, err := vm_service.StartActivity(vm.ID, vmModel.ActivityBeingDeleted)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -275,7 +280,7 @@ func Delete(c *gin.Context) {
 
 	jobID := uuid.New().String()
 	err = job_service.Create(jobID, auth.UserID, jobModel.TypeDeleteVM, map[string]interface{}{
-		"id": current.ID,
+		"id": vm.ID,
 	})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
@@ -283,7 +288,7 @@ func Delete(c *gin.Context) {
 	}
 
 	context.Ok(body.VmDeleted{
-		ID:    current.ID,
+		ID:    vm.ID,
 		JobID: jobID,
 	})
 }
@@ -418,7 +423,7 @@ func detachGPU(context *sys.ClientContext, auth *service.AuthInfo, vm *vmModel.V
 	jobID := uuid.New().String()
 	err = job_service.Create(jobID, auth.UserID, jobModel.TypeDetachGpuFromVM, map[string]interface{}{
 		"id":     vm.ID,
-		"userId": auth.UserID,
+		"userId": vm.OwnerID,
 	})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)

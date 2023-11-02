@@ -34,7 +34,32 @@ func AddIfNotNil(data *bson.D, key string, value interface{}) {
 	*data = append(*data, bson.E{Key: key, Value: value})
 }
 
-func addExcludeDeleted(filter bson.D) bson.D {
+func GroupFilters(filter bson.D, extraFilter bson.M, searchParams *SearchParams, includeDeleted bool) bson.D {
+	// deleted filter
+	if !includeDeleted {
+		filter = AddExcludeDeletedFilter(filter)
+	}
+
+	// extra filter
+	if extraFilter != nil {
+		filter = bson.D{{"$and", bson.A{filter, extraFilter}}}
+	}
+
+	// search filter
+	if searchParams != nil {
+		searchFilter := bson.A{}
+		for _, field := range searchParams.Fields {
+			pattern := fmt.Sprintf(".*%s.*", searchParams.Query)
+			searchFilter = append(searchFilter, bson.M{field: bson.M{"$regex": pattern, "$options": "i"}})
+		}
+
+		return bson.D{{"$and", bson.A{filter, bson.D{{"$or", searchFilter}}}}}
+	} else {
+		return filter
+	}
+}
+
+func AddExcludeDeletedFilter(filter bson.D) bson.D {
 	newFilter := filter
 
 	newFilter = append(newFilter, bson.E{Key: "deletedAt", Value: bson.D{{"$in", []interface{}{nil, time.Time{}}}}})
@@ -42,9 +67,9 @@ func addExcludeDeleted(filter bson.D) bson.D {
 	return newFilter
 }
 
-func GetResource[T Resource](collection *mongo.Collection, filter bson.D, includeDeleted bool, extraFilter bson.D) (*T, error) {
+func GetResource[T Resource](collection *mongo.Collection, filter bson.D) (*T, error) {
 	var res T
-	err := collection.FindOne(context.TODO(), groupFilters(filter, extraFilter, nil, includeDeleted)).Decode(&res)
+	err := collection.FindOne(context.TODO(), filter).Decode(&res)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, nil
@@ -55,7 +80,7 @@ func GetResource[T Resource](collection *mongo.Collection, filter bson.D, includ
 	return &res, nil
 }
 
-func ListResources[T any](collection *mongo.Collection, filter bson.D, includeDeleted bool, pagination *base.Pagination, extraFilter bson.D, search *SearchParams) ([]T, error) {
+func ListResources[T any](collection *mongo.Collection, filter bson.D, pagination *base.Pagination) ([]T, error) {
 	var findOptions *options.FindOptions
 	if pagination != nil {
 		limit := int64(pagination.PageSize)
@@ -71,7 +96,7 @@ func ListResources[T any](collection *mongo.Collection, filter bson.D, includeDe
 		}
 	}
 
-	cursor, err := collection.Find(context.Background(), groupFilters(filter, extraFilter, search, includeDeleted), findOptions)
+	cursor, err := collection.Find(context.Background(), filter, findOptions)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get resources. details: %w", err)
 	}
@@ -92,24 +117,24 @@ func ListResources[T any](collection *mongo.Collection, filter bson.D, includeDe
 	return res, nil
 }
 
-func CountResources(collection *mongo.Collection, filter bson.D, includeDeleted bool, extraFilter bson.D) (int, error) {
-	count, err := collection.CountDocuments(context.Background(), groupFilters(filter, extraFilter, nil, includeDeleted))
+func CountResources(collection *mongo.Collection, filter bson.D) (int, error) {
+	count, err := collection.CountDocuments(context.Background(), filter)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count resources. details: %w", err)
 	}
 	return int(count), nil
 }
 
-func CountDistinctResources(collection *mongo.Collection, field string, filter bson.D, includeDeleted bool, extraFilter bson.D) (int, error) {
-	count, err := collection.Distinct(context.Background(), field, groupFilters(filter, extraFilter, nil, includeDeleted))
+func CountDistinctResources(collection *mongo.Collection, field string, filter bson.D) (int, error) {
+	count, err := collection.Distinct(context.Background(), field, filter)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count resources. details: %w", err)
 	}
 	return len(count), nil
 }
 
-func CreateIfUniqueResource[T Resource](collection *mongo.Collection, id string, data *T, filter bson.D, includeDeleted bool, extraFilter bson.D) error {
-	result, err := collection.UpdateOne(context.TODO(), groupFilters(filter, extraFilter, nil, includeDeleted), bson.D{
+func CreateIfUniqueResource[T Resource](collection *mongo.Collection, id string, data *T, filter bson.D) error {
+	result, err := collection.UpdateOne(context.TODO(), filter, bson.D{
 		{"$setOnInsert", data},
 	}, options.Update().SetUpsert(true))
 	if err != nil {
@@ -118,7 +143,7 @@ func CreateIfUniqueResource[T Resource](collection *mongo.Collection, id string,
 
 	if result.UpsertedCount == 0 {
 		if result.MatchedCount == 1 {
-			fetched, err := GetResource[onlyID](collection, filter, includeDeleted, extraFilter)
+			fetched, err := GetResource[onlyID](collection, filter)
 			if err != nil {
 				return err
 			}
@@ -139,42 +164,11 @@ func CreateIfUniqueResource[T Resource](collection *mongo.Collection, id string,
 	return nil
 }
 
-func UpdateOneResource(collection *mongo.Collection, filter bson.D, update bson.D, includeDeleted bool, extraFilter bson.D) error {
-	_, err := collection.UpdateOne(context.Background(), groupFilters(filter, extraFilter, nil, includeDeleted), update)
+func UpdateOneResource(collection *mongo.Collection, filter bson.D, update bson.D) error {
+	_, err := collection.UpdateOne(context.Background(), filter, update)
 	if err != nil {
 		return fmt.Errorf("failed to update resource. details: %w", err)
 	}
 
 	return nil
-}
-
-func groupFilters(filter bson.D, extraFilter bson.D, searchParams *SearchParams, includeDeleted bool) bson.M {
-	// deleted filter
-	if !includeDeleted {
-		filter = addExcludeDeleted(filter)
-	}
-
-	// extra filter
-	filter = append(filter, extraFilter...)
-
-	// search filter
-	if searchParams != nil {
-		searchFilter := bson.A{}
-		for _, field := range searchParams.Fields {
-			pattern := fmt.Sprintf(".*%s.*", searchParams.Query)
-			searchFilter = append(searchFilter, bson.M{field: bson.M{"$regex": pattern, "$options": "i"}})
-		}
-
-		return bson.M{
-			"$and": bson.A{
-				filter,
-				bson.M{
-					"$or": searchFilter,
-				},
-			},
-		}
-
-	} else {
-		return bson.M{"$and": bson.A{filter}}
-	}
 }

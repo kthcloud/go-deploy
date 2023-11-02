@@ -23,6 +23,25 @@ func HashStringRfc1123(token string) string {
 	return strings.ToLower(urlHash)
 }
 
+func GetPage[T any](list []T, pageSize, page int) []T {
+	if pageSize == 0 {
+		return list
+	}
+
+	start := (page - 1) * pageSize
+	end := page * pageSize
+
+	if start > len(list) {
+		return make([]T, 0)
+	}
+
+	if end > len(list) {
+		end = len(list)
+	}
+
+	return list[start:end]
+}
+
 func PrettyPrintError(err error) {
 	all := make([]string, 0)
 

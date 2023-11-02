@@ -14,6 +14,18 @@ type ResourceClient[T Resource] struct {
 	Collection     *mongo.Collection
 	IncludeDeleted bool
 	Pagination     *base.Pagination
-	ExtraFilter    bson.D
+	ExtraFilter    bson.M
 	Search         *models.SearchParams
+}
+
+func (client *ResourceClient[T]) AddExtraFilter(filter bson.D) *ResourceClient[T] {
+	if client.ExtraFilter == nil {
+		client.ExtraFilter = bson.M{
+			"$and": bson.A{},
+		}
+	}
+
+	client.ExtraFilter["$and"] = append(client.ExtraFilter["$and"].(bson.A), filter)
+
+	return client
 }

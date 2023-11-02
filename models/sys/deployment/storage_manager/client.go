@@ -52,7 +52,7 @@ func (client *Client) IncludeDeletedResources() *Client {
 }
 
 func (client *Client) RestrictToOwner(ownerID string) *Client {
-	client.ResourceClient.ExtraFilter = append(client.ResourceClient.ExtraFilter, bson.E{Key: "ownerId", Value: ownerID})
+	client.ResourceClient.AddExtraFilter(bson.D{{"ownerId", ownerID}})
 	client.ActivityResourceClient.ExtraFilter = client.ResourceClient.ExtraFilter
 	client.RestrictOwnerID = &ownerID
 
