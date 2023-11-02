@@ -291,6 +291,11 @@ func Delete(c *gin.Context) {
 		return
 	}
 
+	if currentDeployment.OwnerID != auth.UserID && !auth.IsAdmin {
+		context.Forbidden("Deployments can only be deleted by their owner")
+		return
+	}
+
 	started, reason, err := deployment_service.StartActivity(currentDeployment.ID, deploymentModels.ActivityBeingDeleted)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)

@@ -7,7 +7,6 @@ import (
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
 	deploymentModel "go-deploy/models/sys/deployment"
-	userModel "go-deploy/models/sys/user"
 	teamModels "go-deploy/models/sys/user/team"
 	"go-deploy/pkg/config"
 	"go-deploy/service"
@@ -19,6 +18,7 @@ import (
 	"go-deploy/utils"
 	"go-deploy/utils/subsystemutils"
 	"log"
+	"sort"
 	"strings"
 )
 
@@ -335,7 +335,20 @@ func GetByIdAuth(id string, auth *service.AuthInfo) (*deploymentModel.Deployment
 		return nil, nil
 	}
 
-	if deployment.OwnerID != auth.UserID && !auth.IsAdmin {
+	if deployment.OwnerID != auth.UserID {
+		inTeam, err := teamModels.New().AddUserID(auth.UserID).AddResourceID(id).ExistsAny()
+		if err != nil {
+			return nil, err
+		}
+
+		if inTeam {
+			return deployment, nil
+		}
+
+		if auth.IsAdmin {
+			return deployment, nil
+		}
+
 		return nil, nil
 	}
 
@@ -361,9 +374,9 @@ func ListAuth(allUsers bool, userID *string, shared bool, auth *service.AuthInfo
 		if *userID != auth.UserID && !auth.IsAdmin {
 			return nil, nil
 		}
-		client.RestrictToUser(*userID)
+		client.RestrictToOwner(*userID)
 	} else if !allUsers || (allUsers && !auth.IsAdmin) {
-		client.RestrictToUser(auth.UserID)
+		client.RestrictToOwner(auth.UserID)
 	}
 
 	resources, err := client.ListAll()
@@ -372,30 +385,64 @@ func ListAuth(allUsers bool, userID *string, shared bool, auth *service.AuthInfo
 	}
 
 	if shared {
-		user, err := userModel.New().GetByID(auth.UserID)
+		ids := make([]string, len(resources))
+		for i, resource := range resources {
+			ids[i] = resource.ID
+		}
+
+		teamClient := teamModels.New().AddUserID(auth.UserID)
+		if pagination != nil {
+			teamClient.AddPagination(pagination.Page, pagination.PageSize)
+		}
+
+		teams, err := teamClient.ListAll()
 		if err != nil {
 			return nil, err
 		}
 
-		teamMap, err := user.GetTeamMap()
-		if err != nil {
-			return nil, err
-		}
-
-		for _, team := range teamMap {
+		for _, team := range teams {
 			for _, resource := range team.GetResourceMap() {
-				if resource.Type == teamModels.ResourceTypeDeployment {
-					deployment, err := deploymentModel.New().GetByID(resource.ID)
-					if err != nil {
-						return nil, err
-					}
+				if resource.Type != teamModels.ResourceTypeDeployment {
+					continue
+				}
 
-					if deployment != nil {
-						resources = append(resources, *deployment)
+				// skip existing non-shared resources
+				skip := false
+				for _, id := range ids {
+					if resource.ID == id {
+						skip = true
+						break
 					}
+				}
+				if skip {
+					continue
+				}
+
+				deployment, err := deploymentModel.New().GetByID(resource.ID)
+				if err != nil {
+					return nil, err
+				}
+
+				if deployment != nil {
+					resources = append(resources, *deployment)
 				}
 			}
 		}
+
+		sort.Slice(resources, func(i, j int) bool {
+			return resources[i].CreatedAt.After(resources[j].CreatedAt)
+		})
+
+		// since we fetched from two collections, we need to do pagination manually
+		if pagination != nil {
+			resources = utils.GetPage(resources, pagination.PageSize, pagination.Page)
+		}
+
+	} else {
+		// sort by createdAt
+		sort.Slice(resources, func(i, j int) bool {
+			return resources[i].CreatedAt.After(resources[j].CreatedAt)
+		})
 	}
 
 	return resources, nil
@@ -475,7 +522,7 @@ func GetUsageByUserID(userID string) (*deploymentModel.Usage, error) {
 		return fmt.Errorf("failed to get usage. details: %w", err)
 	}
 
-	count, err := deploymentModel.New().RestrictToUser(userID).Count()
+	count, err := deploymentModel.New().RestrictToOwner(userID).Count()
 	if err != nil {
 		return nil, makeError(err)
 	}

@@ -31,7 +31,7 @@ func (client *Client) AddPagination(page, pageSize int) *Client {
 }
 
 func (client *Client) AddExtraFilter(filter bson.D) *Client {
-	client.ExtraFilter = filter
+	client.AddExtraFilter(filter)
 
 	return client
 }

@@ -4,6 +4,7 @@ import (
 	"go-deploy/models/db"
 	"go-deploy/models/sys/base"
 	"go-deploy/models/sys/base/resource"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type Client struct {
@@ -24,6 +25,21 @@ func (client *Client) AddPagination(page, pageSize int) *Client {
 		Page:     page,
 		PageSize: pageSize,
 	}
+
+	return client
+}
+
+func (client *Client) AddUserID(userID string) *Client {
+	client.AddExtraFilter(bson.D{{"$or", bson.A{
+		bson.D{{"ownerId", userID}},
+		bson.D{{"memberMap." + userID, bson.D{{"$exists", true}}}},
+	}}})
+
+	return client
+}
+
+func (client *Client) AddResourceID(resourceID string) *Client {
+	client.AddExtraFilter(bson.D{{"resourceMap." + resourceID, bson.D{{"$exists", true}}}})
 
 	return client
 }

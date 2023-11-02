@@ -26,7 +26,7 @@ var NotInvitedErr = fmt.Errorf("not invited")
 func CreateTeam(id, ownerID string, dtoCreateTeam *body.TeamCreate, auth *service.AuthInfo) (*teamModels.Team, error) {
 	params := &teamModels.CreateParams{}
 	params.FromDTO(dtoCreateTeam, func(resourceID string) *teamModels.Resource {
-		return getResourceIfAccessible(ownerID, resourceID, auth)
+		return getResourceIfAccessible(resourceID, auth)
 	})
 
 	teamClient := teamModels.New()
@@ -151,7 +151,7 @@ func UpdateTeamAuth(id string, dtoUpdateTeam *body.TeamUpdate, auth *service.Aut
 
 	params := &teamModels.UpdateParams{}
 	params.FromDTO(dtoUpdateTeam, func(resourceID string) *teamModels.Resource {
-		return getResourceIfAccessible(team.OwnerID, resourceID, auth)
+		return getResourceIfAccessible(resourceID, auth)
 	})
 
 	// if new user, set timestamp
@@ -234,14 +234,14 @@ func DeleteTeamAuth(id string, auth *service.AuthInfo) error {
 	return teamClient.DeleteByID(id)
 }
 
-func getResourceIfAccessible(userID string, resourceID string, auth *service.AuthInfo) *teamModels.Resource {
+func getResourceIfAccessible(resourceID string, auth *service.AuthInfo) *teamModels.Resource {
 	// try to fetch deployment
 	dClient := deploymentModel.New()
 	vClient := vmModel.New()
 
 	if !auth.IsAdmin {
-		dClient.RestrictToUser(userID)
-		vClient.RestrictToUser(userID)
+		dClient.RestrictToOwner(auth.UserID)
+		vClient.RestrictToOwner(auth.UserID)
 	}
 
 	isOwner, err := dClient.ExistsByID(resourceID)
@@ -259,7 +259,7 @@ func getResourceIfAccessible(userID string, resourceID string, auth *service.Aut
 	}
 
 	// try to fetch vm
-	isOwner, err = vmModel.New().RestrictToUser(userID).ExistsByID(resourceID)
+	isOwner, err = vmModel.New().ExistsByID(resourceID)
 	if err != nil {
 		utils.PrettyPrintError(fmt.Errorf("failed to fetch vm when checking user access when creating team: %w", err))
 		return nil

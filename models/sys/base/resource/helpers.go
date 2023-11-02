@@ -9,19 +9,28 @@ import (
 )
 
 func (client *ResourceClient[T]) GetByID(id string) (*T, error) {
-	return models.GetResource[T](client.Collection, bson.D{{"id", id}}, client.IncludeDeleted, client.ExtraFilter)
+	return models.GetResource[T](client.Collection, models.GroupFilters(bson.D{{"id", id}}, client.ExtraFilter, client.Search, client.IncludeDeleted))
 }
 
 func (client *ResourceClient[T]) GetByName(name string) (*T, error) {
-	return models.GetResource[T](client.Collection, bson.D{{"name", name}}, client.IncludeDeleted, client.ExtraFilter)
+	return models.GetResource[T](client.Collection, models.GroupFilters(bson.D{{"name", name}}, client.ExtraFilter, client.Search, client.IncludeDeleted))
 }
 
 func (client *ResourceClient[T]) ListAll() ([]T, error) {
-	return models.ListResources[T](client.Collection, bson.D{}, client.IncludeDeleted, client.Pagination, client.ExtraFilter, client.Search)
+	return models.ListResources[T](client.Collection, models.GroupFilters(bson.D{}, client.ExtraFilter, client.Search, client.IncludeDeleted), client.Pagination)
 }
 
 func (client *ResourceClient[T]) ExistsByID(id string) (bool, error) {
-	count, err := models.CountResources(client.Collection, bson.D{{"id", id}}, false, client.ExtraFilter)
+	count, err := models.CountResources(client.Collection, models.GroupFilters(bson.D{{"id", id}}, client.ExtraFilter, client.Search, client.IncludeDeleted))
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}
+
+func (client *ResourceClient[T]) ExistsWithFilter(filter bson.D) (bool, error) {
+	count, err := models.CountResources(client.Collection, models.GroupFilters(filter, client.ExtraFilter, client.Search, client.IncludeDeleted))
 	if err != nil {
 		return false, err
 	}
@@ -30,7 +39,7 @@ func (client *ResourceClient[T]) ExistsByID(id string) (bool, error) {
 }
 
 func (client *ResourceClient[T]) ExistsAny() (bool, error) {
-	count, err := models.CountResources(client.Collection, bson.D{}, false, client.ExtraFilter)
+	count, err := models.CountResources(client.Collection, models.GroupFilters(bson.D{}, client.ExtraFilter, client.Search, client.IncludeDeleted))
 	if err != nil {
 		return false, err
 	}
@@ -39,11 +48,11 @@ func (client *ResourceClient[T]) ExistsAny() (bool, error) {
 }
 
 func (client *ResourceClient[T]) CreateIfUnique(id string, resource *T, filter bson.D) error {
-	return models.CreateIfUniqueResource[T](client.Collection, id, resource, filter, client.IncludeDeleted, client.ExtraFilter)
+	return models.CreateIfUniqueResource[T](client.Collection, id, resource, models.GroupFilters(filter, client.ExtraFilter, client.Search, client.IncludeDeleted))
 }
 
 func (client *ResourceClient[T]) UpdateWithBsonByID(id string, update bson.D) error {
-	return models.UpdateOneResource(client.Collection, bson.D{{"id", id}}, update, client.IncludeDeleted, client.ExtraFilter)
+	return models.UpdateOneResource(client.Collection, models.GroupFilters(bson.D{{"id", id}}, client.ExtraFilter, client.Search, client.IncludeDeleted), update)
 }
 
 func (client *ResourceClient[T]) SetWithBsonByID(id string, update bson.D) error {
@@ -51,7 +60,7 @@ func (client *ResourceClient[T]) SetWithBsonByID(id string, update bson.D) error
 }
 
 func (client *ResourceClient[T]) CountDistinct(field string) (int, error) {
-	return models.CountDistinctResources(client.Collection, field, bson.D{}, client.IncludeDeleted, client.ExtraFilter)
+	return models.CountDistinctResources(client.Collection, field, models.GroupFilters(bson.D{}, client.ExtraFilter, client.Search, client.IncludeDeleted))
 }
 
 func (client *ResourceClient[T]) DeleteByID(id string) error {
@@ -73,7 +82,7 @@ func (client *ResourceClient[T]) Deleted(id string) (bool, error) {
 		{"id", id},
 		{"deletedAt", bson.M{"$nin": []interface{}{nil, time.Time{}}}},
 	}
-	count, err := models.CountResources(client.Collection, filter, true, client.ExtraFilter)
+	count, err := models.CountResources(client.Collection, models.GroupFilters(filter, client.ExtraFilter, client.Search, true))
 	if err != nil {
 		return false, err
 	}
@@ -82,13 +91,13 @@ func (client *ResourceClient[T]) Deleted(id string) (bool, error) {
 }
 
 func (client *ResourceClient[T]) GetOne() (*T, error) {
-	return models.GetResource[T](client.Collection, bson.D{}, client.IncludeDeleted, client.ExtraFilter)
+	return models.GetResource[T](client.Collection, models.GroupFilters(bson.D{}, client.ExtraFilter, client.Search, client.IncludeDeleted))
 }
 
 func (client *ResourceClient[T]) ListWithFilter(filter bson.D) ([]T, error) {
-	return models.ListResources[T](client.Collection, filter, client.IncludeDeleted, client.Pagination, client.ExtraFilter, client.Search)
+	return models.ListResources[T](client.Collection, models.GroupFilters(filter, client.ExtraFilter, client.Search, client.IncludeDeleted), client.Pagination)
 }
 
 func (client *ResourceClient[T]) Count() (int, error) {
-	return models.CountResources(client.Collection, bson.D{}, client.IncludeDeleted, client.ExtraFilter)
+	return models.CountResources(client.Collection, models.GroupFilters(bson.D{}, client.ExtraFilter, client.Search, client.IncludeDeleted))
 }

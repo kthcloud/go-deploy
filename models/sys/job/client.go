@@ -23,7 +23,7 @@ func New() *Client {
 }
 
 func (client *Client) AddFilter(filter bson.D) *Client {
-	client.ExtraFilter = filter
+	client.AddExtraFilter(filter)
 
 	return client
 }
@@ -38,7 +38,7 @@ func (client *Client) AddPagination(page, pageSize int) *Client {
 }
 
 func (client *Client) RestrictToUser(restrictUserID string) *Client {
-	client.ExtraFilter = append(client.ExtraFilter, bson.E{Key: "userId", Value: restrictUserID})
+	client.AddExtraFilter(bson.D{{"ownerId", restrictUserID}})
 	client.RestrictUserID = &restrictUserID
 
 	return client

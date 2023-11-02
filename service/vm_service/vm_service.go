@@ -5,6 +5,7 @@ import (
 	roleModel "go-deploy/models/config/role"
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
+	teamModels "go-deploy/models/sys/user/team"
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/models/sys/vm/gpu"
 	"go-deploy/pkg/config"
@@ -13,6 +14,7 @@ import (
 	"go-deploy/service/vm_service/k8s_service"
 	"go-deploy/utils"
 	"log"
+	"sort"
 	"strings"
 )
 
@@ -187,7 +189,20 @@ func GetByIdAuth(id string, auth *service.AuthInfo) (*vmModel.VM, error) {
 		return nil, nil
 	}
 
-	if vm.OwnerID != auth.UserID && !auth.IsAdmin {
+	if vm.OwnerID != auth.UserID {
+		inTeam, err := teamModels.New().AddUserID(auth.UserID).AddResourceID(id).ExistsAny()
+		if err != nil {
+			return nil, err
+		}
+
+		if inTeam {
+			return vm, nil
+		}
+
+		if auth.IsAdmin {
+			return vm, nil
+		}
+
 		return nil, nil
 	}
 
@@ -202,7 +217,7 @@ func GetByName(name string) (*vmModel.VM, error) {
 	return vmModel.New().GetByName(name)
 }
 
-func ListAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagination *query.Pagination) ([]vmModel.VM, error) {
+func ListAuth(allUsers bool, userID *string, shared bool, auth *service.AuthInfo, pagination *query.Pagination) ([]vmModel.VM, error) {
 	client := vmModel.New()
 
 	if pagination != nil {
@@ -213,12 +228,78 @@ func ListAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagination 
 		if *userID != auth.UserID && !auth.IsAdmin {
 			return nil, nil
 		}
-		client.RestrictToUser(*userID)
+		client.RestrictToOwner(*userID)
 	} else if !allUsers || (allUsers && !auth.IsAdmin) {
-		client.RestrictToUser(auth.UserID)
+		client.RestrictToOwner(auth.UserID)
 	}
 
-	return client.ListAll()
+	resources, err := client.ListAll()
+	if err != nil {
+		return nil, err
+	}
+
+	if shared {
+		ids := make([]string, len(resources))
+		for i, resource := range resources {
+			ids[i] = resource.ID
+		}
+
+		teamClient := teamModels.New().AddUserID(auth.UserID)
+		if pagination != nil {
+			teamClient.AddPagination(pagination.Page, pagination.PageSize)
+		}
+
+		teams, err := teamClient.ListAll()
+		if err != nil {
+			return nil, err
+		}
+
+		for _, team := range teams {
+			for _, resource := range team.GetResourceMap() {
+				if resource.Type != teamModels.ResourceTypeVM {
+					continue
+				}
+
+				// skip existing non-shared resources
+				skip := false
+				for _, id := range ids {
+					if resource.ID == id {
+						skip = true
+						break
+					}
+				}
+				if skip {
+					continue
+				}
+
+				vm, err := vmModel.New().GetByID(resource.ID)
+				if err != nil {
+					return nil, err
+				}
+
+				if vm != nil {
+					resources = append(resources, *vm)
+				}
+			}
+		}
+
+		sort.Slice(resources, func(i, j int) bool {
+			return resources[i].CreatedAt.After(resources[j].CreatedAt)
+		})
+
+		// since we fetched from two collections, we need to do pagination manually
+		if pagination != nil {
+			resources = utils.GetPage(resources, pagination.PageSize, pagination.Page)
+		}
+
+	} else {
+		// sort by createdAt
+		sort.Slice(resources, func(i, j int) bool {
+			return resources[i].CreatedAt.After(resources[j].CreatedAt)
+		})
+	}
+
+	return resources, nil
 }
 
 func GetConnectionString(vm *vmModel.VM) (*string, error) {
@@ -461,7 +542,7 @@ func GetUsageByUserID(id string) (*vmModel.Usage, error) {
 
 	usage := &vmModel.Usage{}
 
-	currentVms, err := vmModel.New().RestrictToUser(id).ListAll()
+	currentVms, err := vmModel.New().RestrictToOwner(id).ListAll()
 	if err != nil {
 		return nil, makeError(err)
 	}

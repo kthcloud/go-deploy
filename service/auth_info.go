@@ -1,7 +1,9 @@
 package service
 
 import (
+	"fmt"
 	roleModel "go-deploy/models/config/role"
+	userModel "go-deploy/models/sys/user"
 	"go-deploy/pkg/auth"
 	"go-deploy/pkg/config"
 )
@@ -29,6 +31,25 @@ func CreateAuthInfo(userID string, JwtToken *auth.KeycloakToken, iamGroups []str
 		Roles:    roles,
 		IsAdmin:  isAdmin,
 	}
+}
+
+func CreateAuthInfoFromDB(userID string) (*AuthInfo, error) {
+	user, err := userModel.New().GetByID(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	role := config.Config.GetRole(user.EffectiveRole.Name)
+	if role == nil {
+		return nil, fmt.Errorf("failed to get role from db effective role %s", user.EffectiveRole.Name)
+	}
+
+	return &AuthInfo{
+		UserID:   user.ID,
+		JwtToken: nil,
+		Roles:    []roleModel.Role{*role},
+		IsAdmin:  user.IsAdmin,
+	}, nil
 }
 
 func (authInfo *AuthInfo) GetEffectiveRole() *roleModel.Role {

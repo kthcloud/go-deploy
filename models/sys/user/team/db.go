@@ -1,6 +1,7 @@
 package team
 
 import (
+	"errors"
 	"fmt"
 	"go-deploy/models"
 	"go.mongodb.org/mongo-driver/bson"
@@ -22,11 +23,10 @@ func (client *Client) Create(id, ownerID string, params *CreateParams) (*Team, e
 
 	err := client.CreateIfUnique(id, team, bson.D{{"name", params.Name}})
 	if err != nil {
-		if err == models.UniqueConstraintErr {
+		if errors.Is(err, models.UniqueConstraintErr) {
 			return nil, NameTakenErr
-		} else {
-			return nil, err
 		}
+		return nil, err
 	}
 
 	fetched, err := client.GetByName(params.Name)
@@ -37,7 +37,7 @@ func (client *Client) Create(id, ownerID string, params *CreateParams) (*Team, e
 	return fetched, nil
 }
 
-func (client *Client) GetByIdList(ids []string) ([]Team, error) {
+func (client *Client) ListByIDs(ids []string) ([]Team, error) {
 	if ids == nil || len(ids) == 0 {
 		return make([]Team, 0), nil
 	}
@@ -47,7 +47,7 @@ func (client *Client) GetByIdList(ids []string) ([]Team, error) {
 	return client.ListWithFilter(filter)
 }
 
-func (client *Client) GetByUserID(userID string) ([]Team, error) {
+func (client *Client) ListByUserID(userID string) ([]Team, error) {
 	filter := bson.D{
 		{"$or", bson.A{
 			bson.D{{"ownerId", userID}},

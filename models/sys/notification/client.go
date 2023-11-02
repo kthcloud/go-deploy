@@ -35,9 +35,9 @@ func (client *Client) AddPagination(page, pageSize int) *Client {
 	return client
 }
 
-func (client *Client) RestrictToUser(restrictUserID string) *Client {
-	client.ResourceClient.ExtraFilter = append(client.ResourceClient.ExtraFilter, bson.E{Key: "ownerId", Value: restrictUserID})
-	client.RestrictUserID = &restrictUserID
+func (client *Client) RestrictToOwner(ownerID string) *Client {
+	client.ResourceClient.AddExtraFilter(bson.D{{"ownerId", ownerID}})
+	client.RestrictUserID = &ownerID
 
 	return client
 }

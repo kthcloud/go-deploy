@@ -23,6 +23,19 @@ func WithAuth(context *sys.ClientContext) (*service.AuthInfo, error) {
 	return service.CreateAuthInfo(token.Sub, token, token.Groups), nil
 }
 
+func WithAuthFromDB(userID string) (*service.AuthInfo, error) {
+	makeError := func(error) error {
+		return errors.New("failed to get auth info")
+	}
+
+	auth, err := service.CreateAuthInfoFromDB(userID)
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	return auth, nil
+}
+
 func msgForTag(fe validator.FieldError) string {
 	switch fe.Tag() {
 	case "required":
