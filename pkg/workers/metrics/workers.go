@@ -20,8 +20,8 @@ func metricsWorker(ctx context.Context) {
 
 	metricsFuncMap := map[string]func() error{
 		"users-total":          usersTotal,
-		"daily-active-users":   activeUsers("daily", metrics.KeyDailyActiveUsers, 1),
-		"monthly-active-users": activeUsers("monthly", metrics.KeyMonthlyActiveUsers, 1),
+		"daily-active-users":   activeUsers("daily", metrics.KeyDailyActiveUsers, 2),
+		"monthly-active-users": activeUsers("monthly", metrics.KeyMonthlyActiveUsers, 2),
 		"jobs-total":           jobMetrics(metrics.KeyJobsTotal, nil),
 		"jobs-pending":         jobMetrics(metrics.KeyJobsPending, strPtr(job.StatusPending)),
 		"jobs-running":         jobMetrics(metrics.KeyJobsRunning, strPtr(job.StatusRunning)),
@@ -93,22 +93,30 @@ func activeUsers(frequencyType, key string, count int) func() error {
 
 func getActiveUserMongoPipeline(frequencyType string, count int) mongo.Pipeline {
 	var gte time.Time
+	var lte time.Time
 	var dateFormat string
+
+	now := time.Now()
 
 	switch frequencyType {
 	case "daily":
 		gte = time.Now().AddDate(0, 0, -count)
+		gte = time.Date(gte.Year(), gte.Month(), gte.Day(), 0, 0, 0, 0, time.UTC)
+		lte = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
 		dateFormat = "%Y-%m-%d"
 	case "monthly":
 		gte = time.Now().AddDate(0, -count, 0)
+		gte = time.Date(gte.Year(), gte.Month(), 1, 0, 0, 0, 0, time.UTC)
+		lte = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
 		dateFormat = "%Y-%m"
 	}
 
 	return mongo.Pipeline{
 		bson.D{
 			{"$match", bson.M{
-				"createdAt": bson.M{
-					"$gte": gte,
+				"$and": bson.A{
+					bson.M{"createdAt": bson.M{"$gte": gte}},
+					bson.M{"createdAt": bson.M{"$lte": lte}},
 				},
 			}},
 		},
