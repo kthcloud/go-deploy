@@ -27,7 +27,7 @@ func metricsWorker(ctx context.Context) {
 		"jobs-running":         jobMetrics(metrics.KeyJobsRunning, strPtr(job.StatusRunning)),
 		"jobs-failed":          jobMetrics(metrics.KeyJobsFailed, strPtr(job.StatusFailed)),
 		"jobs-terminated":      jobMetrics(metrics.KeyJobsTerminated, strPtr(job.StatusTerminated)),
-		"jobs-finished":        jobMetrics(metrics.KeyJobsFinished, strPtr(job.StatusFinished)),
+		"jobs-completed":       jobMetrics(metrics.KeyJobsCompleted, strPtr(job.StatusCompleted)),
 	}
 
 	for {
