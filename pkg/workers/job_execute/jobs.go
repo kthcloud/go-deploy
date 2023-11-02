@@ -588,12 +588,12 @@ func repairGPUs(job *jobModel.Job) error {
 }
 
 func createSnapshot(job *jobModel.Job) error {
-	err := assertParameters(job, []string{"vmId", "name", "userCreated"})
+	err := assertParameters(job, []string{"id", "name", "userCreated"})
 	if err != nil {
 		return makeTerminatedError(err)
 	}
 
-	vmID := job.Args["vmId"].(string)
+	vmID := job.Args["id"].(string)
 	name := job.Args["name"].(string)
 	userCreated := job.Args["userCreated"].(bool)
 
