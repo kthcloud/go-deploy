@@ -142,6 +142,8 @@ definitions:
         items:
           $ref: '#/definitions/body.Env'
         type: array
+      healthCheckPath:
+        type: string
       id:
         type: string
       image:
@@ -439,11 +441,15 @@ definitions:
     type: object
   body.TeamMember:
     properties:
+      addedAt:
+        type: string
       email:
         type: string
       id:
         type: string
       joinedAt:
+        type: string
+      memberStatus:
         type: string
       teamRole:
         type: string
@@ -526,7 +532,11 @@ definitions:
         type: boolean
       email:
         type: string
+      firstName:
+        type: string
       id:
+        type: string
+      lastName:
         type: string
       onboarded:
         type: boolean
@@ -555,10 +565,6 @@ definitions:
         maxItems: 1000
         minItems: 0
         type: array
-      username:
-        maxLength: 32
-        minLength: 3
-        type: string
     type: object
   body.VmCommand:
     properties:
@@ -836,6 +842,10 @@ paths:
         in: query
         name: userId
         type: string
+      - description: Include shared
+        in: query
+        name: shared
+        type: boolean
       - description: Page number
         in: query
         name: page

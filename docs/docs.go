@@ -50,6 +50,12 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "boolean",
+                        "description": "Include shared",
+                        "name": "shared",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "Page number",
                         "name": "page",
@@ -2049,6 +2055,9 @@ const docTemplate = `{
                         "$ref": "#/definitions/body.Env"
                     }
                 },
+                "healthCheckPath": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -2484,6 +2493,9 @@ const docTemplate = `{
         "body.TeamMember": {
             "type": "object",
             "properties": {
+                "addedAt": {
+                    "type": "string"
+                },
                 "email": {
                     "type": "string"
                 },
@@ -2491,6 +2503,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "joinedAt": {
+                    "type": "string"
+                },
+                "memberStatus": {
                     "type": "string"
                 },
                 "teamRole": {
@@ -2613,7 +2628,13 @@ const docTemplate = `{
                 "email": {
                     "type": "string"
                 },
+                "firstName": {
+                    "type": "string"
+                },
                 "id": {
+                    "type": "string"
+                },
+                "lastName": {
                     "type": "string"
                 },
                 "onboarded": {
@@ -2655,11 +2676,6 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/body.PublicKey"
                     }
-                },
-                "username": {
-                    "type": "string",
-                    "maxLength": 32,
-                    "minLength": 3
                 }
             }
         },
