@@ -17,9 +17,11 @@ import (
 	"go-deploy/service/deployment_service/k8s_service"
 	"go-deploy/utils"
 	"go-deploy/utils/subsystemutils"
+	"go.mongodb.org/mongo-driver/bson"
 	"log"
 	"sort"
 	"strings"
+	"time"
 )
 
 func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreate) error {
@@ -265,7 +267,9 @@ func Restart(id string) error {
 		return fmt.Errorf("failed to restart deployment. details: %w", err)
 	}
 
-	deployment, err := deploymentModel.New().GetByID(id)
+	client := deploymentModel.New()
+
+	deployment, err := client.GetByID(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -275,21 +279,31 @@ func Restart(id string) error {
 		return nil
 	}
 
+	err = client.SetWithBsonByID(id, bson.D{{"restartedAt", time.Now()}})
+	if err != nil {
+		return makeError(err)
+	}
+
 	started, reason, err := StartActivity(deployment.ID, deploymentModel.ActivityRestarting)
 	if err != nil {
 		return makeError(err)
 	}
+
+	go func() {
+		// the restart is best-effort, so we mimic a reasonable delay
+		time.Sleep(5 * time.Second)
+
+		err = deploymentModel.New().RemoveActivity(deployment.ID, deploymentModel.ActivityRestarting)
+		if err != nil {
+			utils.PrettyPrintError(fmt.Errorf("failed to remove activity %s from deployment %s. details: %w", deploymentModel.ActivityRestarting, deployment.ID, err))
+		}
+	}()
 
 	if !started {
 		return fmt.Errorf("failed to restart deployment. details: %s", reason)
 	}
 
 	err = k8s_service.Restart(id)
-	if err != nil {
-		return makeError(err)
-	}
-
-	err = deploymentModel.New().RemoveActivity(deployment.ID, deploymentModel.ActivityRestarting)
 	if err != nil {
 		return makeError(err)
 	}

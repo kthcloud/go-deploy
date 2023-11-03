@@ -12,8 +12,8 @@ const (
 	DeploymentCiConfigPath   = "/v1/deployments/:deploymentId/ciConfig"
 	DeploymentCommandPath    = "/v1/deployments/:deploymentId/command"
 	DeploymentLogsPath       = "/v1/deployments/:deploymentId/logs-sse"
-	DeploymentHarborHookPath = "/v1/deployments/harbor"
-	DeploymentGitHubHookPath = "/v1/deployments/github"
+	DeploymentHarborHookPath = "/v1/hooks/deployments/harbor"
+	DeploymentGitHubHookPath = "/v1/hooks/deployments/github"
 )
 
 type DeploymentRoutingGroup struct{ RoutingGroupBase }
@@ -32,7 +32,11 @@ func (group *DeploymentRoutingGroup) PrivateRoutes() []Route {
 		{Method: "GET", Pattern: DeploymentCiConfigPath, HandlerFunc: v1_deployment.GetCiConfig},
 		{Method: "POST", Pattern: DeploymentCommandPath, HandlerFunc: v1_deployment.DoCommand},
 		{Method: "GET", Pattern: DeploymentLogsPath, HandlerFunc: v1_deployment.GetLogsSSE, Middleware: []gin.HandlerFunc{middleware.SseSetup()}},
+	}
+}
 
+func (group *DeploymentRoutingGroup) HookRoutes() []Route {
+	return []Route{
 		{Method: "POST", Pattern: DeploymentHarborHookPath, HandlerFunc: v1_deployment.HandleHarborHook},
 		{Method: "POST", Pattern: DeploymentGitHubHookPath, HandlerFunc: v1_deployment.HandleGitHubHook},
 	}

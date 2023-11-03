@@ -190,12 +190,7 @@ func (client *Client) RestartDeployment(id string) error {
 		return makeError(err)
 	}
 
-	err = client.waitDeploymentReady(context.TODO(), deployment.Namespace, deployment.Name)
-	if err != nil {
-		return makeError(err)
-	}
-
-	log.Println("deployment", deployment.Name, "restarted")
+	log.Println("deployment", id, "restarted")
 
 	return nil
 }
