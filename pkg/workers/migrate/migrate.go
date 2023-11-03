@@ -33,7 +33,5 @@ func Migrate() {
 //
 // add a date to the migration name to make it easier to identify.
 func getMigrations() map[string]func() error {
-	return map[string]func() error{
-		git
-	}
+	return map[string]func() error{}
 }
