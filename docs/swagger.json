@@ -38,6 +38,12 @@
                         "in": "query"
                     },
                     {
+                        "type": "boolean",
+                        "description": "Include shared",
+                        "name": "shared",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "Page number",
                         "name": "page",
@@ -2037,6 +2043,9 @@
                         "$ref": "#/definitions/body.Env"
                     }
                 },
+                "healthCheckPath": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -2472,6 +2481,9 @@
         "body.TeamMember": {
             "type": "object",
             "properties": {
+                "addedAt": {
+                    "type": "string"
+                },
                 "email": {
                     "type": "string"
                 },
@@ -2479,6 +2491,9 @@
                     "type": "string"
                 },
                 "joinedAt": {
+                    "type": "string"
+                },
+                "memberStatus": {
                     "type": "string"
                 },
                 "teamRole": {
@@ -2601,7 +2616,13 @@
                 "email": {
                     "type": "string"
                 },
+                "firstName": {
+                    "type": "string"
+                },
                 "id": {
+                    "type": "string"
+                },
+                "lastName": {
                     "type": "string"
                 },
                 "onboarded": {
@@ -2643,11 +2664,6 @@
                     "items": {
                         "$ref": "#/definitions/body.PublicKey"
                     }
-                },
-                "username": {
-                    "type": "string",
-                    "maxLength": 32,
-                    "minLength": 3
                 }
             }
         },
