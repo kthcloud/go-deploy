@@ -1,8 +1,6 @@
 package migrator
 
 import (
-	deploymentModel "go-deploy/models/sys/deployment"
-	"go-deploy/service"
 	"log"
 )
 
@@ -35,38 +33,5 @@ func Migrate() {
 //
 // add a date to the migration name to make it easier to identify.
 func getMigrations() map[string]func() error {
-	return map[string]func() error{
-		"addTlsSecretNameForIngressesWithoutCustomCert_2023_10_19": addTlsSecretNameForIngressesWithoutCustomCert_2023_10_19,
-	}
-}
-
-func addTlsSecretNameForIngressesWithoutCustomCert_2023_10_19() error {
-	deployments, err := deploymentModel.New().ListAll()
-	if err != nil {
-		return err
-	}
-
-	for _, deployment := range deployments {
-		if k8sIngress := deployment.Subsystems.K8s.GetIngress(deployment.Name); service.Created(k8sIngress) {
-			if k8sIngress.CustomCert != nil {
-				continue
-			}
-
-			if k8sIngress.TlsSecret != nil {
-				continue
-			}
-
-			name := "wildcard-cert"
-			k8sIngress.TlsSecret = &name
-
-			deployment.Subsystems.K8s.SetIngress(deployment.Name, *k8sIngress)
-
-			err := deploymentModel.New().UpdateSubsystemByID(deployment.ID, "k8s.ingressMap", deployment.Subsystems.K8s.IngressMap)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
+	return map[string]func() error{}
 }

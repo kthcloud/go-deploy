@@ -37,7 +37,7 @@ func NewRouter() *gin.Engine {
 	public.GET("/v1/docs/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
 	// hook routing group
-	hook := router.Group("/hooks")
+	hook := router.Group("/")
 
 	groups := routes.RoutingGroups()
 	for _, group := range groups {

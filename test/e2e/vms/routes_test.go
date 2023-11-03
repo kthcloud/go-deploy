@@ -330,7 +330,7 @@ func TestAttachAnyGPU(t *testing.T) {
 	assert.NoError(t, err, "vm was not updated")
 
 	// make sure the job is picked up
-	time.Sleep(5)
+	time.Sleep(5 * time.Second)
 
 	e2e.WaitForJobFinished(t, vmUpdated.JobID, nil)
 	e2e.WaitForVmRunning(t, vm.ID, nil)
@@ -375,7 +375,7 @@ func TestAttachGPU(t *testing.T) {
 	assert.NoError(t, err, "vm was not updated")
 
 	// make sure the job is picked up
-	time.Sleep(5)
+	time.Sleep(5 * time.Second)
 
 	e2e.WaitForJobFinished(t, vmUpdated.JobID, nil)
 	e2e.WaitForVmRunning(t, vm.ID, nil)
@@ -442,7 +442,7 @@ func TestAttachGpuWithAlreadyAttachedID(t *testing.T) {
 	assert.NoError(t, err, "vm was not updated")
 
 	// make sure the job is picked up
-	time.Sleep(5)
+	time.Sleep(5 * time.Second)
 
 	e2e.WaitForJobFinished(t, vmUpdated.JobID, nil)
 	e2e.WaitForVmRunning(t, vm.ID, nil)
@@ -503,7 +503,7 @@ func TestCreateAndRestoreSnapshot(t *testing.T) {
 	// TODO: add tests for snapshot delete
 
 	// make sure the job is picked up
-	time.Sleep(5)
+	time.Sleep(5 * time.Second)
 
 	e2e.WaitForJobFinished(t, snapshotCreated.JobID, nil)
 	e2e.WaitForVmRunning(t, vm.ID, nil)
@@ -536,7 +536,7 @@ func TestCreateAndRestoreSnapshot(t *testing.T) {
 	assert.NoError(t, err, "vm was not updated")
 
 	// make sure the job is picked up
-	time.Sleep(5)
+	time.Sleep(5 * time.Second)
 
 	e2e.WaitForJobFinished(t, vmUpdated.JobID, nil)
 	e2e.WaitForVmRunning(t, vm.ID, nil)
