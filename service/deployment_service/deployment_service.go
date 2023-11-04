@@ -166,6 +166,13 @@ func Update(id string, deploymentUpdate *body.DeploymentUpdate) error {
 		return makeError(err)
 	}
 
+	if deployment.Type == deploymentModel.TypeCustom {
+		err = harbor_service.Update(id, params)
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
 	err = k8s_service.Update(id, params)
 	if err != nil {
 		if errors.Is(err, base.CustomDomainInUseErr) {
@@ -375,6 +382,10 @@ func GetByID(id string) (*deploymentModel.Deployment, error) {
 
 func GetByName(name string) (*deploymentModel.Deployment, error) {
 	return deploymentModel.New().GetByName(name)
+}
+
+func NameAvailable(name string) (bool, error) {
+	return deploymentModel.New().ExistsByID(name)
 }
 
 func ListAuth(allUsers bool, userID *string, shared bool, auth *service.AuthInfo, pagination *query.Pagination) ([]deploymentModel.Deployment, error) {

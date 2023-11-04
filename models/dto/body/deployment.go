@@ -39,6 +39,7 @@ type DeploymentCreateWithMigrationCode struct {
 }
 
 type DeploymentUpdate struct {
+	Name            *string   `json:"name,omitempty" bson:"name,omitempty" binding:"omitempty,required,rfc1035,min=3,max=30"`
 	Private         *bool     `json:"private,omitempty" bson:"private,omitempty" binding:"omitempty,boolean"`
 	Envs            *[]Env    `json:"envs,omitempty" bson:"envs,omitempty" binding:"omitempty,env_list,min=0,max=1000,dive"`
 	Volumes         *[]Volume `json:"volumes,omitempty" bson:"volumes,omitempty" binding:"omitempty,min=0,max=100,dive"`

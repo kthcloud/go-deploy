@@ -368,6 +368,19 @@ func Update(c *gin.Context) {
 		return
 	}
 
+	if requestBody.Name != nil {
+		available, err := deployment_service.NameAvailable(*requestBody.Name)
+		if err != nil {
+			context.ServerError(err, v1.InternalError)
+			return
+		}
+
+		if !available {
+			context.UserError("Name already taken")
+			return
+		}
+	}
+
 	canUpdate, reason := deployment_service.CanAddActivity(deployment.ID, deploymentModels.ActivityUpdating)
 	if !canUpdate {
 		context.Locked(reason)

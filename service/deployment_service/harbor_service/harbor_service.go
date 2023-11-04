@@ -149,6 +149,80 @@ func Delete(id string) error {
 	return nil
 }
 
+func Update(id string, params *deploymentModel.UpdateParams) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to update harbor for deployment %s. details: %w", id, err)
+	}
+
+	context, err := NewContext(id)
+	if err != nil {
+		if errors.Is(err, base.DeploymentDeletedErr) {
+			return nil
+		}
+
+		return makeError(err)
+	}
+
+	if context.Deployment.Subsystems.Harbor.Placeholder {
+		log.Println("received update for harbor placeholder. skipping")
+		return nil
+	}
+
+	if params.Name != nil {
+		// updating the name requires moving the repository, since it is a persistent storage
+		// we do this by creating a new repository with its "placeholder" being the first repository
+
+		newRepository := context.Generator.Repository()
+		oldRepository := context.Deployment.Subsystems.Harbor.Repository
+
+		if oldRepository.Name != newRepository.Name &&
+			service.Created(&context.Deployment.Subsystems.Harbor.Project) &&
+			service.Created(&oldRepository) &&
+			service.NotCreated(newRepository) {
+
+			newRepository.Placeholder.RepositoryName = oldRepository.Name
+			newRepository.Placeholder.ProjectName = context.Deployment.Subsystems.Harbor.Project.Name
+
+			err = resources.SsCreator(context.Client.CreateRepository).
+				WithDbFunc(dbFunc(id, "repository")).
+				WithPublic(newRepository).
+				Exec()
+			if err != nil {
+				return makeError(err)
+			}
+
+			err = resources.SsDeleter(context.Client.DeleteRepository).
+				WithResourceID(oldRepository.Name).
+				WithDbFunc(dbFunc(id, "repository")).
+				Exec()
+			if err != nil {
+				return makeError(err)
+			}
+		}
+
+		newRobot := context.Generator.Robot()
+		oldRobot := context.Deployment.Subsystems.Harbor.Robot
+
+		err = resources.SsCreator(context.Client.CreateRobot).
+			WithDbFunc(dbFunc(id, "robot")).
+			WithPublic(newRobot).
+			Exec()
+		if err != nil {
+			return makeError(err)
+		}
+
+		err = resources.SsDeleter(context.Client.DeleteRobot).
+			WithResourceID(oldRobot.ID).
+			WithDbFunc(dbFunc(id, "robot")).
+			Exec()
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	return nil
+}
+
 func Repair(name string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to repair harbor %s. details: %w", name, err)
