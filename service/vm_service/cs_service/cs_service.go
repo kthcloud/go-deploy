@@ -229,8 +229,12 @@ func UpdateCS(vmID string, updateParams *vmModel.UpdateParams) error {
 		}
 	}
 
+	serviceOfferingUpdated := false
+
 	// make sure the vm is using the latest service offering
 	if soID != nil && context.VM.Subsystems.CS.VM.ServiceOfferingID != *soID {
+		serviceOfferingUpdated = true
+
 		// turn it off if it is on, but remember the status
 		status, err := context.Client.GetVmStatus(context.VM.Subsystems.CS.VM.ID)
 		if err != nil {
@@ -263,7 +267,9 @@ func UpdateCS(vmID string, updateParams *vmModel.UpdateParams) error {
 				}
 			}
 		}()
+	}
 
+	if updateParams.Name != nil || serviceOfferingUpdated {
 		vms := context.Generator.VMs()
 		for _, vmPublic := range vms {
 			err = resources.SsUpdater(context.Client.UpdateVM).

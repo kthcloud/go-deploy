@@ -346,6 +346,19 @@ func Update(c *gin.Context) {
 		return
 	}
 
+	if requestBody.Name != nil {
+		available, err := vm_service.NameAvailable(*requestBody.Name)
+		if err != nil {
+			context.ServerError(err, v1.InternalError)
+			return
+		}
+
+		if !available {
+			context.UserError("Name already taken")
+			return
+		}
+	}
+
 	ok, reason, err := vm_service.CheckQuotaUpdate(auth.UserID, vm.ID, &auth.GetEffectiveRole().Quotas, auth, requestBody)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)

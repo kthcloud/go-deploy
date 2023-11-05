@@ -121,6 +121,7 @@ func (p *CreateParams) FromDTO(dto *body.VmCreate, fallbackZone *string, deploym
 }
 
 func (p *UpdateParams) FromDTO(dto *body.VmUpdate) {
+	p.Name = dto.Name
 	p.SnapshotID = dto.SnapshotID
 	if dto.Ports != nil {
 		var ports []Port

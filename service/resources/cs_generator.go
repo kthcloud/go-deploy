@@ -57,6 +57,7 @@ func (cr *CsGenerator) VMs() []models.VmPublic {
 
 	if cr.v.vm != nil {
 		if csVM := &cr.v.vm.Subsystems.CS.VM; service.Created(csVM) {
+			csVM.Name = cr.v.vm.Name
 			csVM.ServiceOfferingID = cr.v.vm.Subsystems.CS.ServiceOffering.ID
 			res = append(res, *csVM)
 			return res

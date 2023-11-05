@@ -6,9 +6,14 @@ import (
 	"go-deploy/models/sys/deployment/subsystems"
 	status_codes2 "go-deploy/pkg/app/status_codes"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
 	"time"
+)
+
+var (
+	NonUniqueFieldErr = fmt.Errorf("non unique field")
 )
 
 func (client *Client) Create(id, ownerID string, params *CreateParams) (*Deployment, error) {
@@ -166,6 +171,10 @@ func (client *Client) UpdateWithParamsByID(id string, params *UpdateParams) erro
 		bson.D{{"$set", bson.D{{"apps", deployment.Apps}}}},
 	)
 	if err != nil {
+		if mongo.IsDuplicateKeyError(err) {
+			return NonUniqueFieldErr
+		}
+
 		return fmt.Errorf("failed to update deployment %s. details: %w", id, err)
 	}
 

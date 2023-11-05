@@ -1,6 +1,7 @@
 package vm_service
 
 import (
+	"errors"
 	"fmt"
 	roleModel "go-deploy/models/config/role"
 	"go-deploy/models/dto/body"
@@ -16,6 +17,10 @@ import (
 	"log"
 	"sort"
 	"strings"
+)
+
+var (
+	NonUniqueFieldErr = fmt.Errorf("non unique field")
 )
 
 func Create(id, ownerID string, vmCreate *body.VmCreate) error {
@@ -73,6 +78,10 @@ func Update(id string, dtoVmUpdate *body.VmUpdate) error {
 	} else {
 		err := vmModel.New().UpdateWithParamsByID(id, vmUpdate)
 		if err != nil {
+			if errors.Is(err, vmModel.NonUniqueFieldErr) {
+				return NonUniqueFieldErr
+			}
+
 			return makeError(err)
 		}
 
@@ -300,6 +309,10 @@ func ListAuth(allUsers bool, userID *string, shared bool, auth *service.AuthInfo
 	}
 
 	return resources, nil
+}
+
+func NameAvailable(name string) (bool, error) {
+	return vmModel.New().ExistsByName(name)
 }
 
 func GetConnectionString(vm *vmModel.VM) (*string, error) {

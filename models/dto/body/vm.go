@@ -2,6 +2,40 @@ package body
 
 import "time"
 
+type VmRead struct {
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	OwnerID string `json:"ownerId"`
+	Zone    string `json:"zone"`
+
+	Specs        Specs  `json:"specs,omitempty"`
+	Ports        []Port `json:"ports"`
+	GPU          *VmGpu `json:"gpu,omitempty"`
+	SshPublicKey string `json:"sshPublicKey"`
+
+	Status           string  `json:"status"`
+	ConnectionString *string `json:"connectionString,omitempty"`
+}
+
+type VmCreate struct {
+	Name         string  `json:"name" bson:"name" binding:"required,rfc1035,min=3,max=30"`
+	SshPublicKey string  `json:"sshPublicKey" bson:"sshPublicKey" binding:"required,ssh_public_key"`
+	Ports        []Port  `json:"ports" bson:"ports" binding:"omitempty,port_list_names,port_list_numbers,port_list_http_proxies,min=0,max=100,dive"`
+	CpuCores     int     `json:"cpuCores" bson:"cpuCores" binding:"required,min=2"`
+	RAM          int     `json:"ram" bson:"ram" binding:"required,min=1"`
+	DiskSize     int     `json:"diskSize" bson:"diskSize" binding:"required,min=20"`
+	Zone         *string `json:"zone,omitempty" bson:"zone,omitempty" binding:"omitempty"`
+}
+
+type VmUpdate struct {
+	Name       *string `json:"name,omitempty" bson:"name,omitempty" binding:"omitempty,rfc1035,min=3,max=30"`
+	SnapshotID *string `json:"snapshotId,omitempty" bson:"snapshotId,omitempty" binding:"omitempty,uuid4"`
+	GpuID      *string `json:"gpuId,omitempty" bson:"gpuId,omitempty" binding:"omitempty,min=0,max=100"`
+	Ports      *[]Port `json:"ports,omitempty" bson:"ports,omitempty" binding:"omitempty,port_list_names,port_list_numbers,port_list_http_proxies,min=0,max=1000,dive"`
+	CpuCores   *int    `json:"cpuCores,omitempty" bson:"cpuCores,omitempty" binding:"omitempty,min=1"`
+	RAM        *int    `json:"ram,omitempty" bson:"ram,omitempty" binding:"omitempty,min=1"`
+}
+
 type VmHttpProxy struct {
 	Name         string  `json:"name" bson:"name,omitempty" binding:"required,rfc1035,min=3,max=30"`
 	CustomDomain *string `json:"customDomain,omitempty" bson:"customDomain,omitempty" binding:"omitempty,domain_name,min=1,max=253"`
@@ -30,40 +64,6 @@ type VmGpu struct {
 	LeaseEnd     time.Time `json:"leaseEnd"`
 	LeaseExpired bool      `json:"expired"`
 }
-
-type VmRead struct {
-	ID      string `json:"id"`
-	Name    string `json:"name"`
-	OwnerID string `json:"ownerId"`
-	Zone    string `json:"zone"`
-
-	Specs        Specs  `json:"specs,omitempty"`
-	Ports        []Port `json:"ports"`
-	GPU          *VmGpu `json:"gpu,omitempty"`
-	SshPublicKey string `json:"sshPublicKey"`
-
-	Status           string  `json:"status"`
-	ConnectionString *string `json:"connectionString,omitempty"`
-}
-
-type VmCreate struct {
-	Name         string  `json:"name,omitempty" binding:"required,rfc1035,min=3,max=30"`
-	SshPublicKey string  `json:"sshPublicKey" binding:"required,ssh_public_key"`
-	Ports        []Port  `json:"ports" bson:"ports" binding:"omitempty,port_list_names,port_list_numbers,port_list_http_proxies,min=0,max=100,dive"`
-	CpuCores     int     `json:"cpuCores" bson:"cpuCores" binding:"required,min=2"`
-	RAM          int     `json:"ram" bson:"ram" binding:"required,min=1"`
-	DiskSize     int     `json:"diskSize" bson:"diskSize" binding:"required,min=20"`
-	Zone         *string `json:"zone,omitempty" bson:"zone,omitempty" binding:"omitempty"`
-}
-
-type VmUpdate struct {
-	SnapshotID *string `json:"snapshotId,omitempty" bson:"snapshotId,omitempty" binding:"omitempty,uuid4"`
-	GpuID      *string `json:"gpuId,omitempty" bson:"gpuId,omitempty" binding:"omitempty,min=0,max=100"`
-	Ports      *[]Port `json:"ports,omitempty" bson:"ports,omitempty" binding:"omitempty,port_list_names,port_list_numbers,port_list_http_proxies,min=0,max=1000,dive"`
-	CpuCores   *int    `json:"cpuCores,omitempty" bson:"cpuCores,omitempty" binding:"omitempty,min=1"`
-	RAM        *int    `json:"ram,omitempty" bson:"ram,omitempty" binding:"omitempty,min=1"`
-}
-
 type VmCreated struct {
 	ID    string `json:"id"`
 	JobID string `json:"jobId"`

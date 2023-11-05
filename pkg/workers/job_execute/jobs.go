@@ -229,6 +229,10 @@ func updateVM(job *jobModel.Job) error {
 
 	err = vm_service.Update(id, &update)
 	if err != nil {
+		if errors.Is(err, vm_service.NonUniqueFieldErr) {
+			return makeTerminatedError(err)
+		}
+
 		return makeFailedError(err)
 	}
 
@@ -413,6 +417,10 @@ func updateDeployment(job *jobModel.Job) error {
 
 	err = deployment_service.Update(id, &update)
 	if err != nil {
+		if errors.Is(err, deployment_service.NonUniqueFieldErr) {
+			return makeTerminatedError(err)
+		}
+
 		return makeFailedError(err)
 	}
 

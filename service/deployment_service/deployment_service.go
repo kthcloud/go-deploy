@@ -24,6 +24,10 @@ import (
 	"time"
 )
 
+var (
+	NonUniqueFieldErr = fmt.Errorf("non unique field")
+)
+
 func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreate) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create deployment. details: %w", err)
@@ -163,6 +167,10 @@ func Update(id string, deploymentUpdate *body.DeploymentUpdate) error {
 
 	err = deploymentModel.New().UpdateWithParamsByID(id, params)
 	if err != nil {
+		if errors.Is(err, deploymentModel.NonUniqueFieldErr) {
+			return NonUniqueFieldErr
+		}
+
 		return makeError(err)
 	}
 
@@ -385,7 +393,7 @@ func GetByName(name string) (*deploymentModel.Deployment, error) {
 }
 
 func NameAvailable(name string) (bool, error) {
-	return deploymentModel.New().ExistsByID(name)
+	return deploymentModel.New().ExistsByName(name)
 }
 
 func ListAuth(allUsers bool, userID *string, shared bool, auth *service.AuthInfo, pagination *query.Pagination) ([]deploymentModel.Deployment, error) {

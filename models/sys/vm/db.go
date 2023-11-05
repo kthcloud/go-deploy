@@ -6,9 +6,14 @@ import (
 	"go-deploy/models"
 	"go-deploy/pkg/app/status_codes"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
 	"time"
+)
+
+var (
+	NonUniqueFieldErr = fmt.Errorf("non unique field")
 )
 
 func (client *Client) Create(id, owner, manager string, params *CreateParams) (bool, error) {
@@ -97,6 +102,7 @@ func (client *Client) DeleteByID(id string) error {
 func (client *Client) UpdateWithParamsByID(id string, update *UpdateParams) error {
 	updateData := bson.D{}
 
+	models.AddIfNotNil(&updateData, "name", update.Name)
 	models.AddIfNotNil(&updateData, "ports", update.Ports)
 	models.AddIfNotNil(&updateData, "specs.cpuCores", update.CpuCores)
 	models.AddIfNotNil(&updateData, "specs.ram", update.RAM)
@@ -110,6 +116,10 @@ func (client *Client) UpdateWithParamsByID(id string, update *UpdateParams) erro
 		bson.D{{"$set", updateData}},
 	)
 	if err != nil {
+		if mongo.IsDuplicateKeyError(err) {
+			return NonUniqueFieldErr
+		}
+
 		return fmt.Errorf("failed to update vm %s. details: %w", id, err)
 	}
 
