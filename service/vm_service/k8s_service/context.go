@@ -19,7 +19,7 @@ type Context struct {
 	Generator      *resources.K8sGenerator
 }
 
-func NewContext(vmID string) (*Context, error) {
+func NewContext(vmID string, ownerID ...string) (*Context, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("error creating k8s service context. details: %w", err)
 	}
@@ -34,7 +34,14 @@ func NewContext(vmID string) (*Context, error) {
 		return nil, makeError(base.DeploymentZoneNotFoundErr)
 	}
 
-	k8sClient, err := withClient(deploymentZone, getNamespaceName(baseContext.VM.OwnerID))
+	var namespace string
+	if len(ownerID) > 0 {
+		namespace = getNamespaceName(ownerID[0])
+	} else {
+		namespace = getNamespaceName(baseContext.VM.OwnerID)
+	}
+
+	k8sClient, err := withClient(deploymentZone, namespace)
 	if err != nil {
 		return nil, makeError(err)
 	}

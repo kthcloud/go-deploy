@@ -3,6 +3,7 @@ package deployment
 import (
 	"context"
 	"fmt"
+	"go-deploy/models"
 	"go-deploy/models/sys/deployment/subsystems"
 	status_codes2 "go-deploy/pkg/app/status_codes"
 	"go.mongodb.org/mongo-driver/bson"
@@ -132,39 +133,18 @@ func (client *Client) UpdateWithParamsByID(id string, params *UpdateParams) erro
 		return nil
 	}
 
-	if params.InternalPort != nil {
-		mainApp.InternalPort = *params.InternalPort
-	}
+	update := bson.D{}
 
-	if params.Envs != nil {
-		mainApp.Envs = *params.Envs
-	}
-
-	if params.Private != nil {
-		mainApp.Private = *params.Private
-	}
-
-	if params.CustomDomain != nil {
-		mainApp.CustomDomain = params.CustomDomain
-	}
-
-	if params.Volumes != nil {
-		mainApp.Volumes = *params.Volumes
-	}
-
-	if params.InitCommands != nil {
-		mainApp.InitCommands = *params.InitCommands
-	}
-
-	if params.Image != nil {
-		mainApp.Image = *params.Image
-	}
-
-	if params.PingPath != nil {
-		mainApp.PingPath = *params.PingPath
-	}
-
-	deployment.Apps["main"] = *mainApp
+	models.AddIfNotNil(&update, "name", params.Name)
+	models.AddIfNotNil(&update, "ownerId", params.OwnerID)
+	models.AddIfNotNil(&update, "apps.main.internalPort", params.InternalPort)
+	models.AddIfNotNil(&update, "apps.main.envs", params.Envs)
+	models.AddIfNotNil(&update, "apps.main.private", params.Private)
+	models.AddIfNotNil(&update, "apps.main.volumes", params.Volumes)
+	models.AddIfNotNil(&update, "apps.main.initCommands", params.InitCommands)
+	models.AddIfNotNil(&update, "apps.main.customDomain", params.CustomDomain)
+	models.AddIfNotNil(&update, "apps.main.image", params.Image)
+	models.AddIfNotNil(&update, "apps.main.pingPath", params.PingPath)
 
 	_, err = client.Collection.UpdateOne(context.TODO(),
 		bson.D{{"id", id}},

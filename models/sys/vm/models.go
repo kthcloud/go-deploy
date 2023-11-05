@@ -57,6 +57,7 @@ type CreateParams struct {
 
 type UpdateParams struct {
 	Name       *string `json:"name"`
+	OwnerID    *string `json:"ownerId"`
 	SnapshotID *string `json:"snapshotId"`
 	Ports      *[]Port `json:"ports"`
 	CpuCores   *int    `json:"cpuCores"`

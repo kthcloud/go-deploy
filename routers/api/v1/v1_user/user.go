@@ -179,7 +179,7 @@ func Get(c *gin.Context) {
 		}
 	} else {
 		effectiveRole = config.Config.GetRole(user.EffectiveRole.Name)
-		user, err = user_service.GetByIdAuth(requestURI.UserID, auth)
+		user, err = user_service.GetAuth(requestURI.UserID, auth)
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return

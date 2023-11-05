@@ -244,6 +244,36 @@ func updateVM(job *jobModel.Job) error {
 	return nil
 }
 
+func updateVmOwner(job *jobModel.Job) error {
+	err := assertParameters(job, []string{"id", "params"})
+	if err != nil {
+		return makeTerminatedError(err)
+	}
+
+	id := job.Args["id"].(string)
+	var params body.VmUpdateOwner
+	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
+	if err != nil {
+		return makeTerminatedError(err)
+	}
+
+	deleted, err := vmDeleted(id)
+	if err != nil {
+		return makeTerminatedError(err)
+	}
+
+	if deleted {
+		return makeTerminatedError(fmt.Errorf("vm is deleted"))
+	}
+
+	err = vm_service.UpdateOwner(id, &params)
+	if err != nil {
+		return makeFailedError(err)
+	}
+
+	return nil
+}
+
 func attachGpuToVM(job *jobModel.Job) error {
 	err := assertParameters(job, []string{"id", "gpuIds", "userId", "leaseDuration"})
 	if err != nil {
@@ -427,6 +457,36 @@ func updateDeployment(job *jobModel.Job) error {
 	err = deploymentModel.New().MarkUpdated(id)
 	if err != nil {
 		return makeTerminatedError(err)
+	}
+
+	return nil
+}
+
+func updateDeploymentOwner(job *jobModel.Job) error {
+	err := assertParameters(job, []string{"id", "params"})
+	if err != nil {
+		return makeTerminatedError(err)
+	}
+
+	id := job.Args["id"].(string)
+	var params body.DeploymentUpdateOwner
+	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
+	if err != nil {
+		return makeTerminatedError(err)
+	}
+
+	deleted, err := deploymentDeleted(id)
+	if err != nil {
+		return makeTerminatedError(err)
+	}
+
+	if deleted {
+		return makeTerminatedError(fmt.Errorf("deployment is deleted"))
+	}
+
+	err = deployment_service.UpdateOwner(id, &params)
+	if err != nil {
+		return makeFailedError(err)
 	}
 
 	return nil

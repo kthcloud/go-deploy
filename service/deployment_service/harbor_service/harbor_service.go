@@ -223,6 +223,66 @@ func Update(id string, params *deploymentModel.UpdateParams) error {
 	return nil
 }
 
+func EnsureOwner(id string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to update harbor owner for deployment %s. details: %w", id, err)
+	}
+
+	context, err := NewContext(id)
+	if err != nil {
+		if errors.Is(err, base.DeploymentDeletedErr) {
+			return nil
+		}
+
+		return makeError(err)
+	}
+
+	if context.Deployment.Subsystems.Harbor.Placeholder {
+		log.Println("received update for harbor placeholder. skipping")
+		return nil
+	}
+
+	// the only manual work we need to do before triggering a repair is
+	//  - ensure the harbor project exists
+	//  - ensure the repository is copied to the new project
+
+	err = resources.SsCreator(context.Client.CreateProject).
+		WithDbFunc(dbFunc(id, "project")).
+		WithPublic(context.Generator.Project()).
+		Exec()
+	if err != nil {
+		return makeError(err)
+	}
+
+	newRepository := context.Generator.Repository()
+	oldRepository := context.Deployment.Subsystems.Harbor.Repository
+
+	if oldRepository.Name != newRepository.Name &&
+		service.Created(&context.Deployment.Subsystems.Harbor.Project) &&
+		service.Created(&oldRepository) &&
+		service.NotCreated(newRepository) {
+
+		newRepository.Placeholder.RepositoryName = oldRepository.Name
+		newRepository.Placeholder.ProjectName = context.Deployment.Subsystems.Harbor.Project.Name
+
+		err = resources.SsCreator(context.Client.CreateRepository).
+			WithDbFunc(dbFunc(id, "repository")).
+			WithPublic(newRepository).
+			Exec()
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	// trigger repair to ensure the other subsystems are updated
+	err = Repair(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
+}
+
 func Repair(name string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to repair harbor %s. details: %w", name, err)

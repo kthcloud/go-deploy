@@ -194,6 +194,41 @@ func Update(id string, deploymentUpdate *body.DeploymentUpdate) error {
 	return nil
 }
 
+func UpdateOwner(id string, params *body.DeploymentUpdateOwner) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to update deployment owner. details: %w", err)
+	}
+
+	deployment, err := deploymentModel.New().GetByID(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if deployment == nil {
+		log.Println("deployment", id, "not found when updating owner. assuming it was deleted")
+		return nil
+	}
+
+	err = deploymentModel.New().UpdateWithParamsByID(id, &deploymentModel.UpdateParams{
+		OwnerID: &params.NewOwnerID,
+	})
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = harbor_service.EnsureOwner(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = k8s_service.EnsureOwner(id, params.OldOwnerID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
+}
+
 func Delete(id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete deployment. details: %w", err)

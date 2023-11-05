@@ -84,6 +84,8 @@ func startJob(job *jobModel.Job) error {
 		go wrapper(deleteVM, job)
 	case jobModel.TypeUpdateVM:
 		go wrapper(updateVM, job)
+	case jobModel.TypeUpdateVmOwner:
+		go wrapper(updateVmOwner, job)
 	case jobModel.TypeAttachGpuToVM:
 		go wrapper(attachGpuToVM, job)
 	case jobModel.TypeDetachGpuFromVM:
@@ -94,6 +96,8 @@ func startJob(job *jobModel.Job) error {
 		go wrapper(deleteDeployment, job)
 	case jobModel.TypeUpdateDeployment:
 		go wrapper(updateDeployment, job)
+	case jobModel.TypeUpdateDeploymentOwner:
+		go wrapper(updateDeploymentOwner, job)
 	case jobModel.TypeBuildDeployments:
 		go wrapper(buildDeployments, job)
 	case jobModel.TypeRepairDeployment:

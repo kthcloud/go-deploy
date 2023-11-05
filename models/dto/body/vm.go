@@ -36,6 +36,11 @@ type VmUpdate struct {
 	RAM        *int    `json:"ram,omitempty" bson:"ram,omitempty" binding:"omitempty,min=1"`
 }
 
+type VmUpdateOwner struct {
+	NewOwnerID string `json:"newOwnerId" bson:"newOwnerId" binding:"required,uuid4"`
+	OldOwnerID string `json:"oldOwnerId" bson:"oldOwnerId" binding:"required,uuid4"`
+}
+
 type VmHttpProxy struct {
 	Name         string  `json:"name" bson:"name,omitempty" binding:"required,rfc1035,min=3,max=30"`
 	CustomDomain *string `json:"customDomain,omitempty" bson:"customDomain,omitempty" binding:"omitempty,domain_name,min=1,max=253"`

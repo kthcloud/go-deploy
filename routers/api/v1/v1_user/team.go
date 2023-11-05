@@ -232,7 +232,7 @@ func DeleteTeam(c *gin.Context) {
 }
 
 func getMember(member *teamModels.Member) *body.TeamMember {
-	user, err := user_service.GetByID(member.ID)
+	user, err := user_service.Get(member.ID)
 	if err != nil {
 		utils.PrettyPrintError(fmt.Errorf("failed to get user when getting team member for team: %s", err))
 		return nil

@@ -14,6 +14,7 @@ import (
 	"go-deploy/service"
 	"go-deploy/service/deployment_service"
 	"go-deploy/service/job_service"
+	"go-deploy/service/user_service"
 	"go-deploy/service/zone_service"
 )
 
@@ -365,6 +366,37 @@ func Update(c *gin.Context) {
 
 	if deployment == nil {
 		context.NotFound("Deployment not found")
+		return
+	}
+
+	if requestBody.OwnerID != nil {
+		exists, err := user_service.Exists(*requestBody.OwnerID)
+		if err != nil {
+			context.ServerError(err, v1.InternalError)
+			return
+		}
+
+		if !exists {
+			context.UserError("User not found")
+			return
+		}
+
+		jobID := uuid.New().String()
+		err = job_service.Create(jobID, auth.UserID, jobModel.TypeUpdateDeploymentOwner, map[string]interface{}{
+			"id":      deployment.ID,
+			"ownerId": *requestBody.OwnerID,
+		})
+
+		if err != nil {
+			context.ServerError(err, v1.InternalError)
+			return
+		}
+
+		context.Ok(body.DeploymentUpdated{
+			ID:    deployment.ID,
+			JobID: jobID,
+		})
+
 		return
 	}
 

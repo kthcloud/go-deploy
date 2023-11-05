@@ -11,6 +11,7 @@ import (
 	"go-deploy/models/sys/vm/gpu"
 	"go-deploy/pkg/config"
 	"go-deploy/service"
+	"go-deploy/service/deployment_service/harbor_service"
 	"go-deploy/service/vm_service/cs_service"
 	"go-deploy/service/vm_service/k8s_service"
 	"go-deploy/utils"
@@ -99,6 +100,41 @@ func Update(id string, dtoVmUpdate *body.VmUpdate) error {
 	}
 
 	err := vmModel.New().RemoveActivity(id, vmModel.ActivityBeingUpdated)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
+}
+
+func UpdateOwner(id string, params *body.VmUpdateOwner) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to update deployment owner. details: %w", err)
+	}
+
+	vm, err := vmModel.New().GetByID(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if vm == nil {
+		log.Println("vm", id, "not found when updating owner. assuming it was deleted")
+		return nil
+	}
+
+	err = vmModel.New().UpdateWithParamsByID(id, &vmModel.UpdateParams{
+		OwnerID: &params.NewOwnerID,
+	})
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = harbor_service.EnsureOwner(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = k8s_service.EnsureOwner(id, params.OldOwnerID)
 	if err != nil {
 		return makeError(err)
 	}

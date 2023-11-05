@@ -17,7 +17,7 @@ type DeploymentContext struct {
 	Generator *resources.K8sGenerator
 }
 
-func NewContext(deploymentID string) (*DeploymentContext, error) {
+func NewContext(deploymentID string, overrideOwnerID ...string) (*DeploymentContext, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("error creating context in deployment helper client. details: %w", err)
 	}
@@ -27,7 +27,14 @@ func NewContext(deploymentID string) (*DeploymentContext, error) {
 		return nil, makeError(err)
 	}
 
-	k8sClient, err := withClient(baseContext.Zone, getNamespaceName(baseContext.Deployment.OwnerID))
+	var namespace string
+	if len(overrideOwnerID) > 0 {
+		namespace = getNamespaceName(overrideOwnerID[0])
+	} else {
+		namespace = getNamespaceName(baseContext.Deployment.OwnerID)
+	}
+
+	k8sClient, err := withClient(baseContext.Zone, namespace)
 	if err != nil {
 		return nil, makeError(err)
 	}

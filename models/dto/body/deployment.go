@@ -40,6 +40,7 @@ type DeploymentCreateWithMigrationCode struct {
 
 type DeploymentUpdate struct {
 	Name            *string   `json:"name,omitempty" bson:"name,omitempty" binding:"omitempty,required,rfc1035,min=3,max=30"`
+	OwnerID         *string   `json:"ownerId,omitempty" bson:"ownerId,omitempty" binding:"omitempty,uuid4"`
 	Private         *bool     `json:"private,omitempty" bson:"private,omitempty" binding:"omitempty,boolean"`
 	Envs            *[]Env    `json:"envs,omitempty" bson:"envs,omitempty" binding:"omitempty,env_list,min=0,max=1000,dive"`
 	Volumes         *[]Volume `json:"volumes,omitempty" bson:"volumes,omitempty" binding:"omitempty,min=0,max=100,dive"`
@@ -47,6 +48,11 @@ type DeploymentUpdate struct {
 	CustomDomain    *string   `json:"customDomain,omitempty" bson:"customDomain,omitempty" binding:"omitempty,domain_name,custom_domain,min=0,max=253"`
 	Image           *string   `json:"image,omitempty,omitempty" bson:"image,omitempty" binding:"omitempty,min=1,max=1000"`
 	HealthCheckPath *string   `json:"healthCheckPath,omitempty" bson:"healthCheckPath,omitempty" binding:"omitempty,min=0,max=1000,health_check_path"`
+}
+
+type DeploymentUpdateOwner struct {
+	NewOwnerID string `json:"newOwnerId" bson:"newOwnerId" binding:"required,uuid4"`
+	OldOwnerID string `json:"oldOwnerId" bson:"oldOwnerId" binding:"required,uuid4"`
 }
 
 type DeploymentBuild struct {
