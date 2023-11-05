@@ -95,6 +95,7 @@ func registerCustomValidators() {
 			"domain_name":            validators.DomainName,
 			"custom_domain":          validators.CustomDomain,
 			"health_check_path":      validators.HealthCheckPath,
+			"team_name":              validators.TeamName,
 			"team_member_list":       validators.TeamMemberList,
 			"team_resource_list":     validators.TeamResourceList,
 		}
