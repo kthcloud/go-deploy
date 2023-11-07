@@ -83,6 +83,7 @@ func (client *Client) UpdateWithParamsByID(id string, update *UpdateParams) erro
 	updateData := bson.D{}
 
 	models.AddIfNotNil(&updateData, "name", update.Name)
+	models.AddIfNotNil(&updateData, "ownerId", update.OwnerID)
 	models.AddIfNotNil(&updateData, "ports", update.Ports)
 	models.AddIfNotNil(&updateData, "specs.cpuCores", update.CpuCores)
 	models.AddIfNotNil(&updateData, "specs.ram", update.RAM)

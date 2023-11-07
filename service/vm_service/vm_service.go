@@ -90,11 +90,9 @@ func Update(id string, dtoVmUpdate *body.VmUpdate) error {
 			return makeError(err)
 		}
 
-		if vmUpdate.Ports != nil {
-			err = k8s_service.Repair(id)
-			if err != nil {
-				return makeError(err)
-			}
+		err = k8s_service.Repair(id)
+		if err != nil {
+			return makeError(err)
 		}
 	}
 
@@ -326,7 +324,12 @@ func ListAuth(allUsers bool, userID *string, shared bool, auth *service.AuthInfo
 }
 
 func NameAvailable(name string) (bool, error) {
-	return vmModel.New().ExistsByName(name)
+	exists, err := vmModel.New().ExistsByName(name)
+	if err != nil {
+		return false, err
+	}
+
+	return !exists, nil
 }
 
 func GetConnectionString(vm *vmModel.VM) (*string, error) {

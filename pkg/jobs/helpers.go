@@ -201,6 +201,7 @@ func updatingOwner(job *jobModel.Job) (bool, error) {
 	filter := bson.D{
 		{"args.id", id},
 		{"type", jobModel.TypeUpdateVmOwner},
+		{"status", bson.D{{"$nin", []string{jobModel.StatusCompleted, jobModel.StatusTerminated}}}},
 	}
 
 	anyUpdatingOwnerJob, err := jobModel.New().AddFilter(filter).ExistsAny()
