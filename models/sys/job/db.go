@@ -48,7 +48,7 @@ func (client *Client) Exists(jobType string, args map[string]interface{}) (bool,
 	filter := bson.D{
 		{"type", jobType},
 		{"args", args},
-		{"status", bson.D{{"$ne", StatusTerminated}}},
+		{"status", bson.D{{"$nin", []string{StatusCompleted, StatusTerminated}}}},
 	}
 	count, err := client.Collection.CountDocuments(context.TODO(), filter)
 	if err != nil {
