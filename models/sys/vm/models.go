@@ -5,17 +5,6 @@ import (
 	"time"
 )
 
-const (
-	ActivityBeingCreated     = "beingCreated"
-	ActivityBeingDeleted     = "beingDeleted"
-	ActivityBeingUpdated     = "beingUpdated"
-	ActivityAttachingGPU     = "attachingGpu"
-	ActivityDetachingGPU     = "detachingGpu"
-	ActivityRepairing        = "repairing"
-	ActivityCreatingSnapshot = "creatingSnapshot"
-	ActivityApplyingSnapshot = "applyingSnapshot"
-)
-
 type PortHttpProxy struct {
 	Name         string  `bson:"name"`
 	CustomDomain *string `bson:"customDomain"`

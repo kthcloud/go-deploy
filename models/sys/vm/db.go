@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"go-deploy/models"
+	"go-deploy/models/sys/activity"
 	"go-deploy/pkg/app/status_codes"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -41,7 +42,7 @@ func (client *Client) Create(id, owner, manager string, params *CreateParams) (b
 		GpuID:        "",
 		SshPublicKey: params.SshPublicKey,
 		Ports:        ports,
-		Activities:   []string{ActivityBeingCreated},
+		Activities:   map[string]activity.Activity{ActivityBeingCreated: {ActivityBeingCreated, time.Now()}},
 		Subsystems:   Subsystems{},
 		Specs: Specs{
 			CpuCores: params.CpuCores,
@@ -89,7 +90,7 @@ func (client *Client) DeleteByID(id string) error {
 		bson.D{{"id", id}},
 		bson.D{
 			{"$set", bson.D{{"deletedAt", time.Now()}}},
-			{"$pull", bson.D{{"activities", ActivityBeingDeleted}}},
+			{"$set", bson.D{{"activities", make(map[string]activity.Activity)}}},
 		},
 	)
 	if err != nil {
@@ -151,7 +152,7 @@ func (client *Client) MarkRepaired(id string) error {
 	filter := bson.D{{"id", id}}
 	update := bson.D{
 		{"$set", bson.D{{"repairedAt", time.Now()}}},
-		{"$pull", bson.D{{"activities", "repairing"}}},
+		{"$unset", bson.D{{"activities.repairing", ""}}},
 	}
 
 	_, err := client.Collection.UpdateOne(context.TODO(), filter, update)
@@ -166,7 +167,7 @@ func (client *Client) MarkUpdated(id string) error {
 	filter := bson.D{{"id", id}}
 	update := bson.D{
 		{"$set", bson.D{{"updatedAt", time.Now()}}},
-		{"$pull", bson.D{{"activities", "updating"}}},
+		{"$unset", bson.D{{"activities.updating", ""}}},
 	}
 
 	_, err := client.Collection.UpdateOne(context.TODO(), filter, update)

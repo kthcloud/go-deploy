@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"go-deploy/models"
+	"go-deploy/models/sys/activity"
 	"go-deploy/models/sys/deployment/subsystems"
 	status_codes2 "go-deploy/pkg/app/status_codes"
 	"go.mongodb.org/mongo-driver/bson"
@@ -43,7 +44,7 @@ func (client *Client) Create(id, ownerID string, params *CreateParams) (*Deploym
 		RepairedAt:  time.Time{},
 		RestartedAt: time.Time{},
 		DeletedAt:   time.Time{},
-		Activities:  []string{ActivityBeingCreated},
+		Activities:  map[string]activity.Activity{ActivityBeingCreated: {ActivityBeingCreated, time.Now()}},
 		Apps:        map[string]App{appName: mainApp},
 		Subsystems: Subsystems{
 			GitLab: subsystems.GitLab{
@@ -106,7 +107,7 @@ func (client *Client) DeleteByID(id string) error {
 		bson.D{{"id", id}},
 		bson.D{
 			{"$set", bson.D{{"deletedAt", time.Now()}}},
-			{"$pull", bson.D{{"activities", ActivityBeingDeleted}}},
+			{"$set", bson.D{{"activities", make(map[string]activity.Activity)}}},
 		},
 	)
 	if err != nil {
@@ -148,7 +149,7 @@ func (client *Client) UpdateWithParamsByID(id string, params *UpdateParams) erro
 
 	_, err = client.Collection.UpdateOne(context.TODO(),
 		bson.D{{"id", id}},
-		bson.D{{"$set", bson.D{{"apps", deployment.Apps}}}},
+		bson.D{{"$set", update}},
 	)
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {
@@ -176,7 +177,7 @@ func (client *Client) MarkRepaired(id string) error {
 	filter := bson.D{{"id", id}}
 	update := bson.D{
 		{"$set", bson.D{{"repairedAt", time.Now()}}},
-		{"$pull", bson.D{{"activities", "repairing"}}},
+		{"$unset", bson.D{{"activities.repairing", ""}}},
 	}
 
 	_, err := client.Collection.UpdateOne(context.TODO(), filter, update)
@@ -191,7 +192,7 @@ func (client *Client) MarkUpdated(id string) error {
 	filter := bson.D{{"id", id}}
 	update := bson.D{
 		{"$set", bson.D{{"updatedAt", time.Now()}}},
-		{"$pull", bson.D{{"activities", "updating"}}},
+		{"$unset", bson.D{{"activities.updating", ""}}},
 	}
 
 	_, err := client.Collection.UpdateOne(context.TODO(), filter, update)

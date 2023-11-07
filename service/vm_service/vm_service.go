@@ -99,11 +99,6 @@ func Update(id string, dtoVmUpdate *body.VmUpdate) error {
 		}
 	}
 
-	err := vmModel.New().RemoveActivity(id, vmModel.ActivityBeingUpdated)
-	if err != nil {
-		return makeError(err)
-	}
-
 	return nil
 }
 
@@ -198,22 +193,6 @@ func Repair(id string) error {
 		log.Println("vm", id, "not ready when repairing.")
 		return nil
 	}
-
-	started, reason, err := StartActivity(vm.ID, vmModel.ActivityRepairing)
-	if err != nil {
-		return makeError(err)
-	}
-
-	if !started {
-		return fmt.Errorf("failed to repair vm. details: %s", reason)
-	}
-
-	defer func() {
-		err = vmModel.New().RemoveActivity(vm.ID, vmModel.ActivityRepairing)
-		if err != nil {
-			utils.PrettyPrintError(fmt.Errorf("failed to remove activity %s from vm %s details: %w", vmModel.ActivityRepairing, vm.Name, err))
-		}
-	}()
 
 	err = cs_service.RepairCS(id)
 	if err != nil {
@@ -427,7 +406,7 @@ func CanAddActivity(vmID, activity string) (bool, string, error) {
 		return !vm.BeingDeleted(), "Resource is being deleted", nil
 	case vmModel.ActivityBeingDeleted:
 		return true, "", nil
-	case vmModel.ActivityBeingUpdated:
+	case vmModel.ActivityUpdating:
 		if vm.DoingOnOfActivities([]string{
 			vmModel.ActivityBeingCreated,
 			vmModel.ActivityBeingDeleted,

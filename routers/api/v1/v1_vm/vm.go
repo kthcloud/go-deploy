@@ -370,7 +370,7 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	started, reason, err := vm_service.StartActivity(vm.ID, vmModel.ActivityBeingUpdated)
+	started, reason, err := vm_service.StartActivity(vm.ID, vmModel.ActivityUpdating)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return

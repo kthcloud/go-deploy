@@ -5,27 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"go-deploy/models"
-	"go-deploy/models/dto/body"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"time"
 )
-
-func (job *Job) ToDTO(statusMessage string) body.JobRead {
-	var lastError *string
-	if len(job.ErrorLogs) > 0 {
-		lastError = &job.ErrorLogs[len(job.ErrorLogs)-1]
-	}
-
-	return body.JobRead{
-		ID:        job.ID,
-		UserID:    job.UserID,
-		Type:      job.Type,
-		Status:    statusMessage,
-		LastError: lastError,
-	}
-}
 
 func (client *Client) Create(id, userID, jobType string, args map[string]interface{}) error {
 	return client.CreateScheduled(id, userID, jobType, time.Now(), args)

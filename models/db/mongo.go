@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
+	"strings"
 	"time"
 )
 
@@ -60,55 +61,58 @@ func (dbCtx *Context) setupMongo() error {
 
 	log.Println("successfully found", len(DB.CollectionDefinitionMap), "collections")
 
-	createdCount := 0
+	ensureCount := 0
 	for _, def := range DB.CollectionDefinitionMap {
 		for _, indexName := range def.Indexes {
 			_, err = DB.GetCollection(def.Name).Indexes().CreateOne(context.Background(), mongo.IndexModel{
 				Keys:    map[string]int{indexName: 1},
 				Options: options.Index().SetUnique(false),
 			})
-			if err != nil {
+			if err != nil && !isIndexExistsError(err) {
 				return makeError(err)
 			}
-			createdCount++
+			
+			ensureCount++
 		}
 	}
 
-	log.Println("ensured", createdCount, "indexes")
+	log.Println("ensured", ensureCount, "indexes")
 
-	createdCount = 0
+	ensureCount = 0
 	for _, def := range DB.CollectionDefinitionMap {
 		for _, indexName := range def.UniqueIndexes {
 			_, err = DB.GetCollection(def.Name).Indexes().CreateOne(context.Background(), mongo.IndexModel{
 				Keys:    map[string]int{indexName: 1},
 				Options: options.Index().SetUnique(true).SetPartialFilterExpression(bson.D{{"deletedAt", bson.D{{"$in", []interface{}{nil, time.Time{}}}}}}),
 			})
-			if err != nil {
+			if err != nil && !isIndexExistsError(err) {
 				return makeError(err)
 			}
-			createdCount++
+
+			ensureCount++
 		}
 	}
 
-	log.Println("ensured", createdCount, "unique indexes")
+	log.Println("ensured", ensureCount, "unique indexes")
 
-	createdCount = 0
+	ensureCount = 0
 	for _, def := range DB.CollectionDefinitionMap {
 		for _, indexName := range def.UniqueIndexes {
 			_, err = DB.GetCollection(def.Name).Indexes().CreateOne(context.Background(), mongo.IndexModel{
 				Keys:    map[string]int{indexName: 1},
 				Options: options.Index().SetUnique(true),
 			})
-			if err != nil {
+			if err != nil && !isIndexExistsError(err) {
 				return makeError(err)
 			}
-			createdCount++
+
+			ensureCount++
 		}
 	}
 
-	log.Println("ensured", createdCount, "totally unique indexes")
+	log.Println("ensured", ensureCount, "totally unique indexes")
 
-	createdCount = 0
+	ensureCount = 0
 	for _, def := range DB.CollectionDefinitionMap {
 		if def.TextIndexFields == nil {
 			continue
@@ -122,13 +126,14 @@ func (dbCtx *Context) setupMongo() error {
 		_, err = DB.GetCollection(def.Name).Indexes().CreateOne(context.Background(), mongo.IndexModel{
 			Keys: keys,
 		})
-		if err != nil {
+		if err != nil && !isIndexExistsError(err) {
 			return makeError(err)
 		}
-		createdCount++
+
+		ensureCount++
 	}
 
-	log.Println("ensured", createdCount, "text indexes")
+	log.Println("ensured", ensureCount, "text indexes")
 
 	return nil
 }
@@ -200,4 +205,16 @@ func getCollectionDefinitions() map[string]CollectionDefinition {
 			TotallyUniqueIndexes: []string{"id"},
 		},
 	}
+}
+
+func isIndexExistsError(err error) bool {
+	if mongo.IsDuplicateKeyError(err) {
+		return true
+	}
+
+	if strings.Contains(err.Error(), "An existing index has the same name as the requested index") {
+		return true
+	}
+
+	return false
 }

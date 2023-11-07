@@ -227,11 +227,6 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 		}
 	}
 
-	err = vmModel.New().RemoveActivity(vmID, vmModel.ActivityAttachingGPU)
-	if err != nil {
-		return makeError(err)
-	}
-
 	return nil
 }
 
@@ -325,11 +320,6 @@ func DetachGPU(vmID, userID string) error {
 	}
 
 	err := DetachGpuSync(vmID, userID)
-	if err != nil {
-		return makeError(err)
-	}
-
-	err = vmModel.New().RemoveActivity(vmID, vmModel.ActivityDetachingGPU)
 	if err != nil {
 		return makeError(err)
 	}

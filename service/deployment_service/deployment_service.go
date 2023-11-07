@@ -272,22 +272,6 @@ func Repair(id string) error {
 		return nil
 	}
 
-	started, reason, err := StartActivity(deployment.ID, deploymentModel.ActivityRepairing)
-	if err != nil {
-		return makeError(err)
-	}
-
-	if !started {
-		return fmt.Errorf("failed to repair deployment. details: %s", reason)
-	}
-
-	defer func() {
-		err = deploymentModel.New().RemoveActivity(deployment.ID, deploymentModel.ActivityRepairing)
-		if err != nil {
-			utils.PrettyPrintError(fmt.Errorf("failed to remove activity %s from deployment %s. details: %w", deploymentModel.ActivityRepairing, deployment.ID, err))
-		}
-	}()
-
 	err = k8s_service.Repair(deployment.ID)
 	if err != nil {
 		if errors.Is(err, base.CustomDomainInUseErr) {
