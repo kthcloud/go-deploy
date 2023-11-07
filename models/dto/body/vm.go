@@ -29,6 +29,7 @@ type VmCreate struct {
 
 type VmUpdate struct {
 	Name       *string `json:"name,omitempty" bson:"name,omitempty" binding:"omitempty,rfc1035,min=3,max=30"`
+	OwnerID    *string `json:"ownerId,omitempty" bson:"ownerId,omitempty" binding:"omitempty,uuid4"`
 	SnapshotID *string `json:"snapshotId,omitempty" bson:"snapshotId,omitempty" binding:"omitempty,uuid4"`
 	GpuID      *string `json:"gpuId,omitempty" bson:"gpuId,omitempty" binding:"omitempty,min=0,max=100"`
 	Ports      *[]Port `json:"ports,omitempty" bson:"ports,omitempty" binding:"omitempty,port_list_names,port_list_numbers,port_list_http_proxies,min=0,max=1000,dive"`

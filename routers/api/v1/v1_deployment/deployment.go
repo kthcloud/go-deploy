@@ -370,6 +370,11 @@ func Update(c *gin.Context) {
 	}
 
 	if requestBody.OwnerID != nil {
+		if *requestBody.OwnerID == deployment.OwnerID {
+			context.UserError("Owner already set")
+			return
+		}
+
 		exists, err := user_service.Exists(*requestBody.OwnerID)
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
@@ -383,8 +388,11 @@ func Update(c *gin.Context) {
 
 		jobID := uuid.New().String()
 		err = job_service.Create(jobID, auth.UserID, jobModel.TypeUpdateDeploymentOwner, map[string]interface{}{
-			"id":      deployment.ID,
-			"ownerId": *requestBody.OwnerID,
+			"id": deployment.ID,
+			"params": body.DeploymentUpdateOwner{
+				NewOwnerID: *requestBody.OwnerID,
+				OldOwnerID: deployment.OwnerID,
+			},
 		})
 
 		if err != nil {

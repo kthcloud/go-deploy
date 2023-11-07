@@ -35,7 +35,7 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 
 	// temporary hard-coded fallback
 	fallbackZone := "se-flem"
-	fallbackImage := fmt.Sprintf("%s/%s/%s", config.Config.Registry.URL, subsystemutils.GetPrefixedName(ownerID), deploymentCreate.Name)
+	fallbackImage := createImagePath(ownerID, deploymentCreate.Name)
 	fallbackPort := config.Config.Deployment.Port
 
 	params := &deploymentModel.CreateParams{}
@@ -51,7 +51,7 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 	}
 
 	if deployment.Type == deploymentModel.TypeCustom {
-		err = harbor_service.Create(deploymentID, ownerID, params)
+		err = harbor_service.Create(deploymentID, params)
 		if err != nil {
 			return makeError(err)
 		}
@@ -209,14 +209,21 @@ func UpdateOwner(id string, params *body.DeploymentUpdateOwner) error {
 		return nil
 	}
 
+	var newImage *string
+	if deployment.Type == deploymentModel.TypeCustom {
+		image := createImagePath(params.NewOwnerID, deployment.Name)
+		newImage = &image
+	}
+
 	err = deploymentModel.New().UpdateWithParamsByID(id, &deploymentModel.UpdateParams{
 		OwnerID: &params.NewOwnerID,
+		Image:   newImage,
 	})
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = harbor_service.EnsureOwner(id)
+	err = harbor_service.EnsureOwner(id, params.OldOwnerID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -286,13 +293,13 @@ func Repair(id string) error {
 	}
 
 	if !deployment.Subsystems.Harbor.Placeholder {
-		err = harbor_service.Repair(deployment.Name)
+		err = harbor_service.Repair(deployment.ID)
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
-	log.Println("successfully repaired deployment", deployment.Name)
+	log.Println("successfully repaired deployment", deployment.ID)
 	return nil
 }
 
@@ -690,4 +697,8 @@ func build(ids []string, params *deploymentModel.BuildParams) error {
 	}
 
 	return nil
+}
+
+func createImagePath(ownerID, name string) string {
+	return fmt.Sprintf("%s/%s/%s", config.Config.Registry.URL, subsystemutils.GetPrefixedName(ownerID), name)
 }

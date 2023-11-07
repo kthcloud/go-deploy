@@ -7,10 +7,11 @@ import (
 	"go-deploy/service"
 	"go-deploy/service/deployment_service/base"
 	"go-deploy/service/resources"
+	"go-deploy/utils/subsystemutils"
 	"log"
 )
 
-func Create(deploymentID, userID string, params *deploymentModel.CreateParams) error {
+func Create(deploymentID string, params *deploymentModel.CreateParams) error {
 	log.Println("setting up harbor for", params.Name)
 
 	makeError := func(err error) error {
@@ -86,14 +87,14 @@ func CreatePlaceholder(id string) error {
 	return nil
 }
 
-func Delete(id string) error {
+func Delete(id string, ownerID ...string) error {
 	log.Println("deleting harbor for", id)
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete harbor for deployment %s. details: %w", id, err)
 	}
 
-	context, err := NewContext(id)
+	context, err := NewContext(id, ownerID...)
 	if err != nil {
 		if errors.Is(err, base.DeploymentDeletedErr) {
 			return nil
@@ -223,12 +224,21 @@ func Update(id string, params *deploymentModel.UpdateParams) error {
 	return nil
 }
 
-func EnsureOwner(id string) error {
+func EnsureOwner(id, oldOwnerID string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update harbor owner for deployment %s. details: %w", id, err)
 	}
 
 	context, err := NewContext(id)
+	if err != nil {
+		if errors.Is(err, base.DeploymentDeletedErr) {
+			return nil
+		}
+
+		return makeError(err)
+	}
+
+	oldOwnerContext, err := NewContext(id, oldOwnerID)
 	if err != nil {
 		if errors.Is(err, base.DeploymentDeletedErr) {
 			return nil
@@ -257,13 +267,13 @@ func EnsureOwner(id string) error {
 	newRepository := context.Generator.Repository()
 	oldRepository := context.Deployment.Subsystems.Harbor.Repository
 
-	if oldRepository.Name != newRepository.Name &&
+	if oldRepository.ID != newRepository.ID &&
 		service.Created(&context.Deployment.Subsystems.Harbor.Project) &&
 		service.Created(&oldRepository) &&
 		service.NotCreated(newRepository) {
 
 		newRepository.Placeholder.RepositoryName = oldRepository.Name
-		newRepository.Placeholder.ProjectName = context.Deployment.Subsystems.Harbor.Project.Name
+		newRepository.Placeholder.ProjectName = subsystemutils.GetPrefixedName(oldOwnerID)
 
 		err = resources.SsCreator(context.Client.CreateRepository).
 			WithDbFunc(dbFunc(id, "repository")).
@@ -272,6 +282,31 @@ func EnsureOwner(id string) error {
 		if err != nil {
 			return makeError(err)
 		}
+
+		err = resources.SsDeleter(oldOwnerContext.Client.DeleteRepository).
+			WithResourceID(oldRepository.Name).
+			WithDbFunc(func(interface{}) error { return nil }).
+			Exec()
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	// remove the old resources
+	err = resources.SsDeleter(oldOwnerContext.Client.DeleteRobot).
+		WithResourceID(context.Deployment.Subsystems.Harbor.Robot.ID).
+		WithDbFunc(dbFunc(id, "robot")).
+		Exec()
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = resources.SsDeleter(func(int) error { return nil }).
+		WithResourceID(context.Deployment.Subsystems.Harbor.Webhook.ID).
+		WithDbFunc(dbFunc(id, "webhook")).
+		Exec()
+	if err != nil {
+		return makeError(err)
 	}
 
 	// trigger repair to ensure the other subsystems are updated
@@ -283,12 +318,12 @@ func EnsureOwner(id string) error {
 	return nil
 }
 
-func Repair(name string) error {
+func Repair(id string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to repair harbor %s. details: %w", name, err)
+		return fmt.Errorf("failed to repair harbor %s. details: %w", id, err)
 	}
 
-	context, err := NewContext(name)
+	context, err := NewContext(id)
 	if err != nil {
 		if errors.Is(err, base.DeploymentDeletedErr) {
 			return nil
@@ -303,7 +338,16 @@ func Repair(name string) error {
 			context.Client.CreateProject,
 			context.Client.UpdateProject,
 			func(int) error { return nil },
-		).WithResourceID(project.ID).WithDbFunc(dbFunc(name, "project")).Exec()
+		).WithResourceID(project.ID).WithDbFunc(dbFunc(id, "project")).WithGenPublic(context.Generator.Project()).Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
+	} else {
+		err = resources.SsCreator(context.Client.CreateProject).
+			WithDbFunc(dbFunc(id, "project")).
+			WithPublic(context.Generator.Project()).
+			Exec()
 
 		if err != nil {
 			return makeError(err)
@@ -316,8 +360,16 @@ func Repair(name string) error {
 			context.Client.CreateRobot,
 			context.Client.UpdateRobot,
 			context.Client.DeleteRobot,
-		).WithResourceID(robot.ID).WithDbFunc(dbFunc(name, "robot")).Exec()
+		).WithResourceID(robot.ID).WithDbFunc(dbFunc(id, "robot")).WithGenPublic(context.Generator.Robot()).Exec()
 
+		if err != nil {
+			return makeError(err)
+		}
+	} else {
+		err = resources.SsCreator(context.Client.CreateRobot).
+			WithDbFunc(dbFunc(id, "robot")).
+			WithPublic(context.Generator.Robot()).
+			Exec()
 		if err != nil {
 			return makeError(err)
 		}
@@ -329,7 +381,16 @@ func Repair(name string) error {
 			context.Client.CreateRepository,
 			context.Client.UpdateRepository,
 			context.Client.DeleteRepository,
-		).WithResourceID(repo.Name).WithDbFunc(dbFunc(name, "repository")).Exec()
+		).WithResourceID(repo.Name).WithDbFunc(dbFunc(id, "repository")).WithGenPublic(context.Generator.Repository()).Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
+	} else {
+		err = resources.SsCreator(context.Client.CreateRepository).
+			WithDbFunc(dbFunc(id, "repository")).
+			WithPublic(context.Generator.Repository()).
+			Exec()
 
 		if err != nil {
 			return makeError(err)
@@ -342,7 +403,16 @@ func Repair(name string) error {
 			context.Client.CreateWebhook,
 			context.Client.UpdateWebhook,
 			context.Client.DeleteWebhook,
-		).WithResourceID(hook.ID).WithDbFunc(dbFunc(name, "webhook")).Exec()
+		).WithResourceID(hook.ID).WithDbFunc(dbFunc(id, "webhook")).WithGenPublic(context.Generator.Webhook()).Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
+	} else {
+		err = resources.SsCreator(context.Client.CreateWebhook).
+			WithDbFunc(dbFunc(id, "webhook")).
+			WithPublic(context.Generator.Webhook()).
+			Exec()
 
 		if err != nil {
 			return makeError(err)

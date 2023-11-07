@@ -5,6 +5,7 @@ import (
 	"go-deploy/models/sys/base"
 	"go-deploy/models/sys/base/resource"
 	"go.mongodb.org/mongo-driver/bson"
+	"time"
 )
 
 type Client struct {
@@ -20,6 +21,18 @@ func New() *Client {
 			Pagination:     nil,
 		},
 	}
+}
+
+func (client *Client) ExcludeScheduled() *Client {
+	client.AddExtraFilter(bson.D{{"runAfter", bson.D{{"$lte", time.Now()}}}})
+
+	return client
+}
+
+func (client *Client) ExcludeIDs(ids ...string) *Client {
+	client.AddExtraFilter(bson.D{{"id", bson.D{{"$nin", ids}}}})
+
+	return client
 }
 
 func (client *Client) AddFilter(filter bson.D) *Client {

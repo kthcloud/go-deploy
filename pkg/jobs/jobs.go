@@ -59,7 +59,7 @@ func DeleteVM(job *jobModel.Job) error {
 		return makeTerminatedError(err)
 	}
 
-	relatedJobs, err := jobModel.New().AddFilter(bson.D{{"id", bson.M{"$ne": job.ID}}}).GetByArgs(map[string]interface{}{"id": id})
+	relatedJobs, err := jobModel.New().ExcludeScheduled().ExcludeIDs(job.ID).GetByArgs(map[string]interface{}{"id": id})
 	if err != nil {
 		return makeTerminatedError(err)
 	}
@@ -104,14 +104,14 @@ func DeleteVM(job *jobModel.Job) error {
 }
 
 func UpdateVM(job *jobModel.Job) error {
-	err := assertParameters(job, []string{"id", "update"})
+	err := assertParameters(job, []string{"id", "params"})
 	if err != nil {
 		return makeTerminatedError(err)
 	}
 
 	id := job.Args["id"].(string)
 	var update body.VmUpdate
-	err = mapstructure.Decode(job.Args["update"].(map[string]interface{}), &update)
+	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &update)
 	if err != nil {
 		return makeTerminatedError(err)
 	}
@@ -277,14 +277,14 @@ func DeleteDeployment(job *jobModel.Job) error {
 }
 
 func UpdateDeployment(job *jobModel.Job) error {
-	err := assertParameters(job, []string{"id", "update"})
+	err := assertParameters(job, []string{"id", "params"})
 	if err != nil {
 		return makeTerminatedError(err)
 	}
 
 	id := job.Args["id"].(string)
 	var update body.DeploymentUpdate
-	err = mapstructure.Decode(job.Args["update"].(map[string]interface{}), &update)
+	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &update)
 	if err != nil {
 		return makeTerminatedError(err)
 	}

@@ -11,7 +11,6 @@ import (
 	"go-deploy/models/sys/vm/gpu"
 	"go-deploy/pkg/config"
 	"go-deploy/service"
-	"go-deploy/service/deployment_service/harbor_service"
 	"go-deploy/service/vm_service/cs_service"
 	"go-deploy/service/vm_service/k8s_service"
 	"go-deploy/utils"
@@ -120,11 +119,6 @@ func UpdateOwner(id string, params *body.VmUpdateOwner) error {
 	err = vmModel.New().UpdateWithParamsByID(id, &vmModel.UpdateParams{
 		OwnerID: &params.NewOwnerID,
 	})
-	if err != nil {
-		return makeError(err)
-	}
-
-	err = harbor_service.EnsureOwner(id)
 	if err != nil {
 		return makeError(err)
 	}
