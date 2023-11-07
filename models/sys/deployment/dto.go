@@ -167,7 +167,9 @@ func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZone, fallbac
 }
 
 func (p *UpdateParams) FromDTO(dto *body.DeploymentUpdate, deploymentType string) {
-	p.Name = dto.Name
+	if dto.Name != nil {
+		p.Name = dto.Name
+	}
 
 	if dto.Envs != nil {
 		envs := make([]Env, 0)

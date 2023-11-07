@@ -424,7 +424,7 @@ func Update(c *gin.Context) {
 	jobID := uuid.New().String()
 	err = job_service.Create(jobID, auth.UserID, jobModel.TypeUpdateVM, map[string]interface{}{
 		"id":     vm.ID,
-		"update": requestBody,
+		"params": requestBody,
 	})
 
 	if err != nil {

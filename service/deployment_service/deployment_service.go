@@ -169,6 +169,11 @@ func Update(id string, deploymentUpdate *body.DeploymentUpdate) error {
 	params := &deploymentModel.UpdateParams{}
 	params.FromDTO(deploymentUpdate, deployment.Type)
 
+	if params.Name != nil && deployment.Type == deploymentModel.TypeCustom {
+		image := createImagePath(deployment.OwnerID, *params.Name)
+		params.Image = &image
+	}
+
 	err = deploymentModel.New().UpdateWithParamsByID(id, params)
 	if err != nil {
 		if errors.Is(err, deploymentModel.NonUniqueFieldErr) {
@@ -423,7 +428,12 @@ func GetByName(name string) (*deploymentModel.Deployment, error) {
 }
 
 func NameAvailable(name string) (bool, error) {
-	return deploymentModel.New().ExistsByName(name)
+	exists, err := deploymentModel.New().ExistsByName(name)
+	if err != nil {
+		return false, err
+	}
+
+	return !exists, nil
 }
 
 func ListAuth(allUsers bool, userID *string, shared bool, auth *service.AuthInfo, pagination *query.Pagination) ([]deploymentModel.Deployment, error) {

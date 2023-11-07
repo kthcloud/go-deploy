@@ -103,48 +103,36 @@ func Delete(id string, ownerID ...string) error {
 		return makeError(err)
 	}
 
-	if hook := &context.Deployment.Subsystems.Harbor.Webhook; service.Created(hook) {
-		err = resources.SsDeleter(func(int) error { return nil }).
-			WithResourceID(hook.ID).
-			WithDbFunc(dbFunc(id, "webhook")).
-			Exec()
-
-		if err != nil {
-			return makeError(err)
-		}
+	err = resources.SsDeleter(func(int) error { return nil }).
+		WithResourceID(context.Deployment.Subsystems.Harbor.Webhook.ID).
+		WithDbFunc(dbFunc(id, "webhook")).
+		Exec()
+	if err != nil {
+		return makeError(err)
 	}
 
-	if repo := &context.Deployment.Subsystems.Harbor.Repository; service.Created(repo) {
-		err = resources.SsDeleter(context.Client.DeleteRepository).
-			WithResourceID(repo.Name).
-			WithDbFunc(dbFunc(id, "repository")).
-			Exec()
-
-		if err != nil {
-			return makeError(err)
-		}
+	err = resources.SsDeleter(context.Client.DeleteRepository).
+		WithResourceID(context.Deployment.Subsystems.Harbor.Repository.Name).
+		WithDbFunc(dbFunc(id, "repository")).
+		Exec()
+	if err != nil {
+		return makeError(err)
 	}
 
-	if robot := &context.Deployment.Subsystems.Harbor.Robot; service.Created(robot) {
-		err = resources.SsDeleter(context.Client.DeleteRobot).
-			WithResourceID(robot.ID).
-			WithDbFunc(dbFunc(id, "robot")).
-			Exec()
-
-		if err != nil {
-			return makeError(err)
-		}
+	err = resources.SsDeleter(context.Client.DeleteRobot).
+		WithResourceID(context.Deployment.Subsystems.Harbor.Robot.ID).
+		WithDbFunc(dbFunc(id, "robot")).
+		Exec()
+	if err != nil {
+		return makeError(err)
 	}
 
-	if project := &context.Deployment.Subsystems.Harbor.Project; service.Created(project) {
-		err = resources.SsDeleter(func(int) error { return nil }).
-			WithResourceID(project.ID).
-			WithDbFunc(dbFunc(id, "project")).
-			Exec()
-
-		if err != nil {
-			return makeError(err)
-		}
+	err = resources.SsDeleter(func(int) error { return nil }).
+		WithResourceID(context.Deployment.Subsystems.Harbor.Project.ID).
+		WithDbFunc(dbFunc(id, "project")).
+		Exec()
+	if err != nil {
+		return makeError(err)
 	}
 
 	return nil
@@ -194,7 +182,7 @@ func Update(id string, params *deploymentModel.UpdateParams) error {
 
 			err = resources.SsDeleter(context.Client.DeleteRepository).
 				WithResourceID(oldRepository.Name).
-				WithDbFunc(dbFunc(id, "repository")).
+				WithDbFunc(func(interface{}) error { return nil }).
 				Exec()
 			if err != nil {
 				return makeError(err)
@@ -204,20 +192,22 @@ func Update(id string, params *deploymentModel.UpdateParams) error {
 		newRobot := context.Generator.Robot()
 		oldRobot := context.Deployment.Subsystems.Harbor.Robot
 
-		err = resources.SsCreator(context.Client.CreateRobot).
-			WithDbFunc(dbFunc(id, "robot")).
-			WithPublic(newRobot).
-			Exec()
-		if err != nil {
-			return makeError(err)
-		}
+		if oldRobot.Name != newRobot.Name {
+			err = resources.SsCreator(context.Client.CreateRobot).
+				WithDbFunc(dbFunc(id, "robot")).
+				WithPublic(newRobot).
+				Exec()
+			if err != nil {
+				return makeError(err)
+			}
 
-		err = resources.SsDeleter(context.Client.DeleteRobot).
-			WithResourceID(oldRobot.ID).
-			WithDbFunc(dbFunc(id, "robot")).
-			Exec()
-		if err != nil {
-			return makeError(err)
+			err = resources.SsDeleter(context.Client.DeleteRobot).
+				WithResourceID(oldRobot.ID).
+				WithDbFunc(func(interface{}) error { return nil }).
+				Exec()
+			if err != nil {
+				return makeError(err)
+			}
 		}
 	}
 

@@ -430,7 +430,7 @@ func Update(c *gin.Context) {
 	jobID := uuid.New().String()
 	err = job_service.Create(jobID, auth.UserID, jobModel.TypeUpdateDeployment, map[string]interface{}{
 		"id":     deployment.ID,
-		"update": requestBody,
+		"params": requestBody,
 	})
 
 	if err != nil {
