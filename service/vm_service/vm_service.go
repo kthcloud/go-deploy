@@ -35,13 +35,13 @@ func Create(id, ownerID string, vmCreate *body.VmCreate) error {
 	params := &vmModel.CreateParams{}
 	params.FromDTO(vmCreate, &fallback, &deploymentZone)
 
-	created, err := vmModel.New().Create(id, ownerID, config.Config.Manager, params)
+	_, err := vmModel.New().Create(id, ownerID, config.Config.Manager, params)
 	if err != nil {
-		return makeError(err)
-	}
+		if errors.Is(err, vmModel.NonUniqueFieldErr) {
+			return NonUniqueFieldErr
+		}
 
-	if !created {
-		return makeError(fmt.Errorf("vm already exists for another user"))
+		return makeError(err)
 	}
 
 	err = cs_service.Create(id, params)

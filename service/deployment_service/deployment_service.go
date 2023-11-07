@@ -43,6 +43,10 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 
 	deployment, err := deploymentModel.New().Create(deploymentID, ownerID, params)
 	if err != nil {
+		if errors.Is(err, deploymentModel.NonUniqueFieldErr) {
+			return NonUniqueFieldErr
+		}
+
 		return makeError(err)
 	}
 

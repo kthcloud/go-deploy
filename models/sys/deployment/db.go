@@ -6,7 +6,7 @@ import (
 	"go-deploy/models"
 	"go-deploy/models/sys/activity"
 	"go-deploy/models/sys/deployment/subsystems"
-	status_codes2 "go-deploy/pkg/app/status_codes"
+	"go-deploy/pkg/app/status_codes"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -58,44 +58,20 @@ func (client *Client) Create(id, ownerID string, params *CreateParams) (*Deploym
 				},
 			},
 		},
-		StatusMessage: status_codes2.GetMsg(status_codes2.ResourceBeingCreated),
-		StatusCode:    status_codes2.ResourceBeingCreated,
+		StatusMessage: status_codes.GetMsg(status_codes.ResourceBeingCreated),
+		StatusCode:    status_codes.ResourceBeingCreated,
 	}
 
-	filter := bson.D{{"name", params.Name}, {"deletedAt", bson.D{{"$in", []interface{}{time.Time{}, nil}}}}}
-	result, err := client.Collection.UpdateOne(context.TODO(), filter, bson.D{
-		{"$setOnInsert", deployment},
-	}, options.Update().SetUpsert(true))
+	_, err := client.Collection.InsertOne(context.TODO(), deployment)
 	if err != nil {
+		if mongo.IsDuplicateKeyError(err) {
+			return nil, NonUniqueFieldErr
+		}
+
 		return nil, fmt.Errorf("failed to create deployment. details: %w", err)
 	}
 
-	if result.UpsertedCount == 0 {
-		if result.MatchedCount == 1 {
-			fetchedDeployment, err := client.GetByName(params.Name)
-			if err != nil {
-				return nil, err
-			}
-
-			if fetchedDeployment == nil {
-				log.Println(fmt.Errorf("failed to fetch deployment %s after creation. assuming it was deleted", params.Name))
-				return nil, nil
-			}
-
-			if fetchedDeployment.ID == id {
-				return fetchedDeployment, nil
-			}
-		}
-
-		return nil, nil
-	}
-
-	fetchedDeployment, err := client.GetByName(params.Name)
-	if err != nil {
-		return nil, err
-	}
-
-	return fetchedDeployment, nil
+	return client.GetByID(id)
 }
 
 func (client *Client) ListByGitHubWebhookID(id int64) ([]Deployment, error) {

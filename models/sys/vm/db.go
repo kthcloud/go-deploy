@@ -8,8 +8,6 @@ import (
 	"go-deploy/pkg/app/status_codes"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"log"
 	"time"
 )
 
@@ -17,7 +15,7 @@ var (
 	NonUniqueFieldErr = fmt.Errorf("non unique field")
 )
 
-func (client *Client) Create(id, owner, manager string, params *CreateParams) (bool, error) {
+func (client *Client) Create(id, owner, manager string, params *CreateParams) (*VM, error) {
 	var ports []Port
 	if params.Ports != nil {
 		ports = params.Ports
@@ -54,35 +52,16 @@ func (client *Client) Create(id, owner, manager string, params *CreateParams) (b
 		StatusMessage: status_codes.GetMsg(status_codes.ResourceBeingCreated),
 	}
 
-	filter := bson.D{{"name", params.Name}, {"deletedAt", bson.D{{"$in", []interface{}{time.Time{}, nil}}}}}
-	result, err := client.Collection.UpdateOne(context.TODO(), filter, bson.D{
-		{"$setOnInsert", vm},
-	}, options.Update().SetUpsert(true))
+	_, err := client.Collection.InsertOne(context.TODO(), vm)
 	if err != nil {
-		return false, fmt.Errorf("failed to create vm. details: %w", err)
-	}
-
-	if result.UpsertedCount == 0 {
-		if result.MatchedCount == 1 {
-			fetchedVm, err := client.GetByName(params.Name)
-			if err != nil {
-				return false, err
-			}
-
-			if fetchedVm == nil {
-				log.Println(fmt.Errorf("failed to fetch vm %s after creation. assuming it was deleted", params.Name))
-				return false, nil
-			}
-
-			if fetchedVm.ID == id {
-				return true, nil
-			}
+		if mongo.IsDuplicateKeyError(err) {
+			return nil, NonUniqueFieldErr
 		}
 
-		return false, nil
+		return nil, fmt.Errorf("failed to create vm %s. details: %w", id, err)
 	}
 
-	return true, nil
+	return client.GetByID(id)
 }
 
 func (client *Client) DeleteByID(id string) error {

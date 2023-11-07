@@ -16,7 +16,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
-	"strings"
 	"time"
 )
 
@@ -36,7 +35,7 @@ func CreateVM(job *jobModel.Job) error {
 
 	err = vm_service.Create(id, ownerID, &params)
 	if err != nil {
-		if strings.HasSuffix(err.Error(), "vm already exists for another user") {
+		if errors.Is(err, vm_service.NonUniqueFieldErr) {
 			return makeTerminatedError(err)
 		}
 
@@ -210,7 +209,7 @@ func CreateDeployment(job *jobModel.Job) error {
 
 	err = deployment_service.Create(id, ownerID, &params)
 	if err != nil {
-		if strings.HasSuffix(err.Error(), "deployment already exists for another user") {
+		if errors.Is(err, deployment_service.NonUniqueFieldErr) {
 			return makeTerminatedError(err)
 		}
 
