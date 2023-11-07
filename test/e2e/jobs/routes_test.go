@@ -18,7 +18,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestGetList(t *testing.T) {
-	resp := e2e.DoGetRequest(t, "/jobs")
+	resp := e2e.DoGetRequest(t, "/jobs?all=true")
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	var jobsRead []body.JobRead

@@ -1,6 +1,9 @@
 package vm
 
-import "time"
+import (
+	"go-deploy/models/sys/activity"
+	"time"
+)
 
 type VM struct {
 	ID        string `bson:"id"`
@@ -17,11 +20,11 @@ type VM struct {
 	RepairedAt time.Time `bson:"repairedAt"`
 	DeletedAt  time.Time `bson:"deletedAt"`
 
-	NetworkID    string   `bson:"networkId"`
-	GpuID        string   `bson:"gpuId"`
-	SshPublicKey string   `bson:"sshPublicKey"`
-	Ports        []Port   `bson:"ports"`
-	Activities   []string `bson:"activities"`
+	NetworkID    string                       `bson:"networkId"`
+	GpuID        string                       `bson:"gpuId"`
+	SshPublicKey string                       `bson:"sshPublicKey"`
+	Ports        []Port                       `bson:"ports"`
+	Activities   map[string]activity.Activity `bson:"activities"`
 
 	Subsystems Subsystems `bson:"subsystems"`
 	Specs      Specs      `bson:"specs"`
@@ -42,7 +45,7 @@ func (vm *VM) Ready() bool {
 
 func (vm *VM) DoingActivity(activity string) bool {
 	for _, a := range vm.Activities {
-		if a == activity {
+		if a.Name == activity {
 			return true
 		}
 	}

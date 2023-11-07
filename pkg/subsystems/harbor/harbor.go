@@ -45,7 +45,7 @@ func New(config *ClientConf) (*Client, error) {
 
 func createHarborClient(apiUrl, username, password string) (*apiv2.RESTClient, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create harbor client. details: %w", err.Error())
+		return fmt.Errorf("failed to create harbor client. details: %w", err)
 	}
 
 	client, err := apiv2.NewRESTClientForHost(apiUrl, username, password, &config.Options{})

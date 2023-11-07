@@ -99,14 +99,37 @@ func Create(id string, params *vmModels.CreateParams) error {
 	return nil
 }
 
-func Delete(id string) error {
+func EnsureOwner(id, oldOwnerID string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to update k8s owner for vm %s. details: %w", id, err)
+	}
+
+	// since ownership is determined by the namespace, and the namespace owns everything,
+	// we need to recreate everything
+
+	// delete everything in the old namespace
+	err := Delete(id, oldOwnerID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	// create everything in the new namespace
+	err = Repair(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
+}
+
+func Delete(id string, namespace ...string) error {
 	log.Println("deleting k8s for", id)
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete k8s for deployment %s. details: %w", id, err)
 	}
 
-	context, err := NewContext(id)
+	context, err := NewContext(id, namespace...)
 	if err != nil {
 		if errors.Is(err, base.DeploymentDeletedErr) {
 			return nil

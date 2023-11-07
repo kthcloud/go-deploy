@@ -195,6 +195,22 @@ func HealthCheckPath(fl validator.FieldLevel) bool {
 	return true
 }
 
+func TeamName(fl validator.FieldLevel) bool {
+	name, ok := fl.Field().Interface().(string)
+	if !ok {
+		return false
+	}
+	
+	if name[0] == ' ' || name[len(name)-1] == ' ' {
+		return false
+	}
+
+	regex := regexp.MustCompile(`^[a-zA-Z0-9-_]+$`)
+	match := regex.MatchString(name)
+
+	return match
+}
+
 func TeamMemberList(fl validator.FieldLevel) bool {
 	memberList, ok := fl.Field().Interface().([]body.TeamMemberUpdate)
 	if !ok {

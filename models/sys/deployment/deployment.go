@@ -2,6 +2,7 @@ package deployment
 
 import (
 	"fmt"
+	"go-deploy/models/sys/activity"
 	"time"
 )
 
@@ -18,7 +19,7 @@ type Deployment struct {
 	RestartedAt time.Time `bson:"restartedAt"`
 	DeletedAt   time.Time `bson:"deletedAt"`
 
-	Activities []string `bson:"activities"`
+	Activities map[string]activity.Activity `bson:"activities"`
 
 	Apps       map[string]App `bson:"apps"`
 	Subsystems Subsystems     `bson:"subsystems"`
@@ -81,7 +82,7 @@ func (deployment *Deployment) Ready() bool {
 
 func (deployment *Deployment) DoingActivity(activity string) bool {
 	for _, a := range deployment.Activities {
-		if a == activity {
+		if a.Name == activity {
 			return true
 		}
 	}

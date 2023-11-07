@@ -4,14 +4,18 @@ import (
 	"context"
 	"fmt"
 	"go-deploy/models"
+	"go-deploy/models/sys/activity"
 	"go-deploy/pkg/app/status_codes"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"log"
+	"go.mongodb.org/mongo-driver/mongo"
 	"time"
 )
 
-func (client *Client) Create(id, owner, manager string, params *CreateParams) (bool, error) {
+var (
+	NonUniqueFieldErr = fmt.Errorf("non unique field")
+)
+
+func (client *Client) Create(id, owner, manager string, params *CreateParams) (*VM, error) {
 	var ports []Port
 	if params.Ports != nil {
 		ports = params.Ports
@@ -36,7 +40,7 @@ func (client *Client) Create(id, owner, manager string, params *CreateParams) (b
 		GpuID:        "",
 		SshPublicKey: params.SshPublicKey,
 		Ports:        ports,
-		Activities:   []string{ActivityBeingCreated},
+		Activities:   map[string]activity.Activity{ActivityBeingCreated: {ActivityBeingCreated, time.Now()}},
 		Subsystems:   Subsystems{},
 		Specs: Specs{
 			CpuCores: params.CpuCores,
@@ -48,35 +52,16 @@ func (client *Client) Create(id, owner, manager string, params *CreateParams) (b
 		StatusMessage: status_codes.GetMsg(status_codes.ResourceBeingCreated),
 	}
 
-	filter := bson.D{{"name", params.Name}, {"deletedAt", bson.D{{"$in", []interface{}{time.Time{}, nil}}}}}
-	result, err := client.Collection.UpdateOne(context.TODO(), filter, bson.D{
-		{"$setOnInsert", vm},
-	}, options.Update().SetUpsert(true))
+	_, err := client.Collection.InsertOne(context.TODO(), vm)
 	if err != nil {
-		return false, fmt.Errorf("failed to create vm. details: %w", err)
-	}
-
-	if result.UpsertedCount == 0 {
-		if result.MatchedCount == 1 {
-			fetchedVm, err := client.GetByName(params.Name)
-			if err != nil {
-				return false, err
-			}
-
-			if fetchedVm == nil {
-				log.Println(fmt.Errorf("failed to fetch vm %s after creation. assuming it was deleted", params.Name))
-				return false, nil
-			}
-
-			if fetchedVm.ID == id {
-				return true, nil
-			}
+		if mongo.IsDuplicateKeyError(err) {
+			return nil, NonUniqueFieldErr
 		}
 
-		return false, nil
+		return nil, fmt.Errorf("failed to create vm %s. details: %w", id, err)
 	}
 
-	return true, nil
+	return client.GetByID(id)
 }
 
 func (client *Client) DeleteByID(id string) error {
@@ -84,7 +69,7 @@ func (client *Client) DeleteByID(id string) error {
 		bson.D{{"id", id}},
 		bson.D{
 			{"$set", bson.D{{"deletedAt", time.Now()}}},
-			{"$pull", bson.D{{"activities", ActivityBeingDeleted}}},
+			{"$set", bson.D{{"activities", make(map[string]activity.Activity)}}},
 		},
 	)
 	if err != nil {
@@ -97,6 +82,8 @@ func (client *Client) DeleteByID(id string) error {
 func (client *Client) UpdateWithParamsByID(id string, update *UpdateParams) error {
 	updateData := bson.D{}
 
+	models.AddIfNotNil(&updateData, "name", update.Name)
+	models.AddIfNotNil(&updateData, "ownerId", update.OwnerID)
 	models.AddIfNotNil(&updateData, "ports", update.Ports)
 	models.AddIfNotNil(&updateData, "specs.cpuCores", update.CpuCores)
 	models.AddIfNotNil(&updateData, "specs.ram", update.RAM)
@@ -110,6 +97,10 @@ func (client *Client) UpdateWithParamsByID(id string, update *UpdateParams) erro
 		bson.D{{"$set", updateData}},
 	)
 	if err != nil {
+		if mongo.IsDuplicateKeyError(err) {
+			return NonUniqueFieldErr
+		}
+
 		return fmt.Errorf("failed to update vm %s. details: %w", id, err)
 	}
 
@@ -141,7 +132,7 @@ func (client *Client) MarkRepaired(id string) error {
 	filter := bson.D{{"id", id}}
 	update := bson.D{
 		{"$set", bson.D{{"repairedAt", time.Now()}}},
-		{"$pull", bson.D{{"activities", "repairing"}}},
+		{"$unset", bson.D{{"activities.repairing", ""}}},
 	}
 
 	_, err := client.Collection.UpdateOne(context.TODO(), filter, update)
@@ -156,7 +147,7 @@ func (client *Client) MarkUpdated(id string) error {
 	filter := bson.D{{"id", id}}
 	update := bson.D{
 		{"$set", bson.D{{"updatedAt", time.Now()}}},
-		{"$pull", bson.D{{"activities", "updating"}}},
+		{"$unset", bson.D{{"activities.updating", ""}}},
 	}
 
 	_, err := client.Collection.UpdateOne(context.TODO(), filter, update)

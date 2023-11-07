@@ -88,6 +88,8 @@ func msgForTag(fe validator.FieldError) string {
 		return "Must point to the correct interface, either the zone base domain or its public IP"
 	case "health_check_path":
 		return "Must be a valid path (RFC 3986), ex. /healthz or /ping-me"
+	case "team_name":
+		return "Must not start or end with a space and contain only alphanumeric characters, dashes, and underscores"
 	case "team_member_list":
 		return "Every team member must be unique"
 	case "team_resource_list":

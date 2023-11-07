@@ -15,13 +15,20 @@ type Context struct {
 	Generator *resources.HarborGenerator
 }
 
-func NewContext(deploymentID string) (*Context, error) {
+func NewContext(deploymentID string, ownerID ...string) (*Context, error) {
 	baseContext, err := base.NewDeploymentBaseContext(deploymentID)
 	if err != nil {
 		return nil, err
 	}
 
-	harborClient, err := withClient(getProjectName(baseContext.Deployment.OwnerID))
+	var projectName string
+	if len(ownerID) > 0 {
+		projectName = getProjectName(ownerID[0])
+	} else {
+		projectName = getProjectName(baseContext.Deployment.OwnerID)
+	}
+
+	harborClient, err := withClient(projectName)
 	if err != nil {
 		return nil, err
 	}

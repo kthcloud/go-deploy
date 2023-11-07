@@ -8,16 +8,20 @@ import (
 	"sort"
 )
 
-func GetByIdAuth(userID string, auth *service.AuthInfo) (*userModel.User, error) {
-	if userID != auth.UserID && !auth.IsAdmin {
+func GetAuth(id string, auth *service.AuthInfo) (*userModel.User, error) {
+	if id != auth.UserID && !auth.IsAdmin {
 		return nil, nil
 	}
 
-	return userModel.New().GetByID(userID)
+	return userModel.New().GetByID(id)
 }
 
-func GetByID(userID string) (*userModel.User, error) {
-	return userModel.New().GetByID(userID)
+func Get(id string) (*userModel.User, error) {
+	return userModel.New().GetByID(id)
+}
+
+func Exists(id string) (bool, error) {
+	return userModel.New().ExistsByID(id)
 }
 
 func Create(auth *service.AuthInfo) (*userModel.User, error) {

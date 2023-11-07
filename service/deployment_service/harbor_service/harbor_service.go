@@ -7,10 +7,11 @@ import (
 	"go-deploy/service"
 	"go-deploy/service/deployment_service/base"
 	"go-deploy/service/resources"
+	"go-deploy/utils/subsystemutils"
 	"log"
 )
 
-func Create(deploymentID, userID string, params *deploymentModel.CreateParams) error {
+func Create(deploymentID string, params *deploymentModel.CreateParams) error {
 	log.Println("setting up harbor for", params.Name)
 
 	makeError := func(err error) error {
@@ -86,11 +87,60 @@ func CreatePlaceholder(id string) error {
 	return nil
 }
 
-func Delete(id string) error {
+func Delete(id string, ownerID ...string) error {
 	log.Println("deleting harbor for", id)
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete harbor for deployment %s. details: %w", id, err)
+	}
+
+	context, err := NewContext(id, ownerID...)
+	if err != nil {
+		if errors.Is(err, base.DeploymentDeletedErr) {
+			return nil
+		}
+
+		return makeError(err)
+	}
+
+	err = resources.SsDeleter(func(int) error { return nil }).
+		WithResourceID(context.Deployment.Subsystems.Harbor.Webhook.ID).
+		WithDbFunc(dbFunc(id, "webhook")).
+		Exec()
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = resources.SsDeleter(context.Client.DeleteRepository).
+		WithResourceID(context.Deployment.Subsystems.Harbor.Repository.Name).
+		WithDbFunc(dbFunc(id, "repository")).
+		Exec()
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = resources.SsDeleter(context.Client.DeleteRobot).
+		WithResourceID(context.Deployment.Subsystems.Harbor.Robot.ID).
+		WithDbFunc(dbFunc(id, "robot")).
+		Exec()
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = resources.SsDeleter(func(int) error { return nil }).
+		WithResourceID(context.Deployment.Subsystems.Harbor.Project.ID).
+		WithDbFunc(dbFunc(id, "project")).
+		Exec()
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
+}
+
+func Update(id string, params *deploymentModel.UpdateParams) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to update harbor for deployment %s. details: %w", id, err)
 	}
 
 	context, err := NewContext(id)
@@ -102,59 +152,168 @@ func Delete(id string) error {
 		return makeError(err)
 	}
 
-	if hook := &context.Deployment.Subsystems.Harbor.Webhook; service.Created(hook) {
-		err = resources.SsDeleter(func(int) error { return nil }).
-			WithResourceID(hook.ID).
-			WithDbFunc(dbFunc(id, "webhook")).
-			Exec()
-
-		if err != nil {
-			return makeError(err)
-		}
+	if context.Deployment.Subsystems.Harbor.Placeholder {
+		log.Println("received update for harbor placeholder. skipping")
+		return nil
 	}
 
-	if repo := &context.Deployment.Subsystems.Harbor.Repository; service.Created(repo) {
-		err = resources.SsDeleter(context.Client.DeleteRepository).
-			WithResourceID(repo.Name).
-			WithDbFunc(dbFunc(id, "repository")).
-			Exec()
+	if params.Name != nil {
+		// updating the name requires moving the repository, since it is a persistent storage
+		// we do this by creating a new repository with its "placeholder" being the first repository
 
-		if err != nil {
-			return makeError(err)
+		newRepository := context.Generator.Repository()
+		oldRepository := context.Deployment.Subsystems.Harbor.Repository
+
+		if oldRepository.Name != newRepository.Name &&
+			service.Created(&context.Deployment.Subsystems.Harbor.Project) &&
+			service.Created(&oldRepository) &&
+			service.NotCreated(newRepository) {
+
+			newRepository.Placeholder.RepositoryName = oldRepository.Name
+			newRepository.Placeholder.ProjectName = context.Deployment.Subsystems.Harbor.Project.Name
+
+			err = resources.SsCreator(context.Client.CreateRepository).
+				WithDbFunc(dbFunc(id, "repository")).
+				WithPublic(newRepository).
+				Exec()
+			if err != nil {
+				return makeError(err)
+			}
+
+			err = resources.SsDeleter(context.Client.DeleteRepository).
+				WithResourceID(oldRepository.Name).
+				WithDbFunc(func(interface{}) error { return nil }).
+				Exec()
+			if err != nil {
+				return makeError(err)
+			}
 		}
-	}
 
-	if robot := &context.Deployment.Subsystems.Harbor.Robot; service.Created(robot) {
-		err = resources.SsDeleter(context.Client.DeleteRobot).
-			WithResourceID(robot.ID).
-			WithDbFunc(dbFunc(id, "robot")).
-			Exec()
+		newRobot := context.Generator.Robot()
+		oldRobot := context.Deployment.Subsystems.Harbor.Robot
 
-		if err != nil {
-			return makeError(err)
-		}
-	}
+		if oldRobot.Name != newRobot.Name {
+			err = resources.SsCreator(context.Client.CreateRobot).
+				WithDbFunc(dbFunc(id, "robot")).
+				WithPublic(newRobot).
+				Exec()
+			if err != nil {
+				return makeError(err)
+			}
 
-	if project := &context.Deployment.Subsystems.Harbor.Project; service.Created(project) {
-		err = resources.SsDeleter(func(int) error { return nil }).
-			WithResourceID(project.ID).
-			WithDbFunc(dbFunc(id, "project")).
-			Exec()
-
-		if err != nil {
-			return makeError(err)
+			err = resources.SsDeleter(context.Client.DeleteRobot).
+				WithResourceID(oldRobot.ID).
+				WithDbFunc(func(interface{}) error { return nil }).
+				Exec()
+			if err != nil {
+				return makeError(err)
+			}
 		}
 	}
 
 	return nil
 }
 
-func Repair(name string) error {
+func EnsureOwner(id, oldOwnerID string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to repair harbor %s. details: %w", name, err)
+		return fmt.Errorf("failed to update harbor owner for deployment %s. details: %w", id, err)
 	}
 
-	context, err := NewContext(name)
+	context, err := NewContext(id)
+	if err != nil {
+		if errors.Is(err, base.DeploymentDeletedErr) {
+			return nil
+		}
+
+		return makeError(err)
+	}
+
+	oldOwnerContext, err := NewContext(id, oldOwnerID)
+	if err != nil {
+		if errors.Is(err, base.DeploymentDeletedErr) {
+			return nil
+		}
+
+		return makeError(err)
+	}
+
+	if context.Deployment.Subsystems.Harbor.Placeholder {
+		log.Println("received update for harbor placeholder. skipping")
+		return nil
+	}
+
+	// the only manual work we need to do before triggering a repair is
+	//  - ensure the harbor project exists
+	//  - ensure the repository is copied to the new project
+
+	err = resources.SsCreator(context.Client.CreateProject).
+		WithDbFunc(dbFunc(id, "project")).
+		WithPublic(context.Generator.Project()).
+		Exec()
+	if err != nil {
+		return makeError(err)
+	}
+
+	newRepository := context.Generator.Repository()
+	oldRepository := context.Deployment.Subsystems.Harbor.Repository
+
+	if oldRepository.ID != newRepository.ID &&
+		service.Created(&context.Deployment.Subsystems.Harbor.Project) &&
+		service.Created(&oldRepository) &&
+		service.NotCreated(newRepository) {
+
+		newRepository.Placeholder.RepositoryName = oldRepository.Name
+		newRepository.Placeholder.ProjectName = subsystemutils.GetPrefixedName(oldOwnerID)
+
+		err = resources.SsCreator(context.Client.CreateRepository).
+			WithDbFunc(dbFunc(id, "repository")).
+			WithPublic(newRepository).
+			Exec()
+		if err != nil {
+			return makeError(err)
+		}
+
+		err = resources.SsDeleter(oldOwnerContext.Client.DeleteRepository).
+			WithResourceID(oldRepository.Name).
+			WithDbFunc(func(interface{}) error { return nil }).
+			Exec()
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	// remove the old resources
+	err = resources.SsDeleter(oldOwnerContext.Client.DeleteRobot).
+		WithResourceID(context.Deployment.Subsystems.Harbor.Robot.ID).
+		WithDbFunc(dbFunc(id, "robot")).
+		Exec()
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = resources.SsDeleter(func(int) error { return nil }).
+		WithResourceID(context.Deployment.Subsystems.Harbor.Webhook.ID).
+		WithDbFunc(dbFunc(id, "webhook")).
+		Exec()
+	if err != nil {
+		return makeError(err)
+	}
+
+	// trigger repair to ensure the other subsystems are updated
+	err = Repair(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
+}
+
+func Repair(id string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to repair harbor %s. details: %w", id, err)
+	}
+
+	context, err := NewContext(id)
 	if err != nil {
 		if errors.Is(err, base.DeploymentDeletedErr) {
 			return nil
@@ -169,7 +328,16 @@ func Repair(name string) error {
 			context.Client.CreateProject,
 			context.Client.UpdateProject,
 			func(int) error { return nil },
-		).WithResourceID(project.ID).WithDbFunc(dbFunc(name, "project")).Exec()
+		).WithResourceID(project.ID).WithDbFunc(dbFunc(id, "project")).WithGenPublic(context.Generator.Project()).Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
+	} else {
+		err = resources.SsCreator(context.Client.CreateProject).
+			WithDbFunc(dbFunc(id, "project")).
+			WithPublic(context.Generator.Project()).
+			Exec()
 
 		if err != nil {
 			return makeError(err)
@@ -182,8 +350,16 @@ func Repair(name string) error {
 			context.Client.CreateRobot,
 			context.Client.UpdateRobot,
 			context.Client.DeleteRobot,
-		).WithResourceID(robot.ID).WithDbFunc(dbFunc(name, "robot")).Exec()
+		).WithResourceID(robot.ID).WithDbFunc(dbFunc(id, "robot")).WithGenPublic(context.Generator.Robot()).Exec()
 
+		if err != nil {
+			return makeError(err)
+		}
+	} else {
+		err = resources.SsCreator(context.Client.CreateRobot).
+			WithDbFunc(dbFunc(id, "robot")).
+			WithPublic(context.Generator.Robot()).
+			Exec()
 		if err != nil {
 			return makeError(err)
 		}
@@ -195,7 +371,16 @@ func Repair(name string) error {
 			context.Client.CreateRepository,
 			context.Client.UpdateRepository,
 			context.Client.DeleteRepository,
-		).WithResourceID(repo.Name).WithDbFunc(dbFunc(name, "repository")).Exec()
+		).WithResourceID(repo.Name).WithDbFunc(dbFunc(id, "repository")).WithGenPublic(context.Generator.Repository()).Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
+	} else {
+		err = resources.SsCreator(context.Client.CreateRepository).
+			WithDbFunc(dbFunc(id, "repository")).
+			WithPublic(context.Generator.Repository()).
+			Exec()
 
 		if err != nil {
 			return makeError(err)
@@ -208,7 +393,16 @@ func Repair(name string) error {
 			context.Client.CreateWebhook,
 			context.Client.UpdateWebhook,
 			context.Client.DeleteWebhook,
-		).WithResourceID(hook.ID).WithDbFunc(dbFunc(name, "webhook")).Exec()
+		).WithResourceID(hook.ID).WithDbFunc(dbFunc(id, "webhook")).WithGenPublic(context.Generator.Webhook()).Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
+	} else {
+		err = resources.SsCreator(context.Client.CreateWebhook).
+			WithDbFunc(dbFunc(id, "webhook")).
+			WithPublic(context.Generator.Webhook()).
+			Exec()
 
 		if err != nil {
 			return makeError(err)

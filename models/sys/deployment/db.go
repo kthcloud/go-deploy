@@ -3,12 +3,19 @@ package deployment
 import (
 	"context"
 	"fmt"
+	"go-deploy/models"
+	"go-deploy/models/sys/activity"
 	"go-deploy/models/sys/deployment/subsystems"
-	status_codes2 "go-deploy/pkg/app/status_codes"
+	"go-deploy/pkg/app/status_codes"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
 	"time"
+)
+
+var (
+	NonUniqueFieldErr = fmt.Errorf("non unique field")
 )
 
 func (client *Client) Create(id, ownerID string, params *CreateParams) (*Deployment, error) {
@@ -37,7 +44,7 @@ func (client *Client) Create(id, ownerID string, params *CreateParams) (*Deploym
 		RepairedAt:  time.Time{},
 		RestartedAt: time.Time{},
 		DeletedAt:   time.Time{},
-		Activities:  []string{ActivityBeingCreated},
+		Activities:  map[string]activity.Activity{ActivityBeingCreated: {ActivityBeingCreated, time.Now()}},
 		Apps:        map[string]App{appName: mainApp},
 		Subsystems: Subsystems{
 			GitLab: subsystems.GitLab{
@@ -51,44 +58,20 @@ func (client *Client) Create(id, ownerID string, params *CreateParams) (*Deploym
 				},
 			},
 		},
-		StatusMessage: status_codes2.GetMsg(status_codes2.ResourceBeingCreated),
-		StatusCode:    status_codes2.ResourceBeingCreated,
+		StatusMessage: status_codes.GetMsg(status_codes.ResourceBeingCreated),
+		StatusCode:    status_codes.ResourceBeingCreated,
 	}
 
-	filter := bson.D{{"name", params.Name}, {"deletedAt", bson.D{{"$in", []interface{}{time.Time{}, nil}}}}}
-	result, err := client.Collection.UpdateOne(context.TODO(), filter, bson.D{
-		{"$setOnInsert", deployment},
-	}, options.Update().SetUpsert(true))
+	_, err := client.Collection.InsertOne(context.TODO(), deployment)
 	if err != nil {
+		if mongo.IsDuplicateKeyError(err) {
+			return nil, NonUniqueFieldErr
+		}
+
 		return nil, fmt.Errorf("failed to create deployment. details: %w", err)
 	}
 
-	if result.UpsertedCount == 0 {
-		if result.MatchedCount == 1 {
-			fetchedDeployment, err := client.GetByName(params.Name)
-			if err != nil {
-				return nil, err
-			}
-
-			if fetchedDeployment == nil {
-				log.Println(fmt.Errorf("failed to fetch deployment %s after creation. assuming it was deleted", params.Name))
-				return nil, nil
-			}
-
-			if fetchedDeployment.ID == id {
-				return fetchedDeployment, nil
-			}
-		}
-
-		return nil, nil
-	}
-
-	fetchedDeployment, err := client.GetByName(params.Name)
-	if err != nil {
-		return nil, err
-	}
-
-	return fetchedDeployment, nil
+	return client.GetByID(id)
 }
 
 func (client *Client) ListByGitHubWebhookID(id int64) ([]Deployment, error) {
@@ -100,7 +83,7 @@ func (client *Client) DeleteByID(id string) error {
 		bson.D{{"id", id}},
 		bson.D{
 			{"$set", bson.D{{"deletedAt", time.Now()}}},
-			{"$pull", bson.D{{"activities", ActivityBeingDeleted}}},
+			{"$set", bson.D{{"activities", make(map[string]activity.Activity)}}},
 		},
 	)
 	if err != nil {
@@ -127,45 +110,28 @@ func (client *Client) UpdateWithParamsByID(id string, params *UpdateParams) erro
 		return nil
 	}
 
-	if params.InternalPort != nil {
-		mainApp.InternalPort = *params.InternalPort
-	}
+	update := bson.D{}
 
-	if params.Envs != nil {
-		mainApp.Envs = *params.Envs
-	}
-
-	if params.Private != nil {
-		mainApp.Private = *params.Private
-	}
-
-	if params.CustomDomain != nil {
-		mainApp.CustomDomain = params.CustomDomain
-	}
-
-	if params.Volumes != nil {
-		mainApp.Volumes = *params.Volumes
-	}
-
-	if params.InitCommands != nil {
-		mainApp.InitCommands = *params.InitCommands
-	}
-
-	if params.Image != nil {
-		mainApp.Image = *params.Image
-	}
-
-	if params.PingPath != nil {
-		mainApp.PingPath = *params.PingPath
-	}
-
-	deployment.Apps["main"] = *mainApp
+	models.AddIfNotNil(&update, "name", params.Name)
+	models.AddIfNotNil(&update, "ownerId", params.OwnerID)
+	models.AddIfNotNil(&update, "apps.main.internalPort", params.InternalPort)
+	models.AddIfNotNil(&update, "apps.main.envs", params.Envs)
+	models.AddIfNotNil(&update, "apps.main.private", params.Private)
+	models.AddIfNotNil(&update, "apps.main.volumes", params.Volumes)
+	models.AddIfNotNil(&update, "apps.main.initCommands", params.InitCommands)
+	models.AddIfNotNil(&update, "apps.main.customDomain", params.CustomDomain)
+	models.AddIfNotNil(&update, "apps.main.image", params.Image)
+	models.AddIfNotNil(&update, "apps.main.pingPath", params.PingPath)
 
 	_, err = client.Collection.UpdateOne(context.TODO(),
 		bson.D{{"id", id}},
-		bson.D{{"$set", bson.D{{"apps", deployment.Apps}}}},
+		bson.D{{"$set", update}},
 	)
 	if err != nil {
+		if mongo.IsDuplicateKeyError(err) {
+			return NonUniqueFieldErr
+		}
+
 		return fmt.Errorf("failed to update deployment %s. details: %w", id, err)
 	}
 
@@ -187,7 +153,7 @@ func (client *Client) MarkRepaired(id string) error {
 	filter := bson.D{{"id", id}}
 	update := bson.D{
 		{"$set", bson.D{{"repairedAt", time.Now()}}},
-		{"$pull", bson.D{{"activities", "repairing"}}},
+		{"$unset", bson.D{{"activities.repairing", ""}}},
 	}
 
 	_, err := client.Collection.UpdateOne(context.TODO(), filter, update)
@@ -202,7 +168,7 @@ func (client *Client) MarkUpdated(id string) error {
 	filter := bson.D{{"id", id}}
 	update := bson.D{
 		{"$set", bson.D{{"updatedAt", time.Now()}}},
-		{"$pull", bson.D{{"activities", "updating"}}},
+		{"$unset", bson.D{{"activities.updating", ""}}},
 	}
 
 	_, err := client.Collection.UpdateOne(context.TODO(), filter, update)

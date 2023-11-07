@@ -16,6 +16,7 @@ import (
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
 	"go-deploy/service/job_service"
+	"go-deploy/service/user_service"
 	"go-deploy/service/vm_service"
 	"go-deploy/service/zone_service"
 	"go-deploy/utils"
@@ -346,6 +347,58 @@ func Update(c *gin.Context) {
 		return
 	}
 
+	if requestBody.OwnerID != nil {
+		if *requestBody.OwnerID == vm.OwnerID {
+			context.UserError("Owner already set")
+			return
+		}
+
+		exists, err := user_service.Exists(*requestBody.OwnerID)
+		if err != nil {
+			context.ServerError(err, v1.InternalError)
+			return
+		}
+
+		if !exists {
+			context.UserError("User not found")
+			return
+		}
+
+		jobID := uuid.New().String()
+		err = job_service.Create(jobID, auth.UserID, jobModel.TypeUpdateVmOwner, map[string]interface{}{
+			"id": vm.ID,
+			"params": body.VmUpdateOwner{
+				NewOwnerID: *requestBody.OwnerID,
+				OldOwnerID: vm.OwnerID,
+			},
+		})
+
+		if err != nil {
+			context.ServerError(err, v1.InternalError)
+			return
+		}
+
+		context.Ok(body.VmUpdated{
+			ID:    vm.ID,
+			JobID: jobID,
+		})
+
+		return
+	}
+
+	if requestBody.Name != nil {
+		available, err := vm_service.NameAvailable(*requestBody.Name)
+		if err != nil {
+			context.ServerError(err, v1.InternalError)
+			return
+		}
+
+		if !available {
+			context.UserError("Name already taken")
+			return
+		}
+	}
+
 	ok, reason, err := vm_service.CheckQuotaUpdate(auth.UserID, vm.ID, &auth.GetEffectiveRole().Quotas, auth, requestBody)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
@@ -357,7 +410,7 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	started, reason, err := vm_service.StartActivity(vm.ID, vmModel.ActivityBeingUpdated)
+	started, reason, err := vm_service.StartActivity(vm.ID, vmModel.ActivityUpdating)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -371,7 +424,7 @@ func Update(c *gin.Context) {
 	jobID := uuid.New().String()
 	err = job_service.Create(jobID, auth.UserID, jobModel.TypeUpdateVM, map[string]interface{}{
 		"id":     vm.ID,
-		"update": requestBody,
+		"params": requestBody,
 	})
 
 	if err != nil {

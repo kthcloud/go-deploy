@@ -1,6 +1,7 @@
 package vm_service
 
 import (
+	"errors"
 	"fmt"
 	roleModel "go-deploy/models/config/role"
 	"go-deploy/models/dto/body"
@@ -18,6 +19,10 @@ import (
 	"strings"
 )
 
+var (
+	NonUniqueFieldErr = fmt.Errorf("non unique field")
+)
+
 func Create(id, ownerID string, vmCreate *body.VmCreate) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create vm. details: %w", err)
@@ -30,16 +35,16 @@ func Create(id, ownerID string, vmCreate *body.VmCreate) error {
 	params := &vmModel.CreateParams{}
 	params.FromDTO(vmCreate, &fallback, &deploymentZone)
 
-	created, err := vmModel.New().Create(id, ownerID, config.Config.Manager, params)
+	_, err := vmModel.New().Create(id, ownerID, config.Config.Manager, params)
 	if err != nil {
+		if errors.Is(err, vmModel.NonUniqueFieldErr) {
+			return NonUniqueFieldErr
+		}
+
 		return makeError(err)
 	}
 
-	if !created {
-		return makeError(fmt.Errorf("vm already exists for another user"))
-	}
-
-	err = cs_service.CreateCS(id, params)
+	err = cs_service.Create(id, params)
 	if err != nil {
 		return makeError(err)
 	}
@@ -73,23 +78,55 @@ func Update(id string, dtoVmUpdate *body.VmUpdate) error {
 	} else {
 		err := vmModel.New().UpdateWithParamsByID(id, vmUpdate)
 		if err != nil {
+			if errors.Is(err, vmModel.NonUniqueFieldErr) {
+				return NonUniqueFieldErr
+			}
+
 			return makeError(err)
 		}
 
-		err = cs_service.UpdateCS(id, vmUpdate)
+		err = cs_service.Update(id, vmUpdate)
 		if err != nil {
 			return makeError(err)
 		}
 
-		if vmUpdate.Ports != nil {
-			err = k8s_service.Repair(id)
-			if err != nil {
-				return makeError(err)
-			}
+		err = k8s_service.Repair(id)
+		if err != nil {
+			return makeError(err)
 		}
 	}
 
-	err := vmModel.New().RemoveActivity(id, vmModel.ActivityBeingUpdated)
+	return nil
+}
+
+func UpdateOwner(id string, params *body.VmUpdateOwner) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to update deployment owner. details: %w", err)
+	}
+
+	vm, err := vmModel.New().GetByID(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if vm == nil {
+		log.Println("vm", id, "not found when updating owner. assuming it was deleted")
+		return nil
+	}
+
+	err = vmModel.New().UpdateWithParamsByID(id, &vmModel.UpdateParams{
+		OwnerID: &params.NewOwnerID,
+	})
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = cs_service.EnsureOwner(id, params.OldOwnerID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = k8s_service.EnsureOwner(id, params.OldOwnerID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -121,7 +158,7 @@ func Delete(id string) error {
 		return makeError(err)
 	}
 
-	err = cs_service.DeleteCS(vm.ID)
+	err = cs_service.Delete(vm.ID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -154,23 +191,7 @@ func Repair(id string) error {
 		return nil
 	}
 
-	started, reason, err := StartActivity(vm.ID, vmModel.ActivityRepairing)
-	if err != nil {
-		return makeError(err)
-	}
-
-	if !started {
-		return fmt.Errorf("failed to repair vm. details: %s", reason)
-	}
-
-	defer func() {
-		err = vmModel.New().RemoveActivity(vm.ID, vmModel.ActivityRepairing)
-		if err != nil {
-			utils.PrettyPrintError(fmt.Errorf("failed to remove activity %s from vm %s details: %w", vmModel.ActivityRepairing, vm.Name, err))
-		}
-	}()
-
-	err = cs_service.RepairCS(id)
+	err = cs_service.Repair(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -302,6 +323,15 @@ func ListAuth(allUsers bool, userID *string, shared bool, auth *service.AuthInfo
 	return resources, nil
 }
 
+func NameAvailable(name string) (bool, error) {
+	exists, err := vmModel.New().ExistsByName(name)
+	if err != nil {
+		return false, err
+	}
+
+	return !exists, nil
+}
+
 func GetConnectionString(vm *vmModel.VM) (*string, error) {
 	if vm == nil {
 		return nil, nil
@@ -337,7 +367,7 @@ func DoCommand(vm *vmModel.VM, command string) {
 			gpuID = &vm.GpuID
 		}
 
-		err := cs_service.DoCommandCS(csID, gpuID, command, vm.Zone)
+		err := cs_service.DoCommand(csID, gpuID, command, vm.Zone)
 		if err != nil {
 			utils.PrettyPrintError(err)
 			return
@@ -378,7 +408,7 @@ func CanAddActivity(vmID, activity string) (bool, string, error) {
 		return !vm.BeingDeleted(), "Resource is being deleted", nil
 	case vmModel.ActivityBeingDeleted:
 		return true, "", nil
-	case vmModel.ActivityBeingUpdated:
+	case vmModel.ActivityUpdating:
 		if vm.DoingOnOfActivities([]string{
 			vmModel.ActivityBeingCreated,
 			vmModel.ActivityBeingDeleted,

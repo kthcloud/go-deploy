@@ -29,6 +29,15 @@ func (client *ResourceClient[T]) ExistsByID(id string) (bool, error) {
 	return count > 0, nil
 }
 
+func (client *ResourceClient[T]) ExistsByName(name string) (bool, error) {
+	count, err := models.CountResources(client.Collection, models.GroupFilters(bson.D{{"name", name}}, client.ExtraFilter, client.Search, client.IncludeDeleted))
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}
+
 func (client *ResourceClient[T]) ExistsWithFilter(filter bson.D) (bool, error) {
 	count, err := models.CountResources(client.Collection, models.GroupFilters(filter, client.ExtraFilter, client.Search, client.IncludeDeleted))
 	if err != nil {

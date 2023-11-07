@@ -2,6 +2,7 @@ package storage_manager
 
 import (
 	"fmt"
+	"go-deploy/models/sys/activity"
 	"time"
 )
 
@@ -13,8 +14,8 @@ type StorageManager struct {
 	CreatedAt  time.Time `json:"createdAt" bson:"createdAt"`
 	RepairedAt time.Time `json:"repairAt" bson:"repairAt"`
 
-	Activities []string   `json:"activities" bson:"activities"`
-	Subsystems Subsystems `json:"subsystems" bson:"subsystems"`
+	Activities map[string]activity.Activity `json:"activities" bson:"activities"`
+	Subsystems Subsystems                   `json:"subsystems" bson:"subsystems"`
 }
 
 func (storageManager *StorageManager) GetURL() *string {

@@ -6,7 +6,6 @@ import (
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/service"
 	"go-deploy/service/vm_service/cs_service"
-	"go-deploy/utils"
 	"log"
 	"sort"
 )
@@ -86,22 +85,6 @@ func CreateSnapshot(vmID, name string, userCreated bool) error {
 		return fmt.Errorf("vm %s not ready", vmID)
 	}
 
-	started, reason, err := StartActivity(vm.ID, vmModel.ActivityCreatingSnapshot)
-	if err != nil {
-		return makeError(err)
-	}
-
-	if !started {
-		return fmt.Errorf("failed to create snapshot for vm %s. details: %s", vmID, reason)
-	}
-
-	defer func() {
-		err = vmModel.New().RemoveActivity(vm.ID, vmModel.ActivityCreatingSnapshot)
-		if err != nil {
-			utils.PrettyPrintError(fmt.Errorf("failed to remove activity %s from vm %s. details: %w", vmModel.ActivityCreatingSnapshot, vm.Name, err))
-		}
-	}()
-
 	err = cs_service.CreateSnapshotCS(vm.ID, name, userCreated)
 	if err != nil {
 		return makeError(err)
@@ -116,20 +99,7 @@ func ApplySnapshot(id, snapshotID string) error {
 	}
 
 	log.Println("applying snapshot", snapshotID, "to vm", id)
-	started, reason, err := StartActivity(id, vmModel.ActivityApplyingSnapshot)
-	if err != nil {
-		return makeError(err)
-	}
-
-	if !started {
-		return fmt.Errorf("failed to apply snapshot %s to vm %s. details: %s", snapshotID, id, reason)
-	}
-
-	defer func() {
-		_ = vmModel.New().RemoveActivity(id, vmModel.ActivityApplyingSnapshot)
-	}()
-
-	err = cs_service.ApplySnapshotCS(id, snapshotID)
+	err := cs_service.ApplySnapshotCS(id, snapshotID)
 	if err != nil {
 		return makeError(err)
 	}

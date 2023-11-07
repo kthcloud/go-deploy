@@ -227,11 +227,6 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 		}
 	}
 
-	err = vmModel.New().RemoveActivity(vmID, vmModel.ActivityAttachingGPU)
-	if err != nil {
-		return makeError(err)
-	}
-
 	return nil
 }
 
@@ -329,11 +324,6 @@ func DetachGPU(vmID, userID string) error {
 		return makeError(err)
 	}
 
-	err = vmModel.New().RemoveActivity(vmID, vmModel.ActivityDetachingGPU)
-	if err != nil {
-		return makeError(err)
-	}
-
 	return nil
 }
 
@@ -369,7 +359,7 @@ func CanStartOnHost(vmID, host string) (bool, string, error) {
 		return false, "VM not fully created", nil
 	}
 
-	canStart, reason, err := cs_service.CanStartCS(vm.Subsystems.CS.VM.ID, host, vm.Zone)
+	canStart, reason, err := cs_service.CanStart(vm.Subsystems.CS.VM.ID, host, vm.Zone)
 	if err != nil {
 		return false, "", err
 	}

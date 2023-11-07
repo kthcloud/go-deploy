@@ -24,6 +24,10 @@ import (
 	"time"
 )
 
+var (
+	NonUniqueFieldErr = fmt.Errorf("non unique field")
+)
+
 func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreate) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create deployment. details: %w", err)
@@ -31,7 +35,7 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 
 	// temporary hard-coded fallback
 	fallbackZone := "se-flem"
-	fallbackImage := fmt.Sprintf("%s/%s/%s", config.Config.Registry.URL, subsystemutils.GetPrefixedName(ownerID), deploymentCreate.Name)
+	fallbackImage := createImagePath(ownerID, deploymentCreate.Name)
 	fallbackPort := config.Config.Deployment.Port
 
 	params := &deploymentModel.CreateParams{}
@@ -39,6 +43,10 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 
 	deployment, err := deploymentModel.New().Create(deploymentID, ownerID, params)
 	if err != nil {
+		if errors.Is(err, deploymentModel.NonUniqueFieldErr) {
+			return NonUniqueFieldErr
+		}
+
 		return makeError(err)
 	}
 
@@ -47,7 +55,7 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 	}
 
 	if deployment.Type == deploymentModel.TypeCustom {
-		err = harbor_service.Create(deploymentID, ownerID, params)
+		err = harbor_service.Create(deploymentID, params)
 		if err != nil {
 			return makeError(err)
 		}
@@ -161,9 +169,25 @@ func Update(id string, deploymentUpdate *body.DeploymentUpdate) error {
 	params := &deploymentModel.UpdateParams{}
 	params.FromDTO(deploymentUpdate, deployment.Type)
 
+	if params.Name != nil && deployment.Type == deploymentModel.TypeCustom {
+		image := createImagePath(deployment.OwnerID, *params.Name)
+		params.Image = &image
+	}
+
 	err = deploymentModel.New().UpdateWithParamsByID(id, params)
 	if err != nil {
+		if errors.Is(err, deploymentModel.NonUniqueFieldErr) {
+			return NonUniqueFieldErr
+		}
+
 		return makeError(err)
+	}
+
+	if deployment.Type == deploymentModel.TypeCustom {
+		err = harbor_service.Update(id, params)
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	err = k8s_service.Update(id, params)
@@ -174,6 +198,48 @@ func Update(id string, deploymentUpdate *body.DeploymentUpdate) error {
 		} else {
 			return makeError(err)
 		}
+	}
+
+	return nil
+}
+
+func UpdateOwner(id string, params *body.DeploymentUpdateOwner) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to update deployment owner. details: %w", err)
+	}
+
+	deployment, err := deploymentModel.New().GetByID(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if deployment == nil {
+		log.Println("deployment", id, "not found when updating owner. assuming it was deleted")
+		return nil
+	}
+
+	var newImage *string
+	if deployment.Type == deploymentModel.TypeCustom {
+		image := createImagePath(params.NewOwnerID, deployment.Name)
+		newImage = &image
+	}
+
+	err = deploymentModel.New().UpdateWithParamsByID(id, &deploymentModel.UpdateParams{
+		OwnerID: &params.NewOwnerID,
+		Image:   newImage,
+	})
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = harbor_service.EnsureOwner(id, params.OldOwnerID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = k8s_service.EnsureOwner(id, params.OldOwnerID)
+	if err != nil {
+		return makeError(err)
 	}
 
 	return nil
@@ -222,22 +288,6 @@ func Repair(id string) error {
 		return nil
 	}
 
-	started, reason, err := StartActivity(deployment.ID, deploymentModel.ActivityRepairing)
-	if err != nil {
-		return makeError(err)
-	}
-
-	if !started {
-		return fmt.Errorf("failed to repair deployment. details: %s", reason)
-	}
-
-	defer func() {
-		err = deploymentModel.New().RemoveActivity(deployment.ID, deploymentModel.ActivityRepairing)
-		if err != nil {
-			utils.PrettyPrintError(fmt.Errorf("failed to remove activity %s from deployment %s. details: %w", deploymentModel.ActivityRepairing, deployment.ID, err))
-		}
-	}()
-
 	err = k8s_service.Repair(deployment.ID)
 	if err != nil {
 		if errors.Is(err, base.CustomDomainInUseErr) {
@@ -252,13 +302,13 @@ func Repair(id string) error {
 	}
 
 	if !deployment.Subsystems.Harbor.Placeholder {
-		err = harbor_service.Repair(deployment.Name)
+		err = harbor_service.Repair(deployment.ID)
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
-	log.Println("successfully repaired deployment", deployment.Name)
+	log.Println("successfully repaired deployment", deployment.ID)
 	return nil
 }
 
@@ -375,6 +425,15 @@ func GetByID(id string) (*deploymentModel.Deployment, error) {
 
 func GetByName(name string) (*deploymentModel.Deployment, error) {
 	return deploymentModel.New().GetByName(name)
+}
+
+func NameAvailable(name string) (bool, error) {
+	exists, err := deploymentModel.New().ExistsByName(name)
+	if err != nil {
+		return false, err
+	}
+
+	return !exists, nil
 }
 
 func ListAuth(allUsers bool, userID *string, shared bool, auth *service.AuthInfo, pagination *query.Pagination) ([]deploymentModel.Deployment, error) {
@@ -652,4 +711,8 @@ func build(ids []string, params *deploymentModel.BuildParams) error {
 	}
 
 	return nil
+}
+
+func createImagePath(ownerID, name string) string {
+	return fmt.Sprintf("%s/%s/%s", config.Config.Registry.URL, subsystemutils.GetPrefixedName(ownerID), name)
 }

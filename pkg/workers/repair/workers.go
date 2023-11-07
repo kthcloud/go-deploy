@@ -56,7 +56,7 @@ func deploymentRepairer(ctx context.Context) {
 						"id": deployment.ID,
 					})
 					if err != nil {
-						log.Printf("failed to create repair job for deployment %s: %s\n", deployment.Name, err.Error())
+						utils.PrettyPrintError(fmt.Errorf("failed to create repair job for deployment %s. details: %w", deployment.ID, err))
 						continue
 					}
 
@@ -152,7 +152,7 @@ func gpuRepairer(ctx context.Context) {
 			jobID := uuid.New().String()
 			err := job_service.Create(jobID, "system", jobModel.TypeRepairGPUs, map[string]interface{}{})
 			if err != nil {
-				log.Println("failed to create repair job for gpus: ", err.Error())
+				utils.PrettyPrintError(fmt.Errorf("failed to create repair job for gpus. details: %w", err))
 				continue
 			}
 		case <-ctx.Done():

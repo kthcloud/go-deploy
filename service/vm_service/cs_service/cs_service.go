@@ -15,7 +15,7 @@ import (
 	"log"
 )
 
-func CreateCS(vmID string, params *vmModel.CreateParams) error {
+func Create(vmID string, params *vmModel.CreateParams) error {
 	log.Println("setting up cs for", params.Name)
 
 	makeError := func(err error) error {
@@ -93,7 +93,7 @@ func CreateCS(vmID string, params *vmModel.CreateParams) error {
 	return nil
 }
 
-func DeleteCS(id string) error {
+func Delete(id string) error {
 	log.Println("deleting cs for", id)
 
 	makeError := func(err error) error {
@@ -137,7 +137,7 @@ func DeleteCS(id string) error {
 	return nil
 }
 
-func UpdateCS(vmID string, updateParams *vmModel.UpdateParams) error {
+func Update(vmID string, updateParams *vmModel.UpdateParams) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update cs for vm %s. details: %w", vmID, err)
 	}
@@ -229,8 +229,12 @@ func UpdateCS(vmID string, updateParams *vmModel.UpdateParams) error {
 		}
 	}
 
+	serviceOfferingUpdated := false
+
 	// make sure the vm is using the latest service offering
 	if soID != nil && context.VM.Subsystems.CS.VM.ServiceOfferingID != *soID {
+		serviceOfferingUpdated = true
+
 		// turn it off if it is on, but remember the status
 		status, err := context.Client.GetVmStatus(context.VM.Subsystems.CS.VM.ID)
 		if err != nil {
@@ -263,7 +267,9 @@ func UpdateCS(vmID string, updateParams *vmModel.UpdateParams) error {
 				}
 			}
 		}()
+	}
 
+	if updateParams.Name != nil || serviceOfferingUpdated {
 		vms := context.Generator.VMs()
 		for _, vmPublic := range vms {
 			err = resources.SsUpdater(context.Client.UpdateVM).
@@ -280,7 +286,14 @@ func UpdateCS(vmID string, updateParams *vmModel.UpdateParams) error {
 	return nil
 }
 
-func RepairCS(id string) error {
+func EnsureOwner(id, oldOwnerID string) error {
+	// nothing needs to be done, but the method is kept as there is a project for networks,
+	// and this could be implemented as user-specific networks
+
+	return nil
+}
+
+func Repair(id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to repair cs %s. details: %w", id, err)
 	}
@@ -352,7 +365,7 @@ func RepairCS(id string) error {
 	return nil
 }
 
-func DoCommandCS(csVmID string, gpuID *string, command, zoneName string) error {
+func DoCommand(csVmID string, gpuID *string, command, zoneName string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to execute command %s for cs vm %s. details: %w", command, csVmID, err)
 	}
@@ -378,7 +391,7 @@ func DoCommandCS(csVmID string, gpuID *string, command, zoneName string) error {
 	return nil
 }
 
-func CanStartCS(csVmID, hostName, zoneName string) (bool, string, error) {
+func CanStart(csVmID, hostName, zoneName string) (bool, string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check if cs vm %s can be started on host %s. details: %w", csVmID, hostName, err)
 	}

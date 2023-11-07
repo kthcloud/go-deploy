@@ -44,6 +44,8 @@ type Usage struct {
 }
 
 type UpdateParams struct {
+	Name         *string
+	OwnerID      *string
 	Private      *bool
 	Envs         *[]Env
 	InternalPort *int

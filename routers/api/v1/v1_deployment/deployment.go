@@ -14,6 +14,7 @@ import (
 	"go-deploy/service"
 	"go-deploy/service/deployment_service"
 	"go-deploy/service/job_service"
+	"go-deploy/service/user_service"
 	"go-deploy/service/zone_service"
 )
 
@@ -368,6 +369,58 @@ func Update(c *gin.Context) {
 		return
 	}
 
+	if requestBody.OwnerID != nil {
+		if *requestBody.OwnerID == deployment.OwnerID {
+			context.UserError("Owner already set")
+			return
+		}
+
+		exists, err := user_service.Exists(*requestBody.OwnerID)
+		if err != nil {
+			context.ServerError(err, v1.InternalError)
+			return
+		}
+
+		if !exists {
+			context.UserError("User not found")
+			return
+		}
+
+		jobID := uuid.New().String()
+		err = job_service.Create(jobID, auth.UserID, jobModel.TypeUpdateDeploymentOwner, map[string]interface{}{
+			"id": deployment.ID,
+			"params": body.DeploymentUpdateOwner{
+				NewOwnerID: *requestBody.OwnerID,
+				OldOwnerID: deployment.OwnerID,
+			},
+		})
+
+		if err != nil {
+			context.ServerError(err, v1.InternalError)
+			return
+		}
+
+		context.Ok(body.DeploymentUpdated{
+			ID:    deployment.ID,
+			JobID: jobID,
+		})
+
+		return
+	}
+
+	if requestBody.Name != nil {
+		available, err := deployment_service.NameAvailable(*requestBody.Name)
+		if err != nil {
+			context.ServerError(err, v1.InternalError)
+			return
+		}
+
+		if !available {
+			context.UserError("Name already taken")
+			return
+		}
+	}
+
 	canUpdate, reason := deployment_service.CanAddActivity(deployment.ID, deploymentModels.ActivityUpdating)
 	if !canUpdate {
 		context.Locked(reason)
@@ -377,7 +430,7 @@ func Update(c *gin.Context) {
 	jobID := uuid.New().String()
 	err = job_service.Create(jobID, auth.UserID, jobModel.TypeUpdateDeployment, map[string]interface{}{
 		"id":     deployment.ID,
-		"update": requestBody,
+		"params": requestBody,
 	})
 
 	if err != nil {
