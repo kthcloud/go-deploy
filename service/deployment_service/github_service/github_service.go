@@ -7,8 +7,8 @@ import (
 	githubThirdParty "github.com/google/go-github/github"
 	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/pkg/config"
+	"go-deploy/service/deployment_service/base"
 	"go-deploy/service/resources"
-	"go-deploy/service/vm_service/base"
 	"log"
 	"strings"
 )
