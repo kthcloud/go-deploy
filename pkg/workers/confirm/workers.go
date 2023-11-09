@@ -22,7 +22,7 @@ func deploymentConfirmer(ctx context.Context) {
 			for _, deployment := range beingCreated {
 				created := DeploymentCreated(&deployment)
 				if created {
-					log.Printf("marking deployment %s as created\n", deployment.Name)
+					log.Printf("marking deployment %s as created\n", deployment.ID)
 					_ = deploymentModel.New().RemoveActivity(deployment.ID, deploymentModel.ActivityBeingCreated)
 				}
 			}
@@ -49,7 +49,7 @@ func deploymentConfirmer(ctx context.Context) {
 				}) == -1
 
 				if allFinished {
-					log.Printf("marking deployment %s as deleted\n", deployment.Name)
+					log.Printf("marking deployment %s as deleted\n", deployment.ID)
 					_ = deploymentModel.New().DeleteByID(deployment.ID)
 				}
 			}
@@ -74,7 +74,7 @@ func vmConfirmer(ctx context.Context) {
 			for _, vm := range beingCreated {
 				created := VmCreated(&vm)
 				if created {
-					log.Printf("marking vm %s as created\n", vm.Name)
+					log.Printf("marking vm %s as created\n", vm.ID)
 					_ = vmModel.New().RemoveActivity(vm.ID, vmModel.ActivityBeingCreated)
 				}
 			}
@@ -105,7 +105,7 @@ func vmConfirmer(ctx context.Context) {
 				}) == -1
 
 				if allFinished {
-					log.Printf("marking vm %s as deleted\n", vm.Name)
+					log.Printf("marking vm %s as deleted\n", vm.ID)
 					_ = vmModel.New().DeleteByID(vm.ID)
 				}
 			}

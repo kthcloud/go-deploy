@@ -49,7 +49,7 @@ func deploymentRepairer(ctx context.Context) {
 			for _, deployment := range withNoActivities {
 				now := time.Now()
 				if now.Sub(deployment.RepairedAt) > 5*time.Minute {
-					log.Printf("repairing deployment %s\n", deployment.Name)
+					log.Println("repairing deployment", deployment.ID)
 
 					jobID := uuid.New().String()
 					err = job_service.Create(jobID, deployment.OwnerID, jobModel.TypeRepairDeployment, map[string]interface{}{
@@ -125,7 +125,7 @@ func vmRepairer(ctx context.Context) {
 			for _, vm := range withNoActivities {
 				now := time.Now()
 				if now.Sub(vm.RepairedAt) > 5*time.Minute {
-					log.Printf("repairing vm %s\n", vm.Name)
+					log.Println("repairing vm", vm.ID)
 
 					jobID := uuid.New().String()
 					err = job_service.Create(jobID, vm.OwnerID, jobModel.TypeRepairVM, map[string]interface{}{
