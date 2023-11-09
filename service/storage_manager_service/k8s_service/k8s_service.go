@@ -207,7 +207,7 @@ func DeleteStorageManager(id string) error {
 
 func RepairStorageManager(id string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to repair storage manager in k8s. details: %w", err)
+		return fmt.Errorf("failed to repair storage manager %s in k8s. details: %w", id, err)
 	}
 
 	context, err := NewStorageManagerContext(id)
