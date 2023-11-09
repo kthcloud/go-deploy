@@ -40,18 +40,22 @@ func deploymentPingUpdater(ctx context.Context) {
 
 func pingDeployment(deployment *deploymentModels.Deployment) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to ping deployments. details: %w", err)
-	}
-
-	baseURL := deployment.GetURL()
-	if baseURL == nil {
-		utils.PrettyPrintError(makeError(fmt.Errorf("deployment %s has no url", deployment.Name)))
-		return
+		return fmt.Errorf("failed to ping deployment. details: %w", err)
 	}
 
 	mainApp := deployment.GetMainApp()
 	if mainApp == nil {
 		utils.PrettyPrintError(makeError(fmt.Errorf("deployment %s has no main app", deployment.Name)))
+		return
+	}
+
+	if mainApp.Private {
+		return
+	}
+
+	baseURL := deployment.GetURL()
+	if baseURL == nil {
+		utils.PrettyPrintError(makeError(fmt.Errorf("deployment %s has no url", deployment.Name)))
 		return
 	}
 
