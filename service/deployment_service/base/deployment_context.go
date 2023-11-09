@@ -54,5 +54,6 @@ func (dc *DeploymentContext) Refresh() error {
 
 	dc.Deployment = deployment
 	dc.Generator.WithDeployment(deployment)
+	
 	return nil
 }

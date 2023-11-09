@@ -46,3 +46,19 @@ func NewVmBaseContextWithoutVM(zoneName string) (*VmContext, error) {
 		Generator: resources.PublicGenerator().WithVmZone(zone),
 	}, nil
 }
+
+func (vc *VmContext) Refresh() error {
+	vm, err := vmModel.New().GetByID(vc.VM.ID)
+	if err != nil {
+		return err
+	}
+
+	if vm == nil {
+		return VmDeletedErr
+	}
+
+	vc.VM = vm
+	vc.Generator.WithVM(vm)
+
+	return nil
+}

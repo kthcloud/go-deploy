@@ -33,7 +33,7 @@ func Create(vmID string, params *vmModel.CreateParams) error {
 
 	context.Client.WithUserSshPublicKey(params.SshPublicKey)
 	context.Client.WithAdminSshPublicKey(config.Config.VM.AdminSshPublicKey)
-	
+
 	// Service offering
 	for _, soPublic := range context.Generator.SOs() {
 		err = resources.SsCreator(context.Client.CreateServiceOffering).
@@ -210,8 +210,16 @@ func Update(vmID string, updateParams *vmModel.UpdateParams) error {
 				return makeError(err)
 			}
 
+			err = context.Refresh()
+			if err != nil {
+				if errors.Is(err, base.VmDeletedErr) {
+					return nil
+				}
+
+				return makeError(err)
+			}
+
 			for _, soPublic := range context.Generator.SOs() {
-				soPublic.ID = ""
 				err = resources.SsCreator(context.Client.CreateServiceOffering).
 					WithDbFunc(dbFunc(vmID, "serviceOffering")).
 					WithPublic(&soPublic).
@@ -282,10 +290,17 @@ func Update(vmID string, updateParams *vmModel.UpdateParams) error {
 	}
 
 	if updateParams.Name != nil || serviceOfferingUpdated {
+		err = context.Refresh()
+		if err != nil {
+			if errors.Is(err, base.VmDeletedErr) {
+				return nil
+			}
+
+			return makeError(err)
+		}
+
 		vms := context.Generator.VMs()
 		for _, vmPublic := range vms {
-			vmPublic.ServiceOfferingID = *soID
-
 			err = resources.SsUpdater(context.Client.UpdateVM).
 				WithPublic(&vmPublic).
 				WithDbFunc(dbFunc(vmID, "vm")).
