@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	deploymentModel "go-deploy/models/sys/deployment"
-	storageManagerModel "go-deploy/models/sys/deployment/storage_manager"
 	jobModel "go-deploy/models/sys/job"
+	storageManagerModel "go-deploy/models/sys/storage_manager"
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/pkg/config"
 	"go-deploy/service/job_service"
@@ -97,7 +97,11 @@ func storageManagerRepairer(ctx context.Context) {
 						continue
 					}
 
-					err = deploymentModel.New().MarkRepaired(storageManager.ID)
+					err = storageManagerModel.New().MarkRepaired(storageManager.ID)
+					if err != nil {
+						utils.PrettyPrintError(fmt.Errorf("failed to mark storage manager %s as repaired. details: %w", storageManager.ID, err))
+						continue
+					}
 				}
 			}
 		case <-ctx.Done():
@@ -133,6 +137,10 @@ func vmRepairer(ctx context.Context) {
 					}
 
 					err = vmModel.New().MarkRepaired(vm.ID)
+					if err != nil {
+						log.Printf("failed to mark vm %s as repaired: %s\n", vm.Name, err.Error())
+						continue
+					}
 				}
 			}
 		case <-ctx.Done():

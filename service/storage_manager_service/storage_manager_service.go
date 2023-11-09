@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"go-deploy/models/dto/query"
-	storageManagerModel "go-deploy/models/sys/deployment/storage_manager"
 	jobModel "go-deploy/models/sys/job"
+	"go-deploy/models/sys/storage_manager"
 	"go-deploy/service"
 	"go-deploy/service/job_service"
 	"go-deploy/service/storage_manager_service/k8s_service"
@@ -17,12 +17,12 @@ var (
 	StorageManagerAlreadyExistsErr = fmt.Errorf("storage manager already exists for user")
 )
 
-func GetAllStorageManagers(auth *service.AuthInfo) ([]storageManagerModel.StorageManager, error) {
+func GetAllStorageManagers(auth *service.AuthInfo) ([]storage_manager.StorageManager, error) {
 	if auth.IsAdmin {
-		return storageManagerModel.New().ListAll()
+		return storage_manager.New().ListAll()
 	}
 
-	ownerStorageManager, err := storageManagerModel.New().RestrictToOwner(auth.UserID).GetOne()
+	ownerStorageManager, err := storage_manager.New().RestrictToOwner(auth.UserID).GetOne()
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch storage manager. details: %w", err)
 	}
@@ -31,11 +31,11 @@ func GetAllStorageManagers(auth *service.AuthInfo) ([]storageManagerModel.Storag
 		return nil, nil
 	}
 
-	return []storageManagerModel.StorageManager{*ownerStorageManager}, nil
+	return []storage_manager.StorageManager{*ownerStorageManager}, nil
 }
 
-func ListStorageManagersAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagination *query.Pagination) ([]storageManagerModel.StorageManager, error) {
-	client := storageManagerModel.New()
+func ListStorageManagersAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagination *query.Pagination) ([]storage_manager.StorageManager, error) {
+	client := storage_manager.New()
 
 	if pagination != nil {
 		client.AddPagination(pagination.Page, pagination.PageSize)
@@ -53,8 +53,8 @@ func ListStorageManagersAuth(allUsers bool, userID *string, auth *service.AuthIn
 	return client.ListAll()
 }
 
-func GetStorageManagerByIdAuth(id string, auth *service.AuthInfo) (*storageManagerModel.StorageManager, error) {
-	storageManager, err := storageManagerModel.New().GetByID(id)
+func GetStorageManagerByIdAuth(id string, auth *service.AuthInfo) (*storage_manager.StorageManager, error) {
+	storageManager, err := storage_manager.New().GetByID(id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch storage manager. details: %w", err)
 	}
@@ -66,8 +66,8 @@ func GetStorageManagerByIdAuth(id string, auth *service.AuthInfo) (*storageManag
 	return storageManager, nil
 }
 
-func GetStorageManagerByOwnerIdAuth(ownerID string, auth *service.AuthInfo) (*storageManagerModel.StorageManager, error) {
-	storageManager, err := storageManagerModel.New().RestrictToOwner(ownerID).GetOne()
+func GetStorageManagerByOwnerIdAuth(ownerID string, auth *service.AuthInfo) (*storage_manager.StorageManager, error) {
+	storageManager, err := storage_manager.New().RestrictToOwner(ownerID).GetOne()
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch storage manager. details: %w", err)
 	}
@@ -79,14 +79,14 @@ func GetStorageManagerByOwnerIdAuth(ownerID string, auth *service.AuthInfo) (*st
 	return storageManager, nil
 }
 
-func CreateStorageManager(id string, params *storageManagerModel.CreateParams) error {
+func CreateStorageManager(id string, params *storage_manager.CreateParams) error {
 	makeErr := func(err error) error {
 		return fmt.Errorf("failed to create storage manager. details: %w", err)
 	}
 
-	_, err := storageManagerModel.New().CreateStorageManager(id, params)
+	_, err := storage_manager.New().CreateStorageManager(id, params)
 	if err != nil {
-		if errors.Is(err, storageManagerModel.AlreadyExistsErr) {
+		if errors.Is(err, storage_manager.AlreadyExistsErr) {
 			return StorageManagerAlreadyExistsErr
 		}
 
@@ -109,7 +109,7 @@ func CreateStorageManagerIfNotExists(ownerID string) error {
 	// right now the storage-manager is hosted in se-flem for all users
 	zone := "se-flem"
 
-	exists, err := storageManagerModel.New().RestrictToOwner(ownerID).ExistsAny()
+	exists, err := storage_manager.New().RestrictToOwner(ownerID).ExistsAny()
 	if err != nil {
 		return makeError(err)
 	}
@@ -122,7 +122,7 @@ func CreateStorageManagerIfNotExists(ownerID string) error {
 	jobID := uuid.New().String()
 	err = job_service.Create(jobID, ownerID, jobModel.TypeCreateStorageManager, map[string]interface{}{
 		"id": storageManagerID,
-		"params": storageManagerModel.CreateParams{
+		"params": storage_manager.CreateParams{
 			UserID: ownerID,
 			Zone:   zone,
 		},
@@ -143,7 +143,7 @@ func DeleteStorageManager(id string) error {
 		return makeErr(err)
 	}
 
-	err = storageManagerModel.New().DeleteByID(id)
+	err = storage_manager.New().DeleteByID(id)
 	if err != nil {
 		return makeErr(err)
 	}
@@ -161,7 +161,7 @@ func RepairStorageManager(id string) error {
 		return fmt.Errorf("failed to repair storage manager. details: %w", err)
 	}
 
-	storageManager, err := storageManagerModel.New().GetByID(id)
+	storageManager, err := storage_manager.New().GetByID(id)
 	if err != nil {
 		return makeErr(err)
 	}

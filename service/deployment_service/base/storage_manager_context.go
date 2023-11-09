@@ -2,19 +2,19 @@ package base
 
 import (
 	configModels "go-deploy/models/config"
-	"go-deploy/models/sys/deployment/storage_manager"
+	storage_manager2 "go-deploy/models/sys/storage_manager"
 	"go-deploy/pkg/config"
 	"go-deploy/service/resources"
 )
 
 type StorageManagerContext struct {
-	StorageManager *storage_manager.StorageManager
+	StorageManager *storage_manager2.StorageManager
 	Zone           *configModels.DeploymentZone
 	Generator      *resources.PublicGeneratorType
 }
 
 func NewStorageManagerBaseContext(id string) (*StorageManagerContext, error) {
-	storageManager, err := storage_manager.New().GetByID(id)
+	storageManager, err := storage_manager2.New().GetByID(id)
 	if err != nil {
 		return nil, err
 	}

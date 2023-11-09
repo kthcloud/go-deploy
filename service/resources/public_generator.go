@@ -3,7 +3,7 @@ package resources
 import (
 	"go-deploy/models/config"
 	deploymentModels "go-deploy/models/sys/deployment"
-	"go-deploy/models/sys/deployment/storage_manager"
+	"go-deploy/models/sys/storage_manager"
 	vmModels "go-deploy/models/sys/vm"
 	"go-deploy/pkg/subsystems/k8s"
 )

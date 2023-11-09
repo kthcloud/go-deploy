@@ -7,15 +7,15 @@ import (
 )
 
 type StorageManager struct {
-	ID      string `json:"id" bson:"id"`
-	OwnerID string `json:"ownerId" bson:"ownerId"`
-	Zone    string `json:"zone" bson:"zone"`
+	ID      string `bson:"id"`
+	OwnerID string `bson:"ownerId"`
+	Zone    string `bson:"zone"`
 
-	CreatedAt  time.Time `json:"createdAt" bson:"createdAt"`
-	RepairedAt time.Time `json:"repairAt" bson:"repairAt"`
+	CreatedAt  time.Time `bson:"createdAt"`
+	RepairedAt time.Time `bson:"repairedAt"`
 
-	Activities map[string]activity.Activity `json:"activities" bson:"activities"`
-	Subsystems Subsystems                   `json:"subsystems" bson:"subsystems"`
+	Activities map[string]activity.Activity `bson:"activities"`
+	Subsystems Subsystems                   `bson:"subsystems"`
 }
 
 func (storageManager *StorageManager) GetURL() *string {

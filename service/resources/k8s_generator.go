@@ -6,7 +6,7 @@ import (
 	"fmt"
 	configModels "go-deploy/models/config"
 	"go-deploy/models/sys/deployment"
-	storageManagerModel "go-deploy/models/sys/deployment/storage_manager"
+	storageManagerModel "go-deploy/models/sys/storage_manager"
 	userModel "go-deploy/models/sys/user"
 	"go-deploy/models/sys/vm"
 	"go-deploy/pkg/config"
