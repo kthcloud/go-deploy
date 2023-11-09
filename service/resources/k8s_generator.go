@@ -606,6 +606,8 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 
 	if kg.s.storageManager != nil {
 		if ingress := kg.s.storageManager.Subsystems.K8s.GetIngress(constants.StorageManagerAppName); service.Created(ingress) {
+			ingress.Hosts = []string{getStorageExternalFQDN(kg.s.storageManager.OwnerID, kg.s.zone)}
+
 			res = append(res, *ingress)
 		} else {
 			tlsSecret := constants.WildcardCertSecretName
