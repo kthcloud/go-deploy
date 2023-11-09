@@ -33,8 +33,7 @@ func Create(vmID string, params *vmModel.CreateParams) error {
 
 	context.Client.WithUserSshPublicKey(params.SshPublicKey)
 	context.Client.WithAdminSshPublicKey(config.Config.VM.AdminSshPublicKey)
-	context.WithCreateParams(params)
-
+	
 	// Service offering
 	for _, soPublic := range context.Generator.SOs() {
 		err = resources.SsCreator(context.Client.CreateServiceOffering).

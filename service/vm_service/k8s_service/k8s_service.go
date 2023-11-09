@@ -34,8 +34,6 @@ func Create(id string, params *vmModels.CreateParams) error {
 		return makeError(err)
 	}
 
-	context.WithCreateParams(params)
-
 	// Namespace
 	namespace := context.Generator.Namespace()
 	if namespace != nil {

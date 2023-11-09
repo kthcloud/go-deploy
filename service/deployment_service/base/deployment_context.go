@@ -8,12 +8,10 @@ import (
 )
 
 type DeploymentContext struct {
-	Deployment   *deploymentModels.Deployment
-	MainApp      *deploymentModels.App
-	Zone         *configModels.DeploymentZone
-	CreateParams *deploymentModels.CreateParams
-	UpdateParams *deploymentModels.UpdateParams
-	Generator    *resources.PublicGeneratorType
+	Deployment *deploymentModels.Deployment
+	MainApp    *deploymentModels.App
+	Zone       *configModels.DeploymentZone
+	Generator  *resources.PublicGeneratorType
 }
 
 func NewDeploymentBaseContext(deploymentID string) (*DeploymentContext, error) {
@@ -44,12 +42,17 @@ func NewDeploymentBaseContext(deploymentID string) (*DeploymentContext, error) {
 	}, nil
 }
 
-func (c *DeploymentContext) WithCreateParams(params *deploymentModels.CreateParams) *DeploymentContext {
-	c.CreateParams = params
-	return c
-}
+func (dc *DeploymentContext) Refresh() error {
+	deployment, err := deploymentModels.New().GetByID(dc.Deployment.ID)
+	if err != nil {
+		return err
+	}
 
-func (c *DeploymentContext) WithUpdateParams(params *deploymentModels.UpdateParams) *DeploymentContext {
-	c.UpdateParams = params
-	return c
+	if deployment == nil {
+		return DeploymentDeletedErr
+	}
+
+	dc.Deployment = deployment
+	dc.Generator.WithDeployment(deployment)
+	return nil
 }

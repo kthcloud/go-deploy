@@ -10,8 +10,8 @@ import (
 	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
-	"go-deploy/service/deployment_service"
 	"go-deploy/service/job_service"
+	"go-deploy/service/storage_manager_service"
 	"net/http"
 )
 
@@ -44,7 +44,7 @@ func ListStorageManagers(c *gin.Context) {
 	}
 
 	if requestQuery.All {
-		storageManagers, _ := deployment_service.GetAllStorageManagers(auth)
+		storageManagers, _ := storage_manager_service.GetAllStorageManagers(auth)
 
 		dtoStorageManagers := make([]body.StorageManagerRead, len(storageManagers))
 		for i, deployment := range storageManagers {
@@ -55,7 +55,7 @@ func ListStorageManagers(c *gin.Context) {
 		return
 	}
 
-	storageManagers, err := deployment_service.ListStorageManagersAuth(requestQuery.All, requestQuery.UserID, auth, &requestQuery.Pagination)
+	storageManagers, err := storage_manager_service.ListStorageManagersAuth(requestQuery.All, requestQuery.UserID, auth, &requestQuery.Pagination)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -104,7 +104,7 @@ func GetStorageManager(c *gin.Context) {
 		return
 	}
 
-	storageManager, err := deployment_service.GetStorageManagerByIdAuth(requestURI.StorageManagerID, auth)
+	storageManager, err := storage_manager_service.GetStorageManagerByIdAuth(requestURI.StorageManagerID, auth)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return
@@ -148,7 +148,7 @@ func DeleteStorageManager(c *gin.Context) {
 		return
 	}
 
-	storageManager, err := deployment_service.GetStorageManagerByIdAuth(requestURI.StorageManagerID, auth)
+	storageManager, err := storage_manager_service.GetStorageManagerByIdAuth(requestURI.StorageManagerID, auth)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return

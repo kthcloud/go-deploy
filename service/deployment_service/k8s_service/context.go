@@ -3,7 +3,6 @@ package k8s_service
 import (
 	"fmt"
 	"go-deploy/models/config"
-	deploymentModels "go-deploy/models/sys/deployment"
 	"go-deploy/pkg/subsystems/k8s"
 	"go-deploy/service/deployment_service/base"
 	"go-deploy/service/resources"
@@ -44,18 +43,6 @@ func NewContext(deploymentID string, overrideOwnerID ...string) (*DeploymentCont
 		Client:            k8sClient,
 		Generator:         baseContext.Generator.K8s(k8sClient),
 	}, nil
-}
-
-func (c *DeploymentContext) WithCreateParams(params *deploymentModels.CreateParams) *DeploymentContext {
-	c.CreateParams = params
-	c.Generator.WithDeploymentCreateParams(params)
-	return c
-}
-
-func (c *DeploymentContext) WithUpdateParams(params *deploymentModels.UpdateParams) *DeploymentContext {
-	c.UpdateParams = params
-	c.Generator.WithDeploymentUpdateParams(params)
-	return c
 }
 
 func getNamespaceName(userID string) string {

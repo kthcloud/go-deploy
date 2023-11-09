@@ -31,8 +31,6 @@ func Create(id string, params *deploymentModel.CreateParams) error {
 		return makeError(err)
 	}
 
-	context.WithCreateParams(params)
-
 	// Namespace
 	err = resources.SsCreator(context.Client.CreateNamespace).
 		WithDbFunc(dbFunc(id, "namespace")).
@@ -222,8 +220,6 @@ func Update(id string, params *deploymentModel.UpdateParams) error {
 
 		return makeError(err)
 	}
-
-	context.WithUpdateParams(params)
 
 	if params.Name != nil {
 		// since names are immutable in k8s, we actually need to recreate everything
@@ -718,8 +714,17 @@ func recreatePvPvcDeployments(context *DeploymentContext) error {
 		}
 	}
 
+	err := context.Refresh()
+	if err != nil {
+		if errors.Is(err, base.DeploymentDeletedErr) {
+			return nil
+		}
+
+		return err
+	}
+
 	for _, public := range context.Generator.PVs() {
-		err := resources.SsCreator(context.Client.CreatePV).
+		err = resources.SsCreator(context.Client.CreatePV).
 			WithDbFunc(dbFunc(context.Deployment.ID, "pvMap."+public.Name)).
 			WithPublic(&public).
 			Exec()
@@ -730,7 +735,7 @@ func recreatePvPvcDeployments(context *DeploymentContext) error {
 	}
 
 	for _, public := range context.Generator.PVCs() {
-		err := resources.SsCreator(context.Client.CreatePVC).
+		err = resources.SsCreator(context.Client.CreatePVC).
 			WithDbFunc(dbFunc(context.Deployment.ID, "pvcMap."+public.Name)).
 			WithPublic(&public).
 			Exec()
@@ -741,7 +746,7 @@ func recreatePvPvcDeployments(context *DeploymentContext) error {
 	}
 
 	for _, public := range context.Generator.Deployments() {
-		err := resources.SsCreator(context.Client.CreateDeployment).
+		err = resources.SsCreator(context.Client.CreateDeployment).
 			WithDbFunc(dbFunc(context.Deployment.ID, "deploymentMap."+public.Name)).
 			WithPublic(&public).
 			Exec()

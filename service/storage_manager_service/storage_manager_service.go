@@ -1,4 +1,4 @@
-package deployment_service
+package storage_manager_service
 
 import (
 	"errors"
@@ -8,8 +8,8 @@ import (
 	storageManagerModel "go-deploy/models/sys/deployment/storage_manager"
 	jobModel "go-deploy/models/sys/job"
 	"go-deploy/service"
-	"go-deploy/service/deployment_service/k8s_service"
 	"go-deploy/service/job_service"
+	"go-deploy/service/storage_manager_service/k8s_service"
 	"log"
 )
 

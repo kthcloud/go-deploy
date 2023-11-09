@@ -26,11 +26,9 @@ func CreateStorageManager(smID string, params *storageManagerModel.CreateParams)
 		return makeError(err)
 	}
 
-	context.WithCreateParams(params)
-
 	// Namespace
 	err = resources.SsCreator(context.Client.CreateNamespace).
-		WithDbFunc(dbFuncSM(smID, "namespace")).
+		WithDbFunc(dbFunc(smID, "namespace")).
 		WithPublic(context.Generator.Namespace()).
 		Exec()
 
@@ -41,7 +39,7 @@ func CreateStorageManager(smID string, params *storageManagerModel.CreateParams)
 	// PersistentVolume
 	for _, pvPublic := range context.Generator.PVs() {
 		err = resources.SsCreator(context.Client.CreatePV).
-			WithDbFunc(dbFuncSM(smID, "pvMap."+pvPublic.Name)).
+			WithDbFunc(dbFunc(smID, "pvMap."+pvPublic.Name)).
 			WithPublic(&pvPublic).
 			Exec()
 
@@ -53,7 +51,7 @@ func CreateStorageManager(smID string, params *storageManagerModel.CreateParams)
 	// PersistentVolumeClaim
 	for _, pvcPublic := range context.Generator.PVCs() {
 		err = resources.SsCreator(context.Client.CreatePVC).
-			WithDbFunc(dbFuncSM(smID, "pvcMap."+pvcPublic.Name)).
+			WithDbFunc(dbFunc(smID, "pvcMap."+pvcPublic.Name)).
 			WithPublic(&pvcPublic).
 			Exec()
 
@@ -65,7 +63,7 @@ func CreateStorageManager(smID string, params *storageManagerModel.CreateParams)
 	// Job
 	for _, jobPublic := range context.Generator.Jobs() {
 		err = resources.SsCreator(context.Client.CreateJob).
-			WithDbFunc(dbFuncSM(smID, "jobMap."+jobPublic.Name)).
+			WithDbFunc(dbFunc(smID, "jobMap."+jobPublic.Name)).
 			WithPublic(&jobPublic).
 			Exec()
 
@@ -77,7 +75,7 @@ func CreateStorageManager(smID string, params *storageManagerModel.CreateParams)
 	// Secret
 	for _, secret := range context.Generator.Secrets() {
 		err = resources.SsCreator(context.Client.CreateSecret).
-			WithDbFunc(dbFuncSM(smID, "secretMap."+secret.Name)).
+			WithDbFunc(dbFunc(smID, "secretMap."+secret.Name)).
 			WithPublic(&secret).
 			Exec()
 
@@ -89,7 +87,7 @@ func CreateStorageManager(smID string, params *storageManagerModel.CreateParams)
 	// Deployment
 	for _, deployment := range context.Generator.Deployments() {
 		err = resources.SsCreator(context.Client.CreateDeployment).
-			WithDbFunc(dbFuncSM(smID, "deploymentMap."+deployment.Name)).
+			WithDbFunc(dbFunc(smID, "deploymentMap."+deployment.Name)).
 			WithPublic(&deployment).
 			Exec()
 
@@ -101,7 +99,7 @@ func CreateStorageManager(smID string, params *storageManagerModel.CreateParams)
 	// Service
 	for _, k8sService := range context.Generator.Services() {
 		err = resources.SsCreator(context.Client.CreateService).
-			WithDbFunc(dbFuncSM(smID, "serviceMap."+k8sService.Name)).
+			WithDbFunc(dbFunc(smID, "serviceMap."+k8sService.Name)).
 			WithPublic(&k8sService).
 			Exec()
 
@@ -113,7 +111,7 @@ func CreateStorageManager(smID string, params *storageManagerModel.CreateParams)
 	// Ingress
 	for _, ingress := range context.Generator.Ingresses() {
 		err = resources.SsCreator(context.Client.CreateIngress).
-			WithDbFunc(dbFuncSM(smID, "ingressMap."+ingress.Name)).
+			WithDbFunc(dbFunc(smID, "ingressMap."+ingress.Name)).
 			WithPublic(&ingress).
 			Exec()
 
@@ -145,7 +143,7 @@ func DeleteStorageManager(id string) error {
 	for mapName, k8sDeployment := range context.StorageManager.Subsystems.K8s.DeploymentMap {
 		err = resources.SsDeleter(context.Client.DeleteDeployment).
 			WithResourceID(k8sDeployment.ID).
-			WithDbFunc(dbFuncSM(id, "deploymentMap."+mapName)).
+			WithDbFunc(dbFunc(id, "deploymentMap."+mapName)).
 			Exec()
 	}
 
@@ -153,7 +151,7 @@ func DeleteStorageManager(id string) error {
 	for mapName, k8sService := range context.StorageManager.Subsystems.K8s.ServiceMap {
 		err = resources.SsDeleter(context.Client.DeleteService).
 			WithResourceID(k8sService.ID).
-			WithDbFunc(dbFuncSM(id, "serviceMap."+mapName)).
+			WithDbFunc(dbFunc(id, "serviceMap."+mapName)).
 			Exec()
 	}
 
@@ -161,7 +159,7 @@ func DeleteStorageManager(id string) error {
 	for mapName, ingress := range context.StorageManager.Subsystems.K8s.IngressMap {
 		err = resources.SsDeleter(context.Client.DeleteIngress).
 			WithResourceID(ingress.ID).
-			WithDbFunc(dbFuncSM(id, "ingressMap."+mapName)).
+			WithDbFunc(dbFunc(id, "ingressMap."+mapName)).
 			Exec()
 	}
 
@@ -169,7 +167,7 @@ func DeleteStorageManager(id string) error {
 	for mapName, job := range context.StorageManager.Subsystems.K8s.JobMap {
 		err = resources.SsDeleter(context.Client.DeleteJob).
 			WithResourceID(job.ID).
-			WithDbFunc(dbFuncSM(id, "jobMap."+mapName)).
+			WithDbFunc(dbFunc(id, "jobMap."+mapName)).
 			Exec()
 	}
 
@@ -177,7 +175,7 @@ func DeleteStorageManager(id string) error {
 	for mapName, pvc := range context.StorageManager.Subsystems.K8s.PvcMap {
 		err = resources.SsDeleter(context.Client.DeletePVC).
 			WithResourceID(pvc.ID).
-			WithDbFunc(dbFuncSM(id, "pvcMap."+mapName)).
+			WithDbFunc(dbFunc(id, "pvcMap."+mapName)).
 			Exec()
 	}
 
@@ -185,7 +183,7 @@ func DeleteStorageManager(id string) error {
 	for mapName, pv := range context.StorageManager.Subsystems.K8s.PvMap {
 		err = resources.SsDeleter(context.Client.DeletePV).
 			WithResourceID(pv.ID).
-			WithDbFunc(dbFuncSM(id, "pvMap."+mapName)).
+			WithDbFunc(dbFunc(id, "pvMap."+mapName)).
 			Exec()
 	}
 
@@ -340,7 +338,7 @@ func RepairStorageManager(id string) error {
 	return nil
 }
 
-func dbFuncSM(id, key string) func(interface{}) error {
+func dbFunc(id, key string) func(interface{}) error {
 	return func(data interface{}) error {
 		return storageManagerModel.New().UpdateSubsystemByID(id, "k8s."+key, data)
 	}

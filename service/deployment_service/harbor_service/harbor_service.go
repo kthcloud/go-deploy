@@ -27,8 +27,6 @@ func Create(deploymentID string, params *deploymentModel.CreateParams) error {
 		return makeError(err)
 	}
 
-	context.WithCreateParams(params)
-
 	// Project
 	err = resources.SsCreator(context.Client.CreateProject).
 		WithDbFunc(dbFunc(deploymentID, "project")).

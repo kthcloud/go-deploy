@@ -2,7 +2,7 @@ package k8s_service
 
 import (
 	"fmt"
-	"go-deploy/models/sys/deployment/storage_manager"
+	"go-deploy/models/config"
 	"go-deploy/pkg/subsystems/k8s"
 	"go-deploy/service/deployment_service/base"
 	"go-deploy/service/resources"
@@ -26,7 +26,7 @@ func NewStorageManagerContext(storageManagerID string) (*StorageManagerContext, 
 		return nil, makeError(err)
 	}
 
-	k8sClient, err := withClient(baseContext.Zone, getStorageManagerNamespaceName(baseContext.StorageManager.OwnerID))
+	k8sClient, err := withClient(baseContext.Zone, getNamespace(baseContext.StorageManager.OwnerID))
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -38,12 +38,15 @@ func NewStorageManagerContext(storageManagerID string) (*StorageManagerContext, 
 	}, nil
 }
 
-func getStorageManagerNamespaceName(userID string) string {
+func getNamespace(userID string) string {
 	return subsystemutils.GetPrefixedName("system-" + userID)
 }
 
-func (c *StorageManagerContext) WithCreateParams(params *storage_manager.CreateParams) *StorageManagerContext {
-	c.CreateParams = params
-	c.Generator.WithStorageManagerCreateParams(params)
-	return c
+func withClient(zone *config.DeploymentZone, namespace string) (*k8s.Client, error) {
+	client, err := k8s.New(zone.Client, namespace)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create k8s client. details: %w", err)
+	}
+
+	return client, nil
 }

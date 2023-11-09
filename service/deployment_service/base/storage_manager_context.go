@@ -10,7 +10,6 @@ import (
 type StorageManagerContext struct {
 	StorageManager *storage_manager.StorageManager
 	Zone           *configModels.DeploymentZone
-	CreateParams   *storage_manager.CreateParams
 	Generator      *resources.PublicGeneratorType
 }
 
@@ -34,9 +33,4 @@ func NewStorageManagerBaseContext(id string) (*StorageManagerContext, error) {
 		Zone:           zone,
 		Generator:      resources.PublicGenerator().WithStorageManager(storageManager).WithDeploymentZone(zone),
 	}, nil
-}
-
-func (c *StorageManagerContext) WithCreateParams(params *storage_manager.CreateParams) *StorageManagerContext {
-	c.CreateParams = params
-	return c
 }

@@ -12,6 +12,7 @@ import (
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/pkg/workers/confirm"
 	"go-deploy/service/deployment_service"
+	"go-deploy/service/storage_manager_service"
 	"go-deploy/service/vm_service"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -397,9 +398,9 @@ func CreateStorageManager(job *jobModel.Job) error {
 		return makeTerminatedError(err)
 	}
 
-	err = deployment_service.CreateStorageManager(id, &params)
+	err = storage_manager_service.CreateStorageManager(id, &params)
 	if err != nil {
-		if errors.Is(err, deployment_service.StorageManagerAlreadyExistsErr) {
+		if errors.Is(err, storage_manager_service.StorageManagerAlreadyExistsErr) {
 			return makeTerminatedError(err)
 		}
 
@@ -417,7 +418,7 @@ func DeleteStorageManager(job *jobModel.Job) error {
 
 	id := job.Args["id"].(string)
 
-	err = deployment_service.DeleteStorageManager(id)
+	err = storage_manager_service.DeleteStorageManager(id)
 	if err != nil {
 		return makeFailedError(err)
 	}
@@ -433,7 +434,7 @@ func RepairStorageManager(job *jobModel.Job) error {
 
 	id := job.Args["id"].(string)
 
-	err = deployment_service.RepairStorageManager(id)
+	err = storage_manager_service.RepairStorageManager(id)
 	if err != nil {
 		return makeTerminatedError(err)
 	}
