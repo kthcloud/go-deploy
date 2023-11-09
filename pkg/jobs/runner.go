@@ -17,11 +17,12 @@ func NewRunner(job *jobModel.Job) *Runner {
 }
 
 func (runner *Runner) Run() {
-
 	if jobDef := GetJobDef(runner.Job); jobDef != nil {
 		if jobDef.TerminateFunc != nil {
 			shouldTerminate, err := jobDef.TerminateFunc(runner.Job)
 			if err != nil {
+				utils.PrettyPrintError(fmt.Errorf("error executing job (%s) terminate function, terminating the job instead. details: %w", runner.Job.Type, err))
+
 				err = jobModel.New().MarkTerminated(runner.Job.ID, err.Error())
 				if err != nil {
 					utils.PrettyPrintError(fmt.Errorf("error marking job as terminated. details: %w", err))
@@ -32,6 +33,7 @@ func (runner *Runner) Run() {
 
 			if shouldTerminate {
 				err = jobModel.New().MarkTerminated(runner.Job.ID, "gracefully terminated by system")
+				utils.PrettyPrintError(fmt.Errorf("job (%s) gracefully terminated by system", runner.Job.Type))
 				if err != nil {
 					utils.PrettyPrintError(fmt.Errorf("error marking job as terminated. details: %w", err))
 					return

@@ -34,7 +34,7 @@ func deploymentConfirmer(ctx context.Context) {
 					continue
 				}
 
-				relatedJobs, err := jobModel.New().GetByArgs(map[string]interface{}{
+				relatedJobs, err := jobModel.New().ExcludeScheduled().GetByArgs(map[string]interface{}{
 					"id": deployment.ID,
 				})
 
@@ -45,7 +45,6 @@ func deploymentConfirmer(ctx context.Context) {
 
 				allFinished := slices.IndexFunc(relatedJobs, func(j jobModel.Job) bool {
 					return j.Status != jobModel.StatusCompleted &&
-						j.Status != jobModel.StatusFailed &&
 						j.Status != jobModel.StatusTerminated
 				}) == -1
 
@@ -91,7 +90,7 @@ func vmConfirmer(ctx context.Context) {
 					continue
 				}
 
-				relatedJobs, err := jobModel.New().GetByArgs(map[string]interface{}{
+				relatedJobs, err := jobModel.New().ExcludeScheduled().GetByArgs(map[string]interface{}{
 					"id": vm.ID,
 				})
 
@@ -102,7 +101,6 @@ func vmConfirmer(ctx context.Context) {
 
 				allFinished := slices.IndexFunc(relatedJobs, func(j jobModel.Job) bool {
 					return j.Status != jobModel.StatusCompleted &&
-						j.Status != jobModel.StatusFailed &&
 						j.Status != jobModel.StatusTerminated
 				}) == -1
 
