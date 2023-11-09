@@ -7,7 +7,7 @@ import (
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
 	deploymentModel "go-deploy/models/sys/deployment"
-	teamModels "go-deploy/models/sys/user/team"
+	teamModels "go-deploy/models/sys/team"
 	"go-deploy/pkg/config"
 	"go-deploy/service"
 	"go-deploy/service/deployment_service/base"

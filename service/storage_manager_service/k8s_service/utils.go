@@ -3,7 +3,7 @@ package k8s_service
 import (
 	"fmt"
 	"go-deploy/models/config"
-	storageManagerModel "go-deploy/models/sys/deployment/storage_manager"
+	storageManagerModel "go-deploy/models/sys/storage_manager"
 	"path"
 )
 

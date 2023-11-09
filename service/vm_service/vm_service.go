@@ -6,7 +6,7 @@ import (
 	roleModel "go-deploy/models/config/role"
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
-	teamModels "go-deploy/models/sys/user/team"
+	teamModels "go-deploy/models/sys/team"
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/models/sys/vm/gpu"
 	"go-deploy/pkg/config"

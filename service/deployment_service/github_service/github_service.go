@@ -29,8 +29,6 @@ func Create(id string, params *deploymentModel.CreateParams) error {
 		return makeError(err)
 	}
 
-	githubCtx.WithCreateParams(params)
-
 	// webhook
 	err = resources.SsCreator(githubCtx.Client.CreateWebhook).
 		WithDbFunc(dbFunc(id, "webhook")).

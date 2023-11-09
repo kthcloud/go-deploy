@@ -101,7 +101,7 @@ func UpdateIfDiff[T SsResource](dbResource T, fetchFunc func() (T, error), updat
 		return nil
 	}
 
-	if Nil(dbResource) {
+	if Nil(liveResource) {
 		return recreateFunc(dbResource)
 	}
 

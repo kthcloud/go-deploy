@@ -14,12 +14,13 @@ import (
 	"go-deploy/service"
 	"go-deploy/service/deployment_service"
 	"go-deploy/service/job_service"
+	"go-deploy/service/storage_manager_service"
 	"go-deploy/service/user_service"
 	"go-deploy/service/zone_service"
 )
 
 func getStorageManagerURL(userID string, auth *service.AuthInfo) *string {
-	storageManager, err := deployment_service.GetStorageManagerByOwnerIdAuth(userID, auth)
+	storageManager, err := storage_manager_service.GetStorageManagerByOwnerIdAuth(userID, auth)
 	if err != nil {
 		return nil
 	}

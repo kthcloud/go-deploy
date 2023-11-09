@@ -11,9 +11,6 @@ type VmContext struct {
 	VM        *vmModel.VM
 	Generator *resources.PublicGeneratorType
 	Zone      *configModels.VmZone
-
-	CreateParams *vmModel.CreateParams
-	UpdateParams *vmModel.UpdateParams
 }
 
 func NewVmBaseContext(vmID string) (*VmContext, error) {
@@ -50,12 +47,18 @@ func NewVmBaseContextWithoutVM(zoneName string) (*VmContext, error) {
 	}, nil
 }
 
-func (c *VmContext) WithCreateParams(params *vmModel.CreateParams) *VmContext {
-	c.CreateParams = params
-	return c
-}
+func (vc *VmContext) Refresh() error {
+	vm, err := vmModel.New().GetByID(vc.VM.ID)
+	if err != nil {
+		return err
+	}
 
-func (c *VmContext) WithUpdateParams(params *vmModel.UpdateParams) *VmContext {
-	c.UpdateParams = params
-	return c
+	if vm == nil {
+		return VmDeletedErr
+	}
+
+	vc.VM = vm
+	vc.Generator.WithVM(vm)
+
+	return nil
 }

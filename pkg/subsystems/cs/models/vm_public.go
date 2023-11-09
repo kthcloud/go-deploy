@@ -32,16 +32,9 @@ func CreateVmPublicFromGet(vm *cloudstack.VirtualMachine) *VmPublic {
 
 	tags := FromCsTags(vm.Tags)
 
-	var name string
-	for _, tag := range tags {
-		if tag.Key == "deployName" {
-			name = tag.Value
-		}
-	}
-
 	return &VmPublic{
 		ID:                vm.Id,
-		Name:              name,
+		Name:              vm.Name,
 		ServiceOfferingID: vm.Serviceofferingid,
 		TemplateID:        vm.Templateid,
 		ExtraConfig:       extraConfig,

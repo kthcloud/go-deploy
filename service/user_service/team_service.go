@@ -8,8 +8,8 @@ import (
 	"go-deploy/models/dto/query"
 	deploymentModel "go-deploy/models/sys/deployment"
 	notificationModel "go-deploy/models/sys/notification"
+	team2 "go-deploy/models/sys/team"
 	userModels "go-deploy/models/sys/user"
-	teamModels "go-deploy/models/sys/user/team"
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/service"
 	"go-deploy/service/notification_service"
@@ -23,16 +23,16 @@ var TeamNotFoundErr = fmt.Errorf("team not found")
 var BadInviteCodeErr = fmt.Errorf("bad invite code")
 var NotInvitedErr = fmt.Errorf("not invited")
 
-func CreateTeam(id, ownerID string, dtoCreateTeam *body.TeamCreate, auth *service.AuthInfo) (*teamModels.Team, error) {
-	params := &teamModels.CreateParams{}
-	params.FromDTO(dtoCreateTeam, func(resourceID string) *teamModels.Resource {
+func CreateTeam(id, ownerID string, dtoCreateTeam *body.TeamCreate, auth *service.AuthInfo) (*team2.Team, error) {
+	params := &team2.CreateParams{}
+	params.FromDTO(dtoCreateTeam, func(resourceID string) *team2.Resource {
 		return getResourceIfAccessible(resourceID, auth)
 	})
 
-	teamClient := teamModels.New()
+	teamClient := team2.New()
 	team, err := teamClient.Create(id, ownerID, params)
 	if err != nil {
-		if errors.Is(err, teamModels.NameTakenErr) {
+		if errors.Is(err, team2.NameTakenErr) {
 			return nil, TeamNameTakenErr
 		}
 		return nil, err
@@ -41,11 +41,11 @@ func CreateTeam(id, ownerID string, dtoCreateTeam *body.TeamCreate, auth *servic
 	return team, nil
 }
 
-func JoinTeam(id string, dtoTeamJoin *body.TeamJoin, auth *service.AuthInfo) (*teamModels.Team, error) {
-	params := &teamModels.JoinParams{}
+func JoinTeam(id string, dtoTeamJoin *body.TeamJoin, auth *service.AuthInfo) (*team2.Team, error) {
+	params := &team2.JoinParams{}
 	params.FromDTO(dtoTeamJoin)
 
-	teamClient := teamModels.New()
+	teamClient := team2.New()
 	team, err := teamClient.GetByID(id)
 	if err != nil {
 		return nil, err
@@ -55,7 +55,7 @@ func JoinTeam(id string, dtoTeamJoin *body.TeamJoin, auth *service.AuthInfo) (*t
 		return nil, TeamNotFoundErr
 	}
 
-	if team.GetMemberMap()[auth.UserID].MemberStatus != teamModels.MemberStatusInvited {
+	if team.GetMemberMap()[auth.UserID].MemberStatus != team2.MemberStatusInvited {
 		return team, NotInvitedErr
 	}
 
@@ -64,7 +64,7 @@ func JoinTeam(id string, dtoTeamJoin *body.TeamJoin, auth *service.AuthInfo) (*t
 	}
 
 	updatedMember := team.GetMemberMap()[auth.UserID]
-	updatedMember.MemberStatus = teamModels.MemberStatusJoined
+	updatedMember.MemberStatus = team2.MemberStatusJoined
 	updatedMember.JoinedAt = time.Now()
 
 	err = teamClient.UpdateMember(id, auth.UserID, &updatedMember)
@@ -75,8 +75,8 @@ func JoinTeam(id string, dtoTeamJoin *body.TeamJoin, auth *service.AuthInfo) (*t
 	return teamClient.GetByID(id)
 }
 
-func GetTeamByIdAuth(id string, auth *service.AuthInfo) (*teamModels.Team, error) {
-	teamClient := teamModels.New()
+func GetTeamByIdAuth(id string, auth *service.AuthInfo) (*team2.Team, error) {
+	teamClient := team2.New()
 	team, err := teamClient.GetByID(id)
 	if err != nil {
 		return nil, err
@@ -93,8 +93,8 @@ func GetTeamByIdAuth(id string, auth *service.AuthInfo) (*teamModels.Team, error
 	return team, nil
 }
 
-func ListTeamsAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagination *query.Pagination) ([]teamModels.Team, error) {
-	teamClient := teamModels.New()
+func ListTeamsAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagination *query.Pagination) ([]team2.Team, error) {
+	teamClient := team2.New()
 	userClient := userModels.New()
 
 	if pagination != nil {
@@ -133,8 +133,8 @@ func ListTeamsAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagina
 	return teamClient.ListAll()
 }
 
-func UpdateTeamAuth(id string, dtoUpdateTeam *body.TeamUpdate, auth *service.AuthInfo) (*teamModels.Team, error) {
-	teamClient := teamModels.New()
+func UpdateTeamAuth(id string, dtoUpdateTeam *body.TeamUpdate, auth *service.AuthInfo) (*team2.Team, error) {
+	teamClient := team2.New()
 
 	team, err := teamClient.GetByID(id)
 	if err != nil {
@@ -149,8 +149,8 @@ func UpdateTeamAuth(id string, dtoUpdateTeam *body.TeamUpdate, auth *service.Aut
 		return nil, nil
 	}
 
-	params := &teamModels.UpdateParams{}
-	params.FromDTO(dtoUpdateTeam, func(resourceID string) *teamModels.Resource {
+	params := &team2.UpdateParams{}
+	params.FromDTO(dtoUpdateTeam, func(resourceID string) *team2.Resource {
 		return getResourceIfAccessible(resourceID, auth)
 	})
 
@@ -164,10 +164,10 @@ func UpdateTeamAuth(id string, dtoUpdateTeam *body.TeamUpdate, auth *service.Aut
 				member.AddedAt = time.Now()
 				if auth.IsAdmin {
 					member.JoinedAt = time.Now()
-					member.MemberStatus = teamModels.MemberStatusJoined
+					member.MemberStatus = team2.MemberStatusJoined
 				} else {
 					member.InvitationCode = utils.HashString(uuid.NewString())
-					member.MemberStatus = teamModels.MemberStatusInvited
+					member.MemberStatus = team2.MemberStatusInvited
 					err = notification_service.CreateNotification(uuid.NewString(), member.ID, &notificationModel.CreateParams{
 						Type: notificationModel.TypeTeamInvite,
 						Content: map[string]interface{}{
@@ -216,7 +216,7 @@ func UpdateTeamAuth(id string, dtoUpdateTeam *body.TeamUpdate, auth *service.Aut
 }
 
 func DeleteTeamAuth(id string, auth *service.AuthInfo) error {
-	teamClient := teamModels.New()
+	teamClient := team2.New()
 
 	team, err := teamClient.GetByID(id)
 	if err != nil {
@@ -234,7 +234,7 @@ func DeleteTeamAuth(id string, auth *service.AuthInfo) error {
 	return teamClient.DeleteByID(id)
 }
 
-func getResourceIfAccessible(resourceID string, auth *service.AuthInfo) *teamModels.Resource {
+func getResourceIfAccessible(resourceID string, auth *service.AuthInfo) *team2.Resource {
 	// try to fetch deployment
 	dClient := deploymentModel.New()
 	vClient := vmModel.New()
@@ -251,9 +251,9 @@ func getResourceIfAccessible(resourceID string, auth *service.AuthInfo) *teamMod
 	}
 
 	if isOwner {
-		return &teamModels.Resource{
+		return &team2.Resource{
 			ID:      resourceID,
-			Type:    teamModels.ResourceTypeDeployment,
+			Type:    team2.ResourceTypeDeployment,
 			AddedAt: time.Now(),
 		}
 	}
@@ -266,9 +266,9 @@ func getResourceIfAccessible(resourceID string, auth *service.AuthInfo) *teamMod
 	}
 
 	if isOwner {
-		return &teamModels.Resource{
+		return &team2.Resource{
 			ID:      resourceID,
-			Type:    teamModels.ResourceTypeVM,
+			Type:    team2.ResourceTypeVM,
 			AddedAt: time.Now(),
 		}
 	}

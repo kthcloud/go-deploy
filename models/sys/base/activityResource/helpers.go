@@ -22,7 +22,7 @@ func (client *ActivityResourceClient[T]) ListByActivity(activity string) ([]T, e
 func (client *ActivityResourceClient[T]) ListWithNoActivities() ([]T, error) {
 	filter := bson.D{{
 		"activities", bson.M{
-			"$size": 0,
+			"$gte": bson.M{},
 		},
 	}}
 

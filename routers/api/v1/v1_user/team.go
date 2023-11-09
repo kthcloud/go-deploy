@@ -9,7 +9,7 @@ import (
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
 	"go-deploy/models/dto/uri"
-	teamModels "go-deploy/models/sys/user/team"
+	teamModels "go-deploy/models/sys/team"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/deployment_service"

@@ -5,7 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
-	"go-deploy/service/deployment_service"
+	"go-deploy/service/storage_manager_service"
 	"go-deploy/utils"
 )
 
@@ -19,7 +19,7 @@ func CreateStorageManager() gin.HandlerFunc {
 			return
 		}
 
-		err = deployment_service.CreateStorageManagerIfNotExists(auth.UserID)
+		err = storage_manager_service.CreateStorageManagerIfNotExists(auth.UserID)
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to create storage manager. details: %w", err))
 			return
