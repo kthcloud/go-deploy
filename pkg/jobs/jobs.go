@@ -67,7 +67,7 @@ func DeleteVM(job *jobModel.Job) error {
 	defer cancel()
 
 	go func() {
-		err = waitForJobs(ctx, relatedJobs, []string{jobModel.StatusCompleted, jobModel.StatusFailed, jobModel.StatusTerminated})
+		err = waitForJobs(ctx, relatedJobs, []string{jobModel.StatusCompleted, jobModel.StatusTerminated})
 		if err != nil {
 			log.Println("failed to wait for related jobs", id, ". details:", err)
 		}
@@ -241,7 +241,7 @@ func DeleteDeployment(job *jobModel.Job) error {
 	defer cancel()
 
 	go func() {
-		err = waitForJobs(ctx, relatedJobs, []string{jobModel.StatusCompleted, jobModel.StatusFailed, jobModel.StatusTerminated})
+		err = waitForJobs(ctx, relatedJobs, []string{jobModel.StatusCompleted, jobModel.StatusTerminated})
 		if err != nil {
 			log.Println("failed to wait for related jobs", id, ". details:", err)
 		}
