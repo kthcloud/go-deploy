@@ -191,7 +191,7 @@ func Update(vmID string, updateParams *vmModel.UpdateParams) error {
 
 	// service offering
 	var soID *string
-	if so := &context.VM.Subsystems.CS.ServiceOffering; !service.NotCreated(so) {
+	if so := &context.VM.Subsystems.CS.ServiceOffering; service.Created(so) {
 		var requiresUpdate bool
 		if updateParams.CpuCores != nil {
 			requiresUpdate = true
@@ -212,9 +212,9 @@ func Update(vmID string, updateParams *vmModel.UpdateParams) error {
 			}
 
 			for _, soPublic := range context.Generator.SOs() {
+				soPublic.ID = ""
 				err = resources.SsCreator(context.Client.CreateServiceOffering).
 					WithDbFunc(dbFunc(vmID, "serviceOffering")).
-					WithPublic(&soPublic).
 					WithPublic(&soPublic).
 					Exec()
 
@@ -226,6 +226,19 @@ func Update(vmID string, updateParams *vmModel.UpdateParams) error {
 			}
 		} else {
 			soID = &so.ID
+		}
+	} else {
+		for _, soPublic := range context.Generator.SOs() {
+			err = resources.SsCreator(context.Client.CreateServiceOffering).
+				WithDbFunc(dbFunc(vmID, "serviceOffering")).
+				WithPublic(&soPublic).
+				Exec()
+
+			if err != nil {
+				return makeError(err)
+			}
+
+			soID = &soPublic.ID
 		}
 	}
 
@@ -272,6 +285,8 @@ func Update(vmID string, updateParams *vmModel.UpdateParams) error {
 	if updateParams.Name != nil || serviceOfferingUpdated {
 		vms := context.Generator.VMs()
 		for _, vmPublic := range vms {
+			vmPublic.ServiceOfferingID = *soID
+
 			err = resources.SsUpdater(context.Client.UpdateVM).
 				WithPublic(&vmPublic).
 				WithDbFunc(dbFunc(vmID, "vm")).

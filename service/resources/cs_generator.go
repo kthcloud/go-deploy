@@ -21,17 +21,8 @@ func (cr *CsGenerator) SOs() []models.ServiceOfferingPublic {
 
 	if cr.v.vm != nil {
 		if so := &cr.v.vm.Subsystems.CS.ServiceOffering; service.Created(so) {
-
-			if cr.v.updateParams != nil {
-
-				if cr.v.updateParams.RAM == nil {
-					so.RAM = *cr.v.updateParams.RAM
-				}
-
-				if cr.v.updateParams.CpuCores != nil {
-					so.CpuCores = *cr.v.updateParams.CpuCores
-				}
-			}
+			so.CpuCores = cr.v.vm.Specs.CpuCores
+			so.RAM = cr.v.vm.Specs.RAM
 
 			res = append(res, *so)
 
