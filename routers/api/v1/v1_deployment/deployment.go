@@ -20,7 +20,7 @@ import (
 )
 
 func getStorageManagerURL(userID string, auth *service.AuthInfo) *string {
-	storageManager, err := storage_manager_service.GetStorageManagerByOwnerIdAuth(userID, auth)
+	storageManager, err := storage_manager_service.GetByOwnerIdAuth(userID, auth)
 	if err != nil {
 		return nil
 	}

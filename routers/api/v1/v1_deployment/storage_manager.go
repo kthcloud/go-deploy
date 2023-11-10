@@ -44,7 +44,7 @@ func ListStorageManagers(c *gin.Context) {
 	}
 
 	if requestQuery.All {
-		storageManagers, _ := storage_manager_service.GetAllStorageManagers(auth)
+		storageManagers, _ := storage_manager_service.GetAll(auth)
 
 		dtoStorageManagers := make([]body.StorageManagerRead, len(storageManagers))
 		for i, deployment := range storageManagers {
@@ -55,7 +55,7 @@ func ListStorageManagers(c *gin.Context) {
 		return
 	}
 
-	storageManagers, err := storage_manager_service.ListStorageManagersAuth(requestQuery.All, requestQuery.UserID, auth, &requestQuery.Pagination)
+	storageManagers, err := storage_manager_service.ListAuth(requestQuery.All, requestQuery.UserID, auth, &requestQuery.Pagination)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -104,7 +104,7 @@ func GetStorageManager(c *gin.Context) {
 		return
 	}
 
-	storageManager, err := storage_manager_service.GetStorageManagerByIdAuth(requestURI.StorageManagerID, auth)
+	storageManager, err := storage_manager_service.GetByIdAuth(requestURI.StorageManagerID, auth)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return
@@ -148,7 +148,7 @@ func DeleteStorageManager(c *gin.Context) {
 		return
 	}
 
-	storageManager, err := storage_manager_service.GetStorageManagerByIdAuth(requestURI.StorageManagerID, auth)
+	storageManager, err := storage_manager_service.GetByIdAuth(requestURI.StorageManagerID, auth)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return

@@ -398,7 +398,7 @@ func CreateStorageManager(job *jobModel.Job) error {
 		return makeTerminatedError(err)
 	}
 
-	err = storage_manager_service.CreateStorageManager(id, &params)
+	err = storage_manager_service.Create(id, &params)
 	if err != nil {
 		if errors.Is(err, storage_manager_service.StorageManagerAlreadyExistsErr) {
 			return makeTerminatedError(err)
@@ -418,7 +418,7 @@ func DeleteStorageManager(job *jobModel.Job) error {
 
 	id := job.Args["id"].(string)
 
-	err = storage_manager_service.DeleteStorageManager(id)
+	err = storage_manager_service.Delete(id)
 	if err != nil {
 		return makeFailedError(err)
 	}
@@ -434,7 +434,7 @@ func RepairStorageManager(job *jobModel.Job) error {
 
 	id := job.Args["id"].(string)
 
-	err = storage_manager_service.RepairStorageManager(id)
+	err = storage_manager_service.Repair(id)
 	if err != nil {
 		return makeTerminatedError(err)
 	}
