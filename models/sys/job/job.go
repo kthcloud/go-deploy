@@ -3,25 +3,30 @@ package job
 import "time"
 
 const (
-	TypeCreateVM              = "createVm"
-	TypeDeleteVM              = "deleteVm"
-	TypeUpdateVM              = "updateVm"
-	TypeUpdateVmOwner         = "updateVmOwner"
-	TypeAttachGpuToVM         = "attachGpuToVm"
-	TypeDetachGpuFromVM       = "detachGpuFromVm"
+	TypeCreateVM             = "createVm"
+	TypeDeleteVM             = "deleteVm"
+	TypeUpdateVM             = "updateVm"
+	TypeUpdateVmOwner        = "updateVmOwner"
+	TypeAttachGPU            = "attachGpu"
+	TypeDetachGPU            = "detachGpu"
+	TypeRepairVM             = "repairVm"
+	TypeCreateSystemSnapshot = "createSystemSnapshot"
+	TypeCreateUserSnapshot   = "createUserSnapshot"
+	TypeDeleteSnapshot       = "deleteSnapshot"
+	TypeApplySnapshot        = "applySnapshot"
+
 	TypeCreateDeployment      = "createDeployment"
 	TypeDeleteDeployment      = "deleteDeployment"
 	TypeUpdateDeployment      = "updateDeployment"
 	TypeUpdateDeploymentOwner = "updateDeploymentOwner"
 	TypeBuildDeployments      = "buildDeployments"
-	TypeCreateStorageManager  = "createStorageManager"
-	TypeDeleteStorageManager  = "deleteStorageManager"
-	TypeRepairStorageManager  = "repairStorageManager"
-	TypeRepairVM              = "repairVm"
 	TypeRepairDeployment      = "repairDeployment"
-	TypeRepairGPUs            = "repairGpus"
-	TypeCreateSnapshot        = "createSnapshot"
-	TypeApplySnapshot         = "applySnapshot"
+
+	TypeCreateStorageManager = "createStorageManager"
+	TypeDeleteStorageManager = "deleteStorageManager"
+	TypeRepairStorageManager = "repairStorageManager"
+
+	TypeRepairGPUs = "repairGpus"
 )
 
 const (

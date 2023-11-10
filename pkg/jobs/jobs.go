@@ -472,17 +472,58 @@ func RepairGPUs(job *jobModel.Job) error {
 	return nil
 }
 
-func CreateSnapshot(job *jobModel.Job) error {
-	err := assertParameters(job, []string{"id", "name", "userCreated"})
+func CreateSystemSnapshot(job *jobModel.Job) error {
+	err := assertParameters(job, []string{"id", "params"})
 	if err != nil {
 		return makeTerminatedError(err)
 	}
 
 	vmID := job.Args["id"].(string)
-	name := job.Args["name"].(string)
-	userCreated := job.Args["userCreated"].(bool)
+	var params vmModel.CreateSnapshotParams
+	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
+	if err != nil {
+		return makeTerminatedError(err)
+	}
 
-	err = vm_service.CreateSnapshot(vmID, name, userCreated)
+	err = vm_service.CreateSystemSnapshot(vmID, &params)
+	if err != nil {
+		return makeTerminatedError(err)
+	}
+
+	return nil
+}
+
+func CreateUserSnapshot(job *jobModel.Job) error {
+	err := assertParameters(job, []string{"id", "params"})
+	if err != nil {
+		return makeTerminatedError(err)
+	}
+
+	vmID := job.Args["id"].(string)
+	var params body.VmSnapshotCreate
+	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
+	if err != nil {
+		return makeTerminatedError(err)
+	}
+
+	err = vm_service.CreateUserSnapshot(vmID, &params)
+	if err != nil {
+		return makeTerminatedError(err)
+	}
+
+	return nil
+}
+
+func DeleteSnapshot(job *jobModel.Job) error {
+	err := assertParameters(job, []string{"id", "snapshotId"})
+	if err != nil {
+		return makeTerminatedError(err)
+	}
+
+	vmID := job.Args["id"].(string)
+	snapshotID := job.Args["snapshotId"].(string)
+
+	err = vm_service.DeleteSnapshot(vmID, snapshotID)
 	if err != nil {
 		return makeTerminatedError(err)
 	}

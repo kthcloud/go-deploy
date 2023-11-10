@@ -23,7 +23,7 @@ var (
 	NonUniqueFieldErr = fmt.Errorf("non unique field")
 )
 
-func Create(id, ownerID string, vmCreate *body.VmCreate) error {
+func Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create vm. details: %w", err)
 	}
@@ -33,7 +33,7 @@ func Create(id, ownerID string, vmCreate *body.VmCreate) error {
 	deploymentZone := "se-flem"
 
 	params := &vmModel.CreateParams{}
-	params.FromDTO(vmCreate, &fallback, &deploymentZone)
+	params.FromDTO(dtoVmCreate, &fallback, &deploymentZone)
 
 	_, err := vmModel.New().Create(id, ownerID, config.Config.Manager, params)
 	if err != nil {
@@ -476,18 +476,18 @@ func CanAddActivity(vmID, activity string) (bool, string, error) {
 	return false, "", fmt.Errorf("unknown activity %s", activity)
 }
 
-func CheckQuotaCreate(userID string, quota *roleModel.Quotas, auth *service.AuthInfo, createParams body.VmCreate) (bool, string, error) {
+func CheckQuotaCreate(userID string, quota *roleModel.Quotas, auth *service.AuthInfo, createParams body.VmCreate) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check quota. details: %w", err)
 	}
 
 	if auth.IsAdmin {
-		return true, "", nil
+		return nil
 	}
 
 	usage, err := GetUsageByUserID(userID)
 	if err != nil {
-		return false, "", makeError(err)
+		return makeError(err)
 	}
 
 	totalCpuCores := usage.CpuCores + createParams.CpuCores
@@ -495,49 +495,49 @@ func CheckQuotaCreate(userID string, quota *roleModel.Quotas, auth *service.Auth
 	totalDiskSize := usage.DiskSize + createParams.DiskSize
 
 	if totalCpuCores > quota.CpuCores {
-		return false, fmt.Sprintf("CPU cores quota exceeded. Current: %d, Quota: %d", totalCpuCores, quota.CpuCores), nil
+		return service.NewQuotaExceededError(fmt.Sprintf("CPU cores quota exceeded. Current: %d, Quota: %d", totalCpuCores, quota.CpuCores))
 	}
 
 	if totalRam > quota.RAM {
-		return false, fmt.Sprintf("RAM quota exceeded. Current: %d, Quota: %d", totalRam, quota.RAM), nil
+		return service.NewQuotaExceededError(fmt.Sprintf("RAM quota exceeded. Current: %d, Quota: %d", totalRam, quota.RAM))
 	}
 
 	if totalDiskSize > quota.DiskSize {
-		return false, fmt.Sprintf("Disk size quota exceeded. Current: %d, Quota: %d", totalDiskSize, quota.DiskSize), nil
+		return service.NewQuotaExceededError(fmt.Sprintf("Disk size quota exceeded. Current: %d, Quota: %d", totalDiskSize, quota.DiskSize))
 	}
 
-	return true, "", nil
+	return nil
 }
 
-func CheckQuotaUpdate(userID, vmID string, quota *roleModel.Quotas, auth *service.AuthInfo, updateParams body.VmUpdate) (bool, string, error) {
+func CheckQuotaUpdate(userID, vmID string, quota *roleModel.Quotas, auth *service.AuthInfo, updateParams body.VmUpdate) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check quota. details: %w", err)
 	}
 
 	if auth.IsAdmin {
-		return true, "", nil
+		return nil
 	}
 
 	if updateParams.CpuCores == nil && updateParams.RAM == nil {
-		return true, "", nil
+		return nil
 	}
 
 	usage, err := GetUsageByUserID(userID)
 	if err != nil {
-		return false, "", makeError(err)
+		return makeError(err)
 	}
 
 	if usage == nil {
-		return false, "", makeError(fmt.Errorf("usage not found"))
+		return makeError(fmt.Errorf("usage not found"))
 	}
 
 	vm, err := vmModel.New().GetByID(vmID)
 	if err != nil {
-		return false, "", makeError(err)
+		return makeError(err)
 	}
 
 	if vm == nil {
-		return false, "", makeError(fmt.Errorf("vm not found"))
+		return makeError(fmt.Errorf("vm not found"))
 	}
 
 	if updateParams.CpuCores != nil {
@@ -547,7 +547,7 @@ func CheckQuotaUpdate(userID, vmID string, quota *roleModel.Quotas, auth *servic
 		}
 
 		if totalCpuCores > quota.CpuCores {
-			return false, fmt.Sprintf("CPU cores quota exceeded. Current: %d, Quota: %d", totalCpuCores, quota.CpuCores), nil
+			return service.NewQuotaExceededError(fmt.Sprintf("CPU cores quota exceeded. Current: %d, Quota: %d", totalCpuCores, quota.CpuCores))
 		}
 	}
 
@@ -558,11 +558,11 @@ func CheckQuotaUpdate(userID, vmID string, quota *roleModel.Quotas, auth *servic
 		}
 
 		if totalRam > quota.RAM {
-			return false, fmt.Sprintf("RAM quota exceeded. Current: %d, Quota: %d", totalRam, quota.RAM), nil
+			return service.NewQuotaExceededError(fmt.Sprintf("RAM quota exceeded. Current: %d, Quota: %d", totalRam, quota.RAM))
 		}
 	}
 
-	return true, "", nil
+	return nil
 }
 
 func GetUsageByUserID(id string) (*vmModel.Usage, error) {

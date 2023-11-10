@@ -25,7 +25,9 @@ func (group *VmRoutingGroup) PrivateRoutes() []Route {
 		{Method: "DELETE", Pattern: VmPath, HandlerFunc: v1_vm.Delete},
 
 		{Method: "GET", Pattern: VmSnapshotsPath, HandlerFunc: v1_vm.ListSnapshots},
+		{Method: "GET", Pattern: VmSnapshotsPath, HandlerFunc: v1_vm.GetSnapshot},
 		{Method: "POST", Pattern: VmSnapshotsPath, HandlerFunc: v1_vm.CreateSnapshot},
+		{Method: "DELETE", Pattern: VmSnapshotsPath, HandlerFunc: v1_vm.DeleteSnapshot},
 
 		{Method: "POST", Pattern: VmCommandPath, HandlerFunc: v1_vm.DoCommand},
 	}

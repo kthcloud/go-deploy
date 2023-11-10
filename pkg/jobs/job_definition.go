@@ -56,13 +56,13 @@ func jobMapper() map[string]JobDefinition {
 			EntryFunc:     vAddActivity(va.ActivityUpdating),
 			ExitFunc:      vRemActivity(va.ActivityUpdating),
 		},
-		jobModel.TypeAttachGpuToVM: {
+		jobModel.TypeAttachGPU: {
 			JobFunc:       AttachGpuToVM,
 			TerminateFunc: leafJobVM.Build(),
 			EntryFunc:     vAddActivity(va.ActivityAttachingGPU, va.ActivityUpdating),
 			ExitFunc:      vRemActivity(va.ActivityAttachingGPU, va.ActivityUpdating),
 		},
-		jobModel.TypeDetachGpuFromVM: {
+		jobModel.TypeDetachGPU: {
 			JobFunc:       DetachGpuFromVM,
 			TerminateFunc: leafJobVM.Build(),
 			EntryFunc:     vAddActivity(va.ActivityDetachingGPU, va.ActivityUpdating),
@@ -77,11 +77,21 @@ func jobMapper() map[string]JobDefinition {
 		jobModel.TypeRepairGPUs: {
 			JobFunc: RepairGPUs,
 		},
-		jobModel.TypeCreateSnapshot: {
-			JobFunc:       CreateSnapshot,
+		jobModel.TypeCreateSystemSnapshot: {
+			JobFunc:       CreateSystemSnapshot,
 			TerminateFunc: leafJobVM.Build(),
 			EntryFunc:     vAddActivity(va.ActivityCreatingSnapshot),
 			ExitFunc:      vRemActivity(va.ActivityCreatingSnapshot),
+		},
+		jobModel.TypeCreateUserSnapshot: {
+			JobFunc:       CreateUserSnapshot,
+			TerminateFunc: leafJobVM.Build(),
+			EntryFunc:     vAddActivity(va.ActivityCreatingSnapshot),
+			ExitFunc:      vRemActivity(va.ActivityCreatingSnapshot),
+		},
+		jobModel.TypeDeleteSnapshot: {
+			JobFunc:       DeleteSnapshot,
+			TerminateFunc: leafJobVM.Build(),
 		},
 		jobModel.TypeApplySnapshot: {
 			JobFunc:       ApplySnapshot,

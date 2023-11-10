@@ -525,27 +525,27 @@ func ListAll() ([]deploymentModel.Deployment, error) {
 	return deploymentModel.New().ListAll()
 }
 
-func CheckQuotaCreate(userID string, quota *roleModel.Quotas, auth *service.AuthInfo) (bool, string, error) {
+func CheckQuotaCreate(userID string, quota *roleModel.Quotas, auth *service.AuthInfo) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check quota. details: %w", err)
 	}
 
 	if auth.IsAdmin {
-		return true, "", nil
+		return nil
 	}
 
 	usage, err := GetUsageByUserID(userID)
 	if err != nil {
-		return false, "", makeError(err)
+		return makeError(err)
 	}
 
 	totalCount := usage.Count + 1
 
 	if totalCount > quota.Deployments {
-		return false, fmt.Sprintf("Deployment quota exceeded. Current: %d, Quota: %d", totalCount, quota.CpuCores), nil
+		return service.NewQuotaExceededError(fmt.Sprintf("Deployment quota exceeded. Current: %d, Quota: %d", totalCount, quota.CpuCores))
 	}
 
-	return true, "", nil
+	return nil
 }
 
 func StartActivity(deploymentID, activity string) (bool, string, error) {
