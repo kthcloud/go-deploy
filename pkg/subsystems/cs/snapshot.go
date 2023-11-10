@@ -2,7 +2,6 @@ package cs
 
 import (
 	"fmt"
-	"github.com/google/uuid"
 	"go-deploy/pkg/subsystems/cs/models"
 	"log"
 	"strings"
@@ -100,14 +99,13 @@ func (client *Client) DeleteSnapshot(id string) error {
 		return nil
 	}
 
-	// tnp remove later
-	id = uuid.NewString()
-
 	params := client.CsClient.Snapshot.NewDeleteVMSnapshotParams(id)
 
 	_, err := client.CsClient.Snapshot.DeleteVMSnapshot(params)
 	if err != nil {
-		return makeError(err)
+		if !strings.Contains(err.Error(), "entity does not exist") && !strings.Contains(err.Error(), "Unable to find") {
+			return makeError(err)
+		}
 	}
 
 	return nil

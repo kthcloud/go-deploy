@@ -6,6 +6,7 @@ const (
 	VmsPath         = "/v1/vms"
 	VmPath          = "/v1/vms/:vmId"
 	VmSnapshotsPath = "/v1/vms/:vmId/snapshots"
+	VmSnapshotPath  = "/v1/vms/:vmId/snapshots/:snapshotId"
 	VmCommandPath   = "/v1/vms/:vmId/command"
 )
 
@@ -25,9 +26,9 @@ func (group *VmRoutingGroup) PrivateRoutes() []Route {
 		{Method: "DELETE", Pattern: VmPath, HandlerFunc: v1_vm.Delete},
 
 		{Method: "GET", Pattern: VmSnapshotsPath, HandlerFunc: v1_vm.ListSnapshots},
-		{Method: "GET", Pattern: VmSnapshotsPath, HandlerFunc: v1_vm.GetSnapshot},
+		{Method: "GET", Pattern: VmSnapshotPath, HandlerFunc: v1_vm.GetSnapshot},
 		{Method: "POST", Pattern: VmSnapshotsPath, HandlerFunc: v1_vm.CreateSnapshot},
-		{Method: "DELETE", Pattern: VmSnapshotsPath, HandlerFunc: v1_vm.DeleteSnapshot},
+		{Method: "DELETE", Pattern: VmSnapshotPath, HandlerFunc: v1_vm.DeleteSnapshot},
 
 		{Method: "POST", Pattern: VmCommandPath, HandlerFunc: v1_vm.DoCommand},
 	}

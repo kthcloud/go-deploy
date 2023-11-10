@@ -1,7 +1,11 @@
 package migrator
 
 import (
+	vmModel "go-deploy/models/sys/vm"
+	"go-deploy/pkg/subsystems/cs/models"
+	"go-deploy/service/vm_service/cs_service"
 	"log"
+	"strings"
 )
 
 // Migrate will run as early as possible in the program, and it will never be called again.
@@ -33,5 +37,41 @@ func Migrate() {
 //
 // add a date to the migration name to make it easier to identify.
 func getMigrations() map[string]func() error {
-	return map[string]func() error{}
+	return map[string]func() error{
+		"remove-old-system-snapshots_2023-11-10": removeOldSystemSnapshots,
+	}
+}
+
+func removeOldSystemSnapshots() error {
+	vms, err := vmModel.New().ListAll()
+	if err != nil {
+		return err
+	}
+
+	for _, vm := range vms {
+		snapshots := vm.Subsystems.CS.SnapshotMap
+
+		for _, snapshot := range snapshots {
+			if snapshot.UserCreated() || goodSnapshotName(&snapshot) {
+				continue
+			}
+
+			if err = cs_service.DeleteSnapshot(vm.ID, snapshot.ID); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func goodSnapshotName(snapshot *models.SnapshotPublic) bool {
+	allowed := []string{"daily", "weekly", "monthly"}
+	for _, name := range allowed {
+		if strings.Contains(snapshot.Name, name) {
+			return true
+		}
+	}
+
+	return false
 }
