@@ -10,5 +10,5 @@ type NotificationRead struct {
 }
 
 type NotificationUpdate struct {
-	ReadAt *time.Time `json:"readAt"`
+	Read bool `json:"read"`
 }

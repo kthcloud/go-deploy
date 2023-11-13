@@ -52,6 +52,15 @@ func (t *Team) GetMemberMap() map[string]Member {
 	return t.MemberMap
 }
 
+func (t *Team) GetMember(id string) *Member {
+	res, ok := t.GetMemberMap()[id]
+	if !ok {
+		return nil
+	}
+
+	return &res
+}
+
 func (t *Team) GetResourceMap() map[string]Resource {
 	if t.ResourceMap == nil {
 		t.ResourceMap = make(map[string]Resource)
