@@ -27,13 +27,23 @@ func (cs *CS) GetPortForwardingRule(name string) *csModels.PortForwardingRulePub
 	return &resource
 }
 
-func (cs *CS) GetSnapshot(name string) *csModels.SnapshotPublic {
-	resource, ok := cs.GetSnapshotMap()[name]
+func (cs *CS) GetSnapshotByID(id string) *csModels.SnapshotPublic {
+	resource, ok := cs.GetSnapshotMap()[id]
 	if !ok {
 		return nil
 	}
 
 	return &resource
+}
+
+func (cs *CS) GetSnapshotByName(name string) *csModels.SnapshotPublic {
+	for _, resource := range cs.GetSnapshotMap() {
+		if resource.Name == name {
+			return &resource
+		}
+	}
+
+	return nil
 }
 
 func (cs *CS) SetSnapshot(name string, resource csModels.SnapshotPublic) {

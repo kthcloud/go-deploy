@@ -41,7 +41,7 @@ func ListSnapshotsByVM(vmID string) ([]vmModel.Snapshot, error) {
 	return snapshots, nil
 }
 
-func ListSnapshotsByName(vmID, snapshotName string) (*vmModel.Snapshot, error) {
+func GetSnapshotByName(vmID, snapshotName string) (*vmModel.Snapshot, error) {
 	vm, err := vmModel.New().GetByID(vmID)
 	if err != nil {
 		return nil, err
@@ -51,8 +51,8 @@ func ListSnapshotsByName(vmID, snapshotName string) (*vmModel.Snapshot, error) {
 		return nil, nil
 	}
 
-	snapshot, ok := vm.Subsystems.CS.SnapshotMap[snapshotName]
-	if !ok {
+	snapshot := vm.Subsystems.CS.GetSnapshotByName(snapshotName)
+	if snapshot == nil {
 		return nil, nil
 	}
 
@@ -67,7 +67,7 @@ func ListSnapshotsByName(vmID, snapshotName string) (*vmModel.Snapshot, error) {
 	}, nil
 }
 
-func GetSnapshot(vmID, snapshotName string) (*vmModel.Snapshot, error) {
+func GetSnapshotByID(vmID, snapshotID string) (*vmModel.Snapshot, error) {
 	vm, err := vmModel.New().GetByID(vmID)
 	if err != nil {
 		return nil, err
@@ -77,8 +77,8 @@ func GetSnapshot(vmID, snapshotName string) (*vmModel.Snapshot, error) {
 		return nil, nil
 	}
 
-	snapshot, ok := vm.Subsystems.CS.SnapshotMap[snapshotName]
-	if !ok {
+	snapshot := vm.Subsystems.CS.GetSnapshotByID(snapshotID)
+	if snapshot == nil {
 		return nil, nil
 	}
 

@@ -30,6 +30,7 @@ func GetJobDef(job *jobModel.Job) *JobDefinition {
 func jobMapper() map[string]JobDefinition {
 	coreJobVM := Builder().Add(vmDeleted)
 	leafJobVM := Builder().Add(vmDeleted).Add(updatingOwner)
+	oneCreateSnapshotPerUser := Builder().Add(vmDeleted).Add(updatingOwner).Add(onlyCreateSnapshotPerUser)
 
 	coreJobDeployment := Builder().Add(deploymentDeleted)
 	leafJobDeployment := Builder().Add(deploymentDeleted).Add(updatingOwner)
@@ -85,7 +86,7 @@ func jobMapper() map[string]JobDefinition {
 		},
 		jobModel.TypeCreateUserSnapshot: {
 			JobFunc:       CreateUserSnapshot,
-			TerminateFunc: leafJobVM.Build(),
+			TerminateFunc: oneCreateSnapshotPerUser.Build(),
 			EntryFunc:     vAddActivity(va.ActivityCreatingSnapshot),
 			ExitFunc:      vRemActivity(va.ActivityCreatingSnapshot),
 		},

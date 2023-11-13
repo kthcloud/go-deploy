@@ -30,7 +30,7 @@ func CreateSnapshot(vmID string, params *vmModel.CreateSnapshotParams) error {
 		return makeError(err)
 	}
 
-	if snapshot := context.VM.Subsystems.CS.GetSnapshot(params.Name); service.Created(snapshot) && !params.Overwrite {
+	if snapshot := context.VM.Subsystems.CS.GetSnapshotByName(params.Name); service.Created(snapshot) && !params.Overwrite {
 		return AlreadyExistsErr
 	}
 
@@ -143,7 +143,7 @@ func ApplySnapshot(vmID, snapshotID string) error {
 		return makeError(err)
 	}
 
-	snapshot := context.VM.Subsystems.CS.GetSnapshot(snapshotID)
+	snapshot := context.VM.Subsystems.CS.GetSnapshotByID(snapshotID)
 	if service.NotCreated(snapshot) {
 		return makeError(fmt.Errorf("snapshot %s not found", snapshotID))
 	}

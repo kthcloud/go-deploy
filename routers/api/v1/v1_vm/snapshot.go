@@ -91,7 +91,7 @@ func GetSnapshot(c *gin.Context) {
 		return
 	}
 
-	snapshot, err := vm_service.GetSnapshot(requestURI.VmID, requestURI.SnapshotID)
+	snapshot, err := vm_service.GetSnapshotByID(requestURI.VmID, requestURI.SnapshotID)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -151,7 +151,7 @@ func CreateSnapshot(c *gin.Context) {
 		return
 	}
 
-	current, err := vm_service.ListSnapshotsByName(requestURI.VmID, requestBody.Name)
+	current, err := vm_service.GetSnapshotByName(requestURI.VmID, requestBody.Name)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -232,7 +232,7 @@ func DeleteSnapshot(c *gin.Context) {
 		return
 	}
 
-	snapshot, err := vm_service.GetSnapshot(requestURI.VmID, requestURI.SnapshotID)
+	snapshot, err := vm_service.GetSnapshotByID(requestURI.VmID, requestURI.SnapshotID)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
