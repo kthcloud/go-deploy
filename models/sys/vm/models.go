@@ -64,7 +64,7 @@ type Snapshot struct {
 }
 
 type CreateSnapshotParams struct {
-	Name        string
-	UserCreated bool
-	Overwrite   bool
+	Name        string `bson:"name"`
+	UserCreated bool   `bson:"userCreated"`
+	Overwrite   bool   `bson:"overwrite"`
 }

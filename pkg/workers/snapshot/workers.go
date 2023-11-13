@@ -17,7 +17,7 @@ func snapshotter(ctx context.Context) {
 
 	for {
 		select {
-		case <-time.After(1 * time.Hour):
+		case <-time.After(10 * time.Second):
 			vms, err := vmModel.New().ListAll()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("failed to get all vms. details: %w", err))
@@ -28,15 +28,11 @@ func snapshotter(ctx context.Context) {
 				recurrings := []string{"daily", "weekly", "monthly"}
 
 				for _, recurring := range recurrings {
-					exists, err := job.New().Exists(job.TypeCreateSystemSnapshot, map[string]interface{}{
-						"id": vm.ID,
-						"params": vmModel.CreateSnapshotParams{
-							Name:        fmt.Sprintf("auto-%s", recurring),
-							UserCreated: false,
-							Overwrite:   true,
-						},
-					})
-
+					exists, err := job.New().
+						ExcludeTypes(job.StatusTerminated, job.StatusCompleted).
+						FilterArgs("id", vm.ID).
+						FilterArgs("params.name", fmt.Sprintf("auto-%s", recurring)).
+						ExistsAny()
 					if err != nil {
 						utils.PrettyPrintError(fmt.Errorf("failed to check if snapshot job exists. details: %w", err))
 						continue

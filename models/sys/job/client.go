@@ -41,6 +41,18 @@ func (client *Client) AddFilter(filter bson.D) *Client {
 	return client
 }
 
+func (client *Client) ExcludeTypes(jobType ...string) *Client {
+	client.AddExtraFilter(bson.D{{"type", bson.D{{"$nin", jobType}}}})
+
+	return client
+}
+
+func (client *Client) FilterArgs(argName string, filter interface{}) *Client {
+	client.AddExtraFilter(bson.D{{"args." + argName, filter}})
+
+	return client
+}
+
 func (client *Client) AddPagination(page, pageSize int) *Client {
 	client.Pagination = &base.Pagination{
 		Page:     page,
