@@ -37,12 +37,6 @@ func ListSnapshots(c *gin.Context) {
 		return
 	}
 
-	var requestBody body.VmSnapshotList
-	if err := context.GinContext.ShouldBindJSON(&requestBody); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
-		return
-	}
-
 	snapshots, _ := vm_service.ListSnapshotsByVM(requestURI.VmID)
 	if snapshots == nil {
 		context.Ok([]interface{}{})
@@ -180,10 +174,11 @@ func CreateSnapshot(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = job_service.Create(jobID, auth.UserID, job.TypeCreateSystemSnapshot, map[string]interface{}{
-		"id":          vm.ID,
-		"name":        requestBody.Name,
-		"userCreated": true,
+	err = job_service.Create(jobID, auth.UserID, job.TypeCreateUserSnapshot, map[string]interface{}{
+		"id": vm.ID,
+		"params": body.VmSnapshotCreate{
+			Name: requestBody.Name,
+		},
 	})
 
 	if err != nil {
@@ -248,11 +243,19 @@ func DeleteSnapshot(c *gin.Context) {
 		return
 	}
 
-	err = vm_service.DeleteSnapshot(requestURI.VmID, requestURI.SnapshotID)
+	jobID := uuid.New().String()
+	err = job_service.Create(jobID, auth.UserID, job.TypeDeleteSnapshot, map[string]interface{}{
+		"id":         vm.ID,
+		"snapshotId": snapshot.ID,
+	})
+
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
 	}
 
-	context.Ok(nil)
+	context.Ok(body.VmSnapshotDeleted{
+		ID:    vm.ID,
+		JobID: jobID,
+	})
 }

@@ -29,7 +29,8 @@ func snapshotter(ctx context.Context) {
 
 				for _, recurring := range recurrings {
 					exists, err := job.New().
-						ExcludeTypes(job.StatusTerminated, job.StatusCompleted).
+						IncludeTypes(job.TypeCreateSystemSnapshot).
+						ExcludeStatus(job.StatusTerminated, job.StatusCompleted).
 						FilterArgs("id", vm.ID).
 						FilterArgs("params.name", fmt.Sprintf("auto-%s", recurring)).
 						ExistsAny()

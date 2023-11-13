@@ -41,8 +41,14 @@ func (client *Client) AddFilter(filter bson.D) *Client {
 	return client
 }
 
-func (client *Client) ExcludeTypes(jobType ...string) *Client {
-	client.AddExtraFilter(bson.D{{"type", bson.D{{"$nin", jobType}}}})
+func (client *Client) IncludeTypes(types ...string) *Client {
+	client.AddExtraFilter(bson.D{{"type", bson.D{{"$in", types}}}})
+
+	return client
+}
+
+func (client *Client) ExcludeStatus(status ...string) *Client {
+	client.AddExtraFilter(bson.D{{"status", bson.D{{"$nin", status}}}})
 
 	return client
 }
