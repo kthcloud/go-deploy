@@ -72,14 +72,43 @@ func (rc *SsRepairerType[idType, T]) Exec() error {
 		func() (T, error) {
 			return rc.fetchFunc(*rc.resourceID)
 		},
-		rc.updateFunc,
+		func(dbResource T) (T, error) {
+			var empty T
+
+			updated, err := rc.updateFunc(dbResource)
+			if err != nil {
+				return empty, err
+			}
+
+			if rc.dbFunc == nil {
+				log.Println("no db func provided for subsystem repair. did you forget to call WithDbFunc?")
+				return updated, nil
+			}
+
+			err = rc.dbFunc(updated)
+			if err != nil {
+				return empty, err
+			}
+
+			return updated, nil
+		},
 		func(dbResource T) error {
 			err := rc.deleteFunc(*rc.resourceID)
 			if err != nil {
 				return err
 			}
 
-			_, err = rc.createFunc(dbResource)
+			created, err := rc.createFunc(dbResource)
+			if err != nil {
+				return err
+			}
+
+			if rc.dbFunc == nil {
+				log.Println("no db func provided for subsystem repair. did you forget to call WithDbFunc?")
+				return nil
+			}
+
+			err = rc.dbFunc(created)
 			if err != nil {
 				return err
 			}

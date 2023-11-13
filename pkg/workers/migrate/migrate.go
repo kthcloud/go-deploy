@@ -1,12 +1,11 @@
 package migrator
 
 import (
-	"context"
-	"go-deploy/models/db"
-	"go-deploy/models/sys/activity"
-	"go.mongodb.org/mongo-driver/bson"
+	vmModel "go-deploy/models/sys/vm"
+	"go-deploy/pkg/subsystems/cs/models"
+	"go-deploy/service/vm_service/cs_service"
 	"log"
-	"time"
+	"strings"
 )
 
 // Migrate will run as early as possible in the program, and it will never be called again.
@@ -39,91 +38,40 @@ func Migrate() {
 // add a date to the migration name to make it easier to identify.
 func getMigrations() map[string]func() error {
 	return map[string]func() error{
-		"migration_2021_10_07": migrateActivitesToNewModel_2023_11_07,
+		"remove-old-system-snapshots_2023-11-10": removeOldSystemSnapshots,
 	}
 }
 
-type withOldActivites struct {
-	ID         string   `bson:"id"`
-	Activities []string `bson:"activities"`
-}
-
-func migrateActivitesToNewModel_2023_11_07() error {
-
-	cursor, err := db.DB.GetCollection("deployments").Find(context.TODO(), bson.D{})
+func removeOldSystemSnapshots() error {
+	vms, err := vmModel.New().ListAll()
 	if err != nil {
 		return err
 	}
 
-	for cursor.Next(context.Background()) {
-		var deployment withOldActivites
-		if err := cursor.Decode(&deployment); err != nil {
-			// skip this in case we already migrated it
-		}
+	for _, vm := range vms {
+		snapshots := vm.Subsystems.CS.SnapshotMap
 
-		activities := make(map[string]activity.Activity)
-		for _, a := range deployment.Activities {
-			activities[a] = activity.Activity{
-				Name:      a,
-				CreatedAt: time.Now(),
+		for _, snapshot := range snapshots {
+			if snapshot.UserCreated() || goodSnapshotName(&snapshot) {
+				continue
 			}
-		}
 
-		_, err = db.DB.GetCollection("deployments").UpdateOne(context.Background(), bson.M{"id": deployment.ID}, bson.M{"$set": bson.M{"activities": activities}})
-		if err != nil {
-			return err
-		}
-	}
-
-	cursor, err = db.DB.GetCollection("vms").Find(context.Background(), bson.D{})
-	if err != nil {
-		return err
-	}
-
-	for cursor.Next(context.Background()) {
-		var vm withOldActivites
-		if err := cursor.Decode(&vm); err != nil {
-			// skip this in case we already migrated it
-		}
-
-		activities := make(map[string]activity.Activity)
-		for _, a := range vm.Activities {
-			activities[a] = activity.Activity{
-				Name:      a,
-				CreatedAt: time.Now(),
+			if err = cs_service.DeleteSnapshot(vm.ID, snapshot.ID); err != nil {
+				return err
 			}
-		}
-
-		_, err = db.DB.GetCollection("vms").UpdateOne(context.Background(), bson.M{"id": vm.ID}, bson.M{"$set": bson.M{"activities": activities}})
-		if err != nil {
-			return err
-		}
-	}
-
-	cursor, err = db.DB.GetCollection("storageManagers").Find(context.Background(), bson.D{})
-	if err != nil {
-		return err
-	}
-
-	for cursor.Next(context.Background()) {
-		var storageManager withOldActivites
-		if err := cursor.Decode(&storageManager); err != nil {
-			// skip this in case we already migrated it
-		}
-
-		activities := make(map[string]activity.Activity)
-		for _, a := range storageManager.Activities {
-			activities[a] = activity.Activity{
-				Name:      a,
-				CreatedAt: time.Now(),
-			}
-		}
-
-		_, err = db.DB.GetCollection("storageManagers").UpdateOne(context.Background(), bson.M{"id": storageManager.ID}, bson.M{"$set": bson.M{"activities": activities}})
-		if err != nil {
-			return err
 		}
 	}
 
 	return nil
+}
+
+func goodSnapshotName(snapshot *models.SnapshotPublic) bool {
+	allowed := []string{"daily", "weekly", "monthly"}
+	for _, name := range allowed {
+		if strings.Contains(snapshot.Name, name) {
+			return true
+		}
+	}
+
+	return false
 }

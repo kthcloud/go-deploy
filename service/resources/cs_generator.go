@@ -23,6 +23,7 @@ func (cr *CsGenerator) SOs() []models.ServiceOfferingPublic {
 		if so := &cr.v.vm.Subsystems.CS.ServiceOffering; service.Created(so) {
 			so.CpuCores = cr.v.vm.Specs.CpuCores
 			so.RAM = cr.v.vm.Specs.RAM
+			so.DiskSize = cr.v.vm.Specs.DiskSize
 
 			res = append(res, *so)
 

@@ -2,6 +2,7 @@ package v1_vm
 
 import (
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -194,14 +195,15 @@ func Create(c *gin.Context) {
 		}
 	}
 
-	ok, reason, err := vm_service.CheckQuotaCreate(auth.UserID, &auth.GetEffectiveRole().Quotas, auth, requestBody)
+	err = vm_service.CheckQuotaCreate(auth.UserID, &auth.GetEffectiveRole().Quotas, auth, requestBody)
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
-		return
-	}
+		var quotaExceedErr service.QuotaExceededError
+		if errors.As(err, &quotaExceedErr) {
+			context.Forbidden(quotaExceedErr.Error())
+			return
+		}
 
-	if !ok {
-		context.Forbidden(reason)
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
@@ -399,14 +401,15 @@ func Update(c *gin.Context) {
 		}
 	}
 
-	ok, reason, err := vm_service.CheckQuotaUpdate(auth.UserID, vm.ID, &auth.GetEffectiveRole().Quotas, auth, requestBody)
+	err = vm_service.CheckQuotaUpdate(auth.UserID, vm.ID, &auth.GetEffectiveRole().Quotas, auth, requestBody)
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
-		return
-	}
+		var quotaExceededErr service.QuotaExceededError
+		if errors.As(err, &quotaExceededErr) {
+			context.Forbidden(quotaExceededErr.Error())
+			return
+		}
 
-	if !ok {
-		context.Forbidden(reason)
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
@@ -474,7 +477,7 @@ func detachGPU(context *sys.ClientContext, auth *service.AuthInfo, vm *vmModel.V
 	}
 
 	jobID := uuid.New().String()
-	err = job_service.Create(jobID, auth.UserID, jobModel.TypeDetachGpuFromVM, map[string]interface{}{
+	err = job_service.Create(jobID, auth.UserID, jobModel.TypeDetachGPU, map[string]interface{}{
 		"id":     vm.ID,
 		"userId": vm.OwnerID,
 	})
@@ -622,7 +625,7 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *ser
 	}
 
 	jobID := uuid.New().String()
-	err = job_service.Create(jobID, auth.UserID, jobModel.TypeAttachGpuToVM, map[string]interface{}{
+	err = job_service.Create(jobID, auth.UserID, jobModel.TypeAttachGPU, map[string]interface{}{
 		"id":            vm.ID,
 		"gpuIds":        gpuIds,
 		"userId":        auth.UserID,

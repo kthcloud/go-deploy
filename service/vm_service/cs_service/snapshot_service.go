@@ -3,6 +3,7 @@ package cs_service
 import (
 	"errors"
 	"fmt"
+	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/pkg/subsystems/cs/commands"
 	csModels "go-deploy/pkg/subsystems/cs/models"
 	"go-deploy/service"
@@ -10,7 +11,11 @@ import (
 	"log"
 )
 
-func CreateSnapshotCS(vmID, name string, userCreated bool) error {
+var (
+	AlreadyExistsErr = fmt.Errorf("already exists")
+)
+
+func CreateSnapshot(vmID string, params *vmModel.CreateSnapshotParams) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create snapshot for cs vm %s. details: %w", vmID, err)
 	}
@@ -25,9 +30,8 @@ func CreateSnapshotCS(vmID, name string, userCreated bool) error {
 		return makeError(err)
 	}
 
-	if snapshot := context.VM.Subsystems.CS.GetSnapshot(name); service.Created(snapshot) {
-		log.Println("snapshot", name, "already exists for vm", vmID)
-		return nil
+	if snapshot := context.VM.Subsystems.CS.GetSnapshotByName(params.Name); service.Created(snapshot) && !params.Overwrite {
+		return AlreadyExistsErr
 	}
 
 	vmStatus, err := context.Client.GetVmStatus(context.VM.Subsystems.CS.VM.ID)
@@ -40,14 +44,14 @@ func CreateSnapshotCS(vmID, name string, userCreated bool) error {
 	}
 
 	var description string
-	if userCreated {
+	if params.UserCreated {
 		description = "go-deploy user"
 	} else {
 		description = "go-deploy system"
 	}
 
 	public := &csModels.SnapshotPublic{
-		Name:        name,
+		Name:        params.Name,
 		VmID:        context.VM.Subsystems.CS.VM.ID,
 		Description: description,
 	}
@@ -79,12 +83,52 @@ func CreateSnapshotCS(vmID, name string, userCreated bool) error {
 		}
 	}
 
+	// delete every other snapshot with the same name that is older
+	snapshots, err := context.Client.ReadAllSnapshots(context.VM.Subsystems.CS.VM.ID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	for _, snapshot := range snapshots {
+		if snapshot.Name == params.Name && snapshot.ID != snapshotID {
+			err = context.Client.DeleteSnapshot(snapshot.ID)
+			if err != nil {
+				return makeError(err)
+			}
+		}
+	}
+
 	log.Println("created snapshot", snapshotID, "for vm", vmID)
 
 	return nil
 }
 
-func ApplySnapshotCS(vmID, snapshotID string) error {
+func DeleteSnapshot(vmID, snapshotID string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to delete snapshot %s for vm %s. details: %w", snapshotID, vmID, err)
+	}
+
+	context, err := NewContext(vmID)
+	if err != nil {
+		if errors.Is(err, base.VmDeletedErr) {
+			log.Println("vm", vmID, "not found when deleting snapshot in cs. assuming it was deleted")
+			return nil
+		}
+
+		return makeError(err)
+	}
+
+	err = context.Client.DeleteSnapshot(snapshotID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	log.Println("deleted snapshot", snapshotID, "for vm", vmID)
+
+	return nil
+}
+
+func ApplySnapshot(vmID, snapshotID string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to apply snapshot %s for vm %s. details: %w", snapshotID, vmID, err)
 	}
@@ -99,7 +143,7 @@ func ApplySnapshotCS(vmID, snapshotID string) error {
 		return makeError(err)
 	}
 
-	snapshot := context.VM.Subsystems.CS.GetSnapshot(snapshotID)
+	snapshot := context.VM.Subsystems.CS.GetSnapshotByID(snapshotID)
 	if service.NotCreated(snapshot) {
 		return makeError(fmt.Errorf("snapshot %s not found", snapshotID))
 	}

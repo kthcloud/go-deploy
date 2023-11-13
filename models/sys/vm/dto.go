@@ -150,6 +150,24 @@ func (p *UpdateParams) FromDTO(dto *body.VmUpdate) {
 	p.RAM = dto.RAM
 }
 
+func (sc *Snapshot) ToDTO() body.VmSnapshotRead {
+	return body.VmSnapshotRead{
+		ID:         sc.ID,
+		VmID:       sc.VmID,
+		Name:       sc.Name,
+		ParentName: sc.ParentName,
+		CreatedAt:  sc.CreatedAt,
+		State:      sc.State,
+		Current:    sc.Current,
+	}
+}
+
+func (sc *CreateSnapshotParams) FromDTO(dto *body.VmSnapshotCreate) {
+	sc.Name = dto.Name
+	sc.Overwrite = false
+	sc.UserCreated = true
+}
+
 func fromDtoPort(port *body.Port) Port {
 	var httpProxy *PortHttpProxy
 	if port.HttpProxy != nil {

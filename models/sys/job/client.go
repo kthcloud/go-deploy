@@ -41,6 +41,24 @@ func (client *Client) AddFilter(filter bson.D) *Client {
 	return client
 }
 
+func (client *Client) IncludeTypes(types ...string) *Client {
+	client.AddExtraFilter(bson.D{{"type", bson.D{{"$in", types}}}})
+
+	return client
+}
+
+func (client *Client) ExcludeStatus(status ...string) *Client {
+	client.AddExtraFilter(bson.D{{"status", bson.D{{"$nin", status}}}})
+
+	return client
+}
+
+func (client *Client) FilterArgs(argName string, filter interface{}) *Client {
+	client.AddExtraFilter(bson.D{{"args." + argName, filter}})
+
+	return client
+}
+
 func (client *Client) AddPagination(page, pageSize int) *Client {
 	client.Pagination = &base.Pagination{
 		Page:     page,
@@ -51,7 +69,7 @@ func (client *Client) AddPagination(page, pageSize int) *Client {
 }
 
 func (client *Client) RestrictToUser(restrictUserID string) *Client {
-	client.AddExtraFilter(bson.D{{"ownerId", restrictUserID}})
+	client.AddExtraFilter(bson.D{{"userId", restrictUserID}})
 	client.RestrictUserID = &restrictUserID
 
 	return client

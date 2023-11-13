@@ -12,12 +12,12 @@ import (
 	"log"
 )
 
-func CreateStorageManager(smID string, params *storage_manager.CreateParams) error {
+func Create(id string, params *storage_manager.CreateParams) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create storage manager in k8s. details: %w", err)
 	}
 
-	context, err := NewStorageManagerContext(smID)
+	context, err := NewStorageManagerContext(id)
 	if err != nil {
 		if errors.Is(err, base.StorageManagerDeletedErr) {
 			return nil
@@ -28,7 +28,7 @@ func CreateStorageManager(smID string, params *storage_manager.CreateParams) err
 
 	// Namespace
 	err = resources.SsCreator(context.Client.CreateNamespace).
-		WithDbFunc(dbFunc(smID, "namespace")).
+		WithDbFunc(dbFunc(id, "namespace")).
 		WithPublic(context.Generator.Namespace()).
 		Exec()
 
@@ -39,7 +39,7 @@ func CreateStorageManager(smID string, params *storage_manager.CreateParams) err
 	// PersistentVolume
 	for _, pvPublic := range context.Generator.PVs() {
 		err = resources.SsCreator(context.Client.CreatePV).
-			WithDbFunc(dbFunc(smID, "pvMap."+pvPublic.Name)).
+			WithDbFunc(dbFunc(id, "pvMap."+pvPublic.Name)).
 			WithPublic(&pvPublic).
 			Exec()
 
@@ -51,7 +51,7 @@ func CreateStorageManager(smID string, params *storage_manager.CreateParams) err
 	// PersistentVolumeClaim
 	for _, pvcPublic := range context.Generator.PVCs() {
 		err = resources.SsCreator(context.Client.CreatePVC).
-			WithDbFunc(dbFunc(smID, "pvcMap."+pvcPublic.Name)).
+			WithDbFunc(dbFunc(id, "pvcMap."+pvcPublic.Name)).
 			WithPublic(&pvcPublic).
 			Exec()
 
@@ -63,7 +63,7 @@ func CreateStorageManager(smID string, params *storage_manager.CreateParams) err
 	// Job
 	for _, jobPublic := range context.Generator.Jobs() {
 		err = resources.SsCreator(context.Client.CreateJob).
-			WithDbFunc(dbFunc(smID, "jobMap."+jobPublic.Name)).
+			WithDbFunc(dbFunc(id, "jobMap."+jobPublic.Name)).
 			WithPublic(&jobPublic).
 			Exec()
 
@@ -75,7 +75,7 @@ func CreateStorageManager(smID string, params *storage_manager.CreateParams) err
 	// Secret
 	for _, secret := range context.Generator.Secrets() {
 		err = resources.SsCreator(context.Client.CreateSecret).
-			WithDbFunc(dbFunc(smID, "secretMap."+secret.Name)).
+			WithDbFunc(dbFunc(id, "secretMap."+secret.Name)).
 			WithPublic(&secret).
 			Exec()
 
@@ -87,7 +87,7 @@ func CreateStorageManager(smID string, params *storage_manager.CreateParams) err
 	// Deployment
 	for _, deployment := range context.Generator.Deployments() {
 		err = resources.SsCreator(context.Client.CreateDeployment).
-			WithDbFunc(dbFunc(smID, "deploymentMap."+deployment.Name)).
+			WithDbFunc(dbFunc(id, "deploymentMap."+deployment.Name)).
 			WithPublic(&deployment).
 			Exec()
 
@@ -99,7 +99,7 @@ func CreateStorageManager(smID string, params *storage_manager.CreateParams) err
 	// Service
 	for _, k8sService := range context.Generator.Services() {
 		err = resources.SsCreator(context.Client.CreateService).
-			WithDbFunc(dbFunc(smID, "serviceMap."+k8sService.Name)).
+			WithDbFunc(dbFunc(id, "serviceMap."+k8sService.Name)).
 			WithPublic(&k8sService).
 			Exec()
 
@@ -111,7 +111,7 @@ func CreateStorageManager(smID string, params *storage_manager.CreateParams) err
 	// Ingress
 	for _, ingress := range context.Generator.Ingresses() {
 		err = resources.SsCreator(context.Client.CreateIngress).
-			WithDbFunc(dbFunc(smID, "ingressMap."+ingress.Name)).
+			WithDbFunc(dbFunc(id, "ingressMap."+ingress.Name)).
 			WithPublic(&ingress).
 			Exec()
 
@@ -123,7 +123,7 @@ func CreateStorageManager(smID string, params *storage_manager.CreateParams) err
 	return nil
 }
 
-func DeleteStorageManager(id string) error {
+func Delete(id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete storage manager in k8s. details: %w", err)
 	}
@@ -205,7 +205,7 @@ func DeleteStorageManager(id string) error {
 	return nil
 }
 
-func RepairStorageManager(id string) error {
+func Repair(id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to repair storage manager %s in k8s. details: %w", id, err)
 	}

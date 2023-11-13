@@ -23,42 +23,48 @@ type Subsystems struct {
 }
 
 type Usage struct {
-	CpuCores  int `json:"cpuCores"`
-	RAM       int `json:"ram"`
-	DiskSize  int `json:"diskSize"`
-	Snapshots int `json:"snapshots"`
+	CpuCores  int `bson:"cpuCores"`
+	RAM       int `bson:"ram"`
+	DiskSize  int `bson:"diskSize"`
+	Snapshots int `bson:"snapshots"`
 }
 
 type CreateParams struct {
-	Name           string  `json:"name"`
-	Zone           string  `json:"zone"`
-	DeploymentZone *string `json:"deploymentZone,omitempty"`
+	Name           string
+	Zone           string
+	DeploymentZone *string
 
-	NetworkID *string `json:"networkId"`
+	NetworkID *string
 
-	SshPublicKey string `json:"sshPublicKey"`
-	Ports        []Port `json:"ports"`
+	SshPublicKey string
+	Ports        []Port
 
-	CpuCores int `json:"cpuCores"`
-	RAM      int `json:"ram"`
-	DiskSize int `json:"diskSize"`
+	CpuCores int
+	RAM      int
+	DiskSize int
 }
 
 type UpdateParams struct {
-	Name       *string `json:"name"`
-	OwnerID    *string `json:"ownerId"`
-	SnapshotID *string `json:"snapshotId"`
-	Ports      *[]Port `json:"ports"`
-	CpuCores   *int    `json:"cpuCores"`
-	RAM        *int    `json:"ram"`
+	Name       *string
+	OwnerID    *string
+	SnapshotID *string
+	Ports      *[]Port
+	CpuCores   *int
+	RAM        *int
 }
 
 type Snapshot struct {
-	ID         string    `json:"id"`
-	VmID       string    `json:"vmId"`
-	Name       string    `json:"displayname"`
-	ParentName *string   `json:"parentName,omitempty"`
-	CreatedAt  time.Time `json:"created"`
-	State      string    `json:"state"`
-	Current    bool      `json:"current"`
+	ID         string    `bson:"id"`
+	VmID       string    `bson:"vmId"`
+	Name       string    `bson:"displayname"`
+	ParentName *string   `bson:"parentName,omitempty"`
+	CreatedAt  time.Time `bson:"created"`
+	State      string    `bson:"state"`
+	Current    bool      `bson:"current"`
+}
+
+type CreateSnapshotParams struct {
+	Name        string `bson:"name"`
+	UserCreated bool   `bson:"userCreated"`
+	Overwrite   bool   `bson:"overwrite"`
 }

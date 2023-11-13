@@ -17,7 +17,7 @@ var (
 	StorageManagerAlreadyExistsErr = fmt.Errorf("storage manager already exists for user")
 )
 
-func GetAllStorageManagers(auth *service.AuthInfo) ([]storage_manager.StorageManager, error) {
+func GetAll(auth *service.AuthInfo) ([]storage_manager.StorageManager, error) {
 	if auth.IsAdmin {
 		return storage_manager.New().ListAll()
 	}
@@ -34,7 +34,7 @@ func GetAllStorageManagers(auth *service.AuthInfo) ([]storage_manager.StorageMan
 	return []storage_manager.StorageManager{*ownerStorageManager}, nil
 }
 
-func ListStorageManagersAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagination *query.Pagination) ([]storage_manager.StorageManager, error) {
+func ListAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagination *query.Pagination) ([]storage_manager.StorageManager, error) {
 	client := storage_manager.New()
 
 	if pagination != nil {
@@ -53,7 +53,7 @@ func ListStorageManagersAuth(allUsers bool, userID *string, auth *service.AuthIn
 	return client.ListAll()
 }
 
-func GetStorageManagerByIdAuth(id string, auth *service.AuthInfo) (*storage_manager.StorageManager, error) {
+func GetByIdAuth(id string, auth *service.AuthInfo) (*storage_manager.StorageManager, error) {
 	storageManager, err := storage_manager.New().GetByID(id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch storage manager. details: %w", err)
@@ -66,7 +66,7 @@ func GetStorageManagerByIdAuth(id string, auth *service.AuthInfo) (*storage_mana
 	return storageManager, nil
 }
 
-func GetStorageManagerByOwnerIdAuth(ownerID string, auth *service.AuthInfo) (*storage_manager.StorageManager, error) {
+func GetByOwnerIdAuth(ownerID string, auth *service.AuthInfo) (*storage_manager.StorageManager, error) {
 	storageManager, err := storage_manager.New().RestrictToOwner(ownerID).GetOne()
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch storage manager. details: %w", err)
@@ -79,7 +79,7 @@ func GetStorageManagerByOwnerIdAuth(ownerID string, auth *service.AuthInfo) (*st
 	return storageManager, nil
 }
 
-func CreateStorageManager(id string, params *storage_manager.CreateParams) error {
+func Create(id string, params *storage_manager.CreateParams) error {
 	makeErr := func(err error) error {
 		return fmt.Errorf("failed to create storage manager. details: %w", err)
 	}
@@ -93,7 +93,7 @@ func CreateStorageManager(id string, params *storage_manager.CreateParams) error
 		return makeErr(err)
 	}
 
-	err = k8s_service.CreateStorageManager(id, params)
+	err = k8s_service.Create(id, params)
 	if err != nil {
 		return makeErr(err)
 	}
@@ -101,7 +101,7 @@ func CreateStorageManager(id string, params *storage_manager.CreateParams) error
 	return nil
 }
 
-func CreateStorageManagerIfNotExists(ownerID string) error {
+func CreateIfNotExists(ownerID string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create storage manager (if not exists). details: %w", err)
 	}
@@ -131,14 +131,14 @@ func CreateStorageManagerIfNotExists(ownerID string) error {
 	return err
 }
 
-func DeleteStorageManager(id string) error {
+func Delete(id string) error {
 	makeErr := func(err error) error {
 		return fmt.Errorf("failed to delete storage manager. details: %w", err)
 	}
 
 	log.Println("deleting storage manager", id)
 
-	err := k8s_service.DeleteStorageManager(id)
+	err := k8s_service.Delete(id)
 	if err != nil {
 		return makeErr(err)
 	}
@@ -156,7 +156,7 @@ func DeleteStorageManager(id string) error {
 	return nil
 }
 
-func RepairStorageManager(id string) error {
+func Repair(id string) error {
 	makeErr := func(err error) error {
 		return fmt.Errorf("failed to repair storage manager %s. details: %w", id, err)
 	}
@@ -171,10 +171,12 @@ func RepairStorageManager(id string) error {
 		return nil
 	}
 
-	err = k8s_service.RepairStorageManager(id)
+	err = k8s_service.Repair(id)
 	if err != nil {
 		return makeErr(err)
 	}
+
+	log.Println("successfully repaired storage manager", id)
 
 	return nil
 }

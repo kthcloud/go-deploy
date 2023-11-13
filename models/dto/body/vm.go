@@ -90,6 +90,11 @@ type VmSnapshotCreated struct {
 	JobID string `json:"jobId"`
 }
 
+type VmSnapshotDeleted struct {
+	ID    string `json:"id"`
+	JobID string `json:"jobId"`
+}
+
 type GpuAttached struct {
 	ID    string `json:"id"`
 	JobID string `json:"jobId"`

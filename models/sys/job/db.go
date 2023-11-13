@@ -44,20 +44,6 @@ func (client *Client) CreateScheduled(id, userID, jobType string, runAfter time.
 	return nil
 }
 
-func (client *Client) Exists(jobType string, args map[string]interface{}) (bool, error) {
-	filter := bson.D{
-		{"type", jobType},
-		{"args", args},
-		{"status", bson.D{{"$nin", []string{StatusCompleted, StatusTerminated}}}},
-	}
-	count, err := client.Collection.CountDocuments(context.TODO(), filter)
-	if err != nil {
-		return false, err
-	}
-
-	return count > 0, nil
-}
-
 func (client *Client) GetMany(jobType, status *string) ([]Job, error) {
 	filter := bson.D{}
 	if jobType != nil {

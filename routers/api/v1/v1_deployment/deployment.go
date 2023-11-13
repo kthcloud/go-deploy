@@ -1,6 +1,7 @@
 package v1_deployment
 
 import (
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"go-deploy/models/dto/body"
@@ -20,7 +21,7 @@ import (
 )
 
 func getStorageManagerURL(userID string, auth *service.AuthInfo) *string {
-	storageManager, err := storage_manager_service.GetStorageManagerByOwnerIdAuth(userID, auth)
+	storageManager, err := storage_manager_service.GetByOwnerIdAuth(userID, auth)
 	if err != nil {
 		return nil
 	}
@@ -222,14 +223,15 @@ func Create(c *gin.Context) {
 		}
 	}
 
-	ok, reason, err := deployment_service.CheckQuotaCreate(auth.UserID, &auth.GetEffectiveRole().Quotas, auth)
+	err = deployment_service.CheckQuotaCreate(auth.UserID, &auth.GetEffectiveRole().Quotas, auth)
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
-		return
-	}
+		var quotaExceededErr service.QuotaExceededError
+		if errors.As(err, &quotaExceededErr) {
+			context.Forbidden(quotaExceededErr.Error())
+			return
+		}
 
-	if !ok {
-		context.Forbidden(reason)
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 

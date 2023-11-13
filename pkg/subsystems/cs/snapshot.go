@@ -89,6 +89,28 @@ func (client *Client) CreateSnapshot(public *models.SnapshotPublic) (string, err
 	return createResponse.Id, nil
 }
 
+func (client *Client) DeleteSnapshot(id string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to delete snapshot %s. details: %w", id, err)
+	}
+
+	if id == "" {
+		log.Println("cs snapshot not supplied when deleting. assuming it was deleted")
+		return nil
+	}
+
+	params := client.CsClient.Snapshot.NewDeleteVMSnapshotParams(id)
+
+	_, err := client.CsClient.Snapshot.DeleteVMSnapshot(params)
+	if err != nil {
+		if !strings.Contains(err.Error(), "entity does not exist") && !strings.Contains(err.Error(), "Unable to find") {
+			return makeError(err)
+		}
+	}
+
+	return nil
+}
+
 func (client *Client) ApplySnapshot(public *models.SnapshotPublic) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to apply snapshot %s. details: %w", public.Name, err)

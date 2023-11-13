@@ -2,6 +2,7 @@ package models
 
 import (
 	"go-deploy/pkg/imp/cloudstack"
+	"strings"
 	"time"
 )
 
@@ -22,6 +23,14 @@ func (s *SnapshotPublic) Created() bool {
 
 func (s *SnapshotPublic) IsPlaceholder() bool {
 	return false
+}
+
+func (s *SnapshotPublic) UserCreated() bool {
+	return strings.Contains(s.Description, "user")
+}
+
+func (s *SnapshotPublic) SystemCreated() bool {
+	return strings.Contains(s.Description, "system")
 }
 
 func CreateSnapshotPublicFromGet(snapshot *cloudstack.VMSnapshot) *SnapshotPublic {

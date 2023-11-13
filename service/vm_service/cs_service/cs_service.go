@@ -354,8 +354,8 @@ func Repair(id string) error {
 	}
 
 	// Port-forwarding rules
+	pfrs := context.Generator.PFRs()
 	for mapName, pfr := range context.VM.Subsystems.CS.GetPortForwardingRuleMap() {
-		pfrs := context.Generator.PFRs()
 		idx := slices.IndexFunc(pfrs, func(p csModels.PortForwardingRulePublic) bool { return p.Name == mapName })
 		if idx == -1 {
 			err = resources.SsDeleter(context.Client.DeletePortForwardingRule).
@@ -366,14 +366,17 @@ func Repair(id string) error {
 			if err != nil {
 				return makeError(err)
 			}
-		}
 
+			continue
+		}
+	}
+	for _, pfr := range pfrs {
 		err = resources.SsRepairer(
 			context.Client.ReadPortForwardingRule,
 			context.Client.CreatePortForwardingRule,
 			context.Client.UpdatePortForwardingRule,
 			context.Client.DeletePortForwardingRule,
-		).WithResourceID(pfrs[idx].ID).WithDbFunc(dbFunc(id, "portForwardingRuleMap."+pfrs[idx].Name)).WithGenPublic(&pfrs[idx]).Exec()
+		).WithResourceID(pfr.ID).WithDbFunc(dbFunc(id, "portForwardingRuleMap."+pfr.Name)).WithGenPublic(&pfr).Exec()
 	}
 
 	return nil

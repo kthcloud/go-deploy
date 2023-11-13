@@ -211,3 +211,17 @@ func updatingOwner(job *jobModel.Job) (bool, error) {
 
 	return anyUpdatingOwnerJob, nil
 }
+
+func onlyCreateSnapshotPerUser(job *jobModel.Job) (bool, error) {
+	anySnapshotJob, err := jobModel.New().
+		RestrictToUser(job.UserID).
+		ExcludeIDs(job.ID).
+		IncludeTypes(jobModel.TypeCreateUserSnapshot).
+		ExcludeStatus(jobModel.StatusCompleted, jobModel.StatusTerminated).
+		ExistsAny()
+	if err != nil {
+		return false, err
+	}
+
+	return anySnapshotJob, nil
+}
