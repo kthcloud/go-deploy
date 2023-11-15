@@ -36,6 +36,8 @@ func SetupEnvironment() {
 		log.Fatalf(makeError(err).Error())
 	}
 
+	log.Println("go-deploy", Config.Version)
+
 	log.Println("loaded", len(Config.Roles), "roles in order:")
 	for _, role := range Config.Roles {
 		log.Println("\t", role.Name)
