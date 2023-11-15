@@ -6,6 +6,7 @@ import (
 	"go-deploy/models"
 	"go-deploy/models/sys/activity"
 	"go-deploy/pkg/app/status_codes"
+	"go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"time"
@@ -64,6 +65,10 @@ func (client *Client) Create(id, owner, manager string, params *CreateParams) (*
 	return client.GetByID(id)
 }
 
+func (client *Client) GetByTransferCode(code, userID string) (*VM, error) {
+	return client.GetWithFilter(bson.D{{"transfer.code", code}, {"transfer.userId", userID}})
+}
+
 func (client *Client) DeleteByID(id string) error {
 	_, err := client.Collection.UpdateOne(context.TODO(),
 		bson.D{{"id", id}},
@@ -79,22 +84,28 @@ func (client *Client) DeleteByID(id string) error {
 	return nil
 }
 
-func (client *Client) UpdateWithParamsByID(id string, update *UpdateParams) error {
-	updateData := bson.D{}
+func (client *Client) UpdateWithParamsByID(id string, params *UpdateParams) error {
+	setUpdate := bson.D{}
+	unsetUpdate := bson.D{}
 
-	models.AddIfNotNil(&updateData, "name", update.Name)
-	models.AddIfNotNil(&updateData, "ownerId", update.OwnerID)
-	models.AddIfNotNil(&updateData, "ports", update.Ports)
-	models.AddIfNotNil(&updateData, "specs.cpuCores", update.CpuCores)
-	models.AddIfNotNil(&updateData, "specs.ram", update.RAM)
+	models.AddIfNotNil(&setUpdate, "name", params.Name)
+	models.AddIfNotNil(&setUpdate, "ownerId", params.OwnerID)
+	models.AddIfNotNil(&setUpdate, "ports", params.Ports)
+	models.AddIfNotNil(&setUpdate, "specs.cpuCores", params.CpuCores)
+	models.AddIfNotNil(&setUpdate, "specs.ram", params.RAM)
 
-	if len(updateData) == 0 {
-		return nil
+	if utils.EmptyValue(params.TransferCode) && utils.EmptyValue(params.TransferUserID) {
+		models.AddIfNotNil(&unsetUpdate, "transfer", "")
+	} else {
+		models.AddIfNotNil(&setUpdate, "transfer.code", params.TransferCode)
+		models.AddIfNotNil(&setUpdate, "transfer.userId", params.TransferUserID)
 	}
 
-	_, err := client.Collection.UpdateOne(context.TODO(),
-		bson.D{{"id", id}},
-		bson.D{{"$set", updateData}},
+	err := client.UpdateWithBsonByID(id,
+		bson.D{
+			{"$set", setUpdate},
+			{"$unset", unsetUpdate},
+		},
 	)
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {

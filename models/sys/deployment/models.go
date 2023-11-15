@@ -39,6 +39,11 @@ type Volume struct {
 	ServerPath string `bson:"serverPath"`
 }
 
+type Transfer struct {
+	Code   string `bson:"code"`
+	UserID string `bson:"userId"`
+}
+
 type Usage struct {
 	Count int
 }
@@ -102,9 +107,4 @@ type GitHubRepository struct {
 type GitHubWebhook struct {
 	ID     int64
 	Events []string
-}
-
-type Transfer struct {
-	Code   string `bson:"code"`
-	UserID string `bson:"userId"`
 }

@@ -7,6 +7,7 @@ import (
 	"go-deploy/models/sys/activity"
 	"go-deploy/models/sys/deployment/subsystems"
 	"go-deploy/pkg/app/status_codes"
+	"go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -129,7 +130,7 @@ func (client *Client) UpdateWithParamsByID(id string, params *UpdateParams) erro
 	models.AddIfNotNil(&setUpdate, "apps.main.image", params.Image)
 	models.AddIfNotNil(&setUpdate, "apps.main.pingPath", params.PingPath)
 
-	if emptyValue(params.TransferCode) && emptyValue(params.TransferUserID) {
+	if utils.EmptyValue(params.TransferCode) && utils.EmptyValue(params.TransferUserID) {
 		models.AddIfNotNil(&unsetUpdate, "transfer", "")
 	} else {
 		models.AddIfNotNil(&setUpdate, "transfer.code", params.TransferCode)
@@ -264,8 +265,4 @@ func (client *Client) SavePing(id string, pingResult int) error {
 
 func (client *Client) RemoveCustomDomain(deploymentID string) error {
 	return client.SetWithBsonByID(deploymentID, bson.D{{"apps.main.customDomain", nil}})
-}
-
-func emptyValue(s *string) bool {
-	return s != nil && *s == ""
 }

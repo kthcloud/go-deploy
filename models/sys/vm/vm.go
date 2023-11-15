@@ -32,7 +32,7 @@ type VM struct {
 	StatusCode    int    `bson:"statusCode"`
 	StatusMessage string `bson:"statusMessage"`
 
-	TransferCode string `bson:"transferCode,omitempty"`
+	Transfer *Transfer `bson:"transfer"`
 }
 
 type Specs struct {
@@ -73,4 +73,8 @@ func (vm *VM) BeingCreated() bool {
 
 func (vm *VM) BeingDeleted() bool {
 	return vm.DoingActivity(ActivityBeingDeleted)
+}
+
+func (vm *VM) BeingTransferred() bool {
+	return vm.Transfer != nil
 }

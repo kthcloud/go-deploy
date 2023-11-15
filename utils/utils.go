@@ -80,3 +80,7 @@ func PrettyPrintError(err error) {
 
 	log.Println(output)
 }
+
+func EmptyValue(s *string) bool {
+	return s != nil && *s == ""
+}

@@ -333,10 +333,24 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	vm, err := vm_service.GetByIdAuth(requestURI.VmID, auth)
-	if err != nil {
-		context.ServerError(err, v1.InternalError)
-		return
+	var vm *vmModel.VM
+	if requestBody.TransferCode != nil {
+		vm, err = vm_service.GetByTransferCode(*requestBody.TransferCode, auth.UserID)
+		if err != nil {
+			context.ServerError(err, v1.InternalError)
+			return
+		}
+
+		if requestBody.OwnerID == nil {
+			requestBody.OwnerID = &auth.UserID
+		}
+
+	} else {
+		vm, err = vm_service.GetByIdAuth(requestURI.VmID, auth)
+		if err != nil {
+			context.ServerError(err, v1.InternalError)
+			return
+		}
 	}
 
 	if vm == nil {
@@ -344,15 +358,22 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	if requestBody.GpuID != nil {
-		updateGPU(&context, &requestBody, auth, vm)
-		return
-	}
-
 	if requestBody.OwnerID != nil {
 		if *requestBody.OwnerID == vm.OwnerID {
 			context.UserError("Owner already set")
 			return
+		}
+
+		if vm.BeingTransferred() {
+			if requestBody.TransferCode != nil {
+				if vm.Transfer.UserID != auth.UserID {
+					context.Forbidden("Bad transfer receiver")
+					return
+				}
+			} else if vm.Transfer.UserID == *requestBody.OwnerID {
+				context.UserError("VM is already being transferred to this user")
+				return
+			}
 		}
 
 		exists, err := user_service.Exists(*requestBody.OwnerID)
@@ -366,16 +387,23 @@ func Update(c *gin.Context) {
 			return
 		}
 
-		jobID := uuid.New().String()
-		err = job_service.Create(jobID, auth.UserID, jobModel.TypeUpdateVmOwner, map[string]interface{}{
-			"id": vm.ID,
-			"params": body.VmUpdateOwner{
-				NewOwnerID: *requestBody.OwnerID,
-				OldOwnerID: vm.OwnerID,
-			},
-		})
+		jobID, err := vm_service.UpdateOwnerAuth(vm.ID, &body.VmUpdateOwner{
+			NewOwnerID:   *requestBody.OwnerID,
+			OldOwnerID:   vm.OwnerID,
+			TransferCode: requestBody.TransferCode,
+		}, auth)
 
 		if err != nil {
+			if errors.Is(err, vm_service.VmNotFoundErr) {
+				context.NotFound("VM not found")
+				return
+			}
+
+			if errors.Is(err, vm_service.InvalidTransferCodeErr) {
+				context.Forbidden("Bad transfer code")
+				return
+			}
+
 			context.ServerError(err, v1.InternalError)
 			return
 		}
@@ -384,7 +412,11 @@ func Update(c *gin.Context) {
 			ID:    vm.ID,
 			JobID: jobID,
 		})
+		return
+	}
 
+	if requestBody.GpuID != nil {
+		updateGPU(&context, &requestBody, auth, vm)
 		return
 	}
 
@@ -437,7 +469,7 @@ func Update(c *gin.Context) {
 
 	context.Ok(body.VmUpdated{
 		ID:    vm.ID,
-		JobID: jobID,
+		JobID: &jobID,
 	})
 }
 

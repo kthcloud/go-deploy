@@ -29,17 +29,20 @@ type VmCreate struct {
 
 type VmUpdate struct {
 	Name       *string `json:"name,omitempty" bson:"name,omitempty" binding:"omitempty,rfc1035,min=3,max=30"`
-	OwnerID    *string `json:"ownerId,omitempty" bson:"ownerId,omitempty" binding:"omitempty,uuid4"`
 	SnapshotID *string `json:"snapshotId,omitempty" bson:"snapshotId,omitempty" binding:"omitempty,uuid4"`
 	GpuID      *string `json:"gpuId,omitempty" bson:"gpuId,omitempty" binding:"omitempty,min=0,max=100"`
 	Ports      *[]Port `json:"ports,omitempty" bson:"ports,omitempty" binding:"omitempty,port_list_names,port_list_numbers,port_list_http_proxies,min=0,max=1000,dive"`
 	CpuCores   *int    `json:"cpuCores,omitempty" bson:"cpuCores,omitempty" binding:"omitempty,min=1"`
 	RAM        *int    `json:"ram,omitempty" bson:"ram,omitempty" binding:"omitempty,min=1"`
+
+	OwnerID      *string `json:"ownerId,omitempty" bson:"ownerId,omitempty" binding:"omitempty,uuid4"`
+	TransferCode *string `json:"transferCode,omitempty" bson:"transferCode,omitempty" binding:"omitempty,min=1,max=1000"`
 }
 
 type VmUpdateOwner struct {
-	NewOwnerID string `json:"newOwnerId" bson:"newOwnerId" binding:"required,uuid4"`
-	OldOwnerID string `json:"oldOwnerId" bson:"oldOwnerId" binding:"required,uuid4"`
+	NewOwnerID   string  `json:"newOwnerId" bson:"newOwnerId" binding:"required,uuid4"`
+	OldOwnerID   string  `json:"oldOwnerId" bson:"oldOwnerId" binding:"required,uuid4"`
+	TransferCode *string `json:"transferCode,omitempty" bson:"transferCode,omitempty" binding:"omitempty,min=1,max=1000"`
 }
 
 type VmHttpProxy struct {
@@ -81,8 +84,8 @@ type VmDeleted struct {
 }
 
 type VmUpdated struct {
-	ID    string `json:"id"`
-	JobID string `json:"jobId"`
+	ID    string  `json:"id"`
+	JobID *string `json:"jobId,omitempty"`
 }
 
 type VmSnapshotCreated struct {

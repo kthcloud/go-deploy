@@ -29,11 +29,6 @@ import (
 	"time"
 )
 
-var (
-	NonUniqueFieldErr      = fmt.Errorf("non unique field")
-	InvalidTransferCodeErr = fmt.Errorf("invalid transfer code")
-)
-
 func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreate) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create deployment. details: %w", err)

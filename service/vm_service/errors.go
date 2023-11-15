@@ -1,11 +1,9 @@
-package deployment_service
+package vm_service
 
-import (
-	"fmt"
-)
+import "fmt"
 
 var (
-	DeploymentNotFoundErr  = fmt.Errorf("deployment not found")
+	VmNotFoundErr          = fmt.Errorf("vm not found")
 	NonUniqueFieldErr      = fmt.Errorf("non unique field")
 	InvalidTransferCodeErr = fmt.Errorf("invalid transfer code")
 )
