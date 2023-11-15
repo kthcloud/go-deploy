@@ -339,7 +339,7 @@ func Delete(c *gin.Context) {
 // @Success 200 {object} body.DeploymentUpdated
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /deployments/{deploymentId} [put]
+// @Router /deployments/{deploymentId} [post]
 func Update(c *gin.Context) {
 	context := sys.NewContext(c)
 
