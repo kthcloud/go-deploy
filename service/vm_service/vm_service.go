@@ -212,6 +212,38 @@ func UpdateOwner(id string, params *body.VmUpdateOwner) error {
 	return nil
 }
 
+func ClearUpdateOwner(id string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to clear vm owner update. details: %w", err)
+	}
+
+	deployment, err := vmModel.New().GetByID(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if deployment == nil {
+		return VmNotFoundErr
+	}
+
+	if deployment.Transfer == nil {
+		return nil
+	}
+
+	emptyString := ""
+	err = vmModel.New().UpdateWithParamsByID(id, &vmModel.UpdateParams{
+		TransferUserID: &emptyString,
+		TransferCode:   &emptyString,
+	})
+	if err != nil {
+		return makeError(err)
+	}
+
+	// TODO: delete notification?
+
+	return nil
+}
+
 func Delete(id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete vm. details: %w", err)

@@ -387,6 +387,19 @@ func Update(c *gin.Context) {
 	}
 
 	if requestBody.OwnerID != nil {
+		if *requestBody.OwnerID == "" {
+			err := deployment_service.ClearUpdateOwner(deployment.ID)
+			if err != nil {
+				context.ServerError(err, v1.InternalError)
+				return
+			}
+
+			context.Ok(body.DeploymentUpdated{
+				ID: deployment.ID,
+			})
+			return
+		}
+
 		if *requestBody.OwnerID == deployment.OwnerID {
 			context.UserError("Owner already set")
 			return
@@ -429,15 +442,9 @@ func Update(c *gin.Context) {
 			return
 		}
 
-		// if jobID is nil, a notification was sent to the new owner, and no job was created
-		if jobID == nil {
-			context.OkNoContent()
-			return
-		}
-
 		context.Ok(body.DeploymentUpdated{
 			ID:    deployment.ID,
-			JobID: *jobID,
+			JobID: jobID,
 		})
 		return
 	}
@@ -474,6 +481,6 @@ func Update(c *gin.Context) {
 
 	context.Ok(body.DeploymentUpdated{
 		ID:    deployment.ID,
-		JobID: jobID,
+		JobID: &jobID,
 	})
 }

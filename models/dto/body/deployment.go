@@ -46,7 +46,7 @@ type DeploymentUpdate struct {
 	HealthCheckPath *string   `json:"healthCheckPath,omitempty" bson:"healthCheckPath,omitempty" binding:"omitempty,min=0,max=1000,health_check_path"`
 
 	// update owner
-	OwnerID      *string `json:"ownerId,omitempty" bson:"ownerId,omitempty" binding:"omitempty,uuid4"`
+	OwnerID      *string `json:"ownerId,omitempty" bson:"ownerId,omitempty" binding:"omitempty"`
 	TransferCode *string `json:"transferCode,omitempty" bson:"transferCode,omitempty" binding:"omitempty,min=1,max=1000"`
 }
 
@@ -74,8 +74,8 @@ type DeploymentDeleted struct {
 }
 
 type DeploymentUpdated struct {
-	ID    string `json:"id"`
-	JobID string `json:"jobId"`
+	ID    string  `json:"id"`
+	JobID *string `json:"jobId,omitempty"`
 }
 
 type DeploymentRead struct {
