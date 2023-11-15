@@ -364,18 +364,6 @@ func Update(c *gin.Context) {
 			return
 		}
 
-		if vm.BeingTransferred() {
-			if requestBody.TransferCode != nil {
-				if vm.Transfer.UserID != auth.UserID {
-					context.Forbidden("Bad transfer receiver")
-					return
-				}
-			} else if vm.Transfer.UserID == *requestBody.OwnerID {
-				context.UserError("VM is already being transferred to this user")
-				return
-			}
-		}
-
 		exists, err := user_service.Exists(*requestBody.OwnerID)
 		if err != nil {
 			context.ServerError(err, v1.InternalError)

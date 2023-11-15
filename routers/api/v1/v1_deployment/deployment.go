@@ -392,18 +392,6 @@ func Update(c *gin.Context) {
 			return
 		}
 
-		if deployment.BeingTransferred() {
-			if requestBody.TransferCode != nil {
-				if deployment.Transfer.UserID != auth.UserID {
-					context.Forbidden("Bad transfer receiver")
-					return
-				}
-			} else if deployment.Transfer.UserID == *requestBody.OwnerID {
-				context.UserError("Deployment is already being transferred to this user")
-				return
-			}
-		}
-
 		exists, err := user_service.Exists(*requestBody.OwnerID)
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
