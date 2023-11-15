@@ -3,10 +3,10 @@ package deployment_service
 import (
 	"errors"
 	"fmt"
-	roleModel "go-deploy/models/config/role"
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
 	deploymentModel "go-deploy/models/sys/deployment"
+	roleModel "go-deploy/models/sys/role"
 	teamModels "go-deploy/models/sys/team"
 	"go-deploy/pkg/config"
 	"go-deploy/service"

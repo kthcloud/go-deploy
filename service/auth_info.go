@@ -2,7 +2,7 @@ package service
 
 import (
 	"fmt"
-	roleModel "go-deploy/models/config/role"
+	roleModel "go-deploy/models/sys/role"
 	userModel "go-deploy/models/sys/user"
 	"go-deploy/pkg/auth"
 	"go-deploy/pkg/config"

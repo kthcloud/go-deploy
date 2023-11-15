@@ -3,10 +3,10 @@ package v1_user
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	roleModel "go-deploy/models/config/role"
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
 	"go-deploy/models/dto/uri"
+	roleModel "go-deploy/models/sys/role"
 	userModel "go-deploy/models/sys/user"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/sys"

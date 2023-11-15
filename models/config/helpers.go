@@ -1,7 +1,7 @@
 package config
 
 import (
-	roleModel "go-deploy/models/config/role"
+	roleModel "go-deploy/models/sys/role"
 )
 
 func (e *ConfigType) GetRole(roleName string) *roleModel.Role {

@@ -1,7 +1,7 @@
 package config
 
 import (
-	"go-deploy/models/config/role"
+	"go-deploy/models/sys/role"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -71,6 +71,8 @@ type VM struct {
 }
 
 type ConfigType struct {
+	Version string `yaml:"version"`
+
 	Port          int    `yaml:"port"`
 	ExternalUrl   string `yaml:"externalUrl"`
 	Manager       string `yaml:"manager"`

@@ -629,7 +629,7 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *ser
 		"id":            vm.ID,
 		"gpuIds":        gpuIds,
 		"userId":        auth.UserID,
-		"leaseDuration": auth.GetEffectiveRole().Permissions.GpuLeaseDuration,
+		"leaseDuration": auth.GetEffectiveRole().Quotas.GpuLeaseDuration,
 	})
 
 	if err != nil {

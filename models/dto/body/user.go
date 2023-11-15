@@ -6,17 +6,20 @@ type PublicKey struct {
 }
 
 type Quota struct {
+	Deployments      int     `json:"deployments"`
+	CpuCores         int     `json:"cpuCores"`
+	RAM              int     `json:"ram"`
+	DiskSize         int     `json:"diskSize"`
+	Snapshots        int     `json:"snapshots"`
+	GpuLeaseDuration float64 `json:"gpuLeaseDuration"` // in hours
+}
+
+type Usage struct {
 	Deployments int `json:"deployments"`
 	CpuCores    int `json:"cpuCores"`
 	RAM         int `json:"ram"`
 	DiskSize    int `json:"diskSize"`
 	Snapshots   int `json:"snapshots"`
-}
-
-type Role struct {
-	Name        string   `json:"name"`
-	Description string   `json:"description"`
-	Permissions []string `json:"permissions"`
 }
 
 type SmallUserRead struct {
@@ -40,7 +43,7 @@ type UserRead struct {
 	Admin bool `json:"admin"`
 
 	Quota Quota `json:"quota"`
-	Usage Quota `json:"usage"`
+	Usage Usage `json:"usage"`
 
 	StorageURL *string `json:"storageUrl,omitempty"`
 }
