@@ -3,9 +3,12 @@ package deployment_service
 import (
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
 	deploymentModel "go-deploy/models/sys/deployment"
+	jobModel "go-deploy/models/sys/job"
+	notificationModel "go-deploy/models/sys/notification"
 	roleModel "go-deploy/models/sys/role"
 	teamModels "go-deploy/models/sys/team"
 	"go-deploy/pkg/config"
@@ -15,6 +18,8 @@ import (
 	"go-deploy/service/deployment_service/gitlab_service"
 	"go-deploy/service/deployment_service/harbor_service"
 	"go-deploy/service/deployment_service/k8s_service"
+	"go-deploy/service/job_service"
+	"go-deploy/service/notification_service"
 	"go-deploy/utils"
 	"go-deploy/utils/subsystemutils"
 	"go.mongodb.org/mongo-driver/bson"
@@ -22,10 +27,6 @@ import (
 	"sort"
 	"strings"
 	"time"
-)
-
-var (
-	NonUniqueFieldErr = fmt.Errorf("non unique field")
 )
 
 func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreate) error {
@@ -203,6 +204,78 @@ func Update(id string, deploymentUpdate *body.DeploymentUpdate) error {
 	return nil
 }
 
+func UpdateOwnerAuth(id string, params *body.DeploymentUpdateOwner, auth *service.AuthInfo) (*string, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to update deployment owner. details: %w", err)
+	}
+
+	deployment, err := deploymentModel.New().GetByID(id)
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	if deployment == nil {
+		return nil, DeploymentNotFoundErr
+	}
+
+	if deployment.OwnerID == params.NewOwnerID {
+		return nil, nil
+	}
+
+	doTransfer := false
+
+	if auth.IsAdmin {
+		doTransfer = true
+	} else if auth.UserID == params.NewOwnerID {
+		if params.TransferCode == nil || deployment.Transfer == nil || deployment.Transfer.Code != *params.TransferCode {
+			return nil, InvalidTransferCodeErr
+		}
+
+		doTransfer = true
+	}
+
+	if doTransfer {
+		jobID := uuid.New().String()
+		err := job_service.Create(jobID, auth.UserID, jobModel.TypeUpdateDeploymentOwner, map[string]interface{}{
+			"id":     id,
+			"params": *params,
+		})
+
+		if err != nil {
+			return nil, makeError(err)
+		}
+
+		return &jobID, nil
+	}
+
+	/// create a transfer notification
+	code := createTransferCode()
+	err = deploymentModel.New().UpdateWithParamsByID(id, &deploymentModel.UpdateParams{
+		TransferUserID: &params.NewOwnerID,
+		TransferCode:   &code,
+	})
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	err = notification_service.CreateNotification(uuid.NewString(), params.NewOwnerID, &notificationModel.CreateParams{
+		Type: notificationModel.TypeDeploymentTransfer,
+		Content: map[string]interface{}{
+			"id":     deployment.ID,
+			"name":   deployment.Name,
+			"userId": params.OldOwnerID,
+			"email":  auth.GetEmail(),
+			"code":   code,
+		},
+	})
+
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	return nil, nil
+}
+
 func UpdateOwner(id string, params *body.DeploymentUpdateOwner) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update deployment owner. details: %w", err)
@@ -224,9 +297,13 @@ func UpdateOwner(id string, params *body.DeploymentUpdateOwner) error {
 		newImage = &image
 	}
 
+	emptyString := ""
+
 	err = deploymentModel.New().UpdateWithParamsByID(id, &deploymentModel.UpdateParams{
-		OwnerID: &params.NewOwnerID,
-		Image:   newImage,
+		OwnerID:        &params.NewOwnerID,
+		Image:          newImage,
+		TransferCode:   &emptyString,
+		TransferUserID: &emptyString,
 	})
 	if err != nil {
 		return makeError(err)
@@ -242,6 +319,7 @@ func UpdateOwner(id string, params *body.DeploymentUpdateOwner) error {
 		return makeError(err)
 	}
 
+	log.Println("deployment", id, "owner updated to", params.NewOwnerID)
 	return nil
 }
 
@@ -425,6 +503,10 @@ func GetByID(id string) (*deploymentModel.Deployment, error) {
 
 func GetByName(name string) (*deploymentModel.Deployment, error) {
 	return deploymentModel.New().GetByName(name)
+}
+
+func GetByTransferCode(code, userID string) (*deploymentModel.Deployment, error) {
+	return deploymentModel.New().GetByTransferCode(code, userID)
 }
 
 func NameAvailable(name string) (bool, error) {
@@ -715,4 +797,8 @@ func build(ids []string, params *deploymentModel.BuildParams) error {
 
 func createImagePath(ownerID, name string) string {
 	return fmt.Sprintf("%s/%s/%s", config.Config.Registry.URL, subsystemutils.GetPrefixedName(ownerID), name)
+}
+
+func createTransferCode() string {
+	return utils.HashString(uuid.NewString())
 }

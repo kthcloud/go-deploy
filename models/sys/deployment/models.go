@@ -39,11 +39,17 @@ type Volume struct {
 	ServerPath string `bson:"serverPath"`
 }
 
+type Transfer struct {
+	Code   string `bson:"code"`
+	UserID string `bson:"userId"`
+}
+
 type Usage struct {
 	Count int
 }
 
 type UpdateParams struct {
+	// update
 	Name         *string
 	OwnerID      *string
 	Private      *bool
@@ -54,6 +60,10 @@ type UpdateParams struct {
 	CustomDomain *string
 	Image        *string
 	PingPath     *string
+
+	// ownership update
+	TransferUserID *string
+	TransferCode   *string
 }
 
 type GitHubCreateParams struct {

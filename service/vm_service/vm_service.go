@@ -3,24 +3,25 @@ package vm_service
 import (
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
+	jobModel "go-deploy/models/sys/job"
+	notificationModel "go-deploy/models/sys/notification"
 	roleModel "go-deploy/models/sys/role"
 	teamModels "go-deploy/models/sys/team"
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/models/sys/vm/gpu"
 	"go-deploy/pkg/config"
 	"go-deploy/service"
+	"go-deploy/service/job_service"
+	"go-deploy/service/notification_service"
 	"go-deploy/service/vm_service/cs_service"
 	"go-deploy/service/vm_service/k8s_service"
 	"go-deploy/utils"
 	"log"
 	"sort"
 	"strings"
-)
-
-var (
-	NonUniqueFieldErr = fmt.Errorf("non unique field")
 )
 
 func Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
@@ -99,9 +100,81 @@ func Update(id string, dtoVmUpdate *body.VmUpdate) error {
 	return nil
 }
 
+func UpdateOwnerAuth(id string, params *body.VmUpdateOwner, auth *service.AuthInfo) (*string, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to update vm owner. details: %w", err)
+	}
+
+	vm, err := vmModel.New().GetByID(id)
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	if vm == nil {
+		return nil, VmNotFoundErr
+	}
+
+	if vm.OwnerID == params.NewOwnerID {
+		return nil, nil
+	}
+
+	doTransfer := false
+
+	if auth.IsAdmin {
+		doTransfer = true
+	} else if auth.UserID == params.NewOwnerID {
+		if params.TransferCode == nil || vm.Transfer == nil || vm.Transfer.Code != *params.TransferCode {
+			return nil, InvalidTransferCodeErr
+		}
+
+		doTransfer = true
+	}
+
+	if doTransfer {
+		jobID := uuid.New().String()
+		err = job_service.Create(jobID, auth.UserID, jobModel.TypeUpdateVmOwner, map[string]interface{}{
+			"id":     id,
+			"params": *params,
+		})
+
+		if err != nil {
+			return nil, makeError(err)
+		}
+
+		return &jobID, nil
+	}
+
+	/// create a transfer notification
+	code := createTransferCode()
+	err = vmModel.New().UpdateWithParamsByID(id, &vmModel.UpdateParams{
+		TransferUserID: &params.NewOwnerID,
+		TransferCode:   &code,
+	})
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	err = notification_service.CreateNotification(uuid.NewString(), params.NewOwnerID, &notificationModel.CreateParams{
+		Type: notificationModel.TypeVmTransfer,
+		Content: map[string]interface{}{
+			"id":     vm.ID,
+			"name":   vm.Name,
+			"userId": params.OldOwnerID,
+			"email":  auth.GetEmail(),
+			"code":   code,
+		},
+	})
+
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	return nil, nil
+}
+
 func UpdateOwner(id string, params *body.VmUpdateOwner) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to update deployment owner. details: %w", err)
+		return fmt.Errorf("failed to update vm owner. details: %w", err)
 	}
 
 	vm, err := vmModel.New().GetByID(id)
@@ -114,8 +187,12 @@ func UpdateOwner(id string, params *body.VmUpdateOwner) error {
 		return nil
 	}
 
+	emptyString := ""
+
 	err = vmModel.New().UpdateWithParamsByID(id, &vmModel.UpdateParams{
-		OwnerID: &params.NewOwnerID,
+		OwnerID:        &params.NewOwnerID,
+		TransferCode:   &emptyString,
+		TransferUserID: &emptyString,
 	})
 	if err != nil {
 		return makeError(err)
@@ -131,6 +208,7 @@ func UpdateOwner(id string, params *body.VmUpdateOwner) error {
 		return makeError(err)
 	}
 
+	log.Println("vm", id, "owner updated to", params.NewOwnerID)
 	return nil
 }
 
@@ -236,6 +314,10 @@ func GetByID(id string) (*vmModel.VM, error) {
 
 func GetByName(name string) (*vmModel.VM, error) {
 	return vmModel.New().GetByName(name)
+}
+
+func GetByTransferCode(code, userID string) (*vmModel.VM, error) {
+	return vmModel.New().GetByTransferCode(code, userID)
 }
 
 func ListAuth(allUsers bool, userID *string, shared bool, auth *service.AuthInfo, pagination *query.Pagination) ([]vmModel.VM, error) {
@@ -409,7 +491,7 @@ func CanAddActivity(vmID, activity string) (bool, string, error) {
 	case vmModel.ActivityBeingDeleted:
 		return true, "", nil
 	case vmModel.ActivityUpdating:
-		if vm.DoingOnOfActivities([]string{
+		if vm.DoingOneOfActivities([]string{
 			vmModel.ActivityBeingCreated,
 			vmModel.ActivityBeingDeleted,
 			vmModel.ActivityAttachingGPU,
@@ -419,7 +501,7 @@ func CanAddActivity(vmID, activity string) (bool, string, error) {
 		}
 		return true, "", nil
 	case vmModel.ActivityAttachingGPU:
-		if vm.DoingOnOfActivities([]string{
+		if vm.DoingOneOfActivities([]string{
 			vmModel.ActivityBeingCreated,
 			vmModel.ActivityBeingDeleted,
 			vmModel.ActivityAttachingGPU,
@@ -431,7 +513,7 @@ func CanAddActivity(vmID, activity string) (bool, string, error) {
 		}
 		return true, "", nil
 	case vmModel.ActivityDetachingGPU:
-		if vm.DoingOnOfActivities([]string{
+		if vm.DoingOneOfActivities([]string{
 			vmModel.ActivityBeingCreated,
 			vmModel.ActivityBeingDeleted,
 			vmModel.ActivityAttachingGPU,
@@ -442,7 +524,7 @@ func CanAddActivity(vmID, activity string) (bool, string, error) {
 		}
 		return true, "", nil
 	case vmModel.ActivityRepairing:
-		if vm.DoingOnOfActivities([]string{
+		if vm.DoingOneOfActivities([]string{
 			vmModel.ActivityBeingCreated,
 			vmModel.ActivityBeingDeleted,
 			vmModel.ActivityAttachingGPU,
@@ -452,7 +534,7 @@ func CanAddActivity(vmID, activity string) (bool, string, error) {
 		}
 		return true, "", nil
 	case vmModel.ActivityCreatingSnapshot:
-		if vm.DoingOnOfActivities([]string{
+		if vm.DoingOneOfActivities([]string{
 			vmModel.ActivityBeingCreated,
 			vmModel.ActivityBeingDeleted,
 			vmModel.ActivityAttachingGPU,
@@ -462,7 +544,7 @@ func CanAddActivity(vmID, activity string) (bool, string, error) {
 		}
 		return true, "", nil
 	case vmModel.ActivityApplyingSnapshot:
-		if vm.DoingOnOfActivities([]string{
+		if vm.DoingOneOfActivities([]string{
 			vmModel.ActivityBeingCreated,
 			vmModel.ActivityBeingDeleted,
 			vmModel.ActivityAttachingGPU,
@@ -617,11 +699,6 @@ func GetExternalPortMapper(vmID string) (map[string]int, error) {
 	return mapper, nil
 }
 
-func removeDeploySshFromPortMap(portMap *[]vmModel.Port) {
-	for i, port := range *portMap {
-		if (port.Port == 22 || port.Name == "__ssh") && port.Protocol == "tcp" {
-			*portMap = append((*portMap)[:i], (*portMap)[i+1:]...)
-			break
-		}
-	}
+func createTransferCode() string {
+	return utils.HashString(uuid.NewString())
 }

@@ -313,9 +313,9 @@ func createInvitation(userID, teamID, teamName, invitationCode string) error {
 	return notification_service.CreateNotification(uuid.NewString(), userID, &notificationModel.CreateParams{
 		Type: notificationModel.TypeTeamInvite,
 		Content: map[string]interface{}{
-			"teamId":     teamID,
-			"teamName":   teamName,
-			"inviteCode": invitationCode,
+			"id":   teamID,
+			"name": teamName,
+			"code": invitationCode,
 		},
 	})
 }

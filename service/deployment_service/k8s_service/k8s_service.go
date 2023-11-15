@@ -463,8 +463,8 @@ func Repair(id string) error {
 
 	anyMismatch := false
 
+	pvcs := context.Generator.PVCs()
 	for mapName, pvc := range context.Deployment.Subsystems.K8s.PvcMap {
-		pvcs := context.Generator.PVCs()
 		idx := slices.IndexFunc(pvcs, func(s k8sModels.PvcPublic) bool { return s.Name == mapName })
 		if idx == -1 {
 			err = resources.SsDeleter(context.Client.DeletePVC).
@@ -482,21 +482,22 @@ func Repair(id string) error {
 		if anyMismatch {
 			break
 		}
-
+	}
+	for _, public := range context.Generator.PVCs() {
 		err = resources.SsRepairer(
 			context.Client.ReadPVC,
 			context.Client.CreatePVC,
-			func(_ *k8sModels.PvcPublic) (*k8sModels.PvcPublic, error) { anyMismatch = true; return &pvc, nil },
-			context.Client.DeletePVC,
-		).WithResourceID(pvc.ID).WithDbFunc(dbFunc(id, "pvcMap."+pvc.Name)).WithGenPublic(&pvc).Exec()
+			func(_ *k8sModels.PvcPublic) (*k8sModels.PvcPublic, error) { anyMismatch = true; return &public, nil },
+			func(id string) error { return nil },
+		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "pvcMap."+public.Name)).WithGenPublic(&public).Exec()
 
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
+	pvs := context.Generator.PVs()
 	for mapName, pv := range context.Deployment.Subsystems.K8s.PvMap {
-		pvs := context.Generator.PVs()
 		idx := slices.IndexFunc(pvs, func(s k8sModels.PvPublic) bool { return s.Name == mapName })
 		if idx == -1 {
 			err = resources.SsDeleter(context.Client.DeletePV).
@@ -514,13 +515,14 @@ func Repair(id string) error {
 		if anyMismatch {
 			break
 		}
-
+	}
+	for _, public := range context.Generator.PVs() {
 		err = resources.SsRepairer(
 			context.Client.ReadPV,
 			context.Client.CreatePV,
-			func(_ *k8sModels.PvPublic) (*k8sModels.PvPublic, error) { anyMismatch = true; return &pv, nil },
-			context.Client.DeletePV,
-		).WithResourceID(pv.ID).WithDbFunc(dbFunc(id, "pvMap."+pv.Name)).WithGenPublic(&pv).Exec()
+			func(_ *k8sModels.PvPublic) (*k8sModels.PvPublic, error) { anyMismatch = true; return &public, nil },
+			func(id string) error { return nil },
+		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "pvMap."+public.Name)).WithGenPublic(&public).Exec()
 
 		if err != nil {
 			return makeError(err)

@@ -29,6 +29,11 @@ type Usage struct {
 	Snapshots int `bson:"snapshots"`
 }
 
+type Transfer struct {
+	Code   string `bson:"code"`
+	UserID string `bson:"userId"`
+}
+
 type CreateParams struct {
 	Name           string
 	Zone           string
@@ -51,6 +56,10 @@ type UpdateParams struct {
 	Ports      *[]Port
 	CpuCores   *int
 	RAM        *int
+
+	// update owner
+	TransferCode   *string
+	TransferUserID *string
 }
 
 type Snapshot struct {

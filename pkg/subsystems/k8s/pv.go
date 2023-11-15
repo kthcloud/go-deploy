@@ -83,7 +83,25 @@ func (client *Client) DeletePV(id string) error {
 		if err != nil {
 			return makeError(err)
 		}
+
+		err = client.waitPvDeleted(pv.Name)
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	return nil
+}
+
+func (client *Client) waitPvDeleted(name string) error {
+	maxWait := 120
+	for i := 0; i < maxWait; i++ {
+		time.Sleep(1 * time.Second)
+		_, err := client.K8sClient.CoreV1().PersistentVolumes().Get(context.TODO(), name, metav1.GetOptions{})
+		if err != nil && IsNotFoundErr(err) {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("timeout waiting for pv %s to be deleted", name)
 }

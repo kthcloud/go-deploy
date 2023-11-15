@@ -26,6 +26,8 @@ type Deployment struct {
 
 	StatusMessage string `bson:"statusMessage"`
 	StatusCode    int    `bson:"statusCode"`
+
+	Transfer *Transfer `bson:"transfer"`
 }
 
 func (deployment *Deployment) GetMainApp() *App {
@@ -95,6 +97,10 @@ func (deployment *Deployment) BeingCreated() bool {
 
 func (deployment *Deployment) BeingDeleted() bool {
 	return deployment.DoingActivity(ActivityBeingDeleted)
+}
+
+func (deployment *Deployment) BeingTransferred() bool {
+	return deployment.Transfer != nil
 }
 
 func (deployment *Deployment) Deleted() bool {

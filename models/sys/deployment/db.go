@@ -7,6 +7,7 @@ import (
 	"go-deploy/models/sys/activity"
 	"go-deploy/models/sys/deployment/subsystems"
 	"go-deploy/pkg/app/status_codes"
+	"go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -60,6 +61,7 @@ func (client *Client) Create(id, ownerID string, params *CreateParams) (*Deploym
 		},
 		StatusMessage: status_codes.GetMsg(status_codes.ResourceBeingCreated),
 		StatusCode:    status_codes.ResourceBeingCreated,
+		Transfer:      nil,
 	}
 
 	_, err := client.Collection.InsertOne(context.TODO(), deployment)
@@ -76,6 +78,10 @@ func (client *Client) Create(id, ownerID string, params *CreateParams) (*Deploym
 
 func (client *Client) ListByGitHubWebhookID(id int64) ([]Deployment, error) {
 	return client.ListWithFilter(bson.D{{"subsystems.github.webhook.id", id}})
+}
+
+func (client *Client) GetByTransferCode(code, userID string) (*Deployment, error) {
+	return client.GetWithFilter(bson.D{{"transfer.code", code}, {"transfer.userId", userID}})
 }
 
 func (client *Client) DeleteByID(id string) error {
@@ -110,22 +116,32 @@ func (client *Client) UpdateWithParamsByID(id string, params *UpdateParams) erro
 		return nil
 	}
 
-	update := bson.D{}
+	setUpdate := bson.D{}
+	unsetUpdate := bson.D{}
 
-	models.AddIfNotNil(&update, "name", params.Name)
-	models.AddIfNotNil(&update, "ownerId", params.OwnerID)
-	models.AddIfNotNil(&update, "apps.main.internalPort", params.InternalPort)
-	models.AddIfNotNil(&update, "apps.main.envs", params.Envs)
-	models.AddIfNotNil(&update, "apps.main.private", params.Private)
-	models.AddIfNotNil(&update, "apps.main.volumes", params.Volumes)
-	models.AddIfNotNil(&update, "apps.main.initCommands", params.InitCommands)
-	models.AddIfNotNil(&update, "apps.main.customDomain", params.CustomDomain)
-	models.AddIfNotNil(&update, "apps.main.image", params.Image)
-	models.AddIfNotNil(&update, "apps.main.pingPath", params.PingPath)
+	models.AddIfNotNil(&setUpdate, "name", params.Name)
+	models.AddIfNotNil(&setUpdate, "ownerId", params.OwnerID)
+	models.AddIfNotNil(&setUpdate, "apps.main.internalPort", params.InternalPort)
+	models.AddIfNotNil(&setUpdate, "apps.main.envs", params.Envs)
+	models.AddIfNotNil(&setUpdate, "apps.main.private", params.Private)
+	models.AddIfNotNil(&setUpdate, "apps.main.volumes", params.Volumes)
+	models.AddIfNotNil(&setUpdate, "apps.main.initCommands", params.InitCommands)
+	models.AddIfNotNil(&setUpdate, "apps.main.customDomain", params.CustomDomain)
+	models.AddIfNotNil(&setUpdate, "apps.main.image", params.Image)
+	models.AddIfNotNil(&setUpdate, "apps.main.pingPath", params.PingPath)
 
-	_, err = client.Collection.UpdateOne(context.TODO(),
-		bson.D{{"id", id}},
-		bson.D{{"$set", update}},
+	if utils.EmptyValue(params.TransferCode) && utils.EmptyValue(params.TransferUserID) {
+		models.AddIfNotNil(&unsetUpdate, "transfer", "")
+	} else {
+		models.AddIfNotNil(&setUpdate, "transfer.code", params.TransferCode)
+		models.AddIfNotNil(&setUpdate, "transfer.userId", params.TransferUserID)
+	}
+
+	err = client.UpdateWithBsonByID(id,
+		bson.D{
+			{"$set", setUpdate},
+			{"$unset", unsetUpdate},
+		},
 	)
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {
@@ -136,7 +152,6 @@ func (client *Client) UpdateWithParamsByID(id string, params *UpdateParams) erro
 	}
 
 	return nil
-
 }
 
 func (client *Client) DeleteSubsystemByID(id, key string) error {
