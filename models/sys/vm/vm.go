@@ -32,7 +32,7 @@ type VM struct {
 	StatusCode    int    `bson:"statusCode"`
 	StatusMessage string `bson:"statusMessage"`
 
-	Transfer *Transfer `bson:"transfer"`
+	Transfer *Transfer `bson:"transfer,omitempty"`
 }
 
 type Specs struct {
