@@ -44,6 +44,7 @@ type Usage struct {
 }
 
 type UpdateParams struct {
+	// update
 	Name         *string
 	OwnerID      *string
 	Private      *bool
@@ -54,6 +55,10 @@ type UpdateParams struct {
 	CustomDomain *string
 	Image        *string
 	PingPath     *string
+
+	// ownership update
+	TransferUserID *string
+	TransferCode   *string
 }
 
 type GitHubCreateParams struct {
@@ -97,4 +102,9 @@ type GitHubRepository struct {
 type GitHubWebhook struct {
 	ID     int64
 	Events []string
+}
+
+type Transfer struct {
+	Code   string `bson:"code"`
+	UserID string `bson:"userId"`
 }

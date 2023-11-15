@@ -31,6 +31,8 @@ type VM struct {
 
 	StatusCode    int    `bson:"statusCode"`
 	StatusMessage string `bson:"statusMessage"`
+
+	TransferCode string `bson:"transferCode,omitempty"`
 }
 
 type Specs struct {
@@ -56,7 +58,7 @@ func (vm *VM) HasGPU() bool {
 	return vm.GpuID != ""
 }
 
-func (vm *VM) DoingOnOfActivities(activities []string) bool {
+func (vm *VM) DoingOneOfActivities(activities []string) bool {
 	for _, a := range activities {
 		if vm.DoingActivity(a) {
 			return true

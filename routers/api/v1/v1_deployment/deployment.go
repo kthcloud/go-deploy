@@ -361,10 +361,24 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	deployment, err := deployment_service.GetByIdAuth(requestURI.DeploymentID, auth)
-	if err != nil {
-		context.ServerError(err, v1.InternalError)
-		return
+	var deployment *deploymentModels.Deployment
+	if requestBody.TransferCode != nil {
+		deployment, err = deployment_service.GetByTransferCode(*requestBody.TransferCode, auth.UserID)
+		if err != nil {
+			context.ServerError(err, v1.InternalError)
+			return
+		}
+
+		if requestBody.OwnerID == nil {
+			requestBody.OwnerID = &auth.UserID
+		}
+
+	} else {
+		deployment, err = deployment_service.GetByIdAuth(requestURI.DeploymentID, auth)
+		if err != nil {
+			context.ServerError(err, v1.InternalError)
+			return
+		}
 	}
 
 	if deployment == nil {
@@ -378,6 +392,18 @@ func Update(c *gin.Context) {
 			return
 		}
 
+		if deployment.BeingTransferred() {
+			if requestBody.TransferCode != nil {
+				if deployment.Transfer.UserID != auth.UserID {
+					context.Forbidden("Bad transfer receiver")
+					return
+				}
+			} else if deployment.Transfer.UserID == *requestBody.OwnerID {
+				context.UserError("Deployment is already being transferred to this user")
+				return
+			}
+		}
+
 		exists, err := user_service.Exists(*requestBody.OwnerID)
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
@@ -389,25 +415,42 @@ func Update(c *gin.Context) {
 			return
 		}
 
-		jobID := uuid.New().String()
-		err = job_service.Create(jobID, auth.UserID, jobModel.TypeUpdateDeploymentOwner, map[string]interface{}{
-			"id": deployment.ID,
-			"params": body.DeploymentUpdateOwner{
-				NewOwnerID: *requestBody.OwnerID,
-				OldOwnerID: deployment.OwnerID,
-			},
-		})
-
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
 		}
 
+		jobID, err := deployment_service.UpdateOwnerAuth(deployment.ID, &body.DeploymentUpdateOwner{
+			NewOwnerID:   *requestBody.OwnerID,
+			OldOwnerID:   deployment.OwnerID,
+			TransferCode: requestBody.TransferCode,
+		}, auth)
+
+		if err != nil {
+			if errors.Is(err, deployment_service.DeploymentNotFoundErr) {
+				context.NotFound("Deployment not found")
+				return
+			}
+
+			if errors.Is(err, deployment_service.InvalidTransferCodeErr) {
+				context.Forbidden("Bad transfer code")
+				return
+			}
+
+			context.ServerError(err, v1.InternalError)
+			return
+		}
+
+		// if jobID is nil, a notification was sent to the new owner, and no job was created
+		if jobID == nil {
+			context.OkNoContent()
+			return
+		}
+
 		context.Ok(body.DeploymentUpdated{
 			ID:    deployment.ID,
-			JobID: jobID,
+			JobID: *jobID,
 		})
-
 		return
 	}
 

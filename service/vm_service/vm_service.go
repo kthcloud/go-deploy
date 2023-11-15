@@ -409,7 +409,7 @@ func CanAddActivity(vmID, activity string) (bool, string, error) {
 	case vmModel.ActivityBeingDeleted:
 		return true, "", nil
 	case vmModel.ActivityUpdating:
-		if vm.DoingOnOfActivities([]string{
+		if vm.DoingOneOfActivities([]string{
 			vmModel.ActivityBeingCreated,
 			vmModel.ActivityBeingDeleted,
 			vmModel.ActivityAttachingGPU,
@@ -419,7 +419,7 @@ func CanAddActivity(vmID, activity string) (bool, string, error) {
 		}
 		return true, "", nil
 	case vmModel.ActivityAttachingGPU:
-		if vm.DoingOnOfActivities([]string{
+		if vm.DoingOneOfActivities([]string{
 			vmModel.ActivityBeingCreated,
 			vmModel.ActivityBeingDeleted,
 			vmModel.ActivityAttachingGPU,
@@ -431,7 +431,7 @@ func CanAddActivity(vmID, activity string) (bool, string, error) {
 		}
 		return true, "", nil
 	case vmModel.ActivityDetachingGPU:
-		if vm.DoingOnOfActivities([]string{
+		if vm.DoingOneOfActivities([]string{
 			vmModel.ActivityBeingCreated,
 			vmModel.ActivityBeingDeleted,
 			vmModel.ActivityAttachingGPU,
@@ -442,7 +442,7 @@ func CanAddActivity(vmID, activity string) (bool, string, error) {
 		}
 		return true, "", nil
 	case vmModel.ActivityRepairing:
-		if vm.DoingOnOfActivities([]string{
+		if vm.DoingOneOfActivities([]string{
 			vmModel.ActivityBeingCreated,
 			vmModel.ActivityBeingDeleted,
 			vmModel.ActivityAttachingGPU,
@@ -452,7 +452,7 @@ func CanAddActivity(vmID, activity string) (bool, string, error) {
 		}
 		return true, "", nil
 	case vmModel.ActivityCreatingSnapshot:
-		if vm.DoingOnOfActivities([]string{
+		if vm.DoingOneOfActivities([]string{
 			vmModel.ActivityBeingCreated,
 			vmModel.ActivityBeingDeleted,
 			vmModel.ActivityAttachingGPU,
@@ -462,7 +462,7 @@ func CanAddActivity(vmID, activity string) (bool, string, error) {
 		}
 		return true, "", nil
 	case vmModel.ActivityApplyingSnapshot:
-		if vm.DoingOnOfActivities([]string{
+		if vm.DoingOneOfActivities([]string{
 			vmModel.ActivityBeingCreated,
 			vmModel.ActivityBeingDeleted,
 			vmModel.ActivityAttachingGPU,
