@@ -1,6 +1,9 @@
 package job
 
-import "go-deploy/models/dto/body"
+import (
+	"go-deploy/models/dto/body"
+	"go-deploy/utils"
+)
 
 func (job *Job) ToDTO(statusMessage string) body.JobRead {
 	var lastError *string
@@ -9,11 +12,15 @@ func (job *Job) ToDTO(statusMessage string) body.JobRead {
 	}
 
 	return body.JobRead{
-		ID:        job.ID,
-		UserID:    job.UserID,
-		Type:      job.Type,
-		Status:    statusMessage,
-		LastError: lastError,
+		ID:         job.ID,
+		UserID:     job.UserID,
+		Type:       job.Type,
+		Status:     statusMessage,
+		LastError:  lastError,
+		CreatedAt:  job.CreatedAt,
+		LastRunAt:  utils.NonZeroOrNil(job.LastRunAt),
+		FinishedAt: utils.NonZeroOrNil(job.FinishedAt),
+		RunAfter:   job.RunAfter,
 	}
 }
 

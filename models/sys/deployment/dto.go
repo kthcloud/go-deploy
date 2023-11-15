@@ -63,11 +63,15 @@ func (deployment *Deployment) ToDTO(storageManagerURL *string) body.DeploymentRe
 	}
 
 	return body.DeploymentRead{
-		ID:      deployment.ID,
-		Name:    deployment.Name,
-		Type:    deployment.Type,
-		OwnerID: deployment.OwnerID,
-		Zone:    deployment.Zone,
+		ID:          deployment.ID,
+		Name:        deployment.Name,
+		Type:        deployment.Type,
+		OwnerID:     deployment.OwnerID,
+		Zone:        deployment.Zone,
+		CreatedAt:   deployment.CreatedAt,
+		UpdatedAt:   utils.NonZeroOrNil(deployment.UpdatedAt),
+		RepairedAt:  utils.NonZeroOrNil(deployment.RepairedAt),
+		RestartedAt: utils.NonZeroOrNil(deployment.RestartedAt),
 
 		URL:             deployment.GetURL(),
 		CustomDomainURL: deployment.GetCustomDomainURL(),
@@ -78,13 +82,10 @@ func (deployment *Deployment) ToDTO(storageManagerURL *string) body.DeploymentRe
 		InternalPort:    app.InternalPort,
 		Image:           image,
 		HealthCheckPath: &app.PingPath,
-
-		Status:     deployment.StatusMessage,
-		PingResult: pingResult,
-
-		Integrations: integrations,
-
-		StorageURL: storageManagerURL,
+		Status:          deployment.StatusMessage,
+		PingResult:      pingResult,
+		Integrations:    integrations,
+		StorageURL:      storageManagerURL,
 	}
 }
 

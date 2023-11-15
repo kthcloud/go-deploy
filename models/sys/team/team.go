@@ -35,6 +35,7 @@ type Team struct {
 	Description *string   `bson:"description"`
 	OwnerID     string    `bson:"ownerId"`
 	CreatedAt   time.Time `bson:"createdAt"`
+	UpdatedAt   time.Time `bson:"updatedAt"`
 
 	ResourceMap map[string]Resource `bson:"resourceMap"`
 	MemberMap   map[string]Member   `bson:"memberMap"`

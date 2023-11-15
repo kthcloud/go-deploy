@@ -27,7 +27,7 @@ type Deployment struct {
 	StatusMessage string `bson:"statusMessage"`
 	StatusCode    int    `bson:"statusCode"`
 
-	Transfer *Transfer `bson:"transfer"`
+	Transfer *Transfer `bson:"transfer,omitempty"`
 }
 
 func (deployment *Deployment) GetMainApp() *App {

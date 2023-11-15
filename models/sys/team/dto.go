@@ -2,6 +2,7 @@ package team
 
 import (
 	"go-deploy/models/dto/body"
+	"go-deploy/utils"
 )
 
 func (t *Team) ToDTO(getMember func(*Member) *body.TeamMember, getResourceName func(*Resource) *string) body.TeamRead {
@@ -31,6 +32,8 @@ func (t *Team) ToDTO(getMember func(*Member) *body.TeamMember, getResourceName f
 		Description: t.Description,
 		Resources:   resources,
 		Members:     members,
+		CreatedAt:   t.CreatedAt,
+		UpdatedAt:   utils.NonZeroOrNil(t.UpdatedAt),
 	}
 }
 

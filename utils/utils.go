@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 )
 
 func HashString(token string) string {
@@ -83,4 +84,12 @@ func PrettyPrintError(err error) {
 
 func EmptyValue(s *string) bool {
 	return s != nil && *s == ""
+}
+
+func NonZeroOrNil(t time.Time) *time.Time {
+	if t.IsZero() {
+		return nil
+	}
+
+	return &t
 }
