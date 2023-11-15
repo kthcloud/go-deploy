@@ -3,6 +3,7 @@ package vm
 import (
 	"go-deploy/models/dto/body"
 	"go-deploy/service"
+	"go-deploy/utils"
 )
 
 func (vm *VM) ToDTO(status string, connectionString *string, gpu *body.GpuRead, externalPortMapper map[string]int) body.VmRead {
@@ -70,10 +71,13 @@ func (vm *VM) ToDTO(status string, connectionString *string, gpu *body.GpuRead, 
 	}
 
 	return body.VmRead{
-		ID:      vm.ID,
-		Name:    vm.Name,
-		OwnerID: vm.OwnerID,
-		Zone:    vm.Zone,
+		ID:         vm.ID,
+		Name:       vm.Name,
+		OwnerID:    vm.OwnerID,
+		Zone:       vm.Zone,
+		CreatedAt:  vm.CreatedAt,
+		UpdatedAt:  utils.NonZeroOrNil(vm.UpdatedAt),
+		RepairedAt: utils.NonZeroOrNil(vm.RepairedAt),
 		Specs: body.Specs{
 			CpuCores: vm.Specs.CpuCores,
 			RAM:      vm.Specs.RAM,

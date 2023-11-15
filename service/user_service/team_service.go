@@ -245,6 +245,11 @@ func UpdateTeamAuth(id string, dtoUpdateTeam *body.TeamUpdate, auth *service.Aut
 		return nil, TeamNotFoundErr
 	}
 
+	err = teamClient.MarkUpdated(id)
+	if err != nil {
+		return nil, err
+	}
+
 	return afterUpdate, nil
 }
 

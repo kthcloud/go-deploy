@@ -84,3 +84,7 @@ func (client *Client) UpdateMember(id string, memberID string, member *Member) e
 
 	return client.SetWithBsonByID(id, updateData)
 }
+
+func (client *Client) MarkUpdated(id string) error {
+	return client.SetWithBsonByID(id, bson.D{{"updatedAt", time.Now()}})
+}

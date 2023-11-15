@@ -55,4 +55,6 @@ type TeamRead struct {
 	Description *string        `json:"description,omitempty"`
 	Resources   []TeamResource `json:"resources"`
 	Members     []TeamMember   `json:"members"`
+	CreatedAt   time.Time      `json:"createdAt"`
+	UpdatedAt   *time.Time     `json:"updatedAt,omitempty"`
 }
