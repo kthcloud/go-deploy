@@ -83,7 +83,7 @@ func Create(options *Options) *App {
 		}
 
 		go func() {
-			err := httpServer.ListenAndServe()
+			err = httpServer.ListenAndServe()
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
 				log.Fatalln(fmt.Errorf("failed to start http server. details: %w", err))
 			}

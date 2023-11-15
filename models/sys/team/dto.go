@@ -34,7 +34,7 @@ func (t *Team) ToDTO(getMember func(*Member) *body.TeamMember, getResourceName f
 	}
 }
 
-func (params *CreateParams) FromDTO(teamCreateDTO *body.TeamCreate, getResourceFunc func(string) *Resource) {
+func (params *CreateParams) FromDTO(teamCreateDTO *body.TeamCreate, getResourceFunc func(string) *Resource, getMemberFunc func(*body.TeamMemberCreate) *Member) {
 	params.Name = teamCreateDTO.Name
 	params.MemberMap = make(map[string]Member)
 
@@ -44,11 +44,8 @@ func (params *CreateParams) FromDTO(teamCreateDTO *body.TeamCreate, getResourceF
 		}
 	}
 
-	for _, member := range teamCreateDTO.Members {
-		params.MemberMap[member.ID] = Member{
-			ID:       member.ID,
-			TeamRole: member.TeamRole,
-		}
+	for _, memberDTO := range teamCreateDTO.Members {
+		params.MemberMap[memberDTO.ID] = *getMemberFunc(&memberDTO)
 	}
 }
 
@@ -56,7 +53,7 @@ func (params *JoinParams) FromDTO(teamJoinDTO *body.TeamJoin) {
 	params.InvitationCode = teamJoinDTO.InvitationCode
 }
 
-func (params *UpdateParams) FromDTO(teamUpdateDTO *body.TeamUpdate, getResourceFunc func(string) *Resource) {
+func (params *UpdateParams) FromDTO(teamUpdateDTO *body.TeamUpdate, getResourceFunc func(string) *Resource, getMemberFunc func(*body.TeamMemberUpdate) *Member) {
 	params.Name = teamUpdateDTO.Name
 	params.Description = teamUpdateDTO.Description
 
@@ -72,12 +69,8 @@ func (params *UpdateParams) FromDTO(teamUpdateDTO *body.TeamUpdate, getResourceF
 
 	if teamUpdateDTO.Members != nil {
 		memberMap := make(map[string]Member)
-		for _, member := range *teamUpdateDTO.Members {
-			memberMap[member.ID] = Member{
-				ID: member.ID,
-				// temporary until we have a use case for this
-				TeamRole: MemberRoleAdmin,
-			}
+		for _, memberDTO := range *teamUpdateDTO.Members {
+			memberMap[memberDTO.ID] = *getMemberFunc(&memberDTO)
 		}
 		params.MemberMap = &memberMap
 	}

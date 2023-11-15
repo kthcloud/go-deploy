@@ -1,9 +1,8 @@
 package user
 
 import (
-	"github.com/fatih/structs"
-	roleModel "go-deploy/models/config/role"
 	"go-deploy/models/dto/body"
+	roleModel "go-deploy/models/sys/role"
 	"log"
 )
 
@@ -28,15 +27,6 @@ func (user *User) ToDTO(effectiveRole *roleModel.Role, usage *Usage, storageURL 
 		}
 	}
 
-	permissionsStructMap := structs.Map(effectiveRole.Permissions)
-	permissions := make([]string, 0)
-	for name, value := range permissionsStructMap {
-		hasPermission, ok := value.(bool)
-		if ok && hasPermission {
-			permissions = append(permissions, name)
-		}
-	}
-
 	userRead := body.UserRead{
 		ID:         user.ID,
 		Username:   user.Username,
@@ -46,30 +36,24 @@ func (user *User) ToDTO(effectiveRole *roleModel.Role, usage *Usage, storageURL 
 		PublicKeys: publicKeys,
 		Onboarded:  user.Onboarded,
 
-		Role: body.Role{
-			Name:        effectiveRole.Name,
-			Description: effectiveRole.Description,
-			Permissions: permissions,
-		},
+		Role:  effectiveRole.ToDTO(false),
 		Admin: user.IsAdmin,
 
-		Quota: body.Quota{
-			Deployments: effectiveRole.Quotas.Deployments,
-			CpuCores:    effectiveRole.Quotas.CpuCores,
-			RAM:         effectiveRole.Quotas.RAM,
-			DiskSize:    effectiveRole.Quotas.DiskSize,
-			Snapshots:   effectiveRole.Quotas.Snapshots,
-		},
-		Usage: body.Quota{
-			Deployments: usage.Deployments,
-			CpuCores:    usage.CpuCores,
-			RAM:         usage.RAM,
-			DiskSize:    usage.DiskSize,
-			Snapshots:   usage.Snapshots,
-		},
+		Quota: effectiveRole.Quotas.ToDTO(),
+		Usage: usage.ToDTO(),
 
 		StorageURL: storageURL,
 	}
 
 	return userRead
+}
+
+func (usage *Usage) ToDTO() body.Usage {
+	return body.Usage{
+		Deployments: usage.Deployments,
+		CpuCores:    usage.CpuCores,
+		RAM:         usage.RAM,
+		DiskSize:    usage.DiskSize,
+		Snapshots:   usage.Snapshots,
+	}
 }

@@ -32,5 +32,8 @@ type UpdateParams struct {
 }
 
 func (u *UpdateParams) FromDTO(dto *body.NotificationUpdate) {
-	u.ReadAt = dto.ReadAt
+	if dto.Read {
+		now := time.Now()
+		u.ReadAt = &now
+	}
 }

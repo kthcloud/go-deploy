@@ -32,5 +32,9 @@ func (client *Client) UpdateWithParamsByID(id string, params *UpdateParams) erro
 
 	models.AddIfNotNil(&update, "readAt", params.ReadAt)
 
-	return client.UpdateWithBsonByID(id, update)
+	if len(update) == 0 {
+		return nil
+	}
+
+	return client.SetWithBsonByID(id, update)
 }
