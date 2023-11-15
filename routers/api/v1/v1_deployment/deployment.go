@@ -361,8 +361,6 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	auth.IsAdmin = true
-
 	var deployment *deploymentModels.Deployment
 	if requestBody.TransferCode != nil {
 		deployment, err = deployment_service.GetByTransferCode(*requestBody.TransferCode, auth.UserID)
