@@ -276,6 +276,38 @@ func UpdateOwnerAuth(id string, params *body.DeploymentUpdateOwner, auth *servic
 	return nil, nil
 }
 
+func ClearUpdateOwner(id string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to clear deployment owner update. details: %w", err)
+	}
+
+	deployment, err := deploymentModel.New().GetByID(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if deployment == nil {
+		return DeploymentNotFoundErr
+	}
+
+	if deployment.Transfer == nil {
+		return nil
+	}
+
+	emptyString := ""
+	err = deploymentModel.New().UpdateWithParamsByID(id, &deploymentModel.UpdateParams{
+		TransferUserID: &emptyString,
+		TransferCode:   &emptyString,
+	})
+	if err != nil {
+		return makeError(err)
+	}
+
+	// TODO: delete notification?
+
+	return nil
+}
+
 func UpdateOwner(id string, params *body.DeploymentUpdateOwner) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update deployment owner. details: %w", err)

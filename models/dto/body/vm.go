@@ -38,7 +38,7 @@ type VmUpdate struct {
 	CpuCores   *int    `json:"cpuCores,omitempty" bson:"cpuCores,omitempty" binding:"omitempty,min=1"`
 	RAM        *int    `json:"ram,omitempty" bson:"ram,omitempty" binding:"omitempty,min=1"`
 
-	OwnerID      *string `json:"ownerId,omitempty" bson:"ownerId,omitempty" binding:"omitempty,uuid4"`
+	OwnerID      *string `json:"ownerId,omitempty" bson:"ownerId,omitempty" binding:"omitempty"`
 	TransferCode *string `json:"transferCode,omitempty" bson:"transferCode,omitempty" binding:"omitempty,min=1,max=1000"`
 }
 

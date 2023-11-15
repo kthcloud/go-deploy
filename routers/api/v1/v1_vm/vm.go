@@ -359,6 +359,19 @@ func Update(c *gin.Context) {
 	}
 
 	if requestBody.OwnerID != nil {
+		if *requestBody.OwnerID == "" {
+			err := vm_service.ClearUpdateOwner(vm.ID)
+			if err != nil {
+				context.ServerError(err, v1.InternalError)
+				return
+			}
+
+			context.Ok(body.VmUpdated{
+				ID: vm.ID,
+			})
+			return
+		}
+
 		if *requestBody.OwnerID == vm.OwnerID {
 			context.UserError("Owner already set")
 			return
