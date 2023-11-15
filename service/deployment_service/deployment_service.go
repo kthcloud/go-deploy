@@ -319,6 +319,7 @@ func UpdateOwner(id string, params *body.DeploymentUpdateOwner) error {
 		return makeError(err)
 	}
 
+	log.Println("deployment", id, "owner updated to", params.NewOwnerID)
 	return nil
 }
 

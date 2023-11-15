@@ -208,6 +208,7 @@ func UpdateOwner(id string, params *body.VmUpdateOwner) error {
 		return makeError(err)
 	}
 
+	log.Println("vm", id, "owner updated to", params.NewOwnerID)
 	return nil
 }
 
