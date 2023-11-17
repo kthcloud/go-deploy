@@ -89,16 +89,18 @@ func CreateSnapshot(vmID string, params *vmModel.CreateSnapshotParams) error {
 		return makeError(err)
 	}
 
+	log.Println("created snapshot", snapshotID, "for vm", vmID)
+
 	for _, snapshot := range snapshots {
 		if snapshot.Name == params.Name && snapshot.ID != snapshotID {
 			err = context.Client.DeleteSnapshot(snapshot.ID)
 			if err != nil {
 				return makeError(err)
 			}
+
+			log.Println("deleted old snapshot", snapshot.ID, "for vm", vmID)
 		}
 	}
-
-	log.Println("created snapshot", snapshotID, "for vm", vmID)
 
 	return nil
 }
