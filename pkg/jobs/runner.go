@@ -45,6 +45,12 @@ func (runner *Runner) Run() {
 		go wrapper(jobDef.JobFunc, runner.Job)
 	} else {
 		utils.PrettyPrintError(fmt.Errorf("unknown job type: %s", runner.Job.Type))
+
+		err := jobModel.New().MarkTerminated(runner.Job.ID, "unknown job type")
+		if err != nil {
+			utils.PrettyPrintError(fmt.Errorf("error marking unknown job as terminated. details: %w", err))
+			return
+		}
 	}
 }
 
