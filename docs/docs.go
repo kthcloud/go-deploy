@@ -145,7 +145,7 @@ const docTemplate = `{
             }
         },
         "/deployments/{deploymentId}": {
-            "put": {
+            "post": {
                 "description": "Update deployment",
                 "consumes": [
                     "application/json"
@@ -1092,7 +1092,7 @@ const docTemplate = `{
                     }
                 }
             },
-            "put": {
+            "post": {
                 "description": "Update team",
                 "consumes": [
                     "application/json"
@@ -1516,7 +1516,7 @@ const docTemplate = `{
                     }
                 }
             },
-            "put": {
+            "post": {
                 "description": "Update VM",
                 "consumes": [
                     "application/json"
@@ -1776,6 +1776,132 @@ const docTemplate = `{
                 }
             }
         },
+        "/vms/{vmId}/snapshot/{snapshotId}": {
+            "post": {
+                "description": "Get snapshot",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "VM"
+                ],
+                "summary": "Get snapshot",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "VM ID",
+                        "name": "vmId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Snapshot ID",
+                        "name": "snapshotId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.VmSnapshotRead"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete snapshot",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "VM"
+                ],
+                "summary": "Delete snapshot",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "VM ID",
+                        "name": "vmId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Snapshot ID",
+                        "name": "snapshotId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.VmSnapshotRead"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/vms/{vmId}/snapshots": {
             "get": {
                 "description": "Get snapshot list",
@@ -1829,6 +1955,61 @@ const docTemplate = `{
                     },
                     "423": {
                         "description": "Locked",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create snapshot",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "VM"
+                ],
+                "summary": "Create snapshot",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "VM ID",
+                        "name": "vmId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.VmSnapshotRead"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/sys.ErrorResponse"
                         }
@@ -2046,6 +2227,9 @@ const docTemplate = `{
         "body.DeploymentRead": {
             "type": "object",
             "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
                 "customDomainUrl": {
                     "type": "string"
                 },
@@ -2091,6 +2275,12 @@ const docTemplate = `{
                 "private": {
                     "type": "boolean"
                 },
+                "repairedAt": {
+                    "type": "string"
+                },
+                "restartedAt": {
+                    "type": "string"
+                },
                 "status": {
                     "type": "string"
                 },
@@ -2098,6 +2288,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "type": {
+                    "type": "string"
+                },
+                "updatedAt": {
                     "type": "string"
                 },
                 "url": {
@@ -2116,6 +2309,9 @@ const docTemplate = `{
         },
         "body.DeploymentUpdate": {
             "type": "object",
+            "required": [
+                "name"
+            ],
             "properties": {
                 "customDomain": {
                     "type": "string",
@@ -2148,8 +2344,23 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "name": {
+                    "description": "update",
+                    "type": "string",
+                    "maxLength": 30,
+                    "minLength": 3
+                },
+                "ownerId": {
+                    "description": "update owner",
+                    "type": "string"
+                },
                 "private": {
                     "type": "boolean"
+                },
+                "transferCode": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "minLength": 1
                 },
                 "volumes": {
                     "type": "array",
@@ -2267,10 +2478,22 @@ const docTemplate = `{
         "body.JobRead": {
             "type": "object",
             "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "finishedAt": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
                 "lastError": {
+                    "type": "string"
+                },
+                "lastRunAt": {
+                    "type": "string"
+                },
+                "runAfter": {
                     "type": "string"
                 },
                 "status": {
@@ -2306,6 +2529,9 @@ const docTemplate = `{
                     "type": "object",
                     "additionalProperties": true
                 },
+                "createdAt": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -2320,8 +2546,8 @@ const docTemplate = `{
         "body.NotificationUpdate": {
             "type": "object",
             "properties": {
-                "readAt": {
-                    "type": "string"
+                "read": {
+                    "type": "boolean"
                 }
             }
         },
@@ -2387,6 +2613,10 @@ const docTemplate = `{
                 "diskSize": {
                     "type": "integer"
                 },
+                "gpuLeaseDuration": {
+                    "description": "in hours",
+                    "type": "number"
+                },
                 "ram": {
                     "type": "integer"
                 },
@@ -2409,6 +2639,9 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
+                },
+                "quota": {
+                    "$ref": "#/definitions/body.Quota"
                 }
             }
         },
@@ -2549,6 +2782,9 @@ const docTemplate = `{
         "body.TeamRead": {
             "type": "object",
             "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
                 "description": {
                     "type": "string"
                 },
@@ -2572,6 +2808,9 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/body.TeamResource"
                     }
+                },
+                "updatedAt": {
+                    "type": "string"
                 }
             }
         },
@@ -2619,6 +2858,26 @@ const docTemplate = `{
                 }
             }
         },
+        "body.Usage": {
+            "type": "object",
+            "properties": {
+                "cpuCores": {
+                    "type": "integer"
+                },
+                "deployments": {
+                    "type": "integer"
+                },
+                "diskSize": {
+                    "type": "integer"
+                },
+                "ram": {
+                    "type": "integer"
+                },
+                "snapshots": {
+                    "type": "integer"
+                }
+            }
+        },
         "body.UserRead": {
             "type": "object",
             "properties": {
@@ -2656,7 +2915,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "usage": {
-                    "$ref": "#/definitions/body.Quota"
+                    "$ref": "#/definitions/body.Usage"
                 },
                 "username": {
                     "type": "string"
@@ -2807,6 +3066,9 @@ const docTemplate = `{
                 "connectionString": {
                     "type": "string"
                 },
+                "createdAt": {
+                    "type": "string"
+                },
                 "gpu": {
                     "$ref": "#/definitions/body.VmGpu"
                 },
@@ -2825,6 +3087,9 @@ const docTemplate = `{
                         "$ref": "#/definitions/body.Port"
                     }
                 },
+                "repairedAt": {
+                    "type": "string"
+                },
                 "specs": {
                     "$ref": "#/definitions/body.Specs"
                 },
@@ -2832,6 +3097,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
+                    "type": "string"
+                },
+                "updatedAt": {
                     "type": "string"
                 },
                 "zone": {
@@ -2877,6 +3145,14 @@ const docTemplate = `{
                     "maxLength": 100,
                     "minLength": 0
                 },
+                "name": {
+                    "type": "string",
+                    "maxLength": 30,
+                    "minLength": 3
+                },
+                "ownerId": {
+                    "type": "string"
+                },
                 "ports": {
                     "type": "array",
                     "maxItems": 1000,
@@ -2891,6 +3167,11 @@ const docTemplate = `{
                 },
                 "snapshotId": {
                     "type": "string"
+                },
+                "transferCode": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "minLength": 1
                 }
             }
         },
@@ -2956,10 +3237,6 @@ const docTemplate = `{
                 "chooseZone": {
                     "type": "boolean"
                 },
-                "gpuLeaseDuration": {
-                    "description": "in hours",
-                    "type": "number"
-                },
                 "useCustomDomains": {
                     "type": "boolean"
                 },
@@ -2982,6 +3259,10 @@ const docTemplate = `{
                 },
                 "diskSize": {
                     "type": "integer"
+                },
+                "gpuLeaseDuration": {
+                    "description": "in hours",
+                    "type": "number"
                 },
                 "ram": {
                     "type": "integer"

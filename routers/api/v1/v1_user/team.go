@@ -149,7 +149,7 @@ func CreateTeam(c *gin.Context) {
 // @Success 200 {object} body.TeamRead
 // @Failure 400 {object} body.BindingError
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /teams/{teamId} [put]
+// @Router /teams/{teamId} [post]
 func UpdateTeam(c *gin.Context) {
 	context := sys.NewContext(c)
 

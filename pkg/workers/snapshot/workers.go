@@ -52,7 +52,7 @@ func snapshotter(ctx context.Context) {
 }
 
 func scheduleSnapshotJob(vm *vmModel.VM, recurring string) {
-	log.Println("scheduling", recurring, "snapshot for vm:", vm.ID)
+	log.Println("scheduling", recurring, "snapshot for vm", vm.ID)
 
 	runAt := getRunAt(recurring)
 	err := job.New().CreateScheduled(uuid.New().String(), vm.OwnerID, job.TypeCreateSystemSnapshot, runAt, map[string]interface{}{

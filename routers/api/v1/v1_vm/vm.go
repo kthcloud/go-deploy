@@ -311,7 +311,7 @@ func Delete(c *gin.Context) {
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /vm/{vmId} [put]
+// @Router /vm/{vmId} [post]
 func Update(c *gin.Context) {
 	context := sys.NewContext(c)
 
