@@ -136,6 +136,8 @@ definitions:
     type: object
   body.DeploymentRead:
     properties:
+      createdAt:
+        type: string
       customDomainUrl:
         type: string
       envs:
@@ -166,11 +168,17 @@ definitions:
         type: integer
       private:
         type: boolean
+      repairedAt:
+        type: string
+      restartedAt:
+        type: string
       status:
         type: string
       storageUrl:
         type: string
       type:
+        type: string
+      updatedAt:
         type: string
       url:
         type: string
@@ -207,14 +215,28 @@ definitions:
         maxItems: 100
         minItems: 0
         type: array
+      name:
+        description: update
+        maxLength: 30
+        minLength: 3
+        type: string
+      ownerId:
+        description: update owner
+        type: string
       private:
         type: boolean
+      transferCode:
+        maxLength: 1000
+        minLength: 1
+        type: string
       volumes:
         items:
           $ref: '#/definitions/body.Volume'
         maxItems: 100
         minItems: 0
         type: array
+    required:
+    - name
     type: object
   body.DeploymentUpdated:
     properties:
@@ -287,9 +309,17 @@ definitions:
     type: object
   body.JobRead:
     properties:
+      createdAt:
+        type: string
+      finishedAt:
+        type: string
       id:
         type: string
       lastError:
+        type: string
+      lastRunAt:
+        type: string
+      runAfter:
         type: string
       status:
         type: string
@@ -314,6 +344,8 @@ definitions:
       content:
         additionalProperties: true
         type: object
+      createdAt:
+        type: string
       id:
         type: string
       readAt:
@@ -323,8 +355,8 @@ definitions:
     type: object
   body.NotificationUpdate:
     properties:
-      readAt:
-        type: string
+      read:
+        type: boolean
     type: object
   body.Port:
     properties:
@@ -370,6 +402,9 @@ definitions:
         type: integer
       diskSize:
         type: integer
+      gpuLeaseDuration:
+        description: in hours
+        type: number
       ram:
         type: integer
       snapshots:
@@ -385,6 +420,8 @@ definitions:
         items:
           type: string
         type: array
+      quota:
+        $ref: '#/definitions/body.Quota'
     type: object
   body.Specs:
     properties:
@@ -478,6 +515,8 @@ definitions:
     type: object
   body.TeamRead:
     properties:
+      createdAt:
+        type: string
       description:
         type: string
       id:
@@ -494,6 +533,8 @@ definitions:
         items:
           $ref: '#/definitions/body.TeamResource'
         type: array
+      updatedAt:
+        type: string
     type: object
   body.TeamResource:
     properties:
@@ -526,6 +567,19 @@ definitions:
         minItems: 0
         type: array
     type: object
+  body.Usage:
+    properties:
+      cpuCores:
+        type: integer
+      deployments:
+        type: integer
+      diskSize:
+        type: integer
+      ram:
+        type: integer
+      snapshots:
+        type: integer
+    type: object
   body.UserRead:
     properties:
       admin:
@@ -551,7 +605,7 @@ definitions:
       storageUrl:
         type: string
       usage:
-        $ref: '#/definitions/body.Quota'
+        $ref: '#/definitions/body.Usage'
       username:
         type: string
     type: object
@@ -655,6 +709,8 @@ definitions:
     properties:
       connectionString:
         type: string
+      createdAt:
+        type: string
       gpu:
         $ref: '#/definitions/body.VmGpu'
       id:
@@ -667,11 +723,15 @@ definitions:
         items:
           $ref: '#/definitions/body.Port'
         type: array
+      repairedAt:
+        type: string
       specs:
         $ref: '#/definitions/body.Specs'
       sshPublicKey:
         type: string
       status:
+        type: string
+      updatedAt:
         type: string
       zone:
         type: string
@@ -702,6 +762,12 @@ definitions:
         maxLength: 100
         minLength: 0
         type: string
+      name:
+        maxLength: 30
+        minLength: 3
+        type: string
+      ownerId:
+        type: string
       ports:
         items:
           $ref: '#/definitions/body.Port'
@@ -712,6 +778,10 @@ definitions:
         minimum: 1
         type: integer
       snapshotId:
+        type: string
+      transferCode:
+        maxLength: 1000
+        minLength: 1
         type: string
     type: object
   body.VmUpdated:
@@ -757,9 +827,6 @@ definitions:
         type: boolean
       chooseZone:
         type: boolean
-      gpuLeaseDuration:
-        description: in hours
-        type: number
       useCustomDomains:
         type: boolean
       useGPUs:
@@ -775,6 +842,9 @@ definitions:
         type: integer
       diskSize:
         type: integer
+      gpuLeaseDuration:
+        description: in hours
+        type: number
       ram:
         type: integer
       snapshots:
@@ -984,7 +1054,7 @@ paths:
       summary: Delete deployment
       tags:
       - Deployment
-    put:
+    post:
       consumes:
       - application/json
       description: Update deployment
@@ -1562,7 +1632,7 @@ paths:
       summary: Get team
       tags:
       - Team
-    put:
+    post:
       consumes:
       - application/json
       description: Update team
@@ -1856,7 +1926,7 @@ paths:
       summary: Get VM by id
       tags:
       - VM
-    put:
+    post:
       consumes:
       - application/json
       description: Update VM
@@ -1950,6 +2020,91 @@ paths:
       summary: Do command
       tags:
       - VM
+  /vms/{vmId}/snapshot/{snapshotId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete snapshot
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: VM ID
+        in: path
+        name: vmId
+        required: true
+        type: string
+      - description: Snapshot ID
+        in: path
+        name: snapshotId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.VmSnapshotRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: Delete snapshot
+      tags:
+      - VM
+    post:
+      consumes:
+      - application/json
+      description: Get snapshot
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: VM ID
+        in: path
+        name: vmId
+        required: true
+        type: string
+      - description: Snapshot ID
+        in: path
+        name: snapshotId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.VmSnapshotRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: Get snapshot
+      tags:
+      - VM
   /vms/{vmId}/snapshots:
     get:
       consumes:
@@ -1992,6 +2147,43 @@ paths:
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
       summary: Get snapshot list
+      tags:
+      - VM
+    post:
+      consumes:
+      - application/json
+      description: Create snapshot
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: VM ID
+        in: path
+        name: vmId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.VmSnapshotRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: Create snapshot
       tags:
       - VM
   /vms/gpus:
