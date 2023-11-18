@@ -42,7 +42,7 @@ func (runner *Runner) Run() {
 			}
 		}
 
-		go wrapper(jobDef.JobFunc, runner.Job)
+		go wrapper(jobDef)
 	} else {
 		utils.PrettyPrintError(fmt.Errorf("unknown job type: %s", runner.Job.Type))
 
@@ -54,39 +54,69 @@ func (runner *Runner) Run() {
 	}
 }
 
-func wrapper(fn func(job *jobModel.Job) error, job *jobModel.Job) {
-	err := fn(job)
+func wrapper(def *JobDefinition) {
+	if def.EntryFunc != nil {
+		err := def.EntryFunc(def.Job)
+		if err != nil {
+			utils.PrettyPrintError(fmt.Errorf("error executing job (%s) entry function. details: %w", def.Job.Type, err))
+
+			err = jobModel.New().MarkFailed(def.Job.ID, err.Error())
+			if err != nil {
+				utils.PrettyPrintError(fmt.Errorf("error marking job as failed. details: %w", err))
+				return
+			}
+			return
+		}
+	}
+
+	defer func() {
+		if def.ExitFunc != nil {
+			err := def.ExitFunc(def.Job)
+			if err != nil {
+				utils.PrettyPrintError(fmt.Errorf("error executing job (%s) exit function. details: %w", def.Job.Type, err))
+
+				err = jobModel.New().MarkFailed(def.Job.ID, err.Error())
+				if err != nil {
+					utils.PrettyPrintError(fmt.Errorf("error marking job as failed. details: %w", err))
+					return
+				}
+				return
+			}
+		}
+	}()
+
+	err := def.JobFunc(def.Job)
 
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "failed") {
 			err = errors.Unwrap(err)
-			utils.PrettyPrintError(fmt.Errorf("failed job (%s). details: %w", job.Type, err))
+			utils.PrettyPrintError(fmt.Errorf("failed job (%s). details: %w", def.Job.Type, err))
 
-			err = jobModel.New().MarkFailed(job.ID, err.Error())
+			err = jobModel.New().MarkFailed(def.Job.ID, err.Error())
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error marking job as failed. details: %w", err))
 				return
 			}
 		} else if strings.HasPrefix(err.Error(), "terminated") {
 			err = errors.Unwrap(err)
-			utils.PrettyPrintError(fmt.Errorf("terminated job (%s). details: %w", job.Type, err))
+			utils.PrettyPrintError(fmt.Errorf("terminated job (%s). details: %w", def.Job.Type, err))
 
-			err = jobModel.New().MarkTerminated(job.ID, err.Error())
+			err = jobModel.New().MarkTerminated(def.Job.ID, err.Error())
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error marking job as terminated. details: %w", err))
 				return
 			}
 		} else {
-			utils.PrettyPrintError(fmt.Errorf("error executing job (%s). details: %w", job.Type, err))
+			utils.PrettyPrintError(fmt.Errorf("error executing job (%s). details: %w", def.Job.Type, err))
 
-			err = jobModel.New().MarkFailed(job.ID, err.Error())
+			err = jobModel.New().MarkFailed(def.Job.ID, err.Error())
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error marking job as failed. details: %w", err))
 				return
 			}
 		}
 	} else {
-		err = jobModel.New().MarkCompleted(job.ID)
+		err = jobModel.New().MarkCompleted(def.Job.ID)
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("error marking job as completed. details: %w", err))
 			return
