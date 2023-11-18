@@ -51,6 +51,7 @@ func (cr *CsGenerator) VMs() []models.VmPublic {
 		if csVM := &cr.v.vm.Subsystems.CS.VM; service.Created(csVM) {
 			csVM.Name = cr.v.vm.Name
 			csVM.ServiceOfferingID = cr.v.vm.Subsystems.CS.ServiceOffering.ID
+			csVM.ExtraConfig = cr.v.vm.Subsystems.CS.VM.ExtraConfig
 			res = append(res, *csVM)
 			return res
 		} else {
