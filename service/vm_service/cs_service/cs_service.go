@@ -5,6 +5,7 @@ import (
 	"fmt"
 	configModels "go-deploy/models/config"
 	vmModel "go-deploy/models/sys/vm"
+	gpuModel "go-deploy/models/sys/vm/gpu"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/cs/commands"
 	csModels "go-deploy/pkg/subsystems/cs/models"
@@ -341,6 +342,18 @@ func Repair(id string) error {
 
 	// only repair if the vm is stopped to prevent downtime for the user
 	if status == "Stopped" {
+		var gpu *gpuModel.GPU
+		if context.VM.GpuID != "" {
+			gpu, err = gpuModel.New().GetByID(context.VM.GpuID)
+			if err != nil {
+				return makeError(err)
+			}
+		}
+
+		if gpu != nil {
+			vm.ExtraConfig = CreateExtraConfig(gpu)
+		}
+
 		err = resources.SsRepairer(
 			context.Client.ReadVM,
 			context.Client.CreateVM,

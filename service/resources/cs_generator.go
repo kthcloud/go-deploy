@@ -52,6 +52,7 @@ func (cr *CsGenerator) VMs() []models.VmPublic {
 			csVM.Name = cr.v.vm.Name
 			csVM.ServiceOfferingID = cr.v.vm.Subsystems.CS.ServiceOffering.ID
 			csVM.ExtraConfig = cr.v.vm.Subsystems.CS.VM.ExtraConfig
+
 			res = append(res, *csVM)
 			return res
 		} else {
@@ -60,6 +61,7 @@ func (cr *CsGenerator) VMs() []models.VmPublic {
 				ServiceOfferingID: cr.v.vm.Subsystems.CS.ServiceOffering.ID,
 				TemplateID:        constants.TemplateID,
 				Tags:              createTags(cr.v.vm.Name, cr.v.vm.Name),
+				ExtraConfig:       cr.v.vm.Subsystems.CS.VM.ExtraConfig,
 			})
 			return res
 		}
