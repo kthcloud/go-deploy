@@ -12,6 +12,7 @@ type App struct {
 	Image        string   `bson:"image"`
 	InternalPort int      `bson:"internalPort"`
 	Private      bool     `bson:"private"`
+	Replicas     int      `bson:"replicas"`
 	Envs         []Env    `bson:"envs"`
 	Volumes      []Volume `bson:"volumes"`
 	InitCommands []string `bson:"initCommands"`

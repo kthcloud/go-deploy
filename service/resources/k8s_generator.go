@@ -110,6 +110,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 			k8sDeployment.EnvVars = envVars
 			k8sDeployment.Image = mainApp.Image
 			k8sDeployment.InitCommands = mainApp.InitCommands
+			k8sDeployment.Replicas = mainApp.Replicas
 
 			res = append(res, *k8sDeployment)
 		} else {
@@ -169,6 +170,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 				},
 				Volumes:          k8sVolumes,
 				ImagePullSecrets: imagePullSecrets,
+				Replicas:         mainApp.Replicas,
 			})
 		}
 
@@ -213,6 +215,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 				}
 
 				k8sDeployment.EnvVars = envVars
+				k8sDeployment.Replicas = 1
 
 				res = append(res, k8sDeployment)
 			}
@@ -263,6 +266,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 							Memory: config.Config.Deployment.Resources.Requests.Memory,
 						},
 					},
+					Replicas: 1,
 				})
 			}
 		}
@@ -271,141 +275,137 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 	}
 
 	if kg.s.storageManager != nil {
-		// filebrowser
-		if filebrowser := kg.s.storageManager.Subsystems.K8s.GetDeployment(constants.StorageManagerAppName); service.Created(filebrowser) {
-			res = append(res, *filebrowser)
-		} else {
-			initVolumes, volumes := sVolumes(kg.s.storageManager.OwnerID)
-			allVolumes := append(initVolumes, volumes...)
+		initVolumes, stdVolume := sVolumes(kg.s.storageManager.OwnerID)
+		allVolumes := append(initVolumes, stdVolume...)
 
-			k8sVolumes := make([]models.Volume, len(allVolumes))
-			for i, volume := range allVolumes {
-				pvcName := sPvcName(volume.Name)
-				k8sVolumes[i] = models.Volume{
-					Name:      sPvName(kg.s.storageManager.OwnerID, volume.Name),
-					PvcName:   &pvcName,
-					MountPath: volume.AppPath,
-					Init:      volume.Init,
-				}
+		k8sVolumes := make([]models.Volume, len(allVolumes))
+		for i, volume := range allVolumes {
+			pvcName := sPvcName(volume.Name)
+			k8sVolumes[i] = models.Volume{
+				Name:      sPvName(kg.s.storageManager.OwnerID, volume.Name),
+				PvcName:   &pvcName,
+				MountPath: volume.AppPath,
+				Init:      volume.Init,
 			}
-
-			defaultLimits := models.Limits{
-				CPU:    config.Config.Deployment.Resources.Limits.CPU,
-				Memory: config.Config.Deployment.Resources.Limits.Memory,
-			}
-
-			defaultRequests := models.Requests{
-				CPU:    config.Config.Deployment.Resources.Requests.CPU,
-				Memory: config.Config.Deployment.Resources.Requests.Memory,
-			}
-
-			args := []string{
-				"--noauth",
-				"--root=/deploy",
-				"--database=/data/database.db",
-				"--port=80",
-			}
-
-			res = append(res, models.DeploymentPublic{
-				Name:      constants.StorageManagerAppName,
-				Namespace: kg.namespace,
-				Image:     "filebrowser/filebrowser",
-				Resources: models.Resources{
-					Limits:   defaultLimits,
-					Requests: defaultRequests,
-				},
-				Args:    args,
-				Volumes: k8sVolumes,
-			})
 		}
+
+		defaultLimits := models.Limits{
+			CPU:    config.Config.Deployment.Resources.Limits.CPU,
+			Memory: config.Config.Deployment.Resources.Limits.Memory,
+		}
+
+		defaultRequests := models.Requests{
+			CPU:    config.Config.Deployment.Resources.Requests.CPU,
+			Memory: config.Config.Deployment.Resources.Requests.Memory,
+		}
+
+		args := []string{
+			"--noauth",
+			"--root=/deploy",
+			"--database=/data/database.db",
+			"--port=80",
+		}
+
+		filebrowser := models.DeploymentPublic{
+			Name:      constants.StorageManagerAppName,
+			Namespace: kg.namespace,
+			Image:     "filebrowser/filebrowser",
+			Resources: models.Resources{
+				Limits:   defaultLimits,
+				Requests: defaultRequests,
+			},
+			Args:     args,
+			Volumes:  k8sVolumes,
+			Replicas: 1,
+		}
+
+		if fb := kg.s.storageManager.Subsystems.K8s.GetDeployment(constants.StorageManagerAppName); service.Created(fb) {
+			filebrowser.ID = fb.ID
+			filebrowser.CreatedAt = fb.CreatedAt
+		}
+
+		res = append(res, filebrowser)
 
 		// oauth2-proxy
-		if oauthProxy := kg.s.storageManager.Subsystems.K8s.GetDeployment(constants.StorageManagerAppNameAuth); service.Created(oauthProxy) {
-			res = append(res, *oauthProxy)
-		} else {
-			defaultLimits := models.Limits{
-				CPU:    config.Config.Deployment.Resources.Limits.CPU,
-				Memory: config.Config.Deployment.Resources.Limits.Memory,
-			}
-
-			defaultRequests := models.Requests{
-				CPU:    config.Config.Deployment.Resources.Requests.CPU,
-				Memory: config.Config.Deployment.Resources.Requests.Memory,
-			}
-
-			user, err := userModel.New().GetByID(kg.s.storageManager.OwnerID)
-			if err != nil {
-				utils.PrettyPrintError(fmt.Errorf("failed to get user by id when creating oauth proxy deployment public. details: %w", err))
-				return nil
-			}
-
-			volumes := []models.Volume{
-				{
-					Name:      "oauth-proxy-config",
-					PvcName:   nil,
-					MountPath: "/mnt/config",
-					Init:      true,
-				},
-				{
-					Name:      "oauth-proxy-config",
-					PvcName:   nil,
-					MountPath: "/mnt",
-					Init:      false,
-				},
-			}
-
-			issuer := config.Config.Keycloak.Url + "/realms/" + config.Config.Keycloak.Realm
-			redirectURL := fmt.Sprintf("https://%s.%s/oauth2/callback", kg.s.storageManager.OwnerID, kg.s.zone.Storage.ParentDomain)
-			upstream := "http://storage-manager"
-
-			args := []string{
-				"--http-address=0.0.0.0:4180",
-				"--reverse-proxy=true",
-				"--provider=oidc",
-				"--redirect-url=" + redirectURL,
-				"--oidc-issuer-url=" + issuer,
-				"--cookie-expire=168h",
-				"--cookie-refresh=1h",
-				"--pass-authorization-header=true",
-				"--scope=openid email",
-				"--upstream=" + upstream,
-				"--client-id=" + config.Config.Keycloak.StorageClient.ClientID,
-				"--client-secret=" + config.Config.Keycloak.StorageClient.ClientSecret,
-				"--cookie-secret=qHKgjlAFQBZOnGcdH5jIKV0Auzx5r8jzZenxhJnlZJg=",
-				"--cookie-secure=true",
-				"--ssl-insecure-skip-verify=true",
-				"--insecure-oidc-allow-unverified-email=true",
-				"--skip-provider-button=true",
-				"--pass-authorization-header=true",
-				"--ssl-upstream-insecure-skip-verify=true",
-				"--code-challenge-method=S256",
-				"--authenticated-emails-file=/mnt/authenticated-emails-list",
-			}
-
-			initContainers := []models.InitContainer{
-				{
-					Name:    "oauth-proxy-config-init",
-					Image:   "busybox",
-					Command: []string{"sh", "-c", fmt.Sprintf("mkdir -p /mnt/config && echo %s > /mnt/config/authenticated-emails-list", user.Email)},
-					Args:    nil,
-				},
-			}
-
-			res = append(res, models.DeploymentPublic{
-				Name:      constants.StorageManagerAppNameAuth,
-				Namespace: kg.namespace,
-				Image:     "quay.io/oauth2-proxy/oauth2-proxy:latest",
-				EnvVars:   nil,
-				Resources: models.Resources{
-					Limits:   defaultLimits,
-					Requests: defaultRequests,
-				},
-				Args:           args,
-				InitContainers: initContainers,
-				Volumes:        volumes,
-			})
+		user, err := userModel.New().GetByID(kg.s.storageManager.OwnerID)
+		if err != nil {
+			utils.PrettyPrintError(fmt.Errorf("failed to get user by id when creating oauth proxy deployment public. details: %w", err))
+			return nil
 		}
 
+		volumes := []models.Volume{
+			{
+				Name:      "oauth-proxy-config",
+				PvcName:   nil,
+				MountPath: "/mnt/config",
+				Init:      true,
+			},
+			{
+				Name:      "oauth-proxy-config",
+				PvcName:   nil,
+				MountPath: "/mnt",
+				Init:      false,
+			},
+		}
+
+		issuer := config.Config.Keycloak.Url + "/realms/" + config.Config.Keycloak.Realm
+		redirectURL := fmt.Sprintf("https://%s.%s/oauth2/callback", kg.s.storageManager.OwnerID, kg.s.zone.Storage.ParentDomain)
+		upstream := "http://storage-manager"
+
+		args = []string{
+			"--http-address=0.0.0.0:4180",
+			"--reverse-proxy=true",
+			"--provider=oidc",
+			"--redirect-url=" + redirectURL,
+			"--oidc-issuer-url=" + issuer,
+			"--cookie-expire=168h",
+			"--cookie-refresh=1h",
+			"--pass-authorization-header=true",
+			"--scope=openid email",
+			"--upstream=" + upstream,
+			"--client-id=" + config.Config.Keycloak.StorageClient.ClientID,
+			"--client-secret=" + config.Config.Keycloak.StorageClient.ClientSecret,
+			"--cookie-secret=qHKgjlAFQBZOnGcdH5jIKV0Auzx5r8jzZenxhJnlZJg=",
+			"--cookie-secure=true",
+			"--ssl-insecure-skip-verify=true",
+			"--insecure-oidc-allow-unverified-email=true",
+			"--skip-provider-button=true",
+			"--pass-authorization-header=true",
+			"--ssl-upstream-insecure-skip-verify=true",
+			"--code-challenge-method=S256",
+			"--authenticated-emails-file=/mnt/authenticated-emails-list",
+		}
+
+		initContainers := []models.InitContainer{
+			{
+				Name:    "oauth-proxy-config-init",
+				Image:   "busybox",
+				Command: []string{"sh", "-c", fmt.Sprintf("mkdir -p /mnt/config && echo %s > /mnt/config/authenticated-emails-list", user.Email)},
+				Args:    nil,
+			},
+		}
+
+		oauthProxy := models.DeploymentPublic{
+			Name:      constants.StorageManagerAppNameAuth,
+			Namespace: kg.namespace,
+			Image:     "quay.io/oauth2-proxy/oauth2-proxy:latest",
+			EnvVars:   nil,
+			Resources: models.Resources{
+				Limits:   defaultLimits,
+				Requests: defaultRequests,
+			},
+			Args:           args,
+			InitContainers: initContainers,
+			Volumes:        volumes,
+			Replicas:       1,
+		}
+
+		if op := kg.s.storageManager.Subsystems.K8s.GetDeployment(constants.StorageManagerAppNameAuth); service.Created(op) {
+			oauthProxy.ID = op.ID
+			oauthProxy.CreatedAt = op.CreatedAt
+		}
+
+		res = append(res, oauthProxy)
 		return res
 	}
 
@@ -464,28 +464,35 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 
 	if kg.s.storageManager != nil {
 		// filebrowser
-		if filebrowser := kg.s.storageManager.Subsystems.K8s.GetService(constants.StorageManagerAppName); service.Created(filebrowser) {
-			res = append(res, *filebrowser)
-		} else {
-			res = append(res, models.ServicePublic{
-				Name:       constants.StorageManagerAppName,
-				Namespace:  kg.namespace,
-				Port:       80,
-				TargetPort: 80,
-			})
+		filebrowser := models.ServicePublic{
+			Name:       constants.StorageManagerAppName,
+			Namespace:  kg.namespace,
+			Port:       80,
+			TargetPort: 80,
 		}
 
-		// oauth2-proxy
-		if oauthProxy := kg.s.storageManager.Subsystems.K8s.GetService(constants.StorageManagerAppNameAuth); service.Created(oauthProxy) {
-			res = append(res, *oauthProxy)
-		} else {
-			res = append(res, models.ServicePublic{
-				Name:       constants.StorageManagerAppNameAuth,
-				Namespace:  kg.namespace,
-				Port:       4180,
-				TargetPort: 4180,
-			})
+		if fb := kg.s.storageManager.Subsystems.K8s.GetService(constants.StorageManagerAppName); service.Created(fb) {
+			filebrowser.ID = fb.ID
+			filebrowser.CreatedAt = fb.CreatedAt
 		}
+
+		res = append(res, filebrowser)
+
+		// oauth2-proxy
+		oauthProxy := models.ServicePublic{
+			Name:       constants.StorageManagerAppNameAuth,
+			Namespace:  kg.namespace,
+			Port:       4180,
+			TargetPort: 4180,
+		}
+
+		if op := kg.s.storageManager.Subsystems.K8s.GetService(constants.StorageManagerAppNameAuth); service.Created(op) {
+			oauthProxy.ID = op.ID
+			oauthProxy.CreatedAt = op.CreatedAt
+		}
+
+		res = append(res, oauthProxy)
+
 		return res
 	}
 
@@ -605,24 +612,24 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 	}
 
 	if kg.s.storageManager != nil {
-		if ingress := kg.s.storageManager.Subsystems.K8s.GetIngress(constants.StorageManagerAppName); service.Created(ingress) {
-			ingress.Hosts = []string{getStorageExternalFQDN(kg.s.storageManager.OwnerID, kg.s.zone)}
+		tlsSecret := constants.WildcardCertSecretName
 
-			res = append(res, *ingress)
-		} else {
-			tlsSecret := constants.WildcardCertSecretName
-
-			res = append(res, models.IngressPublic{
-				Name:         constants.StorageManagerAppName,
-				Namespace:    kg.namespace,
-				ServiceName:  constants.StorageManagerAppNameAuth,
-				ServicePort:  4180,
-				IngressClass: config.Config.Deployment.IngressClass,
-				Hosts:        []string{getStorageExternalFQDN(kg.s.storageManager.OwnerID, kg.s.zone)},
-				TlsSecret:    &tlsSecret,
-			})
+		ingress := models.IngressPublic{
+			Name:         constants.StorageManagerAppName,
+			Namespace:    kg.namespace,
+			ServiceName:  constants.StorageManagerAppNameAuth,
+			ServicePort:  4180,
+			IngressClass: config.Config.Deployment.IngressClass,
+			Hosts:        []string{getStorageExternalFQDN(kg.s.storageManager.OwnerID, kg.s.zone)},
+			TlsSecret:    &tlsSecret,
 		}
 
+		if i := kg.s.storageManager.Subsystems.K8s.GetIngress(constants.StorageManagerAppName); service.Created(i) {
+			ingress.ID = i.ID
+			ingress.CreatedAt = i.CreatedAt
+		}
+
+		res = append(res, ingress)
 		return res
 	}
 
@@ -665,22 +672,22 @@ func (kg *K8sGenerator) PVs() []models.PvPublic {
 		initVolumes, volumes := sVolumes(kg.s.storageManager.OwnerID)
 		allVolumes := append(initVolumes, volumes...)
 
-		for mapName, pv := range kg.s.storageManager.Subsystems.K8s.GetPvMap() {
-			if slices.IndexFunc(allVolumes, func(v storageManagerModel.Volume) bool {
-				return sPvName(kg.s.storageManager.OwnerID, v.Name) == mapName
-			}) != -1 {
-				res = append(res, pv)
-			}
+		for _, v := range allVolumes {
+			res = append(res, models.PvPublic{
+				Name:      sPvName(kg.s.storageManager.OwnerID, v.Name),
+				Capacity:  config.Config.Deployment.Resources.Limits.Storage,
+				NfsServer: kg.s.zone.Storage.NfsServer,
+				NfsPath:   path.Join(kg.s.zone.Storage.NfsParentPath, v.ServerPath),
+			})
 		}
 
-		for _, v := range allVolumes {
-			if kg.s.storageManager.Subsystems.K8s.GetPV(sPvName(kg.s.storageManager.OwnerID, v.Name)) == nil {
-				res = append(res, models.PvPublic{
-					Name:      sPvName(kg.s.storageManager.OwnerID, v.Name),
-					Capacity:  config.Config.Deployment.Resources.Limits.Storage,
-					NfsServer: kg.s.zone.Storage.NfsServer,
-					NfsPath:   path.Join(kg.s.zone.Storage.NfsParentPath, v.ServerPath),
-				})
+		for mapName, pv := range kg.s.storageManager.Subsystems.K8s.GetPvMap() {
+			idx := slices.IndexFunc(res, func(pv models.PvPublic) bool {
+				return pv.Name == mapName
+			})
+			if idx != -1 {
+				res[idx].ID = pv.ID
+				res[idx].CreatedAt = pv.CreatedAt
 			}
 		}
 	}
@@ -718,22 +725,22 @@ func (kg *K8sGenerator) PVCs() []models.PvcPublic {
 		initVolumes, volumes := sVolumes(kg.s.storageManager.OwnerID)
 		allVolumes := append(initVolumes, volumes...)
 
-		for mapName, pvc := range kg.s.storageManager.Subsystems.K8s.GetPvcMap() {
-			if slices.IndexFunc(allVolumes, func(v storageManagerModel.Volume) bool {
-				return sPvcName(kg.s.storageManager.OwnerID) == mapName
-			}) != -1 {
-				res = append(res, pvc)
-			}
+		for _, volume := range allVolumes {
+			res = append(res, models.PvcPublic{
+				Name:      sPvcName(volume.Name),
+				Namespace: kg.namespace,
+				Capacity:  config.Config.Deployment.Resources.Limits.Storage,
+				PvName:    sPvName(kg.s.storageManager.OwnerID, volume.Name),
+			})
 		}
 
-		for _, volume := range allVolumes {
-			if kg.s.storageManager.Subsystems.K8s.GetPVC(sPvcName(kg.s.storageManager.OwnerID)) == nil {
-				res = append(res, models.PvcPublic{
-					Name:      sPvcName(volume.Name),
-					Namespace: kg.namespace,
-					Capacity:  config.Config.Deployment.Resources.Limits.Storage,
-					PvName:    sPvName(kg.s.storageManager.OwnerID, volume.Name),
-				})
+		for mapName, pvc := range kg.s.storageManager.Subsystems.K8s.GetPvcMap() {
+			idx := slices.IndexFunc(res, func(pvc models.PvcPublic) bool {
+				return pvc.Name == mapName
+			})
+			if idx != -1 {
+				res[idx].ID = pvc.ID
+				res[idx].CreatedAt = pvc.CreatedAt
 			}
 		}
 
@@ -906,16 +913,7 @@ func (kg *K8sGenerator) Jobs() []models.JobPublic {
 	var res []models.JobPublic
 
 	if kg.s.storageManager != nil {
-		jobs := sJobs(kg.s.storageManager.OwnerID)
-
-		for mapName, job := range kg.s.storageManager.Subsystems.K8s.GetJobMap() {
-			if slices.IndexFunc(jobs, func(j storageManagerModel.Job) bool { return j.Name == mapName }) != -1 {
-				res = append(res, job)
-			}
-		}
-
 		initVolumes, _ := sVolumes(kg.s.storageManager.OwnerID)
-
 		k8sVolumes := make([]models.Volume, len(initVolumes))
 		for i, volume := range initVolumes {
 			pvcName := sPvcName(volume.Name)
@@ -927,16 +925,22 @@ func (kg *K8sGenerator) Jobs() []models.JobPublic {
 			}
 		}
 
-		for _, job := range jobs {
-			if _, ok := kg.s.storageManager.Subsystems.K8s.GetJobMap()[job.Name]; !ok {
-				res = append(res, models.JobPublic{
-					Name:      job.Name,
-					Namespace: kg.namespace,
-					Image:     job.Image,
-					Command:   job.Command,
-					Args:      job.Args,
-					Volumes:   k8sVolumes,
-				})
+		for _, job := range sJobs(kg.s.storageManager.OwnerID) {
+			res = append(res, models.JobPublic{
+				Name:      job.Name,
+				Namespace: kg.namespace,
+				Image:     job.Image,
+				Command:   job.Command,
+				Args:      job.Args,
+				Volumes:   k8sVolumes,
+			})
+		}
+
+		for _, job := range kg.s.storageManager.Subsystems.K8s.GetJobMap() {
+			idx := slices.IndexFunc(res, func(j models.JobPublic) bool { return j.Name == job.Name })
+			if idx != -1 {
+				res[idx].ID = job.ID
+				res[idx].CreatedAt = job.CreatedAt
 			}
 		}
 

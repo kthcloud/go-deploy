@@ -108,6 +108,9 @@ func UpdateIfDiff[T SsResource](dbResource T, fetchFunc func() (T, error), updat
 	dbResourceCleaned := ResetTimeFields(dbResource)
 	liveResourceCleaned := ResetTimeFields(liveResource)
 
+	//fmt.Println("dbResourceCleaned", dbResourceCleaned)
+	//fmt.Println("liveResourceCleaned", liveResourceCleaned)
+
 	if NotNil(liveResource) {
 		timeEqual := areTimeFieldsEqual(dbResource, liveResource)
 		restEqual := reflect.DeepEqual(dbResourceCleaned, liveResourceCleaned)
