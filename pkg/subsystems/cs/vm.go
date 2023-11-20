@@ -9,6 +9,7 @@ import (
 	"gopkg.in/yaml.v3"
 	"log"
 	"math/rand"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -120,11 +121,11 @@ func (client *Client) UpdateVM(public *models.VmPublic) (*models.VmPublic, error
 		params.SetName(public.Name)
 		params.SetDisplayname(public.Name)
 
-		//if public.ExtraConfig == "" {
-		//	params.SetExtraconfig(url.QueryEscape("none"))
-		//} else {
-		//	params.SetExtraconfig(url.QueryEscape(public.ExtraConfig))
-		//}
+		if public.ExtraConfig == "" {
+			params.SetExtraconfig(url.QueryEscape("none"))
+		} else {
+			params.SetExtraconfig(url.QueryEscape(public.ExtraConfig))
+		}
 
 		_, err = client.CsClient.VirtualMachine.UpdateVirtualMachine(params)
 		if err != nil {
