@@ -13,7 +13,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func int32Ptr(i int32) *int32 { return &i }
+func intToInt32Ptr(i int) *int32 {
+	i32 := int32(i)
+	return &i32
+}
 
 const timeFormat = "2006-01-02 15:04:05.000 -0700"
 
@@ -127,7 +130,7 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: int32Ptr(1),
+			Replicas: intToInt32Ptr(public.Replicas),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					keys.ManifestLabelID: public.ID,
