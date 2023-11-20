@@ -18,6 +18,7 @@ import (
 	"golang.org/x/exp/slices"
 	v1 "k8s.io/api/core/v1"
 	"path"
+	"time"
 )
 
 type K8sGenerator struct {
@@ -160,17 +161,22 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 			}
 
 			res = append(res, models.DeploymentPublic{
-				Name:      kg.d.deployment.Name,
-				Namespace: kg.namespace,
-				Image:     mainApp.Image,
-				EnvVars:   k8sEnvs,
+				Name:             kg.d.deployment.Name,
+				Namespace:        kg.namespace,
+				Image:            mainApp.Image,
+				ImagePullSecrets: imagePullSecrets,
+				EnvVars:          k8sEnvs,
 				Resources: models.Resources{
 					Limits:   defaultLimits,
 					Requests: defaultRequests,
 				},
-				Volumes:          k8sVolumes,
-				ImagePullSecrets: imagePullSecrets,
-				Replicas:         mainApp.Replicas,
+				Command:        make([]string, 0),
+				Args:           make([]string, 0),
+				InitCommands:   mainApp.InitCommands,
+				InitContainers: make([]models.InitContainer, 0),
+				Volumes:        k8sVolumes,
+				CreatedAt:      time.Time{},
+				Replicas:       mainApp.Replicas,
 			})
 		}
 
@@ -252,10 +258,11 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 				}
 
 				res = append(res, models.DeploymentPublic{
-					Name:      vpDeploymentName(kg.v.vm, port.HttpProxy.Name),
-					Namespace: kg.namespace,
-					Image:     config.Config.Registry.VmHttpProxyImage,
-					EnvVars:   envVars,
+					Name:             vpDeploymentName(kg.v.vm, port.HttpProxy.Name),
+					Namespace:        kg.namespace,
+					Image:            config.Config.Registry.VmHttpProxyImage,
+					ImagePullSecrets: make([]string, 0),
+					EnvVars:          envVars,
 					Resources: models.Resources{
 						Limits: models.Limits{
 							CPU:    config.Config.Deployment.Resources.Limits.CPU,
@@ -266,7 +273,13 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 							Memory: config.Config.Deployment.Resources.Requests.Memory,
 						},
 					},
-					Replicas: 1,
+					Command:        make([]string, 0),
+					Args:           make([]string, 0),
+					InitCommands:   make([]string, 0),
+					InitContainers: make([]models.InitContainer, 0),
+					Volumes:        make([]models.Volume, 0),
+					CreatedAt:      time.Time{},
+					Replicas:       1,
 				})
 			}
 		}
@@ -307,16 +320,21 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		}
 
 		filebrowser := models.DeploymentPublic{
-			Name:      constants.StorageManagerAppName,
-			Namespace: kg.namespace,
-			Image:     "filebrowser/filebrowser",
+			Name:             constants.StorageManagerAppName,
+			Namespace:        kg.namespace,
+			Image:            "filebrowser/filebrowser",
+			ImagePullSecrets: make([]string, 0),
+			EnvVars:          make([]models.EnvVar, 0),
 			Resources: models.Resources{
 				Limits:   defaultLimits,
 				Requests: defaultRequests,
 			},
-			Args:     args,
-			Volumes:  k8sVolumes,
-			Replicas: 1,
+			Command:        make([]string, 0),
+			Args:           args,
+			InitCommands:   make([]string, 0),
+			InitContainers: make([]models.InitContainer, 0),
+			Volumes:        k8sVolumes,
+			Replicas:       1,
 		}
 
 		if fb := kg.s.storageManager.Subsystems.K8s.GetDeployment(constants.StorageManagerAppName); service.Created(fb) {
@@ -337,14 +355,14 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 			{
 				Name:      "oauth-proxy-config",
 				PvcName:   nil,
-				MountPath: "/mnt/config",
-				Init:      true,
+				MountPath: "/mnt",
+				Init:      false,
 			},
 			{
 				Name:      "oauth-proxy-config",
 				PvcName:   nil,
-				MountPath: "/mnt",
-				Init:      false,
+				MountPath: "/mnt/config",
+				Init:      true,
 			},
 		}
 
@@ -386,17 +404,21 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		}
 
 		oauthProxy := models.DeploymentPublic{
-			Name:      constants.StorageManagerAppNameAuth,
-			Namespace: kg.namespace,
-			Image:     "quay.io/oauth2-proxy/oauth2-proxy:latest",
-			EnvVars:   nil,
+			Name:             constants.StorageManagerAppNameAuth,
+			Namespace:        kg.namespace,
+			Image:            "quay.io/oauth2-proxy/oauth2-proxy:latest",
+			ImagePullSecrets: make([]string, 0),
+			EnvVars:          make([]models.EnvVar, 0),
 			Resources: models.Resources{
 				Limits:   defaultLimits,
 				Requests: defaultRequests,
 			},
+			Command:        make([]string, 0),
 			Args:           args,
+			InitCommands:   make([]string, 0),
 			InitContainers: initContainers,
 			Volumes:        volumes,
+			CreatedAt:      time.Time{},
 			Replicas:       1,
 		}
 
@@ -518,6 +540,7 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 					ServicePort:  kg.d.deployment.GetMainApp().InternalPort,
 					IngressClass: config.Config.Deployment.IngressClass,
 					Hosts:        []string{getExternalFQDN(kg.d.deployment.Name, kg.d.zone)},
+					Placeholder:  false,
 					TlsSecret:    &tlsSecret,
 				})
 			}

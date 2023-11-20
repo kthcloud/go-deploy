@@ -58,6 +58,7 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 		volumes = append(volumes, Volume{
 			Name:    k8sVolume.Name,
 			PvcName: pvcName,
+			Init:    false,
 		})
 	}
 
@@ -67,7 +68,6 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 		lifecycle := firstContainer.Lifecycle
 		volumeMounts := firstContainer.VolumeMounts
 		image = firstContainer.Image
-
 		command = firstContainer.Command
 		args = firstContainer.Args
 
@@ -94,7 +94,7 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 		}
 
 		for _, volumeMount := range volumeMounts {
-			// if we cannot find the volume mount in the volumes list, then it is not a volume we care about
+			// if we cannot find the volume mount in the volume list, then it is not a volume we care about
 			for idx, volume := range volumes {
 				if volume.Name == volumeMount.Name {
 					volumes[idx].MountPath = volumeMount.MountPath
@@ -104,19 +104,40 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 		}
 	}
 
-	var imagePullSecrets []string
-	for _, secret := range deployment.Spec.Template.Spec.ImagePullSecrets {
-		imagePullSecrets = append(imagePullSecrets, secret.Name)
+	imagePullSecrets := make([]string, len(deployment.Spec.Template.Spec.ImagePullSecrets))
+	for idx, imagePullSecret := range deployment.Spec.Template.Spec.ImagePullSecrets {
+		imagePullSecrets[idx] = imagePullSecret.Name
 	}
 
 	initContainers := make([]InitContainer, len(deployment.Spec.Template.Spec.InitContainers))
-	for _, initContainer := range deployment.Spec.Template.Spec.InitContainers {
-		initContainers = append(initContainers, InitContainer{
+	for idx, initContainer := range deployment.Spec.Template.Spec.InitContainers {
+		initContainers[idx] = InitContainer{
 			Name:    initContainer.Name,
 			Image:   initContainer.Image,
 			Command: initContainer.Command,
 			Args:    initContainer.Args,
-		})
+		}
+
+		for _, volumeMount := range initContainer.VolumeMounts {
+			// if we cannot find the volume mount in the volume list, then it is not a volume we care about
+			for _, volume := range volumes {
+				if volume.Name == volumeMount.Name {
+					// if the volume is shared between standard and init containers, then we need to create a new volume
+					// for the init container, otherwise just set the mount path
+					if volume.MountPath == "" {
+						volume.MountPath = volumeMount.MountPath
+					} else {
+						volumes = append(volumes, Volume{
+							Name:      volume.Name,
+							PvcName:   volume.PvcName,
+							MountPath: volumeMount.MountPath,
+							Init:      true,
+						})
+					}
+					break
+				}
+			}
+		}
 	}
 
 	// delete any k8sVolumes that does not have a mount path, they need to be recreated
