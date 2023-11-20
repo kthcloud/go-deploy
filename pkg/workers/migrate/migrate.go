@@ -1,11 +1,9 @@
 package migrator
 
 import (
-	vmModel "go-deploy/models/sys/vm"
-	"go-deploy/pkg/subsystems/cs/models"
-	"go-deploy/service/vm_service/cs_service"
+	deploymentModel "go-deploy/models/sys/deployment"
+	"go.mongodb.org/mongo-driver/bson"
 	"log"
-	"strings"
 )
 
 // Migrate will run as early as possible in the program, and it will never be called again.
@@ -38,40 +36,35 @@ func Migrate() {
 // add a date to the migration name to make it easier to identify.
 func getMigrations() map[string]func() error {
 	return map[string]func() error{
-		"remove-old-system-snapshots_2023-11-10": removeOldSystemSnapshots,
+		"2023-11-10_add_replicas_to_main_app": addReplicasToMainApp,
 	}
 }
 
-func removeOldSystemSnapshots() error {
-	vms, err := vmModel.New().List()
+func addReplicasToMainApp() error {
+	deployments, err := deploymentModel.New().List()
 	if err != nil {
 		return err
 	}
 
-	for _, vm := range vms {
-		snapshots := vm.Subsystems.CS.SnapshotMap
+	for _, deployment := range deployments {
+		app := deployment.GetMainApp()
+		if app == nil {
+			continue
+		}
 
-		for _, snapshot := range snapshots {
-			if snapshot.UserCreated() || goodSnapshotName(&snapshot) {
-				continue
+		if app.Replicas == 0 {
+			app.Replicas = 1
+
+			update := bson.D{
+				{"apps.main", app},
 			}
 
-			if err = cs_service.DeleteSnapshot(vm.ID, snapshot.ID); err != nil {
+			err = deploymentModel.New().SetWithBsonByID(deployment.ID, update)
+			if err != nil {
 				return err
 			}
 		}
 	}
 
 	return nil
-}
-
-func goodSnapshotName(snapshot *models.SnapshotPublic) bool {
-	allowed := []string{"daily", "weekly", "monthly"}
-	for _, name := range allowed {
-		if strings.Contains(snapshot.Name, name) {
-			return true
-		}
-	}
-
-	return false
 }

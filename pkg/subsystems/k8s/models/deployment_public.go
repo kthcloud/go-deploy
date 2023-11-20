@@ -20,6 +20,7 @@ type DeploymentPublic struct {
 	InitContainers   []InitContainer `bson:"initContainers"`
 	Volumes          []Volume        `bson:"volumes"`
 	CreatedAt        time.Time       `bson:"createdAt"`
+	Replicas         int             `bson:"replicas"`
 }
 
 func (d *DeploymentPublic) GetID() string {
@@ -94,9 +95,10 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 
 		for _, volumeMount := range volumeMounts {
 			// if we cannot find the volume mount in the volumes list, then it is not a volume we care about
-			for _, volume := range volumes {
+			for idx, volume := range volumes {
 				if volume.Name == volumeMount.Name {
-					volume.MountPath = volumeMount.MountPath
+					volumes[idx].MountPath = volumeMount.MountPath
+					break
 				}
 			}
 		}
@@ -141,5 +143,6 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 		InitContainers: initContainers,
 		Volumes:        volumes,
 		CreatedAt:      formatCreatedAt(deployment.Annotations),
+		Replicas:       int(*deployment.Spec.Replicas),
 	}
 }
