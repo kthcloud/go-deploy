@@ -16,7 +16,7 @@ func (client *ResourceClient[T]) GetByName(name string) (*T, error) {
 	return models.GetResource[T](client.Collection, models.GroupFilters(bson.D{{"name", name}}, client.ExtraFilter, client.Search, client.IncludeDeleted))
 }
 
-func (client *ResourceClient[T]) ListAll() ([]T, error) {
+func (client *ResourceClient[T]) List() ([]T, error) {
 	return models.ListResources[T](client.Collection, models.GroupFilters(bson.D{}, client.ExtraFilter, client.Search, client.IncludeDeleted), client.Pagination)
 }
 

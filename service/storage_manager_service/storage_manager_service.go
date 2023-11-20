@@ -19,7 +19,7 @@ var (
 
 func GetAll(auth *service.AuthInfo) ([]storage_manager.StorageManager, error) {
 	if auth.IsAdmin {
-		return storage_manager.New().ListAll()
+		return storage_manager.New().List()
 	}
 
 	ownerStorageManager, err := storage_manager.New().RestrictToOwner(auth.UserID).Get()
@@ -50,7 +50,7 @@ func ListAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagination 
 		client.RestrictToOwner(auth.UserID)
 	}
 
-	return client.ListAll()
+	return client.List()
 }
 
 func GetByIdAuth(id string, auth *service.AuthInfo) (*storage_manager.StorageManager, error) {

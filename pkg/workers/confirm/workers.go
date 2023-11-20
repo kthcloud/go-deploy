@@ -18,7 +18,7 @@ func deploymentConfirmer(ctx context.Context) {
 	for {
 		select {
 		case <-time.After(5 * time.Second):
-			beingCreated, _ := deploymentModel.New().ListByActivity(deploymentModel.ActivityBeingCreated)
+			beingCreated, _ := deploymentModel.New().WithActivities(deploymentModel.ActivityBeingCreated).List()
 			for _, deployment := range beingCreated {
 				created := DeploymentCreated(&deployment)
 				if created {
@@ -27,7 +27,7 @@ func deploymentConfirmer(ctx context.Context) {
 				}
 			}
 
-			beingDeleted, _ := deploymentModel.New().ListByActivity(deploymentModel.ActivityBeingDeleted)
+			beingDeleted, _ := deploymentModel.New().WithActivities(deploymentModel.ActivityBeingDeleted).List()
 			for _, deployment := range beingDeleted {
 				deleted := DeploymentDeleted(&deployment)
 				if !deleted {
@@ -66,7 +66,7 @@ func vmConfirmer(ctx context.Context) {
 	for {
 		select {
 		case <-time.After(5 * time.Second):
-			beingCreated, err := vmModel.New().ListByActivity(vmModel.ActivityBeingCreated)
+			beingCreated, err := vmModel.New().WithActivities(vmModel.ActivityBeingCreated).List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("failed to get vms being created. details: %w", err))
 			}
@@ -79,7 +79,7 @@ func vmConfirmer(ctx context.Context) {
 				}
 			}
 
-			beingDeleted, err := vmModel.New().ListByActivity(vmModel.ActivityBeingDeleted)
+			beingDeleted, err := vmModel.New().WithActivities(vmModel.ActivityBeingDeleted).List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("failed to get vms being deleted. details: %w", err))
 			}

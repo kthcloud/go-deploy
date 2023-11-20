@@ -17,7 +17,7 @@ func vmStatusUpdater(ctx context.Context) {
 	for {
 		select {
 		case <-time.After(1 * time.Second):
-			allVms, err := vmModel.New().ListAll()
+			allVms, err := vmModel.New().List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching vms: %w", err))
 				continue
@@ -43,7 +43,7 @@ func vmSnapshotUpdater(ctx context.Context) {
 	for {
 		select {
 		case <-time.After(5 * time.Second):
-			allVms, err := vmModel.New().ListAll()
+			allVms, err := vmModel.New().List()
 			if err != nil {
 				log.Println("error fetching vms: ", err)
 				continue
@@ -69,7 +69,7 @@ func deploymentStatusUpdater(ctx context.Context) {
 	for {
 		select {
 		case <-time.After(1 * time.Second):
-			allDeployments, err := deploymentModel.New().ListAll()
+			allDeployments, err := deploymentModel.New().List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching deployments. details: %w", err))
 				continue
