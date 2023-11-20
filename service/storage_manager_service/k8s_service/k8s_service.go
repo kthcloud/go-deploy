@@ -308,8 +308,8 @@ func Repair(id string) error {
 		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "ingressMap."+public.Name)).WithGenPublic(&public).Exec()
 	}
 
+	secrets := context.Generator.Secrets()
 	for mapName, secret := range context.StorageManager.Subsystems.K8s.SecretMap {
-		secrets := context.Generator.Secrets()
 		idx := slices.IndexFunc(secrets, func(s k8sModels.SecretPublic) bool { return s.Name == mapName })
 		if idx == -1 {
 			err = resources.SsDeleter(context.Client.DeleteSecret).
@@ -322,13 +322,40 @@ func Repair(id string) error {
 			}
 		}
 	}
-	for _, public := range context.Generator.Secrets() {
+	for _, public := range secrets {
 		err = resources.SsRepairer(
 			context.Client.ReadSecret,
 			context.Client.CreateSecret,
 			context.Client.UpdateSecret,
 			context.Client.DeleteSecret,
 		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "secretMap."+public.Name)).WithGenPublic(&public).Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	jobs := context.Generator.Jobs()
+	for mapName, job := range context.StorageManager.Subsystems.K8s.JobMap {
+		idx := slices.IndexFunc(jobs, func(j k8sModels.JobPublic) bool { return j.Name == mapName })
+		if idx == -1 {
+			err = resources.SsDeleter(context.Client.DeleteJob).
+				WithResourceID(job.ID).
+				WithDbFunc(dbFunc(id, "jobMap."+mapName)).
+				Exec()
+
+			if err != nil {
+				return makeError(err)
+			}
+		}
+	}
+	for _, public := range jobs {
+		err = resources.SsRepairer(
+			context.Client.ReadJob,
+			context.Client.CreateJob,
+			func(job *k8sModels.JobPublic) (*k8sModels.JobPublic, error) { return nil, nil },
+			context.Client.DeleteJob,
+		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "jobMap."+public.Name)).WithGenPublic(&public).Exec()
 
 		if err != nil {
 			return makeError(err)
