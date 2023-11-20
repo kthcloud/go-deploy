@@ -32,6 +32,7 @@ func (client *Client) Create(id, ownerID string, params *CreateParams) (*Deploym
 		CustomDomain: params.CustomDomain,
 		PingResult:   0,
 		PingPath:     params.PingPath,
+		Replicas:     1,
 	}
 
 	deployment := Deployment{
