@@ -43,7 +43,7 @@ func getMigrations() map[string]func() error {
 }
 
 func removeOldSystemSnapshots() error {
-	vms, err := vmModel.New().ListAll()
+	vms, err := vmModel.New().List()
 	if err != nil {
 		return err
 	}

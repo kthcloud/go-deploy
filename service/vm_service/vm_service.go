@@ -368,7 +368,7 @@ func ListAuth(allUsers bool, userID *string, shared bool, auth *service.AuthInfo
 		client.RestrictToOwner(auth.UserID)
 	}
 
-	resources, err := client.ListAll()
+	resources, err := client.List()
 	if err != nil {
 		return nil, err
 	}
@@ -384,7 +384,7 @@ func ListAuth(allUsers bool, userID *string, shared bool, auth *service.AuthInfo
 			teamClient.AddPagination(pagination.Page, pagination.PageSize)
 		}
 
-		teams, err := teamClient.ListAll()
+		teams, err := teamClient.List()
 		if err != nil {
 			return nil, err
 		}
@@ -686,7 +686,7 @@ func GetUsageByUserID(id string) (*vmModel.Usage, error) {
 
 	usage := &vmModel.Usage{}
 
-	currentVms, err := vmModel.New().RestrictToOwner(id).ListAll()
+	currentVms, err := vmModel.New().RestrictToOwner(id).List()
 	if err != nil {
 		return nil, makeError(err)
 	}

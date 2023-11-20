@@ -566,7 +566,7 @@ func ListAuth(allUsers bool, userID *string, shared bool, auth *service.AuthInfo
 		client.RestrictToOwner(auth.UserID)
 	}
 
-	resources, err := client.ListAll()
+	resources, err := client.List()
 	if err != nil {
 		return nil, err
 	}
@@ -582,7 +582,7 @@ func ListAuth(allUsers bool, userID *string, shared bool, auth *service.AuthInfo
 			teamClient.AddPagination(pagination.Page, pagination.PageSize)
 		}
 
-		teams, err := teamClient.ListAll()
+		teams, err := teamClient.List()
 		if err != nil {
 			return nil, err
 		}
@@ -636,7 +636,7 @@ func ListAuth(allUsers bool, userID *string, shared bool, auth *service.AuthInfo
 }
 
 func ListAll() ([]deploymentModel.Deployment, error) {
-	return deploymentModel.New().ListAll()
+	return deploymentModel.New().List()
 }
 
 func CheckQuotaCreate(userID string, quota *roleModel.Quotas, auth *service.AuthInfo) error {

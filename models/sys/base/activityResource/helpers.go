@@ -9,26 +9,6 @@ import (
 	"time"
 )
 
-func (client *ActivityResourceClient[T]) ListByActivity(activity string) ([]T, error) {
-	filter := bson.D{{
-		"activities." + activity, bson.M{
-			"$exists": true,
-		},
-	}}
-
-	return models.ListResources[T](client.Collection, models.GroupFilters(filter, client.ExtraFilter, client.Search, false), client.Pagination)
-}
-
-func (client *ActivityResourceClient[T]) ListWithNoActivities() ([]T, error) {
-	filter := bson.D{{
-		"activities", bson.M{
-			"$gte": bson.M{},
-		},
-	}}
-
-	return models.ListResources[T](client.Collection, models.GroupFilters(filter, client.ExtraFilter, client.Search, false), client.Pagination)
-}
-
 func (client *ActivityResourceClient[T]) AddActivity(id, activity string) error {
 	_, err := client.Collection.UpdateOne(context.TODO(),
 		bson.D{{"id", id}},

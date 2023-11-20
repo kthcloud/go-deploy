@@ -59,7 +59,7 @@ func DiscoverAuth(search *string, auth *service.AuthInfo) ([]body.UserReadDiscov
 		client.AddSearch(*search)
 	}
 
-	users, err := client.ListAll()
+	users, err := client.List()
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func ListAuth(allUsers bool, search *string, auth *service.AuthInfo, pagination 
 		return []userModel.User{*user}, nil
 	}
 
-	return client.ListAll()
+	return client.List()
 }
 
 func UpdatedAuth(userID string, dtoUserUpdate *body.UserUpdate, auth *service.AuthInfo) (*userModel.User, error) {

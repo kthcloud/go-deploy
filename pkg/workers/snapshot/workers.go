@@ -18,7 +18,7 @@ func snapshotter(ctx context.Context) {
 	for {
 		select {
 		case <-time.After(10 * time.Second):
-			vms, err := vmModel.New().ListAll()
+			vms, err := vmModel.New().List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("failed to get all vms. details: %w", err))
 				continue
