@@ -70,19 +70,25 @@ func (client *Client) WithActivities(activities ...string) *Client {
 		})
 	}
 
-	client.ActivityResourceClient.AddExtraFilter(bson.D{{
+	filter := bson.D{{
 		"$or", orFilter,
-	}})
+	}}
+
+	client.ResourceClient.AddExtraFilter(filter)
+	client.ActivityResourceClient.AddExtraFilter(filter)
 
 	return client
 }
 
 func (client *Client) WithNoActivities() *Client {
-	client.ActivityResourceClient.AddExtraFilter(bson.D{{
+	filter := bson.D{{
 		"activities", bson.M{
 			"$gte": bson.M{},
 		},
-	}})
+	}}
+
+	client.ResourceClient.AddExtraFilter(filter)
+	client.ActivityResourceClient.AddExtraFilter(filter)
 
 	return client
 }
