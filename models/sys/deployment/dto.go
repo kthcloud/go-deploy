@@ -62,6 +62,11 @@ func (deployment *Deployment) ToDTO(storageManagerURL *string) body.DeploymentRe
 		image = &app.Image
 	}
 
+	var healthCheckPath *string
+	if app.PingPath != "" {
+		healthCheckPath = &app.PingPath
+	}
+
 	return body.DeploymentRead{
 		ID:          deployment.ID,
 		Name:        deployment.Name,
@@ -81,7 +86,7 @@ func (deployment *Deployment) ToDTO(storageManagerURL *string) body.DeploymentRe
 		Private:         app.Private,
 		InternalPort:    app.InternalPort,
 		Image:           image,
-		HealthCheckPath: &app.PingPath,
+		HealthCheckPath: healthCheckPath,
 		Status:          deployment.StatusMessage,
 		PingResult:      pingResult,
 		Integrations:    integrations,

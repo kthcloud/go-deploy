@@ -49,13 +49,9 @@ func pingDeployment(deployment *deploymentModels.Deployment) {
 		return
 	}
 
-	if mainApp.Private {
-		return
-	}
-
 	baseURL := deployment.GetURL()
-	if baseURL == nil {
-		utils.PrettyPrintError(makeError(fmt.Errorf("deployment %s has no url", deployment.Name)))
+	if mainApp.Private || mainApp.PingPath == "" || baseURL == nil {
+		go resetPing(*deployment)
 		return
 	}
 
@@ -75,13 +71,24 @@ func pingDeployment(deployment *deploymentModels.Deployment) {
 
 func pingAndSave(deployment deploymentModels.Deployment, url string) {
 	code, err := ping(url)
-
 	if err != nil {
 		utils.PrettyPrintError(fmt.Errorf("error fetching deployment status ping. details: %w", err))
 		return
 	}
 
-	_ = deployment_service.SavePing(deployment.ID, code)
+	err = deployment_service.SavePing(deployment.ID, code)
+	if err != nil {
+		utils.PrettyPrintError(fmt.Errorf("error saving deployment status ping. details: %w", err))
+		return
+	}
+}
+
+func resetPing(deployment deploymentModels.Deployment) {
+	err := deployment_service.SavePing(deployment.ID, 0)
+	if err != nil {
+		utils.PrettyPrintError(fmt.Errorf("error resetting deployment status ping. details: %w", err))
+		return
+	}
 }
 
 func ping(url string) (int, error) {
