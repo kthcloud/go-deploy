@@ -44,14 +44,14 @@ func (client *Client) waitDeploymentReady(ctx context.Context, namespace, deploy
 					continue
 				}
 
-				deployment := event.Object.(*v1.Deployment)
+				k8sDeployment := event.Object.(*v1.Deployment)
 
-				if deployment.Status.UnavailableReplicas > 0 {
+				if k8sDeployment.Status.UnavailableReplicas > 0 {
 					wasDown = true
 					continue
 				}
 
-				if deployment.Status.UnavailableReplicas == 0 && deployment.Status.ReadyReplicas > 0 && wasDown {
+				if k8sDeployment.Status.UnavailableReplicas == 0 && k8sDeployment.Status.ReadyReplicas > 0 && wasDown {
 					return nil
 				}
 			}

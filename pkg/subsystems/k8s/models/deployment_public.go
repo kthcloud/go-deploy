@@ -20,7 +20,6 @@ type DeploymentPublic struct {
 	InitContainers   []InitContainer `bson:"initContainers"`
 	Volumes          []Volume        `bson:"volumes"`
 	CreatedAt        time.Time       `bson:"createdAt"`
-	Replicas         int             `bson:"replicas"`
 }
 
 func (d *DeploymentPublic) GetID() string {
@@ -164,6 +163,5 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 		InitContainers: initContainers,
 		Volumes:        volumes,
 		CreatedAt:      formatCreatedAt(deployment.Annotations),
-		Replicas:       int(*deployment.Spec.Replicas),
 	}
 }
