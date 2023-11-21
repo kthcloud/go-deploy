@@ -74,7 +74,7 @@ func (client *Client) readLogs(ctx context.Context, prefix, namespace, podName s
 		case <-ctx.Done():
 			return
 		default:
-			logStream, err := getK8sLogStream(client, namespace, podName, 1)
+			logStream, err := getK8sLogStream(client, namespace, podName, 20)
 			if err != nil {
 				if IsNotFoundErr(err) {
 					// pod got deleted for some reason, so we just stop the log stream
