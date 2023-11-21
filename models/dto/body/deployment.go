@@ -100,6 +100,7 @@ type DeploymentRead struct {
 	InternalPort    int      `json:"internalPort"`
 	Image           *string  `json:"image,omitempty"`
 	HealthCheckPath *string  `json:"healthCheckPath,omitempty"`
+	Replicas        int      `json:"replicas"`
 
 	Status     string `json:"status"`
 	PingResult *int   `json:"pingResult,omitempty"`
