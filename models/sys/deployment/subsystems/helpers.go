@@ -66,6 +66,14 @@ func (k *K8s) GetSecretMap() map[string]k8sModels.SecretPublic {
 	return k.SecretMap
 }
 
+func (k *K8s) GetHpaMap() map[string]k8sModels.HpaPublic {
+	if k.HpaMap == nil {
+		k.HpaMap = make(map[string]k8sModels.HpaPublic)
+	}
+
+	return k.HpaMap
+}
+
 func (k *K8s) GetDeployment(name string) *k8sModels.DeploymentPublic {
 	resource, ok := k.GetDeploymentMap()[name]
 	if !ok {
@@ -129,6 +137,15 @@ func (k *K8s) GetSecret(name string) *k8sModels.SecretPublic {
 	return &resource
 }
 
+func (k *K8s) GetHPA(name string) *k8sModels.HpaPublic {
+	resource, ok := k.GetHpaMap()[name]
+	if !ok {
+		return nil
+	}
+
+	return &resource
+}
+
 func (k *K8s) SetNamespace(namespace k8sModels.NamespacePublic) {
 	k.Namespace = namespace
 }
@@ -161,6 +178,10 @@ func (k *K8s) SetSecret(name string, secret k8sModels.SecretPublic) {
 	k.GetSecretMap()[name] = secret
 }
 
+func (k *K8s) SetHPA(name string, hpa k8sModels.HpaPublic) {
+	k.GetHpaMap()[name] = hpa
+}
+
 func (k *K8s) DeleteDeployment(name string) {
 	delete(k.GetDeploymentMap(), name)
 }
@@ -187,4 +208,8 @@ func (k *K8s) DeleteJob(name string) {
 
 func (k *K8s) DeleteSecret(name string) {
 	delete(k.GetSecretMap(), name)
+}
+
+func (k *K8s) DeleteHPA(name string) {
+	delete(k.GetHpaMap(), name)
 }

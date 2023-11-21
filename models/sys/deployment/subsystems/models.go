@@ -17,6 +17,7 @@ type K8s struct {
 	PvcMap        map[string]k8sModels.PvcPublic        `bson:"pvcMap,omitempty"`
 	JobMap        map[string]k8sModels.JobPublic        `bson:"jobMap,omitempty"`
 	SecretMap     map[string]k8sModels.SecretPublic     `bson:"secretMap,omitempty"`
+	HpaMap        map[string]k8sModels.HpaPublic        `bson:"hpaMap,omitempty"`
 }
 
 type Harbor struct {

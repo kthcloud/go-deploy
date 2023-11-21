@@ -967,6 +967,35 @@ func (kg *K8sGenerator) Jobs() []models.JobPublic {
 	return nil
 }
 
+func (kg *K8sGenerator) HPAs() []models.HpaPublic {
+	var res []models.HpaPublic
+
+	if kg.d.deployment != nil {
+		mainApp := kg.d.deployment.GetMainApp()
+
+		hpa := models.HpaPublic{
+			Name:                     kg.d.deployment.Name,
+			Namespace:                kg.namespace,
+			MinReplicas:              1,
+			MaxReplicas:              mainApp.Replicas,
+			Target:                   kg.d.deployment.Name,
+			TargetKind:               "Deployment",
+			CpuAverageUtilization:    config.Config.Deployment.Resources.AutoScale.CpuThreshold,
+			MemoryAverageUtilization: config.Config.Deployment.Resources.AutoScale.MemoryThreshold,
+		}
+
+		if h := kg.s.storageManager.Subsystems.K8s.GetIngress(constants.StorageManagerAppName); service.Created(h) {
+			hpa.ID = h.ID
+			hpa.CreatedAt = h.CreatedAt
+		}
+
+		res = append(res, hpa)
+		return res
+	}
+
+	return nil
+}
+
 func getExternalFQDN(name string, zone *configModels.DeploymentZone) string {
 	return fmt.Sprintf("%s.%s", name, zone.ParentDomain)
 }

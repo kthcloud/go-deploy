@@ -13,6 +13,8 @@ type HpaPublic struct {
 	Namespace                string    `bson:"namespace"`
 	MinReplicas              int       `bson:"minReplicas"`
 	MaxReplicas              int       `bson:"maxReplicas"`
+	Target                   string    `bson:"target"`
+	TargetKind               string    `bson:"targetKind"`
 	CpuAverageUtilization    int       `bson:"cpuAverageUtilization"`
 	MemoryAverageUtilization int       `bson:"memoryAverageUtilization"`
 	CreatedAt                time.Time `bson:"createdAt"`
@@ -62,6 +64,8 @@ func CreateHpaPublicFromRead(hpa *v2.HorizontalPodAutoscaler) *HpaPublic {
 		Namespace:                hpa.Namespace,
 		MinReplicas:              minReplicas,
 		MaxReplicas:              maxReplicas,
+		Target:                   hpa.Spec.ScaleTargetRef.Name,
+		TargetKind:               hpa.Spec.ScaleTargetRef.Kind,
 		CpuAverageUtilization:    cpuAverageUtilization,
 		MemoryAverageUtilization: memoryAverageUtilization,
 		CreatedAt:                formatCreatedAt(hpa.Annotations),
