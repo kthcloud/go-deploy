@@ -661,7 +661,7 @@ func CheckQuotaCreate(requestBody *body.DeploymentCreate, userID string, quota *
 	totalCount := usage.Count + add
 
 	if totalCount > quota.Deployments {
-		return service.NewQuotaExceededError(fmt.Sprintf("Deployment quota exceeded. Current: %d, Quota: %d", totalCount, quota.CpuCores))
+		return service.NewQuotaExceededError(fmt.Sprintf("Deployment quota exceeded. Current: %d, Quota: %d", totalCount, quota.Deployments))
 	}
 
 	return nil
@@ -689,7 +689,7 @@ func CheckQuotaUpdate(requestBody *body.DeploymentUpdate, userID string, quota *
 	totalCount := usage.Count + add
 
 	if totalCount > quota.Deployments {
-		return service.NewQuotaExceededError(fmt.Sprintf("Deployment quota exceeded. Current: %d, Quota: %d", totalCount, quota.CpuCores))
+		return service.NewQuotaExceededError(fmt.Sprintf("Deployment quota exceeded. Current: %d, Quota: %d", totalCount, quota.Deployments))
 	}
 
 	return nil
