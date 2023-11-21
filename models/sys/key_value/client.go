@@ -34,3 +34,11 @@ func (client *Client) Get(key string) (string, error) {
 func (client *Client) Set(key string, value interface{}, expiration time.Duration) error {
 	return client.RedisClient.Set(context.TODO(), key, value, expiration).Err()
 }
+
+func (client *Client) Incr(key string) error {
+	return client.RedisClient.Incr(context.Background(), key).Err()
+}
+
+func (client *Client) Decr(key string) error {
+	return client.RedisClient.Decr(context.Background(), key).Err()
+}
