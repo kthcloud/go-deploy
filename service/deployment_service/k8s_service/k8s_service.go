@@ -112,6 +112,17 @@ func Create(id string, params *deploymentModel.CreateParams) error {
 		}
 	}
 
+	for _, hpaPublic := range context.Generator.HPAs() {
+		err = resources.SsCreator(context.Client.CreateHPA).
+			WithDbFunc(dbFunc(id, "hpaMap."+hpaPublic.Name)).
+			WithPublic(&hpaPublic).
+			Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
 	return nil
 }
 
@@ -137,6 +148,10 @@ func Delete(id string, overrideOwnerID ...string) error {
 			WithResourceID(ingress.ID).
 			WithDbFunc(dbFunc(id, "ingressMap."+mapName)).
 			Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	// Service
@@ -145,6 +160,10 @@ func Delete(id string, overrideOwnerID ...string) error {
 			WithResourceID(k8sService.ID).
 			WithDbFunc(dbFunc(id, "serviceMap."+mapName)).
 			Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	// Deployment
@@ -153,6 +172,10 @@ func Delete(id string, overrideOwnerID ...string) error {
 			WithResourceID(k8sDeployment.ID).
 			WithDbFunc(dbFunc(id, "deploymentMap."+mapName)).
 			Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	// PersistentVolumeClaim
@@ -161,6 +184,10 @@ func Delete(id string, overrideOwnerID ...string) error {
 			WithResourceID(pvc.ID).
 			WithDbFunc(dbFunc(id, "pvcMap."+mapName)).
 			Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	// PersistentVolume
@@ -169,6 +196,10 @@ func Delete(id string, overrideOwnerID ...string) error {
 			WithResourceID(pv.ID).
 			WithDbFunc(dbFunc(id, "pvMap."+mapName)).
 			Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	// Job
@@ -177,6 +208,21 @@ func Delete(id string, overrideOwnerID ...string) error {
 			WithResourceID(job.ID).
 			WithDbFunc(dbFunc(id, "jobMap."+mapName)).
 			Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	for mapName, hpa := range context.Deployment.Subsystems.K8s.HpaMap {
+		err = resources.SsDeleter(context.Client.DeleteHPA).
+			WithResourceID(hpa.ID).
+			WithDbFunc(dbFunc(id, "hpaMap."+mapName)).
+			Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	// Secret
@@ -192,6 +238,10 @@ func Delete(id string, overrideOwnerID ...string) error {
 			WithResourceID(secret.ID).
 			WithDbFunc(dbFunc(id, "secretMap."+mapName)).
 			Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	// Namespace
@@ -199,6 +249,10 @@ func Delete(id string, overrideOwnerID ...string) error {
 		WithResourceID(context.Deployment.Subsystems.K8s.Namespace.ID).
 		WithDbFunc(dbFunc(id, "namespace")).
 		Exec()
+
+	if err != nil {
+		return makeError(err)
+	}
 
 	return nil
 }
@@ -355,7 +409,7 @@ func Repair(id string) error {
 	}
 
 	deployments := context.Generator.Deployments()
-	for mapName, k8sDeployment := range context.Deployment.Subsystems.K8s.DeploymentMap {
+	for mapName, k8sDeployment := range context.Deployment.Subsystems.K8s.GetDeploymentMap() {
 		idx := slices.IndexFunc(deployments, func(d k8sModels.DeploymentPublic) bool { return d.Name == mapName })
 		if idx == -1 {
 			err = resources.SsDeleter(context.Client.DeleteDeployment).
@@ -382,7 +436,7 @@ func Repair(id string) error {
 	}
 
 	services := context.Generator.Services()
-	for mapName, k8sService := range context.Deployment.Subsystems.K8s.ServiceMap {
+	for mapName, k8sService := range context.Deployment.Subsystems.K8s.GetServiceMap() {
 		idx := slices.IndexFunc(services, func(s k8sModels.ServicePublic) bool { return s.Name == mapName })
 		if idx == -1 {
 			err = resources.SsDeleter(context.Client.DeleteService).
@@ -409,7 +463,7 @@ func Repair(id string) error {
 	}
 
 	ingresses := context.Generator.Ingresses()
-	for mapName, ingress := range context.Deployment.Subsystems.K8s.IngressMap {
+	for mapName, ingress := range context.Deployment.Subsystems.K8s.GetIngressMap() {
 		idx := slices.IndexFunc(ingresses, func(i k8sModels.IngressPublic) bool { return i.Name == mapName })
 		if idx == -1 {
 			err = resources.SsDeleter(context.Client.DeleteIngress).
@@ -431,8 +485,8 @@ func Repair(id string) error {
 		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "ingressMap."+public.Name)).WithGenPublic(&public).Exec()
 	}
 
-	for mapName, secret := range context.Deployment.Subsystems.K8s.SecretMap {
-		secrets := context.Generator.Secrets()
+	secrets := context.Generator.Secrets()
+	for mapName, secret := range context.Deployment.Subsystems.K8s.GetSecretMap() {
 		idx := slices.IndexFunc(secrets, func(s k8sModels.SecretPublic) bool { return s.Name == mapName })
 		if idx == -1 {
 			err = resources.SsDeleter(context.Client.DeleteSecret).
@@ -445,13 +499,40 @@ func Repair(id string) error {
 			}
 		}
 	}
-	for _, public := range context.Generator.Secrets() {
+	for _, public := range secrets {
 		err = resources.SsRepairer(
 			context.Client.ReadSecret,
 			context.Client.CreateSecret,
 			context.Client.UpdateSecret,
 			context.Client.DeleteSecret,
 		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "secretMap."+public.Name)).WithGenPublic(&public).Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	hpas := context.Generator.HPAs()
+	for mapName, hpa := range context.Deployment.Subsystems.K8s.GetHpaMap() {
+		idx := slices.IndexFunc(hpas, func(s k8sModels.HpaPublic) bool { return s.Name == mapName })
+		if idx == -1 {
+			err = resources.SsDeleter(context.Client.DeleteHPA).
+				WithResourceID(hpa.ID).
+				WithDbFunc(dbFunc(id, "hpaMap."+mapName)).
+				Exec()
+
+			if err != nil {
+				return makeError(err)
+			}
+		}
+	}
+	for _, public := range hpas {
+		err = resources.SsRepairer(
+			context.Client.ReadHPA,
+			context.Client.CreateHPA,
+			context.Client.UpdateHPA,
+			context.Client.DeleteHPA,
+		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "hpaMap."+public.Name)).WithGenPublic(&public).Exec()
 
 		if err != nil {
 			return makeError(err)

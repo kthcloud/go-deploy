@@ -17,6 +17,7 @@ import (
 	"go-deploy/utils"
 	"golang.org/x/exp/slices"
 	v1 "k8s.io/api/core/v1"
+	"math"
 	"path"
 	"time"
 )
@@ -973,18 +974,24 @@ func (kg *K8sGenerator) HPAs() []models.HpaPublic {
 	if kg.d.deployment != nil {
 		mainApp := kg.d.deployment.GetMainApp()
 
+		max := int(math.Max(float64(mainApp.Replicas), 0))
+		min := int(math.Min(float64(mainApp.Replicas), 1))
+
 		hpa := models.HpaPublic{
-			Name:                     kg.d.deployment.Name,
-			Namespace:                kg.namespace,
-			MinReplicas:              1,
-			MaxReplicas:              mainApp.Replicas,
-			Target:                   kg.d.deployment.Name,
-			TargetKind:               "Deployment",
+			Name:        kg.d.deployment.Name,
+			Namespace:   kg.namespace,
+			MinReplicas: min,
+			MaxReplicas: max,
+			Target: models.Target{
+				Kind:       "Deployment",
+				Name:       kg.d.deployment.Name,
+				ApiVersion: "apps/v1",
+			},
 			CpuAverageUtilization:    config.Config.Deployment.Resources.AutoScale.CpuThreshold,
 			MemoryAverageUtilization: config.Config.Deployment.Resources.AutoScale.MemoryThreshold,
 		}
 
-		if h := kg.s.storageManager.Subsystems.K8s.GetIngress(constants.StorageManagerAppName); service.Created(h) {
+		if h := kg.d.deployment.Subsystems.K8s.GetHPA(kg.d.deployment.Name); service.Created(h) {
 			hpa.ID = h.ID
 			hpa.CreatedAt = h.CreatedAt
 		}

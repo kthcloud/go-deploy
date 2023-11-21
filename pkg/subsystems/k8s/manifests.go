@@ -428,7 +428,6 @@ func CreateSecretManifest(public *models.SecretPublic) *apiv1.Secret {
 }
 
 func CreateHpaManifest(public *models.HpaPublic) *autoscalingv2.HorizontalPodAutoscaler {
-
 	return &autoscalingv2.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      public.Name,
@@ -442,6 +441,11 @@ func CreateHpaManifest(public *models.HpaPublic) *autoscalingv2.HorizontalPodAut
 			},
 		},
 		Spec: autoscalingv2.HorizontalPodAutoscalerSpec{
+			ScaleTargetRef: autoscalingv2.CrossVersionObjectReference{
+				Kind:       public.Target.Kind,
+				Name:       public.Target.Name,
+				APIVersion: public.Target.ApiVersion,
+			},
 			MinReplicas: intToInt32Ptr(public.MinReplicas),
 			MaxReplicas: int32(public.MaxReplicas),
 			Metrics: []autoscalingv2.MetricSpec{
@@ -452,6 +456,15 @@ func CreateHpaManifest(public *models.HpaPublic) *autoscalingv2.HorizontalPodAut
 						Target: autoscalingv2.MetricTarget{
 							Type:               autoscalingv2.UtilizationMetricType,
 							AverageUtilization: intToInt32Ptr(public.CpuAverageUtilization)},
+					},
+				},
+				{
+					Type: autoscalingv2.ResourceMetricSourceType,
+					Resource: &autoscalingv2.ResourceMetricSource{
+						Name: apiv1.ResourceMemory,
+						Target: autoscalingv2.MetricTarget{
+							Type:               autoscalingv2.UtilizationMetricType,
+							AverageUtilization: intToInt32Ptr(public.MemoryAverageUtilization)},
 					},
 				},
 			},

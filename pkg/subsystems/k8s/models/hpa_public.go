@@ -7,14 +7,19 @@ import (
 	"time"
 )
 
+type Target struct {
+	Kind       string `json:"kind"`
+	Name       string `json:"name"`
+	ApiVersion string `json:"apiVersion"`
+}
+
 type HpaPublic struct {
 	ID                       string    `bson:"id"`
 	Name                     string    `bson:"name"`
 	Namespace                string    `bson:"namespace"`
 	MinReplicas              int       `bson:"minReplicas"`
 	MaxReplicas              int       `bson:"maxReplicas"`
-	Target                   string    `bson:"target"`
-	TargetKind               string    `bson:"targetKind"`
+	Target                   Target    `bson:"target"`
 	CpuAverageUtilization    int       `bson:"cpuAverageUtilization"`
 	MemoryAverageUtilization int       `bson:"memoryAverageUtilization"`
 	CreatedAt                time.Time `bson:"createdAt"`
@@ -46,26 +51,27 @@ func CreateHpaPublicFromRead(hpa *v2.HorizontalPodAutoscaler) *HpaPublic {
 		maxReplicas = int(hpa.Spec.MaxReplicas)
 	}
 
-	if hpa.Spec.Metrics != nil && len(hpa.Spec.Metrics) > 0 {
-		for _, metric := range hpa.Spec.Metrics {
-			if metric.Resource != nil && metric.Resource.Name == apiv1.ResourceCPU && metric.Resource.Target.AverageValue != nil {
-				cpuAverageUtilization = int(*metric.Resource.Target.AverageUtilization)
-			}
+	for _, metric := range hpa.Spec.Metrics {
+		if metric.Resource != nil && metric.Resource.Name == apiv1.ResourceCPU && metric.Resource.Target.AverageUtilization != nil {
+			cpuAverageUtilization = int(*metric.Resource.Target.AverageUtilization)
+		}
 
-			if metric.Resource != nil && metric.Resource.Name == apiv1.ResourceMemory && metric.Resource.Target.AverageUtilization != nil {
-				memoryAverageUtilization = int(*metric.Resource.Target.AverageUtilization)
-			}
+		if metric.Resource != nil && metric.Resource.Name == apiv1.ResourceMemory && metric.Resource.Target.AverageUtilization != nil {
+			memoryAverageUtilization = int(*metric.Resource.Target.AverageUtilization)
 		}
 	}
 
 	return &HpaPublic{
-		ID:                       hpa.Labels[keys.ManifestLabelID],
-		Name:                     hpa.Name,
-		Namespace:                hpa.Namespace,
-		MinReplicas:              minReplicas,
-		MaxReplicas:              maxReplicas,
-		Target:                   hpa.Spec.ScaleTargetRef.Name,
-		TargetKind:               hpa.Spec.ScaleTargetRef.Kind,
+		ID:          hpa.Labels[keys.ManifestLabelID],
+		Name:        hpa.Name,
+		Namespace:   hpa.Namespace,
+		MinReplicas: minReplicas,
+		MaxReplicas: maxReplicas,
+		Target: Target{
+			Kind:       hpa.Spec.ScaleTargetRef.Kind,
+			Name:       hpa.Spec.ScaleTargetRef.Name,
+			ApiVersion: hpa.Spec.ScaleTargetRef.APIVersion,
+		},
 		CpuAverageUtilization:    cpuAverageUtilization,
 		MemoryAverageUtilization: memoryAverageUtilization,
 		CreatedAt:                formatCreatedAt(hpa.Annotations),
