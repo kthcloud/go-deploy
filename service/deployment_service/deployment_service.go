@@ -152,7 +152,7 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 	return nil
 }
 
-func Update(id string, deploymentUpdate *body.DeploymentUpdate) error {
+func Update(id string, dtoUpdate *body.DeploymentUpdate) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update deployment. details: %w", err)
 	}
@@ -168,7 +168,7 @@ func Update(id string, deploymentUpdate *body.DeploymentUpdate) error {
 	}
 
 	params := &deploymentModel.UpdateParams{}
-	params.FromDTO(deploymentUpdate, deployment.Type)
+	params.FromDTO(dtoUpdate, deployment.Type)
 
 	if params.Name != nil && deployment.Type == deploymentModel.TypeCustom {
 		image := createImagePath(deployment.OwnerID, *params.Name)
@@ -195,7 +195,7 @@ func Update(id string, deploymentUpdate *body.DeploymentUpdate) error {
 	if err != nil {
 		if errors.Is(err, base.CustomDomainInUseErr) {
 			log.Println("custom domain in use when updating deployment", deployment.Name, ". removing it from the update params")
-			deploymentUpdate.CustomDomain = nil
+			dtoUpdate.CustomDomain = nil
 		} else {
 			return makeError(err)
 		}
@@ -639,7 +639,7 @@ func ListAll() ([]deploymentModel.Deployment, error) {
 	return deploymentModel.New().List()
 }
 
-func CheckQuotaCreate(userID string, quota *roleModel.Quotas, auth *service.AuthInfo) error {
+func CheckQuotaCreate(requestBody *body.DeploymentCreate, userID string, quota *roleModel.Quotas, auth *service.AuthInfo) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check quota. details: %w", err)
 	}
@@ -653,7 +653,40 @@ func CheckQuotaCreate(userID string, quota *roleModel.Quotas, auth *service.Auth
 		return makeError(err)
 	}
 
-	totalCount := usage.Count + 1
+	add := 1
+	if requestBody.Replicas != nil {
+		add = *requestBody.Replicas
+	}
+
+	totalCount := usage.Count + add
+
+	if totalCount > quota.Deployments {
+		return service.NewQuotaExceededError(fmt.Sprintf("Deployment quota exceeded. Current: %d, Quota: %d", totalCount, quota.CpuCores))
+	}
+
+	return nil
+}
+
+func CheckQuotaUpdate(requestBody *body.DeploymentUpdate, userID string, quota *roleModel.Quotas, auth *service.AuthInfo) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to check quota. details: %w", err)
+	}
+
+	if auth.IsAdmin {
+		return nil
+	}
+
+	usage, err := GetUsageByUserID(userID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	add := 1
+	if requestBody.Replicas != nil {
+		add = *requestBody.Replicas
+	}
+
+	totalCount := usage.Count + add
 
 	if totalCount > quota.Deployments {
 		return service.NewQuotaExceededError(fmt.Sprintf("Deployment quota exceeded. Current: %d, Quota: %d", totalCount, quota.CpuCores))

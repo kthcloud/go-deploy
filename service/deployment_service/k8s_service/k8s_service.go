@@ -330,6 +330,13 @@ func Update(id string, params *deploymentModel.UpdateParams) error {
 		}
 	}
 
+	if params.Replicas != nil {
+		err = updateReplicas(context)
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
 	return nil
 }
 
@@ -751,6 +758,33 @@ func updateImage(context *DeploymentContext) error {
 	err := resources.SsUpdater(context.Client.UpdateDeployment).
 		WithDbFunc(dbFunc(context.Deployment.ID, "deploymentMap."+context.Deployment.Name)).
 		WithPublic(&deployments[idx]).
+		Exec()
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func updateReplicas(context *DeploymentContext) error {
+	hpas := context.Generator.HPAs()
+	idx := slices.IndexFunc(hpas, func(i k8sModels.HpaPublic) bool {
+		return i.Name == context.Deployment.Name
+	})
+	if idx == -1 {
+		log.Println("main k8s hpa for deployment", context.Deployment.ID, "not found when updating replicas. assuming it was deleted")
+		return nil
+	}
+
+	if service.NotCreated(&hpas[idx]) {
+		log.Println("main k8s hpa for deployment", context.Deployment.ID, "not created yet when updating replicas. assuming it was deleted")
+		return nil
+	}
+
+	err := resources.SsUpdater(context.Client.UpdateHPA).
+		WithDbFunc(dbFunc(context.Deployment.ID, "hpaMap."+context.Deployment.Name)).
+		WithPublic(&hpas[idx]).
 		Exec()
 
 	if err != nil {

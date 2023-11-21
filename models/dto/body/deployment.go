@@ -28,6 +28,7 @@ type DeploymentCreate struct {
 	InitCommands    []string `json:"initCommands" bson:"initCommands" binding:"omitempty,min=0,max=100,dive,min=0,max=100"`
 	HealthCheckPath *string  `json:"healthCheckPath" bson:"healthCheckPath,omitempty" binding:"omitempty,min=0,max=1000,health_check_path"`
 	CustomDomain    *string  `json:"customDomain" bson:"customDomain,omitempty" binding:"omitempty,domain_name,custom_domain,min=1,max=253"`
+	Replicas        *int     `json:"replicas" bson:"replicas,omitempty" binding:"omitempty,min=1,max=100"`
 
 	GitHub *GitHub `json:"github" bson:"github,omitempty" binding:"omitempty,dive"`
 
@@ -44,6 +45,7 @@ type DeploymentUpdate struct {
 	CustomDomain    *string   `json:"customDomain,omitempty" bson:"customDomain,omitempty" binding:"omitempty,domain_name,custom_domain,min=0,max=253"`
 	Image           *string   `json:"image,omitempty,omitempty" bson:"image,omitempty" binding:"omitempty,min=1,max=1000"`
 	HealthCheckPath *string   `json:"healthCheckPath,omitempty" bson:"healthCheckPath,omitempty" binding:"omitempty,min=0,max=1000,health_check_path"`
+	Replicas        *int      `json:"replicas,omitempty" bson:"replicas,omitempty" binding:"omitempty,min=1,max=100"`
 
 	// update owner
 	OwnerID      *string `json:"ownerId,omitempty" bson:"ownerId,omitempty" binding:"omitempty"`

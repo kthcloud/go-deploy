@@ -21,6 +21,11 @@ var (
 
 func (client *Client) Create(id, ownerID string, params *CreateParams) (*Deployment, error) {
 	appName := "main"
+	replicas := 1
+	if params.Replicas != nil {
+		replicas = *params.Replicas
+	}
+
 	mainApp := App{
 		Name:         appName,
 		Image:        params.Image,
@@ -32,7 +37,7 @@ func (client *Client) Create(id, ownerID string, params *CreateParams) (*Deploym
 		CustomDomain: params.CustomDomain,
 		PingResult:   0,
 		PingPath:     params.PingPath,
-		Replicas:     1,
+		Replicas:     replicas,
 	}
 
 	deployment := Deployment{
@@ -130,6 +135,7 @@ func (client *Client) UpdateWithParamsByID(id string, params *UpdateParams) erro
 	models.AddIfNotNil(&setUpdate, "apps.main.customDomain", params.CustomDomain)
 	models.AddIfNotNil(&setUpdate, "apps.main.image", params.Image)
 	models.AddIfNotNil(&setUpdate, "apps.main.pingPath", params.PingPath)
+	models.AddIfNotNil(&setUpdate, "apps.main.replicas", params.Replicas)
 
 	if utils.EmptyValue(params.TransferCode) && utils.EmptyValue(params.TransferUserID) {
 		models.AddIfNotNil(&unsetUpdate, "transfer", "")

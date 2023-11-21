@@ -61,6 +61,7 @@ type UpdateParams struct {
 	CustomDomain *string
 	Image        *string
 	PingPath     *string
+	Replicas     *int
 
 	// ownership update
 	TransferUserID *string
@@ -84,6 +85,7 @@ type CreateParams struct {
 	InitCommands []string
 	PingPath     string
 	CustomDomain *string
+	Replicas     *int
 
 	GitHub *GitHubCreateParams
 
