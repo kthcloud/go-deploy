@@ -87,10 +87,12 @@ func (deployment *Deployment) ToDTO(storageManagerURL *string) body.DeploymentRe
 		InternalPort:    app.InternalPort,
 		Image:           image,
 		HealthCheckPath: healthCheckPath,
-		Status:          deployment.StatusMessage,
-		PingResult:      pingResult,
-		Integrations:    integrations,
-		StorageURL:      storageManagerURL,
+		Replicas:        app.Replicas,
+
+		Status:       deployment.StatusMessage,
+		PingResult:   pingResult,
+		Integrations: integrations,
+		StorageURL:   storageManagerURL,
 	}
 }
 
@@ -157,6 +159,8 @@ func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZone, fallbac
 		}
 	}
 
+	p.Replicas = dto.Replicas
+
 	// only allow GitHub on non-prebuilt deployments
 	if p.Type == TypeCustom && dto.GitHub != nil {
 		p.GitHub = &GitHubCreateParams{
@@ -221,6 +225,7 @@ func (p *UpdateParams) FromDTO(dto *body.DeploymentUpdate, deploymentType string
 	}
 
 	p.PingPath = dto.HealthCheckPath
+	p.Replicas = dto.Replicas
 }
 
 func (p *BuildParams) FromDTO(dto *body.DeploymentBuild) {

@@ -223,7 +223,7 @@ func Create(c *gin.Context) {
 		}
 	}
 
-	err = deployment_service.CheckQuotaCreate(auth.UserID, &auth.GetEffectiveRole().Quotas, auth)
+	err = deployment_service.CheckQuotaCreate(&requestBody, auth.UserID, &auth.GetEffectiveRole().Quotas, auth)
 	if err != nil {
 		var quotaExceededErr service.QuotaExceededError
 		if errors.As(err, &quotaExceededErr) {
@@ -460,6 +460,18 @@ func Update(c *gin.Context) {
 			context.UserError("Name already taken")
 			return
 		}
+	}
+
+	err = deployment_service.CheckQuotaUpdate(&requestBody, auth.UserID, &auth.GetEffectiveRole().Quotas, auth)
+	if err != nil {
+		var quotaExceededErr service.QuotaExceededError
+		if errors.As(err, &quotaExceededErr) {
+			context.Forbidden(quotaExceededErr.Error())
+			return
+		}
+
+		context.ServerError(err, v1.InternalError)
+		return
 	}
 
 	canUpdate, reason := deployment_service.CanAddActivity(deployment.ID, deploymentModels.ActivityUpdating)

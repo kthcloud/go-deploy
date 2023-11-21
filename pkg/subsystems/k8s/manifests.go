@@ -5,6 +5,7 @@ import (
 	"go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/utils"
 	appsv1 "k8s.io/api/apps/v1"
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/batch/v1"
 	apiv1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -130,7 +131,7 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: intToInt32Ptr(public.Replicas),
+			Replicas: intToInt32Ptr(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					keys.ManifestLabelID: public.ID,
@@ -423,6 +424,51 @@ func CreateSecretManifest(public *models.SecretPublic) *apiv1.Secret {
 		},
 		Data: public.Data,
 		Type: apiv1.SecretType(public.Type),
+	}
+}
+
+func CreateHpaManifest(public *models.HpaPublic) *autoscalingv2.HorizontalPodAutoscaler {
+	return &autoscalingv2.HorizontalPodAutoscaler{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      public.Name,
+			Namespace: public.Namespace,
+			Labels: map[string]string{
+				keys.ManifestLabelID:   public.ID,
+				keys.ManifestLabelName: public.Name,
+			},
+			Annotations: map[string]string{
+				keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat),
+			},
+		},
+		Spec: autoscalingv2.HorizontalPodAutoscalerSpec{
+			ScaleTargetRef: autoscalingv2.CrossVersionObjectReference{
+				Kind:       public.Target.Kind,
+				Name:       public.Target.Name,
+				APIVersion: public.Target.ApiVersion,
+			},
+			MinReplicas: intToInt32Ptr(public.MinReplicas),
+			MaxReplicas: int32(public.MaxReplicas),
+			Metrics: []autoscalingv2.MetricSpec{
+				{
+					Type: autoscalingv2.ResourceMetricSourceType,
+					Resource: &autoscalingv2.ResourceMetricSource{
+						Name: apiv1.ResourceCPU,
+						Target: autoscalingv2.MetricTarget{
+							Type:               autoscalingv2.UtilizationMetricType,
+							AverageUtilization: intToInt32Ptr(public.CpuAverageUtilization)},
+					},
+				},
+				{
+					Type: autoscalingv2.ResourceMetricSourceType,
+					Resource: &autoscalingv2.ResourceMetricSource{
+						Name: apiv1.ResourceMemory,
+						Target: autoscalingv2.MetricTarget{
+							Type:               autoscalingv2.UtilizationMetricType,
+							AverageUtilization: intToInt32Ptr(public.MemoryAverageUtilization)},
+					},
+				},
+			},
+		},
 	}
 }
 

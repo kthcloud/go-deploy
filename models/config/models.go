@@ -51,6 +51,10 @@ type Deployment struct {
 	RepairInterval              int    `yaml:"repairInterval"`
 	PingInterval                int    `yaml:"pingInterval"`
 	Resources                   struct {
+		AutoScale struct {
+			CpuThreshold    int `yaml:"cpuThreshold"`
+			MemoryThreshold int `yaml:"memoryThreshold"`
+		} `yaml:"autoScale"`
 		Limits struct {
 			CPU     string `yaml:"cpu"`
 			Memory  string `yaml:"memory"`

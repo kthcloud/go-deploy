@@ -52,7 +52,14 @@ func appCreatedK8s(deployment *deploymentModels.Deployment, app *deploymentModel
 		secretCreated = true
 	}
 
-	return deploymentCreated && serviceCreated && ingressCreated && secretCreated
+	hpaCreated := false
+	for mapName, hpa := range deployment.Subsystems.K8s.HpaMap {
+		if hpa.Created() && mapName == deployment.Name {
+			hpaCreated = true
+		}
+	}
+
+	return deploymentCreated && serviceCreated && ingressCreated && secretCreated && hpaCreated
 }
 
 func appDeletedK8s(deployment *deploymentModels.Deployment, app *deploymentModels.App) bool {
@@ -98,7 +105,14 @@ func appDeletedK8s(deployment *deploymentModels.Deployment, app *deploymentModel
 		}
 	}
 
-	return deploymentDeleted && serviceDeleted && ingressDeleted && secretDeleted
+	hpaDeleted := true
+	for mapName, hpa := range deployment.Subsystems.K8s.HpaMap {
+		if hpa.Created() && mapName == deployment.Name {
+			hpaDeleted = false
+		}
+	}
+
+	return deploymentDeleted && serviceDeleted && ingressDeleted && secretDeleted && hpaDeleted
 }
 
 func k8sCreated(deployment *deploymentModels.Deployment) (bool, error) {

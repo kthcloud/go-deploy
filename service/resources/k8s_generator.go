@@ -17,6 +17,7 @@ import (
 	"go-deploy/utils"
 	"golang.org/x/exp/slices"
 	v1 "k8s.io/api/core/v1"
+	"math"
 	"path"
 	"time"
 )
@@ -111,7 +112,6 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 			k8sDeployment.EnvVars = envVars
 			k8sDeployment.Image = mainApp.Image
 			k8sDeployment.InitCommands = mainApp.InitCommands
-			k8sDeployment.Replicas = mainApp.Replicas
 
 			res = append(res, *k8sDeployment)
 		} else {
@@ -176,7 +176,6 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 				InitContainers: make([]models.InitContainer, 0),
 				Volumes:        k8sVolumes,
 				CreatedAt:      time.Time{},
-				Replicas:       mainApp.Replicas,
 			})
 		}
 
@@ -221,7 +220,6 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 				}
 
 				k8sDeployment.EnvVars = envVars
-				k8sDeployment.Replicas = 1
 
 				res = append(res, k8sDeployment)
 			}
@@ -279,7 +277,6 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 					InitContainers: make([]models.InitContainer, 0),
 					Volumes:        make([]models.Volume, 0),
 					CreatedAt:      time.Time{},
-					Replicas:       1,
 				})
 			}
 		}
@@ -334,7 +331,6 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 			InitCommands:   make([]string, 0),
 			InitContainers: make([]models.InitContainer, 0),
 			Volumes:        k8sVolumes,
-			Replicas:       1,
 		}
 
 		if fb := kg.s.storageManager.Subsystems.K8s.GetDeployment(constants.StorageManagerAppName); service.Created(fb) {
@@ -419,7 +415,6 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 			InitContainers: initContainers,
 			Volumes:        volumes,
 			CreatedAt:      time.Time{},
-			Replicas:       1,
 		}
 
 		if op := kg.s.storageManager.Subsystems.K8s.GetDeployment(constants.StorageManagerAppNameAuth); service.Created(op) {
@@ -967,6 +962,41 @@ func (kg *K8sGenerator) Jobs() []models.JobPublic {
 			}
 		}
 
+		return res
+	}
+
+	return nil
+}
+
+func (kg *K8sGenerator) HPAs() []models.HpaPublic {
+	var res []models.HpaPublic
+
+	if kg.d.deployment != nil {
+		mainApp := kg.d.deployment.GetMainApp()
+
+		max := int(math.Max(float64(mainApp.Replicas), 0))
+		min := int(math.Min(float64(mainApp.Replicas), 1))
+
+		hpa := models.HpaPublic{
+			Name:        kg.d.deployment.Name,
+			Namespace:   kg.namespace,
+			MinReplicas: min,
+			MaxReplicas: max,
+			Target: models.Target{
+				Kind:       "Deployment",
+				Name:       kg.d.deployment.Name,
+				ApiVersion: "apps/v1",
+			},
+			CpuAverageUtilization:    config.Config.Deployment.Resources.AutoScale.CpuThreshold,
+			MemoryAverageUtilization: config.Config.Deployment.Resources.AutoScale.MemoryThreshold,
+		}
+
+		if h := kg.d.deployment.Subsystems.K8s.GetHPA(kg.d.deployment.Name); service.Created(h) {
+			hpa.ID = h.ID
+			hpa.CreatedAt = h.CreatedAt
+		}
+
+		res = append(res, hpa)
 		return res
 	}
 
