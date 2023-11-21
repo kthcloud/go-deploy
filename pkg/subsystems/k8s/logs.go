@@ -3,7 +3,6 @@ package k8s
 import (
 	"bufio"
 	"context"
-	"errors"
 	"fmt"
 	"go-deploy/pkg/subsystems/k8s/keys"
 	"go-deploy/utils"
@@ -11,80 +10,111 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strings"
+	"sync"
 )
 
-func (client *Client) getPodName(namespace, deploymentID string) (string, error) {
+func (client *Client) getPodNames(namespace, deploymentID string) ([]string, error) {
 	pods, err := client.K8sClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelID, deploymentID),
 	})
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	// Only one pod is allowed
-	for _, pod := range pods.Items {
-		return pod.Name, nil
+	podNames := make([]string, len(pods.Items))
+	for idx, pod := range pods.Items {
+		podNames[idx] = pod.Name
 	}
-	return "", errors.New("no pods in namespace")
+
+	return podNames, nil
 }
 
-func (client *Client) setupPodLogStreamer(cancelCtx context.Context, namespace, deploymentID string, handler func(string)) {
+func (client *Client) setupPodLogStreamer(ctx context.Context, namespace, deploymentID string, handler func(string, string)) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create k8s log stream for deployment %s. details: %w", deploymentID, err)
 	}
 
-	for {
-		podName, err := client.getPodName(namespace, deploymentID)
-		if err != nil {
-			utils.PrettyPrintError(makeError(err))
-			return
-		}
-
-		if podName == "" {
-			return
-		}
-
-		finished := client.readLogs(cancelCtx, namespace, podName, handler)
-		if finished {
-			return
-		}
+	podNames, err := client.getPodNames(namespace, deploymentID)
+	if err != nil {
+		utils.PrettyPrintError(makeError(err))
+		return
 	}
+
+	if len(podNames) == 0 {
+		return
+	}
+
+	wg := sync.WaitGroup{}
+	for idx, podName := range podNames {
+		wg.Add(1)
+
+		localIdx := idx
+		localPodName := podName
+		go func() {
+			client.readLogs(ctx, fmt.Sprintf("[pod %d]", localIdx), namespace, localPodName, handler)
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+
+	return
 }
 
-func (client *Client) readLogs(cancelCtx context.Context, namespace, podName string, handler func(string)) bool {
-	podLogsConnection := client.K8sClient.CoreV1().Pods(namespace).GetLogs(podName, &v1.PodLogOptions{
-		Follow:    true,
-		TailLines: &[]int64{int64(10)}[0],
-	})
-	logStream, err := podLogsConnection.Stream(context.Background())
-	if err != nil {
-		utils.PrettyPrintError(fmt.Errorf("failed to create k8s log stream for pod %s. details: %w", podName, err))
-		return true
-	}
-
+func (client *Client) readLogs(ctx context.Context, prefix, namespace, podName string, handler func(string, string)) {
+	var logStream io.ReadCloser
 	defer func(logStream io.ReadCloser) {
 		if logStream != nil {
 			_ = logStream.Close()
 		}
 	}(logStream)
 
-	reader := bufio.NewScanner(logStream)
 	var line string
 	for {
 		select {
-		case <-cancelCtx.Done():
-			return true
+		case <-ctx.Done():
+			return
 		default:
+			logStream, err := getK8sLogStream(client, namespace, podName, 1)
+			if err != nil {
+				if IsNotFoundErr(err) {
+					// pod got deleted for some reason, so we just stop the log stream
+					return
+				}
+
+				utils.PrettyPrintError(fmt.Errorf("failed to create k8s log stream for pod %s. details: %w", podName, err))
+				return
+			}
+			reader := bufio.NewScanner(logStream)
+
 			for reader.Scan() {
+				if ctx.Err() != nil {
+					break
+				}
+
 				line = reader.Text()
 				if isExitLine(line) {
-					return false
-				} else {
-					handler(line)
+					break
 				}
+
+				handler(prefix, line)
 			}
 		}
 	}
+}
+
+func getK8sLogStream(client *Client, namespace, podName string, history int) (io.ReadCloser, error) {
+	podLogsConnection := client.K8sClient.CoreV1().Pods(namespace).GetLogs(podName, &v1.PodLogOptions{
+		Follow:    true,
+		TailLines: &[]int64{int64(history)}[0],
+	})
+
+	logStream, err := podLogsConnection.Stream(context.Background())
+	if err != nil {
+		utils.PrettyPrintError(fmt.Errorf("failed to create k8s log stream for pod %s. details: %w", podName, err))
+		return nil, err
+	}
+
+	return logStream, nil
 }
 
 func isExitLine(line string) bool {
@@ -93,7 +123,7 @@ func isExitLine(line string) bool {
 	return firstPart && lastPart
 }
 
-func (client *Client) SetupLogStream(context context.Context, namespace, deploymentID string, handler func(string)) error {
-	go client.setupPodLogStreamer(context, namespace, deploymentID, handler)
+func (client *Client) SetupLogStream(ctx context.Context, namespace, deploymentID string, handler func(string, string)) error {
+	go client.setupPodLogStreamer(ctx, namespace, deploymentID, handler)
 	return nil
 }

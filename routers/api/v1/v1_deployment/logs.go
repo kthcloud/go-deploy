@@ -9,14 +9,10 @@ import (
 	"go-deploy/models/dto/uri"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
-	"go-deploy/service"
 	"go-deploy/service/deployment_service"
 	"go-deploy/utils"
-	"go-deploy/utils/requestutils"
 	"io"
-	"log"
 	"net/http"
-	"strings"
 )
 
 var upgrader = websocket.Upgrader{
@@ -40,13 +36,21 @@ func GetLogsSSE(c *gin.Context) {
 		return
 	}
 
-	ch := make(chan string)
-
-	handler := func(msg string) {
-		ch <- msg
+	type Message struct {
+		prefix string
+		msg    string
 	}
 
-	ctx, err := deployment_service.SetupLogStream(requestURI.DeploymentID, handler, auth)
+	ch := make(chan Message)
+
+	handler := func(prefix, msg string) {
+		ch <- Message{prefix, msg}
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	err = deployment_service.SetupLogStream(ctx, requestURI.DeploymentID, handler, auth)
 	if err != nil {
 		if errors.Is(err, deployment_service.DeploymentNotFoundErr) {
 			sysContext.NotFound("Deployment not found")
@@ -61,7 +65,7 @@ func GetLogsSSE(c *gin.Context) {
 		case <-ctx.Done():
 			return false
 		case msg := <-ch:
-			_, err := fmt.Fprintf(w, "data: %s\n\n", msg)
+			_, err := fmt.Fprintf(w, "data: %s\n\n", fmt.Sprintf("%s: %s", msg.prefix, msg.msg))
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error writing message to SSE for deployment %s. details: %w", requestURI.DeploymentID, err))
 				return false
@@ -69,110 +73,6 @@ func GetLogsSSE(c *gin.Context) {
 			return true
 		}
 	})
-}
-
-// GetLogs Websocket
-func GetLogs(c *gin.Context) {
-	sysContext := sys.NewContext(c)
-
-	var requestURI uri.LogsGet
-	if err := sysContext.GinContext.ShouldBindUri(&requestURI); err != nil {
-		sysContext.BindingError(v1.CreateBindingError(err))
-		return
-	}
-
-	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
-	if err != nil {
-		sysContext.ServerError(err, v1.InternalError)
-		return
-	}
-
-	go func() {
-		defer func(ws *websocket.Conn) {
-			_ = ws.Close()
-		}(ws)
-
-		var logContext context.Context
-		var auth *service.AuthInfo
-
-		handler := func(msg string) {
-			err = ws.WriteMessage(websocket.TextMessage, []byte(msg))
-			if err != nil {
-				if strings.Contains(err.Error(), "closed network connection") || strings.Contains(err.Error(), "connection reset by peer") {
-					return
-				}
-
-				utils.PrettyPrintError(fmt.Errorf("error writing message to websocket for deployment %s. details: %w", requestURI.DeploymentID, err))
-				_ = ws.Close()
-			}
-		}
-
-		for {
-			_, data, readMsgErr := ws.ReadMessage()
-			var ce *websocket.CloseError
-			if errors.As(readMsgErr, &ce) {
-				switch ce.Code {
-				case websocket.CloseNormalClosure,
-					websocket.CloseGoingAway,
-					websocket.CloseNoStatusReceived:
-					if logContext != nil {
-						logContext.Done()
-					}
-					log.Println("websocket closed for deployment ", requestURI.DeploymentID)
-					return
-				}
-			}
-
-			if readMsgErr != nil {
-				utils.PrettyPrintError(fmt.Errorf("error reading message from websocket for deployment %s. details: %w", requestURI.DeploymentID, readMsgErr))
-				return
-			}
-
-			msg := string(data)
-
-			if strings.HasPrefix(msg, "Bearer ") && auth == nil {
-				auth = validateBearerToken(msg)
-				if auth != nil {
-					logContext, err = deployment_service.SetupLogStream(requestURI.DeploymentID, handler, auth)
-					if err != nil {
-						sysContext.ServerError(err, v1.InternalError)
-						return
-					}
-
-					if logContext == nil {
-						utils.PrettyPrintError(fmt.Errorf("deployment not found when trying to setup log stream %s", requestURI.DeploymentID))
-						return
-					}
-				}
-			}
-		}
-	}()
-}
-
-func validateBearerToken(bearer string) *service.AuthInfo {
-	req, err := http.NewRequest("GET", "http://localhost:8080/v1/authCheck", nil)
-	req.Header.Add("Authorization", bearer)
-	if err != nil {
-		return nil
-	}
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil
-	}
-
-	var authInfo service.AuthInfo
-	err = requestutils.ParseBody(resp.Body, &authInfo)
-	if err != nil {
-		return nil
-	}
-
-	return &authInfo
 }
 
 //mhuaaaaaaaaaaaah, i love you i love you i love you

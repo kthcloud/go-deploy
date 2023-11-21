@@ -28,6 +28,8 @@ const (
 	KeyJobsTerminated = "metrics:jobs:terminated"
 	KeyJobsCompleted  = "metrics:jobs:completed"
 
+	KeyThreadsLog = "metrics:threads:log"
+
 	KeyHttpStatus2xx
 	KeyHttpStatus3xx
 	KeyHttpStatus4xx
@@ -144,6 +146,13 @@ func GetCollectors() []MetricDefinition {
 			Collector: prometheus.NewGauge(prometheus.GaugeOpts{
 				Name: "jobs_finished",
 				Help: "Number of jobs finished",
+			}),
+		},
+		{
+			Key:        KeyThreadsLog,
+			MetricType: MetricTypeGauge,
+			Collector: prometheus.NewGauge(prometheus.GaugeOpts{
+				Name: "threads_log",
 			}),
 		},
 	}
