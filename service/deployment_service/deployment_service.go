@@ -742,7 +742,7 @@ func GetUsageByUserID(userID string) (*deploymentModel.Usage, error) {
 		return fmt.Errorf("failed to get usage. details: %w", err)
 	}
 
-	count, err := deploymentModel.New().RestrictToOwner(userID).Count()
+	count, err := deploymentModel.New().RestrictToOwner(userID).CountReplicas()
 	if err != nil {
 		return nil, makeError(err)
 	}
