@@ -19,6 +19,7 @@ import (
 	"go-deploy/service/vm_service/cs_service"
 	"go-deploy/service/vm_service/k8s_service"
 	"go-deploy/utils"
+	"go.mongodb.org/mongo-driver/bson"
 	"log"
 	"sort"
 	"strings"
@@ -439,6 +440,15 @@ func ListAuth(allUsers bool, userID *string, shared bool, auth *service.AuthInfo
 
 func NameAvailable(name string) (bool, error) {
 	exists, err := vmModel.New().ExistsByName(name)
+	if err != nil {
+		return false, err
+	}
+
+	return !exists, nil
+}
+
+func HttpProxyNameAvailable(name string) (bool, error) {
+	exists, err := vmModel.New().WithCustomFilter(bson.D{{"ports.httpProxy.name", name}}).ExistsAny()
 	if err != nil {
 		return false, err
 	}

@@ -82,6 +82,8 @@ func msgForTag(fe validator.FieldError) string {
 		return "Every port name must be unique"
 	case "port_list_numbers":
 		return "Every port number must be unique per protocol"
+	case "port_list_http_proxies":
+		return "Every proxy name must be unique"
 	case "valid_domain":
 		return "Must be a valid domain name that is convertible to punycode"
 	case "custom_domain":

@@ -88,6 +88,31 @@ func (client *Client) UpdateWithParamsByID(id string, params *UpdateParams) erro
 	setUpdate := bson.D{}
 	unsetUpdate := bson.D{}
 
+	// check that no other vm has a port with the same http proxy name
+	// this should ideally be done with unique indexes, but the indexes are per document, and not per-array element.
+	// so we would need to create a separate collection for ports, which is not ideal, since that would require
+	// us to use $lookup to get the ports for a vm or use transactions, which is quite annoying :)
+	// so we do it manually here, even though it might cause a race condition, because I'm lazy.
+	if params.Ports != nil {
+		for _, port := range *params.Ports {
+			if port.HttpProxy != nil {
+				filter := bson.D{
+					{"id", bson.D{{"$ne", id}}},
+					{"ports.httpProxy.name", port.HttpProxy.Name},
+				}
+
+				existAny, err := client.ResourceClient.AddExtraFilter(filter).ExistsAny()
+				if err != nil {
+					return err
+				}
+
+				if existAny {
+					return NonUniqueFieldErr
+				}
+			}
+		}
+	}
+
 	models.AddIfNotNil(&setUpdate, "name", params.Name)
 	models.AddIfNotNil(&setUpdate, "ownerId", params.OwnerID)
 	models.AddIfNotNil(&setUpdate, "ports", params.Ports)
