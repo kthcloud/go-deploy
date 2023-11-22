@@ -65,6 +65,10 @@ func GetLogsSSE(c *gin.Context) {
 		case <-ctx.Done():
 			return false
 		case msg := <-ch:
+			if msg.msg == "__control" {
+				return true
+			}
+
 			_, err := fmt.Fprintf(w, "data: %s\n\n", fmt.Sprintf("%s: %s", msg.prefix, msg.msg))
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error writing message to SSE for deployment %s. details: %w", requestURI.DeploymentID, err))

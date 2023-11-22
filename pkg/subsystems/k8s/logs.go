@@ -9,8 +9,10 @@ import (
 	"io"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"log"
 	"strings"
 	"sync"
+	"time"
 )
 
 func (client *Client) getPodNames(namespace, deploymentID string) ([]string, error) {
@@ -68,23 +70,31 @@ func (client *Client) readLogs(ctx context.Context, prefix, namespace, podName s
 		}
 	}(logStream)
 
+	createNewStream := true
+	var reader *bufio.Scanner
+
 	var line string
 	for {
 		select {
 		case <-ctx.Done():
+			log.Println("logger stopped for pod", podName)
 			return
 		default:
-			logStream, err := getK8sLogStream(client, namespace, podName, 20)
-			if err != nil {
-				if IsNotFoundErr(err) {
-					// pod got deleted for some reason, so we just stop the log stream
+			if createNewStream {
+				logStream, err := getK8sLogStream(client, namespace, podName, 20)
+				if err != nil {
+					if IsNotFoundErr(err) {
+						// pod got deleted for some reason, so we just stop the log stream
+						return
+					}
+
+					utils.PrettyPrintError(fmt.Errorf("failed to create k8s log stream for pod %s. details: %w", podName, err))
 					return
 				}
+				reader = bufio.NewScanner(logStream)
 
-				utils.PrettyPrintError(fmt.Errorf("failed to create k8s log stream for pod %s. details: %w", podName, err))
-				return
+				createNewStream = false
 			}
-			reader := bufio.NewScanner(logStream)
 
 			for reader.Scan() {
 				if ctx.Err() != nil {
@@ -93,11 +103,15 @@ func (client *Client) readLogs(ctx context.Context, prefix, namespace, podName s
 
 				line = reader.Text()
 				if isExitLine(line) {
+					createNewStream = true
 					break
 				}
 
 				handler(prefix, line)
 			}
+
+			time.Sleep(100 * time.Millisecond)
+			handler("[control]", "__control")
 		}
 	}
 }
