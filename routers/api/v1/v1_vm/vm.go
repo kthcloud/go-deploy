@@ -434,6 +434,23 @@ func Update(c *gin.Context) {
 		}
 	}
 
+	if requestBody.Ports != nil {
+		for _, port := range *requestBody.Ports {
+			if port.HttpProxy != nil {
+				available, err := vm_service.HttpProxyNameAvailable(port.HttpProxy.Name)
+				if err != nil {
+					context.ServerError(err, v1.InternalError)
+					return
+				}
+
+				if !available {
+					context.UserError("Http proxy name already taken")
+					return
+				}
+			}
+		}
+	}
+
 	err = vm_service.CheckQuotaUpdate(auth.UserID, vm.ID, &auth.GetEffectiveRole().Quotas, auth, requestBody)
 	if err != nil {
 		var quotaExceededErr service.QuotaExceededError

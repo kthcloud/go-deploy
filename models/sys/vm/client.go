@@ -92,3 +92,10 @@ func (client *Client) WithNoActivities() *Client {
 
 	return client
 }
+
+func (client *Client) WithCustomFilter(filter bson.D) *Client {
+	client.ResourceClient.AddExtraFilter(filter)
+	client.ActivityResourceClient.AddExtraFilter(filter)
+
+	return client
+}
