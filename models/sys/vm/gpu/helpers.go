@@ -287,27 +287,25 @@ func (client *Client) Detach(vmID, userID string) error {
 		return fmt.Errorf("gpu not found")
 	}
 
-	if gpu.Lease.VmID != vmID {
-		return fmt.Errorf("vm is not attached to this gpu")
-	}
-
-	filter := bson.D{
-		{"id", gpu.ID},
-		{"lease.vmId", vmID},
-		{"lease.user", userID},
-	}
-
-	update := createClearedLeaseFilter()
-
-	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
-
-	err = client.Collection.FindOneAndUpdate(context.Background(), filter, update, opts).Decode(&gpu)
-	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			// this is not treated as an error, just another instance snatched the gpu before this one
-			return nil
+	if gpu.Lease.VmID == vmID {
+		filter := bson.D{
+			{"id", gpu.ID},
+			{"lease.vmId", vmID},
+			{"lease.user", userID},
 		}
-		return err
+
+		update := createClearedLeaseFilter()
+
+		opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+
+		err = client.Collection.FindOneAndUpdate(context.Background(), filter, update, opts).Decode(&gpu)
+		if err != nil {
+			if errors.Is(err, mongo.ErrNoDocuments) {
+				// this is not treated as an error, just another instance snatched the gpu before this one
+				return nil
+			}
+			return err
+		}
 	}
 
 	err = vmModel.New().SetWithBsonByID(vmID, bson.D{{"gpuId", ""}})
