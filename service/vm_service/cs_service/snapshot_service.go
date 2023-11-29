@@ -58,7 +58,7 @@ func CreateSnapshot(vmID string, params *vmModel.CreateSnapshotParams) error {
 
 	var gpuID *string
 	if HasExtraConfig(context.VM) {
-		gpuID = &context.VM.GpuID
+		gpuID = context.VM.GetGpuID()
 		err := DetachGPU(context.VM.ID, CsDetachGpuAfterStateOn)
 		if err != nil {
 			return makeError(err)
@@ -156,7 +156,7 @@ func ApplySnapshot(vmID, snapshotID string) error {
 
 	var gpuID *string
 	if HasExtraConfig(context.VM) {
-		gpuID = &context.VM.GpuID
+		gpuID = context.VM.GetGpuID()
 		err := DetachGPU(vmID, CsDetachGpuAfterStateOn)
 		if err != nil {
 			return makeError(err)

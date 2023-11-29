@@ -1,9 +1,10 @@
 package vm_service
 
 import (
+	"errors"
 	"fmt"
+	gpuModel "go-deploy/models/sys/gpu"
 	vmModel "go-deploy/models/sys/vm"
-	gpuModel "go-deploy/models/sys/vm/gpu"
 	"go-deploy/pkg/config"
 	"go-deploy/service/vm_service/cs_service"
 	"go-deploy/utils"
@@ -173,6 +174,11 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 		var attached bool
 		attached, err = gpuModel.New().Attach(gpuID, vmID, userID, endLease)
 		if err != nil {
+			if errors.Is(err, gpuModel.AlreadyAttachedErr) || errors.Is(err, gpuModel.NotFoundErr) {
+				// this is not treated as an error, just another instance snatched the gpu before this one
+				continue
+			}
+
 			return makeError(err)
 		}
 
@@ -241,69 +247,27 @@ func RepairGPUs() error {
 		return makeError(err)
 	}
 
-	// get all vms with an assigned gpu
-	vmsWithGPU, err := vmModel.New().ListWithGPU()
+	gpuIds := make([]string, len(attachedGPUs))
+	for idx, gpu := range attachedGPUs {
+		gpuIds[idx] = gpu.ID
+	}
+
+	vmWithGpu, err := vmModel.New().WithIDs(gpuIds...).List()
 	if err != nil {
 		return makeError(err)
 	}
 
-	// find vm with same gpu
-	gpuToVM := make(map[string]*vmModel.VM)
-	for _, vm := range vmsWithGPU {
-		_, ok := gpuToVM[vm.GpuID]
-		if ok {
-			vm1 := gpuToVM[vm.GpuID]
-			vm2 := vm
-			log.Println("found two vms with the same gpu. vm1:", vm1.ID, "(", vm1.Name, ")  vm2:", vm2.ID, "(", vm2.Name, "), gpu: ", vm.GpuID, ". detaching gpu from vm2")
-			err = DetachGPU(vm2.ID)
-			if err != nil {
-				return makeError(err)
-			}
-		}
-
-		gpuToVM[vm.GpuID] = &vm
-	}
-
-	// find gpus that are attached to a vm, but not in the gpuToVM map
-	for _, gpu := range attachedGPUs {
-		_, ok := gpuToVM[gpu.ID]
-		if !ok {
-			log.Println("found gpu that is attached to a vm, but not in the gpuToVM map. clearing lease. vm:", gpu.Lease.VmID, "gpu:", gpu.ID, "("+gpu.Data.Name+")")
-			err = gpuModel.New().ClearLease(gpu.ID)
-			if err != nil {
-				return makeError(err)
-			}
-		}
-	}
-
-	// find vms that have a gpu assigned, but the gpu has no lease
-	for _, vm := range vmsWithGPU {
-		_, ok := gpuToVM[vm.GpuID]
-		if ok {
-			matched := false
-			for _, gpu := range attachedGPUs {
-				if gpu.ID == vm.GpuID {
-					matched = true
-					break
-				}
-			}
-			if matched {
-				continue
-			}
-
-			// detach gpu from vm since we don't know how long it should be leased for
-			log.Println("found vm that has a gpu assigned, but the gpu has no lease. detaching gpu from vm:", vm.ID, "(", vm.Name, ")")
-			err = DetachGPU(vm.ID)
-			if err != nil {
-				return makeError(err)
-			}
-		}
+	vmWithGpuMap := make(map[string]*vmModel.VM)
+	for _, vm := range vmWithGpu {
+		vmWithGpuMap[vm.ID] = &vm
 	}
 
 	// find vms that have a gpu assigned, but cs is not setup to use it
-	for _, vm := range vmsWithGPU {
-		if !hasExtraConfig(&vm) {
-			err := cs_service.AttachGPU(vm.GpuID, vm.ID)
+	for _, gpu := range attachedGPUs {
+		vm := vmWithGpuMap[gpu.ID]
+
+		if !hasExtraConfig(vm) {
+			err := cs_service.AttachGPU(gpu.ID, vm.ID)
 			if err != nil {
 				return makeError(err)
 			}

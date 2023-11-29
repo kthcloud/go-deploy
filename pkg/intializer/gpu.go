@@ -2,7 +2,7 @@ package intializer
 
 import (
 	"fmt"
-	gpuModel "go-deploy/models/sys/vm/gpu"
+	gpu2 "go-deploy/models/sys/gpu"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/landing"
 	"go-deploy/utils"
@@ -31,7 +31,7 @@ func SynchronizeGPUs() {
 	}
 
 	configured := 0
-	currentGPUs, err := gpuModel.New().GetAll()
+	currentGPUs, err := gpu2.New().GetAll()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -40,7 +40,7 @@ func SynchronizeGPUs() {
 		// clear non-leased gpus
 		// this is safe since an admin must delete the lease before removing the gpu from the system
 		if gpu.Lease.VmID == "" {
-			err = gpuModel.New().Delete(gpu.ID)
+			err = gpu2.New().Delete(gpu.ID)
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("failed to delete gpu. details: %w", err))
 			}
@@ -52,7 +52,7 @@ func SynchronizeGPUs() {
 
 			id := createGpuID(host.Name, gpu.Name, gpu.Slot)
 
-			current, err := gpuModel.New().GetByID(id)
+			current, err := gpu2.New().GetByID(id)
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("failed to fetch gpu by id. details: %w", err))
 				continue
@@ -69,7 +69,7 @@ func SynchronizeGPUs() {
 				continue
 			}
 
-			err = gpuModel.New().Create(id, host.Name, gpuModel.GpuData{
+			err = gpu2.New().Create(id, host.Name, gpu2.GpuData{
 				Name:     gpu.Name,
 				Slot:     gpu.Slot,
 				Vendor:   gpu.Vendor,

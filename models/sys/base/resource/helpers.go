@@ -60,12 +60,28 @@ func (client *ResourceClient[T]) CreateIfUnique(id string, resource *T, filter b
 	return models.CreateIfUniqueResource[T](client.Collection, id, resource, models.GroupFilters(filter, client.ExtraFilter, client.Search, client.IncludeDeleted))
 }
 
+func (client *ResourceClient[T]) UpdateWithBson(update bson.D) error {
+	return client.UpdateWithBsonByFilter(bson.D{}, update)
+}
+
 func (client *ResourceClient[T]) UpdateWithBsonByID(id string, update bson.D) error {
-	return models.UpdateOneResource(client.Collection, models.GroupFilters(bson.D{{"id", id}}, client.ExtraFilter, client.Search, client.IncludeDeleted), update)
+	return client.UpdateWithBsonByFilter(bson.D{{"id", id}}, update)
+}
+
+func (client *ResourceClient[T]) UpdateWithBsonByFilter(filter bson.D, update bson.D) error {
+	return models.UpdateOneResource(client.Collection, models.GroupFilters(filter, client.ExtraFilter, client.Search, client.IncludeDeleted), update)
+}
+
+func (client *ResourceClient[T]) SetWithBson(update bson.D) error {
+	return client.UpdateWithBson(bson.D{{"$set", update}})
 }
 
 func (client *ResourceClient[T]) SetWithBsonByID(id string, update bson.D) error {
 	return client.UpdateWithBsonByID(id, bson.D{{"$set", update}})
+}
+
+func (client *ResourceClient[T]) SetWithBsonByFilter(filter bson.D, update bson.D) error {
+	return client.UpdateWithBsonByFilter(filter, bson.D{{"$set", update}})
 }
 
 func (client *ResourceClient[T]) CountDistinct(field string) (int, error) {
@@ -101,6 +117,14 @@ func (client *ResourceClient[T]) Deleted(id string) (bool, error) {
 
 func (client *ResourceClient[T]) Get() (*T, error) {
 	return models.GetResource[T](client.Collection, models.GroupFilters(bson.D{}, client.ExtraFilter, client.Search, client.IncludeDeleted))
+}
+
+type OnlyID struct {
+	ID string `bson:"id"`
+}
+
+func (client *ResourceClient[T]) GetID() (*OnlyID, error) {
+	return models.GetResource[OnlyID](client.Collection, models.GroupFilters(bson.D{}, client.ExtraFilter, client.Search, client.IncludeDeleted))
 }
 
 func (client *ResourceClient[T]) GetWithFilter(filter bson.D) (*T, error) {

@@ -6,11 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"go-deploy/models/dto/body"
-	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"time"
 )
 
@@ -166,45 +164,27 @@ func (client *Client) Delete(gpuID string) error {
 }
 
 func (client *Client) Attach(gpuID, vmID, user string, end time.Time) (bool, error) {
-	vm, err := vmModel.New().GetByID(vmID)
-	if err != nil {
-		return false, err
-	}
-
-	if vm == nil {
-		return false, nil
-	}
-
 	gpu, err := client.GetByID(gpuID)
 	if err != nil {
 		return false, err
 	}
 
 	if gpu == nil {
-		return false, fmt.Errorf("gpu not found")
+		return false, NotFoundErr
 	}
 
 	if gpu.Lease.VmID != "" && gpu.Lease.VmID != vmID {
-		return false, fmt.Errorf("gpu is already attached to another vm")
+		return false, AlreadyAttachedErr
 	}
 
 	// first check if the gpu is already attached to this vm
 	if gpu.Lease.VmID == vmID {
 		if gpu.Lease.IsExpired() {
 			// renew lease
-			filter := bson.D{
-				{"id", gpuID},
-				{"lease.vmId", vmID},
-			}
-			update := bson.M{
-				"$set": bson.M{
-					"lease.end": end,
-				},
-			}
+			filter := bson.D{{"id", gpuID}, {"lease.vmId", vmID}}
+			update := bson.D{{"lease.end", end}}
 
-			opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
-
-			err = client.Collection.FindOneAndUpdate(context.Background(), filter, update, opts).Decode(&gpu)
+			err = client.SetWithBsonByFilter(filter, update)
 			if err != nil {
 				if errors.Is(err, mongo.ErrNoDocuments) {
 					// this is not treated as an error, just another instance snatched the gpu before this one
@@ -228,17 +208,13 @@ func (client *Client) Attach(gpuID, vmID, user string, end time.Time) (bool, err
 				bson.M{"lease.vmId": ""},
 				bson.M{"lease": bson.M{"$exists": false}},
 			}}}
-		update := bson.M{
-			"$set": bson.M{
-				"lease.vmId": vmID,
-				"lease.user": user,
-				"lease.end":  end,
-			},
+		update := bson.D{
+			{"lease.vmId", vmID},
+			{"lease.user", user},
+			{"lease.end", end},
 		}
 
-		opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
-
-		err = client.Collection.FindOneAndUpdate(context.Background(), filter, update, opts).Decode(&gpu)
+		err = client.SetWithBsonByFilter(filter, update)
 		if err != nil {
 			if errors.Is(err, mongo.ErrNoDocuments) {
 				// this is not treated as an error, just another instance snatched the gpu before this one
@@ -248,100 +224,39 @@ func (client *Client) Attach(gpuID, vmID, user string, end time.Time) (bool, err
 		}
 	}
 
-	err = vmModel.New().SetWithBsonByID(vmID, bson.D{{"gpuId", gpuID}})
-	if err != nil {
-		// remove lease, if this also fails, we are in a bad state...
-		_, _ = client.Collection.UpdateOne(
-			context.TODO(),
-			bson.D{{"id", gpuID}},
-			bson.M{"$set": bson.M{"lease": GpuLease{}}},
-		)
-		err := fmt.Errorf("failed to remove lease after vm update failed. system is now in an inconsistent state. please fix manually. vm id: %s gpu id: %s. details: %w", vmID, gpuID, err)
-		utils.PrettyPrintError(err)
-		return false, err
-	}
-
 	return true, nil
 }
 
 func (client *Client) Detach(vmID string) error {
-	vm, err := vmModel.New().GetByID(vmID)
-	if err != nil {
-		return err
-	}
-
-	if vm == nil {
-		return nil
-	}
-
-	if vm.GpuID == "" {
-		return nil
-	}
-
-	gpu, err := client.GetByID(vm.GpuID)
+	gpu, err := client.WithVM(vmID).Get()
 	if err != nil {
 		return err
 	}
 
 	if gpu == nil {
-		return fmt.Errorf("gpu not found")
+		// already detached
+		return nil
 	}
 
-	if gpu.Lease.VmID == vmID {
-		filter := bson.D{
-			{"id", gpu.ID},
-			{"lease.vmId", vmID},
-		}
-
-		update := createClearedLeaseFilter()
-
-		opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
-
-		err = client.Collection.FindOneAndUpdate(context.Background(), filter, update, opts).Decode(&gpu)
-		if err != nil {
-			if !errors.Is(err, mongo.ErrNoDocuments) {
-				return err
-			}
-			utils.PrettyPrintError(fmt.Errorf("failed to clear gpu lease for vm %s. details: %w", vmID, err))
-		}
-	}
-
-	err = vmModel.New().SetWithBsonByID(vmID, bson.D{{"gpuId", ""}})
-	if err != nil {
-		// remove lease, if this also fails, we are in a bad state...
-		_, _ = client.Collection.UpdateOne(
-			context.TODO(),
-			bson.D{{"id", gpu.ID}},
-			bson.M{"$set": bson.M{"lease": GpuLease{}}},
-		)
-		err := fmt.Errorf("failed to remove lease after vm update failed. system is now in an inconsistent state. please fix manually. vm id: %s gpu id: %s. details: %w", vmID, gpu.ID, err)
-		utils.PrettyPrintError(err)
-	}
-
-	return nil
-}
-
-func (client *Client) ClearLease(gpuID string) error {
 	filter := bson.D{
-		{"id", gpuID},
+		{"id", gpu.ID},
+		{"lease.vmId", vmID},
 	}
 
-	update := createClearedLeaseFilter()
+	update := bson.D{
+		{"lease.vmId", ""},
+		{"lease.user", ""},
+		{"lease.end", time.Time{}},
+	}
 
-	err := client.Collection.FindOneAndUpdate(context.Background(), filter, update, nil).Err()
+	err = client.SetWithBsonByFilter(filter, update)
 	if err != nil {
-		return err
+		if !errors.Is(err, mongo.ErrNoDocuments) {
+			return err
+		}
+
+		utils.PrettyPrintError(fmt.Errorf("failed to clear gpu lease for vm %s. details: %w", vmID, err))
 	}
 
 	return nil
-}
-
-func createClearedLeaseFilter() bson.M {
-	return bson.M{
-		"$set": bson.M{
-			"lease.vmId": "",
-			"lease.user": "",
-			"lease.end":  time.Time{},
-		},
-	}
 }

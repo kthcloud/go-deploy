@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	configModels "go-deploy/models/config"
+	gpu2 "go-deploy/models/sys/gpu"
 	vmModel "go-deploy/models/sys/vm"
-	gpuModel "go-deploy/models/sys/vm/gpu"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/cs/commands"
 	csModels "go-deploy/pkg/subsystems/cs/models"
@@ -342,9 +342,9 @@ func Repair(id string) error {
 
 	// only repair if the vm is stopped to prevent downtime for the user
 	if status == "Stopped" {
-		var gpu *gpuModel.GPU
-		if context.VM.GpuID != "" {
-			gpu, err = gpuModel.New().GetByID(context.VM.GpuID)
+		var gpu *gpu2.GPU
+		if gpuID := context.VM.GetGpuID(); gpuID != nil {
+			gpu, err = gpu2.New().GetByID(*gpuID)
 			if err != nil {
 				return makeError(err)
 			}
@@ -496,8 +496,8 @@ func stopVmIfRunning(context *Context) (func(), error) {
 		// turn it on if it was on
 		if status == "Running" {
 			var requiredHost *string
-			if context.VM.HasGPU() {
-				requiredHost, err = GetRequiredHost(context.VM.GpuID)
+			if gpuID := context.VM.GetGpuID(); gpuID != nil {
+				requiredHost, err = GetRequiredHost(*gpuID)
 				if err != nil {
 					log.Println("failed to get required host for vm", context.VM.Name, "in zone", context.Zone.Name, ". details:", err)
 					return

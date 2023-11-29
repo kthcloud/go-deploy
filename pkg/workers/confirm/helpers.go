@@ -3,6 +3,7 @@ package confirm
 import (
 	"fmt"
 	deploymentModels "go-deploy/models/sys/deployment"
+	"go-deploy/models/sys/gpu"
 	"go-deploy/models/sys/vm"
 	"go-deploy/service"
 )
@@ -291,5 +292,10 @@ func k8sDeletedVM(vm *vm.VM) (bool, error) {
 }
 
 func gpuCleared(vm *vm.VM) (bool, error) {
-	return vm.GpuID == "", nil
+	exists, err := gpu.New().WithVM(vm.ID).ExistsAny()
+	if err != nil {
+		return false, err
+	}
+
+	return !exists, nil
 }

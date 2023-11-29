@@ -6,12 +6,12 @@ import (
 	"github.com/google/uuid"
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
+	"go-deploy/models/sys/gpu"
 	jobModel "go-deploy/models/sys/job"
 	notificationModel "go-deploy/models/sys/notification"
 	roleModel "go-deploy/models/sys/role"
 	teamModels "go-deploy/models/sys/team"
 	vmModel "go-deploy/models/sys/vm"
-	"go-deploy/models/sys/vm/gpu"
 	"go-deploy/pkg/config"
 	"go-deploy/service"
 	"go-deploy/service/job_service"
@@ -195,6 +195,11 @@ func UpdateOwner(id string, params *body.VmUpdateOwner) error {
 		TransferCode:   &emptyString,
 		TransferUserID: &emptyString,
 	})
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = gpu.New().WithVM(id).UpdateWithBson(bson.D{{"lease.user", params.NewOwnerID}})
 	if err != nil {
 		return makeError(err)
 	}
@@ -486,12 +491,7 @@ func DoCommand(vm *vmModel.VM, command string) {
 			return
 		}
 
-		var gpuID *string
-		if vm.HasGPU() {
-			gpuID = &vm.GpuID
-		}
-
-		err := cs_service.DoCommand(csID, gpuID, command, vm.Zone)
+		err := cs_service.DoCommand(csID, vm.GetGpuID(), command, vm.Zone)
 		if err != nil {
 			utils.PrettyPrintError(err)
 			return
