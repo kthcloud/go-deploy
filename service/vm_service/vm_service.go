@@ -313,6 +313,11 @@ func Repair(id string) error {
 		return makeError(err)
 	}
 
+	err = k8s_service.Repair(id)
+	if err != nil {
+		return makeError(err)
+	}
+
 	log.Println("successfully repaired vm", id)
 	return nil
 }

@@ -30,13 +30,16 @@ type K8sGenerator struct {
 
 func (kg *K8sGenerator) Namespace() *models.NamespacePublic {
 	if kg.d.deployment != nil {
-		if ns := &kg.d.deployment.Subsystems.K8s.Namespace; service.Created(ns) {
-			return ns
-		} else {
-			return &models.NamespacePublic{
-				Name: kg.namespace,
-			}
+		ns := models.NamespacePublic{
+			Name: kg.namespace,
 		}
+
+		if n := &kg.d.deployment.Subsystems.K8s.Namespace; service.Created(n) {
+			ns.ID = n.ID
+			ns.CreatedAt = n.CreatedAt
+		}
+
+		return &ns
 	}
 
 	if kg.v.vm != nil {
@@ -52,23 +55,29 @@ func (kg *K8sGenerator) Namespace() *models.NamespacePublic {
 			return nil
 		}
 
-		if ns := &kg.v.vm.Subsystems.K8s.Namespace; service.Created(ns) {
-			return ns
-		} else {
-			return &models.NamespacePublic{
-				Name: kg.namespace,
-			}
+		ns := models.NamespacePublic{
+			Name: kg.namespace,
 		}
+
+		if n := &kg.v.vm.Subsystems.K8s.Namespace; service.Created(n) {
+			ns.ID = n.ID
+			ns.CreatedAt = n.CreatedAt
+		}
+
+		return &ns
 	}
 
 	if kg.s.storageManager != nil {
-		if ns := &kg.s.storageManager.Subsystems.K8s.Namespace; service.Created(ns) {
-			return ns
-		} else {
-			return &models.NamespacePublic{
-				Name: kg.namespace,
-			}
+		ns := models.NamespacePublic{
+			Name: kg.namespace,
 		}
+
+		if n := &kg.s.storageManager.Subsystems.K8s.Namespace; service.Created(n) {
+			ns.ID = n.ID
+			ns.CreatedAt = n.CreatedAt
+		}
+
+		return &ns
 	}
 
 	return nil
@@ -78,152 +87,79 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 	var res []models.DeploymentPublic
 
 	if kg.d.deployment != nil {
-		if k8sDeployment := kg.d.deployment.Subsystems.K8s.GetDeployment(kg.d.deployment.Name); service.Created(k8sDeployment) {
-			mainApp := kg.d.deployment.GetMainApp()
+		mainApp := kg.d.deployment.GetMainApp()
 
-			var volumes []models.Volume
-			for _, volume := range mainApp.Volumes {
-				pvcName := dPvcName(kg.d.deployment, volume.Name)
-				volumes = append(volumes, models.Volume{
-					Name:      volume.Name,
-					PvcName:   &pvcName,
-					MountPath: volume.AppPath,
-					Init:      volume.Init,
-				})
-			}
-
-			var envVars []models.EnvVar
-			for _, env := range mainApp.Envs {
-				if env.Name == "PORT" {
-					continue
-				}
-
-				envVars = append(envVars, models.EnvVar{
-					Name:  env.Name,
-					Value: env.Value,
-				})
-			}
-			envVars = append(envVars, models.EnvVar{
-				Name:  "PORT",
-				Value: fmt.Sprintf("%d", kg.d.deployment.GetMainApp().InternalPort),
-			})
-
-			k8sDeployment.Volumes = volumes
-			k8sDeployment.EnvVars = envVars
-			k8sDeployment.Image = mainApp.Image
-			k8sDeployment.InitCommands = mainApp.InitCommands
-
-			res = append(res, *k8sDeployment)
-		} else {
-			var imagePullSecrets []string
-			if kg.d.deployment.Type == deployment.TypeCustom {
-				imagePullSecrets = []string{constants.WithImagePullSecretSuffix(kg.d.deployment.Name)}
-			}
-
-			mainApp := kg.d.deployment.GetMainApp()
-
-			k8sEnvs := make([]models.EnvVar, len(mainApp.Envs))
-			for i, env := range mainApp.Envs {
-				if env.Name == "PORT" {
-					continue
-				}
-
-				k8sEnvs[i] = models.EnvVar{
-					Name:  env.Name,
-					Value: env.Value,
-				}
-			}
-
-			k8sEnvs = append(k8sEnvs, models.EnvVar{
-				Name:  "PORT",
-				Value: fmt.Sprintf("%d", mainApp.InternalPort),
-			})
-
-			defaultLimits := models.Limits{
-				CPU:    config.Config.Deployment.Resources.Limits.CPU,
-				Memory: config.Config.Deployment.Resources.Limits.Memory,
-			}
-
-			defaultRequests := models.Requests{
-				CPU:    config.Config.Deployment.Resources.Requests.CPU,
-				Memory: config.Config.Deployment.Resources.Requests.Memory,
-			}
-
-			k8sVolumes := make([]models.Volume, len(mainApp.Volumes))
-			for i, volume := range mainApp.Volumes {
-				pvcName := fmt.Sprintf("%s-%s", kg.d.deployment.Name, volume.Name)
-				k8sVolumes[i] = models.Volume{
-					Name:      volume.Name,
-					PvcName:   &pvcName,
-					MountPath: volume.AppPath,
-					Init:      volume.Init,
-				}
-			}
-
-			res = append(res, models.DeploymentPublic{
-				Name:             kg.d.deployment.Name,
-				Namespace:        kg.namespace,
-				Image:            mainApp.Image,
-				ImagePullSecrets: imagePullSecrets,
-				EnvVars:          k8sEnvs,
-				Resources: models.Resources{
-					Limits:   defaultLimits,
-					Requests: defaultRequests,
-				},
-				Command:        make([]string, 0),
-				Args:           make([]string, 0),
-				InitCommands:   mainApp.InitCommands,
-				InitContainers: make([]models.InitContainer, 0),
-				Volumes:        k8sVolumes,
-				CreatedAt:      time.Time{},
-			})
+		var imagePullSecrets []string
+		if kg.d.deployment.Type == deployment.TypeCustom {
+			imagePullSecrets = []string{constants.WithImagePullSecretSuffix(kg.d.deployment.Name)}
 		}
 
+		k8sEnvs := make([]models.EnvVar, len(mainApp.Envs))
+		for i, env := range mainApp.Envs {
+			if env.Name == "PORT" {
+				continue
+			}
+
+			k8sEnvs[i] = models.EnvVar{
+				Name:  env.Name,
+				Value: env.Value,
+			}
+		}
+
+		k8sEnvs = append(k8sEnvs, models.EnvVar{
+			Name:  "PORT",
+			Value: fmt.Sprintf("%d", mainApp.InternalPort),
+		})
+
+		defaultLimits := models.Limits{
+			CPU:    config.Config.Deployment.Resources.Limits.CPU,
+			Memory: config.Config.Deployment.Resources.Limits.Memory,
+		}
+
+		defaultRequests := models.Requests{
+			CPU:    config.Config.Deployment.Resources.Requests.CPU,
+			Memory: config.Config.Deployment.Resources.Requests.Memory,
+		}
+
+		k8sVolumes := make([]models.Volume, len(mainApp.Volumes))
+		for i, volume := range mainApp.Volumes {
+			pvcName := fmt.Sprintf("%s-%s", kg.d.deployment.Name, volume.Name)
+			k8sVolumes[i] = models.Volume{
+				Name:      volume.Name,
+				PvcName:   &pvcName,
+				MountPath: volume.AppPath,
+				Init:      volume.Init,
+			}
+		}
+
+		dep := models.DeploymentPublic{
+			Name:             kg.d.deployment.Name,
+			Namespace:        kg.namespace,
+			Image:            mainApp.Image,
+			ImagePullSecrets: imagePullSecrets,
+			EnvVars:          k8sEnvs,
+			Resources: models.Resources{
+				Limits:   defaultLimits,
+				Requests: defaultRequests,
+			},
+			Command:        make([]string, 0),
+			Args:           make([]string, 0),
+			InitCommands:   mainApp.InitCommands,
+			InitContainers: make([]models.InitContainer, 0),
+			Volumes:        k8sVolumes,
+		}
+
+		if d := kg.d.deployment.Subsystems.K8s.GetDeployment(kg.d.deployment.Name); service.Created(d) {
+			dep.ID = d.ID
+			dep.CreatedAt = d.CreatedAt
+		}
+
+		res = append(res, dep)
 		return res
 	}
 
 	if kg.v.vm != nil {
 		ports := kg.v.vm.Ports
-
-		for mapName, k8sDeployment := range kg.v.vm.Subsystems.K8s.GetDeploymentMap() {
-			idx := slices.IndexFunc(ports, func(p vm.Port) bool {
-				if p.HttpProxy == nil {
-					return false
-				}
-
-				return vpDeploymentName(kg.v.vm, p.HttpProxy.Name) == mapName
-			})
-
-			if idx != -1 {
-				csPort := kg.v.vm.Subsystems.CS.GetPortForwardingRule(ports[idx].Name)
-				if csPort == nil {
-					continue
-				}
-
-				envVars := []models.EnvVar{
-					{
-						Name:  "PORT",
-						Value: "8080",
-					},
-					{
-						Name:  "VM_PORT",
-						Value: fmt.Sprintf("%d", csPort.PublicPort),
-					},
-					{
-						Name:  "URL",
-						Value: vpExternalURL(ports[idx].HttpProxy.Name, kg.v.deploymentZone),
-					},
-					{
-						Name:  "VM_URL",
-						Value: kg.v.vmZone.ParentDomain,
-					},
-				}
-
-				k8sDeployment.EnvVars = envVars
-
-				res = append(res, k8sDeployment)
-			}
-		}
 
 		for _, port := range ports {
 			if port.HttpProxy == nil {
@@ -235,49 +171,45 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 				continue
 			}
 
-			if _, ok := kg.v.vm.Subsystems.K8s.GetDeploymentMap()[vpDeploymentName(kg.v.vm, port.HttpProxy.Name)]; !ok {
-				envVars := []models.EnvVar{
-					{
-						Name:  "PORT",
-						Value: "8080",
-					},
-					{
-						Name:  "VM_PORT",
-						Value: fmt.Sprintf("%d", csPort.PublicPort),
-					},
-					{
-						Name:  "URL",
-						Value: vpExternalURL(port.HttpProxy.Name, kg.v.deploymentZone),
-					},
-					{
-						Name:  "VM_URL",
-						Value: kg.v.vmZone.ParentDomain,
-					},
-				}
+			envVars := []models.EnvVar{
+				{Name: "PORT", Value: "8080"},
+				{Name: "VM_PORT", Value: fmt.Sprintf("%d", csPort.PublicPort)},
+				{Name: "URL", Value: vpExternalURL(port.HttpProxy.Name, kg.v.deploymentZone)},
+				{Name: "VM_URL", Value: kg.v.vmZone.ParentDomain},
+			}
 
-				res = append(res, models.DeploymentPublic{
-					Name:             vpDeploymentName(kg.v.vm, port.HttpProxy.Name),
-					Namespace:        kg.namespace,
-					Image:            config.Config.Registry.VmHttpProxyImage,
-					ImagePullSecrets: make([]string, 0),
-					EnvVars:          envVars,
-					Resources: models.Resources{
-						Limits: models.Limits{
-							CPU:    config.Config.Deployment.Resources.Limits.CPU,
-							Memory: config.Config.Deployment.Resources.Limits.Memory,
-						},
-						Requests: models.Requests{
-							CPU:    config.Config.Deployment.Resources.Requests.CPU,
-							Memory: config.Config.Deployment.Resources.Requests.Memory,
-						},
+			res = append(res, models.DeploymentPublic{
+				Name:             vpDeploymentName(kg.v.vm, port.HttpProxy.Name),
+				Namespace:        kg.namespace,
+				Image:            config.Config.Registry.VmHttpProxyImage,
+				ImagePullSecrets: make([]string, 0),
+				EnvVars:          envVars,
+				Resources: models.Resources{
+					Limits: models.Limits{
+						CPU:    config.Config.Deployment.Resources.Limits.CPU,
+						Memory: config.Config.Deployment.Resources.Limits.Memory,
 					},
-					Command:        make([]string, 0),
-					Args:           make([]string, 0),
-					InitCommands:   make([]string, 0),
-					InitContainers: make([]models.InitContainer, 0),
-					Volumes:        make([]models.Volume, 0),
-					CreatedAt:      time.Time{},
-				})
+					Requests: models.Requests{
+						CPU:    config.Config.Deployment.Resources.Requests.CPU,
+						Memory: config.Config.Deployment.Resources.Requests.Memory,
+					},
+				},
+				Command:        make([]string, 0),
+				Args:           make([]string, 0),
+				InitCommands:   make([]string, 0),
+				InitContainers: make([]models.InitContainer, 0),
+				Volumes:        make([]models.Volume, 0),
+			})
+		}
+
+		for mapName, k8sDeployment := range kg.v.vm.Subsystems.K8s.GetDeploymentMap() {
+			idx := slices.IndexFunc(ports, func(p vm.Port) bool {
+				return vpDeploymentName(kg.v.vm, p.HttpProxy.Name) == mapName
+			})
+
+			if idx != -1 {
+				res[idx].ID = k8sDeployment.ID
+				res[idx].CreatedAt = k8sDeployment.CreatedAt
 			}
 		}
 
@@ -432,47 +364,48 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 func (kg *K8sGenerator) Services() []models.ServicePublic {
 	var res []models.ServicePublic
 	if kg.d.deployment != nil {
-		if k8sService := kg.d.deployment.Subsystems.K8s.GetService(kg.d.deployment.Name); service.Created(k8sService) {
-			res = append(res, *k8sService)
-		} else {
-			mainApp := kg.d.deployment.GetMainApp()
-			res = append(res, models.ServicePublic{
-				Name:       kg.d.deployment.Name,
-				Namespace:  kg.namespace,
-				Port:       mainApp.InternalPort,
-				TargetPort: mainApp.InternalPort,
-			})
+		mainApp := kg.d.deployment.GetMainApp()
+
+		se := models.ServicePublic{
+			Name:       kg.d.deployment.Name,
+			Namespace:  kg.namespace,
+			Port:       mainApp.InternalPort,
+			TargetPort: mainApp.InternalPort,
 		}
+
+		if k8sService := kg.d.deployment.Subsystems.K8s.GetService(kg.d.deployment.Name); service.Created(k8sService) {
+			se.ID = k8sService.ID
+			se.CreatedAt = k8sService.CreatedAt
+		}
+
+		res = append(res, se)
 		return res
 	}
 
 	if kg.v.vm != nil {
 		ports := kg.v.vm.Ports
 
-		for mapName, svc := range kg.v.vm.Subsystems.K8s.GetServiceMap() {
-			if slices.IndexFunc(ports, func(p vm.Port) bool {
-				if p.HttpProxy == nil {
-					return false
-				}
-
-				return vpServiceName(kg.v.vm, p.HttpProxy.Name) == mapName
-			}) != -1 {
-				res = append(res, svc)
-			}
-		}
-
 		for _, port := range ports {
 			if port.HttpProxy == nil {
 				continue
 			}
 
-			if _, ok := kg.v.vm.Subsystems.K8s.GetServiceMap()[vpServiceName(kg.v.vm, port.HttpProxy.Name)]; !ok {
-				res = append(res, models.ServicePublic{
-					Name:       vpServiceName(kg.v.vm, port.HttpProxy.Name),
-					Namespace:  kg.namespace,
-					Port:       8080,
-					TargetPort: 8080,
-				})
+			res = append(res, models.ServicePublic{
+				Name:       vpServiceName(kg.v.vm, port.HttpProxy.Name),
+				Namespace:  kg.namespace,
+				Port:       8080,
+				TargetPort: 8080,
+			})
+		}
+
+		for mapName, svc := range kg.v.vm.Subsystems.K8s.GetServiceMap() {
+			idx := slices.IndexFunc(ports, func(p vm.Port) bool {
+				return vpServiceName(kg.v.vm, p.HttpProxy.Name) == mapName
+			})
+
+			if idx != -1 {
+				res[idx].ID = svc.ID
+				res[idx].CreatedAt = svc.CreatedAt
 			}
 		}
 
@@ -519,110 +452,109 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 	var res []models.IngressPublic
 	if kg.d.deployment != nil {
-		if !kg.d.deployment.GetMainApp().Private {
+		mainApp := kg.d.deployment.GetMainApp()
 
-			if k8sIngress := kg.d.deployment.Subsystems.K8s.GetIngress(kg.d.deployment.Name); service.Created(k8sIngress) {
-				k8sIngress.Hosts = []string{getExternalFQDN(kg.d.deployment.Name, kg.d.zone)}
+		if mainApp.Private {
+			return res
+		}
 
-				res = append(res, *k8sIngress)
-			} else {
-				tlsSecret := constants.WildcardCertSecretName
+		tlsSecret := constants.WildcardCertSecretName
+		in := models.IngressPublic{
+			Name:         kg.d.deployment.Name,
+			Namespace:    kg.namespace,
+			ServiceName:  kg.d.deployment.Name,
+			ServicePort:  kg.d.deployment.GetMainApp().InternalPort,
+			IngressClass: config.Config.Deployment.IngressClass,
+			Hosts:        []string{getExternalFQDN(kg.d.deployment.Name, kg.d.zone)},
+			Placeholder:  false,
+			TlsSecret:    &tlsSecret,
+			CustomCert:   nil,
+		}
 
-				res = append(res, models.IngressPublic{
-					Name:         kg.d.deployment.Name,
-					Namespace:    kg.namespace,
-					ServiceName:  kg.d.deployment.Name,
-					ServicePort:  kg.d.deployment.GetMainApp().InternalPort,
-					IngressClass: config.Config.Deployment.IngressClass,
-					Hosts:        []string{getExternalFQDN(kg.d.deployment.Name, kg.d.zone)},
-					Placeholder:  false,
-					TlsSecret:    &tlsSecret,
-				})
+		if k8sIngress := kg.d.deployment.Subsystems.K8s.GetIngress(kg.d.deployment.Name); service.Created(k8sIngress) {
+			in.ID = k8sIngress.ID
+			in.CreatedAt = k8sIngress.CreatedAt
+		}
+
+		res = append(res, in)
+
+		if mainApp.CustomDomain != nil {
+			customIn := models.IngressPublic{
+				ID:           "",
+				Name:         fmt.Sprintf(constants.WithCustomDomainSuffix(kg.d.deployment.Name)),
+				Namespace:    kg.namespace,
+				ServiceName:  kg.d.deployment.Name,
+				ServicePort:  mainApp.InternalPort,
+				IngressClass: config.Config.Deployment.IngressClass,
+				Hosts:        []string{*mainApp.CustomDomain},
+				Placeholder:  false,
+				CreatedAt:    time.Time{},
+				CustomCert: &models.CustomCert{
+					ClusterIssuer: "letsencrypt-prod-deploy-http",
+					CommonName:    *mainApp.CustomDomain,
+				},
+				TlsSecret: nil,
 			}
 
 			if customK8sIngress := kg.d.deployment.Subsystems.K8s.GetIngress(constants.WithCustomDomainSuffix(kg.d.deployment.Name)); service.Created(customK8sIngress) {
-				customK8sIngress.Hosts = []string{*kg.d.deployment.GetMainApp().CustomDomain}
-				res = append(res, *customK8sIngress)
-			} else {
-				if kg.d.deployment.GetMainApp().CustomDomain != nil {
-					res = append(res, models.IngressPublic{
-						Name:         fmt.Sprintf(constants.WithCustomDomainSuffix(kg.d.deployment.Name)),
-						Namespace:    kg.namespace,
-						ServiceName:  kg.d.deployment.Name,
-						ServicePort:  kg.d.deployment.GetMainApp().InternalPort,
-						IngressClass: config.Config.Deployment.IngressClass,
-						Hosts:        []string{*kg.d.deployment.GetMainApp().CustomDomain},
-						CustomCert: &models.CustomCert{
-							ClusterIssuer: "letsencrypt-prod-deploy-http",
-							CommonName:    *kg.d.deployment.GetMainApp().CustomDomain,
-						},
-					})
-				}
+				customIn.ID = customK8sIngress.ID
+				customIn.CreatedAt = customK8sIngress.CreatedAt
 			}
+
+			res = append(res, customIn)
 		}
+
 		return res
 	}
 
 	if kg.v.vm != nil {
 		ports := kg.v.vm.Ports
 
-		for mapName, ingress := range kg.v.vm.Subsystems.K8s.GetIngressMap() {
-			idx := slices.IndexFunc(ports, func(p vm.Port) bool {
-				if p.HttpProxy == nil {
-					return false
-				}
-
-				return vpIngressName(kg.v.vm, p.HttpProxy.Name) == mapName ||
-					(vpCustomDomainIngressName(kg.v.vm, p.HttpProxy.Name) == mapName && p.HttpProxy.CustomDomain != nil)
-			})
-
-			if idx != -1 {
-				if vpCustomDomainIngressName(kg.v.vm, ports[idx].HttpProxy.Name) == mapName {
-					if ports[idx].HttpProxy.CustomDomain != nil {
-						ingress.Hosts = []string{*ports[idx].HttpProxy.CustomDomain}
-					}
-				} else {
-					ingress.Hosts = []string{vpExternalURL(ports[idx].HttpProxy.Name, kg.v.deploymentZone)}
-				}
-
-				res = append(res, ingress)
-			}
-		}
-
 		for _, port := range ports {
 			if port.HttpProxy == nil {
 				continue
 			}
 
-			if _, ok := kg.v.vm.Subsystems.K8s.GetIngressMap()[vpIngressName(kg.v.vm, port.HttpProxy.Name)]; !ok {
-				tlsSecret := constants.WildcardCertSecretName
+			tlsSecret := constants.WildcardCertSecretName
+			res = append(res, models.IngressPublic{
+				Name:         vpIngressName(kg.v.vm, port.HttpProxy.Name),
+				Namespace:    kg.namespace,
+				ServiceName:  vpServiceName(kg.v.vm, port.HttpProxy.Name),
+				ServicePort:  8080,
+				IngressClass: config.Config.Deployment.IngressClass,
+				Hosts:        []string{vpExternalURL(port.HttpProxy.Name, kg.v.deploymentZone)},
+				TlsSecret:    &tlsSecret,
+				CustomCert:   nil,
+				Placeholder:  false,
+			})
 
+			if port.HttpProxy.CustomDomain != nil {
 				res = append(res, models.IngressPublic{
-					Name:         vpIngressName(kg.v.vm, port.HttpProxy.Name),
+					Name:         vpCustomDomainIngressName(kg.v.vm, port.HttpProxy.Name),
 					Namespace:    kg.namespace,
 					ServiceName:  vpServiceName(kg.v.vm, port.HttpProxy.Name),
 					ServicePort:  8080,
 					IngressClass: config.Config.Deployment.IngressClass,
-					Hosts:        []string{vpExternalURL(port.HttpProxy.Name, kg.v.deploymentZone)},
-					TlsSecret:    &tlsSecret,
+					Hosts:        []string{*port.HttpProxy.CustomDomain},
+					Placeholder:  false,
+					CustomCert: &models.CustomCert{
+						ClusterIssuer: "letsencrypt-prod-deploy-http",
+						CommonName:    *port.HttpProxy.CustomDomain,
+					},
+					TlsSecret: nil,
 				})
 			}
+		}
 
-			if port.HttpProxy.CustomDomain != nil {
-				if _, ok := kg.v.vm.Subsystems.K8s.GetIngressMap()[vpCustomDomainIngressName(kg.v.vm, port.HttpProxy.Name)]; !ok {
-					res = append(res, models.IngressPublic{
-						Name:         vpCustomDomainIngressName(kg.v.vm, port.HttpProxy.Name),
-						Namespace:    kg.namespace,
-						ServiceName:  vpServiceName(kg.v.vm, port.HttpProxy.Name),
-						ServicePort:  8080,
-						IngressClass: config.Config.Deployment.IngressClass,
-						Hosts:        []string{*port.HttpProxy.CustomDomain},
-						CustomCert: &models.CustomCert{
-							ClusterIssuer: "letsencrypt-prod-deploy-http",
-							CommonName:    *port.HttpProxy.CustomDomain,
-						},
-					})
-				}
+		for mapName, ingress := range kg.v.vm.Subsystems.K8s.GetIngressMap() {
+			idx := slices.IndexFunc(ports, func(p vm.Port) bool {
+				return vpIngressName(kg.v.vm, p.HttpProxy.Name) == mapName ||
+					(vpCustomDomainIngressName(kg.v.vm, p.HttpProxy.Name) == mapName && p.HttpProxy.CustomDomain != nil)
+			})
+
+			if idx != -1 {
+				res[idx].ID = ingress.ID
+				res[idx].CreatedAt = ingress.CreatedAt
 			}
 		}
 
@@ -666,20 +598,22 @@ func (kg *K8sGenerator) PVs() []models.PvPublic {
 	if kg.d.deployment != nil {
 		volumes := kg.d.deployment.GetMainApp().Volumes
 
-		for mapName, pv := range kg.d.deployment.Subsystems.K8s.GetPvMap() {
-			if slices.IndexFunc(volumes, func(v deployment.Volume) bool { return dPvName(kg.d.deployment, v.Name) == mapName }) != -1 {
-				res = append(res, pv)
-			}
+		for _, v := range volumes {
+			res = append(res, models.PvPublic{
+				Name:      sPvName(kg.d.deployment.OwnerID, v.Name),
+				Capacity:  config.Config.Deployment.Resources.Limits.Storage,
+				NfsServer: kg.s.zone.Storage.NfsServer,
+				NfsPath:   path.Join(kg.s.zone.Storage.NfsParentPath, v.ServerPath),
+			})
 		}
 
-		for _, v := range kg.d.deployment.GetMainApp().Volumes {
-			if kg.d.deployment.Subsystems.K8s.GetPV(dPvName(kg.d.deployment, v.Name)) == nil {
-				res = append(res, models.PvPublic{
-					Name:      dPvName(kg.d.deployment, v.Name),
-					Capacity:  config.Config.Deployment.Resources.Limits.Storage,
-					NfsServer: kg.d.zone.Storage.NfsServer,
-					NfsPath:   path.Join(kg.d.zone.Storage.NfsParentPath, kg.d.deployment.OwnerID, "user", v.ServerPath),
-				})
+		for mapName, pv := range kg.d.deployment.Subsystems.K8s.GetPvMap() {
+			idx := slices.IndexFunc(res, func(pv models.PvPublic) bool {
+				return pv.Name == mapName
+			})
+			if idx != -1 {
+				res[idx].ID = pv.ID
+				res[idx].CreatedAt = pv.CreatedAt
 			}
 		}
 
@@ -719,20 +653,22 @@ func (kg *K8sGenerator) PVCs() []models.PvcPublic {
 	if kg.d.deployment != nil {
 		volumes := kg.d.deployment.GetMainApp().Volumes
 
-		for mapName, pvc := range kg.d.deployment.Subsystems.K8s.GetPvcMap() {
-			if slices.IndexFunc(volumes, func(v deployment.Volume) bool { return dPvcName(kg.d.deployment, v.Name) == mapName }) != -1 {
-				res = append(res, pvc)
-			}
+		for _, volume := range volumes {
+			res = append(res, models.PvcPublic{
+				Name:      sPvcName(volume.Name),
+				Namespace: kg.namespace,
+				Capacity:  config.Config.Deployment.Resources.Limits.Storage,
+				PvName:    sPvName(kg.d.deployment.OwnerID, volume.Name),
+			})
 		}
 
-		for _, v := range kg.d.deployment.GetMainApp().Volumes {
-			if kg.d.deployment.Subsystems.K8s.GetPVC(dPvcName(kg.d.deployment, v.Name)) == nil {
-				res = append(res, models.PvcPublic{
-					Name:      dPvcName(kg.d.deployment, v.Name),
-					Namespace: kg.namespace,
-					Capacity:  config.Config.Deployment.Resources.Limits.Storage,
-					PvName:    dPvName(kg.d.deployment, v.Name),
-				})
+		for mapName, pvc := range kg.d.deployment.Subsystems.K8s.GetPvcMap() {
+			idx := slices.IndexFunc(res, func(pvc models.PvcPublic) bool {
+				return pvc.Name == mapName
+			})
+			if idx != -1 {
+				res[idx].ID = pvc.ID
+				res[idx].CreatedAt = pvc.CreatedAt
 			}
 		}
 

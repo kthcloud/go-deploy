@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/harbor/models"
+	"go-deploy/service"
 	"strings"
 )
 
@@ -13,39 +14,87 @@ type HarborGenerator struct {
 }
 
 func (hg *HarborGenerator) Project() *models.ProjectPublic {
-	return &models.ProjectPublic{
-		Name:   hg.project,
-		Public: false,
+	if hg.d.deployment != nil {
+		pr := models.ProjectPublic{
+			Name:   hg.project,
+			Public: false,
+		}
+
+		if p := &hg.d.deployment.Subsystems.Harbor.Project; service.Created(p) {
+			pr.ID = p.ID
+			pr.CreatedAt = p.CreatedAt
+		}
+
+		return &pr
 	}
+
+	return nil
 }
 
 func (hg *HarborGenerator) Robot() *models.RobotPublic {
-	return &models.RobotPublic{
-		Name:    hg.d.deployment.Name,
-		Disable: false,
+	if hg.d.deployment == nil {
+		ro := models.RobotPublic{
+			Name:    hg.d.deployment.Name,
+			Disable: false,
+		}
+
+		if r := &hg.d.deployment.Subsystems.Harbor.Robot; service.Created(r) {
+			ro.ID = r.ID
+			ro.HarborName = r.HarborName
+			ro.Secret = r.Secret
+			ro.CreatedAt = r.CreatedAt
+
+		}
+
+		return &ro
 	}
+
+	return nil
 }
 
 func (hg *HarborGenerator) Repository() *models.RepositoryPublic {
-	splits := strings.Split(config.Config.Registry.PlaceholderImage, "/")
-	project := splits[len(splits)-2]
-	repository := splits[len(splits)-1]
+	if hg.d.deployment == nil {
+		splits := strings.Split(config.Config.Registry.PlaceholderImage, "/")
+		project := splits[len(splits)-2]
+		repository := splits[len(splits)-1]
 
-	return &models.RepositoryPublic{
-		Name:   hg.d.deployment.Name,
-		Seeded: false,
-		Placeholder: &models.PlaceHolder{
-			ProjectName:    project,
-			RepositoryName: repository,
-		},
+		re := models.RepositoryPublic{
+			Name: hg.d.deployment.Name,
+			Placeholder: &models.PlaceHolder{
+				ProjectName:    project,
+				RepositoryName: repository,
+			},
+		}
+
+		if r := &hg.d.deployment.Subsystems.Harbor.Repository; service.Created(r) {
+			re.ID = r.ID
+			re.Seeded = r.Seeded
+			re.CreatedAt = r.CreatedAt
+		}
+
+		return &re
 	}
+
+	return nil
 }
 
 func (hg *HarborGenerator) Webhook() *models.WebhookPublic {
-	webhookTarget := fmt.Sprintf("%s/v1/hooks/deployments/harbor", config.Config.ExternalUrl)
-	return &models.WebhookPublic{
-		Name:   hg.d.deployment.OwnerID,
-		Target: webhookTarget,
-		Token:  config.Config.Harbor.WebhookSecret,
+	if hg.d.deployment == nil {
+		webhookTarget := fmt.Sprintf("%s/v1/hooks/deployments/harbor", config.Config.ExternalUrl)
+
+		we := models.WebhookPublic{
+			Name:   hg.d.deployment.OwnerID,
+			Target: webhookTarget,
+			Token:  config.Config.Harbor.WebhookSecret,
+		}
+
+		if w := &hg.d.deployment.Subsystems.Harbor.Webhook; service.Created(w) {
+			we.ID = w.ID
+			we.CreatedAt = w.CreatedAt
+		}
+
+		return &we
 	}
+
+	return nil
 }

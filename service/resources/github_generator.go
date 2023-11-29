@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 	"go-deploy/pkg/config"
 	githubModels "go-deploy/pkg/subsystems/github/models"
+	"go-deploy/service"
 )
 
 type GitHubGenerator struct {
@@ -16,13 +17,18 @@ type GitHubGenerator struct {
 func (gg *GitHubGenerator) Webhook() *githubModels.WebhookPublic {
 	if gg.d.deployment != nil {
 		webhookTarget := fmt.Sprintf("%s/v1/hooks/deployments/github", config.Config.ExternalUrl)
-		return &githubModels.WebhookPublic{
+		wh := githubModels.WebhookPublic{
 			RepositoryID: gg.repositoryID,
 			Events:       nil,
 			Active:       false,
 			ContentType:  "json",
 			WebhookURL:   webhookTarget,
 			Secret:       uuid.NewString(),
+		}
+
+		if w := &gg.d.deployment.Subsystems.GitHub.Webhook; service.Created(w) {
+			wh.ID = w.ID
+			wh.CreatedAt = w.CreatedAt
 		}
 	}
 
