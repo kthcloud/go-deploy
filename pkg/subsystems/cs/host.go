@@ -1,16 +1,23 @@
 package cs
 
-import "go-deploy/pkg/subsystems/cs/models"
+import (
+	"fmt"
+	"go-deploy/pkg/subsystems/cs/models"
+)
 
 func (client *Client) ReadHostByName(name string) (*models.HostPublic, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to read host %s. details: %w", name, err)
+	}
+
 	host, _, err := client.CsClient.Host.GetHostByName(name)
 	if err != nil {
-		return nil, err
+		return nil, makeError(err)
 	}
 
 	if host == nil {
 		return nil, nil
 	}
 
-	return models.CreatePublicFromGet(host), nil
+	return models.CreateHostPublicFromGet(host), nil
 }

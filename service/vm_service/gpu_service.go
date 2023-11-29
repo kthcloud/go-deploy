@@ -7,6 +7,7 @@ import (
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/pkg/config"
 	"go-deploy/service/vm_service/cs_service"
+	"go-deploy/service/vm_service/service_errors"
 	"go-deploy/utils"
 	"log"
 	"sort"
@@ -28,15 +29,13 @@ func ListGPUs(onlyAvailable bool, usePrivilegedGPUs bool) ([]gpuModel.GPU, error
 
 		availableGPUs := make([]gpuModel.GPU, 0)
 		for _, gpu := range dbAvailableGPUs {
-			hardwareAvailable, err := IsGpuHardwareAvailable(&gpu)
+			err = IsGpuHardwareAvailable(&gpu)
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error checking if gpu is in use. details: %w", err))
 				continue
 			}
 
-			if hardwareAvailable {
-				availableGPUs = append(availableGPUs, gpu)
-			}
+			availableGPUs = append(availableGPUs, gpu)
 		}
 
 		return availableGPUs, nil
@@ -89,14 +88,12 @@ func GetAllAvailableGPU(usePrivilegedGPUs bool) ([]gpuModel.GPU, error) {
 
 	var availableGPUs []gpuModel.GPU
 	for _, gpu := range dbAvailableGPUs {
-		hardwareAvailable, err := IsGpuHardwareAvailable(&gpu)
+		err = IsGpuHardwareAvailable(&gpu)
 		if err != nil {
 			return nil, err
 		}
 
-		if hardwareAvailable {
-			availableGPUs = append(availableGPUs, gpu)
-		}
+		availableGPUs = append(availableGPUs, gpu)
 	}
 
 	return availableGPUs, nil
@@ -144,14 +141,9 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 
 		requiresCsAttach := gpu.Lease.VmID != vmID || gpu.Lease.VmID == ""
 
-		var hardwareAvailable bool
-		hardwareAvailable, err = IsGpuHardwareAvailable(gpu)
+		err = IsGpuHardwareAvailable(gpu)
 		if err != nil {
 			return makeError(err)
-		}
-
-		if !hardwareAvailable {
-			continue
 		}
 
 		if gpu.Lease.VmID != vmID && gpu.IsAttached() {
@@ -252,19 +244,12 @@ func RepairGPUs() error {
 		gpuIds[idx] = gpu.ID
 	}
 
-	vmWithGpu, err := vmModel.New().WithIDs(gpuIds...).List()
-	if err != nil {
-		return makeError(err)
-	}
-
-	vmWithGpuMap := make(map[string]*vmModel.VM)
-	for _, vm := range vmWithGpu {
-		vmWithGpuMap[vm.ID] = &vm
-	}
-
 	// find vms that have a gpu assigned, but cs is not setup to use it
 	for _, gpu := range attachedGPUs {
-		vm := vmWithGpuMap[gpu.ID]
+		vm, err := vmModel.New().GetByID(gpu.Lease.VmID)
+		if err != nil {
+			return makeError(err)
+		}
 
 		if !hasExtraConfig(vm) {
 			err := cs_service.AttachGPU(gpu.ID, vm.ID)
@@ -309,53 +294,51 @@ func DetachGpuSync(vmID string) error {
 	return nil
 }
 
-func CanStartOnHost(vmID, host string) (bool, string, error) {
+func CanStartOnHost(vmID, host string) error {
 	vm, err := vmModel.New().GetByID(vmID)
 	if err != nil {
-		return false, "", err
+		return err
 	}
 
 	if vm == nil {
-		return false, "", fmt.Errorf("vm %s not found", vmID)
+		return service_errors.VmNotFoundErr
 	}
 
 	if vm.Subsystems.CS.VM.ID == "" {
-		return false, "VM not fully created", nil
+		return service_errors.VmNotCreatedErr
 	}
 
-	canStart, reason, err := cs_service.CanStart(vm.Subsystems.CS.VM.ID, host, vm.Zone)
+	err = cs_service.CanStart(vm.Subsystems.CS.VM.ID, host, vm.Zone)
 	if err != nil {
-		return false, "", err
+		return err
 	}
 
-	if !canStart {
-		return false, reason, nil
-	}
-
-	return true, "", nil
+	return nil
 }
 
-func IsGpuHardwareAvailable(gpu *gpuModel.GPU) (bool, error) {
+func IsGpuHardwareAvailable(gpu *gpuModel.GPU) error {
 	cloudstackAttached, err := cs_service.IsGpuAttachedCS(gpu)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	zone := config.Config.VM.GetZone(gpu.Zone)
 	if zone == nil {
-		return false, fmt.Errorf("zone %s not found", gpu.Zone)
+		return service_errors.ZoneNotFoundErr
 	}
 
-	correctState, _, err := cs_service.HostInCorrectState(gpu.Host, zone)
+	err = cs_service.HostInCorrectState(gpu.Host, zone)
 	if err != nil {
-		return false, err
+		return err
 	}
 
-	// a "bad attach" is when cloudstack reports it being bound, but the database says it's not
+	// check if it is a "bad attach", where cloudstack reports it being attached, but the database says it's not
 	// this usually means it is in use outside the scope of deploy
-	badAttach := cloudstackAttached && !gpu.IsAttached()
+	if cloudstackAttached && !gpu.IsAttached() {
+		return service_errors.GpuNotFoundErr
+	}
 
-	return !badAttach && correctState, nil
+	return nil
 }
 
 func isGpuPrivileged(cardName string) bool {

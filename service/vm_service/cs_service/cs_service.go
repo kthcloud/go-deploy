@@ -12,6 +12,7 @@ import (
 	"go-deploy/service"
 	"go-deploy/service/resources"
 	"go-deploy/service/vm_service/base"
+	"go-deploy/service/vm_service/service_errors"
 	"golang.org/x/exp/slices"
 	"log"
 )
@@ -421,61 +422,93 @@ func DoCommand(csVmID string, gpuID *string, command, zoneName string) error {
 	return nil
 }
 
-func CanStart(csVmID, hostName, zoneName string) (bool, string, error) {
+func CanStart(csVmID, hostName, zoneName string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check if cs vm %s can be started on host %s. details: %w", csVmID, hostName, err)
 	}
 
 	context, err := NewContextWithoutVM(zoneName)
 	if err != nil {
-		return false, "", makeError(err)
+		return makeError(err)
 	}
 
 	hasCapacity, err := context.Client.HasCapacity(csVmID, hostName)
 	if err != nil {
-		return false, "", err
+		return makeError(err)
 	}
 
 	if !hasCapacity {
-		return false, "Host doesn't have capacity", nil
+		return service_errors.VmTooLargeErr
 	}
 
-	correctState, reason, err := HostInCorrectState(hostName, context.Zone)
+	err = HostInCorrectState(hostName, context.Zone)
 	if err != nil {
-		return false, "", err
+		if errors.Is(err, service_errors.HostNotAvailableErr) {
+			return service_errors.VmTooLargeErr
+		}
+
+		return makeError(err)
 	}
 
-	if !correctState {
-		return false, reason, nil
-	}
-
-	return true, "", nil
+	return nil
 }
 
-func HostInCorrectState(hostName string, zone *configModels.VmZone) (bool, string, error) {
+func GetHostByName(hostName string, zone string) (*csModels.HostPublic, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to get host %s. details: %w", hostName, err)
+	}
+
+	context, err := NewContextWithoutVM(zone)
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	host, err := context.Client.ReadHostByName(hostName)
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	return host, nil
+}
+
+func HostInCorrectState(hostName string, zone *configModels.VmZone) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check if host %s is in correct state. details: %w", zone.Name, err)
 	}
 
 	context, err := NewContextWithoutVM(zone.Name)
 	if err != nil {
-		return false, "", makeError(err)
+		return makeError(err)
 	}
 
 	host, err := context.Client.ReadHostByName(hostName)
 	if err != nil {
-		return false, "", makeError(err)
+		return makeError(err)
 	}
 
-	if host.State != "Up" {
-		return false, "Host is not up", nil
+	if host.State != "Up" || host.ResourceState != "Enabled" {
+		return service_errors.HostNotAvailableErr
 	}
 
-	if host.ResourceState != "Enabled" {
-		return false, "Host is not enabled", nil
+	return nil
+}
+
+func GetConfiguration(zone string) (*csModels.ConfigurationPublic, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to get configuration. details: %w", err)
 	}
 
-	return true, "", nil
+	context, err := NewContextWithoutVM(zone)
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	configuration, err := context.Client.ReadConfiguration()
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	return configuration, nil
 }
 
 func stopVmIfRunning(context *Context) (func(), error) {
