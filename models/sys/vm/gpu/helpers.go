@@ -264,7 +264,7 @@ func (client *Client) Attach(gpuID, vmID, user string, end time.Time) (bool, err
 	return true, nil
 }
 
-func (client *Client) Detach(vmID, userID string) error {
+func (client *Client) Detach(vmID string) error {
 	vm, err := vmModel.New().GetByID(vmID)
 	if err != nil {
 		return err
@@ -291,7 +291,6 @@ func (client *Client) Detach(vmID, userID string) error {
 		filter := bson.D{
 			{"id", gpu.ID},
 			{"lease.vmId", vmID},
-			{"lease.user", userID},
 		}
 
 		update := createClearedLeaseFilter()
@@ -300,11 +299,10 @@ func (client *Client) Detach(vmID, userID string) error {
 
 		err = client.Collection.FindOneAndUpdate(context.Background(), filter, update, opts).Decode(&gpu)
 		if err != nil {
-			if errors.Is(err, mongo.ErrNoDocuments) {
-				// this is not treated as an error, just another instance snatched the gpu before this one
-				return nil
+			if !errors.Is(err, mongo.ErrNoDocuments) {
+				return err
 			}
-			return err
+			utils.PrettyPrintError(fmt.Errorf("failed to clear gpu lease for vm %s. details: %w", vmID, err))
 		}
 	}
 

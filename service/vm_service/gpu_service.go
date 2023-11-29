@@ -161,7 +161,7 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 					return makeError(err)
 				}
 
-				err = gpuModel.New().Detach(gpu.Lease.VmID, gpu.Lease.UserID)
+				err = gpuModel.New().Detach(gpu.Lease.VmID)
 				if err != nil {
 					return makeError(err)
 				}
@@ -205,7 +205,7 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 					return makeError(err)
 				}
 
-				err = gpuModel.New().Detach(vmID, userID)
+				err = gpuModel.New().Detach(vmID)
 				if err != nil {
 					return makeError(err)
 				}
@@ -217,7 +217,7 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 					return makeError(err)
 				}
 
-				err = gpuModel.New().Detach(vmID, userID)
+				err = gpuModel.New().Detach(vmID)
 				if err != nil {
 					return makeError(err)
 				}
@@ -255,7 +255,7 @@ func RepairGPUs() error {
 			vm1 := gpuToVM[vm.GpuID]
 			vm2 := vm
 			log.Println("found two vms with the same gpu. vm1:", vm1.ID, "(", vm1.Name, ")  vm2:", vm2.ID, "(", vm2.Name, "), gpu: ", vm.GpuID, ". detaching gpu from vm2")
-			err = DetachGPU(vm2.ID, vm2.OwnerID)
+			err = DetachGPU(vm2.ID)
 			if err != nil {
 				return makeError(err)
 			}
@@ -293,7 +293,7 @@ func RepairGPUs() error {
 
 			// detach gpu from vm since we don't know how long it should be leased for
 			log.Println("found vm that has a gpu assigned, but the gpu has no lease. detaching gpu from vm:", vm.ID, "(", vm.Name, ")")
-			err = DetachGPU(vm.ID, vm.OwnerID)
+			err = DetachGPU(vm.ID)
 			if err != nil {
 				return makeError(err)
 			}
@@ -314,12 +314,12 @@ func RepairGPUs() error {
 	return nil
 }
 
-func DetachGPU(vmID, userID string) error {
+func DetachGPU(vmID string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to detach gpu from vm %s. details: %w", vmID, err)
 	}
 
-	err := DetachGpuSync(vmID, userID)
+	err := DetachGpuSync(vmID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -327,7 +327,7 @@ func DetachGPU(vmID, userID string) error {
 	return nil
 }
 
-func DetachGpuSync(vmID, userID string) error {
+func DetachGpuSync(vmID string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to detach gpu from vm %s. details: %w", vmID, err)
 	}
@@ -337,7 +337,7 @@ func DetachGpuSync(vmID, userID string) error {
 		return makeError(err)
 	}
 
-	err = gpuModel.New().Detach(vmID, userID)
+	err = gpuModel.New().Detach(vmID)
 	if err != nil {
 		return makeError(err)
 	}

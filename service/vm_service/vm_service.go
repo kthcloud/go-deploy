@@ -274,7 +274,7 @@ func Delete(id string) error {
 		return makeError(err)
 	}
 
-	err = gpu.New().Detach(vm.ID, vm.OwnerID)
+	err = gpu.New().Detach(vm.ID)
 	if err != nil {
 		return makeError(err)
 	}

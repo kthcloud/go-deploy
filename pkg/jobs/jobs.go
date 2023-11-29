@@ -178,15 +178,14 @@ func AttachGpuToVM(job *jobModel.Job) error {
 }
 
 func DetachGpuFromVM(job *jobModel.Job) error {
-	err := assertParameters(job, []string{"id", "userId"})
+	err := assertParameters(job, []string{"id"})
 	if err != nil {
 		return makeTerminatedError(err)
 	}
 
 	vmID := job.Args["id"].(string)
-	userID := job.Args["userId"].(string)
 
-	err = vm_service.DetachGPU(vmID, userID)
+	err = vm_service.DetachGPU(vmID)
 	if err != nil {
 		return makeFailedError(err)
 	}
