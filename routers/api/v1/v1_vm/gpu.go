@@ -37,7 +37,7 @@ func ListGPUs(c *gin.Context) {
 		return
 	}
 
-	gpus, err := vm_service.ListGPUs(requestQuery.OnlyShowAvailable, auth.GetEffectiveRole().Permissions.UsePrivilegedGPUs)
+	gpus, err := vm_service.ListGPUs(requestQuery.OnlyShowAvailable, auth)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return

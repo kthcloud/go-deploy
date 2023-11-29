@@ -3,6 +3,7 @@ package gpu
 import (
 	"go-deploy/models/db"
 	"go-deploy/models/sys/base/resource"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type Client struct {
@@ -38,4 +39,10 @@ func NewWithExclusion(excludedHosts []string, excludedGPUs []string) *Client {
 			Collection: db.DB.GetCollection("gpus"),
 		},
 	}
+}
+
+func (client *Client) WithVM(vmID string) *Client {
+	client.ResourceClient.AddExtraFilter(bson.D{{"lease.vmId", vmID}})
+
+	return client
 }

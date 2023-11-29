@@ -6,18 +6,19 @@ import (
 	"github.com/google/uuid"
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
+	"go-deploy/models/sys/gpu"
 	jobModel "go-deploy/models/sys/job"
 	notificationModel "go-deploy/models/sys/notification"
 	roleModel "go-deploy/models/sys/role"
 	teamModels "go-deploy/models/sys/team"
 	vmModel "go-deploy/models/sys/vm"
-	"go-deploy/models/sys/vm/gpu"
 	"go-deploy/pkg/config"
 	"go-deploy/service"
 	"go-deploy/service/job_service"
 	"go-deploy/service/notification_service"
 	"go-deploy/service/vm_service/cs_service"
 	"go-deploy/service/vm_service/k8s_service"
+	errors2 "go-deploy/service/vm_service/service_errors"
 	"go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
@@ -40,7 +41,7 @@ func Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
 	_, err := vmModel.New().Create(id, ownerID, config.Config.Manager, params)
 	if err != nil {
 		if errors.Is(err, vmModel.NonUniqueFieldErr) {
-			return NonUniqueFieldErr
+			return errors2.NonUniqueFieldErr
 		}
 
 		return makeError(err)
@@ -81,7 +82,7 @@ func Update(id string, dtoVmUpdate *body.VmUpdate) error {
 		err := vmModel.New().UpdateWithParamsByID(id, vmUpdate)
 		if err != nil {
 			if errors.Is(err, vmModel.NonUniqueFieldErr) {
-				return NonUniqueFieldErr
+				return errors2.NonUniqueFieldErr
 			}
 
 			return makeError(err)
@@ -112,7 +113,7 @@ func UpdateOwnerAuth(id string, params *body.VmUpdateOwner, auth *service.AuthIn
 	}
 
 	if vm == nil {
-		return nil, VmNotFoundErr
+		return nil, errors2.VmNotFoundErr
 	}
 
 	if vm.OwnerID == params.NewOwnerID {
@@ -125,7 +126,7 @@ func UpdateOwnerAuth(id string, params *body.VmUpdateOwner, auth *service.AuthIn
 		doTransfer = true
 	} else if auth.UserID == params.NewOwnerID {
 		if params.TransferCode == nil || vm.Transfer == nil || vm.Transfer.Code != *params.TransferCode {
-			return nil, InvalidTransferCodeErr
+			return nil, errors2.InvalidTransferCodeErr
 		}
 
 		doTransfer = true
@@ -199,6 +200,11 @@ func UpdateOwner(id string, params *body.VmUpdateOwner) error {
 		return makeError(err)
 	}
 
+	err = gpu.New().WithVM(id).UpdateWithBson(bson.D{{"lease.user", params.NewOwnerID}})
+	if err != nil {
+		return makeError(err)
+	}
+
 	err = cs_service.EnsureOwner(id, params.OldOwnerID)
 	if err != nil {
 		return makeError(err)
@@ -224,7 +230,7 @@ func ClearUpdateOwner(id string) error {
 	}
 
 	if deployment == nil {
-		return VmNotFoundErr
+		return errors2.VmNotFoundErr
 	}
 
 	if deployment.Transfer == nil {
@@ -274,7 +280,7 @@ func Delete(id string) error {
 		return makeError(err)
 	}
 
-	err = gpu.New().Detach(vm.ID, vm.OwnerID)
+	err = gpu.New().Detach(vm.ID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -486,12 +492,7 @@ func DoCommand(vm *vmModel.VM, command string) {
 			return
 		}
 
-		var gpuID *string
-		if vm.HasGPU() {
-			gpuID = &vm.GpuID
-		}
-
-		err := cs_service.DoCommand(csID, gpuID, command, vm.Zone)
+		err := cs_service.DoCommand(csID, vm.GetGpuID(), command, vm.Zone)
 		if err != nil {
 			utils.PrettyPrintError(err)
 			return
@@ -739,6 +740,40 @@ func GetExternalPortMapper(vmID string) (map[string]int, error) {
 	}
 
 	return mapper, nil
+}
+
+type CloudStackHostCapabilities struct {
+	CpuCoresTotal int
+	CpuCoresUsed  int
+	RamTotal      int
+	RamUsed       int
+}
+
+func GetCloudStackHostCapabilities(hostname string, zone string) (*CloudStackHostCapabilities, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to get host capabilities. details: %w", err)
+	}
+
+	host, err := cs_service.GetHostByName(hostname, zone)
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	if host == nil {
+		return nil, nil
+	}
+
+	configuration, err := cs_service.GetConfiguration(zone)
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	return &CloudStackHostCapabilities{
+		CpuCoresTotal: host.CpuCoresTotal * configuration.OverProvisioningFactor,
+		CpuCoresUsed:  host.CpuCoresUsed,
+		RamTotal:      host.RamTotal,
+		RamUsed:       host.RamUsed,
+	}, nil
 }
 
 func createTransferCode() string {

@@ -38,7 +38,6 @@ func (client *Client) Create(id, owner, manager string, params *CreateParams) (*
 		RepairedAt: time.Time{},
 		DeletedAt:  time.Time{},
 
-		GpuID:        "",
 		SshPublicKey: params.SshPublicKey,
 		Ports:        ports,
 		Activities:   map[string]activity.Activity{ActivityBeingCreated: {ActivityBeingCreated, time.Now()}},
@@ -151,17 +150,6 @@ func (client *Client) DeleteSubsystemByID(id, key string) error {
 func (client *Client) UpdateSubsystemByID(id, key string, update interface{}) error {
 	subsystemKey := fmt.Sprintf("subsystems.%s", key)
 	return client.SetWithBsonByID(id, bson.D{{subsystemKey, update}})
-}
-
-func (client *Client) ListWithGPU() ([]VM, error) {
-	// create a filter that checks if the gpuID field is not empty
-	filter := bson.D{{
-		"gpuId", bson.M{
-			"$ne": "",
-		},
-	}}
-
-	return client.ListWithFilter(filter)
 }
 
 func (client *Client) MarkRepaired(id string) error {

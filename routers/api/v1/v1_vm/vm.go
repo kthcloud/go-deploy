@@ -9,9 +9,9 @@ import (
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
 	"go-deploy/models/dto/uri"
+	gpuModel "go-deploy/models/sys/gpu"
 	jobModel "go-deploy/models/sys/job"
 	vmModel "go-deploy/models/sys/vm"
-	gpuModel "go-deploy/models/sys/vm/gpu"
 	zoneModel "go-deploy/models/sys/zone"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
@@ -19,6 +19,7 @@ import (
 	"go-deploy/service/job_service"
 	"go-deploy/service/user_service"
 	"go-deploy/service/vm_service"
+	"go-deploy/service/vm_service/service_errors"
 	"go-deploy/service/zone_service"
 	"go-deploy/utils"
 )
@@ -67,14 +68,9 @@ func List(c *gin.Context) {
 		connectionString, _ := vm_service.GetConnectionString(&vm)
 
 		var gpuRead *body.GpuRead
-		if vm.HasGPU() {
-			gpu, err := vm_service.GetGpuByID(vm.GpuID, true)
-			if err != nil {
-				utils.PrettyPrintError(fmt.Errorf("failed to get gpu for vm when listing. details: %w", err))
-			} else if gpu != nil {
-				gpuDTO := gpu.ToDTO(true)
-				gpuRead = &gpuDTO
-			}
+		if gpu := vm.GetGpu(); gpu != nil {
+			gpuDTO := gpu.ToDTO(true)
+			gpuRead = &gpuDTO
 		}
 
 		mapper, err := vm_service.GetExternalPortMapper(vm.ID)
@@ -129,14 +125,9 @@ func Get(c *gin.Context) {
 
 	connectionString, _ := vm_service.GetConnectionString(vm)
 	var gpuRead *body.GpuRead
-	if vm.HasGPU() {
-		gpu, err := vm_service.GetGpuByID(vm.GpuID, true)
-		if err != nil {
-			utils.PrettyPrintError(fmt.Errorf("failed to get gpu for vm. details: %w", err))
-		} else if gpu != nil {
-			gpuDTO := gpu.ToDTO(true)
-			gpuRead = &gpuDTO
-		}
+	if gpu := vm.GetGpu(); gpu != nil {
+		gpuDTO := gpu.ToDTO(true)
+		gpuRead = &gpuDTO
 	}
 
 	mapper, err := vm_service.GetExternalPortMapper(vm.ID)
@@ -395,12 +386,12 @@ func Update(c *gin.Context) {
 		}, auth)
 
 		if err != nil {
-			if errors.Is(err, vm_service.VmNotFoundErr) {
+			if errors.Is(err, service_errors.VmNotFoundErr) {
 				context.NotFound("VM not found")
 				return
 			}
 
-			if errors.Is(err, vm_service.InvalidTransferCodeErr) {
+			if errors.Is(err, service_errors.InvalidTransferCodeErr) {
 				context.Forbidden("Bad transfer code")
 				return
 			}
@@ -510,7 +501,7 @@ func updateGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *ser
 }
 
 func detachGPU(context *sys.ClientContext, auth *service.AuthInfo, vm *vmModel.VM) {
-	if vm.GpuID == "" {
+	if !vm.HasGPU() {
 		context.UserError("VM does not have a GPU attached")
 		return
 	}
@@ -528,8 +519,7 @@ func detachGPU(context *sys.ClientContext, auth *service.AuthInfo, vm *vmModel.V
 
 	jobID := uuid.New().String()
 	err = job_service.Create(jobID, auth.UserID, jobModel.TypeDetachGPU, map[string]interface{}{
-		"id":     vm.ID,
-		"userId": vm.OwnerID,
+		"id": vm.ID,
 	})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
@@ -548,26 +538,17 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *ser
 		return
 	}
 
+	currentGPU := vm.GetGpu()
+
 	var gpus []gpuModel.GPU
 	if *requestBody.GpuID == "any" {
-		if vm.HasGPU() {
-			gpu, err := vm_service.GetGpuByID(vm.GpuID, false)
-			if err != nil {
-				context.ServerError(err, v1.InternalError)
-				return
-			}
-
-			if gpu == nil {
-				context.NotFound("GPU not found")
-				return
-			}
-
-			if !gpu.Lease.IsExpired() {
+		if currentGPU != nil {
+			if !currentGPU.Lease.IsExpired() {
 				context.UserError("GPU lease not expired")
 				return
 			}
 
-			gpus = []gpuModel.GPU{*gpu}
+			gpus = []gpuModel.GPU{*currentGPU}
 		} else {
 			availableGpus, err := vm_service.GetAllAvailableGPU(auth.GetEffectiveRole().Permissions.UsePrivilegedGPUs)
 			if err != nil {
@@ -599,39 +580,39 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *ser
 			return
 		}
 
-		gpu, err := vm_service.GetGpuByID(*requestBody.GpuID, true)
+		requestedGPU, err := vm_service.GetGpuByID(*requestBody.GpuID, true)
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
 		}
 
-		if gpu == nil {
+		if requestedGPU == nil {
 			context.NotFound("GPU not found")
 			return
 		}
 
-		if vm.HasGPU() && vm.GpuID != *requestBody.GpuID {
+		if currentGPU != nil && currentGPU.ID != requestedGPU.ID {
 			context.UserError("VM already has a GPU attached")
 			return
 		}
 
-		if !gpu.Lease.IsExpired() {
+		if !requestedGPU.Lease.IsExpired() {
 			context.UserError("GPU lease not expired")
 			return
 		}
 
-		hardwareAvailable, err := vm_service.IsGpuHardwareAvailable(gpu)
+		err = vm_service.IsGpuHardwareAvailable(requestedGPU)
 		if err != nil {
-			context.ServerError(err, v1.InternalError)
+			switch {
+			case errors.Is(err, service_errors.HostNotAvailableErr):
+				context.ServerUnavailableError(fmt.Errorf("host not available when attaching gpu to vm %s. details: %w", vm.ID, err), v1.HostNotAvailableErr)
+			default:
+				context.ServerError(err, v1.InternalError)
+			}
 			return
 		}
 
-		if !hardwareAvailable {
-			context.ServerUnavailableError(fmt.Errorf("gpu hardware not available when attaching gpu to vm %s", vm.ID), v1.GpuNotAvailableErr)
-			return
-		}
-
-		gpus = []gpuModel.GPU{*gpu}
+		gpus = []gpuModel.GPU{*requestedGPU}
 	}
 
 	if len(gpus) == 0 {
@@ -642,18 +623,22 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *ser
 	// do this check to give a nice error to the user if the gpu cannot be attached
 	// otherwise it will be silently ignored
 	if len(gpus) == 1 {
-		canStartOnHost, reason, err := vm_service.CanStartOnHost(vm.ID, gpus[0].Host)
-		if err != nil {
-			context.ServerError(err, v1.InternalError)
-			return
-		}
-
-		if !canStartOnHost {
-			if reason == "" {
-				reason = "VM could not be started on host"
+		if err := vm_service.CanStartOnHost(vm.ID, gpus[0].Host); err != nil {
+			switch {
+			case errors.Is(err, service_errors.HostNotAvailableErr):
+				context.ServerUnavailableError(fmt.Errorf("host not available when attaching gpu to vm %s. details: %w", vm.ID, err), v1.HostNotAvailableErr)
+			case errors.Is(err, service_errors.VmTooLargeErr):
+				tooLargeErr := v1.VmTooLargeForHostErr
+				caps, err := vm_service.GetCloudStackHostCapabilities(gpus[0].Host, vm.Zone)
+				if err == nil && caps != nil {
+					tooLargeErr = v1.MakeVmToLargeForHostErr(caps.CpuCoresTotal-caps.CpuCoresUsed, caps.RamTotal-caps.RamUsed)
+				}
+				context.ServerUnavailableError(fmt.Errorf("vm %s too large when attaching gpu", vm.ID), tooLargeErr)
+			case errors.Is(err, service_errors.VmNotCreatedErr):
+				context.ServerUnavailableError(fmt.Errorf("vm %s not created when attaching gpu to vm %s. details: %w", vm.ID, vm.ID, err), v1.VmNotReadyErr)
+			default:
+				context.ServerError(err, v1.InternalError)
 			}
-
-			context.ServerUnavailableError(fmt.Errorf("vm %s could not be started on host %s when attaching gpu, details: %s", vm.ID, gpus[0].Host, reason), v1.HostNotAvailableErr)
 			return
 		}
 	}

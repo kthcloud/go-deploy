@@ -1,11 +1,14 @@
 package vm_service
 
 import (
+	"errors"
 	"fmt"
+	gpuModel "go-deploy/models/sys/gpu"
 	vmModel "go-deploy/models/sys/vm"
-	gpuModel "go-deploy/models/sys/vm/gpu"
 	"go-deploy/pkg/config"
+	"go-deploy/service"
 	"go-deploy/service/vm_service/cs_service"
+	"go-deploy/service/vm_service/service_errors"
 	"go-deploy/utils"
 	"log"
 	"sort"
@@ -13,9 +16,11 @@ import (
 	"time"
 )
 
-func ListGPUs(onlyAvailable bool, usePrivilegedGPUs bool) ([]gpuModel.GPU, error) {
+func ListGPUs(onlyAvailable bool, auth *service.AuthInfo) ([]gpuModel.GPU, error) {
+	effectiveRole := auth.GetEffectiveRole()
+
 	excludedGPUs := config.Config.GPU.ExcludedGPUs
-	if !usePrivilegedGPUs {
+	if !effectiveRole.Permissions.UsePrivilegedGPUs {
 		excludedGPUs = append(excludedGPUs, config.Config.GPU.PrivilegedGPUs...)
 	}
 
@@ -27,20 +32,18 @@ func ListGPUs(onlyAvailable bool, usePrivilegedGPUs bool) ([]gpuModel.GPU, error
 
 		availableGPUs := make([]gpuModel.GPU, 0)
 		for _, gpu := range dbAvailableGPUs {
-			hardwareAvailable, err := IsGpuHardwareAvailable(&gpu)
+			err = IsGpuHardwareAvailable(&gpu)
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error checking if gpu is in use. details: %w", err))
 				continue
 			}
 
-			if hardwareAvailable {
-				availableGPUs = append(availableGPUs, gpu)
-			}
+			availableGPUs = append(availableGPUs, gpu)
 		}
 
 		return availableGPUs, nil
 	}
-	return gpuModel.NewWithExclusion(config.Config.GPU.ExcludedHosts, excludedGPUs).GetAll()
+	return gpuModel.NewWithExclusion(config.Config.GPU.ExcludedHosts, excludedGPUs).List()
 }
 
 func GetGpuByID(gpuID string, usePrivilegedGPUs bool) (*gpuModel.GPU, error) {
@@ -88,14 +91,12 @@ func GetAllAvailableGPU(usePrivilegedGPUs bool) ([]gpuModel.GPU, error) {
 
 	var availableGPUs []gpuModel.GPU
 	for _, gpu := range dbAvailableGPUs {
-		hardwareAvailable, err := IsGpuHardwareAvailable(&gpu)
+		err = IsGpuHardwareAvailable(&gpu)
 		if err != nil {
 			return nil, err
 		}
 
-		if hardwareAvailable {
-			availableGPUs = append(availableGPUs, gpu)
-		}
+		availableGPUs = append(availableGPUs, gpu)
 	}
 
 	return availableGPUs, nil
@@ -143,14 +144,9 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 
 		requiresCsAttach := gpu.Lease.VmID != vmID || gpu.Lease.VmID == ""
 
-		var hardwareAvailable bool
-		hardwareAvailable, err = IsGpuHardwareAvailable(gpu)
+		err = IsGpuHardwareAvailable(gpu)
 		if err != nil {
 			return makeError(err)
-		}
-
-		if !hardwareAvailable {
-			continue
 		}
 
 		if gpu.Lease.VmID != vmID && gpu.IsAttached() {
@@ -161,7 +157,7 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 					return makeError(err)
 				}
 
-				err = gpuModel.New().Detach(gpu.Lease.VmID, gpu.Lease.UserID)
+				err = gpuModel.New().Detach(gpu.Lease.VmID)
 				if err != nil {
 					return makeError(err)
 				}
@@ -173,6 +169,11 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 		var attached bool
 		attached, err = gpuModel.New().Attach(gpuID, vmID, userID, endLease)
 		if err != nil {
+			if errors.Is(err, gpuModel.AlreadyAttachedErr) || errors.Is(err, gpuModel.NotFoundErr) {
+				// this is not treated as an error, just another instance snatched the gpu before this one
+				continue
+			}
+
 			return makeError(err)
 		}
 
@@ -205,7 +206,7 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 					return makeError(err)
 				}
 
-				err = gpuModel.New().Detach(vmID, userID)
+				err = gpuModel.New().Detach(vmID)
 				if err != nil {
 					return makeError(err)
 				}
@@ -217,7 +218,7 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 					return makeError(err)
 				}
 
-				err = gpuModel.New().Detach(vmID, userID)
+				err = gpuModel.New().Detach(vmID)
 				if err != nil {
 					return makeError(err)
 				}
@@ -241,69 +242,20 @@ func RepairGPUs() error {
 		return makeError(err)
 	}
 
-	// get all vms with an assigned gpu
-	vmsWithGPU, err := vmModel.New().ListWithGPU()
-	if err != nil {
-		return makeError(err)
-	}
-
-	// find vm with same gpu
-	gpuToVM := make(map[string]*vmModel.VM)
-	for _, vm := range vmsWithGPU {
-		_, ok := gpuToVM[vm.GpuID]
-		if ok {
-			vm1 := gpuToVM[vm.GpuID]
-			vm2 := vm
-			log.Println("found two vms with the same gpu. vm1:", vm1.ID, "(", vm1.Name, ")  vm2:", vm2.ID, "(", vm2.Name, "), gpu: ", vm.GpuID, ". detaching gpu from vm2")
-			err = DetachGPU(vm2.ID, vm2.OwnerID)
-			if err != nil {
-				return makeError(err)
-			}
-		}
-
-		gpuToVM[vm.GpuID] = &vm
-	}
-
-	// find gpus that are attached to a vm, but not in the gpuToVM map
-	for _, gpu := range attachedGPUs {
-		_, ok := gpuToVM[gpu.ID]
-		if !ok {
-			log.Println("found gpu that is attached to a vm, but not in the gpuToVM map. clearing lease. vm:", gpu.Lease.VmID, "gpu:", gpu.ID, "("+gpu.Data.Name+")")
-			err = gpuModel.New().ClearLease(gpu.ID)
-			if err != nil {
-				return makeError(err)
-			}
-		}
-	}
-
-	// find vms that have a gpu assigned, but the gpu has no lease
-	for _, vm := range vmsWithGPU {
-		_, ok := gpuToVM[vm.GpuID]
-		if ok {
-			matched := false
-			for _, gpu := range attachedGPUs {
-				if gpu.ID == vm.GpuID {
-					matched = true
-					break
-				}
-			}
-			if matched {
-				continue
-			}
-
-			// detach gpu from vm since we don't know how long it should be leased for
-			log.Println("found vm that has a gpu assigned, but the gpu has no lease. detaching gpu from vm:", vm.ID, "(", vm.Name, ")")
-			err = DetachGPU(vm.ID, vm.OwnerID)
-			if err != nil {
-				return makeError(err)
-			}
-		}
+	gpuIds := make([]string, len(attachedGPUs))
+	for idx, gpu := range attachedGPUs {
+		gpuIds[idx] = gpu.ID
 	}
 
 	// find vms that have a gpu assigned, but cs is not setup to use it
-	for _, vm := range vmsWithGPU {
-		if !hasExtraConfig(&vm) {
-			err := cs_service.AttachGPU(vm.GpuID, vm.ID)
+	for _, gpu := range attachedGPUs {
+		vm, err := vmModel.New().GetByID(gpu.Lease.VmID)
+		if err != nil {
+			return makeError(err)
+		}
+
+		if !hasExtraConfig(vm) {
+			err := cs_service.AttachGPU(gpu.ID, vm.ID)
 			if err != nil {
 				return makeError(err)
 			}
@@ -314,12 +266,12 @@ func RepairGPUs() error {
 	return nil
 }
 
-func DetachGPU(vmID, userID string) error {
+func DetachGPU(vmID string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to detach gpu from vm %s. details: %w", vmID, err)
 	}
 
-	err := DetachGpuSync(vmID, userID)
+	err := DetachGpuSync(vmID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -327,7 +279,7 @@ func DetachGPU(vmID, userID string) error {
 	return nil
 }
 
-func DetachGpuSync(vmID, userID string) error {
+func DetachGpuSync(vmID string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to detach gpu from vm %s. details: %w", vmID, err)
 	}
@@ -337,7 +289,7 @@ func DetachGpuSync(vmID, userID string) error {
 		return makeError(err)
 	}
 
-	err = gpuModel.New().Detach(vmID, userID)
+	err = gpuModel.New().Detach(vmID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -345,53 +297,51 @@ func DetachGpuSync(vmID, userID string) error {
 	return nil
 }
 
-func CanStartOnHost(vmID, host string) (bool, string, error) {
+func CanStartOnHost(vmID, host string) error {
 	vm, err := vmModel.New().GetByID(vmID)
 	if err != nil {
-		return false, "", err
+		return err
 	}
 
 	if vm == nil {
-		return false, "", fmt.Errorf("vm %s not found", vmID)
+		return service_errors.VmNotFoundErr
 	}
 
 	if vm.Subsystems.CS.VM.ID == "" {
-		return false, "VM not fully created", nil
+		return service_errors.VmNotCreatedErr
 	}
 
-	canStart, reason, err := cs_service.CanStart(vm.Subsystems.CS.VM.ID, host, vm.Zone)
+	err = cs_service.CanStart(vm.Subsystems.CS.VM.ID, host, vm.Zone)
 	if err != nil {
-		return false, "", err
+		return err
 	}
 
-	if !canStart {
-		return false, reason, nil
-	}
-
-	return true, "", nil
+	return nil
 }
 
-func IsGpuHardwareAvailable(gpu *gpuModel.GPU) (bool, error) {
+func IsGpuHardwareAvailable(gpu *gpuModel.GPU) error {
 	cloudstackAttached, err := cs_service.IsGpuAttachedCS(gpu)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	zone := config.Config.VM.GetZone(gpu.Zone)
 	if zone == nil {
-		return false, fmt.Errorf("zone %s not found", gpu.Zone)
+		return service_errors.ZoneNotFoundErr
 	}
 
-	correctState, _, err := cs_service.HostInCorrectState(gpu.Host, zone)
+	err = cs_service.HostInCorrectState(gpu.Host, zone)
 	if err != nil {
-		return false, err
+		return err
 	}
 
-	// a "bad attach" is when cloudstack reports it being bound, but the database says it's not
+	// check if it is a "bad attach", where cloudstack reports it being attached, but the database says it's not
 	// this usually means it is in use outside the scope of deploy
-	badAttach := cloudstackAttached && !gpu.IsAttached()
+	if cloudstackAttached && !gpu.IsAttached() {
+		return service_errors.GpuNotFoundErr
+	}
 
-	return !badAttach && correctState, nil
+	return nil
 }
 
 func isGpuPrivileged(cardName string) bool {

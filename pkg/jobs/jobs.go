@@ -14,6 +14,7 @@ import (
 	"go-deploy/service/deployment_service"
 	"go-deploy/service/storage_manager_service"
 	"go-deploy/service/vm_service"
+	errors2 "go-deploy/service/vm_service/service_errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
@@ -36,7 +37,7 @@ func CreateVM(job *jobModel.Job) error {
 
 	err = vm_service.Create(id, ownerID, &params)
 	if err != nil {
-		if errors.Is(err, vm_service.NonUniqueFieldErr) {
+		if errors.Is(err, errors2.NonUniqueFieldErr) {
 			return makeTerminatedError(err)
 		}
 
@@ -118,7 +119,7 @@ func UpdateVM(job *jobModel.Job) error {
 
 	err = vm_service.Update(id, &update)
 	if err != nil {
-		if errors.Is(err, vm_service.NonUniqueFieldErr) {
+		if errors.Is(err, errors2.NonUniqueFieldErr) {
 			return makeTerminatedError(err)
 		}
 
@@ -178,15 +179,14 @@ func AttachGpuToVM(job *jobModel.Job) error {
 }
 
 func DetachGpuFromVM(job *jobModel.Job) error {
-	err := assertParameters(job, []string{"id", "userId"})
+	err := assertParameters(job, []string{"id"})
 	if err != nil {
 		return makeTerminatedError(err)
 	}
 
 	vmID := job.Args["id"].(string)
-	userID := job.Args["userId"].(string)
 
-	err = vm_service.DetachGPU(vmID, userID)
+	err = vm_service.DetachGPU(vmID)
 	if err != nil {
 		return makeFailedError(err)
 	}

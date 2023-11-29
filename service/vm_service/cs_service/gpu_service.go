@@ -3,7 +3,7 @@ package cs_service
 import (
 	"errors"
 	"fmt"
-	gpuModel "go-deploy/models/sys/vm/gpu"
+	"go-deploy/models/sys/gpu"
 	"go-deploy/pkg/subsystems/cs/commands"
 	"go-deploy/service"
 	"go-deploy/service/resources"
@@ -27,7 +27,7 @@ func AttachGPU(gpuID, vmID string) error {
 		return nil
 	}
 
-	gpu, err := gpuModel.New().GetByID(gpuID)
+	gpu, err := gpu.New().GetByID(gpuID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -128,7 +128,7 @@ func DetachGPU(vmID string, afterState string) error {
 	return nil
 }
 
-func IsGpuAttachedCS(gpu *gpuModel.GPU) (bool, error) {
+func IsGpuAttachedCS(gpu *gpu.GPU) (bool, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check if gpu %s:%s is attached to any cs vm. details: %w", gpu.Host, gpu.Data.Bus, err)
 	}

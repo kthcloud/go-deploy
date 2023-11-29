@@ -93,6 +93,15 @@ func (client *Client) WithNoActivities() *Client {
 	return client
 }
 
+func (client *Client) WithIDs(ids ...string) *Client {
+	filter := bson.D{{"id", bson.D{{"$in", ids}}}}
+
+	client.ResourceClient.AddExtraFilter(filter)
+	client.ActivityResourceClient.AddExtraFilter(filter)
+
+	return client
+}
+
 func (client *Client) WithCustomFilter(filter bson.D) *Client {
 	client.ResourceClient.AddExtraFilter(filter)
 	client.ActivityResourceClient.AddExtraFilter(filter)

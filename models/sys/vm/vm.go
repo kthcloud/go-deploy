@@ -2,6 +2,7 @@ package vm
 
 import (
 	"go-deploy/models/sys/activity"
+	"go-deploy/models/sys/gpu"
 	"time"
 )
 
@@ -21,7 +22,6 @@ type VM struct {
 	DeletedAt  time.Time `bson:"deletedAt"`
 
 	NetworkID    string                       `bson:"networkId"`
-	GpuID        string                       `bson:"gpuId"`
 	SshPublicKey string                       `bson:"sshPublicKey"`
 	Ports        []Port                       `bson:"ports"`
 	Activities   map[string]activity.Activity `bson:"activities"`
@@ -55,7 +55,30 @@ func (vm *VM) DoingActivity(activity string) bool {
 }
 
 func (vm *VM) HasGPU() bool {
-	return vm.GpuID != ""
+	exists, err := gpu.New().WithVM(vm.ID).ExistsAny()
+	if err != nil {
+		return false
+	}
+
+	return exists
+}
+
+func (vm *VM) GetGpuID() *string {
+	idStruct, err := gpu.New().WithVM(vm.ID).GetID()
+	if err != nil || idStruct == nil {
+		return nil
+	}
+
+	return &idStruct.ID
+}
+
+func (vm *VM) GetGpu() *gpu.GPU {
+	gpu, err := gpu.New().WithVM(vm.ID).Get()
+	if err != nil || gpu == nil {
+		return nil
+	}
+
+	return gpu
 }
 
 func (vm *VM) DoingOneOfActivities(activities []string) bool {

@@ -2,8 +2,8 @@ package cs_service
 
 import (
 	"fmt"
+	"go-deploy/models/sys/gpu"
 	vmModel "go-deploy/models/sys/vm"
-	gpuModel "go-deploy/models/sys/vm/gpu"
 	"go-deploy/pkg/config"
 	csModels "go-deploy/pkg/subsystems/cs/models"
 	"strings"
@@ -23,7 +23,7 @@ func CreateDeployTags(name string, deployName string) []csModels.Tag {
 	}
 }
 
-func CreateExtraConfig(gpu *gpuModel.GPU) string {
+func CreateExtraConfig(gpu *gpu.GPU) string {
 	data := fmt.Sprintf(`
 <devices> <hostdev mode='subsystem' type='pci' managed='yes'> <driver name='vfio' />
 	<source> <address domain='0x0000' bus='0x%s' slot='0x00' function='0x0' /> </source> 
@@ -41,7 +41,7 @@ func HasExtraConfig(vm *vmModel.VM) bool {
 }
 
 func GetRequiredHost(gpuID string) (*string, error) {
-	gpu, err := gpuModel.New().GetByID(gpuID)
+	gpu, err := gpu.New().GetByID(gpuID)
 	if err != nil {
 		return nil, err
 	}
