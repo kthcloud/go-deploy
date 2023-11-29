@@ -31,7 +31,7 @@ func SynchronizeGPUs() {
 	}
 
 	configured := 0
-	currentGPUs, err := gpu2.New().GetAll()
+	currentGPUs, err := gpu2.New().List()
 	if err != nil {
 		log.Fatal(err)
 	}

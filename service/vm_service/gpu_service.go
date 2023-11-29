@@ -6,6 +6,7 @@ import (
 	gpuModel "go-deploy/models/sys/gpu"
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/pkg/config"
+	"go-deploy/service"
 	"go-deploy/service/vm_service/cs_service"
 	"go-deploy/service/vm_service/service_errors"
 	"go-deploy/utils"
@@ -15,9 +16,11 @@ import (
 	"time"
 )
 
-func ListGPUs(onlyAvailable bool, usePrivilegedGPUs bool) ([]gpuModel.GPU, error) {
+func ListGPUs(onlyAvailable bool, auth *service.AuthInfo) ([]gpuModel.GPU, error) {
+	effectiveRole := auth.GetEffectiveRole()
+
 	excludedGPUs := config.Config.GPU.ExcludedGPUs
-	if !usePrivilegedGPUs {
+	if !effectiveRole.Permissions.UsePrivilegedGPUs {
 		excludedGPUs = append(excludedGPUs, config.Config.GPU.PrivilegedGPUs...)
 	}
 
@@ -40,7 +43,7 @@ func ListGPUs(onlyAvailable bool, usePrivilegedGPUs bool) ([]gpuModel.GPU, error
 
 		return availableGPUs, nil
 	}
-	return gpuModel.NewWithExclusion(config.Config.GPU.ExcludedHosts, excludedGPUs).GetAll()
+	return gpuModel.NewWithExclusion(config.Config.GPU.ExcludedHosts, excludedGPUs).List()
 }
 
 func GetGpuByID(gpuID string, usePrivilegedGPUs bool) (*gpuModel.GPU, error) {

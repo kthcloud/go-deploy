@@ -82,10 +82,10 @@ func (client *Client) GetByID(id string) (*GPU, error) {
 	return &gpu, err
 }
 
-func (client *Client) GetAll() ([]GPU, error) {
+func (client *Client) List() ([]GPU, error) {
 	filter := bson.D{
 		{"host", bson.M{"$nin": client.ExcludedHosts}},
-		{"id", bson.M{"$nin": client.ExcludedGPUs}},
+		{"data.name", bson.M{"$nin": client.ExcludedGPUs}},
 	}
 
 	var gpus []GPU
