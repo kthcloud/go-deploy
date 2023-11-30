@@ -191,18 +191,19 @@ func Update(vmID string, updateParams *vmModel.UpdateParams) error {
 	}
 
 	// service offering
-	var soID *string
-	if so := &context.VM.Subsystems.CS.ServiceOffering; service.Created(so) {
-		var requiresUpdate bool
-		if updateParams.CpuCores != nil {
-			requiresUpdate = true
-		}
+	var requiresUpdate bool
+	var serviceOfferingUpdated bool
+	if updateParams.CpuCores != nil {
+		requiresUpdate = true
+	}
 
-		if updateParams.RAM != nil {
-			requiresUpdate = true
-		}
+	if updateParams.RAM != nil {
+		requiresUpdate = true
+	}
 
-		if requiresUpdate {
+	if requiresUpdate {
+		var soID *string
+		if so := &context.VM.Subsystems.CS.ServiceOffering; service.Created(so) {
 			err = resources.SsDeleter(context.Client.DeleteServiceOffering).
 				WithResourceID(so.ID).
 				WithDbFunc(dbFunc(vmID, "serviceOffering")).
@@ -234,35 +235,31 @@ func Update(vmID string, updateParams *vmModel.UpdateParams) error {
 				soID = &soPublic.ID
 			}
 		} else {
-			soID = &so.ID
-		}
-	} else {
-		for _, soPublic := range context.Generator.SOs() {
-			err = resources.SsCreator(context.Client.CreateServiceOffering).
-				WithDbFunc(dbFunc(vmID, "serviceOffering")).
-				WithPublic(&soPublic).
-				Exec()
+			for _, soPublic := range context.Generator.SOs() {
+				err = resources.SsCreator(context.Client.CreateServiceOffering).
+					WithDbFunc(dbFunc(vmID, "serviceOffering")).
+					WithPublic(&soPublic).
+					Exec()
 
+				if err != nil {
+					return makeError(err)
+				}
+
+				soID = &soPublic.ID
+			}
+		}
+
+		// make sure the vm is using the latest service offering
+		if soID != nil && context.VM.Subsystems.CS.VM.ServiceOfferingID != *soID {
+			serviceOfferingUpdated = true
+
+			deferFunc, err := stopVmIfRunning(context)
 			if err != nil {
 				return makeError(err)
 			}
 
-			soID = &soPublic.ID
+			defer deferFunc()
 		}
-	}
-
-	serviceOfferingUpdated := false
-
-	// make sure the vm is using the latest service offering
-	if soID != nil && context.VM.Subsystems.CS.VM.ServiceOfferingID != *soID {
-		serviceOfferingUpdated = true
-
-		deferFunc, err := stopVmIfRunning(context)
-		if err != nil {
-			return makeError(err)
-		}
-
-		defer deferFunc()
 	}
 
 	if updateParams.Name != nil || serviceOfferingUpdated {
