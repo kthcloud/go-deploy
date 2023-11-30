@@ -2,9 +2,7 @@ package cs
 
 import (
 	"fmt"
-	"go-deploy/pkg/imp/cloudstack"
 	"go-deploy/pkg/subsystems/cs/models"
-	"golang.org/x/exp/slices"
 	"log"
 	"sort"
 	"strconv"
@@ -57,25 +55,21 @@ func (client *Client) CreatePortForwardingRule(public *models.PortForwardingRule
 		return nil, makeError(err)
 	}
 
-	var nameTag string
-	for _, tag := range public.Tags {
-		if tag.Key == "name" {
-			nameTag = tag.Value
-			break
-		}
-	}
-
 	var id string
 	for _, rule := range listRules.PortForwardingRules {
-		if rule.Virtualmachineid == public.VmID && rule.Tags != nil {
-			idx := slices.IndexFunc(rule.Tags, func(tag cloudstack.Tags) bool {
-				return tag.Key == "name" && tag.Value == nameTag
-			})
+		intPrivatePort, err := strconv.Atoi(rule.Privateport)
+		if err != nil {
+			return nil, makeError(err)
+		}
 
-			if idx != -1 {
-				id = rule.Id
-				break
-			}
+		intPublicPort, err := strconv.Atoi(rule.Publicport)
+		if err != nil {
+			return nil, makeError(err)
+		}
+
+		if rule.Virtualmachineid == public.VmID && intPrivatePort == public.PrivatePort && intPublicPort == public.PublicPort && rule.Protocol == public.Protocol {
+			id = rule.Id
+			break
 		}
 	}
 

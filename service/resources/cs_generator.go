@@ -9,6 +9,7 @@ import (
 	"go-deploy/service/vm_service/constants"
 	"go-deploy/utils/subsystemutils"
 	"golang.org/x/exp/slices"
+	"sort"
 	"time"
 )
 
@@ -55,6 +56,16 @@ func (cr *CsGenerator) VMs() []models.VmPublic {
 		if v := &cr.v.vm.Subsystems.CS.VM; service.Created(v) {
 			csVM.ID = v.ID
 			csVM.CreatedAt = v.CreatedAt
+
+			for idx, tag := range csVM.Tags {
+				if tag.Key == "createdAt" {
+					for _, createdTag := range v.Tags {
+						if createdTag.Key == "createdAt" {
+							csVM.Tags[idx].Value = createdTag.Value
+						}
+					}
+				}
+			}
 		}
 
 		res = append(res, csVM)
@@ -92,6 +103,16 @@ func (cr *CsGenerator) PFRs() []models.PortForwardingRulePublic {
 				res[idx].ID = pfr.ID
 				res[idx].CreatedAt = pfr.CreatedAt
 				res[idx].PublicPort = pfr.PublicPort
+
+				for jdx, tag := range res[idx].Tags {
+					if tag.Key == "createdAt" {
+						for _, createdTag := range pfr.Tags {
+							if createdTag.Key == "createdAt" {
+								res[idx].Tags[jdx].Value = createdTag.Value
+							}
+						}
+					}
+				}
 			}
 		}
 
@@ -102,10 +123,16 @@ func (cr *CsGenerator) PFRs() []models.PortForwardingRulePublic {
 }
 
 func createTags(name string, deployName string) []models.Tag {
-	return []models.Tag{
+	tags := []models.Tag{
 		{Key: "name", Value: name},
 		{Key: "managedBy", Value: config.Config.Manager},
 		{Key: "deployName", Value: deployName},
 		{Key: "createdAt", Value: time.Now().Format(time.RFC3339)},
 	}
+
+	sort.Slice(tags, func(i, j int) bool {
+		return tags[i].Key < tags[j].Key
+	})
+
+	return tags
 }
