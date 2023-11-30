@@ -25,8 +25,6 @@ const (
 	TypeCreateStorageManager = "createStorageManager"
 	TypeDeleteStorageManager = "deleteStorageManager"
 	TypeRepairStorageManager = "repairStorageManager"
-
-	TypeRepairGPUs = "repairGpus"
 )
 
 const (

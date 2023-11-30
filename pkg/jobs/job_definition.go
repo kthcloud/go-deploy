@@ -75,9 +75,6 @@ func jobMapper() map[string]JobDefinition {
 			EntryFunc:     vAddActivity(va.ActivityRepairing),
 			ExitFunc:      vRemActivity(va.ActivityRepairing),
 		},
-		jobModel.TypeRepairGPUs: {
-			JobFunc: RepairGPUs,
-		},
 		jobModel.TypeCreateSystemSnapshot: {
 			JobFunc:       CreateSystemSnapshot,
 			TerminateFunc: leafJobVM.Build(),

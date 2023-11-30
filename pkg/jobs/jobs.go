@@ -458,20 +458,6 @@ func RepairVM(job *jobModel.Job) error {
 	return nil
 }
 
-func RepairGPUs(job *jobModel.Job) error {
-	err := assertParameters(job, []string{})
-	if err != nil {
-		return makeTerminatedError(err)
-	}
-
-	err = vm_service.RepairGPUs()
-	if err != nil {
-		return makeTerminatedError(err)
-	}
-
-	return nil
-}
-
 func CreateSystemSnapshot(job *jobModel.Job) error {
 	err := assertParameters(job, []string{"id", "params"})
 	if err != nil {

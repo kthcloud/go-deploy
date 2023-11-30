@@ -231,41 +231,6 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 	return nil
 }
 
-func RepairGPUs() error {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to repair gpus. details: %w", err)
-	}
-
-	// get all gpus that are attached to a vm
-	attachedGPUs, err := gpuModel.New().GetAllLeased()
-	if err != nil {
-		return makeError(err)
-	}
-
-	gpuIds := make([]string, len(attachedGPUs))
-	for idx, gpu := range attachedGPUs {
-		gpuIds[idx] = gpu.ID
-	}
-
-	// find vms that have a gpu assigned, but cs is not setup to use it
-	for _, gpu := range attachedGPUs {
-		vm, err := vmModel.New().GetByID(gpu.Lease.VmID)
-		if err != nil {
-			return makeError(err)
-		}
-
-		if !hasExtraConfig(vm) {
-			err := cs_service.AttachGPU(gpu.ID, vm.ID)
-			if err != nil {
-				return makeError(err)
-			}
-		}
-	}
-
-	log.Println("successfully repaired gpus")
-	return nil
-}
-
 func DetachGPU(vmID string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to detach gpu from vm %s. details: %w", vmID, err)
