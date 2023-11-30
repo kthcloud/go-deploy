@@ -428,7 +428,7 @@ func Update(c *gin.Context) {
 	if requestBody.Ports != nil {
 		for _, port := range *requestBody.Ports {
 			if port.HttpProxy != nil {
-				available, err := vm_service.HttpProxyNameAvailable(port.HttpProxy.Name)
+				available, err := vm_service.HttpProxyNameAvailable(requestURI.VmID, port.HttpProxy.Name)
 				if err != nil {
 					context.ServerError(err, v1.InternalError)
 					return

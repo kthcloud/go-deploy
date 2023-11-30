@@ -204,6 +204,10 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 
 		for mapName, k8sDeployment := range kg.v.vm.Subsystems.K8s.GetDeploymentMap() {
 			idx := slices.IndexFunc(ports, func(p vm.Port) bool {
+				if p.HttpProxy == nil {
+					return false
+				}
+
 				return vpDeploymentName(kg.v.vm, p.HttpProxy.Name) == mapName
 			})
 
@@ -400,6 +404,10 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 
 		for mapName, svc := range kg.v.vm.Subsystems.K8s.GetServiceMap() {
 			idx := slices.IndexFunc(ports, func(p vm.Port) bool {
+				if p.HttpProxy == nil {
+					return false
+				}
+
 				return vpServiceName(kg.v.vm, p.HttpProxy.Name) == mapName
 			})
 
@@ -548,6 +556,10 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 
 		for mapName, ingress := range kg.v.vm.Subsystems.K8s.GetIngressMap() {
 			idx := slices.IndexFunc(ports, func(p vm.Port) bool {
+				if p.HttpProxy == nil {
+					return false
+				}
+
 				return vpIngressName(kg.v.vm, p.HttpProxy.Name) == mapName ||
 					(vpCustomDomainIngressName(kg.v.vm, p.HttpProxy.Name) == mapName && p.HttpProxy.CustomDomain != nil)
 			})
