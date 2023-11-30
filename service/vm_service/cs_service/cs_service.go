@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	configModels "go-deploy/models/config"
-	gpu2 "go-deploy/models/sys/gpu"
+	gpuModel "go-deploy/models/sys/gpu"
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/cs/commands"
@@ -340,9 +340,9 @@ func Repair(id string) error {
 
 	// only repair if the vm is stopped to prevent downtime for the user
 	if status == "Stopped" {
-		var gpu *gpu2.GPU
+		var gpu *gpuModel.GPU
 		if gpuID := context.VM.GetGpuID(); gpuID != nil {
-			gpu, err = gpu2.New().GetByID(*gpuID)
+			gpu, err = gpuModel.New().GetByID(*gpuID)
 			if err != nil {
 				return makeError(err)
 			}
@@ -352,6 +352,9 @@ func Repair(id string) error {
 			vm.ExtraConfig = CreateExtraConfig(gpu)
 		}
 
+		// <<NEVER>> call the "DeleteVM" method here, as it contains the persistent storage for the VM
+		// (this api does not handle volume in cloudstack separately from the vm,
+		// so deleting the vm will delete the persistent volume)
 		err = resources.SsRepairer(
 			context.Client.ReadVM,
 			context.Client.CreateVM,

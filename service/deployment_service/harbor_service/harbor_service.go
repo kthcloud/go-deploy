@@ -363,18 +363,10 @@ func Repair(id string) error {
 		}
 	}
 
-	if repo := &context.Deployment.Subsystems.Harbor.Repository; service.Created(repo) {
-		err = resources.SsRepairer(
-			context.Client.ReadRepository,
-			context.Client.CreateRepository,
-			context.Client.UpdateRepository,
-			context.Client.DeleteRepository,
-		).WithResourceID(repo.Name).WithDbFunc(dbFunc(id, "repository")).WithGenPublic(context.Generator.Repository()).Exec()
-
-		if err != nil {
-			return makeError(err)
-		}
-	} else {
+	// don't repair the repository, since it can't be updated anyway
+	// also <<NEVER>> call "DeleteRepository" here since it is the persistent storage for the deployment
+	// if it is updated in the future to actually repair, the delete-func must be empty: func(string) error { return nil }
+	if repo := &context.Deployment.Subsystems.Harbor.Repository; service.NotCreated(repo) {
 		err = resources.SsCreator(context.Client.CreateRepository).
 			WithDbFunc(dbFunc(id, "repository")).
 			WithPublic(context.Generator.Repository()).
