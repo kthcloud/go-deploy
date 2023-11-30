@@ -100,7 +100,7 @@ func (client *Client) UpdateWithParamsByID(id string, params *UpdateParams) erro
 					{"ports.httpProxy.name", port.HttpProxy.Name},
 				}
 
-				existAny, err := client.ResourceClient.AddExtraFilter(filter).ExistsAny()
+				existAny, err := client.ResourceClient.ExistsWithFilter(filter)
 				if err != nil {
 					return err
 				}

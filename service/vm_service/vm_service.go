@@ -458,8 +458,13 @@ func NameAvailable(name string) (bool, error) {
 	return !exists, nil
 }
 
-func HttpProxyNameAvailable(name string) (bool, error) {
-	exists, err := vmModel.New().WithCustomFilter(bson.D{{"ports.httpProxy.name", name}}).ExistsAny()
+func HttpProxyNameAvailable(id, name string) (bool, error) {
+	filter := bson.D{
+		{"id", bson.D{{"$ne", id}}},
+		{"ports.httpProxy.name", name},
+	}
+
+	exists, err := vmModel.New().WithCustomFilter(filter).ExistsAny()
 	if err != nil {
 		return false, err
 	}
