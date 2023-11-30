@@ -148,23 +148,3 @@ func vmRepairer(ctx context.Context) {
 		}
 	}
 }
-
-func gpuRepairer(ctx context.Context) {
-	defer log.Println("gpuRepairer stopped")
-
-	for {
-		select {
-		case <-time.After(time.Duration(config.Config.GPU.RepairInterval) * time.Second):
-			log.Println("repairing gpus")
-
-			jobID := uuid.New().String()
-			err := job_service.Create(jobID, "system", jobModel.TypeRepairGPUs, map[string]interface{}{})
-			if err != nil {
-				utils.PrettyPrintError(fmt.Errorf("failed to create repair job for gpus. details: %w", err))
-				continue
-			}
-		case <-ctx.Done():
-			return
-		}
-	}
-}

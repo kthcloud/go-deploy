@@ -10,5 +10,4 @@ func Setup(ctx context.Context) {
 	go deploymentRepairer(ctx)
 	go storageManagerRepairer(ctx)
 	go vmRepairer(ctx)
-	go gpuRepairer(ctx)
 }
