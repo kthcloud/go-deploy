@@ -391,6 +391,10 @@ func Repair(id string) error {
 			context.Client.UpdatePortForwardingRule,
 			context.Client.DeletePortForwardingRule,
 		).WithResourceID(pfr.ID).WithDbFunc(dbFunc(id, "portForwardingRuleMap."+pfr.Name)).WithGenPublic(&pfr).Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	return nil

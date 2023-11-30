@@ -2,6 +2,7 @@ package models
 
 import (
 	"go-deploy/pkg/imp/cloudstack"
+	"sort"
 	"time"
 )
 
@@ -18,6 +19,10 @@ func FromCsTags(tags []cloudstack.Tags) []Tag {
 			Value: tag.Value,
 		})
 	}
+
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Key < result[j].Key
+	})
 
 	return result
 }
