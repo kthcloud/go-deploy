@@ -32,7 +32,7 @@ func (hg *HarborGenerator) Project() *models.ProjectPublic {
 }
 
 func (hg *HarborGenerator) Robot() *models.RobotPublic {
-	if hg.d.deployment == nil {
+	if hg.d.deployment != nil {
 		ro := models.RobotPublic{
 			Name:    hg.d.deployment.Name,
 			Disable: false,
@@ -53,7 +53,7 @@ func (hg *HarborGenerator) Robot() *models.RobotPublic {
 }
 
 func (hg *HarborGenerator) Repository() *models.RepositoryPublic {
-	if hg.d.deployment == nil {
+	if hg.d.deployment != nil {
 		splits := strings.Split(config.Config.Registry.PlaceholderImage, "/")
 		project := splits[len(splits)-2]
 		repository := splits[len(splits)-1]
@@ -79,7 +79,7 @@ func (hg *HarborGenerator) Repository() *models.RepositoryPublic {
 }
 
 func (hg *HarborGenerator) Webhook() *models.WebhookPublic {
-	if hg.d.deployment == nil {
+	if hg.d.deployment != nil {
 		webhookTarget := fmt.Sprintf("%s/v1/hooks/deployments/harbor", config.Config.ExternalUrl)
 
 		we := models.WebhookPublic{
