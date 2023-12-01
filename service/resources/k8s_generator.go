@@ -137,6 +137,11 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 			image = mainApp.Image
 		} else {
 			image = config.Config.Registry.PlaceholderImage
+
+			k8sEnvs = append(k8sEnvs, models.EnvVar{
+				Name:  "MESSAGE",
+				Value: "This app is currently disabled",
+			})
 		}
 
 		dep := models.DeploymentPublic{
