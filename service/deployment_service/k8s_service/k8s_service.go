@@ -782,11 +782,33 @@ func updateReplicas(context *DeploymentContext) error {
 		return nil
 	}
 
+	deployments := context.Generator.Deployments()
+	idx = slices.IndexFunc(deployments, func(i k8sModels.DeploymentPublic) bool {
+		return i.Name == context.Deployment.Name
+	})
+	if idx == -1 {
+		log.Println("main k8s deployment for deployment", context.Deployment.ID, "not found when updating replicas. assuming it was deleted")
+		return nil
+	}
+
+	if service.NotCreated(&deployments[idx]) {
+		log.Println("main k8s deployment for deployment", context.Deployment.ID, "not created yet when updating replicas. assuming it was deleted")
+		return nil
+	}
+
 	err := resources.SsUpdater(context.Client.UpdateHPA).
 		WithDbFunc(dbFunc(context.Deployment.ID, "hpaMap."+context.Deployment.Name)).
 		WithPublic(&hpas[idx]).
 		Exec()
 
+	if err != nil {
+		return err
+	}
+
+	err = resources.SsUpdater(context.Client.UpdateDeployment).
+		WithDbFunc(dbFunc(context.Deployment.ID, "deploymentMap."+context.Deployment.Name)).
+		WithPublic(&deployments[idx]).
+		Exec()
 	if err != nil {
 		return err
 	}

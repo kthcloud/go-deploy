@@ -126,7 +126,11 @@ func UpdateIfDiff[T SsResource](dbResource T, fetchFunc func() (T, error), updat
 
 	if NotNil(liveResource) {
 		liveResourceCleaned = ResetTimeFields(liveResource)
-		if NotNil(liveResource) && areTimeFieldsEqual(dbResource, liveResource) && reflect.DeepEqual(liveResourceCleaned, dbResourceCleaned) {
+
+		timeEqual := areTimeFieldsEqual(dbResource, liveResource)
+		restEqual := cmp.Equal(dbResourceCleaned, liveResourceCleaned, cmpopts.EquateEmpty())
+
+		if NotNil(liveResource) && timeEqual && restEqual {
 			return nil
 		}
 	}

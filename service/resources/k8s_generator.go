@@ -132,10 +132,17 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 			}
 		}
 
+		var image string
+		if mainApp.Replicas > 0 {
+			image = mainApp.Image
+		} else {
+			image = config.Config.Registry.PlaceholderImage
+		}
+
 		dep := models.DeploymentPublic{
 			Name:             kg.d.deployment.Name,
 			Namespace:        kg.namespace,
-			Image:            mainApp.Image,
+			Image:            image,
 			ImagePullSecrets: imagePullSecrets,
 			EnvVars:          k8sEnvs,
 			Resources: models.Resources{
@@ -922,14 +929,14 @@ func (kg *K8sGenerator) HPAs() []models.HpaPublic {
 	if kg.d.deployment != nil {
 		mainApp := kg.d.deployment.GetMainApp()
 
-		max := int(math.Max(float64(mainApp.Replicas), 0))
-		min := int(math.Min(float64(mainApp.Replicas), 1))
+		minReplicas := 1
+		maxReplicas := int(math.Max(float64(mainApp.Replicas), float64(minReplicas)))
 
 		hpa := models.HpaPublic{
 			Name:        kg.d.deployment.Name,
 			Namespace:   kg.namespace,
-			MinReplicas: min,
-			MaxReplicas: max,
+			MinReplicas: minReplicas,
+			MaxReplicas: maxReplicas,
 			Target: models.Target{
 				Kind:       "Deployment",
 				Name:       kg.d.deployment.Name,
