@@ -30,6 +30,8 @@ func (gg *GitHubGenerator) Webhook() *githubModels.WebhookPublic {
 			wh.ID = w.ID
 			wh.CreatedAt = w.CreatedAt
 		}
+
+		return &wh
 	}
 
 	return nil

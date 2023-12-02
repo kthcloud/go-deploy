@@ -37,11 +37,8 @@ func CreateVM(job *jobModel.Job) error {
 
 	err = vm_service.Create(id, ownerID, &params)
 	if err != nil {
-		if errors.Is(err, errors2.NonUniqueFieldErr) {
-			return makeTerminatedError(err)
-		}
-
-		return makeFailedError(err)
+		// we always terminate these jobs, since rerunning it would cause a NonUniqueFieldErr
+		return makeTerminatedError(err)
 	}
 
 	return nil
@@ -210,11 +207,8 @@ func CreateDeployment(job *jobModel.Job) error {
 
 	err = deployment_service.Create(id, ownerID, &params)
 	if err != nil {
-		if errors.Is(err, deployment_service.NonUniqueFieldErr) {
-			return makeTerminatedError(err)
-		}
-
-		return makeFailedError(err)
+		// we always terminate these jobs, since rerunning it would cause a NonUniqueFieldErr
+		return makeTerminatedError(err)
 	}
 
 	return nil

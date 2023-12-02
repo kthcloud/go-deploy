@@ -5,21 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/gorilla/websocket"
 	"go-deploy/models/dto/uri"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/deployment_service"
-	"go-deploy/utils"
 	"io"
-	"net/http"
 )
-
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
-}
 
 func GetLogsSSE(c *gin.Context) {
 	sysContext := sys.NewContext(c)
@@ -37,14 +28,15 @@ func GetLogsSSE(c *gin.Context) {
 	}
 
 	type Message struct {
+		source string
 		prefix string
 		msg    string
 	}
 
 	ch := make(chan Message)
 
-	handler := func(prefix, msg string) {
-		ch <- Message{prefix, msg}
+	handler := func(source, prefix, msg string) {
+		ch <- Message{source, prefix, msg}
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -68,12 +60,14 @@ func GetLogsSSE(c *gin.Context) {
 			if msg.msg == "__control" {
 				return true
 			}
+			//_, err := fmt.Fprintf(w, "data: %s\n\n", fmt.Sprintf("%s: %s", msg.prefix, msg.msg))
+			//if err != nil {
+			//	utils.PrettyPrintError(fmt.Errorf("error writing message to SSE for deployment %s. details: %w", requestURI.DeploymentID, err))
+			//	return false
+			//}
 
-			_, err := fmt.Fprintf(w, "data: %s\n\n", fmt.Sprintf("%s: %s", msg.prefix, msg.msg))
-			if err != nil {
-				utils.PrettyPrintError(fmt.Errorf("error writing message to SSE for deployment %s. details: %w", requestURI.DeploymentID, err))
-				return false
-			}
+			message := fmt.Sprintf("%s: %s", msg.prefix, msg.msg)
+			c.SSEvent(msg.source, message)
 			return true
 		}
 	})

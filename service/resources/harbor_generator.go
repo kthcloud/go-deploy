@@ -2,6 +2,7 @@ package resources
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/harbor/models"
 	"go-deploy/service"
@@ -83,7 +84,8 @@ func (hg *HarborGenerator) Webhook() *models.WebhookPublic {
 		webhookTarget := fmt.Sprintf("%s/v1/hooks/deployments/harbor", config.Config.ExternalUrl)
 
 		we := models.WebhookPublic{
-			Name:   hg.d.deployment.OwnerID,
+			// "Name" does not matter and will be imported from Harbor if "Target" matches with existing webhook
+			Name:   uuid.NewString(),
 			Target: webhookTarget,
 			Token:  config.Config.Harbor.WebhookSecret,
 		}

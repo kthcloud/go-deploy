@@ -15,6 +15,10 @@ import (
 	"time"
 )
 
+const (
+	ControlMessage = "__control"
+)
+
 func (client *Client) getPodNames(namespace, deploymentID string) ([]string, error) {
 	pods, err := client.K8sClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelID, deploymentID),
@@ -31,7 +35,7 @@ func (client *Client) getPodNames(namespace, deploymentID string) ([]string, err
 	return podNames, nil
 }
 
-func (client *Client) setupPodLogStreamer(ctx context.Context, namespace, deploymentID string, handler func(string, string)) {
+func (client *Client) setupPodLogStreamer(ctx context.Context, namespace, deploymentID string, handler func(int, string)) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create k8s log stream for deployment %s. details: %w", deploymentID, err)
 	}
@@ -50,10 +54,10 @@ func (client *Client) setupPodLogStreamer(ctx context.Context, namespace, deploy
 	for idx, podName := range podNames {
 		wg.Add(1)
 
-		localIdx := idx
+		podNumber := idx
 		localPodName := podName
 		go func() {
-			client.readLogs(ctx, fmt.Sprintf("[pod %d]", localIdx), namespace, localPodName, handler)
+			client.readLogs(ctx, podNumber, namespace, localPodName, handler)
 			wg.Done()
 		}()
 	}
@@ -62,7 +66,7 @@ func (client *Client) setupPodLogStreamer(ctx context.Context, namespace, deploy
 	return
 }
 
-func (client *Client) readLogs(ctx context.Context, prefix, namespace, podName string, handler func(string, string)) {
+func (client *Client) readLogs(ctx context.Context, podNumber int, namespace, podName string, handler func(int, string)) {
 	var logStream io.ReadCloser
 	defer func(logStream io.ReadCloser) {
 		if logStream != nil {
@@ -107,11 +111,11 @@ func (client *Client) readLogs(ctx context.Context, prefix, namespace, podName s
 					break
 				}
 
-				handler(prefix, line)
+				handler(podNumber, line)
 			}
 
 			time.Sleep(100 * time.Millisecond)
-			handler("[control]", "__control")
+			handler(-1, ControlMessage)
 		}
 	}
 }
@@ -137,7 +141,7 @@ func isExitLine(line string) bool {
 	return firstPart && lastPart
 }
 
-func (client *Client) SetupLogStream(ctx context.Context, namespace, deploymentID string, handler func(string, string)) error {
+func (client *Client) SetupLogStream(ctx context.Context, namespace, deploymentID string, handler func(int, string)) error {
 	go client.setupPodLogStreamer(ctx, namespace, deploymentID, handler)
 	return nil
 }
