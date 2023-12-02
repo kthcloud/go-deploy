@@ -15,7 +15,13 @@ import (
 	"time"
 )
 
-func SetupLogStream(ctx context.Context, deploymentID string, handler func(string, string), auth *service.AuthInfo) error {
+const (
+	MessageSourcePod     = "pod"
+	MessageSourceBuild   = "build"
+	MessageSourceControl = "control"
+)
+
+func SetupLogStream(ctx context.Context, deploymentID string, handler func(string, string, string), auth *service.AuthInfo) error {
 	deployment, err := GetByIdAuth(deploymentID, auth)
 	if err != nil {
 		return err
@@ -47,7 +53,13 @@ func SetupLogStream(ctx context.Context, deploymentID string, handler func(strin
 	}
 
 	ssK8s := deployment.Subsystems.K8s
-	err = k8sClient.SetupLogStream(ctx, ssK8s.Namespace.Name, k8sDeployment.ID, handler)
+	err = k8sClient.SetupLogStream(ctx, ssK8s.Namespace.Name, k8sDeployment.ID, func(podNumber int, line string) {
+		if line == k8s.ControlMessage {
+			handler(MessageSourceControl, "[control]", line)
+			return
+		}
+		handler(MessageSourcePod, fmt.Sprintf("[pod %d]", podNumber), line)
+	})
 	if err != nil {
 		return err
 	}
@@ -78,7 +90,7 @@ func SetupLogStream(ctx context.Context, deploymentID string, handler func(strin
 	return nil
 }
 
-func setupContinuousGitLabLogStream(ctx context.Context, deploymentID string, handler func(string, string)) error {
+func setupContinuousGitLabLogStream(ctx context.Context, deploymentID string, handler func(string, string, string)) error {
 	buildID := 0
 	readRows := 0
 
@@ -112,7 +124,7 @@ func setupContinuousGitLabLogStream(ctx context.Context, deploymentID string, ha
 				if build.Status == "pending" || build.Status == "running" {
 					for _, row := range build.Trace[readRows:] {
 						if row != "" {
-							handler("[build]", row)
+							handler(MessageSourceBuild, "[build]", row)
 						}
 						readRows++
 					}

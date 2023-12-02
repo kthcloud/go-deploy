@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"go-deploy/models/dto/body"
@@ -151,8 +152,8 @@ func HandleGitHubHook(c *gin.Context) {
 	}
 
 	var requestBodyParsed body.GithubWebhookPayloadPush
-	if err = context.GinContext.ShouldBindJSON(&requestBodyParsed); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+	if err = json.Unmarshal(requestBodyRaw, &requestBodyParsed); err != nil {
+		context.UserError("Invalid request body")
 		return
 	}
 
