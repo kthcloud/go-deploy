@@ -8,6 +8,10 @@ import (
 const (
 	TypeCustom   = "custom"
 	TypePrebuilt = "prebuilt"
+
+	LogSourcePod        = "pod"
+	LogSourceDeployment = "deployment"
+	LogSourceBuild      = "build"
 )
 
 type App struct {

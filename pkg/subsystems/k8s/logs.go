@@ -15,10 +15,6 @@ import (
 	"time"
 )
 
-const (
-	ControlMessage = "__control"
-)
-
 func (client *Client) getPodNames(namespace, deploymentID string) ([]string, error) {
 	pods, err := client.K8sClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelID, deploymentID),
@@ -27,9 +23,12 @@ func (client *Client) getPodNames(namespace, deploymentID string) ([]string, err
 		return nil, err
 	}
 
-	podNames := make([]string, len(pods.Items))
-	for idx, pod := range pods.Items {
-		podNames[idx] = pod.Name
+	podNames := make([]string, 0)
+	for _, pod := range pods.Items {
+		if pod.Status.Phase != v1.PodRunning {
+			continue
+		}
+		podNames = append(podNames, pod.Name)
 	}
 
 	return podNames, nil
@@ -40,30 +39,61 @@ func (client *Client) setupPodLogStreamer(ctx context.Context, namespace, deploy
 		return fmt.Errorf("failed to create k8s log stream for deployment %s. details: %w", deploymentID, err)
 	}
 
-	podNames, err := client.getPodNames(namespace, deploymentID)
-	if err != nil {
-		utils.PrettyPrintError(makeError(err))
-		return
+	activeStreams := make(map[string]bool)
+	mutex := sync.Mutex{}
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			time.Sleep(500 * time.Millisecond)
+
+			podNames, err := client.getPodNames(namespace, deploymentID)
+			if err != nil {
+				utils.PrettyPrintError(makeError(err))
+				return
+			}
+
+			if len(podNames) == 0 {
+				return
+			}
+
+			// setup log stream for each pod
+			for idx, podName := range podNames {
+				if activeStreams[podName] {
+					continue
+				}
+
+				mutex.Lock()
+				activeStreams[podName] = true
+				mutex.Unlock()
+
+				podNumber := idx
+				localPodName := podName
+				go func() {
+					client.readLogs(ctx, podNumber, namespace, localPodName, handler)
+				}()
+			}
+
+			// remove log stream for each pod that is not running
+			for podName := range activeStreams {
+				found := false
+				for _, name := range podNames {
+					if name == podName {
+						found = true
+						break
+					}
+				}
+
+				if !found {
+					mutex.Lock()
+					delete(activeStreams, podName)
+					mutex.Unlock()
+				}
+			}
+		}
 	}
-
-	if len(podNames) == 0 {
-		return
-	}
-
-	wg := sync.WaitGroup{}
-	for idx, podName := range podNames {
-		wg.Add(1)
-
-		podNumber := idx
-		localPodName := podName
-		go func() {
-			client.readLogs(ctx, podNumber, namespace, localPodName, handler)
-			wg.Done()
-		}()
-	}
-	wg.Wait()
-
-	return
 }
 
 func (client *Client) readLogs(ctx context.Context, podNumber int, namespace, podName string, handler func(string, int, time.Time)) {
@@ -107,7 +137,6 @@ func (client *Client) readLogs(ctx context.Context, podNumber int, namespace, po
 
 				line = reader.Text()
 				if isExitLine(line) {
-					createNewStream = true
 					break
 				}
 
@@ -137,10 +166,21 @@ func getK8sLogStream(client *Client, namespace, podName string, history int) (io
 func isExitLine(line string) bool {
 	firstPart := strings.Contains(line, "rpc error: code = NotFound desc = an error occurred when try to find container")
 	lastPart := strings.Contains(line, "not found")
-	return firstPart && lastPart
+
+	notYetStarted := firstPart && lastPart
+
+	sigQuit := strings.HasSuffix(line, "signal 3 (SIGQUIT) received, shutting down")
+	gracefullyShuttingDown := strings.HasSuffix(line, ": gracefully shutting down")
+
+	return notYetStarted || sigQuit || gracefullyShuttingDown
 }
 
 func (client *Client) SetupDeploymentLogStream(ctx context.Context, deploymentID string, handler func(string, int, time.Time)) error {
 	go client.setupPodLogStreamer(ctx, client.Namespace, deploymentID, handler)
 	return nil
 }
+
+// 2023/12/03 19:11:23 [notice] 1#1: signal 3 (SIGQUIT) received, shutting down
+// 2023/12/03 19:11:23 [notice] 21#21: gracefully shutting down
+// 2023/12/03 19:11:23 [notice] 20#20: exiting
+// 2023/12/03 19:11:23 [notice] 22#22: exit
