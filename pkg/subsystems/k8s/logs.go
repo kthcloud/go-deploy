@@ -39,7 +39,7 @@ func (client *Client) setupPodLogStreamer(ctx context.Context, namespace, deploy
 		return fmt.Errorf("failed to create k8s log stream for deployment %s. details: %w", deploymentID, err)
 	}
 
-	activeStreams := make(map[string]bool)
+	activeStreams := make(map[string]int)
 	mutex := sync.Mutex{}
 
 	for {
@@ -61,12 +61,12 @@ func (client *Client) setupPodLogStreamer(ctx context.Context, namespace, deploy
 
 			// setup log stream for each pod
 			for idx, podName := range podNames {
-				if activeStreams[podName] {
+				if _, ok := activeStreams[podName]; ok {
 					continue
 				}
 
 				mutex.Lock()
-				activeStreams[podName] = true
+				activeStreams[podName] = getFreePodNumber(activeStreams)
 				mutex.Unlock()
 
 				podNumber := idx
@@ -178,6 +178,17 @@ func isExitLine(line string) bool {
 func (client *Client) SetupDeploymentLogStream(ctx context.Context, deploymentID string, handler func(string, int, time.Time)) error {
 	go client.setupPodLogStreamer(ctx, client.Namespace, deploymentID, handler)
 	return nil
+}
+
+func getFreePodNumber(activeStreams map[string]int) int {
+	max := 0
+	for _, v := range activeStreams {
+		if v > max {
+			max = v
+		}
+	}
+
+	return max + 1
 }
 
 // 2023/12/03 19:11:23 [notice] 1#1: signal 3 (SIGQUIT) received, shutting down

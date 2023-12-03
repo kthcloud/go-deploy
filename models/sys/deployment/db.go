@@ -207,6 +207,10 @@ func (client *Client) GetLogsAfter(id string, createdAt time.Time) ([]Log, error
 		return nil, nil
 	}
 
+	sort.Slice(deployment.Logs, func(i, j int) bool {
+		return deployment.Logs[i].CreatedAt.Before(deployment.Logs[j].CreatedAt)
+	})
+
 	filtered := make([]Log, 0)
 	for _, item := range deployment.Logs {
 		if item.CreatedAt.After(createdAt) {
