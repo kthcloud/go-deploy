@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"go-deploy/models/dto/body"
+	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/models/sys/job"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
@@ -17,6 +18,7 @@ import (
 	"go-deploy/utils/requestutils"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func getTokenFromAuthHeader(context sys.ClientContext) (string, error) {
@@ -93,6 +95,15 @@ func HandleHarborHook(c *gin.Context) {
 	}
 
 	if webhook.Type == "PUSH_ARTIFACT" {
+		newLog := deploymentModel.Log{
+			Source:    deploymentModel.LogSourceDeployment,
+			Prefix:    "[deployment]",
+			Line:      "Received push event from Harbor",
+			CreatedAt: time.Now(),
+		}
+
+		deployment_service.AddLogs(deployment.ID, newLog)
+
 		err = deployment_service.Restart(deployment.ID)
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
@@ -192,6 +203,17 @@ func HandleGitHubHook(c *gin.Context) {
 	}
 
 	if len(ids) > 0 {
+		newLog := deploymentModel.Log{
+			Source:    deploymentModel.LogSourceDeployment,
+			Prefix:    "[deployment]",
+			Line:      "Received push event from GitHub",
+			CreatedAt: time.Now(),
+		}
+
+		for _, id := range ids {
+			deployment_service.AddLogs(id, newLog)
+		}
+
 		jobID := uuid.NewString()
 		err = job_service.Create(jobID, "system", job.TypeBuildDeployments, map[string]interface{}{
 			"ids": ids,

@@ -12,11 +12,6 @@ import (
 	"time"
 )
 
-const (
-	MessageSourcePod   = "pod"
-	MessageSourceBuild = "build"
-)
-
 func deploymentLogger(ctx context.Context) {
 	defer log.Println("deploymentLogger stopped")
 
@@ -80,7 +75,7 @@ func deploymentLogger(ctx context.Context) {
 
 					err = k8s_service.SetupLogStream(logCtx, id.ID, func(line string, podNumber int, createdAt time.Time) {
 						err = deploymentModel.New().AddLogs(id.ID, deploymentModel.Log{
-							Source:    MessageSourcePod,
+							Source:    deploymentModel.LogSourcePod,
 							Prefix:    fmt.Sprintf("[pod %d]", podNumber),
 							Line:      line,
 							CreatedAt: createdAt,
@@ -100,7 +95,7 @@ func deploymentLogger(ctx context.Context) {
 
 					err = gitlab_service.SetupLogStream(logCtx, id.ID, func(line string, createdAt time.Time) {
 						err = deploymentModel.New().AddLogs(id.ID, deploymentModel.Log{
-							Source:    MessageSourceBuild,
+							Source:    deploymentModel.LogSourceBuild,
 							Prefix:    "[build]",
 							Line:      line,
 							CreatedAt: createdAt,
