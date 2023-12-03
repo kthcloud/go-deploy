@@ -5,6 +5,7 @@ import (
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/workers/confirm"
 	"go-deploy/pkg/workers/job_execute"
+	"go-deploy/pkg/workers/logger"
 	metricsWorker "go-deploy/pkg/workers/metrics"
 	"go-deploy/pkg/workers/ping"
 	"go-deploy/pkg/workers/repair"
@@ -145,6 +146,16 @@ func GetFlags() FlagDefinitionList {
 			DefaultValue: false,
 			Run: func(ctx context.Context, _ context.CancelFunc) {
 				metricsWorker.Setup(ctx)
+			},
+		},
+		{
+			Name:         "logger",
+			ValueType:    "bool",
+			FlagType:     "worker",
+			Description:  "start logger",
+			DefaultValue: false,
+			Run: func(ctx context.Context, _ context.CancelFunc) {
+				logger.Setup(ctx)
 			},
 		},
 		{

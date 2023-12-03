@@ -1,6 +1,9 @@
 package deployment
 
-import "go-deploy/models/sys/deployment/subsystems"
+import (
+	"go-deploy/models/sys/deployment/subsystems"
+	"time"
+)
 
 const (
 	TypeCustom   = "custom"
@@ -26,6 +29,13 @@ type Subsystems struct {
 	Harbor subsystems.Harbor `bson:"harbor"`
 	GitHub subsystems.GitHub `bson:"github"`
 	GitLab subsystems.GitLab `bson:"gitlab"`
+}
+
+type Log struct {
+	Source    string    `bson:"source"`
+	Prefix    string    `bson:"prefix"`
+	Line      string    `bson:"line"`
+	CreatedAt time.Time `bson:"createdAt"`
 }
 
 type Env struct {

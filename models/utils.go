@@ -67,9 +67,14 @@ func AddExcludeDeletedFilter(filter bson.D) bson.D {
 	return newFilter
 }
 
-func GetResource[T Resource](collection *mongo.Collection, filter bson.D) (*T, error) {
+func GetResource[T Resource](collection *mongo.Collection, filter bson.D, projection bson.D) (*T, error) {
+	findOptions := options.FindOne()
+	if projection != nil {
+		findOptions.SetProjection(projection)
+	}
+
 	var res T
-	err := collection.FindOne(context.TODO(), filter).Decode(&res)
+	err := collection.FindOne(context.Background(), filter, findOptions).Decode(&res)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, nil
@@ -80,8 +85,8 @@ func GetResource[T Resource](collection *mongo.Collection, filter bson.D) (*T, e
 	return &res, nil
 }
 
-func ListResources[T any](collection *mongo.Collection, filter bson.D, pagination *base.Pagination) ([]T, error) {
-	var findOptions *options.FindOptions
+func ListResources[T any](collection *mongo.Collection, filter bson.D, projection bson.D, pagination *base.Pagination) ([]T, error) {
+	findOptions := &options.FindOptions{}
 	if pagination != nil {
 		limit := int64(pagination.PageSize)
 
@@ -90,10 +95,12 @@ func ListResources[T any](collection *mongo.Collection, filter bson.D, paginatio
 			skip = int64(pagination.Page * pagination.PageSize)
 		}
 
-		findOptions = &options.FindOptions{
-			Limit: &limit,
-			Skip:  &skip,
-		}
+		findOptions.SetLimit(limit)
+		findOptions.SetSkip(skip)
+	}
+
+	if projection != nil {
+		findOptions.SetProjection(projection)
 	}
 
 	cursor, err := collection.Find(context.Background(), filter, findOptions)
@@ -143,7 +150,7 @@ func CreateIfUniqueResource[T Resource](collection *mongo.Collection, id string,
 
 	if result.UpsertedCount == 0 {
 		if result.MatchedCount == 1 {
-			fetched, err := GetResource[onlyID](collection, filter)
+			fetched, err := GetResource[onlyID](collection, filter, nil)
 			if err != nil {
 				return err
 			}

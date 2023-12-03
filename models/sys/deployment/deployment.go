@@ -6,6 +6,10 @@ import (
 	"time"
 )
 
+const (
+	NLogsCache = 100
+)
+
 type Deployment struct {
 	ID      string `bson:"id"`
 	Name    string `bson:"name"`
@@ -23,6 +27,7 @@ type Deployment struct {
 
 	Apps       map[string]App `bson:"apps"`
 	Subsystems Subsystems     `bson:"subsystems"`
+	Logs       []Log          `bson:"logs"`
 
 	StatusMessage string `bson:"statusMessage"`
 	StatusCode    int    `bson:"statusCode"`

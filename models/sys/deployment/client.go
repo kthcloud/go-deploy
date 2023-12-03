@@ -45,6 +45,13 @@ func (client *Client) AddPagination(page, pageSize int) *Client {
 	return client
 }
 
+func (client *Client) ExcludeIDs(ids ...string) *Client {
+	client.ResourceClient.AddExtraFilter(bson.D{{"id", bson.D{{"$nin", ids}}}})
+	client.ActivityResourceClient.AddExtraFilter(bson.D{{"id", bson.D{{"$nin", ids}}}})
+
+	return client
+}
+
 func (client *Client) IncludeDeletedResources() *Client {
 	client.IncludeDeleted = true
 

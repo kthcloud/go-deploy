@@ -5,24 +5,21 @@ import (
 	"fmt"
 	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/models/sys/key_value"
-	"go-deploy/pkg/config"
 	"go-deploy/pkg/metrics"
-	"go-deploy/pkg/subsystems/k8s"
 	"go-deploy/service"
 	"go-deploy/utils"
-	"go-deploy/utils/subsystemutils"
 	"log"
 	"time"
 )
 
 const (
-	MessageSourcePod     = "pod"
-	MessageSourceBuild   = "build"
 	MessageSourceControl = "control"
+
+	FetchPeriod = 300 * time.Millisecond
 )
 
-func SetupLogStream(ctx context.Context, deploymentID string, handler func(string, string, string), auth *service.AuthInfo) error {
-	deployment, err := GetByIdAuth(deploymentID, auth)
+func SetupLogStream(ctx context.Context, id string, handler func(string, string, string), history int, auth *service.AuthInfo) error {
+	deployment, err := GetByIdAuth(id, auth)
 	if err != nil {
 		return err
 	}
@@ -32,37 +29,55 @@ func SetupLogStream(ctx context.Context, deploymentID string, handler func(strin
 	}
 
 	if deployment.BeingDeleted() {
-		log.Println("deployment", deploymentID, "is being deleted. not setting up log stream")
+		log.Println("deployment", id, "is being deleted. not setting up log stream")
 		return nil
 	}
 
-	zone := config.Config.Deployment.GetZone(deployment.Zone)
-	if zone == nil {
-		return fmt.Errorf("zone %s not found", deployment.Zone)
-	}
+	go func() {
+		handler(MessageSourceControl, "[control]", "setting up log stream")
+		time.Sleep(500 * time.Millisecond)
 
-	k8sClient, err := k8s.New(zone.Client, subsystemutils.GetPrefixedName(deployment.OwnerID))
-	if err != nil {
-		return err
-	}
-
-	k8sDeployment := deployment.Subsystems.K8s.GetDeployment(deployment.Name)
-	if service.NotCreated(k8sDeployment) {
-		log.Println("deployment", deploymentID, "not found in k8s when setting up log stream. assuming it was deleted")
-		return DeploymentNotFoundErr
-	}
-
-	ssK8s := deployment.Subsystems.K8s
-	err = k8sClient.SetupLogStream(ctx, ssK8s.Namespace.Name, k8sDeployment.ID, func(podNumber int, line string) {
-		if line == k8s.ControlMessage {
-			handler(MessageSourceControl, "[control]", line)
+		// fetch history logs
+		logs, err := deploymentModel.New().GetLogs(id, history)
+		if err != nil {
+			utils.PrettyPrintError(fmt.Errorf("failed to get logs for deployment %s. details: %w", id, err))
 			return
 		}
-		handler(MessageSourcePod, fmt.Sprintf("[pod %d]", podNumber), line)
-	})
-	if err != nil {
-		return err
-	}
+
+		for _, item := range logs {
+			handler(item.Source, item.Prefix, item.Line)
+		}
+
+		// fetch live logs
+		lastFetched := time.Now()
+		if len(logs) > 0 {
+			lastFetched = logs[len(logs)-1].CreatedAt
+		}
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				time.Sleep(FetchPeriod)
+				handler(MessageSourceControl, "[control]", "fetching logs")
+
+				logs, err = deploymentModel.New().GetLogsAfter(id, lastFetched)
+				if err != nil {
+					utils.PrettyPrintError(fmt.Errorf("failed to get logs for deployment %s after %s. details: %w", id, lastFetched, err))
+					return
+				}
+
+				for _, item := range logs {
+					handler(item.Source, item.Prefix, item.Line)
+				}
+
+				if len(logs) > 0 {
+					lastFetched = logs[len(logs)-1].CreatedAt
+				}
+			}
+		}
+	}()
 
 	go func() {
 		err = key_value.New().Incr(metrics.KeyThreadsLog)
@@ -82,55 +97,5 @@ func SetupLogStream(ctx context.Context, deploymentID string, handler func(strin
 		}
 	}()
 
-	err = setupContinuousGitLabLogStream(ctx, deploymentID, handler)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func setupContinuousGitLabLogStream(ctx context.Context, deploymentID string, handler func(string, string, string)) error {
-	buildID := 0
-	readRows := 0
-
-	go func() {
-		for {
-			time.Sleep(300 * time.Millisecond)
-
-			select {
-			case <-ctx.Done():
-				return
-			default:
-				build, err := deploymentModel.New().GetLastGitLabBuild(deploymentID)
-				if err != nil {
-					utils.PrettyPrintError(fmt.Errorf("failed to get last gitlab build when setting up continuous log stream. details: %w", err))
-					return
-				}
-
-				if build == nil {
-					continue
-				}
-
-				if build.ID == 0 {
-					continue
-				}
-
-				if buildID != build.ID {
-					buildID = build.ID
-					readRows = 0
-				}
-
-				if build.Status == "pending" || build.Status == "running" {
-					for _, row := range build.Trace[readRows:] {
-						if row != "" {
-							handler(MessageSourceBuild, "[build]", row)
-						}
-						readRows++
-					}
-				}
-			}
-		}
-	}()
 	return nil
 }
