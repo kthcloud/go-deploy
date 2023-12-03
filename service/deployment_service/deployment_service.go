@@ -418,7 +418,7 @@ func Repair(id string) error {
 		}
 	}
 
-	log.Println("successfully repaired deployment", deployment.ID)
+	log.Println("repaired deployment", deployment.ID)
 	return nil
 }
 

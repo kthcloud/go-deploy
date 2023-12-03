@@ -318,7 +318,7 @@ func Repair(id string) error {
 		return makeError(err)
 	}
 
-	log.Println("successfully repaired vm", id)
+	log.Println("repaired vm", id)
 	return nil
 }
 

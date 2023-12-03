@@ -48,7 +48,7 @@ func (dbCtx *Context) setupMongo() error {
 		log.Fatalln(makeError(err))
 	}
 
-	log.Println("successfully connected to mongodb")
+	log.Println("connected to mongodb")
 
 	// Find collections
 	DB.CollectionMap = make(map[string]*mongo.Collection)
@@ -59,7 +59,7 @@ func (dbCtx *Context) setupMongo() error {
 		DB.CollectionMap[def.Name] = dbCtx.mongoClient.Database(config.Config.MongoDB.Name).Collection(def.Name)
 	}
 
-	log.Println("successfully found", len(DB.CollectionDefinitionMap), "collections")
+	log.Println("found", len(DB.CollectionDefinitionMap), "collections")
 
 	ensureCount := 0
 	for _, def := range DB.CollectionDefinitionMap {
@@ -71,7 +71,7 @@ func (dbCtx *Context) setupMongo() error {
 			if err != nil && !isIndexExistsError(err) {
 				return makeError(err)
 			}
-			
+
 			ensureCount++
 		}
 	}

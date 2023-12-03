@@ -26,7 +26,7 @@ func (dbCtx *Context) setupRedis() error {
 		return makeError(err)
 	}
 
-	log.Println("successfully connected to redis")
+	log.Println("connected to redis")
 
 	return nil
 }
