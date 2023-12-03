@@ -35,7 +35,7 @@ func (client *Client) getPodNames(namespace, deploymentID string) ([]string, err
 	return podNames, nil
 }
 
-func (client *Client) setupPodLogStreamer(ctx context.Context, namespace, deploymentID string, handler func(int, string)) {
+func (client *Client) setupPodLogStreamer(ctx context.Context, namespace, deploymentID string, handler func(string, int, time.Time)) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create k8s log stream for deployment %s. details: %w", deploymentID, err)
 	}
@@ -66,7 +66,7 @@ func (client *Client) setupPodLogStreamer(ctx context.Context, namespace, deploy
 	return
 }
 
-func (client *Client) readLogs(ctx context.Context, podNumber int, namespace, podName string, handler func(int, string)) {
+func (client *Client) readLogs(ctx context.Context, podNumber int, namespace, podName string, handler func(string, int, time.Time)) {
 	var logStream io.ReadCloser
 	defer func(logStream io.ReadCloser) {
 		if logStream != nil {
@@ -85,7 +85,7 @@ func (client *Client) readLogs(ctx context.Context, podNumber int, namespace, po
 			return
 		default:
 			if createNewStream {
-				logStream, err := getK8sLogStream(client, namespace, podName, 20)
+				logStream, err := getK8sLogStream(client, namespace, podName, 0)
 				if err != nil {
 					if IsNotFoundErr(err) {
 						// pod got deleted for some reason, so we just stop the log stream
@@ -111,11 +111,10 @@ func (client *Client) readLogs(ctx context.Context, podNumber int, namespace, po
 					break
 				}
 
-				handler(podNumber, line)
+				handler(line, podNumber, time.Now())
 			}
 
 			time.Sleep(100 * time.Millisecond)
-			handler(-1, ControlMessage)
 		}
 	}
 }
@@ -141,7 +140,7 @@ func isExitLine(line string) bool {
 	return firstPart && lastPart
 }
 
-func (client *Client) SetupLogStream(ctx context.Context, namespace, deploymentID string, handler func(int, string)) error {
-	go client.setupPodLogStreamer(ctx, namespace, deploymentID, handler)
+func (client *Client) SetupDeploymentLogStream(ctx context.Context, deploymentID string, handler func(string, int, time.Time)) error {
+	go client.setupPodLogStreamer(ctx, client.Namespace, deploymentID, handler)
 	return nil
 }

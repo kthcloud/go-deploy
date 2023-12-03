@@ -54,7 +54,7 @@ func (client *Client) GetMany(jobType, status *string) ([]Job, error) {
 		filter = append(filter, bson.E{Key: "status", Value: status})
 	}
 
-	return client.ListWithFilter(filter)
+	return client.ListWithFilterAndProjection(filter, nil)
 }
 
 func (client *Client) GetByArgs(args map[string]interface{}) ([]Job, error) {
@@ -68,7 +68,7 @@ func (client *Client) GetByArgs(args map[string]interface{}) ([]Job, error) {
 		fullFilter = append(fullFilter, filter...)
 	}
 
-	return client.ListWithFilter(fullFilter)
+	return client.ListWithFilterAndProjection(fullFilter, nil)
 }
 
 func (client *Client) GetNext() (*Job, error) {

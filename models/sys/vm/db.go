@@ -65,7 +65,7 @@ func (client *Client) Create(id, owner, manager string, params *CreateParams) (*
 }
 
 func (client *Client) GetByTransferCode(code, userID string) (*VM, error) {
-	return client.GetWithFilter(bson.D{{"transfer.code", code}, {"transfer.userId", userID}})
+	return client.GetWithFilterAndProjection(bson.D{{"transfer.code", code}, {"transfer.userId", userID}}, nil)
 }
 
 func (client *Client) DeleteByID(id string) error {

@@ -9,15 +9,15 @@ import (
 )
 
 func (client *ResourceClient[T]) GetByID(id string) (*T, error) {
-	return models.GetResource[T](client.Collection, models.GroupFilters(bson.D{{"id", id}}, client.ExtraFilter, client.Search, client.IncludeDeleted))
+	return models.GetResource[T](client.Collection, models.GroupFilters(bson.D{{"id", id}}, client.ExtraFilter, client.Search, client.IncludeDeleted), nil)
 }
 
 func (client *ResourceClient[T]) GetByName(name string) (*T, error) {
-	return models.GetResource[T](client.Collection, models.GroupFilters(bson.D{{"name", name}}, client.ExtraFilter, client.Search, client.IncludeDeleted))
+	return models.GetResource[T](client.Collection, models.GroupFilters(bson.D{{"name", name}}, client.ExtraFilter, client.Search, client.IncludeDeleted), nil)
 }
 
 func (client *ResourceClient[T]) List() ([]T, error) {
-	return models.ListResources[T](client.Collection, models.GroupFilters(bson.D{}, client.ExtraFilter, client.Search, client.IncludeDeleted), client.Pagination)
+	return models.ListResources[T](client.Collection, models.GroupFilters(bson.D{}, client.ExtraFilter, client.Search, client.IncludeDeleted), nil, client.Pagination)
 }
 
 func (client *ResourceClient[T]) ExistsByID(id string) (bool, error) {
@@ -116,7 +116,7 @@ func (client *ResourceClient[T]) Deleted(id string) (bool, error) {
 }
 
 func (client *ResourceClient[T]) Get() (*T, error) {
-	return models.GetResource[T](client.Collection, models.GroupFilters(bson.D{}, client.ExtraFilter, client.Search, client.IncludeDeleted))
+	return models.GetResource[T](client.Collection, models.GroupFilters(bson.D{}, client.ExtraFilter, client.Search, client.IncludeDeleted), nil)
 }
 
 type OnlyID struct {
@@ -124,15 +124,21 @@ type OnlyID struct {
 }
 
 func (client *ResourceClient[T]) GetID() (*OnlyID, error) {
-	return models.GetResource[OnlyID](client.Collection, models.GroupFilters(bson.D{}, client.ExtraFilter, client.Search, client.IncludeDeleted))
+	projection := bson.D{{"id", 1}}
+	return models.GetResource[OnlyID](client.Collection, models.GroupFilters(bson.D{}, client.ExtraFilter, client.Search, client.IncludeDeleted), projection)
 }
 
-func (client *ResourceClient[T]) GetWithFilter(filter bson.D) (*T, error) {
-	return models.GetResource[T](client.Collection, models.GroupFilters(filter, client.ExtraFilter, client.Search, client.IncludeDeleted))
+func (client *ResourceClient[T]) ListIDs() ([]OnlyID, error) {
+	projection := bson.D{{"id", 1}}
+	return models.ListResources[OnlyID](client.Collection, models.GroupFilters(nil, client.ExtraFilter, client.Search, client.IncludeDeleted), projection, client.Pagination)
 }
 
-func (client *ResourceClient[T]) ListWithFilter(filter bson.D) ([]T, error) {
-	return models.ListResources[T](client.Collection, models.GroupFilters(filter, client.ExtraFilter, client.Search, client.IncludeDeleted), client.Pagination)
+func (client *ResourceClient[T]) GetWithFilterAndProjection(filter, projection bson.D) (*T, error) {
+	return models.GetResource[T](client.Collection, models.GroupFilters(filter, client.ExtraFilter, client.Search, client.IncludeDeleted), projection)
+}
+
+func (client *ResourceClient[T]) ListWithFilterAndProjection(filter, projection bson.D) ([]T, error) {
+	return models.ListResources[T](client.Collection, models.GroupFilters(filter, client.ExtraFilter, client.Search, client.IncludeDeleted), projection, client.Pagination)
 }
 
 func (client *ResourceClient[T]) Count() (int, error) {

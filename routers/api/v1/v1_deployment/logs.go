@@ -42,7 +42,7 @@ func GetLogsSSE(c *gin.Context) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	err = deployment_service.SetupLogStream(ctx, requestURI.DeploymentID, handler, auth)
+	err = deployment_service.SetupLogStream(ctx, requestURI.DeploymentID, handler, 25, auth)
 	if err != nil {
 		if errors.Is(err, deployment_service.DeploymentNotFoundErr) {
 			sysContext.NotFound("Deployment not found")
@@ -57,14 +57,9 @@ func GetLogsSSE(c *gin.Context) {
 		case <-ctx.Done():
 			return false
 		case msg := <-ch:
-			if msg.msg == "__control" {
+			if msg.source == deployment_service.MessageSourceControl {
 				return true
 			}
-			//_, err := fmt.Fprintf(w, "data: %s\n\n", fmt.Sprintf("%s: %s", msg.prefix, msg.msg))
-			//if err != nil {
-			//	utils.PrettyPrintError(fmt.Errorf("error writing message to SSE for deployment %s. details: %w", requestURI.DeploymentID, err))
-			//	return false
-			//}
 
 			message := fmt.Sprintf("%s: %s", msg.prefix, msg.msg)
 			c.SSEvent(msg.source, message)
