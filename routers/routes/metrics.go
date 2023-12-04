@@ -1,9 +1,12 @@
 package routes
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go-deploy/pkg/config"
 	"go-deploy/pkg/metrics"
+	"net/http"
+	"net/http/httputil"
 )
 
 const (
@@ -17,10 +20,18 @@ type MetricsRoutingGroup struct {
 }
 
 func MetricsRoutes() *MetricsRoutingGroup {
-	promHttpHandler := promhttp.HandlerFor(metrics.Metrics.Registry, promhttp.HandlerOpts{})
+	target := fmt.Sprintf("localhost:%d", config.Config.Port)
+
 	ginHandler := func(c *gin.Context) {
 		metrics.Sync()
-		promHttpHandler.ServeHTTP(c.Writer, c.Request)
+
+		director := func(req *http.Request) {
+			req.URL.Path = "/internal/metrics"
+			req.URL.Scheme = "http"
+			req.URL.Host = target
+		}
+		proxy := &httputil.ReverseProxy{Director: director}
+		proxy.ServeHTTP(c.Writer, c.Request)
 	}
 
 	return &MetricsRoutingGroup{

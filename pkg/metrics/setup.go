@@ -2,21 +2,21 @@ package metrics
 
 import (
 	"fmt"
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/penglongli/gin-metrics/ginmetrics"
 	"go-deploy/models/sys/key_value"
 	"go-deploy/utils"
+	"log"
 	"strconv"
 )
 
 type MetricDefinition struct {
-	Key        string
-	MetricType string
-	Collector  interface{}
+	Name        string
+	Description string
+	Key         string
+	MetricType  ginmetrics.MetricType
 }
 
 const (
-	MetricTypeGauge = "gauge"
-
 	KeyUsersTotal         = "metrics:users:total"
 	KeyDailyActiveUsers   = "metrics:users:daily_active"
 	KeyMonthlyActiveUsers = "metrics:users:monthly_active"
@@ -27,36 +27,38 @@ const (
 	KeyJobsFailed     = "metrics:jobs:failed"
 	KeyJobsTerminated = "metrics:jobs:terminated"
 	KeyJobsCompleted  = "metrics:jobs:completed"
-
-	KeyThreadsLog = "metrics:threads:log"
-
-	KeyHttpStatus2xx
-	KeyHttpStatus3xx
-	KeyHttpStatus4xx
 )
 
 func Setup() {
 	collectors := GetCollectors()
 
-	Metrics.Registry = prometheus.NewRegistry()
-	Metrics.Gauges = make(map[string]prometheus.Gauge)
+	m := ginmetrics.GetMonitor()
 
 	for _, def := range collectors {
 		switch def.MetricType {
-		case MetricTypeGauge:
-			Metrics.Registry.MustRegister(def.Collector.(prometheus.Gauge))
-			Metrics.Gauges[def.Key] = def.Collector.(prometheus.Gauge)
+		case ginmetrics.Gauge:
+			err := m.AddMetric(&ginmetrics.Metric{
+				Type:        ginmetrics.Gauge,
+				Name:        def.Name,
+				Description: def.Description,
+				Labels:      []string{},
+			})
+			if err != nil {
+				log.Fatalln("failed to add metric", def.Name, "to monitor. details:", err)
+			}
 		}
 	}
 }
 
 func Sync() {
 	client := key_value.New()
+	collectors := GetCollectors()
+	monitor := ginmetrics.GetMonitor()
 
-	for key, gauge := range Metrics.Gauges {
-		valueStr, err := client.Get(key)
+	for _, collector := range collectors {
+		valueStr, err := client.Get(collector.Key)
 		if err != nil {
-			utils.PrettyPrintError(fmt.Errorf("error getting value for key %s when synchronizing metrics. details: %w", key, err))
+			utils.PrettyPrintError(fmt.Errorf("error getting value for key %s when synchronizing metrics. details: %w", collector.Key, err))
 			continue
 		}
 
@@ -70,90 +72,78 @@ func Sync() {
 			continue
 		}
 
-		gauge.Set(value)
+		metric := monitor.GetMetric(collector.Name)
+		if metric == nil {
+			utils.PrettyPrintError(fmt.Errorf("metric %s not found when synchronizing metrics", collector.Name))
+			continue
+		}
+
+		switch collector.MetricType {
+		case ginmetrics.Gauge:
+			err = metric.SetGaugeValue([]string{}, value)
+			if err != nil {
+				utils.PrettyPrintError(fmt.Errorf("error setting gauge value for metric %s when synchronizing metrics. details: %w", collector.Name, err))
+				return
+			}
+		}
 	}
 }
 
 func GetCollectors() []MetricDefinition {
 	return []MetricDefinition{
 		{
-			Key:        KeyUsersTotal,
-			MetricType: MetricTypeGauge,
-			Collector: prometheus.NewGauge(prometheus.GaugeOpts{
-				Name: "users_total",
-				Help: "Total number of users",
-			}),
+			Name:        "users_total",
+			Description: "Total number of users",
+			Key:         KeyUsersTotal,
+			MetricType:  ginmetrics.Gauge,
 		},
 		{
-			Key:        KeyDailyActiveUsers,
-			MetricType: MetricTypeGauge,
-			Collector: prometheus.NewGauge(prometheus.GaugeOpts{
-				Name: "users_daily_active",
-				Help: "Number of users active every day the last 2 days",
-			}),
+			Name:        "users_daily_active",
+			Description: "Number of users active every day the last 2 days",
+			Key:         KeyDailyActiveUsers,
+			MetricType:  ginmetrics.Gauge,
 		},
 		{
-			Key:        KeyMonthlyActiveUsers,
-			MetricType: MetricTypeGauge,
-			Collector: prometheus.NewGauge(prometheus.GaugeOpts{
-				Name: "users_monthly_active",
-				Help: "Number of users active every month the last 2 months",
-			}),
+			Name:        "users_monthly_active",
+			Description: "Number of users active every month the last 2 months",
+			Key:         KeyMonthlyActiveUsers,
+			MetricType:  ginmetrics.Gauge,
 		},
 		{
-			Key:        KeyJobsTotal,
-			MetricType: MetricTypeGauge,
-			Collector: prometheus.NewGauge(prometheus.GaugeOpts{
-				Name: "jobs_total",
-				Help: "Total number of jobs",
-			}),
+			Name:        "jobs_total",
+			Description: "Total number of jobs",
+			Key:         KeyJobsTotal,
+			MetricType:  ginmetrics.Gauge,
 		},
 		{
-			Key:        KeyJobsPending,
-			MetricType: MetricTypeGauge,
-			Collector: prometheus.NewGauge(prometheus.GaugeOpts{
-				Name: "jobs_pending",
-				Help: "Number of jobs pending",
-			}),
+			Name:        "jobs_pending",
+			Description: "Number of jobs pending",
+			Key:         KeyJobsPending,
+			MetricType:  ginmetrics.Gauge,
 		},
 		{
-			Key:        KeyJobsRunning,
-			MetricType: MetricTypeGauge,
-			Collector: prometheus.NewGauge(prometheus.GaugeOpts{
-				Name: "jobs_running",
-				Help: "Number of jobs running",
-			}),
+			Name:        "jobs_running",
+			Description: "Number of jobs running",
+			Key:         KeyJobsRunning,
+			MetricType:  ginmetrics.Gauge,
 		},
 		{
-			Key:        KeyJobsFailed,
-			MetricType: MetricTypeGauge,
-			Collector: prometheus.NewGauge(prometheus.GaugeOpts{
-				Name: "jobs_failed",
-				Help: "Number of jobs failed",
-			}),
+			Name:        "jobs_failed",
+			Description: "Number of jobs failed",
+			Key:         KeyJobsFailed,
+			MetricType:  ginmetrics.Gauge,
 		},
 		{
-			Key:        KeyJobsTerminated,
-			MetricType: MetricTypeGauge,
-			Collector: prometheus.NewGauge(prometheus.GaugeOpts{
-				Name: "jobs_terminated",
-				Help: "Number of jobs terminated",
-			}),
+			Name:        "jobs_terminated",
+			Description: "Number of jobs terminated",
+			Key:         KeyJobsTerminated,
+			MetricType:  ginmetrics.Gauge,
 		},
 		{
-			Key:        KeyJobsCompleted,
-			MetricType: MetricTypeGauge,
-			Collector: prometheus.NewGauge(prometheus.GaugeOpts{
-				Name: "jobs_finished",
-				Help: "Number of jobs finished",
-			}),
-		},
-		{
-			Key:        KeyThreadsLog,
-			MetricType: MetricTypeGauge,
-			Collector: prometheus.NewGauge(prometheus.GaugeOpts{
-				Name: "threads_log",
-			}),
+			Name:        "jobs_completed",
+			Description: "Number of jobs completed",
+			Key:         KeyJobsCompleted,
+			MetricType:  ginmetrics.Gauge,
 		},
 	}
 }
