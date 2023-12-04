@@ -9,9 +9,9 @@ import (
 	storageManagerModel "go-deploy/models/sys/storage_manager"
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/pkg/config"
-	"go-deploy/service/job_service"
 	"go-deploy/utils"
 	"log"
+	"math/rand"
 	"time"
 )
 
@@ -21,7 +21,7 @@ func deploymentRepairer(ctx context.Context) {
 	for {
 
 		select {
-		case <-time.After(time.Duration(config.Config.Deployment.RepairInterval) * time.Second):
+		case <-time.After(60 * time.Second):
 			restarting, err := deploymentModel.New().WithActivities(deploymentModel.ActivityRestarting).List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching restarting deployments. details: %w", err))
@@ -47,27 +47,39 @@ func deploymentRepairer(ctx context.Context) {
 			}
 
 			for _, deployment := range withNoActivities {
-				now := time.Now()
-				if now.Sub(deployment.RepairedAt) > 5*time.Minute {
-					log.Println("repairing deployment", deployment.ID)
+				exists, err := jobModel.New().
+					IncludeTypes(jobModel.TypeRepairDeployment).
+					ExcludeStatus(jobModel.StatusTerminated, jobModel.StatusCompleted).
+					FilterArgs("id", deployment.ID).
+					ExistsAny()
+				if err != nil {
+					utils.PrettyPrintError(fmt.Errorf("failed to check if repair job exists for deployment %s. details: %w", deployment.ID, err))
+					continue
+				}
 
-					jobID := uuid.New().String()
-					err = job_service.Create(jobID, deployment.OwnerID, jobModel.TypeRepairDeployment, map[string]interface{}{
-						"id": deployment.ID,
-					})
-					if err != nil {
-						utils.PrettyPrintError(fmt.Errorf("failed to create repair job for deployment %s. details: %w", deployment.ID, err))
-						continue
-					}
+				if exists {
+					continue
+				}
 
-					err = deploymentModel.New().MarkRepaired(deployment.ID)
+				log.Println("scheduling repair job for deployment", deployment.ID)
+
+				jobID := uuid.New().String()
+				// spread out repair jobs evenly over time
+				seconds := config.Config.Deployment.RepairInterval + rand.Intn(config.Config.Deployment.RepairInterval)
+				runAfter := time.Now().Add(time.Duration(seconds) * time.Second)
+
+				err = jobModel.New().CreateScheduled(jobID, deployment.OwnerID, jobModel.TypeRepairDeployment, runAfter, map[string]interface{}{
+					"id": deployment.ID,
+				})
+				if err != nil {
+					utils.PrettyPrintError(fmt.Errorf("failed to schedule repair job for deployment %s. details: %w", deployment.ID, err))
+					continue
 				}
 			}
 
 		case <-ctx.Done():
 			return
 		}
-
 	}
 }
 
@@ -76,7 +88,7 @@ func storageManagerRepairer(ctx context.Context) {
 
 	for {
 		select {
-		case <-time.After(time.Duration(config.Config.Deployment.RepairInterval) * time.Second):
+		case <-time.After(60 * time.Second):
 			withNoActivities, err := storageManagerModel.New().WithNoActivities().List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching storage managers with no activities. details: %w", err))
@@ -84,24 +96,33 @@ func storageManagerRepairer(ctx context.Context) {
 			}
 
 			for _, storageManager := range withNoActivities {
-				now := time.Now()
-				if now.Sub(storageManager.RepairedAt) > 5*time.Minute {
-					log.Println("repairing storage manager", storageManager.ID)
+				exists, err := jobModel.New().
+					IncludeTypes(jobModel.TypeRepairStorageManager).
+					ExcludeStatus(jobModel.StatusTerminated, jobModel.StatusCompleted).
+					FilterArgs("id", storageManager.ID).
+					ExistsAny()
+				if err != nil {
+					utils.PrettyPrintError(fmt.Errorf("failed to check if repair job exists for storage manager %s. details: %w", storageManager.ID, err))
+					continue
+				}
 
-					jobID := uuid.New().String()
-					err = job_service.Create(jobID, storageManager.OwnerID, jobModel.TypeRepairStorageManager, map[string]interface{}{
-						"id": storageManager.ID,
-					})
-					if err != nil {
-						utils.PrettyPrintError(fmt.Errorf("failed to create repair job for storage manager %s. details: %w", storageManager.ID, err))
-						continue
-					}
+				if exists {
+					continue
+				}
 
-					err = storageManagerModel.New().MarkRepaired(storageManager.ID)
-					if err != nil {
-						utils.PrettyPrintError(fmt.Errorf("failed to mark storage manager %s as repaired. details: %w", storageManager.ID, err))
-						continue
-					}
+				log.Println("scheduling repair job for storage manager", storageManager.ID)
+
+				jobID := uuid.New().String()
+				// spread out repair jobs evenly over time
+				seconds := config.Config.Deployment.RepairInterval + rand.Intn(config.Config.Deployment.RepairInterval)
+				runAfter := time.Now().Add(time.Duration(seconds) * time.Second)
+
+				err = jobModel.New().CreateScheduled(jobID, storageManager.OwnerID, jobModel.TypeRepairStorageManager, runAfter, map[string]interface{}{
+					"id": storageManager.ID,
+				})
+				if err != nil {
+					utils.PrettyPrintError(fmt.Errorf("failed to schedule repair job for storage manager %s. details: %w", storageManager.ID, err))
+					continue
 				}
 			}
 		case <-ctx.Done():
@@ -115,7 +136,7 @@ func vmRepairer(ctx context.Context) {
 
 	for {
 		select {
-		case <-time.After(time.Duration(config.Config.VM.RepairInterval) * time.Second):
+		case <-time.After(60 * time.Second):
 			withNoActivities, err := vmModel.New().WithNoActivities().List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching vms with no activities. details: %w", err))
@@ -123,24 +144,33 @@ func vmRepairer(ctx context.Context) {
 			}
 
 			for _, vm := range withNoActivities {
-				now := time.Now()
-				if now.Sub(vm.RepairedAt) > 5*time.Minute {
-					log.Println("repairing vm", vm.ID)
+				exists, err := jobModel.New().
+					IncludeTypes(jobModel.TypeRepairVM).
+					ExcludeStatus(jobModel.StatusTerminated, jobModel.StatusCompleted).
+					FilterArgs("id", vm.ID).
+					ExistsAny()
+				if err != nil {
+					utils.PrettyPrintError(fmt.Errorf("failed to check if repair job exists for vm %s. details: %w", vm.ID, err))
+					continue
+				}
 
-					jobID := uuid.New().String()
-					err = job_service.Create(jobID, vm.OwnerID, jobModel.TypeRepairVM, map[string]interface{}{
-						"id": vm.ID,
-					})
-					if err != nil {
-						log.Printf("failed to create repair job for vm %s: %s\n", vm.Name, err.Error())
-						continue
-					}
+				if exists {
+					continue
+				}
 
-					err = vmModel.New().MarkRepaired(vm.ID)
-					if err != nil {
-						log.Printf("failed to mark vm %s as repaired: %s\n", vm.Name, err.Error())
-						continue
-					}
+				log.Println("scheduling repair job for vm", vm.ID)
+
+				jobID := uuid.New().String()
+				// spread out repair jobs evenly over time
+				seconds := config.Config.VM.RepairInterval + rand.Intn(config.Config.VM.RepairInterval)
+				runAfter := time.Now().Add(time.Duration(seconds) * time.Second)
+
+				err = jobModel.New().CreateScheduled(jobID, vm.OwnerID, jobModel.TypeRepairVM, runAfter, map[string]interface{}{
+					"id": vm.ID,
+				})
+				if err != nil {
+					utils.PrettyPrintError(fmt.Errorf("failed to schedule repair job for vm %s. details: %w", vm.ID, err))
+					continue
 				}
 			}
 		case <-ctx.Done():
