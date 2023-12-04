@@ -2,28 +2,12 @@ package cs_service
 
 import (
 	"fmt"
-	"go-deploy/models/sys/gpu"
+	gpuModel "go-deploy/models/sys/gpu"
 	vmModel "go-deploy/models/sys/vm"
-	"go-deploy/pkg/config"
-	csModels "go-deploy/pkg/subsystems/cs/models"
 	"strings"
-	"time"
 )
 
-func CreateNonRootPortForwardingRuleName(name, networkName string) string {
-	return fmt.Sprintf("%s-%s", name, networkName)
-}
-
-func CreateDeployTags(name string, deployName string) []csModels.Tag {
-	return []csModels.Tag{
-		{Key: "name", Value: name},
-		{Key: "managedBy", Value: config.Config.Manager},
-		{Key: "deployName", Value: deployName},
-		{Key: "createdAt", Value: time.Now().Format(time.RFC3339)},
-	}
-}
-
-func CreateExtraConfig(gpu *gpu.GPU) string {
+func CreateExtraConfig(gpu *gpuModel.GPU) string {
 	data := fmt.Sprintf(`
 <devices> <hostdev mode='subsystem' type='pci' managed='yes'> <driver name='vfio' />
 	<source> <address domain='0x0000' bus='0x%s' slot='0x00' function='0x0' /> </source> 
@@ -41,7 +25,7 @@ func HasExtraConfig(vm *vmModel.VM) bool {
 }
 
 func GetRequiredHost(gpuID string) (*string, error) {
-	gpu, err := gpu.New().GetByID(gpuID)
+	gpu, err := gpuModel.New().GetByID(gpuID)
 	if err != nil {
 		return nil, err
 	}

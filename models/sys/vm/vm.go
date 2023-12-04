@@ -2,7 +2,7 @@ package vm
 
 import (
 	"go-deploy/models/sys/activity"
-	"go-deploy/models/sys/gpu"
+	gpuModel "go-deploy/models/sys/gpu"
 	"time"
 )
 
@@ -11,6 +11,7 @@ type VM struct {
 	Name      string `bson:"name"`
 	OwnerID   string `bson:"ownerId"`
 	ManagedBy string `bson:"managedBy"`
+	Host      *Host  `bson:"host,omitempty"`
 
 	Zone string `bson:"zone"`
 	// used for port http proxy, set in most cases, but kept as optional if no k8s is available
@@ -55,7 +56,7 @@ func (vm *VM) DoingActivity(activity string) bool {
 }
 
 func (vm *VM) HasGPU() bool {
-	exists, err := gpu.New().WithVM(vm.ID).ExistsAny()
+	exists, err := gpuModel.New().WithVM(vm.ID).ExistsAny()
 	if err != nil {
 		return false
 	}
@@ -64,7 +65,7 @@ func (vm *VM) HasGPU() bool {
 }
 
 func (vm *VM) GetGpuID() *string {
-	idStruct, err := gpu.New().WithVM(vm.ID).GetID()
+	idStruct, err := gpuModel.New().WithVM(vm.ID).GetID()
 	if err != nil || idStruct == nil {
 		return nil
 	}
@@ -72,8 +73,8 @@ func (vm *VM) GetGpuID() *string {
 	return &idStruct.ID
 }
 
-func (vm *VM) GetGpu() *gpu.GPU {
-	gpu, err := gpu.New().WithVM(vm.ID).Get()
+func (vm *VM) GetGpu() *gpuModel.GPU {
+	gpu, err := gpuModel.New().WithVM(vm.ID).Get()
 	if err != nil || gpu == nil {
 		return nil
 	}

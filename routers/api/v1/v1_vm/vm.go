@@ -132,7 +132,7 @@ func Get(c *gin.Context) {
 
 	mapper, err := vm_service.GetExternalPortMapper(vm.ID)
 	if err != nil {
-		utils.PrettyPrintError(fmt.Errorf("failed to get external port mapper for vm. details: %w", err))
+		utils.PrettyPrintError(fmt.Errorf("failed to get external port mapper for vm %s. details: %w", vm.ID, err))
 	}
 
 	context.Ok(vm.ToDTO(vm.StatusMessage, connectionString, gpuRead, mapper))
