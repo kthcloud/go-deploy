@@ -176,7 +176,7 @@ func Repair(id string) error {
 		return makeErr(err)
 	}
 
-	log.Println("successfully repaired storage manager", id)
+	log.Println("repaired storage manager", id)
 
 	return nil
 }

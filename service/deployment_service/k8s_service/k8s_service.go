@@ -645,8 +645,13 @@ func SetupLogStream(ctx context.Context, id string, handler func(string, int, ti
 		return nil
 	}
 
-	k8sDeploymentID := k8sContext.Deployment.Subsystems.K8s.GetDeployment(k8sContext.Deployment.Name).ID
-	err = k8sContext.Client.SetupDeploymentLogStream(ctx, k8sDeploymentID, handler)
+	mainDeployment := k8sContext.Deployment.Subsystems.K8s.GetDeployment(k8sContext.Deployment.Name)
+	if !service.Created(mainDeployment) {
+		log.Println("main k8s deployment for deployment", id, "not created when setting up log stream. assuming it was deleted")
+		return nil
+	}
+
+	err = k8sContext.Client.SetupDeploymentLogStream(ctx, mainDeployment.ID, handler)
 	if err != nil {
 		return err
 	}
