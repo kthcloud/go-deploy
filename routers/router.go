@@ -9,6 +9,7 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"go-deploy/docs"
 	"go-deploy/pkg/auth"
+	"go-deploy/pkg/metrics"
 	"go-deploy/pkg/sys"
 	"go-deploy/routers/api/v1/middleware"
 	"go-deploy/routers/api/validators"
@@ -28,6 +29,7 @@ func NewRouter() *gin.Engine {
 	// metrics middleware
 	m := ginmetrics.GetMonitor()
 	m.SetMetricPath("/internal/metrics")
+	m.SetMetricPrefix(metrics.Prefix)
 	m.Use(router)
 
 	docs.SwaggerInfo.BasePath = "/v1"
