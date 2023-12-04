@@ -87,7 +87,6 @@ type ConfigType struct {
 		PrivilegedGPUs []string `yaml:"privilegedGpus"`
 		ExcludedHosts  []string `yaml:"excludedHosts"`
 		ExcludedGPUs   []string `yaml:"excludedGpus"`
-		RepairInterval int      `yaml:"repairInterval"`
 	} `yaml:"gpu"`
 
 	Registry struct {

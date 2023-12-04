@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	deploymentModel "go-deploy/models/sys/deployment"
-	"go-deploy/models/sys/key_value"
-	"go-deploy/pkg/metrics"
 	"go-deploy/service"
 	"go-deploy/utils"
 	"log"
@@ -75,24 +73,6 @@ func SetupLogStream(ctx context.Context, id string, handler func(string, string,
 				if len(logs) > 0 {
 					lastFetched = logs[len(logs)-1].CreatedAt
 				}
-			}
-		}
-	}()
-
-	go func() {
-		err = key_value.New().Incr(metrics.KeyThreadsLog)
-		if err != nil {
-			utils.PrettyPrintError(fmt.Errorf("failed to increment log thread when setting up continuous log stream. details: %w", err))
-		}
-
-		for {
-			time.Sleep(300 * time.Millisecond)
-			if ctx.Err() != nil {
-				err = key_value.New().Decr(metrics.KeyThreadsLog)
-				if err != nil {
-					utils.PrettyPrintError(fmt.Errorf("failed to decrement log thread when setting up continuous log stream. details: %w", err))
-				}
-				return
 			}
 		}
 	}()
