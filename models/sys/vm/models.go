@@ -5,6 +5,11 @@ import (
 	"time"
 )
 
+type Host struct {
+	ID   string `bson:"id"`
+	Name string `bson:"name"`
+}
+
 type PortHttpProxy struct {
 	Name         string  `bson:"name"`
 	CustomDomain *string `bson:"customDomain"`

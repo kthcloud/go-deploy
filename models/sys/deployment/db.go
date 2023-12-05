@@ -2,6 +2,7 @@ package deployment
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"go-deploy/models"
 	"go-deploy/models/sys/activity"
@@ -12,6 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
+	"sort"
 	"time"
 )
 
@@ -65,6 +67,7 @@ func (client *Client) Create(id, ownerID string, params *CreateParams) (*Deploym
 				},
 			},
 		},
+		Logs:          make([]Log, 0),
 		StatusMessage: status_codes.GetMsg(status_codes.ResourceBeingCreated),
 		StatusCode:    status_codes.ResourceBeingCreated,
 		Transfer:      nil,
@@ -83,11 +86,11 @@ func (client *Client) Create(id, ownerID string, params *CreateParams) (*Deploym
 }
 
 func (client *Client) ListByGitHubWebhookID(id int64) ([]Deployment, error) {
-	return client.ListWithFilter(bson.D{{"subsystems.github.webhook.id", id}})
+	return client.ListWithFilterAndProjection(bson.D{{"subsystems.github.webhook.id", id}}, nil)
 }
 
 func (client *Client) GetByTransferCode(code, userID string) (*Deployment, error) {
-	return client.GetWithFilter(bson.D{{"transfer.code", code}, {"transfer.userId", userID}})
+	return client.GetWithFilterAndProjection(bson.D{{"transfer.code", code}, {"transfer.userId", userID}}, nil)
 }
 
 func (client *Client) DeleteByID(id string) error {
@@ -156,6 +159,84 @@ func (client *Client) UpdateWithParamsByID(id string, params *UpdateParams) erro
 		}
 
 		return fmt.Errorf("failed to update deployment %s. details: %w", id, err)
+	}
+
+	return nil
+}
+
+func (client *Client) GetLogs(id string, history int) ([]Log, error) {
+	projection := bson.D{
+		{"logs", bson.D{
+			{"$slice", -history},
+		}},
+	}
+
+	var deployment Deployment
+	err := client.Collection.FindOne(context.TODO(),
+		bson.D{{"id", id}},
+		options.FindOne().SetProjection(projection),
+	).Decode(&deployment)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return []Log{}, nil
+		}
+
+		return nil, err
+	}
+
+	return deployment.Logs, nil
+}
+
+func (client *Client) GetLogsAfter(id string, createdAt time.Time) ([]Log, error) {
+	projection := bson.D{
+		{"logs", bson.D{
+			{"$slice", -NLogsCache},
+		}},
+	}
+
+	filter := bson.D{
+		{"id", id},
+	}
+
+	deployment, err := client.GetWithFilterAndProjection(filter, projection)
+	if err != nil {
+		return nil, err
+	}
+
+	if deployment == nil {
+		return nil, nil
+	}
+
+	filtered := make([]Log, 0)
+	for _, item := range deployment.Logs {
+		if item.CreatedAt.After(createdAt) {
+			filtered = append(filtered, item)
+		}
+	}
+
+	return filtered, nil
+}
+
+// AddLogs adds logs to the end of the logs array
+// Only the last NLogsCache logs are kept
+// Logs are sorted by createdAt
+func (client *Client) AddLogs(id string, logs ...Log) error {
+	sort.Slice(logs, func(i, j int) bool {
+		return logs[i].CreatedAt.Before(logs[j].CreatedAt)
+	})
+
+	update := bson.D{
+		{"$push", bson.D{
+			{"logs", bson.D{
+				{"$each", logs},
+				{"$slice", -NLogsCache},
+			}},
+		}},
+	}
+
+	err := client.UpdateWithBsonByID(id, update)
+	if err != nil {
+		return err
 	}
 
 	return nil

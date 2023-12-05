@@ -4,10 +4,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
+	"github.com/penglongli/gin-metrics/ginmetrics"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"go-deploy/docs"
 	"go-deploy/pkg/auth"
+	"go-deploy/pkg/metrics"
 	"go-deploy/pkg/sys"
 	"go-deploy/routers/api/v1/middleware"
 	"go-deploy/routers/api/validators"
@@ -23,6 +25,12 @@ func NewRouter() *gin.Engine {
 	router.Use(CorsAllowAll())
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
+
+	// metrics middleware
+	m := ginmetrics.GetMonitor()
+	m.SetMetricPath("/internal/metrics")
+	m.SetMetricPrefix(metrics.Prefix)
+	m.Use(router)
 
 	docs.SwaggerInfo.BasePath = "/v1"
 

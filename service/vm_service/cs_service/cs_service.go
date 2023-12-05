@@ -457,6 +457,24 @@ func CanStart(csVmID, hostName, zoneName string) error {
 	return nil
 }
 
+func GetHostByVM(vmID string) (*csModels.HostPublic, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to get host for vm %s. details: %w", vmID, err)
+	}
+
+	context, err := NewContext(vmID)
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	host, err := context.Client.ReadHostByVM(context.VM.Subsystems.CS.VM.ID)
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	return host, nil
+}
+
 func GetHostByName(hostName string, zone string) (*csModels.HostPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get host %s. details: %w", hostName, err)

@@ -1,6 +1,7 @@
 package k8s_service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	deploymentModel "go-deploy/models/sys/deployment"
@@ -13,6 +14,7 @@ import (
 	"golang.org/x/exp/slices"
 	"log"
 	"strings"
+	"time"
 )
 
 func Create(id string, params *deploymentModel.CreateParams) error {
@@ -619,6 +621,39 @@ func Repair(id string) error {
 
 	if anyMismatch {
 		return recreatePvPvcDeployments(context)
+	}
+
+	return nil
+}
+
+func SetupLogStream(ctx context.Context, id string, handler func(string, int, time.Time)) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to setup log stream for deployment %s. details: %w", id, err)
+	}
+
+	k8sContext, err := NewContext(id)
+	if err != nil {
+		if errors.Is(err, base.DeploymentDeletedErr) {
+			return nil
+		}
+
+		return makeError(err)
+	}
+
+	if k8sContext.Deployment.BeingDeleted() {
+		log.Println("deployment", id, "is being deleted. not setting up log stream")
+		return nil
+	}
+
+	mainDeployment := k8sContext.Deployment.Subsystems.K8s.GetDeployment(k8sContext.Deployment.Name)
+	if !service.Created(mainDeployment) {
+		log.Println("main k8s deployment for deployment", id, "not created when setting up log stream. assuming it was deleted")
+		return nil
+	}
+
+	err = k8sContext.Client.SetupDeploymentLogStream(ctx, mainDeployment.ID, handler)
+	if err != nil {
+		return err
 	}
 
 	return nil

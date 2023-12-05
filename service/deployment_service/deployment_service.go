@@ -418,7 +418,7 @@ func Repair(id string) error {
 		}
 	}
 
-	log.Println("successfully repaired deployment", deployment.ID)
+	log.Println("repaired deployment", deployment.ID)
 	return nil
 }
 
@@ -427,9 +427,7 @@ func Restart(id string) error {
 		return fmt.Errorf("failed to restart deployment. details: %w", err)
 	}
 
-	client := deploymentModel.New()
-
-	deployment, err := client.GetByID(id)
+	deployment, err := deploymentModel.New().GetByID(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -439,7 +437,14 @@ func Restart(id string) error {
 		return nil
 	}
 
-	err = client.SetWithBsonByID(id, bson.D{{"restartedAt", time.Now()}})
+	AddLogs(id, deploymentModel.Log{
+		Source:    deploymentModel.LogSourceDeployment,
+		Prefix:    "[deployment]",
+		Line:      "Restart requested",
+		CreatedAt: time.Now(),
+	})
+
+	err = deploymentModel.New().SetWithBsonByID(id, bson.D{{"restartedAt", time.Now()}})
 	if err != nil {
 		return makeError(err)
 	}
@@ -479,12 +484,34 @@ func Build(ids []string, buildParams *body.DeploymentBuild) error {
 	params := &deploymentModel.BuildParams{}
 	params.FromDTO(buildParams)
 
+	for _, id := range ids {
+		err := deploymentModel.New().AddLogs(id, deploymentModel.Log{
+			Source:    deploymentModel.LogSourceDeployment,
+			Prefix:    "[deployment]",
+			Line:      "Build requested",
+			CreatedAt: time.Now(),
+		})
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
 	err := build(ids, params)
 	if err != nil {
 		return makeError(err)
 	}
 
 	return nil
+}
+
+func AddLogs(id string, logs ...deploymentModel.Log) {
+	// logs are added best-effort, so we don't return an error here
+	go func() {
+		err := deploymentModel.New().AddLogs(id, logs...)
+		if err != nil {
+			utils.PrettyPrintError(fmt.Errorf("failed to add logs to deployment %s. details: %w", id, err))
+		}
+	}()
 }
 
 func DoCommand(deployment *deploymentModel.Deployment, command string) {

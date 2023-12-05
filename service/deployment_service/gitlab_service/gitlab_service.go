@@ -1,6 +1,7 @@
 package gitlab_service
 
 import (
+	"context"
 	"fmt"
 	"github.com/google/uuid"
 	deploymentModel "go-deploy/models/sys/deployment"
@@ -12,6 +13,14 @@ import (
 	"log"
 	"strings"
 	"time"
+)
+
+const (
+	BuildStatusPending = "pending"
+	BuildStatusRunning = "running"
+
+	JobStatusSuccess = "success"
+	JobStatusFailed  = "failed"
 )
 
 func CreateBuild(ids []string, params *deploymentModel.BuildParams) error {
@@ -123,7 +132,7 @@ func CreateBuild(ids []string, params *deploymentModel.BuildParams) error {
 			break
 		}
 
-		if lastJob.Status == "success" || lastJob.Status == "failed" {
+		if lastJob.Status == JobStatusSuccess || lastJob.Status == JobStatusFailed {
 			for _, id := range ids {
 				err = updateGitLabBuild(id, lastJob, traceSlice)
 				if err != nil {
@@ -137,5 +146,50 @@ func CreateBuild(ids []string, params *deploymentModel.BuildParams) error {
 	}
 
 	log.Println("build finished with gitlab for", len(ids), "deployments")
+	return nil
+}
+
+func SetupLogStream(ctx context.Context, deploymentID string, handler func(string, time.Time)) error {
+	buildID := 0
+	readLines := 0
+
+	go func() {
+		for {
+			time.Sleep(300 * time.Millisecond)
+
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				build, err := deploymentModel.New().GetLastGitLabBuild(deploymentID)
+				if err != nil {
+					utils.PrettyPrintError(fmt.Errorf("failed to get last gitlab build when setting up continuous log stream. details: %w", err))
+					return
+				}
+
+				if build == nil {
+					continue
+				}
+
+				if build.ID == 0 {
+					continue
+				}
+
+				if buildID != build.ID {
+					buildID = build.ID
+					readLines = 0
+				}
+
+				if build.Status == BuildStatusRunning || build.Status == BuildStatusPending {
+					for _, line := range build.Trace[readLines:] {
+						if line != "" {
+							handler(line, time.Now())
+						}
+						readLines++
+					}
+				}
+			}
+		}
+	}()
 	return nil
 }
