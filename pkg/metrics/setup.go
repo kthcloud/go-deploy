@@ -9,6 +9,16 @@ import (
 	"strconv"
 )
 
+var Metrics MetricsType
+
+const (
+	Prefix = "go_deploy_"
+)
+
+type MetricsType struct {
+	Collectors []MetricDefinition
+}
+
 type MetricDefinition struct {
 	Name        string
 	Description string
@@ -32,6 +42,10 @@ const (
 func Setup() {
 	collectors := GetCollectors()
 
+	Metrics = MetricsType{
+		Collectors: collectors,
+	}
+
 	m := ginmetrics.GetMonitor()
 
 	for _, def := range collectors {
@@ -52,10 +66,9 @@ func Setup() {
 
 func Sync() {
 	client := key_value.New()
-	collectors := GetCollectors()
 	monitor := ginmetrics.GetMonitor()
 
-	for _, collector := range collectors {
+	for _, collector := range Metrics.Collectors {
 		valueStr, err := client.Get(collector.Key)
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("error getting value for key %s when synchronizing metrics. details: %w", collector.Key, err))
@@ -90,7 +103,7 @@ func Sync() {
 }
 
 func GetCollectors() []MetricDefinition {
-	return []MetricDefinition{
+	defs := []MetricDefinition{
 		{
 			Name:        "users_total",
 			Description: "Total number of users",
@@ -146,4 +159,10 @@ func GetCollectors() []MetricDefinition {
 			MetricType:  ginmetrics.Gauge,
 		},
 	}
+
+	for i := range defs {
+		defs[i].Name = Prefix + defs[i].Name
+	}
+
+	return defs
 }

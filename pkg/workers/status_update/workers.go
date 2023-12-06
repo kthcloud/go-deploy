@@ -5,6 +5,7 @@ import (
 	"fmt"
 	deploymentModel "go-deploy/models/sys/deployment"
 	vmModel "go-deploy/models/sys/vm"
+	"go-deploy/service/vm_service"
 	"go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
@@ -30,6 +31,18 @@ func vmStatusUpdater(ctx context.Context) {
 					continue
 				}
 				_ = vmModel.New().SetWithBsonByID(vm.ID, bson.D{{"statusCode", code}, {"statusMessage", message}})
+
+				host, err := vm_service.GetHost(vm.ID)
+				if err != nil {
+					utils.PrettyPrintError(fmt.Errorf("error fetching vm host: %w", err))
+					continue
+				}
+
+				if host == nil {
+					_ = vmModel.New().UpdateWithBsonByID(vm.ID, bson.D{{"$unset", bson.D{{"host", ""}}}})
+				} else {
+					_ = vmModel.New().SetWithBsonByID(vm.ID, bson.D{{"host", host}})
+				}
 			}
 		case <-ctx.Done():
 			return

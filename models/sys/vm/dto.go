@@ -70,11 +70,17 @@ func (vm *VM) ToDTO(status string, connectionString *string, gpu *body.GpuRead, 
 		}
 	}
 
+	var host *string
+	if vm.Host != nil {
+		host = &vm.Host.Name
+	}
+
 	return body.VmRead{
 		ID:         vm.ID,
 		Name:       vm.Name,
 		OwnerID:    vm.OwnerID,
 		Zone:       vm.Zone,
+		Host:       host,
 		CreatedAt:  vm.CreatedAt,
 		UpdatedAt:  utils.NonZeroOrNil(vm.UpdatedAt),
 		RepairedAt: utils.NonZeroOrNil(vm.RepairedAt),

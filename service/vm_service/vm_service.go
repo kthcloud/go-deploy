@@ -740,7 +740,7 @@ func GetExternalPortMapper(vmID string) (map[string]int, error) {
 	}
 
 	if vm == nil {
-		log.Println("vm", vmID, "not found for when detaching getting external port mapper. assuming it was deleted")
+		log.Println("vm", vmID, "not found when detaching getting external port mapper. assuming it was deleted")
 		return nil, nil
 	}
 
@@ -750,6 +750,60 @@ func GetExternalPortMapper(vmID string) (map[string]int, error) {
 	}
 
 	return mapper, nil
+}
+
+func GetHost(vmID string) (*vmModel.Host, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to get host for vm %s. details: %w", vmID, err)
+	}
+
+	vm, err := vmModel.New().GetByID(vmID)
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	if vm == nil {
+		log.Println("vm", vmID, "not found when getting host. assuming it was deleted")
+		return nil, nil
+	}
+
+	host, err := cs_service.GetHostByVM(vmID)
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	if host != nil {
+		return &vmModel.Host{
+			ID:   host.ID,
+			Name: host.Name,
+		}, nil
+	}
+
+	idStruct, err := gpu.New().WithVM(vmID).GetID()
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	if idStruct != nil {
+		hostName, err := cs_service.GetRequiredHost(idStruct.ID)
+		if err != nil {
+			return nil, makeError(err)
+		}
+
+		if hostName != nil {
+			host, err = cs_service.GetHostByName(*hostName, vm.Zone)
+			if err != nil {
+				return nil, makeError(err)
+			}
+
+			return &vmModel.Host{
+				ID:   host.ID,
+				Name: host.Name,
+			}, nil
+		}
+	}
+
+	return nil, nil
 }
 
 type CloudStackHostCapabilities struct {
