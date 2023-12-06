@@ -215,13 +215,18 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		}
 
 		for mapName, k8sDeployment := range kg.v.vm.Subsystems.K8s.GetDeploymentMap() {
-			idx := slices.IndexFunc(ports, func(p vm.Port) bool {
-				if p.HttpProxy == nil {
-					return false
+			idx := 0
+			for _, port := range ports {
+				if port.HttpProxy == nil {
+					continue
 				}
 
-				return vpDeploymentName(kg.v.vm, p.HttpProxy.Name) == mapName
-			})
+				if vpDeploymentName(kg.v.vm, port.HttpProxy.Name) == mapName {
+					break
+				}
+
+				idx++
+			}
 
 			if idx != -1 {
 				res[idx].ID = k8sDeployment.ID
@@ -415,13 +420,18 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 		}
 
 		for mapName, svc := range kg.v.vm.Subsystems.K8s.GetServiceMap() {
-			idx := slices.IndexFunc(ports, func(p vm.Port) bool {
-				if p.HttpProxy == nil {
-					return false
+			idx := 0
+			for _, port := range ports {
+				if port.HttpProxy == nil {
+					continue
 				}
 
-				return vpServiceName(kg.v.vm, p.HttpProxy.Name) == mapName
-			})
+				if vpServiceName(kg.v.vm, port.HttpProxy.Name) == mapName {
+					break
+				}
+
+				idx++
+			}
 
 			if idx != -1 {
 				res[idx].ID = svc.ID
@@ -567,14 +577,19 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 		}
 
 		for mapName, ingress := range kg.v.vm.Subsystems.K8s.GetIngressMap() {
-			idx := slices.IndexFunc(ports, func(p vm.Port) bool {
-				if p.HttpProxy == nil {
-					return false
+			idx := 0
+			for _, port := range ports {
+				if port.HttpProxy == nil {
+					continue
 				}
 
-				return vpIngressName(kg.v.vm, p.HttpProxy.Name) == mapName ||
-					(vpCustomDomainIngressName(kg.v.vm, p.HttpProxy.Name) == mapName && p.HttpProxy.CustomDomain != nil)
-			})
+				if vpIngressName(kg.v.vm, port.HttpProxy.Name) == mapName ||
+					(vpCustomDomainIngressName(kg.v.vm, port.HttpProxy.Name) == mapName && port.HttpProxy.CustomDomain != nil) {
+					break
+				}
+
+				idx++
+			}
 
 			if idx != -1 {
 				res[idx].ID = ingress.ID
