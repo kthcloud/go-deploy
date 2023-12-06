@@ -39,13 +39,14 @@ func CreateSnapshot(vmID string, params *vmModel.CreateSnapshotParams) error {
 		return AlreadyExistsErr
 	}
 
+	// make sure vm is on
 	vmStatus, err := context.Client.GetVmStatus(context.VM.Subsystems.CS.VM.ID)
 	if err != nil {
 		return makeError(err)
 	}
 
 	if vmStatus != "Running" {
-		return fmt.Errorf("cs vm %s is not running", context.VM.Subsystems.CS.VM.ID)
+		return makeBadStateErr(fmt.Sprintf("cs vm %s is not in running state: %s", context.VM.Subsystems.CS.VM.ID, vmStatus))
 	}
 
 	var description string
@@ -63,12 +64,6 @@ func CreateSnapshot(vmID string, params *vmModel.CreateSnapshotParams) error {
 
 	if HasExtraConfig(context.VM) {
 		return makeBadStateErr("vm has extra config (probably a gpu attached)")
-	}
-
-	// make sure vm is on
-	err = context.Client.DoVmCommand(context.VM.Subsystems.CS.VM.ID, nil, commands.Start)
-	if err != nil {
-		return makeError(err)
 	}
 
 	snapshotID, err := context.Client.CreateSnapshot(public)
