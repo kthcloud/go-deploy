@@ -41,7 +41,9 @@ func AttachGPU(gpuID, vmID string) error {
 			return makeError(err)
 		}
 
+		shouldStartAfter := false
 		if status == "Running" {
+			shouldStartAfter = true
 			err = context.Client.DoVmCommand(context.VM.Subsystems.CS.VM.ID, nil, commands.Stop)
 			if err != nil {
 				return makeError(err)
@@ -64,10 +66,13 @@ func AttachGPU(gpuID, vmID string) error {
 			return makeError(err)
 		}
 
-		err = context.Client.DoVmCommand(context.VM.Subsystems.CS.VM.ID, requiredHost, commands.Start)
-		if err != nil {
-			return makeError(err)
+		if shouldStartAfter {
+			err = context.Client.DoVmCommand(context.VM.Subsystems.CS.VM.ID, requiredHost, commands.Start)
+			if err != nil {
+				return makeError(err)
+			}
 		}
+
 	}
 
 	return nil
