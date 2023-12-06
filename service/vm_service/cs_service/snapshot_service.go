@@ -13,7 +13,12 @@ import (
 
 var (
 	AlreadyExistsErr = fmt.Errorf("already exists")
+	BadStateErr      = fmt.Errorf("bad state")
 )
+
+func makeBadStateErr(state string) error {
+	return fmt.Errorf("%w: %s", BadStateErr, state)
+}
 
 func CreateSnapshot(vmID string, params *vmModel.CreateSnapshotParams) error {
 	makeError := func(err error) error {
@@ -56,13 +61,8 @@ func CreateSnapshot(vmID string, params *vmModel.CreateSnapshotParams) error {
 		Description: description,
 	}
 
-	var gpuID *string
 	if HasExtraConfig(context.VM) {
-		gpuID = context.VM.GetGpuID()
-		err := DetachGPU(context.VM.ID, CsDetachGpuAfterStateOn)
-		if err != nil {
-			return makeError(err)
-		}
+		return makeBadStateErr("vm has extra config (probably a gpu attached)")
 	}
 
 	// make sure vm is on
@@ -76,20 +76,26 @@ func CreateSnapshot(vmID string, params *vmModel.CreateSnapshotParams) error {
 		return makeError(err)
 	}
 
-	if gpuID != nil {
-		err = AttachGPU(*gpuID, vmID)
+	if !params.UserCreated {
+		// fetch to see what state the snapshot is in, in order to delete the bad ones
+		snapshot, err := context.Client.ReadSnapshot(snapshotID)
 		if err != nil {
+			_ = context.Client.DeleteSnapshot(snapshotID)
 			return makeError(err)
 		}
+
+		if snapshot.State == "Error" {
+			_ = context.Client.DeleteSnapshot(snapshotID)
+			return makeBadStateErr(fmt.Sprintf("snapshot got state: %s", snapshot.State))
+		}
 	}
+	log.Println("created snapshot", snapshotID, "for vm", vmID)
 
 	// delete every other snapshot with the same name that is older
 	snapshots, err := context.Client.ReadAllSnapshots(context.VM.Subsystems.CS.VM.ID)
 	if err != nil {
 		return makeError(err)
 	}
-
-	log.Println("created snapshot", snapshotID, "for vm", vmID)
 
 	for _, snapshot := range snapshots {
 		if snapshot.Name == params.Name && snapshot.ID != snapshotID {
