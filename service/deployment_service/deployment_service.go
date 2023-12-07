@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"go-deploy/models/dto/body"
-	"go-deploy/models/dto/query"
 	deploymentModel "go-deploy/models/sys/deployment"
 	jobModel "go-deploy/models/sys/job"
 	notificationModel "go-deploy/models/sys/notification"
-	roleModel "go-deploy/models/sys/role"
 	teamModels "go-deploy/models/sys/team"
 	"go-deploy/pkg/config"
 	"go-deploy/service"
 	"go-deploy/service/deployment_service/base"
+	"go-deploy/service/deployment_service/client"
+	dErrors "go-deploy/service/deployment_service/errors"
 	"go-deploy/service/deployment_service/github_service"
 	"go-deploy/service/deployment_service/gitlab_service"
 	"go-deploy/service/deployment_service/harbor_service"
@@ -29,7 +29,7 @@ import (
 	"time"
 )
 
-func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreate) error {
+func (c *Client) Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreate) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create deployment. details: %w", err)
 	}
@@ -45,7 +45,7 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 	deployment, err := deploymentModel.New().Create(deploymentID, ownerID, params)
 	if err != nil {
 		if errors.Is(err, deploymentModel.NonUniqueFieldErr) {
-			return NonUniqueFieldErr
+			return dErrors.NonUniqueFieldErr
 		}
 
 		return makeError(err)
@@ -108,13 +108,9 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 	}
 
 	// fetch again to make sure all the fields are populated
-	deployment, err = deploymentModel.New().GetByID(deploymentID)
+	err = c.Fetch()
 	if err != nil {
 		return makeError(err)
-	}
-
-	if deployment == nil {
-		return makeError(fmt.Errorf("deployment not found after creation"))
 	}
 
 	if deployment.Subsystems.GitHub.Created() && params.GitHub != nil {
@@ -138,7 +134,7 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 			return nil
 		}
 
-		err = build([]string{deployment.ID}, &deploymentModel.BuildParams{
+		err = c.build(&deploymentModel.BuildParams{
 			Name:      repo.Name,
 			Tag:       "latest",
 			Branch:    repo.DefaultBranch,
@@ -152,49 +148,43 @@ func Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreat
 	return nil
 }
 
-func Update(id string, dtoUpdate *body.DeploymentUpdate) error {
+func (c *Client) Update(dtoUpdate *body.DeploymentUpdate) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update deployment. details: %w", err)
 	}
 
-	deployment, err := deploymentModel.New().GetByID(id)
-	if err != nil {
-		return makeError(err)
-	}
-
-	if deployment == nil {
-		log.Println("deployment", id, "not found when updating. assuming it was deleted")
-		return nil
+	if c.Deployment() == nil {
+		return dErrors.DeploymentNotFoundErr
 	}
 
 	params := &deploymentModel.UpdateParams{}
-	params.FromDTO(dtoUpdate, deployment.Type)
+	params.FromDTO(dtoUpdate, c.Deployment().Type)
 
-	if params.Name != nil && deployment.Type == deploymentModel.TypeCustom {
-		image := createImagePath(deployment.OwnerID, *params.Name)
+	if params.Name != nil && c.Deployment().Type == deploymentModel.TypeCustom {
+		image := createImagePath(c.Deployment().OwnerID, *params.Name)
 		params.Image = &image
 	}
 
-	err = deploymentModel.New().UpdateWithParamsByID(id, params)
+	err := deploymentModel.New().UpdateWithParamsByID(c.ID(), params)
 	if err != nil {
 		if errors.Is(err, deploymentModel.NonUniqueFieldErr) {
-			return NonUniqueFieldErr
+			return dErrors.NonUniqueFieldErr
 		}
 
 		return makeError(err)
 	}
 
-	if deployment.Type == deploymentModel.TypeCustom {
-		err = harbor_service.Update(id, params)
+	if c.Deployment().Type == deploymentModel.TypeCustom {
+		err = harbor_service.Update(c.ID(), params)
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
-	err = k8s_service.Update(id, params)
+	err = k8s_service.Update(c.ID(), params)
 	if err != nil {
 		if errors.Is(err, base.CustomDomainInUseErr) {
-			log.Println("custom domain in use when updating deployment", deployment.Name, ". removing it from the update params")
+			log.Println("custom domain in use when updating deployment", c.Deployment().Name, ". removing it from the update params")
 			dtoUpdate.CustomDomain = nil
 		} else {
 			return makeError(err)
@@ -204,40 +194,42 @@ func Update(id string, dtoUpdate *body.DeploymentUpdate) error {
 	return nil
 }
 
-func UpdateOwnerAuth(id string, params *body.DeploymentUpdateOwner, auth *service.AuthInfo) (*string, error) {
+func (c *Client) UpdateOwnerSetup(params *body.DeploymentUpdateOwner) (*string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update deployment owner. details: %w", err)
 	}
 
-	deployment, err := deploymentModel.New().GetByID(id)
-	if err != nil {
-		return nil, makeError(err)
+	if c.Deployment() == nil {
+		return nil, dErrors.DeploymentNotFoundErr
 	}
 
-	if deployment == nil {
-		return nil, DeploymentNotFoundErr
-	}
-
-	if deployment.OwnerID == params.NewOwnerID {
+	if c.Deployment().OwnerID == params.NewOwnerID {
 		return nil, nil
 	}
 
 	doTransfer := false
 
-	if auth.IsAdmin {
+	if c.Auth == nil || c.Auth.IsAdmin {
 		doTransfer = true
-	} else if auth.UserID == params.NewOwnerID {
-		if params.TransferCode == nil || deployment.Transfer == nil || deployment.Transfer.Code != *params.TransferCode {
-			return nil, InvalidTransferCodeErr
+	} else if c.Auth.UserID == params.NewOwnerID {
+		if params.TransferCode == nil || c.Deployment().Transfer == nil || c.Deployment().Transfer.Code != *params.TransferCode {
+			return nil, dErrors.InvalidTransferCodeErr
 		}
 
 		doTransfer = true
 	}
 
+	var effectiveUserID string
+	if c.Auth == nil {
+		effectiveUserID = "system"
+	} else {
+		effectiveUserID = c.Auth.UserID
+	}
+
 	if doTransfer {
 		jobID := uuid.New().String()
-		err := job_service.Create(jobID, auth.UserID, jobModel.TypeUpdateDeploymentOwner, map[string]interface{}{
-			"id":     id,
+		err := job_service.Create(jobID, effectiveUserID, jobModel.TypeUpdateDeploymentOwner, map[string]interface{}{
+			"id":     c.ID(),
 			"params": *params,
 		})
 
@@ -250,7 +242,7 @@ func UpdateOwnerAuth(id string, params *body.DeploymentUpdateOwner, auth *servic
 
 	/// create a transfer notification
 	code := createTransferCode()
-	err = deploymentModel.New().UpdateWithParamsByID(id, &deploymentModel.UpdateParams{
+	err := deploymentModel.New().UpdateWithParamsByID(c.ID(), &deploymentModel.UpdateParams{
 		TransferUserID: &params.NewOwnerID,
 		TransferCode:   &code,
 	})
@@ -261,10 +253,10 @@ func UpdateOwnerAuth(id string, params *body.DeploymentUpdateOwner, auth *servic
 	err = notification_service.CreateNotification(uuid.NewString(), params.NewOwnerID, &notificationModel.CreateParams{
 		Type: notificationModel.TypeDeploymentTransfer,
 		Content: map[string]interface{}{
-			"id":     deployment.ID,
-			"name":   deployment.Name,
+			"id":     c.Deployment().ID,
+			"name":   c.Deployment().Name,
 			"userId": params.OldOwnerID,
-			"email":  auth.GetEmail(),
+			"email":  c.Auth.GetEmail(),
 			"code":   code,
 		},
 	})
@@ -276,26 +268,21 @@ func UpdateOwnerAuth(id string, params *body.DeploymentUpdateOwner, auth *servic
 	return nil, nil
 }
 
-func ClearUpdateOwner(id string) error {
+func (c *Client) ClearUpdateOwner() error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to clear deployment owner update. details: %w", err)
 	}
 
-	deployment, err := deploymentModel.New().GetByID(id)
-	if err != nil {
-		return makeError(err)
+	if c.Deployment() == nil {
+		return dErrors.DeploymentNotFoundErr
 	}
 
-	if deployment == nil {
-		return DeploymentNotFoundErr
-	}
-
-	if deployment.Transfer == nil {
+	if c.Deployment().Transfer == nil {
 		return nil
 	}
 
 	emptyString := ""
-	err = deploymentModel.New().UpdateWithParamsByID(id, &deploymentModel.UpdateParams{
+	err := deploymentModel.New().UpdateWithParamsByID(c.ID(), &deploymentModel.UpdateParams{
 		TransferUserID: &emptyString,
 		TransferCode:   &emptyString,
 	})
@@ -308,30 +295,24 @@ func ClearUpdateOwner(id string) error {
 	return nil
 }
 
-func UpdateOwner(id string, params *body.DeploymentUpdateOwner) error {
+func (c *Client) UpdateOwner(params *body.DeploymentUpdateOwner) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update deployment owner. details: %w", err)
 	}
 
-	deployment, err := deploymentModel.New().GetByID(id)
-	if err != nil {
-		return makeError(err)
-	}
-
-	if deployment == nil {
-		log.Println("deployment", id, "not found when updating owner. assuming it was deleted")
-		return nil
+	if c.Deployment() == nil {
+		return dErrors.DeploymentNotFoundErr
 	}
 
 	var newImage *string
-	if deployment.Type == deploymentModel.TypeCustom {
-		image := createImagePath(params.NewOwnerID, deployment.Name)
+	if c.Deployment().Type == deploymentModel.TypeCustom {
+		image := createImagePath(params.NewOwnerID, c.Deployment().Name)
 		newImage = &image
 	}
 
 	emptyString := ""
 
-	err = deploymentModel.New().UpdateWithParamsByID(id, &deploymentModel.UpdateParams{
+	err := deploymentModel.New().UpdateWithParamsByID(c.ID(), &deploymentModel.UpdateParams{
 		OwnerID:        &params.NewOwnerID,
 		Image:          newImage,
 		TransferCode:   &emptyString,
@@ -341,36 +322,40 @@ func UpdateOwner(id string, params *body.DeploymentUpdateOwner) error {
 		return makeError(err)
 	}
 
-	err = harbor_service.EnsureOwner(id, params.OldOwnerID)
+	err = harbor_service.EnsureOwner(c.ID(), params.OldOwnerID)
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = k8s_service.EnsureOwner(id, params.OldOwnerID)
+	err = k8s_service.EnsureOwner(c.ID(), params.OldOwnerID)
 	if err != nil {
 		return makeError(err)
 	}
 
-	log.Println("deployment", id, "owner updated to", params.NewOwnerID)
+	log.Println("deployment", c.ID(), "owner updated to", params.NewOwnerID)
 	return nil
 }
 
-func Delete(id string) error {
+func (c *Client) Delete() error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete deployment. details: %w", err)
 	}
 
-	err := harbor_service.Delete(id)
+	if !c.HasID() {
+		return dErrors.DeploymentNotFoundErr
+	}
+
+	err := harbor_service.Delete(c.ID())
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = k8s_service.Delete(id)
+	err = k8s_service.Delete(c.ID())
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = github_service.Delete(id)
+	err = github_service.Delete(c.ID())
 	if err != nil {
 		return makeError(err)
 	}
@@ -378,31 +363,25 @@ func Delete(id string) error {
 	return nil
 }
 
-func Repair(id string) error {
+func (c *Client) Repair() error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to repair deployment %s. details: %w", id, err)
+		return fmt.Errorf("failed to repair deployment %s. details: %w", c.ID(), err)
 	}
 
-	deployment, err := deploymentModel.New().GetByID(id)
-	if err != nil {
-		return makeError(err)
+	if c.Deployment() == nil {
+		return dErrors.DeploymentNotFoundErr
 	}
 
-	if deployment == nil {
-		log.Println("deployment", id, "not found when repairing. assuming it was deleted")
+	if !c.Deployment().Ready() {
+		log.Println("deployment", c.ID(), "not ready when repairing.")
 		return nil
 	}
 
-	if !deployment.Ready() {
-		log.Println("deployment", id, "not ready when repairing.")
-		return nil
-	}
-
-	err = k8s_service.Repair(deployment.ID)
+	err := k8s_service.Repair(c.ID())
 	if err != nil {
 		if errors.Is(err, base.CustomDomainInUseErr) {
-			log.Println("custom domain in use when repairing deployment", deployment.ID, ". removing it from the deployment")
-			err = deploymentModel.New().RemoveCustomDomain(deployment.ID)
+			log.Println("custom domain in use when repairing deployment", c.ID(), ". removing it from the deployment")
+			err = deploymentModel.New().RemoveCustomDomain(c.ID())
 			if err != nil {
 				return makeError(err)
 			}
@@ -411,45 +390,39 @@ func Repair(id string) error {
 		}
 	}
 
-	if !deployment.Subsystems.Harbor.Placeholder {
-		err = harbor_service.Repair(deployment.ID)
+	if !c.Deployment().Subsystems.Harbor.Placeholder {
+		err = harbor_service.Repair(c.ID())
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
-	log.Println("repaired deployment", deployment.ID)
+	log.Println("repaired deployment", c.ID())
 	return nil
 }
 
-func Restart(id string) error {
+func (c *Client) Restart() error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to restart deployment. details: %w", err)
 	}
 
-	deployment, err := deploymentModel.New().GetByID(id)
-	if err != nil {
-		return makeError(err)
+	if c.Deployment() == nil {
+
 	}
 
-	if deployment == nil {
-		log.Println("deployment", id, "not found when restarting. assuming it was deleted")
-		return nil
-	}
-
-	AddLogs(id, deploymentModel.Log{
+	c.AddLogs(deploymentModel.Log{
 		Source:    deploymentModel.LogSourceDeployment,
 		Prefix:    "[deployment]",
 		Line:      "Restart requested",
 		CreatedAt: time.Now(),
 	})
 
-	err = deploymentModel.New().SetWithBsonByID(id, bson.D{{"restartedAt", time.Now()}})
+	err := deploymentModel.New().SetWithBsonByID(c.ID(), bson.D{{"restartedAt", time.Now()}})
 	if err != nil {
 		return makeError(err)
 	}
 
-	started, reason, err := StartActivity(deployment.ID, deploymentModel.ActivityRestarting)
+	started, reason, err := c.StartActivity(deploymentModel.ActivityRestarting)
 	if err != nil {
 		return makeError(err)
 	}
@@ -458,17 +431,17 @@ func Restart(id string) error {
 		// the restart is best-effort, so we mimic a reasonable delay
 		time.Sleep(5 * time.Second)
 
-		err = deploymentModel.New().RemoveActivity(deployment.ID, deploymentModel.ActivityRestarting)
+		err = deploymentModel.New().RemoveActivity(c.ID(), deploymentModel.ActivityRestarting)
 		if err != nil {
-			utils.PrettyPrintError(fmt.Errorf("failed to remove activity %s from deployment %s. details: %w", deploymentModel.ActivityRestarting, deployment.ID, err))
+			utils.PrettyPrintError(fmt.Errorf("failed to remove activity %s from deployment %s. details: %w", deploymentModel.ActivityRestarting, c.ID(), err))
 		}
 	}()
 
 	if !started {
-		return fmt.Errorf("failed to restart deployment. details: %s", reason)
+		return fmt.Errorf("failed to restart deployment %s. details: %s", c.ID(), reason)
 	}
 
-	err = k8s_service.Restart(id)
+	err = k8s_service.Restart(c.ID())
 	if err != nil {
 		return makeError(err)
 	}
@@ -476,13 +449,20 @@ func Restart(id string) error {
 	return nil
 }
 
-func Build(ids []string, buildParams *body.DeploymentBuild) error {
+func (c *Client) Build(buildParams *body.DeploymentBuild) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to build deployment. details: %w", err)
 	}
 
 	params := &deploymentModel.BuildParams{}
 	params.FromDTO(buildParams)
+
+	var ids []string
+	if c.HasID() {
+		ids = []string{c.ID()}
+	} else {
+		ids = c.IDs
+	}
 
 	for _, id := range ids {
 		err := deploymentModel.New().AddLogs(id, deploymentModel.Log{
@@ -496,7 +476,7 @@ func Build(ids []string, buildParams *body.DeploymentBuild) error {
 		}
 	}
 
-	err := build(ids, params)
+	err := c.build(params)
 	if err != nil {
 		return makeError(err)
 	}
@@ -504,21 +484,21 @@ func Build(ids []string, buildParams *body.DeploymentBuild) error {
 	return nil
 }
 
-func AddLogs(id string, logs ...deploymentModel.Log) {
+func (c *Client) AddLogs(logs ...deploymentModel.Log) {
 	// logs are added best-effort, so we don't return an error here
 	go func() {
-		err := deploymentModel.New().AddLogs(id, logs...)
+		err := deploymentModel.New().AddLogs(c.ID(), logs...)
 		if err != nil {
-			utils.PrettyPrintError(fmt.Errorf("failed to add logs to deployment %s. details: %w", id, err))
+			utils.PrettyPrintError(fmt.Errorf("failed to add logs to deployment %s. details: %w", c.ID(), err))
 		}
 	}()
 }
 
-func DoCommand(deployment *deploymentModel.Deployment, command string) {
+func (c *Client) DoCommand(command string) {
 	go func() {
 		switch command {
 		case "restart":
-			err := Restart(deployment.ID)
+			err := c.Restart()
 			if err != nil {
 				utils.PrettyPrintError(err)
 			}
@@ -526,87 +506,94 @@ func DoCommand(deployment *deploymentModel.Deployment, command string) {
 	}()
 }
 
-func GetByIdAuth(id string, auth *service.AuthInfo) (*deploymentModel.Deployment, error) {
-	deployment, err := deploymentModel.New().GetByID(id)
-	if err != nil {
-		return nil, err
+func (c *Client) Get(opts *client.GetOptions) (*deploymentModel.Deployment, error) {
+	dClient := deploymentModel.New()
+
+	if opts.TransferCode != "" {
+		return dClient.GetByTransferCode(opts.TransferCode)
 	}
 
-	if deployment == nil {
-		return nil, nil
+	var effectiveUserID string
+	if c.UserID != "" {
+		if c.Auth == nil || c.Auth.UserID == c.UserID || c.Auth.IsAdmin {
+			effectiveUserID = c.UserID
+		} else {
+			effectiveUserID = c.Auth.UserID
+		}
+	} else {
+		if c.Auth != nil && !c.Auth.IsAdmin {
+			effectiveUserID = c.Auth.UserID
+		}
 	}
 
-	if deployment.OwnerID != auth.UserID {
-		inTeam, err := teamModels.New().AddUserID(auth.UserID).AddResourceID(id).ExistsAny()
+	var teamCheck bool
+	if !opts.Shared {
+		teamCheck = false
+	} else if c.Auth == nil || c.Auth.IsAdmin {
+		teamCheck = true
+	} else {
+		var err error
+		teamCheck, err = teamModels.New().AddUserID(c.Auth.UserID).AddResourceID(c.ID()).ExistsAny()
 		if err != nil {
 			return nil, err
 		}
+	}
 
-		if inTeam {
-			return deployment, nil
+	if !teamCheck && effectiveUserID != "" {
+		dClient.RestrictToOwner(effectiveUserID)
+	}
+
+	if opts.HarborWebhook != nil {
+		return dClient.GetByName(opts.HarborWebhook.EventData.Repository.Name)
+	}
+
+	return c.Deployment(), nil
+}
+
+func (c *Client) List(opts *client.ListOptions) ([]deploymentModel.Deployment, error) {
+	dClient := deploymentModel.New()
+
+	if opts.Pagination != nil {
+		dClient.WithPagination(opts.Pagination.Page, opts.Pagination.PageSize)
+	}
+
+	if opts.GitHubWebhookID != 0 {
+		dClient.WithGitHubWebhookID(opts.GitHubWebhookID)
+	}
+
+	var effectiveUserID string
+	if c.UserID != "" {
+		// specific user's deployments are requested
+		if c.Auth == nil || c.Auth.UserID == c.UserID || c.Auth.IsAdmin {
+			effectiveUserID = c.UserID
+		} else {
+			effectiveUserID = c.Auth.UserID
 		}
-
-		if auth.IsAdmin {
-			return deployment, nil
+	} else {
+		// all deployments are requested
+		if c.Auth != nil && !c.Auth.IsAdmin {
+			effectiveUserID = c.Auth.UserID
 		}
-
-		return nil, nil
 	}
 
-	return deployment, nil
-}
-
-func GetByID(id string) (*deploymentModel.Deployment, error) {
-	return deploymentModel.New().GetByID(id)
-}
-
-func GetByName(name string) (*deploymentModel.Deployment, error) {
-	return deploymentModel.New().GetByName(name)
-}
-
-func GetByTransferCode(code, userID string) (*deploymentModel.Deployment, error) {
-	return deploymentModel.New().GetByTransferCode(code, userID)
-}
-
-func NameAvailable(name string) (bool, error) {
-	exists, err := deploymentModel.New().ExistsByName(name)
-	if err != nil {
-		return false, err
+	if effectiveUserID != "" {
+		dClient.RestrictToOwner(effectiveUserID)
 	}
 
-	return !exists, nil
-}
-
-func ListAuth(allUsers bool, userID *string, shared bool, auth *service.AuthInfo, pagination *query.Pagination) ([]deploymentModel.Deployment, error) {
-	client := deploymentModel.New()
-
-	if pagination != nil {
-		client.AddPagination(pagination.Page, pagination.PageSize)
-	}
-
-	if userID != nil {
-		if *userID != auth.UserID && !auth.IsAdmin {
-			return nil, nil
-		}
-		client.RestrictToOwner(*userID)
-	} else if !allUsers || (allUsers && !auth.IsAdmin) {
-		client.RestrictToOwner(auth.UserID)
-	}
-
-	resources, err := client.List()
+	resources, err := dClient.List()
 	if err != nil {
 		return nil, err
 	}
 
-	if shared {
-		ids := make([]string, len(resources))
+	if opts.Shared && effectiveUserID != "" {
+		skipIDs := make([]string, len(resources))
 		for i, resource := range resources {
-			ids[i] = resource.ID
+			skipIDs[i] = resource.ID
 		}
 
-		teamClient := teamModels.New().AddUserID(auth.UserID)
-		if pagination != nil {
-			teamClient.AddPagination(pagination.Page, pagination.PageSize)
+		teamClient := teamModels.New().AddUserID(effectiveUserID)
+		if opts.Pagination != nil {
+			teamClient.AddPagination(opts.Pagination.Page, opts.Pagination.PageSize)
 		}
 
 		teams, err := teamClient.List()
@@ -622,8 +609,8 @@ func ListAuth(allUsers bool, userID *string, shared bool, auth *service.AuthInfo
 
 				// skip existing non-shared resources
 				skip := false
-				for _, id := range ids {
-					if resource.ID == id {
+				for _, skipID := range skipIDs {
+					if resource.ID == skipID {
 						skip = true
 						break
 					}
@@ -648,8 +635,8 @@ func ListAuth(allUsers bool, userID *string, shared bool, auth *service.AuthInfo
 		})
 
 		// since we fetched from two collections, we need to do pagination manually
-		if pagination != nil {
-			resources = utils.GetPage(resources, pagination.PageSize, pagination.Page)
+		if opts.Pagination != nil {
+			resources = utils.GetPage(resources, opts.Pagination.PageSize, opts.Pagination.Page)
 		}
 
 	} else {
@@ -662,73 +649,64 @@ func ListAuth(allUsers bool, userID *string, shared bool, auth *service.AuthInfo
 	return resources, nil
 }
 
-func ListAll() ([]deploymentModel.Deployment, error) {
-	return deploymentModel.New().List()
-}
-
-func CheckQuotaCreate(requestBody *body.DeploymentCreate, userID string, quota *roleModel.Quotas, auth *service.AuthInfo) error {
+func (c *Client) CheckQuota(opts *client.QuotaOptions) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check quota. details: %w", err)
 	}
 
-	if auth.IsAdmin {
+	if c.Auth != nil && c.Auth.IsAdmin {
 		return nil
 	}
 
-	usage, err := GetUsageByUserID(userID)
+	usage, err := c.GetUsage()
 	if err != nil {
 		return makeError(err)
 	}
 
-	add := 1
-	if requestBody.Replicas != nil {
-		add = *requestBody.Replicas
-	}
+	if opts.Create != nil {
+		add := 1
+		if opts.Create.Replicas != nil {
+			add = *opts.Create.Replicas
+		}
 
-	totalCount := usage.Count + add
+		totalCount := usage.Count + add
 
-	if totalCount > quota.Deployments {
-		return service.NewQuotaExceededError(fmt.Sprintf("Deployment quota exceeded. Current: %d, Quota: %d", totalCount, quota.Deployments))
+		if totalCount > opts.Quota.Deployments {
+			return service.NewQuotaExceededError(fmt.Sprintf("Deployment quota exceeded. Current: %d, Quota: %d", totalCount, opts.Quota.Deployments))
+		}
+
+		return nil
+	} else if opts.Update != nil {
+		add := 1
+		if opts.Update.Replicas != nil {
+			add = *opts.Update.Replicas
+		}
+
+		totalCount := usage.Count + add
+
+		if totalCount > opts.Quota.Deployments {
+			return service.NewQuotaExceededError(fmt.Sprintf("Deployment quota exceeded. Current: %d, Quota: %d", totalCount, opts.Quota.Deployments))
+		}
+
+		return nil
+	} else {
+		log.Println("quota options not set when checking quota for deployment", c.ID())
 	}
 
 	return nil
 }
 
-func CheckQuotaUpdate(requestBody *body.DeploymentUpdate, userID string, quota *roleModel.Quotas, auth *service.AuthInfo) error {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to check quota. details: %w", err)
+func (c *Client) StartActivity(activity string) (bool, string, error) {
+	if !c.HasID() {
+		return false, "Deployment not found", nil
 	}
 
-	if auth.IsAdmin {
-		return nil
-	}
-
-	usage, err := GetUsageByUserID(userID)
-	if err != nil {
-		return makeError(err)
-	}
-
-	add := 1
-	if requestBody.Replicas != nil {
-		add = *requestBody.Replicas
-	}
-
-	totalCount := usage.Count + add
-
-	if totalCount > quota.Deployments {
-		return service.NewQuotaExceededError(fmt.Sprintf("Deployment quota exceeded. Current: %d, Quota: %d", totalCount, quota.Deployments))
-	}
-
-	return nil
-}
-
-func StartActivity(deploymentID, activity string) (bool, string, error) {
-	canAdd, reason := CanAddActivity(deploymentID, activity)
+	canAdd, reason := c.CanAddActivity(activity)
 	if !canAdd {
 		return false, reason, nil
 	}
 
-	err := deploymentModel.New().AddActivity(deploymentID, activity)
+	err := deploymentModel.New().AddActivity(c.ID(), activity)
 	if err != nil {
 		return false, "", err
 	}
@@ -736,40 +714,37 @@ func StartActivity(deploymentID, activity string) (bool, string, error) {
 	return true, "", nil
 }
 
-func CanAddActivity(deploymentID, activity string) (bool, string) {
-	deployment, err := deploymentModel.New().GetByID(deploymentID)
-	if err != nil {
-		return false, "Failed to get deployment"
-	}
+func (c *Client) CanAddActivity(activity string) (bool, string) {
+	d := c.Deployment()
 
-	if deployment == nil {
+	if d == nil {
 		return false, "Deployment not found"
 	}
 
 	switch activity {
 	case deploymentModel.ActivityBeingCreated:
-		return !deployment.BeingDeleted(), "Resource is being deleted"
+		return !d.BeingDeleted(), "Resource is being deleted"
 	case deploymentModel.ActivityBeingDeleted:
 		return true, ""
 	case deploymentModel.ActivityUpdating:
-		return !deployment.BeingDeleted() && !deployment.BeingCreated(), "Resource is being deleted or created"
+		return !d.BeingDeleted() && !d.BeingCreated(), "Resource is being deleted or created"
 	case deploymentModel.ActivityRestarting:
-		return !deployment.BeingDeleted(), "Resource is being deleted"
+		return !d.BeingDeleted(), "Resource is being deleted"
 	case deploymentModel.ActivityBuilding:
-		return !deployment.BeingDeleted(), "Resource is being deleted"
+		return !d.BeingDeleted(), "Resource is being deleted"
 	case deploymentModel.ActivityRepairing:
-		return deployment.Ready(), "Resource is not ready"
+		return d.Ready(), "Resource is not ready"
 	}
 
 	return false, fmt.Sprintf("Unknown activity %s", activity)
 }
 
-func GetUsageByUserID(userID string) (*deploymentModel.Usage, error) {
+func (c *Client) GetUsage() (*deploymentModel.Usage, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get usage. details: %w", err)
 	}
 
-	count, err := deploymentModel.New().RestrictToOwner(userID).CountReplicas()
+	count, err := deploymentModel.New().RestrictToOwner(c.UserID).CountReplicas()
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -791,6 +766,15 @@ func GetGitHubAccessTokenByCode(code string) (string, error) {
 	}
 
 	return code, nil
+}
+
+func NameAvailable(name string) (bool, error) {
+	exists, err := deploymentModel.New().ExistsByName(name)
+	if err != nil {
+		return false, err
+	}
+
+	return !exists, nil
 }
 
 func GetGitHubRepositories(token string) ([]deploymentModel.GitHubRepository, error) {
@@ -855,10 +839,17 @@ func SavePing(id string, pingResult int) error {
 	return nil
 }
 
-func build(ids []string, params *deploymentModel.BuildParams) error {
+func (c *Client) build(params *deploymentModel.BuildParams) error {
+	var ids []string
+	if c.HasID() {
+		ids = []string{c.ID()}
+	} else {
+		ids = c.IDs
+	}
+
 	var filtered []string
 	for _, id := range ids {
-		started, reason, err := StartActivity(id, deploymentModel.ActivityBuilding)
+		started, reason, err := c.StartActivity(deploymentModel.ActivityBuilding)
 		if err != nil {
 			return err
 		}
@@ -877,6 +868,10 @@ func build(ids []string, params *deploymentModel.BuildParams) error {
 			}
 		}
 	}()
+
+	if len(filtered) == 0 {
+		return nil
+	}
 
 	err := gitlab_service.CreateBuild(filtered, params)
 	if err != nil {

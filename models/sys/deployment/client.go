@@ -31,7 +31,7 @@ func New() *Client {
 	}
 }
 
-func (client *Client) AddPagination(page, pageSize int) *Client {
+func (client *Client) WithPagination(page, pageSize int) *Client {
 	client.ResourceClient.Pagination = &base.Pagination{
 		Page:     page,
 		PageSize: pageSize,
@@ -94,6 +94,14 @@ func (client *Client) WithNoActivities() *Client {
 		},
 	}}
 
+	client.ResourceClient.AddExtraFilter(filter)
+	client.ActivityResourceClient.AddExtraFilter(filter)
+
+	return client
+}
+
+func (client *Client) WithGitHubWebhookID(id int64) *Client {
+	filter := bson.D{{"subsystems.github.webhook.id", id}}
 	client.ResourceClient.AddExtraFilter(filter)
 	client.ActivityResourceClient.AddExtraFilter(filter)
 

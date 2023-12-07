@@ -1,4 +1,4 @@
-package deployment_service
+package errors
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 
 var (
 	DeploymentNotFoundErr  = fmt.Errorf("deployment not found")
+	ZoneNotFoundErr        = fmt.Errorf("zone not found")
 	NonUniqueFieldErr      = fmt.Errorf("non unique field")
 	InvalidTransferCodeErr = fmt.Errorf("invalid transfer code")
 )

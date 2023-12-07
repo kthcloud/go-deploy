@@ -19,17 +19,15 @@ import (
 	"go-deploy/utils"
 )
 
-func collectUsage(context *sys.ClientContext, userID string) *userModel.Usage {
+func collectUsage(userID string) (*userModel.Usage, error) {
 	vmUsage, err := vm_service.GetUsageByUserID(userID)
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
-		return nil
+		return nil, err
 	}
 
-	deploymentUsage, err := deployment_service.GetUsageByUserID(userID)
+	deploymentUsage, err := deployment_service.New().WithUserID(userID).GetUsage()
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
-		return nil
+		return nil, err
 	}
 
 	usage := &userModel.Usage{
@@ -39,7 +37,7 @@ func collectUsage(context *sys.ClientContext, userID string) *userModel.Usage {
 		DiskSize:    vmUsage.DiskSize,
 	}
 
-	return usage
+	return usage, nil
 }
 
 func getStorageURL(userID string, auth *service.AuthInfo) (*string, error) {
@@ -127,7 +125,7 @@ func ListUsers(c *gin.Context) {
 
 		role := config.Config.GetRole(user.EffectiveRole.Name)
 
-		usage := collectUsage(&context, user.ID)
+		usage, _ := collectUsage(user.ID)
 		if usage == nil {
 			usage = &userModel.Usage{}
 		}
@@ -192,8 +190,9 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	usage := collectUsage(&context, user.ID)
+	usage, err := collectUsage(user.ID)
 	if usage == nil {
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
@@ -265,8 +264,9 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	usage := collectUsage(&context, updated.ID)
+	usage, err := collectUsage(updated.ID)
 	if usage == nil {
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 

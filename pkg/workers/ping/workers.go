@@ -6,6 +6,7 @@ import (
 	deploymentModels "go-deploy/models/sys/deployment"
 	"go-deploy/pkg/config"
 	"go-deploy/service/deployment_service"
+	"go-deploy/service/deployment_service/client"
 	"go-deploy/utils"
 	"log"
 	"net/http"
@@ -23,7 +24,7 @@ func deploymentPingUpdater(ctx context.Context) {
 				return fmt.Errorf("error fetching deployments. details: %w", err)
 			}
 
-			deployments, err := deployment_service.ListAll()
+			deployments, err := deployment_service.New().List(&client.ListOptions{})
 			if err != nil {
 				utils.PrettyPrintError(makeError(err))
 				return

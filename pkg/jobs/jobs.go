@@ -12,9 +12,10 @@ import (
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/pkg/workers/confirm"
 	"go-deploy/service/deployment_service"
+	dErrors "go-deploy/service/deployment_service/errors"
 	"go-deploy/service/storage_manager_service"
 	"go-deploy/service/vm_service"
-	errors2 "go-deploy/service/vm_service/service_errors"
+	sErrors "go-deploy/service/vm_service/service_errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
@@ -116,7 +117,7 @@ func UpdateVM(job *jobModel.Job) error {
 
 	err = vm_service.Update(id, &update)
 	if err != nil {
-		if errors.Is(err, errors2.NonUniqueFieldErr) {
+		if errors.Is(err, sErrors.NonUniqueFieldErr) {
 			return makeTerminatedError(err)
 		}
 
@@ -205,7 +206,7 @@ func CreateDeployment(job *jobModel.Job) error {
 		return makeTerminatedError(err)
 	}
 
-	err = deployment_service.Create(id, ownerID, &params)
+	err = deployment_service.New().Create(id, ownerID, &params)
 	if err != nil {
 		// we always terminate these jobs, since rerunning it would cause a NonUniqueFieldErr
 		return makeTerminatedError(err)
@@ -248,9 +249,11 @@ func DeleteDeployment(job *jobModel.Job) error {
 	default:
 	}
 
-	err = deployment_service.Delete(id)
+	err = deployment_service.New().WithID(id).Delete()
 	if err != nil {
-		return makeFailedError(err)
+		if !errors.Is(err, dErrors.DeploymentNotFoundErr) {
+			return makeFailedError(err)
+		}
 	}
 
 	// check if deleted, otherwise mark as failed and return to queue for retry
@@ -283,9 +286,13 @@ func UpdateDeployment(job *jobModel.Job) error {
 		return makeTerminatedError(err)
 	}
 
-	err = deployment_service.Update(id, &update)
+	err = deployment_service.New().WithID(id).Update(&update)
 	if err != nil {
-		if errors.Is(err, deployment_service.NonUniqueFieldErr) {
+		if errors.Is(err, dErrors.NonUniqueFieldErr) {
+			return makeTerminatedError(err)
+		}
+
+		if errors.Is(err, dErrors.DeploymentNotFoundErr) {
 			return makeTerminatedError(err)
 		}
 
@@ -313,8 +320,12 @@ func UpdateDeploymentOwner(job *jobModel.Job) error {
 		return makeTerminatedError(err)
 	}
 
-	err = deployment_service.UpdateOwner(id, &params)
+	err = deployment_service.New().WithID(id).UpdateOwner(&params)
 	if err != nil {
+		if errors.Is(err, dErrors.DeploymentNotFoundErr) {
+			return makeTerminatedError(err)
+		}
+
 		return makeFailedError(err)
 	}
 
@@ -355,7 +366,7 @@ func BuildDeployments(job *jobModel.Job) error {
 		return nil
 	}
 
-	err = deployment_service.Build(filtered, &params)
+	err = deployment_service.New().WithIDs(filtered).Build(&params)
 	if err != nil {
 		return makeFailedError(err)
 	}
@@ -371,7 +382,7 @@ func RepairDeployment(job *jobModel.Job) error {
 
 	id := job.Args["id"].(string)
 
-	err = deployment_service.Repair(id)
+	err = deployment_service.New().WithID(id).Repair()
 	if err != nil {
 		return makeTerminatedError(err)
 	}

@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 	deploymentModel "go-deploy/models/sys/deployment"
-	"go-deploy/service"
+	"go-deploy/service/deployment_service/client"
+	"go-deploy/service/deployment_service/errors"
 	"go-deploy/utils"
 	"log"
 	"time"
@@ -16,18 +17,18 @@ const (
 	FetchPeriod = 300 * time.Millisecond
 )
 
-func SetupLogStream(ctx context.Context, id string, handler func(string, string, string), history int, auth *service.AuthInfo) error {
-	deployment, err := GetByIdAuth(id, auth)
+func (c *Client) SetupLogStream(ctx context.Context, handler func(string, string, string), history int) error {
+	deployment, err := c.Get(&client.GetOptions{Shared: true})
 	if err != nil {
 		return err
 	}
 
 	if deployment == nil {
-		return DeploymentNotFoundErr
+		return errors.DeploymentNotFoundErr
 	}
 
 	if deployment.BeingDeleted() {
-		log.Println("deployment", id, "is being deleted. not setting up log stream")
+		log.Println("deployment", c.ID, "is being deleted. not setting up log stream")
 		return nil
 	}
 
@@ -36,9 +37,9 @@ func SetupLogStream(ctx context.Context, id string, handler func(string, string,
 		time.Sleep(500 * time.Millisecond)
 
 		// fetch history logs
-		logs, err := deploymentModel.New().GetLogs(id, history)
+		logs, err := deploymentModel.New().GetLogs(c.ID(), history)
 		if err != nil {
-			utils.PrettyPrintError(fmt.Errorf("failed to get logs for deployment %s. details: %w", id, err))
+			utils.PrettyPrintError(fmt.Errorf("failed to get logs for deployment %s. details: %w", c.ID, err))
 			return
 		}
 
@@ -60,9 +61,9 @@ func SetupLogStream(ctx context.Context, id string, handler func(string, string,
 				time.Sleep(FetchPeriod)
 				handler(MessageSourceControl, "[control]", "fetching logs")
 
-				logs, err = deploymentModel.New().GetLogsAfter(id, lastFetched)
+				logs, err = deploymentModel.New().GetLogsAfter(c.ID(), lastFetched)
 				if err != nil {
-					utils.PrettyPrintError(fmt.Errorf("failed to get logs for deployment %s after %s. details: %w", id, lastFetched, err))
+					utils.PrettyPrintError(fmt.Errorf("failed to get logs for deployment %s after %s. details: %w", c.ID, lastFetched, err))
 					return
 				}
 

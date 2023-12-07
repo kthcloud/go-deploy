@@ -14,6 +14,7 @@ import (
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/deployment_service"
+	"go-deploy/service/deployment_service/client"
 	"go-deploy/service/job_service"
 	"go-deploy/utils/requestutils"
 	"strconv"
@@ -83,7 +84,7 @@ func HandleHarborHook(c *gin.Context) {
 		return
 	}
 
-	deployment, err := deployment_service.GetByHarborWebhook(&webhook)
+	deployment, err := deployment_service.New().Get(&client.GetOptions{HarborWebhook: &webhook})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -102,9 +103,10 @@ func HandleHarborHook(c *gin.Context) {
 			CreatedAt: time.Now(),
 		}
 
-		deployment_service.AddLogs(deployment.ID, newLog)
-
-		err = deployment_service.Restart(deployment.ID)
+		dc := deployment_service.New().WithID(deployment.ID)
+		dc.AddLogs(newLog)
+		
+		err = dc.Restart()
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
@@ -168,7 +170,7 @@ func HandleGitHubHook(c *gin.Context) {
 		return
 	}
 
-	deployments, err := deployment_service.ListByGitHubWebhookID(hookID)
+	deployments, err := deployment_service.New().List(&client.ListOptions{GitHubWebhookID: hookID})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -211,7 +213,7 @@ func HandleGitHubHook(c *gin.Context) {
 		}
 
 		for _, id := range ids {
-			deployment_service.AddLogs(id, newLog)
+			deployment_service.New().WithID(id).AddLogs(newLog)
 		}
 
 		jobID := uuid.NewString()

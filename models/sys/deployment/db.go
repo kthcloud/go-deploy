@@ -89,8 +89,8 @@ func (client *Client) ListByGitHubWebhookID(id int64) ([]Deployment, error) {
 	return client.ListWithFilterAndProjection(bson.D{{"subsystems.github.webhook.id", id}}, nil)
 }
 
-func (client *Client) GetByTransferCode(code, userID string) (*Deployment, error) {
-	return client.GetWithFilterAndProjection(bson.D{{"transfer.code", code}, {"transfer.userId", userID}}, nil)
+func (client *Client) GetByTransferCode(code string) (*Deployment, error) {
+	return client.GetWithFilterAndProjection(bson.D{{"transfer.code", code}}, nil)
 }
 
 func (client *Client) DeleteByID(id string) error {

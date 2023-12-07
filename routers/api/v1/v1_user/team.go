@@ -13,6 +13,7 @@ import (
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/deployment_service"
+	"go-deploy/service/deployment_service/client"
 	"go-deploy/service/user_service"
 	"go-deploy/service/vm_service"
 	"go-deploy/utils"
@@ -270,7 +271,7 @@ func getResourceName(resource *teamModels.Resource) *string {
 
 	switch resource.Type {
 	case teamModels.ResourceTypeDeployment:
-		d, err := deployment_service.GetByID(resource.ID)
+		d, err := deployment_service.New().WithID(resource.ID).Get(&client.GetOptions{Shared: true})
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to get deployment when getting team resource name: %s", err))
 			return nil
