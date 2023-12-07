@@ -5,11 +5,11 @@ import (
 )
 
 type Client struct {
-	client.Client[Client]
+	client.BaseClient[Client]
 }
 
 func New() *Client {
 	c := &Client{}
-	c.Client.SetParent(c)
+	c.BaseClient.SetParent(c)
 	return c
 }

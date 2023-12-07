@@ -29,20 +29,24 @@ import (
 	"time"
 )
 
-func (c *Client) Create(deploymentID, ownerID string, deploymentCreate *body.DeploymentCreate) error {
+func (c *Client) Create(deploymentCreate *body.DeploymentCreate) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create deployment. details: %w", err)
 	}
 
+	if !c.HasID() || c.UserID == "" {
+		return errors.New("invalid create request. missing user id or deployment id")
+	}
+
 	// temporary hard-coded fallback
 	fallbackZone := "se-flem"
-	fallbackImage := createImagePath(ownerID, deploymentCreate.Name)
+	fallbackImage := createImagePath(c.UserID, deploymentCreate.Name)
 	fallbackPort := config.Config.Deployment.Port
 
 	params := &deploymentModel.CreateParams{}
 	params.FromDTO(deploymentCreate, fallbackZone, fallbackImage, fallbackPort)
 
-	deployment, err := deploymentModel.New().Create(deploymentID, ownerID, params)
+	deployment, err := deploymentModel.New().Create(c.ID(), c.UserID, params)
 	if err != nil {
 		if errors.Is(err, deploymentModel.NonUniqueFieldErr) {
 			return dErrors.NonUniqueFieldErr
@@ -56,22 +60,22 @@ func (c *Client) Create(deploymentID, ownerID string, deploymentCreate *body.Dep
 	}
 
 	if deployment.Type == deploymentModel.TypeCustom {
-		err = harbor_service.Create(deploymentID, params)
+		err = harbor_service.Create(c.ID(), params)
 		if err != nil {
 			return makeError(err)
 		}
 	} else {
-		err = harbor_service.CreatePlaceholder(deploymentID)
+		err = harbor_service.CreatePlaceholder(c.ID())
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
-	err = k8s_service.Create(deploymentID, params)
+	err = k8s_service.New(&c.Context).Create(params)
 	if err != nil {
 		if errors.Is(err, base.CustomDomainInUseErr) {
 			log.Println("custom domain in use when creating deployment", params.Name, ". removing it from the deployment and create params")
-			err = deploymentModel.New().RemoveCustomDomain(deploymentID)
+			err = deploymentModel.New().RemoveCustomDomain(c.ID())
 			if err != nil {
 				return makeError(err)
 			}
@@ -83,7 +87,7 @@ func (c *Client) Create(deploymentID, ownerID string, deploymentCreate *body.Dep
 
 	createPlaceHolderInstead := false
 	if params.GitHub != nil {
-		err = github_service.Create(deploymentID, params)
+		err = github_service.Create(c.ID(), params)
 		if err != nil {
 			errString := err.Error()
 			if strings.Contains(errString, "/hooks: 404 Not Found") {
@@ -101,7 +105,7 @@ func (c *Client) Create(deploymentID, ownerID string, deploymentCreate *body.Dep
 	}
 
 	if createPlaceHolderInstead {
-		err = github_service.CreatePlaceholder(deploymentID)
+		err = github_service.CreatePlaceholder(c.ID())
 		if err != nil {
 			return makeError(err)
 		}
@@ -181,7 +185,7 @@ func (c *Client) Update(dtoUpdate *body.DeploymentUpdate) error {
 		}
 	}
 
-	err = k8s_service.Update(c.ID(), params)
+	err = k8s_service.New(&c.Context).Update(params)
 	if err != nil {
 		if errors.Is(err, base.CustomDomainInUseErr) {
 			log.Println("custom domain in use when updating deployment", c.Deployment().Name, ". removing it from the update params")
@@ -327,7 +331,7 @@ func (c *Client) UpdateOwner(params *body.DeploymentUpdateOwner) error {
 		return makeError(err)
 	}
 
-	err = k8s_service.EnsureOwner(c.ID(), params.OldOwnerID)
+	err = k8s_service.New(&c.Context).EnsureOwner(params.OldOwnerID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -350,7 +354,7 @@ func (c *Client) Delete() error {
 		return makeError(err)
 	}
 
-	err = k8s_service.Delete(c.ID())
+	err = k8s_service.New(&c.Context).Delete()
 	if err != nil {
 		return makeError(err)
 	}
@@ -377,7 +381,7 @@ func (c *Client) Repair() error {
 		return nil
 	}
 
-	err := k8s_service.Repair(c.ID())
+	err := k8s_service.New(&c.Context).Repair()
 	if err != nil {
 		if errors.Is(err, base.CustomDomainInUseErr) {
 			log.Println("custom domain in use when repairing deployment", c.ID(), ". removing it from the deployment")
@@ -441,7 +445,7 @@ func (c *Client) Restart() error {
 		return fmt.Errorf("failed to restart deployment %s. details: %s", c.ID(), reason)
 	}
 
-	err = k8s_service.Restart(c.ID())
+	err = k8s_service.New(&c.Context).Restart()
 	if err != nil {
 		return makeError(err)
 	}
