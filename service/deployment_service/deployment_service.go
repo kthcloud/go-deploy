@@ -60,12 +60,12 @@ func (c *Client) Create(deploymentCreate *body.DeploymentCreate) error {
 	}
 
 	if deployment.Type == deploymentModel.TypeCustom {
-		err = harbor_service.Create(c.ID(), params)
+		err = harbor_service.New(&c.Context).Create(params)
 		if err != nil {
 			return makeError(err)
 		}
 	} else {
-		err = harbor_service.CreatePlaceholder(c.ID())
+		err = harbor_service.New(&c.Context).CreatePlaceholder()
 		if err != nil {
 			return makeError(err)
 		}
@@ -87,7 +87,7 @@ func (c *Client) Create(deploymentCreate *body.DeploymentCreate) error {
 
 	createPlaceHolderInstead := false
 	if params.GitHub != nil {
-		err = github_service.Create(c.ID(), params)
+		err = github_service.New(&c.Context).Create(params)
 		if err != nil {
 			errString := err.Error()
 			if strings.Contains(errString, "/hooks: 404 Not Found") {
@@ -105,7 +105,7 @@ func (c *Client) Create(deploymentCreate *body.DeploymentCreate) error {
 	}
 
 	if createPlaceHolderInstead {
-		err = github_service.CreatePlaceholder(c.ID())
+		err = github_service.New(&c.Context).CreatePlaceholder()
 		if err != nil {
 			return makeError(err)
 		}
@@ -118,7 +118,8 @@ func (c *Client) Create(deploymentCreate *body.DeploymentCreate) error {
 	}
 
 	if deployment.Subsystems.GitHub.Created() && params.GitHub != nil {
-		repo, err := github_service.GetRepository(params.GitHub.Token, params.GitHub.RepositoryID)
+		gc := github_service.New(&c.Context).WithRepositoryID(params.GitHub.RepositoryID).WithToken(params.GitHub.Token)
+		repo, err := gc.GetRepository()
 		if err != nil {
 			return makeError(err)
 		}
@@ -179,7 +180,7 @@ func (c *Client) Update(dtoUpdate *body.DeploymentUpdate) error {
 	}
 
 	if c.Deployment().Type == deploymentModel.TypeCustom {
-		err = harbor_service.Update(c.ID(), params)
+		err = harbor_service.New(&c.Context).Update(params)
 		if err != nil {
 			return makeError(err)
 		}
@@ -326,7 +327,7 @@ func (c *Client) UpdateOwner(params *body.DeploymentUpdateOwner) error {
 		return makeError(err)
 	}
 
-	err = harbor_service.EnsureOwner(c.ID(), params.OldOwnerID)
+	err = harbor_service.New(&c.Context).EnsureOwner(params.OldOwnerID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -349,7 +350,7 @@ func (c *Client) Delete() error {
 		return dErrors.DeploymentNotFoundErr
 	}
 
-	err := harbor_service.Delete(c.ID())
+	err := harbor_service.New(&c.Context).Delete()
 	if err != nil {
 		return makeError(err)
 	}
@@ -359,7 +360,7 @@ func (c *Client) Delete() error {
 		return makeError(err)
 	}
 
-	err = github_service.Delete(c.ID())
+	err = github_service.New(&c.Context).Delete()
 	if err != nil {
 		return makeError(err)
 	}
@@ -395,7 +396,7 @@ func (c *Client) Repair() error {
 	}
 
 	if !c.Deployment().Subsystems.Harbor.Placeholder {
-		err = harbor_service.Repair(c.ID())
+		err = harbor_service.New(&c.Context).Repair()
 		if err != nil {
 			return makeError(err)
 		}
@@ -759,7 +760,7 @@ func (c *Client) GetUsage() (*deploymentModel.Usage, error) {
 }
 
 func ValidGitHubToken(token string) (bool, string, error) {
-	return github_service.ValidateToken(token)
+	return github_service.New(nil).WithToken(token).Validate()
 }
 
 func GetGitHubAccessTokenByCode(code string) (string, error) {
@@ -782,7 +783,7 @@ func NameAvailable(name string) (bool, error) {
 }
 
 func GetGitHubRepositories(token string) ([]deploymentModel.GitHubRepository, error) {
-	return github_service.GetRepositories(token)
+	return github_service.New(nil).WithToken(token).GetRepositories()
 }
 
 func ValidGitHubRepository(token string, repositoryID int64) (bool, string, error) {
@@ -790,7 +791,9 @@ func ValidGitHubRepository(token string, repositoryID int64) (bool, string, erro
 		return fmt.Errorf("failed to get github repository. details: %w", err)
 	}
 
-	repo, err := github_service.GetRepository(token, repositoryID)
+	gc := github_service.New(nil).WithToken(token).WithRepositoryID(repositoryID)
+
+	repo, err := github_service.New(nil).WithRepositoryID(repositoryID).WithToken(token).GetRepository()
 	if err != nil {
 		return false, "", makeError(err)
 	}
@@ -799,7 +802,9 @@ func ValidGitHubRepository(token string, repositoryID int64) (bool, string, erro
 		return false, "Repository not found", nil
 	}
 
-	webhooks, err := github_service.GetWebhooks(token, repo.Owner, repo.Name)
+	gc.WithRepository(repo)
+
+	webhooks, err := gc.GetWebhooks()
 	if err != nil {
 		return false, "", makeError(err)
 	}

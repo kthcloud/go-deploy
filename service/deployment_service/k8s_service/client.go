@@ -25,6 +25,25 @@ func New(context *client.Context) *Client {
 	return c
 }
 
+// WithUserID sets the user id
+// Overwrites the base client's user id function
+// This is used to set the namespace
+func (c *Client) WithUserID(userID string) *Client {
+	kc := c.Client()
+	if kc != nil {
+		kc.Namespace = getNamespaceName(userID)
+	}
+
+	g := c.Generator()
+	if g != nil {
+		g = g.K8s(c.Client())
+	}
+
+	c.BaseClient.WithUserID(userID)
+
+	return c
+}
+
 func (c *Client) Client() *k8s.Client {
 	if c.client == nil {
 		if c.UserID == "" {

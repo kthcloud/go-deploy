@@ -4,7 +4,6 @@ import (
 	"go-deploy/pkg/subsystems/github"
 	"go-deploy/service/deployment_service/base"
 	"go-deploy/service/resources"
-	"go-deploy/utils/subsystemutils"
 )
 
 type Context struct {
@@ -30,10 +29,6 @@ func NewContext(deploymentID, token string, repositoryID int64) (*Context, error
 		Client:            client,
 		Generator:         baseContext.Generator.GitHub(token, repositoryID),
 	}, nil
-}
-
-func getProjectName(userID string) string {
-	return subsystemutils.GetPrefixedName(userID)
 }
 
 func withClient(token string) (*github.Client, error) {

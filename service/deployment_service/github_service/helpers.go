@@ -3,16 +3,9 @@ package github_service
 import (
 	"encoding/json"
 	"fmt"
-	"go-deploy/pkg/subsystems/github"
 	"go-deploy/utils/requestutils"
 	"net/url"
 )
-
-func withGitHubClient(token string) (*github.Client, error) {
-	return github.New(&github.ClientConf{
-		Token: token,
-	})
-}
 
 func fetchAccessToken(code, clientId string, clientSecret string) (string, error) {
 	apiRoute := "https://github.com/login/oauth/access_token"

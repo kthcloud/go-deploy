@@ -39,7 +39,7 @@ func CreateSnapshot(vmID string, params *vmModel.CreateSnapshotParams) error {
 		return AlreadyExistsErr
 	}
 
-	// make sure vm is on
+	// Make sure vm is on
 	vmStatus, err := context.Client.GetVmStatus(context.VM.Subsystems.CS.VM.ID)
 	if err != nil {
 		return makeError(err)
@@ -71,22 +71,28 @@ func CreateSnapshot(vmID string, params *vmModel.CreateSnapshotParams) error {
 		return makeError(err)
 	}
 
+	if snapshotID == "" {
+		// If no error was received, and no snapshot ID was received, then the snapshot was gracefully not created
+		// So we don't return any error here
+		return nil
+	}
+
 	if !params.UserCreated {
-		// fetch to see what state the snapshot is in, in order to delete the bad ones
+		// Fetch to see what state the snapshot is in, in order to delete the bad ones
 		snapshot, err := context.Client.ReadSnapshot(snapshotID)
 		if err != nil {
 			_ = context.Client.DeleteSnapshot(snapshotID)
 			return makeError(err)
 		}
 
-		if snapshot.State == "Error" {
+		if snapshot != nil && snapshot.State == "Error" {
 			_ = context.Client.DeleteSnapshot(snapshotID)
 			return makeBadStateErr(fmt.Sprintf("snapshot got state: %s", snapshot.State))
 		}
 	}
 	log.Println("created snapshot", snapshotID, "for vm", vmID)
 
-	// delete every other snapshot with the same name that is older
+	// Delete every other snapshot with the same name that is older
 	snapshots, err := context.Client.ReadAllSnapshots(context.VM.Subsystems.CS.VM.ID)
 	if err != nil {
 		return makeError(err)

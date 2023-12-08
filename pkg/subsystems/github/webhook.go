@@ -7,6 +7,28 @@ import (
 	"go-deploy/pkg/subsystems/github/models"
 )
 
+func (client *Client) ListWebhooks(owner string, repositoryName string) ([]*models.WebhookPublic, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to list github webhooks. details: %w", err)
+	}
+
+	hooks, _, err := client.GitHubClient.Repositories.ListHooks(context.TODO(), owner, repositoryName, nil)
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	var public []*models.WebhookPublic
+	for _, hook := range hooks {
+		if hook.Config == nil {
+			continue
+		}
+
+		public = append(public, models.CreateWebhookPublicFromGet(hook, 0))
+	}
+
+	return public, nil
+}
+
 func (client *Client) ReadWebhook(id int64, repositoryID int64) (*models.WebhookPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to read github webhook. details: %w", err)
