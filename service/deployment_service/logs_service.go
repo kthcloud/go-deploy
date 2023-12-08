@@ -12,11 +12,18 @@ import (
 )
 
 const (
+	// MessageSourceControl is the source of the message from the control.
+	// The handler should ignore these messages, as they are only intended to check if the log stream is working.
 	MessageSourceControl = "control"
 
+	// FetchPeriod is the period between each fetch of logs from the database.
 	FetchPeriod = 300 * time.Millisecond
 )
 
+// SetupLogStream sets up a log stream for the deployment.
+//
+// It will continuously check the deployment logs and read the logs after the last read log.
+// Increasing the history will increase the time it takes to set up the log stream.
 func (c *Client) SetupLogStream(ctx context.Context, handler func(string, string, string), history int) error {
 	deployment, err := c.Get(&client.GetOptions{Shared: true})
 	if err != nil {
@@ -28,7 +35,7 @@ func (c *Client) SetupLogStream(ctx context.Context, handler func(string, string
 	}
 
 	if deployment.BeingDeleted() {
-		log.Println("deployment", c.ID, "is being deleted. not setting up log stream")
+		log.Println("deployment", c.ID(), "is being deleted. not setting up log stream")
 		return nil
 	}
 
@@ -39,7 +46,7 @@ func (c *Client) SetupLogStream(ctx context.Context, handler func(string, string
 		// fetch history logs
 		logs, err := deploymentModel.New().GetLogs(c.ID(), history)
 		if err != nil {
-			utils.PrettyPrintError(fmt.Errorf("failed to get logs for deployment %s. details: %w", c.ID, err))
+			utils.PrettyPrintError(fmt.Errorf("failed to get logs for deployment %s. details: %w", c.ID(), err))
 			return
 		}
 
@@ -63,7 +70,7 @@ func (c *Client) SetupLogStream(ctx context.Context, handler func(string, string
 
 				logs, err = deploymentModel.New().GetLogsAfter(c.ID(), lastFetched)
 				if err != nil {
-					utils.PrettyPrintError(fmt.Errorf("failed to get logs for deployment %s after %s. details: %w", c.ID, lastFetched, err))
+					utils.PrettyPrintError(fmt.Errorf("failed to get logs for deployment %s after %s. details: %w", c.ID(), lastFetched, err))
 					return
 				}
 

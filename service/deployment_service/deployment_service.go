@@ -11,7 +11,6 @@ import (
 	teamModels "go-deploy/models/sys/team"
 	"go-deploy/pkg/config"
 	"go-deploy/service"
-	"go-deploy/service/deployment_service/base"
 	"go-deploy/service/deployment_service/client"
 	dErrors "go-deploy/service/deployment_service/errors"
 	"go-deploy/service/deployment_service/github_service"
@@ -29,6 +28,11 @@ import (
 	"time"
 )
 
+// Create creates a new deployment.
+//
+// It returns an error if the deployment already exists (name clash).
+//
+// If GitHub is requested, it will also manually trigger a build to the latest commit.
 func (c *Client) Create(deploymentCreate *body.DeploymentCreate) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create deployment. details: %w", err)
@@ -73,7 +77,7 @@ func (c *Client) Create(deploymentCreate *body.DeploymentCreate) error {
 
 	err = k8s_service.New(&c.Context).Create(params)
 	if err != nil {
-		if errors.Is(err, base.CustomDomainInUseErr) {
+		if errors.Is(err, dErrors.CustomDomainInUseErr) {
 			log.Println("custom domain in use when creating deployment", params.Name, ". removing it from the deployment and create params")
 			err = deploymentModel.New().RemoveCustomDomain(c.ID())
 			if err != nil {
@@ -153,6 +157,9 @@ func (c *Client) Create(deploymentCreate *body.DeploymentCreate) error {
 	return nil
 }
 
+// Update updates an existing deployment.
+//
+// It returns an error if the deployment is not found.
 func (c *Client) Update(dtoUpdate *body.DeploymentUpdate) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update deployment. details: %w", err)
@@ -188,7 +195,7 @@ func (c *Client) Update(dtoUpdate *body.DeploymentUpdate) error {
 
 	err = k8s_service.New(&c.Context).Update(params)
 	if err != nil {
-		if errors.Is(err, base.CustomDomainInUseErr) {
+		if errors.Is(err, dErrors.CustomDomainInUseErr) {
 			log.Println("custom domain in use when updating deployment", c.Deployment().Name, ". removing it from the update params")
 			dtoUpdate.CustomDomain = nil
 		} else {
@@ -199,6 +206,12 @@ func (c *Client) Update(dtoUpdate *body.DeploymentUpdate) error {
 	return nil
 }
 
+// UpdateOwnerSetup updates the owner of the deployment.
+//
+// This is the first step of the owner update process, where it is decided if a notification should be created,
+// or if the transfer should be done immediately.
+//
+// It returns an error if the deployment is not found.
 func (c *Client) UpdateOwnerSetup(params *body.DeploymentUpdateOwner) (*string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update deployment owner. details: %w", err)
@@ -273,6 +286,9 @@ func (c *Client) UpdateOwnerSetup(params *body.DeploymentUpdateOwner) (*string, 
 	return nil, nil
 }
 
+// ClearUpdateOwner clears the owner update process.
+//
+// This is intended to be used when the owner update process is cancelled.
 func (c *Client) ClearUpdateOwner() error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to clear deployment owner update. details: %w", err)
@@ -300,6 +316,11 @@ func (c *Client) ClearUpdateOwner() error {
 	return nil
 }
 
+// UpdateOwner updates the owner of the deployment.
+//
+// This is the second step of the owner update process, where the transfer is actually done.
+//
+// It returns an error if the deployment is not found.
 func (c *Client) UpdateOwner(params *body.DeploymentUpdateOwner) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update deployment owner. details: %w", err)
@@ -341,6 +362,9 @@ func (c *Client) UpdateOwner(params *body.DeploymentUpdateOwner) error {
 	return nil
 }
 
+// Delete deletes an existing deployment.
+//
+// It returns an error if the deployment is not found.
 func (c *Client) Delete() error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete deployment. details: %w", err)
@@ -368,6 +392,9 @@ func (c *Client) Delete() error {
 	return nil
 }
 
+// Repair repairs an existing deployment.
+//
+// Trigger repair jobs for every subsystem.
 func (c *Client) Repair() error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to repair deployment %s. details: %w", c.ID(), err)
@@ -384,7 +411,7 @@ func (c *Client) Repair() error {
 
 	err := k8s_service.New(&c.Context).Repair()
 	if err != nil {
-		if errors.Is(err, base.CustomDomainInUseErr) {
+		if errors.Is(err, dErrors.CustomDomainInUseErr) {
 			log.Println("custom domain in use when repairing deployment", c.ID(), ". removing it from the deployment")
 			err = deploymentModel.New().RemoveCustomDomain(c.ID())
 			if err != nil {
@@ -406,6 +433,9 @@ func (c *Client) Repair() error {
 	return nil
 }
 
+// Restart restarts an existing deployment.
+//
+// It is done in best-effort, and only returns an error if any pre-check fails.
 func (c *Client) Restart() error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to restart deployment. details: %w", err)
@@ -454,6 +484,13 @@ func (c *Client) Restart() error {
 	return nil
 }
 
+// Build builds an existing deployment.
+//
+// It can build by either a list of IDs or a single ID.
+// Use WithID or WithIDs to set the ID(s) (prioritizes ID over IDs).
+//
+// It will filter out all the deployments that are not ready to build.
+// Which means, all the deployments for supplied IDs might not be built.
 func (c *Client) Build(buildParams *body.DeploymentBuild) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to build deployment. details: %w", err)
@@ -489,6 +526,9 @@ func (c *Client) Build(buildParams *body.DeploymentBuild) error {
 	return nil
 }
 
+// AddLogs adds logs to the deployment.
+//
+// It is purely done in best-effort
 func (c *Client) AddLogs(logs ...deploymentModel.Log) {
 	// logs are added best-effort, so we don't return an error here
 	go func() {
@@ -499,6 +539,9 @@ func (c *Client) AddLogs(logs ...deploymentModel.Log) {
 	}()
 }
 
+// DoCommand executes a command on the deployment.
+//
+// It is purely done in best-effort
 func (c *Client) DoCommand(command string) {
 	go func() {
 		switch command {
@@ -511,6 +554,10 @@ func (c *Client) DoCommand(command string) {
 	}()
 }
 
+// Get gets an existing deployment.
+//
+// It can be fetched by a multiple of ways including ID, name, transfer code, and Harbor webhook.
+// It supports service.AuthInfo, and will restrict the result to ensure the user has access to the resource.
 func (c *Client) Get(opts *client.GetOptions) (*deploymentModel.Deployment, error) {
 	dClient := deploymentModel.New()
 
@@ -555,6 +602,10 @@ func (c *Client) Get(opts *client.GetOptions) (*deploymentModel.Deployment, erro
 	return c.Deployment(), nil
 }
 
+// List lists existing deployments.
+//
+// It supports service.AuthInfo, and will restrict the result to ensure the user has access to the resource.
+// It also supports pagination.
 func (c *Client) List(opts *client.ListOptions) ([]deploymentModel.Deployment, error) {
 	dClient := deploymentModel.New()
 
@@ -654,6 +705,11 @@ func (c *Client) List(opts *client.ListOptions) ([]deploymentModel.Deployment, e
 	return resources, nil
 }
 
+// CheckQuota checks if the user has enough quota to create or update a deployment.
+//
+// Make sure to specify either opts.Create or opts.Update in the options (opts.Create takes priority).
+//
+// It returns an error if the user does not have enough quotas.
 func (c *Client) CheckQuota(opts *client.QuotaOptions) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check quota. details: %w", err)
@@ -701,6 +757,10 @@ func (c *Client) CheckQuota(opts *client.QuotaOptions) error {
 	return nil
 }
 
+// StartActivity starts an activity for the deployment.
+//
+// It only starts the activity if it is allowed, determined by CanAddActivity.
+// It returns a boolean indicating if the activity was started, and a string indicating the reason if it was not.
 func (c *Client) StartActivity(activity string) (bool, string, error) {
 	if !c.HasID() {
 		return false, "Deployment not found", nil
@@ -719,6 +779,9 @@ func (c *Client) StartActivity(activity string) (bool, string, error) {
 	return true, "", nil
 }
 
+// CanAddActivity checks if the deployment can add an activity.
+//
+// It returns a boolean indicating if the activity can be added, and a string indicating the reason if it cannot.
 func (c *Client) CanAddActivity(activity string) (bool, string) {
 	d := c.Deployment()
 
@@ -744,6 +807,7 @@ func (c *Client) CanAddActivity(activity string) (bool, string) {
 	return false, fmt.Sprintf("Unknown activity %s", activity)
 }
 
+// GetUsage gets the usage of the user.
 func (c *Client) GetUsage() (*deploymentModel.Usage, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get usage. details: %w", err)
@@ -759,10 +823,14 @@ func (c *Client) GetUsage() (*deploymentModel.Usage, error) {
 	}, nil
 }
 
+// ValidGitHubToken validates a GitHub token.
+//
+// It returns a boolean indicating if the token is valid, a string indicating the reason if it is not, and an error if any.
 func ValidGitHubToken(token string) (bool, string, error) {
 	return github_service.New(nil).WithToken(token).Validate()
 }
 
+// GetGitHubAccessTokenByCode gets a GitHub access token by a code.
 func GetGitHubAccessTokenByCode(code string) (string, error) {
 	code, err := github_service.GetAccessTokenByCode(code)
 	if err != nil {
@@ -773,6 +841,7 @@ func GetGitHubAccessTokenByCode(code string) (string, error) {
 	return code, nil
 }
 
+// NameAvailable checks if a name is available.
 func NameAvailable(name string) (bool, error) {
 	exists, err := deploymentModel.New().ExistsByName(name)
 	if err != nil {
@@ -782,10 +851,18 @@ func NameAvailable(name string) (bool, error) {
 	return !exists, nil
 }
 
+// GetGitHubRepositories gets GitHub repositories for a token.
+//
+// The token should be validated before calling this function.
+// If the token is expired, an error will be returned.
 func GetGitHubRepositories(token string) ([]deploymentModel.GitHubRepository, error) {
 	return github_service.New(nil).WithToken(token).GetRepositories()
 }
 
+// ValidGitHubRepository validates a GitHub repository.
+//
+// The token should be validated before calling this function.
+// If the token is expired, an error will be returned.
 func ValidGitHubRepository(token string, repositoryID int64) (bool, string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get github repository. details: %w", err)
@@ -825,6 +902,7 @@ func ValidGitHubRepository(token string, repositoryID int64) (bool, string, erro
 	return true, "", nil
 }
 
+// SavePing saves a ping result.
 func SavePing(id string, pingResult int) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update deployment with ping result. details: %w", err)
@@ -848,6 +926,9 @@ func SavePing(id string, pingResult int) error {
 	return nil
 }
 
+// build builds a deployment.
+//
+// It is a helper function that does not do any checks.
 func (c *Client) build(params *deploymentModel.BuildParams) error {
 	var ids []string
 	if c.HasID() {
@@ -891,10 +972,12 @@ func (c *Client) build(params *deploymentModel.BuildParams) error {
 	return nil
 }
 
+// createImagePath creates a complete container image path that can be pulled from.
 func createImagePath(ownerID, name string) string {
 	return fmt.Sprintf("%s/%s/%s", config.Config.Registry.URL, subsystemutils.GetPrefixedName(ownerID), name)
 }
 
+// createTransferCode generates a transfer code.
 func createTransferCode() string {
 	return utils.HashString(uuid.NewString())
 }

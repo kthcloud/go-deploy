@@ -7,6 +7,9 @@ import (
 	"net/url"
 )
 
+// fetchAccessToken is a helper function that fetches the access token from GitHub using a code.
+// The code is retrieved from the GitHub OAuth callback.
+// It returns the access token and an error if any.
 func fetchAccessToken(code, clientId string, clientSecret string) (string, error) {
 	apiRoute := "https://github.com/login/oauth/access_token"
 

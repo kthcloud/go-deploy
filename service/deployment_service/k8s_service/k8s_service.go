@@ -8,7 +8,6 @@ import (
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/service"
 	"go-deploy/service/constants"
-	"go-deploy/service/deployment_service/base"
 	dErrors "go-deploy/service/deployment_service/errors"
 	"go-deploy/service/resources"
 	"go-deploy/utils"
@@ -751,7 +750,7 @@ func (c *Client) updateCustomDomain() error {
 
 	if err != nil {
 		if strings.Contains(err.Error(), "is already defined in ingress") {
-			return base.CustomDomainInUseErr
+			return dErrors.CustomDomainInUseErr
 		}
 
 		return err
@@ -919,7 +918,7 @@ func (c *Client) recreatePvPvcDeployments() error {
 
 	err := c.Fetch()
 	if err != nil {
-		if errors.Is(err, base.DeploymentDeletedErr) {
+		if errors.Is(err, dErrors.DeploymentNotFoundErr) {
 			return nil
 		}
 

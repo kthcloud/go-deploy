@@ -23,6 +23,12 @@ const (
 	JobStatusFailed  = "failed"
 )
 
+// CreateBuild creates a build for the given deployment.
+//
+// It creates a temporary GitLab project, imports the git repository to it, and creates a build job.
+// Once the build job is finished, it will push to the Container registry; the temporary GitLab project is deleted
+//
+// Since this is connected to Harbor, the push will trigger a Harbor webhook, and the deployment will be restarted.
 func CreateBuild(ids []string, params *deploymentModel.BuildParams) error {
 	log.Println("creating build with gitlab for", len(ids), "deployments")
 
@@ -149,6 +155,14 @@ func CreateBuild(ids []string, params *deploymentModel.BuildParams) error {
 	return nil
 }
 
+// SetupLogStream sets up a continuous log stream for the given deployment.
+//
+// It will continuously check the GitLab build status and read the build trace.
+// If the build is running, it will read the trace from the last read line.
+// If the build is finished, it will read the trace from the beginning.
+//
+// It will call the handler function for each line read.
+// The handler function is expected to handle the line and the time it was read.
 func SetupLogStream(ctx context.Context, deploymentID string, handler func(string, time.Time)) error {
 	buildID := 0
 	readLines := 0

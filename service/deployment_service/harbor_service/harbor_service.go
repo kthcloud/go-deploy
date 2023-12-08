@@ -4,11 +4,15 @@ import (
 	"fmt"
 	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/service"
+	"go-deploy/service/deployment_service/client"
 	"go-deploy/service/resources"
 	"go-deploy/utils/subsystemutils"
 	"log"
 )
 
+// Create sets up Harbor for the deployment.
+//
+// It creates a project, robot, repository and webhook associated with the deployment and returns an error if any.
 func (c *Client) Create(params *deploymentModel.CreateParams) error {
 	log.Println("setting up harbor for", params.Name)
 
@@ -16,7 +20,7 @@ func (c *Client) Create(params *deploymentModel.CreateParams) error {
 		return fmt.Errorf("failed to setup harbor for deployment %s. details: %w", params.Name, err)
 	}
 
-	_, hc, g, err := c.Get(OptsNoDeployment)
+	_, hc, g, err := c.Get(client.OptsNoDeployment)
 	if err != nil {
 		return makeError(err)
 	}
@@ -64,6 +68,9 @@ func (c *Client) Create(params *deploymentModel.CreateParams) error {
 	return nil
 }
 
+// CreatePlaceholder sets up a placeholder harbor for the deployment.
+//
+// It does not create any resources in Harbor, and only creates a placeholder entry in the database.
 func (c *Client) CreatePlaceholder() error {
 	log.Println("setting up placeholder harbor")
 
@@ -79,6 +86,10 @@ func (c *Client) CreatePlaceholder() error {
 	return nil
 }
 
+// Delete deletes the Harbor setup for the deployment.
+//
+// It deletes all the resources associated with the deployment and returns an error if any.
+// This will remove any persistent storage associated with the deployment.
 func (c *Client) Delete() error {
 	log.Println("deleting harbor for", c.ID())
 
@@ -86,7 +97,7 @@ func (c *Client) Delete() error {
 		return fmt.Errorf("failed to delete harbor for deployment %s. details: %w", c.ID(), err)
 	}
 
-	d, hc, _, err := c.Get(OptsNoGenerator)
+	d, hc, _, err := c.Get(client.OptsNoGenerator)
 	if err != nil {
 		return makeError(err)
 	}
@@ -126,12 +137,15 @@ func (c *Client) Delete() error {
 	return nil
 }
 
+// Update updates the Harbor setup for the deployment.
+//
+// It updates any of the resources associated with fields in the update params and returns an error if any.
 func (c *Client) Update(params *deploymentModel.UpdateParams) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update harbor for deployment %s. details: %w", c.ID(), err)
 	}
 
-	d, hc, g, err := c.Get(OptsAll)
+	d, hc, g, err := c.Get(client.OptsAll)
 	if err != nil {
 		return makeError(err)
 	}
@@ -198,12 +212,18 @@ func (c *Client) Update(params *deploymentModel.UpdateParams) error {
 	return nil
 }
 
+// EnsureOwner ensures the owner of the Harbor setup for the deployment.
+//
+// If the owner of the deployment does match with the ID specified by WithUserID,
+// it will update the Harbor setup to match the new owner.
+//
+// This will always trigger a call to Repair.
 func (c *Client) EnsureOwner(oldOwnerID string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update harbor owner for deployment %s. details: %w", c.ID(), err)
 	}
 
-	d, hc, g, err := c.Get(OptsAll)
+	d, hc, g, err := c.Get(client.OptsAll)
 	if err != nil {
 		return makeError(err)
 	}
@@ -214,7 +234,7 @@ func (c *Client) EnsureOwner(oldOwnerID string) error {
 	}
 
 	// Set up the client for the old owner
-	oldD, oldHC, _, err := New(nil).WithID(c.ID()).WithUserID(oldOwnerID).Get(OptsNoGenerator)
+	oldD, oldHC, _, err := New(nil).WithID(c.ID()).WithUserID(oldOwnerID).Get(client.OptsNoGenerator)
 	if err != nil {
 		return makeError(err)
 	}
@@ -288,12 +308,18 @@ func (c *Client) EnsureOwner(oldOwnerID string) error {
 	return nil
 }
 
+// Repair repairs the Harbor setup for the deployment.
+//
+// It repairs any of the resources associated with the deployment and returns an error if any.
+//
+// Repositories are not repaired since they don't include an update function, and cannot be recreated
+// since they are persistent storage for the deployment.
 func (c *Client) Repair() error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to repair harbor %s. details: %w", c.ID(), err)
 	}
 
-	d, hc, g, err := c.Get(OptsAll)
+	d, hc, g, err := c.Get(client.OptsAll)
 	if err != nil {
 		return makeError(err)
 	}
@@ -380,6 +406,7 @@ func (c *Client) Repair() error {
 	return nil
 }
 
+// dbFunc returns a function that updates the Harbor subsystem.
 func dbFunc(id, key string) func(interface{}) error {
 	return func(data interface{}) error {
 		if data == nil {

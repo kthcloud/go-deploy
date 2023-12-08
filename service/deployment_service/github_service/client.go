@@ -8,40 +8,8 @@ import (
 	"go-deploy/service/resources"
 )
 
-type Opts struct {
-	Deployment bool
-	Client     bool
-	Generator  bool
-}
-
-var (
-	OptsAll = &Opts{
-		Deployment: true,
-		Client:     true,
-		Generator:  true,
-	}
-	OptsNoDeployment = &Opts{
-		Deployment: false,
-		Client:     true,
-		Generator:  true,
-	}
-	OptsNoGenerator = &Opts{
-		Deployment: true,
-		Client:     true,
-		Generator:  false,
-	}
-	OptsOnlyDeployment = &Opts{
-		Deployment: true,
-		Client:     false,
-		Generator:  false,
-	}
-	OptsOnlyClient = &Opts{
-		Deployment: false,
-		Client:     true,
-		Generator:  false,
-	}
-)
-
+// Client is the client for the GitHub service.
+// It contains a BaseClient, which is used to lazy-load and cache data.
 type Client struct {
 	client.BaseClient[Client]
 
@@ -53,6 +21,9 @@ type Client struct {
 	repository   *deployment.GitHubRepository
 }
 
+// New creates a new Client.
+// If context is not nil, it will be used to create a new BaseClient.
+// Otherwise, an empty context will be created.
 func New(context *client.Context) *Client {
 	c := &Client{}
 	c.BaseClient.SetParent(c)
@@ -62,7 +33,11 @@ func New(context *client.Context) *Client {
 	return c
 }
 
-func (c *Client) Get(opts *Opts) (*deployment.Deployment, *github.Client, *resources.GitHubGenerator, error) {
+// Get returns the deployment, client, and generator.
+//
+// Depending on the options specified, some return values may be nil.
+// This is useful when you don't always need all the resources.
+func (c *Client) Get(opts *client.Opts) (*deployment.Deployment, *github.Client, *resources.GitHubGenerator, error) {
 	var d *deployment.Deployment
 	if opts.Deployment {
 		d = c.Deployment()
@@ -95,10 +70,16 @@ func (c *Client) Get(opts *Opts) (*deployment.Deployment, *github.Client, *resou
 	return d, gc, g, nil
 }
 
+// Client returns the GitHub service client.
+//
+// This does not create a new client if it does not exist.
 func (c *Client) Client() *github.Client {
 	return c.client
 }
 
+// GetOrCreateClient returns the GitHub service client.
+//
+// If the client does not exist, it will be created.
 func (c *Client) GetOrCreateClient() (*github.Client, error) {
 	if c.client == nil {
 		if c.token == "" {
@@ -116,6 +97,11 @@ func (c *Client) GetOrCreateClient() (*github.Client, error) {
 	return c.client, nil
 }
 
+// Generator returns the GitHub generator.
+//
+// If the generator does not exist, it will be created.
+// If creating a new generator, the current deployment and zone will be used.
+// Set the deployment and zone before calling this function by using WithDeployment and WithZone.
 func (c *Client) Generator() *resources.GitHubGenerator {
 	if c.generator == nil {
 		pg := resources.PublicGenerator()
@@ -134,29 +120,42 @@ func (c *Client) Generator() *resources.GitHubGenerator {
 	return c.generator
 }
 
+// Token returns the GitHub token.
 func (c *Client) Token() string {
 	return c.token
 }
 
+// RepositoryID returns the GitHub repository ID.
 func (c *Client) RepositoryID() int64 {
 	return c.repositoryID
 }
 
+// Repository returns the GitHub repository.
 func (c *Client) Repository() *deployment.GitHubRepository {
 	return c.repository
 }
 
+// WithToken sets the GitHub token.
 func (c *Client) WithToken(token string) *Client {
 	c.token = token
 	return c
 }
 
+// WithRepositoryID sets the GitHub repository ID.
 func (c *Client) WithRepositoryID(repositoryID int64) *Client {
 	c.repositoryID = repositoryID
 	return c
 }
 
+// WithRepository sets the GitHub repository.
 func (c *Client) WithRepository(repository *deployment.GitHubRepository) *Client {
 	c.repository = repository
 	return c
+}
+
+// WithDeployment sets the deployment.
+func withClient(token string) (*github.Client, error) {
+	return github.New(&github.ClientConf{
+		Token: token,
+	})
 }

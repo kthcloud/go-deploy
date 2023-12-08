@@ -7,11 +7,14 @@ import (
 	githubThirdParty "github.com/google/go-github/github"
 	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/pkg/config"
+	"go-deploy/service/deployment_service/client"
 	"go-deploy/service/resources"
 	"log"
 	"strings"
 )
 
+// Create sets up the GitHub setup for the deployment.
+// It creates a webhook associated with the deployment and returns an error if any.
 func (c *Client) Create(params *deploymentModel.CreateParams) error {
 	log.Println("setting up github for", params.Name)
 
@@ -19,7 +22,7 @@ func (c *Client) Create(params *deploymentModel.CreateParams) error {
 		return fmt.Errorf("failed to setup github for deployment %s. details: %w", params.Name, err)
 	}
 
-	_, gc, g, err := c.Get(OptsNoDeployment)
+	_, gc, g, err := c.Get(client.OptsNoDeployment)
 	if err != nil {
 		return makeError(err)
 	}
@@ -30,9 +33,15 @@ func (c *Client) Create(params *deploymentModel.CreateParams) error {
 		WithPublic(g.Webhook()).
 		Exec()
 
+	if err != nil {
+		return makeError(err)
+	}
+
 	return nil
 }
 
+// Delete deletes the GitHub setup for the deployment.
+// It deletes the webhook associated with the deployment and returns an error if any.
 func (c *Client) Delete() error {
 	log.Println("deleting github for", c.ID())
 
@@ -40,7 +49,7 @@ func (c *Client) Delete() error {
 		return fmt.Errorf("failed to delete github for deployment %s. details: %w", c.ID(), err)
 	}
 
-	d, _, _, err := c.Get(OptsOnlyDeployment)
+	d, _, _, err := c.Get(client.OptsOnlyDeployment)
 	if err != nil {
 		return makeError(err)
 	}
@@ -58,6 +67,8 @@ func (c *Client) Delete() error {
 	return nil
 }
 
+// CreatePlaceholder sets up the placeholder GitHub for the deployment.
+// This is intended to make the deployment aware GitHub has been set up for it, without actually setting it up.
 func (c *Client) CreatePlaceholder() error {
 	log.Println("setting up placeholder github")
 
@@ -73,12 +84,20 @@ func (c *Client) CreatePlaceholder() error {
 	return nil
 }
 
+// Validate checks the validity of the GitHub token.
+//
+// It validates the token by checking the rate limits, response status code,
+// core request limits, and required scopes.
+//
+// It returns true if the token is valid, along with an empty string and nil error.
+// If the token is invalid, it returns false, an error message, and nil error.
+// If any error occurs during validation, it returns false, an empty string, and the error.
 func (c *Client) Validate() (bool, string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to validate github token. details: %w", err)
 	}
 
-	_, gc, _, err := c.Get(OptsOnlyClient)
+	_, gc, _, err := c.Get(client.OptsOnlyClient)
 	if err != nil {
 		return false, "", makeError(err)
 	}
@@ -113,12 +132,16 @@ func (c *Client) Validate() (bool, string, error) {
 	return true, "", nil
 }
 
+// GetRepositories gets the GitHub repositories associated with the token.
+//
+// It returns a list of GitHub repositories and nil error if any.
+// If any error occurs, it returns nil and the error.
 func (c *Client) GetRepositories() ([]deploymentModel.GitHubRepository, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get github repositories. details: %w", err)
 	}
 
-	_, gc, _, err := c.Get(OptsOnlyClient)
+	_, gc, _, err := c.Get(client.OptsOnlyClient)
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -155,12 +178,15 @@ func (c *Client) GetRepositories() ([]deploymentModel.GitHubRepository, error) {
 	return gitHubRepos, nil
 }
 
+// GetRepository retrieves a GitHub repository
+//
+// Uses the ID from WithRepositoryID to retrieve the repository.
 func (c *Client) GetRepository() (*deploymentModel.GitHubRepository, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get repository. details: %w", err)
 	}
 
-	_, gc, _, err := c.Get(OptsOnlyClient)
+	_, gc, _, err := c.Get(client.OptsOnlyClient)
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -183,19 +209,22 @@ func (c *Client) GetRepository() (*deploymentModel.GitHubRepository, error) {
 	}, nil
 }
 
+// GetWebhooks retrieves a list of GitHub webhooks
+//
+// It uses the repository from WithRepository to retrieve the webhooks.
 func (c *Client) GetWebhooks() ([]deploymentModel.GitHubWebhook, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get repository webhooks. details: %w", err)
 	}
 
-	_, gc, _, err := c.Get(OptsOnlyClient)
-	if err != nil {
-		return nil, makeError(err)
-	}
-
 	r := c.Repository()
 	if r == nil {
 		return nil, nil
+	}
+
+	_, gc, _, err := c.Get(client.OptsOnlyClient)
+	if err != nil {
+		return nil, makeError(err)
 	}
 
 	webhooks, err := gc.ListWebhooks(r.Owner, r.Name)
@@ -214,6 +243,10 @@ func (c *Client) GetWebhooks() ([]deploymentModel.GitHubWebhook, error) {
 	return res, nil
 }
 
+// GetAccessTokenByCode retrieves the GitHub access token by the code.
+//
+// It returns the access token and nil error if any.
+// If any error occurs, it returns an empty string and the error.
 func GetAccessTokenByCode(code string) (string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get github access token. details: %w", err)
@@ -232,6 +265,7 @@ func GetAccessTokenByCode(code string) (string, error) {
 	return "", makeError(fmt.Errorf("failed to get github access token. prod err details: %w. dev err details: %w", prodErr, devErr))
 }
 
+// dbFunc returns a function that updates the GitHub subsystem.
 func dbFunc(id, key string) func(interface{}) error {
 	return func(data interface{}) error {
 		if data == nil {
