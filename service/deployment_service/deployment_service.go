@@ -27,6 +27,156 @@ import (
 	"time"
 )
 
+// Get gets an existing deployment.
+//
+// It can be fetched in multiple ways including ID, name, transfer code, and Harbor webhook.
+// It supports service.AuthInfo, and will restrict the result to ensure the user has access to the resource.
+func (c *Client) Get(opts *client.GetOptions) (*deploymentModel.Deployment, error) {
+	dClient := deploymentModel.New()
+
+	if opts.TransferCode != "" {
+		return dClient.GetByTransferCode(opts.TransferCode)
+	}
+
+	var effectiveUserID string
+	if c.UserID != "" {
+		if c.Auth == nil || c.Auth.UserID == c.UserID || c.Auth.IsAdmin {
+			effectiveUserID = c.UserID
+		} else {
+			effectiveUserID = c.Auth.UserID
+		}
+	} else {
+		if c.Auth != nil && !c.Auth.IsAdmin {
+			effectiveUserID = c.Auth.UserID
+		}
+	}
+
+	var teamCheck bool
+	if !opts.Shared {
+		teamCheck = false
+	} else if c.Auth == nil || c.Auth.IsAdmin {
+		teamCheck = true
+	} else {
+		var err error
+		teamCheck, err = teamModels.New().AddUserID(c.Auth.UserID).AddResourceID(c.ID()).ExistsAny()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if !teamCheck && effectiveUserID != "" {
+		dClient.RestrictToOwner(effectiveUserID)
+	}
+
+	if opts.HarborWebhook != nil {
+		return dClient.GetByName(opts.HarborWebhook.EventData.Repository.Name)
+	}
+
+	return c.Deployment(), nil
+}
+
+// List lists existing deployments.
+//
+// It supports service.AuthInfo, and will restrict the result to ensure the user has access to the resource.
+func (c *Client) List(opts *client.ListOptions) ([]deploymentModel.Deployment, error) {
+	dClient := deploymentModel.New()
+
+	if opts.Pagination != nil {
+		dClient.WithPagination(opts.Pagination.Page, opts.Pagination.PageSize)
+	}
+
+	if opts.GitHubWebhookID != 0 {
+		dClient.WithGitHubWebhookID(opts.GitHubWebhookID)
+	}
+
+	var effectiveUserID string
+	if c.UserID != "" {
+		// specific user's deployments are requested
+		if c.Auth == nil || c.Auth.UserID == c.UserID || c.Auth.IsAdmin {
+			effectiveUserID = c.UserID
+		} else {
+			effectiveUserID = c.Auth.UserID
+		}
+	} else {
+		// all deployments are requested
+		if c.Auth != nil && !c.Auth.IsAdmin {
+			effectiveUserID = c.Auth.UserID
+		}
+	}
+
+	if effectiveUserID != "" {
+		dClient.RestrictToOwner(effectiveUserID)
+	}
+
+	resources, err := dClient.List()
+	if err != nil {
+		return nil, err
+	}
+
+	if opts.Shared && effectiveUserID != "" {
+		skipIDs := make([]string, len(resources))
+		for i, resource := range resources {
+			skipIDs[i] = resource.ID
+		}
+
+		teamClient := teamModels.New().AddUserID(effectiveUserID)
+		if opts.Pagination != nil {
+			teamClient.WithPagination(opts.Pagination.Page, opts.Pagination.PageSize)
+		}
+
+		teams, err := teamClient.List()
+		if err != nil {
+			return nil, err
+		}
+
+		for _, team := range teams {
+			for _, resource := range team.GetResourceMap() {
+				if resource.Type != teamModels.ResourceTypeDeployment {
+					continue
+				}
+
+				// skip existing non-shared resources
+				skip := false
+				for _, skipID := range skipIDs {
+					if resource.ID == skipID {
+						skip = true
+						break
+					}
+				}
+				if skip {
+					continue
+				}
+
+				deployment, err := deploymentModel.New().GetByID(resource.ID)
+				if err != nil {
+					return nil, err
+				}
+
+				if deployment != nil {
+					resources = append(resources, *deployment)
+				}
+			}
+		}
+
+		sort.Slice(resources, func(i, j int) bool {
+			return resources[i].CreatedAt.After(resources[j].CreatedAt)
+		})
+
+		// since we fetched from two collections, we need to do pagination manually
+		if opts.Pagination != nil {
+			resources = utils.GetPage(resources, opts.Pagination.PageSize, opts.Pagination.Page)
+		}
+
+	} else {
+		// sort by createdAt
+		sort.Slice(resources, func(i, j int) bool {
+			return resources[i].CreatedAt.After(resources[j].CreatedAt)
+		})
+	}
+
+	return resources, nil
+}
+
 // Create creates a new deployment.
 //
 // It returns an error if the deployment already exists (name clash).
@@ -285,36 +435,6 @@ func (c *Client) UpdateOwnerSetup(params *body.DeploymentUpdateOwner) (*string, 
 	return nil, nil
 }
 
-// ClearUpdateOwner clears the owner update process.
-//
-// This is intended to be used when the owner update process is cancelled.
-func (c *Client) ClearUpdateOwner() error {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to clear deployment owner update. details: %w", err)
-	}
-
-	if c.Deployment() == nil {
-		return sErrors.DeploymentNotFoundErr
-	}
-
-	if c.Deployment().Transfer == nil {
-		return nil
-	}
-
-	emptyString := ""
-	err := deploymentModel.New().UpdateWithParamsByID(c.ID(), &deploymentModel.UpdateParams{
-		TransferUserID: &emptyString,
-		TransferCode:   &emptyString,
-	})
-	if err != nil {
-		return makeError(err)
-	}
-
-	// TODO: delete notification?
-
-	return nil
-}
-
 // UpdateOwner updates the owner of the deployment.
 //
 // This is the second step of the owner update process, where the transfer is actually done.
@@ -358,6 +478,36 @@ func (c *Client) UpdateOwner(params *body.DeploymentUpdateOwner) error {
 	}
 
 	log.Println("deployment", c.ID(), "owner updated to", params.NewOwnerID)
+	return nil
+}
+
+// ClearUpdateOwner clears the owner update process.
+//
+// This is intended to be used when the owner update process is cancelled.
+func (c *Client) ClearUpdateOwner() error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to clear deployment owner update. details: %w", err)
+	}
+
+	if c.Deployment() == nil {
+		return sErrors.DeploymentNotFoundErr
+	}
+
+	if c.Deployment().Transfer == nil {
+		return nil
+	}
+
+	emptyString := ""
+	err := deploymentModel.New().UpdateWithParamsByID(c.ID(), &deploymentModel.UpdateParams{
+		TransferUserID: &emptyString,
+		TransferCode:   &emptyString,
+	})
+	if err != nil {
+		return makeError(err)
+	}
+
+	// TODO: delete notification?
+
 	return nil
 }
 
@@ -551,157 +701,6 @@ func (c *Client) DoCommand(command string) {
 			}
 		}
 	}()
-}
-
-// Get gets an existing deployment.
-//
-// It can be fetched by a multiple of ways including ID, name, transfer code, and Harbor webhook.
-// It supports service.AuthInfo, and will restrict the result to ensure the user has access to the resource.
-func (c *Client) Get(opts *client.GetOptions) (*deploymentModel.Deployment, error) {
-	dClient := deploymentModel.New()
-
-	if opts.TransferCode != "" {
-		return dClient.GetByTransferCode(opts.TransferCode)
-	}
-
-	var effectiveUserID string
-	if c.UserID != "" {
-		if c.Auth == nil || c.Auth.UserID == c.UserID || c.Auth.IsAdmin {
-			effectiveUserID = c.UserID
-		} else {
-			effectiveUserID = c.Auth.UserID
-		}
-	} else {
-		if c.Auth != nil && !c.Auth.IsAdmin {
-			effectiveUserID = c.Auth.UserID
-		}
-	}
-
-	var teamCheck bool
-	if !opts.Shared {
-		teamCheck = false
-	} else if c.Auth == nil || c.Auth.IsAdmin {
-		teamCheck = true
-	} else {
-		var err error
-		teamCheck, err = teamModels.New().AddUserID(c.Auth.UserID).AddResourceID(c.ID()).ExistsAny()
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if !teamCheck && effectiveUserID != "" {
-		dClient.RestrictToOwner(effectiveUserID)
-	}
-
-	if opts.HarborWebhook != nil {
-		return dClient.GetByName(opts.HarborWebhook.EventData.Repository.Name)
-	}
-
-	return c.Deployment(), nil
-}
-
-// List lists existing deployments.
-//
-// It supports service.AuthInfo, and will restrict the result to ensure the user has access to the resource.
-// It also supports pagination.
-func (c *Client) List(opts *client.ListOptions) ([]deploymentModel.Deployment, error) {
-	dClient := deploymentModel.New()
-
-	if opts.Pagination != nil {
-		dClient.WithPagination(opts.Pagination.Page, opts.Pagination.PageSize)
-	}
-
-	if opts.GitHubWebhookID != 0 {
-		dClient.WithGitHubWebhookID(opts.GitHubWebhookID)
-	}
-
-	var effectiveUserID string
-	if c.UserID != "" {
-		// specific user's deployments are requested
-		if c.Auth == nil || c.Auth.UserID == c.UserID || c.Auth.IsAdmin {
-			effectiveUserID = c.UserID
-		} else {
-			effectiveUserID = c.Auth.UserID
-		}
-	} else {
-		// all deployments are requested
-		if c.Auth != nil && !c.Auth.IsAdmin {
-			effectiveUserID = c.Auth.UserID
-		}
-	}
-
-	if effectiveUserID != "" {
-		dClient.RestrictToOwner(effectiveUserID)
-	}
-
-	resources, err := dClient.List()
-	if err != nil {
-		return nil, err
-	}
-
-	if opts.Shared && effectiveUserID != "" {
-		skipIDs := make([]string, len(resources))
-		for i, resource := range resources {
-			skipIDs[i] = resource.ID
-		}
-
-		teamClient := teamModels.New().AddUserID(effectiveUserID)
-		if opts.Pagination != nil {
-			teamClient.WithPagination(opts.Pagination.Page, opts.Pagination.PageSize)
-		}
-
-		teams, err := teamClient.List()
-		if err != nil {
-			return nil, err
-		}
-
-		for _, team := range teams {
-			for _, resource := range team.GetResourceMap() {
-				if resource.Type != teamModels.ResourceTypeDeployment {
-					continue
-				}
-
-				// skip existing non-shared resources
-				skip := false
-				for _, skipID := range skipIDs {
-					if resource.ID == skipID {
-						skip = true
-						break
-					}
-				}
-				if skip {
-					continue
-				}
-
-				deployment, err := deploymentModel.New().GetByID(resource.ID)
-				if err != nil {
-					return nil, err
-				}
-
-				if deployment != nil {
-					resources = append(resources, *deployment)
-				}
-			}
-		}
-
-		sort.Slice(resources, func(i, j int) bool {
-			return resources[i].CreatedAt.After(resources[j].CreatedAt)
-		})
-
-		// since we fetched from two collections, we need to do pagination manually
-		if opts.Pagination != nil {
-			resources = utils.GetPage(resources, opts.Pagination.PageSize, opts.Pagination.Page)
-		}
-
-	} else {
-		// sort by createdAt
-		sort.Slice(resources, func(i, j int) bool {
-			return resources[i].CreatedAt.After(resources[j].CreatedAt)
-		})
-	}
-
-	return resources, nil
 }
 
 // CheckQuota checks if the user has enough quota to create or update a deployment.

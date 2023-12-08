@@ -26,6 +26,9 @@ var (
 	// StorageManagerNotFoundErr is returned when the storage manager is not found.
 	StorageManagerNotFoundErr = fmt.Errorf("storage manager not found")
 
+	// StorageManagerAlreadyExistsErr is returned when the storage manager already exists for user.
+	StorageManagerAlreadyExistsErr = fmt.Errorf("storage manager already exists for user")
+
 	// ZoneNotFoundErr is returned when the zone is not found.
 	// This could be caused by stale data in the database.
 	ZoneNotFoundErr = fmt.Errorf("zone not found")

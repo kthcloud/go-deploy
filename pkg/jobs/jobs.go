@@ -13,9 +13,9 @@ import (
 	"go-deploy/pkg/workers/confirm"
 	"go-deploy/service/deployment_service"
 	dErrors "go-deploy/service/errors"
+	sErrors "go-deploy/service/errors"
 	"go-deploy/service/storage_manager_service"
 	"go-deploy/service/vm_service"
-	sErrors "go-deploy/service/vm_service/service_errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
@@ -407,7 +407,7 @@ func CreateStorageManager(job *jobModel.Job) error {
 
 	err = storage_manager_service.New().WithID(id).WithUserID(userID).Create(&params)
 	if err != nil {
-		if errors.Is(err, storage_manager_service.StorageManagerAlreadyExistsErr) {
+		if errors.Is(err, sErrors.StorageManagerAlreadyExistsErr) {
 			return makeTerminatedError(err)
 		}
 

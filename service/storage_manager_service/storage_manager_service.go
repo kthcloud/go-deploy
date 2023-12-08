@@ -4,21 +4,20 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
-	deploymentModel "go-deploy/models/sys/deployment"
 	jobModel "go-deploy/models/sys/job"
 	"go-deploy/models/sys/storage_manager"
+	sErrors "go-deploy/service/errors"
 	"go-deploy/service/job_service"
 	"go-deploy/service/storage_manager_service/client"
 	"go-deploy/service/storage_manager_service/k8s_service"
 	"log"
 )
 
-var (
-	StorageManagerAlreadyExistsErr = fmt.Errorf("storage manager already exists for user")
-)
-
+// Get gets an existing storage manager.
+//
+// It supports service.AuthInfo, and will restrict the result to ensure the user has access to the resource.
 func (c *Client) Get(opts *client.GetOptions) (*storage_manager.StorageManager, error) {
-	dClient := deploymentModel.New()
+	dClient := storage_manager.New()
 
 	var effectiveUserID string
 	if !c.HasUserID() {
@@ -40,6 +39,9 @@ func (c *Client) Get(opts *client.GetOptions) (*storage_manager.StorageManager, 
 	return c.StorageManager(), nil
 }
 
+// List lists existing storage managers.
+//
+// It supports service.AuthInfo, and will restrict the result to ensure the user has access to the resource.
 func (c *Client) List(opts *client.ListOptions) ([]storage_manager.StorageManager, error) {
 	sClient := storage_manager.New()
 
@@ -66,6 +68,9 @@ func (c *Client) List(opts *client.ListOptions) ([]storage_manager.StorageManage
 	return resources, nil
 }
 
+// Create creates a new storage manager
+//
+// It returns an error if the storage manager already exists (user ID clash).
 func (c *Client) Create(params *storage_manager.CreateParams) error {
 	makeErr := func(err error) error {
 		return fmt.Errorf("failed to create storage manager. details: %w", err)
@@ -78,7 +83,7 @@ func (c *Client) Create(params *storage_manager.CreateParams) error {
 	_, err := storage_manager.New().CreateStorageManager(c.ID(), c.UserID(), params)
 	if err != nil {
 		if errors.Is(err, storage_manager.AlreadyExistsErr) {
-			return StorageManagerAlreadyExistsErr
+			return sErrors.StorageManagerAlreadyExistsErr
 		}
 
 		return makeErr(err)
@@ -92,6 +97,9 @@ func (c *Client) Create(params *storage_manager.CreateParams) error {
 	return nil
 }
 
+// CreateIfNotExists creates a new storage manager if it does not exist.
+//
+// If the storage manager does not exist, it will create a job to create it.
 func (c *Client) CreateIfNotExists() error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create storage manager (if not exists). details: %w", err)
@@ -126,6 +134,9 @@ func (c *Client) CreateIfNotExists() error {
 	return err
 }
 
+// Delete deletes an existing storage manager.
+//
+// It returns an error if the storage manager is not found.
 func (c *Client) Delete() error {
 	makeErr := func(err error) error {
 		return fmt.Errorf("failed to delete storage manager. details: %w", err)
@@ -151,6 +162,9 @@ func (c *Client) Delete() error {
 	return nil
 }
 
+// Repair repairs an existing storage manager.
+//
+// Trigger repair jobs for every subsystem.
 func (c *Client) Repair() error {
 	makeErr := func(err error) error {
 		return fmt.Errorf("failed to repair storage manager %s. details: %w", c.ID(), err)
