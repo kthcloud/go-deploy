@@ -2,11 +2,11 @@ package k8s_service
 
 import (
 	"go-deploy/models/config"
-	"go-deploy/models/sys/deployment"
+	storageManagerModel "go-deploy/models/sys/storage_manager"
 	"go-deploy/pkg/subsystems/k8s"
-	"go-deploy/service/deployment_service/client"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/resources"
+	"go-deploy/service/storage_manager_service/client"
 	"go-deploy/utils/subsystemutils"
 )
 
@@ -36,11 +36,17 @@ func New(context *client.Context) *Client {
 //
 // Depending on the options specified, some return values may be nil.
 // This is useful when you don't always need all the resources.
-func (c *Client) Get(opts *client.Opts) (*deployment.Deployment, *k8s.Client, *resources.K8sGenerator, error) {
-	var d *deployment.Deployment
-	if opts.Deployment {
-		d = c.Deployment()
-		if d == nil {
+//
+// The default option is OptsAll.
+func (c *Client) Get(opts *client.Opts) (*storageManagerModel.StorageManager, *k8s.Client, *resources.K8sGenerator, error) {
+	if opts == nil {
+		opts = client.OptsAll
+	}
+
+	var sm *storageManagerModel.StorageManager
+	if opts.StorageManager {
+		sm = c.StorageManager()
+		if sm == nil {
 			return nil, nil, nil, sErrors.DeploymentNotFoundErr
 		}
 	}
@@ -61,7 +67,7 @@ func (c *Client) Get(opts *client.Opts) (*deployment.Deployment, *k8s.Client, *r
 		}
 	}
 
-	return d, kc, g, nil
+	return sm, kc, g, nil
 }
 
 // WithUserID sets the user id
@@ -88,11 +94,11 @@ func (c *Client) WithUserID(userID string) *Client {
 // If the client does not exist, it will be created.
 func (c *Client) Client() *k8s.Client {
 	if c.client == nil {
-		if c.UserID == "" {
+		if !c.HasUserID() {
 			panic("user id is empty")
 		}
 
-		c.client = withClient(c.Zone(), getNamespaceName(c.UserID))
+		c.client = withClient(c.Zone(), getNamespaceName(c.UserID()))
 	}
 
 	return c.client
@@ -107,8 +113,8 @@ func (c *Client) Generator() *resources.K8sGenerator {
 	if c.generator == nil {
 		pg := resources.PublicGenerator()
 
-		if c.Deployment() != nil {
-			pg.WithDeployment(c.Deployment())
+		if c.StorageManager() != nil {
+			pg.WithStorageManager(c.StorageManager())
 		}
 
 		if c.Zone() != nil {

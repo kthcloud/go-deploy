@@ -14,6 +14,7 @@ import (
 	"go-deploy/service"
 	"go-deploy/service/deployment_service"
 	"go-deploy/service/storage_manager_service"
+	smClient "go-deploy/service/storage_manager_service/client"
 	"go-deploy/service/user_service"
 	"go-deploy/service/vm_service"
 	"go-deploy/utils"
@@ -41,7 +42,7 @@ func collectUsage(userID string) (*userModel.Usage, error) {
 }
 
 func getStorageURL(userID string, auth *service.AuthInfo) (*string, error) {
-	storageManager, err := storage_manager_service.GetByOwnerIdAuth(userID, auth)
+	storageManager, err := storage_manager_service.New().WithUserID(userID).WithAuth(auth).Get(&smClient.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

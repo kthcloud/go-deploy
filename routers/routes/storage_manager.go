@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"go-deploy/routers/api/v1/v1_deployment"
+	"go-deploy/routers/api/v1/v1_storage_manager"
 )
 
 const (
@@ -17,8 +17,8 @@ func StorageManagerRoutes() *StorageManagerRoutingGroup {
 
 func (group *StorageManagerRoutingGroup) PrivateRoutes() []Route {
 	return []Route{
-		{Method: "GET", Pattern: StorageManagersPath, HandlerFunc: v1_deployment.ListStorageManagers},
-		{Method: "GET", Pattern: StorageManagerPath, HandlerFunc: v1_deployment.GetStorageManager},
-		{Method: "DELETE", Pattern: StorageManagerPath, HandlerFunc: v1_deployment.DeleteStorageManager},
+		{Method: "GET", Pattern: StorageManagersPath, HandlerFunc: v1_storage_manager.ListStorageManagers},
+		{Method: "GET", Pattern: StorageManagerPath, HandlerFunc: v1_storage_manager.GetStorageManager},
+		{Method: "DELETE", Pattern: StorageManagerPath, HandlerFunc: v1_storage_manager.DeleteStorageManager},
 	}
 }

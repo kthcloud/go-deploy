@@ -8,7 +8,7 @@ import (
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/service"
 	"go-deploy/service/constants"
-	dErrors "go-deploy/service/deployment_service/errors"
+	sErrors "go-deploy/service/errors"
 	"go-deploy/service/resources"
 	"go-deploy/utils"
 	"golang.org/x/exp/slices"
@@ -17,6 +17,9 @@ import (
 	"time"
 )
 
+// Create sets up K8s for the deployment.
+//
+// It creates all necessary resources in K8s, such as namespaces, deployments, services, etc.
 func (c *Client) Create(params *deploymentModel.CreateParams) error {
 	log.Println("setting up k8s for", params.Name)
 
@@ -25,7 +28,7 @@ func (c *Client) Create(params *deploymentModel.CreateParams) error {
 	}
 
 	if c.Deployment() == nil {
-		return makeError(dErrors.DeploymentNotFoundErr)
+		return makeError(sErrors.DeploymentNotFoundErr)
 	}
 
 	// Namespace
@@ -123,6 +126,9 @@ func (c *Client) Create(params *deploymentModel.CreateParams) error {
 	return nil
 }
 
+// Delete deletes all K8s resources for the deployment.
+//
+// It deletes all K8s resources, such as namespaces, deployments, services, etc.
 func (c *Client) Delete() error {
 	log.Println("deleting k8s for", c.ID())
 
@@ -132,12 +138,12 @@ func (c *Client) Delete() error {
 
 	d := c.Deployment()
 	if d == nil {
-		return makeError(dErrors.DeploymentNotFoundErr)
+		return makeError(sErrors.DeploymentNotFoundErr)
 	}
 
 	kc := c.Client()
 	if kc == nil {
-		return makeError(dErrors.DeploymentNotFoundErr)
+		return makeError(sErrors.DeploymentNotFoundErr)
 	}
 
 	// Ingress
@@ -255,6 +261,9 @@ func (c *Client) Delete() error {
 	return nil
 }
 
+// Update updates K8s resources for the deployment.
+//
+// It updates all K8s resources tied to the fields in the deployment.UpdateParams.
 func (c *Client) Update(params *deploymentModel.UpdateParams) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update k8s for deployment %s. details: %w", c.ID(), err)
@@ -329,26 +338,32 @@ func (c *Client) Update(params *deploymentModel.UpdateParams) error {
 	return nil
 }
 
+// EnsureOwner ensures the owner of the K8s setup for the deployment.
+//
+// If the owner of the deployment does match with the ID specified by WithUserID,
+// it will update the Harbor setup to match the new owner.
+//
+// This will always trigger a call to Repair.
 func (c *Client) EnsureOwner(oldOwnerID string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update k8s owner for deployment %s. details: %w", c.ID(), err)
 	}
 
 	if !c.HasID() {
-		return makeError(dErrors.DeploymentNotFoundErr)
+		return makeError(sErrors.DeploymentNotFoundErr)
 	}
 
 	// since ownership is determined by the namespace, and the namespace owns everything,
 	// we need to recreate everything
 	newOwnerID := c.UserID
 
-	// delete everything in the old namespace
+	// delete everything related to the deployment in the old namespace
 	err := c.WithUserID(oldOwnerID).Delete()
 	if err != nil {
 		return makeError(err)
 	}
 
-	// create everything in the new namespace
+	// create everything related to the deployment in the new namespace
 	err = c.WithUserID(newOwnerID).Repair()
 	if err != nil {
 		return makeError(err)
@@ -357,6 +372,7 @@ func (c *Client) EnsureOwner(oldOwnerID string) error {
 	return nil
 }
 
+// Restart restarts the deployment.
 func (c *Client) Restart() error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to restart k8s %s. details: %w", c.ID(), err)
@@ -364,12 +380,12 @@ func (c *Client) Restart() error {
 
 	d := c.Deployment()
 	if d == nil {
-		return makeError(dErrors.DeploymentNotFoundErr)
+		return makeError(sErrors.DeploymentNotFoundErr)
 	}
 
 	kc := c.Client()
 	if kc == nil {
-		return makeError(dErrors.DeploymentNotFoundErr)
+		return makeError(sErrors.DeploymentNotFoundErr)
 	}
 
 	if k8sDeployment := d.Subsystems.K8s.GetDeployment(d.Name); service.Created(k8sDeployment) {
@@ -384,6 +400,9 @@ func (c *Client) Restart() error {
 	return nil
 }
 
+// Repair repairs the deployment.
+//
+// It repairs all K8s resources for the deployment.
 func (c *Client) Repair() error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to repair k8s %s. details: %w", c.ID(), err)
@@ -391,17 +410,17 @@ func (c *Client) Repair() error {
 
 	d := c.Deployment()
 	if d == nil {
-		return makeError(dErrors.DeploymentNotFoundErr)
+		return makeError(sErrors.DeploymentNotFoundErr)
 	}
 
 	g := c.Generator()
 	if g == nil {
-		return makeError(dErrors.DeploymentNotFoundErr)
+		return makeError(sErrors.DeploymentNotFoundErr)
 	}
 
 	kc := c.Client()
 	if kc == nil {
-		return makeError(dErrors.DeploymentNotFoundErr)
+		return makeError(sErrors.DeploymentNotFoundErr)
 	}
 
 	namespace := g.Namespace()
@@ -625,6 +644,10 @@ func (c *Client) Repair() error {
 	return nil
 }
 
+// SetupLogStream sets up a log stream for the deployment.
+//
+// It sets up a log stream for all the pods in the deployment.
+// The handler function is called for each log line.
 func (c *Client) SetupLogStream(ctx context.Context, handler func(string, int, time.Time)) error {
 	_ = func(err error) error {
 		return fmt.Errorf("failed to setup log stream for deployment %s. details: %w", c.ID(), err)
@@ -632,12 +655,12 @@ func (c *Client) SetupLogStream(ctx context.Context, handler func(string, int, t
 
 	d := c.Deployment()
 	if d == nil {
-		return dErrors.DeploymentNotFoundErr
+		return sErrors.DeploymentNotFoundErr
 	}
 
 	kc := c.Client()
 	if kc == nil {
-		return dErrors.DeploymentNotFoundErr
+		return sErrors.DeploymentNotFoundErr
 	}
 
 	if d.BeingDeleted() {
@@ -659,6 +682,7 @@ func (c *Client) SetupLogStream(ctx context.Context, handler func(string, int, t
 	return nil
 }
 
+// updateInternalPort updates the internal port for the deployment.
 func (c *Client) updateInternalPort() error {
 	g := c.Generator()
 	kc := c.Client()
@@ -690,6 +714,7 @@ func (c *Client) updateInternalPort() error {
 	return nil
 }
 
+// updateEnvs updates the envs for the deployment.
 func (c *Client) updateEnvs() error {
 	g := c.Generator()
 	kc := c.Client()
@@ -721,6 +746,7 @@ func (c *Client) updateEnvs() error {
 	return nil
 }
 
+// updateCustomDomain updates the custom domain for the deployment.
 func (c *Client) updateCustomDomain() error {
 	g := c.Generator()
 	kc := c.Client()
@@ -750,7 +776,7 @@ func (c *Client) updateCustomDomain() error {
 
 	if err != nil {
 		if strings.Contains(err.Error(), "is already defined in ingress") {
-			return dErrors.CustomDomainInUseErr
+			return sErrors.CustomDomainInUseErr
 		}
 
 		return err
@@ -759,6 +785,7 @@ func (c *Client) updateCustomDomain() error {
 	return nil
 }
 
+// updatePrivate updates the private for the deployment.
 func (c *Client) updatePrivate() error {
 	g := c.Generator()
 	kc := c.Client()
@@ -791,6 +818,7 @@ func (c *Client) updatePrivate() error {
 	return nil
 }
 
+// updateImage updates the image for the deployment.
 func (c *Client) updateImage() error {
 	g := c.Generator()
 	kc := c.Client()
@@ -822,6 +850,7 @@ func (c *Client) updateImage() error {
 	return nil
 }
 
+// updateReplicas updates the replicas for the deployment.
 func (c *Client) updateReplicas() error {
 	g := c.Generator()
 	kc := c.Client()
@@ -875,6 +904,10 @@ func (c *Client) updateReplicas() error {
 	return nil
 }
 
+// recreatePvPvcDeployments recreates the pv, pvc and deployment for the deployment.
+//
+// This is needed when the PV or PVC are updated, since they are sticky to the deployment.
+// They are recreated in the following fashion: Deployment -> PVC -> PV -> PV -> PVC -> Deployment
 func (c *Client) recreatePvPvcDeployments() error {
 	// delete deployment, pvcs and pvs
 	// then
@@ -918,7 +951,7 @@ func (c *Client) recreatePvPvcDeployments() error {
 
 	err := c.Fetch()
 	if err != nil {
-		if errors.Is(err, dErrors.DeploymentNotFoundErr) {
+		if errors.Is(err, sErrors.DeploymentNotFoundErr) {
 			return nil
 		}
 
@@ -961,6 +994,7 @@ func (c *Client) recreatePvPvcDeployments() error {
 	return nil
 }
 
+// dbFunc returns a function that updates the K8s subsystem.
 func dbFunc(id, key string) func(interface{}) error {
 	return func(data interface{}) error {
 		if data == nil {

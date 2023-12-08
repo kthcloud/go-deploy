@@ -28,6 +28,5 @@ type InitContainer struct {
 }
 
 type CreateParams struct {
-	UserID string `json:"userId" bson:"userId"`
-	Zone   string `json:"zone" bson:"zone"`
+	Zone string `json:"zone" bson:"zone"`
 }

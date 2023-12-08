@@ -5,7 +5,7 @@ import (
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/harbor"
 	"go-deploy/service/deployment_service/client"
-	dErrors "go-deploy/service/deployment_service/errors"
+	sErrors "go-deploy/service/errors"
 	"go-deploy/service/resources"
 	"go-deploy/utils/subsystemutils"
 )
@@ -40,7 +40,7 @@ func (c *Client) Get(opts *client.Opts) (*deployment.Deployment, *harbor.Client,
 	if opts.Deployment {
 		d = c.Deployment()
 		if d == nil {
-			return nil, nil, nil, dErrors.DeploymentNotFoundErr
+			return nil, nil, nil, sErrors.DeploymentNotFoundErr
 		}
 	}
 
@@ -53,7 +53,7 @@ func (c *Client) Get(opts *client.Opts) (*deployment.Deployment, *harbor.Client,
 		}
 
 		if hc == nil {
-			return nil, nil, nil, dErrors.DeploymentNotFoundErr
+			return nil, nil, nil, sErrors.DeploymentNotFoundErr
 		}
 	}
 
@@ -61,7 +61,7 @@ func (c *Client) Get(opts *client.Opts) (*deployment.Deployment, *harbor.Client,
 	if opts.Generator {
 		g = c.Generator()
 		if g == nil {
-			return nil, nil, nil, dErrors.DeploymentNotFoundErr
+			return nil, nil, nil, sErrors.DeploymentNotFoundErr
 		}
 	}
 
@@ -114,7 +114,7 @@ func (c *Client) WithUserID(userID string) *Client {
 	return c
 }
 
-// Generator returns the GitHub generator.
+// Generator returns the Harbor generator.
 //
 // If the generator does not exist, it will be created.
 // If creating a new generator, the current deployment and zone will be used.

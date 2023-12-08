@@ -19,7 +19,7 @@ func CreateStorageManager() gin.HandlerFunc {
 			return
 		}
 
-		err = storage_manager_service.CreateIfNotExists(auth.UserID)
+		err = storage_manager_service.New().WithUserID(auth.UserID).CreateIfNotExists()
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to create storage manager. details: %w", err))
 			return

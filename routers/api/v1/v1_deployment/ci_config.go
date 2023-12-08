@@ -7,7 +7,7 @@ import (
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/deployment_service"
-	dErrors "go-deploy/service/deployment_service/errors"
+	dErrors "go-deploy/service/errors"
 	"net/http"
 )
 

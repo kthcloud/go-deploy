@@ -16,6 +16,7 @@ import (
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
+	errors2 "go-deploy/service/errors"
 	"go-deploy/service/job_service"
 	"go-deploy/service/user_service"
 	"go-deploy/service/vm_service"
@@ -188,7 +189,7 @@ func Create(c *gin.Context) {
 
 	err = vm_service.CheckQuotaCreate(auth.UserID, &auth.GetEffectiveRole().Quotas, auth, requestBody)
 	if err != nil {
-		var quotaExceedErr service.QuotaExceededError
+		var quotaExceedErr errors2.QuotaExceededError
 		if errors.As(err, &quotaExceedErr) {
 			context.Forbidden(quotaExceedErr.Error())
 			return
@@ -444,7 +445,7 @@ func Update(c *gin.Context) {
 
 	err = vm_service.CheckQuotaUpdate(auth.UserID, vm.ID, &auth.GetEffectiveRole().Quotas, auth, requestBody)
 	if err != nil {
-		var quotaExceededErr service.QuotaExceededError
+		var quotaExceededErr errors2.QuotaExceededError
 		if errors.As(err, &quotaExceededErr) {
 			context.Forbidden(quotaExceededErr.Error())
 			return

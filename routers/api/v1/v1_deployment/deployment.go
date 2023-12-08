@@ -15,15 +15,16 @@ import (
 	"go-deploy/service"
 	"go-deploy/service/deployment_service"
 	"go-deploy/service/deployment_service/client"
-	dErrors "go-deploy/service/deployment_service/errors"
+	sErrors "go-deploy/service/errors"
 	"go-deploy/service/job_service"
 	"go-deploy/service/storage_manager_service"
+	smClient "go-deploy/service/storage_manager_service/client"
 	"go-deploy/service/user_service"
 	"go-deploy/service/zone_service"
 )
 
 func getStorageManagerURL(userID string, auth *service.AuthInfo) *string {
-	storageManager, err := storage_manager_service.GetByOwnerIdAuth(userID, auth)
+	storageManager, err := storage_manager_service.New().WithAuth(auth).WithUserID(userID).Get(&smClient.GetOptions{})
 	if err != nil {
 		return nil
 	}
@@ -237,7 +238,7 @@ func Create(c *gin.Context) {
 
 	err = deployment_service.New().CheckQuota(&client.QuotaOptions{Quota: &auth.GetEffectiveRole().Quotas, Create: &requestBody})
 	if err != nil {
-		var quotaExceededErr service.QuotaExceededError
+		var quotaExceededErr sErrors.QuotaExceededError
 		if errors.As(err, &quotaExceededErr) {
 			context.Forbidden(quotaExceededErr.Error())
 			return
@@ -404,7 +405,7 @@ func Update(c *gin.Context) {
 		if *requestBody.OwnerID == "" {
 			err = dc.ClearUpdateOwner()
 			if err != nil {
-				if errors.Is(err, dErrors.DeploymentNotFoundErr) {
+				if errors.Is(err, sErrors.DeploymentNotFoundErr) {
 					context.NotFound("Deployment not found")
 					return
 				}
@@ -447,12 +448,12 @@ func Update(c *gin.Context) {
 		})
 
 		if err != nil {
-			if errors.Is(err, dErrors.DeploymentNotFoundErr) {
+			if errors.Is(err, sErrors.DeploymentNotFoundErr) {
 				context.NotFound("Deployment not found")
 				return
 			}
 
-			if errors.Is(err, dErrors.InvalidTransferCodeErr) {
+			if errors.Is(err, sErrors.InvalidTransferCodeErr) {
 				context.Forbidden("Bad transfer code")
 				return
 			}
@@ -483,7 +484,7 @@ func Update(c *gin.Context) {
 
 	err = dc.CheckQuota(&client.QuotaOptions{Quota: &auth.GetEffectiveRole().Quotas, Update: &requestBody})
 	if err != nil {
-		var quotaExceededErr service.QuotaExceededError
+		var quotaExceededErr sErrors.QuotaExceededError
 		if errors.As(err, &quotaExceededErr) {
 			context.Forbidden(quotaExceededErr.Error())
 			return

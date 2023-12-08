@@ -14,6 +14,7 @@ import (
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/pkg/config"
 	"go-deploy/service"
+	errors3 "go-deploy/service/errors"
 	"go-deploy/service/job_service"
 	"go-deploy/service/notification_service"
 	"go-deploy/service/vm_service/cs_service"
@@ -393,7 +394,7 @@ func ListAuth(allUsers bool, userID *string, shared bool, auth *service.AuthInfo
 
 		teamClient := teamModels.New().AddUserID(auth.UserID)
 		if pagination != nil {
-			teamClient.AddPagination(pagination.Page, pagination.PageSize)
+			teamClient.WithPagination(pagination.Page, pagination.PageSize)
 		}
 
 		teams, err := teamClient.List()
@@ -630,15 +631,15 @@ func CheckQuotaCreate(userID string, quota *roleModel.Quotas, auth *service.Auth
 	totalDiskSize := usage.DiskSize + createParams.DiskSize
 
 	if totalCpuCores > quota.CpuCores {
-		return service.NewQuotaExceededError(fmt.Sprintf("CPU cores quota exceeded. Current: %d, Quota: %d", totalCpuCores, quota.CpuCores))
+		return errors3.NewQuotaExceededError(fmt.Sprintf("CPU cores quota exceeded. Current: %d, Quota: %d", totalCpuCores, quota.CpuCores))
 	}
 
 	if totalRam > quota.RAM {
-		return service.NewQuotaExceededError(fmt.Sprintf("RAM quota exceeded. Current: %d, Quota: %d", totalRam, quota.RAM))
+		return errors3.NewQuotaExceededError(fmt.Sprintf("RAM quota exceeded. Current: %d, Quota: %d", totalRam, quota.RAM))
 	}
 
 	if totalDiskSize > quota.DiskSize {
-		return service.NewQuotaExceededError(fmt.Sprintf("Disk size quota exceeded. Current: %d, Quota: %d", totalDiskSize, quota.DiskSize))
+		return errors3.NewQuotaExceededError(fmt.Sprintf("Disk size quota exceeded. Current: %d, Quota: %d", totalDiskSize, quota.DiskSize))
 	}
 
 	return nil
@@ -682,7 +683,7 @@ func CheckQuotaUpdate(userID, vmID string, quota *roleModel.Quotas, auth *servic
 		}
 
 		if totalCpuCores > quota.CpuCores {
-			return service.NewQuotaExceededError(fmt.Sprintf("CPU cores quota exceeded. Current: %d, Quota: %d", totalCpuCores, quota.CpuCores))
+			return errors3.NewQuotaExceededError(fmt.Sprintf("CPU cores quota exceeded. Current: %d, Quota: %d", totalCpuCores, quota.CpuCores))
 		}
 	}
 
@@ -693,7 +694,7 @@ func CheckQuotaUpdate(userID, vmID string, quota *roleModel.Quotas, auth *servic
 		}
 
 		if totalRam > quota.RAM {
-			return service.NewQuotaExceededError(fmt.Sprintf("RAM quota exceeded. Current: %d, Quota: %d", totalRam, quota.RAM))
+			return errors3.NewQuotaExceededError(fmt.Sprintf("RAM quota exceeded. Current: %d, Quota: %d", totalRam, quota.RAM))
 		}
 	}
 

@@ -9,7 +9,7 @@ import (
 	"go-deploy/models/sys/job"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
-	"go-deploy/service"
+	errors2 "go-deploy/service/errors"
 	"go-deploy/service/job_service"
 	"go-deploy/service/vm_service"
 )
@@ -141,7 +141,7 @@ func CreateSnapshot(c *gin.Context) {
 
 	err = vm_service.CheckQuotaCreateSnapshot(auth.UserID, &auth.GetEffectiveRole().Quotas, auth)
 	if err != nil {
-		var quotaExceededErr service.QuotaExceededError
+		var quotaExceededErr errors2.QuotaExceededError
 		if errors.As(err, &quotaExceededErr) {
 			context.Forbidden(quotaExceededErr.Error())
 			return

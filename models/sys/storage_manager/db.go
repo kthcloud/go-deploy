@@ -12,10 +12,10 @@ import (
 
 var AlreadyExistsErr = fmt.Errorf("storage manager already exists for user")
 
-func (client *Client) CreateStorageManager(id string, params *CreateParams) (*StorageManager, error) {
+func (client *Client) CreateStorageManager(id, ownerID string, params *CreateParams) (*StorageManager, error) {
 	storageManager := &StorageManager{
 		ID:         id,
-		OwnerID:    params.UserID,
+		OwnerID:    ownerID,
 		Zone:       params.Zone,
 		CreatedAt:  time.Now(),
 		RepairedAt: time.Time{},
@@ -23,7 +23,7 @@ func (client *Client) CreateStorageManager(id string, params *CreateParams) (*St
 		Subsystems: Subsystems{},
 	}
 
-	err := client.CreateIfUnique(id, storageManager, bson.D{{"ownerId", params.UserID}})
+	err := client.CreateIfUnique(id, storageManager, bson.D{{"ownerId", ownerID}})
 	if err != nil {
 		if errors.Is(err, models.UniqueConstraintErr) {
 			return nil, AlreadyExistsErr

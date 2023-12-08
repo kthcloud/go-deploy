@@ -1,4 +1,4 @@
-package v1_deployment
+package v1_storage_manager
 
 import (
 	"github.com/gin-gonic/gin"
@@ -10,8 +10,10 @@ import (
 	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
+	"go-deploy/service"
 	"go-deploy/service/job_service"
 	"go-deploy/service/storage_manager_service"
+	"go-deploy/service/storage_manager_service/client"
 	"net/http"
 )
 
@@ -19,7 +21,7 @@ import (
 // @Summary Get storage manager list
 // @Description Get storage manager list
 // @BasePath /api/v1
-// @Tags Deployment
+// @Tags StorageManager
 // @Accept json
 // @Produce json
 // @Param Authorization header string true "Bearer token"
@@ -43,23 +45,19 @@ func ListStorageManagers(c *gin.Context) {
 		return
 	}
 
-	if requestQuery.All {
-		storageManagers, _ := storage_manager_service.GetAll(auth)
-
-		dtoStorageManagers := make([]body.StorageManagerRead, len(storageManagers))
-		for i, deployment := range storageManagers {
-			dtoStorageManagers[i] = deployment.ToDTO()
-		}
-
-		context.JSONResponse(http.StatusOK, dtoStorageManagers)
-		return
+	var userID string
+	if requestQuery.UserID != nil {
+		userID = *requestQuery.UserID
+	} else if requestQuery.All == false {
+		userID = auth.UserID
 	}
 
-	storageManagers, err := storage_manager_service.ListAuth(requestQuery.All, requestQuery.UserID, auth, &requestQuery.Pagination)
-	if err != nil {
-		context.ServerError(err, v1.InternalError)
-		return
-	}
+	storageManagers, _ := storage_manager_service.New().WithUserID(userID).WithAuth(auth).List(&client.ListOptions{
+		Pagination: &service.Pagination{
+			Page:     requestQuery.Page,
+			PageSize: requestQuery.PageSize,
+		},
+	})
 
 	if len(storageManagers) == 0 {
 		context.JSONResponse(200, []interface{}{})
@@ -78,7 +76,7 @@ func ListStorageManagers(c *gin.Context) {
 // @Summary Get storage manager
 // @Description Get storage manager
 // @BasePath /api/v1
-// @Tags Deployment
+// @Tags StorageManager
 // @Accept json
 // @Produce json
 // @Param Authorization header string true "Bearer token"
@@ -104,7 +102,7 @@ func GetStorageManager(c *gin.Context) {
 		return
 	}
 
-	storageManager, err := storage_manager_service.GetByIdAuth(requestURI.StorageManagerID, auth)
+	storageManager, err := storage_manager_service.New().WithID(requestURI.StorageManagerID).WithAuth(auth).Get(&client.GetOptions{})
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return
@@ -122,7 +120,7 @@ func GetStorageManager(c *gin.Context) {
 // @Summary Delete storage manager
 // @Description Delete storage manager
 // @BasePath /api/v1
-// @Tags Deployment
+// @Tags StorageManager
 // @Accept json
 // @Produce json
 // @Param Authorization header string true "Bearer token"
@@ -148,7 +146,7 @@ func DeleteStorageManager(c *gin.Context) {
 		return
 	}
 
-	storageManager, err := storage_manager_service.GetByIdAuth(requestURI.StorageManagerID, auth)
+	storageManager, err := storage_manager_service.New().WithID(requestURI.StorageManagerID).WithAuth(auth).Get(&client.GetOptions{})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/service/deployment_service/client"
-	"go-deploy/service/deployment_service/errors"
+	"go-deploy/service/errors"
 	"go-deploy/utils"
 	"log"
 	"time"

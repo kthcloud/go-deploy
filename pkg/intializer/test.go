@@ -5,7 +5,7 @@ import (
 	deploymentModel "go-deploy/models/sys/deployment"
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/service/deployment_service"
-	dErrors "go-deploy/service/deployment_service/errors"
+	dErrors "go-deploy/service/errors"
 	"go-deploy/service/vm_service"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"

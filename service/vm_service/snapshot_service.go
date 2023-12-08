@@ -6,6 +6,7 @@ import (
 	roleModel "go-deploy/models/sys/role"
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/service"
+	"go-deploy/service/errors"
 	"go-deploy/service/vm_service/cs_service"
 	"log"
 	"sort"
@@ -206,7 +207,7 @@ func CheckQuotaCreateSnapshot(userID string, quota *roleModel.Quotas, auth *serv
 	}
 
 	if usage.Snapshots >= quota.Snapshots {
-		return service.NewQuotaExceededError(fmt.Sprintf("Snapshot count quota exceeded. Current: %d, Quota: %d", usage.Snapshots, quota.Snapshots))
+		return errors.NewQuotaExceededError(fmt.Sprintf("Snapshot count quota exceeded. Current: %d, Quota: %d", usage.Snapshots, quota.Snapshots))
 	}
 
 	return nil

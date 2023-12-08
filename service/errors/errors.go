@@ -1,8 +1,18 @@
 package errors
 
-import (
-	"fmt"
-)
+import "fmt"
+
+type QuotaExceededError struct {
+	reason string
+}
+
+func (e QuotaExceededError) Error() string {
+	return e.reason
+}
+
+func NewQuotaExceededError(reason string) QuotaExceededError {
+	return QuotaExceededError{reason: reason}
+}
 
 var (
 	// DeploymentNotFoundErr is returned when the deployment is not found.

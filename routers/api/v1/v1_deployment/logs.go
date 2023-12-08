@@ -9,7 +9,7 @@ import (
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/deployment_service"
-	errors2 "go-deploy/service/deployment_service/errors"
+	errors2 "go-deploy/service/errors"
 	"io"
 )
 

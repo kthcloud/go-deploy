@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	configModels "go-deploy/models/config"
-	deploymentModel "go-deploy/models/sys/deployment"
+	storageManagerModel "go-deploy/models/sys/storage_manager"
 	"go-deploy/pkg/config"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
@@ -25,11 +25,11 @@ func (c *BaseClient[parent]) SetContext(context *Context) {
 	c.Context = *context
 }
 
-func (c *BaseClient[parent]) Deployment() *deploymentModel.Deployment {
-	if c.deployment == nil {
+func (c *BaseClient[parent]) StorageManager() *storageManagerModel.StorageManager {
+	if c.storageManager == nil {
 		err := c.Fetch()
 		if err != nil {
-			if errors.Is(err, sErrors.DeploymentNotFoundErr) {
+			if errors.Is(err, sErrors.StorageManagerNotFoundErr) {
 				return nil
 			}
 
@@ -38,7 +38,7 @@ func (c *BaseClient[parent]) Deployment() *deploymentModel.Deployment {
 		}
 	}
 
-	return c.deployment
+	return c.storageManager
 }
 
 func (c *BaseClient[parent]) ID() string {
@@ -46,8 +46,8 @@ func (c *BaseClient[parent]) ID() string {
 		return c.id
 	}
 
-	if c.Deployment() != nil {
-		return c.Deployment().ID
+	if c.StorageManager() != nil {
+		return c.StorageManager().ID
 	}
 
 	return ""
@@ -57,16 +57,20 @@ func (c *BaseClient[parent]) HasID() bool {
 	return c.ID() != ""
 }
 
-func (c *BaseClient[parent]) Name() string {
-	if c.name != "" {
-		return c.name
+func (c *BaseClient[parent]) UserID() string {
+	if c.userID != "" {
+		return c.userID
 	}
 
-	if c.Deployment() != nil {
-		return c.Deployment().Name
+	if sm := c.StorageManager(); sm != nil {
+		return sm.OwnerID
 	}
 
 	return ""
+}
+
+func (c *BaseClient[parent]) HasUserID() bool {
+	return c.UserID() != ""
 }
 
 func (c *BaseClient[parent]) Zone() *configModels.DeploymentZone {
@@ -78,41 +82,34 @@ func (c *BaseClient[parent]) Fetch() error {
 		return fmt.Errorf("failed to fetch deployment in service client: %w", err)
 	}
 
-	var deployment *deploymentModel.Deployment
+	var storageManager *storageManagerModel.StorageManager
 	if c.id != "" {
 		var err error
-		deployment, err = deploymentModel.New().GetByID(c.id)
+		storageManager, err = storageManagerModel.New().GetByID(c.id)
 		if err != nil {
 			return makeError(err)
 		}
 	} else if c.name != "" {
 		var err error
-		deployment, err = deploymentModel.New().GetByName(c.name)
+		storageManager, err = storageManagerModel.New().GetByName(c.name)
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
-	if deployment == nil {
-		return makeError(sErrors.DeploymentNotFoundErr)
+	if storageManager == nil {
+		return makeError(sErrors.StorageManagerNotFoundErr)
 	}
 
-	zone := config.Config.Deployment.GetZone(deployment.Zone)
+	zone := config.Config.Deployment.GetZone(storageManager.Zone)
 	if zone == nil {
 		return makeError(sErrors.ZoneNotFoundErr)
 	}
 
-	mainApp := deployment.GetMainApp()
-	if mainApp == nil {
-		return makeError(sErrors.MainAppNotFoundErr)
-	}
-
 	c.zone = zone
-	c.MainApp = mainApp
-	c.deployment = deployment
-	c.id = deployment.ID
-	c.name = deployment.Name
-	c.UserID = deployment.OwnerID
+	c.storageManager = storageManager
+	c.id = storageManager.ID
+	c.userID = storageManager.OwnerID
 
 	return nil
 }
@@ -133,7 +130,7 @@ func (c *BaseClient[parent]) WithName(name string) *parent {
 }
 
 func (c *BaseClient[parent]) WithUserID(userID string) *parent {
-	c.UserID = userID
+	c.userID = userID
 	return c.p
 }
 

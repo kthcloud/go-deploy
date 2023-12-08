@@ -4,7 +4,7 @@ import (
 	"go-deploy/models/sys/deployment"
 	"go-deploy/pkg/subsystems/github"
 	"go-deploy/service/deployment_service/client"
-	dErrors "go-deploy/service/deployment_service/errors"
+	sErrors "go-deploy/service/errors"
 	"go-deploy/service/resources"
 )
 
@@ -42,7 +42,7 @@ func (c *Client) Get(opts *client.Opts) (*deployment.Deployment, *github.Client,
 	if opts.Deployment {
 		d = c.Deployment()
 		if d == nil {
-			return nil, nil, nil, dErrors.DeploymentNotFoundErr
+			return nil, nil, nil, sErrors.DeploymentNotFoundErr
 		}
 	}
 
@@ -55,7 +55,7 @@ func (c *Client) Get(opts *client.Opts) (*deployment.Deployment, *github.Client,
 		}
 
 		if gc == nil {
-			return nil, nil, nil, dErrors.DeploymentNotFoundErr
+			return nil, nil, nil, sErrors.DeploymentNotFoundErr
 		}
 	}
 
@@ -63,7 +63,7 @@ func (c *Client) Get(opts *client.Opts) (*deployment.Deployment, *github.Client,
 	if opts.Generator {
 		g = c.Generator()
 		if g == nil {
-			return nil, nil, nil, dErrors.DeploymentNotFoundErr
+			return nil, nil, nil, sErrors.DeploymentNotFoundErr
 		}
 	}
 

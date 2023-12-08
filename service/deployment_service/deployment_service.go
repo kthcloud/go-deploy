@@ -10,13 +10,12 @@ import (
 	notificationModel "go-deploy/models/sys/notification"
 	teamModels "go-deploy/models/sys/team"
 	"go-deploy/pkg/config"
-	"go-deploy/service"
 	"go-deploy/service/deployment_service/client"
-	dErrors "go-deploy/service/deployment_service/errors"
 	"go-deploy/service/deployment_service/github_service"
 	"go-deploy/service/deployment_service/gitlab_service"
 	"go-deploy/service/deployment_service/harbor_service"
 	"go-deploy/service/deployment_service/k8s_service"
+	sErrors "go-deploy/service/errors"
 	"go-deploy/service/job_service"
 	"go-deploy/service/notification_service"
 	"go-deploy/utils"
@@ -53,7 +52,7 @@ func (c *Client) Create(deploymentCreate *body.DeploymentCreate) error {
 	deployment, err := deploymentModel.New().Create(c.ID(), c.UserID, params)
 	if err != nil {
 		if errors.Is(err, deploymentModel.NonUniqueFieldErr) {
-			return dErrors.NonUniqueFieldErr
+			return sErrors.NonUniqueFieldErr
 		}
 
 		return makeError(err)
@@ -77,7 +76,7 @@ func (c *Client) Create(deploymentCreate *body.DeploymentCreate) error {
 
 	err = k8s_service.New(&c.Context).Create(params)
 	if err != nil {
-		if errors.Is(err, dErrors.CustomDomainInUseErr) {
+		if errors.Is(err, sErrors.CustomDomainInUseErr) {
 			log.Println("custom domain in use when creating deployment", params.Name, ". removing it from the deployment and create params")
 			err = deploymentModel.New().RemoveCustomDomain(c.ID())
 			if err != nil {
@@ -166,7 +165,7 @@ func (c *Client) Update(dtoUpdate *body.DeploymentUpdate) error {
 	}
 
 	if c.Deployment() == nil {
-		return dErrors.DeploymentNotFoundErr
+		return sErrors.DeploymentNotFoundErr
 	}
 
 	params := &deploymentModel.UpdateParams{}
@@ -180,7 +179,7 @@ func (c *Client) Update(dtoUpdate *body.DeploymentUpdate) error {
 	err := deploymentModel.New().UpdateWithParamsByID(c.ID(), params)
 	if err != nil {
 		if errors.Is(err, deploymentModel.NonUniqueFieldErr) {
-			return dErrors.NonUniqueFieldErr
+			return sErrors.NonUniqueFieldErr
 		}
 
 		return makeError(err)
@@ -195,7 +194,7 @@ func (c *Client) Update(dtoUpdate *body.DeploymentUpdate) error {
 
 	err = k8s_service.New(&c.Context).Update(params)
 	if err != nil {
-		if errors.Is(err, dErrors.CustomDomainInUseErr) {
+		if errors.Is(err, sErrors.CustomDomainInUseErr) {
 			log.Println("custom domain in use when updating deployment", c.Deployment().Name, ". removing it from the update params")
 			dtoUpdate.CustomDomain = nil
 		} else {
@@ -218,7 +217,7 @@ func (c *Client) UpdateOwnerSetup(params *body.DeploymentUpdateOwner) (*string, 
 	}
 
 	if c.Deployment() == nil {
-		return nil, dErrors.DeploymentNotFoundErr
+		return nil, sErrors.DeploymentNotFoundErr
 	}
 
 	if c.Deployment().OwnerID == params.NewOwnerID {
@@ -231,7 +230,7 @@ func (c *Client) UpdateOwnerSetup(params *body.DeploymentUpdateOwner) (*string, 
 		doTransfer = true
 	} else if c.Auth.UserID == params.NewOwnerID {
 		if params.TransferCode == nil || c.Deployment().Transfer == nil || c.Deployment().Transfer.Code != *params.TransferCode {
-			return nil, dErrors.InvalidTransferCodeErr
+			return nil, sErrors.InvalidTransferCodeErr
 		}
 
 		doTransfer = true
@@ -295,7 +294,7 @@ func (c *Client) ClearUpdateOwner() error {
 	}
 
 	if c.Deployment() == nil {
-		return dErrors.DeploymentNotFoundErr
+		return sErrors.DeploymentNotFoundErr
 	}
 
 	if c.Deployment().Transfer == nil {
@@ -327,7 +326,7 @@ func (c *Client) UpdateOwner(params *body.DeploymentUpdateOwner) error {
 	}
 
 	if c.Deployment() == nil {
-		return dErrors.DeploymentNotFoundErr
+		return sErrors.DeploymentNotFoundErr
 	}
 
 	var newImage *string
@@ -371,7 +370,7 @@ func (c *Client) Delete() error {
 	}
 
 	if !c.HasID() {
-		return dErrors.DeploymentNotFoundErr
+		return sErrors.DeploymentNotFoundErr
 	}
 
 	err := harbor_service.New(&c.Context).Delete()
@@ -401,7 +400,7 @@ func (c *Client) Repair() error {
 	}
 
 	if c.Deployment() == nil {
-		return dErrors.DeploymentNotFoundErr
+		return sErrors.DeploymentNotFoundErr
 	}
 
 	if !c.Deployment().Ready() {
@@ -411,7 +410,7 @@ func (c *Client) Repair() error {
 
 	err := k8s_service.New(&c.Context).Repair()
 	if err != nil {
-		if errors.Is(err, dErrors.CustomDomainInUseErr) {
+		if errors.Is(err, sErrors.CustomDomainInUseErr) {
 			log.Println("custom domain in use when repairing deployment", c.ID(), ". removing it from the deployment")
 			err = deploymentModel.New().RemoveCustomDomain(c.ID())
 			if err != nil {
@@ -649,7 +648,7 @@ func (c *Client) List(opts *client.ListOptions) ([]deploymentModel.Deployment, e
 
 		teamClient := teamModels.New().AddUserID(effectiveUserID)
 		if opts.Pagination != nil {
-			teamClient.AddPagination(opts.Pagination.Page, opts.Pagination.PageSize)
+			teamClient.WithPagination(opts.Pagination.Page, opts.Pagination.PageSize)
 		}
 
 		teams, err := teamClient.List()
@@ -733,7 +732,7 @@ func (c *Client) CheckQuota(opts *client.QuotaOptions) error {
 		totalCount := usage.Count + add
 
 		if totalCount > opts.Quota.Deployments {
-			return service.NewQuotaExceededError(fmt.Sprintf("Deployment quota exceeded. Current: %d, Quota: %d", totalCount, opts.Quota.Deployments))
+			return sErrors.NewQuotaExceededError(fmt.Sprintf("Deployment quota exceeded. Current: %d, Quota: %d", totalCount, opts.Quota.Deployments))
 		}
 
 		return nil
@@ -746,7 +745,7 @@ func (c *Client) CheckQuota(opts *client.QuotaOptions) error {
 		totalCount := usage.Count + add
 
 		if totalCount > opts.Quota.Deployments {
-			return service.NewQuotaExceededError(fmt.Sprintf("Deployment quota exceeded. Current: %d, Quota: %d", totalCount, opts.Quota.Deployments))
+			return sErrors.NewQuotaExceededError(fmt.Sprintf("Deployment quota exceeded. Current: %d, Quota: %d", totalCount, opts.Quota.Deployments))
 		}
 
 		return nil
@@ -762,10 +761,6 @@ func (c *Client) CheckQuota(opts *client.QuotaOptions) error {
 // It only starts the activity if it is allowed, determined by CanAddActivity.
 // It returns a boolean indicating if the activity was started, and a string indicating the reason if it was not.
 func (c *Client) StartActivity(activity string) (bool, string, error) {
-	if !c.HasID() {
-		return false, "Deployment not found", nil
-	}
-
 	canAdd, reason := c.CanAddActivity(activity)
 	if !canAdd {
 		return false, reason, nil

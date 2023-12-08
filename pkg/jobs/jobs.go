@@ -12,7 +12,7 @@ import (
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/pkg/workers/confirm"
 	"go-deploy/service/deployment_service"
-	dErrors "go-deploy/service/deployment_service/errors"
+	dErrors "go-deploy/service/errors"
 	"go-deploy/service/storage_manager_service"
 	"go-deploy/service/vm_service"
 	sErrors "go-deploy/service/vm_service/service_errors"
@@ -391,19 +391,21 @@ func RepairDeployment(job *jobModel.Job) error {
 }
 
 func CreateStorageManager(job *jobModel.Job) error {
-	err := assertParameters(job, []string{"id", "params"})
+	err := assertParameters(job, []string{"id", "userId", "params"})
 	if err != nil {
 		return makeTerminatedError(err)
 	}
 
 	id := job.Args["id"].(string)
+	userID := job.Args["userId"].(string)
+
 	var params storageManagerModel.CreateParams
 	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
 	if err != nil {
 		return makeTerminatedError(err)
 	}
 
-	err = storage_manager_service.Create(id, &params)
+	err = storage_manager_service.New().WithID(id).WithUserID(userID).Create(&params)
 	if err != nil {
 		if errors.Is(err, storage_manager_service.StorageManagerAlreadyExistsErr) {
 			return makeTerminatedError(err)
@@ -423,7 +425,7 @@ func DeleteStorageManager(job *jobModel.Job) error {
 
 	id := job.Args["id"].(string)
 
-	err = storage_manager_service.Delete(id)
+	err = storage_manager_service.New().WithID(id).Delete()
 	if err != nil {
 		return makeFailedError(err)
 	}
@@ -439,7 +441,7 @@ func RepairStorageManager(job *jobModel.Job) error {
 
 	id := job.Args["id"].(string)
 
-	err = storage_manager_service.Repair(id)
+	err = storage_manager_service.New().WithID(id).Repair()
 	if err != nil {
 		return makeTerminatedError(err)
 	}
