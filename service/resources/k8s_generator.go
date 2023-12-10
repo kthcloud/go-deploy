@@ -216,19 +216,21 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 
 		for mapName, k8sDeployment := range kg.v.vm.Subsystems.K8s.GetDeploymentMap() {
 			idx := 0
+			matchedIdx := -1
 			for _, port := range ports {
 				if port.HttpProxy == nil {
 					continue
 				}
 
 				if vpDeploymentName(kg.v.vm, port.HttpProxy.Name) == mapName {
+					matchedIdx = idx
 					break
 				}
 
 				idx++
 			}
 
-			if idx != -1 {
+			if matchedIdx != -1 {
 				res[idx].ID = k8sDeployment.ID
 				res[idx].CreatedAt = k8sDeployment.CreatedAt
 			}
@@ -421,19 +423,21 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 
 		for mapName, svc := range kg.v.vm.Subsystems.K8s.GetServiceMap() {
 			idx := 0
+			matchIdx := -1
 			for _, port := range ports {
 				if port.HttpProxy == nil {
 					continue
 				}
 
 				if vpServiceName(kg.v.vm, port.HttpProxy.Name) == mapName {
+					matchIdx = idx
 					break
 				}
 
 				idx++
 			}
 
-			if idx != -1 {
+			if matchIdx != -1 {
 				res[idx].ID = svc.ID
 				res[idx].CreatedAt = svc.CreatedAt
 			}
@@ -578,6 +582,7 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 
 		for mapName, ingress := range kg.v.vm.Subsystems.K8s.GetIngressMap() {
 			idx := 0
+			matchIdx := -1
 			for _, port := range ports {
 				if port.HttpProxy == nil {
 					continue
@@ -585,13 +590,14 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 
 				if vpIngressName(kg.v.vm, port.HttpProxy.Name) == mapName ||
 					(vpCustomDomainIngressName(kg.v.vm, port.HttpProxy.Name) == mapName && port.HttpProxy.CustomDomain != nil) {
+					matchIdx = idx
 					break
 				}
 
 				idx++
 			}
 
-			if idx != -1 {
+			if matchIdx != -1 {
 				res[idx].ID = ingress.ID
 				res[idx].CreatedAt = ingress.CreatedAt
 			}
