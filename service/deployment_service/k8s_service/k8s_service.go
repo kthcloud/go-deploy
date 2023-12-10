@@ -8,6 +8,7 @@ import (
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/service"
 	"go-deploy/service/constants"
+	"go-deploy/service/deployment_service/client"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/resources"
 	"go-deploy/utils"
@@ -31,18 +32,23 @@ func (c *Client) Create(params *deploymentModel.CreateParams) error {
 		return makeError(sErrors.DeploymentNotFoundErr)
 	}
 
+	_, kc, g, err := c.Get(client.OptsNoDeployment)
+	if err != nil {
+		return makeError(err)
+	}
+
 	// Namespace
-	err := resources.SsCreator(c.Client().CreateNamespace).
+	err = resources.SsCreator(kc.CreateNamespace).
 		WithDbFunc(dbFunc(c.ID(), "namespace")).
-		WithPublic(c.Generator().Namespace()).
+		WithPublic(g.Namespace()).
 		Exec()
 	if err != nil {
 		return makeError(err)
 	}
 
 	// PersistentVolume
-	for _, pvPublic := range c.Generator().PVs() {
-		err = resources.SsCreator(c.Client().CreatePV).
+	for _, pvPublic := range g.PVs() {
+		err = resources.SsCreator(kc.CreatePV).
 			WithDbFunc(dbFunc(c.ID(), "pvMap."+pvPublic.Name)).
 			WithPublic(&pvPublic).
 			Exec()
@@ -53,8 +59,8 @@ func (c *Client) Create(params *deploymentModel.CreateParams) error {
 	}
 
 	// PersistentVolumeClaim
-	for _, pvcPublic := range c.Generator().PVCs() {
-		err = resources.SsCreator(c.Client().CreatePVC).
+	for _, pvcPublic := range g.PVCs() {
+		err = resources.SsCreator(kc.CreatePVC).
 			WithDbFunc(dbFunc(c.ID(), "pvcMap."+pvcPublic.Name)).
 			WithPublic(&pvcPublic).
 			Exec()
@@ -65,8 +71,8 @@ func (c *Client) Create(params *deploymentModel.CreateParams) error {
 	}
 
 	// Secret
-	for _, secretPublic := range c.Generator().Secrets() {
-		err = resources.SsCreator(c.Client().CreateSecret).
+	for _, secretPublic := range g.Secrets() {
+		err = resources.SsCreator(kc.CreateSecret).
 			WithDbFunc(dbFunc(c.ID(), "secretMap."+secretPublic.Name)).
 			WithPublic(&secretPublic).
 			Exec()
@@ -77,8 +83,8 @@ func (c *Client) Create(params *deploymentModel.CreateParams) error {
 	}
 
 	// Deployment
-	for _, deploymentPublic := range c.Generator().Deployments() {
-		err = resources.SsCreator(c.Client().CreateDeployment).
+	for _, deploymentPublic := range g.Deployments() {
+		err = resources.SsCreator(kc.CreateDeployment).
 			WithDbFunc(dbFunc(c.ID(), "deploymentMap."+deploymentPublic.Name)).
 			WithPublic(&deploymentPublic).
 			Exec()
@@ -89,8 +95,8 @@ func (c *Client) Create(params *deploymentModel.CreateParams) error {
 	}
 
 	// Service
-	for _, servicePublic := range c.Generator().Services() {
-		err = resources.SsCreator(c.Client().CreateService).
+	for _, servicePublic := range g.Services() {
+		err = resources.SsCreator(kc.CreateService).
 			WithDbFunc(dbFunc(c.ID(), "serviceMap."+servicePublic.Name)).
 			WithPublic(&servicePublic).
 			Exec()
@@ -101,8 +107,8 @@ func (c *Client) Create(params *deploymentModel.CreateParams) error {
 	}
 
 	// Ingress
-	for _, ingressPublic := range c.Generator().Ingresses() {
-		err = resources.SsCreator(c.Client().CreateIngress).
+	for _, ingressPublic := range g.Ingresses() {
+		err = resources.SsCreator(kc.CreateIngress).
 			WithDbFunc(dbFunc(c.ID(), "ingressMap."+ingressPublic.Name)).
 			WithPublic(&ingressPublic).
 			Exec()
@@ -112,8 +118,8 @@ func (c *Client) Create(params *deploymentModel.CreateParams) error {
 		}
 	}
 
-	for _, hpaPublic := range c.Generator().HPAs() {
-		err = resources.SsCreator(c.Client().CreateHPA).
+	for _, hpaPublic := range g.HPAs() {
+		err = resources.SsCreator(kc.CreateHPA).
 			WithDbFunc(dbFunc(c.ID(), "hpaMap."+hpaPublic.Name)).
 			WithPublic(&hpaPublic).
 			Exec()
@@ -136,14 +142,9 @@ func (c *Client) Delete() error {
 		return fmt.Errorf("failed to delete k8s for deployment %s. details: %w", c.ID(), err)
 	}
 
-	d := c.Deployment()
-	if d == nil {
-		return makeError(sErrors.DeploymentNotFoundErr)
-	}
-
-	kc := c.Client()
-	if kc == nil {
-		return makeError(sErrors.DeploymentNotFoundErr)
+	d, kc, _, err := c.Get(client.OptsNoGenerator)
+	if err != nil {
+		return makeError(err)
 	}
 
 	// Ingress
@@ -249,7 +250,7 @@ func (c *Client) Delete() error {
 	}
 
 	// Namespace
-	err := resources.SsDeleter(func(string) error { return nil }).
+	err = resources.SsDeleter(func(string) error { return nil }).
 		WithResourceID(d.Subsystems.K8s.Namespace.ID).
 		WithDbFunc(dbFunc(c.ID(), "namespace")).
 		Exec()
@@ -378,14 +379,9 @@ func (c *Client) Restart() error {
 		return fmt.Errorf("failed to restart k8s %s. details: %w", c.ID(), err)
 	}
 
-	d := c.Deployment()
-	if d == nil {
-		return makeError(sErrors.DeploymentNotFoundErr)
-	}
-
-	kc := c.Client()
-	if kc == nil {
-		return makeError(sErrors.DeploymentNotFoundErr)
+	d, kc, _, err := c.Get(client.OptsNoGenerator)
+	if err != nil {
+		return makeError(err)
 	}
 
 	if k8sDeployment := d.Subsystems.K8s.GetDeployment(d.Name); service.Created(k8sDeployment) {
@@ -408,23 +404,13 @@ func (c *Client) Repair() error {
 		return fmt.Errorf("failed to repair k8s %s. details: %w", c.ID(), err)
 	}
 
-	d := c.Deployment()
-	if d == nil {
-		return makeError(sErrors.DeploymentNotFoundErr)
-	}
-
-	g := c.Generator()
-	if g == nil {
-		return makeError(sErrors.DeploymentNotFoundErr)
-	}
-
-	kc := c.Client()
-	if kc == nil {
-		return makeError(sErrors.DeploymentNotFoundErr)
+	d, kc, g, err := c.Get(client.OptsAll)
+	if err != nil {
+		return makeError(err)
 	}
 
 	namespace := g.Namespace()
-	err := resources.SsRepairer(
+	err = resources.SsRepairer(
 		kc.ReadNamespace,
 		kc.CreateNamespace,
 		kc.UpdateNamespace,

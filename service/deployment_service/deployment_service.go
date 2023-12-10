@@ -591,7 +591,7 @@ func (c *Client) Restart() error {
 	}
 
 	if c.Deployment() == nil {
-
+		return sErrors.DeploymentNotFoundErr
 	}
 
 	c.AddLogs(deploymentModel.Log{
@@ -606,7 +606,7 @@ func (c *Client) Restart() error {
 		return makeError(err)
 	}
 
-	started, reason, err := c.StartActivity(deploymentModel.ActivityRestarting)
+	err = c.StartActivity(deploymentModel.ActivityRestarting)
 	if err != nil {
 		return makeError(err)
 	}
@@ -620,10 +620,6 @@ func (c *Client) Restart() error {
 			utils.PrettyPrintError(fmt.Errorf("failed to remove activity %s from deployment %s. details: %w", deploymentModel.ActivityRestarting, c.ID(), err))
 		}
 	}()
-
-	if !started {
-		return fmt.Errorf("failed to restart deployment %s. details: %s", c.ID(), reason)
-	}
 
 	err = k8s_service.New(&c.Context).Restart()
 	if err != nil {
@@ -759,18 +755,22 @@ func (c *Client) CheckQuota(opts *client.QuotaOptions) error {
 //
 // It only starts the activity if it is allowed, determined by CanAddActivity.
 // It returns a boolean indicating if the activity was started, and a string indicating the reason if it was not.
-func (c *Client) StartActivity(activity string) (bool, string, error) {
+func (c *Client) StartActivity(activity string) error {
 	canAdd, reason := c.CanAddActivity(activity)
 	if !canAdd {
-		return false, reason, nil
+		if reason == "Deployment not found" {
+			return sErrors.DeploymentNotFoundErr
+		}
+
+		return sErrors.NewFailedToStartActivityError(reason)
 	}
 
 	err := deploymentModel.New().AddActivity(c.ID(), activity)
 	if err != nil {
-		return false, "", err
+		return err
 	}
 
-	return true, "", nil
+	return nil
 }
 
 // CanAddActivity checks if the deployment can add an activity.
@@ -933,13 +933,20 @@ func (c *Client) build(params *deploymentModel.BuildParams) error {
 
 	var filtered []string
 	for _, id := range ids {
-		started, reason, err := c.StartActivity(deploymentModel.ActivityBuilding)
+		err := c.StartActivity(deploymentModel.ActivityBuilding)
 		if err != nil {
-			return err
-		}
+			var failedToStartActivityErr sErrors.FailedToStartActivityError
+			if errors.As(err, &failedToStartActivityErr) {
+				log.Println("could not start building activity for deployment", id, ". reason:", failedToStartActivityErr.Error())
+				continue
+			}
 
-		if !started {
-			utils.PrettyPrintError(fmt.Errorf("failed to build deployment. details: %s", reason))
+			if errors.Is(err, sErrors.DeploymentNotFoundErr) {
+				log.Println("deployment", id, "not found when starting activity", deploymentModel.ActivityBuilding, ". assuming it was deleted")
+				continue
+			}
+
+			return err
 		}
 
 		filtered = append(filtered, id)

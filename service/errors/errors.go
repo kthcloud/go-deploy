@@ -2,16 +2,36 @@ package errors
 
 import "fmt"
 
+// QuotaExceededError is returned when the quota is exceeded.
+// For instance, if a user creates too many deployments.
 type QuotaExceededError struct {
 	reason string
 }
 
+// Error returns the reason for the quota exceeded error.
 func (e QuotaExceededError) Error() string {
 	return e.reason
 }
 
+// NewQuotaExceededError creates a new QuotaExceededError.
 func NewQuotaExceededError(reason string) QuotaExceededError {
 	return QuotaExceededError{reason: reason}
+}
+
+// FailedToStartActivityError is returned when an activity fails to start.
+// For instance, if a user tries to update a deployment, that is being deleted.
+type FailedToStartActivityError struct {
+	reason string
+}
+
+// Error returns the reason for the failed to start activity error.
+func (e FailedToStartActivityError) Error() string {
+	return e.reason
+}
+
+// NewFailedToStartActivityError creates a new FailedToStartActivityError.
+func NewFailedToStartActivityError(reason string) FailedToStartActivityError {
+	return FailedToStartActivityError{reason: reason}
 }
 
 var (

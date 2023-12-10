@@ -314,14 +314,20 @@ func Delete(c *gin.Context) {
 		return
 	}
 
-	started, reason, err := dc.StartActivity(deploymentModels.ActivityBeingDeleted)
+	err = dc.StartActivity(deploymentModels.ActivityBeingDeleted)
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
-		return
-	}
+		var failedToStartActivityErr sErrors.FailedToStartActivityError
+		if errors.As(err, &failedToStartActivityErr) {
+			context.Locked(failedToStartActivityErr.Error())
+			return
+		}
 
-	if !started {
-		context.Locked(reason)
+		if errors.Is(err, sErrors.DeploymentNotFoundErr) {
+			context.NotFound("Deployment not found")
+			return
+		}
+
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
