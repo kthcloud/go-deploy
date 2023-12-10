@@ -213,18 +213,18 @@ func (c *Client) Create(deploymentCreate *body.DeploymentCreate) error {
 	}
 
 	if deployment.Type == deploymentModel.TypeCustom {
-		err = harbor_service.New(&c.Context).Create(params)
+		err = harbor_service.New(c.Context).Create(params)
 		if err != nil {
 			return makeError(err)
 		}
 	} else {
-		err = harbor_service.New(&c.Context).CreatePlaceholder()
+		err = harbor_service.New(c.Context).CreatePlaceholder()
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
-	err = k8s_service.New(&c.Context).Create(params)
+	err = k8s_service.New(c.Context).Create(params)
 	if err != nil {
 		if errors.Is(err, sErrors.CustomDomainInUseErr) {
 			log.Println("custom domain in use when creating deployment", params.Name, ". removing it from the deployment and create params")
@@ -240,7 +240,7 @@ func (c *Client) Create(deploymentCreate *body.DeploymentCreate) error {
 
 	createPlaceHolderInstead := false
 	if params.GitHub != nil {
-		err = github_service.New(&c.Context).Create(params)
+		err = github_service.New(c.Context).Create(params)
 		if err != nil {
 			errString := err.Error()
 			if strings.Contains(errString, "/hooks: 404 Not Found") {
@@ -258,7 +258,7 @@ func (c *Client) Create(deploymentCreate *body.DeploymentCreate) error {
 	}
 
 	if createPlaceHolderInstead {
-		err = github_service.New(&c.Context).CreatePlaceholder()
+		err = github_service.New(c.Context).CreatePlaceholder()
 		if err != nil {
 			return makeError(err)
 		}
@@ -271,7 +271,7 @@ func (c *Client) Create(deploymentCreate *body.DeploymentCreate) error {
 	}
 
 	if deployment.Subsystems.GitHub.Created() && params.GitHub != nil {
-		gc := github_service.New(&c.Context).WithRepositoryID(params.GitHub.RepositoryID).WithToken(params.GitHub.Token)
+		gc := github_service.New(c.Context).WithRepositoryID(params.GitHub.RepositoryID).WithToken(params.GitHub.Token)
 		repo, err := gc.GetRepository()
 		if err != nil {
 			return makeError(err)
@@ -336,13 +336,13 @@ func (c *Client) Update(dtoUpdate *body.DeploymentUpdate) error {
 	}
 
 	if c.Deployment().Type == deploymentModel.TypeCustom {
-		err = harbor_service.New(&c.Context).Update(params)
+		err = harbor_service.New(c.Context).Update(params)
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
-	err = k8s_service.New(&c.Context).Update(params)
+	err = k8s_service.New(c.Context).Update(params)
 	if err != nil {
 		if errors.Is(err, sErrors.CustomDomainInUseErr) {
 			log.Println("custom domain in use when updating deployment", c.Deployment().Name, ". removing it from the update params")
@@ -467,12 +467,12 @@ func (c *Client) UpdateOwner(params *body.DeploymentUpdateOwner) error {
 		return makeError(err)
 	}
 
-	err = harbor_service.New(&c.Context).EnsureOwner(params.OldOwnerID)
+	err = harbor_service.New(c.Context).EnsureOwner(params.OldOwnerID)
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = k8s_service.New(&c.Context).EnsureOwner(params.OldOwnerID)
+	err = k8s_service.New(c.Context).EnsureOwner(params.OldOwnerID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -523,17 +523,17 @@ func (c *Client) Delete() error {
 		return sErrors.DeploymentNotFoundErr
 	}
 
-	err := harbor_service.New(&c.Context).Delete()
+	err := harbor_service.New(c.Context).Delete()
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = k8s_service.New(&c.Context).Delete()
+	err = k8s_service.New(c.Context).Delete()
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = github_service.New(&c.Context).Delete()
+	err = github_service.New(c.Context).Delete()
 	if err != nil {
 		return makeError(err)
 	}
@@ -558,7 +558,7 @@ func (c *Client) Repair() error {
 		return nil
 	}
 
-	err := k8s_service.New(&c.Context).Repair()
+	err := k8s_service.New(c.Context).Repair()
 	if err != nil {
 		if errors.Is(err, sErrors.CustomDomainInUseErr) {
 			log.Println("custom domain in use when repairing deployment", c.ID(), ". removing it from the deployment")
@@ -572,7 +572,7 @@ func (c *Client) Repair() error {
 	}
 
 	if !c.Deployment().Subsystems.Harbor.Placeholder {
-		err = harbor_service.New(&c.Context).Repair()
+		err = harbor_service.New(c.Context).Repair()
 		if err != nil {
 			return makeError(err)
 		}
@@ -621,7 +621,7 @@ func (c *Client) Restart() error {
 		}
 	}()
 
-	err = k8s_service.New(&c.Context).Restart()
+	err = k8s_service.New(c.Context).Restart()
 	if err != nil {
 		return makeError(err)
 	}

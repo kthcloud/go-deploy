@@ -5,13 +5,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"go-deploy/models/dto/body"
+	"go-deploy/models/dto/query"
 	"go-deploy/models/dto/uri"
 	"go-deploy/models/sys/job"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
-	errors2 "go-deploy/service/errors"
+	"go-deploy/service"
+	sErrors "go-deploy/service/errors"
 	"go-deploy/service/job_service"
 	"go-deploy/service/vm_service"
+	"go-deploy/service/vm_service/client"
 )
 
 // ListSnapshots
@@ -31,13 +34,24 @@ import (
 func ListSnapshots(c *gin.Context) {
 	context := sys.NewContext(c)
 
+	var requestQuery query.VmSnapshotList
+	if err := context.GinContext.ShouldBindQuery(&requestQuery); err != nil {
+		context.BindingError(v1.CreateBindingError(err))
+		return
+	}
+
 	var requestURI uri.VmSnapshotList
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
 		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
-	snapshots, _ := vm_service.ListSnapshotsByVM(requestURI.VmID)
+	snapshots, _ := vm_service.New().ListSnapshots(requestURI.VmID, &client.ListSnapshotOptions{
+		Pagination: &service.Pagination{
+			Page:     requestQuery.Page,
+			PageSize: requestQuery.PageSize,
+		},
+	})
 	if snapshots == nil {
 		context.Ok([]interface{}{})
 		return
@@ -80,7 +94,9 @@ func GetSnapshot(c *gin.Context) {
 		return
 	}
 
-	vm, err := vm_service.GetByIdAuth(requestURI.VmID, auth)
+	vsc := vm_service.New().WithAuth(auth)
+
+	vm, err := vsc.Get(requestURI.VmID, &client.GetOptions{Shared: true})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -91,7 +107,7 @@ func GetSnapshot(c *gin.Context) {
 		return
 	}
 
-	snapshot, err := vm_service.GetSnapshotByID(requestURI.VmID, requestURI.SnapshotID)
+	snapshot, err := vsc.GetSnapshot(requestURI.VmID, requestURI.SnapshotID, &client.GetSnapshotOptions{})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -139,9 +155,13 @@ func CreateSnapshot(c *gin.Context) {
 		return
 	}
 
-	err = vm_service.CheckQuotaCreateSnapshot(auth.UserID, &auth.GetEffectiveRole().Quotas, auth)
+	vsc := vm_service.New().WithAuth(auth)
+
+	err = vsc.CheckQuota(requestURI.VmID, auth.UserID, &auth.GetEffectiveRole().Quotas, &client.QuotaOptions{
+		CreateSnapshot: &requestBody,
+	})
 	if err != nil {
-		var quotaExceededErr errors2.QuotaExceededError
+		var quotaExceededErr sErrors.QuotaExceededError
 		if errors.As(err, &quotaExceededErr) {
 			context.Forbidden(quotaExceededErr.Error())
 			return
@@ -151,7 +171,7 @@ func CreateSnapshot(c *gin.Context) {
 		return
 	}
 
-	current, err := vm_service.GetSnapshotByName(requestURI.VmID, requestBody.Name)
+	current, err := vsc.GetSnapshotByName(requestURI.VmID, requestBody.Name, &client.GetSnapshotOptions{})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -162,7 +182,7 @@ func CreateSnapshot(c *gin.Context) {
 		return
 	}
 
-	vm, err := vm_service.GetByIdAuth(requestURI.VmID, auth)
+	vm, err := vsc.Get(requestURI.VmID, &client.GetOptions{Shared: true})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -221,7 +241,9 @@ func DeleteSnapshot(c *gin.Context) {
 		return
 	}
 
-	vm, err := vm_service.GetByIdAuth(requestURI.VmID, auth)
+	vsc := vm_service.New().WithAuth(auth)
+
+	vm, err := vsc.Get(requestURI.VmID, &client.GetOptions{Shared: true})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -232,7 +254,7 @@ func DeleteSnapshot(c *gin.Context) {
 		return
 	}
 
-	snapshot, err := vm_service.GetSnapshotByID(requestURI.VmID, requestURI.SnapshotID)
+	snapshot, err := vsc.GetSnapshot(requestURI.VmID, requestURI.SnapshotID, &client.GetSnapshotOptions{})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return

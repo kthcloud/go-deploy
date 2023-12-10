@@ -23,11 +23,10 @@ type Client struct {
 // If context is not nil, it will be used to create a new BaseClient.
 // Otherwise, an empty context will be created.
 func New(context *client.Context) *Client {
-	c := &Client{}
-	c.BaseClient.SetParent(c)
-	if context != nil {
-		c.BaseClient.SetContext(context)
+	c := &Client{
+		BaseClient: client.NewBaseClient[Client](context),
 	}
+	c.BaseClient.SetParent(c)
 	return c
 }
 
@@ -68,14 +67,14 @@ func (c *Client) Get(opts *client.Opts) (*deployment.Deployment, *harbor.Client,
 	return d, hc, g, nil
 }
 
-// Client returns the GitHub service client.
+// Client returns the Harbor service client.
 //
 // This does not create a new client if it does not exist.
 func (c *Client) Client() *harbor.Client {
 	return c.client
 }
 
-// GetOrCreateClient returns the GitHub service client.
+// GetOrCreateClient returns the Harbor service client.
 //
 // If the client does not exist, it will be created.
 func (c *Client) GetOrCreateClient() (*harbor.Client, error) {

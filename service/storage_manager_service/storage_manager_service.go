@@ -89,7 +89,7 @@ func (c *Client) Create(params *storage_manager.CreateParams) error {
 		return makeErr(err)
 	}
 
-	err = k8s_service.New(&c.Context).Create(params)
+	err = k8s_service.New(c.Context).Create(params)
 	if err != nil {
 		return makeErr(err)
 	}
@@ -144,7 +144,7 @@ func (c *Client) Delete() error {
 
 	log.Println("deleting storage manager", c.ID())
 
-	err := k8s_service.New(&c.Context).Delete()
+	err := k8s_service.New(c.Context).Delete()
 	if err != nil {
 		return makeErr(err)
 	}
@@ -180,7 +180,7 @@ func (c *Client) Repair() error {
 		return nil
 	}
 
-	err = k8s_service.New(&c.Context).Repair()
+	err = k8s_service.New(c.Context).Repair()
 	if err != nil {
 		return makeErr(err)
 	}

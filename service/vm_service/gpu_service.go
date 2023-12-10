@@ -4,38 +4,49 @@ import (
 	"errors"
 	"fmt"
 	gpuModel "go-deploy/models/sys/gpu"
-	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/pkg/config"
-	"go-deploy/service"
+	sErrors "go-deploy/service/errors"
+	"go-deploy/service/vm_service/client"
 	"go-deploy/service/vm_service/cs_service"
-	"go-deploy/service/vm_service/service_errors"
 	"go-deploy/utils"
-	"log"
-	"sort"
 	"strings"
 	"time"
 )
 
-func ListGPUs(onlyAvailable bool, auth *service.AuthInfo) ([]gpuModel.GPU, error) {
-	effectiveRole := auth.GetEffectiveRole()
-
+func (c *Client) ListGPUs(opts *client.ListGpuOptions) ([]gpuModel.GPU, error) {
 	excludedGPUs := config.Config.GPU.ExcludedGPUs
-	if !effectiveRole.Permissions.UsePrivilegedGPUs {
-		excludedGPUs = append(excludedGPUs, config.Config.GPU.PrivilegedGPUs...)
+
+	if c.Auth != nil && !c.Auth.GetEffectiveRole().Permissions.UsePrivilegedGPUs {
+		effectiveRole := c.Auth.GetEffectiveRole()
+
+		if !effectiveRole.Permissions.UsePrivilegedGPUs {
+			excludedGPUs = append(excludedGPUs, config.Config.GPU.PrivilegedGPUs...)
+		}
 	}
 
-	if onlyAvailable {
-		dbAvailableGPUs, err := gpuModel.NewWithExclusion(config.Config.GPU.ExcludedHosts, excludedGPUs).GetAllAvailable()
-		if err != nil {
-			return nil, err
-		}
+	gmc := gpuModel.New().WithExclusion(config.Config.GPU.ExcludedHosts, excludedGPUs)
 
+	if opts.Pagination != nil {
+		gmc.WithPagination(opts.Pagination.Page, opts.Pagination.PageSize)
+	}
+
+	if opts.AvailableGPUs {
+		gmc.OnlyAvailable()
+		gpus, _ := gmc.List()
 		availableGPUs := make([]gpuModel.GPU, 0)
-		for _, gpu := range dbAvailableGPUs {
-			err = IsGpuHardwareAvailable(&gpu)
+
+		for _, gpu := range gpus {
+			err := c.CheckGpuHardwareAvailable(gpu.ID)
 			if err != nil {
-				utils.PrettyPrintError(fmt.Errorf("error checking if gpu is in use. details: %w", err))
-				continue
+				switch {
+				case errors.Is(err, sErrors.GpuNotFoundErr):
+					continue
+				case errors.Is(err, sErrors.HostNotAvailableErr):
+					continue
+				default:
+					utils.PrettyPrintError(fmt.Errorf("error checking if gpu is in use. details: %w", err))
+					continue
+				}
 			}
 
 			availableGPUs = append(availableGPUs, gpu)
@@ -43,11 +54,22 @@ func ListGPUs(onlyAvailable bool, auth *service.AuthInfo) ([]gpuModel.GPU, error
 
 		return availableGPUs, nil
 	}
-	return gpuModel.NewWithExclusion(config.Config.GPU.ExcludedHosts, excludedGPUs).List()
+
+	return gmc.List()
 }
 
-func GetGpuByID(gpuID string, usePrivilegedGPUs bool) (*gpuModel.GPU, error) {
-	gpu, err := gpuModel.New().GetByID(gpuID)
+func (c *Client) GetGPU(id string, opts *client.GetGpuOptions) (*gpuModel.GPU, error) {
+	var usePrivilegedGPUs bool
+	if c.Auth == nil || c.Auth.GetEffectiveRole().Permissions.UsePrivilegedGPUs {
+		usePrivilegedGPUs = true
+	}
+
+	var excludedGpus []string
+	if !usePrivilegedGPUs {
+		excludedGpus = config.Config.GPU.PrivilegedGPUs
+	}
+
+	gpu, err := gpuModel.New().WithExclusion(config.Config.GPU.ExcludedHosts, excludedGpus).GetByID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -56,16 +78,17 @@ func GetGpuByID(gpuID string, usePrivilegedGPUs bool) (*gpuModel.GPU, error) {
 		return nil, nil
 	}
 
-	// check if host is excluded
-	for _, excludedHost := range config.Config.GPU.ExcludedHosts {
-		if gpu.Host == excludedHost {
-			return nil, nil
-		}
-	}
+	if opts.AvailableGPUs {
+		err = c.CheckGpuHardwareAvailable(id)
+		if err != nil {
+			switch {
+			case errors.Is(err, sErrors.GpuNotFoundErr):
+				return nil, nil
+			case errors.Is(err, sErrors.HostNotAvailableErr):
+				return nil, nil
+			}
 
-	if !usePrivilegedGPUs {
-		// check if card is privileged
-		if isGpuPrivileged(gpu.Data.Name) {
+			utils.PrettyPrintError(fmt.Errorf("error checking if gpu is in use. details: %w", err))
 			return nil, nil
 		}
 	}
@@ -73,55 +96,7 @@ func GetGpuByID(gpuID string, usePrivilegedGPUs bool) (*gpuModel.GPU, error) {
 	return gpu, nil
 }
 
-func GetAllAvailableGPU(usePrivilegedGPUs bool) ([]gpuModel.GPU, error) {
-	excludedGPUs := config.Config.GPU.ExcludedGPUs
-	if !usePrivilegedGPUs {
-		excludedGPUs = append(excludedGPUs, config.Config.GPU.PrivilegedGPUs...)
-	}
-
-	dbAvailableGPUs, err := gpuModel.NewWithExclusion(config.Config.GPU.ExcludedHosts, excludedGPUs).GetAllAvailable()
-	if err != nil {
-		return nil, err
-	}
-
-	// sort available gpus by host
-	sort.Slice(dbAvailableGPUs, func(i, j int) bool {
-		return dbAvailableGPUs[i].Host < dbAvailableGPUs[j].Host
-	})
-
-	var availableGPUs []gpuModel.GPU
-	for _, gpu := range dbAvailableGPUs {
-		err = IsGpuHardwareAvailable(&gpu)
-		if err != nil {
-			return nil, err
-		}
-
-		availableGPUs = append(availableGPUs, gpu)
-	}
-
-	return availableGPUs, nil
-}
-
-func IsGpuPrivileged(gpuID string) (bool, error) {
-	gpu, err := gpuModel.New().GetByID(gpuID)
-	if err != nil {
-		return false, err
-	}
-
-	if gpu == nil {
-		return false, nil
-	}
-
-	for _, privilegedGPU := range config.Config.GPU.PrivilegedGPUs {
-		if privilegedGPU == gpu.Data.Name {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
-func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) error {
+func (c *Client) AttachGPU(vmID string, gpuIDs []string, leaseDuration float64) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to attach gpu to vm %s. details: %w", vmID, err)
 	}
@@ -130,7 +105,18 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 
 	endLease := time.Now().Add(time.Duration(leaseDuration) * time.Hour)
 
-	var err error
+	vm, err := c.Get(vmID, &client.GetOptions{})
+	if err != nil {
+		return makeError(err)
+	}
+
+	if vm == nil {
+		return sErrors.VmNotFoundErr
+	}
+
+	// service client
+	cc := cs_service.New(c.Context)
+
 	for _, gpuID := range gpuIDs {
 		var gpu *gpuModel.GPU
 		gpu, err = gpuModel.New().GetByID(gpuID)
@@ -142,7 +128,7 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 			continue
 		}
 
-		err = IsGpuHardwareAvailable(gpu)
+		err = c.CheckGpuHardwareAvailable(vmID)
 		if err != nil {
 			return makeError(err)
 		}
@@ -150,7 +136,7 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 		if gpu.Lease.VmID != vmID && gpu.IsAttached() {
 			// if it is attached but expired, take over the card by first detaching it
 			if gpu.Lease.IsExpired() {
-				err = cs_service.DetachGPU(gpu.Lease.VmID, cs_service.CsDetachGpuAfterStateRestore)
+				err = cc.DetachGPU(gpu.Lease.VmID, cs_service.CsDetachGpuAfterStateRestore)
 				if err != nil {
 					return makeError(err)
 				}
@@ -165,7 +151,7 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 		}
 
 		var attached bool
-		attached, err = gpuModel.New().Attach(gpuID, vmID, userID, endLease)
+		attached, err = gpuModel.New().Attach(gpuID, vmID, vm.OwnerID, endLease)
 		if err != nil {
 			if errors.Is(err, gpuModel.AlreadyAttachedErr) || errors.Is(err, gpuModel.NotFoundErr) {
 				// this is not treated as an error, just another instance snatched the gpu before this one
@@ -186,7 +172,7 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 
 		// ensure it is attached in cloudstack, this will not do anything if it is already attached
 		// otherwise, it will restart the vm, which is fine since the user requested this
-		err = cs_service.AttachGPU(gpuID, vmID)
+		err = cc.AttachGPU(vmID, gpuID)
 		if err == nil {
 			break
 		}
@@ -200,7 +186,7 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 			// if the host has insufficient capacity, we need to detach the gpu from the vm
 			// and attempt to attach it to another gpu
 
-			err = cs_service.DetachGPU(vmID, cs_service.CsDetachGpuAfterStateRestore)
+			err = cc.DetachGPU(vmID, cs_service.CsDetachGpuAfterStateRestore)
 			if err != nil {
 				return makeError(err)
 			}
@@ -212,7 +198,7 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 		} else if gpuAlreadyAttached {
 			// if the gpu is already attached, we need to detach it from the vm
 
-			err = cs_service.DetachGPU(vmID, cs_service.CsDetachGpuAfterStateRestore)
+			err = cc.DetachGPU(vmID, cs_service.CsDetachGpuAfterStateRestore)
 			if err != nil {
 				return makeError(err)
 			}
@@ -229,25 +215,12 @@ func AttachGPU(gpuIDs []string, vmID, userID string, leaseDuration float64) erro
 	return nil
 }
 
-func DetachGPU(vmID string) error {
+func (c *Client) DetachGPU(vmID string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to detach gpu from vm %s. details: %w", vmID, err)
 	}
 
-	err := DetachGpuSync(vmID)
-	if err != nil {
-		return makeError(err)
-	}
-
-	return nil
-}
-
-func DetachGpuSync(vmID string) error {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to detach gpu from vm %s. details: %w", vmID, err)
-	}
-
-	err := cs_service.DetachGPU(vmID, cs_service.CsDetachGpuAfterStateRestore)
+	err := cs_service.New(c.Context).DetachGPU(vmID, cs_service.CsDetachGpuAfterStateRestore)
 	if err != nil {
 		return makeError(err)
 	}
@@ -260,40 +233,48 @@ func DetachGpuSync(vmID string) error {
 	return nil
 }
 
-func CanStartOnHost(vmID, host string) error {
-	vm, err := vmModel.New().GetByID(vmID)
+func (c *Client) IsGpuPrivileged(id string) (bool, error) {
+	gpu, err := c.GPU(id, nil)
 	if err != nil {
-		return err
+		return false, err
 	}
 
-	if vm == nil {
-		return service_errors.VmNotFoundErr
+	if gpu == nil {
+		return false, nil
 	}
 
-	if vm.Subsystems.CS.VM.ID == "" {
-		return service_errors.VmNotCreatedErr
+	for _, privilegedGPU := range config.Config.GPU.PrivilegedGPUs {
+		if privilegedGPU == gpu.Data.Name {
+			return true, nil
+		}
 	}
 
-	err = cs_service.CanStart(vm.Subsystems.CS.VM.ID, host, vm.Zone)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return false, nil
 }
 
-func IsGpuHardwareAvailable(gpu *gpuModel.GPU) error {
-	cloudstackAttached, err := cs_service.IsGpuAttachedCS(gpu)
+func (c *Client) CheckGpuHardwareAvailable(gpuID string) error {
+	gpu, err := c.GPU(gpuID, nil)
+	if err != nil {
+		return err
+	}
+
+	if gpu == nil {
+		return sErrors.GpuNotFoundErr
+	}
+
+	cc := cs_service.New(c.Context)
+
+	cloudstackAttached, err := cc.IsGpuAttached(gpuID)
 	if err != nil {
 		return err
 	}
 
 	zone := config.Config.VM.GetZone(gpu.Zone)
 	if zone == nil {
-		return service_errors.ZoneNotFoundErr
+		return sErrors.ZoneNotFoundErr
 	}
 
-	err = cs_service.HostInCorrectState(gpu.Host, zone)
+	err = cc.WithZone(gpu.Zone).CheckHostState(gpu.Host)
 	if err != nil {
 		return err
 	}
@@ -301,27 +282,30 @@ func IsGpuHardwareAvailable(gpu *gpuModel.GPU) error {
 	// check if it is a "bad attach", where cloudstack reports it being attached, but the database says it's not
 	// this usually means it is in use outside the scope of deploy
 	if cloudstackAttached && !gpu.IsAttached() {
-		return service_errors.GpuNotFoundErr
+		return sErrors.GpuNotFoundErr
 	}
 
 	return nil
 }
 
-func isGpuPrivileged(cardName string) bool {
-	for _, privilegedCard := range config.Config.GPU.PrivilegedGPUs {
-		if cardName == privilegedCard {
-			return true
-		}
+func (c *Client) CheckSuitableHost(id, hostName string) error {
+	vm, err := c.VM(id, nil)
+	if err != nil {
+		return err
 	}
 
-	return false
-}
+	if vm == nil {
+		return sErrors.VmNotFoundErr
+	}
 
-func hasExtraConfig(vm *vmModel.VM) bool {
 	if vm.Subsystems.CS.VM.ID == "" {
-		log.Println("cs vm not found when checking for extra config when repairing gpus for vm", vm.ID, ". assuming it was deleted")
-		return false
+		return sErrors.VmNotCreatedErr
 	}
 
-	return vm.Subsystems.CS.VM.ExtraConfig != "" && vm.Subsystems.CS.VM.ExtraConfig != "none"
+	err = cs_service.New(c.Context).WithZone(vm.Zone).CheckSuitableHost(vm.Subsystems.CS.VM.ID, hostName)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

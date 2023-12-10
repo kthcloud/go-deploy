@@ -21,7 +21,7 @@ import (
 )
 
 func collectUsage(userID string) (*userModel.Usage, error) {
-	vmUsage, err := vm_service.GetUsageByUserID(userID)
+	vmUsage, err := vm_service.New().GetUsage(userID)
 	if err != nil {
 		return nil, err
 	}

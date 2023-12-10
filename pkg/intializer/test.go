@@ -64,7 +64,7 @@ func CleanUpOldTests() {
 			panic(err)
 		}
 
-		err = vm_service.Delete(vm.ID)
+		err = vm_service.New().Delete(vm.ID)
 		if err != nil {
 			panic(err)
 		}

@@ -14,5 +14,6 @@ type Client struct {
 func New() *Client {
 	c := &Client{}
 	c.BaseClient.SetParent(c)
+	c.BaseClient.SetContext(&client.Context{})
 	return c
 }

@@ -6,24 +6,29 @@ import (
 	gpuModel "go-deploy/models/sys/gpu"
 	"go-deploy/pkg/subsystems/cs/commands"
 	"go-deploy/service"
+	sErrors "go-deploy/service/errors"
 	"go-deploy/service/resources"
-	"go-deploy/service/vm_service/base"
+	"go-deploy/service/vm_service/client"
 	"log"
 	"strings"
 )
 
-func AttachGPU(gpuID, vmID string) error {
+func (c *Client) AttachGPU(vmID, gpuID string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to attach gpu %s to cs vm %s. details: %w", gpuID, vmID, err)
 	}
 
-	context, err := NewContext(vmID)
+	vm, csc, _, err := c.Get(client.OptsNoGenerator(vmID))
 	if err != nil {
+		if errors.Is(err, sErrors.VmNotFoundErr) {
+			return nil
+		}
+
 		return makeError(err)
 	}
 
-	if service.NotCreated(&context.VM.Subsystems.CS.VM) {
-		log.Println("vm", vmID, "has no cs vm id when attaching gpu", gpuID, "to cs vm, assuming it was deleted")
+	if service.NotCreated(&vm.Subsystems.CS.VM) {
+		log.Println("vm", vmID, "has no cs vm id when attaching gpu", gpuID, ", assuming it was deleted")
 		return nil
 	}
 
@@ -33,10 +38,10 @@ func AttachGPU(gpuID, vmID string) error {
 	}
 
 	requiredExtraConfig := CreateExtraConfig(gpu)
-	currentExtraConfig := context.VM.Subsystems.CS.VM.ExtraConfig
+	currentExtraConfig := vm.Subsystems.CS.VM.ExtraConfig
 	if requiredExtraConfig != currentExtraConfig {
 		var status string
-		status, err = context.Client.GetVmStatus(context.VM.Subsystems.CS.VM.ID)
+		status, err = csc.GetVmStatus(vm.Subsystems.CS.VM.ID)
 		if err != nil {
 			return makeError(err)
 		}
@@ -44,16 +49,16 @@ func AttachGPU(gpuID, vmID string) error {
 		shouldStartAfter := false
 		if status == "Running" {
 			shouldStartAfter = true
-			err = context.Client.DoVmCommand(context.VM.Subsystems.CS.VM.ID, nil, commands.Stop)
+			err = csc.DoVmCommand(vm.Subsystems.CS.VM.ID, nil, commands.Stop)
 			if err != nil {
 				return makeError(err)
 			}
 		}
 
-		context.VM.Subsystems.CS.VM.ExtraConfig = requiredExtraConfig
+		vm.Subsystems.CS.VM.ExtraConfig = requiredExtraConfig
 
-		err = resources.SsUpdater(context.Client.UpdateVM).
-			WithPublic(&context.VM.Subsystems.CS.VM).
+		err = resources.SsUpdater(csc.UpdateVM).
+			WithPublic(&vm.Subsystems.CS.VM).
 			WithDbFunc(dbFunc(vmID, "vm")).
 			Exec()
 
@@ -61,13 +66,13 @@ func AttachGPU(gpuID, vmID string) error {
 			return makeError(err)
 		}
 
-		requiredHost, err := GetRequiredHost(gpuID)
+		requiredHost, err := c.GetRequiredHost(gpuID)
 		if err != nil {
 			return makeError(err)
 		}
 
 		if shouldStartAfter {
-			err = context.Client.DoVmCommand(context.VM.Subsystems.CS.VM.ID, requiredHost, commands.Start)
+			err = csc.DoVmCommand(vm.Subsystems.CS.VM.ID, requiredHost, commands.Start)
 			if err != nil {
 				return makeError(err)
 			}
@@ -78,42 +83,41 @@ func AttachGPU(gpuID, vmID string) error {
 	return nil
 }
 
-func DetachGPU(vmID string, afterState string) error {
+func (c *Client) DetachGPU(vmID string, afterState string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to detach gpu from cs vm %s. details: %w", vmID, err)
 	}
 
-	context, err := NewContext(vmID)
+	vm, csc, _, err := c.Get(client.OptsNoGenerator(vmID))
 	if err != nil {
-		if errors.Is(err, base.VmDeletedErr) {
-			log.Println("vm", vmID, "not found when detaching gpu in cs. assuming it was deleted")
+		if errors.Is(err, sErrors.VmNotFoundErr) {
 			return nil
 		}
 
 		return makeError(err)
 	}
 
-	if service.NotCreated(&context.VM.Subsystems.CS.VM) {
+	if service.NotCreated(&vm.Subsystems.CS.VM) {
 		log.Println("csVM was not created for vm", vmID, "when detaching gpu in cs. assuming it was deleted or not created yet")
 		return nil
 	}
 
-	status, err := context.Client.GetVmStatus(context.VM.Subsystems.CS.VM.ID)
+	status, err := csc.GetVmStatus(vm.Subsystems.CS.VM.ID)
 	if err != nil {
 		return makeError(err)
 	}
 
 	if status == "Running" {
-		err = context.Client.DoVmCommand(context.VM.Subsystems.CS.VM.ID, nil, commands.Stop)
+		err = csc.DoVmCommand(vm.Subsystems.CS.VM.ID, nil, commands.Stop)
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
-	context.VM.Subsystems.CS.VM.ExtraConfig = ""
+	vm.Subsystems.CS.VM.ExtraConfig = ""
 
-	err = resources.SsUpdater(context.Client.UpdateVM).
-		WithPublic(&context.VM.Subsystems.CS.VM).
+	err = resources.SsUpdater(csc.UpdateVM).
+		WithPublic(&vm.Subsystems.CS.VM).
 		WithDbFunc(dbFunc(vmID, "vm")).
 		Exec()
 
@@ -123,7 +127,7 @@ func DetachGPU(vmID string, afterState string) error {
 
 	// turn it on if it was on
 	if (status == "Running" && afterState == CsDetachGpuAfterStateRestore) || afterState == CsDetachGpuAfterStateOn {
-		err = context.Client.DoVmCommand(context.VM.Subsystems.CS.VM.ID, nil, "start")
+		err = csc.DoVmCommand(vm.Subsystems.CS.VM.ID, nil, "start")
 		if err != nil {
 			return makeError(err)
 		}
@@ -132,21 +136,29 @@ func DetachGPU(vmID string, afterState string) error {
 	return nil
 }
 
-func IsGpuAttachedCS(gpu *gpuModel.GPU) (bool, error) {
+func (c *Client) IsGpuAttached(id string) (bool, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if gpu %s:%s is attached to any cs vm. details: %w", gpu.Host, gpu.Data.Bus, err)
+		return fmt.Errorf("failed to check if gpu %s is attached to any cs vm. details: %w", id, err)
 	}
-
-	context, err := NewContextWithoutVM(gpu.Zone)
+	_, csc, _, err := c.Get(client.OptsOnlyClient())
 	if err != nil {
 		return false, makeError(err)
 	}
 
+	gpu, err := c.GPU(id, nil)
+	if err != nil {
+		return false, makeError(err)
+	}
+
+	if gpu == nil {
+		return false, nil
+	}
+
 	// this should be exposed through the subsystem api, but im too lazy to do it now
-	params := context.Client.CsClient.VirtualMachine.NewListVirtualMachinesParams()
+	params := csc.CsClient.VirtualMachine.NewListVirtualMachinesParams()
 	params.SetListall(true)
 
-	vms, err := context.Client.CsClient.VirtualMachine.ListVirtualMachines(params)
+	vms, err := csc.CsClient.VirtualMachine.ListVirtualMachines(params)
 	if err != nil {
 		return false, makeError(err)
 	}
@@ -163,4 +175,17 @@ func IsGpuAttachedCS(gpu *gpuModel.GPU) (bool, error) {
 	}
 
 	return false, nil
+}
+
+func (c *Client) GetRequiredHost(gpuID string) (*string, error) {
+	gpu, err := c.GPU(gpuID, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if gpu.Host == "" {
+		return nil, fmt.Errorf("no host found for gpu %s", gpu.ID)
+	}
+
+	return &gpu.Host, nil
 }

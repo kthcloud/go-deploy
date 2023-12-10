@@ -14,7 +14,17 @@ import (
 type BaseClient[parent any] struct {
 	p *parent
 
-	Context
+	*Context
+}
+
+func NewBaseClient[parent any](context *Context) BaseClient[parent] {
+	if context == nil {
+		context = &Context{
+			//deploymentStore:  make(map[string]*deploymentModel.Deployment),
+		}
+	}
+
+	return BaseClient[parent]{Context: context}
 }
 
 func (c *BaseClient[parent]) SetParent(p *parent) {
@@ -22,7 +32,10 @@ func (c *BaseClient[parent]) SetParent(p *parent) {
 }
 
 func (c *BaseClient[parent]) SetContext(context *Context) {
-	c.Context = *context
+	if context == nil {
+		context = &Context{}
+	}
+	c.Context = context
 }
 
 func (c *BaseClient[parent]) Deployment() *deploymentModel.Deployment {

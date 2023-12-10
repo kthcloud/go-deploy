@@ -24,6 +24,8 @@ func vmStatusUpdater(ctx context.Context) {
 				continue
 			}
 
+			vsc := vm_service.New()
+
 			for _, vm := range allVms {
 				code, message, err := fetchVmStatus(&vm)
 				if err != nil {
@@ -32,7 +34,7 @@ func vmStatusUpdater(ctx context.Context) {
 				}
 				_ = vmModel.New().SetWithBsonByID(vm.ID, bson.D{{"statusCode", code}, {"statusMessage", message}})
 
-				host, err := vm_service.GetHost(vm.ID)
+				host, err := vsc.GetHost(vm.ID)
 				if err != nil {
 					utils.PrettyPrintError(fmt.Errorf("error fetching vm host: %w", err))
 					continue

@@ -23,16 +23,3 @@ func CreateExtraConfig(gpu *gpuModel.GPU) string {
 func HasExtraConfig(vm *vmModel.VM) bool {
 	return vm.Subsystems.CS.VM.ExtraConfig != "" && vm.Subsystems.CS.VM.ExtraConfig != "none"
 }
-
-func GetRequiredHost(gpuID string) (*string, error) {
-	gpu, err := gpuModel.New().GetByID(gpuID)
-	if err != nil {
-		return nil, err
-	}
-
-	if gpu.Host == "" {
-		return nil, fmt.Errorf("no host found for gpu %s", gpu.ID)
-	}
-
-	return &gpu.Host, nil
-}

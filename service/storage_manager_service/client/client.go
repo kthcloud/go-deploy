@@ -14,7 +14,17 @@ import (
 type BaseClient[parent any] struct {
 	p *parent
 
-	Context
+	*Context
+}
+
+func NewBaseClient[parent any](context *Context) BaseClient[parent] {
+	if context == nil {
+		context = &Context{
+			//smStore:  make(map[string]*storageManagerModel.StorageManager),
+		}
+	}
+
+	return BaseClient[parent]{Context: context}
 }
 
 func (c *BaseClient[parent]) SetParent(p *parent) {
@@ -22,7 +32,11 @@ func (c *BaseClient[parent]) SetParent(p *parent) {
 }
 
 func (c *BaseClient[parent]) SetContext(context *Context) {
-	c.Context = *context
+	if context == nil {
+		context = &Context{}
+	}
+
+	c.Context = context
 }
 
 func (c *BaseClient[parent]) StorageManager() *storageManagerModel.StorageManager {
@@ -79,7 +93,7 @@ func (c *BaseClient[parent]) Zone() *configModels.DeploymentZone {
 
 func (c *BaseClient[parent]) Fetch() error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to fetch deployment in service client: %w", err)
+		return fmt.Errorf("failed to fetch sm in service client: %w", err)
 	}
 
 	var storageManager *storageManagerModel.StorageManager

@@ -27,9 +27,7 @@ type Client struct {
 func New(context *client.Context) *Client {
 	c := &Client{}
 	c.BaseClient.SetParent(c)
-	if context != nil {
-		c.BaseClient.SetContext(context)
-	}
+	c.BaseClient.SetContext(context)
 	return c
 }
 

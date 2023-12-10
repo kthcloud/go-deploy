@@ -134,10 +134,19 @@ func (client *Client) UpdateVM(public *models.VmPublic) (*models.VmPublic, error
 	}
 
 	if vm.ServiceOfferingID != public.ServiceOfferingID {
-		params := client.CsClient.VirtualMachine.NewChangeServiceForVirtualMachineParams(public.ID, public.ServiceOfferingID)
-		_, err = client.CsClient.VirtualMachine.ChangeServiceForVirtualMachine(params)
+		vmStatus, err := client.GetVmStatus(public.ID)
 		if err != nil {
 			return nil, makeError(err)
+		}
+
+		if vmStatus == "Stopped" {
+			params := client.CsClient.VirtualMachine.NewChangeServiceForVirtualMachineParams(public.ID, public.ServiceOfferingID)
+			_, err = client.CsClient.VirtualMachine.ChangeServiceForVirtualMachine(params)
+			if err != nil {
+				return nil, makeError(err)
+			}
+		} else {
+			log.Println("cs vm", public.ID, "is not stopped when updating service offering. skipping updating service offering")
 		}
 	}
 

@@ -1,12 +1,13 @@
 package k8s_service
 
 import (
-	"go-deploy/models/config"
-	storageManagerModel "go-deploy/models/sys/storage_manager"
+	"fmt"
+	configModels "go-deploy/models/config"
+	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/pkg/subsystems/k8s"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/resources"
-	"go-deploy/service/storage_manager_service/client"
+	"go-deploy/service/vm_service/client"
 	"go-deploy/utils/subsystemutils"
 )
 
@@ -30,76 +31,90 @@ func New(context *client.Context) *Client {
 	return c
 }
 
-// Get returns the deployment, client, and generator.
+// Get is a helper function returns resources that assists with interacting with the subsystem.
+// Essentially just collector the VM, client and generator.
 //
 // Depending on the options specified, some return values may be nil.
 // This is useful when you don't always need all the resources.
-//
-// The default option is OptsAll.
-func (c *Client) Get(opts *client.Opts) (*storageManagerModel.StorageManager, *k8s.Client, *resources.K8sGenerator, error) {
-	if opts == nil {
-		opts = client.OptsAll
-	}
+func (c *Client) Get(opts *client.Opts) (*vmModel.VM, *k8s.Client, *resources.K8sGenerator, error) {
+	var vm *vmModel.VM
+	var err error
 
-	var sm *storageManagerModel.StorageManager
-	if opts.StorageManager {
-		sm = c.StorageManager()
-		if sm == nil {
-			return nil, nil, nil, sErrors.DeploymentNotFoundErr
+	if opts.VM != "" {
+		vm, err = c.VM(opts.VM, nil)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+
+		if vm == nil {
+			return nil, nil, nil, sErrors.VmNotFoundErr
 		}
 	}
 
 	var kc *k8s.Client
 	if opts.Client {
-		kc = c.Client()
+		kc, err = c.GetOrCreateClient()
 		if kc == nil {
-			return nil, nil, nil, sErrors.DeploymentNotFoundErr
+			return nil, nil, nil, sErrors.VmNotFoundErr
 		}
 	}
 
 	var g *resources.K8sGenerator
 	if opts.Generator {
-		g = c.Generator()
+		g = c.Generator(vm)
 		if g == nil {
-			return nil, nil, nil, sErrors.DeploymentNotFoundErr
+			return nil, nil, nil, sErrors.VmNotFoundErr
 		}
 	}
 
-	return sm, kc, g, nil
+	return vm, kc, g, nil
 }
 
 // WithUserID sets the user id
-// Overwrites the base client's user id function
 // This is used to set the namespace
 func (c *Client) WithUserID(userID string) *Client {
-	kc := c.Client()
-	if kc != nil {
-		kc.Namespace = getNamespaceName(userID)
+	if c.client != nil {
+		c.client.Namespace = getNamespaceName(userID)
 	}
 
-	g := c.Generator()
-	if g != nil {
-		g = g.K8s(c.Client())
+	if c.generator != nil {
+		c.generator.K8s(c.Client())
 	}
 
-	c.BaseClient.WithUserID(userID)
+	c.UserID = userID
 
 	return c
 }
 
 // Client returns the K8s service client.
 //
-// If the client does not exist, it will be created.
+// This does not create a new client if it does not exist.
 func (c *Client) Client() *k8s.Client {
+	return c.client
+}
+
+// GetOrCreateClient returns the K8s service client.
+//
+// If the client does not exist, it will be created.
+func (c *Client) GetOrCreateClient() (*k8s.Client, error) {
 	if c.client == nil {
-		if !c.HasUserID() {
+		if c.UserID == "" {
 			panic("user id is empty")
 		}
 
-		c.client = withClient(c.Zone(), getNamespaceName(c.UserID()))
+		if c.DeploymentZone == nil {
+			panic("deployment zone is nil")
+		}
+
+		kc, err := withClient(c.DeploymentZone, getNamespaceName(c.UserID))
+		if err != nil {
+			return nil, err
+		}
+
+		c.client = kc
 	}
 
-	return c.client
+	return c.client, nil
 }
 
 // Generator returns the K8s generator.
@@ -107,16 +122,20 @@ func (c *Client) Client() *k8s.Client {
 // If the generator does not exist, it will be created.
 // If creating a new generator, the current deployment and zone will be used.
 // Set the deployment and zone before calling this function by using WithDeployment and WithZone.
-func (c *Client) Generator() *resources.K8sGenerator {
+func (c *Client) Generator(vm *vmModel.VM) *resources.K8sGenerator {
 	if c.generator == nil {
 		pg := resources.PublicGenerator()
 
-		if c.StorageManager() != nil {
-			pg.WithStorageManager(c.StorageManager())
+		if vm != nil {
+			pg.WithVM(vm)
 		}
 
-		if c.Zone() != nil {
-			pg.WithDeploymentZone(c.Zone())
+		if c.Zone != nil {
+			pg.WithVmZone(c.Zone)
+		}
+
+		if c.DeploymentZone != nil {
+			pg.WithDeploymentZone(c.DeploymentZone)
 		}
 
 		c.generator = pg.K8s(c.Client())
@@ -131,7 +150,11 @@ func getNamespaceName(userID string) string {
 }
 
 // withClient returns a new K8s service client.
-func withClient(zone *config.DeploymentZone, namespace string) *k8s.Client {
-	c, _ := k8s.New(zone.Client, namespace)
-	return c
+func withClient(zone *configModels.DeploymentZone, namespace string) (*k8s.Client, error) {
+	k8sClient, err := k8s.New(zone.Client, namespace)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create k8s client. details: %w", err)
+	}
+
+	return k8sClient, nil
 }

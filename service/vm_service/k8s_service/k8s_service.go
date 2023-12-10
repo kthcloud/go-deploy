@@ -6,28 +6,24 @@ import (
 	vmModels "go-deploy/models/sys/vm"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/service/constants"
+	sErrors "go-deploy/service/errors"
 	"go-deploy/service/resources"
-	"go-deploy/service/vm_service/base"
+	"go-deploy/service/vm_service/client"
 	"golang.org/x/exp/slices"
 	"log"
 )
 
-func Create(id string, params *vmModels.CreateParams) error {
+func (c *Client) Create(id string, params *vmModels.CreateParams) error {
 	log.Println("setting up k8s for", params.Name)
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to setup k8s for deployment %s. details: %w", params.Name, err)
 	}
 
-	context, err := NewContext(id)
+	_, kc, g, err := c.Get(client.OptsAll(id))
 	if err != nil {
-		if errors.Is(err, base.VmDeletedErr) {
-			log.Println("vm not found when creating k8s for deployment", id, ". assuming it was deleted")
-			return nil
-		}
-
-		if errors.Is(err, base.DeploymentZoneNotFoundErr) {
-			log.Println("deployment zone not found for deployment")
+		if errors.Is(err, sErrors.VmNotFoundErr) {
+			log.Println("vm not found when setting up k8s for", params.Name, ". assuming it was deleted")
 			return nil
 		}
 
@@ -35,9 +31,9 @@ func Create(id string, params *vmModels.CreateParams) error {
 	}
 
 	// Namespace
-	namespace := context.Generator.Namespace()
+	namespace := g.Namespace()
 	if namespace != nil {
-		err = resources.SsCreator(context.Client.CreateNamespace).
+		err = resources.SsCreator(kc.CreateNamespace).
 			WithDbFunc(dbFunc(id, "namespace")).
 			WithPublic(namespace).
 			Exec()
@@ -47,8 +43,8 @@ func Create(id string, params *vmModels.CreateParams) error {
 	}
 
 	// Deployment
-	for _, deploymentPublic := range context.Generator.Deployments() {
-		err = resources.SsCreator(context.Client.CreateDeployment).
+	for _, deploymentPublic := range g.Deployments() {
+		err = resources.SsCreator(kc.CreateDeployment).
 			WithDbFunc(dbFunc(id, "deploymentMap."+deploymentPublic.Name)).
 			WithPublic(&deploymentPublic).
 			Exec()
@@ -59,8 +55,8 @@ func Create(id string, params *vmModels.CreateParams) error {
 	}
 
 	// Service
-	for _, servicePublic := range context.Generator.Services() {
-		err = resources.SsCreator(context.Client.CreateService).
+	for _, servicePublic := range g.Services() {
+		err = resources.SsCreator(kc.CreateService).
 			WithDbFunc(dbFunc(id, "serviceMap."+servicePublic.Name)).
 			WithPublic(&servicePublic).
 			Exec()
@@ -71,8 +67,8 @@ func Create(id string, params *vmModels.CreateParams) error {
 	}
 
 	// Ingress
-	for _, ingressPublic := range context.Generator.Ingresses() {
-		err = resources.SsCreator(context.Client.CreateIngress).
+	for _, ingressPublic := range g.Ingresses() {
+		err = resources.SsCreator(kc.CreateIngress).
 			WithDbFunc(dbFunc(id, "ingressMap."+ingressPublic.Name)).
 			WithPublic(&ingressPublic).
 			Exec()
@@ -83,8 +79,8 @@ func Create(id string, params *vmModels.CreateParams) error {
 	}
 
 	// Secret
-	for _, secretPublic := range context.Generator.Secrets() {
-		err = resources.SsCreator(context.Client.CreateSecret).
+	for _, secretPublic := range g.Secrets() {
+		err = resources.SsCreator(kc.CreateSecret).
 			WithDbFunc(dbFunc(id, "secretMap."+secretPublic.Name)).
 			WithPublic(&secretPublic).
 			Exec()
@@ -97,39 +93,17 @@ func Create(id string, params *vmModels.CreateParams) error {
 	return nil
 }
 
-func EnsureOwner(id, oldOwnerID string) error {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to update k8s owner for vm %s. details: %w", id, err)
-	}
-
-	// since ownership is determined by the namespace, and the namespace owns everything,
-	// we need to recreate everything
-
-	// delete everything in the old namespace
-	err := Delete(id, oldOwnerID)
-	if err != nil {
-		return makeError(err)
-	}
-
-	// create everything in the new namespace
-	err = Repair(id)
-	if err != nil {
-		return makeError(err)
-	}
-
-	return nil
-}
-
-func Delete(id string, namespace ...string) error {
+func (c *Client) Delete(id string) error {
 	log.Println("deleting k8s for", id)
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete k8s for deployment %s. details: %w", id, err)
 	}
 
-	context, err := NewContext(id, namespace...)
+	vm, kc, _, err := c.Get(client.OptsNoGenerator(id))
 	if err != nil {
-		if errors.Is(err, base.DeploymentDeletedErr) {
+		if errors.Is(err, sErrors.VmNotFoundErr) {
+			log.Println("vm not found when deleting k8s for", id, ". assuming it was deleted")
 			return nil
 		}
 
@@ -137,36 +111,36 @@ func Delete(id string, namespace ...string) error {
 	}
 
 	// Ingress
-	for mapName, ingress := range context.VM.Subsystems.K8s.IngressMap {
-		err = resources.SsDeleter(context.Client.DeleteIngress).
+	for mapName, ingress := range vm.Subsystems.K8s.IngressMap {
+		err = resources.SsDeleter(kc.DeleteIngress).
 			WithResourceID(ingress.ID).
 			WithDbFunc(dbFunc(id, "ingressMap."+mapName)).
 			Exec()
 	}
 
 	// Service
-	for mapName, k8sService := range context.VM.Subsystems.K8s.ServiceMap {
-		err = resources.SsDeleter(context.Client.DeleteService).
+	for mapName, k8sService := range vm.Subsystems.K8s.ServiceMap {
+		err = resources.SsDeleter(kc.DeleteService).
 			WithResourceID(k8sService.ID).
 			WithDbFunc(dbFunc(id, "serviceMap."+mapName)).
 			Exec()
 	}
 
 	// Deployment
-	for mapName, k8sDeployment := range context.VM.Subsystems.K8s.DeploymentMap {
-		err = resources.SsDeleter(context.Client.DeleteDeployment).
+	for mapName, k8sDeployment := range vm.Subsystems.K8s.DeploymentMap {
+		err = resources.SsDeleter(kc.DeleteDeployment).
 			WithResourceID(k8sDeployment.ID).
 			WithDbFunc(dbFunc(id, "deploymentMap."+mapName)).
 			Exec()
 	}
 
 	// Secret
-	for mapName, secret := range context.VM.Subsystems.K8s.SecretMap {
+	for mapName, secret := range vm.Subsystems.K8s.SecretMap {
 		var deleteFunc func(id string) error
 		if mapName == constants.WildcardCertSecretName {
 			deleteFunc = func(string) error { return nil }
 		} else {
-			deleteFunc = context.Client.DeleteSecret
+			deleteFunc = kc.DeleteSecret
 		}
 
 		err = resources.SsDeleter(deleteFunc).
@@ -177,33 +151,34 @@ func Delete(id string, namespace ...string) error {
 
 	// Namespace
 	err = resources.SsDeleter(func(string) error { return nil }).
-		WithResourceID(context.VM.Subsystems.K8s.Namespace.ID).
+		WithResourceID(vm.Subsystems.K8s.Namespace.ID).
 		WithDbFunc(dbFunc(id, "namespace")).
 		Exec()
 
 	return nil
 }
 
-func Repair(id string) error {
+func (c *Client) Repair(id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to repair k8s %s. details: %w", id, err)
 	}
 
-	context, err := NewContext(id)
+	vm, kc, g, err := c.Get(client.OptsAll(id))
 	if err != nil {
-		if errors.Is(err, base.DeploymentDeletedErr) {
+		if errors.Is(err, sErrors.VmNotFoundErr) {
+			log.Println("vm not found when deleting k8s for", id, ". assuming it was deleted")
 			return nil
 		}
 
 		return makeError(err)
 	}
 
-	namespace := context.Generator.Namespace()
+	namespace := g.Namespace()
 	if namespace != nil {
 		err = resources.SsRepairer(
-			context.Client.ReadNamespace,
-			context.Client.CreateNamespace,
-			context.Client.UpdateNamespace,
+			kc.ReadNamespace,
+			kc.CreateNamespace,
+			kc.UpdateNamespace,
 			func(string) error { return nil },
 		).WithResourceID(namespace.ID).WithDbFunc(dbFunc(id, "namespace")).WithGenPublic(namespace).Exec()
 
@@ -212,11 +187,11 @@ func Repair(id string) error {
 		}
 	}
 
-	deployments := context.Generator.Deployments()
-	for mapName, k8sDeployment := range context.VM.Subsystems.K8s.DeploymentMap {
+	deployments := g.Deployments()
+	for mapName, k8sDeployment := range vm.Subsystems.K8s.DeploymentMap {
 		idx := slices.IndexFunc(deployments, func(d k8sModels.DeploymentPublic) bool { return d.Name == mapName })
 		if idx == -1 {
-			err = resources.SsDeleter(context.Client.DeleteDeployment).
+			err = resources.SsDeleter(kc.DeleteDeployment).
 				WithResourceID(k8sDeployment.ID).
 				WithDbFunc(dbFunc(id, "deploymentMap."+mapName)).
 				Exec()
@@ -228,10 +203,10 @@ func Repair(id string) error {
 	}
 	for _, public := range deployments {
 		err = resources.SsRepairer(
-			context.Client.ReadDeployment,
-			context.Client.CreateDeployment,
-			context.Client.UpdateDeployment,
-			context.Client.DeleteDeployment,
+			kc.ReadDeployment,
+			kc.CreateDeployment,
+			kc.UpdateDeployment,
+			kc.DeleteDeployment,
 		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "deploymentMap."+public.Name)).WithGenPublic(&public).Exec()
 
 		if err != nil {
@@ -239,11 +214,11 @@ func Repair(id string) error {
 		}
 	}
 
-	services := context.Generator.Services()
-	for mapName, k8sService := range context.VM.Subsystems.K8s.ServiceMap {
+	services := g.Services()
+	for mapName, k8sService := range vm.Subsystems.K8s.ServiceMap {
 		idx := slices.IndexFunc(services, func(s k8sModels.ServicePublic) bool { return s.Name == mapName })
 		if idx == -1 {
-			err = resources.SsDeleter(context.Client.DeleteService).
+			err = resources.SsDeleter(kc.DeleteService).
 				WithResourceID(k8sService.ID).
 				WithDbFunc(dbFunc(id, "serviceMap."+mapName)).
 				Exec()
@@ -255,10 +230,10 @@ func Repair(id string) error {
 	}
 	for _, public := range services {
 		err = resources.SsRepairer(
-			context.Client.ReadService,
-			context.Client.CreateService,
-			context.Client.UpdateService,
-			context.Client.DeleteService,
+			kc.ReadService,
+			kc.CreateService,
+			kc.UpdateService,
+			kc.DeleteService,
 		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "serviceMap."+public.Name)).WithGenPublic(&public).Exec()
 
 		if err != nil {
@@ -266,11 +241,11 @@ func Repair(id string) error {
 		}
 	}
 
-	ingresses := context.Generator.Ingresses()
-	for mapName, ingress := range context.VM.Subsystems.K8s.IngressMap {
+	ingresses := g.Ingresses()
+	for mapName, ingress := range vm.Subsystems.K8s.IngressMap {
 		idx := slices.IndexFunc(ingresses, func(i k8sModels.IngressPublic) bool { return i.Name == mapName })
 		if idx == -1 {
-			err = resources.SsDeleter(context.Client.DeleteIngress).
+			err = resources.SsDeleter(kc.DeleteIngress).
 				WithResourceID(ingress.ID).
 				WithDbFunc(dbFunc(id, "ingressMap."+mapName)).
 				Exec()
@@ -282,18 +257,18 @@ func Repair(id string) error {
 	}
 	for _, public := range ingresses {
 		err = resources.SsRepairer(
-			context.Client.ReadIngress,
-			context.Client.CreateIngress,
-			context.Client.UpdateIngress,
-			context.Client.DeleteIngress,
+			kc.ReadIngress,
+			kc.CreateIngress,
+			kc.UpdateIngress,
+			kc.DeleteIngress,
 		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "ingressMap."+public.Name)).WithGenPublic(&public).Exec()
 	}
 
-	secrets := context.Generator.Secrets()
-	for mapName, secret := range context.VM.Subsystems.K8s.SecretMap {
+	secrets := g.Secrets()
+	for mapName, secret := range vm.Subsystems.K8s.SecretMap {
 		idx := slices.IndexFunc(secrets, func(s k8sModels.SecretPublic) bool { return s.Name == mapName })
 		if idx == -1 {
-			err = resources.SsDeleter(context.Client.DeleteSecret).
+			err = resources.SsDeleter(kc.DeleteSecret).
 				WithResourceID(secret.ID).
 				WithDbFunc(dbFunc(id, "secretMap."+mapName)).
 				Exec()
@@ -305,15 +280,40 @@ func Repair(id string) error {
 	}
 	for _, public := range secrets {
 		err = resources.SsRepairer(
-			context.Client.ReadSecret,
-			context.Client.CreateSecret,
-			context.Client.UpdateSecret,
-			context.Client.DeleteSecret,
+			kc.ReadSecret,
+			kc.CreateSecret,
+			kc.UpdateSecret,
+			kc.DeleteSecret,
 		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "secretMap."+public.Name)).WithGenPublic(&public).Exec()
 
 		if err != nil {
 			return makeError(err)
 		}
+	}
+
+	return nil
+}
+
+func (c *Client) EnsureOwner(id, oldOwnerID string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to update k8s owner for vm %s. details: %w", id, err)
+	}
+
+	newUserID := c.UserID
+
+	// since ownership is determined by the namespace, and the namespace owns everything,
+	// we need to recreate everything
+
+	// delete everything in the old namespace
+	err := c.WithUserID(oldOwnerID).Delete(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	// create everything in the new namespace
+	err = c.WithUserID(newUserID).Repair(id)
+	if err != nil {
+		return makeError(err)
 	}
 
 	return nil

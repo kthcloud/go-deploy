@@ -23,12 +23,10 @@ type Client struct {
 // If context is not nil, it will be used to create a new BaseClient.
 // Otherwise, an empty context will be created.
 func New(context *client.Context) *Client {
-	c := &Client{}
-	c.BaseClient.SetParent(c)
-	if context != nil {
-		c.BaseClient.SetContext(context)
+	c := &Client{
+		BaseClient: client.NewBaseClient[Client](context),
 	}
-
+	c.BaseClient.SetParent(c)
 	return c
 }
 

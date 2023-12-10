@@ -6,7 +6,9 @@ import (
 	"go-deploy/models/dto/query"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
+	"go-deploy/service"
 	"go-deploy/service/vm_service"
+	"go-deploy/service/vm_service/client"
 )
 
 // ListGPUs
@@ -37,7 +39,13 @@ func ListGPUs(c *gin.Context) {
 		return
 	}
 
-	gpus, err := vm_service.ListGPUs(requestQuery.OnlyShowAvailable, auth)
+	gpus, err := vm_service.New().WithAuth(auth).ListGPUs(&client.ListGpuOptions{
+		Pagination: &service.Pagination{
+			Page:     requestQuery.Page,
+			PageSize: requestQuery.PageSize,
+		},
+		AvailableGPUs: requestQuery.OnlyShowAvailable,
+	})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return

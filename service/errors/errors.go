@@ -49,6 +49,27 @@ var (
 	// StorageManagerAlreadyExistsErr is returned when the storage manager already exists for user.
 	StorageManagerAlreadyExistsErr = fmt.Errorf("storage manager already exists for user")
 
+	// VmNotFoundErr is returned when the vm is not found.
+	// This is most likely caused by a race-condition between a some resource call and a deletion call.
+	VmNotFoundErr = fmt.Errorf("vm not found")
+
+	// VmNotCreatedErr is returned when the vm is not created.
+	VmNotCreatedErr = fmt.Errorf("vm not created")
+
+	// GpuNotFoundErr is returned when the gpu is not found.
+	GpuNotFoundErr = fmt.Errorf("gpu not found")
+
+	// GpuAlreadyAttachedErr is returned when the gpu is already attached to another VM.
+	GpuAlreadyAttachedErr = fmt.Errorf("gpu already attached")
+
+	// VmTooLargeErr is returned when the VM is too large to be started on a specific host.
+	// Something that is required when using GPUs.
+	VmTooLargeErr = fmt.Errorf("vm too large")
+
+	// HostNotAvailableErr is returned when the host is not available.
+	// This is usually caused by the host being in maintenance or disabled mode.
+	HostNotAvailableErr = fmt.Errorf("host not available")
+
 	// ZoneNotFoundErr is returned when the zone is not found.
 	// This could be caused by stale data in the database.
 	ZoneNotFoundErr = fmt.Errorf("zone not found")

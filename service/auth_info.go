@@ -56,7 +56,12 @@ func (authInfo *AuthInfo) GetEffectiveRole() *roleModel.Role {
 	// roles are assumed to be given in order of priority, weak -> strong
 	// so, we can safely return the last one
 	if len(authInfo.Roles) == 0 {
-		return config.Config.GetRole("default")
+		defaultRole := config.Config.GetRole("default")
+		if defaultRole == nil {
+			panic("default role not found")
+		}
+
+		return defaultRole
 	}
 
 	return &authInfo.Roles[len(authInfo.Roles)-1]

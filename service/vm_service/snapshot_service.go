@@ -2,18 +2,67 @@ package vm_service
 
 import (
 	"fmt"
-	"go-deploy/models/dto/body"
-	roleModel "go-deploy/models/sys/role"
 	vmModel "go-deploy/models/sys/vm"
-	"go-deploy/service"
-	"go-deploy/service/errors"
+	"go-deploy/service/vm_service/client"
 	"go-deploy/service/vm_service/cs_service"
 	"log"
 	"sort"
 )
 
-func ListSnapshotsByVM(vmID string) ([]vmModel.Snapshot, error) {
-	vm, err := vmModel.New().GetByID(vmID)
+func (c *Client) GetSnapshot(vmID string, id string, opts *client.GetSnapshotOptions) (*vmModel.Snapshot, error) {
+	vm, err := c.Get(vmID, &client.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	if vm == nil {
+		return nil, nil
+	}
+
+	snapshot := vm.Subsystems.CS.GetSnapshotByID(id)
+	if snapshot == nil {
+		return nil, nil
+	}
+
+	return &vmModel.Snapshot{
+		ID:         snapshot.ID,
+		VmID:       vmID,
+		Name:       snapshot.Name,
+		ParentName: snapshot.ParentName,
+		CreatedAt:  snapshot.CreatedAt,
+		State:      snapshot.State,
+		Current:    snapshot.Current,
+	}, nil
+}
+
+func (c *Client) GetSnapshotByName(vmID string, name string, opts *client.GetSnapshotOptions) (*vmModel.Snapshot, error) {
+	vm, err := c.Get(vmID, &client.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	if vm == nil {
+		return nil, nil
+	}
+
+	snapshot := vm.Subsystems.CS.GetSnapshotByName(name)
+	if snapshot == nil {
+		return nil, nil
+	}
+
+	return &vmModel.Snapshot{
+		ID:         snapshot.ID,
+		VmID:       vmID,
+		Name:       snapshot.Name,
+		ParentName: snapshot.ParentName,
+		CreatedAt:  snapshot.CreatedAt,
+		State:      snapshot.State,
+		Current:    snapshot.Current,
+	}, nil
+}
+
+func (c *Client) ListSnapshots(vmID string, opts *client.ListSnapshotOptions) ([]vmModel.Snapshot, error) {
+	vm, err := c.Get(vmID, &client.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -42,64 +91,12 @@ func ListSnapshotsByVM(vmID string) ([]vmModel.Snapshot, error) {
 	return snapshots, nil
 }
 
-func GetSnapshotByName(vmID, snapshotName string) (*vmModel.Snapshot, error) {
-	vm, err := vmModel.New().GetByID(vmID)
-	if err != nil {
-		return nil, err
-	}
-
-	if vm == nil {
-		return nil, nil
-	}
-
-	snapshot := vm.Subsystems.CS.GetSnapshotByName(snapshotName)
-	if snapshot == nil {
-		return nil, nil
-	}
-
-	return &vmModel.Snapshot{
-		ID:         snapshot.ID,
-		VmID:       vmID,
-		Name:       snapshot.Name,
-		ParentName: snapshot.ParentName,
-		CreatedAt:  snapshot.CreatedAt,
-		State:      snapshot.State,
-		Current:    snapshot.Current,
-	}, nil
-}
-
-func GetSnapshotByID(vmID, snapshotID string) (*vmModel.Snapshot, error) {
-	vm, err := vmModel.New().GetByID(vmID)
-	if err != nil {
-		return nil, err
-	}
-
-	if vm == nil {
-		return nil, nil
-	}
-
-	snapshot := vm.Subsystems.CS.GetSnapshotByID(snapshotID)
-	if snapshot == nil {
-		return nil, nil
-	}
-
-	return &vmModel.Snapshot{
-		ID:         snapshot.ID,
-		VmID:       vmID,
-		Name:       snapshot.Name,
-		ParentName: snapshot.ParentName,
-		CreatedAt:  snapshot.CreatedAt,
-		State:      snapshot.State,
-		Current:    snapshot.Current,
-	}, nil
-}
-
-func CreateSystemSnapshot(vmID string, params *vmModel.CreateSnapshotParams) error {
+func (c *Client) CreateSnapshot(vmID string, opts *client.CreateSnapshotOptions) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create snapshot for vm %s. details: %w", vmID, err)
 	}
 
-	vm, err := vmModel.New().GetByID(vmID)
+	vm, err := c.Get(vmID, &client.GetOptions{})
 	if err != nil {
 		return makeError(err)
 	}
@@ -112,38 +109,19 @@ func CreateSystemSnapshot(vmID string, params *vmModel.CreateSnapshotParams) err
 	if !vm.Ready() {
 		return fmt.Errorf("vm %s not ready", vmID)
 	}
-
-	err = cs_service.CreateSnapshot(vm.ID, params)
-	if err != nil {
-		return makeError(err)
+	var params *vmModel.CreateSnapshotParams
+	if opts.System != nil {
+		params = opts.System
+	} else if opts.User != nil {
+		params.FromDTO(opts.User)
 	}
 
-	return nil
-}
-
-func CreateUserSnapshot(vmID string, dtoCreateSnapshot *body.VmSnapshotCreate) error {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to create snapshot for vm %s. details: %w", vmID, err)
-	}
-
-	params := &vmModel.CreateSnapshotParams{}
-	params.FromDTO(dtoCreateSnapshot)
-
-	vm, err := vmModel.New().GetByID(vmID)
-	if err != nil {
-		return makeError(err)
-	}
-
-	if vm == nil {
-		log.Println("vm", vmID, "not found when creating snapshot. assuming it was deleted")
+	if params == nil {
+		log.Println("no snapshot type specified when creating snapshot for vm", vmID, ". did you forget to specify the type?")
 		return nil
 	}
 
-	if !vm.Ready() {
-		return fmt.Errorf("vm %s not ready", vmID)
-	}
-
-	err = cs_service.CreateSnapshot(vm.ID, params)
+	err = cs_service.New(c.Context).CreateSnapshot(vm.ID, params)
 	if err != nil {
 		return makeError(err)
 	}
@@ -151,12 +129,12 @@ func CreateUserSnapshot(vmID string, dtoCreateSnapshot *body.VmSnapshotCreate) e
 	return nil
 }
 
-func DeleteSnapshot(vmID, snapshotID string) error {
+func (c *Client) DeleteSnapshot(vmID, snapshotID string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete snapshot %s from vm %s. details: %w", snapshotID, vmID, err)
 	}
 
-	vm, err := vmModel.New().GetByID(vmID)
+	vm, err := c.Get(vmID, &client.GetOptions{})
 	if err != nil {
 		return makeError(err)
 	}
@@ -167,10 +145,10 @@ func DeleteSnapshot(vmID, snapshotID string) error {
 	}
 
 	if !vm.Ready() {
-		return fmt.Errorf("vm %s not ready", vmID)
+		return makeError(fmt.Errorf("vm not ready"))
 	}
 
-	err = cs_service.DeleteSnapshot(vm.ID, snapshotID)
+	err = cs_service.New(c.Context).DeleteSnapshot(vm.ID, snapshotID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -178,36 +156,15 @@ func DeleteSnapshot(vmID, snapshotID string) error {
 	return nil
 }
 
-func ApplySnapshot(id, snapshotID string) error {
+func (c *Client) ApplySnapshot(id, snapshotID string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to apply snapshot %s to vm %s. details: %w", snapshotID, id, err)
 	}
 
 	log.Println("applying snapshot", snapshotID, "to vm", id)
-	err := cs_service.ApplySnapshot(id, snapshotID)
+	err := cs_service.New(c.Context).ApplySnapshot(id, snapshotID)
 	if err != nil {
 		return makeError(err)
-	}
-
-	return nil
-}
-
-func CheckQuotaCreateSnapshot(userID string, quota *roleModel.Quotas, auth *service.AuthInfo) error {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to check quota. details: %w", err)
-	}
-
-	if auth.IsAdmin {
-		return nil
-	}
-
-	usage, err := GetUsageByUserID(userID)
-	if err != nil {
-		return makeError(err)
-	}
-
-	if usage.Snapshots >= quota.Snapshots {
-		return errors.NewQuotaExceededError(fmt.Sprintf("Snapshot count quota exceeded. Current: %d, Quota: %d", usage.Snapshots, quota.Snapshots))
 	}
 
 	return nil
