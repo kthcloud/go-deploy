@@ -40,6 +40,7 @@ func (t *Team) ToDTO(getMember func(*Member) *body.TeamMember, getResourceName f
 func (params *CreateParams) FromDTO(teamCreateDTO *body.TeamCreate, getResourceFunc func(string) *Resource, getMemberFunc func(*body.TeamMemberCreate) *Member) {
 	params.Name = teamCreateDTO.Name
 	params.MemberMap = make(map[string]Member)
+	params.Description = teamCreateDTO.Description
 
 	for _, resourceDTO := range teamCreateDTO.Resources {
 		if resource := getResourceFunc(resourceDTO); resource != nil {
