@@ -694,7 +694,7 @@ func CheckQuotaCreate(requestBody *body.DeploymentCreate, userID string, quota *
 	return nil
 }
 
-func CheckQuotaUpdate(requestBody *body.DeploymentUpdate, userID string, quota *roleModel.Quotas, auth *service.AuthInfo) error {
+func CheckQuotaUpdate(id string, requestBody *body.DeploymentUpdate, userID string, quota *roleModel.Quotas, auth *service.AuthInfo) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check quota. details: %w", err)
 	}
@@ -708,15 +708,22 @@ func CheckQuotaUpdate(requestBody *body.DeploymentUpdate, userID string, quota *
 		return makeError(err)
 	}
 
-	add := 1
-	if requestBody.Replicas != nil {
-		add = *requestBody.Replicas
+	deployment, err := deploymentModel.New().GetByID(id)
+	if err != nil {
+		return makeError(err)
 	}
 
-	totalCount := usage.Count + add
+	totalBefore := usage.Count
 
-	if totalCount > quota.Deployments {
-		return service.NewQuotaExceededError(fmt.Sprintf("Deployment quota exceeded. Current: %d, Quota: %d", totalCount, quota.Deployments))
+	add := 0
+	if requestBody.Replicas != nil {
+		add = *requestBody.Replicas - deployment.GetMainApp().Replicas
+	}
+
+	totalAfter := totalBefore + add
+
+	if totalAfter > quota.Deployments {
+		return service.NewQuotaExceededError(fmt.Sprintf("Deployment quota exceeded. Current: %d, Quota: %d", totalAfter, quota.Deployments))
 	}
 
 	return nil

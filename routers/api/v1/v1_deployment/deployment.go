@@ -462,7 +462,7 @@ func Update(c *gin.Context) {
 		}
 	}
 
-	err = deployment_service.CheckQuotaUpdate(&requestBody, auth.UserID, &auth.GetEffectiveRole().Quotas, auth)
+	err = deployment_service.CheckQuotaUpdate(requestURI.DeploymentID, &requestBody, auth.UserID, &auth.GetEffectiveRole().Quotas, auth)
 	if err != nil {
 		var quotaExceededErr service.QuotaExceededError
 		if errors.As(err, &quotaExceededErr) {
