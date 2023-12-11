@@ -2,7 +2,7 @@ package cs_service
 
 import (
 	configModels "go-deploy/models/config"
-	"go-deploy/models/sys/vm"
+	vmModels "go-deploy/models/sys/vm"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/cs"
 	sErrors "go-deploy/service/errors"
@@ -35,24 +35,30 @@ func New(context *client.Context) *Client {
 //
 // Depending on the options specified, some return values may be nil.
 // This is useful when you don't always need all the resources.
-func (c *Client) Get(opts *client.Opts) (*vm.VM, *cs.Client, *resources.CsGenerator, error) {
-	var v *vm.VM
+func (c *Client) Get(opts *client.Opts) (*vmModels.VM, *cs.Client, *resources.CsGenerator, error) {
+	var vm *vmModels.VM
 	var err error
 
 	if opts.VM != "" {
-		v, err = c.VM(opts.VM, nil)
+		vm, err = c.VM(opts.VM, nil)
 		if err != nil {
 			return nil, nil, nil, err
 		}
 
-		if v == nil {
+		if vm == nil {
 			return nil, nil, nil, sErrors.VmNotFoundErr
 		}
 	}
 
 	var cc *cs.Client
 	if opts.Client {
-		cc, err = c.GetOrCreateClient()
+		// If creating a client and a VM, use the VM's zone.
+		var zone *string
+		if vm != nil {
+			zone = &vm.Zone
+		}
+
+		cc, err = c.GetOrCreateClient(zone)
 		if cc == nil {
 			return nil, nil, nil, sErrors.VmNotFoundErr
 		}
@@ -60,13 +66,13 @@ func (c *Client) Get(opts *client.Opts) (*vm.VM, *cs.Client, *resources.CsGenera
 
 	var g *resources.CsGenerator
 	if opts.Generator {
-		g = c.Generator(v)
+		g = c.Generator(vm)
 		if g == nil {
 			return nil, nil, nil, sErrors.VmNotFoundErr
 		}
 	}
 
-	return v, cc, g, nil
+	return vm, cc, g, nil
 }
 
 // Client returns the GitHub service client.
@@ -79,13 +85,22 @@ func (c *Client) Client() *cs.Client {
 // GetOrCreateClient returns the GitHub service client.
 //
 // If the client does not exist, it will be created.
-func (c *Client) GetOrCreateClient() (*cs.Client, error) {
+func (c *Client) GetOrCreateClient(zoneName *string) (*cs.Client, error) {
 	if c.client == nil {
-		if c.Zone == nil {
+
+		// Zone specified in options takes precedence.
+		var zone *configModels.VmZone
+		if c.Zone != nil {
+			zone = c.Zone
+		} else if zoneName != nil {
+			zone = config.Config.VM.GetZone(*zoneName)
+		}
+		
+		if zone == nil {
 			panic("zone is nil")
 		}
 
-		csc, err := withCsClient(c.Zone)
+		csc, err := withCsClient(zone)
 		if err != nil {
 			return nil, err
 		}
@@ -99,7 +114,7 @@ func (c *Client) GetOrCreateClient() (*cs.Client, error) {
 // Generator returns the CS generator.
 //
 // If the generator does not exist, it will be created.
-func (c *Client) Generator(vm *vm.VM) *resources.CsGenerator {
+func (c *Client) Generator(vm *vmModels.VM) *resources.CsGenerator {
 	if c.generator == nil {
 		pg := resources.PublicGenerator()
 

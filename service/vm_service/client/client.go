@@ -72,6 +72,16 @@ func (c *BaseClient[parent]) WithZone(zone string) *parent {
 	return c.p
 }
 
+func (c *BaseClient[parent]) WithDeploymentZone(zone string) *parent {
+	c.DeploymentZone = config.Config.Deployment.GetZone(zone)
+	return c.p
+}
+
+func (c *BaseClient[parent]) WithUserID(userID string) *parent {
+	c.UserID = userID
+	return c.p
+}
+
 func (c *BaseClient[parent]) Refresh(id string) (*vmModel.VM, error) {
 	return c.fetchVM(id, "", nil)
 }
@@ -117,10 +127,6 @@ func (c *BaseClient[parent]) fetchVM(id, name string, vmc *vmModel.Client) (*vmM
 		}
 
 	}
-
-	c.Zone = zone
-	c.DeploymentZone = deploymentZone
-	c.UserID = vm.OwnerID
 
 	c.storeVM(vm)
 	return vm, nil
