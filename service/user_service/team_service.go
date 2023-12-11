@@ -265,7 +265,7 @@ func DeleteTeamAuth(id string, auth *service.AuthInfo) error {
 		return nil
 	}
 
-	if !auth.IsAdmin && !team.HasMember(auth.UserID) {
+	if !auth.IsAdmin && team.OwnerID != auth.UserID {
 		return nil
 	}
 
