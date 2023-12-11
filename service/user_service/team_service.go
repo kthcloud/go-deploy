@@ -25,7 +25,7 @@ var NotInvitedErr = fmt.Errorf("not invited")
 
 func CreateTeam(id, ownerID string, dtoCreateTeam *body.TeamCreate, auth *service.AuthInfo) (*teamModels.Team, error) {
 	params := &teamModels.CreateParams{}
-	params.FromDTO(dtoCreateTeam,
+	params.FromDTO(dtoCreateTeam, ownerID,
 		func(resourceID string) *teamModels.Resource { return getResourceIfAccessible(resourceID, auth) },
 		func(memberDTO *body.TeamMemberCreate) *teamModels.Member {
 			member := &teamModels.Member{

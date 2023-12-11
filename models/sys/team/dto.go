@@ -3,6 +3,7 @@ package team
 import (
 	"go-deploy/models/dto/body"
 	"go-deploy/utils"
+	"time"
 )
 
 func (t *Team) ToDTO(getMember func(*Member) *body.TeamMember, getResourceName func(*Resource) *string) body.TeamRead {
@@ -37,7 +38,7 @@ func (t *Team) ToDTO(getMember func(*Member) *body.TeamMember, getResourceName f
 	}
 }
 
-func (params *CreateParams) FromDTO(teamCreateDTO *body.TeamCreate, getResourceFunc func(string) *Resource, getMemberFunc func(*body.TeamMemberCreate) *Member) {
+func (params *CreateParams) FromDTO(teamCreateDTO *body.TeamCreate, ownerID string, getResourceFunc func(string) *Resource, getMemberFunc func(*body.TeamMemberCreate) *Member) {
 	params.Name = teamCreateDTO.Name
 	params.MemberMap = make(map[string]Member)
 	params.Description = teamCreateDTO.Description
@@ -46,6 +47,16 @@ func (params *CreateParams) FromDTO(teamCreateDTO *body.TeamCreate, getResourceF
 		if resource := getResourceFunc(resourceDTO); resource != nil {
 			params.ResourceMap[resource.ID] = *resource
 		}
+	}
+
+	now := time.Now()
+
+	params.MemberMap[ownerID] = Member{
+		ID:           ownerID,
+		TeamRole:     MemberRoleAdmin,
+		AddedAt:      now,
+		JoinedAt:     now,
+		MemberStatus: MemberStatusJoined,
 	}
 
 	for _, memberDTO := range teamCreateDTO.Members {
