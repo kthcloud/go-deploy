@@ -1,6 +1,7 @@
 package client
 
 import (
+	configModels "go-deploy/models/config"
 	"go-deploy/models/dto/body"
 	roleModel "go-deploy/models/sys/role"
 	vmModel "go-deploy/models/sys/vm"
@@ -8,53 +9,21 @@ import (
 )
 
 // Opts is used to specify which resources to get.
-// For example, if you want to get only the VM, you can use OptsOnlyDeployment.
-// If you want to get only the client, you can use OptsOnlyClient.
-// If you want to get both the VM and the client, you can use OptsAll.
 type Opts struct {
-	VM        string
+	VmID      string
 	Client    bool
 	Generator bool
+
+	ExtraOpts
 }
 
-func OptsAll(id string) *Opts {
-	return &Opts{
-		VM:        id,
-		Client:    true,
-		Generator: true,
-	}
-}
-
-func OptsNoVM() *Opts {
-	return &Opts{
-		VM:        "",
-		Client:    true,
-		Generator: true,
-	}
-}
-
-func OptsNoClient(vmID string) *Opts {
-	return &Opts{
-		VM:        vmID,
-		Client:    false,
-		Generator: true,
-	}
-}
-
-func OptsNoGenerator(vmID string) *Opts {
-	return &Opts{
-		VM:        vmID,
-		Client:    true,
-		Generator: false,
-	}
-}
-
-func OptsOnlyClient() *Opts {
-	return &Opts{
-		VM:        "",
-		Client:    true,
-		Generator: false,
-	}
+// ExtraOpts is used to specify the extra options when getting a VM.
+// This is useful when overwriting the implicit options,
+// such as where user ID is by default taken from VM.OwnerID.
+type ExtraOpts struct {
+	UserID         string
+	Zone           *configModels.VmZone
+	DeploymentZone *configModels.DeploymentZone
 }
 
 // GetOptions is used to specify the options when getting a VM.

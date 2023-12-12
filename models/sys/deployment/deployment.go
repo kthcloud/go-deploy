@@ -38,7 +38,7 @@ type Deployment struct {
 func (deployment *Deployment) GetMainApp() *App {
 	app, ok := deployment.Apps["main"]
 	if !ok {
-		return &App{}
+		panic(fmt.Sprintf("deployment %s does not have a main app", deployment.Name))
 	}
 	return &app
 }

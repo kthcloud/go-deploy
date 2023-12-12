@@ -20,7 +20,7 @@ func (c *Client) Create(id string, params *vmModels.CreateParams) error {
 		return fmt.Errorf("failed to setup k8s for deployment %s. details: %w", params.Name, err)
 	}
 
-	_, kc, g, err := c.Get(client.OptsAll(id))
+	_, kc, g, err := c.Get(OptsAll(id))
 	if err != nil {
 		if errors.Is(err, sErrors.VmNotFoundErr) {
 			log.Println("vm not found when setting up k8s for", params.Name, ". assuming it was deleted")
@@ -93,14 +93,19 @@ func (c *Client) Create(id string, params *vmModels.CreateParams) error {
 	return nil
 }
 
-func (c *Client) Delete(id string) error {
+func (c *Client) Delete(id string, overwriteUserID ...string) error {
 	log.Println("deleting k8s for", id)
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete k8s for deployment %s. details: %w", id, err)
 	}
 
-	vm, kc, _, err := c.Get(client.OptsNoGenerator(id))
+	var userID string
+	if len(overwriteUserID) > 0 {
+		userID = overwriteUserID[0]
+	}
+
+	vm, kc, _, err := c.Get(OptsNoGenerator(id, client.ExtraOpts{UserID: userID}))
 	if err != nil {
 		if errors.Is(err, sErrors.VmNotFoundErr) {
 			log.Println("vm not found when deleting k8s for", id, ". assuming it was deleted")
@@ -163,7 +168,7 @@ func (c *Client) Repair(id string) error {
 		return fmt.Errorf("failed to repair k8s %s. details: %w", id, err)
 	}
 
-	vm, kc, g, err := c.Get(client.OptsAll(id))
+	vm, kc, g, err := c.Get(OptsAll(id))
 	if err != nil {
 		if errors.Is(err, sErrors.VmNotFoundErr) {
 			log.Println("vm not found when deleting k8s for", id, ". assuming it was deleted")
@@ -304,14 +309,14 @@ func (c *Client) EnsureOwner(id, oldOwnerID string) error {
 
 	// Delete everything in the old namespace
 	// Pass in the old owner ID to use the old namespace
-	err := c.WithUserID(oldOwnerID).Delete(id)
+	err := c.Delete(id)
 	if err != nil {
 		return makeError(err)
 	}
 
 	// Create everything in the new namespace
 	// We reset the namespace to use the VM's namespace by passing an empty string
-	err = c.WithUserID("").Repair(id)
+	err = c.Repair(id)
 	if err != nil {
 		return makeError(err)
 	}

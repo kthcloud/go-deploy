@@ -10,13 +10,46 @@ import (
 	"go-deploy/service/vm_service/client"
 )
 
+func OptsAll(vmID string, overwriteOps ...client.ExtraOpts) *client.Opts {
+	var ow client.ExtraOpts
+	if len(overwriteOps) > 0 {
+		ow = overwriteOps[0]
+	}
+
+	return &client.Opts{
+		VmID:      vmID,
+		Client:    true,
+		Generator: true,
+		ExtraOpts: ow,
+	}
+}
+
+func OptsOnlyClient(zone *configModels.VmZone) *client.Opts {
+	return &client.Opts{
+		Client: true,
+		ExtraOpts: client.ExtraOpts{
+			Zone: zone,
+		},
+	}
+}
+
+func OptsNoGenerator(vmID string, extraOpts ...client.ExtraOpts) *client.Opts {
+	var eo client.ExtraOpts
+	if len(extraOpts) > 0 {
+		eo = extraOpts[0]
+	}
+
+	return &client.Opts{
+		VmID:      vmID,
+		Client:    true,
+		ExtraOpts: eo,
+	}
+}
+
 // Client is the client for the Harbor service.
 // It contains a BaseClient, which is used to lazy-load and cache data.
 type Client struct {
 	client.BaseClient[Client]
-
-	client    *cs.Client
-	generator *resources.CsGenerator
 }
 
 // New creates a new Client.
@@ -39,8 +72,8 @@ func (c *Client) Get(opts *client.Opts) (*vmModels.VM, *cs.Client, *resources.Cs
 	var vm *vmModels.VM
 	var err error
 
-	if opts.VM != "" {
-		vm, err = c.VM(opts.VM, nil)
+	if opts.VmID != "" {
+		vm, err = c.VM(opts.VmID, nil)
 		if err != nil {
 			return nil, nil, nil, err
 		}
@@ -53,12 +86,12 @@ func (c *Client) Get(opts *client.Opts) (*vmModels.VM, *cs.Client, *resources.Cs
 	var cc *cs.Client
 	if opts.Client {
 		// If creating a client and a VM, use the VM's zone.
-		var zone *string
+		var zone *configModels.VmZone
 		if vm != nil {
-			zone = &vm.Zone
+			zone = config.Config.VM.GetZone(vm.Zone)
 		}
 
-		cc, err = c.GetOrCreateClient(zone)
+		cc, err = c.Client(zone)
 		if cc == nil {
 			return nil, nil, nil, sErrors.VmNotFoundErr
 		}
@@ -66,7 +99,14 @@ func (c *Client) Get(opts *client.Opts) (*vmModels.VM, *cs.Client, *resources.Cs
 
 	var g *resources.CsGenerator
 	if opts.Generator {
-		g = c.Generator(vm)
+		var zone *configModels.VmZone
+		if opts.ExtraOpts.Zone != nil {
+			zone = opts.ExtraOpts.Zone
+		} else if vm != nil {
+			zone = config.Config.VM.GetZone(vm.Zone)
+		}
+
+		g = c.Generator(vm, zone)
 		if g == nil {
 			return nil, nil, nil, sErrors.VmNotFoundErr
 		}
@@ -75,61 +115,30 @@ func (c *Client) Get(opts *client.Opts) (*vmModels.VM, *cs.Client, *resources.Cs
 	return vm, cc, g, nil
 }
 
-// Client returns the GitHub service client.
+// Client returns the CloudStack service client.
 //
-// This does not create a new client if it does not exist.
-func (c *Client) Client() *cs.Client {
-	return c.client
-}
-
-// GetOrCreateClient returns the GitHub service client.
-//
-// If the client does not exist, it will be created.
-func (c *Client) GetOrCreateClient(zoneName *string) (*cs.Client, error) {
-	if c.client == nil {
-
-		// Zone specified in options takes precedence.
-		var zone *configModels.VmZone
-		if c.Zone != nil {
-			zone = c.Zone
-		} else if zoneName != nil {
-			zone = config.Config.VM.GetZone(*zoneName)
-		}
-		
-		if zone == nil {
-			panic("zone is nil")
-		}
-
-		csc, err := withCsClient(zone)
-		if err != nil {
-			return nil, err
-		}
-
-		c.client = csc
+// If WithZone is set, it will try to use those values.
+// Otherwise, it will use the zone parameter.
+// If both are nil, it will panic.
+func (c *Client) Client(zone *configModels.VmZone) (*cs.Client, error) {
+	if zone == nil {
+		panic("zone is nil")
 	}
 
-	return c.client, nil
+	return withCsClient(zone)
 }
 
 // Generator returns the CS generator.
-//
-// If the generator does not exist, it will be created.
-func (c *Client) Generator(vm *vmModels.VM) *resources.CsGenerator {
-	if c.generator == nil {
-		pg := resources.PublicGenerator()
-
-		if vm != nil {
-			pg.WithVM(vm)
-		}
-
-		if c.Zone != nil {
-			pg.WithVmZone(c.Zone)
-		}
-
-		c.generator = pg.CS()
+func (c *Client) Generator(vm *vmModels.VM, zone *configModels.VmZone) *resources.CsGenerator {
+	if vm == nil {
+		panic("vm is nil")
 	}
 
-	return c.generator
+	if zone == nil {
+		panic("zone is nil")
+	}
+
+	return resources.PublicGenerator().WithVM(vm).WithVmZone(zone).CS()
 }
 
 // withClient returns a new service client.

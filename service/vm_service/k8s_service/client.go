@@ -3,7 +3,7 @@ package k8s_service
 import (
 	"fmt"
 	configModels "go-deploy/models/config"
-	vmModel "go-deploy/models/sys/vm"
+	vmModels "go-deploy/models/sys/vm"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/k8s"
 	sErrors "go-deploy/service/errors"
@@ -11,6 +11,33 @@ import (
 	"go-deploy/service/vm_service/client"
 	"go-deploy/utils/subsystemutils"
 )
+
+func OptsAll(vmID string, overwriteOps ...client.ExtraOpts) *client.Opts {
+	var ow client.ExtraOpts
+	if len(overwriteOps) > 0 {
+		ow = overwriteOps[0]
+	}
+
+	return &client.Opts{
+		VmID:      vmID,
+		Client:    true,
+		Generator: true,
+		ExtraOpts: ow,
+	}
+}
+
+func OptsNoGenerator(vmID string, extraOpts ...client.ExtraOpts) *client.Opts {
+	var eo client.ExtraOpts
+	if len(extraOpts) > 0 {
+		eo = extraOpts[0]
+	}
+
+	return &client.Opts{
+		VmID:      vmID,
+		Client:    true,
+		ExtraOpts: eo,
+	}
+}
 
 // Client is the client for the Harbor service.
 // It contains a BaseClient, which is used to lazy-load and cache data.
@@ -29,50 +56,70 @@ func New(context *client.Context) *Client {
 	return c
 }
 
-// Get is a helper function returns resources that assists with interacting with the subsystem.
-// Essentially just collector the VM, client and generator.
+// Get returns the deployment, client, and generator.
 //
 // Depending on the options specified, some return values may be nil.
 // This is useful when you don't always need all the resources.
-func (c *Client) Get(opts *client.Opts) (*vmModel.VM, *k8s.Client, *resources.K8sGenerator, error) {
-	var vm *vmModel.VM
+func (c *Client) Get(opts *client.Opts) (*vmModels.VM, *k8s.Client, *resources.K8sGenerator, error) {
+	var vm *vmModels.VM
+	var kc *k8s.Client
+	var g *resources.K8sGenerator
 	var err error
 
-	if opts.VM != "" {
-		vm, err = c.VM(opts.VM, nil)
+	if opts.VmID != "" {
+		vm, err = c.VM(opts.VmID, nil)
 		if err != nil {
 			return nil, nil, nil, err
 		}
 
 		if vm == nil {
-			return nil, nil, nil, sErrors.VmNotFoundErr
+			return nil, nil, nil, sErrors.DeploymentNotFoundErr
 		}
 	}
 
-	var kc *k8s.Client
 	if opts.Client {
+		var userID string
+		if opts.ExtraOpts.UserID != "" {
+			userID = opts.ExtraOpts.UserID
+		} else {
+			userID = vm.OwnerID
+		}
+
 		var zone *configModels.DeploymentZone
-		var userID *string
-
-		if vm != nil {
-			if vm.DeploymentZone != nil {
-				zone = config.Config.Deployment.GetZone(*vm.DeploymentZone)
-			}
-
-			userID = &vm.OwnerID
+		if opts.ExtraOpts.Zone != nil {
+			zone = opts.ExtraOpts.DeploymentZone
+		} else if vm != nil && vm.DeploymentZone != nil {
+			zone = config.Config.Deployment.GetZone(*vm.DeploymentZone)
 		}
 
 		kc, err = c.Client(userID, zone)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+
 		if kc == nil {
-			return nil, nil, nil, sErrors.VmNotFoundErr
+			return nil, nil, nil, sErrors.DeploymentNotFoundErr
 		}
 	}
 
-	var g *resources.K8sGenerator
 	if opts.Generator {
-		g = c.Generator(vm, kc)
+		var zone *configModels.VmZone
+		if opts.ExtraOpts.Zone != nil {
+			zone = opts.ExtraOpts.Zone
+		} else if vm != nil {
+			zone = config.Config.VM.GetZone(vm.Zone)
+		}
+
+		var deploymentZone *configModels.DeploymentZone
+		if opts.ExtraOpts.DeploymentZone != nil {
+			deploymentZone = opts.ExtraOpts.DeploymentZone
+		} else if vm != nil && vm.DeploymentZone != nil {
+			deploymentZone = config.Config.Deployment.GetZone(*vm.DeploymentZone)
+		}
+
+		g = c.Generator(vm, kc, zone, deploymentZone)
 		if g == nil {
-			return nil, nil, nil, sErrors.VmNotFoundErr
+			return nil, nil, nil, sErrors.DeploymentNotFoundErr
 		}
 	}
 
@@ -80,83 +127,29 @@ func (c *Client) Get(opts *client.Opts) (*vmModel.VM, *k8s.Client, *resources.K8
 }
 
 // Client returns the K8s service client.
-//
-// If userID or zone is nil, it will try to use the values from the options.
-// If none of them are set, it will panic.
-func (c *Client) Client(userID *string, zone *configModels.DeploymentZone) (*k8s.Client, error) {
-	// User ID specified in options takes precedence.
-	appliedUserID := ""
-	if c.UserID != "" {
-		appliedUserID = c.UserID
-	} else if userID != nil {
-		appliedUserID = *userID
-	}
-
-	if appliedUserID == "" {
-		panic("user id is empty")
-	}
-
-	// Zone specified in options takes precedence.
-	var appliedZone *configModels.DeploymentZone
-	if c.DeploymentZone != nil {
-		appliedZone = c.DeploymentZone
-	} else if zone != nil {
-		appliedZone = zone
-	}
-
-	if appliedZone == nil {
-		panic("deployment zone is nil")
-	}
-
-	return withClient(appliedZone, getNamespaceName(appliedUserID))
-}
-
-// Generator returns a K8s generator.
-func (c *Client) Generator(vm *vmModel.VM, client *k8s.Client) *resources.K8sGenerator {
-	pg := resources.PublicGenerator()
-
-	if vm == nil {
-		panic("vm is nil")
-	}
-
-	var vmZone *configModels.VmZone
-	var deploymentZone *configModels.DeploymentZone
-	var userID string
-
-	// User ID specified in options takes precedence.
-	if c.UserID != "" {
-		userID = c.UserID
-	} else {
-		userID = vm.OwnerID
-	}
-
+func (c *Client) Client(userID string, zone *configModels.DeploymentZone) (*k8s.Client, error) {
 	if userID == "" {
 		panic("user id is empty")
 	}
 
-	// Zone specified in options takes precedence.
-	if c.Zone != nil {
-		vmZone = c.Zone
-	} else {
-		vmZone = config.Config.VM.GetZone(vm.Zone)
+	return withClient(zone, getNamespaceName(userID))
+}
+
+// Generator returns the K8s generator.
+func (c *Client) Generator(vm *vmModels.VM, client *k8s.Client, zone *configModels.VmZone, deploymentZone *configModels.DeploymentZone) *resources.K8sGenerator {
+	if vm == nil {
+		panic("vm is nil")
 	}
 
-	if vmZone == nil {
-		panic("vm zone is nil")
+	if client == nil {
+		panic("client is nil")
 	}
 
-	// Deployment zone specified in options takes precedence.
-	if c.DeploymentZone != nil {
-		deploymentZone = c.DeploymentZone
-	} else if vm.DeploymentZone != nil {
-		deploymentZone = config.Config.Deployment.GetZone(*vm.DeploymentZone)
+	if zone == nil {
+		panic("zone is nil")
 	}
 
-	if deploymentZone == nil {
-		panic("deployment zone is nil")
-	}
-
-	return pg.WithVmZone(c.Zone).WithDeploymentZone(c.DeploymentZone).K8s(client)
+	return resources.PublicGenerator().WithVM(vm).WithVmZone(zone).WithDeploymentZone(deploymentZone).K8s(client)
 }
 
 // getNamespaceName returns the namespace name for the user.

@@ -677,7 +677,7 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *ser
 	// do this check to give a nice error to the user if the gpu cannot be attached
 	// otherwise it will be silently ignored
 	if len(gpus) == 1 {
-		if err := vsc.CheckSuitableHost(vm.ID, gpus[0].Host); err != nil {
+		if err := vsc.CheckSuitableHost(vm.ID, gpus[0].Host, gpus[0].Zone); err != nil {
 			switch {
 			case errors.Is(err, sErrors.HostNotAvailableErr):
 				context.ServerUnavailableError(fmt.Errorf("host not available when attaching gpu to vm %s. details: %w", vm.ID, err), v1.HostNotAvailableErr)

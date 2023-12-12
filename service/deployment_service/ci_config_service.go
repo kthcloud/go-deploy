@@ -15,8 +15,8 @@ import (
 //
 // It returns an error if the deployment is not found, or if the deployment is not ready.
 // It returns nil if the deployment is not a custom deployment.
-func (c *Client) GetCiConfig() (*body.CiConfig, error) {
-	deployment, err := c.Get(&client.GetOptions{Shared: true})
+func (c *Client) GetCiConfig(id string) (*body.CiConfig, error) {
+	deployment, err := c.Get(id, &client.GetOptions{Shared: true})
 	if err != nil {
 		return nil, err
 	}

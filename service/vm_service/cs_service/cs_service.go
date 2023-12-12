@@ -3,6 +3,7 @@ package cs_service
 import (
 	"errors"
 	"fmt"
+	configModels "go-deploy/models/config"
 	gpuModel "go-deploy/models/sys/gpu"
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/pkg/config"
@@ -11,7 +12,6 @@ import (
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/resources"
-	"go-deploy/service/vm_service/client"
 	"golang.org/x/exp/slices"
 	"log"
 )
@@ -23,13 +23,18 @@ func (c *Client) Create(id string, params *vmModel.CreateParams) error {
 		return fmt.Errorf("failed to setup cs for vm %s. details: %w", params.Name, err)
 	}
 
-	vm, csc, g, err := c.Get(client.OptsAll(id))
+	vm, csc, g, err := c.Get(OptsAll(id))
 	if err != nil {
 		if errors.Is(err, sErrors.VmNotFoundErr) {
 			return nil
 		}
 
 		return makeError(err)
+	}
+
+	zone := config.Config.VM.GetZone(vm.Zone)
+	if zone == nil {
+		return makeError(sErrors.ZoneNotFoundErr)
 	}
 
 	csc.WithUserSshPublicKey(params.SshPublicKey)
@@ -71,8 +76,8 @@ func (c *Client) Create(id string, params *vmModel.CreateParams) error {
 	for _, pfrPublic := range g.PFRs() {
 		if pfrPublic.PublicPort == 0 {
 			pfrPublic.PublicPort, err = csc.GetFreePort(
-				c.Zone.PortRange.Start,
-				c.Zone.PortRange.End,
+				zone.PortRange.Start,
+				zone.PortRange.End,
 			)
 
 			if err != nil {
@@ -100,7 +105,7 @@ func (c *Client) Delete(id string) error {
 		return fmt.Errorf("failed to delete cs for vm %s. details: %w", id, err)
 	}
 
-	vm, csc, _, err := c.Get(client.OptsNoGenerator(id))
+	vm, csc, _, err := c.Get(OptsNoGenerator(id))
 	if err != nil {
 		if errors.Is(err, sErrors.VmNotFoundErr) {
 			return nil
@@ -142,13 +147,18 @@ func (c *Client) Update(id string, updateParams *vmModel.UpdateParams) error {
 		return fmt.Errorf("failed to update cs for vm %s. details: %w", id, err)
 	}
 
-	vm, csc, g, err := c.Get(client.OptsAll(id))
+	vm, csc, g, err := c.Get(OptsAll(id))
 	if err != nil {
 		if errors.Is(err, sErrors.VmNotFoundErr) {
 			return nil
 		}
 
 		return makeError(err)
+	}
+
+	zone := config.Config.VM.GetZone(vm.Zone)
+	if zone == nil {
+		return makeError(sErrors.ZoneNotFoundErr)
 	}
 
 	// port-forwarding rule
@@ -168,8 +178,8 @@ func (c *Client) Update(id string, updateParams *vmModel.UpdateParams) error {
 			if _, ok := vm.Subsystems.CS.PortForwardingRuleMap[pfrPublic.Name]; !ok {
 				if pfrPublic.PublicPort == 0 {
 					pfrPublic.PublicPort, err = csc.GetFreePort(
-						c.Zone.PortRange.Start,
-						c.Zone.PortRange.End,
+						zone.PortRange.Start,
+						zone.PortRange.End,
 					)
 
 					if err != nil {
@@ -299,7 +309,7 @@ func (c *Client) Repair(id string) error {
 		return fmt.Errorf("failed to repair cs %s. details: %w", id, err)
 	}
 
-	vm, csc, g, err := c.Get(client.OptsAll(id))
+	vm, csc, g, err := c.Get(OptsAll(id))
 	if err != nil {
 		if errors.Is(err, sErrors.VmNotFoundErr) {
 			return nil
@@ -399,12 +409,13 @@ func (c *Client) Repair(id string) error {
 	return nil
 }
 
-func (c *Client) DoCommand(csVmID string, gpuID *string, command string) error {
+// DoCommand executes a command on the vm
+func (c *Client) DoCommand(id, csVmID string, gpuID *string, command string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to execute command %s for cs vm %s. details: %w", command, csVmID, err)
 	}
 
-	_, csc, _, err := c.Get(client.OptsOnlyClient())
+	_, csc, _, err := c.Get(OptsNoGenerator(id))
 	if err != nil {
 		if errors.Is(err, sErrors.VmNotFoundErr) {
 			return nil
@@ -430,14 +441,12 @@ func (c *Client) DoCommand(csVmID string, gpuID *string, command string) error {
 }
 
 // CheckSuitableHost checks if the host is in the correct state to start a vm
-//
-// Zone is assumed to be set prior to calling this method. Either by having a VM being fetched, or using WithZone
-func (c *Client) CheckSuitableHost(csVmID, hostName string) error {
+func (c *Client) CheckSuitableHost(id, csVmID, hostName string, zone *configModels.VmZone) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check if cs vm %s can be started on host %s. details: %w", csVmID, hostName, err)
 	}
 
-	_, csc, _, err := c.Get(client.OptsOnlyClient())
+	_, csc, _, err := c.Get(OptsNoGenerator(id))
 	if err != nil {
 		if errors.Is(err, sErrors.VmNotFoundErr) {
 			return nil
@@ -455,7 +464,7 @@ func (c *Client) CheckSuitableHost(csVmID, hostName string) error {
 		return sErrors.VmTooLargeErr
 	}
 
-	err = c.CheckHostState(hostName)
+	err = c.CheckHostState(hostName, zone)
 	if err != nil {
 		if errors.Is(err, sErrors.HostNotAvailableErr) {
 			return sErrors.VmTooLargeErr
@@ -472,7 +481,7 @@ func (c *Client) GetHostByVM(vmID string) (*csModels.HostPublic, error) {
 		return fmt.Errorf("failed to get host for vm %s. details: %w", vmID, err)
 	}
 
-	vm, csc, _, err := c.Get(client.OptsNoGenerator(vmID))
+	vm, csc, _, err := c.Get(OptsNoGenerator(vmID))
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -485,12 +494,12 @@ func (c *Client) GetHostByVM(vmID string) (*csModels.HostPublic, error) {
 	return host, nil
 }
 
-func (c *Client) GetHostByName(hostName string) (*csModels.HostPublic, error) {
+func (c *Client) GetHostByName(hostName string, zone *configModels.VmZone) (*csModels.HostPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get host %s. details: %w", hostName, err)
 	}
 
-	_, csc, _, err := c.Get(client.OptsOnlyClient())
+	_, csc, _, err := c.Get(OptsOnlyClient(zone))
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -504,14 +513,12 @@ func (c *Client) GetHostByName(hostName string) (*csModels.HostPublic, error) {
 }
 
 // CheckHostState checks if the host is in the correct state to start a vm
-//
-// Zone is assumed to be set prior to calling this method. Either by having a VM being fetched, or using WithZone
-func (c *Client) CheckHostState(hostName string) error {
+func (c *Client) CheckHostState(hostName string, zone *configModels.VmZone) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check if host %s is in correct state. details: %w", hostName, err)
 	}
 
-	_, csc, _, err := c.Get(client.OptsOnlyClient())
+	_, csc, _, err := c.Get(OptsOnlyClient(zone))
 	if err != nil {
 		return makeError(err)
 	}
@@ -528,12 +535,12 @@ func (c *Client) CheckHostState(hostName string) error {
 	return nil
 }
 
-func (c *Client) GetConfiguration() (*csModels.ConfigurationPublic, error) {
+func (c *Client) GetConfiguration(zone *configModels.VmZone) (*csModels.ConfigurationPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get configuration. details: %w", err)
 	}
 
-	_, csc, _, err := c.Get(client.OptsOnlyClient())
+	_, csc, _, err := c.Get(OptsOnlyClient(zone))
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -547,7 +554,7 @@ func (c *Client) GetConfiguration() (*csModels.ConfigurationPublic, error) {
 }
 
 func (c *Client) stopVmIfRunning(id string) (func(), error) {
-	vm, csc, _, err := c.Get(client.OptsNoGenerator(id))
+	vm, csc, _, err := c.Get(OptsNoGenerator(id))
 	if err != nil {
 		if errors.Is(err, sErrors.VmNotFoundErr) {
 			return nil, nil
@@ -576,14 +583,14 @@ func (c *Client) stopVmIfRunning(id string) (func(), error) {
 			if gpuID := vm.GetGpuID(); gpuID != nil {
 				requiredHost, err = c.GetRequiredHost(*gpuID)
 				if err != nil {
-					log.Println("failed to get required host for vm", vm.Name, "in zone", c.Zone.Name, ". details:", err)
+					log.Println("failed to get required host for vm", vm.Name, ". details:", err)
 					return
 				}
 			}
 
 			err = csc.DoVmCommand(vm.Subsystems.CS.VM.ID, requiredHost, commands.Start)
 			if err != nil {
-				log.Println("failed to start vm", vm.Name, "in zone", c.Zone.Name, ". details:", err)
+				log.Println("failed to start vm", vm.Name, ". details:", err)
 				return
 			}
 		}

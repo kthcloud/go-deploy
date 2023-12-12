@@ -38,7 +38,7 @@ func CleanUpOldTests() {
 			panic(err)
 		}
 
-		err = deployment_service.New().WithID(deployment.ID).Delete()
+		err = deployment_service.New().Delete(deployment.ID)
 		if err != nil {
 			if !errors.Is(err, dErrors.DeploymentNotFoundErr) {
 				panic(err)

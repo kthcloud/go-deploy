@@ -8,7 +8,6 @@ import (
 	csModels "go-deploy/pkg/subsystems/cs/models"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
-	"go-deploy/service/vm_service/client"
 	"log"
 )
 
@@ -26,7 +25,7 @@ func (c *Client) CreateSnapshot(vmID string, params *vmModel.CreateSnapshotParam
 		return fmt.Errorf("failed to create snapshot for cs vm %s. details: %w", vmID, err)
 	}
 
-	vm, csc, _, err := c.Get(client.OptsNoGenerator(vmID))
+	vm, csc, _, err := c.Get(OptsNoGenerator(vmID))
 	if err != nil {
 		if errors.Is(err, sErrors.VmNotFoundErr) {
 			return nil
@@ -78,7 +77,7 @@ func (c *Client) CreateSnapshot(vmID string, params *vmModel.CreateSnapshotParam
 	}
 
 	if !params.UserCreated {
-		// Fetch to see what state the snapshot is in, in order to delete the bad ones
+		// fetch to see what state the snapshot is in, in order to delete the bad ones
 		snapshot, err := csc.ReadSnapshot(snapshotID)
 		if err != nil {
 			_ = csc.DeleteSnapshot(snapshotID)
@@ -117,7 +116,7 @@ func (c *Client) DeleteSnapshot(vmID, snapshotID string) error {
 		return fmt.Errorf("failed to delete snapshot %s for vm %s. details: %w", snapshotID, vmID, err)
 	}
 
-	_, csc, _, err := c.Get(client.OptsOnlyClient())
+	_, csc, _, err := c.Get(OptsNoGenerator(vmID))
 	if err != nil {
 		if errors.Is(err, sErrors.VmNotFoundErr) {
 			return nil
@@ -141,7 +140,7 @@ func (c *Client) ApplySnapshot(vmID, snapshotID string) error {
 		return fmt.Errorf("failed to apply snapshot %s for vm %s. details: %w", snapshotID, vmID, err)
 	}
 
-	vm, csc, _, err := c.Get(client.OptsNoGenerator(vmID))
+	vm, csc, _, err := c.Get(OptsNoGenerator(vmID))
 	if err != nil {
 		if errors.Is(err, sErrors.VmNotFoundErr) {
 			return nil

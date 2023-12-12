@@ -58,7 +58,7 @@ func (c *Client) Get(id string, opts *client.GetOptions) (*vmModel.VM, error) {
 		vClient.RestrictToOwner(effectiveUserID)
 	}
 
-	return c.VM(id, nil)
+	return c.VM(id, vClient)
 }
 
 // List lists existing deployments.
@@ -90,7 +90,7 @@ func (c *Client) List(opts *client.ListOptions) ([]vmModel.VM, error) {
 		vClient.RestrictToOwner(effectiveUserID)
 	}
 
-	resources, err := vClient.List()
+	resources, err := c.VMs(vClient)
 	if err != nil {
 		return nil, err
 	}
@@ -497,11 +497,11 @@ func (c *Client) DoCommand(id, command string) {
 
 		csID := vm.Subsystems.CS.VM.ID
 		if csID == "" {
-			log.Println("cannot execute any command when cloudstack vm is not set up")
+			log.Println("cs vm not setup when executing command", command, "for vm", id, ". assuming it was deleted")
 			return
 		}
 
-		err = cs_service.New(c.Context).DoCommand(csID, vm.GetGpuID(), command)
+		err = cs_service.New(c.Context).DoCommand(vm.ID, csID, vm.GetGpuID(), command)
 		if err != nil {
 			utils.PrettyPrintError(err)
 			return
@@ -791,6 +791,11 @@ func (c *Client) GetHost(vmID string) (*vmModel.Host, error) {
 		return nil, nil
 	}
 
+	zone := config.Config.VM.GetZone(vm.Zone)
+	if zone == nil {
+		return nil, makeError(sErrors.ZoneNotFoundErr)
+	}
+
 	cc := cs_service.New(c.Context)
 
 	host, err := cc.GetHostByVM(vmID)
@@ -817,7 +822,7 @@ func (c *Client) GetHost(vmID string) (*vmModel.Host, error) {
 		}
 
 		if hostName != nil {
-			host, err = cc.GetHostByName(*hostName)
+			host, err = cc.GetHostByName(*hostName, zone)
 			if err != nil {
 				return nil, makeError(err)
 			}
@@ -839,14 +844,19 @@ type CloudStackHostCapabilities struct {
 	RamUsed       int
 }
 
-func GetCloudStackHostCapabilities(hostname string, zone string) (*CloudStackHostCapabilities, error) {
+func GetCloudStackHostCapabilities(hostName string, zoneName string) (*CloudStackHostCapabilities, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get host capabilities. details: %w", err)
 	}
 
-	cc := cs_service.New(nil).WithZone(zone)
+	cc := cs_service.New(nil)
 
-	host, err := cc.GetHostByName(hostname)
+	zone := config.Config.VM.GetZone(zoneName)
+	if zone == nil {
+		return nil, makeError(sErrors.ZoneNotFoundErr)
+	}
+
+	host, err := cc.GetHostByName(hostName, zone)
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -855,7 +865,7 @@ func GetCloudStackHostCapabilities(hostname string, zone string) (*CloudStackHos
 		return nil, nil
 	}
 
-	configuration, err := cc.GetConfiguration()
+	configuration, err := cc.GetConfiguration(zone)
 	if err != nil {
 		return nil, makeError(err)
 	}

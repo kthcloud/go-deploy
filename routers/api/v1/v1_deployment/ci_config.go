@@ -37,7 +37,7 @@ func GetCiConfig(c *gin.Context) {
 		return
 	}
 
-	config, err := deployment_service.New().WithAuth(auth).WithID(requestURI.DeploymentID).GetCiConfig()
+	config, err := deployment_service.New().WithAuth(auth).GetCiConfig(requestURI.DeploymentID)
 	if err != nil {
 		if errors.Is(err, dErrors.DeploymentNotFoundErr) {
 			context.NotFound("Deployment not found")

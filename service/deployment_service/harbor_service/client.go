@@ -1,7 +1,8 @@
 package harbor_service
 
 import (
-	"go-deploy/models/sys/deployment"
+	configModels "go-deploy/models/config"
+	deploymentModels "go-deploy/models/sys/deployment"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/harbor"
 	"go-deploy/service/deployment_service/client"
@@ -10,13 +11,36 @@ import (
 	"go-deploy/utils/subsystemutils"
 )
 
+func OptsAll(deploymentID string, overwriteOps ...client.ExtraOpts) *client.Opts {
+	var eo client.ExtraOpts
+	if len(overwriteOps) > 0 {
+		eo = overwriteOps[0]
+	}
+
+	return &client.Opts{
+		DeploymentID: deploymentID,
+		Client:       true,
+		Generator:    true,
+		ExtraOpts:    eo,
+	}
+}
+
+func OptsNoGenerator(deploymentID string, overwriteOps ...client.ExtraOpts) *client.Opts {
+	var eo client.ExtraOpts
+	if len(overwriteOps) > 0 {
+		eo = overwriteOps[0]
+	}
+	return &client.Opts{
+		DeploymentID: deploymentID,
+		Client:       true,
+		ExtraOpts:    eo,
+	}
+}
+
 // Client is the client for the Harbor service.
 // It contains a BaseClient, which is used to lazy-load and cache data.
 type Client struct {
 	client.BaseClient[Client]
-
-	client    *harbor.Client
-	generator *resources.HarborGenerator
 }
 
 // New creates a new Client.
@@ -34,106 +58,85 @@ func New(context *client.Context) *Client {
 //
 // Depending on the options specified, some return values may be nil.
 // This is useful when you don't always need all the resources.
-func (c *Client) Get(opts *client.Opts) (*deployment.Deployment, *harbor.Client, *resources.HarborGenerator, error) {
-	var d *deployment.Deployment
-	if opts.Deployment {
-		d = c.Deployment()
+func (c *Client) Get(opts *client.Opts) (*deploymentModels.Deployment, *harbor.Client, *resources.HarborGenerator, error) {
+	var d *deploymentModels.Deployment
+	var gc *harbor.Client
+	var g *resources.HarborGenerator
+	var err error
+
+	if opts.DeploymentID != "" {
+		d, err = c.Deployment(opts.DeploymentID, nil)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+
 		if d == nil {
 			return nil, nil, nil, sErrors.DeploymentNotFoundErr
 		}
 	}
 
-	var hc *harbor.Client
 	if opts.Client {
-		var err error
-		hc, err = c.GetOrCreateClient()
+		var userID string
+		if opts.ExtraOpts.UserID != "" {
+			userID = opts.ExtraOpts.UserID
+		} else {
+			userID = d.OwnerID
+		}
+
+		gc, err = c.Client(userID)
 		if err != nil {
 			return nil, nil, nil, err
 		}
 
-		if hc == nil {
+		if gc == nil {
 			return nil, nil, nil, sErrors.DeploymentNotFoundErr
 		}
 	}
 
-	var g *resources.HarborGenerator
 	if opts.Generator {
-		g = c.Generator()
+		var userID string
+		if opts.ExtraOpts.UserID != "" {
+			userID = opts.ExtraOpts.UserID
+		} else {
+			userID = d.OwnerID
+		}
+
+		var zone *configModels.DeploymentZone
+		if opts.ExtraOpts.Zone != nil {
+			zone = opts.ExtraOpts.Zone
+		} else if d != nil {
+			zone = config.Config.Deployment.GetZone(d.Zone)
+		}
+
+		g = c.Generator(d, userID, zone)
 		if g == nil {
 			return nil, nil, nil, sErrors.DeploymentNotFoundErr
 		}
 	}
 
-	return d, hc, g, nil
+	return d, gc, g, nil
 }
 
 // Client returns the Harbor service client.
-//
-// This does not create a new client if it does not exist.
-func (c *Client) Client() *harbor.Client {
-	return c.client
-}
-
-// GetOrCreateClient returns the Harbor service client.
-//
-// If the client does not exist, it will be created.
-func (c *Client) GetOrCreateClient() (*harbor.Client, error) {
-	if c.client == nil {
-		if c.UserID == "" {
-			panic("user id is empty")
-		}
-
-		hc, err := withClient(getProjectName(c.UserID))
-		if err != nil {
-			return nil, err
-		}
-
-		c.client = hc
+func (c *Client) Client(userID string) (*harbor.Client, error) {
+	if userID == "" {
+		panic("user id is empty")
 	}
 
-	return c.client, nil
-}
-
-// WithUserID sets the user id
-// Overwrites the base client's user id function
-// This is used to set the project
-func (c *Client) WithUserID(userID string) *Client {
-	c.BaseClient.WithUserID(userID)
-
-	hc := c.Client()
-	if hc != nil {
-		hc.Project = getProjectName(userID)
-	}
-
-	g := c.Generator()
-	if g != nil {
-		g = g.Harbor(getProjectName(userID))
-	}
-
-	return c
+	return withClient(getProjectName(userID))
 }
 
 // Generator returns the Harbor generator.
-//
-// If the generator does not exist, it will be created.
-// If creating a new generator, the current deployment and zone will be used.
-// Set the deployment and zone before calling this function by using WithDeployment and WithZone.
-func (c *Client) Generator() *resources.HarborGenerator {
-	if c.generator == nil {
-		pg := resources.PublicGenerator()
-
-		if c.Deployment() != nil {
-			pg.WithDeployment(c.Deployment())
-		}
-
-		if c.Zone() != nil {
-			pg.WithDeploymentZone(c.Zone())
-		}
-
-		c.generator = pg.Harbor(getProjectName(c.UserID))
+func (c *Client) Generator(d *deploymentModels.Deployment, userID string, zone *configModels.DeploymentZone) *resources.HarborGenerator {
+	if userID == "" {
+		panic("user id is empty")
 	}
 
-	return c.generator
+	if zone == nil {
+		panic("deployment zone is nil")
+	}
+
+	return resources.PublicGenerator().WithDeploymentZone(zone).WithDeployment(d).Harbor(getProjectName(userID))
 }
 
 // getProjectName returns the project name for the user.

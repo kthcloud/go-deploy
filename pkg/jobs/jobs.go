@@ -217,7 +217,7 @@ func CreateDeployment(job *jobModel.Job) error {
 		return makeTerminatedError(err)
 	}
 
-	err = deployment_service.New().WithID(id).WithUserID(ownerID).Create(&params)
+	err = deployment_service.New().Create(id, ownerID, &params)
 	if err != nil {
 		// we always terminate these jobs, since rerunning it would cause a NonUniqueFieldErr
 		return makeTerminatedError(err)
@@ -260,7 +260,7 @@ func DeleteDeployment(job *jobModel.Job) error {
 	default:
 	}
 
-	err = deployment_service.New().WithID(id).Delete()
+	err = deployment_service.New().Delete(id)
 	if err != nil {
 		if !errors.Is(err, dErrors.DeploymentNotFoundErr) {
 			return makeFailedError(err)
@@ -297,7 +297,7 @@ func UpdateDeployment(job *jobModel.Job) error {
 		return makeTerminatedError(err)
 	}
 
-	err = deployment_service.New().WithID(id).Update(&update)
+	err = deployment_service.New().Update(id, &update)
 	if err != nil {
 		if errors.Is(err, dErrors.NonUniqueFieldErr) {
 			return makeTerminatedError(err)
@@ -331,7 +331,7 @@ func UpdateDeploymentOwner(job *jobModel.Job) error {
 		return makeTerminatedError(err)
 	}
 
-	err = deployment_service.New().WithID(id).UpdateOwner(&params)
+	err = deployment_service.New().UpdateOwner(id, &params)
 	if err != nil {
 		if errors.Is(err, dErrors.DeploymentNotFoundErr) {
 			return makeTerminatedError(err)
@@ -377,7 +377,7 @@ func BuildDeployments(job *jobModel.Job) error {
 		return nil
 	}
 
-	err = deployment_service.New().WithIDs(filtered).Build(&params)
+	err = deployment_service.New().Build(filtered, &params)
 	if err != nil {
 		return makeFailedError(err)
 	}
@@ -393,7 +393,7 @@ func RepairDeployment(job *jobModel.Job) error {
 
 	id := job.Args["id"].(string)
 
-	err = deployment_service.New().WithID(id).Repair()
+	err = deployment_service.New().Repair(id)
 	if err != nil {
 		return makeTerminatedError(err)
 	}

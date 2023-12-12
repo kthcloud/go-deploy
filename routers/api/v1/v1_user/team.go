@@ -272,7 +272,7 @@ func getResourceName(resource *teamModels.Resource) *string {
 
 	switch resource.Type {
 	case teamModels.ResourceTypeDeployment:
-		d, err := deployment_service.New().WithID(resource.ID).Get(&dClient.GetOptions{Shared: true})
+		d, err := deployment_service.New().Get(resource.ID, &dClient.GetOptions{Shared: true})
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to get deployment when getting team resource name: %s", err))
 			return nil

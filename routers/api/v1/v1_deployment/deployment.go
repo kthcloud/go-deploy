@@ -75,7 +75,8 @@ func List(c *gin.Context) {
 		userID = auth.UserID
 	}
 
-	deployments, err := deployment_service.New().WithAuth(auth).WithUserID(userID).List(&client.ListOptions{
+	deployments, err := deployment_service.New().WithAuth(auth).List(&client.ListOptions{
+		UserID:     userID,
 		Pagination: &service.Pagination{Page: requestQuery.Page, PageSize: requestQuery.PageSize},
 		Shared:     requestQuery.Shared,
 	})
@@ -130,7 +131,7 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	deployment, err := deployment_service.New().WithAuth(auth).WithID(requestURI.DeploymentID).Get(&client.GetOptions{})
+	deployment, err := deployment_service.New().WithAuth(auth).Get(requestURI.DeploymentID, &client.GetOptions{})
 	if err != nil {
 		context.ServerError(err, v1.AuthInfoNotAvailableErr)
 		return
@@ -183,13 +184,13 @@ func Create(c *gin.Context) {
 		return
 	}
 
-	deployment, err := deployment_service.New().WithName(requestBody.Name).Get(&client.GetOptions{})
+	doesNotAlreadyExists, err := deployment_service.NameAvailable(requestBody.Name)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
 	}
 
-	if deployment != nil {
+	if !doesNotAlreadyExists {
 		context.UserError("Deployment already exists")
 		return
 	}
@@ -236,7 +237,7 @@ func Create(c *gin.Context) {
 		}
 	}
 
-	err = deployment_service.New().CheckQuota(&client.QuotaOptions{Quota: &auth.GetEffectiveRole().Quotas, Create: &requestBody})
+	err = deployment_service.New().CheckQuota("", &client.QuotaOptions{Quota: &auth.GetEffectiveRole().Quotas, Create: &requestBody})
 	if err != nil {
 		var quotaExceededErr sErrors.QuotaExceededError
 		if errors.As(err, &quotaExceededErr) {
@@ -297,8 +298,8 @@ func Delete(c *gin.Context) {
 		return
 	}
 
-	dc := deployment_service.New().WithAuth(auth).WithID(requestURI.DeploymentID)
-	currentDeployment, err := dc.Get(&client.GetOptions{})
+	dc := deployment_service.New().WithAuth(auth)
+	currentDeployment, err := dc.Get(requestURI.DeploymentID, &client.GetOptions{})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -314,7 +315,7 @@ func Delete(c *gin.Context) {
 		return
 	}
 
-	err = dc.StartActivity(deploymentModels.ActivityBeingDeleted)
+	err = dc.StartActivity(requestURI.DeploymentID, deploymentModels.ActivityBeingDeleted)
 	if err != nil {
 		var failedToStartActivityErr sErrors.FailedToStartActivityError
 		if errors.As(err, &failedToStartActivityErr) {
@@ -381,11 +382,11 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	dc := deployment_service.New().WithAuth(auth).WithID(requestURI.DeploymentID)
+	dc := deployment_service.New().WithAuth(auth)
 
 	var deployment *deploymentModels.Deployment
 	if requestBody.TransferCode != nil {
-		deployment, err = dc.Get(&client.GetOptions{TransferCode: *requestBody.TransferCode})
+		deployment, err = dc.Get(requestURI.DeploymentID, &client.GetOptions{TransferCode: *requestBody.TransferCode})
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
@@ -395,7 +396,7 @@ func Update(c *gin.Context) {
 			requestBody.OwnerID = &auth.UserID
 		}
 	} else {
-		deployment, err = dc.Get(&client.GetOptions{})
+		deployment, err = dc.Get(requestURI.DeploymentID, &client.GetOptions{})
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
@@ -409,7 +410,7 @@ func Update(c *gin.Context) {
 
 	if requestBody.OwnerID != nil {
 		if *requestBody.OwnerID == "" {
-			err = dc.ClearUpdateOwner()
+			err = dc.ClearUpdateOwner(requestURI.DeploymentID)
 			if err != nil {
 				if errors.Is(err, sErrors.DeploymentNotFoundErr) {
 					context.NotFound("Deployment not found")
@@ -447,7 +448,7 @@ func Update(c *gin.Context) {
 			return
 		}
 
-		jobID, err := dc.UpdateOwnerSetup(&body.DeploymentUpdateOwner{
+		jobID, err := dc.UpdateOwnerSetup(requestURI.DeploymentID, &body.DeploymentUpdateOwner{
 			NewOwnerID:   *requestBody.OwnerID,
 			OldOwnerID:   deployment.OwnerID,
 			TransferCode: requestBody.TransferCode,
@@ -488,7 +489,7 @@ func Update(c *gin.Context) {
 		}
 	}
 
-	err = dc.CheckQuota(&client.QuotaOptions{Quota: &auth.GetEffectiveRole().Quotas, Update: &requestBody})
+	err = dc.CheckQuota(requestURI.DeploymentID, &client.QuotaOptions{Quota: &auth.GetEffectiveRole().Quotas, Update: &requestBody})
 	if err != nil {
 		var quotaExceededErr sErrors.QuotaExceededError
 		if errors.As(err, &quotaExceededErr) {
@@ -500,7 +501,7 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	canUpdate, reason := dc.CanAddActivity(deploymentModels.ActivityUpdating)
+	canUpdate, reason := dc.CanAddActivity(requestURI.DeploymentID, deploymentModels.ActivityUpdating)
 	if !canUpdate {
 		context.Locked(reason)
 		return

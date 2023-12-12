@@ -26,7 +26,7 @@ func collectUsage(userID string) (*userModel.Usage, error) {
 		return nil, err
 	}
 
-	deploymentUsage, err := deployment_service.New().WithUserID(userID).GetUsage()
+	deploymentUsage, err := deployment_service.New().GetUsage(userID)
 	if err != nil {
 		return nil, err
 	}

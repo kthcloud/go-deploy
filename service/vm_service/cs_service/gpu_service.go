@@ -4,11 +4,11 @@ import (
 	"errors"
 	"fmt"
 	gpuModel "go-deploy/models/sys/gpu"
+	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/cs/commands"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/resources"
-	"go-deploy/service/vm_service/client"
 	"log"
 	"strings"
 )
@@ -18,7 +18,7 @@ func (c *Client) AttachGPU(vmID, gpuID string) error {
 		return fmt.Errorf("failed to attach gpu %s to cs vm %s. details: %w", gpuID, vmID, err)
 	}
 
-	vm, csc, _, err := c.Get(client.OptsNoGenerator(vmID))
+	vm, csc, _, err := c.Get(OptsNoGenerator(vmID))
 	if err != nil {
 		if errors.Is(err, sErrors.VmNotFoundErr) {
 			return nil
@@ -88,7 +88,7 @@ func (c *Client) DetachGPU(vmID string, afterState string) error {
 		return fmt.Errorf("failed to detach gpu from cs vm %s. details: %w", vmID, err)
 	}
 
-	vm, csc, _, err := c.Get(client.OptsNoGenerator(vmID))
+	vm, csc, _, err := c.Get(OptsNoGenerator(vmID))
 	if err != nil {
 		if errors.Is(err, sErrors.VmNotFoundErr) {
 			return nil
@@ -140,10 +140,6 @@ func (c *Client) IsGpuAttached(id string) (bool, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check if gpu %s is attached to any cs vm. details: %w", id, err)
 	}
-	_, csc, _, err := c.Get(client.OptsOnlyClient())
-	if err != nil {
-		return false, makeError(err)
-	}
 
 	gpu, err := c.GPU(id, nil)
 	if err != nil {
@@ -152,6 +148,16 @@ func (c *Client) IsGpuAttached(id string) (bool, error) {
 
 	if gpu == nil {
 		return false, nil
+	}
+
+	zone := config.Config.VM.GetZone(gpu.Zone)
+	if zone == nil {
+		return false, makeError(sErrors.ZoneNotFoundErr)
+	}
+
+	_, csc, _, err := c.Get(OptsOnlyClient(zone))
+	if err != nil {
+		return false, makeError(err)
 	}
 
 	// this should be exposed through the subsystem api, but im too lazy to do it now

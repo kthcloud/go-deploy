@@ -24,8 +24,8 @@ const (
 //
 // It will continuously check the deployment logs and read the logs after the last read log.
 // Increasing the history will increase the time it takes to set up the log stream.
-func (c *Client) SetupLogStream(ctx context.Context, handler func(string, string, string), history int) error {
-	deployment, err := c.Get(&client.GetOptions{Shared: true})
+func (c *Client) SetupLogStream(id string, ctx context.Context, handler func(string, string, string), history int) error {
+	deployment, err := c.Get(id, &client.GetOptions{Shared: true})
 	if err != nil {
 		return err
 	}
@@ -35,7 +35,7 @@ func (c *Client) SetupLogStream(ctx context.Context, handler func(string, string
 	}
 
 	if deployment.BeingDeleted() {
-		log.Println("deployment", c.ID(), "is being deleted. not setting up log stream")
+		log.Println("deployment", id, "is being deleted. not setting up log stream")
 		return nil
 	}
 
@@ -44,9 +44,9 @@ func (c *Client) SetupLogStream(ctx context.Context, handler func(string, string
 		time.Sleep(500 * time.Millisecond)
 
 		// fetch history logs
-		logs, err := deploymentModel.New().GetLogs(c.ID(), history)
+		logs, err := deploymentModel.New().GetLogs(id, history)
 		if err != nil {
-			utils.PrettyPrintError(fmt.Errorf("failed to get logs for deployment %s. details: %w", c.ID(), err))
+			utils.PrettyPrintError(fmt.Errorf("failed to get logs for deployment %s. details: %w", id, err))
 			return
 		}
 
@@ -68,9 +68,9 @@ func (c *Client) SetupLogStream(ctx context.Context, handler func(string, string
 				time.Sleep(FetchPeriod)
 				handler(MessageSourceControl, "[control]", "fetching logs")
 
-				logs, err = deploymentModel.New().GetLogsAfter(c.ID(), lastFetched)
+				logs, err = deploymentModel.New().GetLogsAfter(id, lastFetched)
 				if err != nil {
-					utils.PrettyPrintError(fmt.Errorf("failed to get logs for deployment %s after %s. details: %w", c.ID(), lastFetched, err))
+					utils.PrettyPrintError(fmt.Errorf("failed to get logs for deployment %s after %s. details: %w", id, lastFetched, err))
 					return
 				}
 

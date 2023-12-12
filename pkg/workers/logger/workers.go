@@ -73,7 +73,7 @@ func deploymentLogger(ctx context.Context) {
 					logCtx, cancel := context.WithCancel(ctx)
 					cancelFuncs[id.ID] = cancel
 
-					err = k8s_service.New(nil).WithID(id.ID).SetupLogStream(logCtx, func(line string, podNumber int, createdAt time.Time) {
+					err = k8s_service.New(nil).SetupLogStream(id.ID, logCtx, func(line string, podNumber int, createdAt time.Time) {
 						err = deploymentModel.New().AddLogs(id.ID, deploymentModel.Log{
 							Source:    deploymentModel.LogSourcePod,
 							Prefix:    fmt.Sprintf("[pod %d]", podNumber),

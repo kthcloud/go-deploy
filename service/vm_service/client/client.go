@@ -2,12 +2,9 @@ package client
 
 import (
 	"fmt"
-	configModels "go-deploy/models/config"
 	gpuModel "go-deploy/models/sys/gpu"
 	vmModel "go-deploy/models/sys/vm"
-	"go-deploy/pkg/config"
 	"go-deploy/service"
-	sErrors "go-deploy/service/errors"
 )
 
 type BaseClient[parent any] struct {
@@ -48,6 +45,11 @@ func (c *BaseClient[parent]) VM(id string, vmc *vmModel.Client) (*vmModel.VM, er
 	return vm, nil
 }
 
+func (c *BaseClient[parent]) VMs(vmc *vmModel.Client) ([]vmModel.VM, error) {
+	// Right now we don't have a way to skip fetching when requesting a list of resources
+	return c.fetchVMs(vmc)
+}
+
 func (c *BaseClient[parent]) GPU(id string, gmc *gpuModel.Client) (*gpuModel.GPU, error) {
 	gpu, ok := c.gpuStore[id]
 	if !ok || gpu == nil {
@@ -58,27 +60,12 @@ func (c *BaseClient[parent]) GPU(id string, gmc *gpuModel.Client) (*gpuModel.GPU
 }
 
 func (c *BaseClient[parent]) GPUs(gmc *gpuModel.Client) ([]gpuModel.GPU, error) {
-	// right now we don't have a way to cache when requesting a list of resources
+	// Right now we don't have a way to skip fetching when requesting a list of resources
 	return c.fetchGPUs(gmc)
 }
 
 func (c *BaseClient[parent]) WithAuth(auth *service.AuthInfo) *parent {
 	c.Auth = auth
-	return c.p
-}
-
-func (c *BaseClient[parent]) WithZone(zone string) *parent {
-	c.Zone = config.Config.VM.GetZone(zone)
-	return c.p
-}
-
-func (c *BaseClient[parent]) WithDeploymentZone(zone string) *parent {
-	c.DeploymentZone = config.Config.Deployment.GetZone(zone)
-	return c.p
-}
-
-func (c *BaseClient[parent]) WithUserID(userID string) *parent {
-	c.UserID = userID
 	return c.p
 }
 
@@ -114,22 +101,29 @@ func (c *BaseClient[parent]) fetchVM(id, name string, vmc *vmModel.Client) (*vmM
 		return nil, nil
 	}
 
-	zone := config.Config.VM.GetZone(vm.Zone)
-	if zone == nil {
-		return nil, makeError(sErrors.ZoneNotFoundErr)
-	}
-
-	var deploymentZone *configModels.DeploymentZone
-	if vm.DeploymentZone != nil {
-		deploymentZone = config.Config.Deployment.GetZone(*vm.DeploymentZone)
-		if deploymentZone == nil {
-			return nil, makeError(sErrors.ZoneNotFoundErr)
-		}
-
-	}
-
 	c.storeVM(vm)
 	return vm, nil
+}
+
+func (c *BaseClient[parent]) fetchVMs(vmc *vmModel.Client) ([]vmModel.VM, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to fetch gpus in service client: %w", err)
+	}
+
+	if vmc == nil {
+		vmc = vmModel.New()
+	}
+
+	vms, err := vmc.List()
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	for _, vm := range vms {
+		c.storeVM(&vm)
+	}
+
+	return vms, nil
 }
 
 func (c *BaseClient[parent]) fetchGPU(id string, gmc *gpuModel.Client) (*gpuModel.GPU, error) {

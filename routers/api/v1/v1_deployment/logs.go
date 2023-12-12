@@ -43,7 +43,7 @@ func GetLogsSSE(c *gin.Context) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	err = deployment_service.New().WithAuth(auth).WithID(requestURI.DeploymentID).SetupLogStream(ctx, handler, 25)
+	err = deployment_service.New().WithAuth(auth).SetupLogStream(requestURI.DeploymentID, ctx, handler, 25)
 	if err != nil {
 		if errors.Is(err, errors2.DeploymentNotFoundErr) {
 			sysContext.NotFound("Deployment not found")

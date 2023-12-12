@@ -77,7 +77,7 @@ func pingAndSave(deployment deploymentModels.Deployment, url string) {
 		return
 	}
 
-	err = deployment_service.SavePing(deployment.ID, code)
+	err = deployment_service.New().SavePing(deployment.ID, code)
 	if err != nil {
 		utils.PrettyPrintError(fmt.Errorf("error saving deployment status ping. details: %w", err))
 		return
@@ -85,7 +85,7 @@ func pingAndSave(deployment deploymentModels.Deployment, url string) {
 }
 
 func resetPing(deployment deploymentModels.Deployment) {
-	err := deployment_service.SavePing(deployment.ID, 0)
+	err := deployment_service.New().SavePing(deployment.ID, 0)
 	if err != nil {
 		utils.PrettyPrintError(fmt.Errorf("error resetting deployment status ping. details: %w", err))
 		return
@@ -100,9 +100,9 @@ func ping(url string) (int, error) {
 
 	req.Header.Set("User-Agent", "kthcloud")
 
-	client := &http.Client{}
+	httpClient := &http.Client{}
 
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return 0, err
 	}

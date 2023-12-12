@@ -274,7 +274,7 @@ func (c *Client) CheckGpuHardwareAvailable(gpuID string) error {
 		return sErrors.ZoneNotFoundErr
 	}
 
-	err = cc.WithZone(gpu.Zone).CheckHostState(gpu.Host)
+	err = cc.CheckHostState(gpu.Host, zone)
 	if err != nil {
 		return err
 	}
@@ -288,7 +288,7 @@ func (c *Client) CheckGpuHardwareAvailable(gpuID string) error {
 	return nil
 }
 
-func (c *Client) CheckSuitableHost(id, hostName string) error {
+func (c *Client) CheckSuitableHost(id, hostName, zoneName string) error {
 	vm, err := c.VM(id, nil)
 	if err != nil {
 		return err
@@ -302,7 +302,12 @@ func (c *Client) CheckSuitableHost(id, hostName string) error {
 		return sErrors.VmNotCreatedErr
 	}
 
-	err = cs_service.New(c.Context).WithZone(vm.Zone).CheckSuitableHost(vm.Subsystems.CS.VM.ID, hostName)
+	zone := config.Config.VM.GetZone(zoneName)
+	if zone == nil {
+		return sErrors.ZoneNotFoundErr
+	}
+
+	err = cs_service.New(c.Context).CheckSuitableHost(vm.ID, vm.Subsystems.CS.VM.ID, hostName, zone)
 	if err != nil {
 		return err
 	}
