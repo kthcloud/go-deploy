@@ -3,6 +3,7 @@ package team
 import (
 	"go-deploy/models/dto/body"
 	"go-deploy/utils"
+	"time"
 )
 
 func (t *Team) ToDTO(getMember func(*Member) *body.TeamMember, getResourceName func(*Resource) *string) body.TeamRead {
@@ -37,14 +38,25 @@ func (t *Team) ToDTO(getMember func(*Member) *body.TeamMember, getResourceName f
 	}
 }
 
-func (params *CreateParams) FromDTO(teamCreateDTO *body.TeamCreate, getResourceFunc func(string) *Resource, getMemberFunc func(*body.TeamMemberCreate) *Member) {
+func (params *CreateParams) FromDTO(teamCreateDTO *body.TeamCreate, ownerID string, getResourceFunc func(string) *Resource, getMemberFunc func(*body.TeamMemberCreate) *Member) {
 	params.Name = teamCreateDTO.Name
 	params.MemberMap = make(map[string]Member)
+	params.Description = teamCreateDTO.Description
 
 	for _, resourceDTO := range teamCreateDTO.Resources {
 		if resource := getResourceFunc(resourceDTO); resource != nil {
 			params.ResourceMap[resource.ID] = *resource
 		}
+	}
+
+	now := time.Now()
+
+	params.MemberMap[ownerID] = Member{
+		ID:           ownerID,
+		TeamRole:     MemberRoleAdmin,
+		AddedAt:      now,
+		JoinedAt:     now,
+		MemberStatus: MemberStatusJoined,
 	}
 
 	for _, memberDTO := range teamCreateDTO.Members {
@@ -56,7 +68,7 @@ func (params *JoinParams) FromDTO(teamJoinDTO *body.TeamJoin) {
 	params.InvitationCode = teamJoinDTO.InvitationCode
 }
 
-func (params *UpdateParams) FromDTO(teamUpdateDTO *body.TeamUpdate, getResourceFunc func(string) *Resource, getMemberFunc func(*body.TeamMemberUpdate) *Member) {
+func (params *UpdateParams) FromDTO(teamUpdateDTO *body.TeamUpdate, ownerID string, getResourceFunc func(string) *Resource, getMemberFunc func(*body.TeamMemberUpdate) *Member) {
 	params.Name = teamUpdateDTO.Name
 	params.Description = teamUpdateDTO.Description
 
@@ -72,6 +84,16 @@ func (params *UpdateParams) FromDTO(teamUpdateDTO *body.TeamUpdate, getResourceF
 
 	if teamUpdateDTO.Members != nil {
 		memberMap := make(map[string]Member)
+
+		now := time.Now()
+		memberMap[ownerID] = Member{
+			ID:           ownerID,
+			TeamRole:     MemberRoleAdmin,
+			AddedAt:      now,
+			JoinedAt:     now,
+			MemberStatus: MemberStatusJoined,
+		}
+
 		for _, memberDTO := range *teamUpdateDTO.Members {
 			memberMap[memberDTO.ID] = *getMemberFunc(&memberDTO)
 		}
