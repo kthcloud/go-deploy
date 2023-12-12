@@ -12,8 +12,8 @@ import (
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
 	"go-deploy/service/job_service"
-	"go-deploy/service/storage_manager_service"
-	"go-deploy/service/storage_manager_service/client"
+	"go-deploy/service/sm_service"
+	"go-deploy/service/sm_service/client"
 	"net/http"
 )
 
@@ -45,14 +45,7 @@ func ListStorageManagers(c *gin.Context) {
 		return
 	}
 
-	var userID string
-	if requestQuery.UserID != nil {
-		userID = *requestQuery.UserID
-	} else if requestQuery.All == false {
-		userID = auth.UserID
-	}
-
-	storageManagers, _ := storage_manager_service.New().WithUserID(userID).WithAuth(auth).List(&client.ListOptions{
+	storageManagers, _ := sm_service.New().WithAuth(auth).List(&client.ListOptions{
 		Pagination: &service.Pagination{
 			Page:     requestQuery.Page,
 			PageSize: requestQuery.PageSize,
@@ -90,7 +83,7 @@ func ListStorageManagers(c *gin.Context) {
 func GetStorageManager(c *gin.Context) {
 	context := sys.NewContext(c)
 
-	var requestURI uri.StorageManagerGet
+	var requestURI uri.SmGet
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
 		context.BindingError(v1.CreateBindingError(err))
 		return
@@ -102,7 +95,7 @@ func GetStorageManager(c *gin.Context) {
 		return
 	}
 
-	storageManager, err := storage_manager_service.New().WithID(requestURI.StorageManagerID).WithAuth(auth).Get(&client.GetOptions{})
+	storageManager, err := sm_service.New().WithAuth(auth).Get(requestURI.SmID, &client.GetOptions{})
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return
@@ -134,7 +127,7 @@ func GetStorageManager(c *gin.Context) {
 func DeleteStorageManager(c *gin.Context) {
 	context := sys.NewContext(c)
 
-	var requestURI uri.StorageManagerDelete
+	var requestURI uri.SmDelete
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
 		context.BindingError(v1.CreateBindingError(err))
 		return
@@ -146,7 +139,7 @@ func DeleteStorageManager(c *gin.Context) {
 		return
 	}
 
-	storageManager, err := storage_manager_service.New().WithID(requestURI.StorageManagerID).WithAuth(auth).Get(&client.GetOptions{})
+	storageManager, err := sm_service.New().WithAuth(auth).Get(requestURI.SmID, &client.GetOptions{})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return

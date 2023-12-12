@@ -14,7 +14,7 @@ import (
 	"go-deploy/service/deployment_service"
 	dErrors "go-deploy/service/errors"
 	sErrors "go-deploy/service/errors"
-	"go-deploy/service/storage_manager_service"
+	"go-deploy/service/sm_service"
 	"go-deploy/service/vm_service"
 	"go-deploy/service/vm_service/client"
 	"go.mongodb.org/mongo-driver/bson"
@@ -416,7 +416,7 @@ func CreateStorageManager(job *jobModel.Job) error {
 		return makeTerminatedError(err)
 	}
 
-	err = storage_manager_service.New().WithID(id).WithUserID(userID).Create(&params)
+	err = sm_service.New().Create(id, userID, &params)
 	if err != nil {
 		if errors.Is(err, sErrors.StorageManagerAlreadyExistsErr) {
 			return makeTerminatedError(err)
@@ -436,7 +436,7 @@ func DeleteStorageManager(job *jobModel.Job) error {
 
 	id := job.Args["id"].(string)
 
-	err = storage_manager_service.New().WithID(id).Delete()
+	err = sm_service.New().Delete(id)
 	if err != nil {
 		return makeFailedError(err)
 	}
@@ -452,7 +452,7 @@ func RepairStorageManager(job *jobModel.Job) error {
 
 	id := job.Args["id"].(string)
 
-	err = storage_manager_service.New().WithID(id).Repair()
+	err = sm_service.New().Repair(id)
 	if err != nil {
 		// All errors are terminal, so we don't check for specific errors
 		return makeTerminatedError(err)

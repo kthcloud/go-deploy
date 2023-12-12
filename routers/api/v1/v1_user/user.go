@@ -13,8 +13,8 @@ import (
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
 	"go-deploy/service/deployment_service"
-	"go-deploy/service/storage_manager_service"
-	smClient "go-deploy/service/storage_manager_service/client"
+	"go-deploy/service/sm_service"
+	smClient "go-deploy/service/sm_service/client"
 	"go-deploy/service/user_service"
 	"go-deploy/service/vm_service"
 	"go-deploy/utils"
@@ -42,7 +42,7 @@ func collectUsage(userID string) (*userModel.Usage, error) {
 }
 
 func getStorageURL(userID string, auth *service.AuthInfo) (*string, error) {
-	storageManager, err := storage_manager_service.New().WithUserID(userID).WithAuth(auth).Get(&smClient.GetOptions{})
+	storageManager, err := sm_service.New().WithAuth(auth).GetByUserID(userID, &smClient.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

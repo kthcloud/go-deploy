@@ -6,7 +6,6 @@ import (
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/service/constants"
 	"go-deploy/service/resources"
-	"go-deploy/service/storage_manager_service/client"
 	"golang.org/x/exp/slices"
 	"log"
 )
@@ -14,19 +13,19 @@ import (
 // Create creates the storage manager.
 //
 // It creates all K8s resources for the storage manager.
-func (c *Client) Create(params *storage_manager.CreateParams) error {
+func (c *Client) Create(id string, params *storage_manager.CreateParams) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create storage manager in k8s. details: %w", err)
 	}
 
-	_, kc, g, err := c.Get(client.OptsNoStorageManager)
+	_, kc, g, err := c.Get(OptsAll(id))
 	if err != nil {
 		return makeError(err)
 	}
 
 	// Namespace
 	err = resources.SsCreator(kc.CreateNamespace).
-		WithDbFunc(dbFunc(c.ID(), "namespace")).
+		WithDbFunc(dbFunc(id, "namespace")).
 		WithPublic(g.Namespace()).
 		Exec()
 
@@ -37,7 +36,7 @@ func (c *Client) Create(params *storage_manager.CreateParams) error {
 	// PersistentVolume
 	for _, pvPublic := range g.PVs() {
 		err = resources.SsCreator(kc.CreatePV).
-			WithDbFunc(dbFunc(c.ID(), "pvMap."+pvPublic.Name)).
+			WithDbFunc(dbFunc(id, "pvMap."+pvPublic.Name)).
 			WithPublic(&pvPublic).
 			Exec()
 
@@ -49,7 +48,7 @@ func (c *Client) Create(params *storage_manager.CreateParams) error {
 	// PersistentVolumeClaim
 	for _, pvcPublic := range g.PVCs() {
 		err = resources.SsCreator(kc.CreatePVC).
-			WithDbFunc(dbFunc(c.ID(), "pvcMap."+pvcPublic.Name)).
+			WithDbFunc(dbFunc(id, "pvcMap."+pvcPublic.Name)).
 			WithPublic(&pvcPublic).
 			Exec()
 
@@ -61,7 +60,7 @@ func (c *Client) Create(params *storage_manager.CreateParams) error {
 	// Job
 	for _, jobPublic := range g.Jobs() {
 		err = resources.SsCreator(kc.CreateJob).
-			WithDbFunc(dbFunc(c.ID(), "jobMap."+jobPublic.Name)).
+			WithDbFunc(dbFunc(id, "jobMap."+jobPublic.Name)).
 			WithPublic(&jobPublic).
 			Exec()
 
@@ -73,7 +72,7 @@ func (c *Client) Create(params *storage_manager.CreateParams) error {
 	// Secret
 	for _, secret := range g.Secrets() {
 		err = resources.SsCreator(kc.CreateSecret).
-			WithDbFunc(dbFunc(c.ID(), "secretMap."+secret.Name)).
+			WithDbFunc(dbFunc(id, "secretMap."+secret.Name)).
 			WithPublic(&secret).
 			Exec()
 
@@ -85,7 +84,7 @@ func (c *Client) Create(params *storage_manager.CreateParams) error {
 	// Deployment
 	for _, deployment := range g.Deployments() {
 		err = resources.SsCreator(kc.CreateDeployment).
-			WithDbFunc(dbFunc(c.ID(), "deploymentMap."+deployment.Name)).
+			WithDbFunc(dbFunc(id, "deploymentMap."+deployment.Name)).
 			WithPublic(&deployment).
 			Exec()
 
@@ -97,7 +96,7 @@ func (c *Client) Create(params *storage_manager.CreateParams) error {
 	// Service
 	for _, k8sService := range g.Services() {
 		err = resources.SsCreator(kc.CreateService).
-			WithDbFunc(dbFunc(c.ID(), "serviceMap."+k8sService.Name)).
+			WithDbFunc(dbFunc(id, "serviceMap."+k8sService.Name)).
 			WithPublic(&k8sService).
 			Exec()
 
@@ -109,7 +108,7 @@ func (c *Client) Create(params *storage_manager.CreateParams) error {
 	// Ingress
 	for _, ingress := range g.Ingresses() {
 		err = resources.SsCreator(kc.CreateIngress).
-			WithDbFunc(dbFunc(c.ID(), "ingressMap."+ingress.Name)).
+			WithDbFunc(dbFunc(id, "ingressMap."+ingress.Name)).
 			WithPublic(&ingress).
 			Exec()
 
@@ -124,14 +123,14 @@ func (c *Client) Create(params *storage_manager.CreateParams) error {
 // Delete deletes the storage manager.
 //
 // It deletes all K8s resources for the storage manager.
-func (c *Client) Delete() error {
+func (c *Client) Delete(id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete storage manager in k8s. details: %w", err)
 	}
 
-	log.Println("deleting k8s for storage manager", c.ID())
+	log.Println("deleting k8s for storage manager", id)
 
-	sm, kc, _, err := c.Get(client.OptsNoGenerator)
+	sm, kc, _, err := c.Get(OptsNoGenerator(id))
 	if err != nil {
 		return makeError(err)
 	}
@@ -140,7 +139,7 @@ func (c *Client) Delete() error {
 	for mapName, k8sDeployment := range sm.Subsystems.K8s.DeploymentMap {
 		err = resources.SsDeleter(kc.DeleteDeployment).
 			WithResourceID(k8sDeployment.ID).
-			WithDbFunc(dbFunc(c.ID(), "deploymentMap."+mapName)).
+			WithDbFunc(dbFunc(id, "deploymentMap."+mapName)).
 			Exec()
 	}
 
@@ -148,7 +147,7 @@ func (c *Client) Delete() error {
 	for mapName, k8sService := range sm.Subsystems.K8s.ServiceMap {
 		err = resources.SsDeleter(kc.DeleteService).
 			WithResourceID(k8sService.ID).
-			WithDbFunc(dbFunc(c.ID(), "serviceMap."+mapName)).
+			WithDbFunc(dbFunc(id, "serviceMap."+mapName)).
 			Exec()
 	}
 
@@ -156,7 +155,7 @@ func (c *Client) Delete() error {
 	for mapName, ingress := range sm.Subsystems.K8s.IngressMap {
 		err = resources.SsDeleter(kc.DeleteIngress).
 			WithResourceID(ingress.ID).
-			WithDbFunc(dbFunc(c.ID(), "ingressMap."+mapName)).
+			WithDbFunc(dbFunc(id, "ingressMap."+mapName)).
 			Exec()
 	}
 
@@ -164,7 +163,7 @@ func (c *Client) Delete() error {
 	for mapName, job := range sm.Subsystems.K8s.JobMap {
 		err = resources.SsDeleter(kc.DeleteJob).
 			WithResourceID(job.ID).
-			WithDbFunc(dbFunc(c.ID(), "jobMap."+mapName)).
+			WithDbFunc(dbFunc(id, "jobMap."+mapName)).
 			Exec()
 	}
 
@@ -172,7 +171,7 @@ func (c *Client) Delete() error {
 	for mapName, pvc := range sm.Subsystems.K8s.PvcMap {
 		err = resources.SsDeleter(kc.DeletePVC).
 			WithResourceID(pvc.ID).
-			WithDbFunc(dbFunc(c.ID(), "pvcMap."+mapName)).
+			WithDbFunc(dbFunc(id, "pvcMap."+mapName)).
 			Exec()
 	}
 
@@ -180,7 +179,7 @@ func (c *Client) Delete() error {
 	for mapName, pv := range sm.Subsystems.K8s.PvMap {
 		err = resources.SsDeleter(kc.DeletePV).
 			WithResourceID(pv.ID).
-			WithDbFunc(dbFunc(c.ID(), "pvMap."+mapName)).
+			WithDbFunc(dbFunc(id, "pvMap."+mapName)).
 			Exec()
 	}
 
@@ -190,7 +189,7 @@ func (c *Client) Delete() error {
 		if mapName == constants.WildcardCertSecretName {
 			deleteFunc = func(interface{}) error { return nil }
 		} else {
-			deleteFunc = dbFunc(c.ID(), "secretMap."+mapName)
+			deleteFunc = dbFunc(id, "secretMap."+mapName)
 		}
 
 		err = resources.SsDeleter(kc.DeleteSecret).
@@ -205,12 +204,12 @@ func (c *Client) Delete() error {
 // Repair repairs the storage manager.
 //
 // It repairs all K8s resources for the storage manager.
-func (c *Client) Repair() error {
+func (c *Client) Repair(id string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to repair storage manager %s in k8s. details: %w", c.ID(), err)
+		return fmt.Errorf("failed to repair storage manager %s in k8s. details: %w", id, err)
 	}
 
-	sm, kc, g, err := c.Get(client.OptsAll)
+	sm, kc, g, err := c.Get(OptsAll(id))
 	if err != nil {
 		return makeError(err)
 	}
@@ -221,7 +220,7 @@ func (c *Client) Repair() error {
 		kc.CreateNamespace,
 		kc.UpdateNamespace,
 		func(string) error { return nil },
-	).WithResourceID(namespace.ID).WithDbFunc(dbFunc(c.ID(), "namespace")).WithGenPublic(namespace).Exec()
+	).WithResourceID(namespace.ID).WithDbFunc(dbFunc(id, "namespace")).WithGenPublic(namespace).Exec()
 
 	if err != nil {
 		return makeError(err)
@@ -233,7 +232,7 @@ func (c *Client) Repair() error {
 		if idx == -1 {
 			err = resources.SsDeleter(kc.DeleteDeployment).
 				WithResourceID(k8sDeployment.ID).
-				WithDbFunc(dbFunc(c.ID(), "deploymentMap."+mapName)).
+				WithDbFunc(dbFunc(id, "deploymentMap."+mapName)).
 				Exec()
 
 			if err != nil {
@@ -247,7 +246,7 @@ func (c *Client) Repair() error {
 			kc.CreateDeployment,
 			kc.UpdateDeployment,
 			kc.DeleteDeployment,
-		).WithResourceID(public.ID).WithDbFunc(dbFunc(c.ID(), "deploymentMap."+public.Name)).WithGenPublic(&public).Exec()
+		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "deploymentMap."+public.Name)).WithGenPublic(&public).Exec()
 
 		if err != nil {
 			return makeError(err)
@@ -260,7 +259,7 @@ func (c *Client) Repair() error {
 		if idx == -1 {
 			err = resources.SsDeleter(kc.DeleteService).
 				WithResourceID(k8sService.ID).
-				WithDbFunc(dbFunc(c.ID(), "serviceMap."+mapName)).
+				WithDbFunc(dbFunc(id, "serviceMap."+mapName)).
 				Exec()
 
 			if err != nil {
@@ -274,7 +273,7 @@ func (c *Client) Repair() error {
 			kc.CreateService,
 			kc.UpdateService,
 			kc.DeleteService,
-		).WithResourceID(public.ID).WithDbFunc(dbFunc(c.ID(), "serviceMap."+public.Name)).WithGenPublic(&public).Exec()
+		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "serviceMap."+public.Name)).WithGenPublic(&public).Exec()
 
 		if err != nil {
 			return makeError(err)
@@ -287,7 +286,7 @@ func (c *Client) Repair() error {
 		if idx == -1 {
 			err = resources.SsDeleter(kc.DeleteIngress).
 				WithResourceID(ingress.ID).
-				WithDbFunc(dbFunc(c.ID(), "ingressMap."+mapName)).
+				WithDbFunc(dbFunc(id, "ingressMap."+mapName)).
 				Exec()
 
 			if err != nil {
@@ -301,7 +300,7 @@ func (c *Client) Repair() error {
 			kc.CreateIngress,
 			kc.UpdateIngress,
 			kc.DeleteIngress,
-		).WithResourceID(public.ID).WithDbFunc(dbFunc(c.ID(), "ingressMap."+public.Name)).WithGenPublic(&public).Exec()
+		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "ingressMap."+public.Name)).WithGenPublic(&public).Exec()
 	}
 
 	secrets := g.Secrets()
@@ -310,7 +309,7 @@ func (c *Client) Repair() error {
 		if idx == -1 {
 			err = resources.SsDeleter(kc.DeleteSecret).
 				WithResourceID(secret.ID).
-				WithDbFunc(dbFunc(c.ID(), "secretMap."+mapName)).
+				WithDbFunc(dbFunc(id, "secretMap."+mapName)).
 				Exec()
 
 			if err != nil {
@@ -324,7 +323,7 @@ func (c *Client) Repair() error {
 			kc.CreateSecret,
 			kc.UpdateSecret,
 			kc.DeleteSecret,
-		).WithResourceID(public.ID).WithDbFunc(dbFunc(c.ID(), "secretMap."+public.Name)).WithGenPublic(&public).Exec()
+		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "secretMap."+public.Name)).WithGenPublic(&public).Exec()
 
 		if err != nil {
 			return makeError(err)
@@ -337,7 +336,7 @@ func (c *Client) Repair() error {
 		if idx == -1 {
 			err = resources.SsDeleter(kc.DeleteJob).
 				WithResourceID(job.ID).
-				WithDbFunc(dbFunc(c.ID(), "jobMap."+mapName)).
+				WithDbFunc(dbFunc(id, "jobMap."+mapName)).
 				Exec()
 
 			if err != nil {
@@ -351,7 +350,7 @@ func (c *Client) Repair() error {
 			kc.CreateJob,
 			func(job *k8sModels.JobPublic) (*k8sModels.JobPublic, error) { return nil, nil },
 			kc.DeleteJob,
-		).WithResourceID(public.ID).WithDbFunc(dbFunc(c.ID(), "jobMap."+public.Name)).WithGenPublic(&public).Exec()
+		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "jobMap."+public.Name)).WithGenPublic(&public).Exec()
 
 		if err != nil {
 			return makeError(err)

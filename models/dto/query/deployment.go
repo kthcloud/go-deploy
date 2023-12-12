@@ -20,6 +20,5 @@ type DeploymentUpdate struct {
 type StorageManagerList struct {
 	Pagination
 
-	All    bool    `form:"all" binding:"omitempty,boolean"`
-	UserID *string `form:"userId" binding:"omitempty,uuid4"`
+	All bool `form:"all" binding:"omitempty,boolean"`
 }

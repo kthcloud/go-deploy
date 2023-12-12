@@ -43,8 +43,8 @@ var (
 	// This could be caused by stale data in the database.
 	MainAppNotFoundErr = fmt.Errorf("main app not found")
 
-	// StorageManagerNotFoundErr is returned when the storage manager is not found.
-	StorageManagerNotFoundErr = fmt.Errorf("storage manager not found")
+	// SmNotFoundErr is returned when the storage manager is not found.
+	SmNotFoundErr = fmt.Errorf("storage manager not found")
 
 	// StorageManagerAlreadyExistsErr is returned when the storage manager already exists for user.
 	StorageManagerAlreadyExistsErr = fmt.Errorf("storage manager already exists for user")

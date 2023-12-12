@@ -231,9 +231,11 @@ func TestUpdate(t *testing.T) {
 	err := e2e.ReadResponseBody(t, resp, &deploymentUpdated)
 	assert.NoError(t, err, "deployment was not updated")
 
-	e2e.WaitForJobFinished(t, deploymentUpdated.JobID, func(jobRead *body.JobRead) bool {
-		return true
-	})
+	if deploymentUpdated.JobID != nil {
+		e2e.WaitForJobFinished(t, *deploymentUpdated.JobID, func(jobRead *body.JobRead) bool {
+			return true
+		})
+	}
 
 	e2e.WaitForDeploymentRunning(t, deploymentRead.ID, func(deploymentRead *body.DeploymentRead) bool {
 		//make sure it is accessible
@@ -286,7 +288,9 @@ func TestUpdateImage(t *testing.T) {
 	err := e2e.ReadResponseBody(t, resp, &deploymentUpdated)
 	assert.NoError(t, err, "deployment was not updated")
 
-	e2e.WaitForJobFinished(t, deploymentUpdated.JobID, nil)
+	if deploymentUpdated.JobID != nil {
+		e2e.WaitForJobFinished(t, *deploymentUpdated.JobID, nil)
+	}
 
 	// check if the deployment was updated
 	resp = e2e.DoGetRequest(t, "/deployments/"+deploymentUpdated.ID)
@@ -320,7 +324,9 @@ func TestUpdateInternalPort(t *testing.T) {
 	err := e2e.ReadResponseBody(t, resp, &deploymentUpdated)
 	assert.NoError(t, err, "deployment was not updated")
 
-	e2e.WaitForJobFinished(t, deploymentUpdated.JobID, nil)
+	if deploymentUpdated.JobID != nil {
+		e2e.WaitForJobFinished(t, *deploymentUpdated.JobID, nil)
+	}
 	e2e.WaitForDeploymentRunning(t, deployment.ID, func(deploymentRead *body.DeploymentRead) bool {
 		//make sure it is accessible
 		if deploymentRead.URL != nil {

@@ -17,14 +17,14 @@ import (
 	"go-deploy/service/deployment_service/client"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/job_service"
-	"go-deploy/service/storage_manager_service"
-	smClient "go-deploy/service/storage_manager_service/client"
+	"go-deploy/service/sm_service"
+	smClient "go-deploy/service/sm_service/client"
 	"go-deploy/service/user_service"
 	"go-deploy/service/zone_service"
 )
 
 func getStorageManagerURL(userID string, auth *service.AuthInfo) *string {
-	storageManager, err := storage_manager_service.New().WithAuth(auth).WithUserID(userID).Get(&smClient.GetOptions{})
+	storageManager, err := sm_service.New().WithAuth(auth).GetByUserID(userID, &smClient.GetOptions{})
 	if err != nil {
 		return nil
 	}

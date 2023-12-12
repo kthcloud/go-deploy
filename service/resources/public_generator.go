@@ -51,7 +51,7 @@ func (pc *PublicGeneratorType) WithDeployment(deployment *deploymentModels.Deplo
 	return pc
 }
 
-func (pc *PublicGeneratorType) WithStorageManager(storageManager *storage_manager.StorageManager) *PublicGeneratorType {
+func (pc *PublicGeneratorType) WithSM(storageManager *storage_manager.StorageManager) *PublicGeneratorType {
 	pc.s.storageManager = storageManager
 	return pc
 }

@@ -1,6 +1,6 @@
-package storage_manager_service
+package sm_service
 
-import "go-deploy/service/storage_manager_service/client"
+import "go-deploy/service/sm_service/client"
 
 // Client is the client for the Deployment service.
 // It is used as a wrapper around the BaseClient.
