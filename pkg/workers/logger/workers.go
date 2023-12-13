@@ -42,10 +42,9 @@ func deploymentLogger(ctx context.Context) {
 		}
 	}()
 
-	// listen for new deployments and setup log streams
 	for {
 		select {
-		case <-time.After(500 * time.Millisecond):
+		case <-time.After(1000 * time.Millisecond):
 			currentIDs := make([]string, len(current))
 			idx := 0
 			for id := range current {
@@ -55,7 +54,8 @@ func deploymentLogger(ctx context.Context) {
 
 			ids, err := deploymentModel.New().ExcludeIDs(currentIDs...).ListIDs()
 			if err != nil {
-				utils.PrettyPrintError(fmt.Errorf("deploymentLogger: %w", err))
+				utils.PrettyPrintError(fmt.Errorf("failed to list deployment ids. details: %w", err))
+				continue
 			}
 
 			for _, idInList := range ids {
@@ -73,7 +73,7 @@ func deploymentLogger(ctx context.Context) {
 					logCtx, cancel := context.WithCancel(ctx)
 					cancelFuncs[id.ID] = cancel
 
-					err = k8s_service.New(nil).SetupLogStream(id.ID, logCtx, func(line string, podNumber int, createdAt time.Time) {
+					err = k8s_service.New(nil).SetupLogStream(logCtx, id.ID, func(line string, podNumber int, createdAt time.Time) {
 						err = deploymentModel.New().AddLogs(id.ID, deploymentModel.Log{
 							Source:    deploymentModel.LogSourcePod,
 							Prefix:    fmt.Sprintf("[pod %d]", podNumber),
@@ -81,14 +81,14 @@ func deploymentLogger(ctx context.Context) {
 							CreatedAt: createdAt,
 						})
 						if err != nil {
-							utils.PrettyPrintError(fmt.Errorf("deploymentLogger: %w", err))
+							utils.PrettyPrintError(fmt.Errorf("failed to add k8s logs for deployment %s. details: %w", id.ID, err))
 							shouldCancel <- id.ID
 							return
 						}
 					})
 
 					if err != nil {
-						utils.PrettyPrintError(fmt.Errorf("deploymentLogger: %w", err))
+						utils.PrettyPrintError(fmt.Errorf("failed to setup deployment log stream for deployment %s. details: %w", id.ID, err))
 						shouldCancel <- id.ID
 						return
 					}
@@ -101,14 +101,14 @@ func deploymentLogger(ctx context.Context) {
 							CreatedAt: createdAt,
 						})
 						if err != nil {
-							utils.PrettyPrintError(fmt.Errorf("deploymentLogger: %w", err))
+							utils.PrettyPrintError(fmt.Errorf("failed to add gitlab logs for deployment %s. details: %w", id.ID, err))
 							shouldCancel <- id.ID
 							return
 						}
 					})
 
 					if err != nil {
-						utils.PrettyPrintError(fmt.Errorf("deploymentLogger: %w", err))
+						utils.PrettyPrintError(fmt.Errorf("failed to setup gitlab log stream for deployment %s. details: %w", id.ID, err))
 						shouldCancel <- id.ID
 						return
 					}

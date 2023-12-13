@@ -642,14 +642,14 @@ func (c *Client) Repair(id string) error {
 //
 // It sets up a log stream for all the pods in the deployment.
 // The handler function is called for each log line.
-func (c *Client) SetupLogStream(id string, ctx context.Context, handler func(string, int, time.Time)) error {
-	_ = func(err error) error {
+func (c *Client) SetupLogStream(ctx context.Context, id string, handler func(string, int, time.Time)) error {
+	makeError := func(err error) error {
 		return fmt.Errorf("failed to setup log stream for deployment %s. details: %w", id, err)
 	}
 
 	d, kc, _, err := c.Get(OptsNoGenerator(id))
 	if err != nil {
-		return err
+		return makeError(err)
 	}
 
 	if d.BeingDeleted() {
@@ -663,9 +663,9 @@ func (c *Client) SetupLogStream(id string, ctx context.Context, handler func(str
 		return nil
 	}
 
-	err = kc.SetupDeploymentLogStream(ctx, mainDeployment.ID, handler)
+	err = kc.SetupLogStream(ctx, mainDeployment.ID, handler)
 	if err != nil {
-		return err
+		return makeError(err)
 	}
 
 	return nil
