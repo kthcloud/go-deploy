@@ -1,4 +1,4 @@
-package storage_manager
+package sm
 
 import (
 	"context"
@@ -12,8 +12,8 @@ import (
 
 var AlreadyExistsErr = fmt.Errorf("storage manager already exists for user")
 
-func (client *Client) CreateStorageManager(id, ownerID string, params *CreateParams) (*StorageManager, error) {
-	storageManager := &StorageManager{
+func (client *Client) CreateSM(id, ownerID string, params *CreateParams) (*SM, error) {
+	sm := &SM{
 		ID:         id,
 		OwnerID:    ownerID,
 		Zone:       params.Zone,
@@ -23,7 +23,7 @@ func (client *Client) CreateStorageManager(id, ownerID string, params *CreatePar
 		Subsystems: Subsystems{},
 	}
 
-	err := client.CreateIfUnique(id, storageManager, bson.D{{"ownerId", ownerID}})
+	err := client.CreateIfUnique(id, sm, bson.D{{"ownerId", ownerID}})
 	if err != nil {
 		if errors.Is(err, models.UniqueConstraintErr) {
 			return nil, AlreadyExistsErr

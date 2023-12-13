@@ -46,8 +46,8 @@ var (
 	// SmNotFoundErr is returned when the storage manager is not found.
 	SmNotFoundErr = fmt.Errorf("storage manager not found")
 
-	// StorageManagerAlreadyExistsErr is returned when the storage manager already exists for user.
-	StorageManagerAlreadyExistsErr = fmt.Errorf("storage manager already exists for user")
+	// SmAlreadyExistsErr is returned when the storage manager already exists for user.
+	SmAlreadyExistsErr = fmt.Errorf("storage manager already exists for user")
 
 	// VmNotFoundErr is returned when the vm is not found.
 	// This is most likely caused by a race-condition between a some resource call and a deletion call.

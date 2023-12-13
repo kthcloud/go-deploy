@@ -117,16 +117,3 @@ type CiConfig struct {
 type DeploymentCommand struct {
 	Command string `json:"command" bson:"command" binding:"required,oneof=restart"`
 }
-
-type StorageManagerDeleted struct {
-	ID    string `json:"id"`
-	JobID string `json:"jobId"`
-}
-
-type StorageManagerRead struct {
-	ID        string    `json:"id"`
-	OwnerID   string    `json:"ownerId"`
-	CreatedAt time.Time `json:"createdAt"`
-	Zone      string    `json:"zone"`
-	URL       *string   `json:"url,omitempty"`
-}

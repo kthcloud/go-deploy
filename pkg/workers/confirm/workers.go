@@ -3,9 +3,10 @@ package confirm
 import (
 	"context"
 	"fmt"
-	deploymentModel "go-deploy/models/sys/deployment"
-	jobModel "go-deploy/models/sys/job"
-	vmModel "go-deploy/models/sys/vm"
+	deploymentModels "go-deploy/models/sys/deployment"
+	jobModels "go-deploy/models/sys/job"
+	smModels "go-deploy/models/sys/sm"
+	vmModels "go-deploy/models/sys/vm"
 	"go-deploy/utils"
 	"golang.org/x/exp/slices"
 	"log"
@@ -18,23 +19,23 @@ func deploymentConfirmer(ctx context.Context) {
 	for {
 		select {
 		case <-time.After(5 * time.Second):
-			beingCreated, _ := deploymentModel.New().WithActivities(deploymentModel.ActivityBeingCreated).List()
+			beingCreated, _ := deploymentModels.New().WithActivities(deploymentModels.ActivityBeingCreated).List()
 			for _, deployment := range beingCreated {
 				created := DeploymentCreated(&deployment)
 				if created {
 					log.Printf("marking deployment %s as created\n", deployment.ID)
-					_ = deploymentModel.New().RemoveActivity(deployment.ID, deploymentModel.ActivityBeingCreated)
+					_ = deploymentModels.New().RemoveActivity(deployment.ID, deploymentModels.ActivityBeingCreated)
 				}
 			}
 
-			beingDeleted, _ := deploymentModel.New().WithActivities(deploymentModel.ActivityBeingDeleted).List()
+			beingDeleted, _ := deploymentModels.New().WithActivities(deploymentModels.ActivityBeingDeleted).List()
 			for _, deployment := range beingDeleted {
 				deleted := DeploymentDeleted(&deployment)
 				if !deleted {
 					continue
 				}
 
-				relatedJobs, err := jobModel.New().ExcludeScheduled().GetByArgs(map[string]interface{}{
+				relatedJobs, err := jobModels.New().ExcludeScheduled().GetByArgs(map[string]interface{}{
 					"id": deployment.ID,
 				})
 
@@ -43,14 +44,70 @@ func deploymentConfirmer(ctx context.Context) {
 					continue
 				}
 
-				allFinished := slices.IndexFunc(relatedJobs, func(j jobModel.Job) bool {
-					return j.Status != jobModel.StatusCompleted &&
-						j.Status != jobModel.StatusTerminated
+				allFinished := slices.IndexFunc(relatedJobs, func(j jobModels.Job) bool {
+					return j.Status != jobModels.StatusCompleted &&
+						j.Status != jobModels.StatusTerminated
 				}) == -1
 
 				if allFinished {
 					log.Printf("marking deployment %s as deleted\n", deployment.ID)
-					_ = deploymentModel.New().DeleteByID(deployment.ID)
+					_ = deploymentModels.New().DeleteByID(deployment.ID)
+				}
+			}
+
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func smConfirmer(ctx context.Context) {
+	defer log.Println("smConfirmer stopped")
+
+	for {
+		select {
+		case <-time.After(5 * time.Second):
+			beingCreated, err := smModels.New().WithActivities(smModels.ActivityBeingCreated).List()
+			if err != nil {
+				utils.PrettyPrintError(fmt.Errorf("failed to get sms being created. details: %w", err))
+			}
+
+			for _, sm := range beingCreated {
+				created := SmCreated(&sm)
+				if created {
+					log.Printf("marking sm %s as created\n", sm.ID)
+					_ = smModels.New().RemoveActivity(sm.ID, smModels.ActivityBeingCreated)
+				}
+			}
+
+			beingDeleted, err := smModels.New().WithActivities(smModels.ActivityBeingDeleted).List()
+			if err != nil {
+				utils.PrettyPrintError(fmt.Errorf("failed to get sms being deleted. details: %w", err))
+			}
+
+			for _, sm := range beingDeleted {
+				deleted := SmDeleted(&sm)
+				if !deleted {
+					continue
+				}
+
+				relatedJobs, err := jobModels.New().ExcludeScheduled().GetByArgs(map[string]interface{}{
+					"id": sm.ID,
+				})
+
+				if err != nil {
+					utils.PrettyPrintError(fmt.Errorf("failed to get related jobs when confirming sm deleting. details: %w", err))
+					continue
+				}
+
+				allFinished := slices.IndexFunc(relatedJobs, func(j jobModels.Job) bool {
+					return j.Status != jobModels.StatusCompleted &&
+						j.Status != jobModels.StatusTerminated
+				}) == -1
+
+				if allFinished {
+					log.Printf("marking sm %s as deleted\n", sm.ID)
+					_ = smModels.New().DeleteByID(sm.ID)
 				}
 			}
 
@@ -66,7 +123,7 @@ func vmConfirmer(ctx context.Context) {
 	for {
 		select {
 		case <-time.After(5 * time.Second):
-			beingCreated, err := vmModel.New().WithActivities(vmModel.ActivityBeingCreated).List()
+			beingCreated, err := vmModels.New().WithActivities(vmModels.ActivityBeingCreated).List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("failed to get vms being created. details: %w", err))
 			}
@@ -75,11 +132,11 @@ func vmConfirmer(ctx context.Context) {
 				created := VmCreated(&vm)
 				if created {
 					log.Printf("marking vm %s as created\n", vm.ID)
-					_ = vmModel.New().RemoveActivity(vm.ID, vmModel.ActivityBeingCreated)
+					_ = vmModels.New().RemoveActivity(vm.ID, vmModels.ActivityBeingCreated)
 				}
 			}
 
-			beingDeleted, err := vmModel.New().WithActivities(vmModel.ActivityBeingDeleted).List()
+			beingDeleted, err := vmModels.New().WithActivities(vmModels.ActivityBeingDeleted).List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("failed to get vms being deleted. details: %w", err))
 			}
@@ -90,7 +147,7 @@ func vmConfirmer(ctx context.Context) {
 					continue
 				}
 
-				relatedJobs, err := jobModel.New().ExcludeScheduled().GetByArgs(map[string]interface{}{
+				relatedJobs, err := jobModels.New().ExcludeScheduled().GetByArgs(map[string]interface{}{
 					"id": vm.ID,
 				})
 
@@ -99,14 +156,14 @@ func vmConfirmer(ctx context.Context) {
 					continue
 				}
 
-				allFinished := slices.IndexFunc(relatedJobs, func(j jobModel.Job) bool {
-					return j.Status != jobModel.StatusCompleted &&
-						j.Status != jobModel.StatusTerminated
+				allFinished := slices.IndexFunc(relatedJobs, func(j jobModels.Job) bool {
+					return j.Status != jobModels.StatusCompleted &&
+						j.Status != jobModels.StatusTerminated
 				}) == -1
 
 				if allFinished {
 					log.Printf("marking vm %s as deleted\n", vm.ID)
-					_ = vmModel.New().DeleteByID(vm.ID)
+					_ = vmModels.New().DeleteByID(vm.ID)
 				}
 			}
 

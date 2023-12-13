@@ -3,6 +3,7 @@ package jobs
 import (
 	da "go-deploy/models/sys/deployment"
 	jobModel "go-deploy/models/sys/job"
+	sa "go-deploy/models/sys/sm"
 	va "go-deploy/models/sys/vm"
 )
 
@@ -131,14 +132,17 @@ func jobMapper() map[string]JobDefinition {
 		},
 
 		// storage manager
-		jobModel.TypeCreateStorageManager: {
-			JobFunc: CreateStorageManager,
+		jobModel.TypeCreateSM: {
+			JobFunc: CreateSM,
 		},
-		jobModel.TypeDeleteStorageManager: {
-			JobFunc: DeleteStorageManager,
+		jobModel.TypeDeleteSM: {
+			JobFunc:   DeleteSM,
+			EntryFunc: sAddActivity(sa.ActivityBeingDeleted),
 		},
-		jobModel.TypeRepairStorageManager: {
-			JobFunc: RepairStorageManager,
+		jobModel.TypeRepairSM: {
+			JobFunc:   RepairSM,
+			EntryFunc: sAddActivity(sa.ActivityBeingCreated),
+			ExitFunc:  sRemActivity(sa.ActivityRepairing),
 		},
 	}
 }

@@ -1,4 +1,4 @@
-package v1_storage_manager
+package v1_sm
 
 import (
 	"github.com/gin-gonic/gin"
@@ -17,7 +17,7 @@ import (
 	"net/http"
 )
 
-// ListStorageManagers
+// ListSMs
 // @Summary Get storage manager list
 // @Description Get storage manager list
 // @BasePath /api/v1
@@ -25,15 +25,15 @@ import (
 // @Accept json
 // @Produce json
 // @Param Authorization header string true "Bearer token"
-// @Success 200 {array} body.StorageManagerRead
+// @Success 200 {array} body.SmRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 401 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /storageManagers [get]storageManager
-func ListStorageManagers(c *gin.Context) {
+func ListSMs(c *gin.Context) {
 	context := sys.NewContext(c)
 
-	var requestQuery query.StorageManagerList
+	var requestQuery query.SmList
 	if err := context.GinContext.Bind(&requestQuery); err != nil {
 		context.BindingError(v1.CreateBindingError(err))
 		return
@@ -45,27 +45,27 @@ func ListStorageManagers(c *gin.Context) {
 		return
 	}
 
-	storageManagers, _ := sm_service.New().WithAuth(auth).List(&client.ListOptions{
+	sms, _ := sm_service.New().WithAuth(auth).List(&client.ListOptions{
 		Pagination: &service.Pagination{
 			Page:     requestQuery.Page,
 			PageSize: requestQuery.PageSize,
 		},
 	})
 
-	if len(storageManagers) == 0 {
+	if len(sms) == 0 {
 		context.JSONResponse(200, []interface{}{})
 		return
 	}
 
-	var storageManagerDTOs []body.StorageManagerRead
-	for _, storageManager := range storageManagers {
-		storageManagerDTOs = append(storageManagerDTOs, storageManager.ToDTO())
+	var smDTOs []body.SmRead
+	for _, sm := range sms {
+		smDTOs = append(smDTOs, sm.ToDTO())
 	}
 
-	context.Ok(storageManagerDTOs)
+	context.Ok(smDTOs)
 }
 
-// GetStorageManager
+// GetSM
 // @Summary Get storage manager
 // @Description Get storage manager
 // @BasePath /api/v1
@@ -74,13 +74,13 @@ func ListStorageManagers(c *gin.Context) {
 // @Produce json
 // @Param Authorization header string true "Bearer token"
 // @Param storageManagerId path string true "Storage manager ID"
-// @Success 200 {object} body.StorageManagerDeleted
+// @Success 200 {object} body.SmDeleted
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 401 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /storageManagers/{storageManagerId} [get]
-func GetStorageManager(c *gin.Context) {
+func GetSM(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestURI uri.SmGet
@@ -95,21 +95,21 @@ func GetStorageManager(c *gin.Context) {
 		return
 	}
 
-	storageManager, err := sm_service.New().WithAuth(auth).Get(requestURI.SmID, &client.GetOptions{})
+	sm, err := sm_service.New().WithAuth(auth).Get(requestURI.SmID, &client.GetOptions{})
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return
 	}
 
-	if storageManager == nil || storageManager.OwnerID != auth.UserID {
+	if sm == nil || sm.OwnerID != auth.UserID {
 		context.NotFound("Storage manager not found")
 		return
 	}
 
-	context.Ok(storageManager.ToDTO())
+	context.Ok(sm.ToDTO())
 }
 
-// DeleteStorageManager
+// DeleteSM
 // @Summary Delete storage manager
 // @Description Delete storage manager
 // @BasePath /api/v1
@@ -118,13 +118,13 @@ func GetStorageManager(c *gin.Context) {
 // @Produce json
 // @Param Authorization header string true "Bearer token"
 // @Param storageManagerId path string true "Storage manager ID"
-// @Success 200 {object} body.StorageManagerDeleted
+// @Success 200 {object} body.SmDeleted
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 401 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /storageManager/{storageManagerId} [get]
-func DeleteStorageManager(c *gin.Context) {
+func DeleteSM(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestURI uri.SmDelete
@@ -139,28 +139,28 @@ func DeleteStorageManager(c *gin.Context) {
 		return
 	}
 
-	storageManager, err := sm_service.New().WithAuth(auth).Get(requestURI.SmID, &client.GetOptions{})
+	sm, err := sm_service.New().WithAuth(auth).Get(requestURI.SmID, &client.GetOptions{})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
 	}
 
-	if storageManager == nil {
+	if sm == nil {
 		context.NotFound("Storage manager not found")
 		return
 	}
 
 	jobID := uuid.New().String()
-	err = job_service.Create(jobID, auth.UserID, jobModel.TypeDeleteStorageManager, map[string]interface{}{
-		"id": storageManager.ID,
+	err = job_service.Create(jobID, auth.UserID, jobModel.TypeDeleteSM, map[string]interface{}{
+		"id": sm.ID,
 	})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
 	}
 
-	context.Ok(body.StorageManagerDeleted{
-		ID:    storageManager.ID,
+	context.Ok(body.SmDeleted{
+		ID:    sm.ID,
 		JobID: jobID,
 	})
 }

@@ -27,11 +27,3 @@ type LogsGet struct {
 type BuildGet struct {
 	DeploymentID string `uri:"deploymentId" binding:"required,uuid4"`
 }
-
-type SmGet struct {
-	SmID string `uri:"storageManagerId" binding:"required,uuid4"`
-}
-
-type SmDelete struct {
-	SmID string `uri:"storageManagerId" binding:"required,uuid4"`
-}

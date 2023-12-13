@@ -23,17 +23,17 @@ import (
 	"go-deploy/service/zone_service"
 )
 
-func getStorageManagerURL(userID string, auth *service.AuthInfo) *string {
-	storageManager, err := sm_service.New().WithAuth(auth).GetByUserID(userID, &smClient.GetOptions{})
+func getSmURL(userID string, auth *service.AuthInfo) *string {
+	sm, err := sm_service.New().WithAuth(auth).GetByUserID(userID, &smClient.GetOptions{})
 	if err != nil {
 		return nil
 	}
 
-	if storageManager == nil {
+	if sm == nil {
 		return nil
 	}
 
-	return storageManager.GetURL()
+	return sm.GetURL()
 }
 
 // List
@@ -92,12 +92,12 @@ func List(c *gin.Context) {
 
 	dtoDeployments := make([]body.DeploymentRead, len(deployments))
 	for i, deployment := range deployments {
-		var storageManagerURL *string
+		var smURL *string
 		if mainApp := deployment.GetMainApp(); mainApp != nil && len(mainApp.Volumes) > 0 {
-			storageManagerURL = getStorageManagerURL(deployment.OwnerID, auth)
+			smURL = getSmURL(deployment.OwnerID, auth)
 		}
 
-		dtoDeployments[i] = deployment.ToDTO(storageManagerURL)
+		dtoDeployments[i] = deployment.ToDTO(smURL)
 	}
 
 	context.JSONResponse(200, dtoDeployments)
@@ -142,12 +142,12 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	var storageManagerURL *string
+	var smURL *string
 	if len(deployment.GetMainApp().Volumes) > 0 {
-		storageManagerURL = getStorageManagerURL(deployment.OwnerID, auth)
+		smURL = getSmURL(deployment.OwnerID, auth)
 	}
 
-	context.Ok(deployment.ToDTO(storageManagerURL))
+	context.Ok(deployment.ToDTO(smURL))
 }
 
 // Create

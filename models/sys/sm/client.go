@@ -1,4 +1,4 @@
-package storage_manager
+package sm
 
 import (
 	"go-deploy/models/db"
@@ -13,18 +13,18 @@ type Client struct {
 	Collection      *mongo.Collection
 	RestrictOwnerID *string
 
-	activityResource.ActivityResourceClient[StorageManager]
-	resource.ResourceClient[StorageManager]
+	activityResource.ActivityResourceClient[SM]
+	resource.ResourceClient[SM]
 }
 
 func New() *Client {
 	return &Client{
 		Collection: db.DB.GetCollection("storageManagers"),
 
-		ActivityResourceClient: activityResource.ActivityResourceClient[StorageManager]{
+		ActivityResourceClient: activityResource.ActivityResourceClient[SM]{
 			Collection: db.DB.GetCollection("storageManagers"),
 		},
-		ResourceClient: resource.ResourceClient[StorageManager]{
+		ResourceClient: resource.ResourceClient[SM]{
 			Collection:     db.DB.GetCollection("storageManagers"),
 			IncludeDeleted: false,
 		},

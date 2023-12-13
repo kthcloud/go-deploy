@@ -16,9 +16,3 @@ type DeploymentList struct {
 type DeploymentUpdate struct {
 	Envs []map[string]string `json:"envs" binding:"omitempty,dive,min=0,max=1000"`
 }
-
-type StorageManagerList struct {
-	Pagination
-
-	All bool `form:"all" binding:"omitempty,boolean"`
-}

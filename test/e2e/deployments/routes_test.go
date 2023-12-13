@@ -37,7 +37,7 @@ func TestGetStorageManagers(t *testing.T) {
 	resp := e2e.DoGetRequest(t, "/storageManagers")
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-	var storageManagers []body.StorageManagerRead
+	var storageManagers []body.SmRead
 	err := e2e.ReadResponseBody(t, resp, &storageManagers)
 	assert.NoError(t, err, "storage managers were not fetched")
 
@@ -449,12 +449,12 @@ func TestCreateStorageManager(t *testing.T) {
 
 	// now the storage manager should be available
 	// TODO: update this part of the test when storage manager id is exposed in the deployment/user
-	var storageManager body.StorageManagerRead
+	var storageManager body.SmRead
 	{
 		resp := e2e.DoGetRequest(t, "/storageManagers")
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-		var storageManagers []body.StorageManagerRead
+		var storageManagers []body.SmRead
 		err := e2e.ReadResponseBody(t, resp, &storageManagers)
 		assert.NoError(t, err, "storage managers were not fetched")
 
@@ -475,7 +475,7 @@ func TestCreateStorageManager(t *testing.T) {
 	assert.NotEmpty(t, storageManager.OwnerID, "storage manager owner id was empty")
 	assert.NotEmpty(t, storageManager.URL, "storage manager url was empty")
 
-	e2e.WaitForStorageManagerRunning(t, storageManager.ID, func(storageManagerRead *body.StorageManagerRead) bool {
+	e2e.WaitForSmRunning(t, storageManager.ID, func(storageManagerRead *body.SmRead) bool {
 		//make sure it is accessible
 		if storageManager.URL != nil {
 			return e2e.CheckUpURL(t, *storageManager.URL)

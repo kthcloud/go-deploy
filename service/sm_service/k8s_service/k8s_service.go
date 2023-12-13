@@ -2,7 +2,7 @@ package k8s_service
 
 import (
 	"fmt"
-	"go-deploy/models/sys/storage_manager"
+	"go-deploy/models/sys/sm"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/service/constants"
 	"go-deploy/service/resources"
@@ -13,7 +13,7 @@ import (
 // Create creates the storage manager.
 //
 // It creates all K8s resources for the storage manager.
-func (c *Client) Create(id string, params *storage_manager.CreateParams) error {
+func (c *Client) Create(id string, params *sm.CreateParams) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create storage manager in k8s. details: %w", err)
 	}
@@ -364,8 +364,8 @@ func (c *Client) Repair(id string) error {
 func dbFunc(id, key string) func(interface{}) error {
 	return func(data interface{}) error {
 		if data == nil {
-			return storage_manager.New().DeleteSubsystemByID(id, "k8s."+key)
+			return sm.New().DeleteSubsystemByID(id, "k8s."+key)
 		}
-		return storage_manager.New().UpdateSubsystemByID(id, "k8s."+key, data)
+		return sm.New().UpdateSubsystemByID(id, "k8s."+key, data)
 	}
 }

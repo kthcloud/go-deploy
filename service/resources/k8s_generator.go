@@ -6,8 +6,8 @@ import (
 	"fmt"
 	configModels "go-deploy/models/config"
 	"go-deploy/models/sys/deployment"
-	storageManagerModel "go-deploy/models/sys/storage_manager"
-	userModel "go-deploy/models/sys/user"
+	smModels "go-deploy/models/sys/sm"
+	userModels "go-deploy/models/sys/user"
 	"go-deploy/models/sys/vm"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/k8s"
@@ -67,12 +67,12 @@ func (kg *K8sGenerator) Namespace() *models.NamespacePublic {
 		return &ns
 	}
 
-	if kg.s.storageManager != nil {
+	if kg.s.sm != nil {
 		ns := models.NamespacePublic{
 			Name: kg.namespace,
 		}
 
-		if n := &kg.s.storageManager.Subsystems.K8s.Namespace; service.Created(n) {
+		if n := &kg.s.sm.Subsystems.K8s.Namespace; service.Created(n) {
 			ns.ID = n.ID
 			ns.CreatedAt = n.CreatedAt
 		}
@@ -239,15 +239,15 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		return res
 	}
 
-	if kg.s.storageManager != nil {
-		initVolumes, stdVolume := sVolumes(kg.s.storageManager.OwnerID)
+	if kg.s.sm != nil {
+		initVolumes, stdVolume := sVolumes(kg.s.sm.OwnerID)
 		allVolumes := append(initVolumes, stdVolume...)
 
 		k8sVolumes := make([]models.Volume, len(allVolumes))
 		for i, volume := range allVolumes {
 			pvcName := sPvcName(volume.Name)
 			k8sVolumes[i] = models.Volume{
-				Name:      sPvName(kg.s.storageManager.OwnerID, volume.Name),
+				Name:      sPvName(kg.s.sm.OwnerID, volume.Name),
 				PvcName:   &pvcName,
 				MountPath: volume.AppPath,
 				Init:      volume.Init,
@@ -272,7 +272,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		}
 
 		filebrowser := models.DeploymentPublic{
-			Name:             constants.StorageManagerAppName,
+			Name:             constants.SmAppName,
 			Namespace:        kg.namespace,
 			Image:            "filebrowser/filebrowser",
 			ImagePullSecrets: make([]string, 0),
@@ -288,7 +288,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 			Volumes:        k8sVolumes,
 		}
 
-		if fb := kg.s.storageManager.Subsystems.K8s.GetDeployment(constants.StorageManagerAppName); service.Created(fb) {
+		if fb := kg.s.sm.Subsystems.K8s.GetDeployment(constants.SmAppName); service.Created(fb) {
 			filebrowser.ID = fb.ID
 			filebrowser.CreatedAt = fb.CreatedAt
 		}
@@ -296,7 +296,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		res = append(res, filebrowser)
 
 		// oauth2-proxy
-		user, err := userModel.New().GetByID(kg.s.storageManager.OwnerID)
+		user, err := userModels.New().GetByID(kg.s.sm.OwnerID)
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to get user by id when creating oauth proxy deployment public. details: %w", err))
 			return nil
@@ -318,7 +318,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		}
 
 		issuer := config.Config.Keycloak.Url + "/realms/" + config.Config.Keycloak.Realm
-		redirectURL := fmt.Sprintf("https://%s.%s/oauth2/callback", kg.s.storageManager.OwnerID, kg.s.zone.Storage.ParentDomain)
+		redirectURL := fmt.Sprintf("https://%s.%s/oauth2/callback", kg.s.sm.OwnerID, kg.s.zone.Storage.ParentDomain)
 		upstream := "http://storage-manager"
 
 		args = []string{
@@ -355,7 +355,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		}
 
 		oauthProxy := models.DeploymentPublic{
-			Name:             constants.StorageManagerAppNameAuth,
+			Name:             constants.SmAppNameAuth,
 			Namespace:        kg.namespace,
 			Image:            "quay.io/oauth2-proxy/oauth2-proxy:latest",
 			ImagePullSecrets: make([]string, 0),
@@ -372,7 +372,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 			CreatedAt:      time.Time{},
 		}
 
-		if op := kg.s.storageManager.Subsystems.K8s.GetDeployment(constants.StorageManagerAppNameAuth); service.Created(op) {
+		if op := kg.s.sm.Subsystems.K8s.GetDeployment(constants.SmAppNameAuth); service.Created(op) {
 			oauthProxy.ID = op.ID
 			oauthProxy.CreatedAt = op.CreatedAt
 		}
@@ -446,16 +446,16 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 		return res
 	}
 
-	if kg.s.storageManager != nil {
+	if kg.s.sm != nil {
 		// filebrowser
 		filebrowser := models.ServicePublic{
-			Name:       constants.StorageManagerAppName,
+			Name:       constants.SmAppName,
 			Namespace:  kg.namespace,
 			Port:       80,
 			TargetPort: 80,
 		}
 
-		if fb := kg.s.storageManager.Subsystems.K8s.GetService(constants.StorageManagerAppName); service.Created(fb) {
+		if fb := kg.s.sm.Subsystems.K8s.GetService(constants.SmAppName); service.Created(fb) {
 			filebrowser.ID = fb.ID
 			filebrowser.CreatedAt = fb.CreatedAt
 		}
@@ -464,13 +464,13 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 
 		// oauth2-proxy
 		oauthProxy := models.ServicePublic{
-			Name:       constants.StorageManagerAppNameAuth,
+			Name:       constants.SmAppNameAuth,
 			Namespace:  kg.namespace,
 			Port:       4180,
 			TargetPort: 4180,
 		}
 
-		if op := kg.s.storageManager.Subsystems.K8s.GetService(constants.StorageManagerAppNameAuth); service.Created(op) {
+		if op := kg.s.sm.Subsystems.K8s.GetService(constants.SmAppNameAuth); service.Created(op) {
 			oauthProxy.ID = op.ID
 			oauthProxy.CreatedAt = op.CreatedAt
 		}
@@ -606,20 +606,20 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 		return res
 	}
 
-	if kg.s.storageManager != nil {
+	if kg.s.sm != nil {
 		tlsSecret := constants.WildcardCertSecretName
 
 		ingress := models.IngressPublic{
-			Name:         constants.StorageManagerAppName,
+			Name:         constants.SmAppName,
 			Namespace:    kg.namespace,
-			ServiceName:  constants.StorageManagerAppNameAuth,
+			ServiceName:  constants.SmAppNameAuth,
 			ServicePort:  4180,
 			IngressClass: config.Config.Deployment.IngressClass,
-			Hosts:        []string{getStorageExternalFQDN(kg.s.storageManager.OwnerID, kg.s.zone)},
+			Hosts:        []string{getStorageExternalFQDN(kg.s.sm.OwnerID, kg.s.zone)},
 			TlsSecret:    &tlsSecret,
 		}
 
-		if i := kg.s.storageManager.Subsystems.K8s.GetIngress(constants.StorageManagerAppName); service.Created(i) {
+		if i := kg.s.sm.Subsystems.K8s.GetIngress(constants.SmAppName); service.Created(i) {
 			ingress.ID = i.ID
 			ingress.CreatedAt = i.CreatedAt
 		}
@@ -665,20 +665,20 @@ func (kg *K8sGenerator) PVs() []models.PvPublic {
 		return res
 	}
 
-	if kg.s.storageManager != nil {
-		initVolumes, volumes := sVolumes(kg.s.storageManager.OwnerID)
+	if kg.s.sm != nil {
+		initVolumes, volumes := sVolumes(kg.s.sm.OwnerID)
 		allVolumes := append(initVolumes, volumes...)
 
 		for _, v := range allVolumes {
 			res = append(res, models.PvPublic{
-				Name:      sPvName(kg.s.storageManager.OwnerID, v.Name),
+				Name:      sPvName(kg.s.sm.OwnerID, v.Name),
 				Capacity:  config.Config.Deployment.Resources.Limits.Storage,
 				NfsServer: kg.s.zone.Storage.NfsServer,
 				NfsPath:   path.Join(kg.s.zone.Storage.NfsParentPath, v.ServerPath),
 			})
 		}
 
-		for mapName, pv := range kg.s.storageManager.Subsystems.K8s.GetPvMap() {
+		for mapName, pv := range kg.s.sm.Subsystems.K8s.GetPvMap() {
 			idx := slices.IndexFunc(res, func(pv models.PvPublic) bool {
 				return pv.Name == mapName
 			})
@@ -720,8 +720,8 @@ func (kg *K8sGenerator) PVCs() []models.PvcPublic {
 		return res
 	}
 
-	if kg.s.storageManager != nil {
-		initVolumes, volumes := sVolumes(kg.s.storageManager.OwnerID)
+	if kg.s.sm != nil {
+		initVolumes, volumes := sVolumes(kg.s.sm.OwnerID)
 		allVolumes := append(initVolumes, volumes...)
 
 		for _, volume := range allVolumes {
@@ -729,11 +729,11 @@ func (kg *K8sGenerator) PVCs() []models.PvcPublic {
 				Name:      sPvcName(volume.Name),
 				Namespace: kg.namespace,
 				Capacity:  config.Config.Deployment.Resources.Limits.Storage,
-				PvName:    sPvName(kg.s.storageManager.OwnerID, volume.Name),
+				PvName:    sPvName(kg.s.sm.OwnerID, volume.Name),
 			})
 		}
 
-		for mapName, pvc := range kg.s.storageManager.Subsystems.K8s.GetPvcMap() {
+		for mapName, pvc := range kg.s.sm.Subsystems.K8s.GetPvcMap() {
 			idx := slices.IndexFunc(res, func(pvc models.PvcPublic) bool {
 				return pvc.Name == mapName
 			})
@@ -869,7 +869,7 @@ func (kg *K8sGenerator) Secrets() []models.SecretPublic {
 		return res
 	}
 
-	if kg.s.storageManager != nil {
+	if kg.s.sm != nil {
 		// wildcard certificate
 		/// swap namespaces temporarily
 		var wildcardCertSecret *models.SecretPublic
@@ -889,7 +889,7 @@ func (kg *K8sGenerator) Secrets() []models.SecretPublic {
 			}
 		}
 
-		if secret := kg.s.storageManager.Subsystems.K8s.GetSecret(constants.WildcardCertSecretName); service.Created(secret) {
+		if secret := kg.s.sm.Subsystems.K8s.GetSecret(constants.WildcardCertSecretName); service.Created(secret) {
 			if wildcardCertSecret == nil {
 				wildcardCertSecret = secret
 			} else {
@@ -911,20 +911,20 @@ func (kg *K8sGenerator) Secrets() []models.SecretPublic {
 func (kg *K8sGenerator) Jobs() []models.JobPublic {
 	var res []models.JobPublic
 
-	if kg.s.storageManager != nil {
-		initVolumes, _ := sVolumes(kg.s.storageManager.OwnerID)
+	if kg.s.sm != nil {
+		initVolumes, _ := sVolumes(kg.s.sm.OwnerID)
 		k8sVolumes := make([]models.Volume, len(initVolumes))
 		for i, volume := range initVolumes {
 			pvcName := sPvcName(volume.Name)
 			k8sVolumes[i] = models.Volume{
-				Name:      sPvName(kg.s.storageManager.OwnerID, volume.Name),
+				Name:      sPvName(kg.s.sm.OwnerID, volume.Name),
 				PvcName:   &pvcName,
 				MountPath: volume.AppPath,
 				Init:      volume.Init,
 			}
 		}
 
-		for _, job := range sJobs(kg.s.storageManager.OwnerID) {
+		for _, job := range sJobs(kg.s.sm.OwnerID) {
 			res = append(res, models.JobPublic{
 				Name:      job.Name,
 				Namespace: kg.namespace,
@@ -935,7 +935,7 @@ func (kg *K8sGenerator) Jobs() []models.JobPublic {
 			})
 		}
 
-		for _, job := range kg.s.storageManager.Subsystems.K8s.GetJobMap() {
+		for _, job := range kg.s.sm.Subsystems.K8s.GetJobMap() {
 			idx := slices.IndexFunc(res, func(j models.JobPublic) bool { return j.Name == job.Name })
 			if idx != -1 {
 				res[idx].ID = job.ID
@@ -1048,7 +1048,7 @@ func vpExternalURL(portName string, zone *configModels.DeploymentZone) string {
 
 // storage manager pvc name
 func sPvcName(volumeName string) string {
-	return fmt.Sprintf("%s-%s", constants.StorageManagerAppName, volumeName)
+	return fmt.Sprintf("%s-%s", constants.SmAppName, volumeName)
 }
 
 // storage manager pv name
@@ -1057,8 +1057,8 @@ func sPvName(ownerID, volumeName string) string {
 }
 
 // storage manager volumes
-func sVolumes(ownerID string) ([]storageManagerModel.Volume, []storageManagerModel.Volume) {
-	initVolumes := []storageManagerModel.Volume{
+func sVolumes(ownerID string) ([]smModels.Volume, []smModels.Volume) {
+	initVolumes := []smModels.Volume{
 		{
 			Name:       "init",
 			Init:       false,
@@ -1067,7 +1067,7 @@ func sVolumes(ownerID string) ([]storageManagerModel.Volume, []storageManagerMod
 		},
 	}
 
-	volumes := []storageManagerModel.Volume{
+	volumes := []smModels.Volume{
 		{
 			Name:       "data",
 			Init:       false,
@@ -1086,8 +1086,8 @@ func sVolumes(ownerID string) ([]storageManagerModel.Volume, []storageManagerMod
 }
 
 // storage manager jobs
-func sJobs(userID string) []storageManagerModel.Job {
-	return []storageManagerModel.Job{
+func sJobs(userID string) []smModels.Job {
+	return []smModels.Job{
 		{
 			Name:    "init",
 			Image:   "busybox",

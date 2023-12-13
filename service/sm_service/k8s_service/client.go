@@ -2,7 +2,7 @@ package k8s_service
 
 import (
 	configModels "go-deploy/models/config"
-	smModels "go-deploy/models/sys/storage_manager"
+	smModels "go-deploy/models/sys/sm"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/k8s"
 	sErrors "go-deploy/service/errors"
@@ -61,8 +61,8 @@ func New(context *client.Context) *Client {
 //
 // Depending on the options specified, some return values may be nil.
 // This is useful when you don't always need all the resources.
-func (c *Client) Get(opts *client.Opts) (*smModels.StorageManager, *k8s.Client, *resources.K8sGenerator, error) {
-	var sm *smModels.StorageManager
+func (c *Client) Get(opts *client.Opts) (*smModels.SM, *k8s.Client, *resources.K8sGenerator, error) {
+	var sm *smModels.SM
 	var kc *k8s.Client
 	var g *resources.K8sGenerator
 	var err error
@@ -130,7 +130,7 @@ func (c *Client) Client(userID string, zone *configModels.DeploymentZone) (*k8s.
 }
 
 // Generator returns the K8s generator.
-func (c *Client) Generator(sm *smModels.StorageManager, client *k8s.Client, zone *configModels.DeploymentZone) *resources.K8sGenerator {
+func (c *Client) Generator(sm *smModels.SM, client *k8s.Client, zone *configModels.DeploymentZone) *resources.K8sGenerator {
 	if sm == nil {
 		panic("deployment is nil")
 	}

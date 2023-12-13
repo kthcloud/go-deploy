@@ -1,14 +1,14 @@
 package constants
 
 const (
-	AppName                   = "main"
-	AppNameImagePullSecret    = "image-pull-secret"
-	AppNameCustomDomain       = "custom-domain"
-	VmProxyAppName            = "vm-proxy"
-	StorageManagerNamePrefix  = "system"
-	StorageManagerAppName     = "storage-manager"
-	StorageManagerAppNameAuth = "storage-manager-auth"
-	WildcardCertSecretName    = "wildcard-cert"
+	AppName                = "main"
+	AppNameImagePullSecret = "image-pull-secret"
+	AppNameCustomDomain    = "custom-domain"
+	VmProxyAppName         = "vm-proxy"
+	SmNamePrefix           = "system"
+	SmAppName              = "storage-manager"
+	SmAppNameAuth          = "storage-manager-auth"
+	WildcardCertSecretName = "wildcard-cert"
 )
 
 func WithImagePullSecretSuffix(appName string) string {

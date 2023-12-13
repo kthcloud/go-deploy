@@ -2,7 +2,7 @@ package client
 
 import (
 	"fmt"
-	smModels "go-deploy/models/sys/storage_manager"
+	smModels "go-deploy/models/sys/sm"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
 )
@@ -16,7 +16,7 @@ type BaseClient[parent any] struct {
 func NewBaseClient[parent any](context *Context) BaseClient[parent] {
 	if context == nil {
 		context = &Context{
-			smStore: make(map[string]*smModels.StorageManager),
+			smStore: make(map[string]*smModels.SM),
 		}
 	}
 
@@ -35,7 +35,7 @@ func (c *BaseClient[parent]) SetContext(context *Context) {
 	c.Context = context
 }
 
-func (c *BaseClient[parent]) SM(id, userID string, smc *smModels.Client) (*smModels.StorageManager, error) {
+func (c *BaseClient[parent]) SM(id, userID string, smc *smModels.Client) (*smModels.SM, error) {
 	sm, ok := c.smStore[id]
 	if ok {
 		return sm, nil
@@ -49,7 +49,7 @@ func (c *BaseClient[parent]) SM(id, userID string, smc *smModels.Client) (*smMod
 	return c.fetchSM(id, smc)
 }
 
-func (c *BaseClient[parent]) fetchSM(id string, smc *smModels.Client) (*smModels.StorageManager, error) {
+func (c *BaseClient[parent]) fetchSM(id string, smc *smModels.Client) (*smModels.SM, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to fetch sm in service client: %w", err)
 	}
@@ -58,7 +58,7 @@ func (c *BaseClient[parent]) fetchSM(id string, smc *smModels.Client) (*smModels
 		smc = smModels.New()
 	}
 
-	var sm *smModels.StorageManager
+	var sm *smModels.SM
 	var err error
 
 	if id == "" {
@@ -84,7 +84,7 @@ func (c *BaseClient[parent]) WithAuth(auth *service.AuthInfo) *parent {
 	return c.p
 }
 
-func (c *BaseClient[parent]) storeSM(sm *smModels.StorageManager) {
+func (c *BaseClient[parent]) storeSM(sm *smModels.SM) {
 	c.smStore[sm.ID] = sm
 	c.smStore[sm.OwnerID] = sm
 }

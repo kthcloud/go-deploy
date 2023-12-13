@@ -5,6 +5,7 @@ import (
 	"fmt"
 	deploymentModel "go-deploy/models/sys/deployment"
 	jobModel "go-deploy/models/sys/job"
+	smModels "go-deploy/models/sys/sm"
 	vmModel "go-deploy/models/sys/vm"
 	"go.mongodb.org/mongo-driver/bson"
 	"golang.org/x/exp/slices"
@@ -165,6 +166,36 @@ func dRemActivity(activities ...string) func(*jobModel.Job) error {
 
 		for _, a := range activities {
 			err := deploymentModel.New().RemoveActivity(id, a)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+}
+
+// add activity to sm
+func sAddActivity(activities ...string) func(*jobModel.Job) error {
+	return func(job *jobModel.Job) error {
+		id := job.Args["id"].(string)
+
+		for _, a := range activities {
+			err := smModels.New().AddActivity(id, a)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+}
+
+// remove activity from sm
+func sRemActivity(activities ...string) func(*jobModel.Job) error {
+	return func(job *jobModel.Job) error {
+		id := job.Args["id"].(string)
+
+		for _, a := range activities {
+			err := smModels.New().RemoveActivity(id, a)
 			if err != nil {
 				return err
 			}

@@ -1,4 +1,4 @@
-package storage_manager
+package sm
 
 import (
 	"fmt"
@@ -6,20 +6,21 @@ import (
 	"time"
 )
 
-type StorageManager struct {
+type SM struct {
 	ID      string `bson:"id"`
 	OwnerID string `bson:"ownerId"`
 	Zone    string `bson:"zone"`
 
 	CreatedAt  time.Time `bson:"createdAt"`
 	RepairedAt time.Time `bson:"repairedAt"`
+	DeletedAt  time.Time `bson:"deletedAt"`
 
 	Activities map[string]activity.Activity `bson:"activities"`
 	Subsystems Subsystems                   `bson:"subsystems"`
 }
 
-func (storageManager *StorageManager) GetURL() *string {
-	ingress, ok := storageManager.Subsystems.K8s.IngressMap["oauth-proxy"]
+func (sm *SM) GetURL() *string {
+	ingress, ok := sm.Subsystems.K8s.IngressMap["oauth-proxy"]
 	if !ok || !ingress.Created() {
 		return nil
 	}

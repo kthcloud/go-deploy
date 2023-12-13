@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	configModels "go-deploy/models/config"
-	"go-deploy/models/sys/storage_manager"
+	smModels "go-deploy/models/sys/sm"
 	"go-deploy/pkg/config"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/sm_service/client"
@@ -16,8 +16,8 @@ import (
 // Get gets an existing storage manager.
 //
 // It supports service.AuthInfo, and will restrict the result to ensure the user has access to the resource.
-func (c *Client) Get(id string, opts *client.GetOptions) (*storage_manager.StorageManager, error) {
-	sClient := storage_manager.New()
+func (c *Client) Get(id string, opts *client.GetOptions) (*smModels.SM, error) {
+	sClient := smModels.New()
 
 	if c.Auth != nil && !c.Auth.IsAdmin {
 		sClient.RestrictToOwner(c.Auth.UserID)
@@ -29,8 +29,8 @@ func (c *Client) Get(id string, opts *client.GetOptions) (*storage_manager.Stora
 // GetByUserID gets an existing storage by user ID.
 //
 // It supports service.AuthInfo, and will restrict the result to ensure the user has access to the resource.
-func (c *Client) GetByUserID(userID string, opts *client.GetOptions) (*storage_manager.StorageManager, error) {
-	sClient := storage_manager.New()
+func (c *Client) GetByUserID(userID string, opts *client.GetOptions) (*smModels.SM, error) {
+	sClient := smModels.New()
 
 	if c.Auth != nil && userID != c.Auth.UserID && !c.Auth.IsAdmin {
 		sClient.RestrictToOwner(c.Auth.UserID)
@@ -44,8 +44,8 @@ func (c *Client) GetByUserID(userID string, opts *client.GetOptions) (*storage_m
 // List lists existing storage managers.
 //
 // It supports service.AuthInfo, and will restrict the result to ensure the user has access to the resource.
-func (c *Client) List(opts *client.ListOptions) ([]storage_manager.StorageManager, error) {
-	sClient := storage_manager.New()
+func (c *Client) List(opts *client.ListOptions) ([]smModels.SM, error) {
+	sClient := smModels.New()
 
 	if opts.Pagination != nil {
 		sClient.WithPagination(opts.Pagination.Page, opts.Pagination.PageSize)
@@ -70,15 +70,15 @@ func (c *Client) List(opts *client.ListOptions) ([]storage_manager.StorageManage
 // Create creates a new storage manager
 //
 // It returns an error if the storage manager already exists (user ID clash).
-func (c *Client) Create(id, userID string, params *storage_manager.CreateParams) error {
+func (c *Client) Create(id, userID string, params *smModels.CreateParams) error {
 	makeErr := func(err error) error {
 		return fmt.Errorf("failed to create storage manager. details: %w", err)
 	}
 
-	_, err := storage_manager.New().CreateStorageManager(id, userID, params)
+	_, err := smModels.New().CreateSM(id, userID, params)
 	if err != nil {
-		if errors.Is(err, storage_manager.AlreadyExistsErr) {
-			return sErrors.StorageManagerAlreadyExistsErr
+		if errors.Is(err, smModels.AlreadyExistsErr) {
+			return sErrors.SmAlreadyExistsErr
 		}
 
 		return makeErr(err)
@@ -94,7 +94,7 @@ func (c *Client) Create(id, userID string, params *storage_manager.CreateParams)
 
 // Exists checks if a storage manager exists.
 func (c *Client) Exists(userID string) (bool, error) {
-	return storage_manager.New().RestrictToOwner(userID).ExistsAny()
+	return smModels.New().RestrictToOwner(userID).ExistsAny()
 }
 
 // Delete deletes an existing storage manager.
@@ -112,16 +112,6 @@ func (c *Client) Delete(id string) error {
 		return makeErr(err)
 	}
 
-	err = storage_manager.New().DeleteByID(id)
-	if err != nil {
-		return makeErr(err)
-	}
-
-	// TODO:
-	// New idea! check if everything is deleted at the end, if not, fail the function
-	// this will solve the repair <-> delete race, as it will eventually converge as long as the repair
-	// respects the beingDeleted activity
-
 	return nil
 }
 
@@ -133,12 +123,12 @@ func (c *Client) Repair(id string) error {
 		return fmt.Errorf("failed to repair storage manager %s. details: %w", id, err)
 	}
 
-	storageManager, err := storage_manager.New().GetByID(id)
+	sm, err := smModels.New().GetByID(id)
 	if err != nil {
 		return makeErr(err)
 	}
 
-	if storageManager == nil {
+	if sm == nil {
 		log.Println("storage manager", id, "not found when repairing, assuming it was deleted")
 		return nil
 	}

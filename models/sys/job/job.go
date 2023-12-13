@@ -22,9 +22,9 @@ const (
 	TypeBuildDeployments      = "buildDeployments"
 	TypeRepairDeployment      = "repairDeployment"
 
-	TypeCreateStorageManager = "createStorageManager"
-	TypeDeleteStorageManager = "deleteStorageManager"
-	TypeRepairStorageManager = "repairStorageManager"
+	TypeCreateSM = "createSM"
+	TypeDeleteSM = "deleteSM"
+	TypeRepairSM = "repairSM"
 )
 
 const (

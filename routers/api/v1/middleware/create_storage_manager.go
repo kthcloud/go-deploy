@@ -5,7 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	jobModel "go-deploy/models/sys/job"
-	"go-deploy/models/sys/storage_manager"
+	"go-deploy/models/sys/sm"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/job_service"
@@ -13,7 +13,7 @@ import (
 	"go-deploy/utils"
 )
 
-func CreateStorageManager() gin.HandlerFunc {
+func CreateSM() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		context := sys.NewContext(c)
 
@@ -30,12 +30,12 @@ func CreateStorageManager() gin.HandlerFunc {
 		}
 
 		if !exists {
-			storageManagerID := uuid.New().String()
+			smID := uuid.New().String()
 			jobID := uuid.New().String()
-			err = job_service.Create(jobID, auth.UserID, jobModel.TypeCreateStorageManager, map[string]interface{}{
-				"id":     storageManagerID,
+			err = job_service.Create(jobID, auth.UserID, jobModel.TypeCreateSM, map[string]interface{}{
+				"id":     smID,
 				"userId": auth.UserID,
-				"params": storage_manager.CreateParams{
+				"params": sm.CreateParams{
 					Zone: "se-flem",
 				},
 			})

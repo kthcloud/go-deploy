@@ -1,6 +1,7 @@
-package storage_manager
+package sm
 
 const (
 	ActivityBeingCreated = "beingCreated"
 	ActivityBeingDeleted = "beingDeleted"
+	ActivityRepairing    = "repairing"
 )

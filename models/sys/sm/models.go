@@ -1,4 +1,4 @@
-package storage_manager
+package sm
 
 import "go-deploy/models/sys/deployment/subsystems"
 

@@ -41,15 +41,15 @@ func collectUsage(userID string) (*userModel.Usage, error) {
 	return usage, nil
 }
 
-func getStorageURL(userID string, auth *service.AuthInfo) (*string, error) {
-	storageManager, err := sm_service.New().WithAuth(auth).GetByUserID(userID, &smClient.GetOptions{})
+func getSmURL(userID string, auth *service.AuthInfo) (*string, error) {
+	sm, err := sm_service.New().WithAuth(auth).GetByUserID(userID, &smClient.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
 
 	var storageURL *string
-	if storageManager != nil {
-		storageURL = storageManager.GetURL()
+	if sm != nil {
+		storageURL = sm.GetURL()
 	}
 
 	return storageURL, nil
@@ -118,7 +118,7 @@ func ListUsers(c *gin.Context) {
 			}
 		}
 
-		storageURL, err := getStorageURL(user.ID, auth)
+		storageURL, err := getSmURL(user.ID, auth)
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to get storage url for a user when listing: %w", err))
 			continue
@@ -197,7 +197,7 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	storageURL, err := getStorageURL(user.ID, auth)
+	storageURL, err := getSmURL(user.ID, auth)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -271,7 +271,7 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	storageURL, err := getStorageURL(updated.ID, auth)
+	storageURL, err := getSmURL(updated.ID, auth)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
