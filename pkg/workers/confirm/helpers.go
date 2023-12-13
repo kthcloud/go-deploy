@@ -314,11 +314,19 @@ func csCreated(vm *vm.VM) (bool, error) {
 	cs := &vm.Subsystems.CS
 
 	sshRule, ok := cs.PortForwardingRuleMap["__ssh"]
-	if !ok {
+	if !ok || !sshRule.Created() {
 		return false, nil
 	}
 
-	return cs.VM.Created() && sshRule.Created(), nil
+	if !cs.VM.Created() {
+		return false, nil
+	}
+
+	if !cs.ServiceOffering.Created() {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 func csDeleted(vm *vm.VM) (bool, error) {
@@ -330,7 +338,15 @@ func csDeleted(vm *vm.VM) (bool, error) {
 		}
 	}
 
-	return cs.VM.ID == "", nil
+	if cs.VM.Created() {
+		return false, nil
+	}
+
+	if cs.ServiceOffering.Created() {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 func k8sCreatedVM(vm *vm.VM) (bool, error) {
