@@ -8,6 +8,7 @@ import (
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/cs/commands"
+	cErrors "go-deploy/pkg/subsystems/cs/errors"
 	csModels "go-deploy/pkg/subsystems/cs/models"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
@@ -86,11 +87,15 @@ func (c *Client) Create(id string, params *vmModel.CreateParams) error {
 		}
 
 		err = resources.SsCreator(csc.CreatePortForwardingRule).
-			WithDbFunc(dbFunc(id, "portForwardingRuleMap."+pfrPublic.Name)).
+			WithDbFunc(dbFunc(id, "portForwardingRuleMap."+pfrName(&pfrPublic))).
 			WithPublic(&pfrPublic).
 			Exec()
 
 		if err != nil {
+			if errors.Is(err, cErrors.PortInUseErr) {
+				return makeError(sErrors.PortInUseErr)
+			}
+
 			return makeError(err)
 		}
 	}
@@ -166,16 +171,20 @@ func (c *Client) Update(id string, updateParams *vmModel.UpdateParams) error {
 		pfrs := g.PFRs()
 
 		for _, currentPfr := range vm.Subsystems.CS.GetPortForwardingRuleMap() {
-			if slices.IndexFunc(pfrs, func(p csModels.PortForwardingRulePublic) bool { return p.Name == currentPfr.Name }) == -1 {
+			if slices.IndexFunc(pfrs, func(p csModels.PortForwardingRulePublic) bool { return pfrName(&p) == pfrName(&currentPfr) }) == -1 {
 				err = resources.SsDeleter(csc.DeletePortForwardingRule).
 					WithResourceID(currentPfr.ID).
-					WithDbFunc(dbFunc(id, "portForwardingRuleMap."+currentPfr.Name)).
+					WithDbFunc(dbFunc(id, "portForwardingRuleMap."+pfrName(&currentPfr))).
 					Exec()
+
+				if err != nil {
+					return makeError(err)
+				}
 			}
 		}
 
 		for _, pfrPublic := range pfrs {
-			if _, ok := vm.Subsystems.CS.PortForwardingRuleMap[pfrPublic.Name]; !ok {
+			if _, ok := vm.Subsystems.CS.PortForwardingRuleMap[pfrName(&pfrPublic)]; !ok {
 				if pfrPublic.PublicPort == 0 {
 					pfrPublic.PublicPort, err = csc.GetFreePort(
 						zone.PortRange.Start,
@@ -188,11 +197,15 @@ func (c *Client) Update(id string, updateParams *vmModel.UpdateParams) error {
 				}
 
 				err = resources.SsCreator(csc.CreatePortForwardingRule).
-					WithDbFunc(dbFunc(id, "portForwardingRuleMap."+pfrPublic.Name)).
+					WithDbFunc(dbFunc(id, "portForwardingRuleMap."+pfrName(&pfrPublic))).
 					WithPublic(&pfrPublic).
 					Exec()
 
 				if err != nil {
+					if errors.Is(err, cErrors.PortInUseErr) {
+						return makeError(sErrors.PortInUseErr)
+					}
+
 					return makeError(err)
 				}
 			}
@@ -379,11 +392,11 @@ func (c *Client) Repair(id string) error {
 	// Port-forwarding rules
 	pfrs := g.PFRs()
 	for mapName, pfr := range vm.Subsystems.CS.GetPortForwardingRuleMap() {
-		idx := slices.IndexFunc(pfrs, func(p csModels.PortForwardingRulePublic) bool { return p.Name == mapName })
+		idx := slices.IndexFunc(pfrs, func(p csModels.PortForwardingRulePublic) bool { return pfrName(&p) == mapName })
 		if idx == -1 {
 			err = resources.SsDeleter(csc.DeletePortForwardingRule).
 				WithResourceID(pfr.ID).
-				WithDbFunc(dbFunc(id, "portForwardingRuleMap."+pfr.Name)).
+				WithDbFunc(dbFunc(id, "portForwardingRuleMap."+pfrName(&pfr))).
 				Exec()
 
 			if err != nil {
@@ -399,9 +412,13 @@ func (c *Client) Repair(id string) error {
 			csc.CreatePortForwardingRule,
 			csc.UpdatePortForwardingRule,
 			csc.DeletePortForwardingRule,
-		).WithResourceID(pfr.ID).WithDbFunc(dbFunc(id, "portForwardingRuleMap."+pfr.Name)).WithGenPublic(&pfr).Exec()
+		).WithResourceID(pfr.ID).WithDbFunc(dbFunc(id, "portForwardingRuleMap."+pfrName(&pfr))).WithGenPublic(&pfr).Exec()
 
 		if err != nil {
+			if errors.Is(err, cErrors.PortInUseErr) {
+				return makeError(sErrors.PortInUseErr)
+			}
+
 			return makeError(err)
 		}
 	}
@@ -604,4 +621,12 @@ func dbFunc(vmID, key string) func(interface{}) error {
 		}
 		return vmModel.New().UpdateSubsystemByID(vmID, "cs."+key, data)
 	}
+}
+
+func pfrName(pfr *csModels.PortForwardingRulePublic) string {
+	if pfr.Name == "__ssh" {
+		return pfr.Name
+	}
+
+	return fmt.Sprintf("priv-%d-prot-%s", pfr.PrivatePort, pfr.Protocol)
 }

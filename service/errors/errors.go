@@ -43,6 +43,9 @@ var (
 	// This could be caused by stale data in the database.
 	MainAppNotFoundErr = fmt.Errorf("main app not found")
 
+	// IngressHostInUseErr is returned when the ingress host is already in use.
+	IngressHostInUseErr = fmt.Errorf("ingress host already in use")
+
 	// SmNotFoundErr is returned when the storage manager is not found.
 	SmNotFoundErr = fmt.Errorf("storage manager not found")
 
@@ -66,6 +69,9 @@ var (
 	// Something that is required when using GPUs.
 	VmTooLargeErr = fmt.Errorf("vm too large")
 
+	// PortInUseErr is returned when the port is already in use.
+	PortInUseErr = fmt.Errorf("port in use")
+
 	// HostNotAvailableErr is returned when the host is not available.
 	// This is usually caused by the host being in maintenance or disabled mode.
 	HostNotAvailableErr = fmt.Errorf("host not available")
@@ -73,10 +79,6 @@ var (
 	// ZoneNotFoundErr is returned when the zone is not found.
 	// This could be caused by stale data in the database.
 	ZoneNotFoundErr = fmt.Errorf("zone not found")
-
-	// CustomDomainInUseErr is returned when the custom domain is already in use.
-	// This is most likely a race condition, where two resources request the same custom domain.
-	CustomDomainInUseErr = fmt.Errorf("custom domain is already in use")
 
 	// NonUniqueFieldErr is returned when a field is not unique, such as the name of a deployment.
 	NonUniqueFieldErr = fmt.Errorf("non unique field")

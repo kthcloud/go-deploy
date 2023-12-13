@@ -1,10 +1,13 @@
 package k8s_service
 
 import (
+	"errors"
 	"fmt"
 	"go-deploy/models/sys/sm"
+	kErrors "go-deploy/pkg/subsystems/k8s/errors"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/service/constants"
+	sErrors "go-deploy/service/errors"
 	"go-deploy/service/resources"
 	"golang.org/x/exp/slices"
 	"log"
@@ -113,6 +116,10 @@ func (c *Client) Create(id string, params *sm.CreateParams) error {
 			Exec()
 
 		if err != nil {
+			if errors.Is(err, kErrors.IngressHostInUseErr) {
+				return makeError(sErrors.IngressHostInUseErr)
+			}
+
 			return makeError(err)
 		}
 	}
@@ -301,6 +308,14 @@ func (c *Client) Repair(id string) error {
 			kc.UpdateIngress,
 			kc.DeleteIngress,
 		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "ingressMap."+public.Name)).WithGenPublic(&public).Exec()
+
+		if err != nil {
+			if errors.Is(err, kErrors.IngressHostInUseErr) {
+				return makeError(sErrors.IngressHostInUseErr)
+			}
+
+			return makeError(err)
+		}
 	}
 
 	secrets := g.Secrets()

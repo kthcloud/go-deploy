@@ -148,7 +148,7 @@ func (c *Client) Generator(sm *smModels.SM, client *k8s.Client, zone *configMode
 
 // getNamespaceName returns the namespace name for the user.
 func getNamespaceName(userID string) string {
-	return subsystemutils.GetPrefixedName(userID)
+	return subsystemutils.GetPrefixedName("system-" + userID)
 }
 
 // withClient returns a new K8s service client.

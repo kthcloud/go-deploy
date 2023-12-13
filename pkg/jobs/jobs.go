@@ -12,7 +12,6 @@ import (
 	vmModels "go-deploy/models/sys/vm"
 	"go-deploy/pkg/workers/confirm"
 	"go-deploy/service/deployment_service"
-	dErrors "go-deploy/service/errors"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/sm_service"
 	"go-deploy/service/vm_service"
@@ -39,7 +38,7 @@ func CreateVM(job *jobModels.Job) error {
 
 	err = vm_service.New().Create(id, ownerID, &params)
 	if err != nil {
-		// we always terminate these jobs, since rerunning it would cause a NonUniqueFieldErr
+		// We always terminate these jobs, since rerunning it would cause a NonUniqueFieldErr
 		return makeTerminatedError(err)
 	}
 
@@ -119,6 +118,18 @@ func UpdateVM(job *jobModels.Job) error {
 	err = vm_service.New().Update(id, &update)
 	if err != nil {
 		if errors.Is(err, sErrors.NonUniqueFieldErr) {
+			return makeTerminatedError(err)
+		}
+
+		if errors.Is(err, sErrors.VmNotFoundErr) {
+			return makeTerminatedError(err)
+		}
+
+		if errors.Is(err, sErrors.IngressHostInUseErr) {
+			return makeTerminatedError(err)
+		}
+
+		if errors.Is(err, sErrors.PortInUseErr) {
 			return makeTerminatedError(err)
 		}
 
@@ -219,7 +230,7 @@ func CreateDeployment(job *jobModels.Job) error {
 
 	err = deployment_service.New().Create(id, ownerID, &params)
 	if err != nil {
-		// we always terminate these jobs, since rerunning it would cause a NonUniqueFieldErr
+		// We always terminate these jobs, since rerunning it would cause a NonUniqueFieldErr
 		return makeTerminatedError(err)
 	}
 
@@ -262,7 +273,7 @@ func DeleteDeployment(job *jobModels.Job) error {
 
 	err = deployment_service.New().Delete(id)
 	if err != nil {
-		if !errors.Is(err, dErrors.DeploymentNotFoundErr) {
+		if !errors.Is(err, sErrors.DeploymentNotFoundErr) {
 			return makeFailedError(err)
 		}
 	}
@@ -299,11 +310,15 @@ func UpdateDeployment(job *jobModels.Job) error {
 
 	err = deployment_service.New().Update(id, &update)
 	if err != nil {
-		if errors.Is(err, dErrors.NonUniqueFieldErr) {
+		if errors.Is(err, sErrors.NonUniqueFieldErr) {
 			return makeTerminatedError(err)
 		}
 
-		if errors.Is(err, dErrors.DeploymentNotFoundErr) {
+		if errors.Is(err, sErrors.DeploymentNotFoundErr) {
+			return makeTerminatedError(err)
+		}
+
+		if errors.Is(err, sErrors.IngressHostInUseErr) {
 			return makeTerminatedError(err)
 		}
 
@@ -333,7 +348,7 @@ func UpdateDeploymentOwner(job *jobModels.Job) error {
 
 	err = deployment_service.New().UpdateOwner(id, &params)
 	if err != nil {
-		if errors.Is(err, dErrors.DeploymentNotFoundErr) {
+		if errors.Is(err, sErrors.DeploymentNotFoundErr) {
 			return makeTerminatedError(err)
 		}
 
@@ -418,11 +433,8 @@ func CreateSM(job *jobModels.Job) error {
 
 	err = sm_service.New().Create(id, userID, &params)
 	if err != nil {
-		if errors.Is(err, sErrors.SmAlreadyExistsErr) {
-			return makeTerminatedError(err)
-		}
-
-		return makeFailedError(err)
+		// We always terminate these jobs, since rerunning it would cause a NonUniqueFieldErr
+		return makeTerminatedError(err)
 	}
 
 	return nil

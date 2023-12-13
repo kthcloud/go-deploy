@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	deploymentModel "go-deploy/models/sys/deployment"
+	kErrors "go-deploy/pkg/subsystems/k8s/errors"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/service"
 	"go-deploy/service/constants"
@@ -14,7 +15,6 @@ import (
 	"go-deploy/utils"
 	"golang.org/x/exp/slices"
 	"log"
-	"strings"
 	"time"
 )
 
@@ -110,6 +110,10 @@ func (c *Client) Create(id string, params *deploymentModel.CreateParams) error {
 			Exec()
 
 		if err != nil {
+			if errors.Is(err, kErrors.IngressHostInUseErr) {
+				return makeError(sErrors.IngressHostInUseErr)
+			}
+
 			return makeError(err)
 		}
 	}
@@ -492,6 +496,14 @@ func (c *Client) Repair(id string) error {
 			kc.UpdateIngress,
 			kc.DeleteIngress,
 		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "ingressMap."+public.Name)).WithGenPublic(&public).Exec()
+
+		if err != nil {
+			if errors.Is(err, kErrors.IngressHostInUseErr) {
+				return makeError(sErrors.IngressHostInUseErr)
+			}
+
+			return makeError(err)
+		}
 	}
 
 	secrets := g.Secrets()
@@ -753,8 +765,8 @@ func (c *Client) updateCustomDomain(id string) error {
 	}
 
 	if err != nil {
-		if strings.Contains(err.Error(), "is already defined in ingress") {
-			return sErrors.CustomDomainInUseErr
+		if errors.Is(err, kErrors.IngressHostInUseErr) {
+			return sErrors.IngressHostInUseErr
 		}
 
 		return err
@@ -772,7 +784,7 @@ func (c *Client) updatePrivate(id string) error {
 
 	if d.GetMainApp().Private {
 		for mapName, ingress := range d.Subsystems.K8s.IngressMap {
-			err := resources.SsDeleter(kc.DeleteIngress).
+			err = resources.SsDeleter(kc.DeleteIngress).
 				WithResourceID(ingress.ID).
 				WithDbFunc(dbFunc(d.ID, "ingressMap."+mapName)).
 				Exec()
@@ -783,12 +795,16 @@ func (c *Client) updatePrivate(id string) error {
 		}
 	} else {
 		for _, ingressPublic := range g.Ingresses() {
-			err := resources.SsCreator(kc.CreateIngress).
+			err = resources.SsCreator(kc.CreateIngress).
 				WithDbFunc(dbFunc(d.ID, "ingressMap."+ingressPublic.Name)).
 				WithPublic(&ingressPublic).
 				Exec()
 
 			if err != nil {
+				if errors.Is(err, kErrors.IngressHostInUseErr) {
+					return sErrors.IngressHostInUseErr
+				}
+
 				return err
 			}
 		}

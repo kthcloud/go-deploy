@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	vmModels "go-deploy/models/sys/vm"
+	kErrors "go-deploy/pkg/subsystems/k8s/errors"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/service/constants"
 	sErrors "go-deploy/service/errors"
@@ -74,6 +75,10 @@ func (c *Client) Create(id string, params *vmModels.CreateParams) error {
 			Exec()
 
 		if err != nil {
+			if errors.Is(err, kErrors.IngressHostInUseErr) {
+				return makeError(sErrors.IngressHostInUseErr)
+			}
+
 			return makeError(err)
 		}
 	}
@@ -121,6 +126,10 @@ func (c *Client) Delete(id string, overwriteUserID ...string) error {
 			WithResourceID(ingress.ID).
 			WithDbFunc(dbFunc(id, "ingressMap."+mapName)).
 			Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	// Service
@@ -129,6 +138,10 @@ func (c *Client) Delete(id string, overwriteUserID ...string) error {
 			WithResourceID(k8sService.ID).
 			WithDbFunc(dbFunc(id, "serviceMap."+mapName)).
 			Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	// Deployment
@@ -137,6 +150,10 @@ func (c *Client) Delete(id string, overwriteUserID ...string) error {
 			WithResourceID(k8sDeployment.ID).
 			WithDbFunc(dbFunc(id, "deploymentMap."+mapName)).
 			Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	// Secret
@@ -152,6 +169,10 @@ func (c *Client) Delete(id string, overwriteUserID ...string) error {
 			WithResourceID(secret.ID).
 			WithDbFunc(dbFunc(id, "secretMap."+mapName)).
 			Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	// Namespace
@@ -159,6 +180,10 @@ func (c *Client) Delete(id string, overwriteUserID ...string) error {
 		WithResourceID(vm.Subsystems.K8s.Namespace.ID).
 		WithDbFunc(dbFunc(id, "namespace")).
 		Exec()
+
+	if err != nil {
+		return makeError(err)
+	}
 
 	return nil
 }
@@ -267,6 +292,14 @@ func (c *Client) Repair(id string) error {
 			kc.UpdateIngress,
 			kc.DeleteIngress,
 		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "ingressMap."+public.Name)).WithGenPublic(&public).Exec()
+
+		if err != nil {
+			if errors.Is(err, kErrors.IngressHostInUseErr) {
+				return makeError(sErrors.IngressHostInUseErr)
+			}
+
+			return makeError(err)
+		}
 	}
 
 	secrets := g.Secrets()

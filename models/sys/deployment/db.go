@@ -351,10 +351,6 @@ func (client *Client) SavePing(id string, pingResult int) error {
 	return nil
 }
 
-func (client *Client) RemoveCustomDomain(deploymentID string) error {
-	return client.SetWithBsonByID(deploymentID, bson.D{{"apps.main.customDomain", nil}})
-}
-
 func (client *Client) CountReplicas() (int, error) {
 	deployments, err := client.List()
 	if err != nil {

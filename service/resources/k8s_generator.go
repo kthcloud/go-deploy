@@ -178,7 +178,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 				continue
 			}
 
-			csPort := kg.v.vm.Subsystems.CS.GetPortForwardingRule(port.Name)
+			csPort := kg.v.vm.Subsystems.CS.GetPortForwardingRule(pfrName(port.Port, port.Protocol))
 			if csPort == nil {
 				continue
 			}

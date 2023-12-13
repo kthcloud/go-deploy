@@ -2,6 +2,7 @@ package cs
 
 import (
 	"fmt"
+	"go-deploy/pkg/subsystems/cs/errors"
 	"go-deploy/pkg/subsystems/cs/models"
 	"log"
 	"sort"
@@ -84,6 +85,11 @@ func (client *Client) CreatePortForwardingRule(public *models.PortForwardingRule
 
 		created, err := client.CsClient.Firewall.CreatePortForwardingRule(createRuleParams)
 		if err != nil {
+			errStr := err.Error()
+			if strings.Contains(errStr, "The range specified") && strings.Contains(errStr, "conflicts with rule") {
+				return nil, errors.PortInUseErr
+			}
+
 			return nil, makeError(err)
 		}
 
@@ -119,6 +125,11 @@ func (client *Client) UpdatePortForwardingRule(public *models.PortForwardingRule
 
 	portForwardingRule, err := client.CsClient.Firewall.UpdatePortForwardingRule(updateRuleParams)
 	if err != nil {
+		errStr := err.Error()
+		if strings.Contains(errStr, "The range specified") && strings.Contains(errStr, "conflicts with rule") {
+			return nil, errors.PortInUseErr
+		}
+
 		return nil, makeError(err)
 	}
 

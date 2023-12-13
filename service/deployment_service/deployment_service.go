@@ -214,16 +214,7 @@ func (c *Client) Create(id, ownerID string, deploymentCreate *body.DeploymentCre
 
 	err = k8s_service.New(c.Context).Create(id, params)
 	if err != nil {
-		if errors.Is(err, sErrors.CustomDomainInUseErr) {
-			log.Println("custom domain in use when creating deployment", params.Name, ". removing it from the deployment and create params")
-			err = deploymentModel.New().RemoveCustomDomain(id)
-			if err != nil {
-				return makeError(err)
-			}
-			params.CustomDomain = nil
-		} else {
-			return makeError(err)
-		}
+		return makeError(err)
 	}
 
 	createPlaceHolderInstead := false
@@ -337,12 +328,7 @@ func (c *Client) Update(id string, dtoUpdate *body.DeploymentUpdate) error {
 
 	err = k8s_service.New(c.Context).Update(id, params)
 	if err != nil {
-		if errors.Is(err, sErrors.CustomDomainInUseErr) {
-			log.Println("custom domain in use when updating deployment", d.Name, ". removing it from the update params")
-			dtoUpdate.CustomDomain = nil
-		} else {
-			return makeError(err)
-		}
+		return makeError(err)
 	}
 
 	return nil
@@ -569,12 +555,9 @@ func (c *Client) Repair(id string) error {
 
 	err = k8s_service.New(c.Context).Repair(id)
 	if err != nil {
-		if errors.Is(err, sErrors.CustomDomainInUseErr) {
-			log.Println("custom domain in use when repairing deployment", id, ". removing it from the deployment")
-			err = deploymentModel.New().RemoveCustomDomain(id)
-			if err != nil {
-				return makeError(err)
-			}
+		if errors.Is(err, sErrors.IngressHostInUseErr) {
+			// The user should fix this error, so we don't return an error here
+			utils.PrettyPrintError(err)
 		} else {
 			return makeError(err)
 		}
