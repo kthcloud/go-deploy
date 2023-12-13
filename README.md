@@ -1,4 +1,7 @@
-# 🚀 kthcloud/go-deploy
+<p align="center">
+  <img width=40% src="https://github.com/kthcloud/go-deploy/assets/26722370/f0e0729f-224a-4ac8-a88b-a6ed98760edd" />
+</p>
+
 [![ci](https://github.com/kthcloud/go-deploy/actions/workflows/docker-image.yml/badge.svg)](https://github.com/kthcloud/go-deploy/actions/workflows/docker-image.yml)
 
 go-deploy is a simple API to create deployments similar to Heroku and spin up virtual machines built on top of kthcloud.
