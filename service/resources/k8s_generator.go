@@ -10,9 +10,9 @@ import (
 	userModels "go-deploy/models/sys/user"
 	"go-deploy/models/sys/vm"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/subsystems"
 	"go-deploy/pkg/subsystems/k8s"
 	"go-deploy/pkg/subsystems/k8s/models"
-	"go-deploy/service"
 	"go-deploy/service/constants"
 	"go-deploy/utils"
 	"golang.org/x/exp/slices"
@@ -34,7 +34,7 @@ func (kg *K8sGenerator) Namespace() *models.NamespacePublic {
 			Name: kg.namespace,
 		}
 
-		if n := &kg.d.deployment.Subsystems.K8s.Namespace; service.Created(n) {
+		if n := &kg.d.deployment.Subsystems.K8s.Namespace; subsystems.Created(n) {
 			ns.ID = n.ID
 			ns.CreatedAt = n.CreatedAt
 		}
@@ -59,7 +59,7 @@ func (kg *K8sGenerator) Namespace() *models.NamespacePublic {
 			Name: kg.namespace,
 		}
 
-		if n := &kg.v.vm.Subsystems.K8s.Namespace; service.Created(n) {
+		if n := &kg.v.vm.Subsystems.K8s.Namespace; subsystems.Created(n) {
 			ns.ID = n.ID
 			ns.CreatedAt = n.CreatedAt
 		}
@@ -72,7 +72,7 @@ func (kg *K8sGenerator) Namespace() *models.NamespacePublic {
 			Name: kg.namespace,
 		}
 
-		if n := &kg.s.sm.Subsystems.K8s.Namespace; service.Created(n) {
+		if n := &kg.s.sm.Subsystems.K8s.Namespace; subsystems.Created(n) {
 			ns.ID = n.ID
 			ns.CreatedAt = n.CreatedAt
 		}
@@ -161,7 +161,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 			Volumes:        k8sVolumes,
 		}
 
-		if d := kg.d.deployment.Subsystems.K8s.GetDeployment(kg.d.deployment.Name); service.Created(d) {
+		if d := kg.d.deployment.Subsystems.K8s.GetDeployment(kg.d.deployment.Name); subsystems.Created(d) {
 			dep.ID = d.ID
 			dep.CreatedAt = d.CreatedAt
 		}
@@ -288,7 +288,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 			Volumes:        k8sVolumes,
 		}
 
-		if fb := kg.s.sm.Subsystems.K8s.GetDeployment(constants.SmAppName); service.Created(fb) {
+		if fb := kg.s.sm.Subsystems.K8s.GetDeployment(constants.SmAppName); subsystems.Created(fb) {
 			filebrowser.ID = fb.ID
 			filebrowser.CreatedAt = fb.CreatedAt
 		}
@@ -372,7 +372,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 			CreatedAt:      time.Time{},
 		}
 
-		if op := kg.s.sm.Subsystems.K8s.GetDeployment(constants.SmAppNameAuth); service.Created(op) {
+		if op := kg.s.sm.Subsystems.K8s.GetDeployment(constants.SmAppNameAuth); subsystems.Created(op) {
 			oauthProxy.ID = op.ID
 			oauthProxy.CreatedAt = op.CreatedAt
 		}
@@ -396,7 +396,7 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 			TargetPort: mainApp.InternalPort,
 		}
 
-		if k8sService := kg.d.deployment.Subsystems.K8s.GetService(kg.d.deployment.Name); service.Created(k8sService) {
+		if k8sService := kg.d.deployment.Subsystems.K8s.GetService(kg.d.deployment.Name); subsystems.Created(k8sService) {
 			se.ID = k8sService.ID
 			se.CreatedAt = k8sService.CreatedAt
 		}
@@ -455,7 +455,7 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 			TargetPort: 80,
 		}
 
-		if fb := kg.s.sm.Subsystems.K8s.GetService(constants.SmAppName); service.Created(fb) {
+		if fb := kg.s.sm.Subsystems.K8s.GetService(constants.SmAppName); subsystems.Created(fb) {
 			filebrowser.ID = fb.ID
 			filebrowser.CreatedAt = fb.CreatedAt
 		}
@@ -470,7 +470,7 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 			TargetPort: 4180,
 		}
 
-		if op := kg.s.sm.Subsystems.K8s.GetService(constants.SmAppNameAuth); service.Created(op) {
+		if op := kg.s.sm.Subsystems.K8s.GetService(constants.SmAppNameAuth); subsystems.Created(op) {
 			oauthProxy.ID = op.ID
 			oauthProxy.CreatedAt = op.CreatedAt
 		}
@@ -505,7 +505,7 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 			CustomCert:   nil,
 		}
 
-		if k8sIngress := kg.d.deployment.Subsystems.K8s.GetIngress(kg.d.deployment.Name); service.Created(k8sIngress) {
+		if k8sIngress := kg.d.deployment.Subsystems.K8s.GetIngress(kg.d.deployment.Name); subsystems.Created(k8sIngress) {
 			in.ID = k8sIngress.ID
 			in.CreatedAt = k8sIngress.CreatedAt
 		}
@@ -530,7 +530,7 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 				TlsSecret: nil,
 			}
 
-			if customK8sIngress := kg.d.deployment.Subsystems.K8s.GetIngress(constants.WithCustomDomainSuffix(kg.d.deployment.Name)); service.Created(customK8sIngress) {
+			if customK8sIngress := kg.d.deployment.Subsystems.K8s.GetIngress(constants.WithCustomDomainSuffix(kg.d.deployment.Name)); subsystems.Created(customK8sIngress) {
 				customIn.ID = customK8sIngress.ID
 				customIn.CreatedAt = customK8sIngress.CreatedAt
 			}
@@ -617,7 +617,7 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 			TlsSecret:    &tlsSecret,
 		}
 
-		if i := kg.s.sm.Subsystems.K8s.GetIngress(constants.SmAppName); service.Created(i) {
+		if i := kg.s.sm.Subsystems.K8s.GetIngress(constants.SmAppName); subsystems.Created(i) {
 			ingress.ID = i.ID
 			ingress.CreatedAt = i.CreatedAt
 		}
@@ -770,7 +770,7 @@ func (kg *K8sGenerator) Secrets() []models.SecretPublic {
 			}
 
 			// if already exists, set the fields that are created in the subsystem
-			if secret := kg.d.deployment.Subsystems.K8s.GetSecret(constants.WithImagePullSecretSuffix(kg.d.deployment.Name)); service.Created(secret) {
+			if secret := kg.d.deployment.Subsystems.K8s.GetSecret(constants.WithImagePullSecretSuffix(kg.d.deployment.Name)); subsystems.Created(secret) {
 				if imagePullSecret == nil {
 					imagePullSecret = secret
 				} else {
@@ -803,7 +803,7 @@ func (kg *K8sGenerator) Secrets() []models.SecretPublic {
 			}
 		}
 
-		if secret := kg.d.deployment.Subsystems.K8s.GetSecret(constants.WildcardCertSecretName); service.Created(secret) {
+		if secret := kg.d.deployment.Subsystems.K8s.GetSecret(constants.WildcardCertSecretName); subsystems.Created(secret) {
 			if wildcardCertSecret == nil {
 				wildcardCertSecret = secret
 			} else {
@@ -851,7 +851,7 @@ func (kg *K8sGenerator) Secrets() []models.SecretPublic {
 			}
 		}
 
-		if secret := kg.v.vm.Subsystems.K8s.GetSecret(constants.WildcardCertSecretName); service.Created(secret) {
+		if secret := kg.v.vm.Subsystems.K8s.GetSecret(constants.WildcardCertSecretName); subsystems.Created(secret) {
 			if wildcardCertSecret == nil {
 				wildcardCertSecret = secret
 			} else {
@@ -887,7 +887,7 @@ func (kg *K8sGenerator) Secrets() []models.SecretPublic {
 			}
 		}
 
-		if secret := kg.s.sm.Subsystems.K8s.GetSecret(constants.WildcardCertSecretName); service.Created(secret) {
+		if secret := kg.s.sm.Subsystems.K8s.GetSecret(constants.WildcardCertSecretName); subsystems.Created(secret) {
 			if wildcardCertSecret == nil {
 				wildcardCertSecret = secret
 			} else {
@@ -970,7 +970,7 @@ func (kg *K8sGenerator) HPAs() []models.HpaPublic {
 			MemoryAverageUtilization: config.Config.Deployment.Resources.AutoScale.MemoryThreshold,
 		}
 
-		if h := kg.d.deployment.Subsystems.K8s.GetHPA(kg.d.deployment.Name); service.Created(h) {
+		if h := kg.d.deployment.Subsystems.K8s.GetHPA(kg.d.deployment.Name); subsystems.Created(h) {
 			hpa.ID = h.ID
 			hpa.CreatedAt = h.CreatedAt
 		}

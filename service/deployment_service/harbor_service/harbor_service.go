@@ -3,7 +3,7 @@ package harbor_service
 import (
 	"fmt"
 	deploymentModel "go-deploy/models/sys/deployment"
-	"go-deploy/service"
+	"go-deploy/pkg/subsystems"
 	"go-deploy/service/deployment_service/client"
 	"go-deploy/service/resources"
 	"go-deploy/utils/subsystemutils"
@@ -163,9 +163,9 @@ func (c *Client) Update(id string, params *deploymentModel.UpdateParams) error {
 		oldRepository := d.Subsystems.Harbor.Repository
 
 		if oldRepository.Name != newRepository.Name &&
-			service.Created(&d.Subsystems.Harbor.Project) &&
-			service.Created(&oldRepository) &&
-			service.NotCreated(newRepository) {
+			subsystems.Created(&d.Subsystems.Harbor.Project) &&
+			subsystems.Created(&oldRepository) &&
+			subsystems.NotCreated(newRepository) {
 
 			newRepository.Placeholder.RepositoryName = oldRepository.Name
 			newRepository.Placeholder.ProjectName = d.Subsystems.Harbor.Project.Name
@@ -256,9 +256,9 @@ func (c *Client) EnsureOwner(id string, oldOwnerID string) error {
 	oldRepository := oldD.Subsystems.Harbor.Repository
 
 	if oldRepository.ID != newRepository.ID &&
-		service.Created(&d.Subsystems.Harbor.Project) &&
-		service.Created(&oldRepository) &&
-		service.NotCreated(newRepository) {
+		subsystems.Created(&d.Subsystems.Harbor.Project) &&
+		subsystems.Created(&oldRepository) &&
+		subsystems.NotCreated(newRepository) {
 
 		newRepository.Placeholder.RepositoryName = oldRepository.Name
 		newRepository.Placeholder.ProjectName = subsystemutils.GetPrefixedName(oldOwnerID)
@@ -324,7 +324,7 @@ func (c *Client) Repair(id string) error {
 		return makeError(err)
 	}
 
-	if project := &d.Subsystems.Harbor.Project; service.Created(project) {
+	if project := &d.Subsystems.Harbor.Project; subsystems.Created(project) {
 		err = resources.SsRepairer(
 			hc.ReadProject,
 			hc.CreateProject,
@@ -346,7 +346,7 @@ func (c *Client) Repair(id string) error {
 		}
 	}
 
-	if robot := &d.Subsystems.Harbor.Robot; service.Created(robot) {
+	if robot := &d.Subsystems.Harbor.Robot; subsystems.Created(robot) {
 		err = resources.SsRepairer(
 			hc.ReadRobot,
 			hc.CreateRobot,
@@ -370,7 +370,7 @@ func (c *Client) Repair(id string) error {
 	// Don't repair the repository, since it can't be updated anyway.
 	// Also, <<NEVER>> call "DeleteRepository" here since it is the persistent storage for the deployment.
 	// If it is updated in the future to actually repair, the delete-func must be empty: func(string) error { return nil }.
-	if repo := &d.Subsystems.Harbor.Repository; service.NotCreated(repo) {
+	if repo := &d.Subsystems.Harbor.Repository; subsystems.NotCreated(repo) {
 		err = resources.SsCreator(hc.CreateRepository).
 			WithDbFunc(dbFunc(id, "repository")).
 			WithPublic(g.Repository()).
@@ -381,7 +381,7 @@ func (c *Client) Repair(id string) error {
 		}
 	}
 
-	if hook := &d.Subsystems.Harbor.Webhook; service.Created(hook) {
+	if hook := &d.Subsystems.Harbor.Webhook; subsystems.Created(hook) {
 		err = resources.SsRepairer(
 			hc.ReadWebhook,
 			hc.CreateWebhook,

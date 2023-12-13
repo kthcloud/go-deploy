@@ -84,7 +84,7 @@ func (c *Client) Create(id, userID string, params *smModels.CreateParams) error 
 		return makeErr(err)
 	}
 
-	err = k8s_service.New(c.Context).Create(id, params)
+	err = k8s_service.New(c.Cache).Create(id, params)
 	if err != nil {
 		return makeErr(err)
 	}
@@ -107,7 +107,7 @@ func (c *Client) Delete(id string) error {
 
 	log.Println("deleting storage manager", id)
 
-	err := k8s_service.New(c.Context).Delete(id)
+	err := k8s_service.New(c.Cache).Delete(id)
 	if err != nil {
 		return makeErr(err)
 	}
@@ -133,7 +133,7 @@ func (c *Client) Repair(id string) error {
 		return nil
 	}
 
-	err = k8s_service.New(c.Context).Repair(id)
+	err = k8s_service.New(c.Cache).Repair(id)
 	if err != nil {
 		return makeErr(err)
 	}

@@ -10,39 +10,37 @@ import (
 type BaseClient[parent any] struct {
 	p *parent
 
-	*Context
+	*service.Cache
 }
 
-func NewBaseClient[parent any](context *Context) BaseClient[parent] {
-	if context == nil {
-		context = &Context{
-			smStore: make(map[string]*smModels.SM),
-		}
+func NewBaseClient[parent any](cache *service.Cache) BaseClient[parent] {
+	if cache == nil {
+		cache = service.NewCache()
 	}
 
-	return BaseClient[parent]{Context: context}
+	return BaseClient[parent]{Cache: cache}
 }
 
 func (c *BaseClient[parent]) SetParent(p *parent) {
 	c.p = p
 }
 
-func (c *BaseClient[parent]) SetContext(context *Context) {
+func (c *BaseClient[parent]) SetContext(context *service.Cache) {
 	if context == nil {
-		context = &Context{}
+		context = service.NewCache()
 	}
 
-	c.Context = context
+	c.Cache = context
 }
 
 func (c *BaseClient[parent]) SM(id, userID string, smc *smModels.Client) (*smModels.SM, error) {
-	sm, ok := c.smStore[id]
-	if ok {
+	sm := c.GetSM(id)
+	if sm != nil {
 		return sm, nil
 	}
 
-	sm, ok = c.smStore[userID]
-	if ok {
+	sm = c.GetSM(userID)
+	if sm != nil {
 		return sm, nil
 	}
 
@@ -75,16 +73,11 @@ func (c *BaseClient[parent]) fetchSM(id string, smc *smModels.Client) (*smModels
 		return nil, makeError(sErrors.SmNotFoundErr)
 	}
 
-	c.storeSM(sm)
+	c.StoreSM(sm)
 	return sm, nil
 }
 
 func (c *BaseClient[parent]) WithAuth(auth *service.AuthInfo) *parent {
 	c.Auth = auth
 	return c.p
-}
-
-func (c *BaseClient[parent]) storeSM(sm *smModels.SM) {
-	c.smStore[sm.ID] = sm
-	c.smStore[sm.OwnerID] = sm
 }

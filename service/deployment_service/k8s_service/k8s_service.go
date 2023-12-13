@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 	deploymentModel "go-deploy/models/sys/deployment"
+	"go-deploy/pkg/subsystems"
 	kErrors "go-deploy/pkg/subsystems/k8s/errors"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
-	"go-deploy/service"
 	"go-deploy/service/constants"
 	"go-deploy/service/deployment_service/client"
 	sErrors "go-deploy/service/errors"
@@ -384,7 +384,7 @@ func (c *Client) Restart(id string) error {
 		return makeError(err)
 	}
 
-	if k8sDeployment := d.Subsystems.K8s.GetDeployment(d.Name); service.Created(k8sDeployment) {
+	if k8sDeployment := d.Subsystems.K8s.GetDeployment(d.Name); subsystems.Created(k8sDeployment) {
 		err := kc.RestartDeployment(k8sDeployment.ID)
 		if err != nil {
 			return makeError(err)
@@ -658,7 +658,7 @@ func (c *Client) SetupLogStream(ctx context.Context, id string, handler func(str
 	}
 
 	mainDeployment := d.Subsystems.K8s.GetDeployment(d.Name)
-	if !service.Created(mainDeployment) {
+	if !subsystems.Created(mainDeployment) {
 		log.Println("main k8s deployment for deployment", id, "not created when setting up log stream. assuming it was deleted")
 		return nil
 	}
@@ -687,7 +687,7 @@ func (c *Client) updateInternalPort(id string) error {
 		return nil
 	}
 
-	if service.NotCreated(&services[idx]) {
+	if subsystems.NotCreated(&services[idx]) {
 		log.Println("main k8s service for deployment", d.ID, "not created yet when updating internal port. assuming it was deleted")
 		return nil
 	}
@@ -720,7 +720,7 @@ func (c *Client) updateEnvs(id string) error {
 		return nil
 	}
 
-	if service.NotCreated(&deployments[idx]) {
+	if subsystems.NotCreated(&deployments[idx]) {
 		log.Println("main k8s deployment for deployment", d.ID, "not created yet when updating envs. assuming it was deleted")
 		return nil
 	}
@@ -752,7 +752,7 @@ func (c *Client) updateCustomDomain(id string) error {
 		return nil
 	}
 
-	if service.NotCreated(&ingresses[idx]) {
+	if subsystems.NotCreated(&ingresses[idx]) {
 		err = resources.SsCreator(kc.CreateIngress).
 			WithDbFunc(dbFunc(d.ID, "ingressMap."+constants.WithCustomDomainSuffix(d.Name))).
 			WithPublic(&ingresses[idx]).
@@ -829,7 +829,7 @@ func (c *Client) updateImage(id string) error {
 		return nil
 	}
 
-	if service.NotCreated(&deployments[idx]) {
+	if subsystems.NotCreated(&deployments[idx]) {
 		log.Println("main k8s deployment for deployment", d.ID, "not created yet when updating image. assuming it was deleted")
 		return nil
 	}
@@ -862,7 +862,7 @@ func (c *Client) updateReplicas(id string) error {
 		return nil
 	}
 
-	if service.NotCreated(&hpas[idx]) {
+	if subsystems.NotCreated(&hpas[idx]) {
 		log.Println("main k8s hpa for deployment", d.ID, "not created yet when updating replicas. assuming it was deleted")
 		return nil
 	}
@@ -876,7 +876,7 @@ func (c *Client) updateReplicas(id string) error {
 		return nil
 	}
 
-	if service.NotCreated(&deployments[idx]) {
+	if subsystems.NotCreated(&deployments[idx]) {
 		log.Println("main k8s deployment for deployment", d.ID, "not created yet when updating replicas. assuming it was deleted")
 		return nil
 	}
@@ -915,7 +915,7 @@ func (c *Client) recreatePvPvcDeployments(id string) error {
 		return err
 	}
 
-	if k8sDeployment := d.Subsystems.K8s.GetDeployment(d.Name); service.Created(k8sDeployment) {
+	if k8sDeployment := d.Subsystems.K8s.GetDeployment(d.Name); subsystems.Created(k8sDeployment) {
 		err := resources.SsDeleter(kc.DeleteDeployment).
 			WithResourceID(k8sDeployment.ID).
 			WithDbFunc(dbFunc(d.ID, "deploymentMap."+d.Name)).

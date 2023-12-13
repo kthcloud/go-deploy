@@ -6,6 +6,7 @@ import (
 	vmModels "go-deploy/models/sys/vm"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/k8s"
+	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/resources"
 	"go-deploy/service/vm_service/client"
@@ -46,12 +47,8 @@ type Client struct {
 }
 
 // New creates a new Client.
-// If context is not nil, it will be used to create a new BaseClient.
-// Otherwise, an empty context will be created.
-func New(context *client.Context) *Client {
-	c := &Client{
-		BaseClient: client.NewBaseClient[Client](context),
-	}
+func New(cache *service.Cache) *Client {
+	c := &Client{BaseClient: client.NewBaseClient[Client](cache)}
 	c.BaseClient.SetParent(c)
 	return c
 }

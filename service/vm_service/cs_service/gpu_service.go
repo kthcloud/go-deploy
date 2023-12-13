@@ -5,8 +5,8 @@ import (
 	"fmt"
 	gpuModel "go-deploy/models/sys/gpu"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/subsystems"
 	"go-deploy/pkg/subsystems/cs/commands"
-	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/resources"
 	"log"
@@ -27,7 +27,7 @@ func (c *Client) AttachGPU(vmID, gpuID string) error {
 		return makeError(err)
 	}
 
-	if service.NotCreated(&vm.Subsystems.CS.VM) {
+	if subsystems.NotCreated(&vm.Subsystems.CS.VM) {
 		log.Println("vm", vmID, "has no cs vm id when attaching gpu", gpuID, ", assuming it was deleted")
 		return nil
 	}
@@ -97,7 +97,7 @@ func (c *Client) DetachGPU(vmID string, afterState string) error {
 		return makeError(err)
 	}
 
-	if service.NotCreated(&vm.Subsystems.CS.VM) {
+	if subsystems.NotCreated(&vm.Subsystems.CS.VM) {
 		log.Println("csVM was not created for vm", vmID, "when detaching gpu in cs. assuming it was deleted or not created yet")
 		return nil
 	}

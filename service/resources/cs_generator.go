@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"go-deploy/models/sys/vm"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/subsystems"
 	"go-deploy/pkg/subsystems/cs/models"
-	"go-deploy/service"
 	"go-deploy/service/vm_service/constants"
 	"go-deploy/utils/subsystemutils"
 	"golang.org/x/exp/slices"
@@ -29,7 +29,7 @@ func (cr *CsGenerator) SOs() []models.ServiceOfferingPublic {
 			DiskSize:    cr.v.vm.Specs.DiskSize,
 		}
 
-		if s := &cr.v.vm.Subsystems.CS.ServiceOffering; service.Created(s) {
+		if s := &cr.v.vm.Subsystems.CS.ServiceOffering; subsystems.Created(s) {
 			so.ID = s.ID
 			so.CreatedAt = s.CreatedAt
 		}
@@ -53,7 +53,7 @@ func (cr *CsGenerator) VMs() []models.VmPublic {
 			Tags:              createTags(cr.v.vm.Name, cr.v.vm.Name),
 		}
 
-		if v := &cr.v.vm.Subsystems.CS.VM; service.Created(v) {
+		if v := &cr.v.vm.Subsystems.CS.VM; subsystems.Created(v) {
 			csVM.ID = v.ID
 			csVM.CreatedAt = v.CreatedAt
 

@@ -12,9 +12,7 @@ type Client struct {
 
 // New creates a new deployment service client.
 func New() *Client {
-	c := &Client{
-		BaseClient: client.NewBaseClient[Client](nil),
-	}
+	c := &Client{BaseClient: client.NewBaseClient[Client](nil)}
 	c.BaseClient.SetParent(c)
 	return c
 }

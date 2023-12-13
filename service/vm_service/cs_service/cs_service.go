@@ -7,10 +7,10 @@ import (
 	gpuModel "go-deploy/models/sys/gpu"
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/subsystems"
 	"go-deploy/pkg/subsystems/cs/commands"
 	cErrors "go-deploy/pkg/subsystems/cs/errors"
 	csModels "go-deploy/pkg/subsystems/cs/models"
-	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/resources"
 	"golang.org/x/exp/slices"
@@ -229,7 +229,7 @@ func (c *Client) Update(id string, updateParams *vmModel.UpdateParams) error {
 
 	if requiresUpdate {
 		var soID *string
-		if so := &vm.Subsystems.CS.ServiceOffering; service.Created(so) {
+		if so := &vm.Subsystems.CS.ServiceOffering; subsystems.Created(so) {
 			err = resources.SsDeleter(csc.DeleteServiceOffering).
 				WithResourceID(so.ID).
 				WithDbFunc(dbFunc(id, "serviceOffering")).

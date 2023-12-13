@@ -201,25 +201,25 @@ func (c *Client) Create(id, ownerID string, deploymentCreate *body.DeploymentCre
 	}
 
 	if d.Type == deploymentModel.TypeCustom {
-		err = harbor_service.New(c.Context).Create(id, params)
+		err = harbor_service.New(c.Cache).Create(id, params)
 		if err != nil {
 			return makeError(err)
 		}
 	} else {
-		err = harbor_service.New(c.Context).CreatePlaceholder(id)
+		err = harbor_service.New(c.Cache).CreatePlaceholder(id)
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
-	err = k8s_service.New(c.Context).Create(id, params)
+	err = k8s_service.New(c.Cache).Create(id, params)
 	if err != nil {
 		return makeError(err)
 	}
 
 	createPlaceHolderInstead := false
 	if params.GitHub != nil {
-		err = github_service.New(c.Context).Create(id, params)
+		err = github_service.New(c.Cache).Create(id, params)
 		if err != nil {
 			errString := err.Error()
 			if strings.Contains(errString, "/hooks: 404 Not Found") {
@@ -237,7 +237,7 @@ func (c *Client) Create(id, ownerID string, deploymentCreate *body.DeploymentCre
 	}
 
 	if createPlaceHolderInstead {
-		err = github_service.New(c.Context).CreatePlaceholder(id)
+		err = github_service.New(c.Cache).CreatePlaceholder(id)
 		if err != nil {
 			return makeError(err)
 		}
@@ -250,7 +250,7 @@ func (c *Client) Create(id, ownerID string, deploymentCreate *body.DeploymentCre
 	}
 
 	if d.Subsystems.GitHub.Created() && params.GitHub != nil {
-		gc := github_service.New(c.Context).WithRepositoryID(params.GitHub.RepositoryID).WithToken(params.GitHub.Token)
+		gc := github_service.New(c.Cache).WithRepositoryID(params.GitHub.RepositoryID).WithToken(params.GitHub.Token)
 		repo, err := gc.GetRepository()
 		if err != nil {
 			return makeError(err)
@@ -320,13 +320,13 @@ func (c *Client) Update(id string, dtoUpdate *body.DeploymentUpdate) error {
 	}
 
 	if d.Type == deploymentModel.TypeCustom {
-		err = harbor_service.New(c.Context).Update(id, params)
+		err = harbor_service.New(c.Cache).Update(id, params)
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
-	err = k8s_service.New(c.Context).Update(id, params)
+	err = k8s_service.New(c.Cache).Update(id, params)
 	if err != nil {
 		return makeError(err)
 	}
@@ -456,12 +456,12 @@ func (c *Client) UpdateOwner(id string, params *body.DeploymentUpdateOwner) erro
 		return makeError(err)
 	}
 
-	err = harbor_service.New(c.Context).EnsureOwner(id, params.OldOwnerID)
+	err = harbor_service.New(c.Cache).EnsureOwner(id, params.OldOwnerID)
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = k8s_service.New(c.Context).EnsureOwner(id, params.OldOwnerID)
+	err = k8s_service.New(c.Cache).EnsureOwner(id, params.OldOwnerID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -513,17 +513,17 @@ func (c *Client) Delete(id string) error {
 		return fmt.Errorf("failed to delete deployment. details: %w", err)
 	}
 
-	err := harbor_service.New(c.Context).Delete(id)
+	err := harbor_service.New(c.Cache).Delete(id)
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = k8s_service.New(c.Context).Delete(id)
+	err = k8s_service.New(c.Cache).Delete(id)
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = github_service.New(c.Context).Delete(id)
+	err = github_service.New(c.Cache).Delete(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -553,7 +553,7 @@ func (c *Client) Repair(id string) error {
 		return nil
 	}
 
-	err = k8s_service.New(c.Context).Repair(id)
+	err = k8s_service.New(c.Cache).Repair(id)
 	if err != nil {
 		if errors.Is(err, sErrors.IngressHostInUseErr) {
 			// The user should fix this error, so we don't return an error here
@@ -564,7 +564,7 @@ func (c *Client) Repair(id string) error {
 	}
 
 	if !d.Subsystems.Harbor.Placeholder {
-		err = harbor_service.New(c.Context).Repair(id)
+		err = harbor_service.New(c.Cache).Repair(id)
 		if err != nil {
 			return makeError(err)
 		}
@@ -618,7 +618,7 @@ func (c *Client) Restart(id string) error {
 		}
 	}()
 
-	err = k8s_service.New(c.Context).Restart(id)
+	err = k8s_service.New(c.Cache).Restart(id)
 	if err != nil {
 		return makeError(err)
 	}

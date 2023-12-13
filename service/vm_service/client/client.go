@@ -10,35 +10,32 @@ import (
 type BaseClient[parent any] struct {
 	p *parent
 
-	*Context
+	*service.Cache
 }
 
-func NewBaseClient[parent any](context *Context) BaseClient[parent] {
-	if context == nil {
-		context = &Context{
-			vmStore:  make(map[string]*vmModel.VM),
-			gpuStore: make(map[string]*gpuModel.GPU),
-		}
+func NewBaseClient[parent any](cache *service.Cache) BaseClient[parent] {
+	if cache == nil {
+		cache = service.NewCache()
 	}
 
-	return BaseClient[parent]{Context: context}
+	return BaseClient[parent]{Cache: cache}
 }
 
 func (c *BaseClient[parent]) SetParent(p *parent) {
 	c.p = p
 }
 
-func (c *BaseClient[parent]) SetContext(context *Context) {
+func (c *BaseClient[parent]) SetContext(context *service.Cache) {
 	if context == nil {
-		context = &Context{}
+		context = &service.Cache{}
 	}
 
-	c.Context = context
+	c.Cache = context
 }
 
 func (c *BaseClient[parent]) VM(id string, vmc *vmModel.Client) (*vmModel.VM, error) {
-	vm, ok := c.vmStore[id]
-	if !ok || vm == nil {
+	vm := c.GetVM(id)
+	if vm == nil {
 		return c.fetchVM(id, "", vmc)
 	}
 
@@ -51,8 +48,8 @@ func (c *BaseClient[parent]) VMs(vmc *vmModel.Client) ([]vmModel.VM, error) {
 }
 
 func (c *BaseClient[parent]) GPU(id string, gmc *gpuModel.Client) (*gpuModel.GPU, error) {
-	gpu, ok := c.gpuStore[id]
-	if !ok || gpu == nil {
+	gpu := c.GetGPU(id)
+	if gpu == nil {
 		return c.fetchGPU(id, gmc)
 	}
 
@@ -101,7 +98,7 @@ func (c *BaseClient[parent]) fetchVM(id, name string, vmc *vmModel.Client) (*vmM
 		return nil, nil
 	}
 
-	c.storeVM(vm)
+	c.StoreVM(vm)
 	return vm, nil
 }
 
@@ -120,7 +117,7 @@ func (c *BaseClient[parent]) fetchVMs(vmc *vmModel.Client) ([]vmModel.VM, error)
 	}
 
 	for _, vm := range vms {
-		c.storeVM(&vm)
+		c.StoreVM(&vm)
 	}
 
 	return vms, nil
@@ -144,7 +141,7 @@ func (c *BaseClient[parent]) fetchGPU(id string, gmc *gpuModel.Client) (*gpuMode
 		return nil, nil
 	}
 
-	c.storeGPU(gpu)
+	c.StoreGPU(gpu)
 	return gpu, nil
 }
 
@@ -163,16 +160,8 @@ func (c *BaseClient[parent]) fetchGPUs(gmc *gpuModel.Client) ([]gpuModel.GPU, er
 	}
 
 	for _, gpu := range gpus {
-		c.storeGPU(&gpu)
+		c.StoreGPU(&gpu)
 	}
 
 	return gpus, nil
-}
-
-func (c *BaseClient[parent]) storeVM(vm *vmModel.VM) {
-	c.vmStore[vm.ID] = vm
-}
-
-func (c *BaseClient[parent]) storeGPU(gpu *gpuModel.GPU) {
-	c.gpuStore[gpu.ID] = gpu
 }

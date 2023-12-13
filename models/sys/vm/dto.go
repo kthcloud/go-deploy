@@ -2,7 +2,7 @@ package vm
 
 import (
 	"go-deploy/models/dto/body"
-	"go-deploy/service"
+	"go-deploy/pkg/subsystems"
 	"go-deploy/utils"
 )
 
@@ -35,14 +35,14 @@ func (vm *VM) ToDTO(status string, connectionString *string, gpu *body.GpuRead, 
 			var customDomainUrl *string
 
 			if port.HttpProxy != nil {
-				if ingress := vm.Subsystems.K8s.GetIngress(vm.Name + "-" + port.HttpProxy.Name); service.Created(ingress) {
+				if ingress := vm.Subsystems.K8s.GetIngress(vm.Name + "-" + port.HttpProxy.Name); subsystems.Created(ingress) {
 					if len(ingress.Hosts) > 0 {
 						urlStr := "https://" + ingress.Hosts[0]
 						url = &urlStr
 					}
 				}
 
-				if ingress := vm.Subsystems.K8s.GetIngress(vm.Name + "-" + port.HttpProxy.Name + "-custom-domain"); service.Created(ingress) {
+				if ingress := vm.Subsystems.K8s.GetIngress(vm.Name + "-" + port.HttpProxy.Name + "-custom-domain"); subsystems.Created(ingress) {
 					if len(ingress.Hosts) > 0 {
 						urlStr := "https://" + ingress.Hosts[0]
 						customDomainUrl = &urlStr

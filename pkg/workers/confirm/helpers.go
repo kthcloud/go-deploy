@@ -6,7 +6,7 @@ import (
 	"go-deploy/models/sys/gpu"
 	"go-deploy/models/sys/sm"
 	"go-deploy/models/sys/vm"
-	"go-deploy/service"
+	"go-deploy/pkg/subsystems"
 )
 
 func appCreatedK8s(deployment *deploymentModels.Deployment, app *deploymentModels.App) bool {
@@ -366,15 +366,15 @@ func k8sCreatedVM(vm *vm.VM) (bool, error) {
 
 		resourceName := vm.Name + "-" + port.Name
 
-		if service.NotCreated(k8s.GetDeployment(resourceName)) {
+		if subsystems.NotCreated(k8s.GetDeployment(resourceName)) {
 			return false, nil
 		}
 
-		if service.NotCreated(k8s.GetService(resourceName)) {
+		if subsystems.NotCreated(k8s.GetService(resourceName)) {
 			return false, nil
 		}
 
-		if service.NotCreated(k8s.GetIngress(resourceName)) {
+		if subsystems.NotCreated(k8s.GetIngress(resourceName)) {
 			return false, nil
 		}
 	}
