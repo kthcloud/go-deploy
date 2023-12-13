@@ -124,6 +124,10 @@ func (c *Client) Delete(id string) error {
 			WithResourceID(pfr.ID).
 			WithDbFunc(dbFunc(id, "portForwardingRuleMap."+mapName)).
 			Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	err = resources.SsDeleter(csc.DeleteVM).

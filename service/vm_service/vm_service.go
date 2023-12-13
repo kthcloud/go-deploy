@@ -245,11 +245,6 @@ func (c *Client) Delete(id string) error {
 		return nil
 	}
 
-	err = vmModel.New().AddActivity(vm.ID, vmModel.ActivityBeingDeleted)
-	if err != nil {
-		return makeError(err)
-	}
-
 	err = k8s_service.New(c.Context).Delete(id)
 	if err != nil {
 		return makeError(err)
