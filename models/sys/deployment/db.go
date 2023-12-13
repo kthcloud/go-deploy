@@ -303,18 +303,9 @@ func (client *Client) UpdateGitLabBuild(deploymentID string, build subsystems.Gi
 }
 
 func (client *Client) GetLastGitLabBuild(deploymentID string) (*subsystems.GitLabBuild, error) {
-	// fetch only subsystem.gitlab.lastBuild
-	projection := bson.D{
-		{"subsystems.gitlab.lastBuild", 1},
-	}
-
-	var deployment Deployment
-	err := client.Collection.FindOne(context.TODO(),
-		bson.D{{"id", deploymentID}},
-		options.FindOne().SetProjection(projection),
-	).Decode(&deployment)
+	deployment, err := client.GetWithFilterAndProjection(bson.D{{"id", deploymentID}}, bson.D{{"subsystems.gitlab.lastBuild", 1}})
 	if err != nil {
-		return &subsystems.GitLabBuild{}, err
+		return nil, err
 	}
 
 	return &deployment.Subsystems.GitLab.LastBuild, nil
