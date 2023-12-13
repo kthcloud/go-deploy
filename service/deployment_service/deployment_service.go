@@ -50,7 +50,7 @@ func (c *Client) Get(id string, opts *client.GetOptions) (*deploymentModel.Deplo
 		teamCheck = true
 	} else {
 		var err error
-		teamCheck, err = teamModels.New().AddUserID(c.Auth.UserID).AddResourceID(id).ExistsAny()
+		teamCheck, err = teamModels.New().WithUserID(c.Auth.UserID).WithResourceID(id).ExistsAny()
 		if err != nil {
 			return nil, err
 		}
@@ -111,7 +111,7 @@ func (c *Client) List(opts *client.ListOptions) ([]deploymentModel.Deployment, e
 			skipIDs[i] = resource.ID
 		}
 
-		teamClient := teamModels.New().AddUserID(effectiveUserID)
+		teamClient := teamModels.New().WithUserID(effectiveUserID)
 		if opts.Pagination != nil {
 			teamClient.WithPagination(opts.Pagination.Page, opts.Pagination.PageSize)
 		}

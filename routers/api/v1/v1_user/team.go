@@ -12,8 +12,10 @@ import (
 	teamModels "go-deploy/models/sys/team"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
+	"go-deploy/service"
 	"go-deploy/service/deployment_service"
 	dClient "go-deploy/service/deployment_service/client"
+	sErrors "go-deploy/service/errors"
 	"go-deploy/service/user_service"
 	"go-deploy/service/vm_service"
 	vClient "go-deploy/service/vm_service/client"
@@ -51,7 +53,20 @@ func ListTeams(c *gin.Context) {
 		return
 	}
 
-	teamList, err := user_service.ListTeamsAuth(requestQuery.All, requestQuery.UserID, auth, &requestQuery.Pagination)
+	var userID string
+	if requestQuery.UserID != nil {
+		userID = *requestQuery.UserID
+	} else if !auth.IsAdmin {
+		userID = auth.UserID
+	}
+
+	teamList, err := user_service.New().WithAuth(auth).ListTeams(&user_service.ListTeamsOpts{
+		Pagination: &service.Pagination{
+			Page:     requestQuery.Page,
+			PageSize: requestQuery.PageSize,
+		},
+		UserID: userID,
+	})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -91,7 +106,7 @@ func GetTeam(c *gin.Context) {
 		return
 	}
 
-	team, err := user_service.GetTeamByIdAuth(requestURI.TeamID, auth)
+	team, err := user_service.New().WithAuth(auth).GetTeam(requestURI.TeamID, &user_service.GetTeamOpts{})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -126,9 +141,9 @@ func CreateTeam(c *gin.Context) {
 		return
 	}
 
-	team, err := user_service.CreateTeam(uuid.NewString(), auth.UserID, &requestQuery, auth)
+	team, err := user_service.New().WithAuth(auth).CreateTeam(uuid.NewString(), auth.UserID, &requestQuery)
 	if err != nil {
-		if errors.Is(err, user_service.TeamNameTakenErr) {
+		if errors.Is(err, sErrors.TeamNameTakenErr) {
 			context.UserError("Team name is taken")
 			return
 		}
@@ -163,7 +178,7 @@ func UpdateTeam(c *gin.Context) {
 
 	var requestQueryJoin body.TeamJoin
 	if err := context.GinContext.ShouldBindBodyWith(&requestQueryJoin, binding.JSON); err == nil {
-		joinTeam(context, requestURI.TeamID, &requestQueryJoin)
+		JoinTeam(context, requestURI.TeamID, &requestQueryJoin)
 		return
 	}
 
@@ -179,9 +194,9 @@ func UpdateTeam(c *gin.Context) {
 		return
 	}
 
-	updated, err := user_service.UpdateTeamAuth(requestURI.TeamID, &requestQuery, auth)
+	updated, err := user_service.New().WithAuth(auth).UpdateTeam(requestURI.TeamID, &requestQuery)
 	if err != nil {
-		if errors.Is(err, user_service.TeamNameTakenErr) {
+		if errors.Is(err, sErrors.TeamNameTakenErr) {
 			context.UserError("Team name is taken")
 			return
 		}
@@ -224,7 +239,7 @@ func DeleteTeam(c *gin.Context) {
 		return
 	}
 
-	err = user_service.DeleteTeamAuth(requestURI.TeamID, auth)
+	err = user_service.New().WithAuth(auth).DeleteTeam(requestURI.TeamID)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -301,20 +316,20 @@ func getResourceName(resource *teamModels.Resource) *string {
 
 }
 
-func joinTeam(context sys.ClientContext, id string, requestBody *body.TeamJoin) {
+func JoinTeam(context sys.ClientContext, id string, requestBody *body.TeamJoin) {
 	auth, err := v1.WithAuth(&context)
 	if err != nil {
 		context.ServerError(err, v1.AuthInfoNotAvailableErr)
 	}
 
-	team, err := user_service.JoinTeam(id, requestBody, auth)
+	team, err := user_service.New().WithAuth(auth).JoinTeam(id, requestBody, auth)
 	if err != nil {
-		if errors.Is(err, user_service.NotInvitedErr) {
+		if errors.Is(err, sErrors.NotInvitedErr) {
 			context.UserError("User not invited to team")
 			return
 		}
 
-		if errors.Is(err, user_service.BadInviteCodeErr) {
+		if errors.Is(err, sErrors.BadInviteCodeErr) {
 			context.Forbidden("Bad invite code")
 			return
 		}

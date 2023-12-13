@@ -45,7 +45,7 @@ type Client struct {
 }
 
 // New creates a new Client.
-// If context is not nil, it will be used to create a new BaseClient.
+// If context is not nil, it will be used to create a new Client.
 // Otherwise, an empty context will be created.
 func New(cache *service.Cache) *Client {
 	c := &Client{BaseClient: client.NewBaseClient[Client](cache)}

@@ -24,13 +24,6 @@ func (c *BaseClient[parent]) SetParent(p *parent) {
 	c.p = p
 }
 
-func (c *BaseClient[parent]) SetContext(context *service.Cache) {
-	if context == nil {
-		context = &service.Cache{}
-	}
-	c.Cache = context
-}
-
 func (c *BaseClient[parent]) Deployment(id string, dmc *deploymentModel.Client) (*deploymentModel.Deployment, error) {
 	deployment := c.GetDeployment(id)
 	if deployment == nil {

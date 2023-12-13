@@ -48,7 +48,7 @@ func (c *Client) Get(id string, opts *client.GetOptions) (*vmModel.VM, error) {
 		teamCheck = true
 	} else {
 		var err error
-		teamCheck, err = teamModels.New().AddUserID(c.Auth.UserID).AddResourceID(id).ExistsAny()
+		teamCheck, err = teamModels.New().WithUserID(c.Auth.UserID).WithResourceID(id).ExistsAny()
 		if err != nil {
 			return nil, err
 		}
@@ -73,14 +73,14 @@ func (c *Client) List(opts *client.ListOptions) ([]vmModel.VM, error) {
 
 	var effectiveUserID string
 	if opts.UserID != "" {
-		// specific user's deployments are requested
+		// Specific user's VMs are requested
 		if c.Auth == nil || c.Auth.UserID == opts.UserID || c.Auth.IsAdmin {
 			effectiveUserID = opts.UserID
 		} else {
 			effectiveUserID = c.Auth.UserID
 		}
 	} else {
-		// all deployments are requested
+		// All VMs are requested
 		if c.Auth != nil && !c.Auth.IsAdmin {
 			effectiveUserID = c.Auth.UserID
 		}
@@ -101,7 +101,7 @@ func (c *Client) List(opts *client.ListOptions) ([]vmModel.VM, error) {
 			skipIDs[i] = resource.ID
 		}
 
-		teamClient := teamModels.New().AddUserID(effectiveUserID)
+		teamClient := teamModels.New().WithUserID(effectiveUserID)
 		if opts.Pagination != nil {
 			teamClient.WithPagination(opts.Pagination.Page, opts.Pagination.PageSize)
 		}

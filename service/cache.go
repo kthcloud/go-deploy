@@ -13,6 +13,7 @@ type Cache struct {
 	gpuStore        map[string]*gpuModels.GPU
 	smStore         map[string]*smModels.SM
 
+	// AuthInfo is the authentication information for the client.
 	Auth *AuthInfo
 }
 
@@ -23,11 +24,6 @@ func NewCache() *Cache {
 		gpuStore:        make(map[string]*gpuModels.GPU),
 		smStore:         make(map[string]*smModels.SM),
 	}
-}
-
-func (c *Cache) WithAuth(auth *AuthInfo) *Cache {
-	c.Auth = auth
-	return c
 }
 
 func (c *Cache) StoreDeployment(deployment *deploymentModels.Deployment) {

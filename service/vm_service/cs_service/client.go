@@ -48,7 +48,7 @@ func OptsNoGenerator(vmID string, extraOpts ...client.ExtraOpts) *client.Opts {
 }
 
 // Client is the client for the Harbor service.
-// It contains a BaseClient, which is used to lazy-load and cache data.
+// It contains a Client, which is used to lazy-load and cache data.
 type Client struct {
 	client.BaseClient[Client]
 }

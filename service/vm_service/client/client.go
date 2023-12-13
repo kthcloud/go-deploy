@@ -25,14 +25,6 @@ func (c *BaseClient[parent]) SetParent(p *parent) {
 	c.p = p
 }
 
-func (c *BaseClient[parent]) SetContext(context *service.Cache) {
-	if context == nil {
-		context = &service.Cache{}
-	}
-
-	c.Cache = context
-}
-
 func (c *BaseClient[parent]) VM(id string, vmc *vmModel.Client) (*vmModel.VM, error) {
 	vm := c.GetVM(id)
 	if vm == nil {

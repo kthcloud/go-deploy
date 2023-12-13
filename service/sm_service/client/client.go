@@ -25,14 +25,6 @@ func (c *BaseClient[parent]) SetParent(p *parent) {
 	c.p = p
 }
 
-func (c *BaseClient[parent]) SetContext(context *service.Cache) {
-	if context == nil {
-		context = service.NewCache()
-	}
-
-	c.Cache = context
-}
-
 func (c *BaseClient[parent]) SM(id, userID string, smc *smModels.Client) (*smModels.SM, error) {
 	sm := c.GetSM(id)
 	if sm != nil {
