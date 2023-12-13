@@ -201,6 +201,11 @@ func (client *Client) GetVmStatus(id string) (string, error) {
 		return fmt.Errorf("failed to get cs vm %s status. details: %w", id, err)
 	}
 
+	if id == "" {
+		log.Println("cs vm id not supplied when getting status. assuming it was deleted")
+		return "", nil
+	}
+
 	vm, _, err := client.CsClient.VirtualMachine.GetVirtualMachineByID(id)
 	if err != nil {
 		errString := err.Error()

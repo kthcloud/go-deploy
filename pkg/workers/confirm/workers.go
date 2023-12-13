@@ -19,15 +19,6 @@ func deploymentConfirmer(ctx context.Context) {
 	for {
 		select {
 		case <-time.After(5 * time.Second):
-			beingCreated, _ := deploymentModels.New().WithActivities(deploymentModels.ActivityBeingCreated).List()
-			for _, deployment := range beingCreated {
-				created := DeploymentCreated(&deployment)
-				if created {
-					log.Printf("marking deployment %s as created\n", deployment.ID)
-					_ = deploymentModels.New().RemoveActivity(deployment.ID, deploymentModels.ActivityBeingCreated)
-				}
-			}
-
 			beingDeleted, _ := deploymentModels.New().WithActivities(deploymentModels.ActivityBeingDeleted).List()
 			for _, deployment := range beingDeleted {
 				deleted := DeploymentDeleted(&deployment)
@@ -67,19 +58,6 @@ func smConfirmer(ctx context.Context) {
 	for {
 		select {
 		case <-time.After(5 * time.Second):
-			beingCreated, err := smModels.New().WithActivities(smModels.ActivityBeingCreated).List()
-			if err != nil {
-				utils.PrettyPrintError(fmt.Errorf("failed to get sms being created. details: %w", err))
-			}
-
-			for _, sm := range beingCreated {
-				created := SmCreated(&sm)
-				if created {
-					log.Printf("marking sm %s as created\n", sm.ID)
-					_ = smModels.New().RemoveActivity(sm.ID, smModels.ActivityBeingCreated)
-				}
-			}
-
 			beingDeleted, err := smModels.New().WithActivities(smModels.ActivityBeingDeleted).List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("failed to get sms being deleted. details: %w", err))
@@ -123,19 +101,6 @@ func vmConfirmer(ctx context.Context) {
 	for {
 		select {
 		case <-time.After(5 * time.Second):
-			beingCreated, err := vmModels.New().WithActivities(vmModels.ActivityBeingCreated).List()
-			if err != nil {
-				utils.PrettyPrintError(fmt.Errorf("failed to get vms being created. details: %w", err))
-			}
-
-			for _, vm := range beingCreated {
-				created := VmCreated(&vm)
-				if created {
-					log.Printf("marking vm %s as created\n", vm.ID)
-					_ = vmModels.New().RemoveActivity(vm.ID, vmModels.ActivityBeingCreated)
-				}
-			}
-
 			beingDeleted, err := vmModels.New().WithActivities(vmModels.ActivityBeingDeleted).List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("failed to get vms being deleted. details: %w", err))

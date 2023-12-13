@@ -361,7 +361,7 @@ func (c *Client) Repair(id string) error {
 	}
 
 	// only repair if the vm is stopped to prevent downtime for the user
-	if status == "Stopped" {
+	if status == "" || status == "Stopped" {
 		var gpu *gpuModel.GPU
 		if gpuID := vm.GetGpuID(); gpuID != nil {
 			gpu, err = gpuModel.New().GetByID(*gpuID)
