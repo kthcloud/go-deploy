@@ -53,7 +53,7 @@ func (client *Client) CreateServiceOffering(public *models.ServiceOfferingPublic
 
 	createParams := cloudstack.CreateServiceOfferingParams{}
 	createParams.SetName(public.Name)
-	createParams.SetDisplaytext(public.Name)
+	createParams.SetDisplaytext(public.Description)
 	createParams.SetCpunumber(public.CpuCores)
 	createParams.SetCpuspeed(1)
 	createParams.SetMemory(public.RAM * 1024)
