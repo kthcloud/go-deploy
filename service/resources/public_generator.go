@@ -3,7 +3,7 @@ package resources
 import (
 	"go-deploy/models/config"
 	deploymentModels "go-deploy/models/sys/deployment"
-	"go-deploy/models/sys/storage_manager"
+	"go-deploy/models/sys/sm"
 	vmModels "go-deploy/models/sys/vm"
 	"go-deploy/pkg/subsystems/k8s"
 )
@@ -13,9 +13,9 @@ type Deployment struct {
 	zone       *config.DeploymentZone
 }
 
-type StorageManager struct {
-	storageManager *storage_manager.StorageManager
-	zone           *config.DeploymentZone
+type SM struct {
+	sm   *sm.SM
+	zone *config.DeploymentZone
 }
 
 type VM struct {
@@ -27,7 +27,7 @@ type VM struct {
 type PublicGeneratorType struct {
 	d Deployment
 	v VM
-	s StorageManager
+	s SM
 }
 
 func PublicGenerator() *PublicGeneratorType {
@@ -51,8 +51,8 @@ func (pc *PublicGeneratorType) WithDeployment(deployment *deploymentModels.Deplo
 	return pc
 }
 
-func (pc *PublicGeneratorType) WithStorageManager(storageManager *storage_manager.StorageManager) *PublicGeneratorType {
-	pc.s.storageManager = storageManager
+func (pc *PublicGeneratorType) WithSM(sm *sm.SM) *PublicGeneratorType {
+	pc.s.sm = sm
 	return pc
 }
 

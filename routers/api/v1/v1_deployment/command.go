@@ -9,6 +9,7 @@ import (
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/deployment_service"
+	"go-deploy/service/deployment_service/client"
 	"net/http"
 )
 
@@ -47,7 +48,9 @@ func DoCommand(c *gin.Context) {
 		return
 	}
 
-	deployment, err := deployment_service.GetByIdAuth(requestURI.DeploymentID, auth)
+	dc := deployment_service.New().WithAuth(auth)
+
+	deployment, err := dc.Get(requestURI.DeploymentID, &client.GetOptions{Shared: true})
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return
@@ -63,7 +66,7 @@ func DoCommand(c *gin.Context) {
 		return
 	}
 
-	deployment_service.DoCommand(deployment, requestBody.Command)
+	dc.DoCommand(requestURI.DeploymentID, requestBody.Command)
 
 	context.OkNoContent()
 }

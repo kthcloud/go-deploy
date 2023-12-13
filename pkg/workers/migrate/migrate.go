@@ -1,7 +1,8 @@
 package migrator
 
 import (
-	deploymentModel "go-deploy/models/sys/deployment"
+	"fmt"
+	vmModels "go-deploy/models/sys/vm"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
 )
@@ -36,35 +37,41 @@ func Migrate() {
 // add a date to the migration name to make it easier to identify.
 func getMigrations() map[string]func() error {
 	return map[string]func() error{
-		"2023-11-10_add_replicas_to_main_app": addReplicasToMainApp,
+		"2023-12-13-migrate-vm-cs-port-map-name": migrateVmCsPortMapName,
 	}
 }
 
-func addReplicasToMainApp() error {
-	deployments, err := deploymentModel.New().List()
+func migrateVmCsPortMapName() error {
+	vms, err := vmModels.New().List()
 	if err != nil {
 		return err
 	}
 
-	for _, deployment := range deployments {
-		app := deployment.GetMainApp()
-		if app == nil {
-			continue
+	for _, vm := range vms {
+		for mapName, pfr := range vm.Subsystems.CS.GetPortForwardingRuleMap() {
+			if mapName == "__ssh" {
+				continue
+			}
+
+			if mapName != pfrName(pfr.PrivatePort, pfr.Protocol) {
+				vm.Subsystems.CS.SetPortForwardingRule(pfrName(pfr.PrivatePort, pfr.Protocol), pfr)
+				vm.Subsystems.CS.DeletePortForwardingRule(mapName)
+			}
 		}
 
-		if app.Replicas == 0 {
-			app.Replicas = 1
+		update := bson.D{
+			{"subsystems.cs.portForwardingRuleMap", vm.Subsystems.CS.GetPortForwardingRuleMap()},
+		}
 
-			update := bson.D{
-				{"apps.main", app},
-			}
-
-			err = deploymentModel.New().SetWithBsonByID(deployment.ID, update)
-			if err != nil {
-				return err
-			}
+		err = vmModels.New().SetWithBsonByID(vm.ID, update)
+		if err != nil {
+			return err
 		}
 	}
 
 	return nil
+}
+
+func pfrName(privatePort int, protocol string) string {
+	return fmt.Sprintf("priv-%d-prot-%s", privatePort, protocol)
 }

@@ -6,22 +6,23 @@ import (
 	"fmt"
 	"github.com/mitchellh/mapstructure"
 	"go-deploy/models/dto/body"
-	deploymentModel "go-deploy/models/sys/deployment"
-	jobModel "go-deploy/models/sys/job"
-	storageManagerModel "go-deploy/models/sys/storage_manager"
-	vmModel "go-deploy/models/sys/vm"
+	deploymentModels "go-deploy/models/sys/deployment"
+	jobModels "go-deploy/models/sys/job"
+	smModels "go-deploy/models/sys/sm"
+	vmModels "go-deploy/models/sys/vm"
 	"go-deploy/pkg/workers/confirm"
 	"go-deploy/service/deployment_service"
-	"go-deploy/service/storage_manager_service"
+	sErrors "go-deploy/service/errors"
+	"go-deploy/service/sm_service"
 	"go-deploy/service/vm_service"
-	errors2 "go-deploy/service/vm_service/service_errors"
+	"go-deploy/service/vm_service/client"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 	"time"
 )
 
-func CreateVM(job *jobModel.Job) error {
+func CreateVM(job *jobModels.Job) error {
 	err := assertParameters(job, []string{"id", "ownerId", "params"})
 	if err != nil {
 		return makeTerminatedError(err)
@@ -35,16 +36,16 @@ func CreateVM(job *jobModel.Job) error {
 		return makeTerminatedError(err)
 	}
 
-	err = vm_service.Create(id, ownerID, &params)
+	err = vm_service.New().Create(id, ownerID, &params)
 	if err != nil {
-		// we always terminate these jobs, since rerunning it would cause a NonUniqueFieldErr
+		// We always terminate these jobs, since rerunning it would cause a NonUniqueFieldErr
 		return makeTerminatedError(err)
 	}
 
 	return nil
 }
 
-func DeleteVM(job *jobModel.Job) error {
+func DeleteVM(job *jobModels.Job) error {
 	err := assertParameters(job, []string{"id"})
 	if err != nil {
 		return makeTerminatedError(err)
@@ -52,12 +53,12 @@ func DeleteVM(job *jobModel.Job) error {
 
 	id := job.Args["id"].(string)
 
-	err = vmModel.New().AddActivity(id, vmModel.ActivityBeingDeleted)
+	err = vmModels.New().AddActivity(id, vmModels.ActivityBeingDeleted)
 	if err != nil {
 		return makeTerminatedError(err)
 	}
 
-	relatedJobs, err := jobModel.New().ExcludeScheduled().ExcludeIDs(job.ID).GetByArgs(map[string]interface{}{"id": id})
+	relatedJobs, err := jobModels.New().ExcludeScheduled().ExcludeIDs(job.ID).GetByArgs(map[string]interface{}{"id": id})
 	if err != nil {
 		return makeTerminatedError(err)
 	}
@@ -66,7 +67,7 @@ func DeleteVM(job *jobModel.Job) error {
 	defer cancel()
 
 	go func() {
-		err = waitForJobs(ctx, relatedJobs, []string{jobModel.StatusCompleted, jobModel.StatusTerminated})
+		err = waitForJobs(ctx, relatedJobs, []string{jobModels.StatusCompleted, jobModels.StatusTerminated})
 		if err != nil {
 			log.Println("failed to wait for related jobs", id, ". details:", err)
 		}
@@ -79,13 +80,13 @@ func DeleteVM(job *jobModel.Job) error {
 	case <-ctx.Done():
 	}
 
-	err = vm_service.Delete(id)
+	err = vm_service.New().Delete(id)
 	if err != nil {
 		return makeFailedError(err)
 	}
 
 	// check if deleted, otherwise mark as failed and return to queue for retry
-	vm, err := vmModel.New().GetByID(id)
+	vm, err := vmModels.New().GetByID(id)
 	if err != nil {
 		return makeFailedError(err)
 	}
@@ -101,7 +102,7 @@ func DeleteVM(job *jobModel.Job) error {
 	return nil
 }
 
-func UpdateVM(job *jobModel.Job) error {
+func UpdateVM(job *jobModels.Job) error {
 	err := assertParameters(job, []string{"id", "params"})
 	if err != nil {
 		return makeTerminatedError(err)
@@ -114,16 +115,28 @@ func UpdateVM(job *jobModel.Job) error {
 		return makeTerminatedError(err)
 	}
 
-	err = vm_service.Update(id, &update)
+	err = vm_service.New().Update(id, &update)
 	if err != nil {
-		if errors.Is(err, errors2.NonUniqueFieldErr) {
+		if errors.Is(err, sErrors.NonUniqueFieldErr) {
+			return makeTerminatedError(err)
+		}
+
+		if errors.Is(err, sErrors.VmNotFoundErr) {
+			return makeTerminatedError(err)
+		}
+
+		if errors.Is(err, sErrors.IngressHostInUseErr) {
+			return makeTerminatedError(err)
+		}
+
+		if errors.Is(err, sErrors.PortInUseErr) {
 			return makeTerminatedError(err)
 		}
 
 		return makeFailedError(err)
 	}
 
-	err = vmModel.New().MarkUpdated(id)
+	err = vmModels.New().MarkUpdated(id)
 	if err != nil {
 		return makeTerminatedError(err)
 	}
@@ -131,7 +144,7 @@ func UpdateVM(job *jobModel.Job) error {
 	return nil
 }
 
-func UpdateVmOwner(job *jobModel.Job) error {
+func UpdateVmOwner(job *jobModels.Job) error {
 	err := assertParameters(job, []string{"id", "params"})
 	if err != nil {
 		return makeTerminatedError(err)
@@ -144,7 +157,7 @@ func UpdateVmOwner(job *jobModel.Job) error {
 		return makeTerminatedError(err)
 	}
 
-	err = vm_service.UpdateOwner(id, &params)
+	err = vm_service.New().UpdateOwner(id, &params)
 	if err != nil {
 		return makeFailedError(err)
 	}
@@ -152,7 +165,7 @@ func UpdateVmOwner(job *jobModel.Job) error {
 	return nil
 }
 
-func AttachGpuToVM(job *jobModel.Job) error {
+func AttachGpuToVM(job *jobModels.Job) error {
 	err := assertParameters(job, []string{"id", "gpuIds", "userId", "leaseDuration"})
 	if err != nil {
 		return makeTerminatedError(err)
@@ -164,18 +177,28 @@ func AttachGpuToVM(job *jobModel.Job) error {
 	if err != nil {
 		return makeTerminatedError(err)
 	}
-	userID := job.Args["userId"].(string)
 	leaseDuration := job.Args["leaseDuration"].(float64)
 
-	err = vm_service.AttachGPU(gpuIDs, vmID, userID, leaseDuration)
+	// we keep this field to know who requested the gpu attachment
+	_ = job.Args["userId"].(string)
+
+	err = vm_service.New().AttachGPU(vmID, gpuIDs, leaseDuration)
 	if err != nil {
+		if errors.Is(err, sErrors.GpuNotFoundErr) {
+			return makeTerminatedError(err)
+		}
+
+		if errors.Is(err, sErrors.VmNotFoundErr) {
+			return makeTerminatedError(err)
+		}
+
 		return makeFailedError(err)
 	}
 
 	return nil
 }
 
-func DetachGpuFromVM(job *jobModel.Job) error {
+func DetachGpuFromVM(job *jobModels.Job) error {
 	err := assertParameters(job, []string{"id"})
 	if err != nil {
 		return makeTerminatedError(err)
@@ -183,7 +206,7 @@ func DetachGpuFromVM(job *jobModel.Job) error {
 
 	vmID := job.Args["id"].(string)
 
-	err = vm_service.DetachGPU(vmID)
+	err = vm_service.New().DetachGPU(vmID)
 	if err != nil {
 		return makeFailedError(err)
 	}
@@ -191,7 +214,7 @@ func DetachGpuFromVM(job *jobModel.Job) error {
 	return nil
 }
 
-func CreateDeployment(job *jobModel.Job) error {
+func CreateDeployment(job *jobModels.Job) error {
 	err := assertParameters(job, []string{"id", "ownerId", "params"})
 	if err != nil {
 		return makeTerminatedError(err)
@@ -205,16 +228,16 @@ func CreateDeployment(job *jobModel.Job) error {
 		return makeTerminatedError(err)
 	}
 
-	err = deployment_service.Create(id, ownerID, &params)
+	err = deployment_service.New().Create(id, ownerID, &params)
 	if err != nil {
-		// we always terminate these jobs, since rerunning it would cause a NonUniqueFieldErr
+		// We always terminate these jobs, since rerunning it would cause a NonUniqueFieldErr
 		return makeTerminatedError(err)
 	}
 
 	return nil
 }
 
-func DeleteDeployment(job *jobModel.Job) error {
+func DeleteDeployment(job *jobModels.Job) error {
 	err := assertParameters(job, []string{"id"})
 	if err != nil {
 		return makeTerminatedError(err)
@@ -222,12 +245,12 @@ func DeleteDeployment(job *jobModel.Job) error {
 
 	id := job.Args["id"].(string)
 
-	err = deploymentModel.New().AddActivity(id, deploymentModel.ActivityBeingDeleted)
+	err = deploymentModels.New().AddActivity(id, deploymentModels.ActivityBeingDeleted)
 	if err != nil {
 		return makeTerminatedError(err)
 	}
 
-	relatedJobs, err := jobModel.New().GetByArgs(bson.M{"args.id": id})
+	relatedJobs, err := jobModels.New().GetByArgs(bson.M{"args.id": id})
 	if err != nil {
 		return makeTerminatedError(err)
 	}
@@ -236,7 +259,7 @@ func DeleteDeployment(job *jobModel.Job) error {
 	defer cancel()
 
 	go func() {
-		err = waitForJobs(ctx, relatedJobs, []string{jobModel.StatusCompleted, jobModel.StatusTerminated})
+		err = waitForJobs(ctx, relatedJobs, []string{jobModels.StatusCompleted, jobModels.StatusTerminated})
 		if err != nil {
 			log.Println("failed to wait for related jobs", id, ". details:", err)
 		}
@@ -248,13 +271,15 @@ func DeleteDeployment(job *jobModel.Job) error {
 	default:
 	}
 
-	err = deployment_service.Delete(id)
+	err = deployment_service.New().Delete(id)
 	if err != nil {
-		return makeFailedError(err)
+		if !errors.Is(err, sErrors.DeploymentNotFoundErr) {
+			return makeFailedError(err)
+		}
 	}
 
 	// check if deleted, otherwise mark as failed and return to queue for retry
-	deployment, err := deploymentModel.New().GetByID(id)
+	deployment, err := deploymentModels.New().GetByID(id)
 	if err != nil {
 		return makeFailedError(err)
 	}
@@ -270,7 +295,7 @@ func DeleteDeployment(job *jobModel.Job) error {
 	return nil
 }
 
-func UpdateDeployment(job *jobModel.Job) error {
+func UpdateDeployment(job *jobModels.Job) error {
 	err := assertParameters(job, []string{"id", "params"})
 	if err != nil {
 		return makeTerminatedError(err)
@@ -283,16 +308,24 @@ func UpdateDeployment(job *jobModel.Job) error {
 		return makeTerminatedError(err)
 	}
 
-	err = deployment_service.Update(id, &update)
+	err = deployment_service.New().Update(id, &update)
 	if err != nil {
-		if errors.Is(err, deployment_service.NonUniqueFieldErr) {
+		if errors.Is(err, sErrors.NonUniqueFieldErr) {
+			return makeTerminatedError(err)
+		}
+
+		if errors.Is(err, sErrors.DeploymentNotFoundErr) {
+			return makeTerminatedError(err)
+		}
+
+		if errors.Is(err, sErrors.IngressHostInUseErr) {
 			return makeTerminatedError(err)
 		}
 
 		return makeFailedError(err)
 	}
 
-	err = deploymentModel.New().MarkUpdated(id)
+	err = deploymentModels.New().MarkUpdated(id)
 	if err != nil {
 		return makeTerminatedError(err)
 	}
@@ -300,7 +333,7 @@ func UpdateDeployment(job *jobModel.Job) error {
 	return nil
 }
 
-func UpdateDeploymentOwner(job *jobModel.Job) error {
+func UpdateDeploymentOwner(job *jobModels.Job) error {
 	err := assertParameters(job, []string{"id", "params"})
 	if err != nil {
 		return makeTerminatedError(err)
@@ -313,15 +346,19 @@ func UpdateDeploymentOwner(job *jobModel.Job) error {
 		return makeTerminatedError(err)
 	}
 
-	err = deployment_service.UpdateOwner(id, &params)
+	err = deployment_service.New().UpdateOwner(id, &params)
 	if err != nil {
+		if errors.Is(err, sErrors.DeploymentNotFoundErr) {
+			return makeTerminatedError(err)
+		}
+
 		return makeFailedError(err)
 	}
 
 	return nil
 }
 
-func BuildDeployments(job *jobModel.Job) error {
+func BuildDeployments(job *jobModels.Job) error {
 	err := assertParameters(job, []string{"ids", "build"})
 	if err != nil {
 		return makeTerminatedError(err)
@@ -355,7 +392,7 @@ func BuildDeployments(job *jobModel.Job) error {
 		return nil
 	}
 
-	err = deployment_service.Build(filtered, &params)
+	err = deployment_service.New().Build(filtered, &params)
 	if err != nil {
 		return makeFailedError(err)
 	}
@@ -363,7 +400,7 @@ func BuildDeployments(job *jobModel.Job) error {
 	return nil
 }
 
-func RepairDeployment(job *jobModel.Job) error {
+func RepairDeployment(job *jobModels.Job) error {
 	err := assertParameters(job, []string{"id"})
 	if err != nil {
 		return makeTerminatedError(err)
@@ -371,7 +408,7 @@ func RepairDeployment(job *jobModel.Job) error {
 
 	id := job.Args["id"].(string)
 
-	err = deployment_service.Repair(id)
+	err = deployment_service.New().Repair(id)
 	if err != nil {
 		return makeTerminatedError(err)
 	}
@@ -379,32 +416,47 @@ func RepairDeployment(job *jobModel.Job) error {
 	return nil
 }
 
-func CreateStorageManager(job *jobModel.Job) error {
-	err := assertParameters(job, []string{"id", "params"})
+func CreateSM(job *jobModels.Job) error {
+	err := assertParameters(job, []string{"id", "userId", "params"})
 	if err != nil {
 		return makeTerminatedError(err)
 	}
 
 	id := job.Args["id"].(string)
-	var params storageManagerModel.CreateParams
+	userID := job.Args["userId"].(string)
+
+	var params smModels.CreateParams
 	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
 	if err != nil {
 		return makeTerminatedError(err)
 	}
 
-	err = storage_manager_service.Create(id, &params)
+	err = sm_service.New().Create(id, userID, &params)
 	if err != nil {
-		if errors.Is(err, storage_manager_service.StorageManagerAlreadyExistsErr) {
-			return makeTerminatedError(err)
-		}
+		// We always terminate these jobs, since rerunning it would cause a NonUniqueFieldErr
+		return makeTerminatedError(err)
+	}
 
+	return nil
+}
+
+func DeleteSM(job *jobModels.Job) error {
+	err := assertParameters(job, []string{"id"})
+	if err != nil {
+		return makeTerminatedError(err)
+	}
+
+	id := job.Args["id"].(string)
+
+	err = sm_service.New().Delete(id)
+	if err != nil {
 		return makeFailedError(err)
 	}
 
 	return nil
 }
 
-func DeleteStorageManager(job *jobModel.Job) error {
+func RepairSM(job *jobModels.Job) error {
 	err := assertParameters(job, []string{"id"})
 	if err != nil {
 		return makeTerminatedError(err)
@@ -412,15 +464,16 @@ func DeleteStorageManager(job *jobModel.Job) error {
 
 	id := job.Args["id"].(string)
 
-	err = storage_manager_service.Delete(id)
+	err = sm_service.New().Repair(id)
 	if err != nil {
-		return makeFailedError(err)
+		// All errors are terminal, so we don't check for specific errors
+		return makeTerminatedError(err)
 	}
 
 	return nil
 }
 
-func RepairStorageManager(job *jobModel.Job) error {
+func RepairVM(job *jobModels.Job) error {
 	err := assertParameters(job, []string{"id"})
 	if err != nil {
 		return makeTerminatedError(err)
@@ -428,52 +481,38 @@ func RepairStorageManager(job *jobModel.Job) error {
 
 	id := job.Args["id"].(string)
 
-	err = storage_manager_service.Repair(id)
+	err = vm_service.New().Repair(id)
 	if err != nil {
+		// All errors are terminal, so we don't check for specific errors
 		return makeTerminatedError(err)
 	}
 
 	return nil
 }
 
-func RepairVM(job *jobModel.Job) error {
-	err := assertParameters(job, []string{"id"})
-	if err != nil {
-		return makeTerminatedError(err)
-	}
-
-	id := job.Args["id"].(string)
-
-	err = vm_service.Repair(id)
-	if err != nil {
-		return makeTerminatedError(err)
-	}
-
-	return nil
-}
-
-func CreateSystemSnapshot(job *jobModel.Job) error {
+func CreateSystemSnapshot(job *jobModels.Job) error {
 	err := assertParameters(job, []string{"id", "params"})
 	if err != nil {
 		return makeTerminatedError(err)
 	}
 
 	vmID := job.Args["id"].(string)
-	var params vmModel.CreateSnapshotParams
+	var params vmModels.CreateSnapshotParams
 	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
 	if err != nil {
 		return makeTerminatedError(err)
 	}
 
-	err = vm_service.CreateSystemSnapshot(vmID, &params)
+	err = vm_service.New().CreateSnapshot(vmID, &client.CreateSnapshotOptions{System: &params})
 	if err != nil {
+		// All errors are terminal, so we don't check for specific errors
 		return makeTerminatedError(err)
 	}
 
 	return nil
 }
 
-func CreateUserSnapshot(job *jobModel.Job) error {
+func CreateUserSnapshot(job *jobModels.Job) error {
 	err := assertParameters(job, []string{"id", "params"})
 	if err != nil {
 		return makeTerminatedError(err)
@@ -486,15 +525,16 @@ func CreateUserSnapshot(job *jobModel.Job) error {
 		return makeTerminatedError(err)
 	}
 
-	err = vm_service.CreateUserSnapshot(vmID, &params)
+	err = vm_service.New().CreateSnapshot(vmID, &client.CreateSnapshotOptions{User: &params})
 	if err != nil {
+		// All errors are terminal, so we don't check for specific errors
 		return makeTerminatedError(err)
 	}
 
 	return nil
 }
 
-func DeleteSnapshot(job *jobModel.Job) error {
+func DeleteSnapshot(job *jobModels.Job) error {
 	err := assertParameters(job, []string{"id", "snapshotId"})
 	if err != nil {
 		return makeTerminatedError(err)
@@ -503,15 +543,16 @@ func DeleteSnapshot(job *jobModel.Job) error {
 	vmID := job.Args["id"].(string)
 	snapshotID := job.Args["snapshotId"].(string)
 
-	err = vm_service.DeleteSnapshot(vmID, snapshotID)
+	err = vm_service.New().DeleteSnapshot(vmID, snapshotID)
 	if err != nil {
+		// All errors are terminal, so we don't check for specific errors
 		return makeTerminatedError(err)
 	}
 
 	return nil
 }
 
-func ApplySnapshot(job *jobModel.Job) error {
+func ApplySnapshot(job *jobModels.Job) error {
 	err := assertParameters(job, []string{"id", "snapshotId"})
 	if err != nil {
 		return makeTerminatedError(err)
@@ -520,8 +561,9 @@ func ApplySnapshot(job *jobModel.Job) error {
 	id := job.Args["id"].(string)
 	snapshotID := job.Args["snapshotId"].(string)
 
-	err = vm_service.ApplySnapshot(id, snapshotID)
+	err = vm_service.New().ApplySnapshot(id, snapshotID)
 	if err != nil {
+		// All errors are terminal, so we don't check for specific errors
 		return makeTerminatedError(err)
 	}
 

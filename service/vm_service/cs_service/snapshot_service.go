@@ -7,7 +7,7 @@ import (
 	"go-deploy/pkg/subsystems/cs/commands"
 	csModels "go-deploy/pkg/subsystems/cs/models"
 	"go-deploy/service"
-	"go-deploy/service/vm_service/base"
+	sErrors "go-deploy/service/errors"
 	"log"
 )
 
@@ -20,33 +20,32 @@ func makeBadStateErr(state string) error {
 	return fmt.Errorf("%w: %s", BadStateErr, state)
 }
 
-func CreateSnapshot(vmID string, params *vmModel.CreateSnapshotParams) error {
+func (c *Client) CreateSnapshot(vmID string, params *vmModel.CreateSnapshotParams) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create snapshot for cs vm %s. details: %w", vmID, err)
 	}
 
-	context, err := NewContext(vmID)
+	vm, csc, _, err := c.Get(OptsNoGenerator(vmID))
 	if err != nil {
-		if errors.Is(err, base.VmDeletedErr) {
-			log.Println("vm", vmID, "not found when creating snapshot in cs. assuming it was deleted")
+		if errors.Is(err, sErrors.VmNotFoundErr) {
 			return nil
 		}
 
 		return makeError(err)
 	}
 
-	if snapshot := context.VM.Subsystems.CS.GetSnapshotByName(params.Name); service.Created(snapshot) && !params.Overwrite {
+	if snapshot := vm.Subsystems.CS.GetSnapshotByName(params.Name); service.Created(snapshot) && !params.Overwrite {
 		return AlreadyExistsErr
 	}
 
-	// make sure vm is on
-	vmStatus, err := context.Client.GetVmStatus(context.VM.Subsystems.CS.VM.ID)
+	// Make sure vm is on
+	vmStatus, err := csc.GetVmStatus(vm.Subsystems.CS.VM.ID)
 	if err != nil {
 		return makeError(err)
 	}
 
 	if vmStatus != "Running" {
-		return makeBadStateErr(fmt.Sprintf("cs vm %s is not in running state: %s", context.VM.Subsystems.CS.VM.ID, vmStatus))
+		return makeBadStateErr(fmt.Sprintf("cs vm %s is not in running state: %s", vm.Subsystems.CS.VM.ID, vmStatus))
 	}
 
 	var description string
@@ -58,43 +57,49 @@ func CreateSnapshot(vmID string, params *vmModel.CreateSnapshotParams) error {
 
 	public := &csModels.SnapshotPublic{
 		Name:        params.Name,
-		VmID:        context.VM.Subsystems.CS.VM.ID,
+		VmID:        vm.Subsystems.CS.VM.ID,
 		Description: description,
 	}
 
-	if HasExtraConfig(context.VM) {
+	if HasExtraConfig(vm) {
 		return makeBadStateErr("vm has extra config (probably a gpu attached)")
 	}
 
-	snapshotID, err := context.Client.CreateSnapshot(public)
+	snapshotID, err := csc.CreateSnapshot(public)
 	if err != nil {
 		return makeError(err)
 	}
 
+	if snapshotID == "" {
+		// If no error was received, and no snapshot ID was received, then the snapshot was gracefully not created
+		// So we don't return any error here
+		return nil
+	}
+
 	if !params.UserCreated {
 		// fetch to see what state the snapshot is in, in order to delete the bad ones
-		snapshot, err := context.Client.ReadSnapshot(snapshotID)
+		snapshot, err := csc.ReadSnapshot(snapshotID)
 		if err != nil {
-			_ = context.Client.DeleteSnapshot(snapshotID)
+			_ = csc.DeleteSnapshot(snapshotID)
 			return makeError(err)
 		}
 
-		if snapshot.State == "Error" {
-			_ = context.Client.DeleteSnapshot(snapshotID)
+		if snapshot != nil && snapshot.State == "Error" {
+			_ = csc.DeleteSnapshot(snapshotID)
 			return makeBadStateErr(fmt.Sprintf("snapshot got state: %s", snapshot.State))
 		}
 	}
 	log.Println("created snapshot", snapshotID, "for vm", vmID)
 
-	// delete every other snapshot with the same name that is older
-	snapshots, err := context.Client.ReadAllSnapshots(context.VM.Subsystems.CS.VM.ID)
+	// Delete every other snapshot with the same name that is older
+	snapshots, err := csc.ReadAllSnapshots(vm.Subsystems.CS.VM.ID)
 	if err != nil {
 		return makeError(err)
 	}
 
 	for _, snapshot := range snapshots {
 		if snapshot.Name == params.Name && snapshot.ID != snapshotID {
-			err = context.Client.DeleteSnapshot(snapshot.ID)
+			err = csc.DeleteSnapshot(snapshot.ID)
 			if err != nil {
 				return makeError(err)
 			}
@@ -106,22 +111,21 @@ func CreateSnapshot(vmID string, params *vmModel.CreateSnapshotParams) error {
 	return nil
 }
 
-func DeleteSnapshot(vmID, snapshotID string) error {
+func (c *Client) DeleteSnapshot(vmID, snapshotID string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete snapshot %s for vm %s. details: %w", snapshotID, vmID, err)
 	}
 
-	context, err := NewContext(vmID)
+	_, csc, _, err := c.Get(OptsNoGenerator(vmID))
 	if err != nil {
-		if errors.Is(err, base.VmDeletedErr) {
-			log.Println("vm", vmID, "not found when deleting snapshot in cs. assuming it was deleted")
+		if errors.Is(err, sErrors.VmNotFoundErr) {
 			return nil
 		}
 
 		return makeError(err)
 	}
 
-	err = context.Client.DeleteSnapshot(snapshotID)
+	err = csc.DeleteSnapshot(snapshotID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -131,22 +135,21 @@ func DeleteSnapshot(vmID, snapshotID string) error {
 	return nil
 }
 
-func ApplySnapshot(vmID, snapshotID string) error {
+func (c *Client) ApplySnapshot(vmID, snapshotID string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to apply snapshot %s for vm %s. details: %w", snapshotID, vmID, err)
 	}
 
-	context, err := NewContext(vmID)
+	vm, csc, _, err := c.Get(OptsNoGenerator(vmID))
 	if err != nil {
-		if errors.Is(err, base.VmDeletedErr) {
-			log.Println("vm", vmID, "not found when applying snapshot in cs. assuming it was deleted")
+		if errors.Is(err, sErrors.VmNotFoundErr) {
 			return nil
 		}
 
 		return makeError(err)
 	}
 
-	snapshot := context.VM.Subsystems.CS.GetSnapshotByID(snapshotID)
+	snapshot := vm.Subsystems.CS.GetSnapshotByID(snapshotID)
 	if service.NotCreated(snapshot) {
 		return makeError(fmt.Errorf("snapshot %s not found", snapshotID))
 	}
@@ -156,27 +159,27 @@ func ApplySnapshot(vmID, snapshotID string) error {
 	}
 
 	var gpuID *string
-	if HasExtraConfig(context.VM) {
-		gpuID = context.VM.GetGpuID()
-		err := DetachGPU(vmID, CsDetachGpuAfterStateOn)
+	if HasExtraConfig(vm) {
+		gpuID = vm.GetGpuID()
+		err = c.DetachGPU(vmID, CsDetachGpuAfterStateOn)
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
 	// make sure vm is on
-	err = context.Client.DoVmCommand(context.VM.Subsystems.CS.VM.ID, nil, commands.Start)
+	err = csc.DoVmCommand(vm.Subsystems.CS.VM.ID, nil, commands.Start)
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = context.Client.ApplySnapshot(snapshot)
+	err = csc.ApplySnapshot(snapshot)
 	if err != nil {
 		return makeError(err)
 	}
 
 	if gpuID != nil {
-		err := AttachGPU(*gpuID, vmID)
+		err = c.AttachGPU(vmID, *gpuID)
 		if err != nil {
 			return makeError(err)
 		}

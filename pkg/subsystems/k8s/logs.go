@@ -6,14 +6,27 @@ import (
 	"fmt"
 	"go-deploy/pkg/subsystems/k8s/keys"
 	"go-deploy/utils"
+	"golang.org/x/exp/maps"
 	"io"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/informers"
+	"k8s.io/client-go/tools/cache"
 	"log"
+	"sort"
 	"strings"
-	"sync"
 	"time"
 )
+
+const (
+	podEventStart = "start"
+	podEventStop  = "stop"
+)
+
+type podEvent struct {
+	podName string
+	event   string
+}
 
 func (client *Client) getPodNames(namespace, deploymentID string) ([]string, error) {
 	pods, err := client.K8sClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
@@ -34,102 +47,137 @@ func (client *Client) getPodNames(namespace, deploymentID string) ([]string, err
 	return podNames, nil
 }
 
-func (client *Client) setupPodLogStreamer(ctx context.Context, namespace, deploymentID string, handler func(string, int, time.Time)) {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to create k8s log stream for deployment %s. details: %w", deploymentID, err)
+// SetupLogStream sets up a log stream for the entire cluster
+//
+// This should only be called once per cluster
+func (client *Client) SetupLogStream(ctx context.Context, deploymentID string, handler func(string, int, time.Time)) error {
+	_ = func(err error) error {
+		return fmt.Errorf("failed to create k8s log stream. details: %w", err)
 	}
 
-	activeStreams := make(map[string]int)
-	mutex := sync.Mutex{}
+	go func() {
+		activeStreams := make(map[string]int)
+		cancelFuncs := make(map[string]context.CancelFunc)
+		podChannel := make(chan podEvent)
 
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-			time.Sleep(500 * time.Millisecond)
+		factory := informers.NewSharedInformerFactoryWithOptions(client.K8sClient, 0, informers.WithNamespace(client.Namespace))
+		podInformer := factory.Core().V1().Pods().Informer()
 
-			podNames, err := client.getPodNames(namespace, deploymentID)
-			if err != nil {
-				utils.PrettyPrintError(makeError(err))
-				return
-			}
+		podInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+			AddFunc: func(obj interface{}) {
+				pod := obj.(*v1.Pod)
 
-			if len(podNames) == 0 {
-				return
-			}
-
-			// setup log stream for each pod
-			for idx, podName := range podNames {
-				if _, ok := activeStreams[podName]; ok {
-					continue
+				if label, ok := pod.Labels[keys.ManifestLabelID]; !ok || label != deploymentID {
+					return
 				}
 
-				mutex.Lock()
-				activeStreams[podName] = getFreePodNumber(activeStreams)
-				mutex.Unlock()
+				if pod.Status.Phase != v1.PodRunning {
+					return
+				}
 
-				podNumber := idx
-				localPodName := podName
-				go func() {
-					client.readLogs(ctx, podNumber, namespace, localPodName, handler)
-				}()
-			}
+				podChannel <- podEvent{event: podEventStart, podName: pod.Name}
+			},
+			UpdateFunc: func(oldObj, newObj interface{}) {
+				pod := newObj.(*v1.Pod)
+				if label, ok := pod.Labels[keys.ManifestLabelID]; !ok || label != deploymentID {
+					return
+				}
 
-			// remove log stream for each pod that is not running
-			for podName := range activeStreams {
-				found := false
-				for _, name := range podNames {
-					if name == podName {
-						found = true
-						break
+				if pod.Status.Phase != v1.PodRunning {
+					return
+				}
+
+				podChannel <- podEvent{event: podEventStart, podName: pod.Name}
+			},
+			DeleteFunc: func(obj interface{}) {
+				pod := obj.(*v1.Pod)
+				podChannel <- podEvent{event: podEventStop, podName: pod.Name}
+			},
+		})
+
+		factory.Start(ctx.Done())
+		factory.WaitForCacheSync(ctx.Done())
+
+		for {
+			select {
+			case <-ctx.Done():
+				for _, cancelFunc := range cancelFuncs {
+					cancelFunc()
+				}
+				return
+			case e := <-podChannel:
+				switch e.event {
+				case podEventStart:
+					if _, ok := activeStreams[e.podName]; ok {
+						continue
 					}
-				}
 
-				if !found {
-					mutex.Lock()
-					delete(activeStreams, podName)
-					mutex.Unlock()
+					idx := getFreePodNumber(activeStreams)
+					activeStreams[e.podName] = idx
+
+					cancelCtx, cancelFunc := context.WithCancel(ctx)
+					cancelFuncs[e.podName] = cancelFunc
+
+					log.Println("starting logger for pod", e.podName, "with idx", idx)
+
+					go func() {
+						client.readLogs(cancelCtx, idx, client.Namespace, e.podName, podChannel, handler)
+					}()
+
+				case podEventStop:
+					log.Println("stopping logger for pod", e.podName)
+
+					cancelFunc, ok := cancelFuncs[e.podName]
+					if ok {
+						cancelFunc()
+						delete(cancelFuncs, e.podName)
+					}
+
+					delete(activeStreams, e.podName)
 				}
 			}
 		}
-	}
+	}()
+
+	return nil
 }
 
-func (client *Client) readLogs(ctx context.Context, podNumber int, namespace, podName string, handler func(string, int, time.Time)) {
-	var logStream io.ReadCloser
+func (client *Client) readLogs(ctx context.Context, podNumber int, namespace, podName string, eventChan chan podEvent, handler func(string, int, time.Time)) {
+	defer func() {
+		if r := recover(); r != nil {
+			if err, ok := r.(error); ok {
+				utils.PrettyPrintError(fmt.Errorf("failed to read logs for pod %s (err). details: %w", podName, err))
+			} else {
+				utils.PrettyPrintError(fmt.Errorf("failed to read logs for pod %s (panic). details: %v", podName, r))
+			}
+			eventChan <- podEvent{event: podEventStop, podName: podName}
+		}
+	}()
+
+	logStream, err := getK8sLogStream(client, namespace, podName, 0)
+	if err != nil {
+		if IsNotFoundErr(err) {
+			// pod got deleted for some reason, so we just stop the log stream
+			return
+		}
+
+		utils.PrettyPrintError(fmt.Errorf("failed to create k8s log stream for pod %s. details: %w", podName, err))
+		return
+	}
 	defer func(logStream io.ReadCloser) {
 		if logStream != nil {
 			_ = logStream.Close()
 		}
 	}(logStream)
 
-	createNewStream := true
-	var reader *bufio.Scanner
+	reader := bufio.NewScanner(logStream)
 
 	var line string
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println("logger stopped for pod", podName)
 			return
 		default:
-			if createNewStream {
-				logStream, err := getK8sLogStream(client, namespace, podName, 0)
-				if err != nil {
-					if IsNotFoundErr(err) {
-						// pod got deleted for some reason, so we just stop the log stream
-						return
-					}
-
-					utils.PrettyPrintError(fmt.Errorf("failed to create k8s log stream for pod %s. details: %w", podName, err))
-					return
-				}
-				reader = bufio.NewScanner(logStream)
-
-				createNewStream = false
-			}
-
 			for reader.Scan() {
 				if ctx.Err() != nil {
 					break
@@ -175,20 +223,20 @@ func isExitLine(line string) bool {
 	return notYetStarted || sigQuit || gracefullyShuttingDown
 }
 
-func (client *Client) SetupDeploymentLogStream(ctx context.Context, deploymentID string, handler func(string, int, time.Time)) error {
-	go client.setupPodLogStreamer(ctx, client.Namespace, deploymentID, handler)
-	return nil
-}
-
 func getFreePodNumber(activeStreams map[string]int) int {
-	max := 0
-	for _, v := range activeStreams {
-		if v > max {
-			max = v
+	values := maps.Values(activeStreams)
+
+	sort.Slice(values, func(i, j int) bool {
+		return values[i] < values[j]
+	})
+
+	for i := 0; i < len(values); i++ {
+		if i != values[i] {
+			return i
 		}
 	}
 
-	return max + 1
+	return len(values)
 }
 
 // 2023/12/03 19:11:23 [notice] 1#1: signal 3 (SIGQUIT) received, shutting down

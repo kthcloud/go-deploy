@@ -74,7 +74,7 @@ func (client *Client) CreateSnapshot(public *models.SnapshotPublic) (string, err
 	createResponse, err := client.CsClient.Snapshot.CreateVMSnapshot(params)
 	if err != nil {
 		if strings.Contains(err.Error(), "There is other active vm snapshot tasks on the instance") {
-			log.Println("other snapshots are being created. must wait for them to finish first")
+			log.Println("other snapshots are being created for vm", public.VmID, ". must wait for them to finish first")
 			return "", nil
 		}
 

@@ -79,7 +79,9 @@ func (client *Client) DeleteJob(id string) error {
 	}
 
 	for _, job := range list.Items {
-		err := client.K8sClient.BatchV1().Jobs(client.Namespace).Delete(context.TODO(), job.Name, metav1.DeleteOptions{})
+		err = client.K8sClient.BatchV1().Jobs(client.Namespace).Delete(context.TODO(), job.Name, metav1.DeleteOptions{
+			PropagationPolicy: &[]metav1.DeletionPropagation{metav1.DeletePropagationBackground}[0],
+		})
 		if err != nil && !IsNotFoundErr(err) {
 			return makeError(err)
 		}

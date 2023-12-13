@@ -20,7 +20,7 @@ func New() *Client {
 	}
 }
 
-func (client *Client) AddPagination(page, pageSize int) *Client {
+func (client *Client) WithPagination(page, pageSize int) *Client {
 	client.ResourceClient.Pagination = &base.Pagination{
 		Page:     page,
 		PageSize: pageSize,

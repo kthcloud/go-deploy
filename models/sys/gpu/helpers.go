@@ -127,33 +127,6 @@ func (client *Client) GetAllLeased() ([]GPU, error) {
 	return gpus, nil
 }
 
-func (client *Client) GetAllAvailable() ([]GPU, error) {
-	now := time.Now()
-
-	filter := bson.D{
-		{"$or", []interface{}{
-			bson.M{"lease": bson.M{"$exists": false}},
-			bson.M{"lease.vmId": ""},
-			bson.M{"lease.end": bson.M{"$lte": now}},
-		}},
-		{"host", bson.M{"$nin": client.ExcludedHosts}},
-		{"id", bson.M{"$nin": client.ExcludedGPUs}},
-	}
-
-	var gpus []GPU
-	cursor, err := client.Collection.Find(context.Background(), filter)
-	if err != nil {
-		return nil, err
-	}
-
-	err = cursor.All(context.Background(), &gpus)
-	if err != nil {
-		return nil, err
-	}
-
-	return gpus, nil
-}
-
 func (client *Client) Delete(gpuID string) error {
 	err := client.Collection.FindOneAndDelete(context.Background(), bson.D{{"id", gpuID}}).Err()
 	if err != nil {

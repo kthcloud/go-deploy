@@ -134,10 +134,19 @@ func (client *Client) UpdateVM(public *models.VmPublic) (*models.VmPublic, error
 	}
 
 	if vm.ServiceOfferingID != public.ServiceOfferingID {
-		params := client.CsClient.VirtualMachine.NewChangeServiceForVirtualMachineParams(public.ID, public.ServiceOfferingID)
-		_, err = client.CsClient.VirtualMachine.ChangeServiceForVirtualMachine(params)
+		vmStatus, err := client.GetVmStatus(public.ID)
 		if err != nil {
 			return nil, makeError(err)
+		}
+
+		if vmStatus == "Stopped" {
+			params := client.CsClient.VirtualMachine.NewChangeServiceForVirtualMachineParams(public.ID, public.ServiceOfferingID)
+			_, err = client.CsClient.VirtualMachine.ChangeServiceForVirtualMachine(params)
+			if err != nil {
+				return nil, makeError(err)
+			}
+		} else {
+			log.Println("cs vm", public.ID, "is not stopped when updating service offering. skipping updating service offering")
 		}
 	}
 
@@ -190,6 +199,11 @@ func (client *Client) DeleteVM(id string) error {
 func (client *Client) GetVmStatus(id string) (string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get cs vm %s status. details: %w", id, err)
+	}
+
+	if id == "" {
+		log.Println("cs vm id not supplied when getting status. assuming it was deleted")
+		return "", nil
 	}
 
 	vm, _, err := client.CsClient.VirtualMachine.GetVirtualMachineByID(id)

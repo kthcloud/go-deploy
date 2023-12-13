@@ -4,26 +4,34 @@ import (
 	"context"
 	"fmt"
 	deploymentModel "go-deploy/models/sys/deployment"
-	"go-deploy/service"
+	"go-deploy/service/deployment_service/client"
+	"go-deploy/service/errors"
 	"go-deploy/utils"
 	"log"
 	"time"
 )
 
 const (
+	// MessageSourceControl is the source of the message from the control.
+	// The handler should ignore these messages, as they are only intended to check if the log stream is working.
 	MessageSourceControl = "control"
 
+	// FetchPeriod is the period between each fetch of logs from the database.
 	FetchPeriod = 300 * time.Millisecond
 )
 
-func SetupLogStream(ctx context.Context, id string, handler func(string, string, string), history int, auth *service.AuthInfo) error {
-	deployment, err := GetByIdAuth(id, auth)
+// SetupLogStream sets up a log stream for the deployment.
+//
+// It will continuously check the deployment logs and read the logs after the last read log.
+// Increasing the history will increase the time it takes to set up the log stream.
+func (c *Client) SetupLogStream(id string, ctx context.Context, handler func(string, string, string), history int) error {
+	deployment, err := c.Get(id, &client.GetOptions{Shared: true})
 	if err != nil {
 		return err
 	}
 
 	if deployment == nil {
-		return DeploymentNotFoundErr
+		return errors.DeploymentNotFoundErr
 	}
 
 	if deployment.BeingDeleted() {

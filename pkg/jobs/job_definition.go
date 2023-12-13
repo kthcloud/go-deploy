@@ -3,6 +3,7 @@ package jobs
 import (
 	da "go-deploy/models/sys/deployment"
 	jobModel "go-deploy/models/sys/job"
+	sa "go-deploy/models/sys/sm"
 	va "go-deploy/models/sys/vm"
 )
 
@@ -40,6 +41,8 @@ func jobMapper() map[string]JobDefinition {
 		jobModel.TypeCreateVM: {
 			JobFunc:       CreateVM,
 			TerminateFunc: coreJobVM.Build(),
+			EntryFunc:     vAddActivity(va.ActivityBeingCreated),
+			ExitFunc:      vRemActivity(va.ActivityBeingCreated),
 		},
 		jobModel.TypeDeleteVM: {
 			JobFunc:   DeleteVM,
@@ -102,6 +105,8 @@ func jobMapper() map[string]JobDefinition {
 		jobModel.TypeCreateDeployment: {
 			JobFunc:       CreateDeployment,
 			TerminateFunc: coreJobDeployment.Build(),
+			EntryFunc:     dAddActivity(da.ActivityBeingCreated),
+			ExitFunc:      dRemActivity(da.ActivityBeingCreated),
 		},
 		jobModel.TypeDeleteDeployment: {
 			JobFunc:   DeleteDeployment,
@@ -131,14 +136,19 @@ func jobMapper() map[string]JobDefinition {
 		},
 
 		// storage manager
-		jobModel.TypeCreateStorageManager: {
-			JobFunc: CreateStorageManager,
+		jobModel.TypeCreateSM: {
+			JobFunc:   CreateSM,
+			EntryFunc: sAddActivity(sa.ActivityBeingCreated),
+			ExitFunc:  sRemActivity(sa.ActivityBeingCreated),
 		},
-		jobModel.TypeDeleteStorageManager: {
-			JobFunc: DeleteStorageManager,
+		jobModel.TypeDeleteSM: {
+			JobFunc:   DeleteSM,
+			EntryFunc: sAddActivity(sa.ActivityBeingDeleted),
 		},
-		jobModel.TypeRepairStorageManager: {
-			JobFunc: RepairStorageManager,
+		jobModel.TypeRepairSM: {
+			JobFunc:   RepairSM,
+			EntryFunc: sAddActivity(sa.ActivityBeingCreated),
+			ExitFunc:  sRemActivity(sa.ActivityRepairing),
 		},
 	}
 }

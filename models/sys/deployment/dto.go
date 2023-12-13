@@ -9,7 +9,7 @@ import (
 	"strconv"
 )
 
-func (deployment *Deployment) ToDTO(storageManagerURL *string) body.DeploymentRead {
+func (deployment *Deployment) ToDTO(smURL *string) body.DeploymentRead {
 	app := deployment.GetMainApp()
 	if app == nil {
 		log.Println("main app not found in deployment", deployment.ID)
@@ -92,7 +92,7 @@ func (deployment *Deployment) ToDTO(storageManagerURL *string) body.DeploymentRe
 		Status:       deployment.StatusMessage,
 		PingResult:   pingResult,
 		Integrations: integrations,
-		StorageURL:   storageManagerURL,
+		StorageURL:   smURL,
 	}
 }
 

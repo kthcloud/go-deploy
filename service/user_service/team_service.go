@@ -124,7 +124,7 @@ func ListTeamsAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagina
 	userClient := userModels.New()
 
 	if pagination != nil {
-		teamClient.AddPagination(pagination.Page, pagination.PageSize)
+		teamClient.WithPagination(pagination.Page, pagination.PageSize)
 		userClient.AddPagination(pagination.Page, pagination.PageSize)
 	}
 

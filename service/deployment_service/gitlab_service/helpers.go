@@ -6,6 +6,9 @@ import (
 	"go-deploy/pkg/subsystems/gitlab/models"
 )
 
+// updateGitLabBuild updates the GitLab build for the deployment.
+//
+// It updates the GitLab build with the last job, and the trace.
 func updateGitLabBuild(deploymentID string, lastJob *models.JobPublic, trace []string) error {
 	return deploymentModel.New().UpdateGitLabBuild(deploymentID, subsystems.GitLabBuild{
 		ID:        lastJob.ID,

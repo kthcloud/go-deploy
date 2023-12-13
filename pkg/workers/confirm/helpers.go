@@ -4,6 +4,7 @@ import (
 	"fmt"
 	deploymentModels "go-deploy/models/sys/deployment"
 	"go-deploy/models/sys/gpu"
+	"go-deploy/models/sys/sm"
 	"go-deploy/models/sys/vm"
 	"go-deploy/service"
 )
@@ -116,7 +117,7 @@ func appDeletedK8s(deployment *deploymentModels.Deployment, app *deploymentModel
 	return deploymentDeleted && serviceDeleted && ingressDeleted && secretDeleted && hpaDeleted
 }
 
-func k8sCreated(deployment *deploymentModels.Deployment) (bool, error) {
+func k8sCreatedDeployment(deployment *deploymentModels.Deployment) (bool, error) {
 	_ = func(err error) error {
 		return fmt.Errorf("failed to check if k8s setup is created for deployment %s. details: %w", deployment.Name, err)
 	}
@@ -137,7 +138,7 @@ func k8sCreated(deployment *deploymentModels.Deployment) (bool, error) {
 	return k8s.Namespace.Created(), nil
 }
 
-func k8sDeleted(deployment *deploymentModels.Deployment) (bool, error) {
+func k8sDeletedDeployment(deployment *deploymentModels.Deployment) (bool, error) {
 	_ = func(err error) error {
 		return fmt.Errorf("failed to check if k8s setup is deleted for deployment %s. details: %w", deployment.Name, err)
 	}
@@ -213,15 +214,119 @@ func gitHubDeleted(deployment *deploymentModels.Deployment) (bool, error) {
 	return github.Webhook.ID == 0, nil
 }
 
+func k8sCreatedSM(sm *sm.SM) (bool, error) {
+	k8s := &sm.Subsystems.K8s
+
+	if k8s.Namespace.ID == "" {
+		return false, nil
+	}
+
+	if _, ok := k8s.DeploymentMap["storage-manager"]; !ok {
+		return false, nil
+	}
+
+	if _, ok := k8s.DeploymentMap["storage-manager-auth"]; !ok {
+		return false, nil
+	}
+
+	if _, ok := k8s.ServiceMap["storage-manager"]; !ok {
+		return false, nil
+	}
+
+	if _, ok := k8s.ServiceMap["storage-manager-auth"]; !ok {
+		return false, nil
+	}
+
+	if _, ok := k8s.IngressMap["storage-manager"]; !ok {
+		return false, nil
+	}
+
+	if _, ok := k8s.PvMap["storage-manager-init"]; !ok {
+		return false, nil
+	}
+
+	if _, ok := k8s.PvMap["storage-manager-data"]; !ok {
+		return false, nil
+	}
+
+	if _, ok := k8s.PvMap["storage-manager-user"]; !ok {
+		return false, nil
+	}
+
+	if _, ok := k8s.PvcMap["storage-manager-init"]; !ok {
+		return false, nil
+	}
+
+	if _, ok := k8s.PvcMap["storage-manager-data"]; !ok {
+		return false, nil
+	}
+
+	if _, ok := k8s.PvcMap["storage-manager-user"]; !ok {
+		return false, nil
+	}
+
+	if _, ok := k8s.JobMap["init"]; !ok {
+		return false, nil
+	}
+
+	if _, ok := k8s.SecretMap["wildcard-cert"]; !ok {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+func k8sDeletedSM(sm *sm.SM) (bool, error) {
+	k8s := &sm.Subsystems.K8s
+
+	if len(k8s.DeploymentMap) > 0 {
+		return false, nil
+	}
+
+	if len(k8s.ServiceMap) > 0 {
+		return false, nil
+	}
+
+	if len(k8s.IngressMap) > 0 {
+		return false, nil
+	}
+
+	if len(k8s.PvMap) > 0 {
+		return false, nil
+	}
+
+	if len(k8s.PvcMap) > 0 {
+		return false, nil
+	}
+
+	if len(k8s.JobMap) > 0 {
+		return false, nil
+	}
+
+	if len(k8s.SecretMap) > 0 {
+		return false, nil
+	}
+
+	return k8s.Namespace.ID == "", nil
+}
+
 func csCreated(vm *vm.VM) (bool, error) {
 	cs := &vm.Subsystems.CS
 
 	sshRule, ok := cs.PortForwardingRuleMap["__ssh"]
-	if !ok {
+	if !ok || !sshRule.Created() {
 		return false, nil
 	}
 
-	return cs.VM.Created() && sshRule.Created(), nil
+	if !cs.VM.Created() {
+		return false, nil
+	}
+
+	if !cs.ServiceOffering.Created() {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 func csDeleted(vm *vm.VM) (bool, error) {
@@ -233,7 +338,15 @@ func csDeleted(vm *vm.VM) (bool, error) {
 		}
 	}
 
-	return cs.VM.ID == "", nil
+	if cs.VM.Created() {
+		return false, nil
+	}
+
+	if cs.ServiceOffering.Created() {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 func k8sCreatedVM(vm *vm.VM) (bool, error) {

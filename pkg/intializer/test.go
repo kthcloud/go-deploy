@@ -1,9 +1,11 @@
 package intializer
 
 import (
+	"errors"
 	deploymentModel "go-deploy/models/sys/deployment"
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/service/deployment_service"
+	dErrors "go-deploy/service/errors"
 	"go-deploy/service/vm_service"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
@@ -36,9 +38,11 @@ func CleanUpOldTests() {
 			panic(err)
 		}
 
-		err = deployment_service.Delete(deployment.ID)
+		err = deployment_service.New().Delete(deployment.ID)
 		if err != nil {
-			panic(err)
+			if !errors.Is(err, dErrors.DeploymentNotFoundErr) {
+				panic(err)
+			}
 		}
 
 		deploymentsDeleted++
@@ -60,7 +64,7 @@ func CleanUpOldTests() {
 			panic(err)
 		}
 
-		err = vm_service.Delete(vm.ID)
+		err = vm_service.New().Delete(vm.ID)
 		if err != nil {
 			panic(err)
 		}

@@ -8,38 +8,43 @@ import (
 	vmModel "go-deploy/models/sys/vm"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/cs/commands"
+	cErrors "go-deploy/pkg/subsystems/cs/errors"
 	csModels "go-deploy/pkg/subsystems/cs/models"
 	"go-deploy/service"
+	sErrors "go-deploy/service/errors"
 	"go-deploy/service/resources"
-	"go-deploy/service/vm_service/base"
-	"go-deploy/service/vm_service/service_errors"
 	"golang.org/x/exp/slices"
 	"log"
 )
 
-func Create(vmID string, params *vmModel.CreateParams) error {
+func (c *Client) Create(id string, params *vmModel.CreateParams) error {
 	log.Println("setting up cs for", params.Name)
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to setup cs for vm %s. details: %w", params.Name, err)
 	}
 
-	context, err := NewContext(vmID)
+	vm, csc, g, err := c.Get(OptsAll(id))
 	if err != nil {
-		if errors.Is(err, base.VmDeletedErr) {
+		if errors.Is(err, sErrors.VmNotFoundErr) {
 			return nil
 		}
 
 		return makeError(err)
 	}
 
-	context.Client.WithUserSshPublicKey(params.SshPublicKey)
-	context.Client.WithAdminSshPublicKey(config.Config.VM.AdminSshPublicKey)
+	zone := config.Config.VM.GetZone(vm.Zone)
+	if zone == nil {
+		return makeError(sErrors.ZoneNotFoundErr)
+	}
+
+	csc.WithUserSshPublicKey(params.SshPublicKey)
+	csc.WithAdminSshPublicKey(config.Config.VM.AdminSshPublicKey)
 
 	// Service offering
-	for _, soPublic := range context.Generator.SOs() {
-		err = resources.SsCreator(context.Client.CreateServiceOffering).
-			WithDbFunc(dbFunc(vmID, "serviceOffering")).
+	for _, soPublic := range g.SOs() {
+		err = resources.SsCreator(csc.CreateServiceOffering).
+			WithDbFunc(dbFunc(id, "serviceOffering")).
 			WithPublic(&soPublic).
 			Exec()
 
@@ -47,33 +52,33 @@ func Create(vmID string, params *vmModel.CreateParams) error {
 			return makeError(err)
 		}
 
-		context.VM.Subsystems.CS.ServiceOffering = soPublic
+		vm.Subsystems.CS.ServiceOffering = soPublic
 	}
 
 	// VM
-	for _, vmPublic := range context.Generator.VMs() {
-		err = resources.SsCreator(context.Client.CreateVM).
-			WithDbFunc(dbFunc(vmID, "vm")).
+	for _, vmPublic := range g.VMs() {
+		err = resources.SsCreator(csc.CreateVM).
+			WithDbFunc(dbFunc(id, "vm")).
 			WithPublic(&vmPublic).
 			Exec()
 
 		if err != nil {
-			_ = resources.SsDeleter(context.Client.DeleteServiceOffering).
-				WithDbFunc(dbFunc(vmID, "serviceOffering")).
+			_ = resources.SsDeleter(csc.DeleteServiceOffering).
+				WithDbFunc(dbFunc(id, "serviceOffering")).
 				Exec()
 
 			return makeError(err)
 		}
 
-		context.VM.Subsystems.CS.VM = vmPublic
+		vm.Subsystems.CS.VM = vmPublic
 	}
 
 	// Port-forwarding rules
-	for _, pfrPublic := range context.Generator.PFRs() {
+	for _, pfrPublic := range g.PFRs() {
 		if pfrPublic.PublicPort == 0 {
-			pfrPublic.PublicPort, err = context.Client.GetFreePort(
-				context.Zone.PortRange.Start,
-				context.Zone.PortRange.End,
+			pfrPublic.PublicPort, err = csc.GetFreePort(
+				zone.PortRange.Start,
+				zone.PortRange.End,
 			)
 
 			if err != nil {
@@ -81,12 +86,16 @@ func Create(vmID string, params *vmModel.CreateParams) error {
 			}
 		}
 
-		err = resources.SsCreator(context.Client.CreatePortForwardingRule).
-			WithDbFunc(dbFunc(vmID, "portForwardingRuleMap."+pfrPublic.Name)).
+		err = resources.SsCreator(csc.CreatePortForwardingRule).
+			WithDbFunc(dbFunc(id, "portForwardingRuleMap."+pfrName(&pfrPublic))).
 			WithPublic(&pfrPublic).
 			Exec()
 
 		if err != nil {
+			if errors.Is(err, cErrors.PortInUseErr) {
+				return makeError(sErrors.PortInUseErr)
+			}
+
 			return makeError(err)
 		}
 	}
@@ -94,31 +103,35 @@ func Create(vmID string, params *vmModel.CreateParams) error {
 	return nil
 }
 
-func Delete(id string) error {
+func (c *Client) Delete(id string) error {
 	log.Println("deleting cs for", id)
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete cs for vm %s. details: %w", id, err)
 	}
 
-	context, err := NewContext(id)
+	vm, csc, _, err := c.Get(OptsNoGenerator(id))
 	if err != nil {
-		if errors.Is(err, base.VmDeletedErr) {
+		if errors.Is(err, sErrors.VmNotFoundErr) {
 			return nil
 		}
 
 		return makeError(err)
 	}
 
-	for mapName, pfr := range context.VM.Subsystems.CS.GetPortForwardingRuleMap() {
-		err = resources.SsDeleter(context.Client.DeletePortForwardingRule).
+	for mapName, pfr := range vm.Subsystems.CS.GetPortForwardingRuleMap() {
+		err = resources.SsDeleter(csc.DeletePortForwardingRule).
 			WithResourceID(pfr.ID).
 			WithDbFunc(dbFunc(id, "portForwardingRuleMap."+mapName)).
 			Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
-	err = resources.SsDeleter(context.Client.DeleteVM).
-		WithResourceID(context.VM.Subsystems.CS.VM.ID).
+	err = resources.SsDeleter(csc.DeleteVM).
+		WithResourceID(vm.Subsystems.CS.VM.ID).
 		WithDbFunc(dbFunc(id, "vm")).
 		Exec()
 
@@ -126,8 +139,8 @@ func Delete(id string) error {
 		return makeError(err)
 	}
 
-	err = resources.SsDeleter(context.Client.DeleteServiceOffering).
-		WithResourceID(context.VM.Subsystems.CS.ServiceOffering.ID).
+	err = resources.SsDeleter(csc.DeleteServiceOffering).
+		WithResourceID(vm.Subsystems.CS.ServiceOffering.ID).
 		WithDbFunc(dbFunc(id, "serviceOffering")).
 		Exec()
 
@@ -138,39 +151,48 @@ func Delete(id string) error {
 	return nil
 }
 
-func Update(vmID string, updateParams *vmModel.UpdateParams) error {
+func (c *Client) Update(id string, updateParams *vmModel.UpdateParams) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to update cs for vm %s. details: %w", vmID, err)
+		return fmt.Errorf("failed to update cs for vm %s. details: %w", id, err)
 	}
 
-	context, err := NewContext(vmID)
+	vm, csc, g, err := c.Get(OptsAll(id))
 	if err != nil {
-		if errors.Is(err, base.VmDeletedErr) {
+		if errors.Is(err, sErrors.VmNotFoundErr) {
 			return nil
 		}
 
 		return makeError(err)
 	}
 
+	zone := config.Config.VM.GetZone(vm.Zone)
+	if zone == nil {
+		return makeError(sErrors.ZoneNotFoundErr)
+	}
+
 	// port-forwarding rule
 	if updateParams.Ports != nil {
-		pfrs := context.Generator.PFRs()
+		pfrs := g.PFRs()
 
-		for _, currentPfr := range context.VM.Subsystems.CS.GetPortForwardingRuleMap() {
-			if slices.IndexFunc(pfrs, func(p csModels.PortForwardingRulePublic) bool { return p.Name == currentPfr.Name }) == -1 {
-				err = resources.SsDeleter(context.Client.DeletePortForwardingRule).
+		for _, currentPfr := range vm.Subsystems.CS.GetPortForwardingRuleMap() {
+			if slices.IndexFunc(pfrs, func(p csModels.PortForwardingRulePublic) bool { return pfrName(&p) == pfrName(&currentPfr) }) == -1 {
+				err = resources.SsDeleter(csc.DeletePortForwardingRule).
 					WithResourceID(currentPfr.ID).
-					WithDbFunc(dbFunc(vmID, "portForwardingRuleMap."+currentPfr.Name)).
+					WithDbFunc(dbFunc(id, "portForwardingRuleMap."+pfrName(&currentPfr))).
 					Exec()
+
+				if err != nil {
+					return makeError(err)
+				}
 			}
 		}
 
 		for _, pfrPublic := range pfrs {
-			if _, ok := context.VM.Subsystems.CS.PortForwardingRuleMap[pfrPublic.Name]; !ok {
+			if _, ok := vm.Subsystems.CS.PortForwardingRuleMap[pfrName(&pfrPublic)]; !ok {
 				if pfrPublic.PublicPort == 0 {
-					pfrPublic.PublicPort, err = context.Client.GetFreePort(
-						context.Zone.PortRange.Start,
-						context.Zone.PortRange.End,
+					pfrPublic.PublicPort, err = csc.GetFreePort(
+						zone.PortRange.Start,
+						zone.PortRange.End,
 					)
 
 					if err != nil {
@@ -178,12 +200,16 @@ func Update(vmID string, updateParams *vmModel.UpdateParams) error {
 					}
 				}
 
-				err = resources.SsCreator(context.Client.CreatePortForwardingRule).
-					WithDbFunc(dbFunc(vmID, "portForwardingRuleMap."+pfrPublic.Name)).
+				err = resources.SsCreator(csc.CreatePortForwardingRule).
+					WithDbFunc(dbFunc(id, "portForwardingRuleMap."+pfrName(&pfrPublic))).
 					WithPublic(&pfrPublic).
 					Exec()
 
 				if err != nil {
+					if errors.Is(err, cErrors.PortInUseErr) {
+						return makeError(sErrors.PortInUseErr)
+					}
+
 					return makeError(err)
 				}
 			}
@@ -203,28 +229,28 @@ func Update(vmID string, updateParams *vmModel.UpdateParams) error {
 
 	if requiresUpdate {
 		var soID *string
-		if so := &context.VM.Subsystems.CS.ServiceOffering; service.Created(so) {
-			err = resources.SsDeleter(context.Client.DeleteServiceOffering).
+		if so := &vm.Subsystems.CS.ServiceOffering; service.Created(so) {
+			err = resources.SsDeleter(csc.DeleteServiceOffering).
 				WithResourceID(so.ID).
-				WithDbFunc(dbFunc(vmID, "serviceOffering")).
+				WithDbFunc(dbFunc(id, "serviceOffering")).
 				Exec()
 
 			if err != nil {
 				return makeError(err)
 			}
 
-			err = context.Refresh()
+			_, err = c.Refresh(id)
 			if err != nil {
-				if errors.Is(err, base.VmDeletedErr) {
+				if errors.Is(err, sErrors.VmNotFoundErr) {
 					return nil
 				}
 
 				return makeError(err)
 			}
 
-			for _, soPublic := range context.Generator.SOs() {
-				err = resources.SsCreator(context.Client.CreateServiceOffering).
-					WithDbFunc(dbFunc(vmID, "serviceOffering")).
+			for _, soPublic := range g.SOs() {
+				err = resources.SsCreator(csc.CreateServiceOffering).
+					WithDbFunc(dbFunc(id, "serviceOffering")).
 					WithPublic(&soPublic).
 					Exec()
 
@@ -235,9 +261,9 @@ func Update(vmID string, updateParams *vmModel.UpdateParams) error {
 				soID = &soPublic.ID
 			}
 		} else {
-			for _, soPublic := range context.Generator.SOs() {
-				err = resources.SsCreator(context.Client.CreateServiceOffering).
-					WithDbFunc(dbFunc(vmID, "serviceOffering")).
+			for _, soPublic := range g.SOs() {
+				err = resources.SsCreator(csc.CreateServiceOffering).
+					WithDbFunc(dbFunc(id, "serviceOffering")).
 					WithPublic(&soPublic).
 					Exec()
 
@@ -250,10 +276,10 @@ func Update(vmID string, updateParams *vmModel.UpdateParams) error {
 		}
 
 		// make sure the vm is using the latest service offering
-		if soID != nil && context.VM.Subsystems.CS.VM.ServiceOfferingID != *soID {
+		if soID != nil && vm.Subsystems.CS.VM.ServiceOfferingID != *soID {
 			serviceOfferingUpdated = true
 
-			deferFunc, err := stopVmIfRunning(context)
+			deferFunc, err := c.stopVmIfRunning(id)
 			if err != nil {
 				return makeError(err)
 			}
@@ -263,20 +289,20 @@ func Update(vmID string, updateParams *vmModel.UpdateParams) error {
 	}
 
 	if updateParams.Name != nil || serviceOfferingUpdated {
-		err = context.Refresh()
+		_, err = c.Refresh(id)
 		if err != nil {
-			if errors.Is(err, base.VmDeletedErr) {
+			if errors.Is(err, sErrors.VmNotFoundErr) {
 				return nil
 			}
 
 			return makeError(err)
 		}
 
-		vms := context.Generator.VMs()
+		vms := g.VMs()
 		for _, vmPublic := range vms {
-			err = resources.SsUpdater(context.Client.UpdateVM).
+			err = resources.SsUpdater(csc.UpdateVM).
 				WithPublic(&vmPublic).
-				WithDbFunc(dbFunc(vmID, "vm")).
+				WithDbFunc(dbFunc(id, "vm")).
 				Exec()
 
 			if err != nil {
@@ -288,21 +314,21 @@ func Update(vmID string, updateParams *vmModel.UpdateParams) error {
 	return nil
 }
 
-func EnsureOwner(id, oldOwnerID string) error {
+func (c *Client) EnsureOwner(id, oldOwnerID string) error {
 	// nothing needs to be done, but the method is kept as there is a project for networks,
-	// and this could be implemented as user-specific networks
+	// and this could be implemented as user-specific networks are added
 
 	return nil
 }
 
-func Repair(id string) error {
+func (c *Client) Repair(id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to repair cs %s. details: %w", id, err)
 	}
 
-	context, err := NewContext(id)
+	vm, csc, g, err := c.Get(OptsAll(id))
 	if err != nil {
-		if errors.Is(err, base.VmDeletedErr) {
+		if errors.Is(err, sErrors.VmNotFoundErr) {
 			return nil
 		}
 
@@ -310,21 +336,21 @@ func Repair(id string) error {
 	}
 
 	// Service offering
-	so := context.Generator.SOs()[0]
+	so := g.SOs()[0]
 	err = resources.SsRepairer(
-		context.Client.ReadServiceOffering,
-		context.Client.CreateServiceOffering,
-		context.Client.UpdateServiceOffering,
-		context.Client.DeleteServiceOffering,
+		csc.ReadServiceOffering,
+		csc.CreateServiceOffering,
+		csc.UpdateServiceOffering,
+		csc.DeleteServiceOffering,
 	).WithResourceID(so.ID).WithGenPublic(&so).WithDbFunc(dbFunc(id, "serviceOffering")).Exec()
 
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = context.Refresh()
+	_, err = c.Refresh(id)
 	if err != nil {
-		if errors.Is(err, base.VmDeletedErr) {
+		if errors.Is(err, sErrors.VmNotFoundErr) {
 			return nil
 		}
 
@@ -332,16 +358,16 @@ func Repair(id string) error {
 	}
 
 	// VM
-	vm := context.Generator.VMs()[0]
-	status, err := context.Client.GetVmStatus(context.VM.Subsystems.CS.VM.ID)
+	csVM := g.VMs()[0]
+	status, err := csc.GetVmStatus(vm.Subsystems.CS.VM.ID)
 	if err != nil {
 		return makeError(err)
 	}
 
 	// only repair if the vm is stopped to prevent downtime for the user
-	if status == "Stopped" {
+	if status == "" || status == "Stopped" {
 		var gpu *gpuModel.GPU
-		if gpuID := context.VM.GetGpuID(); gpuID != nil {
+		if gpuID := vm.GetGpuID(); gpuID != nil {
 			gpu, err = gpuModel.New().GetByID(*gpuID)
 			if err != nil {
 				return makeError(err)
@@ -349,18 +375,18 @@ func Repair(id string) error {
 		}
 
 		if gpu != nil {
-			vm.ExtraConfig = CreateExtraConfig(gpu)
+			csVM.ExtraConfig = CreateExtraConfig(gpu)
 		}
 
 		// <<NEVER>> call the "DeleteVM" method here, as it contains the persistent storage for the VM
 		// (this api does not handle volume in cloudstack separately from the vm,
 		// so deleting the vm will delete the persistent volume)
 		err = resources.SsRepairer(
-			context.Client.ReadVM,
-			context.Client.CreateVM,
-			context.Client.UpdateVM,
+			csc.ReadVM,
+			csc.CreateVM,
+			csc.UpdateVM,
 			func(id string) error { return nil },
-		).WithResourceID(vm.ID).WithGenPublic(&vm).WithDbFunc(dbFunc(id, "vm")).Exec()
+		).WithResourceID(csVM.ID).WithGenPublic(&csVM).WithDbFunc(dbFunc(id, "vm")).Exec()
 
 		if err != nil {
 			return makeError(err)
@@ -368,13 +394,13 @@ func Repair(id string) error {
 	}
 
 	// Port-forwarding rules
-	pfrs := context.Generator.PFRs()
-	for mapName, pfr := range context.VM.Subsystems.CS.GetPortForwardingRuleMap() {
-		idx := slices.IndexFunc(pfrs, func(p csModels.PortForwardingRulePublic) bool { return p.Name == mapName })
+	pfrs := g.PFRs()
+	for mapName, pfr := range vm.Subsystems.CS.GetPortForwardingRuleMap() {
+		idx := slices.IndexFunc(pfrs, func(p csModels.PortForwardingRulePublic) bool { return pfrName(&p) == mapName })
 		if idx == -1 {
-			err = resources.SsDeleter(context.Client.DeletePortForwardingRule).
+			err = resources.SsDeleter(csc.DeletePortForwardingRule).
 				WithResourceID(pfr.ID).
-				WithDbFunc(dbFunc(id, "portForwardingRuleMap."+pfr.Name)).
+				WithDbFunc(dbFunc(id, "portForwardingRuleMap."+pfrName(&pfr))).
 				Exec()
 
 			if err != nil {
@@ -386,13 +412,17 @@ func Repair(id string) error {
 	}
 	for _, pfr := range pfrs {
 		err = resources.SsRepairer(
-			context.Client.ReadPortForwardingRule,
-			context.Client.CreatePortForwardingRule,
-			context.Client.UpdatePortForwardingRule,
-			context.Client.DeletePortForwardingRule,
-		).WithResourceID(pfr.ID).WithDbFunc(dbFunc(id, "portForwardingRuleMap."+pfr.Name)).WithGenPublic(&pfr).Exec()
+			csc.ReadPortForwardingRule,
+			csc.CreatePortForwardingRule,
+			csc.UpdatePortForwardingRule,
+			csc.DeletePortForwardingRule,
+		).WithResourceID(pfr.ID).WithDbFunc(dbFunc(id, "portForwardingRuleMap."+pfrName(&pfr))).WithGenPublic(&pfr).Exec()
 
 		if err != nil {
+			if errors.Is(err, cErrors.PortInUseErr) {
+				return makeError(sErrors.PortInUseErr)
+			}
+
 			return makeError(err)
 		}
 	}
@@ -400,25 +430,30 @@ func Repair(id string) error {
 	return nil
 }
 
-func DoCommand(csVmID string, gpuID *string, command, zoneName string) error {
+// DoCommand executes a command on the vm
+func (c *Client) DoCommand(id, csVmID string, gpuID *string, command string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to execute command %s for cs vm %s. details: %w", command, csVmID, err)
 	}
 
-	context, err := NewContextWithoutVM(zoneName)
+	_, csc, _, err := c.Get(OptsNoGenerator(id))
 	if err != nil {
+		if errors.Is(err, sErrors.VmNotFoundErr) {
+			return nil
+		}
+
 		return makeError(err)
 	}
 
 	var requiredHost *string
 	if gpuID != nil {
-		requiredHost, err = GetRequiredHost(*gpuID)
+		requiredHost, err = c.GetRequiredHost(*gpuID)
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
-	err = context.Client.DoVmCommand(csVmID, requiredHost, commands.Command(command))
+	err = csc.DoVmCommand(csVmID, requiredHost, commands.Command(command))
 	if err != nil {
 		return makeError(err)
 	}
@@ -426,29 +461,34 @@ func DoCommand(csVmID string, gpuID *string, command, zoneName string) error {
 	return nil
 }
 
-func CanStart(csVmID, hostName, zoneName string) error {
+// CheckSuitableHost checks if the host is in the correct state to start a vm
+func (c *Client) CheckSuitableHost(id, csVmID, hostName string, zone *configModels.VmZone) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check if cs vm %s can be started on host %s. details: %w", csVmID, hostName, err)
 	}
 
-	context, err := NewContextWithoutVM(zoneName)
+	_, csc, _, err := c.Get(OptsNoGenerator(id))
 	if err != nil {
+		if errors.Is(err, sErrors.VmNotFoundErr) {
+			return nil
+		}
+
 		return makeError(err)
 	}
 
-	hasCapacity, err := context.Client.HasCapacity(csVmID, hostName)
+	hasCapacity, err := csc.HasCapacity(csVmID, hostName)
 	if err != nil {
 		return makeError(err)
 	}
 
 	if !hasCapacity {
-		return service_errors.VmTooLargeErr
+		return sErrors.VmTooLargeErr
 	}
 
-	err = HostInCorrectState(hostName, context.Zone)
+	err = c.CheckHostState(hostName, zone)
 	if err != nil {
-		if errors.Is(err, service_errors.HostNotAvailableErr) {
-			return service_errors.VmTooLargeErr
+		if errors.Is(err, sErrors.HostNotAvailableErr) {
+			return sErrors.VmTooLargeErr
 		}
 
 		return makeError(err)
@@ -457,17 +497,17 @@ func CanStart(csVmID, hostName, zoneName string) error {
 	return nil
 }
 
-func GetHostByVM(vmID string) (*csModels.HostPublic, error) {
+func (c *Client) GetHostByVM(vmID string) (*csModels.HostPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get host for vm %s. details: %w", vmID, err)
 	}
 
-	context, err := NewContext(vmID)
+	vm, csc, _, err := c.Get(OptsNoGenerator(vmID))
 	if err != nil {
 		return nil, makeError(err)
 	}
 
-	host, err := context.Client.ReadHostByVM(context.VM.Subsystems.CS.VM.ID)
+	host, err := csc.ReadHostByVM(vm.Subsystems.CS.VM.ID)
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -475,17 +515,17 @@ func GetHostByVM(vmID string) (*csModels.HostPublic, error) {
 	return host, nil
 }
 
-func GetHostByName(hostName string, zone string) (*csModels.HostPublic, error) {
+func (c *Client) GetHostByName(hostName string, zone *configModels.VmZone) (*csModels.HostPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get host %s. details: %w", hostName, err)
 	}
 
-	context, err := NewContextWithoutVM(zone)
+	_, csc, _, err := c.Get(OptsOnlyClient(zone))
 	if err != nil {
 		return nil, makeError(err)
 	}
 
-	host, err := context.Client.ReadHostByName(hostName)
+	host, err := csc.ReadHostByName(hostName)
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -493,39 +533,40 @@ func GetHostByName(hostName string, zone string) (*csModels.HostPublic, error) {
 	return host, nil
 }
 
-func HostInCorrectState(hostName string, zone *configModels.VmZone) error {
+// CheckHostState checks if the host is in the correct state to start a vm
+func (c *Client) CheckHostState(hostName string, zone *configModels.VmZone) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if host %s is in correct state. details: %w", zone.Name, err)
+		return fmt.Errorf("failed to check if host %s is in correct state. details: %w", hostName, err)
 	}
 
-	context, err := NewContextWithoutVM(zone.Name)
+	_, csc, _, err := c.Get(OptsOnlyClient(zone))
 	if err != nil {
 		return makeError(err)
 	}
 
-	host, err := context.Client.ReadHostByName(hostName)
+	host, err := csc.ReadHostByName(hostName)
 	if err != nil {
 		return makeError(err)
 	}
 
 	if host.State != "Up" || host.ResourceState != "Enabled" {
-		return service_errors.HostNotAvailableErr
+		return sErrors.HostNotAvailableErr
 	}
 
 	return nil
 }
 
-func GetConfiguration(zone string) (*csModels.ConfigurationPublic, error) {
+func (c *Client) GetConfiguration(zone *configModels.VmZone) (*csModels.ConfigurationPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get configuration. details: %w", err)
 	}
 
-	context, err := NewContextWithoutVM(zone)
+	_, csc, _, err := c.Get(OptsOnlyClient(zone))
 	if err != nil {
 		return nil, makeError(err)
 	}
 
-	configuration, err := context.Client.ReadConfiguration()
+	configuration, err := csc.ReadConfiguration()
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -533,15 +574,24 @@ func GetConfiguration(zone string) (*csModels.ConfigurationPublic, error) {
 	return configuration, nil
 }
 
-func stopVmIfRunning(context *Context) (func(), error) {
+func (c *Client) stopVmIfRunning(id string) (func(), error) {
+	vm, csc, _, err := c.Get(OptsNoGenerator(id))
+	if err != nil {
+		if errors.Is(err, sErrors.VmNotFoundErr) {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
 	// turn it off if it is on, but remember the status
-	status, err := context.Client.GetVmStatus(context.VM.Subsystems.CS.VM.ID)
+	status, err := csc.GetVmStatus(vm.Subsystems.CS.VM.ID)
 	if err != nil {
 		return nil, err
 	}
 
 	if status == "Running" {
-		err = context.Client.DoVmCommand(context.VM.Subsystems.CS.VM.ID, nil, commands.Stop)
+		err = csc.DoVmCommand(vm.Subsystems.CS.VM.ID, nil, commands.Stop)
 		if err != nil {
 			return nil, err
 		}
@@ -551,17 +601,17 @@ func stopVmIfRunning(context *Context) (func(), error) {
 		// turn it on if it was on
 		if status == "Running" {
 			var requiredHost *string
-			if gpuID := context.VM.GetGpuID(); gpuID != nil {
-				requiredHost, err = GetRequiredHost(*gpuID)
+			if gpuID := vm.GetGpuID(); gpuID != nil {
+				requiredHost, err = c.GetRequiredHost(*gpuID)
 				if err != nil {
-					log.Println("failed to get required host for vm", context.VM.Name, "in zone", context.Zone.Name, ". details:", err)
+					log.Println("failed to get required host for vm", vm.Name, ". details:", err)
 					return
 				}
 			}
 
-			err = context.Client.DoVmCommand(context.VM.Subsystems.CS.VM.ID, requiredHost, commands.Start)
+			err = csc.DoVmCommand(vm.Subsystems.CS.VM.ID, requiredHost, commands.Start)
 			if err != nil {
-				log.Println("failed to start vm", context.VM.Name, "in zone", context.Zone.Name, ". details:", err)
+				log.Println("failed to start vm", vm.Name, ". details:", err)
 				return
 			}
 		}
@@ -575,4 +625,12 @@ func dbFunc(vmID, key string) func(interface{}) error {
 		}
 		return vmModel.New().UpdateSubsystemByID(vmID, "cs."+key, data)
 	}
+}
+
+func pfrName(pfr *csModels.PortForwardingRulePublic) string {
+	if pfr.Name == "__ssh" {
+		return pfr.Name
+	}
+
+	return fmt.Sprintf("priv-%d-prot-%s", pfr.PrivatePort, pfr.Protocol)
 }

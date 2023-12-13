@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
+	"go-deploy/pkg/subsystems/k8s/errors"
 	"go-deploy/pkg/subsystems/k8s/keys"
 	"go-deploy/pkg/subsystems/k8s/models"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
+	"strings"
 	"time"
 )
 
@@ -55,6 +57,10 @@ func (client *Client) CreateIngress(public *models.IngressPublic) (*models.Ingre
 	manifest := CreateIngressManifest(public)
 	res, err := client.K8sClient.NetworkingV1().Ingresses(public.Namespace).Create(context.TODO(), manifest, metav1.CreateOptions{})
 	if err != nil {
+		if strings.Contains(err.Error(), "is already defined in ingress") {
+			return nil, makeError(errors.IngressHostInUseErr)
+		}
+
 		return nil, makeError(err)
 	}
 
@@ -73,6 +79,10 @@ func (client *Client) UpdateIngress(public *models.IngressPublic) (*models.Ingre
 
 	ingress, err := client.K8sClient.NetworkingV1().Ingresses(public.Namespace).Update(context.TODO(), CreateIngressManifest(public), metav1.UpdateOptions{})
 	if err != nil && !IsNotFoundErr(err) {
+		if strings.Contains(err.Error(), "is already defined in ingress") {
+			return nil, makeError(errors.IngressHostInUseErr)
+		}
+
 		return nil, makeError(err)
 	}
 

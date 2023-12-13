@@ -14,23 +14,26 @@ import (
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
 	"go-deploy/service/deployment_service"
+	"go-deploy/service/deployment_service/client"
+	sErrors "go-deploy/service/errors"
 	"go-deploy/service/job_service"
-	"go-deploy/service/storage_manager_service"
+	"go-deploy/service/sm_service"
+	smClient "go-deploy/service/sm_service/client"
 	"go-deploy/service/user_service"
 	"go-deploy/service/zone_service"
 )
 
-func getStorageManagerURL(userID string, auth *service.AuthInfo) *string {
-	storageManager, err := storage_manager_service.GetByOwnerIdAuth(userID, auth)
+func getSmURL(userID string, auth *service.AuthInfo) *string {
+	sm, err := sm_service.New().WithAuth(auth).GetByUserID(userID, &smClient.GetOptions{})
 	if err != nil {
 		return nil
 	}
 
-	if storageManager == nil {
+	if sm == nil {
 		return nil
 	}
 
-	return storageManager.GetURL()
+	return sm.GetURL()
 }
 
 // List
@@ -65,7 +68,18 @@ func List(c *gin.Context) {
 		return
 	}
 
-	deployments, err := deployment_service.ListAuth(requestQuery.All, requestQuery.UserID, requestQuery.Shared, auth, &requestQuery.Pagination)
+	var userID string
+	if requestQuery.UserID != nil {
+		userID = *requestQuery.UserID
+	} else if requestQuery.All == false {
+		userID = auth.UserID
+	}
+
+	deployments, err := deployment_service.New().WithAuth(auth).List(&client.ListOptions{
+		UserID:     userID,
+		Pagination: &service.Pagination{Page: requestQuery.Page, PageSize: requestQuery.PageSize},
+		Shared:     requestQuery.Shared,
+	})
 	if err != nil {
 		context.ServerError(err, v1.AuthInfoNotAvailableErr)
 		return
@@ -78,12 +92,12 @@ func List(c *gin.Context) {
 
 	dtoDeployments := make([]body.DeploymentRead, len(deployments))
 	for i, deployment := range deployments {
-		var storageManagerURL *string
+		var smURL *string
 		if mainApp := deployment.GetMainApp(); mainApp != nil && len(mainApp.Volumes) > 0 {
-			storageManagerURL = getStorageManagerURL(deployment.OwnerID, auth)
+			smURL = getSmURL(deployment.OwnerID, auth)
 		}
 
-		dtoDeployments[i] = deployment.ToDTO(storageManagerURL)
+		dtoDeployments[i] = deployment.ToDTO(smURL)
 	}
 
 	context.JSONResponse(200, dtoDeployments)
@@ -117,7 +131,7 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	deployment, err := deployment_service.GetByIdAuth(requestURI.DeploymentID, auth)
+	deployment, err := deployment_service.New().WithAuth(auth).Get(requestURI.DeploymentID, &client.GetOptions{})
 	if err != nil {
 		context.ServerError(err, v1.AuthInfoNotAvailableErr)
 		return
@@ -128,12 +142,12 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	var storageManagerURL *string
+	var smURL *string
 	if len(deployment.GetMainApp().Volumes) > 0 {
-		storageManagerURL = getStorageManagerURL(deployment.OwnerID, auth)
+		smURL = getSmURL(deployment.OwnerID, auth)
 	}
 
-	context.Ok(deployment.ToDTO(storageManagerURL))
+	context.Ok(deployment.ToDTO(smURL))
 }
 
 // Create
@@ -170,13 +184,13 @@ func Create(c *gin.Context) {
 		return
 	}
 
-	deployment, err := deployment_service.GetByName(requestBody.Name)
+	doesNotAlreadyExists, err := deployment_service.NameAvailable(requestBody.Name)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
 	}
 
-	if deployment != nil {
+	if !doesNotAlreadyExists {
 		context.UserError("Deployment already exists")
 		return
 	}
@@ -223,9 +237,9 @@ func Create(c *gin.Context) {
 		}
 	}
 
-	err = deployment_service.CheckQuotaCreate(&requestBody, auth.UserID, &auth.GetEffectiveRole().Quotas, auth)
+	err = deployment_service.New().WithAuth(auth).CheckQuota("", &client.QuotaOptions{Create: &requestBody})
 	if err != nil {
-		var quotaExceededErr service.QuotaExceededError
+		var quotaExceededErr sErrors.QuotaExceededError
 		if errors.As(err, &quotaExceededErr) {
 			context.Forbidden(quotaExceededErr.Error())
 			return
@@ -284,7 +298,8 @@ func Delete(c *gin.Context) {
 		return
 	}
 
-	currentDeployment, err := deployment_service.GetByIdAuth(requestURI.DeploymentID, auth)
+	dc := deployment_service.New().WithAuth(auth)
+	currentDeployment, err := dc.Get(requestURI.DeploymentID, &client.GetOptions{})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -300,14 +315,20 @@ func Delete(c *gin.Context) {
 		return
 	}
 
-	started, reason, err := deployment_service.StartActivity(currentDeployment.ID, deploymentModels.ActivityBeingDeleted)
+	err = dc.StartActivity(requestURI.DeploymentID, deploymentModels.ActivityBeingDeleted)
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
-		return
-	}
+		var failedToStartActivityErr sErrors.FailedToStartActivityError
+		if errors.As(err, &failedToStartActivityErr) {
+			context.Locked(failedToStartActivityErr.Error())
+			return
+		}
 
-	if !started {
-		context.Locked(reason)
+		if errors.Is(err, sErrors.DeploymentNotFoundErr) {
+			context.NotFound("Deployment not found")
+			return
+		}
+
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
@@ -361,9 +382,11 @@ func Update(c *gin.Context) {
 		return
 	}
 
+	dc := deployment_service.New().WithAuth(auth)
+
 	var deployment *deploymentModels.Deployment
 	if requestBody.TransferCode != nil {
-		deployment, err = deployment_service.GetByTransferCode(*requestBody.TransferCode, auth.UserID)
+		deployment, err = dc.Get(requestURI.DeploymentID, &client.GetOptions{TransferCode: *requestBody.TransferCode})
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
@@ -372,9 +395,8 @@ func Update(c *gin.Context) {
 		if requestBody.OwnerID == nil {
 			requestBody.OwnerID = &auth.UserID
 		}
-
 	} else {
-		deployment, err = deployment_service.GetByIdAuth(requestURI.DeploymentID, auth)
+		deployment, err = dc.Get(requestURI.DeploymentID, &client.GetOptions{})
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
@@ -388,8 +410,13 @@ func Update(c *gin.Context) {
 
 	if requestBody.OwnerID != nil {
 		if *requestBody.OwnerID == "" {
-			err := deployment_service.ClearUpdateOwner(deployment.ID)
+			err = dc.ClearUpdateOwner(requestURI.DeploymentID)
 			if err != nil {
+				if errors.Is(err, sErrors.DeploymentNotFoundErr) {
+					context.NotFound("Deployment not found")
+					return
+				}
+
 				context.ServerError(err, v1.InternalError)
 				return
 			}
@@ -421,19 +448,19 @@ func Update(c *gin.Context) {
 			return
 		}
 
-		jobID, err := deployment_service.UpdateOwnerAuth(deployment.ID, &body.DeploymentUpdateOwner{
+		jobID, err := dc.UpdateOwnerSetup(requestURI.DeploymentID, &body.DeploymentUpdateOwner{
 			NewOwnerID:   *requestBody.OwnerID,
 			OldOwnerID:   deployment.OwnerID,
 			TransferCode: requestBody.TransferCode,
-		}, auth)
+		})
 
 		if err != nil {
-			if errors.Is(err, deployment_service.DeploymentNotFoundErr) {
+			if errors.Is(err, sErrors.DeploymentNotFoundErr) {
 				context.NotFound("Deployment not found")
 				return
 			}
 
-			if errors.Is(err, deployment_service.InvalidTransferCodeErr) {
+			if errors.Is(err, sErrors.InvalidTransferCodeErr) {
 				context.Forbidden("Bad transfer code")
 				return
 			}
@@ -462,9 +489,9 @@ func Update(c *gin.Context) {
 		}
 	}
 
-	err = deployment_service.CheckQuotaUpdate(requestURI.DeploymentID, &requestBody, auth.UserID, &auth.GetEffectiveRole().Quotas, auth)
+	err = dc.CheckQuota(requestURI.DeploymentID, &client.QuotaOptions{Update: &requestBody})
 	if err != nil {
-		var quotaExceededErr service.QuotaExceededError
+		var quotaExceededErr sErrors.QuotaExceededError
 		if errors.As(err, &quotaExceededErr) {
 			context.Forbidden(quotaExceededErr.Error())
 			return
@@ -474,7 +501,7 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	canUpdate, reason := deployment_service.CanAddActivity(deployment.ID, deploymentModels.ActivityUpdating)
+	canUpdate, reason := dc.CanAddActivity(requestURI.DeploymentID, deploymentModels.ActivityUpdating)
 	if !canUpdate {
 		context.Locked(reason)
 		return

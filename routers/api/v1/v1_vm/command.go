@@ -7,6 +7,7 @@ import (
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/vm_service"
+	"go-deploy/service/vm_service/client"
 )
 
 // DoCommand
@@ -46,7 +47,9 @@ func DoCommand(c *gin.Context) {
 		return
 	}
 
-	vm, err := vm_service.GetByIdAuth(requestURI.VmID, auth)
+	vsc := vm_service.New().WithAuth(auth)
+
+	vm, err := vsc.Get(requestURI.VmID, &client.GetOptions{Shared: true})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -62,7 +65,7 @@ func DoCommand(c *gin.Context) {
 		return
 	}
 
-	vm_service.DoCommand(vm, requestBody.Command)
+	vsc.DoCommand(requestURI.VmID, requestBody.Command)
 
 	context.OkNoContent()
 }

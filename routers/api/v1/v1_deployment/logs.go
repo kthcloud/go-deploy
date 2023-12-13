@@ -9,6 +9,7 @@ import (
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/deployment_service"
+	errors2 "go-deploy/service/errors"
 	"io"
 )
 
@@ -42,9 +43,9 @@ func GetLogsSSE(c *gin.Context) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	err = deployment_service.SetupLogStream(ctx, requestURI.DeploymentID, handler, 25, auth)
+	err = deployment_service.New().WithAuth(auth).SetupLogStream(requestURI.DeploymentID, ctx, handler, 25)
 	if err != nil {
-		if errors.Is(err, deployment_service.DeploymentNotFoundErr) {
+		if errors.Is(err, errors2.DeploymentNotFoundErr) {
 			sysContext.NotFound("Deployment not found")
 		}
 

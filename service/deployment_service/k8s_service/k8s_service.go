@@ -5,46 +5,46 @@ import (
 	"errors"
 	"fmt"
 	deploymentModel "go-deploy/models/sys/deployment"
+	kErrors "go-deploy/pkg/subsystems/k8s/errors"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/service"
 	"go-deploy/service/constants"
-	"go-deploy/service/deployment_service/base"
+	"go-deploy/service/deployment_service/client"
+	sErrors "go-deploy/service/errors"
 	"go-deploy/service/resources"
 	"go-deploy/utils"
 	"golang.org/x/exp/slices"
 	"log"
-	"strings"
 	"time"
 )
 
-func Create(id string, params *deploymentModel.CreateParams) error {
+// Create sets up K8s for the deployment.
+//
+// It creates all necessary resources in K8s, such as namespaces, deployments, services, etc.
+func (c *Client) Create(id string, params *deploymentModel.CreateParams) error {
 	log.Println("setting up k8s for", params.Name)
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to setup k8s for deployment %s. details: %w", params.Name, err)
 	}
 
-	context, err := NewContext(id)
+	_, kc, g, err := c.Get(OptsAll(id))
 	if err != nil {
-		if errors.Is(err, base.DeploymentDeletedErr) {
-			return nil
-		}
-
 		return makeError(err)
 	}
 
 	// Namespace
-	err = resources.SsCreator(context.Client.CreateNamespace).
+	err = resources.SsCreator(kc.CreateNamespace).
 		WithDbFunc(dbFunc(id, "namespace")).
-		WithPublic(context.Generator.Namespace()).
+		WithPublic(g.Namespace()).
 		Exec()
 	if err != nil {
 		return makeError(err)
 	}
 
 	// PersistentVolume
-	for _, pvPublic := range context.Generator.PVs() {
-		err = resources.SsCreator(context.Client.CreatePV).
+	for _, pvPublic := range g.PVs() {
+		err = resources.SsCreator(kc.CreatePV).
 			WithDbFunc(dbFunc(id, "pvMap."+pvPublic.Name)).
 			WithPublic(&pvPublic).
 			Exec()
@@ -55,8 +55,8 @@ func Create(id string, params *deploymentModel.CreateParams) error {
 	}
 
 	// PersistentVolumeClaim
-	for _, pvcPublic := range context.Generator.PVCs() {
-		err = resources.SsCreator(context.Client.CreatePVC).
+	for _, pvcPublic := range g.PVCs() {
+		err = resources.SsCreator(kc.CreatePVC).
 			WithDbFunc(dbFunc(id, "pvcMap."+pvcPublic.Name)).
 			WithPublic(&pvcPublic).
 			Exec()
@@ -67,8 +67,8 @@ func Create(id string, params *deploymentModel.CreateParams) error {
 	}
 
 	// Secret
-	for _, secretPublic := range context.Generator.Secrets() {
-		err = resources.SsCreator(context.Client.CreateSecret).
+	for _, secretPublic := range g.Secrets() {
+		err = resources.SsCreator(kc.CreateSecret).
 			WithDbFunc(dbFunc(id, "secretMap."+secretPublic.Name)).
 			WithPublic(&secretPublic).
 			Exec()
@@ -79,8 +79,8 @@ func Create(id string, params *deploymentModel.CreateParams) error {
 	}
 
 	// Deployment
-	for _, deploymentPublic := range context.Generator.Deployments() {
-		err = resources.SsCreator(context.Client.CreateDeployment).
+	for _, deploymentPublic := range g.Deployments() {
+		err = resources.SsCreator(kc.CreateDeployment).
 			WithDbFunc(dbFunc(id, "deploymentMap."+deploymentPublic.Name)).
 			WithPublic(&deploymentPublic).
 			Exec()
@@ -91,8 +91,8 @@ func Create(id string, params *deploymentModel.CreateParams) error {
 	}
 
 	// Service
-	for _, servicePublic := range context.Generator.Services() {
-		err = resources.SsCreator(context.Client.CreateService).
+	for _, servicePublic := range g.Services() {
+		err = resources.SsCreator(kc.CreateService).
 			WithDbFunc(dbFunc(id, "serviceMap."+servicePublic.Name)).
 			WithPublic(&servicePublic).
 			Exec()
@@ -103,19 +103,23 @@ func Create(id string, params *deploymentModel.CreateParams) error {
 	}
 
 	// Ingress
-	for _, ingressPublic := range context.Generator.Ingresses() {
-		err = resources.SsCreator(context.Client.CreateIngress).
+	for _, ingressPublic := range g.Ingresses() {
+		err = resources.SsCreator(kc.CreateIngress).
 			WithDbFunc(dbFunc(id, "ingressMap."+ingressPublic.Name)).
 			WithPublic(&ingressPublic).
 			Exec()
 
 		if err != nil {
+			if errors.Is(err, kErrors.IngressHostInUseErr) {
+				return makeError(sErrors.IngressHostInUseErr)
+			}
+
 			return makeError(err)
 		}
 	}
 
-	for _, hpaPublic := range context.Generator.HPAs() {
-		err = resources.SsCreator(context.Client.CreateHPA).
+	for _, hpaPublic := range g.HPAs() {
+		err = resources.SsCreator(kc.CreateHPA).
 			WithDbFunc(dbFunc(id, "hpaMap."+hpaPublic.Name)).
 			WithPublic(&hpaPublic).
 			Exec()
@@ -128,25 +132,29 @@ func Create(id string, params *deploymentModel.CreateParams) error {
 	return nil
 }
 
-func Delete(id string, overrideOwnerID ...string) error {
+// Delete deletes all K8s resources for the deployment.
+//
+// It deletes all K8s resources, such as namespaces, deployments, services, etc.
+func (c *Client) Delete(id string, overwriteUserID ...string) error {
 	log.Println("deleting k8s for", id)
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete k8s for deployment %s. details: %w", id, err)
 	}
 
-	context, err := NewContext(id, overrideOwnerID...)
-	if err != nil {
-		if errors.Is(err, base.DeploymentDeletedErr) {
-			return nil
-		}
+	var userID string
+	if len(overwriteUserID) > 0 {
+		userID = overwriteUserID[0]
+	}
 
+	d, kc, _, err := c.Get(OptsNoGenerator(id, client.ExtraOpts{UserID: userID}))
+	if err != nil {
 		return makeError(err)
 	}
 
 	// Ingress
-	for mapName, ingress := range context.Deployment.Subsystems.K8s.IngressMap {
-		err = resources.SsDeleter(context.Client.DeleteIngress).
+	for mapName, ingress := range d.Subsystems.K8s.IngressMap {
+		err := resources.SsDeleter(kc.DeleteIngress).
 			WithResourceID(ingress.ID).
 			WithDbFunc(dbFunc(id, "ingressMap."+mapName)).
 			Exec()
@@ -157,8 +165,8 @@ func Delete(id string, overrideOwnerID ...string) error {
 	}
 
 	// Service
-	for mapName, k8sService := range context.Deployment.Subsystems.K8s.ServiceMap {
-		err = resources.SsDeleter(context.Client.DeleteService).
+	for mapName, k8sService := range d.Subsystems.K8s.ServiceMap {
+		err := resources.SsDeleter(kc.DeleteService).
 			WithResourceID(k8sService.ID).
 			WithDbFunc(dbFunc(id, "serviceMap."+mapName)).
 			Exec()
@@ -169,8 +177,8 @@ func Delete(id string, overrideOwnerID ...string) error {
 	}
 
 	// Deployment
-	for mapName, k8sDeployment := range context.Deployment.Subsystems.K8s.DeploymentMap {
-		err = resources.SsDeleter(context.Client.DeleteDeployment).
+	for mapName, k8sDeployment := range d.Subsystems.K8s.DeploymentMap {
+		err := resources.SsDeleter(kc.DeleteDeployment).
 			WithResourceID(k8sDeployment.ID).
 			WithDbFunc(dbFunc(id, "deploymentMap."+mapName)).
 			Exec()
@@ -181,8 +189,8 @@ func Delete(id string, overrideOwnerID ...string) error {
 	}
 
 	// PersistentVolumeClaim
-	for mapName, pvc := range context.Deployment.Subsystems.K8s.PvcMap {
-		err = resources.SsDeleter(context.Client.DeletePVC).
+	for mapName, pvc := range d.Subsystems.K8s.PvcMap {
+		err := resources.SsDeleter(kc.DeletePVC).
 			WithResourceID(pvc.ID).
 			WithDbFunc(dbFunc(id, "pvcMap."+mapName)).
 			Exec()
@@ -193,8 +201,8 @@ func Delete(id string, overrideOwnerID ...string) error {
 	}
 
 	// PersistentVolume
-	for mapName, pv := range context.Deployment.Subsystems.K8s.PvMap {
-		err = resources.SsDeleter(context.Client.DeletePV).
+	for mapName, pv := range d.Subsystems.K8s.PvMap {
+		err := resources.SsDeleter(kc.DeletePV).
 			WithResourceID(pv.ID).
 			WithDbFunc(dbFunc(id, "pvMap."+mapName)).
 			Exec()
@@ -205,8 +213,8 @@ func Delete(id string, overrideOwnerID ...string) error {
 	}
 
 	// Job
-	for mapName, job := range context.Deployment.Subsystems.K8s.JobMap {
-		err = resources.SsDeleter(context.Client.DeleteJob).
+	for mapName, job := range d.Subsystems.K8s.JobMap {
+		err := resources.SsDeleter(kc.DeleteJob).
 			WithResourceID(job.ID).
 			WithDbFunc(dbFunc(id, "jobMap."+mapName)).
 			Exec()
@@ -216,8 +224,8 @@ func Delete(id string, overrideOwnerID ...string) error {
 		}
 	}
 
-	for mapName, hpa := range context.Deployment.Subsystems.K8s.HpaMap {
-		err = resources.SsDeleter(context.Client.DeleteHPA).
+	for mapName, hpa := range d.Subsystems.K8s.HpaMap {
+		err := resources.SsDeleter(kc.DeleteHPA).
 			WithResourceID(hpa.ID).
 			WithDbFunc(dbFunc(id, "hpaMap."+mapName)).
 			Exec()
@@ -228,15 +236,15 @@ func Delete(id string, overrideOwnerID ...string) error {
 	}
 
 	// Secret
-	for mapName, secret := range context.Deployment.Subsystems.K8s.SecretMap {
+	for mapName, secret := range d.Subsystems.K8s.SecretMap {
 		var deleteFunc func(id string) error
 		if mapName == constants.WildcardCertSecretName {
 			deleteFunc = func(string) error { return nil }
 		} else {
-			deleteFunc = context.Client.DeleteSecret
+			deleteFunc = kc.DeleteSecret
 		}
 
-		err = resources.SsDeleter(deleteFunc).
+		err := resources.SsDeleter(deleteFunc).
 			WithResourceID(secret.ID).
 			WithDbFunc(dbFunc(id, "secretMap."+mapName)).
 			Exec()
@@ -248,7 +256,7 @@ func Delete(id string, overrideOwnerID ...string) error {
 
 	// Namespace
 	err = resources.SsDeleter(func(string) error { return nil }).
-		WithResourceID(context.Deployment.Subsystems.K8s.Namespace.ID).
+		WithResourceID(d.Subsystems.K8s.Namespace.ID).
 		WithDbFunc(dbFunc(id, "namespace")).
 		Exec()
 
@@ -259,7 +267,10 @@ func Delete(id string, overrideOwnerID ...string) error {
 	return nil
 }
 
-func Update(id string, params *deploymentModel.UpdateParams) error {
+// Update updates K8s resources for the deployment.
+//
+// It updates all K8s resources tied to the fields in the deployment.UpdateParams.
+func (c *Client) Update(id string, params *deploymentModel.UpdateParams) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update k8s for deployment %s. details: %w", id, err)
 	}
@@ -268,21 +279,12 @@ func Update(id string, params *deploymentModel.UpdateParams) error {
 		return nil
 	}
 
-	context, err := NewContext(id)
-	if err != nil {
-		if errors.Is(err, base.DeploymentDeletedErr) {
-			return nil
-		}
-
-		return makeError(err)
-	}
-
 	if params.Name != nil {
 		// since names are immutable in k8s, we actually need to recreate everything
 		// we can trigger this in a repair.
 		// this is rather expensive, but it will include all the other updates as well,
 		// so we can just return here
-		err = Repair(id)
+		err := c.Repair(id)
 		if err != nil {
 			return makeError(fmt.Errorf("failed to update name in k8s for deployment %s. details: %w", id, err))
 		}
@@ -291,49 +293,49 @@ func Update(id string, params *deploymentModel.UpdateParams) error {
 	}
 
 	if params.InternalPort != nil {
-		err = updateInternalPort(context)
+		err := c.updateInternalPort(id)
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
 	if params.Envs != nil {
-		err = updateEnvs(context)
+		err := c.updateEnvs(id)
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
 	if params.CustomDomain != nil && (params.Private == nil || !*params.Private) {
-		err = updateCustomDomain(context)
+		err := c.updateCustomDomain(id)
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
 	if params.Private != nil {
-		err = updatePrivate(context)
+		err := c.updatePrivate(id)
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
 	if params.Volumes != nil {
-		err = recreatePvPvcDeployments(context)
+		err := c.recreatePvPvcDeployments(id)
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
 	if params.Image != nil {
-		err = updateImage(context)
+		err := c.updateImage(id)
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
 	if params.Replicas != nil {
-		err = updateReplicas(context)
+		err := c.updateReplicas(id)
 		if err != nil {
 			return makeError(err)
 		}
@@ -342,22 +344,28 @@ func Update(id string, params *deploymentModel.UpdateParams) error {
 	return nil
 }
 
-func EnsureOwner(id, oldOwnerID string) error {
+// EnsureOwner ensures the owner of the K8s setup for the deployment.
+//
+// If the owner of the deployment does match with the ID specified by WithUserID,
+// it will update the Harbor setup to match the new owner.
+//
+// This will always trigger a call to Repair.
+func (c *Client) EnsureOwner(id string, oldOwnerID string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update k8s owner for deployment %s. details: %w", id, err)
 	}
 
-	// since ownership is determined by the namespace, and the namespace owns everything,
-	// we need to recreate everything
+	// Since ownership is determined by the namespace, and the namespace owns everything,
+	// We need to recreate everything
 
-	// delete everything in the old namespace
-	err := Delete(id, oldOwnerID)
+	// Delete everything related to the deployment in the old namespace
+	err := c.Delete(id, oldOwnerID)
 	if err != nil {
 		return makeError(err)
 	}
 
-	// create everything in the new namespace
-	err = Repair(id)
+	// Create everything related to the deployment in the new namespace
+	err = c.Repair(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -365,51 +373,47 @@ func EnsureOwner(id, oldOwnerID string) error {
 	return nil
 }
 
-func Restart(id string) error {
+// Restart restarts the deployment.
+func (c *Client) Restart(id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to restart k8s %s. details: %w", id, err)
 	}
 
-	context, err := NewContext(id)
+	d, kc, _, err := c.Get(OptsNoGenerator(id))
 	if err != nil {
-		if errors.Is(err, base.DeploymentDeletedErr) {
-			return nil
-		}
-
 		return makeError(err)
 	}
 
-	if k8sDeployment := context.Deployment.Subsystems.K8s.GetDeployment(context.Deployment.Name); service.Created(k8sDeployment) {
-		err = context.Client.RestartDeployment(k8sDeployment.ID)
+	if k8sDeployment := d.Subsystems.K8s.GetDeployment(d.Name); service.Created(k8sDeployment) {
+		err := kc.RestartDeployment(k8sDeployment.ID)
 		if err != nil {
 			return makeError(err)
 		}
 	} else {
-		utils.PrettyPrintError(fmt.Errorf("k8s deployment %s not found when restarting, assuming it was deleted", context.Deployment.Name))
+		utils.PrettyPrintError(fmt.Errorf("k8s deployment %s not found when restarting, assuming it was deleted", d.Name))
 	}
 
 	return nil
 }
 
-func Repair(id string) error {
+// Repair repairs the deployment.
+//
+// It repairs all K8s resources for the deployment.
+func (c *Client) Repair(id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to repair k8s %s. details: %w", id, err)
 	}
 
-	context, err := NewContext(id)
+	d, kc, g, err := c.Get(OptsAll(id))
 	if err != nil {
-		if errors.Is(err, base.DeploymentDeletedErr) {
-			return nil
-		}
-
 		return makeError(err)
 	}
 
-	namespace := context.Generator.Namespace()
+	namespace := g.Namespace()
 	err = resources.SsRepairer(
-		context.Client.ReadNamespace,
-		context.Client.CreateNamespace,
-		context.Client.UpdateNamespace,
+		kc.ReadNamespace,
+		kc.CreateNamespace,
+		kc.UpdateNamespace,
 		func(string) error { return nil },
 	).WithResourceID(namespace.ID).WithDbFunc(dbFunc(id, "namespace")).WithGenPublic(namespace).Exec()
 
@@ -417,11 +421,11 @@ func Repair(id string) error {
 		return makeError(err)
 	}
 
-	deployments := context.Generator.Deployments()
-	for mapName, k8sDeployment := range context.Deployment.Subsystems.K8s.GetDeploymentMap() {
+	deployments := g.Deployments()
+	for mapName, k8sDeployment := range d.Subsystems.K8s.GetDeploymentMap() {
 		idx := slices.IndexFunc(deployments, func(d k8sModels.DeploymentPublic) bool { return d.Name == mapName })
 		if idx == -1 {
-			err = resources.SsDeleter(context.Client.DeleteDeployment).
+			err = resources.SsDeleter(kc.DeleteDeployment).
 				WithResourceID(k8sDeployment.ID).
 				WithDbFunc(dbFunc(id, "deploymentMap."+mapName)).
 				Exec()
@@ -433,10 +437,10 @@ func Repair(id string) error {
 	}
 	for _, public := range deployments {
 		err = resources.SsRepairer(
-			context.Client.ReadDeployment,
-			context.Client.CreateDeployment,
-			context.Client.UpdateDeployment,
-			context.Client.DeleteDeployment,
+			kc.ReadDeployment,
+			kc.CreateDeployment,
+			kc.UpdateDeployment,
+			kc.DeleteDeployment,
 		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "deploymentMap."+public.Name)).WithGenPublic(&public).Exec()
 
 		if err != nil {
@@ -444,11 +448,11 @@ func Repair(id string) error {
 		}
 	}
 
-	services := context.Generator.Services()
-	for mapName, k8sService := range context.Deployment.Subsystems.K8s.GetServiceMap() {
+	services := g.Services()
+	for mapName, k8sService := range d.Subsystems.K8s.GetServiceMap() {
 		idx := slices.IndexFunc(services, func(s k8sModels.ServicePublic) bool { return s.Name == mapName })
 		if idx == -1 {
-			err = resources.SsDeleter(context.Client.DeleteService).
+			err = resources.SsDeleter(kc.DeleteService).
 				WithResourceID(k8sService.ID).
 				WithDbFunc(dbFunc(id, "serviceMap."+mapName)).
 				Exec()
@@ -460,10 +464,10 @@ func Repair(id string) error {
 	}
 	for _, public := range services {
 		err = resources.SsRepairer(
-			context.Client.ReadService,
-			context.Client.CreateService,
-			context.Client.UpdateService,
-			context.Client.DeleteService,
+			kc.ReadService,
+			kc.CreateService,
+			kc.UpdateService,
+			kc.DeleteService,
 		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "serviceMap."+public.Name)).WithGenPublic(&public).Exec()
 
 		if err != nil {
@@ -471,11 +475,11 @@ func Repair(id string) error {
 		}
 	}
 
-	ingresses := context.Generator.Ingresses()
-	for mapName, ingress := range context.Deployment.Subsystems.K8s.GetIngressMap() {
+	ingresses := g.Ingresses()
+	for mapName, ingress := range d.Subsystems.K8s.GetIngressMap() {
 		idx := slices.IndexFunc(ingresses, func(i k8sModels.IngressPublic) bool { return i.Name == mapName })
 		if idx == -1 {
-			err = resources.SsDeleter(context.Client.DeleteIngress).
+			err = resources.SsDeleter(kc.DeleteIngress).
 				WithResourceID(ingress.ID).
 				WithDbFunc(dbFunc(id, "ingressMap."+mapName)).
 				Exec()
@@ -487,18 +491,26 @@ func Repair(id string) error {
 	}
 	for _, public := range ingresses {
 		err = resources.SsRepairer(
-			context.Client.ReadIngress,
-			context.Client.CreateIngress,
-			context.Client.UpdateIngress,
-			context.Client.DeleteIngress,
+			kc.ReadIngress,
+			kc.CreateIngress,
+			kc.UpdateIngress,
+			kc.DeleteIngress,
 		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "ingressMap."+public.Name)).WithGenPublic(&public).Exec()
+
+		if err != nil {
+			if errors.Is(err, kErrors.IngressHostInUseErr) {
+				return makeError(sErrors.IngressHostInUseErr)
+			}
+
+			return makeError(err)
+		}
 	}
 
-	secrets := context.Generator.Secrets()
-	for mapName, secret := range context.Deployment.Subsystems.K8s.GetSecretMap() {
+	secrets := g.Secrets()
+	for mapName, secret := range d.Subsystems.K8s.GetSecretMap() {
 		idx := slices.IndexFunc(secrets, func(s k8sModels.SecretPublic) bool { return s.Name == mapName })
 		if idx == -1 {
-			err = resources.SsDeleter(context.Client.DeleteSecret).
+			err = resources.SsDeleter(kc.DeleteSecret).
 				WithResourceID(secret.ID).
 				WithDbFunc(dbFunc(id, "secretMap."+mapName)).
 				Exec()
@@ -510,10 +522,10 @@ func Repair(id string) error {
 	}
 	for _, public := range secrets {
 		err = resources.SsRepairer(
-			context.Client.ReadSecret,
-			context.Client.CreateSecret,
-			context.Client.UpdateSecret,
-			context.Client.DeleteSecret,
+			kc.ReadSecret,
+			kc.CreateSecret,
+			kc.UpdateSecret,
+			kc.DeleteSecret,
 		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "secretMap."+public.Name)).WithGenPublic(&public).Exec()
 
 		if err != nil {
@@ -521,11 +533,11 @@ func Repair(id string) error {
 		}
 	}
 
-	hpas := context.Generator.HPAs()
-	for mapName, hpa := range context.Deployment.Subsystems.K8s.GetHpaMap() {
+	hpas := g.HPAs()
+	for mapName, hpa := range d.Subsystems.K8s.GetHpaMap() {
 		idx := slices.IndexFunc(hpas, func(s k8sModels.HpaPublic) bool { return s.Name == mapName })
 		if idx == -1 {
-			err = resources.SsDeleter(context.Client.DeleteHPA).
+			err = resources.SsDeleter(kc.DeleteHPA).
 				WithResourceID(hpa.ID).
 				WithDbFunc(dbFunc(id, "hpaMap."+mapName)).
 				Exec()
@@ -537,10 +549,10 @@ func Repair(id string) error {
 	}
 	for _, public := range hpas {
 		err = resources.SsRepairer(
-			context.Client.ReadHPA,
-			context.Client.CreateHPA,
-			context.Client.UpdateHPA,
-			context.Client.DeleteHPA,
+			kc.ReadHPA,
+			kc.CreateHPA,
+			kc.UpdateHPA,
+			kc.DeleteHPA,
 		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "hpaMap."+public.Name)).WithGenPublic(&public).Exec()
 
 		if err != nil {
@@ -553,11 +565,11 @@ func Repair(id string) error {
 
 	anyMismatch := false
 
-	pvcs := context.Generator.PVCs()
-	for mapName, pvc := range context.Deployment.Subsystems.K8s.PvcMap {
+	pvcs := g.PVCs()
+	for mapName, pvc := range d.Subsystems.K8s.PvcMap {
 		idx := slices.IndexFunc(pvcs, func(s k8sModels.PvcPublic) bool { return s.Name == mapName })
 		if idx == -1 {
-			err = resources.SsDeleter(context.Client.DeletePVC).
+			err = resources.SsDeleter(kc.DeletePVC).
 				WithResourceID(pvc.ID).
 				WithDbFunc(dbFunc(id, "pvcMap."+mapName)).
 				Exec()
@@ -573,10 +585,10 @@ func Repair(id string) error {
 			break
 		}
 	}
-	for _, public := range context.Generator.PVCs() {
+	for _, public := range g.PVCs() {
 		err = resources.SsRepairer(
-			context.Client.ReadPVC,
-			context.Client.CreatePVC,
+			kc.ReadPVC,
+			kc.CreatePVC,
 			func(_ *k8sModels.PvcPublic) (*k8sModels.PvcPublic, error) { anyMismatch = true; return &public, nil },
 			func(id string) error { return nil },
 		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "pvcMap."+public.Name)).WithGenPublic(&public).Exec()
@@ -586,11 +598,11 @@ func Repair(id string) error {
 		}
 	}
 
-	pvs := context.Generator.PVs()
-	for mapName, pv := range context.Deployment.Subsystems.K8s.PvMap {
+	pvs := g.PVs()
+	for mapName, pv := range d.Subsystems.K8s.PvMap {
 		idx := slices.IndexFunc(pvs, func(s k8sModels.PvPublic) bool { return s.Name == mapName })
 		if idx == -1 {
-			err = resources.SsDeleter(context.Client.DeletePV).
+			err = resources.SsDeleter(kc.DeletePV).
 				WithResourceID(pv.ID).
 				WithDbFunc(dbFunc(id, "pvMap."+mapName)).
 				Exec()
@@ -606,10 +618,10 @@ func Repair(id string) error {
 			break
 		}
 	}
-	for _, public := range context.Generator.PVs() {
+	for _, public := range g.PVs() {
 		err = resources.SsRepairer(
-			context.Client.ReadPV,
-			context.Client.CreatePV,
+			kc.ReadPV,
+			kc.CreatePV,
 			func(_ *k8sModels.PvPublic) (*k8sModels.PvPublic, error) { anyMismatch = true; return &public, nil },
 			func(id string) error { return nil },
 		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "pvMap."+public.Name)).WithGenPublic(&public).Exec()
@@ -620,62 +632,68 @@ func Repair(id string) error {
 	}
 
 	if anyMismatch {
-		return recreatePvPvcDeployments(context)
+		return c.recreatePvPvcDeployments(id)
 	}
 
 	return nil
 }
 
-func SetupLogStream(ctx context.Context, id string, handler func(string, int, time.Time)) error {
+// SetupLogStream sets up a log stream for the deployment.
+//
+// It sets up a log stream for all the pods in the deployment.
+// The handler function is called for each log line.
+func (c *Client) SetupLogStream(ctx context.Context, id string, handler func(string, int, time.Time)) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to setup log stream for deployment %s. details: %w", id, err)
 	}
 
-	k8sContext, err := NewContext(id)
+	d, kc, _, err := c.Get(OptsNoGenerator(id))
 	if err != nil {
-		if errors.Is(err, base.DeploymentDeletedErr) {
-			return nil
-		}
-
 		return makeError(err)
 	}
 
-	if k8sContext.Deployment.BeingDeleted() {
+	if d.BeingDeleted() {
 		log.Println("deployment", id, "is being deleted. not setting up log stream")
 		return nil
 	}
 
-	mainDeployment := k8sContext.Deployment.Subsystems.K8s.GetDeployment(k8sContext.Deployment.Name)
+	mainDeployment := d.Subsystems.K8s.GetDeployment(d.Name)
 	if !service.Created(mainDeployment) {
 		log.Println("main k8s deployment for deployment", id, "not created when setting up log stream. assuming it was deleted")
 		return nil
 	}
 
-	err = k8sContext.Client.SetupDeploymentLogStream(ctx, mainDeployment.ID, handler)
+	err = kc.SetupLogStream(ctx, mainDeployment.ID, handler)
 	if err != nil {
-		return err
+		return makeError(err)
 	}
 
 	return nil
 }
 
-func updateInternalPort(context *DeploymentContext) error {
-	services := context.Generator.Services()
+// updateInternalPort updates the internal port for the deployment.
+func (c *Client) updateInternalPort(id string) error {
+	d, kc, g, err := c.Get(OptsAll(id))
+	if err != nil {
+		return err
+	}
+
+	services := g.Services()
 	idx := slices.IndexFunc(services, func(i k8sModels.ServicePublic) bool {
-		return i.Name == context.Deployment.Name
+		return i.Name == d.Name
 	})
 	if idx == -1 {
-		log.Println("main k8s service for deployment", context.Deployment.ID, "not found when updating internal port. assuming it was deleted")
+		log.Println("main k8s service for deployment", d.ID, "not found when updating internal port. assuming it was deleted")
 		return nil
 	}
 
 	if service.NotCreated(&services[idx]) {
-		log.Println("main k8s service for deployment", context.Deployment.ID, "not created yet when updating internal port. assuming it was deleted")
+		log.Println("main k8s service for deployment", d.ID, "not created yet when updating internal port. assuming it was deleted")
 		return nil
 	}
 
-	err := resources.SsUpdater(context.Client.UpdateService).
-		WithDbFunc(dbFunc(context.Deployment.ID, "serviceMap."+context.Deployment.Name)).
+	err = resources.SsUpdater(kc.UpdateService).
+		WithDbFunc(dbFunc(d.ID, "serviceMap."+d.Name)).
 		WithPublic(&services[idx]).
 		Exec()
 
@@ -686,23 +704,29 @@ func updateInternalPort(context *DeploymentContext) error {
 	return nil
 }
 
-func updateEnvs(context *DeploymentContext) error {
-	deployments := context.Generator.Deployments()
+// updateEnvs updates the envs for the deployment.
+func (c *Client) updateEnvs(id string) error {
+	d, kc, g, err := c.Get(OptsAll(id))
+	if err != nil {
+		return err
+	}
+
+	deployments := g.Deployments()
 	idx := slices.IndexFunc(deployments, func(i k8sModels.DeploymentPublic) bool {
-		return i.Name == context.Deployment.Name
+		return i.Name == d.Name
 	})
 	if idx == -1 {
-		log.Println("main k8s deployment for deployment", context.Deployment.ID, "not found when updating envs. assuming it was deleted")
+		log.Println("main k8s deployment for deployment", d.ID, "not found when updating envs. assuming it was deleted")
 		return nil
 	}
 
 	if service.NotCreated(&deployments[idx]) {
-		log.Println("main k8s deployment for deployment", context.Deployment.ID, "not created yet when updating envs. assuming it was deleted")
+		log.Println("main k8s deployment for deployment", d.ID, "not created yet when updating envs. assuming it was deleted")
 		return nil
 	}
 
-	err := resources.SsUpdater(context.Client.UpdateDeployment).
-		WithDbFunc(dbFunc(context.Deployment.ID, "deploymentMap."+context.Deployment.Name)).
+	err = resources.SsUpdater(kc.UpdateDeployment).
+		WithDbFunc(dbFunc(d.ID, "deploymentMap."+d.Name)).
 		WithPublic(&deployments[idx]).
 		Exec()
 
@@ -713,32 +737,36 @@ func updateEnvs(context *DeploymentContext) error {
 	return nil
 }
 
-func updateCustomDomain(context *DeploymentContext) error {
-	ingresses := context.Generator.Ingresses()
+// updateCustomDomain updates the custom domain for the deployment.
+func (c *Client) updateCustomDomain(id string) error {
+	d, kc, g, err := c.Get(OptsAll(id))
+	if err != nil {
+		return err
+	}
+
+	ingresses := g.Ingresses()
 	idx := slices.IndexFunc(ingresses, func(i k8sModels.IngressPublic) bool {
-		return i.Name == constants.WithCustomDomainSuffix(context.Deployment.Name)
+		return i.Name == constants.WithCustomDomainSuffix(d.Name)
 	})
 	if idx == -1 {
 		return nil
 	}
 
-	var err error
-
 	if service.NotCreated(&ingresses[idx]) {
-		err = resources.SsCreator(context.Client.CreateIngress).
-			WithDbFunc(dbFunc(context.Deployment.ID, "ingressMap."+constants.WithCustomDomainSuffix(context.Deployment.Name))).
+		err = resources.SsCreator(kc.CreateIngress).
+			WithDbFunc(dbFunc(d.ID, "ingressMap."+constants.WithCustomDomainSuffix(d.Name))).
 			WithPublic(&ingresses[idx]).
 			Exec()
 	} else {
-		err = resources.SsUpdater(context.Client.UpdateIngress).
-			WithDbFunc(dbFunc(context.Deployment.ID, "ingressMap."+constants.WithCustomDomainSuffix(context.Deployment.Name))).
+		err = resources.SsUpdater(kc.UpdateIngress).
+			WithDbFunc(dbFunc(d.ID, "ingressMap."+constants.WithCustomDomainSuffix(d.Name))).
 			WithPublic(&ingresses[idx]).
 			Exec()
 	}
 
 	if err != nil {
-		if strings.Contains(err.Error(), "is already defined in ingress") {
-			return base.CustomDomainInUseErr
+		if errors.Is(err, kErrors.IngressHostInUseErr) {
+			return sErrors.IngressHostInUseErr
 		}
 
 		return err
@@ -747,12 +775,18 @@ func updateCustomDomain(context *DeploymentContext) error {
 	return nil
 }
 
-func updatePrivate(context *DeploymentContext) error {
-	if context.MainApp.Private {
-		for mapName, ingress := range context.Deployment.Subsystems.K8s.IngressMap {
-			err := resources.SsDeleter(context.Client.DeleteIngress).
+// updatePrivate updates the private for the deployment.
+func (c *Client) updatePrivate(id string) error {
+	d, kc, g, err := c.Get(OptsAll(id))
+	if err != nil {
+		return err
+	}
+
+	if d.GetMainApp().Private {
+		for mapName, ingress := range d.Subsystems.K8s.IngressMap {
+			err = resources.SsDeleter(kc.DeleteIngress).
 				WithResourceID(ingress.ID).
-				WithDbFunc(dbFunc(context.Deployment.ID, "ingressMap."+mapName)).
+				WithDbFunc(dbFunc(d.ID, "ingressMap."+mapName)).
 				Exec()
 
 			if err != nil {
@@ -760,13 +794,17 @@ func updatePrivate(context *DeploymentContext) error {
 			}
 		}
 	} else {
-		for _, ingressPublic := range context.Generator.Ingresses() {
-			err := resources.SsCreator(context.Client.CreateIngress).
-				WithDbFunc(dbFunc(context.Deployment.ID, "ingressMap."+ingressPublic.Name)).
+		for _, ingressPublic := range g.Ingresses() {
+			err = resources.SsCreator(kc.CreateIngress).
+				WithDbFunc(dbFunc(d.ID, "ingressMap."+ingressPublic.Name)).
 				WithPublic(&ingressPublic).
 				Exec()
 
 			if err != nil {
+				if errors.Is(err, kErrors.IngressHostInUseErr) {
+					return sErrors.IngressHostInUseErr
+				}
+
 				return err
 			}
 		}
@@ -775,23 +813,29 @@ func updatePrivate(context *DeploymentContext) error {
 	return nil
 }
 
-func updateImage(context *DeploymentContext) error {
-	deployments := context.Generator.Deployments()
+// updateImage updates the image for the deployment.
+func (c *Client) updateImage(id string) error {
+	d, kc, g, err := c.Get(OptsAll(id))
+	if err != nil {
+		return err
+	}
+
+	deployments := g.Deployments()
 	idx := slices.IndexFunc(deployments, func(i k8sModels.DeploymentPublic) bool {
-		return i.Name == context.Deployment.Name
+		return i.Name == d.Name
 	})
 	if idx == -1 {
-		log.Println("main k8s deployment for deployment", context.Deployment.ID, "not found when updating image. assuming it was deleted")
+		log.Println("main k8s deployment for deployment", d.ID, "not found when updating image. assuming it was deleted")
 		return nil
 	}
 
 	if service.NotCreated(&deployments[idx]) {
-		log.Println("main k8s deployment for deployment", context.Deployment.ID, "not created yet when updating image. assuming it was deleted")
+		log.Println("main k8s deployment for deployment", d.ID, "not created yet when updating image. assuming it was deleted")
 		return nil
 	}
 
-	err := resources.SsUpdater(context.Client.UpdateDeployment).
-		WithDbFunc(dbFunc(context.Deployment.ID, "deploymentMap."+context.Deployment.Name)).
+	err = resources.SsUpdater(kc.UpdateDeployment).
+		WithDbFunc(dbFunc(d.ID, "deploymentMap."+d.Name)).
 		WithPublic(&deployments[idx]).
 		Exec()
 
@@ -802,37 +846,43 @@ func updateImage(context *DeploymentContext) error {
 	return nil
 }
 
-func updateReplicas(context *DeploymentContext) error {
-	hpas := context.Generator.HPAs()
+// updateReplicas updates the replicas for the deployment.
+func (c *Client) updateReplicas(id string) error {
+	d, kc, g, err := c.Get(OptsAll(id))
+	if err != nil {
+		return err
+	}
+
+	hpas := g.HPAs()
 	idx := slices.IndexFunc(hpas, func(i k8sModels.HpaPublic) bool {
-		return i.Name == context.Deployment.Name
+		return i.Name == d.Name
 	})
 	if idx == -1 {
-		log.Println("main k8s hpa for deployment", context.Deployment.ID, "not found when updating replicas. assuming it was deleted")
+		log.Println("main k8s hpa for deployment", d.ID, "not found when updating replicas. assuming it was deleted")
 		return nil
 	}
 
 	if service.NotCreated(&hpas[idx]) {
-		log.Println("main k8s hpa for deployment", context.Deployment.ID, "not created yet when updating replicas. assuming it was deleted")
+		log.Println("main k8s hpa for deployment", d.ID, "not created yet when updating replicas. assuming it was deleted")
 		return nil
 	}
 
-	deployments := context.Generator.Deployments()
+	deployments := g.Deployments()
 	idx = slices.IndexFunc(deployments, func(i k8sModels.DeploymentPublic) bool {
-		return i.Name == context.Deployment.Name
+		return i.Name == d.Name
 	})
 	if idx == -1 {
-		log.Println("main k8s deployment for deployment", context.Deployment.ID, "not found when updating replicas. assuming it was deleted")
+		log.Println("main k8s deployment for deployment", d.ID, "not found when updating replicas. assuming it was deleted")
 		return nil
 	}
 
 	if service.NotCreated(&deployments[idx]) {
-		log.Println("main k8s deployment for deployment", context.Deployment.ID, "not created yet when updating replicas. assuming it was deleted")
+		log.Println("main k8s deployment for deployment", d.ID, "not created yet when updating replicas. assuming it was deleted")
 		return nil
 	}
 
-	err := resources.SsUpdater(context.Client.UpdateHPA).
-		WithDbFunc(dbFunc(context.Deployment.ID, "hpaMap."+context.Deployment.Name)).
+	err = resources.SsUpdater(kc.UpdateHPA).
+		WithDbFunc(dbFunc(d.ID, "hpaMap."+d.Name)).
 		WithPublic(&hpas[idx]).
 		Exec()
 
@@ -840,8 +890,8 @@ func updateReplicas(context *DeploymentContext) error {
 		return err
 	}
 
-	err = resources.SsUpdater(context.Client.UpdateDeployment).
-		WithDbFunc(dbFunc(context.Deployment.ID, "deploymentMap."+context.Deployment.Name)).
+	err = resources.SsUpdater(kc.UpdateDeployment).
+		WithDbFunc(dbFunc(d.ID, "deploymentMap."+d.Name)).
 		WithPublic(&deployments[idx]).
 		Exec()
 	if err != nil {
@@ -851,55 +901,64 @@ func updateReplicas(context *DeploymentContext) error {
 	return nil
 }
 
-func recreatePvPvcDeployments(context *DeploymentContext) error {
+// recreatePvPvcDeployments recreates the pv, pvc and deployment for the deployment.
+//
+// This is needed when the PV or PVC are updated, since they are sticky to the deployment.
+// They are recreated in the following fashion: Deployment -> PVC -> PV -> PV -> PVC -> Deployment
+func (c *Client) recreatePvPvcDeployments(id string) error {
 	// delete deployment, pvcs and pvs
 	// then
 	// create new deployment, pvcs and pvs
 
-	if k8sDeployment := context.Deployment.Subsystems.K8s.GetDeployment(context.Deployment.Name); service.Created(k8sDeployment) {
-		err := resources.SsDeleter(context.Client.DeleteDeployment).
-			WithResourceID(k8sDeployment.ID).
-			WithDbFunc(dbFunc(context.Deployment.ID, "deploymentMap."+context.Deployment.Name)).
-			Exec()
-		if err != nil {
-			return err
-		}
-	}
-
-	for mapName, pvc := range context.Deployment.Subsystems.K8s.PvcMap {
-		err := resources.SsDeleter(context.Client.DeletePVC).
-			WithResourceID(pvc.ID).
-			WithDbFunc(dbFunc(context.Deployment.ID, "pvcMap."+mapName)).
-			Exec()
-
-		if err != nil {
-			return err
-		}
-	}
-
-	for mapName, pv := range context.Deployment.Subsystems.K8s.PvMap {
-		err := resources.SsDeleter(context.Client.DeletePV).
-			WithResourceID(pv.ID).
-			WithDbFunc(dbFunc(context.Deployment.ID, "pvMap."+mapName)).
-			Exec()
-
-		if err != nil {
-			return err
-		}
-	}
-
-	err := context.Refresh()
+	d, kc, g, err := c.Get(OptsAll(id))
 	if err != nil {
-		if errors.Is(err, base.DeploymentDeletedErr) {
+		return err
+	}
+
+	if k8sDeployment := d.Subsystems.K8s.GetDeployment(d.Name); service.Created(k8sDeployment) {
+		err := resources.SsDeleter(kc.DeleteDeployment).
+			WithResourceID(k8sDeployment.ID).
+			WithDbFunc(dbFunc(d.ID, "deploymentMap."+d.Name)).
+			Exec()
+		if err != nil {
+			return err
+		}
+	}
+
+	for mapName, pvc := range d.Subsystems.K8s.PvcMap {
+		err := resources.SsDeleter(kc.DeletePVC).
+			WithResourceID(pvc.ID).
+			WithDbFunc(dbFunc(d.ID, "pvcMap."+mapName)).
+			Exec()
+
+		if err != nil {
+			return err
+		}
+	}
+
+	for mapName, pv := range d.Subsystems.K8s.PvMap {
+		err := resources.SsDeleter(kc.DeletePV).
+			WithResourceID(pv.ID).
+			WithDbFunc(dbFunc(d.ID, "pvMap."+mapName)).
+			Exec()
+
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err = c.Refresh(id)
+	if err != nil {
+		if errors.Is(err, sErrors.DeploymentNotFoundErr) {
 			return nil
 		}
 
 		return err
 	}
 
-	for _, public := range context.Generator.PVs() {
-		err = resources.SsCreator(context.Client.CreatePV).
-			WithDbFunc(dbFunc(context.Deployment.ID, "pvMap."+public.Name)).
+	for _, public := range g.PVs() {
+		err = resources.SsCreator(kc.CreatePV).
+			WithDbFunc(dbFunc(d.ID, "pvMap."+public.Name)).
 			WithPublic(&public).
 			Exec()
 
@@ -908,9 +967,9 @@ func recreatePvPvcDeployments(context *DeploymentContext) error {
 		}
 	}
 
-	for _, public := range context.Generator.PVCs() {
-		err = resources.SsCreator(context.Client.CreatePVC).
-			WithDbFunc(dbFunc(context.Deployment.ID, "pvcMap."+public.Name)).
+	for _, public := range g.PVCs() {
+		err = resources.SsCreator(kc.CreatePVC).
+			WithDbFunc(dbFunc(d.ID, "pvcMap."+public.Name)).
 			WithPublic(&public).
 			Exec()
 
@@ -919,9 +978,9 @@ func recreatePvPvcDeployments(context *DeploymentContext) error {
 		}
 	}
 
-	for _, public := range context.Generator.Deployments() {
-		err = resources.SsCreator(context.Client.CreateDeployment).
-			WithDbFunc(dbFunc(context.Deployment.ID, "deploymentMap."+public.Name)).
+	for _, public := range g.Deployments() {
+		err = resources.SsCreator(kc.CreateDeployment).
+			WithDbFunc(dbFunc(d.ID, "deploymentMap."+public.Name)).
 			WithPublic(&public).
 			Exec()
 
@@ -933,6 +992,7 @@ func recreatePvPvcDeployments(context *DeploymentContext) error {
 	return nil
 }
 
+// dbFunc returns a function that updates the K8s subsystem.
 func dbFunc(id, key string) func(interface{}) error {
 	return func(data interface{}) error {
 		if data == nil {

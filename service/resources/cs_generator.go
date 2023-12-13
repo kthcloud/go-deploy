@@ -96,7 +96,11 @@ func (cr *CsGenerator) PFRs() []models.PortForwardingRulePublic {
 
 		for mapName, pfr := range cr.v.vm.Subsystems.CS.GetPortForwardingRuleMap() {
 			idx := slices.IndexFunc(ports, func(p vm.Port) bool {
-				return p.Name == mapName
+				if p.Name == "__ssh" {
+					return p.Name == mapName
+				} else {
+					return pfrName(p.Port, p.Protocol) == mapName
+				}
 			})
 
 			if idx != -1 {
@@ -135,4 +139,8 @@ func createTags(name string, deployName string) []models.Tag {
 	})
 
 	return tags
+}
+
+func pfrName(privatePort int, protocol string) string {
+	return fmt.Sprintf("priv-%d-prot-%s", privatePort, protocol)
 }

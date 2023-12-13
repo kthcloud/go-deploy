@@ -26,17 +26,17 @@ func WaitForDeploymentRunning(t *testing.T, id string, callback func(*body.Deplo
 	})
 }
 
-func WaitForStorageManagerRunning(t *testing.T, id string, callback func(read *body.StorageManagerRead) bool) {
+func WaitForSmRunning(t *testing.T, id string, callback func(read *body.SmRead) bool) {
 	fetchUntil(t, "/storageManagers/"+id, func(resp *http.Response) bool {
-		var storageManagerRead body.StorageManagerRead
-		err := ReadResponseBody(t, resp, &storageManagerRead)
+		var smRead body.SmRead
+		err := ReadResponseBody(t, resp, &smRead)
 		assert.NoError(t, err, "storage manager was not fetched")
 
 		if callback == nil {
 			return true
 		}
 
-		return callback(&storageManagerRead)
+		return callback(&smRead)
 	})
 }
 

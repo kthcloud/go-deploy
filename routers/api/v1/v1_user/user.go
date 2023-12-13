@@ -13,23 +13,22 @@ import (
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
 	"go-deploy/service/deployment_service"
-	"go-deploy/service/storage_manager_service"
+	"go-deploy/service/sm_service"
+	smClient "go-deploy/service/sm_service/client"
 	"go-deploy/service/user_service"
 	"go-deploy/service/vm_service"
 	"go-deploy/utils"
 )
 
-func collectUsage(context *sys.ClientContext, userID string) *userModel.Usage {
-	vmUsage, err := vm_service.GetUsageByUserID(userID)
+func collectUsage(userID string) (*userModel.Usage, error) {
+	vmUsage, err := vm_service.New().GetUsage(userID)
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
-		return nil
+		return nil, err
 	}
 
-	deploymentUsage, err := deployment_service.GetUsageByUserID(userID)
+	deploymentUsage, err := deployment_service.New().GetUsage(userID)
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
-		return nil
+		return nil, err
 	}
 
 	usage := &userModel.Usage{
@@ -39,18 +38,18 @@ func collectUsage(context *sys.ClientContext, userID string) *userModel.Usage {
 		DiskSize:    vmUsage.DiskSize,
 	}
 
-	return usage
+	return usage, nil
 }
 
-func getStorageURL(userID string, auth *service.AuthInfo) (*string, error) {
-	storageManager, err := storage_manager_service.GetByOwnerIdAuth(userID, auth)
+func getSmURL(userID string, auth *service.AuthInfo) (*string, error) {
+	sm, err := sm_service.New().WithAuth(auth).GetByUserID(userID, &smClient.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
 
 	var storageURL *string
-	if storageManager != nil {
-		storageURL = storageManager.GetURL()
+	if sm != nil {
+		storageURL = sm.GetURL()
 	}
 
 	return storageURL, nil
@@ -119,7 +118,7 @@ func ListUsers(c *gin.Context) {
 			}
 		}
 
-		storageURL, err := getStorageURL(user.ID, auth)
+		storageURL, err := getSmURL(user.ID, auth)
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to get storage url for a user when listing: %w", err))
 			continue
@@ -127,7 +126,7 @@ func ListUsers(c *gin.Context) {
 
 		role := config.Config.GetRole(user.EffectiveRole.Name)
 
-		usage := collectUsage(&context, user.ID)
+		usage, _ := collectUsage(user.ID)
 		if usage == nil {
 			usage = &userModel.Usage{}
 		}
@@ -192,12 +191,13 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	usage := collectUsage(&context, user.ID)
+	usage, err := collectUsage(user.ID)
 	if usage == nil {
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
-	storageURL, err := getStorageURL(user.ID, auth)
+	storageURL, err := getSmURL(user.ID, auth)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -265,12 +265,13 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	usage := collectUsage(&context, updated.ID)
+	usage, err := collectUsage(updated.ID)
 	if usage == nil {
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
-	storageURL, err := getStorageURL(updated.ID, auth)
+	storageURL, err := getSmURL(updated.ID, auth)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return

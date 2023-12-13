@@ -23,7 +23,7 @@ func RoutingGroups() []RoutingGroup {
 		JobRoutes(),
 		MetricsRoutes(),
 		NotificationRoutes(),
-		StorageManagerRoutes(),
+		SmRoutes(),
 		TeamRoutes(),
 		UserRoutes(),
 		VmRoutes(),

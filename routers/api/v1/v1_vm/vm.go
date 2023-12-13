@@ -16,10 +16,11 @@ import (
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
+	sErrors "go-deploy/service/errors"
 	"go-deploy/service/job_service"
 	"go-deploy/service/user_service"
 	"go-deploy/service/vm_service"
-	"go-deploy/service/vm_service/service_errors"
+	"go-deploy/service/vm_service/client"
 	"go-deploy/service/zone_service"
 	"go-deploy/utils"
 )
@@ -52,7 +53,23 @@ func List(c *gin.Context) {
 		return
 	}
 
-	vms, err := vm_service.ListAuth(requestQuery.All, requestQuery.UserID, requestQuery.Shared, auth, &requestQuery.Pagination)
+	vsc := vm_service.New().WithAuth(auth)
+
+	var userID string
+	if requestQuery.UserID != nil {
+		userID = *requestQuery.UserID
+	} else if requestQuery.All == false {
+		userID = auth.UserID
+	}
+
+	vms, err := vsc.List(&client.ListOptions{
+		Pagination: &service.Pagination{
+			Page:     requestQuery.Page,
+			PageSize: requestQuery.PageSize,
+		},
+		UserID: userID,
+		Shared: requestQuery.Shared,
+	})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -65,7 +82,7 @@ func List(c *gin.Context) {
 
 	dtoVMs := make([]body.VmRead, len(vms))
 	for i, vm := range vms {
-		connectionString, _ := vm_service.GetConnectionString(&vm)
+		connectionString, _ := vsc.GetConnectionString(vm.ID)
 
 		var gpuRead *body.GpuRead
 		if gpu := vm.GetGpu(); gpu != nil {
@@ -73,7 +90,7 @@ func List(c *gin.Context) {
 			gpuRead = &gpuDTO
 		}
 
-		mapper, err := vm_service.GetExternalPortMapper(vm.ID)
+		mapper, err := vsc.GetExternalPortMapper(vm.ID)
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to get external port mapper for vm when listing. details: %w", err))
 			continue
@@ -112,7 +129,9 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	vm, err := vm_service.GetByIdAuth(requestURI.VmID, auth)
+	vsc := vm_service.New().WithAuth(auth)
+
+	vm, err := vsc.Get(requestURI.VmID, &client.GetOptions{Shared: true})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -123,14 +142,14 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	connectionString, _ := vm_service.GetConnectionString(vm)
+	connectionString, _ := vsc.GetConnectionString(requestURI.VmID)
 	var gpuRead *body.GpuRead
 	if gpu := vm.GetGpu(); gpu != nil {
 		gpuDTO := gpu.ToDTO(true)
 		gpuRead = &gpuDTO
 	}
 
-	mapper, err := vm_service.GetExternalPortMapper(vm.ID)
+	mapper, err := vsc.GetExternalPortMapper(vm.ID)
 	if err != nil {
 		utils.PrettyPrintError(fmt.Errorf("failed to get external port mapper for vm %s. details: %w", vm.ID, err))
 	}
@@ -167,13 +186,15 @@ func Create(c *gin.Context) {
 		return
 	}
 
-	vm, err := vm_service.GetByName(requestBody.Name)
+	vsc := vm_service.New().WithAuth(auth)
+
+	unique, err := vm_service.NameAvailable(requestBody.Name)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
 	}
 
-	if vm != nil {
+	if !unique {
 		context.UserError("VM already exists")
 		return
 	}
@@ -186,9 +207,11 @@ func Create(c *gin.Context) {
 		}
 	}
 
-	err = vm_service.CheckQuotaCreate(auth.UserID, &auth.GetEffectiveRole().Quotas, auth, requestBody)
+	err = vsc.CheckQuota("", auth.UserID, &auth.GetEffectiveRole().Quotas, &client.QuotaOptions{
+		Create: &requestBody,
+	})
 	if err != nil {
-		var quotaExceedErr service.QuotaExceededError
+		var quotaExceedErr sErrors.QuotaExceededError
 		if errors.As(err, &quotaExceedErr) {
 			context.Forbidden(quotaExceedErr.Error())
 			return
@@ -245,7 +268,9 @@ func Delete(c *gin.Context) {
 		return
 	}
 
-	vm, err := vm_service.GetByIdAuth(requestURI.VmID, auth)
+	vsc := vm_service.New().WithAuth(auth)
+
+	vm, err := vsc.Get(requestURI.VmID, &client.GetOptions{Shared: true})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -261,14 +286,20 @@ func Delete(c *gin.Context) {
 		return
 	}
 
-	started, reason, err := vm_service.StartActivity(vm.ID, vmModel.ActivityBeingDeleted)
+	err = vsc.StartActivity(vm.ID, vmModel.ActivityBeingDeleted)
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
-		return
-	}
+		var failedToStartActivityErr sErrors.FailedToStartActivityError
+		if errors.As(err, &failedToStartActivityErr) {
+			context.Locked(failedToStartActivityErr.Error())
+			return
+		}
 
-	if !started {
-		context.Locked(reason)
+		if errors.Is(err, sErrors.VmNotFoundErr) {
+			context.NotFound("Deployment not found")
+			return
+		}
+
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
@@ -324,9 +355,11 @@ func Update(c *gin.Context) {
 		return
 	}
 
+	vsc := vm_service.New().WithAuth(auth)
+
 	var vm *vmModel.VM
 	if requestBody.TransferCode != nil {
-		vm, err = vm_service.GetByTransferCode(*requestBody.TransferCode, auth.UserID)
+		vm, err = vsc.Get("", &client.GetOptions{TransferCode: *requestBody.TransferCode})
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
@@ -337,7 +370,7 @@ func Update(c *gin.Context) {
 		}
 
 	} else {
-		vm, err = vm_service.GetByIdAuth(requestURI.VmID, auth)
+		vm, err = vsc.Get(requestURI.VmID, &client.GetOptions{Shared: true})
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
@@ -351,8 +384,13 @@ func Update(c *gin.Context) {
 
 	if requestBody.OwnerID != nil {
 		if *requestBody.OwnerID == "" {
-			err := vm_service.ClearUpdateOwner(vm.ID)
+			err = vsc.ClearUpdateOwner(vm.ID)
 			if err != nil {
+				if errors.Is(err, sErrors.VmNotFoundErr) {
+					context.NotFound("VM not found")
+					return
+				}
+
 				context.ServerError(err, v1.InternalError)
 				return
 			}
@@ -379,19 +417,18 @@ func Update(c *gin.Context) {
 			return
 		}
 
-		jobID, err := vm_service.UpdateOwnerAuth(vm.ID, &body.VmUpdateOwner{
+		jobID, err := vsc.UpdateOwnerSetup(vm.ID, &body.VmUpdateOwner{
 			NewOwnerID:   *requestBody.OwnerID,
 			OldOwnerID:   vm.OwnerID,
 			TransferCode: requestBody.TransferCode,
-		}, auth)
-
+		})
 		if err != nil {
-			if errors.Is(err, service_errors.VmNotFoundErr) {
+			if errors.Is(err, sErrors.VmNotFoundErr) {
 				context.NotFound("VM not found")
 				return
 			}
 
-			if errors.Is(err, service_errors.InvalidTransferCodeErr) {
+			if errors.Is(err, sErrors.InvalidTransferCodeErr) {
 				context.Forbidden("Bad transfer code")
 				return
 			}
@@ -442,9 +479,9 @@ func Update(c *gin.Context) {
 		}
 	}
 
-	err = vm_service.CheckQuotaUpdate(auth.UserID, vm.ID, &auth.GetEffectiveRole().Quotas, auth, requestBody)
+	err = vsc.CheckQuota(auth.UserID, vm.ID, &auth.GetEffectiveRole().Quotas, &client.QuotaOptions{Update: &requestBody})
 	if err != nil {
-		var quotaExceededErr service.QuotaExceededError
+		var quotaExceededErr sErrors.QuotaExceededError
 		if errors.As(err, &quotaExceededErr) {
 			context.Forbidden(quotaExceededErr.Error())
 			return
@@ -454,14 +491,20 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	started, reason, err := vm_service.StartActivity(vm.ID, vmModel.ActivityUpdating)
+	err = vsc.StartActivity(vm.ID, vmModel.ActivityUpdating)
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
-		return
-	}
+		var failedToStartActivityErr sErrors.FailedToStartActivityError
+		if errors.As(err, &failedToStartActivityErr) {
+			context.Locked(failedToStartActivityErr.Error())
+			return
+		}
 
-	if !started {
-		context.Locked(reason)
+		if errors.Is(err, sErrors.VmNotFoundErr) {
+			context.NotFound("Deployment not found")
+			return
+		}
+
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
@@ -506,14 +549,22 @@ func detachGPU(context *sys.ClientContext, auth *service.AuthInfo, vm *vmModel.V
 		return
 	}
 
-	started, reason, err := vm_service.StartActivity(vm.ID, vmModel.ActivityDetachingGPU)
-	if err != nil {
-		context.ServerError(err, v1.InternalError)
-		return
-	}
+	vsc := vm_service.New().WithAuth(auth)
 
-	if !started {
-		context.Locked(reason)
+	err := vsc.StartActivity(vm.ID, vmModel.ActivityDetachingGPU)
+	if err != nil {
+		var failedToStartActivityErr sErrors.FailedToStartActivityError
+		if errors.As(err, &failedToStartActivityErr) {
+			context.Locked(failedToStartActivityErr.Error())
+			return
+		}
+
+		if errors.Is(err, sErrors.VmNotFoundErr) {
+			context.NotFound("Deployment not found")
+			return
+		}
+
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 
@@ -538,6 +589,7 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *ser
 		return
 	}
 
+	vsc := vm_service.New().WithAuth(auth)
 	currentGPU := vm.GetGpu()
 
 	var gpus []gpuModel.GPU
@@ -550,7 +602,9 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *ser
 
 			gpus = []gpuModel.GPU{*currentGPU}
 		} else {
-			availableGpus, err := vm_service.GetAllAvailableGPU(auth.GetEffectiveRole().Permissions.UsePrivilegedGPUs)
+			availableGpus, err := vsc.ListGPUs(&client.ListGpuOptions{
+				AvailableGPUs: true,
+			})
 			if err != nil {
 				context.ServerError(err, v1.InternalError)
 				return
@@ -569,7 +623,7 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *ser
 			return
 		}
 
-		privilegedGPU, err := vm_service.IsGpuPrivileged(*requestBody.GpuID)
+		privilegedGPU, err := vsc.IsGpuPrivileged(*requestBody.GpuID)
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
@@ -580,7 +634,7 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *ser
 			return
 		}
 
-		requestedGPU, err := vm_service.GetGpuByID(*requestBody.GpuID, true)
+		requestedGPU, err := vsc.GetGPU(*requestBody.GpuID, &client.GetGpuOptions{})
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
@@ -601,10 +655,10 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *ser
 			return
 		}
 
-		err = vm_service.IsGpuHardwareAvailable(requestedGPU)
+		err = vsc.CheckGpuHardwareAvailable(requestedGPU.ID)
 		if err != nil {
 			switch {
-			case errors.Is(err, service_errors.HostNotAvailableErr):
+			case errors.Is(err, sErrors.HostNotAvailableErr):
 				context.ServerUnavailableError(fmt.Errorf("host not available when attaching gpu to vm %s. details: %w", vm.ID, err), v1.HostNotAvailableErr)
 			default:
 				context.ServerError(err, v1.InternalError)
@@ -623,18 +677,18 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *ser
 	// do this check to give a nice error to the user if the gpu cannot be attached
 	// otherwise it will be silently ignored
 	if len(gpus) == 1 {
-		if err := vm_service.CanStartOnHost(vm.ID, gpus[0].Host); err != nil {
+		if err := vsc.CheckSuitableHost(vm.ID, gpus[0].Host, gpus[0].Zone); err != nil {
 			switch {
-			case errors.Is(err, service_errors.HostNotAvailableErr):
+			case errors.Is(err, sErrors.HostNotAvailableErr):
 				context.ServerUnavailableError(fmt.Errorf("host not available when attaching gpu to vm %s. details: %w", vm.ID, err), v1.HostNotAvailableErr)
-			case errors.Is(err, service_errors.VmTooLargeErr):
+			case errors.Is(err, sErrors.VmTooLargeErr):
 				tooLargeErr := v1.VmTooLargeForHostErr
 				caps, err := vm_service.GetCloudStackHostCapabilities(gpus[0].Host, vm.Zone)
 				if err == nil && caps != nil {
 					tooLargeErr = v1.MakeVmToLargeForHostErr(caps.CpuCoresTotal-caps.CpuCoresUsed, caps.RamTotal-caps.RamUsed)
 				}
 				context.ServerUnavailableError(fmt.Errorf("vm %s too large when attaching gpu", vm.ID), tooLargeErr)
-			case errors.Is(err, service_errors.VmNotCreatedErr):
+			case errors.Is(err, sErrors.VmNotCreatedErr):
 				context.ServerUnavailableError(fmt.Errorf("vm %s not created when attaching gpu to vm %s. details: %w", vm.ID, vm.ID, err), v1.VmNotReadyErr)
 			default:
 				context.ServerError(err, v1.InternalError)
@@ -648,14 +702,20 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *ser
 		gpuIds[i] = gpu.ID
 	}
 
-	started, reason, err := vm_service.StartActivity(vm.ID, vmModel.ActivityAttachingGPU)
+	err := vsc.StartActivity(vm.ID, vmModel.ActivityAttachingGPU)
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
-		return
-	}
+		var failedToStartActivityErr sErrors.FailedToStartActivityError
+		if errors.As(err, &failedToStartActivityErr) {
+			context.Locked(failedToStartActivityErr.Error())
+			return
+		}
 
-	if !started {
-		context.Locked(reason)
+		if errors.Is(err, sErrors.VmNotFoundErr) {
+			context.NotFound("Deployment not found")
+			return
+		}
+
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 

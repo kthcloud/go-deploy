@@ -89,8 +89,8 @@ func (client *Client) ListByGitHubWebhookID(id int64) ([]Deployment, error) {
 	return client.ListWithFilterAndProjection(bson.D{{"subsystems.github.webhook.id", id}}, nil)
 }
 
-func (client *Client) GetByTransferCode(code, userID string) (*Deployment, error) {
-	return client.GetWithFilterAndProjection(bson.D{{"transfer.code", code}, {"transfer.userId", userID}}, nil)
+func (client *Client) GetByTransferCode(code string) (*Deployment, error) {
+	return client.GetWithFilterAndProjection(bson.D{{"transfer.code", code}}, nil)
 }
 
 func (client *Client) DeleteByID(id string) error {
@@ -303,18 +303,9 @@ func (client *Client) UpdateGitLabBuild(deploymentID string, build subsystems.Gi
 }
 
 func (client *Client) GetLastGitLabBuild(deploymentID string) (*subsystems.GitLabBuild, error) {
-	// fetch only subsystem.gitlab.lastBuild
-	projection := bson.D{
-		{"subsystems.gitlab.lastBuild", 1},
-	}
-
-	var deployment Deployment
-	err := client.Collection.FindOne(context.TODO(),
-		bson.D{{"id", deploymentID}},
-		options.FindOne().SetProjection(projection),
-	).Decode(&deployment)
+	deployment, err := client.GetWithFilterAndProjection(bson.D{{"id", deploymentID}}, bson.D{{"subsystems.gitlab.lastBuild", 1}})
 	if err != nil {
-		return &subsystems.GitLabBuild{}, err
+		return nil, err
 	}
 
 	return &deployment.Subsystems.GitLab.LastBuild, nil
@@ -349,10 +340,6 @@ func (client *Client) SavePing(id string, pingResult int) error {
 	}
 
 	return nil
-}
-
-func (client *Client) RemoveCustomDomain(deploymentID string) error {
-	return client.SetWithBsonByID(deploymentID, bson.D{{"apps.main.customDomain", nil}})
 }
 
 func (client *Client) CountReplicas() (int, error) {

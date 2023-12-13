@@ -5,21 +5,24 @@ import (
 	"go-deploy/models/dto/body"
 	deploymentModel "go-deploy/models/sys/deployment"
 	"go-deploy/pkg/config"
-	"go-deploy/service"
+	"go-deploy/service/deployment_service/client"
+	"go-deploy/service/errors"
 	"go-deploy/utils/subsystemutils"
 	"gopkg.in/yaml.v2"
-	"log"
 )
 
-func GetCiConfig(deploymentID string, auth *service.AuthInfo) (*body.CiConfig, error) {
-	deployment, err := GetByIdAuth(deploymentID, auth)
+// GetCiConfig returns the CI config for the deployment.
+//
+// It returns an error if the deployment is not found, or if the deployment is not ready.
+// It returns nil if the deployment is not a custom deployment.
+func (c *Client) GetCiConfig(id string) (*body.CiConfig, error) {
+	deployment, err := c.Get(id, &client.GetOptions{Shared: true})
 	if err != nil {
 		return nil, err
 	}
 
 	if deployment == nil {
-		log.Println("deployment", deploymentID, "not found for ci config fetch. assuming it was deleted")
-		return nil, nil
+		return nil, errors.DeploymentNotFoundErr
 	}
 
 	if !deployment.Ready() {
@@ -32,7 +35,7 @@ func GetCiConfig(deploymentID string, auth *service.AuthInfo) (*body.CiConfig, e
 
 	tag := fmt.Sprintf("%s/%s/%s",
 		config.Config.Registry.URL,
-		subsystemutils.GetPrefixedName(auth.UserID),
+		subsystemutils.GetPrefixedName(deployment.OwnerID),
 		deployment.Name,
 	)
 

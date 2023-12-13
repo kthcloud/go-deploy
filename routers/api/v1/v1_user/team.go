@@ -13,8 +13,10 @@ import (
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/deployment_service"
+	dClient "go-deploy/service/deployment_service/client"
 	"go-deploy/service/user_service"
 	"go-deploy/service/vm_service"
+	vClient "go-deploy/service/vm_service/client"
 	"go-deploy/utils"
 	"net/http"
 	"time"
@@ -270,7 +272,7 @@ func getResourceName(resource *teamModels.Resource) *string {
 
 	switch resource.Type {
 	case teamModels.ResourceTypeDeployment:
-		d, err := deployment_service.GetByID(resource.ID)
+		d, err := deployment_service.New().Get(resource.ID, &dClient.GetOptions{Shared: true})
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to get deployment when getting team resource name: %s", err))
 			return nil
@@ -282,7 +284,7 @@ func getResourceName(resource *teamModels.Resource) *string {
 
 		return &d.Name
 	case teamModels.ResourceTypeVM:
-		vm, err := vm_service.GetByID(resource.ID)
+		vm, err := vm_service.New().Get(resource.ID, &vClient.GetOptions{Shared: true})
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to get vm when getting team resource name: %s", err))
 			return nil

@@ -2,8 +2,10 @@ package gpu
 
 import (
 	"go-deploy/models/db"
+	"go-deploy/models/sys/base"
 	"go-deploy/models/sys/base/resource"
 	"go.mongodb.org/mongo-driver/bson"
+	"time"
 )
 
 type Client struct {
@@ -23,7 +25,16 @@ func New() *Client {
 	}
 }
 
-func NewWithExclusion(excludedHosts []string, excludedGPUs []string) *Client {
+func (client *Client) WithPagination(page, pageSize int) *Client {
+	client.ResourceClient.Pagination = &base.Pagination{
+		Page:     page,
+		PageSize: pageSize,
+	}
+
+	return client
+}
+
+func (client *Client) WithExclusion(excludedHosts []string, excludedGPUs []string) *Client {
 	if excludedHosts == nil {
 		excludedHosts = make([]string, 0)
 	}
@@ -32,13 +43,26 @@ func NewWithExclusion(excludedHosts []string, excludedGPUs []string) *Client {
 		excludedGPUs = make([]string, 0)
 	}
 
-	return &Client{
-		ExcludedHosts: excludedHosts,
-		ExcludedGPUs:  excludedGPUs,
-		ResourceClient: resource.ResourceClient[GPU]{
-			Collection: db.DB.GetCollection("gpus"),
-		},
+	client.ExcludedHosts = excludedHosts
+	client.ExcludedGPUs = excludedGPUs
+
+	return client
+}
+
+func (client *Client) OnlyAvailable() *Client {
+	filter := bson.D{
+		{"$or", []interface{}{
+			bson.M{"lease": bson.M{"$exists": false}},
+			bson.M{"lease.vmId": ""},
+			bson.M{"lease.end": bson.M{"$lte": time.Now()}},
+		}},
+		{"host", bson.M{"$nin": client.ExcludedHosts}},
+		{"id", bson.M{"$nin": client.ExcludedGPUs}},
 	}
+
+	client.ResourceClient.AddExtraFilter(filter)
+
+	return client
 }
 
 func (client *Client) WithVM(vmID string) *Client {

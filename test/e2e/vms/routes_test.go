@@ -277,7 +277,9 @@ func TestUpdate(t *testing.T) {
 
 	// make sure the job is picked up
 
-	e2e.WaitForJobFinished(t, vmUpdated.JobID, nil)
+	if vmUpdated.JobID != nil {
+		e2e.WaitForJobFinished(t, *vmUpdated.JobID, nil)
+	}
 	e2e.WaitForVmRunning(t, vm.ID, nil)
 
 	var vmRead body.VmRead
@@ -335,7 +337,9 @@ func TestAttachAnyGPU(t *testing.T) {
 	// make sure the job is picked up
 	time.Sleep(5 * time.Second)
 
-	e2e.WaitForJobFinished(t, vmUpdated.JobID, nil)
+	if vmUpdated.JobID != nil {
+		e2e.WaitForJobFinished(t, *vmUpdated.JobID, nil)
+	}
 	e2e.WaitForVmRunning(t, vm.ID, nil)
 
 	var vmRead body.VmRead
@@ -380,7 +384,9 @@ func TestAttachGPU(t *testing.T) {
 	// make sure the job is picked up
 	time.Sleep(5 * time.Second)
 
-	e2e.WaitForJobFinished(t, vmUpdated.JobID, nil)
+	if vmUpdated.JobID != nil {
+		e2e.WaitForJobFinished(t, *vmUpdated.JobID, nil)
+	}
 	e2e.WaitForVmRunning(t, vm.ID, nil)
 
 	var vmRead body.VmRead
@@ -447,7 +453,9 @@ func TestAttachGpuWithAlreadyAttachedID(t *testing.T) {
 	// make sure the job is picked up
 	time.Sleep(5 * time.Second)
 
-	e2e.WaitForJobFinished(t, vmUpdated.JobID, nil)
+	if vmUpdated.JobID != nil {
+		e2e.WaitForJobFinished(t, *vmUpdated.JobID, nil)
+	}
 	e2e.WaitForVmRunning(t, vm.ID, nil)
 
 	updateGpuBody = body.VmUpdate{
@@ -541,7 +549,9 @@ func TestCreateAndRestoreSnapshot(t *testing.T) {
 	// make sure the job is picked up
 	time.Sleep(5 * time.Second)
 
-	e2e.WaitForJobFinished(t, vmUpdated.JobID, nil)
+	if vmUpdated.JobID != nil {
+		e2e.WaitForJobFinished(t, *vmUpdated.JobID, nil)
+	}
 	e2e.WaitForVmRunning(t, vm.ID, nil)
 
 	var vmRead body.VmRead
