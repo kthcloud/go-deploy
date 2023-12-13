@@ -720,9 +720,20 @@ func (c *Client) CheckQuota(id string, opts *client.QuotaOptions) error {
 		return nil
 	}
 
-	usage, err := c.GetUsage(id)
+	usage, err := c.GetUsage(c.Auth.UserID)
 	if err != nil {
 		return makeError(err)
+	}
+
+	quota := c.Auth.GetEffectiveRole().Quotas
+
+	d, err := c.Deployment(id, nil)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if d == nil {
+		return sErrors.DeploymentNotFoundErr
 	}
 
 	if opts.Create != nil {
@@ -731,23 +742,35 @@ func (c *Client) CheckQuota(id string, opts *client.QuotaOptions) error {
 			add = *opts.Create.Replicas
 		}
 
+		// Ensure that users do not create infinite deployments with 0 replicas
+		if add == 0 {
+			add = 1
+		}
+
 		totalCount := usage.Count + add
 
-		if totalCount > opts.Quota.Deployments {
-			return sErrors.NewQuotaExceededError(fmt.Sprintf("Deployment quota exceeded. Current: %d, Quota: %d", totalCount, opts.Quota.Deployments))
+		if totalCount > quota.Deployments {
+			return sErrors.NewQuotaExceededError(fmt.Sprintf("Deployment quota exceeded. Current: %d, Quota: %d", totalCount, quota.Deployments))
 		}
 
 		return nil
 	} else if opts.Update != nil {
-		add := 1
 		if opts.Update.Replicas != nil {
-			add = *opts.Update.Replicas
-		}
+			totalBefore := usage.Count
+			replicasReq := *opts.Update.Replicas
 
-		totalCount := usage.Count + add
+			// Ensure that users do not create infinite deployments with 0 replicas
+			if replicasReq == 0 {
+				replicasReq = 1
+			}
 
-		if totalCount > opts.Quota.Deployments {
-			return sErrors.NewQuotaExceededError(fmt.Sprintf("Deployment quota exceeded. Current: %d, Quota: %d", totalCount, opts.Quota.Deployments))
+			add := replicasReq - d.GetMainApp().Replicas
+
+			totalAfter := totalBefore + add
+
+			if totalAfter > quota.Deployments {
+				return sErrors.NewQuotaExceededError(fmt.Sprintf("Deployment quota exceeded. Current: %d, Quota: %d", totalAfter, quota.Deployments))
+			}
 		}
 
 		return nil

@@ -593,8 +593,6 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 					matchedIdx = idx
 					break
 				}
-
-				idx++
 			}
 
 			if matchedIdx != -1 {

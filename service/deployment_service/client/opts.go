@@ -3,7 +3,6 @@ package client
 import (
 	configModels "go-deploy/models/config"
 	"go-deploy/models/dto/body"
-	roleModel "go-deploy/models/sys/role"
 	"go-deploy/service"
 )
 
@@ -41,7 +40,6 @@ type GetOptions struct {
 
 // QuotaOptions is used to specify the options when getting a deployment's quota.
 type QuotaOptions struct {
-	Quota  *roleModel.Quotas
 	Create *body.DeploymentCreate
 	Update *body.DeploymentUpdate
 }

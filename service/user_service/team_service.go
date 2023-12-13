@@ -14,7 +14,7 @@ import (
 	"go-deploy/service"
 	"go-deploy/service/notification_service"
 	"go-deploy/utils"
-	"golang.org/x/exp/maps"
+	"sort"
 	"time"
 )
 
@@ -25,7 +25,7 @@ var NotInvitedErr = fmt.Errorf("not invited")
 
 func CreateTeam(id, ownerID string, dtoCreateTeam *body.TeamCreate, auth *service.AuthInfo) (*teamModels.Team, error) {
 	params := &teamModels.CreateParams{}
-	params.FromDTO(dtoCreateTeam,
+	params.FromDTO(dtoCreateTeam, ownerID,
 		func(resourceID string) *teamModels.Resource { return getResourceIfAccessible(resourceID, auth) },
 		func(memberDTO *body.TeamMemberCreate) *teamModels.Member {
 			member := &teamModels.Member{
@@ -153,10 +153,28 @@ func ListTeamsAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagina
 			return nil, err
 		}
 
-		return maps.Values(teams), nil
+		teamList := make([]teamModels.Team, 0)
+		for _, team := range teams {
+			teamList = append(teamList, team)
+		}
+
+		sort.Slice(teamList, func(i, j int) bool {
+			return teamList[i].CreatedAt.After(teamList[j].CreatedAt)
+		})
+
+		return teamList, nil
 	}
 
-	return teamClient.List()
+	teams, err := teamClient.List()
+	if err != nil {
+		return nil, err
+	}
+
+	sort.Slice(teams, func(i, j int) bool {
+		return teams[i].CreatedAt.After(teams[j].CreatedAt)
+	})
+
+	return teams, nil
 }
 
 func UpdateTeamAuth(id string, dtoUpdateTeam *body.TeamUpdate, auth *service.AuthInfo) (*teamModels.Team, error) {
@@ -176,7 +194,7 @@ func UpdateTeamAuth(id string, dtoUpdateTeam *body.TeamUpdate, auth *service.Aut
 	}
 
 	params := &teamModels.UpdateParams{}
-	params.FromDTO(dtoUpdateTeam,
+	params.FromDTO(dtoUpdateTeam, team.OwnerID,
 		func(resourceID string) *teamModels.Resource { return getResourceIfAccessible(resourceID, auth) },
 		func(memberDTO *body.TeamMemberUpdate) *teamModels.Member {
 			if existing := team.GetMember(memberDTO.ID); existing != nil {
@@ -265,7 +283,7 @@ func DeleteTeamAuth(id string, auth *service.AuthInfo) error {
 		return nil
 	}
 
-	if !auth.IsAdmin && !team.HasMember(auth.UserID) {
+	if !auth.IsAdmin && team.OwnerID != auth.UserID {
 		return nil
 	}
 

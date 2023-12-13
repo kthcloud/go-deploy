@@ -237,7 +237,7 @@ func Create(c *gin.Context) {
 		}
 	}
 
-	err = deployment_service.New().CheckQuota("", &client.QuotaOptions{Quota: &auth.GetEffectiveRole().Quotas, Create: &requestBody})
+	err = deployment_service.New().WithAuth(auth).CheckQuota("", &client.QuotaOptions{Create: &requestBody})
 	if err != nil {
 		var quotaExceededErr sErrors.QuotaExceededError
 		if errors.As(err, &quotaExceededErr) {
@@ -489,7 +489,7 @@ func Update(c *gin.Context) {
 		}
 	}
 
-	err = dc.CheckQuota(requestURI.DeploymentID, &client.QuotaOptions{Quota: &auth.GetEffectiveRole().Quotas, Update: &requestBody})
+	err = dc.CheckQuota(requestURI.DeploymentID, &client.QuotaOptions{Update: &requestBody})
 	if err != nil {
 		var quotaExceededErr sErrors.QuotaExceededError
 		if errors.As(err, &quotaExceededErr) {
