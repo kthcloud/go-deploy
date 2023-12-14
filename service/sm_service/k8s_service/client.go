@@ -96,7 +96,7 @@ func (c *Client) Get(opts *client.Opts) (*smModels.SM, *k8s.Client, *resources.K
 		}
 
 		if kc == nil {
-			return nil, nil, nil, sErrors.DeploymentNotFoundErr
+			return nil, nil, nil, sErrors.SmNotFoundErr
 		}
 	}
 
@@ -110,7 +110,7 @@ func (c *Client) Get(opts *client.Opts) (*smModels.SM, *k8s.Client, *resources.K
 
 		g = c.Generator(sm, kc, zone)
 		if g == nil {
-			return nil, nil, nil, sErrors.DeploymentNotFoundErr
+			return nil, nil, nil, sErrors.SmNotFoundErr
 		}
 	}
 

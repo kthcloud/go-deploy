@@ -4,7 +4,6 @@ import (
 	"fmt"
 	smModels "go-deploy/models/sys/sm"
 	"go-deploy/service"
-	sErrors "go-deploy/service/errors"
 )
 
 type BaseClient[parent any] struct {
@@ -62,7 +61,7 @@ func (c *BaseClient[parent]) fetchSM(id string, smc *smModels.Client) (*smModels
 	}
 
 	if sm == nil {
-		return nil, makeError(sErrors.SmNotFoundErr)
+		return nil, nil
 	}
 
 	c.StoreSM(sm)

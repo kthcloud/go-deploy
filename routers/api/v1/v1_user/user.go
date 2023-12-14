@@ -47,12 +47,11 @@ func getSmURL(userID string, auth *service.AuthInfo) (*string, error) {
 		return nil, err
 	}
 
-	var storageURL *string
-	if sm != nil {
-		storageURL = sm.GetURL()
+	if sm == nil {
+		return nil, nil
 	}
 
-	return storageURL, nil
+	return sm.GetURL(), nil
 }
 
 // ListUsers
