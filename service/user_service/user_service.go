@@ -2,61 +2,94 @@ package user_service
 
 import (
 	"go-deploy/models/dto/body"
-	"go-deploy/models/dto/query"
 	userModel "go-deploy/models/sys/user"
-	"go-deploy/service"
 	"sort"
 )
 
-func GetAuth(id string, auth *service.AuthInfo) (*userModel.User, error) {
-	if id != auth.UserID && !auth.IsAdmin {
+// Get gets a user
+//
+// It uses AuthInfo to only return the resource the requesting user has access to
+func (c *Client) Get(id string, opts *GetUserOpts) (*userModel.User, error) {
+	if c.Auth != nil && id != c.Auth.UserID && !c.Auth.IsAdmin {
 		return nil, nil
 	}
 
 	return userModel.New().GetByID(id)
 }
 
-func Get(id string) (*userModel.User, error) {
-	return userModel.New().GetByID(id)
+// List lists users
+//
+// It uses AuthInfo to only return the resources the requesting user has access to
+// It uses the search param to enable searching in multiple fields
+func (c *Client) List(opts *ListUsersOpts) ([]userModel.User, error) {
+	client := userModel.New()
+
+	if opts.Pagination != nil {
+		client.WithPagination(opts.Pagination.Page, opts.Pagination.PageSize)
+	}
+
+	if opts.Search != nil {
+		client.WithSearch(*opts.Search)
+	}
+
+	if c.Auth != nil && !c.Auth.IsAdmin {
+		user, err := client.GetByID(c.Auth.UserID)
+		if err != nil {
+			return nil, err
+		}
+
+		return []userModel.User{*user}, nil
+	}
+
+	return client.List()
 }
 
-func Exists(id string) (bool, error) {
+// Exists checks if a user exists
+//
+// This does not use AuthInfo
+func (c *Client) Exists(id string) (bool, error) {
 	return userModel.New().ExistsByID(id)
 }
 
-func Create(auth *service.AuthInfo) (*userModel.User, error) {
-	roleNames := make([]string, len(auth.Roles))
-	for i, role := range auth.Roles {
+func (c *Client) Create() (*userModel.User, error) {
+	if c.Auth == nil {
+		return nil, nil
+	}
+
+	roleNames := make([]string, len(c.Auth.Roles))
+	for i, role := range c.Auth.Roles {
 		roleNames[i] = role.Name
 	}
 
-	effectiveRole := auth.GetEffectiveRole()
+	effectiveRole := c.Auth.GetEffectiveRole()
 
 	params := &userModel.CreateParams{
-		Username:  auth.GetUsername(),
-		FirstName: auth.GetFirstName(),
-		LastName:  auth.GetLastName(),
-		Email:     auth.GetEmail(),
-		IsAdmin:   auth.IsAdmin,
+		Username:  c.Auth.GetUsername(),
+		FirstName: c.Auth.GetFirstName(),
+		LastName:  c.Auth.GetLastName(),
+		Email:     c.Auth.GetEmail(),
+		IsAdmin:   c.Auth.IsAdmin,
 		EffectiveRole: &userModel.EffectiveRole{
 			Name:        effectiveRole.Name,
 			Description: effectiveRole.Description,
 		},
 	}
 
-	err := userModel.New().Create(auth.UserID, params)
-	if err != nil {
-		return nil, err
-	}
-
-	return userModel.New().GetByID(auth.UserID)
+	return userModel.New().Create(c.Auth.UserID, params)
 }
 
-func DiscoverAuth(search *string, auth *service.AuthInfo) ([]body.UserReadDiscovery, error) {
+// Discover returns a list of users that the requesting user has access to
+//
+// It uses search param to enable searching in multiple fields
+func (c *Client) Discover(opts *DiscoverUsersOpts) ([]body.UserReadDiscovery, error) {
 	client := userModel.New()
 
-	if search != nil {
-		client.AddSearch(*search)
+	if opts.Search != nil {
+		client.WithSearch(*opts.Search)
+	}
+
+	if opts.Pagination != nil {
+		client.WithPagination(opts.Pagination.Page, opts.Pagination.PageSize)
 	}
 
 	users, err := client.List()
@@ -66,7 +99,7 @@ func DiscoverAuth(search *string, auth *service.AuthInfo) ([]body.UserReadDiscov
 
 	var usersRead []body.UserReadDiscovery
 	for _, user := range users {
-		if user.ID == auth.UserID {
+		if c.Auth != nil && user.ID == c.Auth.UserID {
 			continue
 		}
 
@@ -86,33 +119,13 @@ func DiscoverAuth(search *string, auth *service.AuthInfo) ([]body.UserReadDiscov
 	return usersRead, nil
 }
 
-func ListAuth(allUsers bool, search *string, auth *service.AuthInfo, pagination *query.Pagination) ([]userModel.User, error) {
+// Update updates a user
+//
+// It uses AuthInfo to only update the resource the requesting user has access to
+func (c *Client) Update(userID string, dtoUserUpdate *body.UserUpdate) (*userModel.User, error) {
 	client := userModel.New()
 
-	if pagination != nil {
-		client.AddPagination(pagination.Page, pagination.PageSize)
-	}
-
-	if search != nil {
-		client.AddSearch(*search)
-	}
-
-	if !allUsers || (allUsers && !auth.IsAdmin) {
-		user, err := client.GetByID(auth.UserID)
-		if err != nil {
-			return nil, err
-		}
-
-		return []userModel.User{*user}, nil
-	}
-
-	return client.List()
-}
-
-func UpdatedAuth(userID string, dtoUserUpdate *body.UserUpdate, auth *service.AuthInfo) (*userModel.User, error) {
-	client := userModel.New()
-
-	if userID != auth.UserID && !auth.IsAdmin {
+	if c.Auth != nil && userID != c.Auth.UserID && !c.Auth.IsAdmin {
 		return nil, nil
 	}
 

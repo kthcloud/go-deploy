@@ -249,7 +249,7 @@ func DeleteTeam(c *gin.Context) {
 }
 
 func getMember(member *teamModels.Member) *body.TeamMember {
-	user, err := user_service.Get(member.ID)
+	user, err := user_service.New().Get(member.ID, &user_service.GetUserOpts{})
 	if err != nil {
 		utils.PrettyPrintError(fmt.Errorf("failed to get user when getting team member for team: %s", err))
 		return nil
@@ -322,7 +322,7 @@ func JoinTeam(context sys.ClientContext, id string, requestBody *body.TeamJoin) 
 		context.ServerError(err, v1.AuthInfoNotAvailableErr)
 	}
 
-	team, err := user_service.New().WithAuth(auth).JoinTeam(id, requestBody, auth)
+	team, err := user_service.New().WithAuth(auth).JoinTeam(id, requestBody)
 	if err != nil {
 		if errors.Is(err, sErrors.NotInvitedErr) {
 			context.UserError("User not invited to team")

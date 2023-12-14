@@ -20,7 +20,7 @@ func New() *Client {
 	}
 }
 
-func (client *Client) AddSearch(search string) *Client {
+func (client *Client) WithSearch(search string) *Client {
 	client.Search = &models.SearchParams{
 		Query:  search,
 		Fields: db.DB.CollectionDefinitionMap["users"].TextIndexFields,
@@ -29,7 +29,7 @@ func (client *Client) AddSearch(search string) *Client {
 	return client
 }
 
-func (client *Client) AddPagination(page, pageSize int) *Client {
+func (client *Client) WithPagination(page, pageSize int) *Client {
 	client.ResourceClient.Pagination = &base.Pagination{
 		Page:     page,
 		PageSize: pageSize,

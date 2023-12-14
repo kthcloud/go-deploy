@@ -7,10 +7,10 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func (client *Client) Create(id string, params *CreateParams) error {
+func (client *Client) Create(id string, params *CreateParams) (*User, error) {
 	current, err := client.GetByID(id)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if params.EffectiveRole == nil {
@@ -32,10 +32,10 @@ func (client *Client) Create(id string, params *CreateParams) error {
 		}}}
 		err = client.UpdateWithBsonByID(id, update)
 		if err != nil {
-			return fmt.Errorf("failed to update user info for %s. details: %w", id, err)
+			return nil, fmt.Errorf("failed to update user info for %s. details: %w", id, err)
 		}
 
-		return nil
+		return client.GetByID(id)
 	}
 
 	_, err = client.Collection.InsertOne(context.TODO(), User{
@@ -51,10 +51,10 @@ func (client *Client) Create(id string, params *CreateParams) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to create user info for %s. details: %w", id, err)
+		return nil, fmt.Errorf("failed to create user info for %s. details: %w", id, err)
 	}
 
-	return nil
+	return client.GetByID(id)
 }
 
 func (client *Client) UpdateWithParams(id string, params *UpdateParams) error {

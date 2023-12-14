@@ -406,7 +406,7 @@ func Update(c *gin.Context) {
 			return
 		}
 
-		exists, err := user_service.Exists(*requestBody.OwnerID)
+		exists, err := user_service.New().Exists(*requestBody.OwnerID)
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return

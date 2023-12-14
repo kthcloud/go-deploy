@@ -94,6 +94,9 @@ var (
 	// TeamNotFoundErr is returned when the team is not found.
 	TeamNotFoundErr = fmt.Errorf("team not found")
 
+	// UserNotFoundErr is returned when the user is not found.
+	UserNotFoundErr = fmt.Errorf("user not found")
+
 	// BadInviteCodeErr is returned when the invite code is invalid.
 	BadInviteCodeErr = fmt.Errorf("bad invite code")
 

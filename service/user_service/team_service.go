@@ -9,7 +9,6 @@ import (
 	notificationModel "go-deploy/models/sys/notification"
 	teamModels "go-deploy/models/sys/team"
 	vmModel "go-deploy/models/sys/vm"
-	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/notification_service"
 	"go-deploy/utils"
@@ -17,6 +16,9 @@ import (
 	"time"
 )
 
+// GetTeam gets a team
+//
+// It uses AuthInfo to only return the resource the requesting user has access to
 func (c *Client) GetTeam(id string, opts *GetTeamOpts) (*teamModels.Team, error) {
 	teamClient := teamModels.New()
 
@@ -32,6 +34,9 @@ func (c *Client) GetTeam(id string, opts *GetTeamOpts) (*teamModels.Team, error)
 	return team, nil
 }
 
+// ListTeams lists teams
+//
+// It uses AuthInfo to only return the resources the requesting user has access to
 func (c *Client) ListTeams(opts *ListTeamsOpts) ([]teamModels.Team, error) {
 	teamClient := teamModels.New()
 
@@ -70,6 +75,9 @@ func (c *Client) ListTeams(opts *ListTeamsOpts) ([]teamModels.Team, error) {
 	return teams, nil
 }
 
+// CreateTeam creates a new team
+//
+// Notifications are sent out if the owner of the team is not admin
 func (c *Client) CreateTeam(id, ownerID string, dtoCreateTeam *body.TeamCreate) (*teamModels.Team, error) {
 	params := &teamModels.CreateParams{}
 	params.FromDTO(dtoCreateTeam, ownerID,
@@ -101,6 +109,10 @@ func (c *Client) CreateTeam(id, ownerID string, dtoCreateTeam *body.TeamCreate) 
 	return team, nil
 }
 
+// UpdateTeam updates a team
+//
+// It uses AuthInfo to only update the resource the requesting user has access to
+// Notifications are sent out if the owner of the team is not admin
 func (c *Client) UpdateTeam(id string, dtoUpdateTeam *body.TeamUpdate) (*teamModels.Team, error) {
 	team, err := teamModels.New().GetByID(id)
 	if err != nil {
@@ -108,11 +120,11 @@ func (c *Client) UpdateTeam(id string, dtoUpdateTeam *body.TeamUpdate) (*teamMod
 	}
 
 	if team == nil {
-		return nil, sErrors.TeamNotFoundErr
+		return nil, nil
 	}
 
 	if c.Auth != nil && team.OwnerID != c.Auth.UserID && !c.Auth.IsAdmin && !team.HasMember(c.Auth.UserID) {
-		return nil, sErrors.TeamNotFoundErr
+		return nil, nil
 	}
 
 	params := &teamModels.UpdateParams{}
@@ -165,7 +177,7 @@ func (c *Client) UpdateTeam(id string, dtoUpdateTeam *body.TeamUpdate) (*teamMod
 	}
 
 	if afterUpdate == nil {
-		return nil, sErrors.TeamNotFoundErr
+		return nil, nil
 	}
 
 	err = teamModels.New().MarkUpdated(id)
@@ -176,6 +188,9 @@ func (c *Client) UpdateTeam(id string, dtoUpdateTeam *body.TeamUpdate) (*teamMod
 	return afterUpdate, nil
 }
 
+// DeleteTeam deletes a team
+//
+// It uses AuthInfo to only delete the resource the requesting user has access to
 func (c *Client) DeleteTeam(id string) error {
 	teamClient := teamModels.New()
 
@@ -190,7 +205,14 @@ func (c *Client) DeleteTeam(id string) error {
 	return teamClient.DeleteByID(id)
 }
 
-func (c *Client) JoinTeam(id string, dtoTeamJoin *body.TeamJoin, auth *service.AuthInfo) (*teamModels.Team, error) {
+// JoinTeam joins a team
+//
+// It uses AuthInfo to only join the resource the requesting user has access to
+func (c *Client) JoinTeam(id string, dtoTeamJoin *body.TeamJoin) (*teamModels.Team, error) {
+	if c.Auth == nil {
+		return nil, nil
+	}
+
 	params := &teamModels.JoinParams{}
 	params.FromDTO(dtoTeamJoin)
 
@@ -201,22 +223,22 @@ func (c *Client) JoinTeam(id string, dtoTeamJoin *body.TeamJoin, auth *service.A
 	}
 
 	if team == nil {
-		return nil, sErrors.TeamNotFoundErr
+		return nil, nil
 	}
 
-	if team.GetMemberMap()[auth.UserID].MemberStatus != teamModels.MemberStatusInvited {
+	if team.GetMemberMap()[c.Auth.UserID].MemberStatus != teamModels.MemberStatusInvited {
 		return team, sErrors.NotInvitedErr
 	}
 
-	if team.GetMemberMap()[auth.UserID].InvitationCode != params.InvitationCode {
+	if team.GetMemberMap()[c.Auth.UserID].InvitationCode != params.InvitationCode {
 		return nil, sErrors.BadInviteCodeErr
 	}
 
-	updatedMember := team.GetMemberMap()[auth.UserID]
+	updatedMember := team.GetMemberMap()[c.Auth.UserID]
 	updatedMember.MemberStatus = teamModels.MemberStatusJoined
 	updatedMember.JoinedAt = time.Now()
 
-	err = teamClient.UpdateMember(id, auth.UserID, &updatedMember)
+	err = teamClient.UpdateMember(id, c.Auth.UserID, &updatedMember)
 	if err != nil {
 		return nil, err
 	}
