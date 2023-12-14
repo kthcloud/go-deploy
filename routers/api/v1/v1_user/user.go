@@ -205,6 +205,9 @@ func Get(c *gin.Context) {
 		}
 
 		effectiveRole = config.Config.GetRole(user.EffectiveRole.Name)
+		if effectiveRole == nil {
+			effectiveRole = &roleModel.Role{}
+		}
 	}
 
 	usage, err := collectUsage(user.ID)
