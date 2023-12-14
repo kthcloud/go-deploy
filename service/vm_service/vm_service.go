@@ -466,13 +466,16 @@ func (c *Client) GetConnectionString(id string) (*string, error) {
 	}
 
 	domainName := zone.ParentDomain
-	port := vm.Subsystems.CS.PortForwardingRuleMap["__ssh"].PublicPort
-
-	if domainName == "" || port == 0 {
+	rule := vm.Subsystems.CS.GetPortForwardingRule("__ssh")
+	if rule == nil {
 		return nil, nil
 	}
 
-	connectionString := fmt.Sprintf("ssh root@%s -p %d", domainName, port)
+	if domainName == "" || rule.PublicPort == 0 {
+		return nil, nil
+	}
+
+	connectionString := fmt.Sprintf("ssh root@%s -p %d", domainName, rule.PublicPort)
 
 	return &connectionString, nil
 }
