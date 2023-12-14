@@ -947,7 +947,7 @@ func (c *Client) recreatePvPvcDeployments(id string) error {
 		}
 	}
 
-	_, err = c.Refresh(id)
+	d, err = c.Refresh(id)
 	if err != nil {
 		if errors.Is(err, sErrors.DeploymentNotFoundErr) {
 			return nil
