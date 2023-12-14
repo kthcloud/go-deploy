@@ -710,15 +710,6 @@ func (c *Client) CheckQuota(id string, opts *client.QuotaOptions) error {
 
 	quota := c.Auth.GetEffectiveRole().Quotas
 
-	d, err := c.Deployment(id, nil)
-	if err != nil {
-		return makeError(err)
-	}
-
-	if d == nil {
-		return sErrors.DeploymentNotFoundErr
-	}
-
 	if opts.Create != nil {
 		add := 1
 		if opts.Create.Replicas != nil {
@@ -738,6 +729,15 @@ func (c *Client) CheckQuota(id string, opts *client.QuotaOptions) error {
 
 		return nil
 	} else if opts.Update != nil {
+		d, err := c.Deployment(id, nil)
+		if err != nil {
+			return makeError(err)
+		}
+
+		if d == nil {
+			return sErrors.DeploymentNotFoundErr
+		}
+
 		if opts.Update.Replicas != nil {
 			totalBefore := usage.Count
 			replicasReq := *opts.Update.Replicas
