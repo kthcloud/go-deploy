@@ -16,9 +16,9 @@ func SynchronizeUser(c *gin.Context) {
 		return
 	}
 
-	_, err = user_service.Create(auth)
+	_, err = user_service.New().WithAuth(auth).Create()
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 

@@ -1,11 +1,12 @@
 package resources
 
 import (
+	"go-deploy/pkg/subsystems"
 	"go-deploy/service"
 	"log"
 )
 
-type SsRepairerType[idType any, T service.SsResource] struct {
+type SsRepairerType[idType any, T subsystems.SsResource] struct {
 	resourceID *idType
 
 	genPublic     T
@@ -18,7 +19,7 @@ type SsRepairerType[idType any, T service.SsResource] struct {
 	deleteFunc func(idType) error
 }
 
-func SsRepairer[idType any, T service.SsResource](
+func SsRepairer[idType any, T subsystems.SsResource](
 	fetchFunc func(idType) (T, error),
 	createFunc func(T) (T, error),
 	updateFunc func(T) (T, error),
@@ -56,14 +57,14 @@ func (rc *SsRepairerType[idType, T]) Exec() error {
 	var dbResource T
 	if rc.genPublicFunc != nil {
 		dbResource = rc.genPublicFunc()
-	} else if service.NotNil(rc.genPublic) {
+	} else if subsystems.NotNil(rc.genPublic) {
 		dbResource = rc.genPublic
 	} else {
 		log.Println("no genPublic or genPublicFunc provided for subsystem repair. did you forget to call WithGenPublic or WithGenPublicFunc?")
 		return nil
 	}
 
-	if service.NotCreated(dbResource) {
+	if subsystems.NotCreated(dbResource) {
 		return rc.createResourceInstead()
 	}
 
@@ -128,14 +129,14 @@ func (rc *SsRepairerType[idType, T]) createResourceInstead() error {
 	var public T
 	if rc.genPublicFunc != nil {
 		public = rc.genPublicFunc()
-	} else if service.NotNil(rc.genPublic) {
+	} else if subsystems.NotNil(rc.genPublic) {
 		public = rc.genPublic
 	} else {
 		log.Println("no genPublic or genPublicFunc provided for subsystem repair. did you forget to call WithGenPublic or WithGenPublicFunc?")
 		return nil
 	}
 
-	if service.Nil(public) {
+	if subsystems.Nil(public) {
 		log.Println("no public supplied for subsystem repair. assuming it failed to create or was skipped")
 		return nil
 	}
@@ -145,7 +146,7 @@ func (rc *SsRepairerType[idType, T]) createResourceInstead() error {
 		return err
 	}
 
-	if service.Nil(resource) {
+	if subsystems.Nil(resource) {
 		log.Println("no resource returned after creation. assuming it failed to create or was skipped")
 		return nil
 	}

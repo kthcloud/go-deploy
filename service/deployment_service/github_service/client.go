@@ -5,6 +5,7 @@ import (
 	deploymentModels "go-deploy/models/sys/deployment"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/github"
+	"go-deploy/service"
 	"go-deploy/service/deployment_service/client"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/resources"
@@ -46,12 +47,8 @@ type Client struct {
 }
 
 // New creates a new Client.
-// If context is not nil, it will be used to create a new BaseClient.
-// Otherwise, an empty context will be created.
-func New(context *client.Context) *Client {
-	c := &Client{
-		BaseClient: client.NewBaseClient[Client](context),
-	}
+func New(cache *service.Cache) *Client {
+	c := &Client{BaseClient: client.NewBaseClient[Client](cache)}
 	c.BaseClient.SetParent(c)
 	return c
 }

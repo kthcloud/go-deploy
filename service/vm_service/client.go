@@ -5,7 +5,7 @@ import (
 )
 
 // Client is the client for the Deployment service.
-// It is used as a wrapper around the BaseClient.
+// It is used as a wrapper around the Client.
 type Client struct {
 	client.BaseClient[Client]
 }

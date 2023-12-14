@@ -5,164 +5,62 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"go-deploy/models/dto/body"
-	"go-deploy/models/dto/query"
 	deploymentModel "go-deploy/models/sys/deployment"
 	notificationModel "go-deploy/models/sys/notification"
 	teamModels "go-deploy/models/sys/team"
-	userModels "go-deploy/models/sys/user"
 	vmModel "go-deploy/models/sys/vm"
-	"go-deploy/service"
+	sErrors "go-deploy/service/errors"
 	"go-deploy/service/notification_service"
 	"go-deploy/utils"
 	"sort"
 	"time"
 )
 
-var TeamNameTakenErr = fmt.Errorf("team name taken")
-var TeamNotFoundErr = fmt.Errorf("team not found")
-var BadInviteCodeErr = fmt.Errorf("bad invite code")
-var NotInvitedErr = fmt.Errorf("not invited")
-
-func CreateTeam(id, ownerID string, dtoCreateTeam *body.TeamCreate, auth *service.AuthInfo) (*teamModels.Team, error) {
-	params := &teamModels.CreateParams{}
-	params.FromDTO(dtoCreateTeam, ownerID,
-		func(resourceID string) *teamModels.Resource { return getResourceIfAccessible(resourceID, auth) },
-		func(memberDTO *body.TeamMemberCreate) *teamModels.Member {
-			member := &teamModels.Member{
-				ID:       memberDTO.ID,
-				TeamRole: memberDTO.TeamRole,
-				AddedAt:  time.Now(),
-			}
-
-			if auth.IsAdmin {
-				member.MemberStatus = teamModels.MemberStatusJoined
-				member.JoinedAt = time.Now()
-			} else {
-				member.MemberStatus = teamModels.MemberStatusInvited
-				member.InvitationCode = createInvitationCode()
-			}
-
-			return member
-		},
-	)
-
-	team, err := teamModels.New().Create(id, ownerID, params)
-	if err != nil {
-		if errors.Is(err, teamModels.NameTakenErr) {
-			return nil, TeamNameTakenErr
-		}
-		return nil, err
-	}
-
-	// send invitations to every member that received an invitation code
-	for _, member := range params.MemberMap {
-		if member.InvitationCode != "" {
-			err = createInvitation(member.ID, team.ID, team.Name, member.InvitationCode)
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	return team, nil
-}
-
-func JoinTeam(id string, dtoTeamJoin *body.TeamJoin, auth *service.AuthInfo) (*teamModels.Team, error) {
-	params := &teamModels.JoinParams{}
-	params.FromDTO(dtoTeamJoin)
-
+// GetTeam gets a team
+//
+// It uses AuthInfo to only return the resource the requesting user has access to
+func (c *Client) GetTeam(id string, opts *GetTeamOpts) (*teamModels.Team, error) {
 	teamClient := teamModels.New()
+
+	if c.Auth != nil && !c.Auth.IsAdmin {
+		teamClient.WithUserID(c.Auth.UserID)
+	}
+
 	team, err := teamClient.GetByID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	if team == nil {
-		return nil, TeamNotFoundErr
-	}
-
-	if team.GetMemberMap()[auth.UserID].MemberStatus != teamModels.MemberStatusInvited {
-		return team, NotInvitedErr
-	}
-
-	if team.GetMemberMap()[auth.UserID].InvitationCode != params.InvitationCode {
-		return nil, BadInviteCodeErr
-	}
-
-	updatedMember := team.GetMemberMap()[auth.UserID]
-	updatedMember.MemberStatus = teamModels.MemberStatusJoined
-	updatedMember.JoinedAt = time.Now()
-
-	err = teamClient.UpdateMember(id, auth.UserID, &updatedMember)
-	if err != nil {
-		return nil, err
-	}
-
-	return teamClient.GetByID(id)
-}
-
-func GetTeamByIdAuth(id string, auth *service.AuthInfo) (*teamModels.Team, error) {
-	teamClient := teamModels.New()
-	team, err := teamClient.GetByID(id)
-	if err != nil {
-		return nil, err
-	}
-
-	if team == nil {
-		return nil, nil
-	}
-
-	if !auth.IsAdmin && !team.HasMember(auth.UserID) {
-		return nil, nil
-	}
-
 	return team, nil
 }
 
-func ListTeamsAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagination *query.Pagination) ([]teamModels.Team, error) {
+// ListTeams lists teams
+//
+// It uses AuthInfo to only return the resources the requesting user has access to
+func (c *Client) ListTeams(opts *ListTeamsOpts) ([]teamModels.Team, error) {
 	teamClient := teamModels.New()
-	userClient := userModels.New()
 
-	if pagination != nil {
-		teamClient.WithPagination(pagination.Page, pagination.PageSize)
-		userClient.AddPagination(pagination.Page, pagination.PageSize)
+	if opts.Pagination != nil {
+		teamClient.WithPagination(opts.Pagination.Page, opts.Pagination.PageSize)
 	}
 
-	var withUserID *string
-	if userID != nil {
-		if *userID != auth.UserID && !auth.IsAdmin {
-			return nil, nil
+	var effectiveUserID string
+	if opts.UserID != "" {
+		// Specific user's teams are requested
+		if c.Auth == nil || c.Auth.UserID == opts.UserID || c.Auth.IsAdmin {
+			effectiveUserID = opts.UserID
+		} else {
+			effectiveUserID = c.Auth.UserID
 		}
-		withUserID = userID
-	} else if !allUsers || (allUsers && !auth.IsAdmin) {
-		withUserID = &auth.UserID
+	} else {
+		// All teams are requested
+		if c.Auth != nil && !c.Auth.IsAdmin {
+			effectiveUserID = c.Auth.UserID
+		}
 	}
 
-	if withUserID != nil {
-		user, err := userClient.GetByID(*withUserID)
-		if err != nil {
-			return nil, err
-		}
-
-		if user == nil {
-			return nil, nil
-		}
-
-		teams, err := user.GetTeamMap()
-		if err != nil {
-			return nil, err
-		}
-
-		teamList := make([]teamModels.Team, 0)
-		for _, team := range teams {
-			teamList = append(teamList, team)
-		}
-
-		sort.Slice(teamList, func(i, j int) bool {
-			return teamList[i].CreatedAt.After(teamList[j].CreatedAt)
-		})
-
-		return teamList, nil
+	if effectiveUserID != "" {
+		teamClient.WithUserID(effectiveUserID)
 	}
 
 	teams, err := teamClient.List()
@@ -177,10 +75,46 @@ func ListTeamsAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagina
 	return teams, nil
 }
 
-func UpdateTeamAuth(id string, dtoUpdateTeam *body.TeamUpdate, auth *service.AuthInfo) (*teamModels.Team, error) {
-	teamClient := teamModels.New()
+// CreateTeam creates a new team
+//
+// Notifications are sent out if the owner of the team is not admin
+func (c *Client) CreateTeam(id, ownerID string, dtoCreateTeam *body.TeamCreate) (*teamModels.Team, error) {
+	params := &teamModels.CreateParams{}
+	params.FromDTO(dtoCreateTeam, ownerID,
+		func(resourceID string) *teamModels.Resource { return c.getResourceIfAccessible(resourceID) },
+		func(memberDTO *body.TeamMemberCreate) *teamModels.Member {
+			return c.createMemberIfAccessible(nil, memberDTO.ID)
+		},
+	)
 
-	team, err := teamClient.GetByID(id)
+	team, err := teamModels.New().Create(id, ownerID, params)
+	if err != nil {
+		if errors.Is(err, teamModels.NameTakenErr) {
+			return nil, sErrors.TeamNameTakenErr
+		}
+
+		return nil, err
+	}
+
+	// Send invitations to every member that received an invitation code
+	for _, member := range params.MemberMap {
+		if member.InvitationCode != "" {
+			err = createInvitationNotification(member.ID, team.ID, team.Name, member.InvitationCode)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	return team, nil
+}
+
+// UpdateTeam updates a team
+//
+// It uses AuthInfo to only update the resource the requesting user has access to
+// Notifications are sent out if the owner of the team is not admin
+func (c *Client) UpdateTeam(id string, dtoUpdateTeam *body.TeamUpdate) (*teamModels.Team, error) {
+	team, err := teamModels.New().GetByID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -189,47 +123,29 @@ func UpdateTeamAuth(id string, dtoUpdateTeam *body.TeamUpdate, auth *service.Aut
 		return nil, nil
 	}
 
-	if team.OwnerID != auth.UserID && !auth.IsAdmin && !team.HasMember(auth.UserID) {
+	if c.Auth != nil && team.OwnerID != c.Auth.UserID && !c.Auth.IsAdmin && !team.HasMember(c.Auth.UserID) {
 		return nil, nil
 	}
 
 	params := &teamModels.UpdateParams{}
 	params.FromDTO(dtoUpdateTeam, team.OwnerID,
-		func(resourceID string) *teamModels.Resource { return getResourceIfAccessible(resourceID, auth) },
+		func(resourceID string) *teamModels.Resource { return c.getResourceIfAccessible(resourceID) },
 		func(memberDTO *body.TeamMemberUpdate) *teamModels.Member {
-			if existing := team.GetMember(memberDTO.ID); existing != nil {
-				existing.TeamRole = teamModels.MemberRoleAdmin
-				return existing
-			}
-
-			member := &teamModels.Member{
-				ID:       memberDTO.ID,
-				TeamRole: teamModels.MemberRoleAdmin,
-				AddedAt:  time.Now(),
-			}
-
-			if auth.IsAdmin {
-				member.MemberStatus = teamModels.MemberStatusJoined
-				member.JoinedAt = time.Now()
-			} else {
-				member.MemberStatus = teamModels.MemberStatusInvited
-				member.InvitationCode = createInvitationCode()
-			}
-
-			return member
+			return c.createMemberIfAccessible(team, memberDTO.ID)
 		},
 	)
 
-	// if new user, set timestamp
+	// If new user, set timestamp
 	if params.MemberMap != nil {
 		for _, member := range *params.MemberMap {
-			// don't invite users that are already joined
+			// Don't invite users that have already joined
 			if existing := team.GetMember(member.ID); existing != nil && existing.MemberStatus == teamModels.MemberStatusJoined {
 				continue
 			}
 
+			// Send notification to new users
 			if member.InvitationCode != "" {
-				err = createInvitation(member.ID, team.ID, team.Name, member.InvitationCode)
+				err = createInvitationNotification(member.ID, team.ID, team.Name, member.InvitationCode)
 				if err != nil {
 					return nil, err
 				}
@@ -237,33 +153,34 @@ func UpdateTeamAuth(id string, dtoUpdateTeam *body.TeamUpdate, auth *service.Aut
 		}
 	}
 
-	// if new resource, set timestamp
+	// If new resource, set timestamp
 	if params.ResourceMap != nil {
 		for _, resource := range *params.ResourceMap {
-			if resourceDB, ok := team.GetResourceMap()[resource.ID]; ok {
-				resource.AddedAt = resourceDB.AddedAt
+			if existing := team.GetResource(resource.ID); existing != nil {
+				resource.AddedAt = existing.AddedAt
 			} else {
 				resource.AddedAt = time.Now()
 			}
+
 			(*params.ResourceMap)[resource.ID] = resource
 		}
 	}
 
-	err = teamClient.UpdateWithParams(id, params)
+	err = teamModels.New().UpdateWithParams(id, params)
 	if err != nil {
 		return nil, err
 	}
 
-	afterUpdate, err := teamClient.GetByID(id)
+	afterUpdate, err := teamModels.New().GetByID(id)
 	if err != nil {
 		return nil, err
 	}
 
 	if afterUpdate == nil {
-		return nil, TeamNotFoundErr
+		return nil, nil
 	}
 
-	err = teamClient.MarkUpdated(id)
+	err = teamModels.New().MarkUpdated(id)
 	if err != nil {
 		return nil, err
 	}
@@ -271,33 +188,72 @@ func UpdateTeamAuth(id string, dtoUpdateTeam *body.TeamUpdate, auth *service.Aut
 	return afterUpdate, nil
 }
 
-func DeleteTeamAuth(id string, auth *service.AuthInfo) error {
+// DeleteTeam deletes a team
+//
+// It uses AuthInfo to only delete the resource the requesting user has access to
+func (c *Client) DeleteTeam(id string) error {
 	teamClient := teamModels.New()
 
-	team, err := teamClient.GetByID(id)
-	if err != nil {
-		return err
+	if c.Auth != nil && !c.Auth.IsAdmin {
+		teamClient.WithOwnerID(c.Auth.UserID)
 	}
 
-	if team == nil {
-		return nil
-	}
-
-	if !auth.IsAdmin && team.OwnerID != auth.UserID {
-		return nil
+	if exists, err := teamClient.ExistsByID(id); !exists || err != nil {
+		return sErrors.TeamNotFoundErr
 	}
 
 	return teamClient.DeleteByID(id)
 }
 
-func getResourceIfAccessible(resourceID string, auth *service.AuthInfo) *teamModels.Resource {
+// JoinTeam joins a team
+//
+// It uses AuthInfo to only join the resource the requesting user has access to
+func (c *Client) JoinTeam(id string, dtoTeamJoin *body.TeamJoin) (*teamModels.Team, error) {
+	if c.Auth == nil {
+		return nil, nil
+	}
+
+	params := &teamModels.JoinParams{}
+	params.FromDTO(dtoTeamJoin)
+
+	teamClient := teamModels.New()
+	team, err := teamClient.GetByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if team == nil {
+		return nil, nil
+	}
+
+	if team.GetMemberMap()[c.Auth.UserID].MemberStatus != teamModels.MemberStatusInvited {
+		return team, sErrors.NotInvitedErr
+	}
+
+	if team.GetMemberMap()[c.Auth.UserID].InvitationCode != params.InvitationCode {
+		return nil, sErrors.BadInviteCodeErr
+	}
+
+	updatedMember := team.GetMemberMap()[c.Auth.UserID]
+	updatedMember.MemberStatus = teamModels.MemberStatusJoined
+	updatedMember.JoinedAt = time.Now()
+
+	err = teamClient.UpdateMember(id, c.Auth.UserID, &updatedMember)
+	if err != nil {
+		return nil, err
+	}
+
+	return teamClient.GetByID(id)
+}
+
+func (c *Client) getResourceIfAccessible(resourceID string) *teamModels.Resource {
 	// try to fetch deployment
 	dClient := deploymentModel.New()
 	vClient := vmModel.New()
 
-	if !auth.IsAdmin {
-		dClient.RestrictToOwner(auth.UserID)
-		vClient.RestrictToOwner(auth.UserID)
+	if c.Auth != nil && !c.Auth.IsAdmin {
+		dClient.RestrictToOwner(c.Auth.UserID)
+		vClient.RestrictToOwner(c.Auth.UserID)
 	}
 
 	isOwner, err := dClient.ExistsByID(resourceID)
@@ -332,7 +288,32 @@ func getResourceIfAccessible(resourceID string, auth *service.AuthInfo) *teamMod
 	return nil
 }
 
-func createInvitation(userID, teamID, teamName, invitationCode string) error {
+func (c *Client) createMemberIfAccessible(current *teamModels.Team, memberID string) *teamModels.Member {
+	if current != nil {
+		if existing := current.GetMember(memberID); existing != nil {
+			existing.TeamRole = teamModels.MemberRoleAdmin
+			return existing
+		}
+	}
+
+	member := &teamModels.Member{
+		ID:       memberID,
+		TeamRole: teamModels.MemberRoleAdmin,
+		AddedAt:  time.Now(),
+	}
+
+	if c.Auth == nil || c.Auth.IsAdmin {
+		member.MemberStatus = teamModels.MemberStatusJoined
+		member.JoinedAt = time.Now()
+	} else {
+		member.MemberStatus = teamModels.MemberStatusInvited
+		member.InvitationCode = createInvitationCode()
+	}
+
+	return member
+}
+
+func createInvitationNotification(userID, teamID, teamName, invitationCode string) error {
 	return notification_service.CreateNotification(uuid.NewString(), userID, &notificationModel.CreateParams{
 		Type: notificationModel.TypeTeamInvite,
 		Content: map[string]interface{}{

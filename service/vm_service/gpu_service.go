@@ -115,7 +115,7 @@ func (c *Client) AttachGPU(vmID string, gpuIDs []string, leaseDuration float64) 
 	}
 
 	// service client
-	cc := cs_service.New(c.Context)
+	cc := cs_service.New(c.Cache)
 
 	for _, gpuID := range gpuIDs {
 		var gpu *gpuModel.GPU
@@ -220,7 +220,7 @@ func (c *Client) DetachGPU(vmID string) error {
 		return fmt.Errorf("failed to detach gpu from vm %s. details: %w", vmID, err)
 	}
 
-	err := cs_service.New(c.Context).DetachGPU(vmID, cs_service.CsDetachGpuAfterStateRestore)
+	err := cs_service.New(c.Cache).DetachGPU(vmID, cs_service.CsDetachGpuAfterStateRestore)
 	if err != nil {
 		return makeError(err)
 	}
@@ -262,7 +262,7 @@ func (c *Client) CheckGpuHardwareAvailable(gpuID string) error {
 		return sErrors.GpuNotFoundErr
 	}
 
-	cc := cs_service.New(c.Context)
+	cc := cs_service.New(c.Cache)
 
 	cloudstackAttached, err := cc.IsGpuAttached(gpuID)
 	if err != nil {
@@ -307,7 +307,7 @@ func (c *Client) CheckSuitableHost(id, hostName, zoneName string) error {
 		return sErrors.ZoneNotFoundErr
 	}
 
-	err = cs_service.New(c.Context).CheckSuitableHost(vm.ID, vm.Subsystems.CS.VM.ID, hostName, zone)
+	err = cs_service.New(c.Cache).CheckSuitableHost(vm.ID, vm.Subsystems.CS.VM.ID, hostName, zone)
 	if err != nil {
 		return err
 	}

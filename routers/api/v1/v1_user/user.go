@@ -82,7 +82,10 @@ func ListUsers(c *gin.Context) {
 	}
 
 	if requestQuery.Discover {
-		users, err := user_service.DiscoverAuth(requestQuery.Search, auth)
+		users, err := user_service.New().WithAuth(auth).Discover(&user_service.DiscoverUsersOpts{
+			Search:     requestQuery.Search,
+			Pagination: &service.Pagination{Page: requestQuery.Page, PageSize: requestQuery.PageSize},
+		})
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
@@ -97,7 +100,12 @@ func ListUsers(c *gin.Context) {
 		return
 	}
 
-	users, err := user_service.ListAuth(requestQuery.All, requestQuery.Search, auth, &requestQuery.Pagination)
+	usc := user_service.New().WithAuth(auth)
+
+	users, err := usc.List(&user_service.ListUsersOpts{
+		Pagination: &service.Pagination{Page: requestQuery.Page, PageSize: requestQuery.PageSize},
+		Search:     requestQuery.Search,
+	})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -107,7 +115,7 @@ func ListUsers(c *gin.Context) {
 	for _, user := range users {
 		// if we list ourselves, take the opportunity to update our role
 		if user.ID == auth.UserID {
-			updatedUser, err := user_service.Create(auth)
+			updatedUser, err := usc.Create()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("failed to get or create a user when listing: %w", err))
 				continue
@@ -170,16 +178,18 @@ func Get(c *gin.Context) {
 	var effectiveRole *roleModel.Role
 	var user *userModel.User
 
+	usc := user_service.New().WithAuth(auth)
+
 	if requestURI.UserID == auth.UserID {
 		effectiveRole = auth.GetEffectiveRole()
-		user, err = user_service.Create(auth)
+		user, err = usc.Create()
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
 		}
 	} else {
 		effectiveRole = config.Config.GetRole(user.EffectiveRole.Name)
-		user, err = user_service.GetAuth(requestURI.UserID, auth)
+		user, err = usc.Get(requestURI.UserID, &user_service.GetUserOpts{})
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
@@ -245,16 +255,18 @@ func Update(c *gin.Context) {
 
 	var effectiveRole *roleModel.Role
 
+	usc := user_service.New().WithAuth(auth)
+
 	if requestURI.UserID == auth.UserID {
 		effectiveRole = auth.GetEffectiveRole()
-		_, err = user_service.Create(auth)
+		_, err = usc.Create()
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
 		}
 	}
 
-	updated, err := user_service.UpdatedAuth(requestURI.UserID, &userUpdate, auth)
+	updated, err := usc.Update(requestURI.UserID, &userUpdate)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return

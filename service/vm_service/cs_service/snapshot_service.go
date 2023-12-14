@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 	vmModel "go-deploy/models/sys/vm"
+	"go-deploy/pkg/subsystems"
 	"go-deploy/pkg/subsystems/cs/commands"
 	csModels "go-deploy/pkg/subsystems/cs/models"
-	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
 	"log"
 )
@@ -34,7 +34,7 @@ func (c *Client) CreateSnapshot(vmID string, params *vmModel.CreateSnapshotParam
 		return makeError(err)
 	}
 
-	if snapshot := vm.Subsystems.CS.GetSnapshotByName(params.Name); service.Created(snapshot) && !params.Overwrite {
+	if snapshot := vm.Subsystems.CS.GetSnapshotByName(params.Name); subsystems.Created(snapshot) && !params.Overwrite {
 		return AlreadyExistsErr
 	}
 
@@ -150,7 +150,7 @@ func (c *Client) ApplySnapshot(vmID, snapshotID string) error {
 	}
 
 	snapshot := vm.Subsystems.CS.GetSnapshotByID(snapshotID)
-	if service.NotCreated(snapshot) {
+	if subsystems.NotCreated(snapshot) {
 		return makeError(fmt.Errorf("snapshot %s not found", snapshotID))
 	}
 

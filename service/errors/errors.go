@@ -86,4 +86,20 @@ var (
 	// InvalidTransferCodeErr is returned when the transfer code is invalid.
 	// This could be caused by the transfer being canceled, or the code being incorrect.
 	InvalidTransferCodeErr = fmt.Errorf("invalid transfer code")
+
+	// TeamNameTakenErr is returned when the team name is already taken by another team.
+	// Every team name should be unique.
+	TeamNameTakenErr = fmt.Errorf("team name taken")
+
+	// TeamNotFoundErr is returned when the team is not found.
+	TeamNotFoundErr = fmt.Errorf("team not found")
+
+	// UserNotFoundErr is returned when the user is not found.
+	UserNotFoundErr = fmt.Errorf("user not found")
+
+	// BadInviteCodeErr is returned when the invite code is invalid.
+	BadInviteCodeErr = fmt.Errorf("bad invite code")
+
+	// NotInvitedErr is returned when the user tries to join a team, but is not invited.
+	NotInvitedErr = fmt.Errorf("not invited")
 )

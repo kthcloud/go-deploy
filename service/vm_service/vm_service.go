@@ -48,7 +48,7 @@ func (c *Client) Get(id string, opts *client.GetOptions) (*vmModel.VM, error) {
 		teamCheck = true
 	} else {
 		var err error
-		teamCheck, err = teamModels.New().AddUserID(c.Auth.UserID).AddResourceID(id).ExistsAny()
+		teamCheck, err = teamModels.New().WithUserID(c.Auth.UserID).WithResourceID(id).ExistsAny()
 		if err != nil {
 			return nil, err
 		}
@@ -73,14 +73,14 @@ func (c *Client) List(opts *client.ListOptions) ([]vmModel.VM, error) {
 
 	var effectiveUserID string
 	if opts.UserID != "" {
-		// specific user's deployments are requested
+		// Specific user's VMs are requested
 		if c.Auth == nil || c.Auth.UserID == opts.UserID || c.Auth.IsAdmin {
 			effectiveUserID = opts.UserID
 		} else {
 			effectiveUserID = c.Auth.UserID
 		}
 	} else {
-		// all deployments are requested
+		// All VMs are requested
 		if c.Auth != nil && !c.Auth.IsAdmin {
 			effectiveUserID = c.Auth.UserID
 		}
@@ -101,7 +101,7 @@ func (c *Client) List(opts *client.ListOptions) ([]vmModel.VM, error) {
 			skipIDs[i] = resource.ID
 		}
 
-		teamClient := teamModels.New().AddUserID(effectiveUserID)
+		teamClient := teamModels.New().WithUserID(effectiveUserID)
 		if opts.Pagination != nil {
 			teamClient.WithPagination(opts.Pagination.Page, opts.Pagination.PageSize)
 		}
@@ -176,14 +176,14 @@ func (c *Client) Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
 		return makeError(err)
 	}
 
-	err = cs_service.New(c.Context).Create(id, params)
+	err = cs_service.New(c.Cache).Create(id, params)
 	if err != nil {
 		return makeError(err)
 	}
 
 	// there is always at least one port: __ssh
 	if len(params.Ports) > 1 {
-		err = k8s_service.New(c.Context).Create(id, params)
+		err = k8s_service.New(c.Cache).Create(id, params)
 		if err != nil {
 			return makeError(err)
 		}
@@ -217,12 +217,12 @@ func (c *Client) Update(id string, dtoVmUpdate *body.VmUpdate) error {
 			return makeError(err)
 		}
 
-		err = cs_service.New(c.Context).Update(id, vmUpdate)
+		err = cs_service.New(c.Cache).Update(id, vmUpdate)
 		if err != nil {
 			return makeError(err)
 		}
 
-		err = k8s_service.New(c.Context).Repair(id)
+		err = k8s_service.New(c.Cache).Repair(id)
 		if err != nil {
 			return makeError(err)
 		}
@@ -245,12 +245,12 @@ func (c *Client) Delete(id string) error {
 		return nil
 	}
 
-	err = k8s_service.New(c.Context).Delete(id)
+	err = k8s_service.New(c.Cache).Delete(id)
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = cs_service.New(c.Context).Delete(vm.ID)
+	err = cs_service.New(c.Cache).Delete(vm.ID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -283,12 +283,12 @@ func (c *Client) Repair(id string) error {
 		return nil
 	}
 
-	err = cs_service.New(c.Context).Repair(id)
+	err = cs_service.New(c.Cache).Repair(id)
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = k8s_service.New(c.Context).Repair(id)
+	err = k8s_service.New(c.Cache).Repair(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -404,12 +404,12 @@ func (c *Client) UpdateOwner(id string, params *body.VmUpdateOwner) error {
 		return makeError(err)
 	}
 
-	err = cs_service.New(c.Context).EnsureOwner(id, params.OldOwnerID)
+	err = cs_service.New(c.Cache).EnsureOwner(id, params.OldOwnerID)
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = k8s_service.New(c.Context).EnsureOwner(id, params.OldOwnerID)
+	err = k8s_service.New(c.Cache).EnsureOwner(id, params.OldOwnerID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -496,7 +496,7 @@ func (c *Client) DoCommand(id, command string) {
 			return
 		}
 
-		err = cs_service.New(c.Context).DoCommand(vm.ID, csID, vm.GetGpuID(), command)
+		err = cs_service.New(c.Cache).DoCommand(vm.ID, csID, vm.GetGpuID(), command)
 		if err != nil {
 			utils.PrettyPrintError(err)
 			return
@@ -791,7 +791,7 @@ func (c *Client) GetHost(vmID string) (*vmModel.Host, error) {
 		return nil, makeError(sErrors.ZoneNotFoundErr)
 	}
 
-	cc := cs_service.New(c.Context)
+	cc := cs_service.New(c.Cache)
 
 	host, err := cc.GetHostByVM(vmID)
 	if err != nil {

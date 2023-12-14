@@ -29,7 +29,7 @@ func (client *Client) WithPagination(page, pageSize int) *Client {
 	return client
 }
 
-func (client *Client) AddUserID(userID string) *Client {
+func (client *Client) WithUserID(userID string) *Client {
 	client.AddExtraFilter(bson.D{{"$or", bson.A{
 		bson.D{{"ownerId", userID}},
 		bson.D{{"memberMap." + userID, bson.D{{"$exists", true}}}},
@@ -38,7 +38,13 @@ func (client *Client) AddUserID(userID string) *Client {
 	return client
 }
 
-func (client *Client) AddResourceID(resourceID string) *Client {
+func (client *Client) WithOwnerID(ownerID string) *Client {
+	client.AddExtraFilter(bson.D{{"ownerId", ownerID}})
+
+	return client
+}
+
+func (client *Client) WithResourceID(resourceID string) *Client {
 	client.AddExtraFilter(bson.D{{"resourceMap." + resourceID, bson.D{{"$exists", true}}}})
 
 	return client

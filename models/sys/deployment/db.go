@@ -308,6 +308,10 @@ func (client *Client) GetLastGitLabBuild(deploymentID string) (*subsystems.GitLa
 		return nil, err
 	}
 
+	if deployment == nil {
+		return nil, nil
+	}
+
 	return &deployment.Subsystems.GitLab.LastBuild, nil
 }
 

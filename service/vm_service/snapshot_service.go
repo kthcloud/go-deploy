@@ -121,7 +121,7 @@ func (c *Client) CreateSnapshot(vmID string, opts *client.CreateSnapshotOptions)
 		return nil
 	}
 
-	err = cs_service.New(c.Context).CreateSnapshot(vm.ID, params)
+	err = cs_service.New(c.Cache).CreateSnapshot(vm.ID, params)
 	if err != nil {
 		return makeError(err)
 	}
@@ -148,7 +148,7 @@ func (c *Client) DeleteSnapshot(vmID, snapshotID string) error {
 		return makeError(fmt.Errorf("vm not ready"))
 	}
 
-	err = cs_service.New(c.Context).DeleteSnapshot(vm.ID, snapshotID)
+	err = cs_service.New(c.Cache).DeleteSnapshot(vm.ID, snapshotID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -162,7 +162,7 @@ func (c *Client) ApplySnapshot(id, snapshotID string) error {
 	}
 
 	log.Println("applying snapshot", snapshotID, "to vm", id)
-	err := cs_service.New(c.Context).ApplySnapshot(id, snapshotID)
+	err := cs_service.New(c.Cache).ApplySnapshot(id, snapshotID)
 	if err != nil {
 		return makeError(err)
 	}

@@ -70,6 +70,15 @@ func (t *Team) GetResourceMap() map[string]Resource {
 	return t.ResourceMap
 }
 
+func (t *Team) GetResource(id string) *Resource {
+	res, ok := t.GetResourceMap()[id]
+	if !ok {
+		return nil
+	}
+
+	return &res
+}
+
 func (t *Team) AddMember(member Member) {
 	t.GetMemberMap()[member.ID] = member
 }

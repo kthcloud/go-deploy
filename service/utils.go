@@ -3,39 +3,12 @@ package service
 import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"go-deploy/pkg/subsystems"
 	"reflect"
 	"time"
 )
 
 type UpdateDbSubsystem func(string, string, interface{}) error
-
-type SsResource interface {
-	Created() bool
-	IsPlaceholder() bool
-}
-
-func CopyValue(src, dst SsResource) {
-	reflect.ValueOf(dst).Elem().Set(reflect.ValueOf(src).Elem())
-}
-
-func Nil(resource SsResource) bool {
-	return !NotNil(resource)
-}
-
-func Created(resource SsResource) bool {
-	return !NotCreated(resource)
-}
-
-func NotNil(resource SsResource) bool {
-	if resource == nil || (reflect.ValueOf(resource).Kind() == reflect.Ptr && reflect.ValueOf(resource).IsNil()) {
-		return false
-	}
-	return true
-}
-
-func NotCreated(resource SsResource) bool {
-	return Nil(resource) || !resource.Created()
-}
 
 func ResetTimeFields[T any](input T) T {
 	// Create a function to recursively reset time.Time fields
@@ -97,20 +70,20 @@ func areTimeFieldsEqual(a, b interface{}) bool {
 	return true
 }
 
-func UpdateIfDiff[T SsResource](dbResource T, fetchFunc func() (T, error), updateFunc func(T) (T, error), recreateFunc func(T) error) error {
+func UpdateIfDiff[T subsystems.SsResource](dbResource T, fetchFunc func() (T, error), updateFunc func(T) (T, error), recreateFunc func(T) error) error {
 	liveResource, err := fetchFunc()
 	if err != nil {
 		return nil
 	}
 
-	if Nil(liveResource) {
+	if subsystems.Nil(liveResource) {
 		return recreateFunc(dbResource)
 	}
 
 	dbResourceCleaned := ResetTimeFields(dbResource)
 	liveResourceCleaned := ResetTimeFields(liveResource)
 
-	if NotNil(liveResource) {
+	if subsystems.NotNil(liveResource) {
 		timeEqual := areTimeFieldsEqual(dbResource, liveResource)
 		restEqual := cmp.Equal(dbResourceCleaned, liveResourceCleaned, cmpopts.EquateEmpty())
 
@@ -124,13 +97,13 @@ func UpdateIfDiff[T SsResource](dbResource T, fetchFunc func() (T, error), updat
 		return err
 	}
 
-	if NotNil(liveResource) {
+	if subsystems.NotNil(liveResource) {
 		liveResourceCleaned = ResetTimeFields(liveResource)
 
 		timeEqual := areTimeFieldsEqual(dbResource, liveResource)
 		restEqual := cmp.Equal(dbResourceCleaned, liveResourceCleaned, cmpopts.EquateEmpty())
 
-		if NotNil(liveResource) && timeEqual && restEqual {
+		if subsystems.NotNil(liveResource) && timeEqual && restEqual {
 			return nil
 		}
 	}

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/subsystems"
 	githubModels "go-deploy/pkg/subsystems/github/models"
-	"go-deploy/service"
 )
 
 type GitHubGenerator struct {
@@ -26,7 +26,7 @@ func (gg *GitHubGenerator) Webhook() *githubModels.WebhookPublic {
 			Secret:       uuid.NewString(),
 		}
 
-		if w := &gg.d.deployment.Subsystems.GitHub.Webhook; service.Created(w) {
+		if w := &gg.d.deployment.Subsystems.GitHub.Webhook; subsystems.Created(w) {
 			wh.ID = w.ID
 			wh.CreatedAt = w.CreatedAt
 		}

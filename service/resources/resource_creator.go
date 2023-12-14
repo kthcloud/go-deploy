@@ -1,11 +1,11 @@
 package resources
 
 import (
-	"go-deploy/service"
+	"go-deploy/pkg/subsystems"
 	"log"
 )
 
-type SsCreatorType[T service.SsResource] struct {
+type SsCreatorType[T subsystems.SsResource] struct {
 	name   *string
 	public T
 
@@ -13,7 +13,7 @@ type SsCreatorType[T service.SsResource] struct {
 	createFunc func(T) (T, error)
 }
 
-func SsCreator[T service.SsResource](createFunc func(T) (T, error)) *SsCreatorType[T] {
+func SsCreator[T subsystems.SsResource](createFunc func(T) (T, error)) *SsCreatorType[T] {
 	return &SsCreatorType[T]{
 		createFunc: createFunc,
 	}
@@ -30,12 +30,12 @@ func (rc *SsCreatorType[T]) WithPublic(public T) *SsCreatorType[T] {
 }
 
 func (rc *SsCreatorType[T]) Exec() error {
-	if service.Nil(rc.public) {
+	if subsystems.Nil(rc.public) {
 		log.Println("no public resource provided for subsystem creation. assuming it failed to create")
 		return nil
 	}
 
-	if service.NotCreated(rc.public) {
+	if subsystems.NotCreated(rc.public) {
 		var resource T
 		if rc.createFunc == nil {
 			log.Println("no create function provided for subsystem creation. did you forget to specify it in the constructor?")
@@ -48,7 +48,7 @@ func (rc *SsCreatorType[T]) Exec() error {
 			}
 		}
 
-		if service.Nil(resource) {
+		if subsystems.Nil(resource) {
 			log.Println("no resource returned after creation. assuming it failed to create or was skipped")
 			return nil
 		}
@@ -58,7 +58,7 @@ func (rc *SsCreatorType[T]) Exec() error {
 			return nil
 		}
 
-		service.CopyValue(resource, rc.public)
+		subsystems.CopyValue(resource, rc.public)
 		return rc.dbFunc(resource)
 	}
 

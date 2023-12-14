@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/subsystems"
 	"go-deploy/pkg/subsystems/harbor/models"
-	"go-deploy/service"
 	"strings"
 )
 
@@ -21,7 +21,7 @@ func (hg *HarborGenerator) Project() *models.ProjectPublic {
 			Public: false,
 		}
 
-		if p := &hg.d.deployment.Subsystems.Harbor.Project; service.Created(p) {
+		if p := &hg.d.deployment.Subsystems.Harbor.Project; subsystems.Created(p) {
 			pr.ID = p.ID
 			pr.CreatedAt = p.CreatedAt
 		}
@@ -39,7 +39,7 @@ func (hg *HarborGenerator) Robot() *models.RobotPublic {
 			Disable: false,
 		}
 
-		if r := &hg.d.deployment.Subsystems.Harbor.Robot; service.Created(r) {
+		if r := &hg.d.deployment.Subsystems.Harbor.Robot; subsystems.Created(r) {
 			ro.ID = r.ID
 			ro.HarborName = r.HarborName
 			ro.Secret = r.Secret
@@ -67,7 +67,7 @@ func (hg *HarborGenerator) Repository() *models.RepositoryPublic {
 			},
 		}
 
-		if r := &hg.d.deployment.Subsystems.Harbor.Repository; service.Created(r) {
+		if r := &hg.d.deployment.Subsystems.Harbor.Repository; subsystems.Created(r) {
 			re.ID = r.ID
 			re.Seeded = r.Seeded
 			re.CreatedAt = r.CreatedAt
@@ -90,7 +90,7 @@ func (hg *HarborGenerator) Webhook() *models.WebhookPublic {
 			Token:  config.Config.Harbor.WebhookSecret,
 		}
 
-		if w := &hg.d.deployment.Subsystems.Harbor.Webhook; service.Created(w) {
+		if w := &hg.d.deployment.Subsystems.Harbor.Webhook; subsystems.Created(w) {
 			we.ID = w.ID
 			we.CreatedAt = w.CreatedAt
 		}
