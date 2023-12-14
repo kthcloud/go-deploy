@@ -219,7 +219,7 @@ func (c *Client) Create(id, ownerID string, deploymentCreate *body.DeploymentCre
 
 	createPlaceHolderInstead := false
 	if params.GitHub != nil {
-		err = github_service.New(c.Cache).Create(id, params)
+		err = github_service.New(c.Cache).WithRepositoryID(deploymentCreate.GitHub.RepositoryID).WithToken(deploymentCreate.GitHub.Token).Create(id, params)
 		if err != nil {
 			errString := err.Error()
 			if strings.Contains(errString, "/hooks: 404 Not Found") {
@@ -244,7 +244,7 @@ func (c *Client) Create(id, ownerID string, deploymentCreate *body.DeploymentCre
 	}
 
 	// fetch again to make sure all the fields are populated
-	_, err = c.Refresh(id)
+	d, err = c.Refresh(id)
 	if err != nil {
 		return makeError(err)
 	}

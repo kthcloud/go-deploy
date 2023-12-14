@@ -239,7 +239,7 @@ func (c *Client) Update(id string, updateParams *vmModel.UpdateParams) error {
 				return makeError(err)
 			}
 
-			_, err = c.Refresh(id)
+			vm, err = c.Refresh(id)
 			if err != nil {
 				if errors.Is(err, sErrors.VmNotFoundErr) {
 					return nil
@@ -289,7 +289,7 @@ func (c *Client) Update(id string, updateParams *vmModel.UpdateParams) error {
 	}
 
 	if updateParams.Name != nil || serviceOfferingUpdated {
-		_, err = c.Refresh(id)
+		vm, err = c.Refresh(id)
 		if err != nil {
 			if errors.Is(err, sErrors.VmNotFoundErr) {
 				return nil
@@ -348,7 +348,7 @@ func (c *Client) Repair(id string) error {
 		return makeError(err)
 	}
 
-	_, err = c.Refresh(id)
+	vm, err = c.Refresh(id)
 	if err != nil {
 		if errors.Is(err, sErrors.VmNotFoundErr) {
 			return nil
