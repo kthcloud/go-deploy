@@ -187,18 +187,27 @@ func Get(c *gin.Context) {
 			context.ServerError(err, v1.InternalError)
 			return
 		}
+
+		if user == nil {
+			context.NotFound("User not found")
+			return
+		}
 	} else {
-		effectiveRole = config.Config.GetRole(user.EffectiveRole.Name)
 		user, err = usc.Get(requestURI.UserID, &user_service.GetUserOpts{})
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
 		}
-	}
 
-	if user == nil {
-		context.NotFound("User not found")
-		return
+		if user == nil {
+			context.NotFound("User not found")
+			return
+		}
+
+		effectiveRole = config.Config.GetRole(user.EffectiveRole.Name)
+		if effectiveRole == nil {
+			effectiveRole = &roleModel.Role{}
+		}
 	}
 
 	usage, err := collectUsage(user.ID)
