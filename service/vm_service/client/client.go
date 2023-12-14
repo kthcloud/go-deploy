@@ -109,7 +109,8 @@ func (c *BaseClient[parent]) fetchVMs(vmc *vmModel.Client) ([]vmModel.VM, error)
 	}
 
 	for _, vm := range vms {
-		c.StoreVM(&vm)
+		v := vm
+		c.StoreVM(&v)
 	}
 
 	return vms, nil
