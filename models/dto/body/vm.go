@@ -18,6 +18,8 @@ type VmRead struct {
 	GPU          *VmGpu `json:"gpu,omitempty"`
 	SshPublicKey string `json:"sshPublicKey"`
 
+	Teams []string `json:"teams"`
+
 	Status           string  `json:"status"`
 	ConnectionString *string `json:"connectionString,omitempty"`
 }

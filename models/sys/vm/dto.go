@@ -7,7 +7,7 @@ import (
 	"go-deploy/utils"
 )
 
-func (vm *VM) ToDTO(status string, connectionString *string, gpu *body.GpuRead, externalPortMapper map[string]int) body.VmRead {
+func (vm *VM) ToDTO(status string, connectionString *string, teams []string, gpu *body.GpuRead, externalPortMapper map[string]int) body.VmRead {
 
 	var vmGpu *body.VmGpu
 	if gpu != nil && gpu.Lease != nil {
@@ -90,9 +90,13 @@ func (vm *VM) ToDTO(status string, connectionString *string, gpu *body.GpuRead, 
 			RAM:      vm.Specs.RAM,
 			DiskSize: vm.Specs.DiskSize,
 		},
-		Ports:            ports,
-		GPU:              vmGpu,
-		SshPublicKey:     vm.SshPublicKey,
+
+		Ports:        ports,
+		GPU:          vmGpu,
+		SshPublicKey: vm.SshPublicKey,
+
+		Teams: teams,
+
 		Status:           status,
 		ConnectionString: connectionString,
 	}
