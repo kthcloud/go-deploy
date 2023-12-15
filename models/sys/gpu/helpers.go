@@ -2,39 +2,13 @@ package gpu
 
 import (
 	"context"
-	"encoding/base64"
 	"errors"
 	"fmt"
-	"go-deploy/models/dto/body"
 	"go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"time"
 )
-
-func (gpu *GPU) ToDTO(addUserInfo bool) body.GpuRead {
-	id := base64.StdEncoding.EncodeToString([]byte(gpu.ID))
-
-	var lease *body.GpuLease
-
-	if gpu.Lease.VmID != "" {
-		lease = &body.GpuLease{
-			End:     gpu.Lease.End,
-			Expired: gpu.Lease.IsExpired(),
-		}
-
-		if addUserInfo {
-			lease.User = &gpu.Lease.UserID
-			lease.VmID = &gpu.Lease.VmID
-		}
-	}
-
-	return body.GpuRead{
-		ID:    id,
-		Name:  gpu.Data.Name,
-		Lease: lease,
-	}
-}
 
 func (client *Client) Create(id, host string, data GpuData, zone string) error {
 	currentGPU, err := client.GetByID(id)
@@ -65,66 +39,6 @@ func (client *Client) Create(id, host string, data GpuData, zone string) error {
 	}
 
 	return nil
-}
-
-func (client *Client) GetByID(id string) (*GPU, error) {
-	var gpu GPU
-	err := client.Collection.FindOne(context.TODO(), bson.D{{"id", id}}).Decode(&gpu)
-	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, nil
-		}
-
-		err = fmt.Errorf("failed to fetch gpu. details: %w", err)
-		return nil, err
-	}
-
-	return &gpu, err
-}
-
-func (client *Client) List() ([]GPU, error) {
-	filter := bson.D{
-		{"host", bson.M{"$nin": client.ExcludedHosts}},
-		{"data.name", bson.M{"$nin": client.ExcludedGPUs}},
-	}
-
-	var gpus []GPU
-	cursor, err := client.Collection.Find(context.Background(), filter)
-	if err != nil {
-		return nil, err
-	}
-
-	err = cursor.All(context.Background(), &gpus)
-	if err != nil {
-		return nil, err
-	}
-
-	return gpus, nil
-}
-
-func (client *Client) GetAllLeased() ([]GPU, error) {
-	// filter lease exist and vmId is not empty
-	filter := bson.D{
-		{"$and", []interface{}{
-			bson.M{"lease.vmId": bson.M{"$ne": ""}},
-			bson.M{"lease": bson.M{"$exists": true}},
-		}},
-		{"host", bson.M{"$nin": client.ExcludedHosts}},
-		{"id", bson.M{"$nin": client.ExcludedGPUs}},
-	}
-
-	var gpus []GPU
-	cursor, err := client.Collection.Find(context.Background(), filter)
-	if err != nil {
-		return nil, err
-	}
-
-	err = cursor.All(context.Background(), &gpus)
-	if err != nil {
-		return nil, err
-	}
-
-	return gpus, nil
 }
 
 func (client *Client) Delete(gpuID string) error {

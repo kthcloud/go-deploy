@@ -82,9 +82,10 @@ func (c *Client) Get(opts *client.Opts) (*vmModels.VM, *cs.Client, *resources.Cs
 
 	var cc *cs.Client
 	if opts.Client {
-		// If creating a client and a VM, use the VM's zone.
 		var zone *configModels.VmZone
-		if vm != nil {
+		if opts.ExtraOpts.Zone != nil {
+			zone = opts.ExtraOpts.Zone
+		} else if vm != nil {
 			zone = config.Config.VM.GetZone(vm.Zone)
 		}
 
