@@ -335,6 +335,11 @@ func (c *Client) Repair(id string) error {
 		return makeError(err)
 	}
 
+	zone := config.Config.VM.GetZone(vm.Zone)
+	if zone == nil {
+		return makeError(sErrors.ZoneNotFoundErr)
+	}
+
 	// Service offering
 	so := g.SOs()[0]
 	err = resources.SsRepairer(
@@ -411,6 +416,17 @@ func (c *Client) Repair(id string) error {
 		}
 	}
 	for _, pfr := range pfrs {
+		if pfr.PublicPort == 0 {
+			pfr.PublicPort, err = csc.GetFreePort(
+				zone.PortRange.Start,
+				zone.PortRange.End,
+			)
+
+			if err != nil {
+				return makeError(err)
+			}
+		}
+
 		err = resources.SsRepairer(
 			csc.ReadPortForwardingRule,
 			csc.CreatePortForwardingRule,
