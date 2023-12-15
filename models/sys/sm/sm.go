@@ -3,6 +3,7 @@ package sm
 import (
 	"fmt"
 	"go-deploy/models/sys/activity"
+	"go-deploy/pkg/subsystems"
 	"time"
 )
 
@@ -20,8 +21,8 @@ type SM struct {
 }
 
 func (sm *SM) GetURL() *string {
-	ingress, ok := sm.Subsystems.K8s.IngressMap["oauth-proxy"]
-	if !ok || !ingress.Created() {
+	ingress := sm.Subsystems.K8s.GetIngress("storage-manager")
+	if subsystems.NotCreated(ingress) {
 		return nil
 	}
 

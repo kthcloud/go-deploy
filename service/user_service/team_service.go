@@ -58,9 +58,13 @@ func (c *Client) ListTeams(opts *ListTeamsOpts) ([]teamModels.Team, error) {
 			effectiveUserID = c.Auth.UserID
 		}
 	}
-
+	
 	if effectiveUserID != "" {
 		teamClient.WithUserID(effectiveUserID)
+	}
+
+	if opts.ResourceID != "" {
+		teamClient.WithResourceID(opts.ResourceID)
 	}
 
 	teams, err := teamClient.List()

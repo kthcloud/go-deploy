@@ -83,14 +83,14 @@ func (c *Client) List(opts *client.ListOptions) ([]deploymentModel.Deployment, e
 
 	var effectiveUserID string
 	if opts.UserID != "" {
-		// specific user's deployments are requested
+		// Specific user's deployments are requested
 		if c.Auth == nil || c.Auth.UserID == opts.UserID || c.Auth.IsAdmin {
 			effectiveUserID = opts.UserID
 		} else {
 			effectiveUserID = c.Auth.UserID
 		}
 	} else {
-		// all deployments are requested
+		// All deployments are requested
 		if c.Auth != nil && !c.Auth.IsAdmin {
 			effectiveUserID = c.Auth.UserID
 		}
@@ -105,6 +105,7 @@ func (c *Client) List(opts *client.ListOptions) ([]deploymentModel.Deployment, e
 		return nil, err
 	}
 
+	// Can only view shared if we are listing resources for a specific user
 	if opts.Shared && effectiveUserID != "" {
 		skipIDs := make([]string, len(resources))
 		for i, resource := range resources {
@@ -127,7 +128,7 @@ func (c *Client) List(opts *client.ListOptions) ([]deploymentModel.Deployment, e
 					continue
 				}
 
-				// skip existing non-shared resources
+				// Skip existing non-shared resources
 				skip := false
 				for _, skipID := range skipIDs {
 					if resource.ID == skipID {
@@ -154,13 +155,13 @@ func (c *Client) List(opts *client.ListOptions) ([]deploymentModel.Deployment, e
 			return resources[i].CreatedAt.After(resources[j].CreatedAt)
 		})
 
-		// since we fetched from two collections, we need to do pagination manually
+		// Since we fetched from two collections, we need to do pagination manually
 		if opts.Pagination != nil {
 			resources = utils.GetPage(resources, opts.Pagination.PageSize, opts.Pagination.Page)
 		}
 
 	} else {
-		// sort by createdAt
+		// Sort by createdAt
 		sort.Slice(resources, func(i, j int) bool {
 			return resources[i].CreatedAt.After(resources[j].CreatedAt)
 		})

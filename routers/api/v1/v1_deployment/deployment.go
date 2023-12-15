@@ -23,19 +23,6 @@ import (
 	"go-deploy/service/zone_service"
 )
 
-func getSmURL(userID string, auth *service.AuthInfo) *string {
-	sm, err := sm_service.New().WithAuth(auth).GetByUserID(userID, &smClient.GetOptions{})
-	if err != nil {
-		return nil
-	}
-
-	if sm == nil {
-		return nil
-	}
-
-	return sm.GetURL()
-}
-
 // List
 // @Summary Get list of deployments
 // @Description Get list of deployments
@@ -78,7 +65,7 @@ func List(c *gin.Context) {
 	deployments, err := deployment_service.New().WithAuth(auth).List(&client.ListOptions{
 		UserID:     userID,
 		Pagination: &service.Pagination{Page: requestQuery.Page, PageSize: requestQuery.PageSize},
-		Shared:     requestQuery.Shared,
+		Shared:     true,
 	})
 	if err != nil {
 		context.ServerError(err, v1.AuthInfoNotAvailableErr)
@@ -92,12 +79,7 @@ func List(c *gin.Context) {
 
 	dtoDeployments := make([]body.DeploymentRead, len(deployments))
 	for i, deployment := range deployments {
-		var smURL *string
-		if mainApp := deployment.GetMainApp(); mainApp != nil && len(mainApp.Volumes) > 0 {
-			smURL = getSmURL(deployment.OwnerID, auth)
-		}
-
-		dtoDeployments[i] = deployment.ToDTO(smURL)
+		dtoDeployments[i] = deployment.ToDTO(getSmURL(deployment.OwnerID, auth), getTeamIDs(deployment.ID))
 	}
 
 	context.JSONResponse(200, dtoDeployments)
@@ -131,7 +113,9 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	deployment, err := deployment_service.New().WithAuth(auth).Get(requestURI.DeploymentID, &client.GetOptions{})
+	deployment, err := deployment_service.New().WithAuth(auth).Get(requestURI.DeploymentID, &client.GetOptions{
+		Shared: true,
+	})
 	if err != nil {
 		context.ServerError(err, v1.AuthInfoNotAvailableErr)
 		return
@@ -142,12 +126,7 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	var smURL *string
-	if len(deployment.GetMainApp().Volumes) > 0 {
-		smURL = getSmURL(deployment.OwnerID, auth)
-	}
-
-	context.Ok(deployment.ToDTO(smURL))
+	context.Ok(deployment.ToDTO(getSmURL(deployment.OwnerID, auth), getTeamIDs(deployment.ID)))
 }
 
 // Create
@@ -522,4 +501,32 @@ func Update(c *gin.Context) {
 		ID:    deployment.ID,
 		JobID: &jobID,
 	})
+}
+
+func getSmURL(userID string, auth *service.AuthInfo) *string {
+	sm, err := sm_service.New().WithAuth(auth).GetByUserID(userID, &smClient.GetOptions{})
+	if err != nil {
+		return nil
+	}
+
+	if sm == nil {
+		return nil
+	}
+
+	return sm.GetURL()
+}
+
+func getTeamIDs(resourceID string) []string {
+	teams, err := user_service.New().ListTeams(&user_service.ListTeamsOpts{ResourceID: resourceID})
+
+	if err != nil {
+		return []string{}
+	}
+
+	teamIDs := make([]string, len(teams))
+	for idx, team := range teams {
+		teamIDs[idx] = team.ID
+	}
+
+	return teamIDs
 }

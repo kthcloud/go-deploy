@@ -27,4 +27,5 @@ type GetTeamOpts struct {
 type ListTeamsOpts struct {
 	Pagination *service.Pagination
 	UserID     string
+	ResourceID string
 }

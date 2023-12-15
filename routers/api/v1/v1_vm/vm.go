@@ -68,7 +68,7 @@ func List(c *gin.Context) {
 			PageSize: requestQuery.PageSize,
 		},
 		UserID: userID,
-		Shared: requestQuery.Shared,
+		Shared: true,
 	})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)

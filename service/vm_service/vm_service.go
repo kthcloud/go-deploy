@@ -95,6 +95,7 @@ func (c *Client) List(opts *client.ListOptions) ([]vmModel.VM, error) {
 		return nil, err
 	}
 
+	// Can only view shared if we are listing resources for a specific user
 	if opts.Shared && effectiveUserID != "" {
 		skipIDs := make([]string, len(resources))
 		for i, resource := range resources {
