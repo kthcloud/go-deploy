@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"fmt"
 	"go-deploy/models/dto/body"
 	"go-deploy/pkg/subsystems"
 	"go-deploy/utils"
@@ -26,9 +27,9 @@ func (vm *VM) ToDTO(status string, connectionString *string, gpu *body.GpuRead, 
 			}
 
 			var externalPort *int
-			if _, ok := externalPortMapper[port.Name]; ok {
-				p := externalPortMapper[port.Name]
-				externalPort = &p
+			if p, ok := externalPortMapper[fmt.Sprintf("priv-%d-prot-%s", port.Port, port.Protocol)]; ok {
+				pLocal := p
+				externalPort = &pLocal
 			}
 
 			var url *string

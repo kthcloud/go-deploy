@@ -95,7 +95,8 @@ func (c *BaseClient[parent]) fetchDeployments(dmc *deploymentModel.Client) ([]de
 	}
 
 	for _, deployment := range deployments {
-		c.StoreDeployment(&deployment)
+		d := deployment
+		c.StoreDeployment(&d)
 	}
 
 	return deployments, nil
