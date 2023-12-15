@@ -9,16 +9,11 @@ import (
 )
 
 type Client struct {
-	ExcludedHosts []string
-	ExcludedGPUs  []string
-
 	resource.ResourceClient[GPU]
 }
 
 func New() *Client {
 	return &Client{
-		ExcludedHosts: make([]string, 0),
-		ExcludedGPUs:  make([]string, 0),
 		ResourceClient: resource.ResourceClient[GPU]{
 			Collection: db.DB.GetCollection("gpus"),
 		},
@@ -43,8 +38,12 @@ func (client *Client) WithExclusion(excludedHosts []string, excludedGPUs []strin
 		excludedGPUs = make([]string, 0)
 	}
 
-	client.ExcludedHosts = excludedHosts
-	client.ExcludedGPUs = excludedGPUs
+	filter := bson.D{
+		{"host", bson.M{"$nin": excludedHosts}},
+		{"id", bson.M{"$nin": excludedGPUs}},
+	}
+
+	client.ResourceClient.AddExtraFilter(filter)
 
 	return client
 }
@@ -56,8 +55,6 @@ func (client *Client) OnlyAvailable() *Client {
 			bson.M{"lease.vmId": ""},
 			bson.M{"lease.end": bson.M{"$lte": time.Now()}},
 		}},
-		{"host", bson.M{"$nin": client.ExcludedHosts}},
-		{"id", bson.M{"$nin": client.ExcludedGPUs}},
 	}
 
 	client.ResourceClient.AddExtraFilter(filter)
