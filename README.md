@@ -33,4 +33,4 @@ go-deploy is open-source software licensed under the [MIT license](https://opens
 
 ## 📧 Contact
 
-If you have any questions or feedback, please feel free to contact us at [email@example.com](mailto:email@example.com).
+If you have any questions or feedback, open an Issue or join [Discord channel](https://discord.gg/MuHQd6QEtM).
