@@ -128,8 +128,12 @@ func (c *Client) AttachGPU(vmID string, gpuIDs []string, leaseDuration float64) 
 			continue
 		}
 
-		err = c.CheckGpuHardwareAvailable(vmID)
+		err = c.CheckGpuHardwareAvailable(gpuID)
 		if err != nil {
+			if errors.Is(err, sErrors.GpuNotFoundErr) {
+				continue
+			}
+
 			return makeError(err)
 		}
 
