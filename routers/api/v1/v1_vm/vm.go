@@ -58,7 +58,7 @@ func List(c *gin.Context) {
 	var userID string
 	if requestQuery.UserID != nil {
 		userID = *requestQuery.UserID
-	} else if requestQuery.All == false {
+	} else if !requestQuery.All {
 		userID = auth.UserID
 	}
 
@@ -68,7 +68,7 @@ func List(c *gin.Context) {
 			PageSize: requestQuery.PageSize,
 		},
 		UserID: userID,
-		Shared: requestQuery.Shared,
+		Shared: true,
 	})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
@@ -96,7 +96,7 @@ func List(c *gin.Context) {
 			continue
 		}
 
-		dtoVMs[i] = vm.ToDTO(vm.StatusMessage, connectionString, gpuRead, mapper)
+		dtoVMs[i] = vm.ToDTO(vm.StatusMessage, connectionString, getTeamIDs(vm.ID, auth), gpuRead, mapper)
 	}
 
 	context.Ok(dtoVMs)
@@ -154,7 +154,7 @@ func Get(c *gin.Context) {
 		utils.PrettyPrintError(fmt.Errorf("failed to get external port mapper for vm %s. details: %w", vm.ID, err))
 	}
 
-	context.Ok(vm.ToDTO(vm.StatusMessage, connectionString, gpuRead, mapper))
+	context.Ok(vm.ToDTO(vm.StatusMessage, connectionString, getTeamIDs(vm.ID, auth), gpuRead, mapper))
 }
 
 // Create
@@ -748,4 +748,19 @@ func decodeGpuID(gpuID string) (string, error) {
 		return "", err
 	}
 	return string(res), nil
+}
+
+func getTeamIDs(resourceID string, auth *service.AuthInfo) []string {
+	teams, err := user_service.New().ListTeams(&user_service.ListTeamsOpts{ResourceID: resourceID, UserID: auth.UserID})
+
+	if err != nil {
+		return []string{}
+	}
+
+	teamIDs := make([]string, len(teams))
+	for idx, team := range teams {
+		teamIDs[idx] = team.ID
+	}
+
+	return teamIDs
 }

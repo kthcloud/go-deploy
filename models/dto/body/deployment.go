@@ -81,11 +81,12 @@ type DeploymentUpdated struct {
 }
 
 type DeploymentRead struct {
-	ID          string     `json:"id"`
-	Name        string     `json:"name"`
-	Type        string     `json:"type"`
-	OwnerID     string     `json:"ownerId"`
-	Zone        string     `json:"zone"`
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	Type    string `json:"type"`
+	OwnerID string `json:"ownerId"`
+	Zone    string `json:"zone"`
+
 	CreatedAt   time.Time  `json:"createdAt"`
 	UpdatedAt   *time.Time `json:"updatedAt,omitempty"`
 	RepairedAt  *time.Time `json:"repairedAt,omitempty"`
@@ -106,6 +107,7 @@ type DeploymentRead struct {
 	PingResult *int   `json:"pingResult,omitempty"`
 
 	Integrations []string `json:"integrations"`
+	Teams        []string `json:"teams"`
 
 	StorageURL *string `json:"storageUrl,omitempty"`
 }

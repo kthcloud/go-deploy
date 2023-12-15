@@ -68,7 +68,7 @@ func (params *JoinParams) FromDTO(teamJoinDTO *body.TeamJoin) {
 	params.InvitationCode = teamJoinDTO.InvitationCode
 }
 
-func (params *UpdateParams) FromDTO(teamUpdateDTO *body.TeamUpdate, ownerID string, getResourceFunc func(string) *Resource, getMemberFunc func(*body.TeamMemberUpdate) *Member) {
+func (params *UpdateParams) FromDTO(teamUpdateDTO *body.TeamUpdate, owner *Member, getResourceFunc func(string) *Resource, getMemberFunc func(*body.TeamMemberUpdate) *Member) {
 	params.Name = teamUpdateDTO.Name
 	params.Description = teamUpdateDTO.Description
 
@@ -85,14 +85,7 @@ func (params *UpdateParams) FromDTO(teamUpdateDTO *body.TeamUpdate, ownerID stri
 	if teamUpdateDTO.Members != nil {
 		memberMap := make(map[string]Member)
 
-		now := time.Now()
-		memberMap[ownerID] = Member{
-			ID:           ownerID,
-			TeamRole:     MemberRoleAdmin,
-			AddedAt:      now,
-			JoinedAt:     now,
-			MemberStatus: MemberStatusJoined,
-		}
+		memberMap[owner.ID] = *owner
 
 		for _, memberDTO := range *teamUpdateDTO.Members {
 			memberMap[memberDTO.ID] = *getMemberFunc(&memberDTO)

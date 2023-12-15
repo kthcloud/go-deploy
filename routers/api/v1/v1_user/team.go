@@ -56,7 +56,7 @@ func ListTeams(c *gin.Context) {
 	var userID string
 	if requestQuery.UserID != nil {
 		userID = *requestQuery.UserID
-	} else if !auth.IsAdmin {
+	} else if !requestQuery.All {
 		userID = auth.UserID
 	}
 
@@ -241,6 +241,11 @@ func DeleteTeam(c *gin.Context) {
 
 	err = user_service.New().WithAuth(auth).DeleteTeam(requestURI.TeamID)
 	if err != nil {
+		if errors.Is(err, sErrors.TeamNotFoundErr) {
+			context.NotFound("Team not found")
+			return
+		}
+
 		context.ServerError(err, v1.InternalError)
 		return
 	}

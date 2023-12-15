@@ -9,7 +9,7 @@ import (
 	"strconv"
 )
 
-func (deployment *Deployment) ToDTO(smURL *string) body.DeploymentRead {
+func (deployment *Deployment) ToDTO(smURL *string, teams []string) body.DeploymentRead {
 	app := deployment.GetMainApp()
 	if app == nil {
 		log.Println("main app not found in deployment", deployment.ID)
@@ -68,11 +68,12 @@ func (deployment *Deployment) ToDTO(smURL *string) body.DeploymentRead {
 	}
 
 	return body.DeploymentRead{
-		ID:          deployment.ID,
-		Name:        deployment.Name,
-		Type:        deployment.Type,
-		OwnerID:     deployment.OwnerID,
-		Zone:        deployment.Zone,
+		ID:      deployment.ID,
+		Name:    deployment.Name,
+		Type:    deployment.Type,
+		OwnerID: deployment.OwnerID,
+		Zone:    deployment.Zone,
+
 		CreatedAt:   deployment.CreatedAt,
 		UpdatedAt:   utils.NonZeroOrNil(deployment.UpdatedAt),
 		RepairedAt:  utils.NonZeroOrNil(deployment.RepairedAt),
@@ -92,7 +93,10 @@ func (deployment *Deployment) ToDTO(smURL *string) body.DeploymentRead {
 		Status:       deployment.StatusMessage,
 		PingResult:   pingResult,
 		Integrations: integrations,
-		StorageURL:   smURL,
+
+		StorageURL: smURL,
+
+		Teams: teams,
 	}
 }
 

@@ -77,6 +77,7 @@ func (c *Client) List(opts *client.ListOptions) ([]vmModel.VM, error) {
 		if c.Auth == nil || c.Auth.UserID == opts.UserID || c.Auth.IsAdmin {
 			effectiveUserID = opts.UserID
 		} else {
+			// User cannot access the other user's resources
 			effectiveUserID = c.Auth.UserID
 		}
 	} else {
@@ -95,6 +96,7 @@ func (c *Client) List(opts *client.ListOptions) ([]vmModel.VM, error) {
 		return nil, err
 	}
 
+	// Can only view shared if we are listing resources for a specific user
 	if opts.Shared && effectiveUserID != "" {
 		skipIDs := make([]string, len(resources))
 		for i, resource := range resources {
