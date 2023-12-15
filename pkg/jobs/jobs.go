@@ -231,7 +231,6 @@ func CreateDeployment(job *jobModels.Job) error {
 
 	err = deployment_service.New().Create(id, ownerID, &params)
 	if err != nil {
-		// We always terminate these jobs, since rerunning it would cause a NonUniqueFieldErr
 		// If there was some error, we trigger a repair, since rerunning it would cause a NonUniqueFieldErr
 		_ = deployment_service.New().Repair(id)
 		return makeTerminatedError(err)
