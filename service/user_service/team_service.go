@@ -50,7 +50,8 @@ func (c *Client) ListTeams(opts *ListTeamsOpts) ([]teamModels.Team, error) {
 		if c.Auth == nil || c.Auth.UserID == opts.UserID || c.Auth.IsAdmin {
 			effectiveUserID = opts.UserID
 		} else {
-			effectiveUserID = c.Auth.UserID
+			// User cannot access the other user's resources
+			return nil, nil
 		}
 	} else {
 		// All teams are requested
@@ -58,7 +59,7 @@ func (c *Client) ListTeams(opts *ListTeamsOpts) ([]teamModels.Team, error) {
 			effectiveUserID = c.Auth.UserID
 		}
 	}
-	
+
 	if effectiveUserID != "" {
 		teamClient.WithUserID(effectiveUserID)
 	}
@@ -132,7 +133,7 @@ func (c *Client) UpdateTeam(id string, dtoUpdateTeam *body.TeamUpdate) (*teamMod
 	}
 
 	params := &teamModels.UpdateParams{}
-	params.FromDTO(dtoUpdateTeam, team.OwnerID,
+	params.FromDTO(dtoUpdateTeam, team.GetMember(team.OwnerID),
 		func(resourceID string) *teamModels.Resource { return c.getResourceIfAccessible(resourceID) },
 		func(memberDTO *body.TeamMemberUpdate) *teamModels.Member {
 			return c.createMemberIfAccessible(team, memberDTO.ID)

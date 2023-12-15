@@ -77,6 +77,7 @@ func (c *Client) List(opts *client.ListOptions) ([]vmModel.VM, error) {
 		if c.Auth == nil || c.Auth.UserID == opts.UserID || c.Auth.IsAdmin {
 			effectiveUserID = opts.UserID
 		} else {
+			// User cannot access the other user's resources
 			effectiveUserID = c.Auth.UserID
 		}
 	} else {

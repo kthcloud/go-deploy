@@ -58,7 +58,7 @@ func List(c *gin.Context) {
 	var userID string
 	if requestQuery.UserID != nil {
 		userID = *requestQuery.UserID
-	} else if requestQuery.All == false {
+	} else if !requestQuery.All {
 		userID = auth.UserID
 	}
 
@@ -79,7 +79,7 @@ func List(c *gin.Context) {
 
 	dtoDeployments := make([]body.DeploymentRead, len(deployments))
 	for i, deployment := range deployments {
-		dtoDeployments[i] = deployment.ToDTO(getSmURL(deployment.OwnerID, auth), getTeamIDs(deployment.ID))
+		dtoDeployments[i] = deployment.ToDTO(getSmURL(deployment.OwnerID, auth), getTeamIDs(deployment.ID, auth))
 	}
 
 	context.JSONResponse(200, dtoDeployments)
@@ -126,7 +126,7 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	context.Ok(deployment.ToDTO(getSmURL(deployment.OwnerID, auth), getTeamIDs(deployment.ID)))
+	context.Ok(deployment.ToDTO(getSmURL(deployment.OwnerID, auth), getTeamIDs(deployment.ID, auth)))
 }
 
 // Create
@@ -516,8 +516,8 @@ func getSmURL(userID string, auth *service.AuthInfo) *string {
 	return sm.GetURL()
 }
 
-func getTeamIDs(resourceID string) []string {
-	teams, err := user_service.New().ListTeams(&user_service.ListTeamsOpts{ResourceID: resourceID})
+func getTeamIDs(resourceID string, auth *service.AuthInfo) []string {
+	teams, err := user_service.New().ListTeams(&user_service.ListTeamsOpts{ResourceID: resourceID, UserID: auth.UserID})
 
 	if err != nil {
 		return []string{}

@@ -58,7 +58,7 @@ func List(c *gin.Context) {
 	var userID string
 	if requestQuery.UserID != nil {
 		userID = *requestQuery.UserID
-	} else if requestQuery.All == false {
+	} else if !requestQuery.All {
 		userID = auth.UserID
 	}
 
