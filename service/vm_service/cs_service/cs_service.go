@@ -399,47 +399,87 @@ func (c *Client) Repair(id string) error {
 	}
 
 	// Port-forwarding rules
-	pfrs := g.PFRs()
-	for mapName, pfr := range vm.Subsystems.CS.GetPortForwardingRuleMap() {
-		idx := slices.IndexFunc(pfrs, func(p csModels.PortForwardingRulePublic) bool { return pfrName(&p) == mapName })
-		if idx == -1 {
-			err = resources.SsDeleter(csc.DeletePortForwardingRule).
-				WithResourceID(pfr.ID).
-				WithDbFunc(dbFunc(id, "portForwardingRuleMap."+pfrName(&pfr))).
-				Exec()
+	//// Only repair PFRs if there is a cs vm
+	if subsystems.Created(&vm.Subsystems.CS.VM) {
+		pfrs := g.PFRs()
+		for mapName, pfr := range vm.Subsystems.CS.GetPortForwardingRuleMap() {
+			idx := slices.IndexFunc(pfrs, func(p csModels.PortForwardingRulePublic) bool { return pfrName(&p) == mapName })
+			if idx == -1 {
+				err = resources.SsDeleter(csc.DeletePortForwardingRule).
+					WithResourceID(pfr.ID).
+					WithDbFunc(dbFunc(id, "portForwardingRuleMap."+pfrName(&pfr))).
+					Exec()
 
-			if err != nil {
-				return makeError(err)
+				if err != nil {
+					return makeError(err)
+				}
+
+				continue
+			}
+		}
+		for _, pfr := range pfrs {
+			if pfr.PublicPort == 0 {
+				pfr.PublicPort, err = csc.GetFreePort(
+					zone.PortRange.Start,
+					zone.PortRange.End,
+				)
+
+				if err != nil {
+					return makeError(err)
+				}
 			}
 
-			continue
+			err = resources.SsRepairer(
+				csc.ReadPortForwardingRule,
+				csc.CreatePortForwardingRule,
+				csc.UpdatePortForwardingRule,
+				csc.DeletePortForwardingRule,
+			).WithResourceID(pfr.ID).WithDbFunc(dbFunc(id, "portForwardingRuleMap."+pfrName(&pfr))).WithGenPublic(&pfr).Exec()
+
+			if err != nil {
+				if errors.Is(err, cErrors.PortInUseErr) {
+					return makeError(sErrors.PortInUseErr)
+				}
+
+				return makeError(err)
+			}
 		}
 	}
-	for _, pfr := range pfrs {
-		if pfr.PublicPort == 0 {
-			pfr.PublicPort, err = csc.GetFreePort(
-				zone.PortRange.Start,
-				zone.PortRange.End,
-			)
 
-			if err != nil {
-				return makeError(err)
+	// Snapshot, ensure the daily, weekly and monthly snapshots are created
+	//// Only repair snapshots if there is a cs vm
+	if subsystems.Created(&vm.Subsystems.CS.VM) {
+		snapshots, err := csc.ReadAllSnapshots(vm.Subsystems.CS.VM.ID)
+		if err != nil {
+			return makeError(err)
+		}
+
+		snapshotMap := make(map[string]string)
+		required := []string{"auto-daily", "auto-weekly", "auto-monthly"}
+
+		for _, snapshot := range snapshots {
+			if snapshot.SystemCreated() {
+				snapshotMap[snapshot.Name] = snapshot.ID
+			}
+
+			for _, name := range required {
+				if snapshot.Name == name {
+					snapshotMap[name] = snapshot.ID
+				}
 			}
 		}
 
-		err = resources.SsRepairer(
-			csc.ReadPortForwardingRule,
-			csc.CreatePortForwardingRule,
-			csc.UpdatePortForwardingRule,
-			csc.DeletePortForwardingRule,
-		).WithResourceID(pfr.ID).WithDbFunc(dbFunc(id, "portForwardingRuleMap."+pfrName(&pfr))).WithGenPublic(&pfr).Exec()
-
-		if err != nil {
-			if errors.Is(err, cErrors.PortInUseErr) {
-				return makeError(sErrors.PortInUseErr)
+		for _, name := range required {
+			if _, ok := snapshotMap[name]; !ok {
+				err = c.CreateSnapshot(id, &vmModel.CreateSnapshotParams{
+					Name:        name,
+					UserCreated: false,
+					Overwrite:   true,
+				})
+				if err != nil {
+					return makeError(err)
+				}
 			}
-
-			return makeError(err)
 		}
 	}
 
