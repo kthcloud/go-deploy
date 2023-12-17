@@ -40,6 +40,7 @@ type VmZone struct {
 	ProjectID   string `yaml:"projectId"`
 	NetworkID   string `yaml:"networkId"`
 	IpAddressID string `yaml:"ipAddressId"`
+	TemplateID  string `yaml:"templateId"`
 }
 
 type Deployment struct {

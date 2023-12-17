@@ -15,6 +15,7 @@ type ClientConf struct {
 	NetworkID   string
 	ProjectID   string
 	ZoneID      string
+	TemplateID  string
 }
 
 type Client struct {
@@ -24,6 +25,7 @@ type Client struct {
 	NetworkOfferingID string
 	ProjectID         string
 	ZoneID            string
+	TemplateID        string
 
 	userSshPublicKey  *string
 	adminSshPublicKey *string
@@ -47,6 +49,7 @@ func New(config *ClientConf) (*Client, error) {
 		RootNetworkID:   config.NetworkID,
 		ProjectID:       config.ProjectID,
 		ZoneID:          config.ZoneID,
+		TemplateID:      config.TemplateID,
 	}
 
 	return &client, nil
