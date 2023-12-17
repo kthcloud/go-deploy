@@ -214,6 +214,11 @@ func (c *Client) Create(id, ownerID string, deploymentCreate *body.DeploymentCre
 		}
 	}
 
+	d, err = c.Refresh(id)
+	if err != nil {
+		return makeError(err)
+	}
+
 	err = k8s_service.New(c.Cache).Create(id, params)
 	if err != nil {
 		return makeError(err)
