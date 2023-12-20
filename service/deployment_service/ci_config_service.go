@@ -50,7 +50,7 @@ func (c *Client) GetCiConfig(id string) (*body.CiConfig, error) {
 			Steps: []deploymentModel.Steps{
 				{
 					Name: "Login to Docker Hub",
-					Uses: "docker/login-action@v2",
+					Uses: "docker/login-action@v3",
 					With: deploymentModel.With{
 						Registry: config.Config.Registry.URL,
 						Username: username,
@@ -59,7 +59,7 @@ func (c *Client) GetCiConfig(id string) (*body.CiConfig, error) {
 				},
 				{
 					Name: "Build and push",
-					Uses: "docker/build-push-action@v3",
+					Uses: "docker/build-push-action@v5",
 					With: deploymentModel.With{
 						Push: true,
 						Tags: tag,
