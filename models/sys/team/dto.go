@@ -3,6 +3,7 @@ package team
 import (
 	"go-deploy/models/dto/body"
 	"go-deploy/utils"
+	"sort"
 	"time"
 )
 
@@ -25,6 +26,13 @@ func (t *Team) ToDTO(getMember func(*Member) *body.TeamMember, getResourceName f
 			members = append(members, *memberDTO)
 		}
 	}
+
+	sort.Slice(resources, func(i, j int) bool {
+		return resources[i].Name < resources[j].Name
+	})
+	sort.Slice(members, func(i, j int) bool {
+		return members[i].Username < members[j].Username
+	})
 
 	return body.TeamRead{
 		ID:          t.ID,
