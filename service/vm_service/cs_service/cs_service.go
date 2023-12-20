@@ -340,6 +340,9 @@ func (c *Client) Repair(id string) error {
 		return makeError(sErrors.ZoneNotFoundErr)
 	}
 
+	csc.WithUserSshPublicKey(vm.SshPublicKey)
+	csc.WithAdminSshPublicKey(config.Config.VM.AdminSshPublicKey)
+
 	// Service offering
 	so := g.SOs()[0]
 	err = resources.SsRepairer(
@@ -384,7 +387,7 @@ func (c *Client) Repair(id string) error {
 		}
 
 		// <<NEVER>> call the "DeleteVM" method here, as it contains the persistent storage for the VM
-		// (this api does not handle volume in cloudstack separately from the vm,
+		// (this api does not handle volumes in cloudstack separately from the vm,
 		// so deleting the vm will delete the persistent volume)
 		err = resources.SsRepairer(
 			csc.ReadVM,
@@ -396,6 +399,8 @@ func (c *Client) Repair(id string) error {
 		if err != nil {
 			return makeError(err)
 		}
+
+		vm.Subsystems.CS.VM = csVM
 	}
 
 	// Port-forwarding rules
@@ -432,7 +437,9 @@ func (c *Client) Repair(id string) error {
 			err = resources.SsRepairer(
 				csc.ReadPortForwardingRule,
 				csc.CreatePortForwardingRule,
-				csc.UpdatePortForwardingRule,
+				func(_ *csModels.PortForwardingRulePublic) (*csModels.PortForwardingRulePublic, error) {
+					return nil, nil
+				},
 				csc.DeletePortForwardingRule,
 			).WithResourceID(pfr.ID).WithDbFunc(dbFunc(id, "portForwardingRuleMap."+pfrName(&pfr))).WithGenPublic(&pfr).Exec()
 
