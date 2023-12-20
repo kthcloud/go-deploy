@@ -115,7 +115,7 @@ func (c *Client) List(opts *client.ListOptions) ([]vmModel.VM, error) {
 
 		for _, team := range teams {
 			for _, resource := range team.GetResourceMap() {
-				if resource.Type != teamModels.ResourceTypeDeployment {
+				if resource.Type != teamModels.ResourceTypeVM {
 					continue
 				}
 
@@ -132,7 +132,11 @@ func (c *Client) List(opts *client.ListOptions) ([]vmModel.VM, error) {
 				}
 
 				vm, err := c.VM(resource.ID, nil)
-				if err != nil && vm != nil {
+				if err != nil {
+					return nil, err
+				}
+
+				if vm != nil {
 					resources = append(resources, *vm)
 				}
 			}
