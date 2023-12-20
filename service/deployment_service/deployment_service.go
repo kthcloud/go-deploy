@@ -39,7 +39,7 @@ func (c *Client) Get(id string, opts *client.GetOptions) (*deploymentModel.Deplo
 	}
 
 	var effectiveUserID string
-	if c.Auth != nil && c.Auth.IsAdmin {
+	if c.Auth != nil && !c.Auth.IsAdmin {
 		effectiveUserID = c.Auth.UserID
 	}
 
@@ -141,7 +141,7 @@ func (c *Client) List(opts *client.ListOptions) ([]deploymentModel.Deployment, e
 					continue
 				}
 
-				deployment, err := deploymentModel.New().GetByID(resource.ID)
+				deployment, err := c.Deployment(resource.ID, nil)
 				if err != nil {
 					return nil, err
 				}
@@ -706,7 +706,7 @@ func (c *Client) CheckQuota(id string, opts *client.QuotaOptions) error {
 		return fmt.Errorf("failed to check quota. details: %w", err)
 	}
 
-	if c.Auth != nil && c.Auth.IsAdmin {
+	if c.Auth == nil || c.Auth.IsAdmin {
 		return nil
 	}
 
