@@ -22,8 +22,10 @@ func (t *Team) ToDTO(getMember func(*Member) *body.TeamMember, getResourceName f
 	}
 
 	for _, member := range t.GetMemberMap() {
-		if memberDTO := getMember(&member); memberDTO != nil {
-			members = append(members, *memberDTO)
+		lMember := member
+		if memberDTO := getMember(&lMember); memberDTO != nil {
+			l := *memberDTO
+			members = append(members, l)
 		}
 	}
 
