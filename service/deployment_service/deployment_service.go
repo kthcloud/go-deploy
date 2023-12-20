@@ -141,7 +141,7 @@ func (c *Client) List(opts *client.ListOptions) ([]deploymentModel.Deployment, e
 					continue
 				}
 
-				deployment, err := deploymentModel.New().GetByID(resource.ID)
+				deployment, err := c.Deployment(resource.ID, nil)
 				if err != nil {
 					return nil, err
 				}
