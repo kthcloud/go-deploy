@@ -37,7 +37,7 @@ func (c *Client) Get(id string, opts *client.GetOptions) (*vmModel.VM, error) {
 	}
 
 	var effectiveUserID string
-	if c.Auth != nil && c.Auth.IsAdmin {
+	if c.Auth != nil && !c.Auth.IsAdmin {
 		effectiveUserID = c.Auth.UserID
 	}
 
