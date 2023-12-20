@@ -6,7 +6,6 @@ import (
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems"
 	"go-deploy/pkg/subsystems/cs/models"
-	"go-deploy/service/vm_service/constants"
 	"go-deploy/utils/subsystemutils"
 	"golang.org/x/exp/slices"
 	"sort"
@@ -48,7 +47,7 @@ func (cr *CsGenerator) VMs() []models.VmPublic {
 		csVM := models.VmPublic{
 			Name:              cr.v.vm.Name,
 			ServiceOfferingID: cr.v.vm.Subsystems.CS.ServiceOffering.ID,
-			TemplateID:        constants.TemplateID,
+			TemplateID:        cr.v.vmZone.TemplateID,
 			ExtraConfig:       cr.v.vm.Subsystems.CS.VM.ExtraConfig,
 			Tags:              createTags(cr.v.vm.Name, cr.v.vm.Name),
 		}

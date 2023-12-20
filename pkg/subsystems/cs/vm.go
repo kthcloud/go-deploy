@@ -209,11 +209,10 @@ func (client *Client) GetVmStatus(id string) (string, error) {
 	vm, _, err := client.CsClient.VirtualMachine.GetVirtualMachineByID(id)
 	if err != nil {
 		errString := err.Error()
-		if !strings.Contains(errString, "not found") {
+		if !strings.Contains(errString, "No match found for") {
 			return "", makeError(err)
 		}
 
-		log.Println("cs vm", id, "not found when getting status. assuming it was deleted")
 		return "", nil
 	}
 

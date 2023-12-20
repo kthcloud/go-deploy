@@ -151,7 +151,7 @@ func createClientFromCloudStackConfig(name string, config *config.CloudStackConf
 	}
 
 	// use regex to replace the private ip in config.ConfigData 172.31.1.* with the public ip
-	regex := regexp.MustCompile(`https://172.31.1.[0-9]+:6443`)
+	regex := regexp.MustCompile(`https://172.[0-9]+.[0-9]+.[0-9]+:6443`)
 	clusterConfig.Configdata = regex.ReplaceAllString(clusterConfig.Configdata, config.ExternalURL)
 
 	return createK8sClient([]byte(clusterConfig.Configdata))

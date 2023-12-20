@@ -136,7 +136,7 @@ func (client *Client) MarkCompleted(jobID string) error {
 	return nil
 }
 
-func (client *Client) MarkFailed(jobID string, reason string) error {
+func (client *Client) MarkFailed(jobID string, runAfter time.Time, attempts int, reason string) error {
 	filter := bson.D{
 		{"id", jobID},
 	}
@@ -145,6 +145,8 @@ func (client *Client) MarkFailed(jobID string, reason string) error {
 			bson.D{
 				{"status", StatusFailed},
 				{"finishedAt", time.Now()},
+				{"attempts", attempts},
+				{"runAfter", runAfter},
 			},
 		},
 		{"$push",

@@ -5,12 +5,16 @@ import (
 	"fmt"
 	jobModel "go-deploy/models/sys/job"
 	"go-deploy/utils"
+	"math"
 	"strings"
+	"time"
 )
 
 type Runner struct {
 	Job *jobModel.Job
 }
+
+const jobAttemptsLimit = 5
 
 func NewRunner(job *jobModel.Job) *Runner {
 	return &Runner{Job: job}
@@ -58,11 +62,11 @@ func wrapper(def *JobDefinition) {
 	if def.EntryFunc != nil {
 		err := def.EntryFunc(def.Job)
 		if err != nil {
-			utils.PrettyPrintError(fmt.Errorf("error executing job %s (%s) entry function. details: %w", def.Job.ID, def.Job.Type, err))
+			utils.PrettyPrintError(fmt.Errorf("error executing job %s (%s) entry function, terminating. details: %w", def.Job.ID, def.Job.Type, err))
 
-			err = jobModel.New().MarkFailed(def.Job.ID, err.Error())
+			err = jobModel.New().MarkTerminated(def.Job.ID, err.Error())
 			if err != nil {
-				utils.PrettyPrintError(fmt.Errorf("error marking job as failed. details: %w", err))
+				utils.PrettyPrintError(fmt.Errorf("error marking job as terminated. details: %w", err))
 				return
 			}
 			return
@@ -73,9 +77,9 @@ func wrapper(def *JobDefinition) {
 		if def.ExitFunc != nil {
 			err := def.ExitFunc(def.Job)
 			if err != nil {
-				utils.PrettyPrintError(fmt.Errorf("error executing job %s (%s) exit function. details: %w", def.Job.ID, def.Job.Type, err))
+				utils.PrettyPrintError(fmt.Errorf("error executing job %s (%s) exit function, terminating. details: %w", def.Job.ID, def.Job.Type, err))
 
-				err = jobModel.New().MarkFailed(def.Job.ID, err.Error())
+				err = jobModel.New().MarkTerminated(def.Job.ID, err.Error())
 				if err != nil {
 					utils.PrettyPrintError(fmt.Errorf("error marking job as failed. details: %w", err))
 					return
@@ -90,12 +94,26 @@ func wrapper(def *JobDefinition) {
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "failed") {
 			err = errors.Unwrap(err)
-			utils.PrettyPrintError(fmt.Errorf("failed job %s (%s). details: %w", def.Job.ID, def.Job.Type, err))
 
-			err = jobModel.New().MarkFailed(def.Job.ID, err.Error())
-			if err != nil {
-				utils.PrettyPrintError(fmt.Errorf("error marking job %s (%s) as failed. details: %w", def.Job.ID, def.Job.Type, err))
+			attempts := def.Job.Attempts + 1
+			if attempts >= jobAttemptsLimit {
+				utils.PrettyPrintError(fmt.Errorf("terminated job %s (%s) after %d failed attempts. details: %w", def.Job.ID, def.Job.Type, attempts, err))
+				err = jobModel.New().MarkTerminated(def.Job.ID, err.Error())
+				if err != nil {
+					utils.PrettyPrintError(fmt.Errorf("error marking job %s (%s) as terminated. details: %w", def.Job.ID, def.Job.Type, err))
+					return
+				}
 				return
+			} else {
+				delay := int(math.Pow(2, float64(attempts-1)) * 30)
+				runAfter := def.Job.RunAfter.Add(time.Duration(delay) * time.Second)
+				utils.PrettyPrintError(fmt.Errorf("failed job %s (%s), attempt: %d delay: %ds details: %w", def.Job.ID, def.Job.Type, attempts-1, delay, err))
+
+				err = jobModel.New().MarkFailed(def.Job.ID, runAfter, attempts, err.Error())
+				if err != nil {
+					utils.PrettyPrintError(fmt.Errorf("error marking job %s (%s) as failed. details: %w", def.Job.ID, def.Job.Type, err))
+					return
+				}
 			}
 		} else if strings.HasPrefix(err.Error(), "terminated") {
 			err = errors.Unwrap(err)
@@ -107,11 +125,11 @@ func wrapper(def *JobDefinition) {
 				return
 			}
 		} else {
-			utils.PrettyPrintError(fmt.Errorf("error executing job %s (%s). details: %w", def.Job.ID, def.Job.Type, err))
+			utils.PrettyPrintError(fmt.Errorf("error executing job %s (%s), terminating. details: %w", def.Job.ID, def.Job.Type, err))
 
-			err = jobModel.New().MarkFailed(def.Job.ID, err.Error())
+			err = jobModel.New().MarkTerminated(def.Job.ID, err.Error())
 			if err != nil {
-				utils.PrettyPrintError(fmt.Errorf("error marking job %s (%s) as failed. details: %w", def.Job.ID, def.Job.Type, err))
+				utils.PrettyPrintError(fmt.Errorf("error marking job %s (%s) as terminated. details: %w", def.Job.ID, def.Job.Type, err))
 				return
 			}
 		}
