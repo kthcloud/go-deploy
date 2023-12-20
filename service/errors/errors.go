@@ -102,4 +102,10 @@ var (
 
 	// NotInvitedErr is returned when the user tries to join a team, but is not invited.
 	NotInvitedErr = fmt.Errorf("not invited")
+
+	// ForbiddenErr is returned when the user is not allowed to perform an action.
+	ForbiddenErr = fmt.Errorf("forbidden")
+
+	// JobNotFoundErr is returned when the job is not found.
+	JobNotFoundErr = fmt.Errorf("job not found")
 )

@@ -1,78 +1,86 @@
 package job_service
 
 import (
-	"fmt"
 	"go-deploy/models/dto/body"
-	"go-deploy/models/dto/query"
 	jobModel "go-deploy/models/sys/job"
 	"go-deploy/service"
+	sErrors "go-deploy/service/errors"
 )
 
-func Create(id, userID, jobType string, args map[string]interface{}) error {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to create job. details: %w", err)
+func (c *Client) Get(id string, opts ...*GetOpts) (*jobModel.Job, error) {
+	_ = service.GetFirstOrDefault(opts)
+
+	jmc := jobModel.New()
+
+	if c.Auth != nil && !c.Auth.IsAdmin {
+		jmc.RestrictToUser(c.Auth.UserID)
 	}
 
-	err := jobModel.New().Create(id, userID, jobType, args)
-	if err != nil {
-		return makeError(err)
-	}
-
-	return nil
+	return c.Job(id, jmc)
 }
 
-func ExistsAuth(id string, auth *service.AuthInfo) (bool, error) {
-	client := jobModel.New()
+func (c *Client) List(opt ...ListOpts) ([]jobModel.Job, error) {
+	o := service.GetFirstOrDefault(opt)
 
-	if !auth.IsAdmin {
-		client.RestrictToUser(auth.UserID)
+	jmc := jobModel.New()
+
+	if o.Pagination != nil {
+		jmc.AddPagination(o.Pagination.Page, o.Pagination.PageSize)
 	}
 
-	return client.ExistsByID(id)
-}
-
-func GetByIdAuth(jobID string, auth *service.AuthInfo) (*jobModel.Job, error) {
-	client := jobModel.New()
-	if !auth.IsAdmin {
-		client.RestrictToUser(auth.UserID)
-	}
-
-	return client.GetByID(jobID)
-}
-
-func ListAuth(allUsers bool, userID, jobType *string, status *string, auth *service.AuthInfo, pagination *query.Pagination) ([]jobModel.Job, error) {
-	client := jobModel.New()
-
-	if pagination != nil {
-		client.AddPagination(pagination.Page, pagination.PageSize)
-	}
-
-	if userID != nil {
-		if *userID != auth.UserID && !auth.IsAdmin {
-			return nil, nil
+	var effectiveUserID string
+	if o.UserID != nil {
+		// Specific user's VMs are requested
+		if c.Auth == nil || c.Auth.UserID == *o.UserID || c.Auth.IsAdmin {
+			effectiveUserID = *o.UserID
+		} else {
+			// User cannot access the other user's resources
+			effectiveUserID = c.Auth.UserID
 		}
-		client.RestrictToUser(*userID)
-	} else if !allUsers || (allUsers && !auth.IsAdmin) {
-		client.RestrictToUser(auth.UserID)
+	} else {
+		// All VMs are requested
+		if c.Auth != nil && !c.Auth.IsAdmin {
+			effectiveUserID = c.Auth.UserID
+		}
 	}
 
-	return client.GetMany(jobType, status)
+	if effectiveUserID != "" {
+		jmc.RestrictToUser(effectiveUserID)
+	}
+
+	if o.JobType != nil {
+		jmc.IncludeTypes(*o.JobType)
+	}
+
+	if o.Status != nil {
+		jmc.IncludeStatus(*o.Status)
+	}
+
+	return c.Jobs(jmc)
 }
 
-func UpdateAuth(id string, jobUpdateDTO *body.JobUpdate, auth *service.AuthInfo) (*jobModel.Job, error) {
-	client := jobModel.New()
+func (c *Client) Create(id, userID, jobType string, args map[string]interface{}) error {
+	return jobModel.New().Create(id, userID, jobType, args)
+}
 
-	if !auth.IsAdmin {
-		client.RestrictToUser(auth.UserID)
+func (c *Client) Update(id string, jobUpdateDTO *body.JobUpdate) (*jobModel.Job, error) {
+	if c.Auth != nil && !c.Auth.IsAdmin {
+		return nil, sErrors.ForbiddenErr
 	}
 
 	var params jobModel.UpdateParams
 	params.FromDTO(jobUpdateDTO)
 
-	err := client.UpdateWithParams(id, &params)
+	jmc := jobModel.New()
+
+	err := jmc.UpdateWithParams(id, &params)
 	if err != nil {
-		return nil, fmt.Errorf("failed to update job. details: %w", err)
+		return nil, err
 	}
 
-	return client.GetByID(id)
+	return c.RefreshJob(id, jmc)
+}
+
+func (c *Client) Exists(id string) (bool, error) {
+	return jobModel.New().ExistsByID(id)
 }

@@ -28,14 +28,14 @@ type ExtraOpts struct {
 
 // GetOptions is used to specify the options when getting a VM.
 type GetOptions struct {
-	TransferCode string
+	TransferCode *string
 	Shared       bool
 }
 
 // ListOptions is used to specify the options when listing VMs.
 type ListOptions struct {
 	Pagination *service.Pagination
-	UserID     string
+	UserID     *string
 	Shared     bool
 }
 

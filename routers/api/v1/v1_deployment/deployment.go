@@ -18,7 +18,6 @@ import (
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/job_service"
 	"go-deploy/service/sm_service"
-	smClient "go-deploy/service/sm_service/client"
 	"go-deploy/service/user_service"
 	"go-deploy/service/zone_service"
 )
@@ -63,7 +62,7 @@ func List(c *gin.Context) {
 	}
 
 	deployments, err := deployment_service.New().WithAuth(auth).List(&client.ListOptions{
-		UserID:     userID,
+		UserID:     &userID,
 		Pagination: &service.Pagination{Page: requestQuery.Page, PageSize: requestQuery.PageSize},
 		Shared:     true,
 	})
@@ -113,7 +112,7 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	deployment, err := deployment_service.New().WithAuth(auth).Get(requestURI.DeploymentID, &client.GetOptions{
+	deployment, err := deployment_service.New().WithAuth(auth).Get(requestURI.DeploymentID, client.GetOptions{
 		Shared: true,
 	})
 	if err != nil {
@@ -230,7 +229,7 @@ func Create(c *gin.Context) {
 
 	deploymentID := uuid.New().String()
 	jobID := uuid.New().String()
-	err = job_service.Create(jobID, auth.UserID, jobModel.TypeCreateDeployment, map[string]interface{}{
+	err = job_service.New().Create(jobID, auth.UserID, jobModel.TypeCreateDeployment, map[string]interface{}{
 		"id":      deploymentID,
 		"ownerId": auth.UserID,
 		"params":  requestBody,
@@ -278,7 +277,7 @@ func Delete(c *gin.Context) {
 	}
 
 	dc := deployment_service.New().WithAuth(auth)
-	currentDeployment, err := dc.Get(requestURI.DeploymentID, &client.GetOptions{})
+	currentDeployment, err := dc.Get(requestURI.DeploymentID)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -312,7 +311,7 @@ func Delete(c *gin.Context) {
 	}
 
 	jobID := uuid.NewString()
-	err = job_service.Create(jobID, auth.UserID, jobModel.TypeDeleteDeployment, map[string]interface{}{
+	err = job_service.New().Create(jobID, auth.UserID, jobModel.TypeDeleteDeployment, map[string]interface{}{
 		"id": currentDeployment.ID,
 	})
 	if err != nil {
@@ -365,7 +364,7 @@ func Update(c *gin.Context) {
 
 	var deployment *deploymentModels.Deployment
 	if requestBody.TransferCode != nil {
-		deployment, err = dc.Get(requestURI.DeploymentID, &client.GetOptions{TransferCode: *requestBody.TransferCode})
+		deployment, err = dc.Get(requestURI.DeploymentID, client.GetOptions{TransferCode: *requestBody.TransferCode})
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
@@ -375,7 +374,7 @@ func Update(c *gin.Context) {
 			requestBody.OwnerID = &auth.UserID
 		}
 	} else {
-		deployment, err = dc.Get(requestURI.DeploymentID, &client.GetOptions{})
+		deployment, err = dc.Get(requestURI.DeploymentID)
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
@@ -487,7 +486,7 @@ func Update(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = job_service.Create(jobID, auth.UserID, jobModel.TypeUpdateDeployment, map[string]interface{}{
+	err = job_service.New().Create(jobID, auth.UserID, jobModel.TypeUpdateDeployment, map[string]interface{}{
 		"id":     deployment.ID,
 		"params": requestBody,
 	})
@@ -504,7 +503,7 @@ func Update(c *gin.Context) {
 }
 
 func getSmURL(userID string, auth *service.AuthInfo) *string {
-	sm, err := sm_service.New().WithAuth(auth).GetByUserID(userID, &smClient.GetOptions{})
+	sm, err := sm_service.New().WithAuth(auth).GetByUserID(userID)
 	if err != nil {
 		return nil
 	}
@@ -517,7 +516,7 @@ func getSmURL(userID string, auth *service.AuthInfo) *string {
 }
 
 func getTeamIDs(resourceID string, auth *service.AuthInfo) []string {
-	teams, err := user_service.New().ListTeams(&user_service.ListTeamsOpts{ResourceID: resourceID, UserID: auth.UserID})
+	teams, err := user_service.New().ListTeams(user_service.ListTeamsOpts{ResourceID: resourceID, UserID: auth.UserID})
 
 	if err != nil {
 		return []string{}

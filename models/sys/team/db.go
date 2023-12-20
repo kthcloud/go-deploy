@@ -59,7 +59,9 @@ func (client *Client) ListByUserID(userID string) ([]Team, error) {
 }
 
 func (client *Client) UpdateWithParams(id string, params *UpdateParams) error {
-	updateData := bson.D{}
+	updateData := bson.D{
+		{"updatedAt", time.Now()},
+	}
 
 	models.AddIfNotNil(&updateData, "name", params.Name)
 	models.AddIfNotNil(&updateData, "description", params.Description)
@@ -74,7 +76,9 @@ func (client *Client) UpdateWithParams(id string, params *UpdateParams) error {
 }
 
 func (client *Client) UpdateMember(id string, memberID string, member *Member) error {
-	updateData := bson.D{}
+	updateData := bson.D{
+		{"updatedAt", time.Now()},
+	}
 
 	models.AddIfNotNil(&updateData, "memberMap."+memberID, member)
 
@@ -83,8 +87,4 @@ func (client *Client) UpdateMember(id string, memberID string, member *Member) e
 	}
 
 	return client.SetWithBsonByID(id, updateData)
-}
-
-func (client *Client) MarkUpdated(id string) error {
-	return client.SetWithBsonByID(id, bson.D{{"updatedAt", time.Now()}})
 }

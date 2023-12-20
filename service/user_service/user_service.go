@@ -3,37 +3,41 @@ package user_service
 import (
 	"go-deploy/models/dto/body"
 	userModel "go-deploy/models/sys/user"
-	"sort"
+	"go-deploy/service"
 )
 
 // Get gets a user
 //
-// It uses AuthInfo to only return the resource the requesting user has access to
-func (c *Client) Get(id string, opts *GetUserOpts) (*userModel.User, error) {
+// It uses service.AuthInfo to only return the resource the requesting user has access to
+func (c *Client) Get(id string, opts ...GetUserOpts) (*userModel.User, error) {
+	_ = service.GetFirstOrDefault(opts)
+
 	if c.Auth != nil && id != c.Auth.UserID && !c.Auth.IsAdmin {
 		return nil, nil
 	}
 
-	return userModel.New().GetByID(id)
+	return c.User(id, userModel.New())
 }
 
 // List lists users
 //
-// It uses AuthInfo to only return the resources the requesting user has access to
+// It uses service.AuthInfo to only return the resources the requesting user has access to
 // It uses the search param to enable searching in multiple fields
-func (c *Client) List(opts *ListUsersOpts) ([]userModel.User, error) {
-	client := userModel.New()
+func (c *Client) List(opts ...ListUsersOpts) ([]userModel.User, error) {
+	o := service.GetFirstOrDefault(opts)
 
-	if opts.Pagination != nil {
-		client.WithPagination(opts.Pagination.Page, opts.Pagination.PageSize)
+	umc := userModel.New()
+
+	if o.Pagination != nil {
+		umc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
 	}
 
-	if opts.Search != nil {
-		client.WithSearch(*opts.Search)
+	if o.Search != nil {
+		umc.WithSearch(*o.Search)
 	}
 
-	if c.Auth != nil && !c.Auth.IsAdmin {
-		user, err := client.GetByID(c.Auth.UserID)
+	if c.Auth != nil && !c.Auth.IsAdmin || !o.All {
+		user, err := umc.GetByID(c.Auth.UserID)
 		if err != nil {
 			return nil, err
 		}
@@ -41,7 +45,7 @@ func (c *Client) List(opts *ListUsersOpts) ([]userModel.User, error) {
 		return []userModel.User{*user}, nil
 	}
 
-	return client.List()
+	return c.Users(umc)
 }
 
 // Exists checks if a user exists
@@ -81,18 +85,19 @@ func (c *Client) Create() (*userModel.User, error) {
 // Discover returns a list of users that the requesting user has access to
 //
 // It uses search param to enable searching in multiple fields
-func (c *Client) Discover(opts *DiscoverUsersOpts) ([]body.UserReadDiscovery, error) {
-	client := userModel.New()
+func (c *Client) Discover(opts ...DiscoverUsersOpts) ([]body.UserReadDiscovery, error) {
+	o := service.GetFirstOrDefault(opts)
+	umc := userModel.New()
 
-	if opts.Search != nil {
-		client.WithSearch(*opts.Search)
+	if o.Search != nil {
+		umc.WithSearch(*o.Search)
 	}
 
-	if opts.Pagination != nil {
-		client.WithPagination(opts.Pagination.Page, opts.Pagination.PageSize)
+	if o.Pagination != nil {
+		umc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
 	}
 
-	users, err := client.List()
+	users, err := c.Users(umc)
 	if err != nil {
 		return nil, err
 	}
@@ -112,18 +117,14 @@ func (c *Client) Discover(opts *DiscoverUsersOpts) ([]body.UserReadDiscovery, er
 		})
 	}
 
-	sort.Slice(usersRead, func(i, j int) bool {
-		return usersRead[i].FirstName < usersRead[j].FirstName
-	})
-
 	return usersRead, nil
 }
 
 // Update updates a user
 //
-// It uses AuthInfo to only update the resource the requesting user has access to
+// It uses service.AuthInfo to only update the resource the requesting user has access to
 func (c *Client) Update(userID string, dtoUserUpdate *body.UserUpdate) (*userModel.User, error) {
-	client := userModel.New()
+	umc := userModel.New()
 
 	if c.Auth != nil && userID != c.Auth.UserID && !c.Auth.IsAdmin {
 		return nil, nil
@@ -147,10 +148,10 @@ func (c *Client) Update(userID string, dtoUserUpdate *body.UserUpdate) (*userMod
 		Onboarded:  dtoUserUpdate.Onboarded,
 	}
 
-	err := client.UpdateWithParams(userID, userUpdate)
+	err := umc.UpdateWithParams(userID, userUpdate)
 	if err != nil {
 		return nil, err
 	}
 
-	return client.GetByID(userID)
+	return c.RefreshUser(userID, umc)
 }

@@ -25,7 +25,7 @@ const (
 // It will continuously check the deployment logs and read the logs after the last read log.
 // Increasing the history will increase the time it takes to set up the log stream.
 func (c *Client) SetupLogStream(id string, ctx context.Context, handler func(string, string, string), history int) error {
-	deployment, err := c.Get(id, &client.GetOptions{Shared: true})
+	deployment, err := c.Get(id, client.GetOptions{Shared: true})
 	if err != nil {
 		return err
 	}

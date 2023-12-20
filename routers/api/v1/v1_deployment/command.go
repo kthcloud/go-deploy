@@ -50,7 +50,7 @@ func DoCommand(c *gin.Context) {
 
 	dc := deployment_service.New().WithAuth(auth)
 
-	deployment, err := dc.Get(requestURI.DeploymentID, &client.GetOptions{Shared: true})
+	deployment, err := dc.Get(requestURI.DeploymentID, client.GetOptions{Shared: true})
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return

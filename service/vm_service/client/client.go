@@ -10,7 +10,11 @@ import (
 type BaseClient[parent any] struct {
 	p *parent
 
-	*service.Cache
+	// Cache is used to cache the resources fetched inside the service.
+	Cache *service.Cache
+
+	// Auth is the authentication information for the client.
+	Auth *service.AuthInfo
 }
 
 func NewBaseClient[parent any](cache *service.Cache) BaseClient[parent] {
@@ -26,7 +30,7 @@ func (c *BaseClient[parent]) SetParent(p *parent) {
 }
 
 func (c *BaseClient[parent]) VM(id string, vmc *vmModel.Client) (*vmModel.VM, error) {
-	vm := c.GetVM(id)
+	vm := c.Cache.GetVM(id)
 	if vm == nil {
 		return c.fetchVM(id, "", vmc)
 	}
@@ -40,7 +44,7 @@ func (c *BaseClient[parent]) VMs(vmc *vmModel.Client) ([]vmModel.VM, error) {
 }
 
 func (c *BaseClient[parent]) GPU(id string, gmc *gpuModel.Client) (*gpuModel.GPU, error) {
-	gpu := c.GetGPU(id)
+	gpu := c.Cache.GetGPU(id)
 	if gpu == nil {
 		return c.fetchGPU(id, gmc)
 	}
@@ -90,7 +94,7 @@ func (c *BaseClient[parent]) fetchVM(id, name string, vmc *vmModel.Client) (*vmM
 		return nil, nil
 	}
 
-	c.StoreVM(vm)
+	c.Cache.StoreVM(vm)
 	return vm, nil
 }
 
@@ -110,7 +114,7 @@ func (c *BaseClient[parent]) fetchVMs(vmc *vmModel.Client) ([]vmModel.VM, error)
 
 	for _, vm := range vms {
 		v := vm
-		c.StoreVM(&v)
+		c.Cache.StoreVM(&v)
 	}
 
 	return vms, nil
@@ -134,7 +138,7 @@ func (c *BaseClient[parent]) fetchGPU(id string, gmc *gpuModel.Client) (*gpuMode
 		return nil, nil
 	}
 
-	c.StoreGPU(gpu)
+	c.Cache.StoreGPU(gpu)
 	return gpu, nil
 }
 
@@ -153,7 +157,7 @@ func (c *BaseClient[parent]) fetchGPUs(gmc *gpuModel.Client) ([]gpuModel.GPU, er
 	}
 
 	for _, gpu := range gpus {
-		c.StoreGPU(&gpu)
+		c.Cache.StoreGPU(&gpu)
 	}
 
 	return gpus, nil

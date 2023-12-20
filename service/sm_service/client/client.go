@@ -9,7 +9,11 @@ import (
 type BaseClient[parent any] struct {
 	p *parent
 
-	*service.Cache
+	// Cache is used to cache the resources fetched inside the service.
+	Cache *service.Cache
+
+	// Auth is the authentication information for the client.
+	Auth *service.AuthInfo
 }
 
 func NewBaseClient[parent any](cache *service.Cache) BaseClient[parent] {
@@ -25,12 +29,12 @@ func (c *BaseClient[parent]) SetParent(p *parent) {
 }
 
 func (c *BaseClient[parent]) SM(id, userID string, smc *smModels.Client) (*smModels.SM, error) {
-	sm := c.GetSM(id)
+	sm := c.Cache.GetSM(id)
 	if sm != nil {
 		return sm, nil
 	}
 
-	sm = c.GetSM(userID)
+	sm = c.Cache.GetSM(userID)
 	if sm != nil {
 		return sm, nil
 	}
@@ -64,7 +68,7 @@ func (c *BaseClient[parent]) fetchSM(id string, smc *smModels.Client) (*smModels
 		return nil, nil
 	}
 
-	c.StoreSM(sm)
+	c.Cache.StoreSM(sm)
 	return sm, nil
 }
 

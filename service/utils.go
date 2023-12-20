@@ -110,3 +110,11 @@ func UpdateIfDiff[T subsystems.SsResource](dbResource T, fetchFunc func() (T, er
 
 	return recreateFunc(dbResource)
 }
+
+func GetFirstOrDefault[T any](variable []T) T {
+	if len(variable) > 0 {
+		return variable[0]
+	}
+	defaultVal := new(T)
+	return *defaultVal
+}

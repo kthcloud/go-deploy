@@ -32,7 +32,7 @@ func CreateSM() gin.HandlerFunc {
 		if !exists {
 			smID := uuid.New().String()
 			jobID := uuid.New().String()
-			err = job_service.Create(jobID, auth.UserID, jobModel.TypeCreateSM, map[string]interface{}{
+			err = job_service.New().Create(jobID, auth.UserID, jobModel.TypeCreateSM, map[string]interface{}{
 				"id":     smID,
 				"userId": auth.UserID,
 				"params": sm.CreateParams{

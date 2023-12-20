@@ -9,7 +9,11 @@ import (
 type BaseClient[parent any] struct {
 	p *parent
 
-	*service.Cache
+	// Cache is used to cache the resources fetched inside the service.
+	Cache *service.Cache
+
+	// Auth is the authentication information for the client.
+	Auth *service.AuthInfo
 }
 
 func NewBaseClient[parent any](cache *service.Cache) BaseClient[parent] {
@@ -25,7 +29,7 @@ func (c *BaseClient[parent]) SetParent(p *parent) {
 }
 
 func (c *BaseClient[parent]) Deployment(id string, dmc *deploymentModel.Client) (*deploymentModel.Deployment, error) {
-	deployment := c.GetDeployment(id)
+	deployment := c.Cache.GetDeployment(id)
 	if deployment == nil {
 		return c.fetchDeployment(id, "", dmc)
 	}
@@ -75,7 +79,7 @@ func (c *BaseClient[parent]) fetchDeployment(id, name string, dmc *deploymentMod
 		return nil, nil
 	}
 
-	c.StoreDeployment(deployment)
+	c.Cache.StoreDeployment(deployment)
 
 	return deployment, nil
 }
@@ -96,7 +100,7 @@ func (c *BaseClient[parent]) fetchDeployments(dmc *deploymentModel.Client) ([]de
 
 	for _, deployment := range deployments {
 		d := deployment
-		c.StoreDeployment(&d)
+		c.Cache.StoreDeployment(&d)
 	}
 
 	return deployments, nil

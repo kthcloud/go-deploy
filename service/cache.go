@@ -3,7 +3,10 @@ package service
 import (
 	deploymentModels "go-deploy/models/sys/deployment"
 	gpuModels "go-deploy/models/sys/gpu"
+	jobModels "go-deploy/models/sys/job"
 	smModels "go-deploy/models/sys/sm"
+	teamModels "go-deploy/models/sys/team"
+	userModels "go-deploy/models/sys/user"
 	vmModels "go-deploy/models/sys/vm"
 )
 
@@ -12,9 +15,9 @@ type Cache struct {
 	vmStore         map[string]*vmModels.VM
 	gpuStore        map[string]*gpuModels.GPU
 	smStore         map[string]*smModels.SM
-
-	// AuthInfo is the authentication information for the client.
-	Auth *AuthInfo
+	userStore       map[string]*userModels.User
+	teamStore       map[string]*teamModels.Team
+	jobStore        map[string]*jobModels.Job
 }
 
 func NewCache() *Cache {
@@ -23,6 +26,9 @@ func NewCache() *Cache {
 		vmStore:         make(map[string]*vmModels.VM),
 		gpuStore:        make(map[string]*gpuModels.GPU),
 		smStore:         make(map[string]*smModels.SM),
+		userStore:       make(map[string]*userModels.User),
+		teamStore:       make(map[string]*teamModels.Team),
+		jobStore:        make(map[string]*jobModels.Job),
 	}
 }
 
@@ -72,6 +78,45 @@ func (c *Cache) StoreSM(sm *smModels.SM) {
 
 func (c *Cache) GetSM(id string) *smModels.SM {
 	r, ok := c.smStore[id]
+	if !ok {
+		return nil
+	}
+
+	return r
+}
+
+func (c *Cache) StoreUser(user *userModels.User) {
+	c.userStore[user.ID] = user
+}
+
+func (c *Cache) GetUser(id string) *userModels.User {
+	r, ok := c.userStore[id]
+	if !ok {
+		return nil
+	}
+
+	return r
+}
+
+func (c *Cache) StoreTeam(team *teamModels.Team) {
+	c.teamStore[team.ID] = team
+}
+
+func (c *Cache) GetTeam(id string) *teamModels.Team {
+	r, ok := c.teamStore[id]
+	if !ok {
+		return nil
+	}
+
+	return r
+}
+
+func (c *Cache) StoreJob(job *jobModels.Job) {
+	c.jobStore[job.ID] = job
+}
+
+func (c *Cache) GetJob(id string) *jobModels.Job {
+	r, ok := c.jobStore[id]
 	if !ok {
 		return nil
 	}

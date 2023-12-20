@@ -86,7 +86,7 @@ func HandleHarborHook(c *gin.Context) {
 		return
 	}
 
-	deployment, err := deployment_service.New().Get("", &client.GetOptions{HarborWebhook: &webhook})
+	deployment, err := deployment_service.New().Get("", client.GetOptions{HarborWebhook: &webhook})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -183,7 +183,7 @@ func HandleGitHubHook(c *gin.Context) {
 		return
 	}
 
-	deployments, err := deployment_service.New().List(&client.ListOptions{GitHubWebhookID: hookID})
+	deployments, err := deployment_service.New().List(&client.ListOptions{GitHubWebhookID: &hookID})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -230,7 +230,7 @@ func HandleGitHubHook(c *gin.Context) {
 		}
 
 		jobID := uuid.NewString()
-		err = job_service.Create(jobID, "system", job.TypeBuildDeployments, map[string]interface{}{
+		err = job_service.New().Create(jobID, "system", job.TypeBuildDeployments, map[string]interface{}{
 			"ids": ids,
 			"build": body.DeploymentBuild{
 				Name:      requestBodyParsed.Repository.Name,

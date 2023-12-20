@@ -105,7 +105,7 @@ func (c *Client) AttachGPU(vmID string, gpuIDs []string, leaseDuration float64) 
 
 	endLease := time.Now().Add(time.Duration(leaseDuration) * time.Hour)
 
-	vm, err := c.Get(vmID, &client.GetOptions{})
+	vm, err := c.Get(vmID)
 	if err != nil {
 		return makeError(err)
 	}

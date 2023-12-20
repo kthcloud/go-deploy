@@ -10,6 +10,7 @@ import (
 	notificationModel "go-deploy/models/sys/notification"
 	teamModels "go-deploy/models/sys/team"
 	"go-deploy/pkg/config"
+	"go-deploy/service"
 	"go-deploy/service/deployment_service/client"
 	"go-deploy/service/deployment_service/github_service"
 	"go-deploy/service/deployment_service/gitlab_service"
@@ -31,11 +32,13 @@ import (
 //
 // It can be fetched in multiple ways including ID, name, transfer code, and Harbor webhook.
 // It supports service.AuthInfo, and will restrict the result to ensure the user has access to the resource.
-func (c *Client) Get(id string, opts *client.GetOptions) (*deploymentModel.Deployment, error) {
+func (c *Client) Get(id string, opts ...client.GetOptions) (*deploymentModel.Deployment, error) {
+	o := service.GetFirstOrDefault(opts)
+
 	dClient := deploymentModel.New()
 
-	if opts.TransferCode != "" {
-		return dClient.GetByTransferCode(opts.TransferCode)
+	if o.TransferCode != "" {
+		return dClient.GetByTransferCode(o.TransferCode)
 	}
 
 	var effectiveUserID string
@@ -44,7 +47,7 @@ func (c *Client) Get(id string, opts *client.GetOptions) (*deploymentModel.Deplo
 	}
 
 	var teamCheck bool
-	if !opts.Shared {
+	if !o.Shared {
 		teamCheck = false
 	} else if c.Auth == nil || c.Auth.IsAdmin {
 		teamCheck = true
@@ -60,8 +63,8 @@ func (c *Client) Get(id string, opts *client.GetOptions) (*deploymentModel.Deplo
 		dClient.RestrictToOwner(effectiveUserID)
 	}
 
-	if opts.HarborWebhook != nil {
-		return dClient.GetByName(opts.HarborWebhook.EventData.Repository.Name)
+	if o.HarborWebhook != nil {
+		return dClient.GetByName(o.HarborWebhook.EventData.Repository.Name)
 	}
 
 	return c.Deployment(id, dClient)
@@ -77,15 +80,15 @@ func (c *Client) List(opts *client.ListOptions) ([]deploymentModel.Deployment, e
 		dClient.WithPagination(opts.Pagination.Page, opts.Pagination.PageSize)
 	}
 
-	if opts.GitHubWebhookID != 0 {
-		dClient.WithGitHubWebhookID(opts.GitHubWebhookID)
+	if opts.GitHubWebhookID != nil {
+		dClient.WithGitHubWebhookID(*opts.GitHubWebhookID)
 	}
 
 	var effectiveUserID string
-	if opts.UserID != "" {
+	if opts.UserID != nil {
 		// Specific user's deployments are requested
-		if c.Auth == nil || c.Auth.UserID == opts.UserID || c.Auth.IsAdmin {
-			effectiveUserID = opts.UserID
+		if c.Auth == nil || c.Auth.UserID == *opts.UserID || c.Auth.IsAdmin {
+			effectiveUserID = *opts.UserID
 		} else {
 			// User cannot access the other user's resources
 			effectiveUserID = c.Auth.UserID
@@ -386,7 +389,7 @@ func (c *Client) UpdateOwnerSetup(id string, params *body.DeploymentUpdateOwner)
 
 	if doTransfer {
 		jobID := uuid.New().String()
-		err := job_service.Create(jobID, effectiveUserID, jobModel.TypeUpdateDeploymentOwner, map[string]interface{}{
+		err := job_service.New().Create(jobID, effectiveUserID, jobModel.TypeUpdateDeploymentOwner, map[string]interface{}{
 			"id":     id,
 			"params": *params,
 		})

@@ -14,7 +14,6 @@ import (
 	"go-deploy/service"
 	"go-deploy/service/deployment_service"
 	"go-deploy/service/sm_service"
-	smClient "go-deploy/service/sm_service/client"
 	"go-deploy/service/user_service"
 	"go-deploy/service/vm_service"
 	"go-deploy/utils"
@@ -42,7 +41,7 @@ func collectUsage(userID string) (*userModel.Usage, error) {
 }
 
 func getSmURL(userID string, auth *service.AuthInfo) (*string, error) {
-	sm, err := sm_service.New().WithAuth(auth).GetByUserID(userID, &smClient.GetOptions{})
+	sm, err := sm_service.New().WithAuth(auth).GetByUserID(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +80,7 @@ func ListUsers(c *gin.Context) {
 	}
 
 	if requestQuery.Discover {
-		users, err := user_service.New().WithAuth(auth).Discover(&user_service.DiscoverUsersOpts{
+		users, err := user_service.New().WithAuth(auth).Discover(user_service.DiscoverUsersOpts{
 			Search:     requestQuery.Search,
 			Pagination: &service.Pagination{Page: requestQuery.Page, PageSize: requestQuery.PageSize},
 		})
@@ -101,9 +100,10 @@ func ListUsers(c *gin.Context) {
 
 	usc := user_service.New().WithAuth(auth)
 
-	users, err := usc.List(&user_service.ListUsersOpts{
+	users, err := usc.List(user_service.ListUsersOpts{
 		Pagination: &service.Pagination{Page: requestQuery.Page, PageSize: requestQuery.PageSize},
 		Search:     requestQuery.Search,
+		All:        requestQuery.All,
 	})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
@@ -192,7 +192,7 @@ func Get(c *gin.Context) {
 			return
 		}
 	} else {
-		user, err = usc.Get(requestURI.UserID, &user_service.GetUserOpts{})
+		user, err = usc.Get(requestURI.UserID)
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
