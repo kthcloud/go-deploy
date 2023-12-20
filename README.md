@@ -23,7 +23,7 @@ If you are part of the development team at kthcloud you will find the current co
 
 ## 🚀 Getting Started
 
-1. Clone the repository: `git clone https://github.com/kthcloud/go-deploy/edit/main/README.md.git`
+1. Clone the repository: `git clone https://github.com/kthcloud/go-deploy`
 2. Clone the admin repository to get access to the configuration file.
 3. Set up a local Redis instance and make sure the credentials in the configuration file match.
 4. Build and run the project using your Go executable, and make sure the DEPLOY_CONFIG_FILE environment variables are set to the configuration file path. 
