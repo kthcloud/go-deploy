@@ -200,7 +200,7 @@ func Create(c *gin.Context) {
 	}
 
 	if requestBody.Zone != nil {
-		zone := zone_service.GetZone(*requestBody.Zone, zoneModel.ZoneTypeVM)
+		zone := zone_service.New().WithAuth(auth).Get(*requestBody.Zone, zoneModel.ZoneTypeVM)
 		if zone == nil {
 			context.NotFound("Zone not found")
 			return

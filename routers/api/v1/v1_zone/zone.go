@@ -4,7 +4,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
-	zoneModel "go-deploy/models/sys/zone"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service/zone_service"
@@ -27,11 +26,16 @@ func List(c *gin.Context) {
 		return
 	}
 
-	var zones []zoneModel.Zone
-	if requestQuery.Type == nil {
-		zones, _ = zone_service.ListZones()
-	} else {
-		zones, _ = zone_service.GetZonesByType(*requestQuery.Type)
+	auth, err := v1.WithAuth(&context)
+	if err != nil {
+		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		return
+	}
+
+	zones, err := zone_service.New().WithAuth(auth).List(zone_service.ListOpts{Type: requestQuery.Type})
+	if err != nil {
+		context.ServerError(err, v1.InternalError)
+		return
 	}
 
 	dtoZones := make([]body.ZoneRead, len(zones))
