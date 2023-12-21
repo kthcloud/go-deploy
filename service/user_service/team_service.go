@@ -181,7 +181,12 @@ func (c *Client) DeleteTeam(id string) error {
 		tmc.WithOwnerID(c.Auth.UserID)
 	}
 
-	if exists, err := tmc.ExistsByID(id); !exists || err != nil {
+	exists, err := tmc.ExistsByID(id)
+	if err != nil {
+		return err
+	}
+
+	if !exists {
 		return sErrors.TeamNotFoundErr
 	}
 

@@ -523,7 +523,16 @@ func (c *Client) Delete(id string) error {
 		return fmt.Errorf("failed to delete deployment. details: %w", err)
 	}
 
-	err := harbor_service.New(c.Cache).Delete(id)
+	d, err := c.Deployment(id, nil)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if d == nil {
+		return sErrors.DeploymentNotFoundErr
+	}
+
+	err = harbor_service.New(c.Cache).Delete(id)
 	if err != nil {
 		return makeError(err)
 	}

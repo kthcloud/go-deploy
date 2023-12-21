@@ -251,7 +251,7 @@ func (c *Client) Delete(id string) error {
 	}
 
 	if vm == nil {
-		return nil
+		return sErrors.VmNotFoundErr
 	}
 
 	err = k8s_service.New(c.Cache).Delete(id)

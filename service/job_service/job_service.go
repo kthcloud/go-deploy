@@ -30,7 +30,7 @@ func (c *Client) List(opt ...ListOpts) ([]jobModel.Job, error) {
 
 	var effectiveUserID string
 	if o.UserID != nil {
-		// Specific user's VMs are requested
+		// Specific user's jobs are requested
 		if c.Auth == nil || c.Auth.UserID == *o.UserID || c.Auth.IsAdmin {
 			effectiveUserID = *o.UserID
 		} else {
@@ -38,7 +38,7 @@ func (c *Client) List(opt ...ListOpts) ([]jobModel.Job, error) {
 			effectiveUserID = c.Auth.UserID
 		}
 	} else {
-		// All VMs are requested
+		// All jobs are requested
 		if c.Auth != nil && !c.Auth.IsAdmin {
 			effectiveUserID = c.Auth.UserID
 		}
