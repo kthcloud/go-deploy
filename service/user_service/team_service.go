@@ -302,7 +302,7 @@ func (c *Client) createMemberIfAccessible(current *teamModels.Team, memberID str
 }
 
 func createInvitationNotification(userID, teamID, teamName, invitationCode string) error {
-	return notification_service.CreateNotification(uuid.NewString(), userID, &notificationModel.CreateParams{
+	_, err := notification_service.New().Create(uuid.NewString(), userID, &notificationModel.CreateParams{
 		Type: notificationModel.TypeTeamInvite,
 		Content: map[string]interface{}{
 			"id":   teamID,
@@ -310,6 +310,8 @@ func createInvitationNotification(userID, teamID, teamName, invitationCode strin
 			"code": invitationCode,
 		},
 	})
+
+	return err
 }
 
 func createInvitationCode() string {

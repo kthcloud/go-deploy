@@ -411,7 +411,7 @@ func (c *Client) UpdateOwnerSetup(id string, params *body.DeploymentUpdateOwner)
 		return nil, makeError(err)
 	}
 
-	err = notification_service.CreateNotification(uuid.NewString(), params.NewOwnerID, &notificationModel.CreateParams{
+	_, err = notification_service.New().Create(uuid.NewString(), params.NewOwnerID, &notificationModel.CreateParams{
 		Type: notificationModel.TypeDeploymentTransfer,
 		Content: map[string]interface{}{
 			"id":     d.ID,

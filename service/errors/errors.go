@@ -108,4 +108,7 @@ var (
 
 	// JobNotFoundErr is returned when the job is not found.
 	JobNotFoundErr = fmt.Errorf("job not found")
+
+	// NotificationNotFoundErr is returned when the notification is not found.
+	NotificationNotFoundErr = fmt.Errorf("notification not found")
 )
