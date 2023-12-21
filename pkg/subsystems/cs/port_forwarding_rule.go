@@ -63,12 +63,7 @@ func (client *Client) CreatePortForwardingRule(public *models.PortForwardingRule
 			return nil, makeError(err)
 		}
 
-		intPublicPort, err := strconv.Atoi(rule.Publicport)
-		if err != nil {
-			return nil, makeError(err)
-		}
-
-		if rule.Virtualmachineid == public.VmID && intPrivatePort == public.PrivatePort && intPublicPort == public.PublicPort && rule.Protocol == public.Protocol {
+		if rule.Virtualmachineid == public.VmID && intPrivatePort == public.PrivatePort && rule.Protocol == public.Protocol {
 			id = rule.Id
 			break
 		}
