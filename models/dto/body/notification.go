@@ -4,6 +4,7 @@ import "time"
 
 type NotificationRead struct {
 	ID        string                 `json:"id"`
+	UserID    string                 `json:"userId"`
 	Type      string                 `json:"type"`
 	Content   map[string]interface{} `json:"content"`
 	CreatedAt time.Time              `json:"createdAt"`
