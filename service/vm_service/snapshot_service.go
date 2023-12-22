@@ -116,7 +116,8 @@ func (c *Client) CreateSnapshot(vmID string, opts *client.CreateSnapshotOptions)
 	if !vm.Ready() {
 		return fmt.Errorf("vm %s not ready", vmID)
 	}
-	var params *vmModel.CreateSnapshotParams
+
+	params := &vmModel.CreateSnapshotParams{}
 	if opts.System != nil {
 		params = opts.System
 	} else if opts.User != nil {
