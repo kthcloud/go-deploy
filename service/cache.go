@@ -36,7 +36,9 @@ func NewCache() *Cache {
 }
 
 func (c *Cache) StoreDeployment(deployment *deploymentModels.Deployment) {
-	c.deploymentStore[deployment.ID] = deployment
+	if deployment != nil {
+		c.deploymentStore[deployment.ID] = deployment
+	}
 }
 
 func (c *Cache) GetDeployment(id string) *deploymentModels.Deployment {
@@ -49,7 +51,9 @@ func (c *Cache) GetDeployment(id string) *deploymentModels.Deployment {
 }
 
 func (c *Cache) StoreVM(vm *vmModels.VM) {
-	c.vmStore[vm.ID] = vm
+	if vm != nil {
+		c.vmStore[vm.ID] = vm
+	}
 }
 
 func (c *Cache) GetVM(id string) *vmModels.VM {
@@ -62,7 +66,9 @@ func (c *Cache) GetVM(id string) *vmModels.VM {
 }
 
 func (c *Cache) StoreGPU(gpu *gpuModels.GPU) {
-	c.gpuStore[gpu.ID] = gpu
+	if gpu != nil {
+		c.gpuStore[gpu.ID] = gpu
+	}
 }
 
 func (c *Cache) GetGPU(id string) *gpuModels.GPU {
@@ -75,8 +81,10 @@ func (c *Cache) GetGPU(id string) *gpuModels.GPU {
 }
 
 func (c *Cache) StoreSM(sm *smModels.SM) {
-	c.smStore[sm.ID] = sm
-	c.smStore[sm.OwnerID] = sm
+	if sm != nil {
+		c.smStore[sm.ID] = sm
+		c.smStore[sm.OwnerID] = sm
+	}
 }
 
 func (c *Cache) GetSM(id string) *smModels.SM {
@@ -89,7 +97,9 @@ func (c *Cache) GetSM(id string) *smModels.SM {
 }
 
 func (c *Cache) StoreUser(user *userModels.User) {
-	c.userStore[user.ID] = user
+	if user != nil {
+		c.userStore[user.ID] = user
+	}
 }
 
 func (c *Cache) GetUser(id string) *userModels.User {
@@ -102,7 +112,9 @@ func (c *Cache) GetUser(id string) *userModels.User {
 }
 
 func (c *Cache) StoreTeam(team *teamModels.Team) {
-	c.teamStore[team.ID] = team
+	if team != nil {
+		c.teamStore[team.ID] = team
+	}
 }
 
 func (c *Cache) GetTeam(id string) *teamModels.Team {
@@ -115,7 +127,9 @@ func (c *Cache) GetTeam(id string) *teamModels.Team {
 }
 
 func (c *Cache) StoreJob(job *jobModels.Job) {
-	c.jobStore[job.ID] = job
+	if job != nil {
+		c.jobStore[job.ID] = job
+	}
 }
 
 func (c *Cache) GetJob(id string) *jobModels.Job {
@@ -128,7 +142,9 @@ func (c *Cache) GetJob(id string) *jobModels.Job {
 }
 
 func (c *Cache) StoreNotification(notification *notificationModels.Notification) {
-	c.notificationStore[notification.ID] = notification
+	if notification != nil {
+		c.notificationStore[notification.ID] = notification
+	}
 }
 
 func (c *Cache) GetNotification(id string) *notificationModels.Notification {
