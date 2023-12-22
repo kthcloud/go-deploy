@@ -8,6 +8,28 @@ import (
 	"testing"
 )
 
+func GetJob(t *testing.T, id string, userID ...string) body.JobRead {
+	resp := DoGetRequest(t, "/jobs/"+id, userID...)
+	assert.Equal(t, http.StatusOK, resp.StatusCode, "job was not fetched")
+
+	var jobRead body.JobRead
+	err := ReadResponseBody(t, resp, &jobRead)
+	assert.NoError(t, err, "job was not fetched")
+
+	return jobRead
+}
+
+func ListJobs(t *testing.T, query string, userID ...string) []body.JobRead {
+	resp := DoGetRequest(t, "/jobs"+query, userID...)
+	assert.Equal(t, http.StatusOK, resp.StatusCode, "jobs were not fetched")
+
+	var jobs []body.JobRead
+	err := ReadResponseBody(t, resp, &jobs)
+	assert.NoError(t, err, "jobs were not fetched")
+
+	return jobs
+}
+
 func WaitForJobFinished(t *testing.T, id string, callback func(*body.JobRead) bool) {
 	fetchUntil(t, "/jobs/"+id, func(resp *http.Response) bool {
 		var jobRead body.JobRead

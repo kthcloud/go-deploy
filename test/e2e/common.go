@@ -12,7 +12,9 @@ import (
 )
 
 const (
-	TestUserID    = "955f0f87-37fd-4792-90eb-9bf6989e698e"
+	AdminUserID   = "955f0f87-37fd-4792-90eb-9bf6989e698a"
+	PowerUserID   = "955f0f87-37fd-4792-90eb-9bf6989e698b"
+	DefaultUserID = "955f0f87-37fd-4792-90eb-9bf6989e698c"
 	TestDomain    = "test-deploy.saffronbun.com"
 	CheckInterval = 1 * time.Second
 )
@@ -44,6 +46,10 @@ func GenName(base string) string {
 	return base + "-" + strings.ReplaceAll(uuid.NewString()[:10], "-", "")
 }
 
+func StrPtr(s string) *string {
+	return &s
+}
+
 func DoPlainGetRequest(t *testing.T, path string) *http.Response {
 	t.Helper()
 
@@ -65,20 +71,23 @@ func CreateServerUrlWithProtocol(protocol, subPath string) string {
 	return protocol + "://localhost:8080/v1" + subPath
 }
 
-func DoGetRequest(t *testing.T, subPath string) *http.Response {
+func DoGetRequest(t *testing.T, subPath string, userID ...string) *http.Response {
 	t.Helper()
 
 	req, err := http.NewRequest("GET", CreateServerURL(subPath), nil)
 	assert.NoError(t, err)
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	assert.NoError(t, err)
+	// Set go-deploy-test-user header
+	effectiveUser := AdminUserID
+	if len(userID) > 0 {
+		effectiveUser = userID[0]
+	}
+	req.Header.Set("go-deploy-test-user", effectiveUser)
 
-	return resp
+	return doRequest(t, req)
 }
 
-func DoPostRequest(t *testing.T, subPath string, body interface{}) *http.Response {
+func DoPostRequest(t *testing.T, subPath string, body interface{}, userID ...string) *http.Response {
 	t.Helper()
 
 	jsonBody, err := json.Marshal(body)
@@ -90,19 +99,33 @@ func DoPostRequest(t *testing.T, subPath string, body interface{}) *http.Respons
 
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	assert.NoError(t, err)
+	// Set go-deploy-test-user header
+	effectiveUser := AdminUserID
+	if len(userID) > 0 {
+		effectiveUser = userID[0]
+	}
+	req.Header.Set("go-deploy-test-user", effectiveUser)
 
-	return resp
+	return doRequest(t, req)
 }
 
-func DoDeleteRequest(t *testing.T, subPath string) *http.Response {
+func DoDeleteRequest(t *testing.T, subPath string, userID ...string) *http.Response {
 	t.Helper()
 
 	req, err := http.NewRequest("DELETE", CreateServerURL(subPath), nil)
 	assert.NoError(t, err)
 
+	// Set go-deploy-test-user header
+	effectiveUser := AdminUserID
+	if len(userID) > 0 {
+		effectiveUser = userID[0]
+	}
+	req.Header.Set("go-deploy-test-user", effectiveUser)
+
+	return doRequest(t, req)
+}
+
+func doRequest(t *testing.T, req *http.Request) *http.Response {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	assert.NoError(t, err)
@@ -117,4 +140,16 @@ func ReadResponseBody(t *testing.T, resp *http.Response, body interface{}) error
 	})
 
 	return json.NewDecoder(resp.Body).Decode(body)
+}
+
+// EqualOrEmpty checks if two lists are equal, where [] == nil
+func EqualOrEmpty(t *testing.T, expected, actual interface{}, msgAndArgs ...interface{}) {
+	t.Helper()
+
+	asList, ok := actual.([]interface{})
+	if expected == nil || (ok && len(asList) == 0) {
+		assert.Empty(t, actual, msgAndArgs)
+	} else {
+		assert.EqualValues(t, expected, actual, msgAndArgs)
+	}
 }

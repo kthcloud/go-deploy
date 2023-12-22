@@ -66,6 +66,28 @@ func checkUpVM(t *testing.T, connectionString string) bool {
 	return true
 }
 
+func GetVM(t *testing.T, id string, userID ...string) body.VmRead {
+	resp := DoGetRequest(t, "/vms/"+id, userID...)
+	assert.Equal(t, http.StatusOK, resp.StatusCode, "vm was not fetched")
+
+	var vmRead body.VmRead
+	err := ReadResponseBody(t, resp, &vmRead)
+	assert.NoError(t, err, "vm was not fetched")
+
+	return vmRead
+}
+
+func ListVMs(t *testing.T, query string, userID ...string) []body.VmRead {
+	resp := DoGetRequest(t, "/vms"+query, userID...)
+	assert.Equal(t, http.StatusOK, resp.StatusCode, "vms were not fetched")
+
+	var vms []body.VmRead
+	err := ReadResponseBody(t, resp, &vms)
+	assert.NoError(t, err, "vms were not fetched")
+
+	return vms
+}
+
 func WithVM(t *testing.T, requestBody body.VmCreate) body.VmRead {
 	resp := DoPostRequest(t, "/vms", requestBody)
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "vm was not created")

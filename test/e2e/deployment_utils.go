@@ -59,6 +59,28 @@ func CheckUpURL(t *testing.T, url string) bool {
 	return false
 }
 
+func GetDeployment(t *testing.T, id string, userID ...string) body.DeploymentRead {
+	resp := DoGetRequest(t, "/deployments/"+id, userID...)
+	assert.Equal(t, http.StatusOK, resp.StatusCode, "deployment was not fetched")
+
+	var deploymentRead body.DeploymentRead
+	err := ReadResponseBody(t, resp, &deploymentRead)
+	assert.NoError(t, err, "deployment was not fetched")
+
+	return deploymentRead
+}
+
+func ListDeployments(t *testing.T, query string, userID ...string) []body.DeploymentRead {
+	resp := DoGetRequest(t, "/deployments"+query, userID...)
+	assert.Equal(t, http.StatusOK, resp.StatusCode, "deployments were not fetched")
+
+	var deployments []body.DeploymentRead
+	err := ReadResponseBody(t, resp, &deployments)
+	assert.NoError(t, err, "deployments were not fetched")
+
+	return deployments
+}
+
 func WithDeployment(t *testing.T, requestBody body.DeploymentCreate) (body.DeploymentRead, string) {
 	resp := DoPostRequest(t, "/deployments", requestBody)
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "deployment was not created")
@@ -88,6 +110,7 @@ func WithDeployment(t *testing.T, requestBody body.DeploymentCreate) (body.Deplo
 	assert.NotEmpty(t, deploymentRead.ID)
 	assert.Equal(t, requestBody.Name, deploymentRead.Name)
 	assert.Equal(t, requestBody.Private, deploymentRead.Private)
+
 	if requestBody.GitHub == nil {
 		assert.Empty(t, deploymentRead.Integrations)
 	} else {
@@ -95,16 +118,10 @@ func WithDeployment(t *testing.T, requestBody body.DeploymentCreate) (body.Deplo
 	}
 
 	if requestBody.Zone == nil {
-		// some zone is set by default
+		// Some zone is set by default
 		assert.NotEmpty(t, deploymentRead.Zone)
 	} else {
 		assert.Equal(t, requestBody.Zone, deploymentRead.Zone)
-	}
-
-	if requestBody.InitCommands == nil {
-		assert.Empty(t, deploymentRead.InitCommands)
-	} else {
-		assert.Equal(t, requestBody.InitCommands, deploymentRead.InitCommands)
 	}
 
 	// PORT env is generated, so we check for that first, then delete and match exact with the rest
@@ -145,17 +162,9 @@ func WithDeployment(t *testing.T, requestBody body.DeploymentCreate) (body.Deplo
 		}
 	}
 
-	if requestBody.Envs == nil {
-		assert.Empty(t, deploymentRead.Envs)
-	} else {
-		assert.Equal(t, requestBody.Envs, deploymentRead.Envs)
-	}
-
-	if requestBody.Volumes == nil {
-		assert.Empty(t, deploymentRead.Volumes)
-	} else {
-		assert.Equal(t, requestBody.Volumes, deploymentRead.Volumes)
-	}
+	EqualOrEmpty(t, requestBody.InitCommands, deploymentRead.InitCommands, "invalid init commands")
+	EqualOrEmpty(t, requestBody.Envs, deploymentRead.Envs, "invalid envs")
+	EqualOrEmpty(t, requestBody.Volumes, deploymentRead.Volumes, "invalid volumes")
 
 	if requestBody.CustomDomain != nil {
 		punyEncoded, err := idna.New().ToASCII("https://" + *requestBody.CustomDomain)

@@ -34,11 +34,11 @@ func shutdown() {
 	db.Shutdown()
 }
 
-func Create(options *Options) *App {
+func Create(opts *Options) *App {
 	config.SetupEnvironment()
 	metrics.Setup()
 
-	if options.TestMode {
+	if opts.TestMode {
 		config.Config.TestMode = true
 		config.Config.MongoDB.Name = config.Config.MongoDB.Name + "-test"
 	}
@@ -56,7 +56,7 @@ func Create(options *Options) *App {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	for _, flag := range options.Flags {
+	for _, flag := range opts.Flags {
 		// handle api worker separately
 		if flag.Name == "api" {
 			continue
@@ -69,7 +69,7 @@ func Create(options *Options) *App {
 
 	var httpServer *http.Server
 
-	if options.Flags.GetPassedValue("api").(bool) {
+	if opts.Flags.GetPassedValue("api").(bool) {
 		ginMode, exists := os.LookupEnv("GIN_MODE")
 		if exists {
 			gin.SetMode(ginMode)

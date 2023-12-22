@@ -19,7 +19,7 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func TestGetList(t *testing.T) {
+func TestList(t *testing.T) {
 	resp := e2e.DoGetRequest(t, "/vms")
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -33,7 +33,7 @@ func TestGetList(t *testing.T) {
 	}
 }
 
-func TestGetGpuList(t *testing.T) {
+func TestListGPUs(t *testing.T) {
 	resp := e2e.DoGetRequest(t, "/gpus")
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -47,7 +47,7 @@ func TestGetGpuList(t *testing.T) {
 	}
 }
 
-func TestGetAvailableGpuList(t *testing.T) {
+func TestListAvailableGPUs(t *testing.T) {
 	t.Skip()
 	return
 
@@ -310,6 +310,37 @@ func TestUpdate(t *testing.T) {
 	if updateRequestBody.RAM != nil {
 		assert.Equal(t, updatedRam, vmRead.Specs.RAM)
 	}
+}
+
+func TestCreateShared(t *testing.T) {
+	vm := e2e.WithVM(t, body.VmCreate{
+		Name:         e2e.GenName("e2e"),
+		SshPublicKey: withSshPublicKey(t),
+		CpuCores:     2,
+		RAM:          2,
+		DiskSize:     20,
+	})
+	team := e2e.WithTeam(t, body.TeamCreate{
+		Name:      e2e.GenName("team"),
+		Resources: []string{vm.ID},
+		Members:   []body.TeamMemberCreate{{ID: e2e.PowerUserID}},
+	})
+
+	deploymentRead := e2e.GetDeployment(t, vm.ID)
+	assert.Equal(t, []string{team.ID}, deploymentRead.Teams, "invalid teams on deployment")
+
+	// Fetch team members deployments
+	deployments := e2e.ListVMs(t, "?userId="+e2e.PowerUserID)
+	assert.NotEmpty(t, deployments, "user has no deployments")
+
+	hasDeployment := false
+	for _, d := range deployments {
+		if d.ID == vm.ID {
+			hasDeployment = true
+		}
+	}
+
+	assert.True(t, hasDeployment, "deployment was not found in other user's deployments")
 }
 
 func TestAttachAnyGPU(t *testing.T) {

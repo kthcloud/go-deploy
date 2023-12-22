@@ -19,7 +19,7 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func TestGetList(t *testing.T) {
+func TestList(t *testing.T) {
 	resp := e2e.DoGetRequest(t, "/deployments")
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -33,23 +33,8 @@ func TestGetList(t *testing.T) {
 	}
 }
 
-func TestGetStorageManagers(t *testing.T) {
-	resp := e2e.DoGetRequest(t, "/storageManagers")
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-	var storageManagers []body.SmRead
-	err := e2e.ReadResponseBody(t, resp, &storageManagers)
-	assert.NoError(t, err, "storage managers were not fetched")
-
-	for _, storageManager := range storageManagers {
-		assert.NotEmpty(t, storageManager.ID, "storage manager id was empty")
-		assert.NotEmpty(t, storageManager.OwnerID, "storage manager owner id was empty")
-		assert.NotEmpty(t, storageManager.URL, "storage manager url was empty")
-	}
-}
-
 func TestCreate(t *testing.T) {
-	// in order to test with GitHub, you need to set the following env variables:
+	// To test with GitHub, you need to set the following env variables:
 	var token string
 	var repositoryID int64
 
@@ -186,6 +171,31 @@ func TestCreateWithInvalidBody(t *testing.T) {
 	}
 
 	e2e.WithAssumedFailedDeployment(t, tooManyInitCommands)
+}
+
+func TestCreateShared(t *testing.T) {
+	deployment, _ := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName("e2e")})
+	team := e2e.WithTeam(t, body.TeamCreate{
+		Name:      e2e.GenName("team"),
+		Resources: []string{deployment.ID},
+		Members:   []body.TeamMemberCreate{{ID: e2e.PowerUserID}},
+	})
+
+	deploymentRead := e2e.GetDeployment(t, deployment.ID)
+	assert.Equal(t, []string{team.ID}, deploymentRead.Teams, "invalid teams on deployment")
+
+	// Fetch team members deployments
+	deployments := e2e.ListDeployments(t, "?userId="+e2e.PowerUserID)
+	assert.NotEmpty(t, deployments, "user has no deployments")
+
+	hasDeployment := false
+	for _, d := range deployments {
+		if d.ID == deployment.ID {
+			hasDeployment = true
+		}
+	}
+
+	assert.True(t, hasDeployment, "deployment was not found in other user's deployments")
 }
 
 func TestUpdate(t *testing.T) {
@@ -413,73 +423,4 @@ func TestFetchLogs(t *testing.T) {
 
 	resp := e2e.DoGetRequest(t, "/deployments/"+deployment.ID+"/logs-sse")
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-}
-
-func TestCreateStorageManager(t *testing.T) {
-	// in order to test this, we need to create a deployment with volumes
-
-	envValue := uuid.NewString()
-
-	requestBody := body.DeploymentCreate{
-		Name:    e2e.GenName("e2e"),
-		Private: false,
-		Envs: []body.Env{
-			{
-				Name:  "e2e",
-				Value: envValue,
-			},
-		},
-		GitHub: nil,
-		Zone:   nil,
-		Volumes: []body.Volume{
-			{
-				Name:    "e2e-test",
-				AppPath: "/etc/test",
-				// keeping this at root ensures that deployment can start,
-				// since we don't have control of the folders
-				ServerPath: "/",
-			},
-		},
-	}
-
-	_, _ = e2e.WithDeployment(t, requestBody)
-
-	// make sure the storage manager has to be created
-	time.Sleep(30 * time.Second)
-
-	// now the storage manager should be available
-	// TODO: update this part of the test when storage manager id is exposed in the deployment/user
-	var storageManager body.SmRead
-	{
-		resp := e2e.DoGetRequest(t, "/storageManagers")
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-		var storageManagers []body.SmRead
-		err := e2e.ReadResponseBody(t, resp, &storageManagers)
-		assert.NoError(t, err, "storage managers were not fetched")
-
-		idx := -1
-		for i, sm := range storageManagers {
-			if sm.OwnerID == e2e.TestUserID {
-				idx = i
-				break
-			}
-		}
-
-		assert.NotEqual(t, -1, idx, "storage manager was not found")
-
-		storageManager = storageManagers[idx]
-	}
-
-	assert.NotEmpty(t, storageManager.ID, "storage manager id was empty")
-	assert.NotEmpty(t, storageManager.OwnerID, "storage manager owner id was empty")
-	assert.NotEmpty(t, storageManager.URL, "storage manager url was empty")
-
-	e2e.WaitForSmRunning(t, storageManager.ID, func(storageManagerRead *body.SmRead) bool {
-		//make sure it is accessible
-		if storageManager.URL != nil {
-			return e2e.CheckUpURL(t, *storageManager.URL)
-		}
-		return false
-	})
 }
