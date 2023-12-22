@@ -109,14 +109,14 @@ func (c *Client) CreateSnapshot(vmID string, opts *client.CreateSnapshotOptions)
 	if !vm.Ready() {
 		return fmt.Errorf("vm %s not ready", vmID)
 	}
-	var params *vmModel.CreateSnapshotParams
+	params := &vmModel.CreateSnapshotParams{}
 	if opts.System != nil {
 		params = opts.System
 	} else if opts.User != nil {
 		params.FromDTO(opts.User)
 	}
 
-	if params == nil {
+	if params.Name == "" {
 		log.Println("no snapshot type specified when creating snapshot for vm", vmID, ". did you forget to specify the type?")
 		return nil
 	}
