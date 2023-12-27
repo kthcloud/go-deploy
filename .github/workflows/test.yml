@@ -47,9 +47,10 @@ jobs:
 
       - name: Start main program
         run: |
-          go build -o go-deploy .
-          ./go-deploy & # Starts your main program in the background
-          sleep 15 # Wait a bit to ensure the program has started
+          ls -la                    # List files in current directory
+          go build -o go-deploy .   # Build go-deploy
+          ./go-deploy &             # Starts in the background
+          sleep 15                  # Wait a bit to ensure it has started
 
-      - name: Run end-to-end tests
+      - name: Run e2e tests
         run: go test test/e2e/...
