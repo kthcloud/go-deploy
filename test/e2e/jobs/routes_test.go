@@ -22,7 +22,7 @@ func TestGet(t *testing.T) {
 	// We can't create a job with the API, so we need to trigger a job
 	// The simplest way is to create a deployment
 
-	_, jobID := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName("e2e")})
+	_, jobID := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
 
 	resp := e2e.DoGetRequest(t, "/jobs/"+jobID)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -41,14 +41,14 @@ func TestList(t *testing.T) {
 		// all
 		"?all=true&pageSize=10",
 		// by status
-		"?status=finished&pageSize=10",
+		"?status=completed&pageSize=10",
 		// by user id
-		"?userID=" + e2e.AdminUserID + "&pageSize=10",
+		"?userId=" + e2e.AdminUserID + "&pageSize=10",
 	}
 
 	for _, query := range queries {
 		jobs := e2e.ListJobs(t, query)
-		assert.NotEmpty(t, jobs, "jobs were not fetched. it should have at least one job")
+		assert.NotEmpty(t, jobs, "jobs were not fetched for query %s. it should have at least one job", query)
 	}
 }
 
@@ -56,7 +56,7 @@ func TestUpdate(t *testing.T) {
 	// we can't create a job with the api, so we need to trigger a job
 	// simplest way is to just create a deployment
 
-	_, jobID := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName("e2e")})
+	_, jobID := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
 	e2e.WaitForJobFinished(t, jobID, nil)
 
 	terminatedStatus := job.StatusTerminated

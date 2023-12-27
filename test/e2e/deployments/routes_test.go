@@ -49,7 +49,7 @@ func TestCreate(t *testing.T) {
 	envValue := uuid.NewString()
 
 	requestBody := body.DeploymentCreate{
-		Name:    e2e.GenName("e2e"),
+		Name:    e2e.GenName(),
 		Private: false,
 		Envs: []body.Env{
 			{
@@ -69,7 +69,7 @@ func TestCreateWithCustomPort(t *testing.T) {
 	customPort := 8081
 
 	requestBody := body.DeploymentCreate{
-		Name:    e2e.GenName("e2e"),
+		Name:    e2e.GenName(),
 		Private: false,
 		Envs: []body.Env{
 			{
@@ -90,7 +90,7 @@ func TestCreateWithCustomImage(t *testing.T) {
 	customPort := 80
 
 	requestBody := body.DeploymentCreate{
-		Name:    e2e.GenName("e2e"),
+		Name:    e2e.GenName(),
 		Private: false,
 		Envs: []body.Env{
 			{
@@ -110,7 +110,7 @@ func TestCreateWithCustomDomain(t *testing.T) {
 	customDomain := e2e.TestDomain
 
 	requestBody := body.DeploymentCreate{
-		Name:         e2e.GenName("e2e"),
+		Name:         e2e.GenName(),
 		Private:      false,
 		CustomDomain: &customDomain,
 	}
@@ -126,14 +126,14 @@ func TestCreateWithInvalidBody(t *testing.T) {
 	e2e.WithAssumedFailedDeployment(t, longName)
 
 	invalidNames := []string{
-		e2e.GenName("e2e") + "-",
-		e2e.GenName("e2e") + "- ",
-		e2e.GenName("e2e") + ".",
-		"." + e2e.GenName("e2e"),
-		e2e.GenName("e2e") + " " + e2e.GenName("e2e"),
-		e2e.GenName("e2e") + "%",
-		e2e.GenName("e2e") + "!",
-		e2e.GenName("e2e") + "%" + e2e.GenName("e2e"),
+		e2e.GenName() + "-",
+		e2e.GenName() + "- ",
+		e2e.GenName() + ".",
+		"." + e2e.GenName(),
+		e2e.GenName() + " " + e2e.GenName(),
+		e2e.GenName() + "%",
+		e2e.GenName() + "!",
+		e2e.GenName() + "%" + e2e.GenName(),
 	}
 
 	for _, name := range invalidNames {
@@ -141,7 +141,7 @@ func TestCreateWithInvalidBody(t *testing.T) {
 		e2e.WithAssumedFailedDeployment(t, requestBody)
 	}
 
-	tooManyEnvs := body.DeploymentCreate{Name: e2e.GenName("e2e")}
+	tooManyEnvs := body.DeploymentCreate{Name: e2e.GenName()}
 	tooManyEnvs.Envs = make([]body.Env, 10000)
 	for i := range tooManyEnvs.Envs {
 		tooManyEnvs.Envs[i] = body.Env{
@@ -152,7 +152,7 @@ func TestCreateWithInvalidBody(t *testing.T) {
 
 	e2e.WithAssumedFailedDeployment(t, tooManyEnvs)
 
-	tooManyVolumes := body.DeploymentCreate{Name: e2e.GenName("e2e")}
+	tooManyVolumes := body.DeploymentCreate{Name: e2e.GenName()}
 	tooManyVolumes.Volumes = make([]body.Volume, 10000)
 	for i := range tooManyVolumes.Volumes {
 		tooManyVolumes.Volumes[i] = body.Volume{
@@ -164,7 +164,7 @@ func TestCreateWithInvalidBody(t *testing.T) {
 
 	e2e.WithAssumedFailedDeployment(t, tooManyVolumes)
 
-	tooManyInitCommands := body.DeploymentCreate{Name: e2e.GenName("e2e")}
+	tooManyInitCommands := body.DeploymentCreate{Name: e2e.GenName()}
 	tooManyInitCommands.InitCommands = make([]string, 10000)
 	for i := range tooManyInitCommands.InitCommands {
 		tooManyInitCommands.InitCommands[i] = uuid.NewString()
@@ -174,9 +174,9 @@ func TestCreateWithInvalidBody(t *testing.T) {
 }
 
 func TestCreateShared(t *testing.T) {
-	deployment, _ := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName("e2e")})
+	deployment, _ := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
 	team := e2e.WithTeam(t, body.TeamCreate{
-		Name:      e2e.GenName("team"),
+		Name:      e2e.GenName(),
 		Resources: []string{deployment.ID},
 		Members:   []body.TeamMemberCreate{{ID: e2e.PowerUserID}},
 	})
@@ -202,7 +202,7 @@ func TestUpdate(t *testing.T) {
 	envValue := uuid.NewString()
 
 	deploymentRead, _ := e2e.WithDeployment(t, body.DeploymentCreate{
-		Name:    e2e.GenName("e2e"),
+		Name:    e2e.GenName(),
 		Private: false,
 		Envs: []body.Env{
 			{
@@ -277,7 +277,7 @@ func TestUpdateImage(t *testing.T) {
 	image2 := "httpd"
 
 	deployment, _ := e2e.WithDeployment(t, body.DeploymentCreate{
-		Name:  e2e.GenName("e2e"),
+		Name:  e2e.GenName(),
 		Image: &image1,
 		Envs: []body.Env{
 			{
@@ -314,7 +314,7 @@ func TestUpdateImage(t *testing.T) {
 }
 
 func TestUpdateInternalPort(t *testing.T) {
-	deployment, _ := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName("e2e")})
+	deployment, _ := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
 
 	customPort := deployment.InternalPort + 1
 
@@ -360,7 +360,7 @@ func TestUpdateInternalPort(t *testing.T) {
 func TestCommand(t *testing.T) {
 	commands := []string{"restart"}
 
-	deployment, _ := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName("e2e")})
+	deployment, _ := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
 
 	for _, command := range commands {
 		reqBody := body.DeploymentCommand{Command: command}
@@ -382,7 +382,7 @@ func TestCommand(t *testing.T) {
 func TestInvalidCommand(t *testing.T) {
 	invalidCommands := []string{"start", "stop"}
 
-	deployment, _ := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName("e2e")})
+	deployment, _ := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
 
 	for _, command := range invalidCommands {
 		reqBody := body.DeploymentCommand{Command: command}
@@ -393,9 +393,9 @@ func TestInvalidCommand(t *testing.T) {
 
 func TestFetchCiConfig(t *testing.T) {
 	image := "nginx"
-	deploymentCustom, _ := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName("e2e")})
+	deploymentCustom, _ := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
 	deploymentPrebuilt, _ := e2e.WithDeployment(t, body.DeploymentCreate{
-		Name:  e2e.GenName("e2e"),
+		Name:  e2e.GenName(),
 		Image: &image,
 		Envs: []body.Env{
 			{
@@ -419,7 +419,7 @@ func TestFetchCiConfig(t *testing.T) {
 }
 
 func TestFetchLogs(t *testing.T) {
-	deployment, _ := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName("e2e")})
+	deployment, _ := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
 
 	resp := e2e.DoGetRequest(t, "/deployments/"+deployment.ID+"/logs-sse")
 	assert.Equal(t, http.StatusOK, resp.StatusCode)

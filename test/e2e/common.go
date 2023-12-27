@@ -3,9 +3,14 @@ package e2e
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"go-deploy/models/dto/body"
+	"go-deploy/pkg/sys"
+	"io"
 	"net/http"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -42,8 +47,12 @@ func fetchUntil(t *testing.T, subPath string, callback func(*http.Response) bool
 	}
 }
 
-func GenName(base string) string {
-	return base + "-" + strings.ReplaceAll(uuid.NewString()[:10], "-", "")
+func GenName(base ...string) string {
+	if len(base) == 0 {
+		return "e2e-" + strings.ReplaceAll(uuid.NewString()[:10], "-", "")
+	}
+
+	return "e2e-" + strings.ReplaceAll(base[0], " ", "-") + "-" + strings.ReplaceAll(uuid.NewString()[:10], "-", "")
 }
 
 func StrPtr(s string) *string {
@@ -142,14 +151,80 @@ func ReadResponseBody(t *testing.T, resp *http.Response, body interface{}) error
 	return json.NewDecoder(resp.Body).Decode(body)
 }
 
+func ReadRawResponseBody(t *testing.T, resp *http.Response) []byte {
+	t.Cleanup(func() {
+		err := resp.Body.Close()
+		assert.NoError(t, err)
+	})
+
+	raw, err := io.ReadAll(resp.Body)
+	if err != nil {
+		assert.FailNow(t, fmt.Sprintf("failed to read response body: %s", err.Error()))
+	}
+
+	return raw
+}
+
+func ParseRawBody(t *testing.T, body []byte, parsedBody interface{}) {
+	err := json.Unmarshal(body, parsedBody)
+	if err != nil {
+		assert.FailNow(t, fmt.Sprintf("failed to parse body: %s", err.Error()))
+	}
+}
+
 // EqualOrEmpty checks if two lists are equal, where [] == nil
 func EqualOrEmpty(t *testing.T, expected, actual interface{}, msgAndArgs ...interface{}) {
 	t.Helper()
 
-	asList, ok := actual.([]interface{})
-	if expected == nil || (ok && len(asList) == 0) {
+	// check if "expected" is a slice, and if so, check how many elements it has
+	isSlice := reflect.ValueOf(expected).Kind() == reflect.Slice
+	noElements := 0
+	if isSlice {
+		noElements = reflect.ValueOf(expected).Len()
+	}
+
+	if expected == nil || (isSlice && noElements == 0) {
 		assert.Empty(t, actual, msgAndArgs)
 	} else {
 		assert.EqualValues(t, expected, actual, msgAndArgs)
 	}
+}
+
+func Parse[okType any](t *testing.T, resp *http.Response) *okType {
+	if resp.StatusCode > 299 {
+		rawBody := ReadRawResponseBody(t, resp)
+
+		var bindingError body.BindingError
+		ParseRawBody(t, rawBody, &bindingError)
+
+		// Check if it was a binding error
+		if len(bindingError.ValidationErrors) > 0 {
+			for _, fieldErrors := range bindingError.ValidationErrors {
+				for _, fieldError := range fieldErrors {
+					assert.Fail(t, fmt.Sprintf("binding error: %s", fieldError))
+				}
+			}
+
+			assert.FailNow(t, fmt.Sprintf("binding error (status code: %d)", resp.StatusCode))
+		}
+
+		// Otherwise parse as ordinary error response
+		var errResp sys.ErrorResponse
+		ParseRawBody(t, rawBody, &errResp)
+
+		if len(errResp.Errors) == 0 {
+			assert.FailNow(t, fmt.Sprintf("error response has no errors (status code: %d)", resp.StatusCode))
+			return nil
+		}
+
+		assert.FailNow(t, fmt.Sprintf("error response has errors (status code: %d): %s", resp.StatusCode, errResp.Errors[0].Msg))
+		return nil
+
+	}
+
+	var okResp okType
+	err := ReadResponseBody(t, resp, &okResp)
+	assert.NoError(t, err)
+
+	return &okResp
 }

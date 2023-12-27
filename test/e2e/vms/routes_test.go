@@ -71,7 +71,7 @@ func TestCreate(t *testing.T) {
 	publicKey := withSshPublicKey(t)
 
 	requestBody := body.VmCreate{
-		Name:         e2e.GenName("e2e"),
+		Name:         e2e.GenName(),
 		SshPublicKey: publicKey,
 		Ports: []body.Port{
 			{
@@ -102,14 +102,14 @@ func TestCreateWithInvalidBody(t *testing.T) {
 	e2e.WithAssumedFailedVM(t, longName)
 
 	invalidNames := []string{
-		e2e.GenName("e2e") + "-",
-		e2e.GenName("e2e") + "- ",
-		e2e.GenName("e2e") + ".",
-		"." + e2e.GenName("e2e"),
-		e2e.GenName("e2e") + " " + e2e.GenName("e2e"),
-		e2e.GenName("e2e") + "%",
-		e2e.GenName("e2e") + "!",
-		e2e.GenName("e2e") + "%" + e2e.GenName("e2e"),
+		e2e.GenName() + "-",
+		e2e.GenName() + "- ",
+		e2e.GenName() + ".",
+		"." + e2e.GenName(),
+		e2e.GenName() + " " + e2e.GenName(),
+		e2e.GenName() + "%",
+		e2e.GenName() + "!",
+		e2e.GenName() + "%" + e2e.GenName(),
 	}
 
 	for _, name := range invalidNames {
@@ -147,7 +147,7 @@ func TestCreateWithInvalidBody(t *testing.T) {
 
 	for _, port := range invalidPorts {
 		requestBody := body.VmCreate{
-			Name:         e2e.GenName("e2e"),
+			Name:         e2e.GenName(),
 			SshPublicKey: withSshPublicKey(t),
 			Ports: []body.Port{
 				port,
@@ -166,7 +166,7 @@ func TestCreateWithInvalidBody(t *testing.T) {
 
 	for _, cpuCores := range invalidCpuCores {
 		requestBody := body.VmCreate{
-			Name:         e2e.GenName("e2e"),
+			Name:         e2e.GenName(),
 			SshPublicKey: withSshPublicKey(t),
 			CpuCores:     cpuCores,
 			RAM:          2,
@@ -182,7 +182,7 @@ func TestCreateWithInvalidBody(t *testing.T) {
 
 	for _, ram := range invalidRam {
 		requestBody := body.VmCreate{
-			Name:         e2e.GenName("e2e"),
+			Name:         e2e.GenName(),
 			SshPublicKey: withSshPublicKey(t),
 			CpuCores:     2,
 			RAM:          ram,
@@ -199,7 +199,7 @@ func TestCreateWithInvalidBody(t *testing.T) {
 
 	for _, diskSize := range invalidDiskSize {
 		requestBody := body.VmCreate{
-			Name:         e2e.GenName("e2e"),
+			Name:         e2e.GenName(),
 			SshPublicKey: withSshPublicKey(t),
 			CpuCores:     2,
 			RAM:          2,
@@ -216,7 +216,7 @@ func TestCreateWithInvalidBody(t *testing.T) {
 
 	for _, publicKey := range invalidPublicKey {
 		requestBody := body.VmCreate{
-			Name:         e2e.GenName("e2e"),
+			Name:         e2e.GenName(),
 			SshPublicKey: publicKey,
 			CpuCores:     2,
 			RAM:          2,
@@ -230,7 +230,7 @@ func TestUpdate(t *testing.T) {
 	publicKey := withSshPublicKey(t)
 
 	requestBody := body.VmCreate{
-		Name:         e2e.GenName("e2e"),
+		Name:         e2e.GenName(),
 		SshPublicKey: publicKey,
 		Ports: []body.Port{
 			{
@@ -314,14 +314,14 @@ func TestUpdate(t *testing.T) {
 
 func TestCreateShared(t *testing.T) {
 	vm := e2e.WithVM(t, body.VmCreate{
-		Name:         e2e.GenName("e2e"),
+		Name:         e2e.GenName(),
 		SshPublicKey: withSshPublicKey(t),
 		CpuCores:     2,
 		RAM:          2,
 		DiskSize:     20,
 	})
 	team := e2e.WithTeam(t, body.TeamCreate{
-		Name:      e2e.GenName("team"),
+		Name:      e2e.GenName(),
 		Resources: []string{vm.ID},
 		Members:   []body.TeamMemberCreate{{ID: e2e.PowerUserID}},
 	})
@@ -345,7 +345,7 @@ func TestCreateShared(t *testing.T) {
 
 func TestAttachAnyGPU(t *testing.T) {
 	vm := e2e.WithVM(t, body.VmCreate{
-		Name:         e2e.GenName("e2e"),
+		Name:         e2e.GenName(),
 		SshPublicKey: withSshPublicKey(t),
 		CpuCores:     2,
 		RAM:          2,
@@ -394,7 +394,7 @@ func TestAttachGPU(t *testing.T) {
 	}
 
 	vm := e2e.WithVM(t, body.VmCreate{
-		Name:         e2e.GenName("e2e"),
+		Name:         e2e.GenName(),
 		SshPublicKey: withSshPublicKey(t),
 		CpuCores:     2,
 		RAM:          2,
@@ -428,7 +428,7 @@ func TestAttachGPU(t *testing.T) {
 
 func TestAttachGPUWithInvalidID(t *testing.T) {
 	vm := e2e.WithVM(t, body.VmCreate{
-		Name:         e2e.GenName("e2e"),
+		Name:         e2e.GenName(),
 		SshPublicKey: withSshPublicKey(t),
 		CpuCores:     2,
 		RAM:          2,
@@ -463,7 +463,7 @@ func TestAttachGpuWithAlreadyAttachedID(t *testing.T) {
 	}
 
 	vm := e2e.WithVM(t, body.VmCreate{
-		Name:         e2e.GenName("e2e"),
+		Name:         e2e.GenName(),
 		SshPublicKey: withSshPublicKey(t),
 		CpuCores:     2,
 		RAM:          2,
@@ -501,7 +501,7 @@ func TestCommand(t *testing.T) {
 	commands := []string{"stop", "start", "reboot"}
 
 	vm := e2e.WithVM(t, body.VmCreate{
-		Name:         e2e.GenName("e2e"),
+		Name:         e2e.GenName(),
 		SshPublicKey: withSshPublicKey(t),
 		CpuCores:     2,
 		RAM:          2,
@@ -521,7 +521,7 @@ func TestCreateAndRestoreSnapshot(t *testing.T) {
 	publicKey := withSshPublicKey(t)
 
 	requestBody := body.VmCreate{
-		Name:         e2e.GenName("e2e"),
+		Name:         e2e.GenName(),
 		SshPublicKey: publicKey,
 		CpuCores:     2,
 		RAM:          2,
@@ -531,7 +531,7 @@ func TestCreateAndRestoreSnapshot(t *testing.T) {
 	vm := e2e.WithVM(t, requestBody)
 
 	snapshotCreateBody := body.VmSnapshotCreate{
-		Name: e2e.GenName("e2e"),
+		Name: e2e.GenName(),
 	}
 
 	resp := e2e.DoPostRequest(t, "/vms/"+vm.ID+"/snapshots", snapshotCreateBody)
@@ -595,7 +595,7 @@ func TestInvalidCommand(t *testing.T) {
 	invalidCommands := []string{"some command", "invalid"}
 
 	vm := e2e.WithVM(t, body.VmCreate{
-		Name:         e2e.GenName("e2e"),
+		Name:         e2e.GenName(),
 		SshPublicKey: withSshPublicKey(t),
 		CpuCores:     2,
 		RAM:          2,
