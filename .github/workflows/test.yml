@@ -40,7 +40,7 @@ jobs:
 
       - name: Create config file from secret
         run: |
-          echo "${{ secrets.CONFIG_FILE }}" | sudo tee /etc/deploy/config.yaml > /dev/null
+          echo "${{ env.CONFIG_FILE }}" | sudo tee /etc/deploy/config.yaml > /dev/null
 
       - name: Export configuration file path
         run: echo "DEPLOY_CONFIG_FILE=/etc/deploy/config.yaml" >> $GITHUB_ENV
