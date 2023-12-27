@@ -3,8 +3,8 @@ package status_update
 import (
 	"context"
 	"fmt"
-	deploymentModel "go-deploy/models/sys/deployment"
-	vmModel "go-deploy/models/sys/vm"
+	deploymentModels "go-deploy/models/sys/deployment"
+	vmModels "go-deploy/models/sys/vm"
 	"go-deploy/service/vm_service"
 	"go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
@@ -18,7 +18,7 @@ func vmStatusUpdater(ctx context.Context) {
 	for {
 		select {
 		case <-time.After(1 * time.Second):
-			allVms, err := vmModel.New().List()
+			allVms, err := vmModels.New().List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching vms: %w", err))
 				continue
@@ -32,7 +32,7 @@ func vmStatusUpdater(ctx context.Context) {
 					utils.PrettyPrintError(fmt.Errorf("error fetching vm status: %w", err))
 					continue
 				}
-				_ = vmModel.New().SetWithBsonByID(vm.ID, bson.D{{"statusCode", code}, {"statusMessage", message}})
+				_ = vmModels.New().SetWithBsonByID(vm.ID, bson.D{{"statusCode", code}, {"statusMessage", message}})
 
 				host, err := vsc.GetHost(vm.ID)
 				if err != nil {
@@ -41,9 +41,9 @@ func vmStatusUpdater(ctx context.Context) {
 				}
 
 				if host == nil {
-					_ = vmModel.New().UpdateWithBsonByID(vm.ID, bson.D{{"$unset", bson.D{{"host", ""}}}})
+					_ = vmModels.New().UpdateWithBsonByID(vm.ID, bson.D{{"$unset", bson.D{{"host", ""}}}})
 				} else {
-					_ = vmModel.New().SetWithBsonByID(vm.ID, bson.D{{"host", host}})
+					_ = vmModels.New().SetWithBsonByID(vm.ID, bson.D{{"host", host}})
 				}
 			}
 		case <-ctx.Done():
@@ -58,7 +58,7 @@ func vmSnapshotUpdater(ctx context.Context) {
 	for {
 		select {
 		case <-time.After(5 * time.Second):
-			allVms, err := vmModel.New().List()
+			allVms, err := vmModels.New().List()
 			if err != nil {
 				log.Println("error fetching vms: ", err)
 				continue
@@ -70,7 +70,7 @@ func vmSnapshotUpdater(ctx context.Context) {
 					continue
 				}
 
-				_ = vmModel.New().UpdateSubsystemByID(vm.ID, "cs.snapshotMap", snapshotMap)
+				_ = vmModels.New().UpdateSubsystemByID(vm.ID, "cs.snapshotMap", snapshotMap)
 			}
 		case <-ctx.Done():
 			return
@@ -84,7 +84,7 @@ func deploymentStatusUpdater(ctx context.Context) {
 	for {
 		select {
 		case <-time.After(1 * time.Second):
-			allDeployments, err := deploymentModel.New().List()
+			allDeployments, err := deploymentModels.New().List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching deployments. details: %w", err))
 				continue
@@ -96,7 +96,7 @@ func deploymentStatusUpdater(ctx context.Context) {
 					utils.PrettyPrintError(fmt.Errorf("error fetching deployment status: %w", err))
 					continue
 				}
-				_ = deploymentModel.New().SetWithBsonByID(deployment.ID, bson.D{{"statusCode", code}, {"statusMessage", message}})
+				_ = deploymentModels.New().SetWithBsonByID(deployment.ID, bson.D{{"statusCode", code}, {"statusMessage", message}})
 			}
 		case <-ctx.Done():
 			return

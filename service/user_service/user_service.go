@@ -2,31 +2,31 @@ package user_service
 
 import (
 	"go-deploy/models/dto/body"
-	userModel "go-deploy/models/sys/user"
+	userModels "go-deploy/models/sys/user"
 	"go-deploy/service"
 )
 
 // Get gets a user
 //
 // It uses service.AuthInfo to only return the resource the requesting user has access to
-func (c *Client) Get(id string, opts ...GetUserOpts) (*userModel.User, error) {
+func (c *Client) Get(id string, opts ...GetUserOpts) (*userModels.User, error) {
 	_ = service.GetFirstOrDefault(opts)
 
 	if c.Auth != nil && id != c.Auth.UserID && !c.Auth.IsAdmin {
 		return nil, nil
 	}
 
-	return c.User(id, userModel.New())
+	return c.User(id, userModels.New())
 }
 
 // List lists users
 //
 // It uses service.AuthInfo to only return the resources the requesting user has access to
 // It uses the search param to enable searching in multiple fields
-func (c *Client) List(opts ...ListUsersOpts) ([]userModel.User, error) {
+func (c *Client) List(opts ...ListUsersOpts) ([]userModels.User, error) {
 	o := service.GetFirstOrDefault(opts)
 
-	umc := userModel.New()
+	umc := userModels.New()
 
 	if o.Pagination != nil {
 		umc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
@@ -42,7 +42,7 @@ func (c *Client) List(opts ...ListUsersOpts) ([]userModel.User, error) {
 			return nil, err
 		}
 
-		return []userModel.User{*user}, nil
+		return []userModels.User{*user}, nil
 	}
 
 	return c.Users(umc)
@@ -52,10 +52,10 @@ func (c *Client) List(opts ...ListUsersOpts) ([]userModel.User, error) {
 //
 // This does not use AuthInfo
 func (c *Client) Exists(id string) (bool, error) {
-	return userModel.New().ExistsByID(id)
+	return userModels.New().ExistsByID(id)
 }
 
-func (c *Client) Create() (*userModel.User, error) {
+func (c *Client) Create() (*userModels.User, error) {
 	if c.Auth == nil {
 		return nil, nil
 	}
@@ -67,19 +67,19 @@ func (c *Client) Create() (*userModel.User, error) {
 
 	effectiveRole := c.Auth.GetEffectiveRole()
 
-	params := &userModel.CreateParams{
+	params := &userModels.CreateParams{
 		Username:  c.Auth.GetUsername(),
 		FirstName: c.Auth.GetFirstName(),
 		LastName:  c.Auth.GetLastName(),
 		Email:     c.Auth.GetEmail(),
 		IsAdmin:   c.Auth.IsAdmin,
-		EffectiveRole: &userModel.EffectiveRole{
+		EffectiveRole: &userModels.EffectiveRole{
 			Name:        effectiveRole.Name,
 			Description: effectiveRole.Description,
 		},
 	}
 
-	return userModel.New().Create(c.Auth.UserID, params)
+	return userModels.New().Create(c.Auth.UserID, params)
 }
 
 // Discover returns a list of users that the requesting user has access to
@@ -87,7 +87,7 @@ func (c *Client) Create() (*userModel.User, error) {
 // It uses search param to enable searching in multiple fields
 func (c *Client) Discover(opts ...DiscoverUsersOpts) ([]body.UserReadDiscovery, error) {
 	o := service.GetFirstOrDefault(opts)
-	umc := userModel.New()
+	umc := userModels.New()
 
 	if o.Search != nil {
 		umc.WithSearch(*o.Search)
@@ -123,18 +123,18 @@ func (c *Client) Discover(opts ...DiscoverUsersOpts) ([]body.UserReadDiscovery, 
 // Update updates a user
 //
 // It uses service.AuthInfo to only update the resource the requesting user has access to
-func (c *Client) Update(userID string, dtoUserUpdate *body.UserUpdate) (*userModel.User, error) {
-	umc := userModel.New()
+func (c *Client) Update(userID string, dtoUserUpdate *body.UserUpdate) (*userModels.User, error) {
+	umc := userModels.New()
 
 	if c.Auth != nil && userID != c.Auth.UserID && !c.Auth.IsAdmin {
 		return nil, nil
 	}
 
-	var publicKeys *[]userModel.PublicKey
+	var publicKeys *[]userModels.PublicKey
 	if dtoUserUpdate.PublicKeys != nil {
-		k := make([]userModel.PublicKey, len(*dtoUserUpdate.PublicKeys))
+		k := make([]userModels.PublicKey, len(*dtoUserUpdate.PublicKeys))
 		for i, key := range *dtoUserUpdate.PublicKeys {
-			k[i] = userModel.PublicKey{
+			k[i] = userModels.PublicKey{
 				Name: key.Name,
 				Key:  key.Key,
 			}
@@ -143,7 +143,7 @@ func (c *Client) Update(userID string, dtoUserUpdate *body.UserUpdate) (*userMod
 		publicKeys = &k
 	}
 
-	userUpdate := &userModel.UpdateParams{
+	userUpdate := &userModels.UpdateParams{
 		PublicKeys: publicKeys,
 		Onboarded:  dtoUserUpdate.Onboarded,
 	}

@@ -15,7 +15,7 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func TestFetchZones(t *testing.T) {
+func TestList(t *testing.T) {
 	resp := e2e.DoGetRequest(t, "/zones")
 	assert.Equal(t, 200, resp.StatusCode)
 

@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"go-deploy/models/dto/body"
-	deploymentModel "go-deploy/models/sys/deployment"
+	deploymentModels "go-deploy/models/sys/deployment"
 	"go-deploy/models/sys/job"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
@@ -98,8 +98,8 @@ func HandleHarborHook(c *gin.Context) {
 	}
 
 	if webhook.Type == "PUSH_ARTIFACT" {
-		newLog := deploymentModel.Log{
-			Source:    deploymentModel.LogSourceDeployment,
+		newLog := deploymentModels.Log{
+			Source:    deploymentModels.LogSourceDeployment,
 			Prefix:    "[deployment]",
 			Line:      "Received push event from Harbor",
 			CreatedAt: time.Now(),
@@ -218,8 +218,8 @@ func HandleGitHubHook(c *gin.Context) {
 	}
 
 	if len(ids) > 0 {
-		newLog := deploymentModel.Log{
-			Source:    deploymentModel.LogSourceDeployment,
+		newLog := deploymentModels.Log{
+			Source:    deploymentModels.LogSourceDeployment,
 			Prefix:    "[deployment]",
 			Line:      "Received push event from GitHub",
 			CreatedAt: time.Now(),

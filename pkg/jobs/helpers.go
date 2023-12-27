@@ -3,17 +3,17 @@ package jobs
 import (
 	"context"
 	"fmt"
-	deploymentModel "go-deploy/models/sys/deployment"
-	jobModel "go-deploy/models/sys/job"
+	deploymentModels "go-deploy/models/sys/deployment"
+	jobModels "go-deploy/models/sys/job"
 	smModels "go-deploy/models/sys/sm"
-	vmModel "go-deploy/models/sys/vm"
+	vmModels "go-deploy/models/sys/vm"
 	"go.mongodb.org/mongo-driver/bson"
 	"golang.org/x/exp/slices"
 	"log"
 	"time"
 )
 
-func assertParameters(job *jobModel.Job, params []string) error {
+func assertParameters(job *jobModels.Job, params []string) error {
 	for _, param := range params {
 		if _, ok := job.Args[param]; !ok {
 			return fmt.Errorf("missing parameter: %s", param)
@@ -31,7 +31,7 @@ func makeFailedError(err error) error {
 	return fmt.Errorf("failed: %w", err)
 }
 
-func waitForJob(context context.Context, job *jobModel.Job, statuses []string) error {
+func waitForJob(context context.Context, job *jobModels.Job, statuses []string) error {
 	if len(statuses) == 0 {
 		return nil
 	}
@@ -46,7 +46,7 @@ func waitForJob(context context.Context, job *jobModel.Job, statuses []string) e
 			return context.Err()
 		default:
 			var err error
-			job, err = jobModel.New().GetByID(job.ID)
+			job, err = jobModels.New().GetByID(job.ID)
 			if err != nil {
 				return err
 			}
@@ -60,7 +60,7 @@ func waitForJob(context context.Context, job *jobModel.Job, statuses []string) e
 	}
 }
 
-func waitForJobs(context context.Context, jobs []jobModel.Job, statuses []string) error {
+func waitForJobs(context context.Context, jobs []jobModels.Job, statuses []string) error {
 	for _, job := range jobs {
 		err := waitForJob(context, &job, statuses)
 		if err != nil {
@@ -72,7 +72,7 @@ func waitForJobs(context context.Context, jobs []jobModel.Job, statuses []string
 }
 
 func deploymentDeletedByID(id string) (bool, error) {
-	deleted, err := deploymentModel.New().IncludeDeletedResources().Deleted(id)
+	deleted, err := deploymentModels.New().IncludeDeletedResources().Deleted(id)
 	if err != nil {
 		return false, err
 	}
@@ -81,7 +81,7 @@ func deploymentDeletedByID(id string) (bool, error) {
 		return true, nil
 	}
 
-	beingDeleted, err := deploymentModel.New().DoingActivity(id, deploymentModel.ActivityBeingDeleted)
+	beingDeleted, err := deploymentModels.New().DoingActivity(id, deploymentModels.ActivityBeingDeleted)
 	if err != nil {
 		return false, err
 	}
@@ -94,7 +94,7 @@ func deploymentDeletedByID(id string) (bool, error) {
 }
 
 func vmDeletedByID(id string) (bool, error) {
-	deleted, err := vmModel.New().IncludeDeletedResources().Deleted(id)
+	deleted, err := vmModels.New().IncludeDeletedResources().Deleted(id)
 	if err != nil {
 		return false, err
 	}
@@ -103,7 +103,7 @@ func vmDeletedByID(id string) (bool, error) {
 		return true, nil
 	}
 
-	beingDeleted, err := vmModel.New().DoingActivity(id, vmModel.ActivityBeingDeleted)
+	beingDeleted, err := vmModels.New().DoingActivity(id, vmModels.ActivityBeingDeleted)
 	if err != nil {
 		return false, err
 	}
@@ -116,12 +116,12 @@ func vmDeletedByID(id string) (bool, error) {
 }
 
 // add activity to vm
-func vAddActivity(activities ...string) func(*jobModel.Job) error {
-	return func(job *jobModel.Job) error {
+func vAddActivity(activities ...string) func(*jobModels.Job) error {
+	return func(job *jobModels.Job) error {
 		id := job.Args["id"].(string)
 
 		for _, a := range activities {
-			err := vmModel.New().AddActivity(id, a)
+			err := vmModels.New().AddActivity(id, a)
 			if err != nil {
 				return err
 			}
@@ -131,17 +131,17 @@ func vAddActivity(activities ...string) func(*jobModel.Job) error {
 }
 
 // remove activity from vm
-func vRemActivity(activities ...string) func(*jobModel.Job) error {
-	return func(job *jobModel.Job) error {
+func vRemActivity(activities ...string) func(*jobModels.Job) error {
+	return func(job *jobModels.Job) error {
 		id := job.Args["id"].(string)
 
 		for _, a := range activities {
-			err := vmModel.New().RemoveActivity(id, a)
+			err := vmModels.New().RemoveActivity(id, a)
 			if err != nil {
 				return err
 			}
 
-			if a == vmModel.ActivityBeingCreated {
+			if a == vmModels.ActivityBeingCreated {
 				log.Println("finished creating vm", id)
 			}
 		}
@@ -150,12 +150,12 @@ func vRemActivity(activities ...string) func(*jobModel.Job) error {
 }
 
 // add activity to deployment
-func dAddActivity(activities ...string) func(*jobModel.Job) error {
-	return func(job *jobModel.Job) error {
+func dAddActivity(activities ...string) func(*jobModels.Job) error {
+	return func(job *jobModels.Job) error {
 		id := job.Args["id"].(string)
 
 		for _, a := range activities {
-			err := deploymentModel.New().AddActivity(id, a)
+			err := deploymentModels.New().AddActivity(id, a)
 			if err != nil {
 				return err
 			}
@@ -165,17 +165,17 @@ func dAddActivity(activities ...string) func(*jobModel.Job) error {
 }
 
 // remove activity from deployment
-func dRemActivity(activities ...string) func(*jobModel.Job) error {
-	return func(job *jobModel.Job) error {
+func dRemActivity(activities ...string) func(*jobModels.Job) error {
+	return func(job *jobModels.Job) error {
 		id := job.Args["id"].(string)
 
 		for _, a := range activities {
-			err := deploymentModel.New().RemoveActivity(id, a)
+			err := deploymentModels.New().RemoveActivity(id, a)
 			if err != nil {
 				return err
 			}
 
-			if a == deploymentModel.ActivityBeingCreated {
+			if a == deploymentModels.ActivityBeingCreated {
 				log.Println("finished creating deployment", id)
 			}
 		}
@@ -184,8 +184,8 @@ func dRemActivity(activities ...string) func(*jobModel.Job) error {
 }
 
 // add activity to sm
-func sAddActivity(activities ...string) func(*jobModel.Job) error {
-	return func(job *jobModel.Job) error {
+func sAddActivity(activities ...string) func(*jobModels.Job) error {
+	return func(job *jobModels.Job) error {
 		id := job.Args["id"].(string)
 
 		for _, a := range activities {
@@ -199,8 +199,8 @@ func sAddActivity(activities ...string) func(*jobModel.Job) error {
 }
 
 // remove activity from sm
-func sRemActivity(activities ...string) func(*jobModel.Job) error {
-	return func(job *jobModel.Job) error {
+func sRemActivity(activities ...string) func(*jobModels.Job) error {
+	return func(job *jobModels.Job) error {
 		id := job.Args["id"].(string)
 
 		for _, a := range activities {
@@ -217,7 +217,7 @@ func sRemActivity(activities ...string) func(*jobModel.Job) error {
 	}
 }
 
-func vmDeleted(job *jobModel.Job) (bool, error) {
+func vmDeleted(job *jobModels.Job) (bool, error) {
 	id := job.Args["id"].(string)
 
 	deleted, err := vmDeletedByID(id)
@@ -228,7 +228,7 @@ func vmDeleted(job *jobModel.Job) (bool, error) {
 	return deleted, nil
 }
 
-func deploymentDeleted(job *jobModel.Job) (bool, error) {
+func deploymentDeleted(job *jobModels.Job) (bool, error) {
 	id := job.Args["id"].(string)
 
 	deleted, err := deploymentDeletedByID(id)
@@ -239,16 +239,16 @@ func deploymentDeleted(job *jobModel.Job) (bool, error) {
 	return deleted, nil
 }
 
-func updatingOwner(job *jobModel.Job) (bool, error) {
+func updatingOwner(job *jobModels.Job) (bool, error) {
 	id := job.Args["id"].(string)
 
 	filter := bson.D{
 		{"args.id", id},
-		{"type", jobModel.TypeUpdateVmOwner},
-		{"status", bson.D{{"$nin", []string{jobModel.StatusCompleted, jobModel.StatusTerminated}}}},
+		{"type", jobModels.TypeUpdateVmOwner},
+		{"status", bson.D{{"$nin", []string{jobModels.StatusCompleted, jobModels.StatusTerminated}}}},
 	}
 
-	anyUpdatingOwnerJob, err := jobModel.New().AddFilter(filter).ExistsAny()
+	anyUpdatingOwnerJob, err := jobModels.New().AddFilter(filter).ExistsAny()
 	if err != nil {
 		return false, err
 	}
@@ -256,12 +256,12 @@ func updatingOwner(job *jobModel.Job) (bool, error) {
 	return anyUpdatingOwnerJob, nil
 }
 
-func onlyCreateSnapshotPerUser(job *jobModel.Job) (bool, error) {
-	anySnapshotJob, err := jobModel.New().
+func onlyCreateSnapshotPerUser(job *jobModels.Job) (bool, error) {
+	anySnapshotJob, err := jobModels.New().
 		RestrictToUser(job.UserID).
 		ExcludeIDs(job.ID).
-		IncludeTypes(jobModel.TypeCreateUserSnapshot).
-		ExcludeStatus(jobModel.StatusCompleted, jobModel.StatusTerminated).
+		IncludeTypes(jobModels.TypeCreateUserSnapshot).
+		ExcludeStatus(jobModels.StatusCompleted, jobModels.StatusTerminated).
 		ExistsAny()
 	if err != nil {
 		return false, err

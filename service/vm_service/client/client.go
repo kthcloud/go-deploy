@@ -2,8 +2,8 @@ package client
 
 import (
 	"fmt"
-	gpuModel "go-deploy/models/sys/gpu"
-	vmModel "go-deploy/models/sys/vm"
+	gpuModels "go-deploy/models/sys/gpu"
+	vmModels "go-deploy/models/sys/vm"
 	"go-deploy/service"
 )
 
@@ -29,7 +29,7 @@ func (c *BaseClient[parent]) SetParent(p *parent) {
 	c.p = p
 }
 
-func (c *BaseClient[parent]) VM(id string, vmc *vmModel.Client) (*vmModel.VM, error) {
+func (c *BaseClient[parent]) VM(id string, vmc *vmModels.Client) (*vmModels.VM, error) {
 	vm := c.Cache.GetVM(id)
 	if vm == nil {
 		return c.fetchVM(id, "", vmc)
@@ -38,12 +38,12 @@ func (c *BaseClient[parent]) VM(id string, vmc *vmModel.Client) (*vmModel.VM, er
 	return vm, nil
 }
 
-func (c *BaseClient[parent]) VMs(vmc *vmModel.Client) ([]vmModel.VM, error) {
+func (c *BaseClient[parent]) VMs(vmc *vmModels.Client) ([]vmModels.VM, error) {
 	// Right now we don't have a way to skip fetching when requesting a list of resources
 	return c.fetchVMs(vmc)
 }
 
-func (c *BaseClient[parent]) GPU(id string, gmc *gpuModel.Client) (*gpuModel.GPU, error) {
+func (c *BaseClient[parent]) GPU(id string, gmc *gpuModels.Client) (*gpuModels.GPU, error) {
 	gpu := c.Cache.GetGPU(id)
 	if gpu == nil {
 		return c.fetchGPU(id, gmc)
@@ -52,7 +52,7 @@ func (c *BaseClient[parent]) GPU(id string, gmc *gpuModel.Client) (*gpuModel.GPU
 	return gpu, nil
 }
 
-func (c *BaseClient[parent]) GPUs(gmc *gpuModel.Client) ([]gpuModel.GPU, error) {
+func (c *BaseClient[parent]) GPUs(gmc *gpuModels.Client) ([]gpuModels.GPU, error) {
 	// Right now we don't have a way to skip fetching when requesting a list of resources
 	return c.fetchGPUs(gmc)
 }
@@ -62,20 +62,20 @@ func (c *BaseClient[parent]) WithAuth(auth *service.AuthInfo) *parent {
 	return c.p
 }
 
-func (c *BaseClient[parent]) Refresh(id string) (*vmModel.VM, error) {
+func (c *BaseClient[parent]) Refresh(id string) (*vmModels.VM, error) {
 	return c.fetchVM(id, "", nil)
 }
 
-func (c *BaseClient[parent]) fetchVM(id, name string, vmc *vmModel.Client) (*vmModel.VM, error) {
+func (c *BaseClient[parent]) fetchVM(id, name string, vmc *vmModels.Client) (*vmModels.VM, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to fetch vm in service client: %w", err)
 	}
 
 	if vmc == nil {
-		vmc = vmModel.New()
+		vmc = vmModels.New()
 	}
 
-	var vm *vmModel.VM
+	var vm *vmModels.VM
 	if id != "" {
 		var err error
 		vm, err = vmc.GetByID(id)
@@ -98,13 +98,13 @@ func (c *BaseClient[parent]) fetchVM(id, name string, vmc *vmModel.Client) (*vmM
 	return vm, nil
 }
 
-func (c *BaseClient[parent]) fetchVMs(vmc *vmModel.Client) ([]vmModel.VM, error) {
+func (c *BaseClient[parent]) fetchVMs(vmc *vmModels.Client) ([]vmModels.VM, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to fetch gpus in service client: %w", err)
 	}
 
 	if vmc == nil {
-		vmc = vmModel.New()
+		vmc = vmModels.New()
 	}
 
 	vms, err := vmc.List()
@@ -120,13 +120,13 @@ func (c *BaseClient[parent]) fetchVMs(vmc *vmModel.Client) ([]vmModel.VM, error)
 	return vms, nil
 }
 
-func (c *BaseClient[parent]) fetchGPU(id string, gmc *gpuModel.Client) (*gpuModel.GPU, error) {
+func (c *BaseClient[parent]) fetchGPU(id string, gmc *gpuModels.Client) (*gpuModels.GPU, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to fetch gpu in service client: %w", err)
 	}
 
 	if gmc == nil {
-		gmc = gpuModel.New()
+		gmc = gpuModels.New()
 	}
 
 	gpu, err := gmc.GetByID(id)
@@ -142,13 +142,13 @@ func (c *BaseClient[parent]) fetchGPU(id string, gmc *gpuModel.Client) (*gpuMode
 	return gpu, nil
 }
 
-func (c *BaseClient[parent]) fetchGPUs(gmc *gpuModel.Client) ([]gpuModel.GPU, error) {
+func (c *BaseClient[parent]) fetchGPUs(gmc *gpuModels.Client) ([]gpuModels.GPU, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to fetch gpus in service client: %w", err)
 	}
 
 	if gmc == nil {
-		gmc = gpuModel.New()
+		gmc = gpuModels.New()
 	}
 
 	gpus, err := gmc.List()

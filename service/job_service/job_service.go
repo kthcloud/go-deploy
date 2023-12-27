@@ -2,15 +2,15 @@ package job_service
 
 import (
 	"go-deploy/models/dto/body"
-	jobModel "go-deploy/models/sys/job"
+	jobModels "go-deploy/models/sys/job"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
 )
 
-func (c *Client) Get(id string, opts ...*GetOpts) (*jobModel.Job, error) {
+func (c *Client) Get(id string, opts ...*GetOpts) (*jobModels.Job, error) {
 	_ = service.GetFirstOrDefault(opts)
 
-	jmc := jobModel.New()
+	jmc := jobModels.New()
 
 	if c.Auth != nil && !c.Auth.IsAdmin {
 		jmc.RestrictToUser(c.Auth.UserID)
@@ -19,10 +19,10 @@ func (c *Client) Get(id string, opts ...*GetOpts) (*jobModel.Job, error) {
 	return c.Job(id, jmc)
 }
 
-func (c *Client) List(opt ...ListOpts) ([]jobModel.Job, error) {
+func (c *Client) List(opt ...ListOpts) ([]jobModels.Job, error) {
 	o := service.GetFirstOrDefault(opt)
 
-	jmc := jobModel.New()
+	jmc := jobModels.New()
 
 	if o.Pagination != nil {
 		jmc.AddPagination(o.Pagination.Page, o.Pagination.PageSize)
@@ -60,18 +60,18 @@ func (c *Client) List(opt ...ListOpts) ([]jobModel.Job, error) {
 }
 
 func (c *Client) Create(id, userID, jobType string, args map[string]interface{}) error {
-	return jobModel.New().Create(id, userID, jobType, args)
+	return jobModels.New().Create(id, userID, jobType, args)
 }
 
-func (c *Client) Update(id string, jobUpdateDTO *body.JobUpdate) (*jobModel.Job, error) {
+func (c *Client) Update(id string, jobUpdateDTO *body.JobUpdate) (*jobModels.Job, error) {
 	if c.Auth != nil && !c.Auth.IsAdmin {
 		return nil, sErrors.ForbiddenErr
 	}
 
-	var params jobModel.UpdateParams
+	var params jobModels.UpdateParams
 	params.FromDTO(jobUpdateDTO)
 
-	jmc := jobModel.New()
+	jmc := jobModels.New()
 
 	err := jmc.UpdateWithParams(id, &params)
 	if err != nil {
@@ -82,5 +82,5 @@ func (c *Client) Update(id string, jobUpdateDTO *body.JobUpdate) (*jobModel.Job,
 }
 
 func (c *Client) Exists(id string) (bool, error) {
-	return jobModel.New().ExistsByID(id)
+	return jobModels.New().ExistsByID(id)
 }

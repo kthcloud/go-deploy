@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	configModels "go-deploy/models/config"
-	gpuModel "go-deploy/models/sys/gpu"
-	vmModel "go-deploy/models/sys/vm"
+	gpuModels "go-deploy/models/sys/gpu"
+	vmModels "go-deploy/models/sys/vm"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems"
 	"go-deploy/pkg/subsystems/cs/commands"
@@ -17,7 +17,7 @@ import (
 	"log"
 )
 
-func (c *Client) Create(id string, params *vmModel.CreateParams) error {
+func (c *Client) Create(id string, params *vmModels.CreateParams) error {
 	log.Println("setting up cs for", params.Name)
 
 	makeError := func(err error) error {
@@ -151,7 +151,7 @@ func (c *Client) Delete(id string) error {
 	return nil
 }
 
-func (c *Client) Update(id string, updateParams *vmModel.UpdateParams) error {
+func (c *Client) Update(id string, updateParams *vmModels.UpdateParams) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update cs for vm %s. details: %w", id, err)
 	}
@@ -374,9 +374,9 @@ func (c *Client) Repair(id string) error {
 
 	// only repair if the vm is stopped to prevent downtime for the user
 	if status == "" || status == "Stopped" {
-		var gpu *gpuModel.GPU
+		var gpu *gpuModels.GPU
 		if gpuID := vm.GetGpuID(); gpuID != nil {
-			gpu, err = gpuModel.New().GetByID(*gpuID)
+			gpu, err = gpuModels.New().GetByID(*gpuID)
 			if err != nil {
 				return makeError(err)
 			}
@@ -478,7 +478,7 @@ func (c *Client) Repair(id string) error {
 
 		for _, name := range required {
 			if _, ok := snapshotMap[name]; !ok {
-				err = c.CreateSnapshot(id, &vmModel.CreateSnapshotParams{
+				err = c.CreateSnapshot(id, &vmModels.CreateSnapshotParams{
 					Name:        name,
 					UserCreated: false,
 					Overwrite:   true,
@@ -684,9 +684,9 @@ func (c *Client) stopVmIfRunning(id string) (func(), error) {
 func dbFunc(vmID, key string) func(interface{}) error {
 	return func(data interface{}) error {
 		if data == nil {
-			return vmModel.New().DeleteSubsystemByID(vmID, "cs."+key)
+			return vmModels.New().DeleteSubsystemByID(vmID, "cs."+key)
 		}
-		return vmModel.New().UpdateSubsystemByID(vmID, "cs."+key, data)
+		return vmModels.New().UpdateSubsystemByID(vmID, "cs."+key, data)
 	}
 }
 

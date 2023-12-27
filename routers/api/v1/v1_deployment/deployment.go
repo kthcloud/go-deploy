@@ -8,8 +8,8 @@ import (
 	"go-deploy/models/dto/query"
 	"go-deploy/models/dto/uri"
 	deploymentModels "go-deploy/models/sys/deployment"
-	jobModel "go-deploy/models/sys/job"
-	zoneModel "go-deploy/models/sys/zone"
+	jobModels "go-deploy/models/sys/job"
+	zoneModels "go-deploy/models/sys/zone"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
@@ -179,7 +179,7 @@ func Create(c *gin.Context) {
 	}
 
 	if requestBody.Zone != nil {
-		zone := zone_service.New().WithAuth(auth).Get(*requestBody.Zone, zoneModel.ZoneTypeDeployment)
+		zone := zone_service.New().WithAuth(auth).Get(*requestBody.Zone, zoneModels.ZoneTypeDeployment)
 		if zone == nil {
 			context.NotFound("Zone not found")
 			return
@@ -229,7 +229,7 @@ func Create(c *gin.Context) {
 
 	deploymentID := uuid.New().String()
 	jobID := uuid.New().String()
-	err = job_service.New().Create(jobID, auth.UserID, jobModel.TypeCreateDeployment, map[string]interface{}{
+	err = job_service.New().Create(jobID, auth.UserID, jobModels.TypeCreateDeployment, map[string]interface{}{
 		"id":      deploymentID,
 		"ownerId": auth.UserID,
 		"params":  requestBody,
@@ -311,7 +311,7 @@ func Delete(c *gin.Context) {
 	}
 
 	jobID := uuid.NewString()
-	err = job_service.New().Create(jobID, auth.UserID, jobModel.TypeDeleteDeployment, map[string]interface{}{
+	err = job_service.New().Create(jobID, auth.UserID, jobModels.TypeDeleteDeployment, map[string]interface{}{
 		"id": currentDeployment.ID,
 	})
 	if err != nil {
@@ -486,7 +486,7 @@ func Update(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = job_service.New().Create(jobID, auth.UserID, jobModel.TypeUpdateDeployment, map[string]interface{}{
+	err = job_service.New().Create(jobID, auth.UserID, jobModels.TypeUpdateDeployment, map[string]interface{}{
 		"id":     deployment.ID,
 		"params": requestBody,
 	})

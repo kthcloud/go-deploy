@@ -2,12 +2,12 @@ package cs_service
 
 import (
 	"fmt"
-	gpuModel "go-deploy/models/sys/gpu"
-	vmModel "go-deploy/models/sys/vm"
+	gpuModels "go-deploy/models/sys/gpu"
+	vmModels "go-deploy/models/sys/vm"
 	"strings"
 )
 
-func CreateExtraConfig(gpu *gpuModel.GPU) string {
+func CreateExtraConfig(gpu *gpuModels.GPU) string {
 	data := fmt.Sprintf(`
 <devices> <hostdev mode='subsystem' type='pci' managed='yes'> <driver name='vfio' />
 	<source> <address domain='0x0000' bus='0x%s' slot='0x00' function='0x0' /> </source> 
@@ -20,6 +20,6 @@ func CreateExtraConfig(gpu *gpuModel.GPU) string {
 	return data
 }
 
-func HasExtraConfig(vm *vmModel.VM) bool {
+func HasExtraConfig(vm *vmModels.VM) bool {
 	return vm.Subsystems.CS.VM.ExtraConfig != "" && vm.Subsystems.CS.VM.ExtraConfig != "none"
 }

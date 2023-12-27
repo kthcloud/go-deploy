@@ -15,5 +15,5 @@ type JobRead struct {
 }
 
 type JobUpdate struct {
-	Status *string `json:"status" binding:"omitempty,oneof=pending running failed terminated finished"`
+	Status *string `json:"status" binding:"omitempty,oneof=pending running failed terminated finished completed"`
 }

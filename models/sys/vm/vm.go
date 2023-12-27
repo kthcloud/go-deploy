@@ -2,7 +2,7 @@ package vm
 
 import (
 	"go-deploy/models/sys/activity"
-	gpuModel "go-deploy/models/sys/gpu"
+	gpuModels "go-deploy/models/sys/gpu"
 	"time"
 )
 
@@ -56,7 +56,7 @@ func (vm *VM) DoingActivity(activity string) bool {
 }
 
 func (vm *VM) HasGPU() bool {
-	exists, err := gpuModel.New().WithVM(vm.ID).ExistsAny()
+	exists, err := gpuModels.New().WithVM(vm.ID).ExistsAny()
 	if err != nil {
 		return false
 	}
@@ -65,7 +65,7 @@ func (vm *VM) HasGPU() bool {
 }
 
 func (vm *VM) GetGpuID() *string {
-	idStruct, err := gpuModel.New().WithVM(vm.ID).GetID()
+	idStruct, err := gpuModels.New().WithVM(vm.ID).GetID()
 	if err != nil || idStruct == nil {
 		return nil
 	}
@@ -73,8 +73,8 @@ func (vm *VM) GetGpuID() *string {
 	return &idStruct.ID
 }
 
-func (vm *VM) GetGpu() *gpuModel.GPU {
-	gpu, err := gpuModel.New().WithVM(vm.ID).Get()
+func (vm *VM) GetGpu() *gpuModels.GPU {
+	gpu, err := gpuModels.New().WithVM(vm.ID).Get()
 	if err != nil || gpu == nil {
 		return nil
 	}

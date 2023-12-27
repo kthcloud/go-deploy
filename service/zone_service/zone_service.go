@@ -2,31 +2,31 @@ package zone_service
 
 import (
 	configModels "go-deploy/models/config"
-	zoneModel "go-deploy/models/sys/zone"
+	zoneModels "go-deploy/models/sys/zone"
 	"go-deploy/pkg/config"
 	"go-deploy/service"
 	"sort"
 )
 
-func (c *Client) List(opts ...ListOpts) ([]zoneModel.Zone, error) {
+func (c *Client) List(opts ...ListOpts) ([]zoneModels.Zone, error) {
 	o := service.GetFirstOrDefault(opts)
 
 	deploymentZones := config.Config.Deployment.Zones
 	vmZones := config.Config.VM.Zones
 
-	var zones []zoneModel.Zone
-	if o.Type != nil && *o.Type == zoneModel.ZoneTypeDeployment {
-		zones = make([]zoneModel.Zone, len(deploymentZones))
+	var zones []zoneModels.Zone
+	if o.Type != nil && *o.Type == zoneModels.ZoneTypeDeployment {
+		zones = make([]zoneModels.Zone, len(deploymentZones))
 		for i, zone := range deploymentZones {
 			zones[i] = *toDZone(&zone)
 		}
-	} else if o.Type != nil && *o.Type == zoneModel.ZoneTypeVM {
-		zones = make([]zoneModel.Zone, len(vmZones))
+	} else if o.Type != nil && *o.Type == zoneModels.ZoneTypeVM {
+		zones = make([]zoneModels.Zone, len(vmZones))
 		for i, zone := range vmZones {
 			zones[i] = *toVZone(&zone)
 		}
 	} else {
-		zones = make([]zoneModel.Zone, len(deploymentZones)+len(vmZones))
+		zones = make([]zoneModels.Zone, len(deploymentZones)+len(vmZones))
 		for i, zone := range deploymentZones {
 			zones[i] = *toDZone(&zone)
 		}
@@ -43,41 +43,41 @@ func (c *Client) List(opts ...ListOpts) ([]zoneModel.Zone, error) {
 	return zones, nil
 }
 
-func (c *Client) Get(name, zoneType string) *zoneModel.Zone {
+func (c *Client) Get(name, zoneType string) *zoneModels.Zone {
 	switch zoneType {
-	case zoneModel.ZoneTypeDeployment:
+	case zoneModels.ZoneTypeDeployment:
 		return toDZone(config.Config.Deployment.GetZone(name))
-	case zoneModel.ZoneTypeVM:
+	case zoneModels.ZoneTypeVM:
 		return toVZone(config.Config.VM.GetZone(name))
 	}
 
 	return nil
 }
 
-func toDZone(dZone *configModels.DeploymentZone) *zoneModel.Zone {
+func toDZone(dZone *configModels.DeploymentZone) *zoneModels.Zone {
 	if dZone == nil {
 		return nil
 	}
 
 	domain := dZone.ParentDomain
-	return &zoneModel.Zone{
+	return &zoneModels.Zone{
 		Name:        dZone.Name,
 		Description: dZone.Description,
-		Type:        zoneModel.ZoneTypeDeployment,
+		Type:        zoneModels.ZoneTypeDeployment,
 		Interface:   &domain,
 	}
 }
 
-func toVZone(vmZone *configModels.VmZone) *zoneModel.Zone {
+func toVZone(vmZone *configModels.VmZone) *zoneModels.Zone {
 	if vmZone == nil {
 		return nil
 	}
 
 	domain := vmZone.ParentDomain
-	return &zoneModel.Zone{
+	return &zoneModels.Zone{
 		Name:        vmZone.Name,
 		Description: vmZone.Description,
-		Type:        zoneModel.ZoneTypeVM,
+		Type:        zoneModels.ZoneTypeVM,
 		Interface:   &domain,
 	}
 }

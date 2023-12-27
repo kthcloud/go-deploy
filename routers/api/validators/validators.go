@@ -200,7 +200,7 @@ func TeamName(fl validator.FieldLevel) bool {
 	if !ok {
 		return false
 	}
-	
+
 	if name[0] == ' ' || name[len(name)-1] == ' ' {
 		return false
 	}
@@ -212,18 +212,26 @@ func TeamName(fl validator.FieldLevel) bool {
 }
 
 func TeamMemberList(fl validator.FieldLevel) bool {
-	memberList, ok := fl.Field().Interface().([]body.TeamMemberUpdate)
-	if !ok {
-		return false
+	if memberListUpdate, ok := fl.Field().Interface().([]body.TeamMemberUpdate); ok {
+		id := make(map[string]bool)
+		for _, member := range memberListUpdate {
+			if _, ok := id[member.ID]; ok {
+				return false
+			}
+			id[member.ID] = true
+		}
+
+		return true
+	} else if memberListCreate, ok := fl.Field().Interface().([]body.TeamMemberCreate); ok {
+		id := make(map[string]bool)
+		for _, member := range memberListCreate {
+			if _, ok := id[member.ID]; ok {
+				return false
+			}
+			id[member.ID] = true
+		}
 	}
 
-	id := make(map[string]bool)
-	for _, member := range memberList {
-		if _, ok := id[member.ID]; ok {
-			return false
-		}
-		id[member.ID] = true
-	}
 	return true
 }
 

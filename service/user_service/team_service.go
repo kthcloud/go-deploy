@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"go-deploy/models/dto/body"
-	deploymentModel "go-deploy/models/sys/deployment"
-	notificationModel "go-deploy/models/sys/notification"
+	deploymentModels "go-deploy/models/sys/deployment"
+	notificationModels "go-deploy/models/sys/notification"
 	teamModels "go-deploy/models/sys/team"
-	vmModel "go-deploy/models/sys/vm"
+	vmModels "go-deploy/models/sys/vm"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/notification_service"
@@ -236,8 +236,8 @@ func (c *Client) JoinTeam(id string, dtoTeamJoin *body.TeamJoin) (*teamModels.Te
 
 func (c *Client) getResourceIfAccessible(resourceID string) *teamModels.Resource {
 	// try to fetch deployment
-	dClient := deploymentModel.New()
-	vClient := vmModel.New()
+	dClient := deploymentModels.New()
+	vClient := vmModels.New()
 
 	if c.Auth != nil && !c.Auth.IsAdmin {
 		dClient.RestrictToOwner(c.Auth.UserID)
@@ -259,7 +259,7 @@ func (c *Client) getResourceIfAccessible(resourceID string) *teamModels.Resource
 	}
 
 	// try to fetch vm
-	isOwner, err = vmModel.New().ExistsByID(resourceID)
+	isOwner, err = vmModels.New().ExistsByID(resourceID)
 	if err != nil {
 		utils.PrettyPrintError(fmt.Errorf("failed to fetch vm when checking user access when creating team: %w", err))
 		return nil
@@ -302,8 +302,8 @@ func (c *Client) createMemberIfAccessible(current *teamModels.Team, memberID str
 }
 
 func createInvitationNotification(userID, teamID, teamName, invitationCode string) error {
-	_, err := notification_service.New().Create(uuid.NewString(), userID, &notificationModel.CreateParams{
-		Type: notificationModel.TypeTeamInvite,
+	_, err := notification_service.New().Create(uuid.NewString(), userID, &notificationModels.CreateParams{
+		Type: notificationModels.TypeTeamInvite,
 		Content: map[string]interface{}{
 			"id":   teamID,
 			"name": teamName,

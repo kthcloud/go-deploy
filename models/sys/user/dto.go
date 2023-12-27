@@ -2,11 +2,11 @@ package user
 
 import (
 	"go-deploy/models/dto/body"
-	roleModel "go-deploy/models/sys/role"
+	roleModels "go-deploy/models/sys/role"
 	"log"
 )
 
-func (user *User) ToDTO(effectiveRole *roleModel.Role, usage *Usage, storageURL *string) body.UserRead {
+func (user *User) ToDTO(effectiveRole *roleModels.Role, usage *Usage, storageURL *string) body.UserRead {
 	publicKeys := make([]body.PublicKey, len(user.PublicKeys))
 	for i, key := range user.PublicKeys {
 		publicKeys[i] = body.PublicKey{
@@ -21,7 +21,7 @@ func (user *User) ToDTO(effectiveRole *roleModel.Role, usage *Usage, storageURL 
 
 	if effectiveRole == nil {
 		log.Println("effective role is nil when creating user read for user", user.Username)
-		effectiveRole = &roleModel.Role{
+		effectiveRole = &roleModels.Role{
 			Name:        "unknown",
 			Description: "unknown",
 		}
