@@ -3,7 +3,7 @@ package cs_service
 import (
 	"errors"
 	"fmt"
-	gpuModel "go-deploy/models/sys/gpu"
+	gpuModels "go-deploy/models/sys/gpu"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems"
 	"go-deploy/pkg/subsystems/cs/commands"
@@ -32,7 +32,7 @@ func (c *Client) AttachGPU(vmID, gpuID string) error {
 		return nil
 	}
 
-	gpu, err := gpuModel.New().GetByID(gpuID)
+	gpu, err := gpuModels.New().GetByID(gpuID)
 	if err != nil {
 		return makeError(err)
 	}

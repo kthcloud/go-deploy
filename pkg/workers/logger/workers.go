@@ -3,7 +3,7 @@ package logger
 import (
 	"context"
 	"fmt"
-	deploymentModel "go-deploy/models/sys/deployment"
+	deploymentModels "go-deploy/models/sys/deployment"
 	"go-deploy/service/deployment_service/gitlab_service"
 	"go-deploy/service/deployment_service/k8s_service"
 	"go-deploy/utils"
@@ -52,7 +52,7 @@ func deploymentLogger(ctx context.Context) {
 				idx++
 			}
 
-			ids, err := deploymentModel.New().ExcludeIDs(currentIDs...).ListIDs()
+			ids, err := deploymentModels.New().ExcludeIDs(currentIDs...).ListIDs()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("failed to list deployment ids. details: %w", err))
 				continue
@@ -74,8 +74,8 @@ func deploymentLogger(ctx context.Context) {
 					cancelFuncs[id.ID] = cancel
 
 					err = k8s_service.New(nil).SetupLogStream(logCtx, id.ID, func(line string, podNumber int, createdAt time.Time) {
-						err = deploymentModel.New().AddLogs(id.ID, deploymentModel.Log{
-							Source:    deploymentModel.LogSourcePod,
+						err = deploymentModels.New().AddLogs(id.ID, deploymentModels.Log{
+							Source:    deploymentModels.LogSourcePod,
 							Prefix:    fmt.Sprintf("[pod %d]", podNumber),
 							Line:      line,
 							CreatedAt: createdAt,
@@ -94,8 +94,8 @@ func deploymentLogger(ctx context.Context) {
 					}
 
 					err = gitlab_service.SetupLogStream(logCtx, id.ID, func(line string, createdAt time.Time) {
-						err = deploymentModel.New().AddLogs(id.ID, deploymentModel.Log{
-							Source:    deploymentModel.LogSourceBuild,
+						err = deploymentModels.New().AddLogs(id.ID, deploymentModels.Log{
+							Source:    deploymentModels.LogSourceBuild,
 							Prefix:    "[build]",
 							Line:      line,
 							CreatedAt: createdAt,

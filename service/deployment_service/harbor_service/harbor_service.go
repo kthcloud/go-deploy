@@ -2,7 +2,7 @@ package harbor_service
 
 import (
 	"fmt"
-	deploymentModel "go-deploy/models/sys/deployment"
+	deploymentModels "go-deploy/models/sys/deployment"
 	"go-deploy/pkg/subsystems"
 	"go-deploy/service/deployment_service/client"
 	"go-deploy/service/resources"
@@ -13,7 +13,7 @@ import (
 // Create sets up Harbor for the deployment.
 //
 // It creates a project, robot, repository and webhook associated with the deployment and returns an error if any.
-func (c *Client) Create(id string, params *deploymentModel.CreateParams) error {
+func (c *Client) Create(id string, params *deploymentModels.CreateParams) error {
 	log.Println("setting up harbor for", params.Name)
 
 	makeError := func(err error) error {
@@ -140,7 +140,7 @@ func (c *Client) Delete(id string) error {
 // Update updates the Harbor setup for the deployment.
 //
 // It updates any of the resources associated with fields in the update params and returns an error if any.
-func (c *Client) Update(id string, params *deploymentModel.UpdateParams) error {
+func (c *Client) Update(id string, params *deploymentModels.UpdateParams) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update harbor for deployment %s. details: %w", id, err)
 	}
@@ -410,8 +410,8 @@ func (c *Client) Repair(id string) error {
 func dbFunc(id, key string) func(interface{}) error {
 	return func(data interface{}) error {
 		if data == nil {
-			return deploymentModel.New().DeleteSubsystemByID(id, "harbor."+key)
+			return deploymentModels.New().DeleteSubsystemByID(id, "harbor."+key)
 		}
-		return deploymentModel.New().UpdateSubsystemByID(id, "harbor."+key, data)
+		return deploymentModels.New().UpdateSubsystemByID(id, "harbor."+key, data)
 	}
 }

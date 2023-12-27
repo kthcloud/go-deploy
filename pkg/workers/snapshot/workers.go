@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"go-deploy/models/sys/job"
-	vmModel "go-deploy/models/sys/vm"
+	vmModels "go-deploy/models/sys/vm"
 	"go-deploy/utils"
 	"log"
 	"math/rand"
@@ -18,7 +18,7 @@ func snapshotter(ctx context.Context) {
 	for {
 		select {
 		case <-time.After(10 * time.Second):
-			vms, err := vmModel.New().List()
+			vms, err := vmModels.New().List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("failed to get all vms. details: %w", err))
 				continue
@@ -51,13 +51,13 @@ func snapshotter(ctx context.Context) {
 	}
 }
 
-func scheduleSnapshotJob(vm *vmModel.VM, recurring string) {
+func scheduleSnapshotJob(vm *vmModels.VM, recurring string) {
 	log.Println("scheduling", recurring, "snapshot for vm", vm.ID)
 
 	runAt := getRunAt(recurring)
 	err := job.New().CreateScheduled(uuid.New().String(), vm.OwnerID, job.TypeCreateSystemSnapshot, runAt, map[string]interface{}{
 		"id": vm.ID,
-		"params": vmModel.CreateSnapshotParams{
+		"params": vmModels.CreateSnapshotParams{
 			Name:        fmt.Sprintf("auto-%s", recurring),
 			UserCreated: false,
 			Overwrite:   true,

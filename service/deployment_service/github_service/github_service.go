@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	githubThirdParty "github.com/google/go-github/github"
-	deploymentModel "go-deploy/models/sys/deployment"
+	deploymentModels "go-deploy/models/sys/deployment"
 	"go-deploy/pkg/config"
 	"go-deploy/service/resources"
 	"log"
@@ -14,7 +14,7 @@ import (
 
 // Create sets up the GitHub setup for the deployment.
 // It creates a webhook associated with the deployment and returns an error if any.
-func (c *Client) Create(id string, params *deploymentModel.CreateParams) error {
+func (c *Client) Create(id string, params *deploymentModels.CreateParams) error {
 	log.Println("setting up github for", params.Name)
 
 	makeError := func(err error) error {
@@ -135,7 +135,7 @@ func (c *Client) Validate() (bool, string, error) {
 //
 // It returns a list of GitHub repositories and nil error if any.
 // If any error occurs, it returns nil and the error.
-func (c *Client) GetRepositories() ([]deploymentModel.GitHubRepository, error) {
+func (c *Client) GetRepositories() ([]deploymentModels.GitHubRepository, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get github repositories. details: %w", err)
 	}
@@ -159,13 +159,13 @@ func (c *Client) GetRepositories() ([]deploymentModel.GitHubRepository, error) {
 		return nil, makeError(err)
 	}
 
-	gitHubRepos := make([]deploymentModel.GitHubRepository, 0)
+	gitHubRepos := make([]deploymentModels.GitHubRepository, 0)
 	for _, repo := range repos {
 		if repo.ID == nil || repo.Name == nil || repo.CloneURL == nil || repo.DefaultBranch == nil {
 			continue
 		}
 
-		gitHubRepos = append(gitHubRepos, deploymentModel.GitHubRepository{
+		gitHubRepos = append(gitHubRepos, deploymentModels.GitHubRepository{
 			ID:            *repo.ID,
 			Name:          *repo.Name,
 			Owner:         *user.Login,
@@ -180,7 +180,7 @@ func (c *Client) GetRepositories() ([]deploymentModel.GitHubRepository, error) {
 // GetRepository retrieves a GitHub repository
 //
 // Uses the ID from WithRepositoryID to retrieve the repository.
-func (c *Client) GetRepository() (*deploymentModel.GitHubRepository, error) {
+func (c *Client) GetRepository() (*deploymentModels.GitHubRepository, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get repository. details: %w", err)
 	}
@@ -199,7 +199,7 @@ func (c *Client) GetRepository() (*deploymentModel.GitHubRepository, error) {
 		return nil, nil
 	}
 
-	return &deploymentModel.GitHubRepository{
+	return &deploymentModels.GitHubRepository{
 		ID:            repo.ID,
 		Name:          repo.Name,
 		Owner:         repo.Owner,
@@ -211,7 +211,7 @@ func (c *Client) GetRepository() (*deploymentModel.GitHubRepository, error) {
 // GetWebhooks retrieves a list of GitHub webhooks
 //
 // It uses the repository from WithRepository to retrieve the webhooks.
-func (c *Client) GetWebhooks(repository *deploymentModel.GitHubRepository) ([]deploymentModel.GitHubWebhook, error) {
+func (c *Client) GetWebhooks(repository *deploymentModels.GitHubRepository) ([]deploymentModels.GitHubWebhook, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get repository webhooks. details: %w", err)
 	}
@@ -226,9 +226,9 @@ func (c *Client) GetWebhooks(repository *deploymentModel.GitHubRepository) ([]de
 		return nil, makeError(err)
 	}
 
-	res := make([]deploymentModel.GitHubWebhook, len(webhooks))
+	res := make([]deploymentModels.GitHubWebhook, len(webhooks))
 	for idx, webhook := range webhooks {
-		res[idx] = deploymentModel.GitHubWebhook{
+		res[idx] = deploymentModels.GitHubWebhook{
 			ID:     webhook.ID,
 			Events: webhook.Events,
 		}
@@ -263,8 +263,8 @@ func GetAccessTokenByCode(code string) (string, error) {
 func dbFunc(id, key string) func(interface{}) error {
 	return func(data interface{}) error {
 		if data == nil {
-			return deploymentModel.New().DeleteSubsystemByID(id, "github."+key)
+			return deploymentModels.New().DeleteSubsystemByID(id, "github."+key)
 		}
-		return deploymentModel.New().UpdateSubsystemByID(id, "github."+key, data)
+		return deploymentModels.New().UpdateSubsystemByID(id, "github."+key, data)
 	}
 }

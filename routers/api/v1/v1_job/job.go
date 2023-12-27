@@ -6,7 +6,7 @@ import (
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
 	"go-deploy/models/dto/uri"
-	jobModel "go-deploy/models/sys/job"
+	jobModels "go-deploy/models/sys/job"
 	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
@@ -167,19 +167,19 @@ func Update(c *gin.Context) {
 
 func jobStatusMessage(status string) string {
 	switch status {
-	case jobModel.StatusPending:
+	case jobModels.StatusPending:
 		return status_codes.GetMsg(status_codes.JobPending)
-	case jobModel.StatusRunning:
+	case jobModels.StatusRunning:
 		return status_codes.GetMsg(status_codes.JobRunning)
-	case jobModel.StatusCompleted:
+	case jobModels.StatusCompleted:
 		return status_codes.GetMsg(status_codes.JobFinished)
-	case jobModel.StatusFailed:
+	case jobModels.StatusFailed:
 		return status_codes.GetMsg(status_codes.JobFailed)
-	case jobModel.StatusTerminated:
+	case jobModels.StatusTerminated:
 		return status_codes.GetMsg(status_codes.JobTerminated)
 
 	// deprecated
-	case jobModel.StatusFinished:
+	case jobModels.StatusFinished:
 		return status_codes.GetMsg(status_codes.JobFinished)
 	default:
 		return status_codes.GetMsg(status_codes.Unknown)

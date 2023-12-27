@@ -2,22 +2,22 @@ package jobs
 
 import (
 	da "go-deploy/models/sys/deployment"
-	jobModel "go-deploy/models/sys/job"
+	jobModels "go-deploy/models/sys/job"
 	sa "go-deploy/models/sys/sm"
 	va "go-deploy/models/sys/vm"
 )
 
 type JobDefinition struct {
-	Job           *jobModel.Job
-	JobFunc       func(*jobModel.Job) error
-	EntryFunc     func(*jobModel.Job) error
-	ExitFunc      func(*jobModel.Job) error
-	TerminateFunc func(*jobModel.Job) (bool, error)
+	Job           *jobModels.Job
+	JobFunc       func(*jobModels.Job) error
+	EntryFunc     func(*jobModels.Job) error
+	ExitFunc      func(*jobModels.Job) error
+	TerminateFunc func(*jobModels.Job) (bool, error)
 }
 
 type JobDefinitions map[string]JobDefinition
 
-func GetJobDef(job *jobModel.Job) *JobDefinition {
+func GetJobDef(job *jobModels.Job) *JobDefinition {
 	jobDef, ok := jobMapper()[job.Type]
 	if !ok {
 		return nil
@@ -38,63 +38,63 @@ func jobMapper() map[string]JobDefinition {
 
 	return map[string]JobDefinition{
 		// vm
-		jobModel.TypeCreateVM: {
+		jobModels.TypeCreateVM: {
 			JobFunc:       CreateVM,
 			TerminateFunc: coreJobVM.Build(),
 			EntryFunc:     vAddActivity(va.ActivityBeingCreated),
 			ExitFunc:      vRemActivity(va.ActivityBeingCreated),
 		},
-		jobModel.TypeDeleteVM: {
+		jobModels.TypeDeleteVM: {
 			JobFunc:   DeleteVM,
 			EntryFunc: vAddActivity(va.ActivityBeingDeleted),
 		},
-		jobModel.TypeUpdateVM: {
+		jobModels.TypeUpdateVM: {
 			JobFunc:       UpdateVM,
 			TerminateFunc: leafJobVM.Build(),
 			EntryFunc:     vAddActivity(va.ActivityUpdating),
 			ExitFunc:      vRemActivity(va.ActivityUpdating),
 		},
-		jobModel.TypeUpdateVmOwner: {
+		jobModels.TypeUpdateVmOwner: {
 			JobFunc:       UpdateVmOwner,
 			TerminateFunc: coreJobVM.Build(),
 			EntryFunc:     vAddActivity(va.ActivityUpdating),
 			ExitFunc:      vRemActivity(va.ActivityUpdating),
 		},
-		jobModel.TypeAttachGPU: {
+		jobModels.TypeAttachGPU: {
 			JobFunc:       AttachGpuToVM,
 			TerminateFunc: leafJobVM.Build(),
 			EntryFunc:     vAddActivity(va.ActivityAttachingGPU, va.ActivityUpdating),
 			ExitFunc:      vRemActivity(va.ActivityAttachingGPU, va.ActivityUpdating),
 		},
-		jobModel.TypeDetachGPU: {
+		jobModels.TypeDetachGPU: {
 			JobFunc:       DetachGpuFromVM,
 			TerminateFunc: leafJobVM.Build(),
 			EntryFunc:     vAddActivity(va.ActivityDetachingGPU, va.ActivityUpdating),
 			ExitFunc:      vRemActivity(va.ActivityDetachingGPU, va.ActivityUpdating),
 		},
-		jobModel.TypeRepairVM: {
+		jobModels.TypeRepairVM: {
 			JobFunc:       RepairVM,
 			TerminateFunc: leafJobVM.Build(),
 			EntryFunc:     vAddActivity(va.ActivityRepairing),
 			ExitFunc:      vRemActivity(va.ActivityRepairing),
 		},
-		jobModel.TypeCreateSystemSnapshot: {
+		jobModels.TypeCreateSystemSnapshot: {
 			JobFunc:       CreateSystemSnapshot,
 			TerminateFunc: leafJobVM.Build(),
 			EntryFunc:     vAddActivity(va.ActivityCreatingSnapshot),
 			ExitFunc:      vRemActivity(va.ActivityCreatingSnapshot),
 		},
-		jobModel.TypeCreateUserSnapshot: {
+		jobModels.TypeCreateUserSnapshot: {
 			JobFunc:       CreateUserSnapshot,
 			TerminateFunc: oneCreateSnapshotPerUser.Build(),
 			EntryFunc:     vAddActivity(va.ActivityCreatingSnapshot),
 			ExitFunc:      vRemActivity(va.ActivityCreatingSnapshot),
 		},
-		jobModel.TypeDeleteSnapshot: {
+		jobModels.TypeDeleteSnapshot: {
 			JobFunc:       DeleteSnapshot,
 			TerminateFunc: leafJobVM.Build(),
 		},
-		jobModel.TypeApplySnapshot: {
+		jobModels.TypeApplySnapshot: {
 			JobFunc:       ApplySnapshot,
 			TerminateFunc: leafJobVM.Build(),
 			EntryFunc:     vAddActivity(va.ActivityApplyingSnapshot),
@@ -102,33 +102,33 @@ func jobMapper() map[string]JobDefinition {
 		},
 
 		// deployment
-		jobModel.TypeCreateDeployment: {
+		jobModels.TypeCreateDeployment: {
 			JobFunc:       CreateDeployment,
 			TerminateFunc: coreJobDeployment.Build(),
 			EntryFunc:     dAddActivity(da.ActivityBeingCreated),
 			ExitFunc:      dRemActivity(da.ActivityBeingCreated),
 		},
-		jobModel.TypeDeleteDeployment: {
+		jobModels.TypeDeleteDeployment: {
 			JobFunc:   DeleteDeployment,
 			EntryFunc: dAddActivity(da.ActivityBeingDeleted),
 		},
-		jobModel.TypeUpdateDeployment: {
+		jobModels.TypeUpdateDeployment: {
 			JobFunc:       UpdateDeployment,
 			TerminateFunc: leafJobDeployment.Build(),
 			EntryFunc:     dAddActivity(da.ActivityUpdating),
 			ExitFunc:      dRemActivity(da.ActivityUpdating),
 		},
-		jobModel.TypeUpdateDeploymentOwner: {
+		jobModels.TypeUpdateDeploymentOwner: {
 			JobFunc:       UpdateDeploymentOwner,
 			TerminateFunc: coreJobDeployment.Build(),
 			EntryFunc:     dAddActivity(da.ActivityUpdating),
 			ExitFunc:      dRemActivity(da.ActivityUpdating),
 		},
-		jobModel.TypeBuildDeployments: {
+		jobModels.TypeBuildDeployments: {
 			// this is a special case where multiple deployments are built in one job, so we don't want to terminate it
 			JobFunc: BuildDeployments,
 		},
-		jobModel.TypeRepairDeployment: {
+		jobModels.TypeRepairDeployment: {
 			JobFunc:       RepairDeployment,
 			TerminateFunc: leafJobDeployment.Build(),
 			EntryFunc:     dAddActivity(da.ActivityRepairing),
@@ -136,16 +136,16 @@ func jobMapper() map[string]JobDefinition {
 		},
 
 		// storage manager
-		jobModel.TypeCreateSM: {
+		jobModels.TypeCreateSM: {
 			JobFunc:   CreateSM,
 			EntryFunc: sAddActivity(sa.ActivityBeingCreated),
 			ExitFunc:  sRemActivity(sa.ActivityBeingCreated),
 		},
-		jobModel.TypeDeleteSM: {
+		jobModels.TypeDeleteSM: {
 			JobFunc:   DeleteSM,
 			EntryFunc: sAddActivity(sa.ActivityBeingDeleted),
 		},
-		jobModel.TypeRepairSM: {
+		jobModels.TypeRepairSM: {
 			JobFunc:   RepairSM,
 			EntryFunc: sAddActivity(sa.ActivityBeingCreated),
 			ExitFunc:  sRemActivity(sa.ActivityRepairing),
@@ -154,21 +154,21 @@ func jobMapper() map[string]JobDefinition {
 }
 
 type TerminateFuncBuilder struct {
-	terminateFuncs []func(*jobModel.Job) (bool, error)
+	terminateFuncs []func(*jobModels.Job) (bool, error)
 }
 
 func Builder() *TerminateFuncBuilder {
 	return &TerminateFuncBuilder{}
 }
 
-func (builder *TerminateFuncBuilder) Add(terminateFunc func(*jobModel.Job) (bool, error)) *TerminateFuncBuilder {
+func (builder *TerminateFuncBuilder) Add(terminateFunc func(*jobModels.Job) (bool, error)) *TerminateFuncBuilder {
 	builder.terminateFuncs = append(builder.terminateFuncs, terminateFunc)
 
 	return builder
 }
 
-func (builder *TerminateFuncBuilder) Build() func(*jobModel.Job) (bool, error) {
-	return func(job *jobModel.Job) (bool, error) {
+func (builder *TerminateFuncBuilder) Build() func(*jobModels.Job) (bool, error) {
+	return func(job *jobModels.Job) (bool, error) {
 		for _, terminateFunc := range builder.terminateFuncs {
 			res, err := terminateFunc(job)
 			if err != nil {

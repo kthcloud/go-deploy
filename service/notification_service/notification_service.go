@@ -2,15 +2,15 @@ package notification_service
 
 import (
 	"go-deploy/models/dto/body"
-	notificationModel "go-deploy/models/sys/notification"
+	notificationModels "go-deploy/models/sys/notification"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
 )
 
-func (c *Client) Get(id string, opts ...GetOpts) (*notificationModel.Notification, error) {
+func (c *Client) Get(id string, opts ...GetOpts) (*notificationModels.Notification, error) {
 	_ = service.GetFirstOrDefault(opts)
 
-	client := notificationModel.New()
+	client := notificationModels.New()
 
 	if c.Auth != nil && !c.Auth.IsAdmin {
 		client.RestrictToUserID(c.Auth.UserID)
@@ -19,10 +19,10 @@ func (c *Client) Get(id string, opts ...GetOpts) (*notificationModel.Notificatio
 	return c.Notification(id, client)
 }
 
-func (c *Client) List(opts ...ListOpts) ([]notificationModel.Notification, error) {
+func (c *Client) List(opts ...ListOpts) ([]notificationModels.Notification, error) {
 	o := service.GetFirstOrDefault(opts)
 
-	nmc := notificationModel.New()
+	nmc := notificationModels.New()
 
 	if o.Pagination != nil {
 		nmc.AddPagination(o.Pagination.Page, o.Pagination.PageSize)
@@ -51,12 +51,12 @@ func (c *Client) List(opts ...ListOpts) ([]notificationModel.Notification, error
 	return c.Notifications(nmc)
 }
 
-func (c *Client) Create(id, userID string, params *notificationModel.CreateParams) (*notificationModel.Notification, error) {
-	return notificationModel.New().Create(id, userID, params)
+func (c *Client) Create(id, userID string, params *notificationModels.CreateParams) (*notificationModels.Notification, error) {
+	return notificationModels.New().Create(id, userID, params)
 }
 
-func (c *Client) Update(id string, dtoNotificationUpdate *body.NotificationUpdate) (*notificationModel.Notification, error) {
-	nmc := notificationModel.New()
+func (c *Client) Update(id string, dtoNotificationUpdate *body.NotificationUpdate) (*notificationModels.Notification, error) {
+	nmc := notificationModels.New()
 
 	if c.Auth != nil && !c.Auth.IsAdmin {
 		nmc.RestrictToUserID(c.Auth.UserID)
@@ -71,7 +71,7 @@ func (c *Client) Update(id string, dtoNotificationUpdate *body.NotificationUpdat
 		return nil, nil
 	}
 
-	params := &notificationModel.UpdateParams{}
+	params := &notificationModels.UpdateParams{}
 	params.FromDTO(dtoNotificationUpdate)
 
 	// if the notification is already read, we don't want to update it to a newer read time
@@ -89,7 +89,7 @@ func (c *Client) Update(id string, dtoNotificationUpdate *body.NotificationUpdat
 }
 
 func (c *Client) Delete(id string) error {
-	client := notificationModel.New()
+	client := notificationModels.New()
 
 	if c.Auth != nil && !c.Auth.IsAdmin {
 		client.RestrictToUserID(c.Auth.UserID)

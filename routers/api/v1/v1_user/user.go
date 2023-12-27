@@ -6,8 +6,8 @@ import (
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
 	"go-deploy/models/dto/uri"
-	roleModel "go-deploy/models/sys/role"
-	userModel "go-deploy/models/sys/user"
+	roleModels "go-deploy/models/sys/role"
+	userModels "go-deploy/models/sys/user"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
@@ -19,7 +19,7 @@ import (
 	"go-deploy/utils"
 )
 
-func collectUsage(userID string) (*userModel.Usage, error) {
+func collectUsage(userID string) (*userModels.Usage, error) {
 	vmUsage, err := vm_service.New().GetUsage(userID)
 	if err != nil {
 		return nil, err
@@ -30,7 +30,7 @@ func collectUsage(userID string) (*userModel.Usage, error) {
 		return nil, err
 	}
 
-	usage := &userModel.Usage{
+	usage := &userModels.Usage{
 		Deployments: deploymentUsage.Count,
 		CpuCores:    vmUsage.CpuCores,
 		RAM:         vmUsage.RAM,
@@ -135,7 +135,7 @@ func ListUsers(c *gin.Context) {
 
 		usage, _ := collectUsage(user.ID)
 		if usage == nil {
-			usage = &userModel.Usage{}
+			usage = &userModels.Usage{}
 		}
 
 		usersDto = append(usersDto, user.ToDTO(role, usage, storageURL))
@@ -174,8 +174,8 @@ func Get(c *gin.Context) {
 		requestURI.UserID = auth.UserID
 	}
 
-	var effectiveRole *roleModel.Role
-	var user *userModel.User
+	var effectiveRole *roleModels.Role
+	var user *userModels.User
 
 	usc := user_service.New().WithAuth(auth)
 
@@ -205,7 +205,7 @@ func Get(c *gin.Context) {
 
 		effectiveRole = config.Config.GetRole(user.EffectiveRole.Name)
 		if effectiveRole == nil {
-			effectiveRole = &roleModel.Role{}
+			effectiveRole = &roleModels.Role{}
 		}
 	}
 
@@ -261,7 +261,7 @@ func Update(c *gin.Context) {
 		requestURI.UserID = auth.UserID
 	}
 
-	var effectiveRole *roleModel.Role
+	var effectiveRole *roleModels.Role
 
 	usc := user_service.New().WithAuth(auth)
 

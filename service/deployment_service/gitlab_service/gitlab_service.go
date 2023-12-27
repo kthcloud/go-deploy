@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
-	deploymentModel "go-deploy/models/sys/deployment"
+	deploymentModels "go-deploy/models/sys/deployment"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/gitlab"
 	"go-deploy/pkg/subsystems/gitlab/models"
@@ -29,7 +29,7 @@ const (
 // Once the build job is finished, it will push to the Container registry; the temporary GitLab project is deleted
 //
 // Since this is connected to Harbor, the push will trigger a Harbor webhook, and the deployment will be restarted.
-func CreateBuild(ids []string, params *deploymentModel.BuildParams) error {
+func CreateBuild(ids []string, params *deploymentModels.BuildParams) error {
 	log.Println("creating build with gitlab for", len(ids), "deployments")
 
 	makeError := func(err error) error {
@@ -68,7 +68,7 @@ func CreateBuild(ids []string, params *deploymentModel.BuildParams) error {
 	}
 
 	for _, id := range ids {
-		deployment, err := deploymentModel.New().GetByID(id)
+		deployment, err := deploymentModels.New().GetByID(id)
 		if err != nil {
 			return makeError(err)
 		}
@@ -86,8 +86,8 @@ func CreateBuild(ids []string, params *deploymentModel.BuildParams) error {
 
 	err = client.AttachCiFile(projectID,
 		params.Branch,
-		deploymentModel.GitLabCiConfig{
-			Build: deploymentModel.Build{
+		deploymentModels.GitLabCiConfig{
+			Build: deploymentModels.Build{
 				Image: "docker:24.0.5",
 				Stage: "build",
 				Services: []string{
@@ -175,7 +175,7 @@ func SetupLogStream(ctx context.Context, deploymentID string, handler func(strin
 			case <-ctx.Done():
 				return
 			default:
-				build, err := deploymentModel.New().GetLastGitLabBuild(deploymentID)
+				build, err := deploymentModels.New().GetLastGitLabBuild(deploymentID)
 				if err != nil {
 					utils.PrettyPrintError(fmt.Errorf("failed to get last gitlab build when setting up continuous log stream. details: %w", err))
 					return

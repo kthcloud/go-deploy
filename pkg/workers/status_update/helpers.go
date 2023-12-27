@@ -2,8 +2,8 @@ package status_update
 
 import (
 	"fmt"
-	deploymentModel "go-deploy/models/sys/deployment"
-	vmModel "go-deploy/models/sys/vm"
+	deploymentModels "go-deploy/models/sys/deployment"
+	vmModels "go-deploy/models/sys/vm"
 	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/cs"
@@ -27,7 +27,7 @@ func withClient(zoneName string) (*cs.Client, error) {
 	})
 }
 
-func fetchCsStatus(vm *vmModel.VM) (int, string, error) {
+func fetchCsStatus(vm *vmModels.VM) (int, string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get status for cs vm %s. details: %w", vm.Name, err)
 	}
@@ -78,12 +78,12 @@ func fetchCsStatus(vm *vmModel.VM) (int, string, error) {
 	return statusCode, status_codes.GetMsg(statusCode), nil
 }
 
-func fetchVmStatus(vm *vmModel.VM) (int, string, error) {
-	if vm.DoingActivity(vmModel.ActivityCreatingSnapshot) {
+func fetchVmStatus(vm *vmModels.VM) (int, string, error) {
+	if vm.DoingActivity(vmModels.ActivityCreatingSnapshot) {
 		return status_codes.ResourceCreatingSnapshot, status_codes.GetMsg(status_codes.ResourceCreatingSnapshot), nil
 	}
 
-	if vm.DoingActivity(vmModel.ActivityApplyingSnapshot) {
+	if vm.DoingActivity(vmModels.ActivityApplyingSnapshot) {
 		return status_codes.ResourceApplyingSnapshot, status_codes.GetMsg(status_codes.ResourceApplyingSnapshot), nil
 	}
 
@@ -110,7 +110,7 @@ func fetchVmStatus(vm *vmModel.VM) (int, string, error) {
 	return csStatusCode, csStatusMessage, err
 }
 
-func fetchSnapshotStatus(vm *vmModel.VM) map[string]csModels.SnapshotPublic {
+func fetchSnapshotStatus(vm *vmModels.VM) map[string]csModels.SnapshotPublic {
 	client, err := withClient(vm.Zone)
 	if err != nil {
 		return nil
@@ -129,7 +129,7 @@ func fetchSnapshotStatus(vm *vmModel.VM) map[string]csModels.SnapshotPublic {
 	return snapshotMap
 }
 
-func fetchDeploymentStatus(deployment *deploymentModel.Deployment) (int, string, error) {
+func fetchDeploymentStatus(deployment *deploymentModels.Deployment) (int, string, error) {
 
 	if deployment == nil {
 		return status_codes.ResourceNotFound, status_codes.GetMsg(status_codes.ResourceNotFound), nil
@@ -143,11 +143,11 @@ func fetchDeploymentStatus(deployment *deploymentModel.Deployment) (int, string,
 		return status_codes.ResourceBeingCreated, status_codes.GetMsg(status_codes.ResourceBeingCreated), nil
 	}
 
-	if deployment.DoingActivity(deploymentModel.ActivityRestarting) {
+	if deployment.DoingActivity(deploymentModels.ActivityRestarting) {
 		return status_codes.ResourceRestarting, status_codes.GetMsg(status_codes.ResourceRestarting), nil
 	}
 
-	if deployment.DoingActivity(deploymentModel.ActivityBuilding) {
+	if deployment.DoingActivity(deploymentModels.ActivityBuilding) {
 		return status_codes.ResourceBuilding, status_codes.GetMsg(status_codes.ResourceBuilding), nil
 	}
 

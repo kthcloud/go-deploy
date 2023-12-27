@@ -1,10 +1,10 @@
 package config
 
 import (
-	roleModel "go-deploy/models/sys/role"
+	roleModels "go-deploy/models/sys/role"
 )
 
-func (e *ConfigType) GetRole(roleName string) *roleModel.Role {
+func (e *ConfigType) GetRole(roleName string) *roleModels.Role {
 	for _, role := range e.Roles {
 		if role.Name == roleName {
 			return &role
@@ -14,8 +14,8 @@ func (e *ConfigType) GetRole(roleName string) *roleModel.Role {
 	return nil
 }
 
-func (e *ConfigType) GetRolesByIamGroups(iamGroups []string) []roleModel.Role {
-	var roles []roleModel.Role
+func (e *ConfigType) GetRolesByIamGroups(iamGroups []string) []roleModels.Role {
+	var roles []roleModels.Role
 
 	for _, role := range e.Roles {
 		for _, iamGroup := range iamGroups {

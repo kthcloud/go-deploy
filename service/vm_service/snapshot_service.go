@@ -2,7 +2,7 @@ package vm_service
 
 import (
 	"fmt"
-	vmModel "go-deploy/models/sys/vm"
+	vmModels "go-deploy/models/sys/vm"
 	"go-deploy/service"
 	"go-deploy/service/vm_service/client"
 	"go-deploy/service/vm_service/cs_service"
@@ -10,7 +10,7 @@ import (
 	"sort"
 )
 
-func (c *Client) GetSnapshot(vmID string, id string, opts ...client.GetSnapshotOptions) (*vmModel.Snapshot, error) {
+func (c *Client) GetSnapshot(vmID string, id string, opts ...client.GetSnapshotOptions) (*vmModels.Snapshot, error) {
 	_ = service.GetFirstOrDefault(opts)
 
 	vm, err := c.Get(vmID)
@@ -27,7 +27,7 @@ func (c *Client) GetSnapshot(vmID string, id string, opts ...client.GetSnapshotO
 		return nil, nil
 	}
 
-	return &vmModel.Snapshot{
+	return &vmModels.Snapshot{
 		ID:         snapshot.ID,
 		VmID:       vmID,
 		Name:       snapshot.Name,
@@ -38,7 +38,7 @@ func (c *Client) GetSnapshot(vmID string, id string, opts ...client.GetSnapshotO
 	}, nil
 }
 
-func (c *Client) GetSnapshotByName(vmID string, name string, opts ...client.GetSnapshotOptions) (*vmModel.Snapshot, error) {
+func (c *Client) GetSnapshotByName(vmID string, name string, opts ...client.GetSnapshotOptions) (*vmModels.Snapshot, error) {
 	_ = service.GetFirstOrDefault(opts)
 
 	vm, err := c.Get(vmID)
@@ -55,7 +55,7 @@ func (c *Client) GetSnapshotByName(vmID string, name string, opts ...client.GetS
 		return nil, nil
 	}
 
-	return &vmModel.Snapshot{
+	return &vmModels.Snapshot{
 		ID:         snapshot.ID,
 		VmID:       vmID,
 		Name:       snapshot.Name,
@@ -66,7 +66,7 @@ func (c *Client) GetSnapshotByName(vmID string, name string, opts ...client.GetS
 	}, nil
 }
 
-func (c *Client) ListSnapshots(vmID string, opts ...client.ListSnapshotOptions) ([]vmModel.Snapshot, error) {
+func (c *Client) ListSnapshots(vmID string, opts ...client.ListSnapshotOptions) ([]vmModels.Snapshot, error) {
 	_ = service.GetFirstOrDefault(opts)
 
 	vm, err := c.Get(vmID)
@@ -78,9 +78,9 @@ func (c *Client) ListSnapshots(vmID string, opts ...client.ListSnapshotOptions) 
 		return nil, nil
 	}
 
-	snapshots := make([]vmModel.Snapshot, 0)
+	snapshots := make([]vmModels.Snapshot, 0)
 	for _, snapshot := range vm.Subsystems.CS.SnapshotMap {
-		snapshots = append(snapshots, vmModel.Snapshot{
+		snapshots = append(snapshots, vmModels.Snapshot{
 			ID:         snapshot.ID,
 			VmID:       vmID,
 			Name:       snapshot.Name,
@@ -117,14 +117,14 @@ func (c *Client) CreateSnapshot(vmID string, opts *client.CreateSnapshotOptions)
 		return fmt.Errorf("vm %s not ready", vmID)
 	}
 
-	params := &vmModel.CreateSnapshotParams{}
+	params := &vmModels.CreateSnapshotParams{}
 	if opts.System != nil {
 		params = opts.System
 	} else if opts.User != nil {
 		params.FromDTO(opts.User)
 	}
 
-	if params == nil {
+	if params.Name == "" {
 		log.Println("no snapshot type specified when creating snapshot for vm", vmID, ". did you forget to specify the type?")
 		return nil
 	}

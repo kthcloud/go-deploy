@@ -2,8 +2,8 @@ package service
 
 import (
 	"fmt"
-	roleModel "go-deploy/models/sys/role"
-	userModel "go-deploy/models/sys/user"
+	roleModels "go-deploy/models/sys/role"
+	userModels "go-deploy/models/sys/user"
 	"go-deploy/pkg/auth"
 	"go-deploy/pkg/config"
 )
@@ -11,7 +11,7 @@ import (
 type AuthInfo struct {
 	UserID   string              `json:"userId"`
 	JwtToken *auth.KeycloakToken `json:"jwtToken"`
-	Roles    []roleModel.Role    `json:"roles"`
+	Roles    []roleModels.Role   `json:"roles"`
 	IsAdmin  bool                `json:"isAdmin"`
 }
 
@@ -34,7 +34,7 @@ func CreateAuthInfo(userID string, JwtToken *auth.KeycloakToken, iamGroups []str
 }
 
 func CreateAuthInfoFromDB(userID string) (*AuthInfo, error) {
-	user, err := userModel.New().GetByID(userID)
+	user, err := userModels.New().GetByID(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -47,12 +47,12 @@ func CreateAuthInfoFromDB(userID string) (*AuthInfo, error) {
 	return &AuthInfo{
 		UserID:   user.ID,
 		JwtToken: nil,
-		Roles:    []roleModel.Role{*role},
+		Roles:    []roleModels.Role{*role},
 		IsAdmin:  user.IsAdmin,
 	}, nil
 }
 
-func (authInfo *AuthInfo) GetEffectiveRole() *roleModel.Role {
+func (authInfo *AuthInfo) GetEffectiveRole() *roleModels.Role {
 	// roles are assumed to be given in order of priority, weak -> strong
 	// so, we can safely return the last one
 	if len(authInfo.Roles) == 0 {

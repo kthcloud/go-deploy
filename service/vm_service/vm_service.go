@@ -6,11 +6,11 @@ import (
 	"github.com/google/uuid"
 	"go-deploy/models/dto/body"
 	"go-deploy/models/sys/gpu"
-	jobModel "go-deploy/models/sys/job"
-	notificationModel "go-deploy/models/sys/notification"
-	roleModel "go-deploy/models/sys/role"
+	jobModels "go-deploy/models/sys/job"
+	notificationModels "go-deploy/models/sys/notification"
+	roleModels "go-deploy/models/sys/role"
 	teamModels "go-deploy/models/sys/team"
-	vmModel "go-deploy/models/sys/vm"
+	vmModels "go-deploy/models/sys/vm"
 	"go-deploy/pkg/config"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
@@ -30,10 +30,10 @@ import (
 //
 // It can be fetched in multiple ways including ID, name, transfer code, and Harbor webhook.
 // It supports service.AuthInfo, and will restrict the result to ensure the user has access to the resource.
-func (c *Client) Get(id string, opts ...client.GetOptions) (*vmModel.VM, error) {
+func (c *Client) Get(id string, opts ...client.GetOptions) (*vmModels.VM, error) {
 	o := service.GetFirstOrDefault(opts)
 
-	vmc := vmModel.New()
+	vmc := vmModels.New()
 
 	if o.TransferCode != nil {
 		return vmc.GetByTransferCode(*o.TransferCode)
@@ -67,8 +67,8 @@ func (c *Client) Get(id string, opts ...client.GetOptions) (*vmModel.VM, error) 
 // List lists existing deployments.
 //
 // It supports service.AuthInfo, and will restrict the result to ensure the user has access to the resource.
-func (c *Client) List(opts *client.ListOptions) ([]vmModel.VM, error) {
-	vmc := vmModel.New()
+func (c *Client) List(opts *client.ListOptions) ([]vmModels.VM, error) {
+	vmc := vmModels.New()
 
 	if opts.Pagination != nil {
 		vmc.WithPagination(opts.Pagination.Page, opts.Pagination.PageSize)
@@ -173,12 +173,12 @@ func (c *Client) Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
 	fallback := "se-flem"
 	deploymentZone := "se-flem"
 
-	params := &vmModel.CreateParams{}
+	params := &vmModels.CreateParams{}
 	params.FromDTO(dtoVmCreate, &fallback, &deploymentZone)
 
-	_, err := vmModel.New().Create(id, ownerID, config.Config.Manager, params)
+	_, err := vmModels.New().Create(id, ownerID, config.Config.Manager, params)
 	if err != nil {
-		if errors.Is(err, vmModel.NonUniqueFieldErr) {
+		if errors.Is(err, vmModels.NonUniqueFieldErr) {
 			return sErrors.NonUniqueFieldErr
 		}
 
@@ -208,7 +208,7 @@ func (c *Client) Update(id string, dtoVmUpdate *body.VmUpdate) error {
 		return fmt.Errorf("failed to update vm. details: %w", err)
 	}
 
-	vmUpdate := &vmModel.UpdateParams{}
+	vmUpdate := &vmModels.UpdateParams{}
 	vmUpdate.FromDTO(dtoVmUpdate)
 
 	if vmUpdate.SnapshotID != nil {
@@ -217,9 +217,9 @@ func (c *Client) Update(id string, dtoVmUpdate *body.VmUpdate) error {
 			return makeError(err)
 		}
 	} else {
-		err := vmModel.New().UpdateWithParamsByID(id, vmUpdate)
+		err := vmModels.New().UpdateWithParamsByID(id, vmUpdate)
 		if err != nil {
-			if errors.Is(err, vmModel.NonUniqueFieldErr) {
+			if errors.Is(err, vmModels.NonUniqueFieldErr) {
 				return sErrors.NonUniqueFieldErr
 			}
 
@@ -338,7 +338,7 @@ func (c *Client) UpdateOwnerSetup(id string, params *body.VmUpdateOwner) (*strin
 
 	if transferDirectly {
 		jobID := uuid.New().String()
-		err := job_service.New().Create(jobID, c.Auth.UserID, jobModel.TypeUpdateVmOwner, map[string]interface{}{
+		err := job_service.New().Create(jobID, c.Auth.UserID, jobModels.TypeUpdateVmOwner, map[string]interface{}{
 			"id":     id,
 			"params": *params,
 		})
@@ -352,7 +352,7 @@ func (c *Client) UpdateOwnerSetup(id string, params *body.VmUpdateOwner) (*strin
 
 	/// create a transfer notification
 	code := createTransferCode()
-	err = vmModel.New().UpdateWithParamsByID(id, &vmModel.UpdateParams{
+	err = vmModels.New().UpdateWithParamsByID(id, &vmModels.UpdateParams{
 		TransferUserID: &params.NewOwnerID,
 		TransferCode:   &code,
 	})
@@ -360,8 +360,8 @@ func (c *Client) UpdateOwnerSetup(id string, params *body.VmUpdateOwner) (*strin
 		return nil, makeError(err)
 	}
 
-	_, err = notification_service.New().Create(uuid.NewString(), params.NewOwnerID, &notificationModel.CreateParams{
-		Type: notificationModel.TypeVmTransfer,
+	_, err = notification_service.New().Create(uuid.NewString(), params.NewOwnerID, &notificationModels.CreateParams{
+		Type: notificationModels.TypeVmTransfer,
 		Content: map[string]interface{}{
 			"id":     vm.ID,
 			"name":   vm.Name,
@@ -399,7 +399,7 @@ func (c *Client) UpdateOwner(id string, params *body.VmUpdateOwner) error {
 
 	emptyString := ""
 
-	err = vmModel.New().UpdateWithParamsByID(id, &vmModel.UpdateParams{
+	err = vmModels.New().UpdateWithParamsByID(id, &vmModels.UpdateParams{
 		OwnerID:        &params.NewOwnerID,
 		TransferCode:   &emptyString,
 		TransferUserID: &emptyString,
@@ -432,7 +432,7 @@ func (c *Client) ClearUpdateOwner(id string) error {
 		return fmt.Errorf("failed to clear vm owner update. details: %w", err)
 	}
 
-	deployment, err := vmModel.New().GetByID(id)
+	deployment, err := vmModels.New().GetByID(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -446,7 +446,7 @@ func (c *Client) ClearUpdateOwner(id string) error {
 	}
 
 	emptyString := ""
-	err = vmModel.New().UpdateWithParamsByID(id, &vmModel.UpdateParams{
+	err = vmModels.New().UpdateWithParamsByID(id, &vmModels.UpdateParams{
 		TransferUserID: &emptyString,
 		TransferCode:   &emptyString,
 	})
@@ -530,7 +530,7 @@ func (c *Client) StartActivity(id, activity string) error {
 		return sErrors.NewFailedToStartActivityError(reason)
 	}
 
-	err = vmModel.New().AddActivity(id, activity)
+	err = vmModels.New().AddActivity(id, activity)
 	if err != nil {
 		return err
 	}
@@ -552,69 +552,69 @@ func (c *Client) CanAddActivity(vmID, activity string) (bool, string, error) {
 	}
 
 	switch activity {
-	case vmModel.ActivityBeingCreated:
+	case vmModels.ActivityBeingCreated:
 		return !vm.BeingDeleted(), "Resource is being deleted", nil
-	case vmModel.ActivityBeingDeleted:
+	case vmModels.ActivityBeingDeleted:
 		return true, "", nil
-	case vmModel.ActivityUpdating:
+	case vmModels.ActivityUpdating:
 		if vm.DoingOneOfActivities([]string{
-			vmModel.ActivityBeingCreated,
-			vmModel.ActivityBeingDeleted,
-			vmModel.ActivityAttachingGPU,
-			vmModel.ActivityDetachingGPU,
+			vmModels.ActivityBeingCreated,
+			vmModels.ActivityBeingDeleted,
+			vmModels.ActivityAttachingGPU,
+			vmModels.ActivityDetachingGPU,
 		}) {
 			return false, "Resource should not be in creation, deletion, and should not be attaching or detaching a GPU", nil
 		}
 		return true, "", nil
-	case vmModel.ActivityAttachingGPU:
+	case vmModels.ActivityAttachingGPU:
 		if vm.DoingOneOfActivities([]string{
-			vmModel.ActivityBeingCreated,
-			vmModel.ActivityBeingDeleted,
-			vmModel.ActivityAttachingGPU,
-			vmModel.ActivityDetachingGPU,
-			vmModel.ActivityCreatingSnapshot,
-			vmModel.ActivityApplyingSnapshot,
+			vmModels.ActivityBeingCreated,
+			vmModels.ActivityBeingDeleted,
+			vmModels.ActivityAttachingGPU,
+			vmModels.ActivityDetachingGPU,
+			vmModels.ActivityCreatingSnapshot,
+			vmModels.ActivityApplyingSnapshot,
 		}) {
 			return false, "Resource should not be in creation or deletion, and should not be attaching or detaching a GPU", nil
 		}
 		return true, "", nil
-	case vmModel.ActivityDetachingGPU:
+	case vmModels.ActivityDetachingGPU:
 		if vm.DoingOneOfActivities([]string{
-			vmModel.ActivityBeingCreated,
-			vmModel.ActivityBeingDeleted,
-			vmModel.ActivityAttachingGPU,
-			vmModel.ActivityCreatingSnapshot,
-			vmModel.ActivityApplyingSnapshot,
+			vmModels.ActivityBeingCreated,
+			vmModels.ActivityBeingDeleted,
+			vmModels.ActivityAttachingGPU,
+			vmModels.ActivityCreatingSnapshot,
+			vmModels.ActivityApplyingSnapshot,
 		}) {
 			return false, "Resource should not be in creation or deletion, and should not be attaching a GPU", nil
 		}
 		return true, "", nil
-	case vmModel.ActivityRepairing:
+	case vmModels.ActivityRepairing:
 		if vm.DoingOneOfActivities([]string{
-			vmModel.ActivityBeingCreated,
-			vmModel.ActivityBeingDeleted,
-			vmModel.ActivityAttachingGPU,
-			vmModel.ActivityDetachingGPU,
+			vmModels.ActivityBeingCreated,
+			vmModels.ActivityBeingDeleted,
+			vmModels.ActivityAttachingGPU,
+			vmModels.ActivityDetachingGPU,
 		}) {
 			return false, "Resource should not be in creation or deletion, and should not be attaching or detaching a GPU", nil
 		}
 		return true, "", nil
-	case vmModel.ActivityCreatingSnapshot:
+	case vmModels.ActivityCreatingSnapshot:
 		if vm.DoingOneOfActivities([]string{
-			vmModel.ActivityBeingCreated,
-			vmModel.ActivityBeingDeleted,
-			vmModel.ActivityAttachingGPU,
-			vmModel.ActivityDetachingGPU,
+			vmModels.ActivityBeingCreated,
+			vmModels.ActivityBeingDeleted,
+			vmModels.ActivityAttachingGPU,
+			vmModels.ActivityDetachingGPU,
 		}) {
 			return false, "Resource should not be in creation or deletion, and should not be attaching or detaching a GPU", nil
 		}
 		return true, "", nil
-	case vmModel.ActivityApplyingSnapshot:
+	case vmModels.ActivityApplyingSnapshot:
 		if vm.DoingOneOfActivities([]string{
-			vmModel.ActivityBeingCreated,
-			vmModel.ActivityBeingDeleted,
-			vmModel.ActivityAttachingGPU,
-			vmModel.ActivityDetachingGPU,
+			vmModels.ActivityBeingCreated,
+			vmModels.ActivityBeingDeleted,
+			vmModels.ActivityAttachingGPU,
+			vmModels.ActivityDetachingGPU,
 		}) {
 			return false, "Resource should not be in creation or deletion, and should not be attaching or detaching a GPU", nil
 		}
@@ -625,7 +625,7 @@ func (c *Client) CanAddActivity(vmID, activity string) (bool, string, error) {
 }
 
 func NameAvailable(name string) (bool, error) {
-	exists, err := vmModel.New().ExistsByName(name)
+	exists, err := vmModels.New().ExistsByName(name)
 	if err != nil {
 		return false, err
 	}
@@ -639,7 +639,7 @@ func HttpProxyNameAvailable(id, name string) (bool, error) {
 		{"ports.httpProxy.name", name},
 	}
 
-	exists, err := vmModel.New().WithCustomFilter(filter).ExistsAny()
+	exists, err := vmModels.New().WithCustomFilter(filter).ExistsAny()
 	if err != nil {
 		return false, err
 	}
@@ -653,7 +653,7 @@ func HttpProxyNameAvailable(id, name string) (bool, error) {
 // When checking quota for opts.Create and opts.CreateSnapshot, id is not used.
 //
 // It returns an error if the user does not have enough quotas.
-func (c *Client) CheckQuota(id, userID string, quota *roleModel.Quotas, opts ...client.QuotaOptions) error {
+func (c *Client) CheckQuota(id, userID string, quota *roleModels.Quotas, opts ...client.QuotaOptions) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check quota for user %s. details: %w", userID, err)
 	}
@@ -694,7 +694,7 @@ func (c *Client) CheckQuota(id, userID string, quota *roleModel.Quotas, opts ...
 			return nil
 		}
 
-		vm, err := vmModel.New().GetByID(id)
+		vm, err := vmModels.New().GetByID(id)
 		if err != nil {
 			return makeError(err)
 		}
@@ -733,14 +733,14 @@ func (c *Client) CheckQuota(id, userID string, quota *roleModel.Quotas, opts ...
 	return nil
 }
 
-func (c *Client) GetUsage(userID string) (*vmModel.Usage, error) {
+func (c *Client) GetUsage(userID string) (*vmModels.Usage, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get usage for user %s. details: %w", userID, err)
 	}
 
-	usage := &vmModel.Usage{}
+	usage := &vmModels.Usage{}
 
-	currentVms, err := vmModel.New().RestrictToOwner(userID).List()
+	currentVms, err := vmModels.New().RestrictToOwner(userID).List()
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -785,7 +785,7 @@ func (c *Client) GetExternalPortMapper(vmID string) (map[string]int, error) {
 	return mapper, nil
 }
 
-func (c *Client) GetHost(vmID string) (*vmModel.Host, error) {
+func (c *Client) GetHost(vmID string) (*vmModels.Host, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get host for vm %s. details: %w", vmID, err)
 	}
@@ -813,7 +813,7 @@ func (c *Client) GetHost(vmID string) (*vmModel.Host, error) {
 	}
 
 	if host != nil {
-		return &vmModel.Host{
+		return &vmModels.Host{
 			ID:   host.ID,
 			Name: host.Name,
 		}, nil
@@ -836,7 +836,7 @@ func (c *Client) GetHost(vmID string) (*vmModel.Host, error) {
 				return nil, makeError(err)
 			}
 
-			return &vmModel.Host{
+			return &vmModels.Host{
 				ID:   host.ID,
 				Name: host.Name,
 			}, nil
