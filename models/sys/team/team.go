@@ -32,7 +32,7 @@ type Resource struct {
 type Team struct {
 	ID          string    `bson:"id"`
 	Name        string    `bson:"name"`
-	Description *string   `bson:"description"`
+	Description string    `bson:"description"`
 	OwnerID     string    `bson:"ownerId"`
 	CreatedAt   time.Time `bson:"createdAt"`
 	UpdatedAt   time.Time `bson:"updatedAt"`

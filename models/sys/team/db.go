@@ -14,7 +14,7 @@ func (client *Client) Create(id, ownerID string, params *CreateParams) (*Team, e
 	team := &Team{
 		ID:          id,
 		Name:        params.Name,
-		Description: &params.Description,
+		Description: params.Description,
 		OwnerID:     ownerID,
 		CreatedAt:   time.Now(),
 		ResourceMap: params.ResourceMap,
