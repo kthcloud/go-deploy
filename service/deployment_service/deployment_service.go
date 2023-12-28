@@ -329,6 +329,11 @@ func (c *Client) Update(id string, dtoUpdate *body.DeploymentUpdate) error {
 		return makeError(err)
 	}
 
+	d, err = c.Refresh(id)
+	if err != nil {
+		return makeError(err)
+	}
+
 	if d.Type == deploymentModels.TypeCustom {
 		err = harbor_service.New(c.Cache).Update(id, params)
 		if err != nil {

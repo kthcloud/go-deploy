@@ -119,6 +119,15 @@ func (c *Client) Delete(id string) error {
 		return makeError(err)
 	}
 
+	err = resources.SsDeleter(csc.DeleteVM).
+		WithResourceID(vm.Subsystems.CS.VM.ID).
+		WithDbFunc(dbFunc(id, "vm")).
+		Exec()
+
+	if err != nil {
+		return makeError(err)
+	}
+
 	for mapName, pfr := range vm.Subsystems.CS.GetPortForwardingRuleMap() {
 		err = resources.SsDeleter(csc.DeletePortForwardingRule).
 			WithResourceID(pfr.ID).
@@ -128,15 +137,6 @@ func (c *Client) Delete(id string) error {
 		if err != nil {
 			return makeError(err)
 		}
-	}
-
-	err = resources.SsDeleter(csc.DeleteVM).
-		WithResourceID(vm.Subsystems.CS.VM.ID).
-		WithDbFunc(dbFunc(id, "vm")).
-		Exec()
-
-	if err != nil {
-		return makeError(err)
 	}
 
 	err = resources.SsDeleter(csc.DeleteServiceOffering).

@@ -190,7 +190,7 @@ func EqualOrEmpty(t *testing.T, expected, actual interface{}, msgAndArgs ...inte
 	}
 }
 
-func Parse[okType any](t *testing.T, resp *http.Response) *okType {
+func Parse[okType any](t *testing.T, resp *http.Response) okType {
 	if resp.StatusCode > 299 {
 		rawBody := ReadRawResponseBody(t, resp)
 
@@ -212,19 +212,20 @@ func Parse[okType any](t *testing.T, resp *http.Response) *okType {
 		var errResp sys.ErrorResponse
 		ParseRawBody(t, rawBody, &errResp)
 
+		empty := new(okType)
+
 		if len(errResp.Errors) == 0 {
 			assert.FailNow(t, fmt.Sprintf("error response has no errors (status code: %d)", resp.StatusCode))
-			return nil
+			return *empty
 		}
 
 		assert.FailNow(t, fmt.Sprintf("error response has errors (status code: %d): %s", resp.StatusCode, errResp.Errors[0].Msg))
-		return nil
-
+		return *empty
 	}
 
 	var okResp okType
 	err := ReadResponseBody(t, resp, &okResp)
 	assert.NoError(t, err)
 
-	return &okResp
+	return okResp
 }

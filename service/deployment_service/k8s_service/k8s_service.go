@@ -279,66 +279,11 @@ func (c *Client) Update(id string, params *deploymentModels.UpdateParams) error 
 		return nil
 	}
 
-	if params.Name != nil {
-		// since names are immutable in k8s, we actually need to recreate everything
-		// we can trigger this in a repair.
-		// this is rather expensive, but it will include all the other updates as well,
-		// so we can just return here
-		err := c.Repair(id)
-		if err != nil {
-			return makeError(fmt.Errorf("failed to update name in k8s for deployment %s. details: %w", id, err))
-		}
-
-		return nil
-	}
-
-	if params.InternalPort != nil {
-		err := c.updateInternalPort(id)
-		if err != nil {
-			return makeError(err)
-		}
-	}
-
-	if params.Envs != nil {
-		err := c.updateEnvs(id)
-		if err != nil {
-			return makeError(err)
-		}
-	}
-
-	if params.CustomDomain != nil && (params.Private == nil || !*params.Private) {
-		err := c.updateCustomDomain(id)
-		if err != nil {
-			return makeError(err)
-		}
-	}
-
-	if params.Private != nil {
-		err := c.updatePrivate(id)
-		if err != nil {
-			return makeError(err)
-		}
-	}
-
-	if params.Volumes != nil {
-		err := c.recreatePvPvcDeployments(id)
-		if err != nil {
-			return makeError(err)
-		}
-	}
-
-	if params.Image != nil {
-		err := c.updateImage(id)
-		if err != nil {
-			return makeError(err)
-		}
-	}
-
-	if params.Replicas != nil {
-		err := c.updateReplicas(id)
-		if err != nil {
-			return makeError(err)
-		}
+	// Since K8s is immutable in many cases, we might need to recreate some resources
+	// This logic is already implemented in Repair, so we can just call that
+	err := c.Repair(id)
+	if err != nil {
+		return makeError(err)
 	}
 
 	return nil
@@ -585,7 +530,7 @@ func (c *Client) Repair(id string) error {
 			break
 		}
 	}
-	for _, public := range g.PVCs() {
+	for _, public := range pvcs {
 		err = resources.SsRepairer(
 			kc.ReadPVC,
 			kc.CreatePVC,
@@ -618,7 +563,7 @@ func (c *Client) Repair(id string) error {
 			break
 		}
 	}
-	for _, public := range g.PVs() {
+	for _, public := range pvs {
 		err = resources.SsRepairer(
 			kc.ReadPV,
 			kc.CreatePV,

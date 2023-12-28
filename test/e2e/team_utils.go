@@ -146,5 +146,5 @@ func WithTeam(t *testing.T, teamCreate body.TeamCreate, userID ...string) body.T
 		}
 	})
 
-	return *teamRead
+	return teamRead
 }

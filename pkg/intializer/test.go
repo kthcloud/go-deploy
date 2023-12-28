@@ -14,7 +14,7 @@ import (
 
 func CleanUpOldTests() {
 	now := time.Now()
-	oneHourAgo := now.Add(-1 * time.Hour)
+	oneHourAgo := now.Add(-1 * time.Minute)
 
 	oldE2eDeployments, err := deploymentModels.New().OlderThan(oneHourAgo).WithNameRegex("e2e-*").List()
 	if err != nil {

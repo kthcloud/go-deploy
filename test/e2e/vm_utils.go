@@ -5,8 +5,9 @@ import (
 	"github.com/helloyi/go-sshclient"
 	"github.com/stretchr/testify/assert"
 	"go-deploy/models/dto/body"
-	status_codes2 "go-deploy/pkg/app/status_codes"
+	"go-deploy/pkg/app/status_codes"
 	"net/http"
+	"os"
 	"strings"
 	"testing"
 )
@@ -17,7 +18,7 @@ func WaitForVmRunning(t *testing.T, id string, callback func(*body.VmRead) bool)
 		err := ReadResponseBody(t, resp, &vmRead)
 		assert.NoError(t, err, "vm was not fetched")
 
-		if vmRead.Status == status_codes2.GetMsg(status_codes2.ResourceRunning) {
+		if vmRead.Status == status_codes.GetMsg(status_codes.ResourceRunning) {
 			if callback == nil || callback(&vmRead) {
 				return true
 			}
@@ -41,60 +42,87 @@ func WaitForVmDeleted(t *testing.T, id string, callback func() bool) {
 	})
 }
 
-func checkUpVM(t *testing.T, connectionString string) bool {
-	t.Helper()
-
-	// ssh user@address -p port
-	connectionStringParts := strings.Split(connectionString, " ")
-	assert.Len(t, connectionStringParts, 4)
-
-	addrParts := strings.Split(connectionStringParts[1], "@")
-	assert.Len(t, addrParts, 2)
-
-	user := addrParts[0]
-	address := addrParts[1]
-	port := connectionStringParts[3]
-
-	client, err := sshclient.DialWithKey(fmt.Sprintf("%s:%s", address, port), user, "../../ssh/id_rsa")
-	if err != nil {
-		return false
-	}
-
-	err = client.Close()
-	assert.NoError(t, err, "ssh connection was not closed")
-
-	return true
-}
-
 func GetVM(t *testing.T, id string, userID ...string) body.VmRead {
 	resp := DoGetRequest(t, "/vms/"+id, userID...)
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "vm was not fetched")
 
-	var vmRead body.VmRead
-	err := ReadResponseBody(t, resp, &vmRead)
-	assert.NoError(t, err, "vm was not fetched")
-
-	return vmRead
+	return Parse[body.VmRead](t, resp)
 }
 
 func ListVMs(t *testing.T, query string, userID ...string) []body.VmRead {
 	resp := DoGetRequest(t, "/vms"+query, userID...)
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "vms were not fetched")
 
-	var vms []body.VmRead
-	err := ReadResponseBody(t, resp, &vms)
-	assert.NoError(t, err, "vms were not fetched")
-
-	return vms
+	return Parse[[]body.VmRead](t, resp)
 }
 
-func WithVM(t *testing.T, requestBody body.VmCreate) body.VmRead {
-	resp := DoPostRequest(t, "/vms", requestBody)
-	assert.Equal(t, http.StatusOK, resp.StatusCode, "vm was not created")
+func UpdateVM(t *testing.T, id string, requestBody body.VmUpdate, userID ...string) body.VmRead {
+	resp := DoPostRequest(t, "/vms/"+id, requestBody, userID...)
+	vmUpdated := Parse[body.VmUpdated](t, resp)
 
-	var vmCreated body.VmCreated
-	err := ReadResponseBody(t, resp, &vmCreated)
-	assert.NoError(t, err, "vm was not created")
+	if vmUpdated.JobID != nil {
+		WaitForJobFinished(t, *vmUpdated.JobID, nil)
+	}
+	WaitForVmRunning(t, id, nil)
+
+	return GetVM(t, id, userID...)
+}
+
+func GetSnapshot(t *testing.T, vmID string, snapshotID string, userID ...string) body.VmSnapshotRead {
+	resp := DoGetRequest(t, "/vms/"+vmID+"/snapshots/"+snapshotID, userID...)
+	return Parse[body.VmSnapshotRead](t, resp)
+}
+
+func ListSnapshots(t *testing.T, vmID string, userID ...string) []body.VmSnapshotRead {
+	resp := DoGetRequest(t, "/vms/"+vmID+"/snapshots", userID...)
+	return Parse[[]body.VmSnapshotRead](t, resp)
+}
+
+func CreateSnapshot(t *testing.T, id string, requestBody body.VmSnapshotCreate, userID ...string) body.VmSnapshotRead {
+	resp := DoPostRequest(t, "/vms/"+id+"/snapshots", requestBody, userID...)
+	snapshotCreated := Parse[body.VmSnapshotCreated](t, resp)
+
+	WaitForJobFinished(t, snapshotCreated.JobID, nil)
+	WaitForVmRunning(t, id, nil)
+
+	return GetSnapshot(t, id, snapshotCreated.ID, userID...)
+}
+
+func DeleteSnapshot(t *testing.T, vmID string, snapshotID string, userID ...string) {
+	resp := DoDeleteRequest(t, "/vms/"+vmID+"/snapshots/"+snapshotID, userID...)
+	assert.Equal(t, http.StatusOK, resp.StatusCode, "snapshot was not deleted")
+
+	var snapshotDeleted body.VmSnapshotDeleted
+	err := ReadResponseBody(t, resp, &snapshotDeleted)
+	assert.NoError(t, err, "snapshot was not deleted")
+
+	WaitForJobFinished(t, snapshotDeleted.JobID, nil)
+	WaitForVmRunning(t, vmID, nil)
+}
+
+func GetGPU(t *testing.T, gpuID string, userID ...string) body.GpuRead {
+	resp := DoGetRequest(t, "/gpus/"+gpuID, userID...)
+	return Parse[body.GpuRead](t, resp)
+}
+
+func ListGPUs(t *testing.T, query string, userID ...string) []body.GpuRead {
+	resp := DoGetRequest(t, "/gpus"+query, userID...)
+	return Parse[[]body.GpuRead](t, resp)
+}
+
+func WithDefaultVM(t *testing.T, userID ...string) body.VmRead {
+	return WithVM(t, body.VmCreate{
+		Name:         GenName(),
+		SshPublicKey: WithSshPublicKey(t),
+		CpuCores:     2,
+		RAM:          2,
+		DiskSize:     20,
+	})
+}
+
+func WithVM(t *testing.T, requestBody body.VmCreate, userID ...string) body.VmRead {
+	resp := DoPostRequest(t, "/vms", requestBody, userID...)
+	vmCreated := Parse[body.VmCreated](t, resp)
 
 	t.Cleanup(func() { cleanUpVm(t, vmCreated.ID) })
 
@@ -107,10 +135,8 @@ func WithVM(t *testing.T, requestBody body.VmCreate) body.VmRead {
 		return false
 	})
 
-	var vmRead body.VmRead
-	readResp := DoGetRequest(t, "/vms/"+vmCreated.ID)
-	err = ReadResponseBody(t, readResp, &vmRead)
-	assert.NoError(t, err, "vm was not created")
+	readResp := DoGetRequest(t, "/vms/"+vmCreated.ID, userID...)
+	vmRead := Parse[body.VmRead](t, readResp)
 
 	assert.NotEmpty(t, vmRead.ID)
 	assert.Equal(t, requestBody.Name, vmRead.Name)
@@ -160,6 +186,45 @@ func WithAssumedFailedVM(t *testing.T, requestBody body.VmCreate) {
 	t.Cleanup(func() { cleanUpVm(t, vmCreated.ID) })
 
 	assert.FailNow(t, "resource was created but should have failed")
+}
+
+func WithSshPublicKey(t *testing.T) string {
+	content, err := os.ReadFile("../../ssh/id_rsa.pub")
+	assert.NoError(t, err, "could not read ssh public key")
+	return strings.TrimSpace(string(content))
+}
+
+func DoSshCommand(t *testing.T, connectionString, cmd string) string {
+	// ssh user@address -p port
+	connectionStringParts := strings.Split(connectionString, " ")
+	assert.Len(t, connectionStringParts, 4)
+
+	addrParts := strings.Split(connectionStringParts[1], "@")
+	assert.Len(t, addrParts, 2)
+
+	user := addrParts[0]
+	address := addrParts[1]
+	port := connectionStringParts[3]
+
+	client, err := sshclient.DialWithKey(fmt.Sprintf("%s:%s", address, port), user, "../../ssh/id_rsa")
+	assert.NoError(t, err, "ssh connection was not established")
+
+	output, err := client.Cmd(cmd).SmartOutput()
+	assert.NoError(t, err, "ssh command failed")
+
+	err = client.Close()
+	assert.NoError(t, err, "ssh connection was not closed")
+
+	return string(output)
+}
+
+func checkUpVM(t *testing.T, connectionString string) bool {
+	t.Helper()
+
+	output := DoSshCommand(t, connectionString, "echo 'hello world'")
+	assert.Equal(t, "hello world\n", output)
+
+	return true
 }
 
 func cleanUpVm(t *testing.T, id string) {

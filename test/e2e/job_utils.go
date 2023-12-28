@@ -32,9 +32,7 @@ func ListJobs(t *testing.T, query string, userID ...string) []body.JobRead {
 
 func WaitForJobFinished(t *testing.T, id string, callback func(*body.JobRead) bool) {
 	fetchUntil(t, "/jobs/"+id, func(resp *http.Response) bool {
-		var jobRead body.JobRead
-		err := ReadResponseBody(t, resp, &jobRead)
-		assert.NoError(t, err, "job was not fetched")
+		jobRead := Parse[body.JobRead](t, resp)
 
 		if jobRead.Status == status_codes2.GetMsg(status_codes2.JobFinished) || jobRead.Status == status_codes2.GetMsg(status_codes2.JobTerminated) {
 			if callback == nil || callback(&jobRead) {

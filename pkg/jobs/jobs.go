@@ -59,7 +59,12 @@ func DeleteVM(job *jobModels.Job) error {
 		return makeTerminatedError(err)
 	}
 
-	relatedJobs, err := jobModels.New().ExcludeScheduled().ExcludeIDs(job.ID).GetByArgs(map[string]interface{}{"id": id})
+	relatedJobs, err := jobModels.New().
+		ExcludeScheduled().
+		ExcludeTypes(jobModels.TypeDeleteVM).
+		ExcludeStatus(jobModels.StatusTerminated, jobModels.StatusCompleted).
+		ExcludeIDs(job.ID).
+		GetByArgs(map[string]interface{}{"id": id})
 	if err != nil {
 		return makeTerminatedError(err)
 	}
