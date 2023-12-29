@@ -7,6 +7,7 @@ import (
 	"go-deploy/models/sys/base/resource"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"time"
 )
 
 type Client struct {
@@ -102,6 +103,25 @@ func (client *Client) WithNoActivities() *Client {
 
 func (client *Client) WithGitHubWebhookID(id int64) *Client {
 	filter := bson.D{{"subsystems.github.webhook.id", id}}
+
+	client.ResourceClient.AddExtraFilter(filter)
+	client.ActivityResourceClient.AddExtraFilter(filter)
+
+	return client
+}
+
+func (client *Client) WithNameRegex(name string) *Client {
+	filter := bson.D{{"name", bson.D{{"$regex", name}}}}
+
+	client.ResourceClient.AddExtraFilter(filter)
+	client.ActivityResourceClient.AddExtraFilter(filter)
+
+	return client
+}
+
+func (client *Client) OlderThan(timestamp time.Time) *Client {
+	filter := bson.D{{"createdAt", bson.D{{"$lt", timestamp}}}}
+
 	client.ResourceClient.AddExtraFilter(filter)
 	client.ActivityResourceClient.AddExtraFilter(filter)
 

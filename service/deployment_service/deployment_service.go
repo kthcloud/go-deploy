@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"go-deploy/models/dto/body"
-	deploymentModel "go-deploy/models/sys/deployment"
-	jobModel "go-deploy/models/sys/job"
-	notificationModel "go-deploy/models/sys/notification"
+	deploymentModels "go-deploy/models/sys/deployment"
+	jobModels "go-deploy/models/sys/job"
+	notificationModels "go-deploy/models/sys/notification"
 	teamModels "go-deploy/models/sys/team"
 	"go-deploy/pkg/config"
+	"go-deploy/service"
 	"go-deploy/service/deployment_service/client"
 	"go-deploy/service/deployment_service/github_service"
 	"go-deploy/service/deployment_service/gitlab_service"
@@ -31,11 +32,13 @@ import (
 //
 // It can be fetched in multiple ways including ID, name, transfer code, and Harbor webhook.
 // It supports service.AuthInfo, and will restrict the result to ensure the user has access to the resource.
-func (c *Client) Get(id string, opts *client.GetOptions) (*deploymentModel.Deployment, error) {
-	dClient := deploymentModel.New()
+func (c *Client) Get(id string, opts ...client.GetOptions) (*deploymentModels.Deployment, error) {
+	o := service.GetFirstOrDefault(opts)
 
-	if opts.TransferCode != "" {
-		return dClient.GetByTransferCode(opts.TransferCode)
+	dClient := deploymentModels.New()
+
+	if o.TransferCode != "" {
+		return dClient.GetByTransferCode(o.TransferCode)
 	}
 
 	var effectiveUserID string
@@ -44,7 +47,7 @@ func (c *Client) Get(id string, opts *client.GetOptions) (*deploymentModel.Deplo
 	}
 
 	var teamCheck bool
-	if !opts.Shared {
+	if !o.Shared {
 		teamCheck = false
 	} else if c.Auth == nil || c.Auth.IsAdmin {
 		teamCheck = true
@@ -60,8 +63,8 @@ func (c *Client) Get(id string, opts *client.GetOptions) (*deploymentModel.Deplo
 		dClient.RestrictToOwner(effectiveUserID)
 	}
 
-	if opts.HarborWebhook != nil {
-		return dClient.GetByName(opts.HarborWebhook.EventData.Repository.Name)
+	if o.HarborWebhook != nil {
+		return dClient.GetByName(o.HarborWebhook.EventData.Repository.Name)
 	}
 
 	return c.Deployment(id, dClient)
@@ -70,22 +73,22 @@ func (c *Client) Get(id string, opts *client.GetOptions) (*deploymentModel.Deplo
 // List lists existing deployments.
 //
 // It supports service.AuthInfo, and will restrict the result to ensure the user has access to the resource.
-func (c *Client) List(opts *client.ListOptions) ([]deploymentModel.Deployment, error) {
-	dClient := deploymentModel.New()
+func (c *Client) List(opts *client.ListOptions) ([]deploymentModels.Deployment, error) {
+	dClient := deploymentModels.New()
 
 	if opts.Pagination != nil {
 		dClient.WithPagination(opts.Pagination.Page, opts.Pagination.PageSize)
 	}
 
-	if opts.GitHubWebhookID != 0 {
-		dClient.WithGitHubWebhookID(opts.GitHubWebhookID)
+	if opts.GitHubWebhookID != nil {
+		dClient.WithGitHubWebhookID(*opts.GitHubWebhookID)
 	}
 
 	var effectiveUserID string
-	if opts.UserID != "" {
+	if opts.UserID != nil {
 		// Specific user's deployments are requested
-		if c.Auth == nil || c.Auth.UserID == opts.UserID || c.Auth.IsAdmin {
-			effectiveUserID = opts.UserID
+		if c.Auth == nil || c.Auth.UserID == *opts.UserID || c.Auth.IsAdmin {
+			effectiveUserID = *opts.UserID
 		} else {
 			// User cannot access the other user's resources
 			effectiveUserID = c.Auth.UserID
@@ -186,12 +189,12 @@ func (c *Client) Create(id, ownerID string, deploymentCreate *body.DeploymentCre
 	fallbackImage := createImagePath(ownerID, deploymentCreate.Name)
 	fallbackPort := config.Config.Deployment.Port
 
-	params := &deploymentModel.CreateParams{}
+	params := &deploymentModels.CreateParams{}
 	params.FromDTO(deploymentCreate, fallbackZone, fallbackImage, fallbackPort)
 
-	d, err := deploymentModel.New().Create(id, ownerID, params)
+	d, err := deploymentModels.New().Create(id, ownerID, params)
 	if err != nil {
-		if errors.Is(err, deploymentModel.NonUniqueFieldErr) {
+		if errors.Is(err, deploymentModels.NonUniqueFieldErr) {
 			return sErrors.NonUniqueFieldErr
 		}
 
@@ -202,7 +205,7 @@ func (c *Client) Create(id, ownerID string, deploymentCreate *body.DeploymentCre
 		return makeError(fmt.Errorf("deployment already exists for another user"))
 	}
 
-	if d.Type == deploymentModel.TypeCustom {
+	if d.Type == deploymentModels.TypeCustom {
 		err = harbor_service.New(c.Cache).Create(id, params)
 		if err != nil {
 			return makeError(err)
@@ -278,7 +281,7 @@ func (c *Client) Create(id, ownerID string, deploymentCreate *body.DeploymentCre
 			return nil
 		}
 
-		err = c.build([]string{id}, &deploymentModel.BuildParams{
+		err = c.build([]string{id}, &deploymentModels.BuildParams{
 			Name:      repo.Name,
 			Tag:       "latest",
 			Branch:    repo.DefaultBranch,
@@ -309,24 +312,29 @@ func (c *Client) Update(id string, dtoUpdate *body.DeploymentUpdate) error {
 		return sErrors.DeploymentNotFoundErr
 	}
 
-	params := &deploymentModel.UpdateParams{}
+	params := &deploymentModels.UpdateParams{}
 	params.FromDTO(dtoUpdate, d.Type)
 
-	if params.Name != nil && d.Type == deploymentModel.TypeCustom {
+	if params.Name != nil && d.Type == deploymentModels.TypeCustom {
 		image := createImagePath(d.OwnerID, *params.Name)
 		params.Image = &image
 	}
 
-	err = deploymentModel.New().UpdateWithParamsByID(id, params)
+	err = deploymentModels.New().UpdateWithParamsByID(id, params)
 	if err != nil {
-		if errors.Is(err, deploymentModel.NonUniqueFieldErr) {
+		if errors.Is(err, deploymentModels.NonUniqueFieldErr) {
 			return sErrors.NonUniqueFieldErr
 		}
 
 		return makeError(err)
 	}
 
-	if d.Type == deploymentModel.TypeCustom {
+	d, err = c.Refresh(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if d.Type == deploymentModels.TypeCustom {
 		err = harbor_service.New(c.Cache).Update(id, params)
 		if err != nil {
 			return makeError(err)
@@ -386,7 +394,7 @@ func (c *Client) UpdateOwnerSetup(id string, params *body.DeploymentUpdateOwner)
 
 	if doTransfer {
 		jobID := uuid.New().String()
-		err := job_service.Create(jobID, effectiveUserID, jobModel.TypeUpdateDeploymentOwner, map[string]interface{}{
+		err := job_service.New().Create(jobID, effectiveUserID, jobModels.TypeUpdateDeploymentOwner, map[string]interface{}{
 			"id":     id,
 			"params": *params,
 		})
@@ -400,7 +408,7 @@ func (c *Client) UpdateOwnerSetup(id string, params *body.DeploymentUpdateOwner)
 
 	/// create a transfer notification
 	code := createTransferCode()
-	err = deploymentModel.New().UpdateWithParamsByID(id, &deploymentModel.UpdateParams{
+	err = deploymentModels.New().UpdateWithParamsByID(id, &deploymentModels.UpdateParams{
 		TransferUserID: &params.NewOwnerID,
 		TransferCode:   &code,
 	})
@@ -408,8 +416,8 @@ func (c *Client) UpdateOwnerSetup(id string, params *body.DeploymentUpdateOwner)
 		return nil, makeError(err)
 	}
 
-	err = notification_service.CreateNotification(uuid.NewString(), params.NewOwnerID, &notificationModel.CreateParams{
-		Type: notificationModel.TypeDeploymentTransfer,
+	_, err = notification_service.New().Create(uuid.NewString(), params.NewOwnerID, &notificationModels.CreateParams{
+		Type: notificationModels.TypeDeploymentTransfer,
 		Content: map[string]interface{}{
 			"id":     d.ID,
 			"name":   d.Name,
@@ -446,14 +454,14 @@ func (c *Client) UpdateOwner(id string, params *body.DeploymentUpdateOwner) erro
 	}
 
 	var newImage *string
-	if d.Type == deploymentModel.TypeCustom {
+	if d.Type == deploymentModels.TypeCustom {
 		image := createImagePath(params.NewOwnerID, d.Name)
 		newImage = &image
 	}
 
 	emptyString := ""
 
-	err = deploymentModel.New().UpdateWithParamsByID(id, &deploymentModel.UpdateParams{
+	err = deploymentModels.New().UpdateWithParamsByID(id, &deploymentModels.UpdateParams{
 		OwnerID:        &params.NewOwnerID,
 		Image:          newImage,
 		TransferCode:   &emptyString,
@@ -499,7 +507,7 @@ func (c *Client) ClearUpdateOwner(id string) error {
 	}
 
 	emptyString := ""
-	err = deploymentModel.New().UpdateWithParamsByID(id, &deploymentModel.UpdateParams{
+	err = deploymentModels.New().UpdateWithParamsByID(id, &deploymentModels.UpdateParams{
 		TransferUserID: &emptyString,
 		TransferCode:   &emptyString,
 	})
@@ -520,7 +528,16 @@ func (c *Client) Delete(id string) error {
 		return fmt.Errorf("failed to delete deployment. details: %w", err)
 	}
 
-	err := harbor_service.New(c.Cache).Delete(id)
+	d, err := c.Deployment(id, nil)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if d == nil {
+		return sErrors.DeploymentNotFoundErr
+	}
+
+	err = harbor_service.New(c.Cache).Delete(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -598,19 +615,19 @@ func (c *Client) Restart(id string) error {
 		return sErrors.DeploymentNotFoundErr
 	}
 
-	c.AddLogs(id, deploymentModel.Log{
-		Source:    deploymentModel.LogSourceDeployment,
+	c.AddLogs(id, deploymentModels.Log{
+		Source:    deploymentModels.LogSourceDeployment,
 		Prefix:    "[deployment]",
 		Line:      "Restart requested",
 		CreatedAt: time.Now(),
 	})
 
-	err = deploymentModel.New().SetWithBsonByID(id, bson.D{{"restartedAt", time.Now()}})
+	err = deploymentModels.New().SetWithBsonByID(id, bson.D{{"restartedAt", time.Now()}})
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = c.StartActivity(id, deploymentModel.ActivityRestarting)
+	err = c.StartActivity(id, deploymentModels.ActivityRestarting)
 	if err != nil {
 		return makeError(err)
 	}
@@ -619,9 +636,9 @@ func (c *Client) Restart(id string) error {
 		// the restart is best-effort, so we mimic a reasonable delay
 		time.Sleep(5 * time.Second)
 
-		err = deploymentModel.New().RemoveActivity(id, deploymentModel.ActivityRestarting)
+		err = deploymentModels.New().RemoveActivity(id, deploymentModels.ActivityRestarting)
 		if err != nil {
-			utils.PrettyPrintError(fmt.Errorf("failed to remove activity %s from deployment %s. details: %w", deploymentModel.ActivityRestarting, id, err))
+			utils.PrettyPrintError(fmt.Errorf("failed to remove activity %s from deployment %s. details: %w", deploymentModels.ActivityRestarting, id, err))
 		}
 	}()
 
@@ -645,12 +662,12 @@ func (c *Client) Build(ids []string, buildParams *body.DeploymentBuild) error {
 		return fmt.Errorf("failed to build deployment. details: %w", err)
 	}
 
-	params := &deploymentModel.BuildParams{}
+	params := &deploymentModels.BuildParams{}
 	params.FromDTO(buildParams)
 
 	for _, id := range ids {
-		err := deploymentModel.New().AddLogs(id, deploymentModel.Log{
-			Source:    deploymentModel.LogSourceDeployment,
+		err := deploymentModels.New().AddLogs(id, deploymentModels.Log{
+			Source:    deploymentModels.LogSourceDeployment,
 			Prefix:    "[deployment]",
 			Line:      "Build requested",
 			CreatedAt: time.Now(),
@@ -671,10 +688,10 @@ func (c *Client) Build(ids []string, buildParams *body.DeploymentBuild) error {
 // AddLogs adds logs to the deployment.
 //
 // It is purely done in best-effort
-func (c *Client) AddLogs(id string, logs ...deploymentModel.Log) {
+func (c *Client) AddLogs(id string, logs ...deploymentModels.Log) {
 	// logs are added best-effort, so we don't return an error here
 	go func() {
-		err := deploymentModel.New().AddLogs(id, logs...)
+		err := deploymentModels.New().AddLogs(id, logs...)
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to add logs to deployment %s. details: %w", id, err))
 		}
@@ -785,7 +802,7 @@ func (c *Client) StartActivity(id string, activity string) error {
 		return sErrors.NewFailedToStartActivityError(reason)
 	}
 
-	err := deploymentModel.New().AddActivity(id, activity)
+	err := deploymentModels.New().AddActivity(id, activity)
 	if err != nil {
 		return err
 	}
@@ -807,17 +824,17 @@ func (c *Client) CanAddActivity(id string, activity string) (bool, string) {
 	}
 
 	switch activity {
-	case deploymentModel.ActivityBeingCreated:
+	case deploymentModels.ActivityBeingCreated:
 		return !d.BeingDeleted(), "Resource is being deleted"
-	case deploymentModel.ActivityBeingDeleted:
+	case deploymentModels.ActivityBeingDeleted:
 		return true, ""
-	case deploymentModel.ActivityUpdating:
+	case deploymentModels.ActivityUpdating:
 		return !d.BeingDeleted() && !d.BeingCreated(), "Resource is being deleted or created"
-	case deploymentModel.ActivityRestarting:
+	case deploymentModels.ActivityRestarting:
 		return !d.BeingDeleted(), "Resource is being deleted"
-	case deploymentModel.ActivityBuilding:
+	case deploymentModels.ActivityBuilding:
 		return !d.BeingDeleted(), "Resource is being deleted"
-	case deploymentModel.ActivityRepairing:
+	case deploymentModels.ActivityRepairing:
 		return d.Ready(), "Resource is not ready"
 	}
 
@@ -825,17 +842,17 @@ func (c *Client) CanAddActivity(id string, activity string) (bool, string) {
 }
 
 // GetUsage gets the usage of the user.
-func (c *Client) GetUsage(userID string) (*deploymentModel.Usage, error) {
+func (c *Client) GetUsage(userID string) (*deploymentModels.Usage, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get usage. details: %w", err)
 	}
 
-	count, err := deploymentModel.New().RestrictToOwner(userID).CountReplicas()
+	count, err := deploymentModels.New().RestrictToOwner(userID).CountReplicas()
 	if err != nil {
 		return nil, makeError(err)
 	}
 
-	return &deploymentModel.Usage{
+	return &deploymentModels.Usage{
 		Count: count,
 	}, nil
 }
@@ -856,7 +873,7 @@ func (c *Client) SavePing(id string, pingResult int) error {
 		return nil
 	}
 
-	err = deploymentModel.New().SavePing(id, pingResult)
+	err = deploymentModels.New().SavePing(id, pingResult)
 	if err != nil {
 		return makeError(err)
 	}
@@ -867,10 +884,10 @@ func (c *Client) SavePing(id string, pingResult int) error {
 // build builds a deployment.
 //
 // It is a helper function that does not do any checks.
-func (c *Client) build(ids []string, params *deploymentModel.BuildParams) error {
+func (c *Client) build(ids []string, params *deploymentModels.BuildParams) error {
 	var filtered []string
 	for _, id := range ids {
-		err := c.StartActivity(id, deploymentModel.ActivityBuilding)
+		err := c.StartActivity(id, deploymentModels.ActivityBuilding)
 		if err != nil {
 			var failedToStartActivityErr sErrors.FailedToStartActivityError
 			if errors.As(err, &failedToStartActivityErr) {
@@ -879,7 +896,7 @@ func (c *Client) build(ids []string, params *deploymentModel.BuildParams) error 
 			}
 
 			if errors.Is(err, sErrors.DeploymentNotFoundErr) {
-				log.Println("deployment", id, "not found when starting activity", deploymentModel.ActivityBuilding, ". assuming it was deleted")
+				log.Println("deployment", id, "not found when starting activity", deploymentModels.ActivityBuilding, ". assuming it was deleted")
 				continue
 			}
 
@@ -890,9 +907,9 @@ func (c *Client) build(ids []string, params *deploymentModel.BuildParams) error 
 	}
 	defer func() {
 		for _, id := range filtered {
-			err := deploymentModel.New().RemoveActivity(id, deploymentModel.ActivityBuilding)
+			err := deploymentModels.New().RemoveActivity(id, deploymentModels.ActivityBuilding)
 			if err != nil {
-				utils.PrettyPrintError(fmt.Errorf("failed to remove activity %s for deployment %s. details: %w", deploymentModel.ActivityBuilding, id, err))
+				utils.PrettyPrintError(fmt.Errorf("failed to remove activity %s for deployment %s. details: %w", deploymentModels.ActivityBuilding, id, err))
 			}
 		}
 	}()
@@ -930,7 +947,7 @@ func GetGitHubAccessTokenByCode(code string) (string, error) {
 
 // NameAvailable checks if a name is available.
 func NameAvailable(name string) (bool, error) {
-	exists, err := deploymentModel.New().ExistsByName(name)
+	exists, err := deploymentModels.New().ExistsByName(name)
 	if err != nil {
 		return false, err
 	}
@@ -942,7 +959,7 @@ func NameAvailable(name string) (bool, error) {
 //
 // The token should be validated before calling this function.
 // If the token is expired, an error will be returned.
-func GetGitHubRepositories(token string) ([]deploymentModel.GitHubRepository, error) {
+func GetGitHubRepositories(token string) ([]deploymentModels.GitHubRepository, error) {
 	return github_service.New(nil).WithToken(token).GetRepositories()
 }
 
@@ -971,7 +988,7 @@ func ValidGitHubRepository(token string, repositoryID int64) (bool, string, erro
 		return false, "", makeError(err)
 	}
 
-	webhooksWithPushEvent := make([]*deploymentModel.GitHubWebhook, 0)
+	webhooksWithPushEvent := make([]*deploymentModels.GitHubWebhook, 0)
 	for _, webhook := range webhooks {
 		for _, event := range webhook.Events {
 			if event == "push" {

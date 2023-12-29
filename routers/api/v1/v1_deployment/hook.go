@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"go-deploy/models/dto/body"
-	deploymentModel "go-deploy/models/sys/deployment"
+	deploymentModels "go-deploy/models/sys/deployment"
 	"go-deploy/models/sys/job"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
@@ -86,7 +86,7 @@ func HandleHarborHook(c *gin.Context) {
 		return
 	}
 
-	deployment, err := deployment_service.New().Get("", &client.GetOptions{HarborWebhook: &webhook})
+	deployment, err := deployment_service.New().Get("", client.GetOptions{HarborWebhook: &webhook})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -98,8 +98,8 @@ func HandleHarborHook(c *gin.Context) {
 	}
 
 	if webhook.Type == "PUSH_ARTIFACT" {
-		newLog := deploymentModel.Log{
-			Source:    deploymentModel.LogSourceDeployment,
+		newLog := deploymentModels.Log{
+			Source:    deploymentModels.LogSourceDeployment,
 			Prefix:    "[deployment]",
 			Line:      "Received push event from Harbor",
 			CreatedAt: time.Now(),
@@ -183,7 +183,7 @@ func HandleGitHubHook(c *gin.Context) {
 		return
 	}
 
-	deployments, err := deployment_service.New().List(&client.ListOptions{GitHubWebhookID: hookID})
+	deployments, err := deployment_service.New().List(&client.ListOptions{GitHubWebhookID: &hookID})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -218,8 +218,8 @@ func HandleGitHubHook(c *gin.Context) {
 	}
 
 	if len(ids) > 0 {
-		newLog := deploymentModel.Log{
-			Source:    deploymentModel.LogSourceDeployment,
+		newLog := deploymentModels.Log{
+			Source:    deploymentModels.LogSourceDeployment,
 			Prefix:    "[deployment]",
 			Line:      "Received push event from GitHub",
 			CreatedAt: time.Now(),
@@ -230,7 +230,7 @@ func HandleGitHubHook(c *gin.Context) {
 		}
 
 		jobID := uuid.NewString()
-		err = job_service.Create(jobID, "system", job.TypeBuildDeployments, map[string]interface{}{
+		err = job_service.New().Create(jobID, "system", job.TypeBuildDeployments, map[string]interface{}{
 			"ids": ids,
 			"build": body.DeploymentBuild{
 				Name:      requestBodyParsed.Repository.Name,

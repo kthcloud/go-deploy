@@ -3,8 +3,8 @@ package client
 import (
 	configModels "go-deploy/models/config"
 	"go-deploy/models/dto/body"
-	roleModel "go-deploy/models/sys/role"
-	vmModel "go-deploy/models/sys/vm"
+	roleModels "go-deploy/models/sys/role"
+	vmModels "go-deploy/models/sys/vm"
 	"go-deploy/service"
 )
 
@@ -28,14 +28,14 @@ type ExtraOpts struct {
 
 // GetOptions is used to specify the options when getting a VM.
 type GetOptions struct {
-	TransferCode string
+	TransferCode *string
 	Shared       bool
 }
 
 // ListOptions is used to specify the options when listing VMs.
 type ListOptions struct {
 	Pagination *service.Pagination
-	UserID     string
+	UserID     *string
 	Shared     bool
 }
 
@@ -61,13 +61,13 @@ type ListSnapshotOptions struct {
 
 // CreateSnapshotOptions is used to specify the options when creating a VM's snapshot.
 type CreateSnapshotOptions struct {
-	System *vmModel.CreateSnapshotParams
+	System *vmModels.CreateSnapshotParams
 	User   *body.VmSnapshotCreate
 }
 
 // QuotaOptions is used to specify the options when getting a VM's quota.
 type QuotaOptions struct {
-	Quota          *roleModel.Quotas
+	Quota          *roleModels.Quotas
 	Create         *body.VmCreate
 	Update         *body.VmUpdate
 	CreateSnapshot *body.VmSnapshotCreate

@@ -52,7 +52,7 @@ type TeamRead struct {
 	ID          string         `json:"id"`
 	Name        string         `json:"name"`
 	OwnerID     string         `json:"ownerId"`
-	Description *string        `json:"description,omitempty"`
+	Description string         `json:"description,omitempty"`
 	Resources   []TeamResource `json:"resources"`
 	Members     []TeamMember   `json:"members"`
 	CreatedAt   time.Time      `json:"createdAt"`

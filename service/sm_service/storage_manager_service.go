@@ -6,6 +6,7 @@ import (
 	configModels "go-deploy/models/config"
 	smModels "go-deploy/models/sys/sm"
 	"go-deploy/pkg/config"
+	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/sm_service/client"
 	"go-deploy/service/sm_service/k8s_service"
@@ -16,7 +17,9 @@ import (
 // Get gets an existing storage manager.
 //
 // It supports service.AuthInfo, and will restrict the result to ensure the user has access to the resource.
-func (c *Client) Get(id string, opts *client.GetOptions) (*smModels.SM, error) {
+func (c *Client) Get(id string, opts ...*client.GetOptions) (*smModels.SM, error) {
+	_ = service.GetFirstOrDefault(opts)
+
 	sClient := smModels.New()
 
 	if c.Auth != nil && !c.Auth.IsAdmin {
@@ -29,7 +32,9 @@ func (c *Client) Get(id string, opts *client.GetOptions) (*smModels.SM, error) {
 // GetByUserID gets an existing storage by user ID.
 //
 // It supports service.AuthInfo, and will restrict the result to ensure the user has access to the resource.
-func (c *Client) GetByUserID(userID string, opts *client.GetOptions) (*smModels.SM, error) {
+func (c *Client) GetByUserID(userID string, opts ...client.GetOptions) (*smModels.SM, error) {
+	_ = service.GetFirstOrDefault(opts)
+
 	sClient := smModels.New()
 
 	if c.Auth != nil && userID != c.Auth.UserID && !c.Auth.IsAdmin {
@@ -44,14 +49,16 @@ func (c *Client) GetByUserID(userID string, opts *client.GetOptions) (*smModels.
 // List lists existing storage managers.
 //
 // It supports service.AuthInfo, and will restrict the result to ensure the user has access to the resource.
-func (c *Client) List(opts *client.ListOptions) ([]smModels.SM, error) {
+func (c *Client) List(opts ...client.ListOptions) ([]smModels.SM, error) {
+	o := service.GetFirstOrDefault(opts)
+
 	sClient := smModels.New()
 
-	if opts.Pagination != nil {
-		sClient.WithPagination(opts.Pagination.Page, opts.Pagination.PageSize)
+	if o.Pagination != nil {
+		sClient.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
 	}
 
-	if c.Auth != nil && !c.Auth.IsAdmin {
+	if c.Auth != nil && (!o.All || !c.Auth.IsAdmin) {
 		sClient.RestrictToOwner(c.Auth.UserID)
 	}
 

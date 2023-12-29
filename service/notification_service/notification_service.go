@@ -2,58 +2,76 @@ package notification_service
 
 import (
 	"go-deploy/models/dto/body"
-	"go-deploy/models/dto/query"
-	notificationModel "go-deploy/models/sys/notification"
+	notificationModels "go-deploy/models/sys/notification"
 	"go-deploy/service"
+	sErrors "go-deploy/service/errors"
 )
 
-func CreateNotification(id, userID string, params *notificationModel.CreateParams) error {
-	_, err := notificationModel.New().Create(id, userID, params)
-	return err
-}
+func (c *Client) Get(id string, opts ...GetOpts) (*notificationModels.Notification, error) {
+	_ = service.GetFirstOrDefault(opts)
 
-func GetByIdWithAuth(id string, auth *service.AuthInfo) (*notificationModel.Notification, error) {
-	client := notificationModel.New()
+	client := notificationModels.New()
 
-	if !auth.IsAdmin {
-		client.RestrictToUserID(auth.UserID)
+	if c.Auth != nil && !c.Auth.IsAdmin {
+		client.RestrictToUserID(c.Auth.UserID)
 	}
 
-	return client.GetByID(id)
+	return c.Notification(id, client)
 }
 
-func ListAuth(allUsers bool, userID *string, auth *service.AuthInfo, pagination *query.Pagination) ([]notificationModel.Notification, error) {
-	client := notificationModel.New()
+func (c *Client) List(opts ...ListOpts) ([]notificationModels.Notification, error) {
+	o := service.GetFirstOrDefault(opts)
 
-	if pagination != nil {
-		client.AddPagination(pagination.Page, pagination.PageSize)
+	nmc := notificationModels.New()
+
+	if o.Pagination != nil {
+		nmc.AddPagination(o.Pagination.Page, o.Pagination.PageSize)
 	}
 
-	if userID != nil {
-		if *userID != auth.UserID && !auth.IsAdmin {
-			return nil, nil
+	var effectiveUserID string
+	if o.UserID != nil {
+		// Specific user's notifications are requested
+		if c.Auth == nil || c.Auth.UserID == *o.UserID || c.Auth.IsAdmin {
+			effectiveUserID = *o.UserID
+		} else {
+			// User cannot access the other user's resources
+			effectiveUserID = c.Auth.UserID
 		}
-		client.RestrictToUserID(*userID)
-	} else if !allUsers || (allUsers && !auth.IsAdmin) {
-		client.RestrictToUserID(auth.UserID)
+	} else {
+		// All notifications are requested
+		if c.Auth != nil && !c.Auth.IsAdmin {
+			effectiveUserID = c.Auth.UserID
+		}
 	}
 
-	return client.List()
+	if effectiveUserID != "" {
+		nmc.RestrictToUserID(effectiveUserID)
+	}
+
+	return c.Notifications(nmc)
 }
 
-func UpdateAuth(id string, dtoNotificationUpdate *body.NotificationUpdate, auth *service.AuthInfo) (*notificationModel.Notification, error) {
-	client := notificationModel.New()
+func (c *Client) Create(id, userID string, params *notificationModels.CreateParams) (*notificationModels.Notification, error) {
+	return notificationModels.New().Create(id, userID, params)
+}
 
-	if !auth.IsAdmin {
-		client.RestrictToUserID(auth.UserID)
+func (c *Client) Update(id string, dtoNotificationUpdate *body.NotificationUpdate) (*notificationModels.Notification, error) {
+	nmc := notificationModels.New()
+
+	if c.Auth != nil && !c.Auth.IsAdmin {
+		nmc.RestrictToUserID(c.Auth.UserID)
 	}
 
-	notification, err := client.GetByID(id)
+	notification, err := c.Notification(id, nmc)
 	if err != nil {
 		return nil, err
 	}
 
-	params := &notificationModel.UpdateParams{}
+	if notification == nil {
+		return nil, nil
+	}
+
+	params := &notificationModels.UpdateParams{}
 	params.FromDTO(dtoNotificationUpdate)
 
 	// if the notification is already read, we don't want to update it to a newer read time
@@ -62,18 +80,29 @@ func UpdateAuth(id string, dtoNotificationUpdate *body.NotificationUpdate, auth 
 		params.ReadAt = nil
 	}
 
-	err = client.UpdateWithParamsByID(id, params)
+	err = nmc.UpdateWithParamsByID(id, params)
 	if err != nil {
 		return nil, err
 	}
 
-	return client.GetByID(id)
+	return c.RefreshNotification(id, nmc)
 }
 
-func DeleteAuth(id string, auth *service.AuthInfo) error {
-	client := notificationModel.New()
-	if !auth.IsAdmin {
-		client.RestrictToUserID(auth.UserID)
+func (c *Client) Delete(id string) error {
+	client := notificationModels.New()
+
+	if c.Auth != nil && !c.Auth.IsAdmin {
+		client.RestrictToUserID(c.Auth.UserID)
 	}
+
+	exists, err := client.ExistsByID(id)
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		return sErrors.NotificationNotFoundErr
+	}
+
 	return client.DeleteByID(id)
 }

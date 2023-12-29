@@ -643,7 +643,7 @@ func (kg *K8sGenerator) PVs() []models.PvPublic {
 
 		for _, v := range volumes {
 			res = append(res, models.PvPublic{
-				Name:      sPvName(kg.d.deployment.OwnerID, v.Name),
+				Name:      dPvName(kg.d.deployment, v.Name),
 				Capacity:  config.Config.Deployment.Resources.Limits.Storage,
 				NfsServer: kg.s.zone.Storage.NfsServer,
 				NfsPath:   path.Join(kg.s.zone.Storage.NfsParentPath, v.ServerPath),
@@ -698,10 +698,10 @@ func (kg *K8sGenerator) PVCs() []models.PvcPublic {
 
 		for _, volume := range volumes {
 			res = append(res, models.PvcPublic{
-				Name:      sPvcName(volume.Name),
+				Name:      dPvcName(kg.d.deployment, volume.Name),
 				Namespace: kg.namespace,
 				Capacity:  config.Config.Deployment.Resources.Limits.Storage,
-				PvName:    sPvName(kg.d.deployment.OwnerID, volume.Name),
+				PvName:    dPvName(kg.d.deployment, volume.Name),
 			})
 		}
 

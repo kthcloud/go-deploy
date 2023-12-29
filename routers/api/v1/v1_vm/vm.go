@@ -9,10 +9,10 @@ import (
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
 	"go-deploy/models/dto/uri"
-	gpuModel "go-deploy/models/sys/gpu"
-	jobModel "go-deploy/models/sys/job"
-	vmModel "go-deploy/models/sys/vm"
-	zoneModel "go-deploy/models/sys/zone"
+	gpuModels "go-deploy/models/sys/gpu"
+	jobModels "go-deploy/models/sys/job"
+	vmModels "go-deploy/models/sys/vm"
+	zoneModels "go-deploy/models/sys/zone"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
@@ -67,7 +67,7 @@ func List(c *gin.Context) {
 			Page:     requestQuery.Page,
 			PageSize: requestQuery.PageSize,
 		},
-		UserID: userID,
+		UserID: &userID,
 		Shared: true,
 	})
 	if err != nil {
@@ -131,7 +131,7 @@ func Get(c *gin.Context) {
 
 	vsc := vm_service.New().WithAuth(auth)
 
-	vm, err := vsc.Get(requestURI.VmID, &client.GetOptions{Shared: true})
+	vm, err := vsc.Get(requestURI.VmID, client.GetOptions{Shared: true})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -200,16 +200,14 @@ func Create(c *gin.Context) {
 	}
 
 	if requestBody.Zone != nil {
-		zone := zone_service.GetZone(*requestBody.Zone, zoneModel.ZoneTypeVM)
+		zone := zone_service.New().WithAuth(auth).Get(*requestBody.Zone, zoneModels.ZoneTypeVM)
 		if zone == nil {
 			context.NotFound("Zone not found")
 			return
 		}
 	}
 
-	err = vsc.CheckQuota("", auth.UserID, &auth.GetEffectiveRole().Quotas, &client.QuotaOptions{
-		Create: &requestBody,
-	})
+	err = vsc.CheckQuota("", auth.UserID, &auth.GetEffectiveRole().Quotas, client.QuotaOptions{Create: &requestBody})
 	if err != nil {
 		var quotaExceedErr sErrors.QuotaExceededError
 		if errors.As(err, &quotaExceedErr) {
@@ -223,7 +221,7 @@ func Create(c *gin.Context) {
 
 	vmID := uuid.New().String()
 	jobID := uuid.New().String()
-	err = job_service.Create(jobID, auth.UserID, jobModel.TypeCreateVM, map[string]interface{}{
+	err = job_service.New().Create(jobID, auth.UserID, jobModels.TypeCreateVM, map[string]interface{}{
 		"id":      vmID,
 		"ownerId": auth.UserID,
 		"params":  requestBody,
@@ -270,7 +268,7 @@ func Delete(c *gin.Context) {
 
 	vsc := vm_service.New().WithAuth(auth)
 
-	vm, err := vsc.Get(requestURI.VmID, &client.GetOptions{Shared: true})
+	vm, err := vsc.Get(requestURI.VmID, client.GetOptions{Shared: true})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -286,7 +284,7 @@ func Delete(c *gin.Context) {
 		return
 	}
 
-	err = vsc.StartActivity(vm.ID, vmModel.ActivityBeingDeleted)
+	err = vsc.StartActivity(vm.ID, vmModels.ActivityBeingDeleted)
 	if err != nil {
 		var failedToStartActivityErr sErrors.FailedToStartActivityError
 		if errors.As(err, &failedToStartActivityErr) {
@@ -304,7 +302,7 @@ func Delete(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = job_service.Create(jobID, auth.UserID, jobModel.TypeDeleteVM, map[string]interface{}{
+	err = job_service.New().Create(jobID, auth.UserID, jobModels.TypeDeleteVM, map[string]interface{}{
 		"id": vm.ID,
 	})
 	if err != nil {
@@ -357,9 +355,9 @@ func Update(c *gin.Context) {
 
 	vsc := vm_service.New().WithAuth(auth)
 
-	var vm *vmModel.VM
+	var vm *vmModels.VM
 	if requestBody.TransferCode != nil {
-		vm, err = vsc.Get("", &client.GetOptions{TransferCode: *requestBody.TransferCode})
+		vm, err = vsc.Get("", client.GetOptions{TransferCode: requestBody.TransferCode})
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
@@ -370,7 +368,7 @@ func Update(c *gin.Context) {
 		}
 
 	} else {
-		vm, err = vsc.Get(requestURI.VmID, &client.GetOptions{Shared: true})
+		vm, err = vsc.Get(requestURI.VmID, client.GetOptions{Shared: true})
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
@@ -479,7 +477,7 @@ func Update(c *gin.Context) {
 		}
 	}
 
-	err = vsc.CheckQuota(auth.UserID, vm.ID, &auth.GetEffectiveRole().Quotas, &client.QuotaOptions{Update: &requestBody})
+	err = vsc.CheckQuota(auth.UserID, vm.ID, &auth.GetEffectiveRole().Quotas, client.QuotaOptions{Update: &requestBody})
 	if err != nil {
 		var quotaExceededErr sErrors.QuotaExceededError
 		if errors.As(err, &quotaExceededErr) {
@@ -491,7 +489,7 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	err = vsc.StartActivity(vm.ID, vmModel.ActivityUpdating)
+	err = vsc.StartActivity(vm.ID, vmModels.ActivityUpdating)
 	if err != nil {
 		var failedToStartActivityErr sErrors.FailedToStartActivityError
 		if errors.As(err, &failedToStartActivityErr) {
@@ -509,7 +507,7 @@ func Update(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = job_service.Create(jobID, auth.UserID, jobModel.TypeUpdateVM, map[string]interface{}{
+	err = job_service.New().Create(jobID, auth.UserID, jobModels.TypeUpdateVM, map[string]interface{}{
 		"id":     vm.ID,
 		"params": requestBody,
 	})
@@ -525,7 +523,7 @@ func Update(c *gin.Context) {
 	})
 }
 
-func updateGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *service.AuthInfo, vm *vmModel.VM) {
+func updateGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *service.AuthInfo, vm *vmModels.VM) {
 	decodedGpuID, decodeErr := decodeGpuID(*requestBody.GpuID)
 	if decodeErr != nil {
 		context.UserError("Invalid GPU ID")
@@ -543,7 +541,7 @@ func updateGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *ser
 	}
 }
 
-func detachGPU(context *sys.ClientContext, auth *service.AuthInfo, vm *vmModel.VM) {
+func detachGPU(context *sys.ClientContext, auth *service.AuthInfo, vm *vmModels.VM) {
 	if !vm.HasGPU() {
 		context.UserError("VM does not have a GPU attached")
 		return
@@ -551,7 +549,7 @@ func detachGPU(context *sys.ClientContext, auth *service.AuthInfo, vm *vmModel.V
 
 	vsc := vm_service.New().WithAuth(auth)
 
-	err := vsc.StartActivity(vm.ID, vmModel.ActivityDetachingGPU)
+	err := vsc.StartActivity(vm.ID, vmModels.ActivityDetachingGPU)
 	if err != nil {
 		var failedToStartActivityErr sErrors.FailedToStartActivityError
 		if errors.As(err, &failedToStartActivityErr) {
@@ -569,7 +567,7 @@ func detachGPU(context *sys.ClientContext, auth *service.AuthInfo, vm *vmModel.V
 	}
 
 	jobID := uuid.New().String()
-	err = job_service.Create(jobID, auth.UserID, jobModel.TypeDetachGPU, map[string]interface{}{
+	err = job_service.New().Create(jobID, auth.UserID, jobModels.TypeDetachGPU, map[string]interface{}{
 		"id": vm.ID,
 	})
 	if err != nil {
@@ -583,7 +581,7 @@ func detachGPU(context *sys.ClientContext, auth *service.AuthInfo, vm *vmModel.V
 	})
 }
 
-func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *service.AuthInfo, vm *vmModel.VM) {
+func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *service.AuthInfo, vm *vmModels.VM) {
 	if !auth.GetEffectiveRole().Permissions.UseGPUs {
 		context.Forbidden("Tier does not include GPU access")
 		return
@@ -592,7 +590,7 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *ser
 	vsc := vm_service.New().WithAuth(auth)
 	currentGPU := vm.GetGpu()
 
-	var gpus []gpuModel.GPU
+	var gpus []gpuModels.GPU
 	if *requestBody.GpuID == "any" {
 		if currentGPU != nil {
 			if !currentGPU.Lease.IsExpired() {
@@ -600,7 +598,7 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *ser
 				return
 			}
 
-			gpus = []gpuModel.GPU{*currentGPU}
+			gpus = []gpuModels.GPU{*currentGPU}
 		} else {
 			availableGpus, err := vsc.ListGPUs(&client.ListGpuOptions{
 				AvailableGPUs: true,
@@ -666,7 +664,7 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *ser
 			return
 		}
 
-		gpus = []gpuModel.GPU{*requestedGPU}
+		gpus = []gpuModels.GPU{*requestedGPU}
 	}
 
 	if len(gpus) == 0 {
@@ -702,7 +700,7 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *ser
 		gpuIds[i] = gpu.ID
 	}
 
-	err := vsc.StartActivity(vm.ID, vmModel.ActivityAttachingGPU)
+	err := vsc.StartActivity(vm.ID, vmModels.ActivityAttachingGPU)
 	if err != nil {
 		var failedToStartActivityErr sErrors.FailedToStartActivityError
 		if errors.As(err, &failedToStartActivityErr) {
@@ -720,7 +718,7 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *ser
 	}
 
 	jobID := uuid.New().String()
-	err = job_service.Create(jobID, auth.UserID, jobModel.TypeAttachGPU, map[string]interface{}{
+	err = job_service.New().Create(jobID, auth.UserID, jobModels.TypeAttachGPU, map[string]interface{}{
 		"id":            vm.ID,
 		"gpuIds":        gpuIds,
 		"userId":        auth.UserID,
@@ -751,7 +749,7 @@ func decodeGpuID(gpuID string) (string, error) {
 }
 
 func getTeamIDs(resourceID string, auth *service.AuthInfo) []string {
-	teams, err := user_service.New().ListTeams(&user_service.ListTeamsOpts{ResourceID: resourceID, UserID: auth.UserID})
+	teams, err := user_service.New().ListTeams(user_service.ListTeamsOpts{ResourceID: resourceID, UserID: auth.UserID})
 
 	if err != nil {
 		return []string{}

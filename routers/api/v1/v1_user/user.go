@@ -6,21 +6,20 @@ import (
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
 	"go-deploy/models/dto/uri"
-	roleModel "go-deploy/models/sys/role"
-	userModel "go-deploy/models/sys/user"
+	roleModels "go-deploy/models/sys/role"
+	userModels "go-deploy/models/sys/user"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
 	"go-deploy/service/deployment_service"
 	"go-deploy/service/sm_service"
-	smClient "go-deploy/service/sm_service/client"
 	"go-deploy/service/user_service"
 	"go-deploy/service/vm_service"
 	"go-deploy/utils"
 )
 
-func collectUsage(userID string) (*userModel.Usage, error) {
+func collectUsage(userID string) (*userModels.Usage, error) {
 	vmUsage, err := vm_service.New().GetUsage(userID)
 	if err != nil {
 		return nil, err
@@ -31,7 +30,7 @@ func collectUsage(userID string) (*userModel.Usage, error) {
 		return nil, err
 	}
 
-	usage := &userModel.Usage{
+	usage := &userModels.Usage{
 		Deployments: deploymentUsage.Count,
 		CpuCores:    vmUsage.CpuCores,
 		RAM:         vmUsage.RAM,
@@ -42,7 +41,7 @@ func collectUsage(userID string) (*userModel.Usage, error) {
 }
 
 func getSmURL(userID string, auth *service.AuthInfo) (*string, error) {
-	sm, err := sm_service.New().WithAuth(auth).GetByUserID(userID, &smClient.GetOptions{})
+	sm, err := sm_service.New().WithAuth(auth).GetByUserID(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +80,7 @@ func ListUsers(c *gin.Context) {
 	}
 
 	if requestQuery.Discover {
-		users, err := user_service.New().WithAuth(auth).Discover(&user_service.DiscoverUsersOpts{
+		users, err := user_service.New().WithAuth(auth).Discover(user_service.DiscoverUsersOpts{
 			Search:     requestQuery.Search,
 			Pagination: &service.Pagination{Page: requestQuery.Page, PageSize: requestQuery.PageSize},
 		})
@@ -101,9 +100,10 @@ func ListUsers(c *gin.Context) {
 
 	usc := user_service.New().WithAuth(auth)
 
-	users, err := usc.List(&user_service.ListUsersOpts{
+	users, err := usc.List(user_service.ListUsersOpts{
 		Pagination: &service.Pagination{Page: requestQuery.Page, PageSize: requestQuery.PageSize},
 		Search:     requestQuery.Search,
+		All:        requestQuery.All,
 	})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
@@ -135,7 +135,7 @@ func ListUsers(c *gin.Context) {
 
 		usage, _ := collectUsage(user.ID)
 		if usage == nil {
-			usage = &userModel.Usage{}
+			usage = &userModels.Usage{}
 		}
 
 		usersDto = append(usersDto, user.ToDTO(role, usage, storageURL))
@@ -174,8 +174,8 @@ func Get(c *gin.Context) {
 		requestURI.UserID = auth.UserID
 	}
 
-	var effectiveRole *roleModel.Role
-	var user *userModel.User
+	var effectiveRole *roleModels.Role
+	var user *userModels.User
 
 	usc := user_service.New().WithAuth(auth)
 
@@ -192,7 +192,7 @@ func Get(c *gin.Context) {
 			return
 		}
 	} else {
-		user, err = usc.Get(requestURI.UserID, &user_service.GetUserOpts{})
+		user, err = usc.Get(requestURI.UserID)
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
@@ -205,7 +205,7 @@ func Get(c *gin.Context) {
 
 		effectiveRole = config.Config.GetRole(user.EffectiveRole.Name)
 		if effectiveRole == nil {
-			effectiveRole = &roleModel.Role{}
+			effectiveRole = &roleModels.Role{}
 		}
 	}
 
@@ -261,7 +261,7 @@ func Update(c *gin.Context) {
 		requestURI.UserID = auth.UserID
 	}
 
-	var effectiveRole *roleModel.Role
+	var effectiveRole *roleModels.Role
 
 	usc := user_service.New().WithAuth(auth)
 

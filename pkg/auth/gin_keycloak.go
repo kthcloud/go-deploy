@@ -205,40 +205,70 @@ func getTokenContainer(ctx *gin.Context, config KeycloakConfig) (*TokenContainer
 	return tc, true
 }
 
-func getTestTokenContainer() (*TokenContainer, bool) {
+func getTestTokenContainer(userID string) *TokenContainer {
+
+	//userID := "955f0f87-37fd-4792-90eb-9bf6989e698e"
+
+	const (
+		AdminUserID   = "955f0f87-37fd-4792-90eb-9bf6989e698a"
+		PowerUserID   = "955f0f87-37fd-4792-90eb-9bf6989e698b"
+		DefaultUserID = "955f0f87-37fd-4792-90eb-9bf6989e698c"
+	)
+
 	tc := &TokenContainer{}
-
-	userID := "955f0f87-37fd-4792-90eb-9bf6989e698e"
-
 	tc.KeyCloakToken = &KeycloakToken{
-		Jti:               "",
-		Exp:               time.Now().Add(time.Hour * 24).Unix(),
-		Nbf:               0,
-		Iat:               0,
-		Iss:               "http://localhost",
-		Sub:               userID,
-		Typ:               "Bearer",
-		Azp:               "deploy",
-		Nonce:             "",
-		AuthTime:          0,
-		SessionState:      "",
-		Acr:               "",
-		ClientSession:     "",
-		AllowedOrigins:    nil,
-		ResourceAccess:    nil,
-		Name:              "tester",
-		PreferredUsername: "tester",
-		GivenName:         "tester",
-		FamilyName:        "tester",
-		Email:             "test@example.com",
-		RealmAccess:       ServiceRole{},
-		Groups: []string{
-			"platinum",
-			"admin",
-		},
+		Jti:            "",
+		Exp:            time.Now().Add(time.Hour * 24).Unix(),
+		Nbf:            0,
+		Iat:            0,
+		Iss:            "http://localhost",
+		Sub:            userID,
+		Typ:            "Bearer",
+		Azp:            "deploy",
+		Nonce:          "",
+		AuthTime:       0,
+		SessionState:   "",
+		Acr:            "",
+		ClientSession:  "",
+		AllowedOrigins: nil,
+		ResourceAccess: nil,
+		//Name:              "tester",
+		//PreferredUsername: "tester",
+		//GivenName:         "tester",
+		//FamilyName:        "tester",
+		//Email:             "test@example.com",
+		RealmAccess: ServiceRole{},
+		//Groups: []string{
+		//	"platinum",
+		//	"admin",
+		//},
 	}
 
-	return tc, true
+	switch userID {
+	case AdminUserID:
+		tc.KeyCloakToken.Name = "tester-admin"
+		tc.KeyCloakToken.PreferredUsername = "tester-admin"
+		tc.KeyCloakToken.GivenName = "tester-admin-first"
+		tc.KeyCloakToken.FamilyName = "tester-admin-last"
+		tc.KeyCloakToken.Email = "tester-admin@test.com"
+		tc.KeyCloakToken.Groups = []string{"admin", "platinum"}
+	case PowerUserID:
+		tc.KeyCloakToken.Name = "tester-power"
+		tc.KeyCloakToken.PreferredUsername = "tester-power"
+		tc.KeyCloakToken.GivenName = "tester-power-first"
+		tc.KeyCloakToken.FamilyName = "tester-power-last"
+		tc.KeyCloakToken.Email = "tester-power@test.com"
+	case DefaultUserID:
+		tc.KeyCloakToken.Name = "tester-default"
+		tc.KeyCloakToken.PreferredUsername = "tester-default"
+		tc.KeyCloakToken.GivenName = "tester-default-first"
+		tc.KeyCloakToken.FamilyName = "tester-default-last"
+		tc.KeyCloakToken.Email = "tester-default@test.com"
+	default:
+		return nil
+	}
+
+	return tc
 }
 
 func (t *TokenContainer) Valid() bool {
@@ -268,13 +298,18 @@ func authChain(kcConfig KeycloakConfig, accessCheckFunctions ...AccessCheckFunct
 			tokenContainer, ok := getTokenContainer(ctx, kcConfig)
 			if !ok {
 				if config.Config.TestMode {
-					testTokenContainer, _ := getTestTokenContainer()
-					for _, fn := range accessCheckFunctions {
-						if fn(testTokenContainer, ctx) {
-							varianceControl <- true
-							return
+					testUserID := ctx.GetHeader("go-deploy-test-user")
+					if testUserID != "" {
+						if testTokenContainer := getTestTokenContainer(testUserID); testTokenContainer != nil {
+							for _, fn := range accessCheckFunctions {
+								if fn(testTokenContainer, ctx) {
+									varianceControl <- true
+									return
+								}
+							}
 						}
 					}
+
 				}
 
 				_ = ctx.AbortWithError(http.StatusUnauthorized, errors.New("no token in context"))

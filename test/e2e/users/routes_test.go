@@ -2,9 +2,7 @@ package users
 
 import (
 	"github.com/stretchr/testify/assert"
-	"go-deploy/models/dto/body"
 	"go-deploy/test/e2e"
-	"net/http"
 	"os"
 	"testing"
 )
@@ -16,27 +14,38 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func TestFetchUsers(t *testing.T) {
-	resp := e2e.DoGetRequest(t, "/users?all=true")
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+func TestGet(t *testing.T) {
+	t.Parallel()
 
-	var users []body.UserRead
-	err := e2e.ReadResponseBody(t, resp, &users)
-	assert.NoError(t, err, "users were not fetched")
-	assert.NotEmpty(t, users, "users were not fetched. it should have at least one user (test user)")
+	e2e.GetUser(t, e2e.AdminUserID)
+}
 
-	for _, user := range users {
-		assert.NotEmpty(t, user.ID, "user id was empty")
+func TestList(t *testing.T) {
+	t.Parallel()
+
+	queries := []string{
+		// all
+		"?all=true",
+		// search
+		"?search=tester",
+	}
+
+	for _, query := range queries {
+		users := e2e.ListUsers(t, query)
+		assert.NotEmpty(t, users, "users were not fetched. it should have at least one user")
 	}
 }
 
-func TestFetchUser(t *testing.T) {
-	resp := e2e.DoGetRequest(t, "/users/"+e2e.TestUserID)
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+func TestDiscover(t *testing.T) {
+	t.Parallel()
 
-	var userRead body.UserRead
-	err := e2e.ReadResponseBody(t, resp, &userRead)
-	assert.NoError(t, err, "user was not fetched")
+	queries := []string{
+		// search
+		"?search=tester&page=1&pageSize=3",
+	}
 
-	assert.Equal(t, e2e.TestUserID, userRead.ID, "invalid user id")
+	for _, query := range queries {
+		users := e2e.ListUsersDiscovery(t, query)
+		assert.NotEmpty(t, users, "users were not fetched. it should have at least one user")
+	}
 }

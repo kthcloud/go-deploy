@@ -1,14 +1,17 @@
 package v1_job
 
 import (
+	"errors"
 	"github.com/gin-gonic/gin"
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
 	"go-deploy/models/dto/uri"
-	jobModel "go-deploy/models/sys/job"
+	jobModels "go-deploy/models/sys/job"
 	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
+	"go-deploy/service"
+	sErrors "go-deploy/service/errors"
 	"go-deploy/service/job_service"
 )
 
@@ -41,7 +44,16 @@ func List(c *gin.Context) {
 		return
 	}
 
-	jobs, err := job_service.ListAuth(requestQuery.All, requestQuery.UserID, requestQuery.Type, requestQuery.Status, auth, &requestQuery.Pagination)
+	jobs, err := job_service.New().WithAuth(auth).List(job_service.ListOpts{
+		Pagination: &service.Pagination{
+			Page:     requestQuery.Page,
+			PageSize: requestQuery.PageSize,
+		},
+		All:     requestQuery.All,
+		UserID:  requestQuery.UserID,
+		JobType: requestQuery.Type,
+		Status:  requestQuery.Status,
+	})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -84,7 +96,7 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	job, err := job_service.GetByIdAuth(requestURI.JobID, auth)
+	job, err := job_service.New().WithAuth(auth).Get(requestURI.JobID)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -129,24 +141,18 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	if !auth.IsAdmin {
-		context.Forbidden("User is not allowed to update jobs")
-		return
-	}
-
-	exists, err := job_service.ExistsAuth(requestURI.JobID, auth)
+	updated, err := job_service.New().WithAuth(auth).Update(requestURI.JobID, &request)
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
-		return
-	}
+		if errors.Is(err, sErrors.ForbiddenErr) {
+			context.Forbidden("User is not allowed to update jobs")
+			return
+		}
 
-	if !exists {
-		context.NotFound("Job not found")
-		return
-	}
+		if errors.Is(err, sErrors.JobNotFoundErr) {
+			context.NotFound("Job not found")
+			return
+		}
 
-	updated, err := job_service.UpdateAuth(requestURI.JobID, &request, auth)
-	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
 	}
@@ -161,19 +167,19 @@ func Update(c *gin.Context) {
 
 func jobStatusMessage(status string) string {
 	switch status {
-	case jobModel.StatusPending:
+	case jobModels.StatusPending:
 		return status_codes.GetMsg(status_codes.JobPending)
-	case jobModel.StatusRunning:
+	case jobModels.StatusRunning:
 		return status_codes.GetMsg(status_codes.JobRunning)
-	case jobModel.StatusCompleted:
+	case jobModels.StatusCompleted:
 		return status_codes.GetMsg(status_codes.JobFinished)
-	case jobModel.StatusFailed:
+	case jobModels.StatusFailed:
 		return status_codes.GetMsg(status_codes.JobFailed)
-	case jobModel.StatusTerminated:
+	case jobModels.StatusTerminated:
 		return status_codes.GetMsg(status_codes.JobTerminated)
 
 	// deprecated
-	case jobModel.StatusFinished:
+	case jobModels.StatusFinished:
 		return status_codes.GetMsg(status_codes.JobFinished)
 	default:
 		return status_codes.GetMsg(status_codes.Unknown)

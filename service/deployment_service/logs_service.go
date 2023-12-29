@@ -3,7 +3,7 @@ package deployment_service
 import (
 	"context"
 	"fmt"
-	deploymentModel "go-deploy/models/sys/deployment"
+	deploymentModels "go-deploy/models/sys/deployment"
 	"go-deploy/service/deployment_service/client"
 	"go-deploy/service/errors"
 	"go-deploy/utils"
@@ -25,7 +25,7 @@ const (
 // It will continuously check the deployment logs and read the logs after the last read log.
 // Increasing the history will increase the time it takes to set up the log stream.
 func (c *Client) SetupLogStream(id string, ctx context.Context, handler func(string, string, string), history int) error {
-	deployment, err := c.Get(id, &client.GetOptions{Shared: true})
+	deployment, err := c.Get(id, client.GetOptions{Shared: true})
 	if err != nil {
 		return err
 	}
@@ -44,7 +44,7 @@ func (c *Client) SetupLogStream(id string, ctx context.Context, handler func(str
 		time.Sleep(500 * time.Millisecond)
 
 		// fetch history logs
-		logs, err := deploymentModel.New().GetLogs(id, history)
+		logs, err := deploymentModels.New().GetLogs(id, history)
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to get logs for deployment %s. details: %w", id, err))
 			return
@@ -68,7 +68,7 @@ func (c *Client) SetupLogStream(id string, ctx context.Context, handler func(str
 				time.Sleep(FetchPeriod)
 				handler(MessageSourceControl, "[control]", "fetching logs")
 
-				logs, err = deploymentModel.New().GetLogsAfter(id, lastFetched)
+				logs, err = deploymentModels.New().GetLogsAfter(id, lastFetched)
 				if err != nil {
 					utils.PrettyPrintError(fmt.Errorf("failed to get logs for deployment %s after %s. details: %w", id, lastFetched, err))
 					return

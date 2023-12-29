@@ -26,8 +26,8 @@ type ExtraOpts struct {
 // ListOptions is used to specify the options when listing deployments.
 type ListOptions struct {
 	Pagination      *service.Pagination
-	GitHubWebhookID int64
-	UserID          string
+	GitHubWebhookID *int64
+	UserID          *string
 	Shared          bool
 }
 

@@ -46,7 +46,7 @@ func ListSnapshots(c *gin.Context) {
 		return
 	}
 
-	snapshots, _ := vm_service.New().ListSnapshots(requestURI.VmID, &client.ListSnapshotOptions{
+	snapshots, _ := vm_service.New().ListSnapshots(requestURI.VmID, client.ListSnapshotOptions{
 		Pagination: &service.Pagination{
 			Page:     requestQuery.Page,
 			PageSize: requestQuery.PageSize,
@@ -96,7 +96,7 @@ func GetSnapshot(c *gin.Context) {
 
 	vsc := vm_service.New().WithAuth(auth)
 
-	vm, err := vsc.Get(requestURI.VmID, &client.GetOptions{Shared: true})
+	vm, err := vsc.Get(requestURI.VmID, client.GetOptions{Shared: true})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -107,7 +107,7 @@ func GetSnapshot(c *gin.Context) {
 		return
 	}
 
-	snapshot, err := vsc.GetSnapshot(requestURI.VmID, requestURI.SnapshotID, &client.GetSnapshotOptions{})
+	snapshot, err := vsc.GetSnapshot(requestURI.VmID, requestURI.SnapshotID, client.GetSnapshotOptions{})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -157,7 +157,7 @@ func CreateSnapshot(c *gin.Context) {
 
 	vsc := vm_service.New().WithAuth(auth)
 
-	err = vsc.CheckQuota(requestURI.VmID, auth.UserID, &auth.GetEffectiveRole().Quotas, &client.QuotaOptions{
+	err = vsc.CheckQuota(requestURI.VmID, auth.UserID, &auth.GetEffectiveRole().Quotas, client.QuotaOptions{
 		CreateSnapshot: &requestBody,
 	})
 	if err != nil {
@@ -171,7 +171,7 @@ func CreateSnapshot(c *gin.Context) {
 		return
 	}
 
-	current, err := vsc.GetSnapshotByName(requestURI.VmID, requestBody.Name, &client.GetSnapshotOptions{})
+	current, err := vsc.GetSnapshotByName(requestURI.VmID, requestBody.Name, client.GetSnapshotOptions{})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -182,7 +182,7 @@ func CreateSnapshot(c *gin.Context) {
 		return
 	}
 
-	vm, err := vsc.Get(requestURI.VmID, &client.GetOptions{Shared: true})
+	vm, err := vsc.Get(requestURI.VmID, client.GetOptions{Shared: true})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -194,7 +194,7 @@ func CreateSnapshot(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = job_service.Create(jobID, auth.UserID, job.TypeCreateUserSnapshot, map[string]interface{}{
+	err = job_service.New().Create(jobID, auth.UserID, job.TypeCreateUserSnapshot, map[string]interface{}{
 		"id": vm.ID,
 		"params": body.VmSnapshotCreate{
 			Name: requestBody.Name,
@@ -243,7 +243,7 @@ func DeleteSnapshot(c *gin.Context) {
 
 	vsc := vm_service.New().WithAuth(auth)
 
-	vm, err := vsc.Get(requestURI.VmID, &client.GetOptions{Shared: true})
+	vm, err := vsc.Get(requestURI.VmID, client.GetOptions{Shared: true})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -254,7 +254,7 @@ func DeleteSnapshot(c *gin.Context) {
 		return
 	}
 
-	snapshot, err := vsc.GetSnapshot(requestURI.VmID, requestURI.SnapshotID, &client.GetSnapshotOptions{})
+	snapshot, err := vsc.GetSnapshot(requestURI.VmID, requestURI.SnapshotID, client.GetSnapshotOptions{})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -266,7 +266,7 @@ func DeleteSnapshot(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = job_service.Create(jobID, auth.UserID, job.TypeDeleteSnapshot, map[string]interface{}{
+	err = job_service.New().Create(jobID, auth.UserID, job.TypeDeleteSnapshot, map[string]interface{}{
 		"id":         vm.ID,
 		"snapshotId": snapshot.ID,
 	})

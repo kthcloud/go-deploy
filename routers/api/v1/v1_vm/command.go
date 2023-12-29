@@ -49,7 +49,7 @@ func DoCommand(c *gin.Context) {
 
 	vsc := vm_service.New().WithAuth(auth)
 
-	vm, err := vsc.Get(requestURI.VmID, &client.GetOptions{Shared: true})
+	vm, err := vsc.Get(requestURI.VmID, client.GetOptions{Shared: true})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return

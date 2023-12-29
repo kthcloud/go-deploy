@@ -1,12 +1,15 @@
 package v1_notification
 
 import (
+	"errors"
 	"github.com/gin-gonic/gin"
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
 	"go-deploy/models/dto/uri"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
+	"go-deploy/service"
+	sErrors "go-deploy/service/errors"
 	"go-deploy/service/notification_service"
 	"net/http"
 )
@@ -36,7 +39,7 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	notification, err := notification_service.GetByIdWithAuth(requestQuery.NotificationID, auth)
+	notification, err := notification_service.New().WithAuth(auth).Get(requestQuery.NotificationID)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -73,7 +76,20 @@ func List(c *gin.Context) {
 		return
 	}
 
-	notifications, err := notification_service.ListAuth(requestQuery.All, requestQuery.UserID, auth, &requestQuery.Pagination)
+	var userID *string
+	if requestQuery.UserID != nil {
+		userID = requestQuery.UserID
+	} else if !requestQuery.All {
+		userID = &auth.UserID
+	}
+
+	notifications, err := notification_service.New().WithAuth(auth).List(notification_service.ListOpts{
+		Pagination: &service.Pagination{
+			Page:     requestQuery.Page,
+			PageSize: requestQuery.PageSize,
+		},
+		UserID: userID,
+	})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -119,7 +135,7 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	updated, err := notification_service.UpdateAuth(requestQuery.NotificationID, &requestBody, auth)
+	updated, err := notification_service.New().WithAuth(auth).Update(requestQuery.NotificationID, &requestBody)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -158,9 +174,14 @@ func Delete(c *gin.Context) {
 		return
 	}
 
-	err = notification_service.DeleteAuth(requestQuery.NotificationID, auth)
+	err = notification_service.New().WithAuth(auth).Delete(requestQuery.NotificationID)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		if errors.Is(err, sErrors.NotificationNotFoundErr) {
+			context.NotFound("Notification not found")
+			return
+		}
+
+		context.ServerError(err, v1.InternalError)
 		return
 	}
 

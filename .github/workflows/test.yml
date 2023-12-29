@@ -1,0 +1,55 @@
+name: Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '**.go'
+      - '.github/workflows/test.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '**.go'
+      - '.github/workflows/test.yml'
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+
+    # This assumes that the configuration file connects to Redis at localhost:6379
+    services:
+      redis:
+        image: redis
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: '>=1.20.0'
+
+      - name: Create config directory
+        run: sudo mkdir -p /etc/deploy && sudo chown $USER /etc/deploy
+
+      - name: Create config file from secret
+        run: |
+          echo "${{ vars.CONFIG_FILE }}" | sudo tee /etc/deploy/config.yaml > /dev/null
+
+      - name: Export configuration file path
+        run: echo "DEPLOY_CONFIG_FILE=/etc/deploy/config.yaml" >> $GITHUB_ENV
+
+      - name: Start main program
+        run: |
+          go build -o go-deploy .     # Build go-deploy
+          ./go-deploy --test-mode &   # Starts in the background
+          sleep 15                    # Wait a bit to ensure it has started
+
+      - name: Run e2e tests
+        run: go test ./test/e2e/...

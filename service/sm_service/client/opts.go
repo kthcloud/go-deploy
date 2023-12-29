@@ -25,6 +25,7 @@ type ExtraOpts struct {
 // ListOptions is used to specify the options when listing storage managers.
 type ListOptions struct {
 	Pagination *service.Pagination
+	All        bool
 }
 
 // GetOptions is used to specify the options when getting a storage manager.

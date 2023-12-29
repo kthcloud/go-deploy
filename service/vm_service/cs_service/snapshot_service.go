@@ -3,7 +3,7 @@ package cs_service
 import (
 	"errors"
 	"fmt"
-	vmModel "go-deploy/models/sys/vm"
+	vmModels "go-deploy/models/sys/vm"
 	"go-deploy/pkg/subsystems"
 	"go-deploy/pkg/subsystems/cs/commands"
 	csModels "go-deploy/pkg/subsystems/cs/models"
@@ -20,7 +20,7 @@ func makeBadStateErr(state string) error {
 	return fmt.Errorf("%w: %s", BadStateErr, state)
 }
 
-func (c *Client) CreateSnapshot(vmID string, params *vmModel.CreateSnapshotParams) error {
+func (c *Client) CreateSnapshot(vmID string, params *vmModels.CreateSnapshotParams) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create snapshot for cs vm %s. details: %w", vmID, err)
 	}

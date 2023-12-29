@@ -1,7 +1,7 @@
 package gitlab_service
 
 import (
-	deploymentModel "go-deploy/models/sys/deployment"
+	deploymentModels "go-deploy/models/sys/deployment"
 	"go-deploy/models/sys/deployment/subsystems"
 	"go-deploy/pkg/subsystems/gitlab/models"
 )
@@ -10,7 +10,7 @@ import (
 //
 // It updates the GitLab build with the last job, and the trace.
 func updateGitLabBuild(deploymentID string, lastJob *models.JobPublic, trace []string) error {
-	return deploymentModel.New().UpdateGitLabBuild(deploymentID, subsystems.GitLabBuild{
+	return deploymentModels.New().UpdateGitLabBuild(deploymentID, subsystems.GitLabBuild{
 		ID:        lastJob.ID,
 		ProjectID: lastJob.ProjectID,
 		Trace:     trace,

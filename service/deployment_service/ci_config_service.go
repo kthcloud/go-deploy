@@ -3,7 +3,7 @@ package deployment_service
 import (
 	"fmt"
 	"go-deploy/models/dto/body"
-	deploymentModel "go-deploy/models/sys/deployment"
+	deploymentModels "go-deploy/models/sys/deployment"
 	"go-deploy/pkg/config"
 	"go-deploy/service/deployment_service/client"
 	"go-deploy/service/errors"
@@ -16,7 +16,7 @@ import (
 // It returns an error if the deployment is not found, or if the deployment is not ready.
 // It returns nil if the deployment is not a custom deployment.
 func (c *Client) GetCiConfig(id string) (*body.CiConfig, error) {
-	deployment, err := c.Get(id, &client.GetOptions{Shared: true})
+	deployment, err := c.Get(id, client.GetOptions{Shared: true})
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +29,7 @@ func (c *Client) GetCiConfig(id string) (*body.CiConfig, error) {
 		return nil, nil
 	}
 
-	if deployment.Type != deploymentModel.TypeCustom {
+	if deployment.Type != deploymentModels.TypeCustom {
 		return nil, nil
 	}
 
@@ -42,16 +42,16 @@ func (c *Client) GetCiConfig(id string) (*body.CiConfig, error) {
 	username := deployment.Subsystems.Harbor.Robot.HarborName
 	password := deployment.Subsystems.Harbor.Robot.Secret
 
-	githubCiConfig := deploymentModel.GithubActionConfig{
+	githubCiConfig := deploymentModels.GithubActionConfig{
 		Name: "kthcloud-ci",
-		On:   deploymentModel.On{Push: deploymentModel.Push{Branches: []string{"main"}}},
-		Jobs: deploymentModel.Jobs{Docker: deploymentModel.Docker{
+		On:   deploymentModels.On{Push: deploymentModels.Push{Branches: []string{"main"}}},
+		Jobs: deploymentModels.Jobs{Docker: deploymentModels.Docker{
 			RunsOn: "ubuntu-latest",
-			Steps: []deploymentModel.Steps{
+			Steps: []deploymentModels.Steps{
 				{
 					Name: "Login to Docker Hub",
 					Uses: "docker/login-action@v3",
-					With: deploymentModel.With{
+					With: deploymentModels.With{
 						Registry: config.Config.Registry.URL,
 						Username: username,
 						Password: password,
@@ -60,7 +60,7 @@ func (c *Client) GetCiConfig(id string) (*body.CiConfig, error) {
 				{
 					Name: "Build and push",
 					Uses: "docker/build-push-action@v5",
-					With: deploymentModel.With{
+					With: deploymentModels.With{
 						Push: true,
 						Tags: tag,
 					},

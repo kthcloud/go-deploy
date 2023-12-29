@@ -6,7 +6,7 @@ import (
 	"go-deploy/models/dto/body"
 	"go-deploy/models/dto/query"
 	"go-deploy/models/dto/uri"
-	jobModel "go-deploy/models/sys/job"
+	jobModels "go-deploy/models/sys/job"
 	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
@@ -45,11 +45,12 @@ func ListSMs(c *gin.Context) {
 		return
 	}
 
-	sms, _ := sm_service.New().WithAuth(auth).List(&client.ListOptions{
+	sms, _ := sm_service.New().WithAuth(auth).List(client.ListOptions{
 		Pagination: &service.Pagination{
 			Page:     requestQuery.Page,
 			PageSize: requestQuery.PageSize,
 		},
+		All: requestQuery.All,
 	})
 
 	if len(sms) == 0 {
@@ -95,7 +96,7 @@ func GetSM(c *gin.Context) {
 		return
 	}
 
-	sm, err := sm_service.New().WithAuth(auth).Get(requestURI.SmID, &client.GetOptions{})
+	sm, err := sm_service.New().WithAuth(auth).Get(requestURI.SmID)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return
@@ -139,7 +140,7 @@ func DeleteSM(c *gin.Context) {
 		return
 	}
 
-	sm, err := sm_service.New().WithAuth(auth).Get(requestURI.SmID, &client.GetOptions{})
+	sm, err := sm_service.New().WithAuth(auth).Get(requestURI.SmID)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -151,7 +152,7 @@ func DeleteSM(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = job_service.Create(jobID, auth.UserID, jobModel.TypeDeleteSM, map[string]interface{}{
+	err = job_service.New().Create(jobID, auth.UserID, jobModels.TypeDeleteSM, map[string]interface{}{
 		"id": sm.ID,
 	})
 	if err != nil {

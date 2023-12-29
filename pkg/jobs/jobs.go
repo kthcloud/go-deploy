@@ -59,7 +59,12 @@ func DeleteVM(job *jobModels.Job) error {
 		return makeTerminatedError(err)
 	}
 
-	relatedJobs, err := jobModels.New().ExcludeScheduled().ExcludeIDs(job.ID).GetByArgs(map[string]interface{}{"id": id})
+	relatedJobs, err := jobModels.New().
+		ExcludeScheduled().
+		ExcludeTypes(jobModels.TypeDeleteVM).
+		ExcludeStatus(jobModels.StatusTerminated, jobModels.StatusCompleted).
+		ExcludeIDs(job.ID).
+		GetByArgs(map[string]interface{}{"id": id})
 	if err != nil {
 		return makeTerminatedError(err)
 	}
@@ -83,10 +88,12 @@ func DeleteVM(job *jobModels.Job) error {
 
 	err = vm_service.New().Delete(id)
 	if err != nil {
-		return makeFailedError(err)
+		if !errors.Is(err, sErrors.VmNotFoundErr) {
+			return makeFailedError(err)
+		}
 	}
 
-	// check if deleted, otherwise mark as failed and return to queue for retry
+	// Check if deleted, otherwise mark as failed and return to queue for retry
 	vm, err := vmModels.New().GetByID(id)
 	if err != nil {
 		return makeFailedError(err)
@@ -180,7 +187,7 @@ func AttachGpuToVM(job *jobModels.Job) error {
 	}
 	leaseDuration := job.Args["leaseDuration"].(float64)
 
-	// we keep this field to know who requested the gpu attachment
+	// We keep this field to know who requested the gpu attachment
 	_ = job.Args["userId"].(string)
 
 	err = vm_service.New().AttachGPU(vmID, gpuIDs, leaseDuration)
@@ -280,7 +287,7 @@ func DeleteDeployment(job *jobModels.Job) error {
 		}
 	}
 
-	// check if deleted, otherwise mark as failed and return to queue for retry
+	// Check if deleted, otherwise mark as failed and return to queue for retry
 	deployment, err := deploymentModels.New().GetByID(id)
 	if err != nil {
 		return makeFailedError(err)

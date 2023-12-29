@@ -3,9 +3,8 @@ package jobs
 import (
 	"github.com/stretchr/testify/assert"
 	"go-deploy/models/dto/body"
-	"go-deploy/models/sys/job"
+	jobModels "go-deploy/models/sys/job"
 	"go-deploy/test/e2e"
-	"net/http"
 	"os"
 	"testing"
 )
@@ -17,55 +16,50 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func TestGetList(t *testing.T) {
-	resp := e2e.DoGetRequest(t, "/jobs?all=true")
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+func TestGet(t *testing.T) {
+	t.Parallel()
 
-	var jobsRead []body.JobRead
-	err := e2e.ReadResponseBody(t, resp, &jobsRead)
-	assert.NoError(t, err, "jobs were not fetched")
+	// We can't create a job with the API, so we need to trigger a job
+	// The simplest way is to create a deployment
 
-	assert.NotEmpty(t, jobsRead, "jobs were empty")
-	for _, j := range jobsRead {
-		assert.NotEmpty(t, j.ID, "job id was empty")
-		assert.NotEmpty(t, j.Type, "job type was empty")
-		assert.NotEmpty(t, j.UserID, "job user id was empty")
+	_, jobID := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
+
+	job := e2e.GetJob(t, jobID)
+
+	assert.Equal(t, jobID, job.ID)
+	assert.Equal(t, job.Type, jobModels.TypeCreateDeployment)
+	assert.Equal(t, job.UserID, e2e.AdminUserID)
+}
+
+func TestList(t *testing.T) {
+	t.Parallel()
+
+	queries := []string{
+		// all
+		"?all=true&pageSize=10",
+		// by status
+		"?status=completed&pageSize=10",
+		// by user id
+		"?userId=" + e2e.AdminUserID + "&pageSize=10",
+	}
+
+	for _, query := range queries {
+		jobs := e2e.ListJobs(t, query)
+		assert.NotEmpty(t, jobs, "jobs were not fetched for query %s. it should have at least one job", query)
 	}
 }
 
-func TestGet(t *testing.T) {
-
-	// we can't create a job with the api, so we need to trigger a job
-	// simplest way is to just create a deployment
-
-	_, jobID := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName("e2e")})
-
-	resp := e2e.DoGetRequest(t, "/jobs/"+jobID)
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-	var jobRead body.JobRead
-	err := e2e.ReadResponseBody(t, resp, &jobRead)
-	assert.NoError(t, err, "job was not fetched")
-
-	assert.Equal(t, jobID, jobRead.ID)
-	assert.Equal(t, jobRead.Type, job.TypeCreateDeployment)
-	assert.Equal(t, jobRead.UserID, e2e.TestUserID)
-}
-
 func TestUpdate(t *testing.T) {
-	// we can't create a job with the api, so we need to trigger a job
-	// simplest way is to just create a deployment
+	t.Parallel()
 
-	_, jobID := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName("e2e")})
+	// We can't create a job with the api, so we need to trigger a job
+	// The simplest way is to just create a deployment
+
+	_, jobID := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
 	e2e.WaitForJobFinished(t, jobID, nil)
 
-	terminatedStatus := job.StatusTerminated
-	resp := e2e.DoPostRequest(t, "/jobs/"+jobID, body.JobUpdate{Status: &terminatedStatus})
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	// The job above is assumed to NOT be terminated, so when we update it to terminated, we will notice the change
+	terminatedStatus := jobModels.StatusTerminated
 
-	var jobRead body.JobRead
-	err := e2e.ReadResponseBody(t, resp, &jobRead)
-	assert.NoError(t, err, "job was not updated")
-
-	assert.Equal(t, job.StatusTerminated, jobRead.Status)
+	e2e.UpdateJob(t, jobID, body.JobUpdate{Status: &terminatedStatus})
 }

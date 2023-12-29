@@ -3,7 +3,7 @@ package vm_service
 import (
 	"errors"
 	"fmt"
-	gpuModel "go-deploy/models/sys/gpu"
+	gpuModels "go-deploy/models/sys/gpu"
 	"go-deploy/pkg/config"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/vm_service/client"
@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func (c *Client) ListGPUs(opts *client.ListGpuOptions) ([]gpuModel.GPU, error) {
+func (c *Client) ListGPUs(opts *client.ListGpuOptions) ([]gpuModels.GPU, error) {
 	excludedGPUs := config.Config.GPU.ExcludedGPUs
 
 	if c.Auth != nil && !c.Auth.GetEffectiveRole().Permissions.UsePrivilegedGPUs {
@@ -24,7 +24,7 @@ func (c *Client) ListGPUs(opts *client.ListGpuOptions) ([]gpuModel.GPU, error) {
 		}
 	}
 
-	gmc := gpuModel.New().WithExclusion(config.Config.GPU.ExcludedHosts, excludedGPUs)
+	gmc := gpuModels.New().WithExclusion(config.Config.GPU.ExcludedHosts, excludedGPUs)
 
 	if opts.Pagination != nil {
 		gmc.WithPagination(opts.Pagination.Page, opts.Pagination.PageSize)
@@ -33,7 +33,7 @@ func (c *Client) ListGPUs(opts *client.ListGpuOptions) ([]gpuModel.GPU, error) {
 	if opts.AvailableGPUs {
 		gmc.OnlyAvailable()
 		gpus, _ := gmc.List()
-		availableGPUs := make([]gpuModel.GPU, 0)
+		availableGPUs := make([]gpuModels.GPU, 0)
 
 		for _, gpu := range gpus {
 			err := c.CheckGpuHardwareAvailable(gpu.ID)
@@ -58,7 +58,7 @@ func (c *Client) ListGPUs(opts *client.ListGpuOptions) ([]gpuModel.GPU, error) {
 	return gmc.List()
 }
 
-func (c *Client) GetGPU(id string, opts *client.GetGpuOptions) (*gpuModel.GPU, error) {
+func (c *Client) GetGPU(id string, opts *client.GetGpuOptions) (*gpuModels.GPU, error) {
 	var usePrivilegedGPUs bool
 	if c.Auth == nil || c.Auth.GetEffectiveRole().Permissions.UsePrivilegedGPUs {
 		usePrivilegedGPUs = true
@@ -69,7 +69,7 @@ func (c *Client) GetGPU(id string, opts *client.GetGpuOptions) (*gpuModel.GPU, e
 		excludedGpus = config.Config.GPU.PrivilegedGPUs
 	}
 
-	gpu, err := gpuModel.New().WithExclusion(config.Config.GPU.ExcludedHosts, excludedGpus).GetByID(id)
+	gpu, err := gpuModels.New().WithExclusion(config.Config.GPU.ExcludedHosts, excludedGpus).GetByID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +105,7 @@ func (c *Client) AttachGPU(vmID string, gpuIDs []string, leaseDuration float64) 
 
 	endLease := time.Now().Add(time.Duration(leaseDuration) * time.Hour)
 
-	vm, err := c.Get(vmID, &client.GetOptions{})
+	vm, err := c.Get(vmID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -118,8 +118,8 @@ func (c *Client) AttachGPU(vmID string, gpuIDs []string, leaseDuration float64) 
 	cc := cs_service.New(c.Cache)
 
 	for _, gpuID := range gpuIDs {
-		var gpu *gpuModel.GPU
-		gpu, err = gpuModel.New().GetByID(gpuID)
+		var gpu *gpuModels.GPU
+		gpu, err = gpuModels.New().GetByID(gpuID)
 		if err != nil {
 			return makeError(err)
 		}
@@ -145,7 +145,7 @@ func (c *Client) AttachGPU(vmID string, gpuIDs []string, leaseDuration float64) 
 					return makeError(err)
 				}
 
-				err = gpuModel.New().Detach(gpu.Lease.VmID)
+				err = gpuModels.New().Detach(gpu.Lease.VmID)
 				if err != nil {
 					return makeError(err)
 				}
@@ -155,9 +155,9 @@ func (c *Client) AttachGPU(vmID string, gpuIDs []string, leaseDuration float64) 
 		}
 
 		var attached bool
-		attached, err = gpuModel.New().Attach(gpuID, vmID, vm.OwnerID, endLease)
+		attached, err = gpuModels.New().Attach(gpuID, vmID, vm.OwnerID, endLease)
 		if err != nil {
-			if errors.Is(err, gpuModel.AlreadyAttachedErr) || errors.Is(err, gpuModel.NotFoundErr) {
+			if errors.Is(err, gpuModels.AlreadyAttachedErr) || errors.Is(err, gpuModels.NotFoundErr) {
 				// this is not treated as an error, just another instance snatched the gpu before this one
 				continue
 			}
@@ -195,7 +195,7 @@ func (c *Client) AttachGPU(vmID string, gpuIDs []string, leaseDuration float64) 
 				return makeError(err)
 			}
 
-			err = gpuModel.New().Detach(vmID)
+			err = gpuModels.New().Detach(vmID)
 			if err != nil {
 				return makeError(err)
 			}
@@ -207,7 +207,7 @@ func (c *Client) AttachGPU(vmID string, gpuIDs []string, leaseDuration float64) 
 				return makeError(err)
 			}
 
-			err = gpuModel.New().Detach(vmID)
+			err = gpuModels.New().Detach(vmID)
 			if err != nil {
 				return makeError(err)
 			}
@@ -229,7 +229,7 @@ func (c *Client) DetachGPU(vmID string) error {
 		return makeError(err)
 	}
 
-	err = gpuModel.New().Detach(vmID)
+	err = gpuModels.New().Detach(vmID)
 	if err != nil {
 		return makeError(err)
 	}

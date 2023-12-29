@@ -52,6 +52,7 @@ func (params *CreateParams) FromDTO(teamCreateDTO *body.TeamCreate, ownerID stri
 	params.Name = teamCreateDTO.Name
 	params.MemberMap = make(map[string]Member)
 	params.Description = teamCreateDTO.Description
+	params.ResourceMap = make(map[string]Resource)
 
 	for _, resourceDTO := range teamCreateDTO.Resources {
 		if resource := getResourceFunc(resourceDTO); resource != nil {

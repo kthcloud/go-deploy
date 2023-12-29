@@ -12,6 +12,7 @@ type GetUserOpts struct {
 type ListUsersOpts struct {
 	Pagination *service.Pagination
 	Search     *string
+	All        bool
 }
 
 type DiscoverUsersOpts struct {

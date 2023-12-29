@@ -1,76 +1,55 @@
 package intializer
 
 import (
-	"errors"
-	deploymentModel "go-deploy/models/sys/deployment"
-	vmModel "go-deploy/models/sys/vm"
-	"go-deploy/service/deployment_service"
-	dErrors "go-deploy/service/errors"
-	"go-deploy/service/vm_service"
-	"go.mongodb.org/mongo-driver/bson"
+	"fmt"
+	"github.com/google/uuid"
+	deploymentModels "go-deploy/models/sys/deployment"
+	"go-deploy/models/sys/job"
+	teamModels "go-deploy/models/sys/team"
+	vmModels "go-deploy/models/sys/vm"
+	"go-deploy/service/user_service"
 	"log"
 	"time"
 )
 
 func CleanUpOldTests() {
-	testerID := "955f0f87-37fd-4792-90eb-9bf6989e698e"
-
 	now := time.Now()
-	oneHourAgo := now.Add(-1 * time.Second)
+	oneHourAgo := now.Add(-1 * time.Minute)
 
-	oldE2eDeployments, err := deploymentModel.New().ListWithFilterAndProjection(bson.D{
-		{"ownerId", testerID},
-		{"createdAt", bson.D{{"$lt", oneHourAgo}}},
-	}, nil)
+	oldE2eDeployments, err := deploymentModels.New().OlderThan(oneHourAgo).WithNameRegex("e2e-*").List()
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("failed to list old e2e deployments: %w", err))
 	}
 
-	deploymentsDeleted := 0
 	for _, deployment := range oldE2eDeployments {
-		err = deploymentModel.New().ClearActivities(deployment.ID)
-		if err != nil {
-			panic(err)
-		}
-
-		err = deploymentModel.New().AddActivity(deployment.ID, deploymentModel.ActivityBeingDeleted)
-		if err != nil {
-			panic(err)
-		}
-
-		err = deployment_service.New().Delete(deployment.ID)
-		if err != nil {
-			if !errors.Is(err, dErrors.DeploymentNotFoundErr) {
-				panic(err)
-			}
-		}
-
-		deploymentsDeleted++
+		_ = job.New().Create(uuid.NewString(), "system", job.TypeDeleteDeployment, map[string]interface{}{
+			"id": deployment.ID,
+		})
 	}
 
-	oldE2eVms, err := vmModel.New().ListWithFilterAndProjection(bson.D{
-		{"ownerId", testerID},
-		{"createdAt", bson.D{{"$lt", oneHourAgo}}},
-	}, nil)
-
+	oldE2eVms, err := vmModels.New().OlderThan(oneHourAgo).WithNameRegex("e2e-*").List()
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("failed to list old e2e vms: %w", err))
 	}
 
-	vmsDeleted := 0
 	for _, vm := range oldE2eVms {
-		err = vmModel.New().ClearActivities(vm.ID)
-		if err != nil {
-			panic(err)
-		}
+		_ = job.New().Create(uuid.NewString(), "system", job.TypeDeleteVM, map[string]interface{}{
+			"id": vm.ID,
+		})
 
-		err = vm_service.New().Delete(vm.ID)
-		if err != nil {
-			panic(err)
-		}
-
-		vmsDeleted++
 	}
 
-	log.Println("cleaned up", deploymentsDeleted, "deployments and", vmsDeleted, "vms (old e2e-tests)")
+	oldE2eTeams, err := teamModels.New().OlderThan(oneHourAgo).WithNameRegex("e2e-*").List()
+	if err != nil {
+		panic(fmt.Errorf("failed to list old e2e teams: %w", err))
+	}
+
+	for _, team := range oldE2eTeams {
+		err := user_service.New().DeleteTeam(team.ID)
+		if err != nil {
+			panic(fmt.Errorf("failed to delete team %s: %w", team.ID, err))
+		}
+	}
+
+	log.Println("e2e-tests cleanup:\n\t- deployments:", len(oldE2eDeployments), "\n\t- vms:", len(oldE2eVms), "\n\t- teams:", len(oldE2eTeams))
 }

@@ -60,7 +60,7 @@ func ListTeams(c *gin.Context) {
 		userID = auth.UserID
 	}
 
-	teamList, err := user_service.New().WithAuth(auth).ListTeams(&user_service.ListTeamsOpts{
+	teamList, err := user_service.New().WithAuth(auth).ListTeams(user_service.ListTeamsOpts{
 		Pagination: &service.Pagination{
 			Page:     requestQuery.Page,
 			PageSize: requestQuery.PageSize,
@@ -106,7 +106,7 @@ func GetTeam(c *gin.Context) {
 		return
 	}
 
-	team, err := user_service.New().WithAuth(auth).GetTeam(requestURI.TeamID, &user_service.GetTeamOpts{})
+	team, err := user_service.New().WithAuth(auth).GetTeam(requestURI.TeamID)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -254,7 +254,7 @@ func DeleteTeam(c *gin.Context) {
 }
 
 func getMember(member *teamModels.Member) *body.TeamMember {
-	user, err := user_service.New().Get(member.ID, &user_service.GetUserOpts{})
+	user, err := user_service.New().Get(member.ID)
 	if err != nil {
 		utils.PrettyPrintError(fmt.Errorf("failed to get user when getting team member for team: %s", err))
 		return nil
@@ -292,7 +292,7 @@ func getResourceName(resource *teamModels.Resource) *string {
 
 	switch resource.Type {
 	case teamModels.ResourceTypeDeployment:
-		d, err := deployment_service.New().Get(resource.ID, &dClient.GetOptions{Shared: true})
+		d, err := deployment_service.New().Get(resource.ID, dClient.GetOptions{Shared: true})
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to get deployment when getting team resource name: %s", err))
 			return nil
@@ -304,7 +304,7 @@ func getResourceName(resource *teamModels.Resource) *string {
 
 		return &d.Name
 	case teamModels.ResourceTypeVM:
-		vm, err := vm_service.New().Get(resource.ID, &vClient.GetOptions{Shared: true})
+		vm, err := vm_service.New().Get(resource.ID, vClient.GetOptions{Shared: true})
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to get vm when getting team resource name: %s", err))
 			return nil

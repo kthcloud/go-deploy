@@ -59,6 +59,91 @@ func CheckUpURL(t *testing.T, url string) bool {
 	return false
 }
 
+func GetDeployment(t *testing.T, id string, userID ...string) body.DeploymentRead {
+	resp := DoGetRequest(t, "/deployments/"+id, userID...)
+	return Parse[body.DeploymentRead](t, resp)
+}
+
+func ListDeployments(t *testing.T, query string, userID ...string) []body.DeploymentRead {
+	resp := DoGetRequest(t, "/deployments"+query, userID...)
+	return Parse[[]body.DeploymentRead](t, resp)
+}
+
+func UpdateDeployment(t *testing.T, id string, requestBody body.DeploymentUpdate, userID ...string) body.DeploymentRead {
+	resp := DoPostRequest(t, "/deployments/"+id, requestBody, userID...)
+	deploymentUpdated := Parse[body.DeploymentUpdated](t, resp)
+
+	if deploymentUpdated.JobID != nil {
+		WaitForJobFinished(t, *deploymentUpdated.JobID, nil)
+	}
+	WaitForDeploymentRunning(t, id, func(read *body.DeploymentRead) bool {
+		if read.Private {
+			return true
+		}
+
+		// Make sure it is accessible
+		if read.URL != nil {
+			return CheckUpURL(t, *read.URL)
+		}
+		return false
+	})
+
+	updated := GetDeployment(t, id, userID...)
+
+	if requestBody.CustomDomain != nil {
+		punyEncoded, err := idna.New().ToASCII("https://" + *requestBody.CustomDomain)
+		assert.NoError(t, err, "custom domain was not puny encoded")
+		assert.Equal(t, punyEncoded, *updated.CustomDomainURL)
+	}
+
+	if requestBody.Image != nil {
+		assert.Equal(t, *requestBody.Image, *updated.Image)
+	}
+
+	if requestBody.InitCommands != nil {
+		EqualOrEmpty(t, *requestBody.InitCommands, updated.InitCommands)
+	}
+
+	if requestBody.Envs != nil {
+		// PORT env is generated, so it will always be in the read, but not necessarily in the request
+		customPort := false
+		for _, env := range *requestBody.Envs {
+			if env.Name == "PORT" {
+				customPort = true
+				break
+			}
+		}
+
+		// If it was not requested, we add it to the request body so we can compare the rest
+		if !customPort {
+			*requestBody.Envs = append(*requestBody.Envs, body.Env{
+				Name:  "PORT",
+				Value: "8080",
+			})
+		}
+
+		EqualOrEmpty(t, *requestBody.Envs, updated.Envs)
+	}
+
+	if requestBody.Volumes != nil {
+		EqualOrEmpty(t, *requestBody.Volumes, updated.Volumes)
+	}
+
+	if requestBody.Private != nil {
+		assert.Equal(t, *requestBody.Private, updated.Private)
+	}
+
+	if requestBody.HealthCheckPath != nil {
+		assert.Equal(t, *requestBody.HealthCheckPath, updated.HealthCheckPath)
+	}
+
+	if requestBody.Replicas != nil {
+		assert.Equal(t, *requestBody.Replicas, updated.Replicas)
+	}
+
+	return updated
+}
+
 func WithDeployment(t *testing.T, requestBody body.DeploymentCreate) (body.DeploymentRead, string) {
 	resp := DoPostRequest(t, "/deployments", requestBody)
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "deployment was not created")
@@ -88,6 +173,7 @@ func WithDeployment(t *testing.T, requestBody body.DeploymentCreate) (body.Deplo
 	assert.NotEmpty(t, deploymentRead.ID)
 	assert.Equal(t, requestBody.Name, deploymentRead.Name)
 	assert.Equal(t, requestBody.Private, deploymentRead.Private)
+
 	if requestBody.GitHub == nil {
 		assert.Empty(t, deploymentRead.Integrations)
 	} else {
@@ -95,16 +181,10 @@ func WithDeployment(t *testing.T, requestBody body.DeploymentCreate) (body.Deplo
 	}
 
 	if requestBody.Zone == nil {
-		// some zone is set by default
+		// Some zone is set by default
 		assert.NotEmpty(t, deploymentRead.Zone)
 	} else {
 		assert.Equal(t, requestBody.Zone, deploymentRead.Zone)
-	}
-
-	if requestBody.InitCommands == nil {
-		assert.Empty(t, deploymentRead.InitCommands)
-	} else {
-		assert.Equal(t, requestBody.InitCommands, deploymentRead.InitCommands)
 	}
 
 	// PORT env is generated, so we check for that first, then delete and match exact with the rest
@@ -145,17 +225,9 @@ func WithDeployment(t *testing.T, requestBody body.DeploymentCreate) (body.Deplo
 		}
 	}
 
-	if requestBody.Envs == nil {
-		assert.Empty(t, deploymentRead.Envs)
-	} else {
-		assert.Equal(t, requestBody.Envs, deploymentRead.Envs)
-	}
-
-	if requestBody.Volumes == nil {
-		assert.Empty(t, deploymentRead.Volumes)
-	} else {
-		assert.Equal(t, requestBody.Volumes, deploymentRead.Volumes)
-	}
+	EqualOrEmpty(t, requestBody.InitCommands, deploymentRead.InitCommands, "invalid init commands")
+	EqualOrEmpty(t, requestBody.Envs, deploymentRead.Envs, "invalid envs")
+	EqualOrEmpty(t, requestBody.Volumes, deploymentRead.Volumes, "invalid volumes")
 
 	if requestBody.CustomDomain != nil {
 		punyEncoded, err := idna.New().ToASCII("https://" + *requestBody.CustomDomain)
