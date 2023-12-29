@@ -1,8 +1,6 @@
 package migrator
 
 import (
-	vmModels "go-deploy/models/sys/vm"
-	"go.mongodb.org/mongo-driver/bson"
 	"log"
 )
 
@@ -35,33 +33,5 @@ func Migrate() {
 //
 // add a date to the migration name to make it easier to identify.
 func getMigrations() map[string]func() error {
-	return map[string]func() error{
-		"2023-12-13-add-deployment-zone-to-vms-without-it": addDeploymentZoneToVmsWithoutIt,
-	}
-}
-
-func addDeploymentZoneToVmsWithoutIt() error {
-	vms, err := vmModels.New().List()
-	if err != nil {
-		return err
-	}
-
-	zone := "se-flem"
-
-	for _, vm := range vms {
-		if vm.DeploymentZone == nil {
-			vm.DeploymentZone = &zone
-
-			update := bson.D{
-				{"deploymentZone", zone},
-			}
-
-			err = vmModels.New().SetWithBsonByID(vm.ID, update)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
+	return map[string]func() error{}
 }
