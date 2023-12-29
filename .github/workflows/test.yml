@@ -37,10 +37,10 @@ jobs:
 
       - name: Create config directory
         run: sudo mkdir -p /etc/deploy && sudo chown $USER /etc/deploy
-
+      - run: echo "${{ vars.CONFIG_FILE }}"
       - name: Create config file from secret
         run: |
-          echo "${{ env.CONFIG_FILE }}" | sudo tee /etc/deploy/config.yaml > /dev/null
+          echo "${{ vars.CONFIG_FILE }}" | sudo tee /etc/deploy/config.yaml > /dev/null
 
       - name: Export configuration file path
         run: echo "DEPLOY_CONFIG_FILE=/etc/deploy/config.yaml" >> $GITHUB_ENV
