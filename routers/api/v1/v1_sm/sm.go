@@ -50,6 +50,7 @@ func ListSMs(c *gin.Context) {
 			Page:     requestQuery.Page,
 			PageSize: requestQuery.PageSize,
 		},
+		All: requestQuery.All,
 	})
 
 	if len(sms) == 0 {

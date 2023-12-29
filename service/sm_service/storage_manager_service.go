@@ -58,7 +58,7 @@ func (c *Client) List(opts ...client.ListOptions) ([]smModels.SM, error) {
 		sClient.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
 	}
 
-	if c.Auth != nil && !c.Auth.IsAdmin {
+	if c.Auth != nil && (!o.All || !c.Auth.IsAdmin) {
 		sClient.RestrictToOwner(c.Auth.UserID)
 	}
 
