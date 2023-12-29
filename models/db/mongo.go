@@ -16,9 +16,9 @@ type CollectionDefinition struct {
 	Name    string
 	Indexes []string
 	// unique only for non-deleted documents
-	UniqueIndexes []string
+	UniqueIndexes [][]string
 	// unique even for deleted documents
-	TotallyUniqueIndexes []string
+	TotallyUniqueIndexes [][]string
 	TextIndexFields      []string
 }
 
@@ -81,8 +81,13 @@ func (dbCtx *Context) setupMongo() error {
 	ensureCount = 0
 	for _, def := range DB.CollectionDefinitionMap {
 		for _, indexName := range def.UniqueIndexes {
+			var keys bson.D
+			for _, key := range indexName {
+				keys = append(keys, bson.E{Key: key, Value: 1})
+			}
+
 			_, err = DB.GetCollection(def.Name).Indexes().CreateOne(context.Background(), mongo.IndexModel{
-				Keys:    map[string]int{indexName: 1},
+				Keys:    keys,
 				Options: options.Index().SetUnique(true).SetPartialFilterExpression(bson.D{{"deletedAt", bson.D{{"$in", []interface{}{nil, time.Time{}}}}}}),
 			})
 			if err != nil && !isIndexExistsError(err) {
@@ -98,8 +103,13 @@ func (dbCtx *Context) setupMongo() error {
 	ensureCount = 0
 	for _, def := range DB.CollectionDefinitionMap {
 		for _, indexName := range def.UniqueIndexes {
+			keys := bson.D{}
+			for _, key := range indexName {
+				keys = append(keys, bson.E{Key: key, Value: 1})
+			}
+
 			_, err = DB.GetCollection(def.Name).Indexes().CreateOne(context.Background(), mongo.IndexModel{
-				Keys:    map[string]int{indexName: 1},
+				Keys:    keys,
 				Options: options.Index().SetUnique(true),
 			})
 			if err != nil && !isIndexExistsError(err) {
@@ -158,51 +168,56 @@ func getCollectionDefinitions() map[string]CollectionDefinition {
 		"deployments": {
 			Name:                 "deployments",
 			Indexes:              []string{"ownerId", "type", "statusCode", "createdAt", "deletedAt", "repairedAt", "restartedAt", "zone"},
-			UniqueIndexes:        []string{"name"},
-			TotallyUniqueIndexes: []string{"id"},
+			UniqueIndexes:        [][]string{{"name"}},
+			TotallyUniqueIndexes: [][]string{{"id"}},
 		},
 		"storageManagers": {
 			Name:                 "storageManagers",
 			Indexes:              []string{"ownerId", "createdAt", "deletedAt", "repairedAt", "zone"},
-			TotallyUniqueIndexes: []string{"id"},
+			TotallyUniqueIndexes: [][]string{{"id"}},
 		},
 		"vms": {
 			Name:                 "vms",
 			Indexes:              []string{"ownerId", "gpuId", "statusCode", "createdAt", "deletedAt", "repairedAt", "restartedAt", "zone"},
-			UniqueIndexes:        []string{"name"},
-			TotallyUniqueIndexes: []string{"id"},
+			UniqueIndexes:        [][]string{{"name"}},
+			TotallyUniqueIndexes: [][]string{{"id"}},
+		},
+		"vmPorts": {
+			Name:          "vmPorts",
+			Indexes:       []string{"publicPort", "zone", "lease.privatePort", "lease.userId", "lease.vmId"},
+			UniqueIndexes: [][]string{{"publicPort", "zone"}},
 		},
 		"gpus": {
 			Name:                 "gpus",
 			Indexes:              []string{"name", "host", "lease.vmId", "lease.user", "lease.end"},
-			TotallyUniqueIndexes: []string{"id"},
+			TotallyUniqueIndexes: [][]string{{"id"}},
 		},
 		"users": {
 			Name:                 "users",
 			Indexes:              []string{"username", "email", "firstName", "lastName", "effectiveRole.name"},
-			TotallyUniqueIndexes: []string{"id"},
+			TotallyUniqueIndexes: [][]string{{"id"}},
 			TextIndexFields:      []string{"username", "email", "firstName", "lastName"},
 		},
 		"teams": {
 			Name:                 "teams",
 			Indexes:              []string{"name", "ownerId", "createdAt", "deletedAt"},
-			TotallyUniqueIndexes: []string{"id"},
+			TotallyUniqueIndexes: [][]string{{"id"}},
 			TextIndexFields:      []string{"name"},
 		},
 		"jobs": {
 			Name:                 "jobs",
 			Indexes:              []string{"userId", "type", "args.id", "status", "createdAt", "runAfter"},
-			TotallyUniqueIndexes: []string{"id"},
+			TotallyUniqueIndexes: [][]string{{"id"}},
 		},
 		"notifications": {
 			Name:                 "notifications",
 			Indexes:              []string{"userId", "type", "createdAt", "readAt", "deletedAt"},
-			TotallyUniqueIndexes: []string{"id"},
+			TotallyUniqueIndexes: [][]string{{"id"}},
 		},
 		"events": {
 			Name:                 "events",
 			Indexes:              []string{"type", "createdAt", "source.userId"},
-			TotallyUniqueIndexes: []string{"id"},
+			TotallyUniqueIndexes: [][]string{{"id"}},
 		},
 	}
 }

@@ -62,7 +62,7 @@ func GroupFilters(filter bson.D, extraFilter bson.M, searchParams *SearchParams,
 func AddExcludeDeletedFilter(filter bson.D) bson.D {
 	newFilter := filter
 
-	newFilter = append(newFilter, bson.E{Key: "deletedAt", Value: bson.D{{"$in", []interface{}{nil, time.Time{}}}}})
+	newFilter = append(newFilter, bson.E{Key: "deletedAt", Value: bson.D{{"$in", bson.A{nil, time.Time{}}}}})
 
 	return newFilter
 }

@@ -53,6 +53,7 @@ func Create(opts *Options) *App {
 	}
 
 	intializer.SynchronizeGPUs()
+	intializer.SynchronizeVmPorts()
 
 	ctx, cancel := context.WithCancel(context.Background())
 
