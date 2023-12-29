@@ -4,7 +4,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go-deploy/models/dto/body"
 	"go-deploy/test/e2e"
-	"net/http"
 	"os"
 	"testing"
 	"time"
@@ -18,34 +17,36 @@ func TestMain(m *testing.M) {
 }
 
 func TestList(t *testing.T) {
-	resp := e2e.DoGetRequest(t, "/storageManagers")
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	t.Parallel()
 
-	var storageManagers []body.SmRead
-	err := e2e.ReadResponseBody(t, resp, &storageManagers)
-	assert.NoError(t, err, "storage managers were not fetched")
+	queries := []string{
+		"?page=1&pageSize=10",
+	}
 
-	for _, storageManager := range storageManagers {
-		assert.NotEmpty(t, storageManager.ID, "storage manager id was empty")
-		assert.NotEmpty(t, storageManager.OwnerID, "storage manager owner id was empty")
-		assert.NotEmpty(t, storageManager.URL, "storage manager url was empty")
+	for _, query := range queries {
+		e2e.ListSMs(t, query)
 	}
 }
 
 func TestCreate(t *testing.T) {
+	t.Parallel()
+
 	// To test this, we should just list deployments, since this triggers creating it
-	_ = e2e.DoGetRequest(t, "/deployments")
+	e2e.DoGetRequest(t, "/deployments")
 
 	// Make sure the storage manager has time to be created
 	time.Sleep(30 * time.Second)
 
-	storageManager := e2e.GetSM(t, e2e.AdminUserID)
+	storageManagers := e2e.ListSMs(t, "?all=false")
+	assert.NotEmpty(t, storageManagers, "storage managers were empty")
+
+	storageManager := storageManagers[0]
 	assert.NotEmpty(t, storageManager.ID, "storage manager id was empty")
 	assert.NotEmpty(t, storageManager.OwnerID, "storage manager owner id was empty")
 	assert.NotEmpty(t, storageManager.URL, "storage manager url was empty")
 
 	e2e.WaitForSmRunning(t, storageManager.ID, func(storageManagerRead *body.SmRead) bool {
-		//make sure it is accessible
+		// Make sure it is accessible
 		if storageManager.URL != nil {
 			return e2e.CheckUpURL(t, *storageManager.URL)
 		}

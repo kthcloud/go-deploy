@@ -3,9 +3,8 @@ package jobs
 import (
 	"github.com/stretchr/testify/assert"
 	"go-deploy/models/dto/body"
-	"go-deploy/models/sys/job"
+	jobModels "go-deploy/models/sys/job"
 	"go-deploy/test/e2e"
-	"net/http"
 	"os"
 	"testing"
 )
@@ -18,25 +17,23 @@ func TestMain(m *testing.M) {
 }
 
 func TestGet(t *testing.T) {
+	t.Parallel()
 
 	// We can't create a job with the API, so we need to trigger a job
 	// The simplest way is to create a deployment
 
 	_, jobID := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
 
-	resp := e2e.DoGetRequest(t, "/jobs/"+jobID)
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	job := e2e.GetJob(t, jobID)
 
-	var jobRead body.JobRead
-	err := e2e.ReadResponseBody(t, resp, &jobRead)
-	assert.NoError(t, err, "job was not fetched")
-
-	assert.Equal(t, jobID, jobRead.ID)
-	assert.Equal(t, jobRead.Type, job.TypeCreateDeployment)
-	assert.Equal(t, jobRead.UserID, e2e.AdminUserID)
+	assert.Equal(t, jobID, job.ID)
+	assert.Equal(t, job.Type, jobModels.TypeCreateDeployment)
+	assert.Equal(t, job.UserID, e2e.AdminUserID)
 }
 
 func TestList(t *testing.T) {
+	t.Parallel()
+
 	queries := []string{
 		// all
 		"?all=true&pageSize=10",
@@ -53,19 +50,16 @@ func TestList(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
-	// we can't create a job with the api, so we need to trigger a job
-	// simplest way is to just create a deployment
+	t.Parallel()
+
+	// We can't create a job with the api, so we need to trigger a job
+	// The simplest way is to just create a deployment
 
 	_, jobID := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
 	e2e.WaitForJobFinished(t, jobID, nil)
 
-	terminatedStatus := job.StatusTerminated
-	resp := e2e.DoPostRequest(t, "/jobs/"+jobID, body.JobUpdate{Status: &terminatedStatus})
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	// The job above is assumed to NOT be terminated, so when we update it to terminated, we will notice the change
+	terminatedStatus := jobModels.StatusTerminated
 
-	var jobRead body.JobRead
-	err := e2e.ReadResponseBody(t, resp, &jobRead)
-	assert.NoError(t, err, "job was not updated")
-
-	assert.Equal(t, job.StatusTerminated, jobRead.Status)
+	e2e.UpdateJob(t, jobID, body.JobUpdate{Status: &terminatedStatus})
 }

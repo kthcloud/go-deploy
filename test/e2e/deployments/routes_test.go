@@ -20,20 +20,22 @@ func TestMain(m *testing.M) {
 }
 
 func TestList(t *testing.T) {
-	resp := e2e.DoGetRequest(t, "/deployments")
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	t.Parallel()
 
-	var deployments []body.DeploymentRead
-	err := e2e.ReadResponseBody(t, resp, &deployments)
-	assert.NoError(t, err, "deployments were not fetched")
+	queries := []string{
+		"?page=1&pageSize=10",
+		"?userId=" + e2e.PowerUserID + "&page=1&pageSize=3",
+		"?userId=" + e2e.DefaultUserID + "&page=1&pageSize=3",
+	}
 
-	for _, deployment := range deployments {
-		assert.NotEmpty(t, deployment.ID, "deployment id was empty")
-		assert.NotEmpty(t, deployment.Name, "deployment name was empty")
+	for _, query := range queries {
+		e2e.ListDeployments(t, query)
 	}
 }
 
 func TestCreate(t *testing.T) {
+	t.Parallel()
+
 	// To test with GitHub, you need to set the following env variables:
 	var token string
 	var repositoryID int64
@@ -46,26 +48,25 @@ func TestCreate(t *testing.T) {
 		}
 	}
 
-	envValue := uuid.NewString()
-
 	requestBody := body.DeploymentCreate{
 		Name:    e2e.GenName(),
 		Private: false,
 		Envs: []body.Env{
 			{
-				Name:  "e2e",
-				Value: envValue,
+				Name:  e2e.GenName(),
+				Value: uuid.NewString(),
 			},
 		},
 		GitHub: github,
-		Zone:   nil,
 	}
 
-	_, _ = e2e.WithDeployment(t, requestBody)
+	e2e.WithDeployment(t, requestBody)
 }
 
 func TestCreateWithCustomPort(t *testing.T) {
-	// this test assumes that the default port is 8080
+	t.Parallel()
+
+	// This test assumes that the default port is 8080
 	customPort := 8081
 
 	requestBody := body.DeploymentCreate{
@@ -77,15 +78,15 @@ func TestCreateWithCustomPort(t *testing.T) {
 				Value: strconv.Itoa(customPort),
 			},
 		},
-		GitHub: nil,
-		Zone:   nil,
 	}
 
-	_, _ = e2e.WithDeployment(t, requestBody)
+	e2e.WithDeployment(t, requestBody)
 }
 
 func TestCreateWithCustomImage(t *testing.T) {
-	// choose this setup so that it is reachable (pingable)
+	t.Parallel()
+
+	// This setup is chosen to make the deployment reachable (pingable)
 	customImage := "nginx:latest"
 	customPort := 80
 
@@ -98,15 +99,15 @@ func TestCreateWithCustomImage(t *testing.T) {
 				Value: strconv.Itoa(customPort),
 			},
 		},
-		Image:  &customImage,
-		GitHub: nil,
-		Zone:   nil,
+		Image: &customImage,
 	}
 
-	_, _ = e2e.WithDeployment(t, requestBody)
+	e2e.WithDeployment(t, requestBody)
 }
 
 func TestCreateWithCustomDomain(t *testing.T) {
+	t.Parallel()
+
 	customDomain := e2e.TestDomain
 
 	requestBody := body.DeploymentCreate{
@@ -115,10 +116,12 @@ func TestCreateWithCustomDomain(t *testing.T) {
 		CustomDomain: &customDomain,
 	}
 
-	_, _ = e2e.WithDeployment(t, requestBody)
+	e2e.WithDeployment(t, requestBody)
 }
 
 func TestCreateWithInvalidBody(t *testing.T) {
+	t.Parallel()
+
 	longName := body.DeploymentCreate{Name: "e2e-"}
 	for i := 0; i < 1000; i++ {
 		longName.Name += uuid.NewString()
@@ -174,6 +177,8 @@ func TestCreateWithInvalidBody(t *testing.T) {
 }
 
 func TestCreateShared(t *testing.T) {
+	t.Parallel()
+
 	deployment, _ := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
 	team := e2e.WithTeam(t, body.TeamCreate{
 		Name:      e2e.GenName(),
@@ -199,6 +204,8 @@ func TestCreateShared(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
+	t.Parallel()
+
 	envValue := uuid.NewString()
 
 	deploymentRead, _ := e2e.WithDeployment(t, body.DeploymentCreate{
@@ -210,18 +217,15 @@ func TestUpdate(t *testing.T) {
 				Value: envValue,
 			},
 		},
-		GitHub: nil,
-		Zone:   nil,
 	})
 
-	// update deployment
-	newEnvValue := uuid.NewString()
+	// Update deployment
 	newPrivateValue := !deploymentRead.Private
 	deploymentUpdate := body.DeploymentUpdate{
 		Envs: &[]body.Env{
 			{
-				Name:  "e2e",
-				Value: newEnvValue,
+				Name:  e2e.GenName(),
+				Value: uuid.NewString(),
 			},
 		},
 		Private: &newPrivateValue,
@@ -234,45 +238,12 @@ func TestUpdate(t *testing.T) {
 		},
 	}
 
-	resp := e2e.DoPostRequest(t, "/deployments/"+deploymentRead.ID, deploymentUpdate)
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-	var deploymentUpdated body.DeploymentUpdated
-	err := e2e.ReadResponseBody(t, resp, &deploymentUpdated)
-	assert.NoError(t, err, "deployment was not updated")
-
-	if deploymentUpdated.JobID != nil {
-		e2e.WaitForJobFinished(t, *deploymentUpdated.JobID, func(jobRead *body.JobRead) bool {
-			return true
-		})
-	}
-
-	e2e.WaitForDeploymentRunning(t, deploymentRead.ID, func(deploymentRead *body.DeploymentRead) bool {
-		//make sure it is accessible
-		if deploymentRead.URL != nil {
-			return e2e.CheckUpURL(t, *deploymentRead.URL)
-		}
-
-		if deploymentRead.Private {
-			return true
-		}
-		return false
-	})
-
-	// check if the deployment was updated
-	resp = e2e.DoGetRequest(t, "/deployments/"+deploymentRead.ID)
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-	var deploymentReadUpdated body.DeploymentRead
-	err = e2e.ReadResponseBody(t, resp, &deploymentReadUpdated)
-	assert.NoError(t, err, "deployment was not created")
-
-	assert.Equal(t, newEnvValue, deploymentReadUpdated.Envs[0].Value)
-	assert.Equal(t, newPrivateValue, deploymentReadUpdated.Private)
-	assert.NotEmpty(t, deploymentReadUpdated.Volumes)
+	e2e.UpdateDeployment(t, deploymentRead.ID, deploymentUpdate)
 }
 
 func TestUpdateImage(t *testing.T) {
+	t.Parallel()
+
 	image1 := "nginx"
 	image2 := "httpd"
 
@@ -291,29 +262,12 @@ func TestUpdateImage(t *testing.T) {
 		Image: &image2,
 	}
 
-	resp := e2e.DoPostRequest(t, "/deployments/"+deployment.ID, deploymentUpdate)
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-	var deploymentUpdated body.DeploymentUpdated
-	err := e2e.ReadResponseBody(t, resp, &deploymentUpdated)
-	assert.NoError(t, err, "deployment was not updated")
-
-	if deploymentUpdated.JobID != nil {
-		e2e.WaitForJobFinished(t, *deploymentUpdated.JobID, nil)
-	}
-
-	// check if the deployment was updated
-	resp = e2e.DoGetRequest(t, "/deployments/"+deploymentUpdated.ID)
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-	var deploymentReadUpdated body.DeploymentRead
-	err = e2e.ReadResponseBody(t, resp, &deploymentReadUpdated)
-	assert.NoError(t, err, "deployment was not updated")
-
-	assert.Equal(t, image2, *deploymentReadUpdated.Image)
+	e2e.UpdateDeployment(t, deployment.ID, deploymentUpdate)
 }
 
 func TestUpdateInternalPort(t *testing.T) {
+	t.Parallel()
+
 	deployment, _ := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
 
 	customPort := deployment.InternalPort + 1
@@ -327,37 +281,12 @@ func TestUpdateInternalPort(t *testing.T) {
 		},
 	}
 
-	resp := e2e.DoPostRequest(t, "/deployments/"+deployment.ID, deploymentUpdate)
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-	var deploymentUpdated body.DeploymentUpdated
-	err := e2e.ReadResponseBody(t, resp, &deploymentUpdated)
-	assert.NoError(t, err, "deployment was not updated")
-
-	if deploymentUpdated.JobID != nil {
-		e2e.WaitForJobFinished(t, *deploymentUpdated.JobID, nil)
-	}
-	e2e.WaitForDeploymentRunning(t, deployment.ID, func(deploymentRead *body.DeploymentRead) bool {
-		//make sure it is accessible
-		if deploymentRead.URL != nil {
-			return e2e.CheckUpURL(t, *deploymentRead.URL)
-		}
-		return false
-	})
-
-	// check if the deployment was updated
-	resp = e2e.DoGetRequest(t, "/deployments/"+deployment.ID)
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-	var deploymentReadUpdated body.DeploymentRead
-	err = e2e.ReadResponseBody(t, resp, &deploymentReadUpdated)
-	assert.NoError(t, err, "deployment was not created")
-
-	assert.Equal(t, customPort, deploymentReadUpdated.InternalPort)
-	assert.True(t, e2e.CheckUpURL(t, *deploymentReadUpdated.URL))
+	e2e.UpdateDeployment(t, deployment.ID, deploymentUpdate)
 }
 
 func TestCommand(t *testing.T) {
+	t.Parallel()
+
 	commands := []string{"restart"}
 
 	deployment, _ := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
@@ -380,6 +309,8 @@ func TestCommand(t *testing.T) {
 }
 
 func TestInvalidCommand(t *testing.T) {
+	t.Parallel()
+
 	invalidCommands := []string{"start", "stop"}
 
 	deployment, _ := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
@@ -392,6 +323,8 @@ func TestInvalidCommand(t *testing.T) {
 }
 
 func TestFetchCiConfig(t *testing.T) {
+	t.Parallel()
+
 	image := "nginx"
 	deploymentCustom, _ := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
 	deploymentPrebuilt, _ := e2e.WithDeployment(t, body.DeploymentCreate{
@@ -413,14 +346,17 @@ func TestFetchCiConfig(t *testing.T) {
 	assert.NoError(t, err, "ci config was not fetched")
 	assert.NotEmpty(t, ciConfig.Config)
 
-	// not ci config for prebuilt deployments
+	// Not ci config for prebuilt deployments
 	resp = e2e.DoGetRequest(t, "/deployments/"+deploymentPrebuilt.ID+"/ciConfig")
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
 
 func TestFetchLogs(t *testing.T) {
+	t.Parallel()
+
 	deployment, _ := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
 
 	resp := e2e.DoGetRequest(t, "/deployments/"+deployment.ID+"/logs-sse")
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, "text/event-stream", resp.Header.Get("Content-Type"))
 }

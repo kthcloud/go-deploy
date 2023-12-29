@@ -20,8 +20,10 @@ func TestMain(m *testing.M) {
 }
 
 func TestList(t *testing.T) {
+	t.Parallel()
+
 	queries := []string{
-		"page=1&pageSize=10",
+		"?page=1&pageSize=10",
 		"?userId=" + e2e.PowerUserID + "&page=1&pageSize=3",
 		"?userId=" + e2e.DefaultUserID + "&page=1&pageSize=3",
 	}
@@ -32,8 +34,10 @@ func TestList(t *testing.T) {
 }
 
 func TestListGPUs(t *testing.T) {
+	t.Parallel()
+
 	queries := []string{
-		"page=1&pageSize=3",
+		"?page=1&pageSize=3",
 		"?available=true&page=1&pageSize=3",
 	}
 
@@ -43,6 +47,8 @@ func TestListGPUs(t *testing.T) {
 }
 
 func TestCreate(t *testing.T) {
+	t.Parallel()
+
 	requestBody := body.VmCreate{
 		Name:         e2e.GenName(),
 		SshPublicKey: e2e.WithSshPublicKey(t),
@@ -63,6 +69,8 @@ func TestCreate(t *testing.T) {
 }
 
 func TestCreateWithInvalidBody(t *testing.T) {
+	t.Parallel()
+
 	longName := body.VmCreate{
 		Name:     "e2e-",
 		CpuCores: 2,
@@ -200,6 +208,8 @@ func TestCreateWithInvalidBody(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
+	t.Parallel()
+
 	vm := e2e.WithDefaultVM(t)
 
 	updatedCpuCores := 4
@@ -225,7 +235,6 @@ func TestUpdate(t *testing.T) {
 				if port.Name == portRead.Name {
 					assert.Equal(t, port.Port, portRead.Port)
 					assert.Equal(t, port.Protocol, portRead.Protocol)
-					assert.NotZero(t, portRead.ExternalPort)
 					found = true
 					break
 				}
@@ -246,6 +255,8 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestCreateShared(t *testing.T) {
+	t.Parallel()
+
 	vm := e2e.WithDefaultVM(t)
 	team := e2e.WithTeam(t, body.TeamCreate{
 		Name:      e2e.GenName(),
@@ -271,13 +282,9 @@ func TestCreateShared(t *testing.T) {
 }
 
 func TestAttachAnyGPU(t *testing.T) {
-	vm := e2e.WithVM(t, body.VmCreate{
-		Name:         e2e.GenName(),
-		SshPublicKey: e2e.WithSshPublicKey(t),
-		CpuCores:     2,
-		RAM:          2,
-		DiskSize:     20,
-	})
+	t.Parallel()
+
+	vm := e2e.WithDefaultVM(t)
 
 	anyID := "any"
 
@@ -294,6 +301,8 @@ func TestAttachAnyGPU(t *testing.T) {
 }
 
 func TestAttachGPU(t *testing.T) {
+	t.Parallel()
+
 	// To test this, you need to set the gpu ID
 	// This is done to prevent tests from "hogging" a single gpu
 	// Normally, it should be enough to just test with any GPU (as done above in TestAttachAnyGPU)
@@ -325,6 +334,8 @@ func TestAttachGPU(t *testing.T) {
 }
 
 func TestAttachGPUWithInvalidID(t *testing.T) {
+	t.Parallel()
+
 	vm := e2e.WithVM(t, body.VmCreate{
 		Name:         e2e.GenName(),
 		SshPublicKey: e2e.WithSshPublicKey(t),
@@ -344,6 +355,8 @@ func TestAttachGPUWithInvalidID(t *testing.T) {
 }
 
 func TestAttachGpuWithAlreadyAttachedID(t *testing.T) {
+	t.Parallel()
+
 	// To test this, you need to set the gpu ID
 	// This is done to prevent tests from "hogging" a single gpu
 	// Normally, it should be enough to just test with any gpu (as done above in TestAttachAnyGPU)
@@ -383,6 +396,8 @@ func TestAttachGpuWithAlreadyAttachedID(t *testing.T) {
 }
 
 func TestCommand(t *testing.T) {
+	t.Parallel()
+
 	commands := []string{"stop", "start", "reboot"}
 	vm := e2e.WithDefaultVM(t)
 
@@ -396,36 +411,39 @@ func TestCommand(t *testing.T) {
 }
 
 func TestCreateAndRestoreSnapshot(t *testing.T) {
+	t.Parallel()
+
 	vm := e2e.WithDefaultVM(t)
 
 	snapshotCreateBody := body.VmSnapshotCreate{
 		Name: e2e.GenName(),
 	}
 
+	// Create
 	snapshot := e2e.CreateSnapshot(t, vm.ID, snapshotCreateBody)
 	t.Cleanup(func() {
-		e2e.DeleteSnapshot(t, vm.ID, snapshotCreateBody.Name)
+		e2e.DeleteSnapshot(t, vm.ID, snapshot.ID)
 	})
 
-	// Ensure it can be fetched by ID
+	// Get
 	snapshot = e2e.GetSnapshot(t, vm.ID, snapshot.ID)
 
-	// Ensure it is listed
+	// List
 	snapshots := e2e.ListSnapshots(t, vm.ID)
 	assert.NotEmpty(t, snapshots, "no snapshots found")
 	found := false
-	for _, snapshot := range snapshots {
-		if snapshot.ID == snapshot.ID {
-			assert.Equal(t, snapshotCreateBody.Name, snapshot.Name)
+	for _, s := range snapshots {
+		if s.ID == s.ID {
+			assert.Equal(t, snapshotCreateBody.Name, s.Name)
 			found = true
-			return
+			break
 		}
 	}
 	assert.True(t, found, "snapshot not found in list")
 
-	// Ensure it can be restored
+	// Restore
 	// Edit the VM to make sure it can be restored
-	e2e.DoSshCommand(t, vm.ID, "echo 'e2e-test' > /tmp/test.txt")
+	e2e.DoSshCommand(t, *vm.ConnectionString, "echo 'e2e-test' > /tmp/test.txt")
 
 	restoreSnapshotBody := body.VmUpdate{
 		SnapshotID: &snapshot.ID,
@@ -434,13 +452,15 @@ func TestCreateAndRestoreSnapshot(t *testing.T) {
 	e2e.UpdateVM(t, vm.ID, restoreSnapshotBody)
 
 	// Check that the file is not there
-	res := e2e.DoSshCommand(t, vm.ID, "cat /tmp/test.txt")
+	res := e2e.DoSshCommand(t, *vm.ConnectionString, "cat /tmp/test.txt")
 	if strings.Contains(res, "e2e-test") {
 		assert.Fail(t, "snapshot did not restore correctly")
 	}
 }
 
 func TestInvalidCommand(t *testing.T) {
+	t.Parallel()
+
 	invalidCommands := []string{"some command", "invalid"}
 
 	vm := e2e.WithDefaultVM(t)

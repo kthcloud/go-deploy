@@ -19,6 +19,8 @@ func TestMain(m *testing.M) {
 }
 
 func TestCreateEmptyTeam(t *testing.T) {
+	t.Parallel()
+
 	requestBody := body.TeamCreate{
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
@@ -30,6 +32,8 @@ func TestCreateEmptyTeam(t *testing.T) {
 }
 
 func TestCreateWithMembers(t *testing.T) {
+	t.Parallel()
+
 	requestBody := body.TeamCreate{
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
@@ -55,6 +59,8 @@ func TestCreateWithMembers(t *testing.T) {
 }
 
 func TestCreateWithResources(t *testing.T) {
+	t.Parallel()
+
 	resource, _ := e2e.WithDeployment(t, body.DeploymentCreate{
 		Name: e2e.GenName(),
 	})
@@ -76,6 +82,8 @@ func TestCreateWithResources(t *testing.T) {
 }
 
 func TestCreateFull(t *testing.T) {
+	t.Parallel()
+
 	resource, _ := e2e.WithDeployment(t, body.DeploymentCreate{
 		Name: e2e.GenName(),
 	})
@@ -100,6 +108,8 @@ func TestCreateFull(t *testing.T) {
 }
 
 func TestCreateWithInvitation(t *testing.T) {
+	t.Parallel()
+
 	team := e2e.WithTeam(t, body.TeamCreate{
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
@@ -142,6 +152,8 @@ func TestCreateWithInvitation(t *testing.T) {
 }
 
 func TestJoin(t *testing.T) {
+	t.Parallel()
+
 	team := e2e.WithTeam(t, body.TeamCreate{
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
@@ -167,6 +179,8 @@ func TestJoin(t *testing.T) {
 }
 
 func TestJoinWithBadCode(t *testing.T) {
+	t.Parallel()
+
 	team := e2e.WithTeam(t, body.TeamCreate{
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
@@ -179,6 +193,8 @@ func TestJoinWithBadCode(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
+	t.Parallel()
+
 	team := e2e.WithTeam(t, body.TeamCreate{
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
@@ -197,6 +213,8 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestUpdateResources(t *testing.T) {
+	t.Parallel()
+
 	team := e2e.WithTeam(t, body.TeamCreate{
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
@@ -223,6 +241,8 @@ func TestUpdateResources(t *testing.T) {
 }
 
 func TestUpdateMembers(t *testing.T) {
+	t.Parallel()
+
 	team := e2e.WithTeam(t, body.TeamCreate{
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
@@ -245,6 +265,8 @@ func TestUpdateMembers(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
+	t.Parallel()
+
 	team := e2e.WithTeam(t, body.TeamCreate{
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
@@ -256,6 +278,8 @@ func TestDelete(t *testing.T) {
 }
 
 func TestDeleteAsNonOwner(t *testing.T) {
+	t.Parallel()
+
 	team := e2e.WithTeam(t, body.TeamCreate{
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),

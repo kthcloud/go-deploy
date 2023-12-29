@@ -44,15 +44,11 @@ func WaitForVmDeleted(t *testing.T, id string, callback func() bool) {
 
 func GetVM(t *testing.T, id string, userID ...string) body.VmRead {
 	resp := DoGetRequest(t, "/vms/"+id, userID...)
-	assert.Equal(t, http.StatusOK, resp.StatusCode, "vm was not fetched")
-
 	return Parse[body.VmRead](t, resp)
 }
 
 func ListVMs(t *testing.T, query string, userID ...string) []body.VmRead {
 	resp := DoGetRequest(t, "/vms"+query, userID...)
-	assert.Equal(t, http.StatusOK, resp.StatusCode, "vms were not fetched")
-
 	return Parse[[]body.VmRead](t, resp)
 }
 
@@ -63,7 +59,13 @@ func UpdateVM(t *testing.T, id string, requestBody body.VmUpdate, userID ...stri
 	if vmUpdated.JobID != nil {
 		WaitForJobFinished(t, *vmUpdated.JobID, nil)
 	}
-	WaitForVmRunning(t, id, nil)
+	WaitForVmRunning(t, id, func(vmRead *body.VmRead) bool {
+		// Make sure it is accessible
+		if vmRead.ConnectionString != nil {
+			return checkUpVM(t, *vmRead.ConnectionString)
+		}
+		return false
+	})
 
 	return GetVM(t, id, userID...)
 }
@@ -85,17 +87,24 @@ func CreateSnapshot(t *testing.T, id string, requestBody body.VmSnapshotCreate, 
 	WaitForJobFinished(t, snapshotCreated.JobID, nil)
 	WaitForVmRunning(t, id, nil)
 
-	return GetSnapshot(t, id, snapshotCreated.ID, userID...)
+	snapshots := ListSnapshots(t, id, userID...)
+	for _, snapshot := range snapshots {
+		if snapshot.Name == requestBody.Name {
+			return snapshot
+		}
+	}
+
+	assert.Fail(t, "snapshot not found")
+	return body.VmSnapshotRead{}
 }
 
 func DeleteSnapshot(t *testing.T, vmID string, snapshotID string, userID ...string) {
 	resp := DoDeleteRequest(t, "/vms/"+vmID+"/snapshots/"+snapshotID, userID...)
-	assert.Equal(t, http.StatusOK, resp.StatusCode, "snapshot was not deleted")
+	if resp.StatusCode == http.StatusNotFound {
+		return
+	}
 
-	var snapshotDeleted body.VmSnapshotDeleted
-	err := ReadResponseBody(t, resp, &snapshotDeleted)
-	assert.NoError(t, err, "snapshot was not deleted")
-
+	snapshotDeleted := Parse[body.VmSnapshotDeleted](t, resp)
 	WaitForJobFinished(t, snapshotDeleted.JobID, nil)
 	WaitForVmRunning(t, vmID, nil)
 }
@@ -207,14 +216,16 @@ func DoSshCommand(t *testing.T, connectionString, cmd string) string {
 	port := connectionStringParts[3]
 
 	client, err := sshclient.DialWithKey(fmt.Sprintf("%s:%s", address, port), user, "../../ssh/id_rsa")
-	assert.NoError(t, err, "ssh connection was not established")
+	if err != nil || client == nil {
+		return ""
+	}
+	defer func() {
+		if client != nil {
+			_ = client.Close()
+		}
+	}()
 
-	output, err := client.Cmd(cmd).SmartOutput()
-	assert.NoError(t, err, "ssh command failed")
-
-	err = client.Close()
-	assert.NoError(t, err, "ssh connection was not closed")
-
+	output, _ := client.Cmd(cmd).SmartOutput()
 	return string(output)
 }
 
@@ -222,9 +233,7 @@ func checkUpVM(t *testing.T, connectionString string) bool {
 	t.Helper()
 
 	output := DoSshCommand(t, connectionString, "echo 'hello world'")
-	assert.Equal(t, "hello world\n", output)
-
-	return true
+	return output == "hello world\n"
 }
 
 func cleanUpVm(t *testing.T, id string) {

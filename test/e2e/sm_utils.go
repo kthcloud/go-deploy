@@ -1,19 +1,16 @@
 package e2e
 
 import (
-	"github.com/stretchr/testify/assert"
 	"go-deploy/models/dto/body"
-	"net/http"
 	"testing"
 )
 
 func GetSM(t *testing.T, id string) body.SmRead {
 	resp := DoGetRequest(t, "/storageManagers/"+id)
-	assert.Equal(t, http.StatusOK, resp.StatusCode, "sm was not fetched")
+	return Parse[body.SmRead](t, resp)
+}
 
-	var smRead body.SmRead
-	err := ReadResponseBody(t, resp, &smRead)
-	assert.NoError(t, err, "storage manager was not fetched")
-
-	return smRead
+func ListSMs(t *testing.T, query string) []body.SmRead {
+	resp := DoGetRequest(t, "/storageManagers"+query)
+	return Parse[[]body.SmRead](t, resp)
 }

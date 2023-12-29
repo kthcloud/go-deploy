@@ -61,24 +61,87 @@ func CheckUpURL(t *testing.T, url string) bool {
 
 func GetDeployment(t *testing.T, id string, userID ...string) body.DeploymentRead {
 	resp := DoGetRequest(t, "/deployments/"+id, userID...)
-	assert.Equal(t, http.StatusOK, resp.StatusCode, "deployment was not fetched")
-
-	var deploymentRead body.DeploymentRead
-	err := ReadResponseBody(t, resp, &deploymentRead)
-	assert.NoError(t, err, "deployment was not fetched")
-
-	return deploymentRead
+	return Parse[body.DeploymentRead](t, resp)
 }
 
 func ListDeployments(t *testing.T, query string, userID ...string) []body.DeploymentRead {
 	resp := DoGetRequest(t, "/deployments"+query, userID...)
-	assert.Equal(t, http.StatusOK, resp.StatusCode, "deployments were not fetched")
+	return Parse[[]body.DeploymentRead](t, resp)
+}
 
-	var deployments []body.DeploymentRead
-	err := ReadResponseBody(t, resp, &deployments)
-	assert.NoError(t, err, "deployments were not fetched")
+func UpdateDeployment(t *testing.T, id string, requestBody body.DeploymentUpdate, userID ...string) body.DeploymentRead {
+	resp := DoPostRequest(t, "/deployments/"+id, requestBody, userID...)
+	deploymentUpdated := Parse[body.DeploymentUpdated](t, resp)
 
-	return deployments
+	if deploymentUpdated.JobID != nil {
+		WaitForJobFinished(t, *deploymentUpdated.JobID, nil)
+	}
+	WaitForDeploymentRunning(t, id, func(read *body.DeploymentRead) bool {
+		if read.Private {
+			return true
+		}
+
+		// Make sure it is accessible
+		if read.URL != nil {
+			return CheckUpURL(t, *read.URL)
+		}
+		return false
+	})
+
+	updated := GetDeployment(t, id, userID...)
+
+	if requestBody.CustomDomain != nil {
+		punyEncoded, err := idna.New().ToASCII("https://" + *requestBody.CustomDomain)
+		assert.NoError(t, err, "custom domain was not puny encoded")
+		assert.Equal(t, punyEncoded, *updated.CustomDomainURL)
+	}
+
+	if requestBody.Image != nil {
+		assert.Equal(t, *requestBody.Image, *updated.Image)
+	}
+
+	if requestBody.InitCommands != nil {
+		EqualOrEmpty(t, *requestBody.InitCommands, updated.InitCommands)
+	}
+
+	if requestBody.Envs != nil {
+		// PORT env is generated, so it will always be in the read, but not necessarily in the request
+		customPort := false
+		for _, env := range *requestBody.Envs {
+			if env.Name == "PORT" {
+				customPort = true
+				break
+			}
+		}
+
+		// If it was not requested, we add it to the request body so we can compare the rest
+		if !customPort {
+			*requestBody.Envs = append(*requestBody.Envs, body.Env{
+				Name:  "PORT",
+				Value: "8080",
+			})
+		}
+
+		EqualOrEmpty(t, *requestBody.Envs, updated.Envs)
+	}
+
+	if requestBody.Volumes != nil {
+		EqualOrEmpty(t, *requestBody.Volumes, updated.Volumes)
+	}
+
+	if requestBody.Private != nil {
+		assert.Equal(t, *requestBody.Private, updated.Private)
+	}
+
+	if requestBody.HealthCheckPath != nil {
+		assert.Equal(t, *requestBody.HealthCheckPath, updated.HealthCheckPath)
+	}
+
+	if requestBody.Replicas != nil {
+		assert.Equal(t, *requestBody.Replicas, updated.Replicas)
+	}
+
+	return updated
 }
 
 func WithDeployment(t *testing.T, requestBody body.DeploymentCreate) (body.DeploymentRead, string) {

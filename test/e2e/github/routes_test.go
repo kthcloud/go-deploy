@@ -17,6 +17,8 @@ func TestMain(m *testing.M) {
 }
 
 func TestFetchRepositories(t *testing.T) {
+	t.Parallel()
+
 	// if you want to test this, you need to set the code below.
 	// this code should be given to you by authorizing towards GitHub
 	code := ""
