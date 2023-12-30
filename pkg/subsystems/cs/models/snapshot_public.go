@@ -50,3 +50,21 @@ func CreateSnapshotPublicFromGet(snapshot *cloudstack.VMSnapshot) *SnapshotPubli
 		Current:     snapshot.Current,
 	}
 }
+
+func CreateSnapshotPublicFromCreate(snapshot *cloudstack.CreateVMSnapshotResponse) *SnapshotPublic {
+	var parentName *string
+	if snapshot.ParentName != "" {
+		parentName = &snapshot.ParentName
+	}
+
+	return &SnapshotPublic{
+		ID:          snapshot.Id,
+		VmID:        snapshot.Virtualmachineid,
+		Name:        snapshot.Displayname,
+		Description: snapshot.Description,
+		ParentName:  parentName,
+		CreatedAt:   formatCreatedAt(snapshot.Created),
+		State:       snapshot.State,
+		Current:     snapshot.Current,
+	}
+}
