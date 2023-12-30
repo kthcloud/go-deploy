@@ -123,7 +123,7 @@ func withDefaultPFR(t *testing.T, vm *models.VmPublic) *models.PortForwardingRul
 		NetworkID:   zone.NetworkID,
 		IpAddressID: zone.IpAddressID,
 		// Make sure this port is not in the range used by go-deploy
-		PublicPort:  10000 + rand.Intn(65000),
+		PublicPort:  10000 + rand.Intn(55000),
 		PrivatePort: 22,
 		Protocol:    "tcp",
 		Tags:        []models.Tag{{Key: "name", Value: acc.GenName()}},
