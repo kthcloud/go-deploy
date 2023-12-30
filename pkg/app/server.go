@@ -44,16 +44,17 @@ func Create(opts *Options) *App {
 	}
 
 	db.Setup()
+
 	intializer.CleanUpOldTests()
+	intializer.SynchronizeGPUs()
+	intializer.SynchronizeVmPorts()
+
 	migrator.Migrate()
 
 	err := job.New().ResetRunning()
 	if err != nil {
 		log.Fatalln(fmt.Errorf("failed to reset running job. details: %w", err))
 	}
-
-	intializer.SynchronizeGPUs()
-	intializer.SynchronizeVmPorts()
 
 	ctx, cancel := context.WithCancel(context.Background())
 
