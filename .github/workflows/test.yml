@@ -67,7 +67,7 @@ jobs:
         run: |
           go build -o go-deploy .     # Build go-deploy
           ./go-deploy --test-mode &   # Starts in the background
-          sleep 15                    # Wait a bit to ensure it has started
+          sleep 60                    # Wait a bit to ensure it has started
 
       - name: Run e2e tests
         run: go test -timeout 30m ./test/e2e/...
