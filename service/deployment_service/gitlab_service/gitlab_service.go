@@ -51,15 +51,15 @@ func CreateBuild(ids []string, params *deploymentModels.BuildParams) error {
 		ImportURL: params.ImportURL,
 	}
 
-	projectID, err := client.CreateProject(public)
+	project, err := client.CreateProject(public)
 	if err != nil {
 		return makeError(err)
 	}
 
 	defer func() {
-		err = client.DeleteProject(projectID)
+		err = client.DeleteProject(project.ID)
 		if err != nil {
-			utils.PrettyPrintError(fmt.Errorf("failed to delete gitlab project %d after build. details: %w", projectID, err))
+			utils.PrettyPrintError(fmt.Errorf("failed to delete gitlab project %d after build. details: %w", project.ID, err))
 		}
 	}()
 
@@ -84,7 +84,7 @@ func CreateBuild(ids []string, params *deploymentModels.BuildParams) error {
 		script = append(script, fmt.Sprintf("docker push %s", path))
 	}
 
-	err = client.AttachCiFile(projectID,
+	err = client.AttachCiFile(project.ID,
 		params.Branch,
 		deploymentModels.GitLabCiConfig{
 			Build: deploymentModels.Build{
@@ -103,7 +103,7 @@ func CreateBuild(ids []string, params *deploymentModels.BuildParams) error {
 
 	var lastJob *models.JobPublic
 	for {
-		lastJob, err = client.ReadLastJob(projectID)
+		lastJob, err = client.ReadLastJob(project.ID)
 		if err != nil {
 			return makeError(err)
 		}
@@ -115,7 +115,7 @@ func CreateBuild(ids []string, params *deploymentModels.BuildParams) error {
 
 	for {
 		var trace string
-		trace, err = client.GetJobTrace(projectID, lastJob.ID)
+		trace, err = client.GetJobTrace(project.ID, lastJob.ID)
 		if err != nil {
 			return makeError(err)
 		}
@@ -129,7 +129,7 @@ func CreateBuild(ids []string, params *deploymentModels.BuildParams) error {
 			}
 		}
 
-		lastJob, err = client.ReadLastJob(projectID)
+		lastJob, err = client.ReadLastJob(project.ID)
 		if err != nil {
 			return makeError(err)
 		}
