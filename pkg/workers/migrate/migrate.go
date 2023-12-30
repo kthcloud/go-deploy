@@ -1,8 +1,9 @@
 package migrator
 
 import (
+	"errors"
 	vmModels "go-deploy/models/sys/vm"
-	"go.mongodb.org/mongo-driver/bson"
+	vmPortModels "go-deploy/models/sys/vmPort"
 	"log"
 )
 
@@ -36,29 +37,33 @@ func Migrate() {
 // add a date to the migration name to make it easier to identify.
 func getMigrations() map[string]func() error {
 	return map[string]func() error{
-		"2023-12-13-add-deployment-zone-to-vms-without-it": addDeploymentZoneToVmsWithoutIt,
+		"leaseVmPortsFromOldSystem_2023_10_30": leaseVmPortsFromOldSystem,
 	}
 }
 
-func addDeploymentZoneToVmsWithoutIt() error {
+func leaseVmPortsFromOldSystem() error {
 	vms, err := vmModels.New().List()
 	if err != nil {
 		return err
 	}
 
-	zone := "se-flem"
-
 	for _, vm := range vms {
-		if vm.DeploymentZone == nil {
-			vm.DeploymentZone = &zone
-
-			update := bson.D{
-				{"deploymentZone", zone},
-			}
-
-			err = vmModels.New().SetWithBsonByID(vm.ID, update)
+		for _, pfr := range vm.Subsystems.CS.PortForwardingRuleMap {
+			vmPort, err := vmPortModels.New().GetByLease(vm.ID, pfr.PrivatePort)
 			if err != nil {
 				return err
+			}
+
+			if vmPort == nil {
+
+				_, err = vmPortModels.New().Lease(pfr.PublicPort, pfr.PrivatePort, vm.ID, vm.Zone)
+				if err != nil {
+					if errors.Is(err, vmPortModels.PortNotFoundErr) {
+						return err
+					}
+
+					return err
+				}
 			}
 		}
 	}

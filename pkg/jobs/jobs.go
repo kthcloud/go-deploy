@@ -125,19 +125,16 @@ func UpdateVM(job *jobModels.Job) error {
 
 	err = vm_service.New().Update(id, &update)
 	if err != nil {
-		if errors.Is(err, sErrors.NonUniqueFieldErr) {
+		switch {
+		case errors.Is(err, sErrors.VmNotFoundErr):
 			return makeTerminatedError(err)
-		}
-
-		if errors.Is(err, sErrors.VmNotFoundErr) {
+		case errors.Is(err, sErrors.NonUniqueFieldErr):
 			return makeTerminatedError(err)
-		}
-
-		if errors.Is(err, sErrors.IngressHostInUseErr) {
+		case errors.Is(err, sErrors.IngressHostInUseErr):
 			return makeTerminatedError(err)
-		}
-
-		if errors.Is(err, sErrors.PortInUseErr) {
+		case errors.Is(err, sErrors.PortInUseErr):
+			return makeTerminatedError(err)
+		case errors.Is(err, sErrors.NoPortsAvailableErr):
 			return makeTerminatedError(err)
 		}
 
@@ -319,15 +316,12 @@ func UpdateDeployment(job *jobModels.Job) error {
 
 	err = deployment_service.New().Update(id, &update)
 	if err != nil {
-		if errors.Is(err, sErrors.NonUniqueFieldErr) {
+		switch {
+		case errors.Is(err, sErrors.DeploymentNotFoundErr):
 			return makeTerminatedError(err)
-		}
-
-		if errors.Is(err, sErrors.DeploymentNotFoundErr) {
+		case errors.Is(err, sErrors.NonUniqueFieldErr):
 			return makeTerminatedError(err)
-		}
-
-		if errors.Is(err, sErrors.IngressHostInUseErr) {
+		case errors.Is(err, sErrors.IngressHostInUseErr):
 			return makeTerminatedError(err)
 		}
 

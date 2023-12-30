@@ -6,6 +6,7 @@ import (
 	configModels "go-deploy/models/config"
 	gpuModels "go-deploy/models/sys/gpu"
 	vmModels "go-deploy/models/sys/vm"
+	vmPortModels "go-deploy/models/sys/vmPort"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems"
 	"go-deploy/pkg/subsystems/cs/commands"
@@ -76,14 +77,16 @@ func (c *Client) Create(id string, params *vmModels.CreateParams) error {
 	// Port-forwarding rules
 	for _, pfrPublic := range g.PFRs() {
 		if pfrPublic.PublicPort == 0 {
-			pfrPublic.PublicPort, err = csc.GetFreePort(
-				zone.PortRange.Start,
-				zone.PortRange.End,
-			)
-
+			port, err := vmPortModels.New().GetOrLeaseAny(pfrPublic.PrivatePort, vm.ID, vm.Zone)
 			if err != nil {
+				if errors.Is(err, vmPortModels.NoPortsAvailableErr) {
+					return makeError(sErrors.NoPortsAvailableErr)
+				}
+
 				return makeError(err)
 			}
+
+			pfrPublic.PublicPort = port.PublicPort
 		}
 
 		err = resources.SsCreator(csc.CreatePortForwardingRule).
@@ -190,14 +193,16 @@ func (c *Client) Update(id string, updateParams *vmModels.UpdateParams) error {
 		for _, pfrPublic := range pfrs {
 			if _, ok := vm.Subsystems.CS.PortForwardingRuleMap[pfrName(&pfrPublic)]; !ok {
 				if pfrPublic.PublicPort == 0 {
-					pfrPublic.PublicPort, err = csc.GetFreePort(
-						zone.PortRange.Start,
-						zone.PortRange.End,
-					)
-
+					vmPort, err := vmPortModels.New().GetOrLeaseAny(pfrPublic.PrivatePort, vm.ID, vm.Zone)
 					if err != nil {
+						if errors.Is(err, vmPortModels.NoPortsAvailableErr) {
+							return makeError(sErrors.NoPortsAvailableErr)
+						}
+
 						return makeError(err)
 					}
+
+					pfrPublic.PublicPort = vmPort.PublicPort
 				}
 
 				err = resources.SsCreator(csc.CreatePortForwardingRule).
@@ -424,14 +429,16 @@ func (c *Client) Repair(id string) error {
 		}
 		for _, pfr := range pfrs {
 			if pfr.PublicPort == 0 {
-				pfr.PublicPort, err = csc.GetFreePort(
-					zone.PortRange.Start,
-					zone.PortRange.End,
-				)
-
+				vmPort, err := vmPortModels.New().GetOrLeaseAny(pfr.PrivatePort, vm.ID, vm.Zone)
 				if err != nil {
+					if errors.Is(err, vmPortModels.NoPortsAvailableErr) {
+						return makeError(sErrors.NoPortsAvailableErr)
+					}
+
 					return makeError(err)
 				}
+
+				pfr.PublicPort = vmPort.PublicPort
 			}
 
 			err = resources.SsRepairer(

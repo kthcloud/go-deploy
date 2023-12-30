@@ -72,6 +72,9 @@ var (
 	// PortInUseErr is returned when the port is already in use.
 	PortInUseErr = fmt.Errorf("port in use")
 
+	// NoPortsAvailableErr is returned when there are no ports available.
+	NoPortsAvailableErr = fmt.Errorf("no ports available")
+
 	// HostNotAvailableErr is returned when the host is not available.
 	// This is usually caused by the host being in maintenance or disabled mode.
 	HostNotAvailableErr = fmt.Errorf("host not available")
