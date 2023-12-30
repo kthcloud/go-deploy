@@ -7,6 +7,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func (client *Client) ReadPortForwardingRule(id string) (*models.PortForwardingRulePublic, error) {
@@ -158,10 +159,18 @@ func (client *Client) DeletePortForwardingRule(id string) error {
 
 	params := client.CsClient.Firewall.NewDeletePortForwardingRuleParams(id)
 
-	_, err = client.CsClient.Firewall.DeletePortForwardingRule(params)
-	if err != nil {
-		return makeError(err)
+	var lastError error
+	for i := 0; i < 5; i++ {
+		// This can sometimes fail with "Unknown error" message. Retrying seems to fix it.
+		_, lastError = client.CsClient.Firewall.DeletePortForwardingRule(params)
+		if err == nil {
+			return nil
+		} else if !strings.Contains(strings.ToLower(err.Error()), "unknown error") {
+			return makeError(err)
+		}
+
+		time.Sleep(1 * time.Second)
 	}
 
-	return nil
+	return makeError(lastError)
 }
