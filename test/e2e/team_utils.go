@@ -3,6 +3,7 @@ package e2e
 import (
 	"github.com/stretchr/testify/assert"
 	"go-deploy/models/dto/body"
+	"go-deploy/test"
 	"net/http"
 	"testing"
 )
@@ -55,7 +56,7 @@ func UpdateTeam(t *testing.T, id string, teamUpdate body.TeamUpdate, userID ...s
 			result = append(result, resource.ID)
 		}
 
-		EqualOrEmpty(t, requested, result, "invalid team resources")
+		test.EqualOrEmpty(t, requested, result, "invalid team resources")
 	}
 
 	if teamUpdate.Members != nil {
@@ -80,7 +81,7 @@ func UpdateTeam(t *testing.T, id string, teamUpdate body.TeamUpdate, userID ...s
 			result = append(result, member.ID)
 		}
 
-		EqualOrEmpty(t, requested, result, "invalid team members")
+		test.EqualOrEmpty(t, requested, result, "invalid team members")
 	}
 
 	return teamRead
@@ -136,8 +137,8 @@ func WithTeam(t *testing.T, teamCreate body.TeamCreate, userID ...string) body.T
 		createdResources = append(createdResources, resource.ID)
 	}
 
-	EqualOrEmpty(t, requestedMembers, createdMembers, "invalid team members")
-	EqualOrEmpty(t, requestedResources, createdResources, "invalid team resources")
+	test.EqualOrEmpty(t, requestedMembers, createdMembers, "invalid team members")
+	test.EqualOrEmpty(t, requestedResources, createdResources, "invalid team resources")
 
 	t.Cleanup(func() {
 		resp = DoDeleteRequest(t, "/teams/"+teamRead.ID)

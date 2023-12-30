@@ -1,19 +1,26 @@
 package harbor
 
 import (
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/harbor"
 	"go-deploy/pkg/subsystems/harbor/models"
+	"go-deploy/test/acc"
+	"strings"
 	"testing"
 )
 
-func withHarborClient(t *testing.T) *harbor.Client {
+func withContext(t *testing.T) (*harbor.Client, *models.ProjectPublic) {
+	p := withDefaultProject(t)
+	return withClient(t, p.Name), p
+}
+
+func withClient(t *testing.T, projectName string) *harbor.Client {
 	client, err := harbor.New(&harbor.ClientConf{
 		URL:      config.Config.Harbor.URL,
 		Username: config.Config.Harbor.User,
 		Password: config.Config.Harbor.Password,
+		Project:  projectName,
 	})
 
 	assert.NoError(t, err, "failed to create harbor client")
@@ -22,135 +29,144 @@ func withHarborClient(t *testing.T) *harbor.Client {
 	return client
 }
 
-func withHarborProject(t *testing.T) *models.ProjectPublic {
-	client := withHarborClient(t)
-
-	project := &models.ProjectPublic{
-		Name: "acc-test-" + uuid.New().String(),
+func withDefaultProject(t *testing.T) *models.ProjectPublic {
+	p := &models.ProjectPublic{
+		Name: acc.GenName(),
 	}
 
-	id, err := client.CreateProject(project)
+	return withProject(t, p)
+}
+
+func withProject(t *testing.T, p *models.ProjectPublic) *models.ProjectPublic {
+	c := withClient(t, "")
+
+	pCreated, err := c.CreateProject(p)
 	assert.NoError(t, err, "failed to create harbor project")
+	t.Cleanup(func() { cleanUpProject(t, c, pCreated.ID) })
 
-	createdProject, err := client.ReadProject(id)
-	assert.NoError(t, err, "failed to read harbor project")
-	assert.NotNil(t, createdProject, "harbor project is nil")
+	assert.NotEmpty(t, pCreated.ID, "no id received from client")
+	assert.Equal(t, p.Name, pCreated.Name, "project name does not match")
+	assert.Equal(t, p.Public, pCreated.Public, "project public does not match")
 
-	project.ID = id
-	assert.NotZero(t, project.ID, "no id received from client")
+	c.Project = pCreated.Name
 
-	assert.EqualValues(t, project, createdProject, "created project does not match")
-
-	return project
+	return pCreated
 }
 
-func withHarborRobot(t *testing.T, project *models.ProjectPublic) *models.RobotPublic {
-	client := withHarborClient(t)
-
-	robot := &models.RobotPublic{
-		Name:        "acc-test-" + uuid.New().String(),
-		ProjectID:   project.ID,
-		ProjectName: project.Name,
-		Disable:     false,
-		Secret:      "some secret",
+func withDefaultRobot(t *testing.T, c *harbor.Client) *models.RobotPublic {
+	r := &models.RobotPublic{
+		Name: acc.GenName(),
 	}
 
-	id, err := client.CreateRobot(robot)
+	return withRobot(t, c, r)
+}
+
+func withRobot(t *testing.T, c *harbor.Client, r *models.RobotPublic) *models.RobotPublic {
+	rCreated, err := c.CreateRobot(r)
 	assert.NoError(t, err, "failed to create harbor robot")
+	t.Cleanup(func() { cleanUpRobot(t, c, rCreated.ID) })
 
-	createdRobot, err := client.ReadRobot(id)
-	assert.NoError(t, err, "failed to read harbor robot")
+	assert.NotEmpty(t, rCreated.ID, "no id received from client")
+	assert.Equal(t, r.Name, rCreated.Name, "robot name does not match")
 
-	robot.ID = id
-	assert.NotZero(t, robot.ID, "no id received from client")
-
-	robot.HarborName = createdRobot.HarborName
-	assert.NotEmpty(t, robot.HarborName, "no harbor name received from client")
-
-	// we can't verify the secret
-	secret := robot.Secret
-	robot.Secret = ""
-
-	createdSecret := createdRobot.Secret
-	createdRobot.Secret = ""
-
-	assert.EqualValues(t, robot, createdRobot, "created robot does not match")
-
-	robot.Secret = secret
-	createdRobot.Secret = createdSecret
-
-	return robot
+	return rCreated
 }
 
-func withHarborWebhook(t *testing.T, project *models.ProjectPublic) *models.WebhookPublic {
-	client := withHarborClient(t)
-
-	webhook := &models.WebhookPublic{
-		Name:        "acc-test-" + uuid.New().String(),
-		ProjectID:   project.ID,
-		ProjectName: project.Name,
-		Target:      "https://some-url.com",
-		Token:       "acc-test-" + uuid.New().String(),
+func withDefaultWebhook(t *testing.T, c *harbor.Client) *models.WebhookPublic {
+	w := &models.WebhookPublic{
+		Name:   acc.GenName(),
+		Target: "https://some-url.com",
+		Token:  acc.GenName(),
 	}
 
-	id, err := client.CreateWebhook(webhook)
-	assert.NoError(t, err, "failed to create harbor webhook")
-	assert.NotZero(t, id, "no id received from client")
-
-	createdWebhook, err := client.ReadWebhook(project.ID, id)
-	assert.NoError(t, err, "failed to read harbor webhook")
-	assert.NotNil(t, createdWebhook, "failed to read harbor webhook")
-
-	webhook.ID = createdWebhook.ID
-	assert.NotZero(t, webhook.ID, "no id received from client")
-	assert.Equal(t, webhook.ID, id, "id does not match")
-
-	assert.EqualValues(t, webhook, createdWebhook, "created webhook does not match")
-
-	return webhook
+	return withWebhook(t, c, w)
 }
 
-func cleanUpHarborProject(t *testing.T, id int) {
-	client := withHarborClient(t)
+func withWebhook(t *testing.T, c *harbor.Client, w *models.WebhookPublic) *models.WebhookPublic {
+	wCreated, err := c.CreateWebhook(w)
+	assert.NoError(t, err, "failed to create harbor webhook")
+	t.Cleanup(func() { cleanUpWebhook(t, c, wCreated.ID) })
 
-	err := client.DeleteProject(id)
+	assert.NotEmpty(t, wCreated.ID, "no id received from client")
+	assert.Equal(t, w.Name, wCreated.Name, "webhook name does not match")
+	assert.Equal(t, w.Target, wCreated.Target, "webhook target does not match")
+	assert.Equal(t, w.Token, wCreated.Token, "webhook token does not match")
+
+	return wCreated
+}
+
+func withDefaultRepository(t *testing.T, c *harbor.Client) *models.RepositoryPublic {
+	splits := strings.Split(config.Config.Registry.PlaceholderImage, "/")
+	project := splits[len(splits)-2]
+	repository := splits[len(splits)-1]
+
+	r := &models.RepositoryPublic{
+		Name: acc.GenName(),
+		Placeholder: &models.PlaceHolder{
+			ProjectName:    project,
+			RepositoryName: repository,
+		},
+	}
+
+	return withRepository(t, c, r)
+}
+
+func withRepository(t *testing.T, c *harbor.Client, r *models.RepositoryPublic) *models.RepositoryPublic {
+	rCreated, err := c.CreateRepository(r)
+	assert.NoError(t, err, "failed to create harbor repository")
+	t.Cleanup(func() { cleanUpRepository(t, c, rCreated.Name) })
+
+	assert.NotEmpty(t, rCreated.ID, "no id received from client")
+	assert.Equal(t, r.Name, rCreated.Name, "repository name does not match")
+	assert.True(t, rCreated.Seeded, "repository is not seeded")
+
+	return rCreated
+}
+
+func cleanUpProject(t *testing.T, c *harbor.Client, id int) {
+	err := c.DeleteProject(id)
 	assert.NoError(t, err, "failed to delete harbor project")
 
-	deletedProject, err := client.ReadProject(id)
+	deletedProject, err := c.ReadProject(id)
 	assert.NoError(t, err, "failed to read harbor project")
 	assert.Nil(t, deletedProject, "failed to delete harbor project")
 
-	// should not return error if project is already deleted
-	err = client.DeleteProject(id)
+	err = c.DeleteProject(id)
 	assert.NoError(t, err, "failed to delete harbor project")
 }
 
-func cleanUpHarborRobot(t *testing.T, id int) {
-	client := withHarborClient(t)
-
-	err := client.DeleteRobot(id)
+func cleanUpRobot(t *testing.T, c *harbor.Client, id int) {
+	err := c.DeleteRobot(id)
 	assert.NoError(t, err, "failed to delete harbor robot")
 
-	deletedRobot, err := client.ReadRobot(id)
+	deletedRobot, err := c.ReadRobot(id)
 	assert.NoError(t, err, "failed to read harbor robot")
 	assert.Nil(t, deletedRobot, "failed to delete harbor robot")
 
-	// should not return error if robot is already deleted
-	err = client.DeleteRobot(id)
+	err = c.DeleteRobot(id)
 	assert.NoError(t, err, "failed to delete harbor robot")
 }
 
-func cleanUpHarborWebhook(t *testing.T, id int, projectID int) {
-	client := withHarborClient(t)
-
-	err := client.DeleteWebhook(id, projectID)
+func cleanUpWebhook(t *testing.T, c *harbor.Client, id int) {
+	err := c.DeleteWebhook(id)
 	assert.NoError(t, err, "failed to delete harbor webhook")
 
-	deletedWebhook, err := client.ReadWebhook(id, projectID)
+	deletedWebhook, err := c.ReadWebhook(id)
 	assert.NoError(t, err, "failed to read harbor webhook")
 	assert.Nil(t, deletedWebhook, "failed to delete harbor webhook")
 
-	// should not return error if webhook is already deleted
-	err = client.DeleteWebhook(id, projectID)
+	err = c.DeleteWebhook(id)
 	assert.NoError(t, err, "failed to delete harbor webhook")
+}
+
+func cleanUpRepository(t *testing.T, c *harbor.Client, name string) {
+	err := c.DeleteRepository(name)
+	assert.NoError(t, err, "failed to delete harbor repository")
+
+	deletedRepository, err := c.ReadRepository(name)
+	assert.NoError(t, err, "failed to read harbor repository")
+	assert.Nil(t, deletedRepository, "failed to delete harbor repository")
+
+	err = c.DeleteRepository(name)
+	assert.NoError(t, err, "failed to delete harbor repository")
 }

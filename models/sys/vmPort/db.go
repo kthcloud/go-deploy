@@ -113,11 +113,11 @@ func (client *Client) GetOrLeaseAny(privatePort int, vmID, zone string) (*VmPort
 	update := bson.D{
 		{
 			"$set", bson.D{
-			{"lease", Lease{
-				VmID:        vmID,
-				PrivatePort: privatePort,
-			}},
-		},
+				{"lease", Lease{
+					VmID:        vmID,
+					PrivatePort: privatePort,
+				}},
+			},
 		},
 	}
 
@@ -147,8 +147,8 @@ func (client *Client) ReleaseAll(vmID string) error {
 	update := bson.D{
 		{
 			"$set", bson.D{
-			{"lease", nil},
-		},
+				{"lease", nil},
+			},
 		},
 	}
 
