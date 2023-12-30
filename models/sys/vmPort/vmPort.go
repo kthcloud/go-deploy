@@ -2,7 +2,6 @@ package vmPort
 
 type Lease struct {
 	VmID        string `bson:"vmId"`
-	UserID      string `bson:"userId"`
 	PrivatePort int    `bson:"privatePort"`
 }
 
