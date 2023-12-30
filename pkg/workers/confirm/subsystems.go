@@ -24,6 +24,7 @@ func getVmDeletedConfirmers() []func(*vmModels.VM) (bool, error) {
 	return []func(*vmModels.VM) (bool, error){
 		csDeleted,
 		gpuCleared,
+		portsCleared,
 		k8sDeletedVM,
 	}
 }

@@ -57,3 +57,9 @@ func (client *Client) IncludePortRange(start, end int) *Client {
 
 	return client
 }
+
+func (client *Client) WithVmID(vmID string) *Client {
+	client.ResourceClient.AddExtraFilter(bson.D{{"lease.vmId", vmID}})
+
+	return client
+}

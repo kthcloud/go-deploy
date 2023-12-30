@@ -189,3 +189,12 @@ func gpuCleared(vm *vm.VM) (bool, error) {
 
 	return !exists, nil
 }
+
+func portsCleared(vm *vm.VM) (bool, error) {
+	exists, err := vmPort.New().WithVmID(vm.ID).ExistsAny()
+	if err != nil {
+		return false, err
+	}
+
+	return !exists, nil
+}

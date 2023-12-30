@@ -5,7 +5,6 @@ import (
 	"go-deploy/pkg/subsystems/cs/errors"
 	"go-deploy/pkg/subsystems/cs/models"
 	"log"
-	"sort"
 	"strconv"
 	"strings"
 )
@@ -165,53 +164,4 @@ func (client *Client) DeletePortForwardingRule(id string) error {
 	}
 
 	return nil
-}
-
-func (client *Client) GetFreePort(startPort, endPort int) (int, error) {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to get free port. details: %w", err)
-	}
-
-	listRulesParams := client.CsClient.Firewall.NewListPortForwardingRulesParams()
-	listRulesParams.SetProjectid(client.ProjectID)
-	listRulesParams.SetNetworkid(client.RootNetworkID)
-	listRulesParams.SetIpaddressid(client.RootIpAddressID)
-	listRulesParams.SetListall(true)
-
-	listRules, err := client.CsClient.Firewall.ListPortForwardingRules(listRulesParams)
-	if err != nil {
-		return -1, nil
-	}
-
-	var ports []int
-	for _, rule := range listRules.PortForwardingRules {
-		port, err := strconv.Atoi(rule.Publicport)
-		if err != nil {
-			return 0, makeError(err)
-		}
-
-		ports = append(ports, port)
-	}
-
-	sort.Ints(ports)
-
-	var freePort int
-	for i := startPort; i < len(ports); i++ {
-		if ports[i]-ports[i-1] > 1 {
-			freePort = ports[i-1] + 1
-			break
-		}
-	}
-
-	if len(ports) == 0 {
-		freePort = startPort
-	} else if freePort == 0 {
-		freePort = ports[len(ports)-1] + 1
-	}
-
-	if freePort > endPort {
-		return 0, fmt.Errorf("no free port found in range %d-%d", startPort, endPort)
-	}
-
-	return freePort, nil
 }
