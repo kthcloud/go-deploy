@@ -136,6 +136,8 @@ func UpdateVM(job *jobModels.Job) error {
 			return makeTerminatedError(err)
 		case errors.Is(err, sErrors.NoPortsAvailableErr):
 			return makeTerminatedError(err)
+		case errors.Is(err, sErrors.SnapshotNotFoundErr):
+			return makeTerminatedError(err)
 		}
 
 		return makeFailedError(err)
@@ -547,24 +549,6 @@ func DeleteSnapshot(job *jobModels.Job) error {
 	snapshotID := job.Args["snapshotId"].(string)
 
 	err = vm_service.New().DeleteSnapshot(vmID, snapshotID)
-	if err != nil {
-		// All errors are terminal, so we don't check for specific errors
-		return makeTerminatedError(err)
-	}
-
-	return nil
-}
-
-func ApplySnapshot(job *jobModels.Job) error {
-	err := assertParameters(job, []string{"id", "snapshotId"})
-	if err != nil {
-		return makeTerminatedError(err)
-	}
-
-	id := job.Args["id"].(string)
-	snapshotID := job.Args["snapshotId"].(string)
-
-	err = vm_service.New().ApplySnapshot(id, snapshotID)
 	if err != nil {
 		// All errors are terminal, so we don't check for specific errors
 		return makeTerminatedError(err)

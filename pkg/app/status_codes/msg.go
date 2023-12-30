@@ -13,7 +13,6 @@ var MsgFlags = map[int]string{
 	ResourceBeingCreated:     "resourceBeingCreated",
 	ResourceBeingDeleted:     "resourceBeingDeleted",
 	ResourceCreatingSnapshot: "resourceCreatingSnapshot",
-	ResourceApplyingSnapshot: "resourceApplyingSnapshot",
 
 	ResourceStarting:   "resourceStarting",
 	ResourceRunning:    "resourceRunning",

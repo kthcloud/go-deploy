@@ -13,7 +13,6 @@ const (
 	TypeCreateSystemSnapshot = "createSystemSnapshot"
 	TypeCreateUserSnapshot   = "createUserSnapshot"
 	TypeDeleteSnapshot       = "deleteSnapshot"
-	TypeApplySnapshot        = "applySnapshot"
 
 	TypeCreateDeployment      = "createDeployment"
 	TypeDeleteDeployment      = "deleteDeployment"

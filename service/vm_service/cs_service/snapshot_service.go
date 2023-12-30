@@ -82,7 +82,7 @@ func (c *Client) CreateSnapshot(vmID string, params *vmModels.CreateSnapshotPara
 			return makeBadStateErr(fmt.Sprintf("snapshot got state: %s", snapshot.State))
 		}
 	}
-	log.Println("created snapshot", snapshot, "for vm", vmID)
+	log.Println("created snapshot", snapshot.ID, "for vm", vmID)
 
 	// Delete every other snapshot with the same name that is older
 	snapshots, err := csc.ReadAllSnapshots(vm.Subsystems.CS.VM.ID)
@@ -144,7 +144,7 @@ func (c *Client) ApplySnapshot(vmID, snapshotID string) error {
 
 	snapshot := vm.Subsystems.CS.GetSnapshotByID(snapshotID)
 	if subsystems.NotCreated(snapshot) {
-		return makeError(fmt.Errorf("snapshot %s not found", snapshotID))
+		return makeError(sErrors.SnapshotNotFoundErr)
 	}
 
 	if snapshot.State != "Ready" {

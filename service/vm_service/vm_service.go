@@ -578,8 +578,6 @@ func (c *Client) CanAddActivity(vmID, activity string) (bool, string, error) {
 			vmModels.ActivityBeingDeleted,
 			vmModels.ActivityAttachingGPU,
 			vmModels.ActivityDetachingGPU,
-			vmModels.ActivityCreatingSnapshot,
-			vmModels.ActivityApplyingSnapshot,
 		}) {
 			return false, "Resource should not be in creation or deletion, and should not be attaching or detaching a GPU", nil
 		}
@@ -589,33 +587,11 @@ func (c *Client) CanAddActivity(vmID, activity string) (bool, string, error) {
 			vmModels.ActivityBeingCreated,
 			vmModels.ActivityBeingDeleted,
 			vmModels.ActivityAttachingGPU,
-			vmModels.ActivityCreatingSnapshot,
-			vmModels.ActivityApplyingSnapshot,
 		}) {
 			return false, "Resource should not be in creation or deletion, and should not be attaching a GPU", nil
 		}
 		return true, "", nil
 	case vmModels.ActivityRepairing:
-		if vm.DoingOneOfActivities([]string{
-			vmModels.ActivityBeingCreated,
-			vmModels.ActivityBeingDeleted,
-			vmModels.ActivityAttachingGPU,
-			vmModels.ActivityDetachingGPU,
-		}) {
-			return false, "Resource should not be in creation or deletion, and should not be attaching or detaching a GPU", nil
-		}
-		return true, "", nil
-	case vmModels.ActivityCreatingSnapshot:
-		if vm.DoingOneOfActivities([]string{
-			vmModels.ActivityBeingCreated,
-			vmModels.ActivityBeingDeleted,
-			vmModels.ActivityAttachingGPU,
-			vmModels.ActivityDetachingGPU,
-		}) {
-			return false, "Resource should not be in creation or deletion, and should not be attaching or detaching a GPU", nil
-		}
-		return true, "", nil
-	case vmModels.ActivityApplyingSnapshot:
 		if vm.DoingOneOfActivities([]string{
 			vmModels.ActivityBeingCreated,
 			vmModels.ActivityBeingDeleted,
