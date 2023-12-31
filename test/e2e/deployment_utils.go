@@ -4,6 +4,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go-deploy/models/dto/body"
 	status_codes2 "go-deploy/pkg/app/status_codes"
+	"go-deploy/test"
 	"golang.org/x/net/idna"
 	"net/http"
 	"strconv"
@@ -101,7 +102,7 @@ func UpdateDeployment(t *testing.T, id string, requestBody body.DeploymentUpdate
 	}
 
 	if requestBody.InitCommands != nil {
-		EqualOrEmpty(t, *requestBody.InitCommands, updated.InitCommands)
+		test.EqualOrEmpty(t, *requestBody.InitCommands, updated.InitCommands)
 	}
 
 	if requestBody.Envs != nil {
@@ -122,11 +123,11 @@ func UpdateDeployment(t *testing.T, id string, requestBody body.DeploymentUpdate
 			})
 		}
 
-		EqualOrEmpty(t, *requestBody.Envs, updated.Envs)
+		test.EqualOrEmpty(t, *requestBody.Envs, updated.Envs)
 	}
 
 	if requestBody.Volumes != nil {
-		EqualOrEmpty(t, *requestBody.Volumes, updated.Volumes)
+		test.EqualOrEmpty(t, *requestBody.Volumes, updated.Volumes)
 	}
 
 	if requestBody.Private != nil {
@@ -225,9 +226,9 @@ func WithDeployment(t *testing.T, requestBody body.DeploymentCreate) (body.Deplo
 		}
 	}
 
-	EqualOrEmpty(t, requestBody.InitCommands, deploymentRead.InitCommands, "invalid init commands")
-	EqualOrEmpty(t, requestBody.Envs, deploymentRead.Envs, "invalid envs")
-	EqualOrEmpty(t, requestBody.Volumes, deploymentRead.Volumes, "invalid volumes")
+	test.EqualOrEmpty(t, requestBody.InitCommands, deploymentRead.InitCommands, "invalid init commands")
+	test.EqualOrEmpty(t, requestBody.Envs, deploymentRead.Envs, "invalid envs")
+	test.EqualOrEmpty(t, requestBody.Volumes, deploymentRead.Volumes, "invalid volumes")
 
 	if requestBody.CustomDomain != nil {
 		punyEncoded, err := idna.New().ToASCII("https://" + *requestBody.CustomDomain)

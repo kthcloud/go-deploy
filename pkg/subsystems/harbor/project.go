@@ -81,14 +81,21 @@ func (client *Client) UpdateProject(public *models.ProjectPublic) (*models.Proje
 	err := client.HarborClient.UpdateProject(context.TODO(), requestBody, nil)
 	if err != nil {
 		// use ErrProjectMismatchMsg
-		targetErr := &harborErrors.ErrProjectMismatch{}
-		if !errors.As(err, &targetErr) {
+		mismatch := &harborErrors.ErrProjectMismatch{}
+		notFound := &harborErrors.ErrProjectNotFound{}
+		if !errors.As(err, &mismatch) && !errors.As(err, &notFound) {
 			return nil, makeError(err)
 		}
 	}
 
 	project, err := client.ReadProject(public.ID)
 	if err != nil {
+		mismatch := &harborErrors.ErrProjectMismatch{}
+		notFound := &harborErrors.ErrProjectNotFound{}
+		if !errors.As(err, &mismatch) && !errors.As(err, &notFound) {
+			return nil, makeError(err)
+		}
+
 		return nil, makeError(err)
 	}
 

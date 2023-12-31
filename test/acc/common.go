@@ -1,9 +1,11 @@
 package acc
 
 import (
+	"github.com/google/uuid"
 	"go-deploy/pkg/config"
 	"log"
 	"os"
+	"strings"
 )
 
 func Setup() {
@@ -30,4 +32,12 @@ func Setup() {
 
 func Shutdown() {
 
+}
+
+func GenName(base ...string) string {
+	if len(base) == 0 {
+		return "acc-" + strings.ReplaceAll(uuid.NewString()[:10], "-", "")
+	}
+
+	return "acc-" + strings.ReplaceAll(base[0], " ", "-") + "-" + strings.ReplaceAll(uuid.NewString()[:10], "-", "")
 }

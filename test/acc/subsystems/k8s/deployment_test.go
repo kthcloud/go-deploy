@@ -1,10 +1,47 @@
 package k8s
 
-import "testing"
+import (
+	"go-deploy/pkg/subsystems/k8s/models"
+	"go-deploy/test"
+	"go-deploy/test/acc"
+	"testing"
+)
 
 func TestCreateDeployment(t *testing.T) {
-	namespace := withK8sNamespace(t)
-	deployment := withK8sDeployment(t, namespace)
-	cleanUpDeployment(t, namespace, deployment)
-	cleanUpNamespace(t, namespace)
+	t.Parallel()
+
+	c, _ := withContext(t)
+	withDefaultDeployment(t, c)
+}
+
+func TestCreateNginxDeployment(t *testing.T) {
+	t.Parallel()
+
+	c, _ := withContext(t)
+
+	d := &models.DeploymentPublic{
+		Name:      acc.GenName(),
+		Namespace: c.Namespace,
+		Image:     "nginx:latest",
+		EnvVars:   []models.EnvVar{{Name: acc.GenName(), Value: acc.GenName()}},
+	}
+
+	withDeployment(t, c, d)
+}
+
+func TestUpdateDeployment(t *testing.T) {
+	t.Parallel()
+
+	c, _ := withContext(t)
+	d := withDefaultDeployment(t, c)
+
+	d.EnvVars = []models.EnvVar{
+		{Name: acc.GenName(), Value: acc.GenName()},
+		{Name: acc.GenName(), Value: acc.GenName()},
+	}
+
+	dUpdated, err := c.UpdateDeployment(d)
+	test.NoError(t, err, "failed to update deployment")
+
+	test.EqualOrEmpty(t, d.EnvVars, dUpdated.EnvVars, "env vars do not match")
 }

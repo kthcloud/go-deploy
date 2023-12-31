@@ -81,7 +81,7 @@ func (client *Client) UpdateServiceOffering(public *models.ServiceOfferingPublic
 
 	updateParams := client.CsClient.ServiceOffering.NewUpdateServiceOfferingParams(public.ID)
 	updateParams.SetName(public.Name)
-	updateParams.SetDisplaytext(public.Name)
+	updateParams.SetDisplaytext(public.Description)
 
 	serviceOffering, err := client.CsClient.ServiceOffering.UpdateServiceOffering(updateParams)
 	if err != nil {

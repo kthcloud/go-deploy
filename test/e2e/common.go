@@ -10,7 +10,6 @@ import (
 	"go-deploy/pkg/sys"
 	"io"
 	"net/http"
-	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -169,24 +168,6 @@ func ParseRawBody(t *testing.T, body []byte, parsedBody interface{}) {
 	err := json.Unmarshal(body, parsedBody)
 	if err != nil {
 		assert.FailNow(t, fmt.Sprintf("failed to parse body: %s", err.Error()))
-	}
-}
-
-// EqualOrEmpty checks if two lists are equal, where [] == nil
-func EqualOrEmpty(t *testing.T, expected, actual interface{}, msgAndArgs ...interface{}) {
-	t.Helper()
-
-	// check if "expected" is a slice, and if so, check how many elements it has
-	isSlice := reflect.ValueOf(expected).Kind() == reflect.Slice
-	noElements := 0
-	if isSlice {
-		noElements = reflect.ValueOf(expected).Len()
-	}
-
-	if expected == nil || (isSlice && noElements == 0) {
-		assert.Empty(t, actual, msgAndArgs)
-	} else {
-		assert.EqualValues(t, expected, actual, msgAndArgs)
 	}
 }
 

@@ -433,7 +433,7 @@ func TestCreateAndRestoreSnapshot(t *testing.T) {
 	assert.NotEmpty(t, snapshots, "no snapshots found")
 	found := false
 	for _, s := range snapshots {
-		if s.ID == s.ID {
+		if snapshot.ID == s.ID {
 			assert.Equal(t, snapshotCreateBody.Name, s.Name)
 			found = true
 			break

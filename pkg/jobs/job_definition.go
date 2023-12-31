@@ -81,24 +81,14 @@ func jobMapper() map[string]JobDefinition {
 		jobModels.TypeCreateSystemSnapshot: {
 			JobFunc:       CreateSystemSnapshot,
 			TerminateFunc: leafJobVM.Build(),
-			EntryFunc:     vAddActivity(va.ActivityCreatingSnapshot),
-			ExitFunc:      vRemActivity(va.ActivityCreatingSnapshot),
 		},
 		jobModels.TypeCreateUserSnapshot: {
 			JobFunc:       CreateUserSnapshot,
 			TerminateFunc: oneCreateSnapshotPerUser.Build(),
-			EntryFunc:     vAddActivity(va.ActivityCreatingSnapshot),
-			ExitFunc:      vRemActivity(va.ActivityCreatingSnapshot),
 		},
 		jobModels.TypeDeleteSnapshot: {
 			JobFunc:       DeleteSnapshot,
 			TerminateFunc: leafJobVM.Build(),
-		},
-		jobModels.TypeApplySnapshot: {
-			JobFunc:       ApplySnapshot,
-			TerminateFunc: leafJobVM.Build(),
-			EntryFunc:     vAddActivity(va.ActivityApplyingSnapshot),
-			ExitFunc:      vRemActivity(va.ActivityApplyingSnapshot),
 		},
 
 		// deployment

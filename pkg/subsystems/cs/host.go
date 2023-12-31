@@ -13,7 +13,9 @@ func (client *Client) ReadHost(id string) (*models.HostPublic, error) {
 
 	host, _, err := client.CsClient.Host.GetHostByID(id)
 	if err != nil {
-		return nil, makeError(err)
+		if !strings.Contains(err.Error(), "No match found for") {
+			return nil, makeError(err)
+		}
 	}
 
 	if host == nil {
@@ -30,7 +32,9 @@ func (client *Client) ReadHostByName(name string) (*models.HostPublic, error) {
 
 	host, _, err := client.CsClient.Host.GetHostByName(name)
 	if err != nil {
-		return nil, makeError(err)
+		if !strings.Contains(err.Error(), "No match found for") {
+			return nil, makeError(err)
+		}
 	}
 
 	if host == nil {

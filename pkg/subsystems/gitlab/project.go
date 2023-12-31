@@ -9,7 +9,24 @@ import (
 	"strings"
 )
 
-func (client *Client) CreateProject(public *models.ProjectPublic) (int, error) {
+func (client *Client) ReadProject(id int) (*models.ProjectPublic, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to get gitlab project. details: %w", err)
+	}
+
+	project, resp, err := client.GitLabClient.Projects.GetProject(id, nil)
+	if resp.StatusCode == 404 {
+		return nil, nil
+	}
+	
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	return models.CreateProjectPublicFromGet(project), nil
+}
+
+func (client *Client) CreateProject(public *models.ProjectPublic) (*models.ProjectPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create gitlab project. details: %w", err)
 	}
@@ -20,10 +37,10 @@ func (client *Client) CreateProject(public *models.ProjectPublic) (int, error) {
 	})
 
 	if err != nil {
-		return 0, makeError(err)
+		return nil, makeError(err)
 	}
 
-	return project.ID, nil
+	return models.CreateProjectPublicFromGet(project), nil
 }
 
 func (client *Client) DeleteProject(id int) error {

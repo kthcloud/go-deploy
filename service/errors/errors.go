@@ -83,6 +83,9 @@ var (
 	// This could be caused by stale data in the database.
 	ZoneNotFoundErr = fmt.Errorf("zone not found")
 
+	// SnapshotNotFoundErr is returned when the snapshot is not found.
+	SnapshotNotFoundErr = fmt.Errorf("snapshot not found")
+
 	// NonUniqueFieldErr is returned when a field is not unique, such as the name of a deployment.
 	NonUniqueFieldErr = fmt.Errorf("non unique field")
 

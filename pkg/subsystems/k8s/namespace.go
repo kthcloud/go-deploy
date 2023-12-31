@@ -25,28 +25,6 @@ func (client *Client) createNamespaceWatcher(ctx context.Context, resourceName s
 	return client.K8sClient.CoreV1().Namespaces().Watch(ctx, opts)
 }
 
-func (client *Client) waitNamespaceDeleted(ctx context.Context, resourceName string) error {
-	watcher, err := client.createNamespaceWatcher(ctx, resourceName)
-	if err != nil {
-		return err
-	}
-
-	defer watcher.Stop()
-
-	for {
-		select {
-		case event := <-watcher.ResultChan():
-
-			if event.Type == watch.Deleted {
-				return nil
-			}
-
-		case <-ctx.Done():
-			return nil
-		}
-	}
-}
-
 func (client *Client) ReadAllNamespaces(prefix *string) ([]models.NamespacePublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to read namespaces. details: %w", err)
@@ -157,5 +135,23 @@ func (client *Client) DeleteNamespace(name string) error {
 		return makeError(err)
 	}
 
+	err = client.waitNamespaceDeleted(name)
+	if err != nil {
+		return makeError(err)
+	}
+
 	return nil
+}
+
+func (client *Client) waitNamespaceDeleted(name string) error {
+	maxWait := 120
+	for i := 0; i < maxWait; i++ {
+		time.Sleep(1 * time.Second)
+		_, err := client.K8sClient.CoreV1().Namespaces().Get(context.TODO(), name, metav1.GetOptions{})
+		if err != nil && IsNotFoundErr(err) {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("timeout waiting for namespace %s to be deleted", name)
 }

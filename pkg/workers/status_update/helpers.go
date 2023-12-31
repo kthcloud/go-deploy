@@ -3,6 +3,7 @@ package status_update
 import (
 	"fmt"
 	deploymentModels "go-deploy/models/sys/deployment"
+	jobModels "go-deploy/models/sys/job"
 	vmModels "go-deploy/models/sys/vm"
 	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/config"
@@ -79,14 +80,19 @@ func fetchCsStatus(vm *vmModels.VM) (int, string, error) {
 }
 
 func fetchVmStatus(vm *vmModels.VM) (int, string, error) {
-	if vm.DoingActivity(vmModels.ActivityCreatingSnapshot) {
+	anyCreateSnapshotJob, err := jobModels.New().
+		FilterArgs("id", vm.ID).
+		IncludeTypes(jobModels.TypeCreateUserSnapshot, jobModels.TypeCreateSystemSnapshot).
+		IncludeStatus(jobModels.StatusRunning).
+		ExistsAny()
+	if err != nil {
+		return status_codes.ResourceUnknown, status_codes.GetMsg(status_codes.ResourceUnknown), fmt.Errorf("failed to check if snapshot job exists. details: %w", err)
+	}
+
+	if anyCreateSnapshotJob {
 		return status_codes.ResourceCreatingSnapshot, status_codes.GetMsg(status_codes.ResourceCreatingSnapshot), nil
 	}
-
-	if vm.DoingActivity(vmModels.ActivityApplyingSnapshot) {
-		return status_codes.ResourceApplyingSnapshot, status_codes.GetMsg(status_codes.ResourceApplyingSnapshot), nil
-	}
-
+	
 	csStatusCode, csStatusMessage, err := fetchCsStatus(vm)
 
 	if csStatusCode == status_codes.ResourceUnknown || csStatusCode == status_codes.ResourceNotFound {

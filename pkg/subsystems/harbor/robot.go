@@ -32,12 +32,7 @@ func (client *Client) ReadRobot(id int) (*models.RobotPublic, error) {
 
 	var public *models.RobotPublic
 	if robot != nil {
-		project, err := client.HarborClient.GetProject(context.TODO(), robot.Permissions[0].Namespace)
-		if err != nil {
-			return nil, makeError(err)
-		}
-
-		public = models.CreateRobotPublicFromGet(robot, project)
+		public = models.CreateRobotPublicFromGet(robot)
 	}
 
 	return public, nil
@@ -85,7 +80,7 @@ func (client *Client) CreateRobot(public *models.RobotPublic) (*models.RobotPubl
 		return nil, makeError(err)
 	}
 
-	return models.CreateRobotPublicFromGet(robot, nil), nil
+	return models.CreateRobotPublicFromGet(robot), nil
 }
 
 func (client *Client) UpdateRobot(public *models.RobotPublic) (*models.RobotPublic, error) {
@@ -96,6 +91,14 @@ func (client *Client) UpdateRobot(public *models.RobotPublic) (*models.RobotPubl
 	if public.ID == 0 {
 		log.Println("id not supplied when updating robot. assuming it was deleted")
 		return nil, nil
+	}
+
+	err := client.HarborClient.UpdateRobotAccount(context.TODO(), models.CreateRobotUpdateBody(public, client.Project))
+	if err != nil {
+		var targetErr *harborErrors.ErrRobotAccountUnknownResource
+		if !errors.As(err, &targetErr) {
+			return nil, makeError(err)
+		}
 	}
 
 	robots, err := client.HarborClient.ListProjectRobotsV1(context.TODO(), client.Project)
@@ -121,7 +124,7 @@ func (client *Client) UpdateRobot(public *models.RobotPublic) (*models.RobotPubl
 		return nil, makeError(err)
 	}
 
-	return models.CreateRobotPublicFromGet(robot, nil), nil
+	return models.CreateRobotPublicFromGet(robot), nil
 }
 
 func (client *Client) DeleteRobot(id int) error {

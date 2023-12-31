@@ -59,7 +59,7 @@ func (client *Client) ReadAllSnapshots(vmID string) ([]models.SnapshotPublic, er
 	return snapshots, nil
 }
 
-func (client *Client) CreateSnapshot(public *models.SnapshotPublic) (string, error) {
+func (client *Client) CreateSnapshot(public *models.SnapshotPublic) (*models.SnapshotPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create snapshot %s. details: %w", public.Name, err)
 	}
@@ -75,18 +75,18 @@ func (client *Client) CreateSnapshot(public *models.SnapshotPublic) (string, err
 	if err != nil {
 		if strings.Contains(err.Error(), "There is other active vm snapshot tasks on the instance") {
 			log.Println("other snapshots are being created for vm", public.VmID, ". must wait for them to finish first")
-			return "", nil
+			return nil, nil
 		}
 
 		if strings.Contains(err.Error(), "Domain not found") {
 			log.Println("cs vm not found. assuming it was deleted")
-			return "", nil
+			return nil, nil
 		}
 
-		return "", makeError(err)
+		return nil, makeError(err)
 	}
 
-	return createResponse.Id, nil
+	return models.CreateSnapshotPublicFromCreate(createResponse), nil
 }
 
 func (client *Client) DeleteSnapshot(id string) error {

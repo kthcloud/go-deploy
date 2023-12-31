@@ -3,6 +3,11 @@ package k8s
 import "testing"
 
 func TestCreateNamespace(t *testing.T) {
-	namespace := withK8sNamespace(t)
-	cleanUpNamespace(t, namespace)
+	t.Parallel()
+
+	withNamespace(t)
+}
+
+func TestUpdateNamespace(t *testing.T) {
+	t.Skip("no fields can be updated right now")
 }

@@ -24,7 +24,7 @@ func (r *RobotPublic) IsPlaceholder() bool {
 	return false
 }
 
-func CreateRobotPublicFromGet(robot *modelv2.Robot, project *modelv2.Project) *RobotPublic {
+func CreateRobotPublicFromGet(robot *modelv2.Robot) *RobotPublic {
 	return &RobotPublic{
 		ID:         int(robot.ID),
 		Name:       extractRobotRealName(robot.Name),

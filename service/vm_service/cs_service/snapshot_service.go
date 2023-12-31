@@ -65,31 +65,24 @@ func (c *Client) CreateSnapshot(vmID string, params *vmModels.CreateSnapshotPara
 		return makeBadStateErr("vm has extra config (probably a gpu attached)")
 	}
 
-	snapshotID, err := csc.CreateSnapshot(public)
+	snapshot, err := csc.CreateSnapshot(public)
 	if err != nil {
 		return makeError(err)
 	}
 
-	if snapshotID == "" {
-		// If no error was received, and no snapshot ID was received, then the snapshot was gracefully not created
+	if snapshot == nil {
+		// If no error was received, and no snapshot was received, then the snapshot was gracefully not created
 		// So we don't return any error here
 		return nil
 	}
 
 	if !params.UserCreated {
-		// fetch to see what state the snapshot is in, in order to delete the bad ones
-		snapshot, err := csc.ReadSnapshot(snapshotID)
-		if err != nil {
-			_ = csc.DeleteSnapshot(snapshotID)
-			return makeError(err)
-		}
-
-		if snapshot != nil && snapshot.State == "Error" {
-			_ = csc.DeleteSnapshot(snapshotID)
+		if snapshot.State == "Error" {
+			_ = csc.DeleteSnapshot(snapshot.ID)
 			return makeBadStateErr(fmt.Sprintf("snapshot got state: %s", snapshot.State))
 		}
 	}
-	log.Println("created snapshot", snapshotID, "for vm", vmID)
+	log.Println("created snapshot", snapshot.ID, "for vm", vmID)
 
 	// Delete every other snapshot with the same name that is older
 	snapshots, err := csc.ReadAllSnapshots(vm.Subsystems.CS.VM.ID)
@@ -97,14 +90,14 @@ func (c *Client) CreateSnapshot(vmID string, params *vmModels.CreateSnapshotPara
 		return makeError(err)
 	}
 
-	for _, snapshot := range snapshots {
-		if snapshot.Name == params.Name && snapshot.ID != snapshotID {
-			err = csc.DeleteSnapshot(snapshot.ID)
+	for _, s := range snapshots {
+		if s.Name == params.Name && s.ID != snapshot.ID {
+			err = csc.DeleteSnapshot(s.ID)
 			if err != nil {
 				return makeError(err)
 			}
 
-			log.Println("deleted old snapshot", snapshot.ID, "for vm", vmID)
+			log.Println("deleted old snapshot", s.ID, "for vm", vmID)
 		}
 	}
 
@@ -151,7 +144,7 @@ func (c *Client) ApplySnapshot(vmID, snapshotID string) error {
 
 	snapshot := vm.Subsystems.CS.GetSnapshotByID(snapshotID)
 	if subsystems.NotCreated(snapshot) {
-		return makeError(fmt.Errorf("snapshot %s not found", snapshotID))
+		return makeError(sErrors.SnapshotNotFoundErr)
 	}
 
 	if snapshot.State != "Ready" {
