@@ -5,6 +5,7 @@ import (
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/cs"
 	"go-deploy/pkg/subsystems/cs/models"
+	"go-deploy/test"
 	"go-deploy/test/acc"
 	"math/rand"
 	"testing"
@@ -26,7 +27,7 @@ func withClient(t *testing.T) *cs.Client {
 		IpAddressID: zone.IpAddressID,
 		NetworkID:   zone.NetworkID,
 	})
-	assert.NoError(t, err, "failed to create cs client")
+	test.NoError(t, err, "failed to create cs client")
 	assert.NotNil(t, client, "cs client is nil")
 
 	return client
@@ -62,7 +63,7 @@ func withServiceOffering(t *testing.T, so *models.ServiceOfferingPublic) *models
 	client := withClient(t)
 
 	soCreated, err := client.CreateServiceOffering(so)
-	assert.NoError(t, err, "failed to create service offering")
+	test.NoError(t, err, "failed to create service offering")
 	assert.NotEmpty(t, soCreated.ID, "no service offering id received from client")
 	t.Cleanup(func() { cleanUpServiceOffering(t, soCreated.ID) })
 
@@ -102,7 +103,7 @@ func withVM(t *testing.T, vm *models.VmPublic) *models.VmPublic {
 	client.WithAdminSshPublicKey(config.Config.VM.AdminSshPublicKey)
 
 	vmCreated, err := client.CreateVM(vm)
-	assert.NoError(t, err, "failed to create vm")
+	test.NoError(t, err, "failed to create vm")
 	assert.NotEmpty(t, vmCreated.ID, "no vm id received from client")
 	t.Cleanup(func() { cleanUpVM(t, vmCreated.ID) })
 
@@ -136,7 +137,8 @@ func withPortForwardingRule(t *testing.T, pfr *models.PortForwardingRulePublic) 
 	client := withClient(t)
 
 	pfrCreated, err := client.CreatePortForwardingRule(pfr)
-	assert.NoError(t, err, "failed to create port forwarding rule")
+	test.NoError(t, err, "failed to create port forwarding rule")
+
 	assert.NotEmpty(t, pfrCreated.ID, "no port forwarding rule id received from client")
 	t.Cleanup(func() { cleanUpPortForwardingRule(t, pfrCreated.ID) })
 
@@ -164,7 +166,7 @@ func withSnapshot(t *testing.T, snapshot *models.SnapshotPublic) *models.Snapsho
 	client := withClient(t)
 
 	snapshotCreated, err := client.CreateSnapshot(snapshot)
-	assert.NoError(t, err, "failed to create snapshot")
+	test.NoError(t, err, "failed to create snapshot")
 	assert.NotEmpty(t, snapshotCreated.ID, "no snapshot id received from client")
 	t.Cleanup(func() { cleanUpSnapshot(t, snapshotCreated.ID) })
 
@@ -179,54 +181,54 @@ func cleanUpServiceOffering(t *testing.T, id string) {
 	client := withClient(t)
 
 	err := client.DeleteServiceOffering(id)
-	assert.NoError(t, err, "failed to delete service offering")
+	test.NoError(t, err, "failed to delete service offering")
 
 	deletedServiceOffering, err := client.ReadServiceOffering(id)
-	assert.NoError(t, err, "failed to read service offering")
+	test.NoError(t, err, "failed to read service offering")
 	assert.Nil(t, deletedServiceOffering, "service offering is not nil")
 
 	err = client.DeleteServiceOffering(id)
-	assert.NoError(t, err, "failed to delete service offering")
+	test.NoError(t, err, "failed to delete service offering")
 }
 
 func cleanUpVM(t *testing.T, id string) {
 	client := withClient(t)
 
 	err := client.DeleteVM(id)
-	assert.NoError(t, err, "failed to delete vm")
+	test.NoError(t, err, "failed to delete vm")
 
 	deletedVM, err := client.ReadVM(id)
-	assert.NoError(t, err, "failed to read vm")
+	test.NoError(t, err, "failed to read vm")
 	assert.Nil(t, deletedVM, "vm is not nil")
 
 	err = client.DeleteVM(id)
-	assert.NoError(t, err, "failed to delete vm")
+	test.NoError(t, err, "failed to delete vm")
 }
 
 func cleanUpPortForwardingRule(t *testing.T, id string) {
 	client := withClient(t)
 
 	err := client.DeletePortForwardingRule(id)
-	assert.NoError(t, err, "failed to delete port forwarding rule")
+	test.NoError(t, err, "failed to delete port forwarding rule")
 
 	deletedPfr, err := client.ReadPortForwardingRule(id)
-	assert.NoError(t, err, "failed to read port forwarding rule")
+	test.NoError(t, err, "failed to read port forwarding rule")
 	assert.Nil(t, deletedPfr, "port forwarding rule is not nil")
 
 	err = client.DeletePortForwardingRule(id)
-	assert.NoError(t, err, "failed to delete port forwarding rule")
+	test.NoError(t, err, "failed to delete port forwarding rule")
 }
 
 func cleanUpSnapshot(t *testing.T, id string) {
 	client := withClient(t)
 
 	err := client.DeleteSnapshot(id)
-	assert.NoError(t, err, "failed to delete snapshot")
+	test.NoError(t, err, "failed to delete snapshot")
 
 	deletedSnapshot, err := client.ReadSnapshot(id)
-	assert.NoError(t, err, "failed to read snapshot")
+	test.NoError(t, err, "failed to read snapshot")
 	assert.Nil(t, deletedSnapshot, "snapshot is not nil")
 
 	err = client.DeleteSnapshot(id)
-	assert.NoError(t, err, "failed to delete snapshot")
+	test.NoError(t, err, "failed to delete snapshot")
 }

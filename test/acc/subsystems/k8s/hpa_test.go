@@ -2,6 +2,7 @@ package k8s
 
 import (
 	"github.com/stretchr/testify/assert"
+	"go-deploy/test"
 	"testing"
 )
 
@@ -24,7 +25,7 @@ func TestUpdateHPA(t *testing.T) {
 	h.MemoryAverageUtilization = 50
 
 	hUpdated, err := c.UpdateHPA(h)
-	assert.NoError(t, err, "failed to update hpa")
+	test.NoError(t, err, "failed to update hpa")
 
 	assert.Equal(t, h.MinReplicas, hUpdated.MinReplicas, "hpa min replicas does not match")
 	assert.Equal(t, h.MaxReplicas, hUpdated.MaxReplicas, "hpa max replicas does not match")

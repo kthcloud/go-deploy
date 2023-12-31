@@ -5,6 +5,7 @@ import (
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/gitlab"
 	"go-deploy/pkg/subsystems/gitlab/models"
+	"go-deploy/test"
 	"go-deploy/test/acc"
 	"testing"
 )
@@ -15,7 +16,7 @@ func withClient(t *testing.T) *gitlab.Client {
 		Token: config.Config.GitLab.Token,
 	})
 
-	assert.NoError(t, err, "failed to create gitlab client")
+	test.NoError(t, err, "failed to create gitlab client")
 
 	return client
 }
@@ -33,7 +34,7 @@ func withProject(t *testing.T, p *models.ProjectPublic) *models.ProjectPublic {
 	client := withClient(t)
 
 	pCreated, err := client.CreateProject(p)
-	assert.NoError(t, err, "failed to create project")
+	test.NoError(t, err, "failed to create project")
 
 	assert.Equal(t, p.Name, pCreated.Name, "project name mismatch")
 	assert.Equal(t, p.ImportURL, pCreated.ImportURL, "project import url mismatch")
@@ -46,12 +47,12 @@ func cleanUpProject(t *testing.T, id int) {
 	c := withClient(t)
 
 	err := c.DeleteProject(id)
-	assert.NoError(t, err, "failed to delete project")
+	test.NoError(t, err, "failed to delete project")
 
 	deletedJob, err := c.ReadProject(id)
-	assert.NoError(t, err, "failed to read project")
+	test.NoError(t, err, "failed to read project")
 	assert.Nil(t, deletedJob, "project not deleted")
 
 	err = c.DeleteProject(id)
-	assert.NoError(t, err, "failed to delete project")
+	test.NoError(t, err, "failed to delete project")
 }

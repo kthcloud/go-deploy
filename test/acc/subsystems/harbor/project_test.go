@@ -2,6 +2,7 @@ package harbor
 
 import (
 	"github.com/stretchr/testify/assert"
+	"go-deploy/test"
 	"testing"
 )
 
@@ -15,7 +16,7 @@ func TestUpdateProject(t *testing.T) {
 	p.Public = !p.Public
 
 	pUpdated, err := c.UpdateProject(p)
-	assert.NoError(t, err, "failed to update project")
+	test.NoError(t, err, "failed to update project")
 
 	assert.Equal(t, p.Public, pUpdated.Public, "project public does not match")
 }

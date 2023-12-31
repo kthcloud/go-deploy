@@ -3,6 +3,7 @@ package harbor
 import (
 	"github.com/stretchr/testify/assert"
 	"go-deploy/pkg/subsystems/harbor/models"
+	"go-deploy/test"
 	"go-deploy/test/acc"
 	"testing"
 )
@@ -29,7 +30,7 @@ func TestUpdateRobot(t *testing.T) {
 	r.Disable = true
 
 	rUpdated, err := c.UpdateRobot(r)
-	assert.NoError(t, err, "failed to update robot")
+	test.NoError(t, err, "failed to update robot")
 
 	assert.Equal(t, r.Disable, rUpdated.Disable, "robot disable is not updated")
 }
@@ -41,7 +42,7 @@ func TestUpdateRobotWithSecret(t *testing.T) {
 	r.Secret = "New-secret123"
 
 	rUpdated, err := c.UpdateRobot(r)
-	assert.NoError(t, err, "failed to update robot")
+	test.NoError(t, err, "failed to update robot")
 
 	assert.Equal(t, r.Secret, rUpdated.Secret, "robot secret is not updated")
 }
@@ -56,7 +57,7 @@ func TestUpdateRobotNewSecret(t *testing.T) {
 	r.Secret = "New-secret123"
 
 	rUpdated, err := c.UpdateRobot(r)
-	assert.NoError(t, err, "failed to update robot")
+	test.NoError(t, err, "failed to update robot")
 
 	assert.Equal(t, r.Secret, rUpdated.Secret, "robot secret is not updated")
 }

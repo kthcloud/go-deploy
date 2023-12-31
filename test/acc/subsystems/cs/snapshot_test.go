@@ -1,7 +1,7 @@
 package cs
 
 import (
-	"github.com/stretchr/testify/assert"
+	"go-deploy/test"
 	"testing"
 )
 
@@ -19,5 +19,5 @@ func TestRestoreSnapshot(t *testing.T) {
 	snapshot := withDefaultSnapshot(t, vm)
 
 	err := client.ApplySnapshot(snapshot)
-	assert.NoError(t, err, "failed to restore snapshot")
+	test.NoError(t, err, "failed to restore snapshot")
 }

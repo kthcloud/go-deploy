@@ -23,7 +23,7 @@ func TestUpdateIngress(t *testing.T) {
 	i.Hosts = []string{acc.GenName() + ".another.com"}
 
 	iUpdated, err := c.UpdateIngress(i)
-	assert.NoError(t, err, "failed to update ingress")
+	test.NoError(t, err, "failed to update ingress")
 
 	test.EqualOrEmpty(t, i.Hosts, iUpdated.Hosts, "hosts do not match")
 }
@@ -38,7 +38,7 @@ func TestUpdateIngressService(t *testing.T) {
 	i.ServicePort = 12345
 
 	iUpdated, err := c.UpdateIngress(i)
-	assert.NoError(t, err, "failed to update ingress")
+	test.NoError(t, err, "failed to update ingress")
 
 	assert.Equal(t, i.ServiceName, iUpdated.ServiceName, "service name does not match")
 	assert.Equal(t, i.ServicePort, iUpdated.ServicePort, "service port does not match")

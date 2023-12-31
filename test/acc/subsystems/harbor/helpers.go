@@ -5,6 +5,7 @@ import (
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/harbor"
 	"go-deploy/pkg/subsystems/harbor/models"
+	"go-deploy/test"
 	"go-deploy/test/acc"
 	"strings"
 	"testing"
@@ -23,7 +24,7 @@ func withClient(t *testing.T, projectName string) *harbor.Client {
 		Project:  projectName,
 	})
 
-	assert.NoError(t, err, "failed to create harbor client")
+	test.NoError(t, err, "failed to create harbor client")
 	assert.NotNil(t, client, "harbor client is nil")
 
 	return client
@@ -41,7 +42,7 @@ func withProject(t *testing.T, p *models.ProjectPublic) *models.ProjectPublic {
 	c := withClient(t, "")
 
 	pCreated, err := c.CreateProject(p)
-	assert.NoError(t, err, "failed to create harbor project")
+	test.NoError(t, err, "failed to create harbor project")
 	t.Cleanup(func() { cleanUpProject(t, c, pCreated.ID) })
 
 	assert.NotEmpty(t, pCreated.ID, "no id received from client")
@@ -63,7 +64,7 @@ func withDefaultRobot(t *testing.T, c *harbor.Client) *models.RobotPublic {
 
 func withRobot(t *testing.T, c *harbor.Client, r *models.RobotPublic) *models.RobotPublic {
 	rCreated, err := c.CreateRobot(r)
-	assert.NoError(t, err, "failed to create harbor robot")
+	test.NoError(t, err, "failed to create harbor robot")
 	t.Cleanup(func() { cleanUpRobot(t, c, rCreated.ID) })
 
 	assert.NotEmpty(t, rCreated.ID, "no id received from client")
@@ -84,7 +85,7 @@ func withDefaultWebhook(t *testing.T, c *harbor.Client) *models.WebhookPublic {
 
 func withWebhook(t *testing.T, c *harbor.Client, w *models.WebhookPublic) *models.WebhookPublic {
 	wCreated, err := c.CreateWebhook(w)
-	assert.NoError(t, err, "failed to create harbor webhook")
+	test.NoError(t, err, "failed to create harbor webhook")
 	t.Cleanup(func() { cleanUpWebhook(t, c, wCreated.ID) })
 
 	assert.NotEmpty(t, wCreated.ID, "no id received from client")
@@ -113,7 +114,7 @@ func withDefaultRepository(t *testing.T, c *harbor.Client) *models.RepositoryPub
 
 func withRepository(t *testing.T, c *harbor.Client, r *models.RepositoryPublic) *models.RepositoryPublic {
 	rCreated, err := c.CreateRepository(r)
-	assert.NoError(t, err, "failed to create harbor repository")
+	test.NoError(t, err, "failed to create harbor repository")
 	t.Cleanup(func() { cleanUpRepository(t, c, rCreated.Name) })
 
 	assert.NotEmpty(t, rCreated.ID, "no id received from client")
@@ -125,48 +126,48 @@ func withRepository(t *testing.T, c *harbor.Client, r *models.RepositoryPublic) 
 
 func cleanUpProject(t *testing.T, c *harbor.Client, id int) {
 	err := c.DeleteProject(id)
-	assert.NoError(t, err, "failed to delete harbor project")
+	test.NoError(t, err, "failed to delete harbor project")
 
 	deletedProject, err := c.ReadProject(id)
-	assert.NoError(t, err, "failed to read harbor project")
+	test.NoError(t, err, "failed to read harbor project")
 	assert.Nil(t, deletedProject, "failed to delete harbor project")
 
 	err = c.DeleteProject(id)
-	assert.NoError(t, err, "failed to delete harbor project")
+	test.NoError(t, err, "failed to delete harbor project")
 }
 
 func cleanUpRobot(t *testing.T, c *harbor.Client, id int) {
 	err := c.DeleteRobot(id)
-	assert.NoError(t, err, "failed to delete harbor robot")
+	test.NoError(t, err, "failed to delete harbor robot")
 
 	deletedRobot, err := c.ReadRobot(id)
-	assert.NoError(t, err, "failed to read harbor robot")
+	test.NoError(t, err, "failed to read harbor robot")
 	assert.Nil(t, deletedRobot, "failed to delete harbor robot")
 
 	err = c.DeleteRobot(id)
-	assert.NoError(t, err, "failed to delete harbor robot")
+	test.NoError(t, err, "failed to delete harbor robot")
 }
 
 func cleanUpWebhook(t *testing.T, c *harbor.Client, id int) {
 	err := c.DeleteWebhook(id)
-	assert.NoError(t, err, "failed to delete harbor webhook")
+	test.NoError(t, err, "failed to delete harbor webhook")
 
 	deletedWebhook, err := c.ReadWebhook(id)
-	assert.NoError(t, err, "failed to read harbor webhook")
+	test.NoError(t, err, "failed to read harbor webhook")
 	assert.Nil(t, deletedWebhook, "failed to delete harbor webhook")
 
 	err = c.DeleteWebhook(id)
-	assert.NoError(t, err, "failed to delete harbor webhook")
+	test.NoError(t, err, "failed to delete harbor webhook")
 }
 
 func cleanUpRepository(t *testing.T, c *harbor.Client, name string) {
 	err := c.DeleteRepository(name)
-	assert.NoError(t, err, "failed to delete harbor repository")
+	test.NoError(t, err, "failed to delete harbor repository")
 
 	deletedRepository, err := c.ReadRepository(name)
-	assert.NoError(t, err, "failed to read harbor repository")
+	test.NoError(t, err, "failed to read harbor repository")
 	assert.Nil(t, deletedRepository, "failed to delete harbor repository")
 
 	err = c.DeleteRepository(name)
-	assert.NoError(t, err, "failed to delete harbor repository")
+	test.NoError(t, err, "failed to delete harbor repository")
 }

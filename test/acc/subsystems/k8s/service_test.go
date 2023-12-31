@@ -2,6 +2,7 @@ package k8s
 
 import (
 	"github.com/stretchr/testify/assert"
+	"go-deploy/test"
 	"testing"
 )
 
@@ -22,7 +23,7 @@ func TestUpdateService(t *testing.T) {
 	s.TargetPort = 12345
 
 	sUpdated, err := c.UpdateService(s)
-	assert.NoError(t, err, "failed to update service")
+	test.NoError(t, err, "failed to update service")
 
 	assert.Equal(t, s.Port, sUpdated.Port, "service port does not match")
 	assert.Equal(t, s.TargetPort, sUpdated.TargetPort, "service target port does not match")

@@ -2,6 +2,7 @@ package harbor
 
 import (
 	"github.com/stretchr/testify/assert"
+	"go-deploy/test"
 	"go-deploy/test/acc"
 	"testing"
 )
@@ -20,7 +21,7 @@ func TestUpdateWebhook(t *testing.T) {
 	w.Token = acc.GenName()
 
 	wUpdated, err := c.UpdateWebhook(w)
-	assert.NoError(t, err, "failed to update webhook")
+	test.NoError(t, err, "failed to update webhook")
 
 	assert.Equal(t, w.Name, wUpdated.Name, "webhook name does not match")
 	assert.Equal(t, w.Target, wUpdated.Target, "webhook target does not match")

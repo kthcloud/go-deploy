@@ -2,6 +2,7 @@ package cs
 
 import (
 	"github.com/stretchr/testify/assert"
+	"go-deploy/test"
 	"testing"
 )
 
@@ -22,7 +23,7 @@ func TestUpdateServiceOffering(t *testing.T) {
 	so.Description = so.Description + "-updated"
 
 	soUpdated, err := client.UpdateServiceOffering(so)
-	assert.NoError(t, err, "failed to update service offering")
+	test.NoError(t, err, "failed to update service offering")
 
 	assert.Equal(t, so.Name, soUpdated.Name, "service offering name is not updated")
 	assert.Equal(t, so.Description, soUpdated.Description, "service offering description is not updated")

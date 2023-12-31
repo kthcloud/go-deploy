@@ -1,7 +1,6 @@
 package k8s
 
 import (
-	"github.com/stretchr/testify/assert"
 	"go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/test"
 	"go-deploy/test/acc"
@@ -42,7 +41,7 @@ func TestUpdateDeployment(t *testing.T) {
 	}
 
 	dUpdated, err := c.UpdateDeployment(d)
-	assert.NoError(t, err, "failed to update deployment")
+	test.NoError(t, err, "failed to update deployment")
 
 	test.EqualOrEmpty(t, d.EnvVars, dUpdated.EnvVars, "env vars do not match")
 }

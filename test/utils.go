@@ -23,3 +23,12 @@ func EqualOrEmpty(t *testing.T, expected, actual interface{}, msgAndArgs ...inte
 		assert.EqualValues(t, expected, actual, msgAndArgs)
 	}
 }
+
+// NoError fails the test if there is an error
+func NoError(t *testing.T, err error, msgAndArgs ...interface{}) {
+	t.Helper()
+
+	if err != nil {
+		assert.FailNow(t, err.Error(), msgAndArgs...)
+	}
+}

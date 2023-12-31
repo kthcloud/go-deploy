@@ -2,6 +2,7 @@ package k8s
 
 import (
 	"github.com/stretchr/testify/assert"
+	"go-deploy/test"
 	"go-deploy/test/acc"
 	"testing"
 )
@@ -23,7 +24,7 @@ func TestUpdateSecret(t *testing.T) {
 	s.Data[key] = []byte(acc.GenName())
 
 	sUpdated, err := c.UpdateSecret(s)
-	assert.NoError(t, err, "failed to update secret")
+	test.NoError(t, err, "failed to update secret")
 
 	_, ok := sUpdated.Data[key]
 	assert.True(t, ok, "secret data does not match")

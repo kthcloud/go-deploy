@@ -2,6 +2,7 @@ package cs
 
 import (
 	"github.com/stretchr/testify/assert"
+	"go-deploy/test"
 	"testing"
 )
 
@@ -12,7 +13,7 @@ func TestReadHost(t *testing.T) {
 
 	client := withClient(t)
 	host, err := client.ReadHostByName(hostName)
-	assert.NoError(t, err, "failed to read host")
+	test.NoError(t, err, "failed to read host")
 
 	assert.Equal(t, hostName, host.Name, "host name does not match")
 }
@@ -24,7 +25,7 @@ func TestReadVmHostname(t *testing.T) {
 	vm := withDefaultVM(t, withCsServiceOfferingSmall(t))
 
 	hostname, err := client.ReadHostByVM(vm.ID)
-	assert.NoError(t, err, "failed to read vm hostname")
+	test.NoError(t, err, "failed to read vm hostname")
 
 	assert.NotEmpty(t, hostname, "vm hostname is empty")
 }
