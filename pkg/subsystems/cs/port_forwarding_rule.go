@@ -2,6 +2,7 @@ package cs
 
 import (
 	"fmt"
+	"go-deploy/pkg/imp/cloudstack"
 	"go-deploy/pkg/subsystems/cs/errors"
 	"go-deploy/pkg/subsystems/cs/models"
 	"log"
@@ -78,14 +79,25 @@ func (client *Client) CreatePortForwardingRule(public *models.PortForwardingRule
 			public.VmID,
 		)
 
-		created, err := client.CsClient.Firewall.CreatePortForwardingRule(createRuleParams)
-		if err != nil {
-			errStr := err.Error()
-			if strings.Contains(errStr, "The range specified") && strings.Contains(errStr, "conflicts with rule") {
-				return nil, errors.PortInUseErr
+		var created *cloudstack.CreatePortForwardingRuleResponse
+		for i := 0; i < 5; i++ {
+			// This can sometimes fail with "Undefined error" message. Retrying seems to fix it.
+			created, err = client.CsClient.Firewall.CreatePortForwardingRule(createRuleParams)
+			if err != nil {
+				errStr := err.Error()
+				if strings.Contains(errStr, "The range specified") && strings.Contains(errStr, "conflicts with rule") {
+					return nil, errors.PortInUseErr
+				}
+
+				return nil, makeError(err)
+			}
+			if err == nil {
+				break
+			} else if !strings.Contains(err.Error(), "Undefined error") {
+				return nil, makeError(err)
 			}
 
-			return nil, makeError(err)
+			time.Sleep(1 * time.Second)
 		}
 
 		id = created.Id
@@ -165,7 +177,7 @@ func (client *Client) DeletePortForwardingRule(id string) error {
 		_, lastError = client.CsClient.Firewall.DeletePortForwardingRule(params)
 		if err == nil {
 			return nil
-		} else if !strings.Contains(strings.ToLower(err.Error()), "unknown error") {
+		} else if !strings.Contains(err.Error(), "Undefined error") {
 			return makeError(err)
 		}
 
