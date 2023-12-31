@@ -2,6 +2,7 @@ package cs
 
 import (
 	"fmt"
+	"time"
 
 	"go-deploy/pkg/imp/cloudstack"
 )
@@ -41,6 +42,9 @@ func New(config *ClientConf) (*Client, error) {
 		config.ApiKey,
 		config.Secret,
 		true,
+		func(c *cloudstack.CloudStackClient) {
+			c.Timeout(300 * time.Second)
+		},
 	)
 
 	client := Client{
