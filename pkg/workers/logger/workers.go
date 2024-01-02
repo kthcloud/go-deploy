@@ -96,9 +96,10 @@ func deploymentLogger(ctx context.Context) {
 
 					err = gitlab_service.SetupLogStream(logCtx, id.ID, func(line string, createdAt time.Time) {
 						err = deploymentModels.New().AddLogs(id.ID, deploymentModels.Log{
-							Source:    deploymentModels.LogSourceBuild,
-							Prefix:    "[build]",
-							Line:      line,
+							Source: deploymentModels.LogSourceBuild,
+							Prefix: "[build]",
+							// Since this is sent as a string, and not a JSON object, we need to prepend the createdAt
+							Line:      fmt.Sprintf("%s %s", createdAt.Format(time.RFC3339), line),
 							CreatedAt: createdAt,
 						})
 						if err != nil {

@@ -628,9 +628,10 @@ func (c *Client) Restart(id string) error {
 	}
 
 	c.AddLogs(id, deploymentModels.Log{
-		Source:    deploymentModels.LogSourceDeployment,
-		Prefix:    "[deployment]",
-		Line:      "Restart requested",
+		Source: deploymentModels.LogSourceDeployment,
+		Prefix: "[deployment]",
+		// Since this is sent as a string, and not a JSON object, we need to prepend the createdAt
+		Line:      fmt.Sprintf("%s %s", time.Now().Format(time.RFC3339), "Restart requested"),
 		CreatedAt: time.Now(),
 	})
 
@@ -679,9 +680,10 @@ func (c *Client) Build(ids []string, buildParams *body.DeploymentBuild) error {
 
 	for _, id := range ids {
 		err := deploymentModels.New().AddLogs(id, deploymentModels.Log{
-			Source:    deploymentModels.LogSourceDeployment,
-			Prefix:    "[deployment]",
-			Line:      "Build requested",
+			Source: deploymentModels.LogSourceDeployment,
+			Prefix: "[deployment]",
+			// Since this is sent as a string, and not a JSON object, we need to prepend the createdAt
+			Line:      fmt.Sprintf("%s %s", time.Now().Format(time.RFC3339), "Build requested"),
 			CreatedAt: time.Now(),
 		})
 		if err != nil {
