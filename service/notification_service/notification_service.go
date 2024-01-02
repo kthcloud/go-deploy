@@ -13,7 +13,7 @@ func (c *Client) Get(id string, opts ...GetOpts) (*notificationModels.Notificati
 	client := notificationModels.New()
 
 	if c.Auth != nil && !c.Auth.IsAdmin {
-		client.RestrictToUserID(c.Auth.UserID)
+		client.WithUserID(c.Auth.UserID)
 	}
 
 	return c.Notification(id, client)
@@ -25,7 +25,7 @@ func (c *Client) List(opts ...ListOpts) ([]notificationModels.Notification, erro
 	nmc := notificationModels.New()
 
 	if o.Pagination != nil {
-		nmc.AddPagination(o.Pagination.Page, o.Pagination.PageSize)
+		nmc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
 	}
 
 	var effectiveUserID string
@@ -45,7 +45,7 @@ func (c *Client) List(opts ...ListOpts) ([]notificationModels.Notification, erro
 	}
 
 	if effectiveUserID != "" {
-		nmc.RestrictToUserID(effectiveUserID)
+		nmc.WithUserID(effectiveUserID)
 	}
 
 	return c.Notifications(nmc)
@@ -59,7 +59,7 @@ func (c *Client) Update(id string, dtoNotificationUpdate *body.NotificationUpdat
 	nmc := notificationModels.New()
 
 	if c.Auth != nil && !c.Auth.IsAdmin {
-		nmc.RestrictToUserID(c.Auth.UserID)
+		nmc.WithUserID(c.Auth.UserID)
 	}
 
 	notification, err := c.Notification(id, nmc)
@@ -71,18 +71,11 @@ func (c *Client) Update(id string, dtoNotificationUpdate *body.NotificationUpdat
 		return nil, nil
 	}
 
-	params := &notificationModels.UpdateParams{}
-	params.FromDTO(dtoNotificationUpdate)
-
-	// if the notification is already read, we don't want to update it to a newer read time
-	// the user should unread it first
-	if notification.ReadAt != nil && params.ReadAt != nil {
-		params.ReadAt = nil
-	}
-
-	err = nmc.UpdateWithParamsByID(id, params)
-	if err != nil {
-		return nil, err
+	if dtoNotificationUpdate.Read && !notification.ReadAt.IsZero() {
+		err = nmc.MarkReadByID(id)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return c.RefreshNotification(id, nmc)
@@ -92,7 +85,7 @@ func (c *Client) Delete(id string) error {
 	client := notificationModels.New()
 
 	if c.Auth != nil && !c.Auth.IsAdmin {
-		client.RestrictToUserID(c.Auth.UserID)
+		client.WithUserID(c.Auth.UserID)
 	}
 
 	exists, err := client.ExistsByID(id)

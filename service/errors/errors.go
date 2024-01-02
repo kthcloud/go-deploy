@@ -86,6 +86,14 @@ var (
 	// SnapshotNotFoundErr is returned when the snapshot is not found.
 	SnapshotNotFoundErr = fmt.Errorf("snapshot not found")
 
+	// SnapshotAlreadyExistsErr is returned when the snapshot already exists.
+	// This is normally caused by not specifying the overwrite flag and a snapshot with the same name already exists.
+	SnapshotAlreadyExistsErr = fmt.Errorf("already exists")
+
+	// BadStateErr is returned when the state is bad.
+	// For example, if a VM has a GPU attached when creating a snapshot.
+	BadStateErr = fmt.Errorf("bad state")
+
 	// NonUniqueFieldErr is returned when a field is not unique, such as the name of a deployment.
 	NonUniqueFieldErr = fmt.Errorf("non unique field")
 

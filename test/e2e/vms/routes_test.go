@@ -282,6 +282,14 @@ func TestCreateShared(t *testing.T) {
 }
 
 func TestAttachAnyGPU(t *testing.T) {
+	// TODO: Fix this test
+	// This test is currently unreliable, as it might attach to a GPU that is leased in production
+	//
+	// We would need to dedicate a small GPU for testing, but this is not possible at the moment, since we have so few
+	// GPUs available
+	t.Skip("not enough GPUs available to run this test")
+	return
+
 	t.Parallel()
 
 	vm := e2e.WithDefaultVM(t)

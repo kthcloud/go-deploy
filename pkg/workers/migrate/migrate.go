@@ -1,10 +1,11 @@
 package migrator
 
 import (
-	"errors"
-	vmModels "go-deploy/models/sys/vm"
-	vmPortModels "go-deploy/models/sys/vmPort"
+	"go-deploy/models/sys/base/resource"
+	deploymentModels "go-deploy/models/sys/deployment"
+	"go.mongodb.org/mongo-driver/bson"
 	"log"
+	"strings"
 )
 
 // Migrate will run as early as possible in the program, and it will never be called again.
@@ -37,33 +38,54 @@ func Migrate() {
 // add a date to the migration name to make it easier to identify.
 func getMigrations() map[string]func() error {
 	return map[string]func() error{
-		"leaseVmPortsFromOldSystem_2023_10_30": leaseVmPortsFromOldSystem,
+		"migrateOldCustomDomainToNewStruct_2024_01_02": migrateOldCustomDomainToNewStruct_2024_01_02,
 	}
 }
 
-func leaseVmPortsFromOldSystem() error {
-	vms, err := vmModels.New().List()
+type oldApp struct {
+	CustomDomain *string `bson:"customDomain"`
+}
+
+type oldDeployment struct {
+	ID   string            `bson:"id"`
+	Apps map[string]oldApp `bson:"apps"`
+}
+
+func migrateOldCustomDomainToNewStruct_2024_01_02() error {
+	rc := resource.ResourceClient[oldDeployment]{
+		Collection: deploymentModels.New().Collection,
+	}
+
+	ids, err := deploymentModels.New().ListIDs()
 	if err != nil {
 		return err
 	}
 
-	for _, vm := range vms {
-		for _, pfr := range vm.Subsystems.CS.PortForwardingRuleMap {
-			vmPort, err := vmPortModels.New().GetByLease(vm.ID, pfr.PrivatePort)
-			if err != nil {
-				return err
+	for _, id := range ids {
+		deployment, err := rc.GetByID(id.ID)
+		if err != nil {
+			if strings.Contains(err.Error(), "error decoding key") {
+				continue
 			}
 
-			if vmPort == nil {
+			return err
+		}
 
-				_, err = vmPortModels.New().Lease(pfr.PublicPort, pfr.PrivatePort, vm.ID, vm.Zone)
-				if err != nil {
-					if errors.Is(err, vmPortModels.PortNotFoundErr) {
-						return err
-					}
+		mainApp := deployment.Apps["main"]
+		if mainApp.CustomDomain != nil {
+			cd := deploymentModels.CustomDomain{
+				Domain: *mainApp.CustomDomain,
+				Secret: "",
+				Status: deploymentModels.CustomDomainStatusReady,
+			}
 
-					return err
-				}
+			update := bson.D{
+				{"apps.main.customDomain", cd},
+			}
+
+			err = deploymentModels.New().SetWithBsonByID(id.ID, update)
+			if err != nil {
+				return err
 			}
 		}
 	}

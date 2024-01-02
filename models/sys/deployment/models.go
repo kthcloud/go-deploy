@@ -12,10 +12,21 @@ const (
 	LogSourcePod        = "pod"
 	LogSourceDeployment = "deployment"
 	LogSourceBuild      = "build"
+
+	CustomDomainStatusPending            = "pending"
+	CustomDomainStatusVerificationFailed = "verificationFailed"
+	CustomDomainStatusReady              = "ready"
 )
 
+type CustomDomain struct {
+	Domain string `bson:"domain"`
+	Secret string `bson:"secret"`
+	Status string `bson:"status"`
+}
+
 type App struct {
-	Name         string   `bson:"name"`
+	Name string `bson:"name"`
+
 	Image        string   `bson:"image"`
 	InternalPort int      `bson:"internalPort"`
 	Private      bool     `bson:"private"`
@@ -23,9 +34,11 @@ type App struct {
 	Envs         []Env    `bson:"envs"`
 	Volumes      []Volume `bson:"volumes"`
 	InitCommands []string `bson:"initCommands"`
-	CustomDomain *string  `bson:"customDomain,omitempty"`
-	PingPath     string   `bson:"pingPath"`
-	PingResult   int      `bson:"pingResult"`
+
+	CustomDomain *CustomDomain `bson:"customDomain"`
+
+	PingPath   string `bson:"pingPath"`
+	PingResult int    `bson:"pingResult"`
 }
 
 type Subsystems struct {

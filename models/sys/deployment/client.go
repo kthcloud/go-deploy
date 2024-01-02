@@ -127,3 +127,12 @@ func (client *Client) OlderThan(timestamp time.Time) *Client {
 
 	return client
 }
+
+func (client *Client) WithPendingCustomDomain() *Client {
+	filter := bson.D{{"apps.main.customDomain.status", bson.D{{"$ne", CustomDomainStatusReady}}}}
+
+	client.ResourceClient.AddExtraFilter(filter)
+	client.ActivityResourceClient.AddExtraFilter(filter)
+
+	return client
+}

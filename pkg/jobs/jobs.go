@@ -16,7 +16,6 @@ import (
 	"go-deploy/service/sm_service"
 	"go-deploy/service/vm_service"
 	"go-deploy/service/vm_service/client"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 	"time"
@@ -64,7 +63,8 @@ func DeleteVM(job *jobModels.Job) error {
 		ExcludeTypes(jobModels.TypeDeleteVM).
 		ExcludeStatus(jobModels.StatusTerminated, jobModels.StatusCompleted).
 		ExcludeIDs(job.ID).
-		GetByArgs(map[string]interface{}{"id": id})
+		FilterArgs("id", id).
+		List()
 	if err != nil {
 		return makeTerminatedError(err)
 	}
@@ -258,7 +258,7 @@ func DeleteDeployment(job *jobModels.Job) error {
 		return makeTerminatedError(err)
 	}
 
-	relatedJobs, err := jobModels.New().GetByArgs(bson.M{"args.id": id})
+	relatedJobs, err := jobModels.New().FilterArgs("id", id).List()
 	if err != nil {
 		return makeTerminatedError(err)
 	}

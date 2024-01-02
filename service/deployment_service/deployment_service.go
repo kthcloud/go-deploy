@@ -406,7 +406,7 @@ func (c *Client) UpdateOwnerSetup(id string, params *body.DeploymentUpdateOwner)
 		return &jobID, nil
 	}
 
-	/// create a transfer notification
+	// Create a transfer notification
 	code := createTransferCode()
 	err = deploymentModels.New().UpdateWithParamsByID(id, &deploymentModels.UpdateParams{
 		TransferUserID: &params.NewOwnerID,
@@ -481,7 +481,13 @@ func (c *Client) UpdateOwner(id string, params *body.DeploymentUpdateOwner) erro
 		return makeError(err)
 	}
 
-	log.Println("deployment", id, "owner updated to", params.NewOwnerID)
+	nmc := notificationModels.New().WithUserID(params.NewOwnerID).FilterContent("id", id).WithType(notificationModels.TypeDeploymentTransfer)
+	err = nmc.MarkReadAndCompleted()
+	if err != nil {
+		return makeError(err)
+	}
+
+	log.Println("deployment", id, "owner updated from", params.OldOwnerID, "to", params.NewOwnerID)
 	return nil
 }
 
@@ -535,6 +541,12 @@ func (c *Client) Delete(id string) error {
 
 	if d == nil {
 		return sErrors.DeploymentNotFoundErr
+	}
+
+	nmc := notificationModels.New().FilterContent("id", id)
+	err = nmc.Delete()
+	if err != nil {
+		return makeError(err)
 	}
 
 	err = harbor_service.New(c.Cache).Delete(id)

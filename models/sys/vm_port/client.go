@@ -1,4 +1,4 @@
-package vmPort
+package vm_port
 
 import (
 	"go-deploy/models/db"

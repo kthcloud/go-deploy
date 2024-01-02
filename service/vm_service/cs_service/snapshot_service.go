@@ -11,13 +11,8 @@ import (
 	"log"
 )
 
-var (
-	AlreadyExistsErr = fmt.Errorf("already exists")
-	BadStateErr      = fmt.Errorf("bad state")
-)
-
 func makeBadStateErr(state string) error {
-	return fmt.Errorf("%w: %s", BadStateErr, state)
+	return fmt.Errorf("%w: %s", sErrors.BadStateErr, state)
 }
 
 func (c *Client) CreateSnapshot(vmID string, params *vmModels.CreateSnapshotParams) error {
@@ -35,7 +30,7 @@ func (c *Client) CreateSnapshot(vmID string, params *vmModels.CreateSnapshotPara
 	}
 
 	if snapshot := vm.Subsystems.CS.GetSnapshotByName(params.Name); subsystems.Created(snapshot) && !params.Overwrite {
-		return AlreadyExistsErr
+		return sErrors.SnapshotAlreadyExistsErr
 	}
 
 	// Make sure vm is on

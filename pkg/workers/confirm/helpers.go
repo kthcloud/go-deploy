@@ -6,7 +6,7 @@ import (
 	"go-deploy/models/sys/gpu"
 	"go-deploy/models/sys/sm"
 	"go-deploy/models/sys/vm"
-	"go-deploy/models/sys/vmPort"
+	"go-deploy/models/sys/vm_port"
 )
 
 func appDeletedK8s(deployment *deploymentModels.Deployment, app *deploymentModels.App) bool {
@@ -191,7 +191,7 @@ func gpuCleared(vm *vm.VM) (bool, error) {
 }
 
 func portsCleared(vm *vm.VM) (bool, error) {
-	exists, err := vmPort.New().WithVmID(vm.ID).ExistsAny()
+	exists, err := vm_port.New().WithVmID(vm.ID).ExistsAny()
 	if err != nil {
 		return false, err
 	}

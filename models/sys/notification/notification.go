@@ -1,7 +1,6 @@
 package notification
 
 import (
-	"go-deploy/models/dto/body"
 	"time"
 )
 
@@ -17,23 +16,13 @@ type Notification struct {
 	Type    string                 `bson:"type"`
 	Content map[string]interface{} `bson:"content"`
 
-	CreatedAt time.Time  `bson:"createdAt"`
-	ReadAt    *time.Time `bson:"readAt,omitempty"`
-	DeletedAt *time.Time `bson:"deletedAt,omitempty"`
+	CreatedAt   time.Time `bson:"createdAt"`
+	ReadAt      time.Time `bson:"readAt,omitempty"`
+	CompletedAt time.Time `bson:"completedAt,omitempty"`
+	DeletedAt   time.Time `bson:"deletedAt,omitempty"`
 }
 
 type CreateParams struct {
 	Type    string                 `json:"type"`
 	Content map[string]interface{} `json:"content"`
-}
-
-type UpdateParams struct {
-	ReadAt *time.Time `json:"readAt"`
-}
-
-func (u *UpdateParams) FromDTO(dto *body.NotificationUpdate) {
-	if dto.Read {
-		now := time.Now()
-		u.ReadAt = &now
-	}
 }

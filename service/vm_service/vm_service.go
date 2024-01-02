@@ -11,7 +11,7 @@ import (
 	roleModels "go-deploy/models/sys/role"
 	teamModels "go-deploy/models/sys/team"
 	vmModels "go-deploy/models/sys/vm"
-	"go-deploy/models/sys/vmPort"
+	"go-deploy/models/sys/vm_port"
 	"go-deploy/pkg/config"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
@@ -255,6 +255,12 @@ func (c *Client) Delete(id string) error {
 		return sErrors.VmNotFoundErr
 	}
 
+	nmc := notificationModels.New().FilterContent("id", id)
+	err = nmc.Delete()
+	if err != nil {
+		return makeError(err)
+	}
+
 	err = k8s_service.New(c.Cache).Delete(id)
 	if err != nil {
 		return makeError(err)
@@ -270,7 +276,7 @@ func (c *Client) Delete(id string) error {
 		return makeError(err)
 	}
 
-	err = vmPort.New().ReleaseAll(vm.ID)
+	err = vm_port.New().ReleaseAll(vm.ID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -290,11 +296,6 @@ func (c *Client) Repair(id string) error {
 
 	if vm == nil {
 		log.Println("vm", id, "not found when repairing. assuming it was deleted")
-		return nil
-	}
-
-	if !vm.Ready() {
-		log.Println("vm", id, "not ready when repairing.")
 		return nil
 	}
 
@@ -344,7 +345,7 @@ func (c *Client) UpdateOwnerSetup(id string, params *body.VmUpdateOwner) (*strin
 
 	if transferDirectly {
 		jobID := uuid.New().String()
-		err := job_service.New().Create(jobID, c.Auth.UserID, jobModels.TypeUpdateVmOwner, map[string]interface{}{
+		err = job_service.New().Create(jobID, c.Auth.UserID, jobModels.TypeUpdateVmOwner, map[string]interface{}{
 			"id":     id,
 			"params": *params,
 		})
@@ -429,7 +430,13 @@ func (c *Client) UpdateOwner(id string, params *body.VmUpdateOwner) error {
 		return makeError(err)
 	}
 
-	log.Println("vm", id, "owner updated to", params.NewOwnerID)
+	nmc := notificationModels.New().FilterContent("id", id).WithType(notificationModels.TypeVmTransfer)
+	err = nmc.MarkReadAndCompleted()
+	if err != nil {
+		return makeError(err)
+	}
+
+	log.Println("vm", id, "owner updated from", params.OldOwnerID, " to", params.NewOwnerID)
 	return nil
 }
 

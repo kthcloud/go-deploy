@@ -2,20 +2,39 @@ package body
 
 import "time"
 
-type Env struct {
-	Name  string `json:"name" bson:"name" binding:"required,env_name,min=1,max=100"`
-	Value string `json:"value" bson:"value" binding:"required,min=1,max=10000"`
-}
+type DeploymentRead struct {
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	Type    string `json:"type"`
+	OwnerID string `json:"ownerId"`
+	Zone    string `json:"zone"`
 
-type Volume struct {
-	Name       string `json:"name" bson:"name" binding:"required,min=1,max=100"`
-	AppPath    string `json:"appPath" bson:"appPath" binding:"required,min=1,max=100"`
-	ServerPath string `json:"serverPath" bson:"serverPath" binding:"required,min=1,max=100"`
-}
+	CreatedAt   time.Time  `json:"createdAt"`
+	UpdatedAt   *time.Time `json:"updatedAt,omitempty"`
+	RepairedAt  *time.Time `json:"repairedAt,omitempty"`
+	RestartedAt *time.Time `json:"restartedAt,omitempty"`
 
-type GitHub struct {
-	Token        string `json:"token" bson:"token" binding:"required,min=1,max=1000"`
-	RepositoryID int64  `json:"repositoryId" bson:"repositoryId" binding:"required"`
+	URL             *string  `json:"url,omitempty"`
+	Envs            []Env    `json:"envs"`
+	Volumes         []Volume `json:"volumes"`
+	InitCommands    []string `json:"initCommands"`
+	Private         bool     `json:"private"`
+	InternalPort    int      `json:"internalPort"`
+	Image           *string  `json:"image,omitempty"`
+	HealthCheckPath *string  `json:"healthCheckPath,omitempty"`
+	Replicas        int      `json:"replicas"`
+
+	CustomDomainURL    *string `json:"customDomainUrl,omitempty"`
+	CustomDomainStatus *string `json:"customDomainStatus,omitempty"`
+	CustomDomainSecret *string `json:"customDomainSecret,omitempty"`
+
+	Status     string `json:"status"`
+	PingResult *int   `json:"pingResult,omitempty"`
+
+	Integrations []string `json:"integrations"`
+	Teams        []string `json:"teams"`
+
+	StorageURL *string `json:"storageUrl,omitempty"`
 }
 
 type DeploymentCreate struct {
@@ -52,6 +71,22 @@ type DeploymentUpdate struct {
 	TransferCode *string `json:"transferCode,omitempty" bson:"transferCode,omitempty" binding:"omitempty,min=1,max=1000"`
 }
 
+type Env struct {
+	Name  string `json:"name" bson:"name" binding:"required,env_name,min=1,max=100"`
+	Value string `json:"value" bson:"value" binding:"required,min=1,max=10000"`
+}
+
+type Volume struct {
+	Name       string `json:"name" bson:"name" binding:"required,min=1,max=100"`
+	AppPath    string `json:"appPath" bson:"appPath" binding:"required,min=1,max=100"`
+	ServerPath string `json:"serverPath" bson:"serverPath" binding:"required,min=1,max=100"`
+}
+
+type GitHub struct {
+	Token        string `json:"token" bson:"token" binding:"required,min=1,max=1000"`
+	RepositoryID int64  `json:"repositoryId" bson:"repositoryId" binding:"required"`
+}
+
 type DeploymentUpdateOwner struct {
 	NewOwnerID   string  `json:"newOwnerId" bson:"newOwnerId" binding:"required,uuid4"`
 	OldOwnerID   string  `json:"oldOwnerId" bson:"oldOwnerId" binding:"required,uuid4"`
@@ -78,38 +113,6 @@ type DeploymentDeleted struct {
 type DeploymentUpdated struct {
 	ID    string  `json:"id"`
 	JobID *string `json:"jobId,omitempty"`
-}
-
-type DeploymentRead struct {
-	ID      string `json:"id"`
-	Name    string `json:"name"`
-	Type    string `json:"type"`
-	OwnerID string `json:"ownerId"`
-	Zone    string `json:"zone"`
-
-	CreatedAt   time.Time  `json:"createdAt"`
-	UpdatedAt   *time.Time `json:"updatedAt,omitempty"`
-	RepairedAt  *time.Time `json:"repairedAt,omitempty"`
-	RestartedAt *time.Time `json:"restartedAt,omitempty"`
-
-	URL             *string  `json:"url,omitempty"`
-	CustomDomainURL *string  `json:"customDomainUrl,omitempty"`
-	Envs            []Env    `json:"envs"`
-	Volumes         []Volume `json:"volumes"`
-	InitCommands    []string `json:"initCommands"`
-	Private         bool     `json:"private"`
-	InternalPort    int      `json:"internalPort"`
-	Image           *string  `json:"image,omitempty"`
-	HealthCheckPath *string  `json:"healthCheckPath,omitempty"`
-	Replicas        int      `json:"replicas"`
-
-	Status     string `json:"status"`
-	PingResult *int   `json:"pingResult,omitempty"`
-
-	Integrations []string `json:"integrations"`
-	Teams        []string `json:"teams"`
-
-	StorageURL *string `json:"storageUrl,omitempty"`
 }
 
 type CiConfig struct {

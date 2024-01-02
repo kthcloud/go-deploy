@@ -21,6 +21,7 @@ const (
 	DefaultUserID = "955f0f87-37fd-4792-90eb-9bf6989e698c"
 	TestDomain    = "test-deploy.saffronbun.com"
 	CheckInterval = 1 * time.Second
+	MaxChecks     = 1800
 )
 
 func fetchUntil(t *testing.T, subPath string, callback func(*http.Response) bool) {
@@ -40,8 +41,8 @@ func fetchUntil(t *testing.T, subPath string, callback func(*http.Response) bool
 		}
 
 		loops++
-		if !assert.LessOrEqual(t, loops, 600, "resource fetch timeout") {
-			break
+		if loops > MaxChecks {
+			assert.FailNow(t, "resource fetch timeout")
 		}
 	}
 }

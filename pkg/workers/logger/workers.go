@@ -60,7 +60,8 @@ func deploymentLogger(ctx context.Context) {
 
 			for _, idInList := range ids {
 				id := idInList
-				// setup log stream
+
+				// Setup log stream
 				go func() {
 					mut.Lock()
 					defer mut.Unlock()

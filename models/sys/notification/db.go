@@ -3,20 +3,20 @@ package notification
 import (
 	"context"
 	"fmt"
-	"go-deploy/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"time"
 )
 
 func (client *Client) Create(id string, userID string, params *CreateParams) (*Notification, error) {
 	notification := &Notification{
-		ID:        id,
-		UserID:    userID,
-		Type:      params.Type,
-		Content:   params.Content,
-		CreatedAt: time.Now(),
-		ReadAt:    nil,
-		DeletedAt: nil,
+		ID:          id,
+		UserID:      userID,
+		Type:        params.Type,
+		Content:     params.Content,
+		CreatedAt:   time.Now(),
+		ReadAt:      time.Time{},
+		CompletedAt: time.Time{},
+		DeletedAt:   time.Time{},
 	}
 
 	_, err := client.Collection.InsertOne(context.TODO(), notification)
@@ -27,14 +27,14 @@ func (client *Client) Create(id string, userID string, params *CreateParams) (*N
 	return notification, nil
 }
 
-func (client *Client) UpdateWithParamsByID(id string, params *UpdateParams) error {
-	update := bson.D{}
+func (client *Client) MarkCompletedByID(id string) error {
+	return client.SetWithBsonByID(id, bson.D{{"completedAt", time.Now()}})
+}
 
-	models.AddIfNotNil(&update, "readAt", params.ReadAt)
+func (client *Client) MarkReadByID(id string) error {
+	return client.SetWithBsonByID(id, bson.D{{"readAt", time.Now()}})
+}
 
-	if len(update) == 0 {
-		return nil
-	}
-
-	return client.SetWithBsonByID(id, update)
+func (client *Client) MarkReadAndCompleted() error {
+	return client.SetWithBson(bson.D{{"readAt", time.Now()}, {"completedAt", time.Now()}})
 }

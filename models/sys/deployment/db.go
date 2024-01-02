@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
 	"go-deploy/models"
 	"go-deploy/models/sys/activity"
 	"go-deploy/models/sys/deployment/subsystems"
@@ -28,6 +29,15 @@ func (client *Client) Create(id, ownerID string, params *CreateParams) (*Deploym
 		replicas = *params.Replicas
 	}
 
+	var customDomain *CustomDomain
+	if params.CustomDomain != nil {
+		customDomain = &CustomDomain{
+			Domain: *params.CustomDomain,
+			Secret: generateCustomDomainSecret(),
+			Status: CustomDomainStatusPending,
+		}
+	}
+
 	mainApp := App{
 		Name:         appName,
 		Image:        params.Image,
@@ -36,7 +46,7 @@ func (client *Client) Create(id, ownerID string, params *CreateParams) (*Deploym
 		Envs:         params.Envs,
 		Volumes:      params.Volumes,
 		InitCommands: params.InitCommands,
-		CustomDomain: params.CustomDomain,
+		CustomDomain: customDomain,
 		PingResult:   0,
 		PingPath:     params.PingPath,
 		Replicas:     replicas,
@@ -128,6 +138,15 @@ func (client *Client) UpdateWithParamsByID(id string, params *UpdateParams) erro
 	setUpdate := bson.D{}
 	unsetUpdate := bson.D{}
 
+	var customDomain *CustomDomain
+	if params.CustomDomain != nil {
+		customDomain = &CustomDomain{
+			Domain: *params.CustomDomain,
+			Secret: generateCustomDomainSecret(),
+			Status: CustomDomainStatusPending,
+		}
+	}
+
 	models.AddIfNotNil(&setUpdate, "name", params.Name)
 	models.AddIfNotNil(&setUpdate, "ownerId", params.OwnerID)
 	models.AddIfNotNil(&setUpdate, "apps.main.internalPort", params.InternalPort)
@@ -135,7 +154,7 @@ func (client *Client) UpdateWithParamsByID(id string, params *UpdateParams) erro
 	models.AddIfNotNil(&setUpdate, "apps.main.private", params.Private)
 	models.AddIfNotNil(&setUpdate, "apps.main.volumes", params.Volumes)
 	models.AddIfNotNil(&setUpdate, "apps.main.initCommands", params.InitCommands)
-	models.AddIfNotNil(&setUpdate, "apps.main.customDomain", params.CustomDomain)
+	models.AddIfNotNil(&setUpdate, "apps.main.customDomain", customDomain)
 	models.AddIfNotNil(&setUpdate, "apps.main.image", params.Image)
 	models.AddIfNotNil(&setUpdate, "apps.main.pingPath", params.PingPath)
 	models.AddIfNotNil(&setUpdate, "apps.main.replicas", params.Replicas)
@@ -282,6 +301,20 @@ func (client *Client) MarkUpdated(id string) error {
 	return nil
 }
 
+func (client *Client) UpdateCustomDomainStatus(id string, status string) error {
+	filter := bson.D{{"id", id}}
+	update := bson.D{
+		{"$set", bson.D{{"apps.main.customDomain.status", status}}},
+	}
+
+	_, err := client.Collection.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (client *Client) UpdateGitLabBuild(deploymentID string, build subsystems.GitLabBuild) error {
 	filter := bson.D{
 		{"id", deploymentID},
@@ -364,4 +397,8 @@ func (client *Client) CountReplicas() (int, error) {
 	}
 
 	return sum, nil
+}
+
+func generateCustomDomainSecret() string {
+	return utils.HashString(uuid.NewString())
 }
