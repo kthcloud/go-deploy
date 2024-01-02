@@ -255,6 +255,12 @@ func (c *Client) Delete(id string) error {
 		return sErrors.VmNotFoundErr
 	}
 
+	nmc := notificationModels.New().FilterContent("id", id)
+	err = nmc.Delete()
+	if err != nil {
+		return makeError(err)
+	}
+
 	err = k8s_service.New(c.Cache).Delete(id)
 	if err != nil {
 		return makeError(err)
@@ -344,7 +350,7 @@ func (c *Client) UpdateOwnerSetup(id string, params *body.VmUpdateOwner) (*strin
 
 	if transferDirectly {
 		jobID := uuid.New().String()
-		err := job_service.New().Create(jobID, c.Auth.UserID, jobModels.TypeUpdateVmOwner, map[string]interface{}{
+		err = job_service.New().Create(jobID, c.Auth.UserID, jobModels.TypeUpdateVmOwner, map[string]interface{}{
 			"id":     id,
 			"params": *params,
 		})
@@ -429,7 +435,13 @@ func (c *Client) UpdateOwner(id string, params *body.VmUpdateOwner) error {
 		return makeError(err)
 	}
 
-	log.Println("vm", id, "owner updated to", params.NewOwnerID)
+	nmc := notificationModels.New().FilterContent("id", id).WithType(notificationModels.TypeVmTransfer)
+	err = nmc.MarkReadAndCompleted()
+	if err != nil {
+		return makeError(err)
+	}
+
+	log.Println("vm", id, "owner updated from", params.OldOwnerID, " to", params.NewOwnerID)
 	return nil
 }
 

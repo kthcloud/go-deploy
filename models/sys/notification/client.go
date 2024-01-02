@@ -26,7 +26,7 @@ func New() *Client {
 	}
 }
 
-func (client *Client) AddPagination(page, pageSize int) *Client {
+func (client *Client) WithPagination(page, pageSize int) *Client {
 	client.ResourceClient.Pagination = &base.Pagination{
 		Page:     page,
 		PageSize: pageSize,
@@ -35,9 +35,21 @@ func (client *Client) AddPagination(page, pageSize int) *Client {
 	return client
 }
 
-func (client *Client) RestrictToUserID(ownerID string) *Client {
+func (client *Client) WithUserID(ownerID string) *Client {
 	client.ResourceClient.AddExtraFilter(bson.D{{"userId", ownerID}})
 	client.RestrictUserID = &ownerID
+
+	return client
+}
+
+func (client *Client) WithType(notificationType string) *Client {
+	client.ResourceClient.AddExtraFilter(bson.D{{"type", notificationType}})
+
+	return client
+}
+
+func (client *Client) FilterContent(contentName string, filter interface{}) *Client {
+	client.AddExtraFilter(bson.D{{"content." + contentName, filter}})
 
 	return client
 }

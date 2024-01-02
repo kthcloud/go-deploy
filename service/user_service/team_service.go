@@ -190,12 +190,17 @@ func (c *Client) DeleteTeam(id string) error {
 		return sErrors.TeamNotFoundErr
 	}
 
+	err = notificationModels.New().FilterContent("id", id).Delete()
+	if err != nil {
+		return err
+	}
+
 	return tmc.DeleteByID(id)
 }
 
 // JoinTeam joins a team
 //
-// It uses service.AuthInfo to only join the resource the requesting user has access to
+// It uses service.AuthInfo to get the user ID
 func (c *Client) JoinTeam(id string, dtoTeamJoin *body.TeamJoin) (*teamModels.Team, error) {
 	if c.Auth == nil {
 		return nil, nil
@@ -231,11 +236,17 @@ func (c *Client) JoinTeam(id string, dtoTeamJoin *body.TeamJoin) (*teamModels.Te
 		return nil, err
 	}
 
+	nmc := notificationModels.New().WithUserID(c.Auth.UserID).FilterContent("id", id).WithType(notificationModels.TypeTeamInvite)
+	err = nmc.MarkReadAndCompleted()
+	if err != nil {
+		return nil, err
+	}
+
 	return c.RefreshTeam(id, tmc)
 }
 
 func (c *Client) getResourceIfAccessible(resourceID string) *teamModels.Resource {
-	// try to fetch deployment
+	// Try to fetch deployment
 	dClient := deploymentModels.New()
 	vClient := vmModels.New()
 
@@ -258,7 +269,7 @@ func (c *Client) getResourceIfAccessible(resourceID string) *teamModels.Resource
 		}
 	}
 
-	// try to fetch vm
+	// Try to fetch vm
 	isOwner, err = vmModels.New().ExistsByID(resourceID)
 	if err != nil {
 		utils.PrettyPrintError(fmt.Errorf("failed to fetch vm when checking user access when creating team: %w", err))

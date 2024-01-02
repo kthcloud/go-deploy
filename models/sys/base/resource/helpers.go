@@ -88,6 +88,20 @@ func (client *ResourceClient[T]) CountDistinct(field string) (int, error) {
 	return models.CountDistinctResources(client.Collection, field, models.GroupFilters(bson.D{}, client.ExtraFilter, client.Search, client.IncludeDeleted))
 }
 
+func (client *ResourceClient[T]) Delete() error {
+	_, err := client.Collection.UpdateOne(context.TODO(),
+		bson.D{},
+		bson.D{
+			{"$set", bson.D{{"deletedAt", time.Now()}}},
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("failed to delete resources. details: %w", err)
+	}
+
+	return nil
+}
+
 func (client *ResourceClient[T]) DeleteByID(id string) error {
 	_, err := client.Collection.UpdateOne(context.TODO(),
 		bson.D{{"id", id}},
