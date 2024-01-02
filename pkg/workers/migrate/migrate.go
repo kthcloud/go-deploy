@@ -1,7 +1,11 @@
 package migrator
 
 import (
+	"go-deploy/models/sys/base/resource"
+	deploymentModels "go-deploy/models/sys/deployment"
+	"go.mongodb.org/mongo-driver/bson"
 	"log"
+	"strings"
 )
 
 // Migrate will run as early as possible in the program, and it will never be called again.
@@ -33,5 +37,58 @@ func Migrate() {
 //
 // add a date to the migration name to make it easier to identify.
 func getMigrations() map[string]func() error {
-	return map[string]func() error{}
+	return map[string]func() error{
+		"migrateOldCustomDomainToNewStruct_2024_01_02": migrateOldCustomDomainToNewStruct_2024_01_02,
+	}
+}
+
+type oldApp struct {
+	CustomDomain *string `bson:"customDomain"`
+}
+
+type oldDeployment struct {
+	ID   string            `bson:"id"`
+	Apps map[string]oldApp `bson:"apps"`
+}
+
+func migrateOldCustomDomainToNewStruct_2024_01_02() error {
+	rc := resource.ResourceClient[oldDeployment]{
+		Collection: deploymentModels.New().Collection,
+	}
+
+	ids, err := deploymentModels.New().ListIDs()
+	if err != nil {
+		return err
+	}
+
+	for _, id := range ids {
+		deployment, err := rc.GetByID(id.ID)
+		if err != nil {
+			if strings.Contains(err.Error(), "error decoding key") {
+				continue
+			}
+
+			return err
+		}
+
+		mainApp := deployment.Apps["main"]
+		if mainApp.CustomDomain != nil {
+			cd := deploymentModels.CustomDomain{
+				Domain: *mainApp.CustomDomain,
+				Secret: "",
+				Status: deploymentModels.CustomDomainStatusReady,
+			}
+
+			update := bson.D{
+				{"apps.main.customDomain", cd},
+			}
+
+			err = deploymentModels.New().SetWithBsonByID(id.ID, update)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
