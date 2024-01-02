@@ -460,7 +460,7 @@ func (c *Client) Repair(id string) error {
 		}
 	}
 
-	// Snapshot, ensure the daily, weekly and monthly snapshots are created
+	// Snapshot, ensure the daily, weekly and monthly snapshots are created, remove redundant required snapshots
 	//// Only repair snapshots if there is a cs vm
 	if subsystems.Created(&vm.Subsystems.CS.VM) {
 		snapshots, err := csc.ReadAllSnapshots(vm.Subsystems.CS.VM.ID)
@@ -468,23 +468,33 @@ func (c *Client) Repair(id string) error {
 			return makeError(err)
 		}
 
-		snapshotMap := make(map[string]string)
+		snapshotMap := make(map[string]csModels.SnapshotPublic)
 		required := []string{"auto-daily", "auto-weekly", "auto-monthly"}
 
 		for _, snapshot := range snapshots {
-			if snapshot.SystemCreated() {
-				snapshotMap[snapshot.Name] = snapshot.ID
-			}
+			if _, ok := snapshotMap[snapshot.Name]; ok {
+				// Delete the older snapshot
+				previous := snapshotMap[snapshot.Name]
+				var deleteSnapshot csModels.SnapshotPublic
+				if snapshot.CreatedAt.Before(previous.CreatedAt) {
+					deleteSnapshot = snapshot
+				} else {
+					deleteSnapshot = previous
+				}
 
-			for _, name := range required {
-				if snapshot.Name == name {
-					snapshotMap[name] = snapshot.ID
+				log.Println("deleting redundant old snapshot", deleteSnapshot.ID, "for cs vm", deleteSnapshot.VmID)
+				err = csc.DeleteSnapshot(previous.ID)
+				if err != nil {
+					return makeError(err)
 				}
 			}
+
+			snapshotMap[snapshot.Name] = snapshot
 		}
 
 		for _, name := range required {
 			if _, ok := snapshotMap[name]; !ok {
+				log.Println("creating missing required snapshot", name, "for vm", vm.ID)
 				err = c.CreateSnapshot(id, &vmModels.CreateSnapshotParams{
 					Name:        name,
 					UserCreated: false,
