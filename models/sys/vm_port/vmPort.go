@@ -1,4 +1,4 @@
-package vmPort
+package vm_port
 
 type Lease struct {
 	VmID        string `bson:"vmId"`

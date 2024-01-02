@@ -6,7 +6,7 @@ import (
 	configModels "go-deploy/models/config"
 	gpuModels "go-deploy/models/sys/gpu"
 	vmModels "go-deploy/models/sys/vm"
-	vmPortModels "go-deploy/models/sys/vmPort"
+	vmPortModels "go-deploy/models/sys/vm_port"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems"
 	"go-deploy/pkg/subsystems/cs/commands"

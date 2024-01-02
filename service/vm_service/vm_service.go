@@ -11,7 +11,7 @@ import (
 	roleModels "go-deploy/models/sys/role"
 	teamModels "go-deploy/models/sys/team"
 	vmModels "go-deploy/models/sys/vm"
-	"go-deploy/models/sys/vmPort"
+	"go-deploy/models/sys/vm_port"
 	"go-deploy/pkg/config"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
@@ -270,7 +270,7 @@ func (c *Client) Delete(id string) error {
 		return makeError(err)
 	}
 
-	err = vmPort.New().ReleaseAll(vm.ID)
+	err = vm_port.New().ReleaseAll(vm.ID)
 	if err != nil {
 		return makeError(err)
 	}

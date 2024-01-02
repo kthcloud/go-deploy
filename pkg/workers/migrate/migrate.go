@@ -3,7 +3,7 @@ package migrator
 import (
 	"errors"
 	vmModels "go-deploy/models/sys/vm"
-	vmPortModels "go-deploy/models/sys/vmPort"
+	vmPortModels "go-deploy/models/sys/vm_port"
 	"log"
 )
 
