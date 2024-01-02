@@ -299,11 +299,6 @@ func (c *Client) Repair(id string) error {
 		return nil
 	}
 
-	if !vm.Ready() {
-		log.Println("vm", id, "not ready when repairing.")
-		return nil
-	}
-
 	err = cs_service.New(c.Cache).Repair(id)
 	if err != nil {
 		return makeError(err)
