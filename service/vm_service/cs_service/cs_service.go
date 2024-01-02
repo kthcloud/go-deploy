@@ -472,6 +472,14 @@ func (c *Client) Repair(id string) error {
 		required := []string{"auto-daily", "auto-weekly", "auto-monthly"}
 
 		for _, snapshot := range snapshots {
+			if snapshot.State == "Error" {
+				log.Println("deleting errored snapshot", snapshot.ID, "for cs vm", snapshot.VmID)
+				err = csc.DeleteSnapshot(snapshot.ID)
+				if err != nil {
+					return makeError(err)
+				}
+			}
+
 			// We don't care about snapshots that are not in ready state or user created
 			if snapshot.State != "Ready" || snapshot.UserCreated() {
 				continue
