@@ -44,33 +44,6 @@ func (client *Client) CreateScheduled(id, userID, jobType string, runAfter time.
 	return nil
 }
 
-func (client *Client) GetMany(jobType, status *string) ([]Job, error) {
-	filter := bson.D{}
-	if jobType != nil {
-		filter = append(filter, bson.E{Key: "type", Value: jobType})
-	}
-
-	if status != nil {
-		filter = append(filter, bson.E{Key: "status", Value: status})
-	}
-
-	return client.ListWithFilterAndProjection(filter, nil)
-}
-
-func (client *Client) GetByArgs(args map[string]interface{}) ([]Job, error) {
-	fullFilter := bson.D{}
-
-	for key, value := range args {
-		filter := bson.D{
-			{"args." + key, value},
-		}
-
-		fullFilter = append(fullFilter, filter...)
-	}
-
-	return client.ListWithFilterAndProjection(fullFilter, nil)
-}
-
 func (client *Client) GetNext() (*Job, error) {
 	now := time.Now()
 	filter := bson.D{

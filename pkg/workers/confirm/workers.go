@@ -26,10 +26,7 @@ func deploymentConfirmer(ctx context.Context) {
 					continue
 				}
 
-				relatedJobs, err := jobModels.New().ExcludeScheduled().GetByArgs(map[string]interface{}{
-					"id": deployment.ID,
-				})
-
+				relatedJobs, err := jobModels.New().ExcludeScheduled().FilterArgs("id", deployment.ID).List()
 				if err != nil {
 					utils.PrettyPrintError(fmt.Errorf("failed to get related jobs when confirming deployment deleting. details: %w", err))
 					continue
@@ -69,10 +66,7 @@ func smConfirmer(ctx context.Context) {
 					continue
 				}
 
-				relatedJobs, err := jobModels.New().ExcludeScheduled().GetByArgs(map[string]interface{}{
-					"id": sm.ID,
-				})
-
+				relatedJobs, err := jobModels.New().ExcludeScheduled().FilterArgs("id", sm.ID).List()
 				if err != nil {
 					utils.PrettyPrintError(fmt.Errorf("failed to get related jobs when confirming sm deleting. details: %w", err))
 					continue
@@ -112,10 +106,7 @@ func vmConfirmer(ctx context.Context) {
 					continue
 				}
 
-				relatedJobs, err := jobModels.New().ExcludeScheduled().GetByArgs(map[string]interface{}{
-					"id": vm.ID,
-				})
-
+				relatedJobs, err := jobModels.New().ExcludeScheduled().FilterArgs("id", vm.ID).List()
 				if err != nil {
 					utils.PrettyPrintError(fmt.Errorf("failed to get related jobs when confirming vm deleting. details: %w", err))
 					continue
