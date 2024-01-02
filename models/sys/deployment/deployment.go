@@ -75,8 +75,8 @@ func (deployment *Deployment) GetCustomDomainURL() *string {
 		return nil
 	}
 
-	if app.CustomDomain != nil && len(*app.CustomDomain) > 0 {
-		url := fmt.Sprintf("https://%s", *app.CustomDomain)
+	if app.CustomDomain != nil && len(app.CustomDomain.Domain) > 0 {
+		url := fmt.Sprintf("https://%s", app.CustomDomain.Domain)
 		return &url
 	}
 

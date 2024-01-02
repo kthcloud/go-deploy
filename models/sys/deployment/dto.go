@@ -67,6 +67,16 @@ func (deployment *Deployment) ToDTO(smURL *string, teams []string) body.Deployme
 		healthCheckPath = &app.PingPath
 	}
 
+	var customDomainSecret *string
+	if app.CustomDomain != nil {
+		customDomainSecret = &app.CustomDomain.Secret
+	}
+
+	var customDomainStatus *string
+	if app.CustomDomain != nil {
+		customDomainStatus = &app.CustomDomain.Status
+	}
+
 	return body.DeploymentRead{
 		ID:      deployment.ID,
 		Name:    deployment.Name,
@@ -80,7 +90,6 @@ func (deployment *Deployment) ToDTO(smURL *string, teams []string) body.Deployme
 		RestartedAt: utils.NonZeroOrNil(deployment.RestartedAt),
 
 		URL:             deployment.GetURL(),
-		CustomDomainURL: deployment.GetCustomDomainURL(),
 		Envs:            envs,
 		Volumes:         volumes,
 		InitCommands:    app.InitCommands,
@@ -89,6 +98,10 @@ func (deployment *Deployment) ToDTO(smURL *string, teams []string) body.Deployme
 		Image:           image,
 		HealthCheckPath: healthCheckPath,
 		Replicas:        app.Replicas,
+
+		CustomDomainURL:    deployment.GetCustomDomainURL(),
+		CustomDomainSecret: customDomainSecret,
+		CustomDomainStatus: customDomainStatus,
 
 		Status:       deployment.StatusMessage,
 		PingResult:   pingResult,

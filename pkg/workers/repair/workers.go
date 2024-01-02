@@ -29,7 +29,7 @@ func deploymentRepairer(ctx context.Context) {
 			}
 
 			for _, deployment := range restarting {
-				// remove activity if it has been restarting for more than 5 minutes
+				// Remove activity if it has been restarting for more than 5 minutes
 				now := time.Now()
 				if now.Sub(deployment.RestartedAt) > 5*time.Minute {
 					log.Printf("removing restarting activity from deployment %s\n", deployment.Name)
@@ -64,7 +64,7 @@ func deploymentRepairer(ctx context.Context) {
 				log.Println("scheduling repair job for deployment", deployment.ID)
 
 				jobID := uuid.New().String()
-				// spread out repair jobs evenly over time
+				// Spread out repair jobs evenly over time
 				seconds := config.Config.Deployment.RepairInterval + rand.Intn(config.Config.Deployment.RepairInterval)
 				runAfter := time.Now().Add(time.Duration(seconds) * time.Second)
 
@@ -113,7 +113,7 @@ func smRepairer(ctx context.Context) {
 				log.Println("scheduling repair job for storage manager", sm.ID)
 
 				jobID := uuid.New().String()
-				// spread out repair jobs evenly over time
+				// Spread out repair jobs evenly over time
 				seconds := config.Config.Deployment.RepairInterval + rand.Intn(config.Config.Deployment.RepairInterval)
 				runAfter := time.Now().Add(time.Duration(seconds) * time.Second)
 
@@ -161,7 +161,7 @@ func vmRepairer(ctx context.Context) {
 				log.Println("scheduling repair job for vm", vm.ID)
 
 				jobID := uuid.New().String()
-				// spread out repair jobs evenly over time
+				// Spread out repair jobs evenly over time
 				seconds := config.Config.VM.RepairInterval + rand.Intn(config.Config.VM.RepairInterval)
 				runAfter := time.Now().Add(time.Duration(seconds) * time.Second)
 

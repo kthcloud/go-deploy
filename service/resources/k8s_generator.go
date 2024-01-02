@@ -512,7 +512,7 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 
 		res = append(res, in)
 
-		if mainApp.CustomDomain != nil {
+		if mainApp.CustomDomain != nil && mainApp.CustomDomain.Status == deployment.CustomDomainStatusReady {
 			customIn := models.IngressPublic{
 				ID:           "",
 				Name:         fmt.Sprintf(constants.WithCustomDomainSuffix(kg.d.deployment.Name)),
@@ -520,12 +520,12 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 				ServiceName:  kg.d.deployment.Name,
 				ServicePort:  mainApp.InternalPort,
 				IngressClass: config.Config.Deployment.IngressClass,
-				Hosts:        []string{*mainApp.CustomDomain},
+				Hosts:        []string{mainApp.CustomDomain.Domain},
 				Placeholder:  false,
 				CreatedAt:    time.Time{},
 				CustomCert: &models.CustomCert{
 					ClusterIssuer: "letsencrypt-prod-deploy-http",
-					CommonName:    *mainApp.CustomDomain,
+					CommonName:    mainApp.CustomDomain.Domain,
 				},
 				TlsSecret: nil,
 			}
