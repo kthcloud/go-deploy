@@ -472,6 +472,11 @@ func (c *Client) Repair(id string) error {
 		required := []string{"auto-daily", "auto-weekly", "auto-monthly"}
 
 		for _, snapshot := range snapshots {
+			// We don't care about snapshots that are not in ready state or user created
+			if snapshot.State != "Ready" || snapshot.UserCreated() {
+				continue
+			}
+
 			if _, ok := snapshotMap[snapshot.Name]; ok {
 				// Delete the older snapshot
 				previous := snapshotMap[snapshot.Name]
