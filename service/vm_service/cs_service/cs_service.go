@@ -501,6 +501,11 @@ func (c *Client) Repair(id string) error {
 					Overwrite:   true,
 				})
 				if err != nil {
+					if errors.Is(err, sErrors.BadStateErr) {
+						// Automatically created snapshots could fail if a GPU is attached, so we ignore this error
+						continue
+					}
+
 					return makeError(err)
 				}
 			}
