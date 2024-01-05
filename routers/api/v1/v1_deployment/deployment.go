@@ -374,7 +374,7 @@ func Update(c *gin.Context) {
 			requestBody.OwnerID = &auth.UserID
 		}
 	} else {
-		deployment, err = dc.Get(requestURI.DeploymentID)
+		deployment, err = dc.Get(requestURI.DeploymentID, client.GetOptions{Shared: true})
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
