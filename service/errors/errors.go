@@ -34,6 +34,21 @@ func NewFailedToStartActivityError(reason string) FailedToStartActivityError {
 	return FailedToStartActivityError{reason: reason}
 }
 
+// PortInUseErr is returned when the port is already in use.
+type PortInUseErr struct {
+	Port int
+}
+
+// Error returns the reason for the port in use error.
+func (e PortInUseErr) Error() string {
+	return fmt.Sprintf("port %d is already in use", e.Port)
+}
+
+// NewPortInUseErr creates a new PortInUseErr.
+func NewPortInUseErr(port int) PortInUseErr {
+	return PortInUseErr{Port: port}
+}
+
 var (
 	// DeploymentNotFoundErr is returned when the deployment is not found.
 	// This is most likely caused by a race-condition between a some resource call and a deletion call.
@@ -68,9 +83,6 @@ var (
 	// VmTooLargeErr is returned when the VM is too large to be started on a specific host.
 	// Something that is required when using GPUs.
 	VmTooLargeErr = fmt.Errorf("vm too large")
-
-	// PortInUseErr is returned when the port is already in use.
-	PortInUseErr = fmt.Errorf("port in use")
 
 	// NoPortsAvailableErr is returned when there are no ports available.
 	NoPortsAvailableErr = fmt.Errorf("no ports available")

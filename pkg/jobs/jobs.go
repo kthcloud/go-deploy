@@ -142,11 +142,14 @@ func UpdateVM(job *jobModels.Job) error {
 			return makeTerminatedError(err)
 		case errors.Is(err, sErrors.IngressHostInUseErr):
 			return makeTerminatedError(err)
-		case errors.Is(err, sErrors.PortInUseErr):
-			return makeTerminatedError(err)
 		case errors.Is(err, sErrors.NoPortsAvailableErr):
 			return makeTerminatedError(err)
 		case errors.Is(err, sErrors.SnapshotNotFoundErr):
+			return makeTerminatedError(err)
+		}
+
+		var portInUseErr sErrors.PortInUseErr
+		if errors.As(err, &portInUseErr) {
 			return makeTerminatedError(err)
 		}
 
