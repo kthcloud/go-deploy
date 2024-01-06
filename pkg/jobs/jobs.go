@@ -75,8 +75,18 @@ func DeleteVM(job *jobModels.Job) error {
 	go func() {
 		err = waitForJobs(ctx, relatedJobs, []string{jobModels.StatusCompleted, jobModels.StatusTerminated})
 		if err != nil {
-			log.Println("failed to wait for related jobs", id, ". details:", err)
+			if errors.Is(err, context.Canceled) {
+				return
+			}
+
+			if errors.Is(err, context.DeadlineExceeded) {
+				log.Println("timeout waiting for related jobs to finish for resource", id)
+				return
+			}
+
+			log.Println("failed to wait for related jobs for resource", id, ". details:", err)
 		}
+
 		cancel()
 	}()
 
@@ -258,7 +268,13 @@ func DeleteDeployment(job *jobModels.Job) error {
 		return makeTerminatedError(err)
 	}
 
-	relatedJobs, err := jobModels.New().FilterArgs("id", id).List()
+	relatedJobs, err := jobModels.New().
+		ExcludeScheduled().
+		ExcludeTypes(jobModels.TypeDeleteDeployment).
+		ExcludeStatus(jobModels.StatusTerminated, jobModels.StatusCompleted).
+		ExcludeIDs(job.ID).
+		FilterArgs("id", id).
+		List()
 	if err != nil {
 		return makeTerminatedError(err)
 	}
@@ -269,14 +285,25 @@ func DeleteDeployment(job *jobModels.Job) error {
 	go func() {
 		err = waitForJobs(ctx, relatedJobs, []string{jobModels.StatusCompleted, jobModels.StatusTerminated})
 		if err != nil {
-			log.Println("failed to wait for related jobs", id, ". details:", err)
+			if errors.Is(err, context.Canceled) {
+				return
+			}
+
+			if errors.Is(err, context.DeadlineExceeded) {
+				log.Println("timeout waiting for related jobs to finish for resource", id)
+				return
+			}
+
+			log.Println("failed to wait for related jobs for resource", id, ". details:", err)
 		}
+
+		cancel()
 	}()
 
 	select {
 	case <-time.After(30 * time.Second):
 		return makeTerminatedError(fmt.Errorf("timeout waiting for related jobs to finish"))
-	default:
+	case <-ctx.Done():
 	}
 
 	err = deployment_service.New().Delete(id)
