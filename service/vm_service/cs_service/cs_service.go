@@ -95,8 +95,9 @@ func (c *Client) Create(id string, params *vmModels.CreateParams) error {
 			Exec()
 
 		if err != nil {
-			if errors.Is(err, cErrors.PortInUseErr) {
-				return makeError(sErrors.PortInUseErr)
+			var portInUseErr *cErrors.PortInUseError
+			if errors.As(err, &portInUseErr) {
+				return makeError(sErrors.NewPortInUseErr(portInUseErr.Port))
 			}
 
 			return makeError(err)
@@ -211,8 +212,9 @@ func (c *Client) Update(id string, updateParams *vmModels.UpdateParams) error {
 					Exec()
 
 				if err != nil {
-					if errors.Is(err, cErrors.PortInUseErr) {
-						return makeError(sErrors.PortInUseErr)
+					var portInUseErr *cErrors.PortInUseError
+					if errors.As(err, &portInUseErr) {
+						return makeError(sErrors.NewPortInUseErr(portInUseErr.Port))
 					}
 
 					return makeError(err)
@@ -451,8 +453,9 @@ func (c *Client) Repair(id string) error {
 			).WithResourceID(pfr.ID).WithDbFunc(dbFunc(id, "portForwardingRuleMap."+pfrName(&pfr))).WithGenPublic(&pfr).Exec()
 
 			if err != nil {
-				if errors.Is(err, cErrors.PortInUseErr) {
-					return makeError(sErrors.PortInUseErr)
+				var portInUseErr *cErrors.PortInUseError
+				if errors.As(err, &portInUseErr) {
+					return makeError(sErrors.NewPortInUseErr(portInUseErr.Port))
 				}
 
 				return makeError(err)

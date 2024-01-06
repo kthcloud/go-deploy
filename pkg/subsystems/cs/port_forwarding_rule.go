@@ -86,7 +86,7 @@ func (client *Client) CreatePortForwardingRule(public *models.PortForwardingRule
 			if err != nil {
 				errStr := err.Error()
 				if strings.Contains(errStr, "The range specified") && strings.Contains(errStr, "conflicts with rule") {
-					return nil, errors.PortInUseErr
+					return nil, errors.NewPortInUseError(public.PublicPort)
 				}
 
 				return nil, makeError(err)
@@ -134,7 +134,7 @@ func (client *Client) UpdatePortForwardingRule(public *models.PortForwardingRule
 	if err != nil {
 		errStr := err.Error()
 		if strings.Contains(errStr, "The range specified") && strings.Contains(errStr, "conflicts with rule") {
-			return nil, errors.PortInUseErr
+			return nil, errors.NewPortInUseError(public.PublicPort)
 		}
 
 		return nil, makeError(err)
