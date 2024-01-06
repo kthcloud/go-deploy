@@ -58,7 +58,7 @@ func (client *Client) SetupLogStream(ctx context.Context, deploymentID string, h
 	go func() {
 		activeStreams := make(map[string]int)
 		cancelFuncs := make(map[string]context.CancelFunc)
-		podChannel := make(chan podEvent)
+		podChannel := make(chan podEvent, 100)
 
 		factory := informers.NewSharedInformerFactoryWithOptions(client.K8sClient, 0, informers.WithNamespace(client.Namespace))
 		podInformer := factory.Core().V1().Pods().Informer()
@@ -125,15 +125,15 @@ func (client *Client) SetupLogStream(ctx context.Context, deploymentID string, h
 					}()
 
 				case podEventStop:
-					log.Println("stopping logger for pod", e.podName)
-
 					cancelFunc, ok := cancelFuncs[e.podName]
 					if ok {
+						log.Println("stopping logger for pod", e.podName)
+
 						cancelFunc()
 						delete(cancelFuncs, e.podName)
-					}
 
-					delete(activeStreams, e.podName)
+						delete(activeStreams, e.podName)
+					}
 				}
 			}
 		}
@@ -157,7 +157,7 @@ func (client *Client) readLogs(ctx context.Context, podNumber int, namespace, po
 	logStream, err := getK8sLogStream(client, namespace, podName, 0)
 	if err != nil {
 		if IsNotFoundErr(err) {
-			// pod got deleted for some reason, so we just stop the log stream
+			// Pod got deleted for some reason, so we just stop the log stream
 			return
 		}
 

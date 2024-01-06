@@ -81,7 +81,7 @@ func deploymentDeletedByID(id string) (bool, error) {
 		return true, nil
 	}
 
-	beingDeleted, err := deploymentModels.New().DoingActivity(id, deploymentModels.ActivityBeingDeleted)
+	beingDeleted, err := deploymentModels.New().IsDoingActivity(id, deploymentModels.ActivityBeingDeleted)
 	if err != nil {
 		return false, err
 	}
@@ -103,7 +103,7 @@ func vmDeletedByID(id string) (bool, error) {
 		return true, nil
 	}
 
-	beingDeleted, err := vmModels.New().DoingActivity(id, vmModels.ActivityBeingDeleted)
+	beingDeleted, err := vmModels.New().IsDoingActivity(id, vmModels.ActivityBeingDeleted)
 	if err != nil {
 		return false, err
 	}
