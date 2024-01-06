@@ -2,10 +2,12 @@ package logger
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	deploymentModels "go-deploy/models/sys/deployment"
 	"go-deploy/service/deployment_service/gitlab_service"
 	"go-deploy/service/deployment_service/k8s_service"
+	sErrors "go-deploy/service/errors"
 	"go-deploy/utils"
 	"log"
 	"sync"
@@ -52,7 +54,10 @@ func deploymentLogger(ctx context.Context) {
 				idx++
 			}
 
-			ids, err := deploymentModels.New().ExcludeIDs(currentIDs...).ListIDs()
+			ids, err := deploymentModels.New().
+				ExcludeIDs(currentIDs...).
+				WithoutActivities(deploymentModels.ActivityBeingCreated, deploymentModels.ActivityBeingDeleted).
+				ListIDs()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("failed to list deployment ids. details: %w", err))
 				continue
@@ -89,6 +94,12 @@ func deploymentLogger(ctx context.Context) {
 					})
 
 					if err != nil {
+						if errors.Is(err, sErrors.BadStateErr) {
+							log.Println("deployment", id.ID, "is not ready to setup log stream, will try again later")
+							shouldCancel <- id.ID
+							return
+						}
+
 						utils.PrettyPrintError(fmt.Errorf("failed to setup deployment log stream for deployment %s. details: %w", id.ID, err))
 						shouldCancel <- id.ID
 						return

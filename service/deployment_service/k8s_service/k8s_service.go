@@ -598,14 +598,12 @@ func (c *Client) SetupLogStream(ctx context.Context, id string, handler func(str
 	}
 
 	if d.BeingDeleted() {
-		log.Println("deployment", id, "is being deleted. not setting up log stream")
-		return nil
+		return sErrors.BadStateErr
 	}
 
 	mainDeployment := d.Subsystems.K8s.GetDeployment(d.Name)
 	if !subsystems.Created(mainDeployment) {
-		log.Println("main k8s deployment for deployment", id, "not created when setting up log stream. assuming it was deleted")
-		return nil
+		return sErrors.BadStateErr
 	}
 
 	err = kc.SetupLogStream(ctx, mainDeployment.ID, handler)
