@@ -63,7 +63,7 @@ func (client *Client) CreateSecret(public *models.SecretPublic) (*models.SecretP
 
 func (client *Client) UpdateSecret(public *models.SecretPublic) (*models.SecretPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to update k8s secret %s. details: %w", public.Name, err)
+		return fmt.Errorf("failed to update k8s secret %s. details: %w", public.ID, err)
 	}
 
 	if public.ID == "" {

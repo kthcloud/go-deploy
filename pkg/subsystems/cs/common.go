@@ -2,7 +2,14 @@ package cs
 
 import (
 	"fmt"
+	"go-deploy/pkg/subsystems/cs/errors"
 	"go-deploy/pkg/subsystems/cs/models"
+)
+
+const (
+	DetailsCpuCores = "cpuNumber"
+	DetailsCpuSpeed = "cpuSpeed"
+	DetailsRAM      = "memory"
 )
 
 func (client *Client) AssertPortForwardingRulesTags(resourceID string, tags []models.Tag) error {
@@ -70,4 +77,25 @@ func (client *Client) AssertTags(resourceID, resourceType string, tags []models.
 	}
 
 	return nil
+}
+
+func (client *Client) getCustomSoID() (string, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to get custom service offering id: %w", err)
+	}
+
+	listServiceOfferingsParams := client.CsClient.ServiceOffering.NewListServiceOfferingsParams()
+	listServiceOfferingsParams.SetName("custom")
+	listServiceOfferingsParams.SetListall(true)
+
+	serviceOfferings, err := client.CsClient.ServiceOffering.ListServiceOfferings(listServiceOfferingsParams)
+	if err != nil {
+		return "", makeError(err)
+	}
+
+	if len(serviceOfferings.ServiceOfferings) == 0 {
+		return "", errors.NotFoundErr
+	}
+
+	return serviceOfferings.ServiceOfferings[0].Id, nil
 }

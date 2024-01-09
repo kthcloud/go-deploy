@@ -8,14 +8,14 @@ import (
 func TestCreateSnapshot(t *testing.T) {
 	t.Parallel()
 
-	withDefaultSnapshot(t, withDefaultVM(t, withCsServiceOfferingSmall(t)))
+	withDefaultSnapshot(t, withDefaultVM(t))
 }
 
 func TestRestoreSnapshot(t *testing.T) {
 	t.Parallel()
 
 	client := withClient(t)
-	vm := withDefaultVM(t, withCsServiceOfferingSmall(t))
+	vm := withDefaultVM(t)
 	snapshot := withDefaultSnapshot(t, vm)
 
 	err := client.ApplySnapshot(snapshot)

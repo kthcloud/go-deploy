@@ -20,20 +20,21 @@ type ClientConf struct {
 }
 
 type Client struct {
-	CsClient          *cloudstack.CloudStackClient
-	RootIpAddressID   string
-	RootNetworkID     string
-	NetworkOfferingID string
-	ProjectID         string
-	ZoneID            string
-	TemplateID        string
+	CsClient                *cloudstack.CloudStackClient
+	RootIpAddressID         string
+	RootNetworkID           string
+	NetworkOfferingID       string
+	ProjectID               string
+	ZoneID                  string
+	TemplateID              string
+	CustomServiceOfferingID string
 
 	userSshPublicKey  *string
 	adminSshPublicKey *string
 }
 
 func New(config *ClientConf) (*Client, error) {
-	_ = func(err error) error {
+	makeErr := func(err error) error {
 		return fmt.Errorf("failed to create cloudstack client. details: %w", err)
 	}
 
@@ -55,6 +56,13 @@ func New(config *ClientConf) (*Client, error) {
 		ZoneID:          config.ZoneID,
 		TemplateID:      config.TemplateID,
 	}
+
+	soID, err := client.getCustomSoID()
+	if err != nil {
+		return nil, makeErr(err)
+	}
+
+	client.CustomServiceOfferingID = soID
 
 	return &client, nil
 }

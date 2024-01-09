@@ -33,57 +33,15 @@ func withClient(t *testing.T) *cs.Client {
 	return client
 }
 
-// 2 CPU cores, 1 GB RAM, 25 GB disk
-func withCsServiceOfferingSmall(t *testing.T) *models.ServiceOfferingPublic {
-	so := &models.ServiceOfferingPublic{
-		Name:        acc.GenName(),
-		Description: acc.GenName(),
-		CpuCores:    2,
-		RAM:         1,
-		DiskSize:    25,
-	}
-
-	return withServiceOffering(t, so)
-}
-
-// 4 CPU cores, 2 GB RAM, 25 GB disk
-func withCsServiceOfferingBig(t *testing.T) *models.ServiceOfferingPublic {
-	so := &models.ServiceOfferingPublic{
-		Name:        acc.GenName(),
-		Description: acc.GenName(),
-		CpuCores:    4,
-		RAM:         2,
-		DiskSize:    25,
-	}
-
-	return withServiceOffering(t, so)
-}
-
-func withServiceOffering(t *testing.T, so *models.ServiceOfferingPublic) *models.ServiceOfferingPublic {
-	client := withClient(t)
-
-	soCreated, err := client.CreateServiceOffering(so)
-	test.NoError(t, err, "failed to create service offering")
-	assert.NotEmpty(t, soCreated.ID, "no service offering id received from client")
-	t.Cleanup(func() { cleanUpServiceOffering(t, soCreated.ID) })
-
-	assert.Equal(t, so.Name, soCreated.Name, "service offering name is not equal")
-	assert.Equal(t, so.Description, soCreated.Description, "service offering description is not equal")
-	assert.Equal(t, so.CpuCores, soCreated.CpuCores, "service offering cpu cores is not equal")
-	assert.Equal(t, so.RAM, soCreated.RAM, "service offering ram is not equal")
-	assert.Equal(t, so.DiskSize, soCreated.DiskSize, "service offering disk size is not equal")
-
-	return soCreated
-}
-
-func withDefaultVM(t *testing.T, so *models.ServiceOfferingPublic) *models.VmPublic {
+func withDefaultVM(t *testing.T) *models.VmPublic {
 	name := acc.GenName()
 
 	defaultVM := &models.VmPublic{
-		Name:              name,
-		ServiceOfferingID: so.ID,
-		TemplateID:        "cbac58b6-336b-49ab-b4d7-341586dfefcc", // ubuntu-2204-cloudstack-ready-v1.2
-		ExtraConfig:       "",
+		Name:        name,
+		CpuCores:    2,
+		RAM:         4,
+		TemplateID:  "cbac58b6-336b-49ab-b4d7-341586dfefcc", // ubuntu-2204-cloudstack-ready-v1.2
+		ExtraConfig: "",
 		Tags: []models.Tag{
 			{Key: "name", Value: name},
 			{Key: "managedBy", Value: "test"},
@@ -108,7 +66,8 @@ func withVM(t *testing.T, vm *models.VmPublic) *models.VmPublic {
 	t.Cleanup(func() { cleanUpVM(t, vmCreated.ID) })
 
 	assert.Equal(t, vm.Name, vmCreated.Name, "vm name is not equal")
-	assert.Equal(t, vm.ServiceOfferingID, vmCreated.ServiceOfferingID, "vm service offering id is not equal")
+	assert.Equal(t, vm.CpuCores, vmCreated.CpuCores, "vm cpu cores is not equal")
+	assert.Equal(t, vm.RAM, vmCreated.RAM, "vm ram is not equal")
 	assert.Equal(t, vm.TemplateID, vmCreated.TemplateID, "vm template id is not equal")
 	assert.Equal(t, vm.ExtraConfig, vmCreated.ExtraConfig, "vm extra config is not equal")
 
@@ -175,20 +134,6 @@ func withSnapshot(t *testing.T, snapshot *models.SnapshotPublic) *models.Snapsho
 	assert.Equal(t, snapshot.Description, snapshotCreated.Description, "snapshot description is not equal")
 
 	return snapshotCreated
-}
-
-func cleanUpServiceOffering(t *testing.T, id string) {
-	client := withClient(t)
-
-	err := client.DeleteServiceOffering(id)
-	test.NoError(t, err, "failed to delete service offering")
-
-	deletedServiceOffering, err := client.ReadServiceOffering(id)
-	test.NoError(t, err, "failed to read service offering")
-	assert.Nil(t, deletedServiceOffering, "service offering is not nil")
-
-	err = client.DeleteServiceOffering(id)
-	test.NoError(t, err, "failed to delete service offering")
 }
 
 func cleanUpVM(t *testing.T, id string) {

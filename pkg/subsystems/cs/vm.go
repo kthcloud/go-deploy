@@ -61,11 +61,16 @@ func (client *Client) CreateVM(public *models.VmPublic) (*models.VmPublic, error
 	var id string
 	if listVms.Count == 0 {
 		createVmParams := client.CsClient.VirtualMachine.NewDeployVirtualMachineParams(
-			public.ServiceOfferingID,
+			client.CustomServiceOfferingID,
 			public.TemplateID,
 			client.ZoneID,
 		)
 
+		createVmParams.SetDetails(map[string]string{
+			DetailsCpuCores: fmt.Sprintf("%d", public.CpuCores),
+			DetailsCpuSpeed: "1",
+			DetailsRAM:      fmt.Sprintf("%d", public.RAM*1024),
+		})
 		createVmParams.SetName(public.Name)
 		createVmParams.SetDisplayname(public.Name)
 		createVmParams.SetNetworkids([]string{client.RootNetworkID})
@@ -98,7 +103,7 @@ func (client *Client) CreateVM(public *models.VmPublic) (*models.VmPublic, error
 
 func (client *Client) UpdateVM(public *models.VmPublic) (*models.VmPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to update cs vm %s. details: %w", public.Name, err)
+		return fmt.Errorf("failed to update cs vm %s. details: %w", public.ID, err)
 	}
 
 	if public.ID == "" {
@@ -133,21 +138,24 @@ func (client *Client) UpdateVM(public *models.VmPublic) (*models.VmPublic, error
 		}
 	}
 
-	if vm.ServiceOfferingID != public.ServiceOfferingID {
-		vmStatus, err := client.GetVmStatus(public.ID)
+	vmStatus, err := client.GetVmStatus(public.ID)
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	if vmStatus == "Stopped" {
+		params := client.CsClient.VirtualMachine.NewChangeServiceForVirtualMachineParams(public.ID, client.CustomServiceOfferingID)
+		params.SetDetails(map[string]string{
+			DetailsCpuCores: fmt.Sprintf("%d", public.CpuCores),
+			DetailsCpuSpeed: "1",
+			DetailsRAM:      fmt.Sprintf("%d", public.RAM*1024),
+		})
+		_, err = client.CsClient.VirtualMachine.ChangeServiceForVirtualMachine(params)
 		if err != nil {
 			return nil, makeError(err)
 		}
-
-		if vmStatus == "Stopped" {
-			params := client.CsClient.VirtualMachine.NewChangeServiceForVirtualMachineParams(public.ID, public.ServiceOfferingID)
-			_, err = client.CsClient.VirtualMachine.ChangeServiceForVirtualMachine(params)
-			if err != nil {
-				return nil, makeError(err)
-			}
-		} else {
-			log.Println("cs vm", public.ID, "is not stopped when updating service offering. skipping updating service offering")
-		}
+	} else {
+		log.Println("cs vm", public.ID, "is not stopped when updating service offering. skipping updating service offering")
 	}
 
 	err = client.AssertVirtualMachineTags(public.ID, public.Tags)

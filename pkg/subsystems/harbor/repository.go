@@ -94,7 +94,7 @@ func (client *Client) CreateRepository(public *models.RepositoryPublic) (*models
 
 func (client *Client) UpdateRepository(public *models.RepositoryPublic) (*models.RepositoryPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to update harbor repository %s. details: %w", public.Name, err)
+		return fmt.Errorf("failed to update harbor repository %d. details: %w", public.ID, err)
 	}
 
 	if public.ID == 0 {
