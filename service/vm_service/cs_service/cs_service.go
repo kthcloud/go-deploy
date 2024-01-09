@@ -42,20 +42,6 @@ func (c *Client) Create(id string, params *vmModels.CreateParams) error {
 	csc.WithUserSshPublicKey(params.SshPublicKey)
 	csc.WithAdminSshPublicKey(config.Config.VM.AdminSshPublicKey)
 
-	// Service offering
-	for _, soPublic := range g.SOs() {
-		err = resources.SsCreator(csc.CreateServiceOffering).
-			WithDbFunc(dbFunc(id, "serviceOffering")).
-			WithPublic(&soPublic).
-			Exec()
-
-		if err != nil {
-			return makeError(err)
-		}
-
-		vm.Subsystems.CS.ServiceOffering = soPublic
-	}
-
 	// VM
 	for _, vmPublic := range g.VMs() {
 		err = resources.SsCreator(csc.CreateVM).
@@ -64,10 +50,6 @@ func (c *Client) Create(id string, params *vmModels.CreateParams) error {
 			Exec()
 
 		if err != nil {
-			_ = resources.SsDeleter(csc.DeleteServiceOffering).
-				WithDbFunc(dbFunc(id, "serviceOffering")).
-				Exec()
-
 			return makeError(err)
 		}
 
@@ -143,15 +125,6 @@ func (c *Client) Delete(id string) error {
 		}
 	}
 
-	err = resources.SsDeleter(csc.DeleteServiceOffering).
-		WithResourceID(vm.Subsystems.CS.ServiceOffering.ID).
-		WithDbFunc(dbFunc(id, "serviceOffering")).
-		Exec()
-
-	if err != nil {
-		return makeError(err)
-	}
-
 	return nil
 }
 
@@ -174,7 +147,7 @@ func (c *Client) Update(id string, updateParams *vmModels.UpdateParams) error {
 		return makeError(sErrors.ZoneNotFoundErr)
 	}
 
-	// port-forwarding rule
+	// PFR
 	if updateParams.Ports != nil {
 		pfrs := g.PFRs()
 
@@ -223,90 +196,19 @@ func (c *Client) Update(id string, updateParams *vmModels.UpdateParams) error {
 		}
 	}
 
-	// service offering
-	var requiresUpdate bool
-	var serviceOfferingUpdated bool
-	if updateParams.CpuCores != nil {
-		requiresUpdate = true
-	}
-
-	if updateParams.RAM != nil {
-		requiresUpdate = true
-	}
-
-	if requiresUpdate {
-		var soID *string
-		if so := &vm.Subsystems.CS.ServiceOffering; subsystems.Created(so) {
-			err = resources.SsDeleter(csc.DeleteServiceOffering).
-				WithResourceID(so.ID).
-				WithDbFunc(dbFunc(id, "serviceOffering")).
-				Exec()
-
-			if err != nil {
-				return makeError(err)
-			}
-
-			vm, err = c.Refresh(id)
-			if err != nil {
-				if errors.Is(err, sErrors.VmNotFoundErr) {
-					return nil
-				}
-
-				return makeError(err)
-			}
-
-			for _, soPublic := range g.SOs() {
-				err = resources.SsCreator(csc.CreateServiceOffering).
-					WithDbFunc(dbFunc(id, "serviceOffering")).
-					WithPublic(&soPublic).
-					Exec()
-
-				if err != nil {
-					return makeError(err)
-				}
-
-				soID = &soPublic.ID
-			}
-		} else {
-			for _, soPublic := range g.SOs() {
-				err = resources.SsCreator(csc.CreateServiceOffering).
-					WithDbFunc(dbFunc(id, "serviceOffering")).
-					WithPublic(&soPublic).
-					Exec()
-
-				if err != nil {
-					return makeError(err)
-				}
-
-				soID = &soPublic.ID
-			}
-		}
-
-		// make sure the vm is using the latest service offering
-		if soID != nil && vm.Subsystems.CS.VM.ServiceOfferingID != *soID {
-			serviceOfferingUpdated = true
-
-			deferFunc, err := c.stopVmIfRunning(id)
-			if err != nil {
-				return makeError(err)
-			}
-
-			defer deferFunc()
-		}
-	}
-
-	if updateParams.Name != nil || serviceOfferingUpdated {
-		vm, err = c.Refresh(id)
+	hasNewSpecs := updateParams.RAM != nil || updateParams.CpuCores != nil
+	if hasNewSpecs {
+		deferFunc, err := c.stopVmIfRunning(id)
 		if err != nil {
-			if errors.Is(err, sErrors.VmNotFoundErr) {
-				return nil
-			}
-
 			return makeError(err)
 		}
 
-		vms := g.VMs()
-		for _, vmPublic := range vms {
+		defer deferFunc()
+	}
+
+	requiresUpdate := hasNewSpecs || updateParams.Name != nil
+	if requiresUpdate {
+		for _, vmPublic := range g.VMs() {
 			err = resources.SsUpdater(csc.UpdateVM).
 				WithPublic(&vmPublic).
 				WithDbFunc(dbFunc(id, "vm")).
@@ -322,7 +224,7 @@ func (c *Client) Update(id string, updateParams *vmModels.UpdateParams) error {
 }
 
 func (c *Client) EnsureOwner(id, oldOwnerID string) error {
-	// nothing needs to be done, but the method is kept as there is a project for networks,
+	// Nothing needs to be done, but the method is kept as there is a project for networks,
 	// and this could be implemented as user-specific networks are added
 
 	return nil
@@ -350,28 +252,6 @@ func (c *Client) Repair(id string) error {
 	csc.WithUserSshPublicKey(vm.SshPublicKey)
 	csc.WithAdminSshPublicKey(config.Config.VM.AdminSshPublicKey)
 
-	// Service offering
-	so := g.SOs()[0]
-	err = resources.SsRepairer(
-		csc.ReadServiceOffering,
-		csc.CreateServiceOffering,
-		csc.UpdateServiceOffering,
-		csc.DeleteServiceOffering,
-	).WithResourceID(so.ID).WithGenPublic(&so).WithDbFunc(dbFunc(id, "serviceOffering")).Exec()
-
-	if err != nil {
-		return makeError(err)
-	}
-
-	vm, err = c.Refresh(id)
-	if err != nil {
-		if errors.Is(err, sErrors.VmNotFoundErr) {
-			return nil
-		}
-
-		return makeError(err)
-	}
-
 	// VM
 	csVM := g.VMs()[0]
 	status, err := csc.GetVmStatus(vm.Subsystems.CS.VM.ID)
@@ -379,7 +259,7 @@ func (c *Client) Repair(id string) error {
 		return makeError(err)
 	}
 
-	// only repair if the vm is stopped to prevent downtime for the user
+	// Only repair if the vm is stopped to prevent downtime for the user
 	if status == "" || status == "Stopped" {
 		var gpu *gpuModels.GPU
 		if gpuID := vm.GetGpuID(); gpuID != nil {

@@ -16,3 +16,8 @@ func (e PortInUseError) Error() string {
 func NewPortInUseError(port int) PortInUseError {
 	return PortInUseError{Port: port}
 }
+
+var (
+	// NotFoundErr is returned when the resource is not found.
+	NotFoundErr = fmt.Errorf("not found")
+)

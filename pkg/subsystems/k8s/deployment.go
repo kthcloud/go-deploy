@@ -119,7 +119,7 @@ func (client *Client) CreateDeployment(public *models.DeploymentPublic) (*models
 
 func (client *Client) UpdateDeployment(public *models.DeploymentPublic) (*models.DeploymentPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to update k8s deployment %s. details: %w", public.Name, err)
+		return fmt.Errorf("failed to update k8s deployment %s. details: %w", public.ID, err)
 	}
 
 	if public.ID == "" {
