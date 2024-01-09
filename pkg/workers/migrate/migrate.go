@@ -1,6 +1,8 @@
 package migrator
 
 import (
+	vmModels "go-deploy/models/sys/vm"
+	"go.mongodb.org/mongo-driver/bson"
 	"log"
 )
 
@@ -33,5 +35,31 @@ func Migrate() {
 //
 // add a date to the migration name to make it easier to identify.
 func getMigrations() map[string]func() error {
-	return map[string]func() error{}
+	return map[string]func() error{
+		"migrateSpecIntoCsVm_2024_01_09": migrateSpecIntoCsVm_2024_01_09,
+	}
+}
+
+func migrateSpecIntoCsVm_2024_01_09() error {
+	vms, err := vmModels.New().List()
+	if err != nil {
+		return err
+	}
+
+	for _, vm := range vms {
+		csVM := &vm.Subsystems.CS.VM
+		if csVM.CpuCores != 0 && csVM.RAM != 0 {
+			continue
+		}
+
+		err = vmModels.New().SetWithBsonByID(vm.ID, bson.D{
+			{"subsystems.cs.vm.cpuCores", vm.Specs.CpuCores},
+			{"subsystems.cs.vm.ram", vm.Specs.RAM},
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
