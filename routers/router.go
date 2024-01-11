@@ -9,6 +9,7 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"go-deploy/docs"
 	"go-deploy/pkg/auth"
+	"go-deploy/pkg/config"
 	"go-deploy/pkg/metrics"
 	"go-deploy/pkg/sys"
 	"go-deploy/routers/api/v1/middleware"
@@ -42,7 +43,16 @@ func NewRouter() *gin.Engine {
 
 	// public routing group
 	public := router.Group("/")
-	public.GET("/v1/docs/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+
+	swaggerBase := ""
+	// If the public URL contains a path, it must be prepended to the swagger base path
+	withoutHTTPs, _ := strings.CutPrefix(config.Config.ExternalUrl, "https://")
+	split := strings.SplitN(withoutHTTPs, "/", 2)
+	if len(split) > 1 {
+		swaggerBase = "/" + split[1]
+	}
+
+	public.GET(swaggerBase+"/v1/docs/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
 	// hook routing group
 	hook := router.Group("/")
