@@ -3,36 +3,39 @@
 ############################
 FROM golang:alpine AS builder
 # Install git.
-# Git is required for fetching the dependencies.
-RUN apk update && apk add --no-cache 'git=~2'
+RUN apk update && apk add --no-cache git=~2
 
-# Install dependencies
-ENV GO111MODULE=on
+# Set up working directory
 WORKDIR $GOPATH/src/packages/goginapp/
 COPY . .
 
-# Fetch dependencies.
-# Using go get.
+# Fetch dependencies and build the binary
+ENV GO111MODULE=on
 RUN go get -d -v
-
-# Build the binary.
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /go/main .
+
+# Copy routers folder to /go/routers
+RUN mkdir /go/routers
+RUN cp -r /go/src/packages/goginapp/routers /go/routers
 
 ############################
 # STEP 2 build a small image
 ############################
 FROM alpine:3
 
-WORKDIR /
+# Set up the working directory
+WORKDIR /go
 
-# Copy our keys executable.
+# Copy the binary
 COPY --from=builder /go/main /go/main
 
+# Copy the routers folder
+COPY --from=builder /go/routers /go/routers
+
+# Set environment variables and expose necessary port
 ENV PORT 8080
 ENV GIN_MODE release
 EXPOSE 8080
 
-WORKDIR /go
-
-# Run the Go Gin binary.
+# Run the Go Gin binary
 ENTRYPOINT ["/go/main"]
