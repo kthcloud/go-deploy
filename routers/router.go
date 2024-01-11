@@ -15,6 +15,7 @@ import (
 	"go-deploy/routers/api/v1/middleware"
 	"go-deploy/routers/api/validators"
 	"go-deploy/routers/routes"
+	"net/http"
 	"reflect"
 	"strings"
 )
@@ -27,13 +28,18 @@ func NewRouter() *gin.Engine {
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 
+	router.StaticFile("static/favicon.ico", "routers/static/favicon.ico")
+	router.StaticFile("static/style.css", "routers/static/style.css")
+	router.StaticFile("static/logo.png", "routers/static/logo.png")
+	router.LoadHTMLFiles("routers/index.html")
+	router.GET("/", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "index.html", gin.H{})
+	})
 	// metrics middleware
 	m := ginmetrics.GetMonitor()
 	m.SetMetricPath("/internal/metrics")
 	m.SetMetricPrefix(metrics.Prefix)
 	m.Use(router)
-
-	docs.SwaggerInfo.BasePath = "/v1"
 
 	// private routing group
 	private := router.Group("/")
@@ -44,15 +50,19 @@ func NewRouter() *gin.Engine {
 	// public routing group
 	public := router.Group("/")
 
-	swaggerBase := ""
 	// If the public URL contains a path, it must be prepended to the swagger base path
+	swaggerBase := ""
 	withoutHTTPs, _ := strings.CutPrefix(config.Config.ExternalUrl, "https://")
 	split := strings.SplitN(withoutHTTPs, "/", 2)
 	if len(split) > 1 {
 		swaggerBase = "/" + split[1]
 	}
+	docs.SwaggerInfo.BasePath = swaggerBase + "/v1"
 
-	public.GET(swaggerBase+"/v1/docs/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+	public.GET("/v1/docs", func(c *gin.Context) {
+		c.Redirect(302, "/v1/docs/index.html")
+	})
+	public.GET("/v1/docs/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
 	// hook routing group
 	hook := router.Group("/")

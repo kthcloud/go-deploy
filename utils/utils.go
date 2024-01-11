@@ -29,8 +29,8 @@ func GetPage[T any](list []T, pageSize, page int) []T {
 		return list
 	}
 
-	start := (page - 1) * pageSize
-	end := page * pageSize
+	start := page * pageSize
+	end := start + pageSize
 
 	if start > len(list) {
 		return make([]T, 0)
