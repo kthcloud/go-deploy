@@ -760,7 +760,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Deployment"
+                    "StorageManager"
                 ],
                 "summary": "Delete storage manager",
                 "parameters": [
@@ -783,7 +783,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/body.StorageManagerDeleted"
+                            "$ref": "#/definitions/body.SmDeleted"
                         }
                     },
                     "400": {
@@ -823,7 +823,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Deployment"
+                    "StorageManager"
                 ],
                 "summary": "Get storage manager list",
                 "parameters": [
@@ -841,7 +841,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/body.StorageManagerRead"
+                                "$ref": "#/definitions/body.SmRead"
                             }
                         }
                     },
@@ -876,7 +876,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Deployment"
+                    "StorageManager"
                 ],
                 "summary": "Get storage manager",
                 "parameters": [
@@ -899,7 +899,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/body.StorageManagerDeleted"
+                            "$ref": "#/definitions/body.SmDeleted"
                         }
                     },
                     "400": {
@@ -2188,6 +2188,11 @@
                 "private": {
                     "type": "boolean"
                 },
+                "replicas": {
+                    "type": "integer",
+                    "maximum": 100,
+                    "minimum": 0
+                },
                 "volumes": {
                     "type": "array",
                     "maxItems": 100,
@@ -2216,6 +2221,12 @@
             "type": "object",
             "properties": {
                 "createdAt": {
+                    "type": "string"
+                },
+                "customDomainSecret": {
+                    "type": "string"
+                },
+                "customDomainStatus": {
                     "type": "string"
                 },
                 "customDomainUrl": {
@@ -2266,6 +2277,9 @@
                 "repairedAt": {
                     "type": "string"
                 },
+                "replicas": {
+                    "type": "integer"
+                },
                 "restartedAt": {
                     "type": "string"
                 },
@@ -2274,6 +2288,12 @@
                 },
                 "storageUrl": {
                     "type": "string"
+                },
+                "teams": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "type": {
                     "type": "string"
@@ -2344,6 +2364,11 @@
                 },
                 "private": {
                     "type": "boolean"
+                },
+                "replicas": {
+                    "type": "integer",
+                    "maximum": 100,
+                    "minimum": 0
                 },
                 "transferCode": {
                     "type": "string",
@@ -2505,7 +2530,8 @@
                         "running",
                         "failed",
                         "terminated",
-                        "finished"
+                        "finished",
+                        "completed"
                     ]
                 }
             }
@@ -2513,6 +2539,9 @@
         "body.NotificationRead": {
             "type": "object",
             "properties": {
+                "completedAt": {
+                    "type": "string"
+                },
                 "content": {
                     "type": "object",
                     "additionalProperties": true
@@ -2527,6 +2556,9 @@
                     "type": "string"
                 },
                 "type": {
+                    "type": "string"
+                },
+                "userId": {
                     "type": "string"
                 }
             }
@@ -2633,21 +2665,7 @@
                 }
             }
         },
-        "body.Specs": {
-            "type": "object",
-            "properties": {
-                "cpuCores": {
-                    "type": "integer"
-                },
-                "diskSize": {
-                    "type": "integer"
-                },
-                "ram": {
-                    "type": "integer"
-                }
-            }
-        },
-        "body.StorageManagerDeleted": {
+        "body.SmDeleted": {
             "type": "object",
             "properties": {
                 "id": {
@@ -2658,7 +2676,7 @@
                 }
             }
         },
-        "body.StorageManagerRead": {
+        "body.SmRead": {
             "type": "object",
             "properties": {
                 "createdAt": {
@@ -2675,6 +2693,20 @@
                 },
                 "zone": {
                     "type": "string"
+                }
+            }
+        },
+        "body.Specs": {
+            "type": "object",
+            "properties": {
+                "cpuCores": {
+                    "type": "integer"
+                },
+                "diskSize": {
+                    "type": "integer"
+                },
+                "ram": {
+                    "type": "integer"
                 }
             }
         },
@@ -3060,6 +3092,9 @@
                 "gpu": {
                     "$ref": "#/definitions/body.VmGpu"
                 },
+                "host": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -3086,6 +3121,12 @@
                 },
                 "status": {
                     "type": "string"
+                },
+                "teams": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "updatedAt": {
                     "type": "string"

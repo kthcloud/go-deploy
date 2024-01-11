@@ -116,6 +116,10 @@ definitions:
         type: string
       private:
         type: boolean
+      replicas:
+        maximum: 100
+        minimum: 0
+        type: integer
       volumes:
         items:
           $ref: '#/definitions/body.Volume'
@@ -137,6 +141,10 @@ definitions:
   body.DeploymentRead:
     properties:
       createdAt:
+        type: string
+      customDomainSecret:
+        type: string
+      customDomainStatus:
         type: string
       customDomainUrl:
         type: string
@@ -170,12 +178,18 @@ definitions:
         type: boolean
       repairedAt:
         type: string
+      replicas:
+        type: integer
       restartedAt:
         type: string
       status:
         type: string
       storageUrl:
         type: string
+      teams:
+        items:
+          type: string
+        type: array
       type:
         type: string
       updatedAt:
@@ -225,6 +239,10 @@ definitions:
         type: string
       private:
         type: boolean
+      replicas:
+        maximum: 100
+        minimum: 0
+        type: integer
       transferCode:
         maxLength: 1000
         minLength: 1
@@ -337,10 +355,13 @@ definitions:
         - failed
         - terminated
         - finished
+        - completed
         type: string
     type: object
   body.NotificationRead:
     properties:
+      completedAt:
+        type: string
       content:
         additionalProperties: true
         type: object
@@ -351,6 +372,8 @@ definitions:
       readAt:
         type: string
       type:
+        type: string
+      userId:
         type: string
     type: object
   body.NotificationUpdate:
@@ -423,23 +446,14 @@ definitions:
       quota:
         $ref: '#/definitions/body.Quota'
     type: object
-  body.Specs:
-    properties:
-      cpuCores:
-        type: integer
-      diskSize:
-        type: integer
-      ram:
-        type: integer
-    type: object
-  body.StorageManagerDeleted:
+  body.SmDeleted:
     properties:
       id:
         type: string
       jobId:
         type: string
     type: object
-  body.StorageManagerRead:
+  body.SmRead:
     properties:
       createdAt:
         type: string
@@ -451,6 +465,15 @@ definitions:
         type: string
       zone:
         type: string
+    type: object
+  body.Specs:
+    properties:
+      cpuCores:
+        type: integer
+      diskSize:
+        type: integer
+      ram:
+        type: integer
     type: object
   body.TeamCreate:
     properties:
@@ -713,6 +736,8 @@ definitions:
         type: string
       gpu:
         $ref: '#/definitions/body.VmGpu'
+      host:
+        type: string
       id:
         type: string
       name:
@@ -731,6 +756,10 @@ definitions:
         type: string
       status:
         type: string
+      teams:
+        items:
+          type: string
+        type: array
       updatedAt:
         type: string
       zone:
@@ -1409,7 +1438,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/body.StorageManagerDeleted'
+            $ref: '#/definitions/body.SmDeleted'
         "400":
           description: Bad Request
           schema:
@@ -1428,7 +1457,7 @@ paths:
             $ref: '#/definitions/sys.ErrorResponse'
       summary: Delete storage manager
       tags:
-      - Deployment
+      - StorageManager
   /storageManagers:
     get:
       consumes:
@@ -1447,7 +1476,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/body.StorageManagerRead'
+              $ref: '#/definitions/body.SmRead'
             type: array
         "400":
           description: Bad Request
@@ -1463,7 +1492,7 @@ paths:
             $ref: '#/definitions/sys.ErrorResponse'
       summary: Get storage manager list
       tags:
-      - Deployment
+      - StorageManager
   /storageManagers/{storageManagerId}:
     get:
       consumes:
@@ -1486,7 +1515,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/body.StorageManagerDeleted'
+            $ref: '#/definitions/body.SmDeleted'
         "400":
           description: Bad Request
           schema:
@@ -1505,7 +1534,7 @@ paths:
             $ref: '#/definitions/sys.ErrorResponse'
       summary: Get storage manager
       tags:
-      - Deployment
+      - StorageManager
   /teams:
     get:
       consumes:

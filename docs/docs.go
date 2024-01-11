@@ -772,7 +772,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Deployment"
+                    "StorageManager"
                 ],
                 "summary": "Delete storage manager",
                 "parameters": [
@@ -795,7 +795,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/body.StorageManagerDeleted"
+                            "$ref": "#/definitions/body.SmDeleted"
                         }
                     },
                     "400": {
@@ -835,7 +835,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Deployment"
+                    "StorageManager"
                 ],
                 "summary": "Get storage manager list",
                 "parameters": [
@@ -853,7 +853,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/body.StorageManagerRead"
+                                "$ref": "#/definitions/body.SmRead"
                             }
                         }
                     },
@@ -888,7 +888,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Deployment"
+                    "StorageManager"
                 ],
                 "summary": "Get storage manager",
                 "parameters": [
@@ -911,7 +911,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/body.StorageManagerDeleted"
+                            "$ref": "#/definitions/body.SmDeleted"
                         }
                     },
                     "400": {
@@ -2200,6 +2200,11 @@ const docTemplate = `{
                 "private": {
                     "type": "boolean"
                 },
+                "replicas": {
+                    "type": "integer",
+                    "maximum": 100,
+                    "minimum": 0
+                },
                 "volumes": {
                     "type": "array",
                     "maxItems": 100,
@@ -2228,6 +2233,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "createdAt": {
+                    "type": "string"
+                },
+                "customDomainSecret": {
+                    "type": "string"
+                },
+                "customDomainStatus": {
                     "type": "string"
                 },
                 "customDomainUrl": {
@@ -2278,6 +2289,9 @@ const docTemplate = `{
                 "repairedAt": {
                     "type": "string"
                 },
+                "replicas": {
+                    "type": "integer"
+                },
                 "restartedAt": {
                     "type": "string"
                 },
@@ -2286,6 +2300,12 @@ const docTemplate = `{
                 },
                 "storageUrl": {
                     "type": "string"
+                },
+                "teams": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "type": {
                     "type": "string"
@@ -2356,6 +2376,11 @@ const docTemplate = `{
                 },
                 "private": {
                     "type": "boolean"
+                },
+                "replicas": {
+                    "type": "integer",
+                    "maximum": 100,
+                    "minimum": 0
                 },
                 "transferCode": {
                     "type": "string",
@@ -2517,7 +2542,8 @@ const docTemplate = `{
                         "running",
                         "failed",
                         "terminated",
-                        "finished"
+                        "finished",
+                        "completed"
                     ]
                 }
             }
@@ -2525,6 +2551,9 @@ const docTemplate = `{
         "body.NotificationRead": {
             "type": "object",
             "properties": {
+                "completedAt": {
+                    "type": "string"
+                },
                 "content": {
                     "type": "object",
                     "additionalProperties": true
@@ -2539,6 +2568,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "type": {
+                    "type": "string"
+                },
+                "userId": {
                     "type": "string"
                 }
             }
@@ -2645,21 +2677,7 @@ const docTemplate = `{
                 }
             }
         },
-        "body.Specs": {
-            "type": "object",
-            "properties": {
-                "cpuCores": {
-                    "type": "integer"
-                },
-                "diskSize": {
-                    "type": "integer"
-                },
-                "ram": {
-                    "type": "integer"
-                }
-            }
-        },
-        "body.StorageManagerDeleted": {
+        "body.SmDeleted": {
             "type": "object",
             "properties": {
                 "id": {
@@ -2670,7 +2688,7 @@ const docTemplate = `{
                 }
             }
         },
-        "body.StorageManagerRead": {
+        "body.SmRead": {
             "type": "object",
             "properties": {
                 "createdAt": {
@@ -2687,6 +2705,20 @@ const docTemplate = `{
                 },
                 "zone": {
                     "type": "string"
+                }
+            }
+        },
+        "body.Specs": {
+            "type": "object",
+            "properties": {
+                "cpuCores": {
+                    "type": "integer"
+                },
+                "diskSize": {
+                    "type": "integer"
+                },
+                "ram": {
+                    "type": "integer"
                 }
             }
         },
@@ -3072,6 +3104,9 @@ const docTemplate = `{
                 "gpu": {
                     "$ref": "#/definitions/body.VmGpu"
                 },
+                "host": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -3098,6 +3133,12 @@ const docTemplate = `{
                 },
                 "status": {
                     "type": "string"
+                },
+                "teams": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "updatedAt": {
                     "type": "string"
