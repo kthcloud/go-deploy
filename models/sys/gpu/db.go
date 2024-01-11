@@ -34,6 +34,12 @@ func (client *Client) Create(id, host string, data GpuData, zone string) error {
 
 	_, err = client.Collection.InsertOne(context.TODO(), gpu)
 	if err != nil {
+		// If the error is a duplicate key error, it means that another instance already created the gpu
+		// Probably caused by a race condition
+		if mongo.IsDuplicateKeyError(err) {
+			return nil
+		}
+
 		err = fmt.Errorf("failed to create gpu. details: %w", err)
 		return err
 	}
