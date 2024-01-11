@@ -69,7 +69,7 @@ func (client *Client) CreateIngress(public *models.IngressPublic) (*models.Ingre
 
 func (client *Client) UpdateIngress(public *models.IngressPublic) (*models.IngressPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to update k8s ingress %s. details: %w", public.Name, err)
+		return fmt.Errorf("failed to update k8s ingress %s. details: %w", public.ID, err)
 	}
 
 	if public.ID == "" {

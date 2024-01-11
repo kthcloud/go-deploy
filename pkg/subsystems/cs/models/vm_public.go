@@ -9,11 +9,13 @@ type VmPublic struct {
 	ID   string `bson:"id"`
 	Name string `bson:"name"`
 
-	ServiceOfferingID string    `bson:"serviceOfferingId"`
-	TemplateID        string    `bson:"templateId"`
-	ExtraConfig       string    `bson:"extraConfig"`
-	Tags              []Tag     `bson:"tags"`
-	CreatedAt         time.Time `bson:"createdAt"`
+	CpuCores int `bson:"cpuCores"`
+	RAM      int `bson:"ram"`
+
+	TemplateID  string    `bson:"templateId"`
+	ExtraConfig string    `bson:"extraConfig"`
+	Tags        []Tag     `bson:"tags"`
+	CreatedAt   time.Time `bson:"createdAt"`
 }
 
 func (vm *VmPublic) Created() bool {
@@ -33,13 +35,14 @@ func CreateVmPublicFromGet(vm *cloudstack.VirtualMachine) *VmPublic {
 	tags := FromCsTags(vm.Tags)
 
 	return &VmPublic{
-		ID:                vm.Id,
-		Name:              vm.Name,
-		ServiceOfferingID: vm.Serviceofferingid,
-		TemplateID:        vm.Templateid,
-		ExtraConfig:       extraConfig,
-		Tags:              tags,
-		CreatedAt:         formatCreatedAt(vm.Created),
+		ID:          vm.Id,
+		Name:        vm.Name,
+		CpuCores:    vm.Cpunumber,
+		RAM:         vm.Memory / 1024,
+		TemplateID:  vm.Templateid,
+		ExtraConfig: extraConfig,
+		Tags:        tags,
+		CreatedAt:   formatCreatedAt(vm.Created),
 	}
 }
 

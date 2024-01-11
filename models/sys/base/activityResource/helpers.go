@@ -55,7 +55,7 @@ func (client *ActivityResourceClient[T]) ClearActivities(id string) error {
 	return nil
 }
 
-func (client *ActivityResourceClient[T]) DoingActivity(id, activity string) (bool, error) {
+func (client *ActivityResourceClient[T]) IsDoingActivity(id, activity string) (bool, error) {
 	filter := bson.D{
 		{"id", id},
 		{"activities." + activity, bson.M{

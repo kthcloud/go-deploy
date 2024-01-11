@@ -34,6 +34,21 @@ func NewFailedToStartActivityError(reason string) FailedToStartActivityError {
 	return FailedToStartActivityError{reason: reason}
 }
 
+// PortInUseErr is returned when the port is already in use.
+type PortInUseErr struct {
+	Port int
+}
+
+// Error returns the reason for the port in use error.
+func (e PortInUseErr) Error() string {
+	return fmt.Sprintf("port %d is already in use", e.Port)
+}
+
+// NewPortInUseErr creates a new PortInUseErr.
+func NewPortInUseErr(port int) PortInUseErr {
+	return PortInUseErr{Port: port}
+}
+
 var (
 	// DeploymentNotFoundErr is returned when the deployment is not found.
 	// This is most likely caused by a race-condition between a some resource call and a deletion call.
@@ -69,9 +84,6 @@ var (
 	// Something that is required when using GPUs.
 	VmTooLargeErr = fmt.Errorf("vm too large")
 
-	// PortInUseErr is returned when the port is already in use.
-	PortInUseErr = fmt.Errorf("port in use")
-
 	// NoPortsAvailableErr is returned when there are no ports available.
 	NoPortsAvailableErr = fmt.Errorf("no ports available")
 
@@ -87,11 +99,11 @@ var (
 	SnapshotNotFoundErr = fmt.Errorf("snapshot not found")
 
 	// SnapshotAlreadyExistsErr is returned when the snapshot already exists.
-	// This is normally caused by not specifying the overwrite flag and a snapshot with the same name already exists.
+	// This is normally caused by not specifying the "overwrite" flag and a snapshot with the same name already exists.
 	SnapshotAlreadyExistsErr = fmt.Errorf("already exists")
 
 	// BadStateErr is returned when the state is bad.
-	// For example, if a VM has a GPU attached when creating a snapshot.
+	// For example, if a VM has a GPU attached when creating a snapshot or if a deployment is not ready to set up a log stream.
 	BadStateErr = fmt.Errorf("bad state")
 
 	// NonUniqueFieldErr is returned when a field is not unique, such as the name of a deployment.

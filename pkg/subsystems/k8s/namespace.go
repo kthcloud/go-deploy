@@ -99,7 +99,7 @@ func (client *Client) CreateNamespace(public *models.NamespacePublic) (*models.N
 
 func (client *Client) UpdateNamespace(public *models.NamespacePublic) (*models.NamespacePublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to update namespace %s. details: %w", public.Name, err)
+		return fmt.Errorf("failed to update namespace %s. details: %w", public.ID, err)
 	}
 
 	if public.ID == "" {

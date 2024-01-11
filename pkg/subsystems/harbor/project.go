@@ -69,7 +69,7 @@ func (client *Client) CreateProject(public *models.ProjectPublic) (*models.Proje
 
 func (client *Client) UpdateProject(public *models.ProjectPublic) (*models.ProjectPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to update harbor project %s. details: %w", public.Name, err)
+		return fmt.Errorf("failed to update harbor project %d. details: %w", public.ID, err)
 	}
 
 	if public.ID == 0 {

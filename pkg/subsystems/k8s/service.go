@@ -63,7 +63,7 @@ func (client *Client) CreateService(public *models.ServicePublic) (*models.Servi
 
 func (client *Client) UpdateService(public *models.ServicePublic) (*models.ServicePublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to update k8s service %s. details: %w", public.Name, err)
+		return fmt.Errorf("failed to update k8s service %s. details: %w", public.ID, err)
 	}
 
 	if public.ID == "" {

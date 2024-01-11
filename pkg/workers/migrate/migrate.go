@@ -1,11 +1,9 @@
 package migrator
 
 import (
-	"go-deploy/models/sys/base/resource"
-	deploymentModels "go-deploy/models/sys/deployment"
+	vmModels "go-deploy/models/sys/vm"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
-	"strings"
 )
 
 // Migrate will run as early as possible in the program, and it will never be called again.
@@ -38,55 +36,28 @@ func Migrate() {
 // add a date to the migration name to make it easier to identify.
 func getMigrations() map[string]func() error {
 	return map[string]func() error{
-		"migrateOldCustomDomainToNewStruct_2024_01_02": migrateOldCustomDomainToNewStruct_2024_01_02,
+		"migrateSpecIntoCsVm_2024_01_09": migrateSpecIntoCsVm_2024_01_09,
 	}
 }
 
-type oldApp struct {
-	CustomDomain *string `bson:"customDomain"`
-}
-
-type oldDeployment struct {
-	ID   string            `bson:"id"`
-	Apps map[string]oldApp `bson:"apps"`
-}
-
-func migrateOldCustomDomainToNewStruct_2024_01_02() error {
-	rc := resource.ResourceClient[oldDeployment]{
-		Collection: deploymentModels.New().Collection,
-	}
-
-	ids, err := deploymentModels.New().ListIDs()
+func migrateSpecIntoCsVm_2024_01_09() error {
+	vms, err := vmModels.New().List()
 	if err != nil {
 		return err
 	}
 
-	for _, id := range ids {
-		deployment, err := rc.GetByID(id.ID)
-		if err != nil {
-			if strings.Contains(err.Error(), "error decoding key") {
-				continue
-			}
-
-			return err
+	for _, vm := range vms {
+		csVM := &vm.Subsystems.CS.VM
+		if csVM.CpuCores != 0 && csVM.RAM != 0 {
+			continue
 		}
 
-		mainApp := deployment.Apps["main"]
-		if mainApp.CustomDomain != nil {
-			cd := deploymentModels.CustomDomain{
-				Domain: *mainApp.CustomDomain,
-				Secret: "",
-				Status: deploymentModels.CustomDomainStatusReady,
-			}
-
-			update := bson.D{
-				{"apps.main.customDomain", cd},
-			}
-
-			err = deploymentModels.New().SetWithBsonByID(id.ID, update)
-			if err != nil {
-				return err
-			}
+		err = vmModels.New().SetWithBsonByID(vm.ID, bson.D{
+			{"subsystems.cs.vm.cpuCores", vm.Specs.CpuCores},
+			{"subsystems.cs.vm.ram", vm.Specs.RAM},
+		})
+		if err != nil {
+			return err
 		}
 	}
 

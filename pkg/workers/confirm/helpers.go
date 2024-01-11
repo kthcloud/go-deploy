@@ -156,10 +156,6 @@ func csDeleted(vm *vm.VM) (bool, error) {
 		return false, nil
 	}
 
-	if cs.ServiceOffering.Created() {
-		return false, nil
-	}
-
 	return true, nil
 }
 

@@ -9,14 +9,14 @@ import (
 func TestCreatePortForwardingRule(t *testing.T) {
 	t.Parallel()
 
-	withDefaultPFR(t, withDefaultVM(t, withCsServiceOfferingSmall(t)))
+	withDefaultPFR(t, withDefaultVM(t))
 }
 
 func TestUpdatePortForwardingRule(t *testing.T) {
 	t.Parallel()
 
 	client := withClient(t)
-	vm := withDefaultVM(t, withCsServiceOfferingSmall(t))
+	vm := withDefaultVM(t)
 	pfr := withDefaultPFR(t, vm)
 
 	pfr.PrivatePort = pfr.PrivatePort + 1

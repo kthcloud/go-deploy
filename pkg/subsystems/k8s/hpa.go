@@ -63,7 +63,7 @@ func (client *Client) CreateHPA(public *models.HpaPublic) (*models.HpaPublic, er
 
 func (client *Client) UpdateHPA(public *models.HpaPublic) (*models.HpaPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to update k8s hpa %s. details: %w", public.Name, err)
+		return fmt.Errorf("failed to update k8s hpa %s. details: %w", public.ID, err)
 	}
 
 	if public.ID == "" {

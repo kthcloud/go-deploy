@@ -68,10 +68,10 @@ func (client *Client) RestrictToOwner(ownerID string) *Client {
 }
 
 func (client *Client) WithActivities(activities ...string) *Client {
-	orFilter := bson.A{}
+	andFilter := bson.A{}
 
 	for _, activity := range activities {
-		orFilter = append(orFilter, bson.M{
+		andFilter = append(andFilter, bson.M{
 			"activities." + activity: bson.M{
 				"$exists": true,
 			},
@@ -79,7 +79,28 @@ func (client *Client) WithActivities(activities ...string) *Client {
 	}
 
 	filter := bson.D{{
-		"$or", orFilter,
+		"$and", andFilter,
+	}}
+
+	client.ResourceClient.AddExtraFilter(filter)
+	client.ActivityResourceClient.AddExtraFilter(filter)
+
+	return client
+}
+
+func (client *Client) WithoutActivities(activities ...string) *Client {
+	andFilter := bson.A{}
+
+	for _, activity := range activities {
+		andFilter = append(andFilter, bson.M{
+			"activities." + activity: bson.M{
+				"$exists": false,
+			},
+		})
+	}
+
+	filter := bson.D{{
+		"$and", andFilter,
 	}}
 
 	client.ResourceClient.AddExtraFilter(filter)

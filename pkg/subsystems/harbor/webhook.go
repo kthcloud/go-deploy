@@ -98,7 +98,7 @@ func (client *Client) CreateWebhook(public *models.WebhookPublic) (*models.Webho
 
 func (client *Client) UpdateWebhook(public *models.WebhookPublic) (*models.WebhookPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to update webhook for %s. details: %w", public.Name, err)
+		return fmt.Errorf("failed to update webhook for %d. details: %w", public.ID, err)
 	}
 
 	project, err := client.HarborClient.GetProject(context.TODO(), client.Project)

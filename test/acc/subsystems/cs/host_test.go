@@ -22,7 +22,7 @@ func TestReadVmHostname(t *testing.T) {
 	t.Parallel()
 
 	client := withClient(t)
-	vm := withDefaultVM(t, withCsServiceOfferingSmall(t))
+	vm := withDefaultVM(t)
 
 	hostname, err := client.ReadHostByVM(vm.ID)
 	test.NoError(t, err, "failed to read vm hostname")

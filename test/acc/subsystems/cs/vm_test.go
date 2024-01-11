@@ -10,14 +10,14 @@ import (
 func TestCreateVM(t *testing.T) {
 	t.Parallel()
 
-	withDefaultVM(t, withCsServiceOfferingSmall(t))
+	withDefaultVM(t)
 }
 
 func TestUpdateVM(t *testing.T) {
 	t.Parallel()
 
 	client := withClient(t)
-	vm := withDefaultVM(t, withCsServiceOfferingSmall(t))
+	vm := withDefaultVM(t)
 
 	vm.Name = vm.Name + "-updated"
 	vm.ExtraConfig = "some-extra-config"
@@ -29,17 +29,17 @@ func TestUpdateVM(t *testing.T) {
 	assert.Equal(t, vm.ExtraConfig, vmUpdated.ExtraConfig, "vm extra config is not updated")
 }
 
-func TestUpdateVmServiceOffering(t *testing.T) {
+func TestUpdateVmSpecs(t *testing.T) {
 	t.Parallel()
 
 	client := withClient(t)
-	soNew := withCsServiceOfferingBig(t)
-	vm := withDefaultVM(t, withCsServiceOfferingSmall(t))
+	vm := withDefaultVM(t)
 
 	err := client.DoVmCommand(vm.ID, nil, commands.Stop)
 	test.NoError(t, err, "failed to stop vm")
 
-	vm.ServiceOfferingID = soNew.ID
+	vm.CpuCores += 1
+	vm.RAM += 1
 
 	vmUpdated, err := client.UpdateVM(vm)
 	test.NoError(t, err, "failed to update vm service offering")
@@ -47,5 +47,6 @@ func TestUpdateVmServiceOffering(t *testing.T) {
 	err = client.DoVmCommand(vm.ID, nil, commands.Start)
 	test.NoError(t, err, "failed to start vm")
 
-	assert.Equal(t, soNew.ID, vmUpdated.ServiceOfferingID, "vm service offering is not updated")
+	assert.Equal(t, vm.CpuCores, vmUpdated.CpuCores, "vm cpu cores are not updated")
+	assert.Equal(t, vm.RAM, vmUpdated.RAM, "vm ram is not updated")
 }
