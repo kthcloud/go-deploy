@@ -3,6 +3,7 @@ version: '3.8'
 services:
   app:
     build: .
+    command: --confirmer
     ports:
       - "8080:8080" # Map the port of your app to the host
     depends_on:
