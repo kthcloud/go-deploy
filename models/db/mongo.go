@@ -102,7 +102,7 @@ func (dbCtx *Context) setupMongo() error {
 
 	ensureCount = 0
 	for _, def := range DB.CollectionDefinitionMap {
-		for _, indexName := range def.UniqueIndexes {
+		for _, indexName := range def.TotallyUniqueIndexes {
 			keys := bson.D{}
 			for _, key := range indexName {
 				keys = append(keys, bson.E{Key: key, Value: 1})
