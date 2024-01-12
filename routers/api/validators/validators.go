@@ -10,7 +10,6 @@ import (
 	"io"
 	"net/http"
 	"regexp"
-	"strconv"
 	"strings"
 )
 
@@ -84,61 +83,114 @@ func EnvList(fl validator.FieldLevel) bool {
 }
 
 func PortListNames(fl validator.FieldLevel) bool {
-	portList, ok := fl.Field().Interface().([]body.Port)
-	if !ok {
-		return false
+	// We need to try with both PortCreate and PortUpdate
+
+	portListCreate, ok := fl.Field().Interface().([]body.PortCreate)
+	if ok {
+		names := make(map[string]bool)
+		for _, port := range portListCreate {
+			if _, exists := names[port.Name]; exists {
+				return false
+			}
+			names[port.Name] = true
+		}
+
+		return true
 	}
 
-	names := make(map[string]bool)
-	for _, port := range portList {
-		if _, ok := names[port.Name]; ok {
-			return false
+	portListUpdate, ok := fl.Field().Interface().([]body.PortUpdate)
+	if ok {
+		names := make(map[string]bool)
+		for _, port := range portListUpdate {
+			if _, exists := names[port.Name]; exists {
+				return false
+			}
+			names[port.Name] = true
 		}
-		names[port.Name] = true
+
+		return true
 	}
-	return true
+
+	return false
 }
 
 func PortListNumbers(fl validator.FieldLevel) bool {
-	portList, ok := fl.Field().Interface().([]body.Port)
-	if !ok {
-		return false
+	// We need to try with both PortCreate and PortUpdate
+
+	portListCreate, ok := fl.Field().Interface().([]body.PortCreate)
+	if ok {
+		numbers := make(map[int]bool)
+		for _, port := range portListCreate {
+			if _, exists := numbers[port.Port]; exists {
+				return false
+			}
+			numbers[port.Port] = true
+		}
+
+		return true
 	}
 
-	ports := make(map[string]bool)
-	for _, port := range portList {
-		identifier := strconv.Itoa(port.Port) + "/" + port.Protocol
-		if _, ok := ports[identifier]; ok {
-			return false
+	portListUpdate, ok := fl.Field().Interface().([]body.PortUpdate)
+	if ok {
+		numbers := make(map[int]bool)
+		for _, port := range portListUpdate {
+			if _, exists := numbers[port.Port]; exists {
+				return false
+			}
+			numbers[port.Port] = true
 		}
-		ports[identifier] = true
+
+		return true
 	}
-	return true
+
+	return false
 }
 
 func PortListHttpProxies(fl validator.FieldLevel) bool {
-	portList, ok := fl.Field().Interface().([]body.Port)
-	if !ok {
-		return false
-	}
+	// We need to try with both PortCreate and PortUpdate
 
-	names := make(map[string]bool)
-	for _, port := range portList {
-		if port.HttpProxy != nil {
-			if _, ok := names[port.HttpProxy.Name]; ok {
-				return false
+	portListCreate, ok := fl.Field().Interface().([]body.PortCreate)
+	if ok {
+		names := make(map[string]bool)
+		for _, port := range portListCreate {
+			if port.HttpProxy != nil {
+				if _, exists := names[port.HttpProxy.Name]; exists {
+					return false
+				}
+				names[port.HttpProxy.Name] = true
 			}
-			names[port.HttpProxy.Name] = true
 		}
+
+		return true
 	}
 
-	return true
+	portListUpdate, ok := fl.Field().Interface().([]body.PortUpdate)
+	if ok {
+		names := make(map[string]bool)
+		for _, port := range portListUpdate {
+			if port.HttpProxy != nil {
+				if _, exists := names[port.HttpProxy.Name]; exists {
+					return false
+				}
+				names[port.HttpProxy.Name] = true
+			}
+		}
+
+		return true
+	}
+
+	return false
 }
 
 func DomainName(fl validator.FieldLevel) bool {
 	domain, ok := fl.Field().Interface().(string)
 	if !ok {
 		return false
+	}
+
+	// Deletion through empty string
+	if domain == "" {
+		return true
 	}
 
 	illegalSuffixes := make([]string, len(config.Config.Deployment.Zones))
@@ -164,6 +216,11 @@ func CustomDomain(fl validator.FieldLevel) bool {
 	domain, ok := fl.Field().Interface().(string)
 	if !ok {
 		return false
+	}
+
+	// Deletion through empty string
+	if domain == "" {
+		return true
 	}
 
 	punyEncoded, err := idna.Lookup.ToASCII(domain)
