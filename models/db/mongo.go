@@ -219,6 +219,10 @@ func getCollectionDefinitions() map[string]CollectionDefinition {
 			Indexes:              []string{"type", "createdAt", "source.userId"},
 			TotallyUniqueIndexes: [][]string{{"id"}},
 		},
+		"workerStatus": {
+			Name:    "workerStatus",
+			Indexes: []string{"name", "status"},
+		},
 	}
 }
 

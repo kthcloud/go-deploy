@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	deploymentModels "go-deploy/models/sys/deployment"
+	"go-deploy/pkg/workers"
 	"go-deploy/service/deployment_service/gitlab_service"
 	"go-deploy/service/deployment_service/k8s_service"
 	sErrors "go-deploy/service/errors"
@@ -46,6 +47,9 @@ func deploymentLogger(ctx context.Context) {
 
 	for {
 		select {
+		case <-time.After(1 * time.Second):
+			workers.ReportStatus("deploymentLogger")
+
 		case <-time.After(1000 * time.Millisecond):
 			currentIDs := make([]string, len(current))
 			idx := 0

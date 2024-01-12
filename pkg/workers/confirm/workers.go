@@ -9,6 +9,7 @@ import (
 	smModels "go-deploy/models/sys/sm"
 	vmModels "go-deploy/models/sys/vm"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/workers"
 	"go-deploy/utils"
 	"golang.org/x/exp/slices"
 	"log"
@@ -18,9 +19,11 @@ import (
 
 func deploymentConfirmer(ctx context.Context) {
 	defer log.Println("deploymentConfirmer stopped")
-
 	for {
 		select {
+		case <-time.After(1 * time.Second):
+			workers.ReportStatus("deploymentConfirmer")
+
 		case <-time.After(5 * time.Second):
 			beingDeleted, _ := deploymentModels.New().WithActivities(deploymentModels.ActivityBeingDeleted).List()
 			for _, deployment := range beingDeleted {
@@ -57,6 +60,9 @@ func customDomainConfirmer(ctx context.Context) {
 
 	for {
 		select {
+		case <-time.After(1 * time.Second):
+			workers.ReportStatus("customDomainConfirmer")
+
 		case <-time.After(1 * time.Second):
 			deploymentsWithPendingCustomDomain, err := deploymentModels.New().WithPendingCustomDomain().List()
 			if err != nil {
@@ -147,6 +153,9 @@ func smConfirmer(ctx context.Context) {
 
 	for {
 		select {
+		case <-time.After(1 * time.Second):
+			workers.ReportStatus("smConfirmer")
+
 		case <-time.After(5 * time.Second):
 			beingDeleted, err := smModels.New().WithActivities(smModels.ActivityBeingDeleted).List()
 			if err != nil {
@@ -187,6 +196,9 @@ func vmConfirmer(ctx context.Context) {
 
 	for {
 		select {
+		case <-time.After(1 * time.Second):
+			workers.ReportStatus("vmConfirmer")
+
 		case <-time.After(5 * time.Second):
 			beingDeleted, err := vmModels.New().WithActivities(vmModels.ActivityBeingDeleted).List()
 			if err != nil {

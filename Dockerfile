@@ -1,41 +1,33 @@
-############################
-# STEP 1 build executable binary
-############################
-FROM golang:alpine AS builder
-# Install git.
-RUN apk update && apk add --no-cache git=~2
+# Stage 1: Build
+FROM golang:1.20 as builder
 
-# Set up working directory
-WORKDIR $GOPATH/src/packages/goginapp/
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy go.mod and go.sum to download dependencies
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy the source code into the container
 COPY . .
 
-# Fetch dependencies and build the binary
-ENV GO111MODULE=on
-RUN go get -d -v
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /go/main .
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux go build -o main .
 
-# Copy routers folder to /go/routers
-RUN mkdir /go/routers
-RUN cp -r /go/src/packages/goginapp/routers /go/routers
+# Second stage: package the application
+FROM alpine:latest
 
-############################
-# STEP 2 build a small image
-############################
-FROM alpine:3
+# Set the working directory in the container
+WORKDIR /root/
 
-# Set up the working directory
-WORKDIR /go
+# Copy the binary from the builder stage
+COPY --from=builder /app/main .
 
-# Copy the binary
-COPY --from=builder /go/main /go/main
+# Copy the "index" folder
+COPY --from=builder /app/index index
 
-# Copy the routers folder
-COPY --from=builder /go/routers /go/routers
-
-# Set environment variables and expose necessary port
 ENV PORT 8080
 ENV GIN_MODE release
-EXPOSE 8080
 
-# Run the Go Gin binary
-ENTRYPOINT ["/go/main"]
+# Command to run the executable
+CMD ["./main"]
