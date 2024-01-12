@@ -30,4 +30,4 @@ ENV PORT 8080
 ENV GIN_MODE release
 
 # Command to run the executable
-CMD ["./main"]
+ENTRYPOINT "./main"
