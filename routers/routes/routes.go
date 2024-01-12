@@ -29,6 +29,7 @@ func RoutingGroups() []RoutingGroup {
 		VmRoutes(),
 		ZoneRoutes(),
 		DiscoverRoutes(),
+		StatusRoutes(),
 	}
 }
 
