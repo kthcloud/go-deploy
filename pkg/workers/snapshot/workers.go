@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"go-deploy/models/sys/job"
 	vmModels "go-deploy/models/sys/vm"
+	"go-deploy/pkg/workers"
 	"go-deploy/utils"
 	"log"
 	"math/rand"
@@ -17,6 +18,9 @@ func snapshotter(ctx context.Context) {
 
 	for {
 		select {
+		case <-time.After(1 * time.Second):
+			workers.ReportStatus("snapshotter")
+
 		case <-time.After(10 * time.Second):
 			vms, err := vmModels.New().List()
 			if err != nil {

@@ -9,6 +9,7 @@ import (
 	smModels "go-deploy/models/sys/sm"
 	vmModels "go-deploy/models/sys/vm"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/workers"
 	"go-deploy/utils"
 	"log"
 	"math/rand"
@@ -19,8 +20,10 @@ func deploymentRepairer(ctx context.Context) {
 	defer log.Println("deploymentRepairer stopped")
 
 	for {
-
 		select {
+		case <-time.After(1 * time.Second):
+			workers.ReportStatus("deploymentRepairer")
+
 		case <-time.After(60 * time.Second):
 			restarting, err := deploymentModels.New().WithActivities(deploymentModels.ActivityRestarting).List()
 			if err != nil {
@@ -88,6 +91,9 @@ func smRepairer(ctx context.Context) {
 
 	for {
 		select {
+		case <-time.After(1 * time.Second):
+			workers.ReportStatus("smRepairer")
+
 		case <-time.After(60 * time.Second):
 			withNoActivities, err := smModels.New().WithNoActivities().List()
 			if err != nil {
@@ -136,6 +142,9 @@ func vmRepairer(ctx context.Context) {
 
 	for {
 		select {
+		case <-time.After(1 * time.Second):
+			workers.ReportStatus("vmRepairer")
+
 		case <-time.After(60 * time.Second):
 			withNoActivities, err := vmModels.New().WithNoActivities().List()
 			if err != nil {

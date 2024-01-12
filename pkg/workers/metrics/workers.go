@@ -8,6 +8,7 @@ import (
 	"go-deploy/models/sys/key_value"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/metrics"
+	"go-deploy/pkg/workers"
 	"go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -32,6 +33,9 @@ func metricsWorker(ctx context.Context) {
 
 	for {
 		select {
+		case <-time.After(1 * time.Second):
+			workers.ReportStatus("metricsWorker")
+
 		case <-time.After(time.Duration(config.Config.Metrics.Interval) * time.Second):
 			for metricGroupName, metric := range metricsFuncMap {
 				if err := metric(); err != nil {

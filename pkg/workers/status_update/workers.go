@@ -5,6 +5,7 @@ import (
 	"fmt"
 	deploymentModels "go-deploy/models/sys/deployment"
 	vmModels "go-deploy/models/sys/vm"
+	"go-deploy/pkg/workers"
 	"go-deploy/service/vm_service"
 	"go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
@@ -17,6 +18,9 @@ func vmStatusUpdater(ctx context.Context) {
 
 	for {
 		select {
+		case <-time.After(1 * time.Second):
+			workers.ReportStatus("vmStatusUpdater")
+
 		case <-time.After(1 * time.Second):
 			allVms, err := vmModels.New().List()
 			if err != nil {
@@ -57,6 +61,9 @@ func vmSnapshotUpdater(ctx context.Context) {
 
 	for {
 		select {
+		case <-time.After(1 * time.Second):
+			workers.ReportStatus("vmSnapshotUpdater")
+
 		case <-time.After(5 * time.Second):
 			allVms, err := vmModels.New().List()
 			if err != nil {
@@ -83,6 +90,9 @@ func deploymentStatusUpdater(ctx context.Context) {
 
 	for {
 		select {
+		case <-time.After(1 * time.Second):
+			workers.ReportStatus("deploymentStatusUpdater")
+
 		case <-time.After(1 * time.Second):
 			allDeployments, err := deploymentModels.New().List()
 			if err != nil {
