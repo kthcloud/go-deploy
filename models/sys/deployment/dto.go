@@ -67,6 +67,11 @@ func (deployment *Deployment) ToDTO(smURL *string, teams []string) body.Deployme
 		healthCheckPath = &app.PingPath
 	}
 
+	var customDomain *string
+	if app.CustomDomain != nil {
+		customDomain = &app.CustomDomain.Domain
+	}
+
 	var customDomainSecret *string
 	if app.CustomDomain != nil {
 		customDomainSecret = &app.CustomDomain.Secret
@@ -99,6 +104,7 @@ func (deployment *Deployment) ToDTO(smURL *string, teams []string) body.Deployme
 		HealthCheckPath: healthCheckPath,
 		Replicas:        app.Replicas,
 
+		CustomDomain:       customDomain,
 		CustomDomainURL:    deployment.GetCustomDomainURL(),
 		CustomDomainSecret: customDomainSecret,
 		CustomDomainStatus: customDomainStatus,

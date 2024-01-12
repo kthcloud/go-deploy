@@ -192,7 +192,7 @@ func (c *Client) Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
 	}
 
 	// there is always at least one port: __ssh
-	if len(params.Ports) > 1 {
+	if len(params.PortMap) > 1 {
 		err = k8s_service.New(c.Cache).Create(id, params)
 		if err != nil {
 			return makeError(err)
@@ -212,30 +212,60 @@ func (c *Client) Update(id string, dtoVmUpdate *body.VmUpdate) error {
 	vmUpdate := &vmModels.UpdateParams{}
 	vmUpdate.FromDTO(dtoVmUpdate)
 
+	// We don't allow both applying a snapshot and updating the VM at the same time.
+	// So, if a snapshot ID is specified, apply it
 	if vmUpdate.SnapshotID != nil {
 		err := c.ApplySnapshot(id, *vmUpdate.SnapshotID)
 		if err != nil {
 			return makeError(err)
 		}
-	} else {
-		err := vmModels.New().UpdateWithParamsByID(id, vmUpdate)
+
+		return nil
+	}
+
+	// Otherwise, update the VM as usual
+	if vmUpdate.PortMap != nil {
+		// We don't want to give new secrets for the same custom domains
+		vm, err := c.VM(id, nil)
 		if err != nil {
-			if errors.Is(err, vmModels.NonUniqueFieldErr) {
-				return sErrors.NonUniqueFieldErr
+			return makeError(err)
+		}
+
+		// So we find if there are any custom domains that are being updated with the same domain name,
+		// and if so, we remove the update from the params
+		for name, p1 := range vm.PortMap {
+			if p2, ok := (*vmUpdate.PortMap)[name]; ok {
+				if p1.HttpProxy != nil && p2.HttpProxy != nil && p1.HttpProxy.CustomDomain != nil && p2.HttpProxy.CustomDomain != nil {
+					if p1.HttpProxy.CustomDomain.Domain == *p2.HttpProxy.CustomDomain {
+						p2.HttpProxy.CustomDomain = nil
+					}
+				}
 			}
+		}
+	}
 
-			return makeError(err)
+	err := vmModels.New().UpdateWithParamsByID(id, vmUpdate)
+	if err != nil {
+		if errors.Is(err, vmModels.NonUniqueFieldErr) {
+			return sErrors.NonUniqueFieldErr
 		}
 
-		err = cs_service.New(c.Cache).Update(id, vmUpdate)
-		if err != nil {
-			return makeError(err)
-		}
+		return makeError(err)
+	}
 
-		err = k8s_service.New(c.Cache).Repair(id)
-		if err != nil {
-			return makeError(err)
-		}
+	_, err = c.Refresh(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = cs_service.New(c.Cache).Update(id, vmUpdate)
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = k8s_service.New(c.Cache).Repair(id)
+	if err != nil {
+		return makeError(err)
 	}
 
 	return nil
@@ -625,7 +655,7 @@ func NameAvailable(name string) (bool, error) {
 func HttpProxyNameAvailable(id, name string) (bool, error) {
 	filter := bson.D{
 		{"id", bson.D{{"$ne", id}}},
-		{"ports.httpProxy.name", name},
+		{"portMap.httpProxy.name", name},
 	}
 
 	exists, err := vmModels.New().WithCustomFilter(filter).ExistsAny()

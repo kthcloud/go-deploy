@@ -127,3 +127,24 @@ func (client *Client) OlderThan(timestamp time.Time) *Client {
 
 	return client
 }
+
+func (client *Client) WithPendingCustomDomain() *Client {
+	filter := bson.D{
+		{"portMap",
+			bson.D{
+				{"$elemMatch",
+					bson.D{
+						{"httpProxy.customDomain.status",
+							bson.D{{"$in", []string{CustomDomainStatusPending, CustomDomainStatusVerificationFailed}}},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	client.ResourceClient.AddExtraFilter(filter)
+	client.ActivityResourceClient.AddExtraFilter(filter)
+
+	return client
+}

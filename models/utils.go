@@ -34,6 +34,10 @@ func AddIfNotNil(data *bson.D, key string, value interface{}) {
 	*data = append(*data, bson.E{Key: key, Value: value})
 }
 
+func Add(data *bson.D, key string, value interface{}) {
+	*data = append(*data, bson.E{Key: key, Value: value})
+}
+
 func GroupFilters(filter bson.D, extraFilter bson.M, searchParams *SearchParams, includeDeleted bool) bson.D {
 	// deleted filter
 	if !includeDeleted {

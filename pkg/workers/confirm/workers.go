@@ -57,68 +57,82 @@ func customDomainConfirmer(ctx context.Context) {
 
 	for {
 		select {
-		case <-time.After(60 * time.Second):
-			withPendingCustomDomain, err := deploymentModels.New().WithPendingCustomDomain().List()
+		case <-time.After(1 * time.Second):
+			deploymentsWithPendingCustomDomain, err := deploymentModels.New().WithPendingCustomDomain().List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("failed to get deployments with pending custom domain. details: %w", err))
 				continue
 			}
 
-			for _, deployment := range withPendingCustomDomain {
+			for _, deployment := range deploymentsWithPendingCustomDomain {
 				// Check if user has updated the DNS record with the custom domain secret
 				// If yes, mark the deployment as custom domain confirmed
-
 				cd := deployment.GetMainApp().CustomDomain
 				if cd == nil {
 					continue
 				}
 
-				if cd.Domain == "" {
-					continue
-				}
-
-				subDomain := config.Config.Deployment.CustomDomainTxtRecordSubdomain
-				txtRecordDomain := subDomain + "." + cd.Domain
-				txtRecord, err := net.LookupTXT(txtRecordDomain)
+				match, err := checkCustomDomain(cd.Domain, cd.Secret)
 				if err != nil {
-					// If error is "no such host", it means the DNS record does not exist yet
-					var targetErr *net.DNSError
-					if ok := errors.As(err, &targetErr); ok && targetErr.IsNotFound {
-						log.Printf("no TXT record found under %s when confirming custom domain %s\n", subDomain, cd.Domain)
-						continue
-					}
-
-					utils.PrettyPrintError(fmt.Errorf("failed to lookup TXT record under %s for custom domain %s. details: %w", subDomain, cd.Domain, err))
-					continue
-				}
-
-				if len(txtRecord) == 0 {
-					log.Printf("no TXT record found under %s when confirming custom domain %s\n", subDomain, cd.Domain)
-					continue
-				}
-
-				match := false
-				for _, r := range txtRecord {
-					if r == cd.Secret {
-						match = true
-						break
-					}
+					log.Printf("failed to check custom domain %s for deployment %s. details: %v\n", cd.Domain, deployment.ID, err)
 				}
 
 				if !match {
-					log.Printf("no TXT record under %s matches the secret for custom domain %s\n", subDomain, cd.Domain)
 					err = deploymentModels.New().UpdateCustomDomainStatus(deployment.ID, deploymentModels.CustomDomainStatusVerificationFailed)
 					if err != nil {
-						utils.PrettyPrintError(fmt.Errorf("failed to mark deployment %s as custom domain confirmed. details: %w", deployment.ID, err))
+						utils.PrettyPrintError(fmt.Errorf("custom domain verification failed. details: %w", err))
+						continue
 					}
-
-					continue
 				}
 
 				log.Printf("marking custom domain %s as confirmed for deployment %s\n", cd.Domain, deployment.ID)
-				err = deploymentModels.New().UpdateCustomDomainStatus(deployment.ID, deploymentModels.CustomDomainStatusReady)
+				err = deploymentModels.New().UpdateCustomDomainStatus(deployment.ID, deploymentModels.CustomDomainStatusActive)
 				if err != nil {
 					utils.PrettyPrintError(fmt.Errorf("failed to mark deployment %s as custom domain confirmed. details: %w", deployment.ID, err))
+					continue
+				}
+			}
+
+			vmsWithPendingCustomDomain, err := vmModels.New().ListWithAnyPendingCustomDomain()
+			if err != nil {
+				utils.PrettyPrintError(fmt.Errorf("failed to get vms with pending custom domain. details: %w", err))
+				continue
+			}
+
+			for _, vm := range vmsWithPendingCustomDomain {
+				// Check if user has updated the DNS record with the custom domain secret
+				// If yes, mark the deployment as custom domain confirmed
+				for portName, port := range vm.PortMap {
+					if port.HttpProxy == nil || port.HttpProxy.CustomDomain == nil {
+						continue
+					}
+
+					cd := port.HttpProxy.CustomDomain
+					if cd == nil {
+						continue
+					}
+
+					match, err := checkCustomDomain(cd.Domain, cd.Secret)
+					if err != nil {
+						log.Printf("failed to check custom domain %s for vm %s. details: %v\n", cd.Domain, vm.ID, err)
+					}
+
+					if !match {
+						err = vmModels.New().UpdateCustomDomainStatus(vm.ID, portName, vmModels.CustomDomainStatusVerificationFailed)
+						if err != nil {
+							utils.PrettyPrintError(fmt.Errorf("custom domain verification failed. details: %w", err))
+							continue
+						}
+
+						continue
+					}
+
+					log.Printf("marking custom domain %s as confirmed for vm %s\n", cd.Domain, vm.ID)
+					err = vmModels.New().UpdateCustomDomainStatus(vm.ID, portName, vmModels.CustomDomainStatusActive)
+					if err != nil {
+						utils.PrettyPrintError(fmt.Errorf("failed to mark deployment %s as custom domain confirmed. details: %w", vm.ID, err))
+						continue
+					}
 				}
 			}
 
@@ -206,4 +220,42 @@ func vmConfirmer(ctx context.Context) {
 			return
 		}
 	}
+}
+
+func checkCustomDomain(domain string, secret string) (bool, error) {
+	subDomain := config.Config.Deployment.CustomDomainTxtRecordSubdomain
+
+	txtRecordDomain := subDomain + "." + domain
+	txtRecord, err := net.LookupTXT(txtRecordDomain)
+	if err != nil {
+		// If error is "no such host", it means the DNS record does not exist yet
+		var targetErr *net.DNSError
+		if ok := errors.As(err, &targetErr); ok && targetErr.IsNotFound {
+			log.Printf("no TXT record found under %s when confirming custom domain %s\n", subDomain, domain)
+			return false, nil
+		}
+
+		utils.PrettyPrintError(fmt.Errorf("failed to lookup TXT record under %s for custom domain %s. details: %w", subDomain, domain, err))
+		return false, err
+	}
+
+	if len(txtRecord) == 0 {
+		log.Printf("no TXT record found under %s when confirming custom domain %s\n", subDomain, domain)
+		return false, nil
+	}
+
+	match := false
+	for _, r := range txtRecord {
+		if r == secret {
+			match = true
+			break
+		}
+	}
+
+	if !match {
+		log.Printf("TXT record found under %s for custom domain %s but secret does not match\n", subDomain, domain)
+		return false, nil
+	}
+
+	return match, nil
 }
