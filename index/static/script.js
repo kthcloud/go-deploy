@@ -17,6 +17,9 @@ const mockData = [
     }
 ];
 
+// var apiURL = "http://localhost:8080/v1/status";
+var apiURL = "https://api.cloud.cbh.kth.se/deploy/v1/status";
+
 function sentenceCase(str) {
     const result = str.replace(/([A-Z])/g, " $1");
     return result.charAt(0).toUpperCase() + result.slice(1);
@@ -48,7 +51,7 @@ function createBox(name, status) {
 function loadBoxes() {
     const container = document.getElementById('boxes-container');
 
-    fetch('http://localhost:8080/v1/status').then(response => {
+    fetch(apiURL).then(response => {
         return response.json();
     }).then(data => {
         container.innerHTML = ''; // Clear the container
