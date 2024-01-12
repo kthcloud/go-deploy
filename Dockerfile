@@ -1,4 +1,6 @@
-# Stage 1: Build
+############################
+# STEP 1 build executable binary
+############################
 FROM golang:1.20 as builder
 
 # Set the working directory inside the container
@@ -14,11 +16,13 @@ COPY . .
 # Build the application
 RUN CGO_ENABLED=0 GOOS=linux go build -o main .
 
-# Second stage: package the application
+############################
+# STEP 2 build a small image
+############################
 FROM alpine:3
 
 # Set the working directory in the container
-WORKDIR /root/
+WORKDIR /go
 
 # Copy the binary from the builder stage
 COPY --from=builder /app/main .
