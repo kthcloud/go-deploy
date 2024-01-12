@@ -56,7 +56,7 @@ func migrateCustomDomainStatusReadyToActive_2024_01_12() error {
 	for _, deployment := range deployments {
 		app := deployment.GetMainApp()
 		if app.CustomDomain != nil && app.CustomDomain.Status == "ready" {
-			err = deploymentModels.New().UpdateWithBsonByID(deployment.ID, bson.D{
+			err = deploymentModels.New().SetWithBsonByID(deployment.ID, bson.D{
 				{"apps.main.customDomain.status", deploymentModels.CustomDomainStatusActive},
 			})
 
