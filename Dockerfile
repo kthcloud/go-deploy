@@ -1,27 +1,26 @@
 ############################
 # STEP 1 build executable binary
 ############################
-FROM golang:1.20 as builder
+FROM golang:alpine AS builder
+# Install git.
+RUN apk update && apk add --no-cache git=~2
 
-# Set the working directory inside the container
+# Set up working directory
 WORKDIR /app
-
-# Copy go.mod and go.sum to download dependencies
-COPY go.mod go.sum ./
-RUN go mod download
-
-# Copy the source code into the container
 COPY . .
 
-# Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -o main .
+# Fetch dependencies and build the binary
+ENV GO111MODULE=on
+RUN go get -d -v
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
+
 
 ############################
 # STEP 2 build a small image
 ############################
 FROM alpine:3
 
-# Set the working directory in the container
+# Set up the working directory
 WORKDIR /go
 
 # Copy the binary from the builder stage
@@ -30,8 +29,11 @@ COPY --from=builder /app/main .
 # Copy the "index" folder
 COPY --from=builder /app/index index
 
+# Set environment variables and expose necessary port
 ENV PORT 8080
 ENV GIN_MODE release
+EXPOSE 8080
 
-# Command to run the executable
-ENTRYPOINT "./main"
+# Run the Go Gin binary
+ENTRYPOINT ["./main"]
+
