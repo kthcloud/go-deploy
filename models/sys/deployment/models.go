@@ -76,56 +76,6 @@ type Usage struct {
 	Count int
 }
 
-type UpdateParams struct {
-	// update
-	Name         *string
-	OwnerID      *string
-	Private      *bool
-	Envs         *[]Env
-	InternalPort *int
-	Volumes      *[]Volume
-	InitCommands *[]string
-	CustomDomain *string
-	Image        *string
-	PingPath     *string
-	Replicas     *int
-
-	// ownership update
-	TransferUserID *string
-	TransferCode   *string
-}
-
-type GitHubCreateParams struct {
-	Token        string
-	RepositoryID int64
-}
-
-type CreateParams struct {
-	Name string
-	Type string
-
-	Image        string
-	InternalPort int
-	Private      bool
-	Envs         []Env
-	Volumes      []Volume
-	InitCommands []string
-	PingPath     string
-	CustomDomain *string
-	Replicas     *int
-
-	GitHub *GitHubCreateParams
-
-	Zone string
-}
-
-type BuildParams struct {
-	Name      string
-	Tag       string
-	Branch    string
-	ImportURL string
-}
-
 type GitHubRepository struct {
 	ID            int64
 	Name          string

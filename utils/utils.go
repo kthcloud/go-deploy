@@ -24,6 +24,14 @@ func HashStringRfc1123(token string) string {
 	return strings.ToLower(urlHash)
 }
 
+func HashStringAlphanumeric(token string) string {
+	urlHash := HashString(token)
+	urlHash = strings.ReplaceAll(urlHash, "_", "")
+	urlHash = strings.ReplaceAll(urlHash, "=", "")
+	urlHash = strings.ReplaceAll(urlHash, "-", "")
+	return urlHash
+}
+
 func GetPage[T any](list []T, pageSize, page int) []T {
 	if pageSize == 0 {
 		return list

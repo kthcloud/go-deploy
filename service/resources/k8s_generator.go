@@ -44,7 +44,7 @@ func (kg *K8sGenerator) Namespace() *models.NamespacePublic {
 
 	if kg.v.vm != nil {
 		createNamespace := false
-		for _, port := range kg.v.vm.Ports {
+		for _, port := range kg.v.vm.PortMap {
 			if port.HttpProxy != nil {
 				createNamespace = true
 				break
@@ -171,9 +171,9 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 	}
 
 	if kg.v.vm != nil {
-		ports := kg.v.vm.Ports
+		portMap := kg.v.vm.PortMap
 
-		for _, port := range ports {
+		for _, port := range portMap {
 			if port.HttpProxy == nil {
 				continue
 			}
@@ -217,7 +217,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		for mapName, k8sDeployment := range kg.v.vm.Subsystems.K8s.GetDeploymentMap() {
 			idx := 0
 			matchedIdx := -1
-			for _, port := range ports {
+			for _, port := range portMap {
 				if port.HttpProxy == nil {
 					continue
 				}
@@ -406,9 +406,9 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 	}
 
 	if kg.v.vm != nil {
-		ports := kg.v.vm.Ports
+		portMap := kg.v.vm.PortMap
 
-		for _, port := range ports {
+		for _, port := range portMap {
 			if port.HttpProxy == nil {
 				continue
 			}
@@ -424,7 +424,7 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 		for mapName, svc := range kg.v.vm.Subsystems.K8s.GetServiceMap() {
 			idx := 0
 			matchedIdx := -1
-			for _, port := range ports {
+			for _, port := range portMap {
 				if port.HttpProxy == nil {
 					continue
 				}
@@ -542,9 +542,9 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 	}
 
 	if kg.v.vm != nil {
-		ports := kg.v.vm.Ports
+		portMap := kg.v.vm.PortMap
 
-		for _, port := range ports {
+		for _, port := range portMap {
 			if port.HttpProxy == nil {
 				continue
 			}
@@ -561,19 +561,18 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 				CustomCert:   nil,
 				Placeholder:  false,
 			})
-
-			if port.HttpProxy.CustomDomain != nil {
+			if port.HttpProxy.CustomDomain != nil && port.HttpProxy.CustomDomain.Status == deployment.CustomDomainStatusActive {
 				res = append(res, models.IngressPublic{
 					Name:         vpCustomDomainIngressName(kg.v.vm, port.HttpProxy.Name),
 					Namespace:    kg.namespace,
 					ServiceName:  vpServiceName(kg.v.vm, port.HttpProxy.Name),
 					ServicePort:  8080,
 					IngressClass: config.Config.Deployment.IngressClass,
-					Hosts:        []string{*port.HttpProxy.CustomDomain},
+					Hosts:        []string{port.HttpProxy.CustomDomain.Domain},
 					Placeholder:  false,
 					CustomCert: &models.CustomCert{
 						ClusterIssuer: "letsencrypt-prod-deploy-http",
-						CommonName:    *port.HttpProxy.CustomDomain,
+						CommonName:    port.HttpProxy.CustomDomain.Domain,
 					},
 					TlsSecret: nil,
 				})
@@ -583,7 +582,7 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 		for mapName, ingress := range kg.v.vm.Subsystems.K8s.GetIngressMap() {
 			idx := 0
 			matchedIdx := -1
-			for _, port := range ports {
+			for _, port := range portMap {
 				if port.HttpProxy == nil {
 					continue
 				}
@@ -821,7 +820,7 @@ func (kg *K8sGenerator) Secrets() []models.SecretPublic {
 
 	if kg.v.vm != nil {
 		createWildcardSecret := false
-		for _, port := range kg.v.vm.Ports {
+		for _, port := range kg.v.vm.PortMap {
 			if port.HttpProxy != nil {
 				createWildcardSecret = true
 				break

@@ -2,7 +2,12 @@ package vm
 
 import (
 	"go-deploy/models/sys/vm/subsystems"
-	"time"
+)
+
+const (
+	CustomDomainStatusPending            = "pending"
+	CustomDomainStatusVerificationFailed = "verificationFailed"
+	CustomDomainStatusActive             = "active"
 )
 
 type Host struct {
@@ -10,16 +15,22 @@ type Host struct {
 	Name string `bson:"name"`
 }
 
+type CustomDomain struct {
+	Domain string `bson:"domain"`
+	Secret string `bson:"secret"`
+	Status string `bson:"status"`
+}
+
 type PortHttpProxy struct {
-	Name         string  `bson:"name"`
-	CustomDomain *string `bson:"customDomain"`
+	Name         string        `bson:"name,omitempty"`
+	CustomDomain *CustomDomain `bson:"customDomain,omitempty"`
 }
 
 type Port struct {
 	Name      string         `bson:"name"`
 	Port      int            `bson:"port"`
 	Protocol  string         `bson:"protocol"`
-	HttpProxy *PortHttpProxy `bson:"httpProxy"`
+	HttpProxy *PortHttpProxy `bson:"httpProxy,omitempty"`
 }
 
 type Subsystems struct {
@@ -37,48 +48,4 @@ type Usage struct {
 type Transfer struct {
 	Code   string `bson:"code"`
 	UserID string `bson:"userId"`
-}
-
-type CreateParams struct {
-	Name           string
-	Zone           string
-	DeploymentZone *string
-
-	NetworkID *string
-
-	SshPublicKey string
-	Ports        []Port
-
-	CpuCores int
-	RAM      int
-	DiskSize int
-}
-
-type UpdateParams struct {
-	Name       *string
-	OwnerID    *string
-	SnapshotID *string
-	Ports      *[]Port
-	CpuCores   *int
-	RAM        *int
-
-	// update owner
-	TransferCode   *string
-	TransferUserID *string
-}
-
-type Snapshot struct {
-	ID         string    `bson:"id"`
-	VmID       string    `bson:"vmId"`
-	Name       string    `bson:"displayname"`
-	ParentName *string   `bson:"parentName,omitempty"`
-	CreatedAt  time.Time `bson:"created"`
-	State      string    `bson:"state"`
-	Current    bool      `bson:"current"`
-}
-
-type CreateSnapshotParams struct {
-	Name        string `bson:"name"`
-	UserCreated bool   `bson:"userCreated"`
-	Overwrite   bool   `bson:"overwrite"`
 }

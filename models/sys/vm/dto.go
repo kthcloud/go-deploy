@@ -5,13 +5,14 @@ import (
 	"go-deploy/models/dto/body"
 	"go-deploy/pkg/subsystems"
 	"go-deploy/utils"
+	"sort"
 )
 
 func (vm *VM) ToDTO(status string, connectionString *string, teams []string, gpu *body.GpuRead, externalPortMapper map[string]int) body.VmRead {
 
-	var vmGpu *body.VmGpu
+	var vmGpu *body.VmGpuLease
 	if gpu != nil && gpu.Lease != nil {
-		vmGpu = &body.VmGpu{
+		vmGpu = &body.VmGpuLease{
 			ID:           gpu.ID,
 			Name:         gpu.Name,
 			LeaseEnd:     gpu.Lease.End,
@@ -19,17 +20,19 @@ func (vm *VM) ToDTO(status string, connectionString *string, teams []string, gpu
 		}
 	}
 
-	ports := make([]body.Port, 0)
-	if vm.Ports != nil && externalPortMapper != nil {
-		for _, port := range vm.Ports {
+	ports := make([]body.PortRead, 0)
+	if vm.PortMap != nil {
+		for _, port := range vm.PortMap {
 			if port.Name == "__ssh" {
 				continue
 			}
 
 			var externalPort *int
-			if p, ok := externalPortMapper[fmt.Sprintf("priv-%d-prot-%s", port.Port, port.Protocol)]; ok {
-				pLocal := p
-				externalPort = &pLocal
+			if externalPortMapper != nil {
+				if p, ok := externalPortMapper[fmt.Sprintf("priv-%d-prot-%s", port.Port, port.Protocol)]; ok {
+					pLocal := p
+					externalPort = &pLocal
+				}
 			}
 
 			var url *string
@@ -51,17 +54,22 @@ func (vm *VM) ToDTO(status string, connectionString *string, teams []string, gpu
 				}
 			}
 
-			var httpProxy *body.VmHttpProxy
+			var httpProxy *body.HttpProxyRead
 			if port.HttpProxy != nil {
-				httpProxy = &body.VmHttpProxy{
+				httpProxy = &body.HttpProxyRead{
 					Name:            port.HttpProxy.Name,
-					CustomDomain:    port.HttpProxy.CustomDomain,
 					URL:             url,
 					CustomDomainURL: customDomainUrl,
 				}
+
+				if port.HttpProxy.CustomDomain != nil {
+					httpProxy.CustomDomain = &port.HttpProxy.CustomDomain.Domain
+					httpProxy.CustomDomainSecret = &port.HttpProxy.CustomDomain.Secret
+					httpProxy.CustomDomainStatus = &port.HttpProxy.CustomDomain.Status
+				}
 			}
 
-			ports = append(ports, body.Port{
+			ports = append(ports, body.PortRead{
 				Name:         port.Name,
 				Port:         port.Port,
 				ExternalPort: externalPort,
@@ -70,6 +78,11 @@ func (vm *VM) ToDTO(status string, connectionString *string, teams []string, gpu
 			})
 		}
 	}
+
+	// Sort ports by name
+	sort.Slice(ports, func(i, j int) bool {
+		return ports[i].Name < ports[j].Name
+	})
 
 	var host *string
 	if vm.Host != nil {
@@ -105,6 +118,12 @@ func (vm *VM) ToDTO(status string, connectionString *string, teams []string, gpu
 func (p *CreateParams) FromDTO(dto *body.VmCreate, fallbackZone *string, deploymentZone *string) {
 	p.Name = dto.Name
 	p.SshPublicKey = dto.SshPublicKey
+	p.CpuCores = dto.CpuCores
+	p.RAM = dto.RAM
+	p.DiskSize = dto.DiskSize
+	p.PortMap = make(map[string]PortCreateParams)
+	p.DeploymentZone = deploymentZone
+
 	for _, port := range dto.Ports {
 		if port.Name == "__ssh" {
 			continue
@@ -114,32 +133,31 @@ func (p *CreateParams) FromDTO(dto *body.VmCreate, fallbackZone *string, deploym
 			continue
 		}
 
-		p.Ports = append(p.Ports, fromDtoPort(&port))
+		p.PortMap[portName(port.Port, port.Protocol)] = fromDtoPortCreate(&port)
 	}
-	p.Ports = append(p.Ports, Port{
+
+	// Ensure there is always an SSH port
+	p.PortMap["__ssh"] = PortCreateParams{
 		Name:     "__ssh",
 		Port:     22,
 		Protocol: "tcp",
-	})
-
-	p.CpuCores = dto.CpuCores
-	p.RAM = dto.RAM
-	p.DiskSize = dto.DiskSize
+	}
 
 	if dto.Zone != nil {
 		p.Zone = *dto.Zone
 	} else {
 		p.Zone = *fallbackZone
 	}
-
-	p.DeploymentZone = deploymentZone
 }
 
 func (p *UpdateParams) FromDTO(dto *body.VmUpdate) {
 	p.Name = dto.Name
 	p.SnapshotID = dto.SnapshotID
+	p.CpuCores = dto.CpuCores
+	p.RAM = dto.RAM
+
 	if dto.Ports != nil {
-		var ports []Port
+		portMap := make(map[string]PortUpdateParams)
 		for _, port := range *dto.Ports {
 			if port.Name == "__ssh" {
 				continue
@@ -149,20 +167,20 @@ func (p *UpdateParams) FromDTO(dto *body.VmUpdate) {
 				continue
 			}
 
-			ports = append(ports, fromDtoPort(&port))
+			portMap[portName(port.Port, port.Protocol)] = fromDtoPortUpdate(&port)
 		}
-		ports = append(ports, Port{
+
+		// Ensure there is always an SSH port
+		portMap["__ssh"] = PortUpdateParams{
 			Name:     "__ssh",
 			Port:     22,
 			Protocol: "tcp",
-		})
+		}
 
-		p.Ports = &ports
+		p.PortMap = &portMap
 	} else {
-		p.Ports = nil
+		p.PortMap = nil
 	}
-	p.CpuCores = dto.CpuCores
-	p.RAM = dto.RAM
 }
 
 func (sc *Snapshot) ToDTO() body.VmSnapshotRead {
@@ -183,19 +201,40 @@ func (sc *CreateSnapshotParams) FromDTO(dto *body.VmSnapshotCreate) {
 	sc.UserCreated = true
 }
 
-func fromDtoPort(port *body.Port) Port {
-	var httpProxy *PortHttpProxy
+func fromDtoPortCreate(port *body.PortCreate) PortCreateParams {
+	var httpProxy *HttpProxyCreateParams
 	if port.HttpProxy != nil {
-		httpProxy = &PortHttpProxy{
+		httpProxy = &HttpProxyCreateParams{
 			Name:         port.HttpProxy.Name,
 			CustomDomain: port.HttpProxy.CustomDomain,
 		}
 	}
 
-	return Port{
+	return PortCreateParams{
 		Name:      port.Name,
 		Port:      port.Port,
 		Protocol:  port.Protocol,
 		HttpProxy: httpProxy,
 	}
+}
+
+func fromDtoPortUpdate(port *body.PortUpdate) PortUpdateParams {
+	var httpProxy *HttpProxyUpdateParams
+	if port.HttpProxy != nil {
+		httpProxy = &HttpProxyUpdateParams{
+			Name:         port.HttpProxy.Name,
+			CustomDomain: port.HttpProxy.CustomDomain,
+		}
+	}
+
+	return PortUpdateParams{
+		Name:      port.Name,
+		Port:      port.Port,
+		Protocol:  port.Protocol,
+		HttpProxy: httpProxy,
+	}
+}
+
+func portName(privatePort int, protocol string) string {
+	return fmt.Sprintf("priv-%d-prot-%s", privatePort, protocol)
 }

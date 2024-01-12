@@ -138,13 +138,27 @@ func (client *Client) UpdateWithParamsByID(id string, params *UpdateParams) erro
 	setUpdate := bson.D{}
 	unsetUpdate := bson.D{}
 
+	// If the custom domain is empty, it means we want to remove it
 	var customDomain *CustomDomain
 	if params.CustomDomain != nil {
-		customDomain = &CustomDomain{
-			Domain: *params.CustomDomain,
-			Secret: generateCustomDomainSecret(),
-			Status: CustomDomainStatusPending,
+		if *params.CustomDomain == "" {
+			models.Add(&unsetUpdate, fmt.Sprintf("apps.%s.customDomain", mainApp.Name), "")
+		} else {
+			models.AddIfNotNil(&setUpdate, fmt.Sprintf("apps.%s.customDomain", mainApp.Name), &CustomDomain{
+				Domain: *params.CustomDomain,
+				Secret: generateCustomDomainSecret(),
+				Status: CustomDomainStatusPending,
+			})
 		}
+	}
+
+	// If the transfer code is empty, it means it is either done and we remove it,
+	// or we don't want to transfer it anymore
+	if utils.EmptyValue(params.TransferCode) && utils.EmptyValue(params.TransferUserID) {
+		models.AddIfNotNil(&unsetUpdate, "transfer", "")
+	} else {
+		models.AddIfNotNil(&setUpdate, "transfer.code", params.TransferCode)
+		models.AddIfNotNil(&setUpdate, "transfer.userId", params.TransferUserID)
 	}
 
 	models.AddIfNotNil(&setUpdate, "name", params.Name)
@@ -158,13 +172,6 @@ func (client *Client) UpdateWithParamsByID(id string, params *UpdateParams) erro
 	models.AddIfNotNil(&setUpdate, "apps.main.image", params.Image)
 	models.AddIfNotNil(&setUpdate, "apps.main.pingPath", params.PingPath)
 	models.AddIfNotNil(&setUpdate, "apps.main.replicas", params.Replicas)
-
-	if utils.EmptyValue(params.TransferCode) && utils.EmptyValue(params.TransferUserID) {
-		models.AddIfNotNil(&unsetUpdate, "transfer", "")
-	} else {
-		models.AddIfNotNil(&setUpdate, "transfer.code", params.TransferCode)
-		models.AddIfNotNil(&setUpdate, "transfer.userId", params.TransferUserID)
-	}
 
 	err = client.UpdateWithBsonByID(id,
 		bson.D{
@@ -348,30 +355,18 @@ func (client *Client) GetLastGitLabBuild(deploymentID string) (*subsystems.GitLa
 	return &deployment.Subsystems.GitLab.LastBuild, nil
 }
 
-func (client *Client) SavePing(id string, pingResult int) error {
-	deployment, err := client.GetByID(id)
+func (client *Client) SetPingResult(id string, pingResult int) error {
+	exists, err := client.ExistsByID(id)
 	if err != nil {
 		return err
 	}
 
-	if deployment == nil {
+	if !exists {
 		log.Println("deployment not found when saving ping result", id, ". assuming it was deleted")
 		return nil
 	}
 
-	app := deployment.GetMainApp()
-	if app == nil {
-		return fmt.Errorf("failed to find main app for deployment %s", id)
-	}
-
-	app.PingResult = pingResult
-
-	deployment.Apps["main"] = *app
-
-	_, err = client.Collection.UpdateOne(context.TODO(),
-		bson.D{{"id", id}},
-		bson.D{{"$set", bson.D{{"apps.main.pingResult", pingResult}}}},
-	)
+	err = client.UpdateWithBsonByID(id, bson.D{{"$set", bson.D{{"apps.main.pingResult", pingResult}}}})
 	if err != nil {
 		return fmt.Errorf("failed to update deployment ping result %s. details: %w", id, err)
 	}
@@ -400,5 +395,5 @@ func (client *Client) CountReplicas() (int, error) {
 }
 
 func generateCustomDomainSecret() string {
-	return utils.HashString(uuid.NewString())
+	return utils.HashStringAlphanumeric(uuid.NewString())
 }

@@ -887,7 +887,7 @@ func (c *Client) SavePing(id string, pingResult int) error {
 		return nil
 	}
 
-	err = deploymentModels.New().SavePing(id, pingResult)
+	err = deploymentModels.New().SetPingResult(id, pingResult)
 	if err != nil {
 		return makeError(err)
 	}

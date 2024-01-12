@@ -148,7 +148,7 @@ func (c *Client) Update(id string, updateParams *vmModels.UpdateParams) error {
 	}
 
 	// PFR
-	if updateParams.Ports != nil {
+	if updateParams.PortMap != nil {
 		pfrs := g.PFRs()
 
 		for _, currentPfr := range vm.Subsystems.CS.GetPortForwardingRuleMap() {

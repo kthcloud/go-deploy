@@ -24,6 +24,7 @@ type DeploymentRead struct {
 	HealthCheckPath *string  `json:"healthCheckPath,omitempty"`
 	Replicas        int      `json:"replicas"`
 
+	CustomDomain       *string `json:"customDomain,omitempty"`
 	CustomDomainURL    *string `json:"customDomainUrl,omitempty"`
 	CustomDomainStatus *string `json:"customDomainStatus,omitempty"`
 	CustomDomainSecret *string `json:"customDomainSecret,omitempty"`

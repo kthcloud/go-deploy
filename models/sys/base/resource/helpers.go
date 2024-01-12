@@ -72,6 +72,30 @@ func (client *ResourceClient[T]) UpdateWithBsonByFilter(filter bson.D, update bs
 	return models.UpdateOneResource(client.Collection, models.GroupFilters(filter, client.ExtraFilter, client.Search, client.IncludeDeleted), update)
 }
 
+func (client *ResourceClient[T]) UnsetWithBson(fields ...string) error {
+	update := bson.D{
+		{"$unset", bson.D{}},
+	}
+
+	for _, field := range fields {
+		update[0].Value = append(update[0].Value.(bson.D), bson.E{Key: field, Value: ""})
+	}
+
+	return client.UpdateWithBson(update)
+}
+
+func (client *ResourceClient[T]) UnsetWithBsonByID(id string, fields ...string) error {
+	update := bson.D{
+		{"$unset", bson.D{}},
+	}
+
+	for _, field := range fields {
+		update[0].Value = append(update[0].Value.(bson.D), bson.E{Key: field, Value: ""})
+	}
+
+	return client.UpdateWithBsonByID(id, update)
+}
+
 func (client *ResourceClient[T]) SetWithBson(update bson.D) error {
 	return client.UpdateWithBson(bson.D{{"$set", update}})
 }
