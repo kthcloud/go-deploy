@@ -15,7 +15,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o main .
 
 # Second stage: package the application
-FROM alpine:latest
+FROM alpine:3
 
 # Set the working directory in the container
 WORKDIR /root/
