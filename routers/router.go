@@ -15,6 +15,7 @@ import (
 	"go-deploy/routers/api/v1/middleware"
 	"go-deploy/routers/api/validators"
 	"go-deploy/routers/routes"
+	"net/http"
 	"reflect"
 	"strings"
 )
@@ -28,13 +29,14 @@ func NewRouter() *gin.Engine {
 	router.Use(gin.Recovery())
 
 	// Does not seem to work in Docker...
-	//router.StaticFile("static/favicon.ico", "routers/static/favicon.ico")
-	//router.StaticFile("static/style.css", "routers/static/style.css")
-	//router.StaticFile("static/logo.png", "routers/static/logo.png")
-	//router.LoadHTMLFiles("routers/index.html")
-	//router.GET("/", func(c *gin.Context) {
-	//	c.HTML(http.StatusOK, "index.html", gin.H{})
-	//})
+	router.StaticFile("static/favicon.ico", "index/static/favicon.ico")
+	router.StaticFile("static/style.css", "index/static/style.css")
+	router.StaticFile("static/logo.png", "index/static/logo.png")
+	router.StaticFile("static/script.js", "index/static/script.js")
+	router.LoadHTMLFiles("index/index.html")
+	router.GET("/", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "index.html", gin.H{})
+	})
 
 	// metrics middleware
 	m := ginmetrics.GetMonitor()

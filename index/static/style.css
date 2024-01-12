@@ -1,0 +1,93 @@
+body {
+    background-color: rgb(20, 20, 20);
+    font-family: "Roboto", sans-serif;
+}
+
+html, body {
+    height: 100%;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh; /* Use the full height of the viewport */
+    text-align: center;
+}
+
+.content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%; /* Ensure the content container spans the full width */
+}
+
+.logo-box {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 2vw;
+}
+
+.boxes {
+    display: flex;
+    justify-content: center; /* Center boxes horizontally */
+    align-items: center; /* This ensures that the boxes align in the center */
+    flex-wrap: wrap; /* Allows boxes to wrap if they don't fit on one line */
+    gap: 1vw; /* Spacing between boxes */
+    width: 100%; /* This should be set so that the flex container sizes correctly */
+}
+
+.box {
+    background-color: #333; /* Dark background */
+    border-radius: 1.8vw; /* Round corners */
+    color: white;
+    padding: 1vw;
+    display: flex;
+    align-items: center;
+    width: fit-content; /* Adjust width based on content */
+    min-width: 1vw; /* Set a minimum width */
+    box-sizing: border-box; /* Include padding in width calculation */
+}
+
+.name, .status {
+    font-size: 0.7vw; /* Adjust font size as needed */
+    margin-left: 1vw; /* Space after the LED */
+    white-space: nowrap; /* Prevent text from wrapping */
+}
+
+/* LED styles */
+.led {
+    height: 0.6vw;
+    width: 0.6vw;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 1vw;
+}
+
+/* Keyframes for a single blink animation */
+@keyframes blink-once {
+    0% { opacity: 0.2; }
+    25% { opacity: 0.2; }
+    50% { opacity: 1; }
+    75% { opacity: 0.2; }
+    100% { opacity: 0.2; }
+}
+
+/* Colors for different statuses */
+.led.running {
+    background-color: green;
+    box-shadow: 0 0 25px 5px green;
+    opacity: 0.2;
+}
+
+.led.stopped {
+    background-color: red;
+    box-shadow: 0 0 25px 5px red;
+    opacity: 0.2;
+}
