@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080" # Map the port of your app to the host
+    depends_on:
+      - mongodb
+      - redis
+    environment:
+      DEPLOY_CONFIG_FILE: /etc/go-deploy/config.yml
+    volumes:
+      - /home/emil/repos/work/admin/secrets/go-deploy/go-deploy-config.yml:/etc/go-deploy/config.yml
+
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: user
+      MONGO_INITDB_ROOT_PASSWORD: password
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+
+volumes:
+  mongodb_data:
+  redis_data:
