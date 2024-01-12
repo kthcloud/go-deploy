@@ -116,7 +116,7 @@ func customDomainConfirmer(ctx context.Context) {
 				}
 
 				log.Printf("marking custom domain %s as confirmed for deployment %s\n", cd.Domain, deployment.ID)
-				err = deploymentModels.New().UpdateCustomDomainStatus(deployment.ID, deploymentModels.CustomDomainStatusReady)
+				err = deploymentModels.New().UpdateCustomDomainStatus(deployment.ID, deploymentModels.CustomDomainStatusActive)
 				if err != nil {
 					utils.PrettyPrintError(fmt.Errorf("failed to mark deployment %s as custom domain confirmed. details: %w", deployment.ID, err))
 				}

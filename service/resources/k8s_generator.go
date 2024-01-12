@@ -512,7 +512,7 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 
 		res = append(res, in)
 
-		if mainApp.CustomDomain != nil && mainApp.CustomDomain.Status == deployment.CustomDomainStatusReady {
+		if mainApp.CustomDomain != nil && mainApp.CustomDomain.Status == deployment.CustomDomainStatusActive {
 			customIn := models.IngressPublic{
 				ID:           "",
 				Name:         fmt.Sprintf(constants.WithCustomDomainSuffix(kg.d.deployment.Name)),

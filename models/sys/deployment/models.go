@@ -15,7 +15,7 @@ const (
 
 	CustomDomainStatusPending            = "pending"
 	CustomDomainStatusVerificationFailed = "verificationFailed"
-	CustomDomainStatusReady              = "ready"
+	CustomDomainStatusActive             = "active"
 )
 
 type CustomDomain struct {

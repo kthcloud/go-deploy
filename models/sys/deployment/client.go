@@ -150,7 +150,7 @@ func (client *Client) OlderThan(timestamp time.Time) *Client {
 }
 
 func (client *Client) WithPendingCustomDomain() *Client {
-	filter := bson.D{{"apps.main.customDomain.status", bson.D{{"$ne", CustomDomainStatusReady}}}}
+	filter := bson.D{{"apps.main.customDomain.status", bson.D{{"$ne", CustomDomainStatusActive}}}}
 
 	client.ResourceClient.AddExtraFilter(filter)
 	client.ActivityResourceClient.AddExtraFilter(filter)
