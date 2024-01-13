@@ -18,7 +18,7 @@ const mockData = [
 ];
 
 // var apiURL = "http://localhost:8080/v1/status";
-var apiURL = "https://api.cloud.cbh.kth.se/deploy/v1/status";
+// const apiURL =
 
 function sentenceCase(str) {
     const result = str.replace(/([A-Z])/g, " $1");
