@@ -9,6 +9,8 @@
 
 go-deploy is a simple API to create deployments similar to Heroku and spin up virtual machines built on top of kthcloud.
 
+It is publically hosted at [https://api.cloud.cbh.kth.se/deploy/v1](https://api.cloud.cbh.kth.se/deploy/v1) or view its [status page](https://api.cloud.cbh.kth.se/deploy).
+
 See our wiki for more information about [go-deploy](https://wiki.cloud.cbh.kth.se/index.php/Deploy).
 
 ## 📚 Docs

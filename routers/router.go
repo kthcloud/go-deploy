@@ -15,7 +15,9 @@ import (
 	"go-deploy/routers/api/v1/middleware"
 	"go-deploy/routers/api/validators"
 	"go-deploy/routers/routes"
+	"log"
 	"net/http"
+	"net/url"
 	"reflect"
 	"strings"
 )
@@ -145,14 +147,22 @@ func registerCustomValidators() {
 }
 
 // getUrlBasePath returns the base path of the external URL.
-// Meaning if we have an external URL of https://example.com/deploy
+// Meaning if we have an external URL of https://example.com/deploy,
 // this function will return "/deploy"
 func getUrlBasePath() string {
-	withoutHTTPs, _ := strings.CutPrefix(config.Config.ExternalUrl, "https://")
-	split := strings.SplitN(withoutHTTPs, "/", 2)
-	if len(split) > 1 {
-		return "/" + split[1]
+	res := ""
+
+	// Parse as URL
+	u, err := url.Parse(config.Config.ExternalUrl)
+	if err != nil {
+		log.Fatal(err)
+	}
+	res = u.Path
+
+	// Remove trailing slash
+	if strings.HasSuffix(res, "/") {
+		res = strings.TrimSuffix(res, "/")
 	}
 
-	return ""
+	return res
 }
