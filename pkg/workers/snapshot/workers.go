@@ -14,12 +14,12 @@ import (
 )
 
 func snapshotter(ctx context.Context) {
-	defer log.Println("snapshotter stopped")
+	defer workers.OnStop("snapshotter")
 
 	for {
 		select {
 		case <-time.After(1 * time.Second):
-			workers.ReportStatus("snapshotter")
+			workers.ReportUp("snapshotter")
 
 		case <-time.After(10 * time.Second):
 			vms, err := vmModels.New().List()

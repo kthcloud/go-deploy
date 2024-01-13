@@ -16,7 +16,7 @@ import (
 )
 
 func deploymentLogger(ctx context.Context) {
-	defer log.Println("deploymentLogger stopped")
+	defer workers.OnStop("deploymentLogger")
 
 	mut := sync.Mutex{}
 
@@ -48,7 +48,7 @@ func deploymentLogger(ctx context.Context) {
 	for {
 		select {
 		case <-time.After(1 * time.Second):
-			workers.ReportStatus("deploymentLogger")
+			workers.ReportUp("deploymentLogger")
 
 		case <-time.After(1000 * time.Millisecond):
 			currentIDs := make([]string, len(current))

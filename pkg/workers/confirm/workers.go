@@ -18,11 +18,11 @@ import (
 )
 
 func deploymentConfirmer(ctx context.Context) {
-	defer log.Println("deploymentConfirmer stopped")
+	defer workers.OnStop("deploymentConfirmer")
 	for {
 		select {
 		case <-time.After(1 * time.Second):
-			workers.ReportStatus("deploymentConfirmer")
+			workers.ReportUp("deploymentConfirmer")
 
 		case <-time.After(5 * time.Second):
 			beingDeleted, _ := deploymentModels.New().WithActivities(deploymentModels.ActivityBeingDeleted).List()
@@ -56,12 +56,12 @@ func deploymentConfirmer(ctx context.Context) {
 }
 
 func customDomainConfirmer(ctx context.Context) {
-	defer log.Println("customDomainConfirmer stopped")
+	defer workers.OnStop("customDomainConfirmer")
 
 	for {
 		select {
 		case <-time.After(1 * time.Second):
-			workers.ReportStatus("customDomainConfirmer")
+			workers.ReportUp("customDomainConfirmer")
 
 		case <-time.After(1 * time.Second):
 			deploymentsWithPendingCustomDomain, err := deploymentModels.New().WithPendingCustomDomain().List()
@@ -149,12 +149,12 @@ func customDomainConfirmer(ctx context.Context) {
 }
 
 func smConfirmer(ctx context.Context) {
-	defer log.Println("smConfirmer stopped")
+	defer workers.OnStop("smConfirmer")
 
 	for {
 		select {
 		case <-time.After(1 * time.Second):
-			workers.ReportStatus("smConfirmer")
+			workers.ReportUp("smConfirmer")
 
 		case <-time.After(5 * time.Second):
 			beingDeleted, err := smModels.New().WithActivities(smModels.ActivityBeingDeleted).List()
@@ -192,12 +192,12 @@ func smConfirmer(ctx context.Context) {
 }
 
 func vmConfirmer(ctx context.Context) {
-	defer log.Println("vmConfirmer stopped")
+	defer workers.OnStop("vmConfirmer")
 
 	for {
 		select {
 		case <-time.After(1 * time.Second):
-			workers.ReportStatus("vmConfirmer")
+			workers.ReportUp("vmConfirmer")
 
 		case <-time.After(5 * time.Second):
 			beingDeleted, err := vmModels.New().WithActivities(vmModels.ActivityBeingDeleted).List()

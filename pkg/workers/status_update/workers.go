@@ -14,12 +14,12 @@ import (
 )
 
 func vmStatusUpdater(ctx context.Context) {
-	defer log.Println("vmStatusUpdater stopped")
+	defer workers.OnStop("vmStatusUpdater")
 
 	for {
 		select {
 		case <-time.After(1 * time.Second):
-			workers.ReportStatus("vmStatusUpdater")
+			workers.ReportUp("vmStatusUpdater")
 
 		case <-time.After(1 * time.Second):
 			allVms, err := vmModels.New().List()
@@ -57,12 +57,12 @@ func vmStatusUpdater(ctx context.Context) {
 }
 
 func vmSnapshotUpdater(ctx context.Context) {
-	defer log.Println("vmSnapshotUpdater stopped")
+	defer workers.OnStop("vmSnapshotUpdater")
 
 	for {
 		select {
 		case <-time.After(1 * time.Second):
-			workers.ReportStatus("vmSnapshotUpdater")
+			workers.ReportUp("vmSnapshotUpdater")
 
 		case <-time.After(5 * time.Second):
 			allVms, err := vmModels.New().List()
@@ -86,12 +86,12 @@ func vmSnapshotUpdater(ctx context.Context) {
 }
 
 func deploymentStatusUpdater(ctx context.Context) {
-	defer log.Println("deploymentStatusUpdater stopped")
+	defer workers.OnStop("deploymentStatusUpdater")
 
 	for {
 		select {
 		case <-time.After(1 * time.Second):
-			workers.ReportStatus("deploymentStatusUpdater")
+			workers.ReportUp("deploymentStatusUpdater")
 
 		case <-time.After(1 * time.Second):
 			allDeployments, err := deploymentModels.New().List()
