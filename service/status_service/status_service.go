@@ -11,11 +11,11 @@ func (c *Client) ListWorkerStatus(opts ...ListWorkerStatusOpts) ([]workerStatusM
 		return nil, err
 	}
 
-	for _, status := range workerStatus {
+	for idx, status := range workerStatus {
 		// If we didn't receive a status update for 10 seconds, we assume the worker is stopped
 		// This is useful when the pod is being terminated, and the worker is not able to report its status
 		if status.Status == "running" && time.Since(status.ReportedAt) > 10*time.Second {
-			status.Status = "stopped"
+			workerStatus[idx].Status = "stopped"
 		}
 	}
 
