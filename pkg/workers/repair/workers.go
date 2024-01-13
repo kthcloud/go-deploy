@@ -17,12 +17,12 @@ import (
 )
 
 func deploymentRepairer(ctx context.Context) {
-	defer log.Println("deploymentRepairer stopped")
+	defer workers.OnStop("deploymentRepairer")
 
 	for {
 		select {
 		case <-time.After(1 * time.Second):
-			workers.ReportStatus("deploymentRepairer")
+			workers.ReportUp("deploymentRepairer")
 
 		case <-time.After(60 * time.Second):
 			restarting, err := deploymentModels.New().WithActivities(deploymentModels.ActivityRestarting).List()
@@ -87,12 +87,12 @@ func deploymentRepairer(ctx context.Context) {
 }
 
 func smRepairer(ctx context.Context) {
-	defer log.Println("smRepairer stopped")
+	defer workers.OnStop("smRepairer")
 
 	for {
 		select {
 		case <-time.After(1 * time.Second):
-			workers.ReportStatus("smRepairer")
+			workers.ReportUp("smRepairer")
 
 		case <-time.After(60 * time.Second):
 			withNoActivities, err := smModels.New().WithNoActivities().List()
@@ -138,12 +138,12 @@ func smRepairer(ctx context.Context) {
 }
 
 func vmRepairer(ctx context.Context) {
-	defer log.Println("vmRepairer stopped")
+	defer workers.OnStop("vmRepairer")
 
 	for {
 		select {
 		case <-time.After(1 * time.Second):
-			workers.ReportStatus("vmRepairer")
+			workers.ReportUp("vmRepairer")
 
 		case <-time.After(60 * time.Second):
 			withNoActivities, err := vmModels.New().WithNoActivities().List()

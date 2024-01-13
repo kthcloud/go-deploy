@@ -7,17 +7,16 @@ import (
 	"go-deploy/pkg/jobs"
 	"go-deploy/pkg/workers"
 	"go-deploy/utils"
-	"log"
 	"time"
 )
 
 func jobFetcher(ctx context.Context) {
-	defer log.Println("jobFetcher stopped")
+	defer workers.OnStop("jobFetcher")
 
 	for {
 		select {
 		case <-time.After(1 * time.Second):
-			workers.ReportStatus("jobFetcher")
+			workers.ReportUp("jobFetcher")
 
 		case <-time.After(100 * time.Millisecond):
 			job, err := jobModels.New().GetNext()
@@ -39,12 +38,12 @@ func jobFetcher(ctx context.Context) {
 }
 
 func failedJobFetcher(ctx context.Context) {
-	defer log.Println("failedJobFetcher stopped")
+	defer workers.OnStop("failedJobFetcher")
 
 	for {
 		select {
 		case <-time.After(1 * time.Second):
-			workers.ReportStatus("failedJobFetcher")
+			workers.ReportUp("failedJobFetcher")
 
 		case <-time.After(30 * time.Second):
 			job, err := jobModels.New().GetNextFailed()

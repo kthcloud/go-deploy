@@ -9,19 +9,18 @@ import (
 	"go-deploy/service/deployment_service"
 	"go-deploy/service/deployment_service/client"
 	"go-deploy/utils"
-	"log"
 	"net/http"
 	"strings"
 	"time"
 )
 
 func deploymentPingUpdater(ctx context.Context) {
-	defer log.Println("deployment ping updater stopped")
+	defer workers.OnStop("deployment ping updater")
 
 	for {
 		select {
 		case <-time.After(1 * time.Second):
-			workers.ReportStatus("deploymentPingUpdater")
+			workers.ReportUp("deploymentPingUpdater")
 
 		case <-time.After(time.Duration(config.Config.Deployment.PingInterval) * time.Second):
 			makeError := func(err error) error {

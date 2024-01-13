@@ -17,7 +17,7 @@ import (
 )
 
 func metricsWorker(ctx context.Context) {
-	defer log.Println("metrics worker stopped")
+	defer workers.OnStop("metrics worker")
 
 	metricsFuncMap := map[string]func() error{
 		"users-total":          usersTotal,
@@ -34,7 +34,7 @@ func metricsWorker(ctx context.Context) {
 	for {
 		select {
 		case <-time.After(1 * time.Second):
-			workers.ReportStatus("metricsWorker")
+			workers.ReportUp("metricsWorker")
 
 		case <-time.After(time.Duration(config.Config.Metrics.Interval) * time.Second):
 			for metricGroupName, metric := range metricsFuncMap {
