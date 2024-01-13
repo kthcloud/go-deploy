@@ -64,6 +64,13 @@ func NewRouter() *gin.Engine {
 	})
 	public.GET("/v1/docs/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
+	//// Health check routes
+	public.GET("/healthz", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	})
+
+	// TODO: Answer /livez or/and /readyz with 200 if the server is up
+
 	// Hook routing group
 	hook := router.Group("/")
 
