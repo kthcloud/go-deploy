@@ -22,52 +22,49 @@ import (
 
 func NewRouter() *gin.Engine {
 	router := gin.New()
+	basePath := getUrlBasePath()
 
-	// global middleware
+	// Global middleware
 	router.Use(CorsAllowAll())
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 
-	// Does not seem to work in Docker...
+	// Metrics middleware
+	m := ginmetrics.GetMonitor()
+	m.SetMetricPath("/internal/metrics")
+	m.SetMetricPrefix(metrics.Prefix)
+	m.Use(router)
+
+	// Index routes
 	router.StaticFile("static/favicon.ico", "index/static/favicon.ico")
 	router.StaticFile("static/style.css", "index/static/style.css")
 	router.StaticFile("static/logo.png", "index/static/logo.png")
 	router.StaticFile("static/script.js", "index/static/script.js")
 	router.LoadHTMLFiles("index/index.html")
 	router.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "index.html", gin.H{})
+		c.HTML(http.StatusOK, "index.html", gin.H{
+			"staticFolder": basePath + "/static",
+			"apiUrl":       config.Config.ExternalUrl + "/v1/status",
+		})
 	})
 
-	// metrics middleware
-	m := ginmetrics.GetMonitor()
-	m.SetMetricPath("/internal/metrics")
-	m.SetMetricPrefix(metrics.Prefix)
-	m.Use(router)
-
-	// private routing group
+	// Private routing group
 	private := router.Group("/")
 	private.Use(auth.New(auth.Check(), sys.GetKeyCloakConfig()))
 	private.Use(middleware.SynchronizeUser)
 	private.Use(middleware.UserHttpEvent())
 
-	// public routing group
+	// Public routing group
 	public := router.Group("/")
 
-	// If the public URL contains a path, it must be prepended to the swagger base path
-	swaggerBase := ""
-	withoutHTTPs, _ := strings.CutPrefix(config.Config.ExternalUrl, "https://")
-	split := strings.SplitN(withoutHTTPs, "/", 2)
-	if len(split) > 1 {
-		swaggerBase = "/" + split[1]
-	}
-	docs.SwaggerInfo.BasePath = swaggerBase + "/v1"
-
+	//// Swagger routes
+	docs.SwaggerInfo.BasePath = basePath + "/v1"
 	public.GET("/v1/docs", func(c *gin.Context) {
 		c.Redirect(302, "/v1/docs/index.html")
 	})
 	public.GET("/v1/docs/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
-	// hook routing group
+	// Hook routing group
 	hook := router.Group("/")
 
 	groups := routes.RoutingGroups()
@@ -138,4 +135,17 @@ func registerCustomValidators() {
 			}
 		}
 	}
+}
+
+// getUrlBasePath returns the base path of the external URL.
+// Meaning if we have an external URL of https://example.com/deploy
+// this function will return "/deploy"
+func getUrlBasePath() string {
+	withoutHTTPs, _ := strings.CutPrefix(config.Config.ExternalUrl, "https://")
+	split := strings.SplitN(withoutHTTPs, "/", 2)
+	if len(split) > 1 {
+		return "/" + split[1]
+	}
+
+	return ""
 }
