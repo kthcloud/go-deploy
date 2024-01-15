@@ -70,7 +70,7 @@ func vmSnapshotUpdater(ctx context.Context) {
 			workers.ReportUp("vmSnapshotUpdater")
 
 		case <-tick:
-			func() {
+			go func() {
 				allVms, err := vmModels.New().List()
 				if err != nil {
 					utils.PrettyPrintError(fmt.Errorf("error fetching vms when updating snapshot status: %w", err))
@@ -99,7 +99,7 @@ func deploymentStatusUpdater(ctx context.Context) {
 	defer workers.OnStop("deploymentStatusUpdater")
 
 	reportTick := time.Tick(1 * time.Second)
-	tick := time.Tick(1 * time.Second)
+	tick := time.Tick(3 * time.Second)
 
 	for {
 		select {
