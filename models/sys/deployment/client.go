@@ -87,7 +87,7 @@ func (client *Client) WithActivities(activities ...string) *Client {
 	}
 
 	filter := bson.D{{
-		"$and", andFilter,
+		"$or", andFilter,
 	}}
 
 	client.ResourceClient.AddExtraFilter(filter)
