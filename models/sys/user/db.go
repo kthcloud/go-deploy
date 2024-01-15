@@ -7,6 +7,9 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
+// Create creates a new user.
+// If the user already exists, it will update the user
+// as a way of synchronizing the user's information.
 func (client *Client) Create(id string, params *CreateParams) (*User, error) {
 	current, err := client.GetByID(id)
 	if err != nil {
@@ -57,6 +60,7 @@ func (client *Client) Create(id string, params *CreateParams) (*User, error) {
 	return client.GetByID(id)
 }
 
+// UpdateWithParams updates the user with the given params.
 func (client *Client) UpdateWithParams(id string, params *UpdateParams) error {
 	updateData := bson.D{}
 

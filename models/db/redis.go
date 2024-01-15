@@ -8,6 +8,8 @@ import (
 	"log"
 )
 
+// setupRedis initializes the Redis connection.
+// It should be called once at the start of the application.
 func (dbCtx *Context) setupRedis() error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to setup redis. details: %w", err)
@@ -31,6 +33,8 @@ func (dbCtx *Context) setupRedis() error {
 	return nil
 }
 
+// shutdownRedis closes the Redis connection.
+// It should be called once at the end of the application.
 func (dbCtx *Context) shutdownRedis() error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to shutdown redis. details: %w", err)

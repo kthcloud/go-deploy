@@ -11,6 +11,7 @@ import (
 	"go-deploy/service/resources"
 )
 
+// OptsAll returns the options required to get all the service tools, ie. deployment, client, and generator.
 func OptsAll(deploymentID string, overwriteOps ...client.ExtraOpts) *client.Opts {
 	var eo client.ExtraOpts
 	if len(overwriteOps) > 0 {
@@ -25,12 +26,14 @@ func OptsAll(deploymentID string, overwriteOps ...client.ExtraOpts) *client.Opts
 	}
 }
 
+// OptsOnlyDeployment returns the options required to get only the deployment.
 func OptsOnlyDeployment(deploymentID string) *client.Opts {
 	return &client.Opts{
 		DeploymentID: deploymentID,
 	}
 }
 
+// OptsOnlyClient returns the options required to get only the client.
 func OptsOnlyClient() *client.Opts {
 	return &client.Opts{
 		Client: true,
@@ -148,12 +151,13 @@ func (c *Client) WithToken(token string) *Client {
 	return c
 }
 
+// WithRepositoryID sets the GitHub repository ID.
 func (c *Client) WithRepositoryID(repositoryID int64) *Client {
 	c.repositoryID = repositoryID
 	return c
 }
 
-// WithDeployment sets the deployment.
+// withClient is a helper function that creates a new GitHub client.
 func withClient(token string) (*github.Client, error) {
 	return github.New(&github.ClientConf{
 		Token: token,

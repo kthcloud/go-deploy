@@ -7,6 +7,7 @@ import (
 	"go-deploy/pkg/subsystems/github/models"
 )
 
+// ListWebhooks lists all webhooks for a repository.
 func (client *Client) ListWebhooks(owner string, repositoryName string) ([]*models.WebhookPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to list github webhooks. details: %w", err)
@@ -29,6 +30,7 @@ func (client *Client) ListWebhooks(owner string, repositoryName string) ([]*mode
 	return public, nil
 }
 
+// ReadWebhook reads a webhook from GitHub.
 func (client *Client) ReadWebhook(id int64, repositoryID int64) (*models.WebhookPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to read github webhook. details: %w", err)
@@ -56,6 +58,7 @@ func (client *Client) ReadWebhook(id int64, repositoryID int64) (*models.Webhook
 	return public, nil
 }
 
+// CreateWebhook creates a webhook on GitHub.
 func (client *Client) CreateWebhook(public *models.WebhookPublic) (*models.WebhookPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create github webhook. details: %w", err)
@@ -115,6 +118,7 @@ func (client *Client) CreateWebhook(public *models.WebhookPublic) (*models.Webho
 	return client.ReadWebhook(*id, public.RepositoryID)
 }
 
+// DeleteWebhook deletes a webhook from GitHub.
 func (client *Client) DeleteWebhook(id int64, repositoryId int64) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete github webhook. details: %w", err)

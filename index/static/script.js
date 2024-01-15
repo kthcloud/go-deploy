@@ -17,9 +17,6 @@ const mockData = [
     }
 ];
 
-// var apiURL = "http://localhost:8080/v1/status";
-// const apiURL =
-
 function sentenceCase(str) {
     const result = str.replace(/([A-Z])/g, " $1");
     return result.charAt(0).toUpperCase() + result.slice(1);

@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+// CreateExtraConfig creates the extra config for the VM, which is used
+// when attaching a GPU to a VM.
 func CreateExtraConfig(gpu *gpuModels.GPU) string {
 	data := fmt.Sprintf(`
 <devices> <hostdev mode='subsystem' type='pci' managed='yes'> <driver name='vfio' />

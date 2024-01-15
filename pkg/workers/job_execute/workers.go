@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+// jobFetcher is a worker that fetches jobs from the database and runs them.
 func jobFetcher(ctx context.Context) {
 	defer workers.OnStop("jobFetcher")
 
@@ -37,6 +38,7 @@ func jobFetcher(ctx context.Context) {
 	}
 }
 
+// failedJobFetcher is a worker that fetches failed jobs from the database and runs them.
 func failedJobFetcher(ctx context.Context) {
 	defer workers.OnStop("failedJobFetcher")
 

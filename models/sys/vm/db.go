@@ -15,9 +15,11 @@ import (
 )
 
 var (
+	// NonUniqueFieldErr is returned when a unique index in the database is violated.
 	NonUniqueFieldErr = fmt.Errorf("non unique field")
 )
 
+// Create creates a new VM.
 func (client *Client) Create(id, owner, manager string, params *CreateParams) (*VM, error) {
 	var portMap map[string]Port
 	if params.PortMap != nil {
@@ -89,31 +91,9 @@ func (client *Client) Create(id, owner, manager string, params *CreateParams) (*
 	return client.GetByID(id)
 }
 
-func (client *Client) GetByTransferCode(code string) (*VM, error) {
-	return client.GetWithFilterAndProjection(bson.D{{"transfer.code", code}}, nil)
-}
-
+// ListWithAnyPendingCustomDomain returns a list of VMs that have any port with a pending custom domain.
+// It uses aggregation to do this, so it is not very efficient.
 func (client *Client) ListWithAnyPendingCustomDomain() ([]VM, error) {
-	// Use aggregation to filter out vms that don't have any pending custom domains
-	//db.collection.aggregate([
-	//  {
-	//	$addFields: {
-	//	  portMapArray: { $objectToArray: "$portMap" }
-	//	}
-	//  },
-	//  {
-	//	$match: {
-	//	  portMapArray: {
-	//		$elemMatch: {
-	//		  "v.httpProxy.customDomain.status": {
-	//			$in: ["pending", "failed"]
-	//		  }
-	//		}
-	//	  }
-	//	}
-	//  }
-	//]);
-
 	pipeline := mongo.Pipeline{
 		{{"$addFields", bson.D{{"portMapArray", bson.D{{"$objectToArray", "$portMap"}}}}}},
 		{{"$match", bson.D{{"portMapArray", bson.D{{"$elemMatch", bson.D{{"v.httpProxy.customDomain.status", bson.D{{"$in", []string{CustomDomainStatusPending, CustomDomainStatusVerificationFailed}}}}}}}}}}},
@@ -137,22 +117,7 @@ func (client *Client) ListWithAnyPendingCustomDomain() ([]VM, error) {
 	return vms, nil
 }
 
-func (client *Client) DeleteByID(id string) error {
-	_, err := client.Collection.UpdateOne(context.TODO(),
-		bson.D{{"id", id}},
-		bson.D{
-			{"$set", bson.D{{"deletedAt", time.Now()}}},
-			{"$set", bson.D{{"activities", make(map[string]activity.Activity)}}},
-		},
-	)
-	if err != nil {
-		return fmt.Errorf("failed to delete deployment %s. details: %w", id, err)
-	}
-
-	return nil
-}
-
-func (client *Client) UpdateWithParamsByID(id string, params *UpdateParams) error {
+func (client *Client) UpdateWithParams(id string, params *UpdateParams) error {
 	setUpdate := bson.D{}
 	unsetUpdate := bson.D{}
 
@@ -258,16 +223,21 @@ func (client *Client) UpdateWithParamsByID(id string, params *UpdateParams) erro
 	return nil
 }
 
-func (client *Client) DeleteSubsystemByID(id, key string) error {
+// DeleteSubsystem erases a subsystem from a VM.
+// It prepends the key with `subsystems` and unsets it.
+func (client *Client) DeleteSubsystem(id, key string) error {
 	subsystemKey := fmt.Sprintf("subsystems.%s", key)
 	return client.UpdateWithBsonByID(id, bson.D{{"$unset", bson.D{{subsystemKey, ""}}}})
 }
 
-func (client *Client) UpdateSubsystemByID(id, key string, update interface{}) error {
+// SetSubsystem sets a subsystem in a VM.
+// It prepends the key with `subsystems` and sets it.
+func (client *Client) SetSubsystem(id, key string, update interface{}) error {
 	subsystemKey := fmt.Sprintf("subsystems.%s", key)
 	return client.SetWithBsonByID(id, bson.D{{subsystemKey, update}})
 }
 
+// UpdateCustomDomainStatus updates the status of a custom domain for a given port.
 func (client *Client) UpdateCustomDomainStatus(id, portName, status string) error {
 	update := bson.D{
 		{"$set", bson.D{{"portMap." + portName + ".httpProxy.customDomain.status", status}}},
@@ -276,6 +246,8 @@ func (client *Client) UpdateCustomDomainStatus(id, portName, status string) erro
 	return client.UpdateWithBsonByID(id, update)
 }
 
+// MarkRepaired marks a VM as repaired.
+// It sets RepairedAt and unsets the repairing activity.
 func (client *Client) MarkRepaired(id string) error {
 	filter := bson.D{{"id", id}}
 	update := bson.D{
@@ -291,6 +263,8 @@ func (client *Client) MarkRepaired(id string) error {
 	return nil
 }
 
+// MarkUpdated marks a VM as updated.
+// It sets UpdatedAt and unsets the updating activity.
 func (client *Client) MarkUpdated(id string) error {
 	filter := bson.D{{"id", id}}
 	update := bson.D{
@@ -306,6 +280,7 @@ func (client *Client) MarkUpdated(id string) error {
 	return nil
 }
 
+// generateCustomDomainSecret generates a random alphanumeric string.
 func generateCustomDomainSecret() string {
 	return utils.HashStringAlphanumeric(uuid.NewString())
 }

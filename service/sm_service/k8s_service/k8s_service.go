@@ -379,8 +379,8 @@ func (c *Client) Repair(id string) error {
 func dbFunc(id, key string) func(interface{}) error {
 	return func(data interface{}) error {
 		if data == nil {
-			return sm.New().DeleteSubsystemByID(id, "k8s."+key)
+			return sm.New().DeleteSubsystem(id, "k8s."+key)
 		}
-		return sm.New().UpdateSubsystemByID(id, "k8s."+key, data)
+		return sm.New().SetSubsystem(id, "k8s."+key, data)
 	}
 }

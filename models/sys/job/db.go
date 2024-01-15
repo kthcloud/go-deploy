@@ -11,10 +11,12 @@ import (
 	"time"
 )
 
+// Create creates a new job in the database.
 func (client *Client) Create(id, userID, jobType string, args map[string]interface{}) error {
 	return client.CreateScheduled(id, userID, jobType, time.Now(), args)
 }
 
+// CreateScheduled creates a new job in the database that will run after the given time.
 func (client *Client) CreateScheduled(id, userID, jobType string, runAfter time.Time, args map[string]interface{}) error {
 	currentJob, err := client.GetByID(id)
 	if err != nil {
@@ -44,6 +46,7 @@ func (client *Client) CreateScheduled(id, userID, jobType string, runAfter time.
 	return nil
 }
 
+// GetNext returns the next job that should be executed.
 func (client *Client) GetNext() (*Job, error) {
 	now := time.Now()
 	filter := bson.D{
@@ -66,6 +69,7 @@ func (client *Client) GetNext() (*Job, error) {
 	return &job, nil
 }
 
+// GetNextFailed returns the next job that failed and should be retried.
 func (client *Client) GetNextFailed() (*Job, error) {
 	now := time.Now()
 	filter := bson.D{
@@ -88,6 +92,7 @@ func (client *Client) GetNextFailed() (*Job, error) {
 	return &job, nil
 }
 
+// MarkCompleted marks a job as completed.
 func (client *Client) MarkCompleted(jobID string) error {
 	filter := bson.D{{"id", jobID}}
 
@@ -109,6 +114,7 @@ func (client *Client) MarkCompleted(jobID string) error {
 	return nil
 }
 
+// MarkFailed marks a job as failed, meaning it should be retried.
 func (client *Client) MarkFailed(jobID string, runAfter time.Time, attempts int, reason string) error {
 	filter := bson.D{
 		{"id", jobID},
@@ -135,6 +141,7 @@ func (client *Client) MarkFailed(jobID string, runAfter time.Time, attempts int,
 	return nil
 }
 
+// MarkTerminated marks a job as terminated, meaning it should not be retried.
 func (client *Client) MarkTerminated(jobID string, reason string) error {
 	filter := bson.D{
 		{"id", jobID},
@@ -159,6 +166,8 @@ func (client *Client) MarkTerminated(jobID string, reason string) error {
 	return nil
 }
 
+// ResetRunning resets all running jobs to pending.
+// This is used when the application is restarted to prevent jobs from being stuck in running state.
 func (client *Client) ResetRunning() error {
 	filter := bson.D{{"status", StatusRunning}}
 	update := bson.D{{"$set", bson.D{{"status", StatusPending}}}}
@@ -168,26 +177,10 @@ func (client *Client) ResetRunning() error {
 		return fmt.Errorf("failed to update job. details: %w", err)
 	}
 
-	err = client.CleanUp()
-	if err != nil {
-		return fmt.Errorf("failed to clean up job. details: %w", err)
-	}
-
 	return nil
 }
 
-func (client *Client) CleanUp() error {
-	filter := bson.D{{"errorLogs", nil}}
-	update := bson.D{{"$set", bson.D{{"errorLogs", make([]string, 0)}}}}
-
-	_, err := client.Collection.UpdateMany(context.Background(), filter, update)
-	if err != nil {
-		return fmt.Errorf("failed to update job. details: %w", err)
-	}
-
-	return nil
-}
-
+// UpdateWithParams updates the job with the given params.
 func (client *Client) UpdateWithParams(id string, params *UpdateParams) error {
 	updateData := bson.D{}
 

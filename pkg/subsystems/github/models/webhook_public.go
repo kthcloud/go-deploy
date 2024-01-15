@@ -24,6 +24,7 @@ func (w *WebhookPublic) IsPlaceholder() bool {
 	return false
 }
 
+// CreateWebhookPublicFromGet converts a github.Hook to a WebhookPublic.
 func CreateWebhookPublicFromGet(webhook *github.Hook, repositoryID int64) *WebhookPublic {
 	contentType := ""
 	if webhook.Config["content_type"] != nil {

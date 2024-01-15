@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// Client is used to manage storage managers in the database.
 type Client struct {
 	Collection      *mongo.Collection
 	RestrictOwnerID *string
@@ -17,6 +18,7 @@ type Client struct {
 	resource.ResourceClient[SM]
 }
 
+// New returns a new storage manager client.
 func New() *Client {
 	return &Client{
 		Collection: db.DB.GetCollection("storageManagers"),
@@ -31,6 +33,7 @@ func New() *Client {
 	}
 }
 
+// WithPagination adds pagination to the client.
 func (client *Client) WithPagination(page, pageSize int) *Client {
 	client.ResourceClient.Pagination = &base.Pagination{
 		Page:     page,
@@ -45,12 +48,14 @@ func (client *Client) WithPagination(page, pageSize int) *Client {
 	return client
 }
 
+// IncludeDeletedResources makes the client include deleted storage managers.
 func (client *Client) IncludeDeletedResources() *Client {
 	client.IncludeDeleted = true
 
 	return client
 }
 
+// RestrictToOwner adds a filter to the client to only include storage managers with the given owner ID.
 func (client *Client) RestrictToOwner(ownerID string) *Client {
 	client.ResourceClient.AddExtraFilter(bson.D{{"ownerId", ownerID}})
 	client.ActivityResourceClient.ExtraFilter = client.ResourceClient.ExtraFilter
@@ -59,6 +64,8 @@ func (client *Client) RestrictToOwner(ownerID string) *Client {
 	return client
 }
 
+// WithActivities adds a filter to the client to only include storage managers that does
+// at least one of the given activities.
 func (client *Client) WithActivities(activities ...string) *Client {
 	orFilter := bson.A{}
 
@@ -80,6 +87,7 @@ func (client *Client) WithActivities(activities ...string) *Client {
 	return client
 }
 
+// WithNoActivities adds a filter to the client to only include storage managers without any activities.
 func (client *Client) WithNoActivities() *Client {
 	filter := bson.D{{
 		"activities", bson.M{

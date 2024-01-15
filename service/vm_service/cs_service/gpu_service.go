@@ -13,6 +13,10 @@ import (
 	"strings"
 )
 
+// AttachGPU attaches a GPU to a VM.
+// It updates the VM's extra config and restarts the VM.
+//
+// If the VM is not running when attaching the GPU, it will not be started.
 func (c *Client) AttachGPU(vmID, gpuID string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to attach gpu %s to cs vm %s. details: %w", gpuID, vmID, err)
@@ -83,6 +87,10 @@ func (c *Client) AttachGPU(vmID, gpuID string) error {
 	return nil
 }
 
+// DetachGPU detaches a GPU from a VM.
+// It updates the VM's extra config and restarts the VM.
+//
+// If the VM is not running when detaching the GPU, it will not be started.
 func (c *Client) DetachGPU(vmID string, afterState string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to detach gpu from cs vm %s. details: %w", vmID, err)
@@ -136,6 +144,8 @@ func (c *Client) DetachGPU(vmID string, afterState string) error {
 	return nil
 }
 
+// IsGpuAttached checks if a GPU is attached to any CS VM.
+// It does this by inspecting the extra config of all VMs (including those not managed by go-deploy).
 func (c *Client) IsGpuAttached(id string) (bool, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check if gpu %s is attached to any cs vm. details: %w", id, err)
@@ -183,6 +193,8 @@ func (c *Client) IsGpuAttached(id string) (bool, error) {
 	return false, nil
 }
 
+// GetRequiredHost returns the host a GPU is required to be on.
+// This is needed because the GPU is attached using GPU passthrough, which requires the VM to be on the same host.
 func (c *Client) GetRequiredHost(gpuID string) (*string, error) {
 	gpu, err := c.GPU(gpuID, nil)
 	if err != nil {

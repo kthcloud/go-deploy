@@ -19,8 +19,10 @@ import (
 )
 
 const (
-	podEventStart = "start"
-	podEventStop  = "stop"
+	// PodEventStart is emitted when a pod starts
+	PodEventStart = "start"
+	// PodEventStop is emitted when a pod stops
+	PodEventStop = "stop"
 )
 
 type podEvent struct {
@@ -28,6 +30,8 @@ type podEvent struct {
 	event   string
 }
 
+// getPodNames gets the names of all pods for a deployment
+// This is used when setting up a log stream for a deployment
 func (client *Client) getPodNames(namespace, deploymentID string) ([]string, error) {
 	pods, err := client.K8sClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelID, deploymentID),
@@ -75,7 +79,7 @@ func (client *Client) SetupLogStream(ctx context.Context, deploymentID string, h
 					return
 				}
 
-				podChannel <- podEvent{event: podEventStart, podName: pod.Name}
+				podChannel <- podEvent{event: PodEventStart, podName: pod.Name}
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				pod := newObj.(*v1.Pod)
@@ -87,11 +91,11 @@ func (client *Client) SetupLogStream(ctx context.Context, deploymentID string, h
 					return
 				}
 
-				podChannel <- podEvent{event: podEventStart, podName: pod.Name}
+				podChannel <- podEvent{event: PodEventStart, podName: pod.Name}
 			},
 			DeleteFunc: func(obj interface{}) {
 				pod := obj.(*v1.Pod)
-				podChannel <- podEvent{event: podEventStop, podName: pod.Name}
+				podChannel <- podEvent{event: PodEventStop, podName: pod.Name}
 			},
 		})
 
@@ -107,7 +111,7 @@ func (client *Client) SetupLogStream(ctx context.Context, deploymentID string, h
 				return
 			case e := <-podChannel:
 				switch e.event {
-				case podEventStart:
+				case PodEventStart:
 					if _, ok := activeStreams[e.podName]; ok {
 						continue
 					}
@@ -124,7 +128,7 @@ func (client *Client) SetupLogStream(ctx context.Context, deploymentID string, h
 						client.readLogs(cancelCtx, idx, client.Namespace, e.podName, podChannel, handler)
 					}()
 
-				case podEventStop:
+				case PodEventStop:
 					cancelFunc, ok := cancelFuncs[e.podName]
 					if ok {
 						log.Println("stopping logger for pod", e.podName)
@@ -142,6 +146,8 @@ func (client *Client) SetupLogStream(ctx context.Context, deploymentID string, h
 	return nil
 }
 
+// readLogs reads logs from a pod and sends them to the handler
+// It listens to the podEvent channel to know when to stop, and emits a PodEventStop event when it stops
 func (client *Client) readLogs(ctx context.Context, podNumber int, namespace, podName string, eventChan chan podEvent, handler func(string, int, time.Time)) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -150,7 +156,7 @@ func (client *Client) readLogs(ctx context.Context, podNumber int, namespace, po
 			} else {
 				utils.PrettyPrintError(fmt.Errorf("failed to read logs for pod %s (panic). details: %v", podName, r))
 			}
-			eventChan <- podEvent{event: podEventStop, podName: podName}
+			eventChan <- podEvent{event: PodEventStop, podName: podName}
 		}
 	}()
 
@@ -196,6 +202,7 @@ func (client *Client) readLogs(ctx context.Context, podNumber int, namespace, po
 	}
 }
 
+// getK8sLogStream gets a log stream for a pod in Kubernetes
 func getK8sLogStream(client *Client, namespace, podName string, history int) (io.ReadCloser, error) {
 	podLogsConnection := client.K8sClient.CoreV1().Pods(namespace).GetLogs(podName, &v1.PodLogOptions{
 		Follow:    true,
@@ -211,6 +218,9 @@ func getK8sLogStream(client *Client, namespace, podName string, history int) (io
 	return logStream, nil
 }
 
+// isExitLine is a helper function to determine if a line from a log stream is an exit line.
+// This is used to know when to stop reading logs from a pod, since Kubernetes does not provide a way
+// to do this directly (at least in a reasonable amount of time).
 func isExitLine(line string) bool {
 	firstPart := strings.Contains(line, "rpc error: code = NotFound desc = an error occurred when try to find container")
 	lastPart := strings.Contains(line, "not found")
@@ -223,6 +233,8 @@ func isExitLine(line string) bool {
 	return notYetStarted || sigQuit || gracefullyShuttingDown
 }
 
+// getFreePodNumber is a helper function that gets the next free pod number for a deployment
+// The number is used as a unique nice-to-read identifier for a pod.
 func getFreePodNumber(activeStreams map[string]int) int {
 	values := maps.Values(activeStreams)
 
@@ -238,8 +250,3 @@ func getFreePodNumber(activeStreams map[string]int) int {
 
 	return len(values)
 }
-
-// 2023/12/03 19:11:23 [notice] 1#1: signal 3 (SIGQUIT) received, shutting down
-// 2023/12/03 19:11:23 [notice] 21#21: gracefully shutting down
-// 2023/12/03 19:11:23 [notice] 20#20: exiting
-// 2023/12/03 19:11:23 [notice] 22#22: exit

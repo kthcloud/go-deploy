@@ -20,6 +20,7 @@ type HostPublic struct {
 	CreatedAt     time.Time `bson:"createdAt"`
 }
 
+// CreateHostPublicFromGet converts a cloudstack.Host to a HostPublic.
 func CreateHostPublicFromGet(host *cloudstack.Host) *HostPublic {
 	ramUsedInGB := int(host.Memoryused / 1024 / 1024 / 1024)
 	ramInGB := int(host.Memorytotal / 1024 / 1024 / 1024)

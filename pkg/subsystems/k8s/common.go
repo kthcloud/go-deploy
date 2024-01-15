@@ -6,6 +6,7 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// IsNotFoundErr returns true if the error is a Kubernetes NotFound error.
 func IsNotFoundErr(err error) bool {
 	var statusError *k8sErrors.StatusError
 	if errors.As(err, &statusError) {

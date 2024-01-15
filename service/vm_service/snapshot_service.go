@@ -10,6 +10,7 @@ import (
 	"sort"
 )
 
+// GetSnapshot gets a snapshot
 func (c *Client) GetSnapshot(vmID string, id string, opts ...client.GetSnapshotOptions) (*vmModels.Snapshot, error) {
 	_ = service.GetFirstOrDefault(opts)
 
@@ -38,6 +39,7 @@ func (c *Client) GetSnapshot(vmID string, id string, opts ...client.GetSnapshotO
 	}, nil
 }
 
+// GetSnapshotByName gets a snapshot by name
 func (c *Client) GetSnapshotByName(vmID string, name string, opts ...client.GetSnapshotOptions) (*vmModels.Snapshot, error) {
 	_ = service.GetFirstOrDefault(opts)
 
@@ -66,6 +68,7 @@ func (c *Client) GetSnapshotByName(vmID string, name string, opts ...client.GetS
 	}, nil
 }
 
+// ListSnapshots lists snapshots
 func (c *Client) ListSnapshots(vmID string, opts ...client.ListSnapshotOptions) ([]vmModels.Snapshot, error) {
 	_ = service.GetFirstOrDefault(opts)
 
@@ -98,6 +101,7 @@ func (c *Client) ListSnapshots(vmID string, opts ...client.ListSnapshotOptions) 
 	return snapshots, nil
 }
 
+// CreateSnapshot creates a snapshot
 func (c *Client) CreateSnapshot(vmID string, opts *client.CreateSnapshotOptions) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create snapshot for vm %s. details: %w", vmID, err)
@@ -116,7 +120,7 @@ func (c *Client) CreateSnapshot(vmID string, opts *client.CreateSnapshotOptions)
 	if !vm.Ready() {
 		return fmt.Errorf("vm %s not ready", vmID)
 	}
-  
+
 	params := &vmModels.CreateSnapshotParams{}
 	if opts.System != nil {
 		params = opts.System
@@ -137,6 +141,7 @@ func (c *Client) CreateSnapshot(vmID string, opts *client.CreateSnapshotOptions)
 	return nil
 }
 
+// DeleteSnapshot deletes a snapshot
 func (c *Client) DeleteSnapshot(vmID, snapshotID string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete snapshot %s from vm %s. details: %w", snapshotID, vmID, err)
@@ -164,6 +169,7 @@ func (c *Client) DeleteSnapshot(vmID, snapshotID string) error {
 	return nil
 }
 
+// ApplySnapshot applies a snapshot
 func (c *Client) ApplySnapshot(id, snapshotID string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to apply snapshot %s to vm %s. details: %w", snapshotID, id, err)

@@ -8,12 +8,14 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// Client is the client for VM ports.
 type Client struct {
 	Collection *mongo.Collection
 
 	resource.ResourceClient[VmPort]
 }
 
+// New creates a new VM port client.
 func New() *Client {
 	return &Client{
 		Collection: db.DB.GetCollection("vmPorts"),
@@ -25,6 +27,7 @@ func New() *Client {
 	}
 }
 
+// WithPagination sets the pagination for the client.
 func (client *Client) WithPagination(page, pageSize int) *Client {
 	client.ResourceClient.Pagination = &base.Pagination{
 		Page:     page,
@@ -34,12 +37,14 @@ func (client *Client) WithPagination(page, pageSize int) *Client {
 	return client
 }
 
+// WithZone adds a filter to the client to only return VM ports in the given zone.
 func (client *Client) WithZone(zone string) *Client {
 	client.ResourceClient.AddExtraFilter(bson.D{{"zone", zone}})
 
 	return client
 }
 
+// ExcludePortRange adds a filter to the client to exclude VM ports in the given range.
 func (client *Client) ExcludePortRange(start, end int) *Client {
 	filter := bson.D{{"$or", bson.A{
 		bson.D{{"publicPort", bson.D{{"$lt", start}}}},
@@ -51,6 +56,7 @@ func (client *Client) ExcludePortRange(start, end int) *Client {
 	return client
 }
 
+// IncludePortRange adds a filter to the client to only return VM ports in the given range.
 func (client *Client) IncludePortRange(start, end int) *Client {
 	client.ResourceClient.AddExtraFilter(bson.D{{"publicPort", bson.D{{"$gte", start}}}})
 	client.ResourceClient.AddExtraFilter(bson.D{{"publicPort", bson.D{{"$lt", end}}}})
@@ -58,6 +64,7 @@ func (client *Client) IncludePortRange(start, end int) *Client {
 	return client
 }
 
+// WithVmID adds a filter to the client to only return VM ports for the given VM.
 func (client *Client) WithVmID(vmID string) *Client {
 	client.ResourceClient.AddExtraFilter(bson.D{{"lease.vmId", vmID}})
 

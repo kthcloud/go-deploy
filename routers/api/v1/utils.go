@@ -10,6 +10,8 @@ import (
 	"reflect"
 )
 
+// WithAuth returns the auth info for the current request.
+// This include all user info necessary to perform authorization checks
 func WithAuth(context *sys.ClientContext) (*service.AuthInfo, error) {
 	makeError := func(error) error {
 		return errors.New("failed to get auth info")
@@ -23,19 +25,7 @@ func WithAuth(context *sys.ClientContext) (*service.AuthInfo, error) {
 	return service.CreateAuthInfo(token.Sub, token, token.Groups), nil
 }
 
-func WithAuthFromDB(userID string) (*service.AuthInfo, error) {
-	makeError := func(error) error {
-		return errors.New("failed to get auth info")
-	}
-
-	auth, err := service.CreateAuthInfoFromDB(userID)
-	if err != nil {
-		return nil, makeError(err)
-	}
-
-	return auth, nil
-}
-
+// msgForTag returns a human readable error message for a validator.FieldError
 func msgForTag(fe validator.FieldError) string {
 	switch fe.Tag() {
 	case "required":
@@ -100,6 +90,8 @@ func msgForTag(fe validator.FieldError) string {
 	return fe.Error()
 }
 
+// CreateBindingError creates a binding error from a validator error
+// This is useful for returning a binding error from a gin handler
 func CreateBindingError(err error) *body.BindingError {
 	out := &body.BindingError{
 		ValidationErrors: make(map[string][]string),

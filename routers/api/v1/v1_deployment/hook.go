@@ -25,40 +25,24 @@ import (
 	"time"
 )
 
-func getTokenFromAuthHeader(context sys.ClientContext) (string, error) {
-	const authHeaderName = "Authorization"
-
-	authHeader := context.GinContext.GetHeader(authHeaderName)
-	if len(authHeader) == 0 {
-		return "", nil
-	}
-
-	headerSplit := strings.Split(authHeader, " ")
-	if len(headerSplit) != 2 {
-		return "", nil
-	}
-
-	if headerSplit[0] != "Basic" {
-		return "", nil
-	}
-
-	decodedHeader, err := base64.StdEncoding.DecodeString(headerSplit[1])
-	if err != nil {
-		return "", err
-	}
-
-	basicAuthSplit := strings.Split(string(decodedHeader), ":")
-	if len(basicAuthSplit) != 2 {
-		return "", nil
-	}
-
-	return basicAuthSplit[1], nil
-}
-
+// HandleHarborHook
+// @Summary Handle Harbor hook
+// @Description Handle Harbor hook
+// @Tags Deployment
+// @Accept  json
+// @Param Authorization header string false "Basic auth token"
+// @Param body body body.HarborWebhook true "Harbor webhook body"
+// @Produce  json
+// @Success 204 {empty} empty
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 401 {object} sys.ErrorResponse
+// @Failure 404 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
+// @Router /hooks/harbor [post]
 func HandleHarborHook(c *gin.Context) {
 	context := sys.NewContext(c)
 
-	token, err := getTokenFromAuthHeader(context)
+	token, err := getHarborTokenFromAuthHeader(context)
 
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
@@ -131,6 +115,22 @@ func HandleHarborHook(c *gin.Context) {
 	context.OkNoContent()
 }
 
+// HandleGitHubHook
+// @Summary Handle GitHub hook
+// @Description Handle GitHub hook
+// @Tags Deployment
+// @Accept  json
+// @Param X-Github-Event header string true "Event type"
+// @Param X-GitHub-Hook-Id header string true "Hook ID"
+// @Param X-Hub-Signature-256 header string true "Signature"
+// @Param body body body.GithubWebhookPayloadPush true "GitHub webhook body"
+// @Produce  json
+// @Success 204 {empty} empty
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 403 {object} sys.ErrorResponse
+// @Failure 404 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
+// @Router /hooks/github [post]
 func HandleGitHubHook(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -198,7 +198,7 @@ func HandleGitHubHook(c *gin.Context) {
 
 	var ids []string
 	for _, deployment := range deployments {
-		if !checkSignature(signature, requestBodyRaw, deployment.Subsystems.GitHub.Webhook.Secret) {
+		if !checkGitHubSignature(signature, requestBodyRaw, deployment.Subsystems.GitHub.Webhook.Secret) {
 			context.Forbidden("Invalid signature")
 			return
 		}
@@ -247,7 +247,8 @@ func HandleGitHubHook(c *gin.Context) {
 	context.OkNoContent()
 }
 
-func checkSignature(signature string, payload []byte, secret string) bool {
+// checkGitHubSignature checks if the GitHub signature is valid.
+func checkGitHubSignature(signature string, payload []byte, secret string) bool {
 	const signaturePrefix = "sha256="
 	const prefixLength = len(signaturePrefix)
 	const signatureLength = prefixLength + (sha256.Size * 2)
@@ -261,13 +262,45 @@ func checkSignature(signature string, payload []byte, secret string) bool {
 
 	byteStringSecret := []byte(secret)
 
-	expected := getSignature(byteStringSecret, payload)
+	expected := getGitHubSignature(byteStringSecret, payload)
 
 	return hmac.Equal(expected, actual)
 }
 
-func getSignature(secret, body []byte) []byte {
+// getGitHubSignature returns the GitHub signature for the given secret and payload.
+func getGitHubSignature(secret, body []byte) []byte {
 	computed := hmac.New(sha256.New, secret)
 	computed.Write(body)
 	return []byte(computed.Sum(nil))
+}
+
+// getHarborTokenFromAuthHeader returns the Harbor token from the Authorization header.
+func getHarborTokenFromAuthHeader(context sys.ClientContext) (string, error) {
+	const authHeaderName = "Authorization"
+
+	authHeader := context.GinContext.GetHeader(authHeaderName)
+	if len(authHeader) == 0 {
+		return "", nil
+	}
+
+	headerSplit := strings.Split(authHeader, " ")
+	if len(headerSplit) != 2 {
+		return "", nil
+	}
+
+	if headerSplit[0] != "Basic" {
+		return "", nil
+	}
+
+	decodedHeader, err := base64.StdEncoding.DecodeString(headerSplit[1])
+	if err != nil {
+		return "", err
+	}
+
+	basicAuthSplit := strings.Split(string(decodedHeader), ":")
+	if len(basicAuthSplit) != 2 {
+		return "", nil
+	}
+
+	return basicAuthSplit[1], nil
 }

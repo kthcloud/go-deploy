@@ -5,6 +5,7 @@ import (
 	"log"
 )
 
+// ReportUp reports that a worker is up.
 func ReportUp(name string) {
 	err := worker_status.New().CreateOrUpdate(name, "running")
 	if err != nil {
@@ -12,6 +13,8 @@ func ReportUp(name string) {
 	}
 }
 
+// OnStop reports that a worker has stopped.
+// It should be called in a defer statement for every worker.
 func OnStop(name string) {
 	log.Println(name, "stopped")
 

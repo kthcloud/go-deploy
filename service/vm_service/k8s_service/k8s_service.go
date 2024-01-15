@@ -14,6 +14,9 @@ import (
 	"log"
 )
 
+// Create sets up K8s for a VM.
+//
+// This does nothing if the VM has no proxy ports.
 func (c *Client) Create(id string, params *vmModels.CreateParams) error {
 	log.Println("setting up k8s for", params.Name)
 
@@ -98,6 +101,7 @@ func (c *Client) Create(id string, params *vmModels.CreateParams) error {
 	return nil
 }
 
+// Delete deletes the K8s setup for a VM.
 func (c *Client) Delete(id string, overwriteUserID ...string) error {
 	log.Println("deleting k8s for", id)
 
@@ -188,6 +192,7 @@ func (c *Client) Delete(id string, overwriteUserID ...string) error {
 	return nil
 }
 
+// Repair repairs the K8s setup for a VM.
 func (c *Client) Repair(id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to repair k8s %s. details: %w", id, err)
@@ -332,6 +337,7 @@ func (c *Client) Repair(id string) error {
 	return nil
 }
 
+// EnsureOwner ensures the owner of the K8s setup, by deleting and then trigger a call to Repair.
 func (c *Client) EnsureOwner(id, oldOwnerID string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update k8s owner for vm %s. details: %w", id, err)
@@ -357,11 +363,12 @@ func (c *Client) EnsureOwner(id, oldOwnerID string) error {
 	return nil
 }
 
+// dbFunc returns a function that updates the K8s subsystem.
 func dbFunc(id, key string) func(interface{}) error {
 	return func(data interface{}) error {
 		if data == nil {
-			return vmModels.New().DeleteSubsystemByID(id, "k8s."+key)
+			return vmModels.New().DeleteSubsystem(id, "k8s."+key)
 		}
-		return vmModels.New().UpdateSubsystemByID(id, "k8s."+key, data)
+		return vmModels.New().SetSubsystem(id, "k8s."+key, data)
 	}
 }

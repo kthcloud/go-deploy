@@ -5,6 +5,8 @@ import (
 	"log"
 )
 
+// SsCreatorType is a type that can be used to create a single subsystem resource
+// It contains the public resource that should be created, and the functions that should be used to create it
 type SsCreatorType[T subsystems.SsResource] struct {
 	name   *string
 	public T
@@ -13,22 +15,26 @@ type SsCreatorType[T subsystems.SsResource] struct {
 	createFunc func(T) (T, error)
 }
 
+// SsCreator create a new creator that can be used for a single resource
 func SsCreator[T subsystems.SsResource](createFunc func(T) (T, error)) *SsCreatorType[T] {
 	return &SsCreatorType[T]{
 		createFunc: createFunc,
 	}
 }
 
+// WithDbFunc sets the db func for the creator
 func (rc *SsCreatorType[T]) WithDbFunc(dbFunc func(interface{}) error) *SsCreatorType[T] {
 	rc.dbFunc = dbFunc
 	return rc
 }
 
+// WithPublic sets the public resource for the creator
 func (rc *SsCreatorType[T]) WithPublic(public T) *SsCreatorType[T] {
 	rc.public = public
 	return rc
 }
 
+// Exec executes the creator
 func (rc *SsCreatorType[T]) Exec() error {
 	if subsystems.Nil(rc.public) {
 		log.Println("no public resource provided for subsystem creation. assuming it failed to create")

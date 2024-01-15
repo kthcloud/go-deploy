@@ -13,6 +13,8 @@ import (
 	"strings"
 )
 
+// googleDnsResponse is the response from the Google DNS API
+// This is used to check if a domain points to the correct IP
 type googleDnsResponse struct {
 	Status   int  `json:"Status,omitempty"`
 	Tc       bool `json:"TC,omitempty"`
@@ -33,6 +35,7 @@ type googleDnsResponse struct {
 	Comment string `json:"Comment,omitempty"`
 }
 
+// Rfc1035 is a validator for RFC 1035 hostnames
 func Rfc1035(fl validator.FieldLevel) bool {
 	name, ok := fl.Field().Interface().(string)
 	if !ok {
@@ -42,6 +45,10 @@ func Rfc1035(fl validator.FieldLevel) bool {
 	rfc1035 := regexp.MustCompile(`^[a-zA-Z]([a-zA-Z0-9-]*[a-zA-Z0-9])?([a-zA-Z]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$`)
 	return rfc1035.MatchString(name)
 }
+
+// SshPublicKey is a validator for SSH public keys.
+// It attempts to parse the key using the golang.org/x/crypto/ssh package
+// If the key is invalid, it will return false
 func SshPublicKey(fl validator.FieldLevel) bool {
 	publicKey, ok := fl.Field().Interface().(string)
 	if !ok {
@@ -55,6 +62,8 @@ func SshPublicKey(fl validator.FieldLevel) bool {
 	return true
 }
 
+// EnvName is a validator for environment variable names
+// It ensure the name is valid for use in the environment
 func EnvName(fl validator.FieldLevel) bool {
 	name, ok := fl.Field().Interface().(string)
 	if !ok {
@@ -66,6 +75,8 @@ func EnvName(fl validator.FieldLevel) bool {
 	return match
 }
 
+// EnvList is a validator for environment variable lists.
+// It ensures that every environment variable name is unique
 func EnvList(fl validator.FieldLevel) bool {
 	envList, ok := fl.Field().Interface().([]body.Env)
 	if !ok {
@@ -82,6 +93,8 @@ func EnvList(fl validator.FieldLevel) bool {
 	return true
 }
 
+// PortListNames is a validator for port lists.
+// It ensures that every port name is unique
 func PortListNames(fl validator.FieldLevel) bool {
 	// We need to try with both PortCreate and PortUpdate
 
@@ -114,6 +127,8 @@ func PortListNames(fl validator.FieldLevel) bool {
 	return false
 }
 
+// PortListNumbers is a validator for port lists.
+// It ensures that every port number is unique per protocol
 func PortListNumbers(fl validator.FieldLevel) bool {
 	// We need to try with both PortCreate and PortUpdate
 
@@ -146,6 +161,8 @@ func PortListNumbers(fl validator.FieldLevel) bool {
 	return false
 }
 
+// PortListHttpProxies is a validator for port lists.
+// It ensures that every proxy name is unique
 func PortListHttpProxies(fl validator.FieldLevel) bool {
 	// We need to try with both PortCreate and PortUpdate
 
@@ -182,6 +199,9 @@ func PortListHttpProxies(fl validator.FieldLevel) bool {
 	return false
 }
 
+// DomainName is a validator for domain names.
+// It ensures that the domain name is not a parent domain of any zone
+// It also ensures that the domain name is valid and can be converted to punycode
 func DomainName(fl validator.FieldLevel) bool {
 	domain, ok := fl.Field().Interface().(string)
 	if !ok {
@@ -212,6 +232,8 @@ func DomainName(fl validator.FieldLevel) bool {
 	return true
 }
 
+// CustomDomain is a validator for custom domain names.
+// It ensures that the domain name is valid and that it points to the correct IP
 func CustomDomain(fl validator.FieldLevel) bool {
 	domain, ok := fl.Field().Interface().(string)
 	if !ok {
@@ -235,6 +257,8 @@ func CustomDomain(fl validator.FieldLevel) bool {
 	return true
 }
 
+// HealthCheckPath is a validator for health check paths.
+// It ensures that the path is valid and that it starts with a slash
 func HealthCheckPath(fl validator.FieldLevel) bool {
 	path, ok := fl.Field().Interface().(string)
 	if !ok {
@@ -252,6 +276,8 @@ func HealthCheckPath(fl validator.FieldLevel) bool {
 	return true
 }
 
+// TeamName is a validator for team names.
+// It ensures that the name is valid and does not start or end with a space
 func TeamName(fl validator.FieldLevel) bool {
 	name, ok := fl.Field().Interface().(string)
 	if !ok {
@@ -268,6 +294,8 @@ func TeamName(fl validator.FieldLevel) bool {
 	return match
 }
 
+// TeamMemberList is a validator for team member lists.
+// It ensures that every team member is unique
 func TeamMemberList(fl validator.FieldLevel) bool {
 	if memberListUpdate, ok := fl.Field().Interface().([]body.TeamMemberUpdate); ok {
 		id := make(map[string]bool)
@@ -292,6 +320,8 @@ func TeamMemberList(fl validator.FieldLevel) bool {
 	return true
 }
 
+// TeamResourceList is a validator for team resource lists.
+// It ensures that every team resource is unique
 func TeamResourceList(fl validator.FieldLevel) bool {
 	resourceList, ok := fl.Field().Interface().([]string)
 	if !ok {
@@ -308,6 +338,7 @@ func TeamResourceList(fl validator.FieldLevel) bool {
 	return true
 }
 
+// domainPointsToDeploy is a helper function that checks if the domain points to the correct IP
 func domainPointsToDeploy(domainName string) bool {
 	for _, zone := range config.Config.Deployment.Zones {
 		mustPointAt := zone.CustomDomainIP
@@ -324,6 +355,7 @@ func domainPointsToDeploy(domainName string) bool {
 	return false
 }
 
+// lookUpIP is a helper function that looks up the IP of a domain using the Google DNS API
 func lookUpIP(domainName string) *string {
 	requestURL := "https://dns.google.com/resolve?name=" + domainName + "&type=A"
 	resp, err := http.Get(requestURL)
@@ -353,6 +385,7 @@ func lookUpIP(domainName string) *string {
 	return &response.Answer[len(response.Answer)-1].Data
 }
 
+// goodURL is a helper function that checks if a URL is valid according to RFC 3986
 func goodURL(url string) bool {
 	rfc3986Characters := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~:/?#[]@!$&'()*+,;="
 	for _, c := range url {

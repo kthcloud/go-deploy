@@ -9,28 +9,14 @@ import (
 )
 
 var (
-	PortNotFoundErr     = errors.New("port not found")
+	// PortNotFoundErr is returned when a port is not found.
+	PortNotFoundErr = errors.New("port not found")
+	// NoPortsAvailableErr is returned when no ports are available.
+	// This is likely due to the port range being full.
 	NoPortsAvailableErr = errors.New("port not found")
 )
 
-func (client *Client) GetByPublicPort(publicPort int, zone string) (*VmPort, error) {
-	filter := bson.D{
-		{"publicPort", publicPort},
-		{"zone", zone},
-	}
-
-	return client.GetWithFilterAndProjection(filter, nil)
-}
-
-func (client *Client) GetByLease(vmID string, privatePort int) (*VmPort, error) {
-	filter := bson.D{
-		{"lease.vmId", vmID},
-		{"lease.privatePort", privatePort},
-	}
-
-	return client.GetWithFilterAndProjection(filter, nil)
-}
-
+// CreateIfNotExists creates the given port range if it does not already exist.
 func (client *Client) CreateIfNotExists(publicPortStart, publicPortEnd int, zone string) (int, error) {
 	toInsert := make([]interface{}, publicPortEnd-publicPortStart)
 	for i := range toInsert {
@@ -58,6 +44,7 @@ func (client *Client) CreateIfNotExists(publicPortStart, publicPortEnd int, zone
 	return len(res.InsertedIDs), nil
 }
 
+// Lease leases a port for the given VM.
 func (client *Client) Lease(publicPort, privatePort int, vmID, zone string) (*VmPort, error) {
 	filter := bson.D{
 		{"publicPort", publicPort},
@@ -88,6 +75,7 @@ func (client *Client) Lease(publicPort, privatePort int, vmID, zone string) (*Vm
 	return &port, nil
 }
 
+// GetOrLeaseAny gets a port that is not leased, or leases a port for the given VM.
 func (client *Client) GetOrLeaseAny(privatePort int, vmID, zone string) (*VmPort, error) {
 	// First check if the lease already exists
 	filter := bson.D{
@@ -95,7 +83,7 @@ func (client *Client) GetOrLeaseAny(privatePort int, vmID, zone string) (*VmPort
 		{"lease.privatePort", privatePort},
 	}
 
-	vmPort, err := client.GetByLease(vmID, privatePort)
+	vmPort, err := client.GetWithFilterAndProjection(filter, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -139,6 +127,7 @@ func (client *Client) GetOrLeaseAny(privatePort int, vmID, zone string) (*VmPort
 	return &port, nil
 }
 
+// ReleaseAll releases all ports leased by the given VM.
 func (client *Client) ReleaseAll(vmID string) error {
 	filter := bson.D{
 		{"lease.vmId", vmID},
@@ -160,7 +149,9 @@ func (client *Client) ReleaseAll(vmID string) error {
 	return nil
 }
 
-func (client *Client) Delete(publicPort int, zone string) error {
+// Erase erases a port.
+// This removes the port from the database entirely.
+func (client *Client) Erase(publicPort int, zone string) error {
 	filter := bson.D{
 		{"publicPort", publicPort},
 		{"zone", zone},

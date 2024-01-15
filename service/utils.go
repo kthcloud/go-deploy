@@ -8,8 +8,12 @@ import (
 	"time"
 )
 
+// UpdateDbSubsystem is a common interface that services use to update subsystem resources
 type UpdateDbSubsystem func(string, string, interface{}) error
 
+// ResetTimeFields resets all time.Time fields in a struct to the zero value
+// This is done when comparing structs to ignore time.Time fields, since they are not
+// guaranteed to be equal using == (they have their own Equal() method)
 func ResetTimeFields[T any](input T) T {
 	// Create a function to recursively reset time.Time fields
 	var resetTimeFields func(v reflect.Value)
@@ -41,6 +45,9 @@ func ResetTimeFields[T any](input T) T {
 	return output.Interface().(T)
 }
 
+// areTimeFieldsEqual compares two structs time.Time fields
+// This is done when comparing structs to ignore time.Time fields, since they are not
+// guaranteed to be equal using == (they have their own Equal() method)
 func areTimeFieldsEqual(a, b interface{}) bool {
 	valA := reflect.ValueOf(a)
 	valB := reflect.ValueOf(b)
@@ -70,6 +77,10 @@ func areTimeFieldsEqual(a, b interface{}) bool {
 	return true
 }
 
+// UpdateIfDiff is a common function that services use to update subsystem resources if there is a diff
+// in the database and live resource.
+//
+// This is the core functionality that enables repairing subsystem resources.
 func UpdateIfDiff[T subsystems.SsResource](dbResource T, fetchFunc func() (T, error), updateFunc func(T) (T, error), recreateFunc func(T) error) error {
 	liveResource, err := fetchFunc()
 	if err != nil {
@@ -111,6 +122,7 @@ func UpdateIfDiff[T subsystems.SsResource](dbResource T, fetchFunc func() (T, er
 	return recreateFunc(dbResource)
 }
 
+// GetFirstOrDefault gets the first element of a slice, or the default value of the type if the slice is empty
 func GetFirstOrDefault[T any](variable []T) T {
 	if len(variable) > 0 {
 		return variable[0]

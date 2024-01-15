@@ -34,6 +34,7 @@ func shutdown() {
 	db.Shutdown()
 }
 
+// Create creates a new App instance.
 func Create(opts *Options) *App {
 	config.SetupEnvironment()
 	metrics.Setup()

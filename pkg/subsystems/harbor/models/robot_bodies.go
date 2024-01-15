@@ -9,6 +9,7 @@ type RobotCreated struct {
 	Secret string `json:"secret"`
 }
 
+// CreateRobotCreateBody creates a body used for create a robot in the Harbor API.
 func CreateRobotCreateBody(public *RobotPublic, projectName string) *model.RobotCreate {
 	return &model.RobotCreate{
 		// These are updated in assertCorrectRobotSecret
@@ -46,6 +47,7 @@ func CreateRobotCreateBody(public *RobotPublic, projectName string) *model.Robot
 	}
 }
 
+// CreateRobotUpdateBody creates a body used for update a robot in the Harbor API.
 func CreateRobotUpdateBody(public *RobotPublic, projectName string) *model.Robot {
 	return &model.Robot{
 		// These are updated in assertCorrectRobotSecret

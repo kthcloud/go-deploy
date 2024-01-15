@@ -10,6 +10,7 @@ import (
 	"strings"
 )
 
+// SynchronizeGPUs synchronizes the GPUs from the landing API to the database.
 func SynchronizeGPUs() {
 	client, err := landing.New(&landing.ClientConf{
 		URL:      config.Config.Landing.URL,

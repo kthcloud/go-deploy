@@ -14,13 +14,12 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func intToInt32Ptr(i int) *int32 {
-	i32 := int32(i)
-	return &i32
-}
+const (
+	// timeFormat is used to convert time.Time to a Kubernetes date string.
+	timeFormat = "2006-01-02 15:04:05.000 -0700"
+)
 
-const timeFormat = "2006-01-02 15:04:05.000 -0700"
-
+// CreateNamespaceManifest creates a Kubernetes Namespace manifest from a models.NamespacePublic.
 func CreateNamespaceManifest(public *models.NamespacePublic) *apiv1.Namespace {
 	return &apiv1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -36,6 +35,7 @@ func CreateNamespaceManifest(public *models.NamespacePublic) *apiv1.Namespace {
 	}
 }
 
+// CreateDeploymentManifest creates a Kubernetes Deployment manifest from a models.DeploymentPublic.
 func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deployment {
 	var envs []apiv1.EnvVar
 	for _, env := range public.EnvVars {
@@ -171,6 +171,8 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 		},
 	}
 }
+
+// CreateServiceManifest creates a Kubernetes Service manifest from a models.ServicePublic.
 func CreateServiceManifest(public *models.ServicePublic) *apiv1.Service {
 	return &apiv1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -201,6 +203,7 @@ func CreateServiceManifest(public *models.ServicePublic) *apiv1.Service {
 	}
 }
 
+// CreateIngressManifest creates a Kubernetes Ingress manifest from a models.IngressPublic.
 func CreateIngressManifest(public *models.IngressPublic) *networkingv1.Ingress {
 	rules := make([]networkingv1.IngressRule, len(public.Hosts))
 	for idx, host := range public.Hosts {
@@ -265,6 +268,7 @@ func CreateIngressManifest(public *models.IngressPublic) *networkingv1.Ingress {
 	}
 }
 
+// CreatePvManifest creates a Kubernetes PersistentVolume manifest from a models.PvPublic.
 func CreatePvManifest(public *models.PvPublic) *apiv1.PersistentVolume {
 	return &apiv1.PersistentVolume{
 		ObjectMeta: metav1.ObjectMeta{
@@ -295,6 +299,7 @@ func CreatePvManifest(public *models.PvPublic) *apiv1.PersistentVolume {
 	}
 }
 
+// CreatePvcManifest creates a Kubernetes PersistentVolumeClaim manifest from a models.PvcPublic.
 func CreatePvcManifest(public *models.PvcPublic) *apiv1.PersistentVolumeClaim {
 	return &apiv1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
@@ -325,6 +330,7 @@ func CreatePvcManifest(public *models.PvcPublic) *apiv1.PersistentVolumeClaim {
 	}
 }
 
+// CreateJobManifest creates a Kubernetes Job manifest from a models.JobPublic.
 func CreateJobManifest(public *models.JobPublic) *v1.Job {
 	volumes := make([]apiv1.Volume, len(public.Volumes))
 
@@ -409,6 +415,7 @@ func CreateJobManifest(public *models.JobPublic) *v1.Job {
 	}
 }
 
+// CreateSecretManifest creates a Kubernetes Secret manifest from a models.SecretPublic.
 func CreateSecretManifest(public *models.SecretPublic) *apiv1.Secret {
 	return &apiv1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -427,6 +434,7 @@ func CreateSecretManifest(public *models.SecretPublic) *apiv1.Secret {
 	}
 }
 
+// CreateHpaManifest creates a Kubernetes HorizontalPodAutoscaler manifest from a models.HpaPublic.
 func CreateHpaManifest(public *models.HpaPublic) *autoscalingv2.HorizontalPodAutoscaler {
 	return &autoscalingv2.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
@@ -472,10 +480,12 @@ func CreateHpaManifest(public *models.HpaPublic) *autoscalingv2.HorizontalPodAut
 	}
 }
 
+// pathTypeAddr is a helper function to convert a string to a networkingv1.PathType.
 func pathTypeAddr(s string) *networkingv1.PathType {
 	return (*networkingv1.PathType)(&s)
 }
 
+// createResourceList is a helper function to create a Kubernetes ResourceList from CPU and Memory strings.
 func createResourceList(cpu, memory string) apiv1.ResourceList {
 	limits := apiv1.ResourceList{}
 
@@ -490,4 +500,10 @@ func createResourceList(cpu, memory string) apiv1.ResourceList {
 	}
 
 	return limits
+}
+
+// intToInt32Ptr is a helper function to convert an int to a *int32.
+func intToInt32Ptr(i int) *int32 {
+	i32 := int32(i)
+	return &i32
 }

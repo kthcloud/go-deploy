@@ -7,6 +7,15 @@ import (
 	"go-deploy/service/discover_service"
 )
 
+// Discover
+// @Summary Discover
+// @Description Discover
+// @Tags Discover
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} body
+// @Failure 500 {object} sys.ErrorResponse
+// @Router /discover [get]
 func Discover(c *gin.Context) {
 	context := sys.NewContext(c)
 

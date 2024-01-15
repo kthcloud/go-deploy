@@ -11,6 +11,7 @@ import (
 	"strings"
 )
 
+// ReadProject reads a project from Harbor.
 func (client *Client) ReadProject(id int) (*models.ProjectPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to read harbor project %d. details: %w", id, err)
@@ -36,6 +37,7 @@ func (client *Client) ReadProject(id int) (*models.ProjectPublic, error) {
 	return nil, nil
 }
 
+// ReadProjectByName reads a project from Harbor.
 func (client *Client) CreateProject(public *models.ProjectPublic) (*models.ProjectPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create harbor project %s. details: %w", public.Name, err)
@@ -67,6 +69,7 @@ func (client *Client) CreateProject(public *models.ProjectPublic) (*models.Proje
 	return models.CreateProjectPublicFromGet(project), nil
 }
 
+// UpdateProject updates a project in Harbor.
 func (client *Client) UpdateProject(public *models.ProjectPublic) (*models.ProjectPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update harbor project %d. details: %w", public.ID, err)
@@ -107,6 +110,7 @@ func (client *Client) UpdateProject(public *models.ProjectPublic) (*models.Proje
 	return nil, nil
 }
 
+// DeleteProject deletes a project from Harbor.
 func (client *Client) DeleteProject(id int) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete project %d. details: %w", id, err)

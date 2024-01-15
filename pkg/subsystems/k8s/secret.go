@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+// ReadSecret reads a Secret from Kubernetes.
 func (client *Client) ReadSecret(id string) (*models.SecretPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to read k8s secret %s. details: %w", id, err)
@@ -35,6 +36,7 @@ func (client *Client) ReadSecret(id string) (*models.SecretPublic, error) {
 	return nil, nil
 }
 
+// CreateSecret creates a Secret in Kubernetes.
 func (client *Client) CreateSecret(public *models.SecretPublic) (*models.SecretPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create k8s secret %s. details: %w", public.Name, err)
@@ -61,6 +63,7 @@ func (client *Client) CreateSecret(public *models.SecretPublic) (*models.SecretP
 	return models.CreateSecretPublicFromRead(res), nil
 }
 
+// UpdateSecret updates a Secret in Kubernetes.
 func (client *Client) UpdateSecret(public *models.SecretPublic) (*models.SecretPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update k8s secret %s. details: %w", public.ID, err)
@@ -84,6 +87,7 @@ func (client *Client) UpdateSecret(public *models.SecretPublic) (*models.SecretP
 	return nil, nil
 }
 
+// DeleteSecret deletes a Secret in Kubernetes.
 func (client *Client) DeleteSecret(id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete k8s secret %s. details: %w", id, err)

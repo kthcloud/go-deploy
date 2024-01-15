@@ -5,10 +5,12 @@ import (
 	"log"
 )
 
+// Setup starts the confirmers.
+// Confirmers are generic workers that periodically checks something until a condition is met.
 func Setup(ctx context.Context) {
 	log.Println("starting confirmers")
-	go deploymentConfirmer(ctx)
+	go deploymentDeletionConfirmer(ctx)
 	go customDomainConfirmer(ctx)
-	go smConfirmer(ctx)
-	go vmConfirmer(ctx)
+	go smDeletionConfirmer(ctx)
+	go vmDeletionConfirmer(ctx)
 }

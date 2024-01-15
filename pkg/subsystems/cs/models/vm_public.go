@@ -26,6 +26,7 @@ func (vm *VmPublic) IsPlaceholder() bool {
 	return false
 }
 
+// CreateVmPublicFromGet converts a cloudstack.VirtualMachine to a VmPublic.
 func CreateVmPublicFromGet(vm *cloudstack.VirtualMachine) *VmPublic {
 	extraConfig := ""
 	if value, found := vm.Details["extraconfig-1"]; found {
@@ -46,6 +47,7 @@ func CreateVmPublicFromGet(vm *cloudstack.VirtualMachine) *VmPublic {
 	}
 }
 
+// CreateVmPublicFromCreate converts a cloudstack.DeployVirtualMachineResponse to a VmPublic.
 func CreateVmPublicFromCreate(vm *cloudstack.DeployVirtualMachineResponse) *VmPublic {
 	return CreateVmPublicFromGet(
 		&cloudstack.VirtualMachine{
@@ -60,6 +62,7 @@ func CreateVmPublicFromCreate(vm *cloudstack.DeployVirtualMachineResponse) *VmPu
 	)
 }
 
+// CreateVmPublicFromUpdate converts a cloudstack.UpdateVirtualMachineResponse to a VmPublic.
 func CreateVmPublicFromUpdate(vm *cloudstack.UpdateVirtualMachineResponse) *VmPublic {
 	return CreateVmPublicFromGet(
 		&cloudstack.VirtualMachine{

@@ -7,6 +7,7 @@ import (
 	sErrors "go-deploy/service/errors"
 )
 
+// Get retrieves a notification by ID.
 func (c *Client) Get(id string, opts ...GetOpts) (*notificationModels.Notification, error) {
 	_ = service.GetFirstOrDefault(opts)
 
@@ -19,6 +20,7 @@ func (c *Client) Get(id string, opts ...GetOpts) (*notificationModels.Notificati
 	return c.Notification(id, client)
 }
 
+// List retrieves a list of notifications.
 func (c *Client) List(opts ...ListOpts) ([]notificationModels.Notification, error) {
 	o := service.GetFirstOrDefault(opts)
 
@@ -51,10 +53,12 @@ func (c *Client) List(opts ...ListOpts) ([]notificationModels.Notification, erro
 	return c.Notifications(nmc)
 }
 
+// Create creates a new notification.
 func (c *Client) Create(id, userID string, params *notificationModels.CreateParams) (*notificationModels.Notification, error) {
 	return notificationModels.New().Create(id, userID, params)
 }
 
+// Update updates the notification with the given ID.
 func (c *Client) Update(id string, dtoNotificationUpdate *body.NotificationUpdate) (*notificationModels.Notification, error) {
 	nmc := notificationModels.New()
 
@@ -81,6 +85,7 @@ func (c *Client) Update(id string, dtoNotificationUpdate *body.NotificationUpdat
 	return c.RefreshNotification(id, nmc)
 }
 
+// Delete deletes the notification with the given ID.
 func (c *Client) Delete(id string) error {
 	client := notificationModels.New()
 

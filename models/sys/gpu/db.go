@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+// Create creates a new gpu in the database.
+// If the gpu already exists, it does nothing.
 func (client *Client) Create(id, host string, data GpuData, zone string) error {
 	currentGPU, err := client.GetByID(id)
 	if err != nil {

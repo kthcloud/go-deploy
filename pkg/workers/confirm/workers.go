@@ -2,27 +2,25 @@ package confirm
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	deploymentModels "go-deploy/models/sys/deployment"
 	jobModels "go-deploy/models/sys/job"
 	smModels "go-deploy/models/sys/sm"
 	vmModels "go-deploy/models/sys/vm"
-	"go-deploy/pkg/config"
 	"go-deploy/pkg/workers"
 	"go-deploy/utils"
 	"golang.org/x/exp/slices"
 	"log"
-	"net"
 	"time"
 )
 
-func deploymentConfirmer(ctx context.Context) {
-	defer workers.OnStop("deploymentConfirmer")
+// deploymentDeletionConfirmer is a worker that confirms deployment deletion.
+func deploymentDeletionConfirmer(ctx context.Context) {
+	defer workers.OnStop("deploymentDeletionConfirmer")
 	for {
 		select {
 		case <-time.After(1 * time.Second):
-			workers.ReportUp("deploymentConfirmer")
+			workers.ReportUp("deploymentDeletionConfirmer")
 
 		case <-time.After(5 * time.Second):
 			beingDeleted, _ := deploymentModels.New().WithActivities(deploymentModels.ActivityBeingDeleted).List()
@@ -55,6 +53,95 @@ func deploymentConfirmer(ctx context.Context) {
 	}
 }
 
+// smDeletionConfirmer is a worker that confirms SM deletion.
+func smDeletionConfirmer(ctx context.Context) {
+	defer workers.OnStop("smDeletionConfirmer")
+
+	for {
+		select {
+		case <-time.After(1 * time.Second):
+			workers.ReportUp("smDeletionConfirmer")
+
+		case <-time.After(5 * time.Second):
+			beingDeleted, err := smModels.New().WithActivities(smModels.ActivityBeingDeleted).List()
+			if err != nil {
+				utils.PrettyPrintError(fmt.Errorf("failed to get sms being deleted. details: %w", err))
+			}
+
+			for _, sm := range beingDeleted {
+				deleted := SmDeleted(&sm)
+				if !deleted {
+					continue
+				}
+
+				relatedJobs, err := jobModels.New().ExcludeScheduled().FilterArgs("id", sm.ID).List()
+				if err != nil {
+					utils.PrettyPrintError(fmt.Errorf("failed to get related jobs when confirming sm deleting. details: %w", err))
+					continue
+				}
+
+				allFinished := slices.IndexFunc(relatedJobs, func(j jobModels.Job) bool {
+					return j.Status != jobModels.StatusCompleted &&
+						j.Status != jobModels.StatusTerminated
+				}) == -1
+
+				if allFinished {
+					log.Printf("marking sm %s as deleted\n", sm.ID)
+					_ = smModels.New().DeleteByID(sm.ID)
+				}
+			}
+
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+// vmDeletionConfirmer is a worker that confirms VM deletion.
+func vmDeletionConfirmer(ctx context.Context) {
+	defer workers.OnStop("vmDeletionConfirmer")
+
+	for {
+		select {
+		case <-time.After(1 * time.Second):
+			workers.ReportUp("vmDeletionConfirmer")
+
+		case <-time.After(5 * time.Second):
+			beingDeleted, err := vmModels.New().WithActivities(vmModels.ActivityBeingDeleted).List()
+			if err != nil {
+				utils.PrettyPrintError(fmt.Errorf("failed to get vms being deleted. details: %w", err))
+			}
+
+			for _, vm := range beingDeleted {
+				deleted := VmDeleted(&vm)
+				if !deleted {
+					continue
+				}
+
+				relatedJobs, err := jobModels.New().ExcludeScheduled().FilterArgs("id", vm.ID).List()
+				if err != nil {
+					utils.PrettyPrintError(fmt.Errorf("failed to get related jobs when confirming vm deleting. details: %w", err))
+					continue
+				}
+
+				allFinished := slices.IndexFunc(relatedJobs, func(j jobModels.Job) bool {
+					return j.Status != jobModels.StatusCompleted &&
+						j.Status != jobModels.StatusTerminated
+				}) == -1
+
+				if allFinished {
+					log.Printf("marking vm %s as deleted\n", vm.ID)
+					_ = vmModels.New().DeleteByID(vm.ID)
+				}
+			}
+
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+// customDomainConfirmer is a worker that confirms custom domain setup.
 func customDomainConfirmer(ctx context.Context) {
 	defer workers.OnStop("customDomainConfirmer")
 
@@ -146,128 +233,4 @@ func customDomainConfirmer(ctx context.Context) {
 			return
 		}
 	}
-}
-
-func smConfirmer(ctx context.Context) {
-	defer workers.OnStop("smConfirmer")
-
-	for {
-		select {
-		case <-time.After(1 * time.Second):
-			workers.ReportUp("smConfirmer")
-
-		case <-time.After(5 * time.Second):
-			beingDeleted, err := smModels.New().WithActivities(smModels.ActivityBeingDeleted).List()
-			if err != nil {
-				utils.PrettyPrintError(fmt.Errorf("failed to get sms being deleted. details: %w", err))
-			}
-
-			for _, sm := range beingDeleted {
-				deleted := SmDeleted(&sm)
-				if !deleted {
-					continue
-				}
-
-				relatedJobs, err := jobModels.New().ExcludeScheduled().FilterArgs("id", sm.ID).List()
-				if err != nil {
-					utils.PrettyPrintError(fmt.Errorf("failed to get related jobs when confirming sm deleting. details: %w", err))
-					continue
-				}
-
-				allFinished := slices.IndexFunc(relatedJobs, func(j jobModels.Job) bool {
-					return j.Status != jobModels.StatusCompleted &&
-						j.Status != jobModels.StatusTerminated
-				}) == -1
-
-				if allFinished {
-					log.Printf("marking sm %s as deleted\n", sm.ID)
-					_ = smModels.New().DeleteByID(sm.ID)
-				}
-			}
-
-		case <-ctx.Done():
-			return
-		}
-	}
-}
-
-func vmConfirmer(ctx context.Context) {
-	defer workers.OnStop("vmConfirmer")
-
-	for {
-		select {
-		case <-time.After(1 * time.Second):
-			workers.ReportUp("vmConfirmer")
-
-		case <-time.After(5 * time.Second):
-			beingDeleted, err := vmModels.New().WithActivities(vmModels.ActivityBeingDeleted).List()
-			if err != nil {
-				utils.PrettyPrintError(fmt.Errorf("failed to get vms being deleted. details: %w", err))
-			}
-
-			for _, vm := range beingDeleted {
-				deleted := VmDeleted(&vm)
-				if !deleted {
-					continue
-				}
-
-				relatedJobs, err := jobModels.New().ExcludeScheduled().FilterArgs("id", vm.ID).List()
-				if err != nil {
-					utils.PrettyPrintError(fmt.Errorf("failed to get related jobs when confirming vm deleting. details: %w", err))
-					continue
-				}
-
-				allFinished := slices.IndexFunc(relatedJobs, func(j jobModels.Job) bool {
-					return j.Status != jobModels.StatusCompleted &&
-						j.Status != jobModels.StatusTerminated
-				}) == -1
-
-				if allFinished {
-					log.Printf("marking vm %s as deleted\n", vm.ID)
-					_ = vmModels.New().DeleteByID(vm.ID)
-				}
-			}
-
-		case <-ctx.Done():
-			return
-		}
-	}
-}
-
-func checkCustomDomain(domain string, secret string) (bool, error) {
-	subDomain := config.Config.Deployment.CustomDomainTxtRecordSubdomain
-
-	txtRecordDomain := subDomain + "." + domain
-	txtRecord, err := net.LookupTXT(txtRecordDomain)
-	if err != nil {
-		// If error is "no such host", it means the DNS record does not exist yet
-		var targetErr *net.DNSError
-		if ok := errors.As(err, &targetErr); ok && targetErr.IsNotFound {
-			log.Printf("no TXT record found under %s when confirming custom domain %s\n", subDomain, domain)
-			return false, nil
-		}
-
-		utils.PrettyPrintError(fmt.Errorf("failed to lookup TXT record under %s for custom domain %s. details: %w", subDomain, domain, err))
-		return false, err
-	}
-
-	if len(txtRecord) == 0 {
-		log.Printf("no TXT record found under %s when confirming custom domain %s\n", subDomain, domain)
-		return false, nil
-	}
-
-	match := false
-	for _, r := range txtRecord {
-		if r == secret {
-			match = true
-			break
-		}
-	}
-
-	if !match {
-		log.Printf("TXT record found under %s for custom domain %s but secret does not match\n", subDomain, domain)
-		return false, nil
-	}
-
-	return match, nil
 }

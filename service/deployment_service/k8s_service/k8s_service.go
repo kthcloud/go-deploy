@@ -289,12 +289,7 @@ func (c *Client) Update(id string, params *deploymentModels.UpdateParams) error 
 	return nil
 }
 
-// EnsureOwner ensures the owner of the K8s setup for the deployment.
-//
-// If the owner of the deployment does match with the ID specified by WithUserID,
-// it will update the Harbor setup to match the new owner.
-//
-// This will always trigger a call to Repair.
+// EnsureOwner ensures the owner of the K8s setup, by deleting and then trigger a call to Repair.
 func (c *Client) EnsureOwner(id string, oldOwnerID string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update k8s owner for deployment %s. details: %w", id, err)
@@ -939,8 +934,8 @@ func (c *Client) recreatePvPvcDeployments(id string) error {
 func dbFunc(id, key string) func(interface{}) error {
 	return func(data interface{}) error {
 		if data == nil {
-			return deploymentModels.New().DeleteSubsystemByID(id, "k8s."+key)
+			return deploymentModels.New().DeleteSubsystem(id, "k8s."+key)
 		}
-		return deploymentModels.New().UpdateSubsystemByID(id, "k8s."+key, data)
+		return deploymentModels.New().SetSubsystem(id, "k8s."+key, data)
 	}
 }

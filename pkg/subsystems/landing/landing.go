@@ -7,12 +7,14 @@ import (
 	"net/http"
 )
 
+// Client is a client for the landing service.
 type Client struct {
 	url          string
 	oauth2Client *http.Client
 	jwt          *gocloak.JWT
 }
 
+// ClientConf is the configuration for creating a landing client.
 type ClientConf struct {
 	URL      string
 	Username string
@@ -23,6 +25,7 @@ type ClientConf struct {
 	OidcRealm    string
 }
 
+// New creates a new landing client.
 func New(config *ClientConf) (*Client, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create landing oauth2Client. details: %w", err)

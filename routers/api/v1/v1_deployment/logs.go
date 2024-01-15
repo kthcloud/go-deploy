@@ -13,6 +13,18 @@ import (
 	"io"
 )
 
+// GetLogsSSE
+// @Summary Get logs SSE
+// @Description Get logs using Server-Sent Events
+// @Tags Deployment
+// @Accept  json
+// @Produce  json
+// @Param deploymentId path string true "Deployment ID"
+// @Success 200 {string} string
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 404 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
+// @Router /deployments/{deploymentId}/logs [get]
 func GetLogsSSE(c *gin.Context) {
 	sysContext := sys.NewContext(c)
 

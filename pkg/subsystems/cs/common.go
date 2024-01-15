@@ -7,23 +7,30 @@ import (
 )
 
 const (
+	// DetailsCpuCores is the key for the number of CPU cores.
 	DetailsCpuCores = "cpuNumber"
+	// DetailsCpuSpeed is the key for the CPU speed.
 	DetailsCpuSpeed = "cpuSpeed"
-	DetailsRAM      = "memory"
+	// DetailsRAM is the key for the memory.
+	DetailsRAM = "memory"
 )
 
+// AssertPortForwardingRulesTags asserts that the tags are present on the port forwarding rule.
 func (client *Client) AssertPortForwardingRulesTags(resourceID string, tags []models.Tag) error {
 	return client.AssertTags(resourceID, "PortForwardingRule", tags)
 }
 
-func (client *Client) AssertVirtualMachineTags(resourceID string, tags []models.Tag) error {
+// AssertVmTags asserts that the tags are present on the virtual machine.
+func (client *Client) AssertVmTags(resourceID string, tags []models.Tag) error {
 	return client.AssertTags(resourceID, "UserVm", tags)
 }
 
-func (client *Client) AssertPublicIPAddressTags(resourceID string, tags []models.Tag) error {
+// AssertPublicIpAddressTags asserts that the tags are present on the public IP address.
+func (client *Client) AssertPublicIpAddressTags(resourceID string, tags []models.Tag) error {
 	return client.AssertTags(resourceID, "PublicIpAddress", tags)
 }
 
+// AssertTags asserts that the tags are present on the resource.
 func (client *Client) AssertTags(resourceID, resourceType string, tags []models.Tag) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create tags for resource %s. details: %w", resourceID, err)
@@ -79,7 +86,10 @@ func (client *Client) AssertTags(resourceID, resourceType string, tags []models.
 	return nil
 }
 
-func (client *Client) getCustomSoID() (string, error) {
+// getCustomServiceOfferingID returns the ID of the custom service offering.
+// The `custom` service offering is a service offering in CloudStack that is able to take custom
+// custom CPU cores, CPU speed and memory.
+func (client *Client) getCustomServiceOfferingID() (string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get custom service offering id: %w", err)
 	}

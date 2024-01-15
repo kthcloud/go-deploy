@@ -25,7 +25,7 @@ type GitHubCreateParams struct {
 }
 
 type UpdateParams struct {
-	// update
+	// Normal Update
 	Name         *string
 	OwnerID      *string
 	Private      *bool
@@ -38,7 +38,7 @@ type UpdateParams struct {
 	PingPath     *string
 	Replicas     *int
 
-	// ownership update
+	// Ownership update
 	TransferUserID *string
 	TransferCode   *string
 }

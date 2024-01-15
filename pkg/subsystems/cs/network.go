@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+// ReadNetwork reads the network from CloudStack.
 func (client *Client) ReadNetwork(id string) (*models.NetworkPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to read network %s. details: %w", id, err)
@@ -32,6 +33,7 @@ func (client *Client) ReadNetwork(id string) (*models.NetworkPublic, error) {
 	return public, nil
 }
 
+// GetNetworkSourceNatIpAddressID gets the source NAT IP address ID for the network in CloudStack.
 func (client *Client) GetNetworkSourceNatIpAddressID(id string) (string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to read network %s. details: %w", id, err)
@@ -61,6 +63,7 @@ func (client *Client) GetNetworkSourceNatIpAddressID(id string) (string, error) 
 	return ipAddressID, nil
 }
 
+// CreateNetwork creates the network in CloudStack.
 func (client *Client) CreateNetwork(public *models.NetworkPublic) (*models.NetworkPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create network %s. details: %w", public.Name, err)
@@ -106,6 +109,7 @@ func (client *Client) CreateNetwork(public *models.NetworkPublic) (*models.Netwo
 	return models.CreateNetworkPublicFromCreate(network), nil
 }
 
+// DeleteNetwork deletes the network in CloudStack.
 func DeleteNetwork(client *Client, id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete network %s. details: %w", id, err)

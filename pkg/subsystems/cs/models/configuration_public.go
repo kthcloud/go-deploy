@@ -9,6 +9,7 @@ type ConfigurationPublic struct {
 	OverProvisioningFactor int
 }
 
+// CreateConfigurationPublicFromGet converts cloudstack.ListConfigurationsResponse to ConfigurationPublic.
 func CreateConfigurationPublicFromGet(configurations *cloudstack.ListConfigurationsResponse) *ConfigurationPublic {
 	res := &ConfigurationPublic{}
 

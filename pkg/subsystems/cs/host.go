@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// ReadHost reads the host from CloudStack by ID.
 func (client *Client) ReadHost(id string) (*models.HostPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to read host %s. details: %w", id, err)
@@ -25,6 +26,7 @@ func (client *Client) ReadHost(id string) (*models.HostPublic, error) {
 	return models.CreateHostPublicFromGet(host), nil
 }
 
+// ReadHostByName reads the host from CloudStack by name.
 func (client *Client) ReadHostByName(name string) (*models.HostPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to read host %s. details: %w", name, err)
@@ -44,6 +46,7 @@ func (client *Client) ReadHostByName(name string) (*models.HostPublic, error) {
 	return models.CreateHostPublicFromGet(host), nil
 }
 
+// ReadHostByVM reads the host from CloudStack by VM ID.
 func (client *Client) ReadHostByVM(vmID string) (*models.HostPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to read host for vm %s. details: %w", vmID, err)

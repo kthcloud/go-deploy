@@ -8,6 +8,7 @@ import (
 	"sort"
 )
 
+// List gets a list of zones
 func (c *Client) List(opts ...ListOpts) ([]zoneModels.Zone, error) {
 	o := service.GetFirstOrDefault(opts)
 
@@ -15,12 +16,12 @@ func (c *Client) List(opts ...ListOpts) ([]zoneModels.Zone, error) {
 	vmZones := config.Config.VM.Zones
 
 	var zones []zoneModels.Zone
-	if o.Type != nil && *o.Type == zoneModels.ZoneTypeDeployment {
+	if o.Type != nil && *o.Type == zoneModels.TypeDeployment {
 		zones = make([]zoneModels.Zone, len(deploymentZones))
 		for i, zone := range deploymentZones {
 			zones[i] = *toDZone(&zone)
 		}
-	} else if o.Type != nil && *o.Type == zoneModels.ZoneTypeVM {
+	} else if o.Type != nil && *o.Type == zoneModels.TypeVM {
 		zones = make([]zoneModels.Zone, len(vmZones))
 		for i, zone := range vmZones {
 			zones[i] = *toVZone(&zone)
@@ -45,9 +46,9 @@ func (c *Client) List(opts ...ListOpts) ([]zoneModels.Zone, error) {
 
 func (c *Client) Get(name, zoneType string) *zoneModels.Zone {
 	switch zoneType {
-	case zoneModels.ZoneTypeDeployment:
+	case zoneModels.TypeDeployment:
 		return toDZone(config.Config.Deployment.GetZone(name))
-	case zoneModels.ZoneTypeVM:
+	case zoneModels.TypeVM:
 		return toVZone(config.Config.VM.GetZone(name))
 	}
 
@@ -63,7 +64,7 @@ func toDZone(dZone *configModels.DeploymentZone) *zoneModels.Zone {
 	return &zoneModels.Zone{
 		Name:        dZone.Name,
 		Description: dZone.Description,
-		Type:        zoneModels.ZoneTypeDeployment,
+		Type:        zoneModels.TypeDeployment,
 		Interface:   &domain,
 	}
 }
@@ -77,7 +78,7 @@ func toVZone(vmZone *configModels.VmZone) *zoneModels.Zone {
 	return &zoneModels.Zone{
 		Name:        vmZone.Name,
 		Description: vmZone.Description,
-		Type:        zoneModels.ZoneTypeVM,
+		Type:        zoneModels.TypeVM,
 		Interface:   &domain,
 	}
 }

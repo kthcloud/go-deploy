@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// Create creates a new event in the database.
 func (client *Client) Create(id string, params *CreateParams) error {
 	event := Event{
 		ID:        id,

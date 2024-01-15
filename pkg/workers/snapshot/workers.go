@@ -13,6 +13,7 @@ import (
 	"time"
 )
 
+// snapshotter is a worker that takes snapshots.
 func snapshotter(ctx context.Context) {
 	defer workers.OnStop("snapshotter")
 

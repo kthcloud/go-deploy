@@ -5,6 +5,8 @@ import (
 	"log"
 )
 
+// SsUpdaterType is a type that can be used to update a single subsystem resource
+// It contains the public resource that should be updated, and the functions that should be used to update it
 type SsUpdaterType[T subsystems.SsResource] struct {
 	public T
 
@@ -12,22 +14,26 @@ type SsUpdaterType[T subsystems.SsResource] struct {
 	updateFunc func(T) (T, error)
 }
 
+// SsUpdater create a new updater that can be used for a single resource
 func SsUpdater[T subsystems.SsResource](updateFunc func(T) (T, error)) *SsUpdaterType[T] {
 	return &SsUpdaterType[T]{
 		updateFunc: updateFunc,
 	}
 }
 
+// WithDbFunc sets the db func for the updater
 func (rc *SsUpdaterType[T]) WithDbFunc(dbFunc func(interface{}) error) *SsUpdaterType[T] {
 	rc.dbFunc = dbFunc
 	return rc
 }
 
+// WithPublic sets the desired public resource for the updater
 func (rc *SsUpdaterType[T]) WithPublic(public T) *SsUpdaterType[T] {
 	rc.public = public
 	return rc
 }
 
+// Exec executes the updater
 func (rc *SsUpdaterType[T]) Exec() error {
 	if subsystems.Nil(rc.public) {
 		log.Println("no public resource provided for subsystem update. did you forget to call WithPublic?")

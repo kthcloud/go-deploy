@@ -16,11 +16,15 @@ import (
 )
 
 const (
+	// BuildStatusPending is the status of a pending build.
 	BuildStatusPending = "pending"
+	// BuildStatusRunning is the status of a running build.
 	BuildStatusRunning = "running"
 
+	// JobStatusSuccess is the status of a successful job.
 	JobStatusSuccess = "success"
-	JobStatusFailed  = "failed"
+	// JobStatusFailed is the status of a failed job.
+	JobStatusFailed = "failed"
 )
 
 // CreateBuild creates a build for the given deployment.

@@ -10,6 +10,7 @@ import (
 	"net/http"
 )
 
+// doJSONRequest is a helper function to do a JSON request to the Harbor API.
 func (client *Client) doJSONRequest(method string, relativePath string, requestBody interface{}) (*http.Response, error) {
 	jsonBody, err := json.Marshal(requestBody)
 	if err != nil {
@@ -20,6 +21,7 @@ func (client *Client) doJSONRequest(method string, relativePath string, requestB
 	return requestutils.DoRequestBasicAuth(method, fullURL, jsonBody, nil, client.username, client.password)
 }
 
+// assertProjectExists checks if a project exists and returns it if it does.
 func (client *Client) assertProjectExists(name string) (bool, *modelv2.Project, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to assert harbor project %s exists. details: %w", name, err)
@@ -32,7 +34,8 @@ func (client *Client) assertProjectExists(name string) (bool, *modelv2.Project, 
 	return project.ProjectID != 0, project, nil
 }
 
-// Needed since the harbor client package refuses to return credentials
+// createProject creates a project in Harbor.
+// Needed since the installed Harbor client does not return credentials.
 func (client *Client) createHarborRobot(public *models.RobotPublic) (*modelv2.RobotCreated, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create harbor robot %s. details: %w", public.Name, err)
@@ -57,6 +60,8 @@ func (client *Client) createHarborRobot(public *models.RobotPublic) (*modelv2.Ro
 	return &robotCreated, nil
 }
 
+// getRobotByNameV1 fetches a robot by name from the Harbor API.
+// Needed since the installed Harbor client does not return credentials.
 func (client *Client) getRobotByNameV1(projectName string, name string) (*modelv2.Robot, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to fetch harbor robot %s by name. details: %w", name, err)

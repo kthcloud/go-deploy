@@ -20,6 +20,7 @@ func (n *NamespacePublic) IsPlaceholder() bool {
 	return false
 }
 
+// CreateNamespacePublicFromRead creates a NamespacePublic from a v1.Namespace.
 func CreateNamespacePublicFromRead(namespace *v1.Namespace) *NamespacePublic {
 	return &NamespacePublic{
 		ID:        namespace.Labels[keys.ManifestLabelID],

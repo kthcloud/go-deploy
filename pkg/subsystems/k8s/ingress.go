@@ -13,6 +13,7 @@ import (
 	"time"
 )
 
+// ReadIngress reads a Ingress from Kubernetes.
 func (client *Client) ReadIngress(id string) (*models.IngressPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to read k8s ingress %s. details: %w", id, err)
@@ -37,6 +38,7 @@ func (client *Client) ReadIngress(id string) (*models.IngressPublic, error) {
 	return nil, nil
 }
 
+// CreateIngress creates a Ingress in Kubernetes.
 func (client *Client) CreateIngress(public *models.IngressPublic) (*models.IngressPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create k8s ingress %s. details: %w", public.Name, err)
@@ -67,6 +69,7 @@ func (client *Client) CreateIngress(public *models.IngressPublic) (*models.Ingre
 	return models.CreateIngressPublicFromRead(res), nil
 }
 
+// UpdateIngress updates a Ingress in Kubernetes.
 func (client *Client) UpdateIngress(public *models.IngressPublic) (*models.IngressPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update k8s ingress %s. details: %w", public.ID, err)
@@ -94,6 +97,7 @@ func (client *Client) UpdateIngress(public *models.IngressPublic) (*models.Ingre
 	return nil, nil
 }
 
+// DeleteIngress deletes a Ingress in Kubernetes.
 func (client *Client) DeleteIngress(id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete k8s ingress %s. details: %w", id, err)

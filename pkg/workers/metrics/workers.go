@@ -16,6 +16,7 @@ import (
 	"time"
 )
 
+// metricsWorker is a worker that updates metrics.
 func metricsWorker(ctx context.Context) {
 	defer workers.OnStop("metrics worker")
 
@@ -48,6 +49,7 @@ func metricsWorker(ctx context.Context) {
 	}
 }
 
+// usersTotal computes the total number of users and stores it in the key-value store.
 func usersTotal() error {
 	total, err := event.New().CountDistinct("source.userId")
 	if err != nil {
@@ -62,6 +64,7 @@ func usersTotal() error {
 	return nil
 }
 
+// activeUsers computes the number of active users and stores it in the key-value store.
 func activeUsers(frequencyType, key string, count int) func() error {
 	return func() error {
 		pipeline := getActiveUserMongoPipeline(frequencyType, count)
@@ -95,6 +98,7 @@ func activeUsers(frequencyType, key string, count int) func() error {
 	}
 }
 
+// getActiveUserMongoPipeline returns a mongo pipeline that computes the number of active users.
 func getActiveUserMongoPipeline(frequencyType string, count int) mongo.Pipeline {
 	var gte time.Time
 	var lte time.Time
@@ -156,6 +160,7 @@ func getActiveUserMongoPipeline(frequencyType string, count int) mongo.Pipeline 
 	}
 }
 
+// jobMetrics computes the number of jobs and stores it in the key-value store.
 func jobMetrics(key string, status *string) func() error {
 	return func() error {
 		filter := bson.D{}
@@ -180,6 +185,7 @@ func jobMetrics(key string, status *string) func() error {
 	}
 }
 
+// strPtr is a helper function that returns a pointer to a string.
 func strPtr(s string) *string {
 	return &s
 }

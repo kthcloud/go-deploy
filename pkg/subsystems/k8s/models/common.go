@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// formatCreatedAt formats a Kubernetes manifest's creation timestamp to a time.Time.
 func formatCreatedAt(annotations map[string]string) time.Time {
 	created, ok := annotations[keys.ManifestCreationTimestamp]
 	if !ok {
@@ -58,6 +59,7 @@ type Resources struct {
 	Requests Requests `bson:"requests"`
 }
 
+// ToK8sEnvVar converts an EnvVar to a v1.EnvVar.
 func (envVar *EnvVar) ToK8sEnvVar() v1.EnvVar {
 	return v1.EnvVar{
 		Name:      envVar.Name,
@@ -66,6 +68,7 @@ func (envVar *EnvVar) ToK8sEnvVar() v1.EnvVar {
 	}
 }
 
+// EnvVarFromK8s converts a v1.EnvVar to an EnvVar.
 func EnvVarFromK8s(envVar *v1.EnvVar) EnvVar {
 	return EnvVar{
 		Name:  envVar.Name,

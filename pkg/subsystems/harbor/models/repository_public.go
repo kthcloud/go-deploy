@@ -22,6 +22,7 @@ func (r *RepositoryPublic) IsPlaceholder() bool {
 	return false
 }
 
+// CreateRepositoryPublicFromGet converts a modelv2.Repository to a RepositoryPublic.
 func CreateRepositoryPublicFromGet(repository *modelv2.Repository) *RepositoryPublic {
 	var createdAt time.Time
 	if repository.CreationTime != nil {
@@ -36,9 +37,11 @@ func CreateRepositoryPublicFromGet(repository *modelv2.Repository) *RepositoryPu
 	}
 }
 
-// for some reason, the name is returned as name=<project name>/<repo name>
+// For some reason, the name is returned as name=<project name>/<repo name>
 // even though it is used as only <repo name> in the api
-// lovely harbor api :)
+//
+// Lovely Harbor API!
+// :)
 func extractRepositoryName(name string) string {
 	split := strings.Split(name, "/")
 	if len(split) == 2 {

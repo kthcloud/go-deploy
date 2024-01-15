@@ -10,9 +10,13 @@ import (
 	"time"
 )
 
-var AlreadyExistsErr = fmt.Errorf("storage manager already exists for user")
+var (
+	// AlreadyExistsErr is returned when a storage manager already exists for a user.
+	AlreadyExistsErr = fmt.Errorf("storage manager already exists for user")
+)
 
-func (client *Client) CreateSM(id, ownerID string, params *CreateParams) (*SM, error) {
+// Create creates a new storage manager.
+func (client *Client) Create(id, ownerID string, params *CreateParams) (*SM, error) {
 	sm := &SM{
 		ID:         id,
 		OwnerID:    ownerID,
@@ -40,15 +44,22 @@ func (client *Client) CreateSM(id, ownerID string, params *CreateParams) (*SM, e
 	return fetched, nil
 }
 
-func (client *Client) DeleteSubsystemByID(id, key string) error {
+// DeleteSubsystem deletes a subsystem from a storage manager.
+// It prepends the key with `subsystems` and unsets it.
+func (client *Client) DeleteSubsystem(id, key string) error {
 	subsystemKey := fmt.Sprintf("subsystems.%s", key)
 	return client.UpdateWithBsonByID(id, bson.D{{"$unset", bson.D{{subsystemKey, ""}}}})
 }
 
-func (client *Client) UpdateSubsystemByID(id, key string, update interface{}) error {
+// SetSubsystem sets a subsystem in a storage manager.
+// It prepends the key with `subsystems` and sets it.
+func (client *Client) SetSubsystem(id, key string, update interface{}) error {
 	subsystemKey := fmt.Sprintf("subsystems.%s", key)
 	return client.SetWithBsonByID(id, bson.D{{subsystemKey, update}})
 }
+
+// MarkRepaired marks a storage manager as repaired.
+// It sets RepairedAt and unsets the repairing activity.
 func (client *Client) MarkRepaired(id string) error {
 	filter := bson.D{{"id", id}}
 	update := bson.D{

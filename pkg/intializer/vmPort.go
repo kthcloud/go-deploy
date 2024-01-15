@@ -7,6 +7,8 @@ import (
 	"strconv"
 )
 
+// SynchronizeVmPorts synchronizes the VM ports from the database to the database.
+// This includes deleting ports that are not in the config and creating ports that are in the config but not in the database.
 func SynchronizeVmPorts() {
 
 	summary := make(map[string]int)
@@ -35,7 +37,7 @@ func SynchronizeVmPorts() {
 		}
 
 		for _, port := range notLeasedPorts {
-			err = vm_port.New().Delete(port.PublicPort, port.Zone)
+			err = vm_port.New().Erase(port.PublicPort, port.Zone)
 			if err != nil {
 				log.Fatalln(err)
 			}

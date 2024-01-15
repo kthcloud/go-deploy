@@ -24,6 +24,7 @@ func (secret *SecretPublic) IsPlaceholder() bool {
 	return secret.Placeholder
 }
 
+// CreateSecretPublicFromRead creates a SecretPublic from a v1.Secret.
 func CreateSecretPublicFromRead(secret *v1.Secret) *SecretPublic {
 	return &SecretPublic{
 		ID:        secret.Labels[keys.ManifestLabelID],

@@ -15,6 +15,7 @@ import (
 	"time"
 )
 
+// deploymentLogger is a worker that logs deployments.
 func deploymentLogger(ctx context.Context) {
 	defer workers.OnStop("deploymentLogger")
 

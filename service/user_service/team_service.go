@@ -245,13 +245,14 @@ func (c *Client) JoinTeam(id string, dtoTeamJoin *body.TeamJoin) (*teamModels.Te
 	return c.RefreshTeam(id, tmc)
 }
 
+// getTeamIfAccessible is a helper function to get a team if the user is accessible to the user in the current context
 func (c *Client) getResourceIfAccessible(resourceID string) *teamModels.Resource {
 	// Try to fetch deployment
 	dClient := deploymentModels.New()
 	vClient := vmModels.New()
 
 	if c.Auth != nil && !c.Auth.IsAdmin {
-		dClient.RestrictToOwner(c.Auth.UserID)
+		dClient.WithOwner(c.Auth.UserID)
 		vClient.RestrictToOwner(c.Auth.UserID)
 	}
 
@@ -287,6 +288,8 @@ func (c *Client) getResourceIfAccessible(resourceID string) *teamModels.Resource
 	return nil
 }
 
+// createMemberIfAccessible is a helper function to create a member for a team if the user is accessible
+// to the user in the current context
 func (c *Client) createMemberIfAccessible(current *teamModels.Team, memberID string) *teamModels.Member {
 	if current != nil {
 		if existing := current.GetMember(memberID); existing != nil {
@@ -312,6 +315,7 @@ func (c *Client) createMemberIfAccessible(current *teamModels.Team, memberID str
 	return member
 }
 
+// createInvitationNotification is a helper function to create a notification for a team invitation
 func createInvitationNotification(userID, teamID, teamName, invitationCode string) error {
 	_, err := notification_service.New().Create(uuid.NewString(), userID, &notificationModels.CreateParams{
 		Type: notificationModels.TypeTeamInvite,
@@ -325,6 +329,7 @@ func createInvitationNotification(userID, teamID, teamName, invitationCode strin
 	return err
 }
 
+// createInvitationCode is a helper function to create a random invitation code
 func createInvitationCode() string {
 	return utils.HashString(uuid.NewString())
 }

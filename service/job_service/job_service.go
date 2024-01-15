@@ -7,6 +7,7 @@ import (
 	sErrors "go-deploy/service/errors"
 )
 
+// Get retrieves a job by ID.
 func (c *Client) Get(id string, opts ...*GetOpts) (*jobModels.Job, error) {
 	_ = service.GetFirstOrDefault(opts)
 
@@ -19,13 +20,14 @@ func (c *Client) Get(id string, opts ...*GetOpts) (*jobModels.Job, error) {
 	return c.Job(id, jmc)
 }
 
+// List retrieves a list of jobs.
 func (c *Client) List(opt ...ListOpts) ([]jobModels.Job, error) {
 	o := service.GetFirstOrDefault(opt)
 
 	jmc := jobModels.New()
 
 	if o.Pagination != nil {
-		jmc.AddPagination(o.Pagination.Page, o.Pagination.PageSize)
+		jmc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
 	}
 
 	var effectiveUserID string
@@ -59,10 +61,12 @@ func (c *Client) List(opt ...ListOpts) ([]jobModels.Job, error) {
 	return c.Jobs(jmc)
 }
 
+// Create creates a new job.
 func (c *Client) Create(id, userID, jobType string, args map[string]interface{}) error {
 	return jobModels.New().Create(id, userID, jobType, args)
 }
 
+// Update updates a job.
 func (c *Client) Update(id string, jobUpdateDTO *body.JobUpdate) (*jobModels.Job, error) {
 	if c.Auth != nil && !c.Auth.IsAdmin {
 		return nil, sErrors.ForbiddenErr
@@ -81,6 +85,7 @@ func (c *Client) Update(id string, jobUpdateDTO *body.JobUpdate) (*jobModels.Job
 	return c.RefreshJob(id, jmc)
 }
 
+// Exists checks if a job exists.
 func (c *Client) Exists(id string) (bool, error) {
 	return jobModels.New().ExistsByID(id)
 }

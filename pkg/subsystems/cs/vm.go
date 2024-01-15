@@ -14,6 +14,7 @@ import (
 	"time"
 )
 
+// ReadVM reads the VM from CloudStack.
 func (client *Client) ReadVM(id string) (*models.VmPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create cs vm %s. details: %w", id, err)
@@ -39,6 +40,7 @@ func (client *Client) ReadVM(id string) (*models.VmPublic, error) {
 	return public, nil
 }
 
+// CreateVM creates the VM in CloudStack.
 func (client *Client) CreateVM(public *models.VmPublic) (*models.VmPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create cs vm %s. details: %w", public.Name, err)
@@ -93,7 +95,7 @@ func (client *Client) CreateVM(public *models.VmPublic) (*models.VmPublic, error
 		id = listVms.VirtualMachines[0].Id
 	}
 
-	err = client.AssertVirtualMachineTags(id, public.Tags)
+	err = client.AssertVmTags(id, public.Tags)
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -101,6 +103,7 @@ func (client *Client) CreateVM(public *models.VmPublic) (*models.VmPublic, error
 	return client.ReadVM(id)
 }
 
+// UpdateVM updates the VM in CloudStack.
 func (client *Client) UpdateVM(public *models.VmPublic) (*models.VmPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update cs vm %s. details: %w", public.ID, err)
@@ -158,7 +161,7 @@ func (client *Client) UpdateVM(public *models.VmPublic) (*models.VmPublic, error
 		log.Println("cs vm", public.ID, "is not stopped when updating service offering. skipping updating service offering")
 	}
 
-	err = client.AssertVirtualMachineTags(public.ID, public.Tags)
+	err = client.AssertVmTags(public.ID, public.Tags)
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -166,6 +169,7 @@ func (client *Client) UpdateVM(public *models.VmPublic) (*models.VmPublic, error
 	return client.ReadVM(public.ID)
 }
 
+// DeleteVM deletes the VM in CloudStack.
 func (client *Client) DeleteVM(id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete cs vm %s. details: %w", id, err)
@@ -204,6 +208,7 @@ func (client *Client) DeleteVM(id string) error {
 	return nil
 }
 
+// GetVmStatus gets the VM status in CloudStack.
 func (client *Client) GetVmStatus(id string) (string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get cs vm %s status. details: %w", id, err)
@@ -227,6 +232,7 @@ func (client *Client) GetVmStatus(id string) (string, error) {
 	return vm.State, nil
 }
 
+// DoVmCommand executes the VM command in CloudStack.
 func (client *Client) DoVmCommand(id string, requiredHost *string, command commands.Command) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to execute csVM command to csVM %s. details: %w", id, err)
@@ -282,6 +288,7 @@ func (client *Client) DoVmCommand(id string, requiredHost *string, command comma
 	return nil
 }
 
+// HasCapacity checks if the VM has capacity in CloudStack.
 func (client *Client) HasCapacity(vmID, hostName string) (bool, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check if vm %s can start on host %s. details: %w", vmID, hostName, err)
@@ -332,6 +339,7 @@ type cloudInitUser struct {
 	SshAuthorizedKeys []string `yaml:"ssh_authorized_keys"`
 }
 
+// createUserData creates the user data for the VM in CloudStack.
 func createUserData(vmName string, userSshPublicKey, adminSshPublicKey *string) string {
 	var authorizedKeys []string
 	if userSshPublicKey != nil {
@@ -369,6 +377,7 @@ func createUserData(vmName string, userSshPublicKey, adminSshPublicKey *string) 
 
 const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
+// generateSalt generates the salt used for the password in CloudStack.
 func generateSalt() string {
 	//goland:noinspection GoDeprecation
 	rand.Seed(time.Now().UnixNano())
@@ -379,6 +388,7 @@ func generateSalt() string {
 	return string(salt)
 }
 
+// hashPassword hashes the password in CloudStack.
 func hashPassword(password, salt string) string {
 	rounds := 4096
 	hash := sha512.New()

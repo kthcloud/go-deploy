@@ -8,8 +8,11 @@ import (
 	"time"
 )
 
-var NameTakenErr = fmt.Errorf("team name taken")
+var (
+	NameTakenErr = fmt.Errorf("team name taken")
+)
 
+// Create creates a new team.
 func (client *Client) Create(id, ownerID string, params *CreateParams) (*Team, error) {
 	team := &Team{
 		ID:          id,
@@ -35,27 +38,6 @@ func (client *Client) Create(id, ownerID string, params *CreateParams) (*Team, e
 	}
 
 	return fetched, nil
-}
-
-func (client *Client) ListByIDs(ids []string) ([]Team, error) {
-	if ids == nil || len(ids) == 0 {
-		return make([]Team, 0), nil
-	}
-
-	filter := bson.D{{"id", bson.D{{"$in", ids}}}}
-
-	return client.ListWithFilterAndProjection(filter, nil)
-}
-
-func (client *Client) ListByUserID(userID string) ([]Team, error) {
-	filter := bson.D{
-		{"$or", bson.A{
-			bson.D{{"ownerId", userID}},
-			bson.D{{"memberMap." + userID, bson.D{{"$exists", true}}}},
-		}},
-	}
-
-	return client.ListWithFilterAndProjection(filter, nil)
 }
 
 func (client *Client) UpdateWithParams(id string, params *UpdateParams) error {

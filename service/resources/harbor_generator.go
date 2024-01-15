@@ -9,11 +9,14 @@ import (
 	"strings"
 )
 
+// HarborGenerator is a generator for Harbor resources
+// It is used to generate the `publics`, such as models.ProjectPublic and models.RobotPublic
 type HarborGenerator struct {
 	*PublicGeneratorType
 	project string
 }
 
+// Project returns a models.ProjectPublic that should be created
 func (hg *HarborGenerator) Project() *models.ProjectPublic {
 	if hg.d.deployment != nil {
 		pr := models.ProjectPublic{
@@ -32,6 +35,7 @@ func (hg *HarborGenerator) Project() *models.ProjectPublic {
 	return nil
 }
 
+// Robot returns a models.RobotPublic that should be created
 func (hg *HarborGenerator) Robot() *models.RobotPublic {
 	if hg.d.deployment != nil {
 		ro := models.RobotPublic{
@@ -53,6 +57,7 @@ func (hg *HarborGenerator) Robot() *models.RobotPublic {
 	return nil
 }
 
+// Repository returns a models.RepositoryPublic that should be created
 func (hg *HarborGenerator) Repository() *models.RepositoryPublic {
 	if hg.d.deployment != nil {
 		splits := strings.Split(config.Config.Registry.PlaceholderImage, "/")
@@ -79,6 +84,7 @@ func (hg *HarborGenerator) Repository() *models.RepositoryPublic {
 	return nil
 }
 
+// Webhook returns a models.WebhookPublic that should be created
 func (hg *HarborGenerator) Webhook() *models.WebhookPublic {
 	if hg.d.deployment != nil {
 		webhookTarget := fmt.Sprintf("%s/v1/hooks/deployments/harbor", config.Config.ExternalUrl)

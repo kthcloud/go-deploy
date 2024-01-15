@@ -23,6 +23,7 @@ func (pv *PvPublic) IsPlaceholder() bool {
 	return false
 }
 
+// CreatePvPublicFromRead creates a PvPublic from a v1.PersistentVolume.
 func CreatePvPublicFromRead(pv *v1.PersistentVolume) *PvPublic {
 	capacityQuantity, ok := pv.Spec.Capacity[v1.ResourceStorage]
 	var capacity string

@@ -82,7 +82,7 @@ func (c *Client) Create(id, userID string, params *smModels.CreateParams) error 
 		return fmt.Errorf("failed to create storage manager. details: %w", err)
 	}
 
-	_, err := smModels.New().CreateSM(id, userID, params)
+	_, err := smModels.New().Create(id, userID, params)
 	if err != nil {
 		if errors.Is(err, smModels.AlreadyExistsErr) {
 			return sErrors.SmAlreadyExistsErr
@@ -150,8 +150,9 @@ func (c *Client) Repair(id string) error {
 	return nil
 }
 
+// GetZone returns the deployment zone for the storage manager.
 func (c *Client) GetZone() *configModels.DeploymentZone {
-	// right now the storage-manager is hosted in se-flem for all users
+	// Currently, the storage-manager is hosted in se-flem for all users
 	zone := "se-flem"
 
 	return config.Config.Deployment.GetZone(zone)

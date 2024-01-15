@@ -10,6 +10,8 @@ import (
 type Resource interface {
 }
 
+// ResourceClient is a type of base client that adds methods to manage a resource in the database.
+// It includes many useful operations such as listing, searching, and pagination.
 type ResourceClient[T Resource] struct {
 	Collection     *mongo.Collection
 	IncludeDeleted bool
@@ -18,6 +20,7 @@ type ResourceClient[T Resource] struct {
 	Search         *models.SearchParams
 }
 
+// AddExtraFilter adds an extra filter to the client.
 func (client *ResourceClient[T]) AddExtraFilter(filter bson.D) *ResourceClient[T] {
 	if client.ExtraFilter == nil {
 		client.ExtraFilter = bson.M{

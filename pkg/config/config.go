@@ -13,8 +13,11 @@ import (
 	"regexp"
 )
 
+// Config is the global configuration object.
+// It is populated from the config file, and managed as a singleton.
 var Config config.ConfigType
 
+// SetupEnvironment loads the configuration from the config file and sets up the environment.
 func SetupEnvironment() {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to setup environment. details: %w", err)
@@ -53,6 +56,7 @@ func SetupEnvironment() {
 	log.Println("config loading finished")
 }
 
+// assertCorrectConfig asserts that the config is correct.
 func assertCorrectConfig() {
 	uniqueNames := make(map[string]bool)
 	for _, zone := range Config.Deployment.Zones {
@@ -73,6 +77,7 @@ func assertCorrectConfig() {
 	log.Println("config checks passed")
 }
 
+// setupK8sClusters sets up the k8s clusters.
 func setupK8sClusters() error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to setup k8s clusters. details: %w", err)
@@ -112,6 +117,7 @@ func setupK8sClusters() error {
 	return nil
 }
 
+// createClientFromCloudStackConfig creates a k8s client from a cloudstack config.
 func createClientFromCloudStackConfig(name string, config *config.CloudStackConfigSource) (*kubernetes.Clientset, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create k8s client from cloudstack config. details: %w", err)
@@ -157,6 +163,7 @@ func createClientFromCloudStackConfig(name string, config *config.CloudStackConf
 	return createK8sClient([]byte(clusterConfig.Configdata))
 }
 
+// createK8sClient creates a k8s client from config data.
 func createK8sClient(configData []byte) (*kubernetes.Clientset, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create k8s client. details: %w", err)

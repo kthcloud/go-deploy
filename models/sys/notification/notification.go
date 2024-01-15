@@ -5,9 +5,12 @@ import (
 )
 
 const (
-	TypeTeamInvite         = "teamInvite"
+	// TypeTeamInvite is used for team invite notifications.
+	TypeTeamInvite = "teamInvite"
+	// TypeDeploymentTransfer is used for deployment transfer notifications.
 	TypeDeploymentTransfer = "deploymentTransfer"
-	TypeVmTransfer         = "vmTransfer"
+	// TypeVmTransfer is used for vm transfer notifications.
+	TypeVmTransfer = "vmTransfer"
 )
 
 type Notification struct {

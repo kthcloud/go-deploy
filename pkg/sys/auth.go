@@ -7,6 +7,7 @@ import (
 	"go-deploy/pkg/config"
 )
 
+// GetKeycloakToken gets the keycloak token from the request.
 func (context *ClientContext) GetKeycloakToken() (*auth.KeycloakToken, error) {
 	tokenRaw, exists := context.GinContext.Get("keycloakToken")
 	if !exists {
@@ -27,6 +28,7 @@ func (context *ClientContext) GetKeycloakToken() (*auth.KeycloakToken, error) {
 	return &keycloakToken, nil
 }
 
+// GetKeyCloakConfig gets the keycloak config.
 func GetKeyCloakConfig() auth.KeycloakConfig {
 	var fullCertPath = fmt.Sprintf("realms/%s/protocol/openid-connect/certs", config.Config.Keycloak.Realm)
 

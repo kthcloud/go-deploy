@@ -9,10 +9,13 @@ import (
 	"time"
 )
 
+// CsGenerator is a generator for CloudStack resources
+// It is used to generate the `publics`, such as models.VmPublic and models.PortForwardingRulePublic
 type CsGenerator struct {
 	*PublicGeneratorType
 }
 
+// VMs returns a list of models.VmPublic that should be created
 func (cr *CsGenerator) VMs() []models.VmPublic {
 	var res []models.VmPublic
 
@@ -48,6 +51,7 @@ func (cr *CsGenerator) VMs() []models.VmPublic {
 	return nil
 }
 
+// PFRs returns a list of models.PortForwardingRulePublic that should be created
 func (cr *CsGenerator) PFRs() []models.PortForwardingRulePublic {
 	var res []models.PortForwardingRulePublic
 
@@ -95,6 +99,7 @@ func (cr *CsGenerator) PFRs() []models.PortForwardingRulePublic {
 	return nil
 }
 
+// createTags is a helper function to create a list of models.Tag
 func createTags(name string, deployName string) []models.Tag {
 	tags := []models.Tag{
 		{Key: "name", Value: name},
@@ -110,6 +115,8 @@ func createTags(name string, deployName string) []models.Tag {
 	return tags
 }
 
+// pfrName is a helper function to create a name for a PortForwardingRule.
+// It is to ensure that there are no restrictions on the name, while still being able to identify it
 func pfrName(privatePort int, protocol string) string {
 	return fmt.Sprintf("priv-%d-prot-%s", privatePort, protocol)
 }

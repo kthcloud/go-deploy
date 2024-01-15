@@ -12,6 +12,7 @@ import (
 	"unicode"
 )
 
+// ReadRobot reads a robot from Harbor.
 func (client *Client) ReadRobot(id int) (*models.RobotPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to read robot %d. details: %w", id, err)
@@ -38,6 +39,7 @@ func (client *Client) ReadRobot(id int) (*models.RobotPublic, error) {
 	return public, nil
 }
 
+// CreateRobot creates a robot in Harbor.
 func (client *Client) CreateRobot(public *models.RobotPublic) (*models.RobotPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create robot %s. details: %w", public.Name, err)
@@ -83,6 +85,7 @@ func (client *Client) CreateRobot(public *models.RobotPublic) (*models.RobotPubl
 	return models.CreateRobotPublicFromGet(robot), nil
 }
 
+// UpdateRobot updates a robot in Harbor.
 func (client *Client) UpdateRobot(public *models.RobotPublic) (*models.RobotPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update robot %s. details: %w", public.Name, err)
@@ -127,6 +130,7 @@ func (client *Client) UpdateRobot(public *models.RobotPublic) (*models.RobotPubl
 	return models.CreateRobotPublicFromGet(robot), nil
 }
 
+// DeleteRobot deletes a robot in Harbor.
 func (client *Client) DeleteRobot(id int) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete robot %d. details: %w", id, err)
@@ -150,6 +154,9 @@ func (client *Client) DeleteRobot(id int) error {
 	return nil
 }
 
+// assertCorrectRobotSecret asserts that the robot secret is correct.
+// This is needed since the installed Harbor client does not return credentials.
+// We use the description field to store the secret (which is arguably a hack, but it works).
 func (client *Client) assertCorrectRobotSecret(robot *harborModelsV2.Robot, secret string) error {
 	if robot.Description != secret && isValidHarborRobotSecret(secret) {
 		robot.Description = secret
@@ -169,6 +176,7 @@ func (client *Client) assertCorrectRobotSecret(robot *harborModelsV2.Robot, secr
 	return nil
 }
 
+// isValidHarborRobotSecret asserts that a secret is a valid to be used as a Harbor robot secret.
 func isValidHarborRobotSecret(secret string) bool {
 	correctLength := len(secret) >= 8 && len(secret) <= 100
 

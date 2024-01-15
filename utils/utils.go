@@ -10,12 +10,15 @@ import (
 	"time"
 )
 
+// HashString hashes a string using sha256 and returns the base64 encoded string
 func HashString(token string) string {
 	hasher := sha256.New()
 	hasher.Write([]byte(token))
 	return base64.URLEncoding.EncodeToString(hasher.Sum(nil))
 }
 
+// HashStringRfc1123 hashes a string using sha256 and returns the base64 encoded string
+// It also removes the characters that are not allowed in a RFC1123 string
 func HashStringRfc1123(token string) string {
 	urlHash := HashString(token)
 	urlHash = strings.ReplaceAll(urlHash, "_", "")
@@ -24,6 +27,8 @@ func HashStringRfc1123(token string) string {
 	return strings.ToLower(urlHash)
 }
 
+// HashStringAlphanumeric hashes a string using sha256 and returns the base64 encoded string
+// It also removes the characters that are not allowed in a alphanumeric string
 func HashStringAlphanumeric(token string) string {
 	urlHash := HashString(token)
 	urlHash = strings.ReplaceAll(urlHash, "_", "")
@@ -32,6 +37,8 @@ func HashStringAlphanumeric(token string) string {
 	return urlHash
 }
 
+// GetPage returns a page of a list
+// If pageSize is 0, the whole list is returned
 func GetPage[T any](list []T, pageSize, page int) []T {
 	if pageSize == 0 {
 		return list
@@ -51,6 +58,8 @@ func GetPage[T any](list []T, pageSize, page int) []T {
 	return list[start:end]
 }
 
+// PrettyPrintError prints an error in a pretty way
+// It splits on `details: ` and adds `due to: \n`
 func PrettyPrintError(err error) {
 	all := make([]string, 0)
 
@@ -90,10 +99,12 @@ func PrettyPrintError(err error) {
 	log.Println(output)
 }
 
+// EmptyValue checks if a string pointer is nil or empty
 func EmptyValue(s *string) bool {
 	return s != nil && *s == ""
 }
 
+// NonZeroOrNil returns a pointer to a time.Time if the time is not zero, otherwise it returns nil
 func NonZeroOrNil(t time.Time) *time.Time {
 	if t.IsZero() {
 		return nil

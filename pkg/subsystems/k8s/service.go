@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+// ReadService reads a Service from Kubernetes.
 func (client *Client) ReadService(id string) (*models.ServicePublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to read k8s service %s. details: %w", id, err)
@@ -35,6 +36,7 @@ func (client *Client) ReadService(id string) (*models.ServicePublic, error) {
 	return nil, nil
 }
 
+// CreateService creates a Service in Kubernetes.
 func (client *Client) CreateService(public *models.ServicePublic) (*models.ServicePublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create k8s service %s. details: %w", public.Name, err)
@@ -61,6 +63,7 @@ func (client *Client) CreateService(public *models.ServicePublic) (*models.Servi
 	return models.CreateServicePublicFromRead(res), nil
 }
 
+// UpdateService updates a Service in Kubernetes.
 func (client *Client) UpdateService(public *models.ServicePublic) (*models.ServicePublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update k8s service %s. details: %w", public.ID, err)
@@ -84,6 +87,7 @@ func (client *Client) UpdateService(public *models.ServicePublic) (*models.Servi
 	return nil, nil
 }
 
+// DeleteService deletes a Service in Kubernetes.
 func (client *Client) DeleteService(id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete k8s service %s. details: %w", id, err)

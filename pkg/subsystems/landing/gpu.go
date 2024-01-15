@@ -6,6 +6,7 @@ import (
 	"go-deploy/utils/requestutils"
 )
 
+// ReadGpuInfo reads gpu info from the landing service.
 func (client *Client) ReadGpuInfo() (*models.GpuInfoRead, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get gpu info. details: %w", err)

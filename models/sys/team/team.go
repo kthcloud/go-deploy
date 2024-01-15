@@ -3,16 +3,23 @@ package team
 import "time"
 
 const (
+	// ResourceTypeDeployment is the type used for deployment resources in a team.
 	ResourceTypeDeployment = "deployment"
-	ResourceTypeVM         = "vm"
+	// ResourceTypeVM is the type used for VM resources in a team.
+	ResourceTypeVM = "vm"
 
-	MemberRoleAdmin     = "admin"
+	// MemberRoleAdmin is the role used for admin members in a team.
+	// This is currently not used, and every member is an admin.
+	MemberRoleAdmin = "admin"
+
+	// MemberStatusInvited is the status used for users that have been invited to a team.
 	MemberStatusInvited = "invited"
-	MemberStatusJoined  = "joined"
+	// MemberStatusJoined is the status used for users that have joined a team.
+	MemberStatusJoined = "joined"
 )
 
 type Member struct {
-	// ID is UserID
+	// ID is the same as UserID
 	ID           string `bson:"id"`
 	TeamRole     string `bson:"teamRole"`
 	MemberStatus string `bson:"memberStatus"`

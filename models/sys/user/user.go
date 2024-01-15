@@ -2,7 +2,7 @@ package user
 
 import (
 	"fmt"
-	"go-deploy/models/sys/team"
+	teamModels "go-deploy/models/sys/team"
 )
 
 type PublicKey struct {
@@ -35,15 +35,17 @@ type User struct {
 	Onboarded     bool          `bson:"onboarded"`
 }
 
-func (user *User) GetTeamMap() (map[string]team.Team, error) {
-	client := team.New()
+// GetTeamMap returns a map of teamModels.Team objects for a given user.
+// This is done live by querying the database.
+func (user *User) GetTeamMap() (map[string]teamModels.Team, error) {
+	client := teamModels.New()
 
-	teams, err := client.ListByUserID(user.ID)
+	teams, err := client.WithUserID(user.ID).List()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get teams for user %s. details: %w", user.Username, err)
 	}
 
-	teamsMap := make(map[string]team.Team)
+	teamsMap := make(map[string]teamModels.Team)
 	for _, team := range teams {
 		teamsMap[team.ID] = team
 	}

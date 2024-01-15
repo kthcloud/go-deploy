@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// CorsAllowAll is a middleware that allows all origins
 func CorsAllowAll() gin.HandlerFunc {
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowOrigins = []string{"*"}

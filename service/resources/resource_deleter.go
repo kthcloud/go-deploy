@@ -4,6 +4,8 @@ import (
 	"log"
 )
 
+// SsDeleterType is a type that can be used to delete a single subsystem resource
+// It contains the resource ID that should be deleted, and the functions that should be used to delete it
 type SsDeleterType[IdType any] struct {
 	resourceID *IdType
 
@@ -11,22 +13,27 @@ type SsDeleterType[IdType any] struct {
 	deleteFunc func(IdType) error
 }
 
+// SsDeleter create a new deleter that can be used for a single resource
 func SsDeleter[IdType any](deleteFunc func(IdType) error) *SsDeleterType[IdType] {
 	return &SsDeleterType[IdType]{
 		deleteFunc: deleteFunc,
 	}
 }
 
+// WithResourceID sets the resource ID for the deleter.
+// The resource ID refers to the subsystem resource's ID, not the deployment ID, VM ID, or SM ID
 func (rc *SsDeleterType[IdType]) WithResourceID(resourceID IdType) *SsDeleterType[IdType] {
 	rc.resourceID = &resourceID
 	return rc
 }
 
+// WithDbFunc sets the db func for the deleter
 func (rc *SsDeleterType[IdType]) WithDbFunc(dbFunc func(interface{}) error) *SsDeleterType[IdType] {
 	rc.dbFunc = dbFunc
 	return rc
 }
 
+// Exec executes the deleter
 func (rc *SsDeleterType[IdType]) Exec() error {
 	if rc.resourceID == nil {
 		log.Println("no resource id provided for subsystem deletion. did you forget to call WithResourceID?")

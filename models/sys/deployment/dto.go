@@ -9,6 +9,7 @@ import (
 	"strconv"
 )
 
+// ToDTO converts a Deployment to a body.DeploymentRead DTO.
 func (deployment *Deployment) ToDTO(smURL *string, teams []string) body.DeploymentRead {
 	app := deployment.GetMainApp()
 	if app == nil {
@@ -119,6 +120,7 @@ func (deployment *Deployment) ToDTO(smURL *string, teams []string) body.Deployme
 	}
 }
 
+// ToDTO converts a GitHubRepository to a body.GitHubRepository DTO.
 func (g *GitHubRepository) ToDTO() body.GitHubRepository {
 	return body.GitHubRepository{
 		ID:   g.ID,
@@ -126,6 +128,7 @@ func (g *GitHubRepository) ToDTO() body.GitHubRepository {
 	}
 }
 
+// FromDTO converts body.DeploymentCreate DTO to CreateParams.
 func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZone, fallbackImage string, fallbackPort int) {
 	p.Name = dto.Name
 
@@ -184,7 +187,7 @@ func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZone, fallbac
 
 	p.Replicas = dto.Replicas
 
-	// only allow GitHub on non-prebuilt deployments
+	// Only allow GitHub on non-prebuilt deployments
 	if p.Type == TypeCustom && dto.GitHub != nil {
 		p.GitHub = &GitHubCreateParams{
 			Token:        dto.GitHub.Token,
@@ -199,6 +202,7 @@ func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZone, fallbac
 	}
 }
 
+// FromDTO converts body.DeploymentUpdate DTO to UpdateParams.
 func (p *UpdateParams) FromDTO(dto *body.DeploymentUpdate, deploymentType string) {
 	if dto.Name != nil {
 		p.Name = dto.Name
@@ -251,6 +255,7 @@ func (p *UpdateParams) FromDTO(dto *body.DeploymentUpdate, deploymentType string
 	p.Replicas = dto.Replicas
 }
 
+// FromDTO converts body.DeploymentBuild DTO to BuildParams.
 func (p *BuildParams) FromDTO(dto *body.DeploymentBuild) {
 	p.Name = dto.Name
 	p.Tag = dto.Tag

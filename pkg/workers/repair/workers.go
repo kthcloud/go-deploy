@@ -16,6 +16,7 @@ import (
 	"time"
 )
 
+// deploymentRepairer is a worker that repairs deployments.
 func deploymentRepairer(ctx context.Context) {
 	defer workers.OnStop("deploymentRepairer")
 
@@ -86,6 +87,7 @@ func deploymentRepairer(ctx context.Context) {
 	}
 }
 
+// smRepairer is a worker that repairs storage managers.
 func smRepairer(ctx context.Context) {
 	defer workers.OnStop("smRepairer")
 
@@ -137,6 +139,7 @@ func smRepairer(ctx context.Context) {
 	}
 }
 
+// vmRepairer is a worker that repairs VMs.
 func vmRepairer(ctx context.Context) {
 	defer workers.OnStop("vmRepairer")
 

@@ -7,6 +7,8 @@ import (
 	"go-deploy/service/user_service"
 )
 
+// SynchronizeUser is a middleware that synchronizes the user's information in the database.
+// This includes name, roles, permissions, etc.
 func SynchronizeUser(c *gin.Context) {
 	context := sys.NewContext(c)
 

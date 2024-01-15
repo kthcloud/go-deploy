@@ -22,6 +22,8 @@ var (
 	NonUniqueFieldErr = fmt.Errorf("non unique field")
 )
 
+// Create creates a new deployment with the given params.
+// It will return a NonUniqueFieldErr any unique index was violated.
 func (client *Client) Create(id, ownerID string, params *CreateParams) (*Deployment, error) {
 	appName := "main"
 	replicas := 1
@@ -95,30 +97,9 @@ func (client *Client) Create(id, ownerID string, params *CreateParams) (*Deploym
 	return client.GetByID(id)
 }
 
-func (client *Client) ListByGitHubWebhookID(id int64) ([]Deployment, error) {
-	return client.ListWithFilterAndProjection(bson.D{{"subsystems.github.webhook.id", id}}, nil)
-}
-
-func (client *Client) GetByTransferCode(code string) (*Deployment, error) {
-	return client.GetWithFilterAndProjection(bson.D{{"transfer.code", code}}, nil)
-}
-
-func (client *Client) DeleteByID(id string) error {
-	_, err := client.Collection.UpdateOne(context.TODO(),
-		bson.D{{"id", id}},
-		bson.D{
-			{"$set", bson.D{{"deletedAt", time.Now()}}},
-			{"$set", bson.D{{"activities", make(map[string]activity.Activity)}}},
-		},
-	)
-	if err != nil {
-		return fmt.Errorf("failed to delete deployment %s. details: %w", id, err)
-	}
-
-	return nil
-}
-
-func (client *Client) UpdateWithParamsByID(id string, params *UpdateParams) error {
+// UpdateWithParams updates a deployment with the given update params.
+// It will return a NonUniqueFieldErr any unique index was violated.
+func (client *Client) UpdateWithParams(id string, params *UpdateParams) error {
 	deployment, err := client.GetByID(id)
 	if err != nil {
 		return err
@@ -190,6 +171,7 @@ func (client *Client) UpdateWithParamsByID(id string, params *UpdateParams) erro
 	return nil
 }
 
+// GetLogs returns the last NLogsCache logs for a deployment
 func (client *Client) GetLogs(id string, history int) ([]Log, error) {
 	projection := bson.D{
 		{"logs", bson.D{
@@ -213,6 +195,7 @@ func (client *Client) GetLogs(id string, history int) ([]Log, error) {
 	return deployment.Logs, nil
 }
 
+// GetLogsAfter returns the logs after the given time, with a maximum of NLogsCache logs.
 func (client *Client) GetLogsAfter(id string, createdAt time.Time) ([]Log, error) {
 	projection := bson.D{
 		{"logs", bson.D{
@@ -243,9 +226,8 @@ func (client *Client) GetLogsAfter(id string, createdAt time.Time) ([]Log, error
 	return filtered, nil
 }
 
-// AddLogs adds logs to the end of the logs array
-// Only the last NLogsCache logs are kept
-// Logs are sorted by createdAt
+// AddLogs adds logs to the end of the log array.
+// Only the last NLogsCache logs are kept, and are sorted by createdAt
 func (client *Client) AddLogs(id string, logs ...Log) error {
 	sort.Slice(logs, func(i, j int) bool {
 		return logs[i].CreatedAt.Before(logs[j].CreatedAt)
@@ -268,16 +250,22 @@ func (client *Client) AddLogs(id string, logs ...Log) error {
 	return nil
 }
 
-func (client *Client) DeleteSubsystemByID(id, key string) error {
+// DeleteSubsystem erases a subsystem from a deployment.
+// It prepends the key with `subsystems` and unsets it.
+func (client *Client) DeleteSubsystem(id, key string) error {
 	subsystemKey := fmt.Sprintf("subsystems.%s", key)
 	return client.UpdateWithBsonByID(id, bson.D{{"$unset", bson.D{{subsystemKey, ""}}}})
 }
 
-func (client *Client) UpdateSubsystemByID(id, key string, update interface{}) error {
+// SetSubsystem updates a subsystem from a deployment.
+// It prepends the key with `subsystems` and sets it.
+func (client *Client) SetSubsystem(id, key string, update interface{}) error {
 	subsystemKey := fmt.Sprintf("subsystems.%s", key)
 	return client.SetWithBsonByID(id, bson.D{{subsystemKey, update}})
 }
 
+// MarkRepaired marks a deployment as repaired.
+// It sets RepairedAt and unsets the repairing activity.
 func (client *Client) MarkRepaired(id string) error {
 	filter := bson.D{{"id", id}}
 	update := bson.D{
@@ -293,6 +281,8 @@ func (client *Client) MarkRepaired(id string) error {
 	return nil
 }
 
+// MarkUpdated marks a deployment as updated.
+// It sets UpdatedAt and unsets the updating activity.
 func (client *Client) MarkUpdated(id string) error {
 	filter := bson.D{{"id", id}}
 	update := bson.D{
@@ -308,6 +298,8 @@ func (client *Client) MarkUpdated(id string) error {
 	return nil
 }
 
+// UpdateCustomDomainStatus updates the status of a custom domain, such as
+// CustomDomainStatusActive, CustomDomainStatusVerificationFailed, CustomDomainStatusPending
 func (client *Client) UpdateCustomDomainStatus(id string, status string) error {
 	filter := bson.D{{"id", id}}
 	update := bson.D{
@@ -322,6 +314,7 @@ func (client *Client) UpdateCustomDomainStatus(id string, status string) error {
 	return nil
 }
 
+// UpdateGitLabBuild updates the last GitLab build for a deployment.
 func (client *Client) UpdateGitLabBuild(deploymentID string, build subsystems.GitLabBuild) error {
 	filter := bson.D{
 		{"id", deploymentID},
@@ -342,6 +335,7 @@ func (client *Client) UpdateGitLabBuild(deploymentID string, build subsystems.Gi
 	return nil
 }
 
+// GetLastGitLabBuild returns the last GitLab build for a deployment.
 func (client *Client) GetLastGitLabBuild(deploymentID string) (*subsystems.GitLabBuild, error) {
 	deployment, err := client.GetWithFilterAndProjection(bson.D{{"id", deploymentID}}, bson.D{{"subsystems.gitlab.lastBuild", 1}})
 	if err != nil {
@@ -355,6 +349,7 @@ func (client *Client) GetLastGitLabBuild(deploymentID string) (*subsystems.GitLa
 	return &deployment.Subsystems.GitLab.LastBuild, nil
 }
 
+// SetPingResult sets the ping result for a deployment.
 func (client *Client) SetPingResult(id string, pingResult int) error {
 	exists, err := client.ExistsByID(id)
 	if err != nil {
@@ -374,6 +369,7 @@ func (client *Client) SetPingResult(id string, pingResult int) error {
 	return nil
 }
 
+// CountReplicas returns the number of replicas for all apps in all deployments.
 func (client *Client) CountReplicas() (int, error) {
 	deployments, err := client.List()
 	if err != nil {
@@ -394,6 +390,7 @@ func (client *Client) CountReplicas() (int, error) {
 	return sum, nil
 }
 
+// generateCustomDomainSecret generates a random alphanumeric string.
 func generateCustomDomainSecret() string {
 	return utils.HashStringAlphanumeric(uuid.NewString())
 }

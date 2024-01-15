@@ -13,6 +13,8 @@ import (
 	"go-deploy/utils"
 )
 
+// CreateSM is a middleware that creates a storage manager for the user if it does not exist.
+// The storage manger is created asynchronously, so it may not be available immediately.
 func CreateSM() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		context := sys.NewContext(c)

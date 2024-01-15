@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+// Client is used to manage VMs in the database.
 type Client struct {
 	Collection     *mongo.Collection
 	RestrictUserID *string
@@ -18,6 +19,7 @@ type Client struct {
 	resource.ResourceClient[VM]
 }
 
+// New returns a new VM client.
 func New() *Client {
 	return &Client{
 		Collection: db.DB.GetCollection("vms"),
@@ -32,6 +34,7 @@ func New() *Client {
 	}
 }
 
+// WithPagination adds pagination to the client.
 func (client *Client) WithPagination(page, pageSize int) *Client {
 	client.ResourceClient.Pagination = &base.Pagination{
 		Page:     page,
@@ -46,12 +49,14 @@ func (client *Client) WithPagination(page, pageSize int) *Client {
 	return client
 }
 
+// IncludeDeletedResources makes the client include deleted VMs.
 func (client *Client) IncludeDeletedResources() *Client {
 	client.IncludeDeleted = true
 
 	return client
 }
 
+// RestrictToOwner adds a filter to the client to only return VMs owned by the given ownerID.
 func (client *Client) RestrictToOwner(ownerID string) *Client {
 	client.ResourceClient.AddExtraFilter(bson.D{{"ownerId", ownerID}})
 	client.ActivityResourceClient.ExtraFilter = client.ResourceClient.ExtraFilter
@@ -60,6 +65,7 @@ func (client *Client) RestrictToOwner(ownerID string) *Client {
 	return client
 }
 
+// WithActivities adds a filter to the client to only return VMs that have the given activities.
 func (client *Client) WithActivities(activities ...string) *Client {
 	orFilter := bson.A{}
 
@@ -81,6 +87,7 @@ func (client *Client) WithActivities(activities ...string) *Client {
 	return client
 }
 
+// WithNoActivities adds a filter to the client to only return VMs that have no activities.
 func (client *Client) WithNoActivities() *Client {
 	filter := bson.D{{
 		"activities", bson.M{
@@ -94,6 +101,7 @@ func (client *Client) WithNoActivities() *Client {
 	return client
 }
 
+// WithIDs adds a filter to the client to only return VMs with the given IDs.
 func (client *Client) WithIDs(ids ...string) *Client {
 	filter := bson.D{{"id", bson.D{{"$in", ids}}}}
 
@@ -103,6 +111,7 @@ func (client *Client) WithIDs(ids ...string) *Client {
 	return client
 }
 
+// WithCustomFilter adds a custom filter to the client.
 func (client *Client) WithCustomFilter(filter bson.D) *Client {
 	client.ResourceClient.AddExtraFilter(filter)
 	client.ActivityResourceClient.AddExtraFilter(filter)
@@ -110,6 +119,7 @@ func (client *Client) WithCustomFilter(filter bson.D) *Client {
 	return client
 }
 
+// WithNameRegex adds a filter to the client to only return VMs with names matching the given regex.
 func (client *Client) WithNameRegex(name string) *Client {
 	filter := bson.D{{"name", bson.D{{"$regex", name}}}}
 
@@ -119,6 +129,7 @@ func (client *Client) WithNameRegex(name string) *Client {
 	return client
 }
 
+// OlderThan adds a filter to the client to only return VMs created before the given timestamp.
 func (client *Client) OlderThan(timestamp time.Time) *Client {
 	filter := bson.D{{"createdAt", bson.D{{"$lt", timestamp}}}}
 
@@ -128,20 +139,9 @@ func (client *Client) OlderThan(timestamp time.Time) *Client {
 	return client
 }
 
-func (client *Client) WithPendingCustomDomain() *Client {
-	filter := bson.D{
-		{"portMap",
-			bson.D{
-				{"$elemMatch",
-					bson.D{
-						{"httpProxy.customDomain.status",
-							bson.D{{"$in", []string{CustomDomainStatusPending, CustomDomainStatusVerificationFailed}}},
-						},
-					},
-				},
-			},
-		},
-	}
+// WithTransferCode adds a filter to the client to only include deployments with the given transfer code.
+func (client *Client) WithTransferCode(code string) *Client {
+	filter := bson.D{{"transferCode", code}}
 
 	client.ResourceClient.AddExtraFilter(filter)
 	client.ActivityResourceClient.AddExtraFilter(filter)

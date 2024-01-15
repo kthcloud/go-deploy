@@ -5,6 +5,7 @@ import (
 	"go-deploy/models/dto/body"
 )
 
+// ToDTO converts a Role to a body.Role DTO.
 func (r *Role) ToDTO(includeQuota bool) body.Role {
 	permissionsStructMap := structs.Map(r.Permissions)
 	permissions := make([]string, 0)
@@ -29,6 +30,7 @@ func (r *Role) ToDTO(includeQuota bool) body.Role {
 	}
 }
 
+// ToDTO converts a Quotas to a body.Quota DTO.
 func (q *Quotas) ToDTO() body.Quota {
 	return body.Quota{
 		Deployments:      q.Deployments,

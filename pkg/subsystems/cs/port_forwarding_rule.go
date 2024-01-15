@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+// ReadPortForwardingRule reads the port forwarding rule from CloudStack.
 func (client *Client) ReadPortForwardingRule(id string) (*models.PortForwardingRulePublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to read port forwarding rule %s. details: %w", id, err)
@@ -36,6 +37,7 @@ func (client *Client) ReadPortForwardingRule(id string) (*models.PortForwardingR
 	return public, nil
 }
 
+// CreatePortForwardingRule creates the port forwarding rule in CloudStack.
 func (client *Client) CreatePortForwardingRule(public *models.PortForwardingRulePublic) (*models.PortForwardingRulePublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create port forwarding rule for vm %s. details: %w", public.VmID, err)
@@ -111,6 +113,7 @@ func (client *Client) CreatePortForwardingRule(public *models.PortForwardingRule
 	return client.ReadPortForwardingRule(id)
 }
 
+// UpdatePortForwardingRule updates the port forwarding rule in CloudStack.
 func (client *Client) UpdatePortForwardingRule(public *models.PortForwardingRulePublic) (*models.PortForwardingRulePublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create port forwarding rule for vm %s. details: %w", public.VmID, err)
@@ -148,6 +151,7 @@ func (client *Client) UpdatePortForwardingRule(public *models.PortForwardingRule
 	return models.CreatePortForwardingRulePublicFromUpdate(portForwardingRule), nil
 }
 
+// DeletePortForwardingRule deletes the port forwarding rule in CloudStack.
 func (client *Client) DeletePortForwardingRule(id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete port forwarding rule %s. details: %w", id, err)

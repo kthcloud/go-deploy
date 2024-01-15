@@ -6,6 +6,7 @@ import (
 	"github.com/mittwald/goharbor-client/v5/apiv2/pkg/config"
 )
 
+// Client is a wrapper around the Harbor API client.
 type Client struct {
 	url      string
 	username string
@@ -15,6 +16,7 @@ type Client struct {
 	HarborClient *apiv2.RESTClient
 }
 
+// ClientConf is a configuration struct for the Harbor client.
 type ClientConf struct {
 	URL      string
 	Username string
@@ -22,6 +24,7 @@ type ClientConf struct {
 	Project  string
 }
 
+// New creates a new Harbor client.
 func New(config *ClientConf) (*Client, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create harbor client. details: %w", err)
@@ -43,6 +46,7 @@ func New(config *ClientConf) (*Client, error) {
 	return &client, nil
 }
 
+// createHarborClient is a helper function to create a Harbor client.
 func createHarborClient(apiUrl, username, password string) (*apiv2.RESTClient, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create harbor client. details: %w", err)
