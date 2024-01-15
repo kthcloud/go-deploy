@@ -653,7 +653,8 @@ func (kg *K8sGenerator) PVs() []models.PvPublic {
 				Name:      dPvName(kg.d.deployment, v.Name),
 				Capacity:  config.Config.Deployment.Resources.Limits.Storage,
 				NfsServer: kg.s.zone.Storage.NfsServer,
-				NfsPath:   path.Join(kg.s.zone.Storage.NfsParentPath, v.ServerPath),
+				// Create path /<zone parent path>/<deployment owner id>/user/<user specified server path>
+				NfsPath: path.Join(kg.s.zone.Storage.NfsParentPath, kg.d.deployment.OwnerID, "user", v.ServerPath),
 			})
 		}
 
