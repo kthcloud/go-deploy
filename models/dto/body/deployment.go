@@ -78,9 +78,9 @@ type Env struct {
 }
 
 type Volume struct {
-	Name       string `json:"name" bson:"name" binding:"required,min=1,max=100"`
-	AppPath    string `json:"appPath" bson:"appPath" binding:"required,min=1,max=100"`
-	ServerPath string `json:"serverPath" bson:"serverPath" binding:"required,min=1,max=100"`
+	Name       string `json:"name" bson:"name" binding:"required,min=1,max=30"`
+	AppPath    string `json:"appPath" bson:"appPath" binding:"required,min=1,max=255"`
+	ServerPath string `json:"serverPath" bson:"serverPath" binding:"required,min=1,max=255"`
 }
 
 type GitHub struct {
