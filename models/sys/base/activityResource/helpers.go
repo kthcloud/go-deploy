@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+// AddActivity adds an activity to the resource with the given ID.
+// If the activity already exists, it will be overwritten.
 func (client *ActivityResourceClient[T]) AddActivity(id, activity string) error {
 	_, err := client.Collection.UpdateOne(context.TODO(),
 		bson.D{{"id", id}},
@@ -26,6 +28,8 @@ func (client *ActivityResourceClient[T]) AddActivity(id, activity string) error 
 	return nil
 }
 
+// RemoveActivity removes an activity from the resource with the given ID.
+// If the activity does not exist, nothing will happen.
 func (client *ActivityResourceClient[T]) RemoveActivity(id, activity string) error {
 	_, err := client.Collection.UpdateOne(context.TODO(),
 		bson.D{{"id", id}},
@@ -40,6 +44,7 @@ func (client *ActivityResourceClient[T]) RemoveActivity(id, activity string) err
 	return nil
 }
 
+// ClearActivities clears all activities from the resource with the given ID.
 func (client *ActivityResourceClient[T]) ClearActivities(id string) error {
 	_, err := client.Collection.UpdateOne(context.TODO(),
 		bson.D{{"id", id}},
@@ -55,6 +60,7 @@ func (client *ActivityResourceClient[T]) ClearActivities(id string) error {
 	return nil
 }
 
+// IsDoingActivity returns whether the resource with the given ID is doing the given activity.
 func (client *ActivityResourceClient[T]) IsDoingActivity(id, activity string) (bool, error) {
 	filter := bson.D{
 		{"id", id},

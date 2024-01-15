@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+// ReadSnapshot reads the snapshot from CloudStack.
 func (client *Client) ReadSnapshot(id string) (*models.SnapshotPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to read snapshot %s. details: %w", id, err)
@@ -36,6 +37,7 @@ func (client *Client) ReadSnapshot(id string) (*models.SnapshotPublic, error) {
 	return snapshot, nil
 }
 
+// ReadAllSnapshots reads all snapshots from CloudStack.
 func (client *Client) ReadAllSnapshots(vmID string) ([]models.SnapshotPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to read all snapshots. details: %w", err)
@@ -59,6 +61,7 @@ func (client *Client) ReadAllSnapshots(vmID string) ([]models.SnapshotPublic, er
 	return snapshots, nil
 }
 
+// CreateSnapshot creates the snapshot in CloudStack.
 func (client *Client) CreateSnapshot(public *models.SnapshotPublic) (*models.SnapshotPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create snapshot %s. details: %w", public.Name, err)
@@ -89,6 +92,7 @@ func (client *Client) CreateSnapshot(public *models.SnapshotPublic) (*models.Sna
 	return models.CreateSnapshotPublicFromCreate(createResponse), nil
 }
 
+// DeleteSnapshot deletes the snapshot in CloudStack.
 func (client *Client) DeleteSnapshot(id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete snapshot %s. details: %w", id, err)
@@ -111,6 +115,7 @@ func (client *Client) DeleteSnapshot(id string) error {
 	return nil
 }
 
+// ApplySnapshot applies the snapshot in CloudStack.
 func (client *Client) ApplySnapshot(public *models.SnapshotPublic) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to apply snapshot %s. details: %w", public.Name, err)

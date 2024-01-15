@@ -34,6 +34,7 @@ func (d *DeploymentPublic) IsPlaceholder() bool {
 	return false
 }
 
+// CreateDeploymentPublicFromRead creates a DeploymentPublic from a appsv1.Deployment.
 func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPublic {
 	var envs []EnvVar
 	for _, env := range deployment.Spec.Template.Spec.Containers[0].Env {

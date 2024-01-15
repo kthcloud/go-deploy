@@ -9,6 +9,8 @@ import (
 	"strings"
 )
 
+// insertPlaceholder inserts a placeholder artifact into a repository.
+// This is used to initialize a repository.
 func (client *Client) insertPlaceholder(public *models.RepositoryPublic) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to insert placeholder repository %d. details: %w", public.ID, err)
@@ -34,6 +36,7 @@ func (client *Client) insertPlaceholder(public *models.RepositoryPublic) error {
 	return err
 }
 
+// ReadRepository reads a repository from Harbor.
 func (client *Client) ReadRepository(name string) (*models.RepositoryPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to read harbor repository %s. details: %w", name, err)
@@ -60,6 +63,7 @@ func (client *Client) ReadRepository(name string) (*models.RepositoryPublic, err
 	return public, nil
 }
 
+// CreateRepository creates a repository in Harbor.
 func (client *Client) CreateRepository(public *models.RepositoryPublic) (*models.RepositoryPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create harbor repository %s. details: %w", public.Name, err)
@@ -92,6 +96,7 @@ func (client *Client) CreateRepository(public *models.RepositoryPublic) (*models
 	return models.CreateRepositoryPublicFromGet(repository), nil
 }
 
+// UpdateRepository updates a repository in Harbor.
 func (client *Client) UpdateRepository(public *models.RepositoryPublic) (*models.RepositoryPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update harbor repository %d. details: %w", public.ID, err)
@@ -121,6 +126,7 @@ func (client *Client) UpdateRepository(public *models.RepositoryPublic) (*models
 	return client.ReadRepository(public.Name)
 }
 
+// DeleteRepository deletes a repository from Harbor.
 func (client *Client) DeleteRepository(name string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete repository %s. details: %w", name, err)

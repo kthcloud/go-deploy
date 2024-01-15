@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+// ReadPV reads a PersistentVolume from Kubernetes.
 func (client *Client) ReadPV(id string) (*models.PvPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to read k8s pv %s. details: %w", id, err)
@@ -35,6 +36,7 @@ func (client *Client) ReadPV(id string) (*models.PvPublic, error) {
 	return nil, nil
 }
 
+// CreatePV creates a PersistentVolume in Kubernetes.
 func (client *Client) CreatePV(public *models.PvPublic) (*models.PvPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create k8s pv %s. details: %w", public.Name, err)
@@ -61,6 +63,7 @@ func (client *Client) CreatePV(public *models.PvPublic) (*models.PvPublic, error
 	return models.CreatePvPublicFromRead(res), nil
 }
 
+// DeletePV deletes a PersistentVolume in Kubernetes.
 func (client *Client) DeletePV(id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete k8s pv %s. details: %w", id, err)
@@ -93,6 +96,7 @@ func (client *Client) DeletePV(id string) error {
 	return nil
 }
 
+// waitPvDeleted waits for a PersistentVolume to be deleted.
 func (client *Client) waitPvDeleted(name string) error {
 	maxWait := 120
 	for i := 0; i < maxWait; i++ {

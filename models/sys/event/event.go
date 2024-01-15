@@ -3,6 +3,7 @@ package event
 import "time"
 
 const (
+	// TypeHttpRequest is the event type of HTTP requests.
 	TypeHttpRequest = "httpRequest"
 )
 
@@ -16,6 +17,9 @@ type Event struct {
 	Type      string    `bson:"type"`
 	CreatedAt time.Time `bson:"createdAt"`
 
-	Source   *Source                `bson:"source,omitempty"`
+	// Source is the source of an event, meaning from where the event originated.
+	Source *Source `bson:"source,omitempty"`
+
+	// Metadata contains any data related to the event.
 	Metadata map[string]interface{} `bson:"metadata,omitempty"`
 }

@@ -7,10 +7,12 @@ import (
 	"go-deploy/models/sys/base/resource"
 )
 
+// Client is used to manage users in the database.
 type Client struct {
 	resource.ResourceClient[User]
 }
 
+// New returns a new user client.
 func New() *Client {
 	return &Client{
 		ResourceClient: resource.ResourceClient[User]{
@@ -20,6 +22,8 @@ func New() *Client {
 	}
 }
 
+// WithSearch searches the `users` collection for the given search string.
+// It uses the text index on the `users` collection to search.
 func (client *Client) WithSearch(search string) *Client {
 	client.Search = &models.SearchParams{
 		Query:  search,
@@ -29,6 +33,7 @@ func (client *Client) WithSearch(search string) *Client {
 	return client
 }
 
+// WithPagination adds pagination to the client.
 func (client *Client) WithPagination(page, pageSize int) *Client {
 	client.ResourceClient.Pagination = &base.Pagination{
 		Page:     page,

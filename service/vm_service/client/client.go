@@ -7,6 +7,7 @@ import (
 	"go-deploy/service"
 )
 
+// BaseClient is the base client for all the subsystems client for VMs and GPUs.
 type BaseClient[parent any] struct {
 	p *parent
 
@@ -17,6 +18,7 @@ type BaseClient[parent any] struct {
 	Auth *service.AuthInfo
 }
 
+// NewBaseClient creates a new BaseClient.
 func NewBaseClient[parent any](cache *service.Cache) BaseClient[parent] {
 	if cache == nil {
 		cache = service.NewCache()
@@ -25,10 +27,14 @@ func NewBaseClient[parent any](cache *service.Cache) BaseClient[parent] {
 	return BaseClient[parent]{Cache: cache}
 }
 
+// SetParent sets the parent of the client.
+// This ensures the correct parent client is returned when calling builder methods.
 func (c *BaseClient[parent]) SetParent(p *parent) {
 	c.p = p
 }
 
+// VM returns the VM with the given ID.
+// After a successful fetch, the VM will be cached.
 func (c *BaseClient[parent]) VM(id string, vmc *vmModels.Client) (*vmModels.VM, error) {
 	vm := c.Cache.GetVM(id)
 	if vm == nil {
@@ -38,11 +44,15 @@ func (c *BaseClient[parent]) VM(id string, vmc *vmModels.Client) (*vmModels.VM, 
 	return vm, nil
 }
 
+// VMs returns a list of VMs.
+// After a successful fetch, the VMs will be cached.
 func (c *BaseClient[parent]) VMs(vmc *vmModels.Client) ([]vmModels.VM, error) {
 	// Right now we don't have a way to skip fetching when requesting a list of resources
 	return c.fetchVMs(vmc)
 }
 
+// GPU returns the GPU with the given ID.
+// After a successful fetch, the GPU will be cached.
 func (c *BaseClient[parent]) GPU(id string, gmc *gpuModels.Client) (*gpuModels.GPU, error) {
 	gpu := c.Cache.GetGPU(id)
 	if gpu == nil {
@@ -52,20 +62,28 @@ func (c *BaseClient[parent]) GPU(id string, gmc *gpuModels.Client) (*gpuModels.G
 	return gpu, nil
 }
 
+// GPUs returns a list of GPUs.
+// After a successful fetch, the GPUs will be cached.
 func (c *BaseClient[parent]) GPUs(gmc *gpuModels.Client) ([]gpuModels.GPU, error) {
 	// Right now we don't have a way to skip fetching when requesting a list of resources
 	return c.fetchGPUs(gmc)
 }
 
+// WithAuth sets the auth on the context.
+// This is used to perform authorization checks.
 func (c *BaseClient[parent]) WithAuth(auth *service.AuthInfo) *parent {
 	c.Auth = auth
 	return c.p
 }
 
+// Refresh refreshes the VM with the given ID.
+// After a successful fetch, the VM will be cached.
 func (c *BaseClient[parent]) Refresh(id string) (*vmModels.VM, error) {
 	return c.fetchVM(id, "", nil)
 }
 
+// fetchVM fetches a VM by ID or name.
+// After a successful fetch, the VM will be cached.
 func (c *BaseClient[parent]) fetchVM(id, name string, vmc *vmModels.Client) (*vmModels.VM, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to fetch vm in service client: %w", err)
@@ -98,6 +116,8 @@ func (c *BaseClient[parent]) fetchVM(id, name string, vmc *vmModels.Client) (*vm
 	return vm, nil
 }
 
+// fetchVMs fetches all VMs according to the given vmc.
+// After a successful fetch, the VMs will be cached.
 func (c *BaseClient[parent]) fetchVMs(vmc *vmModels.Client) ([]vmModels.VM, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to fetch gpus in service client: %w", err)
@@ -120,6 +140,8 @@ func (c *BaseClient[parent]) fetchVMs(vmc *vmModels.Client) ([]vmModels.VM, erro
 	return vms, nil
 }
 
+// fetchGPU fetches a GPU by ID.
+// After a successful fetch, the GPU will be cached.
 func (c *BaseClient[parent]) fetchGPU(id string, gmc *gpuModels.Client) (*gpuModels.GPU, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to fetch gpu in service client: %w", err)
@@ -142,6 +164,8 @@ func (c *BaseClient[parent]) fetchGPU(id string, gmc *gpuModels.Client) (*gpuMod
 	return gpu, nil
 }
 
+// fetchGPUs fetches all GPUs according to the given gmc.
+// After a successful fetch, the GPUs will be cached.
 func (c *BaseClient[parent]) fetchGPUs(gmc *gpuModels.Client) ([]gpuModels.GPU, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to fetch gpus in service client: %w", err)

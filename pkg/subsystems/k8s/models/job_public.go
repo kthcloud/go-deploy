@@ -25,6 +25,7 @@ func (job *JobPublic) IsPlaceholder() bool {
 	return false
 }
 
+// CreateJobPublicFromRead creates a JobPublic from a v1.Job.
 func CreateJobPublicFromRead(job *v1.Job) *JobPublic {
 
 	var volumes []Volume

@@ -7,14 +7,19 @@ import (
 	"io"
 )
 
+// getRobotFullName returns the full name of a robot.
+// This is used because Harbor returns a prepended name (default: robot$) when listing robots.
 func getRobotFullName(projectName, name string) string {
 	return fmt.Sprintf("robot$%s", getRobotName(projectName, name))
 }
 
+// getRobotName returns the name of a robot.
+// This is used because Harbor returns a prepended name (default: robot$) when listing robots.
 func getRobotName(projectName, name string) string {
 	return fmt.Sprintf("%s+%s", projectName, name)
 }
 
+// makeApiError parses an API error from a response body.
 func makeApiError(readCloser io.ReadCloser, makeError func(error) error) error {
 	body, err := requestutils.ReadBody(readCloser)
 	if err != nil {

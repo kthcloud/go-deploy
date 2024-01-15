@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+// ReadHPA reads a HorizontalPodAutoscaler from Kubernetes.
 func (client *Client) ReadHPA(id string) (*models.HpaPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to read k8s hpa %s. details: %w", id, err)
@@ -35,6 +36,7 @@ func (client *Client) ReadHPA(id string) (*models.HpaPublic, error) {
 	return nil, nil
 }
 
+// CreateHPA creates a HorizontalPodAutoscaler in Kubernetes.
 func (client *Client) CreateHPA(public *models.HpaPublic) (*models.HpaPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create k8s hpa %s. details: %w", public.Name, err)
@@ -61,6 +63,7 @@ func (client *Client) CreateHPA(public *models.HpaPublic) (*models.HpaPublic, er
 	return models.CreateHpaPublicFromRead(res), nil
 }
 
+// UpdateHPA updates a HorizontalPodAutoscaler in Kubernetes.
 func (client *Client) UpdateHPA(public *models.HpaPublic) (*models.HpaPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update k8s hpa %s. details: %w", public.ID, err)
@@ -84,6 +87,7 @@ func (client *Client) UpdateHPA(public *models.HpaPublic) (*models.HpaPublic, er
 	return nil, nil
 }
 
+// DeleteHPA deletes a HorizontalPodAutoscaler in Kubernetes.
 func (client *Client) DeleteHPA(id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete k8s hpa %s. details: %w", id, err)

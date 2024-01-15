@@ -1,7 +1,6 @@
 package models
 
 import (
-	"fmt"
 	modelv2 "github.com/mittwald/goharbor-client/v5/apiv2/model"
 	"strings"
 	"time"
@@ -24,6 +23,7 @@ func (r *RobotPublic) IsPlaceholder() bool {
 	return false
 }
 
+// CreateRobotPublicFromGet converts a modelv2.Robot to a RobotPublic.
 func CreateRobotPublicFromGet(robot *modelv2.Robot) *RobotPublic {
 	return &RobotPublic{
 		ID:         int(robot.ID),
@@ -35,10 +35,8 @@ func CreateRobotPublicFromGet(robot *modelv2.Robot) *RobotPublic {
 	}
 }
 
-func getRobotFullName(projectName, name string) string {
-	return fmt.Sprintf("robot$%s", getRobotName(projectName, name))
-}
-
+// extractRobotRealName extracts the real name of a robot from the name returned by the API.
+// This is because the API returns the name as <project name>$<robot name>+<project name>
 func extractRobotRealName(name string) string {
 	robotAndProject := strings.Split(name, "$")
 	if len(robotAndProject) != 2 {
@@ -51,8 +49,4 @@ func extractRobotRealName(name string) string {
 	}
 
 	return onlyRobot[1]
-}
-
-func getRobotName(projectName, name string) string {
-	return fmt.Sprintf("%s+%s", projectName, name)
 }

@@ -7,6 +7,7 @@ import (
 	"go-deploy/pkg/subsystems/gitlab/models"
 )
 
+// ReadLastJob reads the last job from GitLab.
 func (client *Client) ReadLastJob(projectID int) (*models.JobPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to read last job. details: %w", err)
@@ -24,6 +25,8 @@ func (client *Client) ReadLastJob(projectID int) (*models.JobPublic, error) {
 	return nil, nil
 }
 
+// GetJobTrace gets the trace of a job.
+// The entire file is read into memory, and converted to a string.
 func (client *Client) GetJobTrace(projectID int, jobID int) (string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get job trace. details: %w", err)

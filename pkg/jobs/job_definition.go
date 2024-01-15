@@ -7,6 +7,8 @@ import (
 	va "go-deploy/models/sys/vm"
 )
 
+// JobDefinition is a definition of a job.
+// It contains the job itself and the functions that are executed when the job is created, updated, deleted, etc.
 type JobDefinition struct {
 	Job           *jobModels.Job
 	JobFunc       func(*jobModels.Job) error
@@ -17,6 +19,7 @@ type JobDefinition struct {
 
 type JobDefinitions map[string]JobDefinition
 
+// GetJobDef returns the job definition for the given job.
 func GetJobDef(job *jobModels.Job) *JobDefinition {
 	jobDef, ok := jobMapper()[job.Type]
 	if !ok {
@@ -28,6 +31,7 @@ func GetJobDef(job *jobModels.Job) *JobDefinition {
 	return &jobDef
 }
 
+// jobMapper maps job types to job definitions.
 func jobMapper() map[string]JobDefinition {
 	coreJobVM := Builder().Add(vmDeleted)
 	leafJobVM := Builder().Add(vmDeleted).Add(updatingOwner)
@@ -143,20 +147,25 @@ func jobMapper() map[string]JobDefinition {
 	}
 }
 
+// TerminateFuncBuilder is a builder for terminate functions.
+// It uses the builder pattern to add multiple terminate functions to one terminate function.
 type TerminateFuncBuilder struct {
 	terminateFuncs []func(*jobModels.Job) (bool, error)
 }
 
+// Builder returns a new TerminateFuncBuilder.
 func Builder() *TerminateFuncBuilder {
 	return &TerminateFuncBuilder{}
 }
 
+// Add adds a new terminate function to the builder.
 func (builder *TerminateFuncBuilder) Add(terminateFunc func(*jobModels.Job) (bool, error)) *TerminateFuncBuilder {
 	builder.terminateFuncs = append(builder.terminateFuncs, terminateFunc)
 
 	return builder
 }
 
+// Build builds the terminate function.
 func (builder *TerminateFuncBuilder) Build() func(*jobModels.Job) (bool, error) {
 	return func(job *jobModels.Job) (bool, error) {
 		for _, terminateFunc := range builder.terminateFuncs {

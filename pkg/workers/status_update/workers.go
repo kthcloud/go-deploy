@@ -16,12 +16,15 @@ import (
 func vmStatusUpdater(ctx context.Context) {
 	defer workers.OnStop("vmStatusUpdater")
 
+	reportTick := time.Tick(1 * time.Second)
+	tick := time.Tick(1 * time.Second)
+
 	for {
 		select {
-		case <-time.After(1 * time.Second):
+		case <-reportTick:
 			workers.ReportUp("vmStatusUpdater")
 
-		case <-time.After(1 * time.Second):
+		case <-tick:
 			allVms, err := vmModels.New().List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching vms: %w", err))
@@ -59,12 +62,15 @@ func vmStatusUpdater(ctx context.Context) {
 func vmSnapshotUpdater(ctx context.Context) {
 	defer workers.OnStop("vmSnapshotUpdater")
 
+	reportTick := time.Tick(1 * time.Second)
+	tick := time.Tick(5 * time.Second)
+
 	for {
 		select {
-		case <-time.After(1 * time.Second):
+		case <-reportTick:
 			workers.ReportUp("vmSnapshotUpdater")
 
-		case <-time.After(5 * time.Second):
+		case <-tick:
 			allVms, err := vmModels.New().List()
 			if err != nil {
 				log.Println("error fetching vms: ", err)
@@ -77,7 +83,7 @@ func vmSnapshotUpdater(ctx context.Context) {
 					continue
 				}
 
-				_ = vmModels.New().UpdateSubsystemByID(vm.ID, "cs.snapshotMap", snapshotMap)
+				_ = vmModels.New().SetSubsystem(vm.ID, "cs.snapshotMap", snapshotMap)
 			}
 		case <-ctx.Done():
 			return
@@ -88,12 +94,15 @@ func vmSnapshotUpdater(ctx context.Context) {
 func deploymentStatusUpdater(ctx context.Context) {
 	defer workers.OnStop("deploymentStatusUpdater")
 
+	reportTick := time.Tick(1 * time.Second)
+	tick := time.Tick(1 * time.Second)
+
 	for {
 		select {
-		case <-time.After(1 * time.Second):
+		case <-reportTick:
 			workers.ReportUp("deploymentStatusUpdater")
 
-		case <-time.After(1 * time.Second):
+		case <-tick:
 			allDeployments, err := deploymentModels.New().List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching deployments. details: %w", err))

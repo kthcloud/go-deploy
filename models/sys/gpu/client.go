@@ -8,10 +8,12 @@ import (
 	"time"
 )
 
+// Client is used to manage GPUs in the database.
 type Client struct {
 	resource.ResourceClient[GPU]
 }
 
+// New returns a new GPU client.
 func New() *Client {
 	return &Client{
 		ResourceClient: resource.ResourceClient[GPU]{
@@ -20,6 +22,7 @@ func New() *Client {
 	}
 }
 
+// WithPagination sets the pagination for the client.
 func (client *Client) WithPagination(page, pageSize int) *Client {
 	client.ResourceClient.Pagination = &base.Pagination{
 		Page:     page,
@@ -29,6 +32,7 @@ func (client *Client) WithPagination(page, pageSize int) *Client {
 	return client
 }
 
+// WithExclusion adds a filter to the client to exclude the given hosts and GPUs.
 func (client *Client) WithExclusion(excludedHosts []string, excludedGPUs []string) *Client {
 	if excludedHosts == nil {
 		excludedHosts = make([]string, 0)
@@ -48,6 +52,8 @@ func (client *Client) WithExclusion(excludedHosts []string, excludedGPUs []strin
 	return client
 }
 
+// OnlyAvailable adds a filter to the client to only include available GPUs.
+// Available GPUs are GPUs that are not leased, or whose lease has expired.
 func (client *Client) OnlyAvailable() *Client {
 	filter := bson.D{
 		{"$or", []interface{}{
@@ -62,6 +68,7 @@ func (client *Client) OnlyAvailable() *Client {
 	return client
 }
 
+// WithVM adds a filter to the client to only include GPUs attached to the given VM.
 func (client *Client) WithVM(vmID string) *Client {
 	client.ResourceClient.AddExtraFilter(bson.D{{"lease.vmId", vmID}})
 

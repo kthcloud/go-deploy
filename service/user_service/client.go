@@ -7,6 +7,7 @@ import (
 	"sort"
 )
 
+// Client is the client for the User service.
 type Client struct {
 
 	// Cache is used to cache the resources fetched inside the service.
@@ -16,6 +17,7 @@ type Client struct {
 	Auth *service.AuthInfo
 }
 
+// New creates a new User service client.
 func New() *Client {
 	return &Client{
 		Cache: service.NewCache(),
@@ -23,11 +25,14 @@ func New() *Client {
 }
 
 // WithAuth sets the auth on the context.
+// This is used to perform authorization checks.
 func (c *Client) WithAuth(auth *service.AuthInfo) *Client {
 	c.Auth = auth
 	return c
 }
 
+// User returns the User with the given ID.
+// After a successful fetch, the User will be cached.
 func (c *Client) User(id string, umc *userModels.Client) (*userModels.User, error) {
 	user := c.Cache.GetUser(id)
 	if user == nil {
@@ -43,6 +48,8 @@ func (c *Client) User(id string, umc *userModels.Client) (*userModels.User, erro
 	return user, nil
 }
 
+// Users returns a list of Users.
+// After a successful fetch, the Users will be cached.
 func (c *Client) Users(umc *userModels.Client) ([]userModels.User, error) {
 	// Right now we don't have a way to skip fetching when requesting a list of resources
 	users, err := umc.List()
@@ -61,6 +68,8 @@ func (c *Client) Users(umc *userModels.Client) ([]userModels.User, error) {
 	return users, nil
 }
 
+// RefreshUser refreshes the User with the given ID.
+// After a successful fetch, the User will be cached.
 func (c *Client) RefreshUser(id string, umc *userModels.Client) (*userModels.User, error) {
 	user, err := umc.GetByID(id)
 	if err != nil {
@@ -71,6 +80,8 @@ func (c *Client) RefreshUser(id string, umc *userModels.Client) (*userModels.Use
 	return user, nil
 }
 
+// Team returns the Team with the given ID.
+// After a successful fetch, the Team will be cached.
 func (c *Client) Team(id string, tmc *teamModels.Client) (*teamModels.Team, error) {
 	team := c.Cache.GetTeam(id)
 	if team == nil {
@@ -86,6 +97,8 @@ func (c *Client) Team(id string, tmc *teamModels.Client) (*teamModels.Team, erro
 	return team, nil
 }
 
+// Teams returns a list of Teams.
+// After a successful fetch, the Teams will be cached.
 func (c *Client) Teams(tmc *teamModels.Client) ([]teamModels.Team, error) {
 	// Right now we don't have a way to skip fetching when requesting a list of resources
 	teams, err := tmc.List()
@@ -104,6 +117,8 @@ func (c *Client) Teams(tmc *teamModels.Client) ([]teamModels.Team, error) {
 	return teams, nil
 }
 
+// RefreshTeam refreshes the Team with the given ID.
+// After a successful fetch, the Team will be cached.
 func (c *Client) RefreshTeam(id string, tmc *teamModels.Client) (*teamModels.Team, error) {
 	team, err := tmc.GetByID(id)
 	if err != nil {

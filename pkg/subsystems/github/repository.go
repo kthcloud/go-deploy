@@ -7,6 +7,7 @@ import (
 	"log"
 )
 
+// ReadRepository reads a repository from GitHub.
 func (client *Client) ReadRepository(id int64) (*models.RepositoryPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to read repository %d. details: %w", id, err)

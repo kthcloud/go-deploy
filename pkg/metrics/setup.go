@@ -12,6 +12,7 @@ import (
 var Metrics MetricsType
 
 const (
+	// Prefix is the prefix for all metrics.
 	Prefix = "go_deploy_"
 )
 
@@ -27,16 +28,25 @@ type MetricDefinition struct {
 }
 
 const (
-	KeyUsersTotal         = "metrics:users:total"
-	KeyDailyActiveUsers   = "metrics:users:daily_active"
+	// KeyUsersTotal is the key for the total number of users.
+	KeyUsersTotal = "metrics:users:total"
+	// KeyDailyActiveUsers is the key for the number of users that has been active every day the last 2 days.
+	KeyDailyActiveUsers = "metrics:users:daily_active"
+	// KeyMonthlyActiveUsers is the key for the number of users that has been active every month the last 2 months.
 	KeyMonthlyActiveUsers = "metrics:users:monthly_active"
 
-	KeyJobsTotal      = "metrics:jobs:total"
-	KeyJobsPending    = "metrics:jobs:pending"
-	KeyJobsRunning    = "metrics:jobs:running"
-	KeyJobsFailed     = "metrics:jobs:failed"
+	// KeyJobsTotal is the key for the total number of jobs.
+	KeyJobsTotal = "metrics:jobs:total"
+	// KeyJobsPending is the key for the total number of jobs with status job.StatusPending
+	KeyJobsPending = "metrics:jobs:pending"
+	// KeyJobsRunning is the key for the total number of jobs with status job.StatusRunning
+	KeyJobsRunning = "metrics:jobs:running"
+	// KeyJobsFailed is the key for the total number of jobs with status job.StatusFailed
+	KeyJobsFailed = "metrics:jobs:failed"
+	// KeyJobsTerminated is the key for the total number of jobs with status job.StatusTerminated
 	KeyJobsTerminated = "metrics:jobs:terminated"
-	KeyJobsCompleted  = "metrics:jobs:completed"
+	// KeyJobsCompleted is the key for the total number of jobs with status job.StatusCompleted
+	KeyJobsCompleted = "metrics:jobs:completed"
 )
 
 func Setup() {
@@ -60,10 +70,13 @@ func Setup() {
 			if err != nil {
 				log.Fatalln("failed to add metric", def.Name, "to monitor. details:", err)
 			}
+		default:
+			panic("unknown metric type " + strconv.Itoa(int(def.MetricType)))
 		}
 	}
 }
 
+// Sync synchronizes the metrics with the values in the database.
 func Sync() {
 	client := key_value.New()
 	monitor := ginmetrics.GetMonitor()
@@ -98,10 +111,13 @@ func Sync() {
 				utils.PrettyPrintError(fmt.Errorf("error setting gauge value for metric %s when synchronizing metrics. details: %w", collector.Name, err))
 				return
 			}
+		default:
+			panic("unknown metric type " + strconv.Itoa(int(collector.MetricType)))
 		}
 	}
 }
 
+// GetCollectors returns all collectors.
 func GetCollectors() []MetricDefinition {
 	defs := []MetricDefinition{
 		{

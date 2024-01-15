@@ -12,6 +12,7 @@ import (
 	"go-deploy/utils/subsystemutils"
 )
 
+// OptsAll returns the options required to get all the service tools, ie. SM, client, and generator.
 func OptsAll(smID string, overwriteOps ...client.ExtraOpts) *client.Opts {
 	var eo client.ExtraOpts
 	if len(overwriteOps) > 0 {
@@ -26,6 +27,7 @@ func OptsAll(smID string, overwriteOps ...client.ExtraOpts) *client.Opts {
 	}
 }
 
+// OptsNoGenerator returns the options required to get the SM and client.
 func OptsNoGenerator(smID string, overwriteOps ...client.ExtraOpts) *client.Opts {
 	var eo client.ExtraOpts
 	if len(overwriteOps) > 0 {

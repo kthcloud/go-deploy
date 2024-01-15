@@ -16,10 +16,12 @@ type Runner struct {
 
 const jobAttemptsLimit = 5
 
+// NewRunner creates a new job runner for the given job.
 func NewRunner(job *jobModels.Job) *Runner {
 	return &Runner{Job: job}
 }
 
+// Run runs the job, and marks it as completed, failed or terminated according to the job's result.
 func (runner *Runner) Run() {
 	if jobDef := GetJobDef(runner.Job); jobDef != nil {
 		if jobDef.TerminateFunc != nil {
@@ -58,6 +60,8 @@ func (runner *Runner) Run() {
 	}
 }
 
+// wrapper is a helper function that runs the EntryFunc, JobFunc and ExitFunc of the given job definition,
+// and updates the job's status according to the result of the JobFunc.
 func wrapper(def *JobDefinition) {
 	if def.EntryFunc != nil {
 		err := def.EntryFunc(def.Job)

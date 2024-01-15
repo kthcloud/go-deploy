@@ -1,8 +1,10 @@
 package zone
 
 const (
-	ZoneTypeDeployment = "deployment"
-	ZoneTypeVM         = "vm"
+	// TypeDeployment is a zone type for deployments.
+	TypeDeployment = "deployment"
+	// TypeVM is a zone type for VMs.
+	TypeVM = "vm"
 )
 
 type Zone struct {

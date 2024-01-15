@@ -37,7 +37,7 @@ func (c *Client) Get(id string, opts ...client.GetOptions) (*vmModels.VM, error)
 	vmc := vmModels.New()
 
 	if o.TransferCode != nil {
-		return vmc.GetByTransferCode(*o.TransferCode)
+		return vmc.WithTransferCode(*o.TransferCode).Get()
 	}
 
 	var effectiveUserID string
@@ -65,7 +65,7 @@ func (c *Client) Get(id string, opts ...client.GetOptions) (*vmModels.VM, error)
 	return c.VM(id, vmc)
 }
 
-// List lists existing deployments.
+// List lists VMs.
 //
 // It supports service.AuthInfo, and will restrict the result to ensure the user has access to the resource.
 func (c *Client) List(opts *client.ListOptions) ([]vmModels.VM, error) {
@@ -244,7 +244,7 @@ func (c *Client) Update(id string, dtoVmUpdate *body.VmUpdate) error {
 		}
 	}
 
-	err := vmModels.New().UpdateWithParamsByID(id, vmUpdate)
+	err := vmModels.New().UpdateWithParams(id, vmUpdate)
 	if err != nil {
 		if errors.Is(err, vmModels.NonUniqueFieldErr) {
 			return sErrors.NonUniqueFieldErr
@@ -389,7 +389,7 @@ func (c *Client) UpdateOwnerSetup(id string, params *body.VmUpdateOwner) (*strin
 
 	/// create a transfer notification
 	code := createTransferCode()
-	err = vmModels.New().UpdateWithParamsByID(id, &vmModels.UpdateParams{
+	err = vmModels.New().UpdateWithParams(id, &vmModels.UpdateParams{
 		TransferUserID: &params.NewOwnerID,
 		TransferCode:   &code,
 	})
@@ -436,7 +436,7 @@ func (c *Client) UpdateOwner(id string, params *body.VmUpdateOwner) error {
 
 	emptyString := ""
 
-	err = vmModels.New().UpdateWithParamsByID(id, &vmModels.UpdateParams{
+	err = vmModels.New().UpdateWithParams(id, &vmModels.UpdateParams{
 		OwnerID:        &params.NewOwnerID,
 		TransferCode:   &emptyString,
 		TransferUserID: &emptyString,
@@ -445,7 +445,7 @@ func (c *Client) UpdateOwner(id string, params *body.VmUpdateOwner) error {
 		return makeError(err)
 	}
 
-	err = gpu.New().WithVM(id).UpdateWithBson(bson.D{{"lease.user", params.NewOwnerID}})
+	err = gpu.New().WithVM(id).UpdateWithBSON(bson.D{{"lease.user", params.NewOwnerID}})
 	if err != nil {
 		return makeError(err)
 	}
@@ -489,7 +489,7 @@ func (c *Client) ClearUpdateOwner(id string) error {
 	}
 
 	emptyString := ""
-	err = vmModels.New().UpdateWithParamsByID(id, &vmModels.UpdateParams{
+	err = vmModels.New().UpdateWithParams(id, &vmModels.UpdateParams{
 		TransferUserID: &emptyString,
 		TransferCode:   &emptyString,
 	})
@@ -907,5 +907,5 @@ func GetCloudStackHostCapabilities(hostName string, zoneName string) (*CloudStac
 }
 
 func createTransferCode() string {
-	return utils.HashString(uuid.NewString())
+	return utils.HashStringAlphanumeric(uuid.NewString())
 }

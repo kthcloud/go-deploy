@@ -7,14 +7,17 @@ import (
 	"golang.org/x/oauth2"
 )
 
+// Client is a wrapper around the github.Client.
 type Client struct {
 	GitHubClient *github.Client
 }
 
+// ClientConf is the configuration for the GitHub client.
 type ClientConf struct {
 	Token string
 }
 
+// New creates a new GitHub wrapper client.
 func New(config *ClientConf) (*Client, error) {
 	_ = func(err error) error {
 		return fmt.Errorf("failed to create github client. details: %w", err)

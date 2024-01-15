@@ -12,6 +12,10 @@ import (
 	"time"
 )
 
+// CollectionDefinition is a struct that defines a collection.
+// It is used as an abstraction layer between MongoDB and the application.
+// It contains the collection name, as well as any indexes that should be
+// created on the collection.
 type CollectionDefinition struct {
 	Name    string
 	Indexes []string
@@ -22,6 +26,8 @@ type CollectionDefinition struct {
 	TextIndexFields      []string
 }
 
+// setupMongo initializes the MongoDB connection.
+// It should be called once at the start of the application.
 func (dbCtx *Context) setupMongo() error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to setup mongodb. details: %w", err)
@@ -148,6 +154,8 @@ func (dbCtx *Context) setupMongo() error {
 	return nil
 }
 
+// shutdownMongo closes the MongoDB connection.
+// It should be called once at the end of the application.
 func (dbCtx *Context) shutdownMongo() error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to shutdown database. details: %w", err)
@@ -163,6 +171,8 @@ func (dbCtx *Context) shutdownMongo() error {
 	return nil
 }
 
+// getCollectionDefinitions returns a map of all collections and their definitions,
+// including any indexes that should be created on the collection.
 func getCollectionDefinitions() map[string]CollectionDefinition {
 	return map[string]CollectionDefinition{
 		"deployments": {
@@ -226,6 +236,8 @@ func getCollectionDefinitions() map[string]CollectionDefinition {
 	}
 }
 
+// isIndexExistsError returns true if the given error is an "index exists error".
+// This is used to ignore errors when creating indexes that already exist.
 func isIndexExistsError(err error) bool {
 	if mongo.IsDuplicateKeyError(err) {
 		return true

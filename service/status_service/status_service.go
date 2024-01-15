@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// ListWorkerStatus returns the status of all workers
 func (c *Client) ListWorkerStatus(opts ...ListWorkerStatusOpts) ([]workerStatusModels.WorkerStatus, error) {
 	workerStatus, err := workerStatusModels.New().List()
 	if err != nil {

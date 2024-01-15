@@ -6,6 +6,7 @@ import (
 	"go-deploy/service/constants"
 )
 
+// ToDTO converts an SM to a body.SmRead DTO.
 func (sm *SM) ToDTO() body.SmRead {
 	var url *string
 	ingress, ok := sm.Subsystems.K8s.IngressMap[constants.SmAppName]

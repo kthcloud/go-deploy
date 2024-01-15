@@ -1,13 +1,13 @@
 package service
 
 import (
-	"fmt"
 	roleModels "go-deploy/models/sys/role"
-	userModels "go-deploy/models/sys/user"
 	"go-deploy/pkg/auth"
 	"go-deploy/pkg/config"
 )
 
+// AuthInfo is used to pass auth info to services
+// It is used to perform authorization checks.
 type AuthInfo struct {
 	UserID   string              `json:"userId"`
 	JwtToken *auth.KeycloakToken `json:"jwtToken"`
@@ -15,7 +15,8 @@ type AuthInfo struct {
 	IsAdmin  bool                `json:"isAdmin"`
 }
 
-func CreateAuthInfo(userID string, JwtToken *auth.KeycloakToken, iamGroups []string) *AuthInfo {
+// CreateAuthInfo creates an AuthInfo object
+func CreateAuthInfo(userID string, jwtToken *auth.KeycloakToken, iamGroups []string) *AuthInfo {
 	roles := config.Config.GetRolesByIamGroups(iamGroups)
 
 	isAdmin := false
@@ -27,31 +28,14 @@ func CreateAuthInfo(userID string, JwtToken *auth.KeycloakToken, iamGroups []str
 
 	return &AuthInfo{
 		UserID:   userID,
-		JwtToken: JwtToken,
+		JwtToken: jwtToken,
 		Roles:    roles,
 		IsAdmin:  isAdmin,
 	}
 }
 
-func CreateAuthInfoFromDB(userID string) (*AuthInfo, error) {
-	user, err := userModels.New().GetByID(userID)
-	if err != nil {
-		return nil, err
-	}
-
-	role := config.Config.GetRole(user.EffectiveRole.Name)
-	if role == nil {
-		return nil, fmt.Errorf("failed to get role from db effective role %s", user.EffectiveRole.Name)
-	}
-
-	return &AuthInfo{
-		UserID:   user.ID,
-		JwtToken: nil,
-		Roles:    []roleModels.Role{*role},
-		IsAdmin:  user.IsAdmin,
-	}, nil
-}
-
+// GetEffectiveRole gets the effective role of the user
+// This is effectively the strongest role the user has
 func (authInfo *AuthInfo) GetEffectiveRole() *roleModels.Role {
 	// roles are assumed to be given in order of priority, weak -> strong
 	// so, we can safely return the last one

@@ -11,6 +11,7 @@ type Tag struct {
 	Value string `json:"value" bson:"value"`
 }
 
+// FromCsTags converts the CloudStack tags to the internal tags.
 func FromCsTags(tags []cloudstack.Tags) []Tag {
 	var result []Tag
 	for _, tag := range tags {
@@ -27,6 +28,7 @@ func FromCsTags(tags []cloudstack.Tags) []Tag {
 	return result
 }
 
+// formatCreatedAt converts the CloudStack created time string to a time.Time.
 func formatCreatedAt(created string) time.Time {
 	iso8601 := "2006-01-02T15:04:05Z0700"
 	createdAt, err := time.Parse(iso8601, created)

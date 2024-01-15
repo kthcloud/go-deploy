@@ -179,7 +179,7 @@ func Create(c *gin.Context) {
 	}
 
 	if requestBody.Zone != nil {
-		zone := zone_service.New().WithAuth(auth).Get(*requestBody.Zone, zoneModels.ZoneTypeDeployment)
+		zone := zone_service.New().WithAuth(auth).Get(*requestBody.Zone, zoneModels.TypeDeployment)
 		if zone == nil {
 			context.NotFound("Zone not found")
 			return

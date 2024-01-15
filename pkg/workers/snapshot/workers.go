@@ -13,15 +13,19 @@ import (
 	"time"
 )
 
+// snapshotter is a worker that takes snapshots.
 func snapshotter(ctx context.Context) {
 	defer workers.OnStop("snapshotter")
 
+	reportTick := time.Tick(1 * time.Second)
+	tick := time.Tick(10 * time.Second)
+
 	for {
 		select {
-		case <-time.After(1 * time.Second):
+		case <-reportTick:
 			workers.ReportUp("snapshotter")
 
-		case <-time.After(10 * time.Second):
+		case <-tick:
 			vms, err := vmModels.New().List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("failed to get all vms. details: %w", err))

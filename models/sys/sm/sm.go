@@ -20,6 +20,8 @@ type SM struct {
 	Subsystems Subsystems                   `bson:"subsystems"`
 }
 
+// GetURL returns the URL of the storage manager
+// If the K8s ingress does not exist, it will return nil, or if the ingress does not have a host, it will return nil.
 func (sm *SM) GetURL() *string {
 	ingress := sm.Subsystems.K8s.GetIngress("storage-manager")
 	if subsystems.NotCreated(ingress) {

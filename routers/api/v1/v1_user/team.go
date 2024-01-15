@@ -178,7 +178,7 @@ func UpdateTeam(c *gin.Context) {
 
 	var requestQueryJoin body.TeamJoin
 	if err := context.GinContext.ShouldBindBodyWith(&requestQueryJoin, binding.JSON); err == nil {
-		JoinTeam(context, requestURI.TeamID, &requestQueryJoin)
+		joinTeam(context, requestURI.TeamID, &requestQueryJoin)
 		return
 	}
 
@@ -253,6 +253,39 @@ func DeleteTeam(c *gin.Context) {
 	context.OkNoContent()
 }
 
+// joinTeam is an alternate entrypoint for UpdateTeam that allows a user to join a team
+// It is called if a body.TeamJoin is passed in the request body, instead of a body.TeamUpdate
+func joinTeam(context sys.ClientContext, id string, requestBody *body.TeamJoin) {
+	auth, err := v1.WithAuth(&context)
+	if err != nil {
+		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+	}
+
+	team, err := user_service.New().WithAuth(auth).JoinTeam(id, requestBody)
+	if err != nil {
+		if errors.Is(err, sErrors.NotInvitedErr) {
+			context.UserError("User not invited to team")
+			return
+		}
+
+		if errors.Is(err, sErrors.BadInviteCodeErr) {
+			context.Forbidden("Bad invite code")
+			return
+		}
+
+		context.ServerError(err, v1.InternalError)
+		return
+	}
+
+	if team == nil {
+		context.NotFound("Team not found")
+		return
+	}
+
+	context.JSONResponse(http.StatusCreated, team.ToDTO(getMember, getResourceName))
+}
+
+// getMember is a helper function for converting a team member to a team member DTO
 func getMember(member *teamModels.Member) *body.TeamMember {
 	user, err := user_service.New().Get(member.ID)
 	if err != nil {
@@ -285,6 +318,8 @@ func getMember(member *teamModels.Member) *body.TeamMember {
 	}
 }
 
+// getResourceName is a helper function for converting a team resource to a resource name
+// It checks the resource type and gets the resource name from the appropriate service
 func getResourceName(resource *teamModels.Resource) *string {
 	if resource == nil {
 		return nil
@@ -319,34 +354,4 @@ func getResourceName(resource *teamModels.Resource) *string {
 
 	return nil
 
-}
-
-func JoinTeam(context sys.ClientContext, id string, requestBody *body.TeamJoin) {
-	auth, err := v1.WithAuth(&context)
-	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
-	}
-
-	team, err := user_service.New().WithAuth(auth).JoinTeam(id, requestBody)
-	if err != nil {
-		if errors.Is(err, sErrors.NotInvitedErr) {
-			context.UserError("User not invited to team")
-			return
-		}
-
-		if errors.Is(err, sErrors.BadInviteCodeErr) {
-			context.Forbidden("Bad invite code")
-			return
-		}
-
-		context.ServerError(err, v1.InternalError)
-		return
-	}
-
-	if team == nil {
-		context.NotFound("Team not found")
-		return
-	}
-
-	context.JSONResponse(http.StatusCreated, team.ToDTO(getMember, getResourceName))
 }

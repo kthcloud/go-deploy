@@ -6,16 +6,26 @@ import (
 )
 
 const (
-	TypeCustom   = "custom"
+	// TypeCustom is a deployment that builds its own image, e.g., with a Dockerfile.
+	TypeCustom = "custom"
+	// TypePrebuilt is a deployment that uses a prebuilt image, such as nginx:latest.
 	TypePrebuilt = "prebuilt"
 
-	LogSourcePod        = "pod"
+	// LogSourcePod is a log source for a pod in Kubernetes.
+	LogSourcePod = "pod"
+	// LogSourceDeployment is a log source for a deployment in go-deploy.
 	LogSourceDeployment = "deployment"
-	LogSourceBuild      = "build"
+	// LogSourceBuild is a log source for a build in GitLab CI.
+	LogSourceBuild = "build"
 
-	CustomDomainStatusPending            = "pending"
+	// CustomDomainStatusPending is the status of a custom domain that is pending verification.
+	CustomDomainStatusPending = "pending"
+	// CustomDomainStatusVerificationFailed is the status of a custom domain that failed verification.
+	// This is either caused by the DNS record not being set or the DNS record not being propagated yet.
 	CustomDomainStatusVerificationFailed = "verificationFailed"
-	CustomDomainStatusActive             = "active"
+	// CustomDomainStatusActive is the status of a custom domain that is active,
+	// i.e., the DNS record is set and propagated.
+	CustomDomainStatusActive = "active"
 )
 
 type CustomDomain struct {

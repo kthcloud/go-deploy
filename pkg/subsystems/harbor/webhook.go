@@ -9,6 +9,7 @@ import (
 	"strings"
 )
 
+// ReadWebhook reads a webhook from Harbor.
 func (client *Client) ReadWebhook(id int) (*models.WebhookPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to read webhook for %d. details: %w", id, err)
@@ -45,6 +46,7 @@ func (client *Client) ReadWebhook(id int) (*models.WebhookPublic, error) {
 	return nil, nil
 }
 
+// CreateWebhook creates a webhook in Harbor.
 func (client *Client) CreateWebhook(public *models.WebhookPublic) (*models.WebhookPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create webhook for %s. details: %w", public.Name, err)
@@ -96,6 +98,7 @@ func (client *Client) CreateWebhook(public *models.WebhookPublic) (*models.Webho
 	return nil, makeError(fmt.Errorf("webhook not found after creation"))
 }
 
+// UpdateWebhook updates a webhook in Harbor.
 func (client *Client) UpdateWebhook(public *models.WebhookPublic) (*models.WebhookPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update webhook for %d. details: %w", public.ID, err)
@@ -148,6 +151,7 @@ func (client *Client) UpdateWebhook(public *models.WebhookPublic) (*models.Webho
 	return nil, makeError(fmt.Errorf("webhook not found after update"))
 }
 
+// DeleteWebhook deletes a webhook from Harbor.
 func (client *Client) DeleteWebhook(id int) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete webhook for %d. details: %w", id, err)

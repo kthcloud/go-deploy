@@ -37,6 +37,7 @@ func (h *HpaPublic) IsPlaceholder() bool {
 	return false
 }
 
+// CreateHpaPublicFromRead creates a HpaPublic from a v2.HorizontalPodAutoscaler.
 func CreateHpaPublicFromRead(hpa *v2.HorizontalPodAutoscaler) *HpaPublic {
 	var minReplicas int
 	var maxReplicas int

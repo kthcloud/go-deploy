@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+// Client is used to manage deployments in the database.
+// It uses both the ResourceClient and ActivityResourceClient to provide a full set of operations.
 type Client struct {
 	Collection     *mongo.Collection
 	RestrictUserID *string
@@ -18,6 +20,7 @@ type Client struct {
 	resource.ResourceClient[Deployment]
 }
 
+// New returns a new deployment client.
 func New() *Client {
 	return &Client{
 		Collection: db.DB.GetCollection("deployments"),
@@ -32,6 +35,7 @@ func New() *Client {
 	}
 }
 
+// WithPagination sets the pagination for the client.
 func (client *Client) WithPagination(page, pageSize int) *Client {
 	client.ResourceClient.Pagination = &base.Pagination{
 		Page:     page,
@@ -46,6 +50,7 @@ func (client *Client) WithPagination(page, pageSize int) *Client {
 	return client
 }
 
+// ExcludeIDs adds a filter to the client to exclude the given IDs.
 func (client *Client) ExcludeIDs(ids ...string) *Client {
 	client.ResourceClient.AddExtraFilter(bson.D{{"id", bson.D{{"$nin", ids}}}})
 	client.ActivityResourceClient.AddExtraFilter(bson.D{{"id", bson.D{{"$nin", ids}}}})
@@ -53,13 +58,15 @@ func (client *Client) ExcludeIDs(ids ...string) *Client {
 	return client
 }
 
+// IncludeDeletedResources makes the client include deleted storage deployments.
 func (client *Client) IncludeDeletedResources() *Client {
 	client.IncludeDeleted = true
 
 	return client
 }
 
-func (client *Client) RestrictToOwner(ownerID string) *Client {
+// WithOwner adds a filter to the client to only include deployments with the given owner ID.
+func (client *Client) WithOwner(ownerID string) *Client {
 	client.ResourceClient.AddExtraFilter(bson.D{{"ownerId", ownerID}})
 	client.ActivityResourceClient.ExtraFilter = client.ResourceClient.ExtraFilter
 	client.RestrictUserID = &ownerID
@@ -67,6 +74,7 @@ func (client *Client) RestrictToOwner(ownerID string) *Client {
 	return client
 }
 
+// WithActivities adds a filter to the client to only include deployments with the given activities.
 func (client *Client) WithActivities(activities ...string) *Client {
 	andFilter := bson.A{}
 
@@ -79,7 +87,7 @@ func (client *Client) WithActivities(activities ...string) *Client {
 	}
 
 	filter := bson.D{{
-		"$and", andFilter,
+		"$or", andFilter,
 	}}
 
 	client.ResourceClient.AddExtraFilter(filter)
@@ -88,6 +96,7 @@ func (client *Client) WithActivities(activities ...string) *Client {
 	return client
 }
 
+// WithoutActivities adds a filter to the client to only include deployments without the given activities.
 func (client *Client) WithoutActivities(activities ...string) *Client {
 	andFilter := bson.A{}
 
@@ -109,6 +118,7 @@ func (client *Client) WithoutActivities(activities ...string) *Client {
 	return client
 }
 
+// WithNoActivities adds a filter to the client to only include deployments without any activities.
 func (client *Client) WithNoActivities() *Client {
 	filter := bson.D{{
 		"activities", bson.M{
@@ -122,6 +132,7 @@ func (client *Client) WithNoActivities() *Client {
 	return client
 }
 
+// WithGitHubWebhookID adds a filter to the client to only include deployments with the given GitHub webhook ID.
 func (client *Client) WithGitHubWebhookID(id int64) *Client {
 	filter := bson.D{{"subsystems.github.webhook.id", id}}
 
@@ -131,6 +142,7 @@ func (client *Client) WithGitHubWebhookID(id int64) *Client {
 	return client
 }
 
+// WithNameRegex adds a filter to the client to only include deployments with a name matching the given regex.
 func (client *Client) WithNameRegex(name string) *Client {
 	filter := bson.D{{"name", bson.D{{"$regex", name}}}}
 
@@ -140,6 +152,7 @@ func (client *Client) WithNameRegex(name string) *Client {
 	return client
 }
 
+// OlderThan adds a filter to the client to only include deployments created before the given timestamp.
 func (client *Client) OlderThan(timestamp time.Time) *Client {
 	filter := bson.D{{"createdAt", bson.D{{"$lt", timestamp}}}}
 
@@ -149,8 +162,19 @@ func (client *Client) OlderThan(timestamp time.Time) *Client {
 	return client
 }
 
+// WithPendingCustomDomain adds a filter to the client to only include deployments with a pending custom domain.
 func (client *Client) WithPendingCustomDomain() *Client {
 	filter := bson.D{{"apps.main.customDomain.status", bson.D{{"$ne", CustomDomainStatusActive}}}}
+
+	client.ResourceClient.AddExtraFilter(filter)
+	client.ActivityResourceClient.AddExtraFilter(filter)
+
+	return client
+}
+
+// WithTransferCode adds a filter to the client to only include deployments with the given transfer code.
+func (client *Client) WithTransferCode(code string) *Client {
+	filter := bson.D{{"transferCode", code}}
 
 	client.ResourceClient.AddExtraFilter(filter)
 	client.ActivityResourceClient.AddExtraFilter(filter)

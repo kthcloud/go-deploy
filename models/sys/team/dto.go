@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// ToDTO converts a Team to a body.TeamRead DTO.
 func (t *Team) ToDTO(getMember func(*Member) *body.TeamMember, getResourceName func(*Resource) *string) body.TeamRead {
 	resources := make([]body.TeamResource, 0)
 	members := make([]body.TeamMember, 0)
@@ -48,6 +49,7 @@ func (t *Team) ToDTO(getMember func(*Member) *body.TeamMember, getResourceName f
 	}
 }
 
+// FromDTO converts a body.TeamCreate DTO to a CreateParams.
 func (params *CreateParams) FromDTO(teamCreateDTO *body.TeamCreate, ownerID string, getResourceFunc func(string) *Resource, getMemberFunc func(*body.TeamMemberCreate) *Member) {
 	params.Name = teamCreateDTO.Name
 	params.MemberMap = make(map[string]Member)
@@ -75,10 +77,12 @@ func (params *CreateParams) FromDTO(teamCreateDTO *body.TeamCreate, ownerID stri
 	}
 }
 
+// FromDTO converts a body.TeamJoin DTO to a JoinParams.
 func (params *JoinParams) FromDTO(teamJoinDTO *body.TeamJoin) {
 	params.InvitationCode = teamJoinDTO.InvitationCode
 }
 
+// FromDTO converts a body.TeamUpdate DTO to an UpdateParams.
 func (params *UpdateParams) FromDTO(teamUpdateDTO *body.TeamUpdate, owner *Member, getResourceFunc func(string) *Resource, getMemberFunc func(*body.TeamMemberUpdate) *Member) {
 	params.Name = teamUpdateDTO.Name
 	params.Description = teamUpdateDTO.Description

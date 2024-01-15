@@ -11,6 +11,8 @@ import (
 	"go-deploy/utils"
 )
 
+// UserHttpEvent is a middleware that creates an event for the user's http request.
+// This ensures that every request is logged in the database.
 func UserHttpEvent() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		context := sys.NewContext(c)

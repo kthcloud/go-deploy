@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+// ReadJob reads a Job from Kubernetes.
 func (client *Client) ReadJob(id string) (*models.JobPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to read k8s job %s. details: %w", id, err)
@@ -35,6 +36,7 @@ func (client *Client) ReadJob(id string) (*models.JobPublic, error) {
 	return nil, nil
 }
 
+// CreateJob creates a Job in Kubernetes.
 func (client *Client) CreateJob(public *models.JobPublic) (*models.JobPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create k8s job %s. details: %w", public.Name, err)
@@ -61,6 +63,7 @@ func (client *Client) CreateJob(public *models.JobPublic) (*models.JobPublic, er
 	return models.CreateJobPublicFromRead(res), nil
 }
 
+// DeleteJob deletes a Job in Kubernetes.
 func (client *Client) DeleteJob(id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete k8s job %s. details: %w", id, err)

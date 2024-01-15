@@ -7,10 +7,13 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
+// Client is the client for the event resource.
+// It is used to query the database for events, and extends resource.ResourceClient.
 type Client struct {
 	resource.ResourceClient[Event]
 }
 
+// New returns a new event client.
 func New() *Client {
 	return &Client{
 		ResourceClient: resource.ResourceClient[Event]{
@@ -21,7 +24,8 @@ func New() *Client {
 	}
 }
 
-func (client *Client) AddPagination(page, pageSize int) *Client {
+// WithPagination sets the pagination for the client.
+func (client *Client) WithPagination(page, pageSize int) *Client {
 	client.Pagination = &base.Pagination{
 		Page:     page,
 		PageSize: pageSize,
@@ -30,6 +34,7 @@ func (client *Client) AddPagination(page, pageSize int) *Client {
 	return client
 }
 
+// AddExtraFilter adds an extra custom filter to the client.
 func (client *Client) AddExtraFilter(filter bson.D) *Client {
 	client.AddExtraFilter(filter)
 

@@ -165,6 +165,7 @@ func Update(c *gin.Context) {
 	context.Ok(updated.ToDTO(jobStatusMessage(updated.Status)))
 }
 
+// jobStatusMessage is a helper function to get a parsed status message for a job
 func jobStatusMessage(status string) string {
 	switch status {
 	case jobModels.StatusPending:

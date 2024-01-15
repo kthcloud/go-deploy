@@ -214,10 +214,7 @@ func (c *Client) Update(id string, params *deploymentModels.UpdateParams) error 
 
 // EnsureOwner ensures the owner of the Harbor setup for the deployment.
 //
-// If the owner of the deployment does match with the ID specified by WithUserID,
-// it will update the Harbor setup to match the new owner.
-//
-// This will always trigger a call to Repair.
+// This includes copying over the repository artifact and to ensure the new user project exists in Harbor.
 func (c *Client) EnsureOwner(id string, oldOwnerID string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update harbor owner for deployment %s. details: %w", id, err)
@@ -410,8 +407,8 @@ func (c *Client) Repair(id string) error {
 func dbFunc(id, key string) func(interface{}) error {
 	return func(data interface{}) error {
 		if data == nil {
-			return deploymentModels.New().DeleteSubsystemByID(id, "harbor."+key)
+			return deploymentModels.New().DeleteSubsystem(id, "harbor."+key)
 		}
-		return deploymentModels.New().UpdateSubsystemByID(id, "harbor."+key, data)
+		return deploymentModels.New().SetSubsystem(id, "harbor."+key, data)
 	}
 }

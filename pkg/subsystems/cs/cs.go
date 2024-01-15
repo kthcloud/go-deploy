@@ -7,6 +7,7 @@ import (
 	"go-deploy/pkg/imp/cloudstack"
 )
 
+// ClientConf is the configuration for the CloudStack client.
 type ClientConf struct {
 	URL    string
 	ApiKey string
@@ -19,6 +20,7 @@ type ClientConf struct {
 	TemplateID  string
 }
 
+// Client is a wrapper around a CloudStack client.
 type Client struct {
 	CsClient                *cloudstack.CloudStackClient
 	RootIpAddressID         string
@@ -33,6 +35,7 @@ type Client struct {
 	adminSshPublicKey *string
 }
 
+// New creates a new CloudStack wrapper client.
 func New(config *ClientConf) (*Client, error) {
 	makeErr := func(err error) error {
 		return fmt.Errorf("failed to create cloudstack client. details: %w", err)
@@ -57,7 +60,7 @@ func New(config *ClientConf) (*Client, error) {
 		TemplateID:      config.TemplateID,
 	}
 
-	soID, err := client.getCustomSoID()
+	soID, err := client.getCustomServiceOfferingID()
 	if err != nil {
 		return nil, makeErr(err)
 	}
@@ -67,11 +70,13 @@ func New(config *ClientConf) (*Client, error) {
 	return &client, nil
 }
 
+// WithUserSshPublicKey sets the user SSH public key.
 func (client *Client) WithUserSshPublicKey(key string) *Client {
 	client.userSshPublicKey = &key
 	return client
 }
 
+// WithAdminSshPublicKey sets the admin SSH public key.
 func (client *Client) WithAdminSshPublicKey(key string) *Client {
 	client.adminSshPublicKey = &key
 	return client

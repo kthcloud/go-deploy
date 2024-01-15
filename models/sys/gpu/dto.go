@@ -5,6 +5,7 @@ import (
 	"go-deploy/models/dto/body"
 )
 
+// ToDTO converts a GPU to a body.GpuRead DTO.
 func (gpu *GPU) ToDTO(addUserInfo bool) body.GpuRead {
 	id := base64.StdEncoding.EncodeToString([]byte(gpu.ID))
 

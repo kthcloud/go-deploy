@@ -19,40 +19,6 @@ import (
 	"go-deploy/utils"
 )
 
-func collectUsage(userID string) (*userModels.Usage, error) {
-	vmUsage, err := vm_service.New().GetUsage(userID)
-	if err != nil {
-		return nil, err
-	}
-
-	deploymentUsage, err := deployment_service.New().GetUsage(userID)
-	if err != nil {
-		return nil, err
-	}
-
-	usage := &userModels.Usage{
-		Deployments: deploymentUsage.Count,
-		CpuCores:    vmUsage.CpuCores,
-		RAM:         vmUsage.RAM,
-		DiskSize:    vmUsage.DiskSize,
-	}
-
-	return usage, nil
-}
-
-func getSmURL(userID string, auth *service.AuthInfo) (*string, error) {
-	sm, err := sm_service.New().WithAuth(auth).GetByUserID(userID)
-	if err != nil {
-		return nil, err
-	}
-
-	if sm == nil {
-		return nil, nil
-	}
-
-	return sm.GetURL(), nil
-}
-
 // ListUsers
 // @Summary Get user list
 // @Description Get user list
@@ -298,4 +264,41 @@ func Update(c *gin.Context) {
 	}
 
 	context.JSONResponse(200, updated.ToDTO(effectiveRole, usage, storageURL))
+}
+
+// collectUsage is helper function to collect usage for a user.
+// This includes how many deployments, cpu cores, ram and disk size etc. the user has.
+func collectUsage(userID string) (*userModels.Usage, error) {
+	vmUsage, err := vm_service.New().GetUsage(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	deploymentUsage, err := deployment_service.New().GetUsage(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	usage := &userModels.Usage{
+		Deployments: deploymentUsage.Count,
+		CpuCores:    vmUsage.CpuCores,
+		RAM:         vmUsage.RAM,
+		DiskSize:    vmUsage.DiskSize,
+	}
+
+	return usage, nil
+}
+
+// getSmURL is helper function to get storage manager url for a user.
+func getSmURL(userID string, auth *service.AuthInfo) (*string, error) {
+	sm, err := sm_service.New().WithAuth(auth).GetByUserID(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if sm == nil {
+		return nil, nil
+	}
+
+	return sm.GetURL(), nil
 }

@@ -1,14 +1,20 @@
 package confirm
 
 import (
+	"errors"
 	"fmt"
 	deploymentModels "go-deploy/models/sys/deployment"
 	"go-deploy/models/sys/gpu"
 	"go-deploy/models/sys/sm"
 	"go-deploy/models/sys/vm"
 	"go-deploy/models/sys/vm_port"
+	"go-deploy/pkg/config"
+	"go-deploy/utils"
+	"log"
+	"net"
 )
 
+// appDeletedK8s checks if the K8s setup for the given app is deleted.
 func appDeletedK8s(deployment *deploymentModels.Deployment, app *deploymentModels.App) bool {
 	for _, volume := range app.Volumes {
 		pv := deployment.Subsystems.K8s.PvMap[volume.Name]
@@ -62,6 +68,7 @@ func appDeletedK8s(deployment *deploymentModels.Deployment, app *deploymentModel
 	return deploymentDeleted && serviceDeleted && ingressDeleted && secretDeleted && hpaDeleted
 }
 
+// k8sDeleted checks if the K8s setup for the given deployment is deleted.
 func k8sDeletedDeployment(deployment *deploymentModels.Deployment) (bool, error) {
 	_ = func(err error) error {
 		return fmt.Errorf("failed to check if k8s setup is deleted for deployment %s. details: %w", deployment.Name, err)
@@ -83,6 +90,7 @@ func k8sDeletedDeployment(deployment *deploymentModels.Deployment) (bool, error)
 	return k8s.Namespace.ID == "", nil
 }
 
+// harborDeleted checks if the Harbor setup for the given deployment is deleted.
 func harborDeleted(deployment *deploymentModels.Deployment) (bool, error) {
 	_ = func(err error) error {
 		return fmt.Errorf("failed to check if harbor is created for deployment %s. details: %w", deployment.Name, err)
@@ -95,6 +103,7 @@ func harborDeleted(deployment *deploymentModels.Deployment) (bool, error) {
 		harbor.Webhook.ID == 0, nil
 }
 
+// gitHubDeleted checks if the GitHub setup for the given deployment is deleted.
 func gitHubDeleted(deployment *deploymentModels.Deployment) (bool, error) {
 	_ = func(err error) error {
 		return fmt.Errorf("failed to check if github is created for deployment %s. details: %w", deployment.Name, err)
@@ -109,6 +118,7 @@ func gitHubDeleted(deployment *deploymentModels.Deployment) (bool, error) {
 	return github.Webhook.ID == 0, nil
 }
 
+// k8sDeleted checks if the K8s setup for the given storage manager is deleted.
 func k8sDeletedSM(sm *sm.SM) (bool, error) {
 	k8s := &sm.Subsystems.K8s
 
@@ -143,6 +153,7 @@ func k8sDeletedSM(sm *sm.SM) (bool, error) {
 	return k8s.Namespace.ID == "", nil
 }
 
+// csDeleted checks if the CS setup for the given VM is deleted.
 func csDeleted(vm *vm.VM) (bool, error) {
 	cs := &vm.Subsystems.CS
 
@@ -159,6 +170,7 @@ func csDeleted(vm *vm.VM) (bool, error) {
 	return true, nil
 }
 
+// k8sDeleted checks if the K8s setup for the given VM is deleted.
 func k8sDeletedVM(vm *vm.VM) (bool, error) {
 	k8s := &vm.Subsystems.K8s
 
@@ -177,6 +189,7 @@ func k8sDeletedVM(vm *vm.VM) (bool, error) {
 	return k8s.Namespace.ID == "", nil
 }
 
+// gpuCleared checks if the GPU setup for the given VM is cleared.
 func gpuCleared(vm *vm.VM) (bool, error) {
 	exists, err := gpu.New().WithVM(vm.ID).ExistsAny()
 	if err != nil {
@@ -186,6 +199,7 @@ func gpuCleared(vm *vm.VM) (bool, error) {
 	return !exists, nil
 }
 
+// portsCleared checks if the ports setup for the given VM is cleared.
 func portsCleared(vm *vm.VM) (bool, error) {
 	exists, err := vm_port.New().WithVmID(vm.ID).ExistsAny()
 	if err != nil {
@@ -193,4 +207,45 @@ func portsCleared(vm *vm.VM) (bool, error) {
 	}
 
 	return !exists, nil
+}
+
+// checkCustomDomain checks if the custom domain is setup.
+// This polls the TXT record of the custom domain to check if the secret is set.
+func checkCustomDomain(domain string, secret string) (bool, error) {
+	subDomain := config.Config.Deployment.CustomDomainTxtRecordSubdomain
+
+	txtRecordDomain := subDomain + "." + domain
+	txtRecord, err := net.LookupTXT(txtRecordDomain)
+	if err != nil {
+		// If error is "no such host", it means the DNS record does not exist yet
+		var targetErr *net.DNSError
+		if ok := errors.As(err, &targetErr); ok && targetErr.IsNotFound {
+			log.Printf("no TXT record found under %s when confirming custom domain %s\n", subDomain, domain)
+			return false, nil
+		}
+
+		utils.PrettyPrintError(fmt.Errorf("failed to lookup TXT record under %s for custom domain %s. details: %w", subDomain, domain, err))
+		return false, err
+	}
+
+	if len(txtRecord) == 0 {
+		log.Printf("no TXT record found under %s when confirming custom domain %s\n", subDomain, domain)
+		return false, nil
+	}
+
+	match := false
+	for _, r := range txtRecord {
+		if r == secret {
+			match = true
+			break
+		}
+	}
+
+	if !match {
+		log.Printf("TXT record found under %s for custom domain %s but secret does not match\n", subDomain, domain)
+		return false, nil
+	}
+
+	return match, nil
+
 }

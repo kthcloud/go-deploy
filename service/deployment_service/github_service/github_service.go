@@ -263,8 +263,8 @@ func GetAccessTokenByCode(code string) (string, error) {
 func dbFunc(id, key string) func(interface{}) error {
 	return func(data interface{}) error {
 		if data == nil {
-			return deploymentModels.New().DeleteSubsystemByID(id, "github."+key)
+			return deploymentModels.New().DeleteSubsystem(id, "github."+key)
 		}
-		return deploymentModels.New().UpdateSubsystemByID(id, "github."+key, data)
+		return deploymentModels.New().SetSubsystem(id, "github."+key, data)
 	}
 }

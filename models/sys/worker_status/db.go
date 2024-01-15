@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+// CreateOrUpdate creates or updates a worker status.
+// If the worker status already exists, it will be updated.
 func (client *Client) CreateOrUpdate(name, status string) error {
 	filter := bson.D{{"name", name}}
 	update := bson.D{{"$set", bson.D{

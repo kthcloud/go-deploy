@@ -19,15 +19,20 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"math"
 	"path"
+	regexp "regexp"
+	"strings"
 	"time"
 )
 
+// K8sGenerator is a generator for K8s resources
+// It is used to generate the `publics`, such as models.DeploymentPublic and models.IngressPublic
 type K8sGenerator struct {
 	*PublicGeneratorType
 	namespace string
 	client    *k8s.Client
 }
 
+// Namespace returns a models.NamespacePublic that should be created
 func (kg *K8sGenerator) Namespace() *models.NamespacePublic {
 	if kg.d.deployment != nil {
 		ns := models.NamespacePublic{
@@ -83,6 +88,7 @@ func (kg *K8sGenerator) Namespace() *models.NamespacePublic {
 	return nil
 }
 
+// Deployments returns a list of models.DeploymentPublic that should be created
 func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 	var res []models.DeploymentPublic
 
@@ -384,6 +390,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 	return nil
 }
 
+// Services returns a list of models.ServicePublic that should be created
 func (kg *K8sGenerator) Services() []models.ServicePublic {
 	var res []models.ServicePublic
 	if kg.d.deployment != nil {
@@ -483,6 +490,7 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 	return nil
 }
 
+// Ingresses returns a list of models.IngressPublic that should be created
 func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 	var res []models.IngressPublic
 	if kg.d.deployment != nil {
@@ -628,12 +636,14 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 	return nil
 }
 
+// PrivateIngress returns a models.IngressPublic that should be created
 func (kg *K8sGenerator) PrivateIngress() *models.IngressPublic {
 	return &models.IngressPublic{
 		Placeholder: true,
 	}
 }
 
+// PVs returns a list of models.PvPublic that should be created
 func (kg *K8sGenerator) PVs() []models.PvPublic {
 	var res []models.PvPublic
 
@@ -645,7 +655,8 @@ func (kg *K8sGenerator) PVs() []models.PvPublic {
 				Name:      dPvName(kg.d.deployment, v.Name),
 				Capacity:  config.Config.Deployment.Resources.Limits.Storage,
 				NfsServer: kg.s.zone.Storage.NfsServer,
-				NfsPath:   path.Join(kg.s.zone.Storage.NfsParentPath, v.ServerPath),
+				// Create path /<zone parent path>/<deployment owner id>/user/<user specified server path>
+				NfsPath: path.Join(kg.s.zone.Storage.NfsParentPath, kg.d.deployment.OwnerID, "user", v.ServerPath),
 			})
 		}
 
@@ -689,6 +700,7 @@ func (kg *K8sGenerator) PVs() []models.PvPublic {
 	return res
 }
 
+// PVCs returns a list of models.PvcPublic that should be created
 func (kg *K8sGenerator) PVCs() []models.PvcPublic {
 	var res []models.PvcPublic
 
@@ -746,6 +758,7 @@ func (kg *K8sGenerator) PVCs() []models.PvcPublic {
 	return res
 }
 
+// Secrets returns a list of models.SecretPublic that should be created
 func (kg *K8sGenerator) Secrets() []models.SecretPublic {
 	var res []models.SecretPublic
 
@@ -905,6 +918,7 @@ func (kg *K8sGenerator) Secrets() []models.SecretPublic {
 	return nil
 }
 
+// Jobs returns a list of models.JobPublic that should be created
 func (kg *K8sGenerator) Jobs() []models.JobPublic {
 	var res []models.JobPublic
 
@@ -946,6 +960,7 @@ func (kg *K8sGenerator) Jobs() []models.JobPublic {
 	return nil
 }
 
+// HPAs returns a list of models.HpaPublic that should be created
 func (kg *K8sGenerator) HPAs() []models.HpaPublic {
 	var res []models.HpaPublic
 
@@ -981,14 +996,17 @@ func (kg *K8sGenerator) HPAs() []models.HpaPublic {
 	return nil
 }
 
+// getExternalFQDN returns the external FQDN for a deployment in a given zone
 func getExternalFQDN(name string, zone *configModels.DeploymentZone) string {
 	return fmt.Sprintf("%s.%s", name, zone.ParentDomain)
 }
 
+// getStorageExternalFQDN returns the external FQDN for a storage manager in a given zone
 func getStorageExternalFQDN(name string, zone *configModels.DeploymentZone) string {
 	return fmt.Sprintf("%s.%s", name, zone.Storage.ParentDomain)
 }
 
+// encodeDockerConfig encodes docker config to json to be able to use it as a secret
 func encodeDockerConfig(registry, username, password string) []byte {
 	dockerConfig := map[string]interface{}{
 		"auths": map[string]interface{}{
@@ -1008,52 +1026,52 @@ func encodeDockerConfig(registry, username, password string) []byte {
 	return jsonData
 }
 
-// deployment pv name
+// dPvName returns the PV name for a deployment
 func dPvName(deployment *deployment.Deployment, volumeName string) string {
-	return fmt.Sprintf("%s-%s", deployment.Name, volumeName)
+	return fmt.Sprintf("%s-%s", deployment.Name, makeValidK8sName(volumeName))
 }
 
-// deployment pvc name
+// dPvcName returns the PVC name for a deployment
 func dPvcName(deployment *deployment.Deployment, volumeName string) string {
-	return fmt.Sprintf("%s-%s", deployment.Name, volumeName)
+	return fmt.Sprintf("%s-%s", deployment.Name, makeValidK8sName(volumeName))
 }
 
-// vm proxy deployment name
+// vpDeploymentName returns the deployment name for a VM proxy
 func vpDeploymentName(vm *vm.VM, portName string) string {
 	return fmt.Sprintf("%s-%s", vm.Name, portName)
 }
 
-// vm proxy service name
+// vpServiceName returns the service name for a VM proxy
 func vpServiceName(vm *vm.VM, portName string) string {
 	return fmt.Sprintf("%s-%s", vm.Name, portName)
 }
 
-// vm proxy ingress name
+// vpIngressName returns the ingress name for a VM proxy
 func vpIngressName(vm *vm.VM, portName string) string {
 	return fmt.Sprintf("%s-%s", vm.Name, portName)
 }
 
-// vm proxy custom domain ingress name
+// vpCustomDomainIngressName returns the ingress name for a VM proxy custom domain
 func vpCustomDomainIngressName(vm *vm.VM, portName string) string {
 	return fmt.Sprintf("%s-%s-custom-domain", vm.Name, portName)
 }
 
-// vm proxy external url
+// vpExternalURL returns the external URL for a VM proxy
 func vpExternalURL(portName string, zone *configModels.DeploymentZone) string {
 	return fmt.Sprintf("%s.%s", portName, zone.ParentDomainVM)
 }
 
-// storage manager pvc name
+// sPvcName returns the PVC name for a storage manager
 func sPvcName(volumeName string) string {
 	return fmt.Sprintf("%s-%s", constants.SmAppName, volumeName)
 }
 
-// storage manager pv name
+// sPvName returns the PV name for a storage manager
 func sPvName(ownerID, volumeName string) string {
 	return fmt.Sprintf("%s-%s", volumeName, ownerID)
 }
 
-// storage manager volumes
+// sVolumes returns the init and standard volumes for a storage manager
 func sVolumes(ownerID string) ([]smModels.Volume, []smModels.Volume) {
 	initVolumes := []smModels.Volume{
 		{
@@ -1082,7 +1100,7 @@ func sVolumes(ownerID string) ([]smModels.Volume, []smModels.Volume) {
 	return initVolumes, volumes
 }
 
-// storage manager jobs
+// sJobs returns the init jobs for a storage manager
 func sJobs(userID string) []smModels.Job {
 	return []smModels.Job{
 		{
@@ -1096,4 +1114,28 @@ func sJobs(userID string) []smModels.Job {
 			},
 		},
 	}
+}
+
+// makeValidK8sName returns a valid Kubernetes name
+// It returns a string that conforms to the Kubernetes naming convention (RFC 1123)
+func makeValidK8sName(name string) string {
+	// Define a regular expression for invalid Kubernetes name characters
+	re := regexp.MustCompile(`[^a-zA-Z0-9-.]`)
+
+	// Replace invalid characters with '-'
+	validName := re.ReplaceAllString(name, "-")
+
+	// Convert to lower case
+	validName = strings.ToLower(validName)
+
+	// Ensure it starts and ends with an alphanumeric character
+	validName = strings.TrimLeft(validName, "-.")
+	validName = strings.TrimRight(validName, "-.")
+
+	// Kubernetes names are typically limited to 253 characters
+	if len(validName) > 253 {
+		validName = validName[:253]
+	}
+
+	return validName
 }

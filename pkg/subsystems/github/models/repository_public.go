@@ -10,6 +10,7 @@ type RepositoryPublic struct {
 	DefaultBranch string `bson:"defaultBranch"`
 }
 
+// CreateRepositoryPublicFromRead converts a github.Repository to a RepositoryPublic.
 func CreateRepositoryPublicFromRead(repo *github.Repository) *RepositoryPublic {
 	return &RepositoryPublic{
 		ID:            *repo.ID,

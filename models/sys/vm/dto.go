@@ -8,6 +8,7 @@ import (
 	"sort"
 )
 
+// ToDTO converts a VM to a DTO.
 func (vm *VM) ToDTO(status string, connectionString *string, teams []string, gpu *body.GpuRead, externalPortMapper map[string]int) body.VmRead {
 
 	var vmGpu *body.VmGpuLease
@@ -115,6 +116,7 @@ func (vm *VM) ToDTO(status string, connectionString *string, teams []string, gpu
 	}
 }
 
+// FromDTO converts a VM DTO to a VM.
 func (p *CreateParams) FromDTO(dto *body.VmCreate, fallbackZone *string, deploymentZone *string) {
 	p.Name = dto.Name
 	p.SshPublicKey = dto.SshPublicKey
@@ -150,6 +152,7 @@ func (p *CreateParams) FromDTO(dto *body.VmCreate, fallbackZone *string, deploym
 	}
 }
 
+// FromDTO converts a VM DTO to a VM.
 func (p *UpdateParams) FromDTO(dto *body.VmUpdate) {
 	p.Name = dto.Name
 	p.SnapshotID = dto.SnapshotID
@@ -183,6 +186,7 @@ func (p *UpdateParams) FromDTO(dto *body.VmUpdate) {
 	}
 }
 
+// ToDTO converts a VM DTO to a VM.
 func (sc *Snapshot) ToDTO() body.VmSnapshotRead {
 	return body.VmSnapshotRead{
 		ID:         sc.ID,
@@ -195,12 +199,14 @@ func (sc *Snapshot) ToDTO() body.VmSnapshotRead {
 	}
 }
 
+// FromDTO converts a VM DTO to a VM.
 func (sc *CreateSnapshotParams) FromDTO(dto *body.VmSnapshotCreate) {
 	sc.Name = dto.Name
 	sc.Overwrite = false
 	sc.UserCreated = true
 }
 
+// fromDtoPortCreate converts a port DTO to a port.
 func fromDtoPortCreate(port *body.PortCreate) PortCreateParams {
 	var httpProxy *HttpProxyCreateParams
 	if port.HttpProxy != nil {
@@ -218,6 +224,7 @@ func fromDtoPortCreate(port *body.PortCreate) PortCreateParams {
 	}
 }
 
+// fromDtoPortUpdate converts a port DTO to a port.
 func fromDtoPortUpdate(port *body.PortUpdate) PortUpdateParams {
 	var httpProxy *HttpProxyUpdateParams
 	if port.HttpProxy != nil {
@@ -235,6 +242,7 @@ func fromDtoPortUpdate(port *body.PortUpdate) PortUpdateParams {
 	}
 }
 
+// portName returns the name of a port used as a key in the port map in the database.
 func portName(privatePort int, protocol string) string {
 	return fmt.Sprintf("priv-%d-prot-%s", privatePort, protocol)
 }

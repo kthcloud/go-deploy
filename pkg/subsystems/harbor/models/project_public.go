@@ -21,6 +21,7 @@ func (p *ProjectPublic) IsPlaceholder() bool {
 	return false
 }
 
+// CreateProjectUpdateParamsFromPublic creates a body used for update a project in the Harbor API.
 func CreateProjectUpdateParamsFromPublic(public *ProjectPublic) *modelv2.Project {
 	return &modelv2.Project{
 		ProjectID: int32(public.ID),
@@ -31,6 +32,7 @@ func CreateProjectUpdateParamsFromPublic(public *ProjectPublic) *modelv2.Project
 	}
 }
 
+// CreateProjectPublicFromGet converts a modelv2.Project to a ProjectPublic.
 func CreateProjectPublicFromGet(project *modelv2.Project) *ProjectPublic {
 	return &ProjectPublic{
 		ID:        int(project.ProjectID),

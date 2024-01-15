@@ -18,6 +18,9 @@ import (
 	"log"
 )
 
+// Create sets up the CS setup for the VM.
+//
+// This include creating the VM and port-forwarding rules.
 func (c *Client) Create(id string, params *vmModels.CreateParams) error {
 	log.Println("setting up cs for", params.Name)
 
@@ -89,6 +92,10 @@ func (c *Client) Create(id string, params *vmModels.CreateParams) error {
 	return nil
 }
 
+// Delete deletes the CS setup for the VM.
+//
+// This includes deleting the VM and port-forwarding rules.
+// Snapshots are automatically deleted by when the VM is deleted.
 func (c *Client) Delete(id string) error {
 	log.Println("deleting cs for", id)
 
@@ -128,6 +135,9 @@ func (c *Client) Delete(id string) error {
 	return nil
 }
 
+// Update updates a VM.
+//
+// It updates any of the resources associated with fields in the update params and returns an error if any.
 func (c *Client) Update(id string, updateParams *vmModels.UpdateParams) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update cs for vm %s. details: %w", id, err)
@@ -223,6 +233,7 @@ func (c *Client) Update(id string, updateParams *vmModels.UpdateParams) error {
 	return nil
 }
 
+// EnsureOwner ensures the owner of the CS setup.
 func (c *Client) EnsureOwner(id, oldOwnerID string) error {
 	// Nothing needs to be done, but the method is kept as there is a project for networks,
 	// and this could be implemented as user-specific networks are added
@@ -411,7 +422,7 @@ func (c *Client) Repair(id string) error {
 	return nil
 }
 
-// DoCommand executes a command on the vm
+// DoCommand executes a command on the VM.
 func (c *Client) DoCommand(id, csVmID string, gpuID *string, command string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to execute command %s for cs vm %s. details: %w", command, csVmID, err)
@@ -478,6 +489,7 @@ func (c *Client) CheckSuitableHost(id, csVmID, hostName string, zone *configMode
 	return nil
 }
 
+// GetHostByVM retrieves the host given a VM.
 func (c *Client) GetHostByVM(vmID string) (*csModels.HostPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get host for vm %s. details: %w", vmID, err)
@@ -496,6 +508,7 @@ func (c *Client) GetHostByVM(vmID string) (*csModels.HostPublic, error) {
 	return host, nil
 }
 
+// GetHostByName retrieves the host given its name and zone.
 func (c *Client) GetHostByName(hostName string, zone *configModels.VmZone) (*csModels.HostPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get host %s. details: %w", hostName, err)
@@ -537,6 +550,7 @@ func (c *Client) CheckHostState(hostName string, zone *configModels.VmZone) erro
 	return nil
 }
 
+// GetConfiguration retrieves the configuration for the CS environment.
 func (c *Client) GetConfiguration(zone *configModels.VmZone) (*csModels.ConfigurationPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get configuration. details: %w", err)
@@ -555,6 +569,8 @@ func (c *Client) GetConfiguration(zone *configModels.VmZone) (*csModels.Configur
 	return configuration, nil
 }
 
+// stopIfRunning is a helper that stops the VM if it is running,
+// and returns a function to start it again.
 func (c *Client) stopVmIfRunning(id string) (func(), error) {
 	vm, csc, _, err := c.Get(OptsNoGenerator(id))
 	if err != nil {
@@ -599,15 +615,19 @@ func (c *Client) stopVmIfRunning(id string) (func(), error) {
 	}, nil
 }
 
+// dbFunc returns a function that updates the CS subsystem.
 func dbFunc(vmID, key string) func(interface{}) error {
 	return func(data interface{}) error {
 		if data == nil {
-			return vmModels.New().DeleteSubsystemByID(vmID, "cs."+key)
+			return vmModels.New().DeleteSubsystem(vmID, "cs."+key)
 		}
-		return vmModels.New().UpdateSubsystemByID(vmID, "cs."+key, data)
+		return vmModels.New().SetSubsystem(vmID, "cs."+key, data)
 	}
 }
 
+// pfrName is a helper function that returns a formatted name for a port-forwarding rule.
+// It formats the specifications rather than the name, which allows safe storage in the database,
+// while not restricting any user-defined names..
 func pfrName(pfr *csModels.PortForwardingRulePublic) string {
 	if pfr.Name == "__ssh" {
 		return pfr.Name

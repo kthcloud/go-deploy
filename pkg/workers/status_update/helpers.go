@@ -11,6 +11,7 @@ import (
 	csModels "go-deploy/pkg/subsystems/cs/models"
 )
 
+// withClient is a helper function that return as CloudStack client.
 func withClient(zoneName string) (*cs.Client, error) {
 	zone := config.Config.VM.GetZone(zoneName)
 	if zone == nil {
@@ -28,6 +29,7 @@ func withClient(zoneName string) (*cs.Client, error) {
 	})
 }
 
+// fetchCsStatus fetches the status of a VM from CloudStack.
 func fetchCsStatus(vm *vmModels.VM) (int, string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get status for cs vm %s. details: %w", vm.Name, err)
@@ -79,6 +81,7 @@ func fetchCsStatus(vm *vmModels.VM) (int, string, error) {
 	return statusCode, status_codes.GetMsg(statusCode), nil
 }
 
+// fetchVmStatus fetches the status of a VM.
 func fetchVmStatus(vm *vmModels.VM) (int, string, error) {
 	anyCreateSnapshotJob, err := jobModels.New().
 		FilterArgs("id", vm.ID).
@@ -92,7 +95,7 @@ func fetchVmStatus(vm *vmModels.VM) (int, string, error) {
 	if anyCreateSnapshotJob {
 		return status_codes.ResourceCreatingSnapshot, status_codes.GetMsg(status_codes.ResourceCreatingSnapshot), nil
 	}
-	
+
 	csStatusCode, csStatusMessage, err := fetchCsStatus(vm)
 
 	if csStatusCode == status_codes.ResourceUnknown || csStatusCode == status_codes.ResourceNotFound {
@@ -116,6 +119,7 @@ func fetchVmStatus(vm *vmModels.VM) (int, string, error) {
 	return csStatusCode, csStatusMessage, err
 }
 
+// fetchSnapshotStatus fetches the status of a VM's snapshots.
 func fetchSnapshotStatus(vm *vmModels.VM) map[string]csModels.SnapshotPublic {
 	client, err := withClient(vm.Zone)
 	if err != nil {
@@ -135,6 +139,7 @@ func fetchSnapshotStatus(vm *vmModels.VM) map[string]csModels.SnapshotPublic {
 	return snapshotMap
 }
 
+// fetchDeploymentStatus fetches the status of a deployment.
 func fetchDeploymentStatus(deployment *deploymentModels.Deployment) (int, string, error) {
 
 	if deployment == nil {

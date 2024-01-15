@@ -35,6 +35,8 @@ type Deployment struct {
 	Transfer *Transfer `bson:"transfer,omitempty"`
 }
 
+// GetMainApp returns the main app of the deployment.
+// If the app does not exist, it will panic.
 func (deployment *Deployment) GetMainApp() *App {
 	app, ok := deployment.Apps["main"]
 	if !ok {
@@ -43,6 +45,8 @@ func (deployment *Deployment) GetMainApp() *App {
 	return &app
 }
 
+// SetMainApp sets the main app of the deployment.
+// If the app map is nil, it will be initialized before setting the app.
 func (deployment *Deployment) SetMainApp(app *App) {
 	if deployment.Apps == nil {
 		deployment.Apps = map[string]App{}
@@ -50,6 +54,8 @@ func (deployment *Deployment) SetMainApp(app *App) {
 	deployment.Apps["main"] = *app
 }
 
+// GetURL returns the URL of the deployment.
+// If the K8s ingress does not exist, it will return nil, or if the ingress does not have a host, it will return nil.
 func (deployment *Deployment) GetURL() *string {
 	app := deployment.GetMainApp()
 	if app == nil {
@@ -69,6 +75,10 @@ func (deployment *Deployment) GetURL() *string {
 	return nil
 }
 
+// GetCustomDomainURL returns the custom domain URL of the deployment.
+// If the app does not have a custom domain, it will return nil.
+// This method does not check whether the custom domain is active, and does
+// not check if the ingress exists.
 func (deployment *Deployment) GetCustomDomainURL() *string {
 	app := deployment.GetMainApp()
 	if app == nil {
@@ -83,10 +93,12 @@ func (deployment *Deployment) GetCustomDomainURL() *string {
 	return nil
 }
 
+// Ready returns true if the deployment is not being created or deleted.
 func (deployment *Deployment) Ready() bool {
 	return !deployment.DoingActivity(ActivityBeingCreated) && !deployment.DoingActivity(ActivityBeingDeleted)
 }
 
+// DoingActivity returns true if the deployment is doing the given activity.
 func (deployment *Deployment) DoingActivity(activity string) bool {
 	for _, a := range deployment.Activities {
 		if a.Name == activity {
@@ -96,18 +108,12 @@ func (deployment *Deployment) DoingActivity(activity string) bool {
 	return false
 }
 
+// BeingCreated returns true if the deployment is being created.
 func (deployment *Deployment) BeingCreated() bool {
 	return deployment.DoingActivity(ActivityBeingCreated)
 }
 
+// BeingDeleted returns true if the deployment is being deleted.
 func (deployment *Deployment) BeingDeleted() bool {
 	return deployment.DoingActivity(ActivityBeingDeleted)
-}
-
-func (deployment *Deployment) BeingTransferred() bool {
-	return deployment.Transfer != nil
-}
-
-func (deployment *Deployment) Deleted() bool {
-	return deployment.DeletedAt.After(time.Time{})
 }

@@ -33,6 +33,7 @@ func (s *SnapshotPublic) SystemCreated() bool {
 	return strings.Contains(s.Description, "system")
 }
 
+// CreateSnapshotPublicFromGet converts a cloudstack.VMSnapshot to a SnapshotPublic.
 func CreateSnapshotPublicFromGet(snapshot *cloudstack.VMSnapshot) *SnapshotPublic {
 	var parentName *string
 	if snapshot.ParentName != "" {
@@ -51,6 +52,7 @@ func CreateSnapshotPublicFromGet(snapshot *cloudstack.VMSnapshot) *SnapshotPubli
 	}
 }
 
+// CreateSnapshotPublicFromCreate converts a cloudstack.CreateVMSnapshotResponse to a SnapshotPublic.
 func CreateSnapshotPublicFromCreate(snapshot *cloudstack.CreateVMSnapshotResponse) *SnapshotPublic {
 	var parentName *string
 	if snapshot.ParentName != "" {

@@ -38,7 +38,7 @@ func (c *Client) Get(id string, opts ...client.GetOptions) (*deploymentModels.De
 	dClient := deploymentModels.New()
 
 	if o.TransferCode != "" {
-		return dClient.GetByTransferCode(o.TransferCode)
+		return dClient.WithTransferCode(o.TransferCode).Get()
 	}
 
 	var effectiveUserID string
@@ -60,7 +60,7 @@ func (c *Client) Get(id string, opts ...client.GetOptions) (*deploymentModels.De
 	}
 
 	if !teamCheck && effectiveUserID != "" {
-		dClient.RestrictToOwner(effectiveUserID)
+		dClient.WithOwner(effectiveUserID)
 	}
 
 	if o.HarborWebhook != nil {
@@ -101,7 +101,7 @@ func (c *Client) List(opts *client.ListOptions) ([]deploymentModels.Deployment, 
 	}
 
 	if effectiveUserID != "" {
-		dClient.RestrictToOwner(effectiveUserID)
+		dClient.WithOwner(effectiveUserID)
 	}
 
 	resources, err := c.Deployments(dClient)
@@ -320,7 +320,7 @@ func (c *Client) Update(id string, dtoUpdate *body.DeploymentUpdate) error {
 		params.Image = &image
 	}
 
-	err = deploymentModels.New().UpdateWithParamsByID(id, params)
+	err = deploymentModels.New().UpdateWithParams(id, params)
 	if err != nil {
 		if errors.Is(err, deploymentModels.NonUniqueFieldErr) {
 			return sErrors.NonUniqueFieldErr
@@ -408,7 +408,7 @@ func (c *Client) UpdateOwnerSetup(id string, params *body.DeploymentUpdateOwner)
 
 	// Create a transfer notification
 	code := createTransferCode()
-	err = deploymentModels.New().UpdateWithParamsByID(id, &deploymentModels.UpdateParams{
+	err = deploymentModels.New().UpdateWithParams(id, &deploymentModels.UpdateParams{
 		TransferUserID: &params.NewOwnerID,
 		TransferCode:   &code,
 	})
@@ -461,7 +461,7 @@ func (c *Client) UpdateOwner(id string, params *body.DeploymentUpdateOwner) erro
 
 	emptyString := ""
 
-	err = deploymentModels.New().UpdateWithParamsByID(id, &deploymentModels.UpdateParams{
+	err = deploymentModels.New().UpdateWithParams(id, &deploymentModels.UpdateParams{
 		OwnerID:        &params.NewOwnerID,
 		Image:          newImage,
 		TransferCode:   &emptyString,
@@ -513,7 +513,7 @@ func (c *Client) ClearUpdateOwner(id string) error {
 	}
 
 	emptyString := ""
-	err = deploymentModels.New().UpdateWithParamsByID(id, &deploymentModels.UpdateParams{
+	err = deploymentModels.New().UpdateWithParams(id, &deploymentModels.UpdateParams{
 		TransferUserID: &emptyString,
 		TransferCode:   &emptyString,
 	})
@@ -610,7 +610,7 @@ func (c *Client) Repair(id string) error {
 	return nil
 }
 
-// Restart restarts an existing deployment.
+// Restart restarts an deployment.
 //
 // It is done in best-effort, and only returns an error if any pre-check fails.
 func (c *Client) Restart(id string) error {
@@ -663,7 +663,7 @@ func (c *Client) Restart(id string) error {
 	return nil
 }
 
-// Build builds an existing deployment.
+// Build builds an deployment.
 //
 // It can build by either a list of IDs or a single ID.
 // Use WithID or WithIDs to set the ID(s) (prioritizes ID over IDs).
@@ -861,7 +861,7 @@ func (c *Client) GetUsage(userID string) (*deploymentModels.Usage, error) {
 		return fmt.Errorf("failed to get usage. details: %w", err)
 	}
 
-	count, err := deploymentModels.New().RestrictToOwner(userID).CountReplicas()
+	count, err := deploymentModels.New().WithOwner(userID).CountReplicas()
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -1025,5 +1025,5 @@ func createImagePath(ownerID, name string) string {
 
 // createTransferCode generates a transfer code.
 func createTransferCode() string {
-	return utils.HashString(uuid.NewString())
+	return utils.HashStringAlphanumeric(uuid.NewString())
 }

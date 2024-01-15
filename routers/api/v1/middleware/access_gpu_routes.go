@@ -8,6 +8,8 @@ import (
 	"net/http"
 )
 
+// AccessGpuRoutes is a middleware that checks if the user has access to the GPU routes.
+// If the user does not have access, the request is aborted with http.StatusForbidden.
 func AccessGpuRoutes() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		context := sys.NewContext(c)

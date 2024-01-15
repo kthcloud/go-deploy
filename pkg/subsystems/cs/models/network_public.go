@@ -21,6 +21,7 @@ func (n *NetworkPublic) IsPlaceholder() bool {
 	return false
 }
 
+// CreateNetworkPublicFromGet converts a cloudstack.Network to a NetworkPublic.
 func CreateNetworkPublicFromGet(network *cloudstack.Network) *NetworkPublic {
 	tags := FromCsTags(network.Tags)
 
@@ -39,6 +40,7 @@ func CreateNetworkPublicFromGet(network *cloudstack.Network) *NetworkPublic {
 	}
 }
 
+// CreateNetworkPublicFromCreate converts a cloudstack.CreateNetworkResponse to a NetworkPublic.
 func CreateNetworkPublicFromCreate(network *cloudstack.CreateNetworkResponse) *NetworkPublic {
 	return CreateNetworkPublicFromGet(
 		&cloudstack.Network{
@@ -50,6 +52,7 @@ func CreateNetworkPublicFromCreate(network *cloudstack.CreateNetworkResponse) *N
 	)
 }
 
+// CreateNetworkPublicFromUpdate converts a cloudstack.UpdateNetworkResponse to a NetworkPublic.
 func CreateNetworkPublicFromUpdate(network *cloudstack.UpdateNetworkResponse) *NetworkPublic {
 	return CreateNetworkPublicFromGet(
 		&cloudstack.Network{

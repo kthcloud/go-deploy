@@ -11,10 +11,14 @@ import (
 	"log"
 )
 
+// makeBadStateErr creates an error with the BadStateErr type.
 func makeBadStateErr(state string) error {
 	return fmt.Errorf("%w: %s", sErrors.BadStateErr, state)
 }
 
+// CreateSnapshot creates a snapshot for a VM.
+//
+// If the VM is not running, it will return a BadStateErr.
 func (c *Client) CreateSnapshot(vmID string, params *vmModels.CreateSnapshotParams) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create snapshot for cs vm %s. details: %w", vmID, err)
@@ -99,6 +103,7 @@ func (c *Client) CreateSnapshot(vmID string, params *vmModels.CreateSnapshotPara
 	return nil
 }
 
+// DeleteSnapshot deletes a snapshot for a VM.
 func (c *Client) DeleteSnapshot(vmID, snapshotID string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete snapshot %s for vm %s. details: %w", snapshotID, vmID, err)
@@ -123,6 +128,10 @@ func (c *Client) DeleteSnapshot(vmID, snapshotID string) error {
 	return nil
 }
 
+// ApplySnapshot applies a snapshot for a VM.
+// If the VM is not running, it will be started.
+//
+// If the VM has a GPU attached, it will be detached and re-attached after the snapshot is applied.
 func (c *Client) ApplySnapshot(vmID, snapshotID string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to apply snapshot %s for vm %s. details: %w", snapshotID, vmID, err)
@@ -155,7 +164,7 @@ func (c *Client) ApplySnapshot(vmID, snapshotID string) error {
 		}
 	}
 
-	// make sure vm is on
+	// Make sure vm is on
 	err = csc.DoVmCommand(vm.Subsystems.CS.VM.ID, nil, commands.Start)
 	if err != nil {
 		return makeError(err)

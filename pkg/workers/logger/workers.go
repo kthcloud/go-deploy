@@ -15,6 +15,7 @@ import (
 	"time"
 )
 
+// deploymentLogger is a worker that logs deployments.
 func deploymentLogger(ctx context.Context) {
 	defer workers.OnStop("deploymentLogger")
 
@@ -45,12 +46,15 @@ func deploymentLogger(ctx context.Context) {
 		}
 	}()
 
+	reportTick := time.Tick(1 * time.Second)
+	tick := time.Tick(1 * time.Second)
+
 	for {
 		select {
-		case <-time.After(1 * time.Second):
+		case <-reportTick:
 			workers.ReportUp("deploymentLogger")
 
-		case <-time.After(1000 * time.Millisecond):
+		case <-tick:
 			currentIDs := make([]string, len(current))
 			idx := 0
 			for id := range current {

@@ -13,6 +13,9 @@ import (
 	"time"
 )
 
+// ListGPUs lists GPUs
+//
+// It uses service.AuthInfo to only return the resources the requesting user has access to
 func (c *Client) ListGPUs(opts *client.ListGpuOptions) ([]gpuModels.GPU, error) {
 	excludedGPUs := config.Config.GPU.ExcludedGPUs
 
@@ -58,6 +61,9 @@ func (c *Client) ListGPUs(opts *client.ListGpuOptions) ([]gpuModels.GPU, error) 
 	return gmc.List()
 }
 
+// GetGPU gets a GPU
+//
+// It uses service.AuthInfo to only return the resource the requesting user has access to
 func (c *Client) GetGPU(id string, opts *client.GetGpuOptions) (*gpuModels.GPU, error) {
 	var usePrivilegedGPUs bool
 	if c.Auth == nil || c.Auth.GetEffectiveRole().Permissions.UsePrivilegedGPUs {
@@ -96,6 +102,7 @@ func (c *Client) GetGPU(id string, opts *client.GetGpuOptions) (*gpuModels.GPU, 
 	return gpu, nil
 }
 
+// AttachGPU attaches a GPU to a VM
 func (c *Client) AttachGPU(vmID string, gpuIDs []string, leaseDuration float64) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to attach gpu to vm %s. details: %w", vmID, err)
@@ -114,7 +121,7 @@ func (c *Client) AttachGPU(vmID string, gpuIDs []string, leaseDuration float64) 
 		return sErrors.VmNotFoundErr
 	}
 
-	// service client
+	// Service client
 	cc := cs_service.New(c.Cache)
 
 	for _, gpuID := range gpuIDs {
@@ -166,15 +173,15 @@ func (c *Client) AttachGPU(vmID string, gpuIDs []string, leaseDuration float64) 
 		}
 
 		if !attached {
-			// this is an edge case where we don't want to fail the method, since a retry will probably not help
+			// This is an edge case where we don't want to fail the method, since a retry will probably not help
 			//
-			// this is probably caused by a race condition where two users requested the same gpu, where the first one
-			// got it, and the second one failed. we don't want to fail the second user, since that would mean that a
-			// job would get stuck. instead the user is not granted the gpu, and will need to request a new one manually
+			// This is probably caused by a race condition where two users requested the same gpu, where the first one
+			// got it, and the second one failed. We don't want to fail the second user, since that would mean that a
+			// job would get stuck. Instead the user is not granted the gpu, and will need to request a new one manually
 			continue
 		}
 
-		// ensure it is attached in cloudstack, this will not do anything if it is already attached
+		// Ensure it is attached in cloudstack, this will not do anything if it is already attached
 		// otherwise, it will restart the vm, which is fine since the user requested this
 		err = cc.AttachGPU(vmID, gpuID)
 		if err == nil {
@@ -187,7 +194,7 @@ func (c *Client) AttachGPU(vmID string, gpuIDs []string, leaseDuration float64) 
 		gpuAlreadyAttached := strings.Contains(errString, gpuAlreadyAttachedError)
 
 		if insufficientCapacityErr {
-			// if the host has insufficient capacity, we need to detach the gpu from the vm
+			// If the host has insufficient capacity, we need to detach the gpu from the vm
 			// and attempt to attach it to another gpu
 
 			err = cc.DetachGPU(vmID, cs_service.CsDetachGpuAfterStateRestore)
@@ -200,7 +207,7 @@ func (c *Client) AttachGPU(vmID string, gpuIDs []string, leaseDuration float64) 
 				return makeError(err)
 			}
 		} else if gpuAlreadyAttached {
-			// if the gpu is already attached, we need to detach it from the vm
+			// If the gpu is already attached, we need to detach it from the vm
 
 			err = cc.DetachGPU(vmID, cs_service.CsDetachGpuAfterStateRestore)
 			if err != nil {
@@ -219,6 +226,7 @@ func (c *Client) AttachGPU(vmID string, gpuIDs []string, leaseDuration float64) 
 	return nil
 }
 
+// DetachGPU detaches a GPU from a VM
 func (c *Client) DetachGPU(vmID string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to detach gpu from vm %s. details: %w", vmID, err)
@@ -237,6 +245,7 @@ func (c *Client) DetachGPU(vmID string) error {
 	return nil
 }
 
+// IsGpuPrivileged checks if a GPU is privileged.
 func (c *Client) IsGpuPrivileged(id string) (bool, error) {
 	gpu, err := c.GPU(id, nil)
 	if err != nil {
@@ -256,6 +265,7 @@ func (c *Client) IsGpuPrivileged(id string) (bool, error) {
 	return false, nil
 }
 
+// CheckGpuHardwareAvailable checks if a GPU is available for use.
 func (c *Client) CheckGpuHardwareAvailable(gpuID string) error {
 	gpu, err := c.GPU(gpuID, nil)
 	if err != nil {
@@ -283,8 +293,8 @@ func (c *Client) CheckGpuHardwareAvailable(gpuID string) error {
 		return err
 	}
 
-	// check if it is a "bad attach", where cloudstack reports it being attached, but the database says it's not
-	// this usually means it is in use outside the scope of deploy
+	// Check if it is a "bad attach", where cloudstack reports it being attached, but the database says it's not.
+	// This usually means it is in use outside the scope of deploy
 	if cloudstackAttached && !gpu.IsAttached() {
 		return sErrors.GpuNotFoundErr
 	}
@@ -292,6 +302,8 @@ func (c *Client) CheckGpuHardwareAvailable(gpuID string) error {
 	return nil
 }
 
+// CheckSuitableHost checks if a host is suitable for a VM.
+// This is used to minimize the risk of starting a VM that cannot be started on a given host.
 func (c *Client) CheckSuitableHost(id, hostName, zoneName string) error {
 	vm, err := c.VM(id, nil)
 	if err != nil {

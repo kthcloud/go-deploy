@@ -5,6 +5,7 @@ import (
 	"go-deploy/utils"
 )
 
+// ToDTO converts a Job to a body.JobRead DTO.
 func (job *Job) ToDTO(statusMessage string) body.JobRead {
 	var lastError *string
 	if len(job.ErrorLogs) > 0 {

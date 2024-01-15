@@ -13,6 +13,7 @@ type JobPublic struct {
 	CreatedAt time.Time `bson:"createdAt"`
 }
 
+// CreateJobPublicFromGet converts a gitlab.Job to a JobPublic.
 func CreateJobPublicFromGet(job *gitlab.Job) *JobPublic {
 	var createdAt time.Time
 	if job.CreatedAt != nil {

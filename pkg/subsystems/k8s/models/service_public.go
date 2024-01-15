@@ -28,6 +28,7 @@ func (s *ServicePublic) GetFQDN() string {
 	return fmt.Sprintf("%s.%s.svc.cluster.local", s.Name, s.Namespace)
 }
 
+// CreateServicePublicFromRead creates a ServicePublic from a v1.Service.
 func CreateServicePublicFromRead(service *v1.Service) *ServicePublic {
 	return &ServicePublic{
 		ID:         service.Labels[keys.ManifestLabelID],

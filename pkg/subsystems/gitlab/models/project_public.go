@@ -8,6 +8,7 @@ type ProjectPublic struct {
 	ImportURL string `bson:"importUrl"`
 }
 
+// CreateProjectPublicFromGet converts a gitlab.Project to a ProjectPublic.
 func CreateProjectPublicFromGet(p *gitlab.Project) *ProjectPublic {
 	return &ProjectPublic{
 		ID:        p.ID,

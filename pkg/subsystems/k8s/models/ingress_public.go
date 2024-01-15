@@ -33,6 +33,7 @@ func (i *IngressPublic) IsPlaceholder() bool {
 	return i.Placeholder
 }
 
+// CreateIngressPublicFromRead creates a IngressPublic from a v1.Ingress.
 func CreateIngressPublicFromRead(ingress *v1.Ingress) *IngressPublic {
 	var serviceName string
 	var servicePort int

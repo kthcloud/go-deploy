@@ -8,12 +8,15 @@ import (
 	githubModels "go-deploy/pkg/subsystems/github/models"
 )
 
+// GitHubGenerator is a generator for GitHub resources
+// It is used to generate the `publics`, such as models.WebhookPublic
 type GitHubGenerator struct {
 	*PublicGeneratorType
 	token        string
 	repositoryID int64
 }
 
+// Webhook returns a models.WebhookPublic that should be created
 func (gg *GitHubGenerator) Webhook() *githubModels.WebhookPublic {
 	if gg.d.deployment != nil {
 		webhookTarget := fmt.Sprintf("%s/v1/hooks/deployments/github", config.Config.ExternalUrl)

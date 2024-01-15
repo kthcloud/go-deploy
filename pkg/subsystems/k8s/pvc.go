@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+// ReadPVC reads a PersistentVolumeClaim from Kubernetes.
 func (client *Client) ReadPVC(id string) (*models.PvcPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to read k8s pvc %s. details: %w", id, err)
@@ -36,6 +37,7 @@ func (client *Client) ReadPVC(id string) (*models.PvcPublic, error) {
 	return nil, nil
 }
 
+// CreatePVC creates a PersistentVolumeClaim in Kubernetes.
 func (client *Client) CreatePVC(public *models.PvcPublic) (*models.PvcPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create k8s pvc %s. details: %w", public.Name, err)
@@ -67,6 +69,7 @@ func (client *Client) CreatePVC(public *models.PvcPublic) (*models.PvcPublic, er
 	return models.CreatePvcPublicFromRead(res), nil
 }
 
+// DeletePVC deletes a PersistentVolumeClaim in Kubernetes.
 func (client *Client) DeletePVC(id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete k8s pvc %s. details: %w", id, err)
@@ -99,6 +102,7 @@ func (client *Client) DeletePVC(id string) error {
 	return nil
 }
 
+// waitPvcDeleted waits for a PersistentVolumeClaim to be deleted.
 func (client *Client) waitPvcDeleted(name string) error {
 	maxWait := 120
 	for i := 0; i < maxWait; i++ {

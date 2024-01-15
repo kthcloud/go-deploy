@@ -13,6 +13,7 @@ import (
 	"go-deploy/pkg/workers/status_update"
 )
 
+// FlagDefinition represents a definition for a flag that is passed to the program's executable.
 type FlagDefinition struct {
 	Name         string
 	ValueType    string
@@ -23,12 +24,14 @@ type FlagDefinition struct {
 	Run          func(ctx context.Context, cancel context.CancelFunc)
 }
 
+// GetPassedValue returns the value passed to the flag.
 func (flag *FlagDefinition) GetPassedValue() interface{} {
 	return flag.PassedValue
 }
 
 type FlagDefinitionList []FlagDefinition
 
+// IsPassed returns true if the flag was passed to the program.
 func (list *FlagDefinitionList) IsPassed(name string) bool {
 	for _, flag := range *list {
 		if flag.Name == name {
@@ -39,6 +42,7 @@ func (list *FlagDefinitionList) IsPassed(name string) bool {
 	return false
 }
 
+// GetPassedValue returns the value passed to the flag.
 func (list *FlagDefinitionList) GetPassedValue(name string) interface{} {
 	for _, flag := range *list {
 		if flag.Name == name {
@@ -49,6 +53,7 @@ func (list *FlagDefinitionList) GetPassedValue(name string) interface{} {
 	return nil
 }
 
+// SetPassedValue sets the value passed to the flag.
 func (list *FlagDefinitionList) SetPassedValue(name string, value interface{}) {
 	for idx, flag := range *list {
 		if flag.Name == name {
@@ -58,6 +63,7 @@ func (list *FlagDefinitionList) SetPassedValue(name string, value interface{}) {
 	}
 }
 
+// AnyWorkerFlagsPassed returns true if any worker flags were passed to the program.
 func (list *FlagDefinitionList) AnyWorkerFlagsPassed() bool {
 	for _, flag := range *list {
 		if flag.FlagType == "worker" && flag.GetPassedValue().(bool) {
@@ -68,6 +74,7 @@ func (list *FlagDefinitionList) AnyWorkerFlagsPassed() bool {
 	return false
 }
 
+// GetFlags returns a list of all flags that can be passed to the program.
 func GetFlags() FlagDefinitionList {
 	return []FlagDefinition{
 		{

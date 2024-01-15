@@ -13,18 +13,8 @@ import (
 	"time"
 )
 
-func (client *Client) createNamespaceWatcher(ctx context.Context, resourceName string) (watch.Interface, error) {
-	labelSelector := fmt.Sprintf("%s=%s", "kubernetes.io/metadata.name", resourceName)
-
-	opts := metav1.ListOptions{
-		TypeMeta:      metav1.TypeMeta{},
-		LabelSelector: labelSelector,
-		FieldSelector: "",
-	}
-
-	return client.K8sClient.CoreV1().Namespaces().Watch(ctx, opts)
-}
-
+// ReadAllNamespaces reads all namespaces from Kubernetes.
+// If prefix is supplied, only namespaces with that prefix will be returned.
 func (client *Client) ReadAllNamespaces(prefix *string) ([]models.NamespacePublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to read namespaces. details: %w", err)
@@ -47,6 +37,7 @@ func (client *Client) ReadAllNamespaces(prefix *string) ([]models.NamespacePubli
 	return result, nil
 }
 
+// ReadNamespace reads a Namespace from Kubernetes.
 func (client *Client) ReadNamespace(id string) (*models.NamespacePublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to read namespace %s. details: %w", id, err)
@@ -71,6 +62,7 @@ func (client *Client) ReadNamespace(id string) (*models.NamespacePublic, error) 
 	return nil, nil
 }
 
+// CreateNamespace creates a Namespace in Kubernetes.
 func (client *Client) CreateNamespace(public *models.NamespacePublic) (*models.NamespacePublic, error) {
 	_ = func(err error) error {
 		return fmt.Errorf("failed to create namespace %s. details: %w", public.Name, err)
@@ -97,6 +89,7 @@ func (client *Client) CreateNamespace(public *models.NamespacePublic) (*models.N
 	return models.CreateNamespacePublicFromRead(res), nil
 }
 
+// UpdateNamespace updates a Namespace in Kubernetes.
 func (client *Client) UpdateNamespace(public *models.NamespacePublic) (*models.NamespacePublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update namespace %s. details: %w", public.ID, err)
@@ -120,6 +113,7 @@ func (client *Client) UpdateNamespace(public *models.NamespacePublic) (*models.N
 	return nil, nil
 }
 
+// DeleteNamespace deletes a Namespace in Kubernetes.
 func (client *Client) DeleteNamespace(name string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete namespace %s. details: %w", name, err)
@@ -143,6 +137,21 @@ func (client *Client) DeleteNamespace(name string) error {
 	return nil
 }
 
+// createNamespaceWatcher creates a watcher for a namespace.
+// This is used to, for example, wait for a namespace to be deleted after deleting it.
+func (client *Client) createNamespaceWatcher(ctx context.Context, resourceName string) (watch.Interface, error) {
+	labelSelector := fmt.Sprintf("%s=%s", "kubernetes.io/metadata.name", resourceName)
+
+	opts := metav1.ListOptions{
+		TypeMeta:      metav1.TypeMeta{},
+		LabelSelector: labelSelector,
+		FieldSelector: "",
+	}
+
+	return client.K8sClient.CoreV1().Namespaces().Watch(ctx, opts)
+}
+
+// waitNamespaceDeleted waits for a namespace to be deleted.
 func (client *Client) waitNamespaceDeleted(name string) error {
 	maxWait := 120
 	for i := 0; i < maxWait; i++ {

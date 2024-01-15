@@ -7,6 +7,7 @@ import (
 
 func int64Ptr(i int64) *int64 { return &i }
 
+// CreateProjectCreateBody creates a body used for create a project in the Harbor API.
 func CreateProjectCreateBody(public *ProjectPublic) model.ProjectReq {
 	return model.ProjectReq{
 		ProjectName:  public.Name,

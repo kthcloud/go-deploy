@@ -5,6 +5,8 @@ import (
 	"go-deploy/pkg/config"
 )
 
+// Discover returns the discover information.
+// This is stored locally in the config.
 func Discover() (*discover.Discover, error) {
 	return &discover.Discover{
 		Version: config.Config.Version,

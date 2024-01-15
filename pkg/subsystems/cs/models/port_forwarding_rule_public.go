@@ -30,6 +30,7 @@ func (pfr *PortForwardingRulePublic) IsPlaceholder() bool {
 	return false
 }
 
+// CreatePortForwardingRulePublicFromGet converts a cloudstack.PortForwardingRule to a PortForwardingRulePublic.
 func CreatePortForwardingRulePublicFromGet(rule *cloudstack.PortForwardingRule) *PortForwardingRulePublic {
 	publicPort, _ := strconv.Atoi(rule.Publicport)
 	privatePort, _ := strconv.Atoi(rule.Privateport)
@@ -66,6 +67,7 @@ func CreatePortForwardingRulePublicFromGet(rule *cloudstack.PortForwardingRule) 
 	}
 }
 
+// CreatePortForwardingRulePublicFromCreate converts a cloudstack.CreatePortForwardingRuleResponse to a PortForwardingRulePublic.
 func CreatePortForwardingRulePublicFromCreate(rule *cloudstack.CreatePortForwardingRuleResponse) *PortForwardingRulePublic {
 	return CreatePortForwardingRulePublicFromGet(
 		&cloudstack.PortForwardingRule{
@@ -81,6 +83,7 @@ func CreatePortForwardingRulePublicFromCreate(rule *cloudstack.CreatePortForward
 	)
 }
 
+// CreatePortForwardingRulePublicFromUpdate converts a cloudstack.UpdatePortForwardingRuleResponse to a PortForwardingRulePublic.
 func CreatePortForwardingRulePublicFromUpdate(rule *cloudstack.UpdatePortForwardingRuleResponse) *PortForwardingRulePublic {
 	return CreatePortForwardingRulePublicFromGet(
 		&cloudstack.PortForwardingRule{

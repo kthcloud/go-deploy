@@ -11,6 +11,7 @@ import (
 	"go-deploy/service/vm_service/client"
 )
 
+// OptsAll returns the options required to get all the service tools, ie. VM, client and generator.
 func OptsAll(vmID string, overwriteOps ...client.ExtraOpts) *client.Opts {
 	var ow client.ExtraOpts
 	if len(overwriteOps) > 0 {
@@ -25,6 +26,7 @@ func OptsAll(vmID string, overwriteOps ...client.ExtraOpts) *client.Opts {
 	}
 }
 
+// OptsOnlyClient returns the options required to get only the client.
 func OptsOnlyClient(zone *configModels.VmZone) *client.Opts {
 	return &client.Opts{
 		Client: true,
@@ -34,6 +36,7 @@ func OptsOnlyClient(zone *configModels.VmZone) *client.Opts {
 	}
 }
 
+// OptsNoGenerator returns the options required to get only the VM and client.
 func OptsNoGenerator(vmID string, extraOpts ...client.ExtraOpts) *client.Opts {
 	var eo client.ExtraOpts
 	if len(extraOpts) > 0 {

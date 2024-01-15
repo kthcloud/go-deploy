@@ -9,6 +9,7 @@ import (
 	"strings"
 )
 
+// ReadProject reads a project from GitLab.
 func (client *Client) ReadProject(id int) (*models.ProjectPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get gitlab project. details: %w", err)
@@ -18,7 +19,7 @@ func (client *Client) ReadProject(id int) (*models.ProjectPublic, error) {
 	if resp.StatusCode == 404 {
 		return nil, nil
 	}
-	
+
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -26,6 +27,7 @@ func (client *Client) ReadProject(id int) (*models.ProjectPublic, error) {
 	return models.CreateProjectPublicFromGet(project), nil
 }
 
+// CreateProject creates a project in GitLab.
 func (client *Client) CreateProject(public *models.ProjectPublic) (*models.ProjectPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create gitlab project. details: %w", err)
@@ -43,6 +45,7 @@ func (client *Client) CreateProject(public *models.ProjectPublic) (*models.Proje
 	return models.CreateProjectPublicFromGet(project), nil
 }
 
+// DeleteProject deletes a project from GitLab.
 func (client *Client) DeleteProject(id int) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete gitlab project. details: %w", err)
@@ -59,6 +62,8 @@ func (client *Client) DeleteProject(id int) error {
 	return nil
 }
 
+// AttachCiFile attaches a GitLab CI file to a project in GitLab.
+// This will overwrite any existing CI file, and cause a pipeline to be created (which will also run).
 func (client *Client) AttachCiFile(projectID int, branch string, content deployment.GitLabCiConfig) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to attach ci file to project. details: %w", err)
@@ -84,17 +89,4 @@ func (client *Client) AttachCiFile(projectID int, branch string, content deploym
 	}
 
 	return nil
-}
-
-func (client *Client) GetJobs(projectID int) ([]*gitlab.Job, error) {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to get job for project %s. details: %w", projectID, err)
-	}
-
-	jobs, _, err := client.GitLabClient.Jobs.ListProjectJobs(projectID, nil)
-	if err != nil {
-		return nil, makeError(err)
-	}
-
-	return jobs, nil
 }

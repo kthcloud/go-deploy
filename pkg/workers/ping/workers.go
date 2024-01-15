@@ -14,15 +14,20 @@ import (
 	"time"
 )
 
+// deploymentPingUpdater is a worker that pings deployments.
+// It stores the result in the database.
 func deploymentPingUpdater(ctx context.Context) {
 	defer workers.OnStop("deployment ping updater")
 
+	reportTick := time.Tick(1 * time.Second)
+	tick := time.Tick(time.Duration(config.Config.Deployment.PingInterval) * time.Second)
+
 	for {
 		select {
-		case <-time.After(1 * time.Second):
+		case <-reportTick:
 			workers.ReportUp("deploymentPingUpdater")
 
-		case <-time.After(time.Duration(config.Config.Deployment.PingInterval) * time.Second):
+		case <-tick:
 			makeError := func(err error) error {
 				return fmt.Errorf("error fetching deployments. details: %w", err)
 			}
@@ -42,6 +47,7 @@ func deploymentPingUpdater(ctx context.Context) {
 	}
 }
 
+// pingDeployment pings a deployment and stores the result in the database.
 func pingDeployment(deployment *deploymentModels.Deployment) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to ping deployment. details: %w", err)
@@ -73,6 +79,7 @@ func pingDeployment(deployment *deploymentModels.Deployment) {
 	go pingAndSave(*deployment, pingURL)
 }
 
+// pingAndSave pings a deployment and stores the result in the database.
 func pingAndSave(deployment deploymentModels.Deployment, url string) {
 	code, err := ping(url)
 	if err != nil {
@@ -87,6 +94,7 @@ func pingAndSave(deployment deploymentModels.Deployment, url string) {
 	}
 }
 
+// resetPing resets the ping status of a deployment.
 func resetPing(deployment deploymentModels.Deployment) {
 	err := deployment_service.New().SavePing(deployment.ID, 0)
 	if err != nil {
@@ -95,6 +103,7 @@ func resetPing(deployment deploymentModels.Deployment) {
 	}
 }
 
+// ping pings a url and returns the status code.
 func ping(url string) (int, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -113,6 +122,7 @@ func ping(url string) (int, error) {
 	return resp.StatusCode, nil
 }
 
+// goodURL is a helper function that checks if a URL is valid.
 func goodURL(url string) bool {
 	rfc3986Characters := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~:/?#[]@!$&'()*+,;="
 	for _, c := range url {

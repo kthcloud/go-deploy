@@ -5,6 +5,9 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+// The following structs are used to parse the config.yaml file
+// into a struct that can be used by the application.
+
 type CloudStackConfigSource struct {
 	ClusterID   string `yaml:"clusterId"`
 	ExternalURL string `yaml:"externalUrl"`

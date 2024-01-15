@@ -22,6 +22,8 @@ import (
 	"strings"
 )
 
+// NewRouter creates a new router
+// It registers all routes and middlewares
 func NewRouter() *gin.Engine {
 	router := gin.New()
 	basePath := getUrlBasePath()
@@ -96,11 +98,13 @@ func NewRouter() *gin.Engine {
 	return router
 }
 
+// HandleRoute registers a route with the given method, path, handler and middleware
 func HandleRoute(engine *gin.RouterGroup, method, path string, handler gin.HandlerFunc, middleware []gin.HandlerFunc) {
 	allHandlers := append(middleware, handler)
 	engine.Handle(method, path, allHandlers...)
 }
 
+// registerCustomValidators registers custom validators for the gin binding
 func registerCustomValidators() {
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		v.RegisterTagNameFunc(func(fld reflect.StructField) string {

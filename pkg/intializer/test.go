@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+// CleanUpOldTests cleans up old E2E tests.
+// Some E2E tests may fail and leave resources behind.
 func CleanUpOldTests() {
 	now := time.Now()
 	oneHourAgo := now.Add(-1 * time.Minute)
