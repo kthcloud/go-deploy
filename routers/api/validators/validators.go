@@ -338,6 +338,24 @@ func TeamResourceList(fl validator.FieldLevel) bool {
 	return true
 }
 
+// VolumeName is a validator for volume names.
+// It ensures that the name is valid and does not start or end with a space
+func VolumeName(fl validator.FieldLevel) bool {
+	name, ok := fl.Field().Interface().(string)
+	if !ok {
+		return false
+	}
+
+	if name[0] == ' ' || name[len(name)-1] == ' ' {
+		return false
+	}
+
+	regex := regexp.MustCompile(`^[a-zA-Z0-9-_ ]+$`)
+	match := regex.MatchString(name)
+
+	return match
+}
+
 // domainPointsToDeploy is a helper function that checks if the domain points to the correct IP
 func domainPointsToDeploy(domainName string) bool {
 	for _, zone := range config.Config.Deployment.Zones {

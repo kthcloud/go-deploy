@@ -139,6 +139,7 @@ func registerCustomValidators() {
 			"team_name":              validators.TeamName,
 			"team_member_list":       validators.TeamMemberList,
 			"team_resource_list":     validators.TeamResourceList,
+			"volume_name":            validators.VolumeName,
 		}
 
 		for tag, fn := range registrations {
