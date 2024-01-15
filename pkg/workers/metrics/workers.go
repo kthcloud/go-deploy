@@ -32,12 +32,15 @@ func metricsWorker(ctx context.Context) {
 		"jobs-completed":       jobMetrics(metrics.KeyJobsCompleted, strPtr(job.StatusCompleted)),
 	}
 
+	reportTick := time.Tick(1 * time.Second)
+	tick := time.Tick(time.Duration(config.Config.Metrics.Interval) * time.Second)
+
 	for {
 		select {
-		case <-time.After(1 * time.Second):
+		case <-reportTick:
 			workers.ReportUp("metricsWorker")
 
-		case <-time.After(time.Duration(config.Config.Metrics.Interval) * time.Second):
+		case <-tick:
 			for metricGroupName, metric := range metricsFuncMap {
 				if err := metric(); err != nil {
 					utils.PrettyPrintError(fmt.Errorf("error computing metric %s. details: %w", metricGroupName, err))

@@ -19,12 +19,15 @@ import (
 func deploymentPingUpdater(ctx context.Context) {
 	defer workers.OnStop("deployment ping updater")
 
+	reportTick := time.Tick(1 * time.Second)
+	tick := time.Tick(time.Duration(config.Config.Deployment.PingInterval) * time.Second)
+
 	for {
 		select {
-		case <-time.After(1 * time.Second):
+		case <-reportTick:
 			workers.ReportUp("deploymentPingUpdater")
 
-		case <-time.After(time.Duration(config.Config.Deployment.PingInterval) * time.Second):
+		case <-tick:
 			makeError := func(err error) error {
 				return fmt.Errorf("error fetching deployments. details: %w", err)
 			}

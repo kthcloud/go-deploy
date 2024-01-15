@@ -20,12 +20,15 @@ import (
 func deploymentRepairer(ctx context.Context) {
 	defer workers.OnStop("deploymentRepairer")
 
+	reportTick := time.Tick(1 * time.Second)
+	tick := time.Tick(time.Duration(config.Config.Deployment.RepairInterval) * time.Second)
+
 	for {
 		select {
-		case <-time.After(1 * time.Second):
+		case <-reportTick:
 			workers.ReportUp("deploymentRepairer")
 
-		case <-time.After(60 * time.Second):
+		case <-tick:
 			restarting, err := deploymentModels.New().WithActivities(deploymentModels.ActivityRestarting).List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching restarting deployments. details: %w", err))
@@ -91,12 +94,15 @@ func deploymentRepairer(ctx context.Context) {
 func smRepairer(ctx context.Context) {
 	defer workers.OnStop("smRepairer")
 
+	reportTick := time.Tick(1 * time.Second)
+	tick := time.Tick(time.Duration(config.Config.Deployment.RepairInterval) * time.Second)
+
 	for {
 		select {
-		case <-time.After(1 * time.Second):
+		case <-reportTick:
 			workers.ReportUp("smRepairer")
 
-		case <-time.After(60 * time.Second):
+		case <-tick:
 			withNoActivities, err := smModels.New().WithNoActivities().List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching storage managers with no activities. details: %w", err))
@@ -143,12 +149,15 @@ func smRepairer(ctx context.Context) {
 func vmRepairer(ctx context.Context) {
 	defer workers.OnStop("vmRepairer")
 
+	reportTick := time.Tick(1 * time.Second)
+	tick := time.Tick(time.Duration(config.Config.VM.RepairInterval) * time.Second)
+
 	for {
 		select {
-		case <-time.After(1 * time.Second):
+		case <-reportTick:
 			workers.ReportUp("vmRepairer")
 
-		case <-time.After(60 * time.Second):
+		case <-tick:
 			withNoActivities, err := vmModels.New().WithNoActivities().List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching vms with no activities. details: %w", err))

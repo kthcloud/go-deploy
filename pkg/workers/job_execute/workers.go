@@ -14,12 +14,15 @@ import (
 func jobFetcher(ctx context.Context) {
 	defer workers.OnStop("jobFetcher")
 
+	reportTick := time.Tick(1 * time.Second)
+	tick := time.Tick(100 * time.Millisecond)
+
 	for {
 		select {
-		case <-time.After(1 * time.Second):
+		case <-reportTick:
 			workers.ReportUp("jobFetcher")
 
-		case <-time.After(100 * time.Millisecond):
+		case <-tick:
 			job, err := jobModels.New().GetNext()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching next job. details: %w", err))
@@ -42,12 +45,15 @@ func jobFetcher(ctx context.Context) {
 func failedJobFetcher(ctx context.Context) {
 	defer workers.OnStop("failedJobFetcher")
 
+	reportTick := time.Tick(1 * time.Second)
+	tick := time.Tick(1 * time.Second)
+
 	for {
 		select {
-		case <-time.After(1 * time.Second):
+		case <-reportTick:
 			workers.ReportUp("failedJobFetcher")
 
-		case <-time.After(30 * time.Second):
+		case <-tick:
 			job, err := jobModels.New().GetNextFailed()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching next failed job. details: %w", err))
