@@ -9,7 +9,6 @@ import (
 	"go-deploy/service/vm_service"
 	"go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
-	"log"
 	"time"
 )
 
@@ -71,20 +70,25 @@ func vmSnapshotUpdater(ctx context.Context) {
 			workers.ReportUp("vmSnapshotUpdater")
 
 		case <-tick:
-			allVms, err := vmModels.New().List()
-			if err != nil {
-				log.Println("error fetching vms: ", err)
-				continue
-			}
-
-			for _, vm := range allVms {
-				snapshotMap := fetchSnapshotStatus(&vm)
-				if snapshotMap == nil {
-					continue
+			func() {
+				allVms, err := vmModels.New().List()
+				if err != nil {
+					utils.PrettyPrintError(fmt.Errorf("error fetching vms when updating snapshot status: %w", err))
+					return
 				}
 
-				_ = vmModels.New().SetSubsystem(vm.ID, "cs.snapshotMap", snapshotMap)
-			}
+				for _, vm := range allVms {
+					snapshotMap := fetchSnapshotStatus(&vm)
+					if snapshotMap == nil {
+						continue
+					}
+
+					err = vmModels.New().SetSubsystem(vm.ID, "cs.snapshotMap", snapshotMap)
+					if err != nil {
+						utils.PrettyPrintError(fmt.Errorf("error updating vm snapshot map: %w", err))
+					}
+				}
+			}()
 		case <-ctx.Done():
 			return
 		}

@@ -17,12 +17,16 @@ import (
 // deploymentDeletionConfirmer is a worker that confirms deployment deletion.
 func deploymentDeletionConfirmer(ctx context.Context) {
 	defer workers.OnStop("deploymentDeletionConfirmer")
+
+	reportTick := time.Tick(1 * time.Second)
+	tick := time.Tick(3 * time.Second)
+
 	for {
 		select {
-		case <-time.After(1 * time.Second):
+		case <-reportTick:
 			workers.ReportUp("deploymentDeletionConfirmer")
 
-		case <-time.After(5 * time.Second):
+		case <-tick:
 			beingDeleted, _ := deploymentModels.New().WithActivities(deploymentModels.ActivityBeingDeleted).List()
 			for _, deployment := range beingDeleted {
 				deleted := DeploymentDeleted(&deployment)
@@ -57,12 +61,15 @@ func deploymentDeletionConfirmer(ctx context.Context) {
 func smDeletionConfirmer(ctx context.Context) {
 	defer workers.OnStop("smDeletionConfirmer")
 
+	reportTick := time.Tick(1 * time.Second)
+	tick := time.Tick(3 * time.Second)
+
 	for {
 		select {
-		case <-time.After(1 * time.Second):
+		case <-reportTick:
 			workers.ReportUp("smDeletionConfirmer")
 
-		case <-time.After(5 * time.Second):
+		case <-tick:
 			beingDeleted, err := smModels.New().WithActivities(smModels.ActivityBeingDeleted).List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("failed to get sms being deleted. details: %w", err))
@@ -101,12 +108,15 @@ func smDeletionConfirmer(ctx context.Context) {
 func vmDeletionConfirmer(ctx context.Context) {
 	defer workers.OnStop("vmDeletionConfirmer")
 
+	reportTick := time.Tick(1 * time.Second)
+	tick := time.Tick(3 * time.Second)
+
 	for {
 		select {
-		case <-time.After(1 * time.Second):
+		case <-reportTick:
 			workers.ReportUp("vmDeletionConfirmer")
 
-		case <-time.After(5 * time.Second):
+		case <-tick:
 			beingDeleted, err := vmModels.New().WithActivities(vmModels.ActivityBeingDeleted).List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("failed to get vms being deleted. details: %w", err))
@@ -145,12 +155,15 @@ func vmDeletionConfirmer(ctx context.Context) {
 func customDomainConfirmer(ctx context.Context) {
 	defer workers.OnStop("customDomainConfirmer")
 
+	reportTick := time.Tick(1 * time.Second)
+	tick := time.Tick(3 * time.Second)
+
 	for {
 		select {
-		case <-time.After(1 * time.Second):
+		case <-reportTick:
 			workers.ReportUp("customDomainConfirmer")
 
-		case <-time.After(1 * time.Second):
+		case <-tick:
 			deploymentsWithPendingCustomDomain, err := deploymentModels.New().WithPendingCustomDomain().List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("failed to get deployments with pending custom domain. details: %w", err))

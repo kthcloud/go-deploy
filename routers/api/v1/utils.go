@@ -86,6 +86,8 @@ func msgForTag(fe validator.FieldError) string {
 		return "Every team member must be unique"
 	case "team_resource_list":
 		return "Every team resource must be unique"
+	case "volume_name":
+		return "Must be a valid volume name, ex. my-volume, my-volume-123, my volume"
 	}
 	return fe.Error()
 }

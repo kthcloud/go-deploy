@@ -129,9 +129,9 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 
 		k8sVolumes := make([]models.Volume, len(mainApp.Volumes))
 		for i, volume := range mainApp.Volumes {
-			pvcName := fmt.Sprintf("%s-%s", kg.d.deployment.Name, volume.Name)
+			pvcName := fmt.Sprintf("%s-%s", kg.d.deployment.Name, makeValidK8sName(volume.Name))
 			k8sVolumes[i] = models.Volume{
-				Name:      volume.Name,
+				Name:      makeValidK8sName(volume.Name),
 				PvcName:   &pvcName,
 				MountPath: volume.AppPath,
 				Init:      volume.Init,
