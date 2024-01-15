@@ -15,20 +15,22 @@ its [status page](https://api.cloud.cbh.kth.se/deploy).
 See our wiki for more information about [go-deploy](https://wiki.cloud.cbh.kth.se/index.php/Deploy).
 
 ## 📚 Docs
+
 go-deploy is documented using godoc. You can view the documentation by running the documentation server locally.
 
 1. Install godoc `go install golang.org/x/tools/cmd/godoc`
-2. Set the config environment variable `export DEPLOY_CONFIG_FILE=/path/to/config/file`
-3. Run godoc `godoc -http=:6060`
-4. Visit [http://localhost:6060/pkg/go-deploy/](http://localhost:6060/pkg/go-deploy/)
+2. Run godoc `godoc -http=:6060`
+3. Visit [http://localhost:6060/pkg/go-deploy/](http://localhost:6060/pkg/go-deploy/)
 
 ### API
+
 The API is documented using Swagger.
 You can view the API documentation by running go-deploy locally.
 
 1. Install go.mod dependencies `go mod download`
-2. Run go-deploy `go run main.go`
-3. Visit [http://localhost:8080/v1/docs](http://localhost:8080/deploy/v1/docs).
+2. Set the config environment variable `export DEPLOY_CONFIG_FILE=/path/to/config/file`
+3. Run go-deploy `go run main.go`
+4. Visit [http://localhost:8080/v1/docs](http://localhost:8080/deploy/v1/docs).
 
 If you are unable to run the API locally, you can try it out using the deployed API.
 Go to [https://api.cloud.cbh.kth.se/deploy/v1/docs](https://api.cloud.cbh.kth.se/deploy/v1/docs).
