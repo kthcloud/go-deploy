@@ -1025,5 +1025,5 @@ func createImagePath(ownerID, name string) string {
 
 // createTransferCode generates a transfer code.
 func createTransferCode() string {
-	return utils.HashString(uuid.NewString())
+	return utils.HashStringAlphanumeric(uuid.NewString())
 }

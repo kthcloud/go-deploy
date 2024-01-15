@@ -331,5 +331,5 @@ func createInvitationNotification(userID, teamID, teamName, invitationCode strin
 
 // createInvitationCode is a helper function to create a random invitation code
 func createInvitationCode() string {
-	return utils.HashString(uuid.NewString())
+	return utils.HashStringAlphanumeric(uuid.NewString())
 }

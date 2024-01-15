@@ -907,5 +907,5 @@ func GetCloudStackHostCapabilities(hostName string, zoneName string) (*CloudStac
 }
 
 func createTransferCode() string {
-	return utils.HashString(uuid.NewString())
+	return utils.HashStringAlphanumeric(uuid.NewString())
 }
