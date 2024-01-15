@@ -19,6 +19,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"math"
 	"path"
+	regexp "regexp"
+	"strings"
 	"time"
 )
 
@@ -1026,12 +1028,12 @@ func encodeDockerConfig(registry, username, password string) []byte {
 
 // dPvName returns the PV name for a deployment
 func dPvName(deployment *deployment.Deployment, volumeName string) string {
-	return fmt.Sprintf("%s-%s", deployment.Name, volumeName)
+	return fmt.Sprintf("%s-%s", deployment.Name, makeValidK8sName(volumeName))
 }
 
 // dPvcName returns the PVC name for a deployment
 func dPvcName(deployment *deployment.Deployment, volumeName string) string {
-	return fmt.Sprintf("%s-%s", deployment.Name, volumeName)
+	return fmt.Sprintf("%s-%s", deployment.Name, makeValidK8sName(volumeName))
 }
 
 // vpDeploymentName returns the deployment name for a VM proxy
@@ -1112,4 +1114,28 @@ func sJobs(userID string) []smModels.Job {
 			},
 		},
 	}
+}
+
+// makeValidK8sName returns a valid Kubernetes name
+// It returns a string that conforms to the Kubernetes naming convention (RFC 1123)
+func makeValidK8sName(name string) string {
+	// Define a regular expression for invalid Kubernetes name characters
+	re := regexp.MustCompile(`[^a-zA-Z0-9-.]`)
+
+	// Replace invalid characters with '-'
+	validName := re.ReplaceAllString(name, "-")
+
+	// Convert to lower case
+	validName = strings.ToLower(validName)
+
+	// Ensure it starts and ends with an alphanumeric character
+	validName = strings.TrimLeft(validName, "-.")
+	validName = strings.TrimRight(validName, "-.")
+
+	// Kubernetes names are typically limited to 253 characters
+	if len(validName) > 253 {
+		validName = validName[:253]
+	}
+
+	return validName
 }
