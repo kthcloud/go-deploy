@@ -24,7 +24,6 @@ func (cr *CsGenerator) VMs() []models.VmPublic {
 			Name:        cr.v.vm.Name,
 			CpuCores:    cr.v.vm.Specs.CpuCores,
 			RAM:         cr.v.vm.Specs.RAM,
-			TemplateID:  cr.v.vmZone.TemplateID,
 			ExtraConfig: cr.v.vm.Subsystems.CS.VM.ExtraConfig,
 			Tags:        createTags(cr.v.vm.Name, cr.v.vm.Name),
 		}
