@@ -22,12 +22,10 @@ type VM struct {
 	RepairedAt time.Time `bson:"repairedAt"`
 	DeletedAt  time.Time `bson:"deletedAt"`
 
-	NetworkID    string `bson:"networkId"`
-	SshPublicKey string `bson:"sshPublicKey"`
-	// Deprecated, use PortMap instead
-	Ports_     []Port                       `bson:"ports"`
-	PortMap    map[string]Port              `bson:"portMap"`
-	Activities map[string]activity.Activity `bson:"activities"`
+	NetworkID    string                       `bson:"networkId"`
+	SshPublicKey string                       `bson:"sshPublicKey"`
+	PortMap      map[string]Port              `bson:"portMap"`
+	Activities   map[string]activity.Activity `bson:"activities"`
 
 	Subsystems Subsystems `bson:"subsystems"`
 	Specs      Specs      `bson:"specs"`
