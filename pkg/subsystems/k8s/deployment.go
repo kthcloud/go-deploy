@@ -72,6 +72,20 @@ func (client *Client) UpdateDeployment(public *models.DeploymentPublic) (*models
 
 	res, err := client.K8sClient.AppsV1().Deployments(public.Namespace).Update(context.TODO(), CreateDeploymentManifest(public), metav1.UpdateOptions{})
 	if err != nil && !IsNotFoundErr(err) {
+
+		// We treat immutability errors as if no update was done.
+		// This is done because it is compatible with the repair pipeline,
+		// which will try to update the deployment if it is not in a good state.
+		// And if the update did not work, it will try to recreate -> which
+		// will most likely solve the immutability issue.
+		//
+		// It is currently being tested, whether it's a good approach.
+		// If so, it will be added to the other Kubernetes resources.
+		if IsImmutabilityErr(err) {
+			log.Println("k8s deployment", public.Name, "could not be updated due to immutability error. assuming bad state")
+			return nil, nil
+		}
+
 		return nil, makeError(err)
 	}
 

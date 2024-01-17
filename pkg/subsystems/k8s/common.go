@@ -4,6 +4,7 @@ import (
 	"errors"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strings"
 )
 
 // IsNotFoundErr returns true if the error is a Kubernetes NotFound error.
@@ -16,4 +17,9 @@ func IsNotFoundErr(err error) bool {
 	}
 
 	return false
+}
+
+// IsImmutabilityErr returns true if the error is a Kubernetes Immutability error.
+func IsImmutabilityErr(err error) bool {
+	return strings.Contains(err.Error(), "field is immutable")
 }
