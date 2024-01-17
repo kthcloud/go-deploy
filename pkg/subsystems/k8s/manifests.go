@@ -25,7 +25,6 @@ func CreateNamespaceManifest(public *models.NamespacePublic) *apiv1.Namespace {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: public.Name,
 			Labels: map[string]string{
-				keys.ManifestLabelID:   public.ID,
 				keys.ManifestLabelName: public.Name,
 			},
 			Annotations: map[string]string{
@@ -123,7 +122,6 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 			Name:      public.Name,
 			Namespace: public.Namespace,
 			Labels: map[string]string{
-				keys.ManifestLabelID:   public.ID,
 				keys.ManifestLabelName: public.Name,
 			},
 			Annotations: map[string]string{
@@ -134,13 +132,12 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 			Replicas: intToInt32Ptr(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					keys.ManifestLabelID: public.ID,
+					keys.ManifestLabelName: public.Name,
 				},
 			},
 			Template: apiv1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						keys.ManifestLabelID:   public.ID,
 						keys.ManifestLabelName: public.Name,
 					},
 					Annotations: map[string]string{
@@ -179,7 +176,6 @@ func CreateServiceManifest(public *models.ServicePublic) *apiv1.Service {
 			Name:      public.Name,
 			Namespace: public.Namespace,
 			Labels: map[string]string{
-				keys.ManifestLabelID:   public.ID,
 				keys.ManifestLabelName: public.Name,
 			},
 			Annotations: map[string]string{
@@ -255,7 +251,6 @@ func CreateIngressManifest(public *models.IngressPublic) *networkingv1.Ingress {
 			Name:      public.Name,
 			Namespace: public.Namespace,
 			Labels: map[string]string{
-				keys.ManifestLabelID:   public.ID,
 				keys.ManifestLabelName: public.Name,
 			},
 			Annotations: annotations,
@@ -274,7 +269,6 @@ func CreatePvManifest(public *models.PvPublic) *apiv1.PersistentVolume {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: public.Name,
 			Labels: map[string]string{
-				keys.ManifestLabelID:   public.ID,
 				keys.ManifestLabelName: public.Name,
 			},
 			Annotations: map[string]string{
@@ -306,7 +300,6 @@ func CreatePvcManifest(public *models.PvcPublic) *apiv1.PersistentVolumeClaim {
 			Name:      public.Name,
 			Namespace: public.Namespace,
 			Labels: map[string]string{
-				keys.ManifestLabelID:   public.ID,
 				keys.ManifestLabelName: public.Name,
 			},
 			Annotations: map[string]string{
@@ -377,7 +370,6 @@ func CreateJobManifest(public *models.JobPublic) *v1.Job {
 			Name:      public.Name,
 			Namespace: public.Namespace,
 			Labels: map[string]string{
-				keys.ManifestLabelID:   public.ID,
 				keys.ManifestLabelName: public.Name,
 			},
 			Annotations: map[string]string{
@@ -389,7 +381,6 @@ func CreateJobManifest(public *models.JobPublic) *v1.Job {
 			Template: apiv1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						keys.ManifestLabelID:   public.ID,
 						keys.ManifestLabelName: public.Name,
 					},
 					Annotations: map[string]string{
@@ -422,7 +413,6 @@ func CreateSecretManifest(public *models.SecretPublic) *apiv1.Secret {
 			Name:      public.Name,
 			Namespace: public.Namespace,
 			Labels: map[string]string{
-				keys.ManifestLabelID:   public.ID,
 				keys.ManifestLabelName: public.Name,
 			},
 			Annotations: map[string]string{
@@ -441,7 +431,6 @@ func CreateHpaManifest(public *models.HpaPublic) *autoscalingv2.HorizontalPodAut
 			Name:      public.Name,
 			Namespace: public.Namespace,
 			Labels: map[string]string{
-				keys.ManifestLabelID:   public.ID,
 				keys.ManifestLabelName: public.Name,
 			},
 			Annotations: map[string]string{

@@ -6,21 +6,6 @@ import (
 	"time"
 )
 
-// formatCreatedAt formats a Kubernetes manifest's creation timestamp to a time.Time.
-func formatCreatedAt(annotations map[string]string) time.Time {
-	created, ok := annotations[keys.ManifestCreationTimestamp]
-	if !ok {
-		return time.Now()
-	}
-
-	createdAt, err := time.Parse("2006-01-02 15:04:05.000 -0700", created)
-	if err != nil {
-		return time.Now()
-	}
-
-	return createdAt
-}
-
 type K8sResource interface {
 	Created() bool
 }
@@ -74,4 +59,19 @@ func EnvVarFromK8s(envVar *v1.EnvVar) EnvVar {
 		Name:  envVar.Name,
 		Value: envVar.Value,
 	}
+}
+
+// formatCreatedAt formats a Kubernetes manifest's creation timestamp to a time.Time.
+func formatCreatedAt(annotations map[string]string) time.Time {
+	created, ok := annotations[keys.ManifestCreationTimestamp]
+	if !ok {
+		return time.Now()
+	}
+
+	createdAt, err := time.Parse("2006-01-02 15:04:05.000 -0700", created)
+	if err != nil {
+		return time.Now()
+	}
+
+	return createdAt
 }

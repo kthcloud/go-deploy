@@ -1,13 +1,11 @@
 package models
 
 import (
-	"go-deploy/pkg/subsystems/k8s/keys"
 	appsv1 "k8s.io/api/apps/v1"
 	"time"
 )
 
 type DeploymentPublic struct {
-	ID               string          `bson:"id"`
 	Name             string          `bson:"name"`
 	Namespace        string          `bson:"namespace"`
 	Image            string          `bson:"image"`
@@ -22,12 +20,8 @@ type DeploymentPublic struct {
 	CreatedAt        time.Time       `bson:"createdAt"`
 }
 
-func (d *DeploymentPublic) GetID() string {
-	return d.ID
-}
-
 func (d *DeploymentPublic) Created() bool {
-	return d.ID != ""
+	return d.CreatedAt != time.Time{}
 }
 
 func (d *DeploymentPublic) IsPlaceholder() bool {
@@ -140,7 +134,7 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 		}
 	}
 
-	// delete any k8sVolumes that does not have a mount path, they need to be recreated
+	// Delete any k8sVolumes that does not have a mount path, they need to be recreated
 	for i := len(volumes) - 1; i >= 0; i-- {
 		if volumes[i].MountPath == "" {
 			volumes = append(volumes[:i], volumes[i+1:]...)
@@ -148,7 +142,6 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 	}
 
 	return &DeploymentPublic{
-		ID:               deployment.Labels[keys.ManifestLabelID],
 		Name:             deployment.Name,
 		Namespace:        deployment.Namespace,
 		Image:            image,

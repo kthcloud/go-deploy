@@ -3,8 +3,6 @@ package k8s
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
-	"go-deploy/pkg/subsystems/k8s/keys"
 	"go-deploy/pkg/subsystems/k8s/models"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
@@ -12,28 +10,26 @@ import (
 )
 
 // ReadService reads a Service from Kubernetes.
-func (client *Client) ReadService(id string) (*models.ServicePublic, error) {
+func (client *Client) ReadService(name string) (*models.ServicePublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to read k8s service %s. details: %w", id, err)
+		return fmt.Errorf("failed to read k8s service %s. details: %w", name, err)
 	}
 
-	if id == "" {
-		log.Println("no id supplied when reading k8s service. assuming it was deleted")
+	if name == "" {
+		log.Println("no name supplied when reading k8s service. assuming it was deleted")
 		return nil, nil
 	}
 
-	list, err := client.K8sClient.CoreV1().Services(client.Namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelID, id),
-	})
+	res, err := client.K8sClient.CoreV1().Services(client.Namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
+		if IsNotFoundErr(err) {
+			return nil, nil
+		}
+
 		return nil, makeError(err)
 	}
 
-	if len(list.Items) > 0 {
-		return models.CreateServicePublicFromRead(&list.Items[0]), nil
-	}
-
-	return nil, nil
+	return models.CreateServicePublicFromRead(res), nil
 }
 
 // CreateService creates a Service in Kubernetes.
@@ -51,7 +47,6 @@ func (client *Client) CreateService(public *models.ServicePublic) (*models.Servi
 		return models.CreateServicePublicFromRead(service), nil
 	}
 
-	public.ID = uuid.New().String()
 	public.CreatedAt = time.Now()
 
 	manifest := CreateServiceManifest(public)
@@ -66,11 +61,11 @@ func (client *Client) CreateService(public *models.ServicePublic) (*models.Servi
 // UpdateService updates a Service in Kubernetes.
 func (client *Client) UpdateService(public *models.ServicePublic) (*models.ServicePublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to update k8s service %s. details: %w", public.ID, err)
+		return fmt.Errorf("failed to update k8s service %s. details: %w", public.Name, err)
 	}
 
-	if public.ID == "" {
-		log.Println("no id supplied when updating k8s service. assuming it was deleted")
+	if public.Name == "" {
+		log.Println("no name supplied when updating k8s service. assuming it was deleted")
 		return nil, nil
 	}
 
@@ -88,28 +83,19 @@ func (client *Client) UpdateService(public *models.ServicePublic) (*models.Servi
 }
 
 // DeleteService deletes a Service in Kubernetes.
-func (client *Client) DeleteService(id string) error {
+func (client *Client) DeleteService(name string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete k8s service %s. details: %w", id, err)
+		return fmt.Errorf("failed to delete k8s service %s. details: %w", name, err)
 	}
 
-	if id == "" {
-		log.Println("no id supplied when deleting k8s service. assuming it was deleted")
+	if name == "" {
+		log.Println("no name supplied when deleting k8s service. assuming it was deleted")
 		return nil
 	}
 
-	list, err := client.K8sClient.CoreV1().Services(client.Namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelID, id),
-	})
-	if err != nil {
+	err := client.K8sClient.CoreV1().Services(client.Namespace).Delete(context.TODO(), name, metav1.DeleteOptions{})
+	if err != nil && !IsNotFoundErr(err) {
 		return makeError(err)
-	}
-
-	for _, item := range list.Items {
-		err = client.K8sClient.CoreV1().Services(client.Namespace).Delete(context.TODO(), item.Name, metav1.DeleteOptions{})
-		if err != nil {
-			return makeError(err)
-		}
 	}
 
 	return nil

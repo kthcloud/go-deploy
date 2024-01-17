@@ -87,7 +87,7 @@ func k8sDeletedDeployment(deployment *deploymentModels.Deployment) (bool, error)
 	}
 
 	k8s := &deployment.Subsystems.K8s
-	return k8s.Namespace.ID == "", nil
+	return !k8s.Namespace.Created(), nil
 }
 
 // harborDeleted checks if the Harbor setup for the given deployment is deleted.
@@ -150,7 +150,7 @@ func k8sDeletedSM(sm *sm.SM) (bool, error) {
 		return false, nil
 	}
 
-	return k8s.Namespace.ID == "", nil
+	return !k8s.Namespace.Created(), nil
 }
 
 // csDeleted checks if the CS setup for the given VM is deleted.
@@ -186,7 +186,7 @@ func k8sDeletedVM(vm *vm.VM) (bool, error) {
 		return false, nil
 	}
 
-	return k8s.Namespace.ID == "", nil
+	return !k8s.Namespace.Created(), nil
 }
 
 // gpuCleared checks if the GPU setup for the given VM is cleared.

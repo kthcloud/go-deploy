@@ -3,11 +3,8 @@ package k8s
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
-	"go-deploy/pkg/subsystems/k8s/keys"
 	"go-deploy/pkg/subsystems/k8s/models"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/watch"
 	"log"
 	"strings"
 	"time"
@@ -38,52 +35,48 @@ func (client *Client) ReadAllNamespaces(prefix *string) ([]models.NamespacePubli
 }
 
 // ReadNamespace reads a Namespace from Kubernetes.
-func (client *Client) ReadNamespace(id string) (*models.NamespacePublic, error) {
+func (client *Client) ReadNamespace(name string) (*models.NamespacePublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to read namespace %s. details: %w", id, err)
+		return fmt.Errorf("failed to read namespace %s. details: %w", name, err)
 	}
 
-	if id == "" {
+	if name == "" {
 		return nil, nil
 	}
 
-	list, err := client.K8sClient.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
+	res, err := client.K8sClient.CoreV1().Namespaces().Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
+		if IsNotFoundErr(err) {
+			return nil, nil
+		}
+
 		return nil, makeError(err)
 	}
 
-	for _, item := range list.Items {
-		idLabel := GetLabel(item.ObjectMeta.Labels, keys.ManifestLabelID)
-		if idLabel == id {
-			return models.CreateNamespacePublicFromRead(&item), nil
-		}
-	}
-
-	return nil, nil
+	return models.CreateNamespacePublicFromRead(res), nil
 }
 
 // CreateNamespace creates a Namespace in Kubernetes.
 func (client *Client) CreateNamespace(public *models.NamespacePublic) (*models.NamespacePublic, error) {
-	_ = func(err error) error {
+	makeErr := func(err error) error {
 		return fmt.Errorf("failed to create namespace %s. details: %w", public.Name, err)
 	}
 
 	ns, err := client.K8sClient.CoreV1().Namespaces().Get(context.TODO(), public.Name, metav1.GetOptions{})
-	if err == nil && !IsNotFoundErr(err) {
-		return models.CreateNamespacePublicFromRead(ns), nil
+	if err != nil && !IsNotFoundErr(err) {
+		return nil, makeErr(err)
 	}
 
 	if err == nil {
 		return models.CreateNamespacePublicFromRead(ns), nil
 	}
 
-	public.ID = uuid.New().String()
 	public.CreatedAt = time.Now()
 
 	manifest := CreateNamespaceManifest(public)
 	res, err := client.K8sClient.CoreV1().Namespaces().Create(context.TODO(), manifest, metav1.CreateOptions{})
 	if err != nil {
-		return nil, err
+		return nil, makeErr(err)
 	}
 
 	return models.CreateNamespacePublicFromRead(res), nil
@@ -92,10 +85,10 @@ func (client *Client) CreateNamespace(public *models.NamespacePublic) (*models.N
 // UpdateNamespace updates a Namespace in Kubernetes.
 func (client *Client) UpdateNamespace(public *models.NamespacePublic) (*models.NamespacePublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to update namespace %s. details: %w", public.ID, err)
+		return fmt.Errorf("failed to update namespace %s. details: %w", public.Name, err)
 	}
 
-	if public.ID == "" {
+	if public.Name == "" {
 		log.Println("no id in namespace when updating. assuming it was deleted")
 		return nil, nil
 	}
@@ -135,20 +128,6 @@ func (client *Client) DeleteNamespace(name string) error {
 	}
 
 	return nil
-}
-
-// createNamespaceWatcher creates a watcher for a namespace.
-// This is used to, for example, wait for a namespace to be deleted after deleting it.
-func (client *Client) createNamespaceWatcher(ctx context.Context, resourceName string) (watch.Interface, error) {
-	labelSelector := fmt.Sprintf("%s=%s", "kubernetes.io/metadata.name", resourceName)
-
-	opts := metav1.ListOptions{
-		TypeMeta:      metav1.TypeMeta{},
-		LabelSelector: labelSelector,
-		FieldSelector: "",
-	}
-
-	return client.K8sClient.CoreV1().Namespaces().Watch(ctx, opts)
 }
 
 // waitNamespaceDeleted waits for a namespace to be deleted.

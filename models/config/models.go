@@ -50,7 +50,7 @@ type Deployment struct {
 	Port                           int    `yaml:"port"`
 	Prefix                         string `yaml:"prefix"`
 	WildcardCertSecretNamespace    string `yaml:"wildcardCertSecretNamespace"`
-	WildcardCertSecretId           string `yaml:"wildcardCertSecretId"`
+	WildcardCertSecretName         string `yaml:"wildcardCertSecretName"`
 	CustomDomainTxtRecordSubdomain string `yaml:"customDomainTxtRecordSubdomain"`
 	IngressClass                   string `yaml:"ingressClass"`
 	RepairInterval                 int    `yaml:"repairInterval"`

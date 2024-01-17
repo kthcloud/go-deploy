@@ -3,8 +3,6 @@ package k8s
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
-	"go-deploy/pkg/subsystems/k8s/keys"
 	"go-deploy/pkg/subsystems/k8s/models"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
@@ -12,28 +10,26 @@ import (
 )
 
 // ReadHPA reads a HorizontalPodAutoscaler from Kubernetes.
-func (client *Client) ReadHPA(id string) (*models.HpaPublic, error) {
+func (client *Client) ReadHPA(name string) (*models.HpaPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to read k8s hpa %s. details: %w", id, err)
+		return fmt.Errorf("failed to read k8s hpa %s. details: %w", name, err)
 	}
 
-	if id == "" {
-		log.Println("no id supplied when reading k8s hpa. assuming it was deleted")
+	if name == "" {
+		log.Println("no name supplied when reading k8s hpa. assuming it was deleted")
 		return nil, nil
 	}
 
-	list, err := client.K8sClient.AutoscalingV2().HorizontalPodAutoscalers(client.Namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelID, id),
-	})
+	res, err := client.K8sClient.AutoscalingV2().HorizontalPodAutoscalers(client.Namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
+		if IsNotFoundErr(err) {
+			return nil, nil
+		}
+
 		return nil, makeError(err)
 	}
 
-	if len(list.Items) > 0 {
-		return models.CreateHpaPublicFromRead(&list.Items[0]), nil
-	}
-
-	return nil, nil
+	return models.CreateHpaPublicFromRead(res), nil
 }
 
 // CreateHPA creates a HorizontalPodAutoscaler in Kubernetes.
@@ -51,7 +47,6 @@ func (client *Client) CreateHPA(public *models.HpaPublic) (*models.HpaPublic, er
 		return models.CreateHpaPublicFromRead(hpa), nil
 	}
 
-	public.ID = uuid.New().String()
 	public.CreatedAt = time.Now()
 
 	manifest := CreateHpaManifest(public)
@@ -66,11 +61,11 @@ func (client *Client) CreateHPA(public *models.HpaPublic) (*models.HpaPublic, er
 // UpdateHPA updates a HorizontalPodAutoscaler in Kubernetes.
 func (client *Client) UpdateHPA(public *models.HpaPublic) (*models.HpaPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to update k8s hpa %s. details: %w", public.ID, err)
+		return fmt.Errorf("failed to update k8s hpa %s. details: %w", public.Name, err)
 	}
 
-	if public.ID == "" {
-		log.Println("no id supplied when updating k8s hpa. assuming it was deleted")
+	if public.Name == "" {
+		log.Println("no name supplied when updating k8s hpa. assuming it was deleted")
 		return nil, nil
 	}
 
@@ -88,28 +83,19 @@ func (client *Client) UpdateHPA(public *models.HpaPublic) (*models.HpaPublic, er
 }
 
 // DeleteHPA deletes a HorizontalPodAutoscaler in Kubernetes.
-func (client *Client) DeleteHPA(id string) error {
+func (client *Client) DeleteHPA(name string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete k8s hpa %s. details: %w", id, err)
+		return fmt.Errorf("failed to delete k8s hpa %s. details: %w", name, err)
 	}
 
-	if id == "" {
-		log.Println("no id supplied when deleting k8s hpa. assuming it was deleted")
+	if name == "" {
+		log.Println("no name supplied when deleting k8s hpa. assuming it was deleted")
 		return nil
 	}
 
-	list, err := client.K8sClient.AutoscalingV2().HorizontalPodAutoscalers(client.Namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelID, id),
-	})
-	if err != nil {
+	err := client.K8sClient.AutoscalingV2().HorizontalPodAutoscalers(client.Namespace).Delete(context.TODO(), name, metav1.DeleteOptions{})
+	if err != nil && !IsNotFoundErr(err) {
 		return makeError(err)
-	}
-
-	for _, hpa := range list.Items {
-		err = client.K8sClient.AutoscalingV2().HorizontalPodAutoscalers(client.Namespace).Delete(context.TODO(), hpa.Name, metav1.DeleteOptions{})
-		if err != nil {
-			return makeError(err)
-		}
 	}
 
 	return nil

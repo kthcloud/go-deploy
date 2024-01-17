@@ -3,51 +3,40 @@ package k8s
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
-	"go-deploy/pkg/subsystems/k8s/keys"
 	"go-deploy/pkg/subsystems/k8s/models"
-	v1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/watch"
 	"log"
 	"time"
 )
 
 // ReadDeployment reads a deployment from Kubernetes.
-func (client *Client) ReadDeployment(id string) (*models.DeploymentPublic, error) {
+func (client *Client) ReadDeployment(name string) (*models.DeploymentPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to read k8s deployment %s. details: %w", id, err)
+		return fmt.Errorf("failed to read k8s deployment %s. details: %w", name, err)
 	}
 
-	if id == "" {
-		log.Println("no id supplied when reading k8s deployment. assuming it was deleted")
+	if name == "" {
+		log.Println("no name supplied when reading k8s deployment. assuming it was deleted")
 		return nil, nil
 	}
 
-	list, err := client.K8sClient.AppsV1().Deployments(client.Namespace).List(context.TODO(), metav1.ListOptions{})
+	res, err := client.K8sClient.AppsV1().Deployments(client.Namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
+		if IsNotFoundErr(err) {
+			return nil, nil
+		}
+
 		return nil, makeError(err)
 	}
 
-	for _, item := range list.Items {
-		idLabel := GetLabel(item.ObjectMeta.Labels, keys.ManifestLabelID)
-		if idLabel == id {
-			return models.CreateDeploymentPublicFromRead(&item), nil
-		}
-	}
-
-	return nil, nil
+	return models.CreateDeploymentPublicFromRead(res), nil
 }
 
 // CreateDeployment creates a deployment in Kubernetes.
 func (client *Client) CreateDeployment(public *models.DeploymentPublic) (*models.DeploymentPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create deployment %s. details: %w", public.Name, err)
-	}
-
-	if public.Name == "" {
-		return nil, nil
 	}
 
 	deployment, err := client.K8sClient.AppsV1().Deployments(public.Namespace).Get(context.TODO(), public.Name, metav1.GetOptions{})
@@ -59,26 +48,25 @@ func (client *Client) CreateDeployment(public *models.DeploymentPublic) (*models
 		return models.CreateDeploymentPublicFromRead(deployment), nil
 	}
 
-	public.ID = uuid.New().String()
 	public.CreatedAt = time.Now()
 
 	manifest := CreateDeploymentManifest(public)
-	_, err = client.K8sClient.AppsV1().Deployments(public.Namespace).Create(context.TODO(), manifest, metav1.CreateOptions{})
+	res, err := client.K8sClient.AppsV1().Deployments(public.Namespace).Create(context.TODO(), manifest, metav1.CreateOptions{})
 	if err != nil {
 		return nil, makeError(err)
 	}
 
-	return client.ReadDeployment(public.ID)
+	return models.CreateDeploymentPublicFromRead(res), nil
 }
 
 // UpdateDeployment updates a deployment in Kubernetes.
 func (client *Client) UpdateDeployment(public *models.DeploymentPublic) (*models.DeploymentPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to update k8s deployment %s. details: %w", public.ID, err)
+		return fmt.Errorf("failed to update k8s deployment %s. details: %w", public.Name, err)
 	}
 
-	if public.ID == "" {
-		log.Println("no id supplied when updating k8s deployment. assuming it was deleted")
+	if public.Name == "" {
+		log.Println("no name supplied when updating k8s deployment. assuming it was deleted")
 		return nil, nil
 	}
 
@@ -96,28 +84,19 @@ func (client *Client) UpdateDeployment(public *models.DeploymentPublic) (*models
 }
 
 // DeleteDeployment deletes a deployment in Kubernetes.
-func (client *Client) DeleteDeployment(id string) error {
+func (client *Client) DeleteDeployment(name string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete deployment %s. details: %w", id, err)
+		return fmt.Errorf("failed to delete deployment %s. details: %w", name, err)
 	}
 
-	if id == "" {
-		log.Println("no id supplied when deleting k8s deployment. assuming it was deleted")
+	if name == "" {
+		log.Println("no name supplied when deleting k8s deployment. assuming it was deleted")
 		return nil
 	}
 
-	list, err := client.K8sClient.AppsV1().Deployments(client.Namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelID, id),
-	})
-	if err != nil {
+	err := client.K8sClient.AppsV1().Deployments(client.Namespace).Delete(context.TODO(), name, metav1.DeleteOptions{})
+	if err != nil && !IsNotFoundErr(err) {
 		return makeError(err)
-	}
-
-	for _, item := range list.Items {
-		err = client.K8sClient.AppsV1().Deployments(client.Namespace).Delete(context.TODO(), item.Name, metav1.DeleteOptions{})
-		if err != nil && !IsNotFoundErr(err) {
-			return makeError(err)
-		}
 	}
 
 	return nil
@@ -125,12 +104,12 @@ func (client *Client) DeleteDeployment(id string) error {
 
 // RestartDeployment restarts a deployment in Kubernetes.
 // This is done by updating the deployment's annotation `kubectl.kubernetes.io/restartedAt` to the current time.
-func (client *Client) RestartDeployment(id string) error {
+func (client *Client) RestartDeployment(name string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to restart k8s deployment %s. details: %w", id, err)
+		return fmt.Errorf("failed to restart k8s deployment %s. details: %w", name, err)
 	}
 
-	deployment, err := client.ReadDeployment(id)
+	deployment, err := client.ReadDeployment(name)
 	if err != nil {
 		return makeError(err)
 	}
@@ -148,59 +127,5 @@ func (client *Client) RestartDeployment(id string) error {
 		return makeError(err)
 	}
 
-	log.Println("deployment", id, "restarted")
-
 	return nil
-}
-
-// createDeploymentWatcher creates a watcher for a deployment.
-// It is used to, for example, wait for a deployment to be ready after creating it.
-func (client *Client) createDeploymentWatcher(ctx context.Context, namespace, deployment string) (watch.Interface, error) {
-	labelSelector := fmt.Sprintf("%s=%s", "app.kubernetes.io/name", deployment)
-
-	opts := metav1.ListOptions{
-		TypeMeta:      metav1.TypeMeta{},
-		LabelSelector: labelSelector,
-		FieldSelector: "",
-	}
-
-	return client.K8sClient.AppsV1().Deployments(namespace).Watch(ctx, opts)
-}
-
-// waitDeploymentReady waits for a deployment to be ready.
-// This is used after creating a deployment to ensure it is ready before returning.
-func (client *Client) waitDeploymentReady(ctx context.Context, namespace, deployment string) error {
-	watcher, err := client.createDeploymentWatcher(ctx, namespace, deployment)
-	if err != nil {
-		return err
-	}
-
-	defer watcher.Stop()
-
-	wasDown := false
-
-	for {
-		select {
-		case event := <-watcher.ResultChan():
-			if event.Type == watch.Modified {
-				if event.Object == nil {
-					continue
-				}
-
-				k8sDeployment := event.Object.(*v1.Deployment)
-
-				if k8sDeployment.Status.UnavailableReplicas > 0 {
-					wasDown = true
-					continue
-				}
-
-				if k8sDeployment.Status.UnavailableReplicas == 0 && k8sDeployment.Status.ReadyReplicas > 0 && wasDown {
-					return nil
-				}
-			}
-
-		case <-ctx.Done():
-			return nil
-		}
-	}
 }
