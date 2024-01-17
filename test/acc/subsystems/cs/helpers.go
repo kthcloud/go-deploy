@@ -26,6 +26,7 @@ func withClient(t *testing.T) *cs.Client {
 		ProjectID:   zone.ProjectID,
 		IpAddressID: zone.IpAddressID,
 		NetworkID:   zone.NetworkID,
+		TemplateID:  zone.TemplateID,
 	})
 	test.NoError(t, err, "failed to create cs client")
 	assert.NotNil(t, client, "cs client is nil")
@@ -40,7 +41,6 @@ func withDefaultVM(t *testing.T) *models.VmPublic {
 		Name:        name,
 		CpuCores:    2,
 		RAM:         4,
-		TemplateID:  "cbac58b6-336b-49ab-b4d7-341586dfefcc", // ubuntu-2204-cloudstack-ready-v1.2
 		ExtraConfig: "",
 		Tags: []models.Tag{
 			{Key: "name", Value: name},
@@ -68,7 +68,6 @@ func withVM(t *testing.T, vm *models.VmPublic) *models.VmPublic {
 	assert.Equal(t, vm.Name, vmCreated.Name, "vm name is not equal")
 	assert.Equal(t, vm.CpuCores, vmCreated.CpuCores, "vm cpu cores is not equal")
 	assert.Equal(t, vm.RAM, vmCreated.RAM, "vm ram is not equal")
-	assert.Equal(t, vm.TemplateID, vmCreated.TemplateID, "vm template id is not equal")
 	assert.Equal(t, vm.ExtraConfig, vmCreated.ExtraConfig, "vm extra config is not equal")
 
 	return vmCreated

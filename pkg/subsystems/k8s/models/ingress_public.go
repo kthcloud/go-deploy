@@ -12,7 +12,6 @@ type CustomCert struct {
 }
 
 type IngressPublic struct {
-	ID           string      `json:"id" bson:"id"`
 	Name         string      `bson:"name"`
 	Namespace    string      `bson:"namespace"`
 	ServiceName  string      `bson:"serviceName"`
@@ -26,7 +25,7 @@ type IngressPublic struct {
 }
 
 func (i *IngressPublic) Created() bool {
-	return i.ID != ""
+	return i.CreatedAt != time.Time{}
 }
 
 func (i *IngressPublic) IsPlaceholder() bool {
@@ -74,7 +73,6 @@ func CreateIngressPublicFromRead(ingress *v1.Ingress) *IngressPublic {
 	}
 
 	return &IngressPublic{
-		ID:           ingress.Labels[keys.ManifestLabelID],
 		Name:         ingress.Name,
 		Namespace:    ingress.Namespace,
 		ServiceName:  serviceName,

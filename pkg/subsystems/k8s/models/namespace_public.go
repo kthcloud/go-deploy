@@ -1,19 +1,17 @@
 package models
 
 import (
-	"go-deploy/pkg/subsystems/k8s/keys"
 	v1 "k8s.io/api/core/v1"
 	"time"
 )
 
 type NamespacePublic struct {
-	ID        string    `bson:"id"`
 	Name      string    `bson:"name"`
 	CreatedAt time.Time `bson:"createdAt"`
 }
 
 func (n *NamespacePublic) Created() bool {
-	return n.ID != ""
+	return n.CreatedAt != time.Time{}
 }
 
 func (n *NamespacePublic) IsPlaceholder() bool {
@@ -23,7 +21,6 @@ func (n *NamespacePublic) IsPlaceholder() bool {
 // CreateNamespacePublicFromRead creates a NamespacePublic from a v1.Namespace.
 func CreateNamespacePublicFromRead(namespace *v1.Namespace) *NamespacePublic {
 	return &NamespacePublic{
-		ID:        namespace.Labels[keys.ManifestLabelID],
 		Name:      namespace.Name,
 		CreatedAt: formatCreatedAt(namespace.Annotations),
 	}

@@ -152,5 +152,6 @@ func withCsClient(zone *configModels.VmZone) (*cs.Client, error) {
 		ProjectID:   zone.ProjectID,
 		NetworkID:   zone.NetworkID,
 		ZoneID:      zone.ZoneID,
+		TemplateID:  zone.TemplateID,
 	})
 }

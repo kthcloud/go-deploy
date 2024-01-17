@@ -1,13 +1,11 @@
 package models
 
 import (
-	"go-deploy/pkg/subsystems/k8s/keys"
 	v1 "k8s.io/api/batch/v1"
 	"time"
 )
 
 type JobPublic struct {
-	ID        string    `bson:"id"`
 	Name      string    `bson:"name"`
 	Namespace string    `bson:"namespace"`
 	Image     string    `bson:"image"`
@@ -18,7 +16,7 @@ type JobPublic struct {
 }
 
 func (job *JobPublic) Created() bool {
-	return job.ID != ""
+	return job.CreatedAt != time.Time{}
 }
 
 func (job *JobPublic) IsPlaceholder() bool {
@@ -64,7 +62,6 @@ func CreateJobPublicFromRead(job *v1.Job) *JobPublic {
 	}
 
 	return &JobPublic{
-		ID:        job.Labels[keys.ManifestLabelID],
 		Name:      job.Name,
 		Namespace: job.Namespace,
 		Image:     job.Spec.Template.Spec.Containers[0].Image,

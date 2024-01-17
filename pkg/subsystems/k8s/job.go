@@ -3,8 +3,6 @@ package k8s
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
-	"go-deploy/pkg/subsystems/k8s/keys"
 	"go-deploy/pkg/subsystems/k8s/models"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
@@ -12,28 +10,26 @@ import (
 )
 
 // ReadJob reads a Job from Kubernetes.
-func (client *Client) ReadJob(id string) (*models.JobPublic, error) {
+func (client *Client) ReadJob(name string) (*models.JobPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to read k8s job %s. details: %w", id, err)
+		return fmt.Errorf("failed to read k8s job %s. details: %w", name, err)
 	}
 
-	if id == "" {
-		log.Println("no id supplied when reading k8s job. assuming it was deleted")
+	if name == "" {
+		log.Println("no name supplied when reading k8s job. assuming it was deleted")
 		return nil, nil
 	}
 
-	list, err := client.K8sClient.BatchV1().Jobs(client.Namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelID, id),
-	})
+	res, err := client.K8sClient.BatchV1().Jobs(client.Namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
+		if IsNotFoundErr(err) {
+			return nil, nil
+		}
+
 		return nil, makeError(err)
 	}
 
-	if len(list.Items) > 0 {
-		return models.CreateJobPublicFromRead(&list.Items[0]), nil
-	}
-
-	return nil, nil
+	return models.CreateJobPublicFromRead(res), nil
 }
 
 // CreateJob creates a Job in Kubernetes.
@@ -51,7 +47,6 @@ func (client *Client) CreateJob(public *models.JobPublic) (*models.JobPublic, er
 		return models.CreateJobPublicFromRead(job), nil
 	}
 
-	public.ID = uuid.New().String()
 	public.CreatedAt = time.Now()
 
 	manifest := CreateJobManifest(public)
@@ -64,30 +59,21 @@ func (client *Client) CreateJob(public *models.JobPublic) (*models.JobPublic, er
 }
 
 // DeleteJob deletes a Job in Kubernetes.
-func (client *Client) DeleteJob(id string) error {
+func (client *Client) DeleteJob(name string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete k8s job %s. details: %w", id, err)
+		return fmt.Errorf("failed to delete k8s job %s. details: %w", name, err)
 	}
 
-	if id == "" {
-		log.Println("no id supplied when deleting k8s job. assuming it was deleted")
+	if name == "" {
+		log.Println("no name supplied when deleting k8s job. assuming it was deleted")
 		return nil
 	}
 
-	list, err := client.K8sClient.BatchV1().Jobs(client.Namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelID, id),
+	err := client.K8sClient.BatchV1().Jobs(client.Namespace).Delete(context.TODO(), name, metav1.DeleteOptions{
+		PropagationPolicy: &[]metav1.DeletionPropagation{metav1.DeletePropagationBackground}[0],
 	})
-	if err != nil {
+	if err != nil && !IsNotFoundErr(err) {
 		return makeError(err)
-	}
-
-	for _, job := range list.Items {
-		err = client.K8sClient.BatchV1().Jobs(client.Namespace).Delete(context.TODO(), job.Name, metav1.DeleteOptions{
-			PropagationPolicy: &[]metav1.DeletionPropagation{metav1.DeletePropagationBackground}[0],
-		})
-		if err != nil && !IsNotFoundErr(err) {
-			return makeError(err)
-		}
 	}
 
 	return nil

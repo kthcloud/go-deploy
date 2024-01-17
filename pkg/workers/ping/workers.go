@@ -116,6 +116,11 @@ func ping(url string) (int, error) {
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
+		// Check if certificate is invalid
+		if strings.Contains(err.Error(), "x509: certificate") {
+			return 400, nil
+		}
+
 		return 0, err
 	}
 

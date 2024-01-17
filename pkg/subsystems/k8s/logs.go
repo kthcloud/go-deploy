@@ -32,9 +32,9 @@ type podEvent struct {
 
 // getPodNames gets the names of all pods for a deployment
 // This is used when setting up a log stream for a deployment
-func (client *Client) getPodNames(namespace, deploymentID string) ([]string, error) {
+func (client *Client) getPodNames(namespace, deploymentName string) ([]string, error) {
 	pods, err := client.K8sClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelID, deploymentID),
+		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelName, deploymentName),
 	})
 	if err != nil {
 		return nil, err
@@ -54,7 +54,7 @@ func (client *Client) getPodNames(namespace, deploymentID string) ([]string, err
 // SetupLogStream sets up a log stream for the entire cluster
 //
 // This should only be called once per cluster
-func (client *Client) SetupLogStream(ctx context.Context, deploymentID string, handler func(string, int, time.Time)) error {
+func (client *Client) SetupLogStream(ctx context.Context, deploymentName string, handler func(string, int, time.Time)) error {
 	_ = func(err error) error {
 		return fmt.Errorf("failed to create k8s log stream. details: %w", err)
 	}
@@ -71,7 +71,7 @@ func (client *Client) SetupLogStream(ctx context.Context, deploymentID string, h
 			AddFunc: func(obj interface{}) {
 				pod := obj.(*v1.Pod)
 
-				if label, ok := pod.Labels[keys.ManifestLabelID]; !ok || label != deploymentID {
+				if label, ok := pod.Labels[keys.ManifestLabelName]; !ok || label != deploymentName {
 					return
 				}
 
@@ -83,7 +83,7 @@ func (client *Client) SetupLogStream(ctx context.Context, deploymentID string, h
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				pod := newObj.(*v1.Pod)
-				if label, ok := pod.Labels[keys.ManifestLabelID]; !ok || label != deploymentID {
+				if label, ok := pod.Labels[keys.ManifestLabelName]; !ok || label != deploymentName {
 					return
 				}
 

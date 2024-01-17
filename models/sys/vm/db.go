@@ -21,34 +21,29 @@ var (
 
 // Create creates a new VM.
 func (client *Client) Create(id, owner, manager string, params *CreateParams) (*VM, error) {
-	var portMap map[string]Port
-	if params.PortMap != nil {
-		portMap = make(map[string]Port)
-		for _, paramPort := range params.PortMap {
-			port := Port{
-				Name:     paramPort.Name,
-				Port:     paramPort.Port,
-				Protocol: paramPort.Protocol,
-			}
-
-			if paramPort.HttpProxy != nil {
-				port.HttpProxy = &PortHttpProxy{
-					Name: paramPort.HttpProxy.Name,
-				}
-
-				if paramPort.HttpProxy.CustomDomain != nil {
-					port.HttpProxy.CustomDomain = &CustomDomain{
-						Domain: *paramPort.HttpProxy.CustomDomain,
-						Secret: generateCustomDomainSecret(),
-						Status: CustomDomainStatusPending,
-					}
-				}
-			}
-
-			portMap[paramPort.Name] = port
+	portMap := make(map[string]Port)
+	for _, paramPort := range params.PortMap {
+		port := Port{
+			Name:     paramPort.Name,
+			Port:     paramPort.Port,
+			Protocol: paramPort.Protocol,
 		}
-	} else {
-		portMap = make(map[string]Port)
+
+		if paramPort.HttpProxy != nil {
+			port.HttpProxy = &PortHttpProxy{
+				Name: paramPort.HttpProxy.Name,
+			}
+
+			if paramPort.HttpProxy.CustomDomain != nil {
+				port.HttpProxy.CustomDomain = &CustomDomain{
+					Domain: *paramPort.HttpProxy.CustomDomain,
+					Secret: generateCustomDomainSecret(),
+					Status: CustomDomainStatusPending,
+				}
+			}
+		}
+
+		portMap[paramPort.Name] = port
 	}
 
 	vm := VM{
@@ -66,7 +61,7 @@ func (client *Client) Create(id, owner, manager string, params *CreateParams) (*
 		DeletedAt:  time.Time{},
 
 		SshPublicKey: params.SshPublicKey,
-		PortMap:      map[string]Port{},
+		PortMap:      portMap,
 		Activities:   map[string]activity.Activity{ActivityBeingCreated: {ActivityBeingCreated, time.Now()}},
 		Subsystems:   Subsystems{},
 		Specs: Specs{

@@ -36,13 +36,28 @@ func ResetTimeFields[T any](input T) T {
 	}
 
 	// Make a copy of the input struct
-	output := reflect.New(reflect.TypeOf(input)).Elem()
-	output.Set(reflect.ValueOf(input))
+	// If it is a pointer, we need to dereference it firs
+	inputCopy := reflect.ValueOf(input)
+	wasPointer := false
+	if inputCopy.Kind() == reflect.Ptr {
+		inputCopy = inputCopy.Elem()
+		wasPointer = true
+	}
+
+	// Create a new instance of the input struct
+	output := reflect.New(inputCopy.Type()).Elem()
+
+	// Copy the input struct to the output struct
+	output.Set(inputCopy)
 
 	// Recursively reset time.Time fields
 	resetTimeFields(output)
 
-	return output.Interface().(T)
+	if wasPointer {
+		return output.Addr().Interface().(T)
+	} else {
+		return output.Interface().(T)
+	}
 }
 
 // areTimeFieldsEqual compares two structs time.Time fields

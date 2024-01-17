@@ -1,13 +1,11 @@
 package models
 
 import (
-	"go-deploy/pkg/subsystems/k8s/keys"
 	v1 "k8s.io/api/core/v1"
 	"time"
 )
 
 type PvcPublic struct {
-	ID        string    `bson:"id"`
 	Name      string    `bson:"name"`
 	Namespace string    `bson:"namespace"`
 	Capacity  string    `bson:"capacity"`
@@ -16,7 +14,7 @@ type PvcPublic struct {
 }
 
 func (pvc *PvcPublic) Created() bool {
-	return pvc.ID != ""
+	return pvc.CreatedAt != time.Time{}
 }
 
 func (pvc *PvcPublic) IsPlaceholder() bool {
@@ -32,7 +30,6 @@ func CreatePvcPublicFromRead(pvc *v1.PersistentVolumeClaim) *PvcPublic {
 	}
 
 	return &PvcPublic{
-		ID:        pvc.Labels[keys.ManifestLabelID],
 		Name:      pvc.Name,
 		Namespace: pvc.Namespace,
 		Capacity:  capacity,

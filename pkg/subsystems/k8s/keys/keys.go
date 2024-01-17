@@ -3,8 +3,6 @@ package keys
 const (
 	// ManifestLabelName is the label name for the `name` of a manifest.
 	ManifestLabelName = "app.kubernetes.io/deploy-name"
-	// ManifestLabelID is the label name for the `id` of a manifest.
-	ManifestLabelID = "app.kubernetes.io/deploy-id"
 	// ManifestCreationTimestamp is the label name for the `creation timestamp` of a manifest.
 	ManifestCreationTimestamp = "app.kubernetes.io/deploy-created-at"
 

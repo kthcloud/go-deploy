@@ -3,8 +3,6 @@ package k8s
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
-	"go-deploy/pkg/subsystems/k8s/keys"
 	"go-deploy/pkg/subsystems/k8s/models"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
@@ -12,29 +10,26 @@ import (
 )
 
 // ReadPVC reads a PersistentVolumeClaim from Kubernetes.
-func (client *Client) ReadPVC(id string) (*models.PvcPublic, error) {
+func (client *Client) ReadPVC(name string) (*models.PvcPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to read k8s pvc %s. details: %w", id, err)
+		return fmt.Errorf("failed to read k8s pvc %s. details: %w", name, err)
 	}
 
-	if id == "" {
-		log.Println("no id supplied when reading k8s pvc. assuming it was deleted")
+	if name == "" {
+		log.Println("no name supplied when reading k8s pvc. assuming it was deleted")
 		return nil, nil
 	}
 
-	list, err := client.K8sClient.CoreV1().PersistentVolumeClaims(client.Namespace).List(context.TODO(), v1.ListOptions{})
+	res, err := client.K8sClient.CoreV1().PersistentVolumeClaims(client.Namespace).Get(context.TODO(), name, v1.GetOptions{})
 	if err != nil {
+		if IsNotFoundErr(err) {
+			return nil, nil
+		}
+
 		return nil, makeError(err)
 	}
 
-	for _, item := range list.Items {
-		idLabel := GetLabel(item.ObjectMeta.Labels, keys.ManifestLabelID)
-		if idLabel == id {
-			return models.CreatePvcPublicFromRead(&item), nil
-		}
-	}
-
-	return nil, nil
+	return models.CreatePvcPublicFromRead(res), nil
 }
 
 // CreatePVC creates a PersistentVolumeClaim in Kubernetes.
@@ -57,7 +52,6 @@ func (client *Client) CreatePVC(public *models.PvcPublic) (*models.PvcPublic, er
 		return models.CreatePvcPublicFromRead(pvc), nil
 	}
 
-	public.ID = uuid.New().String()
 	public.CreatedAt = time.Now()
 
 	manifest := CreatePvcManifest(public)
@@ -70,33 +64,24 @@ func (client *Client) CreatePVC(public *models.PvcPublic) (*models.PvcPublic, er
 }
 
 // DeletePVC deletes a PersistentVolumeClaim in Kubernetes.
-func (client *Client) DeletePVC(id string) error {
+func (client *Client) DeletePVC(name string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete k8s pvc %s. details: %w", id, err)
+		return fmt.Errorf("failed to delete k8s pvc %s. details: %w", name, err)
 	}
 
-	if id == "" {
-		log.Println("no id supplied when deleting k8s pvc. assuming it was deleted")
+	if name == "" {
+		log.Println("no name supplied when deleting k8s pvc. assuming it was deleted")
 		return nil
 	}
 
-	list, err := client.K8sClient.CoreV1().PersistentVolumeClaims(client.Namespace).List(context.TODO(), v1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelID, id),
-	})
-	if err != nil {
+	err := client.K8sClient.CoreV1().PersistentVolumeClaims(client.Namespace).Delete(context.TODO(), name, v1.DeleteOptions{})
+	if err != nil && !IsNotFoundErr(err) {
 		return makeError(err)
 	}
 
-	for _, pvc := range list.Items {
-		err = client.K8sClient.CoreV1().PersistentVolumeClaims(client.Namespace).Delete(context.TODO(), pvc.Name, v1.DeleteOptions{})
-		if err != nil {
-			return makeError(err)
-		}
-
-		err = client.waitPvcDeleted(pvc.Name)
-		if err != nil {
-			return makeError(err)
-		}
+	err = client.waitPvcDeleted(name)
+	if err != nil {
+		return makeError(err)
 	}
 
 	return nil

@@ -64,7 +64,7 @@ func (client *Client) CreateVM(public *models.VmPublic) (*models.VmPublic, error
 	if listVms.Count == 0 {
 		createVmParams := client.CsClient.VirtualMachine.NewDeployVirtualMachineParams(
 			client.CustomServiceOfferingID,
-			public.TemplateID,
+			client.TemplateID,
 			client.ZoneID,
 		)
 

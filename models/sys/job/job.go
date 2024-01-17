@@ -41,11 +41,11 @@ const (
 	TypeRepairDeployment = "repairDeployment"
 
 	// TypeCreateSM is used when creating a storage manager.
-	TypeCreateSM = "createSM"
+	TypeCreateSM = "createSm"
 	// TypeDeleteSM is used when deleting a storage manager.
-	TypeDeleteSM = "deleteSM"
+	TypeDeleteSM = "deleteSm"
 	// TypeRepairSM is used when repairing a storage manager.
-	TypeRepairSM = "repairSM"
+	TypeRepairSM = "repairSm"
 )
 
 const (

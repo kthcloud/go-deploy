@@ -3,9 +3,7 @@ package k8s
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
 	"go-deploy/pkg/subsystems/k8s/errors"
-	"go-deploy/pkg/subsystems/k8s/keys"
 	"go-deploy/pkg/subsystems/k8s/models"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
@@ -14,28 +12,26 @@ import (
 )
 
 // ReadIngress reads a Ingress from Kubernetes.
-func (client *Client) ReadIngress(id string) (*models.IngressPublic, error) {
+func (client *Client) ReadIngress(name string) (*models.IngressPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to read k8s ingress %s. details: %w", id, err)
+		return fmt.Errorf("failed to read k8s ingress %s. details: %w", name, err)
 	}
 
-	if id == "" {
-		log.Println("no id supplied when reading k8s ingress. assuming it was deleted")
+	if name == "" {
+		log.Println("no name supplied when reading k8s ingress. assuming it was deleted")
 		return nil, nil
 	}
 
-	list, err := client.K8sClient.NetworkingV1().Ingresses(client.Namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelID, id),
-	})
+	res, err := client.K8sClient.NetworkingV1().Ingresses(client.Namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
+		if IsNotFoundErr(err) {
+			return nil, nil
+		}
+
 		return nil, makeError(err)
 	}
 
-	if len(list.Items) > 0 {
-		return models.CreateIngressPublicFromRead(&list.Items[0]), nil
-	}
-
-	return nil, nil
+	return models.CreateIngressPublicFromRead(res), nil
 }
 
 // CreateIngress creates a Ingress in Kubernetes.
@@ -53,7 +49,6 @@ func (client *Client) CreateIngress(public *models.IngressPublic) (*models.Ingre
 		return models.CreateIngressPublicFromRead(ingress), nil
 	}
 
-	public.ID = uuid.New().String()
 	public.CreatedAt = time.Now()
 
 	manifest := CreateIngressManifest(public)
@@ -72,11 +67,11 @@ func (client *Client) CreateIngress(public *models.IngressPublic) (*models.Ingre
 // UpdateIngress updates a Ingress in Kubernetes.
 func (client *Client) UpdateIngress(public *models.IngressPublic) (*models.IngressPublic, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to update k8s ingress %s. details: %w", public.ID, err)
+		return fmt.Errorf("failed to update k8s ingress %s. details: %w", public.Name, err)
 	}
 
-	if public.ID == "" {
-		log.Println("no id supplied when updating k8s ingress. assuming it was deleted")
+	if public.Name == "" {
+		log.Println("no name supplied when updating k8s ingress. assuming it was deleted")
 		return nil, nil
 	}
 
@@ -98,28 +93,19 @@ func (client *Client) UpdateIngress(public *models.IngressPublic) (*models.Ingre
 }
 
 // DeleteIngress deletes a Ingress in Kubernetes.
-func (client *Client) DeleteIngress(id string) error {
+func (client *Client) DeleteIngress(name string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete k8s ingress %s. details: %w", id, err)
+		return fmt.Errorf("failed to delete k8s ingress %s. details: %w", name, err)
 	}
 
-	if id == "" {
-		log.Println("no id supplied when deleting k8s ingress. assuming it was deleted")
+	if name == "" {
+		log.Println("no name supplied when deleting k8s ingress. assuming it was deleted")
 		return nil
 	}
 
-	list, err := client.K8sClient.NetworkingV1().Ingresses(client.Namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelID, id),
-	})
-	if err != nil {
+	err := client.K8sClient.NetworkingV1().Ingresses(client.Namespace).Delete(context.TODO(), name, metav1.DeleteOptions{})
+	if err != nil && !IsNotFoundErr(err) {
 		return makeError(err)
-	}
-
-	for _, ingress := range list.Items {
-		err = client.K8sClient.NetworkingV1().Ingresses(client.Namespace).Delete(context.TODO(), ingress.Name, metav1.DeleteOptions{})
-		if err != nil {
-			return makeError(err)
-		}
 	}
 
 	return nil

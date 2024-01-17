@@ -12,7 +12,6 @@ type VmPublic struct {
 	CpuCores int `bson:"cpuCores"`
 	RAM      int `bson:"ram"`
 
-	TemplateID  string    `bson:"templateId"`
 	ExtraConfig string    `bson:"extraConfig"`
 	Tags        []Tag     `bson:"tags"`
 	CreatedAt   time.Time `bson:"createdAt"`
@@ -40,7 +39,6 @@ func CreateVmPublicFromGet(vm *cloudstack.VirtualMachine) *VmPublic {
 		Name:        vm.Name,
 		CpuCores:    vm.Cpunumber,
 		RAM:         vm.Memory / 1024,
-		TemplateID:  vm.Templateid,
 		ExtraConfig: extraConfig,
 		Tags:        tags,
 		CreatedAt:   formatCreatedAt(vm.Created),

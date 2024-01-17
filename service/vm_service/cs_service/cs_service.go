@@ -16,6 +16,7 @@ import (
 	"go-deploy/service/resources"
 	"golang.org/x/exp/slices"
 	"log"
+	"time"
 )
 
 // Create sets up the CS setup for the VM.
@@ -58,6 +59,8 @@ func (c *Client) Create(id string, params *vmModels.CreateParams) error {
 
 		vm.Subsystems.CS.VM = vmPublic
 	}
+
+	time.Sleep(30 * time.Second)
 
 	// Port-forwarding rules
 	for _, pfrPublic := range g.PFRs() {

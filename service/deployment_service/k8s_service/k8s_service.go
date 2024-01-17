@@ -155,7 +155,7 @@ func (c *Client) Delete(id string, overwriteUserID ...string) error {
 	// Ingress
 	for mapName, ingress := range d.Subsystems.K8s.IngressMap {
 		err := resources.SsDeleter(kc.DeleteIngress).
-			WithResourceID(ingress.ID).
+			WithResourceID(ingress.Name).
 			WithDbFunc(dbFunc(id, "ingressMap."+mapName)).
 			Exec()
 
@@ -167,7 +167,7 @@ func (c *Client) Delete(id string, overwriteUserID ...string) error {
 	// Service
 	for mapName, k8sService := range d.Subsystems.K8s.ServiceMap {
 		err := resources.SsDeleter(kc.DeleteService).
-			WithResourceID(k8sService.ID).
+			WithResourceID(k8sService.Name).
 			WithDbFunc(dbFunc(id, "serviceMap."+mapName)).
 			Exec()
 
@@ -179,7 +179,7 @@ func (c *Client) Delete(id string, overwriteUserID ...string) error {
 	// Deployment
 	for mapName, k8sDeployment := range d.Subsystems.K8s.DeploymentMap {
 		err := resources.SsDeleter(kc.DeleteDeployment).
-			WithResourceID(k8sDeployment.ID).
+			WithResourceID(k8sDeployment.Name).
 			WithDbFunc(dbFunc(id, "deploymentMap."+mapName)).
 			Exec()
 
@@ -191,7 +191,7 @@ func (c *Client) Delete(id string, overwriteUserID ...string) error {
 	// PersistentVolumeClaim
 	for mapName, pvc := range d.Subsystems.K8s.PvcMap {
 		err := resources.SsDeleter(kc.DeletePVC).
-			WithResourceID(pvc.ID).
+			WithResourceID(pvc.Name).
 			WithDbFunc(dbFunc(id, "pvcMap."+mapName)).
 			Exec()
 
@@ -203,7 +203,7 @@ func (c *Client) Delete(id string, overwriteUserID ...string) error {
 	// PersistentVolume
 	for mapName, pv := range d.Subsystems.K8s.PvMap {
 		err := resources.SsDeleter(kc.DeletePV).
-			WithResourceID(pv.ID).
+			WithResourceID(pv.Name).
 			WithDbFunc(dbFunc(id, "pvMap."+mapName)).
 			Exec()
 
@@ -215,7 +215,7 @@ func (c *Client) Delete(id string, overwriteUserID ...string) error {
 	// Job
 	for mapName, job := range d.Subsystems.K8s.JobMap {
 		err := resources.SsDeleter(kc.DeleteJob).
-			WithResourceID(job.ID).
+			WithResourceID(job.Name).
 			WithDbFunc(dbFunc(id, "jobMap."+mapName)).
 			Exec()
 
@@ -226,7 +226,7 @@ func (c *Client) Delete(id string, overwriteUserID ...string) error {
 
 	for mapName, hpa := range d.Subsystems.K8s.HpaMap {
 		err := resources.SsDeleter(kc.DeleteHPA).
-			WithResourceID(hpa.ID).
+			WithResourceID(hpa.Name).
 			WithDbFunc(dbFunc(id, "hpaMap."+mapName)).
 			Exec()
 
@@ -245,7 +245,7 @@ func (c *Client) Delete(id string, overwriteUserID ...string) error {
 		}
 
 		err := resources.SsDeleter(deleteFunc).
-			WithResourceID(secret.ID).
+			WithResourceID(secret.Name).
 			WithDbFunc(dbFunc(id, "secretMap."+mapName)).
 			Exec()
 
@@ -256,7 +256,7 @@ func (c *Client) Delete(id string, overwriteUserID ...string) error {
 
 	// Namespace
 	err = resources.SsDeleter(func(string) error { return nil }).
-		WithResourceID(d.Subsystems.K8s.Namespace.ID).
+		WithResourceID(d.Subsystems.K8s.Namespace.Name).
 		WithDbFunc(dbFunc(id, "namespace")).
 		Exec()
 
@@ -325,7 +325,7 @@ func (c *Client) Restart(id string) error {
 	}
 
 	if k8sDeployment := d.Subsystems.K8s.GetDeployment(d.Name); subsystems.Created(k8sDeployment) {
-		err := kc.RestartDeployment(k8sDeployment.ID)
+		err := kc.RestartDeployment(k8sDeployment.Name)
 		if err != nil {
 			return makeError(err)
 		}
@@ -355,7 +355,7 @@ func (c *Client) Repair(id string) error {
 		kc.CreateNamespace,
 		kc.UpdateNamespace,
 		func(string) error { return nil },
-	).WithResourceID(namespace.ID).WithDbFunc(dbFunc(id, "namespace")).WithGenPublic(namespace).Exec()
+	).WithResourceID(namespace.Name).WithDbFunc(dbFunc(id, "namespace")).WithGenPublic(namespace).Exec()
 
 	if err != nil {
 		return makeError(err)
@@ -366,7 +366,7 @@ func (c *Client) Repair(id string) error {
 		idx := slices.IndexFunc(deployments, func(d k8sModels.DeploymentPublic) bool { return d.Name == mapName })
 		if idx == -1 {
 			err = resources.SsDeleter(kc.DeleteDeployment).
-				WithResourceID(k8sDeployment.ID).
+				WithResourceID(k8sDeployment.Name).
 				WithDbFunc(dbFunc(id, "deploymentMap."+mapName)).
 				Exec()
 
@@ -381,7 +381,7 @@ func (c *Client) Repair(id string) error {
 			kc.CreateDeployment,
 			kc.UpdateDeployment,
 			kc.DeleteDeployment,
-		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "deploymentMap."+public.Name)).WithGenPublic(&public).Exec()
+		).WithResourceID(public.Name).WithDbFunc(dbFunc(id, "deploymentMap."+public.Name)).WithGenPublic(&public).Exec()
 
 		if err != nil {
 			return makeError(err)
@@ -393,7 +393,7 @@ func (c *Client) Repair(id string) error {
 		idx := slices.IndexFunc(services, func(s k8sModels.ServicePublic) bool { return s.Name == mapName })
 		if idx == -1 {
 			err = resources.SsDeleter(kc.DeleteService).
-				WithResourceID(k8sService.ID).
+				WithResourceID(k8sService.Name).
 				WithDbFunc(dbFunc(id, "serviceMap."+mapName)).
 				Exec()
 
@@ -408,7 +408,7 @@ func (c *Client) Repair(id string) error {
 			kc.CreateService,
 			kc.UpdateService,
 			kc.DeleteService,
-		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "serviceMap."+public.Name)).WithGenPublic(&public).Exec()
+		).WithResourceID(public.Name).WithDbFunc(dbFunc(id, "serviceMap."+public.Name)).WithGenPublic(&public).Exec()
 
 		if err != nil {
 			return makeError(err)
@@ -420,7 +420,7 @@ func (c *Client) Repair(id string) error {
 		idx := slices.IndexFunc(ingresses, func(i k8sModels.IngressPublic) bool { return i.Name == mapName })
 		if idx == -1 {
 			err = resources.SsDeleter(kc.DeleteIngress).
-				WithResourceID(ingress.ID).
+				WithResourceID(ingress.Name).
 				WithDbFunc(dbFunc(id, "ingressMap."+mapName)).
 				Exec()
 
@@ -435,7 +435,7 @@ func (c *Client) Repair(id string) error {
 			kc.CreateIngress,
 			kc.UpdateIngress,
 			kc.DeleteIngress,
-		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "ingressMap."+public.Name)).WithGenPublic(&public).Exec()
+		).WithResourceID(public.Name).WithDbFunc(dbFunc(id, "ingressMap."+public.Name)).WithGenPublic(&public).Exec()
 
 		if err != nil {
 			if errors.Is(err, kErrors.IngressHostInUseErr) {
@@ -451,7 +451,7 @@ func (c *Client) Repair(id string) error {
 		idx := slices.IndexFunc(secrets, func(s k8sModels.SecretPublic) bool { return s.Name == mapName })
 		if idx == -1 {
 			err = resources.SsDeleter(kc.DeleteSecret).
-				WithResourceID(secret.ID).
+				WithResourceID(secret.Name).
 				WithDbFunc(dbFunc(id, "secretMap."+mapName)).
 				Exec()
 
@@ -466,7 +466,7 @@ func (c *Client) Repair(id string) error {
 			kc.CreateSecret,
 			kc.UpdateSecret,
 			kc.DeleteSecret,
-		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "secretMap."+public.Name)).WithGenPublic(&public).Exec()
+		).WithResourceID(public.Name).WithDbFunc(dbFunc(id, "secretMap."+public.Name)).WithGenPublic(&public).Exec()
 
 		if err != nil {
 			return makeError(err)
@@ -478,7 +478,7 @@ func (c *Client) Repair(id string) error {
 		idx := slices.IndexFunc(hpas, func(s k8sModels.HpaPublic) bool { return s.Name == mapName })
 		if idx == -1 {
 			err = resources.SsDeleter(kc.DeleteHPA).
-				WithResourceID(hpa.ID).
+				WithResourceID(hpa.Name).
 				WithDbFunc(dbFunc(id, "hpaMap."+mapName)).
 				Exec()
 
@@ -493,15 +493,15 @@ func (c *Client) Repair(id string) error {
 			kc.CreateHPA,
 			kc.UpdateHPA,
 			kc.DeleteHPA,
-		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "hpaMap."+public.Name)).WithGenPublic(&public).Exec()
+		).WithResourceID(public.Name).WithDbFunc(dbFunc(id, "hpaMap."+public.Name)).WithGenPublic(&public).Exec()
 
 		if err != nil {
 			return makeError(err)
 		}
 	}
 
-	// the following are special cases because of dependencies between pvcs, pvs and deployments
-	// if we have any mismatch for pv or pvc, we need to delete and recreate everything
+	// The following are special cases because of dependencies between pvcs, pvs and deployments.
+	// If we have any mismatch for pv or pvc, we need to delete and recreate everything
 
 	anyMismatch := false
 
@@ -510,7 +510,7 @@ func (c *Client) Repair(id string) error {
 		idx := slices.IndexFunc(pvcs, func(s k8sModels.PvcPublic) bool { return s.Name == mapName })
 		if idx == -1 {
 			err = resources.SsDeleter(kc.DeletePVC).
-				WithResourceID(pvc.ID).
+				WithResourceID(pvc.Name).
 				WithDbFunc(dbFunc(id, "pvcMap."+mapName)).
 				Exec()
 
@@ -531,7 +531,7 @@ func (c *Client) Repair(id string) error {
 			kc.CreatePVC,
 			func(_ *k8sModels.PvcPublic) (*k8sModels.PvcPublic, error) { anyMismatch = true; return &public, nil },
 			func(id string) error { return nil },
-		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "pvcMap."+public.Name)).WithGenPublic(&public).Exec()
+		).WithResourceID(public.Name).WithDbFunc(dbFunc(id, "pvcMap."+public.Name)).WithGenPublic(&public).Exec()
 
 		if err != nil {
 			return makeError(err)
@@ -543,7 +543,7 @@ func (c *Client) Repair(id string) error {
 		idx := slices.IndexFunc(pvs, func(s k8sModels.PvPublic) bool { return s.Name == mapName })
 		if idx == -1 {
 			err = resources.SsDeleter(kc.DeletePV).
-				WithResourceID(pv.ID).
+				WithResourceID(pv.Name).
 				WithDbFunc(dbFunc(id, "pvMap."+mapName)).
 				Exec()
 
@@ -564,7 +564,7 @@ func (c *Client) Repair(id string) error {
 			kc.CreatePV,
 			func(_ *k8sModels.PvPublic) (*k8sModels.PvPublic, error) { anyMismatch = true; return &public, nil },
 			func(id string) error { return nil },
-		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "pvMap."+public.Name)).WithGenPublic(&public).Exec()
+		).WithResourceID(public.Name).WithDbFunc(dbFunc(id, "pvMap."+public.Name)).WithGenPublic(&public).Exec()
 
 		if err != nil {
 			return makeError(err)
@@ -601,7 +601,7 @@ func (c *Client) SetupLogStream(ctx context.Context, id string, handler func(str
 		return sErrors.BadStateErr
 	}
 
-	err = kc.SetupLogStream(ctx, mainDeployment.ID, handler)
+	err = kc.SetupLogStream(ctx, mainDeployment.Name, handler)
 	if err != nil {
 		return makeError(err)
 	}
@@ -723,7 +723,7 @@ func (c *Client) updatePrivate(id string) error {
 	if d.GetMainApp().Private {
 		for mapName, ingress := range d.Subsystems.K8s.IngressMap {
 			err = resources.SsDeleter(kc.DeleteIngress).
-				WithResourceID(ingress.ID).
+				WithResourceID(ingress.Name).
 				WithDbFunc(dbFunc(d.ID, "ingressMap."+mapName)).
 				Exec()
 
@@ -855,7 +855,7 @@ func (c *Client) recreatePvPvcDeployments(id string) error {
 
 	if k8sDeployment := d.Subsystems.K8s.GetDeployment(d.Name); subsystems.Created(k8sDeployment) {
 		err := resources.SsDeleter(kc.DeleteDeployment).
-			WithResourceID(k8sDeployment.ID).
+			WithResourceID(k8sDeployment.Name).
 			WithDbFunc(dbFunc(d.ID, "deploymentMap."+d.Name)).
 			Exec()
 		if err != nil {
@@ -865,7 +865,7 @@ func (c *Client) recreatePvPvcDeployments(id string) error {
 
 	for mapName, pvc := range d.Subsystems.K8s.PvcMap {
 		err := resources.SsDeleter(kc.DeletePVC).
-			WithResourceID(pvc.ID).
+			WithResourceID(pvc.Name).
 			WithDbFunc(dbFunc(d.ID, "pvcMap."+mapName)).
 			Exec()
 
@@ -876,7 +876,7 @@ func (c *Client) recreatePvPvcDeployments(id string) error {
 
 	for mapName, pv := range d.Subsystems.K8s.PvMap {
 		err := resources.SsDeleter(kc.DeletePV).
-			WithResourceID(pv.ID).
+			WithResourceID(pv.Name).
 			WithDbFunc(dbFunc(d.ID, "pvMap."+mapName)).
 			Exec()
 

@@ -1,7 +1,6 @@
 package models
 
 import (
-	"go-deploy/pkg/subsystems/k8s/keys"
 	v2 "k8s.io/api/autoscaling/v2"
 	apiv1 "k8s.io/api/core/v1"
 	"time"
@@ -14,7 +13,6 @@ type Target struct {
 }
 
 type HpaPublic struct {
-	ID                       string    `bson:"id"`
 	Name                     string    `bson:"name"`
 	Namespace                string    `bson:"namespace"`
 	MinReplicas              int       `bson:"minReplicas"`
@@ -25,12 +23,8 @@ type HpaPublic struct {
 	CreatedAt                time.Time `bson:"createdAt"`
 }
 
-func (h *HpaPublic) GetID() string {
-	return h.ID
-}
-
 func (h *HpaPublic) Created() bool {
-	return h.ID != ""
+	return h.CreatedAt != time.Time{}
 }
 
 func (h *HpaPublic) IsPlaceholder() bool {
@@ -63,7 +57,6 @@ func CreateHpaPublicFromRead(hpa *v2.HorizontalPodAutoscaler) *HpaPublic {
 	}
 
 	return &HpaPublic{
-		ID:          hpa.Labels[keys.ManifestLabelID],
 		Name:        hpa.Name,
 		Namespace:   hpa.Namespace,
 		MinReplicas: minReplicas,
