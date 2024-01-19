@@ -33,7 +33,7 @@ func List(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestQuery query.JobList
-	if err := context.GinContext.BindQuery(&requestQuery); err != nil {
+	if err := context.GinContext.ShouldBindQuery(&requestQuery); err != nil {
 		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
@@ -45,7 +45,8 @@ func List(c *gin.Context) {
 	}
 
 	jobs, err := job_service.New().WithAuth(auth).List(job_service.ListOpts{
-		Pagination: service.GetOrDefault(requestQuery.Pagination),
+		Pagination: service.GetOrDefaultPagination(requestQuery.Pagination),
+		SortBy:     service.GetOrDefaultSortBy(requestQuery.SortBy),
 		All:        requestQuery.All,
 		UserID:     requestQuery.UserID,
 		JobType:    requestQuery.Type,

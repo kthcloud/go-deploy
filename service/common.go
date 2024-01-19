@@ -7,7 +7,12 @@ type Pagination struct {
 	PageSize int
 }
 
-func GetOrDefault(page *query.Pagination) *Pagination {
+type SortBy struct {
+	Field string
+	Order int
+}
+
+func GetOrDefaultPagination(page *query.Pagination) *Pagination {
 	if page == nil {
 		return &Pagination{
 			Page:     0,
@@ -22,5 +27,27 @@ func GetOrDefault(page *query.Pagination) *Pagination {
 	return &Pagination{
 		Page:     page.Page,
 		PageSize: page.PageSize,
+	}
+}
+
+func GetOrDefaultSortBy(sortBy *query.SortBy) *SortBy {
+	if sortBy == nil {
+		return &SortBy{
+			Field: "createdAt",
+			Order: 1,
+		}
+	}
+
+	if sortBy.Field == "" {
+		sortBy.Field = "createdAt"
+	}
+
+	if sortBy.Order == 0 {
+		sortBy.Order = 1
+	}
+
+	return &SortBy{
+		Field: sortBy.Field,
+		Order: sortBy.Order,
 	}
 }

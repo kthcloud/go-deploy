@@ -61,7 +61,7 @@ func ListTeams(c *gin.Context) {
 	}
 
 	teamList, err := user_service.New().WithAuth(auth).ListTeams(user_service.ListTeamsOpts{
-		Pagination: service.GetOrDefault(requestQuery.Pagination),
+		Pagination: service.GetOrDefaultPagination(requestQuery.Pagination),
 		UserID:     userID,
 	})
 	if err != nil {

@@ -37,7 +37,7 @@ func ListGPUs(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestQuery query.GpuList
-	if err := context.GinContext.Bind(&requestQuery); err != nil {
+	if err := context.GinContext.ShouldBind(&requestQuery); err != nil {
 		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
@@ -49,7 +49,7 @@ func ListGPUs(c *gin.Context) {
 	}
 
 	gpus, err := vm_service.New().WithAuth(auth).ListGPUs(&client.ListGpuOptions{
-		Pagination:    service.GetOrDefault(requestQuery.Pagination),
+		Pagination:    service.GetOrDefaultPagination(requestQuery.Pagination),
 		Zone:          requestQuery.Zone,
 		AvailableGPUs: requestQuery.OnlyShowAvailable,
 	})

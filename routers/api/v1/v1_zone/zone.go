@@ -21,7 +21,7 @@ func List(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestQuery query.ZoneList
-	if err := context.GinContext.Bind(&requestQuery); err != nil {
+	if err := context.GinContext.ShouldBind(&requestQuery); err != nil {
 		context.BindingError(v1.CreateBindingError(err))
 		return
 	}

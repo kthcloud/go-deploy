@@ -84,7 +84,7 @@ func List(c *gin.Context) {
 	}
 
 	notifications, err := notification_service.New().WithAuth(auth).List(notification_service.ListOpts{
-		Pagination: service.GetOrDefault(requestQuery.Pagination),
+		Pagination: service.GetOrDefaultPagination(requestQuery.Pagination),
 		UserID:     userID,
 	})
 	if err != nil {

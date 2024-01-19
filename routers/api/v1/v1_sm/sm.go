@@ -46,7 +46,7 @@ func ListSMs(c *gin.Context) {
 	}
 
 	sms, _ := sm_service.New().WithAuth(auth).List(client.ListOptions{
-		Pagination: service.GetOrDefault(requestQuery.Pagination),
+		Pagination: service.GetOrDefaultPagination(requestQuery.Pagination),
 		All:        requestQuery.All,
 	})
 

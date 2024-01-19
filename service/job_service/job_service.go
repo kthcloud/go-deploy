@@ -30,6 +30,10 @@ func (c *Client) List(opt ...ListOpts) ([]jobModels.Job, error) {
 		jmc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
 	}
 
+	if o.SortBy != nil {
+		jmc.WithSort(o.SortBy.Field, o.SortBy.Order)
+	}
+
 	var effectiveUserID string
 	if o.UserID != nil {
 		// Specific user's jobs are requested
