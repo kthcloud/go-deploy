@@ -180,14 +180,14 @@ func customDomainConfirmer(ctx context.Context) {
 
 				match, err := checkCustomDomain(cd.Domain, cd.Secret)
 				if err != nil {
-					log.Printf("failed to check custom domain %s for deployment %s. details: %v\n", cd.Domain, deployment.ID, err)
+					utils.PrettyPrintError(fmt.Errorf("failed to check custom domain %s for deployment %s. details: %w", cd.Domain, deployment.ID, err))
 					continue
 				}
 
 				if !match {
 					err = deploymentModels.New().UpdateCustomDomainStatus(deployment.ID, deploymentModels.CustomDomainStatusVerificationFailed)
 					if err != nil {
-						utils.PrettyPrintError(fmt.Errorf("custom domain verification failed. details: %w", err))
+						utils.PrettyPrintError(fmt.Errorf("custom domain verification failed for deployment %s. details: %w", deployment.ID, err))
 						continue
 					}
 
@@ -197,7 +197,7 @@ func customDomainConfirmer(ctx context.Context) {
 				log.Printf("marking custom domain %s as confirmed for deployment %s\n", cd.Domain, deployment.ID)
 				err = deploymentModels.New().UpdateCustomDomainStatus(deployment.ID, deploymentModels.CustomDomainStatusActive)
 				if err != nil {
-					utils.PrettyPrintError(fmt.Errorf("failed to mark deployment %s as custom domain confirmed. details: %w", deployment.ID, err))
+					utils.PrettyPrintError(fmt.Errorf("failed to mark custom domain %s as confirmed for deployment %s. details: %w", cd.Domain, deployment.ID, err))
 					continue
 				}
 			}
@@ -223,13 +223,14 @@ func customDomainConfirmer(ctx context.Context) {
 
 					match, err := checkCustomDomain(cd.Domain, cd.Secret)
 					if err != nil {
-						log.Printf("failed to check custom domain %s for vm %s. details: %v\n", cd.Domain, vm.ID, err)
+						utils.PrettyPrintError(fmt.Errorf("failed to check custom domain %s for vm %s. details: %w", cd.Domain, vm.ID, err))
+						continue
 					}
 
 					if !match {
 						err = vmModels.New().UpdateCustomDomainStatus(vm.ID, portName, vmModels.CustomDomainStatusVerificationFailed)
 						if err != nil {
-							utils.PrettyPrintError(fmt.Errorf("custom domain verification failed. details: %w", err))
+							utils.PrettyPrintError(fmt.Errorf("custom domain verification failed for vm %s. details: %w", vm.ID, err))
 							continue
 						}
 
@@ -239,7 +240,7 @@ func customDomainConfirmer(ctx context.Context) {
 					log.Printf("marking custom domain %s as confirmed for vm %s\n", cd.Domain, vm.ID)
 					err = vmModels.New().UpdateCustomDomainStatus(vm.ID, portName, vmModels.CustomDomainStatusActive)
 					if err != nil {
-						utils.PrettyPrintError(fmt.Errorf("failed to mark deployment %s as custom domain confirmed. details: %w", vm.ID, err))
+						utils.PrettyPrintError(fmt.Errorf("failed to mark custom domain %s as confirmed for vm %s. details: %w", cd.Domain, vm.ID, err))
 						continue
 					}
 				}
