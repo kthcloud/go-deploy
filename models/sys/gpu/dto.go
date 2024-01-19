@@ -24,8 +24,10 @@ func (gpu *GPU) ToDTO(addUserInfo bool) body.GpuRead {
 	}
 
 	return body.GpuRead{
-		ID:    id,
-		Name:  gpu.Data.Name,
+		ID:   id,
+		Name: gpu.Data.Name,
+		Zone: gpu.Zone,
+
 		Lease: lease,
 	}
 }

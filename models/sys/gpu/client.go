@@ -74,3 +74,10 @@ func (client *Client) WithVM(vmID string) *Client {
 
 	return client
 }
+
+// WithZone adds a filter to the client to only include GPUs in the given zone.
+func (client *Client) WithZone(zone string) *Client {
+	client.ResourceClient.AddExtraFilter(bson.D{{"zone", zone}})
+
+	return client
+}

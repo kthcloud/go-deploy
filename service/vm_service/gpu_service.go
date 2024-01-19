@@ -33,6 +33,10 @@ func (c *Client) ListGPUs(opts *client.ListGpuOptions) ([]gpuModels.GPU, error) 
 		gmc.WithPagination(opts.Pagination.Page, opts.Pagination.PageSize)
 	}
 
+	if opts.Zone != nil {
+		gmc.WithZone(*opts.Zone)
+	}
+
 	if opts.AvailableGPUs {
 		gmc.OnlyAvailable()
 		gpus, _ := gmc.List()
@@ -75,7 +79,13 @@ func (c *Client) GetGPU(id string, opts *client.GetGpuOptions) (*gpuModels.GPU, 
 		excludedGpus = config.Config.GPU.PrivilegedGPUs
 	}
 
-	gpu, err := gpuModels.New().WithExclusion(config.Config.GPU.ExcludedHosts, excludedGpus).GetByID(id)
+	gmc := gpuModels.New().WithExclusion(config.Config.GPU.ExcludedHosts, excludedGpus)
+
+	if opts.Zone != nil {
+		gmc.WithZone(*opts.Zone)
+	}
+
+	gpu, err := gmc.GetByID(id)
 	if err != nil {
 		return nil, err
 	}

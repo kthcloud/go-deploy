@@ -41,12 +41,14 @@ type ListOptions struct {
 
 // GetGpuOptions is used to specify the options when getting a VM's gpu.
 type GetGpuOptions struct {
+	Zone          *string
 	AvailableGPUs bool
 }
 
 // ListGpuOptions is used to specify the options when listing VMs' gpus.
 type ListGpuOptions struct {
 	Pagination    *service.Pagination
+	Zone          *string
 	AvailableGPUs bool
 }
 

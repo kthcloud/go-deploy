@@ -20,7 +20,9 @@ type GpuLease struct {
 }
 
 type GpuRead struct {
-	ID    string    `json:"id"`
-	Name  string    `json:"name"`
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	Zone string `json:"zone"`
+
 	Lease *GpuLease `json:"lease,omitempty"`
 }
