@@ -53,6 +53,7 @@ func ListGPUs(c *gin.Context) {
 			Page:     requestQuery.Page,
 			PageSize: requestQuery.PageSize,
 		},
+		Zone:          requestQuery.Zone,
 		AvailableGPUs: requestQuery.OnlyShowAvailable,
 	})
 	if err != nil {
@@ -153,6 +154,7 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *ser
 		} else {
 			availableGpus, err := vsc.ListGPUs(&client.ListGpuOptions{
 				AvailableGPUs: true,
+				Zone:          &vm.Zone,
 			})
 			if err != nil {
 				context.ServerError(err, v1.InternalError)
@@ -183,7 +185,9 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *ser
 			return
 		}
 
-		requestedGPU, err := vsc.GetGPU(*requestBody.GpuID, &client.GetGpuOptions{})
+		requestedGPU, err := vsc.GetGPU(*requestBody.GpuID, &client.GetGpuOptions{
+			Zone: &vm.Zone,
+		})
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
