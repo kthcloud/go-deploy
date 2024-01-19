@@ -47,10 +47,7 @@ func ListSnapshots(c *gin.Context) {
 	}
 
 	snapshots, _ := vm_service.New().ListSnapshots(requestURI.VmID, client.ListSnapshotOptions{
-		Pagination: &service.Pagination{
-			Page:     requestQuery.Page,
-			PageSize: requestQuery.PageSize,
-		},
+		Pagination: service.GetOrDefaultPagination(requestQuery.Pagination),
 	})
 	if snapshots == nil {
 		context.Ok([]interface{}{})

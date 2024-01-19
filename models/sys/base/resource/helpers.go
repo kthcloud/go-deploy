@@ -20,7 +20,7 @@ func (client *ResourceClient[T]) GetByName(name string) (*T, error) {
 
 // List returns any resources that match the given filter.
 func (client *ResourceClient[T]) List() ([]T, error) {
-	return models.ListResources[T](client.Collection, models.GroupFilters(bson.D{}, client.ExtraFilter, client.Search, client.IncludeDeleted), nil, client.Pagination)
+	return models.ListResources[T](client.Collection, models.GroupFilters(bson.D{}, client.ExtraFilter, client.Search, client.IncludeDeleted), nil, client.Pagination, client.SortBy)
 }
 
 // ExistsByID returns whether a resource with the given ID exists.
@@ -201,7 +201,7 @@ func (client *ResourceClient[T]) GetID() (*OnlyID, error) {
 // ListIDs returns the IDs of all resources that match the given filter.
 func (client *ResourceClient[T]) ListIDs() ([]OnlyID, error) {
 	projection := bson.D{{"id", 1}}
-	return models.ListResources[OnlyID](client.Collection, models.GroupFilters(nil, client.ExtraFilter, client.Search, client.IncludeDeleted), projection, client.Pagination)
+	return models.ListResources[OnlyID](client.Collection, models.GroupFilters(nil, client.ExtraFilter, client.Search, client.IncludeDeleted), projection, client.Pagination, client.SortBy)
 }
 
 // GetWithFilterAndProjection returns a resource with the given filter and projection.
@@ -213,7 +213,7 @@ func (client *ResourceClient[T]) GetWithFilterAndProjection(filter, projection b
 // ListWithFilterAndProjection returns any resources that match the given filter and projection.
 // It should be used as a base method for other methods to use, and not called directly.
 func (client *ResourceClient[T]) ListWithFilterAndProjection(filter, projection bson.D) ([]T, error) {
-	return models.ListResources[T](client.Collection, models.GroupFilters(filter, client.ExtraFilter, client.Search, client.IncludeDeleted), projection, client.Pagination)
+	return models.ListResources[T](client.Collection, models.GroupFilters(filter, client.ExtraFilter, client.Search, client.IncludeDeleted), projection, client.Pagination, client.SortBy)
 }
 
 // Count returns the number of resources that match the given filter.

@@ -1,7 +1,8 @@
 package query
 
 type JobList struct {
-	Pagination
+	*Pagination
+	*SortBy
 
 	All    bool    `form:"all" binding:"omitempty,boolean"`
 	Status *string `form:"status" binding:"omitempty,oneof=pending running failed terminated finished completed"`

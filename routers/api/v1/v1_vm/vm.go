@@ -40,7 +40,7 @@ func List(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestQuery query.VmList
-	if err := context.GinContext.Bind(&requestQuery); err != nil {
+	if err := context.GinContext.ShouldBind(&requestQuery); err != nil {
 		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
@@ -61,12 +61,9 @@ func List(c *gin.Context) {
 	}
 
 	vms, err := vsc.List(&client.ListOptions{
-		Pagination: &service.Pagination{
-			Page:     requestQuery.Page,
-			PageSize: requestQuery.PageSize,
-		},
-		UserID: &userID,
-		Shared: true,
+		Pagination: service.GetOrDefaultPagination(requestQuery.Pagination),
+		UserID:     &userID,
+		Shared:     true,
 	})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)

@@ -91,6 +91,16 @@ func (client *Client) WithPagination(page, pageSize int) *Client {
 	return client
 }
 
+// WithSort adds sorting to the client.
+func (client *Client) WithSort(field string, order int) *Client {
+	client.SortBy = &base.SortBy{
+		Field: field,
+		Order: order,
+	}
+
+	return client
+}
+
 // RestrictToUser adds a filter to the client to only include jobs with the given user ID.
 func (client *Client) RestrictToUser(restrictUserID string) *Client {
 	client.AddExtraFilter(bson.D{{"userId", restrictUserID}})

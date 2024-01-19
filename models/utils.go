@@ -89,7 +89,7 @@ func GetResource[T Resource](collection *mongo.Collection, filter bson.D, projec
 	return &res, nil
 }
 
-func ListResources[T any](collection *mongo.Collection, filter bson.D, projection bson.D, pagination *base.Pagination) ([]T, error) {
+func ListResources[T any](collection *mongo.Collection, filter bson.D, projection bson.D, pagination *base.Pagination, sortBy *base.SortBy) ([]T, error) {
 	findOptions := &options.FindOptions{}
 	if pagination != nil {
 		limit := int64(pagination.PageSize)
@@ -101,6 +101,10 @@ func ListResources[T any](collection *mongo.Collection, filter bson.D, projectio
 
 		findOptions.SetLimit(limit)
 		findOptions.SetSkip(skip)
+	}
+
+	if sortBy != nil {
+		findOptions.SetSort(bson.D{{sortBy.Field, sortBy.Order}})
 	}
 
 	if projection != nil {

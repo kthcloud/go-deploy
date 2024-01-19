@@ -18,6 +18,7 @@ type ResourceClient[T Resource] struct {
 	Pagination     *base.Pagination
 	ExtraFilter    bson.M
 	Search         *models.SearchParams
+	SortBy         *base.SortBy
 }
 
 // AddExtraFilter adds an extra filter to the client.
