@@ -49,10 +49,7 @@ func ListGPUs(c *gin.Context) {
 	}
 
 	gpus, err := vm_service.New().WithAuth(auth).ListGPUs(&client.ListGpuOptions{
-		Pagination: &service.Pagination{
-			Page:     requestQuery.Page,
-			PageSize: requestQuery.PageSize,
-		},
+		Pagination:    service.GetOrDefault(requestQuery.Pagination),
 		Zone:          requestQuery.Zone,
 		AvailableGPUs: requestQuery.OnlyShowAvailable,
 	})

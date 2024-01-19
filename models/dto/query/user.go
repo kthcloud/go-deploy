@@ -1,7 +1,7 @@
 package query
 
 type UserList struct {
-	Pagination
+	*Pagination
 
 	All      bool    `form:"all" binding:"omitempty,boolean"`
 	Search   *string `form:"search" binding:"omitempty"`
@@ -9,7 +9,7 @@ type UserList struct {
 }
 
 type TeamList struct {
-	Pagination
+	*Pagination
 
 	UserID *string `form:"userId" binding:"omitempty,uuid"`
 	All    bool    `form:"all" binding:"omitempty,boolean"`

@@ -63,7 +63,7 @@ func List(c *gin.Context) {
 
 	deployments, err := deployment_service.New().WithAuth(auth).List(&client.ListOptions{
 		UserID:     &userID,
-		Pagination: &service.Pagination{Page: requestQuery.Page, PageSize: requestQuery.PageSize},
+		Pagination: service.GetOrDefault(requestQuery.Pagination),
 		Shared:     true,
 	})
 	if err != nil {

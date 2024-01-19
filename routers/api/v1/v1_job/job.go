@@ -45,14 +45,11 @@ func List(c *gin.Context) {
 	}
 
 	jobs, err := job_service.New().WithAuth(auth).List(job_service.ListOpts{
-		Pagination: &service.Pagination{
-			Page:     requestQuery.Page,
-			PageSize: requestQuery.PageSize,
-		},
-		All:     requestQuery.All,
-		UserID:  requestQuery.UserID,
-		JobType: requestQuery.Type,
-		Status:  requestQuery.Status,
+		Pagination: service.GetOrDefault(requestQuery.Pagination),
+		All:        requestQuery.All,
+		UserID:     requestQuery.UserID,
+		JobType:    requestQuery.Type,
+		Status:     requestQuery.Status,
 	})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)

@@ -1,7 +1,7 @@
 package query
 
 type SmList struct {
-	Pagination
+	*Pagination
 
 	All bool `form:"all" binding:"omitempty,boolean"`
 }

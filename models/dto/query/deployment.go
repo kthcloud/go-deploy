@@ -6,7 +6,7 @@ type Env struct {
 }
 
 type DeploymentList struct {
-	Pagination
+	*Pagination
 
 	All    bool    `form:"all" binding:"omitempty,boolean"`
 	UserID *string `form:"userId" binding:"omitempty,uuid4"`

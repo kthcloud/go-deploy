@@ -61,12 +61,9 @@ func List(c *gin.Context) {
 	}
 
 	vms, err := vsc.List(&client.ListOptions{
-		Pagination: &service.Pagination{
-			Page:     requestQuery.Page,
-			PageSize: requestQuery.PageSize,
-		},
-		UserID: &userID,
-		Shared: true,
+		Pagination: service.GetOrDefault(requestQuery.Pagination),
+		UserID:     &userID,
+		Shared:     true,
 	})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)

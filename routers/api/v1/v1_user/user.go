@@ -67,7 +67,7 @@ func ListUsers(c *gin.Context) {
 	usc := user_service.New().WithAuth(auth)
 
 	users, err := usc.List(user_service.ListUsersOpts{
-		Pagination: &service.Pagination{Page: requestQuery.Page, PageSize: requestQuery.PageSize},
+		Pagination: service.GetOrDefault(requestQuery.Pagination),
 		Search:     requestQuery.Search,
 		All:        requestQuery.All,
 	})
