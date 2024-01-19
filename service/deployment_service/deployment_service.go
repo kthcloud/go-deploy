@@ -312,12 +312,22 @@ func (c *Client) Update(id string, dtoUpdate *body.DeploymentUpdate) error {
 		return sErrors.DeploymentNotFoundErr
 	}
 
+	mainApp := d.GetMainApp()
+	if mainApp == nil {
+		return makeError(sErrors.MainAppNotFoundErr)
+	}
+
 	params := &deploymentModels.UpdateParams{}
 	params.FromDTO(dtoUpdate, d.Type)
 
 	if params.Name != nil && d.Type == deploymentModels.TypeCustom {
 		image := createImagePath(d.OwnerID, *params.Name)
 		params.Image = &image
+	}
+
+	// Don't update the custom domain secret if the update contains the same domain
+	if params.CustomDomain != nil && mainApp.CustomDomain != nil && *params.CustomDomain == mainApp.CustomDomain.Domain {
+		params.CustomDomain = nil
 	}
 
 	err = deploymentModels.New().UpdateWithParams(id, params)
