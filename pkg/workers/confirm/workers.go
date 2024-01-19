@@ -181,6 +181,7 @@ func customDomainConfirmer(ctx context.Context) {
 				match, err := checkCustomDomain(cd.Domain, cd.Secret)
 				if err != nil {
 					log.Printf("failed to check custom domain %s for deployment %s. details: %v\n", cd.Domain, deployment.ID, err)
+					continue
 				}
 
 				if !match {
@@ -189,6 +190,8 @@ func customDomainConfirmer(ctx context.Context) {
 						utils.PrettyPrintError(fmt.Errorf("custom domain verification failed. details: %w", err))
 						continue
 					}
+
+					continue
 				}
 
 				log.Printf("marking custom domain %s as confirmed for deployment %s\n", cd.Domain, deployment.ID)
