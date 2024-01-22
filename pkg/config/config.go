@@ -5,6 +5,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"go-deploy/models/config"
 	"go-deploy/pkg/imp/cloudstack"
+	"go-deploy/pkg/subsystems/rancher"
 	"gopkg.in/yaml.v3"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -95,6 +96,21 @@ func setupK8sClusters() error {
 		}
 
 		switch configType {
+		case "rancher":
+			{
+				var zoneConfig config.RancherConfigSource
+				err := mapstructure.Decode(sourceType, &zoneConfig)
+				if err != nil {
+					log.Fatalln("failed to parse rancher config source for zone", zone.Name)
+				}
+
+				client, err := createClientFromRancherConfig(zone.Name, &zoneConfig)
+				if err != nil {
+					return makeError(err)
+				}
+
+				Config.Deployment.Zones[idx].Client = client
+			}
 		case "cloudstack":
 			{
 				var zoneConfig config.CloudStackConfigSource
@@ -115,6 +131,35 @@ func setupK8sClusters() error {
 
 	log.Println("k8s clusters setup done")
 	return nil
+}
+
+// createClientFromRancherConfig creates a k8s client from a rancher config.
+func createClientFromRancherConfig(name string, config *config.RancherConfigSource) (*kubernetes.Clientset, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to create k8s client from rancher config. details: %w", err)
+	}
+
+	log.Println("fetching k8s cluster for deployment zone", name)
+
+	rancherClient, err := rancher.New(&rancher.ClientConf{
+		URL:    Config.Rancher.URL,
+		ApiKey: Config.Rancher.ApiKey,
+		Secret: Config.Rancher.Secret,
+	})
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	kubeConfig, err := rancherClient.ReadClusterKubeConfig(config.ClusterID + "asd")
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	if kubeConfig == "" {
+		return nil, makeError(fmt.Errorf("kubeconfig not found for cluster %s", config.ClusterID))
+	}
+
+	return createK8sClient([]byte(kubeConfig))
 }
 
 // createClientFromCloudStackConfig creates a k8s client from a cloudstack config.

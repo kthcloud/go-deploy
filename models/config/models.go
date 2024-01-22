@@ -8,6 +8,10 @@ import (
 // The following structs are used to parse the config.yaml file
 // into a struct that can be used by the application.
 
+type RancherConfigSource struct {
+	ClusterID string `yaml:"clusterId"`
+}
+
 type CloudStackConfigSource struct {
 	ClusterID   string `yaml:"clusterId"`
 	ExternalURL string `yaml:"externalUrl"`
@@ -134,6 +138,12 @@ type ConfigType struct {
 		ApiKey string `yaml:"apiKey"`
 		Secret string `yaml:"secret"`
 	} `yaml:"cs"`
+
+	Rancher struct {
+		URL    string `yaml:"url"`
+		ApiKey string `yaml:"apiKey"`
+		Secret string `yaml:"secret"`
+	}
 
 	Landing struct {
 		URL      string `yaml:"url"`
