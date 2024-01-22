@@ -8,7 +8,7 @@ import (
 	"go-deploy/models/sys/deployment"
 	smModels "go-deploy/models/sys/sm"
 	userModels "go-deploy/models/sys/user"
-	"go-deploy/models/sys/vm"
+	vmModels "go-deploy/models/sys/vm"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems"
 	"go-deploy/pkg/subsystems/k8s"
@@ -1024,22 +1024,22 @@ func dPvcName(deployment *deployment.Deployment, volumeName string) string {
 }
 
 // vpDeploymentName returns the deployment name for a VM proxy
-func vpDeploymentName(vm *vm.VM, portName string) string {
+func vpDeploymentName(vm *vmModels.VM, portName string) string {
 	return fmt.Sprintf("%s-%s", vm.Name, portName)
 }
 
 // vpServiceName returns the service name for a VM proxy
-func vpServiceName(vm *vm.VM, portName string) string {
+func vpServiceName(vm *vmModels.VM, portName string) string {
 	return fmt.Sprintf("%s-%s", vm.Name, portName)
 }
 
 // vpIngressName returns the ingress name for a VM proxy
-func vpIngressName(vm *vm.VM, portName string) string {
+func vpIngressName(vm *vmModels.VM, portName string) string {
 	return fmt.Sprintf("%s-%s", vm.Name, portName)
 }
 
 // vpCustomDomainIngressName returns the ingress name for a VM proxy custom domain
-func vpCustomDomainIngressName(vm *vm.VM, portName string) string {
+func vpCustomDomainIngressName(vm *vmModels.VM, portName string) string {
 	return fmt.Sprintf("%s-%s-custom-domain", vm.Name, portName)
 }
 

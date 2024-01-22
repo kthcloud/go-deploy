@@ -12,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	kubevirtv1 "kubevirt.io/api/core/v1"
 )
 
 const (
@@ -310,7 +311,7 @@ func CreatePvcManifest(public *models.PvcPublic) *apiv1.PersistentVolumeClaim {
 			AccessModes: []apiv1.PersistentVolumeAccessMode{
 				apiv1.ReadWriteMany,
 			},
-			Resources: apiv1.ResourceRequirements{
+			Resources: apiv1.VolumeResourceRequirements{
 				Requests: apiv1.ResourceList{
 					apiv1.ResourceStorage: resource.MustParse(public.Capacity),
 				},
@@ -463,6 +464,62 @@ func CreateHpaManifest(public *models.HpaPublic) *autoscalingv2.HorizontalPodAut
 							Type:               autoscalingv2.UtilizationMetricType,
 							AverageUtilization: intToInt32Ptr(public.MemoryAverageUtilization)},
 					},
+				},
+			},
+		},
+	}
+}
+
+// CreateVmManifest creates a Kubernetes VirtualMachine manifest from a models.VmPublic.
+func CreateVmManifest(public *models.VmPublic) *kubevirtv1.VirtualMachine {
+	return &kubevirtv1.VirtualMachine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      public.Name,
+			Namespace: public.Namespace,
+			Labels: map[string]string{
+				keys.ManifestLabelName: public.Name,
+			},
+			Annotations: map[string]string{
+				keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat),
+			},
+		},
+		Spec: kubevirtv1.VirtualMachineSpec{
+			Running: &public.Running,
+			Template: &kubevirtv1.VirtualMachineInstanceTemplateSpec{
+				Spec: kubevirtv1.VirtualMachineInstanceSpec{
+					Domain: kubevirtv1.DomainSpec{
+						Devices: kubevirtv1.Devices{
+							Disks: []kubevirtv1.Disk{
+								{
+									//Name: "rootdisk",
+									//DiskDevice: kubevirtv1.DiskDevice{
+									//	Disk: &kubevirtv1.DiskTarget{
+									//		Bus: "virtio",
+									//	},
+									//},
+									//VolumeName: "rootdisk",
+								},
+							},
+							Interfaces: []kubevirtv1.Interface{
+								{
+									Name: "eth0",
+									InterfaceBindingMethod: kubevirtv1.InterfaceBindingMethod{
+										Masquerade: &kubevirtv1.InterfaceMasquerade{},
+									},
+								},
+							},
+						},
+					},
+					//Volumes: []kubevirtv1.Volume{
+					//	{
+					//		Name: "rootdisk",
+					//		VolumeSource: kubevirtv1.VolumeSource{
+					//			PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
+					//				ClaimName: public.PvcName,
+					//			},
+					//		},
+					//	},
+					//},
 				},
 			},
 		},
