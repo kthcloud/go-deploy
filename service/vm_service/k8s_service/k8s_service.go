@@ -16,7 +16,7 @@ import (
 
 // Create sets up K8s for a VM.
 //
-// This does nothing if the VM has no proxy ports.
+// This does nothing if the VM is version 1 and has no proxy ports
 func (c *Client) Create(id string, params *vmModels.CreateParams) error {
 	log.Println("setting up k8s for", params.Name)
 
@@ -51,6 +51,18 @@ func (c *Client) Create(id string, params *vmModels.CreateParams) error {
 		err = resources.SsCreator(kc.CreateDeployment).
 			WithDbFunc(dbFunc(id, "deploymentMap."+deploymentPublic.Name)).
 			WithPublic(&deploymentPublic).
+			Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	// VM
+	for _, vmPublic := range g.VMs() {
+		err = resources.SsCreator(kc.CreateVM).
+			WithDbFunc(dbFunc(id, "vmMap."+vmPublic.Name)).
+			WithPublic(&vmPublic).
 			Exec()
 
 		if err != nil {

@@ -384,6 +384,28 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 	return nil
 }
 
+func (kg *K8sGenerator) VMs() []models.VmPublic {
+	var res []models.VmPublic
+
+	if kg.v.vm != nil && kg.v.vm.Version == "2" {
+		vmPublic := models.VmPublic{
+			Name:      vVmName(kg.v.vm),
+			Namespace: kg.namespace,
+			Running:   true,
+			CreatedAt: time.Time{},
+		}
+
+		if vm := kg.v.vm.Subsystems.K8s.GetVm(vVmName(kg.v.vm)); subsystems.Created(vm) {
+			vmPublic.CreatedAt = vm.CreatedAt
+		}
+
+		res = append(res, vmPublic)
+		return res
+	}
+
+	return nil
+}
+
 // Services returns a list of models.ServicePublic that should be created
 func (kg *K8sGenerator) Services() []models.ServicePublic {
 	var res []models.ServicePublic
@@ -1021,6 +1043,11 @@ func dPvName(deployment *deployment.Deployment, volumeName string) string {
 // dPvcName returns the PVC name for a deployment
 func dPvcName(deployment *deployment.Deployment, volumeName string) string {
 	return fmt.Sprintf("%s-%s", deployment.Name, makeValidK8sName(volumeName))
+}
+
+// vVmName returns the VM name for a VM
+func vVmName(vm *vmModels.VM) string {
+	return "vm-" + vm.Name
 }
 
 // vpDeploymentName returns the deployment name for a VM proxy

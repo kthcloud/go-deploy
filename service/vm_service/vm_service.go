@@ -186,13 +186,14 @@ func (c *Client) Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
 		return makeError(err)
 	}
 
-	err = cs_service.New(c.Cache).Create(id, params)
-	if err != nil {
-		return makeError(err)
+	if c.Version == "1" {
+		err = cs_service.New(c.Cache).Create(id, params)
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
-	// there is always at least one port: __ssh
-	if len(params.PortMap) > 1 {
+	if c.Version == "2" || len(params.PortMap) > 1 {
 		err = k8s_service.New(c.Cache).Create(id, params)
 		if err != nil {
 			return makeError(err)

@@ -19,7 +19,7 @@ type K8s struct {
 	IngressMap    map[string]k8sModels.IngressPublic    `bson:"ingressMap,omitempty"`
 	SecretMap     map[string]k8sModels.SecretPublic     `bson:"secretMap,omitempty"`
 
-	// VmMap only exists in V2
+	// VmMap only exists in version 2
 	VmMap map[string]k8sModels.VmPublic `bson:"vmMap,omitempty"`
 }
 
