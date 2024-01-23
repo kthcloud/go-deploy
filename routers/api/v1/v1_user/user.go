@@ -3,19 +3,18 @@ package v1_user
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"go-deploy/models/dto/body"
-	"go-deploy/models/dto/query"
-	"go-deploy/models/dto/uri"
+	"go-deploy/models/dto/v1/body"
+	"go-deploy/models/dto/v1/query"
+	"go-deploy/models/dto/v1/uri"
 	roleModels "go-deploy/models/sys/role"
 	userModels "go-deploy/models/sys/user"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
-	"go-deploy/service/deployment_service"
-	"go-deploy/service/sm_service"
-	"go-deploy/service/user_service"
-	"go-deploy/service/vm_service"
+	"go-deploy/service/clients"
+	v12 "go-deploy/service/v1/common"
+	"go-deploy/service/v1/users/opts"
 	"go-deploy/utils"
 )
 
@@ -45,29 +44,29 @@ func ListUsers(c *gin.Context) {
 		return
 	}
 
+	deployV1 := service.V1(auth)
+
 	if requestQuery.Discover {
-		users, err := user_service.New().WithAuth(auth).Discover(user_service.DiscoverUsersOpts{
+		userList, err := deployV1.Users().Discover(opts.DiscoverOpts{
 			Search:     requestQuery.Search,
-			Pagination: &service.Pagination{Page: requestQuery.Page, PageSize: requestQuery.PageSize},
+			Pagination: &v12.Pagination{Page: requestQuery.Page, PageSize: requestQuery.PageSize},
 		})
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
 		}
 
-		if users == nil {
+		if userList == nil {
 			context.Ok([]interface{}{})
 			return
 		}
 
-		context.Ok(users)
+		context.Ok(userList)
 		return
 	}
 
-	usc := user_service.New().WithAuth(auth)
-
-	users, err := usc.List(user_service.ListUsersOpts{
-		Pagination: service.GetOrDefaultPagination(requestQuery.Pagination),
+	userList, err := deployV1.Users().List(opts.ListOpts{
+		Pagination: v12.GetOrDefaultPagination(requestQuery.Pagination),
 		Search:     requestQuery.Search,
 		All:        requestQuery.All,
 	})
@@ -77,10 +76,10 @@ func ListUsers(c *gin.Context) {
 	}
 
 	usersDto := make([]body.UserRead, 0)
-	for _, user := range users {
+	for _, user := range userList {
 		// if we list ourselves, take the opportunity to update our role
 		if user.ID == auth.UserID {
-			updatedUser, err := usc.Create()
+			updatedUser, err := deployV1.Users().Create()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("failed to get or create a user when listing: %w", err))
 				continue
@@ -91,20 +90,13 @@ func ListUsers(c *gin.Context) {
 			}
 		}
 
-		storageURL, err := getSmURL(user.ID, auth)
-		if err != nil {
-			utils.PrettyPrintError(fmt.Errorf("failed to get storage url for a user when listing: %w", err))
-			continue
-		}
-
 		role := config.Config.GetRole(user.EffectiveRole.Name)
-
-		usage, _ := collectUsage(user.ID)
+		usage, _ := collectUsage(deployV1, user.ID)
 		if usage == nil {
 			usage = &userModels.Usage{}
 		}
 
-		usersDto = append(usersDto, user.ToDTO(role, usage, storageURL))
+		usersDto = append(usersDto, user.ToDTO(role, usage, deployV1.SMs().GetURL(user.ID)))
 	}
 
 	context.Ok(usersDto)
@@ -143,11 +135,11 @@ func Get(c *gin.Context) {
 	var effectiveRole *roleModels.Role
 	var user *userModels.User
 
-	usc := user_service.New().WithAuth(auth)
+	deployV1 := service.V1(auth)
 
 	if requestURI.UserID == auth.UserID {
 		effectiveRole = auth.GetEffectiveRole()
-		user, err = usc.Create()
+		user, err = deployV1.Users().Create()
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
@@ -158,7 +150,7 @@ func Get(c *gin.Context) {
 			return
 		}
 	} else {
-		user, err = usc.Get(requestURI.UserID)
+		user, err = deployV1.Users().Get(requestURI.UserID)
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
@@ -175,19 +167,13 @@ func Get(c *gin.Context) {
 		}
 	}
 
-	usage, err := collectUsage(user.ID)
+	usage, err := collectUsage(deployV1, user.ID)
 	if usage == nil {
 		context.ServerError(err, v1.InternalError)
 		return
 	}
 
-	storageURL, err := getSmURL(user.ID, auth)
-	if err != nil {
-		context.ServerError(err, v1.InternalError)
-		return
-	}
-
-	context.JSONResponse(200, user.ToDTO(effectiveRole, usage, storageURL))
+	context.JSONResponse(200, user.ToDTO(effectiveRole, usage, deployV1.SMs().GetURL(user.ID)))
 }
 
 // Update
@@ -229,18 +215,18 @@ func Update(c *gin.Context) {
 
 	var effectiveRole *roleModels.Role
 
-	usc := user_service.New().WithAuth(auth)
+	deployV1 := service.V1(auth)
 
 	if requestURI.UserID == auth.UserID {
 		effectiveRole = auth.GetEffectiveRole()
-		_, err = usc.Create()
+		_, err = deployV1.Users().Create()
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
 		}
 	}
 
-	updated, err := usc.Update(requestURI.UserID, &userUpdate)
+	updated, err := deployV1.Users().Update(requestURI.UserID, &userUpdate)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -251,30 +237,24 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	usage, err := collectUsage(updated.ID)
+	usage, err := collectUsage(deployV1, updated.ID)
 	if usage == nil {
 		context.ServerError(err, v1.InternalError)
 		return
 	}
 
-	storageURL, err := getSmURL(updated.ID, auth)
-	if err != nil {
-		context.ServerError(err, v1.InternalError)
-		return
-	}
-
-	context.JSONResponse(200, updated.ToDTO(effectiveRole, usage, storageURL))
+	context.JSONResponse(200, updated.ToDTO(effectiveRole, usage, deployV1.SMs().GetURL(updated.ID)))
 }
 
 // collectUsage is helper function to collect usage for a user.
 // This includes how many deployments, cpu cores, ram and disk size etc. the user has.
-func collectUsage(userID string) (*userModels.Usage, error) {
-	vmUsage, err := vm_service.New().GetUsage(userID)
+func collectUsage(deployV1 clients.V1, userID string) (*userModels.Usage, error) {
+	vmUsage, err := deployV1.VMs().GetUsage(userID)
 	if err != nil {
 		return nil, err
 	}
 
-	deploymentUsage, err := deployment_service.New().GetUsage(userID)
+	deploymentUsage, err := deployV1.Deployments().GetUsage(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -287,18 +267,4 @@ func collectUsage(userID string) (*userModels.Usage, error) {
 	}
 
 	return usage, nil
-}
-
-// getSmURL is helper function to get storage manager url for a user.
-func getSmURL(userID string, auth *service.AuthInfo) (*string, error) {
-	sm, err := sm_service.New().WithAuth(auth).GetByUserID(userID)
-	if err != nil {
-		return nil, err
-	}
-
-	if sm == nil {
-		return nil, nil
-	}
-
-	return sm.GetURL(), nil
 }

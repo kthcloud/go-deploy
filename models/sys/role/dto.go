@@ -2,7 +2,7 @@ package role
 
 import (
 	"github.com/fatih/structs"
-	"go-deploy/models/dto/body"
+	"go-deploy/models/dto/v1/body"
 )
 
 // ToDTO converts a Role to a body.Role DTO.

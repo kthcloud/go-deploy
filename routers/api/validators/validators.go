@@ -3,7 +3,7 @@ package validators
 import (
 	"encoding/json"
 	"github.com/go-playground/validator/v10"
-	"go-deploy/models/dto/body"
+	"go-deploy/models/dto/v1/body"
 	"go-deploy/pkg/config"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/idna"

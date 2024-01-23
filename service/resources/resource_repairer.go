@@ -2,7 +2,7 @@ package resources
 
 import (
 	"go-deploy/pkg/subsystems"
-	"go-deploy/service"
+	"go-deploy/service/utils"
 	"log"
 )
 
@@ -86,7 +86,7 @@ func (rc *SsRepairerType[idType, T]) Exec() error {
 		return rc.createResourceInstead()
 	}
 
-	return service.UpdateIfDiff[T](
+	return utils.UpdateIfDiff[T](
 		dbResource,
 		func() (T, error) {
 			return rc.fetchFunc(*rc.resourceID)

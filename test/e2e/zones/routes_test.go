@@ -2,7 +2,7 @@ package zones
 
 import (
 	"github.com/stretchr/testify/assert"
-	"go-deploy/models/dto/body"
+	"go-deploy/models/dto/v1/body"
 	"go-deploy/test/e2e"
 	"os"
 	"testing"

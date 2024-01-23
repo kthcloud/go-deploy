@@ -1,6 +1,6 @@
 package discover
 
-import "go-deploy/models/dto/body"
+import "go-deploy/models/dto/v1/body"
 
 // ToDTO converts a Discover to a body.DiscoverRead DTO.
 func (d *Discover) ToDTO() *body.DiscoverRead {

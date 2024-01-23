@@ -1,7 +1,7 @@
 package job
 
 import (
-	"go-deploy/models/dto/body"
+	"go-deploy/models/dto/v1/body"
 	"go-deploy/utils"
 )
 

@@ -1,7 +1,7 @@
 package e2e
 
 import (
-	"go-deploy/models/dto/body"
+	"go-deploy/models/dto/v1/body"
 	"testing"
 )
 

@@ -2,11 +2,12 @@ package v1_zone
 
 import (
 	"github.com/gin-gonic/gin"
-	"go-deploy/models/dto/body"
-	"go-deploy/models/dto/query"
+	"go-deploy/models/dto/v1/body"
+	"go-deploy/models/dto/v1/query"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
-	"go-deploy/service/zone_service"
+	"go-deploy/service"
+	"go-deploy/service/v1/zones/opts"
 )
 
 // List
@@ -32,14 +33,14 @@ func List(c *gin.Context) {
 		return
 	}
 
-	zones, err := zone_service.New().WithAuth(auth).List(zone_service.ListOpts{Type: requestQuery.Type})
+	zoneList, err := service.V1(auth).Zones().List(opts.ListOpts{Type: requestQuery.Type})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
 	}
 
-	dtoZones := make([]body.ZoneRead, len(zones))
-	for i, zone := range zones {
+	dtoZones := make([]body.ZoneRead, len(zoneList))
+	for i, zone := range zoneList {
 		dtoZones[i] = zone.ToDTO()
 	}
 

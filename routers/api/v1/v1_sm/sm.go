@@ -3,17 +3,16 @@ package v1_sm
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"go-deploy/models/dto/body"
-	"go-deploy/models/dto/query"
-	"go-deploy/models/dto/uri"
+	"go-deploy/models/dto/v1/body"
+	"go-deploy/models/dto/v1/query"
+	"go-deploy/models/dto/v1/uri"
 	jobModels "go-deploy/models/sys/job"
 	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
-	"go-deploy/service/job_service"
-	"go-deploy/service/sm_service"
-	"go-deploy/service/sm_service/client"
+	v12 "go-deploy/service/v1/common"
+	"go-deploy/service/v1/sms/opts"
 	"net/http"
 )
 
@@ -45,18 +44,23 @@ func ListSMs(c *gin.Context) {
 		return
 	}
 
-	sms, _ := sm_service.New().WithAuth(auth).List(client.ListOptions{
-		Pagination: service.GetOrDefaultPagination(requestQuery.Pagination),
+	smList, err := service.V1(auth).SMs().List(opts.ListOpts{
+		Pagination: v12.GetOrDefaultPagination(requestQuery.Pagination),
 		All:        requestQuery.All,
 	})
 
-	if len(sms) == 0 {
+	if err != nil {
+		context.ServerError(err, v1.InternalError)
+		return
+	}
+
+	if len(smList) == 0 {
 		context.JSONResponse(200, []interface{}{})
 		return
 	}
 
 	var smDTOs []body.SmRead
-	for _, sm := range sms {
+	for _, sm := range smList {
 		smDTOs = append(smDTOs, sm.ToDTO())
 	}
 
@@ -93,7 +97,7 @@ func GetSM(c *gin.Context) {
 		return
 	}
 
-	sm, err := sm_service.New().WithAuth(auth).Get(requestURI.SmID)
+	sm, err := service.V1(auth).SMs().Get(requestURI.SmID)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return
@@ -137,7 +141,9 @@ func DeleteSM(c *gin.Context) {
 		return
 	}
 
-	sm, err := sm_service.New().WithAuth(auth).Get(requestURI.SmID)
+	deployV1 := service.V1(auth)
+
+	sm, err := deployV1.SMs().Get(requestURI.SmID)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -149,7 +155,7 @@ func DeleteSM(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = job_service.New().Create(jobID, auth.UserID, jobModels.TypeDeleteSM, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.UserID, jobModels.TypeDeleteSM, map[string]interface{}{
 		"id": sm.ID,
 	})
 	if err != nil {

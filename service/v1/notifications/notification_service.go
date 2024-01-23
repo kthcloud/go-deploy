@@ -1,0 +1,107 @@
+package notifications
+
+import (
+	"go-deploy/models/dto/v1/body"
+	notificationModels "go-deploy/models/sys/notification"
+	sErrors "go-deploy/service/errors"
+	"go-deploy/service/utils"
+	"go-deploy/service/v1/notifications/opts"
+)
+
+// Get retrieves a notification by ID.
+func (c *Client) Get(id string, opts ...opts.GetOpts) (*notificationModels.Notification, error) {
+	_ = utils.GetFirstOrDefault(opts)
+
+	client := notificationModels.New()
+
+	if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
+		client.WithUserID(c.V1.Auth().UserID)
+	}
+
+	return c.Notification(id, client)
+}
+
+// List retrieves a list of notifications.
+func (c *Client) List(opts ...opts.ListOpts) ([]notificationModels.Notification, error) {
+	o := utils.GetFirstOrDefault(opts)
+
+	nmc := notificationModels.New()
+
+	if o.Pagination != nil {
+		nmc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
+	}
+
+	var effectiveUserID string
+	if o.UserID != nil {
+		// Specific user's notifications are requested
+		if !c.V1.HasAuth() || c.V1.Auth().UserID == *o.UserID || c.V1.Auth().IsAdmin {
+			effectiveUserID = *o.UserID
+		} else {
+			// User cannot access the other user's resources
+			effectiveUserID = c.V1.Auth().UserID
+		}
+	} else {
+		// All notifications are requested
+		if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
+			effectiveUserID = c.V1.Auth().UserID
+		}
+	}
+
+	if effectiveUserID != "" {
+		nmc.WithUserID(effectiveUserID)
+	}
+
+	return c.Notifications(nmc)
+}
+
+// Create creates a new notification.
+func (c *Client) Create(id, userID string, params *notificationModels.CreateParams) (*notificationModels.Notification, error) {
+	return notificationModels.New().Create(id, userID, params)
+}
+
+// Update updates the notification with the given ID.
+func (c *Client) Update(id string, dtoNotificationUpdate *body.NotificationUpdate) (*notificationModels.Notification, error) {
+	nmc := notificationModels.New()
+
+	if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
+		nmc.WithUserID(c.V1.Auth().UserID)
+	}
+
+	notification, err := c.Notification(id, nmc)
+	if err != nil {
+		return nil, err
+	}
+
+	if notification == nil {
+		return nil, nil
+	}
+
+	if dtoNotificationUpdate.Read && !notification.ReadAt.IsZero() {
+		err = nmc.MarkReadByID(id)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return c.RefreshNotification(id, nmc)
+}
+
+// Delete deletes the notification with the given ID.
+func (c *Client) Delete(id string) error {
+	client := notificationModels.New()
+
+	if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
+		client.WithUserID(c.V1.Auth().UserID)
+	}
+
+	exists, err := client.ExistsByID(id)
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		return sErrors.NotificationNotFoundErr
+	}
+
+	return client.DeleteByID(id)
+}

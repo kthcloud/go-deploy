@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"go-deploy/models/dto/body"
-	"go-deploy/models/dto/query"
-	"go-deploy/models/dto/uri"
+	"go-deploy/models/dto/v1/body"
+	"go-deploy/models/dto/v1/query"
+	"go-deploy/models/dto/v1/uri"
 	jobModels "go-deploy/models/sys/job"
 	vmModels "go-deploy/models/sys/vm"
 	zoneModels "go-deploy/models/sys/zone"
@@ -15,11 +15,9 @@ import (
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
-	"go-deploy/service/job_service"
-	"go-deploy/service/user_service"
-	"go-deploy/service/vm_service"
-	"go-deploy/service/vm_service/client"
-	"go-deploy/service/zone_service"
+	v12 "go-deploy/service/v1/common"
+	"go-deploy/service/v1/teams/opts"
+	opts2 "go-deploy/service/v1/vms/opts"
 	"go-deploy/utils"
 )
 
@@ -51,7 +49,7 @@ func List(c *gin.Context) {
 		return
 	}
 
-	vsc := vm_service.New().WithAuth(auth)
+	deployV1 := service.V1(auth)
 
 	var userID string
 	if requestQuery.UserID != nil {
@@ -60,8 +58,8 @@ func List(c *gin.Context) {
 		userID = auth.UserID
 	}
 
-	vms, err := vsc.List(&client.ListOptions{
-		Pagination: service.GetOrDefaultPagination(requestQuery.Pagination),
+	vms, err := deployV1.VMs().List(opts2.ListOpts{
+		Pagination: v12.GetOrDefaultPagination(requestQuery.Pagination),
 		UserID:     &userID,
 		Shared:     true,
 	})
@@ -77,7 +75,7 @@ func List(c *gin.Context) {
 
 	dtoVMs := make([]body.VmRead, len(vms))
 	for i, vm := range vms {
-		connectionString, _ := vsc.GetConnectionString(vm.ID)
+		connectionString, _ := deployV1.VMs().GetConnectionString(vm.ID)
 
 		var gpuRead *body.GpuRead
 		if gpu := vm.GetGpu(); gpu != nil {
@@ -85,13 +83,14 @@ func List(c *gin.Context) {
 			gpuRead = &gpuDTO
 		}
 
-		mapper, err := vsc.GetExternalPortMapper(vm.ID)
+		mapper, err := deployV1.VMs().GetExternalPortMapper(vm.ID)
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to get external port mapper for vm when listing. details: %w", err))
 			continue
 		}
 
-		dtoVMs[i] = vm.ToDTO(vm.StatusMessage, connectionString, getTeamIDs(vm.ID, auth), gpuRead, mapper)
+		teamIDs, _ := deployV1.Teams().ListIDs(opts.ListOpts{ResourceID: vm.ID})
+		dtoVMs[i] = vm.ToDTO(vm.StatusMessage, connectionString, teamIDs, gpuRead, mapper)
 	}
 
 	context.Ok(dtoVMs)
@@ -124,9 +123,9 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	vsc := vm_service.New().WithAuth(auth)
+	deployV1 := service.V1(auth)
 
-	vm, err := vsc.Get(requestURI.VmID, client.GetOptions{Shared: true})
+	vm, err := deployV1.VMs().Get(requestURI.VmID, opts2.GetOpts{Shared: true})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -137,19 +136,20 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	connectionString, _ := vsc.GetConnectionString(requestURI.VmID)
+	connectionString, _ := deployV1.VMs().GetConnectionString(requestURI.VmID)
 	var gpuRead *body.GpuRead
 	if gpu := vm.GetGpu(); gpu != nil {
 		gpuDTO := gpu.ToDTO(true)
 		gpuRead = &gpuDTO
 	}
 
-	mapper, err := vsc.GetExternalPortMapper(vm.ID)
+	mapper, err := deployV1.VMs().GetExternalPortMapper(vm.ID)
 	if err != nil {
 		utils.PrettyPrintError(fmt.Errorf("failed to get external port mapper for vm %s. details: %w", vm.ID, err))
 	}
 
-	context.Ok(vm.ToDTO(vm.StatusMessage, connectionString, getTeamIDs(vm.ID, auth), gpuRead, mapper))
+	teamIDs, _ := deployV1.Teams().ListIDs(opts.ListOpts{ResourceID: vm.ID})
+	context.Ok(vm.ToDTO(vm.StatusMessage, connectionString, teamIDs, gpuRead, mapper))
 }
 
 // Create
@@ -181,9 +181,9 @@ func Create(c *gin.Context) {
 		return
 	}
 
-	vsc := vm_service.New().WithAuth(auth)
+	deployV1 := service.V1(auth)
 
-	unique, err := vm_service.NameAvailable(requestBody.Name)
+	unique, err := deployV1.VMs().NameAvailable(requestBody.Name)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -195,14 +195,14 @@ func Create(c *gin.Context) {
 	}
 
 	if requestBody.Zone != nil {
-		zone := zone_service.New().WithAuth(auth).Get(*requestBody.Zone, zoneModels.TypeVM)
+		zone := deployV1.Zones().Get(*requestBody.Zone, zoneModels.TypeVM)
 		if zone == nil {
 			context.NotFound("Zone not found")
 			return
 		}
 	}
 
-	err = vsc.CheckQuota("", auth.UserID, &auth.GetEffectiveRole().Quotas, client.QuotaOptions{Create: &requestBody})
+	err = deployV1.VMs().CheckQuota("", auth.UserID, &auth.GetEffectiveRole().Quotas, opts2.QuotaOpts{Create: &requestBody})
 	if err != nil {
 		var quotaExceedErr sErrors.QuotaExceededError
 		if errors.As(err, &quotaExceedErr) {
@@ -216,7 +216,7 @@ func Create(c *gin.Context) {
 
 	vmID := uuid.New().String()
 	jobID := uuid.New().String()
-	err = job_service.New().Create(jobID, auth.UserID, jobModels.TypeCreateVM, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.UserID, jobModels.TypeCreateVM, map[string]interface{}{
 		"id":      vmID,
 		"ownerId": auth.UserID,
 		"params":  requestBody,
@@ -261,9 +261,9 @@ func Delete(c *gin.Context) {
 		return
 	}
 
-	vsc := vm_service.New().WithAuth(auth)
+	deployV1 := service.V1(auth)
 
-	vm, err := vsc.Get(requestURI.VmID, client.GetOptions{Shared: true})
+	vm, err := deployV1.VMs().Get(requestURI.VmID, opts2.GetOpts{Shared: true})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -279,7 +279,7 @@ func Delete(c *gin.Context) {
 		return
 	}
 
-	err = vsc.StartActivity(vm.ID, vmModels.ActivityBeingDeleted)
+	err = deployV1.VMs().StartActivity(vm.ID, vmModels.ActivityBeingDeleted)
 	if err != nil {
 		var failedToStartActivityErr sErrors.FailedToStartActivityError
 		if errors.As(err, &failedToStartActivityErr) {
@@ -297,7 +297,7 @@ func Delete(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = job_service.New().Create(jobID, auth.UserID, jobModels.TypeDeleteVM, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.UserID, jobModels.TypeDeleteVM, map[string]interface{}{
 		"id": vm.ID,
 	})
 	if err != nil {
@@ -348,11 +348,11 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	vsc := vm_service.New().WithAuth(auth)
+	deployV1 := service.V1(auth)
 
 	var vm *vmModels.VM
 	if requestBody.TransferCode != nil {
-		vm, err = vsc.Get("", client.GetOptions{TransferCode: requestBody.TransferCode})
+		vm, err = deployV1.VMs().Get("", opts2.GetOpts{TransferCode: requestBody.TransferCode})
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
@@ -363,7 +363,7 @@ func Update(c *gin.Context) {
 		}
 
 	} else {
-		vm, err = vsc.Get(requestURI.VmID, client.GetOptions{Shared: true})
+		vm, err = deployV1.VMs().Get(requestURI.VmID, opts2.GetOpts{Shared: true})
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
@@ -377,7 +377,7 @@ func Update(c *gin.Context) {
 
 	if requestBody.OwnerID != nil {
 		if *requestBody.OwnerID == "" {
-			err = vsc.ClearUpdateOwner(vm.ID)
+			err = deployV1.VMs().ClearUpdateOwner(vm.ID)
 			if err != nil {
 				if errors.Is(err, sErrors.VmNotFoundErr) {
 					context.NotFound("VM not found")
@@ -399,7 +399,7 @@ func Update(c *gin.Context) {
 			return
 		}
 
-		exists, err := user_service.New().Exists(*requestBody.OwnerID)
+		exists, err := deployV1.Users().Exists(*requestBody.OwnerID)
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
@@ -410,7 +410,7 @@ func Update(c *gin.Context) {
 			return
 		}
 
-		jobID, err := vsc.UpdateOwnerSetup(vm.ID, &body.VmUpdateOwner{
+		jobID, err := deployV1.VMs().UpdateOwnerSetup(vm.ID, &body.VmUpdateOwner{
 			NewOwnerID:   *requestBody.OwnerID,
 			OldOwnerID:   vm.OwnerID,
 			TransferCode: requestBody.TransferCode,
@@ -438,12 +438,12 @@ func Update(c *gin.Context) {
 	}
 
 	if requestBody.GpuID != nil {
-		updateGPU(&context, &requestBody, auth, vm)
+		updateGPU(&context, &requestBody, deployV1, vm)
 		return
 	}
 
 	if requestBody.Name != nil {
-		available, err := vm_service.NameAvailable(*requestBody.Name)
+		available, err := deployV1.VMs().NameAvailable(*requestBody.Name)
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
@@ -458,7 +458,7 @@ func Update(c *gin.Context) {
 	if requestBody.Ports != nil {
 		for _, port := range *requestBody.Ports {
 			if port.HttpProxy != nil {
-				available, err := vm_service.HttpProxyNameAvailable(requestURI.VmID, port.HttpProxy.Name)
+				available, err := deployV1.VMs().HttpProxyNameAvailable(requestURI.VmID, port.HttpProxy.Name)
 				if err != nil {
 					context.ServerError(err, v1.InternalError)
 					return
@@ -472,7 +472,7 @@ func Update(c *gin.Context) {
 		}
 	}
 
-	err = vsc.CheckQuota(auth.UserID, vm.ID, &auth.GetEffectiveRole().Quotas, client.QuotaOptions{Update: &requestBody})
+	err = deployV1.VMs().CheckQuota(auth.UserID, vm.ID, &auth.GetEffectiveRole().Quotas, opts2.QuotaOpts{Update: &requestBody})
 	if err != nil {
 		var quotaExceededErr sErrors.QuotaExceededError
 		if errors.As(err, &quotaExceededErr) {
@@ -484,7 +484,7 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	err = vsc.StartActivity(vm.ID, vmModels.ActivityUpdating)
+	err = deployV1.VMs().StartActivity(vm.ID, vmModels.ActivityUpdating)
 	if err != nil {
 		var failedToStartActivityErr sErrors.FailedToStartActivityError
 		if errors.As(err, &failedToStartActivityErr) {
@@ -502,7 +502,7 @@ func Update(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = job_service.New().Create(jobID, auth.UserID, jobModels.TypeUpdateVM, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.UserID, jobModels.TypeUpdateVM, map[string]interface{}{
 		"id":     vm.ID,
 		"params": requestBody,
 	})
@@ -516,22 +516,4 @@ func Update(c *gin.Context) {
 		ID:    vm.ID,
 		JobID: &jobID,
 	})
-}
-
-// getTeamIDs returns a list of team IDs that the user is a member of and has access to the VM
-// TODO: this currently fetches the entire team models from the database, but ideally, this should
-// 1. be cached 2. only fetch the team IDs using projection
-func getTeamIDs(resourceID string, auth *service.AuthInfo) []string {
-	teams, err := user_service.New().ListTeams(user_service.ListTeamsOpts{ResourceID: resourceID, UserID: auth.UserID})
-
-	if err != nil {
-		return []string{}
-	}
-
-	teamIDs := make([]string, len(teams))
-	for idx, team := range teams {
-		teamIDs[idx] = team.ID
-	}
-
-	return teamIDs
 }

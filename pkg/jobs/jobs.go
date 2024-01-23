@@ -5,17 +5,15 @@ import (
 	"errors"
 	"fmt"
 	"github.com/mitchellh/mapstructure"
-	"go-deploy/models/dto/body"
+	"go-deploy/models/dto/v1/body"
 	deploymentModels "go-deploy/models/sys/deployment"
 	jobModels "go-deploy/models/sys/job"
 	smModels "go-deploy/models/sys/sm"
 	vmModels "go-deploy/models/sys/vm"
 	"go-deploy/pkg/workers/confirm"
-	"go-deploy/service/deployment_service"
+	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
-	"go-deploy/service/sm_service"
-	"go-deploy/service/vm_service"
-	"go-deploy/service/vm_service/client"
+	"go-deploy/service/v1/vms/opts"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 	"time"
@@ -35,10 +33,10 @@ func CreateVM(job *jobModels.Job) error {
 		return makeTerminatedError(err)
 	}
 
-	err = vm_service.New().Create(id, ownerID, &params)
+	err = service.V1().VMs().Create(id, ownerID, &params)
 	if err != nil {
 		// If there was some error, we trigger a repair, since rerunning it would cause a NonUniqueFieldErr
-		_ = vm_service.New().Repair(id)
+		_ = service.V1().VMs().Repair(id)
 		return makeTerminatedError(err)
 	}
 
@@ -96,7 +94,7 @@ func DeleteVM(job *jobModels.Job) error {
 	case <-ctx.Done():
 	}
 
-	err = vm_service.New().Delete(id)
+	err = service.V1().VMs().Delete(id)
 	if err != nil {
 		if !errors.Is(err, sErrors.VmNotFoundErr) {
 			return makeFailedError(err)
@@ -133,7 +131,7 @@ func UpdateVM(job *jobModels.Job) error {
 		return makeTerminatedError(err)
 	}
 
-	err = vm_service.New().Update(id, &update)
+	err = service.V1().VMs().Update(id, &update)
 	if err != nil {
 		switch {
 		case errors.Is(err, sErrors.VmNotFoundErr):
@@ -177,7 +175,7 @@ func UpdateVmOwner(job *jobModels.Job) error {
 		return makeTerminatedError(err)
 	}
 
-	err = vm_service.New().UpdateOwner(id, &params)
+	err = service.V1().VMs().UpdateOwner(id, &params)
 	if err != nil {
 		return makeFailedError(err)
 	}
@@ -202,7 +200,7 @@ func AttachGpuToVM(job *jobModels.Job) error {
 	// We keep this field to know who requested the gpu attachment
 	_ = job.Args["userId"].(string)
 
-	err = vm_service.New().AttachGPU(vmID, gpuIDs, leaseDuration)
+	err = service.V1().VMs().AttachGPU(vmID, gpuIDs, leaseDuration)
 	if err != nil {
 		if errors.Is(err, sErrors.GpuNotFoundErr) {
 			return makeTerminatedError(err)
@@ -226,7 +224,7 @@ func DetachGpuFromVM(job *jobModels.Job) error {
 
 	vmID := job.Args["id"].(string)
 
-	err = vm_service.New().DetachGPU(vmID)
+	err = service.V1().VMs().DetachGPU(vmID)
 	if err != nil {
 		return makeFailedError(err)
 	}
@@ -248,10 +246,10 @@ func CreateDeployment(job *jobModels.Job) error {
 		return makeTerminatedError(err)
 	}
 
-	err = deployment_service.New().Create(id, ownerID, &params)
+	err = service.V1().Deployments().Create(id, ownerID, &params)
 	if err != nil {
 		// If there was some error, we trigger a repair, since rerunning it would cause a NonUniqueFieldErr
-		_ = deployment_service.New().Repair(id)
+		_ = service.V1().Deployments().Repair(id)
 		return makeTerminatedError(err)
 	}
 
@@ -309,7 +307,7 @@ func DeleteDeployment(job *jobModels.Job) error {
 	case <-ctx.Done():
 	}
 
-	err = deployment_service.New().Delete(id)
+	err = service.V1().Deployments().Delete(id)
 	if err != nil {
 		if !errors.Is(err, sErrors.DeploymentNotFoundErr) {
 			return makeFailedError(err)
@@ -346,7 +344,7 @@ func UpdateDeployment(job *jobModels.Job) error {
 		return makeTerminatedError(err)
 	}
 
-	err = deployment_service.New().Update(id, &update)
+	err = service.V1().Deployments().Update(id, &update)
 	if err != nil {
 		switch {
 		case errors.Is(err, sErrors.DeploymentNotFoundErr):
@@ -381,7 +379,7 @@ func UpdateDeploymentOwner(job *jobModels.Job) error {
 		return makeTerminatedError(err)
 	}
 
-	err = deployment_service.New().UpdateOwner(id, &params)
+	err = service.V1().Deployments().UpdateOwner(id, &params)
 	if err != nil {
 		if errors.Is(err, sErrors.DeploymentNotFoundErr) {
 			return makeTerminatedError(err)
@@ -427,7 +425,7 @@ func BuildDeployments(job *jobModels.Job) error {
 		return nil
 	}
 
-	err = deployment_service.New().Build(filtered, &params)
+	err = service.V1().Deployments().Build(filtered, &params)
 	if err != nil {
 		return makeFailedError(err)
 	}
@@ -443,7 +441,7 @@ func RepairDeployment(job *jobModels.Job) error {
 
 	id := job.Args["id"].(string)
 
-	err = deployment_service.New().Repair(id)
+	err = service.V1().Deployments().Repair(id)
 	if err != nil {
 		return makeTerminatedError(err)
 	}
@@ -466,7 +464,7 @@ func CreateSM(job *jobModels.Job) error {
 		return makeTerminatedError(err)
 	}
 
-	err = sm_service.New().Create(id, userID, &params)
+	err = service.V1().SMs().Create(id, userID, &params)
 	if err != nil {
 		// We always terminate these jobs, since rerunning it would cause a NonUniqueFieldErr
 		return makeTerminatedError(err)
@@ -483,7 +481,7 @@ func DeleteSM(job *jobModels.Job) error {
 
 	id := job.Args["id"].(string)
 
-	err = sm_service.New().Delete(id)
+	err = service.V1().SMs().Delete(id)
 	if err != nil {
 		return makeFailedError(err)
 	}
@@ -499,7 +497,7 @@ func RepairSM(job *jobModels.Job) error {
 
 	id := job.Args["id"].(string)
 
-	err = sm_service.New().Repair(id)
+	err = service.V1().SMs().Repair(id)
 	if err != nil {
 		// All errors are terminal, so we don't check for specific errors
 		return makeTerminatedError(err)
@@ -516,7 +514,7 @@ func RepairVM(job *jobModels.Job) error {
 
 	id := job.Args["id"].(string)
 
-	err = vm_service.New().Repair(id)
+	err = service.V1().VMs().Repair(id)
 	if err != nil {
 		// All errors are terminal, so we don't check for specific errors
 		return makeTerminatedError(err)
@@ -538,7 +536,7 @@ func CreateSystemSnapshot(job *jobModels.Job) error {
 		return makeTerminatedError(err)
 	}
 
-	err = vm_service.New().CreateSnapshot(vmID, &client.CreateSnapshotOptions{System: &params})
+	err = service.V1().VMs().CreateSnapshot(vmID, &opts.CreateSnapshotOpts{System: &params})
 	if err != nil {
 		// All errors are terminal, so we don't check for specific errors
 		return makeTerminatedError(err)
@@ -560,7 +558,7 @@ func CreateUserSnapshot(job *jobModels.Job) error {
 		return makeTerminatedError(err)
 	}
 
-	err = vm_service.New().CreateSnapshot(vmID, &client.CreateSnapshotOptions{User: &params})
+	err = service.V1().VMs().CreateSnapshot(vmID, &opts.CreateSnapshotOpts{User: &params})
 	if err != nil {
 		// All errors are terminal, so we don't check for specific errors
 		return makeTerminatedError(err)
@@ -578,7 +576,7 @@ func DeleteSnapshot(job *jobModels.Job) error {
 	vmID := job.Args["id"].(string)
 	snapshotID := job.Args["snapshotId"].(string)
 
-	err = vm_service.New().DeleteSnapshot(vmID, snapshotID)
+	err = service.V1().VMs().DeleteSnapshot(vmID, snapshotID)
 	if err != nil {
 		// All errors are terminal, so we don't check for specific errors
 		return makeTerminatedError(err)

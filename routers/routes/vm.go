@@ -1,6 +1,8 @@
 package routes
 
-import "go-deploy/routers/api/v1/v1_vm"
+import (
+	"go-deploy/routers/api/v1/v1_vm"
+)
 
 const (
 	VmsPath         = "/v1/vms"
@@ -8,6 +10,9 @@ const (
 	VmSnapshotsPath = "/v1/vms/:vmId/snapshots"
 	VmSnapshotPath  = "/v1/vms/:vmId/snapshots/:snapshotId"
 	VmCommandPath   = "/v1/vms/:vmId/command"
+
+	VmsPathV2 = "/v2/vms"
+	VmPathV2  = "/v2/vms/:vmId"
 )
 
 type VmRoutingGroup struct{ RoutingGroupBase }
@@ -31,5 +36,8 @@ func (group *VmRoutingGroup) PrivateRoutes() []Route {
 		{Method: "DELETE", Pattern: VmSnapshotPath, HandlerFunc: v1_vm.DeleteSnapshot},
 
 		{Method: "POST", Pattern: VmCommandPath, HandlerFunc: v1_vm.DoCommand},
+
+		//{Method: "GET", Pattern: VmsPathV2, HandlerFunc: v2_vm.List},
+		//{Method: "GET", Pattern: VmPathV2, HandlerFunc: v2_vm.Get},
 	}
 }

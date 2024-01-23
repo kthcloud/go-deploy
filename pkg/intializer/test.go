@@ -7,7 +7,7 @@ import (
 	"go-deploy/models/sys/job"
 	teamModels "go-deploy/models/sys/team"
 	vmModels "go-deploy/models/sys/vm"
-	"go-deploy/service/user_service"
+	"go-deploy/service"
 	"log"
 	"time"
 )
@@ -47,7 +47,7 @@ func CleanUpOldTests() {
 	}
 
 	for _, team := range oldE2eTeams {
-		err := user_service.New().DeleteTeam(team.ID)
+		err := service.V1().Teams().Delete(team.ID)
 		if err != nil {
 			panic(fmt.Errorf("failed to delete team %s: %w", team.ID, err))
 		}

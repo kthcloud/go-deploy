@@ -3,10 +3,10 @@ package v1_deployment
 import (
 	"errors"
 	"github.com/gin-gonic/gin"
-	"go-deploy/models/dto/uri"
+	"go-deploy/models/dto/v1/uri"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
-	"go-deploy/service/deployment_service"
+	"go-deploy/service"
 	dErrors "go-deploy/service/errors"
 	"net/http"
 )
@@ -37,7 +37,7 @@ func GetCiConfig(c *gin.Context) {
 		return
 	}
 
-	config, err := deployment_service.New().WithAuth(auth).GetCiConfig(requestURI.DeploymentID)
+	config, err := service.V1(auth).Deployments().GetCiConfig(requestURI.DeploymentID)
 	if err != nil {
 		if errors.Is(err, dErrors.DeploymentNotFoundErr) {
 			context.NotFound("Deployment not found")

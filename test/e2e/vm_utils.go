@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/helloyi/go-sshclient"
 	"github.com/stretchr/testify/assert"
-	"go-deploy/models/dto/body"
+	"go-deploy/models/dto/v1/body"
 	"go-deploy/pkg/app/status_codes"
 	"net/http"
 	"os"

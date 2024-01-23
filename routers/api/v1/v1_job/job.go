@@ -3,16 +3,17 @@ package v1_job
 import (
 	"errors"
 	"github.com/gin-gonic/gin"
-	"go-deploy/models/dto/body"
-	"go-deploy/models/dto/query"
-	"go-deploy/models/dto/uri"
+	"go-deploy/models/dto/v1/body"
+	"go-deploy/models/dto/v1/query"
+	"go-deploy/models/dto/v1/uri"
 	jobModels "go-deploy/models/sys/job"
 	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
-	"go-deploy/service/job_service"
+	v12 "go-deploy/service/v1/common"
+	"go-deploy/service/v1/jobs/opts"
 )
 
 // List
@@ -44,9 +45,9 @@ func List(c *gin.Context) {
 		return
 	}
 
-	jobs, err := job_service.New().WithAuth(auth).List(job_service.ListOpts{
-		Pagination: service.GetOrDefaultPagination(requestQuery.Pagination),
-		SortBy:     service.GetOrDefaultSortBy(requestQuery.SortBy),
+	jobList, err := service.V1(auth).Jobs().List(opts.ListOpts{
+		Pagination: v12.GetOrDefaultPagination(requestQuery.Pagination),
+		SortBy:     v12.GetOrDefaultSortBy(requestQuery.SortBy),
 		All:        requestQuery.All,
 		UserID:     requestQuery.UserID,
 		JobType:    requestQuery.Type,
@@ -57,13 +58,13 @@ func List(c *gin.Context) {
 		return
 	}
 
-	if jobs == nil {
+	if jobList == nil {
 		context.Ok(make([]interface{}, 0))
 		return
 	}
 
 	var jobsDTO []body.JobRead
-	for _, job := range jobs {
+	for _, job := range jobList {
 		jobsDTO = append(jobsDTO, job.ToDTO(jobStatusMessage(job.Status)))
 	}
 
@@ -94,7 +95,7 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	job, err := job_service.New().WithAuth(auth).Get(requestURI.JobID)
+	job, err := service.V1(auth).Jobs().Get(requestURI.JobID)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -139,7 +140,7 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	updated, err := job_service.New().WithAuth(auth).Update(requestURI.JobID, &request)
+	updated, err := service.V1(auth).Jobs().Update(requestURI.JobID, &request)
 	if err != nil {
 		if errors.Is(err, sErrors.ForbiddenErr) {
 			context.Forbidden("User is not allowed to update jobs")

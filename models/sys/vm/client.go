@@ -34,6 +34,14 @@ func New() *Client {
 	}
 }
 
+// WithVersion adds a filter to the client to only return VMs with the given version.
+func (client *Client) WithVersion(version string) *Client {
+	client.ResourceClient.AddExtraFilter(bson.D{{"version", version}})
+	client.ActivityResourceClient.ExtraFilter = client.ResourceClient.ExtraFilter
+
+	return client
+}
+
 // WithPagination adds pagination to the client.
 func (client *Client) WithPagination(page, pageSize int) *Client {
 	client.ResourceClient.Pagination = &base.Pagination{

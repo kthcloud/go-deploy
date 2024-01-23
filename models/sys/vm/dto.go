@@ -2,7 +2,7 @@ package vm
 
 import (
 	"fmt"
-	"go-deploy/models/dto/body"
+	"go-deploy/models/dto/v1/body"
 	"go-deploy/pkg/subsystems"
 	"go-deploy/utils"
 	"sort"

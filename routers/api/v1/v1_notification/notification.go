@@ -3,14 +3,15 @@ package v1_notification
 import (
 	"errors"
 	"github.com/gin-gonic/gin"
-	"go-deploy/models/dto/body"
-	"go-deploy/models/dto/query"
-	"go-deploy/models/dto/uri"
+	"go-deploy/models/dto/v1/body"
+	"go-deploy/models/dto/v1/query"
+	"go-deploy/models/dto/v1/uri"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
-	"go-deploy/service/notification_service"
+	v12 "go-deploy/service/v1/common"
+	"go-deploy/service/v1/notifications/opts"
 	"net/http"
 )
 
@@ -39,7 +40,7 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	notification, err := notification_service.New().WithAuth(auth).Get(requestQuery.NotificationID)
+	notification, err := service.V1(auth).Notifications().Get(requestQuery.NotificationID)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -83,8 +84,8 @@ func List(c *gin.Context) {
 		userID = &auth.UserID
 	}
 
-	notifications, err := notification_service.New().WithAuth(auth).List(notification_service.ListOpts{
-		Pagination: service.GetOrDefaultPagination(requestQuery.Pagination),
+	notificationList, err := service.V1(auth).Notifications().List(opts.ListOpts{
+		Pagination: v12.GetOrDefaultPagination(requestQuery.Pagination),
 		UserID:     userID,
 	})
 	if err != nil {
@@ -92,8 +93,8 @@ func List(c *gin.Context) {
 		return
 	}
 
-	dtoNotifications := make([]body.NotificationRead, len(notifications))
-	for i, notification := range notifications {
+	dtoNotifications := make([]body.NotificationRead, len(notificationList))
+	for i, notification := range notificationList {
 		dtoNotifications[i] = notification.ToDTO()
 	}
 
@@ -132,7 +133,7 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	updated, err := notification_service.New().WithAuth(auth).Update(requestQuery.NotificationID, &requestBody)
+	updated, err := service.V1(auth).Notifications().Update(requestQuery.NotificationID, &requestBody)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -171,7 +172,7 @@ func Delete(c *gin.Context) {
 		return
 	}
 
-	err = notification_service.New().WithAuth(auth).Delete(requestQuery.NotificationID)
+	err = service.V1(auth).Notifications().Delete(requestQuery.NotificationID)
 	if err != nil {
 		if errors.Is(err, sErrors.NotificationNotFoundErr) {
 			context.NotFound("Notification not found")

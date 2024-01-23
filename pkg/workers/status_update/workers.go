@@ -6,7 +6,7 @@ import (
 	deploymentModels "go-deploy/models/sys/deployment"
 	vmModels "go-deploy/models/sys/vm"
 	"go-deploy/pkg/workers"
-	"go-deploy/service/vm_service"
+	"go-deploy/service"
 	"go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"time"
@@ -30,7 +30,7 @@ func vmStatusUpdater(ctx context.Context) {
 				continue
 			}
 
-			vsc := vm_service.New()
+			vsc := service.V1().VMs()
 
 			for _, vm := range allVms {
 				code, message, err := fetchVmStatus(&vm)
