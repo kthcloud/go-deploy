@@ -148,7 +148,7 @@ func getNamespaceName(userID string) string {
 func withClient(zone *configModels.DeploymentZone, namespace string) (*k8s.Client, error) {
 	return k8s.New(&k8s.ClientConf{
 		K8sClient:     zone.K8sClient,
-		VirtK8sClient: nil,
+		VirtK8sClient: zone.KubeVirtClient,
 		Namespace:     namespace,
 	})
 }
