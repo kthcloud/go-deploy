@@ -8,6 +8,7 @@ import (
 	"go-deploy/models/dto/v1/query"
 	"go-deploy/models/dto/v1/uri"
 	"go-deploy/models/sys/job"
+	"go-deploy/models/versions"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
@@ -195,7 +196,7 @@ func CreateSnapshot(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, job.TypeCreateUserSnapshot, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.UserID, job.TypeCreateUserSnapshot, versions.V1, map[string]interface{}{
 		"id": vm.ID,
 		"params": body.VmSnapshotCreate{
 			Name: requestBody.Name,
@@ -267,7 +268,7 @@ func DeleteSnapshot(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, job.TypeDeleteSnapshot, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.UserID, job.TypeDeleteSnapshot, versions.V1, map[string]interface{}{
 		"id":         vm.ID,
 		"snapshotId": snapshot.ID,
 	})

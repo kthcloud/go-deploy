@@ -12,12 +12,12 @@ import (
 )
 
 // Create creates a new job in the database.
-func (client *Client) Create(id, userID, jobType string, args map[string]interface{}) error {
-	return client.CreateScheduled(id, userID, jobType, time.Now(), args)
+func (client *Client) Create(id, userID, jobType, version string, args map[string]interface{}) error {
+	return client.CreateScheduled(id, userID, jobType, version, time.Now(), args)
 }
 
 // CreateScheduled creates a new job in the database that will run after the given time.
-func (client *Client) CreateScheduled(id, userID, jobType string, runAfter time.Time, args map[string]interface{}) error {
+func (client *Client) CreateScheduled(id, userID, jobType, version string, runAfter time.Time, args map[string]interface{}) error {
 	currentJob, err := client.GetByID(id)
 	if err != nil {
 		return err
@@ -32,8 +32,10 @@ func (client *Client) CreateScheduled(id, userID, jobType string, runAfter time.
 		UserID:    userID,
 		Type:      jobType,
 		Args:      args,
+		Version:   version,
 		CreatedAt: time.Now(),
 		RunAfter:  runAfter,
+		Attempts:  0,
 		Status:    StatusPending,
 		ErrorLogs: make([]string, 0),
 	}

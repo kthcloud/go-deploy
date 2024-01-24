@@ -67,8 +67,8 @@ func (c *Client) List(opt ...opts.ListOpts) ([]jobModels.Job, error) {
 }
 
 // Create creates a new job.
-func (c *Client) Create(id, userID, jobType string, args map[string]interface{}) error {
-	return jobModels.New().Create(id, userID, jobType, args)
+func (c *Client) Create(id, userID, jobType, version string, args map[string]interface{}) error {
+	return jobModels.New().Create(id, userID, jobType, version, args)
 }
 
 // Update updates a job.

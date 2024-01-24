@@ -12,10 +12,10 @@ import (
 	teamModels "go-deploy/models/sys/team"
 	vmModels "go-deploy/models/sys/vm"
 	"go-deploy/models/sys/vm_port"
+	"go-deploy/models/versions"
 	"go-deploy/pkg/config"
 	sErrors "go-deploy/service/errors"
 	serviceUtils "go-deploy/service/utils"
-	"go-deploy/service/v2/vms/k8s_service"
 	"go-deploy/service/v2/vms/opts"
 	"go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
@@ -30,7 +30,7 @@ import (
 func (c *Client) Get(id string, opts ...opts.GetOpts) (*vmModels.VM, error) {
 	o := serviceUtils.GetFirstOrDefault(opts)
 
-	vmc := vmModels.New(vmModels.V2)
+	vmc := vmModels.New(versions.V2)
 
 	if o.TransferCode != nil {
 		return vmc.WithTransferCode(*o.TransferCode).Get()
@@ -67,7 +67,7 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*vmModels.VM, error) {
 func (c *Client) List(opts ...opts.ListOpts) ([]vmModels.VM, error) {
 	o := serviceUtils.GetFirstOrDefault(opts)
 
-	vmc := vmModels.New(vmModels.V2)
+	vmc := vmModels.New(versions.V2)
 
 	if o.Pagination != nil {
 		vmc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
@@ -171,16 +171,11 @@ func (c *Client) Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
 		return fmt.Errorf("failed to create vm. details: %w", err)
 	}
 
-	// Temporary hard-coded fallback
-	fallback := "se-flem"
-	deploymentZone := "se-flem"
+	// Right now need to make sure the zone deployed to has KubeVirt installed, so it is hardcoded
+	zone := "se-flem-2"
+	params := vmModels.CreateParams{}.FromDTOv2(dtoVmCreate, &zone)
 
-	params := &vmModels.CreateParams{}
-	params.FromDTOv2(dtoVmCreate, &fallback, &deploymentZone)
-
-	params.Version = vmModels.V2
-
-	_, err := vmModels.New(vmModels.V2).Create(id, ownerID, config.Config.Manager, params)
+	_, err := vmModels.New(versions.V2).Create(id, ownerID, config.Config.Manager, &params)
 	if err != nil {
 		if errors.Is(err, vmModels.NonUniqueFieldErr) {
 			return sErrors.NonUniqueFieldErr
@@ -189,13 +184,9 @@ func (c *Client) Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
 		return makeError(err)
 	}
 
-	if len(params.PortMap) > 1 {
-		err = k8s_service.New(c.Cache).Create(id, params)
-		if err != nil {
-			return makeError(err)
-		}
-	} else {
-		log.Println("skipping k8s setup for vm", id, "since it has no ports")
+	err = c.K8s().Create(id, &params)
+	if err != nil {
+		return makeError(err)
 	}
 
 	return nil
@@ -209,8 +200,7 @@ func (c *Client) Update(id string, dtoVmUpdate *body.VmUpdate) error {
 		return fmt.Errorf("failed to update vm. details: %w", err)
 	}
 
-	vmUpdate := &vmModels.UpdateParams{}
-	vmUpdate.FromDTOv2(dtoVmUpdate)
+	vmUpdate := vmModels.UpdateParams{}.FromDTOv2(dtoVmUpdate)
 
 	// We don't allow both applying a snapshot and updating the VM at the same time.
 	// So, if a snapshot ID is specified, apply it
@@ -244,7 +234,7 @@ func (c *Client) Update(id string, dtoVmUpdate *body.VmUpdate) error {
 		}
 	}
 
-	err := vmModels.New(vmModels.V2).UpdateWithParams(id, vmUpdate)
+	err := vmModels.New(versions.V2).UpdateWithParams(id, &vmUpdate)
 	if err != nil {
 		if errors.Is(err, vmModels.NonUniqueFieldErr) {
 			return sErrors.NonUniqueFieldErr
@@ -258,7 +248,7 @@ func (c *Client) Update(id string, dtoVmUpdate *body.VmUpdate) error {
 		return makeError(err)
 	}
 
-	err = k8s_service.New(c.Cache).Repair(id)
+	err = c.K8s().Repair(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -289,7 +279,7 @@ func (c *Client) Delete(id string) error {
 		return makeError(err)
 	}
 
-	err = k8s_service.New(c.Cache).Delete(id)
+	err = c.K8s().Delete(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -325,7 +315,7 @@ func (c *Client) Repair(id string) error {
 		return nil
 	}
 
-	err = k8s_service.New(c.Cache).Repair(id)
+	err = c.K8s().Repair(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -372,7 +362,7 @@ func (c *Client) UpdateOwnerSetup(id string, params *body.VmUpdateOwner) (*strin
 
 	if transferDirectly {
 		jobID := uuid.New().String()
-		err = c.V1.Jobs().Create(jobID, c.V2.Auth().UserID, jobModels.TypeUpdateVmOwner, map[string]interface{}{
+		err = c.V1.Jobs().Create(jobID, c.V2.Auth().UserID, jobModels.TypeUpdateVmOwner, versions.V2, map[string]interface{}{
 			"id":     id,
 			"params": *params,
 		})
@@ -386,7 +376,7 @@ func (c *Client) UpdateOwnerSetup(id string, params *body.VmUpdateOwner) (*strin
 
 	/// create a transfer notification
 	code := createTransferCode()
-	err = vmModels.New(vmModels.V2).UpdateWithParams(id, &vmModels.UpdateParams{
+	err = vmModels.New(versions.V2).UpdateWithParams(id, &vmModels.UpdateParams{
 		TransferUserID: &params.NewOwnerID,
 		TransferCode:   &code,
 	})
@@ -438,7 +428,7 @@ func (c *Client) UpdateOwner(id string, params *body.VmUpdateOwner) error {
 
 	emptyString := ""
 
-	err = vmModels.New(vmModels.V2).UpdateWithParams(id, &vmModels.UpdateParams{
+	err = vmModels.New(versions.V2).UpdateWithParams(id, &vmModels.UpdateParams{
 		OwnerID:        &params.NewOwnerID,
 		TransferCode:   &emptyString,
 		TransferUserID: &emptyString,
@@ -452,7 +442,7 @@ func (c *Client) UpdateOwner(id string, params *body.VmUpdateOwner) error {
 		return makeError(err)
 	}
 
-	err = k8s_service.New(c.Cache).EnsureOwner(id, params.OldOwnerID)
+	err = c.K8s().EnsureOwner(id, params.OldOwnerID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -475,7 +465,7 @@ func (c *Client) ClearUpdateOwner(id string) error {
 		return fmt.Errorf("failed to clear vm owner update. details: %w", err)
 	}
 
-	deployment, err := vmModels.New(vmModels.V2).GetByID(id)
+	deployment, err := vmModels.New(versions.V2).GetByID(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -489,7 +479,7 @@ func (c *Client) ClearUpdateOwner(id string) error {
 	}
 
 	emptyString := ""
-	err = vmModels.New(vmModels.V2).UpdateWithParams(id, &vmModels.UpdateParams{
+	err = vmModels.New(versions.V2).UpdateWithParams(id, &vmModels.UpdateParams{
 		TransferUserID: &emptyString,
 		TransferCode:   &emptyString,
 	})
@@ -531,7 +521,7 @@ func (c *Client) IsBeingDeleted(id string) (bool, error) {
 
 // NameAvailable checks if the given name is available.
 func (c *Client) NameAvailable(name string) (bool, error) {
-	exists, err := vmModels.New(vmModels.V2).ExistsByName(name)
+	exists, err := vmModels.New(versions.V2).ExistsByName(name)
 	if err != nil {
 		return false, err
 	}
@@ -546,7 +536,7 @@ func (c *Client) HttpProxyNameAvailable(id, name string) (bool, error) {
 		{"portMap.httpProxy.name", name},
 	}
 
-	exists, err := vmModels.New(vmModels.V2).WithCustomFilter(filter).ExistsAny()
+	exists, err := vmModels.New(versions.V2).WithCustomFilter(filter).ExistsAny()
 	if err != nil {
 		return false, err
 	}
@@ -601,7 +591,7 @@ func (c *Client) CheckQuota(id, userID string, quota *roleModels.Quotas, opts ..
 			return nil
 		}
 
-		vm, err := vmModels.New(vmModels.V2).GetByID(id)
+		vm, err := vmModels.New(versions.V2).GetByID(id)
 		if err != nil {
 			return makeError(err)
 		}
@@ -651,7 +641,7 @@ func (c *Client) GetUsage(userID string) (*vmModels.Usage, error) {
 
 	usage := &vmModels.Usage{}
 
-	currentVms, err := vmModels.New(vmModels.V2).RestrictToOwner(userID).List()
+	currentVms, err := vmModels.New(versions.V2).RestrictToOwner(userID).List()
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -682,7 +672,7 @@ func (c *Client) GetExternalPortMapper(vmID string) (map[string]int, error) {
 
 // GetHost gets the host for the VM.
 //
-// It return an error if the VM is not found.
+// It returns an error if the VM is not found.
 func (c *Client) GetHost(vmID string) (*vmModels.Host, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get host for vm %s. details: %w", vmID, err)

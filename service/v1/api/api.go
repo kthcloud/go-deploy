@@ -85,7 +85,7 @@ type Events interface {
 type Jobs interface {
 	Get(id string, opts ...jobOpts.GetOpts) (*jobModels.Job, error)
 	List(opts ...jobOpts.ListOpts) ([]jobModels.Job, error)
-	Create(id, userID, jobType string, args map[string]interface{}) error
+	Create(id, userID, jobType, version string, args map[string]interface{}) error
 	Update(id string, jobUpdateDTO *body.JobUpdate) (*jobModels.Job, error)
 }
 

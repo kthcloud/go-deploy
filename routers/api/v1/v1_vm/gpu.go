@@ -11,6 +11,7 @@ import (
 	gpuModels "go-deploy/models/sys/gpu"
 	jobModels "go-deploy/models/sys/job"
 	vmModels "go-deploy/models/sys/vm"
+	"go-deploy/models/versions"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
@@ -116,7 +117,7 @@ func detachGPU(context *sys.ClientContext, deployV1 clients.V1, vm *vmModels.VM)
 	}
 
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, deployV1.Auth().UserID, jobModels.TypeDetachGPU, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, deployV1.Auth().UserID, jobModels.TypeDetachGPU, versions.V1, map[string]interface{}{
 		"id": vm.ID,
 	})
 	if err != nil {
@@ -271,7 +272,7 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, deployV1 
 	}
 
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, deployV1.Auth().UserID, jobModels.TypeAttachGPU, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, deployV1.Auth().UserID, jobModels.TypeAttachGPU, versions.V1, map[string]interface{}{
 		"id":            vm.ID,
 		"gpuIds":        gpuIds,
 		"userId":        deployV1.Auth().UserID,

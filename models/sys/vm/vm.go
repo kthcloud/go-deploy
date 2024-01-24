@@ -6,11 +6,6 @@ import (
 	"time"
 )
 
-const (
-	V1 = "v1"
-	V2 = "v2"
-)
-
 type VM struct {
 	ID      string `bson:"id"`
 	Name    string `bson:"name"`

@@ -13,6 +13,7 @@ import (
 	"go-deploy/models/dto/v1/body"
 	deploymentModels "go-deploy/models/sys/deployment"
 	"go-deploy/models/sys/job"
+	"go-deploy/models/versions"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
@@ -235,7 +236,7 @@ func HandleGitHubHook(c *gin.Context) {
 		}
 
 		jobID := uuid.NewString()
-		err = deployV1.Jobs().Create(jobID, "system", job.TypeBuildDeployments, map[string]interface{}{
+		err = deployV1.Jobs().Create(jobID, "system", job.TypeBuildDeployments, versions.V1, map[string]interface{}{
 			"ids": ids,
 			"build": body.DeploymentBuild{
 				Name:      requestBodyParsed.Repository.Name,

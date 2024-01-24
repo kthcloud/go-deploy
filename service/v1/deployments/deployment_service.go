@@ -9,6 +9,7 @@ import (
 	jobModels "go-deploy/models/sys/job"
 	notificationModels "go-deploy/models/sys/notification"
 	teamModels "go-deploy/models/sys/team"
+	"go-deploy/models/versions"
 	"go-deploy/pkg/config"
 	sErrors "go-deploy/service/errors"
 	utils2 "go-deploy/service/utils"
@@ -401,7 +402,7 @@ func (c *Client) UpdateOwnerSetup(id string, params *body.DeploymentUpdateOwner)
 
 	if doTransfer {
 		jobID := uuid.New().String()
-		err := c.V1.Jobs().Create(jobID, effectiveUserID, jobModels.TypeUpdateDeploymentOwner, map[string]interface{}{
+		err := c.V1.Jobs().Create(jobID, effectiveUserID, jobModels.TypeUpdateDeploymentOwner, versions.V1, map[string]interface{}{
 			"id":     id,
 			"params": *params,
 		})

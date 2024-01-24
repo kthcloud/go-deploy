@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	vmModels "go-deploy/models/sys/vm"
+	"go-deploy/models/versions"
 	kErrors "go-deploy/pkg/subsystems/k8s/errors"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/service/constants"
@@ -51,18 +52,6 @@ func (c *Client) Create(id string, params *vmModels.CreateParams) error {
 		err = resources.SsCreator(kc.CreateDeployment).
 			WithDbFunc(dbFunc(id, "deploymentMap."+deploymentPublic.Name)).
 			WithPublic(&deploymentPublic).
-			Exec()
-
-		if err != nil {
-			return makeError(err)
-		}
-	}
-
-	// VM
-	for _, vmPublic := range g.VMs() {
-		err = resources.SsCreator(kc.CreateVM).
-			WithDbFunc(dbFunc(id, "vmMap."+vmPublic.Name)).
-			WithPublic(&vmPublic).
 			Exec()
 
 		if err != nil {
@@ -379,8 +368,8 @@ func (c *Client) EnsureOwner(id, oldOwnerID string) error {
 func dbFunc(id, key string) func(interface{}) error {
 	return func(data interface{}) error {
 		if data == nil {
-			return vmModels.New(vmModels.V1).DeleteSubsystem(id, "k8s."+key)
+			return vmModels.New(versions.V1).DeleteSubsystem(id, "k8s."+key)
 		}
-		return vmModels.New(vmModels.V1).SetSubsystem(id, "k8s."+key, data)
+		return vmModels.New(versions.V1).SetSubsystem(id, "k8s."+key, data)
 	}
 }

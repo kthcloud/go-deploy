@@ -12,6 +12,7 @@ import (
 	teamModels "go-deploy/models/sys/team"
 	vmModels "go-deploy/models/sys/vm"
 	"go-deploy/models/sys/vm_port"
+	"go-deploy/models/versions"
 	"go-deploy/pkg/config"
 	sErrors "go-deploy/service/errors"
 	utils2 "go-deploy/service/utils"
@@ -32,7 +33,7 @@ import (
 func (c *Client) Get(id string, opts ...opts.GetOpts) (*vmModels.VM, error) {
 	o := utils2.GetFirstOrDefault(opts)
 
-	vmc := vmModels.New(vmModels.V1)
+	vmc := vmModels.New(versions.V1)
 
 	if o.TransferCode != nil {
 		return vmc.WithTransferCode(*o.TransferCode).Get()
@@ -69,7 +70,7 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*vmModels.VM, error) {
 func (c *Client) List(opts ...opts.ListOpts) ([]vmModels.VM, error) {
 	o := utils2.GetFirstOrDefault(opts)
 
-	vmc := vmModels.New(vmModels.V1)
+	vmc := vmModels.New(versions.V1)
 
 	if o.Pagination != nil {
 		vmc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
@@ -180,9 +181,7 @@ func (c *Client) Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
 	params := &vmModels.CreateParams{}
 	params.FromDTOv1(dtoVmCreate, &fallback, &deploymentZone)
 
-	params.Version = vmModels.V1
-
-	_, err := vmModels.New(vmModels.V1).Create(id, ownerID, config.Config.Manager, params)
+	_, err := vmModels.New(versions.V1).Create(id, ownerID, config.Config.Manager, params)
 	if err != nil {
 		if errors.Is(err, vmModels.NonUniqueFieldErr) {
 			return sErrors.NonUniqueFieldErr
@@ -251,7 +250,7 @@ func (c *Client) Update(id string, dtoVmUpdate *body.VmUpdate) error {
 		}
 	}
 
-	err := vmModels.New(vmModels.V1).UpdateWithParams(id, vmUpdate)
+	err := vmModels.New(versions.V1).UpdateWithParams(id, vmUpdate)
 	if err != nil {
 		if errors.Is(err, vmModels.NonUniqueFieldErr) {
 			return sErrors.NonUniqueFieldErr
@@ -394,7 +393,7 @@ func (c *Client) UpdateOwnerSetup(id string, params *body.VmUpdateOwner) (*strin
 
 	if transferDirectly {
 		jobID := uuid.New().String()
-		err = c.V1.Jobs().Create(jobID, c.V1.Auth().UserID, jobModels.TypeUpdateVmOwner, map[string]interface{}{
+		err = c.V1.Jobs().Create(jobID, c.V1.Auth().UserID, jobModels.TypeUpdateVmOwner, versions.V1, map[string]interface{}{
 			"id":     id,
 			"params": *params,
 		})
@@ -408,7 +407,7 @@ func (c *Client) UpdateOwnerSetup(id string, params *body.VmUpdateOwner) (*strin
 
 	/// create a transfer notification
 	code := createTransferCode()
-	err = vmModels.New(vmModels.V1).UpdateWithParams(id, &vmModels.UpdateParams{
+	err = vmModels.New(versions.V1).UpdateWithParams(id, &vmModels.UpdateParams{
 		TransferUserID: &params.NewOwnerID,
 		TransferCode:   &code,
 	})
@@ -460,7 +459,7 @@ func (c *Client) UpdateOwner(id string, params *body.VmUpdateOwner) error {
 
 	emptyString := ""
 
-	err = vmModels.New(vmModels.V1).UpdateWithParams(id, &vmModels.UpdateParams{
+	err = vmModels.New(versions.V1).UpdateWithParams(id, &vmModels.UpdateParams{
 		OwnerID:        &params.NewOwnerID,
 		TransferCode:   &emptyString,
 		TransferUserID: &emptyString,
@@ -502,7 +501,7 @@ func (c *Client) ClearUpdateOwner(id string) error {
 		return fmt.Errorf("failed to clear vm owner update. details: %w", err)
 	}
 
-	deployment, err := vmModels.New(vmModels.V1).GetByID(id)
+	deployment, err := vmModels.New(versions.V1).GetByID(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -516,7 +515,7 @@ func (c *Client) ClearUpdateOwner(id string) error {
 	}
 
 	emptyString := ""
-	err = vmModels.New(vmModels.V1).UpdateWithParams(id, &vmModels.UpdateParams{
+	err = vmModels.New(versions.V1).UpdateWithParams(id, &vmModels.UpdateParams{
 		TransferUserID: &emptyString,
 		TransferCode:   &emptyString,
 	})
@@ -606,7 +605,7 @@ func (c *Client) StartActivity(id, activity string) error {
 		return sErrors.NewFailedToStartActivityError(reason)
 	}
 
-	err = vmModels.New(vmModels.V1).AddActivity(id, activity)
+	err = vmModels.New(versions.V1).AddActivity(id, activity)
 	if err != nil {
 		return err
 	}
@@ -678,7 +677,7 @@ func (c *Client) CanAddActivity(vmID, activity string) (bool, string, error) {
 
 // NameAvailable checks if the given name is available.
 func (c *Client) NameAvailable(name string) (bool, error) {
-	exists, err := vmModels.New(vmModels.V1).ExistsByName(name)
+	exists, err := vmModels.New(versions.V1).ExistsByName(name)
 	if err != nil {
 		return false, err
 	}
@@ -693,7 +692,7 @@ func (c *Client) HttpProxyNameAvailable(id, name string) (bool, error) {
 		{"portMap.httpProxy.name", name},
 	}
 
-	exists, err := vmModels.New(vmModels.V1).WithCustomFilter(filter).ExistsAny()
+	exists, err := vmModels.New(versions.V1).WithCustomFilter(filter).ExistsAny()
 	if err != nil {
 		return false, err
 	}
@@ -748,7 +747,7 @@ func (c *Client) CheckQuota(id, userID string, quota *roleModels.Quotas, opts ..
 			return nil
 		}
 
-		vm, err := vmModels.New(vmModels.V1).GetByID(id)
+		vm, err := vmModels.New(versions.V1).GetByID(id)
 		if err != nil {
 			return makeError(err)
 		}
@@ -797,7 +796,7 @@ func (c *Client) GetUsage(userID string) (*vmModels.Usage, error) {
 
 	usage := &vmModels.Usage{}
 
-	currentVms, err := vmModels.New(vmModels.V1).RestrictToOwner(userID).List()
+	currentVms, err := vmModels.New(versions.V1).RestrictToOwner(userID).List()
 	if err != nil {
 		return nil, makeError(err)
 	}

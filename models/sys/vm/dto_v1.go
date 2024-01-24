@@ -3,6 +3,7 @@ package vm
 import (
 	"fmt"
 	"go-deploy/models/dto/v1/body"
+	"go-deploy/models/versions"
 	"go-deploy/pkg/subsystems"
 	"go-deploy/utils"
 	"sort"
@@ -117,7 +118,7 @@ func (vm *VM) ToDTOv1(status string, connectionString *string, teams []string, g
 }
 
 // FromDTOv1 converts a VM DTO to a VM.
-func (p *CreateParams) FromDTOv1(dto *body.VmCreate, fallbackZone *string, deploymentZone *string) {
+func (p CreateParams) FromDTOv1(dto *body.VmCreate, fallbackZone *string, deploymentZone *string) {
 	p.Name = dto.Name
 	p.SshPublicKey = dto.SshPublicKey
 	p.CpuCores = dto.CpuCores
@@ -125,6 +126,7 @@ func (p *CreateParams) FromDTOv1(dto *body.VmCreate, fallbackZone *string, deplo
 	p.DiskSize = dto.DiskSize
 	p.PortMap = make(map[string]PortCreateParams)
 	p.DeploymentZone = deploymentZone
+	p.Version = versions.V1
 
 	for _, port := range dto.Ports {
 		if port.Name == "__ssh" {
@@ -153,7 +155,7 @@ func (p *CreateParams) FromDTOv1(dto *body.VmCreate, fallbackZone *string, deplo
 }
 
 // FromDTOv1 converts a VM DTO to a VM.
-func (p *UpdateParams) FromDTOv1(dto *body.VmUpdate) {
+func (p UpdateParams) FromDTOv1(dto *body.VmUpdate) {
 	p.Name = dto.Name
 	p.SnapshotID = dto.SnapshotID
 	p.CpuCores = dto.CpuCores

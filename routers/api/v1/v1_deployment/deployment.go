@@ -10,6 +10,7 @@ import (
 	deploymentModels "go-deploy/models/sys/deployment"
 	jobModels "go-deploy/models/sys/job"
 	zoneModels "go-deploy/models/sys/zone"
+	"go-deploy/models/versions"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
@@ -234,7 +235,7 @@ func Create(c *gin.Context) {
 
 	deploymentID := uuid.New().String()
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, jobModels.TypeCreateDeployment, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.UserID, jobModels.TypeCreateDeployment, versions.V1, map[string]interface{}{
 		"id":      deploymentID,
 		"ownerId": auth.UserID,
 		"params":  requestBody,
@@ -317,7 +318,7 @@ func Delete(c *gin.Context) {
 	}
 
 	jobID := uuid.NewString()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, jobModels.TypeDeleteDeployment, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.UserID, jobModels.TypeDeleteDeployment, versions.V1, map[string]interface{}{
 		"id": currentDeployment.ID,
 	})
 	if err != nil {
@@ -492,7 +493,7 @@ func Update(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, jobModels.TypeUpdateDeployment, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.UserID, jobModels.TypeUpdateDeployment, versions.V1, map[string]interface{}{
 		"id":     deployment.ID,
 		"params": requestBody,
 	})

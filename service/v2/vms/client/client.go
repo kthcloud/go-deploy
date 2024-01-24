@@ -4,6 +4,7 @@ import (
 	"fmt"
 	gpuModels "go-deploy/models/sys/gpu"
 	vmModels "go-deploy/models/sys/vm"
+	"go-deploy/models/versions"
 	"go-deploy/service/core"
 )
 
@@ -80,7 +81,7 @@ func (c *BaseClient[parent]) fetchVM(id, name string, vmc *vmModels.Client) (*vm
 	}
 
 	if vmc == nil {
-		vmc = vmModels.New(vmModels.V2)
+		vmc = vmModels.New(versions.V2)
 	}
 
 	var vm *vmModels.VM
@@ -114,7 +115,7 @@ func (c *BaseClient[parent]) fetchVMs(vmc *vmModels.Client) ([]vmModels.VM, erro
 	}
 
 	if vmc == nil {
-		vmc = vmModels.New(vmModels.V2)
+		vmc = vmModels.New(versions.V2)
 	}
 
 	vms, err := vmc.List()

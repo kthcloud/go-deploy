@@ -5,6 +5,10 @@ import (
 	jobModels "go-deploy/models/sys/job"
 	sa "go-deploy/models/sys/sm"
 	va "go-deploy/models/sys/vm"
+	"go-deploy/models/versions"
+	"go-deploy/pkg/jobs/utils"
+	"go-deploy/pkg/jobs/v1"
+	v2 "go-deploy/pkg/jobs/v2"
 )
 
 // JobDefinition is a definition of a job.
@@ -21,7 +25,7 @@ type JobDefinitions map[string]JobDefinition
 
 // GetJobDef returns the job definition for the given job.
 func GetJobDef(job *jobModels.Job) *JobDefinition {
-	jobDef, ok := jobMapper()[job.Type]
+	jobDef, ok := jobMapper()[job.Version][job.Type]
 	if !ok {
 		return nil
 	}
@@ -32,118 +36,179 @@ func GetJobDef(job *jobModels.Job) *JobDefinition {
 }
 
 // jobMapper maps job types to job definitions.
-func jobMapper() map[string]JobDefinition {
-	coreJobVM := Builder().Add(vmDeleted)
-	leafJobVM := Builder().Add(vmDeleted).Add(updatingOwner)
-	oneCreateSnapshotPerUser := Builder().Add(vmDeleted).Add(updatingOwner).Add(onlyCreateSnapshotPerUser)
+func jobMapper() map[string]map[string]JobDefinition {
+	coreJobVM := Builder().Add(utils.VmDeleted)
+	leafJobVM := Builder().Add(utils.VmDeleted).Add(utils.UpdatingOwner)
+	oneCreateSnapshotPerUser := Builder().Add(utils.VmDeleted).Add(utils.UpdatingOwner).Add(utils.OnlyCreateSnapshotPerUser)
 
-	coreJobDeployment := Builder().Add(deploymentDeleted)
-	leafJobDeployment := Builder().Add(deploymentDeleted).Add(updatingOwner)
+	coreJobDeployment := Builder().Add(utils.DeploymentDeleted)
+	leafJobDeployment := Builder().Add(utils.DeploymentDeleted).Add(utils.UpdatingOwner)
 
-	return map[string]JobDefinition{
-		// vm
+	v1Defs := map[string]JobDefinition{
+		// VM
 		jobModels.TypeCreateVM: {
-			JobFunc:       CreateVM,
+			JobFunc:       v1.CreateVM,
 			TerminateFunc: coreJobVM.Build(),
-			EntryFunc:     vAddActivity(va.ActivityBeingCreated),
-			ExitFunc:      vRemActivity(va.ActivityBeingCreated),
+			EntryFunc:     utils.VmAddActivity(va.ActivityBeingCreated),
+			ExitFunc:      utils.VmRemActivity(va.ActivityBeingCreated),
 		},
 		jobModels.TypeDeleteVM: {
-			JobFunc:   DeleteVM,
-			EntryFunc: vAddActivity(va.ActivityBeingDeleted),
+			JobFunc:   v1.DeleteVM,
+			EntryFunc: utils.VmAddActivity(va.ActivityBeingDeleted),
 		},
 		jobModels.TypeUpdateVM: {
-			JobFunc:       UpdateVM,
+			JobFunc:       v1.UpdateVM,
 			TerminateFunc: leafJobVM.Build(),
-			EntryFunc:     vAddActivity(va.ActivityUpdating),
-			ExitFunc:      vRemActivity(va.ActivityUpdating),
+			EntryFunc:     utils.VmAddActivity(va.ActivityUpdating),
+			ExitFunc:      utils.VmRemActivity(va.ActivityUpdating),
 		},
 		jobModels.TypeUpdateVmOwner: {
-			JobFunc:       UpdateVmOwner,
+			JobFunc:       v1.UpdateVmOwner,
 			TerminateFunc: coreJobVM.Build(),
-			EntryFunc:     vAddActivity(va.ActivityUpdating),
-			ExitFunc:      vRemActivity(va.ActivityUpdating),
+			EntryFunc:     utils.VmAddActivity(va.ActivityUpdating),
+			ExitFunc:      utils.VmRemActivity(va.ActivityUpdating),
 		},
 		jobModels.TypeAttachGPU: {
-			JobFunc:       AttachGpuToVM,
+			JobFunc:       v1.AttachGpuToVM,
 			TerminateFunc: leafJobVM.Build(),
-			EntryFunc:     vAddActivity(va.ActivityAttachingGPU, va.ActivityUpdating),
-			ExitFunc:      vRemActivity(va.ActivityAttachingGPU, va.ActivityUpdating),
+			EntryFunc:     utils.VmAddActivity(va.ActivityAttachingGPU, va.ActivityUpdating),
+			ExitFunc:      utils.VmRemActivity(va.ActivityAttachingGPU, va.ActivityUpdating),
 		},
 		jobModels.TypeDetachGPU: {
-			JobFunc:       DetachGpuFromVM,
+			JobFunc:       v1.DetachGpuFromVM,
 			TerminateFunc: leafJobVM.Build(),
-			EntryFunc:     vAddActivity(va.ActivityDetachingGPU, va.ActivityUpdating),
-			ExitFunc:      vRemActivity(va.ActivityDetachingGPU, va.ActivityUpdating),
+			EntryFunc:     utils.VmAddActivity(va.ActivityDetachingGPU, va.ActivityUpdating),
+			ExitFunc:      utils.VmRemActivity(va.ActivityDetachingGPU, va.ActivityUpdating),
 		},
 		jobModels.TypeRepairVM: {
-			JobFunc:       RepairVM,
+			JobFunc:       v1.RepairVM,
 			TerminateFunc: leafJobVM.Build(),
-			EntryFunc:     vAddActivity(va.ActivityRepairing),
-			ExitFunc:      vRemActivity(va.ActivityRepairing),
+			EntryFunc:     utils.VmAddActivity(va.ActivityRepairing),
+			ExitFunc:      utils.VmRemActivity(va.ActivityRepairing),
 		},
 		jobModels.TypeCreateSystemSnapshot: {
-			JobFunc:       CreateSystemSnapshot,
+			JobFunc:       v1.CreateSystemSnapshot,
 			TerminateFunc: leafJobVM.Build(),
 		},
 		jobModels.TypeCreateUserSnapshot: {
-			JobFunc:       CreateUserSnapshot,
+			JobFunc:       v1.CreateUserSnapshot,
 			TerminateFunc: oneCreateSnapshotPerUser.Build(),
 		},
 		jobModels.TypeDeleteSnapshot: {
-			JobFunc:       DeleteSnapshot,
+			JobFunc:       v1.DeleteSnapshot,
 			TerminateFunc: leafJobVM.Build(),
 		},
 
-		// deployment
+		// Deployment
 		jobModels.TypeCreateDeployment: {
-			JobFunc:       CreateDeployment,
+			JobFunc:       v1.CreateDeployment,
 			TerminateFunc: coreJobDeployment.Build(),
-			EntryFunc:     dAddActivity(da.ActivityBeingCreated),
-			ExitFunc:      dRemActivity(da.ActivityBeingCreated),
+			EntryFunc:     utils.DAddActivity(da.ActivityBeingCreated),
+			ExitFunc:      utils.DRemActivity(da.ActivityBeingCreated),
 		},
 		jobModels.TypeDeleteDeployment: {
-			JobFunc:   DeleteDeployment,
-			EntryFunc: dAddActivity(da.ActivityBeingDeleted),
+			JobFunc:   v1.DeleteDeployment,
+			EntryFunc: utils.DAddActivity(da.ActivityBeingDeleted),
 		},
 		jobModels.TypeUpdateDeployment: {
-			JobFunc:       UpdateDeployment,
+			JobFunc:       v1.UpdateDeployment,
 			TerminateFunc: leafJobDeployment.Build(),
-			EntryFunc:     dAddActivity(da.ActivityUpdating),
-			ExitFunc:      dRemActivity(da.ActivityUpdating),
+			EntryFunc:     utils.DAddActivity(da.ActivityUpdating),
+			ExitFunc:      utils.DRemActivity(da.ActivityUpdating),
 		},
 		jobModels.TypeUpdateDeploymentOwner: {
-			JobFunc:       UpdateDeploymentOwner,
+			JobFunc:       v1.UpdateDeploymentOwner,
 			TerminateFunc: coreJobDeployment.Build(),
-			EntryFunc:     dAddActivity(da.ActivityUpdating),
-			ExitFunc:      dRemActivity(da.ActivityUpdating),
+			EntryFunc:     utils.DAddActivity(da.ActivityUpdating),
+			ExitFunc:      utils.DRemActivity(da.ActivityUpdating),
 		},
 		jobModels.TypeBuildDeployments: {
-			// this is a special case where multiple deployments are built in one job, so we don't want to terminate it
-			JobFunc: BuildDeployments,
+			// This is a special case where multiple deployments are built in one job, so we don't want to terminate it
+			JobFunc: v1.BuildDeployments,
 		},
 		jobModels.TypeRepairDeployment: {
-			JobFunc:       RepairDeployment,
+			JobFunc:       v1.RepairDeployment,
 			TerminateFunc: leafJobDeployment.Build(),
-			EntryFunc:     dAddActivity(da.ActivityRepairing),
-			ExitFunc:      dRemActivity(da.ActivityRepairing),
+			EntryFunc:     utils.DAddActivity(da.ActivityRepairing),
+			ExitFunc:      utils.DRemActivity(da.ActivityRepairing),
 		},
 
 		// storage manager
 		jobModels.TypeCreateSM: {
-			JobFunc:   CreateSM,
-			EntryFunc: sAddActivity(sa.ActivityBeingCreated),
-			ExitFunc:  sRemActivity(sa.ActivityBeingCreated),
+			JobFunc:   v1.CreateSM,
+			EntryFunc: utils.SmAddActivity(sa.ActivityBeingCreated),
+			ExitFunc:  utils.SmRemActivity(sa.ActivityBeingCreated),
 		},
 		jobModels.TypeDeleteSM: {
-			JobFunc:   DeleteSM,
-			EntryFunc: sAddActivity(sa.ActivityBeingDeleted),
+			JobFunc:   v1.DeleteSM,
+			EntryFunc: utils.SmAddActivity(sa.ActivityBeingDeleted),
 		},
 		jobModels.TypeRepairSM: {
-			JobFunc:   RepairSM,
-			EntryFunc: sAddActivity(sa.ActivityBeingCreated),
-			ExitFunc:  sRemActivity(sa.ActivityRepairing),
+			JobFunc:   v1.RepairSM,
+			EntryFunc: utils.SmAddActivity(sa.ActivityBeingCreated),
+			ExitFunc:  utils.SmRemActivity(sa.ActivityRepairing),
 		},
+	}
+
+	v2Defs := map[string]JobDefinition{
+		// VM
+		jobModels.TypeCreateVM: {
+			JobFunc:       v2.CreateVM,
+			TerminateFunc: coreJobVM.Build(),
+			EntryFunc:     utils.VmAddActivity(va.ActivityBeingCreated),
+			ExitFunc:      utils.VmRemActivity(va.ActivityBeingCreated),
+		},
+		jobModels.TypeDeleteVM: {
+			JobFunc:   v2.DeleteVM,
+			EntryFunc: utils.VmAddActivity(va.ActivityBeingDeleted),
+		},
+		jobModels.TypeUpdateVM: {
+			JobFunc:       v2.UpdateVM,
+			TerminateFunc: leafJobVM.Build(),
+			EntryFunc:     utils.VmAddActivity(va.ActivityUpdating),
+			ExitFunc:      utils.VmRemActivity(va.ActivityUpdating),
+		},
+		//jobModels.TypeUpdateVmOwner: {
+		//	JobFunc:       v2.UpdateVmOwner,
+		//	TerminateFunc: coreJobVM.Build(),
+		//	EntryFunc:     vAddActivity(va.ActivityUpdating),
+		//	ExitFunc:      vRemActivity(va.ActivityUpdating),
+		//},
+		//jobModels.TypeAttachGPU: {
+		//	JobFunc:       v2.AttachGpuToVM,
+		//	TerminateFunc: leafJobVM.Build(),
+		//	EntryFunc:     vAddActivity(va.ActivityAttachingGPU, va.ActivityUpdating),
+		//	ExitFunc:      vRemActivity(va.ActivityAttachingGPU, va.ActivityUpdating),
+		//},
+		//jobModels.TypeDetachGPU: {
+		//	JobFunc:       v2.DetachGpuFromVM,
+		//	TerminateFunc: leafJobVM.Build(),
+		//	EntryFunc:     vAddActivity(va.ActivityDetachingGPU, va.ActivityUpdating),
+		//	ExitFunc:      vRemActivity(va.ActivityDetachingGPU, va.ActivityUpdating),
+		//},
+		//jobModels.TypeRepairVM: {
+		//	JobFunc:       v2.RepairVM,
+		//	TerminateFunc: leafJobVM.Build(),
+		//	EntryFunc:     vAddActivity(va.ActivityRepairing),
+		//	ExitFunc:      vRemActivity(va.ActivityRepairing),
+		//},
+		//jobModels.TypeCreateSystemSnapshot: {
+		//	JobFunc:       v2.CreateSystemSnapshot,
+		//	TerminateFunc: leafJobVM.Build(),
+		//},
+		//jobModels.TypeCreateUserSnapshot: {
+		//	JobFunc:       v2.CreateUserSnapshot,
+		//	TerminateFunc: oneCreateSnapshotPerUser.Build(),
+		//},
+		//jobModels.TypeDeleteSnapshot: {
+		//	JobFunc:       v2.DeleteSnapshot,
+		//	TerminateFunc: leafJobVM.Build(),
+		//},
+	}
+
+	return map[string]map[string]JobDefinition{
+		versions.V1: v1Defs,
+		versions.V2: v2Defs,
 	}
 }
 

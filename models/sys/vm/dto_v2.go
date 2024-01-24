@@ -3,6 +3,7 @@ package vm
 import (
 	"go-deploy/models/dto/v2/body"
 	gpuModels "go-deploy/models/sys/gpu"
+	"go-deploy/models/versions"
 	"go-deploy/utils"
 	"reflect"
 )
@@ -47,14 +48,17 @@ func (vm *VM) ToDTOv2(gpu *gpuModels.GPU, teams []string) body.VmRead {
 }
 
 // FromDTOv2 converts a VM DTO to a VM.
-func (p *CreateParams) FromDTOv2(dto *body.VmCreate, fallbackZone *string, deploymentZone *string) {
+func (p CreateParams) FromDTOv2(dto *body.VmCreate, fallbackZone *string) CreateParams {
 	p.Name = dto.Name
 	p.SshPublicKey = dto.SshPublicKey
 	p.CpuCores = dto.CpuCores
 	p.RAM = dto.RAM
 	p.DiskSize = dto.DiskSize
 	p.PortMap = make(map[string]PortCreateParams)
-	p.DeploymentZone = deploymentZone
+	p.Version = versions.V2
+
+	// Right now we only support one zone, since we need to make sure the cluster has KubeVirt installed
+	p.Zone = *fallbackZone
 
 	//for _, port := range dto.Ports {
 	//	if port.Name == "__ssh" {
@@ -75,15 +79,11 @@ func (p *CreateParams) FromDTOv2(dto *body.VmCreate, fallbackZone *string, deplo
 		Protocol: "tcp",
 	}
 
-	if dto.Zone != nil {
-		p.Zone = *dto.Zone
-	} else {
-		p.Zone = *fallbackZone
-	}
+	return p
 }
 
 // FromDTOv2 converts a VM DTO to a VM.
-func (p *UpdateParams) FromDTOv2(dto *body.VmUpdate) {
+func (p UpdateParams) FromDTOv2(dto *body.VmUpdate) UpdateParams {
 	p.Name = dto.Name
 	p.SnapshotID = dto.SnapshotID
 	p.CpuCores = dto.CpuCores
@@ -112,4 +112,6 @@ func (p *UpdateParams) FromDTOv2(dto *body.VmUpdate) {
 
 		p.PortMap = &portMap
 	}
+
+	return p
 }

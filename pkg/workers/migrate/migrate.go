@@ -2,6 +2,7 @@ package migrator
 
 import (
 	vmModels "go-deploy/models/sys/vm"
+	"go-deploy/models/versions"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
 )
@@ -47,7 +48,7 @@ func addVersionV1IfNoVersionVM_2024_01_24() error {
 	}
 
 	for _, vm := range vms {
-		err = vmModels.New().IncludeDeletedResources().SetWithBsonByID(vm.ID, bson.D{{"version", vmModels.V1}})
+		err = vmModels.New().IncludeDeletedResources().SetWithBsonByID(vm.ID, bson.D{{"version", versions.V1}})
 		if err != nil {
 			return err
 		}

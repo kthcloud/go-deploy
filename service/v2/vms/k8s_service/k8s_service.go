@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	vmModels "go-deploy/models/sys/vm"
+	"go-deploy/models/versions"
 	kErrors "go-deploy/pkg/subsystems/k8s/errors"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/service/constants"
@@ -377,8 +378,8 @@ func (c *Client) EnsureOwner(id, oldOwnerID string) error {
 func dbFunc(id, key string) func(interface{}) error {
 	return func(data interface{}) error {
 		if data == nil {
-			return vmModels.New(vmModels.V2).DeleteSubsystem(id, "k8s."+key)
+			return vmModels.New(versions.V2).DeleteSubsystem(id, "k8s."+key)
 		}
-		return vmModels.New(vmModels.V2).SetSubsystem(id, "k8s."+key, data)
+		return vmModels.New(versions.V2).SetSubsystem(id, "k8s."+key, data)
 	}
 }

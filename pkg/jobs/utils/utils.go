@@ -1,4 +1,4 @@
-package jobs
+package utils
 
 import (
 	"context"
@@ -13,8 +13,8 @@ import (
 	"time"
 )
 
-// assertParameters asserts that the job has all the required parameters.
-func assertParameters(job *jobModels.Job, params []string) error {
+// AssertParameters asserts that the job has all the required parameters.
+func AssertParameters(job *jobModels.Job, params []string) error {
 	for _, param := range params {
 		if _, ok := job.Args[param]; !ok {
 			return fmt.Errorf("missing parameter: %s", param)
@@ -24,18 +24,8 @@ func assertParameters(job *jobModels.Job, params []string) error {
 	return nil
 }
 
-// makeTerminatedError makes a terminated error.
-func makeTerminatedError(err error) error {
-	return fmt.Errorf("terminated: %w", err)
-}
-
-// makeFailedError makes a failed error.
-func makeFailedError(err error) error {
-	return fmt.Errorf("failed: %w", err)
-}
-
-// waitForJob waits for a job to reach one of the given statuses.
-func waitForJob(context context.Context, job *jobModels.Job, statuses []string) error {
+// WaitForJob waits for a job to reach one of the given statuses.
+func WaitForJob(context context.Context, job *jobModels.Job, statuses []string) error {
 	if len(statuses) == 0 {
 		return nil
 	}
@@ -64,10 +54,10 @@ func waitForJob(context context.Context, job *jobModels.Job, statuses []string) 
 	}
 }
 
-// waitForJobs waits for a list of jobs to reach one of the given statuses.
-func waitForJobs(context context.Context, jobs []jobModels.Job, statuses []string) error {
+// WaitForJobs waits for a list of jobs to reach one of the given statuses.
+func WaitForJobs(context context.Context, jobs []jobModels.Job, statuses []string) error {
 	for _, job := range jobs {
-		err := waitForJob(context, &job, statuses)
+		err := WaitForJob(context, &job, statuses)
 		if err != nil {
 			return err
 		}
@@ -76,8 +66,8 @@ func waitForJobs(context context.Context, jobs []jobModels.Job, statuses []strin
 	return nil
 }
 
-// deploymentDeletedByID returns true if the deployment is deleted.
-func deploymentDeletedByID(id string) (bool, error) {
+// DeploymentDeletedByID returns true if the deployment is deleted.
+func DeploymentDeletedByID(id string) (bool, error) {
 	deleted, err := deploymentModels.New().IncludeDeletedResources().Deleted(id)
 	if err != nil {
 		return false, err
@@ -99,8 +89,8 @@ func deploymentDeletedByID(id string) (bool, error) {
 	return false, nil
 }
 
-// vmDeletedByID returns true if the VM is deleted.
-func vmDeletedByID(id string) (bool, error) {
+// VmDeletedByID returns true if the VM is deleted.
+func VmDeletedByID(id string) (bool, error) {
 	deleted, err := vmModels.New().IncludeDeletedResources().Deleted(id)
 	if err != nil {
 		return false, err
@@ -122,8 +112,8 @@ func vmDeletedByID(id string) (bool, error) {
 	return false, nil
 }
 
-// vAddActivity is a helper function that adds activity to VM
-func vAddActivity(activities ...string) func(*jobModels.Job) error {
+// VmAddActivity is a helper function that adds activity to VM
+func VmAddActivity(activities ...string) func(*jobModels.Job) error {
 	return func(job *jobModels.Job) error {
 		id := job.Args["id"].(string)
 
@@ -137,8 +127,8 @@ func vAddActivity(activities ...string) func(*jobModels.Job) error {
 	}
 }
 
-// vRemActivity is a helper function that removes activity from VM
-func vRemActivity(activities ...string) func(*jobModels.Job) error {
+// VmRemActivity is a helper function that removes activity from VM
+func VmRemActivity(activities ...string) func(*jobModels.Job) error {
 	return func(job *jobModels.Job) error {
 		id := job.Args["id"].(string)
 
@@ -156,8 +146,8 @@ func vRemActivity(activities ...string) func(*jobModels.Job) error {
 	}
 }
 
-// dAddActivity is a helper function that adds activity to deployment
-func dAddActivity(activities ...string) func(*jobModels.Job) error {
+// DAddActivity is a helper function that adds activity to deployment
+func DAddActivity(activities ...string) func(*jobModels.Job) error {
 	return func(job *jobModels.Job) error {
 		id := job.Args["id"].(string)
 
@@ -171,8 +161,8 @@ func dAddActivity(activities ...string) func(*jobModels.Job) error {
 	}
 }
 
-// dRemActivity is a helper function that removes activity from deployment
-func dRemActivity(activities ...string) func(*jobModels.Job) error {
+// DRemActivity is a helper function that removes activity from deployment
+func DRemActivity(activities ...string) func(*jobModels.Job) error {
 	return func(job *jobModels.Job) error {
 		id := job.Args["id"].(string)
 
@@ -190,8 +180,8 @@ func dRemActivity(activities ...string) func(*jobModels.Job) error {
 	}
 }
 
-// sAddActivity is a helper function that adds activity to storage manager
-func sAddActivity(activities ...string) func(*jobModels.Job) error {
+// SmAddActivity is a helper function that adds activity to storage manager
+func SmAddActivity(activities ...string) func(*jobModels.Job) error {
 	return func(job *jobModels.Job) error {
 		id := job.Args["id"].(string)
 
@@ -205,8 +195,8 @@ func sAddActivity(activities ...string) func(*jobModels.Job) error {
 	}
 }
 
-// sRemActivity is a helper function that removes activity from a storage manager
-func sRemActivity(activities ...string) func(*jobModels.Job) error {
+// SmRemActivity is a helper function that removes activity from a storage manager
+func SmRemActivity(activities ...string) func(*jobModels.Job) error {
 	return func(job *jobModels.Job) error {
 		id := job.Args["id"].(string)
 
@@ -224,11 +214,11 @@ func sRemActivity(activities ...string) func(*jobModels.Job) error {
 	}
 }
 
-// vmDeleted is a helper function that returns true if the VM is deleted.
-func vmDeleted(job *jobModels.Job) (bool, error) {
+// VmDeleted is a helper function that returns true if the VM is deleted.
+func VmDeleted(job *jobModels.Job) (bool, error) {
 	id := job.Args["id"].(string)
 
-	deleted, err := vmDeletedByID(id)
+	deleted, err := VmDeletedByID(id)
 	if err != nil {
 		return false, err
 	}
@@ -236,11 +226,11 @@ func vmDeleted(job *jobModels.Job) (bool, error) {
 	return deleted, nil
 }
 
-// deploymentDeleted is a helper function that returns true if the deployment is deleted.
-func deploymentDeleted(job *jobModels.Job) (bool, error) {
+// DeploymentDeleted is a helper function that returns true if the deployment is deleted.
+func DeploymentDeleted(job *jobModels.Job) (bool, error) {
 	id := job.Args["id"].(string)
 
-	deleted, err := deploymentDeletedByID(id)
+	deleted, err := DeploymentDeletedByID(id)
 	if err != nil {
 		return false, err
 	}
@@ -248,8 +238,8 @@ func deploymentDeleted(job *jobModels.Job) (bool, error) {
 	return deleted, nil
 }
 
-// updatingOwner is a helper function that returns true if there is an updating owner job for the VM.
-func updatingOwner(job *jobModels.Job) (bool, error) {
+// UpdatingOwner is a helper function that returns true if there is an updating owner job for the VM.
+func UpdatingOwner(job *jobModels.Job) (bool, error) {
 	id := job.Args["id"].(string)
 
 	filter := bson.D{
@@ -266,8 +256,8 @@ func updatingOwner(job *jobModels.Job) (bool, error) {
 	return anyUpdatingOwnerJob, nil
 }
 
-// onlyCreateSnapshotPerUser is a helper function that returns true if there is a snapshot job for the user.
-func onlyCreateSnapshotPerUser(job *jobModels.Job) (bool, error) {
+// OnlyCreateSnapshotPerUser is a helper function that returns true if there is a snapshot job for the user.
+func OnlyCreateSnapshotPerUser(job *jobModels.Job) (bool, error) {
 	anySnapshotJob, err := jobModels.New().
 		RestrictToUser(job.UserID).
 		ExcludeIDs(job.ID).

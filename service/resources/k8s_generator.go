@@ -9,6 +9,7 @@ import (
 	smModels "go-deploy/models/sys/sm"
 	userModels "go-deploy/models/sys/user"
 	vmModels "go-deploy/models/sys/vm"
+	"go-deploy/models/versions"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems"
 	"go-deploy/pkg/subsystems/k8s"
@@ -387,7 +388,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 func (kg *K8sGenerator) VMs() []models.VmPublic {
 	var res []models.VmPublic
 
-	if kg.v.vm != nil && kg.v.vm.Version == "2" {
+	if kg.v.vm != nil && kg.v.vm.Version == versions.V2 {
 		vmPublic := models.VmPublic{
 			Name:      vVmName(kg.v.vm),
 			Namespace: kg.namespace,
