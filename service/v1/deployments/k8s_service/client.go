@@ -83,11 +83,9 @@ func (c *Client) Get(opts *opts.Opts) (*deploymentModels.Deployment, *k8s.Client
 			userID = d.OwnerID
 		}
 
-		var zone *configModels.DeploymentZone
-		if opts.ExtraOpts.Zone != nil {
-			zone = opts.ExtraOpts.Zone
-		} else if d != nil {
-			zone = config.Config.Deployment.GetZone(d.Zone)
+		zone := getZone(opts, d)
+		if zone == nil {
+			return nil, nil, nil, sErrors.ZoneNotFoundErr
 		}
 
 		kc, err = c.Client(userID, zone)
@@ -101,11 +99,9 @@ func (c *Client) Get(opts *opts.Opts) (*deploymentModels.Deployment, *k8s.Client
 	}
 
 	if opts.Generator {
-		var zone *configModels.DeploymentZone
-		if opts.ExtraOpts.Zone != nil {
-			zone = opts.ExtraOpts.Zone
-		} else if d != nil {
-			zone = config.Config.Deployment.GetZone(d.Zone)
+		zone := getZone(opts, d)
+		if zone == nil {
+			return nil, nil, nil, sErrors.ZoneNotFoundErr
 		}
 
 		g = c.Generator(d, kc, zone)
@@ -155,4 +151,17 @@ func withClient(zone *configModels.DeploymentZone, namespace string) (*k8s.Clien
 		VirtK8sClient: nil,
 		Namespace:     namespace,
 	})
+}
+
+// getZone is a helper function that returns either the zone in opts or the zone in the deployment.
+func getZone(opts *opts.Opts, d *deploymentModels.Deployment) *configModels.DeploymentZone {
+	if opts.ExtraOpts.Zone != nil {
+		return opts.ExtraOpts.Zone
+	}
+
+	if d != nil {
+		return config.Config.Deployment.GetZone(d.Zone)
+	}
+
+	return nil
 }

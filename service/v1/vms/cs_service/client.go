@@ -86,11 +86,9 @@ func (c *Client) Get(opts *opts.Opts) (*vmModels.VM, *cs.Client, *resources.CsGe
 
 	var cc *cs.Client
 	if opts.Client {
-		var zone *configModels.VmZone
-		if opts.ExtraOpts.Zone != nil {
-			zone = opts.ExtraOpts.Zone
-		} else if vm != nil {
-			zone = config.Config.VM.GetZone(vm.Zone)
+		zone := getZone(opts, vm)
+		if zone == nil {
+			return nil, nil, nil, sErrors.ZoneNotFoundErr
 		}
 
 		cc, err = c.Client(zone)
@@ -101,11 +99,9 @@ func (c *Client) Get(opts *opts.Opts) (*vmModels.VM, *cs.Client, *resources.CsGe
 
 	var g *resources.CsGenerator
 	if opts.Generator {
-		var zone *configModels.VmZone
-		if opts.ExtraOpts.Zone != nil {
-			zone = opts.ExtraOpts.Zone
-		} else if vm != nil {
-			zone = config.Config.VM.GetZone(vm.Zone)
+		zone := getZone(opts, vm)
+		if zone == nil {
+			return nil, nil, nil, sErrors.ZoneNotFoundErr
 		}
 
 		g = c.Generator(vm, zone)
@@ -155,4 +151,17 @@ func withCsClient(zone *configModels.VmZone) (*cs.Client, error) {
 		ZoneID:      zone.ZoneID,
 		TemplateID:  zone.TemplateID,
 	})
+}
+
+// getZone is a helper function that returns either the zone in opts or the zone in vm.
+func getZone(opts *opts.Opts, vm *vmModels.VM) *configModels.VmZone {
+	if opts.ExtraOpts.Zone != nil {
+		return opts.ExtraOpts.Zone
+	}
+
+	if vm != nil {
+		return config.Config.VM.GetZone(vm.Zone)
+	}
+
+	return nil
 }

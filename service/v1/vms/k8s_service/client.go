@@ -85,11 +85,9 @@ func (c *Client) Get(opts *opts.Opts) (*vmModels.VM, *k8s.Client, *resources.K8s
 			userID = vm.OwnerID
 		}
 
-		var zone *configModels.DeploymentZone
-		if opts.ExtraOpts.Zone != nil {
-			zone = opts.ExtraOpts.DeploymentZone
-		} else if vm != nil && vm.DeploymentZone != nil {
-			zone = config.Config.Deployment.GetZone(*vm.DeploymentZone)
+		zone := getDeploymentZone(opts, vm)
+		if zone == nil {
+			return nil, nil, nil, sErrors.ZoneNotFoundErr
 		}
 
 		kc, err = c.Client(userID, zone)
@@ -103,11 +101,9 @@ func (c *Client) Get(opts *opts.Opts) (*vmModels.VM, *k8s.Client, *resources.K8s
 	}
 
 	if opts.Generator {
-		var zone *configModels.VmZone
-		if opts.ExtraOpts.Zone != nil {
-			zone = opts.ExtraOpts.Zone
-		} else if vm != nil {
-			zone = config.Config.VM.GetZone(vm.Zone)
+		zone := getVmZone(opts, vm)
+		if zone == nil {
+			return nil, nil, nil, sErrors.ZoneNotFoundErr
 		}
 
 		var deploymentZone *configModels.DeploymentZone
@@ -169,4 +165,30 @@ func withClient(zone *configModels.DeploymentZone, namespace string) (*k8s.Clien
 	}
 
 	return k8sClient, nil
+}
+
+// getVmZone is a helper function that returns either the zone in opts or the zone in vm.
+func getVmZone(opts *opts.Opts, vm *vmModels.VM) *configModels.VmZone {
+	if opts.ExtraOpts.Zone != nil {
+		return opts.ExtraOpts.Zone
+	}
+
+	if vm != nil {
+		return config.Config.VM.GetZone(vm.Zone)
+	}
+
+	return nil
+}
+
+// getDeploymentZone is a helper function that returns either the zone in opts or the zone in vm.
+func getDeploymentZone(opts *opts.Opts, vm *vmModels.VM) *configModels.DeploymentZone {
+	if opts.ExtraOpts.DeploymentZone != nil {
+		return opts.ExtraOpts.DeploymentZone
+	}
+
+	if vm != nil && vm.DeploymentZone != nil {
+		return config.Config.Deployment.GetZone(*vm.DeploymentZone)
+	}
+
+	return nil
 }
