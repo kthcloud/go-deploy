@@ -5,6 +5,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"go-deploy/models/config"
 	"go-deploy/pkg/imp/cloudstack"
+	"go-deploy/pkg/imp/kubevirt/kubevirt"
 	"go-deploy/pkg/subsystems/rancher"
 	"gopkg.in/yaml.v3"
 	"k8s.io/client-go/kubernetes"
@@ -104,12 +105,13 @@ func setupK8sClusters() error {
 					log.Fatalln("failed to parse rancher config source for zone", zone.Name)
 				}
 
-				client, err := createClientFromRancherConfig(zone.Name, &zoneConfig)
+				k8sClient, kubevirtClient, err := createClientFromRancherConfig(zone.Name, &zoneConfig)
 				if err != nil {
 					return makeError(err)
 				}
 
-				Config.Deployment.Zones[idx].Client = client
+				Config.Deployment.Zones[idx].K8sClient = k8sClient
+				Config.Deployment.Zones[idx].KubeVirtClient = kubevirtClient
 			}
 		case "cloudstack":
 			{
@@ -119,12 +121,13 @@ func setupK8sClusters() error {
 					log.Fatalln("failed to parse cloudstack config source for zone", zone.Name)
 				}
 
-				client, err := createClientFromCloudStackConfig(zone.Name, &zoneConfig)
+				k8sClient, kubevirtClient, err := createClientFromCloudStackConfig(zone.Name, &zoneConfig)
 				if err != nil {
 					return makeError(err)
 				}
 
-				Config.Deployment.Zones[idx].Client = client
+				Config.Deployment.Zones[idx].K8sClient = k8sClient
+				Config.Deployment.Zones[idx].KubeVirtClient = kubevirtClient
 			}
 		}
 	}
@@ -134,7 +137,7 @@ func setupK8sClusters() error {
 }
 
 // createClientFromRancherConfig creates a k8s client from a rancher config.
-func createClientFromRancherConfig(name string, config *config.RancherConfigSource) (*kubernetes.Clientset, error) {
+func createClientFromRancherConfig(name string, config *config.RancherConfigSource) (*kubernetes.Clientset, *kubevirt.Clientset, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create k8s client from rancher config. details: %w", err)
 	}
@@ -147,23 +150,23 @@ func createClientFromRancherConfig(name string, config *config.RancherConfigSour
 		Secret: Config.Rancher.Secret,
 	})
 	if err != nil {
-		return nil, makeError(err)
+		return nil, nil, makeError(err)
 	}
 
-	kubeConfig, err := rancherClient.ReadClusterKubeConfig(config.ClusterID + "asd")
+	kubeConfig, err := rancherClient.ReadClusterKubeConfig(config.ClusterID)
 	if err != nil {
-		return nil, makeError(err)
+		return nil, nil, makeError(err)
 	}
 
 	if kubeConfig == "" {
-		return nil, makeError(fmt.Errorf("kubeconfig not found for cluster %s", config.ClusterID))
+		return nil, nil, makeError(fmt.Errorf("kubeconfig not found for cluster %s", config.ClusterID))
 	}
 
-	return createK8sClient([]byte(kubeConfig))
+	return createK8sClients([]byte(kubeConfig))
 }
 
 // createClientFromCloudStackConfig creates a k8s client from a cloudstack config.
-func createClientFromCloudStackConfig(name string, config *config.CloudStackConfigSource) (*kubernetes.Clientset, error) {
+func createClientFromCloudStackConfig(name string, config *config.CloudStackConfigSource) (*kubernetes.Clientset, *kubevirt.Clientset, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create k8s client from cloudstack config. details: %w", err)
 	}
@@ -205,24 +208,29 @@ func createClientFromCloudStackConfig(name string, config *config.CloudStackConf
 	regex := regexp.MustCompile(`https://172.[0-9]+.[0-9]+.[0-9]+:6443`)
 	clusterConfig.Configdata = regex.ReplaceAllString(clusterConfig.Configdata, config.ExternalURL)
 
-	return createK8sClient([]byte(clusterConfig.Configdata))
+	return createK8sClients([]byte(clusterConfig.Configdata))
 }
 
-// createK8sClient creates a k8s client from config data.
-func createK8sClient(configData []byte) (*kubernetes.Clientset, error) {
+// createK8sClients creates a k8s client from config data.
+func createK8sClients(configData []byte) (*kubernetes.Clientset, *kubevirt.Clientset, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create k8s client. details: %w", err)
 	}
 
 	kubeConfig, err := clientcmd.RESTConfigFromKubeConfig(configData)
 	if err != nil {
-		return nil, makeError(err)
+		return nil, nil, makeError(err)
 	}
 
 	k8sClient, err := kubernetes.NewForConfig(kubeConfig)
 	if err != nil {
-		return nil, makeError(err)
+		return nil, nil, makeError(err)
 	}
 
-	return k8sClient, nil
+	kubeVirtClient, err := kubevirt.NewForConfig(kubeConfig)
+	if err != nil {
+		return nil, nil, makeError(err)
+	}
+
+	return k8sClient, kubeVirtClient, nil
 }

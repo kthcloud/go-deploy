@@ -2,6 +2,7 @@ package config
 
 import (
 	"go-deploy/models/sys/role"
+	"go-deploy/pkg/imp/kubevirt/kubevirt"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -30,7 +31,8 @@ type DeploymentZone struct {
 		NfsParentPath string `yaml:"nfsParentPath"`
 	} `yaml:"storage"`
 
-	Client *kubernetes.Clientset
+	K8sClient      *kubernetes.Clientset
+	KubeVirtClient *kubevirt.Clientset
 }
 
 type VmZone struct {

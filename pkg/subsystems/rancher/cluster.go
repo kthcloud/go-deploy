@@ -31,7 +31,8 @@ func (c *Client) ReadClusterKubeConfig(id string) (string, error) {
 		return fmt.Errorf("failed to read cluster kubeconfig. details: %w", err)
 	}
 
-	req, err := http.NewRequest("POST", c.URL+"/clusters/"+id+"?action=generateKubeconfig", nil)
+	fullUrl := c.URL + "/clusters/" + id + "?action=generateKubeconfig"
+	req, err := http.NewRequest("POST", fullUrl, nil)
 	if err != nil {
 		if strings.Contains(err.Error(), "404") {
 			return "", nil
