@@ -16,8 +16,8 @@ import (
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
 	v12 "go-deploy/service/v1/common"
-	"go-deploy/service/v1/teams/opts"
-	opts2 "go-deploy/service/v1/vms/opts"
+	teamOpts "go-deploy/service/v1/teams/opts"
+	"go-deploy/service/v1/vms/opts"
 	"go-deploy/utils"
 )
 
@@ -58,7 +58,7 @@ func List(c *gin.Context) {
 		userID = auth.UserID
 	}
 
-	vms, err := deployV1.VMs().List(opts2.ListOpts{
+	vms, err := deployV1.VMs().List(opts.ListOpts{
 		Pagination: v12.GetOrDefaultPagination(requestQuery.Pagination),
 		UserID:     &userID,
 		Shared:     true,
@@ -89,7 +89,7 @@ func List(c *gin.Context) {
 			continue
 		}
 
-		teamIDs, _ := deployV1.Teams().ListIDs(opts.ListOpts{ResourceID: vm.ID})
+		teamIDs, _ := deployV1.Teams().ListIDs(teamOpts.ListOpts{ResourceID: vm.ID})
 		dtoVMs[i] = vm.ToDTO(vm.StatusMessage, connectionString, teamIDs, gpuRead, mapper)
 	}
 
@@ -125,7 +125,7 @@ func Get(c *gin.Context) {
 
 	deployV1 := service.V1(auth)
 
-	vm, err := deployV1.VMs().Get(requestURI.VmID, opts2.GetOpts{Shared: true})
+	vm, err := deployV1.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -148,7 +148,7 @@ func Get(c *gin.Context) {
 		utils.PrettyPrintError(fmt.Errorf("failed to get external port mapper for vm %s. details: %w", vm.ID, err))
 	}
 
-	teamIDs, _ := deployV1.Teams().ListIDs(opts.ListOpts{ResourceID: vm.ID})
+	teamIDs, _ := deployV1.Teams().ListIDs(teamOpts.ListOpts{ResourceID: vm.ID})
 	context.Ok(vm.ToDTO(vm.StatusMessage, connectionString, teamIDs, gpuRead, mapper))
 }
 
@@ -202,7 +202,7 @@ func Create(c *gin.Context) {
 		}
 	}
 
-	err = deployV1.VMs().CheckQuota("", auth.UserID, &auth.GetEffectiveRole().Quotas, opts2.QuotaOpts{Create: &requestBody})
+	err = deployV1.VMs().CheckQuota("", auth.UserID, &auth.GetEffectiveRole().Quotas, opts.QuotaOpts{Create: &requestBody})
 	if err != nil {
 		var quotaExceedErr sErrors.QuotaExceededError
 		if errors.As(err, &quotaExceedErr) {
@@ -263,7 +263,7 @@ func Delete(c *gin.Context) {
 
 	deployV1 := service.V1(auth)
 
-	vm, err := deployV1.VMs().Get(requestURI.VmID, opts2.GetOpts{Shared: true})
+	vm, err := deployV1.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -352,7 +352,7 @@ func Update(c *gin.Context) {
 
 	var vm *vmModels.VM
 	if requestBody.TransferCode != nil {
-		vm, err = deployV1.VMs().Get("", opts2.GetOpts{TransferCode: requestBody.TransferCode})
+		vm, err = deployV1.VMs().Get("", opts.GetOpts{TransferCode: requestBody.TransferCode})
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
@@ -363,7 +363,7 @@ func Update(c *gin.Context) {
 		}
 
 	} else {
-		vm, err = deployV1.VMs().Get(requestURI.VmID, opts2.GetOpts{Shared: true})
+		vm, err = deployV1.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
@@ -472,7 +472,7 @@ func Update(c *gin.Context) {
 		}
 	}
 
-	err = deployV1.VMs().CheckQuota(auth.UserID, vm.ID, &auth.GetEffectiveRole().Quotas, opts2.QuotaOpts{Update: &requestBody})
+	err = deployV1.VMs().CheckQuota(auth.UserID, vm.ID, &auth.GetEffectiveRole().Quotas, opts.QuotaOpts{Update: &requestBody})
 	if err != nil {
 		var quotaExceededErr sErrors.QuotaExceededError
 		if errors.As(err, &quotaExceededErr) {

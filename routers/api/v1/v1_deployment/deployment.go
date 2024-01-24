@@ -16,7 +16,7 @@ import (
 	sErrors "go-deploy/service/errors"
 	v12 "go-deploy/service/v1/common"
 	"go-deploy/service/v1/deployments/opts"
-	opts2 "go-deploy/service/v1/teams/opts"
+	teamOpts "go-deploy/service/v1/teams/opts"
 )
 
 // List
@@ -77,7 +77,7 @@ func List(c *gin.Context) {
 
 	dtoDeployments := make([]body.DeploymentRead, len(deployments))
 	for i, deployment := range deployments {
-		teamIDs, _ := deployV1.Teams().ListIDs(opts2.ListOpts{ResourceID: deployment.ID})
+		teamIDs, _ := deployV1.Teams().ListIDs(teamOpts.ListOpts{ResourceID: deployment.ID})
 		dtoDeployments[i] = deployment.ToDTO(deployV1.SMs().GetURL(deployment.OwnerID), teamIDs)
 	}
 
@@ -127,7 +127,7 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	teamIDs, _ := deployV1.Teams().ListIDs(opts2.ListOpts{ResourceID: deployment.ID})
+	teamIDs, _ := deployV1.Teams().ListIDs(teamOpts.ListOpts{ResourceID: deployment.ID})
 	context.Ok(deployment.ToDTO(deployV1.SMs().GetURL(deployment.OwnerID), teamIDs))
 }
 

@@ -21,17 +21,17 @@ import (
 	"go-deploy/service/v1/deployments/harbor_service"
 	"go-deploy/service/v1/deployments/k8s_service"
 	dOpts "go-deploy/service/v1/deployments/opts"
-	"go-deploy/service/v1/jobs/opts"
-	opts2 "go-deploy/service/v1/notifications/opts"
+	jobOpts "go-deploy/service/v1/jobs/opts"
+	nOpts "go-deploy/service/v1/notifications/opts"
 	sK8sService "go-deploy/service/v1/sms/k8s_service"
 	smClient "go-deploy/service/v1/sms/opts"
-	opts3 "go-deploy/service/v1/status/opts"
-	opts4 "go-deploy/service/v1/teams/opts"
-	opts5 "go-deploy/service/v1/users/opts"
+	statusOpts "go-deploy/service/v1/status/opts"
+	teamOpts "go-deploy/service/v1/teams/opts"
+	userOpts "go-deploy/service/v1/users/opts"
 	"go-deploy/service/v1/vms/cs_service"
 	vK8sService "go-deploy/service/v1/vms/k8s_service"
 	vmClient "go-deploy/service/v1/vms/opts"
-	opts6 "go-deploy/service/v1/zones/opts"
+	zoneOpts "go-deploy/service/v1/zones/opts"
 )
 
 type Deployments interface {
@@ -72,33 +72,6 @@ type Deployments interface {
 	K8s() *k8s_service.Client
 	Harbor() *harbor_service.Client
 	GitHub() *github_service.Client
-	//K8s() interface {
-	//	Create(id string, params *deploymentModels.CreateParams) error
-	//	Delete(id string, overwriteUserID ...string) error
-	//	Update(id string, params *deploymentModels.UpdateParams) error
-	//	EnsureOwner(id string, oldOwnerID string) error
-	//	Restart(id string) error
-	//	Repair(id string) error
-	//	SetupLogStream(ctx context.Context, id string, handler func(string, int, time.Time)) error
-	//}
-	//Harbor() interface {
-	//	Create(id string, params *deploymentModels.CreateParams) error
-	//	CreatePlaceholder(id string) error
-	//	Delete(id string) error
-	//	Update(id string, params *deploymentModels.UpdateParams) error
-	//	EnsureOwner(id string, oldOwnerID string) error
-	//	Repair(id string) error
-	//}
-	//GitHub() interface {
-	//	Create(id string, params *deploymentModels.CreateParams) error
-	//	Delete(id string) error
-	//	CreatePlaceholder(id string) error
-	//	Validate() (bool, string, error)
-	//	GetRepositories() ([]deploymentModels.GitHubRepository, error)
-	//	GetRepository() (*deploymentModels.GitHubRepository, error)
-	//	GetWebhooks(repository *deploymentModels.GitHubRepository) ([]deploymentModels.GitHubWebhook, error)
-	//	GetAccessTokenByCode(code string) (string, error)
-	//}
 }
 
 type Discovery interface {
@@ -110,15 +83,15 @@ type Events interface {
 }
 
 type Jobs interface {
-	Get(id string, opts ...opts.GetOpts) (*jobModels.Job, error)
-	List(opts ...opts.ListOpts) ([]jobModels.Job, error)
+	Get(id string, opts ...jobOpts.GetOpts) (*jobModels.Job, error)
+	List(opts ...jobOpts.ListOpts) ([]jobModels.Job, error)
 	Create(id, userID, jobType string, args map[string]interface{}) error
 	Update(id string, jobUpdateDTO *body.JobUpdate) (*jobModels.Job, error)
 }
 
 type Notifications interface {
-	Get(id string, opts ...opts2.GetOpts) (*notificationModels.Notification, error)
-	List(opts ...opts2.ListOpts) ([]notificationModels.Notification, error)
+	Get(id string, opts ...nOpts.GetOpts) (*notificationModels.Notification, error)
+	List(opts ...nOpts.ListOpts) ([]notificationModels.Notification, error)
 	Create(id, userID string, params *notificationModels.CreateParams) (*notificationModels.Notification, error)
 	Update(id string, dtoNotificationUpdate *body.NotificationUpdate) (*notificationModels.Notification, error)
 	Delete(id string) error
@@ -140,23 +113,23 @@ type SMs interface {
 }
 
 type Status interface {
-	ListWorkerStatus(opts ...opts3.ListWorkerStatusOpts) ([]workerStatusModels.WorkerStatus, error)
+	ListWorkerStatus(opts ...statusOpts.ListWorkerStatusOpts) ([]workerStatusModels.WorkerStatus, error)
 }
 
 type Users interface {
-	Get(id string, opts ...opts5.GetOpts) (*userModels.User, error)
-	List(opts ...opts5.ListOpts) ([]userModels.User, error)
+	Get(id string, opts ...userOpts.GetOpts) (*userModels.User, error)
+	List(opts ...userOpts.ListOpts) ([]userModels.User, error)
 	Create() (*userModels.User, error)
 	Update(userID string, dtoUserUpdate *body.UserUpdate) (*userModels.User, error)
 	Exists(id string) (bool, error)
 
-	Discover(opts ...opts5.DiscoverOpts) ([]body.UserReadDiscovery, error)
+	Discover(opts ...userOpts.DiscoverOpts) ([]body.UserReadDiscovery, error)
 }
 
 type Teams interface {
-	Get(id string, opts ...opts4.GetOpts) (*teamModels.Team, error)
-	List(opts ...opts4.ListOpts) ([]teamModels.Team, error)
-	ListIDs(opts ...opts4.ListOpts) ([]string, error)
+	Get(id string, opts ...teamOpts.GetOpts) (*teamModels.Team, error)
+	List(opts ...teamOpts.ListOpts) ([]teamModels.Team, error)
+	ListIDs(opts ...teamOpts.ListOpts) ([]string, error)
 	Create(id, ownerID string, dtoCreateTeam *body.TeamCreate) (*teamModels.Team, error)
 	Update(id string, dtoUpdateTeam *body.TeamUpdate) (*teamModels.Team, error)
 	Delete(id string) error
@@ -210,6 +183,6 @@ type VMs interface {
 }
 
 type Zones interface {
-	List(opts ...opts6.ListOpts) ([]zoneModels.Zone, error)
+	List(opts ...zoneOpts.ListOpts) ([]zoneModels.Zone, error)
 	Get(name, zoneType string) *zoneModels.Zone
 }
