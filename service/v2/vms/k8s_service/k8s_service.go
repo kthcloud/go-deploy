@@ -15,8 +15,6 @@ import (
 )
 
 // Create sets up K8s for a VM.
-//
-// This does nothing if the VM is version 1 and has no proxy ports
 func (c *Client) Create(id string, params *vmModels.CreateParams) error {
 	log.Println("setting up k8s for", params.Name)
 
@@ -379,8 +377,8 @@ func (c *Client) EnsureOwner(id, oldOwnerID string) error {
 func dbFunc(id, key string) func(interface{}) error {
 	return func(data interface{}) error {
 		if data == nil {
-			return vmModels.New(vmModels.V1).DeleteSubsystem(id, "k8s."+key)
+			return vmModels.New(vmModels.V2).DeleteSubsystem(id, "k8s."+key)
 		}
-		return vmModels.New(vmModels.V1).SetSubsystem(id, "k8s."+key, data)
+		return vmModels.New(vmModels.V2).SetSubsystem(id, "k8s."+key, data)
 	}
 }

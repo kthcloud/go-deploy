@@ -12,7 +12,7 @@ import (
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
-	v12 "go-deploy/service/v1/common"
+	v12 "go-deploy/service/v1/utils"
 	"go-deploy/service/v1/vms/opts"
 )
 
@@ -60,7 +60,7 @@ func ListSnapshots(c *gin.Context) {
 
 	dtoSnapshots := make([]body.VmSnapshotRead, len(snapshots))
 	for i, snapshot := range snapshots {
-		dtoSnapshots[i] = snapshot.ToDTO()
+		dtoSnapshots[i] = snapshot.ToDTOv1()
 	}
 
 	context.Ok(dtoSnapshots)
@@ -119,7 +119,7 @@ func GetSnapshot(c *gin.Context) {
 		return
 	}
 
-	context.Ok(snapshot.ToDTO())
+	context.Ok(snapshot.ToDTOv1())
 }
 
 // CreateSnapshot

@@ -8,8 +8,8 @@ import (
 	"sort"
 )
 
-// ToDTO converts a VM to a DTO.
-func (vm *VM) ToDTO(status string, connectionString *string, teams []string, gpu *body.GpuRead, externalPortMapper map[string]int) body.VmRead {
+// ToDTOv1 converts a VM to a DTO.
+func (vm *VM) ToDTOv1(status string, connectionString *string, teams []string, gpu *body.GpuRead, externalPortMapper map[string]int) body.VmRead {
 
 	var vmGpu *body.VmGpuLease
 	if gpu != nil && gpu.Lease != nil {
@@ -116,8 +116,8 @@ func (vm *VM) ToDTO(status string, connectionString *string, teams []string, gpu
 	}
 }
 
-// FromDTO converts a VM DTO to a VM.
-func (p *CreateParams) FromDTO(dto *body.VmCreate, fallbackZone *string, deploymentZone *string) {
+// FromDTOv1 converts a VM DTO to a VM.
+func (p *CreateParams) FromDTOv1(dto *body.VmCreate, fallbackZone *string, deploymentZone *string) {
 	p.Name = dto.Name
 	p.SshPublicKey = dto.SshPublicKey
 	p.CpuCores = dto.CpuCores
@@ -135,7 +135,7 @@ func (p *CreateParams) FromDTO(dto *body.VmCreate, fallbackZone *string, deploym
 			continue
 		}
 
-		p.PortMap[portName(port.Port, port.Protocol)] = fromDtoPortCreate(&port)
+		p.PortMap[portName(port.Port, port.Protocol)] = fromPortCreateDTOv1(&port)
 	}
 
 	// Ensure there is always an SSH port
@@ -152,8 +152,8 @@ func (p *CreateParams) FromDTO(dto *body.VmCreate, fallbackZone *string, deploym
 	}
 }
 
-// FromDTO converts a VM DTO to a VM.
-func (p *UpdateParams) FromDTO(dto *body.VmUpdate) {
+// FromDTOv1 converts a VM DTO to a VM.
+func (p *UpdateParams) FromDTOv1(dto *body.VmUpdate) {
 	p.Name = dto.Name
 	p.SnapshotID = dto.SnapshotID
 	p.CpuCores = dto.CpuCores
@@ -170,7 +170,7 @@ func (p *UpdateParams) FromDTO(dto *body.VmUpdate) {
 				continue
 			}
 
-			portMap[portName(port.Port, port.Protocol)] = fromDtoPortUpdate(&port)
+			portMap[portName(port.Port, port.Protocol)] = fromPortUpdateDTOv1(&port)
 		}
 
 		// Ensure there is always an SSH port
@@ -186,8 +186,8 @@ func (p *UpdateParams) FromDTO(dto *body.VmUpdate) {
 	}
 }
 
-// ToDTO converts a VM DTO to a VM.
-func (sc *Snapshot) ToDTO() body.VmSnapshotRead {
+// ToDTOv1 converts a VM DTO to a VM.
+func (sc *Snapshot) ToDTOv1() body.VmSnapshotRead {
 	return body.VmSnapshotRead{
 		ID:         sc.ID,
 		VmID:       sc.VmID,
@@ -199,15 +199,15 @@ func (sc *Snapshot) ToDTO() body.VmSnapshotRead {
 	}
 }
 
-// FromDTO converts a VM DTO to a VM.
-func (sc *CreateSnapshotParams) FromDTO(dto *body.VmSnapshotCreate) {
+// FromDTOv1 converts a VM DTO to a VM.
+func (sc *CreateSnapshotParams) FromDTOv1(dto *body.VmSnapshotCreate) {
 	sc.Name = dto.Name
 	sc.Overwrite = false
 	sc.UserCreated = true
 }
 
-// fromDtoPortCreate converts a port DTO to a port.
-func fromDtoPortCreate(port *body.PortCreate) PortCreateParams {
+// fromPortCreateDTOv1 converts a port DTO to a port.
+func fromPortCreateDTOv1(port *body.PortCreate) PortCreateParams {
 	var httpProxy *HttpProxyCreateParams
 	if port.HttpProxy != nil {
 		httpProxy = &HttpProxyCreateParams{
@@ -224,8 +224,8 @@ func fromDtoPortCreate(port *body.PortCreate) PortCreateParams {
 	}
 }
 
-// fromDtoPortUpdate converts a port DTO to a port.
-func fromDtoPortUpdate(port *body.PortUpdate) PortUpdateParams {
+// fromPortUpdateDTOv1 converts a port DTO to a port.
+func fromPortUpdateDTOv1(port *body.PortUpdate) PortUpdateParams {
 	var httpProxy *HttpProxyUpdateParams
 	if port.HttpProxy != nil {
 		httpProxy = &HttpProxyUpdateParams{

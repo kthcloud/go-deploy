@@ -20,30 +20,49 @@ type VmRead struct {
 
 	Teams []string `json:"teams"`
 
-	Status           string  `json:"status"`
-	ConnectionString *string `json:"connectionString,omitempty"`
+	Status              string  `json:"status"`
+	SshConnectionString *string `json:"sshConnectionString,omitempty"`
 }
 
 type VmCreate struct {
 	Name         string       `json:"name" bson:"name" binding:"required,rfc1035,min=3,max=30"`
 	SshPublicKey string       `json:"sshPublicKey" bson:"sshPublicKey" binding:"required,ssh_public_key"`
 	Ports        []PortCreate `json:"ports" bson:"ports" binding:"omitempty,port_list_names,port_list_numbers,port_list_http_proxies,min=0,max=10,dive"`
-	CpuCores     int          `json:"cpuCores" bson:"cpuCores" binding:"required,min=2"`
-	RAM          int          `json:"ram" bson:"ram" binding:"required,min=1"`
-	DiskSize     int          `json:"diskSize" bson:"diskSize" binding:"required,min=20"`
-	Zone         *string      `json:"zone,omitempty" bson:"zone,omitempty" binding:"omitempty"`
+
+	CpuCores int `json:"cpuCores" bson:"cpuCores" binding:"required,min=2"`
+	RAM      int `json:"ram" bson:"ram" binding:"required,min=1"`
+	DiskSize int `json:"diskSize" bson:"diskSize" binding:"required,min=20"`
+
+	Zone *string `json:"zone,omitempty" bson:"zone,omitempty" binding:"omitempty"`
 }
 
 type VmUpdate struct {
-	Name       *string       `json:"name,omitempty" bson:"name,omitempty" binding:"omitempty,rfc1035,min=3,max=30"`
-	SnapshotID *string       `json:"snapshotId,omitempty" bson:"snapshotId,omitempty" binding:"omitempty,uuid4"`
-	GpuID      *string       `json:"gpuId,omitempty" bson:"gpuId,omitempty" binding:"omitempty,min=0,max=100"`
-	Ports      *[]PortUpdate `json:"ports,omitempty" bson:"ports,omitempty" binding:"omitempty,port_list_names,port_list_numbers,port_list_http_proxies,min=0,max=10,dive"`
-	CpuCores   *int          `json:"cpuCores,omitempty" bson:"cpuCores,omitempty" binding:"omitempty,min=1"`
-	RAM        *int          `json:"ram,omitempty" bson:"ram,omitempty" binding:"omitempty,min=1"`
+	Ports    *[]PortUpdate `json:"ports,omitempty" bson:"ports,omitempty" binding:"omitempty,port_list_names,port_list_numbers,port_list_http_proxies,min=0,max=10,dive"`
+	CpuCores *int          `json:"cpuCores,omitempty" bson:"cpuCores,omitempty" binding:"omitempty,min=1"`
+	RAM      *int          `json:"ram,omitempty" bson:"ram,omitempty" binding:"omitempty,min=1"`
+	State    *string       `json:"state,omitempty" bson:"state,omitempty" binding:"omitempty,oneof=running stopped"`
 
-	OwnerID      *string `json:"ownerId,omitempty" bson:"ownerId,omitempty" binding:"omitempty"`
+	// Name is used to rename a VM.
+	// If specified, only name will be updated.
+	Name *string `json:"name,omitempty" bson:"name,omitempty" binding:"omitempty,rfc1035,min=3,max=30"`
+
+	// OwnerID is used to initiate transfer a VM to another user.
+	// If specified, only the transfer will happen.
+	// If specified but empty, the transfer will be cancelled.
+	OwnerID *string `json:"ownerId,omitempty" bson:"ownerId,omitempty" binding:"omitempty"`
+
+	// TransferCode is used to accept transfer of a VM.
+	// If specified, only the transfer will happen.
 	TransferCode *string `json:"transferCode,omitempty" bson:"transferCode,omitempty" binding:"omitempty,min=1,max=1000"`
+
+	// SnapshotID is used to apply snapshot to a VM.
+	// If specified, only the snapshot application will happen.
+	SnapshotID *string `json:"snapshotId,omitempty" bson:"snapshotId,omitempty" binding:"omitempty,uuid4"`
+
+	// GpuID is used to attach/detach a GPU to a VM.
+	// If specified and not empty, only the GPU will be attached.
+	// If specified and empty, only the GPU will be detached.
+	GpuID *string `json:"gpuId,omitempty" bson:"gpuId,omitempty" binding:"omitempty,min=0,max=100"`
 }
 
 type VmUpdateOwner struct {
@@ -53,10 +72,10 @@ type VmUpdateOwner struct {
 }
 
 type VmGpuLease struct {
-	ID           string    `json:"id"`
-	Name         string    `json:"name"`
-	LeaseEnd     time.Time `json:"leaseEnd"`
-	LeaseExpired bool      `json:"expired"`
+	ID         string    `json:"id"`
+	Name       string    `json:"name"`
+	LeaseEndAt time.Time `json:"leaseEndAt"`
+	IsExpired  bool      `json:"isExpired"`
 }
 
 type Specs struct {

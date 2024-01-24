@@ -5,6 +5,7 @@ import (
 	"go-deploy/models/sys/base"
 	"go-deploy/models/sys/base/activityResource"
 	"go-deploy/models/sys/base/resource"
+	"go-deploy/service/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"time"
@@ -14,14 +15,15 @@ import (
 type Client struct {
 	Collection     *mongo.Collection
 	RestrictUserID *string
+	Version        *string
 
 	activityResource.ActivityResourceClient[VM]
 	resource.ResourceClient[VM]
 }
 
 // New returns a new VM client.
-func New() *Client {
-	return &Client{
+func New(version ...string) *Client {
+	c := &Client{
 		Collection: db.DB.GetCollection("vms"),
 
 		ActivityResourceClient: activityResource.ActivityResourceClient[VM]{
@@ -32,6 +34,12 @@ func New() *Client {
 			IncludeDeleted: false,
 		},
 	}
+
+	if ver := utils.GetFirstOrDefault(version); ver != "" {
+		c.WithVersion(ver)
+	}
+
+	return c
 }
 
 // WithVersion adds a filter to the client to only return VMs with the given version.

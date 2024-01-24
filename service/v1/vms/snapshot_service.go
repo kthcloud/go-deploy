@@ -125,7 +125,7 @@ func (c *Client) CreateSnapshot(vmID string, opts *opts.CreateSnapshotOpts) erro
 	if opts.System != nil {
 		params = opts.System
 	} else if opts.User != nil {
-		params.FromDTO(opts.User)
+		params.FromDTOv1(opts.User)
 	}
 
 	if params.Name == "" {

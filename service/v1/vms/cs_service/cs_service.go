@@ -622,9 +622,9 @@ func (c *Client) stopVmIfRunning(id string) (func(), error) {
 func dbFunc(vmID, key string) func(interface{}) error {
 	return func(data interface{}) error {
 		if data == nil {
-			return vmModels.New().DeleteSubsystem(vmID, "cs."+key)
+			return vmModels.New(vmModels.V1).DeleteSubsystem(vmID, "cs."+key)
 		}
-		return vmModels.New().SetSubsystem(vmID, "cs."+key, data)
+		return vmModels.New(vmModels.V1).SetSubsystem(vmID, "cs."+key, data)
 	}
 }
 

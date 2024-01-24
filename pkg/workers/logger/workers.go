@@ -108,7 +108,8 @@ func deploymentLogger(ctx context.Context) {
 							return
 						}
 
-						utils.PrettyPrintError(fmt.Errorf("failed to setup deployment log stream for deployment %s. details: %w", id.ID, err))
+						// TODO: Temporary
+						//utils.PrettyPrintError(fmt.Errorf("failed to setup deployment log stream for deployment %s. details: %w", id.ID, err))
 						shouldCancel <- id.ID
 						return
 					}

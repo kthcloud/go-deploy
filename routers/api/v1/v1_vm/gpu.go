@@ -16,7 +16,7 @@ import (
 	"go-deploy/service"
 	"go-deploy/service/clients"
 	sErrors "go-deploy/service/errors"
-	v12 "go-deploy/service/v1/common"
+	v12 "go-deploy/service/v1/utils"
 	"go-deploy/service/v1/vms/opts"
 )
 
@@ -138,7 +138,7 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, deployV1 
 		return
 	}
 
-	currentGPU := vm.GetGpu()
+	currentGPU := vm.GetGPU()
 
 	var gpus []gpuModels.GPU
 	if *requestBody.GpuID == "any" {

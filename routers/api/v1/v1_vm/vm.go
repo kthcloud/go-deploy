@@ -15,8 +15,8 @@ import (
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
-	v12 "go-deploy/service/v1/common"
 	teamOpts "go-deploy/service/v1/teams/opts"
+	v1Utils "go-deploy/service/v1/utils"
 	"go-deploy/service/v1/vms/opts"
 	"go-deploy/utils"
 )
@@ -59,7 +59,7 @@ func List(c *gin.Context) {
 	}
 
 	vms, err := deployV1.VMs().List(opts.ListOpts{
-		Pagination: v12.GetOrDefaultPagination(requestQuery.Pagination),
+		Pagination: v1Utils.GetOrDefaultPagination(requestQuery.Pagination),
 		UserID:     &userID,
 		Shared:     true,
 	})
@@ -78,7 +78,7 @@ func List(c *gin.Context) {
 		connectionString, _ := deployV1.VMs().GetConnectionString(vm.ID)
 
 		var gpuRead *body.GpuRead
-		if gpu := vm.GetGpu(); gpu != nil {
+		if gpu := vm.GetGPU(); gpu != nil {
 			gpuDTO := gpu.ToDTO(true)
 			gpuRead = &gpuDTO
 		}
@@ -90,7 +90,7 @@ func List(c *gin.Context) {
 		}
 
 		teamIDs, _ := deployV1.Teams().ListIDs(teamOpts.ListOpts{ResourceID: vm.ID})
-		dtoVMs[i] = vm.ToDTO(vm.StatusMessage, connectionString, teamIDs, gpuRead, mapper)
+		dtoVMs[i] = vm.ToDTOv1(vm.StatusMessage, connectionString, teamIDs, gpuRead, mapper)
 	}
 
 	context.Ok(dtoVMs)
@@ -138,7 +138,7 @@ func Get(c *gin.Context) {
 
 	connectionString, _ := deployV1.VMs().GetConnectionString(requestURI.VmID)
 	var gpuRead *body.GpuRead
-	if gpu := vm.GetGpu(); gpu != nil {
+	if gpu := vm.GetGPU(); gpu != nil {
 		gpuDTO := gpu.ToDTO(true)
 		gpuRead = &gpuDTO
 	}
@@ -149,7 +149,7 @@ func Get(c *gin.Context) {
 	}
 
 	teamIDs, _ := deployV1.Teams().ListIDs(teamOpts.ListOpts{ResourceID: vm.ID})
-	context.Ok(vm.ToDTO(vm.StatusMessage, connectionString, teamIDs, gpuRead, mapper))
+	context.Ok(vm.ToDTOv1(vm.StatusMessage, connectionString, teamIDs, gpuRead, mapper))
 }
 
 // Create

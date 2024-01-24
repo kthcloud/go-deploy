@@ -80,7 +80,7 @@ func (c *BaseClient[parent]) fetchVM(id, name string, vmc *vmModels.Client) (*vm
 	}
 
 	if vmc == nil {
-		vmc = vmModels.New(vmModels.V1)
+		vmc = vmModels.New(vmModels.V2)
 	}
 
 	var vm *vmModels.VM
@@ -114,7 +114,7 @@ func (c *BaseClient[parent]) fetchVMs(vmc *vmModels.Client) ([]vmModels.VM, erro
 	}
 
 	if vmc == nil {
-		vmc = vmModels.New(vmModels.V1)
+		vmc = vmModels.New(vmModels.V2)
 	}
 
 	vms, err := vmc.List()

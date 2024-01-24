@@ -2,7 +2,7 @@ package opts
 
 import (
 	configModels "go-deploy/models/config"
-	"go-deploy/service/v1/common"
+	"go-deploy/service/v1/utils"
 )
 
 // Opts is used to specify which resources to get.
@@ -24,7 +24,7 @@ type ExtraOpts struct {
 
 // ListOpts is used to specify the options when listing storage managers.
 type ListOpts struct {
-	Pagination *common.Pagination
+	Pagination *utils.Pagination
 	All        bool
 }
 

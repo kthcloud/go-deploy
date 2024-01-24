@@ -1,6 +1,6 @@
-package common
+package utils
 
-import "go-deploy/models/dto/v1/query"
+import "go-deploy/models/dto/v2/query"
 
 type Pagination struct {
 	Page     int

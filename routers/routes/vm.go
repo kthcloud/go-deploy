@@ -2,6 +2,7 @@ package routes
 
 import (
 	"go-deploy/routers/api/v1/v1_vm"
+	"go-deploy/routers/api/v2/v2_vm"
 )
 
 const (
@@ -37,7 +38,10 @@ func (group *VmRoutingGroup) PrivateRoutes() []Route {
 
 		{Method: "POST", Pattern: VmCommandPath, HandlerFunc: v1_vm.DoCommand},
 
-		//{Method: "GET", Pattern: VmsPathV2, HandlerFunc: v2_vm.List},
-		//{Method: "GET", Pattern: VmPathV2, HandlerFunc: v2_vm.Get},
+		{Method: "GET", Pattern: VmsPathV2, HandlerFunc: v2_vm.List},
+		{Method: "GET", Pattern: VmPathV2, HandlerFunc: v2_vm.Get},
+		{Method: "POST", Pattern: VmsPathV2, HandlerFunc: v2_vm.Create},
+		{Method: "POST", Pattern: VmPathV2, HandlerFunc: v2_vm.Update},
+		{Method: "DELETE", Pattern: VmPathV2, HandlerFunc: v2_vm.Delete},
 	}
 }

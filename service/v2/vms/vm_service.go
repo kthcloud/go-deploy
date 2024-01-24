@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
-	"go-deploy/models/dto/v1/body"
+	"go-deploy/models/dto/v2/body"
 	"go-deploy/models/sys/gpu"
 	jobModels "go-deploy/models/sys/job"
 	notificationModels "go-deploy/models/sys/notification"
@@ -14,15 +14,13 @@ import (
 	"go-deploy/models/sys/vm_port"
 	"go-deploy/pkg/config"
 	sErrors "go-deploy/service/errors"
-	utils2 "go-deploy/service/utils"
-	"go-deploy/service/v1/vms/cs_service"
-	"go-deploy/service/v1/vms/k8s_service"
-	"go-deploy/service/v1/vms/opts"
+	serviceUtils "go-deploy/service/utils"
+	"go-deploy/service/v2/vms/k8s_service"
+	"go-deploy/service/v2/vms/opts"
 	"go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
 	"sort"
-	"strings"
 )
 
 // Get gets an existing deployment.
@@ -30,27 +28,27 @@ import (
 // It can be fetched in multiple ways including ID, name, transfer code, and Harbor webhook.
 // It supports service.AuthInfo, and will restrict the result to ensure the user has access to the resource.
 func (c *Client) Get(id string, opts ...opts.GetOpts) (*vmModels.VM, error) {
-	o := utils2.GetFirstOrDefault(opts)
+	o := serviceUtils.GetFirstOrDefault(opts)
 
-	vmc := vmModels.New(vmModels.V1)
+	vmc := vmModels.New(vmModels.V2)
 
 	if o.TransferCode != nil {
 		return vmc.WithTransferCode(*o.TransferCode).Get()
 	}
 
 	var effectiveUserID string
-	if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
-		effectiveUserID = c.V1.Auth().UserID
+	if c.V2.Auth() != nil && !c.V2.Auth().IsAdmin {
+		effectiveUserID = c.V2.Auth().UserID
 	}
 
 	var teamCheck bool
 	if !o.Shared {
 		teamCheck = false
-	} else if !c.V1.HasAuth() || c.V1.Auth().IsAdmin {
+	} else if !c.V2.HasAuth() || c.V2.Auth().IsAdmin {
 		teamCheck = true
 	} else {
 		var err error
-		teamCheck, err = teamModels.New().WithUserID(c.V1.Auth().UserID).WithResourceID(id).ExistsAny()
+		teamCheck, err = teamModels.New().WithUserID(c.V2.Auth().UserID).WithResourceID(id).ExistsAny()
 		if err != nil {
 			return nil, err
 		}
@@ -67,9 +65,9 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*vmModels.VM, error) {
 //
 // It supports service.AuthInfo, and will restrict the result to ensure the user has access to the resource.
 func (c *Client) List(opts ...opts.ListOpts) ([]vmModels.VM, error) {
-	o := utils2.GetFirstOrDefault(opts)
+	o := serviceUtils.GetFirstOrDefault(opts)
 
-	vmc := vmModels.New(vmModels.V1)
+	vmc := vmModels.New(vmModels.V2)
 
 	if o.Pagination != nil {
 		vmc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
@@ -78,16 +76,16 @@ func (c *Client) List(opts ...opts.ListOpts) ([]vmModels.VM, error) {
 	var effectiveUserID string
 	if o.UserID != nil {
 		// Specific user's VMs are requested
-		if !c.V1.HasAuth() || c.V1.Auth().UserID == *o.UserID || c.V1.Auth().IsAdmin {
+		if !c.V2.HasAuth() || c.V2.Auth().UserID == *o.UserID || c.V2.Auth().IsAdmin {
 			effectiveUserID = *o.UserID
 		} else {
 			// User cannot access the other user's resources
-			effectiveUserID = c.V1.Auth().UserID
+			effectiveUserID = c.V2.Auth().UserID
 		}
 	} else {
 		// All VMs are requested
-		if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
-			effectiveUserID = c.V1.Auth().UserID
+		if c.V2.Auth() != nil && !c.V2.Auth().IsAdmin {
+			effectiveUserID = c.V2.Auth().UserID
 		}
 	}
 
@@ -178,21 +176,16 @@ func (c *Client) Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
 	deploymentZone := "se-flem"
 
 	params := &vmModels.CreateParams{}
-	params.FromDTOv1(dtoVmCreate, &fallback, &deploymentZone)
+	params.FromDTOv2(dtoVmCreate, &fallback, &deploymentZone)
 
-	params.Version = vmModels.V1
+	params.Version = vmModels.V2
 
-	_, err := vmModels.New(vmModels.V1).Create(id, ownerID, config.Config.Manager, params)
+	_, err := vmModels.New(vmModels.V2).Create(id, ownerID, config.Config.Manager, params)
 	if err != nil {
 		if errors.Is(err, vmModels.NonUniqueFieldErr) {
 			return sErrors.NonUniqueFieldErr
 		}
 
-		return makeError(err)
-	}
-
-	err = cs_service.New(c.Cache).Create(id, params)
-	if err != nil {
 		return makeError(err)
 	}
 
@@ -217,18 +210,18 @@ func (c *Client) Update(id string, dtoVmUpdate *body.VmUpdate) error {
 	}
 
 	vmUpdate := &vmModels.UpdateParams{}
-	vmUpdate.FromDTOv1(dtoVmUpdate)
+	vmUpdate.FromDTOv2(dtoVmUpdate)
 
 	// We don't allow both applying a snapshot and updating the VM at the same time.
 	// So, if a snapshot ID is specified, apply it
-	if vmUpdate.SnapshotID != nil {
-		err := c.ApplySnapshot(id, *vmUpdate.SnapshotID)
-		if err != nil {
-			return makeError(err)
-		}
-
-		return nil
-	}
+	//if vmUpdate.SnapshotID != nil {
+	//	err := c.ApplySnapshot(id, *vmUpdate.SnapshotID)
+	//	if err != nil {
+	//		return makeError(err)
+	//	}
+	//
+	//	return nil
+	//}
 
 	// Otherwise, update the VM as usual
 	if vmUpdate.PortMap != nil {
@@ -251,7 +244,7 @@ func (c *Client) Update(id string, dtoVmUpdate *body.VmUpdate) error {
 		}
 	}
 
-	err := vmModels.New(vmModels.V1).UpdateWithParams(id, vmUpdate)
+	err := vmModels.New(vmModels.V2).UpdateWithParams(id, vmUpdate)
 	if err != nil {
 		if errors.Is(err, vmModels.NonUniqueFieldErr) {
 			return sErrors.NonUniqueFieldErr
@@ -261,11 +254,6 @@ func (c *Client) Update(id string, dtoVmUpdate *body.VmUpdate) error {
 	}
 
 	_, err = c.Refresh(id)
-	if err != nil {
-		return makeError(err)
-	}
-
-	err = cs_service.New(c.Cache).Update(id, vmUpdate)
 	if err != nil {
 		return makeError(err)
 	}
@@ -306,11 +294,6 @@ func (c *Client) Delete(id string) error {
 		return makeError(err)
 	}
 
-	err = cs_service.New(c.Cache).Delete(vm.ID)
-	if err != nil {
-		return makeError(err)
-	}
-
 	err = gpu.New().Detach(vm.ID)
 	if err != nil {
 		return makeError(err)
@@ -340,11 +323,6 @@ func (c *Client) Repair(id string) error {
 	if vm == nil {
 		log.Println("vm", id, "not found when repairing. assuming it was deleted")
 		return nil
-	}
-
-	err = cs_service.New(c.Cache).Repair(id)
-	if err != nil {
-		return makeError(err)
 	}
 
 	err = k8s_service.New(c.Cache).Repair(id)
@@ -382,9 +360,9 @@ func (c *Client) UpdateOwnerSetup(id string, params *body.VmUpdateOwner) (*strin
 
 	transferDirectly := false
 
-	if !c.V1.HasAuth() || c.V1.Auth().IsAdmin {
+	if !c.V2.HasAuth() || c.V2.Auth().IsAdmin {
 		transferDirectly = true
-	} else if c.V1.Auth().UserID == params.NewOwnerID {
+	} else if c.V2.Auth().UserID == params.NewOwnerID {
 		if params.TransferCode == nil || vm.Transfer == nil || vm.Transfer.Code != *params.TransferCode {
 			return nil, sErrors.InvalidTransferCodeErr
 		}
@@ -394,7 +372,7 @@ func (c *Client) UpdateOwnerSetup(id string, params *body.VmUpdateOwner) (*strin
 
 	if transferDirectly {
 		jobID := uuid.New().String()
-		err = c.V1.Jobs().Create(jobID, c.V1.Auth().UserID, jobModels.TypeUpdateVmOwner, map[string]interface{}{
+		err = c.V1.Jobs().Create(jobID, c.V2.Auth().UserID, jobModels.TypeUpdateVmOwner, map[string]interface{}{
 			"id":     id,
 			"params": *params,
 		})
@@ -408,7 +386,7 @@ func (c *Client) UpdateOwnerSetup(id string, params *body.VmUpdateOwner) (*strin
 
 	/// create a transfer notification
 	code := createTransferCode()
-	err = vmModels.New(vmModels.V1).UpdateWithParams(id, &vmModels.UpdateParams{
+	err = vmModels.New(vmModels.V2).UpdateWithParams(id, &vmModels.UpdateParams{
 		TransferUserID: &params.NewOwnerID,
 		TransferCode:   &code,
 	})
@@ -422,7 +400,7 @@ func (c *Client) UpdateOwnerSetup(id string, params *body.VmUpdateOwner) (*strin
 			"id":     vm.ID,
 			"name":   vm.Name,
 			"userId": params.OldOwnerID,
-			"email":  c.V1.Auth().GetEmail(),
+			"email":  c.V2.Auth().GetEmail(),
 			"code":   code,
 		},
 	})
@@ -460,7 +438,7 @@ func (c *Client) UpdateOwner(id string, params *body.VmUpdateOwner) error {
 
 	emptyString := ""
 
-	err = vmModels.New(vmModels.V1).UpdateWithParams(id, &vmModels.UpdateParams{
+	err = vmModels.New(vmModels.V2).UpdateWithParams(id, &vmModels.UpdateParams{
 		OwnerID:        &params.NewOwnerID,
 		TransferCode:   &emptyString,
 		TransferUserID: &emptyString,
@@ -470,11 +448,6 @@ func (c *Client) UpdateOwner(id string, params *body.VmUpdateOwner) error {
 	}
 
 	err = gpu.New().WithVM(id).UpdateWithBSON(bson.D{{"lease.user", params.NewOwnerID}})
-	if err != nil {
-		return makeError(err)
-	}
-
-	err = cs_service.New(c.Cache).EnsureOwner(id, params.OldOwnerID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -502,7 +475,7 @@ func (c *Client) ClearUpdateOwner(id string) error {
 		return fmt.Errorf("failed to clear vm owner update. details: %w", err)
 	}
 
-	deployment, err := vmModels.New(vmModels.V1).GetByID(id)
+	deployment, err := vmModels.New(vmModels.V2).GetByID(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -516,7 +489,7 @@ func (c *Client) ClearUpdateOwner(id string) error {
 	}
 
 	emptyString := ""
-	err = vmModels.New(vmModels.V1).UpdateWithParams(id, &vmModels.UpdateParams{
+	err = vmModels.New(vmModels.V2).UpdateWithParams(id, &vmModels.UpdateParams{
 		TransferUserID: &emptyString,
 		TransferCode:   &emptyString,
 	})
@@ -537,148 +510,28 @@ func (c *Client) GetConnectionString(id string) (*string, error) {
 		return fmt.Errorf("failed to get connection string for vm %s. details: %w", id, err)
 	}
 
+	return nil, makeError(errors.New("not implemented"))
+}
+
+// IsBeingDeleted checks if the VM is being deleted.
+//
+// This returns true while the VM is being deleted, and after it has been deleted.
+func (c *Client) IsBeingDeleted(id string) (bool, error) {
 	vm, err := c.VM(id, nil)
 	if err != nil {
-		return nil, makeError(err)
-	}
-
-	zone := config.Config.VM.GetZone(vm.Zone)
-	if zone == nil {
-		return nil, makeError(sErrors.ZoneNotFoundErr)
-	}
-
-	domainName := zone.ParentDomain
-	rule := vm.Subsystems.CS.GetPortForwardingRule("__ssh")
-	if rule == nil {
-		return nil, nil
-	}
-
-	if domainName == "" || rule.PublicPort == 0 {
-		return nil, nil
-	}
-
-	connectionString := fmt.Sprintf("ssh root@%s -p %d", domainName, rule.PublicPort)
-
-	return &connectionString, nil
-}
-
-// DoCommand executes a command on the VM.
-//
-// It is purely best-effort, and does not return any errors.
-func (c *Client) DoCommand(id, command string) {
-	go func() {
-		vm, err := c.VM(id, nil)
-		if err != nil {
-			log.Println("failed to get vm", id, "when executing command", command, "details:", err)
-			return
-		}
-
-		if vm == nil {
-			log.Println("vm", id, "not found when executing command", command, ". assuming it was deleted")
-			return
-		}
-
-		csID := vm.Subsystems.CS.VM.ID
-		if csID == "" {
-			log.Println("cs vm not setup when executing command", command, "for vm", id, ". assuming it was deleted")
-			return
-		}
-
-		err = cs_service.New(c.Cache).DoCommand(vm.ID, csID, vm.GetGpuID(), command)
-		if err != nil {
-			utils.PrettyPrintError(err)
-			return
-		}
-	}()
-}
-
-// StartActivity starts an activity for the deployment.
-//
-// It only starts the activity if it is allowed, determined by CanAddActivity.
-// It returns a boolean indicating if the activity was started, and a string indicating the reason if it was not.
-func (c *Client) StartActivity(id, activity string) error {
-	canAdd, reason, err := c.CanAddActivity(id, activity)
-	if !canAdd {
-		if reason == "Deployment not found" {
-			return sErrors.DeploymentNotFoundErr
-		}
-
-		return sErrors.NewFailedToStartActivityError(reason)
-	}
-
-	err = vmModels.New(vmModels.V1).AddActivity(id, activity)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// CanAddActivity checks if the deployment can add an activity.
-//
-// It returns a boolean indicating if the activity can be added, and a string indicating the reason if it cannot.
-func (c *Client) CanAddActivity(vmID, activity string) (bool, string, error) {
-	vm, err := c.VM(vmID, nil)
-	if err != nil {
-		return false, "", err
+		return false, err
 	}
 
 	if vm == nil {
-		return false, "", err
+		return true, nil
 	}
 
-	switch activity {
-	case vmModels.ActivityBeingCreated:
-		return !vm.BeingDeleted(), "Resource is being deleted", nil
-	case vmModels.ActivityBeingDeleted:
-		return true, "", nil
-	case vmModels.ActivityUpdating:
-		if vm.DoingOneOfActivities([]string{
-			vmModels.ActivityBeingCreated,
-			vmModels.ActivityBeingDeleted,
-			vmModels.ActivityAttachingGPU,
-			vmModels.ActivityDetachingGPU,
-		}) {
-			return false, "Resource should not be in creation, deletion, and should not be attaching or detaching a GPU", nil
-		}
-		return true, "", nil
-	case vmModels.ActivityAttachingGPU:
-		if vm.DoingOneOfActivities([]string{
-			vmModels.ActivityBeingCreated,
-			vmModels.ActivityBeingDeleted,
-			vmModels.ActivityAttachingGPU,
-			vmModels.ActivityDetachingGPU,
-		}) {
-			return false, "Resource should not be in creation or deletion, and should not be attaching or detaching a GPU", nil
-		}
-		return true, "", nil
-	case vmModels.ActivityDetachingGPU:
-		if vm.DoingOneOfActivities([]string{
-			vmModels.ActivityBeingCreated,
-			vmModels.ActivityBeingDeleted,
-			vmModels.ActivityAttachingGPU,
-		}) {
-			return false, "Resource should not be in creation or deletion, and should not be attaching a GPU", nil
-		}
-		return true, "", nil
-	case vmModels.ActivityRepairing:
-		if vm.DoingOneOfActivities([]string{
-			vmModels.ActivityBeingCreated,
-			vmModels.ActivityBeingDeleted,
-			vmModels.ActivityAttachingGPU,
-			vmModels.ActivityDetachingGPU,
-		}) {
-			return false, "Resource should not be in creation or deletion, and should not be attaching or detaching a GPU", nil
-		}
-		return true, "", nil
-	}
-
-	return false, "", fmt.Errorf("unknown activity %s", activity)
+	return vm.BeingDeleted(), nil
 }
 
 // NameAvailable checks if the given name is available.
 func (c *Client) NameAvailable(name string) (bool, error) {
-	exists, err := vmModels.New(vmModels.V1).ExistsByName(name)
+	exists, err := vmModels.New(vmModels.V2).ExistsByName(name)
 	if err != nil {
 		return false, err
 	}
@@ -693,7 +546,7 @@ func (c *Client) HttpProxyNameAvailable(id, name string) (bool, error) {
 		{"portMap.httpProxy.name", name},
 	}
 
-	exists, err := vmModels.New(vmModels.V1).WithCustomFilter(filter).ExistsAny()
+	exists, err := vmModels.New(vmModels.V2).WithCustomFilter(filter).ExistsAny()
 	if err != nil {
 		return false, err
 	}
@@ -712,11 +565,11 @@ func (c *Client) CheckQuota(id, userID string, quota *roleModels.Quotas, opts ..
 		return fmt.Errorf("failed to check quota for user %s. details: %w", userID, err)
 	}
 
-	if !c.V1.HasAuth() || c.V1.Auth().IsAdmin {
+	if !c.V2.HasAuth() || c.V2.Auth().IsAdmin {
 		return nil
 	}
 
-	o := utils2.GetFirstOrDefault(opts)
+	o := serviceUtils.GetFirstOrDefault(opts)
 
 	usage, err := c.GetUsage(userID)
 	if err != nil {
@@ -748,7 +601,7 @@ func (c *Client) CheckQuota(id, userID string, quota *roleModels.Quotas, opts ..
 			return nil
 		}
 
-		vm, err := vmModels.New(vmModels.V1).GetByID(id)
+		vm, err := vmModels.New(vmModels.V2).GetByID(id)
 		if err != nil {
 			return makeError(err)
 		}
@@ -778,11 +631,12 @@ func (c *Client) CheckQuota(id, userID string, quota *roleModels.Quotas, opts ..
 				return sErrors.NewQuotaExceededError(fmt.Sprintf("RAM quota exceeded. Current: %d, Quota: %d", totalRam, quota.RAM))
 			}
 		}
-	} else if o.CreateSnapshot != nil {
-		if usage.Snapshots >= quota.Snapshots {
-			return sErrors.NewQuotaExceededError(fmt.Sprintf("Snapshot count quota exceeded. Current: %d, Quota: %d", usage.Snapshots, quota.Snapshots))
-		}
 	}
+	//else if o.CreateSnapshot != nil {
+	//	if usage.Snapshots >= quota.Snapshots {
+	//		return sErrors.NewQuotaExceededError(fmt.Sprintf("Snapshot count quota exceeded. Current: %d, Quota: %d", usage.Snapshots, quota.Snapshots))
+	//	}
+	//}
 
 	return nil
 }
@@ -797,7 +651,7 @@ func (c *Client) GetUsage(userID string) (*vmModels.Usage, error) {
 
 	usage := &vmModels.Usage{}
 
-	currentVms, err := vmModels.New(vmModels.V1).RestrictToOwner(userID).List()
+	currentVms, err := vmModels.New(vmModels.V2).RestrictToOwner(userID).List()
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -809,11 +663,7 @@ func (c *Client) GetUsage(userID string) (*vmModels.Usage, error) {
 		usage.RAM += specs.RAM
 		usage.DiskSize += specs.DiskSize
 
-		for _, snapshot := range vm.Subsystems.CS.SnapshotMap {
-			if strings.Contains(snapshot.Description, "user") {
-				usage.Snapshots++
-			}
-		}
+		// TODO: Add snapshot usage
 	}
 
 	return usage, nil
@@ -827,22 +677,7 @@ func (c *Client) GetExternalPortMapper(vmID string) (map[string]int, error) {
 		return fmt.Errorf("failed to get external port mapper. details: %w", err)
 	}
 
-	vm, err := c.VM(vmID, nil)
-	if err != nil {
-		return nil, makeError(err)
-	}
-
-	if vm == nil {
-		log.Println("vm", vmID, "not found when detaching getting external port mapper. assuming it was deleted")
-		return nil, nil
-	}
-
-	mapper := make(map[string]int)
-	for name, port := range vm.Subsystems.CS.PortForwardingRuleMap {
-		mapper[name] = port.PublicPort
-	}
-
-	return mapper, nil
+	return nil, makeError(errors.New("not implemented"))
 }
 
 // GetHost gets the host for the VM.
@@ -853,95 +688,7 @@ func (c *Client) GetHost(vmID string) (*vmModels.Host, error) {
 		return fmt.Errorf("failed to get host for vm %s. details: %w", vmID, err)
 	}
 
-	vm, err := c.VM(vmID, nil)
-	if err != nil {
-		return nil, makeError(err)
-	}
-
-	if vm == nil {
-		log.Println("vm", vmID, "not found when getting host. assuming it was deleted")
-		return nil, nil
-	}
-
-	zone := config.Config.VM.GetZone(vm.Zone)
-	if zone == nil {
-		return nil, makeError(sErrors.ZoneNotFoundErr)
-	}
-
-	cc := cs_service.New(c.Cache)
-
-	host, err := cc.GetHostByVM(vmID)
-	if err != nil {
-		return nil, makeError(err)
-	}
-
-	if host != nil {
-		return &vmModels.Host{
-			ID:   host.ID,
-			Name: host.Name,
-		}, nil
-	}
-
-	idStruct, err := gpu.New().WithVM(vmID).GetID()
-	if err != nil {
-		return nil, makeError(err)
-	}
-
-	if idStruct != nil {
-		hostName, err := cc.GetRequiredHost(idStruct.ID)
-		if err != nil {
-			return nil, makeError(err)
-		}
-
-		if hostName != nil {
-			host, err = cc.GetHostByName(*hostName, zone)
-			if err != nil {
-				return nil, makeError(err)
-			}
-
-			return &vmModels.Host{
-				ID:   host.ID,
-				Name: host.Name,
-			}, nil
-		}
-	}
-
-	return nil, nil
-}
-
-// GetCloudStackHostCapabilities gets the capabilities of the host, total and used.
-func (c *Client) GetCloudStackHostCapabilities(hostName string, zoneName string) (*vmModels.CloudStackHostCapabilities, error) {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to get host capabilities. details: %w", err)
-	}
-
-	cc := cs_service.New(nil)
-
-	zone := config.Config.VM.GetZone(zoneName)
-	if zone == nil {
-		return nil, makeError(sErrors.ZoneNotFoundErr)
-	}
-
-	host, err := cc.GetHostByName(hostName, zone)
-	if err != nil {
-		return nil, makeError(err)
-	}
-
-	if host == nil {
-		return nil, nil
-	}
-
-	configuration, err := cc.GetConfiguration(zone)
-	if err != nil {
-		return nil, makeError(err)
-	}
-
-	return &vmModels.CloudStackHostCapabilities{
-		CpuCoresTotal: host.CpuCoresTotal * configuration.OverProvisioningFactor,
-		CpuCoresUsed:  host.CpuCoresUsed,
-		RamTotal:      host.RamTotal,
-		RamUsed:       host.RamUsed,
-	}, nil
+	return nil, makeError(errors.New("not implemented"))
 }
 
 func createTransferCode() string {
