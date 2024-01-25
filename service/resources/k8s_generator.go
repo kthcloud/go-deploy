@@ -18,6 +18,7 @@ import (
 	"go-deploy/service/constants"
 	"go-deploy/utils"
 	"golang.org/x/exp/slices"
+	"gopkg.in/yaml.v3"
 	v1 "k8s.io/api/core/v1"
 	"math"
 	"path"
@@ -30,8 +31,30 @@ import (
 // It is used to generate the `publics`, such as models.DeploymentPublic and models.IngressPublic
 type K8sGenerator struct {
 	*PublicGeneratorType
-	namespace string
-	client    *k8s.Client
+	namespace           string
+	client              *k8s.Client
+	extraAuthorizedKeys []string
+}
+
+type CloudInit struct {
+	FQDN            string          `yaml:"fqdn"`
+	Users           []CloudInitUser `yaml:"users"`
+	SshPasswordAuth bool            `yaml:"ssh_pwauth"`
+	RunCMD          []string        `yaml:"runcmd"`
+}
+
+type CloudInitUser struct {
+	Name              string   `yaml:"name"`
+	Sudo              []string `yaml:"sudo"`
+	Passwd            string   `yaml:"passwd"`
+	LockPasswd        bool     `yaml:"lock_passwd"`
+	Shell             string   `yaml:"shell"`
+	SshAuthorizedKeys []string `yaml:"ssh_authorized_keys"`
+}
+
+func (kg *K8sGenerator) WithAuthorizedKeys(keys []string) *K8sGenerator {
+	kg.extraAuthorizedKeys = keys
+	return kg
 }
 
 // Namespace returns a models.NamespacePublic that should be created
@@ -48,7 +71,7 @@ func (kg *K8sGenerator) Namespace() *models.NamespacePublic {
 		return &ns
 	}
 
-	if kg.v.vm != nil {
+	if kg.v.vm != nil && kg.v.vm.Version == versions.V1 {
 		createNamespace := false
 		for _, port := range kg.v.vm.PortMap {
 			if port.HttpProxy != nil {
@@ -61,6 +84,18 @@ func (kg *K8sGenerator) Namespace() *models.NamespacePublic {
 			return nil
 		}
 
+		ns := models.NamespacePublic{
+			Name: kg.namespace,
+		}
+
+		if n := &kg.v.vm.Subsystems.K8s.Namespace; subsystems.Created(n) {
+			ns.CreatedAt = n.CreatedAt
+		}
+
+		return &ns
+	}
+
+	if kg.v.vm != nil && kg.v.vm.Version == versions.V2 {
 		ns := models.NamespacePublic{
 			Name: kg.namespace,
 		}
@@ -174,7 +209,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		return res
 	}
 
-	if kg.v.vm != nil {
+	if kg.v.vm != nil && kg.v.vm.Version == versions.V1 {
 		portMap := kg.v.vm.PortMap
 
 		for _, port := range portMap {
@@ -389,14 +424,43 @@ func (kg *K8sGenerator) VMs() []models.VmPublic {
 	var res []models.VmPublic
 
 	if kg.v.vm != nil && kg.v.vm.Version == versions.V2 {
-		vmPublic := models.VmPublic{
-			Name:      vVmName(kg.v.vm),
-			Namespace: kg.namespace,
-			Running:   true,
-			CreatedAt: time.Time{},
+		sshPublicKeys := make([]string, len(kg.extraAuthorizedKeys)+1)
+		sshPublicKeys[0] = kg.v.vm.SshPublicKey
+		copy(sshPublicKeys[1:], kg.extraAuthorizedKeys)
+
+		cloudInit := CloudInit{
+			FQDN: kg.v.vm.Name,
+			Users: []CloudInitUser{
+				{
+					Name:              "root",
+					Sudo:              []string{"ALL=(ALL) NOPASSWD:ALL"},
+					Passwd:            utils.HashPassword("root", utils.GenerateSalt()),
+					LockPasswd:        true,
+					Shell:             "/bin/bash",
+					SshAuthorizedKeys: sshPublicKeys,
+				},
+			},
+			SshPasswordAuth: false,
+			RunCMD:          []string{"git clone https://github.com/kthcloud/boostrap-vm.git init && cd init && chmod +x run.sh && ./run.sh"},
 		}
 
-		if vm := kg.v.vm.Subsystems.K8s.GetVm(vVmName(kg.v.vm)); subsystems.Created(vm) {
+		vmPublic := models.VmPublic{
+			Name:      vmName(kg.v.vm),
+			Namespace: kg.namespace,
+
+			CpuCores: kg.v.vm.Specs.CpuCores,
+			RAM:      kg.v.vm.Specs.RAM,
+			DiskSize: kg.v.vm.Specs.DiskSize,
+
+			CloudInit: createCloudInitString(&cloudInit),
+			// Temporary image URL
+			ImageURL: "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img",
+			PvName:   vRootPvName(kg.v.vm),
+
+			Running: true,
+		}
+
+		if vm := kg.v.vm.Subsystems.K8s.GetVm(vmName(kg.v.vm)); subsystems.Created(vm) {
 			vmPublic.CreatedAt = vm.CreatedAt
 		}
 
@@ -431,7 +495,7 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 		return res
 	}
 
-	if kg.v.vm != nil {
+	if kg.v.vm != nil && kg.v.vm.Version == versions.V1 {
 		portMap := kg.v.vm.PortMap
 
 		for _, port := range portMap {
@@ -473,6 +537,8 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 
 		return res
 	}
+
+	// TODO: add services for VM v2
 
 	if kg.s.sm != nil {
 		// filebrowser
@@ -571,7 +637,7 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 		return res
 	}
 
-	if kg.v.vm != nil {
+	if kg.v.vm != nil && kg.v.vm.Version == versions.V1 {
 		portMap := kg.v.vm.PortMap
 
 		for _, port := range portMap {
@@ -631,6 +697,8 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 
 		return res
 	}
+
+	// TODO: add ingresses for VM v2
 
 	if kg.s.sm != nil {
 		tlsSecret := constants.WildcardCertSecretName
@@ -692,6 +760,32 @@ func (kg *K8sGenerator) PVs() []models.PvPublic {
 		return res
 	}
 
+	if kg.v.vm != nil && kg.v.vm.Version == versions.V2 {
+		parentPV := models.PvPublic{
+			Name:      vParentPvName(kg.v.vm),
+			Capacity:  config.Config.Deployment.Resources.Limits.Storage,
+			NfsServer: kg.v.deploymentZone.Storage.NfsServer,
+			NfsPath:   kg.s.zone.Storage.VmStorageParentPath,
+		}
+
+		if pv := kg.v.vm.Subsystems.K8s.GetPV(vParentPvName(kg.v.vm)); subsystems.Created(pv) {
+			parentPV.CreatedAt = pv.CreatedAt
+		}
+
+		rootDiskPV := models.PvPublic{
+			Name:      vRootPvName(kg.v.vm),
+			Capacity:  fmt.Sprintf("%dGi", kg.v.vm.Specs.DiskSize),
+			NfsServer: kg.v.deploymentZone.Storage.NfsServer,
+			NfsPath:   path.Join(kg.s.zone.Storage.VmStorageParentPath, kg.v.vm.ID),
+		}
+
+		if pv := kg.v.vm.Subsystems.K8s.GetPV(vRootPvName(kg.v.vm)); subsystems.Created(pv) {
+			rootDiskPV.CreatedAt = pv.CreatedAt
+		}
+
+		return []models.PvPublic{parentPV, rootDiskPV}
+	}
+
 	if kg.s.sm != nil {
 		initVolumes, volumes := sVolumes(kg.s.sm.OwnerID)
 		allVolumes := append(initVolumes, volumes...)
@@ -744,6 +838,21 @@ func (kg *K8sGenerator) PVCs() []models.PvcPublic {
 		}
 
 		return res
+	}
+
+	if kg.v.vm != nil && kg.v.vm.Version == versions.V2 {
+		parentPVC := models.PvcPublic{
+			Name:      vParentPvName(kg.v.vm),
+			Namespace: kg.namespace,
+			Capacity:  config.Config.Deployment.Resources.Limits.Storage,
+			PvName:    vParentPvName(kg.v.vm),
+		}
+
+		if pvc := kg.v.vm.Subsystems.K8s.GetPV(vParentPvName(kg.v.vm)); subsystems.Created(pvc) {
+			parentPVC.CreatedAt = pvc.CreatedAt
+		}
+
+		return []models.PvcPublic{parentPVC}
 	}
 
 	if kg.s.sm != nil {
@@ -934,6 +1043,41 @@ func (kg *K8sGenerator) Secrets() []models.SecretPublic {
 func (kg *K8sGenerator) Jobs() []models.JobPublic {
 	var res []models.JobPublic
 
+	if kg.v.vm != nil && kg.v.vm.Version == versions.V2 {
+		rootDiskCreateFolderJob := models.JobPublic{
+			Name:      kg.v.vm.Name + "-create-root-disk-folder",
+			Namespace: kg.namespace,
+			Image:     "busybox",
+			Command:   []string{"/bin/mkdir"},
+			Args:      []string{"-p", fmt.Sprintf("/mnt/vms/%s", kg.v.vm.ID)},
+			Volumes: []models.Volume{
+				{
+					Name:      vParentPvName(kg.v.vm),
+					PvcName:   strToPtr(vParentPvcName(kg.v.vm)),
+					MountPath: "/mnt/vms",
+				},
+			},
+			CreatedAt: time.Now(),
+		}
+
+		rootDiskUpdatePermissionsJob := models.JobPublic{
+			Name:      kg.v.vm.Name + "-update-root-disk-permissions",
+			Namespace: kg.namespace,
+			Image:     "busybox",
+			Command:   []string{"/bin/chmod"},
+			Args:      []string{"-R", "777", fmt.Sprintf("/mnt/vms/%s", kg.v.vm.ID)},
+			Volumes: []models.Volume{
+				{
+					Name:      vParentPvName(kg.v.vm),
+					PvcName:   strToPtr(vParentPvcName(kg.v.vm)),
+					MountPath: "/mnt/vms",
+				},
+			},
+		}
+
+		return []models.JobPublic{rootDiskCreateFolderJob, rootDiskUpdatePermissionsJob}
+	}
+
 	if kg.s.sm != nil {
 		initVolumes, _ := sVolumes(kg.s.sm.OwnerID)
 		k8sVolumes := make([]models.Volume, len(initVolumes))
@@ -1046,9 +1190,24 @@ func dPvcName(deployment *deployment.Deployment, volumeName string) string {
 	return fmt.Sprintf("%s-%s", deployment.Name, makeValidK8sName(volumeName))
 }
 
-// vVmName returns the VM name for a VM
-func vVmName(vm *vmModels.VM) string {
-	return "vm-" + vm.Name
+// vmName returns the VM name for a VM
+func vmName(vm *vmModels.VM) string {
+	return vm.Name
+}
+
+// vParentPvName returns the PV name for a VM
+func vParentPvName(vm *vmModels.VM) string {
+	return fmt.Sprintf("%s-%s", vm.Name, constants.VmParentName)
+}
+
+// vParentPvcName returns the PVC name for a VM
+func vParentPvcName(vm *vmModels.VM) string {
+	return fmt.Sprintf("%s-%s", vm.Name, constants.VmParentName)
+}
+
+// vRootPvName returns the PV name for a VM
+func vRootPvName(vm *vmModels.VM) string {
+	return fmt.Sprintf("%s-%s", vm.Name, constants.VmRootDiskName)
 }
 
 // vpDeploymentName returns the deployment name for a VM proxy
@@ -1153,4 +1312,21 @@ func makeValidK8sName(name string) string {
 	}
 
 	return validName
+}
+
+// strToPtr	converts a string to a pointer to a string
+func strToPtr(s string) *string {
+	return &s
+}
+
+// createCloudInitString creates a cloud-init string from a cloud-init struct
+func createCloudInitString(cloudInit *CloudInit) string {
+	// Convert cloud-init struct to yaml
+	yamlBytes, err := yaml.Marshal(cloudInit)
+	if err != nil {
+		utils.PrettyPrintError(fmt.Errorf("failed to marshal cloud-init struct to yaml. details: %w", err))
+		return ""
+	}
+
+	return "#cloud-config\n" + string(yamlBytes)
 }

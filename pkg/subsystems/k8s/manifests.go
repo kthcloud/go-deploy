@@ -1,6 +1,7 @@
 package k8s
 
 import (
+	"fmt"
 	"go-deploy/pkg/subsystems/k8s/keys"
 	"go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/utils"
@@ -13,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	kubevirtv1 "kubevirt.io/api/core/v1"
+	cdibetav1 "kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1"
 )
 
 const (
@@ -364,7 +366,7 @@ func CreateJobManifest(public *models.JobPublic) *v1.Job {
 		}
 	}
 
-	ttl := int32(100)
+	ttl := int32(5)
 
 	return &v1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -491,35 +493,74 @@ func CreateVmManifest(public *models.VmPublic) *kubevirtv1.VirtualMachine {
 						Devices: kubevirtv1.Devices{
 							Disks: []kubevirtv1.Disk{
 								{
-									//Name: "rootdisk",
-									//DiskDevice: kubevirtv1.DiskDevice{
-									//	Disk: &kubevirtv1.DiskTarget{
-									//		Bus: "virtio",
-									//	},
-									//},
-									//VolumeName: "rootdisk",
+									Name: "rootdisk",
+									DiskDevice: kubevirtv1.DiskDevice{
+										Disk: &kubevirtv1.DiskTarget{
+											Bus: "virtio",
+										},
+									},
+								},
+								{
+									Name: "cloudinit",
+									DiskDevice: kubevirtv1.DiskDevice{
+										Disk: &kubevirtv1.DiskTarget{
+											Bus: "virtio",
+										},
+									},
 								},
 							},
-							Interfaces: []kubevirtv1.Interface{
-								{
-									Name: "eth0",
-									InterfaceBindingMethod: kubevirtv1.InterfaceBindingMethod{
-										Masquerade: &kubevirtv1.InterfaceMasquerade{},
-									},
+							Rng: &kubevirtv1.Rng{},
+						},
+						Resources: kubevirtv1.ResourceRequirements{
+							Requests: apiv1.ResourceList{
+								apiv1.ResourceMemory: resource.MustParse(fmt.Sprintf("%dGi", public.RAM)),
+								apiv1.ResourceCPU:    resource.MustParse(fmt.Sprintf("%d", public.CpuCores)),
+							},
+						},
+					},
+					Volumes: []kubevirtv1.Volume{
+						{
+							Name: "rootdisk",
+							VolumeSource: kubevirtv1.VolumeSource{
+								DataVolume: &kubevirtv1.DataVolumeSource{
+									Name: "rootdisk-dv",
+								},
+							},
+						},
+						{
+							Name: "cloudinit",
+							VolumeSource: kubevirtv1.VolumeSource{
+								CloudInitNoCloud: &kubevirtv1.CloudInitNoCloudSource{
+									UserData: public.CloudInit,
 								},
 							},
 						},
 					},
-					//Volumes: []kubevirtv1.Volume{
-					//	{
-					//		Name: "rootdisk",
-					//		VolumeSource: kubevirtv1.VolumeSource{
-					//			PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
-					//				ClaimName: public.PvcName,
-					//			},
-					//		},
-					//	},
-					//},
+				},
+			},
+			DataVolumeTemplates: []kubevirtv1.DataVolumeTemplateSpec{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "rootdisk-dv",
+					},
+					Spec: cdibetav1.DataVolumeSpec{
+						PVC: &apiv1.PersistentVolumeClaimSpec{
+							AccessModes: []apiv1.PersistentVolumeAccessMode{
+								apiv1.ReadWriteMany,
+							},
+							Resources: apiv1.VolumeResourceRequirements{
+								Requests: apiv1.ResourceList{
+									apiv1.ResourceStorage: resource.MustParse(fmt.Sprintf("%dGi", public.DiskSize)),
+								},
+							},
+							VolumeName: public.PvName,
+						},
+						Source: &cdibetav1.DataVolumeSource{
+							HTTP: &cdibetav1.DataVolumeSourceHTTP{
+								URL: public.ImageURL,
+							},
+						},
+					},
 				},
 			},
 		},
@@ -552,4 +593,9 @@ func createResourceList(cpu, memory string) apiv1.ResourceList {
 func intToInt32Ptr(i int) *int32 {
 	i32 := int32(i)
 	return &i32
+}
+
+// strToPtr is a helper function to convert a string to a *string.
+func strToPtr(s string) *string {
+	return &s
 }

@@ -10,7 +10,7 @@ import (
 	"go-deploy/service/constants"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/resources"
-	"go-deploy/service/v1/vms/opts"
+	"go-deploy/service/v2/vms/opts"
 	"golang.org/x/exp/slices"
 	"log"
 )
@@ -40,6 +40,39 @@ func (c *Client) Create(id string, params *vmModels.CreateParams) error {
 			WithDbFunc(dbFunc(id, "namespace")).
 			WithPublic(namespace).
 			Exec()
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	// PVs
+	for _, pvPublic := range g.PVs() {
+		err = resources.SsCreator(kc.CreatePV).
+			WithDbFunc(dbFunc(id, "pvMap."+pvPublic.Name)).
+			WithPublic(&pvPublic).
+			Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	// PVCs
+	for _, pvcPublic := range g.PVCs() {
+		err = resources.SsCreator(kc.CreatePVC).
+			WithDbFunc(dbFunc(id, "pvcMap."+pvcPublic.Name)).
+			WithPublic(&pvcPublic).
+			Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	// Jobs
+	// These are run without saving to the database, as they will be deleted when completed
+	for _, jobPublic := range g.Jobs() {
+		_, err = kc.CreateJob(&jobPublic)
 		if err != nil {
 			return makeError(err)
 		}
@@ -171,6 +204,18 @@ func (c *Client) Delete(id string, overwriteUserID ...string) error {
 		}
 	}
 
+	// VM
+	for mapName, k8sVm := range vm.Subsystems.K8s.VmMap {
+		err = resources.SsDeleter(kc.DeleteVM).
+			WithResourceID(k8sVm.Name).
+			WithDbFunc(dbFunc(id, "vmMap."+mapName)).
+			Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
 	// Secret
 	for mapName, secret := range vm.Subsystems.K8s.SecretMap {
 		var deleteFunc func(id string) error
@@ -183,6 +228,30 @@ func (c *Client) Delete(id string, overwriteUserID ...string) error {
 		err = resources.SsDeleter(deleteFunc).
 			WithResourceID(secret.Name).
 			WithDbFunc(dbFunc(id, "secretMap."+mapName)).
+			Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	// PVCs
+	for mapName, pvc := range vm.Subsystems.K8s.PvcMap {
+		err = resources.SsDeleter(kc.DeletePVC).
+			WithResourceID(pvc.Name).
+			WithDbFunc(dbFunc(id, "pvcMap."+mapName)).
+			Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	// PVs
+	for mapName, pv := range vm.Subsystems.K8s.PvMap {
+		err = resources.SsDeleter(kc.DeletePV).
+			WithResourceID(pv.Name).
+			WithDbFunc(dbFunc(id, "pvMap."+mapName)).
 			Exec()
 
 		if err != nil {

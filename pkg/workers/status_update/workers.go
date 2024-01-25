@@ -5,6 +5,7 @@ import (
 	"fmt"
 	deploymentModels "go-deploy/models/sys/deployment"
 	vmModels "go-deploy/models/sys/vm"
+	"go-deploy/models/versions"
 	"go-deploy/pkg/workers"
 	"go-deploy/service"
 	"go-deploy/utils"
@@ -24,7 +25,7 @@ func vmStatusUpdater(ctx context.Context) {
 			workers.ReportUp("vmStatusUpdater")
 
 		case <-tick:
-			allVms, err := vmModels.New().List()
+			allVms, err := vmModels.New(versions.V1).List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching vms: %w", err))
 				continue

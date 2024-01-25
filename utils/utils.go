@@ -2,10 +2,12 @@ package utils
 
 import (
 	"crypto/sha256"
+	"crypto/sha512"
 	"encoding/base64"
 	"errors"
 	"fmt"
 	"log"
+	"math/rand"
 	"strings"
 	"time"
 )
@@ -111,4 +113,29 @@ func NonZeroOrNil(t time.Time) *time.Time {
 	}
 
 	return &t
+}
+
+const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+// GenerateSalt generates the salt that can be used when, for example, hashing a password
+func GenerateSalt() string {
+	//goland:noinspection GoDeprecation
+	rand.Seed(time.Now().UnixNano())
+	salt := make([]byte, 16)
+	for i := range salt {
+		salt[i] = alphabet[rand.Intn(len(alphabet))]
+	}
+	return string(salt)
+}
+
+// HashPassword hashes the password in CloudStack.
+func HashPassword(password, salt string) string {
+	rounds := 4096
+	hash := sha512.New()
+	for i := 0; i < rounds; i++ {
+		hash.Write([]byte(salt + password))
+	}
+	hashSum := hash.Sum(nil)
+	encodedHash := base64.StdEncoding.EncodeToString(hashSum)
+	return fmt.Sprintf("$6$rounds=%d$%s$%s", rounds, salt, encodedHash)
 }

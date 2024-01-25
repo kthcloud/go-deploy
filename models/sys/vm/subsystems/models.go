@@ -21,6 +21,12 @@ type K8s struct {
 
 	// VmMap only exists in version 2
 	VmMap map[string]k8sModels.VmPublic `bson:"vmMap,omitempty"`
+
+	// PvcMap only exists in version 2
+	PvcMap map[string]k8sModels.PvcPublic `bson:"pvcMap,omitempty"`
+
+	// PvMap only exists in version 2
+	PvMap map[string]k8sModels.PvPublic `bson:"pvMap,omitempty"`
 }
 
 // GetDeploymentMap returns the deployment map of the VM.
@@ -73,6 +79,26 @@ func (k8s *K8s) GetSecretMap() map[string]k8sModels.SecretPublic {
 	return k8s.SecretMap
 }
 
+// GetPvcMap returns the PVC map of the VM.
+// If the map is nil, it will be initialized before returning
+func (k8s *K8s) GetPvcMap() map[string]k8sModels.PvcPublic {
+	if k8s.PvcMap == nil {
+		k8s.PvcMap = make(map[string]k8sModels.PvcPublic)
+	}
+
+	return k8s.PvcMap
+}
+
+// GetPvMap returns the PV map of the VM.
+// If the map is nil, it will be initialized before returning
+func (k8s *K8s) GetPvMap() map[string]k8sModels.PvPublic {
+	if k8s.PvMap == nil {
+		k8s.PvMap = make(map[string]k8sModels.PvPublic)
+	}
+
+	return k8s.PvMap
+}
+
 // GetDeployment returns the deployment of the VM.
 // If the deployment does not exist, nil is returned
 func (k8s *K8s) GetDeployment(name string) *k8sModels.DeploymentPublic {
@@ -121,6 +147,28 @@ func (k8s *K8s) GetIngress(name string) *k8sModels.IngressPublic {
 // If the secret does not exist, nil is returned
 func (k8s *K8s) GetSecret(name string) *k8sModels.SecretPublic {
 	resources, ok := k8s.GetSecretMap()[name]
+	if !ok {
+		return nil
+	}
+
+	return &resources
+}
+
+// GetPVC returns the PVC of the VM.
+// If the PVC does not exist, nil is returned
+func (k8s *K8s) GetPVC(name string) *k8sModels.PvcPublic {
+	resources, ok := k8s.GetPvcMap()[name]
+	if !ok {
+		return nil
+	}
+
+	return &resources
+}
+
+// GetPV returns the PV of the VM.
+// If the PV does not exist, nil is returned
+func (k8s *K8s) GetPV(name string) *k8sModels.PvPublic {
+	resources, ok := k8s.GetPvMap()[name]
 	if !ok {
 		return nil
 	}

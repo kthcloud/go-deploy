@@ -26,9 +26,10 @@ type DeploymentZone struct {
 	CustomDomainIP string      `yaml:"customDomainIp"`
 	ConfigSource   interface{} `yaml:"configSource"`
 	Storage        struct {
-		ParentDomain  string `yaml:"parentDomain"`
-		NfsServer     string `yaml:"nfsServer"`
-		NfsParentPath string `yaml:"nfsParentPath"`
+		ParentDomain        string `yaml:"parentDomain"`
+		NfsServer           string `yaml:"nfsServer"`
+		NfsParentPath       string `yaml:"nfsParentPath"`
+		VmStorageParentPath string `yaml:"vmStorageParentPath"`
 	} `yaml:"storage"`
 
 	K8sClient      *kubernetes.Clientset

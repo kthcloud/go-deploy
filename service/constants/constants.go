@@ -8,8 +8,12 @@ const (
 	// AppNameCustomDomain is the name of the custom domain app in various contexts
 	AppNameCustomDomain = "custom-domain"
 
-	// VmProxyAppName is the name of the vm proxy app in various contexts
+	// VmProxyAppName is the name of the VM proxy app in various contexts
 	VmProxyAppName = "vm-proxy"
+	// VmRootDiskName is the name of the root disk in various contexts
+	VmRootDiskName = "root-disk"
+	// VmParentName is the name of the parent VM in various contexts
+	VmParentName = "parent"
 
 	// SmNamePrefix is the prefix for the storage manager app in various contexts
 	SmNamePrefix = "system"
