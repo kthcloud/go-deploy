@@ -174,13 +174,23 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 
 // CreateServiceManifest creates a Kubernetes Service manifest from a models.ServicePublic.
 func CreateServiceManifest(public *models.ServicePublic) *apiv1.Service {
+	labels := map[string]string{
+		keys.ManifestLabelName: public.Name,
+	}
+
+	var serviceType apiv1.ServiceType
+	if public.ExternalIP != nil {
+		serviceType = apiv1.ServiceTypeLoadBalancer
+		labels[keys.ManifestCreationTimestamp] = *public.ExternalIP
+	} else {
+		serviceType = apiv1.ServiceTypeClusterIP
+	}
+
 	return &apiv1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      public.Name,
 			Namespace: public.Namespace,
-			Labels: map[string]string{
-				keys.ManifestLabelName: public.Name,
-			},
+			Labels:    labels,
 			Annotations: map[string]string{
 				keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat),
 			},
@@ -197,6 +207,7 @@ func CreateServiceManifest(public *models.ServicePublic) *apiv1.Service {
 			Selector: map[string]string{
 				keys.ManifestLabelName: public.Name,
 			},
+			Type: serviceType,
 		},
 		Status: apiv1.ServiceStatus{},
 	}
@@ -488,6 +499,15 @@ func CreateVmManifest(public *models.VmPublic) *kubevirtv1.VirtualMachine {
 		Spec: kubevirtv1.VirtualMachineSpec{
 			Running: &public.Running,
 			Template: &kubevirtv1.VirtualMachineInstanceTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: public.Name,
+					Labels: map[string]string{
+						keys.ManifestLabelName: public.Name,
+					},
+					Annotations: map[string]string{
+						keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat),
+					},
+				},
 				Spec: kubevirtv1.VirtualMachineInstanceSpec{
 					Domain: kubevirtv1.DomainSpec{
 						Devices: kubevirtv1.Devices{

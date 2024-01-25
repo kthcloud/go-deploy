@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	vmModels "go-deploy/models/sys/vm"
+	vmPortModels "go-deploy/models/sys/vm_port"
 	"go-deploy/models/versions"
+	"go-deploy/pkg/config"
 	kErrors "go-deploy/pkg/subsystems/k8s/errors"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/service/constants"
@@ -20,10 +22,10 @@ func (c *Client) Create(id string, params *vmModels.CreateParams) error {
 	log.Println("setting up k8s for", params.Name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup k8s for deployment %s. details: %w", params.Name, err)
+		return fmt.Errorf("failed to setup k8s for vm %s. details: %w", params.Name, err)
 	}
 
-	_, kc, g, err := c.Get(OptsAll(id))
+	vm, kc, g, err := c.Get(OptsAll(id))
 	if err != nil {
 		if errors.Is(err, sErrors.VmNotFoundErr) {
 			log.Println("vm not found when setting up k8s for", params.Name, ". assuming it was deleted")
@@ -32,6 +34,8 @@ func (c *Client) Create(id string, params *vmModels.CreateParams) error {
 
 		return makeError(err)
 	}
+
+	g.WithAuthorizedKeys(config.Config.VM.AdminSshPublicKey)
 
 	// Namespace
 	namespace := g.Namespace()
@@ -104,6 +108,19 @@ func (c *Client) Create(id string, params *vmModels.CreateParams) error {
 
 	// Service
 	for _, servicePublic := range g.Services() {
+		if servicePublic.Port == 0 {
+			port, err := vmPortModels.New().GetOrLeaseAny(servicePublic.TargetPort, vm.ID, vm.Zone)
+			if err != nil {
+				if errors.Is(err, vmPortModels.NoPortsAvailableErr) {
+					return makeError(sErrors.NoPortsAvailableErr)
+				}
+
+				return makeError(err)
+			}
+
+			servicePublic.Port = port.PublicPort
+		}
+
 		err = resources.SsCreator(kc.CreateService).
 			WithDbFunc(dbFunc(id, "serviceMap."+servicePublic.Name)).
 			WithPublic(&servicePublic).
@@ -287,6 +304,8 @@ func (c *Client) Repair(id string) error {
 
 		return makeError(err)
 	}
+
+	g.WithAuthorizedKeys(config.Config.VM.AdminSshPublicKey)
 
 	namespace := g.Namespace()
 	if namespace != nil {

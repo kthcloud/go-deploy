@@ -20,6 +20,7 @@ require (
 	github.com/mittwald/goharbor-client/v5 v5.3.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/penglongli/gin-metrics v0.1.10
+	github.com/rancher/go-rancher v0.1.0
 	github.com/redis/go-redis/v9 v9.2.1
 	github.com/stretchr/testify v1.8.4
 	github.com/swaggo/files v1.0.1
@@ -38,6 +39,7 @@ require (
 	k8s.io/apimachinery v0.29.1
 	k8s.io/client-go v0.29.1
 	kubevirt.io/api v1.1.1
+	kubevirt.io/containerized-data-importer-api v1.57.0-alpha1
 )
 
 require (
@@ -109,8 +111,6 @@ require (
 	github.com/prometheus/client_model v0.4.1-0.20230718164431-9a2bf3000d16 // indirect
 	github.com/prometheus/common v0.44.0 // indirect
 	github.com/prometheus/procfs v0.11.1 // indirect
-	github.com/rancher/go-rancher v0.1.0 // indirect
-	github.com/rancherio/go-rancher v0.1.0 // indirect
 	github.com/segmentio/ksuid v1.0.4 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
@@ -135,7 +135,6 @@ require (
 	k8s.io/klog/v2 v2.110.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20231010175941-2dd684a91f00 // indirect
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b // indirect
-	kubevirt.io/containerized-data-importer-api v1.57.0-alpha1 // indirect
 	kubevirt.io/controller-lifecycle-operator-sdk/api v0.0.0-20220329064328-f3cc58c6ed90 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect

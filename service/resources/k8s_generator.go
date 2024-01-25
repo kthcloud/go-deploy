@@ -52,7 +52,7 @@ type CloudInitUser struct {
 	SshAuthorizedKeys []string `yaml:"ssh_authorized_keys"`
 }
 
-func (kg *K8sGenerator) WithAuthorizedKeys(keys []string) *K8sGenerator {
+func (kg *K8sGenerator) WithAuthorizedKeys(keys ...string) *K8sGenerator {
 	kg.extraAuthorizedKeys = keys
 	return kg
 }
@@ -225,12 +225,12 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 			envVars := []models.EnvVar{
 				{Name: "PORT", Value: "8080"},
 				{Name: "VM_PORT", Value: fmt.Sprintf("%d", csPort.PublicPort)},
-				{Name: "URL", Value: vpExternalURL(port.HttpProxy.Name, kg.v.deploymentZone)},
+				{Name: "URL", Value: vmpExternalURL(port.HttpProxy.Name, kg.v.deploymentZone)},
 				{Name: "VM_URL", Value: kg.v.vmZone.ParentDomain},
 			}
 
 			res = append(res, models.DeploymentPublic{
-				Name:             vpDeploymentName(kg.v.vm, port.HttpProxy.Name),
+				Name:             vmpDeploymentName(kg.v.vm, port.HttpProxy.Name),
 				Namespace:        kg.namespace,
 				Image:            config.Config.Registry.VmHttpProxyImage,
 				ImagePullSecrets: make([]string, 0),
@@ -261,7 +261,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 					continue
 				}
 
-				if vpDeploymentName(kg.v.vm, port.HttpProxy.Name) == mapName {
+				if vmpDeploymentName(kg.v.vm, port.HttpProxy.Name) == mapName {
 					matchedIdx = idx
 					break
 				}
@@ -455,7 +455,7 @@ func (kg *K8sGenerator) VMs() []models.VmPublic {
 			CloudInit: createCloudInitString(&cloudInit),
 			// Temporary image URL
 			ImageURL: "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img",
-			PvName:   vRootPvName(kg.v.vm),
+			PvName:   vmRootPvName(kg.v.vm),
 
 			Running: true,
 		}
@@ -504,12 +504,12 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 			}
 
 			res = append(res, models.ServicePublic{
-				Name:       vpServiceName(kg.v.vm, port.HttpProxy.Name),
+				Name:       vmpServiceName(kg.v.vm, port.HttpProxy.Name),
 				Namespace:  kg.namespace,
 				Port:       8080,
 				TargetPort: 8080,
 				Selector: map[string]string{
-					keys.ManifestLabelName: vpDeploymentName(kg.v.vm, port.HttpProxy.Name),
+					keys.ManifestLabelName: vmpDeploymentName(kg.v.vm, port.HttpProxy.Name),
 				},
 			})
 		}
@@ -522,7 +522,7 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 					continue
 				}
 
-				if vpServiceName(kg.v.vm, port.HttpProxy.Name) == mapName {
+				if vmpServiceName(kg.v.vm, port.HttpProxy.Name) == mapName {
 					matchedIdx = idx
 					break
 				}
@@ -538,7 +538,36 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 		return res
 	}
 
-	// TODO: add services for VM v2
+	if kg.v.vm != nil && kg.v.vm.Version == versions.V2 {
+		portMap := kg.v.vm.PortMap
+
+		for _, port := range portMap {
+			res = append(res, models.ServicePublic{
+				Name:       vmServiceName(kg.v.vm),
+				Namespace:  kg.namespace,
+				Port:       0, // This is set externally
+				TargetPort: port.Port,
+				Selector: map[string]string{
+					keys.ManifestLabelName: vmName(kg.v.vm),
+				},
+				ExternalIP: strToPtr("172.31.50.150"),
+			})
+		}
+
+		for mapName, s := range kg.v.vm.Subsystems.K8s.GetServiceMap() {
+			idx := slices.IndexFunc(res, func(service models.ServicePublic) bool {
+				return service.Name == mapName
+			})
+			if idx != -1 {
+				res[idx].Port = s.Port
+				res[idx].CreatedAt = s.CreatedAt
+			}
+		}
+
+		// TODO: Add services for proxy ports
+
+		return res
+	}
 
 	if kg.s.sm != nil {
 		// filebrowser
@@ -647,21 +676,21 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 
 			tlsSecret := constants.WildcardCertSecretName
 			res = append(res, models.IngressPublic{
-				Name:         vpIngressName(kg.v.vm, port.HttpProxy.Name),
+				Name:         vmpIngressName(kg.v.vm, port.HttpProxy.Name),
 				Namespace:    kg.namespace,
-				ServiceName:  vpServiceName(kg.v.vm, port.HttpProxy.Name),
+				ServiceName:  vmpServiceName(kg.v.vm, port.HttpProxy.Name),
 				ServicePort:  8080,
 				IngressClass: config.Config.Deployment.IngressClass,
-				Hosts:        []string{vpExternalURL(port.HttpProxy.Name, kg.v.deploymentZone)},
+				Hosts:        []string{vmpExternalURL(port.HttpProxy.Name, kg.v.deploymentZone)},
 				TlsSecret:    &tlsSecret,
 				CustomCert:   nil,
 				Placeholder:  false,
 			})
 			if port.HttpProxy.CustomDomain != nil && port.HttpProxy.CustomDomain.Status == deployment.CustomDomainStatusActive {
 				res = append(res, models.IngressPublic{
-					Name:         vpCustomDomainIngressName(kg.v.vm, port.HttpProxy.Name),
+					Name:         vmpCustomDomainIngressName(kg.v.vm, port.HttpProxy.Name),
 					Namespace:    kg.namespace,
-					ServiceName:  vpServiceName(kg.v.vm, port.HttpProxy.Name),
+					ServiceName:  vmpServiceName(kg.v.vm, port.HttpProxy.Name),
 					ServicePort:  8080,
 					IngressClass: config.Config.Deployment.IngressClass,
 					Hosts:        []string{port.HttpProxy.CustomDomain.Domain},
@@ -683,8 +712,8 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 					continue
 				}
 
-				if vpIngressName(kg.v.vm, port.HttpProxy.Name) == mapName ||
-					(vpCustomDomainIngressName(kg.v.vm, port.HttpProxy.Name) == mapName && port.HttpProxy.CustomDomain != nil) {
+				if vmpIngressName(kg.v.vm, port.HttpProxy.Name) == mapName ||
+					(vmpCustomDomainIngressName(kg.v.vm, port.HttpProxy.Name) == mapName && port.HttpProxy.CustomDomain != nil) {
 					matchedIdx = idx
 					break
 				}
@@ -762,24 +791,24 @@ func (kg *K8sGenerator) PVs() []models.PvPublic {
 
 	if kg.v.vm != nil && kg.v.vm.Version == versions.V2 {
 		parentPV := models.PvPublic{
-			Name:      vParentPvName(kg.v.vm),
+			Name:      vmParentPvName(kg.v.vm),
 			Capacity:  config.Config.Deployment.Resources.Limits.Storage,
 			NfsServer: kg.v.deploymentZone.Storage.NfsServer,
 			NfsPath:   kg.s.zone.Storage.VmStorageParentPath,
 		}
 
-		if pv := kg.v.vm.Subsystems.K8s.GetPV(vParentPvName(kg.v.vm)); subsystems.Created(pv) {
+		if pv := kg.v.vm.Subsystems.K8s.GetPV(vmParentPvName(kg.v.vm)); subsystems.Created(pv) {
 			parentPV.CreatedAt = pv.CreatedAt
 		}
 
 		rootDiskPV := models.PvPublic{
-			Name:      vRootPvName(kg.v.vm),
+			Name:      vmRootPvName(kg.v.vm),
 			Capacity:  fmt.Sprintf("%dGi", kg.v.vm.Specs.DiskSize),
 			NfsServer: kg.v.deploymentZone.Storage.NfsServer,
 			NfsPath:   path.Join(kg.s.zone.Storage.VmStorageParentPath, kg.v.vm.ID),
 		}
 
-		if pv := kg.v.vm.Subsystems.K8s.GetPV(vRootPvName(kg.v.vm)); subsystems.Created(pv) {
+		if pv := kg.v.vm.Subsystems.K8s.GetPV(vmRootPvName(kg.v.vm)); subsystems.Created(pv) {
 			rootDiskPV.CreatedAt = pv.CreatedAt
 		}
 
@@ -842,13 +871,13 @@ func (kg *K8sGenerator) PVCs() []models.PvcPublic {
 
 	if kg.v.vm != nil && kg.v.vm.Version == versions.V2 {
 		parentPVC := models.PvcPublic{
-			Name:      vParentPvName(kg.v.vm),
+			Name:      vmParentPvName(kg.v.vm),
 			Namespace: kg.namespace,
 			Capacity:  config.Config.Deployment.Resources.Limits.Storage,
-			PvName:    vParentPvName(kg.v.vm),
+			PvName:    vmParentPvName(kg.v.vm),
 		}
 
-		if pvc := kg.v.vm.Subsystems.K8s.GetPV(vParentPvName(kg.v.vm)); subsystems.Created(pvc) {
+		if pvc := kg.v.vm.Subsystems.K8s.GetPV(vmParentPvName(kg.v.vm)); subsystems.Created(pvc) {
 			parentPVC.CreatedAt = pvc.CreatedAt
 		}
 
@@ -1052,8 +1081,8 @@ func (kg *K8sGenerator) Jobs() []models.JobPublic {
 			Args:      []string{"-p", fmt.Sprintf("/mnt/vms/%s", kg.v.vm.ID)},
 			Volumes: []models.Volume{
 				{
-					Name:      vParentPvName(kg.v.vm),
-					PvcName:   strToPtr(vParentPvcName(kg.v.vm)),
+					Name:      vmParentPvName(kg.v.vm),
+					PvcName:   strToPtr(vmParentPvcName(kg.v.vm)),
 					MountPath: "/mnt/vms",
 				},
 			},
@@ -1068,8 +1097,8 @@ func (kg *K8sGenerator) Jobs() []models.JobPublic {
 			Args:      []string{"-R", "777", fmt.Sprintf("/mnt/vms/%s", kg.v.vm.ID)},
 			Volumes: []models.Volume{
 				{
-					Name:      vParentPvName(kg.v.vm),
-					PvcName:   strToPtr(vParentPvcName(kg.v.vm)),
+					Name:      vmParentPvName(kg.v.vm),
+					PvcName:   strToPtr(vmParentPvcName(kg.v.vm)),
 					MountPath: "/mnt/vms",
 				},
 			},
@@ -1195,43 +1224,48 @@ func vmName(vm *vmModels.VM) string {
 	return vm.Name
 }
 
-// vParentPvName returns the PV name for a VM
-func vParentPvName(vm *vmModels.VM) string {
+// vmParentPvName returns the PV name for a VM
+func vmParentPvName(vm *vmModels.VM) string {
 	return fmt.Sprintf("%s-%s", vm.Name, constants.VmParentName)
 }
 
-// vParentPvcName returns the PVC name for a VM
-func vParentPvcName(vm *vmModels.VM) string {
+// vmParentPvcName returns the PVC name for a VM
+func vmParentPvcName(vm *vmModels.VM) string {
 	return fmt.Sprintf("%s-%s", vm.Name, constants.VmParentName)
 }
 
-// vRootPvName returns the PV name for a VM
-func vRootPvName(vm *vmModels.VM) string {
+// vmRootPvName returns the PV name for a VM
+func vmRootPvName(vm *vmModels.VM) string {
 	return fmt.Sprintf("%s-%s", vm.Name, constants.VmRootDiskName)
 }
 
-// vpDeploymentName returns the deployment name for a VM proxy
-func vpDeploymentName(vm *vmModels.VM, portName string) string {
+// vmServiceName returns the service name for a VM
+func vmServiceName(vm *vmModels.VM) string {
+	return vm.Name
+}
+
+// vmpDeploymentName returns the deployment name for a VM proxy
+func vmpDeploymentName(vm *vmModels.VM, portName string) string {
 	return fmt.Sprintf("%s-%s", vm.Name, portName)
 }
 
-// vpServiceName returns the service name for a VM proxy
-func vpServiceName(vm *vmModels.VM, portName string) string {
+// vmpServiceName returns the service name for a VM proxy
+func vmpServiceName(vm *vmModels.VM, portName string) string {
 	return fmt.Sprintf("%s-%s", vm.Name, portName)
 }
 
-// vpIngressName returns the ingress name for a VM proxy
-func vpIngressName(vm *vmModels.VM, portName string) string {
+// vmpIngressName returns the ingress name for a VM proxy
+func vmpIngressName(vm *vmModels.VM, portName string) string {
 	return fmt.Sprintf("%s-%s", vm.Name, portName)
 }
 
-// vpCustomDomainIngressName returns the ingress name for a VM proxy custom domain
-func vpCustomDomainIngressName(vm *vmModels.VM, portName string) string {
+// vmpCustomDomainIngressName returns the ingress name for a VM proxy custom domain
+func vmpCustomDomainIngressName(vm *vmModels.VM, portName string) string {
 	return fmt.Sprintf("%s-%s-custom-domain", vm.Name, portName)
 }
 
-// vpExternalURL returns the external URL for a VM proxy
-func vpExternalURL(portName string, zone *configModels.DeploymentZone) string {
+// vmpExternalURL returns the external URL for a VM proxy
+func vmpExternalURL(portName string, zone *configModels.DeploymentZone) string {
 	return fmt.Sprintf("%s.%s", portName, zone.ParentDomainVM)
 }
 

@@ -60,17 +60,17 @@ func (p CreateParams) FromDTOv2(dto *body.VmCreate, fallbackZone *string) Create
 	// Right now we only support one zone, since we need to make sure the cluster has KubeVirt installed
 	p.Zone = *fallbackZone
 
-	//for _, port := range dto.Ports {
-	//	if port.Name == "__ssh" {
-	//		continue
-	//	}
-	//
-	//	if port.Port == 22 {
-	//		continue
-	//	}
-	//
-	//	p.PortMap[portName(port.Port, port.Protocol)] = fromPortCreateDTOv1(&port)
-	//}
+	for _, port := range dto.Ports {
+		if port.Name == "__ssh" {
+			continue
+		}
+
+		if port.Port == 22 {
+			continue
+		}
+
+		p.PortMap[portName(port.Port, port.Protocol)] = fromPortCreateDTOv2(&port)
+	}
 
 	// Ensure there is always an SSH port
 	p.PortMap["__ssh"] = PortCreateParams{
@@ -114,4 +114,40 @@ func (p UpdateParams) FromDTOv2(dto *body.VmUpdate) UpdateParams {
 	}
 
 	return p
+}
+
+// fromPortCreateDTOv2 converts a port DTO to a port.
+func fromPortCreateDTOv2(port *body.PortCreate) PortCreateParams {
+	var httpProxy *HttpProxyCreateParams
+	if port.HttpProxy != nil {
+		httpProxy = &HttpProxyCreateParams{
+			Name:         port.HttpProxy.Name,
+			CustomDomain: port.HttpProxy.CustomDomain,
+		}
+	}
+
+	return PortCreateParams{
+		Name:      port.Name,
+		Port:      port.Port,
+		Protocol:  port.Protocol,
+		HttpProxy: httpProxy,
+	}
+}
+
+// fromPortCreateDTOv2 converts a port DTO to a port.
+func fromPortUpdateDTOv2(port *body.PortUpdate) PortUpdateParams {
+	var httpProxy *HttpProxyUpdateParams
+	if port.HttpProxy != nil {
+		httpProxy = &HttpProxyUpdateParams{
+			Name:         port.HttpProxy.Name,
+			CustomDomain: port.HttpProxy.CustomDomain,
+		}
+	}
+
+	return PortUpdateParams{
+		Name:      port.Name,
+		Port:      port.Port,
+		Protocol:  port.Protocol,
+		HttpProxy: httpProxy,
+	}
 }
