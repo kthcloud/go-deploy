@@ -14,10 +14,7 @@ import (
 
 func WaitForVmRunning(t *testing.T, id string, callback func(*body.VmRead) bool) {
 	fetchUntil(t, "/vms/"+id, func(resp *http.Response) bool {
-		var vmRead body.VmRead
-		err := ReadResponseBody(t, resp, &vmRead)
-		assert.NoError(t, err, "vm was not fetched")
-
+		vmRead := Parse[body.VmRead](t, resp)
 		if vmRead.Status == status_codes.GetMsg(status_codes.ResourceRunning) {
 			if callback == nil || callback(&vmRead) {
 				return true
