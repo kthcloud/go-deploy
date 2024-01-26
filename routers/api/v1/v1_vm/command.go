@@ -2,12 +2,12 @@ package v1_vm
 
 import (
 	"github.com/gin-gonic/gin"
-	"go-deploy/models/dto/body"
-	"go-deploy/models/dto/uri"
+	"go-deploy/models/dto/v1/body"
+	"go-deploy/models/dto/v1/uri"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
-	"go-deploy/service/vm_service"
-	"go-deploy/service/vm_service/client"
+	"go-deploy/service"
+	"go-deploy/service/v1/vms/opts"
 )
 
 // DoCommand
@@ -47,9 +47,9 @@ func DoCommand(c *gin.Context) {
 		return
 	}
 
-	vsc := vm_service.New().WithAuth(auth)
+	deployV1 := service.V1(auth)
 
-	vm, err := vsc.Get(requestURI.VmID, client.GetOptions{Shared: true})
+	vm, err := deployV1.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -65,7 +65,7 @@ func DoCommand(c *gin.Context) {
 		return
 	}
 
-	vsc.DoCommand(requestURI.VmID, requestBody.Command)
+	deployV1.VMs().DoCommand(requestURI.VmID, requestBody.Command)
 
 	context.OkNoContent()
 }

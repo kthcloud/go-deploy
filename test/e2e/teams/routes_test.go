@@ -2,7 +2,7 @@ package teams
 
 import (
 	"github.com/stretchr/testify/assert"
-	"go-deploy/models/dto/body"
+	"go-deploy/models/dto/v1/body"
 	notificationModels "go-deploy/models/sys/notification"
 	teamModels "go-deploy/models/sys/team"
 	"go-deploy/test/e2e"

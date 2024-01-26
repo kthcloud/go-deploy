@@ -1,6 +1,6 @@
 package worker_status
 
-import "go-deploy/models/dto/body"
+import "go-deploy/models/dto/v1/body"
 
 // ToDTO converts a WorkerStatus to a body.WorkerStatusRead DTO.
 func (ws *WorkerStatus) ToDTO() body.WorkerStatusRead {

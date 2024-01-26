@@ -4,15 +4,15 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/go-playground/validator/v10"
-	"go-deploy/models/dto/body"
+	"go-deploy/models/dto/v1/body"
 	"go-deploy/pkg/sys"
-	"go-deploy/service"
+	"go-deploy/service/core"
 	"reflect"
 )
 
 // WithAuth returns the auth info for the current request.
 // This include all user info necessary to perform authorization checks
-func WithAuth(context *sys.ClientContext) (*service.AuthInfo, error) {
+func WithAuth(context *sys.ClientContext) (*core.AuthInfo, error) {
 	makeError := func(error) error {
 		return errors.New("failed to get auth info")
 	}
@@ -22,7 +22,7 @@ func WithAuth(context *sys.ClientContext) (*service.AuthInfo, error) {
 		return nil, makeError(err)
 	}
 
-	return service.CreateAuthInfo(token.Sub, token, token.Groups), nil
+	return core.CreateAuthInfo(token.Sub, token, token.Groups), nil
 }
 
 // msgForTag returns a human readable error message for a validator.FieldError

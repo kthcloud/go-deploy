@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"go-deploy/models/sys/job"
 	vmModels "go-deploy/models/sys/vm"
+	"go-deploy/models/versions"
 	"go-deploy/pkg/workers"
 	"go-deploy/utils"
 	"log"
@@ -63,7 +64,7 @@ func scheduleSnapshotJob(vm *vmModels.VM, recurring string) {
 	log.Println("scheduling", recurring, "snapshot for vm", vm.ID)
 
 	runAt := getRunAt(recurring)
-	err := job.New().CreateScheduled(uuid.New().String(), vm.OwnerID, job.TypeCreateSystemSnapshot, runAt, map[string]interface{}{
+	err := job.New().CreateScheduled(uuid.New().String(), vm.OwnerID, job.TypeCreateSystemSnapshot, versions.V1, runAt, map[string]interface{}{
 		"id": vm.ID,
 		"params": vmModels.CreateSnapshotParams{
 			Name:        fmt.Sprintf("auto-%s", recurring),

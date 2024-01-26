@@ -1,7 +1,7 @@
 package user
 
 import (
-	"go-deploy/models/dto/body"
+	"go-deploy/models/dto/v1/body"
 	roleModels "go-deploy/models/sys/role"
 	"log"
 )

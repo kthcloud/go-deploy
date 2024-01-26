@@ -47,8 +47,10 @@ func (client *Client) Create(id, owner, manager string, params *CreateParams) (*
 	}
 
 	vm := VM{
-		ID:        id,
-		Name:      params.Name,
+		ID:      id,
+		Name:    params.Name,
+		Version: params.Version,
+
 		OwnerID:   owner,
 		ManagedBy: manager,
 

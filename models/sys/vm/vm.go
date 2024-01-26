@@ -7,8 +7,10 @@ import (
 )
 
 type VM struct {
-	ID        string `bson:"id"`
-	Name      string `bson:"name"`
+	ID      string `bson:"id"`
+	Name    string `bson:"name"`
+	Version string `bson:"version"`
+
 	OwnerID   string `bson:"ownerId"`
 	ManagedBy string `bson:"managedBy"`
 	Host      *Host  `bson:"host,omitempty"`
@@ -18,9 +20,9 @@ type VM struct {
 	DeploymentZone *string `bson:"deploymentZone"`
 
 	CreatedAt  time.Time `bson:"createdAt"`
-	UpdatedAt  time.Time `bson:"updatedAt"`
-	RepairedAt time.Time `bson:"repairedAt"`
-	DeletedAt  time.Time `bson:"deletedAt"`
+	UpdatedAt  time.Time `bson:"updatedAt,omitempty"`
+	RepairedAt time.Time `bson:"repairedAt,omitempty"`
+	DeletedAt  time.Time `bson:"deletedAt,omitempty"`
 
 	NetworkID    string                       `bson:"networkId"`
 	SshPublicKey string                       `bson:"sshPublicKey"`
@@ -73,7 +75,7 @@ func (vm *VM) GetGpuID() *string {
 	return &idStruct.ID
 }
 
-func (vm *VM) GetGpu() *gpuModels.GPU {
+func (vm *VM) GetGPU() *gpuModels.GPU {
 	gpu, err := gpuModels.New().WithVM(vm.ID).Get()
 	if err != nil || gpu == nil {
 		return nil

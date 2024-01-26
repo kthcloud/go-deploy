@@ -4,17 +4,17 @@ import (
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"go-deploy/models/dto/body"
-	"go-deploy/models/dto/query"
-	"go-deploy/models/dto/uri"
+	"go-deploy/models/dto/v1/body"
+	"go-deploy/models/dto/v1/query"
+	"go-deploy/models/dto/v1/uri"
 	"go-deploy/models/sys/job"
+	"go-deploy/models/versions"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
-	"go-deploy/service/job_service"
-	"go-deploy/service/vm_service"
-	"go-deploy/service/vm_service/client"
+	v12 "go-deploy/service/v1/utils"
+	"go-deploy/service/v1/vms/opts"
 )
 
 // ListSnapshots
@@ -46,9 +46,14 @@ func ListSnapshots(c *gin.Context) {
 		return
 	}
 
-	snapshots, _ := vm_service.New().ListSnapshots(requestURI.VmID, client.ListSnapshotOptions{
-		Pagination: service.GetOrDefaultPagination(requestQuery.Pagination),
+	snapshots, err := service.V1().VMs().ListSnapshots(requestURI.VmID, opts.ListSnapshotOpts{
+		Pagination: v12.GetOrDefaultPagination(requestQuery.Pagination),
 	})
+	if err != nil {
+		context.ServerError(err, v1.InternalError)
+		return
+	}
+
 	if snapshots == nil {
 		context.Ok([]interface{}{})
 		return
@@ -56,7 +61,7 @@ func ListSnapshots(c *gin.Context) {
 
 	dtoSnapshots := make([]body.VmSnapshotRead, len(snapshots))
 	for i, snapshot := range snapshots {
-		dtoSnapshots[i] = snapshot.ToDTO()
+		dtoSnapshots[i] = snapshot.ToDTOv1()
 	}
 
 	context.Ok(dtoSnapshots)
@@ -91,9 +96,9 @@ func GetSnapshot(c *gin.Context) {
 		return
 	}
 
-	vsc := vm_service.New().WithAuth(auth)
+	deployV1 := service.V1(auth)
 
-	vm, err := vsc.Get(requestURI.VmID, client.GetOptions{Shared: true})
+	vm, err := deployV1.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -104,7 +109,7 @@ func GetSnapshot(c *gin.Context) {
 		return
 	}
 
-	snapshot, err := vsc.GetSnapshot(requestURI.VmID, requestURI.SnapshotID, client.GetSnapshotOptions{})
+	snapshot, err := deployV1.VMs().GetSnapshot(requestURI.VmID, requestURI.SnapshotID, opts.GetSnapshotOpts{})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -115,7 +120,7 @@ func GetSnapshot(c *gin.Context) {
 		return
 	}
 
-	context.Ok(snapshot.ToDTO())
+	context.Ok(snapshot.ToDTOv1())
 }
 
 // CreateSnapshot
@@ -152,9 +157,9 @@ func CreateSnapshot(c *gin.Context) {
 		return
 	}
 
-	vsc := vm_service.New().WithAuth(auth)
+	deployV1 := service.V1(auth)
 
-	err = vsc.CheckQuota(requestURI.VmID, auth.UserID, &auth.GetEffectiveRole().Quotas, client.QuotaOptions{
+	err = deployV1.VMs().CheckQuota(requestURI.VmID, auth.UserID, &auth.GetEffectiveRole().Quotas, opts.QuotaOpts{
 		CreateSnapshot: &requestBody,
 	})
 	if err != nil {
@@ -168,7 +173,7 @@ func CreateSnapshot(c *gin.Context) {
 		return
 	}
 
-	current, err := vsc.GetSnapshotByName(requestURI.VmID, requestBody.Name, client.GetSnapshotOptions{})
+	current, err := deployV1.VMs().GetSnapshotByName(requestURI.VmID, requestBody.Name, opts.GetSnapshotOpts{})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -179,7 +184,7 @@ func CreateSnapshot(c *gin.Context) {
 		return
 	}
 
-	vm, err := vsc.Get(requestURI.VmID, client.GetOptions{Shared: true})
+	vm, err := deployV1.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -191,7 +196,7 @@ func CreateSnapshot(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = job_service.New().Create(jobID, auth.UserID, job.TypeCreateUserSnapshot, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.UserID, job.TypeCreateUserSnapshot, versions.V1, map[string]interface{}{
 		"id": vm.ID,
 		"params": body.VmSnapshotCreate{
 			Name: requestBody.Name,
@@ -238,9 +243,9 @@ func DeleteSnapshot(c *gin.Context) {
 		return
 	}
 
-	vsc := vm_service.New().WithAuth(auth)
+	deployV1 := service.V1(auth)
 
-	vm, err := vsc.Get(requestURI.VmID, client.GetOptions{Shared: true})
+	vm, err := deployV1.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -251,7 +256,7 @@ func DeleteSnapshot(c *gin.Context) {
 		return
 	}
 
-	snapshot, err := vsc.GetSnapshot(requestURI.VmID, requestURI.SnapshotID, client.GetSnapshotOptions{})
+	snapshot, err := deployV1.VMs().GetSnapshot(requestURI.VmID, requestURI.SnapshotID, opts.GetSnapshotOpts{})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -263,7 +268,7 @@ func DeleteSnapshot(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = job_service.New().Create(jobID, auth.UserID, job.TypeDeleteSnapshot, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.UserID, job.TypeDeleteSnapshot, versions.V1, map[string]interface{}{
 		"id":         vm.ID,
 		"snapshotId": snapshot.ID,
 	})

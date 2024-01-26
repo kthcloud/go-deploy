@@ -2,7 +2,7 @@ package gpu
 
 import (
 	"encoding/base64"
-	"go-deploy/models/dto/body"
+	"go-deploy/models/dto/v1/body"
 )
 
 // ToDTO converts a GPU to a body.GpuRead DTO.

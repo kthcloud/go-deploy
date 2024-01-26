@@ -3,13 +3,13 @@ package v1_deployment
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"go-deploy/models/dto/body"
-	"go-deploy/models/dto/uri"
+	"go-deploy/models/dto/v1/body"
+	"go-deploy/models/dto/v1/uri"
 	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
-	"go-deploy/service/deployment_service"
-	"go-deploy/service/deployment_service/client"
+	"go-deploy/service"
+	"go-deploy/service/v1/deployments/opts"
 	"net/http"
 )
 
@@ -48,9 +48,9 @@ func DoCommand(c *gin.Context) {
 		return
 	}
 
-	dc := deployment_service.New().WithAuth(auth)
+	deployV1 := service.V1(auth)
 
-	deployment, err := dc.Get(requestURI.DeploymentID, client.GetOptions{Shared: true})
+	deployment, err := deployV1.Deployments().Get(requestURI.DeploymentID, opts.GetOpts{Shared: true})
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return
@@ -66,7 +66,7 @@ func DoCommand(c *gin.Context) {
 		return
 	}
 
-	dc.DoCommand(requestURI.DeploymentID, requestBody.Command)
+	deployV1.Deployments().DoCommand(requestURI.DeploymentID, requestBody.Command)
 
 	context.OkNoContent()
 }

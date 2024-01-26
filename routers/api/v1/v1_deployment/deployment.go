@@ -4,22 +4,20 @@ import (
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"go-deploy/models/dto/body"
-	"go-deploy/models/dto/query"
-	"go-deploy/models/dto/uri"
+	"go-deploy/models/dto/v1/body"
+	"go-deploy/models/dto/v1/query"
+	"go-deploy/models/dto/v1/uri"
 	deploymentModels "go-deploy/models/sys/deployment"
 	jobModels "go-deploy/models/sys/job"
 	zoneModels "go-deploy/models/sys/zone"
+	"go-deploy/models/versions"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
-	"go-deploy/service/deployment_service"
-	"go-deploy/service/deployment_service/client"
 	sErrors "go-deploy/service/errors"
-	"go-deploy/service/job_service"
-	"go-deploy/service/sm_service"
-	"go-deploy/service/user_service"
-	"go-deploy/service/zone_service"
+	"go-deploy/service/v1/deployments/opts"
+	teamOpts "go-deploy/service/v1/teams/opts"
+	v12 "go-deploy/service/v1/utils"
 )
 
 // List
@@ -61,9 +59,11 @@ func List(c *gin.Context) {
 		userID = auth.UserID
 	}
 
-	deployments, err := deployment_service.New().WithAuth(auth).List(&client.ListOptions{
+	deployV1 := service.V1(auth)
+
+	deployments, err := deployV1.Deployments().List(opts.ListOpts{
 		UserID:     &userID,
-		Pagination: service.GetOrDefaultPagination(requestQuery.Pagination),
+		Pagination: v12.GetOrDefaultPagination(requestQuery.Pagination),
 		Shared:     true,
 	})
 	if err != nil {
@@ -78,7 +78,8 @@ func List(c *gin.Context) {
 
 	dtoDeployments := make([]body.DeploymentRead, len(deployments))
 	for i, deployment := range deployments {
-		dtoDeployments[i] = deployment.ToDTO(getSmURL(deployment.OwnerID, auth), getTeamIDs(deployment.ID, auth))
+		teamIDs, _ := deployV1.Teams().ListIDs(teamOpts.ListOpts{ResourceID: deployment.ID})
+		dtoDeployments[i] = deployment.ToDTO(deployV1.SMs().GetURL(deployment.OwnerID), teamIDs)
 	}
 
 	context.JSONResponse(200, dtoDeployments)
@@ -112,7 +113,9 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	deployment, err := deployment_service.New().WithAuth(auth).Get(requestURI.DeploymentID, client.GetOptions{
+	deployV1 := service.V1(auth)
+
+	deployment, err := deployV1.Deployments().Get(requestURI.DeploymentID, opts.GetOpts{
 		Shared: true,
 	})
 	if err != nil {
@@ -125,7 +128,8 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	context.Ok(deployment.ToDTO(getSmURL(deployment.OwnerID, auth), getTeamIDs(deployment.ID, auth)))
+	teamIDs, _ := deployV1.Teams().ListIDs(teamOpts.ListOpts{ResourceID: deployment.ID})
+	context.Ok(deployment.ToDTO(deployV1.SMs().GetURL(deployment.OwnerID), teamIDs))
 }
 
 // Create
@@ -162,7 +166,9 @@ func Create(c *gin.Context) {
 		return
 	}
 
-	doesNotAlreadyExists, err := deployment_service.NameAvailable(requestBody.Name)
+	deployV1 := service.V1(auth)
+
+	doesNotAlreadyExists, err := deployV1.Deployments().NameAvailable(requestBody.Name)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -179,7 +185,7 @@ func Create(c *gin.Context) {
 	}
 
 	if requestBody.Zone != nil {
-		zone := zone_service.New().WithAuth(auth).Get(*requestBody.Zone, zoneModels.TypeDeployment)
+		zone := deployV1.Zones().Get(*requestBody.Zone, zoneModels.TypeDeployment)
 		if zone == nil {
 			context.NotFound("Zone not found")
 			return
@@ -192,7 +198,7 @@ func Create(c *gin.Context) {
 	}
 
 	if requestBody.GitHub != nil {
-		validGhToken, reason, err := deployment_service.ValidGitHubToken(requestBody.GitHub.Token)
+		validGhToken, reason, err := deployV1.Deployments().ValidGitHubToken(requestBody.GitHub.Token)
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
@@ -203,7 +209,7 @@ func Create(c *gin.Context) {
 			return
 		}
 
-		validGitHubRepository, reason, err := deployment_service.ValidGitHubRepository(requestBody.GitHub.Token, requestBody.GitHub.RepositoryID)
+		validGitHubRepository, reason, err := deployV1.Deployments().ValidGitHubRepository(requestBody.GitHub.Token, requestBody.GitHub.RepositoryID)
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
@@ -215,7 +221,7 @@ func Create(c *gin.Context) {
 		}
 	}
 
-	err = deployment_service.New().WithAuth(auth).CheckQuota("", &client.QuotaOptions{Create: &requestBody})
+	err = deployV1.Deployments().CheckQuota("", &opts.QuotaOptions{Create: &requestBody})
 	if err != nil {
 		var quotaExceededErr sErrors.QuotaExceededError
 		if errors.As(err, &quotaExceededErr) {
@@ -229,7 +235,7 @@ func Create(c *gin.Context) {
 
 	deploymentID := uuid.New().String()
 	jobID := uuid.New().String()
-	err = job_service.New().Create(jobID, auth.UserID, jobModels.TypeCreateDeployment, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.UserID, jobModels.TypeCreateDeployment, versions.V1, map[string]interface{}{
 		"id":      deploymentID,
 		"ownerId": auth.UserID,
 		"params":  requestBody,
@@ -276,8 +282,9 @@ func Delete(c *gin.Context) {
 		return
 	}
 
-	dc := deployment_service.New().WithAuth(auth)
-	currentDeployment, err := dc.Get(requestURI.DeploymentID)
+	deployV1 := service.V1(auth)
+
+	currentDeployment, err := deployV1.Deployments().Get(requestURI.DeploymentID)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -293,7 +300,7 @@ func Delete(c *gin.Context) {
 		return
 	}
 
-	err = dc.StartActivity(requestURI.DeploymentID, deploymentModels.ActivityBeingDeleted)
+	err = deployV1.Deployments().StartActivity(requestURI.DeploymentID, deploymentModels.ActivityBeingDeleted)
 	if err != nil {
 		var failedToStartActivityErr sErrors.FailedToStartActivityError
 		if errors.As(err, &failedToStartActivityErr) {
@@ -311,7 +318,7 @@ func Delete(c *gin.Context) {
 	}
 
 	jobID := uuid.NewString()
-	err = job_service.New().Create(jobID, auth.UserID, jobModels.TypeDeleteDeployment, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.UserID, jobModels.TypeDeleteDeployment, versions.V1, map[string]interface{}{
 		"id": currentDeployment.ID,
 	})
 	if err != nil {
@@ -360,11 +367,11 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	dc := deployment_service.New().WithAuth(auth)
+	deployV1 := service.V1(auth)
 
 	var deployment *deploymentModels.Deployment
 	if requestBody.TransferCode != nil {
-		deployment, err = dc.Get(requestURI.DeploymentID, client.GetOptions{TransferCode: *requestBody.TransferCode})
+		deployment, err = deployV1.Deployments().Get(requestURI.DeploymentID, opts.GetOpts{TransferCode: *requestBody.TransferCode})
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
@@ -374,7 +381,7 @@ func Update(c *gin.Context) {
 			requestBody.OwnerID = &auth.UserID
 		}
 	} else {
-		deployment, err = dc.Get(requestURI.DeploymentID, client.GetOptions{Shared: true})
+		deployment, err = deployV1.Deployments().Get(requestURI.DeploymentID, opts.GetOpts{Shared: true})
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
@@ -388,7 +395,7 @@ func Update(c *gin.Context) {
 
 	if requestBody.OwnerID != nil {
 		if *requestBody.OwnerID == "" {
-			err = dc.ClearUpdateOwner(requestURI.DeploymentID)
+			err = deployV1.Deployments().ClearUpdateOwner(requestURI.DeploymentID)
 			if err != nil {
 				if errors.Is(err, sErrors.DeploymentNotFoundErr) {
 					context.NotFound("Deployment not found")
@@ -410,7 +417,7 @@ func Update(c *gin.Context) {
 			return
 		}
 
-		exists, err := user_service.New().Exists(*requestBody.OwnerID)
+		exists, err := deployV1.Users().Exists(*requestBody.OwnerID)
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
@@ -426,7 +433,7 @@ func Update(c *gin.Context) {
 			return
 		}
 
-		jobID, err := dc.UpdateOwnerSetup(requestURI.DeploymentID, &body.DeploymentUpdateOwner{
+		jobID, err := deployV1.Deployments().UpdateOwnerSetup(requestURI.DeploymentID, &body.DeploymentUpdateOwner{
 			NewOwnerID:   *requestBody.OwnerID,
 			OldOwnerID:   deployment.OwnerID,
 			TransferCode: requestBody.TransferCode,
@@ -455,7 +462,7 @@ func Update(c *gin.Context) {
 	}
 
 	if requestBody.Name != nil {
-		available, err := deployment_service.NameAvailable(*requestBody.Name)
+		available, err := deployV1.Deployments().NameAvailable(*requestBody.Name)
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
@@ -467,7 +474,7 @@ func Update(c *gin.Context) {
 		}
 	}
 
-	err = dc.CheckQuota(requestURI.DeploymentID, &client.QuotaOptions{Update: &requestBody})
+	err = deployV1.Deployments().CheckQuota(requestURI.DeploymentID, &opts.QuotaOptions{Update: &requestBody})
 	if err != nil {
 		var quotaExceededErr sErrors.QuotaExceededError
 		if errors.As(err, &quotaExceededErr) {
@@ -479,14 +486,14 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	canUpdate, reason := dc.CanAddActivity(requestURI.DeploymentID, deploymentModels.ActivityUpdating)
+	canUpdate, reason := deployV1.Deployments().CanAddActivity(requestURI.DeploymentID, deploymentModels.ActivityUpdating)
 	if !canUpdate {
 		context.Locked(reason)
 		return
 	}
 
 	jobID := uuid.New().String()
-	err = job_service.New().Create(jobID, auth.UserID, jobModels.TypeUpdateDeployment, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.UserID, jobModels.TypeUpdateDeployment, versions.V1, map[string]interface{}{
 		"id":     deployment.ID,
 		"params": requestBody,
 	})
@@ -500,32 +507,4 @@ func Update(c *gin.Context) {
 		ID:    deployment.ID,
 		JobID: &jobID,
 	})
-}
-
-func getSmURL(userID string, auth *service.AuthInfo) *string {
-	sm, err := sm_service.New().WithAuth(auth).GetByUserID(userID)
-	if err != nil {
-		return nil
-	}
-
-	if sm == nil {
-		return nil
-	}
-
-	return sm.GetURL()
-}
-
-func getTeamIDs(resourceID string, auth *service.AuthInfo) []string {
-	teams, err := user_service.New().ListTeams(user_service.ListTeamsOpts{ResourceID: resourceID, UserID: auth.UserID})
-
-	if err != nil {
-		return []string{}
-	}
-
-	teamIDs := make([]string, len(teams))
-	for idx, team := range teams {
-		teamIDs[idx] = team.ID
-	}
-
-	return teamIDs
 }

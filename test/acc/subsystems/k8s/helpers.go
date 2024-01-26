@@ -23,7 +23,7 @@ func withClient(t *testing.T, namespace string) *k8s.Client {
 		t.Fatalf("no zone with name %s found", zoneName)
 	}
 
-	client, err := k8s.New(zone.Client, namespace)
+	client, err := k8s.New(zone.K8sClient, namespace)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}

@@ -2,11 +2,16 @@ package config
 
 import (
 	"go-deploy/models/sys/role"
+	"go-deploy/pkg/imp/kubevirt/kubevirt"
 	"k8s.io/client-go/kubernetes"
 )
 
 // The following structs are used to parse the config.yaml file
 // into a struct that can be used by the application.
+
+type RancherConfigSource struct {
+	ClusterID string `yaml:"clusterId"`
+}
 
 type CloudStackConfigSource struct {
 	ClusterID   string `yaml:"clusterId"`
@@ -21,12 +26,14 @@ type DeploymentZone struct {
 	CustomDomainIP string      `yaml:"customDomainIp"`
 	ConfigSource   interface{} `yaml:"configSource"`
 	Storage        struct {
-		ParentDomain  string `yaml:"parentDomain"`
-		NfsServer     string `yaml:"nfsServer"`
-		NfsParentPath string `yaml:"nfsParentPath"`
+		ParentDomain        string `yaml:"parentDomain"`
+		NfsServer           string `yaml:"nfsServer"`
+		NfsParentPath       string `yaml:"nfsParentPath"`
+		VmStorageParentPath string `yaml:"vmStorageParentPath"`
 	} `yaml:"storage"`
 
-	Client *kubernetes.Clientset
+	K8sClient      *kubernetes.Clientset
+	KubeVirtClient *kubevirt.Clientset
 }
 
 type VmZone struct {
@@ -134,6 +141,12 @@ type ConfigType struct {
 		ApiKey string `yaml:"apiKey"`
 		Secret string `yaml:"secret"`
 	} `yaml:"cs"`
+
+	Rancher struct {
+		URL    string `yaml:"url"`
+		ApiKey string `yaml:"apiKey"`
+		Secret string `yaml:"secret"`
+	}
 
 	Landing struct {
 		URL      string `yaml:"url"`

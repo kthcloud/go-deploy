@@ -36,20 +36,12 @@ func (dbCtx *Context) setupMongo() error {
 	log.Println("setting up mongodb")
 
 	var err error
-	dbCtx.mongoClient, err = mongo.NewClient(options.Client().ApplyURI(config.Config.MongoDB.URL))
+	dbCtx.MongoClient, err = mongo.Connect(context.TODO(), options.Client().ApplyURI(config.Config.MongoDB.URL))
 	if err != nil {
 		return makeError(err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	err = dbCtx.mongoClient.Connect(ctx)
-	if err != nil {
-		return makeError(err)
-	}
-
-	err = dbCtx.mongoClient.Ping(context.Background(), nil)
+	err = dbCtx.MongoClient.Ping(context.Background(), nil)
 	if err != nil {
 		log.Fatalln(makeError(err))
 	}
@@ -62,7 +54,7 @@ func (dbCtx *Context) setupMongo() error {
 	DB.CollectionDefinitionMap = getCollectionDefinitions()
 
 	for _, def := range DB.CollectionDefinitionMap {
-		DB.CollectionMap[def.Name] = dbCtx.mongoClient.Database(config.Config.MongoDB.Name).Collection(def.Name)
+		DB.CollectionMap[def.Name] = dbCtx.MongoClient.Database(config.Config.MongoDB.Name).Collection(def.Name)
 	}
 
 	log.Println("found", len(DB.CollectionDefinitionMap), "collections")
@@ -161,7 +153,7 @@ func (dbCtx *Context) shutdownMongo() error {
 		return fmt.Errorf("failed to shutdown database. details: %w", err)
 	}
 
-	err := dbCtx.mongoClient.Disconnect(context.Background())
+	err := dbCtx.MongoClient.Disconnect(context.Background())
 	if err != nil {
 		return makeError(err)
 	}

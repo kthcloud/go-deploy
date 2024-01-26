@@ -54,3 +54,10 @@ type Transfer struct {
 	Code   string `bson:"code"`
 	UserID string `bson:"userId"`
 }
+
+type CloudStackHostCapabilities struct {
+	CpuCoresTotal int
+	CpuCoresUsed  int
+	RamTotal      int
+	RamUsed       int
+}

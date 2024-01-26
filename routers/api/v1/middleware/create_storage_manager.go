@@ -6,10 +6,10 @@ import (
 	"github.com/google/uuid"
 	jobModels "go-deploy/models/sys/job"
 	"go-deploy/models/sys/sm"
+	"go-deploy/models/versions"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
-	"go-deploy/service/job_service"
-	"go-deploy/service/sm_service"
+	"go-deploy/service"
 	"go-deploy/utils"
 )
 
@@ -25,7 +25,9 @@ func CreateSM() gin.HandlerFunc {
 			return
 		}
 
-		exists, err := sm_service.New().Exists(auth.UserID)
+		deployV1 := service.V1(auth)
+
+		exists, err := deployV1.SMs().Exists(auth.UserID)
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to create storage manager. details: %w", err))
 			return
@@ -34,7 +36,7 @@ func CreateSM() gin.HandlerFunc {
 		if !exists {
 			smID := uuid.New().String()
 			jobID := uuid.New().String()
-			err = job_service.New().Create(jobID, auth.UserID, jobModels.TypeCreateSM, map[string]interface{}{
+			err = deployV1.Jobs().Create(jobID, auth.UserID, jobModels.TypeCreateSM, versions.V1, map[string]interface{}{
 				"id":     smID,
 				"userId": auth.UserID,
 				"params": sm.CreateParams{

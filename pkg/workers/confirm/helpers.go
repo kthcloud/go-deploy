@@ -178,11 +178,23 @@ func k8sDeletedVM(vm *vm.VM) (bool, error) {
 		return false, nil
 	}
 
+	if len(k8s.VmMap) > 0 {
+		return false, nil
+	}
+
 	if len(k8s.ServiceMap) > 0 {
 		return false, nil
 	}
 
 	if len(k8s.IngressMap) > 0 {
+		return false, nil
+	}
+
+	if len(k8s.PvcMap) > 0 {
+		return false, nil
+	}
+
+	if len(k8s.PvMap) > 0 {
 		return false, nil
 	}
 

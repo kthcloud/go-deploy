@@ -5,11 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"go-deploy/models/dto/uri"
+	"go-deploy/models/dto/v1/uri"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
-	"go-deploy/service/deployment_service"
+	"go-deploy/service"
 	errors2 "go-deploy/service/errors"
+	"go-deploy/service/v1/deployments"
 	"io"
 )
 
@@ -55,7 +56,9 @@ func GetLogsSSE(c *gin.Context) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	err = deployment_service.New().WithAuth(auth).SetupLogStream(requestURI.DeploymentID, ctx, handler, 25)
+	deployV1 := service.V1(auth)
+
+	err = deployV1.Deployments().SetupLogStream(requestURI.DeploymentID, ctx, handler, 25)
 	if err != nil {
 		if errors.Is(err, errors2.DeploymentNotFoundErr) {
 			sysContext.NotFound("Deployment not found")
@@ -70,7 +73,7 @@ func GetLogsSSE(c *gin.Context) {
 		case <-ctx.Done():
 			return false
 		case msg := <-ch:
-			if msg.source == deployment_service.MessageSourceControl {
+			if msg.source == deployments.MessageSourceControl {
 				return true
 			}
 

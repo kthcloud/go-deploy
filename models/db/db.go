@@ -14,7 +14,7 @@ var DB Context
 // It is used as a singleton, and should be initialized with
 // the Setup() function.
 type Context struct {
-	mongoClient *mongo.Client
+	MongoClient *mongo.Client
 	RedisClient *redis.Client
 
 	CollectionMap           map[string]*mongo.Collection

@@ -7,7 +7,8 @@ import (
 	"go-deploy/models/sys/job"
 	teamModels "go-deploy/models/sys/team"
 	vmModels "go-deploy/models/sys/vm"
-	"go-deploy/service/user_service"
+	"go-deploy/models/versions"
+	"go-deploy/service"
 	"log"
 	"time"
 )
@@ -24,7 +25,7 @@ func CleanUpOldTests() {
 	}
 
 	for _, deployment := range oldE2eDeployments {
-		_ = job.New().Create(uuid.NewString(), "system", job.TypeDeleteDeployment, map[string]interface{}{
+		_ = job.New().Create(uuid.NewString(), "system", job.TypeDeleteDeployment, versions.V1, map[string]interface{}{
 			"id": deployment.ID,
 		})
 	}
@@ -35,7 +36,7 @@ func CleanUpOldTests() {
 	}
 
 	for _, vm := range oldE2eVms {
-		_ = job.New().Create(uuid.NewString(), "system", job.TypeDeleteVM, map[string]interface{}{
+		_ = job.New().Create(uuid.NewString(), "system", job.TypeDeleteVM, versions.V1, map[string]interface{}{
 			"id": vm.ID,
 		})
 
@@ -47,7 +48,7 @@ func CleanUpOldTests() {
 	}
 
 	for _, team := range oldE2eTeams {
-		err := user_service.New().DeleteTeam(team.ID)
+		err := service.V1().Teams().Delete(team.ID)
 		if err != nil {
 			panic(fmt.Errorf("failed to delete team %s: %w", team.ID, err))
 		}

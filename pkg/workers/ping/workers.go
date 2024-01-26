@@ -6,8 +6,6 @@ import (
 	deploymentModels "go-deploy/models/sys/deployment"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/workers"
-	"go-deploy/service/deployment_service"
-	"go-deploy/service/deployment_service/client"
 	"go-deploy/utils"
 	"net/http"
 	"strings"
@@ -32,7 +30,7 @@ func deploymentPingUpdater(ctx context.Context) {
 				return fmt.Errorf("error fetching deployments. details: %w", err)
 			}
 
-			deployments, err := deployment_service.New().List(&client.ListOptions{})
+			deployments, err := deploymentModels.New().List()
 			if err != nil {
 				utils.PrettyPrintError(makeError(err))
 				return
@@ -87,7 +85,7 @@ func pingAndSave(deployment deploymentModels.Deployment, url string) {
 		return
 	}
 
-	err = deployment_service.New().SavePing(deployment.ID, code)
+	err = deploymentModels.New().SetPingResult(deployment.ID, code)
 	if err != nil {
 		utils.PrettyPrintError(fmt.Errorf("error saving deployment status ping. details: %w", err))
 		return
@@ -96,7 +94,7 @@ func pingAndSave(deployment deploymentModels.Deployment, url string) {
 
 // resetPing resets the ping status of a deployment.
 func resetPing(deployment deploymentModels.Deployment) {
-	err := deployment_service.New().SavePing(deployment.ID, 0)
+	err := deploymentModels.New().SetPingResult(deployment.ID, 0)
 	if err != nil {
 		utils.PrettyPrintError(fmt.Errorf("error resetting deployment status ping. details: %w", err))
 		return

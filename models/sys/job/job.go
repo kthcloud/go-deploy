@@ -66,20 +66,21 @@ const (
 )
 
 type Job struct {
-	ID     string                 `bson:"id" json:"id"`
-	UserID string                 `bson:"userId" json:"userId"`
-	Type   string                 `bson:"type" json:"type"`
-	Args   map[string]interface{} `bson:"args" json:"args"`
+	ID      string                 `bson:"id"`
+	UserID  string                 `bson:"userId"`
+	Type    string                 `bson:"type"`
+	Args    map[string]interface{} `bson:"args"`
+	Version string                 `bson:"version"`
 
-	CreatedAt  time.Time `bson:"createdAt" json:"createdAt"`
-	LastRunAt  time.Time `bson:"lastRunAt" json:"lastRunAt"`
-	FinishedAt time.Time `bson:"finishedAt" json:"finishedAt"`
-	RunAfter   time.Time `bson:"runAfter" json:"runAfter"`
+	CreatedAt  time.Time `bson:"createdAt"`
+	LastRunAt  time.Time `bson:"lastRunAt,omitempty"`
+	FinishedAt time.Time `bson:"finishedAt,omitempty"`
+	RunAfter   time.Time `bson:"runAfter,omitempty"`
 
-	Attempts int `bson:"attempts" json:"attempts"`
+	Attempts int `bson:"attempts"`
 
-	Status    string   `bson:"status" json:"status"`
-	ErrorLogs []string `bson:"errorLogs" json:"errorLogs"`
+	Status    string   `bson:"status" `
+	ErrorLogs []string `bson:"errorLogs" `
 }
 
 type UpdateParams struct {

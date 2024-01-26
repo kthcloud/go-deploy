@@ -1,6 +1,7 @@
 package k8s
 
 import (
+	"fmt"
 	"go-deploy/pkg/subsystems/k8s/keys"
 	"go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/utils"
@@ -12,6 +13,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	kubevirtv1 "kubevirt.io/api/core/v1"
+	cdibetav1 "kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1"
 )
 
 const (
@@ -171,13 +174,23 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 
 // CreateServiceManifest creates a Kubernetes Service manifest from a models.ServicePublic.
 func CreateServiceManifest(public *models.ServicePublic) *apiv1.Service {
+	labels := map[string]string{
+		keys.ManifestLabelName: public.Name,
+	}
+
+	var serviceType apiv1.ServiceType
+	if public.ExternalIP != nil {
+		serviceType = apiv1.ServiceTypeLoadBalancer
+		labels[keys.ManifestCreationTimestamp] = *public.ExternalIP
+	} else {
+		serviceType = apiv1.ServiceTypeClusterIP
+	}
+
 	return &apiv1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      public.Name,
 			Namespace: public.Namespace,
-			Labels: map[string]string{
-				keys.ManifestLabelName: public.Name,
-			},
+			Labels:    labels,
 			Annotations: map[string]string{
 				keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat),
 			},
@@ -194,6 +207,7 @@ func CreateServiceManifest(public *models.ServicePublic) *apiv1.Service {
 			Selector: map[string]string{
 				keys.ManifestLabelName: public.Name,
 			},
+			Type: serviceType,
 		},
 		Status: apiv1.ServiceStatus{},
 	}
@@ -310,7 +324,7 @@ func CreatePvcManifest(public *models.PvcPublic) *apiv1.PersistentVolumeClaim {
 			AccessModes: []apiv1.PersistentVolumeAccessMode{
 				apiv1.ReadWriteMany,
 			},
-			Resources: apiv1.ResourceRequirements{
+			Resources: apiv1.VolumeResourceRequirements{
 				Requests: apiv1.ResourceList{
 					apiv1.ResourceStorage: resource.MustParse(public.Capacity),
 				},
@@ -363,7 +377,7 @@ func CreateJobManifest(public *models.JobPublic) *v1.Job {
 		}
 	}
 
-	ttl := int32(100)
+	ttl := int32(5)
 
 	return &v1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -469,6 +483,110 @@ func CreateHpaManifest(public *models.HpaPublic) *autoscalingv2.HorizontalPodAut
 	}
 }
 
+// CreateVmManifest creates a Kubernetes VirtualMachine manifest from a models.VmPublic.
+func CreateVmManifest(public *models.VmPublic) *kubevirtv1.VirtualMachine {
+	return &kubevirtv1.VirtualMachine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      public.Name,
+			Namespace: public.Namespace,
+			Labels: map[string]string{
+				keys.ManifestLabelName: public.Name,
+			},
+			Annotations: map[string]string{
+				keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat),
+			},
+		},
+		Spec: kubevirtv1.VirtualMachineSpec{
+			Running: &public.Running,
+			Template: &kubevirtv1.VirtualMachineInstanceTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: public.Name,
+					Labels: map[string]string{
+						keys.ManifestLabelName: public.Name,
+					},
+					Annotations: map[string]string{
+						keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat),
+					},
+				},
+				Spec: kubevirtv1.VirtualMachineInstanceSpec{
+					Domain: kubevirtv1.DomainSpec{
+						Devices: kubevirtv1.Devices{
+							Disks: []kubevirtv1.Disk{
+								{
+									Name: "rootdisk",
+									DiskDevice: kubevirtv1.DiskDevice{
+										Disk: &kubevirtv1.DiskTarget{
+											Bus: "virtio",
+										},
+									},
+								},
+								{
+									Name: "cloudinit",
+									DiskDevice: kubevirtv1.DiskDevice{
+										Disk: &kubevirtv1.DiskTarget{
+											Bus: "virtio",
+										},
+									},
+								},
+							},
+							Rng: &kubevirtv1.Rng{},
+						},
+						Resources: kubevirtv1.ResourceRequirements{
+							Requests: apiv1.ResourceList{
+								apiv1.ResourceMemory: resource.MustParse(fmt.Sprintf("%dGi", public.RAM)),
+								apiv1.ResourceCPU:    resource.MustParse(fmt.Sprintf("%d", public.CpuCores)),
+							},
+						},
+					},
+					Volumes: []kubevirtv1.Volume{
+						{
+							Name: "rootdisk",
+							VolumeSource: kubevirtv1.VolumeSource{
+								DataVolume: &kubevirtv1.DataVolumeSource{
+									Name: "rootdisk-dv",
+								},
+							},
+						},
+						{
+							Name: "cloudinit",
+							VolumeSource: kubevirtv1.VolumeSource{
+								CloudInitNoCloud: &kubevirtv1.CloudInitNoCloudSource{
+									UserData: public.CloudInit,
+								},
+							},
+						},
+					},
+				},
+			},
+			DataVolumeTemplates: []kubevirtv1.DataVolumeTemplateSpec{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "rootdisk-dv",
+					},
+					Spec: cdibetav1.DataVolumeSpec{
+						PVC: &apiv1.PersistentVolumeClaimSpec{
+							AccessModes: []apiv1.PersistentVolumeAccessMode{
+								apiv1.ReadWriteMany,
+							},
+							Resources: apiv1.VolumeResourceRequirements{
+								Requests: apiv1.ResourceList{
+									apiv1.ResourceStorage: resource.MustParse(fmt.Sprintf("%dGi", public.DiskSize)),
+								},
+							},
+							VolumeName: public.PvName,
+						},
+						Source: &cdibetav1.DataVolumeSource{
+							HTTP: &cdibetav1.DataVolumeSourceHTTP{
+								URL: public.ImageURL,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 // pathTypeAddr is a helper function to convert a string to a networkingv1.PathType.
 func pathTypeAddr(s string) *networkingv1.PathType {
 	return (*networkingv1.PathType)(&s)
@@ -495,4 +613,9 @@ func createResourceList(cpu, memory string) apiv1.ResourceList {
 func intToInt32Ptr(i int) *int32 {
 	i32 := int32(i)
 	return &i32
+}
+
+// strToPtr is a helper function to convert a string to a *string.
+func strToPtr(s string) *string {
+	return &s
 }

@@ -11,8 +11,9 @@ type ServicePublic struct {
 	Namespace  string            `bson:"namespace"`
 	Port       int               `bson:"port"`
 	TargetPort int               `bson:"targetPort"`
-	CreatedAt  time.Time         `bson:"createdAt"`
+	ExternalIP *string           `bson:"externalIP"`
 	Selector   map[string]string `bson:"selector"`
+	CreatedAt  time.Time         `bson:"createdAt"`
 }
 
 func (s *ServicePublic) Created() bool {
@@ -34,6 +35,11 @@ func CreateServicePublicFromRead(service *v1.Service) *ServicePublic {
 		selector = service.Spec.Selector
 	}
 
+	var externalIP *string
+	if len(service.Spec.ExternalIPs) > 0 {
+		externalIP = &service.Spec.ExternalIPs[0]
+	}
+
 	return &ServicePublic{
 		Name:       service.Name,
 		Namespace:  service.Namespace,
@@ -41,5 +47,6 @@ func CreateServicePublicFromRead(service *v1.Service) *ServicePublic {
 		TargetPort: service.Spec.Ports[0].TargetPort.IntValue(),
 		CreatedAt:  formatCreatedAt(service.Annotations),
 		Selector:   selector,
+		ExternalIP: externalIP,
 	}
 }

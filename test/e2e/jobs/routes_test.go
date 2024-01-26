@@ -2,7 +2,7 @@ package jobs
 
 import (
 	"github.com/stretchr/testify/assert"
-	"go-deploy/models/dto/body"
+	"go-deploy/models/dto/v1/body"
 	jobModels "go-deploy/models/sys/job"
 	"go-deploy/test/e2e"
 	"os"

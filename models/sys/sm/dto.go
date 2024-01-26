@@ -2,7 +2,7 @@ package sm
 
 import (
 	"fmt"
-	"go-deploy/models/dto/body"
+	"go-deploy/models/dto/v1/body"
 	"go-deploy/service/constants"
 )
 

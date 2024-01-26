@@ -2,11 +2,12 @@ package v1_status
 
 import (
 	"github.com/gin-gonic/gin"
-	"go-deploy/models/dto/body"
-	"go-deploy/models/dto/query"
+	"go-deploy/models/dto/v1/body"
+	"go-deploy/models/dto/v1/query"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
-	"go-deploy/service/status_service"
+	"go-deploy/service"
+	"go-deploy/service/v1/status/opts"
 )
 
 // List
@@ -26,14 +27,14 @@ func List(c *gin.Context) {
 		return
 	}
 
-	status, err := status_service.New().ListWorkerStatus(status_service.ListWorkerStatusOpts{})
+	workerStatus, err := service.V1().Status().ListWorkerStatus(opts.ListWorkerStatusOpts{})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
 	}
 
-	dtoWorkerStatus := make([]body.WorkerStatusRead, len(status))
-	for i, zone := range status {
+	dtoWorkerStatus := make([]body.WorkerStatusRead, len(workerStatus))
+	for i, zone := range workerStatus {
 		dtoWorkerStatus[i] = zone.ToDTO()
 	}
 

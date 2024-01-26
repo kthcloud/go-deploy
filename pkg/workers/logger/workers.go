@@ -6,9 +6,9 @@ import (
 	"fmt"
 	deploymentModels "go-deploy/models/sys/deployment"
 	"go-deploy/pkg/workers"
-	"go-deploy/service/deployment_service/gitlab_service"
-	"go-deploy/service/deployment_service/k8s_service"
 	sErrors "go-deploy/service/errors"
+	"go-deploy/service/v1/deployments/gitlab_service"
+	"go-deploy/service/v1/deployments/k8s_service"
 	"go-deploy/utils"
 	"log"
 	"sync"
@@ -108,7 +108,8 @@ func deploymentLogger(ctx context.Context) {
 							return
 						}
 
-						utils.PrettyPrintError(fmt.Errorf("failed to setup deployment log stream for deployment %s. details: %w", id.ID, err))
+						// TODO: Temporary
+						//utils.PrettyPrintError(fmt.Errorf("failed to setup deployment log stream for deployment %s. details: %w", id.ID, err))
 						shouldCancel <- id.ID
 						return
 					}

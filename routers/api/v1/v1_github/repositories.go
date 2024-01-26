@@ -2,11 +2,11 @@ package v1_github
 
 import (
 	"github.com/gin-gonic/gin"
-	"go-deploy/models/dto/body"
-	"go-deploy/models/dto/query"
+	"go-deploy/models/dto/v1/body"
+	"go-deploy/models/dto/v1/query"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
-	"go-deploy/service/deployment_service"
+	"go-deploy/service"
 )
 
 // ListGitHubRepositories
@@ -27,14 +27,16 @@ func ListGitHubRepositories(c *gin.Context) {
 		return
 	}
 
-	// fetch access token
-	accessToken, err := deployment_service.GetGitHubAccessTokenByCode(requestBody.Code)
+	deployV1 := service.V1()
+
+	// Fetch access token
+	accessToken, err := deployV1.Deployments().GetGitHubAccessTokenByCode(requestBody.Code)
 	if err != nil {
 		context.Unauthorized("Failed to get GitHub access token from code")
 		return
 	}
 
-	valid, reason, err := deployment_service.ValidGitHubToken(accessToken)
+	valid, reason, err := deployV1.Deployments().ValidGitHubToken(accessToken)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -45,8 +47,8 @@ func ListGitHubRepositories(c *gin.Context) {
 		return
 	}
 
-	// fetch repositories
-	repositories, err := deployment_service.GetGitHubRepositories(accessToken)
+	// Fetch repositories
+	repositories, err := deployV1.Deployments().GetGitHubRepositories(accessToken)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return

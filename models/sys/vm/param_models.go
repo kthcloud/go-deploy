@@ -1,7 +1,9 @@
 package vm
 
 type CreateParams struct {
-	Name           string
+	Name    string
+	Version string
+
 	Zone           string
 	DeploymentZone *string
 

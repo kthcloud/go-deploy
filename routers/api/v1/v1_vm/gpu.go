@@ -6,18 +6,19 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"go-deploy/models/dto/body"
-	"go-deploy/models/dto/query"
+	"go-deploy/models/dto/v1/body"
+	"go-deploy/models/dto/v1/query"
 	gpuModels "go-deploy/models/sys/gpu"
 	jobModels "go-deploy/models/sys/job"
 	vmModels "go-deploy/models/sys/vm"
+	"go-deploy/models/versions"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
+	"go-deploy/service/clients"
 	sErrors "go-deploy/service/errors"
-	"go-deploy/service/job_service"
-	"go-deploy/service/vm_service"
-	"go-deploy/service/vm_service/client"
+	v12 "go-deploy/service/v1/utils"
+	"go-deploy/service/v1/vms/opts"
 )
 
 // ListGPUs
@@ -48,8 +49,8 @@ func ListGPUs(c *gin.Context) {
 		return
 	}
 
-	gpus, err := vm_service.New().WithAuth(auth).ListGPUs(&client.ListGpuOptions{
-		Pagination:    service.GetOrDefaultPagination(requestQuery.Pagination),
+	gpus, err := service.V1(auth).VMs().ListGPUs(opts.ListGpuOpts{
+		Pagination:    v12.GetOrDefaultPagination(requestQuery.Pagination),
 		Zone:          requestQuery.Zone,
 		AvailableGPUs: requestQuery.OnlyShowAvailable,
 	})
@@ -68,7 +69,9 @@ func ListGPUs(c *gin.Context) {
 
 // updateGPU is an alternate entrypoint for UpdateVM that allows a user to attach or detach a GPU to a VM
 // It is called if GPU ID is not nil in the request body for Update.
-func updateGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *service.AuthInfo, vm *vmModels.VM) {
+//
+// Auth is assumed to be set in the V1 client.
+func updateGPU(context *sys.ClientContext, requestBody *body.VmUpdate, deployV1 clients.V1, vm *vmModels.VM) {
 	decodedGpuID, decodeErr := decodeGpuID(*requestBody.GpuID)
 	if decodeErr != nil {
 		context.UserError("Invalid GPU ID")
@@ -78,25 +81,25 @@ func updateGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *ser
 	requestBody.GpuID = &decodedGpuID
 
 	if *requestBody.GpuID == "" {
-		detachGPU(context, auth, vm)
+		detachGPU(context, deployV1, vm)
 		return
 	} else {
-		attachGPU(context, requestBody, auth, vm)
+		attachGPU(context, requestBody, deployV1, vm)
 		return
 	}
 }
 
 // detachGPU is an alternate entrypoint for UpdateVM that allows a user to detach a GPU from a VM
 // It is called if an empty GPU ID is passed in the request body for Update.
-func detachGPU(context *sys.ClientContext, auth *service.AuthInfo, vm *vmModels.VM) {
+//
+// Auth is assumed to be set in the V1 client.
+func detachGPU(context *sys.ClientContext, deployV1 clients.V1, vm *vmModels.VM) {
 	if !vm.HasGPU() {
 		context.UserError("VM does not have a GPU attached")
 		return
 	}
 
-	vsc := vm_service.New().WithAuth(auth)
-
-	err := vsc.StartActivity(vm.ID, vmModels.ActivityDetachingGPU)
+	err := deployV1.VMs().StartActivity(vm.ID, vmModels.ActivityDetachingGPU)
 	if err != nil {
 		var failedToStartActivityErr sErrors.FailedToStartActivityError
 		if errors.As(err, &failedToStartActivityErr) {
@@ -114,7 +117,7 @@ func detachGPU(context *sys.ClientContext, auth *service.AuthInfo, vm *vmModels.
 	}
 
 	jobID := uuid.New().String()
-	err = job_service.New().Create(jobID, auth.UserID, jobModels.TypeDetachGPU, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, deployV1.Auth().UserID, jobModels.TypeDetachGPU, versions.V1, map[string]interface{}{
 		"id": vm.ID,
 	})
 	if err != nil {
@@ -130,14 +133,13 @@ func detachGPU(context *sys.ClientContext, auth *service.AuthInfo, vm *vmModels.
 
 // attachGPU is an alternate entrypoint for UpdateVM that allows a user to attach a GPU to a VM
 // It is called if a GPU ID is passed in the request body for Update.
-func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *service.AuthInfo, vm *vmModels.VM) {
-	if !auth.GetEffectiveRole().Permissions.UseGPUs {
+func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, deployV1 clients.V1, vm *vmModels.VM) {
+	if !deployV1.Auth().GetEffectiveRole().Permissions.UseGPUs {
 		context.Forbidden("Tier does not include GPU access")
 		return
 	}
 
-	vsc := vm_service.New().WithAuth(auth)
-	currentGPU := vm.GetGpu()
+	currentGPU := vm.GetGPU()
 
 	var gpus []gpuModels.GPU
 	if *requestBody.GpuID == "any" {
@@ -149,7 +151,7 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *ser
 
 			gpus = []gpuModels.GPU{*currentGPU}
 		} else {
-			availableGpus, err := vsc.ListGPUs(&client.ListGpuOptions{
+			availableGpus, err := deployV1.VMs().ListGPUs(opts.ListGpuOpts{
 				AvailableGPUs: true,
 				Zone:          &vm.Zone,
 			})
@@ -166,23 +168,23 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *ser
 			gpus = availableGpus
 		}
 	} else {
-		if !auth.GetEffectiveRole().Permissions.ChooseGPU {
+		if !deployV1.Auth().GetEffectiveRole().Permissions.ChooseGPU {
 			context.Forbidden("Tier does not include GPU selection")
 			return
 		}
 
-		privilegedGPU, err := vsc.IsGpuPrivileged(*requestBody.GpuID)
+		privilegedGPU, err := deployV1.VMs().IsGpuPrivileged(*requestBody.GpuID)
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
 		}
 
-		if privilegedGPU && !auth.GetEffectiveRole().Permissions.UsePrivilegedGPUs {
+		if privilegedGPU && !deployV1.Auth().GetEffectiveRole().Permissions.UsePrivilegedGPUs {
 			context.NotFound("GPU not found")
 			return
 		}
 
-		requestedGPU, err := vsc.GetGPU(*requestBody.GpuID, &client.GetGpuOptions{
+		requestedGPU, err := deployV1.VMs().GetGPU(*requestBody.GpuID, opts.GetGpuOpts{
 			Zone: &vm.Zone,
 		})
 		if err != nil {
@@ -205,7 +207,7 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *ser
 			return
 		}
 
-		err = vsc.CheckGpuHardwareAvailable(requestedGPU.ID)
+		err = deployV1.VMs().CheckGpuHardwareAvailable(requestedGPU.ID)
 		if err != nil {
 			switch {
 			case errors.Is(err, sErrors.HostNotAvailableErr):
@@ -227,13 +229,13 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *ser
 	// do this check to give a nice error to the user if the gpu cannot be attached
 	// otherwise it will be silently ignored
 	if len(gpus) == 1 {
-		if err := vsc.CheckSuitableHost(vm.ID, gpus[0].Host, gpus[0].Zone); err != nil {
+		if err := deployV1.VMs().CheckSuitableHost(vm.ID, gpus[0].Host, gpus[0].Zone); err != nil {
 			switch {
 			case errors.Is(err, sErrors.HostNotAvailableErr):
 				context.ServerUnavailableError(fmt.Errorf("host not available when attaching gpu to vm %s. details: %w", vm.ID, err), v1.HostNotAvailableErr)
 			case errors.Is(err, sErrors.VmTooLargeErr):
 				tooLargeErr := v1.VmTooLargeForHostErr
-				caps, err := vm_service.GetCloudStackHostCapabilities(gpus[0].Host, vm.Zone)
+				caps, err := deployV1.VMs().GetCloudStackHostCapabilities(gpus[0].Host, vm.Zone)
 				if err == nil && caps != nil {
 					tooLargeErr = v1.MakeVmToLargeForHostErr(caps.CpuCoresTotal-caps.CpuCoresUsed, caps.RamTotal-caps.RamUsed)
 				}
@@ -252,7 +254,7 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *ser
 		gpuIds[i] = gpu.ID
 	}
 
-	err := vsc.StartActivity(vm.ID, vmModels.ActivityAttachingGPU)
+	err := deployV1.VMs().StartActivity(vm.ID, vmModels.ActivityAttachingGPU)
 	if err != nil {
 		var failedToStartActivityErr sErrors.FailedToStartActivityError
 		if errors.As(err, &failedToStartActivityErr) {
@@ -270,11 +272,11 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, auth *ser
 	}
 
 	jobID := uuid.New().String()
-	err = job_service.New().Create(jobID, auth.UserID, jobModels.TypeAttachGPU, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, deployV1.Auth().UserID, jobModels.TypeAttachGPU, versions.V1, map[string]interface{}{
 		"id":            vm.ID,
 		"gpuIds":        gpuIds,
-		"userId":        auth.UserID,
-		"leaseDuration": auth.GetEffectiveRole().Quotas.GpuLeaseDuration,
+		"userId":        deployV1.Auth().UserID,
+		"leaseDuration": deployV1.Auth().GetEffectiveRole().Quotas.GpuLeaseDuration,
 	})
 
 	if err != nil {

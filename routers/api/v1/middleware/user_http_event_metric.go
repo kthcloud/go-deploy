@@ -7,7 +7,7 @@ import (
 	"go-deploy/models/sys/event"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
-	"go-deploy/service/event_service"
+	"go-deploy/service"
 	"go-deploy/utils"
 )
 
@@ -26,7 +26,7 @@ func UserHttpEvent() gin.HandlerFunc {
 		userID := auth.UserID
 		ip := context.GinContext.ClientIP()
 
-		err = event_service.Create(uuid.NewString(), &event.CreateParams{
+		err = service.V1(auth).Events().Create(uuid.NewString(), &event.CreateParams{
 			Type: event.TypeHttpRequest,
 			Source: &event.Source{
 				IP:     &ip,
