@@ -13,7 +13,7 @@ func (client *Client) ReadVM(name string) (*models.VmPublic, error) {
 		return fmt.Errorf("failed to read k8s vm. details: %w", err)
 	}
 
-	vm, err := client.VirtK8sClient.KubevirtV1().VirtualMachines(client.Namespace).Get(context.TODO(), name, metav1.GetOptions{})
+	vm, err := client.KubeVirtK8sClient.KubevirtV1().VirtualMachines(client.Namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
 		if IsNotFoundErr(err) {
 			return nil, nil
@@ -32,7 +32,7 @@ func (client *Client) CreateVM(public *models.VmPublic) (*models.VmPublic, error
 		return fmt.Errorf("failed to create k8s vm. details: %w", err)
 	}
 
-	vm, err := client.VirtK8sClient.KubevirtV1().VirtualMachines(client.Namespace).Get(context.TODO(), public.Name, metav1.GetOptions{})
+	vm, err := client.KubeVirtK8sClient.KubevirtV1().VirtualMachines(client.Namespace).Get(context.TODO(), public.Name, metav1.GetOptions{})
 	if err != nil && !IsNotFoundErr(err) {
 		return nil, makeError(err)
 	}
@@ -44,7 +44,7 @@ func (client *Client) CreateVM(public *models.VmPublic) (*models.VmPublic, error
 	public.CreatedAt = time.Now()
 
 	manifest := CreateVmManifest(public)
-	res, err := client.VirtK8sClient.KubevirtV1().VirtualMachines(client.Namespace).Create(context.TODO(), manifest, metav1.CreateOptions{})
+	res, err := client.KubeVirtK8sClient.KubevirtV1().VirtualMachines(client.Namespace).Create(context.TODO(), manifest, metav1.CreateOptions{})
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -58,7 +58,7 @@ func (client *Client) UpdateVM(public *models.VmPublic) (*models.VmPublic, error
 	}
 
 	manifest := CreateVmManifest(public)
-	res, err := client.VirtK8sClient.KubevirtV1().VirtualMachines(client.Namespace).Update(context.TODO(), manifest, metav1.UpdateOptions{})
+	res, err := client.KubeVirtK8sClient.KubevirtV1().VirtualMachines(client.Namespace).Update(context.TODO(), manifest, metav1.UpdateOptions{})
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -71,7 +71,7 @@ func (client *Client) DeleteVM(name string) error {
 		return fmt.Errorf("failed to delete k8s vm. details: %w", err)
 	}
 
-	err := client.VirtK8sClient.KubevirtV1().VirtualMachines(client.Namespace).Delete(context.TODO(), name, metav1.DeleteOptions{})
+	err := client.KubeVirtK8sClient.KubevirtV1().VirtualMachines(client.Namespace).Delete(context.TODO(), name, metav1.DeleteOptions{})
 	if err != nil && !IsNotFoundErr(err) {
 		return makeError(err)
 	}
