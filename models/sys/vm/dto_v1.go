@@ -118,7 +118,7 @@ func (vm *VM) ToDTOv1(status string, connectionString *string, teams []string, g
 }
 
 // FromDTOv1 converts a VM DTO to a VM.
-func (p CreateParams) FromDTOv1(dto *body.VmCreate, fallbackZone *string, deploymentZone *string) {
+func (p CreateParams) FromDTOv1(dto *body.VmCreate, fallbackZone *string, deploymentZone *string) CreateParams {
 	p.Name = dto.Name
 	p.SshPublicKey = dto.SshPublicKey
 	p.CpuCores = dto.CpuCores
@@ -152,10 +152,12 @@ func (p CreateParams) FromDTOv1(dto *body.VmCreate, fallbackZone *string, deploy
 	} else {
 		p.Zone = *fallbackZone
 	}
+
+	return p
 }
 
 // FromDTOv1 converts a VM DTO to a VM.
-func (p UpdateParams) FromDTOv1(dto *body.VmUpdate) {
+func (p UpdateParams) FromDTOv1(dto *body.VmUpdate) UpdateParams {
 	p.Name = dto.Name
 	p.SnapshotID = dto.SnapshotID
 	p.CpuCores = dto.CpuCores
@@ -186,6 +188,8 @@ func (p UpdateParams) FromDTOv1(dto *body.VmUpdate) {
 	} else {
 		p.PortMap = nil
 	}
+
+	return p
 }
 
 // ToDTOv1 converts a VM DTO to a VM.

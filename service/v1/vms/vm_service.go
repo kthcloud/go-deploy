@@ -178,10 +178,9 @@ func (c *Client) Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
 	fallback := "se-flem"
 	deploymentZone := "se-flem"
 
-	params := &vmModels.CreateParams{}
-	params.FromDTOv1(dtoVmCreate, &fallback, &deploymentZone)
+	params := vmModels.CreateParams{}.FromDTOv1(dtoVmCreate, &fallback, &deploymentZone)
 
-	_, err := vmModels.New(versions.V1).Create(id, ownerID, config.Config.Manager, params)
+	_, err := vmModels.New(versions.V1).Create(id, ownerID, config.Config.Manager, &params)
 	if err != nil {
 		if errors.Is(err, vmModels.NonUniqueFieldErr) {
 			return sErrors.NonUniqueFieldErr
@@ -190,13 +189,13 @@ func (c *Client) Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
 		return makeError(err)
 	}
 
-	err = cs_service.New(c.Cache).Create(id, params)
+	err = cs_service.New(c.Cache).Create(id, &params)
 	if err != nil {
 		return makeError(err)
 	}
 
 	if len(params.PortMap) > 1 {
-		err = k8s_service.New(c.Cache).Create(id, params)
+		err = k8s_service.New(c.Cache).Create(id, &params)
 		if err != nil {
 			return makeError(err)
 		}
@@ -215,8 +214,7 @@ func (c *Client) Update(id string, dtoVmUpdate *body.VmUpdate) error {
 		return fmt.Errorf("failed to update vm. details: %w", err)
 	}
 
-	vmUpdate := &vmModels.UpdateParams{}
-	vmUpdate.FromDTOv1(dtoVmUpdate)
+	vmUpdate := vmModels.UpdateParams{}.FromDTOv1(dtoVmUpdate)
 
 	// We don't allow both applying a snapshot and updating the VM at the same time.
 	// So, if a snapshot ID is specified, apply it
@@ -250,7 +248,7 @@ func (c *Client) Update(id string, dtoVmUpdate *body.VmUpdate) error {
 		}
 	}
 
-	err := vmModels.New(versions.V1).UpdateWithParams(id, vmUpdate)
+	err := vmModels.New(versions.V1).UpdateWithParams(id, &vmUpdate)
 	if err != nil {
 		if errors.Is(err, vmModels.NonUniqueFieldErr) {
 			return sErrors.NonUniqueFieldErr
@@ -264,7 +262,7 @@ func (c *Client) Update(id string, dtoVmUpdate *body.VmUpdate) error {
 		return makeError(err)
 	}
 
-	err = cs_service.New(c.Cache).Update(id, vmUpdate)
+	err = cs_service.New(c.Cache).Update(id, &vmUpdate)
 	if err != nil {
 		return makeError(err)
 	}
