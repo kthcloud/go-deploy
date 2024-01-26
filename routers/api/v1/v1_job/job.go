@@ -46,12 +46,14 @@ func List(c *gin.Context) {
 	}
 
 	jobList, err := service.V1(auth).Jobs().List(opts.ListOpts{
-		Pagination: v12.GetOrDefaultPagination(requestQuery.Pagination),
-		SortBy:     v12.GetOrDefaultSortBy(requestQuery.SortBy),
-		All:        requestQuery.All,
-		UserID:     requestQuery.UserID,
-		JobType:    requestQuery.Type,
-		Status:     requestQuery.Status,
+		Pagination:      v12.GetOrDefaultPagination(requestQuery.Pagination),
+		SortBy:          v12.GetOrDefaultSortBy(requestQuery.SortBy),
+		UserID:          requestQuery.UserID,
+		All:             requestQuery.All,
+		JobTypes:        requestQuery.Types,
+		ExcludeJobTypes: requestQuery.ExcludeTypes,
+		Status:          requestQuery.Status,
+		ExcludeStatus:   requestQuery.ExcludeStatus,
 	})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)

@@ -13,8 +13,10 @@ type ListOpts struct {
 	Pagination *utils.Pagination
 	SortBy     *utils.SortBy
 
-	UserID  *string
-	All     bool
-	JobType *string
-	Status  *string
+	UserID          *string
+	All             bool
+	JobTypes        []string
+	ExcludeJobTypes []string
+	Status          []string
+	ExcludeStatus   []string
 }

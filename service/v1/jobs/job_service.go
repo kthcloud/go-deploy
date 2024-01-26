@@ -55,12 +55,20 @@ func (c *Client) List(opt ...opts.ListOpts) ([]jobModels.Job, error) {
 		jmc.RestrictToUser(effectiveUserID)
 	}
 
-	if o.JobType != nil {
-		jmc.IncludeTypes(*o.JobType)
+	if len(o.JobTypes) > 0 {
+		jmc.IncludeTypes(o.JobTypes...)
 	}
 
-	if o.Status != nil {
-		jmc.IncludeStatus(*o.Status)
+	if len(o.ExcludeJobTypes) > 0 {
+		jmc.ExcludeTypes(o.ExcludeJobTypes...)
+	}
+
+	if len(o.Status) > 0 {
+		jmc.IncludeStatus(o.Status...)
+	}
+
+	if len(o.ExcludeStatus) > 0 {
+		jmc.ExcludeStatus(o.ExcludeStatus...)
 	}
 
 	return c.Jobs(jmc)
