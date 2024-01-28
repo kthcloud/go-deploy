@@ -675,7 +675,7 @@ func (c *Client) CanAddActivity(vmID, activity string) (bool, string, error) {
 
 // NameAvailable checks if the given name is available.
 func (c *Client) NameAvailable(name string) (bool, error) {
-	exists, err := vmModels.New(versions.V1).ExistsByName(name)
+	exists, err := vmModels.New().ExistsByName(name)
 	if err != nil {
 		return false, err
 	}
@@ -690,7 +690,7 @@ func (c *Client) HttpProxyNameAvailable(id, name string) (bool, error) {
 		{"portMap.httpProxy.name", name},
 	}
 
-	exists, err := vmModels.New(versions.V1).WithCustomFilter(filter).ExistsAny()
+	exists, err := vmModels.New().WithCustomFilter(filter).ExistsAny()
 	if err != nil {
 		return false, err
 	}

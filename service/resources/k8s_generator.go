@@ -483,7 +483,7 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 			Port:       mainApp.InternalPort,
 			TargetPort: mainApp.InternalPort,
 			Selector: map[string]string{
-				keys.ManifestLabelName: kg.d.deployment.Name,
+				keys.LabelDeployName: kg.d.deployment.Name,
 			},
 		}
 
@@ -509,7 +509,7 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 				Port:       8080,
 				TargetPort: 8080,
 				Selector: map[string]string{
-					keys.ManifestLabelName: vmpDeploymentName(kg.v.vm, port.HttpProxy.Name),
+					keys.LabelDeployName: vmpDeploymentName(kg.v.vm, port.HttpProxy.Name),
 				},
 			})
 		}
@@ -543,14 +543,14 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 
 		for _, port := range portMap {
 			res = append(res, models.ServicePublic{
-				Name:       vmServiceName(kg.v.vm),
+				Name:       vmServiceName(kg.v.vm, pfrName(port.Port, port.Protocol)),
 				Namespace:  kg.namespace,
 				Port:       0, // This is set externally
 				TargetPort: port.Port,
 				Selector: map[string]string{
-					keys.ManifestLabelName: vmName(kg.v.vm),
+					keys.LabelDeployName: vmName(kg.v.vm),
 				},
-				ExternalIP: strToPtr("172.31.50.150"),
+				LoadBalancerIP: &kg.v.deploymentZone.LoadBalancerIP,
 			})
 		}
 
@@ -577,7 +577,7 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 			Port:       80,
 			TargetPort: 80,
 			Selector: map[string]string{
-				keys.ManifestLabelName: constants.SmAppName,
+				keys.LabelDeployName: constants.SmAppName,
 			},
 		}
 
@@ -594,7 +594,7 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 			Port:       4180,
 			TargetPort: 4180,
 			Selector: map[string]string{
-				keys.ManifestLabelName: constants.SmAppNameAuth,
+				keys.LabelDeployName: constants.SmAppNameAuth,
 			},
 		}
 
@@ -1240,8 +1240,8 @@ func vmRootPvName(vm *vmModels.VM) string {
 }
 
 // vmServiceName returns the service name for a VM
-func vmServiceName(vm *vmModels.VM) string {
-	return vm.Name
+func vmServiceName(vm *vmModels.VM, name string) string {
+	return fmt.Sprintf("%s-%s", vm.Name, name)
 }
 
 // vmpDeploymentName returns the deployment name for a VM proxy

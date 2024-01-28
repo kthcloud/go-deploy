@@ -34,7 +34,7 @@ type podEvent struct {
 // This is used when setting up a log stream for a deployment
 func (client *Client) getPodNames(namespace, deploymentName string) ([]string, error) {
 	pods, err := client.K8sClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", keys.ManifestLabelName, deploymentName),
+		LabelSelector: fmt.Sprintf("%s=%s", keys.LabelDeployName, deploymentName),
 	})
 	if err != nil {
 		return nil, err
@@ -71,7 +71,7 @@ func (client *Client) SetupLogStream(ctx context.Context, deploymentName string,
 			AddFunc: func(obj interface{}) {
 				pod := obj.(*v1.Pod)
 
-				if label, ok := pod.Labels[keys.ManifestLabelName]; !ok || label != deploymentName {
+				if label, ok := pod.Labels[keys.LabelDeployName]; !ok || label != deploymentName {
 					return
 				}
 
@@ -83,7 +83,7 @@ func (client *Client) SetupLogStream(ctx context.Context, deploymentName string,
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				pod := newObj.(*v1.Pod)
-				if label, ok := pod.Labels[keys.ManifestLabelName]; !ok || label != deploymentName {
+				if label, ok := pod.Labels[keys.LabelDeployName]; !ok || label != deploymentName {
 					return
 				}
 

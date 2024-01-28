@@ -34,6 +34,12 @@ type DeploymentZone struct {
 
 	K8sClient      *kubernetes.Clientset
 	KubeVirtClient *kubevirt.Clientset
+
+	LoadBalancerIP string `yaml:"loadBalancerIp"`
+	PortRange      struct {
+		Start int `yaml:"start"`
+		End   int `yaml:"end"`
+	} `yaml:"portRange"`
 }
 
 type VmZone struct {

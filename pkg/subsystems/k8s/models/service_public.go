@@ -7,13 +7,13 @@ import (
 )
 
 type ServicePublic struct {
-	Name       string            `bson:"name"`
-	Namespace  string            `bson:"namespace"`
-	Port       int               `bson:"port"`
-	TargetPort int               `bson:"targetPort"`
-	ExternalIP *string           `bson:"externalIP"`
-	Selector   map[string]string `bson:"selector"`
-	CreatedAt  time.Time         `bson:"createdAt"`
+	Name           string            `bson:"name"`
+	Namespace      string            `bson:"namespace"`
+	Port           int               `bson:"port"`
+	TargetPort     int               `bson:"targetPort"`
+	LoadBalancerIP *string           `bson:"loadBalancerIp"`
+	Selector       map[string]string `bson:"selector"`
+	CreatedAt      time.Time         `bson:"createdAt"`
 }
 
 func (s *ServicePublic) Created() bool {
@@ -35,18 +35,18 @@ func CreateServicePublicFromRead(service *v1.Service) *ServicePublic {
 		selector = service.Spec.Selector
 	}
 
-	var externalIP *string
+	var loadBalancerIP *string
 	if len(service.Spec.ExternalIPs) > 0 {
-		externalIP = &service.Spec.ExternalIPs[0]
+		loadBalancerIP = &service.Spec.ExternalIPs[0]
 	}
 
 	return &ServicePublic{
-		Name:       service.Name,
-		Namespace:  service.Namespace,
-		Port:       int(service.Spec.Ports[0].Port),
-		TargetPort: service.Spec.Ports[0].TargetPort.IntValue(),
-		CreatedAt:  formatCreatedAt(service.Annotations),
-		Selector:   selector,
-		ExternalIP: externalIP,
+		Name:           service.Name,
+		Namespace:      service.Namespace,
+		Port:           int(service.Spec.Ports[0].Port),
+		TargetPort:     service.Spec.Ports[0].TargetPort.IntValue(),
+		CreatedAt:      formatCreatedAt(service.Annotations),
+		Selector:       selector,
+		LoadBalancerIP: loadBalancerIP,
 	}
 }
