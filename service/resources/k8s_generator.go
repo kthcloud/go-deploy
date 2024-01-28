@@ -454,8 +454,8 @@ func (kg *K8sGenerator) VMs() []models.VmPublic {
 
 			CloudInit: createCloudInitString(&cloudInit),
 			// Temporary image URL
-			ImageURL: "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img",
-			PvName:   vmRootPvName(kg.v.vm),
+			Image:  "docker://registry.cloud.cbh.kth.se/images/ubuntu:24.04",
+			PvName: vmRootPvName(kg.v.vm),
 
 			Running: true,
 		}

@@ -15,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	kubevirtv1 "kubevirt.io/api/core/v1"
 	cdibetav1 "kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1"
+	"strings"
 )
 
 const (
@@ -483,6 +484,22 @@ func CreateHpaManifest(public *models.HpaPublic) *autoscalingv2.HorizontalPodAut
 
 // CreateVmManifest creates a Kubernetes VirtualMachine manifest from a models.VmPublic.
 func CreateVmManifest(public *models.VmPublic) *kubevirtv1.VirtualMachine {
+	var dvSource *cdibetav1.DataVolumeSource
+
+	if strings.HasPrefix(public.Image, "http") {
+		dvSource = &cdibetav1.DataVolumeSource{
+			HTTP: &cdibetav1.DataVolumeSourceHTTP{
+				URL: public.Image,
+			},
+		}
+	} else if strings.HasPrefix(public.Image, "docker") {
+		dvSource = &cdibetav1.DataVolumeSource{
+			Registry: &cdibetav1.DataVolumeSourceRegistry{
+				URL: &public.Image,
+			},
+		}
+	}
+
 	return &kubevirtv1.VirtualMachine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      public.Name,
@@ -573,11 +590,7 @@ func CreateVmManifest(public *models.VmPublic) *kubevirtv1.VirtualMachine {
 							},
 							VolumeName: public.PvName,
 						},
-						Source: &cdibetav1.DataVolumeSource{
-							HTTP: &cdibetav1.DataVolumeSourceHTTP{
-								URL: public.ImageURL,
-							},
-						},
+						Source: dvSource,
 					},
 				},
 			},

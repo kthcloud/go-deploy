@@ -14,8 +14,13 @@ type VmPublic struct {
 	DiskSize int `bson:"diskSize"`
 
 	CloudInit string `bson:"cloudInit"`
-	ImageURL  string `bson:"imageUrl"`
-	PvName    string `bson:"pvName"`
+	// Image is the URL of the image to use for the VM
+	// It may either be a HTTP URL or a Docker image.
+	//
+	// If it is a HTTP URL, it must be in the format: http(s)://<url>
+	// If it is a Docker image, it must be in the format: docker://<image>
+	Image  string `bson:"imageUrl"`
+	PvName string `bson:"pvName"`
 
 	Running bool `bson:"running"`
 
@@ -74,7 +79,7 @@ func CreateVmPublicFromRead(vm *kubevirtv1.VirtualMachine) *VmPublic {
 		RAM:       ram,
 		DiskSize:  diskSize,
 		CloudInit: cloudInit,
-		ImageURL:  imageURL,
+		Image:     imageURL,
 		PvName:    pvName,
 		Running:   running,
 		CreatedAt: formatCreatedAt(vm.Annotations),
