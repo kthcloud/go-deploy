@@ -363,6 +363,19 @@ func (c *Client) Repair(id string) error {
 		}
 	}
 	for _, public := range services {
+		if public.Port == 0 {
+			port, err := vmPortModels.New().GetOrLeaseAny(public.TargetPort, vm.ID, vm.Zone)
+			if err != nil {
+				if errors.Is(err, vmPortModels.NoPortsAvailableErr) {
+					return makeError(sErrors.NoPortsAvailableErr)
+				}
+
+				return makeError(err)
+			}
+
+			public.Port = port.PublicPort
+		}
+
 		err = resources.SsRepairer(
 			kc.ReadService,
 			kc.CreateService,
