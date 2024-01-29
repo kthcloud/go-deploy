@@ -17,6 +17,7 @@ type VMs interface {
 
 	CheckQuota(id, userID string, quota *roleModels.Quotas, opts ...vmClient.QuotaOpts) error
 	NameAvailable(name string) (bool, error)
+	SshConnectionString(id string) (*string, error)
 
 	K8s() *k8s_service.Client
 }

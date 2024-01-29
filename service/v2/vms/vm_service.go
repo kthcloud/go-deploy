@@ -544,6 +544,36 @@ func (c *Client) HttpProxyNameAvailable(id, name string) (bool, error) {
 	return !exists, nil
 }
 
+// SshConnectionString gets the SSH connection string for the VM.
+//
+// It returns nil if the VM is not found.
+func (c *Client) SshConnectionString(id string) (*string, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to get SSH connection string for vm %s. details: %w", id, err)
+	}
+
+	vm, err := c.VM(id, nil)
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	if vm == nil {
+		return nil, nil
+	}
+
+	zone := config.Config.Deployment.GetZone(vm.Zone)
+	if zone == nil {
+		return nil, makeError(sErrors.ZoneNotFoundErr)
+	}
+
+	var sshConnectionString *string
+	if sshService := vm.Subsystems.K8s.GetService(fmt.Sprintf("%s-%s", vm.Name, portName(22, "tcp"))); sshService != nil {
+		sshConnectionString = utils.StrToPtr(fmt.Sprintf("ssh root@%s -p %d", zone.ParentDomainVM, sshService.Port))
+	}
+
+	return sshConnectionString, nil
+}
+
 // CheckQuota checks if the user has enough quota to create or update a deployment.
 //
 // Make sure to specify either opts.Create or opts.Update in the options (opts.Create takes priority).
@@ -681,6 +711,12 @@ func (c *Client) GetHost(vmID string) (*vmModels.Host, error) {
 	return nil, makeError(errors.New("not implemented"))
 }
 
+// createTransferCode creates a transfer code.
 func createTransferCode() string {
 	return utils.HashStringAlphanumeric(uuid.NewString())
+}
+
+// portName returns the name of a port used as a key in the port map in the database.
+func portName(privatePort int, protocol string) string {
+	return fmt.Sprintf("priv-%d-prot-%s", privatePort, protocol)
 }

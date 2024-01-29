@@ -8,7 +8,7 @@ import (
 	"reflect"
 )
 
-func (vm *VM) ToDTOv2(gpu *gpuModels.GPU, teams []string) body.VmRead {
+func (vm *VM) ToDTOv2(gpu *gpuModels.GPU, teams []string, sshConnectionString *string) body.VmRead {
 	var host *string
 	if vm.Host != nil {
 		host = &vm.Host.Name
@@ -43,7 +43,7 @@ func (vm *VM) ToDTOv2(gpu *gpuModels.GPU, teams []string) body.VmRead {
 		SshPublicKey:        vm.SshPublicKey,
 		Teams:               teams,
 		Status:              vm.StatusMessage,
-		SshConnectionString: nil,
+		SshConnectionString: sshConnectionString,
 	}
 }
 

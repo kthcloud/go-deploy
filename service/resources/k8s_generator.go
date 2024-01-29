@@ -1251,7 +1251,7 @@ func vmpCustomDomainIngressName(vm *vmModels.VM, portName string) string {
 
 // vmpExternalURL returns the external URL for a VM proxy
 func vmpExternalURL(portName string, zone *configModels.DeploymentZone) string {
-	return fmt.Sprintf("%s.%s", portName, zone.ParentDomainVM)
+	return fmt.Sprintf("%s.%s", portName, zone.ParentDomainVmHttpProxy)
 }
 
 // sPvcName returns the PVC name for a storage manager
