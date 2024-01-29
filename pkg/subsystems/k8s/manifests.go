@@ -183,6 +183,7 @@ func CreateServiceManifest(public *models.ServicePublic) *apiv1.Service {
 	if public.LoadBalancerIP != nil {
 		serviceType = apiv1.ServiceTypeLoadBalancer
 		annotations[keys.AnnotationExternalIP] = *public.LoadBalancerIP
+		annotations[keys.AnnotationSharedIP] = "go-deploy"
 	} else {
 		serviceType = apiv1.ServiceTypeClusterIP
 	}

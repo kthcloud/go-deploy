@@ -7,6 +7,9 @@ const (
 	// AnnotationExternalIP is the label name for the `external IP` of a manifest.
 	// Right now this is only used for MetalLB manifests.
 	AnnotationExternalIP = "metallb.universe.tf/loadBalancerIPs"
+	// AnnotationSharedIP is the label name for the `shared IP` of a manifest.
+	// Right now this is only used for MetalLB manifests.
+	AnnotationSharedIP = "metallb.universe.tf/allow-shared-ip"
 	// AnnotationCreationTimestamp is the label name for the `creation timestamp` of a manifest.
 	AnnotationCreationTimestamp = "app.kubernetes.io/deploy-created-at"
 	// AnnotationClusterIssuer is the annotation name for the `cluster issuer` in a cert-manager manifest.
