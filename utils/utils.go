@@ -139,3 +139,8 @@ func HashPassword(password, salt string) string {
 	encodedHash := base64.StdEncoding.EncodeToString(hashSum)
 	return fmt.Sprintf("$6$rounds=%d$%s$%s", rounds, salt, encodedHash)
 }
+
+// StrToPtr converts a string to a pointer
+func StrToPtr(s string) *string {
+	return &s
+}

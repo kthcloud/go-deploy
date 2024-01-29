@@ -24,6 +24,34 @@ func (vm *VM) ToDTOv2(gpu *gpuModels.GPU, teams []string, sshConnectionString *s
 		}
 	}
 
+	ports := make([]body.PortRead, 0, len(vm.PortMap))
+	for _, port := range vm.PortMap {
+		if port.Name == "__ssh" {
+			continue
+		}
+
+		var httpProxy *body.HttpProxyRead
+		if port.HttpProxy != nil {
+			var customDomain *body.CustomDomainRead
+			if port.HttpProxy.CustomDomain != nil {
+				customDomain = &body.CustomDomainRead{
+					Domain: port.HttpProxy.CustomDomain.Domain,
+					Secret: port.HttpProxy.CustomDomain.Secret,
+					Status: port.HttpProxy.CustomDomain.Status,
+				}
+			}
+
+			httpProxy = &body.HttpProxyRead{Name: port.HttpProxy.Name, CustomDomain: customDomain}
+		}
+
+		ports = append(ports, body.PortRead{
+			Name:      port.Name,
+			Port:      port.Port,
+			Protocol:  port.Protocol,
+			HttpProxy: httpProxy,
+		})
+	}
+
 	return body.VmRead{
 		ID:         vm.ID,
 		Name:       vm.Name,
@@ -38,7 +66,7 @@ func (vm *VM) ToDTOv2(gpu *gpuModels.GPU, teams []string, sshConnectionString *s
 			RAM:      vm.Specs.RAM,
 			DiskSize: vm.Specs.DiskSize,
 		},
-		Ports:               nil,
+		Ports:               ports,
 		GPU:                 gpuLease,
 		SshPublicKey:        vm.SshPublicKey,
 		Teams:               teams,
@@ -91,17 +119,17 @@ func (p UpdateParams) FromDTOv2(dto *body.VmUpdate) UpdateParams {
 
 	if dto.Ports != nil {
 		portMap := make(map[string]PortUpdateParams)
-		//for _, port := range *dto.Ports {
-		//	if port.Name == "__ssh" {
-		//		continue
-		//	}
-		//
-		//	if port.Port == 22 {
-		//		continue
-		//	}
-		//
-		//	portMap[portName(port.Port, port.Protocol)] = fromPortUpdateDTOv1(&port)
-		//}
+		for _, port := range *dto.Ports {
+			if port.Name == "__ssh" {
+				continue
+			}
+
+			if port.Port == 22 {
+				continue
+			}
+
+			portMap[portName(port.Port, port.Protocol)] = fromPortUpdateDTOv2(&port)
+		}
 
 		// Ensure there is always an SSH port
 		portMap["__ssh"] = PortUpdateParams{
