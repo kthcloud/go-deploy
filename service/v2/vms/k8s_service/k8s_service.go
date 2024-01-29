@@ -76,7 +76,7 @@ func (c *Client) Create(id string, params *vmModels.CreateParams) error {
 	// Jobs
 	// These are run without saving to the database, as they will be deleted when completed
 	for _, jobPublic := range g.Jobs() {
-		_, err = kc.CreateJob(&jobPublic)
+		err = kc.CreateOneShotJob(&jobPublic)
 		if err != nil {
 			return makeError(err)
 		}

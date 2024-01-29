@@ -1077,8 +1077,8 @@ func (kg *K8sGenerator) Jobs() []models.JobPublic {
 			Name:      kg.v.vm.Name + "-create-root-disk-folder",
 			Namespace: kg.namespace,
 			Image:     "busybox",
-			Command:   []string{"/bin/mkdir"},
-			Args:      []string{"-p", fmt.Sprintf("/mnt/vms/%s", kg.v.vm.ID)},
+			Command:   []string{"/bin/sh", "-c"},
+			Args:      []string{fmt.Sprintf("mkdir -p /mnt/vms/%s && chmod -R 777 /mnt/vms/%s", kg.v.vm.ID, kg.v.vm.ID)},
 			Volumes: []models.Volume{
 				{
 					Name:      vmParentPvName(kg.v.vm),
@@ -1089,22 +1089,7 @@ func (kg *K8sGenerator) Jobs() []models.JobPublic {
 			CreatedAt: time.Now(),
 		}
 
-		rootDiskUpdatePermissionsJob := models.JobPublic{
-			Name:      kg.v.vm.Name + "-update-root-disk-permissions",
-			Namespace: kg.namespace,
-			Image:     "busybox",
-			Command:   []string{"/bin/chmod"},
-			Args:      []string{"-R", "777", fmt.Sprintf("/mnt/vms/%s", kg.v.vm.ID)},
-			Volumes: []models.Volume{
-				{
-					Name:      vmParentPvName(kg.v.vm),
-					PvcName:   strToPtr(vmParentPvcName(kg.v.vm)),
-					MountPath: "/mnt/vms",
-				},
-			},
-		}
-
-		return []models.JobPublic{rootDiskCreateFolderJob, rootDiskUpdatePermissionsJob}
+		return []models.JobPublic{rootDiskCreateFolderJob}
 	}
 
 	if kg.s.sm != nil {

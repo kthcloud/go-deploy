@@ -377,6 +377,10 @@ func CreateJobManifest(public *models.JobPublic) *v1.Job {
 	}
 
 	ttl := int32(5)
+	var backoffLimit *int32
+	if public.MaxTries != nil {
+		backoffLimit = intToInt32Ptr(*public.MaxTries)
+	}
 
 	return &v1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -415,6 +419,7 @@ func CreateJobManifest(public *models.JobPublic) *v1.Job {
 					},
 				},
 			},
+			BackoffLimit: backoffLimit,
 		},
 	}
 }
