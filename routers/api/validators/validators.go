@@ -3,7 +3,8 @@ package validators
 import (
 	"encoding/json"
 	"github.com/go-playground/validator/v10"
-	"go-deploy/models/dto/v1/body"
+	bodyV1 "go-deploy/models/dto/v1/body"
+	bodyV2 "go-deploy/models/dto/v2/body"
 	"go-deploy/pkg/config"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/idna"
@@ -78,7 +79,7 @@ func EnvName(fl validator.FieldLevel) bool {
 // EnvList is a validator for environment variable lists.
 // It ensures that every environment variable name is unique
 func EnvList(fl validator.FieldLevel) bool {
-	envList, ok := fl.Field().Interface().([]body.Env)
+	envList, ok := fl.Field().Interface().([]bodyV1.Env)
 	if !ok {
 		return false
 	}
@@ -98,10 +99,10 @@ func EnvList(fl validator.FieldLevel) bool {
 func PortListNames(fl validator.FieldLevel) bool {
 	// We need to try with both PortCreate and PortUpdate
 
-	portListCreate, ok := fl.Field().Interface().([]body.PortCreate)
+	portListCreateV1, ok := fl.Field().Interface().([]bodyV1.PortCreate)
 	if ok {
 		names := make(map[string]bool)
-		for _, port := range portListCreate {
+		for _, port := range portListCreateV1 {
 			if _, exists := names[port.Name]; exists {
 				return false
 			}
@@ -111,10 +112,36 @@ func PortListNames(fl validator.FieldLevel) bool {
 		return true
 	}
 
-	portListUpdate, ok := fl.Field().Interface().([]body.PortUpdate)
+	portListUpdateV1, ok := fl.Field().Interface().([]bodyV1.PortUpdate)
 	if ok {
 		names := make(map[string]bool)
-		for _, port := range portListUpdate {
+		for _, port := range portListUpdateV1 {
+			if _, exists := names[port.Name]; exists {
+				return false
+			}
+			names[port.Name] = true
+		}
+
+		return true
+	}
+
+	portListCreateV2, ok := fl.Field().Interface().([]bodyV2.PortCreate)
+	if ok {
+		names := make(map[string]bool)
+		for _, port := range portListCreateV2 {
+			if _, exists := names[port.Name]; exists {
+				return false
+			}
+			names[port.Name] = true
+		}
+
+		return true
+	}
+
+	portListUpdateV2, ok := fl.Field().Interface().([]bodyV2.PortUpdate)
+	if ok {
+		names := make(map[string]bool)
+		for _, port := range portListUpdateV2 {
 			if _, exists := names[port.Name]; exists {
 				return false
 			}
@@ -132,10 +159,10 @@ func PortListNames(fl validator.FieldLevel) bool {
 func PortListNumbers(fl validator.FieldLevel) bool {
 	// We need to try with both PortCreate and PortUpdate
 
-	portListCreate, ok := fl.Field().Interface().([]body.PortCreate)
+	portListCreateV1, ok := fl.Field().Interface().([]bodyV1.PortCreate)
 	if ok {
 		numbers := make(map[int]bool)
-		for _, port := range portListCreate {
+		for _, port := range portListCreateV1 {
 			if _, exists := numbers[port.Port]; exists {
 				return false
 			}
@@ -145,10 +172,36 @@ func PortListNumbers(fl validator.FieldLevel) bool {
 		return true
 	}
 
-	portListUpdate, ok := fl.Field().Interface().([]body.PortUpdate)
+	portListUpdateV1, ok := fl.Field().Interface().([]bodyV1.PortUpdate)
 	if ok {
 		numbers := make(map[int]bool)
-		for _, port := range portListUpdate {
+		for _, port := range portListUpdateV1 {
+			if _, exists := numbers[port.Port]; exists {
+				return false
+			}
+			numbers[port.Port] = true
+		}
+
+		return true
+	}
+
+	portListCreateV2, ok := fl.Field().Interface().([]bodyV2.PortCreate)
+	if ok {
+		numbers := make(map[int]bool)
+		for _, port := range portListCreateV2 {
+			if _, exists := numbers[port.Port]; exists {
+				return false
+			}
+			numbers[port.Port] = true
+		}
+
+		return true
+	}
+
+	portListUpdateV2, ok := fl.Field().Interface().([]bodyV2.PortUpdate)
+	if ok {
+		numbers := make(map[int]bool)
+		for _, port := range portListUpdateV2 {
 			if _, exists := numbers[port.Port]; exists {
 				return false
 			}
@@ -166,10 +219,10 @@ func PortListNumbers(fl validator.FieldLevel) bool {
 func PortListHttpProxies(fl validator.FieldLevel) bool {
 	// We need to try with both PortCreate and PortUpdate
 
-	portListCreate, ok := fl.Field().Interface().([]body.PortCreate)
+	portListCreateV1, ok := fl.Field().Interface().([]bodyV1.PortCreate)
 	if ok {
 		names := make(map[string]bool)
-		for _, port := range portListCreate {
+		for _, port := range portListCreateV1 {
 			if port.HttpProxy != nil {
 				if _, exists := names[port.HttpProxy.Name]; exists {
 					return false
@@ -181,10 +234,40 @@ func PortListHttpProxies(fl validator.FieldLevel) bool {
 		return true
 	}
 
-	portListUpdate, ok := fl.Field().Interface().([]body.PortUpdate)
+	portListUpdateV1, ok := fl.Field().Interface().([]bodyV1.PortUpdate)
 	if ok {
 		names := make(map[string]bool)
-		for _, port := range portListUpdate {
+		for _, port := range portListUpdateV1 {
+			if port.HttpProxy != nil {
+				if _, exists := names[port.HttpProxy.Name]; exists {
+					return false
+				}
+				names[port.HttpProxy.Name] = true
+			}
+		}
+
+		return true
+	}
+
+	portListCreateV2, ok := fl.Field().Interface().([]bodyV2.PortCreate)
+	if ok {
+		names := make(map[string]bool)
+		for _, port := range portListCreateV2 {
+			if port.HttpProxy != nil {
+				if _, exists := names[port.HttpProxy.Name]; exists {
+					return false
+				}
+				names[port.HttpProxy.Name] = true
+			}
+		}
+
+		return true
+	}
+
+	portListUpdateV2, ok := fl.Field().Interface().([]bodyV2.PortUpdate)
+	if ok {
+		names := make(map[string]bool)
+		for _, port := range portListUpdateV2 {
 			if port.HttpProxy != nil {
 				if _, exists := names[port.HttpProxy.Name]; exists {
 					return false
@@ -297,7 +380,7 @@ func TeamName(fl validator.FieldLevel) bool {
 // TeamMemberList is a validator for team member lists.
 // It ensures that every team member is unique
 func TeamMemberList(fl validator.FieldLevel) bool {
-	if memberListUpdate, ok := fl.Field().Interface().([]body.TeamMemberUpdate); ok {
+	if memberListUpdate, ok := fl.Field().Interface().([]bodyV1.TeamMemberUpdate); ok {
 		id := make(map[string]bool)
 		for _, member := range memberListUpdate {
 			if _, ok := id[member.ID]; ok {
@@ -307,7 +390,7 @@ func TeamMemberList(fl validator.FieldLevel) bool {
 		}
 
 		return true
-	} else if memberListCreate, ok := fl.Field().Interface().([]body.TeamMemberCreate); ok {
+	} else if memberListCreate, ok := fl.Field().Interface().([]bodyV1.TeamMemberCreate); ok {
 		id := make(map[string]bool)
 		for _, member := range memberListCreate {
 			if _, ok := id[member.ID]; ok {
