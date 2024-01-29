@@ -25,7 +25,7 @@ func vmStatusUpdater(ctx context.Context) {
 			workers.ReportUp("vmStatusUpdater")
 
 		case <-tick:
-			allVms, err := vmModels.New(versions.V1).List()
+			v1Vms, err := vmModels.New(versions.V1).List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching vms: %w", err))
 				continue
@@ -33,13 +33,13 @@ func vmStatusUpdater(ctx context.Context) {
 
 			vsc := service.V1().VMs()
 
-			for _, vm := range allVms {
-				code, message, err := fetchVmStatus(&vm)
+			for _, vm := range v1Vms {
+				code, message, err := fetchVmStatusV1(&vm)
 				if err != nil {
 					utils.PrettyPrintError(fmt.Errorf("error fetching vm status: %w", err))
 					continue
 				}
-				_ = vmModels.New().SetWithBsonByID(vm.ID, bson.D{{"statusCode", code}, {"statusMessage", message}})
+				_ = vmModels.New(versions.V1).SetWithBsonByID(vm.ID, bson.D{{"statusCode", code}, {"statusMessage", message}})
 
 				host, err := vsc.GetHost(vm.ID)
 				if err != nil {
@@ -48,11 +48,27 @@ func vmStatusUpdater(ctx context.Context) {
 				}
 
 				if host == nil {
-					_ = vmModels.New().UpdateWithBsonByID(vm.ID, bson.D{{"$unset", bson.D{{"host", ""}}}})
+					_ = vmModels.New(versions.V1).UpdateWithBsonByID(vm.ID, bson.D{{"$unset", bson.D{{"host", ""}}}})
 				} else {
-					_ = vmModels.New().SetWithBsonByID(vm.ID, bson.D{{"host", host}})
+					_ = vmModels.New(versions.V1).SetWithBsonByID(vm.ID, bson.D{{"host", host}})
 				}
 			}
+
+			v2Vms, err := vmModels.New(versions.V2).List()
+			if err != nil {
+				utils.PrettyPrintError(fmt.Errorf("error fetching vms: %w", err))
+				continue
+			}
+
+			for _, vm := range v2Vms {
+				code, message, err := fetchVmStatusV2(&vm)
+				if err != nil {
+					utils.PrettyPrintError(fmt.Errorf("error fetching vm status: %w", err))
+					continue
+				}
+				_ = vmModels.New(versions.V2).SetWithBsonByID(vm.ID, bson.D{{"statusCode", code}, {"statusMessage", message}})
+			}
+
 		case <-ctx.Done():
 			return
 		}
