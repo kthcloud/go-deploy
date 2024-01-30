@@ -6,6 +6,8 @@ import (
 	clientset "go-deploy/pkg/imp/kubevirt/kubevirt"
 	kubevirtv1 "go-deploy/pkg/imp/kubevirt/kubevirt/typed/core/v1"
 	fakekubevirtv1 "go-deploy/pkg/imp/kubevirt/kubevirt/typed/core/v1/fake"
+	snapshotv1alpha1 "go-deploy/pkg/imp/kubevirt/kubevirt/typed/snapshot/v1alpha1"
+	fakesnapshotv1alpha1 "go-deploy/pkg/imp/kubevirt/kubevirt/typed/snapshot/v1alpha1/fake"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
@@ -67,4 +69,9 @@ var (
 // KubevirtV1 retrieves the KubevirtV1Client
 func (c *Clientset) KubevirtV1() kubevirtv1.KubevirtV1Interface {
 	return &fakekubevirtv1.FakeKubevirtV1{Fake: &c.Fake}
+}
+
+// SnapshotV1alpha1 retrieves the SnapshotV1alpha1Client
+func (c *Clientset) SnapshotV1alpha1() snapshotv1alpha1.SnapshotV1alpha1Interface {
+	return &fakesnapshotv1alpha1.FakeSnapshotV1alpha1{Fake: &c.Fake}
 }

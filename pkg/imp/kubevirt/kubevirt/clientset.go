@@ -5,6 +5,7 @@ package kubevirt
 import (
 	"fmt"
 	kubevirtv1 "go-deploy/pkg/imp/kubevirt/kubevirt/typed/core/v1"
+	snapshotv1alpha1 "go-deploy/pkg/imp/kubevirt/kubevirt/typed/snapshot/v1alpha1"
 	"net/http"
 
 	discovery "k8s.io/client-go/discovery"
@@ -15,17 +16,24 @@ import (
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
 	KubevirtV1() kubevirtv1.KubevirtV1Interface
+	SnapshotV1alpha1() snapshotv1alpha1.SnapshotV1alpha1Interface
 }
 
 // Clientset contains the clients for groups.
 type Clientset struct {
 	*discovery.DiscoveryClient
-	kubevirtV1 *kubevirtv1.KubevirtV1Client
+	kubevirtV1       *kubevirtv1.KubevirtV1Client
+	snapshotV1alpha1 *snapshotv1alpha1.SnapshotV1alpha1Client
 }
 
 // KubevirtV1 retrieves the KubevirtV1Client
 func (c *Clientset) KubevirtV1() kubevirtv1.KubevirtV1Interface {
 	return c.kubevirtV1
+}
+
+// SnapshotV1alpha1 retrieves the SnapshotV1alpha1Client
+func (c *Clientset) SnapshotV1alpha1() snapshotv1alpha1.SnapshotV1alpha1Interface {
+	return c.snapshotV1alpha1
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -76,6 +84,10 @@ func NewForConfigAndClient(c *rest.Config, httpClient *http.Client) (*Clientset,
 	if err != nil {
 		return nil, err
 	}
+	cs.snapshotV1alpha1, err = snapshotv1alpha1.NewForConfigAndClient(&configShallowCopy, httpClient)
+	if err != nil {
+		return nil, err
+	}
 
 	cs.DiscoveryClient, err = discovery.NewDiscoveryClientForConfigAndClient(&configShallowCopy, httpClient)
 	if err != nil {
@@ -98,6 +110,7 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
 	cs.kubevirtV1 = kubevirtv1.New(c)
+	cs.snapshotV1alpha1 = snapshotv1alpha1.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &cs
