@@ -144,7 +144,24 @@ func (p UpdateParams) FromDTOv2(dto *body.VmUpdate) UpdateParams {
 	return p
 }
 
-// fromPortCreateDTOv2 converts a port DTO to a port.
+// ToDTOv2 converts a Snapshot to a body.VmSnapshotRead.
+func (sc *SnapshotV2) ToDTOv2() body.VmSnapshotRead {
+	return body.VmSnapshotRead{
+		ID:        sc.ID,
+		Name:      sc.Name,
+		Status:    sc.Status,
+		CreatedAt: sc.CreatedAt,
+	}
+}
+
+// FromDTOv2 converts a body.VmSnapshotCreate to a CreateSnapshotParams.
+func (sc *CreateSnapshotParams) FromDTOv2(dto *body.VmSnapshotCreate) {
+	sc.Name = dto.Name
+	sc.Overwrite = false
+	sc.UserCreated = true
+}
+
+// fromPortCreateDTOv2 converts a body.PortCreate to a PortCreateParams.
 func fromPortCreateDTOv2(port *body.PortCreate) PortCreateParams {
 	var httpProxy *HttpProxyCreateParams
 	if port.HttpProxy != nil {
@@ -162,7 +179,7 @@ func fromPortCreateDTOv2(port *body.PortCreate) PortCreateParams {
 	}
 }
 
-// fromPortCreateDTOv2 converts a port DTO to a port.
+// fromPortCreateDTOv2 converts a body.PortCreate to a PortCreateParams.
 func fromPortUpdateDTOv2(port *body.PortUpdate) PortUpdateParams {
 	var httpProxy *HttpProxyUpdateParams
 	if port.HttpProxy != nil {

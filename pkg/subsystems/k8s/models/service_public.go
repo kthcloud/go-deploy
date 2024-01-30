@@ -3,14 +3,21 @@ package models
 import (
 	"fmt"
 	v1 "k8s.io/api/core/v1"
+	"strings"
 	"time"
 )
+
+type Port struct {
+	Name       string `bson:"name"`
+	Protocol   string `bson:"protocol"`
+	Port       int    `bson:"port"`
+	TargetPort int    `bson:"targetPort"`
+}
 
 type ServicePublic struct {
 	Name           string            `bson:"name"`
 	Namespace      string            `bson:"namespace"`
-	Port           int               `bson:"port"`
-	TargetPort     int               `bson:"targetPort"`
+	Ports          []Port            `bson:"ports"`
 	LoadBalancerIP *string           `bson:"loadBalancerIp"`
 	Selector       map[string]string `bson:"selector"`
 	CreatedAt      time.Time         `bson:"createdAt"`
@@ -40,11 +47,20 @@ func CreateServicePublicFromRead(service *v1.Service) *ServicePublic {
 		loadBalancerIP = &service.Spec.ExternalIPs[0]
 	}
 
+	var ports []Port
+	for _, port := range service.Spec.Ports {
+		ports = append(ports, Port{
+			Name:       port.Name,
+			Protocol:   strings.ToLower(string(port.Protocol)),
+			Port:       int(port.Port),
+			TargetPort: port.TargetPort.IntValue(),
+		})
+	}
+
 	return &ServicePublic{
 		Name:           service.Name,
 		Namespace:      service.Namespace,
-		Port:           int(service.Spec.Ports[0].Port),
-		TargetPort:     service.Spec.Ports[0].TargetPort.IntValue(),
+		Ports:          ports,
 		CreatedAt:      formatCreatedAt(service.Annotations),
 		Selector:       selector,
 		LoadBalancerIP: loadBalancerIP,

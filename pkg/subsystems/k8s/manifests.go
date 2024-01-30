@@ -14,8 +14,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	kubevirtv1 "kubevirt.io/api/core/v1"
+	snapshotalpha1 "kubevirt.io/api/snapshot/v1alpha1"
 	cdibetav1 "kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1"
 	"strings"
+	"time"
 )
 
 const (
@@ -188,6 +190,16 @@ func CreateServiceManifest(public *models.ServicePublic) *apiv1.Service {
 		serviceType = apiv1.ServiceTypeClusterIP
 	}
 
+	var ports []apiv1.ServicePort
+	for _, port := range public.Ports {
+		ports = append(ports, apiv1.ServicePort{
+			Name:       port.Name,
+			Protocol:   apiv1.Protocol(strings.ToUpper(port.Protocol)),
+			Port:       int32(port.Port),
+			TargetPort: intstr.FromInt32(int32(port.TargetPort)),
+		})
+	}
+
 	return &apiv1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      public.Name,
@@ -198,14 +210,7 @@ func CreateServiceManifest(public *models.ServicePublic) *apiv1.Service {
 			Annotations: annotations,
 		},
 		Spec: apiv1.ServiceSpec{
-			Ports: []apiv1.ServicePort{
-				{
-					Name:       "app-port",
-					Protocol:   "TCP",
-					Port:       int32(public.Port),
-					TargetPort: intstr.FromInt(public.TargetPort),
-				},
-			},
+			Ports:    ports,
 			Selector: public.Selector,
 			Type:     serviceType,
 		},
@@ -492,6 +497,9 @@ func CreateHpaManifest(public *models.HpaPublic) *autoscalingv2.HorizontalPodAut
 func CreateVmManifest(public *models.VmPublic) *kubevirtv1.VirtualMachine {
 	var dvSource *cdibetav1.DataVolumeSource
 
+	name := public.ID
+	deployName := public.Name
+
 	if strings.HasPrefix(public.Image, "http") {
 		dvSource = &cdibetav1.DataVolumeSource{
 			HTTP: &cdibetav1.DataVolumeSourceHTTP{
@@ -508,10 +516,10 @@ func CreateVmManifest(public *models.VmPublic) *kubevirtv1.VirtualMachine {
 
 	return &kubevirtv1.VirtualMachine{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      public.Name,
+			Name:      name,
 			Namespace: public.Namespace,
 			Labels: map[string]string{
-				keys.LabelDeployName: public.Name,
+				keys.LabelDeployName: deployName,
 			},
 			Annotations: map[string]string{
 				keys.AnnotationCreationTimestamp: public.CreatedAt.Format(timeFormat),
@@ -521,9 +529,9 @@ func CreateVmManifest(public *models.VmPublic) *kubevirtv1.VirtualMachine {
 			Running: &public.Running,
 			Template: &kubevirtv1.VirtualMachineInstanceTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: public.Name,
+					Name: name,
 					Labels: map[string]string{
-						keys.LabelDeployName: public.Name,
+						keys.LabelDeployName: deployName,
 					},
 					Annotations: map[string]string{
 						keys.AnnotationCreationTimestamp: public.CreatedAt.Format(timeFormat),
@@ -564,7 +572,7 @@ func CreateVmManifest(public *models.VmPublic) *kubevirtv1.VirtualMachine {
 							Name: "rootdisk",
 							VolumeSource: kubevirtv1.VolumeSource{
 								DataVolume: &kubevirtv1.DataVolumeSource{
-									Name: fmt.Sprintf("%s-rootdisk-dv", public.Name),
+									Name: fmt.Sprintf("%s-rootdisk-dv", name),
 								},
 							},
 						},
@@ -582,10 +590,11 @@ func CreateVmManifest(public *models.VmPublic) *kubevirtv1.VirtualMachine {
 			DataVolumeTemplates: []kubevirtv1.DataVolumeTemplateSpec{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: fmt.Sprintf("%s-rootdisk-dv", public.Name),
+						Name: fmt.Sprintf("%s-rootdisk-dv", name),
 					},
 					Spec: cdibetav1.DataVolumeSpec{
 						PVC: &apiv1.PersistentVolumeClaimSpec{
+							StorageClassName: strToPtr("go-deploy-vms"),
 							AccessModes: []apiv1.PersistentVolumeAccessMode{
 								apiv1.ReadWriteMany,
 							},
@@ -594,11 +603,38 @@ func CreateVmManifest(public *models.VmPublic) *kubevirtv1.VirtualMachine {
 									apiv1.ResourceStorage: resource.MustParse(fmt.Sprintf("%dGi", public.DiskSize)),
 								},
 							},
-							VolumeName: public.PvName,
 						},
 						Source: dvSource,
 					},
 				},
+			},
+		},
+	}
+}
+
+// CreateVmSnapshotManifest creates a Kubernetes VirtualMachineSnapshot manifest from a models.VmSnapshotPublic.
+func CreateVmSnapshotManifest(public *models.VmSnapshotPublic) *snapshotalpha1.VirtualMachineSnapshot {
+	name := public.ID
+	deployName := public.Name
+
+	return &snapshotalpha1.VirtualMachineSnapshot{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: public.Namespace,
+			Labels: map[string]string{
+				keys.LabelDeployName: deployName,
+			},
+			Annotations: map[string]string{
+				keys.AnnotationCreationTimestamp: public.CreatedAt.Format(timeFormat),
+			}},
+		Spec: snapshotalpha1.VirtualMachineSnapshotSpec{
+			Source: apiv1.TypedLocalObjectReference{
+				APIGroup: strToPtr("kubevirt.io"),
+				Kind:     "VirtualMachine",
+				Name:     public.VmID,
+			},
+			FailureDeadline: &metav1.Duration{
+				Duration: 30 * time.Minute,
 			},
 		},
 	}

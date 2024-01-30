@@ -19,5 +19,11 @@ type VMs interface {
 	NameAvailable(name string) (bool, error)
 	SshConnectionString(id string) (*string, error)
 
+	GetSnapshot(vmID, id string, opts ...vmClient.GetSnapshotOpts) (*vmModels.SnapshotV2, error)
+	GetSnapshotByName(vmID, name string, opts ...vmClient.GetSnapshotOpts) (*vmModels.SnapshotV2, error)
+	ListSnapshots(vmID string, opts ...vmClient.ListSnapshotOpts) ([]vmModels.SnapshotV2, error)
+	CreateSnapshot(vmID string, opts *vmClient.CreateSnapshotOpts) (*vmModels.SnapshotV2, error)
+	DeleteSnapshot(vmID, id string) error
+
 	K8s() *k8s_service.Client
 }

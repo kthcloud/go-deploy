@@ -454,13 +454,13 @@ func (kg *K8sGenerator) VMs() []models.VmPublic {
 
 			CloudInit: createCloudInitString(&cloudInit),
 			// Temporary image URL
-			Image:  "docker://registry.cloud.cbh.kth.se/images/ubuntu:24.04",
-			PvName: vmRootPvName(kg.v.vm),
+			Image: "docker://registry.cloud.cbh.kth.se/images/ubuntu:24.04",
 
 			Running: true,
 		}
 
-		if vm := kg.v.vm.Subsystems.K8s.GetVm(vmName(kg.v.vm)); subsystems.Created(vm) {
+		if vm := kg.v.vm.Subsystems.K8s.GetVM(vmName(kg.v.vm)); subsystems.Created(vm) {
+			vmPublic.ID = vm.ID
 			vmPublic.CreatedAt = vm.CreatedAt
 		}
 
@@ -478,10 +478,9 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 		mainApp := kg.d.deployment.GetMainApp()
 
 		se := models.ServicePublic{
-			Name:       kg.d.deployment.Name,
-			Namespace:  kg.namespace,
-			Port:       mainApp.InternalPort,
-			TargetPort: mainApp.InternalPort,
+			Name:      kg.d.deployment.Name,
+			Namespace: kg.namespace,
+			Ports:     []models.Port{{Name: "http", Protocol: "TCP", Port: mainApp.InternalPort, TargetPort: mainApp.InternalPort}},
 			Selector: map[string]string{
 				keys.LabelDeployName: kg.d.deployment.Name,
 			},
@@ -504,10 +503,9 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 			}
 
 			res = append(res, models.ServicePublic{
-				Name:       vmpServiceName(kg.v.vm, port.HttpProxy.Name),
-				Namespace:  kg.namespace,
-				Port:       8080,
-				TargetPort: 8080,
+				Name:      vmpServiceName(kg.v.vm, port.HttpProxy.Name),
+				Namespace: kg.namespace,
+				Ports:     []models.Port{{Name: pfrName(port.Port, port.Protocol), Protocol: port.Protocol, Port: 8080, TargetPort: 8080}},
 				Selector: map[string]string{
 					keys.LabelDeployName: vmpDeploymentName(kg.v.vm, port.HttpProxy.Name),
 				},
@@ -543,10 +541,14 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 
 		for _, port := range portMap {
 			res = append(res, models.ServicePublic{
-				Name:       vmServiceName(kg.v.vm, pfrName(port.Port, port.Protocol)),
-				Namespace:  kg.namespace,
-				Port:       0, // This is set externally
-				TargetPort: port.Port,
+				Name:      vmServiceName(kg.v.vm),
+				Namespace: kg.namespace,
+				Ports: []models.Port{{
+					Name:       pfrName(port.Port, port.Protocol),
+					Protocol:   port.Protocol,
+					Port:       0, // This is set externally
+					TargetPort: port.Port,
+				}},
 				Selector: map[string]string{
 					keys.LabelDeployName: vmName(kg.v.vm),
 				},
@@ -559,7 +561,16 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 				return service.Name == mapName
 			})
 			if idx != -1 {
-				res[idx].Port = s.Port
+				// Set external ports
+				for _, port := range portMap {
+					for _, p := range res[idx].Ports {
+						if p.Name == pfrName(port.Port, port.Protocol) {
+							res[idx].Ports[idx].Port = s.Ports[0].Port
+							break
+						}
+					}
+				}
+
 				res[idx].CreatedAt = s.CreatedAt
 			}
 		}
@@ -572,10 +583,9 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 	if kg.s.sm != nil {
 		// filebrowser
 		filebrowser := models.ServicePublic{
-			Name:       constants.SmAppName,
-			Namespace:  kg.namespace,
-			Port:       80,
-			TargetPort: 80,
+			Name:      constants.SmAppName,
+			Namespace: kg.namespace,
+			Ports:     []models.Port{{Name: "http", Protocol: "TCP", Port: 80, TargetPort: 80}},
 			Selector: map[string]string{
 				keys.LabelDeployName: constants.SmAppName,
 			},
@@ -589,10 +599,9 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 
 		// oauth2-proxy
 		oauthProxy := models.ServicePublic{
-			Name:       constants.SmAppNameAuth,
-			Namespace:  kg.namespace,
-			Port:       4180,
-			TargetPort: 4180,
+			Name:      constants.SmAppNameAuth,
+			Namespace: kg.namespace,
+			Ports:     []models.Port{{Name: "http", Protocol: "TCP", Port: 4180, TargetPort: 4180}},
 			Selector: map[string]string{
 				keys.LabelDeployName: constants.SmAppNameAuth,
 			},
@@ -787,32 +796,6 @@ func (kg *K8sGenerator) PVs() []models.PvPublic {
 		}
 
 		return res
-	}
-
-	if kg.v.vm != nil && kg.v.vm.Version == versions.V2 {
-		parentPV := models.PvPublic{
-			Name:      vmParentPvName(kg.v.vm),
-			Capacity:  config.Config.Deployment.Resources.Limits.Storage,
-			NfsServer: kg.v.deploymentZone.Storage.NfsServer,
-			NfsPath:   kg.s.zone.Storage.VmStorageParentPath,
-		}
-
-		if pv := kg.v.vm.Subsystems.K8s.GetPV(vmParentPvName(kg.v.vm)); subsystems.Created(pv) {
-			parentPV.CreatedAt = pv.CreatedAt
-		}
-
-		rootDiskPV := models.PvPublic{
-			Name:      vmRootPvName(kg.v.vm),
-			Capacity:  fmt.Sprintf("%dGi", kg.v.vm.Specs.DiskSize),
-			NfsServer: kg.v.deploymentZone.Storage.NfsServer,
-			NfsPath:   path.Join(kg.s.zone.Storage.VmStorageParentPath, kg.v.vm.ID),
-		}
-
-		if pv := kg.v.vm.Subsystems.K8s.GetPV(vmRootPvName(kg.v.vm)); subsystems.Created(pv) {
-			rootDiskPV.CreatedAt = pv.CreatedAt
-		}
-
-		return []models.PvPublic{parentPV, rootDiskPV}
 	}
 
 	if kg.s.sm != nil {
@@ -1072,26 +1055,6 @@ func (kg *K8sGenerator) Secrets() []models.SecretPublic {
 func (kg *K8sGenerator) Jobs() []models.JobPublic {
 	var res []models.JobPublic
 
-	if kg.v.vm != nil && kg.v.vm.Version == versions.V2 {
-		rootDiskCreateFolderJob := models.JobPublic{
-			Name:      kg.v.vm.Name + "-create-root-disk-folder",
-			Namespace: kg.namespace,
-			Image:     "busybox",
-			Command:   []string{"/bin/sh", "-c"},
-			Args:      []string{fmt.Sprintf("mkdir -p /mnt/vms/%s && chmod -R 777 /mnt/vms/%s", kg.v.vm.ID, kg.v.vm.ID)},
-			Volumes: []models.Volume{
-				{
-					Name:      vmParentPvName(kg.v.vm),
-					PvcName:   strToPtr(vmParentPvcName(kg.v.vm)),
-					MountPath: "/mnt/vms",
-				},
-			},
-			CreatedAt: time.Now(),
-		}
-
-		return []models.JobPublic{rootDiskCreateFolderJob}
-	}
-
 	if kg.s.sm != nil {
 		initVolumes, _ := sVolumes(kg.s.sm.OwnerID)
 		k8sVolumes := make([]models.Volume, len(initVolumes))
@@ -1214,19 +1177,9 @@ func vmParentPvName(vm *vmModels.VM) string {
 	return fmt.Sprintf("%s-%s", vm.Name, constants.VmParentName)
 }
 
-// vmParentPvcName returns the PVC name for a VM
-func vmParentPvcName(vm *vmModels.VM) string {
-	return fmt.Sprintf("%s-%s", vm.Name, constants.VmParentName)
-}
-
-// vmRootPvName returns the PV name for a VM
-func vmRootPvName(vm *vmModels.VM) string {
-	return fmt.Sprintf("%s-%s", vm.Name, constants.VmRootDiskName)
-}
-
 // vmServiceName returns the service name for a VM
-func vmServiceName(vm *vmModels.VM, name string) string {
-	return fmt.Sprintf("%s-%s", vm.Name, name)
+func vmServiceName(vm *vmModels.VM) string {
+	return vm.Name
 }
 
 // vmpDeploymentName returns the deployment name for a VM proxy
@@ -1331,11 +1284,6 @@ func makeValidK8sName(name string) string {
 	}
 
 	return validName
-}
-
-// strToPtr	converts a string to a pointer to a string
-func strToPtr(s string) *string {
-	return &s
 }
 
 // createCloudInitString creates a cloud-init string from a cloud-init struct

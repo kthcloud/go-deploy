@@ -567,8 +567,12 @@ func (c *Client) SshConnectionString(id string) (*string, error) {
 	}
 
 	var sshConnectionString *string
-	if sshService := vm.Subsystems.K8s.GetService(fmt.Sprintf("%s-%s", vm.Name, portName(22, "tcp"))); sshService != nil {
-		sshConnectionString = utils.StrToPtr(fmt.Sprintf("ssh root@%s -p %d", zone.ParentDomainVM, sshService.Port))
+	if service := vm.Subsystems.K8s.GetService(vm.Name); service != nil {
+		for _, port := range service.Ports {
+			if port.TargetPort == 22 {
+				sshConnectionString = utils.StrToPtr(fmt.Sprintf("ssh root@%s -p %d", zone.ParentDomainVM, port.Port))
+			}
+		}
 	}
 
 	return sshConnectionString, nil

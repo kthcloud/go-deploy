@@ -4,6 +4,7 @@ import (
 	configModels "go-deploy/models/config"
 	"go-deploy/models/dto/v2/body"
 	roleModels "go-deploy/models/sys/role"
+	vmModels "go-deploy/models/sys/vm"
 	"go-deploy/service/v2/utils"
 )
 
@@ -59,16 +60,16 @@ type ListSnapshotOpts struct {
 	Pagination *utils.Pagination
 }
 
-//// CreateSnapshotOpts is used to specify the options when creating a VM's snapshot.
-//type CreateSnapshotOpts struct {
-//	System *vmModels.CreateSnapshotParams
-//	User   *body.VmSnapshotCreate
-//}
+// CreateSnapshotOpts is used to specify the options when creating a VM's snapshot.
+type CreateSnapshotOpts struct {
+	System *vmModels.CreateSnapshotParams
+	User   *body.VmSnapshotCreate
+}
 
 // QuotaOpts is used to specify the options when getting a VM's quota.
 type QuotaOpts struct {
-	Quota  *roleModels.Quotas
-	Create *body.VmCreate
-	Update *body.VmUpdate
-	//CreateSnapshot *body.VmSnapshotCreate
+	Quota          *roleModels.Quotas
+	Create         *body.VmCreate
+	Update         *body.VmUpdate
+	CreateSnapshot *body.VmSnapshotCreate
 }

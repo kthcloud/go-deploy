@@ -192,18 +192,18 @@ func jobMapper() map[string]map[string]JobDefinition {
 		//	EntryFunc:     vAddActivity(va.ActivityRepairing),
 		//	ExitFunc:      vRemActivity(va.ActivityRepairing),
 		//},
-		//jobModels.TypeCreateSystemSnapshot: {
-		//	JobFunc:       v2.CreateSystemSnapshot,
-		//	TerminateFunc: leafJobVM.Build(),
-		//},
-		//jobModels.TypeCreateUserSnapshot: {
-		//	JobFunc:       v2.CreateUserSnapshot,
-		//	TerminateFunc: oneCreateSnapshotPerUser.Build(),
-		//},
-		//jobModels.TypeDeleteSnapshot: {
-		//	JobFunc:       v2.DeleteSnapshot,
-		//	TerminateFunc: leafJobVM.Build(),
-		//},
+		jobModels.TypeCreateSystemSnapshot: {
+			JobFunc:       v2.CreateSystemSnapshot,
+			TerminateFunc: leafJobVM.Build(),
+		},
+		jobModels.TypeCreateUserSnapshot: {
+			JobFunc:       v2.CreateUserSnapshot,
+			TerminateFunc: oneCreateSnapshotPerUser.Build(),
+		},
+		jobModels.TypeDeleteSnapshot: {
+			JobFunc:       v2.DeleteSnapshot,
+			TerminateFunc: leafJobVM.Build(),
+		},
 	}
 
 	return map[string]map[string]JobDefinition{

@@ -13,6 +13,7 @@ import (
 	"go-deploy/pkg/workers/confirm"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
+	"go-deploy/service/v2/vms/opts"
 	"log"
 	"time"
 )
@@ -154,6 +155,68 @@ func UpdateVM(job *jobModels.Job) error {
 
 	err = vmModels.New().MarkUpdated(id)
 	if err != nil {
+		return errors2.MakeTerminatedError(err)
+	}
+
+	return nil
+}
+
+func CreateSystemSnapshot(job *jobModels.Job) error {
+	err := utils.AssertParameters(job, []string{"id", "params"})
+	if err != nil {
+		return errors2.MakeTerminatedError(err)
+	}
+
+	vmID := job.Args["id"].(string)
+	var params vmModels.CreateSnapshotParams
+	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
+	if err != nil {
+		return errors2.MakeTerminatedError(err)
+	}
+
+	_, err = service.V2().VMs().CreateSnapshot(vmID, &opts.CreateSnapshotOpts{System: &params})
+	if err != nil {
+		// All errors are terminal, so we don't check for specific errors
+		return errors2.MakeTerminatedError(err)
+	}
+
+	return nil
+}
+
+func CreateUserSnapshot(job *jobModels.Job) error {
+	err := utils.AssertParameters(job, []string{"id", "params"})
+	if err != nil {
+		return errors2.MakeTerminatedError(err)
+	}
+
+	vmID := job.Args["id"].(string)
+	var params body.VmSnapshotCreate
+	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
+	if err != nil {
+		return errors2.MakeTerminatedError(err)
+	}
+
+	_, err = service.V2().VMs().CreateSnapshot(vmID, &opts.CreateSnapshotOpts{User: &params})
+	if err != nil {
+		// All errors are terminal, so we don't check for specific errors
+		return errors2.MakeTerminatedError(err)
+	}
+
+	return nil
+}
+
+func DeleteSnapshot(job *jobModels.Job) error {
+	err := utils.AssertParameters(job, []string{"id", "snapshotId"})
+	if err != nil {
+		return errors2.MakeTerminatedError(err)
+	}
+
+	vmID := job.Args["id"].(string)
+	snapshotID := job.Args["snapshotId"].(string)
+
+	err = service.V2().VMs().DeleteSnapshot(vmID, snapshotID)
+	if err != nil {
+		// All errors are terminal, so we don't check for specific errors
 		return errors2.MakeTerminatedError(err)
 	}
 

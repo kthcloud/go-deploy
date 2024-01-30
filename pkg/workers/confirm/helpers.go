@@ -198,6 +198,10 @@ func k8sDeletedVM(vm *vm.VM) (bool, error) {
 		return false, nil
 	}
 
+	if len(k8s.VmSnapshotMap) > 0 {
+		return false, nil
+	}
+
 	return !k8s.Namespace.Created(), nil
 }
 
