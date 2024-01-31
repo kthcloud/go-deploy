@@ -94,7 +94,7 @@ func fetchVmStatusV1(vm *vmModels.VM) (int, string, error) {
 
 	anyCreateSnapshotJob, err := jobModels.New().
 		FilterArgs("id", vm.ID).
-		IncludeTypes(jobModels.TypeCreateUserSnapshot, jobModels.TypeCreateSystemSnapshot).
+		IncludeTypes(jobModels.TypeCreateVmUserSnapshot, jobModels.TypeCreateSystemVmSnapshot).
 		IncludeStatus(jobModels.StatusRunning).
 		ExistsAny()
 	if err != nil {

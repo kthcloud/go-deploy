@@ -8,6 +8,7 @@ import (
 	"reflect"
 )
 
+// ToDTOv2 converts a VM to a body.VmRead.
 func (vm *VM) ToDTOv2(gpu *gpuModels.GPU, teams []string, sshConnectionString *string) body.VmRead {
 	var host *string
 	if vm.Host != nil {
@@ -75,7 +76,7 @@ func (vm *VM) ToDTOv2(gpu *gpuModels.GPU, teams []string, sshConnectionString *s
 	}
 }
 
-// FromDTOv2 converts a VM DTO to a VM.
+// FromDTOv2 converts a body.VmCreate to a CreateParams.
 func (p CreateParams) FromDTOv2(dto *body.VmCreate, fallbackZone *string) CreateParams {
 	p.Name = dto.Name
 	p.SshPublicKey = dto.SshPublicKey
@@ -110,7 +111,7 @@ func (p CreateParams) FromDTOv2(dto *body.VmCreate, fallbackZone *string) Create
 	return p
 }
 
-// FromDTOv2 converts a VM DTO to a VM.
+// FromDTOv2 converts a body.VmUpdate to a UpdateParams.
 func (p UpdateParams) FromDTOv2(dto *body.VmUpdate) UpdateParams {
 	p.Name = dto.Name
 	p.SnapshotID = dto.SnapshotID
@@ -141,6 +142,12 @@ func (p UpdateParams) FromDTOv2(dto *body.VmUpdate) UpdateParams {
 		p.PortMap = &portMap
 	}
 
+	return p
+}
+
+// FromDTOv2 converts a dto.VmAction to a ActionParams.
+func (p ActionParams) FromDTOv2(dto *body.VmAction) ActionParams {
+	p.Action = dto.Action
 	return p
 }
 

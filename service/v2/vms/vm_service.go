@@ -324,6 +324,33 @@ func (c *Client) Repair(id string) error {
 	return nil
 }
 
+// DoAction performs an action on the VM.
+func (c *Client) DoAction(id string, dtoVmAction *body.VmAction) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to perform action on vm %s. details: %w", id, err)
+	}
+
+	params := vmModels.ActionParams{}.FromDTOv2(dtoVmAction)
+
+	vm, err := c.VM(id, nil)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if vm == nil {
+		log.Println("vm", id, "not found when performing action. assuming it was deleted")
+		return nil
+	}
+
+	err = c.K8s().DoAction(id, &params)
+	if err != nil {
+		return makeError(err)
+	}
+
+	log.Println("performed action", params.Action, "on vm", id)
+	return nil
+}
+
 // UpdateOwnerSetup updates the owner of the VM.
 //
 // This is the first step of the owner update process, where it is decided if a notification should be created,
@@ -459,7 +486,7 @@ func (c *Client) UpdateOwner(id string, params *body.VmUpdateOwner) error {
 
 // ClearUpdateOwner clears the owner update process.
 //
-// This is intended to be used when the owner update process is cancelled.
+// This is intended to be used when the owner update process is canceled.
 func (c *Client) ClearUpdateOwner(id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to clear vm owner update. details: %w", err)
@@ -570,7 +597,7 @@ func (c *Client) SshConnectionString(id string) (*string, error) {
 	if service := vm.Subsystems.K8s.GetService(vm.Name); service != nil {
 		for _, port := range service.Ports {
 			if port.TargetPort == 22 {
-				sshConnectionString = utils.StrToPtr(fmt.Sprintf("ssh root@%s -p %d", zone.ParentDomainVM, port.Port))
+				sshConnectionString = utils.StrPtr(fmt.Sprintf("ssh root@%s -p %d", zone.ParentDomainVM, port.Port))
 			}
 		}
 	}
@@ -655,12 +682,11 @@ func (c *Client) CheckQuota(id, userID string, quota *roleModels.Quotas, opts ..
 				return sErrors.NewQuotaExceededError(fmt.Sprintf("RAM quota exceeded. Current: %d, Quota: %d", totalRam, quota.RAM))
 			}
 		}
+	} else if o.CreateSnapshot != nil {
+		if usage.Snapshots >= quota.Snapshots {
+			return sErrors.NewQuotaExceededError(fmt.Sprintf("Snapshot count quota exceeded. Current: %d, Quota: %d", usage.Snapshots, quota.Snapshots))
+		}
 	}
-	//else if o.CreateSnapshot != nil {
-	//	if usage.Snapshots >= quota.Snapshots {
-	//		return sErrors.NewQuotaExceededError(fmt.Sprintf("Snapshot count quota exceeded. Current: %d, Quota: %d", usage.Snapshots, quota.Snapshots))
-	//	}
-	//}
 
 	return nil
 }
@@ -691,17 +717,6 @@ func (c *Client) GetUsage(userID string) (*vmModels.Usage, error) {
 	}
 
 	return usage, nil
-}
-
-// GetExternalPortMapper gets the external port mapper for the VM.
-//
-// If the VM is not found, it returns nil.
-func (c *Client) GetExternalPortMapper(vmID string) (map[string]int, error) {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to get external port mapper. details: %w", err)
-	}
-
-	return nil, makeError(errors.New("not implemented"))
 }
 
 // GetHost gets the host for the VM.

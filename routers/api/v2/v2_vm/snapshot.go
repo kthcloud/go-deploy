@@ -196,8 +196,13 @@ func CreateSnapshot(c *gin.Context) {
 		return
 	}
 
+	if !vm.Ready() {
+		context.UserError("VM is not ready")
+		return
+	}
+
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, job.TypeCreateUserSnapshot, versions.V2, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.UserID, job.TypeCreateVmUserSnapshot, versions.V2, map[string]interface{}{
 		"id": vm.ID,
 		"params": body.VmSnapshotCreate{
 			Name: requestBody.Name,
@@ -270,7 +275,7 @@ func DeleteSnapshot(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, job.TypeDeleteSnapshot, versions.V2, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.UserID, job.TypeDeleteVmSnapshot, versions.V2, map[string]interface{}{
 		"id":         vm.ID,
 		"snapshotId": snapshot.ID,
 	})

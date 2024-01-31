@@ -40,7 +40,6 @@ type VmUpdate struct {
 	Ports    *[]PortUpdate `json:"ports,omitempty" bson:"ports,omitempty" binding:"omitempty,port_list_names,port_list_numbers,port_list_http_proxies,min=0,max=10,dive"`
 	CpuCores *int          `json:"cpuCores,omitempty" bson:"cpuCores,omitempty" binding:"omitempty,min=1"`
 	RAM      *int          `json:"ram,omitempty" bson:"ram,omitempty" binding:"omitempty,min=1"`
-	State    *string       `json:"state,omitempty" bson:"state,omitempty" binding:"omitempty,oneof=running stopped"`
 
 	// Name is used to rename a VM.
 	// If specified, only name will be updated.
@@ -48,7 +47,7 @@ type VmUpdate struct {
 
 	// OwnerID is used to initiate transfer a VM to another user.
 	// If specified, only the transfer will happen.
-	// If specified but empty, the transfer will be cancelled.
+	// If specified but empty, the transfer will be canceled.
 	OwnerID *string `json:"ownerId,omitempty" bson:"ownerId,omitempty" binding:"omitempty"`
 
 	// TransferCode is used to accept transfer of a VM.

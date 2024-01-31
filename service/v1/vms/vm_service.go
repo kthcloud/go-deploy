@@ -493,7 +493,7 @@ func (c *Client) UpdateOwner(id string, params *body.VmUpdateOwner) error {
 
 // ClearUpdateOwner clears the owner update process.
 //
-// This is intended to be used when the owner update process is cancelled.
+// This is intended to be used when the owner update process is canceled.
 func (c *Client) ClearUpdateOwner(id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to clear vm owner update. details: %w", err)

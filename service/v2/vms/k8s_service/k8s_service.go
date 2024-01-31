@@ -465,6 +465,81 @@ func (c *Client) Repair(id string) error {
 	return nil
 }
 
+// DoAction performs an action on a VM.
+func (c *Client) DoAction(id string, action *vmModels.ActionParams) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to perform action %s on vm %s. details: %w", action.Action, id, err)
+	}
+
+	_, kc, g, err := c.Get(OptsAll(id))
+	if err != nil {
+		if errors.Is(err, sErrors.VmNotFoundErr) {
+			log.Println("vm not found when performing action", action.Action, "on", id, ". assuming it was deleted")
+			return nil
+		}
+
+		return makeError(err)
+	}
+
+	for _, k8sVM := range g.VMs() {
+		switch action.Action {
+		case vmModels.ActionStart:
+			if k8sVM.Running {
+				continue
+			}
+
+			k8sVM.Running = true
+			err = resources.SsUpdater(kc.UpdateVM).
+				WithDbFunc(dbFunc(id, "vmMap."+k8sVM.Name)).
+				WithPublic(&k8sVM).
+				Exec()
+			if err != nil {
+				return makeError(err)
+			}
+
+		case vmModels.ActionStop:
+			if !k8sVM.Running {
+				continue
+			}
+
+			k8sVM.Running = false
+			err = resources.SsUpdater(kc.UpdateVM).
+				WithDbFunc(dbFunc(id, "vmMap."+k8sVM.Name)).
+				WithPublic(&k8sVM).
+				Exec()
+			if err != nil {
+				return makeError(err)
+			}
+
+		case vmModels.ActionRestart:
+			// This case must be handled separately, as a Restart in KubeVirt is done by first deleting any
+			// VirtualMachineInstances, and then ensuring Running is set to true.
+
+			// 1. Delete all VirtualMachineInstances
+			err = kc.DeleteVMIs(k8sVM.ID)
+			if err != nil {
+				return makeError(err)
+			}
+
+			// 2. Ensure Running is set to true
+			if k8sVM.Running {
+				continue
+			}
+
+			k8sVM.Running = true
+			err = resources.SsUpdater(kc.UpdateVM).
+				WithDbFunc(dbFunc(id, "vmMap."+k8sVM.Name)).
+				WithPublic(&k8sVM).
+				Exec()
+			if err != nil {
+				return makeError(err)
+			}
+		}
+	}
+
+	return nil
+}
+
 // EnsureOwner ensures the owner of the K8s setup, by deleting and then trigger a call to Repair.
 func (c *Client) EnsureOwner(id, oldOwnerID string) error {
 	makeError := func(err error) error {

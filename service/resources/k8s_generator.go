@@ -435,7 +435,7 @@ func (kg *K8sGenerator) VMs() []models.VmPublic {
 					Name:              "root",
 					Sudo:              []string{"ALL=(ALL) NOPASSWD:ALL"},
 					Passwd:            utils.HashPassword("root", utils.GenerateSalt()),
-					LockPasswd:        true,
+					LockPasswd:        false,
 					Shell:             "/bin/bash",
 					SshAuthorizedKeys: sshPublicKeys,
 				},
@@ -455,12 +455,11 @@ func (kg *K8sGenerator) VMs() []models.VmPublic {
 			CloudInit: createCloudInitString(&cloudInit),
 			// Temporary image URL
 			Image: "docker://registry.cloud.cbh.kth.se/images/ubuntu:24.04",
-
-			Running: true,
 		}
 
 		if vm := kg.v.vm.Subsystems.K8s.GetVM(vmName(kg.v.vm)); subsystems.Created(vm) {
 			vmPublic.ID = vm.ID
+			vmPublic.Running = vm.Running
 			vmPublic.CreatedAt = vm.CreatedAt
 		}
 

@@ -17,14 +17,16 @@ const (
 	TypeDetachGPU = "detachGpu"
 	// TypeRepairVM is used when repairing a VM.
 	TypeRepairVM = "repairVm"
-	// TypeCreateSystemSnapshot is used when creating a snapshot requested by the system.
-	// This is separate from TypeCreateUserSnapshot because the system can create any number of snapshots.
-	TypeCreateSystemSnapshot = "createSystemSnapshot"
-	// TypeCreateUserSnapshot is used when creating a snapshot requested by a user.
-	// This is separate from TypeCreateSystemSnapshot because the system can create any number of snapshots.
-	TypeCreateUserSnapshot = "createUserSnapshot"
-	// TypeDeleteSnapshot is used when deleting a snapshot.
-	TypeDeleteSnapshot = "deleteSnapshot"
+	// TypeCreateSystemVmSnapshot is used when creating a snapshot requested by the system.
+	// This is separate from TypeCreateVmUserSnapshot because the system can create any number of snapshots.
+	TypeCreateSystemVmSnapshot = "createSystemSnapshot"
+	// TypeCreateVmUserSnapshot is used when creating a snapshot requested by a user.
+	// This is separate from TypeCreateSystemVmSnapshot because the system can create any number of snapshots.
+	TypeCreateVmUserSnapshot = "createUserSnapshot"
+	// TypeDeleteVmSnapshot is used when deleting a snapshot.
+	TypeDeleteVmSnapshot = "deleteSnapshot"
+	// TypeDoVmAction is used when doing an action on a VM.
+	TypeDoVmAction = "doVmAction"
 
 	// TypeCreateDeployment is used when creating a deployment.
 	TypeCreateDeployment = "createDeployment"

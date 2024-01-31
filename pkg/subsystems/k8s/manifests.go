@@ -494,11 +494,16 @@ func CreateHpaManifest(public *models.HpaPublic) *autoscalingv2.HorizontalPodAut
 }
 
 // CreateVmManifest creates a Kubernetes VirtualMachine manifest from a models.VmPublic.
-func CreateVmManifest(public *models.VmPublic) *kubevirtv1.VirtualMachine {
+func CreateVmManifest(public *models.VmPublic, resourceVersion ...string) *kubevirtv1.VirtualMachine {
 	var dvSource *cdibetav1.DataVolumeSource
+	var version string
 
 	name := public.ID
 	deployName := public.Name
+
+	if len(resourceVersion) > 0 {
+		version = resourceVersion[0]
+	}
 
 	if strings.HasPrefix(public.Image, "http") {
 		dvSource = &cdibetav1.DataVolumeSource{
@@ -524,6 +529,7 @@ func CreateVmManifest(public *models.VmPublic) *kubevirtv1.VirtualMachine {
 			Annotations: map[string]string{
 				keys.AnnotationCreationTimestamp: public.CreatedAt.Format(timeFormat),
 			},
+			ResourceVersion: version,
 		},
 		Spec: kubevirtv1.VirtualMachineSpec{
 			Running: &public.Running,
@@ -558,12 +564,28 @@ func CreateVmManifest(public *models.VmPublic) *kubevirtv1.VirtualMachine {
 									},
 								},
 							},
+							Interfaces: []kubevirtv1.Interface{
+								{
+									Name: "default",
+									InterfaceBindingMethod: kubevirtv1.InterfaceBindingMethod{
+										Masquerade: &kubevirtv1.InterfaceMasquerade{},
+									},
+								},
+							},
 							Rng: &kubevirtv1.Rng{},
 						},
 						Resources: kubevirtv1.ResourceRequirements{
 							Requests: apiv1.ResourceList{
 								apiv1.ResourceMemory: resource.MustParse(fmt.Sprintf("%dGi", public.RAM)),
 								apiv1.ResourceCPU:    resource.MustParse(fmt.Sprintf("%d", public.CpuCores)),
+							},
+						},
+					},
+					Networks: []kubevirtv1.Network{
+						{
+							Name: "default",
+							NetworkSource: kubevirtv1.NetworkSource{
+								Pod: &kubevirtv1.PodNetwork{},
 							},
 						},
 					},

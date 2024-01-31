@@ -16,6 +16,7 @@ const (
 	VmPathV2          = "/v2/vms/:vmId"
 	VmSnapshotsPathV2 = "/v2/vms/:vmId/snapshots"
 	VmSnapshotPathV2  = "/v2/vms/:vmId/snapshots/:snapshotId"
+	VmActionPathV2    = "/v2/vms/:vmId/action"
 )
 
 type VmRoutingGroup struct{ RoutingGroupBase }
@@ -50,5 +51,7 @@ func (group *VmRoutingGroup) PrivateRoutes() []Route {
 		{Method: "GET", Pattern: VmSnapshotPathV2, HandlerFunc: v2_vm.GetSnapshot},
 		{Method: "POST", Pattern: VmSnapshotsPathV2, HandlerFunc: v2_vm.CreateSnapshot},
 		{Method: "DELETE", Pattern: VmSnapshotPathV2, HandlerFunc: v2_vm.DeleteSnapshot},
+
+		{Method: "POST", Pattern: VmActionPathV2, HandlerFunc: v2_vm.DoAction},
 	}
 }

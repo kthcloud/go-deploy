@@ -8,7 +8,7 @@ import (
 	"go-deploy/models/dto/v2/body"
 	jobModels "go-deploy/models/sys/job"
 	vmModels "go-deploy/models/sys/vm"
-	errors2 "go-deploy/pkg/jobs/errors"
+	jErrors "go-deploy/pkg/jobs/errors"
 	"go-deploy/pkg/jobs/utils"
 	"go-deploy/pkg/workers/confirm"
 	"go-deploy/service"
@@ -21,7 +21,7 @@ import (
 func CreateVM(job *jobModels.Job) error {
 	err := utils.AssertParameters(job, []string{"id", "ownerId", "params"})
 	if err != nil {
-		return errors2.MakeTerminatedError(err)
+		return jErrors.MakeTerminatedError(err)
 	}
 
 	id := job.Args["id"].(string)
@@ -29,14 +29,14 @@ func CreateVM(job *jobModels.Job) error {
 	var params body.VmCreate
 	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
 	if err != nil {
-		return errors2.MakeTerminatedError(err)
+		return jErrors.MakeTerminatedError(err)
 	}
 
 	err = service.V2().VMs().Create(id, ownerID, &params)
 	if err != nil {
 		// TODO: If there was some error, we trigger a repair, since rerunning it would cause a NonUniqueFieldErr
 		//_ = service.V2().VMs().Repair(id)
-		return errors2.MakeTerminatedError(err)
+		return jErrors.MakeTerminatedError(err)
 	}
 
 	return nil
@@ -45,14 +45,14 @@ func CreateVM(job *jobModels.Job) error {
 func DeleteVM(job *jobModels.Job) error {
 	err := utils.AssertParameters(job, []string{"id"})
 	if err != nil {
-		return errors2.MakeTerminatedError(err)
+		return jErrors.MakeTerminatedError(err)
 	}
 
 	id := job.Args["id"].(string)
 
 	err = vmModels.New().AddActivity(id, vmModels.ActivityBeingDeleted)
 	if err != nil {
-		return errors2.MakeTerminatedError(err)
+		return jErrors.MakeTerminatedError(err)
 	}
 
 	relatedJobs, err := jobModels.New().
@@ -63,7 +63,7 @@ func DeleteVM(job *jobModels.Job) error {
 		FilterArgs("id", id).
 		List()
 	if err != nil {
-		return errors2.MakeTerminatedError(err)
+		return jErrors.MakeTerminatedError(err)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
@@ -89,21 +89,21 @@ func DeleteVM(job *jobModels.Job) error {
 
 	select {
 	case <-time.After(300 * time.Second):
-		return errors2.MakeTerminatedError(fmt.Errorf("timeout waiting for related jobs to finish"))
+		return jErrors.MakeTerminatedError(fmt.Errorf("timeout waiting for related jobs to finish"))
 	case <-ctx.Done():
 	}
 
 	err = service.V2().VMs().Delete(id)
 	if err != nil {
 		if !errors.Is(err, sErrors.VmNotFoundErr) {
-			return errors2.MakeFailedError(err)
+			return jErrors.MakeFailedError(err)
 		}
 	}
 
 	// Check if deleted, otherwise mark as failed and return to queue for retry
 	vm, err := vmModels.New().GetByID(id)
 	if err != nil {
-		return errors2.MakeFailedError(err)
+		return jErrors.MakeFailedError(err)
 	}
 
 	if vm != nil {
@@ -111,7 +111,7 @@ func DeleteVM(job *jobModels.Job) error {
 			return nil
 		}
 
-		return errors2.MakeFailedError(fmt.Errorf("vm not deleted"))
+		return jErrors.MakeFailedError(fmt.Errorf("vm not deleted"))
 	}
 
 	return nil
@@ -120,95 +120,95 @@ func DeleteVM(job *jobModels.Job) error {
 func UpdateVM(job *jobModels.Job) error {
 	err := utils.AssertParameters(job, []string{"id", "params"})
 	if err != nil {
-		return errors2.MakeTerminatedError(err)
+		return jErrors.MakeTerminatedError(err)
 	}
 
 	id := job.Args["id"].(string)
 	var update body.VmUpdate
 	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &update)
 	if err != nil {
-		return errors2.MakeTerminatedError(err)
+		return jErrors.MakeTerminatedError(err)
 	}
 
 	err = service.V2().VMs().Update(id, &update)
 	if err != nil {
 		switch {
 		case errors.Is(err, sErrors.VmNotFoundErr):
-			return errors2.MakeTerminatedError(err)
+			return jErrors.MakeTerminatedError(err)
 		case errors.Is(err, sErrors.NonUniqueFieldErr):
-			return errors2.MakeTerminatedError(err)
+			return jErrors.MakeTerminatedError(err)
 		case errors.Is(err, sErrors.IngressHostInUseErr):
-			return errors2.MakeTerminatedError(err)
+			return jErrors.MakeTerminatedError(err)
 		case errors.Is(err, sErrors.NoPortsAvailableErr):
-			return errors2.MakeTerminatedError(err)
+			return jErrors.MakeTerminatedError(err)
 		case errors.Is(err, sErrors.SnapshotNotFoundErr):
-			return errors2.MakeTerminatedError(err)
+			return jErrors.MakeTerminatedError(err)
 		}
 
 		var portInUseErr sErrors.PortInUseErr
 		if errors.As(err, &portInUseErr) {
-			return errors2.MakeTerminatedError(err)
+			return jErrors.MakeTerminatedError(err)
 		}
 
-		return errors2.MakeFailedError(err)
+		return jErrors.MakeFailedError(err)
 	}
 
 	err = vmModels.New().MarkUpdated(id)
 	if err != nil {
-		return errors2.MakeTerminatedError(err)
+		return jErrors.MakeTerminatedError(err)
 	}
 
 	return nil
 }
 
-func CreateSystemSnapshot(job *jobModels.Job) error {
+func CreateSystemVmSnapshot(job *jobModels.Job) error {
 	err := utils.AssertParameters(job, []string{"id", "params"})
 	if err != nil {
-		return errors2.MakeTerminatedError(err)
+		return jErrors.MakeTerminatedError(err)
 	}
 
 	vmID := job.Args["id"].(string)
 	var params vmModels.CreateSnapshotParams
 	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
 	if err != nil {
-		return errors2.MakeTerminatedError(err)
+		return jErrors.MakeTerminatedError(err)
 	}
 
 	_, err = service.V2().VMs().CreateSnapshot(vmID, &opts.CreateSnapshotOpts{System: &params})
 	if err != nil {
 		// All errors are terminal, so we don't check for specific errors
-		return errors2.MakeTerminatedError(err)
+		return jErrors.MakeTerminatedError(err)
 	}
 
 	return nil
 }
 
-func CreateUserSnapshot(job *jobModels.Job) error {
+func CreateUserVmSnapshot(job *jobModels.Job) error {
 	err := utils.AssertParameters(job, []string{"id", "params"})
 	if err != nil {
-		return errors2.MakeTerminatedError(err)
+		return jErrors.MakeTerminatedError(err)
 	}
 
 	vmID := job.Args["id"].(string)
 	var params body.VmSnapshotCreate
 	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
 	if err != nil {
-		return errors2.MakeTerminatedError(err)
+		return jErrors.MakeTerminatedError(err)
 	}
 
 	_, err = service.V2().VMs().CreateSnapshot(vmID, &opts.CreateSnapshotOpts{User: &params})
 	if err != nil {
 		// All errors are terminal, so we don't check for specific errors
-		return errors2.MakeTerminatedError(err)
+		return jErrors.MakeTerminatedError(err)
 	}
 
 	return nil
 }
 
-func DeleteSnapshot(job *jobModels.Job) error {
+func DeleteVmSnapshot(job *jobModels.Job) error {
 	err := utils.AssertParameters(job, []string{"id", "snapshotId"})
 	if err != nil {
-		return errors2.MakeTerminatedError(err)
+		return jErrors.MakeTerminatedError(err)
 	}
 
 	vmID := job.Args["id"].(string)
@@ -217,7 +217,29 @@ func DeleteSnapshot(job *jobModels.Job) error {
 	err = service.V2().VMs().DeleteSnapshot(vmID, snapshotID)
 	if err != nil {
 		// All errors are terminal, so we don't check for specific errors
-		return errors2.MakeTerminatedError(err)
+		return jErrors.MakeTerminatedError(err)
+	}
+
+	return nil
+}
+
+func DoVmAction(job *jobModels.Job) error {
+	err := utils.AssertParameters(job, []string{"id", "params"})
+	if err != nil {
+		return jErrors.MakeTerminatedError(err)
+	}
+
+	vmID := job.Args["id"].(string)
+	var params body.VmAction
+	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
+	if err != nil {
+		return jErrors.MakeTerminatedError(err)
+	}
+
+	err = service.V2().VMs().DoAction(vmID, &params)
+	if err != nil {
+		// All errors are terminal, so we don't check for specific errors
+		return jErrors.MakeTerminatedError(err)
 	}
 
 	return nil

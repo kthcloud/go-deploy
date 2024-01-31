@@ -25,5 +25,7 @@ type VMs interface {
 	CreateSnapshot(vmID string, opts *vmClient.CreateSnapshotOpts) (*vmModels.SnapshotV2, error)
 	DeleteSnapshot(vmID, id string) error
 
+	DoAction(id string, action *body.VmAction) error
+
 	K8s() *k8s_service.Client
 }
