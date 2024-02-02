@@ -60,4 +60,5 @@ type CloudStackHostCapabilities struct {
 	CpuCoresUsed  int
 	RamTotal      int
 	RamUsed       int
+	RamAllocated  int
 }
