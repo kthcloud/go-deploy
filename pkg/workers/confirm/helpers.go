@@ -103,21 +103,6 @@ func harborDeleted(deployment *deploymentModels.Deployment) (bool, error) {
 		harbor.Webhook.ID == 0, nil
 }
 
-// gitHubDeleted checks if the GitHub setup for the given deployment is deleted.
-func gitHubDeleted(deployment *deploymentModels.Deployment) (bool, error) {
-	_ = func(err error) error {
-		return fmt.Errorf("failed to check if github is created for deployment %s. details: %w", deployment.Name, err)
-	}
-
-	github := &deployment.Subsystems.GitHub
-
-	if github.Placeholder {
-		return true, nil
-	}
-
-	return github.Webhook.ID == 0, nil
-}
-
 // k8sDeleted checks if the K8s setup for the given storage manager is deleted.
 func k8sDeletedSM(sm *sm.SM) (bool, error) {
 	k8s := &sm.Subsystems.K8s

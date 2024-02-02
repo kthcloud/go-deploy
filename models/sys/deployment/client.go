@@ -132,16 +132,6 @@ func (client *Client) WithNoActivities() *Client {
 	return client
 }
 
-// WithGitHubWebhookID adds a filter to the client to only include deployments with the given GitHub webhook ID.
-func (client *Client) WithGitHubWebhookID(id int64) *Client {
-	filter := bson.D{{"subsystems.github.webhook.id", id}}
-
-	client.ResourceClient.AddExtraFilter(filter)
-	client.ActivityResourceClient.AddExtraFilter(filter)
-
-	return client
-}
-
 // WithNameRegex adds a filter to the client to only include deployments with a name matching the given regex.
 func (client *Client) WithNameRegex(name string) *Client {
 	filter := bson.D{{"name", bson.D{{"$regex", name}}}}

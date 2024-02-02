@@ -54,7 +54,6 @@ type App struct {
 type Subsystems struct {
 	K8s    subsystems.K8s    `bson:"k8s"`
 	Harbor subsystems.Harbor `bson:"harbor"`
-	GitHub subsystems.GitHub `bson:"github"`
 	GitLab subsystems.GitLab `bson:"gitlab"`
 }
 
@@ -84,17 +83,4 @@ type Transfer struct {
 
 type Usage struct {
 	Count int
-}
-
-type GitHubRepository struct {
-	ID            int64
-	Name          string
-	Owner         string
-	CloneURL      string
-	DefaultBranch string
-}
-
-type GitHubWebhook struct {
-	ID     int64
-	Events []string
 }

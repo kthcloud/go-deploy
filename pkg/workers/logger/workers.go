@@ -7,7 +7,6 @@ import (
 	deploymentModels "go-deploy/models/sys/deployment"
 	"go-deploy/pkg/workers"
 	sErrors "go-deploy/service/errors"
-	"go-deploy/service/v1/deployments/gitlab_service"
 	"go-deploy/service/v1/deployments/k8s_service"
 	"go-deploy/utils"
 	"log"
@@ -113,21 +112,6 @@ func deploymentLogger(ctx context.Context) {
 						shouldCancel <- id.ID
 						return
 					}
-
-					err = gitlab_service.SetupLogStream(logCtx, id.ID, func(line string, createdAt time.Time) {
-						err = deploymentModels.New().AddLogs(id.ID, deploymentModels.Log{
-							Source: deploymentModels.LogSourceBuild,
-							Prefix: "[build]",
-							// Since this is sent as a string, and not a JSON object, we need to prepend the createdAt
-							Line:      fmt.Sprintf("%s %s", createdAt.Format(time.RFC3339), line),
-							CreatedAt: createdAt,
-						})
-						if err != nil {
-							utils.PrettyPrintError(fmt.Errorf("failed to add gitlab logs for deployment %s. details: %w", id.ID, err))
-							shouldCancel <- id.ID
-							return
-						}
-					})
 
 					if err != nil {
 						utils.PrettyPrintError(fmt.Errorf("failed to setup gitlab log stream for deployment %s. details: %w", id.ID, err))

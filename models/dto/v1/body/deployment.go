@@ -32,6 +32,9 @@ type DeploymentRead struct {
 	Status     string `json:"status"`
 	PingResult *int   `json:"pingResult,omitempty"`
 
+	// Integrations are currently not used, but could be used if we wanted to add a list of integrations to the deployment
+	//
+	// For example GitHub
 	Integrations []string `json:"integrations"`
 	Teams        []string `json:"teams"`
 
@@ -49,9 +52,7 @@ type DeploymentCreate struct {
 	HealthCheckPath *string  `json:"healthCheckPath" bson:"healthCheckPath,omitempty" binding:"omitempty,min=0,max=1000,health_check_path"`
 	CustomDomain    *string  `json:"customDomain" bson:"customDomain,omitempty" binding:"omitempty,domain_name,custom_domain,min=1,max=253"`
 	Replicas        *int     `json:"replicas" bson:"replicas,omitempty" binding:"omitempty,min=0,max=100"`
-
-	GitHub *GitHub `json:"github" bson:"github,omitempty" binding:"omitempty,dive"`
-
+	
 	Zone *string `json:"zone" bson:"zone,omitempty" binding:"omitempty"`
 }
 
@@ -81,11 +82,6 @@ type Volume struct {
 	Name       string `json:"name" bson:"name" binding:"required,volume_name,min=3,max=30"`
 	AppPath    string `json:"appPath" bson:"appPath" binding:"required,min=1,max=255"`
 	ServerPath string `json:"serverPath" bson:"serverPath" binding:"required,min=1,max=255"`
-}
-
-type GitHub struct {
-	Token        string `json:"token" bson:"token" binding:"required,min=1,max=1000"`
-	RepositoryID int64  `json:"repositoryId" bson:"repositoryId" binding:"required"`
 }
 
 type DeploymentUpdateOwner struct {

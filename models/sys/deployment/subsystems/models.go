@@ -1,7 +1,6 @@
 package subsystems
 
 import (
-	githubModels "go-deploy/pkg/subsystems/github/models"
 	harborModels "go-deploy/pkg/subsystems/harbor/models"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	"time"
@@ -26,11 +25,6 @@ type Harbor struct {
 	Repository  harborModels.RepositoryPublic `bson:"repository"`
 	Webhook     harborModels.WebhookPublic    `bson:"webhook"`
 	Placeholder bool                          `bson:"placeholder"`
-}
-
-type GitHub struct {
-	Webhook     githubModels.WebhookPublic `bson:"webhook"`
-	Placeholder bool                       `bson:"placeholder"`
 }
 
 type GitLab struct {

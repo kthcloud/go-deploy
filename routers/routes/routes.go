@@ -23,7 +23,6 @@ type RoutingGroup interface {
 func RoutingGroups() []RoutingGroup {
 	return []RoutingGroup{
 		DeploymentRoutes(),
-		GitHubRoutes(),
 		GpuRoutes(),
 		JobRoutes(),
 		MetricsRoutes(),

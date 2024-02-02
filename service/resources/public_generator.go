@@ -87,15 +87,6 @@ func (pc *PublicGeneratorType) Harbor(project string) *HarborGenerator {
 	}
 }
 
-// GitHub returns a new GitHubGenerator
-func (pc *PublicGeneratorType) GitHub(token string, repositoryID int64) *GitHubGenerator {
-	return &GitHubGenerator{
-		PublicGeneratorType: pc,
-		token:               token,
-		repositoryID:        repositoryID,
-	}
-}
-
 // CS returns a new CsGenerator
 func (pc *PublicGeneratorType) CS() *CsGenerator {
 	return &CsGenerator{

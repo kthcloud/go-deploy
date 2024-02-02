@@ -11,7 +11,6 @@ func getDeploymentDeletedConfirmers() []func(*deploymentModels.Deployment) (bool
 	return []func(*deploymentModels.Deployment) (bool, error){
 		k8sDeletedDeployment,
 		harborDeleted,
-		gitHubDeleted,
 	}
 }
 
