@@ -76,7 +76,8 @@ func List(c *gin.Context) {
 	dtoVMs := make([]body.VmRead, len(vms))
 	for i, vm := range vms {
 		teamIDs, _ := deployV1.Teams().ListIDs(teamOpts.ListOpts{ResourceID: vm.ID})
-		dtoVMs[i] = vm.ToDTOv2(vm.GetGPU(), teamIDs)
+		sshConnectionString, _ := deployV2.VMs().SshConnectionString(vm.ID)
+		dtoVMs[i] = vm.ToDTOv2(vm.GetGPU(), teamIDs, sshConnectionString)
 	}
 
 	context.Ok(dtoVMs)
@@ -124,7 +125,8 @@ func Get(c *gin.Context) {
 	}
 
 	teamIDs, _ := deployV1.Teams().ListIDs(teamOpts.ListOpts{ResourceID: vm.ID})
-	context.Ok(vm.ToDTOv2(vm.GetGPU(), teamIDs))
+	sshConnectionString, _ := deployV2.VMs().SshConnectionString(vm.ID)
+	context.Ok(vm.ToDTOv2(vm.GetGPU(), teamIDs, sshConnectionString))
 }
 
 // Create

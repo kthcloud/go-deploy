@@ -11,3 +11,10 @@ type Snapshot struct {
 	State      string
 	Current    bool
 }
+
+type SnapshotV2 struct {
+	ID        string
+	Name      string
+	Status    string
+	CreatedAt time.Time
+}

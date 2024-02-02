@@ -76,7 +76,7 @@ func (c *Client) Create(id string, params *vmModels.CreateParams) error {
 	// Jobs
 	// These are run without saving to the database, as they will be deleted when completed
 	for _, jobPublic := range g.Jobs() {
-		_, err = kc.CreateJob(&jobPublic)
+		err = kc.CreateOneShotJob(&jobPublic)
 		if err != nil {
 			return makeError(err)
 		}
@@ -108,17 +108,19 @@ func (c *Client) Create(id string, params *vmModels.CreateParams) error {
 
 	// Service
 	for _, servicePublic := range g.Services() {
-		if servicePublic.Port == 0 {
-			port, err := vmPortModels.New().GetOrLeaseAny(servicePublic.TargetPort, vm.ID, vm.Zone)
-			if err != nil {
-				if errors.Is(err, vmPortModels.NoPortsAvailableErr) {
-					return makeError(sErrors.NoPortsAvailableErr)
+		for idx, port := range servicePublic.Ports {
+			if port.Port == 0 {
+				vmPort, err := vmPortModels.New().GetOrLeaseAny(port.TargetPort, vm.ID, vm.Zone)
+				if err != nil {
+					if errors.Is(err, vmPortModels.NoPortsAvailableErr) {
+						return makeError(sErrors.NoPortsAvailableErr)
+					}
+
+					return makeError(err)
 				}
 
-				return makeError(err)
+				servicePublic.Ports[idx].Port = vmPort.PublicPort
 			}
-
-			servicePublic.Port = port.PublicPort
 		}
 
 		err = resources.SsCreator(kc.CreateService).
@@ -224,7 +226,7 @@ func (c *Client) Delete(id string, overwriteUserID ...string) error {
 	// VM
 	for mapName, k8sVm := range vm.Subsystems.K8s.VmMap {
 		err = resources.SsDeleter(kc.DeleteVM).
-			WithResourceID(k8sVm.Name).
+			WithResourceID(k8sVm.ID).
 			WithDbFunc(dbFunc(id, "vmMap."+mapName)).
 			Exec()
 
@@ -245,6 +247,18 @@ func (c *Client) Delete(id string, overwriteUserID ...string) error {
 		err = resources.SsDeleter(deleteFunc).
 			WithResourceID(secret.Name).
 			WithDbFunc(dbFunc(id, "secretMap."+mapName)).
+			Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	// Snapshots
+	for mapName, snapshot := range vm.Subsystems.K8s.VmSnapshotMap {
+		err = resources.SsDeleter(kc.DeleteVmSnapshot).
+			WithResourceID(snapshot.ID).
+			WithDbFunc(dbFunc(id, "vmSnapshotMap."+mapName)).
 			Exec()
 
 		if err != nil {
@@ -363,6 +377,21 @@ func (c *Client) Repair(id string) error {
 		}
 	}
 	for _, public := range services {
+		for idx, port := range public.Ports {
+			if port.Port == 0 {
+				vmPort, err := vmPortModels.New().GetOrLeaseAny(port.TargetPort, vm.ID, vm.Zone)
+				if err != nil {
+					if errors.Is(err, vmPortModels.NoPortsAvailableErr) {
+						return makeError(sErrors.NoPortsAvailableErr)
+					}
+
+					return makeError(err)
+				}
+
+				public.Ports[idx].Port = vmPort.PublicPort
+			}
+		}
+
 		err = resources.SsRepairer(
 			kc.ReadService,
 			kc.CreateService,
@@ -436,6 +465,81 @@ func (c *Client) Repair(id string) error {
 	return nil
 }
 
+// DoAction performs an action on a VM.
+func (c *Client) DoAction(id string, action *vmModels.ActionParams) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to perform action %s on vm %s. details: %w", action.Action, id, err)
+	}
+
+	_, kc, g, err := c.Get(OptsAll(id))
+	if err != nil {
+		if errors.Is(err, sErrors.VmNotFoundErr) {
+			log.Println("vm not found when performing action", action.Action, "on", id, ". assuming it was deleted")
+			return nil
+		}
+
+		return makeError(err)
+	}
+
+	for _, k8sVM := range g.VMs() {
+		switch action.Action {
+		case vmModels.ActionStart:
+			if k8sVM.Running {
+				continue
+			}
+
+			k8sVM.Running = true
+			err = resources.SsUpdater(kc.UpdateVM).
+				WithDbFunc(dbFunc(id, "vmMap."+k8sVM.Name)).
+				WithPublic(&k8sVM).
+				Exec()
+			if err != nil {
+				return makeError(err)
+			}
+
+		case vmModels.ActionStop:
+			if !k8sVM.Running {
+				continue
+			}
+
+			k8sVM.Running = false
+			err = resources.SsUpdater(kc.UpdateVM).
+				WithDbFunc(dbFunc(id, "vmMap."+k8sVM.Name)).
+				WithPublic(&k8sVM).
+				Exec()
+			if err != nil {
+				return makeError(err)
+			}
+
+		case vmModels.ActionRestart:
+			// This case must be handled separately, as a Restart in KubeVirt is done by first deleting any
+			// VirtualMachineInstances, and then ensuring Running is set to true.
+
+			// 1. Delete all VirtualMachineInstances
+			err = kc.DeleteVMIs(k8sVM.ID)
+			if err != nil {
+				return makeError(err)
+			}
+
+			// 2. Ensure Running is set to true
+			if k8sVM.Running {
+				continue
+			}
+
+			k8sVM.Running = true
+			err = resources.SsUpdater(kc.UpdateVM).
+				WithDbFunc(dbFunc(id, "vmMap."+k8sVM.Name)).
+				WithPublic(&k8sVM).
+				Exec()
+			if err != nil {
+				return makeError(err)
+			}
+		}
+	}
+
+	return nil
+}
+
 // EnsureOwner ensures the owner of the K8s setup, by deleting and then trigger a call to Repair.
 func (c *Client) EnsureOwner(id, oldOwnerID string) error {
 	makeError := func(err error) error {
@@ -461,6 +565,9 @@ func (c *Client) EnsureOwner(id, oldOwnerID string) error {
 
 	return nil
 }
+
+// dbFuncType is a function that updates the K8s subsystem in the database.
+type dbFuncType = func(interface{}) error
 
 // dbFunc returns a function that updates the K8s subsystem.
 func dbFunc(id, key string) func(interface{}) error {

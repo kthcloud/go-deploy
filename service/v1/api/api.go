@@ -17,7 +17,6 @@ import (
 	vmModels "go-deploy/models/sys/vm"
 	workerStatusModels "go-deploy/models/sys/worker_status"
 	zoneModels "go-deploy/models/sys/zone"
-	"go-deploy/service/v1/deployments/github_service"
 	"go-deploy/service/v1/deployments/harbor_service"
 	"go-deploy/service/v1/deployments/k8s_service"
 	dOpts "go-deploy/service/v1/deployments/opts"
@@ -47,7 +46,6 @@ type Deployments interface {
 	ClearUpdateOwner(id string) error
 
 	Restart(id string) error
-	Build(ids []string, buildParams *body.DeploymentBuild) error
 	DoCommand(id string, command string)
 
 	GetCiConfig(id string) (*body.CiConfig, error)
@@ -62,16 +60,10 @@ type Deployments interface {
 	NameAvailable(name string) (bool, error)
 	GetUsage(userID string) (*deploymentModels.Usage, error)
 
-	ValidGitHubToken(token string) (bool, string, error)
-	GetGitHubAccessTokenByCode(code string) (string, error)
-	GetGitHubRepositories(token string) ([]deploymentModels.GitHubRepository, error)
-	ValidGitHubRepository(token string, repositoryID int64) (bool, string, error)
-
 	ValidateHarborToken(secret string) bool
 
 	K8s() *k8s_service.Client
 	Harbor() *harbor_service.Client
-	GitHub() *github_service.Client
 }
 
 type Discovery interface {

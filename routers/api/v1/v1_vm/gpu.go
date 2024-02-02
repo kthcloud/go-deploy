@@ -237,7 +237,7 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, deployV1 
 				tooLargeErr := v1.VmTooLargeForHostErr
 				caps, err := deployV1.VMs().GetCloudStackHostCapabilities(gpus[0].Host, vm.Zone)
 				if err == nil && caps != nil {
-					tooLargeErr = v1.MakeVmToLargeForHostErr(caps.CpuCoresTotal-caps.CpuCoresUsed, caps.RamTotal-caps.RamUsed)
+					tooLargeErr = v1.MakeVmToLargeForHostErr(caps.CpuCoresTotal-caps.CpuCoresUsed, caps.RamTotal-caps.RamAllocated)
 				}
 				context.ServerUnavailableError(fmt.Errorf("vm %s too large when attaching gpu", vm.ID), tooLargeErr)
 			case errors.Is(err, sErrors.VmNotCreatedErr):

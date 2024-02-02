@@ -8,7 +8,8 @@ import (
 	"reflect"
 )
 
-func (vm *VM) ToDTOv2(gpu *gpuModels.GPU, teams []string) body.VmRead {
+// ToDTOv2 converts a VM to a body.VmRead.
+func (vm *VM) ToDTOv2(gpu *gpuModels.GPU, teams []string, sshConnectionString *string) body.VmRead {
 	var host *string
 	if vm.Host != nil {
 		host = &vm.Host.Name
@@ -22,6 +23,34 @@ func (vm *VM) ToDTOv2(gpu *gpuModels.GPU, teams []string) body.VmRead {
 			LeaseEndAt: gpu.Lease.End,
 			IsExpired:  gpu.Lease.IsExpired(),
 		}
+	}
+
+	ports := make([]body.PortRead, 0, len(vm.PortMap))
+	for _, port := range vm.PortMap {
+		if port.Name == "__ssh" {
+			continue
+		}
+
+		var httpProxy *body.HttpProxyRead
+		if port.HttpProxy != nil {
+			var customDomain *body.CustomDomainRead
+			if port.HttpProxy.CustomDomain != nil {
+				customDomain = &body.CustomDomainRead{
+					Domain: port.HttpProxy.CustomDomain.Domain,
+					Secret: port.HttpProxy.CustomDomain.Secret,
+					Status: port.HttpProxy.CustomDomain.Status,
+				}
+			}
+
+			httpProxy = &body.HttpProxyRead{Name: port.HttpProxy.Name, CustomDomain: customDomain}
+		}
+
+		ports = append(ports, body.PortRead{
+			Name:      port.Name,
+			Port:      port.Port,
+			Protocol:  port.Protocol,
+			HttpProxy: httpProxy,
+		})
 	}
 
 	return body.VmRead{
@@ -38,16 +67,16 @@ func (vm *VM) ToDTOv2(gpu *gpuModels.GPU, teams []string) body.VmRead {
 			RAM:      vm.Specs.RAM,
 			DiskSize: vm.Specs.DiskSize,
 		},
-		Ports:               nil,
+		Ports:               ports,
 		GPU:                 gpuLease,
 		SshPublicKey:        vm.SshPublicKey,
 		Teams:               teams,
 		Status:              vm.StatusMessage,
-		SshConnectionString: nil,
+		SshConnectionString: sshConnectionString,
 	}
 }
 
-// FromDTOv2 converts a VM DTO to a VM.
+// FromDTOv2 converts a body.VmCreate to a CreateParams.
 func (p CreateParams) FromDTOv2(dto *body.VmCreate, fallbackZone *string) CreateParams {
 	p.Name = dto.Name
 	p.SshPublicKey = dto.SshPublicKey
@@ -82,7 +111,7 @@ func (p CreateParams) FromDTOv2(dto *body.VmCreate, fallbackZone *string) Create
 	return p
 }
 
-// FromDTOv2 converts a VM DTO to a VM.
+// FromDTOv2 converts a body.VmUpdate to a UpdateParams.
 func (p UpdateParams) FromDTOv2(dto *body.VmUpdate) UpdateParams {
 	p.Name = dto.Name
 	p.SnapshotID = dto.SnapshotID
@@ -91,17 +120,17 @@ func (p UpdateParams) FromDTOv2(dto *body.VmUpdate) UpdateParams {
 
 	if dto.Ports != nil {
 		portMap := make(map[string]PortUpdateParams)
-		//for _, port := range *dto.Ports {
-		//	if port.Name == "__ssh" {
-		//		continue
-		//	}
-		//
-		//	if port.Port == 22 {
-		//		continue
-		//	}
-		//
-		//	portMap[portName(port.Port, port.Protocol)] = fromPortUpdateDTOv1(&port)
-		//}
+		for _, port := range *dto.Ports {
+			if port.Name == "__ssh" {
+				continue
+			}
+
+			if port.Port == 22 {
+				continue
+			}
+
+			portMap[portName(port.Port, port.Protocol)] = fromPortUpdateDTOv2(&port)
+		}
 
 		// Ensure there is always an SSH port
 		portMap["__ssh"] = PortUpdateParams{
@@ -116,7 +145,30 @@ func (p UpdateParams) FromDTOv2(dto *body.VmUpdate) UpdateParams {
 	return p
 }
 
-// fromPortCreateDTOv2 converts a port DTO to a port.
+// FromDTOv2 converts a dto.VmAction to a ActionParams.
+func (p ActionParams) FromDTOv2(dto *body.VmAction) ActionParams {
+	p.Action = dto.Action
+	return p
+}
+
+// ToDTOv2 converts a Snapshot to a body.VmSnapshotRead.
+func (sc *SnapshotV2) ToDTOv2() body.VmSnapshotRead {
+	return body.VmSnapshotRead{
+		ID:        sc.ID,
+		Name:      sc.Name,
+		Status:    sc.Status,
+		CreatedAt: sc.CreatedAt,
+	}
+}
+
+// FromDTOv2 converts a body.VmSnapshotCreate to a CreateSnapshotParams.
+func (sc *CreateSnapshotParams) FromDTOv2(dto *body.VmSnapshotCreate) {
+	sc.Name = dto.Name
+	sc.Overwrite = false
+	sc.UserCreated = true
+}
+
+// fromPortCreateDTOv2 converts a body.PortCreate to a PortCreateParams.
 func fromPortCreateDTOv2(port *body.PortCreate) PortCreateParams {
 	var httpProxy *HttpProxyCreateParams
 	if port.HttpProxy != nil {
@@ -134,7 +186,7 @@ func fromPortCreateDTOv2(port *body.PortCreate) PortCreateParams {
 	}
 }
 
-// fromPortCreateDTOv2 converts a port DTO to a port.
+// fromPortCreateDTOv2 converts a body.PortCreate to a PortCreateParams.
 func fromPortUpdateDTOv2(port *body.PortUpdate) PortUpdateParams {
 	var httpProxy *HttpProxyUpdateParams
 	if port.HttpProxy != nil {

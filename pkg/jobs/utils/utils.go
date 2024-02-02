@@ -261,7 +261,7 @@ func OnlyCreateSnapshotPerUser(job *jobModels.Job) (bool, error) {
 	anySnapshotJob, err := jobModels.New().
 		RestrictToUser(job.UserID).
 		ExcludeIDs(job.ID).
-		IncludeTypes(jobModels.TypeCreateUserSnapshot).
+		IncludeTypes(jobModels.TypeCreateVmUserSnapshot).
 		ExcludeStatus(jobModels.StatusCompleted, jobModels.StatusTerminated).
 		ExistsAny()
 	if err != nil {

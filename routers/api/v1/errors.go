@@ -27,5 +27,5 @@ var (
 
 // MakeVmToLargeForHostErr creates a VmTooLargeForHostErr with the available CPU and RAM
 func MakeVmToLargeForHostErr(cpuAvailable, ramAvailable int) error {
-	return fmt.Errorf("%w. CPU available: %d, RAM available: %d", VmTooLargeForHostErr, cpuAvailable, ramAvailable)
+	return fmt.Errorf("%w. There is only %d CPU cores and %d GB RAM available on the host", VmTooLargeForHostErr, cpuAvailable, ramAvailable)
 }

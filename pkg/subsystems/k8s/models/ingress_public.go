@@ -51,8 +51,8 @@ func CreateIngressPublicFromRead(ingress *v1.Ingress) *IngressPublic {
 	}
 
 	if ingress.Annotations != nil {
-		clusterIssuer := ingress.Annotations[keys.K8sAnnotationClusterIssuer]
-		commonName := ingress.Annotations[keys.K8sAnnotationCommonName]
+		clusterIssuer := ingress.Annotations[keys.AnnotationClusterIssuer]
+		commonName := ingress.Annotations[keys.AnnotationCommonName]
 
 		if clusterIssuer != "" && commonName != "" {
 			customCert = &CustomCert{

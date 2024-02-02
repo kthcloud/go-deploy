@@ -78,3 +78,55 @@ func (client *Client) DeleteJob(name string) error {
 
 	return nil
 }
+
+// CreateOneShotJob creates a Job in Kubernetes that runs once and then deletes itself.
+//
+// This is useful for running tasks, such as creating NFS PVs, that should only be run once.
+//
+// This function is blocking.
+func (client *Client) CreateOneShotJob(public *models.JobPublic) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to create one-shot k8s job %s. details: %w", public.Name, err)
+	}
+
+	_, err := client.CreateJob(public)
+	if err != nil {
+		return makeError(err)
+	}
+
+	// Wait for the job to complete.
+	maxIter := 60
+	iter := 0
+	for {
+		k8sJob, err := client.K8sClient.BatchV1().Jobs(public.Namespace).Get(context.TODO(), public.Name, metav1.GetOptions{})
+		if err != nil {
+			if IsNotFoundErr(err) {
+				return makeError(fmt.Errorf("job %s was deleted before it could complete", public.Name))
+			}
+
+			return makeError(err)
+		}
+
+		if k8sJob.Status.Succeeded > 0 {
+			break
+		}
+
+		time.Sleep(1 * time.Second)
+
+		iter++
+		if iter > maxIter {
+			return makeError(fmt.Errorf("job %s did not complete in time", public.Name))
+		}
+	}
+
+	// Delete the job.
+	err = client.K8sClient.BatchV1().Jobs(public.Namespace).Delete(context.TODO(), public.Name, metav1.DeleteOptions{
+		PropagationPolicy: &[]metav1.DeletionPropagation{metav1.DeletePropagationBackground}[0],
+	})
+
+	if err != nil && !IsNotFoundErr(err) {
+		return makeError(err)
+	}
+
+	return nil
+}

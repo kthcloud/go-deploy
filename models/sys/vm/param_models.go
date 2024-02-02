@@ -1,5 +1,11 @@
 package vm
 
+const (
+	ActionStart   = "start"
+	ActionStop    = "stop"
+	ActionRestart = "restart"
+)
+
 type CreateParams struct {
 	Name    string
 	Version string
@@ -28,6 +34,10 @@ type UpdateParams struct {
 	// update owner
 	TransferCode   *string
 	TransferUserID *string
+}
+
+type ActionParams struct {
+	Action string
 }
 
 type PortCreateParams struct {

@@ -9,6 +9,11 @@ RUN apk update && apk add --no-cache git=~2
 WORKDIR /app
 COPY . .
 
+# Build docs
+RUN go install github.com/swaggo/swag/cmd/swag@latest
+RUN chmod +x ./build-docs.sh
+RUN swag init
+
 # Fetch dependencies and build the binary
 ENV GO111MODULE=on
 RUN go get -d -v
@@ -28,6 +33,9 @@ COPY --from=builder /app/main .
 
 # Copy the "index" folder
 COPY --from=builder /app/index index
+
+# Copy the "docs" folder
+COPY --from=builder /app/docs docs
 
 # Set environment variables and expose necessary port
 ENV PORT 8080

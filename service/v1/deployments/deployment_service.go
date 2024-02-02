@@ -13,14 +13,12 @@ import (
 	"go-deploy/pkg/config"
 	sErrors "go-deploy/service/errors"
 	utils2 "go-deploy/service/utils"
-	"go-deploy/service/v1/deployments/gitlab_service"
 	"go-deploy/service/v1/deployments/opts"
 	"go-deploy/utils"
 	"go-deploy/utils/subsystemutils"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
 	"sort"
-	"strings"
 	"time"
 )
 
@@ -76,10 +74,6 @@ func (c *Client) List(opts ...opts.ListOpts) ([]deploymentModels.Deployment, err
 
 	if o.Pagination != nil {
 		dClient.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
-	}
-
-	if o.GitHubWebhookID != nil {
-		dClient.WithGitHubWebhookID(*o.GitHubWebhookID)
 	}
 
 	var effectiveUserID string
@@ -223,71 +217,6 @@ func (c *Client) Create(id, ownerID string, deploymentCreate *body.DeploymentCre
 	err = c.K8s().Create(id, params)
 	if err != nil {
 		return makeError(err)
-	}
-
-	createPlaceHolderInstead := false
-	if params.GitHub != nil {
-		err = c.GitHub().WithRepositoryID(deploymentCreate.GitHub.RepositoryID).WithToken(deploymentCreate.GitHub.Token).Create(id, params)
-		if err != nil {
-			errString := err.Error()
-			if strings.Contains(errString, "/hooks: 404 Not Found") {
-				utils.PrettyPrintError(makeError(fmt.Errorf("webhook api not found. assuming github is not supported, inserting placeholder instead")))
-				createPlaceHolderInstead = true
-			} else if strings.Contains(errString, "401 Bad credentials") {
-				utils.PrettyPrintError(makeError(fmt.Errorf("bad credentials. assuming github credentials expired or were revoked, inserting placeholder instead")))
-				createPlaceHolderInstead = true
-			} else {
-				return makeError(err)
-			}
-		}
-	} else {
-		createPlaceHolderInstead = true
-	}
-
-	if createPlaceHolderInstead {
-		err = c.GitHub().CreatePlaceholder(id)
-		if err != nil {
-			return makeError(err)
-		}
-	}
-
-	// fetch again to make sure all the fields are populated
-	d, err = c.Refresh(id)
-	if err != nil {
-		return makeError(err)
-	}
-
-	if d.Subsystems.GitHub.Created() && params.GitHub != nil {
-		gc := c.GitHub().WithRepositoryID(params.GitHub.RepositoryID).WithToken(params.GitHub.Token)
-		repo, err := gc.GetRepository()
-		if err != nil {
-			return makeError(err)
-		}
-
-		if repo == nil {
-			log.Println("github repository not found. assuming it was deleted")
-			return nil
-		}
-
-		if repo.DefaultBranch == "" {
-			log.Println("github repository has no default branch. assuming it was deleted")
-			return nil
-		}
-
-		if repo.CloneURL == "" {
-			log.Println("github repository has no clone url. assuming it was deleted")
-			return nil
-		}
-
-		err = c.build([]string{id}, &deploymentModels.BuildParams{
-			Name:      repo.Name,
-			Tag:       "latest",
-			Branch:    repo.DefaultBranch,
-			ImportURL: repo.CloneURL,
-		})
-		if err != nil {
-			return makeError(err)
-		}
 	}
 
 	return nil
@@ -501,7 +430,7 @@ func (c *Client) UpdateOwner(id string, params *body.DeploymentUpdateOwner) erro
 
 // ClearUpdateOwner clears the owner update process.
 //
-// This is intended to be used when the owner update process is cancelled.
+// This is intended to be used when the owner update process is canceled.
 func (c *Client) ClearUpdateOwner(id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to clear deployment owner update. details: %w", err)
@@ -567,11 +496,6 @@ func (c *Client) Delete(id string) error {
 		return makeError(err)
 	}
 
-	err = c.GitHub().Delete(id)
-	if err != nil {
-		return makeError(err)
-	}
-
 	return nil
 }
 
@@ -618,7 +542,7 @@ func (c *Client) Repair(id string) error {
 	return nil
 }
 
-// Restart restarts an deployment.
+// Restart restarts a deployment.
 //
 // It is done in best-effort, and only returns an error if any pre-check fails.
 func (c *Client) Restart(id string) error {
@@ -664,42 +588,6 @@ func (c *Client) Restart(id string) error {
 	}()
 
 	err = c.K8s().Restart(id)
-	if err != nil {
-		return makeError(err)
-	}
-
-	return nil
-}
-
-// Build builds an deployment.
-//
-// It can build by either a list of IDs or a single ID.
-// Use WithID or WithIDs to set the ID(s) (prioritizes ID over IDs).
-//
-// It will filter out all the deployments that are not ready to build.
-// Which means, all the deployments for supplied IDs might not be built.
-func (c *Client) Build(ids []string, buildParams *body.DeploymentBuild) error {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to build deployment. details: %w", err)
-	}
-
-	params := &deploymentModels.BuildParams{}
-	params.FromDTO(buildParams)
-
-	for _, id := range ids {
-		err := deploymentModels.New().AddLogs(id, deploymentModels.Log{
-			Source: deploymentModels.LogSourceDeployment,
-			Prefix: "[deployment]",
-			// Since this is sent as a string, and not a JSON object, we need to prepend the createdAt
-			Line:      fmt.Sprintf("%s %s", time.Now().Format(time.RFC3339), "Build requested"),
-			CreatedAt: time.Now(),
-		})
-		if err != nil {
-			return makeError(err)
-		}
-	}
-
-	err := c.build(ids, params)
 	if err != nil {
 		return makeError(err)
 	}
@@ -887,119 +775,6 @@ func (c *Client) NameAvailable(name string) (bool, error) {
 	}
 
 	return !exists, nil
-}
-
-// ValidGitHubToken validates a GitHub token.
-//
-// It returns a boolean indicating if the token is valid, a string indicating the reason if it is not, and an error if any.
-func (c *Client) ValidGitHubToken(token string) (bool, string, error) {
-	return c.GitHub().WithToken(token).Validate()
-}
-
-// GetGitHubAccessTokenByCode gets a GitHub access token by a code.
-func (c *Client) GetGitHubAccessTokenByCode(code string) (string, error) {
-	code, err := c.GitHub().GetAccessTokenByCode(code)
-	if err != nil {
-		utils.PrettyPrintError(fmt.Errorf("failed to get github access token. details: %w", err))
-		return "", err
-	}
-
-	return code, nil
-}
-
-// GetGitHubRepositories gets GitHub repositories for a token.
-//
-// The token should be validated before calling this function.
-// If the token is expired, an error will be returned.
-func (c *Client) GetGitHubRepositories(token string) ([]deploymentModels.GitHubRepository, error) {
-	return c.GitHub().WithToken(token).GetRepositories()
-}
-
-// ValidGitHubRepository validates a GitHub repository.
-//
-// The token should be validated before calling this function.
-// If the token is expired, an error will be returned.
-func (c *Client) ValidGitHubRepository(token string, repositoryID int64) (bool, string, error) {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to get github repository. details: %w", err)
-	}
-
-	gc := c.GitHub().WithToken(token).WithRepositoryID(repositoryID)
-
-	repo, err := c.GitHub().WithRepositoryID(repositoryID).WithToken(token).GetRepository()
-	if err != nil {
-		return false, "", makeError(err)
-	}
-
-	if repo == nil {
-		return false, "Repository not found", nil
-	}
-
-	webhooks, err := gc.GetWebhooks(repo)
-	if err != nil {
-		return false, "", makeError(err)
-	}
-
-	webhooksWithPushEvent := make([]*deploymentModels.GitHubWebhook, 0)
-	for _, webhook := range webhooks {
-		for _, event := range webhook.Events {
-			if event == "push" {
-				webhooksWithPushEvent = append(webhooksWithPushEvent, &webhook)
-			}
-		}
-	}
-
-	if len(webhooksWithPushEvent) >= 20 {
-		return false, "Too many webhooks with push event", nil
-	}
-
-	return true, "", nil
-}
-
-// build builds a deployment.
-//
-// It is a helper function that does not do any checks.
-func (c *Client) build(ids []string, params *deploymentModels.BuildParams) error {
-	var filtered []string
-	for _, id := range ids {
-		err := c.StartActivity(id, deploymentModels.ActivityBuilding)
-		if err != nil {
-			var failedToStartActivityErr sErrors.FailedToStartActivityError
-			if errors.As(err, &failedToStartActivityErr) {
-				log.Println("could not start building activity for deployment", id, ". reason:", failedToStartActivityErr.Error())
-				continue
-			}
-
-			if errors.Is(err, sErrors.DeploymentNotFoundErr) {
-				log.Println("deployment", id, "not found when starting activity", deploymentModels.ActivityBuilding, ". assuming it was deleted")
-				continue
-			}
-
-			return err
-		}
-
-		filtered = append(filtered, id)
-	}
-	defer func() {
-		for _, id := range filtered {
-			err := deploymentModels.New().RemoveActivity(id, deploymentModels.ActivityBuilding)
-			if err != nil {
-				utils.PrettyPrintError(fmt.Errorf("failed to remove activity %s for deployment %s. details: %w", deploymentModels.ActivityBuilding, id, err))
-			}
-		}
-	}()
-
-	if len(filtered) == 0 {
-		return nil
-	}
-
-	err := gitlab_service.CreateBuild(filtered, params)
-	if err != nil {
-		// we treat building as a non-critical activity, so we don't return an error here
-		utils.PrettyPrintError(fmt.Errorf("failed to build image for %d deployments. details: %w", len(filtered), err))
-	}
-
-	return nil
 }
 
 // createImagePath creates a complete container image path that can be pulled from.

@@ -13,7 +13,6 @@ const (
 	DeploymentCommandPath    = "/v1/deployments/:deploymentId/command"
 	DeploymentLogsPath       = "/v1/deployments/:deploymentId/logs-sse"
 	DeploymentHarborHookPath = "/v1/hooks/deployments/harbor"
-	DeploymentGitHubHookPath = "/v1/hooks/deployments/github"
 )
 
 type DeploymentRoutingGroup struct{ RoutingGroupBase }
@@ -38,6 +37,5 @@ func (group *DeploymentRoutingGroup) PrivateRoutes() []Route {
 func (group *DeploymentRoutingGroup) HookRoutes() []Route {
 	return []Route{
 		{Method: "POST", Pattern: DeploymentHarborHookPath, HandlerFunc: v1_deployment.HandleHarborHook},
-		{Method: "POST", Pattern: DeploymentGitHubHookPath, HandlerFunc: v1_deployment.HandleGitHubHook},
 	}
 }

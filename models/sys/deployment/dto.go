@@ -44,11 +44,6 @@ func (deployment *Deployment) ToDTO(smURL *string, teams []string) body.Deployme
 		}
 	}
 
-	integrations := make([]string, 0)
-	if deployment.Subsystems.GitHub.Created() {
-		integrations = append(integrations, "github")
-	}
-
 	if app.InitCommands == nil {
 		app.InitCommands = make([]string, 0)
 	}
@@ -112,19 +107,11 @@ func (deployment *Deployment) ToDTO(smURL *string, teams []string) body.Deployme
 
 		Status:       deployment.StatusMessage,
 		PingResult:   pingResult,
-		Integrations: integrations,
+		Integrations: make([]string, 0),
 
 		StorageURL: smURL,
 
 		Teams: teams,
-	}
-}
-
-// ToDTO converts a GitHubRepository to a body.GitHubRepository DTO.
-func (g *GitHubRepository) ToDTO() body.GitHubRepository {
-	return body.GitHubRepository{
-		ID:   g.ID,
-		Name: g.Name,
 	}
 }
 
@@ -186,14 +173,6 @@ func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZone, fallbac
 	}
 
 	p.Replicas = dto.Replicas
-
-	// Only allow GitHub on non-prebuilt deployments
-	if p.Type == TypeCustom && dto.GitHub != nil {
-		p.GitHub = &GitHubCreateParams{
-			Token:        dto.GitHub.Token,
-			RepositoryID: dto.GitHub.RepositoryID,
-		}
-	}
 
 	if dto.Zone != nil {
 		p.Zone = *dto.Zone

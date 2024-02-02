@@ -81,8 +81,8 @@ func fetchCsStatus(vm *vmModels.VM) (int, string, error) {
 	return statusCode, status_codes.GetMsg(statusCode), nil
 }
 
-// fetchVmStatus fetches the status of a VM.
-func fetchVmStatus(vm *vmModels.VM) (int, string, error) {
+// fetchVmStatusV1 fetches the status of a VM.
+func fetchVmStatusV1(vm *vmModels.VM) (int, string, error) {
 	csStatusCode, csStatusMessage, err := fetchCsStatus(vm)
 
 	// In case the "delete CS VM" part fails, the VM will be stuck in "Running" state.
@@ -94,7 +94,7 @@ func fetchVmStatus(vm *vmModels.VM) (int, string, error) {
 
 	anyCreateSnapshotJob, err := jobModels.New().
 		FilterArgs("id", vm.ID).
-		IncludeTypes(jobModels.TypeCreateUserSnapshot, jobModels.TypeCreateSystemSnapshot).
+		IncludeTypes(jobModels.TypeCreateVmUserSnapshot, jobModels.TypeCreateSystemVmSnapshot).
 		IncludeStatus(jobModels.StatusRunning).
 		ExistsAny()
 	if err != nil {
@@ -124,6 +124,19 @@ func fetchVmStatus(vm *vmModels.VM) (int, string, error) {
 	}
 
 	return csStatusCode, csStatusMessage, err
+}
+
+// fetchVmStatusV2 fetches the status of a VM.
+func fetchVmStatusV2(vm *vmModels.VM) (int, string, error) {
+	if vm.BeingCreated() {
+		return status_codes.ResourceBeingCreated, status_codes.GetMsg(status_codes.ResourceBeingCreated), nil
+	}
+
+	if vm.BeingDeleted() {
+		return status_codes.ResourceStopping, status_codes.GetMsg(status_codes.ResourceStopping), nil
+	}
+
+	return status_codes.ResourceRunning, status_codes.GetMsg(status_codes.ResourceRunning), nil
 }
 
 // fetchSnapshotStatus fetches the status of a VM's snapshots.

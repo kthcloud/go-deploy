@@ -19,13 +19,13 @@ type CloudStackConfigSource struct {
 }
 
 type DeploymentZone struct {
-	Name           string      `yaml:"name"`
-	Description    string      `yaml:"description"`
-	ParentDomain   string      `yaml:"parentDomain"`
-	ParentDomainVM string      `yaml:"parentDomainVm"`
-	CustomDomainIP string      `yaml:"customDomainIp"`
-	ConfigSource   interface{} `yaml:"configSource"`
-	Storage        struct {
+	Name                    string      `yaml:"name"`
+	Description             string      `yaml:"description"`
+	ParentDomain            string      `yaml:"parentDomain"`
+	ParentDomainVmHttpProxy string      `yaml:"parentDomainVmHttpProxy"`
+	CustomDomainIP          string      `yaml:"customDomainIp"`
+	ConfigSource            interface{} `yaml:"configSource"`
+	Storage                 struct {
 		ParentDomain        string `yaml:"parentDomain"`
 		NfsServer           string `yaml:"nfsServer"`
 		NfsParentPath       string `yaml:"nfsParentPath"`
@@ -34,6 +34,13 @@ type DeploymentZone struct {
 
 	K8sClient      *kubernetes.Clientset
 	KubeVirtClient *kubevirt.Clientset
+
+	ParentDomainVM string `yaml:"parentDomainVm"`
+	LoadBalancerIP string `yaml:"loadBalancerIp"`
+	PortRange      struct {
+		Start int `yaml:"start"`
+		End   int `yaml:"end"`
+	} `yaml:"portRange"`
 }
 
 type VmZone struct {

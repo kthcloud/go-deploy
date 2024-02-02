@@ -6,7 +6,3 @@ type VmList struct {
 	All    bool    `form:"all" binding:"omitempty,boolean"`
 	UserID *string `form:"userId" binding:"omitempty,uuid4"`
 }
-
-type VmSnapshotList struct {
-	*Pagination
-}

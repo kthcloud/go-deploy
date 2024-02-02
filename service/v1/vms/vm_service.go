@@ -493,7 +493,7 @@ func (c *Client) UpdateOwner(id string, params *body.VmUpdateOwner) error {
 
 // ClearUpdateOwner clears the owner update process.
 //
-// This is intended to be used when the owner update process is cancelled.
+// This is intended to be used when the owner update process is canceled.
 func (c *Client) ClearUpdateOwner(id string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to clear vm owner update. details: %w", err)
@@ -675,7 +675,7 @@ func (c *Client) CanAddActivity(vmID, activity string) (bool, string, error) {
 
 // NameAvailable checks if the given name is available.
 func (c *Client) NameAvailable(name string) (bool, error) {
-	exists, err := vmModels.New(versions.V1).ExistsByName(name)
+	exists, err := vmModels.New().ExistsByName(name)
 	if err != nil {
 		return false, err
 	}
@@ -690,7 +690,7 @@ func (c *Client) HttpProxyNameAvailable(id, name string) (bool, error) {
 		{"portMap.httpProxy.name", name},
 	}
 
-	exists, err := vmModels.New(versions.V1).WithCustomFilter(filter).ExistsAny()
+	exists, err := vmModels.New().WithCustomFilter(filter).ExistsAny()
 	if err != nil {
 		return false, err
 	}
@@ -938,6 +938,7 @@ func (c *Client) GetCloudStackHostCapabilities(hostName string, zoneName string)
 		CpuCoresUsed:  host.CpuCoresUsed,
 		RamTotal:      host.RamTotal,
 		RamUsed:       host.RamUsed,
+		RamAllocated:  host.RamAllocated,
 	}, nil
 }
 

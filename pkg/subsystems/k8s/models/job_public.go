@@ -12,6 +12,7 @@ type JobPublic struct {
 	Command   []string  `bson:"command"`
 	Args      []string  `bson:"args"`
 	Volumes   []Volume  `bson:"volumes"`
+	MaxTries  *int      `bson:"maxTries,omitempty"`
 	CreatedAt time.Time `bson:"createdAt"`
 }
 

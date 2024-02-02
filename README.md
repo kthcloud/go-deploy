@@ -33,7 +33,7 @@ You can view the API documentation by running go-deploy locally.
 4. Visit [http://localhost:8080/v1/docs](http://localhost:8080/deploy/v1/docs).
 
 If you are unable to run the API locally, you can try it out using the deployed API.
-Go to [https://api.cloud.cbh.kth.se/deploy/v1/docs](https://api.cloud.cbh.kth.se/deploy/v1/docs).
+Go to [https://api.cloud.cbh.kth.se/deploy/v1/docs/index.html](https://api.cloud.cbh.kth.se/deploy/v1/docs/index.html).
 
 ## 🤝 Contributing
 

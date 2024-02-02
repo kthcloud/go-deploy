@@ -63,7 +63,7 @@ func EnvVarFromK8s(envVar *v1.EnvVar) EnvVar {
 
 // formatCreatedAt formats a Kubernetes manifest's creation timestamp to a time.Time.
 func formatCreatedAt(annotations map[string]string) time.Time {
-	created, ok := annotations[keys.ManifestCreationTimestamp]
+	created, ok := annotations[keys.AnnotationCreationTimestamp]
 	if !ok {
 		return time.Now()
 	}

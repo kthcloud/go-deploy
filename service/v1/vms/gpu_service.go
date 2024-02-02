@@ -338,7 +338,7 @@ func (c *Client) CheckSuitableHost(id, hostName, zoneName string) error {
 		return sErrors.ZoneNotFoundErr
 	}
 
-	err = cs_service.New(c.Cache).CheckSuitableHost(vm.ID, vm.Subsystems.CS.VM.ID, hostName, zone)
+	err = cs_service.New(c.Cache).CheckSuitableHost(vm.ID, hostName, zone)
 	if err != nil {
 		return err
 	}

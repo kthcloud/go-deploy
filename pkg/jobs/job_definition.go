@@ -86,15 +86,15 @@ func jobMapper() map[string]map[string]JobDefinition {
 			EntryFunc:     utils.VmAddActivity(va.ActivityRepairing),
 			ExitFunc:      utils.VmRemActivity(va.ActivityRepairing),
 		},
-		jobModels.TypeCreateSystemSnapshot: {
+		jobModels.TypeCreateSystemVmSnapshot: {
 			JobFunc:       v1.CreateSystemSnapshot,
 			TerminateFunc: leafJobVM.Build(),
 		},
-		jobModels.TypeCreateUserSnapshot: {
+		jobModels.TypeCreateVmUserSnapshot: {
 			JobFunc:       v1.CreateUserSnapshot,
 			TerminateFunc: oneCreateSnapshotPerUser.Build(),
 		},
-		jobModels.TypeDeleteSnapshot: {
+		jobModels.TypeDeleteVmSnapshot: {
 			JobFunc:       v1.DeleteSnapshot,
 			TerminateFunc: leafJobVM.Build(),
 		},
@@ -121,10 +121,6 @@ func jobMapper() map[string]map[string]JobDefinition {
 			TerminateFunc: coreJobDeployment.Build(),
 			EntryFunc:     utils.DAddActivity(da.ActivityUpdating),
 			ExitFunc:      utils.DRemActivity(da.ActivityUpdating),
-		},
-		jobModels.TypeBuildDeployments: {
-			// This is a special case where multiple deployments are built in one job, so we don't want to terminate it
-			JobFunc: v1.BuildDeployments,
 		},
 		jobModels.TypeRepairDeployment: {
 			JobFunc:       v1.RepairDeployment,
@@ -192,18 +188,22 @@ func jobMapper() map[string]map[string]JobDefinition {
 		//	EntryFunc:     vAddActivity(va.ActivityRepairing),
 		//	ExitFunc:      vRemActivity(va.ActivityRepairing),
 		//},
-		//jobModels.TypeCreateSystemSnapshot: {
-		//	JobFunc:       v2.CreateSystemSnapshot,
-		//	TerminateFunc: leafJobVM.Build(),
-		//},
-		//jobModels.TypeCreateUserSnapshot: {
-		//	JobFunc:       v2.CreateUserSnapshot,
-		//	TerminateFunc: oneCreateSnapshotPerUser.Build(),
-		//},
-		//jobModels.TypeDeleteSnapshot: {
-		//	JobFunc:       v2.DeleteSnapshot,
-		//	TerminateFunc: leafJobVM.Build(),
-		//},
+		jobModels.TypeCreateSystemVmSnapshot: {
+			JobFunc:       v2.CreateSystemVmSnapshot,
+			TerminateFunc: leafJobVM.Build(),
+		},
+		jobModels.TypeCreateVmUserSnapshot: {
+			JobFunc:       v2.CreateUserVmSnapshot,
+			TerminateFunc: oneCreateSnapshotPerUser.Build(),
+		},
+		jobModels.TypeDeleteVmSnapshot: {
+			JobFunc:       v2.DeleteVmSnapshot,
+			TerminateFunc: leafJobVM.Build(),
+		},
+		jobModels.TypeDoVmAction: {
+			JobFunc:       v2.DoVmAction,
+			TerminateFunc: leafJobVM.Build(),
+		},
 	}
 
 	return map[string]map[string]JobDefinition{

@@ -27,6 +27,9 @@ type K8s struct {
 
 	// PvMap only exists in version 2
 	PvMap map[string]k8sModels.PvPublic `bson:"pvMap,omitempty"`
+
+	// SnapshotMap only exists in version 2
+	VmSnapshotMap map[string]k8sModels.VmSnapshotPublic `bson:"vmSnapshotMap,omitempty"`
 }
 
 // GetDeploymentMap returns the deployment map of the VM.
@@ -47,6 +50,16 @@ func (k8s *K8s) GetVmMap() map[string]k8sModels.VmPublic {
 	}
 
 	return k8s.VmMap
+}
+
+// GetVmSnapshotMap returns the vm snapshot map of the VM.
+// If the map is nil, it will be initialized before returning
+func (k8s *K8s) GetVmSnapshotMap() map[string]k8sModels.VmSnapshotPublic {
+	if k8s.VmSnapshotMap == nil {
+		k8s.VmSnapshotMap = make(map[string]k8sModels.VmSnapshotPublic)
+	}
+
+	return k8s.VmSnapshotMap
 }
 
 // GetServiceMap returns the service map of the VM.
@@ -110,9 +123,9 @@ func (k8s *K8s) GetDeployment(name string) *k8sModels.DeploymentPublic {
 	return &resources
 }
 
-// GetVm returns the vm of the VM.
+// GetVM returns the vm of the VM.
 // If the vm does not exist, nil is returned
-func (k8s *K8s) GetVm(name string) *k8sModels.VmPublic {
+func (k8s *K8s) GetVM(name string) *k8sModels.VmPublic {
 	resources, ok := k8s.GetVmMap()[name]
 	if !ok {
 		return nil
@@ -174,4 +187,27 @@ func (k8s *K8s) GetPV(name string) *k8sModels.PvPublic {
 	}
 
 	return &resources
+}
+
+// GetVmSnapshotByName returns a snapshot in the VM by name.
+// If the snapshot does not exist, nil is returned
+func (k8s *K8s) GetVmSnapshotByName(name string) *k8sModels.VmSnapshotPublic {
+	resources, ok := k8s.GetVmSnapshotMap()[name]
+	if !ok {
+		return nil
+	}
+
+	return &resources
+}
+
+// GetVmSnapshotByID returns a snapshot in the VM by ID.
+// If the snapshot does not exist, nil is returned
+func (k8s *K8s) GetVmSnapshotByID(id string) *k8sModels.VmSnapshotPublic {
+	for _, snapshot := range k8s.GetVmSnapshotMap() {
+		if snapshot.ID == id {
+			return &snapshot
+		}
+	}
+
+	return nil
 }

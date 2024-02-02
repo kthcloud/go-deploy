@@ -458,12 +458,12 @@ func (c *Client) DoCommand(id, csVmID string, gpuID *string, command string) err
 }
 
 // CheckSuitableHost checks if the host is in the correct state to start a vm
-func (c *Client) CheckSuitableHost(id, csVmID, hostName string, zone *configModels.VmZone) error {
+func (c *Client) CheckSuitableHost(id, hostName string, zone *configModels.VmZone) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if cs vm %s can be started on host %s. details: %w", csVmID, hostName, err)
+		return fmt.Errorf("failed to check if vm %s can be started on host %s. details: %w", id, hostName, err)
 	}
 
-	_, csc, _, err := c.Get(OptsNoGenerator(id))
+	vm, csc, _, err := c.Get(OptsNoGenerator(id))
 	if err != nil {
 		if errors.Is(err, sErrors.VmNotFoundErr) {
 			return nil
@@ -472,7 +472,7 @@ func (c *Client) CheckSuitableHost(id, csVmID, hostName string, zone *configMode
 		return makeError(err)
 	}
 
-	hasCapacity, err := csc.HasCapacity(csVmID, hostName)
+	hasCapacity, err := csc.HasCapacity(vm.Subsystems.CS.VM.ID, hostName)
 	if err != nil {
 		return makeError(err)
 	}

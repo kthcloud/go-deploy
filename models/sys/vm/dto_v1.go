@@ -192,7 +192,7 @@ func (p UpdateParams) FromDTOv1(dto *body.VmUpdate) UpdateParams {
 	return p
 }
 
-// ToDTOv1 converts a VM DTO to a VM.
+// ToDTOv1 converts a Snapshot to a body.VmSnapshotRead.
 func (sc *Snapshot) ToDTOv1() body.VmSnapshotRead {
 	return body.VmSnapshotRead{
 		ID:         sc.ID,
@@ -205,7 +205,7 @@ func (sc *Snapshot) ToDTOv1() body.VmSnapshotRead {
 	}
 }
 
-// FromDTOv1 converts a VM DTO to a VM.
+// FromDTOv1 converts a body.VmSnapshotCreate to a CreateSnapshotParams.
 func (sc *CreateSnapshotParams) FromDTOv1(dto *body.VmSnapshotCreate) {
 	sc.Name = dto.Name
 	sc.Overwrite = false

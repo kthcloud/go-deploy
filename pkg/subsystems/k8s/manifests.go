@@ -14,7 +14,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	kubevirtv1 "kubevirt.io/api/core/v1"
+	snapshotalpha1 "kubevirt.io/api/snapshot/v1alpha1"
 	cdibetav1 "kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1"
+	"strings"
+	"time"
 )
 
 const (
@@ -28,10 +31,10 @@ func CreateNamespaceManifest(public *models.NamespacePublic) *apiv1.Namespace {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: public.Name,
 			Labels: map[string]string{
-				keys.ManifestLabelName: public.Name,
+				keys.LabelDeployName: public.Name,
 			},
 			Annotations: map[string]string{
-				keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat),
+				keys.AnnotationCreationTimestamp: public.CreatedAt.Format(timeFormat),
 			},
 		},
 	}
@@ -125,26 +128,26 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 			Name:      public.Name,
 			Namespace: public.Namespace,
 			Labels: map[string]string{
-				keys.ManifestLabelName: public.Name,
+				keys.LabelDeployName: public.Name,
 			},
 			Annotations: map[string]string{
-				keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat),
+				keys.AnnotationCreationTimestamp: public.CreatedAt.Format(timeFormat),
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: intToInt32Ptr(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					keys.ManifestLabelName: public.Name,
+					keys.LabelDeployName: public.Name,
 				},
 			},
 			Template: apiv1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						keys.ManifestLabelName: public.Name,
+						keys.LabelDeployName: public.Name,
 					},
 					Annotations: map[string]string{
-						keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat),
+						keys.AnnotationCreationTimestamp: public.CreatedAt.Format(timeFormat),
 					},
 				},
 				Spec: apiv1.PodSpec{
@@ -174,40 +177,42 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 
 // CreateServiceManifest creates a Kubernetes Service manifest from a models.ServicePublic.
 func CreateServiceManifest(public *models.ServicePublic) *apiv1.Service {
-	labels := map[string]string{
-		keys.ManifestLabelName: public.Name,
+	annotations := map[string]string{
+		keys.AnnotationCreationTimestamp: public.CreatedAt.Format(timeFormat),
 	}
 
 	var serviceType apiv1.ServiceType
-	if public.ExternalIP != nil {
+	if public.LoadBalancerIP != nil {
 		serviceType = apiv1.ServiceTypeLoadBalancer
-		labels[keys.ManifestCreationTimestamp] = *public.ExternalIP
+		annotations[keys.AnnotationExternalIP] = *public.LoadBalancerIP
+		annotations[keys.AnnotationSharedIP] = "go-deploy"
 	} else {
 		serviceType = apiv1.ServiceTypeClusterIP
+	}
+
+	var ports []apiv1.ServicePort
+	for _, port := range public.Ports {
+		ports = append(ports, apiv1.ServicePort{
+			Name:       port.Name,
+			Protocol:   apiv1.Protocol(strings.ToUpper(port.Protocol)),
+			Port:       int32(port.Port),
+			TargetPort: intstr.FromInt32(int32(port.TargetPort)),
+		})
 	}
 
 	return &apiv1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      public.Name,
 			Namespace: public.Namespace,
-			Labels:    labels,
-			Annotations: map[string]string{
-				keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat),
+			Labels: map[string]string{
+				keys.LabelDeployName: public.Name,
 			},
+			Annotations: annotations,
 		},
 		Spec: apiv1.ServiceSpec{
-			Ports: []apiv1.ServicePort{
-				{
-					Name:       "app-port",
-					Protocol:   "TCP",
-					Port:       int32(public.Port),
-					TargetPort: intstr.FromInt(public.TargetPort),
-				},
-			},
-			Selector: map[string]string{
-				keys.ManifestLabelName: public.Name,
-			},
-			Type: serviceType,
+			Ports:    ports,
+			Selector: public.Selector,
+			Type:     serviceType,
 		},
 		Status: apiv1.ServiceStatus{},
 	}
@@ -253,11 +258,11 @@ func CreateIngressManifest(public *models.IngressPublic) *networkingv1.Ingress {
 		})
 	}
 
-	annotations := map[string]string{keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat)}
+	annotations := map[string]string{keys.AnnotationCreationTimestamp: public.CreatedAt.Format(timeFormat)}
 	if public.CustomCert != nil {
-		annotations[keys.K8sAnnotationClusterIssuer] = public.CustomCert.ClusterIssuer
-		annotations[keys.K8sAnnotationCommonName] = public.CustomCert.CommonName
-		annotations[keys.K8sAnnotationAcmeChallengeType] = "http01"
+		annotations[keys.AnnotationClusterIssuer] = public.CustomCert.ClusterIssuer
+		annotations[keys.AnnotationCommonName] = public.CustomCert.CommonName
+		annotations[keys.AnnotationAcmeChallengeType] = "http01"
 	}
 
 	return &networkingv1.Ingress{
@@ -265,7 +270,7 @@ func CreateIngressManifest(public *models.IngressPublic) *networkingv1.Ingress {
 			Name:      public.Name,
 			Namespace: public.Namespace,
 			Labels: map[string]string{
-				keys.ManifestLabelName: public.Name,
+				keys.LabelDeployName: public.Name,
 			},
 			Annotations: annotations,
 		},
@@ -283,10 +288,10 @@ func CreatePvManifest(public *models.PvPublic) *apiv1.PersistentVolume {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: public.Name,
 			Labels: map[string]string{
-				keys.ManifestLabelName: public.Name,
+				keys.LabelDeployName: public.Name,
 			},
 			Annotations: map[string]string{
-				keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat),
+				keys.AnnotationCreationTimestamp: public.CreatedAt.Format(timeFormat),
 			},
 		},
 		Spec: apiv1.PersistentVolumeSpec{
@@ -314,10 +319,10 @@ func CreatePvcManifest(public *models.PvcPublic) *apiv1.PersistentVolumeClaim {
 			Name:      public.Name,
 			Namespace: public.Namespace,
 			Labels: map[string]string{
-				keys.ManifestLabelName: public.Name,
+				keys.LabelDeployName: public.Name,
 			},
 			Annotations: map[string]string{
-				keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat),
+				keys.AnnotationCreationTimestamp: public.CreatedAt.Format(timeFormat),
 			},
 		},
 		Spec: apiv1.PersistentVolumeClaimSpec{
@@ -378,16 +383,20 @@ func CreateJobManifest(public *models.JobPublic) *v1.Job {
 	}
 
 	ttl := int32(5)
+	var backoffLimit *int32
+	if public.MaxTries != nil {
+		backoffLimit = intToInt32Ptr(*public.MaxTries)
+	}
 
 	return &v1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      public.Name,
 			Namespace: public.Namespace,
 			Labels: map[string]string{
-				keys.ManifestLabelName: public.Name,
+				keys.LabelDeployName: public.Name,
 			},
 			Annotations: map[string]string{
-				keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat),
+				keys.AnnotationCreationTimestamp: public.CreatedAt.Format(timeFormat),
 			},
 		},
 		Spec: v1.JobSpec{
@@ -395,10 +404,10 @@ func CreateJobManifest(public *models.JobPublic) *v1.Job {
 			Template: apiv1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						keys.ManifestLabelName: public.Name,
+						keys.LabelDeployName: public.Name,
 					},
 					Annotations: map[string]string{
-						keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat),
+						keys.AnnotationCreationTimestamp: public.CreatedAt.Format(timeFormat),
 					},
 				},
 				Spec: apiv1.PodSpec{
@@ -416,6 +425,7 @@ func CreateJobManifest(public *models.JobPublic) *v1.Job {
 					},
 				},
 			},
+			BackoffLimit: backoffLimit,
 		},
 	}
 }
@@ -427,10 +437,10 @@ func CreateSecretManifest(public *models.SecretPublic) *apiv1.Secret {
 			Name:      public.Name,
 			Namespace: public.Namespace,
 			Labels: map[string]string{
-				keys.ManifestLabelName: public.Name,
+				keys.LabelDeployName: public.Name,
 			},
 			Annotations: map[string]string{
-				keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat),
+				keys.AnnotationCreationTimestamp: public.CreatedAt.Format(timeFormat),
 			},
 		},
 		Data: public.Data,
@@ -445,10 +455,10 @@ func CreateHpaManifest(public *models.HpaPublic) *autoscalingv2.HorizontalPodAut
 			Name:      public.Name,
 			Namespace: public.Namespace,
 			Labels: map[string]string{
-				keys.ManifestLabelName: public.Name,
+				keys.LabelDeployName: public.Name,
 			},
 			Annotations: map[string]string{
-				keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat),
+				keys.AnnotationCreationTimestamp: public.CreatedAt.Format(timeFormat),
 			},
 		},
 		Spec: autoscalingv2.HorizontalPodAutoscalerSpec{
@@ -484,28 +494,53 @@ func CreateHpaManifest(public *models.HpaPublic) *autoscalingv2.HorizontalPodAut
 }
 
 // CreateVmManifest creates a Kubernetes VirtualMachine manifest from a models.VmPublic.
-func CreateVmManifest(public *models.VmPublic) *kubevirtv1.VirtualMachine {
+func CreateVmManifest(public *models.VmPublic, resourceVersion ...string) *kubevirtv1.VirtualMachine {
+	var dvSource *cdibetav1.DataVolumeSource
+	var version string
+
+	name := public.ID
+	deployName := public.Name
+
+	if len(resourceVersion) > 0 {
+		version = resourceVersion[0]
+	}
+
+	if strings.HasPrefix(public.Image, "http") {
+		dvSource = &cdibetav1.DataVolumeSource{
+			HTTP: &cdibetav1.DataVolumeSourceHTTP{
+				URL: public.Image,
+			},
+		}
+	} else if strings.HasPrefix(public.Image, "docker") {
+		dvSource = &cdibetav1.DataVolumeSource{
+			Registry: &cdibetav1.DataVolumeSourceRegistry{
+				URL: &public.Image,
+			},
+		}
+	}
+
 	return &kubevirtv1.VirtualMachine{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      public.Name,
+			Name:      name,
 			Namespace: public.Namespace,
 			Labels: map[string]string{
-				keys.ManifestLabelName: public.Name,
+				keys.LabelDeployName: deployName,
 			},
 			Annotations: map[string]string{
-				keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat),
+				keys.AnnotationCreationTimestamp: public.CreatedAt.Format(timeFormat),
 			},
+			ResourceVersion: version,
 		},
 		Spec: kubevirtv1.VirtualMachineSpec{
 			Running: &public.Running,
 			Template: &kubevirtv1.VirtualMachineInstanceTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: public.Name,
+					Name: name,
 					Labels: map[string]string{
-						keys.ManifestLabelName: public.Name,
+						keys.LabelDeployName: deployName,
 					},
 					Annotations: map[string]string{
-						keys.ManifestCreationTimestamp: public.CreatedAt.Format(timeFormat),
+						keys.AnnotationCreationTimestamp: public.CreatedAt.Format(timeFormat),
 					},
 				},
 				Spec: kubevirtv1.VirtualMachineInstanceSpec{
@@ -529,6 +564,14 @@ func CreateVmManifest(public *models.VmPublic) *kubevirtv1.VirtualMachine {
 									},
 								},
 							},
+							Interfaces: []kubevirtv1.Interface{
+								{
+									Name: "default",
+									InterfaceBindingMethod: kubevirtv1.InterfaceBindingMethod{
+										Masquerade: &kubevirtv1.InterfaceMasquerade{},
+									},
+								},
+							},
 							Rng: &kubevirtv1.Rng{},
 						},
 						Resources: kubevirtv1.ResourceRequirements{
@@ -538,12 +581,20 @@ func CreateVmManifest(public *models.VmPublic) *kubevirtv1.VirtualMachine {
 							},
 						},
 					},
+					Networks: []kubevirtv1.Network{
+						{
+							Name: "default",
+							NetworkSource: kubevirtv1.NetworkSource{
+								Pod: &kubevirtv1.PodNetwork{},
+							},
+						},
+					},
 					Volumes: []kubevirtv1.Volume{
 						{
 							Name: "rootdisk",
 							VolumeSource: kubevirtv1.VolumeSource{
 								DataVolume: &kubevirtv1.DataVolumeSource{
-									Name: "rootdisk-dv",
+									Name: fmt.Sprintf("%s-rootdisk-dv", name),
 								},
 							},
 						},
@@ -561,10 +612,11 @@ func CreateVmManifest(public *models.VmPublic) *kubevirtv1.VirtualMachine {
 			DataVolumeTemplates: []kubevirtv1.DataVolumeTemplateSpec{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "rootdisk-dv",
+						Name: fmt.Sprintf("%s-rootdisk-dv", name),
 					},
 					Spec: cdibetav1.DataVolumeSpec{
 						PVC: &apiv1.PersistentVolumeClaimSpec{
+							StorageClassName: strToPtr("go-deploy-vms"),
 							AccessModes: []apiv1.PersistentVolumeAccessMode{
 								apiv1.ReadWriteMany,
 							},
@@ -573,15 +625,38 @@ func CreateVmManifest(public *models.VmPublic) *kubevirtv1.VirtualMachine {
 									apiv1.ResourceStorage: resource.MustParse(fmt.Sprintf("%dGi", public.DiskSize)),
 								},
 							},
-							VolumeName: public.PvName,
 						},
-						Source: &cdibetav1.DataVolumeSource{
-							HTTP: &cdibetav1.DataVolumeSourceHTTP{
-								URL: public.ImageURL,
-							},
-						},
+						Source: dvSource,
 					},
 				},
+			},
+		},
+	}
+}
+
+// CreateVmSnapshotManifest creates a Kubernetes VirtualMachineSnapshot manifest from a models.VmSnapshotPublic.
+func CreateVmSnapshotManifest(public *models.VmSnapshotPublic) *snapshotalpha1.VirtualMachineSnapshot {
+	name := public.ID
+	deployName := public.Name
+
+	return &snapshotalpha1.VirtualMachineSnapshot{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: public.Namespace,
+			Labels: map[string]string{
+				keys.LabelDeployName: deployName,
+			},
+			Annotations: map[string]string{
+				keys.AnnotationCreationTimestamp: public.CreatedAt.Format(timeFormat),
+			}},
+		Spec: snapshotalpha1.VirtualMachineSnapshotSpec{
+			Source: apiv1.TypedLocalObjectReference{
+				APIGroup: strToPtr("kubevirt.io"),
+				Kind:     "VirtualMachine",
+				Name:     public.VmID,
+			},
+			FailureDeadline: &metav1.Duration{
+				Duration: 30 * time.Minute,
 			},
 		},
 	}
