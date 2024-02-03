@@ -210,8 +210,8 @@ func portsCleared(vm *vm.VM) (bool, error) {
 
 // checkCustomDomain checks if the custom domain is setup.
 // This polls the TXT record of the custom domain to check if the secret is set.
-// It returns (exists, match, error).
-func checkCustomDomain(domain string, secret string) (bool, bool, error) {
+// It returns (exists, match, txtRecord, error).
+func checkCustomDomain(domain string, secret string) (bool, bool, string, error) {
 	subDomain := config.Config.Deployment.CustomDomainTxtRecordSubdomain
 
 	txtRecordDomain := subDomain + "." + domain
@@ -220,15 +220,15 @@ func checkCustomDomain(domain string, secret string) (bool, bool, error) {
 		// If error is "no such host", it means the DNS record does not exist yet
 		var targetErr *net.DNSError
 		if ok := errors.As(err, &targetErr); ok && targetErr.IsNotFound {
-			return false, false, nil
+			return false, false, "", nil
 		}
 
-		return false, false, err
+		return false, false, "", err
 	}
 
 	exists := len(txtRecord) > 0
 	if !exists {
-		return false, false, nil
+		return false, false, "", nil
 	}
 
 	match := false
@@ -239,5 +239,5 @@ func checkCustomDomain(domain string, secret string) (bool, bool, error) {
 		}
 	}
 
-	return exists, match, nil
+	return exists, match, txtRecord[0], nil
 }
