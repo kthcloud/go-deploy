@@ -81,3 +81,31 @@ func (client *Client) WithZone(zone string) *Client {
 
 	return client
 }
+
+// ExcludeIDs adds a filter to the client to exclude the given GPU IDs.
+func (client *Client) ExcludeIDs(ids ...string) *Client {
+	client.ResourceClient.AddExtraFilter(bson.D{{"id", bson.M{"$nin": ids}}})
+
+	return client
+}
+
+// WithoutLease adds a filter to the client to only include GPUs that are not leased.
+func (client *Client) WithoutLease() *Client {
+	filter := bson.D{
+		{"$or", []interface{}{
+			bson.M{"lease": bson.M{"$exists": false}},
+			bson.M{"lease.vmId": ""},
+		}},
+	}
+
+	client.ResourceClient.AddExtraFilter(filter)
+
+	return client
+}
+
+// WithStale adds a filter to the client to only include GPUs that are stale.
+func (client *Client) WithStale() *Client {
+	client.ResourceClient.AddExtraFilter(bson.D{{"stale", true}})
+
+	return client
+}

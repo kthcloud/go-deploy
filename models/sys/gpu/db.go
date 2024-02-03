@@ -49,15 +49,6 @@ func (client *Client) Create(id, host string, data GpuData, zone string) error {
 	return nil
 }
 
-func (client *Client) Delete(gpuID string) error {
-	err := client.Collection.FindOneAndDelete(context.Background(), bson.D{{"id", gpuID}}).Err()
-	if err != nil {
-		return fmt.Errorf("failed to delete gpu. details: %w", err)
-	}
-
-	return nil
-}
-
 func (client *Client) Attach(gpuID, vmID, user string, end time.Time) (bool, error) {
 	gpu, err := client.GetByID(gpuID)
 	if err != nil {

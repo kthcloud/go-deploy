@@ -47,7 +47,6 @@ func Create(opts *Options) *App {
 	db.Setup()
 
 	intializer.CleanUpOldTests()
-	intializer.SynchronizeGPUs()
 	intializer.SynchronizeVmPorts()
 
 	migrator.Migrate()
