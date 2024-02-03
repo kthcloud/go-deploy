@@ -226,8 +226,8 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, deployV1 
 		return
 	}
 
-	// do this check to give a nice error to the user if the gpu cannot be attached
-	// otherwise it will be silently ignored
+	// Do this check to give a nice error to the user if the gpu cannot be attached
+	// Otherwise it will be silently ignored
 	if len(gpus) == 1 {
 		if err := deployV1.VMs().CheckSuitableHost(vm.ID, gpus[0].Host, gpus[0].Zone); err != nil {
 			switch {
@@ -271,12 +271,19 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, deployV1 
 		return
 	}
 
+	var leaseDuration float64
+	if requestBody.NoLeaseEnd != nil && *requestBody.NoLeaseEnd && deployV1.Auth().IsAdmin {
+		leaseDuration = -1
+	} else {
+		leaseDuration = deployV1.Auth().GetEffectiveRole().Quotas.GpuLeaseDuration
+	}
+
 	jobID := uuid.New().String()
 	err = deployV1.Jobs().Create(jobID, deployV1.Auth().UserID, jobModels.TypeAttachGPU, versions.V1, map[string]interface{}{
 		"id":            vm.ID,
 		"gpuIds":        gpuIds,
 		"userId":        deployV1.Auth().UserID,
-		"leaseDuration": deployV1.Auth().GetEffectiveRole().Quotas.GpuLeaseDuration,
+		"leaseDuration": leaseDuration,
 	})
 
 	if err != nil {
