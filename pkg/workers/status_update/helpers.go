@@ -174,6 +174,10 @@ func fetchDeploymentStatus(deployment *deploymentModels.Deployment) (int, string
 		return status_codes.ResourceBeingCreated, status_codes.GetMsg(status_codes.ResourceBeingCreated), nil
 	}
 
+	if deployment.GetMainApp().Replicas == 0 {
+		return status_codes.ResourceStopped, status_codes.GetMsg(status_codes.ResourceStopped), nil
+	}
+
 	if deployment.DoingActivity(deploymentModels.ActivityRestarting) {
 		return status_codes.ResourceRestarting, status_codes.GetMsg(status_codes.ResourceRestarting), nil
 	}
