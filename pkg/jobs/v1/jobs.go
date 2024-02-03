@@ -16,7 +16,6 @@ import (
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/v1/vms/opts"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 	"time"
 )
@@ -387,48 +386,6 @@ func UpdateDeploymentOwner(job *jobModels.Job) error {
 			return errors2.MakeTerminatedError(err)
 		}
 
-		return errors2.MakeFailedError(err)
-	}
-
-	return nil
-}
-
-func BuildDeployments(job *jobModels.Job) error {
-	err := utils.AssertParameters(job, []string{"ids", "build"})
-	if err != nil {
-		return errors2.MakeTerminatedError(err)
-	}
-
-	idsInt := job.Args["ids"].(primitive.A)
-	ids := make([]string, len(idsInt))
-	for idx, id := range idsInt {
-		ids[idx] = id.(string)
-	}
-
-	var params body.DeploymentBuild
-	err = mapstructure.Decode(job.Args["build"].(map[string]interface{}), &params)
-	if err != nil {
-		return errors2.MakeTerminatedError(err)
-	}
-
-	var filtered []string
-	for _, id := range ids {
-		deleted, err := utils.DeploymentDeletedByID(id)
-		if err != nil {
-			return errors2.MakeTerminatedError(err)
-		}
-
-		if !deleted {
-			filtered = append(filtered, id)
-		}
-	}
-
-	if len(filtered) == 0 {
-		return nil
-	}
-
-	err = service.V1().Deployments().Build(filtered, &params)
-	if err != nil {
 		return errors2.MakeFailedError(err)
 	}
 

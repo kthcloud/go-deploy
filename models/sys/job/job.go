@@ -36,9 +36,6 @@ const (
 	TypeUpdateDeployment = "updateDeployment"
 	// TypeUpdateDeploymentOwner is used when updating a deployment's owner.
 	TypeUpdateDeploymentOwner = "updateDeploymentOwner"
-	// TypeBuildDeployments is used when building deployments.
-	// This contains multiple deployments if they use the same image.
-	TypeBuildDeployments = "buildDeployments"
 	// TypeRepairDeployment is used when repairing a deployment.
 	TypeRepairDeployment = "repairDeployment"
 

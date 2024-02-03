@@ -13,9 +13,7 @@ type CreateParams struct {
 	PingPath     string
 	CustomDomain *string
 	Replicas     *int
-
-	GitHub *GitHubCreateParams
-
+	
 	Zone string
 }
 

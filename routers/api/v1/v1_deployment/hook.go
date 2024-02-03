@@ -1,26 +1,17 @@
 package v1_deployment
 
 import (
-	"crypto/hmac"
-	"crypto/sha256"
 	"encoding/base64"
-	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"go-deploy/models/dto/v1/body"
 	deploymentModels "go-deploy/models/sys/deployment"
-	"go-deploy/models/sys/job"
-	"go-deploy/models/versions"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/v1/deployments/opts"
-	"go-deploy/utils/requestutils"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -114,167 +105,6 @@ func HandleHarborHook(c *gin.Context) {
 	}
 
 	context.OkNoContent()
-}
-
-// HandleGitHubHook
-// @Summary Handle GitHub hook
-// @Description Handle GitHub hook
-// @Tags Deployment
-// @Accept  json
-// @Param X-Github-Event header string true "Event type"
-// @Param X-GitHub-Hook-Id header string true "Hook ID"
-// @Param X-Hub-Signature-256 header string true "Signature"
-// @Param body body body.GithubWebhookPayloadPush true "GitHub webhook body"
-// @Produce  json
-// @Success 204 {empty} empty
-// @Failure 400 {object} sys.ErrorResponse
-// @Failure 403 {object} sys.ErrorResponse
-// @Failure 404 {object} sys.ErrorResponse
-// @Failure 500 {object} sys.ErrorResponse
-// @Router /hooks/github [post]
-func HandleGitHubHook(c *gin.Context) {
-	context := sys.NewContext(c)
-
-	event := context.GinContext.GetHeader("x-github-event")
-	if len(event) == 0 {
-		context.UserError("Missing x-github-event header")
-		return
-	}
-
-	if event == "ping" {
-		context.OkNoContent()
-		return
-	}
-
-	if event != "push" {
-		context.UserError("Unsupported event type")
-		return
-	}
-
-	hookIdStr := context.GinContext.GetHeader("X-Github-Hook-Id")
-	if len(hookIdStr) == 0 {
-		context.UserError("Missing X-GitHub-Hook-Id header")
-		return
-	}
-
-	hookID, err := strconv.ParseInt(hookIdStr, 10, 64)
-	if err != nil {
-		context.UserError("Invalid X-GitHub-Hook-Id header")
-		return
-	}
-
-	if hookID == 0 {
-		context.UserError("Invalid X-GitHub-Hook-Id header")
-		return
-	}
-
-	signature := context.GinContext.GetHeader("x-hub-signature-256")
-	if len(signature) == 0 {
-		context.UserError("Missing x-hub-signature-256 header")
-		return
-	}
-
-	requestBodyRaw, err := requestutils.ReadBody(context.GinContext.Request.Body)
-	if err != nil {
-		context.ServerError(err, v1.InternalError)
-		return
-	}
-
-	var requestBodyParsed body.GithubWebhookPayloadPush
-	if err = json.Unmarshal(requestBodyRaw, &requestBodyParsed); err != nil {
-		context.UserError("Invalid request body")
-		return
-	}
-
-	deployV1 := service.V1()
-
-	deployments, err := deployV1.Deployments().List(opts.ListOpts{GitHubWebhookID: &hookID})
-	if err != nil {
-		context.ServerError(err, v1.InternalError)
-		return
-	}
-
-	if len(deployments) == 0 {
-		context.NotFound("No deployments found for hook ID")
-		return
-	}
-
-	var ids []string
-	for _, deployment := range deployments {
-		if !checkGitHubSignature(signature, requestBodyRaw, deployment.Subsystems.GitHub.Webhook.Secret) {
-			context.Forbidden("Invalid signature")
-			return
-		}
-
-		ids = append(ids, deployment.ID)
-	}
-
-	refSplit := strings.Split(requestBodyParsed.Ref, "/")
-	if len(refSplit) != 3 {
-		context.UserError("Invalid ref field")
-		return
-	}
-
-	pushedBranch := refSplit[2]
-	if pushedBranch != requestBodyParsed.Repository.DefaultBranch {
-		// We only care about the default branch, so this is not an error
-		context.OkNoContent()
-		return
-	}
-
-	if len(ids) > 0 {
-		newLog := deploymentModels.Log{
-			Source: deploymentModels.LogSourceDeployment,
-			Prefix: "[deployment]",
-			// Since this is sent as a string, and not a JSON object, we need to prepend the createdAt
-			Line:      fmt.Sprintf("%s %s", time.Now().Format(time.RFC3339), "Received push event from GitHub"),
-			CreatedAt: time.Now(),
-		}
-
-		for _, id := range ids {
-			deployV1.Deployments().AddLogs(id, newLog)
-		}
-
-		jobID := uuid.NewString()
-		err = deployV1.Jobs().Create(jobID, "system", job.TypeBuildDeployments, versions.V1, map[string]interface{}{
-			"ids": ids,
-			"build": body.DeploymentBuild{
-				Name:      requestBodyParsed.Repository.Name,
-				Tag:       "latest",
-				Branch:    pushedBranch,
-				ImportURL: requestBodyParsed.Repository.CloneURL,
-			},
-		})
-	}
-
-	context.OkNoContent()
-}
-
-// checkGitHubSignature checks if the GitHub signature is valid.
-func checkGitHubSignature(signature string, payload []byte, secret string) bool {
-	const signaturePrefix = "sha256="
-	const prefixLength = len(signaturePrefix)
-	const signatureLength = prefixLength + (sha256.Size * 2)
-
-	if len(signature) != signatureLength || !strings.HasPrefix(signature, signaturePrefix) {
-		return false
-	}
-
-	actual := make([]byte, sha256.Size)
-	_, _ = hex.Decode(actual, []byte(signature[prefixLength:]))
-
-	byteStringSecret := []byte(secret)
-
-	expected := getGitHubSignature(byteStringSecret, payload)
-
-	return hmac.Equal(expected, actual)
-}
-
-// getGitHubSignature returns the GitHub signature for the given secret and payload.
-func getGitHubSignature(secret, body []byte) []byte {
-	computed := hmac.New(sha256.New, secret)
-	computed.Write(body)
-	return []byte(computed.Sum(nil))
 }
 
 // getHarborTokenFromAuthHeader returns the Harbor token from the Authorization header.

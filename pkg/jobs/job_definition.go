@@ -122,10 +122,6 @@ func jobMapper() map[string]map[string]JobDefinition {
 			EntryFunc:     utils.DAddActivity(da.ActivityUpdating),
 			ExitFunc:      utils.DRemActivity(da.ActivityUpdating),
 		},
-		jobModels.TypeBuildDeployments: {
-			// This is a special case where multiple deployments are built in one job, so we don't want to terminate it
-			JobFunc: v1.BuildDeployments,
-		},
 		jobModels.TypeRepairDeployment: {
 			JobFunc:       v1.RepairDeployment,
 			TerminateFunc: leafJobDeployment.Build(),

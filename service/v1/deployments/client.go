@@ -4,7 +4,6 @@ import (
 	"go-deploy/service/clients"
 	"go-deploy/service/core"
 	"go-deploy/service/v1/deployments/client"
-	"go-deploy/service/v1/deployments/github_service"
 	"go-deploy/service/v1/deployments/harbor_service"
 	"go-deploy/service/v1/deployments/k8s_service"
 )
@@ -30,11 +29,6 @@ func New(v1 clients.V1, cache ...*core.Cache) *Client {
 	c := &Client{V1: v1, BaseClient: client.NewBaseClient[Client](ca)}
 	c.BaseClient.SetParent(c)
 	return c
-}
-
-// GitHub returns the client for the GitHub service.
-func (c *Client) GitHub() *github_service.Client {
-	return github_service.New(c.Cache)
 }
 
 // Harbor returns the client for the Harbor service.

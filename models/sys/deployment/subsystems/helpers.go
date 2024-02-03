@@ -2,10 +2,6 @@ package subsystems
 
 import k8sModels "go-deploy/pkg/subsystems/k8s/models"
 
-func (gitHub *GitHub) Created() bool {
-	return gitHub.Webhook.Created()
-}
-
 // GetNamespace returns the namespace of the deployment.
 func (k *K8s) GetNamespace() *k8sModels.NamespacePublic {
 	return &k.Namespace

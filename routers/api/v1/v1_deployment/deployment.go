@@ -197,30 +197,6 @@ func Create(c *gin.Context) {
 		return
 	}
 
-	if requestBody.GitHub != nil {
-		validGhToken, reason, err := deployV1.Deployments().ValidGitHubToken(requestBody.GitHub.Token)
-		if err != nil {
-			context.ServerError(err, v1.InternalError)
-			return
-		}
-
-		if !validGhToken {
-			context.Unauthorized(reason)
-			return
-		}
-
-		validGitHubRepository, reason, err := deployV1.Deployments().ValidGitHubRepository(requestBody.GitHub.Token, requestBody.GitHub.RepositoryID)
-		if err != nil {
-			context.ServerError(err, v1.InternalError)
-			return
-		}
-
-		if !validGitHubRepository {
-			context.Unauthorized(reason)
-			return
-		}
-	}
-
 	err = deployV1.Deployments().CheckQuota("", &opts.QuotaOptions{Create: &requestBody})
 	if err != nil {
 		var quotaExceededErr sErrors.QuotaExceededError

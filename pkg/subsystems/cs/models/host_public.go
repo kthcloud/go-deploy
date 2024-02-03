@@ -17,6 +17,7 @@ type HostPublic struct {
 	CpuCoresTotal int       `bson:"cpuCoresTotal"`
 	RamUsed       int       `bson:"ramUsed"`
 	RamTotal      int       `bson:"ramTotal"`
+	RamAllocated  int       `bson:"ramAllocated"`
 	CreatedAt     time.Time `bson:"createdAt"`
 }
 
@@ -24,9 +25,14 @@ type HostPublic struct {
 func CreateHostPublicFromGet(host *cloudstack.Host) *HostPublic {
 	ramUsedInGB := int(host.Memoryused / 1024 / 1024 / 1024)
 	ramInGB := int(host.Memorytotal / 1024 / 1024 / 1024)
+	ramAllocatedInGB := int(host.Memoryallocated / 1024 / 1024 / 1024)
 
 	if ramUsedInGB > ramInGB {
 		ramUsedInGB = ramInGB
+	}
+
+	if ramAllocatedInGB > ramInGB {
+		ramAllocatedInGB = ramInGB
 	}
 
 	cpuAllocatedPercentage, err := strconv.ParseFloat(strings.Trim(host.Cpuallocated, "%"), 64)
@@ -49,6 +55,7 @@ func CreateHostPublicFromGet(host *cloudstack.Host) *HostPublic {
 		CpuCoresTotal: host.Cpunumber,
 		RamUsed:       ramUsedInGB,
 		RamTotal:      ramInGB,
+		RamAllocated:  ramAllocatedInGB,
 		CreatedAt:     formatCreatedAt(host.Created),
 	}
 }

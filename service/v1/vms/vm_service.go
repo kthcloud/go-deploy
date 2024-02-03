@@ -938,6 +938,7 @@ func (c *Client) GetCloudStackHostCapabilities(hostName string, zoneName string)
 		CpuCoresUsed:  host.CpuCoresUsed,
 		RamTotal:      host.RamTotal,
 		RamUsed:       host.RamUsed,
+		RamAllocated:  host.RamAllocated,
 	}, nil
 }
 

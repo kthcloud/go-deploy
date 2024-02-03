@@ -14,7 +14,7 @@ import (
 	"go-deploy/service"
 	"go-deploy/service/clients"
 	"go-deploy/service/v1/users/opts"
-	v12 "go-deploy/service/v1/utils"
+	sUtils "go-deploy/service/v1/utils"
 	"go-deploy/utils"
 )
 
@@ -49,7 +49,7 @@ func ListUsers(c *gin.Context) {
 	if requestQuery.Discover {
 		userList, err := deployV1.Users().Discover(opts.DiscoverOpts{
 			Search:     requestQuery.Search,
-			Pagination: &v12.Pagination{Page: requestQuery.Page, PageSize: requestQuery.PageSize},
+			Pagination: sUtils.GetOrDefaultPagination(requestQuery.Pagination),
 		})
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
@@ -66,7 +66,7 @@ func ListUsers(c *gin.Context) {
 	}
 
 	userList, err := deployV1.Users().List(opts.ListOpts{
-		Pagination: v12.GetOrDefaultPagination(requestQuery.Pagination),
+		Pagination: sUtils.GetOrDefaultPagination(requestQuery.Pagination),
 		Search:     requestQuery.Search,
 		All:        requestQuery.All,
 	})
