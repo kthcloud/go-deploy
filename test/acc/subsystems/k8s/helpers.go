@@ -79,10 +79,9 @@ func withDeployment(t *testing.T, c *k8s.Client, d *models.DeploymentPublic) *mo
 
 func withDefaultService(t *testing.T, c *k8s.Client) *models.ServicePublic {
 	s := &models.ServicePublic{
-		Name:       acc.GenName(),
-		Namespace:  c.Namespace,
-		Port:       11111,
-		TargetPort: 22222,
+		Name:      acc.GenName(),
+		Namespace: c.Namespace,
+		Ports:     []models.Port{{Port: 11111, TargetPort: 22222}},
 	}
 
 	return withService(t, c, s)
@@ -96,8 +95,8 @@ func withService(t *testing.T, c *k8s.Client, s *models.ServicePublic) *models.S
 
 	assert.Equal(t, s.Name, sCreated.Name, "service name does not match")
 	assert.Equal(t, s.Namespace, sCreated.Namespace, "service namespace does not match")
-	assert.Equal(t, s.Port, sCreated.Port, "service port does not match")
-	assert.Equal(t, s.TargetPort, sCreated.TargetPort, "service target port does not match")
+	assert.Equal(t, s.Ports[0].Port, sCreated.Ports[0].Port, "service port does not match")
+	assert.Equal(t, s.Ports[0].TargetPort, sCreated.Ports[0].TargetPort, "service target port does not match")
 
 	return sCreated
 }
@@ -107,7 +106,7 @@ func withDefaultIngress(t *testing.T, c *k8s.Client, s *models.ServicePublic) *m
 		Name:         acc.GenName(),
 		Namespace:    c.Namespace,
 		ServiceName:  s.Name,
-		ServicePort:  s.Port,
+		ServicePort:  s.Ports[0].Port,
 		IngressClass: "nginx",
 		Hosts:        []string{acc.GenName() + ".example.com"},
 	}

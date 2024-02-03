@@ -19,12 +19,12 @@ func TestUpdateService(t *testing.T) {
 	c, _ := withContext(t)
 	s := withDefaultService(t, c)
 
-	s.Port = 12345
-	s.TargetPort = 12345
+	s.Ports[0].Port = 12345
+	s.Ports[0].TargetPort = 12345
 
 	sUpdated, err := c.UpdateService(s)
 	test.NoError(t, err, "failed to update service")
 
-	assert.Equal(t, s.Port, sUpdated.Port, "service port does not match")
-	assert.Equal(t, s.TargetPort, sUpdated.TargetPort, "service target port does not match")
+	assert.Equal(t, s.Ports[0].Port, sUpdated.Ports[0].Port, "service port does not match")
+	assert.Equal(t, s.Ports[0].TargetPort, sUpdated.Ports[0].TargetPort, "service target port does not match")
 }
