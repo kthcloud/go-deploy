@@ -226,7 +226,7 @@ func customDomainConfirmer(ctx context.Context) {
 				// Check if user has updated the DNS record with the custom domain secret
 				// If yes, mark the deployment as custom domain confirmed
 				for portName, port := range vm.PortMap {
-					if port.HttpProxy == nil || port.HttpProxy.CustomDomain == nil {
+					if port.HttpProxy == nil || port.HttpProxy.CustomDomain == nil || port.HttpProxy.CustomDomain.Status == vmModels.CustomDomainStatusActive {
 						continue
 					}
 
