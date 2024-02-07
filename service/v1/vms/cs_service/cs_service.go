@@ -457,6 +457,25 @@ func (c *Client) DoCommand(id, csVmID string, gpuID *string, command string) err
 	return nil
 }
 
+// ListAllStatus returns the status of all VMs.
+func (c *Client) ListAllStatus(zone *configModels.VmZone) (map[string]string, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to list all statuses. details: %w", err)
+	}
+
+	_, csc, _, err := c.Get(OptsOnlyClient(zone))
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	statuses, err := csc.ListAllStatus()
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	return statuses, nil
+}
+
 // CheckSuitableHost checks if the host is in the correct state to start a vm
 func (c *Client) CheckSuitableHost(id, hostName string, zone *configModels.VmZone) error {
 	makeError := func(err error) error {

@@ -232,6 +232,29 @@ func (client *Client) GetVmStatus(id string) (string, error) {
 	return vm.State, nil
 }
 
+// ListAllStatus lists all the VM status in CloudStack.
+func (client *Client) ListAllStatus() (map[string]string, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to list all cs vm status. details: %w", err)
+	}
+
+	params := client.CsClient.VirtualMachine.NewListVirtualMachinesMetricsParams()
+	params.SetProjectid(client.ProjectID)
+	params.SetListall(true)
+
+	vms, err := client.CsClient.VirtualMachine.ListVirtualMachinesMetrics(params)
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	statuses := make(map[string]string)
+	for _, vm := range vms.VirtualMachinesMetrics {
+		statuses[vm.Id] = vm.State
+	}
+
+	return statuses, nil
+}
+
 // DoVmCommand executes the VM command in CloudStack.
 func (client *Client) DoVmCommand(id string, requiredHost *string, command commands.Command) error {
 	makeError := func(err error) error {

@@ -29,33 +29,8 @@ func withClient(zoneName string) (*cs.Client, error) {
 	})
 }
 
-// fetchCsStatus fetches the status of a VM from CloudStack.
-func fetchCsStatus(vm *vmModels.VM) (int, string, error) {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to get status for cs vm %s. details: %w", vm.Name, err)
-	}
-
-	unknownMsg := status_codes.GetMsg(status_codes.ResourceUnknown)
-
-	client, err := withClient(vm.Zone)
-	if err != nil {
-		return status_codes.ResourceUnknown, unknownMsg, makeError(err)
-	}
-
-	csVmID := vm.Subsystems.CS.VM.ID
-	if csVmID == "" {
-		return status_codes.ResourceNotFound, status_codes.GetMsg(status_codes.ResourceNotFound), nil
-	}
-
-	status, err := client.GetVmStatus(csVmID)
-	if err != nil {
-		return status_codes.ResourceUnknown, unknownMsg, makeError(err)
-	}
-
-	if status == "" {
-		return status_codes.ResourceNotFound, status_codes.GetMsg(status_codes.ResourceNotFound), nil
-	}
-
+// parseCsStatus is a helper function that parses the status of a VM from CloudStack.
+func parseCsStatus(status string) (int, string) {
 	var statusCode int
 	switch status {
 	case "Starting":
@@ -78,12 +53,12 @@ func fetchCsStatus(vm *vmModels.VM) (int, string, error) {
 		statusCode = status_codes.ResourceUnknown
 	}
 
-	return statusCode, status_codes.GetMsg(statusCode), nil
+	return statusCode, status_codes.GetMsg(statusCode)
 }
 
 // fetchVmStatusV1 fetches the status of a VM.
-func fetchVmStatusV1(vm *vmModels.VM) (int, string, error) {
-	csStatusCode, csStatusMessage, err := fetchCsStatus(vm)
+func fetchVmStatusV1(vm *vmModels.VM, csStatus string) (int, string, error) {
+	csStatusCode, csStatusMessage := parseCsStatus(csStatus)
 
 	// In case the "delete CS VM" part fails, the VM will be stuck in "Running" state.
 	// So we need to check if the VM is being deleted and if so, return the correct status

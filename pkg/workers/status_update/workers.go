@@ -6,6 +6,7 @@ import (
 	deploymentModels "go-deploy/models/sys/deployment"
 	vmModels "go-deploy/models/sys/vm"
 	"go-deploy/models/versions"
+	"go-deploy/pkg/config"
 	"go-deploy/pkg/workers"
 	"go-deploy/service"
 	"go-deploy/utils"
@@ -32,14 +33,34 @@ func vmStatusUpdater(ctx context.Context) {
 			}
 
 			vsc := service.V1().VMs()
+			allVmStatus := make(map[string]string)
 
 			for _, vm := range v1Vms {
-				code, message, err := fetchVmStatusV1(&vm)
+				if _, ok := allVmStatus[vm.ID]; !ok {
+					zone := config.Config.VM.GetZone(vm.Zone)
+					if zone == nil {
+						continue
+					}
+
+					statusForZone, err := vsc.CS().ListAllStatus(zone)
+					if err != nil {
+						utils.PrettyPrintError(fmt.Errorf("error fetching all cs vm status: %w", err))
+						continue
+					}
+
+					for k, v := range statusForZone {
+						allVmStatus[k] = v
+					}
+				}
+
+				vmc := vmModels.New(versions.V1)
+
+				code, message, err := fetchVmStatusV1(&vm, allVmStatus[vm.Subsystems.CS.VM.ID])
 				if err != nil {
 					utils.PrettyPrintError(fmt.Errorf("error fetching vm status: %w", err))
 					continue
 				}
-				_ = vmModels.New(versions.V1).SetWithBsonByID(vm.ID, bson.D{{"statusCode", code}, {"statusMessage", message}})
+				_ = vmc.SetWithBsonByID(vm.ID, bson.D{{"statusCode", code}, {"statusMessage", message}})
 
 				host, err := vsc.GetHost(vm.ID)
 				if err != nil {
@@ -48,9 +69,9 @@ func vmStatusUpdater(ctx context.Context) {
 				}
 
 				if host == nil {
-					_ = vmModels.New(versions.V1).UpdateWithBsonByID(vm.ID, bson.D{{"$unset", bson.D{{"host", ""}}}})
+					_ = vmc.UpdateWithBsonByID(vm.ID, bson.D{{"$unset", bson.D{{"host", ""}}}})
 				} else {
-					_ = vmModels.New(versions.V1).SetWithBsonByID(vm.ID, bson.D{{"host", host}})
+					_ = vmc.SetWithBsonByID(vm.ID, bson.D{{"host", host}})
 				}
 			}
 
