@@ -69,7 +69,7 @@ func jobMapper() map[string]map[string]JobDefinition {
 			ExitFunc:      utils.VmRemActivity(va.ActivityUpdating),
 		},
 		jobModels.TypeAttachGPU: {
-			JobFunc:       v1.AttachGpuToVM,
+			JobFunc:       v1.AttachGPU,
 			TerminateFunc: leafJobVM.Build(),
 			EntryFunc:     utils.VmAddActivity(va.ActivityAttachingGPU, va.ActivityUpdating),
 			ExitFunc:      utils.VmRemActivity(va.ActivityAttachingGPU, va.ActivityUpdating),
@@ -171,7 +171,7 @@ func jobMapper() map[string]map[string]JobDefinition {
 		//	ExitFunc:      vRemActivity(va.ActivityUpdating),
 		//},
 		//jobModels.TypeAttachGPU: {
-		//	JobFunc:       v2.AttachGpuToVM,
+		//	JobFunc:       v2.AttachGPU,
 		//	TerminateFunc: leafJobVM.Build(),
 		//	EntryFunc:     vAddActivity(va.ActivityAttachingGPU, va.ActivityUpdating),
 		//	ExitFunc:      vRemActivity(va.ActivityAttachingGPU, va.ActivityUpdating),

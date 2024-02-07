@@ -7,6 +7,7 @@ import (
 	jobModels "go-deploy/models/sys/job"
 	smModels "go-deploy/models/sys/sm"
 	vmModels "go-deploy/models/sys/vm"
+	"go-deploy/pkg/config"
 	"go-deploy/pkg/workers"
 	"go-deploy/utils"
 	"golang.org/x/exp/slices"
@@ -157,6 +158,7 @@ func customDomainConfirmer(ctx context.Context) {
 
 	reportTick := time.Tick(1 * time.Second)
 	tick := time.Tick(3 * time.Second)
+	subDomain := config.Config.Deployment.CustomDomainTxtRecordSubdomain
 
 	for {
 		select {
@@ -178,13 +180,25 @@ func customDomainConfirmer(ctx context.Context) {
 					continue
 				}
 
-				match, err := checkCustomDomain(cd.Domain, cd.Secret)
+				exists, match, txtRecord, err := checkCustomDomain(cd.Domain, cd.Secret)
 				if err != nil {
-					utils.PrettyPrintError(fmt.Errorf("failed to check custom domain %s for deployment %s. details: %w", cd.Domain, deployment.ID, err))
+					utils.PrettyPrintError(fmt.Errorf("failed to lookup TXT record under %s for custom domain %s for deployment %s. details: %w", subDomain, cd.Domain, deployment.ID, err))
+					continue
+				}
+
+				if !exists {
+					log.Printf("no TXT record found under %s when confirming custom domain %s for deployment %s\n", subDomain, cd.Domain, deployment.ID)
 					continue
 				}
 
 				if !match {
+					received := txtRecord
+					expected := cd.Secret
+					if len(received) > len(expected) {
+						received = received[:len(expected)] + "..."
+					}
+
+					log.Printf("TXT record found under %s but secret does not match when confirming custom domain %s for deployment %s (received: %s, expected: %s)\n", subDomain, cd.Domain, deployment.ID, received, expected)
 					err = deploymentModels.New().UpdateCustomDomainStatus(deployment.ID, deploymentModels.CustomDomainStatusVerificationFailed)
 					if err != nil {
 						utils.PrettyPrintError(fmt.Errorf("custom domain verification failed for deployment %s. details: %w", deployment.ID, err))
@@ -221,13 +235,25 @@ func customDomainConfirmer(ctx context.Context) {
 						continue
 					}
 
-					match, err := checkCustomDomain(cd.Domain, cd.Secret)
+					exists, match, txtRecord, err := checkCustomDomain(cd.Domain, cd.Secret)
 					if err != nil {
 						utils.PrettyPrintError(fmt.Errorf("failed to check custom domain %s for vm %s. details: %w", cd.Domain, vm.ID, err))
 						continue
 					}
 
+					if !exists {
+						log.Printf("no TXT record found under %s when confirming custom domain %s for vm %s\n", subDomain, cd.Domain, vm.ID)
+						continue
+					}
+
 					if !match {
+						received := txtRecord
+						expected := cd.Secret
+						if len(received) > len(expected) {
+							received = received[:len(expected)] + "..."
+						}
+
+						log.Printf("TXT record found under %s but secret does not match when confirming custom domain %s for vm %s (received: %s, expected: %s)\n", subDomain, cd.Domain, vm.ID, received, expected)
 						err = vmModels.New().UpdateCustomDomainStatus(vm.ID, portName, vmModels.CustomDomainStatusVerificationFailed)
 						if err != nil {
 							utils.PrettyPrintError(fmt.Errorf("custom domain verification failed for vm %s. details: %w", vm.ID, err))

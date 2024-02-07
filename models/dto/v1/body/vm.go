@@ -37,10 +37,12 @@ type VmCreate struct {
 type VmUpdate struct {
 	Name       *string       `json:"name,omitempty" bson:"name,omitempty" binding:"omitempty,rfc1035,min=3,max=30"`
 	SnapshotID *string       `json:"snapshotId,omitempty" bson:"snapshotId,omitempty" binding:"omitempty,uuid4"`
-	GpuID      *string       `json:"gpuId,omitempty" bson:"gpuId,omitempty" binding:"omitempty,min=0,max=100"`
 	Ports      *[]PortUpdate `json:"ports,omitempty" bson:"ports,omitempty" binding:"omitempty,port_list_names,port_list_numbers,port_list_http_proxies,min=0,max=10,dive"`
 	CpuCores   *int          `json:"cpuCores,omitempty" bson:"cpuCores,omitempty" binding:"omitempty,min=1"`
 	RAM        *int          `json:"ram,omitempty" bson:"ram,omitempty" binding:"omitempty,min=1"`
+
+	GpuID      *string `json:"gpuId,omitempty" bson:"gpuId,omitempty" binding:"omitempty,min=0,max=100"`
+	NoLeaseEnd *bool   `json:"noLeaseEnd,omitempty" bson:"noLeaseEnd,omitempty" binding:"omitempty"`
 
 	OwnerID      *string `json:"ownerId,omitempty" bson:"ownerId,omitempty" binding:"omitempty"`
 	TransferCode *string `json:"transferCode,omitempty" bson:"transferCode,omitempty" binding:"omitempty,min=1,max=1000"`

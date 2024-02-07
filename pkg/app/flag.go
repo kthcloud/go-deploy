@@ -11,6 +11,7 @@ import (
 	"go-deploy/pkg/workers/repair"
 	"go-deploy/pkg/workers/snapshot"
 	"go-deploy/pkg/workers/status_update"
+	"go-deploy/pkg/workers/synchronize"
 )
 
 // FlagDefinition represents a definition for a flag that is passed to the program's executable.
@@ -103,6 +104,16 @@ func GetFlags() FlagDefinitionList {
 			DefaultValue: false,
 			Run: func(ctx context.Context, _ context.CancelFunc) {
 				status_update.Setup(ctx)
+			},
+		},
+		{
+			Name:         "synchronizer",
+			ValueType:    "bool",
+			FlagType:     "worker",
+			Description:  "start synchronizer",
+			DefaultValue: false,
+			Run: func(ctx context.Context, _ context.CancelFunc) {
+				synchronize.Setup(ctx)
 			},
 		},
 		{

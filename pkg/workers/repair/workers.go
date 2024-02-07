@@ -69,8 +69,6 @@ func deploymentRepairer(ctx context.Context) {
 					continue
 				}
 
-				log.Println("scheduling repair job for deployment", deployment.ID)
-
 				jobID := uuid.New().String()
 				// Spread out repair jobs evenly over time
 				seconds := config.Config.Deployment.RepairInterval + rand.Intn(config.Config.Deployment.RepairInterval)
@@ -125,8 +123,6 @@ func smRepairer(ctx context.Context) {
 					continue
 				}
 
-				log.Println("scheduling repair job for storage manager", sm.ID)
-
 				jobID := uuid.New().String()
 				// Spread out repair jobs evenly over time
 				seconds := config.Config.Deployment.RepairInterval + rand.Intn(config.Config.Deployment.RepairInterval)
@@ -179,8 +175,6 @@ func vmRepairer(ctx context.Context) {
 				if exists {
 					continue
 				}
-
-				log.Println("scheduling repair job for vm", vm.ID)
 
 				jobID := uuid.New().String()
 				// Spread out repair jobs evenly over time

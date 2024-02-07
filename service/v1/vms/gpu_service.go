@@ -125,7 +125,13 @@ func (c *Client) AttachGPU(vmID string, gpuIDs []string, leaseDuration float64) 
 	csInsufficientCapacityError := "host has capacity? false"
 	gpuAlreadyAttachedError := "Unable to create a deployment for VM instance"
 
-	endLease := time.Now().Add(time.Duration(leaseDuration) * time.Hour)
+	var endLease time.Time
+	if leaseDuration == -1 {
+		// Represent "end" of time
+		endLease = time.Now().AddDate(1000, 0, 0)
+	} else {
+		endLease = time.Now().Add(time.Duration(leaseDuration) * time.Hour)
+	}
 
 	vm, err := c.Get(vmID)
 	if err != nil {
@@ -188,7 +194,7 @@ func (c *Client) AttachGPU(vmID string, gpuIDs []string, leaseDuration float64) 
 		}
 
 		if !attached {
-			// This is an edge case where we don't want to fail the method, since a retry will probably not help
+			// This is an edge case where we don't want to fail the method, since a retry will probably not help.
 			//
 			// This is probably caused by a race condition where two users requested the same gpu, where the first one
 			// got it, and the second one failed. We don't want to fail the second user, since that would mean that a

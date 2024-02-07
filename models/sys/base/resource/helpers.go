@@ -1,7 +1,6 @@
 package resource
 
 import (
-	"context"
 	"fmt"
 	"go-deploy/models"
 	"go.mongodb.org/mongo-driver/bson"
@@ -131,15 +130,15 @@ func (client *ResourceClient[T]) CountDistinct(field string) (int, error) {
 }
 
 // Delete deletes all resources that match the given filter.
-// It only sets the deletedAt field to the current time, and
+// It only sets the deletedAt field to the current time (which
+// will cause it be to be treated as a deleted resource), and
 // does not remove the resources from the database.
 func (client *ResourceClient[T]) Delete() error {
-	_, err := client.Collection.UpdateOne(context.TODO(),
-		bson.D{},
-		bson.D{
-			{"$set", bson.D{{"deletedAt", time.Now()}}},
-		},
-	)
+	update := bson.D{
+		{"$set", bson.D{{"deletedAt", time.Now()}}},
+	}
+
+	err := client.UpdateWithBSON(update)
 	if err != nil {
 		return fmt.Errorf("failed to delete resources. details: %w", err)
 	}
@@ -148,17 +147,17 @@ func (client *ResourceClient[T]) Delete() error {
 }
 
 // DeleteByID deletes a resource with the given ID.
-// It only sets the deletedAt field to the current time, and
+// It only sets the deletedAt field to the current time (which
+// // will cause it be to be treated as a deleted resource), and
 // does not remove the resource from the database.
 func (client *ResourceClient[T]) DeleteByID(id string) error {
-	_, err := client.Collection.UpdateOne(context.TODO(),
-		bson.D{{"id", id}},
-		bson.D{
-			{"$set", bson.D{{"deletedAt", time.Now()}}},
-		},
-	)
+	update := bson.D{
+		{"$set", bson.D{{"deletedAt", time.Now()}}},
+	}
+
+	err := client.UpdateWithBsonByID(id, update)
 	if err != nil {
-		return fmt.Errorf("failed to delete resource %s. details: %w", id, err)
+		return fmt.Errorf("failed to delete resource. details: %w", err)
 	}
 
 	return nil
@@ -176,6 +175,18 @@ func (client *ResourceClient[T]) Deleted(id string) (bool, error) {
 	}
 
 	return count > 0, nil
+}
+
+// Erase deletes all resources that match the given filter.
+// It removes the resources from the database.
+func (client *ResourceClient[T]) Erase() error {
+	return models.DeleteResources(client.Collection, models.GroupFilters(bson.D{}, client.ExtraFilter, client.Search, client.IncludeDeleted))
+}
+
+// EraseByID deletes a resource with the given ID.
+// It removes the resource from the database.
+func (client *ResourceClient[T]) EraseByID(id string) error {
+	return models.DeleteResources(client.Collection, models.GroupFilters(bson.D{{"id", id}}, client.ExtraFilter, client.Search, client.IncludeDeleted))
 }
 
 // Get returns a resource with the given filter.

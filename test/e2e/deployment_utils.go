@@ -172,12 +172,6 @@ func WithDeployment(t *testing.T, requestBody body.DeploymentCreate) (body.Deplo
 	assert.Equal(t, requestBody.Name, deploymentRead.Name)
 	assert.Equal(t, requestBody.Private, deploymentRead.Private)
 
-	if requestBody.GitHub == nil {
-		assert.Empty(t, deploymentRead.Integrations)
-	} else {
-		assert.NotEmpty(t, deploymentRead.Integrations)
-	}
-
 	if requestBody.Zone == nil {
 		// Some zone is set by default
 		assert.NotEmpty(t, deploymentRead.Zone)

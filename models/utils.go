@@ -187,3 +187,16 @@ func UpdateOneResource(collection *mongo.Collection, filter bson.D, update bson.
 
 	return nil
 }
+
+func DeleteResources(collection *mongo.Collection, filter bson.D) error {
+	_, err := collection.DeleteMany(context.Background(), filter)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil
+		}
+
+		return fmt.Errorf("failed to delete resources. details: %w", err)
+	}
+
+	return nil
+}

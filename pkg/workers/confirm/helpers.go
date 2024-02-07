@@ -9,8 +9,6 @@ import (
 	"go-deploy/models/sys/vm"
 	"go-deploy/models/sys/vm_port"
 	"go-deploy/pkg/config"
-	"go-deploy/utils"
-	"log"
 	"net"
 )
 
@@ -212,7 +210,8 @@ func portsCleared(vm *vm.VM) (bool, error) {
 
 // checkCustomDomain checks if the custom domain is setup.
 // This polls the TXT record of the custom domain to check if the secret is set.
-func checkCustomDomain(domain string, secret string) (bool, error) {
+// It returns (exists, match, txtRecord, error).
+func checkCustomDomain(domain string, secret string) (bool, bool, string, error) {
 	subDomain := config.Config.Deployment.CustomDomainTxtRecordSubdomain
 
 	txtRecordDomain := subDomain + "." + domain
@@ -221,17 +220,15 @@ func checkCustomDomain(domain string, secret string) (bool, error) {
 		// If error is "no such host", it means the DNS record does not exist yet
 		var targetErr *net.DNSError
 		if ok := errors.As(err, &targetErr); ok && targetErr.IsNotFound {
-			log.Printf("no TXT record found under %s when confirming custom domain %s\n", subDomain, domain)
-			return false, nil
+			return false, false, "", nil
 		}
 
-		utils.PrettyPrintError(fmt.Errorf("failed to lookup TXT record under %s for custom domain %s. details: %w", subDomain, domain, err))
-		return false, err
+		return false, false, "", err
 	}
 
-	if len(txtRecord) == 0 {
-		log.Printf("no TXT record found under %s when confirming custom domain %s\n", subDomain, domain)
-		return false, nil
+	exists := len(txtRecord) > 0
+	if !exists {
+		return false, false, "", nil
 	}
 
 	match := false
@@ -242,11 +239,5 @@ func checkCustomDomain(domain string, secret string) (bool, error) {
 		}
 	}
 
-	if !match {
-		log.Printf("TXT record found under %s for custom domain %s but secret does not match\n", subDomain, domain)
-		return false, nil
-	}
-
-	return match, nil
-
+	return exists, match, txtRecord[0], nil
 }
