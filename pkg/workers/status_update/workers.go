@@ -17,7 +17,7 @@ func vmStatusUpdater(ctx context.Context) {
 	defer workers.OnStop("vmStatusUpdater")
 
 	reportTick := time.Tick(1 * time.Second)
-	tick := time.Tick(1 * time.Second)
+	tick := time.Tick(10 * time.Second)
 
 	for {
 		select {
