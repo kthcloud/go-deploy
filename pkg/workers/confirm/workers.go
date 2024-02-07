@@ -157,7 +157,7 @@ func customDomainConfirmer(ctx context.Context) {
 	defer workers.OnStop("customDomainConfirmer")
 
 	reportTick := time.Tick(1 * time.Second)
-	tick := time.Tick(3 * time.Second)
+	tick := time.Tick(180 * time.Second)
 	subDomain := config.Config.Deployment.CustomDomainTxtRecordSubdomain
 
 	for {
@@ -226,7 +226,7 @@ func customDomainConfirmer(ctx context.Context) {
 				// Check if user has updated the DNS record with the custom domain secret
 				// If yes, mark the deployment as custom domain confirmed
 				for portName, port := range vm.PortMap {
-					if port.HttpProxy == nil || port.HttpProxy.CustomDomain == nil {
+					if port.HttpProxy == nil || port.HttpProxy.CustomDomain == nil || port.HttpProxy.CustomDomain.Status == vmModels.CustomDomainStatusActive {
 						continue
 					}
 
