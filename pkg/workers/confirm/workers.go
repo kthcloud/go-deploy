@@ -157,7 +157,7 @@ func customDomainConfirmer(ctx context.Context) {
 	defer workers.OnStop("customDomainConfirmer")
 
 	reportTick := time.Tick(1 * time.Second)
-	tick := time.Tick(3 * time.Second)
+	tick := time.Tick(180 * time.Second)
 	subDomain := config.Config.Deployment.CustomDomainTxtRecordSubdomain
 
 	for {
