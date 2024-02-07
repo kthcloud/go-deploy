@@ -36,18 +36,6 @@ func TestList(t *testing.T) {
 func TestCreate(t *testing.T) {
 	t.Parallel()
 
-	// To test with GitHub, you need to set the following env variables:
-	var token string
-	var repositoryID int64
-
-	var github *body.GitHub
-	if token != "" && repositoryID != 0 {
-		github = &body.GitHub{
-			Token:        token,
-			RepositoryID: repositoryID,
-		}
-	}
-
 	requestBody := body.DeploymentCreate{
 		Name:    e2e.GenName(),
 		Private: false,
@@ -57,7 +45,6 @@ func TestCreate(t *testing.T) {
 				Value: uuid.NewString(),
 			},
 		},
-		GitHub: github,
 	}
 
 	e2e.WithDeployment(t, requestBody)
