@@ -24,7 +24,7 @@ import (
 // @Tags User
 // @Accept  json
 // @Produce  json
-// @Param wantAll query bool false "Want all users"
+// @Param all query bool false "Want all users"
 // @Success 200 {array}  body.UserRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse

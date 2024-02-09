@@ -15,7 +15,7 @@ import (
 	"go-deploy/models/versions"
 	"go-deploy/pkg/config"
 	sErrors "go-deploy/service/errors"
-	utils2 "go-deploy/service/utils"
+	sUtils "go-deploy/service/utils"
 	"go-deploy/service/v1/vms/cs_service"
 	"go-deploy/service/v1/vms/k8s_service"
 	"go-deploy/service/v1/vms/opts"
@@ -31,7 +31,7 @@ import (
 // It can be fetched in multiple ways including ID, name, transfer code, and Harbor webhook.
 // It supports service.AuthInfo, and will restrict the result to ensure the user has access to the resource.
 func (c *Client) Get(id string, opts ...opts.GetOpts) (*vmModels.VM, error) {
-	o := utils2.GetFirstOrDefault(opts)
+	o := sUtils.GetFirstOrDefault(opts)
 
 	vmc := vmModels.New(versions.V1)
 
@@ -68,7 +68,7 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*vmModels.VM, error) {
 //
 // It supports service.AuthInfo, and will restrict the result to ensure the user has access to the resource.
 func (c *Client) List(opts ...opts.ListOpts) ([]vmModels.VM, error) {
-	o := utils2.GetFirstOrDefault(opts)
+	o := sUtils.GetFirstOrDefault(opts)
 
 	vmc := vmModels.New(versions.V1)
 
@@ -713,7 +713,7 @@ func (c *Client) CheckQuota(id, userID string, quota *roleModels.Quotas, opts ..
 		return nil
 	}
 
-	o := utils2.GetFirstOrDefault(opts)
+	o := sUtils.GetFirstOrDefault(opts)
 
 	usage, err := c.GetUsage(userID)
 	if err != nil {

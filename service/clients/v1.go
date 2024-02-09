@@ -18,6 +18,7 @@ type V1 interface {
 	Status() apiV1.Status
 	Teams() apiV1.Teams
 	Users() apiV1.Users
+	UserData() apiV1.UserData
 	VMs() apiV1.VMs
 	Zones() apiV1.Zones
 }

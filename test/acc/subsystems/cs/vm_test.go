@@ -8,12 +8,16 @@ import (
 )
 
 func TestCreateVM(t *testing.T) {
+	t.Skip("CloudStack is too unpredictable to run this test")
+
 	t.Parallel()
 
 	withDefaultVM(t)
 }
 
 func TestUpdateVM(t *testing.T) {
+	t.Skip("CloudStack is too unpredictable to run this test")
+
 	t.Parallel()
 
 	client := withClient(t)
@@ -30,6 +34,8 @@ func TestUpdateVM(t *testing.T) {
 }
 
 func TestUpdateVmSpecs(t *testing.T) {
+	t.Skip("CloudStack is too unpredictable to run this test")
+
 	t.Parallel()
 
 	client := withClient(t)

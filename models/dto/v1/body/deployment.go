@@ -52,7 +52,7 @@ type DeploymentCreate struct {
 	HealthCheckPath *string  `json:"healthCheckPath" bson:"healthCheckPath,omitempty" binding:"omitempty,min=0,max=1000,health_check_path"`
 	CustomDomain    *string  `json:"customDomain" bson:"customDomain,omitempty" binding:"omitempty,domain_name,custom_domain,min=1,max=253"`
 	Replicas        *int     `json:"replicas" bson:"replicas,omitempty" binding:"omitempty,min=0,max=100"`
-	
+
 	Zone *string `json:"zone" bson:"zone,omitempty" binding:"omitempty"`
 }
 
@@ -118,4 +118,11 @@ type CiConfig struct {
 
 type DeploymentCommand struct {
 	Command string `json:"command" bson:"command" binding:"required,oneof=restart"`
+}
+
+type LogMessage struct {
+	Source    string    `json:"source"`
+	Prefix    string    `json:"prefix"`
+	Line      string    `json:"line"`
+	CreatedAt time.Time `json:"createdAt"`
 }

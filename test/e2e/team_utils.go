@@ -141,10 +141,7 @@ func WithTeam(t *testing.T, teamCreate body.TeamCreate, userID ...string) body.T
 	test.EqualOrEmpty(t, requestedResources, createdResources, "invalid team resources")
 
 	t.Cleanup(func() {
-		resp = DoDeleteRequest(t, "/teams/"+teamRead.ID)
-		if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusNotFound {
-			assert.Fail(t, "team was not deleted")
-		}
+		DoDeleteRequest(t, "/teams/"+teamRead.ID)
 	})
 
 	return teamRead

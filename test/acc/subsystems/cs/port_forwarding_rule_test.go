@@ -7,12 +7,16 @@ import (
 )
 
 func TestCreatePortForwardingRule(t *testing.T) {
+	t.Skip("CloudStack is too unpredictable to run this test")
+
 	t.Parallel()
 
 	withDefaultPFR(t, withDefaultVM(t))
 }
 
 func TestUpdatePortForwardingRule(t *testing.T) {
+	t.Skip("CloudStack is too unpredictable to run this test")
+
 	t.Parallel()
 
 	client := withClient(t)

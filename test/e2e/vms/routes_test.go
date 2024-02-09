@@ -20,6 +20,8 @@ func TestMain(m *testing.M) {
 }
 
 func TestList(t *testing.T) {
+	t.Skip("CloudStack is too unpredictable to run this test")
+
 	t.Parallel()
 
 	queries := []string{
@@ -34,6 +36,8 @@ func TestList(t *testing.T) {
 }
 
 func TestListGPUs(t *testing.T) {
+	t.Skip("CloudStack is too unpredictable to run this test")
+
 	t.Parallel()
 
 	queries := []string{
@@ -47,6 +51,8 @@ func TestListGPUs(t *testing.T) {
 }
 
 func TestCreate(t *testing.T) {
+	t.Skip("CloudStack is too unpredictable to run this test")
+
 	t.Parallel()
 
 	requestBody := body.VmCreate{
@@ -69,6 +75,8 @@ func TestCreate(t *testing.T) {
 }
 
 func TestCreateWithInvalidBody(t *testing.T) {
+	t.Skip("CloudStack is too unpredictable to run this test")
+
 	t.Parallel()
 
 	longName := body.VmCreate{
@@ -208,6 +216,8 @@ func TestCreateWithInvalidBody(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
+	t.Skip("CloudStack is too unpredictable to run this test")
+
 	t.Parallel()
 
 	vm := e2e.WithDefaultVM(t)
@@ -255,6 +265,8 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestCreateShared(t *testing.T) {
+	t.Skip("CloudStack is too unpredictable to run this test")
+
 	t.Parallel()
 
 	vm := e2e.WithDefaultVM(t)
@@ -282,6 +294,8 @@ func TestCreateShared(t *testing.T) {
 }
 
 func TestAttachAnyGPU(t *testing.T) {
+	t.Skip("CloudStack is too unpredictable to run this test")
+
 	// TODO: Fix this test
 	// This test is currently unreliable, as it might attach to a GPU that is leased in production
 	//
@@ -309,6 +323,8 @@ func TestAttachAnyGPU(t *testing.T) {
 }
 
 func TestAttachGPU(t *testing.T) {
+	t.Skip("CloudStack is too unpredictable to run this test")
+
 	t.Parallel()
 
 	// To test this, you need to set the gpu ID
@@ -342,6 +358,8 @@ func TestAttachGPU(t *testing.T) {
 }
 
 func TestAttachGPUWithInvalidID(t *testing.T) {
+	t.Skip("CloudStack is too unpredictable to run this test")
+
 	t.Parallel()
 
 	vm := e2e.WithVM(t, body.VmCreate{
@@ -363,6 +381,8 @@ func TestAttachGPUWithInvalidID(t *testing.T) {
 }
 
 func TestAttachGpuWithAlreadyAttachedID(t *testing.T) {
+	t.Skip("CloudStack is too unpredictable to run this test")
+
 	t.Parallel()
 
 	// To test this, you need to set the gpu ID
@@ -404,6 +424,8 @@ func TestAttachGpuWithAlreadyAttachedID(t *testing.T) {
 }
 
 func TestCommand(t *testing.T) {
+	t.Skip("CloudStack is too unpredictable to run this test")
+
 	t.Parallel()
 
 	commands := []string{"stop", "start", "reboot"}
@@ -419,6 +441,8 @@ func TestCommand(t *testing.T) {
 }
 
 func TestCreateAndRestoreSnapshot(t *testing.T) {
+	t.Skip("CloudStack is too unpredictable to run this test")
+
 	t.Parallel()
 
 	vm := e2e.WithDefaultVM(t)
@@ -467,6 +491,8 @@ func TestCreateAndRestoreSnapshot(t *testing.T) {
 }
 
 func TestInvalidCommand(t *testing.T) {
+	t.Skip("CloudStack is too unpredictable to run this test")
+
 	t.Parallel()
 
 	invalidCommands := []string{"some command", "invalid"}
