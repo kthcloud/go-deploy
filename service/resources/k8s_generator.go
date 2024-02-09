@@ -479,7 +479,7 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 		se := models.ServicePublic{
 			Name:      kg.d.deployment.Name,
 			Namespace: kg.namespace,
-			Ports:     []models.Port{{Name: "http", Protocol: "TCP", Port: mainApp.InternalPort, TargetPort: mainApp.InternalPort}},
+			Ports:     []models.Port{{Name: "http", Protocol: "tcp", Port: mainApp.InternalPort, TargetPort: mainApp.InternalPort}},
 			Selector: map[string]string{
 				keys.LabelDeployName: kg.d.deployment.Name,
 			},
@@ -584,7 +584,7 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 		filebrowser := models.ServicePublic{
 			Name:      constants.SmAppName,
 			Namespace: kg.namespace,
-			Ports:     []models.Port{{Name: "http", Protocol: "TCP", Port: 80, TargetPort: 80}},
+			Ports:     []models.Port{{Name: "http", Protocol: "tcp", Port: 80, TargetPort: 80}},
 			Selector: map[string]string{
 				keys.LabelDeployName: constants.SmAppName,
 			},
@@ -600,7 +600,7 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 		oauthProxy := models.ServicePublic{
 			Name:      constants.SmAppNameAuth,
 			Namespace: kg.namespace,
-			Ports:     []models.Port{{Name: "http", Protocol: "TCP", Port: 4180, TargetPort: 4180}},
+			Ports:     []models.Port{{Name: "http", Protocol: "tcp", Port: 4180, TargetPort: 4180}},
 			Selector: map[string]string{
 				keys.LabelDeployName: constants.SmAppNameAuth,
 			},
