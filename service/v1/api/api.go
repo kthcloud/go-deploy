@@ -14,6 +14,7 @@ import (
 	smModels "go-deploy/models/sys/sm"
 	teamModels "go-deploy/models/sys/team"
 	userModels "go-deploy/models/sys/user"
+	userDataModels "go-deploy/models/sys/user_data"
 	vmModels "go-deploy/models/sys/vm"
 	workerStatusModels "go-deploy/models/sys/worker_status"
 	zoneModels "go-deploy/models/sys/zone"
@@ -26,6 +27,7 @@ import (
 	smClient "go-deploy/service/v1/sms/opts"
 	statusOpts "go-deploy/service/v1/status/opts"
 	teamOpts "go-deploy/service/v1/teams/opts"
+	userDataOpts "go-deploy/service/v1/user_data/opts"
 	userOpts "go-deploy/service/v1/users/opts"
 	"go-deploy/service/v1/vms/cs_service"
 	vK8sService "go-deploy/service/v1/vms/k8s_service"
@@ -117,6 +119,15 @@ type Users interface {
 	Exists(id string) (bool, error)
 
 	Discover(opts ...userOpts.DiscoverOpts) ([]body.UserReadDiscovery, error)
+}
+
+type UserData interface {
+	Get(id string, opts ...userDataOpts.GetOpts) (*userDataModels.UserData, error)
+	List(opts ...userDataOpts.ListOpts) ([]userDataModels.UserData, error)
+	Create(id, value, userID string) (*userDataModels.UserData, error)
+	Update(id, value string) (*userDataModels.UserData, error)
+	Delete(id string) error
+	Exists(id string) (bool, error)
 }
 
 type Teams interface {
