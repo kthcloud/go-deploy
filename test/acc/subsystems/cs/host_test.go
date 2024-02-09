@@ -7,6 +7,8 @@ import (
 )
 
 func TestReadHost(t *testing.T) {
+	t.Skip("CloudStack is too unpredictable to run this test")
+
 	// This assumes the host exists
 	// This will obviously fail if the host is renamed or deleted
 	hostName := "se-flem-001"
@@ -19,6 +21,8 @@ func TestReadHost(t *testing.T) {
 }
 
 func TestReadVmHostname(t *testing.T) {
+	t.Skip("CloudStack is too unpredictable to run this test")
+
 	t.Parallel()
 
 	client := withClient(t)

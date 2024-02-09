@@ -6,12 +6,16 @@ import (
 )
 
 func TestCreateSnapshot(t *testing.T) {
+	t.Skip("CloudStack is too unpredictable to run this test")
+
 	t.Parallel()
 
 	withDefaultSnapshot(t, withDefaultVM(t))
 }
 
 func TestRestoreSnapshot(t *testing.T) {
+	t.Skip("CloudStack is too unpredictable to run this test")
+
 	t.Parallel()
 
 	client := withClient(t)
