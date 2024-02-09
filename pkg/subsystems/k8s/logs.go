@@ -67,7 +67,7 @@ func (client *Client) SetupLogStream(ctx context.Context, deploymentName string,
 		factory := informers.NewSharedInformerFactoryWithOptions(client.K8sClient, 0, informers.WithNamespace(client.Namespace))
 		podInformer := factory.Core().V1().Pods().Informer()
 
-		podInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		_, err := podInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				pod := obj.(*v1.Pod)
 
@@ -98,6 +98,9 @@ func (client *Client) SetupLogStream(ctx context.Context, deploymentName string,
 				podChannel <- podEvent{event: PodEventStop, podName: pod.Name}
 			},
 		})
+		if err != nil {
+			return
+		}
 
 		factory.Start(ctx.Done())
 		factory.WaitForCacheSync(ctx.Done())

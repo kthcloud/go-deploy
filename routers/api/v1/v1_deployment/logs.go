@@ -3,8 +3,8 @@ package v1_deployment
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/gin-gonic/gin"
+	"go-deploy/models/dto/v1/body"
 	"go-deploy/models/dto/v1/uri"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
@@ -12,6 +12,7 @@ import (
 	errors2 "go-deploy/service/errors"
 	"go-deploy/service/v1/deployments"
 	"io"
+	"time"
 )
 
 // GetLogsSSE
@@ -42,15 +43,16 @@ func GetLogsSSE(c *gin.Context) {
 	}
 
 	type Message struct {
-		source string
-		prefix string
-		msg    string
+		source    string
+		prefix    string
+		msg       string
+		createdAt time.Time
 	}
 
 	ch := make(chan Message)
 
-	handler := func(source, prefix, msg string) {
-		ch <- Message{source, prefix, msg}
+	handler := func(source, prefix, msg string, createdAt time.Time) {
+		ch <- Message{source, prefix, msg, createdAt}
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -77,8 +79,12 @@ func GetLogsSSE(c *gin.Context) {
 				return true
 			}
 
-			message := fmt.Sprintf("%s: %s", msg.prefix, msg.msg)
-			c.SSEvent(msg.source, message)
+			c.SSEvent(msg.source, body.LogMessage{
+				Source:    msg.source,
+				Prefix:    msg.prefix,
+				Line:      msg.msg,
+				CreatedAt: msg.createdAt,
+			})
 			return true
 		}
 	})

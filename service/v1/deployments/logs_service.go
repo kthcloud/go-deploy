@@ -24,7 +24,7 @@ const (
 //
 // It will continuously check the deployment logs and read the logs after the last read log.
 // Increasing the history will increase the time it takes to set up the log stream.
-func (c *Client) SetupLogStream(id string, ctx context.Context, handler func(string, string, string), history int) error {
+func (c *Client) SetupLogStream(id string, ctx context.Context, handler func(string, string, string, time.Time), history int) error {
 	deployment, err := c.Get(id, opts.GetOpts{Shared: true})
 	if err != nil {
 		return err
@@ -40,7 +40,7 @@ func (c *Client) SetupLogStream(id string, ctx context.Context, handler func(str
 	}
 
 	go func() {
-		handler(MessageSourceControl, "[control]", "setting up log stream")
+		handler(MessageSourceControl, "[control]", "setting up log stream", time.Now())
 		time.Sleep(500 * time.Millisecond)
 
 		// fetch history logs
@@ -51,7 +51,7 @@ func (c *Client) SetupLogStream(id string, ctx context.Context, handler func(str
 		}
 
 		for _, item := range logs {
-			handler(item.Source, item.Prefix, item.Line)
+			handler(item.Source, item.Prefix, item.Line, item.CreatedAt)
 		}
 
 		// fetch live logs
@@ -66,7 +66,7 @@ func (c *Client) SetupLogStream(id string, ctx context.Context, handler func(str
 				return
 			default:
 				time.Sleep(FetchPeriod)
-				handler(MessageSourceControl, "[control]", "fetching logs")
+				handler(MessageSourceControl, "[control]", "fetching logs", time.Now())
 
 				logs, err = deploymentModels.New().GetLogsAfter(id, lastFetched)
 				if err != nil {
@@ -75,7 +75,7 @@ func (c *Client) SetupLogStream(id string, ctx context.Context, handler func(str
 				}
 
 				for _, item := range logs {
-					handler(item.Source, item.Prefix, item.Line)
+					handler(item.Source, item.Prefix, item.Line, item.CreatedAt)
 				}
 
 				if len(logs) > 0 {

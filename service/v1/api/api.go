@@ -31,6 +31,7 @@ import (
 	vK8sService "go-deploy/service/v1/vms/k8s_service"
 	vmClient "go-deploy/service/v1/vms/opts"
 	zoneOpts "go-deploy/service/v1/zones/opts"
+	"time"
 )
 
 type Deployments interface {
@@ -50,7 +51,7 @@ type Deployments interface {
 
 	GetCiConfig(id string) (*body.CiConfig, error)
 
-	SetupLogStream(id string, ctx context.Context, handler func(string, string, string), history int) error
+	SetupLogStream(id string, ctx context.Context, handler func(string, string, string, time.Time), history int) error
 	AddLogs(id string, logs ...deploymentModels.Log)
 
 	StartActivity(id string, activity string) error
