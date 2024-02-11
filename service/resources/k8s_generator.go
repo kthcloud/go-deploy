@@ -1126,6 +1126,64 @@ func (kg *K8sGenerator) HPAs() []models.HpaPublic {
 	return nil
 }
 
+// NetworkPolicies returns a list of models.NetworkPolicyPublic that should be created
+func (kg *K8sGenerator) NetworkPolicies() []models.NetworkPolicyPublic {
+	var res []models.NetworkPolicyPublic
+
+	if kg.d.deployment != nil {
+		for _, egressRule := range kg.d.zone.NetworkPolicies {
+			egressRules := make([]models.EgressRule, 0)
+			for _, egress := range egressRule.Egress {
+				egressRules = append(egressRules, models.EgressRule{CIDR: egress.IP.Allow, Except: egress.IP.Except})
+			}
+
+			np := models.NetworkPolicyPublic{
+				Name:        egressRule.Name,
+				Namespace:   kg.namespace,
+				EgressRules: egressRules,
+			}
+
+			if npo := kg.d.deployment.Subsystems.K8s.GetNetworkPolicy(egressRule.Name); subsystems.Created(npo) {
+				np.CreatedAt = npo.CreatedAt
+			}
+
+			res = append(res, np)
+		}
+
+		return res
+	}
+
+	if kg.v.vm != nil {
+		if !anyHttpProxy(kg.v.vm) {
+			return nil
+		}
+
+		for _, egressRule := range kg.v.deploymentZone.NetworkPolicies {
+			egressRules := make([]models.EgressRule, 0)
+			for _, egress := range egressRule.Egress {
+				egressRules = append(egressRules, models.EgressRule{CIDR: egress.IP.Allow, Except: egress.IP.Except})
+			}
+
+			np := models.NetworkPolicyPublic{
+				Name:        egressRule.Name,
+				Namespace:   kg.namespace,
+				EgressRules: egressRules,
+			}
+
+			if npo := kg.v.vm.Subsystems.K8s.GetNetworkPolicy(egressRule.Name); subsystems.Created(npo) {
+				np.CreatedAt = npo.CreatedAt
+			}
+
+			res = append(res, np)
+		}
+
+		return res
+	}
+
+	return nil
+
+}
+
 // getExternalFQDN returns the external FQDN for a deployment in a given zone
 func getExternalFQDN(name string, zone *configModels.DeploymentZone) string {
 	return fmt.Sprintf("%s.%s", name, zone.ParentDomain)
@@ -1295,4 +1353,15 @@ func createCloudInitString(cloudInit *CloudInit) string {
 	}
 
 	return "#cloud-config\n" + string(yamlBytes)
+}
+
+// anyHttpProxy returns true if a VM has any HTTP proxy ports
+func anyHttpProxy(vm *vmModels.VM) bool {
+	for _, port := range vm.PortMap {
+		if port.HttpProxy != nil {
+			return true
+		}
+	}
+
+	return false
 }

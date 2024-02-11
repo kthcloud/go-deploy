@@ -19,13 +19,23 @@ type CloudStackConfigSource struct {
 }
 
 type DeploymentZone struct {
-	Name                    string      `yaml:"name"`
-	Description             string      `yaml:"description"`
-	ParentDomain            string      `yaml:"parentDomain"`
-	ParentDomainVmHttpProxy string      `yaml:"parentDomainVmHttpProxy"`
-	CustomDomainIP          string      `yaml:"customDomainIp"`
-	ConfigSource            interface{} `yaml:"configSource"`
-	Storage                 struct {
+	Name                    string `yaml:"name"`
+	Description             string `yaml:"description"`
+	ParentDomain            string `yaml:"parentDomain"`
+	ParentDomainVmHttpProxy string `yaml:"parentDomainVmHttpProxy"`
+	CustomDomainIP          string `yaml:"customDomainIp"`
+	NetworkPolicies         []struct {
+		Name   string `yaml:"name"`
+		Egress []struct {
+			IP struct {
+				Allow  string   `yaml:"allow"`
+				Except []string `yaml:"except"`
+			} `yaml:"ip"`
+		} `yaml:"egress"`
+	} `yaml:"networkPolicies"`
+
+	ConfigSource interface{} `yaml:"configSource"`
+	Storage      struct {
 		ParentDomain        string `yaml:"parentDomain"`
 		NfsServer           string `yaml:"nfsServer"`
 		NfsParentPath       string `yaml:"nfsParentPath"`
@@ -35,6 +45,7 @@ type DeploymentZone struct {
 	K8sClient      *kubernetes.Clientset
 	KubeVirtClient *kubevirt.Clientset
 
+	// KubeVirt VM v2
 	ParentDomainVM string `yaml:"parentDomainVm"`
 	LoadBalancerIP string `yaml:"loadBalancerIp"`
 	PortRange      struct {
@@ -52,7 +63,7 @@ type VmZone struct {
 		End   int `yaml:"end"`
 	} `yaml:"portRange"`
 
-	// cloudstack ids
+	// CloudStack IDs
 	ZoneID      string `yaml:"zoneId"`
 	ProjectID   string `yaml:"projectId"`
 	NetworkID   string `yaml:"networkId"`

@@ -66,6 +66,18 @@ func (c *Client) Create(id string, params *deploymentModels.CreateParams) error 
 		}
 	}
 
+	// NetworkPolicies
+	for _, networkPolicyPublic := range g.NetworkPolicies() {
+		err = resources.SsCreator(kc.CreateNetworkPolicy).
+			WithDbFunc(dbFunc(id, "networkPolicyMap."+networkPolicyPublic.Name)).
+			WithPublic(&networkPolicyPublic).
+			Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
 	// Secret
 	for _, secretPublic := range g.Secrets() {
 		err = resources.SsCreator(kc.CreateSecret).
@@ -254,7 +266,21 @@ func (c *Client) Delete(id string, overwriteUserID ...string) error {
 		}
 	}
 
+	// NetworkPolicies
+	// They are not deleted in K8s, as they are shared in the namespace
+	for mapName, networkPolicy := range d.Subsystems.K8s.NetworkPolicyMap {
+		err := resources.SsDeleter(func(string) error { return nil }).
+			WithResourceID(networkPolicy.Name).
+			WithDbFunc(dbFunc(id, "networkPolicyMap."+mapName)).
+			Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
 	// Namespace
+	// They are not deleted in K8s, as they are shared among deployments
 	err = resources.SsDeleter(func(string) error { return nil }).
 		WithResourceID(d.Subsystems.K8s.Namespace.Name).
 		WithDbFunc(dbFunc(id, "namespace")).

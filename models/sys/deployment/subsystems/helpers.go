@@ -87,6 +87,16 @@ func (k *K8s) GetHpaMap() map[string]k8sModels.HpaPublic {
 	return k.HpaMap
 }
 
+// GetNetworkPolicyMap returns the network policy map of the deployment.
+// If the map is nil, it will be initialized before returning.
+func (k *K8s) GetNetworkPolicyMap() map[string]k8sModels.NetworkPolicyPublic {
+	if k.NetworkPolicyMap == nil {
+		k.NetworkPolicyMap = make(map[string]k8sModels.NetworkPolicyPublic)
+	}
+
+	return k.NetworkPolicyMap
+}
+
 // GetDeployment returns the deployment with the given name.
 // If a deployment with the given name does not exist, nil will be returned.
 func (k *K8s) GetDeployment(name string) *k8sModels.DeploymentPublic {
@@ -168,6 +178,17 @@ func (k *K8s) GetSecret(name string) *k8sModels.SecretPublic {
 // If a HPA with the given name does not exist, nil will be returned.
 func (k *K8s) GetHPA(name string) *k8sModels.HpaPublic {
 	resource, ok := k.GetHpaMap()[name]
+	if !ok {
+		return nil
+	}
+
+	return &resource
+}
+
+// GetNetworkPolicy returns the network policy with the given name.
+// If a network policy with the given name does not exist, nil will be returned.
+func (k *K8s) GetNetworkPolicy(name string) *k8sModels.NetworkPolicyPublic {
+	resource, ok := k.GetNetworkPolicyMap()[name]
 	if !ok {
 		return nil
 	}

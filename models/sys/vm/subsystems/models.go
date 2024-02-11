@@ -13,11 +13,12 @@ type CS struct {
 }
 
 type K8s struct {
-	Namespace     k8sModels.NamespacePublic             `bson:"namespace"`
-	DeploymentMap map[string]k8sModels.DeploymentPublic `bson:"deploymentMap,omitempty"`
-	ServiceMap    map[string]k8sModels.ServicePublic    `bson:"serviceMap,omitempty"`
-	IngressMap    map[string]k8sModels.IngressPublic    `bson:"ingressMap,omitempty"`
-	SecretMap     map[string]k8sModels.SecretPublic     `bson:"secretMap,omitempty"`
+	Namespace        k8sModels.NamespacePublic                `bson:"namespace"`
+	DeploymentMap    map[string]k8sModels.DeploymentPublic    `bson:"deploymentMap,omitempty"`
+	ServiceMap       map[string]k8sModels.ServicePublic       `bson:"serviceMap,omitempty"`
+	IngressMap       map[string]k8sModels.IngressPublic       `bson:"ingressMap,omitempty"`
+	SecretMap        map[string]k8sModels.SecretPublic        `bson:"secretMap,omitempty"`
+	NetworkPolicyMap map[string]k8sModels.NetworkPolicyPublic `bson:"networkPolicyMap,omitempty"`
 
 	// VmMap only exists in version 2
 	VmMap map[string]k8sModels.VmPublic `bson:"vmMap,omitempty"`
@@ -92,6 +93,16 @@ func (k8s *K8s) GetSecretMap() map[string]k8sModels.SecretPublic {
 	return k8s.SecretMap
 }
 
+// GetNetworkPolicyMap returns the network policy map of the VM.
+// If the map is nil, it will be initialized before returning
+func (k8s *K8s) GetNetworkPolicyMap() map[string]k8sModels.NetworkPolicyPublic {
+	if k8s.NetworkPolicyMap == nil {
+		k8s.NetworkPolicyMap = make(map[string]k8sModels.NetworkPolicyPublic)
+	}
+
+	return k8s.NetworkPolicyMap
+}
+
 // GetPvcMap returns the PVC map of the VM.
 // If the map is nil, it will be initialized before returning
 func (k8s *K8s) GetPvcMap() map[string]k8sModels.PvcPublic {
@@ -160,6 +171,17 @@ func (k8s *K8s) GetIngress(name string) *k8sModels.IngressPublic {
 // If the secret does not exist, nil is returned
 func (k8s *K8s) GetSecret(name string) *k8sModels.SecretPublic {
 	resources, ok := k8s.GetSecretMap()[name]
+	if !ok {
+		return nil
+	}
+
+	return &resources
+}
+
+// GetNetworkPolicy returns the network policy of the VM.
+// If the network policy does not exist, nil is returned
+func (k8s *K8s) GetNetworkPolicy(name string) *k8sModels.NetworkPolicyPublic {
+	resources, ok := k8s.GetNetworkPolicyMap()[name]
 	if !ok {
 		return nil
 	}
