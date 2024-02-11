@@ -224,18 +224,6 @@ func (c *Client) Delete(id string, overwriteUserID ...string) error {
 		}
 	}
 
-	// Job
-	for mapName, job := range d.Subsystems.K8s.JobMap {
-		err := resources.SsDeleter(kc.DeleteJob).
-			WithResourceID(job.Name).
-			WithDbFunc(dbFunc(id, "jobMap."+mapName)).
-			Exec()
-
-		if err != nil {
-			return makeError(err)
-		}
-	}
-
 	for mapName, hpa := range d.Subsystems.K8s.HpaMap {
 		err := resources.SsDeleter(kc.DeleteHPA).
 			WithResourceID(hpa.Name).

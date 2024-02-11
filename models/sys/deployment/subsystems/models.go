@@ -14,7 +14,6 @@ type K8s struct {
 	IngressMap       map[string]k8sModels.IngressPublic       `bson:"ingressMap,omitempty"`
 	PvMap            map[string]k8sModels.PvPublic            `bson:"pvMap,omitempty"`
 	PvcMap           map[string]k8sModels.PvcPublic           `bson:"pvcMap,omitempty"`
-	JobMap           map[string]k8sModels.JobPublic           `bson:"jobMap,omitempty"`
 	SecretMap        map[string]k8sModels.SecretPublic        `bson:"secretMap,omitempty"`
 	HpaMap           map[string]k8sModels.HpaPublic           `bson:"hpaMap,omitempty"`
 	NetworkPolicyMap map[string]k8sModels.NetworkPolicyPublic `bson:"networkPolicyMap,omitempty"`

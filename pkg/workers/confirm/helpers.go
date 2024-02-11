@@ -125,10 +125,6 @@ func k8sDeletedSM(sm *sm.SM) (bool, error) {
 		return false, nil
 	}
 
-	if len(k8s.JobMap) > 0 {
-		return false, nil
-	}
-
 	if len(k8s.SecretMap) > 0 {
 		return false, nil
 	}

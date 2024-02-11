@@ -1055,6 +1055,8 @@ func (kg *K8sGenerator) Jobs() []models.JobPublic {
 	var res []models.JobPublic
 
 	if kg.s.sm != nil {
+		// These are assumed to be one-shot jobs
+
 		initVolumes, _ := sVolumes(kg.s.sm.OwnerID)
 		k8sVolumes := make([]models.Volume, len(initVolumes))
 		for i, volume := range initVolumes {
@@ -1076,13 +1078,6 @@ func (kg *K8sGenerator) Jobs() []models.JobPublic {
 				Args:      job.Args,
 				Volumes:   k8sVolumes,
 			})
-		}
-
-		for _, job := range kg.s.sm.Subsystems.K8s.GetJobMap() {
-			idx := slices.IndexFunc(res, func(j models.JobPublic) bool { return j.Name == job.Name })
-			if idx != -1 {
-				res[idx].CreatedAt = job.CreatedAt
-			}
 		}
 
 		return res
