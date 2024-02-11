@@ -1148,7 +1148,7 @@ func (kg *K8sGenerator) NetworkPolicies() []models.NetworkPolicyPublic {
 		return res
 	}
 
-	if kg.v.vm != nil {
+	if kg.v.vm != nil && kg.v.vm.Version == versions.V1 {
 		if !anyHttpProxy(kg.v.vm) {
 			return nil
 		}
