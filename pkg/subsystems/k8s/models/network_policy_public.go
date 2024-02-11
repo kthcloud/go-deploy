@@ -44,5 +44,6 @@ func CreateNetworkPolicyPublicFromRead(policy *v1.NetworkPolicy) *NetworkPolicyP
 		Name:        policy.Name,
 		Namespace:   policy.Namespace,
 		EgressRules: egressRules,
+		CreatedAt:   formatCreatedAt(policy.Annotations),
 	}
 }

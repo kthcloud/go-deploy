@@ -6,6 +6,7 @@ import (
 	"go-deploy/pkg/subsystems/k8s/models"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
+	"time"
 )
 
 func (client *Client) ReadNetworkPolicy(name string) (*models.NetworkPolicyPublic, error) {
@@ -43,6 +44,8 @@ func (client *Client) CreateNetworkPolicy(public *models.NetworkPolicyPublic) (*
 	if err == nil {
 		return models.CreateNetworkPolicyPublicFromRead(policy), nil
 	}
+
+	public.CreatedAt = time.Now()
 
 	manifest := CreateNetworkPolicyManifest(public)
 	res, err := client.K8sClient.NetworkingV1().NetworkPolicies(public.Namespace).Create(context.TODO(), manifest, metav1.CreateOptions{})

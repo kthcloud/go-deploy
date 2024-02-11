@@ -267,6 +267,34 @@ func withJob(t *testing.T, c *k8s.Client, job *models.JobPublic) *models.JobPubl
 	return jobCreated
 }
 
+func withDefaultNetworkPolicy(t *testing.T, c *k8s.Client) *models.NetworkPolicyPublic {
+	np := &models.NetworkPolicyPublic{
+		Name:      acc.GenName(),
+		Namespace: c.Namespace,
+		EgressRules: []models.EgressRule{
+			{
+				CIDR:   "0.0.0.0/0",
+				Except: []string{"8.8.8.8/32"},
+			},
+		},
+	}
+
+	return withNetworkPolicy(t, c, np)
+}
+
+func withNetworkPolicy(t *testing.T, c *k8s.Client, np *models.NetworkPolicyPublic) *models.NetworkPolicyPublic {
+	npCreated, err := c.CreateNetworkPolicy(np)
+	test.NoError(t, err, "failed to create network policy")
+	assert.True(t, npCreated.Created(), "network policy was not created")
+	t.Cleanup(func() { cleanUpNetworkPolicy(t, c, npCreated.Name) })
+
+	assert.Equal(t, np.Name, npCreated.Name, "network policy name does not match")
+	assert.Equal(t, np.Namespace, npCreated.Namespace, "network policy namespace does not match")
+	assert.Equal(t, np.EgressRules, npCreated.EgressRules, "network policy egress rules do not match")
+
+	return npCreated
+}
+
 func cleanUpNamespace(t *testing.T, c *k8s.Client, name string) {
 	err := c.DeleteNamespace(name)
 	test.NoError(t, err, "failed to delete namespace")
@@ -373,4 +401,16 @@ func cleanUpJob(t *testing.T, c *k8s.Client, name string) {
 
 	err = c.DeleteJob(name)
 	test.NoError(t, err, "failed to delete job again")
+}
+
+func cleanUpNetworkPolicy(t *testing.T, c *k8s.Client, name string) {
+	err := c.DeleteNetworkPolicy(name)
+	test.NoError(t, err, "failed to delete network policy")
+
+	deletedNetworkPolicy, err := c.ReadNetworkPolicy(name)
+	test.NoError(t, err, "failed to read network policy")
+	assert.Nil(t, deletedNetworkPolicy, "network policy still exists")
+
+	err = c.DeleteNetworkPolicy(name)
+	test.NoError(t, err, "failed to delete network policy again")
 }
