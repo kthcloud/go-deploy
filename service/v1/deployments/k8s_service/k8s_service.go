@@ -375,6 +375,33 @@ func (c *Client) Repair(id string) error {
 		return makeError(err)
 	}
 
+	networkPolicies := g.NetworkPolicies()
+	for mapName, networkPolicy := range d.Subsystems.K8s.GetNetworkPolicyMap() {
+		idx := slices.IndexFunc(networkPolicies, func(n k8sModels.NetworkPolicyPublic) bool { return n.Name == mapName })
+		if idx == -1 {
+			err = resources.SsDeleter(func(string) error { return nil }).
+				WithResourceID(networkPolicy.Name).
+				WithDbFunc(dbFunc(id, "networkPolicyMap."+mapName)).
+				Exec()
+
+			if err != nil {
+				return makeError(err)
+			}
+		}
+	}
+	for _, public := range networkPolicies {
+		err = resources.SsRepairer(
+			kc.ReadNetworkPolicy,
+			kc.CreateNetworkPolicy,
+			kc.UpdateNetworkPolicy,
+			func(string) error { return nil },
+		).WithResourceID(public.Name).WithDbFunc(dbFunc(id, "networkPolicyMap."+public.Name)).WithGenPublic(&public).Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
 	deployments := g.Deployments()
 	for mapName, k8sDeployment := range d.Subsystems.K8s.GetDeploymentMap() {
 		idx := slices.IndexFunc(deployments, func(d k8sModels.DeploymentPublic) bool { return d.Name == mapName })
