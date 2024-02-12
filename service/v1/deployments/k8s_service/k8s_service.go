@@ -255,9 +255,8 @@ func (c *Client) Delete(id string, overwriteUserID ...string) error {
 	}
 
 	// NetworkPolicies
-	// They are not deleted in K8s, as they are shared in the namespace
 	for mapName, networkPolicy := range d.Subsystems.K8s.NetworkPolicyMap {
-		err := resources.SsDeleter(func(string) error { return nil }).
+		err := resources.SsDeleter(kc.DeleteNetworkPolicy).
 			WithResourceID(networkPolicy.Name).
 			WithDbFunc(dbFunc(id, "networkPolicyMap."+mapName)).
 			Exec()
@@ -379,7 +378,7 @@ func (c *Client) Repair(id string) error {
 	for mapName, networkPolicy := range d.Subsystems.K8s.GetNetworkPolicyMap() {
 		idx := slices.IndexFunc(networkPolicies, func(n k8sModels.NetworkPolicyPublic) bool { return n.Name == mapName })
 		if idx == -1 {
-			err = resources.SsDeleter(func(string) error { return nil }).
+			err = resources.SsDeleter(kc.DeleteNetworkPolicy).
 				WithResourceID(networkPolicy.Name).
 				WithDbFunc(dbFunc(id, "networkPolicyMap."+mapName)).
 				Exec()
@@ -394,7 +393,7 @@ func (c *Client) Repair(id string) error {
 			kc.ReadNetworkPolicy,
 			kc.CreateNetworkPolicy,
 			kc.UpdateNetworkPolicy,
-			func(string) error { return nil },
+			kc.DeleteNetworkPolicy,
 		).WithResourceID(public.Name).WithDbFunc(dbFunc(id, "networkPolicyMap."+public.Name)).WithGenPublic(&public).Exec()
 
 		if err != nil {

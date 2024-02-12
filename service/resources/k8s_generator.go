@@ -1133,9 +1133,12 @@ func (kg *K8sGenerator) NetworkPolicies() []models.NetworkPolicyPublic {
 			}
 
 			np := models.NetworkPolicyPublic{
-				Name:        egressRule.Name,
+				Name:        networkPolicyName(kg.d.deployment.Name, egressRule.Name),
 				Namespace:   kg.namespace,
+				Selector:    map[string]string{keys.LabelDeployName: kg.d.deployment.Name},
 				EgressRules: egressRules,
+				// Right now we don't restrict ingress. But it can be added in the future.
+				IngressRules: []models.IngressRule{{CIDR: "0.0.0.0/0"}},
 			}
 
 			if npo := kg.d.deployment.Subsystems.K8s.GetNetworkPolicy(egressRule.Name); subsystems.Created(npo) {
@@ -1160,9 +1163,12 @@ func (kg *K8sGenerator) NetworkPolicies() []models.NetworkPolicyPublic {
 			}
 
 			np := models.NetworkPolicyPublic{
-				Name:        egressRule.Name,
+				Name:        networkPolicyName(kg.v.vm.Name, egressRule.Name),
 				Namespace:   kg.namespace,
+				Selector:    map[string]string{keys.LabelDeployName: kg.v.vm.Name},
 				EgressRules: egressRules,
+				// Right now we don't restrict ingress. But it can be added in the future.
+				IngressRules: []models.IngressRule{{CIDR: "0.0.0.0/0"}},
 			}
 
 			if npo := kg.v.vm.Subsystems.K8s.GetNetworkPolicy(egressRule.Name); subsystems.Created(npo) {
@@ -1267,6 +1273,11 @@ func sPvcName(volumeName string) string {
 // sPvName returns the PV name for a storage manager
 func sPvName(ownerID, volumeName string) string {
 	return fmt.Sprintf("%s-%s", volumeName, ownerID)
+}
+
+// networkPolicyName returns the network policy name for a VM or Deployment
+func networkPolicyName(name, egressRuleName string) string {
+	return fmt.Sprintf("%s-%s", name, egressRuleName)
 }
 
 // sVolumes returns the init and standard volumes for a storage manager

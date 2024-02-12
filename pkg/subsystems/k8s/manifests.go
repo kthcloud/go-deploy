@@ -664,20 +664,27 @@ func CreateVmSnapshotManifest(public *models.VmSnapshotPublic) *snapshotalpha1.V
 
 // CreateNetworkPolicyManifest creates a Kubernetes NetworkPolicy manifest from a models.NetworkPolicyPublic.
 func CreateNetworkPolicyManifest(public *models.NetworkPolicyPublic) *networkingv1.NetworkPolicy {
-	var egressRules []networkingv1.NetworkPolicyEgressRule
-	if public.EgressRules != nil {
-		to := make([]networkingv1.NetworkPolicyPeer, 0)
-		for _, egress := range public.EgressRules {
-			to = append(to, networkingv1.NetworkPolicyPeer{
-				IPBlock: &networkingv1.IPBlock{
-					CIDR:   egress.CIDR,
-					Except: egress.Except,
-				},
-			})
-		}
-
-		egressRules = append(egressRules, networkingv1.NetworkPolicyEgressRule{To: to})
+	to := make([]networkingv1.NetworkPolicyPeer, 0)
+	for _, egress := range public.EgressRules {
+		to = append(to, networkingv1.NetworkPolicyPeer{
+			IPBlock: &networkingv1.IPBlock{
+				CIDR:   egress.CIDR,
+				Except: egress.Except,
+			},
+		})
 	}
+	egressRules := []networkingv1.NetworkPolicyEgressRule{{To: to}}
+
+	from := make([]networkingv1.NetworkPolicyPeer, 0)
+	for _, ingress := range public.IngressRules {
+		from = append(from, networkingv1.NetworkPolicyPeer{
+			IPBlock: &networkingv1.IPBlock{
+				CIDR:   ingress.CIDR,
+				Except: ingress.Except,
+			},
+		})
+	}
+	ingressRules := []networkingv1.NetworkPolicyIngressRule{{From: from}}
 
 	return &networkingv1.NetworkPolicy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -691,8 +698,11 @@ func CreateNetworkPolicyManifest(public *models.NetworkPolicyPublic) *networking
 			},
 		},
 		Spec: networkingv1.NetworkPolicySpec{
-			PodSelector: metav1.LabelSelector{},
-			Egress:      egressRules,
+			PodSelector: metav1.LabelSelector{
+				MatchLabels: public.Selector,
+			},
+			Egress:  egressRules,
+			Ingress: ingressRules,
 		},
 	}
 }
