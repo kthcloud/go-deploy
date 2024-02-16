@@ -21,6 +21,7 @@ func metricsWorker(ctx context.Context) {
 	metricsFuncMap := map[string]func() error{
 		"users-total":          usersTotal,
 		"monthly-active-users": monthlyActiveUsers,
+		"daily-active-users":   dailyActiveUsers,
 		"jobs-total":           jobMetrics(metrics.KeyJobsTotal, nil),
 		"jobs-pending":         jobMetrics(metrics.KeyJobsPending, strPtr(job.StatusPending)),
 		"jobs-running":         jobMetrics(metrics.KeyJobsRunning, strPtr(job.StatusRunning)),
@@ -74,6 +75,21 @@ func monthlyActiveUsers() error {
 	err = key_value.New().Set(metrics.KeyMonthlyActiveUsers, fmt.Sprintf("%d", total), 0)
 	if err != nil {
 		return fmt.Errorf("error setting value for key %s when computing metrics. details: %w", metrics.KeyMonthlyActiveUsers, err)
+	}
+
+	return nil
+}
+
+// dailyActiveUsers computes the number of active users and stores it in the key-value store.
+func dailyActiveUsers() error {
+	total, err := userModels.New().LastAuthenticatedAfter(time.Now().AddDate(0, 0, -1)).Count()
+	if err != nil {
+		return fmt.Errorf("error counting daily active users when computing metrics. details: %w", err)
+	}
+
+	err = key_value.New().Set(metrics.KeyDailyActiveUsers, fmt.Sprintf("%d", total), 0)
+	if err != nil {
+		return fmt.Errorf("error setting value for key %s when computing metrics. details: %w", metrics.KeyDailyActiveUsers, err)
 	}
 
 	return nil
