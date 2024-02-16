@@ -1055,6 +1055,8 @@ func (kg *K8sGenerator) Jobs() []models.JobPublic {
 	var res []models.JobPublic
 
 	if kg.s.sm != nil {
+		// These are assumed to be one-shot jobs
+
 		initVolumes, _ := sVolumes(kg.s.sm.OwnerID)
 		k8sVolumes := make([]models.Volume, len(initVolumes))
 		for i, volume := range initVolumes {
@@ -1076,13 +1078,6 @@ func (kg *K8sGenerator) Jobs() []models.JobPublic {
 				Args:      job.Args,
 				Volumes:   k8sVolumes,
 			})
-		}
-
-		for _, job := range kg.s.sm.Subsystems.K8s.GetJobMap() {
-			idx := slices.IndexFunc(res, func(j models.JobPublic) bool { return j.Name == job.Name })
-			if idx != -1 {
-				res[idx].CreatedAt = job.CreatedAt
-			}
 		}
 
 		return res
@@ -1124,6 +1119,70 @@ func (kg *K8sGenerator) HPAs() []models.HpaPublic {
 	}
 
 	return nil
+}
+
+// NetworkPolicies returns a list of models.NetworkPolicyPublic that should be created
+func (kg *K8sGenerator) NetworkPolicies() []models.NetworkPolicyPublic {
+	var res []models.NetworkPolicyPublic
+
+	if kg.d.deployment != nil {
+		for _, egressRule := range kg.d.zone.NetworkPolicies {
+			egressRules := make([]models.EgressRule, 0)
+			for _, egress := range egressRule.Egress {
+				egressRules = append(egressRules, models.EgressRule{CIDR: egress.IP.Allow, Except: egress.IP.Except})
+			}
+
+			np := models.NetworkPolicyPublic{
+				Name:        networkPolicyName(kg.d.deployment.Name, egressRule.Name),
+				Namespace:   kg.namespace,
+				Selector:    map[string]string{keys.LabelDeployName: kg.d.deployment.Name},
+				EgressRules: egressRules,
+				// Right now we don't restrict ingress. But it can be added in the future.
+				IngressRules: []models.IngressRule{{CIDR: "0.0.0.0/0"}},
+			}
+
+			if npo := kg.d.deployment.Subsystems.K8s.GetNetworkPolicy(egressRule.Name); subsystems.Created(npo) {
+				np.CreatedAt = npo.CreatedAt
+			}
+
+			res = append(res, np)
+		}
+
+		return res
+	}
+
+	if kg.v.vm != nil && kg.v.vm.Version == versions.V1 {
+		if !anyHttpProxy(kg.v.vm) {
+			return nil
+		}
+
+		for _, egressRule := range kg.v.deploymentZone.NetworkPolicies {
+			egressRules := make([]models.EgressRule, 0)
+			for _, egress := range egressRule.Egress {
+				egressRules = append(egressRules, models.EgressRule{CIDR: egress.IP.Allow, Except: egress.IP.Except})
+			}
+
+			np := models.NetworkPolicyPublic{
+				Name:        networkPolicyName(kg.v.vm.Name, egressRule.Name),
+				Namespace:   kg.namespace,
+				Selector:    map[string]string{keys.LabelDeployName: kg.v.vm.Name},
+				EgressRules: egressRules,
+				// Right now we don't restrict ingress. But it can be added in the future.
+				IngressRules: []models.IngressRule{{CIDR: "0.0.0.0/0"}},
+			}
+
+			if npo := kg.v.vm.Subsystems.K8s.GetNetworkPolicy(egressRule.Name); subsystems.Created(npo) {
+				np.CreatedAt = npo.CreatedAt
+			}
+
+			res = append(res, np)
+		}
+
+		return res
+	}
+
+	return nil
+
 }
 
 // getExternalFQDN returns the external FQDN for a deployment in a given zone
@@ -1216,6 +1275,11 @@ func sPvName(ownerID, volumeName string) string {
 	return fmt.Sprintf("%s-%s", volumeName, ownerID)
 }
 
+// networkPolicyName returns the network policy name for a VM or Deployment
+func networkPolicyName(name, egressRuleName string) string {
+	return fmt.Sprintf("%s-%s", name, egressRuleName)
+}
+
 // sVolumes returns the init and standard volumes for a storage manager
 func sVolumes(ownerID string) ([]smModels.Volume, []smModels.Volume) {
 	initVolumes := []smModels.Volume{
@@ -1295,4 +1359,15 @@ func createCloudInitString(cloudInit *CloudInit) string {
 	}
 
 	return "#cloud-config\n" + string(yamlBytes)
+}
+
+// anyHttpProxy returns true if a VM has any HTTP proxy ports
+func anyHttpProxy(vm *vmModels.VM) bool {
+	for _, port := range vm.PortMap {
+		if port.HttpProxy != nil {
+			return true
+		}
+	}
+
+	return false
 }

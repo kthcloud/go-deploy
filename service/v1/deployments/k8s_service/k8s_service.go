@@ -66,6 +66,18 @@ func (c *Client) Create(id string, params *deploymentModels.CreateParams) error 
 		}
 	}
 
+	// NetworkPolicies
+	for _, networkPolicyPublic := range g.NetworkPolicies() {
+		err = resources.SsCreator(kc.CreateNetworkPolicy).
+			WithDbFunc(dbFunc(id, "networkPolicyMap."+networkPolicyPublic.Name)).
+			WithPublic(&networkPolicyPublic).
+			Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
 	// Secret
 	for _, secretPublic := range g.Secrets() {
 		err = resources.SsCreator(kc.CreateSecret).
@@ -212,18 +224,6 @@ func (c *Client) Delete(id string, overwriteUserID ...string) error {
 		}
 	}
 
-	// Job
-	for mapName, job := range d.Subsystems.K8s.JobMap {
-		err := resources.SsDeleter(kc.DeleteJob).
-			WithResourceID(job.Name).
-			WithDbFunc(dbFunc(id, "jobMap."+mapName)).
-			Exec()
-
-		if err != nil {
-			return makeError(err)
-		}
-	}
-
 	for mapName, hpa := range d.Subsystems.K8s.HpaMap {
 		err := resources.SsDeleter(kc.DeleteHPA).
 			WithResourceID(hpa.Name).
@@ -254,7 +254,20 @@ func (c *Client) Delete(id string, overwriteUserID ...string) error {
 		}
 	}
 
+	// NetworkPolicies
+	for mapName, networkPolicy := range d.Subsystems.K8s.NetworkPolicyMap {
+		err := resources.SsDeleter(kc.DeleteNetworkPolicy).
+			WithResourceID(networkPolicy.Name).
+			WithDbFunc(dbFunc(id, "networkPolicyMap."+mapName)).
+			Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
 	// Namespace
+	// They are not deleted in K8s, as they are shared among deployments
 	err = resources.SsDeleter(func(string) error { return nil }).
 		WithResourceID(d.Subsystems.K8s.Namespace.Name).
 		WithDbFunc(dbFunc(id, "namespace")).
@@ -359,6 +372,33 @@ func (c *Client) Repair(id string) error {
 
 	if err != nil {
 		return makeError(err)
+	}
+
+	networkPolicies := g.NetworkPolicies()
+	for mapName, networkPolicy := range d.Subsystems.K8s.GetNetworkPolicyMap() {
+		idx := slices.IndexFunc(networkPolicies, func(n k8sModels.NetworkPolicyPublic) bool { return n.Name == mapName })
+		if idx == -1 {
+			err = resources.SsDeleter(kc.DeleteNetworkPolicy).
+				WithResourceID(networkPolicy.Name).
+				WithDbFunc(dbFunc(id, "networkPolicyMap."+mapName)).
+				Exec()
+
+			if err != nil {
+				return makeError(err)
+			}
+		}
+	}
+	for _, public := range networkPolicies {
+		err = resources.SsRepairer(
+			kc.ReadNetworkPolicy,
+			kc.CreateNetworkPolicy,
+			kc.UpdateNetworkPolicy,
+			kc.DeleteNetworkPolicy,
+		).WithResourceID(public.Name).WithDbFunc(dbFunc(id, "networkPolicyMap."+public.Name)).WithGenPublic(&public).Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	deployments := g.Deployments()

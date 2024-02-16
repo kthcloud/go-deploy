@@ -21,7 +21,7 @@ const (
 	DefaultUserID = "955f0f87-37fd-4792-90eb-9bf6989e698c"
 	TestDomain    = "test-deploy.saffronbun.com"
 	CheckInterval = 1 * time.Second
-	MaxChecks     = 1800
+	MaxChecks     = 900 // 900 * CheckInterval (1) seconds = 15 minutes
 )
 
 func fetchUntil(t *testing.T, subPath string, callback func(*http.Response) bool) {

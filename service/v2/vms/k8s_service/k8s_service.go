@@ -73,15 +73,6 @@ func (c *Client) Create(id string, params *vmModels.CreateParams) error {
 		}
 	}
 
-	// Jobs
-	// These are run without saving to the database, as they will be deleted when completed
-	for _, jobPublic := range g.Jobs() {
-		err = kc.CreateOneShotJob(&jobPublic)
-		if err != nil {
-			return makeError(err)
-		}
-	}
-
 	// Deployment
 	for _, deploymentPublic := range g.Deployments() {
 		err = resources.SsCreator(kc.CreateDeployment).

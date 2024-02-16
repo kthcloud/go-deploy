@@ -57,16 +57,6 @@ func (k *K8s) GetPvcMap() map[string]k8sModels.PvcPublic {
 	return k.PvcMap
 }
 
-// GetJobMap returns the job map of the deployment.
-// If the map is nil, it will be initialized before returning.
-func (k *K8s) GetJobMap() map[string]k8sModels.JobPublic {
-	if k.JobMap == nil {
-		k.JobMap = make(map[string]k8sModels.JobPublic)
-	}
-
-	return k.JobMap
-}
-
 // GetSecretMap returns the secret map of the deployment.
 // If the map is nil, it will be initialized before returning.
 func (k *K8s) GetSecretMap() map[string]k8sModels.SecretPublic {
@@ -85,6 +75,16 @@ func (k *K8s) GetHpaMap() map[string]k8sModels.HpaPublic {
 	}
 
 	return k.HpaMap
+}
+
+// GetNetworkPolicyMap returns the network policy map of the deployment.
+// If the map is nil, it will be initialized before returning.
+func (k *K8s) GetNetworkPolicyMap() map[string]k8sModels.NetworkPolicyPublic {
+	if k.NetworkPolicyMap == nil {
+		k.NetworkPolicyMap = make(map[string]k8sModels.NetworkPolicyPublic)
+	}
+
+	return k.NetworkPolicyMap
 }
 
 // GetDeployment returns the deployment with the given name.
@@ -142,17 +142,6 @@ func (k *K8s) GetPVC(name string) *k8sModels.PvcPublic {
 	return &resource
 }
 
-// GetJob returns the job with the given name.
-// If a job with the given name does not exist, nil will be returned.
-func (k *K8s) GetJob(name string) *k8sModels.JobPublic {
-	resource, ok := k.GetJobMap()[name]
-	if !ok {
-		return nil
-	}
-
-	return &resource
-}
-
 // GetSecret returns the secret with the given name.
 // If a secret with the given name does not exist, nil will be returned.
 func (k *K8s) GetSecret(name string) *k8sModels.SecretPublic {
@@ -175,57 +164,15 @@ func (k *K8s) GetHPA(name string) *k8sModels.HpaPublic {
 	return &resource
 }
 
-// SetNamespace sets the namespace of the deployment.
-func (k *K8s) SetNamespace(namespace k8sModels.NamespacePublic) {
-	k.Namespace = namespace
-}
+// GetNetworkPolicy returns the network policy with the given name.
+// If a network policy with the given name does not exist, nil will be returned.
+func (k *K8s) GetNetworkPolicy(name string) *k8sModels.NetworkPolicyPublic {
+	resource, ok := k.GetNetworkPolicyMap()[name]
+	if !ok {
+		return nil
+	}
 
-// SetDeployment sets the deployment with the given name.
-// It uses GetDeploymentMap to get the map to avoid nil pointer dereferences.
-func (k *K8s) SetDeployment(name string, deployment k8sModels.DeploymentPublic) {
-	k.GetDeploymentMap()[name] = deployment
-}
-
-// SetService sets the service with the given name.
-// It uses GetServiceMap to get the map to avoid nil pointer dereferences.
-func (k *K8s) SetService(name string, service k8sModels.ServicePublic) {
-	k.GetServiceMap()[name] = service
-}
-
-// SetIngress sets the ingress with the given name.
-// It uses GetIngressMap to get the map to avoid nil pointer dereferences.
-func (k *K8s) SetIngress(name string, ingress k8sModels.IngressPublic) {
-	k.GetIngressMap()[name] = ingress
-}
-
-// SetPV sets the PV with the given name.
-// It uses GetPvMap to get the map to avoid nil pointer dereferences.
-func (k *K8s) SetPV(name string, pv k8sModels.PvPublic) {
-	k.GetPvMap()[name] = pv
-}
-
-// SetPVC sets the PVC with the given name.
-// It uses GetPvcMap to get the map to avoid nil pointer dereferences.
-func (k *K8s) SetPVC(name string, pvc k8sModels.PvcPublic) {
-	k.GetPvcMap()[name] = pvc
-}
-
-// SetJob sets the job with the given name.
-// It uses GetJobMap to get the map to avoid nil pointer dereferences.
-func (k *K8s) SetJob(name string, job k8sModels.JobPublic) {
-	k.GetJobMap()[name] = job
-}
-
-// SetSecret sets the secret with the given name.
-// It uses GetSecretMap to get the map to avoid nil pointer dereferences.
-func (k *K8s) SetSecret(name string, secret k8sModels.SecretPublic) {
-	k.GetSecretMap()[name] = secret
-}
-
-// SetHPA sets the HPA with the given name.
-// It uses GetHpaMap to get the map to avoid nil pointer dereferences.
-func (k *K8s) SetHPA(name string, hpa k8sModels.HpaPublic) {
-	k.GetHpaMap()[name] = hpa
+	return &resource
 }
 
 // DeleteDeployment deletes the deployment from the DeploymentMap with the given name.
@@ -256,12 +203,6 @@ func (k *K8s) DeletePV(name string) {
 // It uses GetPvcMap to get the map to avoid nil pointer dereferences.
 func (k *K8s) DeletePVC(name string) {
 	delete(k.GetPvcMap(), name)
-}
-
-// DeleteJob deletes the job from the JobMap with the given name.
-// It uses GetJobMap to get the map to avoid nil pointer dereferences.
-func (k *K8s) DeleteJob(name string) {
-	delete(k.GetJobMap(), name)
 }
 
 // DeleteSecret deletes the secret from the SecretMap with the given name.

@@ -61,12 +61,9 @@ func (c *Client) Create(id string, params *smModels.CreateParams) error {
 	}
 
 	// Job
+	// These are run without saving to the database, as they will be deleted when completed
 	for _, jobPublic := range g.Jobs() {
-		err = resources.SsCreator(kc.CreateJob).
-			WithDbFunc(dbFunc(id, "jobMap."+jobPublic.Name)).
-			WithPublic(&jobPublic).
-			Exec()
-
+		err = kc.CreateOneShotJob(&jobPublic)
 		if err != nil {
 			return makeError(err)
 		}
@@ -163,14 +160,6 @@ func (c *Client) Delete(id string) error {
 		err = resources.SsDeleter(kc.DeleteIngress).
 			WithResourceID(ingress.Name).
 			WithDbFunc(dbFunc(id, "ingressMap."+mapName)).
-			Exec()
-	}
-
-	// Job
-	for mapName, job := range sm.Subsystems.K8s.JobMap {
-		err = resources.SsDeleter(kc.DeleteJob).
-			WithResourceID(job.Name).
-			WithDbFunc(dbFunc(id, "jobMap."+mapName)).
 			Exec()
 	}
 
@@ -339,33 +328,6 @@ func (c *Client) Repair(id string) error {
 			kc.UpdateSecret,
 			kc.DeleteSecret,
 		).WithResourceID(public.Name).WithDbFunc(dbFunc(id, "secretMap."+public.Name)).WithGenPublic(&public).Exec()
-
-		if err != nil {
-			return makeError(err)
-		}
-	}
-
-	jobs := g.Jobs()
-	for mapName, job := range sm.Subsystems.K8s.JobMap {
-		idx := slices.IndexFunc(jobs, func(j k8sModels.JobPublic) bool { return j.Name == mapName })
-		if idx == -1 {
-			err = resources.SsDeleter(kc.DeleteJob).
-				WithResourceID(job.Name).
-				WithDbFunc(dbFunc(id, "jobMap."+mapName)).
-				Exec()
-
-			if err != nil {
-				return makeError(err)
-			}
-		}
-	}
-	for _, public := range jobs {
-		err = resources.SsRepairer(
-			kc.ReadJob,
-			kc.CreateJob,
-			func(job *k8sModels.JobPublic) (*k8sModels.JobPublic, error) { return nil, nil },
-			kc.DeleteJob,
-		).WithResourceID(public.Name).WithDbFunc(dbFunc(id, "jobMap."+public.Name)).WithGenPublic(&public).Exec()
 
 		if err != nil {
 			return makeError(err)

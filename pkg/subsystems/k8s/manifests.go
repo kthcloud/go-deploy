@@ -662,6 +662,51 @@ func CreateVmSnapshotManifest(public *models.VmSnapshotPublic) *snapshotalpha1.V
 	}
 }
 
+// CreateNetworkPolicyManifest creates a Kubernetes NetworkPolicy manifest from a models.NetworkPolicyPublic.
+func CreateNetworkPolicyManifest(public *models.NetworkPolicyPublic) *networkingv1.NetworkPolicy {
+	to := make([]networkingv1.NetworkPolicyPeer, 0)
+	for _, egress := range public.EgressRules {
+		to = append(to, networkingv1.NetworkPolicyPeer{
+			IPBlock: &networkingv1.IPBlock{
+				CIDR:   egress.CIDR,
+				Except: egress.Except,
+			},
+		})
+	}
+	egressRules := []networkingv1.NetworkPolicyEgressRule{{To: to}}
+
+	from := make([]networkingv1.NetworkPolicyPeer, 0)
+	for _, ingress := range public.IngressRules {
+		from = append(from, networkingv1.NetworkPolicyPeer{
+			IPBlock: &networkingv1.IPBlock{
+				CIDR:   ingress.CIDR,
+				Except: ingress.Except,
+			},
+		})
+	}
+	ingressRules := []networkingv1.NetworkPolicyIngressRule{{From: from}}
+
+	return &networkingv1.NetworkPolicy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      public.Name,
+			Namespace: public.Namespace,
+			Labels: map[string]string{
+				keys.LabelDeployName: public.Name,
+			},
+			Annotations: map[string]string{
+				keys.AnnotationCreationTimestamp: public.CreatedAt.Format(timeFormat),
+			},
+		},
+		Spec: networkingv1.NetworkPolicySpec{
+			PodSelector: metav1.LabelSelector{
+				MatchLabels: public.Selector,
+			},
+			Egress:  egressRules,
+			Ingress: ingressRules,
+		},
+	}
+}
+
 // pathTypeAddr is a helper function to convert a string to a networkingv1.PathType.
 func pathTypeAddr(s string) *networkingv1.PathType {
 	return (*networkingv1.PathType)(&s)
