@@ -1,6 +1,9 @@
 name: Test
 
 on:
+  schedule:
+    # Run every day at 3:00 AM
+    - cron: '0 3 * * *'
   workflow_dispatch:
   pull_request:
     branches:
