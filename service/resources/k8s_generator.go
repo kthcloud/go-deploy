@@ -1129,7 +1129,12 @@ func (kg *K8sGenerator) NetworkPolicies() []models.NetworkPolicyPublic {
 		for _, egressRule := range kg.d.zone.NetworkPolicies {
 			egressRules := make([]models.EgressRule, 0)
 			for _, egress := range egressRule.Egress {
-				egressRules = append(egressRules, models.EgressRule{CIDR: egress.IP.Allow, Except: egress.IP.Except})
+				egressRules = append(egressRules, models.EgressRule{
+					IpBlock: &models.IpBlock{
+						CIDR:   egress.IP.Allow,
+						Except: egress.IP.Except,
+					},
+				})
 			}
 
 			np := models.NetworkPolicyPublic{
@@ -1137,8 +1142,15 @@ func (kg *K8sGenerator) NetworkPolicies() []models.NetworkPolicyPublic {
 				Namespace:   kg.namespace,
 				Selector:    map[string]string{keys.LabelDeployName: kg.d.deployment.Name},
 				EgressRules: egressRules,
-				// Right now we don't restrict ingress. But it can be added in the future.
-				IngressRules: []models.IngressRule{{CIDR: "0.0.0.0/0"}},
+				IngressRules: []models.IngressRule{
+					{
+						PodSelector:       map[string]string{"owner-id": kg.d.deployment.OwnerID},
+						NamespaceSelector: map[string]string{"kubernetes.io/metadata.name": kg.namespace},
+					},
+					{
+						NamespaceSelector: map[string]string{"kubernetes.io/metadata.name": kg.d.zone.IngressNamespace},
+					},
+				},
 			}
 
 			if npo := kg.d.deployment.Subsystems.K8s.GetNetworkPolicy(egressRule.Name); subsystems.Created(npo) {
@@ -1159,7 +1171,12 @@ func (kg *K8sGenerator) NetworkPolicies() []models.NetworkPolicyPublic {
 		for _, egressRule := range kg.v.deploymentZone.NetworkPolicies {
 			egressRules := make([]models.EgressRule, 0)
 			for _, egress := range egressRule.Egress {
-				egressRules = append(egressRules, models.EgressRule{CIDR: egress.IP.Allow, Except: egress.IP.Except})
+				egressRules = append(egressRules, models.EgressRule{
+					IpBlock: &models.IpBlock{
+						CIDR:   egress.IP.Allow,
+						Except: egress.IP.Except,
+					},
+				})
 			}
 
 			np := models.NetworkPolicyPublic{
@@ -1167,8 +1184,15 @@ func (kg *K8sGenerator) NetworkPolicies() []models.NetworkPolicyPublic {
 				Namespace:   kg.namespace,
 				Selector:    map[string]string{keys.LabelDeployName: kg.v.vm.Name},
 				EgressRules: egressRules,
-				// Right now we don't restrict ingress. But it can be added in the future.
-				IngressRules: []models.IngressRule{{CIDR: "0.0.0.0/0"}},
+				IngressRules: []models.IngressRule{
+					{
+						PodSelector:       map[string]string{"owner-id": kg.v.vm.OwnerID},
+						NamespaceSelector: map[string]string{"kubernetes.io/metadata.name": kg.namespace},
+					},
+					{
+						NamespaceSelector: map[string]string{"kubernetes.io/metadata.name": kg.v.deploymentZone.IngressNamespace},
+					},
+				},
 			}
 
 			if npo := kg.v.vm.Subsystems.K8s.GetNetworkPolicy(egressRule.Name); subsystems.Created(npo) {

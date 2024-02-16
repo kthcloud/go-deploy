@@ -1,8 +1,6 @@
 package keys
 
 const (
-	// LabelDeployID is the label name for the `id` of a manifest.
-	LabelDeployID = "app.kubernetes.io/deploy-id"
 	// LabelDeployName is the label name for the `name` of a manifest.
 	LabelDeployName = "app.kubernetes.io/deploy-name"
 

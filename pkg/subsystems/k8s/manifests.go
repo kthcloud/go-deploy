@@ -123,13 +123,17 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 		}
 	}
 
+	labels := public.Labels
+	if labels == nil {
+		labels = make(map[string]string)
+	}
+	labels[keys.LabelDeployName] = public.Name
+
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      public.Name,
 			Namespace: public.Namespace,
-			Labels: map[string]string{
-				keys.LabelDeployName: public.Name,
-			},
+			Labels:    labels,
 			Annotations: map[string]string{
 				keys.AnnotationCreationTimestamp: public.CreatedAt.Format(timeFormat),
 			},
@@ -143,9 +147,7 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 			},
 			Template: apiv1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						keys.LabelDeployName: public.Name,
-					},
+					Labels: labels,
 					Annotations: map[string]string{
 						keys.AnnotationCreationTimestamp: public.CreatedAt.Format(timeFormat),
 					},
@@ -666,22 +668,64 @@ func CreateVmSnapshotManifest(public *models.VmSnapshotPublic) *snapshotalpha1.V
 func CreateNetworkPolicyManifest(public *models.NetworkPolicyPublic) *networkingv1.NetworkPolicy {
 	to := make([]networkingv1.NetworkPolicyPeer, 0)
 	for _, egress := range public.EgressRules {
+		var ipBlock *networkingv1.IPBlock
+		if egress.IpBlock != nil {
+			ipBlock = &networkingv1.IPBlock{
+				CIDR:   egress.IpBlock.CIDR,
+				Except: egress.IpBlock.Except,
+			}
+		}
+
+		var podSelector *metav1.LabelSelector
+		if egress.PodSelector != nil {
+			podSelector = &metav1.LabelSelector{
+				MatchLabels: egress.PodSelector,
+			}
+		}
+
+		var namespaceSelector *metav1.LabelSelector
+		if egress.NamespaceSelector != nil {
+			namespaceSelector = &metav1.LabelSelector{
+				MatchLabels: egress.NamespaceSelector,
+			}
+		}
+
 		to = append(to, networkingv1.NetworkPolicyPeer{
-			IPBlock: &networkingv1.IPBlock{
-				CIDR:   egress.CIDR,
-				Except: egress.Except,
-			},
+			IPBlock:           ipBlock,
+			NamespaceSelector: namespaceSelector,
+			PodSelector:       podSelector,
 		})
 	}
 	egressRules := []networkingv1.NetworkPolicyEgressRule{{To: to}}
 
 	from := make([]networkingv1.NetworkPolicyPeer, 0)
 	for _, ingress := range public.IngressRules {
+		var ipBlock *networkingv1.IPBlock
+		if ingress.IpBlock != nil {
+			ipBlock = &networkingv1.IPBlock{
+				CIDR:   ingress.IpBlock.CIDR,
+				Except: ingress.IpBlock.Except,
+			}
+		}
+
+		var podSelector *metav1.LabelSelector
+		if ingress.PodSelector != nil {
+			podSelector = &metav1.LabelSelector{
+				MatchLabels: ingress.PodSelector,
+			}
+		}
+
+		var namespaceSelector *metav1.LabelSelector
+		if ingress.NamespaceSelector != nil {
+			namespaceSelector = &metav1.LabelSelector{
+				MatchLabels: ingress.NamespaceSelector,
+			}
+		}
+
 		from = append(from, networkingv1.NetworkPolicyPeer{
-			IPBlock: &networkingv1.IPBlock{
-				CIDR:   ingress.CIDR,
-				Except: ingress.Except,
-			},
+			IPBlock:           ipBlock,
+			NamespaceSelector: namespaceSelector,
+			PodSelector:       podSelector,
 		})
 	}
 	ingressRules := []networkingv1.NetworkPolicyIngressRule{{From: from}}

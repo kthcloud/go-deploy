@@ -75,3 +75,9 @@ func formatCreatedAt(annotations map[string]string) time.Time {
 
 	return createdAt
 }
+
+// clearSystemLabels removes system labels from a Kubernetes manifest.
+func clearSystemLabels(labels map[string]string) map[string]string {
+	delete(labels, keys.LabelDeployName)
+	return labels
+}

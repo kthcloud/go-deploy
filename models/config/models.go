@@ -33,6 +33,7 @@ type DeploymentZone struct {
 			} `yaml:"ip"`
 		} `yaml:"egress"`
 	} `yaml:"networkPolicies"`
+	IngressNamespace string `yaml:"ingressNamespace"`
 
 	ConfigSource interface{} `yaml:"configSource"`
 	Storage      struct {
