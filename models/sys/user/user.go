@@ -3,6 +3,7 @@ package user
 import (
 	"fmt"
 	teamModels "go-deploy/models/sys/team"
+	"time"
 )
 
 type PublicKey struct {
@@ -24,15 +25,19 @@ type EffectiveRole struct {
 }
 
 type User struct {
-	ID            string        `bson:"id"`
-	Username      string        `bson:"username"`
-	FirstName     string        `bson:"firstName"`
-	LastName      string        `bson:"lastName"`
-	Email         string        `bson:"email"`
-	IsAdmin       bool          `bson:"isAdmin"`
-	EffectiveRole EffectiveRole `bson:"effectiveRole"`
-	PublicKeys    []PublicKey   `bson:"publicKeys"`
-	Onboarded     bool          `bson:"onboarded"`
+	ID                  string        `bson:"id"`
+	Username            string        `bson:"username"`
+	FirstName           string        `bson:"firstName"`
+	LastName            string        `bson:"lastName"`
+	Email               string        `bson:"email"`
+	IsAdmin             bool          `bson:"isAdmin"`
+	EffectiveRole       EffectiveRole `bson:"effectiveRole"`
+	PublicKeys          []PublicKey   `bson:"publicKeys"`
+	LastAuthenticatedAt time.Time     `bson:"lastAuthenticatedAt"`
+
+	// Onboarded
+	// Deprecated: This field is deprecated and will be removed in the future.
+	Onboarded bool `bson:"onboarded"`
 }
 
 // GetTeamMap returns a map of teamModels.Team objects for a given user.
