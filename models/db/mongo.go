@@ -196,7 +196,7 @@ func getCollectionDefinitions() map[string]CollectionDefinition {
 		},
 		"users": {
 			Name:                 "users",
-			Indexes:              []string{"username", "email", "firstName", "lastName", "effectiveRole.name"},
+			Indexes:              []string{"username", "email", "firstName", "lastName", "effectiveRole.name", "lastAuthenticatedAt"},
 			TotallyUniqueIndexes: [][]string{{"id"}},
 			TextIndexFields:      []string{"username", "email", "firstName", "lastName"},
 		},

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go-deploy/models"
 	"go.mongodb.org/mongo-driver/bson"
+	"time"
 )
 
 // Create creates a new user.
@@ -32,6 +33,7 @@ func (client *Client) Create(id string, params *CreateParams) (*User, error) {
 			{"email", params.Email},
 			{"effectiveRole", params.EffectiveRole},
 			{"isAdmin", params.IsAdmin},
+			{"lastAuthenticatedAt", time.Now()},
 		}}}
 		err = client.UpdateWithBsonByID(id, update)
 		if err != nil {
@@ -42,15 +44,17 @@ func (client *Client) Create(id string, params *CreateParams) (*User, error) {
 	}
 
 	_, err = client.Collection.InsertOne(context.TODO(), User{
-		ID:            id,
-		Username:      params.Username,
-		FirstName:     params.FirstName,
-		LastName:      params.LastName,
-		Email:         params.Email,
-		IsAdmin:       params.IsAdmin,
-		EffectiveRole: *params.EffectiveRole,
-		PublicKeys:    []PublicKey{},
-		Onboarded:     false,
+		ID:                  id,
+		Username:            params.Username,
+		FirstName:           params.FirstName,
+		LastName:            params.LastName,
+		Email:               params.Email,
+		IsAdmin:             params.IsAdmin,
+		EffectiveRole:       *params.EffectiveRole,
+		PublicKeys:          []PublicKey{},
+		LastAuthenticatedAt: time.Now(),
+		
+		Onboarded: false,
 	})
 
 	if err != nil {

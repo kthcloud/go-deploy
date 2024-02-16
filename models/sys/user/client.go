@@ -5,6 +5,8 @@ import (
 	"go-deploy/models/db"
 	"go-deploy/models/sys/base"
 	"go-deploy/models/sys/base/resource"
+	"go.mongodb.org/mongo-driver/bson"
+	"time"
 )
 
 // Client is used to manage users in the database.
@@ -39,6 +41,13 @@ func (client *Client) WithPagination(page, pageSize int) *Client {
 		Page:     page,
 		PageSize: pageSize,
 	}
+
+	return client
+}
+
+// LastAuthenticatedAfter filters the users to only those who have authenticated after the given time.
+func (client *Client) LastAuthenticatedAfter(lastAuthenticatedAt time.Time) *Client {
+	client.AddExtraFilter(bson.D{{"lastAuthenticatedAt", bson.D{{"$gt", lastAuthenticatedAt}}}})
 
 	return client
 }
