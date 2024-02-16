@@ -56,7 +56,6 @@ func NewRouter() *gin.Engine {
 	private := router.Group("/")
 	private.Use(auth.New(auth.Check(), sys.GetKeyCloakConfig()))
 	private.Use(middleware.SynchronizeUser)
-	private.Use(middleware.UserHttpEvent())
 
 	// Public routing group
 	public := router.Group("/")
