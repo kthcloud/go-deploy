@@ -132,7 +132,7 @@ type ConfigType struct {
 
 	Metrics struct {
 		Interval int `yaml:"interval"`
-	}
+	} `yaml:"metrics"`
 
 	Keycloak struct {
 		Url           string `yaml:"url"`
