@@ -19,7 +19,12 @@ type CloudStackConfigSource struct {
 }
 
 type DeploymentZone struct {
-	Name                    string `yaml:"name"`
+	Name       string `yaml:"name"`
+	Namespaces struct {
+		Deployment string `yaml:"deployment"`
+		VM         string `yaml:"vm"`
+		System     string `yaml:"system"`
+	}
 	Description             string `yaml:"description"`
 	ParentDomain            string `yaml:"parentDomain"`
 	ParentDomainVmHttpProxy string `yaml:"parentDomainVmHttpProxy"`

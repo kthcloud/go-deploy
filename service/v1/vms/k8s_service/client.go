@@ -11,7 +11,6 @@ import (
 	"go-deploy/service/resources"
 	"go-deploy/service/v1/vms/client"
 	"go-deploy/service/v1/vms/opts"
-	"go-deploy/utils/subsystemutils"
 )
 
 // OptsAll returns the options required to get all the service tools, ie. VM, client and generator.
@@ -128,7 +127,7 @@ func (c *Client) Client(userID string, zone *configModels.DeploymentZone) (*k8s.
 		panic("user id is empty")
 	}
 
-	return withClient(zone, getNamespaceName(userID))
+	return withClient(zone, getNamespaceName(zone))
 }
 
 // Generator returns the K8s generator.
@@ -148,9 +147,9 @@ func (c *Client) Generator(vm *vmModels.VM, client *k8s.Client, zone *configMode
 	return resources.PublicGenerator().WithVM(vm).WithVmZone(zone).WithDeploymentZone(deploymentZone).K8s(client)
 }
 
-// getNamespaceName returns the namespace name for the user.
-func getNamespaceName(userID string) string {
-	return subsystemutils.GetPrefixedName(fmt.Sprintf("vm-%s", userID))
+// getNamespaceName returns the namespace name.
+func getNamespaceName(zone *configModels.DeploymentZone) string {
+	return zone.Namespaces.VM
 }
 
 // withClient returns a new K8s service client.

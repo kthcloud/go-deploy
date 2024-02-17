@@ -24,7 +24,6 @@ import (
 	"path"
 	regexp "regexp"
 	"strings"
-	"time"
 )
 
 // K8sGenerator is a generator for K8s resources
@@ -283,7 +282,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 
 		k8sVolumes := make([]models.Volume, len(allVolumes))
 		for i, volume := range allVolumes {
-			pvcName := sPvcName(volume.Name)
+			pvcName := sPvcName(kg.s.sm.OwnerID, volume.Name)
 			k8sVolumes[i] = models.Volume{
 				Name:      sPvName(kg.s.sm.OwnerID, volume.Name),
 				PvcName:   &pvcName,
@@ -302,6 +301,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 			Memory: config.Config.Deployment.Resources.Requests.Memory,
 		}
 
+		// Filebrowser
 		args := []string{
 			"--noauth",
 			"--root=/deploy",
@@ -310,7 +310,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		}
 
 		filebrowser := models.DeploymentPublic{
-			Name:             constants.SmAppName,
+			Name:             smName(kg.s.sm.OwnerID),
 			Namespace:        kg.namespace,
 			Image:            "filebrowser/filebrowser",
 			ImagePullSecrets: make([]string, 0),
@@ -326,13 +326,13 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 			Volumes:        k8sVolumes,
 		}
 
-		if fb := kg.s.sm.Subsystems.K8s.GetDeployment(constants.SmAppName); subsystems.Created(fb) {
+		if fb := kg.s.sm.Subsystems.K8s.GetDeployment(smName(kg.s.sm.OwnerID)); subsystems.Created(fb) {
 			filebrowser.CreatedAt = fb.CreatedAt
 		}
 
 		res = append(res, filebrowser)
 
-		// oauth2-proxy
+		// Oauth2-proxy
 		user, err := userModels.New().GetByID(kg.s.sm.OwnerID)
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to get user by id when creating oauth proxy deployment public. details: %w", err))
@@ -342,13 +342,11 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		volumes := []models.Volume{
 			{
 				Name:      "oauth-proxy-config",
-				PvcName:   nil,
 				MountPath: "/mnt",
 				Init:      false,
 			},
 			{
 				Name:      "oauth-proxy-config",
-				PvcName:   nil,
 				MountPath: "/mnt/config",
 				Init:      true,
 			},
@@ -356,7 +354,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 
 		issuer := config.Config.Keycloak.Url + "/realms/" + config.Config.Keycloak.Realm
 		redirectURL := fmt.Sprintf("https://%s.%s/oauth2/callback", kg.s.sm.OwnerID, kg.s.zone.Storage.ParentDomain)
-		upstream := "http://storage-manager"
+		upstream := "http://" + smName(kg.s.sm.OwnerID) + ":80"
 
 		args = []string{
 			"--http-address=0.0.0.0:4180",
@@ -382,17 +380,8 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 			"--authenticated-emails-file=/mnt/authenticated-emails-list",
 		}
 
-		initContainers := []models.InitContainer{
-			{
-				Name:    "oauth-proxy-config-init",
-				Image:   "busybox",
-				Command: []string{"sh", "-c", fmt.Sprintf("mkdir -p /mnt/config && echo %s > /mnt/config/authenticated-emails-list", user.Email)},
-				Args:    nil,
-			},
-		}
-
 		oauthProxy := models.DeploymentPublic{
-			Name:             constants.SmAppNameAuth,
+			Name:             smAuthName(kg.s.sm.OwnerID),
 			Namespace:        kg.namespace,
 			Image:            "quay.io/oauth2-proxy/oauth2-proxy:latest",
 			ImagePullSecrets: make([]string, 0),
@@ -401,15 +390,19 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 				Limits:   defaultLimits,
 				Requests: defaultRequests,
 			},
-			Command:        make([]string, 0),
-			Args:           args,
-			InitCommands:   make([]string, 0),
-			InitContainers: initContainers,
-			Volumes:        volumes,
-			CreatedAt:      time.Time{},
+			Command:      make([]string, 0),
+			Args:         args,
+			InitCommands: make([]string, 0),
+			InitContainers: []models.InitContainer{{
+				Name:    "oauth-proxy-config-init",
+				Image:   "busybox",
+				Command: []string{"sh", "-c", fmt.Sprintf("mkdir -p /mnt/config && echo %s > /mnt/config/authenticated-emails-list", user.Email)},
+				Args:    nil,
+			}},
+			Volumes: volumes,
 		}
 
-		if op := kg.s.sm.Subsystems.K8s.GetDeployment(constants.SmAppNameAuth); subsystems.Created(op) {
+		if op := kg.s.sm.Subsystems.K8s.GetDeployment(smAuthName(kg.s.sm.OwnerID)); subsystems.Created(op) {
 			oauthProxy.CreatedAt = op.CreatedAt
 		}
 
@@ -580,33 +573,33 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 	}
 
 	if kg.s.sm != nil {
-		// filebrowser
+		// Filebrowser
 		filebrowser := models.ServicePublic{
-			Name:      constants.SmAppName,
+			Name:      smName(kg.s.sm.OwnerID),
 			Namespace: kg.namespace,
 			Ports:     []models.Port{{Name: "http", Protocol: "tcp", Port: 80, TargetPort: 80}},
 			Selector: map[string]string{
-				keys.LabelDeployName: constants.SmAppName,
+				keys.LabelDeployName: smName(kg.s.sm.OwnerID),
 			},
 		}
 
-		if fb := kg.s.sm.Subsystems.K8s.GetService(constants.SmAppName); subsystems.Created(fb) {
+		if fb := kg.s.sm.Subsystems.K8s.GetService(smName(kg.s.sm.OwnerID)); subsystems.Created(fb) {
 			filebrowser.CreatedAt = fb.CreatedAt
 		}
 
 		res = append(res, filebrowser)
 
-		// oauth2-proxy
+		// Oauth2-proxy
 		oauthProxy := models.ServicePublic{
-			Name:      constants.SmAppNameAuth,
+			Name:      smAuthName(kg.s.sm.OwnerID),
 			Namespace: kg.namespace,
 			Ports:     []models.Port{{Name: "http", Protocol: "tcp", Port: 4180, TargetPort: 4180}},
 			Selector: map[string]string{
-				keys.LabelDeployName: constants.SmAppNameAuth,
+				keys.LabelDeployName: smAuthName(kg.s.sm.OwnerID),
 			},
 		}
 
-		if op := kg.s.sm.Subsystems.K8s.GetService(constants.SmAppNameAuth); subsystems.Created(op) {
+		if op := kg.s.sm.Subsystems.K8s.GetService(smAuthName(kg.s.sm.OwnerID)); subsystems.Created(op) {
 			oauthProxy.CreatedAt = op.CreatedAt
 		}
 
@@ -655,8 +648,6 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 				ServicePort:  mainApp.InternalPort,
 				IngressClass: config.Config.Deployment.IngressClass,
 				Hosts:        []string{mainApp.CustomDomain.Domain},
-				Placeholder:  false,
-				CreatedAt:    time.Time{},
 				CustomCert: &models.CustomCert{
 					ClusterIssuer: "letsencrypt-prod-deploy-http",
 					CommonName:    mainApp.CustomDomain.Domain,
@@ -741,16 +732,16 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 		tlsSecret := constants.WildcardCertSecretName
 
 		ingress := models.IngressPublic{
-			Name:         constants.SmAppName,
+			Name:         smName(kg.s.sm.OwnerID),
 			Namespace:    kg.namespace,
-			ServiceName:  constants.SmAppNameAuth,
+			ServiceName:  smAuthName(kg.s.sm.OwnerID),
 			ServicePort:  4180,
 			IngressClass: config.Config.Deployment.IngressClass,
 			Hosts:        []string{getStorageExternalFQDN(kg.s.sm.OwnerID, kg.s.zone)},
 			TlsSecret:    &tlsSecret,
 		}
 
-		if i := kg.s.sm.Subsystems.K8s.GetIngress(constants.SmAppName); subsystems.Created(i) {
+		if i := kg.s.sm.Subsystems.K8s.GetIngress(smName(kg.s.sm.OwnerID)); subsystems.Created(i) {
 			ingress.CreatedAt = i.CreatedAt
 		}
 
@@ -872,7 +863,7 @@ func (kg *K8sGenerator) PVCs() []models.PvcPublic {
 
 		for _, volume := range allVolumes {
 			res = append(res, models.PvcPublic{
-				Name:      sPvcName(volume.Name),
+				Name:      sPvcName(kg.s.sm.OwnerID, volume.Name),
 				Namespace: kg.namespace,
 				Capacity:  config.Config.Deployment.Resources.Limits.Storage,
 				PvName:    sPvName(kg.s.sm.OwnerID, volume.Name),
@@ -1060,7 +1051,7 @@ func (kg *K8sGenerator) Jobs() []models.JobPublic {
 		initVolumes, _ := sVolumes(kg.s.sm.OwnerID)
 		k8sVolumes := make([]models.Volume, len(initVolumes))
 		for i, volume := range initVolumes {
-			pvcName := sPvcName(volume.Name)
+			pvcName := sPvcName(kg.s.sm.OwnerID, volume.Name)
 			k8sVolumes[i] = models.Volume{
 				Name:      sPvName(kg.s.sm.OwnerID, volume.Name),
 				PvcName:   &pvcName,
@@ -1239,6 +1230,16 @@ func encodeDockerConfig(registry, username, password string) []byte {
 	return jsonData
 }
 
+// smName returns the name for a storage manager
+func smName(userID string) string {
+	return fmt.Sprintf("%s-%s", constants.SmAppName, userID)
+}
+
+// smAuthName returns the name for a storage manager auth proxy
+func smAuthName(userID string) string {
+	return fmt.Sprintf("%s-%s", constants.SmAppNameAuth, userID)
+}
+
 // dPvName returns the PV name for a deployment
 func dPvName(deployment *deployment.Deployment, volumeName string) string {
 	return fmt.Sprintf("%s-%s", deployment.Name, makeValidK8sName(volumeName))
@@ -1290,13 +1291,13 @@ func vmpExternalURL(portName string, zone *configModels.DeploymentZone) string {
 }
 
 // sPvcName returns the PVC name for a storage manager
-func sPvcName(volumeName string) string {
-	return fmt.Sprintf("%s-%s", constants.SmAppName, volumeName)
+func sPvcName(ownerID, volumeName string) string {
+	return fmt.Sprintf("sm-%s-%s", volumeName, ownerID)
 }
 
 // sPvName returns the PV name for a storage manager
 func sPvName(ownerID, volumeName string) string {
-	return fmt.Sprintf("%s-%s", volumeName, ownerID)
+	return fmt.Sprintf("sm-%s-%s", volumeName, ownerID)
 }
 
 // networkPolicyName returns the network policy name for a VM or Deployment

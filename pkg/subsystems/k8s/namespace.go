@@ -130,6 +130,33 @@ func (client *Client) DeleteNamespace(name string) error {
 	return nil
 }
 
+// DeleteNamespaceIfEmpty deletes a Namespace in Kubernetes if it is empty.
+func (client *Client) DeleteNamespaceIfEmpty(name string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to delete namespace %s. details: %w", name, err)
+	}
+
+	if name == "" {
+		log.Println("no name supplied when deleting namespace. assuming it was deleted")
+		return nil
+	}
+
+	ns, err := client.K8sClient.CoreV1().Namespaces().Get(context.TODO(), name, metav1.GetOptions{})
+	if err != nil {
+		if IsNotFoundErr(err) {
+			return nil
+		}
+
+		return makeError(err)
+	}
+
+	if len(ns.Status.Conditions) == 0 {
+		return client.DeleteNamespace(name)
+	}
+
+	return nil
+}
+
 // waitNamespaceDeleted waits for a namespace to be deleted.
 func (client *Client) waitNamespaceDeleted(name string) error {
 	maxWait := 120

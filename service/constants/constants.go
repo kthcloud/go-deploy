@@ -18,9 +18,9 @@ const (
 	// SmNamePrefix is the prefix for the storage manager app in various contexts
 	SmNamePrefix = "system"
 	// SmAppName is the name of the storage manager app in various contexts
-	SmAppName = "storage-manager"
+	SmAppName = "sm"
 	// SmAppNameAuth is the name of the storage manager auth app in various contexts
-	SmAppNameAuth = "storage-manager-auth"
+	SmAppNameAuth = "sm-auth"
 
 	// WildcardCertSecretName is the name of the wildcard cert secret in various contexts
 	WildcardCertSecretName = "wildcard-cert"

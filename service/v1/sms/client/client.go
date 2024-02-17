@@ -45,6 +45,12 @@ func (c *BaseClient[parent]) SM(id, userID string, smc *smModels.Client) (*smMod
 	return c.fetchSM(id, smc)
 }
 
+// Refresh clears the cache for the SM with the given ID and fetches it again.
+// After a successful fetch, the SM is cached.
+func (c *BaseClient[parent]) Refresh(id string) (*smModels.SM, error) {
+	return c.fetchSM(id, nil)
+}
+
 // SMs returns a list of SMs.
 // After a successful fetch, the SMs will be cached.
 func (c *BaseClient[parent]) fetchSM(id string, smc *smModels.Client) (*smModels.SM, error) {

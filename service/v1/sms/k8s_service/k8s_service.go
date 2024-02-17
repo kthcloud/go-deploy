@@ -334,6 +334,148 @@ func (c *Client) Repair(id string) error {
 		}
 	}
 
+	// The following are special cases because of dependencies between pvcs, pvs and deployments.
+	// If we have any mismatch for pv or pvc, we need to delete and recreate everything
+
+	anyMismatch := false
+
+	pvcs := g.PVCs()
+	for mapName, _ := range sm.Subsystems.K8s.PvcMap {
+		idx := slices.IndexFunc(pvcs, func(s k8sModels.PvcPublic) bool { return s.Name == mapName })
+		if idx == -1 {
+			anyMismatch = true
+			break
+		}
+	}
+	for _, public := range pvcs {
+		err = resources.SsRepairer(
+			kc.ReadPVC,
+			kc.CreatePVC,
+			func(_ *k8sModels.PvcPublic) (*k8sModels.PvcPublic, error) { anyMismatch = true; return &public, nil },
+			func(id string) error { return nil },
+		).WithResourceID(public.Name).WithDbFunc(dbFunc(id, "pvcMap."+public.Name)).WithGenPublic(&public).Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	pvs := g.PVs()
+	for mapName, _ := range sm.Subsystems.K8s.PvMap {
+		idx := slices.IndexFunc(pvs, func(s k8sModels.PvPublic) bool { return s.Name == mapName })
+		if idx == -1 {
+			anyMismatch = true
+			break
+		}
+	}
+	for _, public := range pvs {
+		err = resources.SsRepairer(
+			kc.ReadPV,
+			kc.CreatePV,
+			func(_ *k8sModels.PvPublic) (*k8sModels.PvPublic, error) { anyMismatch = true; return &public, nil },
+			func(id string) error { return nil },
+		).WithResourceID(public.Name).WithDbFunc(dbFunc(id, "pvMap."+public.Name)).WithGenPublic(&public).Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	if anyMismatch {
+		return c.recreatePvPvcDeployments(id)
+	}
+
+	return nil
+}
+
+// recreatePvPvcDeployments recreates the pv, pvc and deployment for the deployment.
+//
+// This is needed when the PV or PVC are updated, since they are sticky to the deployment.
+// They are recreated in the following fashion: Deployment -> PVC -> PV -> PV -> PVC -> Deployment
+func (c *Client) recreatePvPvcDeployments(id string) error {
+	// delete deployments, pvcs and pvs
+	// then
+	// create new deployments, pvcs and pvs
+
+	sm, kc, g, err := c.Get(OptsAll(id))
+	if err != nil {
+		return err
+	}
+
+	for mapName, k8sDeployment := range sm.Subsystems.K8s.DeploymentMap {
+		err := resources.SsDeleter(kc.DeleteDeployment).
+			WithResourceID(k8sDeployment.Name).
+			WithDbFunc(dbFunc(sm.ID, "deploymentMap."+mapName)).
+			Exec()
+		if err != nil {
+			return err
+		}
+	}
+
+	for mapName, pvc := range sm.Subsystems.K8s.PvcMap {
+		err := resources.SsDeleter(kc.DeletePVC).
+			WithResourceID(pvc.Name).
+			WithDbFunc(dbFunc(sm.ID, "pvcMap."+mapName)).
+			Exec()
+
+		if err != nil {
+			return err
+		}
+	}
+
+	for mapName, pv := range sm.Subsystems.K8s.PvMap {
+		err := resources.SsDeleter(kc.DeletePV).
+			WithResourceID(pv.Name).
+			WithDbFunc(dbFunc(sm.ID, "pvMap."+mapName)).
+			Exec()
+
+		if err != nil {
+			return err
+		}
+	}
+
+	sm, err = c.Refresh(id)
+	if err != nil {
+		if errors.Is(err, sErrors.SmNotFoundErr) {
+			return nil
+		}
+
+		return err
+	}
+
+	for _, public := range g.PVs() {
+		err = resources.SsCreator(kc.CreatePV).
+			WithDbFunc(dbFunc(sm.ID, "pvMap."+public.Name)).
+			WithPublic(&public).
+			Exec()
+
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, public := range g.PVCs() {
+		err = resources.SsCreator(kc.CreatePVC).
+			WithDbFunc(dbFunc(sm.ID, "pvcMap."+public.Name)).
+			WithPublic(&public).
+			Exec()
+
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, public := range g.Deployments() {
+		err = resources.SsCreator(kc.CreateDeployment).
+			WithDbFunc(dbFunc(sm.ID, "deploymentMap."+public.Name)).
+			WithPublic(&public).
+			Exec()
+
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
