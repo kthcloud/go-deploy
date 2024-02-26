@@ -76,12 +76,12 @@ func moveIntoNewDeployNamespaces() error {
 			if err := kc.DeleteNamespace(deployment.Subsystems.K8s.Namespace.Name); err != nil {
 				return err
 			}
-		}
 
-		// Finally, trigger a repair to recreate the resources in the new namespace with the correct name
-		err = client.Repair(deployment.ID)
-		if err != nil {
-			return err
+			// Finally, trigger a repair to recreate the resources in the new namespace with the correct name
+			err = client.Repair(deployment.ID)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -118,12 +118,12 @@ func moveIntoNewDeployNamespaces() error {
 			if err := kc.DeleteNamespace(vm.Subsystems.K8s.Namespace.Name); err != nil {
 				return err
 			}
-		}
 
-		// Finally, trigger a repair to recreate the resources in the new namespace with the correct name
-		err = client.Repair(vm.ID)
-		if err != nil {
-			return err
+			// Finally, trigger a repair to recreate the resources in the new namespace with the correct name
+			err = client.Repair(vm.ID)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -156,12 +156,12 @@ func moveIntoNewDeployNamespaces() error {
 			if err := kc.DeleteNamespace(sm.Subsystems.K8s.Namespace.Name); err != nil {
 				return err
 			}
-		}
 
-		// Finally, trigger a repair to recreate the resources in the new namespace with the correct name
-		err = client.Repair(sm.ID)
-		if err != nil {
-			return err
+			// Finally, trigger a repair to recreate the resources in the new namespace with the correct name
+			err = client.Repair(sm.ID)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
