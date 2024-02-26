@@ -42,7 +42,11 @@ func NewCache() *Cache {
 // It only stores the deployment if it is not nil.
 func (c *Cache) StoreDeployment(deployment *deploymentModels.Deployment) {
 	if deployment != nil {
-		c.deploymentStore[deployment.ID] = deployment
+		if d, ok := c.deploymentStore[deployment.ID]; ok {
+			*d = *deployment
+		} else {
+			c.deploymentStore[deployment.ID] = deployment
+		}
 	}
 }
 
@@ -61,7 +65,11 @@ func (c *Cache) GetDeployment(id string) *deploymentModels.Deployment {
 // It only stores the VM if it is not nil.
 func (c *Cache) StoreVM(vm *vmModels.VM) {
 	if vm != nil {
-		c.vmStore[vm.ID] = vm
+		if v, ok := c.vmStore[vm.ID]; ok {
+			*v = *vm
+		} else {
+			c.vmStore[vm.ID] = vm
+		}
 	}
 }
 
@@ -80,7 +88,11 @@ func (c *Cache) GetVM(id string) *vmModels.VM {
 // It only stores the GPU if it is not nil.
 func (c *Cache) StoreGPU(gpu *gpuModels.GPU) {
 	if gpu != nil {
-		c.gpuStore[gpu.ID] = gpu
+		if g, ok := c.gpuStore[gpu.ID]; ok {
+			*g = *gpu
+		} else {
+			c.gpuStore[gpu.ID] = gpu
+		}
 	}
 }
 
@@ -101,8 +113,14 @@ func (c *Cache) GetGPU(id string) *gpuModels.GPU {
 // SMs are stored by both ID and OwnerID.
 func (c *Cache) StoreSM(sm *smModels.SM) {
 	if sm != nil {
-		c.smStore[sm.ID] = sm
-		c.smStore[sm.OwnerID] = sm
+		if s, ok := c.smStore[sm.ID]; ok {
+			*s = *sm
+		} else if s, ok = c.smStore[sm.OwnerID]; ok {
+			*s = *sm
+		} else {
+			c.smStore[sm.ID] = sm
+			c.smStore[sm.OwnerID] = sm
+		}
 	}
 }
 
@@ -123,7 +141,11 @@ func (c *Cache) GetSM(id string) *smModels.SM {
 // It only stores the user if it is not nil.
 func (c *Cache) StoreUser(user *userModels.User) {
 	if user != nil {
-		c.userStore[user.ID] = user
+		if u, ok := c.userStore[user.ID]; ok {
+			*u = *user
+		} else {
+			c.userStore[user.ID] = user
+		}
 	}
 }
 
@@ -142,7 +164,11 @@ func (c *Cache) GetUser(id string) *userModels.User {
 // It only stores the team if it is not nil.
 func (c *Cache) StoreTeam(team *teamModels.Team) {
 	if team != nil {
-		c.teamStore[team.ID] = team
+		if t, ok := c.teamStore[team.ID]; ok {
+			*t = *team
+		} else {
+			c.teamStore[team.ID] = team
+		}
 	}
 }
 
@@ -161,7 +187,11 @@ func (c *Cache) GetTeam(id string) *teamModels.Team {
 // It only stores the job if it is not nil.
 func (c *Cache) StoreJob(job *jobModels.Job) {
 	if job != nil {
-		c.jobStore[job.ID] = job
+		if j, ok := c.jobStore[job.ID]; ok {
+			*j = *job
+		} else {
+			c.jobStore[job.ID] = job
+		}
 	}
 }
 
@@ -180,7 +210,11 @@ func (c *Cache) GetJob(id string) *jobModels.Job {
 // It only stores the notification if it is not nil.
 func (c *Cache) StoreNotification(notification *notificationModels.Notification) {
 	if notification != nil {
-		c.notificationStore[notification.ID] = notification
+		if n, ok := c.notificationStore[notification.ID]; ok {
+			*n = *notification
+		} else {
+			c.notificationStore[notification.ID] = notification
+		}
 	}
 }
 
