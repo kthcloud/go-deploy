@@ -218,6 +218,7 @@ func WithDeployment(t *testing.T, requestBody body.DeploymentCreate) (body.Deplo
 	}
 
 	test.EqualOrEmpty(t, requestBody.InitCommands, deploymentRead.InitCommands, "invalid init commands")
+	test.EqualOrEmpty(t, requestBody.Args, deploymentRead.Args, "invalid args")
 	test.EqualOrEmpty(t, requestBody.Envs, deploymentRead.Envs, "invalid envs")
 	test.EqualOrEmpty(t, requestBody.Volumes, deploymentRead.Volumes, "invalid volumes")
 

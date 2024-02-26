@@ -39,9 +39,11 @@ func TestUpdateDeployment(t *testing.T) {
 		{Name: acc.GenName(), Value: acc.GenName()},
 		{Name: acc.GenName(), Value: acc.GenName()},
 	}
+	d.Args = []string{acc.GenName()}
 
 	dUpdated, err := c.UpdateDeployment(d)
 	test.NoError(t, err, "failed to update deployment")
 
 	test.EqualOrEmpty(t, d.EnvVars, dUpdated.EnvVars, "env vars do not match")
+	test.EqualOrEmpty(t, d.Args, dUpdated.Args, "args do not match")
 }
