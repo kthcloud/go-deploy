@@ -1,8 +1,9 @@
 package body
 
 type UserDataRead struct {
-	ID   string `json:"id"`
-	Data string `json:"data"`
+	ID     string `json:"id"`
+	UserID string `json:"userId"`
+	Data   string `json:"data"`
 }
 
 type UserDataCreate struct {
