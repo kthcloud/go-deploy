@@ -546,22 +546,10 @@ func (c *Client) Repair(id string) error {
 	anyMismatch := false
 
 	pvcs := g.PVCs()
-	for mapName, pvc := range d.Subsystems.K8s.PvcMap {
+	for mapName, _ := range d.Subsystems.K8s.PvcMap {
 		idx := slices.IndexFunc(pvcs, func(s k8sModels.PvcPublic) bool { return s.Name == mapName })
 		if idx == -1 {
-			err = resources.SsDeleter(kc.DeletePVC).
-				WithResourceID(pvc.Name).
-				WithDbFunc(dbFunc(id, "pvcMap."+mapName)).
-				Exec()
-
-			if err != nil {
-				return makeError(err)
-			}
-
 			anyMismatch = true
-		}
-
-		if anyMismatch {
 			break
 		}
 	}
@@ -579,22 +567,10 @@ func (c *Client) Repair(id string) error {
 	}
 
 	pvs := g.PVs()
-	for mapName, pv := range d.Subsystems.K8s.PvMap {
+	for mapName, _ := range d.Subsystems.K8s.PvMap {
 		idx := slices.IndexFunc(pvs, func(s k8sModels.PvPublic) bool { return s.Name == mapName })
 		if idx == -1 {
-			err = resources.SsDeleter(kc.DeletePV).
-				WithResourceID(pv.Name).
-				WithDbFunc(dbFunc(id, "pvMap."+mapName)).
-				Exec()
-
-			if err != nil {
-				return makeError(err)
-			}
-
 			anyMismatch = true
-		}
-
-		if anyMismatch {
 			break
 		}
 	}

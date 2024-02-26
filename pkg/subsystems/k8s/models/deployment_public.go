@@ -6,8 +6,10 @@ import (
 )
 
 type DeploymentPublic struct {
-	Name             string          `bson:"name"`
-	Namespace        string          `bson:"namespace"`
+	Name      string            `bson:"name"`
+	Namespace string            `bson:"namespace"`
+	Labels    map[string]string `bson:"labels"`
+
 	Image            string          `bson:"image"`
 	ImagePullSecrets []string        `bson:"imagePullSecrets"`
 	EnvVars          []EnvVar        `bson:"envVars"`
@@ -144,6 +146,7 @@ func CreateDeploymentPublicFromRead(deployment *appsv1.Deployment) *DeploymentPu
 	return &DeploymentPublic{
 		Name:             deployment.Name,
 		Namespace:        deployment.Namespace,
+		Labels:           clearSystemLabels(deployment.Labels),
 		Image:            image,
 		ImagePullSecrets: imagePullSecrets,
 		EnvVars:          envs,

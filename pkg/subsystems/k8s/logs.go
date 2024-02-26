@@ -69,7 +69,10 @@ func (client *Client) SetupLogStream(ctx context.Context, deploymentName string,
 
 		_, err := podInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				pod := obj.(*v1.Pod)
+				pod, ok := obj.(*v1.Pod)
+				if !ok {
+					return
+				}
 
 				if label, ok := pod.Labels[keys.LabelDeployName]; !ok || label != deploymentName {
 					return
@@ -82,7 +85,11 @@ func (client *Client) SetupLogStream(ctx context.Context, deploymentName string,
 				podChannel <- podEvent{event: PodEventStart, podName: pod.Name}
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
-				pod := newObj.(*v1.Pod)
+				pod, ok := newObj.(*v1.Pod)
+				if !ok {
+					return
+				}
+
 				if label, ok := pod.Labels[keys.LabelDeployName]; !ok || label != deploymentName {
 					return
 				}
@@ -94,7 +101,11 @@ func (client *Client) SetupLogStream(ctx context.Context, deploymentName string,
 				podChannel <- podEvent{event: PodEventStart, podName: pod.Name}
 			},
 			DeleteFunc: func(obj interface{}) {
-				pod := obj.(*v1.Pod)
+				pod, ok := obj.(*v1.Pod)
+				if !ok {
+					return
+				}
+
 				podChannel <- podEvent{event: PodEventStop, podName: pod.Name}
 			},
 		})

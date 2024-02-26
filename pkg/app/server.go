@@ -39,6 +39,7 @@ func Create(opts *Options) *App {
 	config.SetupEnvironment()
 	metrics.Setup()
 
+	// If test mode is enabled, use a different database
 	if opts.TestMode {
 		config.Config.TestMode = true
 		config.Config.MongoDB.Name = config.Config.MongoDB.Name + "-test"

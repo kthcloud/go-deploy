@@ -10,7 +10,6 @@ import (
 	"go-deploy/service/resources"
 	"go-deploy/service/v1/deployments/client"
 	"go-deploy/service/v1/deployments/opts"
-	"go-deploy/utils/subsystemutils"
 )
 
 func OptsAll(deploymentID string, overwriteOps ...opts.ExtraOpts) *opts.Opts {
@@ -119,7 +118,7 @@ func (c *Client) Client(userID string, zone *configModels.DeploymentZone) (*k8s.
 		panic("user id is empty")
 	}
 
-	return withClient(zone, getNamespaceName(userID))
+	return withClient(zone, getNamespaceName(zone))
 }
 
 // Generator returns the K8s generator.
@@ -139,9 +138,9 @@ func (c *Client) Generator(d *deploymentModels.Deployment, client *k8s.Client, z
 	return resources.PublicGenerator().WithDeployment(d).WithDeploymentZone(zone).K8s(client)
 }
 
-// getNamespaceName returns the namespace name for the user.
-func getNamespaceName(userID string) string {
-	return subsystemutils.GetPrefixedName(userID)
+// getNamespaceName returns the namespace name.
+func getNamespaceName(zone *configModels.DeploymentZone) string {
+	return zone.Namespaces.Deployment
 }
 
 // withClient returns a new K8s service client.

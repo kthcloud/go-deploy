@@ -5,18 +5,29 @@ import (
 	"time"
 )
 
-type EgressRule struct {
+type IpBlock struct {
 	// CIDR defines what is allowed by the network policy
-	CIDR string `bson:"allowedCidr"`
+	CIDR string `bson:"cidr"`
 	// Except are the blocked CIDRs, and are subsets of CIDR
 	Except []string `bson:"except"`
 }
 
+type EgressRule struct {
+	// IpBlock defines what is allowed by the network policy
+	IpBlock *IpBlock `bson:"ipBlock,omitempty"`
+	// PodSelector defines what is allowed by the network policy
+	PodSelector map[string]string `bson:"podSelector,omitempty"`
+	// NamespaceSelector defines what is allowed by the network policy
+	NamespaceSelector map[string]string `bson:"namespaceSelector,omitempty"`
+}
+
 type IngressRule struct {
-	// CIDR defines what is allowed by the network policy
-	CIDR string `bson:"allowedCidr"`
-	// Except are the blocked CIDRs, and are subsets of CIDR
-	Except []string `bson:"except"`
+	// IpBlock defines what is allowed by the network policy
+	IpBlock *IpBlock `bson:"ipBlock,omitempty"`
+	// PodSelector defines what is allowed by the network policy
+	PodSelector map[string]string `bson:"podSelector,omitempty"`
+	// NamespaceSelector defines what is allowed by the network policy
+	NamespaceSelector map[string]string `bson:"namespaceSelector,omitempty"`
 }
 
 type NetworkPolicyPublic struct {
@@ -40,10 +51,23 @@ func CreateNetworkPolicyPublicFromRead(policy *v1.NetworkPolicy) *NetworkPolicyP
 	var egressRules []EgressRule
 	if len(policy.Spec.Egress) > 0 {
 		for _, e := range policy.Spec.Egress[0].To {
-			egress := EgressRule{
-				CIDR:   e.IPBlock.CIDR,
-				Except: e.IPBlock.Except,
+			var egress EgressRule
+
+			if e.IPBlock != nil {
+				egress.IpBlock = &IpBlock{
+					CIDR:   e.IPBlock.CIDR,
+					Except: e.IPBlock.Except,
+				}
 			}
+
+			if e.PodSelector != nil {
+				egress.PodSelector = e.PodSelector.MatchLabels
+			}
+
+			if e.NamespaceSelector != nil {
+				egress.NamespaceSelector = e.NamespaceSelector.MatchLabels
+			}
+
 			egressRules = append(egressRules, egress)
 		}
 	}
@@ -51,10 +75,23 @@ func CreateNetworkPolicyPublicFromRead(policy *v1.NetworkPolicy) *NetworkPolicyP
 	var ingressRules []IngressRule
 	if len(policy.Spec.Ingress) > 0 {
 		for _, i := range policy.Spec.Ingress[0].From {
-			ingress := IngressRule{
-				CIDR:   i.IPBlock.CIDR,
-				Except: i.IPBlock.Except,
+			var ingress IngressRule
+
+			if i.IPBlock != nil {
+				ingress.IpBlock = &IpBlock{
+					CIDR:   i.IPBlock.CIDR,
+					Except: i.IPBlock.Except,
+				}
 			}
+
+			if i.PodSelector != nil {
+				ingress.PodSelector = i.PodSelector.MatchLabels
+			}
+
+			if i.NamespaceSelector != nil {
+				ingress.NamespaceSelector = i.NamespaceSelector.MatchLabels
+			}
+
 			ingressRules = append(ingressRules, ingress)
 		}
 	}
