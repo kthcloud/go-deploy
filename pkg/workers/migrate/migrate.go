@@ -76,13 +76,6 @@ func moveIntoNewDeployNamespaces() error {
 			if err := kc.DeleteNamespace(deployment.Subsystems.K8s.Namespace.Name); err != nil {
 				return err
 			}
-
-			// Also delete non-namespaced resources
-			for _, pv := range deployment.Subsystems.K8s.PvMap {
-				if err := kc.DeletePV(pv.Name); err != nil {
-					return err
-				}
-			}
 		}
 
 		// Finally, trigger a repair to recreate the resources in the new namespace with the correct name
@@ -125,13 +118,6 @@ func moveIntoNewDeployNamespaces() error {
 			if err := kc.DeleteNamespace(vm.Subsystems.K8s.Namespace.Name); err != nil {
 				return err
 			}
-
-			// Also delete non-namespaced resources
-			for _, pv := range vm.Subsystems.K8s.PvMap {
-				if err := kc.DeletePV(pv.Name); err != nil {
-					return err
-				}
-			}
 		}
 
 		// Finally, trigger a repair to recreate the resources in the new namespace with the correct name
@@ -169,13 +155,6 @@ func moveIntoNewDeployNamespaces() error {
 			// Deleting namespace will cause a cascade delete of all resources in the namespace
 			if err := kc.DeleteNamespace(sm.Subsystems.K8s.Namespace.Name); err != nil {
 				return err
-			}
-
-			// Also delete non-namespaced resources
-			for _, pv := range sm.Subsystems.K8s.PvMap {
-				if err := kc.DeletePV(pv.Name); err != nil {
-					return err
-				}
 			}
 		}
 
