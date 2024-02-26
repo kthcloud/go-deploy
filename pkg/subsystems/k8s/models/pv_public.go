@@ -6,10 +6,14 @@ import (
 )
 
 type PvPublic struct {
-	Name      string    `bson:"name"`
-	Capacity  string    `bson:"capacity"`
-	NfsServer string    `bson:"nfsServer"`
-	NfsPath   string    `bson:"nfsPath"`
+	Name      string `bson:"name"`
+	Capacity  string `bson:"capacity"`
+	NfsServer string `bson:"nfsServer"`
+	NfsPath   string `bson:"nfsPath"`
+	// Released is true if the volume is released.
+	// This is mainly used to be able to repair the volume.
+	// If it is released, then recreate the volume.
+	Released  bool      `bson:"released"`
 	CreatedAt time.Time `bson:"createdAt"`
 }
 
@@ -36,11 +40,17 @@ func CreatePvPublicFromRead(pv *v1.PersistentVolume) *PvPublic {
 		nfsPath = pv.Spec.NFS.Path
 	}
 
+	var released bool
+	if pv.Status.Phase == v1.VolumeReleased {
+		released = true
+	}
+
 	return &PvPublic{
 		Name:      pv.Name,
 		Capacity:  capacity,
 		NfsServer: nfsServer,
 		NfsPath:   nfsPath,
+		Released:  released,
 		CreatedAt: formatCreatedAt(pv.Annotations),
 	}
 }
