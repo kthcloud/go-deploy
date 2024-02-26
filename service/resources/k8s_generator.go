@@ -186,6 +186,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		dep := models.DeploymentPublic{
 			Name:             kg.d.deployment.Name,
 			Namespace:        kg.namespace,
+			Labels:           map[string]string{"owner-id": kg.d.deployment.OwnerID},
 			Image:            image,
 			ImagePullSecrets: imagePullSecrets,
 			EnvVars:          k8sEnvs,
@@ -231,6 +232,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 			res = append(res, models.DeploymentPublic{
 				Name:             vmpDeploymentName(kg.v.vm, port.HttpProxy.Name),
 				Namespace:        kg.namespace,
+				Labels:           map[string]string{"owner-id": kg.v.vm.OwnerID},
 				Image:            config.Config.Registry.VmHttpProxyImage,
 				ImagePullSecrets: make([]string, 0),
 				EnvVars:          envVars,
@@ -312,6 +314,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		filebrowser := models.DeploymentPublic{
 			Name:             smName(kg.s.sm.OwnerID),
 			Namespace:        kg.namespace,
+			Labels:           map[string]string{"owner-id": kg.s.sm.OwnerID},
 			Image:            "filebrowser/filebrowser",
 			ImagePullSecrets: make([]string, 0),
 			EnvVars:          make([]models.EnvVar, 0),
@@ -383,6 +386,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		oauthProxy := models.DeploymentPublic{
 			Name:             smAuthName(kg.s.sm.OwnerID),
 			Namespace:        kg.namespace,
+			Labels:           map[string]string{"owner-id": kg.s.sm.OwnerID},
 			Image:            "quay.io/oauth2-proxy/oauth2-proxy:latest",
 			ImagePullSecrets: make([]string, 0),
 			EnvVars:          make([]models.EnvVar, 0),
