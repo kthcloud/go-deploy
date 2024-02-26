@@ -10,7 +10,7 @@ import (
 func EqualOrEmpty(t *testing.T, expected, actual interface{}, msgAndArgs ...interface{}) {
 	t.Helper()
 
-	// check if "expected" is a slice, and if so, check how many elements it has
+	// Check if "expected" is a slice, and if so, check how many elements it has
 	isSlice := reflect.ValueOf(expected).Kind() == reflect.Slice
 	noElements := 0
 	if isSlice {

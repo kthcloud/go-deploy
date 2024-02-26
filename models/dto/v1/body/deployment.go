@@ -18,6 +18,7 @@ type DeploymentRead struct {
 	Envs            []Env    `json:"envs"`
 	Volumes         []Volume `json:"volumes"`
 	InitCommands    []string `json:"initCommands"`
+	Args            []string `json:"args"`
 	Private         bool     `json:"private"`
 	InternalPort    int      `json:"internalPort"`
 	Image           *string  `json:"image,omitempty"`
@@ -49,6 +50,7 @@ type DeploymentCreate struct {
 	Envs            []Env    `json:"envs" bson:"envs" binding:"omitempty,env_list,min=0,max=1000,dive"`
 	Volumes         []Volume `json:"volumes" bson:"volumes" binding:"omitempty,min=0,max=100,dive"`
 	InitCommands    []string `json:"initCommands" bson:"initCommands" binding:"omitempty,min=0,max=100,dive,min=0,max=100"`
+	Args            []string `json:"args" bson:"args" binding:"omitempty,min=0,max=100,dive,min=0,max=100"`
 	HealthCheckPath *string  `json:"healthCheckPath" bson:"healthCheckPath,omitempty" binding:"omitempty,min=0,max=1000,health_check_path"`
 	CustomDomain    *string  `json:"customDomain" bson:"customDomain,omitempty" binding:"omitempty,domain_name,custom_domain,min=1,max=253"`
 	Replicas        *int     `json:"replicas" bson:"replicas,omitempty" binding:"omitempty,min=0,max=100"`
@@ -62,7 +64,8 @@ type DeploymentUpdate struct {
 	Private         *bool     `json:"private,omitempty" bson:"private,omitempty" binding:"omitempty,boolean"`
 	Envs            *[]Env    `json:"envs,omitempty" bson:"envs,omitempty" binding:"omitempty,env_list,min=0,max=1000,dive"`
 	Volumes         *[]Volume `json:"volumes,omitempty" bson:"volumes,omitempty" binding:"omitempty,min=0,max=100,dive"`
-	InitCommands    *[]string `json:"initCommands,omitempty" bson:"initCommands,omitempty" binding:"omitempty,min=0,max=100,dive"`
+	InitCommands    *[]string `json:"initCommands,omitempty" bson:"initCommands,omitempty" binding:"omitempty,min=0,max=100,dive,min=0,max=100"`
+	Args            *[]string `json:"args,omitempty" bson:"args,omitempty" binding:"omitempty,min=0,max=100,dive,min=0,max=100"`
 	CustomDomain    *string   `json:"customDomain,omitempty" bson:"customDomain,omitempty" binding:"omitempty,domain_name,custom_domain,min=0,max=253"`
 	Image           *string   `json:"image,omitempty,omitempty" bson:"image,omitempty" binding:"omitempty,min=1,max=1000"`
 	HealthCheckPath *string   `json:"healthCheckPath,omitempty" bson:"healthCheckPath,omitempty" binding:"omitempty,min=0,max=1000,health_check_path"`

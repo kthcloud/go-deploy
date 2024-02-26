@@ -48,6 +48,10 @@ func (deployment *Deployment) ToDTO(smURL *string, teams []string) body.Deployme
 		app.InitCommands = make([]string, 0)
 	}
 
+	if app.Args == nil {
+		app.Args = make([]string, 0)
+	}
+
 	var pingResult *int
 	if app.PingResult != 0 {
 		pingResult = &app.PingResult
@@ -157,6 +161,7 @@ func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZone, fallbac
 		}
 	}
 	p.InitCommands = dto.InitCommands
+	p.Args = dto.Args
 
 	if dto.HealthCheckPath == nil {
 		p.PingPath = "/healthz"
@@ -183,10 +188,6 @@ func (p *CreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZone, fallbac
 
 // FromDTO converts body.DeploymentUpdate DTO to UpdateParams.
 func (p *UpdateParams) FromDTO(dto *body.DeploymentUpdate, deploymentType string) {
-	if dto.Name != nil {
-		p.Name = dto.Name
-	}
-
 	if dto.Envs != nil {
 		envs := make([]Env, 0)
 		for _, env := range *dto.Envs {
@@ -216,8 +217,7 @@ func (p *UpdateParams) FromDTO(dto *body.DeploymentUpdate, deploymentType string
 		p.Volumes = &volumes
 	}
 
-	p.Private = dto.Private
-
+	// Convert custom domain to puny encoded
 	if dto.CustomDomain != nil {
 		if punyEncoded, err := idna.New().ToASCII(*dto.CustomDomain); err == nil {
 			p.CustomDomain = &punyEncoded
@@ -226,10 +226,15 @@ func (p *UpdateParams) FromDTO(dto *body.DeploymentUpdate, deploymentType string
 		}
 	}
 
+	// Only allow image updates for prebuilt deployments
 	if deploymentType == TypePrebuilt {
 		p.Image = dto.Image
 	}
 
+	p.Name = dto.Name
+	p.Private = dto.Private
+	p.InitCommands = dto.InitCommands
+	p.Args = dto.Args
 	p.PingPath = dto.HealthCheckPath
 	p.Replicas = dto.Replicas
 }
