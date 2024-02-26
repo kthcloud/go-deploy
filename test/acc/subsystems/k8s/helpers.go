@@ -273,8 +273,14 @@ func withDefaultNetworkPolicy(t *testing.T, c *k8s.Client) *models.NetworkPolicy
 		Namespace: c.Namespace,
 		EgressRules: []models.EgressRule{
 			{
-				CIDR:   "0.0.0.0/0",
-				Except: []string{"8.8.8.8/32"},
+				IpBlock: &models.IpBlock{
+					CIDR:   "0.0.0.0/0",
+					Except: []string{"1.1.1.1/32"},
+				},
+			},
+			{
+				PodSelector:       map[string]string{"name": "block-me"},
+				NamespaceSelector: map[string]string{"name": "block-me"},
 			},
 		},
 	}

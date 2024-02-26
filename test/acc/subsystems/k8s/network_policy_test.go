@@ -1,6 +1,7 @@
 package k8s
 
 import (
+	"github.com/stretchr/testify/assert"
 	"go-deploy/pkg/subsystems/k8s/models"
 	"testing"
 )
@@ -19,7 +20,10 @@ func TestUpdateNetworkPolicy(t *testing.T) {
 	np := withDefaultNetworkPolicy(t, c)
 
 	np.EgressRules = append(np.EgressRules, models.EgressRule{
-		CIDR: "1.1.1.1/32",
+		IpBlock: &models.IpBlock{
+			CIDR:   "0.0.0.0/0",
+			Except: []string{"2.2.2.2/32"},
+		},
 	})
 
 	rulesCount := len(np.EgressRules)
@@ -32,4 +36,22 @@ func TestUpdateNetworkPolicy(t *testing.T) {
 	if len(updated.EgressRules) != rulesCount {
 		t.Fatalf("expected %d egress rules, got %d", rulesCount, len(updated.EgressRules))
 	}
+
+	found := false
+	for _, rule := range updated.EgressRules {
+		if rule.IpBlock != nil {
+			for _, except := range rule.IpBlock.Except {
+				if except == "2.2.2.2/32" {
+					found = true
+					break
+				}
+			}
+		}
+
+		if found {
+			break
+		}
+	}
+
+	assert.True(t, found, "expected to find 2.2.2.2/32 in egress rules")
 }
