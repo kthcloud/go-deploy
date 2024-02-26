@@ -194,7 +194,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 				Requests: defaultRequests,
 			},
 			Command:        make([]string, 0),
-			Args:           make([]string, 0),
+			Args:           mainApp.Args,
 			InitCommands:   mainApp.InitCommands,
 			InitContainers: make([]models.InitContainer, 0),
 			Volumes:        k8sVolumes,

@@ -43,6 +43,8 @@ type App struct {
 	Replicas     int      `bson:"replicas"`
 	Envs         []Env    `bson:"envs"`
 	Volumes      []Volume `bson:"volumes"`
+
+	Args         []string `bson:"args"`
 	InitCommands []string `bson:"initCommands"`
 
 	CustomDomain *CustomDomain `bson:"customDomain"`

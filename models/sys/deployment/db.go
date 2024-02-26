@@ -48,6 +48,7 @@ func (client *Client) Create(id, ownerID string, params *CreateParams) (*Deploym
 		Envs:         params.Envs,
 		Volumes:      params.Volumes,
 		InitCommands: params.InitCommands,
+		Args:         params.Args,
 		CustomDomain: customDomain,
 		PingResult:   0,
 		PingPath:     params.PingPath,
@@ -149,6 +150,7 @@ func (client *Client) UpdateWithParams(id string, params *UpdateParams) error {
 	models.AddIfNotNil(&setUpdate, "apps.main.private", params.Private)
 	models.AddIfNotNil(&setUpdate, "apps.main.volumes", params.Volumes)
 	models.AddIfNotNil(&setUpdate, "apps.main.initCommands", params.InitCommands)
+	models.AddIfNotNil(&setUpdate, "apps.main.args", params.Args)
 	models.AddIfNotNil(&setUpdate, "apps.main.customDomain", customDomain)
 	models.AddIfNotNil(&setUpdate, "apps.main.image", params.Image)
 	models.AddIfNotNil(&setUpdate, "apps.main.pingPath", params.PingPath)

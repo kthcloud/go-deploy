@@ -10,10 +10,11 @@ type CreateParams struct {
 	Envs         []Env
 	Volumes      []Volume
 	InitCommands []string
+	Args         []string
 	PingPath     string
 	CustomDomain *string
 	Replicas     *int
-	
+
 	Zone string
 }
 
@@ -31,6 +32,7 @@ type UpdateParams struct {
 	InternalPort *int
 	Volumes      *[]Volume
 	InitCommands *[]string
+	Args         *[]string
 	CustomDomain *string
 	Image        *string
 	PingPath     *string
