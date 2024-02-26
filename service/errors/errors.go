@@ -123,6 +123,9 @@ var (
 	// UserNotFoundErr is returned when the user is not found.
 	UserNotFoundErr = fmt.Errorf("user not found")
 
+	// UserDataNotFoundErr is returned when the user data is not found.
+	UserDataNotFoundErr = fmt.Errorf("user data not found")
+
 	// BadInviteCodeErr is returned when the invite code is invalid.
 	BadInviteCodeErr = fmt.Errorf("bad invite code")
 
