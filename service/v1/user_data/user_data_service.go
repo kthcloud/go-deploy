@@ -65,8 +65,10 @@ func (c *Client) Create(id, data, userID string) (*userDataModels.UserData, erro
 		return nil, nil
 	}
 
+	udc := userDataModels.New().WithUserID(userID)
+
 	// Ensure max 10 user data per user
-	userDataCount, err := userDataModels.New().WithUserID(userID).Count()
+	userDataCount, err := udc.Count()
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +77,7 @@ func (c *Client) Create(id, data, userID string) (*userDataModels.UserData, erro
 		return nil, errors.NewQuotaExceededError("User Data quota exceeded. Max 10 user data per user allowed.")
 	}
 
-	return userDataModels.New().Create(id, data, userID)
+	return udc.Create(id, data, userID)
 }
 
 // Update updates a user data
@@ -97,8 +99,20 @@ func (c *Client) Update(id, data string) (*userDataModels.UserData, error) {
 func (c *Client) Delete(id string) error {
 	umc := userDataModels.New()
 
-	if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
+	// User data ID are not unique, so not specifying the user ID here,
+	// and multiple user data share the same ID, will result in
+	// delete one random user data with the given ID
+	if c.V1.Auth() != nil {
 		umc.WithUserID(c.V1.Auth().UserID)
+	}
+
+	exists, err := umc.ExistsByID(id)
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		return errors.UserDataNotFoundErr
 	}
 
 	return umc.EraseByID(id)

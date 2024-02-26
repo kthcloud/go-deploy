@@ -244,6 +244,11 @@ func Delete(c *gin.Context) {
 
 	err = deployV1.UserData().Delete(requestURI.ID)
 	if err != nil {
+		if errors.Is(err, sErrors.UserDataNotFoundErr) {
+			context.NotFound("User data not found")
+			return
+		}
+
 		context.ServerError(err, v1.InternalError)
 		return
 	}
