@@ -38,6 +38,13 @@ func OptsNoGenerator(deploymentID string, overwriteOps ...opts.ExtraOpts) *opts.
 	}
 }
 
+func OptsOnlyClient(zone *configModels.DeploymentZone) *opts.Opts {
+	return &opts.Opts{
+		Client:    true,
+		ExtraOpts: opts.ExtraOpts{Zone: zone},
+	}
+}
+
 // Client is the client for the Harbor service.
 // It contains a BaseClient, which is used to lazy-load and cache data.
 type Client struct {
@@ -75,19 +82,12 @@ func (c *Client) Get(opts *opts.Opts) (*deploymentModels.Deployment, *k8s.Client
 	}
 
 	if opts.Client {
-		var userID string
-		if opts.ExtraOpts.UserID != "" {
-			userID = opts.ExtraOpts.UserID
-		} else {
-			userID = d.OwnerID
-		}
-
 		zone := getZone(opts, d)
 		if zone == nil {
 			return nil, nil, nil, sErrors.ZoneNotFoundErr
 		}
 
-		kc, err = c.Client(userID, zone)
+		kc, err = c.Client(zone)
 		if err != nil {
 			return nil, nil, nil, err
 		}
@@ -113,11 +113,7 @@ func (c *Client) Get(opts *opts.Opts) (*deploymentModels.Deployment, *k8s.Client
 }
 
 // Client returns the K8s service client.
-func (c *Client) Client(userID string, zone *configModels.DeploymentZone) (*k8s.Client, error) {
-	if userID == "" {
-		panic("user id is empty")
-	}
-
+func (c *Client) Client(zone *configModels.DeploymentZone) (*k8s.Client, error) {
 	return withClient(zone, getNamespaceName(zone))
 }
 

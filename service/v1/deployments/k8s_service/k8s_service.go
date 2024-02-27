@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go-deploy/models/config"
 	deploymentModels "go-deploy/models/sys/deployment"
 	"go-deploy/pkg/subsystems"
 	kErrors "go-deploy/pkg/subsystems/k8s/errors"
@@ -598,26 +599,17 @@ func (c *Client) Repair(id string) error {
 //
 // It sets up a log stream for all the pods in the deployment.
 // The handler function is called for each log line.
-func (c *Client) SetupLogStream(ctx context.Context, id string, handler func(string, int, time.Time)) error {
+func (c *Client) SetupLogStream(ctx context.Context, zone *config.DeploymentZone, allowedNames []string, handler func(string, string, int, time.Time)) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup log stream for deployment %s. details: %w", id, err)
+		return fmt.Errorf("failed to setup log stream for zone %s. details: %w", zone.Name, err)
 	}
 
-	d, kc, _, err := c.Get(OptsNoGenerator(id))
+	_, kc, _, err := c.Get(OptsOnlyClient(zone))
 	if err != nil {
 		return makeError(err)
 	}
 
-	if d.BeingDeleted() {
-		return sErrors.BadStateErr
-	}
-
-	mainDeployment := d.Subsystems.K8s.GetDeployment(d.Name)
-	if !subsystems.Created(mainDeployment) {
-		return sErrors.BadStateErr
-	}
-
-	err = kc.SetupLogStream(ctx, mainDeployment.Name, handler)
+	err = kc.SetupLogStream(ctx, allowedNames, handler)
 	if err != nil {
 		return makeError(err)
 	}

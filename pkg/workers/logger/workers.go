@@ -2,15 +2,13 @@ package logger
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	deploymentModels "go-deploy/models/sys/deployment"
+	"go-deploy/pkg/config"
 	"go-deploy/pkg/workers"
-	sErrors "go-deploy/service/errors"
 	"go-deploy/service/v1/deployments/k8s_service"
 	"go-deploy/utils"
 	"log"
-	"sync"
 	"time"
 )
 
@@ -18,108 +16,48 @@ import (
 func deploymentLogger(ctx context.Context) {
 	defer workers.OnStop("deploymentLogger")
 
-	mut := sync.Mutex{}
+	reportTick := time.Tick(1 * time.Second)
 
-	current := make(map[string]bool)
-	cancelFuncs := make(map[string]context.CancelFunc)
-	shouldCancel := make(chan string)
+	// Get allowed names
+	allowedNames, err := deploymentModels.New().ListNames()
+	if err != nil {
+		utils.PrettyPrintError(fmt.Errorf("failed to get allowed names for deployment logger. details: %w", err))
+		return
+	}
 
-	// listen for cancel requests
-	go func() {
-		for {
-			select {
-			case id := <-shouldCancel:
-				go func() {
-					mut.Lock()
-					defer mut.Unlock()
+	logCtx := context.Background()
+	for _, zone := range config.Config.Deployment.Zones {
+		dZone := zone
+		// Setup log stream for zone
+		log.Println("setting up log stream for zone", zone.Name)
+		go func() {
+			err := k8s_service.New(nil).SetupLogStream(logCtx, &dZone, allowedNames, func(line string, name string, podNumber int, createdAt time.Time) {
+				err := deploymentModels.New().AddLogsByName(name, deploymentModels.Log{
+					Source:    deploymentModels.LogSourcePod,
+					Prefix:    fmt.Sprintf("[pod %d]", podNumber),
+					Line:      line,
+					CreatedAt: createdAt,
+				})
+				if err != nil {
+					utils.PrettyPrintError(fmt.Errorf("failed to add k8s logs for deployment %s. details: %w", name, err))
+					return
+				}
+			})
 
-					if cancel, ok := cancelFuncs[id]; ok {
-						cancel()
-						delete(cancelFuncs, id)
-					}
-					delete(current, id)
-				}()
-			case <-ctx.Done():
+			if err != nil {
+				// TODO: Temporary
+				//utils.PrettyPrintError(fmt.Errorf("failed to setup log stream for zone %s. details: %w", zone.Name, err))
 				return
 			}
-		}
-	}()
-
-	reportTick := time.Tick(1 * time.Second)
-	tick := time.Tick(1 * time.Second)
+		}()
+	}
 
 	for {
 		select {
 		case <-reportTick:
 			workers.ReportUp("deploymentLogger")
-
-		case <-tick:
-			currentIDs := make([]string, len(current))
-			idx := 0
-			for id := range current {
-				currentIDs[idx] = id
-				idx++
-			}
-
-			ids, err := deploymentModels.New().
-				ExcludeIDs(currentIDs...).
-				WithoutActivities(deploymentModels.ActivityBeingCreated, deploymentModels.ActivityBeingDeleted).
-				ListIDs()
-			if err != nil {
-				utils.PrettyPrintError(fmt.Errorf("failed to list deployment ids. details: %w", err))
-				continue
-			}
-
-			for _, idInList := range ids {
-				id := idInList
-
-				// Setup log stream
-				go func() {
-					mut.Lock()
-					defer mut.Unlock()
-
-					if current[id.ID] {
-						return
-					}
-
-					current[id.ID] = true
-					logCtx, cancel := context.WithCancel(ctx)
-					cancelFuncs[id.ID] = cancel
-
-					err = k8s_service.New(nil).SetupLogStream(logCtx, id.ID, func(line string, podNumber int, createdAt time.Time) {
-						err = deploymentModels.New().AddLogs(id.ID, deploymentModels.Log{
-							Source:    deploymentModels.LogSourcePod,
-							Prefix:    fmt.Sprintf("[pod %d]", podNumber),
-							Line:      line,
-							CreatedAt: createdAt,
-						})
-						if err != nil {
-							utils.PrettyPrintError(fmt.Errorf("failed to add k8s logs for deployment %s. details: %w", id.ID, err))
-							shouldCancel <- id.ID
-							return
-						}
-					})
-
-					if err != nil {
-						if errors.Is(err, sErrors.BadStateErr) {
-							log.Println("deployment", id.ID, "is not ready to setup log stream, will try again later")
-							shouldCancel <- id.ID
-							return
-						}
-
-						// TODO: Temporary
-						//utils.PrettyPrintError(fmt.Errorf("failed to setup deployment log stream for deployment %s. details: %w", id.ID, err))
-						shouldCancel <- id.ID
-						return
-					}
-
-					if err != nil {
-						utils.PrettyPrintError(fmt.Errorf("failed to setup gitlab log stream for deployment %s. details: %w", id.ID, err))
-						shouldCancel <- id.ID
-						return
-					}
-				}()
-			}
+		case <-logCtx.Done():
+			return
 		case <-ctx.Done():
 			return
 		}

@@ -25,9 +25,14 @@ const (
 	PodEventStop = "stop"
 )
 
-type podEvent struct {
-	podName string
-	event   string
+type PodEventType struct {
+	deploymentName string
+	podName        string
+	event          string
+}
+
+func PodEvent(deploymentName, podName, event string) PodEventType {
+	return PodEventType{deploymentName: deploymentName, podName: podName, event: event}
 }
 
 // getPodNames gets the names of all pods for a deployment
@@ -51,18 +56,25 @@ func (client *Client) getPodNames(namespace, deploymentName string) ([]string, e
 	return podNames, nil
 }
 
-// SetupLogStream sets up a log stream for the entire cluster
+// SetupLogStream sets up a log stream for the entire namespace
 //
 // This should only be called once per cluster
-func (client *Client) SetupLogStream(ctx context.Context, deploymentName string, handler func(string, int, time.Time)) error {
+func (client *Client) SetupLogStream(ctx context.Context, allowedNames []string, handler func(string, string, int, time.Time)) error {
 	_ = func(err error) error {
 		return fmt.Errorf("failed to create k8s log stream. details: %w", err)
 	}
 
 	go func() {
-		activeStreams := make(map[string]int)
-		cancelFuncs := make(map[string]context.CancelFunc)
-		podChannel := make(chan podEvent, 100)
+		// activeStreams is a map of active log streams structured as map[deploymentName]map[podName]podNumber
+		activeStreams := make(map[string]map[string]int)
+		cancelFuncs := make(map[string]map[string]context.CancelFunc)
+		podChannel := make(chan PodEventType, 100)
+
+		// Convert allowedNames to a map for faster lookups
+		allowedNamesMap := make(map[string]struct{})
+		for _, name := range allowedNames {
+			allowedNamesMap[name] = struct{}{}
+		}
 
 		factory := informers.NewSharedInformerFactoryWithOptions(client.K8sClient, 0, informers.WithNamespace(client.Namespace))
 		podInformer := factory.Core().V1().Pods().Informer()
@@ -74,7 +86,12 @@ func (client *Client) SetupLogStream(ctx context.Context, deploymentName string,
 					return
 				}
 
-				if label, ok := pod.Labels[keys.LabelDeployName]; !ok || label != deploymentName {
+				var deploymentName string
+				if deploymentName, ok = pod.Labels[keys.LabelDeployName]; !ok {
+					return
+				}
+
+				if _, ok = allowedNamesMap[deploymentName]; !ok {
 					return
 				}
 
@@ -82,7 +99,7 @@ func (client *Client) SetupLogStream(ctx context.Context, deploymentName string,
 					return
 				}
 
-				podChannel <- podEvent{event: PodEventStart, podName: pod.Name}
+				podChannel <- PodEvent(deploymentName, pod.Name, PodEventStart)
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				pod, ok := newObj.(*v1.Pod)
@@ -90,7 +107,12 @@ func (client *Client) SetupLogStream(ctx context.Context, deploymentName string,
 					return
 				}
 
-				if label, ok := pod.Labels[keys.LabelDeployName]; !ok || label != deploymentName {
+				var deploymentName string
+				if deploymentName, ok = pod.Labels[keys.LabelDeployName]; !ok {
+					return
+				}
+
+				if _, ok = allowedNamesMap[deploymentName]; !ok {
 					return
 				}
 
@@ -98,7 +120,7 @@ func (client *Client) SetupLogStream(ctx context.Context, deploymentName string,
 					return
 				}
 
-				podChannel <- podEvent{event: PodEventStart, podName: pod.Name}
+				podChannel <- PodEvent(deploymentName, pod.Name, PodEventStart)
 			},
 			DeleteFunc: func(obj interface{}) {
 				pod, ok := obj.(*v1.Pod)
@@ -106,7 +128,16 @@ func (client *Client) SetupLogStream(ctx context.Context, deploymentName string,
 					return
 				}
 
-				podChannel <- podEvent{event: PodEventStop, podName: pod.Name}
+				var deploymentName string
+				if deploymentName, ok = pod.Labels[keys.LabelDeployName]; !ok {
+					return
+				}
+
+				if _, ok = allowedNamesMap[deploymentName]; !ok {
+					return
+				}
+
+				podChannel <- PodEvent(deploymentName, pod.Name, PodEventStop)
 			},
 		})
 		if err != nil {
@@ -119,33 +150,43 @@ func (client *Client) SetupLogStream(ctx context.Context, deploymentName string,
 		for {
 			select {
 			case <-ctx.Done():
-				for _, cancelFunc := range cancelFuncs {
-					cancelFunc()
+				for _, cancelFuncMap := range cancelFuncs {
+					for _, cancelFunc := range cancelFuncMap {
+						cancelFunc()
+					}
 				}
 				return
 			case e := <-podChannel:
 				switch e.event {
 				case PodEventStart:
-					if _, ok := activeStreams[e.podName]; ok {
-						continue
+					// Create deployment map if it does not exist
+					if _, ok := activeStreams[e.deploymentName]; !ok {
+						activeStreams[e.deploymentName] = make(map[string]int)
 					}
 
-					idx := getFreePodNumber(activeStreams)
-					activeStreams[e.podName] = idx
+					// Create cancel func map if it does not exist
+					if _, ok := cancelFuncs[e.deploymentName]; !ok {
+						cancelFuncs[e.deploymentName] = make(map[string]context.CancelFunc)
+					}
+
+					// Add pod to deployment map
+					idx := getFreePodNumber(activeStreams[e.deploymentName])
+					activeStreams[e.deploymentName][e.podName] = idx
 
 					cancelCtx, cancelFunc := context.WithCancel(ctx)
-					cancelFuncs[e.podName] = cancelFunc
+					cancelFuncs[e.deploymentName][e.podName] = cancelFunc
 
 					log.Println("starting logger for pod", e.podName, "with idx", idx)
 
 					go func() {
-						client.readLogs(cancelCtx, idx, client.Namespace, e.podName, podChannel, handler)
+						client.readLogs(cancelCtx, idx, client.Namespace, e.deploymentName, e.podName, podChannel, handler)
 					}()
 
 				case PodEventStop:
-					cancelFunc, ok := cancelFuncs[e.podName]
+					// Stop the log stream for the pod
+					cancelFunc, ok := cancelFuncs[e.deploymentName][e.podName]
 					if ok {
-						log.Println("stopping logger for pod", e.podName)
+						log.Println("stopping logger for", e.podName)
 
 						cancelFunc()
 						delete(cancelFuncs, e.podName)
@@ -161,8 +202,8 @@ func (client *Client) SetupLogStream(ctx context.Context, deploymentName string,
 }
 
 // readLogs reads logs from a pod and sends them to the handler
-// It listens to the podEvent channel to know when to stop, and emits a PodEventStop event when it stops
-func (client *Client) readLogs(ctx context.Context, podNumber int, namespace, podName string, eventChan chan podEvent, handler func(string, int, time.Time)) {
+// It listens to the PodEventType channel to know when to stop, and emits a PodEventStop event when it stops
+func (client *Client) readLogs(ctx context.Context, podNumber int, namespace, deploymentName, podName string, eventChan chan PodEventType, handler func(string, string, int, time.Time)) {
 	defer func() {
 		if r := recover(); r != nil {
 			if err, ok := r.(error); ok {
@@ -170,7 +211,7 @@ func (client *Client) readLogs(ctx context.Context, podNumber int, namespace, po
 			} else {
 				utils.PrettyPrintError(fmt.Errorf("failed to read logs for pod %s (panic). details: %v", podName, r))
 			}
-			eventChan <- podEvent{event: PodEventStop, podName: podName}
+			eventChan <- PodEventType{event: PodEventStop, podName: podName}
 		}
 	}()
 
@@ -208,7 +249,7 @@ func (client *Client) readLogs(ctx context.Context, podNumber int, namespace, po
 					break
 				}
 
-				handler(line, podNumber, time.Now())
+				handler(line, deploymentName, podNumber, time.Now())
 			}
 
 			time.Sleep(100 * time.Millisecond)
@@ -245,6 +286,10 @@ func isExitLine(line string) bool {
 	gracefullyShuttingDown := strings.HasSuffix(line, ": gracefully shutting down")
 
 	return notYetStarted || sigQuit || gracefullyShuttingDown
+}
+
+func getDeploymentPodName(deploymentName, podName string) string {
+	return fmt.Sprintf("%s-%s", deploymentName, podName)
 }
 
 // getFreePodNumber is a helper function that gets the next free pod number for a deployment

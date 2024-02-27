@@ -78,6 +78,11 @@ func (client *ResourceClient[T]) UpdateWithBsonByID(id string, update bson.D) er
 	return client.UpdateWithBsonByFilter(bson.D{{"id", id}}, update)
 }
 
+// UpdateWithBsonByName updates a resource with the given name and BSON update.
+func (client *ResourceClient[T]) UpdateWithBsonByName(name string, update bson.D) error {
+	return client.UpdateWithBsonByFilter(bson.D{{"name", name}}, update)
+}
+
 // UpdateWithBsonByFilter updates a resource with the given filter and BSON update.
 func (client *ResourceClient[T]) UpdateWithBsonByFilter(filter bson.D, update bson.D) error {
 	return models.UpdateOneResource(client.Collection, models.GroupFilters(filter, client.ExtraFilter, client.Search, client.IncludeDeleted), update)
@@ -202,6 +207,14 @@ type OnlyID struct {
 	ID string `bson:"id"`
 }
 
+// OnlyName is a type that only contains a name.
+// This is useful when only the name is needed.
+// This should be paired with a projection that only includes the name,
+// such as bson.D{{"name", 1}}.
+type OnlyName struct {
+	Name string `bson:"name"`
+}
+
 // GetID returns the ID of a resource with the given filter.
 // It returns a OnlyID type, which only contains the ID.
 func (client *ResourceClient[T]) GetID() (*OnlyID, error) {
@@ -213,6 +226,22 @@ func (client *ResourceClient[T]) GetID() (*OnlyID, error) {
 func (client *ResourceClient[T]) ListIDs() ([]OnlyID, error) {
 	projection := bson.D{{"id", 1}}
 	return models.ListResources[OnlyID](client.Collection, models.GroupFilters(nil, client.ExtraFilter, client.Search, client.IncludeDeleted), projection, client.Pagination, client.SortBy)
+}
+
+// ListNames returns the names of all resources that match the given filter.
+func (client *ResourceClient[T]) ListNames() ([]string, error) {
+	projection := bson.D{{"name", 1}}
+	names, err := models.ListResources[OnlyName](client.Collection, models.GroupFilters(nil, client.ExtraFilter, client.Search, client.IncludeDeleted), projection, client.Pagination, client.SortBy)
+	if err != nil {
+		return nil, err
+	}
+
+	nameList := make([]string, len(names))
+	for i, name := range names {
+		nameList[i] = name.Name
+	}
+
+	return nameList, nil
 }
 
 // GetWithFilterAndProjection returns a resource with the given filter and projection.
