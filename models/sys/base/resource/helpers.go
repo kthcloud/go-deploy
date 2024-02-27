@@ -223,9 +223,19 @@ func (client *ResourceClient[T]) GetID() (*OnlyID, error) {
 }
 
 // ListIDs returns the IDs of all resources that match the given filter.
-func (client *ResourceClient[T]) ListIDs() ([]OnlyID, error) {
+func (client *ResourceClient[T]) ListIDs() ([]string, error) {
 	projection := bson.D{{"id", 1}}
-	return models.ListResources[OnlyID](client.Collection, models.GroupFilters(nil, client.ExtraFilter, client.Search, client.IncludeDeleted), projection, client.Pagination, client.SortBy)
+	ids, err := models.ListResources[OnlyID](client.Collection, models.GroupFilters(nil, client.ExtraFilter, client.Search, client.IncludeDeleted), projection, client.Pagination, client.SortBy)
+	if err != nil {
+		return nil, err
+	}
+
+	idList := make([]string, len(ids))
+	for i, id := range ids {
+		idList[i] = id.ID
+	}
+
+	return idList, nil
 }
 
 // ListNames returns the names of all resources that match the given filter.
