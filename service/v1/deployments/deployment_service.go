@@ -604,7 +604,7 @@ func (c *Client) Restart(id string) error {
 func (c *Client) AddLogs(id string, logs ...deploymentModels.Log) {
 	// logs are added best-effort, so we don't return an error here
 	go func() {
-		err := deploymentModels.New().AddLogs(id, logs...)
+		err := deploymentModels.New().AddLogsByName(id, logs...)
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to add logs to deployment %s. details: %w", id, err))
 		}

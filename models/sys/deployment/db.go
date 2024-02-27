@@ -228,9 +228,9 @@ func (client *Client) GetLogsAfter(id string, createdAt time.Time) ([]Log, error
 	return filtered, nil
 }
 
-// AddLogs adds logs to the end of the log array.
+// AddLogsByName adds logs to the end of the log array.
 // Only the last NLogsCache logs are kept, and are sorted by createdAt
-func (client *Client) AddLogs(id string, logs ...Log) error {
+func (client *Client) AddLogsByName(name string, logs ...Log) error {
 	sort.Slice(logs, func(i, j int) bool {
 		return logs[i].CreatedAt.Before(logs[j].CreatedAt)
 	})
@@ -244,7 +244,7 @@ func (client *Client) AddLogs(id string, logs ...Log) error {
 		}},
 	}
 
-	err := client.UpdateWithBsonByID(id, update)
+	err := client.UpdateWithBsonByID(name, update)
 	if err != nil {
 		return err
 	}
