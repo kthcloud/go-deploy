@@ -109,3 +109,10 @@ func (client *Client) WithStale() *Client {
 
 	return client
 }
+
+// WithGroupName adds a filter to the client to only include GPUs with the given group name.
+func (client *Client) WithGroupName(groupName string) *Client {
+	client.ResourceClient.AddExtraFilter(bson.D{{"groupName", groupName}})
+
+	return client
+}

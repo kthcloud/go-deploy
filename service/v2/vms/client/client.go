@@ -3,6 +3,7 @@ package client
 import (
 	"fmt"
 	gpuModels "go-deploy/models/sys/gpu"
+	gpuLeaseModels "go-deploy/models/sys/gpu_lease"
 	vmModels "go-deploy/models/sys/vm"
 	"go-deploy/models/versions"
 	"go-deploy/service/core"
@@ -65,6 +66,17 @@ func (c *BaseClient[parent]) GPU(id string, gmc *gpuModels.Client) (*gpuModels.G
 func (c *BaseClient[parent]) GPUs(gmc *gpuModels.Client) ([]gpuModels.GPU, error) {
 	// Right now we don't have a way to skip fetching when requesting a list of resources
 	return c.fetchGPUs(gmc)
+}
+
+// GpuLease returns the GPU lease with the given ID.
+// After a successful fetch, the GPU lease will be cached.
+func (c *BaseClient[parent]) GpuLease(id string, glc *gpuLeaseModels.Client) (*gpuLeaseModels.GpuLease, error) {
+	gpuLease := c.Cache.GetGpuLease(id)
+	if gpuLease == nil {
+		return c.fetchGpuLease(id, glc)
+	}
+
+	return gpuLease, nil
 }
 
 // Refresh refreshes the VM with the given ID.
@@ -176,4 +188,51 @@ func (c *BaseClient[parent]) fetchGPUs(gmc *gpuModels.Client) ([]gpuModels.GPU, 
 	}
 
 	return gpus, nil
+}
+
+// fetchGpuLease fetches a GPU lease by ID.
+// After a successful fetch, the GPU lease will be cached.
+func (c *BaseClient[parent]) fetchGpuLease(id string, glc *gpuLeaseModels.Client) (*gpuLeaseModels.GpuLease, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to fetch gpu lease in service client: %w", err)
+	}
+
+	if glc == nil {
+		glc = gpuLeaseModels.New()
+	}
+
+	gpuLease, err := glc.GetByID(id)
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	if gpuLease == nil {
+		return nil, nil
+	}
+
+	c.Cache.StoreGpuLease(gpuLease)
+	return gpuLease, nil
+}
+
+// fetchGpuLeases fetches all GPU leases according to the given glc.
+// After a successful fetch, the GPU leases will be cached.
+func (c *BaseClient[parent]) fetchGpuLeases(glc *gpuLeaseModels.Client) ([]gpuLeaseModels.GpuLease, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to fetch gpu leases in service client: %w", err)
+	}
+
+	if glc == nil {
+		glc = gpuLeaseModels.New()
+	}
+
+	gpuLeases, err := glc.List()
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	for _, gpuLease := range gpuLeases {
+		c.Cache.StoreGpuLease(&gpuLease)
+	}
+
+	return gpuLeases, nil
 }

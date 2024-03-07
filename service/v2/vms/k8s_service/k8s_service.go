@@ -326,6 +326,34 @@ func (c *Client) Repair(id string) error {
 		}
 	}
 
+	vms := g.VMs()
+	for mapName, k8sVm := range vm.Subsystems.K8s.VmMap {
+		idx := slices.IndexFunc(vms, func(v k8sModels.VmPublic) bool { return v.Name == mapName })
+		if idx == -1 {
+			err = resources.SsDeleter(kc.DeleteVM).
+				WithResourceID(k8sVm.ID).
+				WithDbFunc(dbFunc(id, "vmMap."+mapName)).
+				Exec()
+
+			if err != nil {
+				return makeError(err)
+			}
+		}
+	}
+
+	for _, public := range vms {
+		err = resources.SsRepairer(
+			kc.ReadVM,
+			kc.CreateVM,
+			kc.UpdateVM,
+			func(string) error { return nil },
+		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "vmMap."+public.Name)).WithGenPublic(&public).Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
 	deployments := g.Deployments()
 	for mapName, k8sDeployment := range vm.Subsystems.K8s.DeploymentMap {
 		idx := slices.IndexFunc(deployments, func(d k8sModels.DeploymentPublic) bool { return d.Name == mapName })
@@ -456,6 +484,36 @@ func (c *Client) Repair(id string) error {
 	return nil
 }
 
+// AttachGPU attaches a GPU to a VM.
+//
+// If the lease is not active or the VM is already attached to a GPU, an error is returned.
+// If there is an existing attached GPU, it will be replaced.
+func (c *Client) AttachGPU(vmID, groupName string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to attach gpu %s to vm %s. details: %w", groupName, vmID, err)
+	}
+
+	vm, kc, _, err := c.Get(OptsAll(vmID))
+	if vm == nil {
+		return makeError(sErrors.VmNotFoundErr)
+	}
+
+	// Set the GPU to the VM
+	k8sVM := vm.Subsystems.K8s.VmMap[vm.Name]
+	k8sVM.GPUs = []string{groupName}
+	vm.Subsystems.K8s.VmMap[vm.Name] = k8sVM
+
+	err = resources.SsUpdater(kc.UpdateVM).
+		WithDbFunc(dbFunc(vmID, "vmMap."+vm.Name)).
+		WithPublic(&k8sVM).
+		Exec()
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
+}
+
 // DoAction performs an action on a VM.
 func (c *Client) DoAction(id string, action *vmModels.ActionParams) error {
 	makeError := func(err error) error {
@@ -556,9 +614,6 @@ func (c *Client) EnsureOwner(id, oldOwnerID string) error {
 
 	return nil
 }
-
-// dbFuncType is a function that updates the K8s subsystem in the database.
-type dbFuncType = func(interface{}) error
 
 // dbFunc returns a function that updates the K8s subsystem.
 func dbFunc(id, key string) func(interface{}) error {

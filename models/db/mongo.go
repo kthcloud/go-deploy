@@ -190,8 +190,10 @@ func getCollectionDefinitions() map[string]CollectionDefinition {
 			UniqueIndexes: [][]string{{"publicPort", "zone"}},
 		},
 		"gpus": {
-			Name:                 "gpus",
-			Indexes:              []string{"name", "host", "lease.vmId", "lease.user", "lease.end"},
+			Name:    "gpus",
+			Indexes: []string{"groupName", "vmId", "userId"},
+			// Right now we only allow one lease per user
+			UniqueIndexes:        [][]string{{"userId"}},
 			TotallyUniqueIndexes: [][]string{{"id"}},
 		},
 		"users": {

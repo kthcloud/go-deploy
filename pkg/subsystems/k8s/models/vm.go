@@ -11,9 +11,10 @@ type VmPublic struct {
 	Name      string `bson:"name"`
 	Namespace string `bson:"namespace"`
 
-	CpuCores int `bson:"cpuCores"`
-	RAM      int `bson:"memory"`
-	DiskSize int `bson:"diskSize"`
+	CpuCores int      `bson:"cpuCores"`
+	RAM      int      `bson:"memory"`
+	DiskSize int      `bson:"diskSize"`
+	GPUs     []string `bson:"gpus"`
 
 	CloudInit string `bson:"cloudInit"`
 	// Image is the URL of the image to use for the VM

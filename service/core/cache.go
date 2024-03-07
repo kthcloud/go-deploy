@@ -3,6 +3,7 @@ package core
 import (
 	deploymentModels "go-deploy/models/sys/deployment"
 	gpuModels "go-deploy/models/sys/gpu"
+	gpuLeaseModels "go-deploy/models/sys/gpu_lease"
 	jobModels "go-deploy/models/sys/job"
 	notificationModels "go-deploy/models/sys/notification"
 	smModels "go-deploy/models/sys/sm"
@@ -17,6 +18,7 @@ type Cache struct {
 	deploymentStore   map[string]*deploymentModels.Deployment
 	vmStore           map[string]*vmModels.VM
 	gpuStore          map[string]*gpuModels.GPU
+	gpuLeaseStore     map[string]*gpuLeaseModels.GpuLease
 	smStore           map[string]*smModels.SM
 	userStore         map[string]*userModels.User
 	teamStore         map[string]*teamModels.Team
@@ -30,6 +32,7 @@ func NewCache() *Cache {
 		deploymentStore:   make(map[string]*deploymentModels.Deployment),
 		vmStore:           make(map[string]*vmModels.VM),
 		gpuStore:          make(map[string]*gpuModels.GPU),
+		gpuLeaseStore:     make(map[string]*gpuLeaseModels.GpuLease),
 		smStore:           make(map[string]*smModels.SM),
 		userStore:         make(map[string]*userModels.User),
 		teamStore:         make(map[string]*teamModels.Team),
@@ -100,6 +103,29 @@ func (c *Cache) StoreGPU(gpu *gpuModels.GPU) {
 // It returns nil if the GPU is not in the cache.
 func (c *Cache) GetGPU(id string) *gpuModels.GPU {
 	r, ok := c.gpuStore[id]
+	if !ok {
+		return nil
+	}
+
+	return r
+}
+
+// StoreGpuLease stores a GpuLease in the cache.
+// It only stores the GpuLease if it is not nil.
+func (c *Cache) StoreGpuLease(gpuLease *gpuLeaseModels.GpuLease) {
+	if gpuLease != nil {
+		if g, ok := c.gpuLeaseStore[gpuLease.ID]; ok {
+			*g = *gpuLease
+		} else {
+			c.gpuLeaseStore[gpuLease.ID] = gpuLease
+		}
+	}
+}
+
+// GetGpuLease gets a GpuLease from the cache.
+// It returns nil if the GpuLease is not in the cache.
+func (c *Cache) GetGpuLease(id string) *gpuLeaseModels.GpuLease {
+	r, ok := c.gpuLeaseStore[id]
 	if !ok {
 		return nil
 	}

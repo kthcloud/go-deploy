@@ -80,6 +80,9 @@ var (
 	// GpuAlreadyAttachedErr is returned when the gpu is already attached to another VM.
 	GpuAlreadyAttachedErr = fmt.Errorf("gpu already attached")
 
+	// GpuLeaseNotActive is returned when the GPU lease is not active.
+	GpuLeaseNotActiveErr = fmt.Errorf("gpu lease not active")
+
 	// VmTooLargeErr is returned when the VM is too large to be started on a specific host.
 	// Something that is required when using GPUs.
 	VmTooLargeErr = fmt.Errorf("vm too large")
