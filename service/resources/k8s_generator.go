@@ -536,15 +536,26 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 		portMap := kg.v.vm.PortMap
 
 		for _, port := range portMap {
-			res = append(res, models.ServicePublic{
-				Name:      vmServiceName(kg.v.vm),
-				Namespace: kg.namespace,
-				Ports: []models.Port{{
-					Name:       pfrName(port.Port, port.Protocol),
-					Protocol:   port.Protocol,
-					Port:       0, // This is set externally
+			servicePorts := []models.Port{{
+				Name:       pfrName(port.Port, port.Protocol),
+				Protocol:   port.Protocol,
+				Port:       0, // This is set externally
+				TargetPort: port.Port,
+			}}
+
+			if port.HttpProxy != nil {
+				servicePorts = append(servicePorts, models.Port{
+					Name:       "http",
+					Protocol:   "tcp",
+					Port:       8080,
 					TargetPort: port.Port,
-				}},
+				})
+			}
+
+			res = append(res, models.ServicePublic{
+				Name:      vmServiceName(kg.v.vm, pfrName(port.Port, port.Protocol)),
+				Namespace: kg.namespace,
+				Ports:     servicePorts,
 				Selector: map[string]string{
 					keys.LabelDeployName: vmName(kg.v.vm),
 				},
@@ -557,21 +568,23 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 				return service.Name == mapName
 			})
 			if idx != -1 {
-				// Set external ports
-				for _, port := range portMap {
-					for _, p := range res[idx].Ports {
-						if p.Name == pfrName(port.Port, port.Protocol) {
-							res[idx].Ports[idx].Port = s.Ports[0].Port
-							break
-						}
+				// Copy over the external ports if the a port already exist, and is it not set
+				for servicePortIdx, servicePort := range res[idx].Ports {
+					if servicePort.Port != 0 {
+						continue
+					}
+
+					portIdx := slices.IndexFunc(s.Ports, func(port models.Port) bool {
+						return port.Name == servicePort.Name
+					})
+					if portIdx != -1 {
+						res[idx].Ports[servicePortIdx].Port = s.Ports[portIdx].Port
 					}
 				}
 
 				res[idx].CreatedAt = s.CreatedAt
 			}
 		}
-
-		// TODO: Add services for proxy ports
 
 		return res
 	}
@@ -730,7 +743,66 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 		return res
 	}
 
-	// TODO: add ingresses for VM v2
+	if kg.v.vm != nil && kg.v.vm.Version == versions.V2 {
+		portMap := kg.v.vm.PortMap
+
+		for _, port := range portMap {
+			if port.HttpProxy == nil {
+				continue
+			}
+
+			tlsSecret := constants.WildcardCertSecretName
+			res = append(res, models.IngressPublic{
+				Name:         vmpIngressName(kg.v.vm, port.HttpProxy.Name),
+				Namespace:    kg.namespace,
+				ServiceName:  vmServiceName(kg.v.vm, pfrName(port.Port, port.Protocol)),
+				ServicePort:  8080,
+				IngressClass: config.Config.Deployment.IngressClass,
+				Hosts:        []string{vmpExternalURL(port.HttpProxy.Name, kg.v.deploymentZone)},
+				TlsSecret:    &tlsSecret,
+				CustomCert:   nil,
+				Placeholder:  false,
+			})
+			if port.HttpProxy.CustomDomain != nil && port.HttpProxy.CustomDomain.Status == deployment.CustomDomainStatusActive {
+				res = append(res, models.IngressPublic{
+					Name:         vmpCustomDomainIngressName(kg.v.vm, port.HttpProxy.Name),
+					Namespace:    kg.namespace,
+					ServiceName:  vmServiceName(kg.v.vm, pfrName(port.Port, port.Protocol)),
+					ServicePort:  8080,
+					IngressClass: config.Config.Deployment.IngressClass,
+					Hosts:        []string{port.HttpProxy.CustomDomain.Domain},
+					Placeholder:  false,
+					CustomCert: &models.CustomCert{
+						ClusterIssuer: "letsencrypt-prod-deploy-http",
+						CommonName:    port.HttpProxy.CustomDomain.Domain,
+					},
+					TlsSecret: nil,
+				})
+			}
+		}
+
+		for mapName, ingress := range kg.v.vm.Subsystems.K8s.GetIngressMap() {
+			idx := 0
+			matchedIdx := -1
+			for _, port := range portMap {
+				if port.HttpProxy == nil {
+					continue
+				}
+
+				if vmpIngressName(kg.v.vm, port.HttpProxy.Name) == mapName ||
+					(vmpCustomDomainIngressName(kg.v.vm, port.HttpProxy.Name) == mapName && port.HttpProxy.CustomDomain != nil) {
+					matchedIdx = idx
+					break
+				}
+			}
+
+			if matchedIdx != -1 {
+				res[idx].CreatedAt = ingress.CreatedAt
+			}
+		}
+
+		return res
+	}
 
 	if kg.s.sm != nil {
 		tlsSecret := constants.WildcardCertSecretName
@@ -1265,9 +1337,10 @@ func vmParentPvName(vm *vmModels.VM) string {
 	return fmt.Sprintf("%s-%s", vm.Name, constants.VmParentName)
 }
 
-// vmServiceName returns the service name for a VM
-func vmServiceName(vm *vmModels.VM) string {
-	return vm.Name
+// vmServiceName returns the service name for a VM.
+// portName should be created using the pfrName function.
+func vmServiceName(vm *vmModels.VM, portName string) string {
+	return fmt.Sprintf("%s-%s", vm.Name, portName)
 }
 
 // vmpDeploymentName returns the deployment name for a VM proxy

@@ -46,10 +46,11 @@ func (vm *VM) ToDTOv2(gpu *gpuModels.GPU, teams []string, sshConnectionString *s
 		}
 
 		ports = append(ports, body.PortRead{
-			Name:      port.Name,
-			Port:      port.Port,
-			Protocol:  port.Protocol,
-			HttpProxy: httpProxy,
+			Name:         port.Name,
+			Port:         port.Port,
+			ExternalPort: vm.GetExternalPort(port.Port, port.Protocol),
+			Protocol:     port.Protocol,
+			HttpProxy:    httpProxy,
 		})
 	}
 

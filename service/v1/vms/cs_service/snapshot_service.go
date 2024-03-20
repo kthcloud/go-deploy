@@ -13,7 +13,7 @@ import (
 
 // makeBadStateErr creates an error with the BadStateErr type.
 func makeBadStateErr(state string) error {
-	return fmt.Errorf("%w: %s", sErrors.BadStateErr, state)
+	return fmt.Errorf("%w %s", sErrors.BadStateErr, state)
 }
 
 // CreateSnapshot creates a snapshot for a VM.

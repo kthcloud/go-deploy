@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"fmt"
 	"go-deploy/models/sys/activity"
 	gpuModels "go-deploy/models/sys/gpu"
 	"time"
@@ -103,4 +104,20 @@ func (vm *VM) BeingDeleted() bool {
 
 func (vm *VM) BeingTransferred() bool {
 	return vm.Transfer != nil
+}
+
+func (vm *VM) GetExternalPort(privatePort int, protocol string) *int {
+	pfrName := fmt.Sprintf("priv-%d-prot-%s", privatePort, protocol)
+	service := vm.Subsystems.K8s.GetService(fmt.Sprintf("%s-%s", vm.Name, pfrName))
+	if service == nil {
+		return nil
+	}
+
+	for _, port := range service.Ports {
+		if port.Name == pfrName {
+			return &port.Port
+		}
+	}
+
+	return nil
 }
