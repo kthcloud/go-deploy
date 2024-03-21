@@ -51,7 +51,7 @@ func NewPortInUseErr(port int) PortInUseErr {
 
 var (
 	// DeploymentNotFoundErr is returned when the deployment is not found.
-	// This is most likely caused by a race-condition between a some resource call and a deletion call.
+	// This is most likely caused by a race-condition between a some model call and a deletion call.
 	DeploymentNotFoundErr = fmt.Errorf("deployment not found")
 
 	// MainAppNotFoundErr is returned when the main app is not found.
@@ -68,20 +68,20 @@ var (
 	SmAlreadyExistsErr = fmt.Errorf("storage manager already exists for user")
 
 	// VmNotFoundErr is returned when the vm is not found.
-	// This is most likely caused by a race-condition between a some resource call and a deletion call.
+	// This is most likely caused by a race-condition between a some model call and a deletion call.
 	VmNotFoundErr = fmt.Errorf("vm not found")
 
 	// VmNotCreatedErr is returned when the vm is not created.
 	VmNotCreatedErr = fmt.Errorf("vm not created")
 
-	// GpuNotFoundErr is returned when the gpu is not found.
-	GpuNotFoundErr = fmt.Errorf("gpu not found")
+	// GpuNotFoundErr is returned when the gpu_repo is not found.
+	GpuNotFoundErr = fmt.Errorf("gpu_repo not found")
 
-	// GpuAlreadyAttachedErr is returned when the gpu is already attached to another VM.
-	GpuAlreadyAttachedErr = fmt.Errorf("gpu already attached")
+	// GpuAlreadyAttachedErr is returned when the gpu_repo is already attached to another VM.
+	GpuAlreadyAttachedErr = fmt.Errorf("gpu_repo already attached")
 
 	// GpuLeaseNotActive is returned when the GPU lease is not active.
-	GpuLeaseNotActiveErr = fmt.Errorf("gpu lease not active")
+	GpuLeaseNotActiveErr = fmt.Errorf("gpu_repo lease not active")
 
 	// VmTooLargeErr is returned when the VM is too large to be started on a specific host.
 	// Something that is required when using GPUs.

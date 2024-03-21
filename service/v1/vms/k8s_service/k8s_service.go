@@ -3,8 +3,9 @@ package k8s_service
 import (
 	"errors"
 	"fmt"
-	vmModels "go-deploy/models/sys/vm"
+	"go-deploy/models/model"
 	"go-deploy/models/versions"
+	"go-deploy/pkg/db/resources/vm_repo"
 	kErrors "go-deploy/pkg/subsystems/k8s/errors"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/service/constants"
@@ -18,7 +19,7 @@ import (
 // Create sets up K8s for a VM.
 //
 // This does nothing if the VM is version 1 and has no proxy ports
-func (c *Client) Create(id string, params *vmModels.CreateParams) error {
+func (c *Client) Create(id string, params *model.VmCreateParams) error {
 	log.Println("setting up k8s for", params.Name)
 
 	makeError := func(err error) error {
@@ -420,8 +421,8 @@ func (c *Client) EnsureOwner(id, oldOwnerID string) error {
 func dbFunc(id, key string) func(interface{}) error {
 	return func(data interface{}) error {
 		if data == nil {
-			return vmModels.New(versions.V1).DeleteSubsystem(id, "k8s."+key)
+			return vm_repo.New(versions.V1).DeleteSubsystem(id, "k8s."+key)
 		}
-		return vmModels.New(versions.V1).SetSubsystem(id, "k8s."+key, data)
+		return vm_repo.New(versions.V1).SetSubsystem(id, "k8s."+key, data)
 	}
 }

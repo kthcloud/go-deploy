@@ -2,8 +2,8 @@ package jobs
 
 import (
 	"github.com/stretchr/testify/assert"
-	"go-deploy/models/dto/v1/body"
-	jobModels "go-deploy/models/sys/job"
+	"go-deploy/dto/v1/body"
+	"go-deploy/models/model"
 	"go-deploy/test/e2e"
 	"os"
 	"testing"
@@ -27,7 +27,7 @@ func TestGet(t *testing.T) {
 	job := e2e.GetJob(t, jobID)
 
 	assert.Equal(t, jobID, job.ID)
-	assert.Equal(t, job.Type, jobModels.TypeCreateDeployment)
+	assert.Equal(t, job.Type, model.JobCreateDeployment)
 	assert.Equal(t, job.UserID, e2e.AdminUserID)
 }
 
@@ -59,7 +59,7 @@ func TestUpdate(t *testing.T) {
 	e2e.WaitForJobFinished(t, jobID, nil)
 
 	// The job above is assumed to NOT be terminated, so when we update it to terminated, we will notice the change
-	terminatedStatus := jobModels.StatusTerminated
+	terminatedStatus := model.JobStatusTerminated
 
 	e2e.UpdateJob(t, jobID, body.JobUpdate{Status: &terminatedStatus})
 }

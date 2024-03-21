@@ -4,12 +4,10 @@ import (
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"go-deploy/models/dto/v1/body"
-	"go-deploy/models/dto/v1/query"
-	"go-deploy/models/dto/v1/uri"
-	deploymentModels "go-deploy/models/sys/deployment"
-	jobModels "go-deploy/models/sys/job"
-	zoneModels "go-deploy/models/sys/zone"
+	"go-deploy/dto/v1/body"
+	"go-deploy/dto/v1/query"
+	"go-deploy/dto/v1/uri"
+	"go-deploy/models/model"
 	"go-deploy/models/versions"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
@@ -185,7 +183,7 @@ func Create(c *gin.Context) {
 	}
 
 	if requestBody.Zone != nil {
-		zone := deployV1.Zones().Get(*requestBody.Zone, zoneModels.TypeDeployment)
+		zone := deployV1.Zones().Get(*requestBody.Zone, model.ZoneTypeDeployment)
 		if zone == nil {
 			context.NotFound("Zone not found")
 			return
@@ -211,7 +209,7 @@ func Create(c *gin.Context) {
 
 	deploymentID := uuid.New().String()
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, jobModels.TypeCreateDeployment, versions.V1, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobCreateDeployment, versions.V1, map[string]interface{}{
 		"id":      deploymentID,
 		"ownerId": auth.UserID,
 		"params":  requestBody,
@@ -276,7 +274,7 @@ func Delete(c *gin.Context) {
 		return
 	}
 
-	err = deployV1.Deployments().StartActivity(requestURI.DeploymentID, deploymentModels.ActivityBeingDeleted)
+	err = deployV1.Deployments().StartActivity(requestURI.DeploymentID, model.ActivityBeingDeleted)
 	if err != nil {
 		var failedToStartActivityErr sErrors.FailedToStartActivityError
 		if errors.As(err, &failedToStartActivityErr) {
@@ -294,7 +292,7 @@ func Delete(c *gin.Context) {
 	}
 
 	jobID := uuid.NewString()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, jobModels.TypeDeleteDeployment, versions.V1, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobDeleteDeployment, versions.V1, map[string]interface{}{
 		"id": currentDeployment.ID,
 	})
 	if err != nil {
@@ -345,7 +343,7 @@ func Update(c *gin.Context) {
 
 	deployV1 := service.V1(auth)
 
-	var deployment *deploymentModels.Deployment
+	var deployment *model.Deployment
 	if requestBody.TransferCode != nil {
 		deployment, err = deployV1.Deployments().Get(requestURI.DeploymentID, opts.GetOpts{TransferCode: *requestBody.TransferCode})
 		if err != nil {
@@ -462,14 +460,14 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	canUpdate, reason := deployV1.Deployments().CanAddActivity(requestURI.DeploymentID, deploymentModels.ActivityUpdating)
+	canUpdate, reason := deployV1.Deployments().CanAddActivity(requestURI.DeploymentID, model.ActivityUpdating)
 	if !canUpdate {
 		context.Locked(reason)
 		return
 	}
 
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, jobModels.TypeUpdateDeployment, versions.V1, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobUpdateDeployment, versions.V1, map[string]interface{}{
 		"id":     deployment.ID,
 		"params": requestBody,
 	})

@@ -4,12 +4,10 @@ import (
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"go-deploy/models/dto/v2/body"
-	"go-deploy/models/dto/v2/query"
-	"go-deploy/models/dto/v2/uri"
-	jobModels "go-deploy/models/sys/job"
-	vmModels "go-deploy/models/sys/vm"
-	zoneModels "go-deploy/models/sys/zone"
+	"go-deploy/dto/v2/body"
+	"go-deploy/dto/v2/query"
+	"go-deploy/dto/v2/uri"
+	"go-deploy/models/model"
 	"go-deploy/models/versions"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
@@ -77,7 +75,8 @@ func List(c *gin.Context) {
 	for i, vm := range vms {
 		teamIDs, _ := deployV1.Teams().ListIDs(teamOpts.ListOpts{ResourceID: vm.ID})
 		sshConnectionString, _ := deployV2.VMs().SshConnectionString(vm.ID)
-		dtoVMs[i] = vm.ToDTOv2(vm.GetGPU(), teamIDs, sshConnectionString)
+		// TODO: Implement leases read
+		dtoVMs[i] = vm.ToDTOv2(nil, teamIDs, sshConnectionString)
 	}
 
 	context.Ok(dtoVMs)
@@ -126,7 +125,9 @@ func Get(c *gin.Context) {
 
 	teamIDs, _ := deployV1.Teams().ListIDs(teamOpts.ListOpts{ResourceID: vm.ID})
 	sshConnectionString, _ := deployV2.VMs().SshConnectionString(vm.ID)
-	context.Ok(vm.ToDTOv2(vm.GetGPU(), teamIDs, sshConnectionString))
+	// TODO: Implement leases read
+	//lease, _ := deployV2.VMs().GpuLeases()
+	context.Ok(vm.ToDTOv2(nil, teamIDs, sshConnectionString))
 }
 
 // Create
@@ -173,7 +174,7 @@ func Create(c *gin.Context) {
 	}
 
 	if requestBody.Zone != nil {
-		zone := deployV1.Zones().Get(*requestBody.Zone, zoneModels.TypeVM)
+		zone := deployV1.Zones().Get(*requestBody.Zone, model.ZoneTypeVM)
 		if zone == nil {
 			context.NotFound("Zone not found")
 			return
@@ -194,7 +195,7 @@ func Create(c *gin.Context) {
 
 	vmID := uuid.New().String()
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, jobModels.TypeCreateVM, versions.V2, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobCreateVM, versions.V2, map[string]interface{}{
 		"id":      vmID,
 		"ownerId": auth.UserID,
 		"params":  requestBody,
@@ -259,7 +260,7 @@ func Delete(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, jobModels.TypeDeleteVM, versions.V2, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobDeleteVM, versions.V2, map[string]interface{}{
 		"id": vm.ID,
 	})
 	if err != nil {
@@ -313,7 +314,7 @@ func Update(c *gin.Context) {
 	deployV1 := service.V1(auth)
 	deployV2 := service.V2(auth)
 
-	var vm *vmModels.VM
+	var vm *model.VM
 	if requestBody.TransferCode != nil {
 		vm, err = deployV2.VMs().Get("", opts.GetOpts{TransferCode: requestBody.TransferCode})
 		if err != nil {
@@ -448,7 +449,7 @@ func Update(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, jobModels.TypeUpdateVM, versions.V2, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobUpdateVM, versions.V2, map[string]interface{}{
 		"id":     vm.ID,
 		"params": requestBody,
 	})

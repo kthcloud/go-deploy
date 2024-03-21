@@ -2,7 +2,7 @@ package k8s_service
 
 import (
 	configModels "go-deploy/models/config"
-	deploymentModels "go-deploy/models/sys/deployment"
+	"go-deploy/models/model"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/k8s"
 	"go-deploy/service/core"
@@ -64,8 +64,8 @@ func New(cache *core.Cache) *Client {
 //
 // Depending on the options specified, some return values may be nil.
 // This is useful when you don't always need all the resources.
-func (c *Client) Get(opts *opts.Opts) (*deploymentModels.Deployment, *k8s.Client, *resources.K8sGenerator, error) {
-	var d *deploymentModels.Deployment
+func (c *Client) Get(opts *opts.Opts) (*model.Deployment, *k8s.Client, *resources.K8sGenerator, error) {
+	var d *model.Deployment
 	var kc *k8s.Client
 	var g *resources.K8sGenerator
 	var err error
@@ -118,7 +118,7 @@ func (c *Client) Client(zone *configModels.DeploymentZone) (*k8s.Client, error) 
 }
 
 // Generator returns the K8s generator.
-func (c *Client) Generator(d *deploymentModels.Deployment, client *k8s.Client, zone *configModels.DeploymentZone) *resources.K8sGenerator {
+func (c *Client) Generator(d *model.Deployment, client *k8s.Client, zone *configModels.DeploymentZone) *resources.K8sGenerator {
 	if d == nil {
 		panic("deployment is nil")
 	}
@@ -149,7 +149,7 @@ func withClient(zone *configModels.DeploymentZone, namespace string) (*k8s.Clien
 }
 
 // getZone is a helper function that returns either the zone in opts or the zone in the deployment.
-func getZone(opts *opts.Opts, d *deploymentModels.Deployment) *configModels.DeploymentZone {
+func getZone(opts *opts.Opts, d *model.Deployment) *configModels.DeploymentZone {
 	if opts.ExtraOpts.Zone != nil {
 		return opts.ExtraOpts.Zone
 	}

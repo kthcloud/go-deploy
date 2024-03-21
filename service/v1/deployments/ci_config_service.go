@@ -2,13 +2,13 @@ package deployments
 
 import (
 	"fmt"
-	"go-deploy/models/dto/v1/body"
-	deploymentModels "go-deploy/models/sys/deployment"
+	"go-deploy/dto/v1/body"
+	"go-deploy/models/model"
 	"go-deploy/pkg/config"
 	"go-deploy/service/errors"
 	"go-deploy/service/v1/deployments/opts"
 	"go-deploy/utils/subsystemutils"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 // GetCiConfig returns the CI config for the deployment.
@@ -29,7 +29,7 @@ func (c *Client) GetCiConfig(id string) (*body.CiConfig, error) {
 		return nil, nil
 	}
 
-	if deployment.Type != deploymentModels.TypeCustom {
+	if deployment.Type != model.DeploymentTypeCustom {
 		return nil, nil
 	}
 
@@ -42,16 +42,16 @@ func (c *Client) GetCiConfig(id string) (*body.CiConfig, error) {
 	username := deployment.Subsystems.Harbor.Robot.HarborName
 	password := deployment.Subsystems.Harbor.Robot.Secret
 
-	githubCiConfig := deploymentModels.GithubActionConfig{
+	githubCiConfig := model.GithubActionConfig{
 		Name: "kthcloud-ci",
-		On:   deploymentModels.On{Push: deploymentModels.Push{Branches: []string{"main"}}},
-		Jobs: deploymentModels.Jobs{Docker: deploymentModels.Docker{
+		On:   model.On{Push: model.Push{Branches: []string{"main"}}},
+		Jobs: model.Jobs{Docker: model.Docker{
 			RunsOn: "ubuntu-latest",
-			Steps: []deploymentModels.Steps{
+			Steps: []model.Steps{
 				{
 					Name: "Login to Docker Hub",
 					Uses: "docker/login-action@v3",
-					With: deploymentModels.With{
+					With: model.With{
 						Registry: config.Config.Registry.URL,
 						Username: username,
 						Password: password,
@@ -60,7 +60,7 @@ func (c *Client) GetCiConfig(id string) (*body.CiConfig, error) {
 				{
 					Name: "Build and push",
 					Uses: "docker/build-push-action@v5",
-					With: deploymentModels.With{
+					With: model.With{
 						Push: true,
 						Tags: tag,
 					},

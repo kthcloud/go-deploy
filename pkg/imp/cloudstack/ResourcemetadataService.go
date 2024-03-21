@@ -494,7 +494,7 @@ func (s *ResourcemetadataService) NewListResourceDetailsParams(resourcetype stri
 	return p
 }
 
-// List resource detail(s)
+// List model detail(s)
 func (s *ResourcemetadataService) ListResourceDetails(p *ListResourceDetailsParams) (*ListResourceDetailsResponse, error) {
 	resp, err := s.cs.newRequest("listResourceDetails", p.toURLValues())
 	if err != nil {

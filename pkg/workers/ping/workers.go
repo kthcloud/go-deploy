@@ -3,8 +3,9 @@ package ping
 import (
 	"context"
 	"fmt"
-	deploymentModels "go-deploy/models/sys/deployment"
+	"go-deploy/models/model"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/db/resources/deployment_repo"
 	"go-deploy/pkg/workers"
 	"go-deploy/utils"
 	"net/http"
@@ -30,7 +31,7 @@ func deploymentPingUpdater(ctx context.Context) {
 				return fmt.Errorf("error fetching deployments. details: %w", err)
 			}
 
-			deployments, err := deploymentModels.New().List()
+			deployments, err := deployment_repo.New().List()
 			if err != nil {
 				utils.PrettyPrintError(makeError(err))
 				return
@@ -46,7 +47,7 @@ func deploymentPingUpdater(ctx context.Context) {
 }
 
 // pingDeployment pings a deployment and stores the result in the database.
-func pingDeployment(deployment *deploymentModels.Deployment) {
+func pingDeployment(deployment *model.Deployment) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to ping deployment. details: %w", err)
 	}
@@ -78,14 +79,14 @@ func pingDeployment(deployment *deploymentModels.Deployment) {
 }
 
 // pingAndSave pings a deployment and stores the result in the database.
-func pingAndSave(deployment deploymentModels.Deployment, url string) {
+func pingAndSave(deployment model.Deployment, url string) {
 	code, err := ping(url)
 	if err != nil {
 		utils.PrettyPrintError(fmt.Errorf("error fetching deployment status ping. details: %w", err))
 		return
 	}
 
-	err = deploymentModels.New().SetPingResult(deployment.ID, code)
+	err = deployment_repo.New().SetPingResult(deployment.ID, code)
 	if err != nil {
 		utils.PrettyPrintError(fmt.Errorf("error saving deployment status ping. details: %w", err))
 		return
@@ -93,8 +94,8 @@ func pingAndSave(deployment deploymentModels.Deployment, url string) {
 }
 
 // resetPing resets the ping status of a deployment.
-func resetPing(deployment deploymentModels.Deployment) {
-	err := deploymentModels.New().SetPingResult(deployment.ID, 0)
+func resetPing(deployment model.Deployment) {
+	err := deployment_repo.New().SetPingResult(deployment.ID, 0)
 	if err != nil {
 		utils.PrettyPrintError(fmt.Errorf("error resetting deployment status ping. details: %w", err))
 		return

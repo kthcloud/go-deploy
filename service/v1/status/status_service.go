@@ -1,14 +1,15 @@
 package status
 
 import (
-	workerStatusModels "go-deploy/models/sys/worker_status"
+	"go-deploy/models/model"
+	"go-deploy/pkg/db/resources/worker_status_repo"
 	"go-deploy/service/v1/status/opts"
 	"time"
 )
 
 // ListWorkerStatus returns the status of all workers
-func (c *Client) ListWorkerStatus(opts ...opts.ListWorkerStatusOpts) ([]workerStatusModels.WorkerStatus, error) {
-	workerStatus, err := workerStatusModels.New().List()
+func (c *Client) ListWorkerStatus(opts ...opts.ListWorkerStatusOpts) ([]model.WorkerStatus, error) {
+	workerStatus, err := worker_status_repo.New().List()
 	if err != nil {
 		return nil, err
 	}

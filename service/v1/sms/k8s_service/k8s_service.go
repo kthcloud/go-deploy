@@ -3,7 +3,8 @@ package k8s_service
 import (
 	"errors"
 	"fmt"
-	smModels "go-deploy/models/sys/sm"
+	"go-deploy/models/model"
+	"go-deploy/pkg/db/resources/sm_repo"
 	kErrors "go-deploy/pkg/subsystems/k8s/errors"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/service/constants"
@@ -16,7 +17,7 @@ import (
 // Create creates the storage manager.
 //
 // It creates all K8s resources for the storage manager.
-func (c *Client) Create(id string, params *smModels.CreateParams) error {
+func (c *Client) Create(id string, params *model.SmCreateParams) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create storage manager in k8s. details: %w", err)
 	}
@@ -483,8 +484,8 @@ func (c *Client) recreatePvPvcDeployments(id string) error {
 func dbFunc(id, key string) func(interface{}) error {
 	return func(data interface{}) error {
 		if data == nil {
-			return smModels.New().DeleteSubsystem(id, "k8s."+key)
+			return sm_repo.New().DeleteSubsystem(id, "k8s."+key)
 		}
-		return smModels.New().SetSubsystem(id, "k8s."+key, data)
+		return sm_repo.New().SetSubsystem(id, "k8s."+key, data)
 	}
 }

@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
-	deploymentModels "go-deploy/models/sys/deployment"
-	jobModels "go-deploy/models/sys/job"
-	smModels "go-deploy/models/sys/sm"
-	vmModels "go-deploy/models/sys/vm"
+	"go-deploy/models/model"
 	"go-deploy/models/versions"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/db/resources/deployment_repo"
+	"go-deploy/pkg/db/resources/job_repo"
+	"go-deploy/pkg/db/resources/sm_repo"
+	"go-deploy/pkg/db/resources/vm_repo"
 	"go-deploy/pkg/workers"
 	"go-deploy/utils"
 	"log"
@@ -30,7 +31,7 @@ func deploymentRepairer(ctx context.Context) {
 			workers.ReportUp("deploymentRepairer")
 
 		case <-tick:
-			restarting, err := deploymentModels.New().WithActivities(deploymentModels.ActivityRestarting).List()
+			restarting, err := deployment_repo.New().WithActivities(model.ActivityRestarting).List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching restarting deployments. details: %w", err))
 				continue
@@ -41,23 +42,23 @@ func deploymentRepairer(ctx context.Context) {
 				now := time.Now()
 				if now.Sub(deployment.RestartedAt) > 5*time.Minute {
 					log.Printf("removing restarting activity from deployment %s\n", deployment.Name)
-					err = deploymentModels.New().RemoveActivity(deployment.ID, deploymentModels.ActivityRestarting)
+					err = deployment_repo.New().RemoveActivity(deployment.ID, model.ActivityRestarting)
 					if err != nil {
 						utils.PrettyPrintError(fmt.Errorf("failed to remove restarting activity from deployment %s. details: %w", deployment.Name, err))
 					}
 				}
 			}
 
-			withNoActivities, err := deploymentModels.New().WithNoActivities().List()
+			withNoActivities, err := deployment_repo.New().WithNoActivities().List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching deployments with no activities. details: %w", err))
 				continue
 			}
 
 			for _, deployment := range withNoActivities {
-				exists, err := jobModels.New().
-					IncludeTypes(jobModels.TypeRepairDeployment).
-					ExcludeStatus(jobModels.StatusTerminated, jobModels.StatusCompleted).
+				exists, err := job_repo.New().
+					IncludeTypes(model.JobRepairDeployment).
+					ExcludeStatus(model.JobStatusTerminated, model.JobStatusCompleted).
 					FilterArgs("id", deployment.ID).
 					ExistsAny()
 				if err != nil {
@@ -74,7 +75,7 @@ func deploymentRepairer(ctx context.Context) {
 				seconds := config.Config.Deployment.RepairInterval + rand.Intn(config.Config.Deployment.RepairInterval)
 				runAfter := time.Now().Add(time.Duration(seconds) * time.Second)
 
-				err = jobModels.New().CreateScheduled(jobID, deployment.OwnerID, jobModels.TypeRepairDeployment, versions.V1, runAfter, map[string]interface{}{
+				err = job_repo.New().CreateScheduled(jobID, deployment.OwnerID, model.JobRepairDeployment, versions.V1, runAfter, map[string]interface{}{
 					"id": deployment.ID,
 				})
 				if err != nil {
@@ -102,16 +103,16 @@ func smRepairer(ctx context.Context) {
 			workers.ReportUp("smRepairer")
 
 		case <-tick:
-			withNoActivities, err := smModels.New().WithNoActivities().List()
+			withNoActivities, err := sm_repo.New().WithNoActivities().List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching storage managers with no activities. details: %w", err))
 				continue
 			}
 
 			for _, sm := range withNoActivities {
-				exists, err := jobModels.New().
-					IncludeTypes(jobModels.TypeRepairSM).
-					ExcludeStatus(jobModels.StatusTerminated, jobModels.StatusCompleted).
+				exists, err := job_repo.New().
+					IncludeTypes(model.JobRepairSM).
+					ExcludeStatus(model.JobStatusTerminated, model.JobStatusCompleted).
 					FilterArgs("id", sm.ID).
 					ExistsAny()
 				if err != nil {
@@ -128,7 +129,7 @@ func smRepairer(ctx context.Context) {
 				seconds := config.Config.Deployment.RepairInterval + rand.Intn(config.Config.Deployment.RepairInterval)
 				runAfter := time.Now().Add(time.Duration(seconds) * time.Second)
 
-				err = jobModels.New().CreateScheduled(jobID, sm.OwnerID, jobModels.TypeRepairSM, versions.V1, runAfter, map[string]interface{}{
+				err = job_repo.New().CreateScheduled(jobID, sm.OwnerID, model.JobRepairSM, versions.V1, runAfter, map[string]interface{}{
 					"id": sm.ID,
 				})
 				if err != nil {
@@ -155,16 +156,16 @@ func vmRepairer(ctx context.Context) {
 			workers.ReportUp("vmRepairer")
 
 		case <-tick:
-			withNoActivities, err := vmModels.New().WithNoActivities().List()
+			withNoActivities, err := vm_repo.New().WithNoActivities().List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching vms with no activities. details: %w", err))
 				continue
 			}
 
 			for _, vm := range withNoActivities {
-				exists, err := jobModels.New().
-					IncludeTypes(jobModels.TypeRepairVM).
-					ExcludeStatus(jobModels.StatusTerminated, jobModels.StatusCompleted).
+				exists, err := job_repo.New().
+					IncludeTypes(model.JobRepairVM).
+					ExcludeStatus(model.JobStatusTerminated, model.JobStatusCompleted).
 					FilterArgs("id", vm.ID).
 					ExistsAny()
 				if err != nil {
@@ -181,7 +182,7 @@ func vmRepairer(ctx context.Context) {
 				seconds := config.Config.VM.RepairInterval + rand.Intn(config.Config.VM.RepairInterval)
 				runAfter := time.Now().Add(time.Duration(seconds) * time.Second)
 
-				err = jobModels.New().CreateScheduled(jobID, vm.OwnerID, jobModels.TypeRepairVM, versions.V1, runAfter, map[string]interface{}{
+				err = job_repo.New().CreateScheduled(jobID, vm.OwnerID, model.JobRepairVM, versions.V1, runAfter, map[string]interface{}{
 					"id": vm.ID,
 				})
 				if err != nil {

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/helloyi/go-sshclient"
 	"github.com/stretchr/testify/assert"
-	"go-deploy/models/dto/v1/body"
+	"go-deploy/dto/v1/body"
 	"go-deploy/pkg/app/status_codes"
 	"net/http"
 	"os"
@@ -191,7 +191,7 @@ func WithAssumedFailedVM(t *testing.T, requestBody body.VmCreate) {
 
 	t.Cleanup(func() { cleanUpVm(t, vmCreated.ID) })
 
-	assert.FailNow(t, "resource was created but should have failed")
+	assert.FailNow(t, "model was created but should have failed")
 }
 
 func WithSshPublicKey(t *testing.T) string {

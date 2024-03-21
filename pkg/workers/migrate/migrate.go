@@ -2,10 +2,10 @@ package migrator
 
 import (
 	"fmt"
-	deploymentModels "go-deploy/models/sys/deployment"
-	smModels "go-deploy/models/sys/sm"
-	vmModels "go-deploy/models/sys/vm"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/db/resources/deployment_repo"
+	"go-deploy/pkg/db/resources/sm_repo"
+	"go-deploy/pkg/db/resources/vm_repo"
 	k8sServiceDeployment "go-deploy/service/v1/deployments/k8s_service"
 	k8sServiceSM "go-deploy/service/v1/sms/k8s_service"
 	k8sServiceVM "go-deploy/service/v1/vms/k8s_service"
@@ -47,7 +47,7 @@ func getMigrations() map[string]func() error {
 }
 
 func moveIntoNewDeployNamespaces() error {
-	deployments, err := deploymentModels.New().List()
+	deployments, err := deployment_repo.New().List()
 	if err != nil {
 		return err
 	}
@@ -86,7 +86,7 @@ func moveIntoNewDeployNamespaces() error {
 	}
 
 	// Migrate VM (http proxies) to new namespaces
-	vms, err := vmModels.New().List()
+	vms, err := vm_repo.New().List()
 	if err != nil {
 		return err
 	}
@@ -128,7 +128,7 @@ func moveIntoNewDeployNamespaces() error {
 	}
 
 	// Migrate SMs to new namespaces
-	sms, err := smModels.New().List()
+	sms, err := sm_repo.New().List()
 	if err != nil {
 		return err
 	}

@@ -4,11 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
-	"go-deploy/models/dto/v1/body"
-	deploymentModels "go-deploy/models/sys/deployment"
-	notificationModels "go-deploy/models/sys/notification"
-	teamModels "go-deploy/models/sys/team"
-	vmModels "go-deploy/models/sys/vm"
+	"go-deploy/dto/v1/body"
+	"go-deploy/models/model"
+	"go-deploy/pkg/db/resources/deployment_repo"
+	"go-deploy/pkg/db/resources/notification_repo"
+	"go-deploy/pkg/db/resources/team_repo"
+	"go-deploy/pkg/db/resources/vm_repo"
 	sErrors "go-deploy/service/errors"
 	utils2 "go-deploy/service/utils"
 	"go-deploy/service/v1/teams/opts"
@@ -18,11 +19,11 @@ import (
 
 // Get gets a team
 //
-// It uses service.AuthInfo to only return the resource the requesting user has access to
-func (c *Client) Get(id string, opts ...opts.GetOpts) (*teamModels.Team, error) {
+// It uses service.AuthInfo to only return the model the requesting user has access to
+func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.Team, error) {
 	_ = utils2.GetFirstOrDefault(opts)
 
-	tmc := teamModels.New()
+	tmc := team_repo.New()
 
 	if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
 		tmc.WithUserID(c.V1.Auth().UserID)
@@ -34,10 +35,10 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*teamModels.Team, error) 
 // List lists teams
 //
 // It uses service.AuthInfo to only return the resources the requesting user has access to
-func (c *Client) List(opts ...opts.ListOpts) ([]teamModels.Team, error) {
+func (c *Client) List(opts ...opts.ListOpts) ([]model.Team, error) {
 	o := utils2.GetFirstOrDefault(opts)
 
-	tmc := teamModels.New()
+	tmc := team_repo.New()
 
 	if o.Pagination != nil {
 		tmc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
@@ -77,7 +78,7 @@ func (c *Client) List(opts ...opts.ListOpts) ([]teamModels.Team, error) {
 func (c *Client) ListIDs(opts ...opts.ListOpts) ([]string, error) {
 	o := utils2.GetFirstOrDefault(opts)
 
-	tmc := teamModels.New()
+	tmc := team_repo.New()
 
 	if o.Pagination != nil {
 		tmc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
@@ -123,18 +124,18 @@ func (c *Client) ListIDs(opts ...opts.ListOpts) ([]string, error) {
 // Create creates a new team
 //
 // Notifications are sent out if the owner of the team is not admin
-func (c *Client) Create(id, ownerID string, dtoCreateTeam *body.TeamCreate) (*teamModels.Team, error) {
-	params := &teamModels.CreateParams{}
+func (c *Client) Create(id, ownerID string, dtoCreateTeam *body.TeamCreate) (*model.Team, error) {
+	params := &model.TeamCreateParams{}
 	params.FromDTO(dtoCreateTeam, ownerID,
-		func(resourceID string) *teamModels.Resource { return c.getResourceIfAccessible(resourceID) },
-		func(memberDTO *body.TeamMemberCreate) *teamModels.Member {
+		func(resourceID string) *model.TeamResource { return c.getResourceIfAccessible(resourceID) },
+		func(memberDTO *body.TeamMemberCreate) *model.TeamMember {
 			return c.createMemberIfAccessible(nil, memberDTO.ID)
 		},
 	)
 
-	team, err := teamModels.New().Create(id, ownerID, params)
+	team, err := team_repo.New().Create(id, ownerID, params)
 	if err != nil {
-		if errors.Is(err, teamModels.NameTakenErr) {
+		if errors.Is(err, team_repo.NameTakenErr) {
 			return nil, sErrors.TeamNameTakenErr
 		}
 
@@ -156,10 +157,10 @@ func (c *Client) Create(id, ownerID string, dtoCreateTeam *body.TeamCreate) (*te
 
 // Update updates a team
 //
-// It uses service.AuthInfo to only update the resource the requesting user has access to
+// It uses service.AuthInfo to only update the model the requesting user has access to
 // Notifications are sent out if the owner of the team is not admin
-func (c *Client) Update(id string, dtoUpdateTeam *body.TeamUpdate) (*teamModels.Team, error) {
-	team, err := teamModels.New().GetByID(id)
+func (c *Client) Update(id string, dtoUpdateTeam *body.TeamUpdate) (*model.Team, error) {
+	team, err := team_repo.New().GetByID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -172,10 +173,10 @@ func (c *Client) Update(id string, dtoUpdateTeam *body.TeamUpdate) (*teamModels.
 		return nil, nil
 	}
 
-	params := &teamModels.UpdateParams{}
+	params := &model.TeamUpdateParams{}
 	params.FromDTO(dtoUpdateTeam, team.GetMember(team.OwnerID),
-		func(resourceID string) *teamModels.Resource { return c.getResourceIfAccessible(resourceID) },
-		func(memberDTO *body.TeamMemberUpdate) *teamModels.Member {
+		func(resourceID string) *model.TeamResource { return c.getResourceIfAccessible(resourceID) },
+		func(memberDTO *body.TeamMemberUpdate) *model.TeamMember {
 			return c.createMemberIfAccessible(team, memberDTO.ID)
 		},
 	)
@@ -184,7 +185,7 @@ func (c *Client) Update(id string, dtoUpdateTeam *body.TeamUpdate) (*teamModels.
 	if params.MemberMap != nil {
 		for _, member := range *params.MemberMap {
 			// Don't invite users that have already joined
-			if existing := team.GetMember(member.ID); existing != nil && existing.MemberStatus == teamModels.MemberStatusJoined {
+			if existing := team.GetMember(member.ID); existing != nil && existing.MemberStatus == model.TeamMemberStatusJoined {
 				continue
 			}
 
@@ -198,7 +199,7 @@ func (c *Client) Update(id string, dtoUpdateTeam *body.TeamUpdate) (*teamModels.
 		}
 	}
 
-	// If new resource, set timestamp
+	// If new model, set timestamp
 	if params.ResourceMap != nil {
 		for _, resource := range *params.ResourceMap {
 			if existing := team.GetResource(resource.ID); existing != nil {
@@ -211,7 +212,7 @@ func (c *Client) Update(id string, dtoUpdateTeam *body.TeamUpdate) (*teamModels.
 		}
 	}
 
-	tmc := teamModels.New()
+	tmc := team_repo.New()
 
 	err = tmc.UpdateWithParams(id, params)
 	if err != nil {
@@ -223,9 +224,9 @@ func (c *Client) Update(id string, dtoUpdateTeam *body.TeamUpdate) (*teamModels.
 
 // Delete deletes a team
 //
-// It uses service.AuthInfo to only delete the resource the requesting user has access to
+// It uses service.AuthInfo to only delete the model the requesting user has access to
 func (c *Client) Delete(id string) error {
-	tmc := teamModels.New()
+	tmc := team_repo.New()
 
 	if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
 		tmc.WithOwnerID(c.V1.Auth().UserID)
@@ -240,7 +241,7 @@ func (c *Client) Delete(id string) error {
 		return sErrors.TeamNotFoundErr
 	}
 
-	err = notificationModels.New().FilterContent("id", id).Delete()
+	err = notification_repo.New().FilterContent("id", id).Delete()
 	if err != nil {
 		return err
 	}
@@ -251,15 +252,15 @@ func (c *Client) Delete(id string) error {
 // Join joins a team
 //
 // It uses service.AuthInfo to get the user ID
-func (c *Client) Join(id string, dtoTeamJoin *body.TeamJoin) (*teamModels.Team, error) {
+func (c *Client) Join(id string, dtoTeamJoin *body.TeamJoin) (*model.Team, error) {
 	if !c.V1.HasAuth() {
 		return nil, nil
 	}
 
-	params := &teamModels.JoinParams{}
+	params := &model.TeamJoinParams{}
 	params.FromDTO(dtoTeamJoin)
 
-	tmc := teamModels.New()
+	tmc := team_repo.New()
 	team, err := tmc.GetByID(id)
 	if err != nil {
 		return nil, err
@@ -269,7 +270,7 @@ func (c *Client) Join(id string, dtoTeamJoin *body.TeamJoin) (*teamModels.Team, 
 		return nil, nil
 	}
 
-	if team.GetMemberMap()[c.V1.Auth().UserID].MemberStatus != teamModels.MemberStatusInvited {
+	if team.GetMemberMap()[c.V1.Auth().UserID].MemberStatus != model.TeamMemberStatusInvited {
 		return team, sErrors.NotInvitedErr
 	}
 
@@ -278,7 +279,7 @@ func (c *Client) Join(id string, dtoTeamJoin *body.TeamJoin) (*teamModels.Team, 
 	}
 
 	updatedMember := team.GetMemberMap()[c.V1.Auth().UserID]
-	updatedMember.MemberStatus = teamModels.MemberStatusJoined
+	updatedMember.MemberStatus = model.TeamMemberStatusJoined
 	updatedMember.JoinedAt = time.Now()
 
 	err = tmc.UpdateMember(id, c.V1.Auth().UserID, &updatedMember)
@@ -286,7 +287,7 @@ func (c *Client) Join(id string, dtoTeamJoin *body.TeamJoin) (*teamModels.Team, 
 		return nil, err
 	}
 
-	nmc := notificationModels.New().WithUserID(c.V1.Auth().UserID).FilterContent("id", id).WithType(notificationModels.TypeTeamInvite)
+	nmc := notification_repo.New().WithUserID(c.V1.Auth().UserID).FilterContent("id", id).WithType(model.NotificationTeamInvite)
 	err = nmc.MarkReadAndCompleted()
 	if err != nil {
 		return nil, err
@@ -296,10 +297,10 @@ func (c *Client) Join(id string, dtoTeamJoin *body.TeamJoin) (*teamModels.Team, 
 }
 
 // getTeamIfAccessible is a helper function to get a team if the user is accessible to the user in the current context
-func (c *Client) getResourceIfAccessible(resourceID string) *teamModels.Resource {
+func (c *Client) getResourceIfAccessible(resourceID string) *model.TeamResource {
 	// Try to fetch deployment
-	dClient := deploymentModels.New()
-	vClient := vmModels.New()
+	dClient := deployment_repo.New()
+	vClient := vm_repo.New()
 
 	if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
 		dClient.WithOwner(c.V1.Auth().UserID)
@@ -313,24 +314,24 @@ func (c *Client) getResourceIfAccessible(resourceID string) *teamModels.Resource
 	}
 
 	if isOwner {
-		return &teamModels.Resource{
+		return &model.TeamResource{
 			ID:      resourceID,
-			Type:    teamModels.ResourceTypeDeployment,
+			Type:    model.TeamResourceDeployment,
 			AddedAt: time.Now(),
 		}
 	}
 
 	// Try to fetch vm
-	isOwner, err = vmModels.New().ExistsByID(resourceID)
+	isOwner, err = vm_repo.New().ExistsByID(resourceID)
 	if err != nil {
 		utils.PrettyPrintError(fmt.Errorf("failed to fetch vm when checking user access when creating team: %w", err))
 		return nil
 	}
 
 	if isOwner {
-		return &teamModels.Resource{
+		return &model.TeamResource{
 			ID:      resourceID,
-			Type:    teamModels.ResourceTypeVM,
+			Type:    model.TeamResourceVM,
 			AddedAt: time.Now(),
 		}
 	}
@@ -340,25 +341,25 @@ func (c *Client) getResourceIfAccessible(resourceID string) *teamModels.Resource
 
 // createMemberIfAccessible is a helper function to create a member for a team if the user is accessible
 // to the user in the current context
-func (c *Client) createMemberIfAccessible(current *teamModels.Team, memberID string) *teamModels.Member {
+func (c *Client) createMemberIfAccessible(current *model.Team, memberID string) *model.TeamMember {
 	if current != nil {
 		if existing := current.GetMember(memberID); existing != nil {
-			existing.TeamRole = teamModels.MemberRoleAdmin
+			existing.TeamRole = model.TeamMemberRoleAdmin
 			return existing
 		}
 	}
 
-	member := &teamModels.Member{
+	member := &model.TeamMember{
 		ID:       memberID,
-		TeamRole: teamModels.MemberRoleAdmin,
+		TeamRole: model.TeamMemberRoleAdmin,
 		AddedAt:  time.Now(),
 	}
 
 	if !c.V1.HasAuth() || c.V1.Auth().IsAdmin {
-		member.MemberStatus = teamModels.MemberStatusJoined
+		member.MemberStatus = model.TeamMemberStatusJoined
 		member.JoinedAt = time.Now()
 	} else {
-		member.MemberStatus = teamModels.MemberStatusInvited
+		member.MemberStatus = model.TeamMemberStatusInvited
 		member.InvitationCode = createInvitationCode()
 	}
 
@@ -367,8 +368,8 @@ func (c *Client) createMemberIfAccessible(current *teamModels.Team, memberID str
 
 // createInvitationNotification is a helper function to create a notification for a team invitation
 func (c *Client) createInvitationNotification(userID, teamID, teamName, invitationCode string) error {
-	_, err := c.V1.Notifications().Create(uuid.NewString(), userID, &notificationModels.CreateParams{
-		Type: notificationModels.TypeTeamInvite,
+	_, err := c.V1.Notifications().Create(uuid.NewString(), userID, &model.NotificationCreateParams{
+		Type: model.NotificationTeamInvite,
 		Content: map[string]interface{}{
 			"id":   teamID,
 			"name": teamName,

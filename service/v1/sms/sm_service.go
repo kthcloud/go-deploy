@@ -4,8 +4,9 @@ import (
 	"errors"
 	"fmt"
 	configModels "go-deploy/models/config"
-	smModels "go-deploy/models/sys/sm"
+	"go-deploy/models/model"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/db/resources/sm_repo"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/utils"
 	"go-deploy/service/v1/sms/k8s_service"
@@ -16,11 +17,11 @@ import (
 
 // Get gets an existing storage manager.
 //
-// It supports service.AuthInfo, and will restrict the result to ensure the user has access to the resource.
-func (c *Client) Get(id string, opts ...opts.GetOpts) (*smModels.SM, error) {
+// It supports service.AuthInfo, and will restrict the result to ensure the user has access to the model.
+func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.SM, error) {
 	_ = utils.GetFirstOrDefault(opts)
 
-	sClient := smModels.New()
+	sClient := sm_repo.New()
 
 	if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
 		sClient.RestrictToOwner(c.V1.Auth().UserID)
@@ -31,11 +32,11 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*smModels.SM, error) {
 
 // GetByUserID gets an existing storage by user ID.
 //
-// It supports service.AuthInfo, and will restrict the result to ensure the user has access to the resource.
-func (c *Client) GetByUserID(userID string, opts ...opts.GetOpts) (*smModels.SM, error) {
+// It supports service.AuthInfo, and will restrict the result to ensure the user has access to the model.
+func (c *Client) GetByUserID(userID string, opts ...opts.GetOpts) (*model.SM, error) {
 	_ = utils.GetFirstOrDefault(opts)
 
-	sClient := smModels.New()
+	sClient := sm_repo.New()
 
 	if c.V1.Auth() != nil && userID != c.V1.Auth().UserID && !c.V1.Auth().IsAdmin {
 		sClient.RestrictToOwner(c.V1.Auth().UserID)
@@ -48,11 +49,11 @@ func (c *Client) GetByUserID(userID string, opts ...opts.GetOpts) (*smModels.SM,
 
 // List lists existing storage managers.
 //
-// It supports service.AuthInfo, and will restrict the result to ensure the user has access to the resource.
-func (c *Client) List(opts ...opts.ListOpts) ([]smModels.SM, error) {
+// It supports service.AuthInfo, and will restrict the result to ensure the user has access to the model.
+func (c *Client) List(opts ...opts.ListOpts) ([]model.SM, error) {
 	o := utils.GetFirstOrDefault(opts)
 
-	sClient := smModels.New()
+	sClient := sm_repo.New()
 
 	if o.Pagination != nil {
 		sClient.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
@@ -77,14 +78,14 @@ func (c *Client) List(opts ...opts.ListOpts) ([]smModels.SM, error) {
 // Create creates a new storage manager
 //
 // It returns an error if the storage manager already exists (user ID clash).
-func (c *Client) Create(id, userID string, params *smModels.CreateParams) error {
+func (c *Client) Create(id, userID string, params *model.SmCreateParams) error {
 	makeErr := func(err error) error {
 		return fmt.Errorf("failed to create storage manager. details: %w", err)
 	}
 
-	_, err := smModels.New().Create(id, userID, params)
+	_, err := sm_repo.New().Create(id, userID, params)
 	if err != nil {
-		if errors.Is(err, smModels.AlreadyExistsErr) {
+		if errors.Is(err, sm_repo.AlreadyExistsErr) {
 			return sErrors.SmAlreadyExistsErr
 		}
 
@@ -125,7 +126,7 @@ func (c *Client) Repair(id string) error {
 		return fmt.Errorf("failed to repair storage manager %s. details: %w", id, err)
 	}
 
-	sm, err := smModels.New().GetByID(id)
+	sm, err := sm_repo.New().GetByID(id)
 	if err != nil {
 		return makeErr(err)
 	}
@@ -147,7 +148,7 @@ func (c *Client) Repair(id string) error {
 
 // Exists checks if a storage manager exists.
 func (c *Client) Exists(userID string) (bool, error) {
-	return smModels.New().RestrictToOwner(userID).ExistsAny()
+	return sm_repo.New().RestrictToOwner(userID).ExistsAny()
 }
 
 // GetZone returns the deployment zone for the storage manager.

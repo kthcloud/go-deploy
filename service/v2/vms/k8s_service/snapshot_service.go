@@ -2,12 +2,12 @@ package k8s_service
 
 import (
 	"fmt"
-	vmModels "go-deploy/models/sys/vm"
+	"go-deploy/models/model"
 	"go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/service/resources"
 )
 
-func (c *Client) CreateVmSnapshot(vmID string, params *vmModels.CreateSnapshotParams) (*vmModels.SnapshotV2, error) {
+func (c *Client) CreateVmSnapshot(vmID string, params *model.CreateSnapshotParams) (*model.SnapshotV2, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create snapshot for k8s vm %s. details: %w", vmID, err)
 	}
@@ -47,7 +47,7 @@ func (c *Client) CreateVmSnapshot(vmID string, params *vmModels.CreateSnapshotPa
 		return nil, makeError(err)
 	}
 
-	return &vmModels.SnapshotV2{
+	return &model.SnapshotV2{
 		ID:        snapshotPublic.ID,
 		Name:      snapshotPublic.Name,
 		CreatedAt: snapshotPublic.CreatedAt,

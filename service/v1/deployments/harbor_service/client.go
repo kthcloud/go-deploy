@@ -2,7 +2,7 @@ package harbor_service
 
 import (
 	configModels "go-deploy/models/config"
-	deploymentModels "go-deploy/models/sys/deployment"
+	"go-deploy/models/model"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/harbor"
 	"go-deploy/service/core"
@@ -60,8 +60,8 @@ func New(cache *core.Cache) *Client {
 //
 // Depending on the options specified, some return values may be nil.
 // This is useful when you don't always need all the resources.
-func (c *Client) Get(opts *opts.Opts) (*deploymentModels.Deployment, *harbor.Client, *resources.HarborGenerator, error) {
-	var d *deploymentModels.Deployment
+func (c *Client) Get(opts *opts.Opts) (*model.Deployment, *harbor.Client, *resources.HarborGenerator, error) {
+	var d *model.Deployment
 	var gc *harbor.Client
 	var g *resources.HarborGenerator
 	var err error
@@ -129,7 +129,7 @@ func (c *Client) Client(userID string) (*harbor.Client, error) {
 }
 
 // Generator returns the Harbor generator.
-func (c *Client) Generator(d *deploymentModels.Deployment, userID string, zone *configModels.DeploymentZone) *resources.HarborGenerator {
+func (c *Client) Generator(d *model.Deployment, userID string, zone *configModels.DeploymentZone) *resources.HarborGenerator {
 	if userID == "" {
 		panic("user id is empty")
 	}

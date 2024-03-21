@@ -3,11 +3,12 @@ package intializer
 import (
 	"fmt"
 	"github.com/google/uuid"
-	deploymentModels "go-deploy/models/sys/deployment"
-	"go-deploy/models/sys/job"
-	teamModels "go-deploy/models/sys/team"
-	vmModels "go-deploy/models/sys/vm"
+	"go-deploy/models/model"
 	"go-deploy/models/versions"
+	"go-deploy/pkg/db/resources/deployment_repo"
+	"go-deploy/pkg/db/resources/job_repo"
+	"go-deploy/pkg/db/resources/team_repo"
+	"go-deploy/pkg/db/resources/vm_repo"
 	"go-deploy/service"
 	"log"
 	"time"
@@ -19,30 +20,30 @@ func CleanUpOldTests() {
 	now := time.Now()
 	oneHourAgo := now.Add(-1 * time.Minute)
 
-	oldE2eDeployments, err := deploymentModels.New().OlderThan(oneHourAgo).WithNameRegex("e2e-*").List()
+	oldE2eDeployments, err := deployment_repo.New().OlderThan(oneHourAgo).WithNameRegex("e2e-*").List()
 	if err != nil {
 		panic(fmt.Errorf("failed to list old e2e deployments: %w", err))
 	}
 
 	for _, deployment := range oldE2eDeployments {
-		_ = job.New().Create(uuid.NewString(), "system", job.TypeDeleteDeployment, versions.V1, map[string]interface{}{
+		_ = job_repo.New().Create(uuid.NewString(), "system", model.JobDeleteDeployment, versions.V1, map[string]interface{}{
 			"id": deployment.ID,
 		})
 	}
 
-	oldE2eVms, err := vmModels.New().OlderThan(oneHourAgo).WithNameRegex("e2e-*").List()
+	oldE2eVms, err := vm_repo.New().OlderThan(oneHourAgo).WithNameRegex("e2e-*").List()
 	if err != nil {
 		panic(fmt.Errorf("failed to list old e2e vms: %w", err))
 	}
 
 	for _, vm := range oldE2eVms {
-		_ = job.New().Create(uuid.NewString(), "system", job.TypeDeleteVM, versions.V1, map[string]interface{}{
+		_ = job_repo.New().Create(uuid.NewString(), "system", model.JobDeleteVM, versions.V1, map[string]interface{}{
 			"id": vm.ID,
 		})
 
 	}
 
-	oldE2eTeams, err := teamModels.New().OlderThan(oneHourAgo).WithNameRegex("e2e-*").List()
+	oldE2eTeams, err := team_repo.New().OlderThan(oneHourAgo).WithNameRegex("e2e-*").List()
 	if err != nil {
 		panic(fmt.Errorf("failed to list old e2e teams: %w", err))
 	}

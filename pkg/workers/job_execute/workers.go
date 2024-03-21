@@ -3,7 +3,7 @@ package job_execute
 import (
 	"context"
 	"fmt"
-	jobModels "go-deploy/models/sys/job"
+	"go-deploy/pkg/db/resources/job_repo"
 	"go-deploy/pkg/jobs"
 	"go-deploy/pkg/workers"
 	"go-deploy/utils"
@@ -23,7 +23,7 @@ func jobFetcher(ctx context.Context) {
 			workers.ReportUp("jobFetcher")
 
 		case <-tick:
-			job, err := jobModels.New().GetNext()
+			job, err := job_repo.New().GetNext()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching next job. details: %w", err))
 				continue
@@ -54,7 +54,7 @@ func failedJobFetcher(ctx context.Context) {
 			workers.ReportUp("failedJobFetcher")
 
 		case <-tick:
-			job, err := jobModels.New().GetNextFailed()
+			job, err := job_repo.New().GetNextFailed()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching next failed job. details: %w", err))
 				continue

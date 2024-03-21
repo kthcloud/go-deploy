@@ -2,7 +2,7 @@ package cs_service
 
 import (
 	configModels "go-deploy/models/config"
-	vmModels "go-deploy/models/sys/vm"
+	"go-deploy/models/model"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/cs"
 	"go-deploy/service/core"
@@ -69,8 +69,8 @@ func New(cache *core.Cache) *Client {
 //
 // Depending on the options specified, some return values may be nil.
 // This is useful when you don't always need all the resources.
-func (c *Client) Get(opts *opts.Opts) (*vmModels.VM, *cs.Client, *resources.CsGenerator, error) {
-	var vm *vmModels.VM
+func (c *Client) Get(opts *opts.Opts) (*model.VM, *cs.Client, *resources.CsGenerator, error) {
+	var vm *model.VM
 	var err error
 
 	if opts.VmID != "" {
@@ -127,7 +127,7 @@ func (c *Client) Client(zone *configModels.VmZone) (*cs.Client, error) {
 }
 
 // Generator returns the CS generator.
-func (c *Client) Generator(vm *vmModels.VM, zone *configModels.VmZone) *resources.CsGenerator {
+func (c *Client) Generator(vm *model.VM, zone *configModels.VmZone) *resources.CsGenerator {
 	if vm == nil {
 		panic("vm is nil")
 	}
@@ -154,7 +154,7 @@ func withCsClient(zone *configModels.VmZone) (*cs.Client, error) {
 }
 
 // getZone is a helper function that returns either the zone in opts or the zone in vm.
-func getZone(opts *opts.Opts, vm *vmModels.VM) *configModels.VmZone {
+func getZone(opts *opts.Opts, vm *model.VM) *configModels.VmZone {
 	if opts.ExtraOpts.Zone != nil {
 		return opts.ExtraOpts.Zone
 	}

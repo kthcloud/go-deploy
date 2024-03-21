@@ -6,9 +6,9 @@ import (
 	argFlag "flag"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"go-deploy/models/db"
-	"go-deploy/models/sys/job"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/db"
+	"go-deploy/pkg/db/resources/job_repo"
 	"go-deploy/pkg/intializer"
 	"go-deploy/pkg/metrics"
 	"go-deploy/pkg/workers/migrate"
@@ -52,7 +52,7 @@ func Create(opts *Options) *App {
 
 	migrator.Migrate()
 
-	err := job.New().ResetRunning()
+	err := job_repo.New().ResetRunning()
 	if err != nil {
 		log.Fatalln(fmt.Errorf("failed to reset running job. details: %w", err))
 	}

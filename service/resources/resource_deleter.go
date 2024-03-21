@@ -4,8 +4,8 @@ import (
 	"log"
 )
 
-// SsDeleterType is a type that can be used to delete a single subsystem resource
-// It contains the resource ID that should be deleted, and the functions that should be used to delete it
+// SsDeleterType is a type that can be used to delete a single subsystem model
+// It contains the model ID that should be deleted, and the functions that should be used to delete it
 type SsDeleterType[IdType any] struct {
 	resourceID *IdType
 
@@ -13,15 +13,15 @@ type SsDeleterType[IdType any] struct {
 	deleteFunc func(IdType) error
 }
 
-// SsDeleter create a new deleter that can be used for a single resource
+// SsDeleter create a new deleter that can be used for a single model
 func SsDeleter[IdType any](deleteFunc func(IdType) error) *SsDeleterType[IdType] {
 	return &SsDeleterType[IdType]{
 		deleteFunc: deleteFunc,
 	}
 }
 
-// WithResourceID sets the resource ID for the deleter.
-// The resource ID refers to the subsystem resource's ID, not the deployment ID, VM ID, or SM ID
+// WithResourceID sets the model ID for the deleter.
+// The model ID refers to the subsystem model's ID, not the deployment ID, VM ID, or SM ID
 func (rc *SsDeleterType[IdType]) WithResourceID(resourceID IdType) *SsDeleterType[IdType] {
 	rc.resourceID = &resourceID
 	return rc
@@ -36,7 +36,7 @@ func (rc *SsDeleterType[IdType]) WithDbFunc(dbFunc func(interface{}) error) *SsD
 // Exec executes the deleter
 func (rc *SsDeleterType[IdType]) Exec() error {
 	if rc.resourceID == nil {
-		log.Println("no resource id provided for subsystem deletion. did you forget to call WithResourceID?")
+		log.Println("no model id provided for subsystem deletion. did you forget to call WithResourceID?")
 	} else if rc.deleteFunc == nil {
 		log.Println("no delete function provided for subsystem deletion. did you forget to specify it in the constructor?")
 	} else {

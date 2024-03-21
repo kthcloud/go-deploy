@@ -3,7 +3,8 @@ package cs_service
 import (
 	"errors"
 	"fmt"
-	vmModels "go-deploy/models/sys/vm"
+	"go-deploy/models/model"
+	"go-deploy/pkg/db/resources/gpu_repo"
 	"go-deploy/pkg/subsystems"
 	"go-deploy/pkg/subsystems/cs/commands"
 	csModels "go-deploy/pkg/subsystems/cs/models"
@@ -19,7 +20,7 @@ func makeBadStateErr(state string) error {
 // CreateSnapshot creates a snapshot for a VM.
 //
 // If the VM is not running, it will return a BadStateErr.
-func (c *Client) CreateSnapshot(vmID string, params *vmModels.CreateSnapshotParams) error {
+func (c *Client) CreateSnapshot(vmID string, params *model.CreateSnapshotParams) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create snapshot for cs vm %s. details: %w", vmID, err)
 	}
@@ -61,7 +62,7 @@ func (c *Client) CreateSnapshot(vmID string, params *vmModels.CreateSnapshotPara
 	}
 
 	if HasExtraConfig(vm) {
-		return makeBadStateErr("vm has extra config (probably a gpu attached)")
+		return makeBadStateErr("vm has extra config (probably a gpu_repo attached)")
 	}
 
 	snapshot, err := csc.CreateSnapshot(public)
@@ -157,7 +158,7 @@ func (c *Client) ApplySnapshot(vmID, snapshotID string) error {
 
 	var gpuID *string
 	if HasExtraConfig(vm) {
-		gpuID = vm.GetGpuID()
+		gpuID, err = gpu_repo.New().WithVM(vm.ID).GetID()
 		err = c.DetachGPU(vmID, CsDetachGpuAfterStateOn)
 		if err != nil {
 			return makeError(err)

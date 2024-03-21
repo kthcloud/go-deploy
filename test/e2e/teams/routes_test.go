@@ -2,9 +2,8 @@ package teams
 
 import (
 	"github.com/stretchr/testify/assert"
-	"go-deploy/models/dto/v1/body"
-	notificationModels "go-deploy/models/sys/notification"
-	teamModels "go-deploy/models/sys/team"
+	"go-deploy/dto/v1/body"
+	"go-deploy/models/model"
 	"go-deploy/test/e2e"
 	"net/http"
 	"os"
@@ -39,7 +38,7 @@ func TestCreateWithMembers(t *testing.T) {
 		Description: e2e.GenName(),
 		Resources:   nil,
 		Members: []body.TeamMemberCreate{
-			{ID: e2e.PowerUserID, TeamRole: teamModels.MemberRoleAdmin},
+			{ID: e2e.PowerUserID, TeamRole: model.TeamMemberRoleAdmin},
 		},
 	}
 
@@ -77,7 +76,7 @@ func TestCreateWithResources(t *testing.T) {
 
 	// Fetch deployment's teams
 	resource = e2e.GetDeployment(t, resource.ID)
-	assert.EqualValues(t, []string{team.ID}, resource.Teams, "invalid teams on resource")
+	assert.EqualValues(t, []string{team.ID}, resource.Teams, "invalid teams on model")
 
 }
 
@@ -92,7 +91,7 @@ func TestCreateFull(t *testing.T) {
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
 		Resources:   []string{resource.ID},
-		Members:     []body.TeamMemberCreate{{ID: e2e.PowerUserID, TeamRole: teamModels.MemberRoleAdmin}},
+		Members:     []body.TeamMemberCreate{{ID: e2e.PowerUserID, TeamRole: model.TeamMemberRoleAdmin}},
 	}
 
 	// Create team
@@ -104,7 +103,7 @@ func TestCreateFull(t *testing.T) {
 
 	// Fetch deployment's teams
 	resource = e2e.GetDeployment(t, resource.ID)
-	assert.EqualValues(t, []string{team.ID}, resource.Teams, "invalid teams on resource")
+	assert.EqualValues(t, []string{team.ID}, resource.Teams, "invalid teams on model")
 }
 
 func TestCreateWithInvitation(t *testing.T) {
@@ -114,7 +113,7 @@ func TestCreateWithInvitation(t *testing.T) {
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
 		Resources:   nil,
-		Members:     []body.TeamMemberCreate{{ID: e2e.PowerUserID, TeamRole: teamModels.MemberRoleAdmin}},
+		Members:     []body.TeamMemberCreate{{ID: e2e.PowerUserID, TeamRole: model.TeamMemberRoleAdmin}},
 	}, e2e.DefaultUserID)
 
 	assert.Equal(t, 2, len(team.Members), "invalid number of members")
@@ -122,8 +121,8 @@ func TestCreateWithInvitation(t *testing.T) {
 	found := false
 	for _, member := range team.Members {
 		if member.ID == e2e.PowerUserID {
-			assert.Equal(t, teamModels.MemberRoleAdmin, member.TeamRole, "invalid member role")
-			assert.Equal(t, teamModels.MemberStatusInvited, member.MemberStatus, "invalid member status")
+			assert.Equal(t, model.TeamMemberRoleAdmin, member.TeamRole, "invalid member role")
+			assert.Equal(t, model.TeamMemberStatusInvited, member.MemberStatus, "invalid member status")
 
 			found = true
 			break
@@ -139,7 +138,7 @@ func TestCreateWithInvitation(t *testing.T) {
 
 	found = false
 	for _, notification := range notifications {
-		if notification.Type == notificationModels.TypeTeamInvite {
+		if notification.Type == model.NotificationTeamInvite {
 			for key, val := range notification.Content {
 				if key == "id" && val == team.ID {
 					return
@@ -158,13 +157,13 @@ func TestJoin(t *testing.T) {
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
 		Resources:   nil,
-		Members:     []body.TeamMemberCreate{{ID: e2e.PowerUserID, TeamRole: teamModels.MemberRoleAdmin}},
+		Members:     []body.TeamMemberCreate{{ID: e2e.PowerUserID, TeamRole: model.TeamMemberRoleAdmin}},
 	}, e2e.DefaultUserID)
 
 	notifications := e2e.ListNotifications(t, "?userId="+e2e.PowerUserID)
 
 	for _, notification := range notifications {
-		if notification.Type == notificationModels.TypeTeamInvite {
+		if notification.Type == model.NotificationTeamInvite {
 			for key, val := range notification.Content {
 				if key == "id" && val == team.ID {
 					code := notification.Content["code"].(string)
@@ -185,7 +184,7 @@ func TestJoinWithBadCode(t *testing.T) {
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
 		Resources:   nil,
-		Members:     []body.TeamMemberCreate{{ID: e2e.DefaultUserID, TeamRole: teamModels.MemberRoleAdmin}},
+		Members:     []body.TeamMemberCreate{{ID: e2e.DefaultUserID, TeamRole: model.TeamMemberRoleAdmin}},
 	})
 
 	resp := e2e.DoPostRequest(t, "/teams/"+team.ID, body.TeamJoin{InvitationCode: "bad-code"}, e2e.DefaultUserID)
@@ -237,7 +236,7 @@ func TestUpdateResources(t *testing.T) {
 
 	// Fetch deployment's teams
 	resource = e2e.GetDeployment(t, resource.ID)
-	assert.EqualValues(t, []string{team.ID}, resource.Teams, "invalid teams on resource")
+	assert.EqualValues(t, []string{team.ID}, resource.Teams, "invalid teams on model")
 }
 
 func TestUpdateMembers(t *testing.T) {
@@ -254,7 +253,7 @@ func TestUpdateMembers(t *testing.T) {
 		Name:        nil,
 		Description: nil,
 		Resources:   nil,
-		Members:     &[]body.TeamMemberUpdate{{ID: e2e.PowerUserID, TeamRole: teamModels.MemberRoleAdmin}},
+		Members:     &[]body.TeamMemberUpdate{{ID: e2e.PowerUserID, TeamRole: model.TeamMemberRoleAdmin}},
 	}
 
 	e2e.UpdateTeam(t, team.ID, requestBody)

@@ -1,18 +1,19 @@
 package jobs
 
 import (
-	"go-deploy/models/dto/v1/body"
-	jobModels "go-deploy/models/sys/job"
+	"go-deploy/dto/v1/body"
+	"go-deploy/models/model"
+	"go-deploy/pkg/db/resources/job_repo"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/utils"
 	"go-deploy/service/v1/jobs/opts"
 )
 
 // Get retrieves a job by ID.
-func (c *Client) Get(id string, opts ...opts.GetOpts) (*jobModels.Job, error) {
+func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.Job, error) {
 	_ = utils.GetFirstOrDefault(opts)
 
-	jmc := jobModels.New()
+	jmc := job_repo.New()
 
 	if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
 		jmc.RestrictToUser(c.V1.Auth().UserID)
@@ -22,10 +23,10 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*jobModels.Job, error) {
 }
 
 // List retrieves a list of jobs.
-func (c *Client) List(opt ...opts.ListOpts) ([]jobModels.Job, error) {
+func (c *Client) List(opt ...opts.ListOpts) ([]model.Job, error) {
 	o := utils.GetFirstOrDefault(opt)
 
-	jmc := jobModels.New()
+	jmc := job_repo.New()
 
 	if o.Pagination != nil {
 		jmc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
@@ -76,19 +77,19 @@ func (c *Client) List(opt ...opts.ListOpts) ([]jobModels.Job, error) {
 
 // Create creates a new job.
 func (c *Client) Create(id, userID, jobType, version string, args map[string]interface{}) error {
-	return jobModels.New().Create(id, userID, jobType, version, args)
+	return job_repo.New().Create(id, userID, jobType, version, args)
 }
 
 // Update updates a job.
-func (c *Client) Update(id string, jobUpdateDTO *body.JobUpdate) (*jobModels.Job, error) {
+func (c *Client) Update(id string, jobUpdateDTO *body.JobUpdate) (*model.Job, error) {
 	if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
 		return nil, sErrors.ForbiddenErr
 	}
 
-	var params jobModels.UpdateParams
+	var params model.JobUpdateParams
 	params.FromDTO(jobUpdateDTO)
 
-	jmc := jobModels.New()
+	jmc := job_repo.New()
 
 	err := jmc.UpdateWithParams(id, &params)
 	if err != nil {
@@ -100,5 +101,5 @@ func (c *Client) Update(id string, jobUpdateDTO *body.JobUpdate) (*jobModels.Job
 
 // Exists checks if a job exists.
 func (c *Client) Exists(id string) (bool, error) {
-	return jobModels.New().ExistsByID(id)
+	return job_repo.New().ExistsByID(id)
 }

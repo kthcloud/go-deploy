@@ -1,7 +1,8 @@
 package jobs
 
 import (
-	jobModels "go-deploy/models/sys/job"
+	"go-deploy/models/model"
+	"go-deploy/pkg/db/resources/job_repo"
 	"go-deploy/service/clients"
 	"go-deploy/service/core"
 )
@@ -32,7 +33,7 @@ func New(v1 clients.V1, cache ...*core.Cache) *Client {
 
 // Job returns the job with the given ID.
 // After a successful fetch, the job will be cached.
-func (c *Client) Job(id string, jmc *jobModels.Client) (*jobModels.Job, error) {
+func (c *Client) Job(id string, jmc *job_repo.Client) (*model.Job, error) {
 	job := c.Cache.GetJob(id)
 	if job == nil {
 		var err error
@@ -49,7 +50,7 @@ func (c *Client) Job(id string, jmc *jobModels.Client) (*jobModels.Job, error) {
 
 // Jobs returns a list of jobs.
 // After a successful fetch, the jobs will be cached.
-func (c *Client) Jobs(jmc *jobModels.Client) ([]jobModels.Job, error) {
+func (c *Client) Jobs(jmc *job_repo.Client) ([]model.Job, error) {
 	// Right now we don't have a way to skip fetching when requesting a list of resources
 	jobs, err := jmc.List()
 	if err != nil {
@@ -65,7 +66,7 @@ func (c *Client) Jobs(jmc *jobModels.Client) ([]jobModels.Job, error) {
 
 // RefreshJob clears the cache for the job with the given ID and fetches it again.
 // After a successful fetch, the job will be cached.
-func (c *Client) RefreshJob(id string, jmc *jobModels.Client) (*jobModels.Job, error) {
+func (c *Client) RefreshJob(id string, jmc *job_repo.Client) (*model.Job, error) {
 	job, err := jmc.GetByID(id)
 	if err != nil {
 		return nil, err

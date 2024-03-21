@@ -3,9 +3,9 @@ package v2_vm
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"go-deploy/models/dto/v2/body"
-	"go-deploy/models/dto/v2/uri"
-	"go-deploy/models/sys/job"
+	"go-deploy/dto/v2/body"
+	"go-deploy/dto/v2/uri"
+	"go-deploy/models/model"
 	"go-deploy/models/versions"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
@@ -67,7 +67,7 @@ func DoAction(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, job.TypeDoVmAction, versions.V2, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobDoVmAction, versions.V2, map[string]interface{}{
 		"id":     vm.ID,
 		"params": requestBody,
 	})

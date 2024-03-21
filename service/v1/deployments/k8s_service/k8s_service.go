@@ -5,7 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"go-deploy/models/config"
-	deploymentModels "go-deploy/models/sys/deployment"
+	"go-deploy/models/model"
+	"go-deploy/pkg/db/resources/deployment_repo"
 	"go-deploy/pkg/subsystems"
 	kErrors "go-deploy/pkg/subsystems/k8s/errors"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
@@ -14,15 +15,15 @@ import (
 	"go-deploy/service/resources"
 	"go-deploy/service/v1/deployments/opts"
 	"go-deploy/utils"
-	"golang.org/x/exp/slices"
 	"log"
+	"slices"
 	"time"
 )
 
 // Create sets up K8s for the deployment.
 //
 // It creates all necessary resources in K8s, such as namespaces, deployments, services, etc.
-func (c *Client) Create(id string, params *deploymentModels.CreateParams) error {
+func (c *Client) Create(id string, params *model.DeploymentCreateParams) error {
 	log.Println("setting up k8s for", params.Name)
 
 	makeError := func(err error) error {
@@ -284,12 +285,12 @@ func (c *Client) Delete(id string, overwriteUserID ...string) error {
 // Update updates K8s resources for the deployment.
 //
 // It updates all K8s resources tied to the fields in the deployment.UpdateParams.
-func (c *Client) Update(id string, params *deploymentModels.UpdateParams) error {
+func (c *Client) Update(id string, params *model.DeploymentUpdateParams) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update k8s for deployment %s. details: %w", id, err)
 	}
 
-	if *params == (deploymentModels.UpdateParams{}) {
+	if *params == (model.DeploymentUpdateParams{}) {
 		return nil
 	}
 
@@ -942,8 +943,8 @@ func (c *Client) recreatePvPvcDeployments(id string) error {
 func dbFunc(id, key string) func(interface{}) error {
 	return func(data interface{}) error {
 		if data == nil {
-			return deploymentModels.New().DeleteSubsystem(id, "k8s."+key)
+			return deployment_repo.New().DeleteSubsystem(id, "k8s."+key)
 		}
-		return deploymentModels.New().SetSubsystem(id, "k8s."+key, data)
+		return deployment_repo.New().SetSubsystem(id, "k8s."+key, data)
 	}
 }

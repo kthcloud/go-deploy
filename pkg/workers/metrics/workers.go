@@ -3,10 +3,11 @@ package metrics
 import (
 	"context"
 	"fmt"
-	"go-deploy/models/sys/job"
-	"go-deploy/models/sys/key_value"
-	userModels "go-deploy/models/sys/user"
+	"go-deploy/models/model"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/db/key_value"
+	"go-deploy/pkg/db/resources/job_repo"
+	"go-deploy/pkg/db/resources/user_repo"
 	"go-deploy/pkg/metrics"
 	"go-deploy/pkg/workers"
 	"go-deploy/utils"
@@ -23,11 +24,11 @@ func metricsWorker(ctx context.Context) {
 		"monthly-active-users": monthlyActiveUsers,
 		"daily-active-users":   dailyActiveUsers,
 		"jobs-total":           jobMetrics(metrics.KeyJobsTotal, nil),
-		"jobs-pending":         jobMetrics(metrics.KeyJobsPending, strPtr(job.StatusPending)),
-		"jobs-running":         jobMetrics(metrics.KeyJobsRunning, strPtr(job.StatusRunning)),
-		"jobs-failed":          jobMetrics(metrics.KeyJobsFailed, strPtr(job.StatusFailed)),
-		"jobs-terminated":      jobMetrics(metrics.KeyJobsTerminated, strPtr(job.StatusTerminated)),
-		"jobs-completed":       jobMetrics(metrics.KeyJobsCompleted, strPtr(job.StatusCompleted)),
+		"jobs-pending":         jobMetrics(metrics.KeyJobsPending, strPtr(model.JobStatusPending)),
+		"jobs-running":         jobMetrics(metrics.KeyJobsRunning, strPtr(model.JobStatusRunning)),
+		"jobs-failed":          jobMetrics(metrics.KeyJobsFailed, strPtr(model.JobStatusFailed)),
+		"jobs-terminated":      jobMetrics(metrics.KeyJobsTerminated, strPtr(model.JobStatusTerminated)),
+		"jobs-completed":       jobMetrics(metrics.KeyJobsCompleted, strPtr(model.JobStatusCompleted)),
 	}
 
 	reportTick := time.Tick(1 * time.Second)
@@ -52,7 +53,7 @@ func metricsWorker(ctx context.Context) {
 
 // usersTotal computes the total number of users and stores it in the key-value store.
 func usersTotal() error {
-	total, err := userModels.New().Count()
+	total, err := user_repo.New().Count()
 	if err != nil {
 		return fmt.Errorf("error counting distinct users when computing metrics. details: %w", err)
 	}
@@ -67,7 +68,7 @@ func usersTotal() error {
 
 // monthlyActiveUsers computes the number of active users and stores it in the key-value store.
 func monthlyActiveUsers() error {
-	total, err := userModels.New().LastAuthenticatedAfter(time.Now().AddDate(0, -1, 0)).Count()
+	total, err := user_repo.New().LastAuthenticatedAfter(time.Now().AddDate(0, -1, 0)).Count()
 	if err != nil {
 		return fmt.Errorf("error counting monthly active users when computing metrics. details: %w", err)
 	}
@@ -82,7 +83,7 @@ func monthlyActiveUsers() error {
 
 // dailyActiveUsers computes the number of active users and stores it in the key-value store.
 func dailyActiveUsers() error {
-	total, err := userModels.New().LastAuthenticatedAfter(time.Now().AddDate(0, 0, -1)).Count()
+	total, err := user_repo.New().LastAuthenticatedAfter(time.Now().AddDate(0, 0, -1)).Count()
 	if err != nil {
 		return fmt.Errorf("error counting daily active users when computing metrics. details: %w", err)
 	}
@@ -103,7 +104,7 @@ func jobMetrics(key string, status *string) func() error {
 			filter = append(filter, bson.E{Key: "status", Value: *status})
 		}
 
-		total, err := job.New().AddFilter(filter).Count()
+		total, err := job_repo.New().AddFilter(filter).Count()
 		if err != nil {
 			if status == nil {
 				return fmt.Errorf("error counting jobs when computing metrics. details: %w", err)

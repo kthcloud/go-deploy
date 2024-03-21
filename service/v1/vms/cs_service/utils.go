@@ -2,14 +2,13 @@ package cs_service
 
 import (
 	"fmt"
-	gpuModels "go-deploy/models/sys/gpu"
-	vmModels "go-deploy/models/sys/vm"
+	"go-deploy/models/model"
 	"strings"
 )
 
 // CreateExtraConfig creates the extra config for the VM, which is used
 // when attaching a GPU to a VM.
-func CreateExtraConfig(gpu *gpuModels.GPU) string {
+func CreateExtraConfig(gpu *model.GPU) string {
 	data := fmt.Sprintf(`
 <devices> <hostdev mode='subsystem' type='pci' managed='yes'> <driver name='vfio' />
 	<source> <address domain='0x0000' bus='0x%s' slot='0x00' function='0x0' /> </source> 
@@ -22,6 +21,6 @@ func CreateExtraConfig(gpu *gpuModels.GPU) string {
 	return data
 }
 
-func HasExtraConfig(vm *vmModels.VM) bool {
+func HasExtraConfig(vm *model.VM) bool {
 	return vm.Subsystems.CS.VM.ExtraConfig != "" && vm.Subsystems.CS.VM.ExtraConfig != "none"
 }

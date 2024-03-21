@@ -3,7 +3,7 @@ package k8s_service
 import (
 	"fmt"
 	configModels "go-deploy/models/config"
-	vmModels "go-deploy/models/sys/vm"
+	"go-deploy/models/model"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems/k8s"
 	"go-deploy/service/core"
@@ -59,8 +59,8 @@ func New(cache *core.Cache) *Client {
 //
 // Depending on the options specified, some return values may be nil.
 // This is useful when you don't always need all the resources.
-func (c *Client) Get(opts *opts.Opts) (*vmModels.VM, *k8s.Client, *resources.K8sGenerator, error) {
-	var vm *vmModels.VM
+func (c *Client) Get(opts *opts.Opts) (*model.VM, *k8s.Client, *resources.K8sGenerator, error) {
+	var vm *model.VM
 	var kc *k8s.Client
 	var g *resources.K8sGenerator
 	var err error
@@ -131,7 +131,7 @@ func (c *Client) Client(userID string, zone *configModels.DeploymentZone) (*k8s.
 }
 
 // Generator returns the K8s generator.
-func (c *Client) Generator(vm *vmModels.VM, client *k8s.Client, zone *configModels.VmZone, deploymentZone *configModels.DeploymentZone) *resources.K8sGenerator {
+func (c *Client) Generator(vm *model.VM, client *k8s.Client, zone *configModels.VmZone, deploymentZone *configModels.DeploymentZone) *resources.K8sGenerator {
 	if vm == nil {
 		panic("vm is nil")
 	}
@@ -167,7 +167,7 @@ func withClient(zone *configModels.DeploymentZone, namespace string) (*k8s.Clien
 }
 
 // getVmZone is a helper function that returns either the zone in opts or the zone in vm.
-func getVmZone(opts *opts.Opts, vm *vmModels.VM) *configModels.VmZone {
+func getVmZone(opts *opts.Opts, vm *model.VM) *configModels.VmZone {
 	if opts.ExtraOpts.Zone != nil {
 		return opts.ExtraOpts.Zone
 	}
@@ -180,7 +180,7 @@ func getVmZone(opts *opts.Opts, vm *vmModels.VM) *configModels.VmZone {
 }
 
 // getDeploymentZone is a helper function that returns either the zone in opts or the zone in vm.
-func getDeploymentZone(opts *opts.Opts, vm *vmModels.VM) *configModels.DeploymentZone {
+func getDeploymentZone(opts *opts.Opts, vm *model.VM) *configModels.DeploymentZone {
 	if opts.ExtraOpts.DeploymentZone != nil {
 		return opts.ExtraOpts.DeploymentZone
 	}

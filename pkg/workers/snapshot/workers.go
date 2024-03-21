@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
-	"go-deploy/models/sys/job"
-	vmModels "go-deploy/models/sys/vm"
+	"go-deploy/models/model"
 	"go-deploy/models/versions"
+	"go-deploy/pkg/db/resources/job_repo"
+	"go-deploy/pkg/db/resources/vm_repo"
 	"go-deploy/pkg/workers"
 	"go-deploy/utils"
 	"log"
@@ -27,7 +28,7 @@ func snapshotter(ctx context.Context) {
 			workers.ReportUp("snapshotter")
 
 		case <-tick:
-			vms, err := vmModels.New().List()
+			vms, err := vm_repo.New().List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("failed to get all vms. details: %w", err))
 				continue
@@ -37,9 +38,9 @@ func snapshotter(ctx context.Context) {
 				recurrings := []string{"daily", "weekly", "monthly"}
 
 				for _, recurring := range recurrings {
-					exists, err := job.New().
-						IncludeTypes(job.TypeCreateSystemVmSnapshot).
-						ExcludeStatus(job.StatusTerminated, job.StatusCompleted).
+					exists, err := job_repo.New().
+						IncludeTypes(model.JobCreateSystemVmSnapshot).
+						ExcludeStatus(model.JobStatusTerminated, model.JobStatusCompleted).
 						FilterArgs("id", vm.ID).
 						FilterArgs("params.name", fmt.Sprintf("auto-%s", recurring)).
 						ExistsAny()
@@ -60,11 +61,11 @@ func snapshotter(ctx context.Context) {
 	}
 }
 
-func scheduleSnapshotJob(vm *vmModels.VM, recurring string) {
+func scheduleSnapshotJob(vm *model.VM, recurring string) {
 	runAt := getRunAt(recurring)
-	err := job.New().CreateScheduled(uuid.New().String(), vm.OwnerID, job.TypeCreateSystemVmSnapshot, versions.V1, runAt, map[string]interface{}{
+	err := job_repo.New().CreateScheduled(uuid.New().String(), vm.OwnerID, model.JobCreateSystemVmSnapshot, versions.V1, runAt, map[string]interface{}{
 		"id": vm.ID,
-		"params": vmModels.CreateSnapshotParams{
+		"params": model.CreateSnapshotParams{
 			Name:        fmt.Sprintf("auto-%s", recurring),
 			UserCreated: false,
 			Overwrite:   true,
@@ -72,7 +73,7 @@ func scheduleSnapshotJob(vm *vmModels.VM, recurring string) {
 	})
 
 	if err != nil {
-		utils.PrettyPrintError(fmt.Errorf("failed to create snapshot job. details: %w", err))
+		utils.PrettyPrintError(fmt.Errorf("failed to create snapshot model. details: %w", err))
 	}
 }
 
