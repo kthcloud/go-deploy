@@ -2,7 +2,7 @@ package e2e
 
 import (
 	"github.com/stretchr/testify/assert"
-	"go-deploy/models/dto/v1/body"
+	"go-deploy/dto/v1/body"
 	"go-deploy/pkg/app/status_codes"
 	"net/http"
 	"testing"

@@ -42,7 +42,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 )
 
-// UnlimitedResourceID is a special ID to define an unlimited resource
+// UnlimitedResourceID is a special ID to define an unlimited model
 const UnlimitedResourceID = "-1"
 
 var idRegex = regexp.MustCompile(`^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|-1)$`)

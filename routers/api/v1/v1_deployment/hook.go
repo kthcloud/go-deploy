@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"go-deploy/models/dto/v1/body"
-	deploymentModels "go-deploy/models/sys/deployment"
+	"go-deploy/dto/v1/body"
+	"go-deploy/models/model"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
@@ -76,8 +76,8 @@ func HandleHarborHook(c *gin.Context) {
 	}
 
 	if webhook.Type == "PUSH_ARTIFACT" {
-		newLog := deploymentModels.Log{
-			Source: deploymentModels.LogSourceDeployment,
+		newLog := model.Log{
+			Source: model.LogSourceDeployment,
 			Prefix: "[deployment]",
 			// Since this is sent as a string, and not a JSON object, we need to prepend the createdAt
 			Line:      fmt.Sprintf("%s %s", time.Now().Format(time.RFC3339), "Received push event from Harbor"),

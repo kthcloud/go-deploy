@@ -16,17 +16,17 @@ func CopyValue(src, dst SsResource) {
 	reflect.ValueOf(dst).Elem().Set(reflect.ValueOf(src).Elem())
 }
 
-// Nil returns true if the resource is nil.
+// Nil returns true if the model is nil.
 func Nil(resource SsResource) bool {
 	return !NotNil(resource)
 }
 
-// Created returns true if the resource is created.
+// Created returns true if the model is created.
 func Created(resource SsResource) bool {
 	return !NotCreated(resource)
 }
 
-// NotNil returns true if the resource is not nil.
+// NotNil returns true if the model is not nil.
 func NotNil(resource SsResource) bool {
 	if resource == nil || (reflect.ValueOf(resource).Kind() == reflect.Ptr && reflect.ValueOf(resource).IsNil()) {
 		return false
@@ -34,7 +34,7 @@ func NotNil(resource SsResource) bool {
 	return true
 }
 
-// NotCreated returns true if the resource is not created.
+// NotCreated returns true if the model is not created.
 func NotCreated(resource SsResource) bool {
 	return Nil(resource) || !resource.Created()
 }

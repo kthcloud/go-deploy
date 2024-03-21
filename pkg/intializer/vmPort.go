@@ -1,8 +1,9 @@
 package intializer
 
 import (
-	"go-deploy/models/sys/vm_port"
+	"go-deploy/models/model"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/db/resources/vm_port_repo"
 	"log"
 	"strconv"
 )
@@ -41,13 +42,13 @@ func SynchronizeVmPorts() {
 
 	for zone, portRange := range ranges {
 		// Delete all ports that are not in the config
-		portsOutsideRange, err := vm_port.New().WithZone(zone).ExcludePortRange(portRange.Start, portRange.End).List()
+		portsOutsideRange, err := vm_port_repo.New().WithZone(zone).ExcludePortRange(portRange.Start, portRange.End).List()
 		if err != nil {
 			log.Fatalln(err)
 		}
 
-		notLeasedPorts := make([]vm_port.VmPort, 0)
-		leasedPorts := make([]vm_port.VmPort, 0)
+		notLeasedPorts := make([]model.VmPort, 0)
+		leasedPorts := make([]model.VmPort, 0)
 		for _, port := range portsOutsideRange {
 			if port.Lease != nil {
 				leasedPorts = append(leasedPorts, port)
@@ -63,20 +64,20 @@ func SynchronizeVmPorts() {
 		}
 
 		for _, port := range notLeasedPorts {
-			err = vm_port.New().Erase(port.PublicPort, port.Zone)
+			err = vm_port_repo.New().Erase(port.PublicPort, port.Zone)
 			if err != nil {
 				log.Fatalln(err)
 			}
 		}
 
-		existingPorts, err := vm_port.New().WithZone(zone).IncludePortRange(portRange.Start, portRange.End).Count()
+		existingPorts, err := vm_port_repo.New().WithZone(zone).IncludePortRange(portRange.Start, portRange.End).Count()
 		if err != nil {
 			log.Fatalln(err)
 		}
 
 		noInserted := 0
 		if existingPorts != portRange.End-portRange.Start {
-			noInserted, err = vm_port.New().CreateIfNotExists(portRange.Start, portRange.End, zone)
+			noInserted, err = vm_port_repo.New().CreateIfNotExists(portRange.Start, portRange.End, zone)
 			if err != nil {
 				log.Fatalln(err)
 			}

@@ -3,17 +3,15 @@ package confirm
 import (
 	"errors"
 	"fmt"
-	deploymentModels "go-deploy/models/sys/deployment"
-	"go-deploy/models/sys/gpu"
-	"go-deploy/models/sys/sm"
-	"go-deploy/models/sys/vm"
-	"go-deploy/models/sys/vm_port"
+	"go-deploy/models/model"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/db/resources/gpu_repo"
+	"go-deploy/pkg/db/resources/vm_port_repo"
 	"net"
 )
 
 // appDeletedK8s checks if the K8s setup for the given app is deleted.
-func appDeletedK8s(deployment *deploymentModels.Deployment, app *deploymentModels.App) bool {
+func appDeletedK8s(deployment *model.Deployment, app *model.App) bool {
 	for _, volume := range app.Volumes {
 		pv := deployment.Subsystems.K8s.PvMap[volume.Name]
 		if pv.Created() {
@@ -48,7 +46,7 @@ func appDeletedK8s(deployment *deploymentModels.Deployment, app *deploymentModel
 	}
 
 	secretDeleted := true
-	if deployment.Type == deploymentModels.TypeCustom {
+	if deployment.Type == model.DeploymentTypeCustom {
 		for mapName, secret := range deployment.Subsystems.K8s.SecretMap {
 			if secret.Created() && mapName == deployment.Name+"-image-pull-secret" {
 				secretDeleted = false
@@ -67,7 +65,7 @@ func appDeletedK8s(deployment *deploymentModels.Deployment, app *deploymentModel
 }
 
 // k8sDeleted checks if the K8s setup for the given deployment is deleted.
-func k8sDeletedDeployment(deployment *deploymentModels.Deployment) (bool, error) {
+func k8sDeletedDeployment(deployment *model.Deployment) (bool, error) {
 	_ = func(err error) error {
 		return fmt.Errorf("failed to check if k8s setup is deleted for deployment %s. details: %w", deployment.Name, err)
 	}
@@ -89,7 +87,7 @@ func k8sDeletedDeployment(deployment *deploymentModels.Deployment) (bool, error)
 }
 
 // harborDeleted checks if the Harbor setup for the given deployment is deleted.
-func harborDeleted(deployment *deploymentModels.Deployment) (bool, error) {
+func harborDeleted(deployment *model.Deployment) (bool, error) {
 	_ = func(err error) error {
 		return fmt.Errorf("failed to check if harbor is created for deployment %s. details: %w", deployment.Name, err)
 	}
@@ -102,7 +100,7 @@ func harborDeleted(deployment *deploymentModels.Deployment) (bool, error) {
 }
 
 // k8sDeleted checks if the K8s setup for the given storage manager is deleted.
-func k8sDeletedSM(sm *sm.SM) (bool, error) {
+func k8sDeletedSM(sm *model.SM) (bool, error) {
 	k8s := &sm.Subsystems.K8s
 
 	if len(k8s.DeploymentMap) > 0 {
@@ -133,7 +131,7 @@ func k8sDeletedSM(sm *sm.SM) (bool, error) {
 }
 
 // csDeleted checks if the CS setup for the given VM is deleted.
-func csDeleted(vm *vm.VM) (bool, error) {
+func csDeleted(vm *model.VM) (bool, error) {
 	cs := &vm.Subsystems.CS
 
 	for _, rule := range cs.PortForwardingRuleMap {
@@ -150,7 +148,7 @@ func csDeleted(vm *vm.VM) (bool, error) {
 }
 
 // k8sDeleted checks if the K8s setup for the given VM is deleted.
-func k8sDeletedVM(vm *vm.VM) (bool, error) {
+func k8sDeletedVM(vm *model.VM) (bool, error) {
 	k8s := &vm.Subsystems.K8s
 
 	if len(k8s.DeploymentMap) > 0 {
@@ -185,8 +183,8 @@ func k8sDeletedVM(vm *vm.VM) (bool, error) {
 }
 
 // gpuCleared checks if the GPU setup for the given VM is cleared.
-func gpuCleared(vm *vm.VM) (bool, error) {
-	exists, err := gpu.New().WithVM(vm.ID).ExistsAny()
+func gpuCleared(vm *model.VM) (bool, error) {
+	exists, err := gpu_repo.New().WithVM(vm.ID).ExistsAny()
 	if err != nil {
 		return false, err
 	}
@@ -195,8 +193,8 @@ func gpuCleared(vm *vm.VM) (bool, error) {
 }
 
 // portsCleared checks if the ports setup for the given VM is cleared.
-func portsCleared(vm *vm.VM) (bool, error) {
-	exists, err := vm_port.New().WithVmID(vm.ID).ExistsAny()
+func portsCleared(vm *model.VM) (bool, error) {
+	exists, err := vm_port_repo.New().WithVmID(vm.ID).ExistsAny()
 	if err != nil {
 		return false, err
 	}

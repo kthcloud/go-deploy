@@ -4,11 +4,12 @@ import (
 	"errors"
 	"fmt"
 	configModels "go-deploy/models/config"
-	gpuModels "go-deploy/models/sys/gpu"
-	vmModels "go-deploy/models/sys/vm"
-	vmPortModels "go-deploy/models/sys/vm_port"
+	"go-deploy/models/model"
 	"go-deploy/models/versions"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/db/resources/gpu_repo"
+	"go-deploy/pkg/db/resources/vm_port_repo"
+	"go-deploy/pkg/db/resources/vm_repo"
 	"go-deploy/pkg/subsystems"
 	"go-deploy/pkg/subsystems/cs/commands"
 	cErrors "go-deploy/pkg/subsystems/cs/errors"
@@ -23,7 +24,7 @@ import (
 // Create sets up the CS setup for the VM.
 //
 // This include creating the VM and port-forwarding rules.
-func (c *Client) Create(id string, params *vmModels.CreateParams) error {
+func (c *Client) Create(id string, params *model.VmCreateParams) error {
 	log.Println("setting up cs for", params.Name)
 
 	makeError := func(err error) error {
@@ -66,9 +67,9 @@ func (c *Client) Create(id string, params *vmModels.CreateParams) error {
 	// Port-forwarding rules
 	for _, pfrPublic := range g.PFRs() {
 		if pfrPublic.PublicPort == 0 {
-			port, err := vmPortModels.New().GetOrLeaseAny(pfrPublic.PrivatePort, vm.ID, vm.Zone)
+			port, err := vm_port_repo.New().GetOrLeaseAny(pfrPublic.PrivatePort, vm.ID, vm.Zone)
 			if err != nil {
-				if errors.Is(err, vmPortModels.NoPortsAvailableErr) {
+				if errors.Is(err, vm_port_repo.NoPortsAvailableErr) {
 					return makeError(sErrors.NoPortsAvailableErr)
 				}
 
@@ -142,7 +143,7 @@ func (c *Client) Delete(id string) error {
 // Update updates a VM.
 //
 // It updates any of the resources associated with fields in the update params and returns an error if any.
-func (c *Client) Update(id string, updateParams *vmModels.UpdateParams) error {
+func (c *Client) Update(id string, updateParams *model.VmUpdateParams) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update cs for vm %s. details: %w", id, err)
 	}
@@ -181,9 +182,9 @@ func (c *Client) Update(id string, updateParams *vmModels.UpdateParams) error {
 		for _, pfrPublic := range pfrs {
 			if _, ok := vm.Subsystems.CS.PortForwardingRuleMap[pfrName(&pfrPublic)]; !ok {
 				if pfrPublic.PublicPort == 0 {
-					vmPort, err := vmPortModels.New().GetOrLeaseAny(pfrPublic.PrivatePort, vm.ID, vm.Zone)
+					vmPort, err := vm_port_repo.New().GetOrLeaseAny(pfrPublic.PrivatePort, vm.ID, vm.Zone)
 					if err != nil {
-						if errors.Is(err, vmPortModels.NoPortsAvailableErr) {
+						if errors.Is(err, vm_port_repo.NoPortsAvailableErr) {
 							return makeError(sErrors.NoPortsAvailableErr)
 						}
 
@@ -276,12 +277,9 @@ func (c *Client) Repair(id string) error {
 
 	// Only repair if the vm is stopped to prevent downtime for the user
 	if status == "" || status == "Stopped" {
-		var gpu *gpuModels.GPU
-		if gpuID := vm.GetGpuID(); gpuID != nil {
-			gpu, err = gpuModels.New().GetByID(*gpuID)
-			if err != nil {
-				return makeError(err)
-			}
+		gpu, err := gpu_repo.New().WithVM(vm.ID).Get()
+		if err != nil {
+			return makeError(err)
 		}
 
 		if gpu != nil {
@@ -326,9 +324,9 @@ func (c *Client) Repair(id string) error {
 		}
 		for _, pfr := range pfrs {
 			if pfr.PublicPort == 0 {
-				vmPort, err := vmPortModels.New().GetOrLeaseAny(pfr.PrivatePort, vm.ID, vm.Zone)
+				vmPort, err := vm_port_repo.New().GetOrLeaseAny(pfr.PrivatePort, vm.ID, vm.Zone)
 				if err != nil {
-					if errors.Is(err, vmPortModels.NoPortsAvailableErr) {
+					if errors.Is(err, vm_port_repo.NoPortsAvailableErr) {
 						return makeError(sErrors.NoPortsAvailableErr)
 					}
 
@@ -406,7 +404,7 @@ func (c *Client) Repair(id string) error {
 		for _, name := range required {
 			if _, ok := snapshotMap[name]; !ok {
 				log.Println("creating missing required snapshot", name, "for vm", vm.ID)
-				err = c.CreateSnapshot(id, &vmModels.CreateSnapshotParams{
+				err = c.CreateSnapshot(id, &model.CreateSnapshotParams{
 					Name:        name,
 					UserCreated: false,
 					Overwrite:   true,
@@ -621,7 +619,7 @@ func (c *Client) stopVmIfRunning(id string) (func(), error) {
 		// turn it on if it was on
 		if status == "Running" {
 			var requiredHost *string
-			if gpuID := vm.GetGpuID(); gpuID != nil {
+			if gpuID, err := gpu_repo.New().WithVM(vm.ID).GetID(); gpuID != nil {
 				requiredHost, err = c.GetRequiredHost(*gpuID)
 				if err != nil {
 					log.Println("failed to get required host for vm", vm.Name, ". details:", err)
@@ -642,9 +640,9 @@ func (c *Client) stopVmIfRunning(id string) (func(), error) {
 func dbFunc(vmID, key string) func(interface{}) error {
 	return func(data interface{}) error {
 		if data == nil {
-			return vmModels.New(versions.V1).DeleteSubsystem(vmID, "cs."+key)
+			return vm_repo.New(versions.V1).DeleteSubsystem(vmID, "cs."+key)
 		}
-		return vmModels.New(versions.V1).SetSubsystem(vmID, "cs."+key, data)
+		return vm_repo.New(versions.V1).SetSubsystem(vmID, "cs."+key, data)
 	}
 }
 

@@ -3,10 +3,10 @@ package status_update
 import (
 	"context"
 	"fmt"
-	deploymentModels "go-deploy/models/sys/deployment"
-	vmModels "go-deploy/models/sys/vm"
 	"go-deploy/models/versions"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/db/resources/deployment_repo"
+	"go-deploy/pkg/db/resources/vm_repo"
 	"go-deploy/pkg/workers"
 	"go-deploy/service"
 	"go-deploy/utils"
@@ -26,7 +26,7 @@ func vmStatusUpdater(ctx context.Context) {
 			workers.ReportUp("vmStatusUpdater")
 
 		case <-tick:
-			v1Vms, err := vmModels.New(versions.V1).List()
+			v1Vms, err := vm_repo.New(versions.V1).List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching vms: %w", err))
 				continue
@@ -53,7 +53,7 @@ func vmStatusUpdater(ctx context.Context) {
 					}
 				}
 
-				vmc := vmModels.New(versions.V1)
+				vmc := vm_repo.New(versions.V1)
 
 				code, message, err := fetchVmStatusV1(&vm, allVmStatus[vm.Subsystems.CS.VM.ID])
 				if err != nil {
@@ -75,7 +75,7 @@ func vmStatusUpdater(ctx context.Context) {
 				}
 			}
 
-			v2Vms, err := vmModels.New(versions.V2).List()
+			v2Vms, err := vm_repo.New(versions.V2).List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching vms: %w", err))
 				continue
@@ -87,7 +87,7 @@ func vmStatusUpdater(ctx context.Context) {
 					utils.PrettyPrintError(fmt.Errorf("error fetching vm status: %w", err))
 					continue
 				}
-				_ = vmModels.New(versions.V2).SetWithBsonByID(vm.ID, bson.D{{"statusCode", code}, {"statusMessage", message}})
+				_ = vm_repo.New(versions.V2).SetWithBsonByID(vm.ID, bson.D{{"statusCode", code}, {"statusMessage", message}})
 			}
 
 		case <-ctx.Done():
@@ -109,7 +109,7 @@ func vmSnapshotUpdater(ctx context.Context) {
 
 		case <-tick:
 			go func() {
-				allVms, err := vmModels.New().List()
+				allVms, err := vm_repo.New().List()
 				if err != nil {
 					utils.PrettyPrintError(fmt.Errorf("error fetching vms when updating snapshot status: %w", err))
 					return
@@ -121,7 +121,7 @@ func vmSnapshotUpdater(ctx context.Context) {
 						continue
 					}
 
-					err = vmModels.New().SetSubsystem(vm.ID, "cs.snapshotMap", snapshotMap)
+					err = vm_repo.New().SetSubsystem(vm.ID, "cs.snapshotMap", snapshotMap)
 					if err != nil {
 						utils.PrettyPrintError(fmt.Errorf("error updating vm snapshot map: %w", err))
 					}
@@ -145,7 +145,7 @@ func deploymentStatusUpdater(ctx context.Context) {
 			workers.ReportUp("deploymentStatusUpdater")
 
 		case <-tick:
-			allDeployments, err := deploymentModels.New().List()
+			allDeployments, err := deployment_repo.New().List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("error fetching deployments. details: %w", err))
 				continue
@@ -157,7 +157,7 @@ func deploymentStatusUpdater(ctx context.Context) {
 					utils.PrettyPrintError(fmt.Errorf("error fetching deployment status: %w", err))
 					continue
 				}
-				_ = deploymentModels.New().SetWithBsonByID(deployment.ID, bson.D{{"statusCode", code}, {"statusMessage", message}})
+				_ = deployment_repo.New().SetWithBsonByID(deployment.ID, bson.D{{"statusCode", code}, {"statusMessage", message}})
 			}
 		case <-ctx.Done():
 			return

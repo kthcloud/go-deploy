@@ -2,11 +2,10 @@ package status_update
 
 import (
 	"fmt"
-	deploymentModels "go-deploy/models/sys/deployment"
-	jobModels "go-deploy/models/sys/job"
-	vmModels "go-deploy/models/sys/vm"
+	"go-deploy/models/model"
 	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/db/resources/job_repo"
 	"go-deploy/pkg/subsystems/cs"
 	csModels "go-deploy/pkg/subsystems/cs/models"
 )
@@ -57,7 +56,7 @@ func parseCsStatus(status string) (int, string) {
 }
 
 // fetchVmStatusV1 fetches the status of a VM.
-func fetchVmStatusV1(vm *vmModels.VM, csStatus string) (int, string, error) {
+func fetchVmStatusV1(vm *model.VM, csStatus string) (int, string, error) {
 	csStatusCode, csStatusMessage := parseCsStatus(csStatus)
 
 	// In case the "delete CS VM" part fails, the VM will be stuck in "Running" state.
@@ -67,10 +66,10 @@ func fetchVmStatusV1(vm *vmModels.VM, csStatus string) (int, string, error) {
 		return status_codes.ResourceBeingDeleted, status_codes.GetMsg(status_codes.ResourceBeingDeleted), nil
 	}
 
-	anyCreateSnapshotJob, err := jobModels.New().
+	anyCreateSnapshotJob, err := job_repo.New().
 		FilterArgs("id", vm.ID).
-		IncludeTypes(jobModels.TypeCreateVmUserSnapshot, jobModels.TypeCreateSystemVmSnapshot).
-		IncludeStatus(jobModels.StatusRunning).
+		IncludeTypes(model.JobCreateVmUserSnapshot, model.JobCreateSystemVmSnapshot).
+		IncludeStatus(model.JobStatusRunning).
 		ExistsAny()
 	if err != nil {
 		return status_codes.ResourceUnknown, status_codes.GetMsg(status_codes.ResourceUnknown), fmt.Errorf("failed to check if snapshot job exists. details: %w", err)
@@ -102,7 +101,7 @@ func fetchVmStatusV1(vm *vmModels.VM, csStatus string) (int, string, error) {
 }
 
 // fetchVmStatusV2 fetches the status of a VM.
-func fetchVmStatusV2(vm *vmModels.VM) (int, string, error) {
+func fetchVmStatusV2(vm *model.VM) (int, string, error) {
 	if vm.BeingCreated() {
 		return status_codes.ResourceBeingCreated, status_codes.GetMsg(status_codes.ResourceBeingCreated), nil
 	}
@@ -115,7 +114,7 @@ func fetchVmStatusV2(vm *vmModels.VM) (int, string, error) {
 }
 
 // fetchSnapshotStatus fetches the status of a VM's snapshots.
-func fetchSnapshotStatus(vm *vmModels.VM) map[string]csModels.SnapshotPublic {
+func fetchSnapshotStatus(vm *model.VM) map[string]csModels.SnapshotPublic {
 	client, err := withClient(vm.Zone)
 	if err != nil {
 		return nil
@@ -135,7 +134,7 @@ func fetchSnapshotStatus(vm *vmModels.VM) map[string]csModels.SnapshotPublic {
 }
 
 // fetchDeploymentStatus fetches the status of a deployment.
-func fetchDeploymentStatus(deployment *deploymentModels.Deployment) (int, string, error) {
+func fetchDeploymentStatus(deployment *model.Deployment) (int, string, error) {
 
 	if deployment == nil {
 		return status_codes.ResourceNotFound, status_codes.GetMsg(status_codes.ResourceNotFound), nil
@@ -153,11 +152,11 @@ func fetchDeploymentStatus(deployment *deploymentModels.Deployment) (int, string
 		return status_codes.ResourceStopped, status_codes.GetMsg(status_codes.ResourceStopped), nil
 	}
 
-	if deployment.DoingActivity(deploymentModels.ActivityRestarting) {
+	if deployment.DoingActivity(model.ActivityRestarting) {
 		return status_codes.ResourceRestarting, status_codes.GetMsg(status_codes.ResourceRestarting), nil
 	}
 
-	if deployment.DoingActivity(deploymentModels.ActivityBuilding) {
+	if deployment.DoingActivity(model.ActivityBuilding) {
 		return status_codes.ResourceBuilding, status_codes.GetMsg(status_codes.ResourceBuilding), nil
 	}
 

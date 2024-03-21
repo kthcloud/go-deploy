@@ -3,8 +3,9 @@ package vms
 import (
 	"errors"
 	"fmt"
-	gpuModels "go-deploy/models/sys/gpu"
+	"go-deploy/models/model"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/db/resources/gpu_repo"
 	sErrors "go-deploy/service/errors"
 	utils2 "go-deploy/service/utils"
 	"go-deploy/service/v1/vms/cs_service"
@@ -16,8 +17,8 @@ import (
 
 // GetGPU gets a GPU
 //
-// It uses service.AuthInfo to only return the resource the requesting user has access to
-func (c *Client) GetGPU(id string, opts ...opts.GetGpuOpts) (*gpuModels.GPU, error) {
+// It uses service.AuthInfo to only return the model the requesting user has access to
+func (c *Client) GetGPU(id string, opts ...opts.GetGpuOpts) (*model.GPU, error) {
 	o := utils2.GetFirstOrDefault(opts)
 
 	var usePrivilegedGPUs bool
@@ -30,7 +31,7 @@ func (c *Client) GetGPU(id string, opts ...opts.GetGpuOpts) (*gpuModels.GPU, err
 		excludedGpus = config.Config.GPU.PrivilegedGPUs
 	}
 
-	gmc := gpuModels.New().WithExclusion(config.Config.GPU.ExcludedHosts, excludedGpus)
+	gmc := gpu_repo.New().WithExclusion(config.Config.GPU.ExcludedHosts, excludedGpus)
 
 	if o.Zone != nil {
 		gmc.WithZone(*o.Zone)
@@ -55,7 +56,7 @@ func (c *Client) GetGPU(id string, opts ...opts.GetGpuOpts) (*gpuModels.GPU, err
 				return nil, nil
 			}
 
-			utils.PrettyPrintError(fmt.Errorf("error checking if gpu is in use. details: %w", err))
+			utils.PrettyPrintError(fmt.Errorf("error checking if gpu_repo is in use. details: %w", err))
 			return nil, nil
 		}
 	}
@@ -63,10 +64,16 @@ func (c *Client) GetGPU(id string, opts ...opts.GetGpuOpts) (*gpuModels.GPU, err
 	return gpu, nil
 }
 
+// GetGpuByVM gets a GPU attached to a VM
+// If the VM does not have a GPU attached, it will return nil
+func (c *Client) GetGpuByVM(vmID string) (*model.GPU, error) {
+	return gpu_repo.New().WithVM(vmID).Get()
+}
+
 // ListGPUs lists GPUs
 //
 // It uses service.AuthInfo to only return the resources the requesting user has access to
-func (c *Client) ListGPUs(opts ...opts.ListGpuOpts) ([]gpuModels.GPU, error) {
+func (c *Client) ListGPUs(opts ...opts.ListGpuOpts) ([]model.GPU, error) {
 	o := utils2.GetFirstOrDefault(opts)
 
 	excludedGPUs := config.Config.GPU.ExcludedGPUs
@@ -79,7 +86,7 @@ func (c *Client) ListGPUs(opts ...opts.ListGpuOpts) ([]gpuModels.GPU, error) {
 		}
 	}
 
-	gmc := gpuModels.New().WithExclusion(config.Config.GPU.ExcludedHosts, excludedGPUs)
+	gmc := gpu_repo.New().WithExclusion(config.Config.GPU.ExcludedHosts, excludedGPUs)
 
 	if o.Pagination != nil {
 		gmc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
@@ -92,7 +99,7 @@ func (c *Client) ListGPUs(opts ...opts.ListGpuOpts) ([]gpuModels.GPU, error) {
 	if o.AvailableGPUs {
 		gmc.OnlyAvailable()
 		gpus, _ := gmc.List()
-		availableGPUs := make([]gpuModels.GPU, 0)
+		availableGPUs := make([]model.GPU, 0)
 
 		for _, gpu := range gpus {
 			err := c.CheckGpuHardwareAvailable(gpu.ID)
@@ -103,7 +110,7 @@ func (c *Client) ListGPUs(opts ...opts.ListGpuOpts) ([]gpuModels.GPU, error) {
 				case errors.Is(err, sErrors.HostNotAvailableErr):
 					continue
 				default:
-					utils.PrettyPrintError(fmt.Errorf("error checking if gpu is in use. details: %w", err))
+					utils.PrettyPrintError(fmt.Errorf("error checking if gpu_repo is in use. details: %w", err))
 					continue
 				}
 			}
@@ -120,7 +127,7 @@ func (c *Client) ListGPUs(opts ...opts.ListGpuOpts) ([]gpuModels.GPU, error) {
 // AttachGPU attaches a GPU to a VM
 func (c *Client) AttachGPU(vmID string, gpuIDs []string, leaseDuration float64) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to attach gpu to vm %s. details: %w", vmID, err)
+		return fmt.Errorf("failed to attach gpu_repo to vm %s. details: %w", vmID, err)
 	}
 	csInsufficientCapacityError := "host has capacity? false"
 	gpuAlreadyAttachedError := "Unable to create a deployment for VM instance"
@@ -146,8 +153,8 @@ func (c *Client) AttachGPU(vmID string, gpuIDs []string, leaseDuration float64) 
 	cc := cs_service.New(c.Cache)
 
 	for _, gpuID := range gpuIDs {
-		var gpu *gpuModels.GPU
-		gpu, err = gpuModels.New().GetByID(gpuID)
+		var gpu *model.GPU
+		gpu, err = gpu_repo.New().GetByID(gpuID)
 		if err != nil {
 			return makeError(err)
 		}
@@ -173,7 +180,7 @@ func (c *Client) AttachGPU(vmID string, gpuIDs []string, leaseDuration float64) 
 					return makeError(err)
 				}
 
-				err = gpuModels.New().Detach(gpu.Lease.VmID)
+				err = gpu_repo.New().Detach(gpu.Lease.VmID)
 				if err != nil {
 					return makeError(err)
 				}
@@ -183,10 +190,10 @@ func (c *Client) AttachGPU(vmID string, gpuIDs []string, leaseDuration float64) 
 		}
 
 		var attached bool
-		attached, err = gpuModels.New().Attach(gpuID, vmID, vm.OwnerID, endLease)
+		attached, err = gpu_repo.New().Attach(gpuID, vmID, vm.OwnerID, endLease)
 		if err != nil {
-			if errors.Is(err, gpuModels.AlreadyAttachedErr) || errors.Is(err, gpuModels.NotFoundErr) {
-				// this is not treated as an error, just another instance snatched the gpu before this one
+			if errors.Is(err, gpu_repo.AlreadyAttachedErr) || errors.Is(err, gpu_repo.NotFoundErr) {
+				// this is not treated as an error, just another instance snatched the gpu_repo before this one
 				continue
 			}
 
@@ -196,9 +203,9 @@ func (c *Client) AttachGPU(vmID string, gpuIDs []string, leaseDuration float64) 
 		if !attached {
 			// This is an edge case where we don't want to fail the method, since a retry will probably not help.
 			//
-			// This is probably caused by a race condition where two users requested the same gpu, where the first one
+			// This is probably caused by a race condition where two users requested the same gpu_repo, where the first one
 			// got it, and the second one failed. We don't want to fail the second user, since that would mean that a
-			// job would get stuck. Instead the user is not granted the gpu, and will need to request a new one manually
+			// job would get stuck. Instead the user is not granted the gpu_repo, and will need to request a new one manually
 			continue
 		}
 
@@ -215,27 +222,27 @@ func (c *Client) AttachGPU(vmID string, gpuIDs []string, leaseDuration float64) 
 		gpuAlreadyAttached := strings.Contains(errString, gpuAlreadyAttachedError)
 
 		if insufficientCapacityErr {
-			// If the host has insufficient capacity, we need to detach the gpu from the vm
-			// and attempt to attach it to another gpu
+			// If the host has insufficient capacity, we need to detach the gpu_repo from the vm
+			// and attempt to attach it to another gpu_repo
 
 			err = cc.DetachGPU(vmID, cs_service.CsDetachGpuAfterStateRestore)
 			if err != nil {
 				return makeError(err)
 			}
 
-			err = gpuModels.New().Detach(vmID)
+			err = gpu_repo.New().Detach(vmID)
 			if err != nil {
 				return makeError(err)
 			}
 		} else if gpuAlreadyAttached {
-			// If the gpu is already attached, we need to detach it from the vm
+			// If the gpu_repo is already attached, we need to detach it from the vm
 
 			err = cc.DetachGPU(vmID, cs_service.CsDetachGpuAfterStateRestore)
 			if err != nil {
 				return makeError(err)
 			}
 
-			err = gpuModels.New().Detach(vmID)
+			err = gpu_repo.New().Detach(vmID)
 			if err != nil {
 				return makeError(err)
 			}
@@ -250,7 +257,7 @@ func (c *Client) AttachGPU(vmID string, gpuIDs []string, leaseDuration float64) 
 // DetachGPU detaches a GPU from a VM
 func (c *Client) DetachGPU(vmID string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to detach gpu from vm %s. details: %w", vmID, err)
+		return fmt.Errorf("failed to detach gpu_repo from vm %s. details: %w", vmID, err)
 	}
 
 	err := cs_service.New(c.Cache).DetachGPU(vmID, cs_service.CsDetachGpuAfterStateRestore)
@@ -258,7 +265,7 @@ func (c *Client) DetachGPU(vmID string) error {
 		return makeError(err)
 	}
 
-	err = gpuModels.New().Detach(vmID)
+	err = gpu_repo.New().Detach(vmID)
 	if err != nil {
 		return makeError(err)
 	}

@@ -3,8 +3,8 @@ package validators
 import (
 	"encoding/json"
 	"github.com/go-playground/validator/v10"
-	bodyV1 "go-deploy/models/dto/v1/body"
-	bodyV2 "go-deploy/models/dto/v2/body"
+	bodyV1 "go-deploy/dto/v1/body"
+	bodyV2 "go-deploy/dto/v2/body"
 	"go-deploy/pkg/config"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/idna"
@@ -403,8 +403,8 @@ func TeamMemberList(fl validator.FieldLevel) bool {
 	return true
 }
 
-// TeamResourceList is a validator for team resource lists.
-// It ensures that every team resource is unique
+// TeamResourceList is a validator for team model lists.
+// It ensures that every team model is unique
 func TeamResourceList(fl validator.FieldLevel) bool {
 	resourceList, ok := fl.Field().Interface().([]string)
 	if !ok {

@@ -2,8 +2,8 @@ package v1_zone
 
 import (
 	"github.com/gin-gonic/gin"
-	"go-deploy/models/dto/v1/body"
-	"go-deploy/models/dto/v1/query"
+	"go-deploy/dto/v1/body"
+	"go-deploy/dto/v1/query"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"

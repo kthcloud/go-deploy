@@ -2,7 +2,8 @@ package client
 
 import (
 	"fmt"
-	smModels "go-deploy/models/sys/sm"
+	"go-deploy/models/model"
+	"go-deploy/pkg/db/resources/sm_repo"
 	"go-deploy/service/core"
 )
 
@@ -31,7 +32,7 @@ func (c *BaseClient[parent]) SetParent(p *parent) {
 
 // SM returns the SM with the given ID.
 // After a successful fetch, the SM will be cached.
-func (c *BaseClient[parent]) SM(id, userID string, smc *smModels.Client) (*smModels.SM, error) {
+func (c *BaseClient[parent]) SM(id, userID string, smc *sm_repo.Client) (*model.SM, error) {
 	sm := c.Cache.GetSM(id)
 	if sm != nil {
 		return sm, nil
@@ -47,22 +48,22 @@ func (c *BaseClient[parent]) SM(id, userID string, smc *smModels.Client) (*smMod
 
 // Refresh clears the cache for the SM with the given ID and fetches it again.
 // After a successful fetch, the SM is cached.
-func (c *BaseClient[parent]) Refresh(id string) (*smModels.SM, error) {
+func (c *BaseClient[parent]) Refresh(id string) (*model.SM, error) {
 	return c.fetchSM(id, nil)
 }
 
 // SMs returns a list of SMs.
 // After a successful fetch, the SMs will be cached.
-func (c *BaseClient[parent]) fetchSM(id string, smc *smModels.Client) (*smModels.SM, error) {
+func (c *BaseClient[parent]) fetchSM(id string, smc *sm_repo.Client) (*model.SM, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to fetch sm in service client: %w", err)
 	}
 
 	if smc == nil {
-		smc = smModels.New()
+		smc = sm_repo.New()
 	}
 
-	var sm *smModels.SM
+	var sm *model.SM
 	var err error
 
 	if id == "" {

@@ -1,10 +1,9 @@
 package opts
 
 import (
+	"go-deploy/dto/v1/body"
 	configModels "go-deploy/models/config"
-	"go-deploy/models/dto/v1/body"
-	roleModels "go-deploy/models/sys/role"
-	vmModels "go-deploy/models/sys/vm"
+	"go-deploy/models/model"
 	"go-deploy/service/v1/utils"
 )
 
@@ -39,7 +38,7 @@ type ListOpts struct {
 	Shared     bool
 }
 
-// GetGpuOpts is used to specify the options when getting a VM's gpu.
+// GetGpuOpts is used to specify the options when getting a VM's gpu_repo.
 type GetGpuOpts struct {
 	Zone          *string
 	AvailableGPUs bool
@@ -63,13 +62,13 @@ type ListSnapshotOpts struct {
 
 // CreateSnapshotOpts is used to specify the options when creating a VM's snapshot.
 type CreateSnapshotOpts struct {
-	System *vmModels.CreateSnapshotParams
+	System *model.CreateSnapshotParams
 	User   *body.VmSnapshotCreate
 }
 
 // QuotaOpts is used to specify the options when getting a VM's quota.
 type QuotaOpts struct {
-	Quota          *roleModels.Quotas
+	Quota          *model.Quotas
 	Create         *body.VmCreate
 	Update         *body.VmUpdate
 	CreateSnapshot *body.VmSnapshotCreate

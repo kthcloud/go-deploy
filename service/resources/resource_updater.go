@@ -5,8 +5,8 @@ import (
 	"log"
 )
 
-// SsUpdaterType is a type that can be used to update a single subsystem resource
-// It contains the public resource that should be updated, and the functions that should be used to update it
+// SsUpdaterType is a type that can be used to update a single subsystem model
+// It contains the public model that should be updated, and the functions that should be used to update it
 type SsUpdaterType[T subsystems.SsResource] struct {
 	public T
 
@@ -14,7 +14,7 @@ type SsUpdaterType[T subsystems.SsResource] struct {
 	updateFunc func(T) (T, error)
 }
 
-// SsUpdater create a new updater that can be used for a single resource
+// SsUpdater create a new updater that can be used for a single model
 func SsUpdater[T subsystems.SsResource](updateFunc func(T) (T, error)) *SsUpdaterType[T] {
 	return &SsUpdaterType[T]{
 		updateFunc: updateFunc,
@@ -27,7 +27,7 @@ func (rc *SsUpdaterType[T]) WithDbFunc(dbFunc func(interface{}) error) *SsUpdate
 	return rc
 }
 
-// WithPublic sets the desired public resource for the updater
+// WithPublic sets the desired public model for the updater
 func (rc *SsUpdaterType[T]) WithPublic(public T) *SsUpdaterType[T] {
 	rc.public = public
 	return rc
@@ -36,7 +36,7 @@ func (rc *SsUpdaterType[T]) WithPublic(public T) *SsUpdaterType[T] {
 // Exec executes the updater
 func (rc *SsUpdaterType[T]) Exec() error {
 	if subsystems.Nil(rc.public) {
-		log.Println("no public resource provided for subsystem update. did you forget to call WithPublic?")
+		log.Println("no public model provided for subsystem update. did you forget to call WithPublic?")
 		return nil
 	}
 
@@ -54,7 +54,7 @@ func (rc *SsUpdaterType[T]) Exec() error {
 		}
 
 		if subsystems.Nil(resource) {
-			log.Println("no resource returned after update. assuming it was deleted")
+			log.Println("no model returned after update. assuming it was deleted")
 			return nil
 		}
 

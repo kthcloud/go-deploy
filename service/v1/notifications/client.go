@@ -1,7 +1,8 @@
 package notifications
 
 import (
-	notificationModels "go-deploy/models/sys/notification"
+	"go-deploy/models/model"
+	"go-deploy/pkg/db/resources/notification_repo"
 	"go-deploy/service/clients"
 	"go-deploy/service/core"
 	"sort"
@@ -33,7 +34,7 @@ func New(v1 clients.V1, cache ...*core.Cache) *Client {
 
 // Notification returns the notification with the given ID.
 // After a successful fetch, the notification will be cached.
-func (c *Client) Notification(id string, nmc *notificationModels.Client) (*notificationModels.Notification, error) {
+func (c *Client) Notification(id string, nmc *notification_repo.Client) (*model.Notification, error) {
 	notification := c.Cache.GetNotification(id)
 	if notification == nil {
 		var err error
@@ -50,7 +51,7 @@ func (c *Client) Notification(id string, nmc *notificationModels.Client) (*notif
 
 // Notifications returns a list of notifications.
 // After a successful fetch, the notifications will be cached.
-func (c *Client) Notifications(nmc *notificationModels.Client) ([]notificationModels.Notification, error) {
+func (c *Client) Notifications(nmc *notification_repo.Client) ([]model.Notification, error) {
 	// Right now we don't have a way to skip fetching when requesting a list of resources
 	notifications, err := nmc.List()
 	if err != nil {
@@ -70,7 +71,7 @@ func (c *Client) Notifications(nmc *notificationModels.Client) ([]notificationMo
 
 // RefreshNotification clears the cache for the notification with the given ID and fetches it again.
 // After a successful fetch, the notification will be cached.
-func (c *Client) RefreshNotification(id string, umc *notificationModels.Client) (*notificationModels.Notification, error) {
+func (c *Client) RefreshNotification(id string, umc *notification_repo.Client) (*model.Notification, error) {
 	notification, err := umc.GetByID(id)
 	if err != nil {
 		return nil, err

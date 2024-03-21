@@ -3,11 +3,10 @@ package v1_user
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"go-deploy/models/dto/v1/body"
-	"go-deploy/models/dto/v1/query"
-	"go-deploy/models/dto/v1/uri"
-	roleModels "go-deploy/models/sys/role"
-	userModels "go-deploy/models/sys/user"
+	"go-deploy/dto/v1/body"
+	"go-deploy/dto/v1/query"
+	"go-deploy/dto/v1/uri"
+	"go-deploy/models/model"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
@@ -93,7 +92,7 @@ func ListUsers(c *gin.Context) {
 		role := config.Config.GetRole(user.EffectiveRole.Name)
 		usage, _ := collectUsage(deployV1, user.ID)
 		if usage == nil {
-			usage = &userModels.Usage{}
+			usage = &model.UserUsage{}
 		}
 
 		usersDto = append(usersDto, user.ToDTO(role, usage, deployV1.SMs().GetURL(user.ID)))
@@ -132,8 +131,8 @@ func Get(c *gin.Context) {
 		requestURI.UserID = auth.UserID
 	}
 
-	var effectiveRole *roleModels.Role
-	var user *userModels.User
+	var effectiveRole *model.Role
+	var user *model.User
 
 	deployV1 := service.V1(auth)
 
@@ -163,7 +162,7 @@ func Get(c *gin.Context) {
 
 		effectiveRole = config.Config.GetRole(user.EffectiveRole.Name)
 		if effectiveRole == nil {
-			effectiveRole = &roleModels.Role{}
+			effectiveRole = &model.Role{}
 		}
 	}
 
@@ -213,7 +212,7 @@ func Update(c *gin.Context) {
 		requestURI.UserID = auth.UserID
 	}
 
-	var effectiveRole *roleModels.Role
+	var effectiveRole *model.Role
 
 	deployV1 := service.V1(auth)
 
@@ -248,7 +247,7 @@ func Update(c *gin.Context) {
 
 // collectUsage is helper function to collect usage for a user.
 // This includes how many deployments, cpu cores, ram and disk size etc. the user has.
-func collectUsage(deployV1 clients.V1, userID string) (*userModels.Usage, error) {
+func collectUsage(deployV1 clients.V1, userID string) (*model.UserUsage, error) {
 	vmUsage, err := deployV1.VMs().GetUsage(userID)
 	if err != nil {
 		return nil, err
@@ -259,7 +258,7 @@ func collectUsage(deployV1 clients.V1, userID string) (*userModels.Usage, error)
 		return nil, err
 	}
 
-	usage := &userModels.Usage{
+	usage := &model.UserUsage{
 		Deployments: deploymentUsage.Count,
 		CpuCores:    vmUsage.CpuCores,
 		RAM:         vmUsage.RAM,

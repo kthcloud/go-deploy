@@ -2,7 +2,8 @@ package client
 
 import (
 	"fmt"
-	deploymentModels "go-deploy/models/sys/deployment"
+	"go-deploy/models/model"
+	"go-deploy/pkg/db/resources/deployment_repo"
 	"go-deploy/service/core"
 )
 
@@ -31,7 +32,7 @@ func (c *BaseClient[parent]) SetParent(p *parent) {
 
 // Deployment returns the deployment with the given ID.
 // After a successful fetch, the deployment is cached.
-func (c *BaseClient[parent]) Deployment(id string, dmc *deploymentModels.Client) (*deploymentModels.Deployment, error) {
+func (c *BaseClient[parent]) Deployment(id string, dmc *deployment_repo.Client) (*model.Deployment, error) {
 	deployment := c.Cache.GetDeployment(id)
 	if deployment == nil {
 		return c.fetchDeployment(id, "", dmc)
@@ -42,29 +43,29 @@ func (c *BaseClient[parent]) Deployment(id string, dmc *deploymentModels.Client)
 
 // Deployments returns a list of all deployments.
 // After a successful fetch, the deployments are cached.
-func (c *BaseClient[parent]) Deployments(dmc *deploymentModels.Client) ([]deploymentModels.Deployment, error) {
+func (c *BaseClient[parent]) Deployments(dmc *deployment_repo.Client) ([]model.Deployment, error) {
 	// Right now we don't have a way to skip fetching when requesting a list of resources
 	return c.fetchDeployments(dmc)
 }
 
 // Refresh clears the cache for the deployment with the given ID and fetches it again.
 // After a successful fetch, the deployment is cached.
-func (c *BaseClient[parent]) Refresh(id string) (*deploymentModels.Deployment, error) {
+func (c *BaseClient[parent]) Refresh(id string) (*model.Deployment, error) {
 	return c.fetchDeployment(id, "", nil)
 }
 
 // fetchDeployment fetches the deployment with the given ID or name.
 // After a successful fetch, the deployment is cached.
-func (c *BaseClient[parent]) fetchDeployment(id, name string, dmc *deploymentModels.Client) (*deploymentModels.Deployment, error) {
+func (c *BaseClient[parent]) fetchDeployment(id, name string, dmc *deployment_repo.Client) (*model.Deployment, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to fetch deployment in service client: %w", err)
 	}
 
 	if dmc == nil {
-		dmc = deploymentModels.New()
+		dmc = deployment_repo.New()
 	}
 
-	var deployment *deploymentModels.Deployment
+	var deployment *model.Deployment
 	if id != "" {
 		var err error
 		deployment, err = dmc.GetByID(id)
@@ -90,13 +91,13 @@ func (c *BaseClient[parent]) fetchDeployment(id, name string, dmc *deploymentMod
 
 // fetchDeployments fetches all deployments.
 // After a successful fetch, the deployments are cached.
-func (c *BaseClient[parent]) fetchDeployments(dmc *deploymentModels.Client) ([]deploymentModels.Deployment, error) {
+func (c *BaseClient[parent]) fetchDeployments(dmc *deployment_repo.Client) ([]model.Deployment, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to fetch gpus in service client: %w", err)
 	}
 
 	if dmc == nil {
-		dmc = deploymentModels.New()
+		dmc = deployment_repo.New()
 	}
 
 	deployments, err := dmc.List()

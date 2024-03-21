@@ -1,10 +1,9 @@
 package opts
 
 import (
+	"go-deploy/dto/v2/body"
 	configModels "go-deploy/models/config"
-	"go-deploy/models/dto/v2/body"
-	roleModels "go-deploy/models/sys/role"
-	vmModels "go-deploy/models/sys/vm"
+	"go-deploy/models/model"
 	"go-deploy/service/v2/utils"
 )
 
@@ -38,17 +37,32 @@ type ListOpts struct {
 	Shared     bool
 }
 
-// GetGpuOpts is used to specify the options when getting a VM's gpu.
+// GetGpuOpts is used to specify the options when getting a GPU.
 type GetGpuOpts struct {
 	Zone          *string
 	AvailableGPUs bool
 }
 
-// ListGpuOpts is used to specify the options when listing VMs' gpus.
+// ListGpuOpts is used to specify the options when listing GPUs.
 type ListGpuOpts struct {
 	Pagination    *utils.Pagination
 	Zone          *string
 	AvailableGPUs bool
+}
+
+// GetGpuLeaseOpts is used to specify the options when getting a GPU lease.
+type GetGpuLeaseOpts struct {
+}
+
+// ListGpuLeaseOpts is used to specify the options when listing GPU leases.
+type ListGpuLeaseOpts struct {
+	Pagination *utils.Pagination
+}
+
+// CreateGpuLeaseOpts is used to specify the options when attaching a GPU to a VM.
+type CreateGpuLeaseOpts struct {
+	// LeaseForever is used to specify whether the lease should be created forever.
+	LeaseForever bool
 }
 
 // GetSnapshotOpts is used to specify the options when getting a VM's snapshot.
@@ -62,13 +76,13 @@ type ListSnapshotOpts struct {
 
 // CreateSnapshotOpts is used to specify the options when creating a VM's snapshot.
 type CreateSnapshotOpts struct {
-	System *vmModels.CreateSnapshotParams
+	System *model.CreateSnapshotParams
 	User   *body.VmSnapshotCreate
 }
 
 // QuotaOpts is used to specify the options when getting a VM's quota.
 type QuotaOpts struct {
-	Quota          *roleModels.Quotas
+	Quota          *model.Quotas
 	Create         *body.VmCreate
 	Update         *body.VmUpdate
 	CreateSnapshot *body.VmSnapshotCreate

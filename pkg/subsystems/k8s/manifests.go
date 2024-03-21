@@ -618,7 +618,7 @@ func CreateVmManifest(public *models.VmPublic, resourceVersion ...string) *kubev
 					},
 					Spec: cdibetav1.DataVolumeSpec{
 						PVC: &apiv1.PersistentVolumeClaimSpec{
-							StorageClassName: strToPtr("go-deploy-vms"),
+							StorageClassName: strToPtr("deploy-vm-disks"),
 							AccessModes: []apiv1.PersistentVolumeAccessMode{
 								apiv1.ReadWriteMany,
 							},

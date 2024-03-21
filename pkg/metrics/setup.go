@@ -3,7 +3,7 @@ package metrics
 import (
 	"fmt"
 	"github.com/penglongli/gin-metrics/ginmetrics"
-	"go-deploy/models/sys/key_value"
+	"go-deploy/pkg/db/key_value"
 	"go-deploy/utils"
 	"log"
 	"strconv"

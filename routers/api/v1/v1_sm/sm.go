@@ -3,10 +3,10 @@ package v1_sm
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"go-deploy/models/dto/v1/body"
-	"go-deploy/models/dto/v1/query"
-	"go-deploy/models/dto/v1/uri"
-	jobModels "go-deploy/models/sys/job"
+	"go-deploy/dto/v1/body"
+	"go-deploy/dto/v1/query"
+	"go-deploy/dto/v1/uri"
+	"go-deploy/models/model"
 	"go-deploy/models/versions"
 	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/sys"
@@ -156,7 +156,7 @@ func DeleteSM(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, jobModels.TypeDeleteSM, versions.V1, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobDeleteSM, versions.V1, map[string]interface{}{
 		"id": sm.ID,
 	})
 	if err != nil {

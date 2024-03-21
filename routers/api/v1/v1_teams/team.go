@@ -6,10 +6,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/google/uuid"
-	"go-deploy/models/dto/v1/body"
-	"go-deploy/models/dto/v1/query"
-	"go-deploy/models/dto/v1/uri"
-	teamModels "go-deploy/models/sys/team"
+	"go-deploy/dto/v1/body"
+	"go-deploy/dto/v1/query"
+	"go-deploy/dto/v1/uri"
+	"go-deploy/models/model"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
@@ -282,7 +282,7 @@ func joinTeam(context sys.ClientContext, id string, requestBody *body.TeamJoin) 
 }
 
 // getMember is a helper function for converting a team member to a team member DTO
-func getMember(member *teamModels.Member) *body.TeamMember {
+func getMember(member *model.TeamMember) *body.TeamMember {
 	user, err := service.V1().Users().Get(member.ID)
 	if err != nil {
 		utils.PrettyPrintError(fmt.Errorf("failed to get user when getting team member for team: %s", err))
@@ -314,9 +314,9 @@ func getMember(member *teamModels.Member) *body.TeamMember {
 	}
 }
 
-// getResourceName is a helper function for converting a team resource to a resource name
-// It checks the resource type and gets the resource name from the appropriate service
-func getResourceName(resource *teamModels.Resource) *string {
+// getResourceName is a helper function for converting a team model to a model name
+// It checks the model type and gets the model name from the appropriate service
+func getResourceName(resource *model.TeamResource) *string {
 	if resource == nil {
 		return nil
 	}
@@ -324,10 +324,10 @@ func getResourceName(resource *teamModels.Resource) *string {
 	deployV1 := service.V1()
 
 	switch resource.Type {
-	case teamModels.ResourceTypeDeployment:
+	case model.TeamResourceDeployment:
 		d, err := deployV1.Deployments().Get(resource.ID, dClient.GetOpts{Shared: true})
 		if err != nil {
-			utils.PrettyPrintError(fmt.Errorf("failed to get deployment when getting team resource name: %s", err))
+			utils.PrettyPrintError(fmt.Errorf("failed to get deployment when getting team model name: %s", err))
 			return nil
 		}
 
@@ -336,10 +336,10 @@ func getResourceName(resource *teamModels.Resource) *string {
 		}
 
 		return &d.Name
-	case teamModels.ResourceTypeVM:
+	case model.TeamResourceVM:
 		vm, err := deployV1.VMs().Get(resource.ID, vClient.GetOpts{Shared: true})
 		if err != nil {
-			utils.PrettyPrintError(fmt.Errorf("failed to get vm when getting team resource name: %s", err))
+			utils.PrettyPrintError(fmt.Errorf("failed to get vm when getting team model name: %s", err))
 			return nil
 		}
 

@@ -3,8 +3,8 @@ package v1_deployment
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"go-deploy/models/dto/v1/body"
-	"go-deploy/models/dto/v1/uri"
+	"go-deploy/dto/v1/body"
+	"go-deploy/dto/v1/uri"
 	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"

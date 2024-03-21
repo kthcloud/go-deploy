@@ -1,8 +1,8 @@
 package opts
 
 import (
+	"go-deploy/dto/v1/body"
 	configModels "go-deploy/models/config"
-	"go-deploy/models/dto/v1/body"
 	v1 "go-deploy/service/v1/utils"
 )
 

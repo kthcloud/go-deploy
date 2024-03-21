@@ -3,8 +3,9 @@ package logger
 import (
 	"context"
 	"fmt"
-	deploymentModels "go-deploy/models/sys/deployment"
+	"go-deploy/models/model"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/db/resources/deployment_repo"
 	"go-deploy/pkg/workers"
 	"go-deploy/service/v1/deployments/k8s_service"
 	"go-deploy/utils"
@@ -19,7 +20,7 @@ func deploymentLogger(ctx context.Context) {
 	reportTick := time.Tick(1 * time.Second)
 
 	// Get allowed names
-	allowedNames, err := deploymentModels.New().ListNames()
+	allowedNames, err := deployment_repo.New().ListNames()
 	if err != nil {
 		utils.PrettyPrintError(fmt.Errorf("failed to get allowed names for deployment logger. details: %w", err))
 		return
@@ -32,8 +33,8 @@ func deploymentLogger(ctx context.Context) {
 		log.Println("setting up log stream for zone", zone.Name)
 		go func() {
 			err := k8s_service.New(nil).SetupLogStream(logCtx, &dZone, allowedNames, func(line string, name string, podNumber int, createdAt time.Time) {
-				err := deploymentModels.New().AddLogsByName(name, deploymentModels.Log{
-					Source:    deploymentModels.LogSourcePod,
+				err := deployment_repo.New().AddLogsByName(name, model.Log{
+					Source:    model.LogSourcePod,
 					Prefix:    fmt.Sprintf("[pod %d]", podNumber),
 					Line:      line,
 					CreatedAt: createdAt,

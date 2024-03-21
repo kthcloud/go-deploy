@@ -93,7 +93,7 @@ func areTimeFieldsEqual(a, b interface{}) bool {
 }
 
 // UpdateIfDiff is a common function that services use to update subsystem resources if there is a diff
-// in the database and live resource.
+// in the database and live model.
 //
 // This is the core functionality that enables repairing subsystem resources.
 func UpdateIfDiff[T subsystems.SsResource](dbResource T, fetchFunc func() (T, error), updateFunc func(T) (T, error), recreateFunc func(T) error) error {

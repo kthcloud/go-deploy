@@ -5,12 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	configModels "go-deploy/models/config"
-	"go-deploy/models/sys/deployment"
-	smModels "go-deploy/models/sys/sm"
-	userModels "go-deploy/models/sys/user"
-	vmModels "go-deploy/models/sys/vm"
+	"go-deploy/models/model"
 	"go-deploy/models/versions"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/db/resources/user_repo"
 	"go-deploy/pkg/subsystems"
 	"go-deploy/pkg/subsystems/k8s"
 	"go-deploy/pkg/subsystems/k8s/keys"
@@ -129,7 +127,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		mainApp := kg.d.deployment.GetMainApp()
 
 		var imagePullSecrets []string
-		if kg.d.deployment.Type == deployment.TypeCustom {
+		if kg.d.deployment.Type == model.DeploymentTypeCustom {
 			imagePullSecrets = []string{constants.WithImagePullSecretSuffix(kg.d.deployment.Name)}
 		}
 
@@ -336,7 +334,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		res = append(res, filebrowser)
 
 		// Oauth2-proxy
-		user, err := userModels.New().GetByID(kg.s.sm.OwnerID)
+		user, err := user_repo.New().GetByID(kg.s.sm.OwnerID)
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to get user by id when creating oauth proxy deployment public. details: %w", err))
 			return nil
@@ -536,15 +534,26 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 		portMap := kg.v.vm.PortMap
 
 		for _, port := range portMap {
-			res = append(res, models.ServicePublic{
-				Name:      vmServiceName(kg.v.vm),
-				Namespace: kg.namespace,
-				Ports: []models.Port{{
-					Name:       pfrName(port.Port, port.Protocol),
-					Protocol:   port.Protocol,
-					Port:       0, // This is set externally
+			servicePorts := []models.Port{{
+				Name:       pfrName(port.Port, port.Protocol),
+				Protocol:   port.Protocol,
+				Port:       0, // This is set externally
+				TargetPort: port.Port,
+			}}
+
+			if port.HttpProxy != nil {
+				servicePorts = append(servicePorts, models.Port{
+					Name:       "http",
+					Protocol:   "tcp",
+					Port:       8080,
 					TargetPort: port.Port,
-				}},
+				})
+			}
+
+			res = append(res, models.ServicePublic{
+				Name:      vmServiceName(kg.v.vm, pfrName(port.Port, port.Protocol)),
+				Namespace: kg.namespace,
+				Ports:     servicePorts,
 				Selector: map[string]string{
 					keys.LabelDeployName: vmName(kg.v.vm),
 				},
@@ -557,21 +566,23 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 				return service.Name == mapName
 			})
 			if idx != -1 {
-				// Set external ports
-				for _, port := range portMap {
-					for _, p := range res[idx].Ports {
-						if p.Name == pfrName(port.Port, port.Protocol) {
-							res[idx].Ports[idx].Port = s.Ports[0].Port
-							break
-						}
+				// Copy over the external ports if the a port already exist, and is it not set
+				for servicePortIdx, servicePort := range res[idx].Ports {
+					if servicePort.Port != 0 {
+						continue
+					}
+
+					portIdx := slices.IndexFunc(s.Ports, func(port models.Port) bool {
+						return port.Name == servicePort.Name
+					})
+					if portIdx != -1 {
+						res[idx].Ports[servicePortIdx].Port = s.Ports[portIdx].Port
 					}
 				}
 
 				res[idx].CreatedAt = s.CreatedAt
 			}
 		}
-
-		// TODO: Add services for proxy ports
 
 		return res
 	}
@@ -644,7 +655,7 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 
 		res = append(res, in)
 
-		if mainApp.CustomDomain != nil && mainApp.CustomDomain.Status == deployment.CustomDomainStatusActive {
+		if mainApp.CustomDomain != nil && mainApp.CustomDomain.Status == model.CustomDomainStatusActive {
 			customIn := models.IngressPublic{
 				Name:         fmt.Sprintf(constants.WithCustomDomainSuffix(kg.d.deployment.Name)),
 				Namespace:    kg.namespace,
@@ -689,7 +700,7 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 				CustomCert:   nil,
 				Placeholder:  false,
 			})
-			if port.HttpProxy.CustomDomain != nil && port.HttpProxy.CustomDomain.Status == deployment.CustomDomainStatusActive {
+			if port.HttpProxy.CustomDomain != nil && port.HttpProxy.CustomDomain.Status == model.CustomDomainStatusActive {
 				res = append(res, models.IngressPublic{
 					Name:         vmpCustomDomainIngressName(kg.v.vm, port.HttpProxy.Name),
 					Namespace:    kg.namespace,
@@ -730,7 +741,66 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 		return res
 	}
 
-	// TODO: add ingresses for VM v2
+	if kg.v.vm != nil && kg.v.vm.Version == versions.V2 {
+		portMap := kg.v.vm.PortMap
+
+		for _, port := range portMap {
+			if port.HttpProxy == nil {
+				continue
+			}
+
+			tlsSecret := constants.WildcardCertSecretName
+			res = append(res, models.IngressPublic{
+				Name:         vmpIngressName(kg.v.vm, port.HttpProxy.Name),
+				Namespace:    kg.namespace,
+				ServiceName:  vmServiceName(kg.v.vm, pfrName(port.Port, port.Protocol)),
+				ServicePort:  8080,
+				IngressClass: config.Config.Deployment.IngressClass,
+				Hosts:        []string{vmpExternalURL(port.HttpProxy.Name, kg.v.deploymentZone)},
+				TlsSecret:    &tlsSecret,
+				CustomCert:   nil,
+				Placeholder:  false,
+			})
+			if port.HttpProxy.CustomDomain != nil && port.HttpProxy.CustomDomain.Status == model.CustomDomainStatusActive {
+				res = append(res, models.IngressPublic{
+					Name:         vmpCustomDomainIngressName(kg.v.vm, port.HttpProxy.Name),
+					Namespace:    kg.namespace,
+					ServiceName:  vmServiceName(kg.v.vm, pfrName(port.Port, port.Protocol)),
+					ServicePort:  8080,
+					IngressClass: config.Config.Deployment.IngressClass,
+					Hosts:        []string{port.HttpProxy.CustomDomain.Domain},
+					Placeholder:  false,
+					CustomCert: &models.CustomCert{
+						ClusterIssuer: "letsencrypt-prod-deploy-http",
+						CommonName:    port.HttpProxy.CustomDomain.Domain,
+					},
+					TlsSecret: nil,
+				})
+			}
+		}
+
+		for mapName, ingress := range kg.v.vm.Subsystems.K8s.GetIngressMap() {
+			idx := 0
+			matchedIdx := -1
+			for _, port := range portMap {
+				if port.HttpProxy == nil {
+					continue
+				}
+
+				if vmpIngressName(kg.v.vm, port.HttpProxy.Name) == mapName ||
+					(vmpCustomDomainIngressName(kg.v.vm, port.HttpProxy.Name) == mapName && port.HttpProxy.CustomDomain != nil) {
+					matchedIdx = idx
+					break
+				}
+			}
+
+			if matchedIdx != -1 {
+				res[idx].CreatedAt = ingress.CreatedAt
+			}
+		}
+
+		return res
+	}
 
 	if kg.s.sm != nil {
 		tlsSecret := constants.WildcardCertSecretName
@@ -895,10 +965,10 @@ func (kg *K8sGenerator) Secrets() []models.SecretPublic {
 	var res []models.SecretPublic
 
 	if kg.d.deployment != nil {
-		if kg.d.deployment.Type == deployment.TypeCustom {
+		if kg.d.deployment.Type == model.DeploymentTypeCustom {
 			var imagePullSecret *models.SecretPublic
 
-			if kg.d.deployment.Subsystems.Harbor.Robot.Created() && kg.d.deployment.Type == deployment.TypeCustom {
+			if kg.d.deployment.Subsystems.Harbor.Robot.Created() && kg.d.deployment.Type == model.DeploymentTypeCustom {
 				registry := config.Config.Registry.URL
 				username := kg.d.deployment.Subsystems.Harbor.Robot.HarborName
 				password := kg.d.deployment.Subsystems.Harbor.Robot.Secret
@@ -1246,47 +1316,48 @@ func smAuthName(userID string) string {
 }
 
 // dPvName returns the PV name for a deployment
-func dPvName(deployment *deployment.Deployment, volumeName string) string {
+func dPvName(deployment *model.Deployment, volumeName string) string {
 	return fmt.Sprintf("%s-%s", deployment.Name, makeValidK8sName(volumeName))
 }
 
 // dPvcName returns the PVC name for a deployment
-func dPvcName(deployment *deployment.Deployment, volumeName string) string {
+func dPvcName(deployment *model.Deployment, volumeName string) string {
 	return fmt.Sprintf("%s-%s", deployment.Name, makeValidK8sName(volumeName))
 }
 
 // vmName returns the VM name for a VM
-func vmName(vm *vmModels.VM) string {
+func vmName(vm *model.VM) string {
 	return vm.Name
 }
 
 // vmParentPvName returns the PV name for a VM
-func vmParentPvName(vm *vmModels.VM) string {
+func vmParentPvName(vm *model.VM) string {
 	return fmt.Sprintf("%s-%s", vm.Name, constants.VmParentName)
 }
 
-// vmServiceName returns the service name for a VM
-func vmServiceName(vm *vmModels.VM) string {
-	return vm.Name
+// vmServiceName returns the service name for a VM.
+// portName should be created using the pfrName function.
+func vmServiceName(vm *model.VM, portName string) string {
+	return fmt.Sprintf("%s-%s", vm.Name, portName)
 }
 
 // vmpDeploymentName returns the deployment name for a VM proxy
-func vmpDeploymentName(vm *vmModels.VM, portName string) string {
+func vmpDeploymentName(vm *model.VM, portName string) string {
 	return fmt.Sprintf("%s-%s", vm.Name, portName)
 }
 
 // vmpServiceName returns the service name for a VM proxy
-func vmpServiceName(vm *vmModels.VM, portName string) string {
+func vmpServiceName(vm *model.VM, portName string) string {
 	return fmt.Sprintf("%s-%s", vm.Name, portName)
 }
 
 // vmpIngressName returns the ingress name for a VM proxy
-func vmpIngressName(vm *vmModels.VM, portName string) string {
+func vmpIngressName(vm *model.VM, portName string) string {
 	return fmt.Sprintf("%s-%s", vm.Name, portName)
 }
 
 // vmpCustomDomainIngressName returns the ingress name for a VM proxy custom domain
-func vmpCustomDomainIngressName(vm *vmModels.VM, portName string) string {
+func vmpCustomDomainIngressName(vm *model.VM, portName string) string {
 	return fmt.Sprintf("%s-%s-custom-domain", vm.Name, portName)
 }
 
@@ -1311,8 +1382,8 @@ func networkPolicyName(name, egressRuleName string) string {
 }
 
 // sVolumes returns the init and standard volumes for a storage manager
-func sVolumes(ownerID string) ([]smModels.Volume, []smModels.Volume) {
-	initVolumes := []smModels.Volume{
+func sVolumes(ownerID string) ([]model.SmVolume, []model.SmVolume) {
+	initVolumes := []model.SmVolume{
 		{
 			Name:       "init",
 			Init:       false,
@@ -1321,7 +1392,7 @@ func sVolumes(ownerID string) ([]smModels.Volume, []smModels.Volume) {
 		},
 	}
 
-	volumes := []smModels.Volume{
+	volumes := []model.SmVolume{
 		{
 			Name:       "data",
 			Init:       false,
@@ -1340,8 +1411,8 @@ func sVolumes(ownerID string) ([]smModels.Volume, []smModels.Volume) {
 }
 
 // sJobs returns the init jobs for a storage manager
-func sJobs(userID string) []smModels.Job {
-	return []smModels.Job{
+func sJobs(userID string) []model.SmJob {
+	return []model.SmJob{
 		{
 			Name:    "init",
 			Image:   "busybox",
@@ -1392,7 +1463,7 @@ func createCloudInitString(cloudInit *CloudInit) string {
 }
 
 // anyHttpProxy returns true if a VM has any HTTP proxy ports
-func anyHttpProxy(vm *vmModels.VM) bool {
+func anyHttpProxy(vm *model.VM) bool {
 	for _, port := range vm.PortMap {
 		if port.HttpProxy != nil {
 			return true

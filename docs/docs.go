@@ -3590,7 +3590,7 @@ const docTemplate = `{
                 "createdAt": {
                     "type": "string"
                 },
-                "gpu": {
+                "gpu_repo": {
                     "$ref": "#/definitions/go-deploy_models_dto_v1_body.VmGpuLease"
                 },
                 "host": {
@@ -3955,7 +3955,7 @@ const docTemplate = `{
                 "createdAt": {
                     "type": "string"
                 },
-                "gpu": {
+                "gpu_repo": {
                     "$ref": "#/definitions/go-deploy_models_dto_v2_body.VmGpuLease"
                 },
                 "host": {

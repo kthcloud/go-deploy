@@ -3,10 +3,10 @@ package v1_job
 import (
 	"errors"
 	"github.com/gin-gonic/gin"
-	"go-deploy/models/dto/v1/body"
-	"go-deploy/models/dto/v1/query"
-	"go-deploy/models/dto/v1/uri"
-	jobModels "go-deploy/models/sys/job"
+	"go-deploy/dto/v1/body"
+	"go-deploy/dto/v1/query"
+	"go-deploy/dto/v1/uri"
+	"go-deploy/models/model"
 	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
@@ -169,20 +169,17 @@ func Update(c *gin.Context) {
 // jobStatusMessage is a helper function to get a parsed status message for a job
 func jobStatusMessage(status string) string {
 	switch status {
-	case jobModels.StatusPending:
+	case model.JobStatusPending:
 		return status_codes.GetMsg(status_codes.JobPending)
-	case jobModels.StatusRunning:
+	case model.JobStatusRunning:
 		return status_codes.GetMsg(status_codes.JobRunning)
-	case jobModels.StatusCompleted:
+	case model.JobStatusCompleted:
 		return status_codes.GetMsg(status_codes.JobFinished)
-	case jobModels.StatusFailed:
+	case model.JobStatusFailed:
 		return status_codes.GetMsg(status_codes.JobFailed)
-	case jobModels.StatusTerminated:
+	case model.JobStatusTerminated:
 		return status_codes.GetMsg(status_codes.JobTerminated)
 
-	// deprecated
-	case jobModels.StatusFinished:
-		return status_codes.GetMsg(status_codes.JobFinished)
 	default:
 		return status_codes.GetMsg(status_codes.Unknown)
 	}

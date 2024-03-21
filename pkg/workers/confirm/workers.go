@@ -3,11 +3,12 @@ package confirm
 import (
 	"context"
 	"fmt"
-	deploymentModels "go-deploy/models/sys/deployment"
-	jobModels "go-deploy/models/sys/job"
-	smModels "go-deploy/models/sys/sm"
-	vmModels "go-deploy/models/sys/vm"
+	"go-deploy/models/model"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/db/resources/deployment_repo"
+	"go-deploy/pkg/db/resources/job_repo"
+	"go-deploy/pkg/db/resources/sm_repo"
+	"go-deploy/pkg/db/resources/vm_repo"
 	"go-deploy/pkg/workers"
 	"go-deploy/utils"
 	"golang.org/x/exp/slices"
@@ -28,27 +29,27 @@ func deploymentDeletionConfirmer(ctx context.Context) {
 			workers.ReportUp("deploymentDeletionConfirmer")
 
 		case <-tick:
-			beingDeleted, _ := deploymentModels.New().WithActivities(deploymentModels.ActivityBeingDeleted).List()
+			beingDeleted, _ := deployment_repo.New().WithActivities(model.ActivityBeingDeleted).List()
 			for _, deployment := range beingDeleted {
 				deleted := DeploymentDeleted(&deployment)
 				if !deleted {
 					continue
 				}
 
-				relatedJobs, err := jobModels.New().ExcludeScheduled().FilterArgs("id", deployment.ID).List()
+				relatedJobs, err := job_repo.New().ExcludeScheduled().FilterArgs("id", deployment.ID).List()
 				if err != nil {
 					utils.PrettyPrintError(fmt.Errorf("failed to get related jobs when confirming deployment deleting. details: %w", err))
 					continue
 				}
 
-				allFinished := slices.IndexFunc(relatedJobs, func(j jobModels.Job) bool {
-					return j.Status != jobModels.StatusCompleted &&
-						j.Status != jobModels.StatusTerminated
+				allFinished := slices.IndexFunc(relatedJobs, func(j model.Job) bool {
+					return j.Status != model.JobStatusCompleted &&
+						j.Status != model.JobStatusTerminated
 				}) == -1
 
 				if allFinished {
 					log.Printf("marking deployment %s as deleted\n", deployment.ID)
-					_ = deploymentModels.New().DeleteByID(deployment.ID)
+					_ = deployment_repo.New().DeleteByID(deployment.ID)
 				}
 			}
 
@@ -71,7 +72,7 @@ func smDeletionConfirmer(ctx context.Context) {
 			workers.ReportUp("smDeletionConfirmer")
 
 		case <-tick:
-			beingDeleted, err := smModels.New().WithActivities(smModels.ActivityBeingDeleted).List()
+			beingDeleted, err := sm_repo.New().WithActivities(model.ActivityBeingDeleted).List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("failed to get sms being deleted. details: %w", err))
 			}
@@ -82,20 +83,20 @@ func smDeletionConfirmer(ctx context.Context) {
 					continue
 				}
 
-				relatedJobs, err := jobModels.New().ExcludeScheduled().FilterArgs("id", sm.ID).List()
+				relatedJobs, err := job_repo.New().ExcludeScheduled().FilterArgs("id", sm.ID).List()
 				if err != nil {
 					utils.PrettyPrintError(fmt.Errorf("failed to get related jobs when confirming sm deleting. details: %w", err))
 					continue
 				}
 
-				allFinished := slices.IndexFunc(relatedJobs, func(j jobModels.Job) bool {
-					return j.Status != jobModels.StatusCompleted &&
-						j.Status != jobModels.StatusTerminated
+				allFinished := slices.IndexFunc(relatedJobs, func(j model.Job) bool {
+					return j.Status != model.JobStatusCompleted &&
+						j.Status != model.JobStatusTerminated
 				}) == -1
 
 				if allFinished {
 					log.Printf("marking sm %s as deleted\n", sm.ID)
-					_ = smModels.New().DeleteByID(sm.ID)
+					_ = sm_repo.New().DeleteByID(sm.ID)
 				}
 			}
 
@@ -118,7 +119,7 @@ func vmDeletionConfirmer(ctx context.Context) {
 			workers.ReportUp("vmDeletionConfirmer")
 
 		case <-tick:
-			beingDeleted, err := vmModels.New().WithActivities(vmModels.ActivityBeingDeleted).List()
+			beingDeleted, err := vm_repo.New().WithActivities(model.ActivityBeingDeleted).List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("failed to get vms being deleted. details: %w", err))
 			}
@@ -129,20 +130,20 @@ func vmDeletionConfirmer(ctx context.Context) {
 					continue
 				}
 
-				relatedJobs, err := jobModels.New().ExcludeScheduled().FilterArgs("id", vm.ID).List()
+				relatedJobs, err := job_repo.New().ExcludeScheduled().FilterArgs("id", vm.ID).List()
 				if err != nil {
 					utils.PrettyPrintError(fmt.Errorf("failed to get related jobs when confirming vm deleting. details: %w", err))
 					continue
 				}
 
-				allFinished := slices.IndexFunc(relatedJobs, func(j jobModels.Job) bool {
-					return j.Status != jobModels.StatusCompleted &&
-						j.Status != jobModels.StatusTerminated
+				allFinished := slices.IndexFunc(relatedJobs, func(j model.Job) bool {
+					return j.Status != model.JobStatusCompleted &&
+						j.Status != model.JobStatusTerminated
 				}) == -1
 
 				if allFinished {
 					log.Printf("marking vm %s as deleted\n", vm.ID)
-					_ = vmModels.New().DeleteByID(vm.ID)
+					_ = vm_repo.New().DeleteByID(vm.ID)
 				}
 			}
 
@@ -166,7 +167,7 @@ func customDomainConfirmer(ctx context.Context) {
 			workers.ReportUp("customDomainConfirmer")
 
 		case <-tick:
-			deploymentsWithPendingCustomDomain, err := deploymentModels.New().WithPendingCustomDomain().List()
+			deploymentsWithPendingCustomDomain, err := deployment_repo.New().WithPendingCustomDomain().List()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("failed to get deployments with pending custom domain. details: %w", err))
 				continue
@@ -199,7 +200,7 @@ func customDomainConfirmer(ctx context.Context) {
 					}
 
 					log.Printf("TXT record found under %s but secret does not match when confirming custom domain %s for deployment %s (received: %s, expected: %s)\n", subDomain, cd.Domain, deployment.ID, received, expected)
-					err = deploymentModels.New().UpdateCustomDomainStatus(deployment.ID, deploymentModels.CustomDomainStatusVerificationFailed)
+					err = deployment_repo.New().UpdateCustomDomainStatus(deployment.ID, model.CustomDomainStatusVerificationFailed)
 					if err != nil {
 						utils.PrettyPrintError(fmt.Errorf("custom domain verification failed for deployment %s. details: %w", deployment.ID, err))
 						continue
@@ -209,14 +210,14 @@ func customDomainConfirmer(ctx context.Context) {
 				}
 
 				log.Printf("marking custom domain %s as confirmed for deployment %s\n", cd.Domain, deployment.ID)
-				err = deploymentModels.New().UpdateCustomDomainStatus(deployment.ID, deploymentModels.CustomDomainStatusActive)
+				err = deployment_repo.New().UpdateCustomDomainStatus(deployment.ID, model.CustomDomainStatusActive)
 				if err != nil {
 					utils.PrettyPrintError(fmt.Errorf("failed to mark custom domain %s as confirmed for deployment %s. details: %w", cd.Domain, deployment.ID, err))
 					continue
 				}
 			}
 
-			vmsWithPendingCustomDomain, err := vmModels.New().ListWithAnyPendingCustomDomain()
+			vmsWithPendingCustomDomain, err := vm_repo.New().ListWithAnyPendingCustomDomain()
 			if err != nil {
 				utils.PrettyPrintError(fmt.Errorf("failed to get vms with pending custom domain. details: %w", err))
 				continue
@@ -226,7 +227,7 @@ func customDomainConfirmer(ctx context.Context) {
 				// Check if user has updated the DNS record with the custom domain secret
 				// If yes, mark the deployment as custom domain confirmed
 				for portName, port := range vm.PortMap {
-					if port.HttpProxy == nil || port.HttpProxy.CustomDomain == nil || port.HttpProxy.CustomDomain.Status == vmModels.CustomDomainStatusActive {
+					if port.HttpProxy == nil || port.HttpProxy.CustomDomain == nil || port.HttpProxy.CustomDomain.Status == model.CustomDomainStatusActive {
 						continue
 					}
 
@@ -254,7 +255,7 @@ func customDomainConfirmer(ctx context.Context) {
 						}
 
 						log.Printf("TXT record found under %s but secret does not match when confirming custom domain %s for vm %s (received: %s, expected: %s)\n", subDomain, cd.Domain, vm.ID, received, expected)
-						err = vmModels.New().UpdateCustomDomainStatus(vm.ID, portName, vmModels.CustomDomainStatusVerificationFailed)
+						err = vm_repo.New().UpdateCustomDomainStatus(vm.ID, portName, model.CustomDomainStatusVerificationFailed)
 						if err != nil {
 							utils.PrettyPrintError(fmt.Errorf("custom domain verification failed for vm %s. details: %w", vm.ID, err))
 							continue
@@ -264,7 +265,7 @@ func customDomainConfirmer(ctx context.Context) {
 					}
 
 					log.Printf("marking custom domain %s as confirmed for vm %s\n", cd.Domain, vm.ID)
-					err = vmModels.New().UpdateCustomDomainStatus(vm.ID, portName, vmModels.CustomDomainStatusActive)
+					err = vm_repo.New().UpdateCustomDomainStatus(vm.ID, portName, model.CustomDomainStatusActive)
 					if err != nil {
 						utils.PrettyPrintError(fmt.Errorf("failed to mark custom domain %s as confirmed for vm %s. details: %w", cd.Domain, vm.ID, err))
 						continue

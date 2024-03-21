@@ -4,14 +4,14 @@ import (
 	"log"
 )
 
-// SsPlaceholderCreatorType is a type that can be used to create a single subsystem placeholder resource.
+// SsPlaceholderCreatorType is a type that can be used to create a single subsystem placeholder model.
 // It contains the functions that should be used to create it.
-// A placeholder subsystem creator is essentially a normal subsystem creator without any public resource
+// A placeholder subsystem creator is essentially a normal subsystem creator without any public model
 type SsPlaceholderCreatorType struct {
 	dbFunc func(interface{}) error
 }
 
-// SsPlaceholderCreator create a new creator that can be used for a single resource
+// SsPlaceholderCreator create a new creator that can be used for a single model
 func SsPlaceholderCreator() *SsPlaceholderCreatorType {
 	return &SsPlaceholderCreatorType{}
 }

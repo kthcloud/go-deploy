@@ -1,8 +1,11 @@
 package events
 
-import "go-deploy/models/sys/event"
+import (
+	"go-deploy/models/model"
+	"go-deploy/pkg/db/resources/event_repo"
+)
 
 // Create creates a new event.
-func (c *Client) Create(id string, params *event.CreateParams) error {
-	return event.New().Create(id, params)
+func (c *Client) Create(id string, params *model.EventCreateParams) error {
+	return event_repo.New().Create(id, params)
 }

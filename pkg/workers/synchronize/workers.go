@@ -2,8 +2,9 @@ package synchronize
 
 import (
 	"fmt"
-	gpuModels "go-deploy/models/sys/gpu"
+	"go-deploy/models/model"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/db/resources/gpu_repo"
 	"go-deploy/pkg/subsystems/landing"
 	"go-deploy/pkg/subsystems/landing/models"
 	"go-deploy/pkg/workers"
@@ -45,21 +46,21 @@ func gpuSynchronizer() {
 			}
 
 			// Delete GPUs without a lease to sync with the landing page
-			err = gpuModels.New().WithoutLease().ExcludeIDs(ids...).Erase()
+			err = gpu_repo.New().WithoutLease().ExcludeIDs(ids...).Erase()
 			if err != nil {
 				utils.PrettyPrintError(makeError(err))
 				continue
 			}
 
 			// Update stale GPUs
-			err = gpuModels.New().ExcludeIDs(ids...).SetWithBSON(bson.D{{"stale", true}})
+			err = gpu_repo.New().ExcludeIDs(ids...).SetWithBSON(bson.D{{"stale", true}})
 			if err != nil {
 				utils.PrettyPrintError(makeError(err))
 				continue
 			}
 
 			// Warn if there are any stale GPUs
-			staleGPUs, err := gpuModels.New().WithStale().List()
+			staleGPUs, err := gpu_repo.New().WithStale().List()
 			if err != nil {
 				utils.PrettyPrintError(makeError(err))
 				continue
@@ -79,9 +80,9 @@ func gpuSynchronizer() {
 			for _, host := range gpuInfo.GpuInfo.Hosts {
 				for _, gpu := range host.GPUs {
 					gpuID := createGpuID(host.Name, gpu.Name, gpu.Slot)
-					exists, err := gpuModels.New().ExistsByID(gpuID)
+					exists, err := gpu_repo.New().ExistsByID(gpuID)
 					if err != nil {
-						utils.PrettyPrintError(fmt.Errorf("failed to fetch gpu by id. details: %w", err))
+						utils.PrettyPrintError(fmt.Errorf("failed to fetch gpu_repo by id. details: %w", err))
 						continue
 					}
 
@@ -95,7 +96,7 @@ func gpuSynchronizer() {
 						continue
 					}
 
-					err = gpuModels.New().Create(gpuID, host.Name, gpuModels.GpuData{
+					err = gpu_repo.New().Create(gpuID, host.Name, model.GpuData{
 						Name:     gpu.Name,
 						Slot:     gpu.Slot,
 						Vendor:   gpu.Vendor,
@@ -139,15 +140,6 @@ func fetchGPUs() (*models.GpuInfoRead, error) {
 	}
 
 	return gpuInfo, nil
-}
-
-func deleteRemovedUnleasedGPUs() error {
-	err := gpuModels.New().WithoutLease().Delete()
-	if err != nil {
-		return fmt.Errorf("failed to delete gpu: %w", err)
-	}
-
-	return nil
 }
 
 func createGpuID(host, gpuName, slot string) string {

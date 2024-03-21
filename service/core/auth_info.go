@@ -1,7 +1,7 @@
 package core
 
 import (
-	roleModels "go-deploy/models/sys/role"
+	"go-deploy/models/model"
 	"go-deploy/pkg/auth"
 	"go-deploy/pkg/config"
 )
@@ -11,7 +11,7 @@ import (
 type AuthInfo struct {
 	UserID   string              `json:"userId"`
 	JwtToken *auth.KeycloakToken `json:"jwtToken"`
-	Roles    []roleModels.Role   `json:"roles"`
+	Roles    []model.Role        `json:"roles"`
 	IsAdmin  bool                `json:"isAdmin"`
 }
 
@@ -36,7 +36,7 @@ func CreateAuthInfo(userID string, jwtToken *auth.KeycloakToken, iamGroups []str
 
 // GetEffectiveRole gets the effective role of the user
 // This is effectively the strongest role the user has
-func (authInfo *AuthInfo) GetEffectiveRole() *roleModels.Role {
+func (authInfo *AuthInfo) GetEffectiveRole() *model.Role {
 	// roles are assumed to be given in order of priority, weak -> strong
 	// so, we can safely return the last one
 	if len(authInfo.Roles) == 0 {

@@ -18,6 +18,6 @@ func NewPortInUseError(port int) PortInUseError {
 }
 
 var (
-	// NotFoundErr is returned when the resource is not found.
+	// NotFoundErr is returned when the model is not found.
 	NotFoundErr = fmt.Errorf("not found")
 )

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"go-deploy/models/dto/v1/body"
+	"go-deploy/dto/v1/body"
 	"go-deploy/pkg/sys"
 	"io"
 	"net/http"
@@ -42,7 +42,7 @@ func fetchUntil(t *testing.T, subPath string, callback func(*http.Response) bool
 
 		loops++
 		if loops > MaxChecks {
-			assert.FailNow(t, "resource fetch timeout")
+			assert.FailNow(t, "model fetch timeout")
 		}
 	}
 }

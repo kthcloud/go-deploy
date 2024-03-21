@@ -3,10 +3,11 @@ package k8s_service
 import (
 	"errors"
 	"fmt"
-	vmModels "go-deploy/models/sys/vm"
-	vmPortModels "go-deploy/models/sys/vm_port"
+	"go-deploy/models/model"
 	"go-deploy/models/versions"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/db/resources/vm_port_repo"
+	"go-deploy/pkg/db/resources/vm_repo"
 	kErrors "go-deploy/pkg/subsystems/k8s/errors"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/service/constants"
@@ -18,7 +19,7 @@ import (
 )
 
 // Create sets up K8s for a VM.
-func (c *Client) Create(id string, params *vmModels.CreateParams) error {
+func (c *Client) Create(id string, params *model.VmCreateParams) error {
 	log.Println("setting up k8s for", params.Name)
 
 	makeError := func(err error) error {
@@ -101,9 +102,9 @@ func (c *Client) Create(id string, params *vmModels.CreateParams) error {
 	for _, servicePublic := range g.Services() {
 		for idx, port := range servicePublic.Ports {
 			if port.Port == 0 {
-				vmPort, err := vmPortModels.New().GetOrLeaseAny(port.TargetPort, vm.ID, vm.Zone)
+				vmPort, err := vm_port_repo.New().GetOrLeaseAny(port.TargetPort, vm.ID, vm.Zone)
 				if err != nil {
-					if errors.Is(err, vmPortModels.NoPortsAvailableErr) {
+					if errors.Is(err, vm_port_repo.NoPortsAvailableErr) {
 						return makeError(sErrors.NoPortsAvailableErr)
 					}
 
@@ -326,6 +327,34 @@ func (c *Client) Repair(id string) error {
 		}
 	}
 
+	vms := g.VMs()
+	for mapName, k8sVm := range vm.Subsystems.K8s.VmMap {
+		idx := slices.IndexFunc(vms, func(v k8sModels.VmPublic) bool { return v.Name == mapName })
+		if idx == -1 {
+			err = resources.SsDeleter(kc.DeleteVM).
+				WithResourceID(k8sVm.ID).
+				WithDbFunc(dbFunc(id, "vmMap."+mapName)).
+				Exec()
+
+			if err != nil {
+				return makeError(err)
+			}
+		}
+	}
+
+	for _, public := range vms {
+		err = resources.SsRepairer(
+			kc.ReadVM,
+			kc.CreateVM,
+			kc.UpdateVM,
+			func(string) error { return nil },
+		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "vmMap."+public.Name)).WithGenPublic(&public).Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
 	deployments := g.Deployments()
 	for mapName, k8sDeployment := range vm.Subsystems.K8s.DeploymentMap {
 		idx := slices.IndexFunc(deployments, func(d k8sModels.DeploymentPublic) bool { return d.Name == mapName })
@@ -370,9 +399,9 @@ func (c *Client) Repair(id string) error {
 	for _, public := range services {
 		for idx, port := range public.Ports {
 			if port.Port == 0 {
-				vmPort, err := vmPortModels.New().GetOrLeaseAny(port.TargetPort, vm.ID, vm.Zone)
+				vmPort, err := vm_port_repo.New().GetOrLeaseAny(port.TargetPort, vm.ID, vm.Zone)
 				if err != nil {
-					if errors.Is(err, vmPortModels.NoPortsAvailableErr) {
+					if errors.Is(err, vm_port_repo.NoPortsAvailableErr) {
 						return makeError(sErrors.NoPortsAvailableErr)
 					}
 
@@ -456,8 +485,38 @@ func (c *Client) Repair(id string) error {
 	return nil
 }
 
+// AttachGPU attaches a GPU to a VM.
+//
+// If the lease is not active or the VM is already attached to a GPU, an error is returned.
+// If there is an existing attached GPU, it will be replaced.
+func (c *Client) AttachGPU(vmID, groupName string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to attach gpu_repo %s to vm %s. details: %w", groupName, vmID, err)
+	}
+
+	vm, kc, _, err := c.Get(OptsAll(vmID))
+	if vm == nil {
+		return makeError(sErrors.VmNotFoundErr)
+	}
+
+	// Set the GPU to the VM
+	k8sVM := vm.Subsystems.K8s.VmMap[vm.Name]
+	k8sVM.GPUs = []string{groupName}
+	vm.Subsystems.K8s.VmMap[vm.Name] = k8sVM
+
+	err = resources.SsUpdater(kc.UpdateVM).
+		WithDbFunc(dbFunc(vmID, "vmMap."+vm.Name)).
+		WithPublic(&k8sVM).
+		Exec()
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
+}
+
 // DoAction performs an action on a VM.
-func (c *Client) DoAction(id string, action *vmModels.ActionParams) error {
+func (c *Client) DoAction(id string, action *model.VmActionParams) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to perform action %s on vm %s. details: %w", action.Action, id, err)
 	}
@@ -474,7 +533,7 @@ func (c *Client) DoAction(id string, action *vmModels.ActionParams) error {
 
 	for _, k8sVM := range g.VMs() {
 		switch action.Action {
-		case vmModels.ActionStart:
+		case model.ActionStart:
 			if k8sVM.Running {
 				continue
 			}
@@ -488,7 +547,7 @@ func (c *Client) DoAction(id string, action *vmModels.ActionParams) error {
 				return makeError(err)
 			}
 
-		case vmModels.ActionStop:
+		case model.ActionStop:
 			if !k8sVM.Running {
 				continue
 			}
@@ -502,7 +561,7 @@ func (c *Client) DoAction(id string, action *vmModels.ActionParams) error {
 				return makeError(err)
 			}
 
-		case vmModels.ActionRestart:
+		case model.ActionRestart:
 			// This case must be handled separately, as a Restart in KubeVirt is done by first deleting any
 			// VirtualMachineInstances, and then ensuring Running is set to true.
 
@@ -557,15 +616,12 @@ func (c *Client) EnsureOwner(id, oldOwnerID string) error {
 	return nil
 }
 
-// dbFuncType is a function that updates the K8s subsystem in the database.
-type dbFuncType = func(interface{}) error
-
 // dbFunc returns a function that updates the K8s subsystem.
 func dbFunc(id, key string) func(interface{}) error {
 	return func(data interface{}) error {
 		if data == nil {
-			return vmModels.New(versions.V2).DeleteSubsystem(id, "k8s."+key)
+			return vm_repo.New(versions.V2).DeleteSubsystem(id, "k8s."+key)
 		}
-		return vmModels.New(versions.V2).SetSubsystem(id, "k8s."+key, data)
+		return vm_repo.New(versions.V2).SetSubsystem(id, "k8s."+key, data)
 	}
 }

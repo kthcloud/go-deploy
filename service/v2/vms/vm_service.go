@@ -4,16 +4,15 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
-	"go-deploy/models/dto/v2/body"
-	"go-deploy/models/sys/gpu"
-	jobModels "go-deploy/models/sys/job"
-	notificationModels "go-deploy/models/sys/notification"
-	roleModels "go-deploy/models/sys/role"
-	teamModels "go-deploy/models/sys/team"
-	vmModels "go-deploy/models/sys/vm"
-	"go-deploy/models/sys/vm_port"
+	"go-deploy/dto/v2/body"
+	"go-deploy/models/model"
 	"go-deploy/models/versions"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/db/resources/gpu_repo"
+	"go-deploy/pkg/db/resources/notification_repo"
+	"go-deploy/pkg/db/resources/team_repo"
+	"go-deploy/pkg/db/resources/vm_port_repo"
+	"go-deploy/pkg/db/resources/vm_repo"
 	sErrors "go-deploy/service/errors"
 	serviceUtils "go-deploy/service/utils"
 	"go-deploy/service/v2/vms/opts"
@@ -26,11 +25,11 @@ import (
 // Get gets an existing deployment.
 //
 // It can be fetched in multiple ways including ID, name, transfer code, and Harbor webhook.
-// It supports service.AuthInfo, and will restrict the result to ensure the user has access to the resource.
-func (c *Client) Get(id string, opts ...opts.GetOpts) (*vmModels.VM, error) {
+// It supports service.AuthInfo, and will restrict the result to ensure the user has access to the model.
+func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.VM, error) {
 	o := serviceUtils.GetFirstOrDefault(opts)
 
-	vmc := vmModels.New(versions.V2)
+	vmc := vm_repo.New(versions.V2)
 
 	if o.TransferCode != nil {
 		return vmc.WithTransferCode(*o.TransferCode).Get()
@@ -48,7 +47,7 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*vmModels.VM, error) {
 		teamCheck = true
 	} else {
 		var err error
-		teamCheck, err = teamModels.New().WithUserID(c.V2.Auth().UserID).WithResourceID(id).ExistsAny()
+		teamCheck, err = team_repo.New().WithUserID(c.V2.Auth().UserID).WithResourceID(id).ExistsAny()
 		if err != nil {
 			return nil, err
 		}
@@ -63,11 +62,11 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*vmModels.VM, error) {
 
 // List lists VMs.
 //
-// It supports service.AuthInfo, and will restrict the result to ensure the user has access to the resource.
-func (c *Client) List(opts ...opts.ListOpts) ([]vmModels.VM, error) {
+// It supports service.AuthInfo, and will restrict the result to ensure the user has access to the model.
+func (c *Client) List(opts ...opts.ListOpts) ([]model.VM, error) {
 	o := serviceUtils.GetFirstOrDefault(opts)
 
-	vmc := vmModels.New(versions.V2)
+	vmc := vm_repo.New(versions.V2)
 
 	if o.Pagination != nil {
 		vmc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
@@ -93,19 +92,19 @@ func (c *Client) List(opts ...opts.ListOpts) ([]vmModels.VM, error) {
 		vmc.RestrictToOwner(effectiveUserID)
 	}
 
-	resources, err := c.VMs(vmc)
+	vms, err := c.VMs(vmc)
 	if err != nil {
 		return nil, err
 	}
 
 	// Can only view shared if we are listing resources for a specific user
 	if o.Shared && effectiveUserID != "" {
-		skipIDs := make([]string, len(resources))
-		for i, resource := range resources {
-			skipIDs[i] = resource.ID
+		skipIDs := make([]string, len(vms))
+		for i, vm := range vms {
+			skipIDs[i] = vm.ID
 		}
 
-		teamClient := teamModels.New().WithUserID(effectiveUserID)
+		teamClient := team_repo.New().WithUserID(effectiveUserID)
 		if o.Pagination != nil {
 			teamClient.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
 		}
@@ -116,15 +115,15 @@ func (c *Client) List(opts ...opts.ListOpts) ([]vmModels.VM, error) {
 		}
 
 		for _, team := range teams {
-			for _, resource := range team.GetResourceMap() {
-				if resource.Type != teamModels.ResourceTypeVM {
+			for _, r := range team.GetResourceMap() {
+				if r.Type != model.TeamResourceVM {
 					continue
 				}
 
 				// skip existing non-shared resources
 				skip := false
 				for _, skipID := range skipIDs {
-					if resource.ID == skipID {
+					if r.ID == skipID {
 						skip = true
 						break
 					}
@@ -133,34 +132,34 @@ func (c *Client) List(opts ...opts.ListOpts) ([]vmModels.VM, error) {
 					continue
 				}
 
-				vm, err := c.VM(resource.ID, nil)
+				vm, err := c.VM(r.ID, nil)
 				if err != nil {
 					return nil, err
 				}
 
 				if vm != nil {
-					resources = append(resources, *vm)
+					vms = append(vms, *vm)
 				}
 			}
 		}
 
-		sort.Slice(resources, func(i, j int) bool {
-			return resources[i].CreatedAt.After(resources[j].CreatedAt)
+		sort.Slice(vms, func(i, j int) bool {
+			return vms[i].CreatedAt.After(vms[j].CreatedAt)
 		})
 
 		// Since we fetched from two collections, we need to do pagination manually
 		if o.Pagination != nil {
-			resources = utils.GetPage(resources, o.Pagination.PageSize, o.Pagination.Page)
+			vms = utils.GetPage(vms, o.Pagination.PageSize, o.Pagination.Page)
 		}
 
 	} else {
 		// Sort by createdAt
-		sort.Slice(resources, func(i, j int) bool {
-			return resources[i].CreatedAt.After(resources[j].CreatedAt)
+		sort.Slice(vms, func(i, j int) bool {
+			return vms[i].CreatedAt.After(vms[j].CreatedAt)
 		})
 	}
 
-	return resources, nil
+	return vms, nil
 }
 
 // Create creates a new VM.
@@ -173,11 +172,11 @@ func (c *Client) Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
 
 	// Right now need to make sure the zone deployed to has KubeVirt installed, so it is hardcoded
 	zone := "se-flem-2"
-	params := vmModels.CreateParams{}.FromDTOv2(dtoVmCreate, &zone)
+	params := model.VmCreateParams{}.FromDTOv2(dtoVmCreate, &zone)
 
-	_, err := vmModels.New(versions.V2).Create(id, ownerID, config.Config.Manager, &params)
+	_, err := vm_repo.New(versions.V2).Create(id, ownerID, config.Config.Manager, &params)
 	if err != nil {
-		if errors.Is(err, vmModels.NonUniqueFieldErr) {
+		if errors.Is(err, vm_repo.NonUniqueFieldErr) {
 			return sErrors.NonUniqueFieldErr
 		}
 
@@ -200,7 +199,7 @@ func (c *Client) Update(id string, dtoVmUpdate *body.VmUpdate) error {
 		return fmt.Errorf("failed to update vm. details: %w", err)
 	}
 
-	vmUpdate := vmModels.UpdateParams{}.FromDTOv2(dtoVmUpdate)
+	vmUpdate := model.VmUpdateParams{}.FromDTOv2(dtoVmUpdate)
 
 	// We don't allow both applying a snapshot and updating the VM at the same time.
 	// So, if a snapshot ID is specified, apply it
@@ -234,9 +233,9 @@ func (c *Client) Update(id string, dtoVmUpdate *body.VmUpdate) error {
 		}
 	}
 
-	err := vmModels.New(versions.V2).UpdateWithParams(id, &vmUpdate)
+	err := vm_repo.New(versions.V2).UpdateWithParams(id, &vmUpdate)
 	if err != nil {
-		if errors.Is(err, vmModels.NonUniqueFieldErr) {
+		if errors.Is(err, vm_repo.NonUniqueFieldErr) {
 			return sErrors.NonUniqueFieldErr
 		}
 
@@ -273,7 +272,7 @@ func (c *Client) Delete(id string) error {
 		return sErrors.VmNotFoundErr
 	}
 
-	nmc := notificationModels.New().FilterContent("id", id)
+	nmc := notification_repo.New().FilterContent("id", id)
 	err = nmc.Delete()
 	if err != nil {
 		return makeError(err)
@@ -284,12 +283,12 @@ func (c *Client) Delete(id string) error {
 		return makeError(err)
 	}
 
-	err = gpu.New().Detach(vm.ID)
+	err = gpu_repo.New().Detach(vm.ID)
 	if err != nil {
 		return makeError(err)
 	}
 
-	err = vm_port.New().ReleaseAll(vm.ID)
+	err = vm_port_repo.New().ReleaseAll(vm.ID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -330,7 +329,7 @@ func (c *Client) DoAction(id string, dtoVmAction *body.VmAction) error {
 		return fmt.Errorf("failed to perform action on vm %s. details: %w", id, err)
 	}
 
-	params := vmModels.ActionParams{}.FromDTOv2(dtoVmAction)
+	params := model.VmActionParams{}.FromDTOv2(dtoVmAction)
 
 	vm, err := c.VM(id, nil)
 	if err != nil {
@@ -389,7 +388,7 @@ func (c *Client) UpdateOwnerSetup(id string, params *body.VmUpdateOwner) (*strin
 
 	if transferDirectly {
 		jobID := uuid.New().String()
-		err = c.V1.Jobs().Create(jobID, c.V2.Auth().UserID, jobModels.TypeUpdateVmOwner, versions.V2, map[string]interface{}{
+		err = c.V1.Jobs().Create(jobID, c.V2.Auth().UserID, model.JobUpdateVmOwner, versions.V2, map[string]interface{}{
 			"id":     id,
 			"params": *params,
 		})
@@ -403,7 +402,7 @@ func (c *Client) UpdateOwnerSetup(id string, params *body.VmUpdateOwner) (*strin
 
 	/// create a transfer notification
 	code := createTransferCode()
-	err = vmModels.New(versions.V2).UpdateWithParams(id, &vmModels.UpdateParams{
+	err = vm_repo.New(versions.V2).UpdateWithParams(id, &model.VmUpdateParams{
 		TransferUserID: &params.NewOwnerID,
 		TransferCode:   &code,
 	})
@@ -411,8 +410,8 @@ func (c *Client) UpdateOwnerSetup(id string, params *body.VmUpdateOwner) (*strin
 		return nil, makeError(err)
 	}
 
-	_, err = c.V1.Notifications().Create(uuid.NewString(), params.NewOwnerID, &notificationModels.CreateParams{
-		Type: notificationModels.TypeVmTransfer,
+	_, err = c.V1.Notifications().Create(uuid.NewString(), params.NewOwnerID, &model.NotificationCreateParams{
+		Type: model.NotificationVmTransfer,
 		Content: map[string]interface{}{
 			"id":     vm.ID,
 			"name":   vm.Name,
@@ -455,7 +454,7 @@ func (c *Client) UpdateOwner(id string, params *body.VmUpdateOwner) error {
 
 	emptyString := ""
 
-	err = vmModels.New(versions.V2).UpdateWithParams(id, &vmModels.UpdateParams{
+	err = vm_repo.New(versions.V2).UpdateWithParams(id, &model.VmUpdateParams{
 		OwnerID:        &params.NewOwnerID,
 		TransferCode:   &emptyString,
 		TransferUserID: &emptyString,
@@ -464,7 +463,7 @@ func (c *Client) UpdateOwner(id string, params *body.VmUpdateOwner) error {
 		return makeError(err)
 	}
 
-	err = gpu.New().WithVM(id).UpdateWithBSON(bson.D{{"lease.user", params.NewOwnerID}})
+	err = gpu_repo.New().WithVM(id).UpdateWithBSON(bson.D{{"lease.user", params.NewOwnerID}})
 	if err != nil {
 		return makeError(err)
 	}
@@ -474,7 +473,7 @@ func (c *Client) UpdateOwner(id string, params *body.VmUpdateOwner) error {
 		return makeError(err)
 	}
 
-	nmc := notificationModels.New().FilterContent("id", id).WithType(notificationModels.TypeVmTransfer)
+	nmc := notification_repo.New().FilterContent("id", id).WithType(model.NotificationVmTransfer)
 	err = nmc.MarkReadAndCompleted()
 	if err != nil {
 		return makeError(err)
@@ -492,7 +491,7 @@ func (c *Client) ClearUpdateOwner(id string) error {
 		return fmt.Errorf("failed to clear vm owner update. details: %w", err)
 	}
 
-	deployment, err := vmModels.New(versions.V2).GetByID(id)
+	deployment, err := vm_repo.New(versions.V2).GetByID(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -506,7 +505,7 @@ func (c *Client) ClearUpdateOwner(id string) error {
 	}
 
 	emptyString := ""
-	err = vmModels.New(versions.V2).UpdateWithParams(id, &vmModels.UpdateParams{
+	err = vm_repo.New(versions.V2).UpdateWithParams(id, &model.VmUpdateParams{
 		TransferUserID: &emptyString,
 		TransferCode:   &emptyString,
 	})
@@ -548,7 +547,7 @@ func (c *Client) IsBeingDeleted(id string) (bool, error) {
 
 // NameAvailable checks if the given name is available.
 func (c *Client) NameAvailable(name string) (bool, error) {
-	exists, err := vmModels.New().ExistsByName(name)
+	exists, err := vm_repo.New().ExistsByName(name)
 	if err != nil {
 		return false, err
 	}
@@ -563,7 +562,7 @@ func (c *Client) HttpProxyNameAvailable(id, name string) (bool, error) {
 		{"portMap.httpProxy.name", name},
 	}
 
-	exists, err := vmModels.New().WithCustomFilter(filter).ExistsAny()
+	exists, err := vm_repo.New().WithCustomFilter(filter).ExistsAny()
 	if err != nil {
 		return false, err
 	}
@@ -594,7 +593,7 @@ func (c *Client) SshConnectionString(id string) (*string, error) {
 	}
 
 	var sshConnectionString *string
-	if service := vm.Subsystems.K8s.GetService(vm.Name); service != nil {
+	if service := vm.Subsystems.K8s.GetService(fmt.Sprintf("%s-priv-22-prot-tcp", vm.Name)); service != nil {
 		for _, port := range service.Ports {
 			if port.TargetPort == 22 {
 				sshConnectionString = utils.StrPtr(fmt.Sprintf("ssh root@%s -p %d", zone.ParentDomainVM, port.Port))
@@ -611,7 +610,7 @@ func (c *Client) SshConnectionString(id string) (*string, error) {
 // When checking quota for opts.Create and opts.CreateSnapshot, id is not used.
 //
 // It returns an error if the user does not have enough quotas.
-func (c *Client) CheckQuota(id, userID string, quota *roleModels.Quotas, opts ...opts.QuotaOpts) error {
+func (c *Client) CheckQuota(id, userID string, quota *model.Quotas, opts ...opts.QuotaOpts) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check quota for user %s. details: %w", userID, err)
 	}
@@ -652,7 +651,7 @@ func (c *Client) CheckQuota(id, userID string, quota *roleModels.Quotas, opts ..
 			return nil
 		}
 
-		vm, err := vmModels.New(versions.V2).GetByID(id)
+		vm, err := vm_repo.New(versions.V2).GetByID(id)
 		if err != nil {
 			return makeError(err)
 		}
@@ -694,14 +693,14 @@ func (c *Client) CheckQuota(id, userID string, quota *roleModels.Quotas, opts ..
 // GetUsage gets the usage for the user.
 //
 // If user does not exist, or user does not have any VMs, it returns an empty usage.
-func (c *Client) GetUsage(userID string) (*vmModels.Usage, error) {
+func (c *Client) GetUsage(userID string) (*model.VmUsage, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get usage for user %s. details: %w", userID, err)
 	}
 
-	usage := &vmModels.Usage{}
+	usage := &model.VmUsage{}
 
-	currentVms, err := vmModels.New(versions.V2).RestrictToOwner(userID).List()
+	currentVms, err := vm_repo.New(versions.V2).RestrictToOwner(userID).List()
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -722,7 +721,7 @@ func (c *Client) GetUsage(userID string) (*vmModels.Usage, error) {
 // GetHost gets the host for the VM.
 //
 // It returns an error if the VM is not found.
-func (c *Client) GetHost(vmID string) (*vmModels.Host, error) {
+func (c *Client) GetHost(vmID string) (*model.Host, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get host for vm %s. details: %w", vmID, err)
 	}

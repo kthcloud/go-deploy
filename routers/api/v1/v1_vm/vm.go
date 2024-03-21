@@ -5,12 +5,10 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"go-deploy/models/dto/v1/body"
-	"go-deploy/models/dto/v1/query"
-	"go-deploy/models/dto/v1/uri"
-	jobModels "go-deploy/models/sys/job"
-	vmModels "go-deploy/models/sys/vm"
-	zoneModels "go-deploy/models/sys/zone"
+	"go-deploy/dto/v1/body"
+	"go-deploy/dto/v1/query"
+	"go-deploy/dto/v1/uri"
+	"go-deploy/models/model"
 	"go-deploy/models/versions"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
@@ -79,7 +77,7 @@ func List(c *gin.Context) {
 		connectionString, _ := deployV1.VMs().GetConnectionString(vm.ID)
 
 		var gpuRead *body.GpuRead
-		if gpu := vm.GetGPU(); gpu != nil {
+		if gpu, _ := deployV1.VMs().GetGpuByVM(vm.ID); gpu != nil {
 			gpuDTO := gpu.ToDTO(true)
 			gpuRead = &gpuDTO
 		}
@@ -139,7 +137,7 @@ func Get(c *gin.Context) {
 
 	connectionString, _ := deployV1.VMs().GetConnectionString(requestURI.VmID)
 	var gpuRead *body.GpuRead
-	if gpu := vm.GetGPU(); gpu != nil {
+	if gpu, _ := deployV1.VMs().GetGpuByVM(vm.ID); gpu != nil {
 		gpuDTO := gpu.ToDTO(true)
 		gpuRead = &gpuDTO
 	}
@@ -196,7 +194,7 @@ func Create(c *gin.Context) {
 	}
 
 	if requestBody.Zone != nil {
-		zone := deployV1.Zones().Get(*requestBody.Zone, zoneModels.TypeVM)
+		zone := deployV1.Zones().Get(*requestBody.Zone, model.ZoneTypeVM)
 		if zone == nil {
 			context.NotFound("Zone not found")
 			return
@@ -217,7 +215,7 @@ func Create(c *gin.Context) {
 
 	vmID := uuid.New().String()
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, jobModels.TypeCreateVM, versions.V1, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobCreateVM, versions.V1, map[string]interface{}{
 		"id":      vmID,
 		"ownerId": auth.UserID,
 		"params":  requestBody,
@@ -280,7 +278,7 @@ func Delete(c *gin.Context) {
 		return
 	}
 
-	err = deployV1.VMs().StartActivity(vm.ID, vmModels.ActivityBeingDeleted)
+	err = deployV1.VMs().StartActivity(vm.ID, model.ActivityBeingDeleted)
 	if err != nil {
 		var failedToStartActivityErr sErrors.FailedToStartActivityError
 		if errors.As(err, &failedToStartActivityErr) {
@@ -298,7 +296,7 @@ func Delete(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, jobModels.TypeDeleteVM, versions.V1, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobDeleteVM, versions.V1, map[string]interface{}{
 		"id": vm.ID,
 	})
 	if err != nil {
@@ -351,7 +349,7 @@ func Update(c *gin.Context) {
 
 	deployV1 := service.V1(auth)
 
-	var vm *vmModels.VM
+	var vm *model.VM
 	if requestBody.TransferCode != nil {
 		vm, err = deployV1.VMs().Get("", opts.GetOpts{TransferCode: requestBody.TransferCode})
 		if err != nil {
@@ -485,7 +483,7 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	err = deployV1.VMs().StartActivity(vm.ID, vmModels.ActivityUpdating)
+	err = deployV1.VMs().StartActivity(vm.ID, model.ActivityUpdating)
 	if err != nil {
 		var failedToStartActivityErr sErrors.FailedToStartActivityError
 		if errors.As(err, &failedToStartActivityErr) {
@@ -503,7 +501,7 @@ func Update(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, jobModels.TypeUpdateVM, versions.V1, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobUpdateVM, versions.V1, map[string]interface{}{
 		"id":     vm.ID,
 		"params": requestBody,
 	})

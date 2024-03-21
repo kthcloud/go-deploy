@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/go-playground/validator/v10"
-	"go-deploy/models/dto/v1/body"
+	"go-deploy/dto/v1/body"
 	"go-deploy/pkg/sys"
 	"go-deploy/service/core"
 	"reflect"
@@ -85,7 +85,7 @@ func msgForTag(fe validator.FieldError) string {
 	case "team_member_list":
 		return "Every team member must be unique"
 	case "team_resource_list":
-		return "Every team resource must be unique"
+		return "Every team model must be unique"
 	case "volume_name":
 		return "Must be a valid volume name, ex. my-volume, my-volume-123, my volume"
 	}

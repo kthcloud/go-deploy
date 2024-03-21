@@ -1,18 +1,19 @@
 package notifications
 
 import (
-	"go-deploy/models/dto/v1/body"
-	notificationModels "go-deploy/models/sys/notification"
+	"go-deploy/dto/v1/body"
+	"go-deploy/models/model"
+	"go-deploy/pkg/db/resources/notification_repo"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/utils"
 	"go-deploy/service/v1/notifications/opts"
 )
 
 // Get retrieves a notification by ID.
-func (c *Client) Get(id string, opts ...opts.GetOpts) (*notificationModels.Notification, error) {
+func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.Notification, error) {
 	_ = utils.GetFirstOrDefault(opts)
 
-	client := notificationModels.New()
+	client := notification_repo.New()
 
 	if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
 		client.WithUserID(c.V1.Auth().UserID)
@@ -22,10 +23,10 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*notificationModels.Notif
 }
 
 // List retrieves a list of notifications.
-func (c *Client) List(opts ...opts.ListOpts) ([]notificationModels.Notification, error) {
+func (c *Client) List(opts ...opts.ListOpts) ([]model.Notification, error) {
 	o := utils.GetFirstOrDefault(opts)
 
-	nmc := notificationModels.New()
+	nmc := notification_repo.New()
 
 	if o.Pagination != nil {
 		nmc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
@@ -55,13 +56,13 @@ func (c *Client) List(opts ...opts.ListOpts) ([]notificationModels.Notification,
 }
 
 // Create creates a new notification.
-func (c *Client) Create(id, userID string, params *notificationModels.CreateParams) (*notificationModels.Notification, error) {
-	return notificationModels.New().Create(id, userID, params)
+func (c *Client) Create(id, userID string, params *model.NotificationCreateParams) (*model.Notification, error) {
+	return notification_repo.New().Create(id, userID, params)
 }
 
 // Update updates the notification with the given ID.
-func (c *Client) Update(id string, dtoNotificationUpdate *body.NotificationUpdate) (*notificationModels.Notification, error) {
-	nmc := notificationModels.New()
+func (c *Client) Update(id string, dtoNotificationUpdate *body.NotificationUpdate) (*model.Notification, error) {
+	nmc := notification_repo.New()
 
 	if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
 		nmc.WithUserID(c.V1.Auth().UserID)
@@ -88,7 +89,7 @@ func (c *Client) Update(id string, dtoNotificationUpdate *body.NotificationUpdat
 
 // Delete deletes the notification with the given ID.
 func (c *Client) Delete(id string) error {
-	client := notificationModels.New()
+	client := notification_repo.New()
 
 	if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
 		client.WithUserID(c.V1.Auth().UserID)

@@ -307,7 +307,7 @@ func (s *LimitService) NewListResourceLimitsParams() *ListResourceLimitsParams {
 	return p
 }
 
-// Lists resource limits.
+// Lists model limits.
 func (s *LimitService) ListResourceLimits(p *ListResourceLimitsParams) (*ListResourceLimitsResponse, error) {
 	resp, err := s.cs.newRequest("listResourceLimits", p.toURLValues())
 	if err != nil {
@@ -521,7 +521,7 @@ func (s *LimitService) NewUpdateResourceCountParams(domainid string) *UpdateReso
 	return p
 }
 
-// Recalculate and update resource count for an account or domain.
+// Recalculate and update model count for an account or domain.
 func (s *LimitService) UpdateResourceCount(p *UpdateResourceCountParams) (*UpdateResourceCountResponse, error) {
 	resp, err := s.cs.newRequest("updateResourceCount", p.toURLValues())
 	if err != nil {
@@ -662,7 +662,7 @@ func (s *LimitService) NewUpdateResourceLimitParams(resourcetype int) *UpdateRes
 	return p
 }
 
-// Updates resource limits for an account or domain.
+// Updates model limits for an account or domain.
 func (s *LimitService) UpdateResourceLimit(p *UpdateResourceLimitParams) (*UpdateResourceLimitResponse, error) {
 	resp, err := s.cs.newRequest("updateResourceLimit", p.toURLValues())
 	if err != nil {

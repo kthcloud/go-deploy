@@ -3,7 +3,7 @@ package deployments
 import (
 	"context"
 	"fmt"
-	deploymentModels "go-deploy/models/sys/deployment"
+	"go-deploy/pkg/db/resources/deployment_repo"
 	"go-deploy/service/errors"
 	"go-deploy/service/v1/deployments/opts"
 	"go-deploy/utils"
@@ -44,7 +44,7 @@ func (c *Client) SetupLogStream(id string, ctx context.Context, handler func(str
 		time.Sleep(500 * time.Millisecond)
 
 		// fetch history logs
-		logs, err := deploymentModels.New().GetLogs(id, history)
+		logs, err := deployment_repo.New().GetLogs(id, history)
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to get logs for deployment %s. details: %w", id, err))
 			return
@@ -68,7 +68,7 @@ func (c *Client) SetupLogStream(id string, ctx context.Context, handler func(str
 				time.Sleep(FetchPeriod)
 				handler(MessageSourceControl, "[control]", "fetching logs", time.Now())
 
-				logs, err = deploymentModels.New().GetLogsAfter(id, lastFetched)
+				logs, err = deployment_repo.New().GetLogsAfter(id, lastFetched)
 				if err != nil {
 					utils.PrettyPrintError(fmt.Errorf("failed to get logs for deployment %s after %s. details: %w", id, lastFetched, err))
 					return

@@ -1,13 +1,13 @@
 package config
 
 import (
-	roleModels "go-deploy/models/sys/role"
+	"go-deploy/models/model"
 )
 
 // GetRole returns the role with the given name.
 // If the role is not found, nil is returned.
 // All roles are loaded locally by the configuration file
-func (e *ConfigType) GetRole(roleName string) *roleModels.Role {
+func (e *ConfigType) GetRole(roleName string) *model.Role {
 	for _, role := range e.Roles {
 		if role.Name == roleName {
 			return &role
@@ -20,8 +20,8 @@ func (e *ConfigType) GetRole(roleName string) *roleModels.Role {
 // GetRolesByIamGroups returns all roles with an IAM group matching.
 // If no roles are found, an empty slice is returned.
 // All roles are loaded locally by the configuration file
-func (e *ConfigType) GetRolesByIamGroups(iamGroups []string) []roleModels.Role {
-	var roles []roleModels.Role
+func (e *ConfigType) GetRolesByIamGroups(iamGroups []string) []model.Role {
+	var roles []model.Role
 
 	for _, role := range e.Roles {
 		for _, iamGroup := range iamGroups {

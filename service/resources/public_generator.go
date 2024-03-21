@@ -2,24 +2,22 @@ package resources
 
 import (
 	"go-deploy/models/config"
-	deploymentModels "go-deploy/models/sys/deployment"
-	"go-deploy/models/sys/sm"
-	vmModels "go-deploy/models/sys/vm"
+	"go-deploy/models/model"
 	"go-deploy/pkg/subsystems/k8s"
 )
 
 type Deployment struct {
-	deployment *deploymentModels.Deployment
+	deployment *model.Deployment
 	zone       *config.DeploymentZone
 }
 
 type SM struct {
-	sm   *sm.SM
+	sm   *model.SM
 	zone *config.DeploymentZone
 }
 
 type VM struct {
-	vm             *vmModels.VM
+	vm             *model.VM
 	vmZone         *config.VmZone
 	deploymentZone *config.DeploymentZone
 }
@@ -53,19 +51,19 @@ func (pc *PublicGeneratorType) WithVmZone(zone *config.VmZone) *PublicGeneratorT
 }
 
 // WithDeployment sets the deployment for the generator
-func (pc *PublicGeneratorType) WithDeployment(deployment *deploymentModels.Deployment) *PublicGeneratorType {
+func (pc *PublicGeneratorType) WithDeployment(deployment *model.Deployment) *PublicGeneratorType {
 	pc.d.deployment = deployment
 	return pc
 }
 
 // WithSM sets the SM for the generator
-func (pc *PublicGeneratorType) WithSM(sm *sm.SM) *PublicGeneratorType {
+func (pc *PublicGeneratorType) WithSM(sm *model.SM) *PublicGeneratorType {
 	pc.s.sm = sm
 	return pc
 }
 
 // WithVM sets the VM for the generator
-func (pc *PublicGeneratorType) WithVM(vm *vmModels.VM) *PublicGeneratorType {
+func (pc *PublicGeneratorType) WithVM(vm *model.VM) *PublicGeneratorType {
 	pc.v.vm = vm
 	return pc
 }

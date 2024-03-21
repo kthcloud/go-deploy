@@ -139,7 +139,7 @@ func (s *ResourcetagsService) NewCreateTagsParams(resourceids []string, resource
 	return p
 }
 
-// Creates resource tag(s)
+// Creates model tag(s)
 func (s *ResourcetagsService) CreateTags(p *CreateTagsParams) (*CreateTagsResponse, error) {
 	resp, err := s.cs.newRequest("createTags", p.toURLValues())
 	if err != nil {
@@ -259,7 +259,7 @@ func (s *ResourcetagsService) NewDeleteTagsParams(resourceids []string, resource
 	return p
 }
 
-// Deleting resource tag(s)
+// Deleting model tag(s)
 func (s *ResourcetagsService) DeleteTags(p *DeleteTagsParams) (*DeleteTagsResponse, error) {
 	resp, err := s.cs.newRequest("deleteTags", p.toURLValues())
 	if err != nil {
@@ -694,7 +694,7 @@ func (s *ResourcetagsService) NewListTagsParams() *ListTagsParams {
 	return p
 }
 
-// List resource tag(s)
+// List model tag(s)
 func (s *ResourcetagsService) ListTags(p *ListTagsParams) (*ListTagsResponse, error) {
 	resp, err := s.cs.newRequest("listTags", p.toURLValues())
 	if err != nil {
