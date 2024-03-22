@@ -277,6 +277,15 @@ func (client *Client) DoVmCommand(id string, requiredHost *string, command comma
 				}
 
 				params.SetHostid(host.Id)
+			} else {
+				// Temporarily randomize host to start on
+				hosts, err := client.CsClient.Host.ListHosts(client.CsClient.Host.NewListHostsParams())
+				if err != nil {
+					return makeError(err)
+				}
+
+				host := hosts.Hosts[rand.Intn(len(hosts.Hosts))]
+				params.SetHostid(host.Id)
 			}
 
 			_, err = client.CsClient.VirtualMachine.StartVirtualMachine(params)
