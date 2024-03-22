@@ -1730,7 +1730,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/go-deploy_models_dto_v2_body.VmRead"
+                                "$ref": "#/definitions/go-deploy_dto_v2_body.VmRead"
                             }
                         }
                     },
@@ -1761,7 +1761,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/go-deploy_models_dto_v2_body.VmCreate"
+                            "$ref": "#/definitions/go-deploy_dto_v2_body.VmCreate"
                         }
                     }
                 ],
@@ -1769,7 +1769,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/go-deploy_models_dto_v2_body.VmCreated"
+                            "$ref": "#/definitions/go-deploy_dto_v2_body.VmCreated"
                         }
                     },
                     "400": {
@@ -1831,7 +1831,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/go-deploy_models_dto_v2_body.VmRead"
+                            "$ref": "#/definitions/go-deploy_dto_v2_body.VmRead"
                         }
                     },
                     "400": {
@@ -1887,7 +1887,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/go-deploy_models_dto_v2_body.VmUpdate"
+                            "$ref": "#/definitions/go-deploy_dto_v2_body.VmUpdate"
                         }
                     }
                 ],
@@ -1895,7 +1895,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/go-deploy_models_dto_v2_body.VmUpdated"
+                            "$ref": "#/definitions/go-deploy_dto_v2_body.VmUpdated"
                         }
                     },
                     "400": {
@@ -1955,7 +1955,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/go-deploy_models_dto_v2_body.VmDeleted"
+                            "$ref": "#/definitions/go-deploy_dto_v2_body.VmDeleted"
                         }
                     },
                     "400": {
@@ -2148,7 +2148,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/go-deploy_models_dto_v2_body.VmSnapshotRead"
+                            "$ref": "#/definitions/go-deploy_dto_v2_body.VmSnapshotRead"
                         }
                     },
                     "400": {
@@ -2210,7 +2210,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/go-deploy_models_dto_v2_body.VmSnapshotRead"
+                            "$ref": "#/definitions/go-deploy_dto_v2_body.VmSnapshotRead"
                         }
                     },
                     "400": {
@@ -2269,7 +2269,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/go-deploy_models_dto_v2_body.VmSnapshotRead"
+                                "$ref": "#/definitions/go-deploy_dto_v2_body.VmSnapshotRead"
                             }
                         }
                     },
@@ -2331,7 +2331,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/go-deploy_models_dto_v2_body.VmSnapshotRead"
+                            "$ref": "#/definitions/go-deploy_dto_v2_body.VmSnapshotRead"
                         }
                     },
                     "400": {
@@ -2416,6 +2416,14 @@
                 "name"
             ],
             "properties": {
+                "args": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "minItems": 0,
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "customDomain": {
                     "type": "string",
                     "maxLength": 253,
@@ -2487,6 +2495,12 @@
         "body.DeploymentRead": {
             "type": "object",
             "properties": {
+                "args": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "createdAt": {
                     "type": "string"
                 },
@@ -2592,6 +2606,14 @@
                 "name"
             ],
             "properties": {
+                "args": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "minItems": 0,
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "customDomain": {
                     "type": "string",
                     "maxLength": 253,
@@ -2700,23 +2722,6 @@
                 }
             }
         },
-        "body.GpuLease": {
-            "type": "object",
-            "properties": {
-                "end": {
-                    "type": "string"
-                },
-                "expired": {
-                    "type": "boolean"
-                },
-                "user": {
-                    "type": "string"
-                },
-                "vmId": {
-                    "type": "string"
-                }
-            }
-        },
         "body.GpuRead": {
             "type": "object",
             "properties": {
@@ -2724,7 +2729,7 @@
                     "type": "string"
                 },
                 "lease": {
-                    "$ref": "#/definitions/body.GpuLease"
+                    "$ref": "#/definitions/body.Lease"
                 },
                 "name": {
                     "type": "string"
@@ -2835,6 +2840,23 @@
                         "finished",
                         "completed"
                     ]
+                }
+            }
+        },
+        "body.Lease": {
+            "type": "object",
+            "properties": {
+                "end": {
+                    "type": "string"
+                },
+                "expired": {
+                    "type": "boolean"
+                },
+                "user": {
+                    "type": "string"
+                },
+                "vmId": {
+                    "type": "string"
                 }
             }
         },
@@ -3180,6 +3202,9 @@
                 },
                 "id": {
                     "type": "string"
+                },
+                "userId": {
+                    "type": "string"
                 }
             }
         },
@@ -3331,7 +3356,7 @@
                 }
             }
         },
-        "go-deploy_models_dto_v1_body.HttpProxyCreate": {
+        "go-deploy_dto_v1_body.HttpProxyCreate": {
             "type": "object",
             "required": [
                 "name"
@@ -3349,7 +3374,7 @@
                 }
             }
         },
-        "go-deploy_models_dto_v1_body.HttpProxyRead": {
+        "go-deploy_dto_v1_body.HttpProxyRead": {
             "type": "object",
             "required": [
                 "name"
@@ -3377,7 +3402,7 @@
                 }
             }
         },
-        "go-deploy_models_dto_v1_body.HttpProxyUpdate": {
+        "go-deploy_dto_v1_body.HttpProxyUpdate": {
             "type": "object",
             "required": [
                 "name"
@@ -3394,7 +3419,7 @@
                 }
             }
         },
-        "go-deploy_models_dto_v1_body.PortCreate": {
+        "go-deploy_dto_v1_body.PortCreate": {
             "type": "object",
             "required": [
                 "name",
@@ -3403,7 +3428,7 @@
             ],
             "properties": {
                 "httpProxy": {
-                    "$ref": "#/definitions/go-deploy_models_dto_v1_body.HttpProxyCreate"
+                    "$ref": "#/definitions/go-deploy_dto_v1_body.HttpProxyCreate"
                 },
                 "name": {
                     "type": "string",
@@ -3424,14 +3449,14 @@
                 }
             }
         },
-        "go-deploy_models_dto_v1_body.PortRead": {
+        "go-deploy_dto_v1_body.PortRead": {
             "type": "object",
             "properties": {
                 "externalPort": {
                     "type": "integer"
                 },
                 "httpProxy": {
-                    "$ref": "#/definitions/go-deploy_models_dto_v1_body.HttpProxyRead"
+                    "$ref": "#/definitions/go-deploy_dto_v1_body.HttpProxyRead"
                 },
                 "name": {
                     "type": "string"
@@ -3444,7 +3469,7 @@
                 }
             }
         },
-        "go-deploy_models_dto_v1_body.PortUpdate": {
+        "go-deploy_dto_v1_body.PortUpdate": {
             "type": "object",
             "required": [
                 "name",
@@ -3453,7 +3478,7 @@
             ],
             "properties": {
                 "httpProxy": {
-                    "$ref": "#/definitions/go-deploy_models_dto_v1_body.HttpProxyUpdate"
+                    "$ref": "#/definitions/go-deploy_dto_v1_body.HttpProxyUpdate"
                 },
                 "name": {
                     "type": "string",
@@ -3474,7 +3499,7 @@
                 }
             }
         },
-        "go-deploy_models_dto_v1_body.Specs": {
+        "go-deploy_dto_v1_body.Specs": {
             "type": "object",
             "properties": {
                 "cpuCores": {
@@ -3488,7 +3513,7 @@
                 }
             }
         },
-        "go-deploy_models_dto_v1_body.VmCreate": {
+        "go-deploy_dto_v1_body.VmCreate": {
             "type": "object",
             "required": [
                 "cpuCores",
@@ -3516,7 +3541,7 @@
                     "maxItems": 10,
                     "minItems": 0,
                     "items": {
-                        "$ref": "#/definitions/go-deploy_models_dto_v1_body.PortCreate"
+                        "$ref": "#/definitions/go-deploy_dto_v1_body.PortCreate"
                     }
                 },
                 "ram": {
@@ -3531,7 +3556,7 @@
                 }
             }
         },
-        "go-deploy_models_dto_v1_body.VmCreated": {
+        "go-deploy_dto_v1_body.VmCreated": {
             "type": "object",
             "properties": {
                 "id": {
@@ -3542,7 +3567,7 @@
                 }
             }
         },
-        "go-deploy_models_dto_v1_body.VmDeleted": {
+        "go-deploy_dto_v1_body.VmDeleted": {
             "type": "object",
             "properties": {
                 "id": {
@@ -3553,7 +3578,7 @@
                 }
             }
         },
-        "go-deploy_models_dto_v1_body.VmGpuLease": {
+        "go-deploy_dto_v1_body.VmGpuLease": {
             "type": "object",
             "properties": {
                 "expired": {
@@ -3570,7 +3595,7 @@
                 }
             }
         },
-        "go-deploy_models_dto_v1_body.VmRead": {
+        "go-deploy_dto_v1_body.VmRead": {
             "type": "object",
             "properties": {
                 "connectionString": {
@@ -3579,8 +3604,8 @@
                 "createdAt": {
                     "type": "string"
                 },
-                "gpu": {
-                    "$ref": "#/definitions/go-deploy_models_dto_v1_body.VmGpuLease"
+                "gpu_repo": {
+                    "$ref": "#/definitions/go-deploy_dto_v1_body.VmGpuLease"
                 },
                 "host": {
                     "type": "string"
@@ -3597,14 +3622,14 @@
                 "ports": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/go-deploy_models_dto_v1_body.PortRead"
+                        "$ref": "#/definitions/go-deploy_dto_v1_body.PortRead"
                     }
                 },
                 "repairedAt": {
                     "type": "string"
                 },
                 "specs": {
-                    "$ref": "#/definitions/go-deploy_models_dto_v1_body.Specs"
+                    "$ref": "#/definitions/go-deploy_dto_v1_body.Specs"
                 },
                 "sshPublicKey": {
                     "type": "string"
@@ -3626,7 +3651,7 @@
                 }
             }
         },
-        "go-deploy_models_dto_v1_body.VmSnapshotRead": {
+        "go-deploy_dto_v1_body.VmSnapshotRead": {
             "type": "object",
             "properties": {
                 "created": {
@@ -3652,7 +3677,7 @@
                 }
             }
         },
-        "go-deploy_models_dto_v1_body.VmUpdate": {
+        "go-deploy_dto_v1_body.VmUpdate": {
             "type": "object",
             "properties": {
                 "cpuCores": {
@@ -3680,7 +3705,7 @@
                     "maxItems": 10,
                     "minItems": 0,
                     "items": {
-                        "$ref": "#/definitions/go-deploy_models_dto_v1_body.PortUpdate"
+                        "$ref": "#/definitions/go-deploy_dto_v1_body.PortUpdate"
                     }
                 },
                 "ram": {
@@ -3697,7 +3722,7 @@
                 }
             }
         },
-        "go-deploy_models_dto_v1_body.VmUpdated": {
+        "go-deploy_dto_v1_body.VmUpdated": {
             "type": "object",
             "properties": {
                 "id": {
@@ -3708,7 +3733,7 @@
                 }
             }
         },
-        "go-deploy_models_dto_v2_body.HttpProxyCreate": {
+        "go-deploy_dto_v2_body.HttpProxyCreate": {
             "type": "object",
             "required": [
                 "name"
@@ -3726,7 +3751,7 @@
                 }
             }
         },
-        "go-deploy_models_dto_v2_body.HttpProxyRead": {
+        "go-deploy_dto_v2_body.HttpProxyRead": {
             "type": "object",
             "required": [
                 "name"
@@ -3745,7 +3770,7 @@
                 }
             }
         },
-        "go-deploy_models_dto_v2_body.HttpProxyUpdate": {
+        "go-deploy_dto_v2_body.HttpProxyUpdate": {
             "type": "object",
             "required": [
                 "name"
@@ -3762,7 +3787,7 @@
                 }
             }
         },
-        "go-deploy_models_dto_v2_body.PortCreate": {
+        "go-deploy_dto_v2_body.PortCreate": {
             "type": "object",
             "required": [
                 "name",
@@ -3771,7 +3796,7 @@
             ],
             "properties": {
                 "httpProxy": {
-                    "$ref": "#/definitions/go-deploy_models_dto_v2_body.HttpProxyCreate"
+                    "$ref": "#/definitions/go-deploy_dto_v2_body.HttpProxyCreate"
                 },
                 "name": {
                     "type": "string",
@@ -3792,14 +3817,14 @@
                 }
             }
         },
-        "go-deploy_models_dto_v2_body.PortRead": {
+        "go-deploy_dto_v2_body.PortRead": {
             "type": "object",
             "properties": {
                 "externalPort": {
                     "type": "integer"
                 },
                 "httpProxy": {
-                    "$ref": "#/definitions/go-deploy_models_dto_v2_body.HttpProxyRead"
+                    "$ref": "#/definitions/go-deploy_dto_v2_body.HttpProxyRead"
                 },
                 "name": {
                     "type": "string"
@@ -3812,7 +3837,7 @@
                 }
             }
         },
-        "go-deploy_models_dto_v2_body.PortUpdate": {
+        "go-deploy_dto_v2_body.PortUpdate": {
             "type": "object",
             "required": [
                 "name",
@@ -3821,7 +3846,7 @@
             ],
             "properties": {
                 "httpProxy": {
-                    "$ref": "#/definitions/go-deploy_models_dto_v2_body.HttpProxyUpdate"
+                    "$ref": "#/definitions/go-deploy_dto_v2_body.HttpProxyUpdate"
                 },
                 "name": {
                     "type": "string",
@@ -3842,7 +3867,7 @@
                 }
             }
         },
-        "go-deploy_models_dto_v2_body.Specs": {
+        "go-deploy_dto_v2_body.Specs": {
             "type": "object",
             "properties": {
                 "cpuCores": {
@@ -3856,7 +3881,7 @@
                 }
             }
         },
-        "go-deploy_models_dto_v2_body.VmCreate": {
+        "go-deploy_dto_v2_body.VmCreate": {
             "type": "object",
             "required": [
                 "cpuCores",
@@ -3884,7 +3909,7 @@
                     "maxItems": 10,
                     "minItems": 0,
                     "items": {
-                        "$ref": "#/definitions/go-deploy_models_dto_v2_body.PortCreate"
+                        "$ref": "#/definitions/go-deploy_dto_v2_body.PortCreate"
                     }
                 },
                 "ram": {
@@ -3899,7 +3924,7 @@
                 }
             }
         },
-        "go-deploy_models_dto_v2_body.VmCreated": {
+        "go-deploy_dto_v2_body.VmCreated": {
             "type": "object",
             "properties": {
                 "id": {
@@ -3910,7 +3935,7 @@
                 }
             }
         },
-        "go-deploy_models_dto_v2_body.VmDeleted": {
+        "go-deploy_dto_v2_body.VmDeleted": {
             "type": "object",
             "properties": {
                 "id": {
@@ -3921,7 +3946,7 @@
                 }
             }
         },
-        "go-deploy_models_dto_v2_body.VmGpuLease": {
+        "go-deploy_dto_v2_body.VmGpuLease": {
             "type": "object",
             "properties": {
                 "id": {
@@ -3938,14 +3963,14 @@
                 }
             }
         },
-        "go-deploy_models_dto_v2_body.VmRead": {
+        "go-deploy_dto_v2_body.VmRead": {
             "type": "object",
             "properties": {
                 "createdAt": {
                     "type": "string"
                 },
-                "gpu": {
-                    "$ref": "#/definitions/go-deploy_models_dto_v2_body.VmGpuLease"
+                "gpu_repo": {
+                    "$ref": "#/definitions/go-deploy_dto_v2_body.VmGpuLease"
                 },
                 "host": {
                     "type": "string"
@@ -3962,14 +3987,14 @@
                 "ports": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/go-deploy_models_dto_v2_body.PortRead"
+                        "$ref": "#/definitions/go-deploy_dto_v2_body.PortRead"
                     }
                 },
                 "repairedAt": {
                     "type": "string"
                 },
                 "specs": {
-                    "$ref": "#/definitions/go-deploy_models_dto_v2_body.Specs"
+                    "$ref": "#/definitions/go-deploy_dto_v2_body.Specs"
                 },
                 "sshConnectionString": {
                     "type": "string"
@@ -3994,7 +4019,7 @@
                 }
             }
         },
-        "go-deploy_models_dto_v2_body.VmSnapshotRead": {
+        "go-deploy_dto_v2_body.VmSnapshotRead": {
             "type": "object",
             "properties": {
                 "created": {
@@ -4011,7 +4036,7 @@
                 }
             }
         },
-        "go-deploy_models_dto_v2_body.VmUpdate": {
+        "go-deploy_dto_v2_body.VmUpdate": {
             "type": "object",
             "properties": {
                 "cpuCores": {
@@ -4039,7 +4064,7 @@
                     "maxItems": 10,
                     "minItems": 0,
                     "items": {
-                        "$ref": "#/definitions/go-deploy_models_dto_v2_body.PortUpdate"
+                        "$ref": "#/definitions/go-deploy_dto_v2_body.PortUpdate"
                     }
                 },
                 "ram": {
@@ -4058,7 +4083,7 @@
                 }
             }
         },
-        "go-deploy_models_dto_v2_body.VmUpdated": {
+        "go-deploy_dto_v2_body.VmUpdated": {
             "type": "object",
             "properties": {
                 "id": {

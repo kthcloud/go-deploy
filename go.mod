@@ -24,13 +24,13 @@ require (
 	github.com/stretchr/testify v1.8.4
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0
+	github.com/swaggo/swag v1.16.1
 	go.mongodb.org/mongo-driver v1.13.1
 	golang.org/x/crypto v0.18.0
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d
 	golang.org/x/net v0.20.0
 	golang.org/x/oauth2 v0.10.0
 	gopkg.in/square/go-jose.v2 v2.6.0
-	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.29.1
 	k8s.io/apimachinery v0.29.1
@@ -107,7 +107,6 @@ require (
 	github.com/prometheus/procfs v0.11.1 // indirect
 	github.com/segmentio/ksuid v1.0.4 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/swaggo/swag v1.16.1 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
@@ -126,6 +125,7 @@ require (
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 	k8s.io/apiextensions-apiserver v0.26.3 // indirect
 	k8s.io/klog/v2 v2.110.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20231010175941-2dd684a91f00 // indirect

@@ -35,6 +35,12 @@ definitions:
     type: object
   body.DeploymentCreate:
     properties:
+      args:
+        items:
+          type: string
+        maxItems: 100
+        minItems: 0
+        type: array
       customDomain:
         maxLength: 253
         minLength: 1
@@ -89,6 +95,10 @@ definitions:
     type: object
   body.DeploymentRead:
     properties:
+      args:
+        items:
+          type: string
+        type: array
       createdAt:
         type: string
       customDomain:
@@ -160,6 +170,12 @@ definitions:
     type: object
   body.DeploymentUpdate:
     properties:
+      args:
+        items:
+          type: string
+        maxItems: 100
+        minItems: 0
+        type: array
       customDomain:
         maxLength: 253
         minLength: 0
@@ -241,23 +257,12 @@ definitions:
     - name
     - value
     type: object
-  body.GpuLease:
-    properties:
-      end:
-        type: string
-      expired:
-        type: boolean
-      user:
-        type: string
-      vmId:
-        type: string
-    type: object
   body.GpuRead:
     properties:
       id:
         type: string
       lease:
-        $ref: '#/definitions/body.GpuLease'
+        $ref: '#/definitions/body.Lease'
       name:
         type: string
       zone:
@@ -330,6 +335,17 @@ definitions:
         - terminated
         - finished
         - completed
+        type: string
+    type: object
+  body.Lease:
+    properties:
+      end:
+        type: string
+      expired:
+        type: boolean
+      user:
+        type: string
+      vmId:
         type: string
     type: object
   body.NotificationRead:
@@ -564,6 +580,8 @@ definitions:
         type: string
       id:
         type: string
+      userId:
+        type: string
     type: object
   body.UserDataUpdate:
     properties:
@@ -667,7 +685,7 @@ definitions:
       type:
         type: string
     type: object
-  go-deploy_models_dto_v1_body.HttpProxyCreate:
+  go-deploy_dto_v1_body.HttpProxyCreate:
     properties:
       customDomain:
         maxLength: 100
@@ -680,7 +698,7 @@ definitions:
     required:
     - name
     type: object
-  go-deploy_models_dto_v1_body.HttpProxyRead:
+  go-deploy_dto_v1_body.HttpProxyRead:
     properties:
       customDomain:
         type: string
@@ -699,7 +717,7 @@ definitions:
     required:
     - name
     type: object
-  go-deploy_models_dto_v1_body.HttpProxyUpdate:
+  go-deploy_dto_v1_body.HttpProxyUpdate:
     properties:
       customDomain:
         maxLength: 100
@@ -711,10 +729,10 @@ definitions:
     required:
     - name
     type: object
-  go-deploy_models_dto_v1_body.PortCreate:
+  go-deploy_dto_v1_body.PortCreate:
     properties:
       httpProxy:
-        $ref: '#/definitions/go-deploy_models_dto_v1_body.HttpProxyCreate'
+        $ref: '#/definitions/go-deploy_dto_v1_body.HttpProxyCreate'
       name:
         maxLength: 100
         minLength: 1
@@ -733,12 +751,12 @@ definitions:
     - port
     - protocol
     type: object
-  go-deploy_models_dto_v1_body.PortRead:
+  go-deploy_dto_v1_body.PortRead:
     properties:
       externalPort:
         type: integer
       httpProxy:
-        $ref: '#/definitions/go-deploy_models_dto_v1_body.HttpProxyRead'
+        $ref: '#/definitions/go-deploy_dto_v1_body.HttpProxyRead'
       name:
         type: string
       port:
@@ -746,10 +764,10 @@ definitions:
       protocol:
         type: string
     type: object
-  go-deploy_models_dto_v1_body.PortUpdate:
+  go-deploy_dto_v1_body.PortUpdate:
     properties:
       httpProxy:
-        $ref: '#/definitions/go-deploy_models_dto_v1_body.HttpProxyUpdate'
+        $ref: '#/definitions/go-deploy_dto_v1_body.HttpProxyUpdate'
       name:
         maxLength: 100
         minLength: 1
@@ -768,7 +786,7 @@ definitions:
     - port
     - protocol
     type: object
-  go-deploy_models_dto_v1_body.Specs:
+  go-deploy_dto_v1_body.Specs:
     properties:
       cpuCores:
         type: integer
@@ -777,7 +795,7 @@ definitions:
       ram:
         type: integer
     type: object
-  go-deploy_models_dto_v1_body.VmCreate:
+  go-deploy_dto_v1_body.VmCreate:
     properties:
       cpuCores:
         minimum: 2
@@ -791,7 +809,7 @@ definitions:
         type: string
       ports:
         items:
-          $ref: '#/definitions/go-deploy_models_dto_v1_body.PortCreate'
+          $ref: '#/definitions/go-deploy_dto_v1_body.PortCreate'
         maxItems: 10
         minItems: 0
         type: array
@@ -809,21 +827,21 @@ definitions:
     - ram
     - sshPublicKey
     type: object
-  go-deploy_models_dto_v1_body.VmCreated:
+  go-deploy_dto_v1_body.VmCreated:
     properties:
       id:
         type: string
       jobId:
         type: string
     type: object
-  go-deploy_models_dto_v1_body.VmDeleted:
+  go-deploy_dto_v1_body.VmDeleted:
     properties:
       id:
         type: string
       jobId:
         type: string
     type: object
-  go-deploy_models_dto_v1_body.VmGpuLease:
+  go-deploy_dto_v1_body.VmGpuLease:
     properties:
       expired:
         type: boolean
@@ -834,14 +852,14 @@ definitions:
       name:
         type: string
     type: object
-  go-deploy_models_dto_v1_body.VmRead:
+  go-deploy_dto_v1_body.VmRead:
     properties:
       connectionString:
         type: string
       createdAt:
         type: string
-      gpu:
-        $ref: '#/definitions/go-deploy_models_dto_v1_body.VmGpuLease'
+      gpu_repo:
+        $ref: '#/definitions/go-deploy_dto_v1_body.VmGpuLease'
       host:
         type: string
       id:
@@ -852,12 +870,12 @@ definitions:
         type: string
       ports:
         items:
-          $ref: '#/definitions/go-deploy_models_dto_v1_body.PortRead'
+          $ref: '#/definitions/go-deploy_dto_v1_body.PortRead'
         type: array
       repairedAt:
         type: string
       specs:
-        $ref: '#/definitions/go-deploy_models_dto_v1_body.Specs'
+        $ref: '#/definitions/go-deploy_dto_v1_body.Specs'
       sshPublicKey:
         type: string
       status:
@@ -871,7 +889,7 @@ definitions:
       zone:
         type: string
     type: object
-  go-deploy_models_dto_v1_body.VmSnapshotRead:
+  go-deploy_dto_v1_body.VmSnapshotRead:
     properties:
       created:
         type: string
@@ -888,7 +906,7 @@ definitions:
       vmId:
         type: string
     type: object
-  go-deploy_models_dto_v1_body.VmUpdate:
+  go-deploy_dto_v1_body.VmUpdate:
     properties:
       cpuCores:
         minimum: 1
@@ -907,7 +925,7 @@ definitions:
         type: string
       ports:
         items:
-          $ref: '#/definitions/go-deploy_models_dto_v1_body.PortUpdate'
+          $ref: '#/definitions/go-deploy_dto_v1_body.PortUpdate'
         maxItems: 10
         minItems: 0
         type: array
@@ -921,14 +939,14 @@ definitions:
         minLength: 1
         type: string
     type: object
-  go-deploy_models_dto_v1_body.VmUpdated:
+  go-deploy_dto_v1_body.VmUpdated:
     properties:
       id:
         type: string
       jobId:
         type: string
     type: object
-  go-deploy_models_dto_v2_body.HttpProxyCreate:
+  go-deploy_dto_v2_body.HttpProxyCreate:
     properties:
       customDomain:
         maxLength: 100
@@ -941,7 +959,7 @@ definitions:
     required:
     - name
     type: object
-  go-deploy_models_dto_v2_body.HttpProxyRead:
+  go-deploy_dto_v2_body.HttpProxyRead:
     properties:
       customDomain:
         $ref: '#/definitions/body.CustomDomainRead'
@@ -954,7 +972,7 @@ definitions:
     required:
     - name
     type: object
-  go-deploy_models_dto_v2_body.HttpProxyUpdate:
+  go-deploy_dto_v2_body.HttpProxyUpdate:
     properties:
       customDomain:
         maxLength: 100
@@ -966,10 +984,10 @@ definitions:
     required:
     - name
     type: object
-  go-deploy_models_dto_v2_body.PortCreate:
+  go-deploy_dto_v2_body.PortCreate:
     properties:
       httpProxy:
-        $ref: '#/definitions/go-deploy_models_dto_v2_body.HttpProxyCreate'
+        $ref: '#/definitions/go-deploy_dto_v2_body.HttpProxyCreate'
       name:
         maxLength: 100
         minLength: 1
@@ -988,12 +1006,12 @@ definitions:
     - port
     - protocol
     type: object
-  go-deploy_models_dto_v2_body.PortRead:
+  go-deploy_dto_v2_body.PortRead:
     properties:
       externalPort:
         type: integer
       httpProxy:
-        $ref: '#/definitions/go-deploy_models_dto_v2_body.HttpProxyRead'
+        $ref: '#/definitions/go-deploy_dto_v2_body.HttpProxyRead'
       name:
         type: string
       port:
@@ -1001,10 +1019,10 @@ definitions:
       protocol:
         type: string
     type: object
-  go-deploy_models_dto_v2_body.PortUpdate:
+  go-deploy_dto_v2_body.PortUpdate:
     properties:
       httpProxy:
-        $ref: '#/definitions/go-deploy_models_dto_v2_body.HttpProxyUpdate'
+        $ref: '#/definitions/go-deploy_dto_v2_body.HttpProxyUpdate'
       name:
         maxLength: 100
         minLength: 1
@@ -1023,7 +1041,7 @@ definitions:
     - port
     - protocol
     type: object
-  go-deploy_models_dto_v2_body.Specs:
+  go-deploy_dto_v2_body.Specs:
     properties:
       cpuCores:
         type: integer
@@ -1032,7 +1050,7 @@ definitions:
       ram:
         type: integer
     type: object
-  go-deploy_models_dto_v2_body.VmCreate:
+  go-deploy_dto_v2_body.VmCreate:
     properties:
       cpuCores:
         minimum: 2
@@ -1046,7 +1064,7 @@ definitions:
         type: string
       ports:
         items:
-          $ref: '#/definitions/go-deploy_models_dto_v2_body.PortCreate'
+          $ref: '#/definitions/go-deploy_dto_v2_body.PortCreate'
         maxItems: 10
         minItems: 0
         type: array
@@ -1064,21 +1082,21 @@ definitions:
     - ram
     - sshPublicKey
     type: object
-  go-deploy_models_dto_v2_body.VmCreated:
+  go-deploy_dto_v2_body.VmCreated:
     properties:
       id:
         type: string
       jobId:
         type: string
     type: object
-  go-deploy_models_dto_v2_body.VmDeleted:
+  go-deploy_dto_v2_body.VmDeleted:
     properties:
       id:
         type: string
       jobId:
         type: string
     type: object
-  go-deploy_models_dto_v2_body.VmGpuLease:
+  go-deploy_dto_v2_body.VmGpuLease:
     properties:
       id:
         type: string
@@ -1089,12 +1107,12 @@ definitions:
       name:
         type: string
     type: object
-  go-deploy_models_dto_v2_body.VmRead:
+  go-deploy_dto_v2_body.VmRead:
     properties:
       createdAt:
         type: string
-      gpu:
-        $ref: '#/definitions/go-deploy_models_dto_v2_body.VmGpuLease'
+      gpu_repo:
+        $ref: '#/definitions/go-deploy_dto_v2_body.VmGpuLease'
       host:
         type: string
       id:
@@ -1105,12 +1123,12 @@ definitions:
         type: string
       ports:
         items:
-          $ref: '#/definitions/go-deploy_models_dto_v2_body.PortRead'
+          $ref: '#/definitions/go-deploy_dto_v2_body.PortRead'
         type: array
       repairedAt:
         type: string
       specs:
-        $ref: '#/definitions/go-deploy_models_dto_v2_body.Specs'
+        $ref: '#/definitions/go-deploy_dto_v2_body.Specs'
       sshConnectionString:
         type: string
       sshPublicKey:
@@ -1126,7 +1144,7 @@ definitions:
       zone:
         type: string
     type: object
-  go-deploy_models_dto_v2_body.VmSnapshotRead:
+  go-deploy_dto_v2_body.VmSnapshotRead:
     properties:
       created:
         type: string
@@ -1137,7 +1155,7 @@ definitions:
       status:
         type: string
     type: object
-  go-deploy_models_dto_v2_body.VmUpdate:
+  go-deploy_dto_v2_body.VmUpdate:
     properties:
       cpuCores:
         minimum: 1
@@ -1165,7 +1183,7 @@ definitions:
         type: string
       ports:
         items:
-          $ref: '#/definitions/go-deploy_models_dto_v2_body.PortUpdate'
+          $ref: '#/definitions/go-deploy_dto_v2_body.PortUpdate'
         maxItems: 10
         minItems: 0
         type: array
@@ -1185,7 +1203,7 @@ definitions:
         minLength: 1
         type: string
     type: object
-  go-deploy_models_dto_v2_body.VmUpdated:
+  go-deploy_dto_v2_body.VmUpdated:
     properties:
       id:
         type: string
@@ -2350,7 +2368,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/go-deploy_models_dto_v2_body.VmRead'
+              $ref: '#/definitions/go-deploy_dto_v2_body.VmRead'
             type: array
         "500":
           description: Internal Server Error
@@ -2369,14 +2387,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/go-deploy_models_dto_v2_body.VmCreate'
+          $ref: '#/definitions/go-deploy_dto_v2_body.VmCreate'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/go-deploy_models_dto_v2_body.VmCreated'
+            $ref: '#/definitions/go-deploy_dto_v2_body.VmCreated'
         "400":
           description: Bad Request
           schema:
@@ -2417,7 +2435,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/go-deploy_models_dto_v2_body.VmDeleted'
+            $ref: '#/definitions/go-deploy_dto_v2_body.VmDeleted'
         "400":
           description: Bad Request
           schema:
@@ -2457,7 +2475,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/go-deploy_models_dto_v2_body.VmRead'
+            $ref: '#/definitions/go-deploy_dto_v2_body.VmRead'
         "400":
           description: Bad Request
           schema:
@@ -2493,14 +2511,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/go-deploy_models_dto_v2_body.VmUpdate'
+          $ref: '#/definitions/go-deploy_dto_v2_body.VmUpdate'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/go-deploy_models_dto_v2_body.VmUpdated'
+            $ref: '#/definitions/go-deploy_dto_v2_body.VmUpdated'
         "400":
           description: Bad Request
           schema:
@@ -2590,7 +2608,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/go-deploy_models_dto_v2_body.VmSnapshotRead'
+            $ref: '#/definitions/go-deploy_dto_v2_body.VmSnapshotRead'
         "400":
           description: Bad Request
           schema:
@@ -2632,7 +2650,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/go-deploy_models_dto_v2_body.VmSnapshotRead'
+            $ref: '#/definitions/go-deploy_dto_v2_body.VmSnapshotRead'
         "400":
           description: Bad Request
           schema:
@@ -2671,7 +2689,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/go-deploy_models_dto_v2_body.VmSnapshotRead'
+              $ref: '#/definitions/go-deploy_dto_v2_body.VmSnapshotRead'
             type: array
         "400":
           description: Bad Request
@@ -2713,7 +2731,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/go-deploy_models_dto_v2_body.VmSnapshotRead'
+            $ref: '#/definitions/go-deploy_dto_v2_body.VmSnapshotRead'
         "400":
           description: Bad Request
           schema:
