@@ -849,12 +849,13 @@ func (c *Client) GetExternalPortMapper(vmID string) (map[string]int, error) {
 
 // GetHost gets the host for the VM.
 //
-// It return an error if the VM is not found.
+// It returns an error if the VM is not found.
 func (c *Client) GetHost(vmID string) (*model.Host, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get host for vm %s. details: %w", vmID, err)
 	}
 
+	// 1. Try to get the host from the VM, this only works if the VM is running
 	vm, err := c.VM(vmID, nil)
 	if err != nil {
 		return nil, makeError(err)
@@ -884,6 +885,7 @@ func (c *Client) GetHost(vmID string) (*model.Host, error) {
 		}, nil
 	}
 
+	// 2. Try to get the host by the GPU, since the VM is required to start on the host with the GPU
 	gpuID, err := gpu_repo.New().WithVM(vmID).GetID()
 	if err != nil {
 		return nil, makeError(err)
@@ -901,13 +903,16 @@ func (c *Client) GetHost(vmID string) (*model.Host, error) {
 				return nil, makeError(err)
 			}
 
-			return &model.Host{
-				ID:   host.ID,
-				Name: host.Name,
-			}, nil
+			if host != nil {
+				return &model.Host{
+					ID:   host.ID,
+					Name: host.Name,
+				}, nil
+			}
 		}
 	}
 
+	// The host was not found using any method
 	return nil, nil
 }
 
