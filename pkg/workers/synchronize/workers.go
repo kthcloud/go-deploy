@@ -19,7 +19,7 @@ func gpuSynchronizer() {
 	defer workers.OnStop("gpuSynchronizer")
 
 	reportTick := time.Tick(1 * time.Second)
-	tick := time.Tick(3 * time.Second)
+	tick := time.Tick(60 * time.Second)
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to synchronize gpus: %w", err)
