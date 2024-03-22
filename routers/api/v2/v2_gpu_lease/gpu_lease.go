@@ -2,9 +2,9 @@ package v2_gpu_lease
 
 import (
 	"github.com/gin-gonic/gin"
+	"go-deploy/dto/v2/body"
 	"go-deploy/dto/v2/query"
 	"go-deploy/dto/v2/uri"
-	"go-deploy/models/sys/job"
 	"go-deploy/models/versions"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
