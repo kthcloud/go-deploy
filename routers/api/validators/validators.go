@@ -1,40 +1,15 @@
 package validators
 
 import (
-	"encoding/json"
 	"github.com/go-playground/validator/v10"
 	bodyV1 "go-deploy/dto/v1/body"
 	bodyV2 "go-deploy/dto/v2/body"
 	"go-deploy/pkg/config"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/idna"
-	"io"
-	"net/http"
 	"regexp"
 	"strings"
 )
-
-// googleDnsResponse is the response from the Google DNS API
-// This is used to check if a domain points to the correct IP
-type googleDnsResponse struct {
-	Status   int  `json:"Status,omitempty"`
-	Tc       bool `json:"TC,omitempty"`
-	Rd       bool `json:"RD,omitempty"`
-	Ra       bool `json:"RA,omitempty"`
-	Ad       bool `json:"AD,omitempty"`
-	Cd       bool `json:"CD,omitempty"`
-	Question []struct {
-		Name string `json:"name,omitempty"`
-		Type int    `json:"type,omitempty"`
-	} `json:"Question,omitempty"`
-	Answer []struct {
-		Name string `json:"name,omitempty"`
-		Type int    `json:"type,omitempty"`
-		TTL  int    `json:"TTL,omitempty"`
-		Data string `json:"data,omitempty"`
-	} `json:"Answer,omitempty"`
-	Comment string `json:"Comment,omitempty"`
-}
 
 // Rfc1035 is a validator for RFC 1035 hostnames
 func Rfc1035(fl validator.FieldLevel) bool {
@@ -328,12 +303,9 @@ func CustomDomain(fl validator.FieldLevel) bool {
 		return true
 	}
 
-	punyEncoded, err := idna.Lookup.ToASCII(domain)
+	// Check if punycode conversion is possible
+	_, err := idna.Lookup.ToASCII(domain)
 	if err != nil {
-		return false
-	}
-
-	if !domainPointsToDeploy(punyEncoded) {
 		return false
 	}
 
@@ -437,53 +409,6 @@ func VolumeName(fl validator.FieldLevel) bool {
 	match := regex.MatchString(name)
 
 	return match
-}
-
-// domainPointsToDeploy is a helper function that checks if the domain points to the correct IP
-func domainPointsToDeploy(domainName string) bool {
-	for _, zone := range config.Config.Deployment.Zones {
-		mustPointAt := zone.CustomDomainIP
-
-		pointsTo := lookUpIP(domainName)
-		if pointsTo == nil {
-			return false
-		}
-
-		if *pointsTo == mustPointAt {
-			return true
-		}
-	}
-	return false
-}
-
-// lookUpIP is a helper function that looks up the IP of a domain using the Google DNS API
-func lookUpIP(domainName string) *string {
-	requestURL := "https://dns.google.com/resolve?name=" + domainName + "&type=A"
-	resp, err := http.Get(requestURL)
-	if err != nil {
-		return nil
-	}
-
-	defer func(Body io.ReadCloser) {
-		_ = Body.Close()
-	}(resp.Body)
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil
-	}
-
-	var response googleDnsResponse
-	err = json.Unmarshal(respBody, &response)
-	if err != nil {
-		return nil
-	}
-
-	if len(response.Answer) == 0 {
-		return nil
-	}
-
-	return &response.Answer[len(response.Answer)-1].Data
 }
 
 // goodURL is a helper function that checks if a URL is valid according to RFC 3986
