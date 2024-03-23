@@ -94,6 +94,7 @@ func (deployment *Deployment) ToDTO(smURL *string, teams []string) body.Deployme
 		Envs:            envs,
 		Volumes:         volumes,
 		InitCommands:    app.InitCommands,
+		Args:            app.Args,
 		Private:         app.Private,
 		InternalPort:    app.InternalPort,
 		Image:           image,
