@@ -9,28 +9,24 @@ import (
 	k8sServiceDeployment "go-deploy/service/v1/deployments/k8s_service"
 	k8sServiceSM "go-deploy/service/v1/sms/k8s_service"
 	k8sServiceVM "go-deploy/service/v1/vms/k8s_service"
-	"log"
 )
 
 // Migrate will run as early as possible in the program, and it will never be called again.
-func Migrate() {
+func Migrate() error {
 	migrations := getMigrations()
 
 	if len(migrations) > 0 {
-		log.Println("migrating...")
-
 		for name, migration := range migrations {
-			log.Printf("running migration %s", name)
+			fmt.Printf("- %s (%d/%d)\n", name, 1, len(migrations))
 			if err := migration(); err != nil {
-				log.Fatalf("failed to run migration %s. details: %s", name, err)
+				return fmt.Errorf("migration %s failed. details: %w", name, err)
 			}
 		}
-
-		log.Println("migrations done")
-		return
+	} else {
+		fmt.Println("No migrations to run")
 	}
 
-	log.Println("nothing to migrate")
+	return nil
 }
 
 // getMigrations returns a map of migrations to run.

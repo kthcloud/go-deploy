@@ -34,27 +34,69 @@ func shutdown() {
 	db.Shutdown()
 }
 
+type InitTask struct {
+	Name      string
+	Task      func() error
+	Composite bool
+}
+
+func (it *InitTask) LogBegin(prefix string) {
+	orange := "\033[38;5;208m"
+	grey := "\033[90m"
+	reset := "\033[0m"
+	now := time.Now().Format("2006/01/02 15:04:05")
+	taskName := it.Name
+	fmt.Printf("[%s] %s %s%s%s %s...%s ", now, prefix, orange, taskName, reset, grey, reset)
+	if it.Composite {
+		lightBlue := "\033[38;5;39m"
+		fmt.Println(lightBlue)
+	}
+}
+
+func (it *InitTask) LogCompleted() {
+	green := "\033[32m"
+	grey := "\033[90m"
+	reset := "\033[0m"
+	if it.Composite {
+		fmt.Printf("%s... done %s✓%s\n", grey, green, reset)
+	} else {
+		fmt.Printf("%s✓%s\n", green, reset)
+	}
+}
+
+func (it *InitTask) LogFailed() {
+	red := "\033[31m"
+	grey := "\033[90m"
+	reset := "\033[0m"
+	if it.Composite {
+		fmt.Printf("%s... failed %s✗%s\n", grey, red, reset)
+	} else {
+		fmt.Printf("%s✗%s\n", red, reset)
+	}
+}
+
 // Create creates a new App instance.
 func Create(opts *Options) *App {
-	config.SetupEnvironment()
-	metrics.Setup()
 
-	// If test mode is enabled, use a different database
-	if opts.TestMode {
-		config.Config.TestMode = true
-		config.Config.MongoDB.Name = config.Config.MongoDB.Name + "-test"
+	initTasks := []InitTask{
+		{Name: "Setup environment", Task: config.SetupEnvironment, Composite: true},
+		{Name: "Setup metrics", Task: metrics.Setup},
+		{Name: "Enable test mode if requested", Task: enableTestIfRequested},
+		{Name: "Setup database", Task: db.Setup, Composite: true},
+		{Name: "Clean up old tests", Task: intializer.CleanUpOldTests},
+		{Name: "Synchronize VM ports", Task: intializer.SynchronizeVmPorts, Composite: true},
+		{Name: "Run migrations", Task: migrator.Migrate, Composite: true},
+		{Name: "Reset running jobs", Task: func() error { return job_repo.New().ResetRunning() }},
 	}
 
-	db.Setup()
-
-	intializer.CleanUpOldTests()
-	intializer.SynchronizeVmPorts()
-
-	migrator.Migrate()
-
-	err := job_repo.New().ResetRunning()
-	if err != nil {
-		log.Fatalln(fmt.Errorf("failed to reset running job. details: %w", err))
+	for idx, task := range initTasks {
+		task.LogBegin(fmt.Sprintf("(%d/%d)", idx+1, len(initTasks)))
+		err := task.Task()
+		if err != nil {
+			task.LogFailed()
+			log.Fatalln("Task", task.Name, "failed. See error below:\n", err)
+		}
+		task.LogCompleted()
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -86,7 +128,7 @@ func Create(opts *Options) *App {
 		}
 
 		go func() {
-			err = httpServer.ListenAndServe()
+			err := httpServer.ListenAndServe()
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
 				log.Fatalln(fmt.Errorf("failed to start http server. details: %w", err))
 			}
@@ -163,4 +205,13 @@ func ParseFlags() *Options {
 	}
 
 	return &options
+}
+
+func enableTestIfRequested() error {
+	if config.Config.TestMode {
+		config.Config.TestMode = true
+		config.Config.MongoDB.Name = config.Config.MongoDB.Name + "-test"
+	}
+
+	return nil
 }

@@ -5,7 +5,6 @@ import (
 	"github.com/penglongli/gin-metrics/ginmetrics"
 	"go-deploy/pkg/db/key_value"
 	"go-deploy/utils"
-	"log"
 	"strconv"
 )
 
@@ -49,7 +48,7 @@ const (
 	KeyJobsCompleted = "metrics:jobs:completed"
 )
 
-func Setup() {
+func Setup() error {
 	collectors := GetCollectors()
 
 	Metrics = MetricsType{
@@ -68,12 +67,14 @@ func Setup() {
 				Labels:      []string{},
 			})
 			if err != nil {
-				log.Fatalln("failed to add metric", def.Name, "to monitor. details:", err)
+				return fmt.Errorf("failed to add metric %s to monitor. details: %w", def.Name, err)
 			}
 		default:
-			panic("unknown metric type " + strconv.Itoa(int(def.MetricType)))
+			return fmt.Errorf("unknown metric type %d", def.MetricType)
 		}
 	}
+
+	return nil
 }
 
 // Sync synchronizes the metrics with the values in the database.

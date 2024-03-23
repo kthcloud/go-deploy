@@ -33,7 +33,7 @@ func (dbCtx *Context) setupMongo() error {
 		return fmt.Errorf("failed to setup mongodb. details: %w", err)
 	}
 
-	log.Println("setting up mongodb")
+	fmt.Println("Setting up MongoDB")
 
 	var err error
 	dbCtx.MongoClient, err = mongo.Connect(context.TODO(), options.Client().ApplyURI(config.Config.MongoDB.URL))
@@ -46,8 +46,6 @@ func (dbCtx *Context) setupMongo() error {
 		log.Fatalln(makeError(err))
 	}
 
-	log.Println("connected to mongodb")
-
 	// Find collections
 	DB.CollectionMap = make(map[string]*mongo.Collection)
 
@@ -56,8 +54,6 @@ func (dbCtx *Context) setupMongo() error {
 	for _, def := range DB.CollectionDefinitionMap {
 		DB.CollectionMap[def.Name] = dbCtx.MongoClient.Database(config.Config.MongoDB.Name).Collection(def.Name)
 	}
-
-	log.Println("found", len(DB.CollectionDefinitionMap), "collections")
 
 	ensureCount := 0
 	for _, def := range DB.CollectionDefinitionMap {
@@ -74,7 +70,7 @@ func (dbCtx *Context) setupMongo() error {
 		}
 	}
 
-	log.Println("ensured", ensureCount, "indexes")
+	fmt.Printf(" - Ensured %d indexes\n", ensureCount)
 
 	ensureCount = 0
 	for _, def := range DB.CollectionDefinitionMap {
@@ -96,7 +92,7 @@ func (dbCtx *Context) setupMongo() error {
 		}
 	}
 
-	log.Println("ensured", ensureCount, "unique indexes")
+	fmt.Printf(" - Ensured %d unique indexes\n", ensureCount)
 
 	ensureCount = 0
 	for _, def := range DB.CollectionDefinitionMap {
@@ -118,7 +114,7 @@ func (dbCtx *Context) setupMongo() error {
 		}
 	}
 
-	log.Println("ensured", ensureCount, "totally unique indexes")
+	fmt.Printf(" - Ensured %d totally unique indexes\n", ensureCount)
 
 	ensureCount = 0
 	for _, def := range DB.CollectionDefinitionMap {
@@ -141,7 +137,7 @@ func (dbCtx *Context) setupMongo() error {
 		ensureCount++
 	}
 
-	log.Println("ensured", ensureCount, "text indexes")
+	fmt.Printf(" - Ensured %d text indexes\n", ensureCount)
 
 	return nil
 }

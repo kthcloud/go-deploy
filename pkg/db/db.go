@@ -33,22 +33,22 @@ func (dbCtx *Context) GetCollection(collectionName string) *mongo.Collection {
 
 // Setup initializes the database context.
 // It should be called once at the start of the application.
-func Setup() {
+func Setup() error {
 	DB = Context{
 		CollectionMap: make(map[string]*mongo.Collection),
 	}
 
 	err := DB.setupMongo()
 	if err != nil {
-		log.Fatalln(err)
+		return err
 	}
 
 	err = DB.setupRedis()
 	if err != nil {
-		log.Fatalln(err)
+		return err
 	}
 
-	log.Println("successfully setup db")
+	return nil
 }
 
 // Shutdown closes the database connections.

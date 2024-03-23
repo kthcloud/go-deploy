@@ -1,6 +1,7 @@
 package intializer
 
 import (
+	"fmt"
 	"go-deploy/models/model"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/db/resources/vm_port_repo"
@@ -10,7 +11,7 @@ import (
 
 // SynchronizeVmPorts synchronizes the VM ports from the database to the database.
 // This includes deleting ports that are not in the config and creating ports that are in the config but not in the database.
-func SynchronizeVmPorts() {
+func SynchronizeVmPorts() error {
 
 	// Method synchronizes the port in both VM zones and Deployment zones
 	// This is a temporary solution while we support both CloudStack VMs (v1) and KubeVirt VMs (v2)
@@ -59,27 +60,27 @@ func SynchronizeVmPorts() {
 
 		if len(leasedPorts) > 0 {
 			for _, port := range leasedPorts {
-				log.Printf("port %d is leased by vm %s. this port will remain, but should be deleted", port.PublicPort, port.Lease.VmID)
+				fmt.Printf("port %d is leased by vm %s. this port will remain, but should be deleted\n", port.PublicPort, port.Lease.VmID)
 			}
 		}
 
 		for _, port := range notLeasedPorts {
 			err = vm_port_repo.New().Erase(port.PublicPort, port.Zone)
 			if err != nil {
-				log.Fatalln(err)
+				return err
 			}
 		}
 
 		existingPorts, err := vm_port_repo.New().WithZone(zone).IncludePortRange(portRange.Start, portRange.End).Count()
 		if err != nil {
-			log.Fatalln(err)
+			return err
 		}
 
 		noInserted := 0
 		if existingPorts != portRange.End-portRange.Start {
 			noInserted, err = vm_port_repo.New().CreateIfNotExists(portRange.Start, portRange.End, zone)
 			if err != nil {
-				log.Fatalln(err)
+				return err
 			}
 		}
 
@@ -88,8 +89,10 @@ func SynchronizeVmPorts() {
 
 	summaryString := ""
 	for zone, noInserted := range summary {
-		summaryString += "\t- " + zone + ": inserted " + strconv.Itoa(noInserted) + " new ports\n"
+		summaryString += " - " + zone + ": inserted " + strconv.Itoa(noInserted) + " new ports\n"
 	}
 
-	log.Printf("synchronized vm ports:\n%s", summaryString)
+	fmt.Printf("%s", summaryString)
+
+	return nil
 }
