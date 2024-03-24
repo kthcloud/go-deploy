@@ -162,6 +162,59 @@ func UpdateVM(job *model.Job) error {
 	return nil
 }
 
+func CreateGpuLease(job *model.Job) error {
+	err := utils.AssertParameters(job, []string{"id", "vmId", "userId", "params"})
+	if err != nil {
+		return jErrors.MakeTerminatedError(err)
+	}
+
+	id := job.Args["id"].(string)
+	vmID := job.Args["vmId"].(string)
+	userID := job.Args["userId"].(string)
+	var params body.GpuLeaseCreate
+	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
+	if err != nil {
+		return jErrors.MakeTerminatedError(err)
+	}
+
+	err = service.V2(utils.GetAuthInfo(job)).VMs().GpuLeases().Create(id, vmID, userID, &params)
+	if err != nil {
+		switch {
+		case errors.Is(err, sErrors.VmNotFoundErr):
+			return jErrors.MakeTerminatedError(err)
+		case errors.Is(err, sErrors.GpuLeaseAlreadyExistsErr):
+			return jErrors.MakeTerminatedError(err)
+		case errors.Is(err, sErrors.GpuNotFoundErr):
+			return jErrors.MakeTerminatedError(err)
+		}
+
+		return jErrors.MakeFailedError(err)
+	}
+
+	return nil
+}
+
+func DeleteGpuLease(job *model.Job) error {
+	err := utils.AssertParameters(job, []string{"id"})
+	if err != nil {
+		return jErrors.MakeTerminatedError(err)
+	}
+
+	id := job.Args["id"].(string)
+
+	err = service.V2().VMs().GpuLeases().Delete(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, sErrors.GpuNotFoundErr):
+			return jErrors.MakeTerminatedError(err)
+		}
+
+		return jErrors.MakeFailedError(err)
+	}
+
+	return nil
+}
+
 func CreateSystemVmSnapshot(job *model.Job) error {
 	err := utils.AssertParameters(job, []string{"id", "params"})
 	if err != nil {
@@ -231,7 +284,7 @@ func DoVmAction(job *model.Job) error {
 	}
 
 	vmID := job.Args["id"].(string)
-	var params body.VmAction
+	var params body.VmActionCreate
 	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)

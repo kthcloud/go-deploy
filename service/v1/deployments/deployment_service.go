@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 	"go-deploy/dto/v1/body"
 	"go-deploy/models/model"
-	"go-deploy/models/versions"
+	"go-deploy/models/version"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/db/resources/deployment_repo"
 	"go-deploy/pkg/db/resources/notification_repo"
@@ -334,7 +334,7 @@ func (c *Client) UpdateOwnerSetup(id string, params *body.DeploymentUpdateOwner)
 
 	if doTransfer {
 		jobID := uuid.New().String()
-		err := c.V1.Jobs().Create(jobID, effectiveUserID, model.JobUpdateDeploymentOwner, versions.V1, map[string]interface{}{
+		err := c.V1.Jobs().Create(jobID, effectiveUserID, model.JobUpdateDeploymentOwner, version.V1, map[string]interface{}{
 			"id":     id,
 			"params": *params,
 		})

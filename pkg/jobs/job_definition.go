@@ -2,7 +2,7 @@ package jobs
 
 import (
 	"go-deploy/models/model"
-	"go-deploy/models/versions"
+	"go-deploy/models/version"
 	"go-deploy/pkg/jobs/utils"
 	"go-deploy/pkg/jobs/v1"
 	v2 "go-deploy/pkg/jobs/v2"
@@ -180,6 +180,14 @@ func jobMapper() map[string]map[string]JobDefinition {
 		//	EntryFunc:     vAddActivity(model.ActivityRepairing),
 		//	ExitFunc:      vRemActivity(model.ActivityRepairing),
 		//},
+		model.JobCreateGpuLease: {
+			JobFunc:       v2.CreateGpuLease,
+			TerminateFunc: leafJobVM.Build(),
+		},
+		model.JobDeleteGpuLease: {
+			JobFunc:       v2.DeleteGpuLease,
+			TerminateFunc: leafJobVM.Build(),
+		},
 		model.JobCreateSystemVmSnapshot: {
 			JobFunc:       v2.CreateSystemVmSnapshot,
 			TerminateFunc: leafJobVM.Build(),
@@ -199,8 +207,8 @@ func jobMapper() map[string]map[string]JobDefinition {
 	}
 
 	return map[string]map[string]JobDefinition{
-		versions.V1: v1Defs,
-		versions.V2: v2Defs,
+		version.V1: v1Defs,
+		version.V2: v2Defs,
 	}
 }
 

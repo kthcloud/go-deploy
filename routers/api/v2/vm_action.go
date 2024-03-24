@@ -1,41 +1,41 @@
-package v2_vm
+package v2
 
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"go-deploy/dto/v2/body"
-	"go-deploy/dto/v2/uri"
+	"go-deploy/dto/v2/query"
 	"go-deploy/models/model"
-	"go-deploy/models/versions"
+	"go-deploy/models/version"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
 	"go-deploy/service/v2/vms/opts"
 )
 
-// DoAction
-// @Summary Do action
-// @Description Do action
+// CreateAction
+// @Summary Creates a new action
+// @Description Creates a new action
 // @Tags VM
 // @Accept  json
 // @Produce  json
 // @Param vmId path string true "VM ID"
-// @Param body body body.VmAction true "Command body"
+// @Param body body body.Action true "Command body"
 // @Success 200 {empty} empty
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /vms/{vmId}/command [post]
-func DoAction(c *gin.Context) {
+func CreateAction(c *gin.Context) {
 	context := sys.NewContext(c)
 
-	var requestURI uri.VmCommand
-	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
+	var requestQuery query.VmActionCreate
+	if err := context.GinContext.ShouldBindQuery(&requestQuery); err != nil {
 		context.BindingError(v1.CreateBindingError(err))
 		return
 	}
 
-	var requestBody body.VmAction
+	var requestBody body.VmActionCreate
 	if err := context.GinContext.ShouldBindJSON(&requestBody); err != nil {
 		context.BindingError(v1.CreateBindingError(err))
 		return
@@ -50,7 +50,7 @@ func DoAction(c *gin.Context) {
 	deployV1 := service.V1(auth)
 	deployV2 := service.V2(auth)
 
-	vm, err := deployV2.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
+	vm, err := deployV2.VMs().Get(requestQuery.VmID, opts.GetOpts{Shared: true})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -67,7 +67,7 @@ func DoAction(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobDoVmAction, versions.V2, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobDoVmAction, version.V2, map[string]interface{}{
 		"id":     vm.ID,
 		"params": requestBody,
 	})
@@ -77,7 +77,7 @@ func DoAction(c *gin.Context) {
 		return
 	}
 
-	context.Ok(body.VmActionDone{
+	context.Ok(body.VmActionCreated{
 		ID:    vm.ID,
 		JobID: jobID,
 	})

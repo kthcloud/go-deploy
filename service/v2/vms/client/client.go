@@ -3,7 +3,7 @@ package client
 import (
 	"fmt"
 	"go-deploy/models/model"
-	"go-deploy/models/versions"
+	"go-deploy/models/version"
 	"go-deploy/pkg/db/resources/gpu_lease_repo"
 	"go-deploy/pkg/db/resources/gpu_repo"
 	"go-deploy/pkg/db/resources/vm_repo"
@@ -94,7 +94,7 @@ func (c *BaseClient[parent]) fetchVM(id, name string, vmc *vm_repo.Client) (*mod
 	}
 
 	if vmc == nil {
-		vmc = vm_repo.New(versions.V2)
+		vmc = vm_repo.New(version.V2)
 	}
 
 	var vm *model.VM
@@ -128,7 +128,7 @@ func (c *BaseClient[parent]) fetchVMs(vmc *vm_repo.Client) ([]model.VM, error) {
 	}
 
 	if vmc == nil {
-		vmc = vm_repo.New(versions.V2)
+		vmc = vm_repo.New(version.V2)
 	}
 
 	vms, err := vmc.List()

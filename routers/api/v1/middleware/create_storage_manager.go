@@ -5,7 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"go-deploy/models/model"
-	"go-deploy/models/versions"
+	"go-deploy/models/version"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
@@ -35,7 +35,7 @@ func CreateSM() gin.HandlerFunc {
 		if !exists {
 			smID := uuid.New().String()
 			jobID := uuid.New().String()
-			err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobCreateSM, versions.V1, map[string]interface{}{
+			err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobCreateSM, version.V1, map[string]interface{}{
 				"id":     smID,
 				"userId": auth.UserID,
 				"params": model.SmCreateParams{

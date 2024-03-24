@@ -1,4 +1,4 @@
-package versions
+package version
 
 const (
 	V1 = "v1"

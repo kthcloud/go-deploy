@@ -3,10 +3,12 @@ package utils
 import (
 	"context"
 	"fmt"
+	"github.com/mitchellh/mapstructure"
 	"go-deploy/models/model"
 	"go-deploy/pkg/db/resources/deployment_repo"
 	"go-deploy/pkg/db/resources/job_repo"
 	"go-deploy/pkg/db/resources/vm_repo"
+	"go-deploy/service/core"
 	"go.mongodb.org/mongo-driver/bson"
 	"golang.org/x/exp/slices"
 	"log"
@@ -22,6 +24,38 @@ func AssertParameters(job *model.Job, params []string) error {
 	}
 
 	return nil
+}
+
+// GetAuthInfo returns the auth info from the job.
+// AuthInfo is not always available in the job, so it might be nil.
+func GetAuthInfo(job *model.Job) *core.AuthInfo {
+	if job.Args["authInfo"] == nil {
+		return nil
+	}
+
+	/*
+		var params body.GpuLeaseCreate
+			err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
+			if err != nil {
+				return jErrors.MakeTerminatedError(err)
+			}
+	*/
+
+	if job.Args == nil {
+		return nil
+	}
+
+	if job.Args["authInfo"] == nil {
+		return nil
+	}
+
+	authInfo := &core.AuthInfo{}
+	err := mapstructure.Decode(job.Args["authInfo"].(map[string]interface{}), authInfo)
+	if err != nil {
+		return nil
+	}
+
+	return authInfo
 }
 
 // WaitForJob waits for a job to reach one of the given statuses.

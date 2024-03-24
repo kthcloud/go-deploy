@@ -7,7 +7,7 @@ import (
 	"go-deploy/dto/v1/query"
 	"go-deploy/dto/v1/uri"
 	"go-deploy/models/model"
-	"go-deploy/models/versions"
+	"go-deploy/models/version"
 	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
@@ -156,7 +156,7 @@ func DeleteSM(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobDeleteSM, versions.V1, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobDeleteSM, version.V1, map[string]interface{}{
 		"id": sm.ID,
 	})
 	if err != nil {

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"go-deploy/models/model"
-	"go-deploy/models/versions"
+	"go-deploy/models/version"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/db/resources/deployment_repo"
 	"go-deploy/pkg/db/resources/job_repo"
@@ -75,7 +75,7 @@ func deploymentRepairer(ctx context.Context) {
 				seconds := config.Config.Deployment.RepairInterval + rand.Intn(config.Config.Deployment.RepairInterval)
 				runAfter := time.Now().Add(time.Duration(seconds) * time.Second)
 
-				err = job_repo.New().CreateScheduled(jobID, deployment.OwnerID, model.JobRepairDeployment, versions.V1, runAfter, map[string]interface{}{
+				err = job_repo.New().CreateScheduled(jobID, deployment.OwnerID, model.JobRepairDeployment, version.V1, runAfter, map[string]interface{}{
 					"id": deployment.ID,
 				})
 				if err != nil {
@@ -129,7 +129,7 @@ func smRepairer(ctx context.Context) {
 				seconds := config.Config.Deployment.RepairInterval + rand.Intn(config.Config.Deployment.RepairInterval)
 				runAfter := time.Now().Add(time.Duration(seconds) * time.Second)
 
-				err = job_repo.New().CreateScheduled(jobID, sm.OwnerID, model.JobRepairSM, versions.V1, runAfter, map[string]interface{}{
+				err = job_repo.New().CreateScheduled(jobID, sm.OwnerID, model.JobRepairSM, version.V1, runAfter, map[string]interface{}{
 					"id": sm.ID,
 				})
 				if err != nil {
@@ -182,7 +182,7 @@ func vmRepairer(ctx context.Context) {
 				seconds := config.Config.VM.RepairInterval + rand.Intn(config.Config.VM.RepairInterval)
 				runAfter := time.Now().Add(time.Duration(seconds) * time.Second)
 
-				err = job_repo.New().CreateScheduled(jobID, vm.OwnerID, model.JobRepairVM, versions.V1, runAfter, map[string]interface{}{
+				err = job_repo.New().CreateScheduled(jobID, vm.OwnerID, model.JobRepairVM, version.V1, runAfter, map[string]interface{}{
 					"id": vm.ID,
 				})
 				if err != nil {

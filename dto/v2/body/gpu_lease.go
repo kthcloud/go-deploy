@@ -2,20 +2,6 @@ package body
 
 import "time"
 
-type GpuLeaseCreate struct {
-	GpuName string `json:"gpuName" binding:"required"`
-}
-
-type GpuLeaseCreated struct {
-	ID    string `json:"id"`
-	JobID string `json:"jobId"`
-}
-
-type GpuLeaseDeleted struct {
-	ID    string `json:"id"`
-	JobID string `json:"jobId"`
-}
-
 type GpuLeaseRead struct {
 	ID      string `json:"id"`
 	VmID    string `json:"vmId"`
@@ -30,4 +16,22 @@ type GpuLeaseRead struct {
 	// AssignedAt specifies the time when the lease was assigned to the user.
 	AssignedAt *time.Time `json:"assignedAt,omitempty"`
 	CreatedAt  time.Time  `json:"createdAt"`
+}
+
+type GpuLeaseCreate struct {
+	// GpuName is used to specify the GPU to lease.
+	// As such, the lease does not specify which specific GPU to lease, but rather the type of GPU to lease.
+	GpuName string `json:"gpuName" binding:"required"`
+	// LeaseForever is used to specify whether the lease should be created forever.
+	LeaseForever bool `json:"leaseForever"`
+}
+
+type GpuLeaseCreated struct {
+	ID    string `json:"id"`
+	JobID string `json:"jobId"`
+}
+
+type GpuLeaseDeleted struct {
+	ID    string `json:"id"`
+	JobID string `json:"jobId"`
 }

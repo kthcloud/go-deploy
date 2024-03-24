@@ -1,5 +1,8 @@
 package uri
 
+type GpuLeaseList struct {
+}
+
 type GpuLeaseGet struct {
 	GpuLeaseID string `uri:"gpuLeaseId" binding:"required,uuid4"`
 }

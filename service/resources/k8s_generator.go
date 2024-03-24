@@ -6,7 +6,7 @@ import (
 	"fmt"
 	configModels "go-deploy/models/config"
 	"go-deploy/models/model"
-	"go-deploy/models/versions"
+	"go-deploy/models/version"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/db/resources/user_repo"
 	"go-deploy/pkg/subsystems"
@@ -68,7 +68,7 @@ func (kg *K8sGenerator) Namespace() *models.NamespacePublic {
 		return &ns
 	}
 
-	if kg.v.vm != nil && kg.v.vm.Version == versions.V1 {
+	if kg.v.vm != nil && kg.v.vm.Version == version.V1 {
 		createNamespace := false
 		for _, port := range kg.v.vm.PortMap {
 			if port.HttpProxy != nil {
@@ -92,7 +92,7 @@ func (kg *K8sGenerator) Namespace() *models.NamespacePublic {
 		return &ns
 	}
 
-	if kg.v.vm != nil && kg.v.vm.Version == versions.V2 {
+	if kg.v.vm != nil && kg.v.vm.Version == version.V2 {
 		ns := models.NamespacePublic{
 			Name: kg.namespace,
 		}
@@ -207,7 +207,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		return res
 	}
 
-	if kg.v.vm != nil && kg.v.vm.Version == versions.V1 {
+	if kg.v.vm != nil && kg.v.vm.Version == version.V1 {
 		portMap := kg.v.vm.PortMap
 
 		for _, port := range portMap {
@@ -418,7 +418,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 func (kg *K8sGenerator) VMs() []models.VmPublic {
 	var res []models.VmPublic
 
-	if kg.v.vm != nil && kg.v.vm.Version == versions.V2 {
+	if kg.v.vm != nil && kg.v.vm.Version == version.V2 {
 		sshPublicKeys := make([]string, len(kg.extraAuthorizedKeys)+1)
 		sshPublicKeys[0] = kg.v.vm.SshPublicKey
 		copy(sshPublicKeys[1:], kg.extraAuthorizedKeys)
@@ -488,7 +488,7 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 		return res
 	}
 
-	if kg.v.vm != nil && kg.v.vm.Version == versions.V1 {
+	if kg.v.vm != nil && kg.v.vm.Version == version.V1 {
 		portMap := kg.v.vm.PortMap
 
 		for _, port := range portMap {
@@ -530,7 +530,7 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 		return res
 	}
 
-	if kg.v.vm != nil && kg.v.vm.Version == versions.V2 {
+	if kg.v.vm != nil && kg.v.vm.Version == version.V2 {
 		portMap := kg.v.vm.PortMap
 
 		for _, port := range portMap {
@@ -680,7 +680,7 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 		return res
 	}
 
-	if kg.v.vm != nil && kg.v.vm.Version == versions.V1 {
+	if kg.v.vm != nil && kg.v.vm.Version == version.V1 {
 		portMap := kg.v.vm.PortMap
 
 		for _, port := range portMap {
@@ -741,7 +741,7 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 		return res
 	}
 
-	if kg.v.vm != nil && kg.v.vm.Version == versions.V2 {
+	if kg.v.vm != nil && kg.v.vm.Version == version.V2 {
 		portMap := kg.v.vm.PortMap
 
 		for _, port := range portMap {
@@ -917,7 +917,7 @@ func (kg *K8sGenerator) PVCs() []models.PvcPublic {
 		return res
 	}
 
-	if kg.v.vm != nil && kg.v.vm.Version == versions.V2 {
+	if kg.v.vm != nil && kg.v.vm.Version == version.V2 {
 		parentPVC := models.PvcPublic{
 			Name:      vmParentPvName(kg.v.vm),
 			Namespace: kg.namespace,
@@ -1229,7 +1229,7 @@ func (kg *K8sGenerator) NetworkPolicies() []models.NetworkPolicyPublic {
 		return res
 	}
 
-	if kg.v.vm != nil && kg.v.vm.Version == versions.V1 {
+	if kg.v.vm != nil && kg.v.vm.Version == version.V1 {
 		if !anyHttpProxy(kg.v.vm) {
 			return nil
 		}

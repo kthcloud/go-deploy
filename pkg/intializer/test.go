@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"go-deploy/models/model"
-	"go-deploy/models/versions"
+	"go-deploy/models/version"
 	"go-deploy/pkg/db/resources/deployment_repo"
 	"go-deploy/pkg/db/resources/job_repo"
 	"go-deploy/pkg/db/resources/team_repo"
@@ -25,7 +25,7 @@ func CleanUpOldTests() error {
 	}
 
 	for _, deployment := range oldE2eDeployments {
-		_ = job_repo.New().Create(uuid.NewString(), "system", model.JobDeleteDeployment, versions.V1, map[string]interface{}{
+		_ = job_repo.New().Create(uuid.NewString(), "system", model.JobDeleteDeployment, version.V1, map[string]interface{}{
 			"id": deployment.ID,
 		})
 	}
@@ -36,7 +36,7 @@ func CleanUpOldTests() error {
 	}
 
 	for _, vm := range oldE2eVms {
-		_ = job_repo.New().Create(uuid.NewString(), "system", model.JobDeleteVM, versions.V1, map[string]interface{}{
+		_ = job_repo.New().Create(uuid.NewString(), "system", model.JobDeleteVM, version.V1, map[string]interface{}{
 			"id": vm.ID,
 		})
 	}

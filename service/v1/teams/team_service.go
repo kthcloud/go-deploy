@@ -296,6 +296,10 @@ func (c *Client) Join(id string, dtoTeamJoin *body.TeamJoin) (*model.Team, error
 	return c.RefreshTeam(id, tmc)
 }
 
+func (c *Client) CheckResourceAccess(userID, resourceID string) (bool, error) {
+	return team_repo.New().WithUserID(userID).WithResourceID(resourceID).ExistsAny()
+}
+
 // getTeamIfAccessible is a helper function to get a team if the user is accessible to the user in the current context
 func (c *Client) getResourceIfAccessible(resourceID string) *model.TeamResource {
 	// Try to fetch deployment
@@ -304,7 +308,7 @@ func (c *Client) getResourceIfAccessible(resourceID string) *model.TeamResource 
 
 	if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
 		dClient.WithOwner(c.V1.Auth().UserID)
-		vClient.RestrictToOwner(c.V1.Auth().UserID)
+		vClient.WithOwner(c.V1.Auth().UserID)
 	}
 
 	isOwner, err := dClient.ExistsByID(resourceID)

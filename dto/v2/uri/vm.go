@@ -24,7 +24,3 @@ type GpuDetach struct {
 type GpuGet struct {
 	GpuID string `uri:"gpuId" binding:"required,uuid4"`
 }
-
-type VmCommand struct {
-	VmID string `uri:"vmId" binding:"required,uuid4"`
-}

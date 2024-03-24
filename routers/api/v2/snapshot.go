@@ -1,71 +1,25 @@
-package v2_gpu_lease
+package v2
 
 import (
+	"errors"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"go-deploy/dto/v2/body"
 	"go-deploy/dto/v2/query"
 	"go-deploy/dto/v2/uri"
-	"go-deploy/models/versions"
+	"go-deploy/models/model"
+	"go-deploy/models/version"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/v2/utils"
+	"go-deploy/service/v2/vms/opts"
 )
 
-// ListGpuLeases
-// @Summary Get snapshot list
-// @Description Get snapshot list
-// @Tags VM
-// @Accept json
-// @Produce json
-// @Param Authorization header string true "Bearer token"
-// @Param vmId path string true "VM ID"
-// @Success 200 {array} body.VmSnapshotRead
-// @Failure 400 {object} sys.ErrorResponse
-// @Failure 404 {object} sys.ErrorResponse
-// @Failure 423 {object} sys.ErrorResponse
-// @Failure 500 {object} sys.ErrorResponse
-// @Router /vms/{vmId}/snapshots [get]
-func ListGpuLeases(c *gin.Context) {
-	context := sys.NewContext(c)
-
-	var requestQuery query.GpuLeaseList
-	if err := context.GinContext.ShouldBindQuery(&requestQuery); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
-		return
-	}
-
-	var requestURI uri.VmSnapshotList
-	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
-		return
-	}
-
-	snapshots, err := service.V2().VMs().List(requestURI.VmID, opts.ListSnapshotOpts{
-		Pagination: utils.GetOrDefaultPagination(requestQuery.Pagination),
-	})
-	if err != nil {
-		context.ServerError(err, v1.InternalError)
-		return
-	}
-
-	if snapshots == nil {
-		context.Ok([]interface{}{})
-		return
-	}
-
-	dtoSnapshots := make([]body.VmSnapshotRead, len(snapshots))
-	for i, snapshot := range snapshots {
-		dtoSnapshots[i] = snapshot.ToDTOv2()
-	}
-
-	context.Ok(dtoSnapshots)
-}
-
 // GetSnapshot
-// @Summary Get snapshot
-// @Description Get snapshot
+// @Summary GetVM snapshot
+// @Description GetVM snapshot
 // @Tags VM
 // @Accept json
 // @Produce json
@@ -105,7 +59,7 @@ func GetSnapshot(c *gin.Context) {
 		return
 	}
 
-	snapshot, err := deployV2.VMs().GetSnapshot(requestURI.VmID, requestURI.SnapshotID, opts.GetSnapshotOpts{})
+	snapshot, err := deployV2.VMs().Snapshots().Get(requestURI.VmID, requestURI.SnapshotID, opts.GetSnapshotOpts{})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -119,9 +73,59 @@ func GetSnapshot(c *gin.Context) {
 	context.Ok(snapshot.ToDTOv2())
 }
 
+// ListSnapshots
+// @Summary GetVM snapshot list
+// @Description GetVM snapshot list
+// @Tags VM
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer token"
+// @Param vmId path string true "VM ID"
+// @Success 200 {array} body.VmSnapshotRead
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 404 {object} sys.ErrorResponse
+// @Failure 423 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
+// @Router /vms/{vmId}/snapshots [get]
+func ListSnapshots(c *gin.Context) {
+	context := sys.NewContext(c)
+
+	var requestQuery query.VmSnapshotList
+	if err := context.GinContext.ShouldBind(&requestQuery); err != nil {
+		context.BindingError(v1.CreateBindingError(err))
+		return
+	}
+
+	var requestURI uri.VmSnapshotList
+	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
+		context.BindingError(v1.CreateBindingError(err))
+		return
+	}
+
+	snapshots, err := service.V2().VMs().Snapshots().List(requestURI.VmID, opts.ListSnapshotOpts{
+		Pagination: utils.GetOrDefaultPagination(requestQuery.Pagination),
+	})
+	if err != nil {
+		context.ServerError(err, v1.InternalError)
+		return
+	}
+
+	if snapshots == nil {
+		context.Ok([]interface{}{})
+		return
+	}
+
+	dtoSnapshots := make([]body.VmSnapshotRead, len(snapshots))
+	for i, snapshot := range snapshots {
+		dtoSnapshots[i] = snapshot.ToDTOv2()
+	}
+
+	context.Ok(dtoSnapshots)
+}
+
 // CreateSnapshot
-// @Summary Create snapshot
-// @Description Create snapshot
+// @Summary CreateVM snapshot
+// @Description CreateVM snapshot
 // @Tags VM
 // @Accept json
 // @Produce json
@@ -170,7 +174,7 @@ func CreateSnapshot(c *gin.Context) {
 		return
 	}
 
-	current, err := deployV2.VMs().GetSnapshotByName(requestURI.VmID, requestBody.Name, opts.GetSnapshotOpts{})
+	current, err := deployV2.VMs().Snapshots().GetByName(requestURI.VmID, requestBody.Name, opts.GetSnapshotOpts{})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -198,7 +202,7 @@ func CreateSnapshot(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, job.TypeCreateVmUserSnapshot, versions.V2, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobCreateVmUserSnapshot, version.V2, map[string]interface{}{
 		"id": vm.ID,
 		"params": body.VmSnapshotCreate{
 			Name: requestBody.Name,
@@ -259,7 +263,7 @@ func DeleteSnapshot(c *gin.Context) {
 		return
 	}
 
-	snapshot, err := deployV2.VMs().GetSnapshot(requestURI.VmID, requestURI.SnapshotID, opts.GetSnapshotOpts{})
+	snapshot, err := deployV2.VMs().Snapshots().Get(requestURI.VmID, requestURI.SnapshotID, opts.GetSnapshotOpts{})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -271,7 +275,7 @@ func DeleteSnapshot(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, job.TypeDeleteVmSnapshot, versions.V2, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobDeleteVmSnapshot, version.V2, map[string]interface{}{
 		"id":         vm.ID,
 		"snapshotId": snapshot.ID,
 	})

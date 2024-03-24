@@ -71,10 +71,10 @@ type VmUpdateOwner struct {
 }
 
 type VmGpuLease struct {
-	ID         string    `json:"id"`
-	Name       string    `json:"name"`
-	LeaseEndAt time.Time `json:"leaseEndAt"`
-	IsExpired  bool      `json:"isExpired"`
+	ID         string     `json:"id"`
+	Name       string     `json:"name"`
+	LeaseEndAt *time.Time `json:"leaseEndAt,omitempty"`
+	IsExpired  bool       `json:"isExpired"`
 }
 
 type Specs struct {

@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 	"go-deploy/dto/v1/body"
 	"go-deploy/models/model"
-	"go-deploy/models/versions"
+	"go-deploy/models/version"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/db/resources/gpu_repo"
 	"go-deploy/pkg/db/resources/notification_repo"
@@ -32,7 +32,7 @@ import (
 func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.VM, error) {
 	o := sUtils.GetFirstOrDefault(opts)
 
-	vmc := vm_repo.New(versions.V1)
+	vmc := vm_repo.New(version.V1)
 
 	if o.TransferCode != nil {
 		return vmc.WithTransferCode(*o.TransferCode).Get()
@@ -57,7 +57,7 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.VM, error) {
 	}
 
 	if !teamCheck && effectiveUserID != "" {
-		vmc.RestrictToOwner(effectiveUserID)
+		vmc.WithOwner(effectiveUserID)
 	}
 
 	return c.VM(id, vmc)
@@ -69,7 +69,7 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.VM, error) {
 func (c *Client) List(opts ...opts.ListOpts) ([]model.VM, error) {
 	o := sUtils.GetFirstOrDefault(opts)
 
-	vmc := vm_repo.New(versions.V1)
+	vmc := vm_repo.New(version.V1)
 
 	if o.Pagination != nil {
 		vmc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
@@ -92,7 +92,7 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.VM, error) {
 	}
 
 	if effectiveUserID != "" {
-		vmc.RestrictToOwner(effectiveUserID)
+		vmc.WithOwner(effectiveUserID)
 	}
 
 	vms, err := c.VMs(vmc)
@@ -179,7 +179,7 @@ func (c *Client) Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
 
 	params := model.VmCreateParams{}.FromDTOv1(dtoVmCreate, &fallback, &deploymentZone)
 
-	_, err := vm_repo.New(versions.V1).Create(id, ownerID, config.Config.Manager, &params)
+	_, err := vm_repo.New(version.V1).Create(id, ownerID, config.Config.Manager, &params)
 	if err != nil {
 		if errors.Is(err, vm_repo.NonUniqueFieldErr) {
 			return sErrors.NonUniqueFieldErr
@@ -247,7 +247,7 @@ func (c *Client) Update(id string, dtoVmUpdate *body.VmUpdate) error {
 		}
 	}
 
-	err := vm_repo.New(versions.V1).UpdateWithParams(id, &vmUpdate)
+	err := vm_repo.New(version.V1).UpdateWithParams(id, &vmUpdate)
 	if err != nil {
 		if errors.Is(err, vm_repo.NonUniqueFieldErr) {
 			return sErrors.NonUniqueFieldErr
@@ -390,7 +390,7 @@ func (c *Client) UpdateOwnerSetup(id string, params *body.VmUpdateOwner) (*strin
 
 	if transferDirectly {
 		jobID := uuid.New().String()
-		err = c.V1.Jobs().Create(jobID, c.V1.Auth().UserID, model.JobUpdateVmOwner, versions.V1, map[string]interface{}{
+		err = c.V1.Jobs().Create(jobID, c.V1.Auth().UserID, model.JobUpdateVmOwner, version.V1, map[string]interface{}{
 			"id":     id,
 			"params": *params,
 		})
@@ -404,7 +404,7 @@ func (c *Client) UpdateOwnerSetup(id string, params *body.VmUpdateOwner) (*strin
 
 	/// create a transfer notification
 	code := createTransferCode()
-	err = vm_repo.New(versions.V1).UpdateWithParams(id, &model.VmUpdateParams{
+	err = vm_repo.New(version.V1).UpdateWithParams(id, &model.VmUpdateParams{
 		TransferUserID: &params.NewOwnerID,
 		TransferCode:   &code,
 	})
@@ -456,7 +456,7 @@ func (c *Client) UpdateOwner(id string, params *body.VmUpdateOwner) error {
 
 	emptyString := ""
 
-	err = vm_repo.New(versions.V1).UpdateWithParams(id, &model.VmUpdateParams{
+	err = vm_repo.New(version.V1).UpdateWithParams(id, &model.VmUpdateParams{
 		OwnerID:        &params.NewOwnerID,
 		TransferCode:   &emptyString,
 		TransferUserID: &emptyString,
@@ -498,7 +498,7 @@ func (c *Client) ClearUpdateOwner(id string) error {
 		return fmt.Errorf("failed to clear vm owner update. details: %w", err)
 	}
 
-	deployment, err := vm_repo.New(versions.V1).GetByID(id)
+	deployment, err := vm_repo.New(version.V1).GetByID(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -512,7 +512,7 @@ func (c *Client) ClearUpdateOwner(id string) error {
 	}
 
 	emptyString := ""
-	err = vm_repo.New(versions.V1).UpdateWithParams(id, &model.VmUpdateParams{
+	err = vm_repo.New(version.V1).UpdateWithParams(id, &model.VmUpdateParams{
 		TransferUserID: &emptyString,
 		TransferCode:   &emptyString,
 	})
@@ -608,7 +608,7 @@ func (c *Client) StartActivity(id, activity string) error {
 		return sErrors.NewFailedToStartActivityError(reason)
 	}
 
-	err = vm_repo.New(versions.V1).AddActivity(id, activity)
+	err = vm_repo.New(version.V1).AddActivity(id, activity)
 	if err != nil {
 		return err
 	}
@@ -750,7 +750,7 @@ func (c *Client) CheckQuota(id, userID string, quota *model.Quotas, opts ...opts
 			return nil
 		}
 
-		vm, err := vm_repo.New(versions.V1).GetByID(id)
+		vm, err := vm_repo.New(version.V1).GetByID(id)
 		if err != nil {
 			return makeError(err)
 		}
@@ -799,7 +799,7 @@ func (c *Client) GetUsage(userID string) (*model.VmUsage, error) {
 
 	usage := &model.VmUsage{}
 
-	currentVms, err := vm_repo.New(versions.V1).RestrictToOwner(userID).List()
+	currentVms, err := vm_repo.New(version.V1).WithOwner(userID).List()
 	if err != nil {
 		return nil, makeError(err)
 	}

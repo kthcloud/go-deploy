@@ -1,4 +1,4 @@
-package v2_vm
+package v2
 
 import (
 	"errors"
@@ -8,7 +8,7 @@ import (
 	"go-deploy/dto/v2/query"
 	"go-deploy/dto/v2/uri"
 	"go-deploy/models/model"
-	"go-deploy/models/versions"
+	"go-deploy/models/version"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
@@ -18,20 +18,68 @@ import (
 	"go-deploy/service/v2/vms/opts"
 )
 
-// List
-// @Summary Get list of VMs
-// @Description Get list of VMs
+// GetVM
+// @Summary GetVM VM by id
+// @Description GetVM VM by id
 // @Tags VM
 // @Accept  json
 // @Produce  json
-// @Param all query bool false "Get all"
+// @Param vmId path string true "VM ID"
+// @Success 200 {object} body.VmRead
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 404 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
+// @Router /vm/{vmId} [get]
+func GetVM(c *gin.Context) {
+	context := sys.NewContext(c)
+
+	var requestURI uri.VmGet
+	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
+		context.BindingError(v1.CreateBindingError(err))
+		return
+	}
+
+	auth, err := v1.WithAuth(&context)
+	if err != nil {
+		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		return
+	}
+
+	deployV1 := service.V1(auth)
+	deployV2 := service.V2(auth)
+
+	vm, err := deployV2.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
+	if err != nil {
+		context.ServerError(err, v1.InternalError)
+		return
+	}
+
+	if vm == nil {
+		context.NotFound("VM not found")
+		return
+	}
+
+	teamIDs, _ := deployV1.Teams().ListIDs(teamOpts.ListOpts{ResourceID: vm.ID})
+	sshConnectionString, _ := deployV2.VMs().SshConnectionString(vm.ID)
+	// TODO: Implement leases read
+	//lease, _ := deployV2.VMs().GpuLeases()
+	context.Ok(vm.ToDTOv2(nil, teamIDs, sshConnectionString))
+}
+
+// ListVMs
+// @Summary GetVM list of VMs
+// @Description GetVM list of VMs
+// @Tags VM
+// @Accept  json
+// @Produce  json
+// @Param all query bool false "GetVM all"
 // @Param userId query string false "Filter by user id"
 // @Param page query int false "Page number"
 // @Param pageSize query int false "Number of items per page"
 // @Success 200 {array} body.VmRead
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /vm [get]
-func List(c *gin.Context) {
+func ListVMs(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestQuery query.VmList
@@ -82,57 +130,9 @@ func List(c *gin.Context) {
 	context.Ok(dtoVMs)
 }
 
-// Get
-// @Summary Get VM by id
-// @Description Get VM by id
-// @Tags VM
-// @Accept  json
-// @Produce  json
-// @Param vmId path string true "VM ID"
-// @Success 200 {object} body.VmRead
-// @Failure 400 {object} sys.ErrorResponse
-// @Failure 404 {object} sys.ErrorResponse
-// @Failure 500 {object} sys.ErrorResponse
-// @Router /vm/{vmId} [get]
-func Get(c *gin.Context) {
-	context := sys.NewContext(c)
-
-	var requestURI uri.VmGet
-	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
-		return
-	}
-
-	auth, err := v1.WithAuth(&context)
-	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
-		return
-	}
-
-	deployV1 := service.V1(auth)
-	deployV2 := service.V2(auth)
-
-	vm, err := deployV2.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
-	if err != nil {
-		context.ServerError(err, v1.InternalError)
-		return
-	}
-
-	if vm == nil {
-		context.NotFound("VM not found")
-		return
-	}
-
-	teamIDs, _ := deployV1.Teams().ListIDs(teamOpts.ListOpts{ResourceID: vm.ID})
-	sshConnectionString, _ := deployV2.VMs().SshConnectionString(vm.ID)
-	// TODO: Implement leases read
-	//lease, _ := deployV2.VMs().GpuLeases()
-	context.Ok(vm.ToDTOv2(nil, teamIDs, sshConnectionString))
-}
-
-// Create
-// @Summary Create VM
-// @Description Create VM
+// CreateVM
+// @Summary CreateVM VM
+// @Description CreateVM VM
 // @Tags VM
 // @Accept  json
 // @Produce  json
@@ -144,7 +144,7 @@ func Get(c *gin.Context) {
 // @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /vm [post]
-func Create(c *gin.Context) {
+func CreateVM(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestBody body.VmCreate
@@ -195,7 +195,7 @@ func Create(c *gin.Context) {
 
 	vmID := uuid.New().String()
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobCreateVM, versions.V2, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobCreateVM, version.V2, map[string]interface{}{
 		"id":      vmID,
 		"ownerId": auth.UserID,
 		"params":  requestBody,
@@ -211,7 +211,7 @@ func Create(c *gin.Context) {
 	})
 }
 
-// Delete
+// DeleteVM
 // @Summary Delete VM
 // @Description Delete VM
 // @Tags VM
@@ -225,7 +225,7 @@ func Create(c *gin.Context) {
 // @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /vm/{vmId} [delete]
-func Delete(c *gin.Context) {
+func DeleteVM(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestURI uri.VmDelete
@@ -260,7 +260,7 @@ func Delete(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobDeleteVM, versions.V2, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobDeleteVM, version.V2, map[string]interface{}{
 		"id": vm.ID,
 	})
 	if err != nil {
@@ -274,9 +274,9 @@ func Delete(c *gin.Context) {
 	})
 }
 
-// Update
-// @Summary Update VM
-// @Description Update VM
+// UpdateVM
+// @Summary Updates a VM
+// @Description Updates a VM
 // @Tags VM
 // @Accept  json
 // @Produce  json
@@ -290,7 +290,7 @@ func Delete(c *gin.Context) {
 // @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /vm/{vmId} [post]
-func Update(c *gin.Context) {
+func UpdateVM(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestURI uri.VmUpdate
@@ -449,7 +449,7 @@ func Update(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobUpdateVM, versions.V2, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobUpdateVM, version.V2, map[string]interface{}{
 		"id":     vm.ID,
 		"params": requestBody,
 	})

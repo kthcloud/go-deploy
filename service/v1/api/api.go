@@ -125,6 +125,7 @@ type Teams interface {
 	Update(id string, dtoUpdateTeam *body.TeamUpdate) (*model.Team, error)
 	Delete(id string) error
 	Join(id string, dtoTeamJoin *body.TeamJoin) (*model.Team, error)
+	CheckResourceAccess(userID, resourceID string) (bool, error)
 }
 
 type VMs interface {

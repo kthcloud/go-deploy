@@ -80,6 +80,9 @@ var (
 	// GpuAlreadyAttachedErr is returned when the gpu_repo is already attached to another VM.
 	GpuAlreadyAttachedErr = fmt.Errorf("gpu_repo already attached")
 
+	// GpuLeaseAlreadyExistsErr is returned when a GPU lease already exists for a user.
+	GpuLeaseAlreadyExistsErr = fmt.Errorf("gpu_repo lease already exists")
+
 	// GpuLeaseNotActive is returned when the GPU lease is not active.
 	GpuLeaseNotActiveErr = fmt.Errorf("gpu_repo lease not active")
 

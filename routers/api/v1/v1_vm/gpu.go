@@ -9,7 +9,7 @@ import (
 	"go-deploy/dto/v1/body"
 	"go-deploy/dto/v1/query"
 	"go-deploy/models/model"
-	"go-deploy/models/versions"
+	"go-deploy/models/version"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
@@ -110,7 +110,7 @@ func detachGPU(context *sys.ClientContext, deployV1 clients.V1, vm *model.VM) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, deployV1.Auth().UserID, model.JobDetachGPU, versions.V1, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, deployV1.Auth().UserID, model.JobDetachGPU, version.V1, map[string]interface{}{
 		"id": vm.ID,
 	})
 	if err != nil {
@@ -276,7 +276,7 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, deployV1 
 	}
 
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, deployV1.Auth().UserID, model.JobAttachGPU, versions.V1, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, deployV1.Auth().UserID, model.JobAttachGPU, version.V1, map[string]interface{}{
 		"id":            vm.ID,
 		"gpuIds":        gpuIds,
 		"userId":        deployV1.Auth().UserID,

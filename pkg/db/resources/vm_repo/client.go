@@ -71,8 +71,8 @@ func (client *Client) IncludeDeletedResources() *Client {
 	return client
 }
 
-// RestrictToOwner adds a filter to the client to only return VMs owned by the given ownerID.
-func (client *Client) RestrictToOwner(ownerID string) *Client {
+// WithOwner adds a filter to the client to only return VMs owned by the given ownerID.
+func (client *Client) WithOwner(ownerID string) *Client {
 	client.ResourceClient.AddExtraFilter(bson.D{{"ownerId", ownerID}})
 	client.ActivityResourceClient.ExtraFilter = client.ResourceClient.ExtraFilter
 	client.RestrictUserID = &ownerID

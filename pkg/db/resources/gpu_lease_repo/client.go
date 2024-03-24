@@ -38,9 +38,16 @@ func (client *Client) WithGroupName(groupName string) *Client {
 	return client
 }
 
-// WithVM adds a filter to the client to only include leases with the given VM ID.
-func (client *Client) WithVM(vmID string) *Client {
+// WithVmID adds a filter to the client to only include leases with the given VM ID.
+func (client *Client) WithVmID(vmID string) *Client {
 	client.ResourceClient.AddExtraFilter(bson.D{{"vmId", vmID}})
+
+	return client
+}
+
+// WithUserID adds a filter to the client to only include leases with the given user ID.
+func (client *Client) WithUserID(userID string) *Client {
+	client.ResourceClient.AddExtraFilter(bson.D{{"userId", userID}})
 
 	return client
 }

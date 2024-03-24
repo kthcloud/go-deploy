@@ -5,7 +5,7 @@ import (
 	"fmt"
 	configModels "go-deploy/models/config"
 	"go-deploy/models/model"
-	"go-deploy/models/versions"
+	"go-deploy/models/version"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/db/resources/gpu_repo"
 	"go-deploy/pkg/db/resources/vm_port_repo"
@@ -640,9 +640,9 @@ func (c *Client) stopVmIfRunning(id string) (func(), error) {
 func dbFunc(vmID, key string) func(interface{}) error {
 	return func(data interface{}) error {
 		if data == nil {
-			return vm_repo.New(versions.V1).DeleteSubsystem(vmID, "cs."+key)
+			return vm_repo.New(version.V1).DeleteSubsystem(vmID, "cs."+key)
 		}
-		return vm_repo.New(versions.V1).SetSubsystem(vmID, "cs."+key, data)
+		return vm_repo.New(version.V1).SetSubsystem(vmID, "cs."+key, data)
 	}
 }
 

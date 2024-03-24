@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"go-deploy/models/model"
-	"go-deploy/models/versions"
+	"go-deploy/models/version"
 	"go-deploy/pkg/db/resources/job_repo"
 	"go-deploy/pkg/db/resources/vm_repo"
 	"go-deploy/pkg/workers"
@@ -63,7 +63,7 @@ func snapshotter(ctx context.Context) {
 
 func scheduleSnapshotJob(vm *model.VM, recurring string) {
 	runAt := getRunAt(recurring)
-	err := job_repo.New().CreateScheduled(uuid.New().String(), vm.OwnerID, model.JobCreateSystemVmSnapshot, versions.V1, runAt, map[string]interface{}{
+	err := job_repo.New().CreateScheduled(uuid.New().String(), vm.OwnerID, model.JobCreateSystemVmSnapshot, version.V1, runAt, map[string]interface{}{
 		"id": vm.ID,
 		"params": model.CreateSnapshotParams{
 			Name:        fmt.Sprintf("auto-%s", recurring),

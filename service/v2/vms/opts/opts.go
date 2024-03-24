@@ -56,13 +56,9 @@ type GetGpuLeaseOpts struct {
 
 // ListGpuLeaseOpts is used to specify the options when listing GPU leases.
 type ListGpuLeaseOpts struct {
+	VmID       *string
+	UserID     *string
 	Pagination *utils.Pagination
-}
-
-// CreateGpuLeaseOpts is used to specify the options when attaching a GPU to a VM.
-type CreateGpuLeaseOpts struct {
-	// LeaseForever is used to specify whether the lease should be created forever.
-	LeaseForever bool
 }
 
 // GetSnapshotOpts is used to specify the options when getting a VM's snapshot.

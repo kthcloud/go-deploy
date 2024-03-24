@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"go-deploy/models/model"
-	"go-deploy/models/versions"
+	"go-deploy/models/version"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/db/resources/vm_port_repo"
 	"go-deploy/pkg/db/resources/vm_repo"
@@ -620,8 +620,8 @@ func (c *Client) EnsureOwner(id, oldOwnerID string) error {
 func dbFunc(id, key string) func(interface{}) error {
 	return func(data interface{}) error {
 		if data == nil {
-			return vm_repo.New(versions.V2).DeleteSubsystem(id, "k8s."+key)
+			return vm_repo.New(version.V2).DeleteSubsystem(id, "k8s."+key)
 		}
-		return vm_repo.New(versions.V2).SetSubsystem(id, "k8s."+key, data)
+		return vm_repo.New(version.V2).SetSubsystem(id, "k8s."+key, data)
 	}
 }

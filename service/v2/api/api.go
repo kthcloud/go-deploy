@@ -14,11 +14,13 @@ type VMs interface {
 	Update(id string, dtoVmUpdate *body.VmUpdate) error
 	Delete(id string) error
 
+	IsAccessible(id string) (bool, error)
+
 	CheckQuota(id, userID string, quota *model.Quotas, opts ...vmOpts.QuotaOpts) error
 	NameAvailable(name string) (bool, error)
 	SshConnectionString(id string) (*string, error)
 
-	DoAction(id string, action *body.VmAction) error
+	DoAction(id string, action *body.VmActionCreate) error
 
 	Snapshots() Snapshots
 	GPUs() GPUs
@@ -40,8 +42,8 @@ type GPUs interface {
 }
 
 type GpuLeases interface {
-	//Get(leaseID string, opts ...vmOpts.GetGpuLeaseOpts) (*model.GpuLease, error)
+	Get(id string, opts ...vmOpts.GetGpuLeaseOpts) (*model.GpuLease, error)
 	List(opts ...vmOpts.ListGpuLeaseOpts) ([]model.GpuLease, error)
-	Create(leaseID, vmID string, userID, gpuGroupName string, opts ...vmOpts.CreateGpuLeaseOpts) error
-	//Delete(vmID, id string) error
+	Create(leaseID, vmID, userID string, dtoGpuLeaseCreate *body.GpuLeaseCreate) error
+	Delete(id string) error
 }

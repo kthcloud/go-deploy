@@ -2,7 +2,7 @@ package routes
 
 import (
 	"go-deploy/routers/api/v1/v1_vm"
-	"go-deploy/routers/api/v2/v2_vm"
+	v2 "go-deploy/routers/api/v2"
 )
 
 const (
@@ -45,23 +45,10 @@ func (group *VmRoutingGroup) PrivateRoutes() []Route {
 		{Method: "POST", Pattern: VmCommandPath, HandlerFunc: v1_vm.DoCommand},
 
 		// V2
-		{Method: "GET", Pattern: VmsPathV2, HandlerFunc: v2_vm.List},
-		{Method: "GET", Pattern: VmPathV2, HandlerFunc: v2_vm.Get},
-		{Method: "POST", Pattern: VmsPathV2, HandlerFunc: v2_vm.Create},
-		{Method: "POST", Pattern: VmPathV2, HandlerFunc: v2_vm.Update},
-		{Method: "DELETE", Pattern: VmPathV2, HandlerFunc: v2_vm.Delete},
-
-		// TODO: Implement GPU Leases
-		//{Method: "GET", Pattern: VmGpuLeasesPathV2, HandlerFunc: v2_vm.ListGpuLeases},
-		//{Method: "GET", Pattern: VmGpuLeasePathV2, HandlerFunc: v2_vm.GetGpuLease},
-		//{Method: "POST", Pattern: VmGpuLeasesPathV2, HandlerFunc: v2_vm.CreateGpuLease},
-		//{Method: "DELETE", Pattern: VmGpuLeasePathV2, HandlerFunc: v2_vm.DeleteGpuLease},
-
-		{Method: "GET", Pattern: VmSnapshotsPathV2, HandlerFunc: v2_vm.ListSnapshots},
-		{Method: "GET", Pattern: VmSnapshotPathV2, HandlerFunc: v2_vm.GetSnapshot},
-		{Method: "POST", Pattern: VmSnapshotsPathV2, HandlerFunc: v2_vm.CreateSnapshot},
-		{Method: "DELETE", Pattern: VmSnapshotPathV2, HandlerFunc: v2_vm.DeleteSnapshot},
-
-		{Method: "POST", Pattern: VmActionPathV2, HandlerFunc: v2_vm.DoAction},
+		{Method: "GET", Pattern: VmsPathV2, HandlerFunc: v2.ListVMs},
+		{Method: "GET", Pattern: VmPathV2, HandlerFunc: v2.GetVM},
+		{Method: "POST", Pattern: VmsPathV2, HandlerFunc: v2.CreateVM},
+		{Method: "POST", Pattern: VmPathV2, HandlerFunc: v2.UpdateVM},
+		{Method: "DELETE", Pattern: VmPathV2, HandlerFunc: v2.DeleteVM},
 	}
 }

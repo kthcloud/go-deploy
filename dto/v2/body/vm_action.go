@@ -1,10 +1,10 @@
 package body
 
-type VmAction struct {
+type VmActionCreate struct {
 	Action string `json:"action" binding:"required,oneof=start stop restart repair"`
 }
 
-type VmActionDone struct {
+type VmActionCreated struct {
 	ID    string `json:"id"`
 	JobID string `json:"jobId"`
 }
