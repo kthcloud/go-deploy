@@ -199,6 +199,11 @@ func getCollectionDefinitions() map[string]CollectionDefinition {
 			UniqueIndexes:        [][]string{{"userId"}},
 			TotallyUniqueIndexes: [][]string{{"id"}},
 		},
+		"gpuGroups": {
+			Name:          "gpuGroups",
+			Indexes:       []string{"id", "zone"},
+			UniqueIndexes: [][]string{{"id", "zone"}},
+		},
 		"users": {
 			Name:                 "users",
 			Indexes:              []string{"username", "email", "firstName", "lastName", "effectiveRole.name", "lastAuthenticatedAt"},

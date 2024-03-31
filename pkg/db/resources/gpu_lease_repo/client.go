@@ -7,12 +7,12 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-// Client is used to manage GPUs in the database.
+// Client is used to manage GPU leases in the database.
 type Client struct {
 	base_clients.ResourceClient[model.GpuLease]
 }
 
-// New returns a new GPU client.
+// New returns a new GPU lease client.
 func New() *Client {
 	return &Client{
 		ResourceClient: base_clients.ResourceClient[model.GpuLease]{

@@ -172,12 +172,12 @@ type ConfigType struct {
 		Secret string `yaml:"secret"`
 	}
 
-	Landing struct {
+	SysApi struct {
 		URL      string `yaml:"url"`
 		User     string `yaml:"user"`
 		Password string `yaml:"password"`
 		ClientID string `yaml:"clientId"`
-	} `yaml:"landing"`
+	} `yaml:"sys-api"`
 
 	Harbor struct {
 		URL           string `yaml:"url"`
@@ -185,20 +185,4 @@ type ConfigType struct {
 		Password      string `yaml:"password"`
 		WebhookSecret string `yaml:"webhookSecret"`
 	} `yaml:"harbor"`
-
-	GitLab struct {
-		URL   string `yaml:"url"`
-		Token string `yaml:"token"`
-	}
-
-	GitHub struct {
-		DevClient struct {
-			ID     string `yaml:"id"`
-			Secret string `yaml:"secret"`
-		} `yaml:"devClient"`
-		ProdClient struct {
-			ID     string `yaml:"id"`
-			Secret string `yaml:"secret"`
-		} `yaml:"prodClient"`
-	}
 }
