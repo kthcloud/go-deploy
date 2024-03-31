@@ -1,4 +1,4 @@
-package landing
+package sys_api
 
 import (
 	"encoding/json"
@@ -7,19 +7,19 @@ import (
 	"net/http"
 )
 
-// doRequest is a helper function for making requests to the landing service.
+// doRequest is a helper function for making requests to the sys-api service.
 func (client *Client) doRequest(method string, relativePath string) (*http.Response, error) {
 	fullURL := fmt.Sprintf("%s%s", client.url, relativePath)
 	return requestutils.DoRequestBearer(method, fullURL, nil, nil, client.jwt.AccessToken)
 }
 
-// doQueryRequest is a helper function for making requests to the landing service with query parameters.
+// doQueryRequest is a helper function for making requests to the sys-api service with query parameters.
 func (client *Client) doQueryRequest(method string, relativePath string, params map[string]string) (*http.Response, error) {
 	fullURL := fmt.Sprintf("%s%s", client.url, relativePath)
 	return requestutils.DoRequestBearer(method, fullURL, nil, params, client.jwt.AccessToken)
 }
 
-// doJSONRequest is a helper function for making requests to the landing service with a JSON body.
+// doJSONRequest is a helper function for making requests to the sys-api service with a JSON body.
 func (client *Client) doJSONRequest(method string, relativePath string, requestBody interface{}) (*http.Response, error) {
 	jsonBody, err := json.Marshal(requestBody)
 	if err != nil {

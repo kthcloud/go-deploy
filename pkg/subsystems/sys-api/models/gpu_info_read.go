@@ -14,9 +14,9 @@ type GPU struct {
 type GpuInfoRead struct {
 	GpuInfo struct {
 		Hosts []struct {
-			Name   string `json:"name"`
-			ZoneID string `json:"zoneId"`
-			GPUs   []GPU  `json:"gpus"`
+			Name string `json:"name"`
+			Zone string `json:"zone"`
+			GPUs []GPU  `json:"gpus"`
 		} `json:"hosts"`
 	} `json:"gpuInfo"`
 	Timestamp time.Time `json:"timestamp"`

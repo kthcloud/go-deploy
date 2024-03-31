@@ -1,12 +1,12 @@
-package landing
+package sys_api
 
 import (
 	"fmt"
-	"go-deploy/pkg/subsystems/landing/models"
+	"go-deploy/pkg/subsystems/sys-api/models"
 	"go-deploy/utils/requestutils"
 )
 
-// ReadGpuInfo reads gpu_repo info from the landing service.
+// ReadGpuInfo reads gpu_repo info from the sys-api service.
 func (client *Client) ReadGpuInfo() (*models.GpuInfoRead, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get gpu_repo info. details: %w", err)

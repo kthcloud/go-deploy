@@ -1,4 +1,4 @@
-package landing
+package sys_api
 
 import (
 	"context"
@@ -7,14 +7,14 @@ import (
 	"net/http"
 )
 
-// Client is a client for the landing service.
+// Client is a client for the sys-api service.
 type Client struct {
 	url          string
 	oauth2Client *http.Client
 	jwt          *gocloak.JWT
 }
 
-// ClientConf is the configuration for creating a landing client.
+// ClientConf is the configuration for creating a sys-api client.
 type ClientConf struct {
 	URL      string
 	Username string
@@ -25,10 +25,10 @@ type ClientConf struct {
 	OidcRealm    string
 }
 
-// New creates a new landing client.
+// New creates a new sys-api client.
 func New(config *ClientConf) (*Client, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create landing oauth2Client. details: %w", err)
+		return fmt.Errorf("failed to create sys-api oauth2 client. details: %w", err)
 	}
 
 	kcClient := gocloak.NewClient(config.OidcProvider)
