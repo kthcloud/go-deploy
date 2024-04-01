@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/mittwald/goharbor-client/v5/apiv2/pkg/clients/artifact"
+	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems/harbor/models"
-	"log"
 	"strings"
 )
 

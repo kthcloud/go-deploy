@@ -1,8 +1,8 @@
 package resources
 
 import (
+	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems"
-	"log"
 )
 
 // SsUpdaterType is a type that can be used to update a single subsystem model

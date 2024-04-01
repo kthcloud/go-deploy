@@ -1,54 +1,38 @@
-package metrics
+package metrics_update
 
 import (
-	"context"
 	"fmt"
 	"go-deploy/models/model"
-	"go-deploy/pkg/config"
 	"go-deploy/pkg/db/key_value"
 	"go-deploy/pkg/db/resources/job_repo"
 	"go-deploy/pkg/db/resources/user_repo"
 	"go-deploy/pkg/metrics"
-	"go-deploy/pkg/workers"
 	"go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"time"
 )
 
-// metricsWorker is a worker that updates metrics.
-func metricsWorker(ctx context.Context) {
-	defer workers.OnStop("metrics worker")
+var metricsFuncMap = map[string]func() error{
+	"users-total":          usersTotal,
+	"monthly-active-users": monthlyActiveUsers,
+	"daily-active-users":   dailyActiveUsers,
+	"jobs-total":           jobMetrics(metrics.KeyJobsTotal, nil),
+	"jobs-pending":         jobMetrics(metrics.KeyJobsPending, strPtr(model.JobStatusPending)),
+	"jobs-running":         jobMetrics(metrics.KeyJobsRunning, strPtr(model.JobStatusRunning)),
+	"jobs-failed":          jobMetrics(metrics.KeyJobsFailed, strPtr(model.JobStatusFailed)),
+	"jobs-terminated":      jobMetrics(metrics.KeyJobsTerminated, strPtr(model.JobStatusTerminated)),
+	"jobs-completed":       jobMetrics(metrics.KeyJobsCompleted, strPtr(model.JobStatusCompleted)),
+}
 
-	metricsFuncMap := map[string]func() error{
-		"users-total":          usersTotal,
-		"monthly-active-users": monthlyActiveUsers,
-		"daily-active-users":   dailyActiveUsers,
-		"jobs-total":           jobMetrics(metrics.KeyJobsTotal, nil),
-		"jobs-pending":         jobMetrics(metrics.KeyJobsPending, strPtr(model.JobStatusPending)),
-		"jobs-running":         jobMetrics(metrics.KeyJobsRunning, strPtr(model.JobStatusRunning)),
-		"jobs-failed":          jobMetrics(metrics.KeyJobsFailed, strPtr(model.JobStatusFailed)),
-		"jobs-terminated":      jobMetrics(metrics.KeyJobsTerminated, strPtr(model.JobStatusTerminated)),
-		"jobs-completed":       jobMetrics(metrics.KeyJobsCompleted, strPtr(model.JobStatusCompleted)),
-	}
-
-	reportTick := time.Tick(1 * time.Second)
-	tick := time.Tick(time.Duration(config.Config.Metrics.Interval) * time.Second)
-
-	for {
-		select {
-		case <-reportTick:
-			workers.ReportUp("metricsWorker")
-
-		case <-tick:
-			for metricGroupName, metric := range metricsFuncMap {
-				if err := metric(); err != nil {
-					utils.PrettyPrintError(fmt.Errorf("error computing metric %s. details: %w", metricGroupName, err))
-				}
-			}
-		case <-ctx.Done():
-			return
+// metricsUpdater is a worker that updates metrics.
+func metricsUpdater() error {
+	for metricGroupName, metric := range metricsFuncMap {
+		if err := metric(); err != nil {
+			utils.PrettyPrintError(fmt.Errorf("error computing metric %s, skipping. details: %w", metricGroupName, err))
 		}
 	}
+
+	return nil
 }
 
 // usersTotal computes the total number of users and stores it in the key-value store.

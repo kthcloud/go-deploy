@@ -10,12 +10,12 @@ import (
 	"go-deploy/docs"
 	"go-deploy/pkg/auth"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/log"
 	"go-deploy/pkg/metrics"
 	"go-deploy/pkg/sys"
 	"go-deploy/routers/api/v1/middleware"
 	"go-deploy/routers/api/validators"
 	"go-deploy/routers/routes"
-	"log"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -159,7 +159,7 @@ func getUrlBasePath() string {
 	// Parse as URL
 	u, err := url.Parse(config.Config.ExternalUrl)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln("failed to parse external URL. details:", err)
 	}
 	res = u.Path
 

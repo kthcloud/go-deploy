@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/db/resources/gpu_repo"
+	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems"
 	"go-deploy/pkg/subsystems/cs/commands"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/resources"
-	"log"
 	"strings"
 )
 

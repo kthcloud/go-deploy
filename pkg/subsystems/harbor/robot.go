@@ -6,8 +6,8 @@ import (
 	"fmt"
 	harborModelsV2 "github.com/mittwald/goharbor-client/v5/apiv2/model"
 	harborErrors "github.com/mittwald/goharbor-client/v5/apiv2/pkg/errors"
+	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems/harbor/models"
-	"log"
 	"strings"
 	"unicode"
 )

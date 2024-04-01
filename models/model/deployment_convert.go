@@ -3,9 +3,9 @@ package model
 import (
 	"fmt"
 	"go-deploy/dto/v1/body"
+	"go-deploy/pkg/log"
 	"go-deploy/utils"
 	"golang.org/x/net/idna"
-	"log"
 	"strconv"
 )
 

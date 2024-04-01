@@ -1,8 +1,8 @@
 package resources
 
 import (
+	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems"
-	"log"
 )
 
 // SsCreatorType is a type that can be used to create a single subsystem model

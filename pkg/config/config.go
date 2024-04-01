@@ -6,12 +6,14 @@ import (
 	"go-deploy/models/config"
 	"go-deploy/pkg/imp/cloudstack"
 	"go-deploy/pkg/imp/kubevirt/kubevirt"
+	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems/rancher"
 	"gopkg.in/yaml.v3"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"os"
 	"regexp"
+	"strings"
 )
 
 // Config is the global configuration object.
@@ -39,19 +41,20 @@ func SetupEnvironment() error {
 		return makeError(err)
 	}
 
-	fmt.Println("go-deploy", Config.Version)
+	log.Println("go-deploy", Config.Version)
 
 	if len(Config.Roles) == 0 {
-		fmt.Println("WARNING: no roles found in config")
+		log.Println("WARNING: no roles found in config")
 	} else {
-		fmt.Printf("Roles (in order): ")
+		var roles []string
 		for idx, role := range Config.Roles {
 			if idx == len(Config.Roles)-1 {
-				fmt.Printf("%s\n", role.Name)
+				log.Printf("%s", role.Name)
 				break
 			}
-			fmt.Printf("%s -> ", role.Name)
+			roles = append(roles, role.Name)
 		}
+		log.Printf("Roles (in order): " + strings.Join(roles, "->"))
 	}
 
 	err = checkConfig()
@@ -106,7 +109,7 @@ func setupK8sClusters() error {
 			return makeError(fmt.Errorf("failed to parse type of config source for zone %s", zone.Name))
 		}
 
-		fmt.Printf("setting up k8s cluster for zone %s (%d/%d)\n", zone.Name, idx+1, len(Config.Deployment.Zones))
+		log.Printf(" - Setting up k8s cluster for zone %s (%d/%d)", zone.Name, idx+1, len(Config.Deployment.Zones))
 
 		switch configType {
 		case "rancher":
@@ -144,7 +147,7 @@ func setupK8sClusters() error {
 		}
 	}
 
-	fmt.Println("k8s clusters setup done")
+	log.Println("k8s clusters setup done")
 	return nil
 }
 

@@ -7,6 +7,7 @@ import (
 	"go-deploy/models/config"
 	"go-deploy/models/model"
 	"go-deploy/pkg/db/resources/deployment_repo"
+	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems"
 	kErrors "go-deploy/pkg/subsystems/k8s/errors"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
@@ -15,7 +16,6 @@ import (
 	"go-deploy/service/resources"
 	"go-deploy/service/v1/deployments/opts"
 	"go-deploy/utils"
-	"log"
 	"slices"
 	"time"
 )

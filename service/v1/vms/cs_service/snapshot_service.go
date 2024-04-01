@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"go-deploy/models/model"
 	"go-deploy/pkg/db/resources/gpu_repo"
+	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems"
 	"go-deploy/pkg/subsystems/cs/commands"
 	csModels "go-deploy/pkg/subsystems/cs/models"
 	sErrors "go-deploy/service/errors"
-	"log"
 )
 
 // makeBadStateErr creates an error with the BadStateErr type.

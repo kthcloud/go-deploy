@@ -3,10 +3,10 @@ package k8s
 import (
 	"context"
 	"fmt"
+	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems/k8s/errors"
 	"go-deploy/pkg/subsystems/k8s/models"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"log"
 	"strings"
 	"time"
 )

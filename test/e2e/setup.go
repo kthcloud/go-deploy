@@ -1,7 +1,7 @@
 package e2e
 
 import (
-	"log"
+	"go-deploy/pkg/log"
 	"os"
 )
 

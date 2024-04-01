@@ -2,7 +2,7 @@ package workers
 
 import (
 	"go-deploy/pkg/db/resources/worker_status_repo"
-	"log"
+	"go-deploy/pkg/log"
 )
 
 // ReportUp reports that a worker is up.

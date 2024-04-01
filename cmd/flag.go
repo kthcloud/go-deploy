@@ -1,4 +1,4 @@
-package app
+package cmd
 
 import (
 	"context"
@@ -6,8 +6,7 @@ import (
 	"go-deploy/pkg/workers/confirm"
 	"go-deploy/pkg/workers/job_execute"
 	"go-deploy/pkg/workers/logger"
-	metricsWorker "go-deploy/pkg/workers/metrics"
-	"go-deploy/pkg/workers/ping"
+	metricsWorker "go-deploy/pkg/workers/metrics_update"
 	"go-deploy/pkg/workers/repair"
 	"go-deploy/pkg/workers/snapshot"
 	"go-deploy/pkg/workers/status_update"
@@ -134,16 +133,6 @@ func GetFlags() FlagDefinitionList {
 			DefaultValue: false,
 			Run: func(ctx context.Context, _ context.CancelFunc) {
 				repair.Setup(ctx)
-			},
-		},
-		{
-			Name:         "pinger",
-			ValueType:    "bool",
-			FlagType:     "worker",
-			Description:  "start pinger",
-			DefaultValue: false,
-			Run: func(ctx context.Context, _ context.CancelFunc) {
-				ping.Setup(ctx)
 			},
 		},
 		{

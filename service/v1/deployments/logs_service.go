@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"go-deploy/pkg/db/resources/deployment_repo"
+	"go-deploy/pkg/log"
 	"go-deploy/service/errors"
 	"go-deploy/service/v1/deployments/opts"
 	"go-deploy/utils"
-	"log"
 	"time"
 )
 

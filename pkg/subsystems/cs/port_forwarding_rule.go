@@ -3,9 +3,9 @@ package cs
 import (
 	"fmt"
 	"go-deploy/pkg/imp/cloudstack"
+	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems/cs/errors"
 	"go-deploy/pkg/subsystems/cs/models"
-	"log"
 	"strconv"
 	"strings"
 	"time"

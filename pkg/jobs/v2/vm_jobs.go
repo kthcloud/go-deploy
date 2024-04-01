@@ -11,11 +11,11 @@ import (
 	"go-deploy/pkg/db/resources/vm_repo"
 	jErrors "go-deploy/pkg/jobs/errors"
 	"go-deploy/pkg/jobs/utils"
+	"go-deploy/pkg/log"
 	"go-deploy/pkg/workers/confirm"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/v2/vms/opts"
-	"log"
 	"time"
 )
 

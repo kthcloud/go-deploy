@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/redis/go-redis/v9"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/log"
 )
 
 // setupRedis initializes the Redis connection.
@@ -14,7 +15,7 @@ func (dbCtx *Context) setupRedis() error {
 		return fmt.Errorf("failed to setup redis. details: %w", err)
 	}
 
-	fmt.Println("Setting up Redis")
+	log.Println("Setting up Redis")
 
 	dbCtx.RedisClient = redis.NewClient(&redis.Options{
 		Addr:     config.Config.Redis.URL,

@@ -4,6 +4,7 @@ import (
 	"go-deploy/models/model"
 	"go-deploy/pkg/imp/kubevirt/kubevirt"
 	"k8s.io/client-go/kubernetes"
+	"time"
 )
 
 // The following structs are used to parse the config.yaml file
@@ -119,6 +120,28 @@ type ConfigType struct {
 	SessionSecret string `yaml:"sessionSecret"`
 	TestMode      bool   `yaml:"testMode"`
 
+	Deployment Deployment `yaml:"deployment"`
+	VM         VM         `yaml:"vm"`
+
+	Timer struct {
+		GpuSynchronize            time.Duration `yaml:"gpuSynchronize"`
+		VmStatusUpdate            time.Duration `yaml:"vmStatusUpdate"`
+		VmSnapshotUpdate          time.Duration `yaml:"vmSnapshotUpdate"`
+		DeploymentStatusUpdate    time.Duration `yaml:"deploymentStatusUpdate"`
+		DeploymentPingUpdate      time.Duration `yaml:"deploymentPingUpdate"`
+		Snapshot                  time.Duration `yaml:"snapshot"`
+		DeploymentRepair          time.Duration `yaml:"deploymentRepair"`
+		VmRepair                  time.Duration `yaml:"vmRepair"`
+		SmRepair                  time.Duration `yaml:"smRepair"`
+		MetricsUpdate             time.Duration `yaml:"metricsUpdate"`
+		JobFetch                  time.Duration `yaml:"jobFetch"`
+		FailedJobFetch            time.Duration `yaml:"failedJobFetch"`
+		DeploymentDeletionConfirm time.Duration `yaml:"deploymentDeletionConfirm"`
+		VmDeletionConfirm         time.Duration `yaml:"vmDeletionConfirm"`
+		SmDeletionConfirm         time.Duration `yaml:"smDeletionConfirm"`
+		CustomDomainConfirm       time.Duration `yaml:"customDomainConfirm"`
+	}
+
 	GPU struct {
 		PrivilegedGPUs []string `yaml:"privilegedGpus"`
 		ExcludedHosts  []string `yaml:"excludedHosts"`
@@ -130,9 +153,6 @@ type ConfigType struct {
 		PlaceholderImage string `yaml:"placeholderImage"`
 		VmHttpProxyImage string `yaml:"vmHttpProxyImage"`
 	} `yaml:"registry"`
-
-	Deployment Deployment `yaml:"deployment"`
-	VM         VM         `yaml:"vm"`
 
 	Roles []model.Role `yaml:"roles"`
 

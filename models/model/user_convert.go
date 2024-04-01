@@ -2,7 +2,7 @@ package model
 
 import (
 	"go-deploy/dto/v1/body"
-	"log"
+	"go-deploy/pkg/log"
 )
 
 // ToDTO converts a User to a body.UserRead DTO.

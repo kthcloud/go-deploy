@@ -1,11 +1,10 @@
 package intializer
 
 import (
-	"fmt"
 	"go-deploy/models/model"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/db/resources/vm_port_repo"
-	"log"
+	"go-deploy/pkg/log"
 	"strconv"
 )
 
@@ -60,7 +59,7 @@ func SynchronizeVmPorts() error {
 
 		if len(leasedPorts) > 0 {
 			for _, port := range leasedPorts {
-				fmt.Printf("port %d is leased by vm %s. this port will remain, but should be deleted\n", port.PublicPort, port.Lease.VmID)
+				log.Printf("Port %d is leased by vm %s. this port will remain, but should be deleted\n", port.PublicPort, port.Lease.VmID)
 			}
 		}
 
@@ -87,12 +86,9 @@ func SynchronizeVmPorts() error {
 		summary[zone] = noInserted
 	}
 
-	summaryString := ""
 	for zone, noInserted := range summary {
-		summaryString += " - " + zone + ": inserted " + strconv.Itoa(noInserted) + " new ports\n"
+		log.Printf(" - " + zone + ": inserted " + strconv.Itoa(noInserted) + " new ports")
 	}
-
-	fmt.Printf("%s", summaryString)
 
 	return nil
 }

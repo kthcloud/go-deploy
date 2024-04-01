@@ -6,56 +6,37 @@ import (
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/db/resources/gpu_group_repo"
 	"go-deploy/pkg/db/resources/gpu_repo"
+	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems/sys-api"
 	"go-deploy/pkg/subsystems/sys-api/models"
-	"go-deploy/pkg/workers"
 	"go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
-	"log"
 	"strings"
-	"time"
 )
 
 // gpuSynchronizer synchronizes the GPUs in the database with the sys-api page.
 // Whenever a GPU is added or removed from a machine, the sys-api is updated, and this
 // worker will synchronize the database with the sys-api
-func gpuSynchronizer() {
-	defer workers.OnStop("gpuSynchronizer")
-
-	reportTick := time.Tick(1 * time.Second)
-	tick := time.Tick(60 * time.Second)
-
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to synchronize gpus: %w", err)
+func gpuSynchronizer() error {
+	// Fetch GPUs
+	gpuInfo, err := fetchGPUs()
+	if err != nil {
+		return err
 	}
 
-	for {
-		select {
-		case <-reportTick:
-			workers.ReportUp("gpuSynchronizer")
-		case <-tick:
-
-			// Fetch GPUs
-			gpuInfo, err := fetchGPUs()
-			if err != nil {
-				utils.PrettyPrintError(makeError(err))
-				continue
-			}
-
-			// Synchronize GPUs v1
-			err = synchronizeGpusV1(gpuInfo)
-			if err != nil {
-				utils.PrettyPrintError(makeError(err))
-			}
-
-			// Synchronize GPUs v2
-			err = synchronizeGpusV2(gpuInfo)
-			if err != nil {
-				utils.PrettyPrintError(makeError(err))
-			}
-
-		}
+	// Synchronize GPUs v1
+	err = synchronizeGpusV1(gpuInfo)
+	if err != nil {
+		return err
 	}
+
+	// Synchronize GPUs v2
+	err = synchronizeGpusV2(gpuInfo)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func synchronizeGpusV1(gpuInfo *models.GpuInfoRead) error {

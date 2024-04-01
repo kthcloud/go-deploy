@@ -8,10 +8,10 @@ import (
 	"go-deploy/pkg/db/resources/deployment_repo"
 	"go-deploy/pkg/db/resources/job_repo"
 	"go-deploy/pkg/db/resources/vm_repo"
+	"go-deploy/pkg/log"
 	"go-deploy/service/core"
 	"go.mongodb.org/mongo-driver/bson"
 	"golang.org/x/exp/slices"
-	"log"
 	"time"
 )
 

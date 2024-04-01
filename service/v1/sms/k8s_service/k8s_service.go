@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"go-deploy/models/model"
 	"go-deploy/pkg/db/resources/sm_repo"
+	"go-deploy/pkg/log"
 	kErrors "go-deploy/pkg/subsystems/k8s/errors"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/service/constants"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/resources"
 	"golang.org/x/exp/slices"
-	"log"
 )
 
 // Create creates the storage manager.

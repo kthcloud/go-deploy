@@ -2,12 +2,14 @@ package synchronize
 
 import (
 	"context"
-	"log"
+	"go-deploy/pkg/config"
+	"go-deploy/pkg/log"
+	"go-deploy/pkg/workers"
 )
 
 // Setup starts the synchronizers.
 // Synchronizers are workers that periodically synchronize resources, such as GPUs.
 func Setup(ctx context.Context) {
-	log.Println("starting synchronizers")
-	go gpuSynchronizer()
+	log.Println("Starting synchronizers")
+	go workers.PeriodicWorker(ctx, "gpuSynchronizer", gpuSynchronizer, config.Config.Timer.GpuSynchronize)
 }

@@ -1,7 +1,7 @@
 package resources
 
 import (
-	"log"
+	"go-deploy/pkg/log"
 )
 
 // SsPlaceholderCreatorType is a type that can be used to create a single subsystem placeholder model.

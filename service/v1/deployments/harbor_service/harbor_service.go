@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"go-deploy/models/model"
 	"go-deploy/pkg/db/resources/deployment_repo"
+	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems"
 	"go-deploy/service/resources"
 	"go-deploy/service/v1/deployments/opts"
 	"go-deploy/utils/subsystemutils"
-	"log"
 )
 
 // Create sets up Harbor for the deployment.

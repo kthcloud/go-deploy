@@ -3,7 +3,7 @@ package acc
 import (
 	"github.com/google/uuid"
 	"go-deploy/pkg/config"
-	"log"
+	"go-deploy/pkg/log"
 	"os"
 	"strings"
 )

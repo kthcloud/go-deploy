@@ -6,7 +6,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"log"
+	"go-deploy/pkg/log"
 	"math/rand"
 	"strings"
 	"time"

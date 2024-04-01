@@ -13,6 +13,7 @@ import (
 	"go-deploy/pkg/db/resources/team_repo"
 	"go-deploy/pkg/db/resources/vm_port_repo"
 	"go-deploy/pkg/db/resources/vm_repo"
+	"go-deploy/pkg/log"
 	sErrors "go-deploy/service/errors"
 	sUtils "go-deploy/service/utils"
 	"go-deploy/service/v1/vms/cs_service"
@@ -20,7 +21,6 @@ import (
 	"go-deploy/service/v1/vms/opts"
 	"go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
-	"log"
 	"sort"
 	"strings"
 )

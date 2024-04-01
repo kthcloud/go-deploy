@@ -8,6 +8,7 @@ import (
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/db/resources/vm_port_repo"
 	"go-deploy/pkg/db/resources/vm_repo"
+	"go-deploy/pkg/log"
 	kErrors "go-deploy/pkg/subsystems/k8s/errors"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/service/constants"
@@ -15,7 +16,6 @@ import (
 	"go-deploy/service/resources"
 	"go-deploy/service/v2/vms/opts"
 	"golang.org/x/exp/slices"
-	"log"
 )
 
 // Create sets up K8s for a VM.

@@ -1,15 +1,15 @@
 package main
 
 import (
-	"go-deploy/pkg/app"
-	"log"
+	"go-deploy/cmd"
+	"go-deploy/pkg/log"
 	"os"
 )
 
 func main() {
-	options := app.ParseFlags()
+	options := cmd.ParseFlags()
 
-	deployApp := app.Create(options)
+	deployApp := cmd.Create(options)
 	if deployApp == nil {
 		log.Fatalln("failed to start app")
 	}

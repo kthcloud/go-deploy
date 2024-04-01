@@ -1,7 +1,7 @@
 package resources
 
 import (
-	"log"
+	"go-deploy/pkg/log"
 )
 
 // SsDeleterType is a type that can be used to delete a single subsystem model

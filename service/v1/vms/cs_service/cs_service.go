@@ -10,6 +10,7 @@ import (
 	"go-deploy/pkg/db/resources/gpu_repo"
 	"go-deploy/pkg/db/resources/vm_port_repo"
 	"go-deploy/pkg/db/resources/vm_repo"
+	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems"
 	"go-deploy/pkg/subsystems/cs/commands"
 	cErrors "go-deploy/pkg/subsystems/cs/errors"
@@ -17,7 +18,6 @@ import (
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/resources"
 	"golang.org/x/exp/slices"
-	"log"
 	"time"
 )
 

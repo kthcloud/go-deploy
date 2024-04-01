@@ -1,9 +1,9 @@
 package resources
 
 import (
+	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems"
 	"go-deploy/service/utils"
-	"log"
 )
 
 // SsRepairerType is a type that can be used to repair a single subsystem model

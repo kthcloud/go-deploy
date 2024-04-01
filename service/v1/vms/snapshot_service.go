@@ -3,10 +3,10 @@ package vms
 import (
 	"fmt"
 	"go-deploy/models/model"
+	"go-deploy/pkg/log"
 	"go-deploy/service/utils"
 	"go-deploy/service/v1/vms/cs_service"
 	"go-deploy/service/v1/vms/opts"
-	"log"
 	"sort"
 )
 

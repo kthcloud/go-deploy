@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"log"
 	"strings"
 	"time"
 )
@@ -33,7 +33,7 @@ func (dbCtx *Context) setupMongo() error {
 		return fmt.Errorf("failed to setup mongodb. details: %w", err)
 	}
 
-	fmt.Println("Setting up MongoDB")
+	log.Println("Setting up MongoDB")
 
 	var err error
 	dbCtx.MongoClient, err = mongo.Connect(context.TODO(), options.Client().ApplyURI(config.Config.MongoDB.URL))
@@ -70,7 +70,7 @@ func (dbCtx *Context) setupMongo() error {
 		}
 	}
 
-	fmt.Printf(" - Ensured %d indexes\n", ensureCount)
+	log.Printf(" - Ensured %d indexes", ensureCount)
 
 	ensureCount = 0
 	for _, def := range DB.CollectionDefinitionMap {
@@ -92,7 +92,7 @@ func (dbCtx *Context) setupMongo() error {
 		}
 	}
 
-	fmt.Printf(" - Ensured %d unique indexes\n", ensureCount)
+	log.Printf(" - Ensured %d unique indexes", ensureCount)
 
 	ensureCount = 0
 	for _, def := range DB.CollectionDefinitionMap {
@@ -114,7 +114,7 @@ func (dbCtx *Context) setupMongo() error {
 		}
 	}
 
-	fmt.Printf(" - Ensured %d totally unique indexes\n", ensureCount)
+	log.Printf(" - Ensured %d totally unique indexes", ensureCount)
 
 	ensureCount = 0
 	for _, def := range DB.CollectionDefinitionMap {
@@ -137,7 +137,7 @@ func (dbCtx *Context) setupMongo() error {
 		ensureCount++
 	}
 
-	fmt.Printf(" - Ensured %d text indexes\n", ensureCount)
+	log.Printf(" - Ensured %d text indexes", ensureCount)
 
 	return nil
 }

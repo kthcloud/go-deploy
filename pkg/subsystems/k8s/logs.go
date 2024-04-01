@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems/k8s/keys"
 	"go-deploy/utils"
 	"golang.org/x/exp/maps"
@@ -12,7 +13,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/tools/cache"
-	"log"
 	"sort"
 	"strings"
 	"time"
@@ -176,7 +176,7 @@ func (client *Client) SetupLogStream(ctx context.Context, allowedNames []string,
 					cancelCtx, cancelFunc := context.WithCancel(ctx)
 					cancelFuncs[e.deploymentName][e.podName] = cancelFunc
 
-					log.Println("starting logger for pod", e.podName, "with idx", idx)
+					log.Println("Starting logger for pod", e.podName, "with idx", idx)
 
 					go func() {
 						client.readLogs(cancelCtx, idx, client.Namespace, e.deploymentName, e.podName, podChannel, handler)

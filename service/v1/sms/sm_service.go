@@ -7,11 +7,11 @@ import (
 	"go-deploy/models/model"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/db/resources/sm_repo"
+	"go-deploy/pkg/log"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/utils"
 	"go-deploy/service/v1/sms/k8s_service"
 	"go-deploy/service/v1/sms/opts"
-	"log"
 	"sort"
 )
 

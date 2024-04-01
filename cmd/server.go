@@ -1,4 +1,4 @@
-package app
+package cmd
 
 import (
 	"context"
@@ -8,12 +8,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/db"
+	"go-deploy/pkg/db/migrate"
 	"go-deploy/pkg/db/resources/job_repo"
 	"go-deploy/pkg/intializer"
+	"go-deploy/pkg/log"
 	"go-deploy/pkg/metrics"
-	"go-deploy/pkg/workers/migrate"
 	"go-deploy/routers"
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -35,68 +35,34 @@ func shutdown() {
 }
 
 type InitTask struct {
-	Name      string
-	Task      func() error
-	Composite bool
+	Name string
+	Task func() error
 }
 
-func (it *InitTask) LogBegin(prefix string) {
-	orange := "\033[38;5;208m"
-	grey := "\033[90m"
-	reset := "\033[0m"
-	now := time.Now().Format("2006/01/02 15:04:05")
-	taskName := it.Name
-	fmt.Printf("[%s] %s %s%s%s %s...%s ", now, prefix, orange, taskName, reset, grey, reset)
-	if it.Composite {
-		lightBlue := "\033[38;5;39m"
-		fmt.Println(lightBlue)
-	}
-}
-
-func (it *InitTask) LogCompleted() {
-	green := "\033[32m"
-	grey := "\033[90m"
-	reset := "\033[0m"
-	if it.Composite {
-		fmt.Printf("%s... done %s✓%s\n", grey, green, reset)
-	} else {
-		fmt.Printf("%s✓%s\n", green, reset)
-	}
-}
-
-func (it *InitTask) LogFailed() {
-	red := "\033[31m"
-	grey := "\033[90m"
-	reset := "\033[0m"
-	if it.Composite {
-		fmt.Printf("%s... failed %s✗%s\n", grey, red, reset)
-	} else {
-		fmt.Printf("%s✗%s\n", red, reset)
-	}
+func (it *InitTask) Begin(prefix string) {
+	log.Infof("%s %s%s%s %s...%s ", prefix, log.Orange, it.Name, log.Reset, log.Grey, log.Reset)
 }
 
 // Create creates a new App instance.
 func Create(opts *Options) *App {
 
 	initTasks := []InitTask{
-		{Name: "Setup environment", Task: config.SetupEnvironment, Composite: true},
+		{Name: "Setup environment", Task: config.SetupEnvironment},
 		{Name: "Setup metrics", Task: metrics.Setup},
 		{Name: "Enable test mode if requested", Task: enableTestIfRequested},
-		{Name: "Setup database", Task: db.Setup, Composite: true},
+		{Name: "Setup database", Task: db.Setup},
 		{Name: "Clean up old tests", Task: intializer.CleanUpOldTests},
-		{Name: "Synchronize VM ports", Task: intializer.SynchronizeVmPorts, Composite: true},
-		{Name: "Run migrations", Task: migrator.Migrate, Composite: true},
+		{Name: "Synchronize VM ports", Task: intializer.SynchronizeVmPorts},
+		{Name: "Run migrations", Task: migrator.Migrate},
 		{Name: "Reset running jobs", Task: func() error { return job_repo.New().ResetRunning() }},
 	}
 
 	for idx, task := range initTasks {
-		task.LogBegin(fmt.Sprintf("(%d/%d)", idx+1, len(initTasks)))
+		task.Begin(fmt.Sprintf("(%d/%d)", idx+1, len(initTasks)))
 		err := task.Task()
 		if err != nil {
-			task.LogFailed()
-			log.Fatalln("Task", task.Name, "failed. See error below:\n", err)
+			log.Fatalf("Init task %s failed. details: %s", task.Name, err.Error())
 		}
-		task.LogCompleted()
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -155,13 +121,13 @@ func (app *App) Stop() {
 
 		select {
 		case <-ctx.Done():
-			log.Println("waiting for http server to shutdown...")
+			log.Println("Saiting for http server to shutdown...")
 		}
 	}
 
 	shutdown()
 
-	log.Println("server exited successfully")
+	log.Println("Server exited successfully")
 }
 
 func ParseFlags() *Options {
@@ -190,11 +156,11 @@ func ParseFlags() *Options {
 	}
 
 	if options.TestMode {
-		log.Println("RUNNING IN TEST MODE. NO AUTHENTICATION WILL BE REQUIRED.")
+		log.Warnln("RUNNING IN TEST MODE. NO AUTHENTICATION WILL BE REQUIRED.")
 	}
 
 	if !flags.AnyWorkerFlagsPassed() {
-		log.Println("no workers specified, starting all")
+		log.Println("No workers specified, starting all")
 
 		for _, flag := range flags {
 			switch flag.FlagType {
