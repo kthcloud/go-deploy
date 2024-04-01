@@ -16,8 +16,8 @@ import (
 )
 
 // GetGpuLease
-// @Summary GetVM GPU lease
-// @Description GetVM GPU lease
+// @Summary Get GPU lease
+// @Description Get GPU lease
 // @Tags VM
 // @Accept json
 // @Produce json
@@ -59,8 +59,8 @@ func GetGpuLease(c *gin.Context) {
 }
 
 // ListGpuLeases
-// @Summary GetVM GPU lease list
-// @Description GetVM GPU lease list
+// @Summary List GPU leases
+// @Description List GPU leases
 // @Tags VM
 // @Accept json
 // @Produce json
@@ -115,8 +115,8 @@ func ListGpuLeases(c *gin.Context) {
 }
 
 // CreateGpuLease
-// @Summary CreateVM GPU lease
-// @Description CreateVM GPU lease
+// @Summary Create GPU Lease
+// @Description Create GPU lease
 // @Tags VM
 // @Accept json
 // @Produce json
@@ -185,8 +185,8 @@ func CreateGpuLease(c *gin.Context) {
 }
 
 // DeleteGpuLease
-// @Summary DeleteVM GPU lease
-// @Description DeleteVM GPU lease
+// @Summary Delete GPU lease
+// @Description Delete GPU lease
 // @Tags VM
 // @Accept json
 // @Produce json

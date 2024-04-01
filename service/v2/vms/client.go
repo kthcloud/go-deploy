@@ -5,6 +5,7 @@ import (
 	"go-deploy/service/core"
 	"go-deploy/service/v2/api"
 	"go-deploy/service/v2/vms/client"
+	"go-deploy/service/v2/vms/gpu_groups"
 	"go-deploy/service/v2/vms/gpu_leases"
 	"go-deploy/service/v2/vms/gpus"
 	"go-deploy/service/v2/vms/k8s_service"
@@ -42,6 +43,11 @@ func (c *Client) GPUs() api.GPUs {
 // GpuLeases returns the client for the GPU Leases service.
 func (c *Client) GpuLeases() api.GpuLeases {
 	return gpu_leases.New(c.V1, c.V2, c.Cache)
+}
+
+// GpuGroups returns the client for the GPU Groups service.
+func (c *Client) GpuGroups() api.GpuGroups {
+	return gpu_groups.New(c.V1, c.V2, c.Cache)
 }
 
 // Snapshots returns the client for the Snapshots service.

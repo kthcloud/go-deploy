@@ -107,7 +107,12 @@ func (c *Client) List(opts ...opts.ListGpuLeaseOpts) ([]model.GpuLease, error) {
 		glc.WithUserID(c.V1.Auth().UserID)
 	}
 
-	return glc.List()
+	leases, err := glc.List()
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	return leases, nil
 }
 
 // Create creates a GPU lease
@@ -216,5 +221,10 @@ func (c *Client) Delete(id string) error {
 	}
 
 	// 4. No auth info was provided, delete the lease
-	return gpu_lease_repo.New().DeleteByID(id)
+	err = gpu_lease_repo.New().DeleteByID(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
 }

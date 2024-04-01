@@ -129,12 +129,13 @@ func synchronizeGpusV2(gpuInfo *models.GpuInfoRead) error {
 
 			if group, ok := groups[host.Zone][*groupName]; !ok {
 				groups[host.Zone][*groupName] = model.GpuGroup{
-					ID:       *groupName,
-					Zone:     host.Zone,
-					Total:    1,
-					Vendor:   gpu.Vendor,
-					VendorID: gpu.VendorID,
-					DeviceID: gpu.DeviceID,
+					ID:          *groupName,
+					DisplayName: gpu.Name,
+					Zone:        host.Zone,
+					Total:       1,
+					Vendor:      gpu.Vendor,
+					VendorID:    gpu.VendorID,
+					DeviceID:    gpu.DeviceID,
 				}
 			} else {
 				group.Total++
@@ -158,6 +159,7 @@ func synchronizeGpusV2(gpuInfo *models.GpuInfoRead) error {
 				}
 			} else {
 				err = gpu_group_repo.New().WithZone(zone).SetWithBsonByID(group.ID, bson.D{
+					{"displayName", group.DisplayName},
 					{"total", group.Total},
 					{"vendor", group.Vendor},
 					{"vendorId", group.VendorID},

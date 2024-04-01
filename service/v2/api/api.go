@@ -25,6 +25,7 @@ type VMs interface {
 	Snapshots() Snapshots
 	GPUs() GPUs
 	GpuLeases() GpuLeases
+	GpuGroups() GpuGroups
 
 	K8s() *k8s_service.Client
 }
@@ -46,4 +47,9 @@ type GpuLeases interface {
 	List(opts ...vmOpts.ListGpuLeaseOpts) ([]model.GpuLease, error)
 	Create(leaseID, vmID, userID string, dtoGpuLeaseCreate *body.GpuLeaseCreate) error
 	Delete(id string) error
+}
+
+type GpuGroups interface {
+	Get(id string, opts ...vmOpts.GetGpuGroupOpts) (*model.GpuGroup, error)
+	List(opts ...vmOpts.ListGpuGroupOpts) ([]model.GpuGroup, error)
 }

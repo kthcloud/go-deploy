@@ -54,7 +54,7 @@ func deploymentRepairer() error {
 
 		jobID := uuid.New().String()
 		// Spread out repair jobs evenly over time
-		seconds := config.Config.Deployment.RepairInterval + rand.Intn(config.Config.Deployment.RepairInterval)
+		seconds := int(config.Config.Timer.DeploymentRepair.Seconds()) + rand.Intn(int(config.Config.Timer.DeploymentRepair.Seconds()))
 		runAfter := time.Now().Add(time.Duration(seconds) * time.Second)
 
 		err = job_repo.New().CreateScheduled(jobID, deployment.OwnerID, model.JobRepairDeployment, version.V1, runAfter, map[string]interface{}{
@@ -91,7 +91,7 @@ func smRepairer() error {
 
 		jobID := uuid.New().String()
 		// Spread out repair jobs evenly over time
-		seconds := config.Config.Deployment.RepairInterval + rand.Intn(config.Config.Deployment.RepairInterval)
+		seconds := int(config.Config.Timer.SmRepair.Seconds()) + rand.Intn(int(config.Config.Timer.SmRepair.Seconds()))
 		runAfter := time.Now().Add(time.Duration(seconds) * time.Second)
 
 		err = job_repo.New().CreateScheduled(jobID, sm.OwnerID, model.JobRepairSM, version.V1, runAfter, map[string]interface{}{
@@ -128,7 +128,7 @@ func vmRepairer() error {
 
 		jobID := uuid.New().String()
 		// Spread out repair jobs evenly over time
-		seconds := config.Config.VM.RepairInterval + rand.Intn(config.Config.VM.RepairInterval)
+		seconds := int(config.Config.Timer.VmRepair.Seconds()) + rand.Intn(int(config.Config.Timer.VmRepair.Seconds()))
 		runAfter := time.Now().Add(time.Duration(seconds) * time.Second)
 
 		err = job_repo.New().CreateScheduled(jobID, vm.OwnerID, model.JobRepairVM, version.V1, runAfter, map[string]interface{}{

@@ -61,6 +61,15 @@ type ListGpuLeaseOpts struct {
 	Pagination *utils.Pagination
 }
 
+// GetGpuGroupOpts is used to specify the options when getting a GPU group.
+type GetGpuGroupOpts struct {
+}
+
+// ListGpuGroupOpts is used to specify the options when listing GPU groups.
+type ListGpuGroupOpts struct {
+	Pagination *utils.Pagination
+}
+
 // GetSnapshotOpts is used to specify the options when getting a VM's snapshot.
 type GetSnapshotOpts struct {
 }

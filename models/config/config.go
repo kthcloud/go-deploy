@@ -116,7 +116,6 @@ type CloudStackConfigSource struct {
 }
 type VM struct {
 	AdminSshPublicKey string   `yaml:"adminSshPublicKey"`
-	RepairInterval    int      `yaml:"repairInterval"`
 	Zones             []VmZone `yaml:"zones"`
 }
 
@@ -144,8 +143,6 @@ type Deployment struct {
 	WildcardCertSecretName         string `yaml:"wildcardCertSecretName"`
 	CustomDomainTxtRecordSubdomain string `yaml:"customDomainTxtRecordSubdomain"`
 	IngressClass                   string `yaml:"ingressClass"`
-	RepairInterval                 int    `yaml:"repairInterval"`
-	PingInterval                   int    `yaml:"pingInterval"`
 	Resources                      struct {
 		AutoScale struct {
 			CpuThreshold    int `yaml:"cpuThreshold"`
