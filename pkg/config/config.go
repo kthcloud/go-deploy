@@ -21,7 +21,7 @@ import (
 var Config config.ConfigType
 
 // SetupEnvironment loads the configuration from the config file and sets up the environment.
-func SetupEnvironment() error {
+func SetupEnvironment(mode string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to setup environment. details: %w", err)
 	}
@@ -40,6 +40,9 @@ func SetupEnvironment() error {
 	if err != nil {
 		return makeError(err)
 	}
+
+	// Keep this here
+	Config.Mode = mode
 
 	log.Println("go-deploy", Config.Version)
 

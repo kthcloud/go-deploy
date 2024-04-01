@@ -6,6 +6,7 @@ import (
 	argFlag "flag"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"go-deploy/models/mode"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/db"
 	"go-deploy/pkg/db/migrate"
@@ -20,8 +21,8 @@ import (
 )
 
 type Options struct {
-	Flags    FlagDefinitionList
-	TestMode bool
+	Flags FlagDefinitionList
+	Mode  string
 }
 
 type App struct {
@@ -45,9 +46,14 @@ func (it *InitTask) Begin(prefix string) {
 
 // Create creates a new App instance.
 func Create(opts *Options) *App {
+	err := log.SetupLogger(opts.Mode)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to setup logger. details: %s", err.Error()))
+	}
 
 	initTasks := []InitTask{
-		{Name: "Setup environment", Task: config.SetupEnvironment},
+		{Name: "Validate application", Task: func() error { return validateApp(opts) }},
+		{Name: "Setup environment", Task: func() error { return config.SetupEnvironment(opts.Mode) }},
 		{Name: "Setup metrics", Task: metrics.Setup},
 		{Name: "Enable test mode if requested", Task: enableTestIfRequested},
 		{Name: "Setup database", Task: db.Setup},
@@ -64,11 +70,12 @@ func Create(opts *Options) *App {
 			log.Fatalf("Init task %s failed. details: %s", task.Name, err.Error())
 		}
 	}
+	log.Printf("%sInitialization completed%s", log.Orange, log.Reset)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
 	for _, flag := range opts.Flags {
-		// handle api worker separately
+		// Handle api worker separately
 		if flag.Name == "api" {
 			continue
 		}
@@ -85,7 +92,7 @@ func Create(opts *Options) *App {
 		if exists {
 			gin.SetMode(ginMode)
 		} else {
-			gin.SetMode("debug")
+			gin.SetMode("release")
 		}
 
 		httpServer = &http.Server{
@@ -94,6 +101,7 @@ func Create(opts *Options) *App {
 		}
 
 		go func() {
+			log.Printf("Starting HTTP server on 0.0.0.0:%d", config.Config.Port)
 			err := httpServer.ListenAndServe()
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
 				log.Fatalln(fmt.Errorf("failed to start http server. details: %w", err))
@@ -133,49 +141,63 @@ func (app *App) Stop() {
 func ParseFlags() *Options {
 	flags := GetFlags()
 
+	// 1. Parse flags
 	for _, flag := range flags {
 		switch flag.ValueType {
 		case "bool":
 			argFlag.Bool(flag.Name, flag.DefaultValue.(bool), flag.Description)
+		case "string":
+			argFlag.String(flag.Name, flag.DefaultValue.(string), flag.Description)
 		}
+		// Add more cases as needed
 	}
 	argFlag.Parse()
 
+	// 2. Extract passed values
 	for _, flag := range flags {
 		switch flag.ValueType {
 		case "bool":
 			if lookedUpVal := argFlag.Lookup(flag.Name); lookedUpVal != nil {
 				flags.SetPassedValue(flag.Name, argFlag.Lookup(flag.Name).Value.(argFlag.Getter).Get().(bool))
 			}
+		case "string":
+			if lookedUpVal := argFlag.Lookup(flag.Name); lookedUpVal != nil {
+				flags.SetPassedValue(flag.Name, argFlag.Lookup(flag.Name).Value.(argFlag.Getter).Get().(string))
+			}
 		}
+		// Add more cases as needed
 	}
 
 	options := Options{
-		Flags:    flags,
-		TestMode: flags.GetPassedValue("test-mode").(bool),
+		Flags: flags,
+		Mode:  flags.GetPassedValue("mode").(string),
 	}
 
-	if options.TestMode {
-		log.Warnln("RUNNING IN TEST MODE. NO AUTHENTICATION WILL BE REQUIRED.")
-	}
-
-	if !flags.AnyWorkerFlagsPassed() {
-		log.Println("No workers specified, starting all")
-
-		for _, flag := range flags {
-			switch flag.FlagType {
-			case "worker":
-				flags.SetPassedValue(flag.Name, true)
-			}
-		}
+	if options.Mode != mode.Test && options.Mode != mode.Prod && options.Mode != mode.Dev {
+		panic("Invalid mode specified. Valid options are: test, dev, prod")
 	}
 
 	return &options
 }
 
+func validateApp(options *Options) error {
+	if !options.Flags.AnyWorkerFlagsPassed() {
+		log.Println("No workers specified, starting all")
+
+		for _, flag := range options.Flags {
+			switch flag.FlagType {
+			case "worker":
+				options.Flags.SetPassedValue(flag.Name, true)
+			}
+		}
+	}
+
+	return nil
+}
+
 func enableTestIfRequested() error {
-	if config.Config.TestMode {
-		config.Config.TestMode = true
+	if config.Config.Mode == mode.Test {
+		log.Printf("%sRUNNING IN TEST MODE. NO AUTHENTICATION WILL BE REQUIRED%s", log.Bold, log.Reset)
 		config.Config.MongoDB.Name = config.Config.MongoDB.Name + "-test"
 	}
 

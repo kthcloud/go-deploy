@@ -10,7 +10,7 @@ import (
 // Loggers are used to poll logs from external services, such as Kubernetes.
 // Right now, there should only be one logger running at a time.
 func Setup(ctx context.Context) {
-	log.Println("Starting job workers")
+	log.Println("Starting loggers")
 
 	go workers.Worker(ctx, "deploymentLogger", deploymentLogger)
 }

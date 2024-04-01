@@ -1,13 +1,14 @@
 package log
 
 import (
+	"go-deploy/models/mode"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
 var (
-	Logger      *zap.SugaredLogger
-	AsyncLogger *zap.SugaredLogger
+	Logger    *zap.SugaredLogger
+	LoggerMap = make(map[string]*zap.SugaredLogger)
 )
 
 var (
@@ -16,23 +17,45 @@ var (
 
 	Orange = "\033[38;5;208m"
 	Grey   = "\033[90m"
+
+	runMode       = "development"
+	defaultLogger = "default"
 )
 
-func init() {
-	development := true
+func SetupLogger(mode string) error {
+	runMode = mode
+	Logger = Get(defaultLogger)
 
-	if development {
-		l := zap.Must(zap.NewDevelopment(zap.WithCaller(false)))
-		Logger = l.Sugar()
+	return nil
+}
+
+func Get(name string) *zap.SugaredLogger {
+	if sugaredLogger, ok := LoggerMap[name]; ok {
+		return sugaredLogger
+	}
+
+	var sugaredLogger *zap.SugaredLogger
+
+	if runMode != mode.Prod {
+		logger := zap.Must(zap.NewDevelopment(zap.WithCaller(false)))
+		if name == defaultLogger {
+			// For default logger, we don't need to name it.
+			sugaredLogger = logger.Sugar()
+		} else {
+			sugaredLogger = logger.Sugar().Named(name)
+		}
 	} else {
-		l := zap.Must(zap.NewProduction(zap.WithCaller(false)))
-		Logger = l.Sugar()
+		logger := zap.Must(zap.NewProduction(zap.WithCaller(false)))
+		sugaredLogger = logger.Sugar().Named(name)
 
 		Bold = ""
 		Reset = ""
 		Orange = ""
 		Grey = ""
 	}
+
+	LoggerMap[name] = sugaredLogger
+	return sugaredLogger
 }
 
 // Logln logs a message at provided level.

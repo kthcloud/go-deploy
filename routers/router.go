@@ -1,6 +1,7 @@
 package routers
 
 import (
+	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
@@ -8,6 +9,7 @@ import (
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"go-deploy/docs"
+	"go-deploy/models/mode"
 	"go-deploy/pkg/auth"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/log"
@@ -20,6 +22,7 @@ import (
 	"net/url"
 	"reflect"
 	"strings"
+	"time"
 )
 
 // NewRouter creates a new router
@@ -29,9 +32,10 @@ func NewRouter() *gin.Engine {
 	basePath := getUrlBasePath()
 
 	// Global middleware
+	ginLogger := log.Get("api")
 	router.Use(CorsAllowAll())
-	router.Use(gin.Logger())
-	router.Use(gin.Recovery())
+	router.Use(getGinLogger())
+	router.Use(ginzap.RecoveryWithZap(ginLogger.Desugar(), true))
 
 	// Metrics middleware
 	m := ginmetrics.GetMonitor()
@@ -169,4 +173,15 @@ func getUrlBasePath() string {
 	}
 
 	return res
+}
+
+// getGinLogger returns the logger used for Gin Gonic.
+// When in development mode, it will use the default gin.Logger(), since it is easier to read.
+// When in production mode, it will use the logger from the log package.
+func getGinLogger() gin.HandlerFunc {
+	if config.Config.Mode != mode.Prod {
+		return gin.Logger()
+	}
+
+	return ginzap.Ginzap(log.Get("api").Desugar(), time.RFC3339, true)
 }

@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"go-deploy/pkg/config"
 	"go-deploy/pkg/workers/confirm"
 	"go-deploy/pkg/workers/job_execute"
 	"go-deploy/pkg/workers/logger"
@@ -81,7 +80,7 @@ func GetFlags() FlagDefinitionList {
 			Name:         "api",
 			ValueType:    "bool",
 			FlagType:     "worker",
-			Description:  "start api server",
+			Description:  "Start api server",
 			DefaultValue: false,
 			Run:          nil,
 		},
@@ -89,7 +88,7 @@ func GetFlags() FlagDefinitionList {
 			Name:         "confirmer",
 			ValueType:    "bool",
 			FlagType:     "worker",
-			Description:  "start confirmer",
+			Description:  "Start confirmer",
 			DefaultValue: false,
 			Run: func(ctx context.Context, _ context.CancelFunc) {
 				confirm.Setup(ctx)
@@ -99,7 +98,7 @@ func GetFlags() FlagDefinitionList {
 			Name:         "status-updater",
 			ValueType:    "bool",
 			FlagType:     "worker",
-			Description:  "start status updater",
+			Description:  "Start status updater",
 			DefaultValue: false,
 			Run: func(ctx context.Context, _ context.CancelFunc) {
 				status_update.Setup(ctx)
@@ -109,7 +108,7 @@ func GetFlags() FlagDefinitionList {
 			Name:         "synchronizer",
 			ValueType:    "bool",
 			FlagType:     "worker",
-			Description:  "start synchronizer",
+			Description:  "Start synchronizer",
 			DefaultValue: false,
 			Run: func(ctx context.Context, _ context.CancelFunc) {
 				synchronize.Setup(ctx)
@@ -119,7 +118,7 @@ func GetFlags() FlagDefinitionList {
 			Name:         "job-executor",
 			ValueType:    "bool",
 			FlagType:     "worker",
-			Description:  "start job executor",
+			Description:  "Start job executor",
 			DefaultValue: false,
 			Run: func(ctx context.Context, _ context.CancelFunc) {
 				job_execute.Setup(ctx)
@@ -129,7 +128,7 @@ func GetFlags() FlagDefinitionList {
 			Name:         "repairer",
 			ValueType:    "bool",
 			FlagType:     "worker",
-			Description:  "start repairer",
+			Description:  "Start repairer",
 			DefaultValue: false,
 			Run: func(ctx context.Context, _ context.CancelFunc) {
 				repair.Setup(ctx)
@@ -139,7 +138,7 @@ func GetFlags() FlagDefinitionList {
 			Name:         "snapshotter",
 			ValueType:    "bool",
 			FlagType:     "worker",
-			Description:  "start snapshotter",
+			Description:  "Start snapshotter",
 			DefaultValue: false,
 			Run: func(ctx context.Context, _ context.CancelFunc) {
 				snapshot.Setup(ctx)
@@ -149,7 +148,7 @@ func GetFlags() FlagDefinitionList {
 			Name:         "metrics-updater",
 			ValueType:    "bool",
 			FlagType:     "worker",
-			Description:  "start metrics updater",
+			Description:  "Start metrics updater",
 			DefaultValue: false,
 			Run: func(ctx context.Context, _ context.CancelFunc) {
 				metricsWorker.Setup(ctx)
@@ -159,22 +158,18 @@ func GetFlags() FlagDefinitionList {
 			Name:         "logger",
 			ValueType:    "bool",
 			FlagType:     "worker",
-			Description:  "start logger",
+			Description:  "Start logger",
 			DefaultValue: false,
 			Run: func(ctx context.Context, _ context.CancelFunc) {
 				logger.Setup(ctx)
 			},
 		},
 		{
-			Name:         "test-mode",
-			ValueType:    "bool",
+			Name:         "mode",
+			ValueType:    "string",
 			FlagType:     "global",
-			Description:  "run in test mode",
-			DefaultValue: false,
-			Run: func(ctx context.Context, _ context.CancelFunc) {
-				config.Config.TestMode = true
-				config.Config.MongoDB.Name = config.Config.MongoDB.Name + "-test"
-			},
+			Description:  "Set the mode of the application, 'prod', 'dev', or 'test'",
+			DefaultValue: "dev",
 		},
 	}
 }
