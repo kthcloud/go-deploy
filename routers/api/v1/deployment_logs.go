@@ -1,4 +1,4 @@
-package v1_deployment
+package v1
 
 import (
 	"context"
@@ -7,7 +7,6 @@ import (
 	"go-deploy/dto/v1/body"
 	"go-deploy/dto/v1/uri"
 	"go-deploy/pkg/sys"
-	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
 	errors2 "go-deploy/service/errors"
 	"go-deploy/service/v1/deployments"
@@ -15,8 +14,8 @@ import (
 	"time"
 )
 
-// GetLogsSSE
-// @Summary Get logs SSE
+// GetLogs
+// @Summary Get logs using Server-Sent Events
 // @Description Get logs using Server-Sent Events
 // @Tags Deployment
 // @Accept  json
@@ -27,18 +26,18 @@ import (
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /deployments/{deploymentId}/logs [get]
-func GetLogsSSE(c *gin.Context) {
+func GetLogs(c *gin.Context) {
 	sysContext := sys.NewContext(c)
 
 	var requestURI uri.LogsGet
 	if err := sysContext.GinContext.ShouldBindUri(&requestURI); err != nil {
-		sysContext.BindingError(v1.CreateBindingError(err))
+		sysContext.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&sysContext)
+	auth, err := WithAuth(&sysContext)
 	if err != nil {
-		sysContext.ServerError(err, v1.AuthInfoNotAvailableErr)
+		sysContext.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -66,7 +65,7 @@ func GetLogsSSE(c *gin.Context) {
 			sysContext.NotFound("Deployment not found")
 		}
 
-		sysContext.ServerError(err, v1.InternalError)
+		sysContext.ServerError(err, InternalError)
 		return
 	}
 

@@ -1,4 +1,4 @@
-package v1_user
+package v1
 
 import (
 	"fmt"
@@ -9,7 +9,6 @@ import (
 	"go-deploy/models/model"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/sys"
-	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
 	"go-deploy/service/clients"
 	"go-deploy/service/v1/users/opts"
@@ -17,9 +16,83 @@ import (
 	"go-deploy/utils"
 )
 
+// GetUser
+// @Summary Get user by id
+// @Description Get user by id
+// @Tags User
+// @Accept  json
+// @Produce  json
+// @Param userId path string true "User ID"
+// @Success 200 {object}  body.UserRead
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
+// @Router /users/{userId} [get]
+func GetUser(c *gin.Context) {
+	context := sys.NewContext(c)
+
+	var requestURI uri.UserGet
+	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
+		context.BindingError(CreateBindingError(err))
+		return
+	}
+
+	auth, err := WithAuth(&context)
+	if err != nil {
+		context.ServerError(err, AuthInfoNotAvailableErr)
+		return
+	}
+
+	if requestURI.UserID == "" {
+		requestURI.UserID = auth.UserID
+	}
+
+	var effectiveRole *model.Role
+	var user *model.User
+
+	deployV1 := service.V1(auth)
+
+	if requestURI.UserID == auth.UserID {
+		effectiveRole = auth.GetEffectiveRole()
+		user, err = deployV1.Users().Create()
+		if err != nil {
+			context.ServerError(err, InternalError)
+			return
+		}
+
+		if user == nil {
+			context.NotFound("User not found")
+			return
+		}
+	} else {
+		user, err = deployV1.Users().Get(requestURI.UserID)
+		if err != nil {
+			context.ServerError(err, InternalError)
+			return
+		}
+
+		if user == nil {
+			context.NotFound("User not found")
+			return
+		}
+
+		effectiveRole = config.Config.GetRole(user.EffectiveRole.Name)
+		if effectiveRole == nil {
+			effectiveRole = &model.Role{}
+		}
+	}
+
+	usage, err := collectUsage(deployV1, user.ID)
+	if usage == nil {
+		context.ServerError(err, InternalError)
+		return
+	}
+
+	context.JSONResponse(200, user.ToDTO(effectiveRole, usage, deployV1.SMs().GetURL(user.ID)))
+}
+
 // ListUsers
-// @Summary Get user list
-// @Description Get user list
+// @Summary GetUser user list
+// @Description GetUser user list
 // @Tags User
 // @Accept  json
 // @Produce  json
@@ -33,13 +106,13 @@ func ListUsers(c *gin.Context) {
 
 	var requestQuery query.UserList
 	if err := context.GinContext.ShouldBind(&requestQuery); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -51,7 +124,7 @@ func ListUsers(c *gin.Context) {
 			Pagination: sUtils.GetOrDefaultPagination(requestQuery.Pagination),
 		})
 		if err != nil {
-			context.ServerError(err, v1.InternalError)
+			context.ServerError(err, InternalError)
 			return
 		}
 
@@ -70,7 +143,7 @@ func ListUsers(c *gin.Context) {
 		All:        requestQuery.All,
 	})
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -101,81 +174,7 @@ func ListUsers(c *gin.Context) {
 	context.Ok(usersDto)
 }
 
-// Get
-// @Summary Get user by id
-// @Description Get user by id
-// @Tags User
-// @Accept  json
-// @Produce  json
-// @Param userId path string true "User ID"
-// @Success 200 {object}  body.UserRead
-// @Failure 400 {object} sys.ErrorResponse
-// @Failure 500 {object} sys.ErrorResponse
-// @Router /users/{userId} [get]
-func Get(c *gin.Context) {
-	context := sys.NewContext(c)
-
-	var requestURI uri.UserGet
-	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
-		return
-	}
-
-	auth, err := v1.WithAuth(&context)
-	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
-		return
-	}
-
-	if requestURI.UserID == "" {
-		requestURI.UserID = auth.UserID
-	}
-
-	var effectiveRole *model.Role
-	var user *model.User
-
-	deployV1 := service.V1(auth)
-
-	if requestURI.UserID == auth.UserID {
-		effectiveRole = auth.GetEffectiveRole()
-		user, err = deployV1.Users().Create()
-		if err != nil {
-			context.ServerError(err, v1.InternalError)
-			return
-		}
-
-		if user == nil {
-			context.NotFound("User not found")
-			return
-		}
-	} else {
-		user, err = deployV1.Users().Get(requestURI.UserID)
-		if err != nil {
-			context.ServerError(err, v1.InternalError)
-			return
-		}
-
-		if user == nil {
-			context.NotFound("User not found")
-			return
-		}
-
-		effectiveRole = config.Config.GetRole(user.EffectiveRole.Name)
-		if effectiveRole == nil {
-			effectiveRole = &model.Role{}
-		}
-	}
-
-	usage, err := collectUsage(deployV1, user.ID)
-	if usage == nil {
-		context.ServerError(err, v1.InternalError)
-		return
-	}
-
-	context.JSONResponse(200, user.ToDTO(effectiveRole, usage, deployV1.SMs().GetURL(user.ID)))
-}
-
-// Update
+// UpdateUser
 // @Summary Update user by id
 // @Description Update user by id
 // @Tags User
@@ -187,24 +186,24 @@ func Get(c *gin.Context) {
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /users/{userId} [post]
-func Update(c *gin.Context) {
+func UpdateUser(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestURI uri.UserUpdate
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
 	var userUpdate body.UserUpdate
 	if err := context.GinContext.ShouldBindJSON(&userUpdate); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -220,14 +219,14 @@ func Update(c *gin.Context) {
 		effectiveRole = auth.GetEffectiveRole()
 		_, err = deployV1.Users().Create()
 		if err != nil {
-			context.ServerError(err, v1.InternalError)
+			context.ServerError(err, InternalError)
 			return
 		}
 	}
 
 	updated, err := deployV1.Users().Update(requestURI.UserID, &userUpdate)
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -238,7 +237,7 @@ func Update(c *gin.Context) {
 
 	usage, err := collectUsage(deployV1, updated.ID)
 	if usage == nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 

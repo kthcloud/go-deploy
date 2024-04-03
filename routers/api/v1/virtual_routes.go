@@ -1,4 +1,4 @@
-package v1_virtual_routes
+package v1
 
 import "github.com/gin-gonic/gin"
 

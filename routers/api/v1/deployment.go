@@ -1,4 +1,4 @@
-package v1_deployment
+package v1
 
 import (
 	"errors"
@@ -10,7 +10,6 @@ import (
 	"go-deploy/models/model"
 	"go-deploy/models/version"
 	"go-deploy/pkg/sys"
-	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/v1/deployments/opts"
@@ -18,15 +17,60 @@ import (
 	v12 "go-deploy/service/v1/utils"
 )
 
-// List
-// @Summary Get list of deployments
-// @Description Get list of deployments
-// @BasePath /api/v1
+// GetDeployment
+// @Summary Get deployment
+// @Description Get deployment
 // @Tags Deployment
 // @Accept  json
 // @Produce  json
 // @Param Authorization header string true "Bearer token"
-// @Param all query bool false "Get all"
+// @Param deploymentId path string true "Deployment ID"
+// @Success 200 {object} body.DeploymentRead
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
+// @Router /deployments/{deployment_id} [get]
+func GetDeployment(c *gin.Context) {
+	context := sys.NewContext(c)
+
+	var requestURI uri.DeploymentGet
+	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
+		context.BindingError(CreateBindingError(err))
+		return
+	}
+
+	auth, err := WithAuth(&context)
+	if err != nil {
+		context.ServerError(err, AuthInfoNotAvailableErr)
+		return
+	}
+
+	deployV1 := service.V1(auth)
+
+	deployment, err := deployV1.Deployments().Get(requestURI.DeploymentID, opts.GetOpts{
+		Shared: true,
+	})
+	if err != nil {
+		context.ServerError(err, AuthInfoNotAvailableErr)
+		return
+	}
+
+	if deployment == nil {
+		context.NotFound("Deployment not found")
+		return
+	}
+
+	teamIDs, _ := deployV1.Teams().ListIDs(teamOpts.ListOpts{ResourceID: deployment.ID})
+	context.Ok(deployment.ToDTO(deployV1.SMs().GetURL(deployment.OwnerID), teamIDs))
+}
+
+// ListDeployments
+// @Summary List deployments
+// @Description List deployments
+// @Tags Deployment
+// @Accept  json
+// @Produce  json
+// @Param Authorization header string true "Bearer token"
+// @Param all query bool false "GetDeployment all"
 // @Param userId query string false "Filter by user id"
 // @Param shared query bool false "Include shared"
 // @Param page query int false "Page number"
@@ -35,18 +79,18 @@ import (
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /deployments [get]
-func List(c *gin.Context) {
+func ListDeployments(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestQuery query.DeploymentList
 	if err := context.GinContext.Bind(&requestQuery); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -65,7 +109,7 @@ func List(c *gin.Context) {
 		Shared:     true,
 	})
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -83,57 +127,9 @@ func List(c *gin.Context) {
 	context.JSONResponse(200, dtoDeployments)
 }
 
-// Get
-// @Summary Get deployment by id
-// @Description Get deployment by id
-// @BasePath /api/v1
-// @Tags Deployment
-// @Accept  json
-// @Produce  json
-// @Param Authorization header string true "Bearer token"
-// @Param deploymentId path string true "Deployment ID"
-// @Success 200 {object} body.DeploymentRead
-// @Failure 400 {object} sys.ErrorResponse
-// @Failure 500 {object} sys.ErrorResponse
-// @Router /deployments/{deployment_id} [get]
-func Get(c *gin.Context) {
-	context := sys.NewContext(c)
-
-	var requestURI uri.DeploymentGet
-	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
-		return
-	}
-
-	auth, err := v1.WithAuth(&context)
-	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
-		return
-	}
-
-	deployV1 := service.V1(auth)
-
-	deployment, err := deployV1.Deployments().Get(requestURI.DeploymentID, opts.GetOpts{
-		Shared: true,
-	})
-	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
-		return
-	}
-
-	if deployment == nil {
-		context.NotFound("Deployment not found")
-		return
-	}
-
-	teamIDs, _ := deployV1.Teams().ListIDs(teamOpts.ListOpts{ResourceID: deployment.ID})
-	context.Ok(deployment.ToDTO(deployV1.SMs().GetURL(deployment.OwnerID), teamIDs))
-}
-
-// Create
+// CreateDeployment
 // @Summary Create deployment
 // @Description Create deployment
-// @BasePath /api/v1
 // @Tags Deployment
 // @Accept  json
 // @Produce  json
@@ -143,24 +139,24 @@ func Get(c *gin.Context) {
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /deployments [post]
-func Create(c *gin.Context) {
+func CreateDeployment(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestBody body.DeploymentCreate
 	if err := context.GinContext.ShouldBindJSON(&requestBody); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
 	effectiveRole := auth.GetEffectiveRole()
 	if effectiveRole == nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -168,7 +164,7 @@ func Create(c *gin.Context) {
 
 	doesNotAlreadyExists, err := deployV1.Deployments().NameAvailable(requestBody.Name)
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -203,7 +199,7 @@ func Create(c *gin.Context) {
 			return
 		}
 
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -216,7 +212,7 @@ func Create(c *gin.Context) {
 	})
 
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -226,10 +222,9 @@ func Create(c *gin.Context) {
 	})
 }
 
-// Delete
+// DeleteDeployment
 // @Summary Delete deployment
 // @Description Delete deployment
-// @BasePath /api/v1
 // @Tags Deployment
 // @Accept  json
 // @Produce  json
@@ -241,18 +236,18 @@ func Create(c *gin.Context) {
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /deployments/{deploymentId} [delete]
-func Delete(c *gin.Context) {
+func DeleteDeployment(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestURI uri.DeploymentDelete
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -260,7 +255,7 @@ func Delete(c *gin.Context) {
 
 	currentDeployment, err := deployV1.Deployments().Get(requestURI.DeploymentID)
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -287,7 +282,7 @@ func Delete(c *gin.Context) {
 			return
 		}
 
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -296,7 +291,7 @@ func Delete(c *gin.Context) {
 		"id": currentDeployment.ID,
 	})
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -306,10 +301,9 @@ func Delete(c *gin.Context) {
 	})
 }
 
-// Update
+// UpdateDeployment
 // @Summary Update deployment
 // @Description Update deployment
-// @BasePath /api/v1
 // @Tags Deployment
 // @Accept  json
 // @Produce  json
@@ -320,24 +314,24 @@ func Delete(c *gin.Context) {
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /deployments/{deploymentId} [post]
-func Update(c *gin.Context) {
+func UpdateDeployment(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestURI uri.DeploymentUpdate
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
 	var requestBody body.DeploymentUpdate
 	if err := context.GinContext.ShouldBindJSON(&requestBody); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -347,7 +341,7 @@ func Update(c *gin.Context) {
 	if requestBody.TransferCode != nil {
 		deployment, err = deployV1.Deployments().Get(requestURI.DeploymentID, opts.GetOpts{TransferCode: *requestBody.TransferCode})
 		if err != nil {
-			context.ServerError(err, v1.InternalError)
+			context.ServerError(err, InternalError)
 			return
 		}
 
@@ -357,7 +351,7 @@ func Update(c *gin.Context) {
 	} else {
 		deployment, err = deployV1.Deployments().Get(requestURI.DeploymentID, opts.GetOpts{Shared: true})
 		if err != nil {
-			context.ServerError(err, v1.InternalError)
+			context.ServerError(err, InternalError)
 			return
 		}
 	}
@@ -376,7 +370,7 @@ func Update(c *gin.Context) {
 					return
 				}
 
-				context.ServerError(err, v1.InternalError)
+				context.ServerError(err, InternalError)
 				return
 			}
 
@@ -393,7 +387,7 @@ func Update(c *gin.Context) {
 
 		exists, err := deployV1.Users().Exists(*requestBody.OwnerID)
 		if err != nil {
-			context.ServerError(err, v1.InternalError)
+			context.ServerError(err, InternalError)
 			return
 		}
 
@@ -403,7 +397,7 @@ func Update(c *gin.Context) {
 		}
 
 		if err != nil {
-			context.ServerError(err, v1.InternalError)
+			context.ServerError(err, InternalError)
 			return
 		}
 
@@ -424,7 +418,7 @@ func Update(c *gin.Context) {
 				return
 			}
 
-			context.ServerError(err, v1.InternalError)
+			context.ServerError(err, InternalError)
 			return
 		}
 
@@ -438,7 +432,7 @@ func Update(c *gin.Context) {
 	if requestBody.Name != nil {
 		available, err := deployV1.Deployments().NameAvailable(*requestBody.Name)
 		if err != nil {
-			context.ServerError(err, v1.InternalError)
+			context.ServerError(err, InternalError)
 			return
 		}
 
@@ -456,7 +450,7 @@ func Update(c *gin.Context) {
 			return
 		}
 
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -473,7 +467,7 @@ func Update(c *gin.Context) {
 	})
 
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 

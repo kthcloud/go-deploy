@@ -6,7 +6,7 @@ import (
 	"go-deploy/dto/v2/query"
 	"go-deploy/dto/v2/uri"
 	"go-deploy/pkg/sys"
-	v1 "go-deploy/routers/api/v1"
+	"go-deploy/routers/api/v1"
 	"go-deploy/service"
 	"go-deploy/service/v2/utils"
 	"go-deploy/service/v2/vms/opts"

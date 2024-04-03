@@ -1,8 +1,6 @@
 package routes
 
-import (
-	"go-deploy/routers/api/v1/v1_discover"
-)
+import v1 "go-deploy/routers/api/v1"
 
 const (
 	DiscoverPath = "/v1/discover"
@@ -16,6 +14,6 @@ func DiscoverRoutes() *DiscoverRoutingGroup {
 
 func (group *DiscoverRoutingGroup) PrivateRoutes() []Route {
 	return []Route{
-		{Method: "GET", Pattern: DiscoverPath, HandlerFunc: v1_discover.Discover},
+		{Method: "GET", Pattern: DiscoverPath, HandlerFunc: v1.Discover},
 	}
 }

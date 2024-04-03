@@ -1,4 +1,4 @@
-package v1_teams
+package v1
 
 import (
 	"errors"
@@ -11,7 +11,6 @@ import (
 	"go-deploy/dto/v1/uri"
 	"go-deploy/models/model"
 	"go-deploy/pkg/sys"
-	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
 	dClient "go-deploy/service/v1/deployments/opts"
@@ -23,9 +22,44 @@ import (
 	"time"
 )
 
-// List godoc
-// @Summary Get team list
-// @Description Get team list
+// GetTeam
+// @Summary Get team
+// @Description Get team
+// @Tags Team
+// @Accept json
+// @Produce json
+// @Param teamId path string true "Team ID"
+// @Success 200 {object} body.TeamRead
+// @Failure 400 {object} body.BindingError
+// @Failure 500 {object} sys.ErrorResponse
+// @Router /teams/{teamId} [get]
+func GetTeam(c *gin.Context) {
+	context := sys.NewContext(c)
+
+	var requestURI uri.TeamGet
+	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
+		context.BindingError(CreateBindingError(err))
+		return
+	}
+
+	auth, err := WithAuth(&context)
+	if err != nil {
+		context.ServerError(err, AuthInfoNotAvailableErr)
+		return
+	}
+
+	team, err := service.V1(auth).Teams().Get(requestURI.TeamID)
+	if err != nil {
+		context.ServerError(err, InternalError)
+		return
+	}
+
+	context.Ok(team.ToDTO(getMember, getResourceName))
+}
+
+// ListTeams
+// @Summary List teams
+// @Description List teams
 // @Tags Team
 // @Accept json
 // @Produce json
@@ -37,18 +71,18 @@ import (
 // @Failure 400 {object} body.BindingError
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /teams [get]
-func List(c *gin.Context) {
+func ListTeams(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestQuery query.TeamList
 	if err := context.GinContext.ShouldBind(&requestQuery); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -64,7 +98,7 @@ func List(c *gin.Context) {
 		UserID:     userID,
 	})
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -76,42 +110,7 @@ func List(c *gin.Context) {
 	context.Ok(teamListDTO)
 }
 
-// Get godoc
-// @Summary Get team
-// @Description Get team
-// @Tags Team
-// @Accept json
-// @Produce json
-// @Param teamId path string true "Team ID"
-// @Success 200 {object} body.TeamRead
-// @Failure 400 {object} body.BindingError
-// @Failure 500 {object} sys.ErrorResponse
-// @Router /teams/{teamId} [get]
-func Get(c *gin.Context) {
-	context := sys.NewContext(c)
-
-	var requestURI uri.TeamGet
-	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
-		return
-	}
-
-	auth, err := v1.WithAuth(&context)
-	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
-		return
-	}
-
-	team, err := service.V1(auth).Teams().Get(requestURI.TeamID)
-	if err != nil {
-		context.ServerError(err, v1.InternalError)
-		return
-	}
-
-	context.Ok(team.ToDTO(getMember, getResourceName))
-}
-
-// Create godoc
+// CreateTeam
 // @Summary Create team
 // @Description Create team
 // @Tags Team
@@ -122,18 +121,18 @@ func Get(c *gin.Context) {
 // @Failure 400 {object} body.BindingError
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /teams [post]
-func Create(c *gin.Context) {
+func CreateTeam(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestQuery body.TeamCreate
 	if err := context.GinContext.ShouldBindJSON(&requestQuery); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -144,14 +143,14 @@ func Create(c *gin.Context) {
 			return
 		}
 
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
 	context.JSONResponse(http.StatusCreated, team.ToDTO(getMember, getResourceName))
 }
 
-// Update godoc
+// UpdateTeam godoc
 // @Summary Update team
 // @Description Update team
 // @Tags Team
@@ -163,12 +162,12 @@ func Create(c *gin.Context) {
 // @Failure 400 {object} body.BindingError
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /teams/{teamId} [post]
-func Update(c *gin.Context) {
+func UpdateTeam(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestURI uri.TeamUpdate
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
@@ -180,13 +179,13 @@ func Update(c *gin.Context) {
 
 	var requestQuery body.TeamUpdate
 	if err := context.GinContext.ShouldBindBodyWith(&requestQuery, binding.JSON); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -197,7 +196,7 @@ func Update(c *gin.Context) {
 			return
 		}
 
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -209,7 +208,7 @@ func Update(c *gin.Context) {
 	context.JSONResponse(http.StatusOK, updated.ToDTO(getMember, getResourceName))
 }
 
-// Delete godoc
+// DeleteTeam
 // @Summary Delete team
 // @Description Delete team
 // @Tags Team
@@ -220,18 +219,18 @@ func Update(c *gin.Context) {
 // @Failure 400 {object} body.BindingError
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /teams/{teamId} [delete]
-func Delete(c *gin.Context) {
+func DeleteTeam(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestURI uri.TeamUpdate
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -242,19 +241,19 @@ func Delete(c *gin.Context) {
 			return
 		}
 
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
 	context.OkNoContent()
 }
 
-// joinTeam is an alternate entrypoint for Update that allows a user to join a team
+// joinTeam is an alternate entrypoint for UpdateTeam that allows a user to join a team
 // It is called if a body.TeamJoin is passed in the request body, instead of a body.TeamUpdate
 func joinTeam(context sys.ClientContext, id string, requestBody *body.TeamJoin) {
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 	}
 
 	team, err := service.V1(auth).Teams().Join(id, requestBody)
@@ -269,7 +268,7 @@ func joinTeam(context sys.ClientContext, id string, requestBody *body.TeamJoin) 
 			return
 		}
 
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 

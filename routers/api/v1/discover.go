@@ -1,9 +1,8 @@
-package v1_discover
+package v1
 
 import (
 	"github.com/gin-gonic/gin"
 	"go-deploy/pkg/sys"
-	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
 )
 
@@ -21,7 +20,7 @@ func Discover(c *gin.Context) {
 
 	discover, err := service.V1().Discovery().Discover()
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 

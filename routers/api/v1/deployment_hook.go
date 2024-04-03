@@ -1,4 +1,4 @@
-package v1_deployment
+package v1
 
 import (
 	"encoding/base64"
@@ -8,7 +8,6 @@ import (
 	"go-deploy/dto/v1/body"
 	"go-deploy/models/model"
 	"go-deploy/pkg/sys"
-	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/v1/deployments/opts"
@@ -36,7 +35,7 @@ func HandleHarborHook(c *gin.Context) {
 	token, err := getHarborTokenFromAuthHeader(context)
 
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -53,20 +52,20 @@ func HandleHarborHook(c *gin.Context) {
 	}
 
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
 	var webhook body.HarborWebhook
 	err = context.GinContext.ShouldBindJSON(&webhook)
 	if err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
 	deployment, err := deployV1.Deployments().Get("", opts.GetOpts{HarborWebhook: &webhook})
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -99,7 +98,7 @@ func HandleHarborHook(c *gin.Context) {
 				return
 			}
 
-			context.ServerError(err, v1.InternalError)
+			context.ServerError(err, InternalError)
 			return
 		}
 	}

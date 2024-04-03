@@ -1,4 +1,4 @@
-package v1_user_data
+package v1
 
 import (
 	"errors"
@@ -8,16 +8,15 @@ import (
 	"go-deploy/dto/v1/query"
 	"go-deploy/dto/v1/uri"
 	"go-deploy/pkg/sys"
-	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/v1/user_data/opts"
 	sUtils "go-deploy/service/v1/utils"
 )
 
-// Get
-// @Summary Get user data by id
-// @Description Get user data by id
+// GetUserData
+// @Summary Get user data
+// @Description Get user data
 // @Tags User data
 // @Accept  json
 // @Produce  json
@@ -27,18 +26,18 @@ import (
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /userData/{id} [get]
-func Get(c *gin.Context) {
+func GetUserData(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestURI uri.UserDataGet
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -46,7 +45,7 @@ func Get(c *gin.Context) {
 
 	userData, err := deployV1.UserData().Get(requestURI.ID)
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -58,9 +57,9 @@ func Get(c *gin.Context) {
 	context.Ok(userData.ToDTO())
 }
 
-// List
-// @Summary Get userdata list
-// @Description Get userdata list
+// ListUserData
+// @Summary List user data
+// @Description List user data
 // @Tags User data
 // @Accept  json
 // @Produce  json
@@ -69,18 +68,18 @@ func Get(c *gin.Context) {
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /userData [get]
-func List(c *gin.Context) {
+func ListUserData(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestQuery query.UserDataList
 	if err := context.GinContext.ShouldBind(&requestQuery); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -91,7 +90,7 @@ func List(c *gin.Context) {
 		UserID:     requestQuery.UserID,
 	})
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -103,7 +102,7 @@ func List(c *gin.Context) {
 	context.Ok(dtoUserData)
 }
 
-// Create
+// CreateUserData
 // @Summary Create user data
 // @Description Create user data
 // @Tags User data
@@ -114,18 +113,18 @@ func List(c *gin.Context) {
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /userData [post]
-func Create(c *gin.Context) {
+func CreateUserData(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var userCreate body.UserDataCreate
 	if err := context.GinContext.ShouldBindJSON(&userCreate); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -133,7 +132,7 @@ func Create(c *gin.Context) {
 
 	exists, err := deployV1.UserData().Exists(userCreate.ID)
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -150,16 +149,16 @@ func Create(c *gin.Context) {
 			return
 		}
 
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
 	context.Ok(userData.ToDTO())
 }
 
-// Update
-// @Summary Update user data by id, create if not exists
-// @Description Update user data by id, create if not exists
+// UpdateUserData
+// @Summary Update user data, create if not exists
+// @Description Update user data, create if not exists
 // @Tags User
 // @Accept  json
 // @Produce  json
@@ -169,24 +168,24 @@ func Create(c *gin.Context) {
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /usersData/{id} [post]
-func Update(c *gin.Context) {
+func UpdateUserData(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestURI uri.UserDataUpdate
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
 	var userUpdate body.UserDataUpdate
 	if err := context.GinContext.ShouldBindJSON(&userUpdate); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -194,19 +193,19 @@ func Update(c *gin.Context) {
 
 	userData, err := deployV1.UserData().Update(requestURI.ID, userUpdate.Data)
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
 	if userData == nil {
 		userData, err = deployV1.UserData().Create(requestURI.ID, userUpdate.Data, auth.UserID)
 		if err != nil {
-			context.ServerError(err, v1.InternalError)
+			context.ServerError(err, InternalError)
 			return
 		}
 
 		if userData == nil {
-			context.ServerError(fmt.Errorf("failed to create user data (when creating from update)"), v1.InternalError)
+			context.ServerError(fmt.Errorf("failed to create user data (when creating from update)"), InternalError)
 			return
 		}
 	}
@@ -214,9 +213,9 @@ func Update(c *gin.Context) {
 	context.Ok(userData.ToDTO())
 }
 
-// Delete
-// @Summary Delete user data by id
-// @Description Delete user data by id
+// DeleteUserData
+// @Summary Delete user data
+// @Description Delete user data
 // @Tags User data
 // @Accept  json
 // @Produce  json
@@ -225,18 +224,18 @@ func Update(c *gin.Context) {
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /userData/{id} [delete]
-func Delete(c *gin.Context) {
+func DeleteUserData(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestURI uri.UserDataGet
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -249,7 +248,7 @@ func Delete(c *gin.Context) {
 			return
 		}
 
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 

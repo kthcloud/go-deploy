@@ -2,8 +2,8 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
+	v1 "go-deploy/routers/api/v1"
 	"go-deploy/routers/api/v1/middleware"
-	"go-deploy/routers/api/v1/v1_vm"
 )
 
 const (
@@ -20,6 +20,6 @@ func GpuRoutes() *GpuRoutingGroup {
 
 func (group *GpuRoutingGroup) PrivateRoutes() []Route {
 	return []Route{
-		{Method: "GET", Pattern: GpusPath, HandlerFunc: v1_vm.ListGPUs, Middleware: []gin.HandlerFunc{middleware.AccessGpuRoutes()}},
+		{Method: "GET", Pattern: GpusPath, HandlerFunc: v1.ListGPUs, Middleware: []gin.HandlerFunc{middleware.AccessGpuRoutes()}},
 	}
 }

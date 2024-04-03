@@ -1,4 +1,4 @@
-package v1_vm
+package v1
 
 import (
 	"encoding/base64"
@@ -11,7 +11,6 @@ import (
 	"go-deploy/models/model"
 	"go-deploy/models/version"
 	"go-deploy/pkg/sys"
-	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
 	"go-deploy/service/clients"
 	sErrors "go-deploy/service/errors"
@@ -37,13 +36,13 @@ func ListGPUs(c *gin.Context) {
 
 	var requestQuery query.GpuList
 	if err := context.GinContext.ShouldBind(&requestQuery); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -53,7 +52,7 @@ func ListGPUs(c *gin.Context) {
 		AvailableGPUs: requestQuery.OnlyShowAvailable,
 	})
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -105,7 +104,7 @@ func detachGPU(context *sys.ClientContext, deployV1 clients.V1, vm *model.VM) {
 			return
 		}
 
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -114,7 +113,7 @@ func detachGPU(context *sys.ClientContext, deployV1 clients.V1, vm *model.VM) {
 		"id": vm.ID,
 	})
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -134,7 +133,7 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, deployV1 
 
 	currentGPU, err := deployV1.VMs().GetGpuByVM(vm.ID)
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -153,12 +152,12 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, deployV1 
 				Zone:          &vm.Zone,
 			})
 			if err != nil {
-				context.ServerError(err, v1.InternalError)
+				context.ServerError(err, InternalError)
 				return
 			}
 
 			if availableGpus == nil {
-				context.ServerUnavailableError(fmt.Errorf("no available gpus when attaching gpu_repo to vm %s", vm.ID), v1.NoAvailableGpuErr)
+				context.ServerUnavailableError(fmt.Errorf("no available gpus when attaching gpu_repo to vm %s", vm.ID), NoAvailableGpuErr)
 				return
 			}
 
@@ -172,7 +171,7 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, deployV1 
 
 		privilegedGPU, err := deployV1.VMs().IsGpuPrivileged(*requestBody.GpuID)
 		if err != nil {
-			context.ServerError(err, v1.InternalError)
+			context.ServerError(err, InternalError)
 			return
 		}
 
@@ -185,7 +184,7 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, deployV1 
 			Zone: &vm.Zone,
 		})
 		if err != nil {
-			context.ServerError(err, v1.InternalError)
+			context.ServerError(err, InternalError)
 			return
 		}
 
@@ -208,9 +207,9 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, deployV1 
 		if err != nil {
 			switch {
 			case errors.Is(err, sErrors.HostNotAvailableErr):
-				context.ServerUnavailableError(fmt.Errorf("host not available when attaching gpu_repo to vm %s. details: %w", vm.ID, err), v1.HostNotAvailableErr)
+				context.ServerUnavailableError(fmt.Errorf("host not available when attaching gpu_repo to vm %s. details: %w", vm.ID, err), HostNotAvailableErr)
 			default:
-				context.ServerError(err, v1.InternalError)
+				context.ServerError(err, InternalError)
 			}
 			return
 		}
@@ -219,7 +218,7 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, deployV1 
 	}
 
 	if len(gpus) == 0 {
-		context.ServerUnavailableError(fmt.Errorf("no available gpus when attaching gpu_repo to vm %s", vm.ID), v1.NoAvailableGpuErr)
+		context.ServerUnavailableError(fmt.Errorf("no available gpus when attaching gpu_repo to vm %s", vm.ID), NoAvailableGpuErr)
 		return
 	}
 
@@ -229,18 +228,18 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, deployV1 
 		if err := deployV1.VMs().CheckSuitableHost(vm.ID, gpus[0].Host, gpus[0].Zone); err != nil {
 			switch {
 			case errors.Is(err, sErrors.HostNotAvailableErr):
-				context.ServerUnavailableError(fmt.Errorf("host not available when attaching gpu_repo to vm %s. details: %w", vm.ID, err), v1.HostNotAvailableErr)
+				context.ServerUnavailableError(fmt.Errorf("host not available when attaching gpu_repo to vm %s. details: %w", vm.ID, err), HostNotAvailableErr)
 			case errors.Is(err, sErrors.VmTooLargeErr):
-				tooLargeErr := v1.VmTooLargeForHostErr
+				tooLargeErr := VmTooLargeForHostErr
 				caps, err := deployV1.VMs().GetCloudStackHostCapabilities(gpus[0].Host, vm.Zone)
 				if err == nil && caps != nil {
-					tooLargeErr = v1.MakeVmToLargeForHostErr(caps.CpuCoresTotal-caps.CpuCoresUsed, caps.RamTotal-caps.RamAllocated)
+					tooLargeErr = MakeVmToLargeForHostErr(caps.CpuCoresTotal-caps.CpuCoresUsed, caps.RamTotal-caps.RamAllocated)
 				}
 				context.ServerUnavailableError(fmt.Errorf("vm %s too large when attaching gpu_repo", vm.ID), tooLargeErr)
 			case errors.Is(err, sErrors.VmNotCreatedErr):
-				context.ServerUnavailableError(fmt.Errorf("vm %s not created when attaching gpu_repo to vm %s. details: %w", vm.ID, vm.ID, err), v1.VmNotReadyErr)
+				context.ServerUnavailableError(fmt.Errorf("vm %s not created when attaching gpu_repo to vm %s. details: %w", vm.ID, vm.ID, err), VmNotReadyErr)
 			default:
-				context.ServerError(err, v1.InternalError)
+				context.ServerError(err, InternalError)
 			}
 			return
 		}
@@ -264,7 +263,7 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, deployV1 
 			return
 		}
 
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -284,7 +283,7 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, deployV1 
 	})
 
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 

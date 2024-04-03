@@ -1,4 +1,4 @@
-package v1_deployment
+package v1
 
 import (
 	"fmt"
@@ -7,13 +7,12 @@ import (
 	"go-deploy/dto/v1/uri"
 	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/sys"
-	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
 	"go-deploy/service/v1/deployments/opts"
 	"net/http"
 )
 
-// DoCommand
+// DoDeploymentCommand
 // @Summary Do command
 // @Description Do command
 // @Tags Deployment
@@ -27,24 +26,24 @@ import (
 // @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /deployments/{deploymentId}/command [post]
-func DoCommand(c *gin.Context) {
+func DoDeploymentCommand(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestURI uri.DeploymentCommand
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
 	var requestBody body.DeploymentCommand
 	if err := context.GinContext.ShouldBindJSON(&requestBody); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 

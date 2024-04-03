@@ -1,8 +1,6 @@
 package routes
 
-import (
-	"go-deploy/routers/api/v1/v1_status"
-)
+import v1 "go-deploy/routers/api/v1"
 
 const (
 	StatusPath = "/v1/status"
@@ -16,6 +14,6 @@ func StatusRoutes() *StatusRoutingGroup {
 
 func (group *StatusRoutingGroup) PublicRoutes() []Route {
 	return []Route{
-		{Method: "GET", Pattern: StatusPath, HandlerFunc: v1_status.List},
+		{Method: "GET", Pattern: StatusPath, HandlerFunc: v1.ListWorkerStatus},
 	}
 }

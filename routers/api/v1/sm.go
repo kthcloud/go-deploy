@@ -1,4 +1,4 @@
-package v1_sm
+package v1
 
 import (
 	"github.com/gin-gonic/gin"
@@ -10,68 +10,15 @@ import (
 	"go-deploy/models/version"
 	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/sys"
-	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
 	"go-deploy/service/v1/sms/opts"
 	v12 "go-deploy/service/v1/utils"
 	"net/http"
 )
 
-// ListSMs
-// @Summary Get storage manager list
-// @Description Get storage manager list
-// @BasePath /api/v1
-// @Tags StorageManager
-// @Accept json
-// @Produce json
-// @Param Authorization header string true "Bearer token"
-// @Success 200 {array} body.SmRead
-// @Failure 400 {object} sys.ErrorResponse
-// @Failure 401 {object} sys.ErrorResponse
-// @Failure 500 {object} sys.ErrorResponse
-// @Router /storageManagers [get]storageManager
-func ListSMs(c *gin.Context) {
-	context := sys.NewContext(c)
-
-	var requestQuery query.SmList
-	if err := context.GinContext.Bind(&requestQuery); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
-		return
-	}
-
-	auth, err := v1.WithAuth(&context)
-	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
-		return
-	}
-
-	smList, err := service.V1(auth).SMs().List(opts.ListOpts{
-		Pagination: v12.GetOrDefaultPagination(requestQuery.Pagination),
-		All:        requestQuery.All,
-	})
-
-	if err != nil {
-		context.ServerError(err, v1.InternalError)
-		return
-	}
-
-	if len(smList) == 0 {
-		context.JSONResponse(200, []interface{}{})
-		return
-	}
-
-	var smDTOs []body.SmRead
-	for _, sm := range smList {
-		smDTOs = append(smDTOs, sm.ToDTO())
-	}
-
-	context.Ok(smDTOs)
-}
-
 // GetSM
 // @Summary Get storage manager
 // @Description Get storage manager
-// @BasePath /api/v1
 // @Tags StorageManager
 // @Accept json
 // @Produce json
@@ -88,13 +35,13 @@ func GetSM(c *gin.Context) {
 
 	var requestURI uri.SmGet
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -112,10 +59,59 @@ func GetSM(c *gin.Context) {
 	context.Ok(sm.ToDTO())
 }
 
+// ListSMs
+// @Summary Get storage manager list
+// @Description Get storage manager list
+// @Tags StorageManager
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer token"
+// @Success 200 {array} body.SmRead
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 401 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
+// @Router /storageManagers [get]storageManager
+func ListSMs(c *gin.Context) {
+	context := sys.NewContext(c)
+
+	var requestQuery query.SmList
+	if err := context.GinContext.Bind(&requestQuery); err != nil {
+		context.BindingError(CreateBindingError(err))
+		return
+	}
+
+	auth, err := WithAuth(&context)
+	if err != nil {
+		context.ServerError(err, AuthInfoNotAvailableErr)
+		return
+	}
+
+	smList, err := service.V1(auth).SMs().List(opts.ListOpts{
+		Pagination: v12.GetOrDefaultPagination(requestQuery.Pagination),
+		All:        requestQuery.All,
+	})
+
+	if err != nil {
+		context.ServerError(err, InternalError)
+		return
+	}
+
+	if len(smList) == 0 {
+		context.JSONResponse(200, []interface{}{})
+		return
+	}
+
+	var smDTOs []body.SmRead
+	for _, sm := range smList {
+		smDTOs = append(smDTOs, sm.ToDTO())
+	}
+
+	context.Ok(smDTOs)
+}
+
 // DeleteSM
 // @Summary Delete storage manager
 // @Description Delete storage manager
-// @BasePath /api/v1
 // @Tags StorageManager
 // @Accept json
 // @Produce json
@@ -132,13 +128,13 @@ func DeleteSM(c *gin.Context) {
 
 	var requestURI uri.SmDelete
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -146,7 +142,7 @@ func DeleteSM(c *gin.Context) {
 
 	sm, err := deployV1.SMs().Get(requestURI.SmID)
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -160,7 +156,7 @@ func DeleteSM(c *gin.Context) {
 		"id": sm.ID,
 	})
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 

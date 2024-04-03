@@ -1,4 +1,4 @@
-package v1_notification
+package v1
 
 import (
 	"errors"
@@ -7,7 +7,6 @@ import (
 	"go-deploy/dto/v1/query"
 	"go-deploy/dto/v1/uri"
 	"go-deploy/pkg/sys"
-	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/v1/notifications/opts"
@@ -15,9 +14,9 @@ import (
 	"net/http"
 )
 
-// Get godoc
-// @Summary Get notification
-// @Description Get notification
+// GetNotification godoc
+// @Summary GetNotification notification
+// @Description GetNotification notification
 // @Tags Notification
 // @Accept  json
 // @Produce  json
@@ -25,55 +24,55 @@ import (
 // @Success 200 {object} body.NotificationRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Router /notifications/{notificationId} [get]
-func Get(c *gin.Context) {
+func GetNotification(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestQuery uri.NotificationGet
 	if err := context.GinContext.ShouldBindUri(&requestQuery); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
 	notification, err := service.V1(auth).Notifications().Get(requestQuery.NotificationID)
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
 	context.JSONResponse(http.StatusOK, notification.ToDTO())
 }
 
-// List godoc
-// @Summary Get notifications
-// @Description Get notifications
+// ListNotifications godoc
+// @Summary GetNotification notifications
+// @Description GetNotification notifications
 // @Tags Notification
 // @Accept  json
 // @Produce  json
-// @Param all query bool false "Get all notifications"
-// @Param userId query string false "Get notifications by user id"
+// @Param all query bool false "GetNotification all notifications"
+// @Param userId query string false "GetNotification notifications by user id"
 // @Param page query int false "Page number"
 // @Param pageSize query int false "Number of items per page"
 // @Success 200 {array} body.NotificationRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Router /notifications [get]
-func List(c *gin.Context) {
+func ListNotifications(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestQuery query.NotificationList
 	if err := context.GinContext.ShouldBind(&requestQuery); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -89,7 +88,7 @@ func List(c *gin.Context) {
 		UserID:     userID,
 	})
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -101,9 +100,9 @@ func List(c *gin.Context) {
 	context.Ok(dtoNotifications)
 }
 
-// Update godoc
-// @Summary Update notification
-// @Description Update notification
+// UpdateNotification godoc
+// @Summary UpdateNotification notification
+// @Description UpdateNotification notification
 // @Tags Notification
 // @Accept  json
 // @Produce  json
@@ -112,30 +111,30 @@ func List(c *gin.Context) {
 // @Success 200
 // @Failure 400 {object} sys.ErrorResponse
 // @Router /notifications/{notificationId} [post]
-func Update(c *gin.Context) {
+func UpdateNotification(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestQuery uri.NotificationUpdate
 	if err := context.GinContext.ShouldBindUri(&requestQuery); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
 	var requestBody body.NotificationUpdate
 	if err := context.GinContext.ShouldBindJSON(&requestBody); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
 	updated, err := service.V1(auth).Notifications().Update(requestQuery.NotificationID, &requestBody)
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -147,9 +146,9 @@ func Update(c *gin.Context) {
 	context.Ok(updated.ToDTO())
 }
 
-// Delete godoc
-// @Summary Delete notification
-// @Description Delete notification
+// DeleteNotification godoc
+// @Summary DeleteNotification notification
+// @Description DeleteNotification notification
 // @Tags Notification
 // @Accept  json
 // @Produce  json
@@ -157,18 +156,18 @@ func Update(c *gin.Context) {
 // @Success 200
 // @Failure 400 {object} sys.ErrorResponse
 // @Router /notifications/{notificationId} [delete]
-func Delete(c *gin.Context) {
+func DeleteNotification(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestQuery uri.NotificationDelete
 	if err := context.GinContext.ShouldBindUri(&requestQuery); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -179,7 +178,7 @@ func Delete(c *gin.Context) {
 			return
 		}
 
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 

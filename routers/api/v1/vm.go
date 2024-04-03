@@ -1,4 +1,4 @@
-package v1_vm
+package v1
 
 import (
 	"errors"
@@ -11,7 +11,6 @@ import (
 	"go-deploy/models/model"
 	"go-deploy/models/version"
 	"go-deploy/pkg/sys"
-	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
 	teamOpts "go-deploy/service/v1/teams/opts"
@@ -20,31 +19,87 @@ import (
 	"go-deploy/utils"
 )
 
-// List
-// @Summary Get list of VMs
-// @Description Get list of VMs
+// GetVM
+// @Summary Get VM
+// @Description Get VM
 // @Tags VM
 // @Accept  json
 // @Produce  json
-// @Param all query bool false "Get all"
+// @Param vmId path string true "VM ID"
+// @Success 200 {object} body.VmRead
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 404 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
+// @Router /vm/{vmId} [get]
+func GetVM(c *gin.Context) {
+	context := sys.NewContext(c)
+
+	var requestURI uri.VmGet
+	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
+		context.BindingError(CreateBindingError(err))
+		return
+	}
+
+	auth, err := WithAuth(&context)
+	if err != nil {
+		context.ServerError(err, AuthInfoNotAvailableErr)
+		return
+	}
+
+	deployV1 := service.V1(auth)
+
+	vm, err := deployV1.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
+	if err != nil {
+		context.ServerError(err, InternalError)
+		return
+	}
+
+	if vm == nil {
+		context.NotFound("VM not found")
+		return
+	}
+
+	connectionString, _ := deployV1.VMs().GetConnectionString(requestURI.VmID)
+	var gpuRead *body.GpuRead
+	if gpu, _ := deployV1.VMs().GetGpuByVM(vm.ID); gpu != nil {
+		gpuDTO := gpu.ToDTO(true)
+		gpuRead = &gpuDTO
+	}
+
+	mapper, err := deployV1.VMs().GetExternalPortMapper(vm.ID)
+	if err != nil {
+		utils.PrettyPrintError(fmt.Errorf("failed to get external port mapper for vm %s. details: %w", vm.ID, err))
+	}
+
+	teamIDs, _ := deployV1.Teams().ListIDs(teamOpts.ListOpts{ResourceID: vm.ID})
+	context.Ok(vm.ToDTOv1(vm.StatusMessage, connectionString, teamIDs, gpuRead, mapper))
+}
+
+// ListVMs
+// @Summary List VMs
+// @Description List VMs
+// @Tags VM
+// @Accept  json
+// @Produce  json
+// @Param all query bool false "GetVM all"
 // @Param userId query string false "Filter by user id"
 // @Param page query int false "Page number"
 // @Param pageSize query int false "Number of items per page"
 // @Success 200 {array} body.VmRead
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /vm [get]
-func List(c *gin.Context) {
+func ListVMs(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestQuery query.VmList
 	if err := context.GinContext.ShouldBind(&requestQuery); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -63,7 +118,7 @@ func List(c *gin.Context) {
 		Shared:     true,
 	})
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -95,63 +150,7 @@ func List(c *gin.Context) {
 	context.Ok(dtoVMs)
 }
 
-// Get
-// @Summary Get VM by id
-// @Description Get VM by id
-// @Tags VM
-// @Accept  json
-// @Produce  json
-// @Param vmId path string true "VM ID"
-// @Success 200 {object} body.VmRead
-// @Failure 400 {object} sys.ErrorResponse
-// @Failure 404 {object} sys.ErrorResponse
-// @Failure 500 {object} sys.ErrorResponse
-// @Router /vm/{vmId} [get]
-func Get(c *gin.Context) {
-	context := sys.NewContext(c)
-
-	var requestURI uri.VmGet
-	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
-		return
-	}
-
-	auth, err := v1.WithAuth(&context)
-	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
-		return
-	}
-
-	deployV1 := service.V1(auth)
-
-	vm, err := deployV1.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
-	if err != nil {
-		context.ServerError(err, v1.InternalError)
-		return
-	}
-
-	if vm == nil {
-		context.NotFound("VM not found")
-		return
-	}
-
-	connectionString, _ := deployV1.VMs().GetConnectionString(requestURI.VmID)
-	var gpuRead *body.GpuRead
-	if gpu, _ := deployV1.VMs().GetGpuByVM(vm.ID); gpu != nil {
-		gpuDTO := gpu.ToDTO(true)
-		gpuRead = &gpuDTO
-	}
-
-	mapper, err := deployV1.VMs().GetExternalPortMapper(vm.ID)
-	if err != nil {
-		utils.PrettyPrintError(fmt.Errorf("failed to get external port mapper for vm %s. details: %w", vm.ID, err))
-	}
-
-	teamIDs, _ := deployV1.Teams().ListIDs(teamOpts.ListOpts{ResourceID: vm.ID})
-	context.Ok(vm.ToDTOv1(vm.StatusMessage, connectionString, teamIDs, gpuRead, mapper))
-}
-
-// Create
+// CreateVM
 // @Summary Create VM
 // @Description Create VM
 // @Tags VM
@@ -165,18 +164,18 @@ func Get(c *gin.Context) {
 // @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /vm [post]
-func Create(c *gin.Context) {
+func CreateVM(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestBody body.VmCreate
 	if err := context.GinContext.ShouldBindJSON(&requestBody); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -184,7 +183,7 @@ func Create(c *gin.Context) {
 
 	unique, err := deployV1.VMs().NameAvailable(requestBody.Name)
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -209,7 +208,7 @@ func Create(c *gin.Context) {
 			return
 		}
 
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -221,7 +220,7 @@ func Create(c *gin.Context) {
 		"params":  requestBody,
 	})
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -231,9 +230,216 @@ func Create(c *gin.Context) {
 	})
 }
 
-// Delete
-// @Summary Delete VM
-// @Description Delete VM
+// UpdateVM
+// @Summary UpdateVM VM
+// @Description UpdateVM VM
+// @Tags VM
+// @Accept  json
+// @Produce  json
+// @Param Authorization header string true "Bearer token"
+// @Param vmId path string true "VM ID"
+// @Param body body body.VmUpdate true "VM update"
+// @Success 200 {object} body.VmUpdated
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 401 {object} sys.ErrorResponse
+// @Failure 404 {object} sys.ErrorResponse
+// @Failure 423 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
+// @Router /vm/{vmId} [post]
+func UpdateVM(c *gin.Context) {
+	context := sys.NewContext(c)
+
+	var requestURI uri.VmUpdate
+	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
+		context.BindingError(CreateBindingError(err))
+		return
+	}
+
+	var requestBody body.VmUpdate
+	if err := context.GinContext.ShouldBindJSON(&requestBody); err != nil {
+		context.BindingError(CreateBindingError(err))
+		return
+	}
+
+	auth, err := WithAuth(&context)
+	if err != nil {
+		context.ServerError(err, AuthInfoNotAvailableErr)
+		return
+	}
+
+	deployV1 := service.V1(auth)
+
+	var vm *model.VM
+	if requestBody.TransferCode != nil {
+		vm, err = deployV1.VMs().Get("", opts.GetOpts{TransferCode: requestBody.TransferCode})
+		if err != nil {
+			context.ServerError(err, InternalError)
+			return
+		}
+
+		if requestBody.OwnerID == nil {
+			requestBody.OwnerID = &auth.UserID
+		}
+
+	} else {
+		vm, err = deployV1.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
+		if err != nil {
+			context.ServerError(err, InternalError)
+			return
+		}
+	}
+
+	if vm == nil {
+		context.NotFound("VM not found")
+		return
+	}
+
+	if requestBody.OwnerID != nil {
+		if *requestBody.OwnerID == "" {
+			err = deployV1.VMs().ClearUpdateOwner(vm.ID)
+			if err != nil {
+				if errors.Is(err, sErrors.VmNotFoundErr) {
+					context.NotFound("VM not found")
+					return
+				}
+
+				context.ServerError(err, InternalError)
+				return
+			}
+
+			context.Ok(body.VmUpdated{
+				ID: vm.ID,
+			})
+			return
+		}
+
+		if *requestBody.OwnerID == vm.OwnerID {
+			context.UserError("Owner already set")
+			return
+		}
+
+		exists, err := deployV1.Users().Exists(*requestBody.OwnerID)
+		if err != nil {
+			context.ServerError(err, InternalError)
+			return
+		}
+
+		if !exists {
+			context.UserError("User not found")
+			return
+		}
+
+		jobID, err := deployV1.VMs().UpdateOwnerSetup(vm.ID, &body.VmUpdateOwner{
+			NewOwnerID:   *requestBody.OwnerID,
+			OldOwnerID:   vm.OwnerID,
+			TransferCode: requestBody.TransferCode,
+		})
+		if err != nil {
+			if errors.Is(err, sErrors.VmNotFoundErr) {
+				context.NotFound("VM not found")
+				return
+			}
+
+			if errors.Is(err, sErrors.InvalidTransferCodeErr) {
+				context.Forbidden("Bad transfer code")
+				return
+			}
+
+			context.ServerError(err, InternalError)
+			return
+		}
+
+		context.Ok(body.VmUpdated{
+			ID:    vm.ID,
+			JobID: jobID,
+		})
+		return
+	}
+
+	if requestBody.GpuID != nil {
+		updateGPU(&context, &requestBody, deployV1, vm)
+		return
+	}
+
+	if requestBody.Name != nil {
+		available, err := deployV1.VMs().NameAvailable(*requestBody.Name)
+		if err != nil {
+			context.ServerError(err, InternalError)
+			return
+		}
+
+		if !available {
+			context.UserError("Name already taken")
+			return
+		}
+	}
+
+	if requestBody.Ports != nil {
+		for _, port := range *requestBody.Ports {
+			if port.HttpProxy != nil {
+				available, err := deployV1.VMs().HttpProxyNameAvailable(requestURI.VmID, port.HttpProxy.Name)
+				if err != nil {
+					context.ServerError(err, InternalError)
+					return
+				}
+
+				if !available {
+					context.UserError("Http proxy name already taken")
+					return
+				}
+			}
+		}
+	}
+
+	err = deployV1.VMs().CheckQuota(auth.UserID, vm.ID, &auth.GetEffectiveRole().Quotas, opts.QuotaOpts{Update: &requestBody})
+	if err != nil {
+		var quotaExceededErr sErrors.QuotaExceededError
+		if errors.As(err, &quotaExceededErr) {
+			context.Forbidden(quotaExceededErr.Error())
+			return
+		}
+
+		context.ServerError(err, InternalError)
+		return
+	}
+
+	err = deployV1.VMs().StartActivity(vm.ID, model.ActivityUpdating)
+	if err != nil {
+		var failedToStartActivityErr sErrors.FailedToStartActivityError
+		if errors.As(err, &failedToStartActivityErr) {
+			context.Locked(failedToStartActivityErr.Error())
+			return
+		}
+
+		if errors.Is(err, sErrors.VmNotFoundErr) {
+			context.NotFound("Deployment not found")
+			return
+		}
+
+		context.ServerError(err, InternalError)
+		return
+	}
+
+	jobID := uuid.New().String()
+	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobUpdateVM, version.V1, map[string]interface{}{
+		"id":     vm.ID,
+		"params": requestBody,
+	})
+
+	if err != nil {
+		context.ServerError(err, InternalError)
+		return
+	}
+
+	context.Ok(body.VmUpdated{
+		ID:    vm.ID,
+		JobID: &jobID,
+	})
+}
+
+// DeleteVM
+// @Summary DeleteVM VM
+// @Description DeleteVM VM
 // @Tags VM
 // @Accept  json
 // @Produce  json
@@ -245,18 +451,18 @@ func Create(c *gin.Context) {
 // @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /vm/{vmId} [delete]
-func Delete(c *gin.Context) {
+func DeleteVM(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestURI uri.VmDelete
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -264,7 +470,7 @@ func Delete(c *gin.Context) {
 
 	vm, err := deployV1.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -291,7 +497,7 @@ func Delete(c *gin.Context) {
 			return
 		}
 
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -300,219 +506,12 @@ func Delete(c *gin.Context) {
 		"id": vm.ID,
 	})
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
 	context.Ok(body.VmDeleted{
 		ID:    vm.ID,
 		JobID: jobID,
-	})
-}
-
-// Update
-// @Summary Update VM
-// @Description Update VM
-// @Tags VM
-// @Accept  json
-// @Produce  json
-// @Param Authorization header string true "Bearer token"
-// @Param vmId path string true "VM ID"
-// @Param body body body.VmUpdate true "VM update"
-// @Success 200 {object} body.VmUpdated
-// @Failure 400 {object} sys.ErrorResponse
-// @Failure 401 {object} sys.ErrorResponse
-// @Failure 404 {object} sys.ErrorResponse
-// @Failure 423 {object} sys.ErrorResponse
-// @Failure 500 {object} sys.ErrorResponse
-// @Router /vm/{vmId} [post]
-func Update(c *gin.Context) {
-	context := sys.NewContext(c)
-
-	var requestURI uri.VmUpdate
-	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
-		return
-	}
-
-	var requestBody body.VmUpdate
-	if err := context.GinContext.ShouldBindJSON(&requestBody); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
-		return
-	}
-
-	auth, err := v1.WithAuth(&context)
-	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
-		return
-	}
-
-	deployV1 := service.V1(auth)
-
-	var vm *model.VM
-	if requestBody.TransferCode != nil {
-		vm, err = deployV1.VMs().Get("", opts.GetOpts{TransferCode: requestBody.TransferCode})
-		if err != nil {
-			context.ServerError(err, v1.InternalError)
-			return
-		}
-
-		if requestBody.OwnerID == nil {
-			requestBody.OwnerID = &auth.UserID
-		}
-
-	} else {
-		vm, err = deployV1.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
-		if err != nil {
-			context.ServerError(err, v1.InternalError)
-			return
-		}
-	}
-
-	if vm == nil {
-		context.NotFound("VM not found")
-		return
-	}
-
-	if requestBody.OwnerID != nil {
-		if *requestBody.OwnerID == "" {
-			err = deployV1.VMs().ClearUpdateOwner(vm.ID)
-			if err != nil {
-				if errors.Is(err, sErrors.VmNotFoundErr) {
-					context.NotFound("VM not found")
-					return
-				}
-
-				context.ServerError(err, v1.InternalError)
-				return
-			}
-
-			context.Ok(body.VmUpdated{
-				ID: vm.ID,
-			})
-			return
-		}
-
-		if *requestBody.OwnerID == vm.OwnerID {
-			context.UserError("Owner already set")
-			return
-		}
-
-		exists, err := deployV1.Users().Exists(*requestBody.OwnerID)
-		if err != nil {
-			context.ServerError(err, v1.InternalError)
-			return
-		}
-
-		if !exists {
-			context.UserError("User not found")
-			return
-		}
-
-		jobID, err := deployV1.VMs().UpdateOwnerSetup(vm.ID, &body.VmUpdateOwner{
-			NewOwnerID:   *requestBody.OwnerID,
-			OldOwnerID:   vm.OwnerID,
-			TransferCode: requestBody.TransferCode,
-		})
-		if err != nil {
-			if errors.Is(err, sErrors.VmNotFoundErr) {
-				context.NotFound("VM not found")
-				return
-			}
-
-			if errors.Is(err, sErrors.InvalidTransferCodeErr) {
-				context.Forbidden("Bad transfer code")
-				return
-			}
-
-			context.ServerError(err, v1.InternalError)
-			return
-		}
-
-		context.Ok(body.VmUpdated{
-			ID:    vm.ID,
-			JobID: jobID,
-		})
-		return
-	}
-
-	if requestBody.GpuID != nil {
-		updateGPU(&context, &requestBody, deployV1, vm)
-		return
-	}
-
-	if requestBody.Name != nil {
-		available, err := deployV1.VMs().NameAvailable(*requestBody.Name)
-		if err != nil {
-			context.ServerError(err, v1.InternalError)
-			return
-		}
-
-		if !available {
-			context.UserError("Name already taken")
-			return
-		}
-	}
-
-	if requestBody.Ports != nil {
-		for _, port := range *requestBody.Ports {
-			if port.HttpProxy != nil {
-				available, err := deployV1.VMs().HttpProxyNameAvailable(requestURI.VmID, port.HttpProxy.Name)
-				if err != nil {
-					context.ServerError(err, v1.InternalError)
-					return
-				}
-
-				if !available {
-					context.UserError("Http proxy name already taken")
-					return
-				}
-			}
-		}
-	}
-
-	err = deployV1.VMs().CheckQuota(auth.UserID, vm.ID, &auth.GetEffectiveRole().Quotas, opts.QuotaOpts{Update: &requestBody})
-	if err != nil {
-		var quotaExceededErr sErrors.QuotaExceededError
-		if errors.As(err, &quotaExceededErr) {
-			context.Forbidden(quotaExceededErr.Error())
-			return
-		}
-
-		context.ServerError(err, v1.InternalError)
-		return
-	}
-
-	err = deployV1.VMs().StartActivity(vm.ID, model.ActivityUpdating)
-	if err != nil {
-		var failedToStartActivityErr sErrors.FailedToStartActivityError
-		if errors.As(err, &failedToStartActivityErr) {
-			context.Locked(failedToStartActivityErr.Error())
-			return
-		}
-
-		if errors.Is(err, sErrors.VmNotFoundErr) {
-			context.NotFound("Deployment not found")
-			return
-		}
-
-		context.ServerError(err, v1.InternalError)
-		return
-	}
-
-	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobUpdateVM, version.V1, map[string]interface{}{
-		"id":     vm.ID,
-		"params": requestBody,
-	})
-
-	if err != nil {
-		context.ServerError(err, v1.InternalError)
-		return
-	}
-
-	context.Ok(body.VmUpdated{
-		ID:    vm.ID,
-		JobID: &jobID,
 	})
 }

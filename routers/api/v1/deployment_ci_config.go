@@ -1,11 +1,10 @@
-package v1_deployment
+package v1
 
 import (
 	"errors"
 	"github.com/gin-gonic/gin"
 	"go-deploy/dto/v1/uri"
 	"go-deploy/pkg/sys"
-	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
 	dErrors "go-deploy/service/errors"
 	"net/http"
@@ -27,13 +26,13 @@ func GetCiConfig(c *gin.Context) {
 
 	var requestURI uri.CiConfigGet
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -44,7 +43,7 @@ func GetCiConfig(c *gin.Context) {
 			return
 		}
 
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 

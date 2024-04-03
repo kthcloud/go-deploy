@@ -1,6 +1,6 @@
 package routes
 
-import "go-deploy/routers/api/v1/v1_job"
+import v1 "go-deploy/routers/api/v1"
 
 const (
 	JobsPath = "/v1/jobs"
@@ -15,8 +15,8 @@ func JobRoutes() *JobRoutingGroup {
 
 func (group *JobRoutingGroup) PrivateRoutes() []Route {
 	return []Route{
-		{Method: "GET", Pattern: JobsPath, HandlerFunc: v1_job.List},
-		{Method: "GET", Pattern: JobPath, HandlerFunc: v1_job.Get},
-		{Method: "POST", Pattern: JobPath, HandlerFunc: v1_job.Update},
+		{Method: "GET", Pattern: JobsPath, HandlerFunc: v1.ListJobs},
+		{Method: "GET", Pattern: JobPath, HandlerFunc: v1.GetJob},
+		{Method: "POST", Pattern: JobPath, HandlerFunc: v1.UpdateJob},
 	}
 }

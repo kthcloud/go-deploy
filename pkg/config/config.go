@@ -150,7 +150,7 @@ func setupK8sClusters() error {
 		}
 	}
 
-	log.Println("k8s clusters setup done")
+	log.Println("K8s clusters setup done")
 	return nil
 }
 

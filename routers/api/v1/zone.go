@@ -1,41 +1,40 @@
-package v1_zone
+package v1
 
 import (
 	"github.com/gin-gonic/gin"
 	"go-deploy/dto/v1/body"
 	"go-deploy/dto/v1/query"
 	"go-deploy/pkg/sys"
-	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
 	"go-deploy/service/v1/zones/opts"
 )
 
-// List
-// @Summary Get list of zones
-// @Description Get list of zones
+// ListZones
+// @Summary List zones
+// @Description List zones
 // @Tags zone
 // @Accept json
 // @Produce json
 // @Param type query string false "Zone type"
 // @Success 200 {array} body.ZoneRead
-func List(c *gin.Context) {
+func ListZones(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestQuery query.ZoneList
 	if err := context.GinContext.ShouldBind(&requestQuery); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
 	zoneList, err := service.V1(auth).Zones().List(opts.ListOpts{Type: requestQuery.Type})
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 

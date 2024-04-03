@@ -1,4 +1,4 @@
-package v1_vm
+package v1
 
 import (
 	"errors"
@@ -10,62 +10,11 @@ import (
 	"go-deploy/models/model"
 	"go-deploy/models/version"
 	"go-deploy/pkg/sys"
-	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
 	v12 "go-deploy/service/v1/utils"
 	"go-deploy/service/v1/vms/opts"
 )
-
-// ListSnapshots
-// @Summary Get snapshot list
-// @Description Get snapshot list
-// @Tags VM
-// @Accept json
-// @Produce json
-// @Param Authorization header string true "Bearer token"
-// @Param vmId path string true "VM ID"
-// @Success 200 {array} body.VmSnapshotRead
-// @Failure 400 {object} sys.ErrorResponse
-// @Failure 404 {object} sys.ErrorResponse
-// @Failure 423 {object} sys.ErrorResponse
-// @Failure 500 {object} sys.ErrorResponse
-// @Router /vms/{vmId}/snapshots [get]
-func ListSnapshots(c *gin.Context) {
-	context := sys.NewContext(c)
-
-	var requestQuery query.VmSnapshotList
-	if err := context.GinContext.ShouldBindQuery(&requestQuery); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
-		return
-	}
-
-	var requestURI uri.VmSnapshotList
-	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
-		return
-	}
-
-	snapshots, err := service.V1().VMs().ListSnapshots(requestURI.VmID, opts.ListSnapshotOpts{
-		Pagination: v12.GetOrDefaultPagination(requestQuery.Pagination),
-	})
-	if err != nil {
-		context.ServerError(err, v1.InternalError)
-		return
-	}
-
-	if snapshots == nil {
-		context.Ok([]interface{}{})
-		return
-	}
-
-	dtoSnapshots := make([]body.VmSnapshotRead, len(snapshots))
-	for i, snapshot := range snapshots {
-		dtoSnapshots[i] = snapshot.ToDTOv1()
-	}
-
-	context.Ok(dtoSnapshots)
-}
 
 // GetSnapshot
 // @Summary Get snapshot
@@ -86,13 +35,13 @@ func GetSnapshot(c *gin.Context) {
 
 	var requestURI uri.VmSnapshotGet
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -100,7 +49,7 @@ func GetSnapshot(c *gin.Context) {
 
 	vm, err := deployV1.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -111,7 +60,7 @@ func GetSnapshot(c *gin.Context) {
 
 	snapshot, err := deployV1.VMs().GetSnapshot(requestURI.VmID, requestURI.SnapshotID, opts.GetSnapshotOpts{})
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -121,6 +70,56 @@ func GetSnapshot(c *gin.Context) {
 	}
 
 	context.Ok(snapshot.ToDTOv1())
+}
+
+// ListSnapshots
+// @Summary List snapshots
+// @Description List snapshots
+// @Tags VM
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer token"
+// @Param vmId path string true "VM ID"
+// @Success 200 {array} body.VmSnapshotRead
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 404 {object} sys.ErrorResponse
+// @Failure 423 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
+// @Router /vms/{vmId}/snapshots [get]
+func ListSnapshots(c *gin.Context) {
+	context := sys.NewContext(c)
+
+	var requestQuery query.VmSnapshotList
+	if err := context.GinContext.ShouldBindQuery(&requestQuery); err != nil {
+		context.BindingError(CreateBindingError(err))
+		return
+	}
+
+	var requestURI uri.VmSnapshotList
+	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
+		context.BindingError(CreateBindingError(err))
+		return
+	}
+
+	snapshots, err := service.V1().VMs().ListSnapshots(requestURI.VmID, opts.ListSnapshotOpts{
+		Pagination: v12.GetOrDefaultPagination(requestQuery.Pagination),
+	})
+	if err != nil {
+		context.ServerError(err, InternalError)
+		return
+	}
+
+	if snapshots == nil {
+		context.Ok([]interface{}{})
+		return
+	}
+
+	dtoSnapshots := make([]body.VmSnapshotRead, len(snapshots))
+	for i, snapshot := range snapshots {
+		dtoSnapshots[i] = snapshot.ToDTOv1()
+	}
+
+	context.Ok(dtoSnapshots)
 }
 
 // CreateSnapshot
@@ -141,19 +140,19 @@ func CreateSnapshot(c *gin.Context) {
 
 	var requestURI uri.VmSnapshotCreate
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
 	var requestBody body.VmSnapshotCreate
 	if err := context.GinContext.ShouldBindJSON(&requestBody); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -169,13 +168,13 @@ func CreateSnapshot(c *gin.Context) {
 			return
 		}
 
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
 	current, err := deployV1.VMs().GetSnapshotByName(requestURI.VmID, requestBody.Name, opts.GetSnapshotOpts{})
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -186,7 +185,7 @@ func CreateSnapshot(c *gin.Context) {
 
 	vm, err := deployV1.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -204,7 +203,7 @@ func CreateSnapshot(c *gin.Context) {
 	})
 
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -233,13 +232,13 @@ func DeleteSnapshot(c *gin.Context) {
 
 	var requestURI uri.VmSnapshotDelete
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -247,7 +246,7 @@ func DeleteSnapshot(c *gin.Context) {
 
 	vm, err := deployV1.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -258,7 +257,7 @@ func DeleteSnapshot(c *gin.Context) {
 
 	snapshot, err := deployV1.VMs().GetSnapshot(requestURI.VmID, requestURI.SnapshotID, opts.GetSnapshotOpts{})
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -274,7 +273,7 @@ func DeleteSnapshot(c *gin.Context) {
 	})
 
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 

@@ -1,16 +1,15 @@
-package v1_vm
+package v1
 
 import (
 	"github.com/gin-gonic/gin"
 	"go-deploy/dto/v1/body"
 	"go-deploy/dto/v1/uri"
 	"go-deploy/pkg/sys"
-	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
 	"go-deploy/service/v1/vms/opts"
 )
 
-// DoCommand
+// DoVmCommand
 // @Summary Do command
 // @Description Do command
 // @Tags VM
@@ -24,26 +23,26 @@ import (
 // @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /vms/{vmId}/command [post]
-func DoCommand(c *gin.Context) {
+func DoVmCommand(c *gin.Context) {
 	// TODO: this route is weird and should be covered in the vm update route with desired states
 
 	context := sys.NewContext(c)
 
 	var requestURI uri.VmCommand
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
 	var requestBody body.VmCommand
 	if err := context.GinContext.ShouldBindJSON(&requestBody); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -51,7 +50,7 @@ func DoCommand(c *gin.Context) {
 
 	vm, err := deployV1.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
