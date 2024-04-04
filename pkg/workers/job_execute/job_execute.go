@@ -13,5 +13,5 @@ func Setup(ctx context.Context) {
 	log.Println("Starting job workers")
 
 	go workers.PeriodicWorker(ctx, "jobFetcher", jobFetcher, config.Config.Timer.JobFetch)
-	go workers.PeriodicWorker(ctx, "jobFetcher", failedJobFetcher, config.Config.Timer.FailedJobFetch)
+	go workers.PeriodicWorker(ctx, "failedJobFetcher", failedJobFetcher, config.Config.Timer.FailedJobFetch)
 }

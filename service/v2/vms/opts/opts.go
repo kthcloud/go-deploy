@@ -58,6 +58,7 @@ type GetGpuLeaseOpts struct {
 type ListGpuLeaseOpts struct {
 	VmID       *string
 	UserID     *string
+	GpuGroupID *string
 	Pagination *utils.Pagination
 }
 

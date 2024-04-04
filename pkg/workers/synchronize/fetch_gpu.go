@@ -122,14 +122,16 @@ func synchronizeGpusV2(gpuInfo *models.GpuInfoRead) error {
 			if groupName == nil {
 				continue
 			}
+			groupID := utils.HashStringAlphanumericLower(fmt.Sprintf("%s-%s", *groupName, host.Zone))
+
 			// rtx5000: 1eb0  rtx-a6000: 2230
 			if groups[host.Zone] == nil {
 				groups[host.Zone] = make(map[string]model.GpuGroup)
 			}
 
-			if group, ok := groups[host.Zone][*groupName]; !ok {
-				groups[host.Zone][*groupName] = model.GpuGroup{
-					ID:          *groupName,
+			if group, ok := groups[host.Zone][groupID]; !ok {
+				groups[host.Zone][groupID] = model.GpuGroup{
+					Name:        *groupName,
 					DisplayName: gpu.Name,
 					Zone:        host.Zone,
 					Total:       1,
@@ -153,12 +155,13 @@ func synchronizeGpusV2(gpuInfo *models.GpuInfoRead) error {
 			}
 
 			if !exists {
-				err := gpu_group_repo.New().Create(group.ID, zone, group.Vendor, group.DeviceID, group.VendorID, group.Total)
+				err := gpu_group_repo.New().Create(group.Name, group.DisplayName, zone, group.Vendor, group.DeviceID, group.VendorID, group.Total)
 				if err != nil {
 					return err
 				}
 			} else {
 				err = gpu_group_repo.New().WithZone(zone).SetWithBsonByID(group.ID, bson.D{
+					{"name", group.Name},
 					{"displayName", group.DisplayName},
 					{"total", group.Total},
 					{"vendor", group.Vendor},

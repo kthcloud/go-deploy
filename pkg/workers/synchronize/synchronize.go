@@ -12,4 +12,5 @@ import (
 func Setup(ctx context.Context) {
 	log.Println("Starting synchronizers")
 	go workers.PeriodicWorker(ctx, "gpuSynchronizer", gpuSynchronizer, config.Config.Timer.GpuSynchronize)
+	go workers.PeriodicWorker(ctx, "gpuLeaseSynchronizer", gpuLeaseSynchronizer, config.Config.Timer.GpuLeaseSynchronize)
 }

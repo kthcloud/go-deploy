@@ -86,6 +86,9 @@ var (
 	// GpuLeaseNotActive is returned when the GPU lease is not active.
 	GpuLeaseNotActiveErr = fmt.Errorf("gpu_repo lease not active")
 
+	// GpuLeaseNotFoundErr is returned when the GPU lease is not found.
+	GpuLeaseNotFoundErr = fmt.Errorf("gpu_repo lease not found")
+
 	// VmTooLargeErr is returned when the VM is too large to be started on a specific host.
 	// Something that is required when using GPUs.
 	VmTooLargeErr = fmt.Errorf("vm too large")

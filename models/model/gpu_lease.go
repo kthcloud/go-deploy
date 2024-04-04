@@ -6,16 +6,17 @@ import (
 )
 
 type GpuLease struct {
-	ID        string `bson:"id"`
-	GroupName string `bson:"groupName"`
+	ID         string `bson:"id"`
+	GpuGroupID string `bson:"gpuGroupId"`
 
 	VmID   string `bson:"vmId"`
 	UserID string `bson:"userId"`
 
 	LeaseDuration float64    `bson:"leaseDuration"`
-	ActivatedAt   *time.Time `bson:"expiresAt,omitempty"`
-
-	CreatedAt time.Time `bson:"createdAt"`
+	ActivatedAt   *time.Time `bson:"activatedAt,omitempty"`
+	AssignedAt    *time.Time `bson:"assignedAt,omitempty"`
+	ExpiredAt     *time.Time `bson:"expiredAt,omitempty"`
+	CreatedAt     time.Time  `bson:"createdAt"`
 }
 
 // IsActive returns true if the lease is active.
@@ -26,7 +27,7 @@ func (g *GpuLease) IsActive() bool {
 
 // IsExpired returns true if the lease is expired.
 func (g *GpuLease) IsExpired() bool {
-	return g.ActivatedAt != nil && g.ActivatedAt.After(time.Now().Add(time.Duration(-g.LeaseDuration)*time.Hour))
+	return g.ExpiredAt != nil && g.ExpiredAt.Before(time.Now())
 }
 
 type GpuLeaseCreateParams struct {
@@ -37,7 +38,7 @@ type GpuLeaseCreateParams struct {
 // FromDTO converts body.GpuLeaseCreate DTO to GpuLeaseCreateParams.
 func (g GpuLeaseCreateParams) FromDTO(dto *body.GpuLeaseCreate) GpuLeaseCreateParams {
 	return GpuLeaseCreateParams{
-		GpuGroupName: dto.GpuName,
+		GpuGroupName: dto.GpuGroupID,
 		LeaseForever: dto.LeaseForever,
 	}
 }

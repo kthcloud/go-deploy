@@ -75,6 +75,11 @@ func (c *Client) List(opts ...opts.ListGpuLeaseOpts) ([]model.GpuLease, error) {
 		glc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
 	}
 
+	if o.GpuGroupID != nil {
+		// Specific GPU group's GPU leases are requested
+		glc.WithGpuGroupID(*o.GpuGroupID)
+	}
+
 	if o.VmID != nil {
 		// Specific VM's GPU leases are requested
 		if c.V2.HasAuth() {
@@ -227,4 +232,58 @@ func (c *Client) Delete(id string) error {
 	}
 
 	return nil
+}
+
+// Count counts the number of GPU leases
+func (c *Client) Count(opts ...opts.ListGpuLeaseOpts) (int, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to count gpu leases. details: %w", err)
+	}
+
+	o := sUtils.GetFirstOrDefault(opts)
+
+	glc := gpu_lease_repo.New()
+
+	if o.GpuGroupID != nil {
+		glc.WithGpuGroupID(*o.GpuGroupID)
+	}
+
+	count, err := glc.Count()
+	if err != nil {
+		return 0, makeError(err)
+	}
+
+	return count, nil
+}
+
+// GetQueuePosition fetches the queue position of a GPU lease.
+// Queue position is the number of leases that were created before this one minus the total GPUs of the group
+// A queue position of 0 means the lease can be activated.
+func (c *Client) GetQueuePosition(id string) (int, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to get gpu lease context. details: %w", err)
+	}
+
+	lease, err := c.Get(id)
+	if err != nil {
+		return 0, makeError(err)
+	}
+
+	if lease == nil {
+		return 0, makeError(sErrors.GpuLeaseNotFoundErr)
+	}
+
+	count, err := c.Count(opts.ListGpuLeaseOpts{
+		GpuGroupID: &lease.GpuGroupID,
+	})
+
+	gpuGroup, err := c.V2.VMs().GpuGroups().Get(lease.GpuGroupID)
+	if err != nil {
+		return 0, makeError(err)
+	}
+
+	// Add 1 to the queue position to make it human readable (queue position 1 means next in line)
+	queuePosition := max((count-gpuGroup.Total)+1, 0)
+
+	return queuePosition, nil
 }

@@ -24,6 +24,7 @@ type ConfigType struct {
 
 	Timer struct {
 		GpuSynchronize            time.Duration `yaml:"gpuSynchronize"`
+		GpuLeaseSynchronize       time.Duration `yaml:"gpuLeaseSynchronize"`
 		VmStatusUpdate            time.Duration `yaml:"vmStatusUpdate"`
 		VmSnapshotUpdate          time.Duration `yaml:"vmSnapshotUpdate"`
 		DeploymentStatusUpdate    time.Duration `yaml:"deploymentStatusUpdate"`

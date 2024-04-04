@@ -55,7 +55,12 @@ func GetGpuLease(c *gin.Context) {
 		return
 	}
 
-	context.Ok(gpuLease.ToDTO())
+	position, err := service.V2(auth).VMs().GpuLeases().GetQueuePosition(gpuLease.ID)
+	if err != nil {
+		context.ServerError(err, v1.InternalError)
+	}
+
+	context.Ok(gpuLease.ToDTO(position))
 }
 
 // ListGpuLeases
@@ -108,7 +113,7 @@ func ListGpuLeases(c *gin.Context) {
 
 	dtoGpuLeases := make([]body.GpuLeaseRead, len(gpuLeases))
 	for i, gpuLease := range gpuLeases {
-		dtoGpuLeases[i] = gpuLease.ToDTO()
+		dtoGpuLeases[i] = gpuLease.ToDTO(-1)
 	}
 
 	context.Ok(dtoGpuLeases)
@@ -235,5 +240,8 @@ func DeleteGpuLease(c *gin.Context) {
 		return
 	}
 
-	context.Ok(gpuLease.ToDTO())
+	context.Ok(body.GpuLeaseDeleted{
+		ID:    gpuLease.ID,
+		JobID: jobID,
+	})
 }

@@ -39,6 +39,11 @@ func HashStringAlphanumeric(token string) string {
 	return urlHash
 }
 
+// HashStringAlphanumericLower is a lowercase version of HashStringAlphanumeric
+func HashStringAlphanumericLower(token string) string {
+	return strings.ToLower(HashStringAlphanumeric(token))
+}
+
 // GetPage returns a page of a list
 // If pageSize is 0, the whole list is returned
 func GetPage[T any](list []T, pageSize, page int) []T {

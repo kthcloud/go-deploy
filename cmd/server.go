@@ -101,7 +101,7 @@ func Create(opts *Options) *App {
 		}
 
 		go func() {
-			log.Printf("Starting HTTP server on 0.0.0.0:%d", config.Config.Port)
+			log.Printf("%sHTTP server listening on %s0.0.0.0:%d%s", log.Bold, log.Orange, config.Config.Port, log.Reset)
 			err := httpServer.ListenAndServe()
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
 				log.Fatalln(fmt.Errorf("failed to start http server. details: %w", err))

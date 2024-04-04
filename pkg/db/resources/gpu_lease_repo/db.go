@@ -9,13 +9,16 @@ import (
 )
 
 func (client *Client) Create(id, vmID, userID, groupName string, leaseDuration float64) error {
+
 	lease := model.GpuLease{
 		ID:            id,
-		GroupName:     groupName,
+		GpuGroupID:    groupName,
 		VmID:          vmID,
 		UserID:        userID,
 		LeaseDuration: leaseDuration,
 		ActivatedAt:   nil,
+		AssignedAt:    nil,
+		ExpiredAt:     nil,
 		CreatedAt:     time.Now(),
 	}
 
@@ -30,4 +33,20 @@ func (client *Client) Create(id, vmID, userID, groupName string, leaseDuration f
 	}
 
 	return nil
+}
+
+func (client *Client) SetExpiry(id string, expiresAt time.Time) error {
+	return client.SetWithBsonByID(id, bson.D{{"expiresAt", expiresAt}})
+}
+
+func (client *Client) MarkExpired(id string) error {
+	return client.SetWithBsonByID(id, bson.D{{"expiredAt", time.Now()}})
+}
+
+func (client *Client) MarkAssigned(id string) error {
+	return client.SetWithBsonByID(id, bson.D{{"assignedAt", time.Now()}})
+}
+
+func (client *Client) MarkActivated(id string) error {
+	return client.SetWithBsonByID(id, bson.D{{"activatedAt", time.Now()}})
 }

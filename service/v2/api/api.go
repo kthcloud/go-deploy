@@ -47,6 +47,10 @@ type GpuLeases interface {
 	List(opts ...vmOpts.ListGpuLeaseOpts) ([]model.GpuLease, error)
 	Create(leaseID, vmID, userID string, dtoGpuLeaseCreate *body.GpuLeaseCreate) error
 	Delete(id string) error
+
+	Count(opts ...vmOpts.ListGpuLeaseOpts) (int, error)
+
+	GetQueuePosition(id string) (int, error)
 }
 
 type GpuGroups interface {

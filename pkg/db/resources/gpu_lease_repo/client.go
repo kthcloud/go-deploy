@@ -45,6 +45,13 @@ func (client *Client) WithVmID(vmID string) *Client {
 	return client
 }
 
+// WithGpuGroupID adds a filter to the client to only include leases with the given GPU group ID.
+func (client *Client) WithGpuGroupID(gpuGroupID string) *Client {
+	client.ResourceClient.AddExtraFilter(bson.D{{"gpuGroupId", gpuGroupID}})
+
+	return client
+}
+
 // WithUserID adds a filter to the client to only include leases with the given user ID.
 func (client *Client) WithUserID(userID string) *Client {
 	client.ResourceClient.AddExtraFilter(bson.D{{"userId", userID}})
