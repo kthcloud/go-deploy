@@ -5,6 +5,7 @@ import (
 	"go-deploy/pkg/db"
 	"go-deploy/pkg/db/resources/base_clients"
 	"go.mongodb.org/mongo-driver/bson"
+	"time"
 )
 
 // Client is used to manage GPU leases in the database.
@@ -48,6 +49,13 @@ func (client *Client) WithVmID(vmID string) *Client {
 // WithGpuGroupID adds a filter to the client to only include leases with the given GPU group ID.
 func (client *Client) WithGpuGroupID(gpuGroupID string) *Client {
 	client.ResourceClient.AddExtraFilter(bson.D{{"gpuGroupId", gpuGroupID}})
+
+	return client
+}
+
+// CreatedBefore adds a filter to the client to only include leases created before the given time.
+func (client *Client) CreatedBefore(createdBefore time.Time) *Client {
+	client.ResourceClient.AddExtraFilter(bson.D{{"createdAt", bson.D{{"$lt", createdBefore}}}})
 
 	return client
 }

@@ -154,3 +154,8 @@ func StrPtr(s string) *string {
 func Int64Ptr(i int64) *int64 {
 	return &i
 }
+
+// PtrOf converts a value to a pointer
+func PtrOf[T any](v T) *T {
+	return &v
+}

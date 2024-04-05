@@ -61,6 +61,35 @@ func (c *Client) Get(id string, opts ...opts.GetGpuLeaseOpts) (*model.GpuLease, 
 	return lease, nil
 }
 
+// GetByVmID gets a GPU lease by VM ID
+func (c *Client) GetByVmID(vmID string, opts ...opts.GetGpuLeaseOpts) (*model.GpuLease, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to get gpu lease. details: %w", err)
+	}
+
+	vm, err := c.V2.VMs().Get(vmID)
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	if vm == nil {
+		return nil, makeError(sErrors.VmNotFoundErr)
+	}
+
+	glc := gpu_lease_repo.New()
+
+	lease, err := glc.WithVmID(vmID).Get()
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	if lease == nil {
+		return nil, nil
+	}
+
+	return lease, nil
+}
+
 // List lists GPU leases for a VM
 func (c *Client) List(opts ...opts.ListGpuLeaseOpts) ([]model.GpuLease, error) {
 	makeError := func(err error) error {
@@ -147,7 +176,7 @@ func (c *Client) Create(leaseID, vmID, userID string, dtoGpuLeaseCreate *body.Gp
 
 	var leaseDuration float64
 	if !c.V2.HasAuth() || (params.LeaseForever && c.V2.Auth().IsAdmin) {
-		leaseDuration = 1000 * 365 * 24 // 1000 years is close enough to forever, right? :)
+		leaseDuration = 1000 * 365 * 24 // A 1000-year lease is close enough to forever, right? :)
 	}
 
 	// Find the lease duration by the user's plan
@@ -171,6 +200,96 @@ func (c *Client) Create(leaseID, vmID, userID string, dtoGpuLeaseCreate *body.Gp
 	return nil
 }
 
+// Update updates a GPU lease
+func (c *Client) Update(id string, dtoGpuLeaseUpdate *body.GpuLeaseUpdate) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to update gpu lease. details: %w", err)
+	}
+
+	lease, err := c.Get(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	if lease == nil {
+		return makeError(sErrors.GpuLeaseNotFoundErr)
+	}
+
+	params := model.GpuLeaseUpdateParams{}.FromDTO(dtoGpuLeaseUpdate)
+
+	// Ensure we don't update active leases
+	if lease.ActivatedAt != nil {
+		params.Active = nil
+	}
+
+	// If the lease was request to be activated, check if that is allowed but checking if the lease is assigned
+	if params.Active != nil && *params.Active && lease.AssignedAt == nil {
+		return makeError(sErrors.GpuLeaseNotAssignedErr)
+	}
+
+	if c.V2.HasAuth() {
+		// 1. User has access through being an admin
+		if c.V2.Auth().IsAdmin {
+			err = gpu_lease_repo.New().UpdateWithParams(id, params)
+			if err != nil {
+				return makeError(err)
+			}
+
+			return nil
+		}
+
+		// 2. User has access through being the lease owner
+		if lease.UserID == c.V2.Auth().UserID {
+			err = gpu_lease_repo.New().UpdateWithParams(id, params)
+			if err != nil {
+				return makeError(err)
+			}
+
+			return nil
+		}
+
+		// 3. User has access to the parent VM through a team
+		hasAccess, err := c.V1.Teams().CheckResourceAccess(c.V2.Auth().UserID, lease.VmID)
+		if err != nil {
+			return makeError(err)
+		}
+
+		if hasAccess {
+			err = gpu_lease_repo.New().UpdateWithParams(id, params)
+			if err != nil {
+				return makeError(err)
+			}
+
+			return nil
+		}
+
+		return nil
+	}
+
+	// 4. No auth info was provided, update the lease
+	err = gpu_lease_repo.New().UpdateWithParams(id, params)
+	if err != nil {
+		return makeError(err)
+	}
+
+	// Attach GPU if the request was to activate the lease.
+	// We use the original update params, since the active is deleted if the lease is already active.
+	// But we always want to allow attaching the GPU if the lease is active
+	if dtoGpuLeaseUpdate.Active != nil && *dtoGpuLeaseUpdate.Active {
+		group, err := c.V2.VMs().GpuGroups().Get(lease.GpuGroupID)
+		if err != nil {
+			return makeError(err)
+		}
+
+		err = c.V2.VMs().K8s().AttachGPU(lease.VmID, group.Name)
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	return nil
+}
+
 // Delete deletes a GPU lease
 func (c *Client) Delete(id string) error {
 	makeError := func(err error) error {
@@ -184,6 +303,14 @@ func (c *Client) Delete(id string) error {
 
 	if lease == nil {
 		return nil
+	}
+
+	// Detach the GPU
+	if lease.AssignedAt != nil {
+		err = c.V2.VMs().K8s().DetachGPU(lease.VmID)
+		if err != nil && !errors.Is(err, sErrors.VmNotFoundErr) {
+			return makeError(err)
+		}
 	}
 
 	if c.V2.HasAuth() {
@@ -248,6 +375,10 @@ func (c *Client) Count(opts ...opts.ListGpuLeaseOpts) (int, error) {
 		glc.WithGpuGroupID(*o.GpuGroupID)
 	}
 
+	if o.CreatedBefore != nil {
+		glc.CreatedBefore(*o.CreatedBefore)
+	}
+
 	count, err := glc.Count()
 	if err != nil {
 		return 0, makeError(err)
@@ -274,7 +405,8 @@ func (c *Client) GetQueuePosition(id string) (int, error) {
 	}
 
 	count, err := c.Count(opts.ListGpuLeaseOpts{
-		GpuGroupID: &lease.GpuGroupID,
+		GpuGroupID:    &lease.GpuGroupID,
+		CreatedBefore: &lease.CreatedAt,
 	})
 
 	gpuGroup, err := c.V2.VMs().GpuGroups().Get(lease.GpuGroupID)
@@ -282,7 +414,11 @@ func (c *Client) GetQueuePosition(id string) (int, error) {
 		return 0, makeError(err)
 	}
 
-	// Add 1 to the queue position to make it human readable (queue position 1 means next in line)
+	if gpuGroup == nil {
+		return 0, makeError(sErrors.GpuGroupNotFoundErr)
+	}
+
+	// Add 1 to the queue position to make it human-readable (queue position 1 means next in line)
 	queuePosition := max((count-gpuGroup.Total)+1, 0)
 
 	return queuePosition, nil

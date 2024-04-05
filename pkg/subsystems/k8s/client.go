@@ -8,18 +8,16 @@ import (
 
 // ClientConf is the configuration for the Kubernetes wrapper client.
 type ClientConf struct {
-	K8sClient            *kubernetes.Clientset
-	KubeVirtK8sClient    *kubevirt.Clientset
-	Namespace            string
-	AlternativeNamespace *string
+	K8sClient         *kubernetes.Clientset
+	KubeVirtK8sClient *kubevirt.Clientset
+	Namespace         string
 }
 
 // Client is a wrapper around the Kubernetes client.
 type Client struct {
-	K8sClient            *kubernetes.Clientset
-	KubeVirtK8sClient    *kubevirt.Clientset
-	Namespace            string
-	AlternativeNamespace *string
+	K8sClient         *kubernetes.Clientset
+	KubeVirtK8sClient *kubevirt.Clientset
+	Namespace         string
 }
 
 // New creates a new Kubernetes wrapper client.
@@ -29,10 +27,9 @@ func New(conf *ClientConf) (*Client, error) {
 	}
 
 	client := Client{
-		K8sClient:            conf.K8sClient,
-		KubeVirtK8sClient:    conf.KubeVirtK8sClient,
-		Namespace:            conf.Namespace,
-		AlternativeNamespace: conf.AlternativeNamespace,
+		K8sClient:         conf.K8sClient,
+		KubeVirtK8sClient: conf.KubeVirtK8sClient,
+		Namespace:         conf.Namespace,
 	}
 
 	return &client, nil

@@ -61,9 +61,9 @@ func GetVM(c *gin.Context) {
 
 	teamIDs, _ := deployV1.Teams().ListIDs(teamOpts.ListOpts{ResourceID: vm.ID})
 	sshConnectionString, _ := deployV2.VMs().SshConnectionString(vm.ID)
-	// TODO: Implement leases read
-	//lease, _ := deployV2.VMs().GpuLeases()
-	context.Ok(vm.ToDTOv2(nil, teamIDs, sshConnectionString))
+
+	lease, _ := deployV2.VMs().GpuLeases().GetByVmID(vm.ID)
+	context.Ok(vm.ToDTOv2(lease, teamIDs, sshConnectionString))
 }
 
 // ListVMs
@@ -123,8 +123,8 @@ func ListVMs(c *gin.Context) {
 	for i, vm := range vms {
 		teamIDs, _ := deployV1.Teams().ListIDs(teamOpts.ListOpts{ResourceID: vm.ID})
 		sshConnectionString, _ := deployV2.VMs().SshConnectionString(vm.ID)
-		// TODO: Implement leases read
-		dtoVMs[i] = vm.ToDTOv2(nil, teamIDs, sshConnectionString)
+		lease, _ := deployV2.VMs().GpuLeases().GetByVmID(vm.ID)
+		dtoVMs[i] = vm.ToDTOv2(lease, teamIDs, sshConnectionString)
 	}
 
 	context.Ok(dtoVMs)

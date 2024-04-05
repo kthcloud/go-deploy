@@ -40,8 +40,8 @@ func (group *VmRoutingGroup) PrivateRoutes() []Route {
 		{Method: "POST", Pattern: VmCommandPath, HandlerFunc: v1.DoVmCommand},
 
 		// V2
-		{Method: "GET", Pattern: VmsPathV2, HandlerFunc: v2.ListVMs},
 		{Method: "GET", Pattern: VmPathV2, HandlerFunc: v2.GetVM},
+		{Method: "GET", Pattern: VmsPathV2, HandlerFunc: v2.ListVMs},
 		{Method: "POST", Pattern: VmsPathV2, HandlerFunc: v2.CreateVM},
 		{Method: "POST", Pattern: VmPathV2, HandlerFunc: v2.UpdateVM},
 		{Method: "DELETE", Pattern: VmPathV2, HandlerFunc: v2.DeleteVM},

@@ -5,6 +5,7 @@ import (
 	configModels "go-deploy/models/config"
 	"go-deploy/models/model"
 	"go-deploy/service/v2/utils"
+	"time"
 )
 
 // Opts is used to specify which resources to get.
@@ -56,10 +57,11 @@ type GetGpuLeaseOpts struct {
 
 // ListGpuLeaseOpts is used to specify the options when listing GPU leases.
 type ListGpuLeaseOpts struct {
-	VmID       *string
-	UserID     *string
-	GpuGroupID *string
-	Pagination *utils.Pagination
+	VmID          *string
+	UserID        *string
+	GpuGroupID    *string
+	Pagination    *utils.Pagination
+	CreatedBefore *time.Time
 }
 
 // GetGpuGroupOpts is used to specify the options when getting a GPU group.

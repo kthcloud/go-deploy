@@ -2,6 +2,7 @@ package synchronize
 
 import (
 	"fmt"
+	configModels "go-deploy/models/config"
 	"go-deploy/models/model"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/db/resources/gpu_group_repo"
@@ -9,6 +10,7 @@ import (
 	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems/sys-api"
 	"go-deploy/pkg/subsystems/sys-api/models"
+	"go-deploy/service"
 	"go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"strings"
@@ -129,8 +131,9 @@ func synchronizeGpusV2(gpuInfo *models.GpuInfoRead) error {
 				groups[host.Zone] = make(map[string]model.GpuGroup)
 			}
 
-			if group, ok := groups[host.Zone][groupID]; !ok {
-				groups[host.Zone][groupID] = model.GpuGroup{
+			if group, ok := groups[host.Zone][*groupName]; !ok {
+				groups[host.Zone][*groupName] = model.GpuGroup{
+					ID:          groupID,
 					Name:        *groupName,
 					DisplayName: gpu.Name,
 					Zone:        host.Zone,
@@ -182,11 +185,36 @@ func synchronizeGpusV2(gpuInfo *models.GpuInfoRead) error {
 	}
 
 	for _, group := range groupsInDb {
-		if _, ok := groups[group.Zone][group.ID]; !ok {
+		if _, ok := groups[group.Zone][group.Name]; !ok {
 			err := gpu_group_repo.New().WithZone(group.Zone).EraseByID(group.ID)
 			if err != nil {
 				return err
 			}
+		}
+	}
+
+	// Sync GPU groups with backend
+	deployV2 := service.V2()
+
+	groupsByZone := make(map[string][]model.GpuGroup)
+	for _, group := range groupsInDb {
+		groupsByZone[group.Zone] = append(groupsByZone[group.Zone], group)
+	}
+
+	for zoneName, groups := range groupsByZone {
+		zone := config.Config.Deployment.GetZone(zoneName)
+		if zone == nil {
+			log.Println("Zone", zoneName, "not found. Skipping GPU synchronization.")
+			continue
+		}
+
+		if !zone.HasCapability(configModels.CapabilityKubeVirt) {
+			continue
+		}
+
+		err = deployV2.VMs().K8s().Synchronize(zoneName, groups)
+		if err != nil {
+			return err
 		}
 	}
 

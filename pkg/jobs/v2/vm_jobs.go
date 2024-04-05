@@ -194,6 +194,34 @@ func CreateGpuLease(job *model.Job) error {
 	return nil
 }
 
+func UpdateGpuLease(job *model.Job) error {
+	err := utils.AssertParameters(job, []string{"id", "params"})
+	if err != nil {
+		return jErrors.MakeTerminatedError(err)
+	}
+
+	id := job.Args["id"].(string)
+	var params body.GpuLeaseUpdate
+	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
+	if err != nil {
+		return jErrors.MakeTerminatedError(err)
+	}
+
+	err = service.V2().VMs().GpuLeases().Update(id, &params)
+	if err != nil {
+		switch {
+		case errors.Is(err, sErrors.GpuLeaseNotFoundErr):
+			return jErrors.MakeTerminatedError(err)
+		case errors.Is(err, sErrors.GpuLeaseNotAssignedErr):
+			return jErrors.MakeTerminatedError(err)
+		}
+
+		return jErrors.MakeFailedError(err)
+	}
+
+	return nil
+}
+
 func DeleteGpuLease(job *model.Job) error {
 	err := utils.AssertParameters(job, []string{"id"})
 	if err != nil {

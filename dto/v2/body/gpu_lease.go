@@ -22,7 +22,10 @@ type GpuLeaseRead struct {
 	// AssignedAt specifies the time when the lease was assigned to the user.
 	AssignedAt *time.Time `json:"assignedAt,omitempty"`
 	CreatedAt  time.Time  `json:"createdAt"`
-	ExpiredAt  *time.Time `json:"expiredAt,omitempty"`
+	// ExpiresAt specifies the time when the lease will expire.
+	// This is only present if the lease is active.
+	ExpiresAt *time.Time `json:"expiresAt,omitempty"`
+	ExpiredAt *time.Time `json:"expiredAt,omitempty"`
 }
 
 type GpuLeaseCreate struct {
@@ -33,7 +36,18 @@ type GpuLeaseCreate struct {
 	LeaseForever bool `json:"leaseForever"`
 }
 
+type GpuLeaseUpdate struct {
+	// Active is used to specify whether the lease should be active (may only be set to true).
+	// It is not possible to un-activate a lease.
+	Active *bool `json:"active" binding:"eq=true"`
+}
+
 type GpuLeaseCreated struct {
+	ID    string `json:"id"`
+	JobID string `json:"jobId"`
+}
+
+type GpuLeaseUpdated struct {
 	ID    string `json:"id"`
 	JobID string `json:"jobId"`
 }

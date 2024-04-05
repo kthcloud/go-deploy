@@ -44,8 +44,10 @@ type GPUs interface {
 
 type GpuLeases interface {
 	Get(id string, opts ...vmOpts.GetGpuLeaseOpts) (*model.GpuLease, error)
+	GetByVmID(vmID string, opts ...vmOpts.GetGpuLeaseOpts) (*model.GpuLease, error)
 	List(opts ...vmOpts.ListGpuLeaseOpts) ([]model.GpuLease, error)
 	Create(leaseID, vmID, userID string, dtoGpuLeaseCreate *body.GpuLeaseCreate) error
+	Update(id string, dtoGpuLeaseUpdate *body.GpuLeaseUpdate) error
 	Delete(id string) error
 
 	Count(opts ...vmOpts.ListGpuLeaseOpts) (int, error)
@@ -56,4 +58,5 @@ type GpuLeases interface {
 type GpuGroups interface {
 	Get(id string, opts ...vmOpts.GetGpuGroupOpts) (*model.GpuGroup, error)
 	List(opts ...vmOpts.ListGpuGroupOpts) ([]model.GpuGroup, error)
+	Exists(id string) (bool, error)
 }

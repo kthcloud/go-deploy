@@ -486,12 +486,10 @@ func (c *Client) Repair(id string) error {
 }
 
 // AttachGPU attaches a GPU to a VM.
-//
-// If the lease is not active or the VM is already attached to a GPU, an error is returned.
 // If there is an existing attached GPU, it will be replaced.
 func (c *Client) AttachGPU(vmID, groupName string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to attach gpu_repo %s to vm %s. details: %w", groupName, vmID, err)
+		return fmt.Errorf("failed to attach gpu %s to vm %s. details: %w", groupName, vmID, err)
 	}
 
 	vm, kc, _, err := c.Get(OptsAll(vmID))
@@ -508,6 +506,45 @@ func (c *Client) AttachGPU(vmID, groupName string) error {
 		WithDbFunc(dbFunc(vmID, "vmMap."+vm.Name)).
 		WithPublic(&k8sVM).
 		Exec()
+	if err != nil {
+		return makeError(err)
+	}
+
+	// This requires as a restart to take effect
+	err = c.DoAction(vmID, &model.VmActionParams{Action: model.ActionRestartIfRunning})
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
+}
+
+// DetachGPU detaches a GPU from a VM.
+func (c *Client) DetachGPU(vmID string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to detach gpu from vm %s. details: %w", vmID, err)
+	}
+
+	vm, kc, _, err := c.Get(OptsAll(vmID))
+	if vm == nil {
+		return makeError(sErrors.VmNotFoundErr)
+	}
+
+	// Remove the GPU from the VM
+	k8sVM := vm.Subsystems.K8s.VmMap[vm.Name]
+	k8sVM.GPUs = []string{}
+	vm.Subsystems.K8s.VmMap[vm.Name] = k8sVM
+
+	err = resources.SsUpdater(kc.UpdateVM).
+		WithDbFunc(dbFunc(vmID, "vmMap."+vm.Name)).
+		WithPublic(&k8sVM).
+		Exec()
+	if err != nil {
+		return makeError(err)
+	}
+
+	// This requires as a restart to take effect
+	err = c.DoAction(vmID, &model.VmActionParams{Action: model.ActionRestartIfRunning})
 	if err != nil {
 		return makeError(err)
 	}
@@ -584,6 +621,12 @@ func (c *Client) DoAction(id string, action *model.VmActionParams) error {
 			if err != nil {
 				return makeError(err)
 			}
+		case model.ActionRestartIfRunning:
+			if !k8sVM.Running {
+				continue
+			}
+
+			return c.DoAction(id, &model.VmActionParams{Action: model.ActionRestart})
 		}
 	}
 
@@ -609,6 +652,40 @@ func (c *Client) EnsureOwner(id, oldOwnerID string) error {
 	// Create everything in the new namespace
 	// We reset the namespace to use the VM's namespace by passing an empty string
 	err = c.Repair(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
+}
+
+// Synchronize synchronizes GPU groups with the backend.
+// This updates the KubeVirt allowed PCI devices.
+func (c *Client) Synchronize(zoneName string, gpuGroups []model.GpuGroup) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to synchronize gpu groups. details: %w", err)
+	}
+
+	// Ensure zone has KubeVirt capabilities
+	zone := config.Config.Deployment.GetZone(zoneName)
+	if zone == nil {
+		return makeError(sErrors.ZoneNotFoundErr)
+	}
+
+	_, kc, _, err := c.Get(OptsOnlyClient(zoneName))
+	if err != nil {
+		return makeError(err)
+	}
+
+	var devices k8sModels.PermittedHostDevices
+	for _, gpuGroup := range gpuGroups {
+		devices.PciHostDevices = append(devices.PciHostDevices, k8sModels.PciHostDevice{
+			PciVendorSelector: k8sModels.CreatePciVendorSelector(gpuGroup.VendorID, gpuGroup.DeviceID),
+			ResourceName:      gpuGroup.Name,
+		})
+	}
+
+	err = kc.SetPermittedHostDevices(devices)
 	if err != nil {
 		return makeError(err)
 	}

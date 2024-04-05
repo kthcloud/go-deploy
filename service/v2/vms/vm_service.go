@@ -8,6 +8,7 @@ import (
 	"go-deploy/models/model"
 	"go-deploy/models/version"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/db/resources/gpu_lease_repo"
 	"go-deploy/pkg/db/resources/gpu_repo"
 	"go-deploy/pkg/db/resources/notification_repo"
 	"go-deploy/pkg/db/resources/team_repo"
@@ -289,6 +290,11 @@ func (c *Client) Delete(id string) error {
 	}
 
 	err = vm_port_repo.New().ReleaseAll(vm.ID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = gpu_lease_repo.New().WithVmID(id).Delete()
 	if err != nil {
 		return makeError(err)
 	}

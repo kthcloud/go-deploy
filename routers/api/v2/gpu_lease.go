@@ -1,6 +1,7 @@
 package v2
 
 import (
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"go-deploy/dto/v2/body"
@@ -11,6 +12,7 @@ import (
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
+	sErrors "go-deploy/service/errors"
 	"go-deploy/service/v2/utils"
 	"go-deploy/service/v2/vms/opts"
 )
@@ -57,6 +59,10 @@ func GetGpuLease(c *gin.Context) {
 
 	position, err := service.V2(auth).VMs().GpuLeases().GetQueuePosition(gpuLease.ID)
 	if err != nil {
+		if errors.Is(err, sErrors.GpuLeaseNotFoundErr) {
+			position = -1
+		}
+
 		context.ServerError(err, v1.InternalError)
 	}
 
@@ -100,6 +106,7 @@ func ListGpuLeases(c *gin.Context) {
 
 	gpuLeases, err := service.V2(auth).VMs().GpuLeases().List(opts.ListGpuLeaseOpts{
 		Pagination: utils.GetOrDefaultPagination(requestQuery.Pagination),
+		// TODO: Add support to list by a list of VM IDs
 	})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
@@ -113,7 +120,12 @@ func ListGpuLeases(c *gin.Context) {
 
 	dtoGpuLeases := make([]body.GpuLeaseRead, len(gpuLeases))
 	for i, gpuLease := range gpuLeases {
-		dtoGpuLeases[i] = gpuLease.ToDTO(-1)
+		queuePosition, err := service.V2(auth).VMs().GpuLeases().GetQueuePosition(gpuLease.ID)
+		if err != nil {
+			queuePosition = -1
+		}
+
+		dtoGpuLeases[i] = gpuLease.ToDTO(queuePosition)
 	}
 
 	context.Ok(dtoGpuLeases)
@@ -158,6 +170,11 @@ func CreateGpuLease(c *gin.Context) {
 
 	canAccess, err := deployV2.VMs().IsAccessible(requestQuery.VmID)
 	if err != nil {
+		if errors.Is(err, sErrors.VmNotFoundErr) {
+			context.NotFound("VM not found")
+			return
+		}
+
 		context.ServerError(err, v1.InternalError)
 		return
 	}
@@ -167,7 +184,16 @@ func CreateGpuLease(c *gin.Context) {
 		return
 	}
 
-	// TODO: Check if GPU type is valid
+	groupExists, err := deployV2.VMs().GpuGroups().Exists(requestBody.GpuGroupID)
+	if err != nil {
+		context.ServerError(err, v1.InternalError)
+		return
+	}
+
+	if !groupExists {
+		context.NotFound("GPU group not found")
+		return
+	}
 
 	gpuLeaseID := uuid.New().String()
 	jobID := uuid.New().String()
@@ -185,6 +211,79 @@ func CreateGpuLease(c *gin.Context) {
 
 	context.Ok(body.GpuLeaseCreated{
 		ID:    gpuLeaseID,
+		JobID: jobID,
+	})
+}
+
+// UpdateGpuLease
+// @Summary Update GPU lease
+// @Description Update GPU lease
+// @Tags VM
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer token"
+// @Param gpuLeaseId path string true "GPU lease ID"
+// @Param body body body.GpuLeaseUpdate true "GPU lease"
+// @Success 200 {object} body.GpuLeaseRead
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 404 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
+// @Router /gpuLeases/{gpuLeaseId} [post]
+func UpdateGpuLease(c *gin.Context) {
+	context := sys.NewContext(c)
+
+	var requestURI uri.GpuLeaseUpdate
+	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
+		context.BindingError(v1.CreateBindingError(err))
+		return
+	}
+
+	var requestBody body.GpuLeaseUpdate
+	if err := context.GinContext.ShouldBindJSON(&requestBody); err != nil {
+		context.BindingError(v1.CreateBindingError(err))
+		return
+	}
+
+	auth, err := v1.WithAuth(&context)
+	if err != nil {
+		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		return
+	}
+
+	deployV1 := service.V1(auth)
+	deployV2 := service.V2(auth)
+
+	gpuLease, err := deployV2.VMs().GpuLeases().Get(requestURI.GpuLeaseID)
+	if err != nil {
+		context.ServerError(err, v1.InternalError)
+		return
+	}
+
+	if gpuLease == nil {
+		context.NotFound("GPU lease not found")
+		return
+	}
+
+	// If the update includes activating the lease, we ensure it is allowed
+	if requestBody.Active != nil && *requestBody.Active {
+		if gpuLease.AssignedAt == nil {
+			context.UserError("GPU lease is not assigned")
+			return
+		}
+	}
+
+	jobID := uuid.New().String()
+	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobUpdateGpuLease, version.V2, map[string]interface{}{
+		"id":     gpuLease.ID,
+		"params": requestBody,
+	})
+	if err != nil {
+		context.ServerError(err, v1.InternalError)
+		return
+	}
+
+	context.Ok(body.GpuLeaseUpdated{
+		ID:    gpuLease.ID,
 		JobID: jobID,
 	})
 }

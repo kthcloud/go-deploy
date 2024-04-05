@@ -18,6 +18,7 @@ func (group *GpuLeaseRoutingGroup) PrivateRoutes() []Route {
 		{Method: "GET", Pattern: GpuLeasePath, HandlerFunc: v2.GetGpuLease},
 		{Method: "GET", Pattern: GpuLeasesPath, HandlerFunc: v2.ListGpuLeases},
 		{Method: "POST", Pattern: GpuLeasesPath, HandlerFunc: v2.CreateGpuLease},
+		{Method: "POST", Pattern: GpuLeasePath, HandlerFunc: v2.UpdateGpuLease},
 		{Method: "DELETE", Pattern: GpuLeasePath, HandlerFunc: v2.DeleteGpuLease},
 	}
 }

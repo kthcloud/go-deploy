@@ -45,3 +45,19 @@ func (c *Client) List(opts ...opts.ListGpuGroupOpts) ([]model.GpuGroup, error) {
 
 	return groups, nil
 }
+
+// Exists checks if a GPU group exists
+func (c *Client) Exists(id string) (bool, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to check if gpu group exists. details: %w", err)
+	}
+
+	ggc := gpu_group_repo.New()
+
+	exists, err := ggc.ExistsByID(id)
+	if err != nil {
+		return false, makeError(err)
+	}
+
+	return exists, nil
+}

@@ -10,6 +10,10 @@ import (
 // The following structs are used to parse the config.yaml file
 // into a struct that can be used by the application.
 
+const (
+	CapabilityKubeVirt = "kubevirt"
+)
+
 type ConfigType struct {
 	Version string `yaml:"version"`
 
@@ -169,7 +173,10 @@ type DeploymentZone struct {
 		VM         string `yaml:"vm"`
 		System     string `yaml:"system"`
 	}
-	Description             string `yaml:"description"`
+	Description string `yaml:"description"`
+
+	Capabilities []string `yaml:"capabilities"`
+
 	ParentDomain            string `yaml:"parentDomain"`
 	ParentDomainVmHttpProxy string `yaml:"parentDomainVmHttpProxy"`
 	CustomDomainIP          string `yaml:"customDomainIp"`

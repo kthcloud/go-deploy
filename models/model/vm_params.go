@@ -1,9 +1,10 @@
 package model
 
 const (
-	ActionStart   = "start"
-	ActionStop    = "stop"
-	ActionRestart = "restart"
+	ActionStart            = "start"
+	ActionStop             = "stop"
+	ActionRestart          = "restart"
+	ActionRestartIfRunning = "restartIfRunning"
 )
 
 type VmCreateParams struct {

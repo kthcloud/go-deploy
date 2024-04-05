@@ -4,6 +4,8 @@ import (
 	"go-deploy/models/model"
 	"go-deploy/pkg/db/resources/gpu_group_repo"
 	"go-deploy/pkg/db/resources/gpu_lease_repo"
+	"go-deploy/pkg/log"
+	"go-deploy/service"
 	"sort"
 	"time"
 )
@@ -22,22 +24,57 @@ func gpuLeaseSynchronizer() error {
 	// Ensure that the GPU leases are sorted by createdAt to simplify queue position logic
 	sort.Slice(gpuLeases, func(i, j int) bool { return gpuLeases[i].CreatedAt.Before(gpuLeases[j].CreatedAt) })
 
-	// 1. Check for expired leases
+	// Check for leases that refer to non-existent GPU groups
+	err = checkForNonExistentGpuGroups(gpuLeases, gpuGroups)
+	if err != nil {
+		return err
+	}
+
+	// Check for expired leases
 	err = checkForExpiredLeases(gpuLeases)
 	if err != nil {
 		return err
 	}
 
-	// 2. Check for leases that has a queue position of 0 without being assigned (They should be assigned)
+	// Check for leases that have a queue position of 0 without being assigned (They should be assigned)
 	err = checkForUnassignedLeases(gpuLeases, gpuGroups)
 	if err != nil {
 		return err
 	}
 
-	// 3. Check for leases that are assigned 24 hours ago and are not yet activated
+	// Check for leases that were assigned 24 hours ago and are not yet activated
 	err = checkForUnactivatedLeases(gpuLeases)
 	if err != nil {
 		return err
+	}
+
+	// Check for leases that are expired in a queue with more leases than the total GPUs
+	// If there are no pending leases, it can remain.
+	err = checkForExpiredLeasesInFullQueues(gpuLeases, gpuGroups)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func checkForNonExistentGpuGroups(leases []model.GpuLease, groups []model.GpuGroup) error {
+	groupIDs := make(map[string]bool)
+	for _, group := range groups {
+		groupIDs[group.ID] = true
+	}
+
+	deployV2 := service.V2()
+
+	for _, lease := range leases {
+		if _, ok := groupIDs[lease.GpuGroupID]; !ok {
+			log.Infoln("Deleting lease", lease.ID, "since it refers to a non-existent GPU group")
+			// The lease refers to a non-existent GPU group
+			err := deployV2.VMs().GpuLeases().Delete(lease.ID)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
@@ -122,6 +159,65 @@ func checkForUnactivatedLeases(leases []model.GpuLease) error {
 			err := gpu_lease_repo.New().MarkActivated(lease.ID)
 			if err != nil {
 				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func checkForExpiredLeasesInFullQueues(leases []model.GpuLease, groups []model.GpuGroup) error {
+	// Index the GPU leases by GPU ID
+	leasesByGpuID := make(map[string][]model.GpuLease)
+	for _, lease := range leases {
+		leasesByGpuID[lease.GpuGroupID] = append(leasesByGpuID[lease.GpuGroupID], lease)
+	}
+
+	deployV2 := service.V2()
+
+	for _, group := range groups {
+		leasesByGPU, ok := leasesByGpuID[group.ID]
+		if !ok {
+			continue
+		}
+
+		pending := max(len(leasesByGPU)-group.Total, 0)
+		if pending == 0 {
+			// The group is not full, any expired leases can remain
+			continue
+		}
+
+		// The group has pending leases, check for expired leases and delete them
+		// Delete only the amount needed, and sort by expiration date to delete the ones that have been expired the longest
+		leasesByExpiration := make([]model.GpuLease, len(leasesByGPU))
+		copy(leasesByExpiration, leasesByGPU)
+
+		// If expiredAt is null, it should be last in the list
+		sort.Slice(leasesByExpiration, func(i, j int) bool {
+			if leasesByExpiration[i].ExpiredAt == nil {
+				return false
+			} else if leasesByExpiration[j].ExpiredAt == nil {
+				return true
+			} else {
+				return leasesByExpiration[i].ExpiredAt.Before(*leasesByExpiration[j].ExpiredAt)
+			}
+		})
+
+		noDeleted := 0
+		for _, lease := range leasesByExpiration {
+			if !lease.IsExpired() {
+				// No more leases are expired since the list is sorted
+				break
+			}
+
+			err := deployV2.VMs().GpuLeases().Delete(lease.ID)
+			if err != nil {
+				return err
+			}
+
+			noDeleted++
+			if noDeleted == pending {
+				break
 			}
 		}
 	}

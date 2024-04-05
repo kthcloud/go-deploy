@@ -184,6 +184,10 @@ func jobMapper() map[string]map[string]JobDefinition {
 			JobFunc:       v2.CreateGpuLease,
 			TerminateFunc: leafJobVM.Build(),
 		},
+		model.JobUpdateGpuLease: {
+			JobFunc:       v2.UpdateGpuLease,
+			TerminateFunc: leafJobVM.Build(),
+		},
 		model.JobDeleteGpuLease: {
 			JobFunc:       v2.DeleteGpuLease,
 			TerminateFunc: leafJobVM.Build(),

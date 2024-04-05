@@ -19,6 +19,8 @@ const (
 	JobRepairVM = "repairVm"
 	// JobCreateGpuLease is used when creating a GPU lease for a VM.
 	JobCreateGpuLease = "createGpuLease"
+	// JobUpdateGpuLease is used when updating a GPU lease for a VM.
+	JobUpdateGpuLease = "updateGpuLease"
 	// JobDeleteGpuLease is used when deleting a GPU lease for a VM.
 	JobDeleteGpuLease = "deleteGpuLease"
 	// JobCreateSystemVmSnapshot is used when creating a snapshot requested by the system.

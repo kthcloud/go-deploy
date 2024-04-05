@@ -35,6 +35,17 @@ func (client *Client) Create(id, vmID, userID, groupName string, leaseDuration f
 	return nil
 }
 
+func (client *Client) UpdateWithParams(id string, params *model.GpuLeaseUpdateParams) error {
+	update := bson.D{}
+
+	if params.Active != nil && *params.Active {
+		update = append(update, bson.E{Key: "activatedAt", Value: time.Now()})
+	}
+
+	err := client.SetWithBsonByID(id, update)
+	return err
+}
+
 func (client *Client) SetExpiry(id string, expiresAt time.Time) error {
 	return client.SetWithBsonByID(id, bson.D{{"expiresAt", expiresAt}})
 }

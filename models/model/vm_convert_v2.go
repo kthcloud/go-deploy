@@ -16,15 +16,15 @@ func (vm *VM) ToDTOv2(gpuLease *GpuLease, teams []string, sshConnectionString *s
 
 	var lease *body.VmGpuLease
 	if gpuLease != nil && gpuLease.IsActive() {
-		var leaseEndAt *time.Time
-		if gpuLease.ActivatedAt != nil {
-			leaseEndAt = utils.NonZeroOrNil((*gpuLease.ActivatedAt).Add(time.Duration(gpuLease.LeaseDuration) * time.Hour))
+		var expiresAt *time.Time
+		if gpuLease.IsActive() {
+			expiresAt = utils.NonZeroOrNil((*gpuLease.ActivatedAt).Add(time.Duration(gpuLease.LeaseDuration) * time.Hour))
 		}
 
 		lease = &body.VmGpuLease{
 			ID:         gpuLease.ID,
-			Name:       gpuLease.GpuGroupID,
-			LeaseEndAt: leaseEndAt,
+			GpuGroupID: gpuLease.GpuGroupID,
+			ExpiresAt:  expiresAt,
 			IsExpired:  gpuLease.IsExpired(),
 		}
 	}

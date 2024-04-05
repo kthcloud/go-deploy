@@ -42,6 +42,20 @@ func OptsNoGenerator(vmID string, extraOpts ...opts.ExtraOpts) *opts.Opts {
 	}
 }
 
+// OptsOnlyClient returns the options required to get only the client.
+func OptsOnlyClient(zone string, extraOpts ...opts.ExtraOpts) *opts.Opts {
+	var eo opts.ExtraOpts
+	eo.Zone = config.Config.Deployment.GetZone(zone)
+	if len(extraOpts) > 0 {
+		eo = extraOpts[0]
+	}
+
+	return &opts.Opts{
+		Client:    true,
+		ExtraOpts: eo,
+	}
+}
+
 // Client is the client for the Harbor service.
 // It contains a Client, which is used to lazy-load and cache data.
 type Client struct {
@@ -49,13 +63,20 @@ type Client struct {
 }
 
 // New creates a new Client.
-func New(cache *core.Cache) *Client {
-	c := &Client{BaseClient: client.NewBaseClient[Client](cache)}
+func New(cache ...*core.Cache) *Client {
+	var ca *core.Cache
+	if len(cache) > 0 {
+		ca = cache[0]
+	} else {
+		ca = core.NewCache()
+	}
+
+	c := &Client{BaseClient: client.NewBaseClient[Client](ca)}
 	c.BaseClient.SetParent(c)
 	return c
 }
 
-// Get returns the deployment, client, and generator.
+// Get returns the VM, client, and generator.
 //
 // Depending on the options specified, some return values may be nil.
 // This is useful when you don't always need all the resources.
@@ -72,7 +93,7 @@ func (c *Client) Get(opts *opts.Opts) (*model.VM, *k8s.Client, *resources.K8sGen
 		}
 
 		if vm == nil {
-			return nil, nil, nil, sErrors.DeploymentNotFoundErr
+			return nil, nil, nil, sErrors.VmNotFoundErr
 		}
 	}
 
@@ -88,7 +109,7 @@ func (c *Client) Get(opts *opts.Opts) (*model.VM, *k8s.Client, *resources.K8sGen
 		}
 
 		if kc == nil {
-			return nil, nil, nil, sErrors.DeploymentNotFoundErr
+			return nil, nil, nil, sErrors.VmNotFoundErr
 		}
 	}
 
@@ -100,7 +121,7 @@ func (c *Client) Get(opts *opts.Opts) (*model.VM, *k8s.Client, *resources.K8sGen
 
 		g = c.Generator(vm, kc, zone)
 		if g == nil {
-			return nil, nil, nil, sErrors.DeploymentNotFoundErr
+			return nil, nil, nil, sErrors.VmNotFoundErr
 		}
 	}
 
