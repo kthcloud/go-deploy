@@ -1,0 +1,23 @@
+name: Build, package and publish NPM package
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "dev"
+      - "main"
+    paths:
+      - "export/**"
+      - ".github/workflows/npm-package.yml"
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Publish
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
