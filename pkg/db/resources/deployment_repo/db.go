@@ -232,7 +232,7 @@ func (client *Client) AddLogsByName(name string, logs ...model.Log) error {
 		}},
 	}
 
-	err := client.UpdateWithBsonByID(name, update)
+	err := client.UpdateWithBsonByName(name, update)
 	if err != nil {
 		return err
 	}
