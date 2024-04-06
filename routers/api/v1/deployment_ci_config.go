@@ -43,6 +43,11 @@ func GetCiConfig(c *gin.Context) {
 			return
 		}
 
+		if errors.Is(err, dErrors.DeploymentHasNotCiConfigErr) {
+			context.UserError("Deployment has not CI config (not a custom deployment)")
+			return
+		}
+
 		context.ServerError(err, InternalError)
 		return
 	}

@@ -54,6 +54,9 @@ var (
 	// This is most likely caused by a race-condition between a some model call and a deletion call.
 	DeploymentNotFoundErr = fmt.Errorf("deployment not found")
 
+	// DeploymentHasNotCiConfigErr is returned when the deployment does not have a CI config.
+	DeploymentHasNotCiConfigErr = fmt.Errorf("deployment does not have a CI config")
+
 	// MainAppNotFoundErr is returned when the main app is not found.
 	// This could be caused by stale data in the database.
 	MainAppNotFoundErr = fmt.Errorf("main app not found")
