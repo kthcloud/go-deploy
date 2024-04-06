@@ -1,15 +1,12 @@
 package v1
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"go-deploy/dto/v1/body"
 	"go-deploy/dto/v1/uri"
-	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/sys"
 	"go-deploy/service"
 	"go-deploy/service/v1/deployments/opts"
-	"net/http"
 )
 
 // DoDeploymentCommand
@@ -51,17 +48,17 @@ func DoDeploymentCommand(c *gin.Context) {
 
 	deployment, err := deployV1.Deployments().Get(requestURI.DeploymentID, opts.GetOpts{Shared: true})
 	if err != nil {
-		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
+		context.ServerError(err, InternalError)
 		return
 	}
 
 	if deployment == nil {
-		context.ErrorResponse(http.StatusNotFound, status_codes.ResourceNotFound, fmt.Sprintf("Resource with id %s not found", requestURI.DeploymentID))
+		context.NotFound("Deployment not found")
 		return
 	}
 
 	if !deployment.Ready() {
-		context.ErrorResponse(http.StatusLocked, status_codes.ResourceNotReady, fmt.Sprintf("Resource %s is not ready", requestURI.DeploymentID))
+		context.UserError("Resource is not ready")
 		return
 	}
 
