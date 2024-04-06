@@ -21,8 +21,9 @@ type Opts struct {
 // This is useful when overwriting the implicit options,
 // such as where user ID is by default taken from VM.OwnerID.
 type ExtraOpts struct {
-	UserID string
-	Zone   *configModels.DeploymentZone
+	UserID       string
+	Zone         *configModels.DeploymentZone
+	ExtraSshKeys []string
 }
 
 // GetOpts is used to specify the options when getting a VM.

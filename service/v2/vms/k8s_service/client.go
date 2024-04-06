@@ -8,9 +8,10 @@ import (
 	"go-deploy/pkg/subsystems/k8s"
 	"go-deploy/service/core"
 	sErrors "go-deploy/service/errors"
-	"go-deploy/service/resources"
+	"go-deploy/service/generators"
 	"go-deploy/service/v2/vms/client"
 	"go-deploy/service/v2/vms/opts"
+	"go-deploy/service/v2/vms/resources"
 )
 
 // OptsAll returns the options required to get all the service tools, ie. VM, client and generator.
@@ -80,10 +81,10 @@ func New(cache ...*core.Cache) *Client {
 //
 // Depending on the options specified, some return values may be nil.
 // This is useful when you don't always need all the resources.
-func (c *Client) Get(opts *opts.Opts) (*model.VM, *k8s.Client, *resources.K8sGenerator, error) {
+func (c *Client) Get(opts *opts.Opts) (*model.VM, *k8s.Client, generators.K8sGenerator, error) {
 	var vm *model.VM
 	var kc *k8s.Client
-	var g *resources.K8sGenerator
+	var g generators.K8sGenerator
 	var err error
 
 	if opts.VmID != "" {
@@ -119,7 +120,7 @@ func (c *Client) Get(opts *opts.Opts) (*model.VM, *k8s.Client, *resources.K8sGen
 			return nil, nil, nil, sErrors.ZoneNotFoundErr
 		}
 
-		g = c.Generator(vm, kc, zone)
+		g = c.Generator(vm, kc, zone, opts.ExtraOpts.ExtraSshKeys)
 		if g == nil {
 			return nil, nil, nil, sErrors.VmNotFoundErr
 		}
@@ -134,7 +135,7 @@ func (c *Client) Client(zone *configModels.DeploymentZone) (*k8s.Client, error) 
 }
 
 // Generator returns the K8s generator.
-func (c *Client) Generator(vm *model.VM, client *k8s.Client, zone *configModels.DeploymentZone) *resources.K8sGenerator {
+func (c *Client) Generator(vm *model.VM, client *k8s.Client, zone *configModels.DeploymentZone, extraSshKeys []string) generators.K8sGenerator {
 	if vm == nil {
 		panic("vm is nil")
 	}
@@ -147,7 +148,7 @@ func (c *Client) Generator(vm *model.VM, client *k8s.Client, zone *configModels.
 		panic("zone is nil")
 	}
 
-	return resources.PublicGenerator().WithVM(vm).WithDeploymentZone(zone).K8s(client)
+	return resources.K8s(vm, zone, client, getNamespaceName(zone), extraSshKeys)
 }
 
 // getNamespaceName returns the namespace name

@@ -1,34 +1,44 @@
 package resources
 
 import (
-	"fmt"
+	configModels "go-deploy/models/config"
+	"go-deploy/models/model"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems"
 	"go-deploy/pkg/subsystems/cs/models"
+	"go-deploy/service/generators"
 	"sort"
 	"time"
 )
 
-// CsGenerator is a generator for CloudStack resources
-// It is used to generate the `publics`, such as models.VmPublic and models.PortForwardingRulePublic
 type CsGenerator struct {
-	*PublicGeneratorType
+	generators.CsGeneratorBase
+
+	vm   *model.VM
+	zone *configModels.VmZone
+}
+
+func CS(vm *model.VM, zone *configModels.VmZone) *CsGenerator {
+	return &CsGenerator{
+		vm:   vm,
+		zone: zone,
+	}
 }
 
 // VMs returns a list of models.VmPublic that should be created
-func (cr *CsGenerator) VMs() []models.VmPublic {
+func (cg *CsGenerator) VMs() []models.VmPublic {
 	var res []models.VmPublic
 
-	if cr.v.vm != nil {
+	if cg.vm != nil {
 		csVM := models.VmPublic{
-			Name:        cr.v.vm.Name,
-			CpuCores:    cr.v.vm.Specs.CpuCores,
-			RAM:         cr.v.vm.Specs.RAM,
-			ExtraConfig: cr.v.vm.Subsystems.CS.VM.ExtraConfig,
-			Tags:        createTags(cr.v.vm.Name, cr.v.vm.Name),
+			Name:        cg.vm.Name,
+			CpuCores:    cg.vm.Specs.CpuCores,
+			RAM:         cg.vm.Specs.RAM,
+			ExtraConfig: cg.vm.Subsystems.CS.VM.ExtraConfig,
+			Tags:        createTags(cg.vm.Name, cg.vm.Name),
 		}
 
-		if v := &cr.v.vm.Subsystems.CS.VM; subsystems.Created(v) {
+		if v := &cg.vm.Subsystems.CS.VM; subsystems.Created(v) {
 			csVM.ID = v.ID
 			csVM.CreatedAt = v.CreatedAt
 
@@ -51,26 +61,26 @@ func (cr *CsGenerator) VMs() []models.VmPublic {
 }
 
 // PFRs returns a list of models.PortForwardingRulePublic that should be created
-func (cr *CsGenerator) PFRs() []models.PortForwardingRulePublic {
+func (cg *CsGenerator) PFRs() []models.PortForwardingRulePublic {
 	var res []models.PortForwardingRulePublic
 
-	if cr.v.vm != nil {
-		portMap := cr.v.vm.PortMap
+	if cg.vm != nil {
+		portMap := cg.vm.PortMap
 
 		for name, port := range portMap {
 			res = append(res, models.PortForwardingRulePublic{
 				Name:        name,
-				VmID:        cr.v.vm.Subsystems.CS.VM.ID,
-				NetworkID:   cr.v.vmZone.NetworkID,
-				IpAddressID: cr.v.vmZone.IpAddressID,
+				VmID:        cg.vm.Subsystems.CS.VM.ID,
+				NetworkID:   cg.zone.NetworkID,
+				IpAddressID: cg.zone.IpAddressID,
 				PublicPort:  0, // this is set externally
 				PrivatePort: port.Port,
 				Protocol:    port.Protocol,
-				Tags:        createTags(port.Name, cr.v.vm.Name),
+				Tags:        createTags(port.Name, cg.vm.Name),
 			})
 		}
 
-		for mapName, pfr := range cr.v.vm.Subsystems.CS.GetPortForwardingRuleMap() {
+		for mapName, pfr := range cg.vm.Subsystems.CS.GetPortForwardingRuleMap() {
 			for idx, port := range res {
 				if port.Name == mapName {
 					res[idx].ID = pfr.ID
@@ -112,10 +122,4 @@ func createTags(name string, deployName string) []models.Tag {
 	})
 
 	return tags
-}
-
-// pfrName is a helper function to create a name for a PortForwardingRule.
-// It is to ensure that there are no restrictions on the name, while still being able to identify it
-func pfrName(privatePort int, protocol string) string {
-	return fmt.Sprintf("priv-%d-prot-%s", privatePort, protocol)
 }

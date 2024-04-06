@@ -26,7 +26,7 @@ func (c *Client) Create(id string, params *model.VmCreateParams) error {
 		return fmt.Errorf("failed to setup k8s for vm %s. details: %w", params.Name, err)
 	}
 
-	vm, kc, g, err := c.Get(OptsAll(id))
+	vm, kc, g, err := c.Get(OptsAll(id, opts.ExtraOpts{ExtraSshKeys: []string{config.Config.VM.AdminSshPublicKey}}))
 	if err != nil {
 		if errors.Is(err, sErrors.VmNotFoundErr) {
 			log.Println("vm not found when setting up k8s for", params.Name, ". assuming it was deleted")
@@ -35,8 +35,6 @@ func (c *Client) Create(id string, params *model.VmCreateParams) error {
 
 		return makeError(err)
 	}
-
-	g.WithAuthorizedKeys(config.Config.VM.AdminSshPublicKey)
 
 	// Namespace
 	namespace := g.Namespace()
@@ -301,7 +299,7 @@ func (c *Client) Repair(id string) error {
 		return fmt.Errorf("failed to repair k8s %s. details: %w", id, err)
 	}
 
-	vm, kc, g, err := c.Get(OptsAll(id))
+	vm, kc, g, err := c.Get(OptsAll(id, opts.ExtraOpts{ExtraSshKeys: []string{config.Config.VM.AdminSshPublicKey}}))
 	if err != nil {
 		if errors.Is(err, sErrors.VmNotFoundErr) {
 			log.Println("vm not found when deleting k8s for", id, ". assuming it was deleted")
@@ -310,8 +308,6 @@ func (c *Client) Repair(id string) error {
 
 		return makeError(err)
 	}
-
-	g.WithAuthorizedKeys(config.Config.VM.AdminSshPublicKey)
 
 	namespace := g.Namespace()
 	if namespace != nil {

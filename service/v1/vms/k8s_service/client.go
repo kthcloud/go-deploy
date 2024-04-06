@@ -8,9 +8,10 @@ import (
 	"go-deploy/pkg/subsystems/k8s"
 	"go-deploy/service/core"
 	sErrors "go-deploy/service/errors"
-	"go-deploy/service/resources"
+	"go-deploy/service/generators"
 	"go-deploy/service/v1/vms/client"
 	"go-deploy/service/v1/vms/opts"
+	"go-deploy/service/v1/vms/resources"
 )
 
 // OptsAll returns the options required to get all the service tools, ie. VM, client and generator.
@@ -59,10 +60,10 @@ func New(cache *core.Cache) *Client {
 //
 // Depending on the options specified, some return values may be nil.
 // This is useful when you don't always need all the resources.
-func (c *Client) Get(opts *opts.Opts) (*model.VM, *k8s.Client, *resources.K8sGenerator, error) {
+func (c *Client) Get(opts *opts.Opts) (*model.VM, *k8s.Client, generators.K8sGenerator, error) {
 	var vm *model.VM
 	var kc *k8s.Client
-	var g *resources.K8sGenerator
+	var g generators.K8sGenerator
 	var err error
 
 	if opts.VmID != "" {
@@ -131,7 +132,7 @@ func (c *Client) Client(userID string, zone *configModels.DeploymentZone) (*k8s.
 }
 
 // Generator returns the K8s generator.
-func (c *Client) Generator(vm *model.VM, client *k8s.Client, zone *configModels.VmZone, deploymentZone *configModels.DeploymentZone) *resources.K8sGenerator {
+func (c *Client) Generator(vm *model.VM, client *k8s.Client, zone *configModels.VmZone, deploymentZone *configModels.DeploymentZone) generators.K8sGenerator {
 	if vm == nil {
 		panic("vm is nil")
 	}
@@ -144,7 +145,7 @@ func (c *Client) Generator(vm *model.VM, client *k8s.Client, zone *configModels.
 		panic("zone is nil")
 	}
 
-	return resources.PublicGenerator().WithVM(vm).WithVmZone(zone).WithDeploymentZone(deploymentZone).K8s(client)
+	return resources.K8s(vm, zone, deploymentZone, client, getNamespaceName(deploymentZone))
 }
 
 // getNamespaceName returns the namespace name.

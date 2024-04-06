@@ -7,9 +7,10 @@ import (
 	"go-deploy/pkg/subsystems/harbor"
 	"go-deploy/service/core"
 	sErrors "go-deploy/service/errors"
-	"go-deploy/service/resources"
+	"go-deploy/service/generators"
 	"go-deploy/service/v1/deployments/client"
 	"go-deploy/service/v1/deployments/opts"
+	"go-deploy/service/v1/deployments/resources"
 	"go-deploy/utils/subsystemutils"
 )
 
@@ -60,19 +61,19 @@ func New(cache *core.Cache) *Client {
 //
 // Depending on the options specified, some return values may be nil.
 // This is useful when you don't always need all the resources.
-func (c *Client) Get(opts *opts.Opts) (*model.Deployment, *harbor.Client, *resources.HarborGenerator, error) {
-	var d *model.Deployment
-	var gc *harbor.Client
-	var g *resources.HarborGenerator
+func (c *Client) Get(opts *opts.Opts) (*model.Deployment, *harbor.Client, generators.HarborGenerator, error) {
+	var deployment *model.Deployment
+	var harborClient *harbor.Client
+	var harborGenerator generators.HarborGenerator
 	var err error
 
 	if opts.DeploymentID != "" {
-		d, err = c.Deployment(opts.DeploymentID, nil)
+		deployment, err = c.Deployment(opts.DeploymentID, nil)
 		if err != nil {
 			return nil, nil, nil, err
 		}
 
-		if d == nil {
+		if deployment == nil {
 			return nil, nil, nil, sErrors.DeploymentNotFoundErr
 		}
 	}
@@ -82,15 +83,15 @@ func (c *Client) Get(opts *opts.Opts) (*model.Deployment, *harbor.Client, *resou
 		if opts.ExtraOpts.UserID != "" {
 			userID = opts.ExtraOpts.UserID
 		} else {
-			userID = d.OwnerID
+			userID = deployment.OwnerID
 		}
 
-		gc, err = c.Client(userID)
+		harborClient, err = c.Client(userID)
 		if err != nil {
 			return nil, nil, nil, err
 		}
 
-		if gc == nil {
+		if harborClient == nil {
 			return nil, nil, nil, sErrors.DeploymentNotFoundErr
 		}
 	}
@@ -100,23 +101,23 @@ func (c *Client) Get(opts *opts.Opts) (*model.Deployment, *harbor.Client, *resou
 		if opts.ExtraOpts.UserID != "" {
 			userID = opts.ExtraOpts.UserID
 		} else {
-			userID = d.OwnerID
+			userID = deployment.OwnerID
 		}
 
 		var zone *configModels.DeploymentZone
 		if opts.ExtraOpts.Zone != nil {
 			zone = opts.ExtraOpts.Zone
-		} else if d != nil {
-			zone = config.Config.Deployment.GetZone(d.Zone)
+		} else if deployment != nil {
+			zone = config.Config.Deployment.GetZone(deployment.Zone)
 		}
 
-		g = c.Generator(d, userID, zone)
-		if g == nil {
+		harborGenerator = c.Generator(deployment, userID, zone)
+		if harborGenerator == nil {
 			return nil, nil, nil, sErrors.DeploymentNotFoundErr
 		}
 	}
 
-	return d, gc, g, nil
+	return deployment, harborClient, harborGenerator, nil
 }
 
 // Client returns the Harbor service client.
@@ -129,7 +130,7 @@ func (c *Client) Client(userID string) (*harbor.Client, error) {
 }
 
 // Generator returns the Harbor generator.
-func (c *Client) Generator(d *model.Deployment, userID string, zone *configModels.DeploymentZone) *resources.HarborGenerator {
+func (c *Client) Generator(deployment *model.Deployment, userID string, zone *configModels.DeploymentZone) generators.HarborGenerator {
 	if userID == "" {
 		panic("user id is empty")
 	}
@@ -138,7 +139,7 @@ func (c *Client) Generator(d *model.Deployment, userID string, zone *configModel
 		panic("deployment zone is nil")
 	}
 
-	return resources.PublicGenerator().WithDeploymentZone(zone).WithDeployment(d).Harbor(getProjectName(userID))
+	return resources.Harbor(deployment, zone, getProjectName(userID))
 }
 
 // getProjectName returns the project name for the user.

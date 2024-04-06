@@ -30,7 +30,7 @@ func (c *Client) GetCiConfig(id string) (*body.CiConfig, error) {
 	}
 
 	if deployment.Type != model.DeploymentTypeCustom {
-		return nil, nil
+		return nil, errors.DeploymentHasNotCiConfigErr
 	}
 
 	tag := fmt.Sprintf("%s/%s/%s",

@@ -3,28 +3,41 @@ package resources
 import (
 	"fmt"
 	"github.com/google/uuid"
+	configModels "go-deploy/models/config"
+	"go-deploy/models/model"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems"
 	"go-deploy/pkg/subsystems/harbor/models"
+	"go-deploy/service/generators"
 	"strings"
 )
 
-// HarborGenerator is a generator for Harbor resources
-// It is used to generate the `publics`, such as models.ProjectPublic and models.RobotPublic
 type HarborGenerator struct {
-	*PublicGeneratorType
+	generators.HarborGeneratorBase
+
+	deployment *model.Deployment
+	zone       *configModels.DeploymentZone
+
 	project string
+}
+
+func Harbor(deployment *model.Deployment, zone *configModels.DeploymentZone, project string) generators.HarborGenerator {
+	return &HarborGenerator{
+		deployment: deployment,
+		zone:       zone,
+		project:    project,
+	}
 }
 
 // Project returns a models.ProjectPublic that should be created
 func (hg *HarborGenerator) Project() *models.ProjectPublic {
-	if hg.d.deployment != nil {
+	if hg.deployment != nil {
 		pr := models.ProjectPublic{
 			Name:   hg.project,
 			Public: false,
 		}
 
-		if p := &hg.d.deployment.Subsystems.Harbor.Project; subsystems.Created(p) {
+		if p := &hg.deployment.Subsystems.Harbor.Project; subsystems.Created(p) {
 			pr.ID = p.ID
 			pr.CreatedAt = p.CreatedAt
 		}
@@ -37,13 +50,13 @@ func (hg *HarborGenerator) Project() *models.ProjectPublic {
 
 // Robot returns a models.RobotPublic that should be created
 func (hg *HarborGenerator) Robot() *models.RobotPublic {
-	if hg.d.deployment != nil {
+	if hg.deployment != nil {
 		ro := models.RobotPublic{
-			Name:    hg.d.deployment.Name,
+			Name:    hg.deployment.Name,
 			Disable: false,
 		}
 
-		if r := &hg.d.deployment.Subsystems.Harbor.Robot; subsystems.Created(r) {
+		if r := &hg.deployment.Subsystems.Harbor.Robot; subsystems.Created(r) {
 			ro.ID = r.ID
 			ro.HarborName = r.HarborName
 			ro.Secret = r.Secret
@@ -59,20 +72,20 @@ func (hg *HarborGenerator) Robot() *models.RobotPublic {
 
 // Repository returns a models.RepositoryPublic that should be created
 func (hg *HarborGenerator) Repository() *models.RepositoryPublic {
-	if hg.d.deployment != nil {
+	if hg.deployment != nil {
 		splits := strings.Split(config.Config.Registry.PlaceholderImage, "/")
 		project := splits[len(splits)-2]
 		repository := splits[len(splits)-1]
 
 		re := models.RepositoryPublic{
-			Name: hg.d.deployment.Name,
+			Name: hg.deployment.Name,
 			Placeholder: &models.PlaceHolder{
 				ProjectName:    project,
 				RepositoryName: repository,
 			},
 		}
 
-		if r := &hg.d.deployment.Subsystems.Harbor.Repository; subsystems.Created(r) {
+		if r := &hg.deployment.Subsystems.Harbor.Repository; subsystems.Created(r) {
 			re.ID = r.ID
 			re.Seeded = r.Seeded
 			re.CreatedAt = r.CreatedAt
@@ -86,7 +99,7 @@ func (hg *HarborGenerator) Repository() *models.RepositoryPublic {
 
 // Webhook returns a models.WebhookPublic that should be created
 func (hg *HarborGenerator) Webhook() *models.WebhookPublic {
-	if hg.d.deployment != nil {
+	if hg.deployment != nil {
 		webhookTarget := fmt.Sprintf("%s/v1/hooks/deployments/harbor", config.Config.ExternalUrl)
 
 		we := models.WebhookPublic{
@@ -96,7 +109,7 @@ func (hg *HarborGenerator) Webhook() *models.WebhookPublic {
 			Token:  config.Config.Harbor.WebhookSecret,
 		}
 
-		if w := &hg.d.deployment.Subsystems.Harbor.Webhook; subsystems.Created(w) {
+		if w := &hg.deployment.Subsystems.Harbor.Webhook; subsystems.Created(w) {
 			we.ID = w.ID
 			we.CreatedAt = w.CreatedAt
 		}
