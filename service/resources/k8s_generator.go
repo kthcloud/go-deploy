@@ -22,6 +22,7 @@ import (
 	"path"
 	regexp "regexp"
 	"strings"
+	"time"
 )
 
 // K8sGenerator is a generator for K8s resources
@@ -442,14 +443,15 @@ func (kg *K8sGenerator) VMs() []models.VmPublic {
 		vmPublic := models.VmPublic{
 			Name:      vmName(kg.v.vm),
 			Namespace: kg.namespace,
-
-			CpuCores: kg.v.vm.Specs.CpuCores,
-			RAM:      kg.v.vm.Specs.RAM,
-			DiskSize: kg.v.vm.Specs.DiskSize,
-
+			CpuCores:  kg.v.vm.Specs.CpuCores,
+			RAM:       kg.v.vm.Specs.RAM,
+			DiskSize:  kg.v.vm.Specs.DiskSize,
+			GPUs:      make([]string, 0),
 			CloudInit: createCloudInitString(&cloudInit),
 			// Temporary image URL
-			Image: "docker://registry.cloud.cbh.kth.se/images/ubuntu:24.04",
+			Image:     "docker://registry.cloud.cbh.kth.se/images/ubuntu:24.04",
+			Running:   false,
+			CreatedAt: time.Time{},
 		}
 
 		if vm := kg.v.vm.Subsystems.K8s.GetVM(vmName(kg.v.vm)); subsystems.Created(vm) {
@@ -915,21 +917,6 @@ func (kg *K8sGenerator) PVCs() []models.PvcPublic {
 		}
 
 		return res
-	}
-
-	if kg.v.vm != nil && kg.v.vm.Version == version.V2 {
-		parentPVC := models.PvcPublic{
-			Name:      vmParentPvName(kg.v.vm),
-			Namespace: kg.namespace,
-			Capacity:  config.Config.Deployment.Resources.Limits.Storage,
-			PvName:    vmParentPvName(kg.v.vm),
-		}
-
-		if pvc := kg.v.vm.Subsystems.K8s.GetPV(vmParentPvName(kg.v.vm)); subsystems.Created(pvc) {
-			parentPVC.CreatedAt = pvc.CreatedAt
-		}
-
-		return []models.PvcPublic{parentPVC}
 	}
 
 	if kg.s.sm != nil {

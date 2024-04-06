@@ -26,9 +26,7 @@ func (client *Client) ReadVM(id string) (*models.VmPublic, error) {
 		return nil, makeError(err)
 	}
 
-	return &models.VmPublic{
-		Name: vm.Name,
-	}, nil
+	return models.CreateVmPublicFromRead(vm), nil
 }
 
 func (client *Client) CreateVM(public *models.VmPublic) (*models.VmPublic, error) {

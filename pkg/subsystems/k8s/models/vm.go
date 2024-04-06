@@ -22,7 +22,7 @@ type VmPublic struct {
 	//
 	// If it is an HTTP URL, it must be in the format: http(s)://<url>
 	// If it is a Docker image, it must be in the format: docker://<image>
-	Image string `bson:"imageUrl"`
+	Image string `bson:"image"`
 
 	Running bool `bson:"running"`
 
@@ -43,7 +43,7 @@ func CreateVmPublicFromRead(vm *kubevirtv1.VirtualMachine) *VmPublic {
 	var cpuCores int
 	var diskSize int
 	var cloudInit string
-	var imageURL string
+	var image string
 	var name string
 
 	if vm.ObjectMeta.Labels != nil {
@@ -58,7 +58,7 @@ func CreateVmPublicFromRead(vm *kubevirtv1.VirtualMachine) *VmPublic {
 
 	if vm.Spec.Template != nil {
 		if r := vm.Spec.Template.Spec.Domain.Resources.Requests; r != nil {
-			ram = int(r.Memory().Value())
+			ram = int(r.Memory().Value()) / 1024 / 1024 / 1024
 			cpuCores = int(r.Cpu().Value())
 		}
 
@@ -74,8 +74,13 @@ func CreateVmPublicFromRead(vm *kubevirtv1.VirtualMachine) *VmPublic {
 			diskSize = int(v.Storage().Value())
 		}
 
-		if vm.Spec.DataVolumeTemplates[0].Spec.Source != nil && vm.Spec.DataVolumeTemplates[0].Spec.Source.HTTP != nil {
-			imageURL = vm.Spec.DataVolumeTemplates[0].Spec.Source.HTTP.URL
+		source := vm.Spec.DataVolumeTemplates[0].Spec.Source
+		if source != nil {
+			if source.Registry != nil && source.Registry.URL != nil {
+				image = *source.Registry.URL
+			} else if source.HTTP != nil {
+				image = source.HTTP.URL
+			}
 		}
 	}
 
@@ -87,7 +92,7 @@ func CreateVmPublicFromRead(vm *kubevirtv1.VirtualMachine) *VmPublic {
 		RAM:       ram,
 		DiskSize:  diskSize,
 		CloudInit: cloudInit,
-		Image:     imageURL,
+		Image:     image,
 		Running:   running,
 		CreatedAt: formatCreatedAt(vm.Annotations),
 	}
