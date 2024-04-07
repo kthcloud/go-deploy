@@ -71,7 +71,7 @@ func CreateVmPublicFromRead(vm *kubevirtv1.VirtualMachine) *VmPublic {
 
 	if len(vm.Spec.DataVolumeTemplates) > 0 && vm.Spec.DataVolumeTemplates[0].Spec.PVC != nil {
 		if v := vm.Spec.DataVolumeTemplates[0].Spec.PVC.Resources.Requests; v != nil {
-			diskSize = int(v.Storage().Value())
+			diskSize = int(v.Storage().Value()) / 1024 / 1024 / 1024
 		}
 
 		source := vm.Spec.DataVolumeTemplates[0].Spec.Source

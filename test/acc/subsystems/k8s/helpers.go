@@ -11,14 +11,18 @@ import (
 	"testing"
 )
 
-func withContext(t *testing.T) (*k8s.Client, *models.NamespacePublic) {
-	n := withNamespace(t)
-	return withClient(t, n.Name), n
+func withContext(t *testing.T, zoneName ...string) (*k8s.Client, *models.NamespacePublic) {
+	n := withNamespace(t, zoneName...)
+	return withClient(t, n.Name, zoneName...), n
 }
 
-func withClient(t *testing.T, namespace string) *k8s.Client {
-	zoneName := "se-flem"
-	zone := config.Config.Deployment.GetZone(zoneName)
+func withClient(t *testing.T, namespace string, zoneName ...string) *k8s.Client {
+	zName := "se-flem"
+	if len(zoneName) > 0 {
+		zName = zoneName[0]
+	}
+
+	zone := config.Config.Deployment.GetZone(zName)
 	if zone == nil {
 		t.Fatalf("no zone with name %s found", zoneName)
 	}
@@ -35,8 +39,8 @@ func withClient(t *testing.T, namespace string) *k8s.Client {
 	return client
 }
 
-func withNamespace(t *testing.T) *models.NamespacePublic {
-	c := withClient(t, "")
+func withNamespace(t *testing.T, zoneName ...string) *models.NamespacePublic {
+	c := withClient(t, "", zoneName...)
 
 	n := &models.NamespacePublic{
 		Name: acc.GenName(),
@@ -75,6 +79,57 @@ func withDeployment(t *testing.T, c *k8s.Client, d *models.DeploymentPublic) *mo
 	test.EqualOrEmpty(t, d.EnvVars, dCreated.EnvVars, "deployment env vars do not match")
 
 	return dCreated
+}
+
+func withDefaultVM(t *testing.T, c *k8s.Client) *models.VmPublic {
+	name := acc.GenName()
+	sshPublicKey := "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDbFXrLEF2PYNodfwNfGe+4qM3FeZ/FxcfYLZwxStKVW/eTgYn3Y0DQSti86mA+Jrzkx2aSvHDPPJEQUUTiZUMwTiJlR4ud3FBDYZXQVsNhfJO5zduqLpEEdjtFMP/Y3jGpoh+Eq8U08yWRfs1sKay/THS5MoKIprFVU+yIgHsxNcrU2hymTnt+A43dxKHXd4aZXhfW5qHwBZzNBggRXPFb6RpABx2qk9dQGGHFrGp5p0cC2sekXNFg7lV8PEx8pspu+Kf5mSBd1aphRde8ATR61zEDbAGKi1wbGHhrrZ/dAigcSB5YNgllTg5l09CwtjWBFHGY1oxwb+F3foXH19dDIlkB7wsyoT/XD7NMOfNyqDYLlOrVVMPfEdNkBXdCScK8Q3rrT/LL/7fefo/OirDnCvL3dxEA/9ay0hVEHyef6E++tiO9DU/HBVAY6NYjYQCZZ92rqVPzM94ppBU4XocxzAQ7zL+pFABbZkYtXTH8VaE4A1MTgRXvte1CmzeFPQs= emil@thinkpad"
+
+	cloudInitString := `#cloud-config
+fqdn: ` + name + `
+users:
+    - name: root
+      sudo:
+        - ALL=(ALL) NOPASSWD:ALL
+      passwd: $6$rounds=4096$e1qOwC3bflSjcbvK$/Otkkdsr+tcKV0pIFSNe0esOBw2lDUBlUWJMNiKFhQaQJW6wa2Cz4OQmmr3woItXRQV7WG2ooGMX9S0Ikc2Fmw==
+      lock_passwd: false
+      shell: /bin/bash
+      ssh_authorized_keys:
+        - ` + sshPublicKey + `
+ssh_pwauth: false
+runcmd:
+    - git clone https://github.com/kthcloud/boostrap-vm.git init && cd init && chmod +x run.sh && ./run.sh
+`
+
+	vm := &models.VmPublic{
+		Name:      name,
+		Namespace: c.Namespace,
+		// Temporary image
+		Image:     "docker://registry.cloud.cbh.kth.se/images/ubuntu:24.04",
+		CpuCores:  1,
+		RAM:       4,
+		DiskSize:  15,
+		CloudInit: cloudInitString,
+	}
+
+	return withVM(t, c, vm)
+}
+
+func withVM(t *testing.T, c *k8s.Client, vm *models.VmPublic) *models.VmPublic {
+	vmCreated, err := c.CreateVM(vm)
+	test.NoError(t, err, "failed to create vm")
+	assert.True(t, vmCreated.Created(), "vm was not created")
+	t.Cleanup(func() { cleanUpVM(t, c, vmCreated.Name) })
+
+	assert.Equal(t, vm.Name, vmCreated.Name, "vm name does not match")
+	assert.Equal(t, vm.Namespace, vmCreated.Namespace, "vm namespace does not match")
+	assert.Equal(t, vm.Image, vmCreated.Image, "vm image does not match")
+	assert.Equal(t, vm.CpuCores, vmCreated.CpuCores, "vm cpu cores do not match")
+	assert.Equal(t, vm.RAM, vmCreated.RAM, "vm ram does not match")
+	assert.Equal(t, vm.DiskSize, vmCreated.DiskSize, "vm disk size does not match")
+	test.EqualOrEmpty(t, vm.GPUs, vmCreated.GPUs, "vm gpus do not match")
+
+	return vmCreated
 }
 
 func withDefaultService(t *testing.T, c *k8s.Client) *models.ServicePublic {
@@ -323,6 +378,18 @@ func cleanUpDeployment(t *testing.T, c *k8s.Client, name string) {
 
 	err = c.DeleteDeployment(name)
 	test.NoError(t, err, "failed to delete deployment again")
+}
+
+func cleanUpVM(t *testing.T, c *k8s.Client, name string) {
+	err := c.DeleteVM(name)
+	test.NoError(t, err, "failed to delete vm")
+
+	deletedVM, err := c.ReadVM(name)
+	test.NoError(t, err, "failed to read vm")
+	assert.Nil(t, deletedVM, "vm still exists")
+
+	err = c.DeleteVM(name)
+	test.NoError(t, err, "failed to delete vm again")
 }
 
 func cleanUpService(t *testing.T, c *k8s.Client, name string) {
