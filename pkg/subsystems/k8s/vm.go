@@ -67,22 +67,30 @@ func (client *Client) UpdateVM(public *models.VmPublic) (*models.VmPublic, error
 		return nil, nil
 	}
 
-	vm, err := client.KubeVirtK8sClient.KubevirtV1().VirtualMachines(client.Namespace).Get(context.TODO(), public.ID, metav1.GetOptions{})
-	if err != nil {
-		if IsNotFoundErr(err) {
-			return nil, nil
+	for i := 0; i < 5; i++ {
+		vm, err := client.KubeVirtK8sClient.KubevirtV1().VirtualMachines(client.Namespace).Get(context.TODO(), public.ID, metav1.GetOptions{})
+		if err != nil {
+			if IsNotFoundErr(err) {
+				return nil, nil
+			}
+
+			return nil, makeError(err)
 		}
 
-		return nil, makeError(err)
+		manifest := CreateVmManifest(public, vm.ObjectMeta.ResourceVersion)
+		res, err := client.KubeVirtK8sClient.KubevirtV1().VirtualMachines(client.Namespace).Update(context.TODO(), manifest, metav1.UpdateOptions{})
+		if err != nil {
+			if IsHasBeenModifiedErr(err) {
+				continue
+			}
+
+			return nil, makeError(err)
+		}
+
+		return models.CreateVmPublicFromRead(res), nil
 	}
 
-	manifest := CreateVmManifest(public, vm.ObjectMeta.ResourceVersion)
-	res, err := client.KubeVirtK8sClient.KubevirtV1().VirtualMachines(client.Namespace).Update(context.TODO(), manifest, metav1.UpdateOptions{})
-	if err != nil {
-		return nil, makeError(err)
-	}
-
-	return models.CreateVmPublicFromRead(res), nil
+	return nil, makeError(fmt.Errorf("failed to update k8s vm %s. details: max retries reached", public.ID))
 }
 
 func (client *Client) DeleteVM(id string) error {
