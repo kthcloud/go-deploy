@@ -133,7 +133,7 @@ func (c *Client) Delete(id string) error {
 		return fmt.Errorf("failed to delete storage manager in k8s. details: %w", err)
 	}
 
-	log.Println("deleting k8s for storage manager", id)
+	log.Println("Deleting k8s for storage manager", id)
 
 	sm, kc, _, err := c.Get(OptsNoGenerator(id))
 	if err != nil {

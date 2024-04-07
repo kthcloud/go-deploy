@@ -40,7 +40,7 @@ func (runner *Runner) Run() {
 			}
 
 			if shouldTerminate {
-				log.Println("Job %s (%s) gracefully terminated by system", runner.Job.ID, runner.Job.Type)
+				log.Printf("Job %s (%s) gracefully terminated by system", runner.Job.ID, runner.Job.Type)
 				err = job_repo.New().MarkTerminated(runner.Job.ID, "gracefully terminated by system")
 				if err != nil {
 					utils.PrettyPrintError(fmt.Errorf("error marking job %s (%s) as terminated. details: %w", runner.Job.ID, runner.Job.Type, err))

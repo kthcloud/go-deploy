@@ -4,6 +4,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go-deploy/dto/v1/body"
 	"go-deploy/test/e2e"
+	"go-deploy/test/e2e/v1"
 	"os"
 	"testing"
 )
@@ -18,12 +19,12 @@ func TestMain(m *testing.M) {
 func TestGet(t *testing.T) {
 	t.Parallel()
 
-	userData := e2e.WithUserData(t, body.UserDataCreate{
+	userData := v1.WithUserData(t, body.UserDataCreate{
 		ID:   e2e.GenName("userData"),
 		Data: "test",
 	})
 
-	userDataRead := e2e.GetUserData(t, userData.ID)
+	userDataRead := v1.GetUserData(t, userData.ID)
 	if userDataRead.ID != userData.ID {
 		t.Error("user data was not fetched")
 	}
@@ -32,12 +33,12 @@ func TestGet(t *testing.T) {
 func TestList(t *testing.T) {
 	t.Parallel()
 
-	userData := e2e.WithUserData(t, body.UserDataCreate{
+	userData := v1.WithUserData(t, body.UserDataCreate{
 		ID:   e2e.GenName("userData"),
 		Data: "test",
 	})
 
-	userDataList := e2e.ListUserData(t, "")
+	userDataList := v1.ListUserData(t, "")
 	assert.NotEmpty(t, userDataList, "user data was not fetched")
 
 	found := false
@@ -54,12 +55,12 @@ func TestList(t *testing.T) {
 func TestUpdate(t *testing.T) {
 	t.Parallel()
 
-	userData := e2e.WithUserData(t, body.UserDataCreate{
+	userData := v1.WithUserData(t, body.UserDataCreate{
 		ID:   e2e.GenName("userData"),
 		Data: "test",
 	})
 
-	userDataUpdate := e2e.UpdateUserData(t, userData.ID, body.UserDataUpdate{
+	userDataUpdate := v1.UpdateUserData(t, userData.ID, body.UserDataUpdate{
 		Data: "test2",
 	})
 

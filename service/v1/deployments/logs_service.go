@@ -40,7 +40,7 @@ func (c *Client) SetupLogStream(id string, ctx context.Context, handler func(str
 	}
 
 	go func() {
-		handler(MessageSourceControl, "[control]", "setting up log stream", time.Now())
+		handler(MessageSourceControl, "[control]", "Setting up log stream", time.Now())
 		time.Sleep(500 * time.Millisecond)
 
 		// fetch history logs

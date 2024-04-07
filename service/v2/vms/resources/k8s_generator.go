@@ -98,7 +98,7 @@ func (kg *K8sGenerator) VMs() []models.VmPublic {
 		CloudInit: createCloudInitString(&cloudInit),
 		// Temporary image URL
 		Image:     "docker://registry.cloud.cbh.kth.se/images/ubuntu:24.04",
-		Running:   false,
+		Running:   true,
 		CreatedAt: time.Time{},
 	}
 

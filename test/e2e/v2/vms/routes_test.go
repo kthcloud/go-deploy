@@ -3,8 +3,11 @@ package vms
 import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"go-deploy/dto/v1/body"
+	bodyV1 "go-deploy/dto/v1/body"
+	"go-deploy/dto/v2/body"
 	"go-deploy/test/e2e"
+	"go-deploy/test/e2e/v1"
+	"go-deploy/test/e2e/v2"
 	"net/http"
 	"os"
 	"strings"
@@ -20,8 +23,6 @@ func TestMain(m *testing.M) {
 }
 
 func TestList(t *testing.T) {
-	t.Skip("CloudStack is too unpredictable to run this test")
-
 	t.Parallel()
 
 	queries := []string{
@@ -31,33 +32,16 @@ func TestList(t *testing.T) {
 	}
 
 	for _, query := range queries {
-		e2e.ListVMs(t, query)
-	}
-}
-
-func TestListGPUs(t *testing.T) {
-	t.Skip("CloudStack is too unpredictable to run this test")
-
-	t.Parallel()
-
-	queries := []string{
-		"?page=1&pageSize=3",
-		"?available=true&page=1&pageSize=3",
-	}
-
-	for _, query := range queries {
-		e2e.ListGPUs(t, query)
+		v2.ListVMs(t, query)
 	}
 }
 
 func TestCreate(t *testing.T) {
-	t.Skip("CloudStack is too unpredictable to run this test")
-
 	t.Parallel()
 
 	requestBody := body.VmCreate{
 		Name:         e2e.GenName(),
-		SshPublicKey: e2e.WithSshPublicKey(t),
+		SshPublicKey: v2.WithSshPublicKey(t),
 		Ports: []body.PortCreate{
 			{
 				Name:     "e2e-test",
@@ -71,12 +55,10 @@ func TestCreate(t *testing.T) {
 		Zone:     nil,
 	}
 
-	e2e.WithVM(t, requestBody)
+	v2.WithVM(t, requestBody)
 }
 
 func TestCreateWithInvalidBody(t *testing.T) {
-	t.Skip("CloudStack is too unpredictable to run this test")
-
 	t.Parallel()
 
 	longName := body.VmCreate{
@@ -88,7 +70,7 @@ func TestCreateWithInvalidBody(t *testing.T) {
 	for i := 0; i < 1000; i++ {
 		longName.Name += uuid.NewString()
 	}
-	e2e.WithAssumedFailedVM(t, longName)
+	v2.WithAssumedFailedVM(t, longName)
 
 	invalidNames := []string{
 		e2e.GenName() + "-",
@@ -108,7 +90,7 @@ func TestCreateWithInvalidBody(t *testing.T) {
 			RAM:      2,
 			DiskSize: 20,
 		}
-		e2e.WithAssumedFailedVM(t, requestBody)
+		v2.WithAssumedFailedVM(t, requestBody)
 	}
 
 	invalidPorts := []body.PortCreate{
@@ -137,7 +119,7 @@ func TestCreateWithInvalidBody(t *testing.T) {
 	for _, port := range invalidPorts {
 		requestBody := body.VmCreate{
 			Name:         e2e.GenName(),
-			SshPublicKey: e2e.WithSshPublicKey(t),
+			SshPublicKey: v2.WithSshPublicKey(t),
 			Ports: []body.PortCreate{
 				port,
 			},
@@ -145,7 +127,7 @@ func TestCreateWithInvalidBody(t *testing.T) {
 			RAM:      2,
 			DiskSize: 20,
 		}
-		e2e.WithAssumedFailedVM(t, requestBody)
+		v2.WithAssumedFailedVM(t, requestBody)
 	}
 
 	invalidCpuCores := []int{
@@ -156,12 +138,12 @@ func TestCreateWithInvalidBody(t *testing.T) {
 	for _, cpuCores := range invalidCpuCores {
 		requestBody := body.VmCreate{
 			Name:         e2e.GenName(),
-			SshPublicKey: e2e.WithSshPublicKey(t),
+			SshPublicKey: v2.WithSshPublicKey(t),
 			CpuCores:     cpuCores,
 			RAM:          2,
 			DiskSize:     20,
 		}
-		e2e.WithAssumedFailedVM(t, requestBody)
+		v2.WithAssumedFailedVM(t, requestBody)
 	}
 
 	invalidRam := []int{
@@ -172,12 +154,12 @@ func TestCreateWithInvalidBody(t *testing.T) {
 	for _, ram := range invalidRam {
 		requestBody := body.VmCreate{
 			Name:         e2e.GenName(),
-			SshPublicKey: e2e.WithSshPublicKey(t),
+			SshPublicKey: v2.WithSshPublicKey(t),
 			CpuCores:     2,
 			RAM:          ram,
 			DiskSize:     20,
 		}
-		e2e.WithAssumedFailedVM(t, requestBody)
+		v2.WithAssumedFailedVM(t, requestBody)
 	}
 
 	invalidDiskSize := []int{
@@ -189,12 +171,12 @@ func TestCreateWithInvalidBody(t *testing.T) {
 	for _, diskSize := range invalidDiskSize {
 		requestBody := body.VmCreate{
 			Name:         e2e.GenName(),
-			SshPublicKey: e2e.WithSshPublicKey(t),
+			SshPublicKey: v2.WithSshPublicKey(t),
 			CpuCores:     2,
 			RAM:          2,
 			DiskSize:     diskSize,
 		}
-		e2e.WithAssumedFailedVM(t, requestBody)
+		v2.WithAssumedFailedVM(t, requestBody)
 	}
 
 	invalidPublicKey := []string{
@@ -211,16 +193,14 @@ func TestCreateWithInvalidBody(t *testing.T) {
 			RAM:          2,
 			DiskSize:     20,
 		}
-		e2e.WithAssumedFailedVM(t, requestBody)
+		v2.WithAssumedFailedVM(t, requestBody)
 	}
 }
 
 func TestUpdate(t *testing.T) {
-	t.Skip("CloudStack is too unpredictable to run this test")
-
 	t.Parallel()
 
-	vm := e2e.WithDefaultVM(t)
+	vm := v2.WithDefaultVM(t)
 
 	updatedCpuCores := 4
 	updatedRam := 4
@@ -236,7 +216,7 @@ func TestUpdate(t *testing.T) {
 		RAM:      &updatedRam,
 	}
 
-	vm = e2e.UpdateVM(t, vm.ID, updateRequestBody)
+	vm = v2.UpdateVM(t, vm.ID, updateRequestBody)
 
 	if updateRequestBody.Ports != nil {
 		for _, port := range *updateRequestBody.Ports {
@@ -265,22 +245,20 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestCreateShared(t *testing.T) {
-	t.Skip("CloudStack is too unpredictable to run this test")
-
 	t.Parallel()
 
-	vm := e2e.WithDefaultVM(t)
-	team := e2e.WithTeam(t, body.TeamCreate{
+	vm := v2.WithDefaultVM(t)
+	team := v1.WithTeam(t, bodyV1.TeamCreate{
 		Name:      e2e.GenName(),
 		Resources: []string{vm.ID},
-		Members:   []body.TeamMemberCreate{{ID: e2e.PowerUserID}},
+		Members:   []bodyV1.TeamMemberCreate{{ID: e2e.PowerUserID}},
 	})
 
-	vmRead := e2e.GetVM(t, vm.ID)
+	vmRead := v1.GetVM(t, vm.ID)
 	assert.Equal(t, []string{team.ID}, vmRead.Teams, "invalid teams on vm")
 
 	// Fetch team members vms
-	vms := e2e.ListVMs(t, "?userId="+e2e.PowerUserID)
+	vms := v1.ListVMs(t, "?userId="+e2e.PowerUserID)
 	assert.NotEmpty(t, vms, "user has no vms")
 
 	hasVM := false
@@ -294,8 +272,6 @@ func TestCreateShared(t *testing.T) {
 }
 
 func TestAttachAnyGPU(t *testing.T) {
-	t.Skip("CloudStack is too unpredictable to run this test")
-
 	// TODO: Fix this test
 	// This test is currently unreliable, as it might attach to a GPU that is leased in production
 	//
@@ -306,7 +282,7 @@ func TestAttachAnyGPU(t *testing.T) {
 
 	t.Parallel()
 
-	vm := e2e.WithDefaultVM(t)
+	vm := v2.WithDefaultVM(t)
 
 	anyID := "any"
 
@@ -314,7 +290,7 @@ func TestAttachAnyGPU(t *testing.T) {
 		GpuID: &anyID,
 	}
 
-	e2e.UpdateVM(t, vm.ID, updateGpuBody)
+	v2.UpdateVM(t, vm.ID, updateGpuBody)
 
 	// We can't check the GPU ID here, because it might be the case that
 	// no GPUs were available (reserved in another database)
@@ -323,8 +299,6 @@ func TestAttachAnyGPU(t *testing.T) {
 }
 
 func TestAttachGPU(t *testing.T) {
-	t.Skip("CloudStack is too unpredictable to run this test")
-
 	t.Parallel()
 
 	// To test this, you need to set the gpu_repo ID
@@ -337,9 +311,9 @@ func TestAttachGPU(t *testing.T) {
 		t.Skip("no gpu_repo ID set")
 	}
 
-	vm := e2e.WithVM(t, body.VmCreate{
+	vm := v2.WithVM(t, body.VmCreate{
 		Name:         e2e.GenName(),
-		SshPublicKey: e2e.WithSshPublicKey(t),
+		SshPublicKey: v2.WithSshPublicKey(t),
 		CpuCores:     2,
 		RAM:          2,
 		DiskSize:     20,
@@ -349,7 +323,7 @@ func TestAttachGPU(t *testing.T) {
 		GpuID: &gpuID,
 	}
 
-	e2e.UpdateVM(t, vm.ID, updateGpuBody)
+	v2.UpdateVM(t, vm.ID, updateGpuBody)
 
 	// We can't check the GPU ID here, because it might be the case that
 	// the GPU was not available (reserved in another database)
@@ -358,13 +332,11 @@ func TestAttachGPU(t *testing.T) {
 }
 
 func TestAttachGPUWithInvalidID(t *testing.T) {
-	t.Skip("CloudStack is too unpredictable to run this test")
-
 	t.Parallel()
 
-	vm := e2e.WithVM(t, body.VmCreate{
+	vm := v2.WithVM(t, body.VmCreate{
 		Name:         e2e.GenName(),
-		SshPublicKey: e2e.WithSshPublicKey(t),
+		SshPublicKey: v2.WithSshPublicKey(t),
 		CpuCores:     2,
 		RAM:          2,
 		DiskSize:     20,
@@ -381,8 +353,6 @@ func TestAttachGPUWithInvalidID(t *testing.T) {
 }
 
 func TestAttachGpuWithAlreadyAttachedID(t *testing.T) {
-	t.Skip("CloudStack is too unpredictable to run this test")
-
 	t.Parallel()
 
 	// To test this, you need to set the gpu_repo ID
@@ -401,9 +371,9 @@ func TestAttachGpuWithAlreadyAttachedID(t *testing.T) {
 		t.Skip("no another gpu_repo ID set")
 	}
 
-	vm := e2e.WithVM(t, body.VmCreate{
+	vm := v2.WithVM(t, body.VmCreate{
 		Name:         e2e.GenName(),
-		SshPublicKey: e2e.WithSshPublicKey(t),
+		SshPublicKey: v2.WithSshPublicKey(t),
 		CpuCores:     2,
 		RAM:          2,
 		DiskSize:     20,
@@ -413,7 +383,7 @@ func TestAttachGpuWithAlreadyAttachedID(t *testing.T) {
 		GpuID: &gpuID,
 	}
 
-	e2e.UpdateVM(t, vm.ID, updateGpuBody)
+	v2.UpdateVM(t, vm.ID, updateGpuBody)
 
 	updateGpuBody = body.VmUpdate{
 		GpuID: &anotherGpuID,
@@ -423,16 +393,14 @@ func TestAttachGpuWithAlreadyAttachedID(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
 
-func TestCommand(t *testing.T) {
-	t.Skip("CloudStack is too unpredictable to run this test")
-
+func TestAction(t *testing.T) {
 	t.Parallel()
 
-	commands := []string{"stop", "start", "reboot"}
-	vm := e2e.WithDefaultVM(t)
+	actions := []string{"stop", "start", "restart"}
+	vm := v2.WithDefaultVM(t)
 
-	for _, command := range commands {
-		reqBody := body.VmCommand{Command: command}
+	for _, action := range actions {
+		reqBody := body.VmActionCreate{Action: action}
 		resp := e2e.DoPostRequest(t, "/vms/"+vm.ID+"/command", reqBody)
 		assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 
@@ -440,67 +408,15 @@ func TestCommand(t *testing.T) {
 	}
 }
 
-func TestCreateAndRestoreSnapshot(t *testing.T) {
-	t.Skip("CloudStack is too unpredictable to run this test")
-
+func TestInvalidAction(t *testing.T) {
 	t.Parallel()
 
-	vm := e2e.WithDefaultVM(t)
+	actions := []string{"some command", "invalid"}
 
-	snapshotCreateBody := body.VmSnapshotCreate{
-		Name: e2e.GenName(),
-	}
+	vm := v2.WithDefaultVM(t)
 
-	// Create
-	snapshot := e2e.CreateSnapshot(t, vm.ID, snapshotCreateBody)
-	t.Cleanup(func() {
-		e2e.DeleteSnapshot(t, vm.ID, snapshot.ID)
-	})
-
-	// Get
-	snapshot = e2e.GetSnapshot(t, vm.ID, snapshot.ID)
-
-	// List
-	snapshots := e2e.ListSnapshots(t, vm.ID)
-	assert.NotEmpty(t, snapshots, "no snapshots found")
-	found := false
-	for _, s := range snapshots {
-		if snapshot.ID == s.ID {
-			assert.Equal(t, snapshotCreateBody.Name, s.Name)
-			found = true
-			break
-		}
-	}
-	assert.True(t, found, "snapshot not found in list")
-
-	// Restore
-	// Edit the VM to make sure it can be restored
-	e2e.DoSshCommand(t, *vm.ConnectionString, "echo 'e2e-test' > /tmp/test.txt")
-
-	restoreSnapshotBody := body.VmUpdate{
-		SnapshotID: &snapshot.ID,
-	}
-
-	e2e.UpdateVM(t, vm.ID, restoreSnapshotBody)
-
-	// Check that the file is not there
-	res := e2e.DoSshCommand(t, *vm.ConnectionString, "cat /tmp/test.txt")
-	if strings.Contains(res, "e2e-test") {
-		assert.Fail(t, "snapshot did not restore correctly")
-	}
-}
-
-func TestInvalidCommand(t *testing.T) {
-	t.Skip("CloudStack is too unpredictable to run this test")
-
-	t.Parallel()
-
-	invalidCommands := []string{"some command", "invalid"}
-
-	vm := e2e.WithDefaultVM(t)
-
-	for _, command := range invalidCommands {
-		reqBody := body.VmCommand{Command: command}
+	for _, action := range actions {
+		reqBody := body.VmActionCreate{Action: action}
 		resp := e2e.DoPostRequest(t, "/vms/"+vm.ID+"/command", reqBody)
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	}

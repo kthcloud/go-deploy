@@ -1,10 +1,11 @@
-package e2e
+package v1
 
 import (
 	"github.com/stretchr/testify/assert"
 	"go-deploy/dto/v1/body"
 	"go-deploy/pkg/app/status_codes"
 	"go-deploy/test"
+	"go-deploy/test/e2e"
 	"golang.org/x/net/idna"
 	"net/http"
 	"strconv"
@@ -12,8 +13,8 @@ import (
 )
 
 func WaitForDeploymentRunning(t *testing.T, id string, callback func(*body.DeploymentRead) bool) {
-	fetchUntil(t, "/deployments/"+id, func(resp *http.Response) bool {
-		deploymentRead := Parse[body.DeploymentRead](t, resp)
+	e2e.FetchUntil(t, "/deployments/"+id, func(resp *http.Response) bool {
+		deploymentRead := e2e.Parse[body.DeploymentRead](t, resp)
 		if deploymentRead.Status == status_codes.GetMsg(status_codes.ResourceRunning) {
 			if callback == nil || callback(&deploymentRead) {
 				return true
@@ -25,9 +26,9 @@ func WaitForDeploymentRunning(t *testing.T, id string, callback func(*body.Deplo
 }
 
 func WaitForSmRunning(t *testing.T, id string, callback func(read *body.SmRead) bool) {
-	fetchUntil(t, "/storageManagers/"+id, func(resp *http.Response) bool {
+	e2e.FetchUntil(t, "/storageManagers/"+id, func(resp *http.Response) bool {
 		var smRead body.SmRead
-		err := ReadResponseBody(t, resp, &smRead)
+		err := e2e.ReadResponseBody(t, resp, &smRead)
 		assert.NoError(t, err, "storage manager was not fetched")
 
 		if callback == nil {
@@ -39,7 +40,7 @@ func WaitForSmRunning(t *testing.T, id string, callback func(read *body.SmRead) 
 }
 
 func WaitForDeploymentDeleted(t *testing.T, id string, callback func() bool) {
-	fetchUntil(t, "/deployments/"+id, func(resp *http.Response) bool {
+	e2e.FetchUntil(t, "/deployments/"+id, func(resp *http.Response) bool {
 		return resp.StatusCode == http.StatusNotFound
 	})
 }
@@ -58,18 +59,18 @@ func CheckUpURL(t *testing.T, url string) bool {
 }
 
 func GetDeployment(t *testing.T, id string, userID ...string) body.DeploymentRead {
-	resp := DoGetRequest(t, "/deployments/"+id, userID...)
-	return Parse[body.DeploymentRead](t, resp)
+	resp := e2e.DoGetRequest(t, "/deployments/"+id, userID...)
+	return e2e.Parse[body.DeploymentRead](t, resp)
 }
 
 func ListDeployments(t *testing.T, query string, userID ...string) []body.DeploymentRead {
-	resp := DoGetRequest(t, "/deployments"+query, userID...)
-	return Parse[[]body.DeploymentRead](t, resp)
+	resp := e2e.DoGetRequest(t, "/deployments"+query, userID...)
+	return e2e.Parse[[]body.DeploymentRead](t, resp)
 }
 
 func UpdateDeployment(t *testing.T, id string, requestBody body.DeploymentUpdate, userID ...string) body.DeploymentRead {
-	resp := DoPostRequest(t, "/deployments/"+id, requestBody, userID...)
-	deploymentUpdated := Parse[body.DeploymentUpdated](t, resp)
+	resp := e2e.DoPostRequest(t, "/deployments/"+id, requestBody, userID...)
+	deploymentUpdated := e2e.Parse[body.DeploymentUpdated](t, resp)
 
 	if deploymentUpdated.JobID != nil {
 		WaitForJobFinished(t, *deploymentUpdated.JobID, nil)
@@ -143,11 +144,11 @@ func UpdateDeployment(t *testing.T, id string, requestBody body.DeploymentUpdate
 }
 
 func WithDeployment(t *testing.T, requestBody body.DeploymentCreate) (body.DeploymentRead, string) {
-	resp := DoPostRequest(t, "/deployments", requestBody)
+	resp := e2e.DoPostRequest(t, "/deployments", requestBody)
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "deployment was not created")
 
 	var deploymentCreated body.DeploymentCreated
-	err := ReadResponseBody(t, resp, &deploymentCreated)
+	err := e2e.ReadResponseBody(t, resp, &deploymentCreated)
 	assert.NoError(t, err, "deployment was not created")
 
 	t.Cleanup(func() {
@@ -164,8 +165,8 @@ func WithDeployment(t *testing.T, requestBody body.DeploymentCreate) (body.Deplo
 	})
 
 	var deploymentRead body.DeploymentRead
-	readResp := DoGetRequest(t, "/deployments/"+deploymentCreated.ID)
-	err = ReadResponseBody(t, readResp, &deploymentRead)
+	readResp := e2e.DoGetRequest(t, "/deployments/"+deploymentCreated.ID)
+	err = e2e.ReadResponseBody(t, readResp, &deploymentRead)
 	assert.NoError(t, err, "deployment was not created")
 
 	assert.NotEmpty(t, deploymentRead.ID)
@@ -232,13 +233,13 @@ func WithDeployment(t *testing.T, requestBody body.DeploymentCreate) (body.Deplo
 }
 
 func WithAssumedFailedDeployment(t *testing.T, requestBody body.DeploymentCreate) {
-	resp := DoPostRequest(t, "/deployments", requestBody)
+	resp := e2e.DoPostRequest(t, "/deployments", requestBody)
 	if resp.StatusCode == http.StatusBadRequest {
 		return
 	}
 
 	var deploymentCreated body.DeploymentCreated
-	err := ReadResponseBody(t, resp, &deploymentCreated)
+	err := e2e.ReadResponseBody(t, resp, &deploymentCreated)
 	assert.NoError(t, err, "deployment created body was not read")
 
 	t.Cleanup(func() { CleanUpDeployment(t, deploymentCreated.ID) })
@@ -247,14 +248,14 @@ func WithAssumedFailedDeployment(t *testing.T, requestBody body.DeploymentCreate
 }
 
 func CleanUpDeployment(t *testing.T, id string) {
-	resp := DoDeleteRequest(t, "/deployments/"+id)
+	resp := e2e.DoDeleteRequest(t, "/deployments/"+id)
 	if resp.StatusCode == http.StatusNotFound {
 		return
 	}
 
 	if resp.StatusCode == http.StatusOK {
 		var vmDeleted body.VmDeleted
-		err := ReadResponseBody(t, resp, &vmDeleted)
+		err := e2e.ReadResponseBody(t, resp, &vmDeleted)
 		assert.NoError(t, err, "deleted body was not read")
 		assert.Equal(t, id, vmDeleted.ID)
 

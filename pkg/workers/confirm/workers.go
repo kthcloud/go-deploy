@@ -36,7 +36,7 @@ func deploymentDeletionConfirmer() error {
 		}) == -1
 
 		if allFinished {
-			log.Printf("marking deployment %s as deleted\n", deployment.ID)
+			log.Printf("Marking deployment %s as deleted\n", deployment.ID)
 			err = deployment_repo.New().DeleteByID(deployment.ID)
 			if err != nil {
 				return err
@@ -72,7 +72,7 @@ func smDeletionConfirmer() error {
 		}) == -1
 
 		if allFinished {
-			log.Printf("marking sm %s as deleted\n", sm.ID)
+			log.Printf("Marking sm %s as deleted\n", sm.ID)
 			err = sm_repo.New().DeleteByID(sm.ID)
 			if err != nil {
 				return err
@@ -108,7 +108,7 @@ func vmDeletionConfirmer() error {
 		}) == -1
 
 		if allFinished {
-			log.Printf("marking vm %s as deleted\n", vm.ID)
+			log.Printf("Marking vm %s as deleted", vm.ID)
 			err = vm_repo.New().DeleteByID(vm.ID)
 			if err != nil {
 				return err
@@ -162,7 +162,7 @@ func customDomainConfirmer() error {
 			continue
 		}
 
-		log.Printf("marking custom domain %s as confirmed for deployment %s\n", cd.Domain, deployment.ID)
+		log.Printf("Marking custom domain %s as confirmed for deployment %s\n", cd.Domain, deployment.ID)
 		err = deployment_repo.New().UpdateCustomDomainStatus(deployment.ID, model.CustomDomainStatusActive)
 		if err != nil {
 			return nil
@@ -213,7 +213,7 @@ func customDomainConfirmer() error {
 				continue
 			}
 
-			log.Printf("marking custom domain %s as confirmed for vm %s\n", cd.Domain, vm.ID)
+			log.Printf("Marking custom domain %s as confirmed for vm %s\n", cd.Domain, vm.ID)
 			err = vm_repo.New().UpdateCustomDomainStatus(vm.ID, portName, model.CustomDomainStatusActive)
 			if err != nil {
 				return err

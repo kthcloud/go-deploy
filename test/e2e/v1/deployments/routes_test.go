@@ -5,6 +5,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go-deploy/dto/v1/body"
 	"go-deploy/test/e2e"
+	"go-deploy/test/e2e/v1"
 	"net/http"
 	"os"
 	"strconv"
@@ -29,7 +30,7 @@ func TestList(t *testing.T) {
 	}
 
 	for _, query := range queries {
-		e2e.ListDeployments(t, query)
+		v1.ListDeployments(t, query)
 	}
 }
 
@@ -47,7 +48,7 @@ func TestCreate(t *testing.T) {
 		},
 	}
 
-	e2e.WithDeployment(t, requestBody)
+	v1.WithDeployment(t, requestBody)
 }
 
 func TestCreateWithCustomPort(t *testing.T) {
@@ -67,7 +68,7 @@ func TestCreateWithCustomPort(t *testing.T) {
 		},
 	}
 
-	e2e.WithDeployment(t, requestBody)
+	v1.WithDeployment(t, requestBody)
 }
 
 func TestCreateWithCustomImage(t *testing.T) {
@@ -89,7 +90,7 @@ func TestCreateWithCustomImage(t *testing.T) {
 		Image: &customImage,
 	}
 
-	e2e.WithDeployment(t, requestBody)
+	v1.WithDeployment(t, requestBody)
 }
 
 func TestCreateWithCustomDomain(t *testing.T) {
@@ -103,7 +104,7 @@ func TestCreateWithCustomDomain(t *testing.T) {
 		CustomDomain: &customDomain,
 	}
 
-	e2e.WithDeployment(t, requestBody)
+	v1.WithDeployment(t, requestBody)
 }
 
 func TestCreateWithInvalidBody(t *testing.T) {
@@ -113,7 +114,7 @@ func TestCreateWithInvalidBody(t *testing.T) {
 	for i := 0; i < 1000; i++ {
 		longName.Name += uuid.NewString()
 	}
-	e2e.WithAssumedFailedDeployment(t, longName)
+	v1.WithAssumedFailedDeployment(t, longName)
 
 	invalidNames := []string{
 		e2e.GenName() + "-",
@@ -128,7 +129,7 @@ func TestCreateWithInvalidBody(t *testing.T) {
 
 	for _, name := range invalidNames {
 		requestBody := body.DeploymentCreate{Name: name}
-		e2e.WithAssumedFailedDeployment(t, requestBody)
+		v1.WithAssumedFailedDeployment(t, requestBody)
 	}
 
 	tooManyEnvs := body.DeploymentCreate{Name: e2e.GenName()}
@@ -140,7 +141,7 @@ func TestCreateWithInvalidBody(t *testing.T) {
 		}
 	}
 
-	e2e.WithAssumedFailedDeployment(t, tooManyEnvs)
+	v1.WithAssumedFailedDeployment(t, tooManyEnvs)
 
 	tooManyVolumes := body.DeploymentCreate{Name: e2e.GenName()}
 	tooManyVolumes.Volumes = make([]body.Volume, 10000)
@@ -152,7 +153,7 @@ func TestCreateWithInvalidBody(t *testing.T) {
 		}
 	}
 
-	e2e.WithAssumedFailedDeployment(t, tooManyVolumes)
+	v1.WithAssumedFailedDeployment(t, tooManyVolumes)
 
 	tooManyInitCommands := body.DeploymentCreate{Name: e2e.GenName()}
 	tooManyInitCommands.InitCommands = make([]string, 10000)
@@ -160,24 +161,24 @@ func TestCreateWithInvalidBody(t *testing.T) {
 		tooManyInitCommands.InitCommands[i] = uuid.NewString()
 	}
 
-	e2e.WithAssumedFailedDeployment(t, tooManyInitCommands)
+	v1.WithAssumedFailedDeployment(t, tooManyInitCommands)
 }
 
 func TestCreateShared(t *testing.T) {
 	t.Parallel()
 
-	deployment, _ := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
-	team := e2e.WithTeam(t, body.TeamCreate{
+	deployment, _ := v1.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
+	team := v1.WithTeam(t, body.TeamCreate{
 		Name:      e2e.GenName(),
 		Resources: []string{deployment.ID},
 		Members:   []body.TeamMemberCreate{{ID: e2e.PowerUserID}},
 	})
 
-	deploymentRead := e2e.GetDeployment(t, deployment.ID)
+	deploymentRead := v1.GetDeployment(t, deployment.ID)
 	assert.Equal(t, []string{team.ID}, deploymentRead.Teams, "invalid teams on deployment")
 
 	// Fetch team members deployments
-	deployments := e2e.ListDeployments(t, "?userId="+e2e.PowerUserID)
+	deployments := v1.ListDeployments(t, "?userId="+e2e.PowerUserID)
 	assert.NotEmpty(t, deployments, "user has no deployments")
 
 	hasDeployment := false
@@ -195,7 +196,7 @@ func TestUpdate(t *testing.T) {
 
 	envValue := uuid.NewString()
 
-	deploymentRead, _ := e2e.WithDeployment(t, body.DeploymentCreate{
+	deploymentRead, _ := v1.WithDeployment(t, body.DeploymentCreate{
 		Name:    e2e.GenName(),
 		Private: false,
 		Envs: []body.Env{
@@ -225,7 +226,7 @@ func TestUpdate(t *testing.T) {
 		},
 	}
 
-	e2e.UpdateDeployment(t, deploymentRead.ID, deploymentUpdate)
+	v1.UpdateDeployment(t, deploymentRead.ID, deploymentUpdate)
 }
 
 func TestUpdateImage(t *testing.T) {
@@ -234,7 +235,7 @@ func TestUpdateImage(t *testing.T) {
 	image1 := "nginx"
 	image2 := "httpd"
 
-	deployment, _ := e2e.WithDeployment(t, body.DeploymentCreate{
+	deployment, _ := v1.WithDeployment(t, body.DeploymentCreate{
 		Name:  e2e.GenName(),
 		Image: &image1,
 		Envs: []body.Env{
@@ -249,13 +250,13 @@ func TestUpdateImage(t *testing.T) {
 		Image: &image2,
 	}
 
-	e2e.UpdateDeployment(t, deployment.ID, deploymentUpdate)
+	v1.UpdateDeployment(t, deployment.ID, deploymentUpdate)
 }
 
 func TestUpdateInternalPort(t *testing.T) {
 	t.Parallel()
 
-	deployment, _ := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
+	deployment, _ := v1.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
 
 	customPort := deployment.InternalPort + 1
 
@@ -268,7 +269,7 @@ func TestUpdateInternalPort(t *testing.T) {
 		},
 	}
 
-	e2e.UpdateDeployment(t, deployment.ID, deploymentUpdate)
+	v1.UpdateDeployment(t, deployment.ID, deploymentUpdate)
 }
 
 func TestCommand(t *testing.T) {
@@ -276,7 +277,7 @@ func TestCommand(t *testing.T) {
 
 	commands := []string{"restart"}
 
-	deployment, _ := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
+	deployment, _ := v1.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
 
 	for _, command := range commands {
 		reqBody := body.DeploymentCommand{Command: command}
@@ -285,10 +286,10 @@ func TestCommand(t *testing.T) {
 
 		time.Sleep(3 * time.Second)
 
-		e2e.WaitForDeploymentRunning(t, deployment.ID, func(deploymentRead *body.DeploymentRead) bool {
+		v1.WaitForDeploymentRunning(t, deployment.ID, func(deploymentRead *body.DeploymentRead) bool {
 			//make sure it is accessible
 			if deploymentRead.URL != nil {
-				return e2e.CheckUpURL(t, *deploymentRead.URL)
+				return v1.CheckUpURL(t, *deploymentRead.URL)
 			}
 			return false
 		})
@@ -300,7 +301,7 @@ func TestInvalidCommand(t *testing.T) {
 
 	invalidCommands := []string{"start", "stop"}
 
-	deployment, _ := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
+	deployment, _ := v1.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
 
 	for _, command := range invalidCommands {
 		reqBody := body.DeploymentCommand{Command: command}
@@ -313,8 +314,8 @@ func TestFetchCiConfig(t *testing.T) {
 	t.Parallel()
 
 	image := "nginx"
-	deploymentCustom, _ := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
-	deploymentPrebuilt, _ := e2e.WithDeployment(t, body.DeploymentCreate{
+	deploymentCustom, _ := v1.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
+	deploymentPrebuilt, _ := v1.WithDeployment(t, body.DeploymentCreate{
 		Name:  e2e.GenName(),
 		Image: &image,
 		Envs: []body.Env{
@@ -341,7 +342,7 @@ func TestFetchCiConfig(t *testing.T) {
 func TestFetchLogs(t *testing.T) {
 	t.Parallel()
 
-	deployment, _ := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
+	deployment, _ := v1.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
 
 	resp := e2e.DoGetRequest(t, "/deployments/"+deployment.ID+"/logs-sse")
 	assert.Equal(t, http.StatusOK, resp.StatusCode)

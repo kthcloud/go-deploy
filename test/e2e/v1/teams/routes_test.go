@@ -5,6 +5,7 @@ import (
 	"go-deploy/dto/v1/body"
 	"go-deploy/models/model"
 	"go-deploy/test/e2e"
+	"go-deploy/test/e2e/v1"
 	"net/http"
 	"os"
 	"testing"
@@ -27,7 +28,7 @@ func TestCreateEmptyTeam(t *testing.T) {
 		Members:     nil,
 	}
 
-	_ = e2e.WithTeam(t, requestBody)
+	_ = v1.WithTeam(t, requestBody)
 }
 
 func TestCreateWithMembers(t *testing.T) {
@@ -43,10 +44,10 @@ func TestCreateWithMembers(t *testing.T) {
 	}
 
 	// Create team
-	_ = e2e.WithTeam(t, requestBody)
+	_ = v1.WithTeam(t, requestBody)
 
 	// Fetch TestUser2's teams
-	teams := e2e.ListTeams(t, "?userId="+e2e.PowerUserID)
+	teams := v1.ListTeams(t, "?userId="+e2e.PowerUserID)
 	found := false
 	for _, team := range teams {
 		if team.Name == requestBody.Name {
@@ -60,7 +61,7 @@ func TestCreateWithMembers(t *testing.T) {
 func TestCreateWithResources(t *testing.T) {
 	t.Parallel()
 
-	resource, _ := e2e.WithDeployment(t, body.DeploymentCreate{
+	resource, _ := v1.WithDeployment(t, body.DeploymentCreate{
 		Name: e2e.GenName(),
 	})
 
@@ -72,10 +73,10 @@ func TestCreateWithResources(t *testing.T) {
 	}
 
 	// Create Team
-	team := e2e.WithTeam(t, requestBody)
+	team := v1.WithTeam(t, requestBody)
 
 	// Fetch deployment's teams
-	resource = e2e.GetDeployment(t, resource.ID)
+	resource = v1.GetDeployment(t, resource.ID)
 	assert.EqualValues(t, []string{team.ID}, resource.Teams, "invalid teams on model")
 
 }
@@ -83,7 +84,7 @@ func TestCreateWithResources(t *testing.T) {
 func TestCreateFull(t *testing.T) {
 	t.Parallel()
 
-	resource, _ := e2e.WithDeployment(t, body.DeploymentCreate{
+	resource, _ := v1.WithDeployment(t, body.DeploymentCreate{
 		Name: e2e.GenName(),
 	})
 
@@ -95,21 +96,21 @@ func TestCreateFull(t *testing.T) {
 	}
 
 	// Create team
-	team := e2e.WithTeam(t, requestBody)
+	team := v1.WithTeam(t, requestBody)
 
 	// Fetch TestUser2's teams
-	teams := e2e.ListTeams(t, "?userId="+e2e.PowerUserID)
+	teams := v1.ListTeams(t, "?userId="+e2e.PowerUserID)
 	assert.NotEmpty(t, teams, "user has no teams")
 
 	// Fetch deployment's teams
-	resource = e2e.GetDeployment(t, resource.ID)
+	resource = v1.GetDeployment(t, resource.ID)
 	assert.EqualValues(t, []string{team.ID}, resource.Teams, "invalid teams on model")
 }
 
 func TestCreateWithInvitation(t *testing.T) {
 	t.Parallel()
 
-	team := e2e.WithTeam(t, body.TeamCreate{
+	team := v1.WithTeam(t, body.TeamCreate{
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
 		Resources:   nil,
@@ -133,7 +134,7 @@ func TestCreateWithInvitation(t *testing.T) {
 		assert.Fail(t, "user was not invited")
 	}
 
-	notifications := e2e.ListNotifications(t, "?userId="+e2e.PowerUserID)
+	notifications := v1.ListNotifications(t, "?userId="+e2e.PowerUserID)
 	assert.NotEmpty(t, notifications, "user has no notifications")
 
 	found = false
@@ -153,21 +154,21 @@ func TestCreateWithInvitation(t *testing.T) {
 func TestJoin(t *testing.T) {
 	t.Parallel()
 
-	team := e2e.WithTeam(t, body.TeamCreate{
+	team := v1.WithTeam(t, body.TeamCreate{
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
 		Resources:   nil,
 		Members:     []body.TeamMemberCreate{{ID: e2e.PowerUserID, TeamRole: model.TeamMemberRoleAdmin}},
 	}, e2e.DefaultUserID)
 
-	notifications := e2e.ListNotifications(t, "?userId="+e2e.PowerUserID)
+	notifications := v1.ListNotifications(t, "?userId="+e2e.PowerUserID)
 
 	for _, notification := range notifications {
 		if notification.Type == model.NotificationTeamInvite {
 			for key, val := range notification.Content {
 				if key == "id" && val == team.ID {
 					code := notification.Content["code"].(string)
-					e2e.JoinTeam(t, team.ID, code, e2e.PowerUserID)
+					v1.JoinTeam(t, team.ID, code, e2e.PowerUserID)
 					return
 				}
 			}
@@ -180,7 +181,7 @@ func TestJoin(t *testing.T) {
 func TestJoinWithBadCode(t *testing.T) {
 	t.Parallel()
 
-	team := e2e.WithTeam(t, body.TeamCreate{
+	team := v1.WithTeam(t, body.TeamCreate{
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
 		Resources:   nil,
@@ -194,7 +195,7 @@ func TestJoinWithBadCode(t *testing.T) {
 func TestUpdate(t *testing.T) {
 	t.Parallel()
 
-	team := e2e.WithTeam(t, body.TeamCreate{
+	team := v1.WithTeam(t, body.TeamCreate{
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
 		Resources:   nil,
@@ -208,20 +209,20 @@ func TestUpdate(t *testing.T) {
 		Members:     nil,
 	}
 
-	e2e.UpdateTeam(t, team.ID, requestBody)
+	v1.UpdateTeam(t, team.ID, requestBody)
 }
 
 func TestUpdateResources(t *testing.T) {
 	t.Parallel()
 
-	team := e2e.WithTeam(t, body.TeamCreate{
+	team := v1.WithTeam(t, body.TeamCreate{
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
 		Resources:   nil,
 		Members:     nil,
 	})
 
-	resource, _ := e2e.WithDeployment(t, body.DeploymentCreate{
+	resource, _ := v1.WithDeployment(t, body.DeploymentCreate{
 		Name: e2e.GenName("deployment"),
 	})
 
@@ -232,17 +233,17 @@ func TestUpdateResources(t *testing.T) {
 		Members:     nil,
 	}
 
-	e2e.UpdateTeam(t, team.ID, requestBody)
+	v1.UpdateTeam(t, team.ID, requestBody)
 
 	// Fetch deployment's teams
-	resource = e2e.GetDeployment(t, resource.ID)
+	resource = v1.GetDeployment(t, resource.ID)
 	assert.EqualValues(t, []string{team.ID}, resource.Teams, "invalid teams on model")
 }
 
 func TestUpdateMembers(t *testing.T) {
 	t.Parallel()
 
-	team := e2e.WithTeam(t, body.TeamCreate{
+	team := v1.WithTeam(t, body.TeamCreate{
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
 		Resources:   nil,
@@ -256,30 +257,30 @@ func TestUpdateMembers(t *testing.T) {
 		Members:     &[]body.TeamMemberUpdate{{ID: e2e.PowerUserID, TeamRole: model.TeamMemberRoleAdmin}},
 	}
 
-	e2e.UpdateTeam(t, team.ID, requestBody)
+	v1.UpdateTeam(t, team.ID, requestBody)
 
 	// Fetch TestUser2's teams
-	teams := e2e.ListTeams(t, "?userId="+e2e.PowerUserID)
+	teams := v1.ListTeams(t, "?userId="+e2e.PowerUserID)
 	assert.NotEmpty(t, teams, "user has no teams")
 }
 
 func TestDelete(t *testing.T) {
 	t.Parallel()
 
-	team := e2e.WithTeam(t, body.TeamCreate{
+	team := v1.WithTeam(t, body.TeamCreate{
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
 		Resources:   nil,
 		Members:     nil,
 	})
 
-	e2e.DeleteTeam(t, team.ID)
+	v1.DeleteTeam(t, team.ID)
 }
 
 func TestDeleteAsNonOwner(t *testing.T) {
 	t.Parallel()
 
-	team := e2e.WithTeam(t, body.TeamCreate{
+	team := v1.WithTeam(t, body.TeamCreate{
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
 		Resources:   nil,

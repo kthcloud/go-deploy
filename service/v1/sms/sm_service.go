@@ -108,7 +108,7 @@ func (c *Client) Delete(id string) error {
 		return fmt.Errorf("failed to delete storage manager. details: %w", err)
 	}
 
-	log.Println("deleting storage manager", id)
+	log.Println("Deleting storage manager", id)
 
 	err := k8s_service.New(c.Cache).Delete(id)
 	if err != nil {

@@ -22,9 +22,12 @@ const (
 	TestDomain    = "test-deploy.saffronbun.com"
 	CheckInterval = 1 * time.Second
 	MaxChecks     = 900 // 900 * CheckInterval (1) seconds = 15 minutes
+
+	V1 = "v1"
+	V2 = "v2"
 )
 
-func fetchUntil(t *testing.T, subPath string, callback func(*http.Response) bool) {
+func FetchUntil(t *testing.T, subPath string, callback func(*http.Response) bool) {
 	loops := 0
 	for {
 		time.Sleep(CheckInterval)
@@ -77,7 +80,7 @@ func CreateServerURL(subPath string) string {
 }
 
 func CreateServerUrlWithProtocol(protocol, subPath string) string {
-	return protocol + "://localhost:8080/v1" + subPath
+	return protocol + "://localhost:8080" + subPath
 }
 
 func DoGetRequest(t *testing.T, subPath string, userID ...string) *http.Response {

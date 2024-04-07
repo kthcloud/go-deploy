@@ -15,7 +15,7 @@ import (
 //
 // It creates a project, robot, repository and webhook associated with the deployment and returns an error if any.
 func (c *Client) Create(id string, params *model.DeploymentCreateParams) error {
-	log.Println("setting up harbor for", params.Name)
+	log.Println("Setting up harbor for", params.Name)
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to setup harbor for deployment %s. details: %w", params.Name, err)
@@ -73,7 +73,7 @@ func (c *Client) Create(id string, params *model.DeploymentCreateParams) error {
 //
 // It does not create any resources in Harbor, and only creates a placeholder entry in the database.
 func (c *Client) CreatePlaceholder(id string) error {
-	log.Println("setting up placeholder harbor")
+	log.Println("Setting up placeholder harbor")
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to setup placeholder harbor. details: %w", err)
@@ -92,7 +92,7 @@ func (c *Client) CreatePlaceholder(id string) error {
 // It deletes all the resources associated with the deployment and returns an error if any.
 // This will remove any persistent storage associated with the deployment.
 func (c *Client) Delete(id string) error {
-	log.Println("deleting harbor for", id)
+	log.Println("Deleting harbor for", id)
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete harbor for deployment %s. details: %w", id, err)

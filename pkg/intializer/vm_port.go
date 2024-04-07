@@ -59,7 +59,7 @@ func SynchronizeVmPorts() error {
 
 		if len(leasedPorts) > 0 {
 			for _, port := range leasedPorts {
-				log.Printf("Port %d is leased by vm %s. this port will remain, but should be deleted\n", port.PublicPort, port.Lease.VmID)
+				log.Printf("Port %d is leased by vm %s. this port will remain, but should be deleted", port.PublicPort, port.Lease.VmID)
 			}
 		}
 

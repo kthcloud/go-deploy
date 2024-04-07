@@ -5,6 +5,7 @@ import (
 	"go-deploy/dto/v1/body"
 	"go-deploy/models/model"
 	"go-deploy/test/e2e"
+	"go-deploy/test/e2e/v1"
 	"os"
 	"testing"
 )
@@ -22,9 +23,9 @@ func TestGet(t *testing.T) {
 	// We can't create a job with the API, so we need to trigger a job
 	// The simplest way is to create a deployment
 
-	_, jobID := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
+	_, jobID := v1.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
 
-	job := e2e.GetJob(t, jobID)
+	job := v1.GetJob(t, jobID)
 
 	assert.Equal(t, jobID, job.ID)
 	assert.Equal(t, job.Type, model.JobCreateDeployment)
@@ -44,7 +45,7 @@ func TestList(t *testing.T) {
 	}
 
 	for _, query := range queries {
-		jobs := e2e.ListJobs(t, query)
+		jobs := v1.ListJobs(t, query)
 		assert.NotEmpty(t, jobs, "jobs were not fetched for query %s. it should have at least one job", query)
 	}
 }
@@ -55,11 +56,11 @@ func TestUpdate(t *testing.T) {
 	// We can't create a job with the api, so we need to trigger a job
 	// The simplest way is to just create a deployment
 
-	_, jobID := e2e.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
-	e2e.WaitForJobFinished(t, jobID, nil)
+	_, jobID := v1.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
+	v1.WaitForJobFinished(t, jobID, nil)
 
 	// The job above is assumed to NOT be terminated, so when we update it to terminated, we will notice the change
 	terminatedStatus := model.JobStatusTerminated
 
-	e2e.UpdateJob(t, jobID, body.JobUpdate{Status: &terminatedStatus})
+	v1.UpdateJob(t, jobID, body.JobUpdate{Status: &terminatedStatus})
 }

@@ -17,7 +17,7 @@ import (
 // Some E2E tests may fail and leave resources behind.
 func CleanUpOldTests() error {
 	now := time.Now()
-	oneHourAgo := now.Add(-1 * time.Minute)
+	oneHourAgo := now.Add(-1 * time.Second)
 
 	oldE2eDeployments, err := deployment_repo.New().OlderThan(oneHourAgo).WithNameRegex("e2e-*").List()
 	if err != nil {
@@ -36,9 +36,15 @@ func CleanUpOldTests() error {
 	}
 
 	for _, vm := range oldE2eVms {
-		_ = job_repo.New().Create(uuid.NewString(), "system", model.JobDeleteVM, version.V1, map[string]interface{}{
-			"id": vm.ID,
-		})
+		if vm.Version == version.V1 {
+			_ = job_repo.New().Create(uuid.NewString(), "system", model.JobDeleteVM, version.V1, map[string]interface{}{
+				"id": vm.ID,
+			})
+		} else if vm.Version == version.V2 {
+			_ = job_repo.New().Create(uuid.NewString(), "system", model.JobDeleteVM, version.V2, map[string]interface{}{
+				"id": vm.ID,
+			})
+		}
 	}
 
 	oldE2eTeams, err := team_repo.New().OlderThan(oneHourAgo).WithNameRegex("e2e-*").List()

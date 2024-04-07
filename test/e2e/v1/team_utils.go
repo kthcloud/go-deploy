@@ -1,39 +1,40 @@
-package e2e
+package v1
 
 import (
 	"github.com/stretchr/testify/assert"
 	"go-deploy/dto/v1/body"
 	"go-deploy/test"
+	"go-deploy/test/e2e"
 	"net/http"
 	"testing"
 )
 
 func GetTeam(t *testing.T, id string, userID ...string) body.TeamRead {
-	resp := DoGetRequest(t, "/teams/"+id, userID...)
+	resp := e2e.DoGetRequest(t, "/teams/"+id, userID...)
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "team was not fetched")
 
 	var teamRead body.TeamRead
-	err := ReadResponseBody(t, resp, &teamRead)
+	err := e2e.ReadResponseBody(t, resp, &teamRead)
 	assert.NoError(t, err, "team was not fetched")
 
 	return teamRead
 }
 
 func ListTeams(t *testing.T, query string, userID ...string) []body.TeamRead {
-	resp := DoGetRequest(t, "/teams"+query, userID...)
+	resp := e2e.DoGetRequest(t, "/teams"+query, userID...)
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "teams were not fetched")
 
 	var teams []body.TeamRead
-	err := ReadResponseBody(t, resp, &teams)
+	err := e2e.ReadResponseBody(t, resp, &teams)
 	assert.NoError(t, err, "teams were not fetched")
 
 	return teams
 }
 
 func UpdateTeam(t *testing.T, id string, teamUpdate body.TeamUpdate, userID ...string) body.TeamRead {
-	resp := DoPostRequest(t, "/teams/"+id, teamUpdate, userID...)
+	resp := e2e.DoPostRequest(t, "/teams/"+id, teamUpdate, userID...)
 	var teamRead body.TeamRead
-	err := ReadResponseBody(t, resp, &teamRead)
+	err := e2e.ReadResponseBody(t, resp, &teamRead)
 	assert.NoError(t, err, "team was not updated")
 
 	if teamUpdate.Name != nil {
@@ -66,11 +67,11 @@ func UpdateTeam(t *testing.T, id string, teamUpdate body.TeamUpdate, userID ...s
 		if len(userID) > 0 {
 			requested = append(requested, userID[0])
 		} else {
-			requested = append(requested, AdminUserID)
+			requested = append(requested, e2e.AdminUserID)
 		}
 
 		for _, member := range *teamUpdate.Members {
-			if member.ID == AdminUserID {
+			if member.ID == e2e.AdminUserID {
 				continue
 			}
 
@@ -88,7 +89,7 @@ func UpdateTeam(t *testing.T, id string, teamUpdate body.TeamUpdate, userID ...s
 }
 
 func DeleteTeam(t *testing.T, id string, userID ...string) {
-	resp := DoDeleteRequest(t, "/teams/"+id, userID...)
+	resp := e2e.DoDeleteRequest(t, "/teams/"+id, userID...)
 	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusNotFound {
 		t.Errorf("team was not deleted")
 	}
@@ -99,8 +100,8 @@ func JoinTeam(t *testing.T, id string, invitationCode string, userID ...string) 
 		InvitationCode: invitationCode,
 	}
 
-	resp := DoPostRequest(t, "/teams/"+id, teamJoin, userID...)
-	_ = Parse[struct{}](t, resp)
+	resp := e2e.DoPostRequest(t, "/teams/"+id, teamJoin, userID...)
+	_ = e2e.Parse[struct{}](t, resp)
 }
 
 func WithTeam(t *testing.T, teamCreate body.TeamCreate, userID ...string) body.TeamRead {
@@ -108,11 +109,11 @@ func WithTeam(t *testing.T, teamCreate body.TeamCreate, userID ...string) body.T
 	if len(userID) > 0 {
 		requestedMembers = append(requestedMembers, userID[0])
 	} else {
-		requestedMembers = append(requestedMembers, AdminUserID)
+		requestedMembers = append(requestedMembers, e2e.AdminUserID)
 	}
 
 	for _, member := range teamCreate.Members {
-		if member.ID == AdminUserID {
+		if member.ID == e2e.AdminUserID {
 			continue
 		}
 
@@ -123,8 +124,8 @@ func WithTeam(t *testing.T, teamCreate body.TeamCreate, userID ...string) body.T
 	var createdMembers []string
 	var createdResources []string
 
-	resp := DoPostRequest(t, "/teams", teamCreate, userID...)
-	teamRead := Parse[body.TeamRead](t, resp)
+	resp := e2e.DoPostRequest(t, "/teams", teamCreate, userID...)
+	teamRead := e2e.Parse[body.TeamRead](t, resp)
 
 	assert.Equal(t, teamCreate.Name, teamRead.Name, "invalid team name")
 	assert.Equal(t, teamCreate.Description, teamRead.Description, "invalid team description")
@@ -141,7 +142,7 @@ func WithTeam(t *testing.T, teamCreate body.TeamCreate, userID ...string) body.T
 	test.EqualOrEmpty(t, requestedResources, createdResources, "invalid team resources")
 
 	t.Cleanup(func() {
-		DoDeleteRequest(t, "/teams/"+teamRead.ID)
+		e2e.DoDeleteRequest(t, "/teams/"+teamRead.ID)
 	})
 
 	return teamRead

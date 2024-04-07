@@ -25,7 +25,7 @@ import (
 //
 // This include creating the VM and port-forwarding rules.
 func (c *Client) Create(id string, params *model.VmCreateParams) error {
-	log.Println("setting up cs for", params.Name)
+	log.Println("Setting up cs for", params.Name)
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to setup cs for vm %s. details: %w", params.Name, err)
@@ -102,7 +102,7 @@ func (c *Client) Create(id string, params *model.VmCreateParams) error {
 // This includes deleting the VM and port-forwarding rules.
 // Snapshots are automatically deleted by when the VM is deleted.
 func (c *Client) Delete(id string) error {
-	log.Println("deleting cs for", id)
+	log.Println("Deleting cs for", id)
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete cs for vm %s. details: %w", id, err)
@@ -369,7 +369,7 @@ func (c *Client) Repair(id string) error {
 
 		for _, snapshot := range snapshots {
 			if snapshot.State == "Error" {
-				log.Println("deleting errored snapshot", snapshot.ID, "for cs vm", snapshot.VmID)
+				log.Println("Deleting errored snapshot", snapshot.ID, "for cs vm", snapshot.VmID)
 				err = csc.DeleteSnapshot(snapshot.ID)
 				if err != nil {
 					return makeError(err)
@@ -391,7 +391,7 @@ func (c *Client) Repair(id string) error {
 					deleteSnapshot = previous
 				}
 
-				log.Println("deleting redundant old snapshot", deleteSnapshot.ID, "for cs vm", deleteSnapshot.VmID)
+				log.Println("Deleting redundant old snapshot", deleteSnapshot.ID, "for cs vm", deleteSnapshot.VmID)
 				err = csc.DeleteSnapshot(previous.ID)
 				if err != nil {
 					return makeError(err)
@@ -403,7 +403,7 @@ func (c *Client) Repair(id string) error {
 
 		for _, name := range required {
 			if _, ok := snapshotMap[name]; !ok {
-				log.Println("creating missing required snapshot", name, "for vm", vm.ID)
+				log.Println("Creating missing required snapshot", name, "for vm", vm.ID)
 				err = c.CreateSnapshot(id, &model.CreateSnapshotParams{
 					Name:        name,
 					UserCreated: false,

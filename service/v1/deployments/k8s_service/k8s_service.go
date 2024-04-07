@@ -24,7 +24,7 @@ import (
 //
 // It creates all necessary resources in K8s, such as namespaces, deployments, services, etc.
 func (c *Client) Create(id string, params *model.DeploymentCreateParams) error {
-	log.Println("setting up k8s for", params.Name)
+	log.Println("Setting up k8s for", params.Name)
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to setup k8s for deployment %s. details: %w", params.Name, err)
@@ -150,7 +150,7 @@ func (c *Client) Create(id string, params *model.DeploymentCreateParams) error {
 //
 // It deletes all K8s resources, such as namespaces, deployments, services, etc.
 func (c *Client) Delete(id string, overwriteUserID ...string) error {
-	log.Println("deleting k8s for", id)
+	log.Println("Deleting k8s for", id)
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete k8s for deployment %s. details: %w", id, err)

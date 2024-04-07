@@ -3,6 +3,7 @@ package users
 import (
 	"github.com/stretchr/testify/assert"
 	"go-deploy/test/e2e"
+	"go-deploy/test/e2e/v1"
 	"os"
 	"testing"
 )
@@ -17,7 +18,7 @@ func TestMain(m *testing.M) {
 func TestGet(t *testing.T) {
 	t.Parallel()
 
-	e2e.GetUser(t, e2e.AdminUserID)
+	v1.GetUser(t, e2e.AdminUserID)
 }
 
 func TestList(t *testing.T) {
@@ -31,7 +32,7 @@ func TestList(t *testing.T) {
 	}
 
 	for _, query := range queries {
-		users := e2e.ListUsers(t, query)
+		users := v1.ListUsers(t, query)
 		assert.NotEmpty(t, users, "users were not fetched. it should have at least one user")
 	}
 }
@@ -45,7 +46,7 @@ func TestDiscover(t *testing.T) {
 	}
 
 	for _, query := range queries {
-		users := e2e.ListUsersDiscovery(t, query)
+		users := v1.ListUsersDiscovery(t, query)
 		assert.NotEmpty(t, users, "users were not fetched. it should have at least one user")
 	}
 }
