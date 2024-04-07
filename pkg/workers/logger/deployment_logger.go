@@ -24,8 +24,8 @@ func deploymentLogger(ctx context.Context) error {
 		dZone := zone
 		log.Println("Setting up log stream for zone", zone.Name)
 		go func() {
-			err := k8s_service.New(nil).SetupLogStream(ctx, &dZone, allowedNames, func(line string, name string, podNumber int, createdAt time.Time) {
-				err := deployment_repo.New().AddLogsByName(name, model.Log{
+			err = k8s_service.New().SetupLogStream(ctx, &dZone, allowedNames, func(line string, name string, podNumber int, createdAt time.Time) {
+				err = deployment_repo.New().AddLogsByName(name, model.Log{
 					Source:    model.LogSourcePod,
 					Prefix:    fmt.Sprintf("[pod %d]", podNumber),
 					Line:      line,

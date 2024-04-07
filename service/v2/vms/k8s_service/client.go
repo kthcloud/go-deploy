@@ -63,7 +63,8 @@ type Client struct {
 	client.BaseClient[Client]
 }
 
-// New creates a new Client.
+// New creates a new Client and injects the cache.
+// If a cache is not supplied it will create a new one.
 func New(cache ...*core.Cache) *Client {
 	var ca *core.Cache
 	if len(cache) > 0 {

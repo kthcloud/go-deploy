@@ -173,7 +173,7 @@ func VmRemActivity(activities ...string) func(*model.Job) error {
 			}
 
 			if a == model.ActivityBeingCreated {
-				log.Println("finished creating vm", id)
+				log.Println("Finished creating vm", id)
 			}
 		}
 		return nil
@@ -207,7 +207,7 @@ func DRemActivity(activities ...string) func(*model.Job) error {
 			}
 
 			if a == model.ActivityBeingCreated {
-				log.Println("finished creating deployment", id)
+				log.Println("Finished creating deployment", id)
 			}
 		}
 		return nil

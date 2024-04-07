@@ -152,6 +152,11 @@ func (client *ResourceClient[T]) SetWithBsonByID(id string, update bson.D) error
 	return client.UpdateWithBsonByID(id, bson.D{{"$set", update}})
 }
 
+// SetWithBsonByName sets the given fields to the given values in a model with the given name.
+func (client *ResourceClient[T]) SetWithBsonByName(name string, update bson.D) error {
+	return client.UpdateWithBsonByName(name, bson.D{{"$set", update}})
+}
+
 // SetWithBsonByFilter sets the given fields to the given values in a model with the given filter.
 func (client *ResourceClient[T]) SetWithBsonByFilter(filter bson.D, update bson.D) error {
 	return client.UpdateWithBsonByFilter(filter, bson.D{{"$set", update}})

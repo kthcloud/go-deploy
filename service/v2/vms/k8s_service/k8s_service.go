@@ -1,8 +1,10 @@
 package k8s_service
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	configModels "go-deploy/models/config"
 	"go-deploy/models/model"
 	"go-deploy/models/version"
 	"go-deploy/pkg/config"
@@ -687,6 +689,17 @@ func (c *Client) Synchronize(zoneName string, gpuGroups []model.GpuGroup) error 
 	}
 
 	return nil
+}
+
+// SetupStatusWatcher sets up a status watcher for a zone.
+// For every status change, it triggers the callback.
+func (c *Client) SetupStatusWatcher(ctx context.Context, zone *configModels.DeploymentZone, resourceType string, callback func(string, string)) error {
+	_, kc, _, err := c.Get(OptsOnlyClient(zone.Name))
+	if err != nil {
+		return err
+	}
+
+	return kc.SetupStatusWatcher(ctx, resourceType, callback)
 }
 
 // dbFunc returns a function that updates the K8s subsystem.

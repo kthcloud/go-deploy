@@ -11,6 +11,7 @@ const (
 	ResourceBeingCreated     = 10025
 	ResourceBeingDeleted     = 10026
 	ResourceCreatingSnapshot = 10027
+	ResourceMigrating        = 10029
 
 	ResourceUnknown    = 10030
 	ResourceStarting   = 10031

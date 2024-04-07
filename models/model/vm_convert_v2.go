@@ -76,7 +76,7 @@ func (vm *VM) ToDTOv2(gpuLease *GpuLease, teams []string, sshConnectionString *s
 		GPU:                 lease,
 		SshPublicKey:        vm.SshPublicKey,
 		Teams:               teams,
-		Status:              vm.StatusMessage,
+		Status:              vm.Status,
 		SshConnectionString: sshConnectionString,
 	}
 }

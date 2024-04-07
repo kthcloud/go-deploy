@@ -66,23 +66,6 @@ func vmStatusUpdater() error {
 		}
 	}
 
-	v2Vms, err := vm_repo.New(version.V2).List()
-	if err != nil {
-		return err
-	}
-
-	for _, vm := range v2Vms {
-		code, message, err := fetchVmStatusV2(&vm)
-		if err != nil {
-			return err
-		}
-
-		err = vm_repo.New(version.V2).SetWithBsonByID(vm.ID, bson.D{{"statusCode", code}, {"statusMessage", message}})
-		if err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 

@@ -404,7 +404,7 @@ func (c *Client) DoAction(id string, dtoAction *body.VmActionCreate) error {
 		return makeError(err)
 	}
 
-	log.Println("performed action", params.Action, "on vm", id)
+	log.Println("Performed action", params.Action, "on vm", id)
 	return nil
 }
 
