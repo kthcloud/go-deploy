@@ -50,7 +50,7 @@ type ConfigType struct {
 		PrivilegedGPUs []string `yaml:"privilegedGpus"`
 		ExcludedHosts  []string `yaml:"excludedHosts"`
 		ExcludedGPUs   []string `yaml:"excludedGpus"`
-	} `yaml:"gpu_repo"`
+	} `yaml:"gpu"`
 
 	Registry struct {
 		URL              string `yaml:"url"`

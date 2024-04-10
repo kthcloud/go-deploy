@@ -168,22 +168,6 @@ func CreateGpuLease(c *gin.Context) {
 	deployV1 := service.V1(auth)
 	deployV2 := service.V2(auth)
 
-	canAccess, err := deployV2.VMs().IsAccessible(requestQuery.VmID)
-	if err != nil {
-		if errors.Is(err, sErrors.VmNotFoundErr) {
-			context.NotFound("VM not found")
-			return
-		}
-
-		context.ServerError(err, v1.InternalError)
-		return
-	}
-
-	if !canAccess {
-		context.Forbidden("User does not have access to the VM")
-		return
-	}
-
 	groupExists, err := deployV2.VMs().GpuGroups().Exists(requestBody.GpuGroupID)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
@@ -199,7 +183,6 @@ func CreateGpuLease(c *gin.Context) {
 	jobID := uuid.New().String()
 	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobCreateGpuLease, version.V2, map[string]interface{}{
 		"id":       gpuLeaseID,
-		"vmId":     requestQuery.VmID,
 		"userId":   auth.UserID,
 		"authInfo": *auth,
 		"params":   requestBody,
@@ -265,11 +248,9 @@ func UpdateGpuLease(c *gin.Context) {
 	}
 
 	// If the update includes activating the lease, we ensure it is allowed
-	if requestBody.Active != nil && *requestBody.Active {
-		if gpuLease.AssignedAt == nil {
-			context.UserError("GPU lease is not assigned")
-			return
-		}
+	if requestBody.VmID != nil && gpuLease.AssignedAt == nil {
+		context.UserError("GPU lease is not assigned")
+		return
 	}
 
 	jobID := uuid.New().String()

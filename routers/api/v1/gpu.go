@@ -157,7 +157,7 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, deployV1 
 			}
 
 			if availableGpus == nil {
-				context.ServerUnavailableError(fmt.Errorf("no available gpus when attaching gpu_repo to vm %s", vm.ID), NoAvailableGpuErr)
+				context.ServerUnavailableError(fmt.Errorf("no available gpus when attaching gpu to vm %s", vm.ID), NoAvailableGpuErr)
 				return
 			}
 
@@ -207,7 +207,7 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, deployV1 
 		if err != nil {
 			switch {
 			case errors.Is(err, sErrors.HostNotAvailableErr):
-				context.ServerUnavailableError(fmt.Errorf("host not available when attaching gpu_repo to vm %s. details: %w", vm.ID, err), HostNotAvailableErr)
+				context.ServerUnavailableError(fmt.Errorf("host not available when attaching gpu to vm %s. details: %w", vm.ID, err), HostNotAvailableErr)
 			default:
 				context.ServerError(err, InternalError)
 			}
@@ -218,26 +218,26 @@ func attachGPU(context *sys.ClientContext, requestBody *body.VmUpdate, deployV1 
 	}
 
 	if len(gpus) == 0 {
-		context.ServerUnavailableError(fmt.Errorf("no available gpus when attaching gpu_repo to vm %s", vm.ID), NoAvailableGpuErr)
+		context.ServerUnavailableError(fmt.Errorf("no available gpus when attaching gpu to vm %s", vm.ID), NoAvailableGpuErr)
 		return
 	}
 
-	// Do this check to give a nice error to the user if the gpu_repo cannot be attached
+	// Do this check to give a nice error to the user if the GPU cannot be attached
 	// Otherwise it will be silently ignored
 	if len(gpus) == 1 {
 		if err := deployV1.VMs().CheckSuitableHost(vm.ID, gpus[0].Host, gpus[0].Zone); err != nil {
 			switch {
 			case errors.Is(err, sErrors.HostNotAvailableErr):
-				context.ServerUnavailableError(fmt.Errorf("host not available when attaching gpu_repo to vm %s. details: %w", vm.ID, err), HostNotAvailableErr)
+				context.ServerUnavailableError(fmt.Errorf("host not available when attaching gpu to vm %s. details: %w", vm.ID, err), HostNotAvailableErr)
 			case errors.Is(err, sErrors.VmTooLargeErr):
 				tooLargeErr := VmTooLargeForHostErr
 				caps, err := deployV1.VMs().GetCloudStackHostCapabilities(gpus[0].Host, vm.Zone)
 				if err == nil && caps != nil {
 					tooLargeErr = MakeVmToLargeForHostErr(caps.CpuCoresTotal-caps.CpuCoresUsed, caps.RamTotal-caps.RamAllocated)
 				}
-				context.ServerUnavailableError(fmt.Errorf("vm %s too large when attaching gpu_repo", vm.ID), tooLargeErr)
+				context.ServerUnavailableError(fmt.Errorf("vm %s too large when attaching gpu", vm.ID), tooLargeErr)
 			case errors.Is(err, sErrors.VmNotCreatedErr):
-				context.ServerUnavailableError(fmt.Errorf("vm %s not created when attaching gpu_repo to vm %s. details: %w", vm.ID, vm.ID, err), VmNotReadyErr)
+				context.ServerUnavailableError(fmt.Errorf("vm %s not created when attaching gpu to vm %s. details: %w", vm.ID, vm.ID, err), VmNotReadyErr)
 			default:
 				context.ServerError(err, InternalError)
 			}

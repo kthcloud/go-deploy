@@ -328,14 +328,14 @@ func TestAttachGPU(t *testing.T) {
 
 	t.Parallel()
 
-	// To test this, you need to set the gpu_repo ID
-	// This is done to prevent tests from "hogging" a single gpu_repo
+	// To test this, you need to set the GPI ID
+	// This is done to prevent tests from "hogging" a single GPU
 	// Normally, it should be enough to just test with any GPU (as done above in TestAttachAnyGPU)
 	gpuID := ""
 
 	//goland:noinspection ALL
 	if gpuID == "" {
-		t.Skip("no gpu_repo ID set")
+		t.Skip("no gpu ID set")
 	}
 
 	vm := v1.WithVM(t, body.VmCreate{
@@ -386,20 +386,20 @@ func TestAttachGpuWithAlreadyAttachedID(t *testing.T) {
 
 	t.Parallel()
 
-	// To test this, you need to set the gpu_repo ID
-	// This is done to prevent tests from "hogging" a single gpu_repo
-	// Normally, it should be enough to just test with any gpu_repo (as done above in TestAttachAnyGPU)
+	// To test this, you need to set the GPU ID
+	// This is done to prevent tests from "hogging" a single GPU
+	// Normally, it should be enough to just test with any GPU (as done above in TestAttachAnyGPU)
 	gpuID := ""
 	anotherGpuID := ""
 
 	//goland:noinspection ALL
 	if gpuID == "" {
-		t.Skip("no gpu_repo ID set")
+		t.Skip("no gpu ID set")
 	}
 
 	//goland:noinspection ALL
 	if anotherGpuID == "" {
-		t.Skip("no another gpu_repo ID set")
+		t.Skip("no another gpu ID set")
 	}
 
 	vm := v1.WithVM(t, body.VmCreate{

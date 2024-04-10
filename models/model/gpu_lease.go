@@ -8,9 +8,11 @@ import (
 type GpuLease struct {
 	ID         string `bson:"id"`
 	GpuGroupID string `bson:"gpuGroupId"`
+	UserID     string `bson:"userId"`
 
-	VmID   string `bson:"vmId"`
-	UserID string `bson:"userId"`
+	// VmID is set to attach the lease to a VM.
+	// If the lease is not attached to a VM, this field is nil.
+	VmID *string `bson:"vmId"`
 
 	LeaseDuration float64    `bson:"leaseDuration"`
 	ActivatedAt   *time.Time `bson:"activatedAt,omitempty"`

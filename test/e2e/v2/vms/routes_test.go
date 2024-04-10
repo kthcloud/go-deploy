@@ -16,10 +16,12 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	e2e.Setup()
-	code := m.Run()
-	e2e.Shutdown()
-	os.Exit(code)
+	if e2e.V2TestsEnabled {
+		e2e.Setup()
+		code := m.Run()
+		e2e.Shutdown()
+		os.Exit(code)
+	}
 }
 
 func TestList(t *testing.T) {
@@ -254,11 +256,11 @@ func TestCreateShared(t *testing.T) {
 		Members:   []bodyV1.TeamMemberCreate{{ID: e2e.PowerUserID}},
 	})
 
-	vmRead := v1.GetVM(t, vm.ID)
+	vmRead := v2.GetVM(t, vm.ID)
 	assert.Equal(t, []string{team.ID}, vmRead.Teams, "invalid teams on vm")
 
 	// Fetch team members vms
-	vms := v1.ListVMs(t, "?userId="+e2e.PowerUserID)
+	vms := v2.ListVMs(t, "?userId="+e2e.PowerUserID)
 	assert.NotEmpty(t, vms, "user has no vms")
 
 	hasVM := false
@@ -269,128 +271,6 @@ func TestCreateShared(t *testing.T) {
 	}
 
 	assert.True(t, hasVM, "vm was not found in other user's vms")
-}
-
-func TestAttachAnyGPU(t *testing.T) {
-	// TODO: Fix this test
-	// This test is currently unreliable, as it might attach to a GPU that is leased in production
-	//
-	// We would need to dedicate a small GPU for testing, but this is not possible at the moment, since we have so few
-	// GPUs available
-	t.Skip("not enough GPUs available to run this test")
-	return
-
-	t.Parallel()
-
-	vm := v2.WithDefaultVM(t)
-
-	anyID := "any"
-
-	updateGpuBody := body.VmUpdate{
-		GpuID: &anyID,
-	}
-
-	v2.UpdateVM(t, vm.ID, updateGpuBody)
-
-	// We can't check the GPU ID here, because it might be the case that
-	// no GPUs were available (reserved in another database)
-
-	// TODO: check that the GPU is actually attached by running a command over SSH (e.g. nvidia-smi or lspci)
-}
-
-func TestAttachGPU(t *testing.T) {
-	t.Parallel()
-
-	// To test this, you need to set the gpu_repo ID
-	// This is done to prevent tests from "hogging" a single gpu_repo
-	// Normally, it should be enough to just test with any GPU (as done above in TestAttachAnyGPU)
-	gpuID := ""
-
-	//goland:noinspection ALL
-	if gpuID == "" {
-		t.Skip("no gpu_repo ID set")
-	}
-
-	vm := v2.WithVM(t, body.VmCreate{
-		Name:         e2e.GenName(),
-		SshPublicKey: v2.WithSshPublicKey(t),
-		CpuCores:     2,
-		RAM:          2,
-		DiskSize:     20,
-	})
-
-	updateGpuBody := body.VmUpdate{
-		GpuID: &gpuID,
-	}
-
-	v2.UpdateVM(t, vm.ID, updateGpuBody)
-
-	// We can't check the GPU ID here, because it might be the case that
-	// the GPU was not available (reserved in another database)
-
-	// TODO: check that the GPU is actually attached by running a command over SSH (e.g. nvidia-smi or lspci)
-}
-
-func TestAttachGPUWithInvalidID(t *testing.T) {
-	t.Parallel()
-
-	vm := v2.WithVM(t, body.VmCreate{
-		Name:         e2e.GenName(),
-		SshPublicKey: v2.WithSshPublicKey(t),
-		CpuCores:     2,
-		RAM:          2,
-		DiskSize:     20,
-	})
-
-	invalidID := "invalid"
-
-	updateGpuBody := body.VmUpdate{
-		GpuID: &invalidID,
-	}
-
-	resp := e2e.DoPostRequest(t, "/vms/"+vm.ID, updateGpuBody)
-	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-}
-
-func TestAttachGpuWithAlreadyAttachedID(t *testing.T) {
-	t.Parallel()
-
-	// To test this, you need to set the gpu_repo ID
-	// This is done to prevent tests from "hogging" a single gpu_repo
-	// Normally, it should be enough to just test with any gpu_repo (as done above in TestAttachAnyGPU)
-	gpuID := ""
-	anotherGpuID := ""
-
-	//goland:noinspection ALL
-	if gpuID == "" {
-		t.Skip("no gpu_repo ID set")
-	}
-
-	//goland:noinspection ALL
-	if anotherGpuID == "" {
-		t.Skip("no another gpu_repo ID set")
-	}
-
-	vm := v2.WithVM(t, body.VmCreate{
-		Name:         e2e.GenName(),
-		SshPublicKey: v2.WithSshPublicKey(t),
-		CpuCores:     2,
-		RAM:          2,
-		DiskSize:     20,
-	})
-
-	updateGpuBody := body.VmUpdate{
-		GpuID: &gpuID,
-	}
-
-	v2.UpdateVM(t, vm.ID, updateGpuBody)
-
-	updateGpuBody = body.VmUpdate{
-		GpuID: &anotherGpuID,
-	}
-
-	resp := e2e.DoPostRequest(t, "/vms/"+vm.ID, updateGpuBody)
-	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
 
 func TestAction(t *testing.T) {

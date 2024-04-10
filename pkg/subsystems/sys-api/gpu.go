@@ -6,10 +6,10 @@ import (
 	"go-deploy/utils/requestutils"
 )
 
-// ReadGpuInfo reads gpu_repo info from the sys-api service.
+// ReadGpuInfo reads GPU info from the sys-api service.
 func (client *Client) ReadGpuInfo() (*models.GpuInfoRead, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to get gpu_repo info. details: %w", err)
+		return fmt.Errorf("failed to get gpu info. details: %w", err)
 	}
 
 	res, err := client.doRequest("GET", "/internal/gpuInfo")

@@ -119,7 +119,6 @@ func (p VmCreateParams) FromDTOv2(dto *body.VmCreate, fallbackZone *string) VmCr
 // FromDTOv2 converts a body.VmUpdate to a UpdateParams.
 func (p VmUpdateParams) FromDTOv2(dto *body.VmUpdate) VmUpdateParams {
 	p.Name = dto.Name
-	p.SnapshotID = dto.SnapshotID
 	p.CpuCores = dto.CpuCores
 	p.RAM = dto.RAM
 

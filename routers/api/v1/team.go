@@ -13,10 +13,11 @@ import (
 	"go-deploy/pkg/sys"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
-	dClient "go-deploy/service/v1/deployments/opts"
+	deploymentOpts "go-deploy/service/v1/deployments/opts"
 	"go-deploy/service/v1/teams/opts"
 	v12 "go-deploy/service/v1/utils"
-	vClient "go-deploy/service/v1/vms/opts"
+	vmOptsV1 "go-deploy/service/v1/vms/opts"
+	vmOptsV2 "go-deploy/service/v2/vms/opts"
 	"go-deploy/utils"
 	"net/http"
 	"time"
@@ -321,10 +322,11 @@ func getResourceName(resource *model.TeamResource) *string {
 	}
 
 	deployV1 := service.V1()
+	deployV2 := service.V2()
 
 	switch resource.Type {
 	case model.TeamResourceDeployment:
-		d, err := deployV1.Deployments().Get(resource.ID, dClient.GetOpts{Shared: true})
+		d, err := deployV1.Deployments().Get(resource.ID, deploymentOpts.GetOpts{Shared: true})
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to get deployment when getting team model name: %s", err))
 			return nil
@@ -336,13 +338,19 @@ func getResourceName(resource *model.TeamResource) *string {
 
 		return &d.Name
 	case model.TeamResourceVM:
-		vm, err := deployV1.VMs().Get(resource.ID, vClient.GetOpts{Shared: true})
+		vm, err := deployV1.VMs().Get(resource.ID, vmOptsV1.GetOpts{Shared: true})
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to get vm when getting team model name: %s", err))
 			return nil
 		}
 
-		if vm == nil {
+		if vm != nil {
+			return &vm.Name
+		}
+
+		vm, err = deployV2.VMs().Get(resource.ID, vmOptsV2.GetOpts{Shared: true})
+		if err != nil {
+			utils.PrettyPrintError(fmt.Errorf("failed to get vm when getting team model name: %s", err))
 			return nil
 		}
 

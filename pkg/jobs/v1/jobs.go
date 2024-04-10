@@ -198,7 +198,7 @@ func AttachGPU(job *model.Job) error {
 	}
 	leaseDuration := job.Args["leaseDuration"].(float64)
 
-	// We keep this field to know who requested the gpu_repo attachment
+	// We keep this field to know who requested the gpu attachment
 	_ = job.Args["userId"].(string)
 
 	err = service.V1().VMs().AttachGPU(vmID, gpuIDs, leaseDuration)

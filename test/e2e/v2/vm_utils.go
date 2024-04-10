@@ -80,8 +80,8 @@ func WithDefaultVM(t *testing.T, userID ...string) body.VmRead {
 		SshPublicKey: WithSshPublicKey(t),
 		CpuCores:     2,
 		RAM:          2,
-		DiskSize:     20,
-	})
+		DiskSize:     10,
+	}, userID...)
 }
 
 func WithVM(t *testing.T, requestBody body.VmCreate, userID ...string) body.VmRead {

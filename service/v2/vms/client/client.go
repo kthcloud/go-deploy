@@ -148,7 +148,7 @@ func (c *BaseClient[parent]) fetchVMs(vmc *vm_repo.Client) ([]model.VM, error) {
 // After a successful fetch, the GPU will be cached.
 func (c *BaseClient[parent]) fetchGPU(id string, gmc *gpu_repo.Client) (*model.GPU, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to fetch gpu_repo in service client: %w", err)
+		return fmt.Errorf("failed to fetch gpu in service client: %w", err)
 	}
 
 	if gmc == nil {
@@ -195,7 +195,7 @@ func (c *BaseClient[parent]) fetchGPUs(gmc *gpu_repo.Client) ([]model.GPU, error
 // After a successful fetch, the GPU lease will be cached.
 func (c *BaseClient[parent]) fetchGpuLease(id string, glc *gpu_lease_repo.Client) (*model.GpuLease, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to fetch gpu_repo lease in service client: %w", err)
+		return fmt.Errorf("failed to fetch gpu lease in service client: %w", err)
 	}
 
 	if glc == nil {
@@ -219,7 +219,7 @@ func (c *BaseClient[parent]) fetchGpuLease(id string, glc *gpu_lease_repo.Client
 // After a successful fetch, the GPU leases will be cached.
 func (c *BaseClient[parent]) fetchGpuLeases(glc *gpu_lease_repo.Client) ([]model.GpuLease, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to fetch gpu_repo leases in service client: %w", err)
+		return fmt.Errorf("failed to fetch gpu leases in service client: %w", err)
 	}
 
 	if glc == nil {

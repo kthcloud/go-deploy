@@ -163,13 +163,12 @@ func UpdateVM(job *model.Job) error {
 }
 
 func CreateGpuLease(job *model.Job) error {
-	err := utils.AssertParameters(job, []string{"id", "vmId", "userId", "params"})
+	err := utils.AssertParameters(job, []string{"id", "userId", "params"})
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
 	}
 
 	id := job.Args["id"].(string)
-	vmID := job.Args["vmId"].(string)
 	userID := job.Args["userId"].(string)
 	var params body.GpuLeaseCreate
 	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
@@ -177,7 +176,7 @@ func CreateGpuLease(job *model.Job) error {
 		return jErrors.MakeTerminatedError(err)
 	}
 
-	err = service.V2(utils.GetAuthInfo(job)).VMs().GpuLeases().Create(id, vmID, userID, &params)
+	err = service.V2(utils.GetAuthInfo(job)).VMs().GpuLeases().Create(id, userID, &params)
 	if err != nil {
 		switch {
 		case errors.Is(err, sErrors.VmNotFoundErr):

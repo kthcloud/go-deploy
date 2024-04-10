@@ -136,7 +136,7 @@ func (c *BaseClient[parent]) fetchVMs(vmc *vm_repo.Client) ([]model.VM, error) {
 // After a successful fetch, the GPU will be cached.
 func (c *BaseClient[parent]) fetchGPU(id string, gmc *gpu_repo.Client) (*model.GPU, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to fetch gpu_repo in service client: %w", err)
+		return fmt.Errorf("failed to fetch gpu in service client: %w", err)
 	}
 
 	if gmc == nil {

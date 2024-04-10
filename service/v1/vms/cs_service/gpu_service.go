@@ -19,7 +19,7 @@ import (
 // If the VM is not running when attaching the GPU, it will not be started.
 func (c *Client) AttachGPU(vmID, gpuID string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to attach gpu_repo %s to cs vm %s. details: %w", gpuID, vmID, err)
+		return fmt.Errorf("failed to attach gpu %s to cs vm %s. details: %w", gpuID, vmID, err)
 	}
 
 	vm, csc, _, err := c.Get(OptsNoGenerator(vmID))
@@ -32,7 +32,7 @@ func (c *Client) AttachGPU(vmID, gpuID string) error {
 	}
 
 	if subsystems.NotCreated(&vm.Subsystems.CS.VM) {
-		log.Println("vm", vmID, "has no cs vm id when attaching gpu_repo", gpuID, ", assuming it was deleted")
+		log.Println("vm", vmID, "has no cs vm id when attaching gpu", gpuID, ", assuming it was deleted")
 		return nil
 	}
 
@@ -93,7 +93,7 @@ func (c *Client) AttachGPU(vmID, gpuID string) error {
 // If the VM is not running when detaching the GPU, it will not be started.
 func (c *Client) DetachGPU(vmID string, afterState string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to detach gpu_repo from cs vm %s. details: %w", vmID, err)
+		return fmt.Errorf("failed to detach gpu from cs vm %s. details: %w", vmID, err)
 	}
 
 	vm, csc, _, err := c.Get(OptsNoGenerator(vmID))
@@ -106,7 +106,7 @@ func (c *Client) DetachGPU(vmID string, afterState string) error {
 	}
 
 	if subsystems.NotCreated(&vm.Subsystems.CS.VM) {
-		log.Println("csVM was not created for vm", vmID, "when detaching gpu_repo in cs. assuming it was deleted or not created yet")
+		log.Println("csVM was not created for vm", vmID, "when detaching gpu in cs. assuming it was deleted or not created yet")
 		return nil
 	}
 
@@ -148,7 +148,7 @@ func (c *Client) DetachGPU(vmID string, afterState string) error {
 // It does this by inspecting the extra config of all VMs (including those not managed by go-deploy).
 func (c *Client) IsGpuAttached(id string) (bool, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to check if gpu_repo %s is attached to any cs vm. details: %w", id, err)
+		return fmt.Errorf("failed to check if gpu %s is attached to any cs vm. details: %w", id, err)
 	}
 
 	gpu, err := c.GPU(id, nil)

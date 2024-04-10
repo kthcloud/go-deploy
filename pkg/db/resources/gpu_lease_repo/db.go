@@ -8,12 +8,12 @@ import (
 	"time"
 )
 
-func (client *Client) Create(id, vmID, userID, groupName string, leaseDuration float64) error {
+func (client *Client) Create(id, userID, groupName string, leaseDuration float64) error {
 
 	lease := model.GpuLease{
 		ID:            id,
 		GpuGroupID:    groupName,
-		VmID:          vmID,
+		VmID:          nil,
 		UserID:        userID,
 		LeaseDuration: leaseDuration,
 		ActivatedAt:   nil,
@@ -38,12 +38,18 @@ func (client *Client) Create(id, vmID, userID, groupName string, leaseDuration f
 func (client *Client) UpdateWithParams(id string, params *model.GpuLeaseUpdateParams) error {
 	update := bson.D{}
 
-	if params.Active != nil && *params.Active {
-		update = append(update, bson.E{Key: "activatedAt", Value: time.Now()})
-	}
+	db.AddIfNotNil(&update, "activatedAt", params.ActivatedAt)
+	db.AddIfNotNil(&update, "vmId", params.VmID)
 
-	err := client.SetWithBsonByID(id, update)
-	return err
+	return client.SetWithBsonByID(id, update)
+}
+
+func (client *Client) Release() error {
+	return client.SetWithBSON(bson.D{{"vmId", nil}})
+}
+
+func (client *Client) ReleaseByID(id string) error {
+	return client.SetWithBsonByID(id, bson.D{{"vmId", nil}})
 }
 
 func (client *Client) SetExpiry(id string, expiresAt time.Time) error {

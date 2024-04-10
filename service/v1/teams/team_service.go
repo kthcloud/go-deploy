@@ -303,15 +303,15 @@ func (c *Client) CheckResourceAccess(userID, resourceID string) (bool, error) {
 // getTeamIfAccessible is a helper function to get a team if the user is accessible to the user in the current context
 func (c *Client) getResourceIfAccessible(resourceID string) *model.TeamResource {
 	// Try to fetch deployment
-	dClient := deployment_repo.New()
-	vClient := vm_repo.New()
+	dmc := deployment_repo.New()
+	vmc := vm_repo.New()
 
 	if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
-		dClient.WithOwner(c.V1.Auth().UserID)
-		vClient.WithOwner(c.V1.Auth().UserID)
+		dmc.WithOwner(c.V1.Auth().UserID)
+		vmc.WithOwner(c.V1.Auth().UserID)
 	}
 
-	isOwner, err := dClient.ExistsByID(resourceID)
+	isOwner, err := dmc.ExistsByID(resourceID)
 	if err != nil {
 		utils.PrettyPrintError(fmt.Errorf("failed to fetch deployment when checking user access when creating team: %w", err))
 		return nil

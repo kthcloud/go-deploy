@@ -14,28 +14,26 @@ func (g *GpuLease) ToDTO(queuePosition int) body.GpuLeaseRead {
 	}
 
 	return body.GpuLeaseRead{
-		ID:            g.ID,
-		VmID:          g.VmID,
-		GpuGroupID:    g.GpuGroupID,
-		Active:        g.IsActive(),
+		ID:         g.ID,
+		GpuGroupID: g.GpuGroupID,
+		Active:     g.IsActive(),
+		UserID:     g.UserID,
+		VmID:       g.VmID,
+
 		QueuePosition: queuePosition,
-		ActivatedAt:   g.ActivatedAt,
-		AssignedAt:    g.AssignedAt,
-		ExpiresAt:     expiresAt,
-		ExpiredAt:     g.ExpiredAt,
-		CreatedAt:     g.CreatedAt,
+		LeaseDuration: g.LeaseDuration,
+
+		ActivatedAt: g.ActivatedAt,
+		AssignedAt:  g.AssignedAt,
+		CreatedAt:   g.CreatedAt,
+		ExpiresAt:   expiresAt,
+		ExpiredAt:   g.ExpiredAt,
 	}
 }
 
 // FromDTO converts body.GpuLeaseUpdate DTO to GpuLeaseUpdateParams.
 func (p GpuLeaseUpdateParams) FromDTO(dto *body.GpuLeaseUpdate) *GpuLeaseUpdateParams {
-	// Only allow activations and not deactivations.
-	var active *bool
-	if dto.Active != nil && *dto.Active {
-		active = dto.Active
-	}
-
 	return &GpuLeaseUpdateParams{
-		Active: active,
+		VmID: dto.VmID,
 	}
 }

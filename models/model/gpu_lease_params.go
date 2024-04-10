@@ -1,5 +1,8 @@
 package model
 
+import "time"
+
 type GpuLeaseUpdateParams struct {
-	Active *bool
+	ActivatedAt *time.Time
+	VmID        *string
 }

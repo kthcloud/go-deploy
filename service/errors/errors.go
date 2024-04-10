@@ -77,10 +77,10 @@ var (
 	// VmNotCreatedErr is returned when the vm is not created.
 	VmNotCreatedErr = fmt.Errorf("vm not created")
 
-	// GpuNotFoundErr is returned when the gpu_repo is not found.
+	// GpuNotFoundErr is returned when the gpu is not found.
 	GpuNotFoundErr = fmt.Errorf("gpu not found")
 
-	// GpuAlreadyAttachedErr is returned when the gpu_repo is already attached to another VM.
+	// GpuAlreadyAttachedErr is returned when the GPU is already attached to another VM.
 	GpuAlreadyAttachedErr = fmt.Errorf("gpu already attached")
 
 	// GpuLeaseAlreadyExistsErr is returned when a GPU lease already exists for a user.

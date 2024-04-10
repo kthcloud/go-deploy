@@ -83,7 +83,7 @@ func synchronizeGpusV1(gpuInfo *models.GpuInfoRead) error {
 			gpuID := createGpuID(host.Name, gpu.Name, gpu.Slot)
 			exists, err := gpu_repo.New().ExistsByID(gpuID)
 			if err != nil {
-				utils.PrettyPrintError(fmt.Errorf("failed to fetch gpu_repo by id. details: %w", err))
+				utils.PrettyPrintError(fmt.Errorf("failed to fetch gpu by id. details: %w", err))
 				continue
 			}
 

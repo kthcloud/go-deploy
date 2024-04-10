@@ -9,6 +9,7 @@ import (
 	sErrors "go-deploy/service/errors"
 	sUtils "go-deploy/service/utils"
 	"go-deploy/service/v2/vms/opts"
+	"time"
 )
 
 // Get gets a GPU lease by ID
@@ -45,13 +46,15 @@ func (c *Client) Get(id string, opts ...opts.GetGpuLeaseOpts) (*model.GpuLease, 
 		}
 
 		// 3. User has access to the parent VM through a team
-		hasAccess, err := c.V1.Teams().CheckResourceAccess(c.V2.Auth().UserID, lease.VmID)
-		if err != nil {
-			return nil, makeError(err)
-		}
+		if lease.VmID != nil {
+			hasAccess, err := c.V1.Teams().CheckResourceAccess(c.V2.Auth().UserID, *lease.VmID)
+			if err != nil {
+				return nil, makeError(err)
+			}
 
-		if !hasAccess {
-			return nil, nil
+			if !hasAccess {
+				return nil, nil
+			}
 		}
 
 		return lease, nil
@@ -152,22 +155,12 @@ func (c *Client) List(opts ...opts.ListGpuLeaseOpts) ([]model.GpuLease, error) {
 // Create creates a GPU lease
 //
 // The lease is not active immediately, but will be activated by the GPU lease worker
-func (c *Client) Create(leaseID, vmID, userID string, dtoGpuLeaseCreate *body.GpuLeaseCreate) error {
+func (c *Client) Create(leaseID, userID string, dtoGpuLeaseCreate *body.GpuLeaseCreate) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create gpu lease. details: %w", err)
 	}
 
 	if c.V2.HasAuth() && !c.V2.Auth().IsAdmin {
-		// Check if the user has access to the VM
-		hasAccess, err := c.V1.Teams().CheckResourceAccess(c.V2.Auth().UserID, vmID)
-		if err != nil {
-			return makeError(err)
-		}
-
-		if !hasAccess {
-			return nil
-		}
-
 		// If not admin, the user cannot lease a GPU forever
 		dtoGpuLeaseCreate.LeaseForever = false
 	}
@@ -188,7 +181,7 @@ func (c *Client) Create(leaseID, vmID, userID string, dtoGpuLeaseCreate *body.Gp
 		return makeError(errors.New("lease duration could not be determined"))
 	}
 
-	err := gpu_lease_repo.New().Create(leaseID, vmID, userID, params.GpuGroupName, leaseDuration)
+	err := gpu_lease_repo.New().Create(leaseID, userID, params.GpuGroupName, leaseDuration)
 	if err != nil {
 		if errors.Is(err, gpu_lease_repo.GpuLeaseAlreadyExistsErr) {
 			return makeError(sErrors.GpuLeaseAlreadyExistsErr)
@@ -217,71 +210,44 @@ func (c *Client) Update(id string, dtoGpuLeaseUpdate *body.GpuLeaseUpdate) error
 
 	params := model.GpuLeaseUpdateParams{}.FromDTO(dtoGpuLeaseUpdate)
 
-	// Ensure we don't update active leases
-	if lease.ActivatedAt != nil {
-		params.Active = nil
+	// Ensure we active the lease if it is the first time attaching a VM
+	if params.VmID != nil && lease.ActivatedAt == nil {
+		now := time.Now()
+		params.ActivatedAt = &now
 	}
 
 	// If the lease was request to be activated, check if that is allowed but checking if the lease is assigned
-	if params.Active != nil && *params.Active && lease.AssignedAt == nil {
+	if params.ActivatedAt != nil && lease.AssignedAt == nil {
 		return makeError(sErrors.GpuLeaseNotAssignedErr)
 	}
 
-	if c.V2.HasAuth() {
-		// 1. User has access through being an admin
-		if c.V2.Auth().IsAdmin {
-			err = gpu_lease_repo.New().UpdateWithParams(id, params)
-			if err != nil {
-				return makeError(err)
-			}
-
-			return nil
-		}
-
-		// 2. User has access through being the lease owner
-		if lease.UserID == c.V2.Auth().UserID {
-			err = gpu_lease_repo.New().UpdateWithParams(id, params)
-			if err != nil {
-				return makeError(err)
-			}
-
-			return nil
-		}
-
-		// 3. User has access to the parent VM through a team
-		hasAccess, err := c.V1.Teams().CheckResourceAccess(c.V2.Auth().UserID, lease.VmID)
-		if err != nil {
-			return makeError(err)
-		}
-
-		if hasAccess {
-			err = gpu_lease_repo.New().UpdateWithParams(id, params)
-			if err != nil {
-				return makeError(err)
-			}
-
-			return nil
-		}
-
-		return nil
+	// If the lease is trying to update to the same VM, ignore the attach
+	if lease.VmID != nil && params.VmID != nil && *lease.VmID == *params.VmID {
+		params.VmID = nil
+		params.ActivatedAt = nil
 	}
 
-	// 4. No auth info was provided, update the lease
 	err = gpu_lease_repo.New().UpdateWithParams(id, params)
 	if err != nil {
 		return makeError(err)
 	}
 
-	// Attach GPU if the request was to activate the lease.
-	// We use the original update params, since the active is deleted if the lease is already active.
-	// But we always want to allow attaching the GPU if the lease is active
-	if dtoGpuLeaseUpdate.Active != nil && *dtoGpuLeaseUpdate.Active {
+	// If the lease already has a VM attached, detach it
+	if lease.VmID != nil {
+		err = c.V2.VMs().K8s().DetachGPU(*lease.VmID)
+		if err != nil && !errors.Is(err, sErrors.VmNotFoundErr) {
+			return makeError(err)
+		}
+	}
+
+	// Attach the GPU to the VM
+	if params.VmID != nil {
 		group, err := c.V2.VMs().GpuGroups().Get(lease.GpuGroupID)
 		if err != nil {
 			return makeError(err)
 		}
 
-		err = c.V2.VMs().K8s().AttachGPU(lease.VmID, group.Name)
+		err = c.V2.VMs().K8s().AttachGPU(*params.VmID, group.Name)
 		if err != nil {
 			return makeError(err)
 		}
@@ -306,53 +272,13 @@ func (c *Client) Delete(id string) error {
 	}
 
 	// Detach the GPU
-	if lease.AssignedAt != nil {
-		err = c.V2.VMs().K8s().DetachGPU(lease.VmID)
+	if lease.VmID != nil {
+		err = c.V2.VMs().K8s().DetachGPU(*lease.VmID)
 		if err != nil && !errors.Is(err, sErrors.VmNotFoundErr) {
 			return makeError(err)
 		}
 	}
 
-	if c.V2.HasAuth() {
-		// 1. User has access through being an admin
-		if c.V2.Auth().IsAdmin {
-			err = gpu_lease_repo.New().DeleteByID(id)
-			if err != nil {
-				return makeError(err)
-			}
-
-			return nil
-		}
-
-		// 2. User has access through being the lease owner
-		if lease.UserID == c.V2.Auth().UserID {
-			err = gpu_lease_repo.New().DeleteByID(id)
-			if err != nil {
-				return makeError(err)
-			}
-
-			return nil
-		}
-
-		// 3. User has access to the parent VM through a team
-		hasAccess, err := c.V1.Teams().CheckResourceAccess(c.V2.Auth().UserID, lease.VmID)
-		if err != nil {
-			return makeError(err)
-		}
-
-		if hasAccess {
-			err = gpu_lease_repo.New().DeleteByID(id)
-			if err != nil {
-				return makeError(err)
-			}
-
-			return nil
-		}
-
-		return nil
-	}
-
-	// 4. No auth info was provided, delete the lease
 	err = gpu_lease_repo.New().DeleteByID(id)
 	if err != nil {
 		return makeError(err)

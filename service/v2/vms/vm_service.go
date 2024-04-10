@@ -294,7 +294,7 @@ func (c *Client) Delete(id string) error {
 		return makeError(err)
 	}
 
-	err = gpu_lease_repo.New().WithVmID(id).Delete()
+	err = gpu_lease_repo.New().WithVmID(id).Release()
 	if err != nil {
 		return makeError(err)
 	}

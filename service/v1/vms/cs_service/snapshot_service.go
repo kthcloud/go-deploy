@@ -62,7 +62,7 @@ func (c *Client) CreateSnapshot(vmID string, params *model.CreateSnapshotParams)
 	}
 
 	if HasExtraConfig(vm) {
-		return makeBadStateErr("vm has extra config (probably a gpu_repo attached)")
+		return makeBadStateErr("vm has extra config (probably a gpu attached)")
 	}
 
 	snapshot, err := csc.CreateSnapshot(public)

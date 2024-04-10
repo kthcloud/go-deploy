@@ -9,8 +9,13 @@ import (
 	"testing"
 )
 
+const (
+	TeamPath  = "/v1/teams/"
+	TeamsPath = "/v1/teams"
+)
+
 func GetTeam(t *testing.T, id string, userID ...string) body.TeamRead {
-	resp := e2e.DoGetRequest(t, "/teams/"+id, userID...)
+	resp := e2e.DoGetRequest(t, TeamPath+id, userID...)
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "team was not fetched")
 
 	var teamRead body.TeamRead
@@ -21,7 +26,7 @@ func GetTeam(t *testing.T, id string, userID ...string) body.TeamRead {
 }
 
 func ListTeams(t *testing.T, query string, userID ...string) []body.TeamRead {
-	resp := e2e.DoGetRequest(t, "/teams"+query, userID...)
+	resp := e2e.DoGetRequest(t, TeamsPath+query, userID...)
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "teams were not fetched")
 
 	var teams []body.TeamRead
@@ -32,7 +37,7 @@ func ListTeams(t *testing.T, query string, userID ...string) []body.TeamRead {
 }
 
 func UpdateTeam(t *testing.T, id string, teamUpdate body.TeamUpdate, userID ...string) body.TeamRead {
-	resp := e2e.DoPostRequest(t, "/teams/"+id, teamUpdate, userID...)
+	resp := e2e.DoPostRequest(t, TeamPath+id, teamUpdate, userID...)
 	var teamRead body.TeamRead
 	err := e2e.ReadResponseBody(t, resp, &teamRead)
 	assert.NoError(t, err, "team was not updated")
@@ -89,7 +94,7 @@ func UpdateTeam(t *testing.T, id string, teamUpdate body.TeamUpdate, userID ...s
 }
 
 func DeleteTeam(t *testing.T, id string, userID ...string) {
-	resp := e2e.DoDeleteRequest(t, "/teams/"+id, userID...)
+	resp := e2e.DoDeleteRequest(t, TeamPath+id, userID...)
 	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusNotFound {
 		t.Errorf("team was not deleted")
 	}
@@ -100,7 +105,7 @@ func JoinTeam(t *testing.T, id string, invitationCode string, userID ...string) 
 		InvitationCode: invitationCode,
 	}
 
-	resp := e2e.DoPostRequest(t, "/teams/"+id, teamJoin, userID...)
+	resp := e2e.DoPostRequest(t, TeamPath+id, teamJoin, userID...)
 	_ = e2e.Parse[struct{}](t, resp)
 }
 
@@ -124,7 +129,7 @@ func WithTeam(t *testing.T, teamCreate body.TeamCreate, userID ...string) body.T
 	var createdMembers []string
 	var createdResources []string
 
-	resp := e2e.DoPostRequest(t, "/teams", teamCreate, userID...)
+	resp := e2e.DoPostRequest(t, TeamsPath, teamCreate, userID...)
 	teamRead := e2e.Parse[body.TeamRead](t, resp)
 
 	assert.Equal(t, teamCreate.Name, teamRead.Name, "invalid team name")

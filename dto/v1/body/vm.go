@@ -15,7 +15,7 @@ type VmRead struct {
 
 	Specs        Specs       `json:"specs,omitempty"`
 	Ports        []PortRead  `json:"ports"`
-	GPU          *VmGpuLease `json:"gpu_repo,omitempty"`
+	GPU          *VmGpuLease `json:"gpu,omitempty"`
 	SshPublicKey string      `json:"sshPublicKey"`
 
 	Teams []string `json:"teams"`

@@ -8,5 +8,4 @@ type GpuLeaseList struct {
 }
 
 type GpuLeaseCreate struct {
-	VmID string `form:"vmId" binding:"required,uuid4"`
 }

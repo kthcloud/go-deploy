@@ -38,7 +38,7 @@ type ListOpts struct {
 	Shared     bool
 }
 
-// GetGpuOpts is used to specify the options when getting a VM's gpu_repo.
+// GetGpuOpts is used to specify the options when getting a VM's GPU.
 type GetGpuOpts struct {
 	Zone          *string
 	AvailableGPUs bool
