@@ -24,7 +24,7 @@ const (
 	MaxChecks     = 900 // 900 * CheckInterval (1) seconds = 15 minutes
 
 	// V2TestsEnabled flag is used temporarily to enable V2 tests until V2 zone is fully operational
-	V2TestsEnabled = false
+	V2TestsEnabled = true
 )
 
 func FetchUntil(t *testing.T, subPath string, callback func(*http.Response) bool) {
