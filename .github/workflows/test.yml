@@ -69,7 +69,7 @@ jobs:
       - name: Start main program
         run: |
           go build -o go-deploy .     # Build go-deploy
-          ./go-deploy --test-mode &   # Starts in the background
+          ./go-deploy --mode=test &   # Starts in the background
           sleep 60                    # Wait a bit to ensure it has started
 
       - name: Run e2e tests
