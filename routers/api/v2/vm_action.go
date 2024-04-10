@@ -20,12 +20,12 @@ import (
 // @Accept  json
 // @Produce  json
 // @Param vmId path string true "VM ID"
-// @Param body body body.Action true "Command body"
-// @Success 200 {empty} empty
+// @Param body body body.VmActionCreate true "Command body"
+// @Success 200 {object} body.VmActionCreated
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /vms/{vmId}/command [post]
+// @Router /v2/vms/{vmId}/command [post]
 func CreateAction(c *gin.Context) {
 	context := sys.NewContext(c)
 

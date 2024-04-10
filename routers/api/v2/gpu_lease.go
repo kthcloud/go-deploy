@@ -20,7 +20,7 @@ import (
 // GetGpuLease
 // @Summary Get GPU lease
 // @Description Get GPU lease
-// @Tags VM
+// @Tags GpuLease
 // @Accept json
 // @Produce json
 // @Param Authorization header string true "Bearer token"
@@ -30,7 +30,7 @@ import (
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /gpuLeases/{gpuLeaseId} [get]
+// @Router /v2/gpuLeases/{gpuLeaseId} [get]
 func GetGpuLease(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -72,17 +72,17 @@ func GetGpuLease(c *gin.Context) {
 // ListGpuLeases
 // @Summary List GPU leases
 // @Description List GPU leases
-// @Tags VM
+// @Tags GpuLease
 // @Accept json
 // @Produce json
 // @Param Authorization header string true "Bearer token"
 // @Param vmId query string false "VM ID"
-// @Success 200 {array} body.
+// @Success 200 {array} body.GpuLeaseRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /gpuLeases [get]
+// @Router /v2/gpuLeases [get]
 func ListGpuLeases(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -134,7 +134,7 @@ func ListGpuLeases(c *gin.Context) {
 // CreateGpuLease
 // @Summary Create GPU Lease
 // @Description Create GPU lease
-// @Tags VM
+// @Tags GpuLease
 // @Accept json
 // @Produce json
 // @Param Authorization header string true "Bearer token"
@@ -143,7 +143,7 @@ func ListGpuLeases(c *gin.Context) {
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /gpuLeases [post]
+// @Router /v2/gpuLeases [post]
 func CreateGpuLease(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -201,7 +201,7 @@ func CreateGpuLease(c *gin.Context) {
 // UpdateGpuLease
 // @Summary Update GPU lease
 // @Description Update GPU lease
-// @Tags VM
+// @Tags GpuLease
 // @Accept json
 // @Produce json
 // @Param Authorization header string true "Bearer token"
@@ -211,7 +211,7 @@ func CreateGpuLease(c *gin.Context) {
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /gpuLeases/{gpuLeaseId} [post]
+// @Router /v2/gpuLeases/{gpuLeaseId} [post]
 func UpdateGpuLease(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -272,7 +272,7 @@ func UpdateGpuLease(c *gin.Context) {
 // DeleteGpuLease
 // @Summary Delete GPU lease
 // @Description Delete GPU lease
-// @Tags VM
+// @Tags GpuLease
 // @Accept json
 // @Produce json
 // @Param Authorization header string true "Bearer token"
@@ -281,7 +281,7 @@ func UpdateGpuLease(c *gin.Context) {
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /gpuLeases/{gpuLeaseId} [delete]
+// @Router /v2/gpuLeases/{gpuLeaseId} [delete]
 func DeleteGpuLease(c *gin.Context) {
 	context := sys.NewContext(c)
 

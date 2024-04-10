@@ -12,11 +12,14 @@ import (
 // ListZones
 // @Summary List zones
 // @Description List zones
-// @Tags zone
+// @Tags Zone
 // @Accept json
 // @Produce json
 // @Param type query string false "Zone type"
 // @Success 200 {array} body.ZoneRead
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
+// @Router /v1/zones [get]
 func ListZones(c *gin.Context) {
 	context := sys.NewContext(c)
 

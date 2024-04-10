@@ -14,7 +14,7 @@ import (
 // @Produce  json
 // @Success 200 {object} body.DiscoverRead
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /discover [get]
+// @Router /v1/discover [get]
 func Discover(c *gin.Context) {
 	context := sys.NewContext(c)
 

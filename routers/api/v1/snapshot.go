@@ -29,7 +29,7 @@ import (
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /vms/{vmId}/snapshot/{snapshotId} [post]
+// @Router /v1/vms/{vmId}/snapshot/{snapshotId} [post]
 func GetSnapshot(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -85,7 +85,7 @@ func GetSnapshot(c *gin.Context) {
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /vms/{vmId}/snapshots [get]
+// @Router /v1/vms/{vmId}/snapshots [get]
 func ListSnapshots(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -134,7 +134,7 @@ func ListSnapshots(c *gin.Context) {
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /vms/{vmId}/snapshots [post]
+// @Router /v1/vms/{vmId}/snapshots [post]
 func CreateSnapshot(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -226,7 +226,7 @@ func CreateSnapshot(c *gin.Context) {
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /vms/{vmId}/snapshot/{snapshotId} [delete]
+// @Router /v1/vms/{vmId}/snapshot/{snapshotId} [delete]
 func DeleteSnapshot(c *gin.Context) {
 	context := sys.NewContext(c)
 

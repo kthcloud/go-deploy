@@ -28,7 +28,7 @@ import (
 // @Success 200 {object} body.DeploymentRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /deployments/{deployment_id} [get]
+// @Router /v1/deployments/{deployment_id} [get]
 func GetDeployment(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -78,7 +78,7 @@ func GetDeployment(c *gin.Context) {
 // @Success 200 {array} body.DeploymentRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /deployments [get]
+// @Router /v1/deployments [get]
 func ListDeployments(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -138,7 +138,7 @@ func ListDeployments(c *gin.Context) {
 // @Success 200 {object} body.DeploymentRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /deployments [post]
+// @Router /v1/deployments [post]
 func CreateDeployment(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -235,7 +235,7 @@ func CreateDeployment(c *gin.Context) {
 // @Failure 401 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /deployments/{deploymentId} [delete]
+// @Router /v1/deployments/{deploymentId} [delete]
 func DeleteDeployment(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -313,7 +313,7 @@ func DeleteDeployment(c *gin.Context) {
 // @Success 200 {object} body.DeploymentUpdated
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /deployments/{deploymentId} [post]
+// @Router /v1/deployments/{deploymentId} [post]
 func UpdateDeployment(c *gin.Context) {
 	context := sys.NewContext(c)
 

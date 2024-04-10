@@ -18,9 +18,9 @@ import (
 )
 
 // GetSnapshot
-// @Summary GetVM snapshot
-// @Description GetVM snapshot
-// @Tags VM
+// @Summary Get snapshot
+// @Description Get snapshot
+// @Tags Snapshot
 // @Accept json
 // @Produce json
 // @Param Authorization header string true "Bearer token"
@@ -30,7 +30,7 @@ import (
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /vms/{vmId}/snapshot/{snapshotId} [post]
+// @Router /v2/vms/{vmId}/snapshot/{snapshotId} [post]
 func GetSnapshot(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -74,9 +74,9 @@ func GetSnapshot(c *gin.Context) {
 }
 
 // ListSnapshots
-// @Summary GetVM snapshot list
-// @Description GetVM snapshot list
-// @Tags VM
+// @Summary List snapshots
+// @Description List snapshots
+// @Tags Snapshot
 // @Accept json
 // @Produce json
 // @Param Authorization header string true "Bearer token"
@@ -86,7 +86,7 @@ func GetSnapshot(c *gin.Context) {
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /vms/{vmId}/snapshots [get]
+// @Router /v2/vms/{vmId}/snapshots [get]
 func ListSnapshots(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -124,9 +124,9 @@ func ListSnapshots(c *gin.Context) {
 }
 
 // CreateSnapshot
-// @Summary CreateVM snapshot
-// @Description CreateVM snapshot
-// @Tags VM
+// @Summary Create snapshot
+// @Description Create snapshot
+// @Tags Snapshot
 // @Accept json
 // @Produce json
 // @Param Authorization header string true "Bearer token"
@@ -135,7 +135,7 @@ func ListSnapshots(c *gin.Context) {
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /vms/{vmId}/snapshots [post]
+// @Router /v2/vms/{vmId}/snapshots [post]
 func CreateSnapshot(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -223,7 +223,7 @@ func CreateSnapshot(c *gin.Context) {
 // DeleteSnapshot
 // @Summary Delete snapshot
 // @Description Delete snapshot
-// @Tags VM
+// @Tags Snapshot
 // @Accept json
 // @Produce json
 // @Param Authorization header string true "Bearer token"
@@ -233,7 +233,7 @@ func CreateSnapshot(c *gin.Context) {
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /vms/{vmId}/snapshot/{snapshotId} [delete]
+// @Router /v2/vms/{vmId}/snapshot/{snapshotId} [delete]
 func DeleteSnapshot(c *gin.Context) {
 	context := sys.NewContext(c)
 

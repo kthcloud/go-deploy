@@ -15,15 +15,15 @@ import (
 )
 
 // GetNotification godoc
-// @Summary GetNotification notification
-// @Description GetNotification notification
+// @Summary Get notification
+// @Description Get notification
 // @Tags Notification
 // @Accept  json
 // @Produce  json
 // @Param notificationId path string true "Notification ID"
 // @Success 200 {object} body.NotificationRead
 // @Failure 400 {object} sys.ErrorResponse
-// @Router /notifications/{notificationId} [get]
+// @Router /v1/notifications/{notificationId} [get]
 func GetNotification(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -49,8 +49,8 @@ func GetNotification(c *gin.Context) {
 }
 
 // ListNotifications godoc
-// @Summary GetNotification notifications
-// @Description GetNotification notifications
+// @Summary List notifications
+// @Description List notifications
 // @Tags Notification
 // @Accept  json
 // @Produce  json
@@ -60,7 +60,7 @@ func GetNotification(c *gin.Context) {
 // @Param pageSize query int false "Number of items per page"
 // @Success 200 {array} body.NotificationRead
 // @Failure 400 {object} sys.ErrorResponse
-// @Router /notifications [get]
+// @Router /v1/notifications [get]
 func ListNotifications(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -101,8 +101,8 @@ func ListNotifications(c *gin.Context) {
 }
 
 // UpdateNotification godoc
-// @Summary UpdateNotification notification
-// @Description UpdateNotification notification
+// @Summary Update notification
+// @Description Update notification
 // @Tags Notification
 // @Accept  json
 // @Produce  json
@@ -110,7 +110,7 @@ func ListNotifications(c *gin.Context) {
 // @Param body body body.NotificationUpdate true "Notification update"
 // @Success 200
 // @Failure 400 {object} sys.ErrorResponse
-// @Router /notifications/{notificationId} [post]
+// @Router /v1/notifications/{notificationId} [post]
 func UpdateNotification(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -147,15 +147,15 @@ func UpdateNotification(c *gin.Context) {
 }
 
 // DeleteNotification godoc
-// @Summary DeleteNotification notification
-// @Description DeleteNotification notification
+// @Summary Delete notification
+// @Description Delete notification
 // @Tags Notification
 // @Accept  json
 // @Produce  json
 // @Param notificationId path string true "Notification ID"
 // @Success 200
 // @Failure 400 {object} sys.ErrorResponse
-// @Router /notifications/{notificationId} [delete]
+// @Router /v1/notifications/{notificationId} [delete]
 func DeleteNotification(c *gin.Context) {
 	context := sys.NewContext(c)
 

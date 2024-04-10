@@ -22,7 +22,7 @@ import (
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /deployments/{deploymentId}/command [post]
+// @Router /v1/deployments/{deploymentId}/command [post]
 func DoDeploymentCommand(c *gin.Context) {
 	context := sys.NewContext(c)
 

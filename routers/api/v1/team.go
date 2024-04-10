@@ -33,7 +33,7 @@ import (
 // @Success 200 {object} body.TeamRead
 // @Failure 400 {object} body.BindingError
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /teams/{teamId} [get]
+// @Router /v1/teams/{teamId} [get]
 func GetTeam(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -71,7 +71,7 @@ func GetTeam(c *gin.Context) {
 // @Success 200 {array} body.TeamRead
 // @Failure 400 {object} body.BindingError
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /teams [get]
+// @Router /v1/teams [get]
 func ListTeams(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -121,7 +121,7 @@ func ListTeams(c *gin.Context) {
 // @Success 200 {object} body.TeamRead
 // @Failure 400 {object} body.BindingError
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /teams [post]
+// @Router /v1/teams [post]
 func CreateTeam(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -162,7 +162,7 @@ func CreateTeam(c *gin.Context) {
 // @Success 200 {object} body.TeamRead
 // @Failure 400 {object} body.BindingError
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /teams/{teamId} [post]
+// @Router /v1/teams/{teamId} [post]
 func UpdateTeam(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -219,7 +219,7 @@ func UpdateTeam(c *gin.Context) {
 // @Success 204 "No Content"
 // @Failure 400 {object} body.BindingError
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /teams/{teamId} [delete]
+// @Router /v1/teams/{teamId} [delete]
 func DeleteTeam(c *gin.Context) {
 	context := sys.NewContext(c)
 

@@ -25,7 +25,7 @@ import (
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /deployments/{deploymentId}/logs [get]
+// @Router /v1/deployments/{deploymentId}/logs [get]
 func GetLogs(c *gin.Context) {
 	sysContext := sys.NewContext(c)
 

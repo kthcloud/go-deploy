@@ -23,7 +23,7 @@ import (
 // @Produce  json
 // @Param jobId path string true "Job ID"
 // @Success 200 {object} body.JobRead
-// @Router /job/{id} [get]
+// @Router /v1/job/{id} [get]
 func GetJob(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -54,8 +54,8 @@ func GetJob(c *gin.Context) {
 }
 
 // ListJobs
-// @Summary GetJob list of jobs
-// @Description GetJob list of jobs
+// @Summary List jobs
+// @Description List jobs
 // @Tags Job
 // @Accept  json
 // @Produce  json
@@ -66,7 +66,7 @@ func GetJob(c *gin.Context) {
 // @Param page query int false "Page number"
 // @Param pageSize query int false "Number of items per page"
 // @Success 200 {array} body.JobRead
-// @Router /job [get]
+// @Router /v1/job [get]
 func ListJobs(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -111,15 +111,15 @@ func ListJobs(c *gin.Context) {
 }
 
 // UpdateJob
-// @Summary UpdateJob job
-// @Description UpdateJob job
+// @Summary Update job
+// @Description Update job
 // @Tags Job
 // @Accept  json
 // @Produce  json
 // @Param jobId path string true "Job ID"
 // @Param body body body.JobUpdate true "Job update"
 // @Success 200 {object} body.JobRead
-// @Router /job/{id} [post]
+// @Router /v1/job/{id} [post]
 func UpdateJob(c *gin.Context) {
 	context := sys.NewContext(c)
 

@@ -16,7 +16,7 @@ import (
 // GetGpuGroup
 // @Summary Get GPU group
 // @Description Get GPU group
-// @Tags VM
+// @Tags GpuGroup
 // @Accept json
 // @Produce json
 // @Param Authorization header string true "Bearer token"
@@ -26,7 +26,7 @@ import (
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /gpuGroups/{gpuGroupId} [get]
+// @Router /v2/gpuGroups/{gpuGroupId} [get]
 func GetGpuGroup(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -63,17 +63,17 @@ func GetGpuGroup(c *gin.Context) {
 // ListGpuGroups
 // @Summary List GPU groups
 // @Description List GPU groups
-// @Tags VM
+// @Tags GpuGroup
 // @Accept json
 // @Produce json
 // @Param Authorization header string true "Bearer token"
 // @Param vmId query string false "VM ID"
-// @Success 200 {array} body.
+// @Success 200 {array} body.GpuGroupRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /gpuGroups [get]
+// @Router /v2/gpuGroups [get]
 func ListGpuGroups(c *gin.Context) {
 	context := sys.NewContext(c)
 

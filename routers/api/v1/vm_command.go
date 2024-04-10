@@ -22,7 +22,7 @@ import (
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /vms/{vmId}/command [post]
+// @Router /v1/vms/{vmId}/command [post]
 func DoVmCommand(c *gin.Context) {
 	// TODO: this route is weird and should be covered in the vm update route with desired states
 

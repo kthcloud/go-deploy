@@ -10,12 +10,15 @@ import (
 )
 
 // ListWorkerStatus
-// @Summary Get list of worker status
-// @Description Get list of worker status
-// @Tags zone
+// @Summary List worker status
+// @Description List of worker status
+// @Tags Status
 // @Accept json
 // @Produce json
 // @Success 200 {array} body.WorkerStatusRead
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
+// @Router /v1/status [get]
 func ListWorkerStatus(c *gin.Context) {
 	context := sys.NewContext(c)
 

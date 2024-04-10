@@ -30,7 +30,7 @@ import (
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /vms/gpus [get]
+// @Router /v1/vms/gpus [get]
 func ListGPUs(c *gin.Context) {
 	context := sys.NewContext(c)
 

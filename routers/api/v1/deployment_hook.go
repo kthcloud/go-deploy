@@ -28,7 +28,7 @@ import (
 // @Failure 401 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /hooks/harbor [post]
+// @Router /v1/hooks/harbor [post]
 func HandleHarborHook(c *gin.Context) {
 	context := sys.NewContext(c)
 

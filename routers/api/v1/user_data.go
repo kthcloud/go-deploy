@@ -17,7 +17,7 @@ import (
 // GetUserData
 // @Summary Get user data
 // @Description Get user data
-// @Tags User data
+// @Tags UserData
 // @Accept  json
 // @Produce  json
 // @Param id path string true "User data ID"
@@ -25,7 +25,7 @@ import (
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /userData/{id} [get]
+// @Router /v1/userData/{id} [get]
 func GetUserData(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -60,14 +60,14 @@ func GetUserData(c *gin.Context) {
 // ListUserData
 // @Summary List user data
 // @Description List user data
-// @Tags User data
+// @Tags UserData
 // @Accept  json
 // @Produce  json
 // @Param all query bool false "Want all users"
 // @Success 200 {array}  body.UserRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /userData [get]
+// @Router /v1/userData [get]
 func ListUserData(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -105,14 +105,14 @@ func ListUserData(c *gin.Context) {
 // CreateUserData
 // @Summary Create user data
 // @Description Create user data
-// @Tags User data
+// @Tags UserData
 // @Accept  json
 // @Produce  json
 // @Param body body body.UserDataCreate true "User data create"
 // @Success 200 {object} body.UserDataRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /userData [post]
+// @Router /v1/userData [post]
 func CreateUserData(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -167,7 +167,7 @@ func CreateUserData(c *gin.Context) {
 // @Success 200 {object} body.UserDataRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /usersData/{id} [post]
+// @Router /v1/usersData/{id} [post]
 func UpdateUserData(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -216,14 +216,14 @@ func UpdateUserData(c *gin.Context) {
 // DeleteUserData
 // @Summary Delete user data
 // @Description Delete user data
-// @Tags User data
+// @Tags UserData
 // @Accept  json
 // @Produce  json
 // @Param id path string true "User data ID"
 // @Success 204 "No Content"
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /userData/{id} [delete]
+// @Router /v1/userData/{id} [delete]
 func DeleteUserData(c *gin.Context) {
 	context := sys.NewContext(c)
 

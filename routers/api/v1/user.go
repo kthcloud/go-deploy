@@ -17,8 +17,8 @@ import (
 )
 
 // GetUser
-// @Summary Get user by id
-// @Description Get user by id
+// @Summary Get user
+// @Description Get user
 // @Tags User
 // @Accept  json
 // @Produce  json
@@ -26,7 +26,7 @@ import (
 // @Success 200 {object}  body.UserRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /users/{userId} [get]
+// @Router /v1/users/{userId} [get]
 func GetUser(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -91,8 +91,8 @@ func GetUser(c *gin.Context) {
 }
 
 // ListUsers
-// @Summary GetUser user list
-// @Description GetUser user list
+// @Summary List users
+// @Description List users
 // @Tags User
 // @Accept  json
 // @Produce  json
@@ -100,7 +100,7 @@ func GetUser(c *gin.Context) {
 // @Success 200 {array}  body.UserRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /users [get]
+// @Router /v1/users [get]
 func ListUsers(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -175,8 +175,8 @@ func ListUsers(c *gin.Context) {
 }
 
 // UpdateUser
-// @Summary Update user by id
-// @Description Update user by id
+// @Summary Update user
+// @Description Update user
 // @Tags User
 // @Accept  json
 // @Produce  json
@@ -185,7 +185,7 @@ func ListUsers(c *gin.Context) {
 // @Success 200 {object} body.UserRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /users/{userId} [post]
+// @Router /v1/users/{userId} [post]
 func UpdateUser(c *gin.Context) {
 	context := sys.NewContext(c)
 
