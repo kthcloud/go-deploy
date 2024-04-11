@@ -80,3 +80,7 @@ func (kg *K8sGeneratorBase) Secrets() []models.SecretPublic {
 func (kg *K8sGeneratorBase) HPAs() []models.HpaPublic {
 	return nil
 }
+
+func (kg *K8sGeneratorBase) NetworkPolicies() []models.NetworkPolicyPublic {
+	return nil
+}
