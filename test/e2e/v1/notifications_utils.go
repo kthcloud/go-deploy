@@ -8,8 +8,13 @@ import (
 	"testing"
 )
 
+const (
+	NotificationPath  = "/v1/notifications/"
+	NotificationsPath = "/v1/notifications"
+)
+
 func GetNotification(t *testing.T, id string, userID ...string) body.NotificationRead {
-	resp := e2e.DoGetRequest(t, "/notifications/"+id, userID...)
+	resp := e2e.DoGetRequest(t, NotificationPath+id, userID...)
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "notification was not fetched")
 
 	var notificationRead body.NotificationRead
@@ -20,7 +25,7 @@ func GetNotification(t *testing.T, id string, userID ...string) body.Notificatio
 }
 
 func ListNotifications(t *testing.T, query string, userID ...string) []body.NotificationRead {
-	resp := e2e.DoGetRequest(t, "/notifications"+query, userID...)
+	resp := e2e.DoGetRequest(t, NotificationsPath+query, userID...)
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "notifications were not fetched")
 
 	var notifications []body.NotificationRead

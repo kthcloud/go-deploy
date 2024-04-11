@@ -368,7 +368,7 @@ func (c *Client) Repair(id string) error {
 	}
 
 	if vm == nil {
-		log.Println("vm", id, "not found when repairing. assuming it was deleted")
+		log.Println("VM", id, "not found when repairing. Assuming it was deleted")
 		return nil
 	}
 
@@ -377,7 +377,7 @@ func (c *Client) Repair(id string) error {
 		return makeError(err)
 	}
 
-	log.Println("repaired vm", id)
+	log.Println("Repaired vm", id)
 	return nil
 }
 
@@ -395,7 +395,7 @@ func (c *Client) DoAction(id string, dtoAction *body.VmActionCreate) error {
 	}
 
 	if vm == nil {
-		log.Println("vm", id, "not found when performing action. assuming it was deleted")
+		log.Println("VM", id, "not found when performing action. Assuming it was deleted")
 		return nil
 	}
 
@@ -506,7 +506,7 @@ func (c *Client) UpdateOwner(id string, params *body.VmUpdateOwner) error {
 	}
 
 	if vm == nil {
-		log.Println("vm", id, "not found when updating owner. assuming it was deleted")
+		log.Println("VM", id, "not found when updating owner. Assuming it was deleted")
 		return nil
 	}
 
@@ -537,7 +537,7 @@ func (c *Client) UpdateOwner(id string, params *body.VmUpdateOwner) error {
 		return makeError(err)
 	}
 
-	log.Println("vm", id, "owner updated from", params.OldOwnerID, " to", params.NewOwnerID)
+	log.Println("VM", id, "owner updated from", params.OldOwnerID, " to", params.NewOwnerID)
 	return nil
 }
 

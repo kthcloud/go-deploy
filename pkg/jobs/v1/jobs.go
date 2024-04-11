@@ -79,11 +79,11 @@ func DeleteVM(job *model.Job) error {
 			}
 
 			if errors.Is(err, context.DeadlineExceeded) {
-				log.Println("timeout waiting for related jobs to finish for model", id)
+				log.Println("Timeout waiting for related jobs to finish for model", id)
 				return
 			}
 
-			log.Println("failed to wait for related jobs for model", id, ". details:", err)
+			log.Println("Failed to wait for related jobs for model", id, ". details:", err)
 		}
 
 		cancel()
@@ -292,11 +292,11 @@ func DeleteDeployment(job *model.Job) error {
 			}
 
 			if errors.Is(err, context.DeadlineExceeded) {
-				log.Println("timeout waiting for related jobs to finish for model", id)
+				log.Println("Timeout waiting for related jobs to finish for model", id)
 				return
 			}
 
-			log.Println("failed to wait for related jobs for model", id, ". details:", err)
+			log.Println("Failed to wait for related jobs for model", id, ". details:", err)
 		}
 
 		cancel()

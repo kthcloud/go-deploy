@@ -8,8 +8,13 @@ import (
 	"testing"
 )
 
+const (
+	UserDataPath  = "/v1/userData/"
+	UserDatasPath = "/v1/userData"
+)
+
 func GetUserData(t *testing.T, id string, userID ...string) body.UserDataRead {
-	resp := e2e.DoGetRequest(t, "/userData/"+id, userID...)
+	resp := e2e.DoGetRequest(t, UserDataPath+id, userID...)
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "user data was not fetched")
 
 	var userDataRead body.UserDataRead
@@ -20,7 +25,7 @@ func GetUserData(t *testing.T, id string, userID ...string) body.UserDataRead {
 }
 
 func ListUserData(t *testing.T, query string, userID ...string) []body.UserDataRead {
-	resp := e2e.DoGetRequest(t, "/userData"+query, userID...)
+	resp := e2e.DoGetRequest(t, UserDatasPath+query, userID...)
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "user data was not fetched")
 
 	var userData []body.UserDataRead
@@ -31,7 +36,7 @@ func ListUserData(t *testing.T, query string, userID ...string) []body.UserDataR
 }
 
 func UpdateUserData(t *testing.T, id string, userDataUpdate body.UserDataUpdate, userID ...string) body.UserDataRead {
-	resp := e2e.DoPostRequest(t, "/userData/"+id, userDataUpdate, userID...)
+	resp := e2e.DoPostRequest(t, UserDataPath+id, userDataUpdate, userID...)
 	var userDataRead body.UserDataRead
 	err := e2e.ReadResponseBody(t, resp, &userDataRead)
 	assert.NoError(t, err, "user data was not updated")
@@ -42,12 +47,12 @@ func UpdateUserData(t *testing.T, id string, userDataUpdate body.UserDataUpdate,
 }
 
 func DeleteUserData(t *testing.T, id string, userID ...string) {
-	resp := e2e.DoDeleteRequest(t, "/userData/"+id, userID...)
+	resp := e2e.DoDeleteRequest(t, UserDataPath+id, userID...)
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode, "user data was not deleted")
 }
 
 func WithUserData(t *testing.T, userDataCreate body.UserDataCreate, userID ...string) body.UserDataRead {
-	resp := e2e.DoPostRequest(t, "/userData", userDataCreate, userID...)
+	resp := e2e.DoPostRequest(t, UserDatasPath, userDataCreate, userID...)
 	userData := e2e.Parse[body.UserDataRead](t, resp)
 
 	assert.Equal(t, userDataCreate.Data, userData.Data, "invalid user data name")

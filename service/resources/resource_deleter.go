@@ -36,9 +36,9 @@ func (rc *SsDeleterType[IdType]) WithDbFunc(dbFunc func(interface{}) error) *SsD
 // Exec executes the deleter
 func (rc *SsDeleterType[IdType]) Exec() error {
 	if rc.resourceID == nil {
-		log.Println("no model id provided for subsystem deletion. did you forget to call WithResourceID?")
+		log.Println("No model id provided for subsystem deletion. did you forget to call WithResourceID?")
 	} else if rc.deleteFunc == nil {
-		log.Println("no delete function provided for subsystem deletion. did you forget to specify it in the constructor?")
+		log.Println("No delete function provided for subsystem deletion. did you forget to specify it in the constructor?")
 	} else {
 		err := rc.deleteFunc(*rc.resourceID)
 		if err != nil {
@@ -47,7 +47,7 @@ func (rc *SsDeleterType[IdType]) Exec() error {
 	}
 
 	if rc.dbFunc == nil {
-		log.Println("no db func provided for subsystem deletion. did you forget to call WithDbFunc?")
+		log.Println("No db func provided for subsystem deletion. did you forget to call WithDbFunc?")
 		return nil
 	}
 

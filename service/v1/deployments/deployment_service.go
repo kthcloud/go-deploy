@@ -427,7 +427,7 @@ func (c *Client) UpdateOwner(id string, params *body.DeploymentUpdateOwner) erro
 		return makeError(err)
 	}
 
-	log.Println("deployment", id, "owner updated from", params.OldOwnerID, "to", params.NewOwnerID)
+	log.Println("Deployment", id, "owner updated from", params.OldOwnerID, "to", params.NewOwnerID)
 	return nil
 }
 
@@ -520,7 +520,7 @@ func (c *Client) Repair(id string) error {
 	}
 
 	if !d.Ready() {
-		log.Println("deployment", id, "not ready when repairing.")
+		log.Println("Deployment", id, "not ready when repairing.")
 		return nil
 	}
 
@@ -541,7 +541,7 @@ func (c *Client) Repair(id string) error {
 		}
 	}
 
-	log.Println("repaired deployment", id)
+	log.Println("Repaired deployment", id)
 	return nil
 }
 
@@ -695,7 +695,7 @@ func (c *Client) CheckQuota(id string, opts *opts.QuotaOptions) error {
 
 		return nil
 	} else {
-		log.Println("quota options not set when checking quota for deployment", id)
+		log.Println("Quota options not set when checking quota for deployment", id)
 	}
 
 	return nil

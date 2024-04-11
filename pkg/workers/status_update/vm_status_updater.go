@@ -44,7 +44,7 @@ func parseKubeVirtStatus(status string) string {
 	var statusCode int
 	switch status {
 	case "Provisioning", "WaitingForVolumeBinding":
-		statusCode = status_codes.ResourceBeingCreated
+		statusCode = status_codes.ResourceProvisioning
 	case "Starting":
 		statusCode = status_codes.ResourceStarting
 	case "Running":

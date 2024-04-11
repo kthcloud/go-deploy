@@ -63,7 +63,7 @@ func (client *Client) UpdateVM(public *models.VmPublic) (*models.VmPublic, error
 	}
 
 	if public.ID == "" {
-		log.Println("no id supplied when updating k8s vm. assuming it was deleted")
+		log.Println("No id supplied when updating k8s vm. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -99,7 +99,7 @@ func (client *Client) DeleteVM(id string) error {
 	}
 
 	if id == "" {
-		log.Println("no id supplied when deleting k8s vm. assuming it was deleted")
+		log.Println("No id supplied when deleting k8s vm. Assuming it was deleted")
 		return nil
 	}
 
@@ -125,7 +125,7 @@ func (client *Client) DeleteVMIs(vmID string) error {
 	}
 
 	if vmID == "" {
-		log.Println("no vm id supplied when deleting k8s vmis. assuming it was deleted")
+		log.Println("No vm id supplied when deleting k8s vmis. Assuming it was deleted")
 		return nil
 	}
 

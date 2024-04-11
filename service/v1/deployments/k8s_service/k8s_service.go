@@ -24,7 +24,7 @@ import (
 //
 // It creates all necessary resources in K8s, such as namespaces, deployments, services, etc.
 func (c *Client) Create(id string, params *model.DeploymentCreateParams) error {
-	log.Println("Setting up k8s for", params.Name)
+	log.Println("Setting up K8s for", params.Name)
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to setup k8s for deployment %s. details: %w", params.Name, err)
@@ -150,7 +150,7 @@ func (c *Client) Create(id string, params *model.DeploymentCreateParams) error {
 //
 // It deletes all K8s resources, such as namespaces, deployments, services, etc.
 func (c *Client) Delete(id string, overwriteUserID ...string) error {
-	log.Println("Deleting k8s for", id)
+	log.Println("Deleting K8s for", id)
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete k8s for deployment %s. details: %w", id, err)
@@ -630,12 +630,12 @@ func (c *Client) updateInternalPort(id string) error {
 		return i.Name == d.Name
 	})
 	if idx == -1 {
-		log.Println("main k8s service for deployment", d.ID, "not found when updating internal port. assuming it was deleted")
+		log.Println("Main k8s service for deployment", d.ID, "not found when updating internal port. Assuming it was deleted")
 		return nil
 	}
 
 	if subsystems.NotCreated(&services[idx]) {
-		log.Println("main k8s service for deployment", d.ID, "not created yet when updating internal port. assuming it was deleted")
+		log.Println("Main k8s service for deployment", d.ID, "not created yet when updating internal port. Assuming it was deleted")
 		return nil
 	}
 
@@ -663,12 +663,12 @@ func (c *Client) updateEnvs(id string) error {
 		return i.Name == d.Name
 	})
 	if idx == -1 {
-		log.Println("main k8s deployment for deployment", d.ID, "not found when updating envs. assuming it was deleted")
+		log.Println("Main k8s deployment for deployment", d.ID, "not found when updating envs. Assuming it was deleted")
 		return nil
 	}
 
 	if subsystems.NotCreated(&deployments[idx]) {
-		log.Println("main k8s deployment for deployment", d.ID, "not created yet when updating envs. assuming it was deleted")
+		log.Println("Main k8s deployment for deployment", d.ID, "not created yet when updating envs. Assuming it was deleted")
 		return nil
 	}
 
@@ -772,12 +772,12 @@ func (c *Client) updateImage(id string) error {
 		return i.Name == d.Name
 	})
 	if idx == -1 {
-		log.Println("main k8s deployment for deployment", d.ID, "not found when updating image. assuming it was deleted")
+		log.Println("Main k8s deployment for deployment", d.ID, "not found when updating image. Assuming it was deleted")
 		return nil
 	}
 
 	if subsystems.NotCreated(&deployments[idx]) {
-		log.Println("main k8s deployment for deployment", d.ID, "not created yet when updating image. assuming it was deleted")
+		log.Println("Main k8s deployment for deployment", d.ID, "not created yet when updating image. Assuming it was deleted")
 		return nil
 	}
 
@@ -805,12 +805,12 @@ func (c *Client) updateReplicas(id string) error {
 		return i.Name == d.Name
 	})
 	if idx == -1 {
-		log.Println("main k8s hpa for deployment", d.ID, "not found when updating replicas. assuming it was deleted")
+		log.Println("Main k8s hpa for deployment", d.ID, "not found when updating replicas. Assuming it was deleted")
 		return nil
 	}
 
 	if subsystems.NotCreated(&hpas[idx]) {
-		log.Println("main k8s hpa for deployment", d.ID, "not created yet when updating replicas. assuming it was deleted")
+		log.Println("Main k8s hpa for deployment", d.ID, "not created yet when updating replicas. Assuming it was deleted")
 		return nil
 	}
 
@@ -819,12 +819,12 @@ func (c *Client) updateReplicas(id string) error {
 		return i.Name == d.Name
 	})
 	if idx == -1 {
-		log.Println("main k8s deployment for deployment", d.ID, "not found when updating replicas. assuming it was deleted")
+		log.Println("Main k8s deployment for deployment", d.ID, "not found when updating replicas. Assuming it was deleted")
 		return nil
 	}
 
 	if subsystems.NotCreated(&deployments[idx]) {
-		log.Println("main k8s deployment for deployment", d.ID, "not created yet when updating replicas. assuming it was deleted")
+		log.Println("Main k8s deployment for deployment", d.ID, "not created yet when updating replicas. Assuming it was deleted")
 		return nil
 	}
 

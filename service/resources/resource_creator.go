@@ -37,14 +37,14 @@ func (rc *SsCreatorType[T]) WithPublic(public T) *SsCreatorType[T] {
 // Exec executes the creator
 func (rc *SsCreatorType[T]) Exec() error {
 	if subsystems.Nil(rc.public) {
-		log.Println("no public model provided for subsystem creation. assuming it failed to create")
+		log.Println("No public model provided for subsystem creation. Assuming it failed to create")
 		return nil
 	}
 
 	if subsystems.NotCreated(rc.public) {
 		var resource T
 		if rc.createFunc == nil {
-			log.Println("no create function provided for subsystem creation. did you forget to specify it in the constructor?")
+			log.Println("No create function provided for subsystem creation. did you forget to specify it in the constructor?")
 			return nil
 		} else {
 			var err error
@@ -55,12 +55,12 @@ func (rc *SsCreatorType[T]) Exec() error {
 		}
 
 		if subsystems.Nil(resource) {
-			log.Println("no model returned after creation. assuming it failed to create or was skipped")
+			log.Println("No model returned after creation. Assuming it failed to create or was skipped")
 			return nil
 		}
 
 		if rc.dbFunc == nil {
-			log.Println("no db func provided for subsystem creation. did you forget to call WithDbFunc?")
+			log.Println("No db func provided for subsystem creation. did you forget to call WithDbFunc?")
 			return nil
 		}
 

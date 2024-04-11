@@ -113,7 +113,7 @@ func (c *Client) CreateSnapshot(vmID string, opts *opts.CreateSnapshotOpts) erro
 	}
 
 	if vm == nil {
-		log.Println("vm", vmID, "not found when creating snapshot. assuming it was deleted")
+		log.Println("VM", vmID, "not found when creating snapshot. Assuming it was deleted")
 		return nil
 	}
 
@@ -129,7 +129,7 @@ func (c *Client) CreateSnapshot(vmID string, opts *opts.CreateSnapshotOpts) erro
 	}
 
 	if params.Name == "" {
-		log.Println("no snapshot type specified when creating snapshot for vm", vmID, ". did you forget to specify the type?")
+		log.Println("No snapshot type specified when creating snapshot for vm", vmID, ". did you forget to specify the type?")
 		return nil
 	}
 
@@ -153,7 +153,7 @@ func (c *Client) DeleteSnapshot(vmID, snapshotID string) error {
 	}
 
 	if vm == nil {
-		log.Println("vm", vmID, "not found when deleting snapshot", snapshotID, ". assuming it was deleted")
+		log.Println("VM", vmID, "not found when deleting snapshot", snapshotID, ". Assuming it was deleted")
 		return nil
 	}
 
@@ -175,7 +175,7 @@ func (c *Client) ApplySnapshot(id, snapshotID string) error {
 		return fmt.Errorf("failed to apply snapshot %s to vm %s. details: %w", snapshotID, id, err)
 	}
 
-	log.Println("applying snapshot", snapshotID, "to vm", id)
+	log.Println("Applying snapshot", snapshotID, "to vm", id)
 	err := cs_service.New(c.Cache).ApplySnapshot(id, snapshotID)
 	if err != nil {
 		return makeError(err)

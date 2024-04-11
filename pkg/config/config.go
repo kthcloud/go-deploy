@@ -112,7 +112,7 @@ func setupK8sClusters() error {
 			return makeError(fmt.Errorf("failed to parse type of config source for zone %s", zone.Name))
 		}
 
-		log.Printf(" - Setting up k8s cluster for zone %s (%d/%d)", zone.Name, idx+1, len(Config.Deployment.Zones))
+		log.Printf(" - Setting up K8s cluster for zone %s (%d/%d)", zone.Name, idx+1, len(Config.Deployment.Zones))
 
 		switch configType {
 		case "rancher":

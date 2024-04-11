@@ -18,7 +18,7 @@ func (client *Client) ReadPortForwardingRule(id string) (*models.PortForwardingR
 	}
 
 	if id == "" {
-		log.Println("cs port forwarding rule not supplied when reading. assuming it was deleted")
+		log.Println("CS port forwarding rule not supplied when reading. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -44,7 +44,7 @@ func (client *Client) CreatePortForwardingRule(public *models.PortForwardingRule
 	}
 
 	if public.VmID == "" {
-		log.Println("cs vm id not supplied when creating port forwarding rule. assuming it was deleted")
+		log.Println("CS vm id not supplied when creating port forwarding rule. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -120,12 +120,12 @@ func (client *Client) UpdatePortForwardingRule(public *models.PortForwardingRule
 	}
 
 	if public.ID == "" {
-		log.Println("cs port forwarding rule id not supplied when updating port forwarding rule. assuming it was deleted")
+		log.Println("CS port forwarding rule id not supplied when updating port forwarding rule. Assuming it was deleted")
 		return nil, nil
 	}
 
 	if public.VmID == "" {
-		log.Println("cs vm id not supplied when updating port forwarding rule. assuming it was deleted")
+		log.Println("CS vm id not supplied when updating port forwarding rule. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -158,7 +158,7 @@ func (client *Client) DeletePortForwardingRule(id string) error {
 	}
 
 	if id == "" {
-		log.Println("cs port forwarding rule not supplied when deleting. assuming it was deleted")
+		log.Println("CS port forwarding rule not supplied when deleting. Assuming it was deleted")
 		return nil
 	}
 

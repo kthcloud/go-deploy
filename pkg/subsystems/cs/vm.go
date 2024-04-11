@@ -21,7 +21,7 @@ func (client *Client) ReadVM(id string) (*models.VmPublic, error) {
 	}
 
 	if id == "" {
-		log.Println("cs vm id not supplied when reading. assuming it was deleted")
+		log.Println("CS vm id not supplied when reading. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -47,7 +47,7 @@ func (client *Client) CreateVM(public *models.VmPublic) (*models.VmPublic, error
 	}
 
 	if public.Name == "" {
-		log.Println("cs vm name not supplied when creating. assuming it was deleted")
+		log.Println("CS vm name not supplied when creating. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -110,7 +110,7 @@ func (client *Client) UpdateVM(public *models.VmPublic) (*models.VmPublic, error
 	}
 
 	if public.ID == "" {
-		log.Println("cs vm id not supplied when updating. assuming it was deleted")
+		log.Println("CS vm id not supplied when updating. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -120,7 +120,7 @@ func (client *Client) UpdateVM(public *models.VmPublic) (*models.VmPublic, error
 	}
 
 	if vm == nil {
-		log.Println("cs vm", public.ID, "not found when updating. assuming it was deleted")
+		log.Println("CS vm", public.ID, "not found when updating. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -158,7 +158,7 @@ func (client *Client) UpdateVM(public *models.VmPublic) (*models.VmPublic, error
 			return nil, makeError(err)
 		}
 	} else {
-		log.Println("cs vm", public.ID, "is not stopped when updating service offering. skipping updating service offering")
+		log.Println("CS vm", public.ID, "is not stopped when updating service offering. skipping updating service offering")
 	}
 
 	err = client.AssertVmTags(public.ID, public.Tags)
@@ -176,7 +176,7 @@ func (client *Client) DeleteVM(id string) error {
 	}
 
 	if id == "" {
-		log.Println("cs vm id not supplied when deleting. assuming it was deleted")
+		log.Println("CS vm id not supplied when deleting. Assuming it was deleted")
 		return nil
 	}
 
@@ -188,7 +188,7 @@ func (client *Client) DeleteVM(id string) error {
 	}
 
 	if vm == nil {
-		log.Println("cs vm", id, "not found when deleting. assuming it was deleted")
+		log.Println("CS vm", id, "not found when deleting. Assuming it was deleted")
 		return nil
 	}
 
@@ -215,7 +215,7 @@ func (client *Client) GetVmStatus(id string) (string, error) {
 	}
 
 	if id == "" {
-		log.Println("cs vm id not supplied when getting status. assuming it was deleted")
+		log.Println("CS vm id not supplied when getting status. Assuming it was deleted")
 		return "", nil
 	}
 

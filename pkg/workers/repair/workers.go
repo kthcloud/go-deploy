@@ -25,7 +25,7 @@ func deploymentRepairer() error {
 		// Remove activity if it has been restarting for more than 5 minutes
 		now := time.Now()
 		if now.Sub(deployment.RestartedAt) > 5*time.Minute {
-			log.Printf("removing restarting activity from deployment %s\n", deployment.Name)
+			log.Printf("Removing restarting activity from deployment %s\n", deployment.Name)
 			err = deployment_repo.New().RemoveActivity(deployment.ID, model.ActivityRestarting)
 			if err != nil {
 				return err

@@ -28,28 +28,13 @@ type K8sGenerator struct {
 	zone *configModels.DeploymentZone
 }
 
-func K8s() *K8sGenerator {
-	return &K8sGenerator{}
-}
-
-func (kg *K8sGenerator) WithNamespace(namespace string) *K8sGenerator {
-	kg.namespace = namespace
-	return kg
-}
-
-func (kg *K8sGenerator) WithClient(client *k8s.Client) *K8sGenerator {
-	kg.client = client
-	return kg
-}
-
-func (kg *K8sGenerator) WithSM(sm *model.SM) *K8sGenerator {
-	kg.sm = sm
-	return kg
-}
-
-func (kg *K8sGenerator) WithZone(zone *configModels.DeploymentZone) *K8sGenerator {
-	kg.zone = zone
-	return kg
+func K8s(sm *model.SM, zone *configModels.DeploymentZone, client *k8s.Client, namespace string) *K8sGenerator {
+	return &K8sGenerator{
+		namespace: namespace,
+		client:    client,
+		sm:        sm,
+		zone:      zone,
+	}
 }
 
 func (kg *K8sGenerator) Namespace() *models.NamespacePublic {

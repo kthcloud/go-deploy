@@ -281,7 +281,7 @@ func TestCommand(t *testing.T) {
 
 	for _, command := range commands {
 		reqBody := body.DeploymentCommand{Command: command}
-		resp := e2e.DoPostRequest(t, "/deployments/"+deployment.ID+"/command", reqBody)
+		resp := e2e.DoPostRequest(t, v1.DeploymentPath+deployment.ID+"/command", reqBody)
 		assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 
 		time.Sleep(3 * time.Second)
@@ -305,7 +305,7 @@ func TestInvalidCommand(t *testing.T) {
 
 	for _, command := range invalidCommands {
 		reqBody := body.DeploymentCommand{Command: command}
-		resp := e2e.DoPostRequest(t, "/deployments/"+deployment.ID+"/command", reqBody)
+		resp := e2e.DoPostRequest(t, v1.DeploymentPath+deployment.ID+"/command", reqBody)
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	}
 }
@@ -326,7 +326,7 @@ func TestFetchCiConfig(t *testing.T) {
 		},
 	})
 
-	resp := e2e.DoGetRequest(t, "/deployments/"+deploymentCustom.ID+"/ciConfig")
+	resp := e2e.DoGetRequest(t, v1.DeploymentPath+deploymentCustom.ID+"/ciConfig")
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	var ciConfig body.CiConfig
@@ -335,7 +335,7 @@ func TestFetchCiConfig(t *testing.T) {
 	assert.NotEmpty(t, ciConfig.Config)
 
 	// Not ci config for prebuilt deployments
-	resp = e2e.DoGetRequest(t, "/deployments/"+deploymentPrebuilt.ID+"/ciConfig")
+	resp = e2e.DoGetRequest(t, v1.DeploymentPath+deploymentPrebuilt.ID+"/ciConfig")
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
 
@@ -344,7 +344,7 @@ func TestFetchLogs(t *testing.T) {
 
 	deployment, _ := v1.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
 
-	resp := e2e.DoGetRequest(t, "/deployments/"+deployment.ID+"/logs-sse")
+	resp := e2e.DoGetRequest(t, v1.DeploymentPath+deployment.ID+"/logs-sse")
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, "text/event-stream", resp.Header.Get("Content-Type"))
 }

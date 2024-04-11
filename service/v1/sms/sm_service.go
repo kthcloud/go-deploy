@@ -132,7 +132,7 @@ func (c *Client) Repair(id string) error {
 	}
 
 	if sm == nil {
-		log.Println("storage manager", id, "not found when repairing, assuming it was deleted")
+		log.Println("Storage manager", id, "not found when repairing, assuming it was deleted")
 		return nil
 	}
 
@@ -141,7 +141,7 @@ func (c *Client) Repair(id string) error {
 		return makeErr(err)
 	}
 
-	log.Println("repaired storage manager", id)
+	log.Println("Repaired storage manager", id)
 
 	return nil
 }

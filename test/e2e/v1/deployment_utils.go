@@ -12,38 +12,10 @@ import (
 	"testing"
 )
 
-func WaitForDeploymentRunning(t *testing.T, id string, callback func(*body.DeploymentRead) bool) {
-	e2e.FetchUntil(t, "/deployments/"+id, func(resp *http.Response) bool {
-		deploymentRead := e2e.Parse[body.DeploymentRead](t, resp)
-		if deploymentRead.Status == status_codes.GetMsg(status_codes.ResourceRunning) {
-			if callback == nil || callback(&deploymentRead) {
-				return true
-			}
-		}
-
-		return false
-	})
-}
-
-func WaitForSmRunning(t *testing.T, id string, callback func(read *body.SmRead) bool) {
-	e2e.FetchUntil(t, "/storageManagers/"+id, func(resp *http.Response) bool {
-		var smRead body.SmRead
-		err := e2e.ReadResponseBody(t, resp, &smRead)
-		assert.NoError(t, err, "storage manager was not fetched")
-
-		if callback == nil {
-			return true
-		}
-
-		return callback(&smRead)
-	})
-}
-
-func WaitForDeploymentDeleted(t *testing.T, id string, callback func() bool) {
-	e2e.FetchUntil(t, "/deployments/"+id, func(resp *http.Response) bool {
-		return resp.StatusCode == http.StatusNotFound
-	})
-}
+const (
+	DeploymentPath  = "/v1/deployments/"
+	DeploymentsPath = "/v1/deployments"
+)
 
 func CheckUpURL(t *testing.T, url string) bool {
 	t.Helper()
@@ -59,17 +31,17 @@ func CheckUpURL(t *testing.T, url string) bool {
 }
 
 func GetDeployment(t *testing.T, id string, userID ...string) body.DeploymentRead {
-	resp := e2e.DoGetRequest(t, "/deployments/"+id, userID...)
+	resp := e2e.DoGetRequest(t, DeploymentPath+id, userID...)
 	return e2e.Parse[body.DeploymentRead](t, resp)
 }
 
 func ListDeployments(t *testing.T, query string, userID ...string) []body.DeploymentRead {
-	resp := e2e.DoGetRequest(t, "/deployments"+query, userID...)
+	resp := e2e.DoGetRequest(t, DeploymentsPath+query, userID...)
 	return e2e.Parse[[]body.DeploymentRead](t, resp)
 }
 
 func UpdateDeployment(t *testing.T, id string, requestBody body.DeploymentUpdate, userID ...string) body.DeploymentRead {
-	resp := e2e.DoPostRequest(t, "/deployments/"+id, requestBody, userID...)
+	resp := e2e.DoPostRequest(t, DeploymentPath+id, requestBody, userID...)
 	deploymentUpdated := e2e.Parse[body.DeploymentUpdated](t, resp)
 
 	if deploymentUpdated.JobID != nil {
@@ -144,7 +116,7 @@ func UpdateDeployment(t *testing.T, id string, requestBody body.DeploymentUpdate
 }
 
 func WithDeployment(t *testing.T, requestBody body.DeploymentCreate) (body.DeploymentRead, string) {
-	resp := e2e.DoPostRequest(t, "/deployments", requestBody)
+	resp := e2e.DoPostRequest(t, DeploymentsPath, requestBody)
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "deployment was not created")
 
 	var deploymentCreated body.DeploymentCreated
@@ -164,11 +136,7 @@ func WithDeployment(t *testing.T, requestBody body.DeploymentCreate) (body.Deplo
 		return false
 	})
 
-	var deploymentRead body.DeploymentRead
-	readResp := e2e.DoGetRequest(t, "/deployments/"+deploymentCreated.ID)
-	err = e2e.ReadResponseBody(t, readResp, &deploymentRead)
-	assert.NoError(t, err, "deployment was not created")
-
+	deploymentRead := GetDeployment(t, deploymentCreated.ID)
 	assert.NotEmpty(t, deploymentRead.ID)
 	assert.Equal(t, requestBody.Name, deploymentRead.Name)
 	assert.Equal(t, requestBody.Private, deploymentRead.Private)
@@ -233,7 +201,7 @@ func WithDeployment(t *testing.T, requestBody body.DeploymentCreate) (body.Deplo
 }
 
 func WithAssumedFailedDeployment(t *testing.T, requestBody body.DeploymentCreate) {
-	resp := e2e.DoPostRequest(t, "/deployments", requestBody)
+	resp := e2e.DoPostRequest(t, DeploymentsPath, requestBody)
 	if resp.StatusCode == http.StatusBadRequest {
 		return
 	}
@@ -248,7 +216,7 @@ func WithAssumedFailedDeployment(t *testing.T, requestBody body.DeploymentCreate
 }
 
 func CleanUpDeployment(t *testing.T, id string) {
-	resp := e2e.DoDeleteRequest(t, "/deployments/"+id)
+	resp := e2e.DoDeleteRequest(t, DeploymentPath+id)
 	if resp.StatusCode == http.StatusNotFound {
 		return
 	}
@@ -266,4 +234,23 @@ func CleanUpDeployment(t *testing.T, id string) {
 	}
 
 	assert.FailNow(t, "deployment was not deleted")
+}
+
+func WaitForDeploymentRunning(t *testing.T, id string, callback func(*body.DeploymentRead) bool) {
+	e2e.FetchUntil(t, DeploymentPath+id, func(resp *http.Response) bool {
+		deploymentRead := e2e.Parse[body.DeploymentRead](t, resp)
+		if deploymentRead.Status == status_codes.GetMsg(status_codes.ResourceRunning) {
+			if callback == nil || callback(&deploymentRead) {
+				return true
+			}
+		}
+
+		return false
+	})
+}
+
+func WaitForDeploymentDeleted(t *testing.T, id string, callback func() bool) {
+	e2e.FetchUntil(t, DeploymentPath+id, func(resp *http.Response) bool {
+		return resp.StatusCode == http.StatusNotFound
+	})
 }

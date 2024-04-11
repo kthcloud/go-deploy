@@ -13,7 +13,7 @@ import (
 func (deployment *Deployment) ToDTO(smURL *string, teams []string) body.DeploymentRead {
 	app := deployment.GetMainApp()
 	if app == nil {
-		log.Println("main app not found in deployment", deployment.ID)
+		log.Println("Main app not found in deployment", deployment.ID)
 		app = &App{}
 	}
 

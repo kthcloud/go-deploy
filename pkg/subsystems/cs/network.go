@@ -14,7 +14,7 @@ func (client *Client) ReadNetwork(id string) (*models.NetworkPublic, error) {
 	}
 
 	if id == "" {
-		log.Println("cs port forwarding rule not supplied when reading. assuming it was deleted")
+		log.Println("CS port forwarding rule not supplied when reading. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -70,7 +70,7 @@ func (client *Client) CreateNetwork(public *models.NetworkPublic) (*models.Netwo
 	}
 
 	if public.Name == "" {
-		log.Println("cs network name not supplied when creating network. assuming it was deleted")
+		log.Println("CS network name not supplied when creating network. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -116,7 +116,7 @@ func DeleteNetwork(client *Client, id string) error {
 	}
 
 	if id == "" {
-		log.Println("cs network id not supplied when deleting network. assuming it was deleted")
+		log.Println("CS network id not supplied when deleting network. Assuming it was deleted")
 		return nil
 	}
 

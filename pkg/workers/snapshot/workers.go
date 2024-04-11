@@ -75,6 +75,6 @@ func getRunAt(recurring string) time.Time {
 		return time.Date(now.Year(), now.Month()+1, now.Day(), 3, minutes, 0, 0, time.UTC)
 	}
 
-	log.Println("invalid recurring value:", recurring)
+	log.Println("Invalid recurring value:", recurring)
 	return time.Time{}
 }

@@ -167,7 +167,7 @@ func TestCreateWithInvalidBody(t *testing.T) {
 	invalidDiskSize := []int{
 		-1,
 		0,
-		10,
+		5,
 	}
 
 	for _, diskSize := range invalidDiskSize {
@@ -280,10 +280,7 @@ func TestAction(t *testing.T) {
 	vm := v2.WithDefaultVM(t)
 
 	for _, action := range actions {
-		reqBody := body.VmActionCreate{Action: action}
-		resp := e2e.DoPostRequest(t, "/vms/"+vm.ID+"/command", reqBody)
-		assert.Equal(t, http.StatusNoContent, resp.StatusCode)
-
+		v2.DoVmAction(t, vm.ID, body.VmActionCreate{Action: action})
 		time.Sleep(30 * time.Second)
 	}
 }
@@ -297,7 +294,7 @@ func TestInvalidAction(t *testing.T) {
 
 	for _, action := range actions {
 		reqBody := body.VmActionCreate{Action: action}
-		resp := e2e.DoPostRequest(t, "/vms/"+vm.ID+"/command", reqBody)
+		resp := e2e.DoPostRequest(t, v2.VmActionsPath+"?vmId="+vm.ID, reqBody)
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	}
 }

@@ -125,8 +125,8 @@ func (c *Client) Client(zone *configModels.DeploymentZone) (*k8s.Client, error) 
 }
 
 // Generator returns the K8s generator.
-func (c *Client) Generator(d *model.Deployment, client *k8s.Client, zone *configModels.DeploymentZone) generators.K8sGenerator {
-	if d == nil {
+func (c *Client) Generator(deployment *model.Deployment, client *k8s.Client, zone *configModels.DeploymentZone) generators.K8sGenerator {
+	if deployment == nil {
 		panic("deployment is nil")
 	}
 
@@ -138,7 +138,7 @@ func (c *Client) Generator(d *model.Deployment, client *k8s.Client, zone *config
 		panic("deployment zone is nil")
 	}
 
-	return resources.K8s().WithDeployment(d).WithZone(zone).WithClient(client).WithNamespace(getNamespaceName(zone))
+	return resources.K8s(deployment, zone, client, getNamespaceName(zone))
 }
 
 // getNamespaceName returns the namespace name.

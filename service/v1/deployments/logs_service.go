@@ -35,7 +35,7 @@ func (c *Client) SetupLogStream(id string, ctx context.Context, handler func(str
 	}
 
 	if deployment.BeingDeleted() {
-		log.Println("deployment", id, "is being deleted. not setting up log stream")
+		log.Println("Deployment", id, "is being deleted. not setting up log stream")
 		return nil
 	}
 

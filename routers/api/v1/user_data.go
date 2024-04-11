@@ -167,7 +167,7 @@ func CreateUserData(c *gin.Context) {
 // @Success 200 {object} body.UserDataRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v1/usersData/{id} [post]
+// @Router /v1/userData/{id} [post]
 func UpdateUserData(c *gin.Context) {
 	context := sys.NewContext(c)
 

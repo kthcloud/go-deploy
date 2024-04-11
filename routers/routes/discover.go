@@ -12,7 +12,7 @@ func DiscoverRoutes() *DiscoverRoutingGroup {
 	return &DiscoverRoutingGroup{}
 }
 
-func (group *DiscoverRoutingGroup) PrivateRoutes() []Route {
+func (group *DiscoverRoutingGroup) PublicRoutes() []Route {
 	return []Route{
 		{Method: "GET", Pattern: DiscoverPath, HandlerFunc: v1.Discover},
 	}

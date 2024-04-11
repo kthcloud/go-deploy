@@ -186,7 +186,7 @@ func (client *Client) SetupLogStream(ctx context.Context, allowedNames []string,
 					// Stop the log stream for the pod
 					cancelFunc, ok := cancelFuncs[e.deploymentName][e.podName]
 					if ok {
-						log.Println("stopping logger for", e.podName)
+						log.Println("Stopping logger for", e.podName)
 
 						cancelFunc()
 						delete(cancelFuncs, e.podName)

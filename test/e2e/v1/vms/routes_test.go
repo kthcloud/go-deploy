@@ -377,7 +377,7 @@ func TestAttachGPUWithInvalidID(t *testing.T) {
 		GpuID: &invalidID,
 	}
 
-	resp := e2e.DoPostRequest(t, "/vms/"+vm.ID, updateGpuBody)
+	resp := e2e.DoPostRequest(t, v1.VmPath+vm.ID, updateGpuBody)
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
 
@@ -420,7 +420,7 @@ func TestAttachGpuWithAlreadyAttachedID(t *testing.T) {
 		GpuID: &anotherGpuID,
 	}
 
-	resp := e2e.DoPostRequest(t, "/vms/"+vm.ID, updateGpuBody)
+	resp := e2e.DoPostRequest(t, v1.VmPath+vm.ID, updateGpuBody)
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
 
@@ -434,7 +434,7 @@ func TestCommand(t *testing.T) {
 
 	for _, command := range commands {
 		reqBody := body.VmCommand{Command: command}
-		resp := e2e.DoPostRequest(t, "/vms/"+vm.ID+"/command", reqBody)
+		resp := e2e.DoPostRequest(t, v1.VmPath+vm.ID+"/command", reqBody)
 		assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 
 		time.Sleep(30 * time.Second)
@@ -502,7 +502,7 @@ func TestInvalidCommand(t *testing.T) {
 
 	for _, command := range invalidCommands {
 		reqBody := body.VmCommand{Command: command}
-		resp := e2e.DoPostRequest(t, "/vms/"+vm.ID+"/command", reqBody)
+		resp := e2e.DoPostRequest(t, v1.VmPath+vm.ID+"/command", reqBody)
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	}
 }

@@ -89,7 +89,7 @@ func (client *Client) UpdateNamespace(public *models.NamespacePublic) (*models.N
 	}
 
 	if public.Name == "" {
-		log.Println("no id in namespace when updating. assuming it was deleted")
+		log.Println("No id in namespace when updating. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -102,7 +102,7 @@ func (client *Client) UpdateNamespace(public *models.NamespacePublic) (*models.N
 		return models.CreateNamespacePublicFromRead(ns), nil
 	}
 
-	log.Println("namespace", public.Name, "not found when updating. assuming it was deleted")
+	log.Println("Namespace", public.Name, "not found when updating. Assuming it was deleted")
 	return nil, nil
 }
 
@@ -113,7 +113,7 @@ func (client *Client) DeleteNamespace(name string) error {
 	}
 
 	if name == "" {
-		log.Println("no name supplied when deleting namespace. assuming it was deleted")
+		log.Println("No name supplied when deleting namespace. Assuming it was deleted")
 		return nil
 	}
 
@@ -137,7 +137,7 @@ func (client *Client) DeleteNamespaceIfEmpty(name string) error {
 	}
 
 	if name == "" {
-		log.Println("no name supplied when deleting namespace. assuming it was deleted")
+		log.Println("No name supplied when deleting namespace. Assuming it was deleted")
 		return nil
 	}
 

@@ -36,7 +36,7 @@ func deploymentDeletionConfirmer() error {
 		}) == -1
 
 		if allFinished {
-			log.Printf("Marking deployment %s as deleted\n", deployment.ID)
+			log.Printf("Marking deployment %s as deleted", deployment.ID)
 			err = deployment_repo.New().DeleteByID(deployment.ID)
 			if err != nil {
 				return err
@@ -72,7 +72,7 @@ func smDeletionConfirmer() error {
 		}) == -1
 
 		if allFinished {
-			log.Printf("Marking sm %s as deleted\n", sm.ID)
+			log.Printf("Marking sm %s as deleted", sm.ID)
 			err = sm_repo.New().DeleteByID(sm.ID)
 			if err != nil {
 				return err
@@ -142,7 +142,7 @@ func customDomainConfirmer() error {
 		}
 
 		if !exists {
-			log.Printf("no TXT record found under %s when confirming custom domain %s for deployment %s\n", subDomain, cd.Domain, deployment.ID)
+			log.Printf("No TXT record found under %s when confirming custom domain %s for deployment %s\n", subDomain, cd.Domain, deployment.ID)
 			continue
 		}
 
@@ -162,7 +162,7 @@ func customDomainConfirmer() error {
 			continue
 		}
 
-		log.Printf("Marking custom domain %s as confirmed for deployment %s\n", cd.Domain, deployment.ID)
+		log.Printf("Marking custom domain %s as confirmed for deployment %s", cd.Domain, deployment.ID)
 		err = deployment_repo.New().UpdateCustomDomainStatus(deployment.ID, model.CustomDomainStatusActive)
 		if err != nil {
 			return nil
@@ -193,7 +193,7 @@ func customDomainConfirmer() error {
 			}
 
 			if !exists {
-				log.Printf("no TXT record found under %s when confirming custom domain %s for vm %s\n", subDomain, cd.Domain, vm.ID)
+				log.Printf("No TXT record found under %s when confirming custom domain %s for vm %s\n", subDomain, cd.Domain, vm.ID)
 				continue
 			}
 
@@ -213,7 +213,7 @@ func customDomainConfirmer() error {
 				continue
 			}
 
-			log.Printf("Marking custom domain %s as confirmed for vm %s\n", cd.Domain, vm.ID)
+			log.Printf("Marking custom domain %s as confirmed for vm %s", cd.Domain, vm.ID)
 			err = vm_repo.New().UpdateCustomDomainStatus(vm.ID, portName, model.CustomDomainStatusActive)
 			if err != nil {
 				return err

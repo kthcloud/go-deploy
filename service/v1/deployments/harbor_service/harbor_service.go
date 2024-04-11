@@ -152,7 +152,7 @@ func (c *Client) Update(id string, params *model.DeploymentUpdateParams) error {
 	}
 
 	if d.Subsystems.Harbor.Placeholder {
-		log.Println("received update for harbor placeholder. skipping")
+		log.Println("Received update for harbor placeholder. skipping")
 		return nil
 	}
 
@@ -227,7 +227,7 @@ func (c *Client) EnsureOwner(id string, oldOwnerID string) error {
 	}
 
 	if d.Subsystems.Harbor.Placeholder {
-		log.Println("received owner update for harbor placeholder. skipping")
+		log.Println("Received owner update for harbor placeholder. skipping")
 		return nil
 	}
 

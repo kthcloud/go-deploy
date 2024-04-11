@@ -36,14 +36,14 @@ func (rc *SsUpdaterType[T]) WithPublic(public T) *SsUpdaterType[T] {
 // Exec executes the updater
 func (rc *SsUpdaterType[T]) Exec() error {
 	if subsystems.Nil(rc.public) {
-		log.Println("no public model provided for subsystem update. did you forget to call WithPublic?")
+		log.Println("No public model provided for subsystem update. did you forget to call WithPublic?")
 		return nil
 	}
 
 	if subsystems.Created(rc.public) {
 		var resource T
 		if rc.updateFunc == nil {
-			log.Println("no update function provided for subsystem update. did you forget to specify it in the constructor?")
+			log.Println("No update function provided for subsystem update. did you forget to specify it in the constructor?")
 			resource = rc.public
 		} else {
 			var err error
@@ -54,12 +54,12 @@ func (rc *SsUpdaterType[T]) Exec() error {
 		}
 
 		if subsystems.Nil(resource) {
-			log.Println("no model returned after update. assuming it was deleted")
+			log.Println("No model returned after update. Assuming it was deleted")
 			return nil
 		}
 
 		if rc.dbFunc == nil {
-			log.Println("no db func provided for subsystem update. did you forget to call WithDbFunc?")
+			log.Println("No db func provided for subsystem update. did you forget to call WithDbFunc?")
 			return nil
 		}
 

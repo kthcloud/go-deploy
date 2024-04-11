@@ -32,8 +32,7 @@ func TestList(t *testing.T) {
 func TestCreate(t *testing.T) {
 	t.Parallel()
 
-	// To test this, we should just list deployments, since this triggers creating it
-	e2e.DoGetRequest(t, "/deployments")
+	v1.ListDeployments(t, "?all=true")
 
 	// Make sure the storage manager has time to be created
 	time.Sleep(30 * time.Second)

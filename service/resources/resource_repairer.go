@@ -78,7 +78,7 @@ func (rc *SsRepairerType[idType, T]) Exec() error {
 	} else if subsystems.NotNil(rc.genPublic) {
 		dbResource = rc.genPublic
 	} else {
-		log.Println("no genPublic or genPublicFunc provided for subsystem repair. did you forget to call WithGenPublic or WithGenPublicFunc?")
+		log.Println("No genPublic or genPublicFunc provided for subsystem repair. did you forget to call WithGenPublic or WithGenPublicFunc?")
 		return nil
 	}
 
@@ -100,7 +100,7 @@ func (rc *SsRepairerType[idType, T]) Exec() error {
 			}
 
 			if rc.dbFunc == nil {
-				log.Println("no db func provided for subsystem repair. did you forget to call WithDbFunc?")
+				log.Println("No db func provided for subsystem repair. did you forget to call WithDbFunc?")
 				return updated, nil
 			}
 
@@ -123,7 +123,7 @@ func (rc *SsRepairerType[idType, T]) Exec() error {
 			}
 
 			if rc.dbFunc == nil {
-				log.Println("no db func provided for subsystem repair. did you forget to call WithDbFunc?")
+				log.Println("No db func provided for subsystem repair. did you forget to call WithDbFunc?")
 				return nil
 			}
 
@@ -140,7 +140,7 @@ func (rc *SsRepairerType[idType, T]) Exec() error {
 func (rc *SsRepairerType[idType, T]) createResourceInstead() error {
 
 	if rc.createFunc == nil {
-		log.Println("no create function provided for subsystem repair. did you forget to specify it in the constructor?")
+		log.Println("No create function provided for subsystem repair. did you forget to specify it in the constructor?")
 		return nil
 	}
 
@@ -150,12 +150,12 @@ func (rc *SsRepairerType[idType, T]) createResourceInstead() error {
 	} else if subsystems.NotNil(rc.genPublic) {
 		public = rc.genPublic
 	} else {
-		log.Println("no genPublic or genPublicFunc provided for subsystem repair. did you forget to call WithGenPublic or WithGenPublicFunc?")
+		log.Println("No genPublic or genPublicFunc provided for subsystem repair. did you forget to call WithGenPublic or WithGenPublicFunc?")
 		return nil
 	}
 
 	if subsystems.Nil(public) {
-		log.Println("no public supplied for subsystem repair. assuming it failed to create or was skipped")
+		log.Println("No public supplied for subsystem repair. Assuming it failed to create or was skipped")
 		return nil
 	}
 
@@ -165,12 +165,12 @@ func (rc *SsRepairerType[idType, T]) createResourceInstead() error {
 	}
 
 	if subsystems.Nil(resource) {
-		log.Println("no model returned after creation. assuming it failed to create or was skipped")
+		log.Println("No model returned after creation. Assuming it failed to create or was skipped")
 		return nil
 	}
 
 	if rc.dbFunc == nil {
-		log.Println("no db func provided for subsystem repair. did you forget to call WithDbFunc?")
+		log.Println("No db func provided for subsystem repair. did you forget to call WithDbFunc?")
 		return nil
 	}
 

@@ -19,7 +19,7 @@ func (client *Client) ReadRobot(id int) (*models.RobotPublic, error) {
 	}
 
 	if id == 0 {
-		log.Println("id not supplied when reading robot. assuming it was deleted")
+		log.Println("ID not supplied when reading robot. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -92,7 +92,7 @@ func (client *Client) UpdateRobot(public *models.RobotPublic) (*models.RobotPubl
 	}
 
 	if public.ID == 0 {
-		log.Println("id not supplied when updating robot. assuming it was deleted")
+		log.Println("ID not supplied when updating robot. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -118,7 +118,7 @@ func (client *Client) UpdateRobot(public *models.RobotPublic) (*models.RobotPubl
 	}
 
 	if robot == nil {
-		log.Println("robot", public.Name, "not found when updating. assuming it was deleted")
+		log.Println("Robot", public.Name, "not found when updating. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -137,7 +137,7 @@ func (client *Client) DeleteRobot(id int) error {
 	}
 
 	if id == 0 {
-		log.Println("id not supplied when deleting robot. assuming it was deleted")
+		log.Println("ID not supplied when deleting robot. Assuming it was deleted")
 		return nil
 	}
 

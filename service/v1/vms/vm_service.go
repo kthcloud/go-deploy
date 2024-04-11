@@ -199,7 +199,7 @@ func (c *Client) Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
 			return makeError(err)
 		}
 	} else {
-		log.Println("skipping k8s setup for vm", id, "since it has no ports")
+		log.Println("Skipping k8s setup for vm", id, "since it has no ports")
 	}
 
 	return nil
@@ -334,7 +334,7 @@ func (c *Client) Repair(id string) error {
 	}
 
 	if vm == nil {
-		log.Println("vm", id, "not found when repairing. assuming it was deleted")
+		log.Println("VM", id, "not found when repairing. Assuming it was deleted")
 		return nil
 	}
 
@@ -348,7 +348,7 @@ func (c *Client) Repair(id string) error {
 		return makeError(err)
 	}
 
-	log.Println("repaired vm", id)
+	log.Println("Repaired vm", id)
 	return nil
 }
 
@@ -450,7 +450,7 @@ func (c *Client) UpdateOwner(id string, params *body.VmUpdateOwner) error {
 	}
 
 	if vm == nil {
-		log.Println("vm", id, "not found when updating owner. assuming it was deleted")
+		log.Println("VM", id, "not found when updating owner. Assuming it was deleted")
 		return nil
 	}
 
@@ -486,7 +486,7 @@ func (c *Client) UpdateOwner(id string, params *body.VmUpdateOwner) error {
 		return makeError(err)
 	}
 
-	log.Println("vm", id, "owner updated from", params.OldOwnerID, " to", params.NewOwnerID)
+	log.Println("VM", id, "owner updated from", params.OldOwnerID, " to", params.NewOwnerID)
 	return nil
 }
 
@@ -565,24 +565,24 @@ func (c *Client) DoCommand(id, command string) {
 	go func() {
 		vm, err := c.VM(id, nil)
 		if err != nil {
-			log.Println("failed to get vm", id, "when executing command", command, "details:", err)
+			log.Println("Failed to get vm", id, "when executing command", command, "details:", err)
 			return
 		}
 
 		if vm == nil {
-			log.Println("vm", id, "not found when executing command", command, ". assuming it was deleted")
+			log.Println("VM", id, "not found when executing command", command, ". Assuming it was deleted")
 			return
 		}
 
 		csID := vm.Subsystems.CS.VM.ID
 		if csID == "" {
-			log.Println("cs vm not setup when executing command", command, "for vm", id, ". assuming it was deleted")
+			log.Println("CS vm not setup when executing command", command, "for vm", id, ". Assuming it was deleted")
 			return
 		}
 
 		gpuID, err := gpu_repo.New().WithVM(vm.ID).GetID()
 		if err != nil {
-			log.Println("failed to get gpu id for vm", id, "when executing command", command, "details:", err)
+			log.Println("Failed to get gpu id for vm", id, "when executing command", command, "details:", err)
 			return
 		}
 
@@ -835,7 +835,7 @@ func (c *Client) GetExternalPortMapper(vmID string) (map[string]int, error) {
 	}
 
 	if vm == nil {
-		log.Println("vm", vmID, "not found when detaching getting external port mapper. assuming it was deleted")
+		log.Println("VM", vmID, "not found when detaching getting external port mapper. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -862,7 +862,7 @@ func (c *Client) GetHost(vmID string) (*model.Host, error) {
 	}
 
 	if vm == nil {
-		log.Println("vm", vmID, "not found when getting host. assuming it was deleted")
+		log.Println("VM", vmID, "not found when getting host. Assuming it was deleted")
 		return nil, nil
 	}
 

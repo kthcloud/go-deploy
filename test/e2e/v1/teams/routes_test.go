@@ -188,7 +188,7 @@ func TestJoinWithBadCode(t *testing.T) {
 		Members:     []body.TeamMemberCreate{{ID: e2e.DefaultUserID, TeamRole: model.TeamMemberRoleAdmin}},
 	})
 
-	resp := e2e.DoPostRequest(t, "/teams/"+team.ID, body.TeamJoin{InvitationCode: "bad-code"}, e2e.DefaultUserID)
+	resp := e2e.DoPostRequest(t, v1.TeamPath+team.ID, body.TeamJoin{InvitationCode: "bad-code"}, e2e.DefaultUserID)
 	assert.Equal(t, 400, resp.StatusCode, "bad code was not detected")
 }
 
@@ -287,6 +287,6 @@ func TestDeleteAsNonOwner(t *testing.T) {
 		Members:     nil,
 	})
 
-	resp := e2e.DoDeleteRequest(t, "/teams/"+team.ID, e2e.DefaultUserID)
+	resp := e2e.DoDeleteRequest(t, v1.TeamPath+team.ID, e2e.DefaultUserID)
 	assert.Equal(t, http.StatusNotFound, resp.StatusCode, "team was deleted by non-owner member")
 }

@@ -158,7 +158,7 @@ func CreateIfUniqueResource[T Resource](collection *mongo.Collection, id string,
 			}
 
 			if fetched == nil {
-				utils.PrettyPrintError(fmt.Errorf("failed to fetch model after creation. assuming it was deleted"))
+				utils.PrettyPrintError(fmt.Errorf("failed to fetch model after creation. Assuming it was deleted"))
 				return nil
 			}
 

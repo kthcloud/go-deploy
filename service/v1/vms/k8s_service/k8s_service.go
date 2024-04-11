@@ -20,7 +20,7 @@ import (
 //
 // This does nothing if the VM is version 1 and has no proxy ports
 func (c *Client) Create(id string, params *model.VmCreateParams) error {
-	log.Println("Setting up k8s for", params.Name)
+	log.Println("Setting up K8s for", params.Name)
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to setup k8s for deployment %s. details: %w", params.Name, err)
@@ -29,7 +29,7 @@ func (c *Client) Create(id string, params *model.VmCreateParams) error {
 	_, kc, g, err := c.Get(OptsAll(id))
 	if err != nil {
 		if errors.Is(err, sErrors.VmNotFoundErr) {
-			log.Println("vm not found when setting up k8s for", params.Name, ". assuming it was deleted")
+			log.Println("VM not found when setting up k8s for", params.Name, ". Assuming it was deleted")
 			return nil
 		}
 
@@ -117,7 +117,7 @@ func (c *Client) Create(id string, params *model.VmCreateParams) error {
 
 // Delete deletes the K8s setup for a VM.
 func (c *Client) Delete(id string, overwriteUserID ...string) error {
-	log.Println("Deleting k8s for", id)
+	log.Println("Deleting K8s for", id)
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete k8s for deployment %s. details: %w", id, err)
@@ -131,7 +131,7 @@ func (c *Client) Delete(id string, overwriteUserID ...string) error {
 	vm, kc, _, err := c.Get(OptsNoGenerator(id, opts.ExtraOpts{UserID: userID}))
 	if err != nil {
 		if errors.Is(err, sErrors.VmNotFoundErr) {
-			log.Println("vm not found when deleting k8s for", id, ". assuming it was deleted")
+			log.Println("VM not found when deleting k8s for", id, ". Assuming it was deleted")
 			return nil
 		}
 
@@ -228,7 +228,7 @@ func (c *Client) Repair(id string) error {
 	vm, kc, g, err := c.Get(OptsAll(id))
 	if err != nil {
 		if errors.Is(err, sErrors.VmNotFoundErr) {
-			log.Println("vm not found when deleting k8s for", id, ". assuming it was deleted")
+			log.Println("VM not found when deleting k8s for", id, ". Assuming it was deleted")
 			return nil
 		}
 

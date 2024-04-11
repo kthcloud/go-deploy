@@ -17,34 +17,9 @@ import (
 const (
 	VmPath  = "/v2/vms/"
 	VmsPath = "/v2/vms"
+
+	VmActionsPath = "/v2/vmActions"
 )
-
-func WaitForVmRunning(t *testing.T, id string, callback func(*body.VmRead) bool) {
-	e2e.FetchUntil(t, VmPath+id, func(resp *http.Response) bool {
-		vmRead := e2e.Parse[body.VmRead](t, resp)
-		if vmRead.Status == status_codes.GetMsg(status_codes.ResourceRunning) {
-			if callback == nil || callback(&vmRead) {
-				return true
-			}
-		}
-
-		return false
-	})
-}
-
-func WaitForVmDeleted(t *testing.T, id string, callback func() bool) {
-	e2e.FetchUntil(t, VmPath+id, func(resp *http.Response) bool {
-		if resp.StatusCode != http.StatusNotFound {
-			return false
-		}
-
-		if callback == nil {
-			return true
-		}
-
-		return callback()
-	})
-}
 
 func GetVM(t *testing.T, id string, userID ...string) body.VmRead {
 	resp := e2e.DoGetRequest(t, VmPath+id, userID...)
@@ -72,6 +47,15 @@ func UpdateVM(t *testing.T, id string, requestBody body.VmUpdate, userID ...stri
 	})
 
 	return GetVM(t, id, userID...)
+}
+
+func DoVmAction(t *testing.T, vmID string, requestBody body.VmActionCreate, userID ...string) body.VmActionCreated {
+	resp := e2e.DoPostRequest(t, VmActionsPath+"?vmId="+vmID, requestBody, userID...)
+	vmActionCreated := e2e.Parse[body.VmActionCreated](t, resp)
+
+	v1.WaitForJobFinished(t, vmActionCreated.JobID, nil)
+
+	return vmActionCreated
 }
 
 func WithDefaultVM(t *testing.T, userID ...string) body.VmRead {
@@ -181,6 +165,33 @@ func DoSshCommand(t *testing.T, connectionString, cmd string) string {
 
 	output, _ := client.Cmd(cmd).SmartOutput()
 	return string(output)
+}
+
+func WaitForVmRunning(t *testing.T, id string, callback func(*body.VmRead) bool) {
+	e2e.FetchUntil(t, VmPath+id, func(resp *http.Response) bool {
+		vmRead := e2e.Parse[body.VmRead](t, resp)
+		if vmRead.Status == status_codes.GetMsg(status_codes.ResourceRunning) {
+			if callback == nil || callback(&vmRead) {
+				return true
+			}
+		}
+
+		return false
+	})
+}
+
+func WaitForVmDeleted(t *testing.T, id string, callback func() bool) {
+	e2e.FetchUntil(t, VmPath+id, func(resp *http.Response) bool {
+		if resp.StatusCode != http.StatusNotFound {
+			return false
+		}
+
+		if callback == nil {
+			return true
+		}
+
+		return callback()
+	})
 }
 
 func checkUpVM(t *testing.T, connectionString string) bool {

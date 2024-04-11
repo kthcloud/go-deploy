@@ -14,7 +14,7 @@ func (client *Client) ReadSnapshot(id string) (*models.SnapshotPublic, error) {
 	}
 
 	if id == "" {
-		log.Println("cs snapshot not supplied when reading. assuming it was deleted")
+		log.Println("CS snapshot not supplied when reading. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -77,12 +77,12 @@ func (client *Client) CreateSnapshot(public *models.SnapshotPublic) (*models.Sna
 	createResponse, err := client.CsClient.Snapshot.CreateVMSnapshot(params)
 	if err != nil {
 		if strings.Contains(err.Error(), "There is other active vm snapshot tasks on the instance") {
-			log.Println("other snapshots are being created for vm", public.VmID, ". must wait for them to finish first")
+			log.Println("Other snapshots are being created for vm", public.VmID, ". must wait for them to finish first")
 			return nil, nil
 		}
 
 		if strings.Contains(err.Error(), "Domain not found") {
-			log.Println("cs vm not found. assuming it was deleted")
+			log.Println("CS vm not found. Assuming it was deleted")
 			return nil, nil
 		}
 
@@ -99,7 +99,7 @@ func (client *Client) DeleteSnapshot(id string) error {
 	}
 
 	if id == "" {
-		log.Println("cs snapshot not supplied when deleting. assuming it was deleted")
+		log.Println("CS snapshot not supplied when deleting. Assuming it was deleted")
 		return nil
 	}
 

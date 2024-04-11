@@ -16,7 +16,7 @@ func (client *Client) ReadPVC(name string) (*models.PvcPublic, error) {
 	}
 
 	if name == "" {
-		log.Println("no name supplied when reading k8s pvc. assuming it was deleted")
+		log.Println("No name supplied when reading k8s pvc. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -39,7 +39,7 @@ func (client *Client) CreatePVC(public *models.PvcPublic) (*models.PvcPublic, er
 	}
 
 	if public.Name == "" {
-		log.Println("no name supplied when creating k8s pvc. assuming it was deleted")
+		log.Println("No name supplied when creating k8s pvc. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -70,7 +70,7 @@ func (client *Client) DeletePVC(name string) error {
 	}
 
 	if name == "" {
-		log.Println("no name supplied when deleting k8s pvc. assuming it was deleted")
+		log.Println("No name supplied when deleting k8s pvc. Assuming it was deleted")
 		return nil
 	}
 

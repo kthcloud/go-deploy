@@ -17,7 +17,7 @@ func (client *Client) ReadDeployment(name string) (*models.DeploymentPublic, err
 	}
 
 	if name == "" {
-		log.Println("no name supplied when reading k8s deployment. assuming it was deleted")
+		log.Println("No name supplied when reading k8s deployment. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -66,7 +66,7 @@ func (client *Client) UpdateDeployment(public *models.DeploymentPublic) (*models
 	}
 
 	if public.Name == "" {
-		log.Println("no name supplied when updating k8s deployment. assuming it was deleted")
+		log.Println("No name supplied when updating k8s deployment. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -82,7 +82,7 @@ func (client *Client) UpdateDeployment(public *models.DeploymentPublic) (*models
 		// It is currently being tested, whether it's a good approach.
 		// If so, it will be added to the other Kubernetes resources.
 		if IsImmutabilityErr(err) {
-			log.Println("k8s deployment", public.Name, "could not be updated due to immutability error. assuming bad state")
+			log.Println("K8s deployment", public.Name, "could not be updated due to immutability error. Assuming bad state")
 			return nil, nil
 		}
 
@@ -93,7 +93,7 @@ func (client *Client) UpdateDeployment(public *models.DeploymentPublic) (*models
 		return models.CreateDeploymentPublicFromRead(res), nil
 	}
 
-	log.Println("k8s deployment", public.Name, "not found when updating. assuming it was deleted")
+	log.Println("K8s deployment", public.Name, "not found when updating. Assuming it was deleted")
 	return nil, nil
 }
 
@@ -104,7 +104,7 @@ func (client *Client) DeleteDeployment(name string) error {
 	}
 
 	if name == "" {
-		log.Println("no name supplied when deleting k8s deployment. assuming it was deleted")
+		log.Println("No name supplied when deleting k8s deployment. Assuming it was deleted")
 		return nil
 	}
 
@@ -129,7 +129,7 @@ func (client *Client) RestartDeployment(name string) error {
 	}
 
 	if deployment == nil {
-		log.Println("no deployment found when restarting. assuming it was deleted")
+		log.Println("No deployment found when restarting. Assuming it was deleted")
 		return nil
 	}
 

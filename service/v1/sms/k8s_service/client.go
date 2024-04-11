@@ -151,7 +151,7 @@ func (c *Client) Generator(sm *model.SM, client *k8s.Client, zone *configModels.
 		panic("deployment zone is nil")
 	}
 
-	return resources.K8s().WithClient(client).WithSM(sm).WithZone(zone)
+	return resources.K8s(sm, zone, client, getNamespaceName(zone))
 }
 
 // getNamespaceName returns the namespace name

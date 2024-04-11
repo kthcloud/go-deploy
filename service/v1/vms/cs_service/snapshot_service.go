@@ -124,7 +124,7 @@ func (c *Client) DeleteSnapshot(vmID, snapshotID string) error {
 		return makeError(err)
 	}
 
-	log.Println("deleted snapshot", snapshotID, "for vm", vmID)
+	log.Println("Deleted snapshot", snapshotID, "for vm", vmID)
 
 	return nil
 }
@@ -183,7 +183,7 @@ func (c *Client) ApplySnapshot(vmID, snapshotID string) error {
 		}
 	}
 
-	log.Println("applied snapshot", snapshotID, "for vm", vmID)
+	log.Println("Applied snapshot", snapshotID, "for vm", vmID)
 
 	return nil
 }

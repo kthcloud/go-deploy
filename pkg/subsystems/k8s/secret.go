@@ -16,7 +16,7 @@ func (client *Client) ReadSecret(name string) (*models.SecretPublic, error) {
 	}
 
 	if name == "" {
-		log.Println("no name supplied when reading k8s secret. assuming it was deleted")
+		log.Println("No name supplied when reading K8s secret. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -65,7 +65,7 @@ func (client *Client) UpdateSecret(public *models.SecretPublic) (*models.SecretP
 	}
 
 	if public.Name == "" {
-		log.Println("no name supplied when updating k8s secret. assuming it was deleted")
+		log.Println("No name supplied when updating K8s secret. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -78,7 +78,7 @@ func (client *Client) UpdateSecret(public *models.SecretPublic) (*models.SecretP
 		return models.CreateSecretPublicFromRead(res), nil
 	}
 
-	log.Println("k8s secret", public.Name, "not found when updating. assuming it was deleted")
+	log.Println("K8s secret", public.Name, "not found when updating. Assuming it was deleted")
 	return nil, nil
 }
 
@@ -89,7 +89,7 @@ func (client *Client) DeleteSecret(name string) error {
 	}
 
 	if name == "" {
-		log.Println("no name supplied when deleting k8s secret. assuming it was deleted")
+		log.Println("No name supplied when deleting K8s secret. Assuming it was deleted")
 		return nil
 	}
 

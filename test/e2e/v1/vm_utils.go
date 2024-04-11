@@ -13,45 +13,23 @@ import (
 	"testing"
 )
 
-func WaitForVmRunning(t *testing.T, id string, callback func(*body.VmRead) bool) {
-	e2e.FetchUntil(t, "/vms/"+id, func(resp *http.Response) bool {
-		vmRead := e2e.Parse[body.VmRead](t, resp)
-		if vmRead.Status == status_codes.GetMsg(status_codes.ResourceRunning) {
-			if callback == nil || callback(&vmRead) {
-				return true
-			}
-		}
-
-		return false
-	})
-}
-
-func WaitForVmDeleted(t *testing.T, id string, callback func() bool) {
-	e2e.FetchUntil(t, "/vms/"+id, func(resp *http.Response) bool {
-		if resp.StatusCode != http.StatusNotFound {
-			return false
-		}
-
-		if callback == nil {
-			return true
-		}
-
-		return callback()
-	})
-}
+const (
+	VmPath  = "/v1/vms/"
+	VmsPath = "/v1/vms"
+)
 
 func GetVM(t *testing.T, id string, userID ...string) body.VmRead {
-	resp := e2e.DoGetRequest(t, "/vms/"+id, userID...)
+	resp := e2e.DoGetRequest(t, VmPath+id, userID...)
 	return e2e.Parse[body.VmRead](t, resp)
 }
 
 func ListVMs(t *testing.T, query string, userID ...string) []body.VmRead {
-	resp := e2e.DoGetRequest(t, "/vms"+query, userID...)
+	resp := e2e.DoGetRequest(t, VmsPath+query, userID...)
 	return e2e.Parse[[]body.VmRead](t, resp)
 }
 
 func UpdateVM(t *testing.T, id string, requestBody body.VmUpdate, userID ...string) body.VmRead {
-	resp := e2e.DoPostRequest(t, "/vms/"+id, requestBody, userID...)
+	resp := e2e.DoPostRequest(t, VmPath+id, requestBody, userID...)
 	vmUpdated := e2e.Parse[body.VmUpdated](t, resp)
 
 	if vmUpdated.JobID != nil {
@@ -79,7 +57,7 @@ func ListSnapshots(t *testing.T, vmID string, userID ...string) []body.VmSnapsho
 }
 
 func CreateSnapshot(t *testing.T, id string, requestBody body.VmSnapshotCreate, userID ...string) body.VmSnapshotRead {
-	resp := e2e.DoPostRequest(t, "/vms/"+id+"/snapshots", requestBody, userID...)
+	resp := e2e.DoPostRequest(t, VmPath+id+"/snapshots", requestBody, userID...)
 	snapshotCreated := e2e.Parse[body.VmSnapshotCreated](t, resp)
 
 	WaitForJobFinished(t, snapshotCreated.JobID, nil)
@@ -128,7 +106,7 @@ func WithDefaultVM(t *testing.T, userID ...string) body.VmRead {
 }
 
 func WithVM(t *testing.T, requestBody body.VmCreate, userID ...string) body.VmRead {
-	resp := e2e.DoPostRequest(t, "/vms", requestBody, userID...)
+	resp := e2e.DoPostRequest(t, VmsPath, requestBody, userID...)
 	vmCreated := e2e.Parse[body.VmCreated](t, resp)
 
 	t.Cleanup(func() { cleanUpVm(t, vmCreated.ID) })
@@ -181,7 +159,7 @@ func WithVM(t *testing.T, requestBody body.VmCreate, userID ...string) body.VmRe
 }
 
 func WithAssumedFailedVM(t *testing.T, requestBody body.VmCreate) {
-	resp := e2e.DoPostRequest(t, "/vms", requestBody)
+	resp := e2e.DoPostRequest(t, VmsPath, requestBody)
 	if resp.StatusCode == http.StatusBadRequest {
 		return
 	}
@@ -227,6 +205,33 @@ func DoSshCommand(t *testing.T, connectionString, cmd string) string {
 	return string(output)
 }
 
+func WaitForVmRunning(t *testing.T, id string, callback func(*body.VmRead) bool) {
+	e2e.FetchUntil(t, VmPath+id, func(resp *http.Response) bool {
+		vmRead := e2e.Parse[body.VmRead](t, resp)
+		if vmRead.Status == status_codes.GetMsg(status_codes.ResourceRunning) {
+			if callback == nil || callback(&vmRead) {
+				return true
+			}
+		}
+
+		return false
+	})
+}
+
+func WaitForVmDeleted(t *testing.T, id string, callback func() bool) {
+	e2e.FetchUntil(t, VmPath+id, func(resp *http.Response) bool {
+		if resp.StatusCode != http.StatusNotFound {
+			return false
+		}
+
+		if callback == nil {
+			return true
+		}
+
+		return callback()
+	})
+}
+
 func checkUpVM(t *testing.T, connectionString string) bool {
 	t.Helper()
 
@@ -235,7 +240,7 @@ func checkUpVM(t *testing.T, connectionString string) bool {
 }
 
 func cleanUpVm(t *testing.T, id string) {
-	resp := e2e.DoDeleteRequest(t, "/vms/"+id)
+	resp := e2e.DoDeleteRequest(t, VmPath+id)
 	if resp.StatusCode == http.StatusNotFound {
 		return
 	}

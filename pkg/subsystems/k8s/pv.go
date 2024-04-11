@@ -16,7 +16,7 @@ func (client *Client) ReadPV(name string) (*models.PvPublic, error) {
 	}
 
 	if name == "" {
-		log.Println("no name supplied when reading k8s pv. assuming it was deleted")
+		log.Println("No name supplied when reading k8s pv. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -65,7 +65,7 @@ func (client *Client) DeletePV(name string) error {
 	}
 
 	if name == "" {
-		log.Println("no name supplied when deleting k8s pv. assuming it was deleted")
+		log.Println("No name supplied when deleting k8s pv. Assuming it was deleted")
 		return nil
 	}
 

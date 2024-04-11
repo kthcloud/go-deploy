@@ -18,7 +18,7 @@ func (client *Client) ReadWebhook(id int) (*models.WebhookPublic, error) {
 	project, err := client.HarborClient.GetProject(context.TODO(), client.Project)
 	if err != nil {
 		if strings.Contains(err.Error(), "project not found on server side") {
-			log.Println("project", client.Project, "not found when deleting webhook. assuming it was deleted")
+			log.Println("Project", client.Project, "not found when deleting webhook. Assuming it was deleted")
 			return nil, nil
 		}
 
@@ -55,7 +55,7 @@ func (client *Client) CreateWebhook(public *models.WebhookPublic) (*models.Webho
 	project, err := client.HarborClient.GetProject(context.TODO(), client.Project)
 	if err != nil {
 		if strings.Contains(err.Error(), "project not found on server side") {
-			log.Println("project", client.Project, "not found when deleting webhook. assuming it was deleted")
+			log.Println("Project", client.Project, "not found when deleting webhook. Assuming it was deleted")
 			return nil, nil
 		}
 
@@ -107,7 +107,7 @@ func (client *Client) UpdateWebhook(public *models.WebhookPublic) (*models.Webho
 	project, err := client.HarborClient.GetProject(context.TODO(), client.Project)
 	if err != nil {
 		if strings.Contains(err.Error(), "project not found on server side") {
-			log.Println("project", client.Project, "not found when deleting webhook. assuming it was deleted")
+			log.Println("Project", client.Project, "not found when deleting webhook. Assuming it was deleted")
 			return nil, nil
 		}
 
@@ -127,7 +127,7 @@ func (client *Client) UpdateWebhook(public *models.WebhookPublic) (*models.Webho
 	}
 
 	if webhookPolicy == nil {
-		log.Println("webhook", public.Name, "not found when updating. assuming it was deleted")
+		log.Println("webhook", public.Name, "not found when updating. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -158,14 +158,14 @@ func (client *Client) DeleteWebhook(id int) error {
 	}
 
 	if id == 0 {
-		log.Println("id not supplied when deleting webhook. assuming it was deleted")
+		log.Println("ID not supplied when deleting webhook. Assuming it was deleted")
 		return nil
 	}
 
 	project, err := client.HarborClient.GetProject(context.TODO(), client.Project)
 	if err != nil {
 		if strings.Contains(err.Error(), "project not found on server side") {
-			log.Println("project", client.Project, "not found when deleting webhook. assuming it was deleted")
+			log.Println("Project", client.Project, "not found when deleting webhook. Assuming it was deleted")
 			return nil
 		}
 

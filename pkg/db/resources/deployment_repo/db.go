@@ -95,13 +95,13 @@ func (client *Client) UpdateWithParams(id string, params *model.DeploymentUpdate
 	}
 
 	if deployment == nil {
-		log.Println("deployment not found when updating deployment", id, ". assuming it was deleted")
+		log.Println("Deployment not found when updating deployment", id, ". Assuming it was deleted")
 		return nil
 	}
 
 	mainApp := deployment.GetMainApp()
 	if mainApp == nil {
-		log.Println("main app not found when updating deployment", id, ". assuming it was deleted")
+		log.Println("Main app not found when updating deployment", id, ". Assuming it was deleted")
 		return nil
 	}
 
@@ -312,7 +312,7 @@ func (client *Client) SetPingResult(id string, pingResult int) error {
 	}
 
 	if !exists {
-		log.Println("deployment not found when saving ping result", id, ". assuming it was deleted")
+		log.Println("Deployment not found when saving ping result", id, ". Assuming it was deleted")
 		return nil
 	}
 

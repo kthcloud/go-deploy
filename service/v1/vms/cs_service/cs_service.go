@@ -622,14 +622,14 @@ func (c *Client) stopVmIfRunning(id string) (func(), error) {
 			if gpuID, err := gpu_repo.New().WithVM(vm.ID).GetID(); gpuID != nil {
 				requiredHost, err = c.GetRequiredHost(*gpuID)
 				if err != nil {
-					log.Println("failed to get required host for vm", vm.Name, ". details:", err)
+					log.Println("Failed to get required host for vm", vm.Name, ". details:", err)
 					return
 				}
 			}
 
 			err = csc.DoVmCommand(vm.Subsystems.CS.VM.ID, requiredHost, commands.Start)
 			if err != nil {
-				log.Println("failed to start vm", vm.Name, ". details:", err)
+				log.Println("Failed to start vm", vm.Name, ". details:", err)
 				return
 			}
 		}

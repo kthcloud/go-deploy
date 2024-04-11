@@ -16,24 +16,12 @@ const (
 
 func GetTeam(t *testing.T, id string, userID ...string) body.TeamRead {
 	resp := e2e.DoGetRequest(t, TeamPath+id, userID...)
-	assert.Equal(t, http.StatusOK, resp.StatusCode, "team was not fetched")
-
-	var teamRead body.TeamRead
-	err := e2e.ReadResponseBody(t, resp, &teamRead)
-	assert.NoError(t, err, "team was not fetched")
-
-	return teamRead
+	return e2e.Parse[body.TeamRead](t, resp)
 }
 
 func ListTeams(t *testing.T, query string, userID ...string) []body.TeamRead {
 	resp := e2e.DoGetRequest(t, TeamsPath+query, userID...)
-	assert.Equal(t, http.StatusOK, resp.StatusCode, "teams were not fetched")
-
-	var teams []body.TeamRead
-	err := e2e.ReadResponseBody(t, resp, &teams)
-	assert.NoError(t, err, "teams were not fetched")
-
-	return teams
+	return e2e.Parse[[]body.TeamRead](t, resp)
 }
 
 func UpdateTeam(t *testing.T, id string, teamUpdate body.TeamUpdate, userID ...string) body.TeamRead {
@@ -147,7 +135,7 @@ func WithTeam(t *testing.T, teamCreate body.TeamCreate, userID ...string) body.T
 	test.EqualOrEmpty(t, requestedResources, createdResources, "invalid team resources")
 
 	t.Cleanup(func() {
-		e2e.DoDeleteRequest(t, "/teams/"+teamRead.ID)
+		e2e.DoDeleteRequest(t, TeamPath+teamRead.ID)
 	})
 
 	return teamRead
