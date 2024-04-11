@@ -56,7 +56,7 @@ func (c *Client) GetGPU(id string, opts ...opts.GetGpuOpts) (*model.GPU, error) 
 				return nil, nil
 			}
 
-			utils.PrettyPrintError(fmt.Errorf("error checking if gpu_repo is in use. details: %w", err))
+			utils.PrettyPrintError(fmt.Errorf("error checking if gpu is in use. details: %w", err))
 			return nil, nil
 		}
 	}
@@ -110,7 +110,7 @@ func (c *Client) ListGPUs(opts ...opts.ListGpuOpts) ([]model.GPU, error) {
 				case errors.Is(err, sErrors.HostNotAvailableErr):
 					continue
 				default:
-					utils.PrettyPrintError(fmt.Errorf("error checking if gpu_repo is in use. details: %w", err))
+					utils.PrettyPrintError(fmt.Errorf("error checking if gpu is in use. details: %w", err))
 					continue
 				}
 			}
@@ -127,7 +127,7 @@ func (c *Client) ListGPUs(opts ...opts.ListGpuOpts) ([]model.GPU, error) {
 // AttachGPU attaches a GPU to a VM
 func (c *Client) AttachGPU(vmID string, gpuIDs []string, leaseDuration float64) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to attach gpu_repo to vm %s. details: %w", vmID, err)
+		return fmt.Errorf("failed to attach gpu to vm %s. details: %w", vmID, err)
 	}
 	csInsufficientCapacityError := "host has capacity? false"
 	gpuAlreadyAttachedError := "Unable to create a deployment for VM instance"
@@ -193,7 +193,7 @@ func (c *Client) AttachGPU(vmID string, gpuIDs []string, leaseDuration float64) 
 		attached, err = gpu_repo.New().Attach(gpuID, vmID, vm.OwnerID, endLease)
 		if err != nil {
 			if errors.Is(err, gpu_repo.AlreadyAttachedErr) || errors.Is(err, gpu_repo.NotFoundErr) {
-				// this is not treated as an error, just another instance snatched the gpu_repo before this one
+				// This is not treated as an error, just another instance snatched the GPU before this one
 				continue
 			}
 
@@ -203,9 +203,10 @@ func (c *Client) AttachGPU(vmID string, gpuIDs []string, leaseDuration float64) 
 		if !attached {
 			// This is an edge case where we don't want to fail the method, since a retry will probably not help.
 			//
-			// This is probably caused by a race condition where two users requested the same gpu_repo, where the first one
+			// This is probably caused by a race condition where two users requested the same GPU, where the first one
 			// got it, and the second one failed. We don't want to fail the second user, since that would mean that a
-			// job would get stuck. Instead the user is not granted the gpu_repo, and will need to request a new one manually
+			// job would get stuck.
+			// Instead the user is not granted the GPU, and will need to request a new one manually
 			continue
 		}
 
@@ -222,8 +223,8 @@ func (c *Client) AttachGPU(vmID string, gpuIDs []string, leaseDuration float64) 
 		gpuAlreadyAttached := strings.Contains(errString, gpuAlreadyAttachedError)
 
 		if insufficientCapacityErr {
-			// If the host has insufficient capacity, we need to detach the gpu_repo from the vm
-			// and attempt to attach it to another gpu_repo
+			// If the host has insufficient capacity, we need to detach the GPU from the vm
+			// and attempt to attach it to another GPU
 
 			err = cc.DetachGPU(vmID, cs_service.CsDetachGpuAfterStateRestore)
 			if err != nil {
@@ -235,7 +236,7 @@ func (c *Client) AttachGPU(vmID string, gpuIDs []string, leaseDuration float64) 
 				return makeError(err)
 			}
 		} else if gpuAlreadyAttached {
-			// If the gpu_repo is already attached, we need to detach it from the vm
+			// If the GPU is already attached, we need to detach it from the vm
 
 			err = cc.DetachGPU(vmID, cs_service.CsDetachGpuAfterStateRestore)
 			if err != nil {
@@ -257,7 +258,7 @@ func (c *Client) AttachGPU(vmID string, gpuIDs []string, leaseDuration float64) 
 // DetachGPU detaches a GPU from a VM
 func (c *Client) DetachGPU(vmID string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to detach gpu_repo from vm %s. details: %w", vmID, err)
+		return fmt.Errorf("failed to detach gpu from vm %s. details: %w", vmID, err)
 	}
 
 	err := cs_service.New(c.Cache).DetachGPU(vmID, cs_service.CsDetachGpuAfterStateRestore)

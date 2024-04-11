@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"log"
 	"strings"
 	"time"
 )
@@ -33,7 +33,7 @@ func (dbCtx *Context) setupMongo() error {
 		return fmt.Errorf("failed to setup mongodb. details: %w", err)
 	}
 
-	log.Println("setting up mongodb")
+	log.Println("Setting up MongoDB")
 
 	var err error
 	dbCtx.MongoClient, err = mongo.Connect(context.TODO(), options.Client().ApplyURI(config.Config.MongoDB.URL))
@@ -46,8 +46,6 @@ func (dbCtx *Context) setupMongo() error {
 		log.Fatalln(makeError(err))
 	}
 
-	log.Println("connected to mongodb")
-
 	// Find collections
 	DB.CollectionMap = make(map[string]*mongo.Collection)
 
@@ -56,8 +54,6 @@ func (dbCtx *Context) setupMongo() error {
 	for _, def := range DB.CollectionDefinitionMap {
 		DB.CollectionMap[def.Name] = dbCtx.MongoClient.Database(config.Config.MongoDB.Name).Collection(def.Name)
 	}
-
-	log.Println("found", len(DB.CollectionDefinitionMap), "collections")
 
 	ensureCount := 0
 	for _, def := range DB.CollectionDefinitionMap {
@@ -74,7 +70,7 @@ func (dbCtx *Context) setupMongo() error {
 		}
 	}
 
-	log.Println("ensured", ensureCount, "indexes")
+	log.Printf(" - Ensured %d indexes", ensureCount)
 
 	ensureCount = 0
 	for _, def := range DB.CollectionDefinitionMap {
@@ -96,7 +92,7 @@ func (dbCtx *Context) setupMongo() error {
 		}
 	}
 
-	log.Println("ensured", ensureCount, "unique indexes")
+	log.Printf(" - Ensured %d unique indexes", ensureCount)
 
 	ensureCount = 0
 	for _, def := range DB.CollectionDefinitionMap {
@@ -118,7 +114,7 @@ func (dbCtx *Context) setupMongo() error {
 		}
 	}
 
-	log.Println("ensured", ensureCount, "totally unique indexes")
+	log.Printf(" - Ensured %d totally unique indexes", ensureCount)
 
 	ensureCount = 0
 	for _, def := range DB.CollectionDefinitionMap {
@@ -141,7 +137,7 @@ func (dbCtx *Context) setupMongo() error {
 		ensureCount++
 	}
 
-	log.Println("ensured", ensureCount, "text indexes")
+	log.Printf(" - Ensured %d text indexes", ensureCount)
 
 	return nil
 }
@@ -194,6 +190,19 @@ func getCollectionDefinitions() map[string]CollectionDefinition {
 			Indexes: []string{"groupName", "vmId", "userId"},
 			// Right now we only allow one lease per user
 			UniqueIndexes:        [][]string{{"userId"}},
+			TotallyUniqueIndexes: [][]string{{"id"}},
+		},
+		"gpuLeases": {
+			Name:    "gpuLeases",
+			Indexes: []string{"groupName", "vmId", "userId", "createdAt"},
+			// Right now we only allow a single lease per user, this might change in the future
+			UniqueIndexes:        [][]string{{"userId"}},
+			TotallyUniqueIndexes: [][]string{{"id"}},
+		},
+		"gpuGroups": {
+			Name:                 "gpuGroups",
+			Indexes:              []string{"zone"},
+			UniqueIndexes:        [][]string{{"name", "zone"}},
 			TotallyUniqueIndexes: [][]string{{"id"}},
 		},
 		"users": {

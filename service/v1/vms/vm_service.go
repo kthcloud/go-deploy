@@ -6,13 +6,14 @@ import (
 	"github.com/google/uuid"
 	"go-deploy/dto/v1/body"
 	"go-deploy/models/model"
-	"go-deploy/models/versions"
+	"go-deploy/models/version"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/db/resources/gpu_repo"
 	"go-deploy/pkg/db/resources/notification_repo"
 	"go-deploy/pkg/db/resources/team_repo"
 	"go-deploy/pkg/db/resources/vm_port_repo"
 	"go-deploy/pkg/db/resources/vm_repo"
+	"go-deploy/pkg/log"
 	sErrors "go-deploy/service/errors"
 	sUtils "go-deploy/service/utils"
 	"go-deploy/service/v1/vms/cs_service"
@@ -20,7 +21,6 @@ import (
 	"go-deploy/service/v1/vms/opts"
 	"go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
-	"log"
 	"sort"
 	"strings"
 )
@@ -32,7 +32,7 @@ import (
 func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.VM, error) {
 	o := sUtils.GetFirstOrDefault(opts)
 
-	vmc := vm_repo.New(versions.V1)
+	vmc := vm_repo.New(version.V1)
 
 	if o.TransferCode != nil {
 		return vmc.WithTransferCode(*o.TransferCode).Get()
@@ -57,7 +57,7 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.VM, error) {
 	}
 
 	if !teamCheck && effectiveUserID != "" {
-		vmc.RestrictToOwner(effectiveUserID)
+		vmc.WithOwner(effectiveUserID)
 	}
 
 	return c.VM(id, vmc)
@@ -69,7 +69,7 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.VM, error) {
 func (c *Client) List(opts ...opts.ListOpts) ([]model.VM, error) {
 	o := sUtils.GetFirstOrDefault(opts)
 
-	vmc := vm_repo.New(versions.V1)
+	vmc := vm_repo.New(version.V1)
 
 	if o.Pagination != nil {
 		vmc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
@@ -92,7 +92,7 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.VM, error) {
 	}
 
 	if effectiveUserID != "" {
-		vmc.RestrictToOwner(effectiveUserID)
+		vmc.WithOwner(effectiveUserID)
 	}
 
 	vms, err := c.VMs(vmc)
@@ -179,7 +179,7 @@ func (c *Client) Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
 
 	params := model.VmCreateParams{}.FromDTOv1(dtoVmCreate, &fallback, &deploymentZone)
 
-	_, err := vm_repo.New(versions.V1).Create(id, ownerID, config.Config.Manager, &params)
+	_, err := vm_repo.New(version.V1).Create(id, ownerID, config.Config.Manager, &params)
 	if err != nil {
 		if errors.Is(err, vm_repo.NonUniqueFieldErr) {
 			return sErrors.NonUniqueFieldErr
@@ -199,7 +199,7 @@ func (c *Client) Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
 			return makeError(err)
 		}
 	} else {
-		log.Println("skipping k8s setup for vm", id, "since it has no ports")
+		log.Println("Skipping k8s setup for vm", id, "since it has no ports")
 	}
 
 	return nil
@@ -247,7 +247,7 @@ func (c *Client) Update(id string, dtoVmUpdate *body.VmUpdate) error {
 		}
 	}
 
-	err := vm_repo.New(versions.V1).UpdateWithParams(id, &vmUpdate)
+	err := vm_repo.New(version.V1).UpdateWithParams(id, &vmUpdate)
 	if err != nil {
 		if errors.Is(err, vm_repo.NonUniqueFieldErr) {
 			return sErrors.NonUniqueFieldErr
@@ -334,7 +334,7 @@ func (c *Client) Repair(id string) error {
 	}
 
 	if vm == nil {
-		log.Println("vm", id, "not found when repairing. assuming it was deleted")
+		log.Println("VM", id, "not found when repairing. Assuming it was deleted")
 		return nil
 	}
 
@@ -348,7 +348,7 @@ func (c *Client) Repair(id string) error {
 		return makeError(err)
 	}
 
-	log.Println("repaired vm", id)
+	log.Println("Repaired vm", id)
 	return nil
 }
 
@@ -390,7 +390,7 @@ func (c *Client) UpdateOwnerSetup(id string, params *body.VmUpdateOwner) (*strin
 
 	if transferDirectly {
 		jobID := uuid.New().String()
-		err = c.V1.Jobs().Create(jobID, c.V1.Auth().UserID, model.JobUpdateVmOwner, versions.V1, map[string]interface{}{
+		err = c.V1.Jobs().Create(jobID, c.V1.Auth().UserID, model.JobUpdateVmOwner, version.V1, map[string]interface{}{
 			"id":     id,
 			"params": *params,
 		})
@@ -404,7 +404,7 @@ func (c *Client) UpdateOwnerSetup(id string, params *body.VmUpdateOwner) (*strin
 
 	/// create a transfer notification
 	code := createTransferCode()
-	err = vm_repo.New(versions.V1).UpdateWithParams(id, &model.VmUpdateParams{
+	err = vm_repo.New(version.V1).UpdateWithParams(id, &model.VmUpdateParams{
 		TransferUserID: &params.NewOwnerID,
 		TransferCode:   &code,
 	})
@@ -450,13 +450,13 @@ func (c *Client) UpdateOwner(id string, params *body.VmUpdateOwner) error {
 	}
 
 	if vm == nil {
-		log.Println("vm", id, "not found when updating owner. assuming it was deleted")
+		log.Println("VM", id, "not found when updating owner. Assuming it was deleted")
 		return nil
 	}
 
 	emptyString := ""
 
-	err = vm_repo.New(versions.V1).UpdateWithParams(id, &model.VmUpdateParams{
+	err = vm_repo.New(version.V1).UpdateWithParams(id, &model.VmUpdateParams{
 		OwnerID:        &params.NewOwnerID,
 		TransferCode:   &emptyString,
 		TransferUserID: &emptyString,
@@ -486,7 +486,7 @@ func (c *Client) UpdateOwner(id string, params *body.VmUpdateOwner) error {
 		return makeError(err)
 	}
 
-	log.Println("vm", id, "owner updated from", params.OldOwnerID, " to", params.NewOwnerID)
+	log.Println("VM", id, "owner updated from", params.OldOwnerID, " to", params.NewOwnerID)
 	return nil
 }
 
@@ -498,7 +498,7 @@ func (c *Client) ClearUpdateOwner(id string) error {
 		return fmt.Errorf("failed to clear vm owner update. details: %w", err)
 	}
 
-	deployment, err := vm_repo.New(versions.V1).GetByID(id)
+	deployment, err := vm_repo.New(version.V1).GetByID(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -512,7 +512,7 @@ func (c *Client) ClearUpdateOwner(id string) error {
 	}
 
 	emptyString := ""
-	err = vm_repo.New(versions.V1).UpdateWithParams(id, &model.VmUpdateParams{
+	err = vm_repo.New(version.V1).UpdateWithParams(id, &model.VmUpdateParams{
 		TransferUserID: &emptyString,
 		TransferCode:   &emptyString,
 	})
@@ -565,24 +565,24 @@ func (c *Client) DoCommand(id, command string) {
 	go func() {
 		vm, err := c.VM(id, nil)
 		if err != nil {
-			log.Println("failed to get vm", id, "when executing command", command, "details:", err)
+			log.Println("Failed to get vm", id, "when executing command", command, "details:", err)
 			return
 		}
 
 		if vm == nil {
-			log.Println("vm", id, "not found when executing command", command, ". assuming it was deleted")
+			log.Println("VM", id, "not found when executing command", command, ". Assuming it was deleted")
 			return
 		}
 
 		csID := vm.Subsystems.CS.VM.ID
 		if csID == "" {
-			log.Println("cs vm not setup when executing command", command, "for vm", id, ". assuming it was deleted")
+			log.Println("CS vm not setup when executing command", command, "for vm", id, ". Assuming it was deleted")
 			return
 		}
 
 		gpuID, err := gpu_repo.New().WithVM(vm.ID).GetID()
 		if err != nil {
-			log.Println("failed to get gpu id for vm", id, "when executing command", command, "details:", err)
+			log.Println("Failed to get gpu id for vm", id, "when executing command", command, "details:", err)
 			return
 		}
 
@@ -608,7 +608,7 @@ func (c *Client) StartActivity(id, activity string) error {
 		return sErrors.NewFailedToStartActivityError(reason)
 	}
 
-	err = vm_repo.New(versions.V1).AddActivity(id, activity)
+	err = vm_repo.New(version.V1).AddActivity(id, activity)
 	if err != nil {
 		return err
 	}
@@ -750,7 +750,7 @@ func (c *Client) CheckQuota(id, userID string, quota *model.Quotas, opts ...opts
 			return nil
 		}
 
-		vm, err := vm_repo.New(versions.V1).GetByID(id)
+		vm, err := vm_repo.New(version.V1).GetByID(id)
 		if err != nil {
 			return makeError(err)
 		}
@@ -799,7 +799,7 @@ func (c *Client) GetUsage(userID string) (*model.VmUsage, error) {
 
 	usage := &model.VmUsage{}
 
-	currentVms, err := vm_repo.New(versions.V1).RestrictToOwner(userID).List()
+	currentVms, err := vm_repo.New(version.V1).WithOwner(userID).List()
 	if err != nil {
 		return nil, makeError(err)
 	}
@@ -835,7 +835,7 @@ func (c *Client) GetExternalPortMapper(vmID string) (map[string]int, error) {
 	}
 
 	if vm == nil {
-		log.Println("vm", vmID, "not found when detaching getting external port mapper. assuming it was deleted")
+		log.Println("VM", vmID, "not found when detaching getting external port mapper. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -862,7 +862,7 @@ func (c *Client) GetHost(vmID string) (*model.Host, error) {
 	}
 
 	if vm == nil {
-		log.Println("vm", vmID, "not found when getting host. assuming it was deleted")
+		log.Println("VM", vmID, "not found when getting host. Assuming it was deleted")
 		return nil, nil
 	}
 

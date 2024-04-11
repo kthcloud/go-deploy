@@ -2,7 +2,7 @@ package model
 
 import (
 	"go-deploy/dto/v2/body"
-	"go-deploy/models/versions"
+	"go-deploy/models/version"
 	"go-deploy/utils"
 	"time"
 )
@@ -16,10 +16,15 @@ func (vm *VM) ToDTOv2(gpuLease *GpuLease, teams []string, sshConnectionString *s
 
 	var lease *body.VmGpuLease
 	if gpuLease != nil && gpuLease.IsActive() {
+		var expiresAt *time.Time
+		if gpuLease.IsActive() {
+			expiresAt = utils.NonZeroOrNil((*gpuLease.ActivatedAt).Add(time.Duration(gpuLease.LeaseDuration) * time.Hour))
+		}
+
 		lease = &body.VmGpuLease{
 			ID:         gpuLease.ID,
-			Name:       gpuLease.GroupName,
-			LeaseEndAt: (*gpuLease.ActivatedAt).Add(time.Duration(gpuLease.LeaseDuration) * time.Hour),
+			GpuGroupID: gpuLease.GpuGroupID,
+			ExpiresAt:  expiresAt,
 			IsExpired:  gpuLease.IsExpired(),
 		}
 	}
@@ -71,7 +76,7 @@ func (vm *VM) ToDTOv2(gpuLease *GpuLease, teams []string, sshConnectionString *s
 		GPU:                 lease,
 		SshPublicKey:        vm.SshPublicKey,
 		Teams:               teams,
-		Status:              vm.StatusMessage,
+		Status:              vm.Status,
 		SshConnectionString: sshConnectionString,
 	}
 }
@@ -84,7 +89,7 @@ func (p VmCreateParams) FromDTOv2(dto *body.VmCreate, fallbackZone *string) VmCr
 	p.RAM = dto.RAM
 	p.DiskSize = dto.DiskSize
 	p.PortMap = make(map[string]PortCreateParams)
-	p.Version = versions.V2
+	p.Version = version.V2
 
 	// Right now we only support one zone, since we need to make sure the cluster has KubeVirt installed
 	p.Zone = *fallbackZone
@@ -114,7 +119,6 @@ func (p VmCreateParams) FromDTOv2(dto *body.VmCreate, fallbackZone *string) VmCr
 // FromDTOv2 converts a body.VmUpdate to a UpdateParams.
 func (p VmUpdateParams) FromDTOv2(dto *body.VmUpdate) VmUpdateParams {
 	p.Name = dto.Name
-	p.SnapshotID = dto.SnapshotID
 	p.CpuCores = dto.CpuCores
 	p.RAM = dto.RAM
 
@@ -145,8 +149,8 @@ func (p VmUpdateParams) FromDTOv2(dto *body.VmUpdate) VmUpdateParams {
 	return p
 }
 
-// FromDTOv2 converts a dto.VmAction to a ActionParams.
-func (p VmActionParams) FromDTOv2(dto *body.VmAction) VmActionParams {
+// FromDTOv2 converts a dto.Action to a VmActionParams.
+func (p VmActionParams) FromDTOv2(dto *body.VmActionCreate) VmActionParams {
 	p.Action = dto.Action
 	return p
 }

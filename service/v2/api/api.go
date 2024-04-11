@@ -14,15 +14,18 @@ type VMs interface {
 	Update(id string, dtoVmUpdate *body.VmUpdate) error
 	Delete(id string) error
 
+	IsAccessible(id string) (bool, error)
+
 	CheckQuota(id, userID string, quota *model.Quotas, opts ...vmOpts.QuotaOpts) error
 	NameAvailable(name string) (bool, error)
 	SshConnectionString(id string) (*string, error)
 
-	DoAction(id string, action *body.VmAction) error
+	DoAction(id string, action *body.VmActionCreate) error
 
 	Snapshots() Snapshots
 	GPUs() GPUs
 	GpuLeases() GpuLeases
+	GpuGroups() GpuGroups
 
 	K8s() *k8s_service.Client
 }
@@ -40,8 +43,20 @@ type GPUs interface {
 }
 
 type GpuLeases interface {
-	//Get(leaseID string, opts ...vmOpts.GetGpuLeaseOpts) (*model.GpuLease, error)
+	Get(id string, opts ...vmOpts.GetGpuLeaseOpts) (*model.GpuLease, error)
+	GetByVmID(vmID string, opts ...vmOpts.GetGpuLeaseOpts) (*model.GpuLease, error)
 	List(opts ...vmOpts.ListGpuLeaseOpts) ([]model.GpuLease, error)
-	Create(leaseID, vmID string, userID, gpuGroupName string, opts ...vmOpts.CreateGpuLeaseOpts) error
-	//Delete(vmID, id string) error
+	Create(leaseID, userID string, dtoGpuLeaseCreate *body.GpuLeaseCreate) error
+	Update(id string, dtoGpuLeaseUpdate *body.GpuLeaseUpdate) error
+	Delete(id string) error
+
+	Count(opts ...vmOpts.ListGpuLeaseOpts) (int, error)
+
+	GetQueuePosition(id string) (int, error)
+}
+
+type GpuGroups interface {
+	Get(id string, opts ...vmOpts.GetGpuGroupOpts) (*model.GpuGroup, error)
+	List(opts ...vmOpts.ListGpuGroupOpts) ([]model.GpuGroup, error)
+	Exists(id string) (bool, error)
 }

@@ -5,11 +5,12 @@ import (
 	"fmt"
 	configModels "go-deploy/models/config"
 	"go-deploy/models/model"
-	"go-deploy/models/versions"
+	"go-deploy/models/version"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/db/resources/gpu_repo"
 	"go-deploy/pkg/db/resources/vm_port_repo"
 	"go-deploy/pkg/db/resources/vm_repo"
+	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems"
 	"go-deploy/pkg/subsystems/cs/commands"
 	cErrors "go-deploy/pkg/subsystems/cs/errors"
@@ -17,7 +18,6 @@ import (
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/resources"
 	"golang.org/x/exp/slices"
-	"log"
 	"time"
 )
 
@@ -25,7 +25,7 @@ import (
 //
 // This include creating the VM and port-forwarding rules.
 func (c *Client) Create(id string, params *model.VmCreateParams) error {
-	log.Println("setting up cs for", params.Name)
+	log.Println("Setting up cs for", params.Name)
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to setup cs for vm %s. details: %w", params.Name, err)
@@ -102,7 +102,7 @@ func (c *Client) Create(id string, params *model.VmCreateParams) error {
 // This includes deleting the VM and port-forwarding rules.
 // Snapshots are automatically deleted by when the VM is deleted.
 func (c *Client) Delete(id string) error {
-	log.Println("deleting cs for", id)
+	log.Println("Deleting cs for", id)
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete cs for vm %s. details: %w", id, err)
@@ -369,7 +369,7 @@ func (c *Client) Repair(id string) error {
 
 		for _, snapshot := range snapshots {
 			if snapshot.State == "Error" {
-				log.Println("deleting errored snapshot", snapshot.ID, "for cs vm", snapshot.VmID)
+				log.Println("Deleting errored snapshot", snapshot.ID, "for cs vm", snapshot.VmID)
 				err = csc.DeleteSnapshot(snapshot.ID)
 				if err != nil {
 					return makeError(err)
@@ -391,7 +391,7 @@ func (c *Client) Repair(id string) error {
 					deleteSnapshot = previous
 				}
 
-				log.Println("deleting redundant old snapshot", deleteSnapshot.ID, "for cs vm", deleteSnapshot.VmID)
+				log.Println("Deleting redundant old snapshot", deleteSnapshot.ID, "for cs vm", deleteSnapshot.VmID)
 				err = csc.DeleteSnapshot(previous.ID)
 				if err != nil {
 					return makeError(err)
@@ -403,7 +403,7 @@ func (c *Client) Repair(id string) error {
 
 		for _, name := range required {
 			if _, ok := snapshotMap[name]; !ok {
-				log.Println("creating missing required snapshot", name, "for vm", vm.ID)
+				log.Println("Creating missing required snapshot", name, "for vm", vm.ID)
 				err = c.CreateSnapshot(id, &model.CreateSnapshotParams{
 					Name:        name,
 					UserCreated: false,
@@ -622,14 +622,14 @@ func (c *Client) stopVmIfRunning(id string) (func(), error) {
 			if gpuID, err := gpu_repo.New().WithVM(vm.ID).GetID(); gpuID != nil {
 				requiredHost, err = c.GetRequiredHost(*gpuID)
 				if err != nil {
-					log.Println("failed to get required host for vm", vm.Name, ". details:", err)
+					log.Println("Failed to get required host for vm", vm.Name, ". details:", err)
 					return
 				}
 			}
 
 			err = csc.DoVmCommand(vm.Subsystems.CS.VM.ID, requiredHost, commands.Start)
 			if err != nil {
-				log.Println("failed to start vm", vm.Name, ". details:", err)
+				log.Println("Failed to start vm", vm.Name, ". details:", err)
 				return
 			}
 		}
@@ -640,9 +640,9 @@ func (c *Client) stopVmIfRunning(id string) (func(), error) {
 func dbFunc(vmID, key string) func(interface{}) error {
 	return func(data interface{}) error {
 		if data == nil {
-			return vm_repo.New(versions.V1).DeleteSubsystem(vmID, "cs."+key)
+			return vm_repo.New(version.V1).DeleteSubsystem(vmID, "cs."+key)
 		}
-		return vm_repo.New(versions.V1).SetSubsystem(vmID, "cs."+key, data)
+		return vm_repo.New(version.V1).SetSubsystem(vmID, "cs."+key, data)
 	}
 }
 

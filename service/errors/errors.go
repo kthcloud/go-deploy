@@ -54,6 +54,9 @@ var (
 	// This is most likely caused by a race-condition between a some model call and a deletion call.
 	DeploymentNotFoundErr = fmt.Errorf("deployment not found")
 
+	// DeploymentHasNotCiConfigErr is returned when the deployment does not have a CI config.
+	DeploymentHasNotCiConfigErr = fmt.Errorf("deployment does not have a CI config")
+
 	// MainAppNotFoundErr is returned when the main app is not found.
 	// This could be caused by stale data in the database.
 	MainAppNotFoundErr = fmt.Errorf("main app not found")
@@ -74,14 +77,26 @@ var (
 	// VmNotCreatedErr is returned when the vm is not created.
 	VmNotCreatedErr = fmt.Errorf("vm not created")
 
-	// GpuNotFoundErr is returned when the gpu_repo is not found.
-	GpuNotFoundErr = fmt.Errorf("gpu_repo not found")
+	// GpuNotFoundErr is returned when the gpu is not found.
+	GpuNotFoundErr = fmt.Errorf("gpu not found")
 
-	// GpuAlreadyAttachedErr is returned when the gpu_repo is already attached to another VM.
-	GpuAlreadyAttachedErr = fmt.Errorf("gpu_repo already attached")
+	// GpuAlreadyAttachedErr is returned when the GPU is already attached to another VM.
+	GpuAlreadyAttachedErr = fmt.Errorf("gpu already attached")
 
-	// GpuLeaseNotActive is returned when the GPU lease is not active.
-	GpuLeaseNotActiveErr = fmt.Errorf("gpu_repo lease not active")
+	// GpuLeaseAlreadyExistsErr is returned when a GPU lease already exists for a user.
+	GpuLeaseAlreadyExistsErr = fmt.Errorf("gpu lease already exists")
+
+	// GpuLeaseNotActiveErr is returned when the GPU lease is not active.
+	GpuLeaseNotActiveErr = fmt.Errorf("gpu lease not active")
+
+	// GpuLeaseNotAssignedErr is returned when the GPU lease is not assigned.
+	GpuLeaseNotAssignedErr = fmt.Errorf("gpu lease not assigned")
+
+	// GpuLeaseNotFoundErr is returned when the GPU lease is not found.
+	GpuLeaseNotFoundErr = fmt.Errorf("gpu lease not found")
+
+	// GpuGroupNotFoundErr is returned when the GPU group is not found.
+	GpuGroupNotFoundErr = fmt.Errorf("gpu group not found")
 
 	// VmTooLargeErr is returned when the VM is too large to be started on a specific host.
 	// Something that is required when using GPUs.

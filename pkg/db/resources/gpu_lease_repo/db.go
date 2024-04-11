@@ -8,14 +8,17 @@ import (
 	"time"
 )
 
-func (client *Client) Create(id, vmID, userID, groupName string, leaseDuration float64) error {
+func (client *Client) Create(id, userID, groupName string, leaseDuration float64) error {
+
 	lease := model.GpuLease{
 		ID:            id,
-		GroupName:     groupName,
-		VmID:          vmID,
+		GpuGroupID:    groupName,
+		VmID:          nil,
 		UserID:        userID,
 		LeaseDuration: leaseDuration,
 		ActivatedAt:   nil,
+		AssignedAt:    nil,
+		ExpiredAt:     nil,
 		CreatedAt:     time.Now(),
 	}
 
@@ -30,4 +33,37 @@ func (client *Client) Create(id, vmID, userID, groupName string, leaseDuration f
 	}
 
 	return nil
+}
+
+func (client *Client) UpdateWithParams(id string, params *model.GpuLeaseUpdateParams) error {
+	update := bson.D{}
+
+	db.AddIfNotNil(&update, "activatedAt", params.ActivatedAt)
+	db.AddIfNotNil(&update, "vmId", params.VmID)
+
+	return client.SetWithBsonByID(id, update)
+}
+
+func (client *Client) Release() error {
+	return client.SetWithBSON(bson.D{{"vmId", nil}})
+}
+
+func (client *Client) ReleaseByID(id string) error {
+	return client.SetWithBsonByID(id, bson.D{{"vmId", nil}})
+}
+
+func (client *Client) SetExpiry(id string, expiresAt time.Time) error {
+	return client.SetWithBsonByID(id, bson.D{{"expiresAt", expiresAt}})
+}
+
+func (client *Client) MarkExpired(id string) error {
+	return client.SetWithBsonByID(id, bson.D{{"expiredAt", time.Now()}})
+}
+
+func (client *Client) MarkAssigned(id string) error {
+	return client.SetWithBsonByID(id, bson.D{{"assignedAt", time.Now()}})
+}
+
+func (client *Client) MarkActivated(id string) error {
+	return client.SetWithBsonByID(id, bson.D{{"activatedAt", time.Now()}})
 }

@@ -1,13 +1,16 @@
 package k8s_service
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	configModels "go-deploy/models/config"
 	"go-deploy/models/model"
-	"go-deploy/models/versions"
+	"go-deploy/models/version"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/db/resources/vm_port_repo"
 	"go-deploy/pkg/db/resources/vm_repo"
+	"go-deploy/pkg/log"
 	kErrors "go-deploy/pkg/subsystems/k8s/errors"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/service/constants"
@@ -15,28 +18,25 @@ import (
 	"go-deploy/service/resources"
 	"go-deploy/service/v2/vms/opts"
 	"golang.org/x/exp/slices"
-	"log"
 )
 
 // Create sets up K8s for a VM.
 func (c *Client) Create(id string, params *model.VmCreateParams) error {
-	log.Println("setting up k8s for", params.Name)
+	log.Println("Setting up K8s for", params.Name)
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to setup k8s for vm %s. details: %w", params.Name, err)
 	}
 
-	vm, kc, g, err := c.Get(OptsAll(id))
+	vm, kc, g, err := c.Get(OptsAll(id, opts.ExtraOpts{ExtraSshKeys: []string{config.Config.VM.AdminSshPublicKey}}))
 	if err != nil {
 		if errors.Is(err, sErrors.VmNotFoundErr) {
-			log.Println("vm not found when setting up k8s for", params.Name, ". assuming it was deleted")
+			log.Println("VM not found when setting up k8s for", params.Name, ". Assuming it was deleted")
 			return nil
 		}
 
 		return makeError(err)
 	}
-
-	g.WithAuthorizedKeys(config.Config.VM.AdminSshPublicKey)
 
 	// Namespace
 	namespace := g.Namespace()
@@ -158,7 +158,7 @@ func (c *Client) Create(id string, params *model.VmCreateParams) error {
 
 // Delete deletes the K8s setup for a VM.
 func (c *Client) Delete(id string, overwriteUserID ...string) error {
-	log.Println("deleting k8s for", id)
+	log.Println("Deleting K8s for", id)
 
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to delete k8s for deployment %s. details: %w", id, err)
@@ -172,7 +172,7 @@ func (c *Client) Delete(id string, overwriteUserID ...string) error {
 	vm, kc, _, err := c.Get(OptsNoGenerator(id, opts.ExtraOpts{UserID: userID}))
 	if err != nil {
 		if errors.Is(err, sErrors.VmNotFoundErr) {
-			log.Println("vm not found when deleting k8s for", id, ". assuming it was deleted")
+			log.Println("VM not found when deleting k8s for", id, ". Assuming it was deleted")
 			return nil
 		}
 
@@ -301,17 +301,15 @@ func (c *Client) Repair(id string) error {
 		return fmt.Errorf("failed to repair k8s %s. details: %w", id, err)
 	}
 
-	vm, kc, g, err := c.Get(OptsAll(id))
+	vm, kc, g, err := c.Get(OptsAll(id, opts.ExtraOpts{ExtraSshKeys: []string{config.Config.VM.AdminSshPublicKey}}))
 	if err != nil {
 		if errors.Is(err, sErrors.VmNotFoundErr) {
-			log.Println("vm not found when deleting k8s for", id, ". assuming it was deleted")
+			log.Println("VM not found when deleting k8s for", id, ". Assuming it was deleted")
 			return nil
 		}
 
 		return makeError(err)
 	}
-
-	g.WithAuthorizedKeys(config.Config.VM.AdminSshPublicKey)
 
 	namespace := g.Namespace()
 	if namespace != nil {
@@ -486,12 +484,10 @@ func (c *Client) Repair(id string) error {
 }
 
 // AttachGPU attaches a GPU to a VM.
-//
-// If the lease is not active or the VM is already attached to a GPU, an error is returned.
 // If there is an existing attached GPU, it will be replaced.
 func (c *Client) AttachGPU(vmID, groupName string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to attach gpu_repo %s to vm %s. details: %w", groupName, vmID, err)
+		return fmt.Errorf("failed to attach gpu %s to vm %s. details: %w", groupName, vmID, err)
 	}
 
 	vm, kc, _, err := c.Get(OptsAll(vmID))
@@ -512,6 +508,45 @@ func (c *Client) AttachGPU(vmID, groupName string) error {
 		return makeError(err)
 	}
 
+	// This requires as a restart to take effect
+	err = c.DoAction(vmID, &model.VmActionParams{Action: model.ActionRestartIfRunning})
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
+}
+
+// DetachGPU detaches a GPU from a VM.
+func (c *Client) DetachGPU(vmID string) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to detach gpu from vm %s. details: %w", vmID, err)
+	}
+
+	vm, kc, _, err := c.Get(OptsAll(vmID))
+	if vm == nil {
+		return makeError(sErrors.VmNotFoundErr)
+	}
+
+	// Remove the GPU from the VM
+	k8sVM := vm.Subsystems.K8s.VmMap[vm.Name]
+	k8sVM.GPUs = []string{}
+	vm.Subsystems.K8s.VmMap[vm.Name] = k8sVM
+
+	err = resources.SsUpdater(kc.UpdateVM).
+		WithDbFunc(dbFunc(vmID, "vmMap."+vm.Name)).
+		WithPublic(&k8sVM).
+		Exec()
+	if err != nil {
+		return makeError(err)
+	}
+
+	// This requires as a restart to take effect
+	err = c.DoAction(vmID, &model.VmActionParams{Action: model.ActionRestartIfRunning})
+	if err != nil {
+		return makeError(err)
+	}
+
 	return nil
 }
 
@@ -524,7 +559,7 @@ func (c *Client) DoAction(id string, action *model.VmActionParams) error {
 	_, kc, g, err := c.Get(OptsAll(id))
 	if err != nil {
 		if errors.Is(err, sErrors.VmNotFoundErr) {
-			log.Println("vm not found when performing action", action.Action, "on", id, ". assuming it was deleted")
+			log.Println("VM not found when performing action", action.Action, "on", id, ". Assuming it was deleted")
 			return nil
 		}
 
@@ -584,6 +619,12 @@ func (c *Client) DoAction(id string, action *model.VmActionParams) error {
 			if err != nil {
 				return makeError(err)
 			}
+		case model.ActionRestartIfRunning:
+			if !k8sVM.Running {
+				continue
+			}
+
+			return c.DoAction(id, &model.VmActionParams{Action: model.ActionRestart})
 		}
 	}
 
@@ -616,12 +657,57 @@ func (c *Client) EnsureOwner(id, oldOwnerID string) error {
 	return nil
 }
 
+// Synchronize synchronizes GPU groups with the backend.
+// This updates the KubeVirt allowed PCI devices.
+func (c *Client) Synchronize(zoneName string, gpuGroups []model.GpuGroup) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to synchronize gpu groups. details: %w", err)
+	}
+
+	// Ensure zone has KubeVirt capabilities
+	zone := config.Config.Deployment.GetZone(zoneName)
+	if zone == nil {
+		return makeError(sErrors.ZoneNotFoundErr)
+	}
+
+	_, kc, _, err := c.Get(OptsOnlyClient(zoneName))
+	if err != nil {
+		return makeError(err)
+	}
+
+	var devices k8sModels.PermittedHostDevices
+	for _, gpuGroup := range gpuGroups {
+		devices.PciHostDevices = append(devices.PciHostDevices, k8sModels.PciHostDevice{
+			PciVendorSelector: k8sModels.CreatePciVendorSelector(gpuGroup.VendorID, gpuGroup.DeviceID),
+			ResourceName:      gpuGroup.Name,
+		})
+	}
+
+	err = kc.SetPermittedHostDevices(devices)
+	if err != nil {
+		return makeError(err)
+	}
+
+	return nil
+}
+
+// SetupStatusWatcher sets up a status watcher for a zone.
+// For every status change, it triggers the callback.
+func (c *Client) SetupStatusWatcher(ctx context.Context, zone *configModels.DeploymentZone, resourceType string, callback func(string, string)) error {
+	_, kc, _, err := c.Get(OptsOnlyClient(zone.Name))
+	if err != nil {
+		return err
+	}
+
+	return kc.SetupStatusWatcher(ctx, resourceType, callback)
+}
+
 // dbFunc returns a function that updates the K8s subsystem.
 func dbFunc(id, key string) func(interface{}) error {
 	return func(data interface{}) error {
 		if data == nil {
-			return vm_repo.New(versions.V2).DeleteSubsystem(id, "k8s."+key)
+			return vm_repo.New(version.V2).DeleteSubsystem(id, "k8s."+key)
 		}
-		return vm_repo.New(versions.V2).SetSubsystem(id, "k8s."+key, data)
+		return vm_repo.New(version.V2).SetSubsystem(id, "k8s."+key, data)
 	}
 }

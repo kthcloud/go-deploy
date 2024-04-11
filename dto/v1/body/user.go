@@ -37,7 +37,6 @@ type UserRead struct {
 	LastName   string      `json:"lastName"`
 	Email      string      `json:"email"`
 	PublicKeys []PublicKey `json:"publicKeys"`
-	Onboarded  bool        `json:"onboarded"`
 
 	Role  Role `json:"role"`
 	Admin bool `json:"admin"`
@@ -58,5 +57,4 @@ type UserReadDiscovery struct {
 
 type UserUpdate struct {
 	PublicKeys *[]PublicKey `json:"publicKeys,omitempty" bson:"publicKeys,omitempty" binding:"omitempty,min=0,max=1000,dive"`
-	Onboarded  *bool        `json:"onboarded,omitempty" bson:"onboarded,omitempty" binding:"omitempty,boolean"`
 }

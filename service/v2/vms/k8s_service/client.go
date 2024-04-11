@@ -8,9 +8,10 @@ import (
 	"go-deploy/pkg/subsystems/k8s"
 	"go-deploy/service/core"
 	sErrors "go-deploy/service/errors"
-	"go-deploy/service/resources"
+	"go-deploy/service/generators"
 	"go-deploy/service/v2/vms/client"
 	"go-deploy/service/v2/vms/opts"
+	"go-deploy/service/v2/vms/resources"
 )
 
 // OptsAll returns the options required to get all the service tools, ie. VM, client and generator.
@@ -42,27 +43,49 @@ func OptsNoGenerator(vmID string, extraOpts ...opts.ExtraOpts) *opts.Opts {
 	}
 }
 
+// OptsOnlyClient returns the options required to get only the client.
+func OptsOnlyClient(zone string, extraOpts ...opts.ExtraOpts) *opts.Opts {
+	var eo opts.ExtraOpts
+	eo.Zone = config.Config.Deployment.GetZone(zone)
+	if len(extraOpts) > 0 {
+		eo = extraOpts[0]
+	}
+
+	return &opts.Opts{
+		Client:    true,
+		ExtraOpts: eo,
+	}
+}
+
 // Client is the client for the Harbor service.
 // It contains a Client, which is used to lazy-load and cache data.
 type Client struct {
 	client.BaseClient[Client]
 }
 
-// New creates a new Client.
-func New(cache *core.Cache) *Client {
-	c := &Client{BaseClient: client.NewBaseClient[Client](cache)}
+// New creates a new Client and injects the cache.
+// If a cache is not supplied it will create a new one.
+func New(cache ...*core.Cache) *Client {
+	var ca *core.Cache
+	if len(cache) > 0 {
+		ca = cache[0]
+	} else {
+		ca = core.NewCache()
+	}
+
+	c := &Client{BaseClient: client.NewBaseClient[Client](ca)}
 	c.BaseClient.SetParent(c)
 	return c
 }
 
-// Get returns the deployment, client, and generator.
+// Get returns the VM, client, and generator.
 //
 // Depending on the options specified, some return values may be nil.
 // This is useful when you don't always need all the resources.
-func (c *Client) Get(opts *opts.Opts) (*model.VM, *k8s.Client, *resources.K8sGenerator, error) {
+func (c *Client) Get(opts *opts.Opts) (*model.VM, *k8s.Client, generators.K8sGenerator, error) {
 	var vm *model.VM
 	var kc *k8s.Client
-	var g *resources.K8sGenerator
+	var g generators.K8sGenerator
 	var err error
 
 	if opts.VmID != "" {
@@ -72,7 +95,7 @@ func (c *Client) Get(opts *opts.Opts) (*model.VM, *k8s.Client, *resources.K8sGen
 		}
 
 		if vm == nil {
-			return nil, nil, nil, sErrors.DeploymentNotFoundErr
+			return nil, nil, nil, sErrors.VmNotFoundErr
 		}
 	}
 
@@ -88,7 +111,7 @@ func (c *Client) Get(opts *opts.Opts) (*model.VM, *k8s.Client, *resources.K8sGen
 		}
 
 		if kc == nil {
-			return nil, nil, nil, sErrors.DeploymentNotFoundErr
+			return nil, nil, nil, sErrors.VmNotFoundErr
 		}
 	}
 
@@ -98,9 +121,9 @@ func (c *Client) Get(opts *opts.Opts) (*model.VM, *k8s.Client, *resources.K8sGen
 			return nil, nil, nil, sErrors.ZoneNotFoundErr
 		}
 
-		g = c.Generator(vm, kc, zone)
+		g = c.Generator(vm, kc, zone, opts.ExtraOpts.ExtraSshKeys)
 		if g == nil {
-			return nil, nil, nil, sErrors.DeploymentNotFoundErr
+			return nil, nil, nil, sErrors.VmNotFoundErr
 		}
 	}
 
@@ -113,7 +136,7 @@ func (c *Client) Client(zone *configModels.DeploymentZone) (*k8s.Client, error) 
 }
 
 // Generator returns the K8s generator.
-func (c *Client) Generator(vm *model.VM, client *k8s.Client, zone *configModels.DeploymentZone) *resources.K8sGenerator {
+func (c *Client) Generator(vm *model.VM, client *k8s.Client, zone *configModels.DeploymentZone, extraSshKeys []string) generators.K8sGenerator {
 	if vm == nil {
 		panic("vm is nil")
 	}
@@ -126,7 +149,7 @@ func (c *Client) Generator(vm *model.VM, client *k8s.Client, zone *configModels.
 		panic("zone is nil")
 	}
 
-	return resources.PublicGenerator().WithVM(vm).WithDeploymentZone(zone).K8s(client)
+	return resources.K8s(vm, zone, client, getNamespaceName(zone), extraSshKeys)
 }
 
 // getNamespaceName returns the namespace name

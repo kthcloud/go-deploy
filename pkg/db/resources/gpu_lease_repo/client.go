@@ -5,14 +5,15 @@ import (
 	"go-deploy/pkg/db"
 	"go-deploy/pkg/db/resources/base_clients"
 	"go.mongodb.org/mongo-driver/bson"
+	"time"
 )
 
-// Client is used to manage GPUs in the database.
+// Client is used to manage GPU leases in the database.
 type Client struct {
 	base_clients.ResourceClient[model.GpuLease]
 }
 
-// New returns a new GPU client.
+// New returns a new GPU lease client.
 func New() *Client {
 	return &Client{
 		ResourceClient: base_clients.ResourceClient[model.GpuLease]{
@@ -38,9 +39,30 @@ func (client *Client) WithGroupName(groupName string) *Client {
 	return client
 }
 
-// WithVM adds a filter to the client to only include leases with the given VM ID.
-func (client *Client) WithVM(vmID string) *Client {
+// WithVmID adds a filter to the client to only include leases with the given VM ID.
+func (client *Client) WithVmID(vmID string) *Client {
 	client.ResourceClient.AddExtraFilter(bson.D{{"vmId", vmID}})
+
+	return client
+}
+
+// WithGpuGroupID adds a filter to the client to only include leases with the given GPU group ID.
+func (client *Client) WithGpuGroupID(gpuGroupID string) *Client {
+	client.ResourceClient.AddExtraFilter(bson.D{{"gpuGroupId", gpuGroupID}})
+
+	return client
+}
+
+// CreatedBefore adds a filter to the client to only include leases created before the given time.
+func (client *Client) CreatedBefore(createdBefore time.Time) *Client {
+	client.ResourceClient.AddExtraFilter(bson.D{{"createdAt", bson.D{{"$lt", createdBefore}}}})
+
+	return client
+}
+
+// WithUserID adds a filter to the client to only include leases with the given user ID.
+func (client *Client) WithUserID(userID string) *Client {
+	client.ResourceClient.AddExtraFilter(bson.D{{"userId", userID}})
 
 	return client
 }

@@ -1,21 +1,19 @@
 package main
 
 import (
-	"go-deploy/pkg/app"
-	"log"
+	"go-deploy/cmd"
 	"os"
 )
 
 func main() {
-	options := app.ParseFlags()
+	options := cmd.ParseFlags()
 
-	deployApp := app.Create(options)
+	deployApp := cmd.Create(options)
 	if deployApp == nil {
-		log.Fatalln("failed to start app")
+		panic("failed to start app")
 	}
 	defer deployApp.Stop()
 
 	quit := make(chan os.Signal)
 	<-quit
-	log.Println("received shutdown signal")
 }

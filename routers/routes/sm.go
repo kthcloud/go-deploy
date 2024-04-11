@@ -1,8 +1,6 @@
 package routes
 
-import (
-	"go-deploy/routers/api/v1/v1_sm"
-)
+import v1 "go-deploy/routers/api/v1"
 
 const (
 	SMsPath = "/v1/storageManagers"
@@ -17,8 +15,8 @@ func SmRoutes() *SmRoutingGroup {
 
 func (group *SmRoutingGroup) PrivateRoutes() []Route {
 	return []Route{
-		{Method: "GET", Pattern: SMsPath, HandlerFunc: v1_sm.ListSMs},
-		{Method: "GET", Pattern: SmPath, HandlerFunc: v1_sm.GetSM},
-		{Method: "DELETE", Pattern: SmPath, HandlerFunc: v1_sm.DeleteSM},
+		{Method: "GET", Pattern: SMsPath, HandlerFunc: v1.ListSMs},
+		{Method: "GET", Pattern: SmPath, HandlerFunc: v1.GetSM},
+		{Method: "DELETE", Pattern: SmPath, HandlerFunc: v1.DeleteSM},
 	}
 }

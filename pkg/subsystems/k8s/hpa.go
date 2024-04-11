@@ -3,9 +3,9 @@ package k8s
 import (
 	"context"
 	"fmt"
+	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems/k8s/models"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"log"
 	"time"
 )
 
@@ -16,7 +16,7 @@ func (client *Client) ReadHPA(name string) (*models.HpaPublic, error) {
 	}
 
 	if name == "" {
-		log.Println("no name supplied when reading k8s hpa. assuming it was deleted")
+		log.Println("No name supplied when reading k8s hpa. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -65,7 +65,7 @@ func (client *Client) UpdateHPA(public *models.HpaPublic) (*models.HpaPublic, er
 	}
 
 	if public.Name == "" {
-		log.Println("no name supplied when updating k8s hpa. assuming it was deleted")
+		log.Println("No name supplied when updating k8s hpa. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -78,7 +78,7 @@ func (client *Client) UpdateHPA(public *models.HpaPublic) (*models.HpaPublic, er
 		return models.CreateHpaPublicFromRead(hpa), nil
 	}
 
-	log.Println("k8s hpa", public.Name, "not found when updating. assuming it was deleted")
+	log.Println("K8s hpa", public.Name, "not found when updating. Assuming it was deleted")
 	return nil, nil
 }
 
@@ -89,7 +89,7 @@ func (client *Client) DeleteHPA(name string) error {
 	}
 
 	if name == "" {
-		log.Println("no name supplied when deleting k8s hpa. assuming it was deleted")
+		log.Println("No name supplied when deleting k8s hpa. Assuming it was deleted")
 		return nil
 	}
 

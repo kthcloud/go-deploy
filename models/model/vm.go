@@ -31,8 +31,15 @@ type VM struct {
 	Subsystems Subsystems `bson:"subsystems"`
 	Specs      Specs      `bson:"specs"`
 
-	StatusCode    int    `bson:"statusCode"`
+	// StatusCode
+	// Deprecated use Status instead
+	StatusCode int `bson:"statusCode"`
+	// StatusMessage
+	// Deprecated use Status instead
 	StatusMessage string `bson:"statusMessage"`
+	// Status is the current status of a VM instance
+	// It is set by the status updater worker
+	Status string `bson:"status"`
 
 	Transfer *VmTransfer `bson:"transfer,omitempty"`
 }

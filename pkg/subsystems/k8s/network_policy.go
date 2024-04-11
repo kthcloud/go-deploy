@@ -3,9 +3,9 @@ package k8s
 import (
 	"context"
 	"fmt"
+	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems/k8s/models"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"log"
 	"time"
 )
 
@@ -15,7 +15,7 @@ func (client *Client) ReadNetworkPolicy(name string) (*models.NetworkPolicyPubli
 	}
 
 	if name == "" {
-		log.Println("no name supplied when reading k8s network policy. assuming it was deleted")
+		log.Println("No name supplied when reading k8s network policy. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -62,7 +62,7 @@ func (client *Client) UpdateNetworkPolicy(public *models.NetworkPolicyPublic) (*
 	}
 
 	if public.Name == "" {
-		log.Println("no name supplied when updating k8s network policy. assuming it was deleted")
+		log.Println("No name supplied when updating k8s network policy. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -75,7 +75,7 @@ func (client *Client) UpdateNetworkPolicy(public *models.NetworkPolicyPublic) (*
 		return models.CreateNetworkPolicyPublicFromRead(res), nil
 	}
 
-	log.Println("k8s network policy", public.Name, "not found when updating. assuming it was deleted")
+	log.Println("K8s network policy", public.Name, "not found when updating. Assuming it was deleted")
 	return nil, nil
 }
 
@@ -85,7 +85,7 @@ func (client *Client) DeleteNetworkPolicy(name string) error {
 	}
 
 	if name == "" {
-		log.Println("no name supplied when deleting k8s network policy. assuming it was deleted")
+		log.Println("No name supplied when deleting k8s network policy. Assuming it was deleted")
 		return nil
 	}
 

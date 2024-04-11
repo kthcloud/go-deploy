@@ -2,8 +2,8 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
+	v1 "go-deploy/routers/api/v1"
 	"go-deploy/routers/api/v1/middleware"
-	"go-deploy/routers/api/v1/v1_deployment"
 )
 
 const (
@@ -21,21 +21,22 @@ func DeploymentRoutes() *DeploymentRoutingGroup { return &DeploymentRoutingGroup
 
 func (group *DeploymentRoutingGroup) PrivateRoutes() []Route {
 	return []Route{
-		{Method: "GET", Pattern: DeploymentsPath, HandlerFunc: v1_deployment.List},
+		{Method: "GET", Pattern: DeploymentsPath, HandlerFunc: v1.ListDeployments},
 
-		{Method: "GET", Pattern: DeploymentPath, HandlerFunc: v1_deployment.Get},
-		{Method: "POST", Pattern: DeploymentsPath, HandlerFunc: v1_deployment.Create, Middleware: []gin.HandlerFunc{middleware.CreateSM()}},
-		{Method: "POST", Pattern: DeploymentPath, HandlerFunc: v1_deployment.Update},
-		{Method: "DELETE", Pattern: DeploymentPath, HandlerFunc: v1_deployment.Delete},
+		{Method: "GET", Pattern: DeploymentPath, HandlerFunc: v1.GetDeployment},
+		{Method: "POST", Pattern: DeploymentsPath, HandlerFunc: v1.CreateDeployment,
+			Middleware: []gin.HandlerFunc{middleware.CreateSM()}},
+		{Method: "POST", Pattern: DeploymentPath, HandlerFunc: v1.UpdateDeployment},
+		{Method: "DELETE", Pattern: DeploymentPath, HandlerFunc: v1.DeleteDeployment},
 
-		{Method: "GET", Pattern: DeploymentCiConfigPath, HandlerFunc: v1_deployment.GetCiConfig},
-		{Method: "POST", Pattern: DeploymentCommandPath, HandlerFunc: v1_deployment.DoCommand},
-		{Method: "GET", Pattern: DeploymentLogsPath, HandlerFunc: v1_deployment.GetLogsSSE, Middleware: []gin.HandlerFunc{middleware.SseSetup()}},
+		{Method: "GET", Pattern: DeploymentCiConfigPath, HandlerFunc: v1.GetCiConfig},
+		{Method: "POST", Pattern: DeploymentCommandPath, HandlerFunc: v1.DoDeploymentCommand},
+		{Method: "GET", Pattern: DeploymentLogsPath, HandlerFunc: v1.GetLogs, Middleware: []gin.HandlerFunc{middleware.SseSetup()}},
 	}
 }
 
 func (group *DeploymentRoutingGroup) HookRoutes() []Route {
 	return []Route{
-		{Method: "POST", Pattern: DeploymentHarborHookPath, HandlerFunc: v1_deployment.HandleHarborHook},
+		{Method: "POST", Pattern: DeploymentHarborHookPath, HandlerFunc: v1.HandleHarborHook},
 	}
 }

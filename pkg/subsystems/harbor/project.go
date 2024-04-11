@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	harborErrors "github.com/mittwald/goharbor-client/v5/apiv2/pkg/errors"
+	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems/harbor/models"
-	"log"
 	"strconv"
 	"strings"
 )
@@ -18,7 +18,7 @@ func (client *Client) ReadProject(id int) (*models.ProjectPublic, error) {
 	}
 
 	if id == 0 {
-		log.Println("id not supplied when reading harbor project. assuming it was deleted")
+		log.Println("ID not supplied when reading harbor project. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -76,7 +76,7 @@ func (client *Client) UpdateProject(public *models.ProjectPublic) (*models.Proje
 	}
 
 	if public.ID == 0 {
-		log.Println("id not supplied when updating harbor project. assuming it was deleted")
+		log.Println("ID not supplied when updating harbor project. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -106,7 +106,7 @@ func (client *Client) UpdateProject(public *models.ProjectPublic) (*models.Proje
 		return project, nil
 	}
 
-	log.Println("harbor project", public.Name, "not found when updating. assuming it was deleted")
+	log.Println("Harbor project", public.Name, "not found when updating. Assuming it was deleted")
 	return nil, nil
 }
 
@@ -117,7 +117,7 @@ func (client *Client) DeleteProject(id int) error {
 	}
 
 	if id == 0 {
-		log.Println("id not supplied when deleting harbor project. assuming it was deleted")
+		log.Println("ID not supplied when deleting harbor project. Assuming it was deleted")
 		return nil
 	}
 

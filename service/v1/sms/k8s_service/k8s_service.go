@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"go-deploy/models/model"
 	"go-deploy/pkg/db/resources/sm_repo"
+	"go-deploy/pkg/log"
 	kErrors "go-deploy/pkg/subsystems/k8s/errors"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/service/constants"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/resources"
 	"golang.org/x/exp/slices"
-	"log"
 )
 
 // Create creates the storage manager.
@@ -133,7 +133,7 @@ func (c *Client) Delete(id string) error {
 		return fmt.Errorf("failed to delete storage manager in k8s. details: %w", err)
 	}
 
-	log.Println("deleting k8s for storage manager", id)
+	log.Println("Deleting K8s for storage manager", id)
 
 	sm, kc, _, err := c.Get(OptsNoGenerator(id))
 	if err != nil {

@@ -19,6 +19,11 @@ func IsNotFoundErr(err error) bool {
 	return false
 }
 
+// IsHasBeenModifiedErr returns true if the error is a Kubernetes HasBeenModified error.
+func IsHasBeenModifiedErr(err error) bool {
+	return strings.Contains(err.Error(), "has been modified; please apply your changes to the latest version and try again")
+}
+
 // IsImmutabilityErr returns true if the error is a Kubernetes Immutability error.
 func IsImmutabilityErr(err error) bool {
 	return strings.Contains(err.Error(), "field is immutable")

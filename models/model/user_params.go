@@ -11,8 +11,4 @@ type UserCreateParams struct {
 
 type UserUpdateParams struct {
 	PublicKeys *[]PublicKey
-
-	// Onboarded
-	// Deprecated: This field is deprecated and will be removed in the future.
-	Onboarded *bool
 }

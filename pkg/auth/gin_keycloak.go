@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"go-deploy/models/mode"
 	"go-deploy/pkg/config"
 	"io/ioutil"
 	"math/big"
@@ -297,7 +298,7 @@ func authChain(kcConfig KeycloakConfig, accessCheckFunctions ...AccessCheckFunct
 		go func() {
 			tokenContainer, ok := getTokenContainer(ctx, kcConfig)
 			if !ok {
-				if config.Config.TestMode {
+				if config.Config.Mode == mode.Test {
 					testUserID := ctx.GetHeader("go-deploy-test-user")
 					if testUserID != "" {
 						if testTokenContainer := getTestTokenContainer(testUserID); testTokenContainer != nil {

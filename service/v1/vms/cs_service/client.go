@@ -7,9 +7,10 @@ import (
 	"go-deploy/pkg/subsystems/cs"
 	"go-deploy/service/core"
 	sErrors "go-deploy/service/errors"
-	"go-deploy/service/resources"
+	"go-deploy/service/generators"
 	"go-deploy/service/v1/vms/client"
 	"go-deploy/service/v1/vms/opts"
+	"go-deploy/service/v1/vms/resources"
 )
 
 // OptsAll returns the options required to get all the service tools, ie. VM, client and generator.
@@ -69,7 +70,7 @@ func New(cache *core.Cache) *Client {
 //
 // Depending on the options specified, some return values may be nil.
 // This is useful when you don't always need all the resources.
-func (c *Client) Get(opts *opts.Opts) (*model.VM, *cs.Client, *resources.CsGenerator, error) {
+func (c *Client) Get(opts *opts.Opts) (*model.VM, *cs.Client, generators.CsGenerator, error) {
 	var vm *model.VM
 	var err error
 
@@ -84,33 +85,33 @@ func (c *Client) Get(opts *opts.Opts) (*model.VM, *cs.Client, *resources.CsGener
 		}
 	}
 
-	var cc *cs.Client
+	var csClient *cs.Client
 	if opts.Client {
 		zone := getZone(opts, vm)
 		if zone == nil {
 			return nil, nil, nil, sErrors.ZoneNotFoundErr
 		}
 
-		cc, err = c.Client(zone)
-		if cc == nil {
+		csClient, err = c.Client(zone)
+		if csClient == nil {
 			return nil, nil, nil, sErrors.VmNotFoundErr
 		}
 	}
 
-	var g *resources.CsGenerator
+	var csGenerator generators.CsGenerator
 	if opts.Generator {
 		zone := getZone(opts, vm)
 		if zone == nil {
 			return nil, nil, nil, sErrors.ZoneNotFoundErr
 		}
 
-		g = c.Generator(vm, zone)
-		if g == nil {
+		csGenerator = c.Generator(vm, zone)
+		if csGenerator == nil {
 			return nil, nil, nil, sErrors.VmNotFoundErr
 		}
 	}
 
-	return vm, cc, g, nil
+	return vm, csClient, csGenerator, nil
 }
 
 // Client returns the CloudStack service client.
@@ -127,7 +128,7 @@ func (c *Client) Client(zone *configModels.VmZone) (*cs.Client, error) {
 }
 
 // Generator returns the CS generator.
-func (c *Client) Generator(vm *model.VM, zone *configModels.VmZone) *resources.CsGenerator {
+func (c *Client) Generator(vm *model.VM, zone *configModels.VmZone) generators.CsGenerator {
 	if vm == nil {
 		panic("vm is nil")
 	}
@@ -136,7 +137,7 @@ func (c *Client) Generator(vm *model.VM, zone *configModels.VmZone) *resources.C
 		panic("zone is nil")
 	}
 
-	return resources.PublicGenerator().WithVM(vm).WithVmZone(zone).CS()
+	return resources.CS(vm, zone)
 }
 
 // withClient returns a new service client.

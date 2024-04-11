@@ -217,7 +217,7 @@ func checkCustomDomain(domain string, secret string) (bool, bool, string, error)
 			return false, false, "", nil
 		}
 
-		return false, false, "", err
+		return false, false, "", fmt.Errorf("failed to lookup TXT record under %s for custom domain %s. details: %w", subDomain, domain, err)
 	}
 
 	exists := len(txtRecord) > 0

@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"go-deploy/models/model"
 	"go-deploy/pkg/db/resources/gpu_repo"
+	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems"
 	"go-deploy/pkg/subsystems/cs/commands"
 	csModels "go-deploy/pkg/subsystems/cs/models"
 	sErrors "go-deploy/service/errors"
-	"log"
 )
 
 // makeBadStateErr creates an error with the BadStateErr type.
@@ -62,7 +62,7 @@ func (c *Client) CreateSnapshot(vmID string, params *model.CreateSnapshotParams)
 	}
 
 	if HasExtraConfig(vm) {
-		return makeBadStateErr("vm has extra config (probably a gpu_repo attached)")
+		return makeBadStateErr("vm has extra config (probably a gpu attached)")
 	}
 
 	snapshot, err := csc.CreateSnapshot(public)
@@ -82,7 +82,7 @@ func (c *Client) CreateSnapshot(vmID string, params *model.CreateSnapshotParams)
 			return makeBadStateErr(fmt.Sprintf("snapshot got state: %s", snapshot.State))
 		}
 	}
-	log.Println("created snapshot", snapshot.ID, "for vm", vmID)
+	log.Println("Created snapshot", snapshot.ID, "for VM", vmID)
 
 	// Delete every other snapshot with the same name that is older
 	snapshots, err := csc.ReadAllSnapshots(vm.Subsystems.CS.VM.ID)
@@ -97,7 +97,7 @@ func (c *Client) CreateSnapshot(vmID string, params *model.CreateSnapshotParams)
 				return makeError(err)
 			}
 
-			log.Println("deleted old snapshot", s.ID, "for vm", vmID)
+			log.Println("Deleted old snapshot", s.ID, "for VM", vmID)
 		}
 	}
 
@@ -124,7 +124,7 @@ func (c *Client) DeleteSnapshot(vmID, snapshotID string) error {
 		return makeError(err)
 	}
 
-	log.Println("deleted snapshot", snapshotID, "for vm", vmID)
+	log.Println("Deleted snapshot", snapshotID, "for vm", vmID)
 
 	return nil
 }
@@ -183,7 +183,7 @@ func (c *Client) ApplySnapshot(vmID, snapshotID string) error {
 		}
 	}
 
-	log.Println("applied snapshot", snapshotID, "for vm", vmID)
+	log.Println("Applied snapshot", snapshotID, "for vm", vmID)
 
 	return nil
 }

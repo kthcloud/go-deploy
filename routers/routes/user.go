@@ -1,6 +1,6 @@
 package routes
 
-import "go-deploy/routers/api/v1/v1_user"
+import v1 "go-deploy/routers/api/v1"
 
 const (
 	UsersPath = "/v1/users"
@@ -15,9 +15,9 @@ func UserRoutes() *UserRoutingGroup {
 
 func (group *UserRoutingGroup) PrivateRoutes() []Route {
 	return []Route{
-		{Method: "GET", Pattern: UsersPath, HandlerFunc: v1_user.ListUsers},
-		{Method: "GET", Pattern: UserPath, HandlerFunc: v1_user.Get},
-		{Method: "POST", Pattern: UsersPath, HandlerFunc: v1_user.Update}, // update using id in the token
-		{Method: "POST", Pattern: UserPath, HandlerFunc: v1_user.Update},  // update using id in the path
+		{Method: "GET", Pattern: UsersPath, HandlerFunc: v1.ListUsers},
+		{Method: "GET", Pattern: UserPath, HandlerFunc: v1.GetUser},
+		{Method: "POST", Pattern: UsersPath, HandlerFunc: v1.UpdateUser}, // update using id in the token
+		{Method: "POST", Pattern: UserPath, HandlerFunc: v1.UpdateUser},  // update using id in the path
 	}
 }

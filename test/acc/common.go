@@ -1,9 +1,11 @@
 package acc
 
 import (
+	"fmt"
 	"github.com/google/uuid"
+	"go-deploy/models/mode"
 	"go-deploy/pkg/config"
-	"log"
+	"go-deploy/pkg/log"
 	"os"
 	"strings"
 )
@@ -17,16 +19,23 @@ func Setup() {
 	for _, env := range requiredEnvs {
 		_, result := os.LookupEnv(env)
 		if !result {
-			log.Fatalln("required environment variable not set: " + env)
+			log.Fatalln("Required environment variable not set: " + env)
 		}
+	}
+
+	err := log.SetupLogger(mode.Test)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to setup logger. details: %s", err.Error()))
 	}
 
 	_, result := os.LookupEnv("DEPLOY_CONFIG_FILE")
 	if result {
-		config.SetupEnvironment()
+		err := config.SetupEnvironment(mode.Test)
+		if err != nil {
+			log.Fatalln(err)
+		}
 	}
 
-	config.Config.TestMode = true
 	config.Config.MongoDB.Name = config.Config.MongoDB.Name + "-test"
 }
 

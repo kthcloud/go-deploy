@@ -3,9 +3,9 @@ package snapshots
 import (
 	"fmt"
 	"go-deploy/models/model"
+	"go-deploy/pkg/log"
 	"go-deploy/service/utils"
 	"go-deploy/service/v2/vms/opts"
-	"log"
 	"sort"
 )
 
@@ -105,7 +105,7 @@ func (c *Client) Create(vmID string, opts ...opts.CreateSnapshotOpts) (*model.Sn
 	}
 
 	if vm == nil {
-		log.Println("vm", vmID, "not found when creating snapshot. assuming it was deleted")
+		log.Println("VM", vmID, "not found when creating snapshot. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -121,7 +121,7 @@ func (c *Client) Create(vmID string, opts ...opts.CreateSnapshotOpts) (*model.Sn
 	}
 
 	if params.Name == "" {
-		log.Println("no snapshot type specified when creating snapshot for vm", vmID, ". did you forget to specify the type?")
+		log.Println("No snapshot type specified when creating snapshot for vm", vmID, ". did you forget to specify the type?")
 		return nil, nil
 	}
 
@@ -145,7 +145,7 @@ func (c *Client) Delete(vmID, snapshotID string) error {
 	}
 
 	if vm == nil {
-		log.Println("vm", vmID, "not found when deleting snapshot", snapshotID, ". assuming it was deleted")
+		log.Println("VM", vmID, "not found when deleting snapshot", snapshotID, ". Assuming it was deleted")
 		return nil
 	}
 
@@ -167,7 +167,7 @@ func (c *Client) Apply(vmID, snapshotID string) error {
 		return fmt.Errorf("failed to apply snapshot %s to vm %s. details: %w", snapshotID, vmID, err)
 	}
 
-	//log.Println("applying snapshot", snapshotID, "to vm", id)
+	//log.Println("Applying snapshot", snapshotID, "to vm", id)
 	//err := c.K8s().ApplyVmSnapshot(id, snapshotID)
 	//if err != nil {
 	//	return makeError(err)

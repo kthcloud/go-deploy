@@ -15,7 +15,7 @@ type VmRead struct {
 
 	Specs        Specs       `json:"specs,omitempty"`
 	Ports        []PortRead  `json:"ports"`
-	GPU          *VmGpuLease `json:"gpu_repo,omitempty"`
+	GPU          *VmGpuLease `json:"gpu,omitempty"`
 	SshPublicKey string      `json:"sshPublicKey"`
 
 	Teams []string `json:"teams"`
@@ -31,7 +31,7 @@ type VmCreate struct {
 
 	CpuCores int `json:"cpuCores" bson:"cpuCores" binding:"required,min=2"`
 	RAM      int `json:"ram" bson:"ram" binding:"required,min=1"`
-	DiskSize int `json:"diskSize" bson:"diskSize" binding:"required,min=20"`
+	DiskSize int `json:"diskSize" bson:"diskSize" binding:"required,min=10"`
 
 	Zone *string `json:"zone,omitempty" bson:"zone,omitempty" binding:"omitempty"`
 }
@@ -53,15 +53,6 @@ type VmUpdate struct {
 	// TransferCode is used to accept transfer of a VM.
 	// If specified, only the transfer will happen.
 	TransferCode *string `json:"transferCode,omitempty" bson:"transferCode,omitempty" binding:"omitempty,min=1,max=1000"`
-
-	// SnapshotID is used to apply snapshot to a VM.
-	// If specified, only the snapshot application will happen.
-	SnapshotID *string `json:"snapshotId,omitempty" bson:"snapshotId,omitempty" binding:"omitempty,uuid4"`
-
-	// GpuID is used to attach/detach a GPU to a VM.
-	// If specified and not empty, only the GPU will be attached.
-	// If specified and empty, only the GPU will be detached.
-	GpuID *string `json:"gpuId,omitempty" bson:"gpuId,omitempty" binding:"omitempty,min=0,max=100"`
 }
 
 type VmUpdateOwner struct {
@@ -71,10 +62,10 @@ type VmUpdateOwner struct {
 }
 
 type VmGpuLease struct {
-	ID         string    `json:"id"`
-	Name       string    `json:"name"`
-	LeaseEndAt time.Time `json:"leaseEndAt"`
-	IsExpired  bool      `json:"isExpired"`
+	ID         string     `json:"id"`
+	GpuGroupID string     `json:"gpuGroupId"`
+	ExpiresAt  *time.Time `json:"expiresAt"`
+	IsExpired  bool       `json:"isExpired"`
 }
 
 type Specs struct {

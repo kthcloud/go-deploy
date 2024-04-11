@@ -1,0 +1,1078 @@
+definitions:
+  body.CustomDomainRead:
+    properties:
+      domain:
+        type: string
+      secret:
+        type: string
+      status:
+        type: string
+      url:
+        type: string
+    type: object
+  body.GpuGroupRead:
+    properties:
+      available:
+        type: integer
+      displayName:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      total:
+        type: integer
+      vendor:
+        type: string
+      zone:
+        type: string
+    type: object
+  body.GpuLeaseCreate:
+    properties:
+      gpuGroupId:
+        description: |-
+          GpuGroupID is used to specify the GPU to lease.
+          As such, the lease does not specify which specific GPU to lease, but rather the type of GPU to lease.
+        type: string
+      leaseForever:
+        description: LeaseForever is used to specify whether the lease should be created
+          forever.
+        type: boolean
+    required:
+    - gpuGroupId
+    type: object
+  body.GpuLeaseRead:
+    properties:
+      activatedAt:
+        description: |-
+          ActivatedAt specifies the time when the lease was activated. This is the time the user first attached the GPU
+          or 1 day after the lease was created if the user did not attach the GPU.
+        type: string
+      active:
+        type: boolean
+      assignedAt:
+        description: AssignedAt specifies the time when the lease was assigned to
+          the user.
+        type: string
+      createdAt:
+        type: string
+      expiredAt:
+        type: string
+      expiresAt:
+        description: |-
+          ExpiresAt specifies the time when the lease will expire.
+          This is only present if the lease is active.
+        type: string
+      gpuGroupId:
+        type: string
+      id:
+        type: string
+      leaseDuration:
+        type: number
+      queuePosition:
+        type: integer
+      userId:
+        type: string
+      vmId:
+        description: VmID is set when the lease is attached to a VM.
+        type: string
+    type: object
+  body.GpuLeaseUpdate:
+    properties:
+      vmId:
+        description: |-
+          VmID is used to specify the VM to attach the lease to.
+
+          - If specified, the lease will be attached to the VM.
+
+          - If the lease is already attached to a VM, it will be detached from the current VM and attached to the new VM.
+
+          - If the lease is not active, specifying a VM will activate the lease.
+
+          - If the lease is not assigned, an error will be returned.
+        type: string
+    type: object
+  body.VmActionCreate:
+    properties:
+      action:
+        enum:
+        - start
+        - stop
+        - restart
+        - repair
+        type: string
+    required:
+    - action
+    type: object
+  body.VmActionCreated:
+    properties:
+      id:
+        type: string
+      jobId:
+        type: string
+    type: object
+  go-deploy_dto_v2_body.HttpProxyCreate:
+    properties:
+      customDomain:
+        maxLength: 100
+        minLength: 1
+        type: string
+      name:
+        maxLength: 30
+        minLength: 3
+        type: string
+    required:
+    - name
+    type: object
+  go-deploy_dto_v2_body.HttpProxyRead:
+    properties:
+      customDomain:
+        $ref: '#/definitions/body.CustomDomainRead'
+      name:
+        maxLength: 30
+        minLength: 3
+        type: string
+      url:
+        type: string
+    required:
+    - name
+    type: object
+  go-deploy_dto_v2_body.HttpProxyUpdate:
+    properties:
+      customDomain:
+        maxLength: 100
+        type: string
+      name:
+        maxLength: 30
+        minLength: 3
+        type: string
+    required:
+    - name
+    type: object
+  go-deploy_dto_v2_body.PortCreate:
+    properties:
+      httpProxy:
+        $ref: '#/definitions/go-deploy_dto_v2_body.HttpProxyCreate'
+      name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      port:
+        maximum: 65535
+        minimum: 1
+        type: integer
+      protocol:
+        enum:
+        - tcp
+        - udp
+        type: string
+    required:
+    - name
+    - port
+    - protocol
+    type: object
+  go-deploy_dto_v2_body.PortRead:
+    properties:
+      externalPort:
+        type: integer
+      httpProxy:
+        $ref: '#/definitions/go-deploy_dto_v2_body.HttpProxyRead'
+      name:
+        type: string
+      port:
+        type: integer
+      protocol:
+        type: string
+    type: object
+  go-deploy_dto_v2_body.PortUpdate:
+    properties:
+      httpProxy:
+        $ref: '#/definitions/go-deploy_dto_v2_body.HttpProxyUpdate'
+      name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      port:
+        maximum: 65535
+        minimum: 1
+        type: integer
+      protocol:
+        enum:
+        - tcp
+        - udp
+        type: string
+    required:
+    - name
+    - port
+    - protocol
+    type: object
+  go-deploy_dto_v2_body.Specs:
+    properties:
+      cpuCores:
+        type: integer
+      diskSize:
+        type: integer
+      ram:
+        type: integer
+    type: object
+  go-deploy_dto_v2_body.VmCreate:
+    properties:
+      cpuCores:
+        minimum: 2
+        type: integer
+      diskSize:
+        minimum: 10
+        type: integer
+      name:
+        maxLength: 30
+        minLength: 3
+        type: string
+      ports:
+        items:
+          $ref: '#/definitions/go-deploy_dto_v2_body.PortCreate'
+        maxItems: 10
+        minItems: 0
+        type: array
+      ram:
+        minimum: 1
+        type: integer
+      sshPublicKey:
+        type: string
+      zone:
+        type: string
+    required:
+    - cpuCores
+    - diskSize
+    - name
+    - ram
+    - sshPublicKey
+    type: object
+  go-deploy_dto_v2_body.VmCreated:
+    properties:
+      id:
+        type: string
+      jobId:
+        type: string
+    type: object
+  go-deploy_dto_v2_body.VmDeleted:
+    properties:
+      id:
+        type: string
+      jobId:
+        type: string
+    type: object
+  go-deploy_dto_v2_body.VmGpuLease:
+    properties:
+      expiresAt:
+        type: string
+      gpuGroupId:
+        type: string
+      id:
+        type: string
+      isExpired:
+        type: boolean
+    type: object
+  go-deploy_dto_v2_body.VmRead:
+    properties:
+      createdAt:
+        type: string
+      gpu:
+        $ref: '#/definitions/go-deploy_dto_v2_body.VmGpuLease'
+      host:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      ownerId:
+        type: string
+      ports:
+        items:
+          $ref: '#/definitions/go-deploy_dto_v2_body.PortRead'
+        type: array
+      repairedAt:
+        type: string
+      specs:
+        $ref: '#/definitions/go-deploy_dto_v2_body.Specs'
+      sshConnectionString:
+        type: string
+      sshPublicKey:
+        type: string
+      status:
+        type: string
+      teams:
+        items:
+          type: string
+        type: array
+      updatedAt:
+        type: string
+      zone:
+        type: string
+    type: object
+  go-deploy_dto_v2_body.VmSnapshotRead:
+    properties:
+      created:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      status:
+        type: string
+    type: object
+  go-deploy_dto_v2_body.VmUpdate:
+    properties:
+      cpuCores:
+        minimum: 1
+        type: integer
+      name:
+        description: |-
+          Name is used to rename a VM.
+          If specified, only name will be updated.
+        maxLength: 30
+        minLength: 3
+        type: string
+      ownerId:
+        description: |-
+          OwnerID is used to initiate transfer a VM to another user.
+          If specified, only the transfer will happen.
+          If specified but empty, the transfer will be canceled.
+        type: string
+      ports:
+        items:
+          $ref: '#/definitions/go-deploy_dto_v2_body.PortUpdate'
+        maxItems: 10
+        minItems: 0
+        type: array
+      ram:
+        minimum: 1
+        type: integer
+      transferCode:
+        description: |-
+          TransferCode is used to accept transfer of a VM.
+          If specified, only the transfer will happen.
+        maxLength: 1000
+        minLength: 1
+        type: string
+    type: object
+  go-deploy_dto_v2_body.VmUpdated:
+    properties:
+      id:
+        type: string
+      jobId:
+        type: string
+    type: object
+  sys.ErrorResponse:
+    properties:
+      errors:
+        items:
+          $ref: '#/definitions/sys.errorPiece'
+        type: array
+    type: object
+  sys.errorPiece:
+    properties:
+      code:
+        type: string
+      msg:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /v2/gpuGroups:
+    get:
+      consumes:
+      - application/json
+      description: List GPU groups
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: VM ID
+        in: query
+        name: vmId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/body.GpuGroupRead'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "423":
+          description: Locked
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: List GPU groups
+      tags:
+      - GpuGroup
+  /v2/gpuGroups/{gpuGroupId}:
+    get:
+      consumes:
+      - application/json
+      description: Get GPU group
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: GPU group ID
+        in: path
+        name: gpuGroupId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.GpuGroupRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "423":
+          description: Locked
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: Get GPU group
+      tags:
+      - GpuGroup
+  /v2/gpuLeases:
+    get:
+      consumes:
+      - application/json
+      description: List GPU leases
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: VM ID
+        in: query
+        name: vmId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/body.GpuLeaseRead'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "423":
+          description: Locked
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: List GPU leases
+      tags:
+      - GpuLease
+    post:
+      consumes:
+      - application/json
+      description: Create GPU lease
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: GPU lease
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/body.GpuLeaseCreate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.GpuLeaseRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: Create GPU Lease
+      tags:
+      - GpuLease
+  /v2/gpuLeases/{gpuLeaseId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete GPU lease
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: GPU lease ID
+        in: path
+        name: gpuLeaseId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.GpuLeaseRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: Delete GPU lease
+      tags:
+      - GpuLease
+    get:
+      consumes:
+      - application/json
+      description: Get GPU lease
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: GPU lease ID
+        in: path
+        name: gpuLeaseId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.GpuLeaseRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "423":
+          description: Locked
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: Get GPU lease
+      tags:
+      - GpuLease
+    post:
+      consumes:
+      - application/json
+      description: Update GPU lease
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: GPU lease ID
+        in: path
+        name: gpuLeaseId
+        required: true
+        type: string
+      - description: GPU lease
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/body.GpuLeaseUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.GpuLeaseRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: Update GPU lease
+      tags:
+      - GpuLease
+  /v2/vm:
+    get:
+      consumes:
+      - application/json
+      description: GetVM list of VMs
+      parameters:
+      - description: GetVM all
+        in: query
+        name: all
+        type: boolean
+      - description: Filter by user id
+        in: query
+        name: userId
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/go-deploy_dto_v2_body.VmRead'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: GetVM list of VMs
+      tags:
+      - VM
+    post:
+      consumes:
+      - application/json
+      description: CreateVM VM
+      parameters:
+      - description: VM body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/go-deploy_dto_v2_body.VmCreate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/go-deploy_dto_v2_body.VmCreated'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "423":
+          description: Locked
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: CreateVM VM
+      tags:
+      - VM
+  /v2/vm/{vmId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete VM
+      parameters:
+      - description: VM ID
+        in: path
+        name: vmId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/go-deploy_dto_v2_body.VmDeleted'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "423":
+          description: Locked
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: Delete VM
+      tags:
+      - VM
+    get:
+      consumes:
+      - application/json
+      description: GetVM VM by id
+      parameters:
+      - description: VM ID
+        in: path
+        name: vmId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/go-deploy_dto_v2_body.VmRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: GetVM VM by id
+      tags:
+      - VM
+    post:
+      consumes:
+      - application/json
+      description: Updates a VM
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: VM ID
+        in: path
+        name: vmId
+        required: true
+        type: string
+      - description: VM update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/go-deploy_dto_v2_body.VmUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/go-deploy_dto_v2_body.VmUpdated'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "423":
+          description: Locked
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: Updates a VM
+      tags:
+      - VM
+  /v2/vms/{vmId}/command:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new action
+      parameters:
+      - description: VM ID
+        in: path
+        name: vmId
+        required: true
+        type: string
+      - description: Command body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/body.VmActionCreate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.VmActionCreated'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: Creates a new action
+      tags:
+      - VM
+  /v2/vms/{vmId}/snapshot/{snapshotId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete snapshot
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: VM ID
+        in: path
+        name: vmId
+        required: true
+        type: string
+      - description: Snapshot ID
+        in: path
+        name: snapshotId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/go-deploy_dto_v2_body.VmSnapshotRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: Delete snapshot
+      tags:
+      - Snapshot
+    post:
+      consumes:
+      - application/json
+      description: GetVM snapshot
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: VM ID
+        in: path
+        name: vmId
+        required: true
+        type: string
+      - description: Snapshot ID
+        in: path
+        name: snapshotId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/go-deploy_dto_v2_body.VmSnapshotRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: GetVM snapshot
+      tags:
+      - Snapshot
+  /v2/vms/{vmId}/snapshots:
+    get:
+      consumes:
+      - application/json
+      description: GetVM snapshot list
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: VM ID
+        in: path
+        name: vmId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/go-deploy_dto_v2_body.VmSnapshotRead'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "423":
+          description: Locked
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: GetVM snapshot list
+      tags:
+      - Snapshot
+    post:
+      consumes:
+      - application/json
+      description: CreateVM snapshot
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: VM ID
+        in: path
+        name: vmId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/go-deploy_dto_v2_body.VmSnapshotRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: CreateVM snapshot
+      tags:
+      - Snapshot
+swagger: "2.0"

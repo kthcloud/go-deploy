@@ -12,7 +12,7 @@ import (
 )
 
 // Create creates a new gpu_repo in the database.
-// If the gpu_repo already exists, it does nothing.
+// If the GPU already exists, it does nothing.
 func (client *Client) Create(id, host string, data model.GpuData, zone string) error {
 	currentGPU, err := client.GetByID(id)
 	if err != nil {
@@ -37,13 +37,13 @@ func (client *Client) Create(id, host string, data model.GpuData, zone string) e
 
 	_, err = client.Collection.InsertOne(context.TODO(), gpu)
 	if err != nil {
-		// If the error is a duplicate key error, it means that another instance already created the gpu_repo
+		// If the error is a duplicate key error, it means that another instance already created the GPU
 		// Probably caused by a race condition
 		if mongo.IsDuplicateKeyError(err) {
 			return nil
 		}
 
-		err = fmt.Errorf("failed to create gpu_repo. details: %w", err)
+		err = fmt.Errorf("failed to create gpu. details: %w", err)
 		return err
 	}
 
@@ -64,7 +64,7 @@ func (client *Client) Attach(gpuID, vmID, user string, end time.Time) (bool, err
 		return false, AlreadyAttachedErr
 	}
 
-	// first check if the gpu_repo is already attached to this vm
+	// First check if the GPU is already attached to this vm
 	if gpu.Lease.VmID == vmID {
 		if gpu.Lease.IsExpired() {
 			// renew lease
@@ -74,20 +74,20 @@ func (client *Client) Attach(gpuID, vmID, user string, end time.Time) (bool, err
 			err = client.SetWithBsonByFilter(filter, update)
 			if err != nil {
 				if errors.Is(err, mongo.ErrNoDocuments) {
-					// this is not treated as an error, just another instance snatched the gpu_repo before this one
+					// This is not treated as an error, just another instance snatched the GPU before this one
 					return false, nil
 				}
 
-				err = fmt.Errorf("failed to update gpu_repo. details: %w", err)
+				err = fmt.Errorf("failed to update gpu. details: %w", err)
 				return false, err
 			}
 		}
 
-		// either way return true, since a renewal succeeded or nothing happened (still attached)
+		// Either way return true, since a renewal succeeded or nothing happened (still attached)
 		return true, nil
 	}
 
-	// if this is not a renewal, try to attach the gpu_repo to the vm
+	// If this is not a renewal, try to attach the GPU to the vm
 	if !gpu.IsAttached() {
 		filter := bson.D{
 			{"id", gpuID},
@@ -104,7 +104,7 @@ func (client *Client) Attach(gpuID, vmID, user string, end time.Time) (bool, err
 		err = client.SetWithBsonByFilter(filter, update)
 		if err != nil {
 			if errors.Is(err, mongo.ErrNoDocuments) {
-				// this is not treated as an error, just another instance snatched the gpu_repo before this one
+				// This is not treated as an error, just another instance snatched the GPU before this one
 				return false, nil
 			}
 			return false, err
@@ -142,7 +142,7 @@ func (client *Client) Detach(vmID string) error {
 			return err
 		}
 
-		utils.PrettyPrintError(fmt.Errorf("failed to clear gpu_repo lease for vm %s. details: %w", vmID, err))
+		utils.PrettyPrintError(fmt.Errorf("failed to clear gpu lease for vm %s. details: %w", vmID, err))
 	}
 
 	return nil

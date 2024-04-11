@@ -3,9 +3,9 @@ package model
 import (
 	"fmt"
 	"go-deploy/dto/v1/body"
+	"go-deploy/pkg/log"
 	"go-deploy/utils"
 	"golang.org/x/net/idna"
-	"log"
 	"strconv"
 )
 
@@ -13,7 +13,7 @@ import (
 func (deployment *Deployment) ToDTO(smURL *string, teams []string) body.DeploymentRead {
 	app := deployment.GetMainApp()
 	if app == nil {
-		log.Println("main app not found in deployment", deployment.ID)
+		log.Println("Main app not found in deployment", deployment.ID)
 		app = &App{}
 	}
 
@@ -94,6 +94,7 @@ func (deployment *Deployment) ToDTO(smURL *string, teams []string) body.Deployme
 		Envs:            envs,
 		Volumes:         volumes,
 		InitCommands:    app.InitCommands,
+		Args:            app.Args,
 		Private:         app.Private,
 		InternalPort:    app.InternalPort,
 		Image:           image,

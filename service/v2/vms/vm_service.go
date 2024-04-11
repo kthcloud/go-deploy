@@ -6,19 +6,20 @@ import (
 	"github.com/google/uuid"
 	"go-deploy/dto/v2/body"
 	"go-deploy/models/model"
-	"go-deploy/models/versions"
+	"go-deploy/models/version"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/db/resources/gpu_lease_repo"
 	"go-deploy/pkg/db/resources/gpu_repo"
 	"go-deploy/pkg/db/resources/notification_repo"
 	"go-deploy/pkg/db/resources/team_repo"
 	"go-deploy/pkg/db/resources/vm_port_repo"
 	"go-deploy/pkg/db/resources/vm_repo"
+	"go-deploy/pkg/log"
 	sErrors "go-deploy/service/errors"
 	serviceUtils "go-deploy/service/utils"
 	"go-deploy/service/v2/vms/opts"
 	"go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
-	"log"
 	"sort"
 )
 
@@ -29,7 +30,7 @@ import (
 func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.VM, error) {
 	o := serviceUtils.GetFirstOrDefault(opts)
 
-	vmc := vm_repo.New(versions.V2)
+	vmc := vm_repo.New(version.V2)
 
 	if o.TransferCode != nil {
 		return vmc.WithTransferCode(*o.TransferCode).Get()
@@ -54,7 +55,7 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.VM, error) {
 	}
 
 	if !teamCheck && effectiveUserID != "" {
-		vmc.RestrictToOwner(effectiveUserID)
+		vmc.WithOwner(effectiveUserID)
 	}
 
 	return c.VM(id, vmc)
@@ -66,7 +67,7 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.VM, error) {
 func (c *Client) List(opts ...opts.ListOpts) ([]model.VM, error) {
 	o := serviceUtils.GetFirstOrDefault(opts)
 
-	vmc := vm_repo.New(versions.V2)
+	vmc := vm_repo.New(version.V2)
 
 	if o.Pagination != nil {
 		vmc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
@@ -89,7 +90,7 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.VM, error) {
 	}
 
 	if effectiveUserID != "" {
-		vmc.RestrictToOwner(effectiveUserID)
+		vmc.WithOwner(effectiveUserID)
 	}
 
 	vms, err := c.VMs(vmc)
@@ -174,7 +175,7 @@ func (c *Client) Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
 	zone := "se-flem-2"
 	params := model.VmCreateParams{}.FromDTOv2(dtoVmCreate, &zone)
 
-	_, err := vm_repo.New(versions.V2).Create(id, ownerID, config.Config.Manager, &params)
+	_, err := vm_repo.New(version.V2).Create(id, ownerID, config.Config.Manager, &params)
 	if err != nil {
 		if errors.Is(err, vm_repo.NonUniqueFieldErr) {
 			return sErrors.NonUniqueFieldErr
@@ -233,7 +234,7 @@ func (c *Client) Update(id string, dtoVmUpdate *body.VmUpdate) error {
 		}
 	}
 
-	err := vm_repo.New(versions.V2).UpdateWithParams(id, &vmUpdate)
+	err := vm_repo.New(version.V2).UpdateWithParams(id, &vmUpdate)
 	if err != nil {
 		if errors.Is(err, vm_repo.NonUniqueFieldErr) {
 			return sErrors.NonUniqueFieldErr
@@ -293,7 +294,64 @@ func (c *Client) Delete(id string) error {
 		return makeError(err)
 	}
 
+	err = gpu_lease_repo.New().WithVmID(id).Release()
+	if err != nil {
+		return makeError(err)
+	}
+
 	return nil
+}
+
+// IsAccessible checks if the VM is accessible by the caller.
+// This is useful when providing auth info and check if it's enough to access a VM.
+// It is lightweight since it does not require the VM to be fetched.
+//
+// It returns an error if the VM is not found.
+func (c *Client) IsAccessible(id string) (bool, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to check if user can access vm %s. details: %w", id, err)
+	}
+
+	exists, err := vm_repo.New(version.V2).ExistsByID(id)
+	if err != nil {
+		return false, makeError(err)
+	}
+
+	if !exists {
+		return false, makeError(sErrors.VmNotFoundErr)
+	}
+
+	if c.V2.HasAuth() {
+		// 1. User has access through being an admin
+		if c.V2.Auth().IsAdmin {
+			return true, nil
+		}
+
+		// 2. User has access through being the owner
+		vmByOwner, err := vm_repo.New(version.V2).WithOwner(c.V2.Auth().UserID).ExistsByID(id)
+		if err != nil {
+			return false, makeError(err)
+		}
+
+		if vmByOwner {
+			return true, nil
+		}
+
+		// 3. User has access through a team
+		teamAccess, err := c.V1.Teams().CheckResourceAccess(c.V2.Auth().UserID, id)
+		if err != nil {
+			return false, makeError(err)
+		}
+
+		if teamAccess {
+			return true, nil
+		}
+
+		return false, nil
+	}
+
+	// 4. No auth info was provided, always return true
+	return true, nil
 }
 
 // Repair repairs an existing deployment.
@@ -310,7 +368,7 @@ func (c *Client) Repair(id string) error {
 	}
 
 	if vm == nil {
-		log.Println("vm", id, "not found when repairing. assuming it was deleted")
+		log.Println("VM", id, "not found when repairing. Assuming it was deleted")
 		return nil
 	}
 
@@ -319,17 +377,17 @@ func (c *Client) Repair(id string) error {
 		return makeError(err)
 	}
 
-	log.Println("repaired vm", id)
+	log.Println("Repaired vm", id)
 	return nil
 }
 
 // DoAction performs an action on the VM.
-func (c *Client) DoAction(id string, dtoVmAction *body.VmAction) error {
+func (c *Client) DoAction(id string, dtoAction *body.VmActionCreate) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to perform action on vm %s. details: %w", id, err)
 	}
 
-	params := model.VmActionParams{}.FromDTOv2(dtoVmAction)
+	params := model.VmActionParams{}.FromDTOv2(dtoAction)
 
 	vm, err := c.VM(id, nil)
 	if err != nil {
@@ -337,7 +395,7 @@ func (c *Client) DoAction(id string, dtoVmAction *body.VmAction) error {
 	}
 
 	if vm == nil {
-		log.Println("vm", id, "not found when performing action. assuming it was deleted")
+		log.Println("VM", id, "not found when performing action. Assuming it was deleted")
 		return nil
 	}
 
@@ -346,7 +404,7 @@ func (c *Client) DoAction(id string, dtoVmAction *body.VmAction) error {
 		return makeError(err)
 	}
 
-	log.Println("performed action", params.Action, "on vm", id)
+	log.Println("Performed action", params.Action, "on vm", id)
 	return nil
 }
 
@@ -388,7 +446,7 @@ func (c *Client) UpdateOwnerSetup(id string, params *body.VmUpdateOwner) (*strin
 
 	if transferDirectly {
 		jobID := uuid.New().String()
-		err = c.V1.Jobs().Create(jobID, c.V2.Auth().UserID, model.JobUpdateVmOwner, versions.V2, map[string]interface{}{
+		err = c.V1.Jobs().Create(jobID, c.V2.Auth().UserID, model.JobUpdateVmOwner, version.V2, map[string]interface{}{
 			"id":     id,
 			"params": *params,
 		})
@@ -402,7 +460,7 @@ func (c *Client) UpdateOwnerSetup(id string, params *body.VmUpdateOwner) (*strin
 
 	/// create a transfer notification
 	code := createTransferCode()
-	err = vm_repo.New(versions.V2).UpdateWithParams(id, &model.VmUpdateParams{
+	err = vm_repo.New(version.V2).UpdateWithParams(id, &model.VmUpdateParams{
 		TransferUserID: &params.NewOwnerID,
 		TransferCode:   &code,
 	})
@@ -448,13 +506,13 @@ func (c *Client) UpdateOwner(id string, params *body.VmUpdateOwner) error {
 	}
 
 	if vm == nil {
-		log.Println("vm", id, "not found when updating owner. assuming it was deleted")
+		log.Println("VM", id, "not found when updating owner. Assuming it was deleted")
 		return nil
 	}
 
 	emptyString := ""
 
-	err = vm_repo.New(versions.V2).UpdateWithParams(id, &model.VmUpdateParams{
+	err = vm_repo.New(version.V2).UpdateWithParams(id, &model.VmUpdateParams{
 		OwnerID:        &params.NewOwnerID,
 		TransferCode:   &emptyString,
 		TransferUserID: &emptyString,
@@ -479,7 +537,7 @@ func (c *Client) UpdateOwner(id string, params *body.VmUpdateOwner) error {
 		return makeError(err)
 	}
 
-	log.Println("vm", id, "owner updated from", params.OldOwnerID, " to", params.NewOwnerID)
+	log.Println("VM", id, "owner updated from", params.OldOwnerID, " to", params.NewOwnerID)
 	return nil
 }
 
@@ -491,7 +549,7 @@ func (c *Client) ClearUpdateOwner(id string) error {
 		return fmt.Errorf("failed to clear vm owner update. details: %w", err)
 	}
 
-	deployment, err := vm_repo.New(versions.V2).GetByID(id)
+	deployment, err := vm_repo.New(version.V2).GetByID(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -505,7 +563,7 @@ func (c *Client) ClearUpdateOwner(id string) error {
 	}
 
 	emptyString := ""
-	err = vm_repo.New(versions.V2).UpdateWithParams(id, &model.VmUpdateParams{
+	err = vm_repo.New(version.V2).UpdateWithParams(id, &model.VmUpdateParams{
 		TransferUserID: &emptyString,
 		TransferCode:   &emptyString,
 	})
@@ -651,7 +709,7 @@ func (c *Client) CheckQuota(id, userID string, quota *model.Quotas, opts ...opts
 			return nil
 		}
 
-		vm, err := vm_repo.New(versions.V2).GetByID(id)
+		vm, err := vm_repo.New(version.V2).GetByID(id)
 		if err != nil {
 			return makeError(err)
 		}
@@ -700,7 +758,7 @@ func (c *Client) GetUsage(userID string) (*model.VmUsage, error) {
 
 	usage := &model.VmUsage{}
 
-	currentVms, err := vm_repo.New(versions.V2).RestrictToOwner(userID).List()
+	currentVms, err := vm_repo.New(version.V2).WithOwner(userID).List()
 	if err != nil {
 		return nil, makeError(err)
 	}

@@ -2,7 +2,7 @@ package model
 
 import (
 	"go-deploy/dto/v1/body"
-	"log"
+	"go-deploy/pkg/log"
 )
 
 // ToDTO converts a User to a body.UserRead DTO.
@@ -20,7 +20,7 @@ func (user *User) ToDTO(effectiveRole *Role, usage *UserUsage, storageURL *strin
 	}
 
 	if effectiveRole == nil {
-		log.Println("effective role is nil when creating user read for user", user.Username)
+		log.Println("Effective role is nil when creating user read for user", user.Username)
 		effectiveRole = &Role{
 			Name:        "unknown",
 			Description: "unknown",
@@ -34,7 +34,6 @@ func (user *User) ToDTO(effectiveRole *Role, usage *UserUsage, storageURL *strin
 		FirstName:  user.FirstName,
 		LastName:   user.LastName,
 		PublicKeys: publicKeys,
-		Onboarded:  user.Onboarded,
 
 		Role:  effectiveRole.ToDTO(false),
 		Admin: user.IsAdmin,

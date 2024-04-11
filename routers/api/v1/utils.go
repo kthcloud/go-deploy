@@ -32,6 +32,8 @@ func msgForTag(fe validator.FieldError) string {
 		return "This field is required"
 	case "email":
 		return "Must be a valid email address"
+	case "eq":
+		return "Must be " + fe.Param()
 	case "min":
 		switch fe.Kind() {
 		case reflect.String:

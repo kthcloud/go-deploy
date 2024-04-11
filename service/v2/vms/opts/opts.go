@@ -5,6 +5,7 @@ import (
 	configModels "go-deploy/models/config"
 	"go-deploy/models/model"
 	"go-deploy/service/v2/utils"
+	"time"
 )
 
 // Opts is used to specify which resources to get.
@@ -20,8 +21,9 @@ type Opts struct {
 // This is useful when overwriting the implicit options,
 // such as where user ID is by default taken from VM.OwnerID.
 type ExtraOpts struct {
-	UserID string
-	Zone   *configModels.DeploymentZone
+	UserID       string
+	Zone         *configModels.DeploymentZone
+	ExtraSshKeys []string
 }
 
 // GetOpts is used to specify the options when getting a VM.
@@ -56,13 +58,20 @@ type GetGpuLeaseOpts struct {
 
 // ListGpuLeaseOpts is used to specify the options when listing GPU leases.
 type ListGpuLeaseOpts struct {
-	Pagination *utils.Pagination
+	VmID          *string
+	UserID        *string
+	GpuGroupID    *string
+	Pagination    *utils.Pagination
+	CreatedBefore *time.Time
 }
 
-// CreateGpuLeaseOpts is used to specify the options when attaching a GPU to a VM.
-type CreateGpuLeaseOpts struct {
-	// LeaseForever is used to specify whether the lease should be created forever.
-	LeaseForever bool
+// GetGpuGroupOpts is used to specify the options when getting a GPU group.
+type GetGpuGroupOpts struct {
+}
+
+// ListGpuGroupOpts is used to specify the options when listing GPU groups.
+type ListGpuGroupOpts struct {
+	Pagination *utils.Pagination
 }
 
 // GetSnapshotOpts is used to specify the options when getting a VM's snapshot.

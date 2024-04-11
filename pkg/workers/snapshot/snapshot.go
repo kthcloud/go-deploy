@@ -2,12 +2,14 @@ package snapshot
 
 import (
 	"context"
-	"log"
+	"go-deploy/pkg/config"
+	"go-deploy/pkg/log"
+	"go-deploy/pkg/workers"
 )
 
 // Setup starts the snapshot workers.
 // Snapshot workers are workers that periodically takes snapshots.
 func Setup(ctx context.Context) {
-	log.Println("starting snapshot workers")
-	go snapshotter(ctx)
+	log.Println("Starting snapshot workers")
+	go workers.PeriodicWorker(ctx, "snapshotter", snapshotter, config.Config.Timer.Snapshot)
 }

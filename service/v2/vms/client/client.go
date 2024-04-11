@@ -3,7 +3,7 @@ package client
 import (
 	"fmt"
 	"go-deploy/models/model"
-	"go-deploy/models/versions"
+	"go-deploy/models/version"
 	"go-deploy/pkg/db/resources/gpu_lease_repo"
 	"go-deploy/pkg/db/resources/gpu_repo"
 	"go-deploy/pkg/db/resources/vm_repo"
@@ -94,7 +94,7 @@ func (c *BaseClient[parent]) fetchVM(id, name string, vmc *vm_repo.Client) (*mod
 	}
 
 	if vmc == nil {
-		vmc = vm_repo.New(versions.V2)
+		vmc = vm_repo.New(version.V2)
 	}
 
 	var vm *model.VM
@@ -128,7 +128,7 @@ func (c *BaseClient[parent]) fetchVMs(vmc *vm_repo.Client) ([]model.VM, error) {
 	}
 
 	if vmc == nil {
-		vmc = vm_repo.New(versions.V2)
+		vmc = vm_repo.New(version.V2)
 	}
 
 	vms, err := vmc.List()
@@ -148,7 +148,7 @@ func (c *BaseClient[parent]) fetchVMs(vmc *vm_repo.Client) ([]model.VM, error) {
 // After a successful fetch, the GPU will be cached.
 func (c *BaseClient[parent]) fetchGPU(id string, gmc *gpu_repo.Client) (*model.GPU, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to fetch gpu_repo in service client: %w", err)
+		return fmt.Errorf("failed to fetch gpu in service client: %w", err)
 	}
 
 	if gmc == nil {
@@ -195,7 +195,7 @@ func (c *BaseClient[parent]) fetchGPUs(gmc *gpu_repo.Client) ([]model.GPU, error
 // After a successful fetch, the GPU lease will be cached.
 func (c *BaseClient[parent]) fetchGpuLease(id string, glc *gpu_lease_repo.Client) (*model.GpuLease, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to fetch gpu_repo lease in service client: %w", err)
+		return fmt.Errorf("failed to fetch gpu lease in service client: %w", err)
 	}
 
 	if glc == nil {
@@ -219,7 +219,7 @@ func (c *BaseClient[parent]) fetchGpuLease(id string, glc *gpu_lease_repo.Client
 // After a successful fetch, the GPU leases will be cached.
 func (c *BaseClient[parent]) fetchGpuLeases(glc *gpu_lease_repo.Client) ([]model.GpuLease, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to fetch gpu_repo leases in service client: %w", err)
+		return fmt.Errorf("failed to fetch gpu leases in service client: %w", err)
 	}
 
 	if glc == nil {

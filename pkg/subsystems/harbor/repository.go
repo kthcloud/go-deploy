@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/mittwald/goharbor-client/v5/apiv2/pkg/clients/artifact"
+	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems/harbor/models"
-	"log"
 	"strings"
 )
 
@@ -43,7 +43,7 @@ func (client *Client) ReadRepository(name string) (*models.RepositoryPublic, err
 	}
 
 	if name == "" {
-		log.Println("name not supplied when reading harbor repository. assuming it was deleted")
+		log.Println("Name not supplied when reading harbor repository. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -103,7 +103,7 @@ func (client *Client) UpdateRepository(public *models.RepositoryPublic) (*models
 	}
 
 	if public.ID == 0 {
-		log.Println("id not supplied when updating harbor repository. assuming it was deleted")
+		log.Println("ID not supplied when updating harbor repository. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -133,7 +133,7 @@ func (client *Client) DeleteRepository(name string) error {
 	}
 
 	if name == "" {
-		log.Println("name not supplied when deleting harbor repository. assuming it was deleted")
+		log.Println("Name not supplied when deleting harbor repository. Assuming it was deleted")
 		return nil
 	}
 

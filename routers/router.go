@@ -1,25 +1,29 @@
 package routers
 
 import (
+	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
 	"github.com/penglongli/gin-metrics/ginmetrics"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	"go-deploy/docs"
+	docsV1 "go-deploy/docs/api/v1"
+	docsV2 "go-deploy/docs/api/v2"
+	"go-deploy/models/mode"
 	"go-deploy/pkg/auth"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/log"
 	"go-deploy/pkg/metrics"
 	"go-deploy/pkg/sys"
 	"go-deploy/routers/api/v1/middleware"
 	"go-deploy/routers/api/validators"
 	"go-deploy/routers/routes"
-	"log"
 	"net/http"
 	"net/url"
 	"reflect"
 	"strings"
+	"time"
 )
 
 // NewRouter creates a new router
@@ -29,9 +33,10 @@ func NewRouter() *gin.Engine {
 	basePath := getUrlBasePath()
 
 	// Global middleware
+	ginLogger := log.Get("api")
 	router.Use(CorsAllowAll())
-	router.Use(gin.Logger())
-	router.Use(gin.Recovery())
+	router.Use(getGinLogger())
+	router.Use(ginzap.RecoveryWithZap(ginLogger.Desugar(), true))
 
 	// Metrics middleware
 	m := ginmetrics.GetMonitor()
@@ -61,11 +66,20 @@ func NewRouter() *gin.Engine {
 	public := router.Group("/")
 
 	//// Swagger routes
-	docs.SwaggerInfo.BasePath = basePath + "/v1"
-	public.GET("/v1/docs", func(c *gin.Context) {
-		c.Redirect(302, "/v1/docs/index.html")
-	})
-	public.GET("/v1/docs/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+	// v1
+	docsV1.SwaggerInfoV1.BasePath = basePath
+	println(docsV1.SwaggerInfoV1.InfoInstanceName)
+	//public.GET("/v1/docs", func(c *gin.Context) {
+	//	c.Redirect(302, "/v1/docs/index.html")
+	//})
+	public.GET("/v1/docs/*any", ginSwagger.WrapHandler(swaggerfiles.Handler, ginSwagger.InstanceName("V1")))
+
+	// v2
+	docsV2.SwaggerInfoV2.BasePath = basePath
+	//public.GET("/v2/docs", func(c *gin.Context) {
+	//	c.Redirect(302, "/v2/docs/index.html")
+	//})
+	public.GET("/v2/docs/*any", ginSwagger.WrapHandler(swaggerfiles.Handler, ginSwagger.InstanceName("V2")))
 
 	//// Health check routes
 	public.GET("/healthz", func(c *gin.Context) {
@@ -159,7 +173,7 @@ func getUrlBasePath() string {
 	// Parse as URL
 	u, err := url.Parse(config.Config.ExternalUrl)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln("failed to parse external URL. details:", err)
 	}
 	res = u.Path
 
@@ -169,4 +183,15 @@ func getUrlBasePath() string {
 	}
 
 	return res
+}
+
+// getGinLogger returns the logger used for Gin Gonic.
+// When in development mode, it will use the default gin.Logger(), since it is easier to read.
+// When in production mode, it will use the logger from the log package.
+func getGinLogger() gin.HandlerFunc {
+	if config.Config.Mode != mode.Prod {
+		return gin.Logger()
+	}
+
+	return ginzap.Ginzap(log.Get("api").Desugar(), time.RFC3339, true)
 }

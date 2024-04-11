@@ -7,11 +7,11 @@ import (
 	"go-deploy/models/model"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/db/resources/sm_repo"
+	"go-deploy/pkg/log"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/utils"
 	"go-deploy/service/v1/sms/k8s_service"
 	"go-deploy/service/v1/sms/opts"
-	"log"
 	"sort"
 )
 
@@ -108,7 +108,7 @@ func (c *Client) Delete(id string) error {
 		return fmt.Errorf("failed to delete storage manager. details: %w", err)
 	}
 
-	log.Println("deleting storage manager", id)
+	log.Println("Deleting storage manager", id)
 
 	err := k8s_service.New(c.Cache).Delete(id)
 	if err != nil {
@@ -132,7 +132,7 @@ func (c *Client) Repair(id string) error {
 	}
 
 	if sm == nil {
-		log.Println("storage manager", id, "not found when repairing, assuming it was deleted")
+		log.Println("Storage manager", id, "not found when repairing, assuming it was deleted")
 		return nil
 	}
 
@@ -141,7 +141,7 @@ func (c *Client) Repair(id string) error {
 		return makeErr(err)
 	}
 
-	log.Println("repaired storage manager", id)
+	log.Println("Repaired storage manager", id)
 
 	return nil
 }

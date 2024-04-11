@@ -12,7 +12,7 @@ COPY . .
 # Build docs
 RUN go install github.com/swaggo/swag/cmd/swag@latest
 RUN chmod +x ./build-docs.sh
-RUN swag init
+RUN ./build-docs.sh
 
 # Fetch dependencies and build the binary
 ENV GO111MODULE=on

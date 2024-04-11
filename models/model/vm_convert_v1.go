@@ -3,7 +3,7 @@ package model
 import (
 	"fmt"
 	"go-deploy/dto/v1/body"
-	"go-deploy/models/versions"
+	"go-deploy/models/version"
 	"go-deploy/pkg/subsystems"
 	"go-deploy/utils"
 	"sort"
@@ -126,7 +126,7 @@ func (p VmCreateParams) FromDTOv1(dto *body.VmCreate, fallbackZone *string, depl
 	p.DiskSize = dto.DiskSize
 	p.PortMap = make(map[string]PortCreateParams)
 	p.DeploymentZone = deploymentZone
-	p.Version = versions.V1
+	p.Version = version.V1
 
 	for _, port := range dto.Ports {
 		if port.Name == "__ssh" {

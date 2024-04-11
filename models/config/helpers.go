@@ -46,6 +46,18 @@ func (d *Deployment) GetZone(name string) *DeploymentZone {
 	return nil
 }
 
+// HasCapability returns true if the deployment zone has the given capability.
+// If the capability is not found, false is returned.
+// All capabilities are loaded locally by the configuration file
+func (d *DeploymentZone) HasCapability(capability string) bool {
+	for _, c := range d.Capabilities {
+		if c == capability {
+			return true
+		}
+	}
+	return false
+}
+
 // GetZone returns the VM zone with the given name.
 // If the zone is not found, nil is returned.
 // All zones are loaded locally by the configuration file

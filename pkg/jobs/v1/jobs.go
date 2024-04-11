@@ -12,11 +12,11 @@ import (
 	"go-deploy/pkg/db/resources/vm_repo"
 	jErrors "go-deploy/pkg/jobs/errors"
 	"go-deploy/pkg/jobs/utils"
+	"go-deploy/pkg/log"
 	"go-deploy/pkg/workers/confirm"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/v1/vms/opts"
-	"log"
 	"time"
 )
 
@@ -79,11 +79,11 @@ func DeleteVM(job *model.Job) error {
 			}
 
 			if errors.Is(err, context.DeadlineExceeded) {
-				log.Println("timeout waiting for related jobs to finish for model", id)
+				log.Println("Timeout waiting for related jobs to finish for model", id)
 				return
 			}
 
-			log.Println("failed to wait for related jobs for model", id, ". details:", err)
+			log.Println("Failed to wait for related jobs for model", id, ". details:", err)
 		}
 
 		cancel()
@@ -198,7 +198,7 @@ func AttachGPU(job *model.Job) error {
 	}
 	leaseDuration := job.Args["leaseDuration"].(float64)
 
-	// We keep this field to know who requested the gpu_repo attachment
+	// We keep this field to know who requested the gpu attachment
 	_ = job.Args["userId"].(string)
 
 	err = service.V1().VMs().AttachGPU(vmID, gpuIDs, leaseDuration)
@@ -292,11 +292,11 @@ func DeleteDeployment(job *model.Job) error {
 			}
 
 			if errors.Is(err, context.DeadlineExceeded) {
-				log.Println("timeout waiting for related jobs to finish for model", id)
+				log.Println("Timeout waiting for related jobs to finish for model", id)
 				return
 			}
 
-			log.Println("failed to wait for related jobs for model", id, ". details:", err)
+			log.Println("Failed to wait for related jobs for model", id, ". details:", err)
 		}
 
 		cancel()

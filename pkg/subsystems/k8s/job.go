@@ -3,9 +3,9 @@ package k8s
 import (
 	"context"
 	"fmt"
+	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems/k8s/models"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"log"
 	"time"
 )
 
@@ -16,7 +16,7 @@ func (client *Client) ReadJob(name string) (*models.JobPublic, error) {
 	}
 
 	if name == "" {
-		log.Println("no name supplied when reading k8s job. assuming it was deleted")
+		log.Println("No name supplied when reading k8s job. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -65,7 +65,7 @@ func (client *Client) DeleteJob(name string) error {
 	}
 
 	if name == "" {
-		log.Println("no name supplied when deleting k8s job. assuming it was deleted")
+		log.Println("No name supplied when deleting k8s job. Assuming it was deleted")
 		return nil
 	}
 

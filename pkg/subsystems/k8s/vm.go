@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
+	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems/k8s/keys"
 	"go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"log"
 	"time"
 )
 
@@ -26,9 +26,7 @@ func (client *Client) ReadVM(id string) (*models.VmPublic, error) {
 		return nil, makeError(err)
 	}
 
-	return &models.VmPublic{
-		Name: vm.Name,
-	}, nil
+	return models.CreateVmPublicFromRead(vm), nil
 }
 
 func (client *Client) CreateVM(public *models.VmPublic) (*models.VmPublic, error) {
@@ -65,26 +63,34 @@ func (client *Client) UpdateVM(public *models.VmPublic) (*models.VmPublic, error
 	}
 
 	if public.ID == "" {
-		log.Println("no id supplied when updating k8s vm. assuming it was deleted")
+		log.Println("No id supplied when updating k8s vm. Assuming it was deleted")
 		return nil, nil
 	}
 
-	vm, err := client.KubeVirtK8sClient.KubevirtV1().VirtualMachines(client.Namespace).Get(context.TODO(), public.ID, metav1.GetOptions{})
-	if err != nil {
-		if IsNotFoundErr(err) {
-			return nil, nil
+	for i := 0; i < 5; i++ {
+		vm, err := client.KubeVirtK8sClient.KubevirtV1().VirtualMachines(client.Namespace).Get(context.TODO(), public.ID, metav1.GetOptions{})
+		if err != nil {
+			if IsNotFoundErr(err) {
+				return nil, nil
+			}
+
+			return nil, makeError(err)
 		}
 
-		return nil, makeError(err)
+		manifest := CreateVmManifest(public, vm.ObjectMeta.ResourceVersion)
+		res, err := client.KubeVirtK8sClient.KubevirtV1().VirtualMachines(client.Namespace).Update(context.TODO(), manifest, metav1.UpdateOptions{})
+		if err != nil {
+			if IsHasBeenModifiedErr(err) {
+				continue
+			}
+
+			return nil, makeError(err)
+		}
+
+		return models.CreateVmPublicFromRead(res), nil
 	}
 
-	manifest := CreateVmManifest(public, vm.ObjectMeta.ResourceVersion)
-	res, err := client.KubeVirtK8sClient.KubevirtV1().VirtualMachines(client.Namespace).Update(context.TODO(), manifest, metav1.UpdateOptions{})
-	if err != nil {
-		return nil, makeError(err)
-	}
-
-	return models.CreateVmPublicFromRead(res), nil
+	return nil, makeError(fmt.Errorf("failed to update k8s vm %s. details: max retries reached", public.ID))
 }
 
 func (client *Client) DeleteVM(id string) error {
@@ -93,7 +99,7 @@ func (client *Client) DeleteVM(id string) error {
 	}
 
 	if id == "" {
-		log.Println("no id supplied when deleting k8s vm. assuming it was deleted")
+		log.Println("No id supplied when deleting k8s vm. Assuming it was deleted")
 		return nil
 	}
 
@@ -119,7 +125,7 @@ func (client *Client) DeleteVMIs(vmID string) error {
 	}
 
 	if vmID == "" {
-		log.Println("no vm id supplied when deleting k8s vmis. assuming it was deleted")
+		log.Println("No vm id supplied when deleting k8s vmis. Assuming it was deleted")
 		return nil
 	}
 

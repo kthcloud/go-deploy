@@ -6,7 +6,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"log"
+	"go-deploy/pkg/log"
 	"math/rand"
 	"strings"
 	"time"
@@ -37,6 +37,11 @@ func HashStringAlphanumeric(token string) string {
 	urlHash = strings.ReplaceAll(urlHash, "=", "")
 	urlHash = strings.ReplaceAll(urlHash, "-", "")
 	return urlHash
+}
+
+// HashStringAlphanumericLower is a lowercase version of HashStringAlphanumeric
+func HashStringAlphanumericLower(token string) string {
+	return strings.ToLower(HashStringAlphanumeric(token))
 }
 
 // GetPage returns a page of a list
@@ -148,4 +153,9 @@ func StrPtr(s string) *string {
 // Int64Ptr converts an int64 to a pointer
 func Int64Ptr(i int64) *int64 {
 	return &i
+}
+
+// PtrOf converts a value to a pointer
+func PtrOf[T any](v T) *T {
+	return &v
 }

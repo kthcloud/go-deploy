@@ -8,11 +8,11 @@ import (
 	"go-deploy/models/model"
 	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/db"
+	"go-deploy/pkg/log"
 	"go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"log"
 	"sort"
 	"time"
 )
@@ -95,13 +95,13 @@ func (client *Client) UpdateWithParams(id string, params *model.DeploymentUpdate
 	}
 
 	if deployment == nil {
-		log.Println("deployment not found when updating deployment", id, ". assuming it was deleted")
+		log.Println("Deployment not found when updating deployment", id, ". Assuming it was deleted")
 		return nil
 	}
 
 	mainApp := deployment.GetMainApp()
 	if mainApp == nil {
-		log.Println("main app not found when updating deployment", id, ". assuming it was deleted")
+		log.Println("Main app not found when updating deployment", id, ". Assuming it was deleted")
 		return nil
 	}
 
@@ -232,7 +232,7 @@ func (client *Client) AddLogsByName(name string, logs ...model.Log) error {
 		}},
 	}
 
-	err := client.UpdateWithBsonByID(name, update)
+	err := client.UpdateWithBsonByName(name, update)
 	if err != nil {
 		return err
 	}
@@ -312,7 +312,7 @@ func (client *Client) SetPingResult(id string, pingResult int) error {
 	}
 
 	if !exists {
-		log.Println("deployment not found when saving ping result", id, ". assuming it was deleted")
+		log.Println("Deployment not found when saving ping result", id, ". Assuming it was deleted")
 		return nil
 	}
 

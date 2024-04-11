@@ -54,8 +54,6 @@ func (client *Client) Create(id string, params *model.UserCreateParams) (*model.
 		EffectiveRole:       *params.EffectiveRole,
 		PublicKeys:          []model.PublicKey{},
 		LastAuthenticatedAt: time.Now(),
-
-		Onboarded: false,
 	})
 
 	if err != nil {
@@ -70,7 +68,6 @@ func (client *Client) UpdateWithParams(id string, params *model.UserUpdateParams
 	updateData := bson.D{}
 
 	db.AddIfNotNil(&updateData, "publicKeys", params.PublicKeys)
-	db.AddIfNotNil(&updateData, "onboarded", params.Onboarded)
 
 	if len(updateData) == 0 {
 		return nil

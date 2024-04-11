@@ -151,7 +151,6 @@ func (c *Client) Update(userID string, dtoUserUpdate *body.UserUpdate) (*model.U
 
 	userUpdate := &model.UserUpdateParams{
 		PublicKeys: publicKeys,
-		Onboarded:  dtoUserUpdate.Onboarded,
 	}
 
 	err := umc.UpdateWithParams(userID, userUpdate)

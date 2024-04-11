@@ -11,11 +11,11 @@ import (
 	"go-deploy/pkg/db/resources/vm_repo"
 	jErrors "go-deploy/pkg/jobs/errors"
 	"go-deploy/pkg/jobs/utils"
+	"go-deploy/pkg/log"
 	"go-deploy/pkg/workers/confirm"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/v2/vms/opts"
-	"log"
 	"time"
 )
 
@@ -78,11 +78,11 @@ func DeleteVM(job *model.Job) error {
 			}
 
 			if errors.Is(err, context.DeadlineExceeded) {
-				log.Println("timeout waiting for related jobs to finish for model", id)
+				log.Println("Timeout waiting for related jobs to finish for model", id)
 				return
 			}
 
-			log.Println("failed to wait for related jobs for model", id, ". details:", err)
+			log.Println("Failed to wait for related jobs for model", id, ". details:", err)
 		}
 
 		cancel()
@@ -162,6 +162,86 @@ func UpdateVM(job *model.Job) error {
 	return nil
 }
 
+func CreateGpuLease(job *model.Job) error {
+	err := utils.AssertParameters(job, []string{"id", "userId", "params"})
+	if err != nil {
+		return jErrors.MakeTerminatedError(err)
+	}
+
+	id := job.Args["id"].(string)
+	userID := job.Args["userId"].(string)
+	var params body.GpuLeaseCreate
+	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
+	if err != nil {
+		return jErrors.MakeTerminatedError(err)
+	}
+
+	err = service.V2(utils.GetAuthInfo(job)).VMs().GpuLeases().Create(id, userID, &params)
+	if err != nil {
+		switch {
+		case errors.Is(err, sErrors.VmNotFoundErr):
+			return jErrors.MakeTerminatedError(err)
+		case errors.Is(err, sErrors.GpuLeaseAlreadyExistsErr):
+			return jErrors.MakeTerminatedError(err)
+		case errors.Is(err, sErrors.GpuNotFoundErr):
+			return jErrors.MakeTerminatedError(err)
+		}
+
+		return jErrors.MakeFailedError(err)
+	}
+
+	return nil
+}
+
+func UpdateGpuLease(job *model.Job) error {
+	err := utils.AssertParameters(job, []string{"id", "params"})
+	if err != nil {
+		return jErrors.MakeTerminatedError(err)
+	}
+
+	id := job.Args["id"].(string)
+	var params body.GpuLeaseUpdate
+	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
+	if err != nil {
+		return jErrors.MakeTerminatedError(err)
+	}
+
+	err = service.V2().VMs().GpuLeases().Update(id, &params)
+	if err != nil {
+		switch {
+		case errors.Is(err, sErrors.GpuLeaseNotFoundErr):
+			return jErrors.MakeTerminatedError(err)
+		case errors.Is(err, sErrors.GpuLeaseNotAssignedErr):
+			return jErrors.MakeTerminatedError(err)
+		}
+
+		return jErrors.MakeFailedError(err)
+	}
+
+	return nil
+}
+
+func DeleteGpuLease(job *model.Job) error {
+	err := utils.AssertParameters(job, []string{"id"})
+	if err != nil {
+		return jErrors.MakeTerminatedError(err)
+	}
+
+	id := job.Args["id"].(string)
+
+	err = service.V2().VMs().GpuLeases().Delete(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, sErrors.GpuNotFoundErr):
+			return jErrors.MakeTerminatedError(err)
+		}
+
+		return jErrors.MakeFailedError(err)
+	}
+
+	return nil
+}
+
 func CreateSystemVmSnapshot(job *model.Job) error {
 	err := utils.AssertParameters(job, []string{"id", "params"})
 	if err != nil {
@@ -231,7 +311,7 @@ func DoVmAction(job *model.Job) error {
 	}
 
 	vmID := job.Args["id"].(string)
-	var params body.VmAction
+	var params body.VmActionCreate
 	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)

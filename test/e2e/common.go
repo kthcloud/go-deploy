@@ -22,9 +22,12 @@ const (
 	TestDomain    = "test-deploy.saffronbun.com"
 	CheckInterval = 1 * time.Second
 	MaxChecks     = 900 // 900 * CheckInterval (1) seconds = 15 minutes
+
+	// V2TestsEnabled flag is used temporarily to enable V2 tests until V2 zone is fully operational
+	V2TestsEnabled = true
 )
 
-func fetchUntil(t *testing.T, subPath string, callback func(*http.Response) bool) {
+func FetchUntil(t *testing.T, subPath string, callback func(*http.Response) bool) {
 	loops := 0
 	for {
 		time.Sleep(CheckInterval)
@@ -77,7 +80,7 @@ func CreateServerURL(subPath string) string {
 }
 
 func CreateServerUrlWithProtocol(protocol, subPath string) string {
-	return protocol + "://localhost:8080/v1" + subPath
+	return protocol + "://localhost:8080" + subPath
 }
 
 func DoGetRequest(t *testing.T, subPath string, userID ...string) *http.Response {
@@ -165,36 +168,42 @@ func ReadRawResponseBody(t *testing.T, resp *http.Response) []byte {
 	return raw
 }
 
-func ParseRawBody(t *testing.T, body []byte, parsedBody interface{}) {
+func parseRawBody(body []byte, parsedBody interface{}) error {
 	err := json.Unmarshal(body, parsedBody)
 	if err != nil {
-		assert.FailNow(t, fmt.Sprintf("failed to parse body: %s", err.Error()))
+		return fmt.Errorf("failed to parse body: %w", err)
 	}
+
+	return nil
 }
 
 func Parse[okType any](t *testing.T, resp *http.Response) okType {
 	if resp.StatusCode > 299 {
 		rawBody := ReadRawResponseBody(t, resp)
+		empty := new(okType)
 
 		var bindingError body.BindingError
-		ParseRawBody(t, rawBody, &bindingError)
+		err := parseRawBody(rawBody, &bindingError)
 
 		// Check if it was a binding error
-		if len(bindingError.ValidationErrors) > 0 {
+		if err != nil || len(bindingError.ValidationErrors) > 0 {
 			for _, fieldErrors := range bindingError.ValidationErrors {
 				for _, fieldError := range fieldErrors {
 					assert.Fail(t, fmt.Sprintf("binding error: %s", fieldError))
 				}
 			}
 
-			assert.FailNow(t, fmt.Sprintf("binding error (status code: %d)", resp.StatusCode))
+			assert.FailNow(t, fmt.Sprintf("error that was not go-deploy binding error (path: %s status code: %d)", resp.Request.URL.Path, resp.StatusCode))
+			return *empty
 		}
 
 		// Otherwise parse as ordinary error response
 		var errResp sys.ErrorResponse
-		ParseRawBody(t, rawBody, &errResp)
-
-		empty := new(okType)
+		err = parseRawBody(rawBody, &errResp)
+		if err != nil {
+			assert.FailNow(t, fmt.Sprintf("failed to parse error response (status code: %d): %s", resp.StatusCode, err.Error()))
+			return *empty
+		}
 
 		if len(errResp.Errors) == 0 {
 			assert.FailNow(t, fmt.Sprintf("error response has no errors (status code: %d)", resp.StatusCode))

@@ -11,15 +11,16 @@ const (
 	ResourceBeingCreated     = 10025
 	ResourceBeingDeleted     = 10026
 	ResourceCreatingSnapshot = 10027
-
-	ResourceUnknown    = 10030
-	ResourceStarting   = 10031
-	ResourceRunning    = 10032
-	ResourceStopping   = 10033
-	ResourceStopped    = 10034
-	ResourceRestarting = 10035
-	ResourceBuilding   = 10036
-	ResourceError      = 10037
+	ResourceProvisioning     = 10028
+	ResourceMigrating        = 10029
+	ResourceUnknown          = 10030
+	ResourceStarting         = 10031
+	ResourceRunning          = 10032
+	ResourceStopping         = 10033
+	ResourceStopped          = 10034
+	ResourceRestarting       = 10035
+	ResourceBuilding         = 10036
+	ResourceError            = 10037
 
 	JobPending    = 10040
 	JobFinished   = 10041

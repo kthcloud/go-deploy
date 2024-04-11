@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"go-deploy/pkg/db/resources/deployment_repo"
+	"go-deploy/pkg/log"
 	"go-deploy/service/errors"
 	"go-deploy/service/v1/deployments/opts"
 	"go-deploy/utils"
-	"log"
 	"time"
 )
 
@@ -35,12 +35,12 @@ func (c *Client) SetupLogStream(id string, ctx context.Context, handler func(str
 	}
 
 	if deployment.BeingDeleted() {
-		log.Println("deployment", id, "is being deleted. not setting up log stream")
+		log.Println("Deployment", id, "is being deleted. not setting up log stream")
 		return nil
 	}
 
 	go func() {
-		handler(MessageSourceControl, "[control]", "setting up log stream", time.Now())
+		handler(MessageSourceControl, "[control]", "Setting up log stream", time.Now())
 		time.Sleep(500 * time.Millisecond)
 
 		// fetch history logs

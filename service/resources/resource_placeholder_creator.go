@@ -1,7 +1,7 @@
 package resources
 
 import (
-	"log"
+	"go-deploy/pkg/log"
 )
 
 // SsPlaceholderCreatorType is a type that can be used to create a single subsystem placeholder model.
@@ -25,7 +25,7 @@ func (rc *SsPlaceholderCreatorType) WithDbFunc(dbFunc func(interface{}) error) *
 // Exec executes the placeholder creator
 func (rc *SsPlaceholderCreatorType) Exec() error {
 	if rc.dbFunc == nil {
-		log.Println("no db key provided for subsystem placeholder creation. did you forget to call WithDbKey?")
+		log.Println("No db key provided for subsystem placeholder creation. did you forget to call WithDbKey?")
 		return nil
 	}
 

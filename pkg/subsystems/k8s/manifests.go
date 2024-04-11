@@ -499,6 +499,7 @@ func CreateHpaManifest(public *models.HpaPublic) *autoscalingv2.HorizontalPodAut
 func CreateVmManifest(public *models.VmPublic, resourceVersion ...string) *kubevirtv1.VirtualMachine {
 	var dvSource *cdibetav1.DataVolumeSource
 	var version string
+	var gpus []kubevirtv1.GPU
 
 	name := public.ID
 	deployName := public.Name
@@ -518,6 +519,16 @@ func CreateVmManifest(public *models.VmPublic, resourceVersion ...string) *kubev
 			Registry: &cdibetav1.DataVolumeSourceRegistry{
 				URL: &public.Image,
 			},
+		}
+	}
+
+	if len(public.GPUs) > 0 {
+		gpus = make([]kubevirtv1.GPU, len(public.GPUs))
+		for i, gpu := range public.GPUs {
+			gpus[i] = kubevirtv1.GPU{
+				Name:       fmt.Sprintf("gpu-%d", i),
+				DeviceName: gpu,
+			}
 		}
 	}
 
@@ -548,6 +559,7 @@ func CreateVmManifest(public *models.VmPublic, resourceVersion ...string) *kubev
 				Spec: kubevirtv1.VirtualMachineInstanceSpec{
 					Domain: kubevirtv1.DomainSpec{
 						Devices: kubevirtv1.Devices{
+							GPUs: gpus,
 							Disks: []kubevirtv1.Disk{
 								{
 									Name: "rootdisk",

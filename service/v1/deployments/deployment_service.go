@@ -6,18 +6,18 @@ import (
 	"github.com/google/uuid"
 	"go-deploy/dto/v1/body"
 	"go-deploy/models/model"
-	"go-deploy/models/versions"
+	"go-deploy/models/version"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/db/resources/deployment_repo"
 	"go-deploy/pkg/db/resources/notification_repo"
 	"go-deploy/pkg/db/resources/team_repo"
+	"go-deploy/pkg/log"
 	sErrors "go-deploy/service/errors"
 	utils2 "go-deploy/service/utils"
 	"go-deploy/service/v1/deployments/opts"
 	"go-deploy/utils"
 	"go-deploy/utils/subsystemutils"
 	"go.mongodb.org/mongo-driver/bson"
-	"log"
 	"sort"
 	"time"
 )
@@ -334,7 +334,7 @@ func (c *Client) UpdateOwnerSetup(id string, params *body.DeploymentUpdateOwner)
 
 	if doTransfer {
 		jobID := uuid.New().String()
-		err := c.V1.Jobs().Create(jobID, effectiveUserID, model.JobUpdateDeploymentOwner, versions.V1, map[string]interface{}{
+		err := c.V1.Jobs().Create(jobID, effectiveUserID, model.JobUpdateDeploymentOwner, version.V1, map[string]interface{}{
 			"id":     id,
 			"params": *params,
 		})
@@ -427,7 +427,7 @@ func (c *Client) UpdateOwner(id string, params *body.DeploymentUpdateOwner) erro
 		return makeError(err)
 	}
 
-	log.Println("deployment", id, "owner updated from", params.OldOwnerID, "to", params.NewOwnerID)
+	log.Println("Deployment", id, "owner updated from", params.OldOwnerID, "to", params.NewOwnerID)
 	return nil
 }
 
@@ -520,7 +520,7 @@ func (c *Client) Repair(id string) error {
 	}
 
 	if !d.Ready() {
-		log.Println("deployment", id, "not ready when repairing.")
+		log.Println("Deployment", id, "not ready when repairing.")
 		return nil
 	}
 
@@ -541,7 +541,7 @@ func (c *Client) Repair(id string) error {
 		}
 	}
 
-	log.Println("repaired deployment", id)
+	log.Println("Repaired deployment", id)
 	return nil
 }
 
@@ -695,7 +695,7 @@ func (c *Client) CheckQuota(id string, opts *opts.QuotaOptions) error {
 
 		return nil
 	} else {
-		log.Println("quota options not set when checking quota for deployment", id)
+		log.Println("Quota options not set when checking quota for deployment", id)
 	}
 
 	return nil

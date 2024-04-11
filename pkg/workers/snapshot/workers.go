@@ -1,69 +1,51 @@
 package snapshot
 
 import (
-	"context"
 	"fmt"
 	"github.com/google/uuid"
 	"go-deploy/models/model"
-	"go-deploy/models/versions"
+	"go-deploy/models/version"
 	"go-deploy/pkg/db/resources/job_repo"
 	"go-deploy/pkg/db/resources/vm_repo"
-	"go-deploy/pkg/workers"
+	"go-deploy/pkg/log"
 	"go-deploy/utils"
-	"log"
 	"math/rand"
 	"time"
 )
 
 // snapshotter is a worker that takes snapshots.
-func snapshotter(ctx context.Context) {
-	defer workers.OnStop("snapshotter")
+func snapshotter() error {
+	vms, err := vm_repo.New().List()
+	if err != nil {
+		return err
+	}
 
-	reportTick := time.Tick(1 * time.Second)
-	tick := time.Tick(10 * time.Second)
+	for _, vm := range vms {
+		recurrings := []string{"daily", "weekly", "monthly"}
 
-	for {
-		select {
-		case <-reportTick:
-			workers.ReportUp("snapshotter")
-
-		case <-tick:
-			vms, err := vm_repo.New().List()
+		for _, recurring := range recurrings {
+			exists, err := job_repo.New().
+				IncludeTypes(model.JobCreateSystemVmSnapshot).
+				ExcludeStatus(model.JobStatusTerminated, model.JobStatusCompleted).
+				FilterArgs("id", vm.ID).
+				FilterArgs("params.name", fmt.Sprintf("auto-%s", recurring)).
+				ExistsAny()
 			if err != nil {
-				utils.PrettyPrintError(fmt.Errorf("failed to get all vms. details: %w", err))
-				continue
+				return err
 			}
 
-			for _, vm := range vms {
-				recurrings := []string{"daily", "weekly", "monthly"}
-
-				for _, recurring := range recurrings {
-					exists, err := job_repo.New().
-						IncludeTypes(model.JobCreateSystemVmSnapshot).
-						ExcludeStatus(model.JobStatusTerminated, model.JobStatusCompleted).
-						FilterArgs("id", vm.ID).
-						FilterArgs("params.name", fmt.Sprintf("auto-%s", recurring)).
-						ExistsAny()
-					if err != nil {
-						utils.PrettyPrintError(fmt.Errorf("failed to check if snapshot job exists. details: %w", err))
-						continue
-					}
-
-					if !exists {
-						scheduleSnapshotJob(&vm, recurring)
-					}
-				}
+			if !exists {
+				scheduleSnapshotJob(&vm, recurring)
 			}
-
-		case <-ctx.Done():
-			return
 		}
 	}
+
+	return nil
 }
 
 func scheduleSnapshotJob(vm *model.VM, recurring string) {
 	runAt := getRunAt(recurring)
-	err := job_repo.New().CreateScheduled(uuid.New().String(), vm.OwnerID, model.JobCreateSystemVmSnapshot, versions.V1, runAt, map[string]interface{}{
+	err := job_repo.New().CreateScheduled(uuid.New().String(), vm.OwnerID, model.JobCreateSystemVmSnapshot, version.V1, runAt, map[string]interface{}{
 		"id": vm.ID,
 		"params": model.CreateSnapshotParams{
 			Name:        fmt.Sprintf("auto-%s", recurring),
@@ -93,6 +75,6 @@ func getRunAt(recurring string) time.Time {
 		return time.Date(now.Year(), now.Month()+1, now.Day(), 3, minutes, 0, 0, time.UTC)
 	}
 
-	log.Println("invalid recurring value:", recurring)
+	log.Println("Invalid recurring value:", recurring)
 	return time.Time{}
 }

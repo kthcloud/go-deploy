@@ -32,8 +32,4 @@ type User struct {
 	EffectiveRole       EffectiveRole `bson:"effectiveRole"`
 	PublicKeys          []PublicKey   `bson:"publicKeys"`
 	LastAuthenticatedAt time.Time     `bson:"lastAuthenticatedAt"`
-
-	// Onboarded
-	// Deprecated: This field is deprecated and will be removed in the future.
-	Onboarded bool `bson:"onboarded"`
 }

@@ -3,9 +3,9 @@ package k8s
 import (
 	"context"
 	"fmt"
+	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems/k8s/models"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"log"
 	"time"
 )
 
@@ -16,7 +16,7 @@ func (client *Client) ReadService(name string) (*models.ServicePublic, error) {
 	}
 
 	if name == "" {
-		log.Println("no name supplied when reading k8s service. assuming it was deleted")
+		log.Println("No name supplied when reading k8s service. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -65,7 +65,7 @@ func (client *Client) UpdateService(public *models.ServicePublic) (*models.Servi
 	}
 
 	if public.Name == "" {
-		log.Println("no name supplied when updating k8s service. assuming it was deleted")
+		log.Println("No name supplied when updating k8s service. Assuming it was deleted")
 		return nil, nil
 	}
 
@@ -78,7 +78,7 @@ func (client *Client) UpdateService(public *models.ServicePublic) (*models.Servi
 		return models.CreateServicePublicFromRead(res), nil
 	}
 
-	log.Println("k8s service", public.Name, "not found when updating. assuming it was deleted")
+	log.Println("K8s service", public.Name, "not found when updating. Assuming it was deleted")
 	return nil, nil
 }
 
@@ -89,7 +89,7 @@ func (client *Client) DeleteService(name string) error {
 	}
 
 	if name == "" {
-		log.Println("no name supplied when deleting k8s service. assuming it was deleted")
+		log.Println("No name supplied when deleting k8s service. Assuming it was deleted")
 		return nil
 	}
 

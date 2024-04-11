@@ -3,6 +3,7 @@ package model
 import (
 	"github.com/fatih/structs"
 	"go-deploy/dto/v1/body"
+	"sort"
 )
 
 type Role struct {
@@ -29,6 +30,10 @@ func (r *Role) ToDTO(includeQuota bool) body.Role {
 		dto := r.Quotas.ToDTO()
 		quota = &dto
 	}
+
+	sort.Slice(permissions, func(i, j int) bool {
+		return permissions[i] < permissions[j]
+	})
 
 	return body.Role{
 		Name:        r.Name,
