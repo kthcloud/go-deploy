@@ -11,7 +11,8 @@ import (
 // into a struct that can be used by the application.
 
 const (
-	CapabilityKubeVirt = "kubevirt"
+	ZoneCapabilityDeployment = "deployment"
+	ZoneCapabilityVM         = "vm"
 )
 
 type ConfigType struct {

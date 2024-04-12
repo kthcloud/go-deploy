@@ -249,6 +249,11 @@ func CreateDeployment(job *model.Job) error {
 
 	err = service.V1().Deployments().Create(id, ownerID, &params)
 	if err != nil {
+		var zoneCapabilityMissingErr sErrors.ZoneCapabilityMissingErr
+		if errors.As(err, &zoneCapabilityMissingErr) {
+			return jErrors.MakeTerminatedError(err)
+		}
+
 		// If there was some error, we trigger a repair, since rerunning it would cause a NonUniqueFieldErr
 		_ = service.V1().Deployments().Repair(id)
 		return jErrors.MakeTerminatedError(err)

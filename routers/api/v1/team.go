@@ -354,7 +354,11 @@ func getResourceName(resource *model.TeamResource) *string {
 			return nil
 		}
 
-		return &vm.Name
+		if vm != nil {
+			return &vm.Name
+		}
+
+		return nil
 	}
 
 	return nil

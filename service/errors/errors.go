@@ -44,9 +44,25 @@ func (e PortInUseErr) Error() string {
 	return fmt.Sprintf("port %d is already in use", e.Port)
 }
 
-// NewPortInUseErr creates a new PortInUseErr.
-func NewPortInUseErr(port int) PortInUseErr {
+// NewPortInUseError creates a new PortInUseErr.
+func NewPortInUseError(port int) PortInUseErr {
 	return PortInUseErr{Port: port}
+}
+
+// ZoneCapabilityMissingErr is returned when the zone capability is missing.
+type ZoneCapabilityMissingErr struct {
+	Zone       string
+	Capability string
+}
+
+// Error returns the reason for the zone capability missing error.
+func (e ZoneCapabilityMissingErr) Error() string {
+	return fmt.Sprintf("zone %s is missing capability %s", e.Zone, e.Capability)
+}
+
+// NewZoneCapabilityMissingError creates a new ZoneCapabilityMissingErr.
+func NewZoneCapabilityMissingError(zone, capability string) ZoneCapabilityMissingErr {
+	return ZoneCapabilityMissingErr{Zone: zone, Capability: capability}
 }
 
 var (

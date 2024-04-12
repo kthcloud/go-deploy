@@ -15,7 +15,7 @@ import (
 
 func vmStatusUpdaterV2(ctx context.Context) error {
 	for _, zone := range config.Config.Deployment.Zones {
-		if !zone.HasCapability(configModels.CapabilityKubeVirt) {
+		if !zone.HasCapability(configModels.ZoneCapabilityVM) {
 			continue
 		}
 

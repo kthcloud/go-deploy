@@ -591,6 +591,10 @@ func CreateVmManifest(public *models.VmPublic, resourceVersion ...string) *kubev
 						Resources: kubevirtv1.ResourceRequirements{
 							Requests: apiv1.ResourceList{
 								apiv1.ResourceMemory: resource.MustParse(fmt.Sprintf("%dGi", public.RAM)),
+								apiv1.ResourceCPU:    resource.MustParse(fmt.Sprintf("250m")),
+							},
+							Limits: apiv1.ResourceList{
+								apiv1.ResourceMemory: resource.MustParse(fmt.Sprintf("%dGi", public.RAM)),
 								apiv1.ResourceCPU:    resource.MustParse(fmt.Sprintf("%d", public.CpuCores)),
 							},
 						},

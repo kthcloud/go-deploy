@@ -7,6 +7,7 @@ import (
 	"go-deploy/dto/v1/body"
 	"go-deploy/dto/v1/query"
 	"go-deploy/dto/v1/uri"
+	configModels "go-deploy/models/config"
 	"go-deploy/models/model"
 	"go-deploy/models/version"
 	"go-deploy/pkg/sys"
@@ -182,6 +183,11 @@ func CreateDeployment(c *gin.Context) {
 		zone := deployV1.Zones().Get(*requestBody.Zone, model.ZoneTypeDeployment)
 		if zone == nil {
 			context.NotFound("Zone not found")
+			return
+		}
+
+		if !deployV1.Zones().HasCapability(*requestBody.Zone, configModels.ZoneCapabilityDeployment) {
+			context.Forbidden("Zone does not have deployment capability")
 			return
 		}
 	}
