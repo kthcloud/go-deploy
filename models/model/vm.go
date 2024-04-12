@@ -32,10 +32,10 @@ type VM struct {
 	Specs      Specs      `bson:"specs"`
 
 	// StatusCode
-	// Deprecated use Status instead
+	// Deprecated: use Status instead
 	StatusCode int `bson:"statusCode"`
 	// StatusMessage
-	// Deprecated use Status instead
+	// Deprecated: use Status instead
 	StatusMessage string `bson:"statusMessage"`
 	// Status is the current status of a VM instance
 	// It is set by the status updater worker

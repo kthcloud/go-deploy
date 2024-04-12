@@ -72,6 +72,7 @@ func (client *Client) Create(id, owner, manager string, params *model.VmCreatePa
 			DiskSize: params.DiskSize,
 		},
 
+		Status:        status_codes.GetMsg(status_codes.ResourceBeingCreated),
 		StatusCode:    status_codes.ResourceBeingCreated,
 		StatusMessage: status_codes.GetMsg(status_codes.ResourceBeingCreated),
 	}
