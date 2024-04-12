@@ -57,7 +57,7 @@ func CreateVmPublicFromRead(vm *kubevirtv1.VirtualMachine) *VmPublic {
 	}
 
 	if vm.Spec.Template != nil {
-		if r := vm.Spec.Template.Spec.Domain.Resources.Requests; r != nil {
+		if r := vm.Spec.Template.Spec.Domain.Resources.Limits; r != nil {
 			ram = int(r.Memory().Value()) / 1024 / 1024 / 1024
 			cpuCores = int(r.Cpu().Value())
 		}
