@@ -14,7 +14,7 @@ import (
 func (client *Client) SetupStatusWatcher(ctx context.Context, resourceType string, handler func(string, string)) error {
 	switch resourceType {
 	case "vm":
-		statusChan, err := client.KubeVirtK8sClient.KubevirtV1().VirtualMachines(client.Namespace).Watch(ctx, metav1.ListOptions{})
+		statusChan, err := client.KubeVirtK8sClient.KubevirtV1().VirtualMachines(client.Namespace).Watch(ctx, metav1.ListOptions{Watch: true})
 
 		if err != nil {
 			return err
