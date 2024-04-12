@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"go-deploy/dto/v2/body"
+	configModels "go-deploy/models/config"
 	"go-deploy/models/model"
 	"go-deploy/models/version"
 	"go-deploy/pkg/config"
@@ -171,9 +172,13 @@ func (c *Client) Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
 		return fmt.Errorf("failed to create vm. details: %w", err)
 	}
 
-	// Right now need to make sure the zone deployed to has KubeVirt installed, so it is hardcoded
+	// Right now need to make sure the zone has KubeVirt installed, so it is hardcoded
 	zone := "se-flem-2"
 	params := model.VmCreateParams{}.FromDTOv2(dtoVmCreate, &zone)
+
+	if !c.V1.Zones().HasCapability(zone, configModels.ZoneCapabilityVM) {
+		return sErrors.NewZoneCapabilityMissingError(zone, configModels.ZoneCapabilityVM)
+	}
 
 	_, err := vm_repo.New(version.V2).Create(id, ownerID, config.Config.Manager, &params)
 	if err != nil {

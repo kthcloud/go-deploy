@@ -7,6 +7,7 @@ import (
 	"go-deploy/dto/v2/body"
 	"go-deploy/dto/v2/query"
 	"go-deploy/dto/v2/uri"
+	configModels "go-deploy/models/config"
 	"go-deploy/models/model"
 	"go-deploy/models/version"
 	"go-deploy/pkg/sys"
@@ -174,9 +175,14 @@ func CreateVM(c *gin.Context) {
 	}
 
 	if requestBody.Zone != nil {
-		zone := deployV1.Zones().Get(*requestBody.Zone, model.ZoneTypeVM)
+		zone := deployV1.Zones().Get(*requestBody.Zone, model.ZoneTypeDeployment)
 		if zone == nil {
 			context.NotFound("Zone not found")
+			return
+		}
+
+		if !deployV1.Zones().HasCapability(*requestBody.Zone, configModels.ZoneCapabilityVM) {
+			context.Forbidden("Zone does not have VM capability")
 			return
 		}
 	}

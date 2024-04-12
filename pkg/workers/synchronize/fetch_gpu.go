@@ -208,7 +208,7 @@ func synchronizeGpusV2(gpuInfo *models.GpuInfoRead) error {
 			continue
 		}
 
-		if !zone.HasCapability(configModels.CapabilityKubeVirt) {
+		if !zone.HasCapability(configModels.ZoneCapabilityDeployment) {
 			continue
 		}
 

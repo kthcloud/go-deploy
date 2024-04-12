@@ -68,17 +68,10 @@ func NewRouter() *gin.Engine {
 	//// Swagger routes
 	// v1
 	docsV1.SwaggerInfoV1.BasePath = basePath
-	println(docsV1.SwaggerInfoV1.InfoInstanceName)
-	//public.GET("/v1/docs", func(c *gin.Context) {
-	//	c.Redirect(302, "/v1/docs/index.html")
-	//})
 	public.GET("/v1/docs/*any", ginSwagger.WrapHandler(swaggerfiles.Handler, ginSwagger.InstanceName("V1")))
 
 	// v2
 	docsV2.SwaggerInfoV2.BasePath = basePath
-	//public.GET("/v2/docs", func(c *gin.Context) {
-	//	c.Redirect(302, "/v2/docs/index.html")
-	//})
 	public.GET("/v2/docs/*any", ginSwagger.WrapHandler(swaggerfiles.Handler, ginSwagger.InstanceName("V2")))
 
 	//// Health check routes

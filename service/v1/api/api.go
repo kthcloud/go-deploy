@@ -178,4 +178,5 @@ type VMs interface {
 type Zones interface {
 	List(opts ...zoneOpts.ListOpts) ([]model.Zone, error)
 	Get(name, zoneType string) *model.Zone
+	HasCapability(zoneName, capability string) bool
 }

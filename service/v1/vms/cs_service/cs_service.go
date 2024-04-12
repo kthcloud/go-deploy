@@ -87,7 +87,7 @@ func (c *Client) Create(id string, params *model.VmCreateParams) error {
 		if err != nil {
 			var portInUseErr *cErrors.PortInUseError
 			if errors.As(err, &portInUseErr) {
-				return makeError(sErrors.NewPortInUseErr(portInUseErr.Port))
+				return makeError(sErrors.NewPortInUseError(portInUseErr.Port))
 			}
 
 			return makeError(err)
@@ -202,7 +202,7 @@ func (c *Client) Update(id string, updateParams *model.VmUpdateParams) error {
 				if err != nil {
 					var portInUseErr *cErrors.PortInUseError
 					if errors.As(err, &portInUseErr) {
-						return makeError(sErrors.NewPortInUseErr(portInUseErr.Port))
+						return makeError(sErrors.NewPortInUseError(portInUseErr.Port))
 					}
 
 					return makeError(err)
@@ -348,7 +348,7 @@ func (c *Client) Repair(id string) error {
 			if err != nil {
 				var portInUseErr *cErrors.PortInUseError
 				if errors.As(err, &portInUseErr) {
-					return makeError(sErrors.NewPortInUseErr(portInUseErr.Port))
+					return makeError(sErrors.NewPortInUseError(portInUseErr.Port))
 				}
 
 				return makeError(err)

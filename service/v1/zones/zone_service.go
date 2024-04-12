@@ -57,6 +57,15 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.Zone, error) {
 	return zones, nil
 }
 
+func (c *Client) HasCapability(zoneName, capability string) bool {
+	zone := config.Config.Deployment.GetZone(zoneName)
+	if zone == nil {
+		return false
+	}
+
+	return zone.HasCapability(capability)
+}
+
 func toDZone(dZone *configModels.DeploymentZone) *model.Zone {
 	if dZone == nil {
 		return nil
@@ -66,8 +75,8 @@ func toDZone(dZone *configModels.DeploymentZone) *model.Zone {
 	return &model.Zone{
 		Name:        dZone.Name,
 		Description: dZone.Description,
-		Type:        model.ZoneTypeDeployment,
 		Interface:   &domain,
+		Type:        model.ZoneTypeDeployment,
 	}
 }
 
@@ -80,7 +89,7 @@ func toVZone(vmZone *configModels.VmZone) *model.Zone {
 	return &model.Zone{
 		Name:        vmZone.Name,
 		Description: vmZone.Description,
-		Type:        model.ZoneTypeVM,
 		Interface:   &domain,
+		Type:        model.ZoneTypeVM,
 	}
 }

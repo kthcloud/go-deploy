@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"go-deploy/dto/v1/body"
+	configModels "go-deploy/models/config"
 	"go-deploy/models/model"
 	"go-deploy/models/version"
 	"go-deploy/pkg/config"
@@ -183,6 +184,10 @@ func (c *Client) Create(id, ownerID string, deploymentCreate *body.DeploymentCre
 
 	params := &model.DeploymentCreateParams{}
 	params.FromDTO(deploymentCreate, fallbackZone, fallbackImage, fallbackPort)
+
+	if !c.V1.Zones().HasCapability(params.Zone, configModels.ZoneCapabilityDeployment) {
+		return sErrors.NewZoneCapabilityMissingError(params.Zone, configModels.ZoneCapabilityDeployment)
+	}
 
 	d, err := deployment_repo.New().Create(id, ownerID, params)
 	if err != nil {
