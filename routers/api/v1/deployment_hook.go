@@ -79,7 +79,7 @@ func HandleHarborHook(c *gin.Context) {
 			Source: model.LogSourceDeployment,
 			Prefix: "[deployment]",
 			// Since this is sent as a string, and not a JSON object, we need to prepend the createdAt
-			Line:      fmt.Sprintf("%s %s", time.Now().Format(time.RFC3339), "Received push event from Harbor"),
+			Line:      fmt.Sprintf("%s %s", time.Now().Format(time.RFC3339), "Received push event from Registry"),
 			CreatedAt: time.Now(),
 		}
 
