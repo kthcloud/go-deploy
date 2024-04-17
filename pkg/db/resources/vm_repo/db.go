@@ -20,7 +20,7 @@ var (
 )
 
 // Create creates a new VM.
-func (client *Client) Create(id, owner, manager string, params *model.VmCreateParams) (*model.VM, error) {
+func (client *Client) Create(id, owner string, params *model.VmCreateParams) (*model.VM, error) {
 	portMap := make(map[string]model.Port)
 	for _, paramPort := range params.PortMap {
 		port := model.Port{
@@ -51,8 +51,7 @@ func (client *Client) Create(id, owner, manager string, params *model.VmCreatePa
 		Name:    params.Name,
 		Version: params.Version,
 
-		OwnerID:   owner,
-		ManagedBy: manager,
+		OwnerID: owner,
 
 		Zone:           params.Zone,
 		DeploymentZone: params.DeploymentZone,

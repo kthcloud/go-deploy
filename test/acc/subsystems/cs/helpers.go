@@ -13,7 +13,7 @@ import (
 
 func withClient(t *testing.T) *cs.Client {
 	zoneName := "se-flem"
-	zone := config.Config.VM.GetZone(zoneName)
+	zone := config.Config.VM.GetLegacyZone(zoneName)
 	if zone == nil {
 		t.Fatalf("no zone with name %s found", zoneName)
 	}
@@ -74,7 +74,7 @@ func withVM(t *testing.T, vm *models.VmPublic) *models.VmPublic {
 }
 
 func withDefaultPFR(t *testing.T, vm *models.VmPublic) *models.PortForwardingRulePublic {
-	zone := config.Config.VM.GetZone("se-flem")
+	zone := config.Config.VM.GetLegacyZone("se-flem")
 
 	pfr := &models.PortForwardingRulePublic{
 		Name:        acc.GenName(),

@@ -29,7 +29,7 @@ func OptsAll(vmID string, overwriteOps ...opts.ExtraOpts) *opts.Opts {
 }
 
 // OptsOnlyClient returns the options required to get only the client.
-func OptsOnlyClient(zone *configModels.VmZone) *opts.Opts {
+func OptsOnlyClient(zone *configModels.LegacyZone) *opts.Opts {
 	return &opts.Opts{
 		Client: true,
 		ExtraOpts: opts.ExtraOpts{
@@ -119,7 +119,7 @@ func (c *Client) Get(opts *opts.Opts) (*model.VM, *cs.Client, generators.CsGener
 // If WithZone is set, it will try to use those values.
 // Otherwise, it will use the zone parameter.
 // If both are nil, it will panic.
-func (c *Client) Client(zone *configModels.VmZone) (*cs.Client, error) {
+func (c *Client) Client(zone *configModels.LegacyZone) (*cs.Client, error) {
 	if zone == nil {
 		panic("zone is nil")
 	}
@@ -128,7 +128,7 @@ func (c *Client) Client(zone *configModels.VmZone) (*cs.Client, error) {
 }
 
 // Generator returns the CS generator.
-func (c *Client) Generator(vm *model.VM, zone *configModels.VmZone) generators.CsGenerator {
+func (c *Client) Generator(vm *model.VM, zone *configModels.LegacyZone) generators.CsGenerator {
 	if vm == nil {
 		panic("vm is nil")
 	}
@@ -141,7 +141,7 @@ func (c *Client) Generator(vm *model.VM, zone *configModels.VmZone) generators.C
 }
 
 // withClient returns a new service client.
-func withCsClient(zone *configModels.VmZone) (*cs.Client, error) {
+func withCsClient(zone *configModels.LegacyZone) (*cs.Client, error) {
 	return cs.New(&cs.ClientConf{
 		URL:         config.Config.CS.URL,
 		ApiKey:      config.Config.CS.ApiKey,
@@ -155,13 +155,13 @@ func withCsClient(zone *configModels.VmZone) (*cs.Client, error) {
 }
 
 // getZone is a helper function that returns either the zone in opts or the zone in vm.
-func getZone(opts *opts.Opts, vm *model.VM) *configModels.VmZone {
+func getZone(opts *opts.Opts, vm *model.VM) *configModels.LegacyZone {
 	if opts.ExtraOpts.Zone != nil {
 		return opts.ExtraOpts.Zone
 	}
 
 	if vm != nil {
-		return config.Config.VM.GetZone(vm.Zone)
+		return config.Config.VM.GetLegacyZone(vm.Zone)
 	}
 
 	return nil

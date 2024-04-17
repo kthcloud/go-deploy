@@ -19,14 +19,14 @@ type K8sGenerator struct {
 	generators.K8sGeneratorBase
 
 	vm             *model.VM
-	vmZone         *configModels.VmZone
-	deploymentZone *configModels.DeploymentZone
+	vmZone         *configModels.LegacyZone
+	deploymentZone *configModels.Zone
 	client         *k8s.Client
 
 	namespace string
 }
 
-func K8s(vm *model.VM, vmZone *configModels.VmZone, deploymentZone *configModels.DeploymentZone, client *k8s.Client, namespace string) *K8sGenerator {
+func K8s(vm *model.VM, vmZone *configModels.LegacyZone, deploymentZone *configModels.Zone, client *k8s.Client, namespace string) *K8sGenerator {
 	return &K8sGenerator{
 		vm:             vm,
 		vmZone:         vmZone,
@@ -314,6 +314,6 @@ func vmProxyCustomDomainIngressName(vm *model.VM, portName string) string {
 }
 
 // vmProxyExternalURL returns the external URL for a VM proxy
-func vmProxyExternalURL(portName string, zone *configModels.DeploymentZone) string {
-	return fmt.Sprintf("%s.%s", portName, zone.ParentDomainVmHttpProxy)
+func vmProxyExternalURL(portName string, zone *configModels.Zone) string {
+	return fmt.Sprintf("%s.%s", portName, zone.Domains.ParentVmApp)
 }

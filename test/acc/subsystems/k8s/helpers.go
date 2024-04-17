@@ -22,14 +22,14 @@ func withClient(t *testing.T, namespace string, zoneName ...string) *k8s.Client 
 		zName = zoneName[0]
 	}
 
-	zone := config.Config.Deployment.GetZone(zName)
+	zone := config.Config.GetZone(zName)
 	if zone == nil {
 		t.Fatalf("no zone with name %s found", zoneName)
 	}
 
 	client, err := k8s.New(&k8s.ClientConf{
-		K8sClient:         zone.K8sClient,
-		KubeVirtK8sClient: zone.KubeVirtClient,
+		K8sClient:         zone.K8s.Client,
+		KubeVirtK8sClient: zone.K8s.KubeVirtClient,
 		Namespace:         namespace,
 	})
 	if err != nil {

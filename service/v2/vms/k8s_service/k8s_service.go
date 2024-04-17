@@ -665,9 +665,13 @@ func (c *Client) Synchronize(zoneName string, gpuGroups []model.GpuGroup) error 
 	}
 
 	// Ensure zone has KubeVirt capabilities
-	zone := config.Config.Deployment.GetZone(zoneName)
+	zone := config.Config.GetZone(zoneName)
 	if zone == nil {
 		return makeError(sErrors.ZoneNotFoundErr)
+	}
+
+	if !zone.HasCapability(configModels.ZoneCapabilityVM) {
+		return nil
 	}
 
 	_, kc, _, err := c.Get(OptsOnlyClient(zoneName))
@@ -693,7 +697,7 @@ func (c *Client) Synchronize(zoneName string, gpuGroups []model.GpuGroup) error 
 
 // SetupStatusWatcher sets up a status watcher for a zone.
 // For every status change, it triggers the callback.
-func (c *Client) SetupStatusWatcher(ctx context.Context, zone *configModels.DeploymentZone, resourceType string, callback func(string, string)) error {
+func (c *Client) SetupStatusWatcher(ctx context.Context, zone *configModels.Zone, resourceType string, callback func(string, string)) error {
 	_, kc, _, err := c.Get(OptsOnlyClient(zone.Name))
 	if err != nil {
 		return err

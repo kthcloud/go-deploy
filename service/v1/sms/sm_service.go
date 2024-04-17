@@ -152,11 +152,11 @@ func (c *Client) Exists(userID string) (bool, error) {
 }
 
 // GetZone returns the deployment zone for the storage manager.
-func (c *Client) GetZone() *configModels.DeploymentZone {
+func (c *Client) GetZone() *configModels.Zone {
 	// Currently, the storage-manager is hosted in se-flem for all users
 	zone := "se-flem"
 
-	return config.Config.Deployment.GetZone(zone)
+	return config.Config.GetZone(zone)
 }
 
 // GetURL returns the URL for the storage manager.

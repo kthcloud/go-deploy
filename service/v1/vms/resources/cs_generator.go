@@ -3,7 +3,6 @@ package resources
 import (
 	configModels "go-deploy/models/config"
 	"go-deploy/models/model"
-	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems"
 	"go-deploy/pkg/subsystems/cs/models"
 	"go-deploy/service/generators"
@@ -15,10 +14,10 @@ type CsGenerator struct {
 	generators.CsGeneratorBase
 
 	vm   *model.VM
-	zone *configModels.VmZone
+	zone *configModels.LegacyZone
 }
 
-func CS(vm *model.VM, zone *configModels.VmZone) *CsGenerator {
+func CS(vm *model.VM, zone *configModels.LegacyZone) *CsGenerator {
 	return &CsGenerator{
 		vm:   vm,
 		zone: zone,
@@ -112,7 +111,6 @@ func (cg *CsGenerator) PFRs() []models.PortForwardingRulePublic {
 func createTags(name string, deployName string) []models.Tag {
 	tags := []models.Tag{
 		{Key: "name", Value: name},
-		{Key: "managedBy", Value: config.Config.Manager},
 		{Key: "deployName", Value: deployName},
 		{Key: "createdAt", Value: time.Now().Format(time.RFC3339)},
 	}

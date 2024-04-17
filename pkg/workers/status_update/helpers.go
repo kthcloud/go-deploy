@@ -16,7 +16,7 @@ import (
 
 // withClient is a helper function that return as CloudStack client.
 func withClient(zoneName string) (*cs.Client, error) {
-	zone := config.Config.VM.GetZone(zoneName)
+	zone := config.Config.VM.GetLegacyZone(zoneName)
 	if zone == nil {
 		return nil, fmt.Errorf("zone with id %s not found", zoneName)
 	}

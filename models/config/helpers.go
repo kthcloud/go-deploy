@@ -34,10 +34,10 @@ func (e *ConfigType) GetRolesByIamGroups(iamGroups []string) []model.Role {
 	return roles
 }
 
-// GetZone returns the Deployment zone with the given name.
+// GetZone returns the Zone with the given name.
 // If the zone is not found, nil is returned.
 // All zones are loaded locally by the configuration file
-func (d *Deployment) GetZone(name string) *DeploymentZone {
+func (d *ConfigType) GetZone(name string) *Zone {
 	for _, zone := range d.Zones {
 		if zone.Name == name {
 			return &zone
@@ -49,7 +49,7 @@ func (d *Deployment) GetZone(name string) *DeploymentZone {
 // HasCapability returns true if the deployment zone has the given capability.
 // If the capability is not found, false is returned.
 // All capabilities are loaded locally by the configuration file
-func (d *DeploymentZone) HasCapability(capability string) bool {
+func (d *Zone) HasCapability(capability string) bool {
 	for _, c := range d.Capabilities {
 		if c == capability {
 			return true
@@ -58,10 +58,11 @@ func (d *DeploymentZone) HasCapability(capability string) bool {
 	return false
 }
 
-// GetZone returns the VM zone with the given name.
+// GetLegacyZone returns the VM zone with the given name.
 // If the zone is not found, nil is returned.
 // All zones are loaded locally by the configuration file
-func (v *VM) GetZone(name string) *VmZone {
+// Deprecated: Use ConfigType.GetZone instead
+func (v *VM) GetLegacyZone(name string) *LegacyZone {
 	for _, zone := range v.Zones {
 		if zone.Name == name {
 			return &zone
@@ -70,10 +71,11 @@ func (v *VM) GetZone(name string) *VmZone {
 	return nil
 }
 
-// GetZoneByID returns the VM zone with the given ID.
+// GetLegacyZoneByID returns the VM zone with the given ID.
 // If the zone is not found, nil is returned.
 // All zones are loaded locally by the configuration file
-func (v *VM) GetZoneByID(id string) *VmZone {
+// Deprecated: Use ConfigType.GetZone instead
+func (v *VM) GetLegacyZoneByID(id string) *LegacyZone {
 	for _, zone := range v.Zones {
 		if zone.ZoneID == id {
 			return &zone

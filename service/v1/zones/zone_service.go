@@ -13,9 +13,9 @@ import (
 func (c *Client) Get(name, zoneType string) *model.Zone {
 	switch zoneType {
 	case model.ZoneTypeDeployment:
-		return toDZone(config.Config.Deployment.GetZone(name))
+		return toDZone(config.Config.GetZone(name))
 	case model.ZoneTypeVM:
-		return toVZone(config.Config.VM.GetZone(name))
+		return toVZone(config.Config.VM.GetLegacyZone(name))
 	}
 
 	return nil
@@ -25,7 +25,7 @@ func (c *Client) Get(name, zoneType string) *model.Zone {
 func (c *Client) List(opts ...opts.ListOpts) ([]model.Zone, error) {
 	o := utils.GetFirstOrDefault(opts)
 
-	deploymentZones := config.Config.Deployment.Zones
+	deploymentZones := config.Config.Zones
 	vmZones := config.Config.VM.Zones
 
 	var zones []model.Zone
@@ -58,7 +58,7 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.Zone, error) {
 }
 
 func (c *Client) HasCapability(zoneName, capability string) bool {
-	zone := config.Config.Deployment.GetZone(zoneName)
+	zone := config.Config.GetZone(zoneName)
 	if zone == nil {
 		return false
 	}
@@ -66,12 +66,12 @@ func (c *Client) HasCapability(zoneName, capability string) bool {
 	return zone.HasCapability(capability)
 }
 
-func toDZone(dZone *configModels.DeploymentZone) *model.Zone {
+func toDZone(dZone *configModels.Zone) *model.Zone {
 	if dZone == nil {
 		return nil
 	}
 
-	domain := dZone.ParentDomain
+	domain := dZone.Domains.ParentDeployment
 	return &model.Zone{
 		Name:        dZone.Name,
 		Description: dZone.Description,
@@ -80,7 +80,7 @@ func toDZone(dZone *configModels.DeploymentZone) *model.Zone {
 	}
 }
 
-func toVZone(vmZone *configModels.VmZone) *model.Zone {
+func toVZone(vmZone *configModels.LegacyZone) *model.Zone {
 	if vmZone == nil {
 		return nil
 	}

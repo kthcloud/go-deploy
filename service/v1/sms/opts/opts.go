@@ -19,7 +19,7 @@ type Opts struct {
 // such as where user ID is by default taken from StorageManager.OwnerID.
 type ExtraOpts struct {
 	UserID string
-	Zone   *configModels.DeploymentZone
+	Zone   *configModels.Zone
 }
 
 // ListOpts is used to specify the options when listing storage managers.

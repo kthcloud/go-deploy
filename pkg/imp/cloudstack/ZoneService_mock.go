@@ -164,7 +164,7 @@ func (m *MockZoneServiceIface) GetZoneByID(id string, opts ...OptionFunc) (*Zone
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "GetZoneByID", varargs...)
+	ret := m.ctrl.Call(m, "GetLegacyZoneByID", varargs...)
 	ret0, _ := ret[0].(*Zone)
 	ret1, _ := ret[1].(int)
 	ret2, _ := ret[2].(error)
@@ -175,7 +175,7 @@ func (m *MockZoneServiceIface) GetZoneByID(id string, opts ...OptionFunc) (*Zone
 func (mr *MockZoneServiceIfaceMockRecorder) GetZoneByID(id interface{}, opts ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{id}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetZoneByID", reflect.TypeOf((*MockZoneServiceIface)(nil).GetZoneByID), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLegacyZoneByID", reflect.TypeOf((*MockZoneServiceIface)(nil).GetZoneByID), varargs...)
 }
 
 // GetZoneByName mocks base method.

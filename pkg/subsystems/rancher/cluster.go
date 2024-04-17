@@ -26,9 +26,26 @@ func (c *Client) ReadCluster(id string) (*models.ClusterPublic, error) {
 	return models.CreateClusterPublicFromRead(cluster), nil
 }
 
-func (c *Client) ReadClusterKubeConfig(id string) (string, error) {
+func (c *Client) ReadClusterKubeConfig(name string) (string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to read cluster kubeconfig. details: %w", err)
+	}
+
+	allClusters, err := c.RancherClient.Cluster.List(nil)
+	if err != nil {
+		return "", makeError(err)
+	}
+
+	var id string
+	for _, cluster := range allClusters.Data {
+		if cluster.Name == name {
+			id = cluster.Id
+			break
+		}
+	}
+
+	if id == "" {
+		return "", nil
 	}
 
 	fullUrl := c.URL + "/clusters/" + id + "?action=generateKubeconfig"

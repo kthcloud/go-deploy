@@ -179,7 +179,7 @@ func (c *Client) Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
 
 	params := model.VmCreateParams{}.FromDTOv1(dtoVmCreate, &fallback, &deploymentZone)
 
-	_, err := vm_repo.New(version.V1).Create(id, ownerID, config.Config.Manager, &params)
+	_, err := vm_repo.New(version.V1).Create(id, ownerID, &params)
 	if err != nil {
 		if errors.Is(err, vm_repo.NonUniqueFieldErr) {
 			return sErrors.NonUniqueFieldErr
@@ -538,7 +538,7 @@ func (c *Client) GetConnectionString(id string) (*string, error) {
 		return nil, makeError(err)
 	}
 
-	zone := config.Config.VM.GetZone(vm.Zone)
+	zone := config.Config.VM.GetLegacyZone(vm.Zone)
 	if zone == nil {
 		return nil, makeError(sErrors.ZoneNotFoundErr)
 	}
@@ -866,7 +866,7 @@ func (c *Client) GetHost(vmID string) (*model.Host, error) {
 		return nil, nil
 	}
 
-	zone := config.Config.VM.GetZone(vm.Zone)
+	zone := config.Config.VM.GetLegacyZone(vm.Zone)
 	if zone == nil {
 		return nil, makeError(sErrors.ZoneNotFoundErr)
 	}
@@ -924,7 +924,7 @@ func (c *Client) GetCloudStackHostCapabilities(hostName string, zoneName string)
 
 	cc := cs_service.New(nil)
 
-	zone := config.Config.VM.GetZone(zoneName)
+	zone := config.Config.VM.GetLegacyZone(zoneName)
 	if zone == nil {
 		return nil, makeError(sErrors.ZoneNotFoundErr)
 	}

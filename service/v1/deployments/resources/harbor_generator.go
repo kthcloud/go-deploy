@@ -16,12 +16,12 @@ type HarborGenerator struct {
 	generators.HarborGeneratorBase
 
 	deployment *model.Deployment
-	zone       *configModels.DeploymentZone
+	zone       *configModels.Zone
 
 	project string
 }
 
-func Harbor(deployment *model.Deployment, zone *configModels.DeploymentZone, project string) generators.HarborGenerator {
+func Harbor(deployment *model.Deployment, zone *configModels.Zone, project string) generators.HarborGenerator {
 	return &HarborGenerator{
 		deployment: deployment,
 		zone:       zone,

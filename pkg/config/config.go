@@ -74,24 +74,7 @@ func SetupEnvironment(mode string) error {
 }
 
 // checkConfig asserts that the config is correct.
-// This includes checking for unique zone names.
 func checkConfig() error {
-	uniqueNames := make(map[string]bool)
-	for _, zone := range Config.Deployment.Zones {
-		if uniqueNames[zone.Name] {
-			return fmt.Errorf("found duplicate deployment zone name: %s", zone.Name)
-		}
-		uniqueNames[zone.Name] = true
-	}
-
-	uniqueNames = make(map[string]bool)
-	for _, zone := range Config.VM.Zones {
-		if uniqueNames[zone.Name] {
-			return fmt.Errorf("found duplicate vm zone name: %s", zone.Name)
-		}
-		uniqueNames[zone.Name] = true
-	}
-
 	return nil
 }
 
@@ -101,8 +84,8 @@ func setupK8sClusters() error {
 		return fmt.Errorf("failed to setup k8s clusters. details: %w", err)
 	}
 
-	for idx, zone := range Config.Deployment.Zones {
-		sourceType, ok := zone.ConfigSource.(map[string]interface{})
+	for idx, zone := range Config.Zones {
+		sourceType, ok := zone.K8s.ConfigSource.(map[string]interface{})
 		if !ok {
 			return makeError(fmt.Errorf("failed to parse type of config source for zone %s", zone.Name))
 		}
@@ -112,7 +95,7 @@ func setupK8sClusters() error {
 			return makeError(fmt.Errorf("failed to parse type of config source for zone %s", zone.Name))
 		}
 
-		log.Printf(" - Setting up K8s cluster for zone %s (%d/%d)", zone.Name, idx+1, len(Config.Deployment.Zones))
+		log.Printf(" - Setting up K8s cluster for zone %s (%d/%d)", zone.Name, idx+1, len(Config.Zones))
 
 		switch configType {
 		case "rancher":
@@ -128,8 +111,8 @@ func setupK8sClusters() error {
 					return makeError(err)
 				}
 
-				Config.Deployment.Zones[idx].K8sClient = k8sClient
-				Config.Deployment.Zones[idx].KubeVirtClient = kubevirtClient
+				Config.Zones[idx].K8s.Client = k8sClient
+				Config.Zones[idx].K8s.KubeVirtClient = kubevirtClient
 			}
 		case "cloudstack":
 			{
@@ -144,8 +127,8 @@ func setupK8sClusters() error {
 					return makeError(err)
 				}
 
-				Config.Deployment.Zones[idx].K8sClient = k8sClient
-				Config.Deployment.Zones[idx].KubeVirtClient = kubevirtClient
+				Config.Zones[idx].K8s.Client = k8sClient
+				Config.Zones[idx].K8s.KubeVirtClient = kubevirtClient
 			}
 		}
 	}
@@ -169,13 +152,13 @@ func createClientFromRancherConfig(name string, config *config.RancherConfigSour
 		return nil, nil, makeError(err)
 	}
 
-	kubeConfig, err := rancherClient.ReadClusterKubeConfig(config.ClusterID)
+	kubeConfig, err := rancherClient.ReadClusterKubeConfig(config.ClusterName)
 	if err != nil {
 		return nil, nil, makeError(err)
 	}
 
 	if kubeConfig == "" {
-		return nil, nil, makeError(fmt.Errorf("kubeconfig not found for cluster %s", config.ClusterID))
+		return nil, nil, makeError(fmt.Errorf("kubeconfig not found for cluster %s", config.ClusterName))
 	}
 
 	return createK8sClients([]byte(kubeConfig))

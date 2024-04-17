@@ -312,7 +312,7 @@ func (c *Client) CheckGpuHardwareAvailable(gpuID string) error {
 		return err
 	}
 
-	zone := config.Config.VM.GetZone(gpu.Zone)
+	zone := config.Config.VM.GetLegacyZone(gpu.Zone)
 	if zone == nil {
 		return sErrors.ZoneNotFoundErr
 	}
@@ -347,7 +347,7 @@ func (c *Client) CheckSuitableHost(id, hostName, zoneName string) error {
 		return sErrors.VmNotCreatedErr
 	}
 
-	zone := config.Config.VM.GetZone(zoneName)
+	zone := config.Config.VM.GetLegacyZone(zoneName)
 	if zone == nil {
 		return sErrors.ZoneNotFoundErr
 	}

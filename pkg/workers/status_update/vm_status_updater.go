@@ -14,7 +14,7 @@ import (
 )
 
 func vmStatusUpdaterV2(ctx context.Context) error {
-	for _, zone := range config.Config.Deployment.Zones {
+	for _, zone := range config.Config.Zones {
 		if !zone.HasCapability(configModels.ZoneCapabilityVM) {
 			continue
 		}

@@ -22,7 +22,7 @@ func vmStatusUpdater() error {
 
 	for _, vm := range v1Vms {
 		if _, ok := allVmStatus[vm.ID]; !ok {
-			zone := config.Config.VM.GetZone(vm.Zone)
+			zone := config.Config.VM.GetLegacyZone(vm.Zone)
 			if zone == nil {
 				continue
 			}
