@@ -39,7 +39,7 @@ func OptsNoGenerator(deploymentID string, overwriteOps ...opts.ExtraOpts) *opts.
 	}
 }
 
-func OptsOnlyClient(zone *configModels.DeploymentZone) *opts.Opts {
+func OptsOnlyClient(zone *configModels.Zone) *opts.Opts {
 	return &opts.Opts{
 		Client:    true,
 		ExtraOpts: opts.ExtraOpts{Zone: zone},
@@ -120,12 +120,12 @@ func (c *Client) Get(opts *opts.Opts) (*model.Deployment, *k8s.Client, generator
 }
 
 // Client returns the K8s service client.
-func (c *Client) Client(zone *configModels.DeploymentZone) (*k8s.Client, error) {
+func (c *Client) Client(zone *configModels.Zone) (*k8s.Client, error) {
 	return withClient(zone, getNamespaceName(zone))
 }
 
 // Generator returns the K8s generator.
-func (c *Client) Generator(deployment *model.Deployment, client *k8s.Client, zone *configModels.DeploymentZone) generators.K8sGenerator {
+func (c *Client) Generator(deployment *model.Deployment, client *k8s.Client, zone *configModels.Zone) generators.K8sGenerator {
 	if deployment == nil {
 		panic("deployment is nil")
 	}
@@ -142,27 +142,27 @@ func (c *Client) Generator(deployment *model.Deployment, client *k8s.Client, zon
 }
 
 // getNamespaceName returns the namespace name.
-func getNamespaceName(zone *configModels.DeploymentZone) string {
-	return zone.Namespaces.Deployment
+func getNamespaceName(zone *configModels.Zone) string {
+	return zone.K8s.Namespaces.Deployment
 }
 
 // withClient returns a new K8s service client.
-func withClient(zone *configModels.DeploymentZone, namespace string) (*k8s.Client, error) {
+func withClient(zone *configModels.Zone, namespace string) (*k8s.Client, error) {
 	return k8s.New(&k8s.ClientConf{
-		K8sClient:         zone.K8sClient,
-		KubeVirtK8sClient: zone.KubeVirtClient,
+		K8sClient:         zone.K8s.Client,
+		KubeVirtK8sClient: zone.K8s.KubeVirtClient,
 		Namespace:         namespace,
 	})
 }
 
 // getZone is a helper function that returns either the zone in opts or the zone in the deployment.
-func getZone(opts *opts.Opts, d *model.Deployment) *configModels.DeploymentZone {
+func getZone(opts *opts.Opts, d *model.Deployment) *configModels.Zone {
 	if opts.ExtraOpts.Zone != nil {
 		return opts.ExtraOpts.Zone
 	}
 
 	if d != nil {
-		return config.Config.Deployment.GetZone(d.Zone)
+		return config.Config.GetZone(d.Zone)
 	}
 
 	return nil

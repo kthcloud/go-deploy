@@ -46,7 +46,7 @@ func OptsNoGenerator(vmID string, extraOpts ...opts.ExtraOpts) *opts.Opts {
 // OptsOnlyClient returns the options required to get only the client.
 func OptsOnlyClient(zone string, extraOpts ...opts.ExtraOpts) *opts.Opts {
 	var eo opts.ExtraOpts
-	eo.Zone = config.Config.Deployment.GetZone(zone)
+	eo.Zone = config.Config.GetZone(zone)
 	if len(extraOpts) > 0 {
 		eo = extraOpts[0]
 	}
@@ -131,12 +131,12 @@ func (c *Client) Get(opts *opts.Opts) (*model.VM, *k8s.Client, generators.K8sGen
 }
 
 // Client returns the K8s service client.
-func (c *Client) Client(zone *configModels.DeploymentZone) (*k8s.Client, error) {
+func (c *Client) Client(zone *configModels.Zone) (*k8s.Client, error) {
 	return withClient(zone, getNamespaceName(zone))
 }
 
 // Generator returns the K8s generator.
-func (c *Client) Generator(vm *model.VM, client *k8s.Client, zone *configModels.DeploymentZone, extraSshKeys []string) generators.K8sGenerator {
+func (c *Client) Generator(vm *model.VM, client *k8s.Client, zone *configModels.Zone, extraSshKeys []string) generators.K8sGenerator {
 	if vm == nil {
 		panic("vm is nil")
 	}
@@ -153,15 +153,15 @@ func (c *Client) Generator(vm *model.VM, client *k8s.Client, zone *configModels.
 }
 
 // getNamespaceName returns the namespace name
-func getNamespaceName(zone *configModels.DeploymentZone) string {
-	return zone.Namespaces.VM
+func getNamespaceName(zone *configModels.Zone) string {
+	return zone.K8s.Namespaces.VM
 }
 
 // withClient returns a new K8s service client.
-func withClient(zone *configModels.DeploymentZone, namespace string) (*k8s.Client, error) {
+func withClient(zone *configModels.Zone, namespace string) (*k8s.Client, error) {
 	k8sClient, err := k8s.New(&k8s.ClientConf{
-		K8sClient:         zone.K8sClient,
-		KubeVirtK8sClient: zone.KubeVirtClient,
+		K8sClient:         zone.K8s.Client,
+		KubeVirtK8sClient: zone.K8s.KubeVirtClient,
 		Namespace:         namespace,
 	})
 	if err != nil {
@@ -172,13 +172,13 @@ func withClient(zone *configModels.DeploymentZone, namespace string) (*k8s.Clien
 }
 
 // getZone is a helper function that returns either the zone in opts or the zone in vm.
-func getZone(opts *opts.Opts, vm *model.VM) *configModels.DeploymentZone {
+func getZone(opts *opts.Opts, vm *model.VM) *configModels.Zone {
 	if opts.ExtraOpts.Zone != nil {
 		return opts.ExtraOpts.Zone
 	}
 
 	if vm != nil {
-		return config.Config.Deployment.GetZone(vm.Zone)
+		return config.Config.GetZone(vm.Zone)
 	}
 
 	return nil

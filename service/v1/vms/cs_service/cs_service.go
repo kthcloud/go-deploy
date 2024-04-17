@@ -40,7 +40,7 @@ func (c *Client) Create(id string, params *model.VmCreateParams) error {
 		return makeError(err)
 	}
 
-	zone := config.Config.VM.GetZone(vm.Zone)
+	zone := config.Config.VM.GetLegacyZone(vm.Zone)
 	if zone == nil {
 		return makeError(sErrors.ZoneNotFoundErr)
 	}
@@ -157,7 +157,7 @@ func (c *Client) Update(id string, updateParams *model.VmUpdateParams) error {
 		return makeError(err)
 	}
 
-	zone := config.Config.VM.GetZone(vm.Zone)
+	zone := config.Config.VM.GetLegacyZone(vm.Zone)
 	if zone == nil {
 		return makeError(sErrors.ZoneNotFoundErr)
 	}
@@ -260,7 +260,7 @@ func (c *Client) Repair(id string) error {
 		return makeError(err)
 	}
 
-	zone := config.Config.VM.GetZone(vm.Zone)
+	zone := config.Config.VM.GetLegacyZone(vm.Zone)
 	if zone == nil {
 		return makeError(sErrors.ZoneNotFoundErr)
 	}
@@ -456,7 +456,7 @@ func (c *Client) DoCommand(id, csVmID string, gpuID *string, command string) err
 }
 
 // ListAllStatus returns the status of all VMs.
-func (c *Client) ListAllStatus(zone *configModels.VmZone) (map[string]string, error) {
+func (c *Client) ListAllStatus(zone *configModels.LegacyZone) (map[string]string, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to list all statuses. details: %w", err)
 	}
@@ -475,7 +475,7 @@ func (c *Client) ListAllStatus(zone *configModels.VmZone) (map[string]string, er
 }
 
 // CheckSuitableHost checks if the host is in the correct state to start a vm
-func (c *Client) CheckSuitableHost(id, hostName string, zone *configModels.VmZone) error {
+func (c *Client) CheckSuitableHost(id, hostName string, zone *configModels.LegacyZone) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check if vm %s can be started on host %s. details: %w", id, hostName, err)
 	}
@@ -530,7 +530,7 @@ func (c *Client) GetHostByVM(vmID string) (*csModels.HostPublic, error) {
 }
 
 // GetHostByName retrieves the host given its name and zone.
-func (c *Client) GetHostByName(hostName string, zone *configModels.VmZone) (*csModels.HostPublic, error) {
+func (c *Client) GetHostByName(hostName string, zone *configModels.LegacyZone) (*csModels.HostPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get host %s. details: %w", hostName, err)
 	}
@@ -549,7 +549,7 @@ func (c *Client) GetHostByName(hostName string, zone *configModels.VmZone) (*csM
 }
 
 // CheckHostState checks if the host is in the correct state to start a vm
-func (c *Client) CheckHostState(hostName string, zone *configModels.VmZone) error {
+func (c *Client) CheckHostState(hostName string, zone *configModels.LegacyZone) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to check if host %s is in correct state. details: %w", hostName, err)
 	}
@@ -572,7 +572,7 @@ func (c *Client) CheckHostState(hostName string, zone *configModels.VmZone) erro
 }
 
 // GetConfiguration retrieves the configuration for the CS environment.
-func (c *Client) GetConfiguration(zone *configModels.VmZone) (*csModels.ConfigurationPublic, error) {
+func (c *Client) GetConfiguration(zone *configModels.LegacyZone) (*csModels.ConfigurationPublic, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get configuration. details: %w", err)
 	}

@@ -22,7 +22,7 @@ type Opts struct {
 // such as where user ID is by default taken from VM.OwnerID.
 type ExtraOpts struct {
 	UserID       string
-	Zone         *configModels.DeploymentZone
+	Zone         *configModels.Zone
 	ExtraSshKeys []string
 }
 

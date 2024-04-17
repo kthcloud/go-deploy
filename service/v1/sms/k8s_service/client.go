@@ -94,11 +94,11 @@ func (c *Client) Get(opts *opts.Opts) (*model.SM, *k8s.Client, generators.K8sGen
 			userID = sm.OwnerID
 		}
 
-		var zone *configModels.DeploymentZone
+		var zone *configModels.Zone
 		if opts.ExtraOpts.Zone != nil {
 			zone = opts.ExtraOpts.Zone
 		} else if sm != nil {
-			zone = config.Config.Deployment.GetZone(sm.Zone)
+			zone = config.Config.GetZone(sm.Zone)
 		}
 
 		k8sClient, err = c.Client(userID, zone)
@@ -112,11 +112,11 @@ func (c *Client) Get(opts *opts.Opts) (*model.SM, *k8s.Client, generators.K8sGen
 	}
 
 	if opts.Generator {
-		var zone *configModels.DeploymentZone
+		var zone *configModels.Zone
 		if opts.ExtraOpts.Zone != nil {
 			zone = opts.ExtraOpts.Zone
 		} else if sm != nil {
-			zone = config.Config.Deployment.GetZone(sm.Zone)
+			zone = config.Config.GetZone(sm.Zone)
 		}
 
 		k8sGenerator = c.Generator(sm, k8sClient, zone)
@@ -129,7 +129,7 @@ func (c *Client) Get(opts *opts.Opts) (*model.SM, *k8s.Client, generators.K8sGen
 }
 
 // Client returns the K8s service client.
-func (c *Client) Client(userID string, zone *configModels.DeploymentZone) (*k8s.Client, error) {
+func (c *Client) Client(userID string, zone *configModels.Zone) (*k8s.Client, error) {
 	if userID == "" {
 		panic("user id is empty")
 	}
@@ -138,7 +138,7 @@ func (c *Client) Client(userID string, zone *configModels.DeploymentZone) (*k8s.
 }
 
 // Generator returns the K8s generator.
-func (c *Client) Generator(sm *model.SM, client *k8s.Client, zone *configModels.DeploymentZone) generators.K8sGenerator {
+func (c *Client) Generator(sm *model.SM, client *k8s.Client, zone *configModels.Zone) generators.K8sGenerator {
 	if sm == nil {
 		panic("deployment is nil")
 	}
@@ -155,15 +155,15 @@ func (c *Client) Generator(sm *model.SM, client *k8s.Client, zone *configModels.
 }
 
 // getNamespaceName returns the namespace name
-func getNamespaceName(zone *configModels.DeploymentZone) string {
-	return zone.Namespaces.System
+func getNamespaceName(zone *configModels.Zone) string {
+	return zone.K8s.Namespaces.System
 }
 
 // withClient returns a new K8s service client.
-func withClient(zone *configModels.DeploymentZone, namespace string) (*k8s.Client, error) {
+func withClient(zone *configModels.Zone, namespace string) (*k8s.Client, error) {
 	return k8s.New(&k8s.ClientConf{
-		K8sClient:         zone.K8sClient,
-		KubeVirtK8sClient: zone.KubeVirtClient,
+		K8sClient:         zone.K8s.Client,
+		KubeVirtK8sClient: zone.K8s.KubeVirtClient,
 		Namespace:         namespace,
 	})
 }

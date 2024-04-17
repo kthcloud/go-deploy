@@ -91,7 +91,7 @@ func synchronizeGpusV1(gpuInfo *models.GpuInfoRead) error {
 				continue
 			}
 
-			zone := config.Config.VM.GetZone(host.Zone)
+			zone := config.Config.VM.GetLegacyZone(host.Zone)
 			if zone == nil {
 				log.Println("GPU zone", host.Zone, "not found. Skipping GPU", gpuID)
 				continue
@@ -202,13 +202,13 @@ func synchronizeGpusV2(gpuInfo *models.GpuInfoRead) error {
 	}
 
 	for zoneName, groups := range groupsByZone {
-		zone := config.Config.Deployment.GetZone(zoneName)
+		zone := config.Config.GetZone(zoneName)
 		if zone == nil {
 			log.Println("Zone", zoneName, "not found. Skipping GPU synchronization.")
 			continue
 		}
 
-		if !zone.HasCapability(configModels.ZoneCapabilityDeployment) {
+		if !zone.HasCapability(configModels.ZoneCapabilityVM) {
 			continue
 		}
 

@@ -29,10 +29,10 @@ type K8sGenerator struct {
 	client    *k8s.Client
 
 	deployment *model.Deployment
-	zone       *configModels.DeploymentZone
+	zone       *configModels.Zone
 }
 
-func K8s(deployment *model.Deployment, zone *configModels.DeploymentZone, client *k8s.Client, namespace string) *K8sGenerator {
+func K8s(deployment *model.Deployment, zone *configModels.Zone, client *k8s.Client, namespace string) *K8sGenerator {
 	return &K8sGenerator{
 		namespace:  namespace,
 		client:     client,
@@ -218,7 +218,7 @@ func (kg *K8sGenerator) PVs() []models.PvPublic {
 			Name:      deploymentPvName(kg.deployment, v.Name),
 			Capacity:  config.Config.Deployment.Resources.Limits.Storage,
 			NfsServer: kg.zone.Storage.NfsServer,
-			NfsPath:   path.Join(kg.zone.Storage.NfsParentPath, kg.deployment.OwnerID, "user", v.ServerPath),
+			NfsPath:   path.Join(kg.zone.Storage.Paths.ParentDeployment, kg.deployment.OwnerID, "user", v.ServerPath),
 			Released:  false,
 		})
 	}
@@ -386,7 +386,7 @@ func (kg *K8sGenerator) NetworkPolicies() []models.NetworkPolicyPublic {
 					NamespaceSelector: map[string]string{"kubernetes.io/metadata.name": kg.namespace},
 				},
 				{
-					NamespaceSelector: map[string]string{"kubernetes.io/metadata.name": kg.zone.IngressNamespace},
+					NamespaceSelector: map[string]string{"kubernetes.io/metadata.name": kg.zone.K8s.IngressNamespace},
 				},
 			},
 		}
@@ -461,6 +461,6 @@ func encodeDockerConfig(registry, username, password string) []byte {
 }
 
 // getExternalFQDN returns the external FQDN for a deployment in a given zone
-func getExternalFQDN(name string, zone *configModels.DeploymentZone) string {
-	return fmt.Sprintf("%s.%s", name, zone.ParentDomain)
+func getExternalFQDN(name string, zone *configModels.Zone) string {
+	return fmt.Sprintf("%s.%s", name, zone.Domains.ParentDeployment)
 }

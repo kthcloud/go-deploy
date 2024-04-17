@@ -25,10 +25,10 @@ type K8sGenerator struct {
 	client    *k8s.Client
 
 	sm   *model.SM
-	zone *configModels.DeploymentZone
+	zone *configModels.Zone
 }
 
-func K8s(sm *model.SM, zone *configModels.DeploymentZone, client *k8s.Client, namespace string) *K8sGenerator {
+func K8s(sm *model.SM, zone *configModels.Zone, client *k8s.Client, namespace string) *K8sGenerator {
 	return &K8sGenerator{
 		namespace: namespace,
 		client:    client,
@@ -129,7 +129,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 	}
 
 	issuer := config.Config.Keycloak.Url + "/realms/" + config.Config.Keycloak.Realm
-	redirectURL := fmt.Sprintf("https://%s.%s/oauth2/callback", kg.sm.OwnerID, kg.zone.Storage.ParentDomain)
+	redirectURL := fmt.Sprintf("https://%s.%s/oauth2/callback", kg.sm.OwnerID, kg.zone.Domains.ParentSM)
 	upstream := "http://" + smName(kg.sm.OwnerID) + ":80"
 
 	args = []string{
@@ -260,7 +260,7 @@ func (kg *K8sGenerator) PVs() []models.PvPublic {
 			Name:      smPvName(kg.sm.OwnerID, v.Name),
 			Capacity:  config.Config.Deployment.Resources.Limits.Storage,
 			NfsServer: kg.zone.Storage.NfsServer,
-			NfsPath:   path.Join(kg.zone.Storage.NfsParentPath, v.ServerPath),
+			NfsPath:   path.Join(kg.zone.Storage.Paths.ParentDeployment, v.ServerPath),
 			Released:  false,
 		})
 	}
@@ -437,6 +437,6 @@ func smPvName(ownerID, volumeName string) string {
 }
 
 // storageExternalFQDN returns the external FQDN for a storage manager in a given zone
-func storageExternalFQDN(name string, zone *configModels.DeploymentZone) string {
-	return fmt.Sprintf("%s.%s", name, zone.Storage.ParentDomain)
+func storageExternalFQDN(name string, zone *configModels.Zone) string {
+	return fmt.Sprintf("%s.%s", name, zone.Domains.ParentSM)
 }

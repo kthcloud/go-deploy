@@ -20,7 +20,7 @@ type Opts struct {
 // such as where user ID is by default taken from Deployment.OwnerID.
 type ExtraOpts struct {
 	UserID string
-	Zone   *configModels.DeploymentZone
+	Zone   *configModels.Zone
 }
 
 // ListOpts is used to specify the options when listing deployments.

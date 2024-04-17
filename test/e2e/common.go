@@ -187,10 +187,15 @@ func Parse[okType any](t *testing.T, resp *http.Response) okType {
 
 		// Check if it was a binding error
 		if err != nil || len(bindingError.ValidationErrors) > 0 {
+			anyErr := false
 			for _, fieldErrors := range bindingError.ValidationErrors {
 				for _, fieldError := range fieldErrors {
 					assert.Fail(t, fmt.Sprintf("binding error: %s", fieldError))
+					anyErr = true
 				}
+			}
+			if anyErr {
+				return *empty
 			}
 
 			assert.FailNow(t, fmt.Sprintf("error that was not go-deploy binding error (path: %s status code: %d)", resp.Request.URL.Path, resp.StatusCode))

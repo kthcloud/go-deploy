@@ -25,6 +25,8 @@ type ConfigType struct {
 	Deployment Deployment `yaml:"deployment"`
 	VM         VM         `yaml:"vm"`
 
+	Zones []Zone `yaml:"zones"`
+
 	Timer struct {
 		GpuSynchronize            time.Duration `yaml:"gpuSynchronize"`
 		GpuLeaseSynchronize       time.Duration `yaml:"gpuLeaseSynchronize"`
@@ -111,19 +113,28 @@ type ConfigType struct {
 }
 
 type RancherConfigSource struct {
-	ClusterID string `yaml:"clusterId"`
+	ClusterName string `yaml:"clusterName"`
 }
 
+type KubeConfigSource struct {
+	Filepath string `yaml:"filepath"`
+}
+
+// CloudStackConfigSource
+// Deprecated: Use RancherConfigSource or KubeConfigSource instead
 type CloudStackConfigSource struct {
 	ClusterID   string `yaml:"clusterId"`
 	ExternalURL string `yaml:"externalUrl"`
 }
+
 type VM struct {
-	AdminSshPublicKey string   `yaml:"adminSshPublicKey"`
-	Zones             []VmZone `yaml:"zones"`
+	AdminSshPublicKey string       `yaml:"adminSshPublicKey"`
+	Zones             []LegacyZone `yaml:"zones"`
 }
 
-type VmZone struct {
+// LegacyZone is a zone that is used for VM v1
+// Deprecated: User Zone instead
+type LegacyZone struct {
 	Name         string `yaml:"name"`
 	Description  string `yaml:"description"`
 	ParentDomain string `yaml:"parentDomain"`
@@ -162,24 +173,46 @@ type Deployment struct {
 			Memory string `yaml:"memory"`
 		} `yaml:"requests"`
 	} `yaml:"resources"`
-	Zones []DeploymentZone `yaml:"zones"`
 }
 
-type DeploymentZone struct {
-	Name       string `yaml:"name"`
-	Namespaces struct {
-		Deployment string `yaml:"deployment"`
-		VM         string `yaml:"vm"`
-		System     string `yaml:"system"`
-	}
+type Zone struct {
+	Name        string `yaml:"name"`
 	Description string `yaml:"description"`
 
-	Capabilities []string `yaml:"capabilities"`
+	K8s struct {
+		Namespaces struct {
+			Deployment string `yaml:"deployment"`
+			VM         string `yaml:"vm"`
+			System     string `yaml:"system"`
+		} `yaml:"namespaces"`
+		// ConfigSource is the source of the Kubernetes configuration
+		// It can be either RancherConfigSource or KubeConfigSource
+		ConfigSource interface{} `yaml:"configSource"`
+		// IngressNamespace is the namespace where the ingress resources are created, e.g. "ingress-nginx"
+		IngressNamespace string `yaml:"ingressNamespace"`
+		// LoadBalancerIP is the IP of the load balancer that is used for the ingress resources
+		LoadBalancerIP string `yaml:"loadBalancerIp"`
+		// Client is the Kubernetes client for the zone created by querying the ConfigSource
+		Client *kubernetes.Clientset
+		// KubeVirtClient is the KubeVirt client for the zone created by querying the ConfigSource
+		KubeVirtClient *kubevirt.Clientset
+	}
 
-	ParentDomain            string `yaml:"parentDomain"`
-	ParentDomainVmHttpProxy string `yaml:"parentDomainVmHttpProxy"`
-	CustomDomainIP          string `yaml:"customDomainIp"`
-	NetworkPolicies         []struct {
+	Capabilities []string `yaml:"capabilities"`
+	Domains      struct {
+		ParentDeployment string `yaml:"parentDeployment"`
+		ParentVM         string `yaml:"parentVm"`
+		ParentVmApp      string `yaml:"parentVmApp"`
+		ParentSM         string `yaml:"parentSm"`
+	}
+	Storage struct {
+		NfsServer string `yaml:"nfsServer"`
+		Paths     struct {
+			ParentDeployment string `yaml:"parentDeployment"`
+			ParentVM         string `yaml:"parentVm"`
+		} `yaml:"paths"`
+	} `yaml:"storage"`
+	NetworkPolicies []struct {
 		Name   string `yaml:"name"`
 		Egress []struct {
 			IP struct {
@@ -188,23 +221,7 @@ type DeploymentZone struct {
 			} `yaml:"ip"`
 		} `yaml:"egress"`
 	} `yaml:"networkPolicies"`
-	IngressNamespace string `yaml:"ingressNamespace"`
-
-	ConfigSource interface{} `yaml:"configSource"`
-	Storage      struct {
-		ParentDomain        string `yaml:"parentDomain"`
-		NfsServer           string `yaml:"nfsServer"`
-		NfsParentPath       string `yaml:"nfsParentPath"`
-		VmStorageParentPath string `yaml:"vmStorageParentPath"`
-	} `yaml:"storage"`
-
-	K8sClient      *kubernetes.Clientset
-	KubeVirtClient *kubevirt.Clientset
-
-	// KubeVirt VM v2
-	ParentDomainVM string `yaml:"parentDomainVm"`
-	LoadBalancerIP string `yaml:"loadBalancerIp"`
-	PortRange      struct {
+	PortRange struct {
 		Start int `yaml:"start"`
 		End   int `yaml:"end"`
 	} `yaml:"portRange"`

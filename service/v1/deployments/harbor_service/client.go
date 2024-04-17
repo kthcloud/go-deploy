@@ -104,11 +104,11 @@ func (c *Client) Get(opts *opts.Opts) (*model.Deployment, *harbor.Client, genera
 			userID = deployment.OwnerID
 		}
 
-		var zone *configModels.DeploymentZone
+		var zone *configModels.Zone
 		if opts.ExtraOpts.Zone != nil {
 			zone = opts.ExtraOpts.Zone
 		} else if deployment != nil {
-			zone = config.Config.Deployment.GetZone(deployment.Zone)
+			zone = config.Config.GetZone(deployment.Zone)
 		}
 
 		harborGenerator = c.Generator(deployment, userID, zone)
@@ -130,7 +130,7 @@ func (c *Client) Client(userID string) (*harbor.Client, error) {
 }
 
 // Generator returns the Harbor generator.
-func (c *Client) Generator(deployment *model.Deployment, userID string, zone *configModels.DeploymentZone) generators.HarborGenerator {
+func (c *Client) Generator(deployment *model.Deployment, userID string, zone *configModels.Zone) generators.HarborGenerator {
 	if userID == "" {
 		panic("user id is empty")
 	}

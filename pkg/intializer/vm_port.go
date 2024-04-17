@@ -31,7 +31,7 @@ func SynchronizeVmPorts() error {
 		}
 	}
 
-	for _, zone := range config.Config.Deployment.Zones {
+	for _, zone := range config.Config.Zones {
 		if zone.PortRange.End != 0 {
 			ranges[zone.Name] = PortRange{
 				Start: zone.PortRange.Start,

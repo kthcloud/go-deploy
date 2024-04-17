@@ -119,10 +119,7 @@ func WithDeployment(t *testing.T, requestBody body.DeploymentCreate) (body.Deplo
 	resp := e2e.DoPostRequest(t, DeploymentsPath, requestBody)
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "deployment was not created")
 
-	var deploymentCreated body.DeploymentCreated
-	err := e2e.ReadResponseBody(t, resp, &deploymentCreated)
-	assert.NoError(t, err, "deployment was not created")
-
+	deploymentCreated := e2e.Parse[body.DeploymentCreated](t, resp)
 	t.Cleanup(func() {
 		CleanUpDeployment(t, deploymentCreated.ID)
 	})

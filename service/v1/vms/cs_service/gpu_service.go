@@ -160,7 +160,7 @@ func (c *Client) IsGpuAttached(id string) (bool, error) {
 		return false, nil
 	}
 
-	zone := config.Config.VM.GetZone(gpu.Zone)
+	zone := config.Config.VM.GetLegacyZone(gpu.Zone)
 	if zone == nil {
 		return false, makeError(sErrors.ZoneNotFoundErr)
 	}

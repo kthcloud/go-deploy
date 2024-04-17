@@ -271,9 +271,11 @@ func DomainName(fl validator.FieldLevel) bool {
 		return true
 	}
 
-	illegalSuffixes := make([]string, len(config.Config.Deployment.Zones))
-	for idx, zone := range config.Config.Deployment.Zones {
-		illegalSuffixes[idx] = zone.ParentDomain
+	var illegalSuffixes []string
+	for _, zone := range config.Config.Zones {
+		if zone.Domains.ParentDeployment != "" {
+			illegalSuffixes = append(illegalSuffixes, zone.Domains.ParentDeployment)
+		}
 	}
 
 	for _, suffix := range illegalSuffixes {

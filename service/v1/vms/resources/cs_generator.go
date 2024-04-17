@@ -14,10 +14,10 @@ type CsGenerator struct {
 	generators.CsGeneratorBase
 
 	vm   *model.VM
-	zone *configModels.VmZone
+	zone *configModels.LegacyZone
 }
 
-func CS(vm *model.VM, zone *configModels.VmZone) *CsGenerator {
+func CS(vm *model.VM, zone *configModels.LegacyZone) *CsGenerator {
 	return &CsGenerator{
 		vm:   vm,
 		zone: zone,

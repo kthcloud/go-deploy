@@ -600,7 +600,7 @@ func (c *Client) Repair(id string) error {
 //
 // It sets up a log stream for all the pods in the deployment.
 // The handler function is called for each log line.
-func (c *Client) SetupLogStream(ctx context.Context, zone *config.DeploymentZone, allowedNames []string, handler func(string, string, int, time.Time)) error {
+func (c *Client) SetupLogStream(ctx context.Context, zone *config.Zone, allowedNames []string, handler func(string, string, int, time.Time)) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to setup log stream for zone %s. details: %w", zone.Name, err)
 	}

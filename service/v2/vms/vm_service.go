@@ -650,7 +650,7 @@ func (c *Client) SshConnectionString(id string) (*string, error) {
 		return nil, nil
 	}
 
-	zone := config.Config.Deployment.GetZone(vm.Zone)
+	zone := config.Config.GetZone(vm.Zone)
 	if zone == nil {
 		return nil, makeError(sErrors.ZoneNotFoundErr)
 	}
@@ -659,7 +659,7 @@ func (c *Client) SshConnectionString(id string) (*string, error) {
 	if service := vm.Subsystems.K8s.GetService(fmt.Sprintf("%s-priv-22-prot-tcp", vm.Name)); service != nil {
 		for _, port := range service.Ports {
 			if port.TargetPort == 22 {
-				sshConnectionString = utils.StrPtr(fmt.Sprintf("ssh root@%s -p %d", zone.ParentDomainVM, port.Port))
+				sshConnectionString = utils.StrPtr(fmt.Sprintf("ssh root@%s -p %d", zone.Domains.ParentVM, port.Port))
 			}
 		}
 	}

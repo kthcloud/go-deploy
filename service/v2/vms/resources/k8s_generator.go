@@ -22,7 +22,7 @@ type K8sGenerator struct {
 	generators.K8sGeneratorBase
 
 	vm     *model.VM
-	zone   *configModels.DeploymentZone
+	zone   *configModels.Zone
 	client *k8s.Client
 
 	namespace           string
@@ -45,7 +45,7 @@ type CloudInitUser struct {
 	SshAuthorizedKeys []string `yaml:"ssh_authorized_keys"`
 }
 
-func K8s(vm *model.VM, zone *configModels.DeploymentZone, client *k8s.Client, namespace string, extraAuthorizedKeys []string) *K8sGenerator {
+func K8s(vm *model.VM, zone *configModels.Zone, client *k8s.Client, namespace string, extraAuthorizedKeys []string) *K8sGenerator {
 	return &K8sGenerator{
 		vm:                  vm,
 		zone:                zone,
@@ -140,7 +140,7 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 			Selector: map[string]string{
 				keys.LabelDeployName: vmName(kg.vm),
 			},
-			LoadBalancerIP: &kg.zone.LoadBalancerIP,
+			LoadBalancerIP: &kg.zone.K8s.LoadBalancerIP,
 		})
 	}
 
@@ -311,7 +311,7 @@ func (kg *K8sGenerator) NetworkPolicies() []models.NetworkPolicyPublic {
 					NamespaceSelector: map[string]string{"kubernetes.io/metadata.name": kg.namespace},
 				},
 				{
-					NamespaceSelector: map[string]string{"kubernetes.io/metadata.name": kg.zone.IngressNamespace},
+					NamespaceSelector: map[string]string{"kubernetes.io/metadata.name": kg.zone.K8s.IngressNamespace},
 				},
 			},
 		}
@@ -366,8 +366,8 @@ func vmProxyCustomDomainIngressName(vm *model.VM, portName string) string {
 }
 
 // vmProxyExternalURL returns the external URL for a VM proxy
-func vmProxyExternalURL(portName string, zone *configModels.DeploymentZone) string {
-	return fmt.Sprintf("%s.%s", portName, zone.ParentDomainVmHttpProxy)
+func vmProxyExternalURL(portName string, zone *configModels.Zone) string {
+	return fmt.Sprintf("%s.%s", portName, zone.Domains.ParentVmApp)
 }
 
 // vmNetworkPolicyName returns the network policy name for a VM or Deployment

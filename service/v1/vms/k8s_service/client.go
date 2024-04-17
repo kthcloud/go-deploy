@@ -106,11 +106,11 @@ func (c *Client) Get(opts *opts.Opts) (*model.VM, *k8s.Client, generators.K8sGen
 			return nil, nil, nil, sErrors.ZoneNotFoundErr
 		}
 
-		var deploymentZone *configModels.DeploymentZone
+		var deploymentZone *configModels.Zone
 		if opts.ExtraOpts.DeploymentZone != nil {
 			deploymentZone = opts.ExtraOpts.DeploymentZone
 		} else if vm != nil && vm.DeploymentZone != nil {
-			deploymentZone = config.Config.Deployment.GetZone(*vm.DeploymentZone)
+			deploymentZone = config.Config.GetZone(*vm.DeploymentZone)
 		}
 
 		g = c.Generator(vm, kc, zone, deploymentZone)
@@ -123,7 +123,7 @@ func (c *Client) Get(opts *opts.Opts) (*model.VM, *k8s.Client, generators.K8sGen
 }
 
 // Client returns the K8s service client.
-func (c *Client) Client(userID string, zone *configModels.DeploymentZone) (*k8s.Client, error) {
+func (c *Client) Client(userID string, zone *configModels.Zone) (*k8s.Client, error) {
 	if userID == "" {
 		panic("user id is empty")
 	}
@@ -132,7 +132,7 @@ func (c *Client) Client(userID string, zone *configModels.DeploymentZone) (*k8s.
 }
 
 // Generator returns the K8s generator.
-func (c *Client) Generator(vm *model.VM, client *k8s.Client, zone *configModels.VmZone, deploymentZone *configModels.DeploymentZone) generators.K8sGenerator {
+func (c *Client) Generator(vm *model.VM, client *k8s.Client, zone *configModels.LegacyZone, deploymentZone *configModels.Zone) generators.K8sGenerator {
 	if vm == nil {
 		panic("vm is nil")
 	}
@@ -149,15 +149,15 @@ func (c *Client) Generator(vm *model.VM, client *k8s.Client, zone *configModels.
 }
 
 // getNamespaceName returns the namespace name.
-func getNamespaceName(zone *configModels.DeploymentZone) string {
-	return zone.Namespaces.VM
+func getNamespaceName(zone *configModels.Zone) string {
+	return zone.K8s.Namespaces.VM
 }
 
 // withClient returns a new K8s service client.
-func withClient(zone *configModels.DeploymentZone, namespace string) (*k8s.Client, error) {
+func withClient(zone *configModels.Zone, namespace string) (*k8s.Client, error) {
 	k8sClient, err := k8s.New(&k8s.ClientConf{
-		K8sClient:         zone.K8sClient,
-		KubeVirtK8sClient: zone.KubeVirtClient,
+		K8sClient:         zone.K8s.Client,
+		KubeVirtK8sClient: zone.K8s.KubeVirtClient,
 		Namespace:         namespace,
 	})
 	if err != nil {
@@ -168,26 +168,26 @@ func withClient(zone *configModels.DeploymentZone, namespace string) (*k8s.Clien
 }
 
 // getVmZone is a helper function that returns either the zone in opts or the zone in vm.
-func getVmZone(opts *opts.Opts, vm *model.VM) *configModels.VmZone {
+func getVmZone(opts *opts.Opts, vm *model.VM) *configModels.LegacyZone {
 	if opts.ExtraOpts.Zone != nil {
 		return opts.ExtraOpts.Zone
 	}
 
 	if vm != nil {
-		return config.Config.VM.GetZone(vm.Zone)
+		return config.Config.VM.GetLegacyZone(vm.Zone)
 	}
 
 	return nil
 }
 
 // getDeploymentZone is a helper function that returns either the zone in opts or the zone in vm.
-func getDeploymentZone(opts *opts.Opts, vm *model.VM) *configModels.DeploymentZone {
+func getDeploymentZone(opts *opts.Opts, vm *model.VM) *configModels.Zone {
 	if opts.ExtraOpts.DeploymentZone != nil {
 		return opts.ExtraOpts.DeploymentZone
 	}
 
 	if vm != nil && vm.DeploymentZone != nil {
-		return config.Config.Deployment.GetZone(*vm.DeploymentZone)
+		return config.Config.GetZone(*vm.DeploymentZone)
 	}
 
 	return nil

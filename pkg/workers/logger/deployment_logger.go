@@ -20,7 +20,7 @@ func deploymentLogger(ctx context.Context) error {
 		return err
 	}
 
-	for _, zone := range config.Config.Deployment.Zones {
+	for _, zone := range config.Config.Zones {
 		dZone := zone
 		log.Println("Setting up log stream for zone", zone.Name)
 		go func() {

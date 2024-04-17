@@ -538,7 +538,7 @@ func (c *Client) GetConnectionString(id string) (*string, error) {
 		return nil, makeError(err)
 	}
 
-	zone := config.Config.VM.GetZone(vm.Zone)
+	zone := config.Config.VM.GetLegacyZone(vm.Zone)
 	if zone == nil {
 		return nil, makeError(sErrors.ZoneNotFoundErr)
 	}
@@ -866,7 +866,7 @@ func (c *Client) GetHost(vmID string) (*model.Host, error) {
 		return nil, nil
 	}
 
-	zone := config.Config.VM.GetZone(vm.Zone)
+	zone := config.Config.VM.GetLegacyZone(vm.Zone)
 	if zone == nil {
 		return nil, makeError(sErrors.ZoneNotFoundErr)
 	}
@@ -924,7 +924,7 @@ func (c *Client) GetCloudStackHostCapabilities(hostName string, zoneName string)
 
 	cc := cs_service.New(nil)
 
-	zone := config.Config.VM.GetZone(zoneName)
+	zone := config.Config.VM.GetLegacyZone(zoneName)
 	if zone == nil {
 		return nil, makeError(sErrors.ZoneNotFoundErr)
 	}

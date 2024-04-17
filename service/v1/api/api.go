@@ -88,7 +88,7 @@ type SMs interface {
 	Repair(id string) error
 	Exists(userID string) (bool, error)
 
-	GetZone() *configModels.DeploymentZone
+	GetZone() *configModels.Zone
 	GetURL(userID string) *string
 
 	K8s() *smK8sService.Client
