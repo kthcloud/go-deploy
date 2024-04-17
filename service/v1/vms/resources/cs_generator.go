@@ -3,7 +3,6 @@ package resources
 import (
 	configModels "go-deploy/models/config"
 	"go-deploy/models/model"
-	"go-deploy/pkg/config"
 	"go-deploy/pkg/subsystems"
 	"go-deploy/pkg/subsystems/cs/models"
 	"go-deploy/service/generators"
@@ -112,7 +111,6 @@ func (cg *CsGenerator) PFRs() []models.PortForwardingRulePublic {
 func createTags(name string, deployName string) []models.Tag {
 	tags := []models.Tag{
 		{Key: "name", Value: name},
-		{Key: "managedBy", Value: config.Config.Manager},
 		{Key: "deployName", Value: deployName},
 		{Key: "createdAt", Value: time.Now().Format(time.RFC3339)},
 	}

@@ -180,7 +180,7 @@ func (c *Client) Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
 		return sErrors.NewZoneCapabilityMissingError(zone, configModels.ZoneCapabilityVM)
 	}
 
-	_, err := vm_repo.New(version.V2).Create(id, ownerID, config.Config.Manager, &params)
+	_, err := vm_repo.New(version.V2).Create(id, ownerID, &params)
 	if err != nil {
 		if errors.Is(err, vm_repo.NonUniqueFieldErr) {
 			return sErrors.NonUniqueFieldErr

@@ -18,11 +18,9 @@ const (
 type ConfigType struct {
 	Version string `yaml:"version"`
 
-	Port          int    `yaml:"port"`
-	ExternalUrl   string `yaml:"externalUrl"`
-	Manager       string `yaml:"manager"`
-	SessionSecret string `yaml:"sessionSecret"`
-	Mode          string `yaml:"mode"`
+	Port        int    `yaml:"port"`
+	ExternalUrl string `yaml:"externalUrl"`
+	Mode        string `yaml:"mode"`
 
 	Deployment Deployment `yaml:"deployment"`
 	VM         VM         `yaml:"vm"`

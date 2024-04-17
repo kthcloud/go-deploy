@@ -1,0 +1,279 @@
+version: 1.0.0
+
+port: $port
+externalUrl: $externalUrl
+mode: $mode
+
+timer:
+  gpuSynchronize: 5s
+  gpuLeaseSynchronize: 5s
+  vmStatusUpdate: 20s
+  vmSnapshotUpdate: 30s
+  deploymentStatusUpdate: 5s 
+  deploymentPingUpdate: 15s
+  snapshot: 1h
+  deploymentRepair: 30m 
+  vmRepair: 30m
+  smRepair: 30m
+  metricsUpdate: 1m 
+  jobFetch: 1s
+  failedJobFetch: 1s 
+  deploymentDeletionConfirm: 5s 
+  vmDeletionConfirm: 5s
+  smDeletionConfirm: 5s
+  customDomainConfirm: 30m
+
+registry:
+  url: $registry_url
+  placeholderImage: $placeholder_image
+  vmHttpProxyImage: $placeholder_image
+
+gpu:
+  privilegedGpus:
+  excludedHosts:
+  excludedGpus:
+
+deployment:
+  port: 8080
+  prefix: deploy-
+  wildcardCertSecretNamespace: ingress-nginx
+  wildcardCertSecretName: deploy-wildcard-secret
+  customDomainTxtRecordSubdomain: _kthcloud
+  ingressClass: nginx
+  repairInterval: 60
+  pingInterval: 30
+  resources:
+    autoScale:
+      cpuThreshold: 50
+      memoryThreshold: 50
+    limits:
+      cpu: 100m
+      memory: 500Mi
+      storage: 1Gi
+    requests:
+      cpu: 50m
+      memory: 100Mi
+  zones:
+    - name: local
+      namespaces:
+        deployment: deploy
+        vm: deploy-vms
+        system: deploy-system
+      description: Local Zone
+      capabilities:
+        - deployment
+        - vm
+      parentDomain: app.local
+      parentDomainVmHttpProxy: vm-app.local
+      customDomainIp: 127.0.0.1
+      ingressNamespace: ingress-nginx
+      networkPolicies:
+
+      configSource:
+        type: cloudstack
+        clusterId: ee34b884-7652-4811-acf5-1f18be81039f
+        externalUrl: https://k8s.dev.cloud.cbh.kth.se:6443
+      storage:
+        parentDomain: storage.cloud.cbh.kth.se
+        nfsServer: nfs.cloud.cbh.kth.se
+        nfsParentPath: /mnt/cloud/apps/sys/deploy/storage
+
+    # KubeVirt zone
+    - name: se-flem-2
+      namespaces:
+        deployment: deploy
+        vm: deploy-vms
+        system: deploy-system
+      description: Flemingsberg
+      capabilities:
+        - vm
+
+      parentDomain: app.cloud.cbh.kth.se
+      parentDomainVmHttpProxy: vm-app.cloud.cbh.kth.se
+      customDomainIp: 130.237.83.247
+      configSource:
+        type: rancher
+        clusterId: c-m-lsfmrlxg
+      storage:
+        parentDomain: storage.cloud.cbh.kth.se
+        nfsServer: nfs.cloud.cbh.kth.se
+        nfsParentPath: /mnt/cloud/apps/sys/deploy/storage
+        vmStorageParentPath: /mnt/cloud/apps/sys/deploy/vms
+
+      # Added for KubeVirt
+      parentDomainVm: vm.cloud.cbh.kth.se
+      loadBalancerIp: 172.31.50.150
+      portRange:
+        start: 29000
+        end: 29899
+
+    - name: se-kista
+      namespaces:
+        deployment: deploy
+        vm: deploy-vms
+        system: deploy-system
+      description: Kista
+      capabilities:
+        - deployment
+
+      parentDomain: app.kista.cloud
+      parentDomainVmHttpProxy: vm-app.kista.cloud
+      customDomainIp: 130.237.11.66
+      configSource:
+        type: cloudstack
+        clusterId: 24290300-45ce-4d1c-af1c-1300459adece
+        externalUrl: https://k8s.kista.cloud:6443
+      # Use same storage as se-flem
+      storage:
+        parentDomain: storage.cloud.cbh.kth.se
+        nfsServer: 172.31.5.11 #nfs.cloud.cbh.kth.se
+        nfsParentPath: /mnt/cloud/apps/sys/deploy/storage
+
+vm:
+  adminSshPublicKey: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDHJ+XBsrl/eUIcDHJf8tA22wgocd8+r6zH47VzNl1M9Ri6tlgEeH13O6b6yO7W38wjx+Ftcv+9P93XeAf3N8h78JuvWlb8Q/xPMFZxSePRpiYtDqCR3ClEZ8KkKYgS/APeybZy9fNH8JduuvSAp5FkDVnW8VZfUpKUm0w3Ka32jtAwAOb5ghIdSc35hL37hLnB0PVz9q3f5OD2g1bEx187IunDrQYkp8YVDPxLI0qc7iARFYpEvNfTiRaWMRywAd7ANa4LQYc4KyWZxEsAZ+pjdOsp7WkaHrbeBypLFh+9+3nEYcT4CTj9r0jIM2e8m1Y7t79heMy/AqQF2FsaOvFuow70RjFmrIrC2Z/AylJDkYtcgy8cxafviISwlplgQ0XQsTsc4OAZAGyLvNHgUh3VeArXa4YczlDSK+IlFUwDr87r7MPoLETO9RhraA98ksHUzPQ0/J1NbjwB+vMCAAak1Zv4MIJLdX2XPjzDrUvPdnkyt4OLZD++RVM3EuOqDDM= cloud@se-flem-001
+  repairInterval: 60
+  zones:
+    - name: se-flem
+      description: Flemingsberg
+      zoneId: 3a74db73-6058-4520-8d8c-ab7d9b7955c8
+      projectId: d1ba382b-e310-445b-a54b-c4e773662af3
+      networkId: 4a065a52-f290-4d2e-aeb4-6f48d3bd9bfe
+      ipAddressId: e9d7884d-0848-4a3c-a31c-da62addd2e12
+      templateId: 88313b67-1bb4-4f36-bed7-945f24b63911
+      parentDomain: vm.cloud.cbh.kth.se
+      portRange:
+        start: 2900
+        end: 2950
+    - name: se-kista
+      description: Kista
+      zoneId: 13f65d1b-e766-44ad-bd79-9089c0beae97
+      projectId: d1ba382b-e310-445b-a54b-c4e773662af3
+      networkId: 4a065a52-f290-4d2e-aeb4-6f48d3bd9bfe
+      ipAddressId: 0118ee29-a763-49f7-b59a-026690465a37
+      templateId: 88313b67-1bb4-4f36-bed7-945f24b63911
+      parentDomain: vm.kista.cloud
+      portRange:
+        start: 2900
+        end: 2950
+
+roles:
+  - name: default
+    description: Default
+    iamGroup: default
+    permissions:
+      chooseZone: false
+      chooseGpu: false
+      useCustomDomains: false
+      useGpus: false
+      usePrivilegedGpus: false
+    quotas:
+      deployments: 5
+      cpuCores: 2
+      ram: 4
+      diskSize: 20
+      snapshots: 1
+      gpuLeaseDuration:
+  - name: bronze
+    description: Bronze
+    iamGroup: bronze
+    permissions:
+      chooseZone: false
+      chooseGpu: false
+      useCustomDomains: true
+      useGpus: true
+      usePrivilegedGpus: false
+    quotas:
+      deployments: 5
+      cpuCores: 4
+      ram: 16
+      diskSize: 50
+      snapshots: 5
+      gpuLeaseDuration: 5
+  - name: silver
+    description: Silver
+    iamGroup: silver
+    permissions:
+      chooseZone: true
+      chooseGpu: true
+      useCustomDomains: true
+      useGpus: true
+      usePrivilegedGpus: false
+    quotas:
+      deployments: 10
+      cpuCores: 8
+      ram: 60
+      diskSize: 500
+      snapshots: 10
+      gpuLeaseDuration: 24
+  - name: gold
+    description: Gold
+    iamGroup: gold
+    permissions:
+      chooseZone: true
+      chooseGpu: true
+      useCustomDomains: true
+      useGpus: true
+      usePrivilegedGpus: true
+    quotas:
+      deployments: 10
+      cpuCores: 12
+      ram: 80
+      diskSize: 1000
+      snapshots: 10
+      gpuLeaseDuration: 24
+  - name: platinum
+    description: Platinum
+    iamGroup: platinum
+    permissions:
+      chooseZone: true
+      chooseGpu: true
+      useCustomDomains: true
+      useGpus: true
+      usePrivilegedGpus: true
+    quotas:
+      deployments: 15
+      cpuCores: 40
+      ram: 160
+      diskSize: 2000
+      snapshots: 10
+      gpuLeaseDuration: 168
+
+keycloak:
+  url: https://iam.cloud.cbh.kth.se
+  realm: cloud
+  adminGroup: admin
+  storageClient:
+    clientId: deploy-storage
+    clientSecret: uTmlxSHhr7IJ02VBeAewh5YnEK0Lw3rU
+
+mongodb:
+  # url: mongodb://user:password@mongodb:27017
+  url: mongodb+srv://landing:debihiho22@cluster0.8dy9qwh.mongodb.net
+  name: deploy
+
+redis:
+  # url: redis:6379
+  url: localhost:6379
+  password:
+
+cs:
+  url: https://dashboard.cloud.cbh.kth.se/client/api
+  apiKey: QqZLNjLFeeAMQv7bqlD3RJIolh4oq9ynsOKgqz81Hi7VcDIK5IAgGKCEc5mUBPBFV_tlVgbJWDHHkmDY68mN6g
+  secret: 8RascoIpP29pUx3k37b/frAwwEOr62dK9DRu5w81iaBmHrZmVw34v3OeETNkS5fRrBWFf5UCYt6he+FtyN88v+jPc7Lxq8SWtNaz7d1mk1OCeyAhwHvTs6JkrQZgaf0Q
+
+rancher:
+  url: https://rancher.mgmt.cloud.cbh.kth.se/v3
+  apiKey: token-qlq7w
+  secret: rp5c7vbrf7bjt7c4b7lvsh9cmfhj4gc5zwp48f2r464r69nv9bfmqf
+
+sys-api:
+  url: https://api.cloud.cbh.kth.se/landing/v2
+  user: deploy@cloud.cbh.kth.se
+  password: mupopewo33
+  clientId: landing
+
+harbor:
+  url: https://registry.cloud.cbh.kth.se/api/v2.0
+  user: admin
+  password: limuxila43
+  webhookSecret: Bhi4FLKPWBbOhhs51twscxYvzRcutrluf0bJTxAHMMY=

@@ -179,7 +179,7 @@ func (c *Client) Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
 
 	params := model.VmCreateParams{}.FromDTOv1(dtoVmCreate, &fallback, &deploymentZone)
 
-	_, err := vm_repo.New(version.V1).Create(id, ownerID, config.Config.Manager, &params)
+	_, err := vm_repo.New(version.V1).Create(id, ownerID, &params)
 	if err != nil {
 		if errors.Is(err, vm_repo.NonUniqueFieldErr) {
 			return sErrors.NonUniqueFieldErr
