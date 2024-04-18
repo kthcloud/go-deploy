@@ -1,8 +1,8 @@
 version: 1.0.0
 
-port: 8080
-externalUrl: 
-mode: 
+port: $port
+externalUrl: $externalUrl
+mode: $mode
 
 timer:
   gpuSynchronize: 5s
@@ -52,9 +52,9 @@ zones:
     end: 29899
 
 registry:
-  url: 
-  placeholderImage: 
-  vmHttpProxyImage: 
+  url: $registry_url
+  placeholderImage: $placeholder_image
+  vmHttpProxyImage: $placeholder_image
 
 gpu:
   privilegedGpus:
@@ -138,20 +138,20 @@ roles:
       gpuLeaseDuration: 168
 
 keycloak:
-  url: 
-  realm: 
-  adminGroup: 
-  storageClient: 
-    clientId: 
-    clientSecret: 
+  url: $keycloak_url
+  realm: $keycloak_realm
+  adminGroup: $keycloak_admin_group
+  storageClient: $keycloak_storage_client
+    clientId: $keycloak_storage_client
+    clientSecret: $keycloak_storage_secret
 
 mongodb:
-  url: 
-  name: 
+  url: $mongodb_url
+  name: $mongodb_name
 
 redis:
-  url: 
-  password: 
+  url: $redis_url
+  password: $redis_password
 
 cs:
   url: 
@@ -170,7 +170,7 @@ sys-api:
   clientId: 
 
 harbor:
-  url: 
-  user: 
-  password: 
-  webhookSecret: 
+  url: $harbor_url
+  user: $harbor_user
+  password: $harbor_password
+  webhookSecret: $harbor_webhook_secret

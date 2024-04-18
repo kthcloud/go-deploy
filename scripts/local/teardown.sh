@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Ensure this script is run from the script folder by checking if the parent folder contains mod.go
-if [ ! -f "../go.mod" ]; then
+if [ ! -f "../../go.mod" ]; then
   echo "$RED_CROSS Please run this script from the scripts folder"
   exit 1
 fi
@@ -20,20 +20,6 @@ function delete_k3d_cluster() {
   fi
 }
 
-function delete_mongodb() {
-  if [ "$(docker ps -q -f name=go-deploy-mongodb)" ]; then
-    docker stop go-deploy-mongodb
-    docker rm go-deploy-mongodb
-  fi
-}
-
-function delete_redis() {
-  if [ "$(docker ps -q -f name=go-deploy-redis)" ]; then
-    docker stop go-deploy-redis
-    docker rm go-deploy-redis
-  fi
-}
-
 function delete_harbor() {
   if [ -d "harbor" ]; then
     # If the docker-compose file exists, bring down the services
@@ -47,6 +33,4 @@ function delete_harbor() {
 }
 
 run_with_spinner "Delete Harbor" delete_harbor
-run_with_spinner "Delete Redis" delete_redis
-run_with_spinner "Delete MongoDB" delete_mongodb
 run_with_spinner "Delete K3d Cluster" delete_k3d_cluster
