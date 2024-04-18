@@ -28,13 +28,16 @@ func (group *VmRoutingGroup) PrivateRoutes() []Route {
 		{Method: "GET", Pattern: VmsPath, HandlerFunc: v1.ListVMs},
 
 		{Method: "GET", Pattern: VmPath, HandlerFunc: v1.GetVM},
-		{Method: "POST", Pattern: VmsPath, HandlerFunc: v1.CreateVM},
-		{Method: "POST", Pattern: VmPath, HandlerFunc: v1.UpdateVM},
+		// Deprecated
+		//{Method: "POST", Pattern: VmsPath, HandlerFunc: v1.CreateVM},
+		// Deprecated
+		//{Method: "POST", Pattern: VmPath, HandlerFunc: v1.UpdateVM},
 		{Method: "DELETE", Pattern: VmPath, HandlerFunc: v1.DeleteVM},
 
 		{Method: "GET", Pattern: VmSnapshotsPath, HandlerFunc: v1.ListSnapshots},
 		{Method: "GET", Pattern: VmSnapshotPath, HandlerFunc: v1.GetSnapshot},
-		{Method: "POST", Pattern: VmSnapshotsPath, HandlerFunc: v1.CreateSnapshot},
+		// Deprecated
+		//{Method: "POST", Pattern: VmSnapshotsPath, HandlerFunc: v1.CreateSnapshot},
 		{Method: "DELETE", Pattern: VmSnapshotPath, HandlerFunc: v1.DeleteSnapshot},
 
 		{Method: "POST", Pattern: VmCommandPath, HandlerFunc: v1.DoVmCommand},
