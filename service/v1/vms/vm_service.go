@@ -302,10 +302,13 @@ func (c *Client) Delete(id string) error {
 		return makeError(err)
 	}
 
-	err = cs_service.New(c.Cache).Delete(vm.ID)
-	if err != nil {
-		return makeError(err)
-	}
+	// CloudStack does not allow deleting VMs right now
+	// However, we don't allow creating new ones, so we can just keep the VMs in CloudStack
+	// until it is removed.
+	//err = cs_service.New(c.Cache).Delete(vm.ID)
+	//if err != nil {
+	//	return makeError(err)
+	//}
 
 	err = gpu_repo.New().Detach(vm.ID)
 	if err != nil {

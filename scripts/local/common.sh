@@ -45,6 +45,14 @@ run_with_spinner() {
     local task_name=$1
     shift  # Remove the first argument which is the task name
     # Run command and redirect stdout to /dev/null
-    ( "$@" > /dev/null ) &
+    out=mktemp
+    err=mktemp
+    ( "$@" >$out 2>$err ) &
     spinner "$task_name" "$@"
+    exit_code=$?
+    if [ $exit_code -ne 0 ]; then
+        echo "Failed to run $task_name"
+        echo "Error: $(cat $err)"
+        exit $exit_code
+    fi
 }
