@@ -32,5 +32,10 @@ function delete_harbor() {
   sudo rm -f $DIR/harbor*.tgz.*
 }
 
+function delete_local_dns_record() {
+  sudo rm -f /etc/dnsmasq.d/50-go-deploy-dev.conf
+}
+
 run_with_spinner "Delete Harbor" delete_harbor
 run_with_spinner "Delete K3d Cluster" delete_k3d_cluster
+run_with_spinner "Delete local DNS record" delete_local_dns_record

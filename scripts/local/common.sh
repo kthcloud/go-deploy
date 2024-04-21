@@ -4,8 +4,8 @@ spinner() {
     local pid=$!
     local delay=0.07
     local spinstr='|/-\'
-    local green_check='\033[32m✓\033[0m'
-    local red_cross='\033[31m✗\033[0m'
+    local green_check='\033[32;1m✔\033[0m'
+    local red_cross='\033[31;1m✘\033[0m'
     local temp_file=$(mktemp)
 
     local task_name=$1
@@ -45,9 +45,8 @@ run_with_spinner() {
     local task_name=$1
     shift  # Remove the first argument which is the task name
     # Run command and redirect stdout to /dev/null
-    out=mktemp
-    err=mktemp
-    ( "$@" >$out 2>$err ) &
+    err_file=$(mktemp)
+    "$@" > /dev/null 2>"$err_file" &
     spinner "$task_name" "$@"
     exit_code=$?
     if [ $exit_code -ne 0 ]; then
