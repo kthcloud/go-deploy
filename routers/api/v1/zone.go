@@ -6,7 +6,6 @@ import (
 	"go-deploy/dto/v1/query"
 	"go-deploy/pkg/sys"
 	"go-deploy/service"
-	"go-deploy/service/v1/zones/opts"
 )
 
 // ListZones
@@ -35,7 +34,7 @@ func ListZones(c *gin.Context) {
 		return
 	}
 
-	zoneList, err := service.V1(auth).Zones().List(opts.ListOpts{Type: requestQuery.Type})
+	zoneList, err := service.V1(auth).Zones().List()
 	if err != nil {
 		context.ServerError(err, InternalError)
 		return

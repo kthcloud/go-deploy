@@ -23,31 +23,19 @@ func (c *Client) Get(name, zoneType string) *model.Zone {
 
 // List gets a list of zones
 func (c *Client) List(opts ...opts.ListOpts) ([]model.Zone, error) {
-	o := utils.GetFirstOrDefault(opts)
+	_ = utils.GetFirstOrDefault(opts)
 
 	deploymentZones := config.Config.Zones
 	vmZones := config.Config.VM.Zones
 
 	var zones []model.Zone
-	if o.Type != nil && *o.Type == model.ZoneTypeDeployment {
-		zones = make([]model.Zone, len(deploymentZones))
-		for i, zone := range deploymentZones {
-			zones[i] = *toDZone(&zone)
-		}
-	} else if o.Type != nil && *o.Type == model.ZoneTypeVM {
-		zones = make([]model.Zone, len(vmZones))
-		for i, zone := range vmZones {
-			zones[i] = *toVZone(&zone)
-		}
-	} else {
-		zones = make([]model.Zone, len(deploymentZones)+len(vmZones))
-		for i, zone := range deploymentZones {
-			zones[i] = *toDZone(&zone)
-		}
+	zones = make([]model.Zone, len(deploymentZones)+len(vmZones))
+	for i, zone := range deploymentZones {
+		zones[i] = *toDZone(&zone)
+	}
 
-		for i, zone := range vmZones {
-			zones[i+len(deploymentZones)] = *toVZone(&zone)
-		}
+	for i, zone := range vmZones {
+		zones[i+len(deploymentZones)] = *toVZone(&zone)
 	}
 
 	sort.Slice(zones, func(i, j int) bool {
@@ -73,10 +61,13 @@ func toDZone(dZone *configModels.Zone) *model.Zone {
 
 	domain := dZone.Domains.ParentDeployment
 	return &model.Zone{
-		Name:        dZone.Name,
-		Description: dZone.Description,
-		Interface:   &domain,
-		Type:        model.ZoneTypeDeployment,
+		Name:         dZone.Name,
+		Description:  dZone.Description,
+		Capabilities: dZone.Capabilities,
+		Interface:    &domain,
+		Legacy:       false,
+
+		Type: model.ZoneTypeDeployment,
 	}
 }
 
@@ -89,7 +80,12 @@ func toVZone(vmZone *configModels.LegacyZone) *model.Zone {
 	return &model.Zone{
 		Name:        vmZone.Name,
 		Description: vmZone.Description,
-		Interface:   &domain,
-		Type:        model.ZoneTypeVM,
+		Capabilities: []string{
+			configModels.ZoneCapabilityVM,
+		},
+		Interface: &domain,
+		Legacy:    true,
+
+		Type: model.ZoneTypeVM,
 	}
 }
