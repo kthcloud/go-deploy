@@ -20,7 +20,6 @@ func getSmDeletedConfirmers() []func(*model.SM) (bool, error) {
 // getVmDeletedConfirmers gets the confirmers for VM deletion.
 func getVmDeletedConfirmers() []func(*model.VM) (bool, error) {
 	return []func(*model.VM) (bool, error){
-		csDeleted,
 		gpuCleared,
 		portsCleared,
 		k8sDeletedVM,
