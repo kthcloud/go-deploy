@@ -1,7 +1,7 @@
 {
     "name": "kthcloud-types",
     "version": "1.0.0",
-    "description": "Types for the go-deploy api of kthcloud",
+    "description": "Types for the go-deploy API of kthcloud",
     "main": "index.ts",
     "repository": {
         "type": "git",
