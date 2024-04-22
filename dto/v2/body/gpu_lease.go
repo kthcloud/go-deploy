@@ -17,7 +17,7 @@ type GpuLeaseRead struct {
 	VmID *string `json:"vmId,omitempty"`
 
 	QueuePosition int     `json:"queuePosition"`
-	LeaseDuration float64 `bson:"leaseDuration"`
+	LeaseDuration float64 `json:"leaseDuration"`
 
 	// ActivatedAt specifies the time when the lease was activated. This is the time the user first attached the GPU
 	// or 1 day after the lease was created if the user did not attach the GPU.
