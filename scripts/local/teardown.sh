@@ -21,11 +21,9 @@ function delete_k3d_cluster() {
 }
 
 function delete_harbor() {
-  if [ -d "harbor" ]; then
-    # If the docker-compose file exists, bring down the services
-    if [ -f "harbor/docker-compose.yml" ]; then
-        sudo docker compose -f $DIR/harbor/docker-compose.yml down > /dev/null 2>&1
-    fi
+  # If the docker-compose file exists, bring down the services
+  if [ -f "harbor/docker-compose.yml" ]; then
+      sudo docker compose -f $DIR/harbor/docker-compose.yml down > /dev/null 2>&1
   fi
 
   sudo rm -rf $DIR/harbor
