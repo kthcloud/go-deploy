@@ -177,7 +177,7 @@ func CreateVM(c *gin.Context) {
 	}
 
 	if requestBody.Zone != nil {
-		zone := deployV1.Zones().Get(*requestBody.Zone, model.ZoneTypeDeployment)
+		zone := deployV1.Zones().Get(*requestBody.Zone)
 		if zone == nil {
 			context.NotFound("Zone not found")
 			return

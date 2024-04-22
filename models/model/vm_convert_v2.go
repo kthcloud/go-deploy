@@ -91,8 +91,11 @@ func (p VmCreateParams) FromDTOv2(dto *body.VmCreate, fallbackZone *string) VmCr
 	p.PortMap = make(map[string]PortCreateParams)
 	p.Version = version.V2
 
-	// Right now we only support one zone, since we need to make sure the cluster has KubeVirt installed
-	p.Zone = *fallbackZone
+	if dto.Zone == nil {
+		p.Zone = *fallbackZone
+	} else {
+		p.Zone = *dto.Zone
+	}
 
 	for _, port := range dto.Ports {
 		if port.Name == "__ssh" {

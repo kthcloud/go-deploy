@@ -172,12 +172,11 @@ func (c *Client) Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
 		return fmt.Errorf("failed to create vm. details: %w", err)
 	}
 
-	// Right now need to make sure the zone has KubeVirt installed, so it is hardcoded
-	zone := "se-flem-2"
-	params := model.VmCreateParams{}.FromDTOv2(dtoVmCreate, &zone)
+	fallbackZone := "se-flem-2"
+	params := model.VmCreateParams{}.FromDTOv2(dtoVmCreate, &fallbackZone)
 
-	if !c.V1.Zones().HasCapability(zone, configModels.ZoneCapabilityVM) {
-		return sErrors.NewZoneCapabilityMissingError(zone, configModels.ZoneCapabilityVM)
+	if !c.V1.Zones().HasCapability(params.Zone, configModels.ZoneCapabilityVM) {
+		return sErrors.NewZoneCapabilityMissingError(fallbackZone, configModels.ZoneCapabilityVM)
 	}
 
 	_, err := vm_repo.New(version.V2).Create(id, ownerID, &params)
