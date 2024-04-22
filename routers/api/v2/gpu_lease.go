@@ -139,7 +139,7 @@ func ListGpuLeases(c *gin.Context) {
 // @Produce json
 // @Param Authorization header string true "Bearer token"
 // @Param body body body.GpuLeaseCreate true "GPU lease"
-// @Success 200 {object} body.GpuLeaseRead
+// @Success 200 {object} body.GpuLeaseCreated
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
@@ -207,7 +207,7 @@ func CreateGpuLease(c *gin.Context) {
 // @Param Authorization header string true "Bearer token"
 // @Param gpuLeaseId path string true "GPU lease ID"
 // @Param body body body.GpuLeaseUpdate true "GPU lease"
-// @Success 200 {object} body.GpuLeaseRead
+// @Success 200 {object} body.GpuLeaseUpdated
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
@@ -277,7 +277,7 @@ func UpdateGpuLease(c *gin.Context) {
 // @Produce json
 // @Param Authorization header string true "Bearer token"
 // @Param gpuLeaseId path string true "GPU lease ID"
-// @Success 200 {object} body.GpuLeaseRead
+// @Success 200 {object} body.GpuLeaseDeleted
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse

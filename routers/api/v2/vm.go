@@ -78,6 +78,9 @@ func GetVM(c *gin.Context) {
 // @Param page query int false "Page number"
 // @Param pageSize query int false "Number of items per page"
 // @Success 200 {array} body.VmRead
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 401 {object} sys.ErrorResponse
+// @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /v2/vms [get]
 func ListVMs(c *gin.Context) {
@@ -142,7 +145,6 @@ func ListVMs(c *gin.Context) {
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 401 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
-// @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /v2/vms [post]
 func CreateVM(c *gin.Context) {
@@ -228,7 +230,6 @@ func CreateVM(c *gin.Context) {
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 401 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
-// @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /v2/vms/{vmId} [delete]
 func DeleteVM(c *gin.Context) {
@@ -293,7 +294,6 @@ func DeleteVM(c *gin.Context) {
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 401 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
-// @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /v2/vms/{vmId} [post]
 func UpdateVM(c *gin.Context) {
