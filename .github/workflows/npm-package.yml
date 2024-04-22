@@ -19,5 +19,6 @@ jobs:
       - name: Publish
         run: npm publish
         working-directory: ./export
+        registry-url: "https://registry.npmjs.org"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
