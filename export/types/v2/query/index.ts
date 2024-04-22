@@ -28,7 +28,6 @@ export interface GpuLeaseList {
   VmIDs: string[];
 }
 export interface GpuLeaseCreate {
-  VmID: string;
 }
 
 //////////

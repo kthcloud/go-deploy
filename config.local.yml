@@ -1,8 +1,8 @@
 version: 1.0.0
 
 port: 8080
-externalUrl: 
-mode: 
+externalUrl: localhost
+mode: dev
 
 timer:
   gpuSynchronize: 5s
@@ -52,9 +52,9 @@ zones:
     end: 29899
 
 registry:
-  url: 
-  placeholderImage: 
-  vmHttpProxyImage: 
+  url: localhost:11080
+  placeholderImage: library/go-deploy-placeholder:latest
+  vmHttpProxyImage: library/go-deploy-placeholder:latest
 
 gpu:
   privilegedGpus:
@@ -138,19 +138,19 @@ roles:
       gpuLeaseDuration: 168
 
 keycloak:
-  url: 
-  realm: 
-  adminGroup: 
-  storageClient: 
+  url: http://localhost:12080
+  realm: master
+  adminGroup: admin
+  storageClient:
     clientId: 
     clientSecret: 
 
 mongodb:
-  url: 
-  name: 
+  url: mongodb://root:root@mongodb.mongodb.svc.cluster.local:27017
+  name: deploy
 
 redis:
-  url: 
+  url: redis://redis.redis.svc.cluster.local:6379
   password: 
 
 cs:
@@ -168,9 +168,10 @@ sys-api:
   user: 
   password: 
   clientId: 
+  useMock: true
 
 harbor:
-  url: 
-  user: 
-  password: 
-  webhookSecret: 
+  url: http://localhost:11080
+  user: admin
+  password: admin
+  webhookSecret: secret

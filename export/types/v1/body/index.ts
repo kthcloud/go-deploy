@@ -309,7 +309,6 @@ export interface UserRead {
   lastName: string;
   email: string;
   publicKeys: PublicKey[];
-  onboarded: boolean;
   role: Role;
   admin: boolean;
   quota: Quota;
@@ -325,7 +324,6 @@ export interface UserReadDiscovery {
 }
 export interface UserUpdate {
   publicKeys?: PublicKey[];
-  onboarded?: boolean;
 }
 
 //////////
@@ -358,7 +356,7 @@ export interface VmRead {
   repairedAt?: string;
   specs?: Specs;
   ports: PortRead[];
-  gpu_repo?: VmGpuLease;
+  gpu?: VmGpuLease;
   sshPublicKey: string;
   teams: string[];
   status: string;
@@ -551,6 +549,11 @@ export interface GitHubWebhookPush {
 export interface ZoneRead {
   name: string;
   description: string;
-  type: string;
+  capabilities: string[];
   interface?: string;
+  /**
+   * Type
+   * Deprecated: use capabilities instead
+   */
+  type: string;
 }

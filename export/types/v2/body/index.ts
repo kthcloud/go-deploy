@@ -23,10 +23,15 @@ export interface GpuLeaseGpuGroup {
 }
 export interface GpuLeaseRead {
   id: string;
-  vmId: string;
   gpuGroupId: string;
   active: boolean;
+  userId: string;
+  /**
+   * VmID is set when the lease is attached to a VM.
+   */
+  vmId?: string;
   queuePosition: number /* int */;
+  LeaseDuration: number /* float64 */;
   /**
    * ActivatedAt specifies the time when the lease was activated. This is the time the user first attached the GPU
    * or 1 day after the lease was created if the user did not attach the GPU.
@@ -37,6 +42,11 @@ export interface GpuLeaseRead {
    */
   assignedAt?: string;
   createdAt: string;
+  /**
+   * ExpiresAt specifies the time when the lease will expire.
+   * This is only present if the lease is active.
+   */
+  expiresAt?: string;
   expiredAt?: string;
 }
 export interface GpuLeaseCreate {
@@ -52,10 +62,13 @@ export interface GpuLeaseCreate {
 }
 export interface GpuLeaseUpdate {
   /**
-   * Active is used to specify whether the lease should be active.
-   * It is not possible to un-activate a lease.
+   * VmID is used to specify the VM to attach the lease to.
+   * - If specified, the lease will be attached to the VM.
+   * - If the lease is already attached to a VM, it will be detached from the current VM and attached to the new VM.
+   * - If the lease is not active, specifying a VM will activate the lease.
+   * - If the lease is not assigned, an error will be returned.
    */
-  active: boolean;
+  vmId?: string;
 }
 export interface GpuLeaseCreated {
   id: string;
@@ -105,7 +118,7 @@ export interface VmRead {
   repairedAt?: string;
   specs?: Specs;
   ports: PortRead[];
-  gpu_repo?: VmGpuLease;
+  gpu?: VmGpuLease;
   sshPublicKey: string;
   teams: string[];
   status: string;
@@ -140,17 +153,6 @@ export interface VmUpdate {
    * If specified, only the transfer will happen.
    */
   transferCode?: string;
-  /**
-   * SnapshotID is used to apply snapshot to a VM.
-   * If specified, only the snapshot application will happen.
-   */
-  snapshotId?: string;
-  /**
-   * GpuID is used to attach/detach a GPU to a VM.
-   * If specified and not empty, only the GPU will be attached.
-   * If specified and empty, only the GPU will be detached.
-   */
-  gpuId?: string;
 }
 export interface VmUpdateOwner {
   newOwnerId: string;
@@ -159,8 +161,8 @@ export interface VmUpdateOwner {
 }
 export interface VmGpuLease {
   id: string;
-  name: string;
-  leaseEndAt?: string;
+  gpuGroupId: string;
+  expiresAt?: string;
   isExpired: boolean;
 }
 export interface Specs {

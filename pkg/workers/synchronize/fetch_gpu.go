@@ -234,6 +234,8 @@ func fetchGPUs() (*models.GpuInfoRead, error) {
 		OidcProvider: config.Config.Keycloak.Url,
 		OidcClientID: config.Config.SysApi.ClientID,
 		OidcRealm:    config.Config.Keycloak.Realm,
+
+		UseMock: config.Config.SysApi.UseMock,
 	})
 
 	if err != nil {

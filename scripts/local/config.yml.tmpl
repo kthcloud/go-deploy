@@ -1,7 +1,7 @@
 version: 1.0.0
 
 port: $port
-externalUrl: $externalUrl
+externalUrl: localhost
 mode: $mode
 
 timer:
@@ -141,7 +141,7 @@ keycloak:
   url: $keycloak_url
   realm: $keycloak_realm
   adminGroup: $keycloak_admin_group
-  storageClient: $keycloak_storage_client
+  storageClient:
     clientId: $keycloak_storage_client
     clientSecret: $keycloak_storage_secret
 
@@ -168,6 +168,7 @@ sys-api:
   user: 
   password: 
   clientId: 
+  useMock: true
 
 harbor:
   url: $harbor_url

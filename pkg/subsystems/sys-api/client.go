@@ -4,14 +4,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/Nerzal/gocloak/v13"
-	"net/http"
 )
 
 // Client is a client for the sys-api service.
 type Client struct {
-	url          string
-	oauth2Client *http.Client
-	jwt          *gocloak.JWT
+	url     string
+	jwt     *gocloak.JWT
+	useMock bool
 }
 
 // ClientConf is the configuration for creating a sys-api client.
@@ -23,6 +22,8 @@ type ClientConf struct {
 	OidcProvider string
 	OidcClientID string
 	OidcRealm    string
+
+	UseMock bool
 }
 
 // New creates a new sys-api client.
@@ -39,8 +40,9 @@ func New(config *ClientConf) (*Client, error) {
 	}
 
 	client := &Client{
-		url: config.URL,
-		jwt: jwt,
+		url:     config.URL,
+		jwt:     jwt,
+		useMock: config.UseMock,
 	}
 
 	return client, nil
