@@ -1,0 +1,19 @@
+{
+    "name": "kthcloud-types",
+    "version": "1.0.0",
+    "description": "Types for the go-deploy api of kthcloud",
+    "main": "index.ts",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/kthcloud/go-deploy.git"
+    },
+    "keywords": [
+        "kthcloud"
+    ],
+    "author": "kthcloud",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/kthcloud/go-deploy/issues"
+    },
+    "homepage": "https://github.com/kthcloud/go-deploy#readme"
+}
