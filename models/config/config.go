@@ -85,17 +85,13 @@ type ConfigType struct {
 		Password string `yaml:"password"`
 	}
 
+	// CS is the CloudStack configuration
+	// Deprecated: CloudStack will no longer be used
 	CS struct {
 		URL    string `yaml:"url"`
 		ApiKey string `yaml:"apiKey"`
 		Secret string `yaml:"secret"`
 	} `yaml:"cs"`
-
-	Rancher struct {
-		URL    string `yaml:"url"`
-		ApiKey string `yaml:"apiKey"`
-		Secret string `yaml:"secret"`
-	}
 
 	SysApi struct {
 		URL      string `yaml:"url"`
@@ -117,6 +113,9 @@ type ConfigType struct {
 
 type RancherConfigSource struct {
 	ClusterName string `yaml:"clusterName"`
+	URL         string `yaml:"url"`
+	ApiKey      string `yaml:"apiKey"`
+	Secret      string `yaml:"secret"`
 }
 
 type KubeConfigSource struct {

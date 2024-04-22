@@ -10,44 +10,30 @@ import (
 )
 
 // Get gets a zone by name and type
-func (c *Client) Get(name, zoneType string) *model.Zone {
-	switch zoneType {
-	case model.ZoneTypeDeployment:
-		return toDZone(config.Config.GetZone(name))
-	case model.ZoneTypeVM:
-		return toVZone(config.Config.VM.GetLegacyZone(name))
-	}
+func (c *Client) Get(name string) *model.Zone {
+	return toZone(config.Config.GetZone(name))
+}
 
-	return nil
+// GetLegacy gets a legacy zone by name
+func (c *Client) GetLegacy(name string) *model.Zone {
+	return toLegacyZone(config.Config.VM.GetLegacyZone(name))
 }
 
 // List gets a list of zones
 func (c *Client) List(opts ...opts.ListOpts) ([]model.Zone, error) {
-	o := utils.GetFirstOrDefault(opts)
+	_ = utils.GetFirstOrDefault(opts)
 
 	deploymentZones := config.Config.Zones
 	vmZones := config.Config.VM.Zones
 
 	var zones []model.Zone
-	if o.Type != nil && *o.Type == model.ZoneTypeDeployment {
-		zones = make([]model.Zone, len(deploymentZones))
-		for i, zone := range deploymentZones {
-			zones[i] = *toDZone(&zone)
-		}
-	} else if o.Type != nil && *o.Type == model.ZoneTypeVM {
-		zones = make([]model.Zone, len(vmZones))
-		for i, zone := range vmZones {
-			zones[i] = *toVZone(&zone)
-		}
-	} else {
-		zones = make([]model.Zone, len(deploymentZones)+len(vmZones))
-		for i, zone := range deploymentZones {
-			zones[i] = *toDZone(&zone)
-		}
+	zones = make([]model.Zone, len(deploymentZones)+len(vmZones))
+	for i, zone := range deploymentZones {
+		zones[i] = *toZone(&zone)
+	}
 
-		for i, zone := range vmZones {
-			zones[i+len(deploymentZones)] = *toVZone(&zone)
-		}
+	for i, zone := range vmZones {
+		zones[i+len(deploymentZones)] = *toLegacyZone(&zone)
 	}
 
 	sort.Slice(zones, func(i, j int) bool {
@@ -66,30 +52,38 @@ func (c *Client) HasCapability(zoneName, capability string) bool {
 	return zone.HasCapability(capability)
 }
 
-func toDZone(dZone *configModels.Zone) *model.Zone {
-	if dZone == nil {
+func toZone(zone *configModels.Zone) *model.Zone {
+	if zone == nil {
 		return nil
 	}
 
-	domain := dZone.Domains.ParentDeployment
+	domain := zone.Domains.ParentDeployment
 	return &model.Zone{
-		Name:        dZone.Name,
-		Description: dZone.Description,
-		Interface:   &domain,
-		Type:        model.ZoneTypeDeployment,
+		Name:         zone.Name,
+		Description:  zone.Description,
+		Capabilities: zone.Capabilities,
+		Interface:    &domain,
+		Legacy:       false,
+
+		Type: model.ZoneTypeDeployment,
 	}
 }
 
-func toVZone(vmZone *configModels.LegacyZone) *model.Zone {
-	if vmZone == nil {
+func toLegacyZone(legacyZone *configModels.LegacyZone) *model.Zone {
+	if legacyZone == nil {
 		return nil
 	}
 
-	domain := vmZone.ParentDomain
+	domain := legacyZone.ParentDomain
 	return &model.Zone{
-		Name:        vmZone.Name,
-		Description: vmZone.Description,
-		Interface:   &domain,
-		Type:        model.ZoneTypeVM,
+		Name:        legacyZone.Name,
+		Description: legacyZone.Description,
+		Capabilities: []string{
+			configModels.ZoneCapabilityVM,
+		},
+		Interface: &domain,
+		Legacy:    true,
+
+		Type: model.ZoneTypeVM,
 	}
 }

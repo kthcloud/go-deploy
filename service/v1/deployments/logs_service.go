@@ -16,6 +16,10 @@ const (
 	// The handler should ignore these messages, as they are only intended to check if the log stream is working.
 	MessageSourceControl = "control"
 
+	// MessageSourceKeepAlive is the source of the message from the keep alive.
+	// They are sent to the client to keep the connection alive.
+	MessageSourceKeepAlive = "keep-alive"
+
 	// FetchPeriod is the period between each fetch of logs from the database.
 	FetchPeriod = 300 * time.Millisecond
 )
@@ -54,16 +58,21 @@ func (c *Client) SetupLogStream(id string, ctx context.Context, handler func(str
 			handler(item.Source, item.Prefix, item.Line, item.CreatedAt)
 		}
 
-		// fetch live logs
+		// Fetch live logs
 		lastFetched := time.Now()
 		if len(logs) > 0 {
 			lastFetched = logs[len(logs)-1].CreatedAt
 		}
 
+		// Keep-alive packet every 30 seconds
+		ticker := time.Tick(30 * time.Second)
+
 		for {
 			select {
 			case <-ctx.Done():
 				return
+			case <-ticker:
+				handler(MessageSourceKeepAlive, "[keep-alive]", "keep-alive", time.Now())
 			default:
 				time.Sleep(FetchPeriod)
 				handler(MessageSourceControl, "[control]", "fetching logs", time.Now())

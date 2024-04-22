@@ -124,6 +124,7 @@ type Teams interface {
 	Create(id, ownerID string, dtoCreateTeam *body.TeamCreate) (*model.Team, error)
 	Update(id string, dtoUpdateTeam *body.TeamUpdate) (*model.Team, error)
 	Delete(id string) error
+	CleanResource(id string) error
 	Join(id string, dtoTeamJoin *body.TeamJoin) (*model.Team, error)
 	CheckResourceAccess(userID, resourceID string) (bool, error)
 }
@@ -177,6 +178,7 @@ type VMs interface {
 
 type Zones interface {
 	List(opts ...zoneOpts.ListOpts) ([]model.Zone, error)
-	Get(name, zoneType string) *model.Zone
+	Get(name string) *model.Zone
+	GetLegacy(name string) *model.Zone
 	HasCapability(zoneName, capability string) bool
 }

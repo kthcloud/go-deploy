@@ -131,7 +131,7 @@ func ListSnapshots(c *gin.Context) {
 // @Produce json
 // @Param Authorization header string true "Bearer token"
 // @Param vmId path string true "VM ID"
-// @Success 200 {object} body.VmSnapshotRead
+// @Success 200 {object} body.VmSnapshotCreated
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
@@ -229,7 +229,7 @@ func CreateSnapshot(c *gin.Context) {
 // @Param Authorization header string true "Bearer token"
 // @Param vmId path string true "VM ID"
 // @Param snapshotId path string true "Snapshot ID"
-// @Success 200 {object} body.VmSnapshotRead
+// @Success 200 {object} body.VmSnapshotDeleted
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse

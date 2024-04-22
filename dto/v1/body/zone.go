@@ -5,6 +5,7 @@ type ZoneRead struct {
 	Description  string   `json:"description"`
 	Capabilities []string `json:"capabilities"`
 	Interface    *string  `json:"interface"`
+	Legacy       bool     `json:"legacy"`
 
 	// Type
 	// Deprecated: use capabilities instead
