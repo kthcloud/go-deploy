@@ -14,6 +14,7 @@ import (
 	utils2 "go-deploy/service/utils"
 	"go-deploy/service/v1/teams/opts"
 	"go-deploy/utils"
+	"go.mongodb.org/mongo-driver/bson"
 	"time"
 )
 
@@ -247,6 +248,34 @@ func (c *Client) Delete(id string) error {
 	}
 
 	return tmc.DeleteByID(id)
+}
+
+// CleanResource cleans a resource from all teams
+//
+// It uses service.AuthInfo to only delete the model the requesting user has access to
+func (c *Client) CleanResource(resourceID string) error {
+	tmc := team_repo.New()
+
+	if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
+		tmc.WithOwnerID(c.V1.Auth().UserID)
+	}
+
+	tmc.WithResourceID(resourceID)
+
+	teams, err := c.Teams(tmc)
+	if err != nil {
+		return err
+	}
+
+	for _, team := range teams {
+		delete(team.GetResourceMap(), resourceID)
+		err = tmc.UpdateWithBsonByID(team.ID, bson.D{{"$set", bson.D{{"resourceMap", team.ResourceMap}}}})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // Join joins a team

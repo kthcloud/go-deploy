@@ -297,6 +297,11 @@ func (c *Client) Delete(id string) error {
 		return makeError(err)
 	}
 
+	err = c.V1.Teams().CleanResource(id)
+	if err != nil {
+		return makeError(err)
+	}
+
 	err = k8s_service.New(c.Cache).Delete(id)
 	if err != nil {
 		return makeError(err)

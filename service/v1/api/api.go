@@ -124,6 +124,7 @@ type Teams interface {
 	Create(id, ownerID string, dtoCreateTeam *body.TeamCreate) (*model.Team, error)
 	Update(id string, dtoUpdateTeam *body.TeamUpdate) (*model.Team, error)
 	Delete(id string) error
+	CleanResource(id string) error
 	Join(id string, dtoTeamJoin *body.TeamJoin) (*model.Team, error)
 	CheckResourceAccess(userID, resourceID string) (bool, error)
 }

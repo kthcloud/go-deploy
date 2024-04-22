@@ -144,9 +144,9 @@ func createClientFromRancherConfig(name string, config *config.RancherConfigSour
 	}
 
 	rancherClient, err := rancher.New(&rancher.ClientConf{
-		URL:    Config.Rancher.URL,
-		ApiKey: Config.Rancher.ApiKey,
-		Secret: Config.Rancher.Secret,
+		URL:    config.URL,
+		ApiKey: config.ApiKey,
+		Secret: config.Secret,
 	})
 	if err != nil {
 		return nil, nil, makeError(err)
