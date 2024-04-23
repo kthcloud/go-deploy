@@ -191,7 +191,7 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 			IngressClass: config.Config.Deployment.IngressClass,
 			Hosts:        []string{mainApp.CustomDomain.Domain},
 			CustomCert: &models.CustomCert{
-				ClusterIssuer: "letsencrypt-prod-deploy-http",
+				ClusterIssuer: kg.zone.K8s.ClusterIssuer,
 				CommonName:    mainApp.CustomDomain.Domain,
 			},
 			TlsSecret: nil,

@@ -195,6 +195,7 @@ type Zone struct {
 		IngressNamespace string `yaml:"ingressNamespace"`
 		// LoadBalancerIP is the IP of the load balancer that is used for the ingress resources
 		LoadBalancerIP string `yaml:"loadBalancerIp"`
+		ClusterIssuer  string `yaml:"clusterIssuer"`
 		// Client is the Kubernetes client for the zone created by querying the ConfigSource
 		Client *kubernetes.Clientset
 		// KubeVirtClient is the KubeVirt client for the zone created by querying the ConfigSource
