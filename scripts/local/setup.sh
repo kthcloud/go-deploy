@@ -35,6 +35,27 @@ if ! [ -x "$(command -v helm)" ]; then
   exit 1
 fi
 
+# Check if dnsmasq is installed, if not exit
+if ! [ -x "$(command -v dnsmasq)" ]; then
+  echo -e "$RED_CROSS dnsmasq is not installed. Please install dnsmasq"
+  exit 1
+fi
+
+function configure_local_dns() {
+  # If file /etc/dnsmasq.d/50-go-deploy-dev.conf does not exist, create it
+  if ! [ -f "/etc/dnsmasq.d/50-go-deploy-dev.conf" ]; then
+    echo "address=/deploy.localhost/127.0.0.1" | sudo tee -a /etc/dnsmasq.d/50-go-deploy-dev.conf
+  fi
+
+  sudo systemctl restart dnsmasq
+}
+
+function wait_for_dns() {
+  while [ "$(dig +short deploy.localhost)" == "" ]; do
+    sleep 5
+  done
+}
+
 # If not exists, install k3d
 function install_k3d() {
   k3s_install_path="curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | bash"
@@ -43,11 +64,10 @@ function install_k3d() {
   fi
 }
 
-
 function create_k3d_cluster() {
   name="go-deploy-dev"
   current=$(k3d cluster list | grep -c $name)
-  if [ $current -eq 0 ]; then
+  if [ "$current" -eq 0 ]; then
     k3d cluster create $name --agents 2 \
       -p "$LOADBALANCER_HTTP_PORT:80@loadbalancer" \
       -p "$LOADBALANCER_HTTPS_PORT:443@loadbalancer" \
@@ -55,10 +75,14 @@ function create_k3d_cluster() {
       -p "$REDIS_PORT:6379@server:0" \
       -p "$MONGO_DB_PORT:27017@server:0" \
       -p "$NFS_PORT:2049@server:0"
-
-    # Edit traefik to allow for external names
-    helm upgrade traefik traefik -n kube-system --set providers.kubernetesIngress.allowExternalNameServices=true --repo=https://traefik.github.io/charts
   fi
+
+  # Wait for helm list to include traefik
+  while [ "$(helm list -n kube-system | grep -c traefik)" -eq 0 ]; do
+    sleep 5
+  done
+
+  helm upgrade traefik traefik -n kube-system --set providers.kubernetesIngress.allowExternalNameServices=true --repo=https://traefik.github.io/charts
 }
 
 function setup_harbor() {
@@ -339,14 +363,8 @@ function install_cdi() {
   fi
 }
 
-
-function configure_local_dns() {
-  # Add entries to /etc/dns_masq.d
-  if ! grep -q "address=/deploy.local/127.0.0.1" /etc/dnsmasq.d/50-go-deploy-dev.conf; then
-    echo "address=/deploy.local/127.0.0.1" | sudo tee -a /etc/dnsmasq.d/50-go-deploy-dev.conf
-  fi
-}
-
+run_with_spinner "Configuring local DNS" configure_local_dns
+run_with_spinner "Waiting for DNS" wait_for_dns
 
 run_with_spinner "Install k3d" install_k3d
 run_with_spinner "Set up k3d cluster" create_k3d_cluster
@@ -364,7 +382,6 @@ run_with_spinner "Install Storage Classes" install_storage_classes
 run_with_spinner "Install KubeVirt" install_kubevirt
 run_with_spinner "Install CDI" install_cdi
 
-run_with_spinner "Configuring local DNS" configure_local_dns
 
 
 # If exists ../../config.local.yml, ask if user want to replace it
@@ -418,7 +435,9 @@ echo " - Redis: redis://localhost:13017"
 echo ""
 echo "Please review the generated config.local.yml file and make any necessary changes"
 echo ""
-echo "If you are not using dnsmasq already, follow this guide: https://gist.github.com/frank-dspeed/6b6f1f720dd5e1c57eec8f1fdb2276df"
+echo "If you are not using dnsmasq already, you need to set it up. Use the following guides as a reference:"
+echo " - WSL2 (Windows): https://github.com/absolunet/pleaz/blob/production/documentation/installation/wsl2/dnsmasq.md"
+echo " - systemd-resolved (Linux): https://gist.github.com/frank-dspeed/6b6f1f720dd5e1c57eec8f1fdb2276df"
 echo ""
 echo "To start the application, go the the top directory and run the following command:"
 echo ""

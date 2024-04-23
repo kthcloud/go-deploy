@@ -183,6 +183,11 @@ func CreateVM(c *gin.Context) {
 			return
 		}
 
+		if !zone.Enabled {
+			context.Forbidden("Zone is disabled")
+			return
+		}
+
 		if !deployV1.Zones().HasCapability(*requestBody.Zone, configModels.ZoneCapabilityVM) {
 			context.Forbidden("Zone does not have VM capability")
 			return

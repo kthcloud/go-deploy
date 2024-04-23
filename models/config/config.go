@@ -180,6 +180,7 @@ type Deployment struct {
 type Zone struct {
 	Name        string `yaml:"name"`
 	Description string `yaml:"description"`
+	Enabled     bool   `yaml:"enabled"`
 
 	K8s struct {
 		Namespaces struct {
