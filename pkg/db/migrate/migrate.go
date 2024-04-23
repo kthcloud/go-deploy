@@ -2,9 +2,7 @@ package migrator
 
 import (
 	"fmt"
-	"go-deploy/pkg/db/resources/deployment_repo"
 	"go-deploy/pkg/log"
-	"go-deploy/service"
 )
 
 // Migrate runs every migration specified in the getMigrations function.
@@ -34,26 +32,5 @@ func Migrate() error {
 //
 // add a date to the migration name to make it easier to identify.
 func getMigrations() map[string]func() error {
-	return map[string]func() error{
-		"repairDeploymentsWithPersistentStorage_2024_04_23": repairDeploymentsWithPersistentStorage_2024_04_23,
-	}
-}
-
-func repairDeploymentsWithPersistentStorage_2024_04_23() error {
-	deployments, err := deployment_repo.New().WithZone("se-flem-2").List()
-	if err != nil {
-		return err
-	}
-
-	for _, deployment := range deployments {
-		if len(deployment.GetMainApp().Volumes) == 0 {
-			continue
-		}
-
-		if err := service.V1().Deployments().Repair(deployment.ID); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return map[string]func() error{}
 }
