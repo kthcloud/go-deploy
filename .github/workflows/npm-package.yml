@@ -40,6 +40,6 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Push changes
-        run:
+        run: |
           BRANCH_NAME=${GITHUB_HEAD_REF}
           git add . && git commit -m "Bump npm package version" && git push origin HEAD:$BRANCH_NAME
