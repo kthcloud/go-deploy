@@ -1,20 +1,25 @@
-name: Build, package and publish NPM package
+name: Build, package, and publish NPM package
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - "main"
+      - "dev"
     paths:
       - "export/**"
       - ".github/workflows/npm-package.yml"
 
 jobs:
-  docker:
+  build-and-publish:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Ensures tags are also fetched
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -22,8 +27,18 @@ jobs:
           node-version: "lts/*"
           registry-url: "https://registry.npmjs.org"
 
+      - name: Bump NPM version
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          npm version patch -m "Bump version to %s"
+        working-directory: ./export
+
       - name: Publish
         run: npm publish
         working-directory: ./export
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Push changes
+        run: git push origin HEAD:dev --tag
