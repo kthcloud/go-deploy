@@ -24,3 +24,14 @@ func (client *Client) CreateOrUpdate(name, status string) error {
 
 	return nil
 }
+
+// DeleteStale deletes all worker statuses that have not been updated in the last 24 hours.
+func (client *Client) DeleteStale() error {
+	filter := bson.D{{"reportedAt", bson.D{{"$lt", time.Now().Add(-24 * time.Hour)}}}}
+	_, err := client.Collection.DeleteMany(context.TODO(), filter)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
