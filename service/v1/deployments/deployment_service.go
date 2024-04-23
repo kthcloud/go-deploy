@@ -178,7 +178,7 @@ func (c *Client) Create(id, ownerID string, deploymentCreate *body.DeploymentCre
 	}
 
 	// temporary hard-coded fallback
-	fallbackZone := "se-flem"
+	fallbackZone := "se-flem-2"
 	fallbackImage := createImagePath(ownerID, deploymentCreate.Name)
 	fallbackPort := config.Config.Deployment.Port
 

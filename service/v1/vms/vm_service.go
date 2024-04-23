@@ -175,7 +175,7 @@ func (c *Client) Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
 
 	// Temporary hard-coded fallback
 	fallback := "se-flem"
-	deploymentZone := "se-flem"
+	deploymentZone := "se-flem-2"
 
 	params := model.VmCreateParams{}.FromDTOv1(dtoVmCreate, &fallback, &deploymentZone)
 

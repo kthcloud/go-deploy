@@ -39,7 +39,7 @@ func CreateSM() gin.HandlerFunc {
 				"id":     smID,
 				"userId": auth.UserID,
 				"params": model.SmCreateParams{
-					Zone: "se-flem",
+					Zone: "se-flem-2",
 				},
 			})
 
