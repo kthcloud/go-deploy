@@ -17,6 +17,7 @@ type Zone struct {
 	Capabilities []string `bson:"capabilities"`
 	Interface    *string  `bson:"interface"`
 	Legacy       bool     `bson:"legacy"`
+	Enabled      bool     `bson:"enabled"`
 
 	// Type
 	// Deprecated: use capabilities instead
@@ -38,6 +39,7 @@ func (z *Zone) ToDTO() body.ZoneRead {
 		Interface:    z.Interface,
 		Capabilities: capabilities,
 		Legacy:       z.Legacy,
+		Enabled:      z.Enabled,
 		Type:         z.Type,
 	}
 }
