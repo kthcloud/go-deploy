@@ -64,6 +64,7 @@ func toZone(zone *configModels.Zone) *model.Zone {
 		Capabilities: zone.Capabilities,
 		Interface:    &domain,
 		Legacy:       false,
+		Enabled:      zone.Enabled,
 
 		Type: model.ZoneTypeDeployment,
 	}
@@ -83,6 +84,7 @@ func toLegacyZone(legacyZone *configModels.LegacyZone) *model.Zone {
 		},
 		Interface: &domain,
 		Legacy:    true,
+		Enabled:   false,
 
 		Type: model.ZoneTypeVM,
 	}
