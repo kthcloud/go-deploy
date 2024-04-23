@@ -72,7 +72,7 @@ func smDeletionConfirmer() error {
 		}) == -1
 
 		if allFinished {
-			log.Printf("Marking sm %s as deleted", sm.ID)
+			log.Printf("Marking SM %s as deleted", sm.ID)
 			err = sm_repo.New().DeleteByID(sm.ID)
 			if err != nil {
 				return err
@@ -108,7 +108,7 @@ func vmDeletionConfirmer() error {
 		}) == -1
 
 		if allFinished {
-			log.Printf("Marking vm %s as deleted", vm.ID)
+			log.Printf("Marking VM %s as deleted", vm.ID)
 			err = vm_repo.New().DeleteByID(vm.ID)
 			if err != nil {
 				return err

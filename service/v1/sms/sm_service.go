@@ -154,7 +154,7 @@ func (c *Client) Exists(userID string) (bool, error) {
 // GetZone returns the deployment zone for the storage manager.
 func (c *Client) GetZone() *configModels.Zone {
 	// Currently, the storage-manager is hosted in se-flem for all users
-	zone := "se-flem"
+	zone := "se-flem-2"
 
 	return config.Config.GetZone(zone)
 }
