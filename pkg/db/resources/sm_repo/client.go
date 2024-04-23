@@ -87,3 +87,10 @@ func (client *Client) WithNoActivities() *Client {
 
 	return client
 }
+
+// WithZone adds a filter to the client to only include storage managers with the given zone.
+func (client *Client) WithZone(zone string) *Client {
+	client.ResourceClient.AddExtraFilter(bson.D{{"zone", zone}})
+
+	return client
+}

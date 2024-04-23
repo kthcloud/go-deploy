@@ -2,7 +2,10 @@ package migrator
 
 import (
 	"fmt"
+	"go-deploy/pkg/db/resources/sm_repo"
 	"go-deploy/pkg/log"
+	v1 "go-deploy/service/v1"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // Migrate runs every migration specified in the getMigrations function.
@@ -32,5 +35,30 @@ func Migrate() error {
 //
 // add a date to the migration name to make it easier to identify.
 func getMigrations() map[string]func() error {
-	return map[string]func() error{}
+	return map[string]func() error{
+		"migrateSmsToNewSeFlemZone_2024_04_23": migrateSmsToNewSeFlemZone_2024_04_23,
+	}
+}
+
+func migrateSmsToNewSeFlemZone_2024_04_23() error {
+	sms, err := sm_repo.New().WithZone("se-flem").List()
+	if err != nil {
+		return err
+	}
+
+	for _, sm := range sms {
+		sm.Zone = "se-flem-2"
+		if err := sm_repo.New().SetWithBsonByID(sm.ID, bson.D{{"zone", sm.Zone}}); err != nil {
+			return err
+		}
+
+		// Repair
+		if err := v1.New().SMs().Repair(sm.ID); err != nil {
+			// Revert zone change
+			_ = sm_repo.New().SetWithBsonByID(sm.ID, bson.D{{"zone", "se-flem"}})
+			return err
+		}
+	}
+
+	return nil
 }
