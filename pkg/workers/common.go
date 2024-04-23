@@ -13,6 +13,14 @@ func ReportUp(name string) {
 	}
 }
 
+// CleanUp deletes all worker statuses that have not been updated in the last 24 hours.
+func CleanUp() {
+	err := worker_status_repo.New().DeleteStale()
+	if err != nil {
+		log.Printf("Failed to clean up worker statuses. details: %s", err)
+	}
+}
+
 // OnStop reports that a worker has stopped.
 // It should be called in a defer statement for every worker.
 func OnStop(name string) {

@@ -23,11 +23,14 @@ func Worker(ctx context.Context, name string, work func(context.Context) error) 
 	}()
 
 	reportTick := time.Tick(1 * time.Second)
+	cleanUpTick := time.Tick(300 * time.Second)
 
 	for {
 		select {
 		case <-reportTick:
 			ReportUp(name)
+		case <-cleanUpTick:
+			CleanUp()
 		case <-internalCtx.Done():
 			return
 		case <-ctx.Done():
