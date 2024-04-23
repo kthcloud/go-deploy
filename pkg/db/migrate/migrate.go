@@ -40,7 +40,7 @@ func getMigrations() map[string]func() error {
 }
 
 func repairDeploymentsWithPersistentStorage_2024_04_23() error {
-	deployments, err := deployment_repo.New().List()
+	deployments, err := deployment_repo.New().WithZone("se-flem-2").List()
 	if err != nil {
 		return err
 	}
