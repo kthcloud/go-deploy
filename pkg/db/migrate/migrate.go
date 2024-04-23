@@ -2,7 +2,10 @@ package migrator
 
 import (
 	"fmt"
+	"go-deploy/pkg/db/resources/deployment_repo"
 	"go-deploy/pkg/log"
+	"go-deploy/service"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // Migrate runs every migration specified in the getMigrations function.
@@ -32,5 +35,28 @@ func Migrate() error {
 //
 // add a date to the migration name to make it easier to identify.
 func getMigrations() map[string]func() error {
-	return map[string]func() error{}
+	return map[string]func() error{
+		"moveToNewZoneSeFlem_2024_04_23": moveToNewZoneSeFlem_2024_04_23,
+	}
+}
+
+func moveToNewZoneSeFlem_2024_04_23() error {
+	deployments, err := deployment_repo.New().WithZone("se-flem").List()
+	if err != nil {
+		return err
+	}
+
+	for _, deployment := range deployments {
+		deployment.Zone = "se-flem-2"
+		if err := deployment_repo.New().SetWithBsonByID(deployment.ID, bson.D{{"zone", deployment.Zone}}); err != nil {
+			return err
+		}
+
+		// Repair the deployment
+		if err := service.V1().Deployments().Repair(deployment.ID); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

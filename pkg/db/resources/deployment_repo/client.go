@@ -170,3 +170,13 @@ func (client *Client) WithTransferCode(code string) *Client {
 
 	return client
 }
+
+// WithZone adds a filter to the client to only include deployments in the given zone.
+func (client *Client) WithZone(zone string) *Client {
+	filter := bson.D{{"zone", zone}}
+
+	client.ResourceClient.AddExtraFilter(filter)
+	client.ActivityResourceClient.AddExtraFilter(filter)
+
+	return client
+}
