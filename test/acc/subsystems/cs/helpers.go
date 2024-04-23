@@ -12,7 +12,7 @@ import (
 )
 
 func withClient(t *testing.T) *cs.Client {
-	zoneName := "se-flem"
+	zoneName := "se-flem-2"
 	zone := config.Config.VM.GetLegacyZone(zoneName)
 	if zone == nil {
 		t.Fatalf("no zone with name %s found", zoneName)
