@@ -153,13 +153,3 @@ func (client *Client) OlderThan(timestamp time.Time) *Client {
 
 	return client
 }
-
-// WithTransferCode adds a filter to the client to only include deployments with the given transfer code.
-func (client *Client) WithTransferCode(code string) *Client {
-	filter := bson.D{{"transferCode", code}}
-
-	client.ResourceClient.AddExtraFilter(filter)
-	client.ActivityResourceClient.AddExtraFilter(filter)
-
-	return client
-}

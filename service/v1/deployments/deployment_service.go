@@ -3,18 +3,17 @@ package deployments
 import (
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
 	"go-deploy/dto/v1/body"
 	configModels "go-deploy/models/config"
 	"go-deploy/models/model"
-	"go-deploy/models/version"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/db/resources/deployment_repo"
 	"go-deploy/pkg/db/resources/notification_repo"
+	"go-deploy/pkg/db/resources/resource_migration_repo"
 	"go-deploy/pkg/db/resources/team_repo"
 	"go-deploy/pkg/log"
 	sErrors "go-deploy/service/errors"
-	utils2 "go-deploy/service/utils"
+	sUtils "go-deploy/service/utils"
 	"go-deploy/service/v1/deployments/opts"
 	"go-deploy/utils"
 	"go-deploy/utils/subsystemutils"
@@ -28,12 +27,26 @@ import (
 // It can be fetched in multiple ways including ID, name, transfer code, and Harbor webhook.
 // It supports service.AuthInfo, and will restrict the result to ensure the user has access to the model.
 func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.Deployment, error) {
-	o := utils2.GetFirstOrDefault(opts)
+	o := sUtils.GetFirstOrDefault(opts)
 
-	dClient := deployment_repo.New()
+	dmc := deployment_repo.New()
 
-	if o.TransferCode != "" {
-		return dClient.WithTransferCode(o.TransferCode).Get()
+	if o.MigrationToken != nil {
+		rmc := resource_migration_repo.New().
+			WithType(model.ResourceMigrationTypeUpdateOwner).
+			WithResourceType(model.ResourceMigrationResourceTypeDeployment).
+			WithTransferCode(*o.MigrationToken)
+
+		migration, err := rmc.Get()
+		if err != nil {
+			return nil, err
+		}
+
+		if migration == nil {
+			return nil, nil
+		}
+
+		return c.Deployment(migration.ResourceID, dmc)
 	}
 
 	var effectiveUserID string
@@ -55,26 +68,26 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.Deployment, error)
 	}
 
 	if !teamCheck && effectiveUserID != "" {
-		dClient.WithOwner(effectiveUserID)
+		dmc.WithOwner(effectiveUserID)
 	}
 
 	if o.HarborWebhook != nil {
-		return dClient.GetByName(o.HarborWebhook.EventData.Repository.Name)
+		return dmc.GetByName(o.HarborWebhook.EventData.Repository.Name)
 	}
 
-	return c.Deployment(id, dClient)
+	return c.Deployment(id, dmc)
 }
 
 // List lists existing deployments.
 //
 // It supports service.AuthInfo, and will restrict the result to ensure the user has access to the model.
 func (c *Client) List(opts ...opts.ListOpts) ([]model.Deployment, error) {
-	o := utils2.GetFirstOrDefault(opts)
+	o := sUtils.GetFirstOrDefault(opts)
 
-	dClient := deployment_repo.New()
+	dmc := deployment_repo.New()
 
 	if o.Pagination != nil {
-		dClient.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
+		dmc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
 	}
 
 	var effectiveUserID string
@@ -94,10 +107,10 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.Deployment, error) {
 	}
 
 	if effectiveUserID != "" {
-		dClient.WithOwner(effectiveUserID)
+		dmc.WithOwner(effectiveUserID)
 	}
 
-	resources, err := c.Deployments(dClient)
+	resources, err := c.Deployments(dmc)
 	if err != nil {
 		return nil, err
 	}
@@ -294,91 +307,6 @@ func (c *Client) Update(id string, dtoUpdate *body.DeploymentUpdate) error {
 	return nil
 }
 
-// UpdateOwnerSetup updates the owner of the deployment.
-//
-// This is the first step of the owner update process, where it is decided if a notification should be created,
-// or if the transfer should be done immediately.
-//
-// It returns an error if the deployment is not found.
-func (c *Client) UpdateOwnerSetup(id string, params *body.DeploymentUpdateOwner) (*string, error) {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to update deployment owner. details: %w", err)
-	}
-
-	d, err := c.Deployment(id, nil)
-	if err != nil {
-		return nil, makeError(err)
-	}
-
-	if d == nil {
-		return nil, sErrors.DeploymentNotFoundErr
-	}
-
-	if d.OwnerID == params.NewOwnerID {
-		return nil, nil
-	}
-
-	doTransfer := false
-
-	if !c.V1.HasAuth() || c.V1.Auth().IsAdmin {
-		doTransfer = true
-	} else if c.V1.Auth().UserID == params.NewOwnerID {
-		if params.TransferCode == nil || d.Transfer == nil || d.Transfer.Code != *params.TransferCode {
-			return nil, sErrors.InvalidTransferCodeErr
-		}
-
-		doTransfer = true
-	}
-
-	var effectiveUserID string
-	if !c.V1.HasAuth() {
-		effectiveUserID = "system"
-	} else {
-		effectiveUserID = c.V1.Auth().UserID
-	}
-
-	if doTransfer {
-		jobID := uuid.New().String()
-		err := c.V1.Jobs().Create(jobID, effectiveUserID, model.JobUpdateDeploymentOwner, version.V1, map[string]interface{}{
-			"id":     id,
-			"params": *params,
-		})
-
-		if err != nil {
-			return nil, makeError(err)
-		}
-
-		return &jobID, nil
-	}
-
-	// Create a transfer notification
-	code := createTransferCode()
-	err = deployment_repo.New().UpdateWithParams(id, &model.DeploymentUpdateParams{
-		TransferUserID: &params.NewOwnerID,
-		TransferCode:   &code,
-	})
-	if err != nil {
-		return nil, makeError(err)
-	}
-
-	_, err = c.V1.Notifications().Create(uuid.NewString(), params.NewOwnerID, &model.NotificationCreateParams{
-		Type: model.NotificationDeploymentTransfer,
-		Content: map[string]interface{}{
-			"id":     d.ID,
-			"name":   d.Name,
-			"userId": params.OldOwnerID,
-			"email":  c.V1.Auth().GetEmail(),
-			"code":   code,
-		},
-	})
-
-	if err != nil {
-		return nil, makeError(err)
-	}
-
-	return nil, nil
-}
-
 // UpdateOwner updates the owner of the deployment.
 //
 // This is the second step of the owner update process, where the transfer is actually done.
@@ -404,13 +332,9 @@ func (c *Client) UpdateOwner(id string, params *body.DeploymentUpdateOwner) erro
 		newImage = &image
 	}
 
-	emptyString := ""
-
 	err = deployment_repo.New().UpdateWithParams(id, &model.DeploymentUpdateParams{
-		OwnerID:        &params.NewOwnerID,
-		Image:          newImage,
-		TransferCode:   &emptyString,
-		TransferUserID: &emptyString,
+		OwnerID: &params.NewOwnerID,
+		Image:   newImage,
 	})
 	if err != nil {
 		return makeError(err)
@@ -433,41 +357,6 @@ func (c *Client) UpdateOwner(id string, params *body.DeploymentUpdateOwner) erro
 	}
 
 	log.Println("Deployment", id, "owner updated from", params.OldOwnerID, "to", params.NewOwnerID)
-	return nil
-}
-
-// ClearUpdateOwner clears the owner update process.
-//
-// This is intended to be used when the owner update process is canceled.
-func (c *Client) ClearUpdateOwner(id string) error {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to clear deployment owner update. details: %w", err)
-	}
-
-	d, err := c.Deployment(id, nil)
-	if err != nil {
-		return makeError(err)
-	}
-
-	if d == nil {
-		return sErrors.DeploymentNotFoundErr
-	}
-
-	if d.Transfer == nil {
-		return nil
-	}
-
-	emptyString := ""
-	err = deployment_repo.New().UpdateWithParams(id, &model.DeploymentUpdateParams{
-		TransferUserID: &emptyString,
-		TransferCode:   &emptyString,
-	})
-	if err != nil {
-		return makeError(err)
-	}
-
-	// TODO: delete notification?
-
 	return nil
 }
 
@@ -793,9 +682,4 @@ func (c *Client) NameAvailable(name string) (bool, error) {
 // createImagePath creates a complete container image path that can be pulled from.
 func createImagePath(ownerID, name string) string {
 	return fmt.Sprintf("%s/%s/%s", config.Config.Registry.URL, subsystemutils.GetPrefixedName(ownerID), name)
-}
-
-// createTransferCode generates a transfer code.
-func createTransferCode() string {
-	return utils.HashStringAlphanumeric(uuid.NewString())
 }

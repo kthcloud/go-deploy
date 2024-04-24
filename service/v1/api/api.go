@@ -10,6 +10,7 @@ import (
 	dOpts "go-deploy/service/v1/deployments/opts"
 	jobOpts "go-deploy/service/v1/jobs/opts"
 	nOpts "go-deploy/service/v1/notifications/opts"
+	resourceMigrationOpts "go-deploy/service/v1/resource_migrations/opts"
 	smK8sService "go-deploy/service/v1/sms/k8s_service"
 	smOpts "go-deploy/service/v1/sms/opts"
 	statusOpts "go-deploy/service/v1/status/opts"
@@ -31,9 +32,7 @@ type Deployments interface {
 	Delete(id string) error
 	Repair(id string) error
 
-	UpdateOwnerSetup(id string, params *body.DeploymentUpdateOwner) (*string, error)
 	UpdateOwner(id string, params *body.DeploymentUpdateOwner) error
-	ClearUpdateOwner(id string) error
 
 	Restart(id string) error
 	DoCommand(id string, command string)
@@ -144,9 +143,7 @@ type VMs interface {
 	DeleteSnapshot(id, snapshotID string) error
 	ApplySnapshot(id, snapshotID string) error
 
-	UpdateOwnerSetup(id string, params *body.VmUpdateOwner) (*string, error)
 	UpdateOwner(id string, params *body.VmUpdateOwner) error
-	ClearUpdateOwner(id string) error
 
 	GetConnectionString(id string) (*string, error)
 	GetExternalPortMapper(vmID string) (map[string]int, error)
@@ -181,4 +178,12 @@ type Zones interface {
 	Get(name string) *model.Zone
 	GetLegacy(name string) *model.Zone
 	HasCapability(zoneName, capability string) bool
+}
+
+type ResourceMigrations interface {
+	Get(id string, opts ...resourceMigrationOpts.GetOpts) (*model.ResourceMigration, error)
+	List(opts ...resourceMigrationOpts.ListOpts) ([]model.ResourceMigration, error)
+	Create(id string, userID string, dtoResourceMigrationCreate *body.ResourceMigrationCreate) error
+	Update(id string, dtoResourceMigrationUpdate *body.ResourceMigrationUpdate) error
+	Delete(id string) error
 }

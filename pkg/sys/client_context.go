@@ -19,10 +19,10 @@ func NewContext(ginContext *gin.Context) ClientContext {
 }
 
 type ErrorResponse struct {
-	Errors []errorPiece `json:"errors"`
+	Errors []Error `json:"errors"`
 }
 
-type errorPiece struct {
+type Error struct {
 	Code string `json:"code"`
 	Msg  string `json:"msg"`
 }
@@ -39,19 +39,19 @@ func (context *ClientContext) ResponseValidationError(errors map[string][]string
 // ServerError is a helper function to return a server error response.
 func (context *ClientContext) ServerError(log, display error) {
 	utils.PrettyPrintError(log)
-	context.GinContext.JSON(http.StatusInternalServerError, ErrorResponse{Errors: []errorPiece{{Code: status_codes.GetMsg(status_codes.Error), Msg: display.Error()}}})
+	context.GinContext.JSON(http.StatusInternalServerError, ErrorResponse{Errors: []Error{{Code: status_codes.GetMsg(status_codes.Error), Msg: display.Error()}}})
 }
 
 // ServerUnavailableError is a helper function to return a server unavailable error response.
 // It logs the error internally, and returns a generic error message to the user.
 func (context *ClientContext) ServerUnavailableError(log, display error) {
 	utils.PrettyPrintError(log)
-	context.GinContext.JSON(http.StatusServiceUnavailable, ErrorResponse{Errors: []errorPiece{{Code: status_codes.GetMsg(status_codes.Error), Msg: display.Error()}}})
+	context.GinContext.JSON(http.StatusServiceUnavailable, ErrorResponse{Errors: []Error{{Code: status_codes.GetMsg(status_codes.Error), Msg: display.Error()}}})
 }
 
 // UserError is a helper function to return a user error response.
 func (context *ClientContext) UserError(msg string) {
-	context.GinContext.JSON(http.StatusBadRequest, ErrorResponse{Errors: []errorPiece{{Code: status_codes.GetMsg(status_codes.Error), Msg: msg}}})
+	context.GinContext.JSON(http.StatusBadRequest, ErrorResponse{Errors: []Error{{Code: status_codes.GetMsg(status_codes.Error), Msg: msg}}})
 }
 
 // BindingError is a helper function to return a binding error response.
@@ -62,7 +62,7 @@ func (context *ClientContext) BindingError(bindingError *body.BindingError) {
 
 // ErrorResponse is a helper function to return an error response.
 func (context *ClientContext) ErrorResponse(httpCode int, errCode int, message string) {
-	errors := []errorPiece{{Code: status_codes.GetMsg(errCode), Msg: message}}
+	errors := []Error{{Code: status_codes.GetMsg(errCode), Msg: message}}
 	context.GinContext.JSON(httpCode, ErrorResponse{Errors: errors})
 }
 
@@ -83,22 +83,22 @@ func (context *ClientContext) OkNoContent() {
 
 // Unauthorized is a helper function to return an unauthorized response.
 func (context *ClientContext) Unauthorized(msg string) {
-	context.GinContext.JSON(http.StatusUnauthorized, ErrorResponse{Errors: []errorPiece{{Code: status_codes.GetMsg(status_codes.Error), Msg: msg}}})
+	context.GinContext.JSON(http.StatusUnauthorized, ErrorResponse{Errors: []Error{{Code: status_codes.GetMsg(status_codes.Error), Msg: msg}}})
 }
 
 // Forbidden is a helper function to return a forbidden response.
 func (context *ClientContext) Forbidden(msg string) {
-	context.GinContext.JSON(http.StatusForbidden, ErrorResponse{Errors: []errorPiece{{Code: status_codes.GetMsg(status_codes.Error), Msg: msg}}})
+	context.GinContext.JSON(http.StatusForbidden, ErrorResponse{Errors: []Error{{Code: status_codes.GetMsg(status_codes.Error), Msg: msg}}})
 }
 
 // NotFound is a helper function to return a not found response.
 func (context *ClientContext) NotFound(msg string) {
-	context.GinContext.JSON(http.StatusNotFound, ErrorResponse{Errors: []errorPiece{{Code: status_codes.GetMsg(status_codes.Error), Msg: msg}}})
+	context.GinContext.JSON(http.StatusNotFound, ErrorResponse{Errors: []Error{{Code: status_codes.GetMsg(status_codes.Error), Msg: msg}}})
 }
 
 // Locked is a helper function to return a locked response.
 func (context *ClientContext) Locked(msg string) {
-	context.GinContext.JSON(http.StatusLocked, ErrorResponse{Errors: []errorPiece{{Code: status_codes.GetMsg(status_codes.Error), Msg: msg}}})
+	context.GinContext.JSON(http.StatusLocked, ErrorResponse{Errors: []Error{{Code: status_codes.GetMsg(status_codes.Error), Msg: msg}}})
 }
 
 // NotModified is a helper function to return a not modified response.

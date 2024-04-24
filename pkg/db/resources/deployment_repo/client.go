@@ -161,16 +161,6 @@ func (client *Client) WithPendingCustomDomain() *Client {
 	return client
 }
 
-// WithTransferCode adds a filter to the client to only include deployments with the given transfer code.
-func (client *Client) WithTransferCode(code string) *Client {
-	filter := bson.D{{"transferCode", code}}
-
-	client.ResourceClient.AddExtraFilter(filter)
-	client.ActivityResourceClient.AddExtraFilter(filter)
-
-	return client
-}
-
 // WithZone adds a filter to the client to only include deployments in the given zone.
 func (client *Client) WithZone(zone string) *Client {
 	filter := bson.D{{"zone", zone}}

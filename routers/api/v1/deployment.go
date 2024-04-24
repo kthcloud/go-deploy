@@ -39,6 +39,12 @@ func GetDeployment(c *gin.Context) {
 		return
 	}
 
+	var requestQuery query.DeploymentGet
+	if err := context.GinContext.Bind(&requestQuery); err != nil {
+		context.BindingError(CreateBindingError(err))
+		return
+	}
+
 	auth, err := WithAuth(&context)
 	if err != nil {
 		context.ServerError(err, AuthInfoNotAvailableErr)
@@ -47,11 +53,15 @@ func GetDeployment(c *gin.Context) {
 
 	deployV1 := service.V1(auth)
 
-	deployment, err := deployV1.Deployments().Get(requestURI.DeploymentID, opts.GetOpts{
-		Shared: true,
-	})
+	var deployment *model.Deployment
+	if requestQuery.MigrationToken != nil {
+		deployment, err = deployV1.Deployments().Get(requestURI.DeploymentID, opts.GetOpts{MigrationToken: requestQuery.MigrationToken})
+	} else {
+		deployment, err = deployV1.Deployments().Get(requestURI.DeploymentID, opts.GetOpts{Shared: true})
+	}
+
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -299,7 +309,8 @@ func DeleteDeployment(c *gin.Context) {
 
 	jobID := uuid.NewString()
 	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobDeleteDeployment, version.V1, map[string]interface{}{
-		"id": currentDeployment.ID,
+		"id":      currentDeployment.ID,
+		"ownerId": auth.UserID,
 	})
 	if err != nil {
 		context.ServerError(err, InternalError)
@@ -348,95 +359,13 @@ func UpdateDeployment(c *gin.Context) {
 
 	deployV1 := service.V1(auth)
 
-	var deployment *model.Deployment
-	if requestBody.TransferCode != nil {
-		deployment, err = deployV1.Deployments().Get(requestURI.DeploymentID, opts.GetOpts{TransferCode: *requestBody.TransferCode})
-		if err != nil {
-			context.ServerError(err, InternalError)
-			return
-		}
-
-		if requestBody.OwnerID == nil {
-			requestBody.OwnerID = &auth.UserID
-		}
-	} else {
-		deployment, err = deployV1.Deployments().Get(requestURI.DeploymentID, opts.GetOpts{Shared: true})
-		if err != nil {
-			context.ServerError(err, InternalError)
-			return
-		}
-	}
-
-	if deployment == nil {
-		context.NotFound("Deployment not found")
+	deployment, err := deployV1.Deployments().Get(requestURI.DeploymentID, opts.GetOpts{Shared: true})
+	if err != nil {
+		context.ServerError(err, InternalError)
 		return
 	}
-
-	if requestBody.OwnerID != nil {
-		if *requestBody.OwnerID == "" {
-			err = deployV1.Deployments().ClearUpdateOwner(requestURI.DeploymentID)
-			if err != nil {
-				if errors.Is(err, sErrors.DeploymentNotFoundErr) {
-					context.NotFound("Deployment not found")
-					return
-				}
-
-				context.ServerError(err, InternalError)
-				return
-			}
-
-			context.Ok(body.DeploymentUpdated{
-				ID: deployment.ID,
-			})
-			return
-		}
-
-		if *requestBody.OwnerID == deployment.OwnerID {
-			context.UserError("Owner already set")
-			return
-		}
-
-		exists, err := deployV1.Users().Exists(*requestBody.OwnerID)
-		if err != nil {
-			context.ServerError(err, InternalError)
-			return
-		}
-
-		if !exists {
-			context.UserError("User not found")
-			return
-		}
-
-		if err != nil {
-			context.ServerError(err, InternalError)
-			return
-		}
-
-		jobID, err := deployV1.Deployments().UpdateOwnerSetup(requestURI.DeploymentID, &body.DeploymentUpdateOwner{
-			NewOwnerID:   *requestBody.OwnerID,
-			OldOwnerID:   deployment.OwnerID,
-			TransferCode: requestBody.TransferCode,
-		})
-
-		if err != nil {
-			if errors.Is(err, sErrors.DeploymentNotFoundErr) {
-				context.NotFound("Deployment not found")
-				return
-			}
-
-			if errors.Is(err, sErrors.InvalidTransferCodeErr) {
-				context.Forbidden("Bad transfer code")
-				return
-			}
-
-			context.ServerError(err, InternalError)
-			return
-		}
-
-		context.Ok(body.DeploymentUpdated{
-			ID:    deployment.ID,
-			JobID: jobID,
-		})
+	if deployment == nil {
+		context.NotFound("Deployment not found")
 		return
 	}
 

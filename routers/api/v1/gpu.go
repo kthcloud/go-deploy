@@ -110,7 +110,8 @@ func detachGPU(context *sys.ClientContext, deployV1 clients.V1, vm *model.VM) {
 
 	jobID := uuid.New().String()
 	err = deployV1.Jobs().Create(jobID, deployV1.Auth().UserID, model.JobDetachGPU, version.V1, map[string]interface{}{
-		"id": vm.ID,
+		"id":      vm.ID,
+		"ownerID": vm.OwnerID,
 	})
 	if err != nil {
 		context.ServerError(err, InternalError)

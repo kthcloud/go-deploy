@@ -31,10 +31,6 @@ type VmUpdateParams struct {
 	PortMap    *map[string]PortUpdateParams
 	CpuCores   *int
 	RAM        *int
-
-	// update owner
-	TransferCode   *string
-	TransferUserID *string
 }
 
 type VmActionParams struct {

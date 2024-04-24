@@ -33,14 +33,6 @@ func GetAuthInfo(job *model.Job) *core.AuthInfo {
 		return nil
 	}
 
-	/*
-		var params body.GpuLeaseCreate
-			err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
-			if err != nil {
-				return jErrors.MakeTerminatedError(err)
-			}
-	*/
-
 	if job.Args == nil {
 		return nil
 	}

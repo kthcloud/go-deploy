@@ -153,7 +153,8 @@ func DeleteSM(c *gin.Context) {
 
 	jobID := uuid.New().String()
 	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobDeleteSM, version.V1, map[string]interface{}{
-		"id": sm.ID,
+		"id":      sm.ID,
+		"ownerId": sm.OwnerID,
 	})
 	if err != nil {
 		context.ServerError(err, InternalError)

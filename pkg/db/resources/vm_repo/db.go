@@ -188,16 +188,7 @@ func (client *Client) UpdateWithParams(id string, params *model.VmUpdateParams) 
 			db.Add(&unsetUpdate, fmt.Sprintf("portMap.%s", name), "")
 		}
 	}
-
-	// If the transfer code is empty, it means it is either done and we remove it,
-	// or we don't want to transfer it anymore
-	if utils.EmptyValue(params.TransferCode) && utils.EmptyValue(params.TransferUserID) {
-		db.AddIfNotNil(&unsetUpdate, "transfer", "")
-	} else {
-		db.AddIfNotNil(&setUpdate, "transfer.code", params.TransferCode)
-		db.AddIfNotNil(&setUpdate, "transfer.userId", params.TransferUserID)
-	}
-
+	
 	db.AddIfNotNil(&setUpdate, "name", params.Name)
 	db.AddIfNotNil(&setUpdate, "ownerId", params.OwnerID)
 	db.AddIfNotNil(&setUpdate, "specs.cpuCores", params.CpuCores)

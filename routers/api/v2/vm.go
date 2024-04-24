@@ -40,6 +40,12 @@ func GetVM(c *gin.Context) {
 		return
 	}
 
+	var requestQuery query.VmGet
+	if err := context.GinContext.ShouldBind(&requestQuery); err != nil {
+		context.BindingError(v1.CreateBindingError(err))
+		return
+	}
+
 	auth, err := v1.WithAuth(&context)
 	if err != nil {
 		context.ServerError(err, v1.AuthInfoNotAvailableErr)
@@ -49,7 +55,13 @@ func GetVM(c *gin.Context) {
 	deployV1 := service.V1(auth)
 	deployV2 := service.V2(auth)
 
-	vm, err := deployV2.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
+	var vm *model.VM
+	if requestQuery.MigrationToken != nil {
+		vm, err = deployV2.VMs().Get(requestURI.VmID, opts.GetOpts{MigrationToken: requestQuery.MigrationToken})
+	} else {
+		vm, err = deployV2.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
+	}
+
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -325,24 +337,10 @@ func UpdateVM(c *gin.Context) {
 	deployV1 := service.V1(auth)
 	deployV2 := service.V2(auth)
 
-	var vm *model.VM
-	if requestBody.TransferCode != nil {
-		vm, err = deployV2.VMs().Get("", opts.GetOpts{TransferCode: requestBody.TransferCode})
-		if err != nil {
-			context.ServerError(err, v1.InternalError)
-			return
-		}
-
-		if requestBody.OwnerID == nil {
-			requestBody.OwnerID = &auth.UserID
-		}
-
-	} else {
-		vm, err = deployV2.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
-		if err != nil {
-			context.ServerError(err, v1.InternalError)
-			return
-		}
+	vm, err := deployV2.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
+	if err != nil {
+		context.ServerError(err, v1.InternalError)
+		return
 	}
 
 	if vm == nil {
@@ -350,102 +348,36 @@ func UpdateVM(c *gin.Context) {
 		return
 	}
 
-	//if requestBody.OwnerID != nil {
-	//	if *requestBody.OwnerID == "" {
-	//		err = deployV2.VMs().ClearUpdateOwner(vm.ID)
-	//		if err != nil {
-	//			if errors.Is(err, sErrors.VmNotFoundErr) {
-	//				context.NotFound("VM not found")
-	//				return
-	//			}
-	//
-	//			context.ServerError(err, v1.InternalError)
-	//			return
-	//		}
-	//
-	//		context.Ok(body.VmUpdated{
-	//			ID: vm.ID,
-	//		})
-	//		return
-	//	}
-	//
-	//	if *requestBody.OwnerID == vm.OwnerID {
-	//		context.UserError("Owner already set")
-	//		return
-	//	}
-	//
-	//	exists, err := deployV1.Users().Exists(*requestBody.OwnerID)
-	//	if err != nil {
-	//		context.ServerError(err, v1.InternalError)
-	//		return
-	//	}
-	//
-	//	if !exists {
-	//		context.UserError("User not found")
-	//		return
-	//	}
-	//
-	//	jobID, err := deployV2.VMs().UpdateOwnerSetup(vm.ID, &body.VmUpdateOwner{
-	//		NewOwnerID:   *requestBody.OwnerID,
-	//		OldOwnerID:   vm.OwnerID,
-	//		TransferCode: requestBody.TransferCode,
-	//	})
-	//	if err != nil {
-	//		if errors.Is(err, sErrors.VmNotFoundErr) {
-	//			context.NotFound("VM not found")
-	//			return
-	//		}
-	//
-	//		if errors.Is(err, sErrors.InvalidTransferCodeErr) {
-	//			context.Forbidden("Bad transfer code")
-	//			return
-	//		}
-	//
-	//		context.ServerError(err, v1.InternalError)
-	//		return
-	//	}
-	//
-	//	context.Ok(body.VmUpdated{
-	//		ID:    vm.ID,
-	//		JobID: jobID,
-	//	})
-	//	return
-	//}
+	if requestBody.Name != nil {
+		available, err := deployV1.VMs().NameAvailable(*requestBody.Name)
+		if err != nil {
+			context.ServerError(err, v1.InternalError)
+			return
+		}
 
-	//if requestBody.GpuID != nil {
-	//	updateGPU(&context, &requestBody, deployV1, vm)
-	//	return
-	//}
+		if !available {
+			context.UserError("Name already taken")
+			return
+		}
+	}
 
-	//if requestBody.Name != nil {
-	//	available, err := deployV1.VMs().NameAvailable(*requestBody.Name)
-	//	if err != nil {
-	//		context.ServerError(err, v1.InternalError)
-	//		return
-	//	}
-	//
-	//	if !available {
-	//		context.UserError("Name already taken")
-	//		return
-	//	}
-	//}
-
-	//if requestBody.Ports != nil {
-	//	for _, port := range *requestBody.Ports {
-	//		if port.HttpProxy != nil {
-	//			available, err := deployV1.VMs().HttpProxyNameAvailable(requestURI.VmID, port.HttpProxy.Name)
-	//			if err != nil {
-	//				context.ServerError(err, v1.InternalError)
-	//				return
-	//			}
-	//
-	//			if !available {
-	//				context.UserError("Http proxy name already taken")
-	//				return
-	//			}
-	//		}
-	//	}
-	//}
+	if requestBody.Ports != nil {
+		for _, port := range *requestBody.Ports {
+			if port.HttpProxy != nil {
+				// TODO: Fix this
+				//available, err := deployV2.VMs().HttpProxyNameAvailable(requestURI.VmID, port.HttpProxy.Name)
+				//if err != nil {
+				//	context.ServerError(err, v1.InternalError)
+				//	return
+				//}
+				//
+				//if !available {
+				//	context.UserError("Http proxy name already taken")
+				//	return
+				//}
+			}
+		}
+	}
 
 	err = deployV2.VMs().CheckQuota(auth.UserID, vm.ID, &auth.GetEffectiveRole().Quotas, opts.QuotaOpts{Update: &requestBody})
 	if err != nil {
