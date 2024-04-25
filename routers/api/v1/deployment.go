@@ -227,9 +227,10 @@ func CreateDeployment(c *gin.Context) {
 	deploymentID := uuid.New().String()
 	jobID := uuid.New().String()
 	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobCreateDeployment, version.V1, map[string]interface{}{
-		"id":      deploymentID,
-		"ownerId": auth.UserID,
-		"params":  requestBody,
+		"id":       deploymentID,
+		"ownerId":  auth.UserID,
+		"params":   requestBody,
+		"authInfo": auth,
 	})
 
 	if err != nil {
@@ -309,8 +310,9 @@ func DeleteDeployment(c *gin.Context) {
 
 	jobID := uuid.NewString()
 	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobDeleteDeployment, version.V1, map[string]interface{}{
-		"id":      currentDeployment.ID,
-		"ownerId": auth.UserID,
+		"id":       currentDeployment.ID,
+		"ownerId":  auth.UserID,
+		"authInfo": auth,
 	})
 	if err != nil {
 		context.ServerError(err, InternalError)
@@ -402,8 +404,9 @@ func UpdateDeployment(c *gin.Context) {
 
 	jobID := uuid.New().String()
 	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobUpdateDeployment, version.V1, map[string]interface{}{
-		"id":     deployment.ID,
-		"params": requestBody,
+		"id":       deployment.ID,
+		"params":   requestBody,
+		"authInfo": auth,
 	})
 
 	if err != nil {

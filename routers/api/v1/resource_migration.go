@@ -126,9 +126,10 @@ func CreateResourceMigration(c *gin.Context) {
 	resourceMigrationID := uuid.New().String()
 	jobID := uuid.New().String()
 	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobCreateResourceMigration, version.V1, map[string]interface{}{
-		"id":     resourceMigrationID,
-		"userId": auth.UserID,
-		"params": requestBody,
+		"id":       resourceMigrationID,
+		"userId":   auth.UserID,
+		"params":   requestBody,
+		"authInfo": auth,
 	})
 
 	if err != nil {
@@ -197,8 +198,9 @@ func UpdateResourceMigration(c *gin.Context) {
 
 	jobID := uuid.New().String()
 	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobUpdateResourceMigration, version.V1, map[string]interface{}{
-		"id":     resourceMigration.ID,
-		"params": requestBody,
+		"id":       resourceMigration.ID,
+		"params":   requestBody,
+		"authInfo": auth,
 	})
 
 	if err != nil {
@@ -254,7 +256,8 @@ func DeleteResourceMigration(c *gin.Context) {
 
 	jobID := uuid.New().String()
 	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobDeleteResourceMigration, version.V1, map[string]interface{}{
-		"id": resourceMigration.ID,
+		"id":       resourceMigration.ID,
+		"authInfo": auth,
 	})
 
 	if err != nil {

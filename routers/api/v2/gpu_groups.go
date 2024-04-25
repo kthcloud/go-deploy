@@ -10,7 +10,6 @@ import (
 	"go-deploy/service"
 	"go-deploy/service/v2/utils"
 	"go-deploy/service/v2/vms/opts"
-	"math/rand"
 )
 
 // GetGpuGroup
@@ -42,7 +41,9 @@ func GetGpuGroup(c *gin.Context) {
 		return
 	}
 
-	gpuGroup, err := service.V2(auth).VMs().GpuGroups().Get(requestURI.GpuGroupID)
+	deployV2 := service.V2(auth)
+
+	gpuGroup, err := deployV2.VMs().GpuGroups().Get(requestURI.GpuGroupID)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return
@@ -53,9 +54,13 @@ func GetGpuGroup(c *gin.Context) {
 		return
 	}
 
-	// TODO: Replace with proper check how many leases
-	// Temporary to test API
-	leases := rand.Int() % gpuGroup.Total
+	leases, err := deployV2.VMs().GpuLeases().Count(opts.ListGpuLeaseOpts{
+		GpuGroupID: &gpuGroup.ID,
+	})
+	if err != nil {
+		context.ServerError(err, v1.InternalError)
+		return
+	}
 
 	context.Ok(gpuGroup.ToDTO(leases))
 }
@@ -95,7 +100,9 @@ func ListGpuGroups(c *gin.Context) {
 		return
 	}
 
-	gpuGroups, err := service.V2(auth).VMs().GpuGroups().List(opts.ListGpuGroupOpts{
+	deployV2 := service.V2(auth)
+
+	gpuGroups, err := deployV2.VMs().GpuGroups().List(opts.ListGpuGroupOpts{
 		Pagination: utils.GetOrDefaultPagination(requestQuery.Pagination),
 	})
 	if err != nil {
@@ -109,13 +116,16 @@ func ListGpuGroups(c *gin.Context) {
 	}
 
 	dtoGpuGroups := make([]body.GpuGroupRead, len(gpuGroups))
-	for i, group := range gpuGroups {
+	for i, gpuGroup := range gpuGroups {
+		leases, err := deployV2.VMs().GpuLeases().Count(opts.ListGpuLeaseOpts{
+			GpuGroupID: &gpuGroup.ID,
+		})
+		if err != nil {
+			context.ServerError(err, v1.InternalError)
+			return
+		}
 
-		// TODO: Replace with proper check how many leases
-		// Temporary to test API
-		leases := rand.Int() % group.Total
-
-		dtoGpuGroups[i] = group.ToDTO(leases)
+		dtoGpuGroups[i] = gpuGroup.ToDTO(leases)
 	}
 
 	context.Ok(dtoGpuGroups)

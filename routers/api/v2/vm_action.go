@@ -68,8 +68,9 @@ func CreateAction(c *gin.Context) {
 
 	jobID := uuid.New().String()
 	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobDoVmAction, version.V2, map[string]interface{}{
-		"id":     vm.ID,
-		"params": requestBody,
+		"id":       vm.ID,
+		"params":   requestBody,
+		"authInfo": auth,
 	})
 
 	if err != nil {

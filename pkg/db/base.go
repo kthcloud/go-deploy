@@ -147,6 +147,10 @@ func CreateIfUniqueResource[T Resource](collection *mongo.Collection, id string,
 		{"$setOnInsert", data},
 	}, options.Update().SetUpsert(true))
 	if err != nil {
+		if mongo.IsDuplicateKeyError(err) {
+			return UniqueConstraintErr
+		}
+
 		return fmt.Errorf("failed to create unique model. details: %w", err)
 	}
 
