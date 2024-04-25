@@ -265,6 +265,23 @@ func (client *ResourceClient[T]) GetID() (*string, error) {
 	return &idStruct.ID, nil
 }
 
+// GetName returns the name of a model with the given filter.
+// It returns a OnlyName type, which only contains the name.
+func (client *ResourceClient[T]) GetName(id string) (*string, error) {
+	projection := bson.D{{"name", 1}}
+
+	nameStruct, err := db.GetResource[OnlyName](client.Collection, db.GroupFilters(bson.D{{"id", id}}, client.ExtraFilter, client.Search, client.IncludeDeleted), projection)
+	if err != nil {
+		return nil, err
+	}
+
+	if nameStruct == nil {
+		return nil, nil
+	}
+
+	return &nameStruct.Name, nil
+}
+
 // ListIDs returns the IDs of all resources that match the given filter.
 func (client *ResourceClient[T]) ListIDs() ([]string, error) {
 	projection := bson.D{{"id", 1}}

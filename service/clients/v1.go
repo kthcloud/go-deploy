@@ -21,4 +21,5 @@ type V1 interface {
 	UserData() apiV1.UserData
 	VMs() apiV1.VMs
 	Zones() apiV1.Zones
+	ResourceMigrations() apiV1.ResourceMigrations
 }

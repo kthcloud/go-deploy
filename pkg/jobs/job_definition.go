@@ -126,7 +126,7 @@ func jobMapper() map[string]map[string]JobDefinition {
 			ExitFunc:      utils.DRemActivity(model.ActivityRepairing),
 		},
 
-		// storage manager
+		// SM
 		model.JobCreateSM: {
 			JobFunc: v1.CreateSM,
 		},
@@ -135,6 +135,17 @@ func jobMapper() map[string]map[string]JobDefinition {
 		},
 		model.JobRepairSM: {
 			JobFunc: v1.RepairSM,
+		},
+
+		// Resource Migration
+		model.JobCreateResourceMigration: {
+			JobFunc: v1.CreateResourceMigration,
+		},
+		model.JobUpdateResourceMigration: {
+			JobFunc: v1.UpdateResourceMigration,
+		},
+		model.JobDeleteResourceMigration: {
+			JobFunc: v1.DeleteResourceMigration,
 		},
 	}
 

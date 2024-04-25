@@ -27,8 +27,7 @@ type ExtraOpts struct {
 
 // GetOpts is used to specify the options when getting a VM.
 type GetOpts struct {
-	TransferCode *string
-	Shared       bool
+	Shared bool
 }
 
 // ListOpts is used to specify the options when listing VMs.

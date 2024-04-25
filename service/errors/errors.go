@@ -174,4 +174,23 @@ var (
 
 	// NotificationNotFoundErr is returned when the notification is not found.
 	NotificationNotFoundErr = fmt.Errorf("notification not found")
+
+	// ResourceMigrationNotFoundErr is returned when the resource migration is not found.
+	ResourceMigrationNotFoundErr = fmt.Errorf("resource migration not found")
+
+	// BadResourceMigrationTypeErr is returned when the resource migration type is invalid.
+	// This could be caused by providing another type than what is expected by the function.
+	BadResourceMigrationTypeErr = fmt.Errorf("bad resource migration type")
+
+	// BadResourceMigrationResourceTypeErr is returned when the resource migration resource type is invalid.
+	// This could be caused by providing another type than what is expected by the function.
+	BadResourceMigrationResourceTypeErr = fmt.Errorf("bad resource migration resource type")
+
+	// BadResourceMigrationParamsErr is returned when the resource migration params are invalid.
+	// This could be caused by providing another type than what is expected by the function.
+	BadResourceMigrationParamsErr = fmt.Errorf("bad resource migration params")
+
+	// BadResourceMigrationStatusErr is returned when the resource migration status is invalid.
+	// This could be caused by providing another type than what is expected by the function.
+	BadResourceMigrationStatusErr = fmt.Errorf("bad resource migration status")
 )

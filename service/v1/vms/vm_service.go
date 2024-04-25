@@ -3,7 +3,6 @@ package vms
 import (
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
 	"go-deploy/dto/v1/body"
 	"go-deploy/models/model"
 	"go-deploy/models/version"
@@ -33,10 +32,6 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.VM, error) {
 	o := sUtils.GetFirstOrDefault(opts)
 
 	vmc := vm_repo.New(version.V1)
-
-	if o.TransferCode != nil {
-		return vmc.WithTransferCode(*o.TransferCode).Get()
-	}
 
 	var effectiveUserID string
 	if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
@@ -360,84 +355,6 @@ func (c *Client) Repair(id string) error {
 	return nil
 }
 
-// UpdateOwnerSetup updates the owner of the VM.
-//
-// This is the first step of the owner update process, where it is decided if a notification should be created,
-// or if the transfer should be done immediately.
-//
-// It returns an error if the VM is not found.
-func (c *Client) UpdateOwnerSetup(id string, params *body.VmUpdateOwner) (*string, error) {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to update vm owner. details: %w", err)
-	}
-
-	vm, err := c.VM(id, nil)
-	if err != nil {
-		return nil, makeError(err)
-	}
-
-	if vm == nil {
-		return nil, sErrors.VmNotFoundErr
-	}
-
-	if vm.OwnerID == params.NewOwnerID {
-		return nil, nil
-	}
-
-	transferDirectly := false
-
-	if !c.V1.HasAuth() || c.V1.Auth().IsAdmin {
-		transferDirectly = true
-	} else if c.V1.Auth().UserID == params.NewOwnerID {
-		if params.TransferCode == nil || vm.Transfer == nil || vm.Transfer.Code != *params.TransferCode {
-			return nil, sErrors.InvalidTransferCodeErr
-		}
-
-		transferDirectly = true
-	}
-
-	if transferDirectly {
-		jobID := uuid.New().String()
-		err = c.V1.Jobs().Create(jobID, c.V1.Auth().UserID, model.JobUpdateVmOwner, version.V1, map[string]interface{}{
-			"id":     id,
-			"params": *params,
-		})
-
-		if err != nil {
-			return nil, makeError(err)
-		}
-
-		return &jobID, nil
-	}
-
-	/// create a transfer notification
-	code := createTransferCode()
-	err = vm_repo.New(version.V1).UpdateWithParams(id, &model.VmUpdateParams{
-		TransferUserID: &params.NewOwnerID,
-		TransferCode:   &code,
-	})
-	if err != nil {
-		return nil, makeError(err)
-	}
-
-	_, err = c.V1.Notifications().Create(uuid.NewString(), params.NewOwnerID, &model.NotificationCreateParams{
-		Type: model.NotificationVmTransfer,
-		Content: map[string]interface{}{
-			"id":     vm.ID,
-			"name":   vm.Name,
-			"userId": params.OldOwnerID,
-			"email":  c.V1.Auth().GetEmail(),
-			"code":   code,
-		},
-	})
-
-	if err != nil {
-		return nil, makeError(err)
-	}
-
-	return nil, nil
-}
-
 // UpdateOwner updates the owner of the VM.
 //
 // This is the second step of the owner update process, where the transfer is actually done.
@@ -462,12 +379,8 @@ func (c *Client) UpdateOwner(id string, params *body.VmUpdateOwner) error {
 		return nil
 	}
 
-	emptyString := ""
-
 	err = vm_repo.New(version.V1).UpdateWithParams(id, &model.VmUpdateParams{
-		OwnerID:        &params.NewOwnerID,
-		TransferCode:   &emptyString,
-		TransferUserID: &emptyString,
+		OwnerID: &params.NewOwnerID,
 	})
 	if err != nil {
 		return makeError(err)
@@ -495,41 +408,6 @@ func (c *Client) UpdateOwner(id string, params *body.VmUpdateOwner) error {
 	}
 
 	log.Println("VM", id, "owner updated from", params.OldOwnerID, " to", params.NewOwnerID)
-	return nil
-}
-
-// ClearUpdateOwner clears the owner update process.
-//
-// This is intended to be used when the owner update process is canceled.
-func (c *Client) ClearUpdateOwner(id string) error {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to clear vm owner update. details: %w", err)
-	}
-
-	deployment, err := vm_repo.New(version.V1).GetByID(id)
-	if err != nil {
-		return makeError(err)
-	}
-
-	if deployment == nil {
-		return sErrors.VmNotFoundErr
-	}
-
-	if deployment.Transfer == nil {
-		return nil
-	}
-
-	emptyString := ""
-	err = vm_repo.New(version.V1).UpdateWithParams(id, &model.VmUpdateParams{
-		TransferUserID: &emptyString,
-		TransferCode:   &emptyString,
-	})
-	if err != nil {
-		return makeError(err)
-	}
-
-	// TODO: delete notification?
-
 	return nil
 }
 
@@ -958,8 +836,4 @@ func (c *Client) GetCloudStackHostCapabilities(hostName string, zoneName string)
 		RamUsed:       host.RamUsed,
 		RamAllocated:  host.RamAllocated,
 	}, nil
-}
-
-func createTransferCode() string {
-	return utils.HashStringAlphanumeric(uuid.NewString())
 }

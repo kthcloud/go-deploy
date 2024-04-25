@@ -49,16 +49,11 @@ type VmUpdate struct {
 	// If specified, only the transfer will happen.
 	// If specified but empty, the transfer will be canceled.
 	OwnerID *string `json:"ownerId,omitempty" bson:"ownerId,omitempty" binding:"omitempty"`
-
-	// TransferCode is used to accept transfer of a VM.
-	// If specified, only the transfer will happen.
-	TransferCode *string `json:"transferCode,omitempty" bson:"transferCode,omitempty" binding:"omitempty,min=1,max=1000"`
 }
 
 type VmUpdateOwner struct {
-	NewOwnerID   string  `json:"newOwnerId" bson:"newOwnerId" binding:"required,uuid4"`
-	OldOwnerID   string  `json:"oldOwnerId" bson:"oldOwnerId" binding:"required,uuid4"`
-	TransferCode *string `json:"transferCode,omitempty" bson:"transferCode,omitempty" binding:"omitempty,min=1,max=1000"`
+	NewOwnerID string `json:"newOwnerId" bson:"newOwnerId" binding:"required,uuid4"`
+	OldOwnerID string `json:"oldOwnerId" bson:"oldOwnerId" binding:"required,uuid4"`
 }
 
 type VmGpuLease struct {

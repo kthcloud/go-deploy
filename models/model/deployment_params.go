@@ -19,7 +19,6 @@ type DeploymentCreateParams struct {
 }
 
 type DeploymentUpdateParams struct {
-	// Normal Update
 	Name         *string
 	OwnerID      *string
 	Private      *bool
@@ -32,8 +31,4 @@ type DeploymentUpdateParams struct {
 	Image        *string
 	PingPath     *string
 	Replicas     *int
-
-	// Ownership update
-	TransferUserID *string
-	TransferCode   *string
 }

@@ -548,3 +548,64 @@ func DeleteSnapshot(job *model.Job) error {
 
 	return nil
 }
+
+func CreateResourceMigration(job *model.Job) error {
+	err := utils.AssertParameters(job, []string{"id", "userId", "params"})
+	if err != nil {
+		return jErrors.MakeTerminatedError(err)
+	}
+
+	id := job.Args["id"].(string)
+	userID := job.Args["userId"].(string)
+
+	var params body.ResourceMigrationCreate
+	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
+	if err != nil {
+		return jErrors.MakeTerminatedError(err)
+	}
+
+	err = service.V1(utils.GetAuthInfo(job)).ResourceMigrations().Create(id, userID, &params)
+	if err != nil {
+		// We always terminate these jobs, since rerunning it would cause a NonUniqueFieldErr
+		return jErrors.MakeTerminatedError(err)
+	}
+
+	return nil
+}
+
+func UpdateResourceMigration(job *model.Job) error {
+	err := utils.AssertParameters(job, []string{"id", "params"})
+	if err != nil {
+		return jErrors.MakeTerminatedError(err)
+	}
+
+	id := job.Args["id"].(string)
+	var update body.ResourceMigrationUpdate
+	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &update)
+	if err != nil {
+		return jErrors.MakeTerminatedError(err)
+	}
+
+	err = service.V1(utils.GetAuthInfo(job)).ResourceMigrations().Update(id, &update)
+	if err != nil {
+		return jErrors.MakeFailedError(err)
+	}
+
+	return nil
+}
+
+func DeleteResourceMigration(job *model.Job) error {
+	err := utils.AssertParameters(job, []string{"id"})
+	if err != nil {
+		return jErrors.MakeTerminatedError(err)
+	}
+
+	id := job.Args["id"].(string)
+
+	err = service.V1(utils.GetAuthInfo(job)).ResourceMigrations().Delete(id)
+	if err != nil {
+		return jErrors.MakeFailedError(err)
+	}
+
+	return nil
+}

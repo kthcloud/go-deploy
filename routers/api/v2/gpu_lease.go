@@ -182,10 +182,9 @@ func CreateGpuLease(c *gin.Context) {
 	gpuLeaseID := uuid.New().String()
 	jobID := uuid.New().String()
 	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobCreateGpuLease, version.V2, map[string]interface{}{
-		"id":       gpuLeaseID,
-		"userId":   auth.UserID,
-		"authInfo": *auth,
-		"params":   requestBody,
+		"id":     gpuLeaseID,
+		"userId": auth.UserID,
+		"params": requestBody,
 	})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)

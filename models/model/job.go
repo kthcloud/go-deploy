@@ -51,6 +51,13 @@ const (
 	JobDeleteSM = "deleteSm"
 	// JobRepairSM is used when repairing a storage manager.
 	JobRepairSM = "repairSm"
+
+	// JobCreateResourceMigration is used when creating a resource migration.
+	JobCreateResourceMigration = "createResourceMigration"
+	// JobDeleteResourceMigration is used when deleting a resource migration.
+	JobDeleteResourceMigration = "deleteResourceMigration"
+	// JobUpdateResourceMigration is used when updating a resource migration.
+	JobUpdateResourceMigration = "updateResourceMigration"
 )
 
 const (

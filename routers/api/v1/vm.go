@@ -274,90 +274,14 @@ func UpdateVM(c *gin.Context) {
 
 	deployV1 := service.V1(auth)
 
-	var vm *model.VM
-	if requestBody.TransferCode != nil {
-		vm, err = deployV1.VMs().Get("", opts.GetOpts{TransferCode: requestBody.TransferCode})
-		if err != nil {
-			context.ServerError(err, InternalError)
-			return
-		}
-
-		if requestBody.OwnerID == nil {
-			requestBody.OwnerID = &auth.UserID
-		}
-
-	} else {
-		vm, err = deployV1.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
-		if err != nil {
-			context.ServerError(err, InternalError)
-			return
-		}
+	vm, err := deployV1.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
+	if err != nil {
+		context.ServerError(err, InternalError)
+		return
 	}
 
 	if vm == nil {
 		context.NotFound("VM not found")
-		return
-	}
-
-	if requestBody.OwnerID != nil {
-		if *requestBody.OwnerID == "" {
-			err = deployV1.VMs().ClearUpdateOwner(vm.ID)
-			if err != nil {
-				if errors.Is(err, sErrors.VmNotFoundErr) {
-					context.NotFound("VM not found")
-					return
-				}
-
-				context.ServerError(err, InternalError)
-				return
-			}
-
-			context.Ok(body.VmUpdated{
-				ID: vm.ID,
-			})
-			return
-		}
-
-		if *requestBody.OwnerID == vm.OwnerID {
-			context.UserError("Owner already set")
-			return
-		}
-
-		exists, err := deployV1.Users().Exists(*requestBody.OwnerID)
-		if err != nil {
-			context.ServerError(err, InternalError)
-			return
-		}
-
-		if !exists {
-			context.UserError("User not found")
-			return
-		}
-
-		jobID, err := deployV1.VMs().UpdateOwnerSetup(vm.ID, &body.VmUpdateOwner{
-			NewOwnerID:   *requestBody.OwnerID,
-			OldOwnerID:   vm.OwnerID,
-			TransferCode: requestBody.TransferCode,
-		})
-		if err != nil {
-			if errors.Is(err, sErrors.VmNotFoundErr) {
-				context.NotFound("VM not found")
-				return
-			}
-
-			if errors.Is(err, sErrors.InvalidTransferCodeErr) {
-				context.Forbidden("Bad transfer code")
-				return
-			}
-
-			context.ServerError(err, InternalError)
-			return
-		}
-
-		context.Ok(body.VmUpdated{
-			ID:    vm.ID,
-			JobID: jobID,
-		})
 		return
 	}
 
@@ -396,7 +320,7 @@ func UpdateVM(c *gin.Context) {
 		}
 	}
 
-	err = deployV1.VMs().CheckQuota(auth.UserID, vm.ID, &auth.GetEffectiveRole().Quotas, opts.QuotaOpts{Update: &requestBody})
+	err = deployV1.VMs().CheckQuota(vm.ID, auth.UserID, &auth.GetEffectiveRole().Quotas, opts.QuotaOpts{Update: &requestBody})
 	if err != nil {
 		var quotaExceededErr sErrors.QuotaExceededError
 		if errors.As(err, &quotaExceededErr) {

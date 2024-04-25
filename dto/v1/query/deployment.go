@@ -5,6 +5,12 @@ type Env struct {
 	Val string `json:"val" binding:"required,min=1,max=10000"`
 }
 
+type DeploymentGet struct {
+	// MigrationToken is used when fetching a deployment that is being migrated.
+	// The token should only be known by the user receiving the deployment.
+	MigrationToken *string `json:"token" binding:"omitempty"`
+}
+
 type DeploymentList struct {
 	*Pagination
 

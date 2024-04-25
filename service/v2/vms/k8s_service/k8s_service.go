@@ -637,19 +637,10 @@ func (c *Client) EnsureOwner(id, oldOwnerID string) error {
 		return fmt.Errorf("failed to update k8s owner for vm %s. details: %w", id, err)
 	}
 
-	// Since ownership is determined by the namespace, and the namespace owns everything,
-	// we need to recreate everything
+	// Since ownership is determined by the user-id label, we need to relabel everything
+	// This is simply done by repairing the K8s setup
 
-	// Delete everything in the old namespace
-	// Pass in the old owner ID to use the old namespace
-	err := c.Delete(id)
-	if err != nil {
-		return makeError(err)
-	}
-
-	// Create everything in the new namespace
-	// We reset the namespace to use the VM's namespace by passing an empty string
-	err = c.Repair(id)
+	err := c.Repair(id)
 	if err != nil {
 		return makeError(err)
 	}

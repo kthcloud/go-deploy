@@ -8,6 +8,7 @@ import (
 	"go-deploy/service/v1/events"
 	"go-deploy/service/v1/jobs"
 	"go-deploy/service/v1/notifications"
+	"go-deploy/service/v1/resource_migrations"
 	"go-deploy/service/v1/sms"
 	"go-deploy/service/v1/status"
 	"go-deploy/service/v1/teams"
@@ -88,4 +89,8 @@ func (c *Client) VMs() api.VMs {
 
 func (c *Client) Zones() api.Zones {
 	return zones.New(c, c.cache)
+}
+
+func (c *Client) ResourceMigrations() api.ResourceMigrations {
+	return resource_migrations.New(c, c.cache)
 }
