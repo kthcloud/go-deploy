@@ -349,7 +349,7 @@ func UpdateVM(c *gin.Context) {
 	}
 
 	if requestBody.Name != nil {
-		available, err := deployV1.VMs().NameAvailable(*requestBody.Name)
+		available, err := deployV2.VMs().NameAvailable(*requestBody.Name)
 		if err != nil {
 			context.ServerError(err, v1.InternalError)
 			return
@@ -379,7 +379,7 @@ func UpdateVM(c *gin.Context) {
 		}
 	}
 
-	err = deployV2.VMs().CheckQuota(auth.UserID, vm.ID, &auth.GetEffectiveRole().Quotas, opts.QuotaOpts{Update: &requestBody})
+	err = deployV2.VMs().CheckQuota(vm.ID, auth.UserID, &auth.GetEffectiveRole().Quotas, opts.QuotaOpts{Update: &requestBody})
 	if err != nil {
 		var quotaExceededErr sErrors.QuotaExceededError
 		if errors.As(err, &quotaExceededErr) {
