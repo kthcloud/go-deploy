@@ -15,6 +15,6 @@ func VmActionRoutes() *VmActionRoutingGroup {
 
 func (group *VmActionRoutingGroup) PrivateRoutes() []Route {
 	return []Route{
-		{Method: "POST", Pattern: VmActionsPath, HandlerFunc: v2.CreateAction},
+		{Method: "POST", Pattern: VmActionsPath, HandlerFunc: v2.CreateVmAction},
 	}
 }

@@ -1,0 +1,20 @@
+# https://github.com/goharbor/harbor-helm
+externalURL: "http://harbor.deploy.localhost:9080"
+harborAdminPassword: "Harbor12345"
+
+expose:
+  tls:
+    enabled: false
+  ingress:
+    hosts:
+      core: harbor.deploy.localhost
+
+internalTLS:
+  enabled: false
+
+persistence:
+  enabled: true
+  resourcePolicy: "delete"
+
+trivy:
+  enabled: false

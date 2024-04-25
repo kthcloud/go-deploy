@@ -13,20 +13,20 @@ import (
 	"go-deploy/service/v2/vms/opts"
 )
 
-// CreateAction
+// CreateVmAction
 // @Summary Creates a new action
 // @Description Creates a new action
-// @Tags VM
+// @Tags VmAction
 // @Accept  json
 // @Produce  json
 // @Param vmId path string true "VM ID"
-// @Param body body body.VmActionCreate true "Command body"
+// @Param body body body.VmActionCreate true "actions body"
 // @Success 200 {object} body.VmActionCreated
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v2/vms/{vmId}/command [post]
-func CreateAction(c *gin.Context) {
+// @Router /v2/actions [post]
+func CreateVmAction(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestQuery query.VmActionCreate

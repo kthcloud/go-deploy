@@ -41,6 +41,12 @@ if ! [ -x "$(command -v dnsmasq)" ]; then
   exit 1
 fi
 
+# Check if /etc/dnsqmasq.d exists, if not exit
+if ! [ -d "/etc/dnsmasq.d" ]; then
+  echo -e "$RED_CROSS /etc/dnsmasq.d does not exist. This is usually caused by dnsmasq not being installed correctly"
+  exit 1
+fi
+
 function configure_local_dns() {
   # If file /etc/dnsmasq.d/50-go-deploy-dev.conf does not exist, create it
   if ! [ -f "/etc/dnsmasq.d/50-go-deploy-dev.conf" ]; then
@@ -77,6 +83,11 @@ function create_k3d_cluster() {
       -p "$NFS_PORT:2049@server:0"
   fi
 
+  # Wait for kubeconfig to change
+  while [ "$(kubectl config current-context)" != "k3d-$name" ]; do
+    sleep 5
+  done
+
   # Wait for helm list to include traefik
   while [ "$(helm list -n kube-system | grep -c traefik)" -eq 0 ]; do
     sleep 5
@@ -85,66 +96,34 @@ function create_k3d_cluster() {
   helm upgrade traefik traefik -n kube-system --set providers.kubernetesIngress.allowExternalNameServices=true --repo=https://traefik.github.io/charts
 }
 
-function setup_harbor() {
-  curl_result=$(curl -s localhost:11080 -o /dev/null -w "%{http_code}")
-  if [ $curl_result -eq 0 ]; then     
-    # If Harbor folder does not exist, download and extract
-    if [ ! -d "harbor" ]; then
-        download_url="https://github.com/goharbor/harbor/releases/download/v2.9.4-rc1/harbor-offline-installer-v2.9.4-rc1.tgz"
-        wget -O harbor.tgz $download_url -q
-        tar xvf harbor.tgz
-        rm -rf harbor.tgz
-    fi
-
-    cp ./harbor/harbor.yml.tmpl ./harbor/harbor.yml
-    # Disable https
-    sed -i '/# https related config/,/private_key: \/your\/private\/key\/path/d' ./harbor/harbor.yml
-    # Set hostname to localhost
-    sed -i 's/reg.mydomain.com/harbor.deploy.localhost/g' ./harbor/harbor.yml
-    # Edit http port to be 11080
-    sed -i 's/port: 80/port: 11080/g' ./harbor/harbor.yml
-    # Set data dir
-    mkdir -p ./data/harbor
-    sed -i "s|data_volume: /data|data_volume: $(pwd)/data/harbor|g" ./harbor/harbor.yml
-    # Set password to admin
-    sed -i 's/harbor_admin_password: Harbor12345/harbor_admin_password: admin/g' ./harbor/harbor.yml
-
-    sudo ./harbor/install.sh
-
-    # Wait for Harbor to be up
-    sleep 5
-  fi
-
-  # If namespace 'harbor' already exists, skip
-  res=$(kubectl get ns | grep -c harbor)
+function install_harbor() {
+  # If helm release 'harbor' in namespace 'harbor' already exists, skip
+  res=$(helm list -n harbor | grep -c harbor)
   if [ $res -eq 0 ]; then
-    kubectl apply -f ./manifests/harbor.yml
+    helm install harbor harbor \
+      --repo https://helm.goharbor.io \
+      --namespace harbor \
+      --create-namespace \
+      --values ./helmvalues/harbor.values.yml
   fi
 
-  # If robot_token file does exists, skip
-  if ! [ -f "./harbor/robot_token" ]; then
-    # Create Robot account for Harbor
-    payload='{"name":"go-deploy","duration":-1,"disable":false,"level":"system","permissions":[{"kind":"project","namespace":"*","access":[{"resource":"repository","action":"pull"},{"resource":"repository","action":"push"}]}]}'
-    res=$(curl -s -u admin:admin -X POST -H "Content-Type: application/json" -d "$payload" http://localhost:8000/api/v2.0/robots)
-
-    # If contains "already exists", then delete it and create again
-    if [[ $res == *"already exists"* ]]; then
-      fetched_id=$(curl -s -u admin:admin -X GET http://harbor.$BASE_URL/api/v2.0/robots | jq -r '.[] | select(.name=="robot$go-deploy") | .id')
-      curl -u admin:admin -X DELETE http://harbor.$BASE_URL/api/v2.0/robots/$fetched_id
-      res=$(curl -s -u admin:admin -X POST -H "Content-Type: application/json" -d "$payload" http://localhost:8000/api/v2.0/robots)
-    fi
-
-    # res: "{"creation_time":"2024-04-17T13:41:10.609Z","expires_at":-1,"id":36,"name":"robot$go-deploy","secret":"d6LV52nMjrk11G7ufVE0ssI2gJesd4dm"}"
-    # Extract the secret from the response
-    secret=$(echo $res | jq -r '.secret')
-
-    echo $secret > ./harbor/robot_token
-  fi  
+  # Wait for Harbor to be up
+  while [ "$(curl -s -o /dev/null -w "%{http_code}" http://harbor.$BASE_URL)" != "200" ]; do
+    sleep 5
+  done
 }
 
 function seed_harbor_with_placeholder_images() {
+  local url="http://harbor.$BASE_URL"
+  local domain="harbor.$BASE_URL"
+  local user="admin"
+  local password="Harbor12345"
+
+  local robot_user="robot\$library+test"
+  local robot_password="qf6ywPgO0ek55iyeLWC39WXHWAOO68QX"
+
   # If repository "go-deploy-placeholder" in project "library" already exists, skip
-  res=$(curl -s -u admin:Harbor12345 -X GET http://localhost:11080/api/v2.0/projects/library/repositories | jq -r '.[] | select(.name=="library/go-deploy-placeholder") | .name')
+  res=$(curl -s -u $user:$password -X GET $url/api/v2.0/projects/library/repositories | jq -r '.[] | select(.name=="library/go-deploy-placeholder") | .name')
   if [ "$res" == "library/go-deploy-placeholder" ]; then
     return
   fi
@@ -155,14 +134,13 @@ function seed_harbor_with_placeholder_images() {
   fi
 
   # Use 'library' so we don't need to create our own (library is the default namespace in Harbor)
-  docker build go-deploy-placeholder/ -t localhost:11080/library/go-deploy-placeholder:latest
-  docker login localhost:11080 -u admin -p Harbor12345
-  docker push localhost:11080/library/go-deploy-placeholder:latest
+  docker build go-deploy-placeholder/ -t $domain/library/go-deploy-placeholder:latest
+  docker login $domain -u $robot_user -p $robot_password
+  docker push $domain/library/go-deploy-placeholder:latest
 
   # Remove the placeholder repo
   rm -rf go-deploy-placeholder
 }
-
 
 function install_mongodb() {
   # If namespace 'mongodb' already exists, skip
@@ -368,9 +346,9 @@ run_with_spinner "Waiting for DNS" wait_for_dns
 
 run_with_spinner "Install k3d" install_k3d
 run_with_spinner "Set up k3d cluster" create_k3d_cluster
-run_with_spinner "Set up Harbor" setup_harbor
-run_with_spinner "Seed Harbor with placeholder images" seed_harbor_with_placeholder_images
 
+run_with_spinner "Install Harbor" install_harbor
+run_with_spinner "Seed Harbor with placeholder images" seed_harbor_with_placeholder_images
 run_with_spinner "Install MongoDB" install_mongodb
 run_with_spinner "Install Redis" install_redis
 run_with_spinner "Install Keycloak" install_keycloak
@@ -433,11 +411,11 @@ echo " - Keycloak: http://localhost:12080 (admin:admin)"
 echo " - MongoDB: mongodb://root:root@localhost:13017"
 echo " - Redis: redis://localhost:13017"
 echo ""
-echo "Please review the generated config.local.yml file and make any necessary changes"
-echo ""
-echo "If you are not using dnsmasq already, you need to set it up. Use the following guides as a reference:"
+echo "dnsmasq is used to allow the names to resolve. See the following guides for help configuring it:"
 echo " - WSL2 (Windows): https://github.com/absolunet/pleaz/blob/production/documentation/installation/wsl2/dnsmasq.md"
 echo " - systemd-resolved (Linux): https://gist.github.com/frank-dspeed/6b6f1f720dd5e1c57eec8f1fdb2276df"
+echo ""
+echo "Please review the generated config.local.yml file and make any necessary changes"
 echo ""
 echo "To start the application, go the the top directory and run the following command:"
 echo ""

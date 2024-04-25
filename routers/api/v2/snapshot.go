@@ -86,7 +86,7 @@ func GetSnapshot(c *gin.Context) {
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v2/vms/{vmId}/snapshots [get]
+// @Router /v2/snapshots [get]
 func ListSnapshots(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -135,7 +135,7 @@ func ListSnapshots(c *gin.Context) {
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v2/vms/{vmId}/snapshots [post]
+// @Router /v2/snapshots [post]
 func CreateSnapshot(c *gin.Context) {
 	context := sys.NewContext(c)
 
