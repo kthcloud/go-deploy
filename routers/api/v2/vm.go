@@ -221,9 +221,10 @@ func CreateVM(c *gin.Context) {
 	vmID := uuid.New().String()
 	jobID := uuid.New().String()
 	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobCreateVM, version.V2, map[string]interface{}{
-		"id":      vmID,
-		"ownerId": auth.UserID,
-		"params":  requestBody,
+		"id":       vmID,
+		"ownerId":  auth.UserID,
+		"params":   requestBody,
+		"authInfo": auth,
 	})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
@@ -285,7 +286,8 @@ func DeleteVM(c *gin.Context) {
 
 	jobID := uuid.New().String()
 	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobDeleteVM, version.V2, map[string]interface{}{
-		"id": vm.ID,
+		"id":       vm.ID,
+		"authInfo": auth,
 	})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
@@ -393,8 +395,9 @@ func UpdateVM(c *gin.Context) {
 
 	jobID := uuid.New().String()
 	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobUpdateVM, version.V2, map[string]interface{}{
-		"id":     vm.ID,
-		"params": requestBody,
+		"id":       vm.ID,
+		"params":   requestBody,
+		"authInfo": auth,
 	})
 
 	if err != nil {

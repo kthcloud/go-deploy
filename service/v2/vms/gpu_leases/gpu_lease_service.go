@@ -297,6 +297,14 @@ func (c *Client) Count(opts ...opts.ListGpuLeaseOpts) (int, error) {
 
 	glc := gpu_lease_repo.New()
 
+	if o.UserID != nil {
+		glc.WithUserID(*o.UserID)
+	}
+
+	if o.VmID != nil {
+		glc.WithVmID(*o.VmID)
+	}
+
 	if o.GpuGroupID != nil {
 		glc.WithGpuGroupID(*o.GpuGroupID)
 	}
