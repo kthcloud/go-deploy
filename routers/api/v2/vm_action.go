@@ -25,7 +25,7 @@ import (
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v2/actions [post]
+// @Router /v2/vmActions [post]
 func CreateVmAction(c *gin.Context) {
 	context := sys.NewContext(c)
 
