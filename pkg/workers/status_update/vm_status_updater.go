@@ -9,6 +9,7 @@ import (
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/db/resources/vm_repo"
 	"go-deploy/pkg/log"
+	"go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/service/v2/vms/k8s_service"
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -22,13 +23,15 @@ func vmStatusUpdaterV2(ctx context.Context) error {
 		log.Println("Setting up VM status watcher for zone", zone.Name)
 
 		z := zone
-		err := k8s_service.New().SetupStatusWatcher(ctx, &z, "vm", func(name, kubeVirtStatus string) {
-			status := parseKubeVirtStatus(kubeVirtStatus)
+		err := k8s_service.New().SetupStatusWatcher(ctx, &z, "vm", func(name string, incomingStatus interface{}) {
+			if status, ok := incomingStatus.(*models.VmStatus); ok {
+				kubeVirtStatus := parseVmStatus(status)
 
-			err := vm_repo.New(version.V2).SetWithBsonByName(name, bson.D{{"status", status}})
-			if err != nil {
-				log.Println("Failed to update VM status for", name, "with status", status, "details:", err)
-				return
+				err := vm_repo.New(version.V2).SetWithBsonByName(name, bson.D{{"status", kubeVirtStatus}})
+				if err != nil {
+					log.Println("Failed to update VM status for", name, "with status", kubeVirtStatus, "details:", err)
+					return
+				}
 			}
 		})
 
@@ -40,9 +43,9 @@ func vmStatusUpdaterV2(ctx context.Context) error {
 	return nil
 }
 
-func parseKubeVirtStatus(status string) string {
+func parseVmStatus(status *models.VmStatus) string {
 	var statusCode int
-	switch status {
+	switch status.PrintableStatus {
 	case "Provisioning", "WaitingForVolumeBinding":
 		statusCode = status_codes.ResourceProvisioning
 	case "Starting":

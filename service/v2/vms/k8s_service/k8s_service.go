@@ -688,7 +688,7 @@ func (c *Client) Synchronize(zoneName string, gpuGroups []model.GpuGroup) error 
 
 // SetupStatusWatcher sets up a status watcher for a zone.
 // For every status change, it triggers the callback.
-func (c *Client) SetupStatusWatcher(ctx context.Context, zone *configModels.Zone, resourceType string, callback func(string, string)) error {
+func (c *Client) SetupStatusWatcher(ctx context.Context, zone *configModels.Zone, resourceType string, callback func(string, interface{})) error {
 	_, kc, _, err := c.Get(OptsOnlyClient(zone.Name))
 	if err != nil {
 		return err

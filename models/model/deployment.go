@@ -28,8 +28,7 @@ type Deployment struct {
 	Subsystems DeploymentSubsystems `bson:"subsystems"`
 	Logs       []Log                `bson:"logs"`
 
-	StatusMessage string `bson:"statusMessage"`
-	StatusCode    int    `bson:"statusCode"`
+	Status string `bson:"status"`
 
 	Transfer *DeploymentTransfer `bson:"transfer,omitempty"`
 }

@@ -63,6 +63,7 @@ func GetLogs(c *gin.Context) {
 	if err != nil {
 		if errors.Is(err, errors2.DeploymentNotFoundErr) {
 			sysContext.NotFound("Deployment not found")
+			return
 		}
 
 		sysContext.ServerError(err, InternalError)
