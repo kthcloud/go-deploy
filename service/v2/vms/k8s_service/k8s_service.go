@@ -161,7 +161,7 @@ func (c *Client) Delete(id string, overwriteUserID ...string) error {
 	log.Println("Deleting K8s for", id)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete k8s for deployment %s. details: %w", id, err)
+		return fmt.Errorf("failed to delete k8s for vm %s. details: %w", id, err)
 	}
 
 	var userID string
