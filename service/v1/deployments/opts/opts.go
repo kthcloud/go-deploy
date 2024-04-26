@@ -33,9 +33,9 @@ type ListOpts struct {
 
 // GetOpts is used to specify the options when getting a deployment.
 type GetOpts struct {
-	MigrationToken *string
-	HarborWebhook  *body.HarborWebhook
-	Shared         bool
+	MigrationCode *string
+	HarborWebhook *body.HarborWebhook
+	Shared        bool
 }
 
 // QuotaOptions is used to specify the options when getting a deployment's quota.

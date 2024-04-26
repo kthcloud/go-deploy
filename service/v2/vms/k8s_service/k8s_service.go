@@ -637,7 +637,7 @@ func (c *Client) EnsureOwner(id, oldOwnerID string) error {
 		return fmt.Errorf("failed to update k8s owner for vm %s. details: %w", id, err)
 	}
 
-	// Since ownership is determined by the user-id label, we need to relabel everything
+	// Since ownership is determined by the user-id label, we simply need to relabel everything
 	// This is simply done by repairing the K8s setup
 
 	err := c.Repair(id)

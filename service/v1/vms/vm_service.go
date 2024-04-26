@@ -766,7 +766,6 @@ func (c *Client) GetHost(vmID string) (*model.Host, error) {
 
 	if host != nil {
 		return &model.Host{
-			ID:   host.ID,
 			Name: host.Name,
 		}, nil
 	}
@@ -791,7 +790,6 @@ func (c *Client) GetHost(vmID string) (*model.Host, error) {
 
 			if host != nil {
 				return &model.Host{
-					ID:   host.ID,
 					Name: host.Name,
 				}, nil
 			}

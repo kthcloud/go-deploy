@@ -23,7 +23,7 @@ func ListWorkerStatus(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestQuery query.StatusList
-	if err := context.GinContext.Bind(&requestQuery); err != nil {
+	if err := context.GinContext.ShouldBind(&requestQuery); err != nil {
 		context.BindingError(CreateBindingError(err))
 		return
 	}

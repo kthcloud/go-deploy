@@ -75,7 +75,7 @@ func ListSMs(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestQuery query.SmList
-	if err := context.GinContext.Bind(&requestQuery); err != nil {
+	if err := context.GinContext.ShouldBind(&requestQuery); err != nil {
 		context.BindingError(CreateBindingError(err))
 		return
 	}
@@ -153,9 +153,8 @@ func DeleteSM(c *gin.Context) {
 
 	jobID := uuid.New().String()
 	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobDeleteSM, version.V1, map[string]interface{}{
-		"id":       sm.ID,
-		"ownerId":  sm.OwnerID,
-		"authInfo": auth,
+		"id":      sm.ID,
+		"ownerId": sm.OwnerID,
 	})
 	if err != nil {
 		context.ServerError(err, InternalError)

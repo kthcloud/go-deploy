@@ -143,10 +143,6 @@ var (
 	// NonUniqueFieldErr is returned when a field is not unique, such as the name of a deployment.
 	NonUniqueFieldErr = fmt.Errorf("non unique field")
 
-	// InvalidTransferCodeErr is returned when the transfer code is invalid.
-	// This could be caused by the transfer being canceled, or the code being incorrect.
-	InvalidTransferCodeErr = fmt.Errorf("invalid transfer code")
-
 	// TeamNameTakenErr is returned when the team name is already taken by another team.
 	// Every team name should be unique.
 	TeamNameTakenErr = fmt.Errorf("team name taken")
@@ -178,6 +174,15 @@ var (
 	// ResourceMigrationNotFoundErr is returned when the resource migration is not found.
 	ResourceMigrationNotFoundErr = fmt.Errorf("resource migration not found")
 
+	// AlreadyAcceptedErr is returned when the resource migration is already accepted.
+	AlreadyAcceptedErr = fmt.Errorf("resource migration already accepted")
+
+	// AlreadyMigratedErr is returned when the resource is already migrated.
+	AlreadyMigratedErr = fmt.Errorf("resource already migrated")
+
+	// ResourceMigrationAlreadyExistsErr is returned when the resource migration already exists.
+	ResourceMigrationAlreadyExistsErr = fmt.Errorf("resource migration already exists")
+
 	// BadResourceMigrationTypeErr is returned when the resource migration type is invalid.
 	// This could be caused by providing another type than what is expected by the function.
 	BadResourceMigrationTypeErr = fmt.Errorf("bad resource migration type")
@@ -193,4 +198,11 @@ var (
 	// BadResourceMigrationStatusErr is returned when the resource migration status is invalid.
 	// This could be caused by providing another type than what is expected by the function.
 	BadResourceMigrationStatusErr = fmt.Errorf("bad resource migration status")
+
+	// ResourceNotFoundErr is returned when the resource is not found.
+	// This is used when the type of resource is unknown, such as for team resources or migration resources.
+	ResourceNotFoundErr = fmt.Errorf("resource not found")
+
+	// BadMigrationCodeErr is returned when the migration code is invalid.
+	BadMigrationCodeErr = fmt.Errorf("bad migration code")
 )

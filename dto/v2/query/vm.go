@@ -1,9 +1,9 @@
 package query
 
 type VmGet struct {
-	// MigrationToken is used when fetching a deployment that is being migrated.
+	// MigrationCode is used when fetching a deployment that is being migrated.
 	// The token should only be known by the user receiving the deployment.
-	MigrationToken *string `json:"token" binding:"omitempty"`
+	MigrationCode *string `json:"migrationCode" binding:"omitempty"`
 }
 
 type VmList struct {

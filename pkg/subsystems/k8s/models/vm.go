@@ -7,9 +7,10 @@ import (
 )
 
 type VmPublic struct {
-	ID        string `bson:"id"`
-	Name      string `bson:"name"`
-	Namespace string `bson:"namespace"`
+	ID        string            `bson:"id"`
+	Name      string            `bson:"name"`
+	Namespace string            `bson:"namespace"`
+	Labels    map[string]string `bson:"labels"`
 
 	CpuCores int      `bson:"cpuCores"`
 	RAM      int      `bson:"memory"`

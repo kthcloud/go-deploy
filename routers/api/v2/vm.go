@@ -56,8 +56,8 @@ func GetVM(c *gin.Context) {
 	deployV2 := service.V2(auth)
 
 	var vm *model.VM
-	if requestQuery.MigrationToken != nil {
-		vm, err = deployV2.VMs().Get(requestURI.VmID, opts.GetOpts{MigrationToken: requestQuery.MigrationToken})
+	if requestQuery.MigrationCode != nil {
+		vm, err = deployV2.VMs().Get(requestURI.VmID, opts.GetOpts{MigrationCode: requestQuery.MigrationCode})
 	} else {
 		vm, err = deployV2.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
 	}

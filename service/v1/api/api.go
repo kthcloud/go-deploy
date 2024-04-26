@@ -29,10 +29,9 @@ type Deployments interface {
 	List(opts ...dOpts.ListOpts) ([]model.Deployment, error)
 	Create(id, userID string, dtoDeploymentCreate *body.DeploymentCreate) error
 	Update(id string, dtoDeploymentUpdate *body.DeploymentUpdate) error
+	UpdateOwner(id string, params *model.DeploymentUpdateOwnerParams) error
 	Delete(id string) error
 	Repair(id string) error
-
-	UpdateOwner(id string, params *body.DeploymentUpdateOwner) error
 
 	Restart(id string) error
 	DoCommand(id string, command string)
@@ -183,7 +182,7 @@ type Zones interface {
 type ResourceMigrations interface {
 	Get(id string, opts ...resourceMigrationOpts.GetOpts) (*model.ResourceMigration, error)
 	List(opts ...resourceMigrationOpts.ListOpts) ([]model.ResourceMigration, error)
-	Create(id string, userID string, dtoResourceMigrationCreate *body.ResourceMigrationCreate) error
-	Update(id string, dtoResourceMigrationUpdate *body.ResourceMigrationUpdate) error
+	Create(id, userID string, migrationCreate *body.ResourceMigrationCreate) (*model.ResourceMigration, *string, error)
+	Update(id string, migrationUpdate *body.ResourceMigrationUpdate, opts ...resourceMigrationOpts.UpdateOpts) (*model.ResourceMigration, *string, error)
 	Delete(id string) error
 }

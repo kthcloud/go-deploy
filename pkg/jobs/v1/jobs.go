@@ -34,10 +34,10 @@ func CreateVM(job *model.Job) error {
 		return jErrors.MakeTerminatedError(err)
 	}
 
-	err = service.V1().VMs().Create(id, ownerID, &params)
+	err = service.V1(utils.GetAuthInfo(job)).VMs().Create(id, ownerID, &params)
 	if err != nil {
 		// If there was some error, we trigger a repair, since rerunning it would cause a NonUniqueFieldErr
-		_ = service.V1().VMs().Repair(id)
+		_ = service.V1(utils.GetAuthInfo(job)).VMs().Repair(id)
 		return jErrors.MakeTerminatedError(err)
 	}
 
@@ -95,7 +95,7 @@ func DeleteVM(job *model.Job) error {
 	case <-ctx.Done():
 	}
 
-	err = service.V1().VMs().Delete(id)
+	err = service.V1(utils.GetAuthInfo(job)).VMs().Delete(id)
 	if err != nil {
 		if !errors.Is(err, sErrors.VmNotFoundErr) {
 			return jErrors.MakeFailedError(err)
@@ -132,7 +132,7 @@ func UpdateVM(job *model.Job) error {
 		return jErrors.MakeTerminatedError(err)
 	}
 
-	err = service.V1().VMs().Update(id, &update)
+	err = service.V1(utils.GetAuthInfo(job)).VMs().Update(id, &update)
 	if err != nil {
 		switch {
 		case errors.Is(err, sErrors.VmNotFoundErr):
@@ -176,7 +176,7 @@ func UpdateVmOwner(job *model.Job) error {
 		return jErrors.MakeTerminatedError(err)
 	}
 
-	err = service.V1().VMs().UpdateOwner(id, &params)
+	err = service.V1(utils.GetAuthInfo(job)).VMs().UpdateOwner(id, &params)
 	if err != nil {
 		return jErrors.MakeFailedError(err)
 	}
@@ -201,7 +201,7 @@ func AttachGPU(job *model.Job) error {
 	// We keep this field to know who requested the gpu attachment
 	_ = job.Args["userId"].(string)
 
-	err = service.V1().VMs().AttachGPU(vmID, gpuIDs, leaseDuration)
+	err = service.V1(utils.GetAuthInfo(job)).VMs().AttachGPU(vmID, gpuIDs, leaseDuration)
 	if err != nil {
 		if errors.Is(err, sErrors.GpuNotFoundErr) {
 			return jErrors.MakeTerminatedError(err)
@@ -225,7 +225,7 @@ func DetachGpuFromVM(job *model.Job) error {
 
 	vmID := job.Args["id"].(string)
 
-	err = service.V1().VMs().DetachGPU(vmID)
+	err = service.V1(utils.GetAuthInfo(job)).VMs().DetachGPU(vmID)
 	if err != nil {
 		return jErrors.MakeFailedError(err)
 	}
@@ -247,7 +247,7 @@ func CreateDeployment(job *model.Job) error {
 		return jErrors.MakeTerminatedError(err)
 	}
 
-	err = service.V1().Deployments().Create(id, ownerID, &params)
+	err = service.V1(utils.GetAuthInfo(job)).Deployments().Create(id, ownerID, &params)
 	if err != nil {
 		var zoneCapabilityMissingErr sErrors.ZoneCapabilityMissingErr
 		if errors.As(err, &zoneCapabilityMissingErr) {
@@ -255,7 +255,7 @@ func CreateDeployment(job *model.Job) error {
 		}
 
 		// If there was some error, we trigger a repair, since rerunning it would cause a NonUniqueFieldErr
-		_ = service.V1().Deployments().Repair(id)
+		_ = service.V1(utils.GetAuthInfo(job)).Deployments().Repair(id)
 		return jErrors.MakeTerminatedError(err)
 	}
 
@@ -313,7 +313,7 @@ func DeleteDeployment(job *model.Job) error {
 	case <-ctx.Done():
 	}
 
-	err = service.V1().Deployments().Delete(id)
+	err = service.V1(utils.GetAuthInfo(job)).Deployments().Delete(id)
 	if err != nil {
 		if !errors.Is(err, sErrors.DeploymentNotFoundErr) {
 			return jErrors.MakeFailedError(err)
@@ -350,7 +350,7 @@ func UpdateDeployment(job *model.Job) error {
 		return jErrors.MakeTerminatedError(err)
 	}
 
-	err = service.V1().Deployments().Update(id, &update)
+	err = service.V1(utils.GetAuthInfo(job)).Deployments().Update(id, &update)
 	if err != nil {
 		switch {
 		case errors.Is(err, sErrors.DeploymentNotFoundErr):
@@ -379,19 +379,27 @@ func UpdateDeploymentOwner(job *model.Job) error {
 	}
 
 	id := job.Args["id"].(string)
-	var params body.DeploymentUpdateOwner
+	var params model.DeploymentUpdateOwnerParams
 	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
 	}
 
-	err = service.V1().Deployments().UpdateOwner(id, &params)
+	err = service.V1(utils.GetAuthInfo(job)).Deployments().UpdateOwner(id, &params)
 	if err != nil {
 		if errors.Is(err, sErrors.DeploymentNotFoundErr) {
 			return jErrors.MakeTerminatedError(err)
 		}
 
 		return jErrors.MakeFailedError(err)
+	}
+
+	if job.HasArg("resourceMigrationId") {
+		resourceMigrationID := job.Args["resourceMigrationId"].(string)
+		err = service.V1(utils.GetAuthInfo(job)).ResourceMigrations().Delete(resourceMigrationID)
+		if err != nil {
+			return jErrors.MakeTerminatedError(err)
+		}
 	}
 
 	return nil
@@ -405,7 +413,7 @@ func RepairDeployment(job *model.Job) error {
 
 	id := job.Args["id"].(string)
 
-	err = service.V1().Deployments().Repair(id)
+	err = service.V1(utils.GetAuthInfo(job)).Deployments().Repair(id)
 	if err != nil {
 		return jErrors.MakeTerminatedError(err)
 	}
@@ -428,7 +436,7 @@ func CreateSM(job *model.Job) error {
 		return jErrors.MakeTerminatedError(err)
 	}
 
-	err = service.V1().SMs().Create(id, userID, &params)
+	err = service.V1(utils.GetAuthInfo(job)).SMs().Create(id, userID, &params)
 	if err != nil {
 		// We always terminate these jobs, since rerunning it would cause a NonUniqueFieldErr
 		return jErrors.MakeTerminatedError(err)
@@ -445,7 +453,7 @@ func DeleteSM(job *model.Job) error {
 
 	id := job.Args["id"].(string)
 
-	err = service.V1().SMs().Delete(id)
+	err = service.V1(utils.GetAuthInfo(job)).SMs().Delete(id)
 	if err != nil {
 		return jErrors.MakeFailedError(err)
 	}
@@ -461,7 +469,7 @@ func RepairSM(job *model.Job) error {
 
 	id := job.Args["id"].(string)
 
-	err = service.V1().SMs().Repair(id)
+	err = service.V1(utils.GetAuthInfo(job)).SMs().Repair(id)
 	if err != nil {
 		// All errors are terminal, so we don't check for specific errors
 		return jErrors.MakeTerminatedError(err)
@@ -478,7 +486,7 @@ func RepairVM(job *model.Job) error {
 
 	id := job.Args["id"].(string)
 
-	err = service.V1().VMs().Repair(id)
+	err = service.V1(utils.GetAuthInfo(job)).VMs().Repair(id)
 	if err != nil {
 		// All errors are terminal, so we don't check for specific errors
 		return jErrors.MakeTerminatedError(err)
@@ -500,7 +508,7 @@ func CreateSystemSnapshot(job *model.Job) error {
 		return jErrors.MakeTerminatedError(err)
 	}
 
-	err = service.V1().VMs().CreateSnapshot(vmID, &opts.CreateSnapshotOpts{System: &params})
+	err = service.V1(utils.GetAuthInfo(job)).VMs().CreateSnapshot(vmID, &opts.CreateSnapshotOpts{System: &params})
 	if err != nil {
 		// All errors are terminal, so we don't check for specific errors
 		return jErrors.MakeTerminatedError(err)
@@ -522,7 +530,7 @@ func CreateUserSnapshot(job *model.Job) error {
 		return jErrors.MakeTerminatedError(err)
 	}
 
-	err = service.V1().VMs().CreateSnapshot(vmID, &opts.CreateSnapshotOpts{User: &params})
+	err = service.V1(utils.GetAuthInfo(job)).VMs().CreateSnapshot(vmID, &opts.CreateSnapshotOpts{User: &params})
 	if err != nil {
 		// All errors are terminal, so we don't check for specific errors
 		return jErrors.MakeTerminatedError(err)
@@ -540,71 +548,10 @@ func DeleteSnapshot(job *model.Job) error {
 	vmID := job.Args["id"].(string)
 	snapshotID := job.Args["snapshotId"].(string)
 
-	err = service.V1().VMs().DeleteSnapshot(vmID, snapshotID)
+	err = service.V1(utils.GetAuthInfo(job)).VMs().DeleteSnapshot(vmID, snapshotID)
 	if err != nil {
 		// All errors are terminal, so we don't check for specific errors
 		return jErrors.MakeTerminatedError(err)
-	}
-
-	return nil
-}
-
-func CreateResourceMigration(job *model.Job) error {
-	err := utils.AssertParameters(job, []string{"id", "userId", "params"})
-	if err != nil {
-		return jErrors.MakeTerminatedError(err)
-	}
-
-	id := job.Args["id"].(string)
-	userID := job.Args["userId"].(string)
-
-	var params body.ResourceMigrationCreate
-	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &params)
-	if err != nil {
-		return jErrors.MakeTerminatedError(err)
-	}
-
-	err = service.V1(utils.GetAuthInfo(job)).ResourceMigrations().Create(id, userID, &params)
-	if err != nil {
-		// We always terminate these jobs, since rerunning it would cause a NonUniqueFieldErr
-		return jErrors.MakeTerminatedError(err)
-	}
-
-	return nil
-}
-
-func UpdateResourceMigration(job *model.Job) error {
-	err := utils.AssertParameters(job, []string{"id", "params"})
-	if err != nil {
-		return jErrors.MakeTerminatedError(err)
-	}
-
-	id := job.Args["id"].(string)
-	var update body.ResourceMigrationUpdate
-	err = mapstructure.Decode(job.Args["params"].(map[string]interface{}), &update)
-	if err != nil {
-		return jErrors.MakeTerminatedError(err)
-	}
-
-	err = service.V1(utils.GetAuthInfo(job)).ResourceMigrations().Update(id, &update)
-	if err != nil {
-		return jErrors.MakeFailedError(err)
-	}
-
-	return nil
-}
-
-func DeleteResourceMigration(job *model.Job) error {
-	err := utils.AssertParameters(job, []string{"id"})
-	if err != nil {
-		return jErrors.MakeTerminatedError(err)
-	}
-
-	id := job.Args["id"].(string)
-
-	err = service.V1(utils.GetAuthInfo(job)).ResourceMigrations().Delete(id)
-	if err != nil {
-		return jErrors.MakeFailedError(err)
 	}
 
 	return nil

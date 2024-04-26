@@ -40,7 +40,7 @@ func GetDeployment(c *gin.Context) {
 	}
 
 	var requestQuery query.DeploymentGet
-	if err := context.GinContext.Bind(&requestQuery); err != nil {
+	if err := context.GinContext.ShouldBind(&requestQuery); err != nil {
 		context.BindingError(CreateBindingError(err))
 		return
 	}
@@ -54,8 +54,8 @@ func GetDeployment(c *gin.Context) {
 	deployV1 := service.V1(auth)
 
 	var deployment *model.Deployment
-	if requestQuery.MigrationToken != nil {
-		deployment, err = deployV1.Deployments().Get(requestURI.DeploymentID, opts.GetOpts{MigrationToken: requestQuery.MigrationToken})
+	if requestQuery.MigrationCode != nil {
+		deployment, err = deployV1.Deployments().Get(requestURI.DeploymentID, opts.GetOpts{MigrationCode: requestQuery.MigrationCode})
 	} else {
 		deployment, err = deployV1.Deployments().Get(requestURI.DeploymentID, opts.GetOpts{Shared: true})
 	}
@@ -94,7 +94,7 @@ func ListDeployments(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestQuery query.DeploymentList
-	if err := context.GinContext.Bind(&requestQuery); err != nil {
+	if err := context.GinContext.ShouldBind(&requestQuery); err != nil {
 		context.BindingError(CreateBindingError(err))
 		return
 	}

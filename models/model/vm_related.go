@@ -1,7 +1,6 @@
 package model
 
 type Host struct {
-	ID   string `bson:"id"`
 	Name string `bson:"name"`
 }
 

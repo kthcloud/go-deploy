@@ -33,6 +33,11 @@ type VmUpdateParams struct {
 	RAM        *int
 }
 
+type VmUpdateOwnerParams struct {
+	NewOwnerID string
+	OldOwnerID string
+}
+
 type VmActionParams struct {
 	Action string
 }

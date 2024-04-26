@@ -34,11 +34,11 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.VM, error) {
 
 	vmc := vm_repo.New(version.V2)
 
-	if o.MigrationToken != nil {
+	if o.MigrationCode != nil {
 		rmc := resource_migration_repo.New().
 			WithType(model.ResourceMigrationTypeUpdateOwner).
 			WithResourceType(model.ResourceMigrationResourceTypeDeployment).
-			WithTransferCode(*o.MigrationToken)
+			WithTransferCode(*o.MigrationCode)
 
 		migration, err := rmc.Get()
 		if err != nil {
@@ -437,7 +437,7 @@ func (c *Client) DoAction(id string, dtoAction *body.VmActionCreate) error {
 // This is the second step of the owner update process, where the transfer is actually done.
 //
 // It returns an error if the VM is not found.
-func (c *Client) UpdateOwner(id string, params *body.VmUpdateOwner) error {
+func (c *Client) UpdateOwner(id string, params *model.VmUpdateOwnerParams) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update vm owner. details: %w", err)
 	}
@@ -463,12 +463,23 @@ func (c *Client) UpdateOwner(id string, params *body.VmUpdateOwner) error {
 		return makeError(err)
 	}
 
-	err = gpu_repo.New().WithVM(id).UpdateWithBSON(bson.D{{"lease.user", params.NewOwnerID}})
+	_, err = c.Refresh(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = gpu_lease_repo.New().WithVmID(id).Release()
 	if err != nil {
 		return makeError(err)
 	}
 
 	err = c.K8s().EnsureOwner(id, params.OldOwnerID)
+	if err != nil {
+		return makeError(err)
+	}
+
+	// Restart VM to ensure possibly new specs are applied
+	err = c.K8s().DoAction(id, &model.VmActionParams{Action: model.ActionRestart})
 	if err != nil {
 		return makeError(err)
 	}

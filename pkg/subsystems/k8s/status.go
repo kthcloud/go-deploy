@@ -21,6 +21,8 @@ func (client *Client) SetupStatusWatcher(ctx context.Context, resourceType strin
 		return client.deploymentStatusWatcher(ctx, handler)
 	case "vm":
 		return client.vmStatusWatcher(ctx, handler)
+	case "vmi":
+		return client.vmiStatusWatcher(ctx, handler)
 	}
 
 	return nil
@@ -131,6 +133,69 @@ func (client *Client) vmStatusWatcher(ctx context.Context, handler func(string, 
 						handler(deployName, &models.VmStatus{
 							PrintableStatus: string(vm.Status.PrintableStatus),
 						})
+					}
+				}
+			case <-recreateInterval:
+				watcher.Stop()
+				watcher, err = setupVmWatcher(client.Namespace)
+				if err != nil {
+					fmt.Println("Failed to restart VM status watcher, sleeping for 10 seconds before retrying")
+					time.Sleep(10 * time.Second)
+					return
+				}
+				resultsChan = watcher.ResultChan()
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
+	return nil
+}
+
+func (client *Client) vmiStatusWatcher(ctx context.Context, handler func(string, interface{})) error {
+	setupVmWatcher := func(namespace string) (watch.Interface, error) {
+		statusChan, err := client.KubeVirtK8sClient.KubevirtV1().VirtualMachineInstances(client.Namespace).Watch(ctx, metav1.ListOptions{Watch: true})
+		if err != nil {
+			return nil, err
+		}
+
+		if statusChan == nil {
+			return nil, fmt.Errorf("failed to watch vmis, no channel returned")
+		}
+
+		return statusChan, nil
+	}
+
+	watcher, err := setupVmWatcher(client.Namespace)
+	if err != nil {
+		return err
+	}
+
+	resultsChan := watcher.ResultChan()
+	go func() {
+		// For now, the watch stops working sometimes, so we need to restart it every 10 seconds
+		// This is a temporary fix until we find the root cause
+		recreateInterval := time.Tick(20 * time.Second)
+
+		for {
+			select {
+			case event := <-resultsChan:
+				if event.Type == watch.Added || event.Type == watch.Modified {
+					vmi := event.Object.(*v1.VirtualMachineInstance)
+
+					// Fetch deploy name from label LabelDeployName
+					deployName, ok := vmi.Labels[keys.LabelDeployName]
+					if ok {
+						vmiStatus := &models.VmiStatus{}
+
+						// Get the host name from the label "kubevirt.io/nodeName"
+						host, ok := vmi.Labels["kubevirt.io/nodeName"]
+						if ok {
+							vmiStatus.Host = &host
+						}
+
+						handler(deployName, vmiStatus)
 					}
 				}
 			case <-recreateInterval:

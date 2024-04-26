@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"go-deploy/service/clients"
 	"go-deploy/service/core"
 	"go-deploy/service/v1/api"
 	"go-deploy/service/v1/deployments"
@@ -19,18 +20,21 @@ import (
 )
 
 type Client struct {
+	V2 clients.V2
+
 	auth  *core.AuthInfo
 	cache *core.Cache
 }
 
-func New(authInfo ...*core.AuthInfo) *Client {
-	var a *core.AuthInfo
+func New(v2 clients.V2, authInfo ...*core.AuthInfo) *Client {
+	var auth *core.AuthInfo
 	if len(authInfo) > 0 {
-		a = authInfo[0]
+		auth = authInfo[0]
 	}
 
 	return &Client{
-		auth:  a,
+		V2:    v2,
+		auth:  auth,
 		cache: core.NewCache(),
 	}
 }
@@ -92,5 +96,5 @@ func (c *Client) Zones() api.Zones {
 }
 
 func (c *Client) ResourceMigrations() api.ResourceMigrations {
-	return resource_migrations.New(c, c.cache)
+	return resource_migrations.New(c, c.V2, c.cache)
 }

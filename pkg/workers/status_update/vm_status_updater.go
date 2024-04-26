@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	configModels "go-deploy/models/config"
+	"go-deploy/models/model"
 	"go-deploy/models/version"
 	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/config"
@@ -26,12 +27,38 @@ func vmStatusUpdaterV2(ctx context.Context) error {
 		err := k8s_service.New().SetupStatusWatcher(ctx, &z, "vm", func(name string, incomingStatus interface{}) {
 			if status, ok := incomingStatus.(*models.VmStatus); ok {
 				kubeVirtStatus := parseVmStatus(status)
-
 				err := vm_repo.New(version.V2).SetWithBsonByName(name, bson.D{{"status", kubeVirtStatus}})
 				if err != nil {
-					log.Println("Failed to update VM status for", name, "with status", kubeVirtStatus, "details:", err)
+					log.Printf("Failed to update VM status for %s. details: %s", name, err.Error())
 					return
 				}
+
+				if kubeVirtStatus == status_codes.GetMsg(status_codes.ResourceStopped) {
+					err = vm_repo.New(version.V2).UnsetWithBsonByName(name, "host")
+					if err != nil {
+						log.Printf("Failed to update VM instance status for %s. details: %s", name, err.Error())
+						return
+					}
+				}
+			}
+		})
+
+		err = k8s_service.New().SetupStatusWatcher(ctx, &z, "vmi", func(name string, incomingStatus interface{}) {
+			if status, ok := incomingStatus.(*models.VmiStatus); ok {
+				if status.Host == nil {
+					err = vm_repo.New(version.V2).UnsetWithBsonByName(name, "host")
+					if err != nil {
+						log.Printf("Failed to update VM instance status for %s. details: %s", name, err.Error())
+						return
+					}
+				} else {
+					err = vm_repo.New(version.V2).SetWithBsonByName(name, bson.D{{"host", model.Host{Name: *status.Host}}})
+					if err != nil {
+						log.Printf("Failed to update VM instance status for %s. details: %s", name, err.Error())
+						return
+					}
+				}
+
 			}
 		})
 

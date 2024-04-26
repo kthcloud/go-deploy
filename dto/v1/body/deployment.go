@@ -87,12 +87,6 @@ type Volume struct {
 	ServerPath string `json:"serverPath" bson:"serverPath" binding:"required,min=1,max=255"`
 }
 
-type DeploymentUpdateOwner struct {
-	NewOwnerID   string  `json:"newOwnerId" bson:"newOwnerId" binding:"required,uuid4"`
-	OldOwnerID   string  `json:"oldOwnerId" bson:"oldOwnerId" binding:"required,uuid4"`
-	TransferCode *string `json:"transferCode,omitempty" bson:"transferCode,omitempty" binding:"omitempty,min=1,max=1000"`
-}
-
 type DeploymentBuild struct {
 	Name      string `bson:"name"`
 	Tag       string `bson:"tag"`

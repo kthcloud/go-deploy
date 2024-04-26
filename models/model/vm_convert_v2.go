@@ -3,6 +3,7 @@ package model
 import (
 	"go-deploy/dto/v2/body"
 	"go-deploy/models/version"
+	"go-deploy/pkg/subsystems"
 	"go-deploy/utils"
 	"time"
 )
@@ -58,15 +59,21 @@ func (vm *VM) ToDTOv2(gpuLease *GpuLease, teams []string, sshConnectionString *s
 		})
 	}
 
+	var internalName *string
+	if k8sVM := vm.Subsystems.K8s.GetVM(vm.Name); subsystems.Created(k8sVM) {
+		internalName = &k8sVM.ID
+	}
+
 	return body.VmRead{
-		ID:         vm.ID,
-		Name:       vm.Name,
-		OwnerID:    vm.OwnerID,
-		Zone:       vm.Zone,
-		Host:       host,
-		CreatedAt:  vm.CreatedAt,
-		UpdatedAt:  utils.NonZeroOrNil(vm.UpdatedAt),
-		RepairedAt: utils.NonZeroOrNil(vm.RepairedAt),
+		ID:           vm.ID,
+		Name:         vm.Name,
+		InternalName: internalName,
+		OwnerID:      vm.OwnerID,
+		Zone:         vm.Zone,
+		Host:         host,
+		CreatedAt:    vm.CreatedAt,
+		UpdatedAt:    utils.NonZeroOrNil(vm.UpdatedAt),
+		RepairedAt:   utils.NonZeroOrNil(vm.RepairedAt),
 		Specs: body.Specs{
 			CpuCores: vm.Specs.CpuCores,
 			RAM:      vm.Specs.RAM,

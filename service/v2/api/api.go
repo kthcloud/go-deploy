@@ -12,6 +12,7 @@ type VMs interface {
 	List(opts ...vmOpts.ListOpts) ([]model.VM, error)
 	Create(id, ownerID string, dtoVmCreate *body.VmCreate) error
 	Update(id string, dtoVmUpdate *body.VmUpdate) error
+	UpdateOwner(id string, params *model.VmUpdateOwnerParams) error
 	Delete(id string) error
 
 	IsAccessible(id string) (bool, error)

@@ -91,6 +91,7 @@ func (kg *K8sGenerator) VMs() []models.VmPublic {
 	vmPublic := models.VmPublic{
 		Name:      vmName(kg.vm),
 		Namespace: kg.namespace,
+		Labels:    map[string]string{"owner-id": kg.vm.OwnerID},
 		CpuCores:  kg.vm.Specs.CpuCores,
 		RAM:       kg.vm.Specs.RAM,
 		DiskSize:  kg.vm.Specs.DiskSize,
