@@ -200,6 +200,7 @@ func CreateSnapshot(c *gin.Context) {
 		"params": body.VmSnapshotCreate{
 			Name: requestBody.Name,
 		},
+		"authInfo": auth,
 	})
 
 	if err != nil {
@@ -270,6 +271,7 @@ func DeleteSnapshot(c *gin.Context) {
 	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobDeleteVmSnapshot, version.V1, map[string]interface{}{
 		"id":         vm.ID,
 		"snapshotId": snapshot.ID,
+		"authInfo":   auth,
 	})
 
 	if err != nil {

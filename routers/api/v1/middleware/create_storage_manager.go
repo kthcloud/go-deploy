@@ -41,6 +41,7 @@ func CreateSM() gin.HandlerFunc {
 				"params": model.SmCreateParams{
 					Zone: "se-flem-2",
 				},
+				"authInfo": auth,
 			})
 
 			if err != nil {

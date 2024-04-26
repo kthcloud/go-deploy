@@ -104,9 +104,14 @@ func ListGpuLeases(c *gin.Context) {
 		return
 	}
 
+	var userID string
+	if !requestQuery.All {
+		userID = auth.UserID
+	}
+
 	gpuLeases, err := service.V2(auth).VMs().GpuLeases().List(opts.ListGpuLeaseOpts{
 		Pagination: utils.GetOrDefaultPagination(requestQuery.Pagination),
-		// TODO: Add support to list by a list of VM IDs
+		UserID:     &userID,
 	})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
@@ -179,12 +184,28 @@ func CreateGpuLease(c *gin.Context) {
 		return
 	}
 
+	// Right now we only allow a single lease per user, this can be updated in the future
+	anyGpuLease, err := deployV2.VMs().GpuLeases().Count(opts.ListGpuLeaseOpts{
+		UserID: &auth.UserID,
+	})
+
+	if err != nil {
+		context.ServerError(err, v1.InternalError)
+		return
+	}
+
+	if anyGpuLease > 0 {
+		context.UserError("User already has a GPU lease")
+		return
+	}
+
 	gpuLeaseID := uuid.New().String()
 	jobID := uuid.New().String()
 	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobCreateGpuLease, version.V2, map[string]interface{}{
-		"id":     gpuLeaseID,
-		"userId": auth.UserID,
-		"params": requestBody,
+		"id":       gpuLeaseID,
+		"userId":   auth.UserID,
+		"params":   requestBody,
+		"authInfo": auth,
 	})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
@@ -254,8 +275,9 @@ func UpdateGpuLease(c *gin.Context) {
 
 	jobID := uuid.New().String()
 	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobUpdateGpuLease, version.V2, map[string]interface{}{
-		"id":     gpuLease.ID,
-		"params": requestBody,
+		"id":       gpuLease.ID,
+		"params":   requestBody,
+		"authInfo": auth,
 	})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
@@ -312,7 +334,8 @@ func DeleteGpuLease(c *gin.Context) {
 
 	jobID := uuid.New().String()
 	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobDeleteGpuLease, version.V2, map[string]interface{}{
-		"id": gpuLease.ID,
+		"id":       gpuLease.ID,
+		"authInfo": auth,
 	})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)

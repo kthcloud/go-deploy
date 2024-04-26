@@ -39,6 +39,6 @@ func (gpuGroup *GpuGroup) ToDTO(leases int) body.GpuGroupRead {
 		Zone:        gpuGroup.Zone,
 		Vendor:      gpuGroup.Vendor,
 		Total:       gpuGroup.Total,
-		Available:   gpuGroup.Total - leases,
+		Available:   max(0, gpuGroup.Total-leases),
 	}
 }

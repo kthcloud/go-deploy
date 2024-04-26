@@ -86,7 +86,7 @@ func GetSnapshot(c *gin.Context) {
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v2/vms/{vmId}/snapshots [get]
+// @Router /v2/snapshots [get]
 func ListSnapshots(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -135,7 +135,7 @@ func ListSnapshots(c *gin.Context) {
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v2/vms/{vmId}/snapshots [post]
+// @Router /v2/snapshots [post]
 func CreateSnapshot(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -207,6 +207,7 @@ func CreateSnapshot(c *gin.Context) {
 		"params": body.VmSnapshotCreate{
 			Name: requestBody.Name,
 		},
+		"authInfo": auth,
 	})
 
 	if err != nil {
@@ -278,6 +279,7 @@ func DeleteSnapshot(c *gin.Context) {
 	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobDeleteVmSnapshot, version.V2, map[string]interface{}{
 		"id":         vm.ID,
 		"snapshotId": snapshot.ID,
+		"authInfo":   auth,
 	})
 
 	if err != nil {

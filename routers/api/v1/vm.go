@@ -220,9 +220,10 @@ func CreateVM(c *gin.Context) {
 	vmID := uuid.New().String()
 	jobID := uuid.New().String()
 	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobCreateVM, version.V1, map[string]interface{}{
-		"id":      vmID,
-		"ownerId": auth.UserID,
-		"params":  requestBody,
+		"id":       vmID,
+		"ownerId":  auth.UserID,
+		"params":   requestBody,
+		"authInfo": auth,
 	})
 	if err != nil {
 		context.ServerError(err, InternalError)
@@ -320,7 +321,7 @@ func UpdateVM(c *gin.Context) {
 		}
 	}
 
-	err = deployV1.VMs().CheckQuota(auth.UserID, vm.ID, &auth.GetEffectiveRole().Quotas, opts.QuotaOpts{Update: &requestBody})
+	err = deployV1.VMs().CheckQuota(vm.ID, auth.UserID, &auth.GetEffectiveRole().Quotas, opts.QuotaOpts{Update: &requestBody})
 	if err != nil {
 		var quotaExceededErr sErrors.QuotaExceededError
 		if errors.As(err, &quotaExceededErr) {
@@ -351,8 +352,9 @@ func UpdateVM(c *gin.Context) {
 
 	jobID := uuid.New().String()
 	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobUpdateVM, version.V1, map[string]interface{}{
-		"id":     vm.ID,
-		"params": requestBody,
+		"id":       vm.ID,
+		"params":   requestBody,
+		"authInfo": auth,
 	})
 
 	if err != nil {
@@ -432,7 +434,8 @@ func DeleteVM(c *gin.Context) {
 
 	jobID := uuid.New().String()
 	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobDeleteVM, version.V1, map[string]interface{}{
-		"id": vm.ID,
+		"id":       vm.ID,
+		"authInfo": auth,
 	})
 	if err != nil {
 		context.ServerError(err, InternalError)

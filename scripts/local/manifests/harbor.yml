@@ -1,43 +1,28 @@
-# Redirect to host.docker.internal:12080 using Service endpoint
 ---
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: harbor
----
-kind: Service
-apiVersion: v1
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
 metadata:
   name: harbor
   namespace: harbor
 spec:
-  type: ExternalName
-  externalName: host.k3d.internal
-  ports:
-    - name: http
-      port: 11080
-      targetPort: 11080
-    - name: https
-      port: 11443
-      targetPort: 11443
----
-kind: Ingress
-apiVersion: networking.k8s.io/v1
-metadata:
-  name: harbor
-  namespace: harbor
-  annotations:
-    traefik.frontend.passHostHeader: "false"
-spec:
-  ingressClassName: traefik
-  rules:
-    - host: harbor.deploy.localhost
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: harbor
-                port:
-                  number: 11080
+  entryPoints:
+    - websecure
+  routes:
+  - match: Host(`harbor.deploy.localhost`)
+    kind: Rule
+    services:
+    - name: harbor-harbor-portal
+      namespace: harbor
+      port: 80
+  - match: Host(`harbor.deploy.localhost`) && PathPrefix(`/api/`, `/service/`, `/v2/`, `/chartrepo/`, `/c/`)
+    kind: Rule
+    services:
+    - name: harbor-harbor-core
+      namespace: harbor
+      port: 80
+  tls:
+    certResolver: default
+    domains:
+    - main: '*.harbor.deploy.localhost'
+      sans:
+      - 'harbor.deploy.localhost'
