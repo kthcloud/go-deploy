@@ -209,7 +209,12 @@ func jobMapper() map[string]map[string]JobDefinition {
 			TerminateFunc: leafJobVM.Build(),
 		},
 		model.JobUpdateVmOwner: {
-			JobFunc: v2.UpdateVmOwner,
+			JobFunc:       v2.UpdateVmOwner,
+			TerminateFunc: coreJobVM.Build(),
+		},
+		model.JobRepairVM: {
+			JobFunc:       v2.RepairVM,
+			TerminateFunc: leafJobVM.Build(),
 		},
 	}
 

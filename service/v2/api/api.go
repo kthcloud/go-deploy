@@ -14,6 +14,7 @@ type VMs interface {
 	Update(id string, dtoVmUpdate *body.VmUpdate) error
 	UpdateOwner(id string, params *model.VmUpdateOwnerParams) error
 	Delete(id string) error
+	Repair(id string) error
 
 	IsAccessible(id string) (bool, error)
 

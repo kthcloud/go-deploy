@@ -43,8 +43,8 @@ func CreateServicePublicFromRead(service *v1.Service) *ServicePublic {
 	}
 
 	var loadBalancerIP *string
-	if len(service.Spec.ExternalIPs) > 0 {
-		loadBalancerIP = &service.Spec.ExternalIPs[0]
+	if len(service.Status.LoadBalancer.Ingress) > 0 {
+		loadBalancerIP = &service.Status.LoadBalancer.Ingress[0].IP
 	}
 
 	var ports []Port

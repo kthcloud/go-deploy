@@ -70,7 +70,6 @@ func (client *Client) Create(id, ownerID string, params *model.DeploymentCreateP
 		Subsystems:  model.DeploymentSubsystems{},
 		Logs:        make([]model.Log, 0),
 		Status:      status_codes.GetMsg(status_codes.ResourceBeingCreated),
-		Transfer:    nil,
 	}
 
 	_, err := client.Collection.InsertOne(context.TODO(), deployment)

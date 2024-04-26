@@ -28,11 +28,6 @@ type VmUsage struct {
 	Snapshots int `bson:"snapshots"`
 }
 
-type VmTransfer struct {
-	Code   string `bson:"code"`
-	UserID string `bson:"userId"`
-}
-
 type CloudStackHostCapabilities struct {
 	CpuCoresTotal int
 	CpuCoresUsed  int

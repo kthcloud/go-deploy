@@ -131,7 +131,7 @@ func vmRepairer() error {
 		seconds := int(config.Config.Timer.VmRepair.Seconds()) + rand.Intn(int(config.Config.Timer.VmRepair.Seconds()))
 		runAfter := time.Now().Add(time.Duration(seconds) * time.Second)
 
-		err = job_repo.New().CreateScheduled(jobID, vm.OwnerID, model.JobRepairVM, version.V1, runAfter, map[string]interface{}{
+		err = job_repo.New().CreateScheduled(jobID, vm.OwnerID, model.JobRepairVM, version.V2, runAfter, map[string]interface{}{
 			"id": vm.ID,
 		})
 		if err != nil {

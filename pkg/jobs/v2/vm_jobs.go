@@ -354,3 +354,20 @@ func UpdateVmOwner(job *model.Job) error {
 
 	return nil
 }
+
+func RepairVM(job *model.Job) error {
+	err := utils.AssertParameters(job, []string{"id"})
+	if err != nil {
+		return jErrors.MakeTerminatedError(err)
+	}
+
+	id := job.Args["id"].(string)
+
+	err = service.V2(utils.GetAuthInfo(job)).VMs().Repair(id)
+	if err != nil {
+		// All errors are terminal, so we don't check for specific errors
+		return jErrors.MakeTerminatedError(err)
+	}
+
+	return nil
+}

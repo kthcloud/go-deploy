@@ -70,10 +70,6 @@ type DeploymentUpdate struct {
 	Image           *string   `json:"image,omitempty,omitempty" bson:"image,omitempty" binding:"omitempty,min=1,max=1000"`
 	HealthCheckPath *string   `json:"healthCheckPath,omitempty" bson:"healthCheckPath,omitempty" binding:"omitempty,min=0,max=1000,health_check_path"`
 	Replicas        *int      `json:"replicas,omitempty" bson:"replicas,omitempty" binding:"omitempty,min=0,max=100"`
-
-	// update owner
-	OwnerID      *string `json:"ownerId,omitempty" bson:"ownerId,omitempty" binding:"omitempty"`
-	TransferCode *string `json:"transferCode,omitempty" bson:"transferCode,omitempty" binding:"omitempty,min=1,max=1000"`
 }
 
 type Env struct {

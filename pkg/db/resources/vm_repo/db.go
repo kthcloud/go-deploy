@@ -111,7 +111,16 @@ func (client *Client) ListWithAnyPendingCustomDomain() ([]model.VM, error) {
 		return nil, err
 	}
 
-	return vms, nil
+	var filteredVms []model.VM
+	for _, vm := range vms {
+		if vm.DoingActivity(model.ActivityBeingDeleted) {
+			continue
+		}
+
+		filteredVms = append(filteredVms, vm)
+	}
+
+	return filteredVms, nil
 }
 
 func (client *Client) UpdateWithParams(id string, params *model.VmUpdateParams) error {
@@ -188,7 +197,7 @@ func (client *Client) UpdateWithParams(id string, params *model.VmUpdateParams) 
 			db.Add(&unsetUpdate, fmt.Sprintf("portMap.%s", name), "")
 		}
 	}
-	
+
 	db.AddIfNotNil(&setUpdate, "name", params.Name)
 	db.AddIfNotNil(&setUpdate, "ownerId", params.OwnerID)
 	db.AddIfNotNil(&setUpdate, "specs.cpuCores", params.CpuCores)

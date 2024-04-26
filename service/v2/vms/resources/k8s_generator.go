@@ -39,7 +39,7 @@ type CloudInit struct {
 type CloudInitUser struct {
 	Name              string   `yaml:"name"`
 	Sudo              []string `yaml:"sudo"`
-	Passwd            string   `yaml:"passwd"`
+	Passwd            string   `yaml:"passwd,omitempty"`
 	LockPasswd        bool     `yaml:"lock_passwd"`
 	Shell             string   `yaml:"shell"`
 	SshAuthorizedKeys []string `yaml:"ssh_authorized_keys"`
@@ -78,7 +78,6 @@ func (kg *K8sGenerator) VMs() []models.VmPublic {
 			{
 				Name:              "root",
 				Sudo:              []string{"ALL=(ALL) NOPASSWD:ALL"},
-				Passwd:            utils.HashPassword("root", utils.GenerateSalt()),
 				LockPasswd:        false,
 				Shell:             "/bin/bash",
 				SshAuthorizedKeys: sshPublicKeys,
@@ -118,31 +117,36 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 	portMap := kg.vm.PortMap
 
 	for _, port := range portMap {
-		servicePorts := []models.Port{{
-			Name:       vmPfrName(port.Port, port.Protocol),
-			Protocol:   port.Protocol,
-			Port:       0, // This is set externally
-			TargetPort: port.Port,
-		}}
-
-		if port.HttpProxy != nil {
-			servicePorts = append(servicePorts, models.Port{
-				Name:       "http",
-				Protocol:   "tcp",
-				Port:       8080,
-				TargetPort: port.Port,
-			})
-		}
-
 		res = append(res, models.ServicePublic{
 			Name:      vmServiceName(kg.vm, vmPfrName(port.Port, port.Protocol)),
 			Namespace: kg.namespace,
-			Ports:     servicePorts,
+			Ports: []models.Port{{
+				Name:       vmPfrName(port.Port, port.Protocol),
+				Protocol:   port.Protocol,
+				Port:       0, // This is set externally
+				TargetPort: port.Port,
+			}},
 			Selector: map[string]string{
 				keys.LabelDeployName: vmName(kg.vm),
 			},
 			LoadBalancerIP: &kg.zone.K8s.LoadBalancerIP,
 		})
+
+		if port.HttpProxy != nil {
+			res = append(res, models.ServicePublic{
+				Name:      vmProxyServiceName(kg.vm, vmPfrName(port.Port, port.Protocol)),
+				Namespace: kg.namespace,
+				Ports: []models.Port{{
+					Name:       vmPfrName(port.Port, port.Protocol),
+					Protocol:   "tcp",
+					Port:       8080,
+					TargetPort: port.Port,
+				}},
+				Selector: map[string]string{
+					keys.LabelDeployName: vmName(kg.vm),
+				},
+			})
+		}
 	}
 
 	for mapName, s := range kg.vm.Subsystems.K8s.GetServiceMap() {
@@ -150,7 +154,7 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 			return service.Name == mapName
 		})
 		if idx != -1 {
-			// Copy over the external ports if the a port already exist, and is it not set
+			// Copy over the external ports
 			for servicePortIdx, servicePort := range res[idx].Ports {
 				if servicePort.Port != 0 {
 					continue
@@ -350,9 +354,15 @@ func vmServiceName(vm *model.VM, portName string) string {
 	return fmt.Sprintf("%s-%s", vm.Name, portName)
 }
 
+// vmProxyServiceName returns the service name for a VM proxy.
+// portName should be created using the vmPfrName function.
+func vmProxyServiceName(vm *model.VM, portName string) string {
+	return fmt.Sprintf("%s-%s-proxy", vm.Name, portName)
+}
+
 // vmPfrName is a helper function to create a name for a port forwarding rule.
 // It is to ensure that there are no restrictions on the name, while still being able to identify it
-func vmPfrName(privatePort int, protocol string) string {
+func vmPfrName(privatePort int, protocol string, suffix ...string) string {
 	return fmt.Sprintf("priv-%d-prot-%s", privatePort, protocol)
 }
 

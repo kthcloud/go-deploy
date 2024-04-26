@@ -29,8 +29,6 @@ type Deployment struct {
 	Logs       []Log                `bson:"logs"`
 
 	Status string `bson:"status"`
-
-	Transfer *DeploymentTransfer `bson:"transfer,omitempty"`
 }
 
 // GetMainApp returns the main app of the deployment.

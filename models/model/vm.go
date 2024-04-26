@@ -40,8 +40,6 @@ type VM struct {
 	// Status is the current status of a VM instance
 	// It is set by the status updater worker
 	Status string `bson:"status"`
-
-	Transfer *VmTransfer `bson:"transfer,omitempty"`
 }
 
 type Specs struct {
@@ -78,10 +76,6 @@ func (vm *VM) BeingCreated() bool {
 
 func (vm *VM) BeingDeleted() bool {
 	return vm.DoingActivity(ActivityBeingDeleted)
-}
-
-func (vm *VM) BeingTransferred() bool {
-	return vm.Transfer != nil
 }
 
 func (vm *VM) GetExternalPort(privatePort int, protocol string) *int {
