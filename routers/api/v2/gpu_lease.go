@@ -104,14 +104,14 @@ func ListGpuLeases(c *gin.Context) {
 		return
 	}
 
-	var userID string
+	var userID *string
 	if !requestQuery.All {
-		userID = auth.UserID
+		userID = &auth.UserID
 	}
 
 	gpuLeases, err := service.V2(auth).VMs().GpuLeases().List(opts.ListGpuLeaseOpts{
 		Pagination: utils.GetOrDefaultPagination(requestQuery.Pagination),
-		UserID:     &userID,
+		UserID:     userID,
 	})
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
