@@ -24,7 +24,7 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.SM, error) {
 	sClient := sm_repo.New()
 
 	if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
-		sClient.RestrictToOwner(c.V1.Auth().UserID)
+		sClient.WithOwnerID(c.V1.Auth().UserID)
 	}
 
 	return c.SM(id, "", sClient)
@@ -39,9 +39,9 @@ func (c *Client) GetByUserID(userID string, opts ...opts.GetOpts) (*model.SM, er
 	sClient := sm_repo.New()
 
 	if c.V1.Auth() != nil && userID != c.V1.Auth().UserID && !c.V1.Auth().IsAdmin {
-		sClient.RestrictToOwner(c.V1.Auth().UserID)
+		sClient.WithOwnerID(c.V1.Auth().UserID)
 	} else {
-		sClient.RestrictToOwner(userID)
+		sClient.WithOwnerID(userID)
 	}
 
 	return c.SM("", userID, sClient)
@@ -60,7 +60,7 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.SM, error) {
 	}
 
 	if c.V1.Auth() != nil && (!o.All || !c.V1.Auth().IsAdmin) {
-		sClient.RestrictToOwner(c.V1.Auth().UserID)
+		sClient.WithOwnerID(c.V1.Auth().UserID)
 	}
 
 	resources, err := sClient.List()
@@ -148,7 +148,7 @@ func (c *Client) Repair(id string) error {
 
 // Exists checks if a storage manager exists.
 func (c *Client) Exists(userID string) (bool, error) {
-	return sm_repo.New().RestrictToOwner(userID).ExistsAny()
+	return sm_repo.New().WithOwnerID(userID).ExistsAny()
 }
 
 // GetZone returns the deployment zone for the storage manager.
@@ -159,18 +159,14 @@ func (c *Client) GetZone() *configModels.Zone {
 	return config.Config.GetZone(zone)
 }
 
-// GetURL returns the URL for the storage manager.
+// GetUrlByUserID returns the URL for the storage manager.
 //
 // TODO: Right now it fetches the entire storage manager, but we should probably use a projection.
-func (c *Client) GetURL(userID string) *string {
-	sm, err := c.GetByUserID(userID)
+func (c *Client) GetUrlByUserID(userID string) *string {
+	url, err := sm_repo.New().WithOwnerID(userID).GetURL()
 	if err != nil {
 		return nil
 	}
 
-	if sm == nil {
-		return nil
-	}
-
-	return sm.GetURL()
+	return url
 }

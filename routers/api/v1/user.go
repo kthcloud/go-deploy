@@ -87,7 +87,7 @@ func GetUser(c *gin.Context) {
 		return
 	}
 
-	context.JSONResponse(200, user.ToDTO(effectiveRole, usage, deployV1.SMs().GetURL(user.ID)))
+	context.JSONResponse(200, user.ToDTO(effectiveRole, usage, deployV1.SMs().GetUrlByUserID(user.ID)))
 }
 
 // ListUsers
@@ -168,7 +168,7 @@ func ListUsers(c *gin.Context) {
 			usage = &model.UserUsage{}
 		}
 
-		usersDto = append(usersDto, user.ToDTO(role, usage, deployV1.SMs().GetURL(user.ID)))
+		usersDto = append(usersDto, user.ToDTO(role, usage, deployV1.SMs().GetUrlByUserID(user.ID)))
 	}
 
 	context.Ok(usersDto)
@@ -241,7 +241,7 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	context.JSONResponse(200, updated.ToDTO(effectiveRole, usage, deployV1.SMs().GetURL(updated.ID)))
+	context.JSONResponse(200, updated.ToDTO(effectiveRole, usage, deployV1.SMs().GetUrlByUserID(updated.ID)))
 }
 
 // collectUsage is helper function to collect usage for a user.

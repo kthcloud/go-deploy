@@ -71,7 +71,7 @@ func GetDeployment(c *gin.Context) {
 	}
 
 	teamIDs, _ := deployV1.Teams().ListIDs(teamOpts.ListOpts{ResourceID: deployment.ID})
-	context.Ok(deployment.ToDTO(deployV1.SMs().GetURL(deployment.OwnerID), teamIDs))
+	context.Ok(deployment.ToDTO(deployV1.SMs().GetUrlByUserID(deployment.OwnerID), teamIDs))
 }
 
 // ListDeployments
@@ -132,7 +132,7 @@ func ListDeployments(c *gin.Context) {
 	dtoDeployments := make([]body.DeploymentRead, len(deployments))
 	for i, deployment := range deployments {
 		teamIDs, _ := deployV1.Teams().ListIDs(teamOpts.ListOpts{ResourceID: deployment.ID})
-		dtoDeployments[i] = deployment.ToDTO(deployV1.SMs().GetURL(deployment.OwnerID), teamIDs)
+		dtoDeployments[i] = deployment.ToDTO(deployV1.SMs().GetUrlByUserID(deployment.OwnerID), teamIDs)
 	}
 
 	context.JSONResponse(200, dtoDeployments)

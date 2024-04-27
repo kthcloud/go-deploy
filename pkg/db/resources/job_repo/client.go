@@ -101,10 +101,10 @@ func (client *Client) WithSort(field string, order int) *Client {
 	return client
 }
 
-// RestrictToUser adds a filter to the client to only include jobs with the given user ID.
-func (client *Client) RestrictToUser(restrictUserID string) *Client {
-	client.AddExtraFilter(bson.D{{"userId", restrictUserID}})
-	client.RestrictUserID = &restrictUserID
+// WithUserID adds a filter to the client to only include jobs with the given user ID.
+func (client *Client) WithUserID(userID string) *Client {
+	client.AddExtraFilter(bson.D{{"userId", userID}})
+	client.RestrictUserID = &userID
 
 	return client
 }

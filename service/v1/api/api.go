@@ -87,7 +87,7 @@ type SMs interface {
 	Exists(userID string) (bool, error)
 
 	GetZone() *configModels.Zone
-	GetURL(userID string) *string
+	GetUrlByUserID(userID string) *string
 
 	K8s() *smK8sService.Client
 }

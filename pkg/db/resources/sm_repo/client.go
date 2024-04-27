@@ -5,22 +5,16 @@ import (
 	"go-deploy/pkg/db"
 	"go-deploy/pkg/db/resources/base_clients"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // Client is used to manage storage managers in the database.
 type Client struct {
-	Collection      *mongo.Collection
-	RestrictOwnerID *string
-
 	base_clients.ResourceClient[model.SM]
 }
 
 // New returns a new storage manager client.
 func New() *Client {
 	return &Client{
-		Collection: db.DB.GetCollection("storageManagers"),
-
 		ResourceClient: base_clients.ResourceClient[model.SM]{
 			Collection:     db.DB.GetCollection("storageManagers"),
 			IncludeDeleted: false,
@@ -45,10 +39,9 @@ func (client *Client) IncludeDeletedResources() *Client {
 	return client
 }
 
-// RestrictToOwner adds a filter to the client to only include storage managers with the given owner ID.
-func (client *Client) RestrictToOwner(ownerID string) *Client {
+// WithOwnerID adds a filter to the client to only include storage managers with the given owner ID.
+func (client *Client) WithOwnerID(ownerID string) *Client {
 	client.ResourceClient.AddExtraFilter(bson.D{{"ownerId", ownerID}})
-	client.RestrictOwnerID = &ownerID
 
 	return client
 }
