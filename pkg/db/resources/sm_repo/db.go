@@ -51,6 +51,10 @@ func (client *Client) GetURL() (*string, error) {
 		return nil, err
 	}
 
+	if sm == nil {
+		return nil, nil
+	}
+
 	return sm.GetURL(), nil
 }
 
