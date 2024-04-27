@@ -173,9 +173,10 @@ type VMs interface {
 }
 
 type Zones interface {
-	List(opts ...zoneOpts.ListOpts) ([]model.Zone, error)
-	Get(name string) *model.Zone
-	GetLegacy(name string) *model.Zone
+	Get(name string) *configModels.Zone
+	GetLegacy(name string) *configModels.LegacyZone
+	List(opts ...zoneOpts.ListOpts) ([]configModels.Zone, error)
+	ListLegacy(opts ...zoneOpts.ListOpts) ([]configModels.LegacyZone, error)
 	HasCapability(zoneName, capability string) bool
 }
 

@@ -198,11 +198,6 @@ func CreateVM(c *gin.Context) {
 			context.NotFound("Zone not found")
 			return
 		}
-
-		if !zone.Enabled {
-			context.Forbidden("Zone is disabled")
-			return
-		}
 	}
 
 	err = deployV1.VMs().CheckQuota("", auth.UserID, &auth.GetEffectiveRole().Quotas, opts.QuotaOpts{Create: &requestBody})

@@ -45,5 +45,18 @@ func ListZones(c *gin.Context) {
 		dtoZones[i] = zone.ToDTO()
 	}
 
+	legacyZoneList, err := service.V1(auth).Zones().ListLegacy()
+	if err != nil {
+		context.ServerError(err, InternalError)
+		return
+	}
+
+	dtoLegacyZones := make([]body.ZoneRead, len(legacyZoneList))
+	for i, zone := range legacyZoneList {
+		dtoLegacyZones[i] = zone.ToDTO()
+	}
+
+	dtoZones = append(dtoZones, dtoLegacyZones...)
+
 	context.Ok(dtoZones)
 }
