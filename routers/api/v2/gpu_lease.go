@@ -123,14 +123,21 @@ func ListGpuLeases(c *gin.Context) {
 		return
 	}
 
-	dtoGpuLeases := make([]body.GpuLeaseRead, len(gpuLeases))
-	for i, gpuLease := range gpuLeases {
+	dtoGpuLeases := make([]body.GpuLeaseRead, 0)
+	for _, gpuLease := range gpuLeases {
 		queuePosition, err := service.V2(auth).VMs().GpuLeases().GetQueuePosition(gpuLease.ID)
 		if err != nil {
+			switch {
+			case errors.Is(err, sErrors.GpuLeaseNotFoundErr):
+				continue
+			case errors.Is(err, sErrors.GpuGroupNotFoundErr):
+				continue
+			}
+
 			queuePosition = -1
 		}
 
-		dtoGpuLeases[i] = gpuLease.ToDTO(queuePosition)
+		dtoGpuLeases = append(dtoGpuLeases, gpuLease.ToDTO(queuePosition))
 	}
 
 	context.Ok(dtoGpuLeases)
