@@ -341,19 +341,19 @@ func (kg *K8sGenerator) Secrets() []models.SecretPublic {
 	return res
 }
 
-func (kg *K8sGenerator) Jobs() []models.JobPublic {
+func (kg *K8sGenerator) OneShotJobs() []models.JobPublic {
 	res := make([]models.JobPublic, 0)
 
 	// These are assumed to be one-shot jobs
 	initVolumes, _ := smVolumes(kg.sm.OwnerID)
 	k8sVolumes := make([]models.Volume, len(initVolumes))
-	for i, volume := range initVolumes {
-		pvcName := smPvcName(kg.sm.OwnerID, volume.Name)
+	for i, initVolume := range initVolumes {
+		pvcName := smPvcName(kg.sm.OwnerID, initVolume.Name)
 		k8sVolumes[i] = models.Volume{
-			Name:      smPvName(kg.sm.OwnerID, volume.Name),
+			Name:      smPvName(kg.sm.OwnerID, initVolume.Name),
 			PvcName:   &pvcName,
-			MountPath: volume.AppPath,
-			Init:      volume.Init,
+			MountPath: initVolume.AppPath,
+			Init:      initVolume.Init,
 		}
 	}
 

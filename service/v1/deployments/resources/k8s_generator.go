@@ -20,6 +20,7 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"time"
 )
 
 type K8sGenerator struct {
@@ -210,6 +211,9 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 
 func (kg *K8sGenerator) PVs() []models.PvPublic {
 	res := make([]models.PvPublic, 0)
+	if len(kg.deployment.GetMainApp().Volumes) == 0 {
+		return res
+	}
 
 	volumes := kg.deployment.GetMainApp().Volumes
 
@@ -223,6 +227,15 @@ func (kg *K8sGenerator) PVs() []models.PvPublic {
 		})
 	}
 
+	// Add volume to root that can be used to create storage paths
+	res = append(res, models.PvPublic{
+		Name:      deploymentRootPvName(kg.deployment),
+		Capacity:  config.Config.Deployment.Resources.Limits.Storage,
+		NfsServer: kg.zone.Storage.NfsServer,
+		NfsPath:   path.Join(kg.zone.Storage.Paths.ParentDeployment, kg.deployment.OwnerID, "user"),
+		Released:  false,
+	})
+
 	for mapName, pv := range kg.deployment.Subsystems.K8s.GetPvMap() {
 		idx := slices.IndexFunc(res, func(pv models.PvPublic) bool {
 			return pv.Name == mapName
@@ -233,7 +246,6 @@ func (kg *K8sGenerator) PVs() []models.PvPublic {
 	}
 
 	return res
-
 }
 
 func (kg *K8sGenerator) PVCs() []models.PvcPublic {
@@ -249,6 +261,14 @@ func (kg *K8sGenerator) PVCs() []models.PvcPublic {
 			PvName:    deploymentPvName(kg.deployment, volume.Name),
 		})
 	}
+
+	// Add PVC for root that can be used to create storage paths
+	res = append(res, models.PvcPublic{
+		Name:      deploymentRootPvcName(kg.deployment),
+		Namespace: kg.namespace,
+		Capacity:  config.Config.Deployment.Resources.Limits.Storage,
+		PvName:    deploymentRootPvName(kg.deployment),
+	})
 
 	for mapName, pvc := range kg.deployment.Subsystems.K8s.GetPvcMap() {
 		idx := slices.IndexFunc(res, func(pvc models.PvcPublic) bool {
@@ -361,6 +381,46 @@ func (kg *K8sGenerator) HPAs() []models.HpaPublic {
 	return res
 }
 
+func (kg *K8sGenerator) OneShotJobs() []models.JobPublic {
+	res := make([]models.JobPublic, 0)
+	if len(kg.deployment.GetMainApp().Volumes) == 0 {
+		return res
+	}
+
+	// OneShot jobs generate the path in the storage server for the user
+
+	args := []string{
+		"-p",
+	}
+	for _, v := range kg.deployment.GetMainApp().Volumes {
+		if v.ServerPath == "" {
+			continue
+		}
+
+		args = append(args, path.Join("/exports", v.ServerPath))
+	}
+
+	pvcName := deploymentRootPvcName(kg.deployment)
+	res = append(res, models.JobPublic{
+		Name:      fmt.Sprintf("create-storage-path-%s", kg.deployment.Name),
+		Namespace: kg.namespace,
+		Image:     "busybox",
+		Command:   []string{"/bin/mkdir"},
+		Args:      args,
+		Volumes: []models.Volume{
+			{
+				Name:      "storage",
+				PvcName:   &pvcName,
+				MountPath: "/exports",
+				Init:      false,
+			},
+		},
+		CreatedAt: time.Now(),
+	})
+
+	return res
+}
+
 func (kg *K8sGenerator) NetworkPolicies() []models.NetworkPolicyPublic {
 	res := make([]models.NetworkPolicyPublic, 0)
 
@@ -430,9 +490,19 @@ func deploymentPvName(deployment *model.Deployment, volumeName string) string {
 	return fmt.Sprintf("%s-%s", deployment.Name, makeValidK8sName(volumeName))
 }
 
+// deploymentRootPvName returns the root PV name for a deployment
+func deploymentRootPvName(deployment *model.Deployment) string {
+	return fmt.Sprintf("root-%s", deployment.Name)
+}
+
 // deploymentPvcName returns the PVC name for a deployment
 func deploymentPvcName(deployment *model.Deployment, volumeName string) string {
 	return fmt.Sprintf("%s-%s", deployment.Name, makeValidK8sName(volumeName))
+}
+
+// deploymentRootPvcName returns the root PVC name for a deployment
+func deploymentRootPvcName(deployment *model.Deployment) string {
+	return fmt.Sprintf("root-%s", deployment.Name)
 }
 
 // deploymentNetworkPolicyName returns the network policy name for a VM or Deployment

@@ -63,7 +63,7 @@ func (c *Client) Create(id string, params *model.SmCreateParams) error {
 
 	// Job
 	// These are run without saving to the database, as they will be deleted when completed
-	for _, jobPublic := range g.Jobs() {
+	for _, jobPublic := range g.OneShotJobs() {
 		err = kc.CreateOneShotJob(&jobPublic)
 		if err != nil {
 			return makeError(err)

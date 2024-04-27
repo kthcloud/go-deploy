@@ -133,12 +133,21 @@ func (c *Client) Create(id string, params *model.DeploymentCreateParams) error {
 		}
 	}
 
+	// HPA
 	for _, hpaPublic := range g.HPAs() {
 		err = resources.SsCreator(kc.CreateHPA).
 			WithDbFunc(dbFunc(id, "hpaMap."+hpaPublic.Name)).
 			WithPublic(&hpaPublic).
 			Exec()
 
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	// OneShotJobs
+	for _, jobPublic := range g.OneShotJobs() {
+		err = kc.CreateOneShotJob(&jobPublic)
 		if err != nil {
 			return makeError(err)
 		}
@@ -295,11 +304,24 @@ func (c *Client) Update(id string, params *model.DeploymentUpdateParams) error {
 		return nil
 	}
 
-	// Since K8s is immutable in many cases, we might need to recreate some resources
-	// This logic is already implemented in Repair, so we can just call that
-	err := c.Repair(id)
+	_, kc, g, err := c.Get(OptsAll(id))
 	if err != nil {
 		return makeError(err)
+	}
+
+	// Since K8s is immutable in many cases, we might need to recreate some resources
+	// This logic is already implemented in Repair, so we can just call that
+	err = c.Repair(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	// OneShotJobs
+	for _, jobPublic := range g.OneShotJobs() {
+		err = kc.CreateOneShotJob(&jobPublic)
+		if err != nil {
+			return makeError(err)
+		}
 	}
 
 	return nil
@@ -543,8 +565,8 @@ func (c *Client) Repair(id string) error {
 		}
 	}
 
-	// The following are special cases because of dependencies between pvcs, pvs and deployments.
-	// If we have any mismatch for pv or pvc, we need to delete and recreate everything
+	// The following are special cases because of dependencies between PVCs, PVs and deployments.
+	// If we have any mismatch for PV or PVC, we need to delete and recreate everything
 
 	anyMismatch := false
 
