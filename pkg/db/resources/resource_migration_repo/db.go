@@ -1,7 +1,6 @@
 package resource_migration_repo
 
 import (
-	"context"
 	"fmt"
 	"go-deploy/models/model"
 	"go-deploy/pkg/db"
@@ -9,7 +8,7 @@ import (
 	"time"
 )
 
-func (c *Client) Create(id, userID, resourceID, migrationType, resourceType, status string, params interface{}) (*model.ResourceMigration, error) {
+func (c *Client) Create(id, userID, resourceID, migrationType, resourceType string, code *string, status string, params interface{}) (*model.ResourceMigration, error) {
 	migration := &model.ResourceMigration{
 		ID:         id,
 		ResourceID: resourceID,
@@ -17,14 +16,29 @@ func (c *Client) Create(id, userID, resourceID, migrationType, resourceType, sta
 
 		Type:         migrationType,
 		ResourceType: resourceType,
+		Code:         code,
 
 		Status:    status,
 		CreatedAt: time.Now(),
-
-		Params: params,
 	}
 
-	_, err := c.Collection.InsertOne(context.TODO(), migration)
+	switch migrationType {
+	case model.ResourceMigrationTypeUpdateOwner:
+		updateOwnerParams, ok := params.(*model.ResourceMigrationUpdateOwnerParams)
+		if !ok {
+			return nil, fmt.Errorf("bad params for migration type %s", migrationType)
+		}
+
+		migration.UpdateOwner = &model.ResourceMigrationUpdateOwner{
+			NewOwnerID: updateOwnerParams.NewOwnerID,
+			OldOwnerID: updateOwnerParams.OldOwnerID,
+		}
+
+	default:
+		return nil, fmt.Errorf("bad migration type %s", migrationType)
+	}
+
+	err := c.CreateIfUnique(id, migration, bson.D{{"resourceId", resourceID}})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create migration. details: %w", err)
 	}
@@ -37,5 +51,5 @@ func (c *Client) Create(id, userID, resourceID, migrationType, resourceType, sta
 func (c *Client) UpdateWithParams(id string, params *model.ResourceMigrationUpdateParams) error {
 	update := bson.D{}
 	db.AddIfNotNil(&update, "status", params.Status)
-	return c.UpdateWithBsonByID(id, update)
+	return c.SetWithBsonByID(id, update)
 }

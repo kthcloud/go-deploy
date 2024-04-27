@@ -297,10 +297,10 @@ func (c *Client) Delete(id string) error {
 		return makeError(err)
 	}
 
-	err = k8s_service.New(c.Cache).Delete(id)
-	if err != nil {
-		return makeError(err)
-	}
+	//err = k8s_service.New(c.Cache).Delete(id)
+	//if err != nil {
+	//	return makeError(err)
+	//}
 
 	// CloudStack does not allow deleting VMs right now
 	// However, we don't allow creating new ones, so we can just keep the VMs in CloudStack
@@ -766,7 +766,6 @@ func (c *Client) GetHost(vmID string) (*model.Host, error) {
 
 	if host != nil {
 		return &model.Host{
-			ID:   host.ID,
 			Name: host.Name,
 		}, nil
 	}
@@ -791,7 +790,6 @@ func (c *Client) GetHost(vmID string) (*model.Host, error) {
 
 			if host != nil {
 				return &model.Host{
-					ID:   host.ID,
 					Name: host.Name,
 				}, nil
 			}

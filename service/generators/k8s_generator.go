@@ -31,8 +31,8 @@ type K8sGenerator interface {
 	// Secrets returns a list of models.SecretPublic that should be created
 	Secrets() []models.SecretPublic
 
-	// Jobs returns a list of models.JobPublic that should be created
-	Jobs() []models.JobPublic
+	// OneShotJobs returns a list of models.JobPublic that should be created
+	OneShotJobs() []models.JobPublic
 
 	// HPAs returns a list of models.HpaPublic that should be created
 	HPAs() []models.HpaPublic

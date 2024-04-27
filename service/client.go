@@ -8,9 +8,9 @@ import (
 )
 
 func V1(authInfo ...*core.AuthInfo) clients.V1 {
-	return v1.New(authInfo...)
+	return v1.New(v2.New(nil, authInfo...), authInfo...)
 }
 
 func V2(authInfo ...*core.AuthInfo) clients.V2 {
-	return v2.New(v1.New(authInfo...), authInfo...)
+	return v2.New(v1.New(nil, authInfo...), authInfo...)
 }

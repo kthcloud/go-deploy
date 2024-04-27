@@ -11,17 +11,18 @@ type ResourceMigrationRead struct {
 	ResourceType string `json:"resourceType"`
 	Status       string `json:"status"`
 
+	UpdateOwner *struct {
+		OwnerID string `json:"ownerId"`
+	} `json:"updateOwner,omitempty"`
+
 	CreatedAt time.Time  `json:"createdAt"`
 	DeletedAt *time.Time `json:"deletedAt,omitempty"`
 }
 
 type ResourceMigrationCreate struct {
-	Type string `json:"type" binding:"required"`
-
-	ResourceID string `json:"resourceID" binding:"required,uuid4"`
-
-	// TODO: this field is redundant, remove it
-	ResourceType string `json:"resourceType" binding:"required"`
+	Type       string  `json:"type" binding:"required"`
+	ResourceID string  `json:"resourceID" binding:"required,uuid4"`
+	Status     *string `json:"status" binding:"required"`
 
 	UpdateOwner *struct {
 		OwnerID string `json:"ownerId" binding:"required,uuid4"`
@@ -29,21 +30,22 @@ type ResourceMigrationCreate struct {
 }
 
 type ResourceMigrationUpdate struct {
-	Status string  `json:"status"`
-	Token  *string `json:"token,omitempty"`
+	Status string  `json:"status" binding:"required"`
+	Code   *string `json:"code,omitempty"`
 }
 
 type ResourceMigrationCreated struct {
-	ID    string `json:"id"`
-	JobID string `json:"jobId"`
+	ResourceMigrationRead `json:",inline"`
+
+	// JobID is the ID of the job that was created for the resource migration.
+	// Only if the migration was created with status 'accepted' a job will be created.
+	JobID *string `json:"jobId,omitempty"`
 }
 
 type ResourceMigrationUpdated struct {
-	ID    string `json:"id"`
-	JobID string `json:"jobId"`
-}
+	ResourceMigrationRead `json:",inline"`
 
-type ResourceMigrationDeleted struct {
-	ID    string `json:"id"`
-	JobID string `json:"jobId"`
+	// JobID is the ID of the job that was created for the resource migration.
+	// Only if the migration was updated with status 'accepted' a job will be created.
+	JobID *string `json:"jobId,omitempty"`
 }

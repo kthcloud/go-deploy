@@ -29,10 +29,9 @@ type Deployments interface {
 	List(opts ...dOpts.ListOpts) ([]model.Deployment, error)
 	Create(id, userID string, dtoDeploymentCreate *body.DeploymentCreate) error
 	Update(id string, dtoDeploymentUpdate *body.DeploymentUpdate) error
+	UpdateOwner(id string, params *model.DeploymentUpdateOwnerParams) error
 	Delete(id string) error
 	Repair(id string) error
-
-	UpdateOwner(id string, params *body.DeploymentUpdateOwner) error
 
 	Restart(id string) error
 	DoCommand(id string, command string)
@@ -88,7 +87,7 @@ type SMs interface {
 	Exists(userID string) (bool, error)
 
 	GetZone() *configModels.Zone
-	GetURL(userID string) *string
+	GetUrlByUserID(userID string) *string
 
 	K8s() *smK8sService.Client
 }
@@ -174,16 +173,17 @@ type VMs interface {
 }
 
 type Zones interface {
-	List(opts ...zoneOpts.ListOpts) ([]model.Zone, error)
-	Get(name string) *model.Zone
-	GetLegacy(name string) *model.Zone
+	Get(name string) *configModels.Zone
+	GetLegacy(name string) *configModels.LegacyZone
+	List(opts ...zoneOpts.ListOpts) ([]configModels.Zone, error)
+	ListLegacy(opts ...zoneOpts.ListOpts) ([]configModels.LegacyZone, error)
 	HasCapability(zoneName, capability string) bool
 }
 
 type ResourceMigrations interface {
 	Get(id string, opts ...resourceMigrationOpts.GetOpts) (*model.ResourceMigration, error)
 	List(opts ...resourceMigrationOpts.ListOpts) ([]model.ResourceMigration, error)
-	Create(id string, userID string, dtoResourceMigrationCreate *body.ResourceMigrationCreate) error
-	Update(id string, dtoResourceMigrationUpdate *body.ResourceMigrationUpdate) error
+	Create(id, userID string, migrationCreate *body.ResourceMigrationCreate) (*model.ResourceMigration, *string, error)
+	Update(id string, migrationUpdate *body.ResourceMigrationUpdate, opts ...resourceMigrationOpts.UpdateOpts) (*model.ResourceMigration, *string, error)
 	Delete(id string) error
 }

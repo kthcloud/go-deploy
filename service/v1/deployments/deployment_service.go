@@ -31,11 +31,11 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.Deployment, error)
 
 	dmc := deployment_repo.New()
 
-	if o.MigrationToken != nil {
+	if o.MigrationCode != nil {
 		rmc := resource_migration_repo.New().
 			WithType(model.ResourceMigrationTypeUpdateOwner).
 			WithResourceType(model.ResourceMigrationResourceTypeDeployment).
-			WithTransferCode(*o.MigrationToken)
+			WithTransferCode(*o.MigrationCode)
 
 		migration, err := rmc.Get()
 		if err != nil {
@@ -240,9 +240,6 @@ func (c *Client) Create(id, ownerID string, deploymentCreate *body.DeploymentCre
 	return nil
 }
 
-// kubernetes.io/metadata.name
-// owner-id: 955f0f87-37fd-4792-90eb-9bf6989e698a
-
 // Update updates an existing deployment.
 //
 // It returns an error if the deployment is not found.
@@ -312,7 +309,7 @@ func (c *Client) Update(id string, dtoUpdate *body.DeploymentUpdate) error {
 // This is the second step of the owner update process, where the transfer is actually done.
 //
 // It returns an error if the deployment is not found.
-func (c *Client) UpdateOwner(id string, params *body.DeploymentUpdateOwner) error {
+func (c *Client) UpdateOwner(id string, params *model.DeploymentUpdateOwnerParams) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to update deployment owner. details: %w", err)
 	}

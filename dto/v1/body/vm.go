@@ -43,9 +43,6 @@ type VmUpdate struct {
 
 	GpuID      *string `json:"gpuId,omitempty" bson:"gpuId,omitempty" binding:"omitempty,min=0,max=100"`
 	NoLeaseEnd *bool   `json:"noLeaseEnd,omitempty" bson:"noLeaseEnd,omitempty" binding:"omitempty"`
-
-	OwnerID      *string `json:"ownerId,omitempty" bson:"ownerId,omitempty" binding:"omitempty"`
-	TransferCode *string `json:"transferCode,omitempty" bson:"transferCode,omitempty" binding:"omitempty,min=1,max=1000"`
 }
 
 type VmUpdateOwner struct {

@@ -19,7 +19,7 @@ type PortUpdate struct {
 	Name      string           `json:"name,omitempty" bson:"name" binding:"required,min=1,max=100"`
 	Port      int              `json:"port,omitempty" bson:"port" binding:"required,min=1,max=65535"`
 	Protocol  string           `json:"protocol,omitempty" bson:"protocol," binding:"required,oneof=tcp udp"`
-	HttpProxy *HttpProxyUpdate `json:"httpProxy,omitempty" bson:"httpProxy,omitempty" binding:"omitempty,dive"`
+	HttpProxy *HttpProxyUpdate `json:"httpProxy,omitempty" bson:"httpProxy,omitempty" binding:"omitempty"`
 }
 
 type CustomDomainRead struct {

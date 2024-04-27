@@ -16,7 +16,7 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.Job, error) {
 	jmc := job_repo.New()
 
 	if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
-		jmc.RestrictToUser(c.V1.Auth().UserID)
+		jmc.WithUserID(c.V1.Auth().UserID)
 	}
 
 	return c.Job(id, jmc)
@@ -53,7 +53,7 @@ func (c *Client) List(opt ...opts.ListOpts) ([]model.Job, error) {
 	}
 
 	if effectiveUserID != "" {
-		jmc.RestrictToUser(effectiveUserID)
+		jmc.WithUserID(effectiveUserID)
 	}
 
 	if len(o.JobTypes) > 0 {

@@ -1,7 +1,6 @@
 package model
 
 type Host struct {
-	ID   string `bson:"id"`
 	Name string `bson:"name"`
 }
 
@@ -27,11 +26,6 @@ type VmUsage struct {
 	RAM       int `bson:"ram"`
 	DiskSize  int `bson:"diskSize"`
 	Snapshots int `bson:"snapshots"`
-}
-
-type VmTransfer struct {
-	Code   string `bson:"code"`
-	UserID string `bson:"userId"`
 }
 
 type CloudStackHostCapabilities struct {

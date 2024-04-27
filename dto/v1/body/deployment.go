@@ -70,10 +70,6 @@ type DeploymentUpdate struct {
 	Image           *string   `json:"image,omitempty,omitempty" bson:"image,omitempty" binding:"omitempty,min=1,max=1000"`
 	HealthCheckPath *string   `json:"healthCheckPath,omitempty" bson:"healthCheckPath,omitempty" binding:"omitempty,min=0,max=1000,health_check_path"`
 	Replicas        *int      `json:"replicas,omitempty" bson:"replicas,omitempty" binding:"omitempty,min=0,max=100"`
-
-	// update owner
-	OwnerID      *string `json:"ownerId,omitempty" bson:"ownerId,omitempty" binding:"omitempty"`
-	TransferCode *string `json:"transferCode,omitempty" bson:"transferCode,omitempty" binding:"omitempty,min=1,max=1000"`
 }
 
 type Env struct {
@@ -85,12 +81,6 @@ type Volume struct {
 	Name       string `json:"name" bson:"name" binding:"required,volume_name,min=3,max=30"`
 	AppPath    string `json:"appPath" bson:"appPath" binding:"required,min=1,max=255"`
 	ServerPath string `json:"serverPath" bson:"serverPath" binding:"required,min=1,max=255"`
-}
-
-type DeploymentUpdateOwner struct {
-	NewOwnerID   string  `json:"newOwnerId" bson:"newOwnerId" binding:"required,uuid4"`
-	OldOwnerID   string  `json:"oldOwnerId" bson:"oldOwnerId" binding:"required,uuid4"`
-	TransferCode *string `json:"transferCode,omitempty" bson:"transferCode,omitempty" binding:"omitempty,min=1,max=1000"`
 }
 
 type DeploymentBuild struct {

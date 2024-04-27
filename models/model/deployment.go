@@ -28,10 +28,7 @@ type Deployment struct {
 	Subsystems DeploymentSubsystems `bson:"subsystems"`
 	Logs       []Log                `bson:"logs"`
 
-	StatusMessage string `bson:"statusMessage"`
-	StatusCode    int    `bson:"statusCode"`
-
-	Transfer *DeploymentTransfer `bson:"transfer,omitempty"`
+	Status string `bson:"status"`
 }
 
 // GetMainApp returns the main app of the deployment.

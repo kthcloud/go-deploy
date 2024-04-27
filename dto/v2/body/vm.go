@@ -3,11 +3,12 @@ package body
 import "time"
 
 type VmRead struct {
-	ID      string  `json:"id"`
-	Name    string  `json:"name"`
-	OwnerID string  `json:"ownerId"`
-	Zone    string  `json:"zone"`
-	Host    *string `json:"host,omitempty"`
+	ID           string  `json:"id"`
+	Name         string  `json:"name"`
+	InternalName *string `json:"internalName,omitempty"`
+	OwnerID      string  `json:"ownerId"`
+	Zone         string  `json:"zone"`
+	Host         *string `json:"host,omitempty"`
 
 	CreatedAt  time.Time  `json:"createdAt"`
 	UpdatedAt  *time.Time `json:"updatedAt,omitempty"`

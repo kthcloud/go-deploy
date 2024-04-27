@@ -12,9 +12,7 @@ const (
 	ResourceMigrationResourceTypeDeployment = "deployment"
 
 	ResourceMigrationStatusPending  = "pending"
-	ResourceMigrationStatusReady    = "ready"
-	ResourceMigrationStatusRunning  = "running"
-	ResourceMigrationStatusComplete = "complete"
+	ResourceMigrationStatusAccepted = "accepted"
 )
 
 type ResourceMigration struct {
@@ -26,30 +24,27 @@ type ResourceMigration struct {
 	ResourceType string `bson:"resourceType"`
 	Status       string `bson:"status"`
 
-	Token *string `bson:"token"`
+	Code *string `bson:"code"`
 
 	CreatedAt time.Time  `bson:"createdAt"`
 	DeletedAt *time.Time `bson:"deletedAt,omitempty"`
 
-	Params interface{} `bson:"params"`
+	UpdateOwner *ResourceMigrationUpdateOwner `bson:"updateOwner,omitempty"`
+}
+
+type ResourceMigrationUpdateOwner struct {
+	NewOwnerID string
+	OldOwnerID string
 }
 
 type ResourceMigrationUpdateOwnerParams struct {
-	OwnerID string `bson:"ownerId"`
-}
-
-// AsUpdateOwnerParams returns the params as an update owner params struct.
-func (r *ResourceMigration) AsUpdateOwnerParams() *ResourceMigrationUpdateOwnerParams {
-	if r.Type != ResourceMigrationTypeUpdateOwner {
-		panic("cannot convert migration to update owner params")
-	}
-
-	return r.Params.(*ResourceMigrationUpdateOwnerParams)
+	NewOwnerID string
+	OldOwnerID string
 }
 
 // ToDTO returns the resource migration to a body.ResourceMigrationDTO
-func (r *ResourceMigration) ToDTO() *body.ResourceMigrationRead {
-	return &body.ResourceMigrationRead{
+func (r *ResourceMigration) ToDTO() body.ResourceMigrationRead {
+	return body.ResourceMigrationRead{
 		ID:         r.ID,
 		ResourceID: r.ResourceID,
 		UserID:     r.UserID,
@@ -57,6 +52,12 @@ func (r *ResourceMigration) ToDTO() *body.ResourceMigrationRead {
 		Type:         r.Type,
 		ResourceType: r.ResourceType,
 		Status:       r.Status,
+
+		UpdateOwner: &struct {
+			OwnerID string `json:"ownerId"`
+		}{
+			OwnerID: r.UpdateOwner.NewOwnerID,
+		},
 
 		CreatedAt: r.CreatedAt,
 		DeletedAt: r.DeletedAt,

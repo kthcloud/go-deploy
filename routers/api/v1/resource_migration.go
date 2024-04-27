@@ -1,15 +1,16 @@
 package v1
 
 import (
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"go-deploy/dto/v1/body"
 	"go-deploy/dto/v1/query"
 	"go-deploy/dto/v1/uri"
-	"go-deploy/models/model"
-	"go-deploy/models/version"
 	"go-deploy/pkg/sys"
 	"go-deploy/service"
+	sErrors "go-deploy/service/errors"
+	"go-deploy/service/v1/resource_migrations/opts"
 	"net/http"
 )
 
@@ -43,6 +44,11 @@ func GetResourceMigration(c *gin.Context) {
 	resourceMigration, err := service.V1(auth).ResourceMigrations().Get(requestQuery.ResourceMigrationID)
 	if err != nil {
 		context.ServerError(err, InternalError)
+		return
+	}
+
+	if resourceMigration == nil {
+		context.NotFound("Resource migration not found")
 		return
 	}
 
@@ -101,7 +107,7 @@ func ListResourceMigrations(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param body body body.ResourceMigrationCreate true "Resource Migration Create"
-// @Success 201 {object} body.ResourceMigrationRead
+// @Success 200 {object} body.ResourceMigrationCreated
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 401 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
@@ -123,23 +129,39 @@ func CreateResourceMigration(c *gin.Context) {
 
 	deployV1 := service.V1(auth)
 
-	resourceMigrationID := uuid.New().String()
-	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobCreateResourceMigration, version.V1, map[string]interface{}{
-		"id":       resourceMigrationID,
-		"userId":   auth.UserID,
-		"params":   requestBody,
-		"authInfo": auth,
-	})
-
+	resourceMigration, jobID, err := deployV1.ResourceMigrations().Create(uuid.New().String(), auth.UserID, &requestBody)
 	if err != nil {
+		switch {
+		case errors.Is(err, sErrors.ResourceMigrationAlreadyExistsErr):
+			context.UserError("Resource migration already exists")
+			return
+		case errors.Is(err, sErrors.BadResourceMigrationParamsErr):
+			context.UserError("Bad resource migration params")
+			return
+		case errors.Is(err, sErrors.BadResourceMigrationStatusErr):
+			context.UserError("Bad resource migration status")
+			return
+		case errors.Is(err, sErrors.BadResourceMigrationTypeErr):
+			context.UserError("Bad resource migration type")
+			return
+		case errors.Is(err, sErrors.BadResourceMigrationResourceTypeErr):
+			context.UserError("Bad resource migration resource type")
+			return
+		case errors.Is(err, sErrors.ResourceNotFoundErr):
+			context.UserError("Resource not found")
+			return
+		case errors.Is(err, sErrors.AlreadyMigratedErr):
+			context.UserError("Resource already migrated")
+			return
+		}
+
 		context.ServerError(err, InternalError)
 		return
 	}
 
 	context.Ok(body.ResourceMigrationCreated{
-		ID:    resourceMigrationID,
-		JobID: jobID,
+		ResourceMigrationRead: resourceMigration.ToDTO(),
+		JobID:                 jobID,
 	})
 }
 
@@ -151,7 +173,7 @@ func CreateResourceMigration(c *gin.Context) {
 // @Produce  json
 // @Param resourceMigrationId path string true "Resource Migration ID"
 // @Param body body body.ResourceMigrationUpdate true "Resource Migration Update"
-// @Success 200 {object} body.ResourceMigrationRead
+// @Success 200 {object} body.ResourceMigrationUpdated
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 401 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
@@ -161,12 +183,6 @@ func UpdateResourceMigration(c *gin.Context) {
 
 	var requestURI uri.ResourceMigrationUpdate
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.BindingError(CreateBindingError(err))
-		return
-	}
-
-	var requestQuery body.ResourceMigrationUpdate
-	if err := context.GinContext.ShouldBindJSON(&requestQuery); err != nil {
 		context.BindingError(CreateBindingError(err))
 		return
 	}
@@ -185,7 +201,9 @@ func UpdateResourceMigration(c *gin.Context) {
 
 	deployV1 := service.V1(auth)
 
-	resourceMigration, err := deployV1.ResourceMigrations().Get(requestURI.ResourceMigrationID)
+	resourceMigration, err := deployV1.ResourceMigrations().Get(requestURI.ResourceMigrationID, opts.GetOpts{
+		MigrationCode: requestBody.Code,
+	})
 	if err != nil {
 		context.ServerError(err, InternalError)
 		return
@@ -196,21 +214,53 @@ func UpdateResourceMigration(c *gin.Context) {
 		return
 	}
 
-	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobUpdateResourceMigration, version.V1, map[string]interface{}{
-		"id":       resourceMigration.ID,
-		"params":   requestBody,
-		"authInfo": auth,
+	var jobID *string
+	resourceMigration, jobID, err = deployV1.ResourceMigrations().Update(resourceMigration.ID, &requestBody, opts.UpdateOpts{
+		MigrationCode: requestBody.Code,
 	})
-
 	if err != nil {
+		switch {
+		case errors.Is(err, sErrors.ResourceMigrationNotFoundErr):
+			context.NotFound("Resource migration not found")
+			return
+		case errors.Is(err, sErrors.AlreadyAcceptedErr):
+			context.UserError("Resource migration already accepted")
+			return
+		case errors.Is(err, sErrors.AlreadyMigratedErr):
+			context.UserError("Resource already migrated")
+			return
+		case errors.Is(err, sErrors.BadResourceMigrationParamsErr):
+			context.UserError("Bad resource migration params")
+			return
+		case errors.Is(err, sErrors.BadResourceMigrationStatusErr):
+			context.UserError("Bad resource migration status")
+			return
+		case errors.Is(err, sErrors.BadResourceMigrationTypeErr):
+			context.UserError("Bad resource migration type")
+			return
+		case errors.Is(err, sErrors.BadResourceMigrationResourceTypeErr):
+			context.UserError("Bad resource migration resource type")
+			return
+		case errors.Is(err, sErrors.ResourceNotFoundErr):
+			context.UserError("Resource not found")
+			return
+		case errors.Is(err, sErrors.BadMigrationCodeErr):
+			context.UserError("Bad migration code")
+			return
+		}
+
 		context.ServerError(err, InternalError)
 		return
 	}
 
+	if resourceMigration == nil {
+		context.NotFound("Resource migration not found")
+		return
+	}
+
 	context.Ok(body.ResourceMigrationUpdated{
-		ID:    resourceMigration.ID,
-		JobID: jobID,
+		ResourceMigrationRead: resourceMigration.ToDTO(),
+		JobID:                 jobID,
 	})
 }
 
@@ -221,7 +271,7 @@ func UpdateResourceMigration(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param resourceMigrationId path string true "Resource Migration ID"
-// @Success 204 {object} sys.EmptyResponse
+// @Success 204 "No Content"
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 401 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
@@ -254,19 +304,16 @@ func DeleteResourceMigration(c *gin.Context) {
 		return
 	}
 
-	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobDeleteResourceMigration, version.V1, map[string]interface{}{
-		"id":       resourceMigration.ID,
-		"authInfo": auth,
-	})
+	err = deployV1.ResourceMigrations().Delete(resourceMigration.ID)
+	if err != nil {
+		context.ServerError(err, InternalError)
+		return
+	}
 
 	if err != nil {
 		context.ServerError(err, InternalError)
 		return
 	}
 
-	context.Ok(body.ResourceMigrationDeleted{
-		ID:    resourceMigration.ID,
-		JobID: jobID,
-	})
+	context.OkNoContent()
 }

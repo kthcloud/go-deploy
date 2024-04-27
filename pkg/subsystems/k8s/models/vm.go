@@ -7,9 +7,10 @@ import (
 )
 
 type VmPublic struct {
-	ID        string `bson:"id"`
-	Name      string `bson:"name"`
-	Namespace string `bson:"namespace"`
+	ID        string            `bson:"id"`
+	Name      string            `bson:"name"`
+	Namespace string            `bson:"namespace"`
+	Labels    map[string]string `bson:"labels"`
 
 	CpuCores int      `bson:"cpuCores"`
 	RAM      int      `bson:"memory"`
@@ -84,13 +85,20 @@ func CreateVmPublicFromRead(vm *kubevirtv1.VirtualMachine) *VmPublic {
 		}
 	}
 
+	gpus := make([]string, 0)
+	for _, gpu := range vm.Spec.Template.Spec.Domain.Devices.GPUs {
+		gpus = append(gpus, gpu.DeviceName)
+	}
+
 	return &VmPublic{
 		ID:        vm.Name,
 		Name:      name,
 		Namespace: vm.Namespace,
+		Labels:    clearSystemLabels(vm.Labels),
 		CpuCores:  cpuCores,
 		RAM:       ram,
 		DiskSize:  diskSize,
+		GPUs:      gpus,
 		CloudInit: cloudInit,
 		Image:     image,
 		Running:   running,

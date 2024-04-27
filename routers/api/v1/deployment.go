@@ -40,7 +40,7 @@ func GetDeployment(c *gin.Context) {
 	}
 
 	var requestQuery query.DeploymentGet
-	if err := context.GinContext.Bind(&requestQuery); err != nil {
+	if err := context.GinContext.ShouldBind(&requestQuery); err != nil {
 		context.BindingError(CreateBindingError(err))
 		return
 	}
@@ -54,8 +54,8 @@ func GetDeployment(c *gin.Context) {
 	deployV1 := service.V1(auth)
 
 	var deployment *model.Deployment
-	if requestQuery.MigrationToken != nil {
-		deployment, err = deployV1.Deployments().Get(requestURI.DeploymentID, opts.GetOpts{MigrationToken: requestQuery.MigrationToken})
+	if requestQuery.MigrationCode != nil {
+		deployment, err = deployV1.Deployments().Get(requestURI.DeploymentID, opts.GetOpts{MigrationCode: requestQuery.MigrationCode})
 	} else {
 		deployment, err = deployV1.Deployments().Get(requestURI.DeploymentID, opts.GetOpts{Shared: true})
 	}
@@ -71,7 +71,7 @@ func GetDeployment(c *gin.Context) {
 	}
 
 	teamIDs, _ := deployV1.Teams().ListIDs(teamOpts.ListOpts{ResourceID: deployment.ID})
-	context.Ok(deployment.ToDTO(deployV1.SMs().GetURL(deployment.OwnerID), teamIDs))
+	context.Ok(deployment.ToDTO(deployV1.SMs().GetUrlByUserID(deployment.OwnerID), teamIDs))
 }
 
 // ListDeployments
@@ -94,7 +94,7 @@ func ListDeployments(c *gin.Context) {
 	context := sys.NewContext(c)
 
 	var requestQuery query.DeploymentList
-	if err := context.GinContext.Bind(&requestQuery); err != nil {
+	if err := context.GinContext.ShouldBind(&requestQuery); err != nil {
 		context.BindingError(CreateBindingError(err))
 		return
 	}
@@ -132,7 +132,7 @@ func ListDeployments(c *gin.Context) {
 	dtoDeployments := make([]body.DeploymentRead, len(deployments))
 	for i, deployment := range deployments {
 		teamIDs, _ := deployV1.Teams().ListIDs(teamOpts.ListOpts{ResourceID: deployment.ID})
-		dtoDeployments[i] = deployment.ToDTO(deployV1.SMs().GetURL(deployment.OwnerID), teamIDs)
+		dtoDeployments[i] = deployment.ToDTO(deployV1.SMs().GetUrlByUserID(deployment.OwnerID), teamIDs)
 	}
 
 	context.JSONResponse(200, dtoDeployments)

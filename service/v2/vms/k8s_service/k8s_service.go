@@ -161,7 +161,7 @@ func (c *Client) Delete(id string, overwriteUserID ...string) error {
 	log.Println("Deleting K8s for", id)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to delete k8s for deployment %s. details: %w", id, err)
+		return fmt.Errorf("failed to delete k8s for vm %s. details: %w", id, err)
 	}
 
 	var userID string
@@ -637,7 +637,7 @@ func (c *Client) EnsureOwner(id, oldOwnerID string) error {
 		return fmt.Errorf("failed to update k8s owner for vm %s. details: %w", id, err)
 	}
 
-	// Since ownership is determined by the user-id label, we need to relabel everything
+	// Since ownership is determined by the user-id label, we simply need to relabel everything
 	// This is simply done by repairing the K8s setup
 
 	err := c.Repair(id)
@@ -688,7 +688,7 @@ func (c *Client) Synchronize(zoneName string, gpuGroups []model.GpuGroup) error 
 
 // SetupStatusWatcher sets up a status watcher for a zone.
 // For every status change, it triggers the callback.
-func (c *Client) SetupStatusWatcher(ctx context.Context, zone *configModels.Zone, resourceType string, callback func(string, string)) error {
+func (c *Client) SetupStatusWatcher(ctx context.Context, zone *configModels.Zone, resourceType string, callback func(string, interface{})) error {
 	_, kc, _, err := c.Get(OptsOnlyClient(zone.Name))
 	if err != nil {
 		return err

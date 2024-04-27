@@ -7,8 +7,8 @@ import (
 // GetRole returns the role with the given name.
 // If the role is not found, nil is returned.
 // All roles are loaded locally by the configuration file
-func (e *ConfigType) GetRole(roleName string) *model.Role {
-	for _, role := range e.Roles {
+func (c *ConfigType) GetRole(roleName string) *model.Role {
+	for _, role := range c.Roles {
 		if role.Name == roleName {
 			return &role
 		}
@@ -20,10 +20,10 @@ func (e *ConfigType) GetRole(roleName string) *model.Role {
 // GetRolesByIamGroups returns all roles with an IAM group matching.
 // If no roles are found, an empty slice is returned.
 // All roles are loaded locally by the configuration file
-func (e *ConfigType) GetRolesByIamGroups(iamGroups []string) []model.Role {
+func (c *ConfigType) GetRolesByIamGroups(iamGroups []string) []model.Role {
 	var roles []model.Role
 
-	for _, role := range e.Roles {
+	for _, role := range c.Roles {
 		for _, iamGroup := range iamGroups {
 			if role.IamGroup == iamGroup {
 				roles = append(roles, role)
@@ -37,8 +37,8 @@ func (e *ConfigType) GetRolesByIamGroups(iamGroups []string) []model.Role {
 // GetZone returns the Zone with the given name.
 // If the zone is not found, nil is returned.
 // All zones are loaded locally by the configuration file
-func (d *ConfigType) GetZone(name string) *Zone {
-	for _, zone := range d.Zones {
+func (c *ConfigType) GetZone(name string) *Zone {
+	for _, zone := range c.Zones {
 		if zone.Name == name {
 			return &zone
 		}
@@ -49,8 +49,8 @@ func (d *ConfigType) GetZone(name string) *Zone {
 // HasCapability returns true if the deployment zone has the given capability.
 // If the capability is not found, false is returned.
 // All capabilities are loaded locally by the configuration file
-func (d *Zone) HasCapability(capability string) bool {
-	for _, c := range d.Capabilities {
+func (z *Zone) HasCapability(capability string) bool {
+	for _, c := range z.Capabilities {
 		if c == capability {
 			return true
 		}

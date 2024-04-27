@@ -106,7 +106,7 @@ func (deployment *Deployment) ToDTO(smURL *string, teams []string) body.Deployme
 		CustomDomainSecret: customDomainSecret,
 		CustomDomainStatus: customDomainStatus,
 
-		Status:       deployment.StatusMessage,
+		Status:       deployment.Status,
 		PingResult:   pingResult,
 		Integrations: make([]string, 0),
 

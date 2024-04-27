@@ -32,3 +32,8 @@ type DeploymentUpdateParams struct {
 	PingPath     *string
 	Replicas     *int
 }
+
+type DeploymentUpdateOwnerParams struct {
+	NewOwnerID string
+	OldOwnerID string
+}

@@ -136,17 +136,6 @@ func jobMapper() map[string]map[string]JobDefinition {
 		model.JobRepairSM: {
 			JobFunc: v1.RepairSM,
 		},
-
-		// Resource Migration
-		model.JobCreateResourceMigration: {
-			JobFunc: v1.CreateResourceMigration,
-		},
-		model.JobUpdateResourceMigration: {
-			JobFunc: v1.UpdateResourceMigration,
-		},
-		model.JobDeleteResourceMigration: {
-			JobFunc: v1.DeleteResourceMigration,
-		},
 	}
 
 	v2Defs := map[string]JobDefinition{
@@ -217,6 +206,14 @@ func jobMapper() map[string]map[string]JobDefinition {
 		},
 		model.JobDoVmAction: {
 			JobFunc:       v2.DoVmAction,
+			TerminateFunc: leafJobVM.Build(),
+		},
+		model.JobUpdateVmOwner: {
+			JobFunc:       v2.UpdateVmOwner,
+			TerminateFunc: coreJobVM.Build(),
+		},
+		model.JobRepairVM: {
+			JobFunc:       v2.RepairVM,
 			TerminateFunc: leafJobVM.Build(),
 		},
 	}

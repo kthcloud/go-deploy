@@ -23,7 +23,7 @@ import (
 // @Param Authorization header string false "Basic auth token"
 // @Param body body body.HarborWebhook true "Harbor webhook body"
 // @Produce  json
-// @Success 204 {empty} empty
+// @Success 204 "No Content"
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 401 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse

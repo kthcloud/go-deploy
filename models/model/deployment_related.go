@@ -56,11 +56,6 @@ type DeploymentVolume struct {
 	ServerPath string `bson:"serverPath"`
 }
 
-type DeploymentTransfer struct {
-	Code   string `bson:"code"`
-	UserID string `bson:"userId"`
-}
-
 type DeploymentUsage struct {
 	Count int
 }

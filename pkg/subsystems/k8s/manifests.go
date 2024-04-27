@@ -502,7 +502,6 @@ func CreateVmManifest(public *models.VmPublic, resourceVersion ...string) *kubev
 	var gpus []kubevirtv1.GPU
 
 	name := public.ID
-	deployName := public.Name
 
 	if len(resourceVersion) > 0 {
 		version = resourceVersion[0]
@@ -532,13 +531,17 @@ func CreateVmManifest(public *models.VmPublic, resourceVersion ...string) *kubev
 		}
 	}
 
+	labels := public.Labels
+	if labels == nil {
+		labels = make(map[string]string)
+	}
+	labels[keys.LabelDeployName] = public.Name
+
 	return &kubevirtv1.VirtualMachine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: public.Namespace,
-			Labels: map[string]string{
-				keys.LabelDeployName: deployName,
-			},
+			Labels:    labels,
 			Annotations: map[string]string{
 				keys.AnnotationCreationTimestamp: public.CreatedAt.Format(timeFormat),
 			},
@@ -548,10 +551,8 @@ func CreateVmManifest(public *models.VmPublic, resourceVersion ...string) *kubev
 			Running: &public.Running,
 			Template: &kubevirtv1.VirtualMachineInstanceTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: name,
-					Labels: map[string]string{
-						keys.LabelDeployName: deployName,
-					},
+					Name:   name,
+					Labels: labels,
 					Annotations: map[string]string{
 						keys.AnnotationCreationTimestamp: public.CreatedAt.Format(timeFormat),
 					},

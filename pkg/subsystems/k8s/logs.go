@@ -266,7 +266,6 @@ func getK8sLogStream(client *Client, namespace, podName string, history int) (io
 
 	logStream, err := podLogsConnection.Stream(context.Background())
 	if err != nil {
-		utils.PrettyPrintError(fmt.Errorf("failed to create k8s log stream for pod %s. details: %w", podName, err))
 		return nil, err
 	}
 

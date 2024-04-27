@@ -251,7 +251,7 @@ func UpdatingOwner(job *model.Job) (bool, error) {
 // OnlyCreateSnapshotPerUser is a helper function that returns true if there is a snapshot job for the user.
 func OnlyCreateSnapshotPerUser(job *model.Job) (bool, error) {
 	anySnapshotJob, err := job_repo.New().
-		RestrictToUser(job.UserID).
+		WithUserID(job.UserID).
 		ExcludeIDs(job.ID).
 		IncludeTypes(model.JobCreateVmUserSnapshot).
 		ExcludeStatus(model.JobStatusCompleted, model.JobStatusTerminated).

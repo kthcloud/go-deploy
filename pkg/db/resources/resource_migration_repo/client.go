@@ -45,14 +45,14 @@ func (c *Client) WithResourceType(resourceType string) *Client {
 
 // WithResourceID adds a filter to the client to only include resource migrations with the given resource ID.
 func (c *Client) WithResourceID(resourceID string) *Client {
-	c.ResourceClient.AddExtraFilter(bson.D{{"resourceID", resourceID}})
+	c.ResourceClient.AddExtraFilter(bson.D{{"resourceId", resourceID}})
 
 	return c
 }
 
 // WithUserID adds a filter to the client to only include resource migrations with the given user ID.
 func (c *Client) WithUserID(userID string) *Client {
-	c.ResourceClient.AddExtraFilter(bson.D{{"userID", userID}})
+	c.ResourceClient.AddExtraFilter(bson.D{{"userId", userID}})
 
 	return c
 }
@@ -61,6 +61,20 @@ func (c *Client) WithUserID(userID string) *Client {
 // This is only applicable to migrations with the type model.ResourceMigrationTypeUpdateOwner
 func (c *Client) WithTransferCode(transferCode string) *Client {
 	c.ResourceClient.AddExtraFilter(bson.D{{"params.transferCode", transferCode}})
+
+	return c
+}
+
+// WithStatus adds a filter to the client to only include resource migrations with the given status.
+func (c *Client) WithStatus(status string) *Client {
+	c.ResourceClient.AddExtraFilter(bson.D{{"status", status}})
+
+	return c
+}
+
+// WithCode adds a filter to the client to only include resource migrations with the given code.
+func (c *Client) WithCode(code string) *Client {
+	c.ResourceClient.AddExtraFilter(bson.D{{"code", code}})
 
 	return c
 }

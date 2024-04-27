@@ -142,6 +142,19 @@ func (client *ResourceClient[T]) UnsetWithBsonByID(id string, fields ...string) 
 	return client.UpdateWithBsonByID(id, update)
 }
 
+// UnsetWithBsonByName unsets the given fields from a model with the given name.
+func (client *ResourceClient[T]) UnsetWithBsonByName(name string, fields ...string) error {
+	update := bson.D{
+		{"$unset", bson.D{}},
+	}
+
+	for _, field := range fields {
+		update[0].Value = append(update[0].Value.(bson.D), bson.E{Key: field, Value: ""})
+	}
+
+	return client.UpdateWithBsonByName(name, update)
+}
+
 // SetWithBSON sets the given fields to the given values in a model.
 func (client *ResourceClient[T]) SetWithBSON(update bson.D) error {
 	return client.UpdateWithBSON(bson.D{{"$set", update}})
