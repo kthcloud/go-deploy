@@ -189,7 +189,7 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 		res = append(res, models.IngressPublic{
 			Name:         vmProxyIngressName(kg.vm, port.HttpProxy.Name),
 			Namespace:    kg.namespace,
-			ServiceName:  vmServiceName(kg.vm, vmPfrName(port.Port, port.Protocol)),
+			ServiceName:  vmProxyServiceName(kg.vm, vmPfrName(port.Port, port.Protocol)),
 			ServicePort:  8080,
 			IngressClass: config.Config.Deployment.IngressClass,
 			Hosts:        []string{vmProxyExternalURL(port.HttpProxy.Name, kg.zone)},
@@ -201,7 +201,7 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 			res = append(res, models.IngressPublic{
 				Name:         vmProxyCustomDomainIngressName(kg.vm, port.HttpProxy.Name),
 				Namespace:    kg.namespace,
-				ServiceName:  vmServiceName(kg.vm, vmPfrName(port.Port, port.Protocol)),
+				ServiceName:  vmProxyServiceName(kg.vm, vmPfrName(port.Port, port.Protocol)),
 				ServicePort:  8080,
 				IngressClass: config.Config.Deployment.IngressClass,
 				Hosts:        []string{port.HttpProxy.CustomDomain.Domain},
