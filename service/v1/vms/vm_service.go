@@ -351,7 +351,7 @@ func (c *Client) Repair(id string) error {
 		return makeError(err)
 	}
 
-	log.Println("Repaired vm", id)
+	log.Println("Repaired VM", id)
 	return nil
 }
 
