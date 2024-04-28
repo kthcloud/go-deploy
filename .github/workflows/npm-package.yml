@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "export/**"
+      - "dto/**"
       - ".github/workflows/npm-package.yml"
 
 jobs:
