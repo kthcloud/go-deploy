@@ -20,6 +20,8 @@ jobs:
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
+        with:
+          registry-url: https://registry.npmjs.org
 
       - name: Run generate-types script from script folder
         run: cd ./scripts && chmod +x ./generate-types.sh && ./generate-types.sh
