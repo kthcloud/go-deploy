@@ -112,7 +112,7 @@ func wrapper(def *JobDefinition) {
 				return
 			} else {
 				delay := int(math.Pow(2, float64(attempts-1)) * 30)
-				runAfter := def.Job.RunAfter.Add(time.Duration(delay) * time.Second)
+				runAfter := def.Job.LastRunAt.Add(time.Duration(delay) * time.Second)
 				utils.PrettyPrintError(fmt.Errorf("failed job %s (%s), attempt: %d/%d delay: %ds details: %w", def.Job.ID, def.Job.Type, attempts, jobAttemptsLimit, delay, err))
 
 				err = job_repo.New().MarkFailed(def.Job.ID, runAfter, attempts, err.Error())
