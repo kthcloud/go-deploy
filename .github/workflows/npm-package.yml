@@ -18,10 +18,11 @@ jobs:
         with:
           fetch-depth: 0 # Ensures tags are also fetched
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
-          registry-url: https://registry.npmjs.org
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Run generate-types script from script folder
         run: cd ./scripts && chmod +x ./generate-types.sh && ./generate-types.sh
