@@ -18,7 +18,7 @@ func Rfc1035(fl validator.FieldLevel) bool {
 		return false
 	}
 
-	rfc1035 := regexp.MustCompile(`^[a-zA-Z]([a-zA-Z0-9-]*[a-zA-Z0-9])?([a-zA-Z]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$`)
+	rfc1035 := regexp.MustCompile(`^[a-z]([a-z0-9-]*[a-z0-9])?([a-z]([a-z0-9-]*[a-z0-9])?)*$`)
 	return rfc1035.MatchString(name)
 }
 
