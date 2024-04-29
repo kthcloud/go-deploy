@@ -47,7 +47,7 @@ run_with_spinner() {
     # Run command and redirect stdout to /dev/null
     err_file=$(mktemp)
     "$@" > /dev/null 2> $err_file &
-    spinner "$task_name" "$@"
+    spinner "$task_name" "$@" 
 
     # Check if any content in the error file
     if [ -s $err_file ]; then

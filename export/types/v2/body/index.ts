@@ -31,7 +31,7 @@ export interface GpuLeaseRead {
    */
   vmId?: string;
   queuePosition: number /* int */;
-  LeaseDuration: number /* float64 */;
+  leaseDuration: number /* float64 */;
   /**
    * ActivatedAt specifies the time when the lease was activated. This is the time the user first attached the GPU
    * or 1 day after the lease was created if the user did not attach the GPU.
@@ -110,6 +110,7 @@ export interface VmSnapshotDeleted {
 export interface VmRead {
   id: string;
   name: string;
+  internalName?: string;
   ownerId: string;
   zone: string;
   host?: string;
@@ -148,16 +149,10 @@ export interface VmUpdate {
    * If specified but empty, the transfer will be canceled.
    */
   ownerId?: string;
-  /**
-   * TransferCode is used to accept transfer of a VM.
-   * If specified, only the transfer will happen.
-   */
-  transferCode?: string;
 }
 export interface VmUpdateOwner {
   newOwnerId: string;
   oldOwnerId: string;
-  transferCode?: string;
 }
 export interface VmGpuLease {
   id: string;
@@ -229,9 +224,17 @@ export interface HttpProxyRead {
 }
 export interface HttpProxyCreate {
   name: string;
+  /**
+   * CustomDomain is the domain that the deployment will be available on.
+   * The max length is set to 243 to allow for a sub domain when confirming the domain.
+   */
   customDomain?: string;
 }
 export interface HttpProxyUpdate {
   name?: string;
+  /**
+   * CustomDomain is the domain that the deployment will be available on.
+   * The max length is set to 243 to allow for a sub domain when confirming the domain.
+   */
   customDomain?: string;
 }

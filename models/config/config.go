@@ -16,8 +16,6 @@ const (
 )
 
 type ConfigType struct {
-	Version string `yaml:"version"`
-
 	Port        int    `yaml:"port"`
 	ExternalUrl string `yaml:"externalUrl"`
 	Mode        string `yaml:"mode"`

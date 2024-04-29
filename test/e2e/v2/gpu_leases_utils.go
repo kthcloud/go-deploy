@@ -15,17 +15,17 @@ const (
 
 func GetGpuLease(t *testing.T, id string, userID ...string) body.GpuLeaseRead {
 	resp := e2e.DoGetRequest(t, GpuLeasePath+id, userID...)
-	return e2e.Parse[body.GpuLeaseRead](t, resp)
+	return e2e.MustParse[body.GpuLeaseRead](t, resp)
 }
 
 func ListGpuLeases(t *testing.T, query string, userID ...string) []body.GpuLeaseRead {
 	resp := e2e.DoGetRequest(t, GpuLeasesPath+query, userID...)
-	return e2e.Parse[[]body.GpuLeaseRead](t, resp)
+	return e2e.MustParse[[]body.GpuLeaseRead](t, resp)
 }
 
 func UpdateGpuLease(t *testing.T, id string, requestBody body.GpuLeaseUpdate, userID ...string) body.GpuLeaseRead {
 	resp := e2e.DoPostRequest(t, GpuLeasePath+id, requestBody, userID...)
-	gpuLeaseUpdated := e2e.Parse[body.GpuLeaseUpdated](t, resp)
+	gpuLeaseUpdated := e2e.MustParse[body.GpuLeaseUpdated](t, resp)
 
 	v1.WaitForJobFinished(t, gpuLeaseUpdated.JobID, nil)
 
@@ -46,7 +46,7 @@ func WithDefaultGpuLease(t *testing.T, gpuGroupID string, userID ...string) body
 
 func WithGpuLease(t *testing.T, requestBody body.GpuLeaseCreate, userID ...string) body.GpuLeaseRead {
 	resp := e2e.DoPostRequest(t, GpuLeasesPath, requestBody, userID...)
-	gpuLeaseCreated := e2e.Parse[body.GpuLeaseCreated](t, resp)
+	gpuLeaseCreated := e2e.MustParse[body.GpuLeaseCreated](t, resp)
 
 	t.Cleanup(func() { cleanUpGpuLease(t, gpuLeaseCreated.ID) })
 
@@ -66,5 +66,5 @@ func WithGpuLease(t *testing.T, requestBody body.GpuLeaseCreate, userID ...strin
 
 func cleanUpGpuLease(t *testing.T, id string) {
 	resp := e2e.DoDeleteRequest(t, GpuLeasePath+id)
-	v1.WaitForJobFinished(t, e2e.Parse[body.GpuLeaseDeleted](t, resp).JobID, nil)
+	v1.WaitForJobFinished(t, e2e.MustParse[body.GpuLeaseDeleted](t, resp).JobID, nil)
 }

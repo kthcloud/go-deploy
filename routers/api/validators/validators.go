@@ -18,7 +18,7 @@ func Rfc1035(fl validator.FieldLevel) bool {
 		return false
 	}
 
-	rfc1035 := regexp.MustCompile(`^[a-zA-Z]([a-zA-Z0-9-]*[a-zA-Z0-9])?([a-zA-Z]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$`)
+	rfc1035 := regexp.MustCompile(`^[a-z]([a-z0-9-]*[a-z0-9])?([a-z]([a-z0-9-]*[a-z0-9])?)*$`)
 	return rfc1035.MatchString(name)
 }
 
@@ -284,30 +284,13 @@ func DomainName(fl validator.FieldLevel) bool {
 		}
 	}
 
-	_, err := idna.Lookup.ToASCII(domain)
+	punyEncoded, err := idna.Lookup.ToASCII(domain)
 	if err != nil {
 		return false
 	}
 
-	return true
-}
-
-// CustomDomain is a validator for custom domain names.
-// It ensures that the domain name is valid and that it points to the correct IP
-func CustomDomain(fl validator.FieldLevel) bool {
-	domain, ok := fl.Field().Interface().(string)
-	if !ok {
-		return false
-	}
-
-	// Deletion through empty string
-	if domain == "" {
-		return true
-	}
-
-	// Check if punycode conversion is possible
-	_, err := idna.Lookup.ToASCII(domain)
-	if err != nil {
+	// The max length is set to 243 to allow for a sub domain when confirming the domain.
+	if len(punyEncoded) > 243 {
 		return false
 	}
 

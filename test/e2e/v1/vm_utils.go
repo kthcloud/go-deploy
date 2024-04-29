@@ -20,17 +20,17 @@ const (
 
 func GetVM(t *testing.T, id string, userID ...string) body.VmRead {
 	resp := e2e.DoGetRequest(t, VmPath+id, userID...)
-	return e2e.Parse[body.VmRead](t, resp)
+	return e2e.MustParse[body.VmRead](t, resp)
 }
 
 func ListVMs(t *testing.T, query string, userID ...string) []body.VmRead {
 	resp := e2e.DoGetRequest(t, VmsPath+query, userID...)
-	return e2e.Parse[[]body.VmRead](t, resp)
+	return e2e.MustParse[[]body.VmRead](t, resp)
 }
 
 func UpdateVM(t *testing.T, id string, requestBody body.VmUpdate, userID ...string) body.VmRead {
 	resp := e2e.DoPostRequest(t, VmPath+id, requestBody, userID...)
-	vmUpdated := e2e.Parse[body.VmUpdated](t, resp)
+	vmUpdated := e2e.MustParse[body.VmUpdated](t, resp)
 
 	if vmUpdated.JobID != nil {
 		WaitForJobFinished(t, *vmUpdated.JobID, nil)
@@ -48,17 +48,17 @@ func UpdateVM(t *testing.T, id string, requestBody body.VmUpdate, userID ...stri
 
 func GetSnapshot(t *testing.T, vmID string, snapshotID string, userID ...string) body.VmSnapshotRead {
 	resp := e2e.DoGetRequest(t, "/vms/"+vmID+"/snapshots/"+snapshotID, userID...)
-	return e2e.Parse[body.VmSnapshotRead](t, resp)
+	return e2e.MustParse[body.VmSnapshotRead](t, resp)
 }
 
 func ListSnapshots(t *testing.T, vmID string, userID ...string) []body.VmSnapshotRead {
 	resp := e2e.DoGetRequest(t, "/vms/"+vmID+"/snapshots", userID...)
-	return e2e.Parse[[]body.VmSnapshotRead](t, resp)
+	return e2e.MustParse[[]body.VmSnapshotRead](t, resp)
 }
 
 func CreateSnapshot(t *testing.T, id string, requestBody body.VmSnapshotCreate, userID ...string) body.VmSnapshotRead {
 	resp := e2e.DoPostRequest(t, VmPath+id+"/snapshots", requestBody, userID...)
-	snapshotCreated := e2e.Parse[body.VmSnapshotCreated](t, resp)
+	snapshotCreated := e2e.MustParse[body.VmSnapshotCreated](t, resp)
 
 	WaitForJobFinished(t, snapshotCreated.JobID, nil)
 	WaitForVmRunning(t, id, nil)
@@ -80,19 +80,19 @@ func DeleteSnapshot(t *testing.T, vmID string, snapshotID string, userID ...stri
 		return
 	}
 
-	snapshotDeleted := e2e.Parse[body.VmSnapshotDeleted](t, resp)
+	snapshotDeleted := e2e.MustParse[body.VmSnapshotDeleted](t, resp)
 	WaitForJobFinished(t, snapshotDeleted.JobID, nil)
 	WaitForVmRunning(t, vmID, nil)
 }
 
 func GetGPU(t *testing.T, gpuID string, userID ...string) body.GpuRead {
 	resp := e2e.DoGetRequest(t, "/gpus/"+gpuID, userID...)
-	return e2e.Parse[body.GpuRead](t, resp)
+	return e2e.MustParse[body.GpuRead](t, resp)
 }
 
 func ListGPUs(t *testing.T, query string, userID ...string) []body.GpuRead {
 	resp := e2e.DoGetRequest(t, "/gpus"+query, userID...)
-	return e2e.Parse[[]body.GpuRead](t, resp)
+	return e2e.MustParse[[]body.GpuRead](t, resp)
 }
 
 func WithDefaultVM(t *testing.T, userID ...string) body.VmRead {
@@ -107,7 +107,7 @@ func WithDefaultVM(t *testing.T, userID ...string) body.VmRead {
 
 func WithVM(t *testing.T, requestBody body.VmCreate, userID ...string) body.VmRead {
 	resp := e2e.DoPostRequest(t, VmsPath, requestBody, userID...)
-	vmCreated := e2e.Parse[body.VmCreated](t, resp)
+	vmCreated := e2e.MustParse[body.VmCreated](t, resp)
 
 	t.Cleanup(func() { cleanUpVm(t, vmCreated.ID) })
 
@@ -121,7 +121,7 @@ func WithVM(t *testing.T, requestBody body.VmCreate, userID ...string) body.VmRe
 	})
 
 	readResp := e2e.DoGetRequest(t, "/vms/"+vmCreated.ID, userID...)
-	vmRead := e2e.Parse[body.VmRead](t, readResp)
+	vmRead := e2e.MustParse[body.VmRead](t, readResp)
 
 	assert.NotEmpty(t, vmRead.ID)
 	assert.Equal(t, requestBody.Name, vmRead.Name)
@@ -207,7 +207,7 @@ func DoSshCommand(t *testing.T, connectionString, cmd string) string {
 
 func WaitForVmRunning(t *testing.T, id string, callback func(*body.VmRead) bool) {
 	e2e.FetchUntil(t, VmPath+id, func(resp *http.Response) bool {
-		vmRead := e2e.Parse[body.VmRead](t, resp)
+		vmRead := e2e.MustParse[body.VmRead](t, resp)
 		if vmRead.Status == status_codes.GetMsg(status_codes.ResourceRunning) {
 			if callback == nil || callback(&vmRead) {
 				return true

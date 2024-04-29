@@ -140,7 +140,6 @@ func registerCustomValidators() {
 			"port_list_numbers":      validators.PortListNumbers,
 			"port_list_http_proxies": validators.PortListHttpProxies,
 			"domain_name":            validators.DomainName,
-			"custom_domain":          validators.CustomDomain,
 			"health_check_path":      validators.HealthCheckPath,
 			"team_name":              validators.TeamName,
 			"team_member_list":       validators.TeamMemberList,

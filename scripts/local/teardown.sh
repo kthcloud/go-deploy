@@ -20,20 +20,9 @@ function delete_k3d_cluster() {
   fi
 }
 
-function delete_harbor() {
-  # If the docker-compose file exists, bring down the services
-  if [ -f "harbor/docker-compose.yml" ]; then
-      sudo docker compose -f $DIR/harbor/docker-compose.yml down > /dev/null 2>&1
-  fi
-
-  sudo rm -rf $DIR/harbor
-  sudo rm -f $DIR/harbor*.tgz.*
-}
-
 function delete_local_dns_record() {
   sudo rm -f /etc/dnsmasq.d/50-go-deploy-dev.conf
 }
 
-run_with_spinner "Delete Harbor" delete_harbor
 run_with_spinner "Delete K3d Cluster" delete_k3d_cluster
 run_with_spinner "Delete local DNS record" delete_local_dns_record

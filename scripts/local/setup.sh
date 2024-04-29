@@ -23,6 +23,11 @@ MONGO_DB_PORT=9027
 REDIS_PORT=9079
 NFS_PORT=9049
 
+# Context variables
+keycloak_deploy_secret=""
+keycloak_deploy_storage_secret=""
+
+
 # Check if Docker is installed, if not exit
 if ! [ -x "$(command -v docker)" ]; then
   echo -e "$RED_CROSS Docker is not installed. Please install Docker"
@@ -87,13 +92,6 @@ function create_k3d_cluster() {
   while [ "$(kubectl config current-context)" != "k3d-$name" ]; do
     sleep 5
   done
-
-  # Wait for helm list to include traefik
-  while [ "$(helm list -n kube-system | grep -c traefik)" -eq 0 ]; do
-    sleep 5
-  done
-
-  helm upgrade traefik traefik -n kube-system --set providers.kubernetesIngress.allowExternalNameServices=true --repo=https://traefik.github.io/charts
 }
 
 function install_harbor() {
@@ -168,51 +166,100 @@ function install_keycloak() {
   rm -f keycloak.values.yml
 
   # Wait for Keycloak to be up
-  while [ "$(curl -s -o /dev/null -w "%{http_code}" http://keycloak.$BASE_URL)" != "200" ]; do
+  while [ "$(curl -s -o /dev/null -w "%{http_code}" http://keycloak.$BASE_URL/health/ready)" != "200" ]; do
     sleep 5
   done
 
-  token=$(curl -s -X POST -H "Content-Type: application/x-www-form-urlencoded" -d "client_id=admin-cli&username=admin&password=admin&grant_type=password" http://keycloak.$BASE_URL/realms/master/protocol/openid-connect/token | jq -r '.access_token')
-
-  # Create realm 'deploy'
-  check_exists=$(curl -s -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $token" -X GET http://keycloak.$BASE_URL/admin/realms/deploy)
-  exists=$(echo $check_exists | jq -r '.realm')
-  if [ "$exists" != "deploy" ]; then
-    payload='{"realm":"deploy","enabled":true}'
-    curl -s -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $token" -X POST http://keycloak.$BASE_URL/admin/realms -d "$payload"
+  local token=$(curl -s \
+    -X POST \
+    -H "Content-Type: application/x-www-form-urlencoded" \
+    -d "client_id=admin-cli&username=admin&password=admin&grant_type=password" \
+    http://keycloak.$BASE_URL/realms/master/protocol/openid-connect/token \
+    | jq -r '.access_token')
+  
+  # Check if go-deploy client exists, if not create it
+  local check_exists=$(curl -s \
+    -H "Content-Type: application/json" \
+    -H \"Accept: application/json\" \
+    -H "Authorization: Bearer $token" \
+    -X GET http://keycloak.$BASE_URL/admin/realms/master/clients?clientId=go-deploy)
+  local exists=$(echo $check_exists | jq -r '.[] | select(.clientId=="go-deploy") | .clientId')
+  if [ "$exists" != "go-deploy" ]; then
+    local payload='{
+      "protocol":"openid-connect",
+      "clientId":"go-deploy",
+      "name":"go-deploy",
+      "description":"go-deploy",
+      "publicClient":false,
+      "authorizationServicesEnabled":false,
+      "serviceAccountsEnabled":true,
+      "implicitFlowEnabled":false,
+      "directAccessGrantsEnabled":true,
+      "standardFlowEnabled":true,
+      "frontchannelLogout":true,
+      "attributes":{"saml_idp_initiated_sso_url_name":"","oauth2.device.authorization.grant.enabled":false,"oidc.ciba.grant.enabled":false},
+      "alwaysDisplayInConsole":false,
+      "rootUrl":"",
+      "baseUrl":"",
+      "redirectUris":["http://*"]
+      }'
+    curl -s \
+      -H "Content-Type: application/json" \
+      -H "Accept: application/json" \
+      -H "Authorization: Bearer $token" \
+      -X POST http://keycloak.$BASE_URL/admin/realms/master/clients -d "$payload"
   fi
 
-  # query: /admin/realms/master/clients?first=0&max=101
-  # check if client exist for go-deploy-storage
-  # if not, create it
-  check_exists=$(curl -s -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $token" -X GET http://keycloak.$BASE_URL/admin/realms/master/clients?clientId=go-deploy-storage  )
-  exists=$(echo $check_exists | jq -r '.[] | select(.clientId=="go-deploy-storage") | .clientId')
+  # Fetch created client's secret
+  keycloak_deploy_secret=$(curl -s \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json" \
+    -H "Authorization: Bearer $token" \
+    -X GET http://keycloak.$BASE_URL/admin/realms/master/clients?clientId=go-deploy \
+    | jq -r '.[0].clientSecret')
+
+
+
+  # Check if go-deploy-storage client exists, if not create it
+  local check_exists=$(curl -s \
+    -H "Content-Type: application/json" \
+    -H \"Accept: application/json\" \
+    -H "Authorization: Bearer $token" \
+    -X GET http://keycloak.$BASE_URL/admin/realms/master/clients?clientId=go-deploy-storage)
+  local exists=$(echo $check_exists | jq -r '.[] | select(.clientId=="go-deploy-storage") | .clientId')
   if [ "$exists" != "go-deploy-storage" ]; then
-    payload='{
-      "clientId": "go-deploy-storage",
-      "name": "go-deploy-storage",
-      "rootUrl": "http://localhost:11080",
-      "redirectUris": ["http://localhost:11080/*"],
-      "webOrigins": ["http://localhost:11080"],
-      "protocol": "openid-connect",
-      "publicClient": true,
-      "bearerOnly": false,
-      "consentRequired": false,
-      "standardFlowEnabled": true,
-      "implicitFlowEnabled": false,
-      "directAccessGrantsEnabled": true,
-      "serviceAccountsEnabled": true,
-      "authorizationServicesEnabled": true,
-      "clientAuthenticatorType": "client-secret",
-      "secret": "secret"
-    }'
-    curl -s -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization Bearer $token" -X POST http://keycloak.$BASE_URL/admin/realms/master/clients -d "$payload"
+    local payload='{
+      "protocol":"openid-connect",
+      "clientId":"go-deploy-storage",
+      "name":"go-deploy-storage",
+      "description":"go-deploy-storage",
+      "publicClient":false,
+      "authorizationServicesEnabled":false,
+      "serviceAccountsEnabled":true,
+      "implicitFlowEnabled":false,
+      "directAccessGrantsEnabled":true,
+      "standardFlowEnabled":true,
+      "frontchannelLogout":true,
+      "attributes":{"saml_idp_initiated_sso_url_name":"","oauth2.device.authorization.grant.enabled":false,"oidc.ciba.grant.enabled":false},
+      "alwaysDisplayInConsole":false,
+      "rootUrl":"",
+      "baseUrl":"",
+      "redirectUris":["http://*"]
+      }'
+    curl -s \
+      -H "Content-Type: application/json" \
+      -H "Accept: application/json" \
+      -H "Authorization: Bearer $token" \
+      -X POST http://keycloak.$BASE_URL/admin/realms/master/clients -d "$payload"
   fi
 
-
-  # curl_result=$(curl -s localhost:11080 -o /dev/null -w "%{http_code}")
-  # if [ $curl_result -eq 0 ]; then
-
+  # Fetch created client's secret
+  keycloak_deploy_storage_secret=$(curl -s \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json" \
+    -H "Authorization: Bearer $token" \
+    -X GET http://keycloak.$BASE_URL/admin/realms/master/clients?clientId=go-deploy-storage \
+    | jq -r '.[0].clientSecret')
 }
 
 function install_nfs_server() {
@@ -335,9 +382,9 @@ function install_cdi() {
     kubectl apply -f https://github.com/kubevirt/containerized-data-importer/releases/download/$VERSION/cdi-cr.yaml
   fi
 
-  # Ensure spec.config.scratchSpaceStorageClass: deploy-vm-scratch
-  if [ "$(kubectl get cdi.kubevirt.io/cdi -n cdi -o=jsonpath="{.spec.config.scratchSpaceStorageClass}")" != "deploy-vm-scratch" ]; then
-    kubectl patch cdi.kubevirt.io/cdi -n cdi --type='json' -p='[{"op": "add", "path": "/spec/config/scratchSpaceStorageClass", "value": "deploy-vm-scratch"}]'
+  # Ensure that spec.config.scratchSpaceStorageClass: deploy-vm-scratch, if not set it
+  if [ "$(kubectl get cdi -n cdi -o=jsonpath="{.items[0].spec.config.scratchSpaceStorageClass}")" != "deploy-vm-scratch" ]; then
+    kubectl patch cdi cdi -n cdi --type='json' -p='[{"op": "replace", "path": "/spec/config/scratchSpaceStorageClass", "value": "deploy-vm-scratch"}]'
   fi
 }
 
@@ -348,7 +395,6 @@ run_with_spinner "Install k3d" install_k3d
 run_with_spinner "Set up k3d cluster" create_k3d_cluster
 
 run_with_spinner "Install Harbor" install_harbor
-run_with_spinner "Seed Harbor with placeholder images" seed_harbor_with_placeholder_images
 run_with_spinner "Install MongoDB" install_mongodb
 run_with_spinner "Install Redis" install_redis
 run_with_spinner "Install Keycloak" install_keycloak
@@ -359,6 +405,8 @@ run_with_spinner "Install NFS CSI" install_nfs_csi
 run_with_spinner "Install Storage Classes" install_storage_classes
 run_with_spinner "Install KubeVirt" install_kubevirt
 run_with_spinner "Install CDI" install_cdi
+
+run_with_spinner "Seed Harbor with placeholder images" seed_harbor_with_placeholder_images
 
 
 

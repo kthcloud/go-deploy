@@ -11,4 +11,5 @@ type UserCreateParams struct {
 
 type UserUpdateParams struct {
 	PublicKeys *[]PublicKey
+	UserData   *[]UserData
 }

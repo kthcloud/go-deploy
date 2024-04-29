@@ -66,6 +66,9 @@ func NewZoneCapabilityMissingError(zone, capability string) ZoneCapabilityMissin
 }
 
 var (
+	// AuthInfoNotAvailableErr is returned when the auth info is not available
+	AuthInfoNotAvailableErr = fmt.Errorf("auth info not available")
+
 	// DeploymentNotFoundErr is returned when the deployment is not found.
 	// This is most likely caused by a race-condition between a some model call and a deletion call.
 	DeploymentNotFoundErr = fmt.Errorf("deployment not found")
