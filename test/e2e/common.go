@@ -177,7 +177,7 @@ func parseRawBody(body []byte, parsedBody interface{}) error {
 	return nil
 }
 
-func Parse[okType any](t *testing.T, resp *http.Response) okType {
+func MustParse[okType any](t *testing.T, resp *http.Response) okType {
 	if resp.StatusCode > 299 {
 		rawBody := ReadRawResponseBody(t, resp)
 		empty := new(okType)

@@ -2,6 +2,7 @@ package discovery
 
 import (
 	"go-deploy/models/model"
+	"go-deploy/models/version"
 	"go-deploy/pkg/config"
 )
 
@@ -9,7 +10,7 @@ import (
 // This is stored locally in the config.
 func (c *Client) Discover() (*model.Discover, error) {
 	return &model.Discover{
-		Version: config.Config.Version,
+		Version: version.AppVersion,
 		Roles:   config.Config.Roles,
 	}, nil
 }

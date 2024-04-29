@@ -77,9 +77,7 @@ func msgForTag(fe validator.FieldError) string {
 	case "port_list_http_proxies":
 		return "Every proxy name must be unique"
 	case "valid_domain":
-		return "Must be a valid domain name that is convertible to punycode"
-	case "custom_domain":
-		return "Must point to the correct interface, either the zone base domain or its public IP"
+		return "Must be a valid domain name that is convertible to punycode, and less than 243 characters"
 	case "health_check_path":
 		return "Must be a valid path (RFC 3986), ex. /healthz or /ping-me"
 	case "team_name":
@@ -90,6 +88,8 @@ func msgForTag(fe validator.FieldError) string {
 		return "Every team model must be unique"
 	case "volume_name":
 		return "Must be a valid volume name, ex. my-volume, my-volume-123, my volume"
+	case "domain_name":
+		return "Must be a valid domain name that can be puny-encoded and is less than 243 characters"
 	}
 	return fe.Error()
 }

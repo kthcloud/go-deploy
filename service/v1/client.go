@@ -13,7 +13,6 @@ import (
 	"go-deploy/service/v1/sms"
 	"go-deploy/service/v1/status"
 	"go-deploy/service/v1/teams"
-	"go-deploy/service/v1/user_data"
 	"go-deploy/service/v1/users"
 	"go-deploy/service/v1/vms"
 	"go-deploy/service/v1/zones"
@@ -81,10 +80,6 @@ func (c *Client) Teams() api.Teams {
 
 func (c *Client) Users() api.Users {
 	return users.New(c, c.cache)
-}
-
-func (c *Client) UserData() api.UserData {
-	return user_data.New(c, c.cache)
 }
 
 func (c *Client) VMs() api.VMs {

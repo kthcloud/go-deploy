@@ -1,5 +1,41 @@
 package body
 
+type UserRead struct {
+	ID         string      `json:"id"`
+	Username   string      `json:"username"`
+	FirstName  string      `json:"firstName"`
+	LastName   string      `json:"lastName"`
+	Email      string      `json:"email"`
+	PublicKeys []PublicKey `json:"publicKeys"`
+	UserData   []UserData  `json:"userData"`
+
+	Role  Role `json:"role"`
+	Admin bool `json:"admin"`
+
+	Quota Quota `json:"quota"`
+	Usage Usage `json:"usage"`
+
+	StorageURL *string `json:"storageUrl,omitempty"`
+}
+
+type UserReadDiscovery struct {
+	ID        string `json:"id"`
+	Username  string `json:"username"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	Email     string `json:"email"`
+}
+
+type UserUpdate struct {
+	PublicKeys *[]PublicKey `json:"publicKeys,omitempty" bson:"publicKeys,omitempty" binding:"omitempty,min=0,max=100,dive"`
+	UserData   *[]UserData  `json:"userData,omitempty" bson:"publicKeys,omitempty" binding:"omitempty,min=0,max=100,dive"`
+}
+
+type UserData struct {
+	Key   string `json:"key" binding:"required,min=1,max=255"`
+	Value string `json:"value" binding:"required,min=1,max=255"`
+}
+
 type PublicKey struct {
 	Name string `json:"name" binding:"required,min=1,max=30"`
 	Key  string `json:"key" binding:"required,ssh_public_key"`
@@ -28,33 +64,4 @@ type SmallUserRead struct {
 	FirstName string `json:"firstName"`
 	LastName  string `json:"lastName"`
 	Email     string `json:"email"`
-}
-
-type UserRead struct {
-	ID         string      `json:"id"`
-	Username   string      `json:"username"`
-	FirstName  string      `json:"firstName"`
-	LastName   string      `json:"lastName"`
-	Email      string      `json:"email"`
-	PublicKeys []PublicKey `json:"publicKeys"`
-
-	Role  Role `json:"role"`
-	Admin bool `json:"admin"`
-
-	Quota Quota `json:"quota"`
-	Usage Usage `json:"usage"`
-
-	StorageURL *string `json:"storageUrl,omitempty"`
-}
-
-type UserReadDiscovery struct {
-	ID        string `json:"id"`
-	Username  string `json:"username"`
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
-	Email     string `json:"email"`
-}
-
-type UserUpdate struct {
-	PublicKeys *[]PublicKey `json:"publicKeys,omitempty" bson:"publicKeys,omitempty" binding:"omitempty,min=0,max=1000,dive"`
 }

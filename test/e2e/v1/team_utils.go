@@ -16,12 +16,12 @@ const (
 
 func GetTeam(t *testing.T, id string, userID ...string) body.TeamRead {
 	resp := e2e.DoGetRequest(t, TeamPath+id, userID...)
-	return e2e.Parse[body.TeamRead](t, resp)
+	return e2e.MustParse[body.TeamRead](t, resp)
 }
 
 func ListTeams(t *testing.T, query string, userID ...string) []body.TeamRead {
 	resp := e2e.DoGetRequest(t, TeamsPath+query, userID...)
-	return e2e.Parse[[]body.TeamRead](t, resp)
+	return e2e.MustParse[[]body.TeamRead](t, resp)
 }
 
 func UpdateTeam(t *testing.T, id string, teamUpdate body.TeamUpdate, userID ...string) body.TeamRead {
@@ -94,7 +94,7 @@ func JoinTeam(t *testing.T, id string, invitationCode string, userID ...string) 
 	}
 
 	resp := e2e.DoPostRequest(t, TeamPath+id, teamJoin, userID...)
-	_ = e2e.Parse[struct{}](t, resp)
+	_ = e2e.MustParse[struct{}](t, resp)
 }
 
 func WithTeam(t *testing.T, teamCreate body.TeamCreate, userID ...string) body.TeamRead {
@@ -118,7 +118,7 @@ func WithTeam(t *testing.T, teamCreate body.TeamCreate, userID ...string) body.T
 	var createdResources []string
 
 	resp := e2e.DoPostRequest(t, TeamsPath, teamCreate, userID...)
-	teamRead := e2e.Parse[body.TeamRead](t, resp)
+	teamRead := e2e.MustParse[body.TeamRead](t, resp)
 
 	assert.Equal(t, teamCreate.Name, teamRead.Name, "invalid team name")
 	assert.Equal(t, teamCreate.Description, teamRead.Description, "invalid team description")
