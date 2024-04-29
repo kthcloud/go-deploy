@@ -68,6 +68,7 @@ func (client *Client) UpdateWithParams(id string, params *model.UserUpdateParams
 	updateData := bson.D{}
 
 	db.AddIfNotNil(&updateData, "publicKeys", params.PublicKeys)
+	db.AddIfNotNil(&updateData, "userData", params.UserData)
 
 	if len(updateData) == 0 {
 		return nil

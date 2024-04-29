@@ -13,7 +13,7 @@ const (
 
 func GetGpuGroup(t *testing.T, id string, userID ...string) body.GpuGroupRead {
 	resp := e2e.DoGetRequest(t, GpuGroupPath+id, userID...)
-	return e2e.Parse[body.GpuGroupRead](t, resp)
+	return e2e.MustParse[body.GpuGroupRead](t, resp)
 }
 
 func GetAnyAvailableGpuGroup(t *testing.T, userID ...string) *body.GpuGroupRead {
@@ -27,5 +27,5 @@ func GetAnyAvailableGpuGroup(t *testing.T, userID ...string) *body.GpuGroupRead 
 
 func ListGpuGroups(t *testing.T, query string, userID ...string) []body.GpuGroupRead {
 	resp := e2e.DoGetRequest(t, GpuGroupsPath+query, userID...)
-	return e2e.Parse[[]body.GpuGroupRead](t, resp)
+	return e2e.MustParse[[]body.GpuGroupRead](t, resp)
 }

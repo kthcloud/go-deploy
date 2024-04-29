@@ -32,17 +32,17 @@ func CheckUpURL(t *testing.T, url string) bool {
 
 func GetDeployment(t *testing.T, id string, userID ...string) body.DeploymentRead {
 	resp := e2e.DoGetRequest(t, DeploymentPath+id, userID...)
-	return e2e.Parse[body.DeploymentRead](t, resp)
+	return e2e.MustParse[body.DeploymentRead](t, resp)
 }
 
 func ListDeployments(t *testing.T, query string, userID ...string) []body.DeploymentRead {
 	resp := e2e.DoGetRequest(t, DeploymentsPath+query, userID...)
-	return e2e.Parse[[]body.DeploymentRead](t, resp)
+	return e2e.MustParse[[]body.DeploymentRead](t, resp)
 }
 
 func UpdateDeployment(t *testing.T, id string, requestBody body.DeploymentUpdate, userID ...string) body.DeploymentRead {
 	resp := e2e.DoPostRequest(t, DeploymentPath+id, requestBody, userID...)
-	deploymentUpdated := e2e.Parse[body.DeploymentUpdated](t, resp)
+	deploymentUpdated := e2e.MustParse[body.DeploymentUpdated](t, resp)
 
 	if deploymentUpdated.JobID != nil {
 		WaitForJobFinished(t, *deploymentUpdated.JobID, nil)
@@ -119,7 +119,7 @@ func WithDeployment(t *testing.T, requestBody body.DeploymentCreate) (body.Deplo
 	resp := e2e.DoPostRequest(t, DeploymentsPath, requestBody)
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "deployment was not created")
 
-	deploymentCreated := e2e.Parse[body.DeploymentCreated](t, resp)
+	deploymentCreated := e2e.MustParse[body.DeploymentCreated](t, resp)
 	t.Cleanup(func() {
 		CleanUpDeployment(t, deploymentCreated.ID)
 	})
@@ -235,7 +235,7 @@ func CleanUpDeployment(t *testing.T, id string) {
 
 func WaitForDeploymentRunning(t *testing.T, id string, callback func(*body.DeploymentRead) bool) {
 	e2e.FetchUntil(t, DeploymentPath+id, func(resp *http.Response) bool {
-		deploymentRead := e2e.Parse[body.DeploymentRead](t, resp)
+		deploymentRead := e2e.MustParse[body.DeploymentRead](t, resp)
 		if deploymentRead.Status == status_codes.GetMsg(status_codes.ResourceRunning) {
 			if callback == nil || callback(&deploymentRead) {
 				return true

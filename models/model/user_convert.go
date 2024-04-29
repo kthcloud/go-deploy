@@ -27,13 +27,23 @@ func (user *User) ToDTO(effectiveRole *Role, usage *UserUsage, storageURL *strin
 		}
 	}
 
+	userData := make([]body.UserData, len(user.UserData))
+	for i, data := range user.UserData {
+		userData[i] = body.UserData{
+			Key:   data.Key,
+			Value: data.Value,
+		}
+	}
+
 	userRead := body.UserRead{
-		ID:         user.ID,
-		Username:   user.Username,
-		Email:      user.Email,
-		FirstName:  user.FirstName,
-		LastName:   user.LastName,
+		ID:        user.ID,
+		Username:  user.Username,
+		Email:     user.Email,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+
 		PublicKeys: publicKeys,
+		UserData:   userData,
 
 		Role:  effectiveRole.ToDTO(false),
 		Admin: user.IsAdmin,
@@ -56,4 +66,39 @@ func (usage *UserUsage) ToDTO() body.Usage {
 		DiskSize:    usage.DiskSize,
 		Snapshots:   usage.Snapshots,
 	}
+}
+
+// FromDTO converts a body.UserUpdate DTO to a UserUpdateParams.
+func (params UserUpdateParams) FromDTO(userUpdateDTO *body.UserUpdate) UserUpdateParams {
+	var publicKeys *[]PublicKey
+	if userUpdateDTO.PublicKeys != nil {
+		k := make([]PublicKey, len(*userUpdateDTO.PublicKeys))
+		for i, key := range *userUpdateDTO.PublicKeys {
+			k[i] = PublicKey{
+				Name: key.Name,
+				Key:  key.Key,
+			}
+		}
+
+		publicKeys = &k
+	}
+
+	params.PublicKeys = publicKeys
+
+	var userData *[]UserData
+	if userUpdateDTO.UserData != nil {
+		d := make([]UserData, len(*userUpdateDTO.UserData))
+		for i, data := range *userUpdateDTO.UserData {
+			d[i] = UserData{
+				Key:   data.Key,
+				Value: data.Value,
+			}
+		}
+
+		userData = &d
+	}
+
+	params.UserData = userData
+
+	return params
 }

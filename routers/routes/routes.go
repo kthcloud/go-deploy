@@ -32,7 +32,6 @@ func RoutingGroups() []RoutingGroup {
 		SmRoutes(),
 		TeamRoutes(),
 		UserRoutes(),
-		UserDataRoutes(),
 		VmRoutes(),
 		VmActionRoutes(),
 		SnapshotRoutes(),

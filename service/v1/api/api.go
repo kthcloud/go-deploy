@@ -15,7 +15,6 @@ import (
 	smOpts "go-deploy/service/v1/sms/opts"
 	statusOpts "go-deploy/service/v1/status/opts"
 	teamOpts "go-deploy/service/v1/teams/opts"
-	userDataOpts "go-deploy/service/v1/user_data/opts"
 	userOpts "go-deploy/service/v1/users/opts"
 	"go-deploy/service/v1/vms/cs_service"
 	vmK8sService "go-deploy/service/v1/vms/k8s_service"
@@ -104,15 +103,6 @@ type Users interface {
 	Exists(id string) (bool, error)
 
 	Discover(opts ...userOpts.DiscoverOpts) ([]body.UserReadDiscovery, error)
-}
-
-type UserData interface {
-	Get(id string, opts ...userDataOpts.GetOpts) (*model.UserData, error)
-	List(opts ...userDataOpts.ListOpts) ([]model.UserData, error)
-	Create(id, value, userID string) (*model.UserData, error)
-	Update(id, value string) (*model.UserData, error)
-	Delete(id string) error
-	Exists(id string) (bool, error)
 }
 
 type Teams interface {

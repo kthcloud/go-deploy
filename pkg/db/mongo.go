@@ -211,10 +211,6 @@ func getCollectionDefinitions() map[string]CollectionDefinition {
 			TotallyUniqueIndexes: [][]string{{"id"}},
 			TextIndexFields:      []string{"username", "email", "firstName", "lastName"},
 		},
-		"userData": {
-			Name:    "userData",
-			Indexes: []string{"id", "userId", "createdAt"},
-		},
 		"teams": {
 			Name:                 "teams",
 			Indexes:              []string{"name", "ownerId", "createdAt", "deletedAt"},

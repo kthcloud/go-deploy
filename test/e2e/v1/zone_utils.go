@@ -13,10 +13,10 @@ const (
 
 func GetZone(t *testing.T, id string) body.ZoneRead {
 	resp := e2e.DoGetRequest(t, ZonePath+id)
-	return e2e.Parse[body.ZoneRead](t, resp)
+	return e2e.MustParse[body.ZoneRead](t, resp)
 }
 
 func ListZones(t *testing.T, query string) []body.ZoneRead {
 	resp := e2e.DoGetRequest(t, ZonesPath+query)
-	return e2e.Parse[[]body.ZoneRead](t, resp)
+	return e2e.MustParse[[]body.ZoneRead](t, resp)
 }
