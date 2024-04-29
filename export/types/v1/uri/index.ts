@@ -49,6 +49,19 @@ export interface NotificationDelete {
 }
 
 //////////
+// source: resource_migration.go
+
+export interface ResourceMigrationGet {
+  ResourceMigrationID: string;
+}
+export interface ResourceMigrationUpdate {
+  ResourceMigrationID: string;
+}
+export interface ResourceMigrationDelete {
+  ResourceMigrationID: string;
+}
+
+//////////
 // source: sm.go
 
 export interface SmGet {
@@ -76,19 +89,6 @@ export interface UserGet {
 }
 export interface UserUpdate {
   UserID: string;
-}
-
-//////////
-// source: user_data.go
-
-export interface UserDataGet {
-  ID: string;
-}
-export interface UserDataUpdate {
-  ID: string;
-}
-export interface UserDataDelete {
-  ID: string;
 }
 
 //////////

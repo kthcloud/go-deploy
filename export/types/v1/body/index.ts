@@ -46,6 +46,10 @@ export interface DeploymentCreate {
   initCommands: string[];
   args: string[];
   healthCheckPath?: string;
+  /**
+   * CustomDomain is the domain that the deployment will be available on.
+   * The max length is set to 243 to allow for a sub domain when confirming the domain.
+   */
   customDomain?: string;
   replicas?: number /* int */;
   zone?: string;
@@ -64,11 +68,6 @@ export interface DeploymentUpdate {
   image?: string;
   healthCheckPath?: string;
   replicas?: number /* int */;
-  /**
-   * update owner
-   */
-  ownerId?: string;
-  transferCode?: string;
 }
 export interface Env {
   name: string;
@@ -78,11 +77,6 @@ export interface Volume {
   name: string;
   appPath: string;
   serverPath: string;
-}
-export interface DeploymentUpdateOwner {
-  newOwnerId: string;
-  oldOwnerId: string;
-  transferCode?: string;
 }
 export interface DeploymentBuild {
   Name: string;
@@ -189,6 +183,51 @@ export interface NotificationUpdate {
 }
 
 //////////
+// source: resource_migration.go
+
+export interface ResourceMigrationRead {
+  id: string;
+  resourceId: string;
+  userId: string;
+  type: string;
+  resourceType: string;
+  status: string;
+  updateOwner?: {
+    ownerId: string;
+  };
+  createdAt: string;
+  deletedAt?: string;
+}
+export interface ResourceMigrationCreate {
+  type: string;
+  resourceID: string;
+  status?: string;
+  updateOwner?: {
+    ownerId: string;
+  };
+}
+export interface ResourceMigrationUpdate {
+  status: string;
+  code?: string;
+}
+export interface ResourceMigrationCreated {
+  ResourceMigrationRead: ResourceMigrationRead;
+  /**
+   * JobID is the ID of the job that was created for the resource migration.
+   * Only if the migration was created with status 'accepted' a job will be created.
+   */
+  jobId?: string;
+}
+export interface ResourceMigrationUpdated {
+  ResourceMigrationRead: ResourceMigrationRead;
+  /**
+   * JobID is the ID of the job that was created for the resource migration.
+   * Only if the migration was updated with status 'accepted' a job will be created.
+   */
+  jobId?: string;
+}
+
+//////////
 // source: role.go
 
 export interface Role {
@@ -276,6 +315,35 @@ export interface TeamRead {
 //////////
 // source: user.go
 
+export interface UserRead {
+  id: string;
+  username: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  publicKeys: PublicKey[];
+  userData: UserData[];
+  role: Role;
+  admin: boolean;
+  quota: Quota;
+  usage: Usage;
+  storageUrl?: string;
+}
+export interface UserReadDiscovery {
+  id: string;
+  username: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+export interface UserUpdate {
+  publicKeys?: PublicKey[];
+  userData?: UserData[];
+}
+export interface UserData {
+  key: string;
+  value: string;
+}
 export interface PublicKey {
   name: string;
   key: string;
@@ -301,45 +369,6 @@ export interface SmallUserRead {
   firstName: string;
   lastName: string;
   email: string;
-}
-export interface UserRead {
-  id: string;
-  username: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  publicKeys: PublicKey[];
-  role: Role;
-  admin: boolean;
-  quota: Quota;
-  usage: Usage;
-  storageUrl?: string;
-}
-export interface UserReadDiscovery {
-  id: string;
-  username: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-}
-export interface UserUpdate {
-  publicKeys?: PublicKey[];
-}
-
-//////////
-// source: user_data.go
-
-export interface UserDataRead {
-  id: string;
-  userId: string;
-  data: string;
-}
-export interface UserDataCreate {
-  id: string;
-  data: string;
-}
-export interface UserDataUpdate {
-  data: string;
 }
 
 //////////
@@ -379,8 +408,6 @@ export interface VmUpdate {
   ram?: number /* int */;
   gpuId?: string;
   noLeaseEnd?: boolean;
-  ownerId?: string;
-  transferCode?: string;
 }
 export interface VmUpdateOwner {
   newOwnerId: string;
@@ -503,57 +530,31 @@ export interface HarborWebhook {
     };
   };
 }
-export interface GitHubWebhookPing {
-  hook: {
-    id: number /* int64 */;
-    type: string;
-    events: string[];
-    Config: {
-      url: string;
-      content_type: string;
-      token: string;
-    };
-  };
-  repository: {
-    id: number /* int64 */;
-    name: string;
-    Owner: {
-      id: number /* int64 */;
-      login: string;
-    };
-  };
-}
-export interface GithubWebhookPayloadPush {
-  ref: string;
-  repository: {
-    id: number /* int64 */;
-    name: string;
-    Owner: {
-      id: number /* int64 */;
-      login: string;
-    };
-    clone_url: string;
-    default_branch: string;
-  };
-}
-export interface GitHubWebhookPush {
-  ID: number /* int64 */;
-  Event: string;
-  Signature: string;
-  Payload: GithubWebhookPayloadPush;
-}
 
 //////////
 // source: zone.go
 
+export interface ZoneEndpoints {
+  deployment?: string;
+  storage?: string;
+  vm?: string;
+  vmApp?: string;
+}
 export interface ZoneRead {
   name: string;
   description: string;
   capabilities: string[];
+  endpoints: ZoneEndpoints;
+  legacy: boolean;
+  enabled: boolean;
+  /**
+   * Interface
+   * Deprecated: use Endpoints instead
+   */
   interface?: string;
   /**
    * Type
-   * Deprecated: use capabilities instead
+   * Deprecated: use Capabilities instead
    */
   type: string;
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/mitchellh/mapstructure"
 	"go-deploy/models/config"
+	"go-deploy/models/version"
 	"go-deploy/pkg/imp/cloudstack"
 	"go-deploy/pkg/imp/kubevirt/kubevirt"
 	"go-deploy/pkg/log"
@@ -44,7 +45,7 @@ func SetupEnvironment(mode string) error {
 	// Keep this here
 	Config.Mode = mode
 
-	log.Println("go-deploy", Config.Version)
+	log.Println("go-deploy", version.AppVersion)
 
 	if len(Config.Roles) == 0 {
 		log.Println("WARNING: no roles found in config")

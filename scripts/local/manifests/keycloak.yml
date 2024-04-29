@@ -35,7 +35,7 @@ spec:
     spec:
       containers:
         - name: keycloak-db
-          image: postgres:10.1
+          image: postgres:15.6
           imagePullPolicy: IfNotPresent
           env:
             - name: POSTGRES_DB
@@ -75,45 +75,51 @@ spec:
     spec: 
       containers: 
         - name: keycloak
-          image: quay.io/keycloak/keycloak:20.0.5
+          image: quay.io/keycloak/keycloak:24.0.1
           args: 
-            - start
+            - start-dev
           imagePullPolicy: Always
           env: 
             # Keycloak configuration
             - name: KEYCLOAK_ADMIN
-              value: admin                
-            
+              value: admin
+
             - name: KEYCLOAK_ADMIN_PASSWORD
               value: admin
 
             - name: KC_PROXY
               value: edge
-            
-            - name: KC_HOSTNAME
-              value: keycloak.local
-            
+
+            - name: KC_HOSTNAME_URL
+              value: http://keycloak.deploy.localhost:9080
+
+            - name: KC_HTTP_ENABLED
+              value: "true"
+
+            - name: KC_HEALTH_ENABLED
+              value: "true"
+
             # Database configuration
             - name: KC_DB
               value: postgres
-              
+
             - name: KC_DB_URL_HOST
               value: keycloak-db
-              
+
             - name: KC_DB_URL_PORT
               value: "5432"
-              
+
             - name: KC_DB_URL_DATABASE
               value: keycloak
-              
+
             - name: KC_DB_USERNAME
               value: keycloak
-              
+
             - name: KC_DB_PASSWORD
               value: keycloak
           ports: 
             - name: http
-              containerPort: 8080                
+              containerPort: 8080
             - name: https
               containerPort: 8443
           readinessProbe:
@@ -146,7 +152,7 @@ metadata:
     app.kubernetes.io/name: keycloak
 spec:
   ports: 
-    - port: 12080
+    - port: 8080
       targetPort: 8080
   selector: 
     app.kubernetes.io/name: keycloak
@@ -168,4 +174,4 @@ spec:
               service:
                 name: keycloak
                 port:
-                  number: 12080
+                  number: 8080

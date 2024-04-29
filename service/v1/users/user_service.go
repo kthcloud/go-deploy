@@ -136,24 +136,9 @@ func (c *Client) Update(userID string, dtoUserUpdate *body.UserUpdate) (*model.U
 		return nil, nil
 	}
 
-	var publicKeys *[]model.PublicKey
-	if dtoUserUpdate.PublicKeys != nil {
-		k := make([]model.PublicKey, len(*dtoUserUpdate.PublicKeys))
-		for i, key := range *dtoUserUpdate.PublicKeys {
-			k[i] = model.PublicKey{
-				Name: key.Name,
-				Key:  key.Key,
-			}
-		}
+	userUpdate := model.UserUpdateParams{}.FromDTO(dtoUserUpdate)
 
-		publicKeys = &k
-	}
-
-	userUpdate := &model.UserUpdateParams{
-		PublicKeys: publicKeys,
-	}
-
-	err := umc.UpdateWithParams(userID, userUpdate)
+	err := umc.UpdateWithParams(userID, &userUpdate)
 	if err != nil {
 		return nil, err
 	}

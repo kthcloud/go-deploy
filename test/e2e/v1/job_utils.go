@@ -53,7 +53,7 @@ func UpdateJob(t *testing.T, id string, requestBody body.JobUpdate, userID ...st
 
 func WaitForJobFinished(t *testing.T, id string, callback func(*body.JobRead) bool) {
 	e2e.FetchUntil(t, JobPath+id, func(resp *http.Response) bool {
-		jobRead := e2e.Parse[body.JobRead](t, resp)
+		jobRead := e2e.MustParse[body.JobRead](t, resp)
 
 		if jobRead.Status == status_codes.GetMsg(status_codes.JobFinished) || jobRead.Status == status_codes.GetMsg(status_codes.JobTerminated) {
 			if callback == nil || callback(&jobRead) {

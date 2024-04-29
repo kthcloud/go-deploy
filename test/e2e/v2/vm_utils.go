@@ -23,17 +23,17 @@ const (
 
 func GetVM(t *testing.T, id string, userID ...string) body.VmRead {
 	resp := e2e.DoGetRequest(t, VmPath+id, userID...)
-	return e2e.Parse[body.VmRead](t, resp)
+	return e2e.MustParse[body.VmRead](t, resp)
 }
 
 func ListVMs(t *testing.T, query string, userID ...string) []body.VmRead {
 	resp := e2e.DoGetRequest(t, VmsPath+query, userID...)
-	return e2e.Parse[[]body.VmRead](t, resp)
+	return e2e.MustParse[[]body.VmRead](t, resp)
 }
 
 func UpdateVM(t *testing.T, id string, requestBody body.VmUpdate, userID ...string) body.VmRead {
 	resp := e2e.DoPostRequest(t, VmPath+id, requestBody, userID...)
-	vmUpdated := e2e.Parse[body.VmUpdated](t, resp)
+	vmUpdated := e2e.MustParse[body.VmUpdated](t, resp)
 
 	if vmUpdated.JobID != nil {
 		v1.WaitForJobFinished(t, *vmUpdated.JobID, nil)
@@ -51,7 +51,7 @@ func UpdateVM(t *testing.T, id string, requestBody body.VmUpdate, userID ...stri
 
 func DoVmAction(t *testing.T, vmID string, requestBody body.VmActionCreate, userID ...string) body.VmActionCreated {
 	resp := e2e.DoPostRequest(t, VmActionsPath+"?vmId="+vmID, requestBody, userID...)
-	vmActionCreated := e2e.Parse[body.VmActionCreated](t, resp)
+	vmActionCreated := e2e.MustParse[body.VmActionCreated](t, resp)
 
 	v1.WaitForJobFinished(t, vmActionCreated.JobID, nil)
 
@@ -70,7 +70,7 @@ func WithDefaultVM(t *testing.T, userID ...string) body.VmRead {
 
 func WithVM(t *testing.T, requestBody body.VmCreate, userID ...string) body.VmRead {
 	resp := e2e.DoPostRequest(t, VmsPath, requestBody, userID...)
-	vmCreated := e2e.Parse[body.VmCreated](t, resp)
+	vmCreated := e2e.MustParse[body.VmCreated](t, resp)
 
 	t.Cleanup(func() { cleanUpVm(t, vmCreated.ID) })
 
@@ -169,7 +169,7 @@ func DoSshCommand(t *testing.T, connectionString, cmd string) string {
 
 func WaitForVmRunning(t *testing.T, id string, callback func(*body.VmRead) bool) {
 	e2e.FetchUntil(t, VmPath+id, func(resp *http.Response) bool {
-		vmRead := e2e.Parse[body.VmRead](t, resp)
+		vmRead := e2e.MustParse[body.VmRead](t, resp)
 		if vmRead.Status == status_codes.GetMsg(status_codes.ResourceRunning) {
 			if callback == nil || callback(&vmRead) {
 				return true
