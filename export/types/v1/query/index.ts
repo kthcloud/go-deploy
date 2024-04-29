@@ -19,6 +19,13 @@ export interface Env {
   key: string;
   val: string;
 }
+export interface DeploymentGet {
+  /**
+   * MigrationCode is used when fetching a deployment that is being migrated.
+   * The token should only be known by the user receiving the deployment.
+   */
+  migrationCode?: string;
+}
 export interface DeploymentList {
   Pagination?: Pagination;
   All: boolean;
@@ -26,13 +33,6 @@ export interface DeploymentList {
 }
 export interface DeploymentUpdate {
   envs: { [key: string]: string}[];
-}
-
-//////////
-// source: github.go
-
-export interface GitHubRepositoriesList {
-  Code: string;
 }
 
 //////////
@@ -68,6 +68,13 @@ export interface NotificationList {
 }
 
 //////////
+// source: resource_migration.go
+
+export interface ResourceMigrationList {
+  Pagination?: Pagination;
+}
+
+//////////
 // source: sm.go
 
 export interface SmList {
@@ -98,14 +105,6 @@ export interface UserList {
   All: boolean;
   Search?: string;
   Discover: boolean;
-}
-
-//////////
-// source: user_data.go
-
-export interface UserDataList {
-  Pagination?: Pagination;
-  UserID?: string;
 }
 
 //////////

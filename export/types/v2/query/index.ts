@@ -40,6 +40,13 @@ export interface VmSnapshotList {
 //////////
 // source: vm.go
 
+export interface VmGet {
+  /**
+   * MigrationCode is used when fetching a deployment that is being migrated.
+   * The token should only be known by the user receiving the deployment.
+   */
+  migrationCode?: string;
+}
 export interface VmList {
   Pagination?: Pagination;
   All: boolean;
