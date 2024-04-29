@@ -34,10 +34,10 @@ type HttpProxyRead struct {
 
 type HttpProxyCreate struct {
 	Name         string  `json:"name" bson:"name,omitempty" binding:"required,rfc1035,min=3,max=30"`
-	CustomDomain *string `json:"customDomain,omitempty" bson:"customDomain,omitempty" binding:"omitempty,custom_domain,domain_name,min=1,max=100"`
+	CustomDomain *string `json:"customDomain,omitempty" bson:"customDomain,omitempty" binding:"omitempty,domain_name"`
 }
 
 type HttpProxyUpdate struct {
 	Name         string  `json:"name,omitempty" bson:"name,omitempty" binding:"required,rfc1035,min=3,max=30"`
-	CustomDomain *string `json:"customDomain,omitempty" bson:"customDomain,omitempty" binding:"omitempty,custom_domain,domain_name,max=100"`
+	CustomDomain *string `json:"customDomain,omitempty" bson:"customDomain,omitempty" binding:"omitempty,domain_name"`
 }
