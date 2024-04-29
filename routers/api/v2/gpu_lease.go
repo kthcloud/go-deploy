@@ -180,6 +180,12 @@ func CreateGpuLease(c *gin.Context) {
 	deployV1 := service.V1(auth)
 	deployV2 := service.V2(auth)
 
+	allowedToLease := auth.GetEffectiveRole().Permissions.UseGPUs
+	if !allowedToLease {
+		context.UserError("User not allowed to lease GPUs")
+		return
+	}
+
 	groupExists, err := deployV2.VMs().GpuGroups().Exists(requestBody.GpuGroupID)
 	if err != nil {
 		context.ServerError(err, v1.InternalError)

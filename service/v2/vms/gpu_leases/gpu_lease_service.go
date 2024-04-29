@@ -115,6 +115,21 @@ func (c *Client) List(opts ...opts.ListGpuLeaseOpts) ([]model.GpuLease, error) {
 	if o.VmID != nil {
 		// Specific VM's GPU leases are requested
 		if c.V2.HasAuth() {
+			// Check ownership
+			vm, err := c.V2.VMs().Get(*o.VmID)
+			if err != nil {
+				return nil, makeError(err)
+			}
+
+			if vm == nil {
+				return nil, makeError(sErrors.VmNotFoundErr)
+			}
+
+			if vm.OwnerID != c.V2.Auth().UserID {
+				return nil, nil
+			}
+
+			// Check team access
 			hasAccess, err := c.V1.Teams().CheckResourceAccess(c.V2.Auth().UserID, *o.VmID)
 			if err != nil {
 				return nil, makeError(err)
@@ -129,19 +144,17 @@ func (c *Client) List(opts ...opts.ListGpuLeaseOpts) ([]model.GpuLease, error) {
 	}
 
 	if o.UserID != nil {
-		// Specific user's VMs are requested
-		if c.V1.HasAuth() && c.V1.Auth().UserID != *o.UserID && !c.V1.Auth().IsAdmin {
+		// Specific user's GPU leases are requested
+		if !c.V1.HasAuth() || c.V1.Auth().UserID == *o.UserID || c.V1.Auth().IsAdmin {
+			glc.WithUserID(*o.UserID)
+		} else {
 			return nil, nil
 		}
-
-		glc.WithUserID(*o.UserID)
 	} else {
-		// All VMs are requested
+		// All GPU leases are requested
 		if c.V1.HasAuth() && !c.V1.Auth().IsAdmin {
-			return nil, nil
+			glc.WithUserID(c.V1.Auth().UserID)
 		}
-
-		glc.WithUserID(c.V1.Auth().UserID)
 	}
 
 	leases, err := glc.List()
