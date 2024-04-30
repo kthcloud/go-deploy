@@ -47,7 +47,7 @@ jobs:
         cd ../build
         git add .
         if ! git diff-index --quiet HEAD; then
-          ehco "Committing changes"
+          echo "Committing changes"
           git commit -m "[🚚 CI] Generate build from main"
           git push
         else
