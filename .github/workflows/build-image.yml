@@ -1,10 +1,10 @@
-name: Build Image
+name: Build image
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - 'main'
+      - 'build'
 
 jobs:
   docker:

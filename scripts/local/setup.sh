@@ -327,19 +327,19 @@ function install_storage_classes() {
   fi
 
   # If storage class 'deploy-vm-disks' does not exist, create it
-  res=$(kubectl get sc | grep -c nfs)
+  res=$(kubectl get sc 2>/dev/null | grep -c nfs)
   if [ $res -eq 0 ]; then
     kubectl apply -f ./manifests/sc-vm-disks.yml
   fi
 
   # If storage class 'deploy-vm-scratch' does not exist, create it
-  res=$(kubectl get sc | grep -c scratch)
+  res=$(kubectl get sc 2>/dev/null | grep -c scratch)
   if [ $res -eq 0 ]; then
     kubectl apply -f ./manifests/sc-vm-scratch.yml
   fi
 
   # If volume snapshot class 'deploy-vm-snapshots' does not exist, create it
-  res=$(kubectl get volumesnapshotclass | grep -c deploy-vm-snapshots)
+  res=$(kubectl get volumesnapshotclass 2>/dev/null | grep -c deploy-vm-snapshots)
   if [ $res -eq 0 ]; then
     kubectl apply -f ./manifests/sc-vm-snapshots.yml
   fi
