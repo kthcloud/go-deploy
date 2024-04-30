@@ -25,7 +25,7 @@ jobs:
         ./generate-docs.sh
         cd ..
 
-        git clone https://github.com/kthcloud/go-deploy -b build build
+        git clone https://${{secrets.GH_ACCESS_TOKEN}}@github.com/kthcloud/go-deploy -b build build
         
         rm -rf build/docs
         rm -rf build/export
