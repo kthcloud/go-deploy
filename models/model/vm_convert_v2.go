@@ -23,10 +23,14 @@ func (vm *VM) ToDTOv2(gpuLease *GpuLease, teams []string, sshConnectionString *s
 		}
 
 		lease = &body.VmGpuLease{
-			ID:         gpuLease.ID,
-			GpuGroupID: gpuLease.GpuGroupID,
-			ExpiresAt:  expiresAt,
-			IsExpired:  gpuLease.IsExpired(),
+			ID:            gpuLease.ID,
+			GpuGroupID:    gpuLease.GpuGroupID,
+			LeaseDuration: gpuLease.LeaseDuration,
+			ActivatedAt:   gpuLease.ActivatedAt,
+			AssignedAt:    gpuLease.AssignedAt,
+			CreatedAt:     gpuLease.CreatedAt,
+			ExpiresAt:     expiresAt,
+			ExpiredAt:     gpuLease.ExpiredAt,
 		}
 	}
 
