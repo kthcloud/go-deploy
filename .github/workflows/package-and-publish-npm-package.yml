@@ -34,5 +34,6 @@ jobs:
         
       - name: Push changes
         run: |
+          echo "hello"
           BRANCH_NAME=${GITHUB_HEAD_REF}
           git add . && git commit -m "Bump npm package version" && git push
