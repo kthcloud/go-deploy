@@ -10,7 +10,7 @@ on:
       - main
     paths:
       - '**.go'
-      - '.github/workflows/test.yml'
+      - '.github/workflows/run-tests.yml'
 
 jobs:
   acc:
