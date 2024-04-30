@@ -20,8 +20,6 @@ jobs:
         git config --global user.email "noreply@cloud.cbh.kth.se"
         git config --global credential.helper cache
 
-        chmod +x ./build
-
         git clone https://github.com/kthcloud/go-deploy -b build build
         
         cd build/scripts
