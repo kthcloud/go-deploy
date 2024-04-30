@@ -9,11 +9,6 @@ RUN apk update && apk add --no-cache git=~2
 WORKDIR /app
 COPY . .
 
-# Build docs
-RUN go install github.com/swaggo/swag/cmd/swag@latest
-RUN chmod +x ./build-docs.sh
-RUN ./build-docs.sh
-
 # Fetch dependencies and build the binary
 ENV GO111MODULE=on
 RUN go get -d -v

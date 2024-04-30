@@ -1,13 +1,17 @@
-name: Build image
+name: Build and push image
 
 on:
   workflow_dispatch:
   push:
     branches:
       - 'build'
+    paths:
+      - 'Dockerfile'
+      - '.github/workflows/build-and-push-image.yml'
+      - '*.go'
 
 jobs:
-  docker:
+  build-and-push-image:
     runs-on: ubuntu-latest
     steps:
       - name: Login to DockerHub

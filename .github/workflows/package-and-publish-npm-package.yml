@@ -1,4 +1,4 @@
-name: Build, package, and publish NPM package
+name: Package and publish NPM package
 
 on:
   workflow_dispatch:
@@ -7,10 +7,10 @@ on:
       - build
     paths:
       - "export/**"
-      - ".github/workflows/npm-package.yml"
+      - ".github/workflows/package-and-publish-npm-package.yml"
 
 jobs:
-  build-and-publish:
+  package-and-publish:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -39,4 +39,5 @@ jobs:
 
       - name: Push changes
         run: |
-          git add . && git commit -m "Bump npm package version" && git push
+          BRANCH_NAME=${GITHUB_HEAD_REF}
+          git add . && git commit -m "Bump npm package version" && git push origin HEAD:$BRANCH_NAME
