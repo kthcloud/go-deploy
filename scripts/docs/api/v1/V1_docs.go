@@ -1745,7 +1745,7 @@ const docTemplateV1 = `{
                 }
             }
         },
-        "/v1/vm": {
+        "/v1/vms": {
             "get": {
                 "description": "List VMs",
                 "consumes": [
@@ -1865,7 +1865,65 @@ const docTemplateV1 = `{
                 }
             }
         },
-        "/v1/vm/{vmId}": {
+        "/v1/vms/gpus": {
+            "get": {
+                "description": "Get list of GPUs",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "VM"
+                ],
+                "summary": "Get list of GPUs",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "Only show available GPUs",
+                        "name": "available",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/body.GpuRead"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "423": {
+                        "description": "Locked",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/vms/{vmId}": {
             "get": {
                 "description": "Get VM",
                 "consumes": [
@@ -2026,64 +2084,6 @@ const docTemplateV1 = `{
                     },
                     "401": {
                         "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "423": {
-                        "description": "Locked",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/vms/gpus": {
-            "get": {
-                "description": "Get list of GPUs",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "VM"
-                ],
-                "summary": "Get list of GPUs",
-                "parameters": [
-                    {
-                        "type": "boolean",
-                        "description": "Only show available GPUs",
-                        "name": "available",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/body.GpuRead"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/sys.ErrorResponse"
                         }

@@ -2620,7 +2620,7 @@ paths:
       summary: Update user
       tags:
       - User
-  /v1/vm:
+  /v1/vms:
     get:
       consumes:
       - application/json
@@ -2699,7 +2699,7 @@ paths:
       summary: Create VM
       tags:
       - VM
-  /v1/vm/{vmId}:
+  /v1/vms/{vmId}:
     delete:
       consumes:
       - application/json
