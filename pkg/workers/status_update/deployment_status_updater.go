@@ -10,30 +10,8 @@ import (
 	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/service/v1/deployments/k8s_service"
-	"go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
 )
-
-func deploymentStatusUpdater2() error {
-	allDeployments, err := deployment_repo.New().List()
-	if err != nil {
-		return err
-	}
-
-	for _, deployment := range allDeployments {
-		code, message, err := fetchDeploymentStatus(&deployment)
-		if err != nil {
-			utils.PrettyPrintError(fmt.Errorf("error fetching deployment status: %w", err))
-			continue
-		}
-		err = deployment_repo.New().SetWithBsonByID(deployment.ID, bson.D{{"statusCode", code}, {"statusMessage", message}})
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
 
 func deploymentStatusUpdater(ctx context.Context) error {
 	for _, zone := range config.Config.Zones {

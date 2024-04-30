@@ -83,7 +83,7 @@ func fetchVmStatusV1(vm *model.VM, csStatus string) (int, string, error) {
 		return status_codes.ResourceCreatingSnapshot, status_codes.GetMsg(status_codes.ResourceCreatingSnapshot), nil
 	}
 
-	if csStatusCode == status_codes.ResourceUnknown || csStatusCode == status_codes.ResourceNotFound {
+	if csStatusCode == status_codes.ResourceUnknown {
 		if vm.BeingDeleted() {
 			return status_codes.ResourceDeleting, status_codes.GetMsg(status_codes.ResourceDeleting), nil
 		}
@@ -137,36 +137,6 @@ func fetchSnapshotStatus(vm *model.VM) map[string]csModels.SnapshotPublic {
 	return snapshotMap
 }
 
-// fetchDeploymentStatus fetches the status of a deployment.
-func fetchDeploymentStatus(deployment *model.Deployment) (int, string, error) {
-
-	if deployment == nil {
-		return status_codes.ResourceNotFound, status_codes.GetMsg(status_codes.ResourceNotFound), nil
-	}
-
-	if deployment.BeingDeleted() {
-		return status_codes.ResourceDeleting, status_codes.GetMsg(status_codes.ResourceDeleting), nil
-	}
-
-	if deployment.BeingCreated() {
-		return status_codes.ResourceCreating, status_codes.GetMsg(status_codes.ResourceCreating), nil
-	}
-
-	if deployment.GetMainApp().Replicas == 0 {
-		return status_codes.ResourceStopped, status_codes.GetMsg(status_codes.ResourceStopped), nil
-	}
-
-	if deployment.DoingActivity(model.ActivityRestarting) {
-		return status_codes.ResourceRestarting, status_codes.GetMsg(status_codes.ResourceRestarting), nil
-	}
-
-	if deployment.DoingActivity(model.ActivityBuilding) {
-		return status_codes.ResourceBuilding, status_codes.GetMsg(status_codes.ResourceBuilding), nil
-	}
-
-	return status_codes.ResourceRunning, status_codes.GetMsg(status_codes.ResourceRunning), nil
-}
-
 // pingDeployment pings a deployment and stores the result in the database.
 func pingDeployment(deployment *model.Deployment) {
 	makeError := func(err error) error {
@@ -203,8 +173,7 @@ func pingDeployment(deployment *model.Deployment) {
 func pingAndSave(deployment model.Deployment, url string) {
 	code, err := ping(url)
 	if err != nil {
-		utils.PrettyPrintError(fmt.Errorf("error fetching deployment status ping. details: %w", err))
-		return
+		code = 0
 	}
 
 	err = deployment_repo.New().SetPingResult(deployment.ID, code)
