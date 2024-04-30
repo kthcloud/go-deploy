@@ -1,0 +1,24 @@
+name: Build docs
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - "routers/**"
+      - '.github/workflows/build-docs.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Build docs
+      run: |       
+        cd scripts
+        source ./path-cmd.sh
+        chmod +x ./generate-docs.sh
+        ./generate-docs.sh
+        cd ..
+      

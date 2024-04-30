@@ -1,0 +1,23 @@
+name: Build types
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'dto/**'
+      - '.github/workflows/build-types.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Build types
+      run: |       
+        cd scripts
+        chmod +x ./generate-types.sh
+        ./generate-types.sh
+        cd ..
+      
