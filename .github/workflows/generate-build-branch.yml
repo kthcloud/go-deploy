@@ -32,6 +32,9 @@ jobs:
         rm -rf ../build/*
         cp -r ./* ../build/
         
+        rm -rf ../build/.github
+        cp -r ./.github ../build/
+        
         cd ../build
         git add .
         if ! git diff-index --quiet HEAD; then
