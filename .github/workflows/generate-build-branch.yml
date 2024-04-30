@@ -30,7 +30,7 @@ jobs:
         cd go-deploy
         
         rm -rf ../build/*
-        copy -r ./* ../build/
+        cp -r ./* ../build/
         
         cd ../build
         git add .
