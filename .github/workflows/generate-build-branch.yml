@@ -17,6 +17,7 @@ jobs:
         git config --global user.email "noreply@cloud.cbh.kth.se"
         git config --global credential.helper cache
         
+        echo "Generating types and docs"
         cd scripts
         source ./path-cmd.sh
         chmod +x ./generate-types.sh
@@ -25,23 +26,30 @@ jobs:
         ./generate-docs.sh
         cd ..
         
+        echo "Cloning build branch"
         cd ..
         git clone https://${{secrets.GH_ACCESS_TOKEN}}@github.com/kthcloud/go-deploy -b build build    
         cd build
         npm_package_version=$(cat export/package.json | jq -r '.version')
         cd ../go-deploy
         
+        echo "Found package version $npm_package_version"
         sed -i "s/\"version\": \".*\"/\"version\": \"$npm_package_version\"/g" export/package.json
         
+        echo "Cleaning up build branch"
         rm -rf ../build/*
         cp -r ./* ../build
         
+        echo "Copying into build branch"
         rm -rf ../build/.github
         cp -r ./.github ../build
         
         cd ../build
         git add .
         if ! git diff-index --quiet HEAD; then
+          ehco "Committing changes"
           git commit -m "[🚚 CI] Generate build from main"
           git push
+        else
+          echo "No changes to commit"
         fi
