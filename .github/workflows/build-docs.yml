@@ -3,6 +3,9 @@ name: Build docs
 on:
   pull_request:
     branches: [ "main" ]
+    paths:
+      - "routers/**"
+      - '.github/workflows/build-docs.yml'
 
 jobs:
   build:

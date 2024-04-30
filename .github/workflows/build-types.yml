@@ -3,6 +3,9 @@ name: Build types
 on:
   pull_request:
     branches: [ "main" ]
+    paths:
+      - 'dto/**'
+      - '.github/workflows/build-types.yml'
 
 jobs:
   build:
