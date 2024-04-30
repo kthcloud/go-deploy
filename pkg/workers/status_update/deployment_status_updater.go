@@ -84,7 +84,7 @@ func parseDeploymentStatus(status *models.DeploymentStatus) string {
 	if status.ReadyReplicas == status.DesiredReplicas {
 		statusCode = status_codes.ResourceRunning
 	} else if status.Generation <= 1 && (status.ReadyReplicas != status.DesiredReplicas || status.UnavailableReplicas > 0) {
-		statusCode = status_codes.ResourceBeingCreated
+		statusCode = status_codes.ResourceCreating
 	} else if status.DesiredReplicas == 0 && status.ReadyReplicas > 0 {
 		statusCode = status_codes.ResourceStopping
 	} else if status.DesiredReplicas == 0 {

@@ -86,7 +86,7 @@ func parseVmStatus(status *models.VmStatus) string {
 	case "Stopping":
 		statusCode = status_codes.ResourceStopping
 	case "Terminating":
-		statusCode = status_codes.ResourceBeingDeleted
+		statusCode = status_codes.ResourceDeleting
 	case "CrashLoopBackOff", "Unknown", "Unschedulable", "ErrImagePull", "ImagePullBackOff", "PvcNotFound", "DataVolumeError":
 		statusCode = status_codes.ResourceError
 	default:

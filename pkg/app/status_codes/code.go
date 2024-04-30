@@ -3,13 +3,8 @@ package status_codes
 const (
 	Unknown = 0
 
-	ResourceNotCreated       = 10020
-	ResourceNotFound         = 10021
-	ResourceNotUpdated       = 10022
-	ResourceNotReady         = 10023
-	ResourceNotAvailable     = 10024
-	ResourceBeingCreated     = 10025
-	ResourceBeingDeleted     = 10026
+	ResourceCreating         = 10025
+	ResourceDeleting         = 10026
 	ResourceCreatingSnapshot = 10027
 	ResourceProvisioning     = 10028
 	ResourceMigrating        = 10029
@@ -40,13 +35,8 @@ var MsgFlags = map[int]string{
 
 	ResourceUnknown: "resourceUnknown",
 
-	ResourceNotCreated:       "resourceNotCreated",
-	ResourceNotFound:         "resourceNotFound",
-	ResourceNotUpdated:       "resourceNotModified",
-	ResourceNotReady:         "resourceNotReady",
-	ResourceNotAvailable:     "resourceNotAvailable",
-	ResourceBeingCreated:     "resourceBeingCreated",
-	ResourceBeingDeleted:     "resourceBeingDeleted",
+	ResourceCreating:         "resourceCreating",
+	ResourceDeleting:         "resourceDeleting",
 	ResourceCreatingSnapshot: "resourceCreatingSnapshot",
 	ResourceMigrating:        "resourceMigrating",
 	ResourceProvisioning:     "resourceProvisioning",

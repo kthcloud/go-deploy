@@ -71,9 +71,9 @@ func (client *Client) Create(id, owner string, params *model.VmCreateParams) (*m
 			DiskSize: params.DiskSize,
 		},
 
-		Status:        status_codes.GetMsg(status_codes.ResourceBeingCreated),
-		StatusCode:    status_codes.ResourceBeingCreated,
-		StatusMessage: status_codes.GetMsg(status_codes.ResourceBeingCreated),
+		Status:        status_codes.GetMsg(status_codes.ResourceCreating),
+		StatusCode:    status_codes.ResourceCreating,
+		StatusMessage: status_codes.GetMsg(status_codes.ResourceCreating),
 	}
 
 	_, err := client.Collection.InsertOne(context.TODO(), vm)
