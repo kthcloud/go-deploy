@@ -8,7 +8,7 @@ on:
     paths:
       - 'Dockerfile'
       - '.github/workflows/build-and-push-image.yml'
-      - '*.go'
+      - '**.go'
 
 jobs:
   build-and-push-image:

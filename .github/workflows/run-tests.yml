@@ -1,4 +1,4 @@
-name: Acceptance and end-to-end tests
+name: Run tests
 
 on:
   schedule:
