@@ -34,8 +34,7 @@ jobs:
         cp -r export build
         
         cd build
-        git add docs
-        git add export
+        git add .
         if ! git diff-index --quiet HEAD; then
           git commit -m "[🚚 Automatic] Generate build branch from main"
           git push
