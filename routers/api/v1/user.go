@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"go-deploy/dto/v1/body"
 	"go-deploy/dto/v1/query"
@@ -13,7 +12,6 @@ import (
 	"go-deploy/service/clients"
 	"go-deploy/service/v1/users/opts"
 	sUtils "go-deploy/service/v1/utils"
-	"go-deploy/utils"
 )
 
 // GetUser
@@ -51,34 +49,20 @@ func GetUser(c *gin.Context) {
 
 	deployV1 := service.V1(auth)
 
-	if requestURI.UserID == auth.UserID {
-		effectiveRole = auth.GetEffectiveRole()
-		user, err = deployV1.Users().Create()
-		if err != nil {
-			context.ServerError(err, InternalError)
-			return
-		}
+	user, err = deployV1.Users().Get(requestURI.UserID)
+	if err != nil {
+		context.ServerError(err, InternalError)
+		return
+	}
 
-		if user == nil {
-			context.NotFound("User not found")
-			return
-		}
-	} else {
-		user, err = deployV1.Users().Get(requestURI.UserID)
-		if err != nil {
-			context.ServerError(err, InternalError)
-			return
-		}
+	if user == nil {
+		context.NotFound("User not found")
+		return
+	}
 
-		if user == nil {
-			context.NotFound("User not found")
-			return
-		}
-
-		effectiveRole = config.Config.GetRole(user.EffectiveRole.Name)
-		if effectiveRole == nil {
-			effectiveRole = &model.Role{}
-		}
+	effectiveRole = config.Config.GetRole(user.EffectiveRole.Name)
+	if effectiveRole == nil {
+		effectiveRole = &model.Role{}
 	}
 
 	usage, err := collectUsage(deployV1, user.ID)
@@ -149,19 +133,6 @@ func ListUsers(c *gin.Context) {
 
 	usersDto := make([]body.UserRead, 0)
 	for _, user := range userList {
-		// if we list ourselves, take the opportunity to update our role
-		if user.ID == auth.UserID {
-			updatedUser, err := deployV1.Users().Create()
-			if err != nil {
-				utils.PrettyPrintError(fmt.Errorf("failed to get or create a user when listing: %w", err))
-				continue
-			}
-
-			if updatedUser != nil {
-				user = *updatedUser
-			}
-		}
-
 		role := config.Config.GetRole(user.EffectiveRole.Name)
 		usage, _ := collectUsage(deployV1, user.ID)
 		if usage == nil {
@@ -217,7 +188,7 @@ func UpdateUser(c *gin.Context) {
 
 	if requestURI.UserID == auth.UserID {
 		effectiveRole = auth.GetEffectiveRole()
-		_, err = deployV1.Users().Create()
+		_, err = deployV1.Users().Synchronize()
 		if err != nil {
 			context.ServerError(err, InternalError)
 			return

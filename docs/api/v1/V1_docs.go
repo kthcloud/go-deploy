@@ -92,7 +92,7 @@ const docTemplateV1 = `{
                 }
             },
             "post": {
-                "description": "Create deployment",
+                "description": "Synchronize deployment",
                 "consumes": [
                     "application/json"
                 ],
@@ -102,7 +102,7 @@ const docTemplateV1 = `{
                 "tags": [
                     "Deployment"
                 ],
-                "summary": "Create deployment",
+                "summary": "Synchronize deployment",
                 "parameters": [
                     {
                         "type": "string",
@@ -1183,7 +1183,7 @@ const docTemplateV1 = `{
                 }
             },
             "post": {
-                "description": "Create team",
+                "description": "Synchronize team",
                 "consumes": [
                     "application/json"
                 ],
@@ -1193,7 +1193,7 @@ const docTemplateV1 = `{
                 "tags": [
                     "Team"
                 ],
-                "summary": "Create team",
+                "summary": "Synchronize team",
                 "parameters": [
                     {
                         "description": "Team",
@@ -1407,7 +1407,7 @@ const docTemplateV1 = `{
                 }
             },
             "post": {
-                "description": "Create user data",
+                "description": "Synchronize user data",
                 "consumes": [
                     "application/json"
                 ],
@@ -1417,7 +1417,7 @@ const docTemplateV1 = `{
                 "tags": [
                     "UserData"
                 ],
-                "summary": "Create user data",
+                "summary": "Synchronize user data",
                 "parameters": [
                     {
                         "description": "User data create",
@@ -1792,7 +1792,7 @@ const docTemplateV1 = `{
                 }
             },
             "post": {
-                "description": "Create VM",
+                "description": "Synchronize VM",
                 "consumes": [
                     "application/json"
                 ],
@@ -1802,7 +1802,7 @@ const docTemplateV1 = `{
                 "tags": [
                     "VM"
                 ],
-                "summary": "Create VM",
+                "summary": "Synchronize VM",
                 "parameters": [
                     {
                         "description": "VM body",
@@ -2355,7 +2355,7 @@ const docTemplateV1 = `{
                 }
             },
             "post": {
-                "description": "Create snapshot",
+                "description": "Synchronize snapshot",
                 "consumes": [
                     "application/json"
                 ],
@@ -2365,7 +2365,7 @@ const docTemplateV1 = `{
                 "tags": [
                     "VM"
                 ],
-                "summary": "Create snapshot",
+                "summary": "Synchronize snapshot",
                 "parameters": [
                     {
                         "type": "string",

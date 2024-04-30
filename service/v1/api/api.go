@@ -98,7 +98,7 @@ type Status interface {
 type Users interface {
 	Get(id string, opts ...userOpts.GetOpts) (*model.User, error)
 	List(opts ...userOpts.ListOpts) ([]model.User, error)
-	Create() (*model.User, error)
+	Synchronize() (*model.User, error)
 	Update(userID string, dtoUserUpdate *body.UserUpdate) (*model.User, error)
 	Exists(id string) (bool, error)
 

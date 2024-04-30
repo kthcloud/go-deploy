@@ -208,7 +208,7 @@ const docTemplateV2 = `{
                 }
             },
             "post": {
-                "description": "Create GPU lease",
+                "description": "Synchronize GPU lease",
                 "consumes": [
                     "application/json"
                 ],
@@ -218,7 +218,7 @@ const docTemplateV2 = `{
                 "tags": [
                     "GpuLease"
                 ],
-                "summary": "Create GPU Lease",
+                "summary": "Synchronize GPU Lease",
                 "parameters": [
                     {
                         "type": "string",

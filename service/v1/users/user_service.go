@@ -1,11 +1,16 @@
 package users
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"go-deploy/dto/v1/body"
 	"go-deploy/models/model"
 	"go-deploy/pkg/db/resources/user_repo"
 	"go-deploy/service/utils"
 	"go-deploy/service/v1/users/opts"
+	"net/http"
+	"strings"
+	"time"
 )
 
 // Get gets a user
@@ -57,11 +62,9 @@ func (c *Client) Exists(id string) (bool, error) {
 	return user_repo.New().ExistsByID(id)
 }
 
-// Create creates a user
-//
-// It uses service.AuthInfo to get the information about the user
-// and acts as a synchronization if the user already exists.
-func (c *Client) Create() (*model.User, error) {
+// Synchronize creates a user or updates an existing user.
+// It does nothing if no auth info is provided
+func (c *Client) Synchronize() (*model.User, error) {
 	if !c.V1.HasAuth() {
 		return nil, nil
 	}
@@ -85,7 +88,33 @@ func (c *Client) Create() (*model.User, error) {
 		},
 	}
 
-	return user_repo.New().Create(c.V1.Auth().UserID, params)
+	umc := user_repo.New()
+
+	user, err := umc.Synchronize(c.V1.Auth().UserID, params)
+	if err != nil {
+		return nil, err
+	}
+
+	if user.Gravatar.FetchedAt.IsZero() || user.Gravatar.FetchedAt.Add(model.FetchGravatarInterval).Before(time.Now()) {
+		gravatarURL, err := c.FetchGravatar(user.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		if gravatarURL == nil {
+			err = umc.UnsetGravatar(user.ID)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			err = umc.SetGravatar(user.ID, *gravatarURL)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	return user, nil
 }
 
 // Discover returns a list of users that the requesting user has access to
@@ -144,4 +173,39 @@ func (c *Client) Update(userID string, dtoUserUpdate *body.UserUpdate) (*model.U
 	}
 
 	return c.RefreshUser(userID, umc)
+}
+
+// FetchGravatar checks if the user has a gravatar image and fetches it if it exists
+// If the user does not have a gravatar image, it returns nil
+func (c *Client) FetchGravatar(userID string) (*string, error) {
+	umc := user_repo.New()
+
+	if c.V1.Auth() != nil && userID != c.V1.Auth().UserID && !c.V1.Auth().IsAdmin {
+		return nil, nil
+	}
+
+	user, err := c.User(userID, umc)
+	if err != nil {
+		return nil, err
+	}
+
+	hasher := sha256.Sum256([]byte(strings.TrimSpace(user.Email)))
+	hash := hex.EncodeToString(hasher[:])
+
+	gravatarURL := "https://www.gravatar.com/avatar/" + hash + "?d=404"
+
+	// Check if image exists
+	resp, err := http.Head(gravatarURL)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, nil
+	}
+
+	// Trim the query string
+	gravatarURL = gravatarURL[:strings.Index(gravatarURL, "?")]
+
+	return &gravatarURL, nil
 }
