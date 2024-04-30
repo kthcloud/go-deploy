@@ -14,6 +14,7 @@ jobs:
     - name: Build docs
       run: |       
         cd scripts
+        source ./path-cmd.sh
         chmod +x ./generate-docs.sh
         ./generate-docs.sh
         cd ..
