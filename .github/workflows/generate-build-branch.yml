@@ -24,16 +24,15 @@ jobs:
         chmod +x ./generate-docs.sh
         ./generate-docs.sh
         cd ..
-
+        
+        cd ..
         git clone https://${{secrets.GH_ACCESS_TOKEN}}@github.com/kthcloud/go-deploy -b build build
+        cd go-deploy
         
-        rm -rf build/docs
-        rm -rf build/export
-
-        cp -r docs build
-        cp -r export build
+        rm -rf ../build/*
+        copy -r ./* ../build/
         
-        cd build
+        cd ../build
         git add .
         if ! git diff-index --quiet HEAD; then
           git commit -m "[🚚 Automatic] Generate build branch from main"
