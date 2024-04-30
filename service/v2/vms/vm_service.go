@@ -687,8 +687,6 @@ func (c *Client) GetUsage(userID string) (*model.VmUsage, error) {
 		usage.CpuCores += specs.CpuCores
 		usage.RAM += specs.RAM
 		usage.DiskSize += specs.DiskSize
-
-		// TODO: Add snapshot usage
 	}
 
 	return usage, nil

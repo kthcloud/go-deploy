@@ -418,6 +418,11 @@ func RepairDeployment(job *model.Job) error {
 		return jErrors.MakeTerminatedError(err)
 	}
 
+	err = deployment_repo.New().MarkRepaired(id)
+	if err != nil {
+		return jErrors.MakeTerminatedError(err)
+	}
+
 	return nil
 }
 
