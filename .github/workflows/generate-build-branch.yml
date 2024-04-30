@@ -26,8 +26,14 @@ jobs:
         cd ..
         
         cd ..
-        git clone https://${{secrets.GH_ACCESS_TOKEN}}@github.com/kthcloud/go-deploy -b build build
-        cd go-deploy
+        git clone https://${{secrets.GH_ACCESS_TOKEN}}@github.com/kthcloud/go-deploy -b build build       
+        cd build
+        npm_package_version=$(cat export/package.json | jq -r '.version')
+        cd ../go-deploy
+        
+        cd export
+        sed -i "s/\"version\": \".*\"/\"version\": \"$npm_package_version\"/g" package.json
+        cd ..
         
         rm -rf ../build/*
         cp -r ./* ../build/
