@@ -61,7 +61,7 @@ func GetResourceMigration(c *gin.Context) {
 // @Tags ResourceMigration
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} body.ResourceMigrationList
+// @Success 200 {array} body.ResourceMigrationRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 401 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
