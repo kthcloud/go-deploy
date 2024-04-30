@@ -1,12 +1,12 @@
 name: Build, package, and publish NPM package
 
 on:
-  pull_request:
+  workflow_dispatch:
+  push:
     branches:
-      - main
+      - build
     paths:
       - "export/**"
-      - "dto/**"
       - ".github/workflows/npm-package.yml"
 
 jobs:
@@ -23,9 +23,6 @@ jobs:
         with:
           node-version: "20"
           registry-url: "https://registry.npmjs.org"
-
-      - name: Run generate-types script from script folder
-        run: cd ./scripts && chmod +x ./generate-types.sh && ./generate-types.sh
 
       - name: Bump NPM version
         run: |

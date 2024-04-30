@@ -1,0 +1,42 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: Generate build branch
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Generate build branch
+      run: |
+        git config --global user.name "kthcloud"
+        git config --global user.email "noreply@cloud.cbh.kth.se"
+        git config --global credential.helper cache
+
+        chmod +x ./build
+
+        git clone https://github.com/kthcloud/go-deploy -b build build
+        
+        cd build/scripts
+        chmod +x ./generate-types.sh
+        ./generate-types.sh
+        chmod +x ./generate-docs.sh
+        ./generate-docs.sh
+        
+        cp -r docs build/docs
+        cp -r export build/export
+        
+        cd build
+        git add docs
+        git add export
+        if ! git diff-index --quiet HEAD; then
+          git commit -m "[🚚 Automatic] Generate build branch from main
+          git push
+        fi
