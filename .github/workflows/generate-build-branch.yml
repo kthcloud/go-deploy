@@ -37,6 +37,6 @@ jobs:
         git add docs
         git add export
         if ! git diff-index --quiet HEAD; then
-          git commit -m "[🚚 Automatic] Generate build branch from main
+          git commit -m "[🚚 Automatic] Generate build branch from main"
           git push
         fi
