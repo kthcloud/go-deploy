@@ -8,7 +8,7 @@ on:
       - '.github/workflows/build-docs.yml'
 
 jobs:
-  build:
+  build-docs:
     runs-on: ubuntu-latest
 
     steps:

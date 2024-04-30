@@ -10,7 +10,7 @@ on:
       - ".github/workflows/package-and-publish-npm-package.yml"
 
 jobs:
-  package-and-publish:
+  package-and-publish-npm-package:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
