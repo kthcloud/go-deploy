@@ -18,6 +18,10 @@ jobs:
         with:
           fetch-depth: 0 # Ensures tags are also fetched
 
+      - name: Clean up
+        run: |
+          rm export/tygo.yml
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
@@ -31,9 +35,14 @@ jobs:
           git config user.email github-actions@github.com
           npm version patch
         working-directory: ./export
-        
+
+      - name: Publish
+        run: npm publish --access public
+        working-directory: ./export
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
       - name: Push changes
         run: |
-          echo "hello"
           BRANCH_NAME=${GITHUB_HEAD_REF}
           git add . && git commit -m "Bump npm package version" && git push

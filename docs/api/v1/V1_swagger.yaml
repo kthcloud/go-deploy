@@ -1424,7 +1424,7 @@ paths:
       summary: Handle Harbor hook
       tags:
       - Deployment
-  /v1/job:
+  /v1/jobs:
     get:
       consumes:
       - application/json
@@ -1466,7 +1466,7 @@ paths:
       summary: List jobs
       tags:
       - Job
-  /v1/job/{id}:
+  /v1/jobs/{id}:
     get:
       consumes:
       - application/json
@@ -1833,48 +1833,6 @@ paths:
       summary: List worker status
       tags:
       - Status
-  /v1/storageManager/{storageManagerId}:
-    get:
-      consumes:
-      - application/json
-      description: Delete storage manager
-      parameters:
-      - description: Bearer token
-        in: header
-        name: Authorization
-        required: true
-        type: string
-      - description: Storage manager ID
-        in: path
-        name: storageManagerId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/body.SmDeleted'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/sys.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/sys.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/sys.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/sys.ErrorResponse'
-      summary: Delete storage manager
-      tags:
-      - StorageManager
   /v1/storageManagers:
     get:
       consumes:
@@ -1914,7 +1872,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get storage manager
+      description: Delete storage manager
       parameters:
       - description: Bearer token
         in: header
@@ -1949,7 +1907,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
-      summary: Get storage manager
+      summary: Delete storage manager
       tags:
       - StorageManager
   /v1/teams:

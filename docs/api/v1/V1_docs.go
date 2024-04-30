@@ -564,7 +564,7 @@ const docTemplateV1 = `{
                 }
             }
         },
-        "/v1/job": {
+        "/v1/jobs": {
             "get": {
                 "description": "List jobs",
                 "consumes": [
@@ -628,7 +628,7 @@ const docTemplateV1 = `{
                 }
             }
         },
-        "/v1/job/{id}": {
+        "/v1/jobs/{id}": {
             "get": {
                 "description": "GetJob job by id",
                 "consumes": [
@@ -1183,69 +1183,6 @@ const docTemplateV1 = `{
                 }
             }
         },
-        "/v1/storageManager/{storageManagerId}": {
-            "get": {
-                "description": "Delete storage manager",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "StorageManager"
-                ],
-                "summary": "Delete storage manager",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer token",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Storage manager ID",
-                        "name": "storageManagerId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/body.SmDeleted"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/v1/storageManagers": {
             "get": {
                 "description": "Get storage manager list",
@@ -1301,7 +1238,7 @@ const docTemplateV1 = `{
         },
         "/v1/storageManagers/{storageManagerId}": {
             "get": {
-                "description": "Get storage manager",
+                "description": "Delete storage manager",
                 "consumes": [
                     "application/json"
                 ],
@@ -1311,7 +1248,7 @@ const docTemplateV1 = `{
                 "tags": [
                     "StorageManager"
                 ],
-                "summary": "Get storage manager",
+                "summary": "Delete storage manager",
                 "parameters": [
                     {
                         "type": "string",
