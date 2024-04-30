@@ -31,8 +31,9 @@ definitions:
         minItems: 0
         type: array
       customDomain:
-        maxLength: 253
-        minLength: 1
+        description: |-
+          CustomDomain is the domain that the deployment will be available on.
+          The max length is set to 243 to allow for a sub domain when confirming the domain.
         type: string
       envs:
         items:
@@ -194,19 +195,12 @@ definitions:
         maxLength: 30
         minLength: 3
         type: string
-      ownerId:
-        description: update owner
-        type: string
       private:
         type: boolean
       replicas:
         maximum: 100
         minimum: 0
         type: integer
-      transferCode:
-        maxLength: 1000
-        minLength: 1
-        type: string
       volumes:
         items:
           $ref: '#/definitions/body.Volume'
@@ -388,6 +382,117 @@ definitions:
       snapshots:
         type: integer
     type: object
+  body.ResourceMigrationCreate:
+    properties:
+      resourceID:
+        type: string
+      status:
+        type: string
+      type:
+        type: string
+      updateOwner:
+        properties:
+          ownerId:
+            type: string
+        required:
+        - ownerId
+        type: object
+    required:
+    - resourceID
+    - status
+    - type
+    type: object
+  body.ResourceMigrationCreated:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        type: string
+      id:
+        type: string
+      jobId:
+        description: |-
+          JobID is the ID of the job that was created for the resource migration.
+          Only if the migration was created with status 'accepted' a job will be created.
+        type: string
+      resourceId:
+        type: string
+      resourceType:
+        type: string
+      status:
+        type: string
+      type:
+        type: string
+      updateOwner:
+        properties:
+          ownerId:
+            type: string
+        type: object
+      userId:
+        type: string
+    type: object
+  body.ResourceMigrationRead:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        type: string
+      id:
+        type: string
+      resourceId:
+        type: string
+      resourceType:
+        type: string
+      status:
+        type: string
+      type:
+        type: string
+      updateOwner:
+        properties:
+          ownerId:
+            type: string
+        type: object
+      userId:
+        type: string
+    type: object
+  body.ResourceMigrationUpdate:
+    properties:
+      code:
+        type: string
+      status:
+        type: string
+    required:
+    - status
+    type: object
+  body.ResourceMigrationUpdated:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        type: string
+      id:
+        type: string
+      jobId:
+        description: |-
+          JobID is the ID of the job that was created for the resource migration.
+          Only if the migration was updated with status 'accepted' a job will be created.
+        type: string
+      resourceId:
+        type: string
+      resourceType:
+        type: string
+      status:
+        type: string
+      type:
+        type: string
+      updateOwner:
+        properties:
+          ownerId:
+            type: string
+        type: object
+      userId:
+        type: string
+    type: object
   body.Role:
     properties:
       description:
@@ -549,37 +654,19 @@ definitions:
       snapshots:
         type: integer
     type: object
-  body.UserDataCreate:
+  body.UserData:
     properties:
-      data:
-        maxLength: 1000
+      key:
+        maxLength: 255
         minLength: 1
         type: string
-      id:
-        maxLength: 100
-        minLength: 1
-        type: string
-    required:
-    - data
-    - id
-    type: object
-  body.UserDataRead:
-    properties:
-      data:
-        type: string
-      id:
-        type: string
-      userId:
-        type: string
-    type: object
-  body.UserDataUpdate:
-    properties:
-      data:
-        maxLength: 1000
+      value:
+        maxLength: 255
         minLength: 1
         type: string
     required:
-    - data
+    - key
+    - value
     type: object
   body.UserRead:
     properties:
@@ -593,8 +680,6 @@ definitions:
         type: string
       lastName:
         type: string
-      onboarded:
-        type: boolean
       publicKeys:
         items:
           $ref: '#/definitions/body.PublicKey'
@@ -607,17 +692,25 @@ definitions:
         type: string
       usage:
         $ref: '#/definitions/body.Usage'
+      userData:
+        items:
+          $ref: '#/definitions/body.UserData'
+        type: array
       username:
         type: string
     type: object
   body.UserUpdate:
     properties:
-      onboarded:
-        type: boolean
       publicKeys:
         items:
           $ref: '#/definitions/body.PublicKey'
-        maxItems: 1000
+        maxItems: 100
+        minItems: 0
+        type: array
+      userData:
+        items:
+          $ref: '#/definitions/body.UserData'
+        maxItems: 100
         minItems: 0
         type: array
     type: object
@@ -660,22 +753,47 @@ definitions:
       status:
         type: string
     type: object
+  body.ZoneEndpoints:
+    properties:
+      deployment:
+        type: string
+      storage:
+        type: string
+      vm:
+        type: string
+      vmApp:
+        type: string
+    type: object
   body.ZoneRead:
     properties:
+      capabilities:
+        items:
+          type: string
+        type: array
       description:
         type: string
+      enabled:
+        type: boolean
+      endpoints:
+        $ref: '#/definitions/body.ZoneEndpoints'
       interface:
+        description: |-
+          Interface
+          Deprecated: use Endpoints instead
         type: string
+      legacy:
+        type: boolean
       name:
         type: string
       type:
+        description: |-
+          Type
+          Deprecated: use Capabilities instead
         type: string
     type: object
   go-deploy_dto_v1_body.HttpProxyCreate:
     properties:
       customDomain:
-        maxLength: 100
-        minLength: 1
         type: string
       name:
         maxLength: 30
@@ -706,7 +824,6 @@ definitions:
   go-deploy_dto_v1_body.HttpProxyUpdate:
     properties:
       customDomain:
-        maxLength: 100
         type: string
       name:
         maxLength: 30
@@ -907,8 +1024,6 @@ definitions:
         type: string
       noLeaseEnd:
         type: boolean
-      ownerId:
-        type: string
       ports:
         items:
           $ref: '#/definitions/go-deploy_dto_v1_body.PortUpdate'
@@ -920,10 +1035,6 @@ definitions:
         type: integer
       snapshotId:
         type: string
-      transferCode:
-        maxLength: 1000
-        minLength: 1
-        type: string
     type: object
   go-deploy_dto_v1_body.VmUpdated:
     properties:
@@ -932,19 +1043,19 @@ definitions:
       jobId:
         type: string
     type: object
-  sys.ErrorResponse:
-    properties:
-      errors:
-        items:
-          $ref: '#/definitions/sys.errorPiece'
-        type: array
-    type: object
-  sys.errorPiece:
+  sys.Error:
     properties:
       code:
         type: string
       msg:
         type: string
+    type: object
+  sys.ErrorResponse:
+    properties:
+      errors:
+        items:
+          $ref: '#/definitions/sys.Error'
+        type: array
     type: object
 info:
   contact: {}
@@ -1294,8 +1405,6 @@ paths:
       responses:
         "204":
           description: No Content
-          schema:
-            type: empty
         "400":
           description: Bad Request
           schema:
@@ -1536,6 +1645,169 @@ paths:
       summary: Update notification
       tags:
       - Notification
+  /v1/resourceMigrations:
+    get:
+      consumes:
+      - application/json
+      description: List resource migrations
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/body.ResourceMigrationRead'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: List resource migrations
+      tags:
+      - ResourceMigration
+    post:
+      consumes:
+      - application/json
+      description: Create resource migration
+      parameters:
+      - description: Resource Migration Create
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/body.ResourceMigrationCreate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.ResourceMigrationCreated'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: Create resource migration
+      tags:
+      - ResourceMigration
+  /v1/resourceMigrations/{resourceMigrationId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete resource migration
+      parameters:
+      - description: Resource Migration ID
+        in: path
+        name: resourceMigrationId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: Delete resource migration
+      tags:
+      - ResourceMigration
+    get:
+      consumes:
+      - application/json
+      description: Get resource migration
+      parameters:
+      - description: Resource Migration ID
+        in: path
+        name: resourceMigrationId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.ResourceMigrationRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: Get resource migration
+      tags:
+      - ResourceMigration
+    post:
+      consumes:
+      - application/json
+      description: Update resource migration
+      parameters:
+      - description: Resource Migration ID
+        in: path
+        name: resourceMigrationId
+        required: true
+        type: string
+      - description: Resource Migration Update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/body.ResourceMigrationUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.ResourceMigrationUpdated'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: Update resource migration
+      tags:
+      - ResourceMigration
   /v1/status:
     get:
       consumes:
@@ -1840,124 +2112,6 @@ paths:
       summary: Update team
       tags:
       - Team
-  /v1/userData:
-    get:
-      consumes:
-      - application/json
-      description: List user data
-      parameters:
-      - description: Want all users
-        in: query
-        name: all
-        type: boolean
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/body.UserRead'
-            type: array
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/sys.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/sys.ErrorResponse'
-      summary: List user data
-      tags:
-      - UserData
-    post:
-      consumes:
-      - application/json
-      description: Create user data
-      parameters:
-      - description: User data create
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/body.UserDataCreate'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/body.UserDataRead'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/sys.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/sys.ErrorResponse'
-      summary: Create user data
-      tags:
-      - UserData
-  /v1/userData/{id}:
-    delete:
-      consumes:
-      - application/json
-      description: Delete user data
-      parameters:
-      - description: User data ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: No Content
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/sys.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/sys.ErrorResponse'
-      summary: Delete user data
-      tags:
-      - UserData
-    get:
-      consumes:
-      - application/json
-      description: Get user data
-      parameters:
-      - description: User data ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/body.UserDataRead'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/sys.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/sys.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/sys.ErrorResponse'
-      summary: Get user data
-      tags:
-      - UserData
   /v1/users:
     get:
       consumes:
@@ -2051,42 +2205,7 @@ paths:
       summary: Update user
       tags:
       - User
-  /v1/usersData/{id}:
-    post:
-      consumes:
-      - application/json
-      description: Update user data, create if not exists
-      parameters:
-      - description: User data ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: User data update
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/body.UserDataUpdate'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/body.UserDataRead'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/sys.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/sys.ErrorResponse'
-      summary: Update user data, create if not exists
-      tags:
-      - User
-  /v1/vm:
+  /v1/vms:
     get:
       consumes:
       - application/json
@@ -2165,7 +2284,7 @@ paths:
       summary: Create VM
       tags:
       - VM
-  /v1/vm/{vmId}:
+  /v1/vms/{vmId}:
     delete:
       consumes:
       - application/json
