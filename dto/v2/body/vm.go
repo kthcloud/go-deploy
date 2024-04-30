@@ -58,10 +58,21 @@ type VmUpdateOwner struct {
 }
 
 type VmGpuLease struct {
-	ID         string     `json:"id"`
-	GpuGroupID string     `json:"gpuGroupId"`
-	ExpiresAt  *time.Time `json:"expiresAt"`
-	IsExpired  bool       `json:"isExpired"`
+	ID            string  `json:"id"`
+	GpuGroupID    string  `json:"gpuGroupId"`
+	LeaseDuration float64 `json:"leaseDuration"`
+	// ActivatedAt specifies the time when the lease was activated. This is the time the user first attached the GPU
+	// or 1 day after the lease was created if the user did not attach the GPU.
+	ActivatedAt *time.Time `json:"activatedAt,omitempty"`
+	// AssignedAt specifies the time when the lease was assigned to the user.
+	AssignedAt *time.Time `json:"assignedAt,omitempty"`
+	CreatedAt  time.Time  `json:"createdAt"`
+	// ExpiresAt specifies the time when the lease will expire.
+	// This is only present if the lease is active.
+	ExpiresAt *time.Time `json:"expiresAt,omitempty"`
+	// ExpiredAt specifies the time when the lease expired.
+	// This is only present if the lease is expired.
+	ExpiredAt *time.Time `json:"expiredAt,omitempty"`
 }
 
 type Specs struct {
