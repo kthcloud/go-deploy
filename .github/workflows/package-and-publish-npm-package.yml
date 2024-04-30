@@ -18,6 +18,10 @@ jobs:
         with:
           fetch-depth: 0 # Ensures tags are also fetched
 
+      - name: Clean up
+        run: |
+          rm export/tygo.yml
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
