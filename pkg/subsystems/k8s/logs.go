@@ -81,16 +81,16 @@ func (client *Client) SetupLogStream(ctx context.Context, allowedNames []string,
 		podInformer := factory.Core().V1().Pods().Informer()
 
 		// Returns the name of the deployment, when it was created and whether the pod is allowed
-		allowedPod := func(pod *v1.Pod) (string, time.Time, bool) {
+		allowedPod := func(pod *v1.Pod) (string, bool) {
 			var deploymentName string
 			var ok bool
 
 			if deploymentName, ok = pod.Labels[keys.LabelDeployName]; !ok {
-				return "", time.Time{}, false
+				return "", false
 			}
 
 			if _, ok = allowedNamesMap[deploymentName]; !ok {
-				return "", time.Time{}, false
+				return "", false
 			}
 
 			allowedStatuses := []v1.PodPhase{
@@ -107,10 +107,10 @@ func (client *Client) SetupLogStream(ctx context.Context, allowedNames []string,
 			}
 
 			if !allowed {
-				return "", time.Time{}, false
+				return "", false
 			}
 
-			return deploymentName, pod.CreationTimestamp.Time, true
+			return deploymentName, true
 		}
 
 		_, err := podInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -120,12 +120,14 @@ func (client *Client) SetupLogStream(ctx context.Context, allowedNames []string,
 					return
 				}
 
-				deploymentName, createdAt, ok := allowedPod(pod)
+				deploymentName, ok := allowedPod(pod)
 				if !ok {
 					return
 				}
 
-				podChannel <- PodEvent(deploymentName, pod.Name, PodEventStart, createdAt)
+				// 10 seconds prior are to fetch logs that were created between the time the watcher noticed the pod, and the time the pod was created
+				// Increasing this too much could cause duplicate logs if the logger is restarted
+				podChannel <- PodEvent(deploymentName, pod.Name, PodEventStart, time.Now().Add(-10*time.Second))
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				pod, ok := newObj.(*v1.Pod)
@@ -133,12 +135,14 @@ func (client *Client) SetupLogStream(ctx context.Context, allowedNames []string,
 					return
 				}
 
-				deploymentName, createdAt, ok := allowedPod(pod)
+				deploymentName, ok := allowedPod(pod)
 				if !ok {
 					return
 				}
 
-				podChannel <- PodEvent(deploymentName, pod.Name, PodEventStart, createdAt)
+				// 10 seconds prior are to fetch logs that were created between the time the watcher noticed the pod, and the time the pod was created
+				// Increasing this too much could cause duplicate logs if the logger is restarted
+				podChannel <- PodEvent(deploymentName, pod.Name, PodEventStart, time.Now().Add(-10*time.Second))
 			},
 			DeleteFunc: func(obj interface{}) {
 				pod, ok := obj.(*v1.Pod)
