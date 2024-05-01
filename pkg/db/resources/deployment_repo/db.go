@@ -106,10 +106,10 @@ func (client *Client) UpdateWithParams(id string, params *model.DeploymentUpdate
 	setUpdate := bson.D{}
 	unsetUpdate := bson.D{}
 
-	// If the custom domain is empty, it means we want to remove it
 	var customDomain *model.CustomDomain
 	if params.CustomDomain != nil {
 		if *params.CustomDomain == "" {
+			// If the custom domain is empty, it means we want to remove it
 			db.Add(&unsetUpdate, fmt.Sprintf("apps.%s.customDomain", mainApp.Name), "")
 		} else {
 			db.AddIfNotNil(&setUpdate, fmt.Sprintf("apps.%s.customDomain", mainApp.Name), &model.CustomDomain{
@@ -227,6 +227,21 @@ func (client *Client) AddLogsByName(name string, logs ...model.Log) error {
 	}
 
 	return nil
+}
+
+// SetStatusByName sets the status of a deployment.
+func (client *Client) SetStatusByName(name, status string) error {
+	return client.SetWithBsonByName(name, bson.D{{"status", status}})
+}
+
+// SetErrorByName sets the error of a deployment.
+func (client *Client) SetErrorByName(name string, error *model.DeploymentError) error {
+	return client.SetWithBsonByName(name, bson.D{{"error", error}})
+}
+
+// UnsetErrorByName unsets the error of a deployment.
+func (client *Client) UnsetErrorByName(name string) error {
+	return client.UnsetByName(name, "error")
 }
 
 // DeleteSubsystem erases a subsystem from a deployment.

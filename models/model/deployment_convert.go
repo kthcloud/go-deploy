@@ -78,6 +78,18 @@ func (deployment *Deployment) ToDTO(smURL *string, teams []string) body.Deployme
 		customDomainStatus = &app.CustomDomain.Status
 	}
 
+	var deploymentError *string
+	if deployment.Error != nil {
+		deploymentError = &deployment.Error.Description
+	}
+
+	var status string
+	if deploymentError == nil {
+		status = deployment.Status
+	} else {
+		status = deployment.Error.Reason
+	}
+
 	return body.DeploymentRead{
 		ID:      deployment.ID,
 		Name:    deployment.Name,
@@ -106,13 +118,14 @@ func (deployment *Deployment) ToDTO(smURL *string, teams []string) body.Deployme
 		CustomDomainSecret: customDomainSecret,
 		CustomDomainStatus: customDomainStatus,
 
-		Status:       deployment.Status,
-		PingResult:   pingResult,
+		Status:     status,
+		Error:      deploymentError,
+		PingResult: pingResult,
+
 		Integrations: make([]string, 0),
 
 		StorageURL: smURL,
-
-		Teams: teams,
+		Teams:      teams,
 	}
 }
 

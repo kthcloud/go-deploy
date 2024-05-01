@@ -129,8 +129,8 @@ func (client *ResourceClient[T]) UnsetWithBSON(fields ...string) error {
 	return client.UpdateWithBSON(update)
 }
 
-// UnsetWithBsonByID unsets the given fields from a model with the given ID.
-func (client *ResourceClient[T]) UnsetWithBsonByID(id string, fields ...string) error {
+// UnsetWithID unsets the given fields from a model with the given ID.
+func (client *ResourceClient[T]) UnsetWithID(id string, fields ...string) error {
 	update := bson.D{
 		{"$unset", bson.D{}},
 	}
@@ -142,8 +142,8 @@ func (client *ResourceClient[T]) UnsetWithBsonByID(id string, fields ...string) 
 	return client.UpdateWithBsonByID(id, update)
 }
 
-// UnsetWithBsonByName unsets the given fields from a model with the given name.
-func (client *ResourceClient[T]) UnsetWithBsonByName(name string, fields ...string) error {
+// UnsetByName unsets the given fields from a model with the given name.
+func (client *ResourceClient[T]) UnsetByName(name string, fields ...string) error {
 	update := bson.D{
 		{"$unset", bson.D{}},
 	}

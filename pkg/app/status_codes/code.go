@@ -17,12 +17,15 @@ const (
 	ResourceBuilding         = 10036
 	ResourceError            = 10037
 	ResourceScaling          = 10038
+	ResourceCrashLoop        = 10039
+	ResourceMountFailed      = 10040
+	ResourceImagePullFailed  = 10041
 
-	JobPending    = 10040
-	JobFinished   = 10041
-	JobFailed     = 10042
-	JobRunning    = 10043
-	JobTerminated = 10044
+	JobPending    = 10140
+	JobFinished   = 10141
+	JobFailed     = 10142
+	JobRunning    = 10143
+	JobTerminated = 10144
 
 	Success                  = 20001
 	InvalidParams            = 20002
@@ -48,6 +51,9 @@ var MsgFlags = map[int]string{
 	ResourceBuilding:         "resourceBuilding",
 	ResourceError:            "resourceError",
 	ResourceScaling:          "resourceScaling",
+	ResourceCrashLoop:        "resourceCrashLoop",
+	ResourceMountFailed:      "resourceMountFailed",
+	ResourceImagePullFailed:  "resourceImagePullFailed",
 
 	JobPending:    "pending",
 	JobRunning:    "running",

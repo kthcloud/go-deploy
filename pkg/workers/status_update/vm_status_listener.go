@@ -15,7 +15,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func vmStatusUpdaterV2(ctx context.Context) error {
+func VmStatusListener(ctx context.Context) error {
 	for _, zone := range config.Config.Zones {
 		if !zone.HasCapability(configModels.ZoneCapabilityVM) {
 			continue
@@ -34,7 +34,7 @@ func vmStatusUpdaterV2(ctx context.Context) error {
 				}
 
 				if kubeVirtStatus == status_codes.GetMsg(status_codes.ResourceStopped) {
-					err = vm_repo.New(version.V2).UnsetWithBsonByName(name, "host")
+					err = vm_repo.New(version.V2).UnsetByName(name, "host")
 					if err != nil {
 						log.Printf("Failed to update VM instance status for %s. details: %s", name, err.Error())
 						return
@@ -46,7 +46,7 @@ func vmStatusUpdaterV2(ctx context.Context) error {
 		err = k8s_service.New().SetupStatusWatcher(ctx, &z, "vmi", func(name string, incomingStatus interface{}) {
 			if status, ok := incomingStatus.(*models.VmiStatus); ok {
 				if status.Host == nil {
-					err = vm_repo.New(version.V2).UnsetWithBsonByName(name, "host")
+					err = vm_repo.New(version.V2).UnsetByName(name, "host")
 					if err != nil {
 						log.Printf("Failed to update VM instance status for %s. details: %s", name, err.Error())
 						return

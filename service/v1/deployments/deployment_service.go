@@ -634,17 +634,17 @@ func (c *Client) CanAddActivity(id string, activity string) (bool, string) {
 
 	switch activity {
 	case model.ActivityBeingCreated:
-		return !d.BeingDeleted(), "TeamResource is being deleted"
+		return !d.BeingDeleted(), "Resource is being deleted"
 	case model.ActivityBeingDeleted:
 		return true, ""
 	case model.ActivityUpdating:
-		return !d.BeingDeleted() && !d.BeingCreated(), "TeamResource is being deleted or created"
+		return !d.BeingDeleted() && !d.BeingCreated(), "Resource is being deleted or created"
 	case model.ActivityRestarting:
-		return !d.BeingDeleted(), "TeamResource is being deleted"
+		return !d.BeingDeleted(), "Resource is being deleted"
 	case model.ActivityBuilding:
-		return !d.BeingDeleted(), "TeamResource is being deleted"
+		return !d.BeingDeleted(), "Resource is being deleted"
 	case model.ActivityRepairing:
-		return d.Ready(), "TeamResource is not ready"
+		return d.Ready(), "Resource is not ready"
 	}
 
 	return false, fmt.Sprintf("Unknown activity %s", activity)

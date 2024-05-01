@@ -132,15 +132,15 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.VM, error) {
 		}
 
 		for _, team := range teams {
-			for _, r := range team.GetResourceMap() {
-				if r.Type != model.TeamResourceVM {
+			for _, resource := range team.GetResourceMap() {
+				if resource.Type != model.TeamResourceVM {
 					continue
 				}
 
 				// skip existing non-shared resources
 				skip := false
 				for _, skipID := range skipIDs {
-					if r.ID == skipID {
+					if resource.ID == skipID {
 						skip = true
 						break
 					}
@@ -149,7 +149,7 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.VM, error) {
 					continue
 				}
 
-				vm, err := c.VM(r.ID, nil)
+				vm, err := c.VM(resource.ID, nil)
 				if err != nil {
 					return nil, err
 				}

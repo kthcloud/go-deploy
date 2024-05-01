@@ -59,3 +59,8 @@ type DeploymentVolume struct {
 type DeploymentUsage struct {
 	Count int
 }
+
+type DeploymentError struct {
+	Reason      string `bson:"reason"`
+	Description string `bson:"description"`
+}

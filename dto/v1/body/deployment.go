@@ -30,8 +30,9 @@ type DeploymentRead struct {
 	CustomDomainStatus *string `json:"customDomainStatus,omitempty"`
 	CustomDomainSecret *string `json:"customDomainSecret,omitempty"`
 
-	Status     string `json:"status"`
-	PingResult *int   `json:"pingResult,omitempty"`
+	Status     string  `json:"status"`
+	Error      *string `json:"error,omitempty"`
+	PingResult *int    `json:"pingResult,omitempty"`
 
 	// Integrations are currently not used, but could be used if we wanted to add a list of integrations to the deployment
 	//

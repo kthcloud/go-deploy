@@ -29,6 +29,9 @@ type Deployment struct {
 	Logs       []Log                `bson:"logs"`
 
 	Status string `bson:"status"`
+	// Error is set if there is an error with the deployment.
+	// The error is not cleared until the deployment is in a healthy state.
+	Error *DeploymentError `bson:"error,omitempty"`
 }
 
 // GetMainApp returns the main app of the deployment.
