@@ -224,7 +224,11 @@ func (client *Client) vmiStatusWatcher(ctx context.Context, handler func(string,
 
 func (client *Client) eventWatcher(ctx context.Context, handler func(string, interface{}), opts ...opts.WatcherOpts) error {
 	setupEventWatcher := func(namespace string) (watch.Interface, error) {
-		statusChan, err := client.K8sClient.CoreV1().Events(client.Namespace).Watch(ctx, metav1.ListOptions{Watch: true})
+		statusChan, err := client.K8sClient.CoreV1().Events(client.Namespace).Watch(ctx, metav1.ListOptions{
+			// Fields involvesObject.kind=Pod and type=Warning and reason=FailedMount or BackOff or Failed
+			FieldSelector: "involvedObject.kind=Pod,type=Warning",
+			Watch:         true,
+		})
 		if err != nil {
 			return nil, err
 		}
@@ -243,9 +247,8 @@ func (client *Client) eventWatcher(ctx context.Context, handler func(string, int
 
 	resultsChan := watcher.ResultChan()
 	go func() {
-		// For now, the watch stops working sometimes, so we need to restart it every 10 seconds
-		// This is a temporary fix until we find the root cause
-		recreateInterval := time.Tick(20 * time.Second)
+		// For now, the watch stops working sometimes, so we need to restart it every 300 seconds
+		recreateInterval := time.Tick(300 * time.Second)
 
 		for {
 			select {
@@ -253,98 +256,100 @@ func (client *Client) eventWatcher(ctx context.Context, handler func(string, int
 				if event.Type == watch.Added || event.Type == watch.Modified {
 					e := event.Object.(*corev1.Event)
 
-					var deployName string
-					var objectKind string
-					var reason string
-					var description string
+					go func(e *corev1.Event) {
+						var deployName string
+						var objectKind string
+						var reason string
+						var description string
 
-					switch e.InvolvedObject.Kind {
-					case "Pod":
-						objectKind = models.EventObjectKindDeployment
-						// InvolvedObject.Name is a pod name, we need to get the deployment name
-						pod, err := client.K8sClient.CoreV1().Pods(client.Namespace).Get(ctx, e.InvolvedObject.Name, metav1.GetOptions{})
-						if err != nil {
-							continue
+						switch e.InvolvedObject.Kind {
+						case "Pod":
+							objectKind = models.EventObjectKindDeployment
+							// InvolvedObject.Name is a pod name, we need to get the deployment name
+							pod, err := client.K8sClient.CoreV1().Pods(client.Namespace).Get(ctx, e.InvolvedObject.Name, metav1.GetOptions{})
+							if err != nil {
+								return
+							}
+							// Fetch deploy name from label LabelDeployName
+							var ok bool
+							deployName, ok = pod.Labels[keys.LabelDeployName]
+							if !ok {
+								return
+							}
 						}
+						if objectKind == "" {
+							return
+						}
+
+						switch e.Reason {
+						case "FailedMount":
+							reason = models.EventReasonMountFailed
+							// We parse out a nicer message for mount failures
+							// Extract the following substring "MountVolume.SetUp failed for volume "<anyname>" : mount failed"
+							// from the message using regex
+							var exitStatus string
+							exitStatusRegex := regexp.MustCompile(`exit status (\d+)`)
+							exitStatusMatches := exitStatusRegex.FindStringSubmatch(e.Message)
+							if len(exitStatusMatches) > 1 {
+								exitStatus = fmt.Sprintf(" (Exit code: %s)", exitStatusMatches[1])
+							}
+
+							var volumeName string
+							regex := regexp.MustCompile(`MountVolume\.SetUp failed for volume "(.*)" : mount failed`)
+							matches := regex.FindStringSubmatch(e.Message)
+							if len(matches) > 1 {
+								// If the volume name starts with deployName, we remove it, local-test-my-volume => my-volume
+								volumeName = fmt.Sprintf(" %s", strings.TrimPrefix(matches[1], deployName+"-"))
+							}
+							description = fmt.Sprintf("Failed to mount volume%s. Ensure the path exists in your storage%s.", volumeName, exitStatus)
+
+						case "BackOff":
+							reason = models.EventReasonCrashLoop
+							// We parse out a nicer message for crash loops
+							// BackOff can occur in many cases, but we handle those in other branches
+							if !strings.Contains(e.Message, "Back-off restarting failed container") {
+								return
+							}
+
+							description = "Crash loop detected. Ensure your deployment is configured correctly."
+						case "Failed":
+							// Failed can be due to image pull failures or image pull backoff
+							// If not, we ignore it
+							if !strings.Contains(e.Message, "Failed to pull image") {
+								return
+							}
+
+							reason = models.EventReasonImagePullFailed
+							// We parse out a nicer message for image pull failures
+							// Extract the requested image from "Failed to pull image "thisdoesnotexist"" using regex
+							regex := regexp.MustCompile(`Failed to pull image "(.*)": failed to pull and unpack image`)
+							matches := regex.FindStringSubmatch(e.Message)
+							var image string
+							if len(matches) > 1 {
+								image = fmt.Sprintf(" %s", matches[1])
+							}
+
+							description = fmt.Sprintf("Failed to pull image%s. Ensure the image exists and is accessible.", image)
+						default:
+							return
+						}
+
+						var eventType string
+						switch e.Type {
+						case "Warning":
+							eventType = models.EventTypeWarning
+						case "Normal":
+							eventType = models.EventTypeNormal
+						}
+
 						// Fetch deploy name from label LabelDeployName
-						var ok bool
-						deployName, ok = pod.Labels[keys.LabelDeployName]
-						if !ok {
-							continue
-						}
-					}
-					if objectKind == "" {
-						continue
-					}
-
-					switch e.Reason {
-					case "FailedMount":
-						reason = models.EventReasonMountFailed
-						// We parse out a nicer message for mount failures
-						// Extract the following substring "MountVolume.SetUp failed for volume "<anyname>" : mount failed"
-						// from the message using regex
-						var exitStatus string
-						exitStatusRegex := regexp.MustCompile(`exit status (\d+)`)
-						exitStatusMatches := exitStatusRegex.FindStringSubmatch(e.Message)
-						if len(exitStatusMatches) > 1 {
-							exitStatus = fmt.Sprintf(" (Exit code: %s)", exitStatusMatches[1])
-						}
-
-						var volumeName string
-						regex := regexp.MustCompile(`MountVolume\.SetUp failed for volume "(.*)" : mount failed`)
-						matches := regex.FindStringSubmatch(e.Message)
-						if len(matches) > 1 {
-							// If the volume name starts with deployName, we remove it, local-test-my-volume => my-volume
-							volumeName = fmt.Sprintf(" %s", strings.TrimPrefix(matches[1], deployName+"-"))
-						}
-						description = fmt.Sprintf("Failed to mount volume%s. Ensure the path exists in your storage%s.", volumeName, exitStatus)
-
-					case "BackOff":
-						reason = models.EventReasonCrashLoop
-						// We parse out a nicer message for crash loops
-						// BackOff can occur in many cases, but we handle those in other branches
-						if !strings.Contains(e.Message, "Back-off restarting failed container") {
-							continue
-						}
-
-						description = "Crash loop detected. Ensure your deployment is configured correctly."
-					case "Failed":
-						// Failed can be due to image pull failures or image pull backoff
-						// If not, we ignore it
-						if !strings.Contains(e.Message, "Failed to pull image") {
-							continue
-						}
-
-						reason = models.EventReasonImagePullFailed
-						// We parse out a nicer message for image pull failures
-						// Extract the requested image from "Failed to pull image "thisdoesnotexist"" using regex
-						regex := regexp.MustCompile(`Failed to pull image "(.*)": failed to pull and unpack image`)
-						matches := regex.FindStringSubmatch(e.Message)
-						var image string
-						if len(matches) > 1 {
-							image = fmt.Sprintf(" %s", matches[1])
-						}
-
-						description = fmt.Sprintf("Failed to pull image%s. Ensure the image exists and is accessible.", image)
-					default:
-						continue
-					}
-
-					var eventType string
-					switch e.Type {
-					case "Warning":
-						eventType = models.EventTypeWarning
-					case "Normal":
-						eventType = models.EventTypeNormal
-					}
-
-					// Fetch deploy name from label LabelDeployName
-					handler(deployName, &models.Event{
-						Type:        eventType,
-						Reason:      reason,
-						Description: description,
-						ObjectKind:  objectKind,
-					})
+						handler(deployName, &models.Event{
+							Type:        eventType,
+							Reason:      reason,
+							Description: description,
+							ObjectKind:  objectKind,
+						})
+					}(e)
 				}
 			case <-recreateInterval:
 				watcher.Stop()
