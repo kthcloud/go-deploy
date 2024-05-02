@@ -11,7 +11,8 @@ import (
 // Status updaters are workers that periodically updates the status of external services, such as CloudStack.
 func Setup(ctx context.Context) {
 	log.Println("Starting status updaters")
-	go workers.Worker(ctx, "vmStatusUpdaterV2", vmStatusUpdaterV2)
-	go workers.Worker(ctx, "deploymentStatusUpdater", deploymentStatusUpdater)
+	go workers.Worker(ctx, "vmStatusListener", VmStatusListener)
+	go workers.Worker(ctx, "deploymentStatusListener", DeploymentStatusListener)
+	go workers.Worker(ctx, "eventListener", DeploymentEventListener)
 	go workers.PeriodicWorker(ctx, "deploymentPingUpdater", deploymentPingUpdater, config.Config.Timer.DeploymentPingUpdate)
 }

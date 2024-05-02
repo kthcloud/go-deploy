@@ -36,11 +36,12 @@ func (user *User) ToDTO(effectiveRole *Role, usage *UserUsage, storageURL *strin
 	}
 
 	userRead := body.UserRead{
-		ID:        user.ID,
-		Username:  user.Username,
-		Email:     user.Email,
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
+		ID:          user.ID,
+		Username:    user.Username,
+		Email:       user.Email,
+		FirstName:   user.FirstName,
+		LastName:    user.LastName,
+		GravatarURL: user.Gravatar.URL,
 
 		PublicKeys: publicKeys,
 		UserData:   userData,

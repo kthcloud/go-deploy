@@ -19,6 +19,7 @@ type VMs interface {
 	IsAccessible(id string) (bool, error)
 
 	CheckQuota(id, userID string, quota *model.Quotas, opts ...vmOpts.QuotaOpts) error
+	GetUsage(userID string) (*model.VmUsage, error)
 	NameAvailable(name string) (bool, error)
 	SshConnectionString(id string) (*string, error)
 

@@ -35,8 +35,8 @@ func CreateVM(job *model.Job) error {
 
 	err = service.V2(utils.GetAuthInfo(job)).VMs().Create(id, ownerID, &params)
 	if err != nil {
-		// TODO: If there was some error, we trigger a repair, since rerunning it would cause a NonUniqueFieldErr
-		//_ = service.V2(utils.GetAuthInfo(job)).VMs().Repair(id)
+		// If there was some error, we trigger a repair, since rerunning it would cause a NonUniqueFieldErr
+		_ = service.V2(utils.GetAuthInfo(job)).VMs().Repair(id)
 		return jErrors.MakeTerminatedError(err)
 	}
 
@@ -352,6 +352,11 @@ func UpdateVmOwner(job *model.Job) error {
 		}
 	}
 
+	err = vm_repo.New().MarkUpdated(id)
+	if err != nil {
+		return jErrors.MakeTerminatedError(err)
+	}
+
 	return nil
 }
 
@@ -366,6 +371,11 @@ func RepairVM(job *model.Job) error {
 	err = service.V2(utils.GetAuthInfo(job)).VMs().Repair(id)
 	if err != nil {
 		// All errors are terminal, so we don't check for specific errors
+		return jErrors.MakeTerminatedError(err)
+	}
+
+	err = vm_repo.New().MarkRepaired(id)
+	if err != nil {
 		return jErrors.MakeTerminatedError(err)
 	}
 

@@ -206,7 +206,6 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 	}
 
 	return res
-
 }
 
 func (kg *K8sGenerator) PVs() []models.PvPublic {
@@ -250,6 +249,9 @@ func (kg *K8sGenerator) PVs() []models.PvPublic {
 
 func (kg *K8sGenerator) PVCs() []models.PvcPublic {
 	res := make([]models.PvcPublic, 0)
+	if len(kg.deployment.GetMainApp().Volumes) == 0 {
+		return res
+	}
 
 	volumes := kg.deployment.GetMainApp().Volumes
 

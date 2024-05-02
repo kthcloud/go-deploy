@@ -16,8 +16,6 @@ import (
 )
 
 // GetGPU gets a GPU
-//
-// It uses service.AuthInfo to only return the model the requesting user has access to
 func (c *Client) GetGPU(id string, opts ...opts.GetGpuOpts) (*model.GPU, error) {
 	o := utils2.GetFirstOrDefault(opts)
 
@@ -71,8 +69,6 @@ func (c *Client) GetGpuByVM(vmID string) (*model.GPU, error) {
 }
 
 // ListGPUs lists GPUs
-//
-// It uses service.AuthInfo to only return the resources the requesting user has access to
 func (c *Client) ListGPUs(opts ...opts.ListGpuOpts) ([]model.GPU, error) {
 	o := utils2.GetFirstOrDefault(opts)
 

@@ -79,7 +79,7 @@ func (c *Client) Teams() api.Teams {
 }
 
 func (c *Client) Users() api.Users {
-	return users.New(c, c.cache)
+	return users.New(c, c.V2, c.cache)
 }
 
 func (c *Client) VMs() api.VMs {
