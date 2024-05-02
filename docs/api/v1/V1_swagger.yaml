@@ -8,6 +8,16 @@ definitions:
       name:
         type: string
     type: object
+  body.ApiKeyCreate:
+    properties:
+      expiresAt:
+        type: string
+      name:
+        type: string
+    required:
+    - expiresAt
+    - name
+    type: object
   body.ApiKeyCreated:
     properties:
       createdAt:
@@ -2198,6 +2208,41 @@ paths:
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
       summary: Update user
+      tags:
+      - User
+  /v1/users/{userId}/apiKeys:
+    post:
+      consumes:
+      - application/json
+      description: Create API key
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: API key create body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/body.ApiKeyCreate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.ApiKeyCreated'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: Create API key
       tags:
       - User
   /v1/vms:

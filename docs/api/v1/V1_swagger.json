@@ -1671,6 +1671,59 @@
                 }
             }
         },
+        "/v1/users/{userId}/apiKeys": {
+            "post": {
+                "description": "Create API key",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Create API key",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "API key create body",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/body.ApiKeyCreate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.ApiKeyCreated"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/vms": {
             "get": {
                 "description": "List VMs",
@@ -2401,6 +2454,21 @@
                 "createdAt": {
                     "type": "string"
                 },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.ApiKeyCreate": {
+            "type": "object",
+            "required": [
+                "expiresAt",
+                "name"
+            ],
+            "properties": {
                 "expiresAt": {
                     "type": "string"
                 },
