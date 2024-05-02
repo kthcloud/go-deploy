@@ -3,8 +3,8 @@
 </p>
 
 <div align="center">
-  <img src="https://github.com/kthcloud/go-deploy/actions/workflows/test.yml/badge.svg"\>
-  <img src="https://github.com/kthcloud/go-deploy/actions/workflows/build-image.yml/badge.svg"\>
+  <img src="https://github.com/kthcloud/go-deploy/actions/workflows/run-tests.yml/badge.svg"\>
+  <img src="https://github.com/kthcloud/go-deploy/actions/workflows/build-and-push-image.yml/badge.svg"\>
 </div>
 
 go-deploy is a simple API to create deployments similar to Heroku and spin up virtual machines built on top of kthcloud.

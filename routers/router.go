@@ -75,7 +75,7 @@ func NewRouter() *gin.Engine {
 	public.GET("/v2/docs/*any", ginSwagger.WrapHandler(swaggerfiles.Handler, ginSwagger.InstanceName("V2")))
 
 	//// Health check routes
-	public.GET("/healthz", func(c *gin.Context) {
+	public.Any("/healthz", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 

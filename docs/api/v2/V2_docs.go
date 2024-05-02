@@ -208,7 +208,7 @@ const docTemplateV2 = `{
                 }
             },
             "post": {
-                "description": "Synchronize GPU lease",
+                "description": "Create GPU lease",
                 "consumes": [
                     "application/json"
                 ],
@@ -218,7 +218,7 @@ const docTemplateV2 = `{
                 "tags": [
                     "GpuLease"
                 ],
-                "summary": "Synchronize GPU Lease",
+                "summary": "Create GPU Lease",
                 "parameters": [
                     {
                         "type": "string",
@@ -241,7 +241,7 @@ const docTemplateV2 = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/body.GpuLeaseRead"
+                            "$ref": "#/definitions/body.GpuLeaseCreated"
                         }
                     },
                     "400": {
@@ -368,7 +368,7 @@ const docTemplateV2 = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/body.GpuLeaseRead"
+                            "$ref": "#/definitions/body.GpuLeaseUpdated"
                         }
                     },
                     "400": {
@@ -423,7 +423,7 @@ const docTemplateV2 = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/body.GpuLeaseRead"
+                            "$ref": "#/definitions/body.GpuLeaseDeleted"
                         }
                     },
                     "400": {
@@ -447,7 +447,187 @@ const docTemplateV2 = `{
                 }
             }
         },
-        "/v2/vm": {
+        "/v2/snapshots": {
+            "get": {
+                "description": "List snapshots",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Snapshot"
+                ],
+                "summary": "List snapshots",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "VM ID",
+                        "name": "vmId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/go-deploy_dto_v2_body.VmSnapshotRead"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "423": {
+                        "description": "Locked",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create snapshot",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Snapshot"
+                ],
+                "summary": "Create snapshot",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "VM ID",
+                        "name": "vmId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/go-deploy_dto_v2_body.VmSnapshotCreated"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v2/vmActions": {
+            "post": {
+                "description": "Creates a new action",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "VmAction"
+                ],
+                "summary": "Creates a new action",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "VM ID",
+                        "name": "vmId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "actions body",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/body.VmActionCreate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.VmActionCreated"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v2/vms": {
             "get": {
                 "description": "GetVM list of VMs",
                 "consumes": [
@@ -494,6 +674,24 @@ const docTemplateV2 = `{
                             "items": {
                                 "$ref": "#/definitions/go-deploy_dto_v2_body.VmRead"
                             }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
                     "500": {
@@ -552,12 +750,6 @@ const docTemplateV2 = `{
                             "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
-                    "423": {
-                        "description": "Locked",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -567,7 +759,7 @@ const docTemplateV2 = `{
                 }
             }
         },
-        "/v2/vm/{vmId}": {
+        "/v2/vms/{vmId}": {
             "get": {
                 "description": "GetVM VM by id",
                 "consumes": [
@@ -678,12 +870,6 @@ const docTemplateV2 = `{
                             "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
-                    "423": {
-                        "description": "Locked",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -738,71 +924,6 @@ const docTemplateV2 = `{
                             "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     },
-                    "423": {
-                        "description": "Locked",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/v2/vms/{vmId}/command": {
-            "post": {
-                "description": "Creates a new action",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "VM"
-                ],
-                "summary": "Creates a new action",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "VM ID",
-                        "name": "vmId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Command body",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/body.VmActionCreate"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/body.VmActionCreated"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -814,7 +935,7 @@ const docTemplateV2 = `{
         },
         "/v2/vms/{vmId}/snapshot/{snapshotId}": {
             "post": {
-                "description": "GetVM snapshot",
+                "description": "Get snapshot",
                 "consumes": [
                     "application/json"
                 ],
@@ -824,7 +945,7 @@ const docTemplateV2 = `{
                 "tags": [
                     "Snapshot"
                 ],
-                "summary": "GetVM snapshot",
+                "summary": "Get snapshot",
                 "parameters": [
                     {
                         "type": "string",
@@ -914,128 +1035,7 @@ const docTemplateV2 = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/go-deploy_dto_v2_body.VmSnapshotRead"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/v2/vms/{vmId}/snapshots": {
-            "get": {
-                "description": "GetVM snapshot list",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Snapshot"
-                ],
-                "summary": "GetVM snapshot list",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer token",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "VM ID",
-                        "name": "vmId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/go-deploy_dto_v2_body.VmSnapshotRead"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "423": {
-                        "description": "Locked",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "CreateVM snapshot",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Snapshot"
-                ],
-                "summary": "CreateVM snapshot",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer token",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "VM ID",
-                        "name": "vmId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/go-deploy_dto_v2_body.VmSnapshotRead"
+                            "$ref": "#/definitions/go-deploy_dto_v2_body.VmSnapshotDeleted"
                         }
                     },
                     "400": {
@@ -1120,6 +1120,28 @@ const docTemplateV2 = `{
                 }
             }
         },
+        "body.GpuLeaseCreated": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "jobId": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.GpuLeaseDeleted": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "jobId": {
+                    "type": "string"
+                }
+            }
+        },
         "body.GpuLeaseRead": {
             "type": "object",
             "properties": {
@@ -1174,6 +1196,17 @@ const docTemplateV2 = `{
                 }
             }
         },
+        "body.GpuLeaseUpdated": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "jobId": {
+                    "type": "string"
+                }
+            }
+        },
         "body.VmActionCreate": {
             "type": "object",
             "required": [
@@ -1209,9 +1242,8 @@ const docTemplateV2 = `{
             ],
             "properties": {
                 "customDomain": {
-                    "type": "string",
-                    "maxLength": 100,
-                    "minLength": 1
+                    "description": "CustomDomain is the domain that the deployment will be available on.\nThe max length is set to 243 to allow for a sub domain when confirming the domain.",
+                    "type": "string"
                 },
                 "name": {
                     "type": "string",
@@ -1246,8 +1278,8 @@ const docTemplateV2 = `{
             ],
             "properties": {
                 "customDomain": {
-                    "type": "string",
-                    "maxLength": 100
+                    "description": "CustomDomain is the domain that the deployment will be available on.\nThe max length is set to 243 to allow for a sub domain when confirming the domain.",
+                    "type": "string"
                 },
                 "name": {
                     "type": "string",
@@ -1418,7 +1450,23 @@ const docTemplateV2 = `{
         "go-deploy_dto_v2_body.VmGpuLease": {
             "type": "object",
             "properties": {
+                "activatedAt": {
+                    "description": "ActivatedAt specifies the time when the lease was activated. This is the time the user first attached the GPU\nor 1 day after the lease was created if the user did not attach the GPU.",
+                    "type": "string"
+                },
+                "assignedAt": {
+                    "description": "AssignedAt specifies the time when the lease was assigned to the user.",
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "expiredAt": {
+                    "description": "ExpiredAt specifies the time when the lease expired.\nThis is only present if the lease is expired.",
+                    "type": "string"
+                },
                 "expiresAt": {
+                    "description": "ExpiresAt specifies the time when the lease will expire.\nThis is only present if the lease is active.",
                     "type": "string"
                 },
                 "gpuGroupId": {
@@ -1427,8 +1475,8 @@ const docTemplateV2 = `{
                 "id": {
                     "type": "string"
                 },
-                "isExpired": {
-                    "type": "boolean"
+                "leaseDuration": {
+                    "type": "number"
                 }
             }
         },
@@ -1445,6 +1493,9 @@ const docTemplateV2 = `{
                     "type": "string"
                 },
                 "id": {
+                    "type": "string"
+                },
+                "internalName": {
                     "type": "string"
                 },
                 "name": {
@@ -1484,6 +1535,28 @@ const docTemplateV2 = `{
                     "type": "string"
                 },
                 "zone": {
+                    "type": "string"
+                }
+            }
+        },
+        "go-deploy_dto_v2_body.VmSnapshotCreated": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "jobId": {
+                    "type": "string"
+                }
+            }
+        },
+        "go-deploy_dto_v2_body.VmSnapshotDeleted": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "jobId": {
                     "type": "string"
                 }
             }
@@ -1533,12 +1606,6 @@ const docTemplateV2 = `{
                 "ram": {
                     "type": "integer",
                     "minimum": 1
-                },
-                "transferCode": {
-                    "description": "TransferCode is used to accept transfer of a VM.\nIf specified, only the transfer will happen.",
-                    "type": "string",
-                    "maxLength": 1000,
-                    "minLength": 1
                 }
             }
         },
@@ -1553,18 +1620,7 @@ const docTemplateV2 = `{
                 }
             }
         },
-        "sys.ErrorResponse": {
-            "type": "object",
-            "properties": {
-                "errors": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/sys.errorPiece"
-                    }
-                }
-            }
-        },
-        "sys.errorPiece": {
+        "sys.Error": {
             "type": "object",
             "properties": {
                 "code": {
@@ -1572,6 +1628,17 @@ const docTemplateV2 = `{
                 },
                 "msg": {
                     "type": "string"
+                }
+            }
+        },
+        "sys.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/sys.Error"
+                    }
                 }
             }
         }

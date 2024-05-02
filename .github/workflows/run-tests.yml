@@ -70,7 +70,12 @@ jobs:
         run: |
           go build -o go-deploy .     # Build go-deploy
           ./go-deploy --mode=test &   # Starts in the background
-          sleep 60                    # Wait a bit to ensure it has started
+          
+          # Wait for the API to return 200 on /healthz
+          until $(curl --output /dev/null --silent --head --fail http://localhost:8080/healthz); do
+              echo "Waiting for API to start"
+              sleep 1
+          done
 
       - name: Run e2e tests
         run: go test -timeout 30m ./test/e2e/...
