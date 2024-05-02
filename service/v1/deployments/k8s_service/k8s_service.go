@@ -616,6 +616,15 @@ func (c *Client) Repair(id string) error {
 		return c.recreatePvPvcDeployments(id)
 	}
 
+	// OneShotJobs should be kept last since they depend on the PVCs
+	oneShotJobs := g.OneShotJobs()
+	for _, public := range oneShotJobs {
+		err = kc.CreateOneShotJob(&public)
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
 	return nil
 }
 
