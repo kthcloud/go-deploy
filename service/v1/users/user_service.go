@@ -6,6 +6,7 @@ import (
 	"go-deploy/dto/v1/body"
 	"go-deploy/models/model"
 	"go-deploy/pkg/db/resources/user_repo"
+	sErrors "go-deploy/service/errors"
 	"go-deploy/service/utils"
 	"go-deploy/service/v1/users/opts"
 	"net/http"
@@ -17,11 +18,16 @@ import (
 func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.User, error) {
 	_ = utils.GetFirstOrDefault(opts)
 
-	if c.V1.Auth() != nil && id != c.V1.Auth().UserID && !c.V1.Auth().IsAdmin {
+	if c.V1.Auth() != nil && id != c.V1.Auth().User.ID && !c.V1.Auth().User.IsAdmin {
 		return nil, nil
 	}
 
 	return c.User(id, user_repo.New())
+}
+
+// GetByApiKey gets a user by their API key
+func (c *Client) GetByApiKey(apiKey string) (*model.User, error) {
+	return user_repo.New().WithApiKey(apiKey).Get()
 }
 
 // GetUsage gets the usage of a user, such as number of deployments and CPU cores used.
@@ -60,8 +66,8 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.User, error) {
 		umc.WithSearch(*o.Search)
 	}
 
-	if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin || !o.All {
-		user, err := umc.GetByID(c.V1.Auth().UserID)
+	if c.V1.Auth() != nil && !c.V1.Auth().User.IsAdmin || !o.All {
+		user, err := umc.GetByID(c.V1.Auth().User.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -81,33 +87,29 @@ func (c *Client) Exists(id string) (bool, error) {
 
 // Synchronize creates a user or updates an existing user.
 // It does nothing if no auth info is provided
-func (c *Client) Synchronize() (*model.User, error) {
-	if !c.V1.HasAuth() {
-		return nil, nil
+//
+// It does not use AuthInfo as it is meant to be used by the auth service
+func (c *Client) Synchronize(authParams *model.AuthParams) (*model.User, error) {
+	var effectiveRole *model.EffectiveRole
+	if len(authParams.Roles) > 0 {
+		effectiveRole = &model.EffectiveRole{
+			Name:        authParams.Roles[len(authParams.Roles)-1].Name,
+			Description: authParams.Roles[len(authParams.Roles)-1].Description,
+		}
 	}
 
-	roleNames := make([]string, len(c.V1.Auth().Roles))
-	for i, role := range c.V1.Auth().Roles {
-		roleNames[i] = role.Name
-	}
-
-	effectiveRole := c.V1.Auth().GetEffectiveRole()
-
-	params := &model.UserCreateParams{
-		Username:  c.V1.Auth().GetUsername(),
-		FirstName: c.V1.Auth().GetFirstName(),
-		LastName:  c.V1.Auth().GetLastName(),
-		Email:     c.V1.Auth().GetEmail(),
-		IsAdmin:   c.V1.Auth().IsAdmin,
-		EffectiveRole: &model.EffectiveRole{
-			Name:        effectiveRole.Name,
-			Description: effectiveRole.Description,
-		},
+	synchronizeParams := &model.UserSynchronizeParams{
+		Username:      authParams.Username,
+		FirstName:     authParams.FirstName,
+		LastName:      authParams.LastName,
+		Email:         authParams.Email,
+		IsAdmin:       authParams.IsAdmin,
+		EffectiveRole: effectiveRole,
 	}
 
 	umc := user_repo.New()
 
-	user, err := umc.Synchronize(c.V1.Auth().UserID, params)
+	user, err := umc.Synchronize(authParams.UserID, synchronizeParams)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +158,7 @@ func (c *Client) Discover(opts ...opts.DiscoverOpts) ([]body.UserReadDiscovery, 
 
 	var usersRead []body.UserReadDiscovery
 	for _, user := range users {
-		if c.V1.Auth() != nil && user.ID == c.V1.Auth().UserID {
+		if c.V1.Auth() != nil && user.ID == c.V1.Auth().User.ID {
 			continue
 		}
 
@@ -176,13 +178,18 @@ func (c *Client) Discover(opts ...opts.DiscoverOpts) ([]body.UserReadDiscovery, 
 func (c *Client) Update(userID string, dtoUserUpdate *body.UserUpdate) (*model.User, error) {
 	umc := user_repo.New()
 
-	if c.V1.Auth() != nil && userID != c.V1.Auth().UserID && !c.V1.Auth().IsAdmin {
-		return nil, nil
+	user, err := c.User(userID, umc)
+	if err != nil {
+		return nil, err
 	}
 
-	userUpdate := model.UserUpdateParams{}.FromDTO(dtoUserUpdate)
+	if user == nil {
+		return nil, sErrors.UserNotFoundErr
+	}
 
-	err := umc.UpdateWithParams(userID, &userUpdate)
+	userUpdate := model.UserUpdateParams{}.FromDTO(dtoUserUpdate, user.ApiKeys)
+
+	err = umc.UpdateWithParams(userID, &userUpdate)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +202,7 @@ func (c *Client) Update(userID string, dtoUserUpdate *body.UserUpdate) (*model.U
 func (c *Client) FetchGravatar(userID string) (*string, error) {
 	umc := user_repo.New()
 
-	if c.V1.Auth() != nil && userID != c.V1.Auth().UserID && !c.V1.Auth().IsAdmin {
+	if c.V1.Auth() != nil && userID != c.V1.Auth().User.ID && !c.V1.Auth().User.IsAdmin {
 		return nil, nil
 	}
 

@@ -24,8 +24,8 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.Team, error) {
 
 	tmc := team_repo.New()
 
-	if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
-		tmc.WithUserID(c.V1.Auth().UserID)
+	if c.V1.Auth() != nil && !c.V1.Auth().User.IsAdmin {
+		tmc.WithUserID(c.V1.Auth().User.ID)
 	}
 
 	return c.Team(id, tmc)
@@ -44,7 +44,7 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.Team, error) {
 	var effectiveUserID string
 	if o.UserID != "" {
 		// Specific user's teams are requested
-		if !c.V1.HasAuth() || c.V1.Auth().UserID == o.UserID || c.V1.Auth().IsAdmin {
+		if !c.V1.HasAuth() || c.V1.Auth().User.ID == o.UserID || c.V1.Auth().User.IsAdmin {
 			effectiveUserID = o.UserID
 		} else {
 			// User cannot access the other user's resources
@@ -52,8 +52,8 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.Team, error) {
 		}
 	} else {
 		// All teams are requested
-		if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
-			effectiveUserID = c.V1.Auth().UserID
+		if c.V1.Auth() != nil && !c.V1.Auth().User.IsAdmin {
+			effectiveUserID = c.V1.Auth().User.ID
 		}
 	}
 
@@ -84,7 +84,7 @@ func (c *Client) ListIDs(opts ...opts.ListOpts) ([]string, error) {
 	var effectiveUserID string
 	if o.UserID != "" {
 		// Specific user's teams are requested
-		if !c.V1.HasAuth() || c.V1.Auth().UserID == o.UserID || c.V1.Auth().IsAdmin {
+		if !c.V1.HasAuth() || c.V1.Auth().User.ID == o.UserID || c.V1.Auth().User.IsAdmin {
 			effectiveUserID = o.UserID
 		} else {
 			// User cannot access the other user's resources
@@ -92,8 +92,8 @@ func (c *Client) ListIDs(opts ...opts.ListOpts) ([]string, error) {
 		}
 	} else {
 		// All teams are requested
-		if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
-			effectiveUserID = c.V1.Auth().UserID
+		if c.V1.Auth() != nil && !c.V1.Auth().User.IsAdmin {
+			effectiveUserID = c.V1.Auth().User.ID
 		}
 	}
 
@@ -163,7 +163,7 @@ func (c *Client) Update(id string, dtoUpdateTeam *body.TeamUpdate) (*model.Team,
 		return nil, nil
 	}
 
-	if c.V1.Auth() != nil && team.OwnerID != c.V1.Auth().UserID && !c.V1.Auth().IsAdmin && !team.HasMember(c.V1.Auth().UserID) {
+	if c.V1.Auth() != nil && team.OwnerID != c.V1.Auth().User.ID && !c.V1.Auth().User.IsAdmin && !team.HasMember(c.V1.Auth().User.ID) {
 		return nil, nil
 	}
 
@@ -220,8 +220,8 @@ func (c *Client) Update(id string, dtoUpdateTeam *body.TeamUpdate) (*model.Team,
 func (c *Client) Delete(id string) error {
 	tmc := team_repo.New()
 
-	if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
-		tmc.WithOwnerID(c.V1.Auth().UserID)
+	if c.V1.Auth() != nil && !c.V1.Auth().User.IsAdmin {
+		tmc.WithOwnerID(c.V1.Auth().User.ID)
 	}
 
 	exists, err := tmc.ExistsByID(id)
@@ -245,8 +245,8 @@ func (c *Client) Delete(id string) error {
 func (c *Client) CleanResource(resourceID string) error {
 	tmc := team_repo.New()
 
-	if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
-		tmc.WithOwnerID(c.V1.Auth().UserID)
+	if c.V1.Auth() != nil && !c.V1.Auth().User.IsAdmin {
+		tmc.WithOwnerID(c.V1.Auth().User.ID)
 	}
 
 	tmc.WithResourceID(resourceID)
@@ -288,24 +288,24 @@ func (c *Client) Join(id string, dtoTeamJoin *body.TeamJoin) (*model.Team, error
 		return nil, nil
 	}
 
-	if team.GetMemberMap()[c.V1.Auth().UserID].MemberStatus != model.TeamMemberStatusInvited {
+	if team.GetMemberMap()[c.V1.Auth().User.ID].MemberStatus != model.TeamMemberStatusInvited {
 		return team, sErrors.NotInvitedErr
 	}
 
-	if team.GetMemberMap()[c.V1.Auth().UserID].InvitationCode != params.InvitationCode {
+	if team.GetMemberMap()[c.V1.Auth().User.ID].InvitationCode != params.InvitationCode {
 		return nil, sErrors.BadInviteCodeErr
 	}
 
-	updatedMember := team.GetMemberMap()[c.V1.Auth().UserID]
+	updatedMember := team.GetMemberMap()[c.V1.Auth().User.ID]
 	updatedMember.MemberStatus = model.TeamMemberStatusJoined
 	updatedMember.JoinedAt = time.Now()
 
-	err = tmc.UpdateMember(id, c.V1.Auth().UserID, &updatedMember)
+	err = tmc.UpdateMember(id, c.V1.Auth().User.ID, &updatedMember)
 	if err != nil {
 		return nil, err
 	}
 
-	nmc := notification_repo.New().WithUserID(c.V1.Auth().UserID).FilterContent("id", id).WithType(model.NotificationTeamInvite)
+	nmc := notification_repo.New().WithUserID(c.V1.Auth().User.ID).FilterContent("id", id).WithType(model.NotificationTeamInvite)
 	err = nmc.MarkReadAndCompleted()
 	if err != nil {
 		return nil, err
@@ -324,9 +324,9 @@ func (c *Client) getResourceIfAccessible(resourceID string) *model.TeamResource 
 	dmc := deployment_repo.New()
 	vmc := vm_repo.New()
 
-	if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
-		dmc.WithOwner(c.V1.Auth().UserID)
-		vmc.WithOwner(c.V1.Auth().UserID)
+	if c.V1.Auth() != nil && !c.V1.Auth().User.IsAdmin {
+		dmc.WithOwner(c.V1.Auth().User.ID)
+		vmc.WithOwner(c.V1.Auth().User.ID)
 	}
 
 	isOwner, err := dmc.ExistsByID(resourceID)
@@ -377,7 +377,7 @@ func (c *Client) createMemberIfAccessible(current *model.Team, memberID string) 
 		AddedAt:  time.Now(),
 	}
 
-	if !c.V1.HasAuth() || c.V1.Auth().IsAdmin {
+	if !c.V1.HasAuth() || c.V1.Auth().User.IsAdmin {
 		member.MemberStatus = model.TeamMemberStatusJoined
 		member.JoinedAt = time.Now()
 	} else {

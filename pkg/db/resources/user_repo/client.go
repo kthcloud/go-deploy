@@ -50,3 +50,15 @@ func (client *Client) LastAuthenticatedAfter(lastAuthenticatedAt time.Time) *Cli
 
 	return client
 }
+
+// WithApiKey filters the users to only those with the given API key.
+func (client *Client) WithApiKey(apiKey string) *Client {
+	client.AddExtraFilter(bson.D{{"apiKeys", bson.D{{"$elemMatch",
+		bson.D{
+			{"key", apiKey},
+			{"expiresAt", bson.D{{"$gt", time.Now()}}},
+		},
+	}}}})
+
+	return client
+}

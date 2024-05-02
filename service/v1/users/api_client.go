@@ -6,6 +6,8 @@ import (
 	"go-deploy/pkg/db/resources/user_repo"
 	"go-deploy/service/clients"
 	"go-deploy/service/core"
+	"go-deploy/service/v1/api"
+	"go-deploy/service/v1/users/api_key"
 	"sort"
 )
 
@@ -32,6 +34,11 @@ func New(v1 clients.V1, v2 clients.V2, cache ...*core.Cache) *Client {
 		V2:    v2,
 		Cache: c,
 	}
+}
+
+// ApiKeys returns the client for the ApiKeys service.
+func (c *Client) ApiKeys() api.ApiKeys {
+	return api_key.New(c.V1, c.V2, c.Cache)
 }
 
 // User returns the User with the given ID.

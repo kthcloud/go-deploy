@@ -24,8 +24,8 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.ResourceMigration,
 
 	if o.MigrationCode != nil {
 		rmc.WithCode(*o.MigrationCode)
-	} else if c.V1.HasAuth() && !c.V1.Auth().IsAdmin {
-		rmc.WithUserID(c.V1.Auth().UserID)
+	} else if c.V1.HasAuth() && !c.V1.Auth().User.IsAdmin {
+		rmc.WithUserID(c.V1.Auth().User.ID)
 	}
 
 	resourceMigration, err := rmc.GetByID(id)
@@ -49,16 +49,16 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.ResourceMigration, error) 
 	var effectiveUserID string
 	if o.UserID != nil {
 		// Specific user's deployments are requested
-		if !c.V1.HasAuth() || c.V1.Auth().UserID == *o.UserID || c.V1.Auth().IsAdmin {
+		if !c.V1.HasAuth() || c.V1.Auth().User.ID == *o.UserID || c.V1.Auth().User.IsAdmin {
 			effectiveUserID = *o.UserID
 		} else {
 			// User cannot access the other user's resources
-			effectiveUserID = c.V1.Auth().UserID
+			effectiveUserID = c.V1.Auth().User.ID
 		}
 	} else {
 		// All deployments are requested
-		if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
-			effectiveUserID = c.V1.Auth().UserID
+		if c.V1.Auth() != nil && !c.V1.Auth().User.IsAdmin {
+			effectiveUserID = c.V1.Auth().User.ID
 		}
 	}
 
@@ -135,7 +135,7 @@ func (c *Client) CreateMigrationUpdateOwner(id, userID, resourceID, resourceType
 
 	// Right now we only support deployments or VMs, so this logic might need to be changed in the future. For teams etc.
 
-	if c.V1.HasAuth() && !c.V1.Auth().IsAdmin {
+	if c.V1.HasAuth() && !c.V1.Auth().User.IsAdmin {
 		status = model.ResourceMigrationStatusPending
 	}
 
@@ -170,8 +170,8 @@ func (c *Client) CreateMigrationUpdateOwner(id, userID, resourceID, resourceType
 		}
 
 		if c.V1.HasAuth() {
-			content["user"] = c.V1.Auth().UserID
-			content["email"] = c.V1.Auth().GetEmail()
+			content["user"] = c.V1.Auth().User.ID
+			content["email"] = c.V1.Auth().User.Email
 		} else {
 			user, _ := c.V1.Users().Get(userID)
 			if user != nil {
@@ -226,8 +226,8 @@ func (c *Client) Update(id string, migrationUpdate *body.ResourceMigrationUpdate
 
 	if o.MigrationCode != nil {
 		rmc.WithCode(*o.MigrationCode)
-	} else if c.V1.HasAuth() && !c.V1.Auth().IsAdmin {
-		rmc.WithUserID(c.V1.Auth().UserID)
+	} else if c.V1.HasAuth() && !c.V1.Auth().User.IsAdmin {
+		rmc.WithUserID(c.V1.Auth().User.ID)
 	}
 
 	resourceMigration, err := rmc.GetByID(id)
@@ -246,7 +246,7 @@ func (c *Client) Update(id string, migrationUpdate *body.ResourceMigrationUpdate
 
 		canDoUpdate := false
 
-		requireCodeCheck := c.V1.HasAuth() && !c.V1.Auth().IsAdmin
+		requireCodeCheck := c.V1.HasAuth() && !c.V1.Auth().User.IsAdmin
 		if requireCodeCheck {
 			if migrationUpdate.Code == nil {
 				return nil, nil, sErrors.BadMigrationCodeErr
@@ -300,8 +300,8 @@ func (c *Client) Delete(id string) error {
 
 	rmc := resource_migration_repo.New()
 
-	if c.V1.HasAuth() && !c.V1.Auth().IsAdmin {
-		rmc.WithUserID(c.V1.Auth().UserID)
+	if c.V1.HasAuth() && !c.V1.Auth().User.IsAdmin {
+		rmc.WithUserID(c.V1.Auth().User.ID)
 	}
 
 	err := rmc.DeleteByID(id)

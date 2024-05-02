@@ -156,8 +156,9 @@ var (
 	// UserNotFoundErr is returned when the user is not found.
 	UserNotFoundErr = fmt.Errorf("user not found")
 
-	// UserDataNotFoundErr is returned when the user data is not found.
-	UserDataNotFoundErr = fmt.Errorf("user data not found")
+	// ApiKeyNameTakenErr is returned when the API key name is already taken by another API key.
+	// Every API key name should be unique.
+	ApiKeyNameTakenErr = fmt.Errorf("api key name taken")
 
 	// BadInviteCodeErr is returned when the invite code is invalid.
 	BadInviteCodeErr = fmt.Errorf("bad invite code")

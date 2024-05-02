@@ -91,7 +91,7 @@ func ListTeams(c *gin.Context) {
 	if requestQuery.UserID != nil {
 		userID = *requestQuery.UserID
 	} else if !requestQuery.All {
-		userID = auth.UserID
+		userID = auth.User.ID
 	}
 
 	teamList, err := service.V1(auth).Teams().List(opts.ListOpts{
@@ -137,7 +137,7 @@ func CreateTeam(c *gin.Context) {
 		return
 	}
 
-	team, err := service.V1(auth).Teams().Create(uuid.NewString(), auth.UserID, &requestQuery)
+	team, err := service.V1(auth).Teams().Create(uuid.NewString(), auth.User.ID, &requestQuery)
 	if err != nil {
 		if errors.Is(err, sErrors.TeamNameTakenErr) {
 			context.UserError("Team name is taken")

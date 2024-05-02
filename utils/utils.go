@@ -122,7 +122,7 @@ func NonZeroOrNil(t time.Time) *time.Time {
 
 const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
-// GenerateSalt generates the salt that can be used when, for example, hashing a password
+// GenerateSalt generates the salt that can be used when hashing a password
 func GenerateSalt() string {
 	//goland:noinspection GoDeprecation
 	rand.Seed(time.Now().UnixNano())

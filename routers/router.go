@@ -59,8 +59,8 @@ func NewRouter() *gin.Engine {
 
 	// Private routing group
 	private := router.Group("/")
-	private.Use(auth.New(auth.Check(), sys.GetKeyCloakConfig()))
-	private.Use(middleware.SynchronizeUser)
+	private.Use(auth.SetupKeycloakChain(auth.Check(), sys.GetKeyCloakConfig()))
+	private.Use(middleware.SetupAuthUser)
 
 	// Public routing group
 	public := router.Group("/")
@@ -144,6 +144,7 @@ func registerCustomValidators() {
 			"team_name":              validators.TeamName,
 			"team_member_list":       validators.TeamMemberList,
 			"team_resource_list":     validators.TeamResourceList,
+			"time_in_future":         validators.TimeInFuture,
 			"volume_name":            validators.VolumeName,
 		}
 

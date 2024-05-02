@@ -15,8 +15,8 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.Job, error) {
 
 	jmc := job_repo.New()
 
-	if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
-		jmc.WithUserID(c.V1.Auth().UserID)
+	if c.V1.Auth() != nil && !c.V1.Auth().User.IsAdmin {
+		jmc.WithUserID(c.V1.Auth().User.ID)
 	}
 
 	return c.Job(id, jmc)
@@ -39,16 +39,16 @@ func (c *Client) List(opt ...opts.ListOpts) ([]model.Job, error) {
 	var effectiveUserID string
 	if o.UserID != nil {
 		// Specific user's jobs are requested
-		if !c.V1.HasAuth() || c.V1.Auth().UserID == *o.UserID || c.V1.Auth().IsAdmin {
+		if !c.V1.HasAuth() || c.V1.Auth().User.ID == *o.UserID || c.V1.Auth().User.IsAdmin {
 			effectiveUserID = *o.UserID
 		} else {
 			// User cannot access the other user's resources
-			effectiveUserID = c.V1.Auth().UserID
+			effectiveUserID = c.V1.Auth().User.ID
 		}
 	} else {
 		// All jobs are requested
-		if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
-			effectiveUserID = c.V1.Auth().UserID
+		if c.V1.Auth() != nil && !c.V1.Auth().User.IsAdmin {
+			effectiveUserID = c.V1.Auth().User.ID
 		}
 	}
 
@@ -82,7 +82,7 @@ func (c *Client) Create(id, userID, jobType, version string, args map[string]int
 
 // Update updates a job.
 func (c *Client) Update(id string, jobUpdateDTO *body.JobUpdate) (*model.Job, error) {
-	if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
+	if c.V1.Auth() != nil && !c.V1.Auth().User.IsAdmin {
 		return nil, sErrors.ForbiddenErr
 	}
 

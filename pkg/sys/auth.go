@@ -7,6 +7,32 @@ import (
 	"go-deploy/pkg/config"
 )
 
+// HasApiKey checks if the request has an api key.
+func (context *ClientContext) HasApiKey() bool {
+	return context.GinContext.GetHeader("X-API-KEY") != ""
+}
+
+// GetApiKey gets the api key from the request.
+func (context *ClientContext) GetApiKey() (string, error) {
+	apiKey := context.GinContext.GetHeader("X-API-KEY")
+	if apiKey == "" {
+		return "", fmt.Errorf("failed to find api key in request")
+	}
+
+	return apiKey, nil
+}
+
+// HasBearerToken checks if the request has a bearer token.
+func (context *ClientContext) HasBearerToken() bool {
+	return context.GinContext.GetHeader("Authorization") != ""
+}
+
+// HasKeycloakToken checks if the request has a keycloak token.
+func (context *ClientContext) HasKeycloakToken() bool {
+	_, exists := context.GinContext.Get("keycloakToken")
+	return exists
+}
+
 // GetKeycloakToken gets the keycloak token from the request.
 func (context *ClientContext) GetKeycloakToken() (*auth.KeycloakToken, error) {
 	tokenRaw, exists := context.GinContext.Get("keycloakToken")

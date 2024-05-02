@@ -51,7 +51,7 @@ func GetSM(c *gin.Context) {
 		return
 	}
 
-	if sm == nil || sm.OwnerID != auth.UserID {
+	if sm == nil || sm.OwnerID != auth.User.ID {
 		context.NotFound("Storage manager not found")
 		return
 	}
@@ -152,7 +152,7 @@ func DeleteSM(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobDeleteSM, version.V1, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.User.ID, model.JobDeleteSM, version.V1, map[string]interface{}{
 		"id":      sm.ID,
 		"ownerId": sm.OwnerID,
 	})

@@ -109,7 +109,7 @@ func ListVMs(c *gin.Context) {
 	if requestQuery.UserID != nil {
 		userID = *requestQuery.UserID
 	} else if !requestQuery.All {
-		userID = auth.UserID
+		userID = auth.User.ID
 	}
 
 	vms, err := deployV1.VMs().List(opts.ListOpts{
@@ -200,7 +200,7 @@ func CreateVM(c *gin.Context) {
 		}
 	}
 
-	err = deployV1.VMs().CheckQuota("", auth.UserID, &auth.GetEffectiveRole().Quotas, opts.QuotaOpts{Create: &requestBody})
+	err = deployV1.VMs().CheckQuota("", auth.User.ID, &auth.GetEffectiveRole().Quotas, opts.QuotaOpts{Create: &requestBody})
 	if err != nil {
 		var quotaExceedErr sErrors.QuotaExceededError
 		if errors.As(err, &quotaExceedErr) {
@@ -214,9 +214,9 @@ func CreateVM(c *gin.Context) {
 
 	vmID := uuid.New().String()
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobCreateVM, version.V1, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.User.ID, model.JobCreateVM, version.V1, map[string]interface{}{
 		"id":       vmID,
-		"ownerId":  auth.UserID,
+		"ownerId":  auth.User.ID,
 		"params":   requestBody,
 		"authInfo": auth,
 	})
@@ -316,7 +316,7 @@ func UpdateVM(c *gin.Context) {
 		}
 	}
 
-	err = deployV1.VMs().CheckQuota(vm.ID, auth.UserID, &auth.GetEffectiveRole().Quotas, opts.QuotaOpts{Update: &requestBody})
+	err = deployV1.VMs().CheckQuota(vm.ID, auth.User.ID, &auth.GetEffectiveRole().Quotas, opts.QuotaOpts{Update: &requestBody})
 	if err != nil {
 		var quotaExceededErr sErrors.QuotaExceededError
 		if errors.As(err, &quotaExceededErr) {
@@ -346,7 +346,7 @@ func UpdateVM(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobUpdateVM, version.V1, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.User.ID, model.JobUpdateVM, version.V1, map[string]interface{}{
 		"id":       vm.ID,
 		"params":   requestBody,
 		"authInfo": auth,
@@ -405,7 +405,7 @@ func DeleteVM(c *gin.Context) {
 		return
 	}
 
-	if vm.OwnerID != auth.UserID && !auth.IsAdmin {
+	if vm.OwnerID != auth.User.ID && !auth.User.IsAdmin {
 		context.Forbidden("VMs can only be deleted by their owner")
 		return
 	}
@@ -428,7 +428,7 @@ func DeleteVM(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobDeleteVM, version.V1, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.User.ID, model.JobDeleteVM, version.V1, map[string]interface{}{
 		"id":       vm.ID,
 		"authInfo": auth,
 	})
