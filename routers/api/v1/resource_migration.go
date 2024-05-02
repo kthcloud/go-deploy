@@ -129,7 +129,7 @@ func CreateResourceMigration(c *gin.Context) {
 
 	deployV1 := service.V1(auth)
 
-	resourceMigration, jobID, err := deployV1.ResourceMigrations().Create(uuid.New().String(), auth.UserID, &requestBody)
+	resourceMigration, jobID, err := deployV1.ResourceMigrations().Create(uuid.New().String(), auth.User.ID, &requestBody)
 	if err != nil {
 		switch {
 		case errors.Is(err, sErrors.ResourceMigrationAlreadyExistsErr):

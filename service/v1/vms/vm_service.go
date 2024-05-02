@@ -34,18 +34,18 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.VM, error) {
 	vmc := vm_repo.New(version.V1)
 
 	var effectiveUserID string
-	if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
-		effectiveUserID = c.V1.Auth().UserID
+	if c.V1.Auth() != nil && !c.V1.Auth().User.IsAdmin {
+		effectiveUserID = c.V1.Auth().User.ID
 	}
 
 	var teamCheck bool
 	if !o.Shared {
 		teamCheck = false
-	} else if !c.V1.HasAuth() || c.V1.Auth().IsAdmin {
+	} else if !c.V1.HasAuth() || c.V1.Auth().User.IsAdmin {
 		teamCheck = true
 	} else {
 		var err error
-		teamCheck, err = team_repo.New().WithUserID(c.V1.Auth().UserID).WithResourceID(id).ExistsAny()
+		teamCheck, err = team_repo.New().WithUserID(c.V1.Auth().User.ID).WithResourceID(id).ExistsAny()
 		if err != nil {
 			return nil, err
 		}
@@ -73,16 +73,16 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.VM, error) {
 	var effectiveUserID string
 	if o.UserID != nil {
 		// Specific user's VMs are requested
-		if !c.V1.HasAuth() || c.V1.Auth().UserID == *o.UserID || c.V1.Auth().IsAdmin {
+		if !c.V1.HasAuth() || c.V1.Auth().User.ID == *o.UserID || c.V1.Auth().User.IsAdmin {
 			effectiveUserID = *o.UserID
 		} else {
 			// User cannot access the other user's resources
-			effectiveUserID = c.V1.Auth().UserID
+			effectiveUserID = c.V1.Auth().User.ID
 		}
 	} else {
 		// All VMs are requested
-		if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
-			effectiveUserID = c.V1.Auth().UserID
+		if c.V1.Auth() != nil && !c.V1.Auth().User.IsAdmin {
+			effectiveUserID = c.V1.Auth().User.ID
 		}
 	}
 
@@ -600,7 +600,7 @@ func (c *Client) CheckQuota(id, userID string, quota *model.Quotas, opts ...opts
 		return fmt.Errorf("failed to check quota for user %s. details: %w", userID, err)
 	}
 
-	if !c.V1.HasAuth() || c.V1.Auth().IsAdmin {
+	if !c.V1.HasAuth() || c.V1.Auth().User.IsAdmin {
 		return nil
 	}
 

@@ -23,8 +23,8 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.SM, error) {
 
 	sClient := sm_repo.New()
 
-	if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
-		sClient.WithOwnerID(c.V1.Auth().UserID)
+	if c.V1.Auth() != nil && !c.V1.Auth().User.IsAdmin {
+		sClient.WithOwnerID(c.V1.Auth().User.ID)
 	}
 
 	return c.SM(id, "", sClient)
@@ -38,8 +38,8 @@ func (c *Client) GetByUserID(userID string, opts ...opts.GetOpts) (*model.SM, er
 
 	sClient := sm_repo.New()
 
-	if c.V1.Auth() != nil && userID != c.V1.Auth().UserID && !c.V1.Auth().IsAdmin {
-		sClient.WithOwnerID(c.V1.Auth().UserID)
+	if c.V1.Auth() != nil && userID != c.V1.Auth().User.ID && !c.V1.Auth().User.IsAdmin {
+		sClient.WithOwnerID(c.V1.Auth().User.ID)
 	} else {
 		sClient.WithOwnerID(userID)
 	}
@@ -59,8 +59,8 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.SM, error) {
 		sClient.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
 	}
 
-	if c.V1.Auth() != nil && (!o.All || !c.V1.Auth().IsAdmin) {
-		sClient.WithOwnerID(c.V1.Auth().UserID)
+	if c.V1.Auth() != nil && (!o.All || !c.V1.Auth().User.IsAdmin) {
+		sClient.WithOwnerID(c.V1.Auth().User.ID)
 	}
 
 	resources, err := sClient.List()

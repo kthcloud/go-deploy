@@ -31,12 +31,12 @@ func (c *Client) Get(id string, opts ...opts.GetGpuLeaseOpts) (*model.GpuLease, 
 
 	if c.V2.HasAuth() {
 		// 1. User has access through being an admin
-		if c.V2.Auth().IsAdmin {
+		if c.V2.Auth().User.IsAdmin {
 			return glc.GetByID(id)
 		}
 
 		// 2. User has access through being the lease owner
-		leaseByUserID, err := glc.WithUserID(c.V2.Auth().UserID).GetByID(id)
+		leaseByUserID, err := glc.WithUserID(c.V2.Auth().User.ID).GetByID(id)
 		if err != nil {
 			return nil, makeError(err)
 		}
@@ -47,7 +47,7 @@ func (c *Client) Get(id string, opts ...opts.GetGpuLeaseOpts) (*model.GpuLease, 
 
 		// 3. User has access to the parent VM through a team
 		if lease.VmID != nil {
-			hasAccess, err := c.V1.Teams().CheckResourceAccess(c.V2.Auth().UserID, *lease.VmID)
+			hasAccess, err := c.V1.Teams().CheckResourceAccess(c.V2.Auth().User.ID, *lease.VmID)
 			if err != nil {
 				return nil, makeError(err)
 			}
@@ -125,12 +125,12 @@ func (c *Client) List(opts ...opts.ListGpuLeaseOpts) ([]model.GpuLease, error) {
 				return nil, makeError(sErrors.VmNotFoundErr)
 			}
 
-			if vm.OwnerID != c.V2.Auth().UserID {
+			if vm.OwnerID != c.V2.Auth().User.ID {
 				return nil, nil
 			}
 
 			// Check team access
-			hasAccess, err := c.V1.Teams().CheckResourceAccess(c.V2.Auth().UserID, *o.VmID)
+			hasAccess, err := c.V1.Teams().CheckResourceAccess(c.V2.Auth().User.ID, *o.VmID)
 			if err != nil {
 				return nil, makeError(err)
 			}
@@ -145,15 +145,15 @@ func (c *Client) List(opts ...opts.ListGpuLeaseOpts) ([]model.GpuLease, error) {
 
 	if o.UserID != nil {
 		// Specific user's GPU leases are requested
-		if !c.V1.HasAuth() || c.V1.Auth().UserID == *o.UserID || c.V1.Auth().IsAdmin {
+		if !c.V1.HasAuth() || c.V1.Auth().User.ID == *o.UserID || c.V1.Auth().User.IsAdmin {
 			glc.WithUserID(*o.UserID)
 		} else {
 			return nil, nil
 		}
 	} else {
 		// All GPU leases are requested
-		if c.V1.HasAuth() && !c.V1.Auth().IsAdmin {
-			glc.WithUserID(c.V1.Auth().UserID)
+		if c.V1.HasAuth() && !c.V1.Auth().User.IsAdmin {
+			glc.WithUserID(c.V1.Auth().User.ID)
 		}
 	}
 
@@ -173,7 +173,7 @@ func (c *Client) Create(leaseID, userID string, dtoGpuLeaseCreate *body.GpuLease
 		return fmt.Errorf("failed to create gpu lease. details: %w", err)
 	}
 
-	if c.V2.HasAuth() && !c.V2.Auth().IsAdmin {
+	if c.V2.HasAuth() && !c.V2.Auth().User.IsAdmin {
 		// If not admin, the user cannot lease a GPU forever
 		dtoGpuLeaseCreate.LeaseForever = false
 	}
@@ -181,7 +181,7 @@ func (c *Client) Create(leaseID, userID string, dtoGpuLeaseCreate *body.GpuLease
 	params := model.GpuLeaseCreateParams{}.FromDTO(dtoGpuLeaseCreate)
 
 	var leaseDuration float64
-	if !c.V2.HasAuth() || (params.LeaseForever && c.V2.Auth().IsAdmin) {
+	if !c.V2.HasAuth() || (params.LeaseForever && c.V2.Auth().User.IsAdmin) {
 		leaseDuration = 1000 * 365 * 24 // A 1000-year lease is close enough to forever, right? :)
 	}
 

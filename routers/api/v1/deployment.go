@@ -109,7 +109,7 @@ func ListDeployments(c *gin.Context) {
 	if requestQuery.UserID != nil {
 		userID = *requestQuery.UserID
 	} else if !requestQuery.All {
-		userID = auth.UserID
+		userID = auth.User.ID
 	}
 
 	deployV1 := service.V1(auth)
@@ -226,9 +226,9 @@ func CreateDeployment(c *gin.Context) {
 
 	deploymentID := uuid.New().String()
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobCreateDeployment, version.V1, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.User.ID, model.JobCreateDeployment, version.V1, map[string]interface{}{
 		"id":       deploymentID,
-		"ownerId":  auth.UserID,
+		"ownerId":  auth.User.ID,
 		"params":   requestBody,
 		"authInfo": auth,
 	})
@@ -286,7 +286,7 @@ func DeleteDeployment(c *gin.Context) {
 		return
 	}
 
-	if currentDeployment.OwnerID != auth.UserID && !auth.IsAdmin {
+	if currentDeployment.OwnerID != auth.User.ID && !auth.User.IsAdmin {
 		context.Forbidden("Deployments can only be deleted by their owner")
 		return
 	}
@@ -309,9 +309,9 @@ func DeleteDeployment(c *gin.Context) {
 	}
 
 	jobID := uuid.NewString()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobDeleteDeployment, version.V1, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.User.ID, model.JobDeleteDeployment, version.V1, map[string]interface{}{
 		"id":       currentDeployment.ID,
-		"ownerId":  auth.UserID,
+		"ownerId":  auth.User.ID,
 		"authInfo": auth,
 	})
 	if err != nil {
@@ -403,7 +403,7 @@ func UpdateDeployment(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobUpdateDeployment, version.V1, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.User.ID, model.JobUpdateDeployment, version.V1, map[string]interface{}{
 		"id":       deployment.ID,
 		"params":   requestBody,
 		"authInfo": auth,

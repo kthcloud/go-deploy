@@ -1,12 +1,16 @@
 package body
 
+import "time"
+
 type UserRead struct {
-	ID         string      `json:"id"`
-	Username   string      `json:"username"`
-	FirstName  string      `json:"firstName"`
-	LastName   string      `json:"lastName"`
-	Email      string      `json:"email"`
+	ID        string `json:"id"`
+	Username  string `json:"username"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	Email     string `json:"email"`
+
 	PublicKeys []PublicKey `json:"publicKeys"`
+	ApiKeys    []ApiKey    `json:"apiKeys"`
 	UserData   []UserData  `json:"userData"`
 
 	Role  Role `json:"role"`
@@ -29,7 +33,10 @@ type UserReadDiscovery struct {
 
 type UserUpdate struct {
 	PublicKeys *[]PublicKey `json:"publicKeys,omitempty" bson:"publicKeys,omitempty" binding:"omitempty,min=0,max=100,dive"`
-	UserData   *[]UserData  `json:"userData,omitempty" bson:"publicKeys,omitempty" binding:"omitempty,min=0,max=100,dive"`
+	// ApiKeys specifies the API keys that should remain. If an API key is not in this list, it will be deleted.
+	// However, API keys cannot be created, use /apiKeys endpoint to create new API keys.
+	ApiKeys  *[]ApiKey   `json:"apiKeys,omitempty" bson:"apiKeys,omitempty" binding:"omitempty,min=0,max=100,dive"`
+	UserData *[]UserData `json:"userData,omitempty" bson:"publicKeys,omitempty" binding:"omitempty,min=0,max=100,dive"`
 }
 
 type UserData struct {
@@ -40,6 +47,12 @@ type UserData struct {
 type PublicKey struct {
 	Name string `json:"name" binding:"required,min=1,max=30"`
 	Key  string `json:"key" binding:"required,ssh_public_key"`
+}
+
+type ApiKey struct {
+	Name      string    `json:"name"`
+	CreatedAt time.Time `json:"createdAt"`
+	ExpiresAt time.Time `json:"expiresAt"`
 }
 
 type Quota struct {

@@ -169,10 +169,62 @@ func getCollectionDefinitions() map[string]CollectionDefinition {
 			UniqueIndexes:        [][]string{{"name"}},
 			TotallyUniqueIndexes: [][]string{{"id"}},
 		},
+		"events": {
+			Name:                 "events",
+			Indexes:              []string{"type", "createdAt", "source.userId"},
+			TotallyUniqueIndexes: [][]string{{"id"}},
+		},
+		"gpus": {
+			Name:    "gpus",
+			Indexes: []string{"groupName", "vmId", "userId"},
+			// Right now we only allow one lease per user
+			UniqueIndexes:        [][]string{{"userId"}},
+			TotallyUniqueIndexes: [][]string{{"id"}},
+		},
+		"gpuGroups": {
+			Name:                 "gpuGroups",
+			Indexes:              []string{},
+			UniqueIndexes:        [][]string{{"name", "zone"}},
+			TotallyUniqueIndexes: [][]string{{"id"}},
+		},
+		"gpuLeases": {
+			Name:    "gpuLeases",
+			Indexes: []string{"groupName", "vmId", "createdAt"},
+			// Right now we only allow a single lease per user, this might change in the future
+			UniqueIndexes:        [][]string{{"userId"}},
+			TotallyUniqueIndexes: [][]string{{"id"}},
+		},
+		"jobs": {
+			Name:                 "jobs",
+			Indexes:              []string{"userId", "type", "args.id", "status", "createdAt", "runAfter"},
+			TotallyUniqueIndexes: [][]string{{"id"}},
+		},
+		"notifications": {
+			Name:                 "notifications",
+			Indexes:              []string{"userId", "type", "createdAt", "readAt", "deletedAt"},
+			TotallyUniqueIndexes: [][]string{{"id"}},
+		},
+		"resourceMigrations": {
+			Name:                 "resourceMigrations",
+			Indexes:              []string{"resourceId", "type", "resourceType", "userId", "createdAt", "deletedAt"},
+			TotallyUniqueIndexes: [][]string{{"id"}},
+		},
 		"storageManagers": {
 			Name:                 "storageManagers",
 			Indexes:              []string{"ownerId", "createdAt", "deletedAt", "repairedAt", "zone"},
 			TotallyUniqueIndexes: [][]string{{"id"}},
+		},
+		"teams": {
+			Name:                 "teams",
+			Indexes:              []string{"name", "ownerId", "createdAt", "deletedAt"},
+			TotallyUniqueIndexes: [][]string{{"id"}},
+			TextIndexFields:      []string{"name"},
+		},
+		"users": {
+			Name:                 "users",
+			Indexes:              []string{"username", "email", "firstName", "lastName", "effectiveRole.name", "lastAuthenticatedAt", "apiKeys.key"},
+			TotallyUniqueIndexes: [][]string{{"id"}},
+			TextIndexFields:      []string{"username", "email", "firstName", "lastName"},
 		},
 		"vms": {
 			Name:                 "vms",
@@ -185,61 +237,9 @@ func getCollectionDefinitions() map[string]CollectionDefinition {
 			Indexes:       []string{"publicPort", "zone", "lease.privatePort", "lease.userId", "lease.vmId"},
 			UniqueIndexes: [][]string{{"publicPort", "zone"}},
 		},
-		"gpus": {
-			Name:    "gpus",
-			Indexes: []string{"groupName", "vmId", "userId"},
-			// Right now we only allow one lease per user
-			UniqueIndexes:        [][]string{{"userId"}},
-			TotallyUniqueIndexes: [][]string{{"id"}},
-		},
-		"gpuLeases": {
-			Name:    "gpuLeases",
-			Indexes: []string{"groupName", "vmId", "createdAt"},
-			// Right now we only allow a single lease per user, this might change in the future
-			UniqueIndexes:        [][]string{{"userId"}},
-			TotallyUniqueIndexes: [][]string{{"id"}},
-		},
-		"gpuGroups": {
-			Name:                 "gpuGroups",
-			Indexes:              []string{},
-			UniqueIndexes:        [][]string{{"name", "zone"}},
-			TotallyUniqueIndexes: [][]string{{"id"}},
-		},
-		"users": {
-			Name:                 "users",
-			Indexes:              []string{"username", "email", "firstName", "lastName", "effectiveRole.name", "lastAuthenticatedAt"},
-			TotallyUniqueIndexes: [][]string{{"id"}},
-			TextIndexFields:      []string{"username", "email", "firstName", "lastName"},
-		},
-		"teams": {
-			Name:                 "teams",
-			Indexes:              []string{"name", "ownerId", "createdAt", "deletedAt"},
-			TotallyUniqueIndexes: [][]string{{"id"}},
-			TextIndexFields:      []string{"name"},
-		},
-		"jobs": {
-			Name:                 "jobs",
-			Indexes:              []string{"userId", "type", "args.id", "status", "createdAt", "runAfter"},
-			TotallyUniqueIndexes: [][]string{{"id"}},
-		},
-		"notifications": {
-			Name:                 "notifications",
-			Indexes:              []string{"userId", "type", "createdAt", "readAt", "deletedAt"},
-			TotallyUniqueIndexes: [][]string{{"id"}},
-		},
-		"events": {
-			Name:                 "events",
-			Indexes:              []string{"type", "createdAt", "source.userId"},
-			TotallyUniqueIndexes: [][]string{{"id"}},
-		},
 		"workerStatus": {
 			Name:    "workerStatus",
 			Indexes: []string{"name", "status"},
-		},
-		"resourceMigrations": {
-			Name:                 "resourceMigrations",
-			Indexes:              []string{"resourceId", "type", "resourceType", "userId", "createdAt", "deletedAt"},
-			TotallyUniqueIndexes: [][]string{{"id"}},
 		},
 	}
 }

@@ -10,7 +10,7 @@ import (
 )
 
 // Synchronize creates a new user or updates an existing user.
-func (client *Client) Synchronize(id string, params *model.UserCreateParams) (*model.User, error) {
+func (client *Client) Synchronize(id string, params *model.UserSynchronizeParams) (*model.User, error) {
 	current, err := client.GetByID(id)
 	if err != nil {
 		return nil, err
@@ -68,6 +68,7 @@ func (client *Client) UpdateWithParams(id string, params *model.UserUpdateParams
 	updateData := bson.D{}
 
 	db.AddIfNotNil(&updateData, "publicKeys", params.PublicKeys)
+	db.AddIfNotNil(&updateData, "apiKeys", params.ApiKeys)
 	db.AddIfNotNil(&updateData, "userData", params.UserData)
 
 	if len(updateData) == 0 {

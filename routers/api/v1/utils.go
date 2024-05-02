@@ -3,6 +3,7 @@ package v1
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/go-playground/validator/v10"
 	"go-deploy/dto/v1/body"
 	"go-deploy/pkg/sys"
@@ -17,12 +18,12 @@ func WithAuth(context *sys.ClientContext) (*core.AuthInfo, error) {
 		return errors.New("failed to get auth info")
 	}
 
-	token, err := context.GetKeycloakToken()
-	if err != nil {
-		return nil, makeError(err)
+	user := context.GetAuthUser()
+	if user == nil {
+		return nil, makeError(fmt.Errorf("auth user not found in context"))
 	}
 
-	return core.CreateAuthInfo(token.Sub, token, token.Groups), nil
+	return core.CreateAuthInfo(user), nil
 }
 
 // msgForTag returns a human readable error message for a validator.FieldError
@@ -86,6 +87,8 @@ func msgForTag(fe validator.FieldError) string {
 		return "Every team member must be unique"
 	case "team_resource_list":
 		return "Every team model must be unique"
+	case "time_in_future":
+		return "Must be a time in the future"
 	case "volume_name":
 		return "Must be a valid volume name, ex. my-volume, my-volume-123, my volume"
 	case "domain_name":

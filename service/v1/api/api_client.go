@@ -97,13 +97,20 @@ type Status interface {
 
 type Users interface {
 	Get(id string, opts ...userOpts.GetOpts) (*model.User, error)
+	GetByApiKey(apiKey string) (*model.User, error)
 	GetUsage(userID string) (*model.UserUsage, error)
 	List(opts ...userOpts.ListOpts) ([]model.User, error)
-	Synchronize() (*model.User, error)
+	Synchronize(authParams *model.AuthParams) (*model.User, error)
 	Update(userID string, dtoUserUpdate *body.UserUpdate) (*model.User, error)
 	Exists(id string) (bool, error)
 
 	Discover(opts ...userOpts.DiscoverOpts) ([]body.UserReadDiscovery, error)
+
+	ApiKeys() ApiKeys
+}
+
+type ApiKeys interface {
+	Create(userID string, dtoApiKeyCreate *body.ApiKeyCreate) (*model.ApiKey, error)
 }
 
 type Teams interface {

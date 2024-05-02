@@ -23,9 +23,20 @@ type User struct {
 	EffectiveRole EffectiveRole `bson:"effectiveRole"`
 
 	PublicKeys []PublicKey `bson:"publicKeys"`
+	ApiKeys    []ApiKey    `bson:"apiKeys"`
 	UserData   []UserData  `bson:"userData"`
 
 	LastAuthenticatedAt time.Time `bson:"lastAuthenticatedAt"`
+}
+
+type AuthParams struct {
+	UserID    string `json:"userId"`
+	Username  string `json:"username"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	Email     string `json:"email"`
+	IsAdmin   bool   `json:"isAdmin"`
+	Roles     []Role `json:"roles"`
 }
 
 type PublicKey struct {

@@ -27,6 +27,15 @@ func (user *User) ToDTO(effectiveRole *Role, usage *UserUsage, storageURL *strin
 		}
 	}
 
+	apiKeys := make([]body.ApiKey, len(user.ApiKeys))
+	for i, key := range user.ApiKeys {
+		apiKeys[i] = body.ApiKey{
+			Name:      key.Name,
+			CreatedAt: key.CreatedAt,
+			ExpiresAt: key.ExpiresAt,
+		}
+	}
+
 	userData := make([]body.UserData, len(user.UserData))
 	for i, data := range user.UserData {
 		userData[i] = body.UserData{
@@ -44,6 +53,7 @@ func (user *User) ToDTO(effectiveRole *Role, usage *UserUsage, storageURL *strin
 		GravatarURL: user.Gravatar.URL,
 
 		PublicKeys: publicKeys,
+		ApiKeys:    apiKeys,
 		UserData:   userData,
 
 		Role:  effectiveRole.ToDTO(false),
@@ -70,7 +80,7 @@ func (usage *UserUsage) ToDTO() body.Usage {
 }
 
 // FromDTO converts a body.UserUpdate DTO to a UserUpdateParams.
-func (params UserUpdateParams) FromDTO(userUpdateDTO *body.UserUpdate) UserUpdateParams {
+func (params UserUpdateParams) FromDTO(userUpdateDTO *body.UserUpdate, currentApiKeys []ApiKey) UserUpdateParams {
 	var publicKeys *[]PublicKey
 	if userUpdateDTO.PublicKeys != nil {
 		k := make([]PublicKey, len(*userUpdateDTO.PublicKeys))
@@ -85,6 +95,23 @@ func (params UserUpdateParams) FromDTO(userUpdateDTO *body.UserUpdate) UserUpdat
 	}
 
 	params.PublicKeys = publicKeys
+
+	var apiKeys *[]ApiKey
+	if userUpdateDTO.ApiKeys != nil {
+		a := make([]ApiKey, len(*userUpdateDTO.ApiKeys))
+		for i, key := range *userUpdateDTO.ApiKeys {
+			for _, currentKey := range currentApiKeys {
+				if key.Name == currentKey.Name {
+					a[i] = currentKey
+					break
+				}
+			}
+		}
+
+		apiKeys = &a
+	}
+
+	params.ApiKeys = apiKeys
 
 	var userData *[]UserData
 	if userUpdateDTO.UserData != nil {

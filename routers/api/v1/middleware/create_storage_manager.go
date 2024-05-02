@@ -26,7 +26,7 @@ func CreateSM() gin.HandlerFunc {
 
 		deployV1 := service.V1(auth)
 
-		exists, err := deployV1.SMs().Exists(auth.UserID)
+		exists, err := deployV1.SMs().Exists(auth.User.ID)
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to create storage manager. details: %w", err))
 			return
@@ -35,9 +35,9 @@ func CreateSM() gin.HandlerFunc {
 		if !exists {
 			smID := uuid.New().String()
 			jobID := uuid.New().String()
-			err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobCreateSM, version.V1, map[string]interface{}{
+			err = deployV1.Jobs().Create(jobID, auth.User.ID, model.JobCreateSM, version.V1, map[string]interface{}{
 				"id":     smID,
-				"userId": auth.UserID,
+				"userId": auth.User.ID,
 				"params": model.SmCreateParams{
 					Zone: "se-flem-2",
 				},
