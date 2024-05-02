@@ -22,7 +22,7 @@ type ResourceMigrationRead struct {
 type ResourceMigrationCreate struct {
 	Type       string  `json:"type" binding:"required"`
 	ResourceID string  `json:"resourceID" binding:"required,uuid4"`
-	Status     *string `json:"status" binding:"required"`
+	Status     *string `json:"status"`
 
 	UpdateOwner *struct {
 		OwnerID string `json:"ownerId" binding:"required,uuid4"`
