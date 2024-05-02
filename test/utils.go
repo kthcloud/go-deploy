@@ -42,7 +42,7 @@ func EqualOrEmpty(t *testing.T, expected, actual interface{}, msgAndArgs ...inte
 	if expected == nil || (isSlice && noElements == 0) {
 		assert.Empty(t, actual, msgAndArgs)
 	} else {
-		assert.EqualValues(t, expected, actual, msgAndArgs)
+		assert.ElementsMatch(t, expected, actual, msgAndArgs)
 	}
 }
 

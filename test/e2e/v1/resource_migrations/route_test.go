@@ -38,7 +38,7 @@ func TestCreateOwnerUpdateNoAdmin(t *testing.T) {
 	resource1, _ := v1.WithDeployment(t, body.DeploymentCreate{
 		Name:    e2e.GenName(),
 		Private: false,
-	}, e2e.DefaultUserID)
+	}, e2e.PowerUserID)
 
 	resource2 := v2.WithVM(t, bodyV2.VmCreate{
 		Name:         e2e.GenName(),
@@ -46,7 +46,7 @@ func TestCreateOwnerUpdateNoAdmin(t *testing.T) {
 		CpuCores:     1,
 		RAM:          4,
 		DiskSize:     10,
-	}, e2e.DefaultUserID)
+	}, e2e.PowerUserID)
 
 	// Create as default user
 	resourceMigration1 := v1.WithResourceMigration(t, body.ResourceMigrationCreate{
@@ -55,21 +55,21 @@ func TestCreateOwnerUpdateNoAdmin(t *testing.T) {
 		UpdateOwner: &struct {
 			OwnerID string `json:"ownerId" binding:"required,uuid4"`
 		}{
-			OwnerID: e2e.PowerUserID,
+			OwnerID: e2e.DefaultUserID,
 		},
-	}, e2e.DefaultUserID)
+	}, e2e.PowerUserID)
 	resourceMigration2 := v1.WithResourceMigration(t, body.ResourceMigrationCreate{
 		Type:       model.ResourceMigrationTypeUpdateOwner,
 		ResourceID: resource2.ID,
 		UpdateOwner: &struct {
 			OwnerID string `json:"ownerId" binding:"required,uuid4"`
 		}{
-			OwnerID: e2e.PowerUserID,
+			OwnerID: e2e.DefaultUserID,
 		},
-	}, e2e.DefaultUserID)
+	}, e2e.PowerUserID)
 
 	// They generate notifications for the receiver, find them
-	notifications := v1.ListNotifications(t, "", e2e.PowerUserID)
+	notifications := v1.ListNotifications(t, "", e2e.DefaultUserID, e2e.DefaultUserID)
 	var notification1 *body.NotificationRead
 	var notification2 *body.NotificationRead
 	for _, n := range notifications {
@@ -95,17 +95,17 @@ func TestCreateOwnerUpdateNoAdmin(t *testing.T) {
 	v1.UpdateResourceMigration(t, resourceMigration1.ID, body.ResourceMigrationUpdate{
 		Status: model.ResourceMigrationStatusAccepted,
 		Code:   &code1,
-	}, e2e.PowerUserID)
+	}, e2e.DefaultUserID)
 	v1.UpdateResourceMigration(t, resourceMigration2.ID, body.ResourceMigrationUpdate{
 		Status: model.ResourceMigrationStatusAccepted,
 		Code:   &code2,
-	}, e2e.PowerUserID)
+	}, e2e.DefaultUserID)
 
 	// Check if the owner was updated
-	resource1 = v1.GetDeployment(t, resource1.ID)
-	assert.Equal(t, e2e.PowerUserID, resource1.OwnerID, "deployment owner not updated")
-	resource2 = v2.GetVM(t, resource2.ID)
-	assert.Equal(t, e2e.PowerUserID, resource2.OwnerID, "vm owner not updated")
+	resource1 = v1.GetDeployment(t, resource1.ID, e2e.DefaultUserID)
+	assert.Equal(t, e2e.DefaultUserID, resource1.OwnerID, "deployment owner not updated")
+	resource2 = v2.GetVM(t, resource2.ID, e2e.DefaultUserID)
+	assert.Equal(t, e2e.DefaultUserID, resource2.OwnerID, "vm owner not updated")
 }
 
 func TestCreateOwnerUpdateAsAdmin(t *testing.T) {
@@ -114,7 +114,7 @@ func TestCreateOwnerUpdateAsAdmin(t *testing.T) {
 	resource1, _ := v1.WithDeployment(t, body.DeploymentCreate{
 		Name:    e2e.GenName(),
 		Private: false,
-	}, e2e.AdminUserID)
+	}, e2e.PowerUserID)
 
 	resource2 := v2.WithVM(t, bodyV2.VmCreate{
 		Name:         e2e.GenName(),
@@ -122,7 +122,7 @@ func TestCreateOwnerUpdateAsAdmin(t *testing.T) {
 		CpuCores:     1,
 		RAM:          4,
 		DiskSize:     10,
-	}, e2e.AdminUserID)
+	}, e2e.PowerUserID)
 
 	// Create as default user
 	s := model.ResourceMigrationStatusAccepted
@@ -133,7 +133,7 @@ func TestCreateOwnerUpdateAsAdmin(t *testing.T) {
 		UpdateOwner: &struct {
 			OwnerID string `json:"ownerId" binding:"required,uuid4"`
 		}{
-			OwnerID: e2e.PowerUserID,
+			OwnerID: e2e.DefaultUserID,
 		},
 	}, e2e.AdminUserID)
 	v1.WithResourceMigration(t, body.ResourceMigrationCreate{
@@ -143,13 +143,13 @@ func TestCreateOwnerUpdateAsAdmin(t *testing.T) {
 		UpdateOwner: &struct {
 			OwnerID string `json:"ownerId" binding:"required,uuid4"`
 		}{
-			OwnerID: e2e.PowerUserID,
+			OwnerID: e2e.DefaultUserID,
 		},
 	}, e2e.AdminUserID)
 
 	// They should be instant now
-	resource1 = v1.GetDeployment(t, resource1.ID)
-	assert.Equal(t, e2e.PowerUserID, resource1.OwnerID, "deployment owner not updated")
-	resource2 = v2.GetVM(t, resource2.ID)
-	assert.Equal(t, e2e.PowerUserID, resource2.OwnerID, "vm owner not updated")
+	resource1 = v1.GetDeployment(t, resource1.ID, e2e.DefaultUserID)
+	assert.Equal(t, e2e.DefaultUserID, resource1.OwnerID, "deployment owner not updated")
+	resource2 = v2.GetVM(t, resource2.ID, e2e.DefaultUserID)
+	assert.Equal(t, e2e.DefaultUserID, resource2.OwnerID, "vm owner not updated")
 }

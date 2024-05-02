@@ -17,10 +17,17 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func TestGet(t *testing.T) {
+func TestGetAnotherUser(t *testing.T) {
 	t.Parallel()
 
-	v1.GetUser(t, e2e.AdminUserID)
+	// Getting another user requires admin permissions
+	v1.GetUser(t, e2e.PowerUserID, e2e.AdminUserID)
+}
+
+func TestGetYourself(t *testing.T) {
+	t.Parallel()
+
+	v1.GetUser(t, e2e.PowerUserID, e2e.PowerUserID)
 }
 
 func TestList(t *testing.T) {

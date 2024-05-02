@@ -32,7 +32,7 @@ func FetchUntil(t *testing.T, subPath string, callback func(*http.Response) bool
 	for {
 		time.Sleep(CheckInterval)
 
-		resp := DoGetRequest(t, subPath)
+		resp := DoGetRequest(t, subPath, AdminUserID)
 		if resp.StatusCode == http.StatusNotFound {
 			if callback == nil || callback(resp) {
 				break

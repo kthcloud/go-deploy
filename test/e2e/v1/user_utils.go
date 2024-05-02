@@ -13,8 +13,8 @@ const (
 	UsersPath = "/v1/users"
 )
 
-func GetUser(t *testing.T, id string) body.UserRead {
-	resp := e2e.DoGetRequest(t, UserPath+id)
+func GetUser(t *testing.T, id string, userID ...string) body.UserRead {
+	resp := e2e.DoGetRequest(t, UserPath+id, userID...)
 	return e2e.MustParse[body.UserRead](t, resp)
 }
 

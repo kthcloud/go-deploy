@@ -211,7 +211,7 @@ func WithAssumedFailedDeployment(t *testing.T, requestBody body.DeploymentCreate
 }
 
 func CleanUpDeployment(t *testing.T, id string) {
-	resp := e2e.DoDeleteRequest(t, DeploymentPath+id)
+	resp := e2e.DoDeleteRequest(t, DeploymentPath+id, e2e.AdminUserID)
 	if resp.StatusCode == http.StatusNotFound {
 		return
 	}

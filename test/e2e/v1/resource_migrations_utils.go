@@ -74,8 +74,8 @@ func WithResourceMigration(t *testing.T, requestBody body.ResourceMigrationCreat
 	return resourceMigrationCreated.ResourceMigrationRead
 }
 
-func CleanUpResourceMigration(t *testing.T, id string, userID ...string) {
-	resp := e2e.DoDeleteRequest(t, ResourceMigrationPath+id, userID...)
+func CleanUpResourceMigration(t *testing.T, id string) {
+	resp := e2e.DoDeleteRequest(t, ResourceMigrationPath+id, e2e.AdminUserID)
 	if resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusNoContent {
 		return
 	}

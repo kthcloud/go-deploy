@@ -23,13 +23,13 @@ func TestGet(t *testing.T) {
 	// We can't create a job with the API, so we need to trigger a job
 	// The simplest way is to create a deployment
 
-	_, jobID := v1.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
+	deployment, jobID := v1.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
 
 	job := v1.GetJob(t, jobID)
 
 	assert.Equal(t, jobID, job.ID)
 	assert.Equal(t, job.Type, model.JobCreateDeployment)
-	assert.Equal(t, job.UserID, e2e.AdminUserID)
+	assert.Equal(t, job.UserID, deployment.OwnerID)
 }
 
 func TestList(t *testing.T) {
@@ -53,7 +53,9 @@ func TestList(t *testing.T) {
 func TestUpdate(t *testing.T) {
 	t.Parallel()
 
-	// We can't create a job with the api, so we need to trigger a job
+	// Updating a job is only allowed by admins, so we need to use the admin user
+
+	// We can't create a job with the API, so we need to trigger a job
 	// The simplest way is to just create a deployment
 
 	_, jobID := v1.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
@@ -62,5 +64,5 @@ func TestUpdate(t *testing.T) {
 	// The job above is assumed to NOT be terminated, so when we update it to terminated, we will notice the change
 	terminatedStatus := model.JobStatusTerminated
 
-	v1.UpdateJob(t, jobID, body.JobUpdate{Status: &terminatedStatus})
+	v1.UpdateJob(t, jobID, body.JobUpdate{Status: &terminatedStatus}, e2e.AdminUserID)
 }
