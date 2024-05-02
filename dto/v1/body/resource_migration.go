@@ -35,7 +35,7 @@ type ResourceMigrationUpdate struct {
 }
 
 type ResourceMigrationCreated struct {
-	ResourceMigrationRead `json:",inline"`
+	ResourceMigrationRead `json:",inline" tstype:",extends"`
 
 	// JobID is the ID of the job that was created for the resource migration.
 	// Only if the migration was created with status 'accepted' a job will be created.
@@ -43,7 +43,7 @@ type ResourceMigrationCreated struct {
 }
 
 type ResourceMigrationUpdated struct {
-	ResourceMigrationRead `json:",inline"`
+	ResourceMigrationRead `json:",inline" tstype:",extends"`
 
 	// JobID is the ID of the job that was created for the resource migration.
 	// Only if the migration was updated with status 'accepted' a job will be created.
