@@ -299,7 +299,7 @@ func authChain(kcConfig KeycloakConfig, accessCheckFunctions ...AccessCheckFunct
 			return
 		}
 
-		if ctx.Request.Header.Get("Authorization") == "" {
+		if ctx.Request.Header.Get("Authorization") == "" && config.Config.Mode != mode.Test {
 			ctx.Next()
 			return
 		}
