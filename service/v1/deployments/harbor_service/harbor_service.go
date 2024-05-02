@@ -6,9 +6,11 @@ import (
 	"go-deploy/pkg/db/resources/deployment_repo"
 	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems"
+	"go-deploy/pkg/subsystems/harbor/models"
 	"go-deploy/service/resources"
 	"go-deploy/service/v1/deployments/opts"
 	"go-deploy/utils/subsystemutils"
+	"time"
 )
 
 // Create sets up Harbor for the deployment.
@@ -242,29 +244,36 @@ func (c *Client) EnsureOwner(id string, oldOwnerID string) error {
 	//  - ensure the repository is copied to the new project
 	//  - remove the old resources
 
+	project := g.Project()
+	project.ID = 0
+	project.CreatedAt = time.Time{}
+
 	err = resources.SsCreator(hc.CreateProject).
 		WithDbFunc(dbFunc(id, "project")).
-		WithPublic(g.Project()).
+		WithPublic(project).
 		Exec()
 	if err != nil {
 		return makeError(err)
 	}
 
-	newRepository := g.Repository()
 	oldRepository := oldD.Subsystems.Harbor.Repository
+	// Only copy the repository if the project exists and the old repository exists
+	// If the old repository doesn't exist, it means the transfer has already been done
+	if subsystems.Created(&d.Subsystems.Harbor.Project) && subsystems.Created(&oldRepository) {
+		newRepository := oldRepository
+		// Reset the ID to 0 to ensure a new repository is created
+		newRepository.ID = 0
+		newRepository.Name = d.Name
 
-	if oldRepository.ID != newRepository.ID &&
-		subsystems.Created(&d.Subsystems.Harbor.Project) &&
-		subsystems.Created(&oldRepository) &&
-		subsystems.NotCreated(newRepository) {
-
-		newRepository.Placeholder.RepositoryName = oldRepository.Name
-		newRepository.Placeholder.ProjectName = subsystemutils.GetPrefixedName(oldOwnerID)
+		newRepository.Placeholder = &models.PlaceHolder{
+			ProjectName:    subsystemutils.GetPrefixedName(oldOwnerID),
+			RepositoryName: oldRepository.Name,
+		}
 
 		// Create a new repository
 		err = resources.SsCreator(hc.CreateRepository).
 			WithDbFunc(dbFunc(id, "repository")).
-			WithPublic(newRepository).
+			WithPublic(&newRepository).
 			Exec()
 		if err != nil {
 			return makeError(err)

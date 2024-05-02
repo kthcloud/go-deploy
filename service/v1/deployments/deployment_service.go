@@ -337,6 +337,11 @@ func (c *Client) UpdateOwner(id string, params *model.DeploymentUpdateOwnerParam
 		return makeError(err)
 	}
 
+	d, err = c.Refresh(id)
+	if err != nil {
+		return makeError(err)
+	}
+
 	err = c.Harbor().EnsureOwner(id, params.OldOwnerID)
 	if err != nil {
 		return makeError(err)
