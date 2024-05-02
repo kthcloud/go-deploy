@@ -1,0 +1,27 @@
+packages:
+  #v1
+  - path: go-deploy/dto/v1/body
+    output_path: types/v1/body
+    type_mappings:
+      time.Time: "string"
+  - path: go-deploy/dto/v1/query
+    output_path: types/v1/query
+    type_mappings:
+      time.Time: "string"
+  - path: go-deploy/dto/v1/uri
+    output_path: types/v1/uri
+    type_mappings:
+      time.Time: "string"
+  # v2
+  - path: go-deploy/dto/v2/body
+    output_path: types/v2/body
+    type_mappings:
+      time.Time: "string"
+  - path: go-deploy/dto/v2/query
+    output_path: types/v2/query
+    type_mappings:
+      time.Time: "string"
+  - path: go-deploy/dto/v2/uri
+    output_path: types/v2/uri
+    type_mappings:
+      time.Time: "string"

@@ -53,18 +53,18 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.VM, error) {
 	}
 
 	var effectiveUserID string
-	if c.V2.Auth() != nil && !c.V2.Auth().IsAdmin {
-		effectiveUserID = c.V2.Auth().UserID
+	if c.V2.Auth() != nil && !c.V2.Auth().User.IsAdmin {
+		effectiveUserID = c.V2.Auth().User.ID
 	}
 
 	var teamCheck bool
 	if !o.Shared {
 		teamCheck = false
-	} else if !c.V2.HasAuth() || c.V2.Auth().IsAdmin {
+	} else if !c.V2.HasAuth() || c.V2.Auth().User.IsAdmin {
 		teamCheck = true
 	} else {
 		var err error
-		teamCheck, err = team_repo.New().WithUserID(c.V2.Auth().UserID).WithResourceID(id).ExistsAny()
+		teamCheck, err = team_repo.New().WithUserID(c.V2.Auth().User.ID).WithResourceID(id).ExistsAny()
 		if err != nil {
 			return nil, err
 		}
@@ -92,16 +92,16 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.VM, error) {
 	var effectiveUserID string
 	if o.UserID != nil {
 		// Specific user's VMs are requested
-		if !c.V2.HasAuth() || c.V2.Auth().UserID == *o.UserID || c.V2.Auth().IsAdmin {
+		if !c.V2.HasAuth() || c.V2.Auth().User.ID == *o.UserID || c.V2.Auth().User.IsAdmin {
 			effectiveUserID = *o.UserID
 		} else {
 			// User cannot access the other user's resources
-			effectiveUserID = c.V2.Auth().UserID
+			effectiveUserID = c.V2.Auth().User.ID
 		}
 	} else {
 		// All VMs are requested
-		if c.V2.Auth() != nil && !c.V2.Auth().IsAdmin {
-			effectiveUserID = c.V2.Auth().UserID
+		if c.V2.Auth() != nil && !c.V2.Auth().User.IsAdmin {
+			effectiveUserID = c.V2.Auth().User.ID
 		}
 	}
 
@@ -347,12 +347,12 @@ func (c *Client) IsAccessible(id string) (bool, error) {
 
 	if c.V2.HasAuth() {
 		// 1. User has access through being an admin
-		if c.V2.Auth().IsAdmin {
+		if c.V2.Auth().User.IsAdmin {
 			return true, nil
 		}
 
 		// 2. User has access through being the owner
-		vmByOwner, err := vm_repo.New(version.V2).WithOwner(c.V2.Auth().UserID).ExistsByID(id)
+		vmByOwner, err := vm_repo.New(version.V2).WithOwner(c.V2.Auth().User.ID).ExistsByID(id)
 		if err != nil {
 			return false, makeError(err)
 		}
@@ -362,7 +362,7 @@ func (c *Client) IsAccessible(id string) (bool, error) {
 		}
 
 		// 3. User has access through a team
-		teamAccess, err := c.V1.Teams().CheckResourceAccess(c.V2.Auth().UserID, id)
+		teamAccess, err := c.V1.Teams().CheckResourceAccess(c.V2.Auth().User.ID, id)
 		if err != nil {
 			return false, makeError(err)
 		}
@@ -591,7 +591,7 @@ func (c *Client) CheckQuota(id, userID string, quota *model.Quotas, opts ...opts
 		return fmt.Errorf("failed to check quota for user %s. details: %w", userID, err)
 	}
 
-	if !c.V2.HasAuth() || c.V2.Auth().IsAdmin {
+	if !c.V2.HasAuth() || c.V2.Auth().User.IsAdmin {
 		return nil
 	}
 

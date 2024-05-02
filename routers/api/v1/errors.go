@@ -5,6 +5,8 @@ import "fmt"
 var (
 	// AuthInfoNotAvailableErr is returned when the auth info is not available
 	AuthInfoNotAvailableErr = fmt.Errorf("auth info not available")
+	// AuthInfoSetupFailedErr is returned when the auth info setup failed
+	AuthInfoSetupFailedErr = fmt.Errorf("auth info setup failed")
 	// InternalError is returned when an internal error occurs.
 	// This is a generic error that should not be returned in the API, but rather logged
 	InternalError = fmt.Errorf("internal error")

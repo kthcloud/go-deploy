@@ -1,6 +1,6 @@
 package model
 
-type UserCreateParams struct {
+type UserSynchronizeParams struct {
 	Username      string
 	FirstName     string
 	LastName      string
@@ -10,6 +10,7 @@ type UserCreateParams struct {
 }
 
 type UserUpdateParams struct {
+	ApiKeys    *[]ApiKey
 	PublicKeys *[]PublicKey
 	UserData   *[]UserData
 }

@@ -9,6 +9,7 @@ import (
 	"golang.org/x/net/idna"
 	"regexp"
 	"strings"
+	"time"
 )
 
 // Rfc1035 is a validator for RFC 1035 hostnames
@@ -375,6 +376,22 @@ func TeamResourceList(fl validator.FieldLevel) bool {
 		}
 		id[resourceID] = true
 	}
+	return true
+}
+
+// TimeInFuture is a validator for time fields.
+// It ensures that the time is in the future
+func TimeInFuture(fl validator.FieldLevel) bool {
+	t, ok := fl.Field().Interface().(time.Time)
+	if !ok {
+		return false
+	}
+
+	if t.Before(time.Now()) {
+		return false
+	}
+
+	// We need to check if the time is in the future
 	return true
 }
 

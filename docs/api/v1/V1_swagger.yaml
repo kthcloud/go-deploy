@@ -1,4 +1,24 @@
 definitions:
+  body.ApiKey:
+    properties:
+      createdAt:
+        type: string
+      expiresAt:
+        type: string
+      name:
+        type: string
+    type: object
+  body.ApiKeyCreated:
+    properties:
+      createdAt:
+        type: string
+      expiresAt:
+        type: string
+      key:
+        type: string
+      name:
+        type: string
+    type: object
   body.BindingError:
     properties:
       validationErrors:
@@ -674,6 +694,10 @@ definitions:
     properties:
       admin:
         type: boolean
+      apiKeys:
+        items:
+          $ref: '#/definitions/body.ApiKey'
+        type: array
       email:
         type: string
       firstName:
@@ -705,6 +729,15 @@ definitions:
     type: object
   body.UserUpdate:
     properties:
+      apiKeys:
+        description: |-
+          ApiKeys specifies the API keys that should remain. If an API key is not in this list, it will be deleted.
+          However, API keys cannot be created, use /apiKeys endpoint to create new API keys.
+        items:
+          $ref: '#/definitions/body.ApiKey'
+        maxItems: 100
+        minItems: 0
+        type: array
       publicKeys:
         items:
           $ref: '#/definitions/body.PublicKey'

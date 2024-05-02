@@ -158,7 +158,7 @@ func CreateSnapshot(c *gin.Context) {
 
 	deployV1 := service.V1(auth)
 
-	err = deployV1.VMs().CheckQuota(requestURI.VmID, auth.UserID, &auth.GetEffectiveRole().Quotas, opts.QuotaOpts{
+	err = deployV1.VMs().CheckQuota(requestURI.VmID, auth.User.ID, &auth.GetEffectiveRole().Quotas, opts.QuotaOpts{
 		CreateSnapshot: &requestBody,
 	})
 	if err != nil {
@@ -195,7 +195,7 @@ func CreateSnapshot(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobCreateVmUserSnapshot, version.V1, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.User.ID, model.JobCreateVmUserSnapshot, version.V1, map[string]interface{}{
 		"id": vm.ID,
 		"params": body.VmSnapshotCreate{
 			Name: requestBody.Name,
@@ -268,7 +268,7 @@ func DeleteSnapshot(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.UserID, model.JobDeleteVmSnapshot, version.V1, map[string]interface{}{
+	err = deployV1.Jobs().Create(jobID, auth.User.ID, model.JobDeleteVmSnapshot, version.V1, map[string]interface{}{
 		"id":         vm.ID,
 		"snapshotId": snapshot.ID,
 		"authInfo":   auth,

@@ -3,6 +3,7 @@ package sys
 import (
 	"github.com/gin-gonic/gin"
 	"go-deploy/dto/v1/body"
+	"go-deploy/models/model"
 	"go-deploy/pkg/app/status_codes"
 	"go-deploy/utils"
 	"net/http"
@@ -29,6 +30,18 @@ type Error struct {
 
 type validationErrorResponse struct {
 	ValidationErrors map[string][]string `json:"validationErrors"`
+}
+
+// GetAuthUser gets the authenticated user from the context.
+func (context *ClientContext) GetAuthUser() *model.User {
+	if val, exists := context.GinContext.Get("authUser"); exists && val != nil {
+		asUser, ok := val.(*model.User)
+		if ok {
+			return asUser
+		}
+	}
+
+	return nil
 }
 
 // ResponseValidationError is a helper function to return a validation error response.

@@ -24,7 +24,7 @@ import (
 	"gopkg.in/square/go-jose.v2/jwt"
 )
 
-// VarianceTimer controls the max runtime of New() and AuthChain() middleware
+// VarianceTimer controls the max runtime of SetupKeycloakChain() and AuthChain() middleware
 var VarianceTimer = 30000 * time.Millisecond
 var publicKeyCache = cache.New(8*time.Hour, 8*time.Hour)
 
@@ -285,13 +285,25 @@ type KeycloakConfig struct {
 	FullCertsPath *string
 }
 
-func New(accessCheckFunction AccessCheckFunction, endpoints KeycloakConfig) gin.HandlerFunc {
+func SetupKeycloakChain(accessCheckFunction AccessCheckFunction, endpoints KeycloakConfig) gin.HandlerFunc {
 	return authChain(endpoints, accessCheckFunction)
 }
 
 func authChain(kcConfig KeycloakConfig, accessCheckFunctions ...AccessCheckFunction) gin.HandlerFunc {
 	// middleware
 	return func(ctx *gin.Context) {
+		// We only do this if an API key is not supplied and a Bearer token is supplied
+		// Authentication is chosen later by the supplied methods
+		if ctx.Request.Header.Get("X-API-Key") != "" {
+			ctx.Next()
+			return
+		}
+
+		if ctx.Request.Header.Get("Authorization") == "" && config.Config.Mode != mode.Test {
+			ctx.Next()
+			return
+		}
+
 		t := time.Now()
 		varianceControl := make(chan bool, 1)
 

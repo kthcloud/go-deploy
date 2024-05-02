@@ -80,7 +80,7 @@ func ListNotifications(c *gin.Context) {
 	if requestQuery.UserID != nil {
 		userID = requestQuery.UserID
 	} else if !requestQuery.All {
-		userID = &auth.UserID
+		userID = &auth.User.ID
 	}
 
 	notificationList, err := service.V1(auth).Notifications().List(opts.ListOpts{

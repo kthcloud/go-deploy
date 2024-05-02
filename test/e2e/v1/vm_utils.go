@@ -170,7 +170,7 @@ func WithAssumedFailedVM(t *testing.T, requestBody body.VmCreate) {
 
 	t.Cleanup(func() { cleanUpVm(t, vmCreated.ID) })
 
-	assert.FailNow(t, "model was created but should have failed")
+	assert.FailNow(t, "vm was created but should have failed")
 }
 
 func WithSshPublicKey(t *testing.T) string {

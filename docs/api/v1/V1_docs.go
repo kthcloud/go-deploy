@@ -2406,6 +2406,37 @@ const docTemplateV1 = `{
         }
     },
     "definitions": {
+        "body.ApiKey": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.ApiKeyCreated": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "body.BindingError": {
             "type": "object",
             "properties": {
@@ -3388,6 +3419,12 @@ const docTemplateV1 = `{
                 "admin": {
                     "type": "boolean"
                 },
+                "apiKeys": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/body.ApiKey"
+                    }
+                },
                 "email": {
                     "type": "string"
                 },
@@ -3435,6 +3472,15 @@ const docTemplateV1 = `{
         "body.UserUpdate": {
             "type": "object",
             "properties": {
+                "apiKeys": {
+                    "description": "ApiKeys specifies the API keys that should remain. If an API key is not in this list, it will be deleted.\nHowever, API keys cannot be created, use /apiKeys endpoint to create new API keys.",
+                    "type": "array",
+                    "maxItems": 100,
+                    "minItems": 0,
+                    "items": {
+                        "$ref": "#/definitions/body.ApiKey"
+                    }
+                },
                 "publicKeys": {
                     "type": "array",
                     "maxItems": 100,

@@ -15,8 +15,8 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.Notification, erro
 
 	client := notification_repo.New()
 
-	if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
-		client.WithUserID(c.V1.Auth().UserID)
+	if c.V1.Auth() != nil && !c.V1.Auth().User.IsAdmin {
+		client.WithUserID(c.V1.Auth().User.ID)
 	}
 
 	return c.Notification(id, client)
@@ -35,16 +35,16 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.Notification, error) {
 	var effectiveUserID string
 	if o.UserID != nil {
 		// Specific user's notifications are requested
-		if !c.V1.HasAuth() || c.V1.Auth().UserID == *o.UserID || c.V1.Auth().IsAdmin {
+		if !c.V1.HasAuth() || c.V1.Auth().User.ID == *o.UserID || c.V1.Auth().User.IsAdmin {
 			effectiveUserID = *o.UserID
 		} else {
 			// User cannot access the other user's resources
-			effectiveUserID = c.V1.Auth().UserID
+			effectiveUserID = c.V1.Auth().User.ID
 		}
 	} else {
 		// All notifications are requested
-		if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
-			effectiveUserID = c.V1.Auth().UserID
+		if c.V1.Auth() != nil && !c.V1.Auth().User.IsAdmin {
+			effectiveUserID = c.V1.Auth().User.ID
 		}
 	}
 
@@ -64,8 +64,8 @@ func (c *Client) Create(id, userID string, params *model.NotificationCreateParam
 func (c *Client) Update(id string, dtoNotificationUpdate *body.NotificationUpdate) (*model.Notification, error) {
 	nmc := notification_repo.New()
 
-	if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
-		nmc.WithUserID(c.V1.Auth().UserID)
+	if c.V1.Auth() != nil && !c.V1.Auth().User.IsAdmin {
+		nmc.WithUserID(c.V1.Auth().User.ID)
 	}
 
 	notification, err := c.Notification(id, nmc)
@@ -91,8 +91,8 @@ func (c *Client) Update(id string, dtoNotificationUpdate *body.NotificationUpdat
 func (c *Client) Delete(id string) error {
 	client := notification_repo.New()
 
-	if c.V1.Auth() != nil && !c.V1.Auth().IsAdmin {
-		client.WithUserID(c.V1.Auth().UserID)
+	if c.V1.Auth() != nil && !c.V1.Auth().User.IsAdmin {
+		client.WithUserID(c.V1.Auth().User.ID)
 	}
 
 	exists, err := client.ExistsByID(id)

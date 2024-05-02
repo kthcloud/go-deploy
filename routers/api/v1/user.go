@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"errors"
 	"github.com/gin-gonic/gin"
 	"go-deploy/dto/v1/body"
 	"go-deploy/dto/v1/query"
@@ -9,6 +10,7 @@ import (
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/sys"
 	"go-deploy/service"
+	sErrors "go-deploy/service/errors"
 	"go-deploy/service/v1/users/opts"
 	sUtils "go-deploy/service/v1/utils"
 )
@@ -40,7 +42,7 @@ func GetUser(c *gin.Context) {
 	}
 
 	if requestURI.UserID == "" {
-		requestURI.UserID = auth.UserID
+		requestURI.UserID = auth.User.ID
 	}
 
 	var effectiveRole *model.Role
@@ -169,24 +171,20 @@ func UpdateUser(c *gin.Context) {
 	}
 
 	if requestURI.UserID == "" {
-		requestURI.UserID = auth.UserID
+		requestURI.UserID = auth.User.ID
 	}
 
 	var effectiveRole *model.Role
 
 	deployV1 := service.V1(auth)
 
-	if requestURI.UserID == auth.UserID {
-		effectiveRole = auth.GetEffectiveRole()
-		_, err = deployV1.Users().Synchronize()
-		if err != nil {
-			context.ServerError(err, InternalError)
-			return
-		}
-	}
-
 	updated, err := deployV1.Users().Update(requestURI.UserID, &userUpdate)
 	if err != nil {
+		switch {
+		case errors.Is(err, sErrors.UserNotFoundErr):
+			context.NotFound("User not found")
+		}
+
 		context.ServerError(err, InternalError)
 		return
 	}

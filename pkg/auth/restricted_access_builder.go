@@ -52,7 +52,7 @@ func (builder restrictedAccessBuilderImpl) Build() gin.HandlerFunc {
 		glog.Warningf("[ginkeycloak] access check is disabled")
 		return func(ctx *gin.Context) {}
 	}
-	return New(builder.checkIfOneConditionMatches(), builder.keycloakConfig())
+	return SetupKeycloakChain(builder.checkIfOneConditionMatches(), builder.keycloakConfig())
 }
 
 func (builder restrictedAccessBuilderImpl) keycloakConfig() KeycloakConfig {
