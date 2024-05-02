@@ -30,7 +30,7 @@ type VmCreate struct {
 	SshPublicKey string       `json:"sshPublicKey" bson:"sshPublicKey" binding:"required,ssh_public_key"`
 	Ports        []PortCreate `json:"ports" bson:"ports" binding:"omitempty,port_list_names,port_list_numbers,port_list_http_proxies,min=0,max=10,dive"`
 
-	CpuCores int `json:"cpuCores" bson:"cpuCores" binding:"required,min=2"`
+	CpuCores int `json:"cpuCores" bson:"cpuCores" binding:"required,min=1"`
 	RAM      int `json:"ram" bson:"ram" binding:"required,min=1"`
 	DiskSize int `json:"diskSize" bson:"diskSize" binding:"required,min=10"`
 
