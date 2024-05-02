@@ -103,6 +103,8 @@ definitions:
         items:
           $ref: '#/definitions/body.Env'
         type: array
+      error:
+        type: string
       healthCheckPath:
         type: string
       id:
@@ -675,6 +677,8 @@ definitions:
       email:
         type: string
       firstName:
+        type: string
+      gravatarUrl:
         type: string
       id:
         type: string

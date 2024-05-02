@@ -18,7 +18,7 @@ func SynchronizeUser(c *gin.Context) {
 		return
 	}
 
-	_, err = service.V1(auth).Users().Create()
+	_, err = service.V1(auth).Users().Synchronize()
 	if err != nil {
 		context.ServerError(err, v1.InternalError)
 		return

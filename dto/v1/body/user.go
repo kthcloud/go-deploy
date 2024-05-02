@@ -15,7 +15,8 @@ type UserRead struct {
 	Quota Quota `json:"quota"`
 	Usage Usage `json:"usage"`
 
-	StorageURL *string `json:"storageUrl,omitempty"`
+	StorageURL  *string `json:"storageUrl,omitempty"`
+	GravatarURL *string `json:"gravatarUrl,omitempty"`
 }
 
 type UserReadDiscovery struct {

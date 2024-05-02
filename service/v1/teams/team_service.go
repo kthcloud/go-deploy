@@ -18,9 +18,7 @@ import (
 	"time"
 )
 
-// Get gets a team
-//
-// It uses service.AuthInfo to only return the model the requesting user has access to
+// Get gets a team by ID
 func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.Team, error) {
 	_ = utils2.GetFirstOrDefault(opts)
 
@@ -34,8 +32,6 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.Team, error) {
 }
 
 // List lists teams
-//
-// It uses service.AuthInfo to only return the resources the requesting user has access to
 func (c *Client) List(opts ...opts.ListOpts) ([]model.Team, error) {
 	o := utils2.GetFirstOrDefault(opts)
 
@@ -157,9 +153,6 @@ func (c *Client) Create(id, ownerID string, dtoCreateTeam *body.TeamCreate) (*mo
 }
 
 // Update updates a team
-//
-// It uses service.AuthInfo to only update the model the requesting user has access to
-// Notifications are sent out if the owner of the team is not admin
 func (c *Client) Update(id string, dtoUpdateTeam *body.TeamUpdate) (*model.Team, error) {
 	team, err := team_repo.New().GetByID(id)
 	if err != nil {
@@ -224,8 +217,6 @@ func (c *Client) Update(id string, dtoUpdateTeam *body.TeamUpdate) (*model.Team,
 }
 
 // Delete deletes a team
-//
-// It uses service.AuthInfo to only delete the model the requesting user has access to
 func (c *Client) Delete(id string) error {
 	tmc := team_repo.New()
 
@@ -251,8 +242,6 @@ func (c *Client) Delete(id string) error {
 }
 
 // CleanResource cleans a resource from all teams
-//
-// It uses service.AuthInfo to only delete the model the requesting user has access to
 func (c *Client) CleanResource(resourceID string) error {
 	tmc := team_repo.New()
 

@@ -69,7 +69,7 @@ func (client *Client) Create(id, ownerID string, params *model.DeploymentCreateP
 		Apps:        map[string]model.App{appName: mainApp},
 		Subsystems:  model.DeploymentSubsystems{},
 		Logs:        make([]model.Log, 0),
-		Status:      status_codes.GetMsg(status_codes.ResourceBeingCreated),
+		Status:      status_codes.GetMsg(status_codes.ResourceCreating),
 	}
 
 	_, err := client.Collection.InsertOne(context.TODO(), deployment)
@@ -106,10 +106,10 @@ func (client *Client) UpdateWithParams(id string, params *model.DeploymentUpdate
 	setUpdate := bson.D{}
 	unsetUpdate := bson.D{}
 
-	// If the custom domain is empty, it means we want to remove it
 	var customDomain *model.CustomDomain
 	if params.CustomDomain != nil {
 		if *params.CustomDomain == "" {
+			// If the custom domain is empty, it means we want to remove it
 			db.Add(&unsetUpdate, fmt.Sprintf("apps.%s.customDomain", mainApp.Name), "")
 		} else {
 			db.AddIfNotNil(&setUpdate, fmt.Sprintf("apps.%s.customDomain", mainApp.Name), &model.CustomDomain{
@@ -229,6 +229,46 @@ func (client *Client) AddLogsByName(name string, logs ...model.Log) error {
 	return nil
 }
 
+// GetUsage returns the total usage of all deployments.
+func (client *Client) GetUsage() (*model.DeploymentUsage, error) {
+	projection := bson.D{
+		{"_id", 0},
+		{"apps.main.replicas", 1},
+	}
+
+	deployments, err := client.ListWithFilterAndProjection(bson.D{}, projection)
+	if err != nil {
+		return nil, err
+	}
+
+	usage := &model.DeploymentUsage{
+		Replicas: 0,
+	}
+
+	for _, deployment := range deployments {
+		for _, app := range deployment.Apps {
+			usage.Replicas += app.Replicas
+		}
+	}
+
+	return usage, nil
+}
+
+// SetStatusByName sets the status of a deployment.
+func (client *Client) SetStatusByName(name, status string) error {
+	return client.SetWithBsonByName(name, bson.D{{"status", status}})
+}
+
+// SetErrorByName sets the error of a deployment.
+func (client *Client) SetErrorByName(name string, error *model.DeploymentError) error {
+	return client.SetWithBsonByName(name, bson.D{{"error", error}})
+}
+
+// UnsetErrorByName unsets the error of a deployment.
+func (client *Client) UnsetErrorByName(name string) error {
+	return client.UnsetByName(name, "error")
+}
+
 // DeleteSubsystem erases a subsystem from a deployment.
 // It prepends the key with `subsystems` and unsets it.
 func (client *Client) DeleteSubsystem(id, key string) error {
@@ -311,27 +351,6 @@ func (client *Client) SetPingResult(id string, pingResult int) error {
 	}
 
 	return nil
-}
-
-// CountReplicas returns the number of replicas for all apps in all deployments.
-func (client *Client) CountReplicas() (int, error) {
-	deployments, err := client.List()
-	if err != nil {
-		return 0, err
-	}
-
-	sum := 0
-	for _, deployment := range deployments {
-		for _, app := range deployment.Apps {
-			if app.Replicas > 0 {
-				sum += app.Replicas
-			} else {
-				sum += 1
-			}
-		}
-	}
-
-	return sum, nil
 }
 
 // generateCustomDomainSecret generates a random alphanumeric string.

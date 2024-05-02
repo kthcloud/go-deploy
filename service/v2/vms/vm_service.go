@@ -132,15 +132,15 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.VM, error) {
 		}
 
 		for _, team := range teams {
-			for _, r := range team.GetResourceMap() {
-				if r.Type != model.TeamResourceVM {
+			for _, resource := range team.GetResourceMap() {
+				if resource.Type != model.TeamResourceVM {
 					continue
 				}
 
 				// skip existing non-shared resources
 				skip := false
 				for _, skipID := range skipIDs {
-					if r.ID == skipID {
+					if resource.ID == skipID {
 						skip = true
 						break
 					}
@@ -149,7 +149,7 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.VM, error) {
 					continue
 				}
 
-				vm, err := c.VM(r.ID, nil)
+				vm, err := c.VM(resource.ID, nil)
 				if err != nil {
 					return nil, err
 				}
@@ -667,31 +667,8 @@ func (c *Client) CheckQuota(id, userID string, quota *model.Quotas, opts ...opts
 }
 
 // GetUsage gets the usage for the user.
-//
-// If user does not exist, or user does not have any VMs, it returns an empty usage.
 func (c *Client) GetUsage(userID string) (*model.VmUsage, error) {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to get usage for user %s. details: %w", userID, err)
-	}
-
-	usage := &model.VmUsage{}
-
-	currentVms, err := vm_repo.New(version.V2).WithOwner(userID).List()
-	if err != nil {
-		return nil, makeError(err)
-	}
-
-	for _, vm := range currentVms {
-		specs := vm.Specs
-
-		usage.CpuCores += specs.CpuCores
-		usage.RAM += specs.RAM
-		usage.DiskSize += specs.DiskSize
-
-		// TODO: Add snapshot usage
-	}
-
-	return usage, nil
+	return vm_repo.New(version.V2).WithOwner(userID).GetUsage()
 }
 
 // GetHost gets the host for the VM.

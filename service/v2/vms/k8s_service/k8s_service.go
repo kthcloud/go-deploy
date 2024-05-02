@@ -694,7 +694,7 @@ func (c *Client) SetupStatusWatcher(ctx context.Context, zone *configModels.Zone
 		return err
 	}
 
-	return kc.SetupStatusWatcher(ctx, resourceType, callback)
+	return kc.SetupWatcher(ctx, resourceType, callback)
 }
 
 // dbFunc returns a function that updates the K8s subsystem.

@@ -28,6 +28,7 @@ export interface DeploymentRead {
   customDomainStatus?: string;
   customDomainSecret?: string;
   status: string;
+  error?: string;
   pingResult?: number /* int */;
   /**
    * Integrations are currently not used, but could be used if we wanted to add a list of integrations to the deployment
@@ -328,6 +329,7 @@ export interface UserRead {
   quota: Quota;
   usage: Usage;
   storageUrl?: string;
+  gravatarUrl?: string;
 }
 export interface UserReadDiscovery {
   id: string;

@@ -160,8 +160,6 @@ func (c *Client) GetZone() *configModels.Zone {
 }
 
 // GetUrlByUserID returns the URL for the storage manager.
-//
-// TODO: Right now it fetches the entire storage manager, but we should probably use a projection.
 func (c *Client) GetUrlByUserID(userID string) *string {
 	url, err := sm_repo.New().WithOwnerID(userID).GetURL()
 	if err != nil {

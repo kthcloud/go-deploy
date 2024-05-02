@@ -2542,6 +2542,9 @@
                         "$ref": "#/definitions/body.Env"
                     }
                 },
+                "error": {
+                    "type": "string"
+                },
                 "healthCheckPath": {
                     "type": "string"
                 },
@@ -3378,6 +3381,9 @@
                     "type": "string"
                 },
                 "firstName": {
+                    "type": "string"
+                },
+                "gravatarUrl": {
                     "type": "string"
                 },
                 "id": {

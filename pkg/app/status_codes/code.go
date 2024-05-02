@@ -3,13 +3,8 @@ package status_codes
 const (
 	Unknown = 0
 
-	ResourceNotCreated       = 10020
-	ResourceNotFound         = 10021
-	ResourceNotUpdated       = 10022
-	ResourceNotReady         = 10023
-	ResourceNotAvailable     = 10024
-	ResourceBeingCreated     = 10025
-	ResourceBeingDeleted     = 10026
+	ResourceCreating         = 10025
+	ResourceDeleting         = 10026
 	ResourceCreatingSnapshot = 10027
 	ResourceProvisioning     = 10028
 	ResourceMigrating        = 10029
@@ -22,12 +17,15 @@ const (
 	ResourceBuilding         = 10036
 	ResourceError            = 10037
 	ResourceScaling          = 10038
+	ResourceCrashLoop        = 10039
+	ResourceMountFailed      = 10040
+	ResourceImagePullFailed  = 10041
 
-	JobPending    = 10040
-	JobFinished   = 10041
-	JobFailed     = 10042
-	JobRunning    = 10043
-	JobTerminated = 10044
+	JobPending    = 10140
+	JobFinished   = 10141
+	JobFailed     = 10142
+	JobRunning    = 10143
+	JobTerminated = 10144
 
 	Success                  = 20001
 	InvalidParams            = 20002
@@ -40,13 +38,8 @@ var MsgFlags = map[int]string{
 
 	ResourceUnknown: "resourceUnknown",
 
-	ResourceNotCreated:       "resourceNotCreated",
-	ResourceNotFound:         "resourceNotFound",
-	ResourceNotUpdated:       "resourceNotModified",
-	ResourceNotReady:         "resourceNotReady",
-	ResourceNotAvailable:     "resourceNotAvailable",
-	ResourceBeingCreated:     "resourceBeingCreated",
-	ResourceBeingDeleted:     "resourceBeingDeleted",
+	ResourceCreating:         "resourceCreating",
+	ResourceDeleting:         "resourceDeleting",
 	ResourceCreatingSnapshot: "resourceCreatingSnapshot",
 	ResourceMigrating:        "resourceMigrating",
 	ResourceProvisioning:     "resourceProvisioning",
@@ -58,6 +51,9 @@ var MsgFlags = map[int]string{
 	ResourceBuilding:         "resourceBuilding",
 	ResourceError:            "resourceError",
 	ResourceScaling:          "resourceScaling",
+	ResourceCrashLoop:        "resourceCrashLoop",
+	ResourceMountFailed:      "resourceMountFailed",
+	ResourceImagePullFailed:  "resourceImagePullFailed",
 
 	JobPending:    "pending",
 	JobRunning:    "running",

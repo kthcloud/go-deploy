@@ -649,7 +649,7 @@ func (c *Client) SetupStatusWatcher(ctx context.Context, zone *configModels.Zone
 		return err
 	}
 
-	return kc.SetupStatusWatcher(ctx, resourceType, callback)
+	return kc.SetupWatcher(ctx, resourceType, callback)
 }
 
 // recreatePvPvcDeployments recreates the pv, pvc and deployment for the deployment.

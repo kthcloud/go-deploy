@@ -2553,6 +2553,9 @@ const docTemplateV1 = `{
                         "$ref": "#/definitions/body.Env"
                     }
                 },
+                "error": {
+                    "type": "string"
+                },
                 "healthCheckPath": {
                     "type": "string"
                 },
@@ -3389,6 +3392,9 @@ const docTemplateV1 = `{
                     "type": "string"
                 },
                 "firstName": {
+                    "type": "string"
+                },
+                "gravatarUrl": {
                     "type": "string"
                 },
                 "id": {
