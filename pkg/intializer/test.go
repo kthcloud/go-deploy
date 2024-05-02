@@ -17,7 +17,7 @@ import (
 // Some E2E tests may fail and leave resources behind.
 func CleanUpOldTests() error {
 	now := time.Now()
-	oneHourAgo := now.Add(-1 * time.Hour)
+	oneHourAgo := now.Add(-1 * time.Second)
 
 	oldE2eDeployments, err := deployment_repo.New().OlderThan(oneHourAgo).WithNameRegex("e2e-*").List()
 	if err != nil {

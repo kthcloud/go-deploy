@@ -115,10 +115,8 @@ func UpdateDeployment(t *testing.T, id string, requestBody body.DeploymentUpdate
 	return updated
 }
 
-func WithDeployment(t *testing.T, requestBody body.DeploymentCreate) (body.DeploymentRead, string) {
-	resp := e2e.DoPostRequest(t, DeploymentsPath, requestBody)
-	assert.Equal(t, http.StatusOK, resp.StatusCode, "deployment was not created")
-
+func WithDeployment(t *testing.T, requestBody body.DeploymentCreate, userID ...string) (body.DeploymentRead, string) {
+	resp := e2e.DoPostRequest(t, DeploymentsPath, requestBody, userID...)
 	deploymentCreated := e2e.MustParse[body.DeploymentCreated](t, resp)
 	t.Cleanup(func() {
 		CleanUpDeployment(t, deploymentCreated.ID)
