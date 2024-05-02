@@ -57,7 +57,7 @@ type DeploymentVolume struct {
 }
 
 type DeploymentUsage struct {
-	Count int
+	Replicas int
 }
 
 type DeploymentError struct {

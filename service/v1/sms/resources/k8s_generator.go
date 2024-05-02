@@ -115,6 +115,10 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		return nil
 	}
 
+	if user == nil {
+		return nil
+	}
+
 	volumes := []models.Volume{
 		{
 			Name:      "oauth-proxy-config",

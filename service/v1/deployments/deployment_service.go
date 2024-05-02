@@ -554,7 +554,7 @@ func (c *Client) CheckQuota(id string, opts *opts.QuotaOptions) error {
 			add = 1
 		}
 
-		totalCount := usage.Count + add
+		totalCount := usage.Replicas + add
 
 		if totalCount > quota.Deployments {
 			return sErrors.NewQuotaExceededError(fmt.Sprintf("Deployment quota exceeded. Current: %d, Quota: %d", totalCount, quota.Deployments))
@@ -572,7 +572,7 @@ func (c *Client) CheckQuota(id string, opts *opts.QuotaOptions) error {
 		}
 
 		if opts.Update.Replicas != nil {
-			totalBefore := usage.Count
+			totalBefore := usage.Replicas
 			replicasReq := *opts.Update.Replicas
 
 			// Ensure that users do not create infinite deployments with 0 replicas
@@ -652,18 +652,7 @@ func (c *Client) CanAddActivity(id string, activity string) (bool, string) {
 
 // GetUsage gets the usage of the user.
 func (c *Client) GetUsage(userID string) (*model.DeploymentUsage, error) {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to get usage. details: %w", err)
-	}
-
-	count, err := deployment_repo.New().WithOwner(userID).CountReplicas()
-	if err != nil {
-		return nil, makeError(err)
-	}
-
-	return &model.DeploymentUsage{
-		Count: count,
-	}, nil
+	return deployment_repo.New().WithOwner(userID).GetUsage()
 }
 
 // NameAvailable checks if a name is available.

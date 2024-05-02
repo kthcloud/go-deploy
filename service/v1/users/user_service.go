@@ -14,8 +14,6 @@ import (
 )
 
 // Get gets a user
-//
-// It uses service.AuthInfo to only return the model the requesting user has access to
 func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.User, error) {
 	_ = utils.GetFirstOrDefault(opts)
 
@@ -26,10 +24,29 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.User, error) {
 	return c.User(id, user_repo.New())
 }
 
+// GetUsage gets the usage of a user, such as number of deployments and CPU cores used.
+func (c *Client) GetUsage(userID string) (*model.UserUsage, error) {
+	vmUsage, err := c.V2.VMs().GetUsage(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	deploymentUsage, err := c.V1.Deployments().GetUsage(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	usage := &model.UserUsage{
+		Deployments: deploymentUsage.Replicas,
+		CpuCores:    vmUsage.CpuCores,
+		RAM:         vmUsage.RAM,
+		DiskSize:    vmUsage.DiskSize,
+	}
+
+	return usage, nil
+}
+
 // List lists users
-//
-// It uses service.AuthInfo to only return the resources the requesting user has access to
-// It uses the search param to enable searching in multiple fields
 func (c *Client) List(opts ...opts.ListOpts) ([]model.User, error) {
 	o := utils.GetFirstOrDefault(opts)
 
@@ -156,8 +173,6 @@ func (c *Client) Discover(opts ...opts.DiscoverOpts) ([]body.UserReadDiscovery, 
 }
 
 // Update updates a user
-//
-// It uses service.AuthInfo to only update the model the requesting user has access to
 func (c *Client) Update(userID string, dtoUserUpdate *body.UserUpdate) (*model.User, error) {
 	umc := user_repo.New()
 

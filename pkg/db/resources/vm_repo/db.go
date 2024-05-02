@@ -220,6 +220,36 @@ func (client *Client) UpdateWithParams(id string, params *model.VmUpdateParams) 
 	return nil
 }
 
+// GetUsage returns the usage in CPU cores, RAM, disk size and snapshots.
+func (client *Client) GetUsage() (*model.VmUsage, error) {
+	projection := bson.D{
+		{"_id", 0},
+		{"id", 1},
+		{"name", 1},
+		{"specs", 1},
+	}
+
+	vms, err := client.ListWithFilterAndProjection(bson.D{}, projection)
+	if err != nil {
+		return nil, err
+	}
+
+	usage := &model.VmUsage{
+		CpuCores:  0,
+		RAM:       0,
+		DiskSize:  0,
+		Snapshots: 0,
+	}
+
+	for _, vm := range vms {
+		usage.CpuCores += vm.Specs.CpuCores
+		usage.RAM += vm.Specs.RAM
+		usage.DiskSize += vm.Specs.DiskSize
+	}
+
+	return usage, nil
+}
+
 // DeleteSubsystem erases a subsystem from a VM.
 // It prepends the key with `subsystems` and unsets it.
 func (client *Client) DeleteSubsystem(id, key string) error {

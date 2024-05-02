@@ -229,6 +229,31 @@ func (client *Client) AddLogsByName(name string, logs ...model.Log) error {
 	return nil
 }
 
+// GetUsage returns the total usage of all deployments.
+func (client *Client) GetUsage() (*model.DeploymentUsage, error) {
+	projection := bson.D{
+		{"_id", 0},
+		{"apps.main.replicas", 1},
+	}
+
+	deployments, err := client.ListWithFilterAndProjection(bson.D{}, projection)
+	if err != nil {
+		return nil, err
+	}
+
+	usage := &model.DeploymentUsage{
+		Replicas: 0,
+	}
+
+	for _, deployment := range deployments {
+		for _, app := range deployment.Apps {
+			usage.Replicas += app.Replicas
+		}
+	}
+
+	return usage, nil
+}
+
 // SetStatusByName sets the status of a deployment.
 func (client *Client) SetStatusByName(name, status string) error {
 	return client.SetWithBsonByName(name, bson.D{{"status", status}})
@@ -326,27 +351,6 @@ func (client *Client) SetPingResult(id string, pingResult int) error {
 	}
 
 	return nil
-}
-
-// CountReplicas returns the number of replicas for all apps in all deployments.
-func (client *Client) CountReplicas() (int, error) {
-	deployments, err := client.List()
-	if err != nil {
-		return 0, err
-	}
-
-	sum := 0
-	for _, deployment := range deployments {
-		for _, app := range deployment.Apps {
-			if app.Replicas > 0 {
-				sum += app.Replicas
-			} else {
-				sum += 1
-			}
-		}
-	}
-
-	return sum, nil
 }
 
 // generateCustomDomainSecret generates a random alphanumeric string.

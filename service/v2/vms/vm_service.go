@@ -667,29 +667,8 @@ func (c *Client) CheckQuota(id, userID string, quota *model.Quotas, opts ...opts
 }
 
 // GetUsage gets the usage for the user.
-//
-// If user does not exist, or user does not have any VMs, it returns an empty usage.
 func (c *Client) GetUsage(userID string) (*model.VmUsage, error) {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to get usage for user %s. details: %w", userID, err)
-	}
-
-	usage := &model.VmUsage{}
-
-	currentVms, err := vm_repo.New(version.V2).WithOwner(userID).List()
-	if err != nil {
-		return nil, makeError(err)
-	}
-
-	for _, vm := range currentVms {
-		specs := vm.Specs
-
-		usage.CpuCores += specs.CpuCores
-		usage.RAM += specs.RAM
-		usage.DiskSize += specs.DiskSize
-	}
-
-	return usage, nil
+	return vm_repo.New(version.V2).WithOwner(userID).GetUsage()
 }
 
 // GetHost gets the host for the VM.

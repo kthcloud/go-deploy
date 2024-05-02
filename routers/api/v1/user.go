@@ -9,7 +9,6 @@ import (
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/sys"
 	"go-deploy/service"
-	"go-deploy/service/clients"
 	"go-deploy/service/v1/users/opts"
 	sUtils "go-deploy/service/v1/utils"
 )
@@ -65,12 +64,7 @@ func GetUser(c *gin.Context) {
 		effectiveRole = &model.Role{}
 	}
 
-	usage, err := collectUsage(deployV1, user.ID)
-	if usage == nil {
-		context.ServerError(err, InternalError)
-		return
-	}
-
+	usage, _ := deployV1.Users().GetUsage(user.ID)
 	context.JSONResponse(200, user.ToDTO(effectiveRole, usage, deployV1.SMs().GetUrlByUserID(user.ID)))
 }
 
@@ -134,11 +128,7 @@ func ListUsers(c *gin.Context) {
 	usersDto := make([]body.UserRead, 0)
 	for _, user := range userList {
 		role := config.Config.GetRole(user.EffectiveRole.Name)
-		usage, _ := collectUsage(deployV1, user.ID)
-		if usage == nil {
-			usage = &model.UserUsage{}
-		}
-
+		usage, _ := deployV1.Users().GetUsage(user.ID)
 		usersDto = append(usersDto, user.ToDTO(role, usage, deployV1.SMs().GetUrlByUserID(user.ID)))
 	}
 
@@ -206,34 +196,6 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	usage, err := collectUsage(deployV1, updated.ID)
-	if usage == nil {
-		context.ServerError(err, InternalError)
-		return
-	}
-
+	usage, err := deployV1.Users().GetUsage(updated.ID)
 	context.JSONResponse(200, updated.ToDTO(effectiveRole, usage, deployV1.SMs().GetUrlByUserID(updated.ID)))
-}
-
-// collectUsage is helper function to collect usage for a user.
-// This includes how many deployments, cpu cores, ram and disk size etc. the user has.
-func collectUsage(deployV1 clients.V1, userID string) (*model.UserUsage, error) {
-	vmUsage, err := deployV1.VMs().GetUsage(userID)
-	if err != nil {
-		return nil, err
-	}
-
-	deploymentUsage, err := deployV1.Deployments().GetUsage(userID)
-	if err != nil {
-		return nil, err
-	}
-
-	usage := &model.UserUsage{
-		Deployments: deploymentUsage.Count,
-		CpuCores:    vmUsage.CpuCores,
-		RAM:         vmUsage.RAM,
-		DiskSize:    vmUsage.DiskSize,
-	}
-
-	return usage, nil
 }
