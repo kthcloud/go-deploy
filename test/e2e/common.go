@@ -114,7 +114,7 @@ func DoPostRequest(t *testing.T, subPath string, body interface{}, userID ...str
 	req.Header.Set("Content-Type", "application/json")
 
 	// Set go-deploy-test-user header
-	effectiveUser := AdminUserID
+	effectiveUser := PowerUserID
 	if len(userID) > 0 {
 		effectiveUser = userID[0]
 	}
@@ -130,7 +130,7 @@ func DoDeleteRequest(t *testing.T, subPath string, userID ...string) *http.Respo
 	assert.NoError(t, err)
 
 	// Set go-deploy-test-user header
-	effectiveUser := AdminUserID
+	effectiveUser := PowerUserID
 	if len(userID) > 0 {
 		effectiveUser = userID[0]
 	}
