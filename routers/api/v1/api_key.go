@@ -17,10 +17,11 @@ import (
 // @Accept  json
 // @Produce  json
 // @Param userId path string true "User ID"
+// @Param body body body.ApiKeyCreate true "API key create body"
 // @Success 200 {object}  body.ApiKeyCreated
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v1/users/{userId} [get]
+// @Router /v1/users/{userId}/apiKeys [post]
 func CreateApiKey(c *gin.Context) {
 	context := sys.NewContext(c)
 

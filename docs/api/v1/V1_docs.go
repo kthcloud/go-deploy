@@ -92,7 +92,7 @@ const docTemplateV1 = `{
                 }
             },
             "post": {
-                "description": "Synchronize deployment",
+                "description": "Create deployment",
                 "consumes": [
                     "application/json"
                 ],
@@ -102,7 +102,7 @@ const docTemplateV1 = `{
                 "tags": [
                     "Deployment"
                 ],
-                "summary": "Synchronize deployment",
+                "summary": "Create deployment",
                 "parameters": [
                     {
                         "type": "string",
@@ -535,10 +535,7 @@ const docTemplateV1 = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "No Content",
-                        "schema": {
-                            "type": "empty"
-                        }
+                        "description": "No Content"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -567,7 +564,7 @@ const docTemplateV1 = `{
                 }
             }
         },
-        "/v1/job": {
+        "/v1/jobs": {
             "get": {
                 "description": "List jobs",
                 "consumes": [
@@ -631,7 +628,7 @@ const docTemplateV1 = `{
                 }
             }
         },
-        "/v1/job/{id}": {
+        "/v1/jobs/{id}": {
             "get": {
                 "description": "GetJob job by id",
                 "consumes": [
@@ -902,6 +899,252 @@ const docTemplateV1 = `{
                 }
             }
         },
+        "/v1/resourceMigrations": {
+            "get": {
+                "description": "List resource migrations",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ResourceMigration"
+                ],
+                "summary": "List resource migrations",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/body.ResourceMigrationRead"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create resource migration",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ResourceMigration"
+                ],
+                "summary": "Create resource migration",
+                "parameters": [
+                    {
+                        "description": "Resource Migration Create",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/body.ResourceMigrationCreate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.ResourceMigrationCreated"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/resourceMigrations/{resourceMigrationId}": {
+            "get": {
+                "description": "Get resource migration",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ResourceMigration"
+                ],
+                "summary": "Get resource migration",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Resource Migration ID",
+                        "name": "resourceMigrationId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.ResourceMigrationRead"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Update resource migration",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ResourceMigration"
+                ],
+                "summary": "Update resource migration",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Resource Migration ID",
+                        "name": "resourceMigrationId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Resource Migration Update",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/body.ResourceMigrationUpdate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.ResourceMigrationUpdated"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete resource migration",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ResourceMigration"
+                ],
+                "summary": "Delete resource migration",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Resource Migration ID",
+                        "name": "resourceMigrationId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/status": {
             "get": {
                 "description": "List of worker status",
@@ -927,69 +1170,6 @@ const docTemplateV1 = `{
                     },
                     "400": {
                         "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/storageManager/{storageManagerId}": {
-            "get": {
-                "description": "Delete storage manager",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "StorageManager"
-                ],
-                "summary": "Delete storage manager",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer token",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Storage manager ID",
-                        "name": "storageManagerId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/body.SmDeleted"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/sys.ErrorResponse"
                         }
@@ -1058,7 +1238,7 @@ const docTemplateV1 = `{
         },
         "/v1/storageManagers/{storageManagerId}": {
             "get": {
-                "description": "Get storage manager",
+                "description": "Delete storage manager",
                 "consumes": [
                     "application/json"
                 ],
@@ -1068,7 +1248,7 @@ const docTemplateV1 = `{
                 "tags": [
                     "StorageManager"
                 ],
-                "summary": "Get storage manager",
+                "summary": "Delete storage manager",
                 "parameters": [
                     {
                         "type": "string",
@@ -1183,7 +1363,7 @@ const docTemplateV1 = `{
                 }
             },
             "post": {
-                "description": "Synchronize team",
+                "description": "Create team",
                 "consumes": [
                     "application/json"
                 ],
@@ -1193,7 +1373,7 @@ const docTemplateV1 = `{
                 "tags": [
                     "Team"
                 ],
-                "summary": "Synchronize team",
+                "summary": "Create team",
                 "parameters": [
                     {
                         "description": "Team",
@@ -1361,185 +1541,6 @@ const docTemplateV1 = `{
                 }
             }
         },
-        "/v1/userData": {
-            "get": {
-                "description": "List user data",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "UserData"
-                ],
-                "summary": "List user data",
-                "parameters": [
-                    {
-                        "type": "boolean",
-                        "description": "Want all users",
-                        "name": "all",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/body.UserRead"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Synchronize user data",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "UserData"
-                ],
-                "summary": "Synchronize user data",
-                "parameters": [
-                    {
-                        "description": "User data create",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/body.UserDataCreate"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/body.UserDataRead"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/userData/{id}": {
-            "get": {
-                "description": "Get user data",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "UserData"
-                ],
-                "summary": "Get user data",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "User data ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/body.UserDataRead"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete user data",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "UserData"
-                ],
-                "summary": "Delete user data",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "User data ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content"
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/v1/users": {
             "get": {
                 "description": "List users",
@@ -1681,9 +1682,9 @@ const docTemplateV1 = `{
                 }
             }
         },
-        "/v1/usersData/{id}": {
+        "/v1/users/{userId}/apiKeys": {
             "post": {
-                "description": "Update user data, create if not exists",
+                "description": "Create API key",
                 "consumes": [
                     "application/json"
                 ],
@@ -1693,22 +1694,22 @@ const docTemplateV1 = `{
                 "tags": [
                     "User"
                 ],
-                "summary": "Update user data, create if not exists",
+                "summary": "Create API key",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "User data ID",
-                        "name": "id",
+                        "description": "User ID",
+                        "name": "userId",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "User data update",
+                        "description": "API key create request",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/body.UserDataUpdate"
+                            "$ref": "#/definitions/body.ApiKeyCreate"
                         }
                     }
                 ],
@@ -1716,7 +1717,7 @@ const docTemplateV1 = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/body.UserDataRead"
+                            "$ref": "#/definitions/body.ApiKeyCreated"
                         }
                     },
                     "400": {
@@ -1734,7 +1735,7 @@ const docTemplateV1 = `{
                 }
             }
         },
-        "/v1/vm": {
+        "/v1/vms": {
             "get": {
                 "description": "List VMs",
                 "consumes": [
@@ -1792,7 +1793,7 @@ const docTemplateV1 = `{
                 }
             },
             "post": {
-                "description": "Synchronize VM",
+                "description": "Create VM",
                 "consumes": [
                     "application/json"
                 ],
@@ -1802,7 +1803,7 @@ const docTemplateV1 = `{
                 "tags": [
                     "VM"
                 ],
-                "summary": "Synchronize VM",
+                "summary": "Create VM",
                 "parameters": [
                     {
                         "description": "VM body",
@@ -1854,7 +1855,65 @@ const docTemplateV1 = `{
                 }
             }
         },
-        "/v1/vm/{vmId}": {
+        "/v1/vms/gpus": {
+            "get": {
+                "description": "Get list of GPUs",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "VM"
+                ],
+                "summary": "Get list of GPUs",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "Only show available GPUs",
+                        "name": "available",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/body.GpuRead"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "423": {
+                        "description": "Locked",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/vms/{vmId}": {
             "get": {
                 "description": "Get VM",
                 "consumes": [
@@ -2015,64 +2074,6 @@ const docTemplateV1 = `{
                     },
                     "401": {
                         "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "423": {
-                        "description": "Locked",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/vms/gpus": {
-            "get": {
-                "description": "Get list of GPUs",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "VM"
-                ],
-                "summary": "Get list of GPUs",
-                "parameters": [
-                    {
-                        "type": "boolean",
-                        "description": "Only show available GPUs",
-                        "name": "available",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/body.GpuRead"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/sys.ErrorResponse"
                         }
@@ -2355,7 +2356,7 @@ const docTemplateV1 = `{
                 }
             },
             "post": {
-                "description": "Synchronize snapshot",
+                "description": "Create snapshot",
                 "consumes": [
                     "application/json"
                 ],
@@ -2365,7 +2366,7 @@ const docTemplateV1 = `{
                 "tags": [
                     "VM"
                 ],
-                "summary": "Synchronize snapshot",
+                "summary": "Create snapshot",
                 "parameters": [
                     {
                         "type": "string",
@@ -2458,6 +2459,52 @@ const docTemplateV1 = `{
         }
     },
     "definitions": {
+        "body.ApiKey": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.ApiKeyCreate": {
+            "type": "object",
+            "required": [
+                "expiresAt",
+                "name"
+            ],
+            "properties": {
+                "expiresAt": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.ApiKeyCreated": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "body.BindingError": {
             "type": "object",
             "properties": {
@@ -2509,9 +2556,8 @@ const docTemplateV1 = `{
                     }
                 },
                 "customDomain": {
-                    "type": "string",
-                    "maxLength": 253,
-                    "minLength": 1
+                    "description": "CustomDomain is the domain that the deployment will be available on.\nThe max length is set to 243 to allow for a sub domain when confirming the domain.",
+                    "type": "string"
                 },
                 "envs": {
                     "type": "array",
@@ -2605,6 +2651,9 @@ const docTemplateV1 = `{
                     "items": {
                         "$ref": "#/definitions/body.Env"
                     }
+                },
+                "error": {
+                    "type": "string"
                 },
                 "healthCheckPath": {
                     "type": "string"
@@ -2735,10 +2784,6 @@ const docTemplateV1 = `{
                     "maxLength": 30,
                     "minLength": 3
                 },
-                "ownerId": {
-                    "description": "update owner",
-                    "type": "string"
-                },
                 "private": {
                     "type": "boolean"
                 },
@@ -2746,11 +2791,6 @@ const docTemplateV1 = `{
                     "type": "integer",
                     "maximum": 100,
                     "minimum": 0
-                },
-                "transferCode": {
-                    "type": "string",
-                    "maxLength": 1000,
-                    "minLength": 1
                 },
                 "volumes": {
                     "type": "array",
@@ -3020,6 +3060,169 @@ const docTemplateV1 = `{
                 }
             }
         },
+        "body.ResourceMigrationCreate": {
+            "type": "object",
+            "required": [
+                "resourceID",
+                "status",
+                "type"
+            ],
+            "properties": {
+                "resourceID": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "updateOwner": {
+                    "type": "object",
+                    "required": [
+                        "ownerId"
+                    ],
+                    "properties": {
+                        "ownerId": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "body.ResourceMigrationCreated": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "jobId": {
+                    "description": "JobID is the ID of the job that was created for the resource migration.\nOnly if the migration was created with status 'accepted' a job will be created.",
+                    "type": "string"
+                },
+                "resourceId": {
+                    "type": "string"
+                },
+                "resourceType": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "updateOwner": {
+                    "type": "object",
+                    "properties": {
+                        "ownerId": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "userId": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.ResourceMigrationRead": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "resourceId": {
+                    "type": "string"
+                },
+                "resourceType": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "updateOwner": {
+                    "type": "object",
+                    "properties": {
+                        "ownerId": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "userId": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.ResourceMigrationUpdate": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.ResourceMigrationUpdated": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "jobId": {
+                    "description": "JobID is the ID of the job that was created for the resource migration.\nOnly if the migration was updated with status 'accepted' a job will be created.",
+                    "type": "string"
+                },
+                "resourceId": {
+                    "type": "string"
+                },
+                "resourceType": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "updateOwner": {
+                    "type": "object",
+                    "properties": {
+                        "ownerId": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "userId": {
+                    "type": "string"
+                }
+            }
+        },
         "body.Role": {
             "type": "object",
             "properties": {
@@ -3259,48 +3462,21 @@ const docTemplateV1 = `{
                 }
             }
         },
-        "body.UserDataCreate": {
+        "body.UserData": {
             "type": "object",
             "required": [
-                "data",
-                "id"
+                "key",
+                "value"
             ],
             "properties": {
-                "data": {
+                "key": {
                     "type": "string",
-                    "maxLength": 1000,
+                    "maxLength": 255,
                     "minLength": 1
                 },
-                "id": {
+                "value": {
                     "type": "string",
-                    "maxLength": 100,
-                    "minLength": 1
-                }
-            }
-        },
-        "body.UserDataRead": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "userId": {
-                    "type": "string"
-                }
-            }
-        },
-        "body.UserDataUpdate": {
-            "type": "object",
-            "required": [
-                "data"
-            ],
-            "properties": {
-                "data": {
-                    "type": "string",
-                    "maxLength": 1000,
+                    "maxLength": 255,
                     "minLength": 1
                 }
             }
@@ -3311,10 +3487,19 @@ const docTemplateV1 = `{
                 "admin": {
                     "type": "boolean"
                 },
+                "apiKeys": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/body.ApiKey"
+                    }
+                },
                 "email": {
                     "type": "string"
                 },
                 "firstName": {
+                    "type": "string"
+                },
+                "gravatarUrl": {
                     "type": "string"
                 },
                 "id": {
@@ -3322,9 +3507,6 @@ const docTemplateV1 = `{
                 },
                 "lastName": {
                     "type": "string"
-                },
-                "onboarded": {
-                    "type": "boolean"
                 },
                 "publicKeys": {
                     "type": "array",
@@ -3344,6 +3526,12 @@ const docTemplateV1 = `{
                 "usage": {
                     "$ref": "#/definitions/body.Usage"
                 },
+                "userData": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/body.UserData"
+                    }
+                },
                 "username": {
                     "type": "string"
                 }
@@ -3352,15 +3540,29 @@ const docTemplateV1 = `{
         "body.UserUpdate": {
             "type": "object",
             "properties": {
-                "onboarded": {
-                    "type": "boolean"
+                "apiKeys": {
+                    "description": "ApiKeys specifies the API keys that should remain. If an API key is not in this list, it will be deleted.\nHowever, API keys cannot be created, use /apiKeys endpoint to create new API keys.",
+                    "type": "array",
+                    "maxItems": 100,
+                    "minItems": 0,
+                    "items": {
+                        "$ref": "#/definitions/body.ApiKey"
+                    }
                 },
                 "publicKeys": {
                     "type": "array",
-                    "maxItems": 1000,
+                    "maxItems": 100,
                     "minItems": 0,
                     "items": {
                         "$ref": "#/definitions/body.PublicKey"
+                    }
+                },
+                "userData": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "minItems": 0,
+                    "items": {
+                        "$ref": "#/definitions/body.UserData"
                     }
                 }
             }
@@ -3420,19 +3622,53 @@ const docTemplateV1 = `{
                 }
             }
         },
+        "body.ZoneEndpoints": {
+            "type": "object",
+            "properties": {
+                "deployment": {
+                    "type": "string"
+                },
+                "storage": {
+                    "type": "string"
+                },
+                "vm": {
+                    "type": "string"
+                },
+                "vmApp": {
+                    "type": "string"
+                }
+            }
+        },
         "body.ZoneRead": {
             "type": "object",
             "properties": {
+                "capabilities": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "description": {
                     "type": "string"
                 },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "endpoints": {
+                    "$ref": "#/definitions/body.ZoneEndpoints"
+                },
                 "interface": {
+                    "description": "Interface\nDeprecated: use Endpoints instead",
                     "type": "string"
+                },
+                "legacy": {
+                    "type": "boolean"
                 },
                 "name": {
                     "type": "string"
                 },
                 "type": {
+                    "description": "Type\nDeprecated: use Capabilities instead",
                     "type": "string"
                 }
             }
@@ -3444,9 +3680,7 @@ const docTemplateV1 = `{
             ],
             "properties": {
                 "customDomain": {
-                    "type": "string",
-                    "maxLength": 100,
-                    "minLength": 1
+                    "type": "string"
                 },
                 "name": {
                     "type": "string",
@@ -3490,8 +3724,7 @@ const docTemplateV1 = `{
             ],
             "properties": {
                 "customDomain": {
-                    "type": "string",
-                    "maxLength": 100
+                    "type": "string"
                 },
                 "name": {
                     "type": "string",
@@ -3778,9 +4011,6 @@ const docTemplateV1 = `{
                 "noLeaseEnd": {
                     "type": "boolean"
                 },
-                "ownerId": {
-                    "type": "string"
-                },
                 "ports": {
                     "type": "array",
                     "maxItems": 10,
@@ -3795,11 +4025,6 @@ const docTemplateV1 = `{
                 },
                 "snapshotId": {
                     "type": "string"
-                },
-                "transferCode": {
-                    "type": "string",
-                    "maxLength": 1000,
-                    "minLength": 1
                 }
             }
         },
@@ -3814,18 +4039,7 @@ const docTemplateV1 = `{
                 }
             }
         },
-        "sys.ErrorResponse": {
-            "type": "object",
-            "properties": {
-                "errors": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/sys.errorPiece"
-                    }
-                }
-            }
-        },
-        "sys.errorPiece": {
+        "sys.Error": {
             "type": "object",
             "properties": {
                 "code": {
@@ -3833,6 +4047,17 @@ const docTemplateV1 = `{
                 },
                 "msg": {
                     "type": "string"
+                }
+            }
+        },
+        "sys.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/sys.Error"
+                    }
                 }
             }
         }
