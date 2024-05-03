@@ -90,6 +90,9 @@ export interface UserGet {
 export interface UserUpdate {
   UserID: string;
 }
+export interface ApiKeyCreate {
+  UserID: string;
+}
 
 //////////
 // source: vm.go

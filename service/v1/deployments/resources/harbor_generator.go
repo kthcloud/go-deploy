@@ -31,21 +31,17 @@ func Harbor(deployment *model.Deployment, zone *configModels.Zone, project strin
 
 // Project returns a models.ProjectPublic that should be created
 func (hg *HarborGenerator) Project() *models.ProjectPublic {
-	if hg.deployment != nil {
-		pr := models.ProjectPublic{
-			Name:   hg.project,
-			Public: false,
-		}
-
-		if p := &hg.deployment.Subsystems.Harbor.Project; subsystems.Created(p) {
-			pr.ID = p.ID
-			pr.CreatedAt = p.CreatedAt
-		}
-
-		return &pr
+	pr := models.ProjectPublic{
+		Name:   hg.project,
+		Public: false,
 	}
 
-	return nil
+	if p := &hg.deployment.Subsystems.Harbor.Project; subsystems.Created(p) {
+		pr.ID = p.ID
+		pr.CreatedAt = p.CreatedAt
+	}
+
+	return &pr
 }
 
 // Robot returns a models.RobotPublic that should be created
@@ -72,29 +68,25 @@ func (hg *HarborGenerator) Robot() *models.RobotPublic {
 
 // Repository returns a models.RepositoryPublic that should be created
 func (hg *HarborGenerator) Repository() *models.RepositoryPublic {
-	if hg.deployment != nil {
-		splits := strings.Split(config.Config.Registry.PlaceholderImage, "/")
-		project := splits[len(splits)-2]
-		repository := splits[len(splits)-1]
+	splits := strings.Split(config.Config.Registry.PlaceholderImage, "/")
+	project := splits[len(splits)-2]
+	repository := splits[len(splits)-1]
 
-		re := models.RepositoryPublic{
-			Name: hg.deployment.Name,
-			Placeholder: &models.PlaceHolder{
-				ProjectName:    project,
-				RepositoryName: repository,
-			},
-		}
-
-		if r := &hg.deployment.Subsystems.Harbor.Repository; subsystems.Created(r) {
-			re.ID = r.ID
-			re.Seeded = r.Seeded
-			re.CreatedAt = r.CreatedAt
-		}
-
-		return &re
+	re := models.RepositoryPublic{
+		Name: hg.deployment.Name,
+		Placeholder: &models.PlaceHolder{
+			ProjectName:    project,
+			RepositoryName: repository,
+		},
 	}
 
-	return nil
+	if r := &hg.deployment.Subsystems.Harbor.Repository; subsystems.Created(r) {
+		re.ID = r.ID
+		re.Seeded = r.Seeded
+		re.CreatedAt = r.CreatedAt
+	}
+
+	return &re
 }
 
 // Webhook returns a models.WebhookPublic that should be created

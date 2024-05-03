@@ -253,14 +253,14 @@ func TestCreateShared(t *testing.T) {
 	team := v1.WithTeam(t, bodyV1.TeamCreate{
 		Name:      e2e.GenName(),
 		Resources: []string{vm.ID},
-		Members:   []bodyV1.TeamMemberCreate{{ID: e2e.PowerUserID}},
-	})
+		Members:   []bodyV1.TeamMemberCreate{{ID: e2e.DefaultUserID}},
+	}, e2e.PowerUserID)
 
 	vmRead := v2.GetVM(t, vm.ID)
 	assert.Equal(t, []string{team.ID}, vmRead.Teams, "invalid teams on vm")
 
 	// Fetch team members vms
-	vms := v2.ListVMs(t, "?userId="+e2e.PowerUserID)
+	vms := v2.ListVMs(t, "?userId="+e2e.DefaultUserID, e2e.DefaultUserID)
 	assert.NotEmpty(t, vms, "user has no vms")
 
 	hasVM := false

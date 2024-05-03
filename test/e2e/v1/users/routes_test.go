@@ -7,6 +7,7 @@ import (
 	"go-deploy/test/e2e/v1"
 	"os"
 	"testing"
+	"time"
 )
 
 func TestMain(m *testing.M) {
@@ -16,10 +17,17 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func TestGet(t *testing.T) {
+func TestGetAnotherUser(t *testing.T) {
 	t.Parallel()
 
-	v1.GetUser(t, e2e.AdminUserID)
+	// Getting another user requires admin permissions
+	v1.GetUser(t, e2e.PowerUserID, e2e.AdminUserID)
+}
+
+func TestGetYourself(t *testing.T) {
+	t.Parallel()
+
+	v1.GetUser(t, e2e.PowerUserID, e2e.PowerUserID)
 }
 
 func TestList(t *testing.T) {
@@ -96,4 +104,142 @@ func TestUpdateUserData(t *testing.T) {
 	v1.UpdateUser(t, e2e.AdminUserID, update)
 	v1.UpdateUser(t, e2e.PowerUserID, update)
 	v1.UpdateUser(t, e2e.DefaultUserID, update)
+}
+
+func TestCreateApiKey(t *testing.T) {
+	// Since this edit the user's API keys, we can't run this in parallel
+
+	t.Cleanup(func() {
+		v1.UpdateUser(t, e2e.PowerUserID, body.UserUpdate{
+			ApiKeys: &[]body.ApiKey{},
+		})
+	})
+
+	names := []string{
+		e2e.GenName("test-key-1"),
+		e2e.GenName("test-key-2"),
+		e2e.GenName("test-key-3"),
+		e2e.GenName("test-key-4"),
+		e2e.GenName("test-key-5"),
+	}
+
+	for _, name := range names {
+		v1.CreateApiKey(t, e2e.PowerUserID, body.ApiKeyCreate{
+			Name:      name,
+			ExpiresAt: time.Now().Add(24 * time.Hour),
+		})
+	}
+
+	user := v1.GetUser(t, e2e.PowerUserID)
+	for _, name := range names {
+		found := false
+		for _, apiKey := range user.ApiKeys {
+			if apiKey.Name == name {
+				found = true
+				break
+			}
+		}
+		assert.True(t, found, "api key was not created")
+	}
+
+	// 1. Clean up the first two one by one
+	namesWithoutFirstTwo := names[2:]
+	apiKeysWithoutFirstTwo := user.ApiKeys[2:]
+
+	user = v1.UpdateUser(t, e2e.PowerUserID, body.UserUpdate{
+		ApiKeys: &apiKeysWithoutFirstTwo,
+	})
+
+	for _, name := range namesWithoutFirstTwo {
+		found := false
+		for _, apiKey := range user.ApiKeys {
+			if apiKey.Name == name {
+				found = true
+				break
+			}
+		}
+		assert.True(t, found, "api key was not updated")
+	}
+
+	// 2. Clean up the rest
+	emptyApiKeys := make([]body.ApiKey, 0)
+	user = v1.UpdateUser(t, e2e.PowerUserID, body.UserUpdate{
+		ApiKeys: &emptyApiKeys,
+	})
+
+	assert.Empty(t, user.ApiKeys, "api keys were not deleted")
+}
+
+func TestMalformedDelete(t *testing.T) {
+	// Since this edit the user's API keys, we can't run this in parallel
+
+	t.Cleanup(func() {
+		v1.UpdateUser(t, e2e.PowerUserID, body.UserUpdate{
+			ApiKeys: &[]body.ApiKey{},
+		})
+	})
+
+	names := []string{
+		e2e.GenName("test-key-1"),
+		e2e.GenName("test-key-2"),
+		e2e.GenName("test-key-3"),
+	}
+
+	for _, name := range names {
+		v1.CreateApiKey(t, e2e.PowerUserID, body.ApiKeyCreate{
+			Name:      name,
+			ExpiresAt: time.Now().Add(24 * time.Hour),
+		})
+	}
+
+	user := v1.GetUser(t, e2e.PowerUserID)
+	for _, name := range names {
+		found := false
+		for _, apiKey := range user.ApiKeys {
+			if apiKey.Name == name {
+				found = true
+				break
+			}
+		}
+		assert.True(t, found, "api key was not created")
+	}
+
+	// Update with test-key-1, test-key-2 and unknown-key
+	// This should skip the unknown-key and delete test-key-3
+	culprit := e2e.GenName("unknown-key")
+	newKeys := []body.ApiKey{
+		{
+			Name: names[0],
+		},
+		{
+			Name: names[1],
+		},
+		{
+			Name: culprit,
+		},
+	}
+
+	user = v1.UpdateUser(t, e2e.PowerUserID, body.UserUpdate{
+		ApiKeys: &newKeys,
+	})
+
+	nameThatShouldExist := names[:2]
+	for _, name := range nameThatShouldExist {
+		found := false
+		for _, apiKey := range user.ApiKeys {
+			if apiKey.Name == name {
+				found = true
+				break
+			}
+		}
+		assert.True(t, found, "api key was not updated")
+	}
+
+	// Ensure culprit key is not added to the list
+	for _, apiKey := range user.ApiKeys {
+		assert.NotEqual(t, culprit, apiKey.Name, "unknown-key was added")
+		assert.NotEmpty(t, apiKey.Name, "empty key was added")
+		assert.NotEmpty(t, apiKey.CreatedAt, "empty created at was added")
+		assert.NotEmpty(t, apiKey.ExpiresAt, "empty created at was added")
+	}
 }

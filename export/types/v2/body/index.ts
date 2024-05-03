@@ -157,8 +157,27 @@ export interface VmUpdateOwner {
 export interface VmGpuLease {
   id: string;
   gpuGroupId: string;
+  leaseDuration: number /* float64 */;
+  /**
+   * ActivatedAt specifies the time when the lease was activated. This is the time the user first attached the GPU
+   * or 1 day after the lease was created if the user did not attach the GPU.
+   */
+  activatedAt?: string;
+  /**
+   * AssignedAt specifies the time when the lease was assigned to the user.
+   */
+  assignedAt?: string;
+  createdAt: string;
+  /**
+   * ExpiresAt specifies the time when the lease will expire.
+   * This is only present if the lease is active.
+   */
   expiresAt?: string;
-  isExpired: boolean;
+  /**
+   * ExpiredAt specifies the time when the lease expired.
+   * This is only present if the lease is expired.
+   */
+  expiredAt?: string;
 }
 export interface Specs {
   cpuCores?: number /* int */;

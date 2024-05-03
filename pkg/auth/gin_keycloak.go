@@ -259,6 +259,7 @@ func getTestTokenContainer(userID string) *TokenContainer {
 		tc.KeyCloakToken.GivenName = "tester-power-first"
 		tc.KeyCloakToken.FamilyName = "tester-power-last"
 		tc.KeyCloakToken.Email = "tester-power@test.com"
+		tc.KeyCloakToken.Groups = []string{"platinum"}
 	case DefaultUserID:
 		tc.KeyCloakToken.Name = "tester-default"
 		tc.KeyCloakToken.PreferredUsername = "tester-default"

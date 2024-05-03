@@ -102,11 +102,11 @@ func WithTeam(t *testing.T, teamCreate body.TeamCreate, userID ...string) body.T
 	if len(userID) > 0 {
 		requestedMembers = append(requestedMembers, userID[0])
 	} else {
-		requestedMembers = append(requestedMembers, e2e.AdminUserID)
+		requestedMembers = append(requestedMembers, e2e.PowerUserID)
 	}
 
 	for _, member := range teamCreate.Members {
-		if member.ID == e2e.AdminUserID {
+		if member.ID == e2e.PowerUserID {
 			continue
 		}
 

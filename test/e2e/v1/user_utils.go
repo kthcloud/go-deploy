@@ -3,6 +3,7 @@ package v1
 import (
 	"github.com/stretchr/testify/assert"
 	"go-deploy/dto/v1/body"
+	"go-deploy/test"
 	"go-deploy/test/e2e"
 	"testing"
 )
@@ -12,8 +13,8 @@ const (
 	UsersPath = "/v1/users"
 )
 
-func GetUser(t *testing.T, id string) body.UserRead {
-	resp := e2e.DoGetRequest(t, UserPath+id)
+func GetUser(t *testing.T, id string, userID ...string) body.UserRead {
+	resp := e2e.DoGetRequest(t, UserPath+id, userID...)
 	return e2e.MustParse[body.UserRead](t, resp)
 }
 
@@ -31,9 +32,8 @@ func ListUsersDiscovery(t *testing.T, query string) []body.UserReadDiscovery {
 	return e2e.MustParse[[]body.UserReadDiscovery](t, resp)
 }
 
-func UpdateUser(t *testing.T, id string, update body.UserUpdate) {
+func UpdateUser(t *testing.T, id string, update body.UserUpdate) body.UserRead {
 	resp := e2e.DoPostRequest(t, UserPath+id, update)
-
 	userRead := e2e.MustParse[body.UserRead](t, resp)
 
 	if update.PublicKeys != nil {
@@ -73,4 +73,16 @@ func UpdateUser(t *testing.T, id string, update body.UserUpdate) {
 		}
 		assert.True(t, foundAll, "user data were not updated")
 	}
+
+	return userRead
+}
+
+func CreateApiKey(t *testing.T, userID string, apiKeyCreate body.ApiKeyCreate) {
+	resp := e2e.DoPostRequest(t, UserPath+userID+"/apiKeys", apiKeyCreate)
+	apiKeyCreated := e2e.MustParse[body.ApiKeyCreated](t, resp)
+
+	assert.NotEmpty(t, apiKeyCreated.Key)
+	assert.Equal(t, apiKeyCreate.Name, apiKeyCreated.Name)
+	test.TimeNotZero(t, apiKeyCreated.CreatedAt)
+	test.TimeEq(t, apiKeyCreated.ExpiresAt, apiKeyCreated.ExpiresAt)
 }

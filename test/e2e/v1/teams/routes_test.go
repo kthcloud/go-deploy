@@ -39,7 +39,7 @@ func TestCreateWithMembers(t *testing.T) {
 		Description: e2e.GenName(),
 		Resources:   nil,
 		Members: []body.TeamMemberCreate{
-			{ID: e2e.PowerUserID, TeamRole: model.TeamMemberRoleAdmin},
+			{ID: e2e.DefaultUserID, TeamRole: model.TeamMemberRoleAdmin},
 		},
 	}
 
@@ -47,7 +47,7 @@ func TestCreateWithMembers(t *testing.T) {
 	_ = v1.WithTeam(t, requestBody)
 
 	// Fetch TestUser2's teams
-	teams := v1.ListTeams(t, "?userId="+e2e.PowerUserID)
+	teams := v1.ListTeams(t, "?userId="+e2e.DefaultUserID, e2e.DefaultUserID)
 	found := false
 	for _, team := range teams {
 		if team.Name == requestBody.Name {
@@ -78,7 +78,6 @@ func TestCreateWithResources(t *testing.T) {
 	// Fetch deployment's teams
 	resource = v1.GetDeployment(t, resource.ID)
 	assert.EqualValues(t, []string{team.ID}, resource.Teams, "invalid teams on model")
-
 }
 
 func TestCreateFull(t *testing.T) {
@@ -92,14 +91,14 @@ func TestCreateFull(t *testing.T) {
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
 		Resources:   []string{resource.ID},
-		Members:     []body.TeamMemberCreate{{ID: e2e.PowerUserID, TeamRole: model.TeamMemberRoleAdmin}},
+		Members:     []body.TeamMemberCreate{{ID: e2e.DefaultUserID, TeamRole: model.TeamMemberRoleAdmin}},
 	}
 
 	// Create team
 	team := v1.WithTeam(t, requestBody)
 
 	// Fetch TestUser2's teams
-	teams := v1.ListTeams(t, "?userId="+e2e.PowerUserID)
+	teams := v1.ListTeams(t, "?userId="+e2e.DefaultUserID, e2e.DefaultUserID)
 	assert.NotEmpty(t, teams, "user has no teams")
 
 	// Fetch deployment's teams
@@ -114,14 +113,14 @@ func TestCreateWithInvitation(t *testing.T) {
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
 		Resources:   nil,
-		Members:     []body.TeamMemberCreate{{ID: e2e.PowerUserID, TeamRole: model.TeamMemberRoleAdmin}},
-	}, e2e.DefaultUserID)
+		Members:     []body.TeamMemberCreate{{ID: e2e.DefaultUserID, TeamRole: model.TeamMemberRoleAdmin}},
+	}, e2e.PowerUserID)
 
 	assert.Equal(t, 2, len(team.Members), "invalid number of members")
 
 	found := false
 	for _, member := range team.Members {
-		if member.ID == e2e.PowerUserID {
+		if member.ID == e2e.DefaultUserID {
 			assert.Equal(t, model.TeamMemberRoleAdmin, member.TeamRole, "invalid member role")
 			assert.Equal(t, model.TeamMemberStatusInvited, member.MemberStatus, "invalid member status")
 
@@ -134,7 +133,7 @@ func TestCreateWithInvitation(t *testing.T) {
 		assert.Fail(t, "user was not invited")
 	}
 
-	notifications := v1.ListNotifications(t, "?userId="+e2e.PowerUserID)
+	notifications := v1.ListNotifications(t, "?userId="+e2e.DefaultUserID, e2e.DefaultUserID)
 	assert.NotEmpty(t, notifications, "user has no notifications")
 
 	found = false
@@ -158,17 +157,17 @@ func TestJoin(t *testing.T) {
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
 		Resources:   nil,
-		Members:     []body.TeamMemberCreate{{ID: e2e.PowerUserID, TeamRole: model.TeamMemberRoleAdmin}},
-	}, e2e.DefaultUserID)
+		Members:     []body.TeamMemberCreate{{ID: e2e.DefaultUserID, TeamRole: model.TeamMemberRoleAdmin}},
+	}, e2e.PowerUserID)
 
-	notifications := v1.ListNotifications(t, "?userId="+e2e.PowerUserID)
+	notifications := v1.ListNotifications(t, "?userId="+e2e.DefaultUserID, e2e.DefaultUserID)
 
 	for _, notification := range notifications {
 		if notification.Type == model.NotificationTeamInvite {
 			for key, val := range notification.Content {
 				if key == "id" && val == team.ID {
 					code := notification.Content["code"].(string)
-					v1.JoinTeam(t, team.ID, code, e2e.PowerUserID)
+					v1.JoinTeam(t, team.ID, code, e2e.DefaultUserID)
 					return
 				}
 			}
@@ -186,10 +185,10 @@ func TestJoinWithBadCode(t *testing.T) {
 		Description: e2e.GenName(),
 		Resources:   nil,
 		Members:     []body.TeamMemberCreate{{ID: e2e.DefaultUserID, TeamRole: model.TeamMemberRoleAdmin}},
-	})
+	}, e2e.PowerUserID)
 
 	resp := e2e.DoPostRequest(t, v1.TeamPath+team.ID, body.TeamJoin{InvitationCode: "bad-code"}, e2e.DefaultUserID)
-	assert.Equal(t, 400, resp.StatusCode, "bad code was not detected")
+	assert.Equal(t, http.StatusForbidden, resp.StatusCode, "bad code was not detected")
 }
 
 func TestUpdate(t *testing.T) {
@@ -254,13 +253,13 @@ func TestUpdateMembers(t *testing.T) {
 		Name:        nil,
 		Description: nil,
 		Resources:   nil,
-		Members:     &[]body.TeamMemberUpdate{{ID: e2e.PowerUserID, TeamRole: model.TeamMemberRoleAdmin}},
+		Members:     &[]body.TeamMemberUpdate{{ID: e2e.DefaultUserID, TeamRole: model.TeamMemberRoleAdmin}},
 	}
 
-	v1.UpdateTeam(t, team.ID, requestBody)
+	v1.UpdateTeam(t, team.ID, requestBody, e2e.PowerUserID)
 
-	// Fetch TestUser2's teams
-	teams := v1.ListTeams(t, "?userId="+e2e.PowerUserID)
+	// Fetch PowerUser's teams, even though it is not accepted, it should be in the list
+	teams := v1.ListTeams(t, "?userId="+e2e.DefaultUserID, e2e.DefaultUserID)
 	assert.NotEmpty(t, teams, "user has no teams")
 }
 

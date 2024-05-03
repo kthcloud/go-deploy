@@ -32,7 +32,7 @@ func FetchUntil(t *testing.T, subPath string, callback func(*http.Response) bool
 	for {
 		time.Sleep(CheckInterval)
 
-		resp := DoGetRequest(t, subPath)
+		resp := DoGetRequest(t, subPath, AdminUserID)
 		if resp.StatusCode == http.StatusNotFound {
 			if callback == nil || callback(resp) {
 				break
@@ -90,7 +90,9 @@ func DoGetRequest(t *testing.T, subPath string, userID ...string) *http.Response
 	assert.NoError(t, err)
 
 	// Set go-deploy-test-user header
-	effectiveUser := AdminUserID
+	// We use PowerUserID as the default user for all requests
+	// Since it is not admin (and thus still go through auth checks) and it has a high quota
+	effectiveUser := PowerUserID
 	if len(userID) > 0 {
 		effectiveUser = userID[0]
 	}
@@ -112,7 +114,7 @@ func DoPostRequest(t *testing.T, subPath string, body interface{}, userID ...str
 	req.Header.Set("Content-Type", "application/json")
 
 	// Set go-deploy-test-user header
-	effectiveUser := AdminUserID
+	effectiveUser := PowerUserID
 	if len(userID) > 0 {
 		effectiveUser = userID[0]
 	}
@@ -128,7 +130,7 @@ func DoDeleteRequest(t *testing.T, subPath string, userID ...string) *http.Respo
 	assert.NoError(t, err)
 
 	// Set go-deploy-test-user header
-	effectiveUser := AdminUserID
+	effectiveUser := PowerUserID
 	if len(userID) > 0 {
 		effectiveUser = userID[0]
 	}
@@ -178,6 +180,10 @@ func parseRawBody(body []byte, parsedBody interface{}) error {
 }
 
 func MustParse[okType any](t *testing.T, resp *http.Response) okType {
+	if resp == nil {
+		assert.FailNow(t, "response is nil. is the server running?")
+	}
+
 	if resp.StatusCode > 299 {
 		rawBody := ReadRawResponseBody(t, resp)
 		empty := new(okType)
@@ -188,9 +194,9 @@ func MustParse[okType any](t *testing.T, resp *http.Response) okType {
 		// Check if it was a binding error
 		if err != nil || len(bindingError.ValidationErrors) > 0 {
 			anyErr := false
-			for _, fieldErrors := range bindingError.ValidationErrors {
+			for fieldKey, fieldErrors := range bindingError.ValidationErrors {
 				for _, fieldError := range fieldErrors {
-					assert.Fail(t, fmt.Sprintf("binding error: %s", fieldError))
+					assert.Fail(t, fmt.Sprintf("binding error for field %s: %s", fieldKey, fieldError))
 					anyErr = true
 				}
 			}

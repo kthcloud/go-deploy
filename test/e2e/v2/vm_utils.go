@@ -202,7 +202,7 @@ func checkUpVM(t *testing.T, connectionString string) bool {
 }
 
 func cleanUpVm(t *testing.T, id string) {
-	resp := e2e.DoDeleteRequest(t, VmPath+id)
+	resp := e2e.DoDeleteRequest(t, VmPath+id, e2e.AdminUserID)
 	if resp.StatusCode == http.StatusNotFound {
 		return
 	}

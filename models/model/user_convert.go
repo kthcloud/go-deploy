@@ -98,11 +98,11 @@ func (params UserUpdateParams) FromDTO(userUpdateDTO *body.UserUpdate, currentAp
 
 	var apiKeys *[]ApiKey
 	if userUpdateDTO.ApiKeys != nil {
-		a := make([]ApiKey, len(*userUpdateDTO.ApiKeys))
-		for i, key := range *userUpdateDTO.ApiKeys {
+		a := make([]ApiKey, 0)
+		for _, key := range *userUpdateDTO.ApiKeys {
 			for _, currentKey := range currentApiKeys {
 				if key.Name == currentKey.Name {
-					a[i] = currentKey
+					a = append(a, currentKey)
 					break
 				}
 			}
