@@ -225,16 +225,14 @@ export interface ResourceMigrationUpdate {
   status: string;
   code?: string;
 }
-export interface ResourceMigrationCreated {
-  ResourceMigrationRead: ResourceMigrationRead;
+export interface ResourceMigrationCreated extends ResourceMigrationRead {
   /**
    * JobID is the ID of the job that was created for the resource migration.
    * Only if the migration was created with status 'accepted' a job will be created.
    */
   jobId?: string;
 }
-export interface ResourceMigrationUpdated {
-  ResourceMigrationRead: ResourceMigrationRead;
+export interface ResourceMigrationUpdated extends ResourceMigrationRead {
   /**
    * JobID is the ID of the job that was created for the resource migration.
    * Only if the migration was updated with status 'accepted' a job will be created.
@@ -279,10 +277,7 @@ export interface WorkerStatusRead {
 //////////
 // source: team.go
 
-export interface TeamMember {
-  id: string;
-  username: string;
-  email: string;
+export interface TeamMember extends UserReadDiscovery {
   teamRole: string;
   memberStatus: string;
   joinedAt?: string;
@@ -352,6 +347,7 @@ export interface UserReadDiscovery {
   firstName: string;
   lastName: string;
   email: string;
+  gravatarUrl?: string;
 }
 export interface UserUpdate {
   publicKeys?: PublicKey[];

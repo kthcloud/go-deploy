@@ -141,7 +141,7 @@ func (c *Client) CreateMigrationUpdateOwner(id, userID, resourceID, resourceType
 
 	code := c.CreateCode()
 	rmc := resource_migration_repo.New()
-	resourceMigraiton, err := rmc.Create(id, userID, resourceID, model.ResourceMigrationTypeUpdateOwner, resourceType, &code, status, params)
+	resourceMigration, err := rmc.Create(id, userID, resourceID, model.ResourceMigrationTypeUpdateOwner, resourceType, &code, status, params)
 	if err != nil {
 		if errors.Is(err, db.UniqueConstraintErr) {
 			return nil, nil, sErrors.ResourceMigrationAlreadyExistsErr
@@ -189,13 +189,13 @@ func (c *Client) CreateMigrationUpdateOwner(id, userID, resourceID, resourceType
 			return nil, nil, makeError(err)
 		}
 
-		return resourceMigraiton, nil, nil
+		return resourceMigration, nil, nil
 	case model.ResourceMigrationStatusAccepted:
 		// Update the owner of the resource
 		jobID := uuid.NewString()
 		args := map[string]interface{}{
 			"id":                  resourceID,
-			"resourceMigrationId": resourceMigraiton.ID,
+			"resourceMigrationId": resourceMigration.ID,
 			"params":              params,
 			"authInfo":            c.V1.Auth(),
 		}
@@ -210,7 +210,7 @@ func (c *Client) CreateMigrationUpdateOwner(id, userID, resourceID, resourceType
 			return nil, nil, makeError(err)
 		}
 
-		return resourceMigraiton, &jobID, nil
+		return resourceMigration, &jobID, nil
 	default:
 		return nil, nil, sErrors.BadResourceMigrationStatusErr
 	}

@@ -171,14 +171,14 @@ func TestCreateShared(t *testing.T) {
 	team := v1.WithTeam(t, body.TeamCreate{
 		Name:      e2e.GenName(),
 		Resources: []string{deployment.ID},
-		Members:   []body.TeamMemberCreate{{ID: e2e.PowerUserID}},
-	})
+		Members:   []body.TeamMemberCreate{{ID: e2e.DefaultUserID}},
+	}, e2e.PowerUserID)
 
 	deploymentRead := v1.GetDeployment(t, deployment.ID)
 	assert.Equal(t, []string{team.ID}, deploymentRead.Teams, "invalid teams on deployment")
 
 	// Fetch team members deployments
-	deployments := v1.ListDeployments(t, "?userId="+e2e.PowerUserID)
+	deployments := v1.ListDeployments(t, "?userId="+e2e.DefaultUserID, e2e.DefaultUserID)
 	assert.NotEmpty(t, deployments, "user has no deployments")
 
 	hasDeployment := false

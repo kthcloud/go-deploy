@@ -242,7 +242,7 @@ definitions:
   go-deploy_dto_v2_body.VmCreate:
     properties:
       cpuCores:
-        minimum: 2
+        minimum: 1
         type: integer
       diskSize:
         minimum: 10

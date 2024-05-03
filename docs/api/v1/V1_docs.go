@@ -3064,7 +3064,6 @@ const docTemplateV1 = `{
             "type": "object",
             "required": [
                 "resourceID",
-                "status",
                 "type"
             ],
             "properties": {
@@ -3316,10 +3315,19 @@ const docTemplateV1 = `{
                 "email": {
                     "type": "string"
                 },
+                "firstName": {
+                    "type": "string"
+                },
+                "gravatarUrl": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
                 "joinedAt": {
+                    "type": "string"
+                },
+                "lastName": {
                     "type": "string"
                 },
                 "memberStatus": {

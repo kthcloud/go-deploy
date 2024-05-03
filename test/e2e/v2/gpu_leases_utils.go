@@ -65,6 +65,6 @@ func WithGpuLease(t *testing.T, requestBody body.GpuLeaseCreate, userID ...strin
 }
 
 func cleanUpGpuLease(t *testing.T, id string) {
-	resp := e2e.DoDeleteRequest(t, GpuLeasePath+id)
+	resp := e2e.DoDeleteRequest(t, GpuLeasePath+id, e2e.AdminUserID)
 	v1.WaitForJobFinished(t, e2e.MustParse[body.GpuLeaseDeleted](t, resp).JobID, nil)
 }

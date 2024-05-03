@@ -54,6 +54,6 @@ func TestCreate(t *testing.T) {
 	})
 
 	// Ensure the User has the storage url
-	user := v1.GetUser(t, e2e.AdminUserID)
+	user := v1.GetUser(t, e2e.PowerUserID)
 	assert.NotEmpty(t, user.StorageURL, "storage url was empty")
 }

@@ -1394,7 +1394,7 @@ const docTemplateV2 = `{
             "properties": {
                 "cpuCores": {
                     "type": "integer",
-                    "minimum": 2
+                    "minimum": 1
                 },
                 "diskSize": {
                     "type": "integer",

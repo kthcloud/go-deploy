@@ -3,9 +3,7 @@ package body
 import "time"
 
 type TeamMember struct {
-	ID       string `json:"id"`
-	Username string `json:"username"`
-	Email    string `json:"email"`
+	UserReadDiscovery `json:",inline" tstype:",extends"`
 
 	TeamRole     string `json:"teamRole"`
 	MemberStatus string `json:"memberStatus"`
