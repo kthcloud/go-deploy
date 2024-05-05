@@ -109,6 +109,10 @@ type ConfigType struct {
 	} `yaml:"harbor"`
 }
 
+type LocalPathConfigSource struct {
+	Path string `yaml:"path"`
+}
+
 type RancherConfigSource struct {
 	ClusterName string `yaml:"clusterName"`
 	URL         string `yaml:"url"`
