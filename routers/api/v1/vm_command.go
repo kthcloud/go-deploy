@@ -18,7 +18,7 @@ import (
 // @Security ApiKeyAuth
 // @Param vmId path string true "VM ID"
 // @Param body body body.VmCommand true "Command body"
-// @Success 200 {empty} empty
+// @Success 204 "No Content"
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 423 {object} sys.ErrorResponse

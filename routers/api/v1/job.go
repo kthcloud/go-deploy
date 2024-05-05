@@ -24,7 +24,11 @@ import (
 // @Security ApiKeyAuth
 // @Param jobId path string true "Job ID"
 // @Success 200 {object} body.JobRead
-// @Router /v1/jobs/{id} [get]
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 401 {object} sys.ErrorResponse
+// @Failure 404 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
+// @Router /v1/jobs/{jobId} [get]
 func GetJob(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -122,7 +126,7 @@ func ListJobs(c *gin.Context) {
 // @Param jobId path string true "Job ID"
 // @Param body body body.JobUpdate true "Job update"
 // @Success 200 {object} body.JobRead
-// @Router /v1/jobs/{id} [post]
+// @Router /v1/jobs/{jobId} [post]
 func UpdateJob(c *gin.Context) {
 	context := sys.NewContext(c)
 

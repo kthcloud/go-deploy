@@ -12,8 +12,7 @@ const docTemplateV1 = `{
         "termsOfService": "http://swagger.io/terms/",
         "contact": {
             "name": "Support",
-            "url": "https://github.com/kthcloud/go-deploy",
-            "email": "support@swagger.io"
+            "url": "https://github.com/kthcloud/go-deploy"
         },
         "license": {
             "name": "MIT License",
@@ -398,11 +397,8 @@ const docTemplateV1 = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "empty"
-                        }
+                    "204": {
+                        "description": "No Content"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -645,7 +641,7 @@ const docTemplateV1 = `{
                 }
             }
         },
-        "/v1/jobs/{id}": {
+        "/v1/jobs/{jobId}": {
             "get": {
                 "security": [
                     {
@@ -677,6 +673,30 @@ const docTemplateV1 = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/body.JobRead"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
                         }
                     }
                 }
@@ -2328,11 +2348,8 @@ const docTemplateV1 = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "empty"
-                        }
+                    "204": {
+                        "description": "No Content"
                     },
                     "400": {
                         "description": "Bad Request",

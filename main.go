@@ -11,7 +11,6 @@ import (
 // @TermsOfService http://swagger.io/terms/
 // @Contact.name Support
 // @Contact.url https://github.com/kthcloud/go-deploy
-// @Contact.email support@swagger.io
 // @License.name MIT License
 // @License.url https://github.com/kthcloud/go-deploy?tab=MIT-1-ov-file#readme
 // @SecurityDefinitions.apikey ApiKeyAuth

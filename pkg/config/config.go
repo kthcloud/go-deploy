@@ -15,6 +15,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"time"
 )
 
 // Config is the global configuration object.
@@ -42,8 +43,9 @@ func SetupEnvironment(mode string) error {
 		return makeError(err)
 	}
 
-	// Keep this here
 	Config.Mode = mode
+	Config.Filepath = filepath
+	config.LastRoleReload = time.Now()
 
 	log.Println("go-deploy", version.AppVersion)
 

@@ -18,7 +18,12 @@ jobs:
       run: |       
         cd scripts
         source ./path-cmd.sh
+        
         chmod +x ./generate-docs.sh
         ./generate-docs.sh
+        
+        chmod +x ./convert-to-v3-docs.sh
+        ./convert-to-v3-docs.sh
+        
         cd ..
       

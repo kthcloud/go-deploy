@@ -19,6 +19,9 @@ type ConfigType struct {
 	Port        int    `yaml:"port"`
 	ExternalUrl string `yaml:"externalUrl"`
 	Mode        string `yaml:"mode"`
+	// Filepath is the path to the configuration file
+	// It is set by the SetupEnvironment function when the configuration is loaded
+	Filepath string
 
 	Deployment Deployment `yaml:"deployment"`
 	VM         VM         `yaml:"vm"`

@@ -12,8 +12,7 @@ const docTemplateV2 = `{
         "termsOfService": "http://swagger.io/terms/",
         "contact": {
             "name": "Support",
-            "url": "https://github.com/kthcloud/go-deploy",
-            "email": "support@swagger.io"
+            "url": "https://github.com/kthcloud/go-deploy"
         },
         "license": {
             "name": "MIT License",
