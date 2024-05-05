@@ -272,6 +272,20 @@ func TestUpdateInternalPort(t *testing.T) {
 	v1.UpdateDeployment(t, deployment.ID, deploymentUpdate)
 }
 
+func TestUpdateName(t *testing.T) {
+	t.Parallel()
+
+	deployment, _ := v1.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
+
+	newName := e2e.GenName()
+
+	deploymentUpdate := body.DeploymentUpdate{
+		Name: &newName,
+	}
+
+	v1.UpdateDeployment(t, deployment.ID, deploymentUpdate)
+}
+
 func TestCommand(t *testing.T) {
 	t.Parallel()
 

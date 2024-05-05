@@ -333,16 +333,13 @@ func (c *Client) EnsureOwner(id string, oldOwnerID string) error {
 		return fmt.Errorf("failed to update k8s owner for deployment %s. details: %w", id, err)
 	}
 
-	// Since ownership is determined by the namespace, and the namespace owns everything,
-	// We need to recreate everything
-
-	// Delete everything related to the deployment in the old namespace
+	// Delete everything related to the deployment
 	err := c.Delete(id, oldOwnerID)
 	if err != nil {
 		return makeError(err)
 	}
 
-	// Create everything related to the deployment in the new namespace
+	// Create everything related to the deployment
 	err = c.Repair(id)
 	if err != nil {
 		return makeError(err)
