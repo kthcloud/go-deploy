@@ -15,6 +15,7 @@ import (
 // @Tags VM
 // @Accept  json
 // @Produce  json
+// @Security ApiKeyAuth
 // @Param vmId path string true "VM ID"
 // @Param body body body.VmCommand true "Command body"
 // @Success 200 {empty} empty

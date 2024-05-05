@@ -21,6 +21,7 @@ import (
 // @Tags User
 // @Accept  json
 // @Produce  json
+// @Security ApiKeyAuth
 // @Param userId path string true "User ID"
 // @Success 200 {object}  body.UserRead
 // @Failure 400 {object} sys.ErrorResponse
@@ -76,7 +77,12 @@ func GetUser(c *gin.Context) {
 // @Tags User
 // @Accept  json
 // @Produce  json
-// @Param all query bool false "Want all users"
+// @Security ApiKeyAuth
+// @Param all query bool false "List all"
+// @Param discover query bool false "Discovery mode"
+// @Param search query string false "Search query"
+// @Param page query int false "Page number"
+// @Param pageSize query int false "Number of items per page"
 // @Success 200 {array}  body.UserRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
@@ -143,6 +149,7 @@ func ListUsers(c *gin.Context) {
 // @Tags User
 // @Accept  json
 // @Produce  json
+// @Security ApiKeyAuth
 // @Param userId path string true "User ID"
 // @Param body body body.UserUpdate true "User update"
 // @Success 200 {object} body.UserRead

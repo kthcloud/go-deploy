@@ -15,6 +15,7 @@ import (
 // @Tags Deployment
 // @Accept  json
 // @Produce  json
+// @Security ApiKeyAuth
 // @Param deploymentId path string true "Deployment ID"
 // @Param body body body.DeploymentCommand true "Command body"
 // @Success 200 {empty} empty

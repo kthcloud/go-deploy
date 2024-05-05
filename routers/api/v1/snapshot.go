@@ -22,7 +22,7 @@ import (
 // @Tags VM
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "Bearer token"
+// @Security ApiKeyAuth
 // @Param vmId path string true "VM ID"
 // @Param snapshotId path string true "Snapshot ID"
 // @Success 200 {object} body.VmSnapshotRead
@@ -78,8 +78,10 @@ func GetSnapshot(c *gin.Context) {
 // @Tags VM
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "Bearer token"
+// @Security ApiKeyAuth
 // @Param vmId path string true "VM ID"
+// @Param page query int false "Page number"
+// @Param pageSize query int false "Number of items per page"
 // @Success 200 {array} body.VmSnapshotRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
@@ -128,7 +130,7 @@ func ListSnapshots(c *gin.Context) {
 // @Tags VM
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "Bearer token"
+// @Security ApiKeyAuth
 // @Param vmId path string true "VM ID"
 // @Success 200 {object} body.VmSnapshotRead
 // @Failure 400 {object} sys.ErrorResponse
@@ -220,7 +222,7 @@ func CreateSnapshot(c *gin.Context) {
 // @Tags VM
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "Bearer token"
+// @Security ApiKeyAuth
 // @Param vmId path string true "VM ID"
 // @Param snapshotId path string true "Snapshot ID"
 // @Success 200 {object} body.VmSnapshotRead

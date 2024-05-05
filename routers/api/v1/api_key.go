@@ -16,6 +16,7 @@ import (
 // @Tags User
 // @Accept  json
 // @Produce  json
+// @Security ApiKeyAuth
 // @Param userId path string true "User ID"
 // @Param body body body.ApiKeyCreate true "API key create body"
 // @Success 200 {object}  body.ApiKeyCreated

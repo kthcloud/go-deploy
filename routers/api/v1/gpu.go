@@ -24,6 +24,7 @@ import (
 // @Tags VM
 // @Accept  json
 // @Produce  json
+// @Security ApiKeyAuth
 // @Param available query bool false "Only show available GPUs"
 // @Success 200 {array} body.GpuRead
 // @Failure 400 {object} sys.ErrorResponse

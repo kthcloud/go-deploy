@@ -9,7 +9,16 @@ const docTemplateV2 = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "contact": {},
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "Support",
+            "url": "https://github.com/kthcloud/go-deploy",
+            "email": "support@swagger.io"
+        },
+        "license": {
+            "name": "MIT License",
+            "url": "https://github.com/kthcloud/go-deploy?tab=MIT-1-ov-file#readme"
+        },
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
@@ -17,6 +26,11 @@ const docTemplateV2 = `{
     "paths": {
         "/v2/gpuGroups": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "List GPU groups",
                 "consumes": [
                     "application/json"
@@ -30,16 +44,15 @@ const docTemplateV2 = `{
                 "summary": "List GPU groups",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Bearer token",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
                     },
                     {
-                        "type": "string",
-                        "description": "VM ID",
-                        "name": "vmId",
+                        "type": "integer",
+                        "description": "Number of items per page",
+                        "name": "pageSize",
                         "in": "query"
                     }
                 ],
@@ -82,6 +95,11 @@ const docTemplateV2 = `{
         },
         "/v2/gpuGroups/{gpuGroupId}": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Get GPU group",
                 "consumes": [
                     "application/json"
@@ -94,13 +112,6 @@ const docTemplateV2 = `{
                 ],
                 "summary": "Get GPU group",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer token",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
                     {
                         "type": "string",
                         "description": "GPU group ID",
@@ -145,6 +156,11 @@ const docTemplateV2 = `{
         },
         "/v2/gpuLeases": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "List GPU leases",
                 "consumes": [
                     "application/json"
@@ -158,16 +174,27 @@ const docTemplateV2 = `{
                 "summary": "List GPU leases",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Bearer token",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
+                        "type": "boolean",
+                        "description": "List all",
+                        "name": "all",
+                        "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "VM ID",
+                        "description": "Filter by VM ID",
                         "name": "vmId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page",
+                        "name": "pageSize",
                         "in": "query"
                     }
                 ],
@@ -208,6 +235,11 @@ const docTemplateV2 = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Create GPU lease",
                 "consumes": [
                     "application/json"
@@ -220,13 +252,6 @@ const docTemplateV2 = `{
                 ],
                 "summary": "Create GPU Lease",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer token",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
                     {
                         "description": "GPU lease",
                         "name": "body",
@@ -267,6 +292,11 @@ const docTemplateV2 = `{
         },
         "/v2/gpuLeases/{gpuLeaseId}": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Get GPU lease",
                 "consumes": [
                     "application/json"
@@ -279,13 +309,6 @@ const docTemplateV2 = `{
                 ],
                 "summary": "Get GPU lease",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer token",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
                     {
                         "type": "string",
                         "description": "GPU lease ID",
@@ -328,6 +351,11 @@ const docTemplateV2 = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Update GPU lease",
                 "consumes": [
                     "application/json"
@@ -340,13 +368,6 @@ const docTemplateV2 = `{
                 ],
                 "summary": "Update GPU lease",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer token",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
                     {
                         "type": "string",
                         "description": "GPU lease ID",
@@ -392,6 +413,11 @@ const docTemplateV2 = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Delete GPU lease",
                 "consumes": [
                     "application/json"
@@ -404,13 +430,6 @@ const docTemplateV2 = `{
                 ],
                 "summary": "Delete GPU lease",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer token",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
                     {
                         "type": "string",
                         "description": "GPU lease ID",
@@ -449,6 +468,11 @@ const docTemplateV2 = `{
         },
         "/v2/snapshots": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "List snapshots",
                 "consumes": [
                     "application/json"
@@ -463,17 +487,22 @@ const docTemplateV2 = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Bearer token",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "VM ID",
+                        "description": "Filter by VM ID",
                         "name": "vmId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page",
+                        "name": "pageSize",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -513,6 +542,11 @@ const docTemplateV2 = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Create snapshot",
                 "consumes": [
                     "application/json"
@@ -525,13 +559,6 @@ const docTemplateV2 = `{
                 ],
                 "summary": "Create snapshot",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer token",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
                     {
                         "type": "string",
                         "description": "VM ID",
@@ -570,6 +597,11 @@ const docTemplateV2 = `{
         },
         "/v2/vmActions": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Creates a new action",
                 "consumes": [
                     "application/json"
@@ -629,7 +661,12 @@ const docTemplateV2 = `{
         },
         "/v2/vms": {
             "get": {
-                "description": "GetVM list of VMs",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List VMs",
                 "consumes": [
                     "application/json"
                 ],
@@ -639,17 +676,17 @@ const docTemplateV2 = `{
                 "tags": [
                     "VM"
                 ],
-                "summary": "GetVM list of VMs",
+                "summary": "List VMs",
                 "parameters": [
                     {
                         "type": "boolean",
-                        "description": "GetVM all",
+                        "description": "List all",
                         "name": "all",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Filter by user id",
+                        "description": "Filter by user ID",
                         "name": "userId",
                         "in": "query"
                     },
@@ -703,7 +740,12 @@ const docTemplateV2 = `{
                 }
             },
             "post": {
-                "description": "CreateVM VM",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create VM",
                 "consumes": [
                     "application/json"
                 ],
@@ -713,7 +755,7 @@ const docTemplateV2 = `{
                 "tags": [
                     "VM"
                 ],
-                "summary": "CreateVM VM",
+                "summary": "Create VM",
                 "parameters": [
                     {
                         "description": "VM body",
@@ -761,7 +803,12 @@ const docTemplateV2 = `{
         },
         "/v2/vms/{vmId}": {
             "get": {
-                "description": "GetVM VM by id",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get VM",
                 "consumes": [
                     "application/json"
                 ],
@@ -771,7 +818,7 @@ const docTemplateV2 = `{
                 "tags": [
                     "VM"
                 ],
-                "summary": "GetVM VM by id",
+                "summary": "Get VM",
                 "parameters": [
                     {
                         "type": "string",
@@ -809,7 +856,12 @@ const docTemplateV2 = `{
                 }
             },
             "post": {
-                "description": "Updates a VM",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Update VM",
                 "consumes": [
                     "application/json"
                 ],
@@ -819,15 +871,8 @@ const docTemplateV2 = `{
                 "tags": [
                     "VM"
                 ],
-                "summary": "Updates a VM",
+                "summary": "Update VM",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer token",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
                     {
                         "type": "string",
                         "description": "VM ID",
@@ -879,6 +924,11 @@ const docTemplateV2 = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Delete VM",
                 "consumes": [
                     "application/json"
@@ -935,6 +985,11 @@ const docTemplateV2 = `{
         },
         "/v2/vms/{vmId}/snapshot/{snapshotId}": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Get snapshot",
                 "consumes": [
                     "application/json"
@@ -947,13 +1002,6 @@ const docTemplateV2 = `{
                 ],
                 "summary": "Get snapshot",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer token",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
                     {
                         "type": "string",
                         "description": "VM ID",
@@ -997,6 +1045,11 @@ const docTemplateV2 = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Delete snapshot",
                 "consumes": [
                     "application/json"
@@ -1009,13 +1062,6 @@ const docTemplateV2 = `{
                 ],
                 "summary": "Delete snapshot",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer token",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
                     {
                         "type": "string",
                         "description": "VM ID",
@@ -1394,7 +1440,7 @@ const docTemplateV2 = `{
             "properties": {
                 "cpuCores": {
                     "type": "integer",
-                    "minimum": 2
+                    "minimum": 1
                 },
                 "diskSize": {
                     "type": "integer",
@@ -1642,17 +1688,24 @@ const docTemplateV2 = `{
                 }
             }
         }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "X-Api-Key",
+            "in": "header"
+        }
     }
 }`
 
 // SwaggerInfoV2 holds exported Swagger Info so clients can modify it
 var SwaggerInfoV2 = &swag.Spec{
-	Version:          "",
+	Version:          "1.0",
 	Host:             "",
 	BasePath:         "",
 	Schemes:          []string{},
-	Title:            "",
-	Description:      "",
+	Title:            "go-deploy API",
+	Description:      "This is the API explorer for the go-deploy API. You can use it as a reference for the API endpoints.",
 	InfoInstanceName: "V2",
 	SwaggerTemplate:  docTemplateV2,
 	LeftDelim:        "{{",

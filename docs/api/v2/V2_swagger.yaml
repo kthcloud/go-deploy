@@ -242,7 +242,7 @@ definitions:
   go-deploy_dto_v2_body.VmCreate:
     properties:
       cpuCores:
-        minimum: 2
+        minimum: 1
         type: integer
       diskSize:
         minimum: 10
@@ -429,7 +429,18 @@ definitions:
         type: array
     type: object
 info:
-  contact: {}
+  contact:
+    email: support@swagger.io
+    name: Support
+    url: https://github.com/kthcloud/go-deploy
+  description: This is the API explorer for the go-deploy API. You can use it as a
+    reference for the API endpoints.
+  license:
+    name: MIT License
+    url: https://github.com/kthcloud/go-deploy?tab=MIT-1-ov-file#readme
+  termsOfService: http://swagger.io/terms/
+  title: go-deploy API
+  version: "1.0"
 paths:
   /v2/gpuGroups:
     get:
@@ -437,15 +448,14 @@ paths:
       - application/json
       description: List GPU groups
       parameters:
-      - description: Bearer token
-        in: header
-        name: Authorization
-        required: true
-        type: string
-      - description: VM ID
+      - description: Page number
         in: query
-        name: vmId
-        type: string
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        type: integer
       produces:
       - application/json
       responses:
@@ -471,6 +481,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: List GPU groups
       tags:
       - GpuGroup
@@ -480,11 +492,6 @@ paths:
       - application/json
       description: Get GPU group
       parameters:
-      - description: Bearer token
-        in: header
-        name: Authorization
-        required: true
-        type: string
       - description: GPU group ID
         in: path
         name: gpuGroupId
@@ -513,6 +520,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Get GPU group
       tags:
       - GpuGroup
@@ -522,15 +531,22 @@ paths:
       - application/json
       description: List GPU leases
       parameters:
-      - description: Bearer token
-        in: header
-        name: Authorization
-        required: true
-        type: string
-      - description: VM ID
+      - description: List all
+        in: query
+        name: all
+        type: boolean
+      - description: Filter by VM ID
         in: query
         name: vmId
         type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        type: integer
       produces:
       - application/json
       responses:
@@ -556,6 +572,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: List GPU leases
       tags:
       - GpuLease
@@ -564,11 +582,6 @@ paths:
       - application/json
       description: Create GPU lease
       parameters:
-      - description: Bearer token
-        in: header
-        name: Authorization
-        required: true
-        type: string
       - description: GPU lease
         in: body
         name: body
@@ -594,6 +607,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Create GPU Lease
       tags:
       - GpuLease
@@ -603,11 +618,6 @@ paths:
       - application/json
       description: Delete GPU lease
       parameters:
-      - description: Bearer token
-        in: header
-        name: Authorization
-        required: true
-        type: string
       - description: GPU lease ID
         in: path
         name: gpuLeaseId
@@ -632,6 +642,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Delete GPU lease
       tags:
       - GpuLease
@@ -640,11 +652,6 @@ paths:
       - application/json
       description: Get GPU lease
       parameters:
-      - description: Bearer token
-        in: header
-        name: Authorization
-        required: true
-        type: string
       - description: GPU lease ID
         in: path
         name: gpuLeaseId
@@ -673,6 +680,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Get GPU lease
       tags:
       - GpuLease
@@ -681,11 +690,6 @@ paths:
       - application/json
       description: Update GPU lease
       parameters:
-      - description: Bearer token
-        in: header
-        name: Authorization
-        required: true
-        type: string
       - description: GPU lease ID
         in: path
         name: gpuLeaseId
@@ -716,6 +720,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Update GPU lease
       tags:
       - GpuLease
@@ -725,16 +731,19 @@ paths:
       - application/json
       description: List snapshots
       parameters:
-      - description: Bearer token
-        in: header
-        name: Authorization
-        required: true
-        type: string
-      - description: VM ID
+      - description: Filter by VM ID
         in: path
         name: vmId
         required: true
         type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        type: integer
       produces:
       - application/json
       responses:
@@ -760,6 +769,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: List snapshots
       tags:
       - Snapshot
@@ -768,11 +779,6 @@ paths:
       - application/json
       description: Create snapshot
       parameters:
-      - description: Bearer token
-        in: header
-        name: Authorization
-        required: true
-        type: string
       - description: VM ID
         in: path
         name: vmId
@@ -797,6 +803,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Create snapshot
       tags:
       - Snapshot
@@ -836,6 +844,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Creates a new action
       tags:
       - VmAction
@@ -843,13 +853,13 @@ paths:
     get:
       consumes:
       - application/json
-      description: GetVM list of VMs
+      description: List VMs
       parameters:
-      - description: GetVM all
+      - description: List all
         in: query
         name: all
         type: boolean
-      - description: Filter by user id
+      - description: Filter by user ID
         in: query
         name: userId
         type: string
@@ -886,13 +896,15 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
-      summary: GetVM list of VMs
+      security:
+      - ApiKeyAuth: []
+      summary: List VMs
       tags:
       - VM
     post:
       consumes:
       - application/json
-      description: CreateVM VM
+      description: Create VM
       parameters:
       - description: VM body
         in: body
@@ -923,7 +935,9 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
-      summary: CreateVM VM
+      security:
+      - ApiKeyAuth: []
+      summary: Create VM
       tags:
       - VM
   /v2/vms/{vmId}:
@@ -960,13 +974,15 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Delete VM
       tags:
       - VM
     get:
       consumes:
       - application/json
-      description: GetVM VM by id
+      description: Get VM
       parameters:
       - description: VM ID
         in: path
@@ -992,19 +1008,16 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
-      summary: GetVM VM by id
+      security:
+      - ApiKeyAuth: []
+      summary: Get VM
       tags:
       - VM
     post:
       consumes:
       - application/json
-      description: Updates a VM
+      description: Update VM
       parameters:
-      - description: Bearer token
-        in: header
-        name: Authorization
-        required: true
-        type: string
       - description: VM ID
         in: path
         name: vmId
@@ -1039,7 +1052,9 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
-      summary: Updates a VM
+      security:
+      - ApiKeyAuth: []
+      summary: Update VM
       tags:
       - VM
   /v2/vms/{vmId}/snapshot/{snapshotId}:
@@ -1048,11 +1063,6 @@ paths:
       - application/json
       description: Delete snapshot
       parameters:
-      - description: Bearer token
-        in: header
-        name: Authorization
-        required: true
-        type: string
       - description: VM ID
         in: path
         name: vmId
@@ -1082,6 +1092,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Delete snapshot
       tags:
       - Snapshot
@@ -1090,11 +1102,6 @@ paths:
       - application/json
       description: Get snapshot
       parameters:
-      - description: Bearer token
-        in: header
-        name: Authorization
-        required: true
-        type: string
       - description: VM ID
         in: path
         name: vmId
@@ -1124,7 +1131,14 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Get snapshot
       tags:
       - Snapshot
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: X-Api-Key
+    type: apiKey
 swagger: "2.0"

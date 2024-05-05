@@ -431,7 +431,6 @@ definitions:
         type: object
     required:
     - resourceID
-    - status
     - type
     type: object
   body.ResourceMigrationCreated:
@@ -588,9 +587,15 @@ definitions:
         type: string
       email:
         type: string
+      firstName:
+        type: string
+      gravatarUrl:
+        type: string
       id:
         type: string
       joinedAt:
+        type: string
+      lastName:
         type: string
       memberStatus:
         type: string
@@ -795,7 +800,7 @@ definitions:
     properties:
       name:
         type: string
-      reported_at:
+      reportedAt:
         type: string
       status:
         type: string
@@ -1105,7 +1110,18 @@ definitions:
         type: array
     type: object
 info:
-  contact: {}
+  contact:
+    email: support@swagger.io
+    name: Support
+    url: https://github.com/kthcloud/go-deploy
+  description: This is the API explorer for the go-deploy API. You can use it as a
+    reference for the API endpoints.
+  license:
+    name: MIT License
+    url: https://github.com/kthcloud/go-deploy?tab=MIT-1-ov-file#readme
+  termsOfService: http://swagger.io/terms/
+  title: go-deploy API
+  version: "1.0"
 paths:
   /v1/deployments:
     get:
@@ -1113,16 +1129,11 @@ paths:
       - application/json
       description: List deployments
       parameters:
-      - description: Bearer token
-        in: header
-        name: Authorization
-        required: true
-        type: string
-      - description: GetDeployment all
+      - description: List all
         in: query
         name: all
         type: boolean
-      - description: Filter by user id
+      - description: Filter by user ID
         in: query
         name: userId
         type: string
@@ -1155,6 +1166,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: List deployments
       tags:
       - Deployment
@@ -1163,11 +1176,6 @@ paths:
       - application/json
       description: Create deployment
       parameters:
-      - description: Bearer token
-        in: header
-        name: Authorization
-        required: true
-        type: string
       - description: Deployment body
         in: body
         name: body
@@ -1189,41 +1197,9 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Create deployment
-      tags:
-      - Deployment
-  /v1/deployments/{deployment_id}:
-    get:
-      consumes:
-      - application/json
-      description: Get deployment
-      parameters:
-      - description: Bearer token
-        in: header
-        name: Authorization
-        required: true
-        type: string
-      - description: Deployment ID
-        in: path
-        name: deploymentId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/body.DeploymentRead'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/sys.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/sys.ErrorResponse'
-      summary: Get deployment
       tags:
       - Deployment
   /v1/deployments/{deploymentId}:
@@ -1232,11 +1208,6 @@ paths:
       - application/json
       description: Delete deployment
       parameters:
-      - description: Bearer token
-        in: header
-        name: Authorization
-        required: true
-        type: string
       - description: Deployment ID
         in: path
         name: deploymentId
@@ -1265,7 +1236,39 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Delete deployment
+      tags:
+      - Deployment
+    get:
+      consumes:
+      - application/json
+      description: Get deployment
+      parameters:
+      - description: Deployment ID
+        in: path
+        name: deploymentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.DeploymentRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get deployment
       tags:
       - Deployment
     post:
@@ -1273,11 +1276,6 @@ paths:
       - application/json
       description: Update deployment
       parameters:
-      - description: Bearer token
-        in: header
-        name: Authorization
-        required: true
-        type: string
       - description: Deployment ID
         in: path
         name: deploymentId
@@ -1304,6 +1302,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Update deployment
       tags:
       - Deployment
@@ -1333,6 +1333,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Get CI config
       tags:
       - Deployment
@@ -1376,6 +1378,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Do command
       tags:
       - Deployment
@@ -1409,6 +1413,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Get logs using Server-Sent Events
       tags:
       - Deployment
@@ -1477,11 +1483,11 @@ paths:
       - application/json
       description: List jobs
       parameters:
-      - description: GetJob all
+      - description: List all
         in: query
         name: all
         type: boolean
-      - description: Filter by user id
+      - description: Filter by user ID
         in: query
         name: userId
         type: string
@@ -1510,6 +1516,8 @@ paths:
             items:
               $ref: '#/definitions/body.JobRead'
             type: array
+      security:
+      - ApiKeyAuth: []
       summary: List jobs
       tags:
       - Job
@@ -1531,13 +1539,15 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/body.JobRead'
+      security:
+      - ApiKeyAuth: []
       summary: GetJob job by id
       tags:
       - Job
     post:
       consumes:
       - application/json
-      description: Update job
+      description: Update job. Only allowed for admins.
       parameters:
       - description: Job ID
         in: path
@@ -1557,6 +1567,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/body.JobRead'
+      security:
+      - ApiKeyAuth: []
       summary: Update job
       tags:
       - Job
@@ -1585,11 +1597,11 @@ paths:
       - application/json
       description: List notifications
       parameters:
-      - description: GetNotification all notifications
+      - description: List all notifications
         in: query
         name: all
         type: boolean
-      - description: GetNotification notifications by user id
+      - description: Filter by user ID
         in: query
         name: userId
         type: string
@@ -1614,6 +1626,8 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: List notifications
       tags:
       - Notification
@@ -1637,6 +1651,8 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Delete notification
       tags:
       - Notification
@@ -1661,6 +1677,8 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Get notification
       tags:
       - Notification
@@ -1689,6 +1707,8 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Update notification
       tags:
       - Notification
@@ -1697,6 +1717,15 @@ paths:
       consumes:
       - application/json
       description: List resource migrations
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        type: integer
       produces:
       - application/json
       responses:
@@ -1718,6 +1747,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: List resource migrations
       tags:
       - ResourceMigration
@@ -1751,6 +1782,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Create resource migration
       tags:
       - ResourceMigration
@@ -1782,6 +1815,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Delete resource migration
       tags:
       - ResourceMigration
@@ -1814,6 +1849,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Get resource migration
       tags:
       - ResourceMigration
@@ -1852,6 +1889,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Update resource migration
       tags:
       - ResourceMigration
@@ -1886,11 +1925,18 @@ paths:
       - application/json
       description: Get storage manager list
       parameters:
-      - description: Bearer token
-        in: header
-        name: Authorization
-        required: true
-        type: string
+      - description: List all
+        in: query
+        name: all
+        type: boolean
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        type: integer
       produces:
       - application/json
       responses:
@@ -1912,6 +1958,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Get storage manager list
       tags:
       - StorageManager
@@ -1921,11 +1969,6 @@ paths:
       - application/json
       description: Delete storage manager
       parameters:
-      - description: Bearer token
-        in: header
-        name: Authorization
-        required: true
-        type: string
       - description: Storage manager ID
         in: path
         name: storageManagerId
@@ -1954,6 +1997,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Delete storage manager
       tags:
       - StorageManager
@@ -1963,19 +2008,19 @@ paths:
       - application/json
       description: List teams
       parameters:
-      - description: All teams
+      - description: List all
         in: query
         name: all
         type: boolean
-      - description: User ID
+      - description: Filter by user ID
         in: query
         name: userId
         type: string
-      - description: Page
+      - description: Page number
         in: query
         name: page
         type: integer
-      - description: Page Size
+      - description: Number of items per page
         in: query
         name: pageSize
         type: integer
@@ -1996,6 +2041,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: List teams
       tags:
       - Team
@@ -2025,6 +2072,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Create team
       tags:
       - Team
@@ -2052,6 +2101,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Delete team
       tags:
       - Team
@@ -2080,6 +2131,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Get team
       tags:
       - Team
@@ -2114,6 +2167,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Update team
       tags:
       - Team
@@ -2123,10 +2178,26 @@ paths:
       - application/json
       description: List users
       parameters:
-      - description: Want all users
+      - description: List all
         in: query
         name: all
         type: boolean
+      - description: Discovery mode
+        in: query
+        name: discover
+        type: boolean
+      - description: Search query
+        in: query
+        name: search
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        type: integer
       produces:
       - application/json
       responses:
@@ -2144,6 +2215,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: List users
       tags:
       - User
@@ -2173,6 +2246,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Get user
       tags:
       - User
@@ -2207,6 +2282,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Update user
       tags:
       - User
@@ -2221,7 +2298,7 @@ paths:
         name: userId
         required: true
         type: string
-      - description: API key create request
+      - description: API key create body
         in: body
         name: body
         required: true
@@ -2242,6 +2319,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Create API key
       tags:
       - User
@@ -2251,11 +2330,11 @@ paths:
       - application/json
       description: List VMs
       parameters:
-      - description: GetVM all
+      - description: List all
         in: query
         name: all
         type: boolean
-      - description: Filter by user id
+      - description: Filter by user ID
         in: query
         name: userId
         type: string
@@ -2280,6 +2359,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: List VMs
       tags:
       - VM
@@ -2321,6 +2402,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Create VM
       tags:
       - VM
@@ -2362,6 +2445,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: DeleteVM VM
       tags:
       - VM
@@ -2394,6 +2479,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Get VM
       tags:
       - VM
@@ -2402,11 +2489,6 @@ paths:
       - application/json
       description: UpdateVM VM
       parameters:
-      - description: Bearer token
-        in: header
-        name: Authorization
-        required: true
-        type: string
       - description: VM ID
         in: path
         name: vmId
@@ -2445,6 +2527,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: UpdateVM VM
       tags:
       - VM
@@ -2488,6 +2572,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Do command
       tags:
       - VM
@@ -2497,11 +2583,6 @@ paths:
       - application/json
       description: Delete snapshot
       parameters:
-      - description: Bearer token
-        in: header
-        name: Authorization
-        required: true
-        type: string
       - description: VM ID
         in: path
         name: vmId
@@ -2531,6 +2612,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Delete snapshot
       tags:
       - VM
@@ -2539,11 +2622,6 @@ paths:
       - application/json
       description: Get snapshot
       parameters:
-      - description: Bearer token
-        in: header
-        name: Authorization
-        required: true
-        type: string
       - description: VM ID
         in: path
         name: vmId
@@ -2573,6 +2651,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Get snapshot
       tags:
       - VM
@@ -2582,16 +2662,19 @@ paths:
       - application/json
       description: List snapshots
       parameters:
-      - description: Bearer token
-        in: header
-        name: Authorization
-        required: true
-        type: string
       - description: VM ID
         in: path
         name: vmId
         required: true
         type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        type: integer
       produces:
       - application/json
       responses:
@@ -2617,6 +2700,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: List snapshots
       tags:
       - VM
@@ -2625,11 +2710,6 @@ paths:
       - application/json
       description: Create snapshot
       parameters:
-      - description: Bearer token
-        in: header
-        name: Authorization
-        required: true
-        type: string
       - description: VM ID
         in: path
         name: vmId
@@ -2654,6 +2734,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Create snapshot
       tags:
       - VM
@@ -2692,6 +2774,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Get list of GPUs
       tags:
       - VM
@@ -2700,11 +2784,6 @@ paths:
       consumes:
       - application/json
       description: List zones
-      parameters:
-      - description: Zone type
-        in: query
-        name: type
-        type: string
       produces:
       - application/json
       responses:
@@ -2722,7 +2801,14 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: List zones
       tags:
       - Zone
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: X-Api-Key
+    type: apiKey
 swagger: "2.0"

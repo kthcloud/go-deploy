@@ -119,6 +119,11 @@ func (context *ClientContext) NotModified() {
 	context.GinContext.Status(http.StatusNotModified)
 }
 
+// NotImplemented is a helper function to return a not implemented response.
+func (context *ClientContext) NotImplemented() {
+	context.GinContext.Status(http.StatusNotImplemented)
+}
+
 // OkCreated is a helper function to return a created response.
 func (context *ClientContext) OkCreated(data interface{}) {
 	context.GinContext.JSON(http.StatusCreated, data)
