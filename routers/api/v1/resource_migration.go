@@ -20,6 +20,7 @@ import (
 // @Tags ResourceMigration
 // @Accept  json
 // @Produce  json
+// @Security ApiKeyAuth
 // @Param resourceMigrationId path string true "Resource Migration ID"
 // @Success 200 {object} body.ResourceMigrationRead
 // @Failure 400 {object} sys.ErrorResponse
@@ -61,6 +62,9 @@ func GetResourceMigration(c *gin.Context) {
 // @Tags ResourceMigration
 // @Accept  json
 // @Produce  json
+// @Security ApiKeyAuth
+// @Param page query int false "Page number"
+// @Param pageSize query int false "Number of items per page"
 // @Success 200 {array} body.ResourceMigrationRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 401 {object} sys.ErrorResponse
@@ -106,6 +110,7 @@ func ListResourceMigrations(c *gin.Context) {
 // @Tags ResourceMigration
 // @Accept  json
 // @Produce  json
+// @Security ApiKeyAuth
 // @Param body body body.ResourceMigrationCreate true "Resource Migration Create"
 // @Success 200 {object} body.ResourceMigrationCreated
 // @Failure 400 {object} sys.ErrorResponse
@@ -171,6 +176,7 @@ func CreateResourceMigration(c *gin.Context) {
 // @Tags ResourceMigration
 // @Accept  json
 // @Produce  json
+// @Security ApiKeyAuth
 // @Param resourceMigrationId path string true "Resource Migration ID"
 // @Param body body body.ResourceMigrationUpdate true "Resource Migration Update"
 // @Success 200 {object} body.ResourceMigrationUpdated
@@ -270,6 +276,7 @@ func UpdateResourceMigration(c *gin.Context) {
 // @Tags ResourceMigration
 // @Accept  json
 // @Produce  json
+// @Security ApiKeyAuth
 // @Param resourceMigrationId path string true "Resource Migration ID"
 // @Success 204 "No Content"
 // @Failure 400 {object} sys.ErrorResponse

@@ -11,7 +11,8 @@ type Push struct {
 }
 
 type On struct {
-	Push Push `yaml:"push"`
+	Push             Push     `yaml:"push"`
+	WorkflowDispatch struct{} `yaml:"workflow_dispatch"`
 }
 
 type With struct {

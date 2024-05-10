@@ -20,11 +20,12 @@ import (
 )
 
 // GetVM
-// @Summary GetVM VM by id
-// @Description GetVM VM by id
+// @Summary Get VM
+// @Description Get VM
 // @Tags VM
 // @Accept  json
 // @Produce  json
+// @Security ApiKeyAuth
 // @Param vmId path string true "VM ID"
 // @Success 200 {object} body.VmRead
 // @Failure 400 {object} sys.ErrorResponse
@@ -80,13 +81,14 @@ func GetVM(c *gin.Context) {
 }
 
 // ListVMs
-// @Summary GetVM list of VMs
-// @Description GetVM list of VMs
+// @Summary List VMs
+// @Description List VMs
 // @Tags VM
 // @Accept  json
 // @Produce  json
-// @Param all query bool false "GetVM all"
-// @Param userId query string false "Filter by user id"
+// @Security ApiKeyAuth
+// @Param all query bool false "List all"
+// @Param userId query string false "Filter by user ID"
 // @Param page query int false "Page number"
 // @Param pageSize query int false "Number of items per page"
 // @Success 200 {array} body.VmRead
@@ -147,11 +149,12 @@ func ListVMs(c *gin.Context) {
 }
 
 // CreateVM
-// @Summary CreateVM VM
-// @Description CreateVM VM
+// @Summary Create VM
+// @Description Create VM
 // @Tags VM
 // @Accept  json
 // @Produce  json
+// @Security ApiKeyAuth
 // @Param body body body.VmCreate true "VM body"
 // @Success 200 {object} body.VmCreated
 // @Failure 400 {object} sys.ErrorResponse
@@ -243,6 +246,7 @@ func CreateVM(c *gin.Context) {
 // @Tags VM
 // @Accept  json
 // @Produce  json
+// @Security ApiKeyAuth
 // @Param vmId path string true "VM ID"
 // @Success 200 {object} body.VmDeleted
 // @Failure 400 {object} sys.ErrorResponse
@@ -301,12 +305,12 @@ func DeleteVM(c *gin.Context) {
 }
 
 // UpdateVM
-// @Summary Updates a VM
-// @Description Updates a VM
+// @Summary Update VM
+// @Description Update VM
 // @Tags VM
 // @Accept  json
 // @Produce  json
-// @Param Authorization header string true "Bearer token"
+// @Security ApiKeyAuth
 // @Param vmId path string true "VM ID"
 // @Param body body body.VmUpdate true "VM update"
 // @Success 200 {object} body.VmUpdated

@@ -23,7 +23,7 @@ import (
 // @Tags Snapshot
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "Bearer token"
+// @Security ApiKeyAuth
 // @Param vmId path string true "VM ID"
 // @Param snapshotId path string true "Snapshot ID"
 // @Success 200 {object} body.VmSnapshotRead
@@ -33,6 +33,10 @@ import (
 // @Router /v2/vms/{vmId}/snapshot/{snapshotId} [post]
 func GetSnapshot(c *gin.Context) {
 	context := sys.NewContext(c)
+
+	// Not yet implemented
+	context.NotImplemented()
+	return
 
 	var requestURI uri.VmSnapshotGet
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
@@ -79,8 +83,10 @@ func GetSnapshot(c *gin.Context) {
 // @Tags Snapshot
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "Bearer token"
-// @Param vmId path string true "VM ID"
+// @Security ApiKeyAuth
+// @Param vmId path string true "Filter by VM ID"
+// @Param page query int false "Page number"
+// @Param pageSize query int false "Number of items per page"
 // @Success 200 {array} body.VmSnapshotRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
@@ -89,6 +95,10 @@ func GetSnapshot(c *gin.Context) {
 // @Router /v2/snapshots [get]
 func ListSnapshots(c *gin.Context) {
 	context := sys.NewContext(c)
+
+	// Not yet implemented
+	context.NotImplemented()
+	return
 
 	var requestQuery query.VmSnapshotList
 	if err := context.GinContext.ShouldBind(&requestQuery); err != nil {
@@ -129,7 +139,7 @@ func ListSnapshots(c *gin.Context) {
 // @Tags Snapshot
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "Bearer token"
+// @Security ApiKeyAuth
 // @Param vmId path string true "VM ID"
 // @Success 200 {object} body.VmSnapshotCreated
 // @Failure 400 {object} sys.ErrorResponse
@@ -138,6 +148,10 @@ func ListSnapshots(c *gin.Context) {
 // @Router /v2/snapshots [post]
 func CreateSnapshot(c *gin.Context) {
 	context := sys.NewContext(c)
+
+	// Not yet implemented
+	context.NotImplemented()
+	return
 
 	var requestURI uri.VmSnapshotCreate
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
@@ -227,7 +241,7 @@ func CreateSnapshot(c *gin.Context) {
 // @Tags Snapshot
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "Bearer token"
+// @Security ApiKeyAuth
 // @Param vmId path string true "VM ID"
 // @Param snapshotId path string true "Snapshot ID"
 // @Success 200 {object} body.VmSnapshotDeleted
@@ -237,6 +251,10 @@ func CreateSnapshot(c *gin.Context) {
 // @Router /v2/vms/{vmId}/snapshot/{snapshotId} [delete]
 func DeleteSnapshot(c *gin.Context) {
 	context := sys.NewContext(c)
+
+	// Not yet implemented
+	context.NotImplemented()
+	return
 
 	var requestURI uri.VmSnapshotDelete
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {

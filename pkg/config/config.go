@@ -15,6 +15,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"time"
 )
 
 // Config is the global configuration object.
@@ -42,8 +43,9 @@ func SetupEnvironment(mode string) error {
 		return makeError(err)
 	}
 
-	// Keep this here
 	Config.Mode = mode
+	Config.Filepath = filepath
+	config.LastRoleReload = time.Now()
 
 	log.Println("go-deploy", version.AppVersion)
 
@@ -99,6 +101,22 @@ func setupK8sClusters() error {
 		log.Printf(" - Setting up K8s cluster for zone %s (%d/%d)", zone.Name, idx+1, len(Config.Zones))
 
 		switch configType {
+		case "localPath":
+			{
+				var zoneConfig config.LocalPathConfigSource
+				err := mapstructure.Decode(sourceType, &zoneConfig)
+				if err != nil {
+					return makeError(fmt.Errorf("failed to parse file config source for zone %s. details: %w", zone.Name, err))
+				}
+
+				k8sClient, kubevirtClient, err := createClientFromLocalPathConfig(zone.Name, &zoneConfig)
+				if err != nil {
+					return makeError(err)
+				}
+
+				Config.Zones[idx].K8s.Client = k8sClient
+				Config.Zones[idx].K8s.KubeVirtClient = kubevirtClient
+			}
 		case "rancher":
 			{
 				var zoneConfig config.RancherConfigSource
@@ -138,31 +156,69 @@ func setupK8sClusters() error {
 	return nil
 }
 
-// createClientFromRancherConfig creates a k8s client from a rancher config.
-func createClientFromRancherConfig(name string, config *config.RancherConfigSource) (*kubernetes.Clientset, *kubevirt.Clientset, error) {
+// createClientFromLocalPathConfig creates a k8s client from a local path config.
+func createClientFromLocalPathConfig(zoneName string, config *config.LocalPathConfigSource) (*kubernetes.Clientset, *kubevirt.Clientset, error) {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to create k8s client from rancher config. details: %w", err)
+		return fmt.Errorf("failed to create k8s client from local path config (zone: %s). details: %w", zoneName, err)
 	}
 
-	rancherClient, err := rancher.New(&rancher.ClientConf{
-		URL:    config.URL,
-		ApiKey: config.ApiKey,
-		Secret: config.Secret,
-	})
+	kubeConfig, err := os.ReadFile(config.Path)
 	if err != nil {
 		return nil, nil, makeError(err)
 	}
 
-	kubeConfig, err := rancherClient.ReadClusterKubeConfig(config.ClusterName)
+	return createK8sClients(kubeConfig)
+}
+
+// createClientFromRancherConfig creates a k8s client from a rancher config.
+func createClientFromRancherConfig(zoneName string, config *config.RancherConfigSource) (*kubernetes.Clientset, *kubevirt.Clientset, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to create k8s client from rancher config (zone: %s). details: %w", zoneName, err)
+	}
+
+	// Check cache, if cache/rancher-rancher-cluster-name exists, use it
+	// If not, create a new client and save it to cache
+	if _, err := os.Stat(fmt.Sprintf("cache/rancher-%s.config", config.ClusterName)); os.IsNotExist(err) {
+		rancherClient, err := rancher.New(&rancher.ClientConf{
+			URL:    config.URL,
+			ApiKey: config.ApiKey,
+			Secret: config.Secret,
+		})
+		if err != nil {
+			return nil, nil, makeError(err)
+		}
+
+		kubeConfig, err := rancherClient.ReadClusterKubeConfig(config.ClusterName)
+		if err != nil {
+			return nil, nil, makeError(err)
+		}
+
+		if kubeConfig == "" {
+			return nil, nil, makeError(fmt.Errorf("kubeconfig not found for cluster %s", config.ClusterName))
+		}
+
+		cacheDir := "cache"
+		if _, err := os.Stat(cacheDir); os.IsNotExist(err) {
+			err = os.Mkdir(cacheDir, 0755)
+			if err != nil {
+				return nil, nil, makeError(err)
+			}
+		}
+
+		err = os.WriteFile(fmt.Sprintf("cache/rancher-%s.config", config.ClusterName), []byte(kubeConfig), 0644)
+		if err != nil {
+			return nil, nil, makeError(err)
+		}
+
+		return createK8sClients([]byte(kubeConfig))
+	}
+
+	kubeConfig, err := os.ReadFile(fmt.Sprintf("cache/rancher-%s.config", config.ClusterName))
 	if err != nil {
 		return nil, nil, makeError(err)
 	}
 
-	if kubeConfig == "" {
-		return nil, nil, makeError(fmt.Errorf("kubeconfig not found for cluster %s", config.ClusterName))
-	}
-
-	return createK8sClients([]byte(kubeConfig))
+	return createK8sClients(kubeConfig)
 }
 
 // createClientFromCloudStackConfig creates a k8s client from a cloudstack config.

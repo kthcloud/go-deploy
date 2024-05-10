@@ -11,6 +11,6 @@ import (
 func (c *Client) Discover() (*model.Discover, error) {
 	return &model.Discover{
 		Version: version.AppVersion,
-		Roles:   config.Config.Roles,
+		Roles:   config.Config.GetRoles(),
 	}, nil
 }

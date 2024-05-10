@@ -22,7 +22,7 @@ import (
 // @Tags StorageManager
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "Bearer token"
+// @Security ApiKeyAuth
 // @Param storageManagerId path string true "Storage manager ID"
 // @Success 200 {object} body.SmDeleted
 // @Failure 400 {object} sys.ErrorResponse
@@ -65,7 +65,10 @@ func GetSM(c *gin.Context) {
 // @Tags StorageManager
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "Bearer token"
+// @Security ApiKeyAuth
+// @Param all query bool false "List all"
+// @Param page query int false "Page number"
+// @Param pageSize query int false "Number of items per page"
 // @Success 200 {array} body.SmRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 401 {object} sys.ErrorResponse
@@ -115,7 +118,7 @@ func ListSMs(c *gin.Context) {
 // @Tags StorageManager
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "Bearer token"
+// @Security ApiKeyAuth
 // @Param storageManagerId path string true "Storage manager ID"
 // @Success 200 {object} body.SmDeleted
 // @Failure 400 {object} sys.ErrorResponse

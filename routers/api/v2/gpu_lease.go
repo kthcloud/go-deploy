@@ -23,7 +23,7 @@ import (
 // @Tags GpuLease
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "Bearer token"
+// @Security ApiKeyAuth
 // @Param gpuLeaseId path string true "GPU lease ID"
 // @Success 200 {object} body.GpuLeaseRead
 // @Failure 400 {object} sys.ErrorResponse
@@ -75,8 +75,11 @@ func GetGpuLease(c *gin.Context) {
 // @Tags GpuLease
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "Bearer token"
-// @Param vmId query string false "VM ID"
+// @Security ApiKeyAuth
+// @Param all query bool false "List all"
+// @Param vmId query string false "Filter by VM ID"
+// @Param page query int false "Page number"
+// @Param pageSize query int false "Number of items per page"
 // @Success 200 {array} body.GpuLeaseRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
@@ -149,7 +152,7 @@ func ListGpuLeases(c *gin.Context) {
 // @Tags GpuLease
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "Bearer token"
+// @Security ApiKeyAuth
 // @Param body body body.GpuLeaseCreate true "GPU lease"
 // @Success 200 {object} body.GpuLeaseCreated
 // @Failure 400 {object} sys.ErrorResponse
@@ -237,7 +240,7 @@ func CreateGpuLease(c *gin.Context) {
 // @Tags GpuLease
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "Bearer token"
+// @Security ApiKeyAuth
 // @Param gpuLeaseId path string true "GPU lease ID"
 // @Param body body body.GpuLeaseUpdate true "GPU lease"
 // @Success 200 {object} body.GpuLeaseUpdated
@@ -309,7 +312,7 @@ func UpdateGpuLease(c *gin.Context) {
 // @Tags GpuLease
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "Bearer token"
+// @Security ApiKeyAuth
 // @Param gpuLeaseId path string true "GPU lease ID"
 // @Success 200 {object} body.GpuLeaseDeleted
 // @Failure 400 {object} sys.ErrorResponse
