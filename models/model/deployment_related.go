@@ -21,10 +21,13 @@ const (
 type App struct {
 	Name string `bson:"name"`
 
+	CpuCores float64 `bson:"cpuCores,omitempty"`
+	RAM      float64 `bson:"ram,omitempty"`
+	Replicas int     `bson:"replicas"`
+
 	Image        string             `bson:"image"`
 	InternalPort int                `bson:"internalPort"`
 	Private      bool               `bson:"private"`
-	Replicas     int                `bson:"replicas"`
 	Envs         []DeploymentEnv    `bson:"envs"`
 	Volumes      []DeploymentVolume `bson:"volumes"`
 

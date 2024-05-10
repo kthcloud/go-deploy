@@ -91,12 +91,12 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 			EnvVars:          envVars,
 			Resources: models.Resources{
 				Limits: models.Limits{
-					CPU:    config.Config.Deployment.Resources.Limits.CPU,
-					Memory: config.Config.Deployment.Resources.Limits.Memory,
+					CPU:    fmt.Sprintf("%f", config.Config.Deployment.Resources.Limits.CPU),
+					Memory: fmt.Sprintf("%fGi", config.Config.Deployment.Resources.Limits.RAM),
 				},
 				Requests: models.Requests{
-					CPU:    config.Config.Deployment.Resources.Requests.CPU,
-					Memory: config.Config.Deployment.Resources.Requests.Memory,
+					CPU:    fmt.Sprintf("%f", config.Config.Deployment.Resources.Requests.CPU),
+					Memory: fmt.Sprintf("%fGi", config.Config.Deployment.Resources.Requests.RAM),
 				},
 			},
 			Command:        make([]string, 0),

@@ -65,7 +65,7 @@ func (client *Client) Create(id, owner string, params *model.VmCreateParams) (*m
 		PortMap:      portMap,
 		Activities:   map[string]model.Activity{model.ActivityBeingCreated: {model.ActivityBeingCreated, time.Now()}},
 		Subsystems:   model.Subsystems{},
-		Specs: model.Specs{
+		Specs: model.VmSpecs{
 			CpuCores: params.CpuCores,
 			RAM:      params.RAM,
 			DiskSize: params.DiskSize,

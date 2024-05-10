@@ -25,10 +25,6 @@ var (
 // It will return a NonUniqueFieldErr any unique index was violated.
 func (client *Client) Create(id, ownerID string, params *model.DeploymentCreateParams) (*model.Deployment, error) {
 	appName := "main"
-	replicas := 1
-	if params.Replicas != nil {
-		replicas = *params.Replicas
-	}
 
 	var customDomain *model.CustomDomain
 	if params.CustomDomain != nil {
@@ -40,7 +36,12 @@ func (client *Client) Create(id, ownerID string, params *model.DeploymentCreateP
 	}
 
 	mainApp := model.App{
-		Name:         appName,
+		Name: appName,
+
+		CpuCores: params.CpuCores,
+		RAM:      params.RAM,
+		Replicas: params.Replicas,
+
 		Image:        params.Image,
 		InternalPort: params.InternalPort,
 		Private:      params.Private,
@@ -51,7 +52,6 @@ func (client *Client) Create(id, ownerID string, params *model.DeploymentCreateP
 		CustomDomain: customDomain,
 		PingResult:   0,
 		PingPath:     params.PingPath,
-		Replicas:     replicas,
 	}
 
 	deployment := model.Deployment{
@@ -131,6 +131,8 @@ func (client *Client) UpdateWithParams(id string, params *model.DeploymentUpdate
 	db.AddIfNotNil(&setUpdate, "apps.main.customDomain", customDomain)
 	db.AddIfNotNil(&setUpdate, "apps.main.image", params.Image)
 	db.AddIfNotNil(&setUpdate, "apps.main.pingPath", params.PingPath)
+	db.AddIfNotNil(&setUpdate, "apps.main.cpuCores", params.CpuCores)
+	db.AddIfNotNil(&setUpdate, "apps.main.ram", params.RAM)
 	db.AddIfNotNil(&setUpdate, "apps.main.replicas", params.Replicas)
 
 	err = client.UpdateWithBsonByID(id,

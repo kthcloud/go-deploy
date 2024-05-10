@@ -198,11 +198,19 @@ func (c *Client) Create(id, ownerID string, deploymentCreate *body.DeploymentCre
 	params := &model.DeploymentCreateParams{}
 	params.FromDTO(deploymentCreate, fallbackZone, fallbackImage, fallbackPort)
 
+	if params.CpuCores == 0 {
+		params.CpuCores = config.Config.Deployment.Resources.Limits.CPU
+	}
+
+	if params.RAM == 0 {
+		params.RAM = config.Config.Deployment.Resources.Limits.RAM
+	}
+
 	if !c.V1.Zones().HasCapability(params.Zone, configModels.ZoneCapabilityDeployment) {
 		return sErrors.NewZoneCapabilityMissingError(params.Zone, configModels.ZoneCapabilityDeployment)
 	}
 
-	d, err := deployment_repo.New().Create(id, ownerID, params)
+	deployment, err := deployment_repo.New().Create(id, ownerID, params)
 	if err != nil {
 		if errors.Is(err, deployment_repo.NonUniqueFieldErr) {
 			return sErrors.NonUniqueFieldErr
@@ -211,11 +219,11 @@ func (c *Client) Create(id, ownerID string, deploymentCreate *body.DeploymentCre
 		return makeError(err)
 	}
 
-	if d == nil {
+	if deployment == nil {
 		return makeError(fmt.Errorf("deployment already exists for another user"))
 	}
 
-	if d.Type == model.DeploymentTypeCustom {
+	if deployment.Type == model.DeploymentTypeCustom {
 		err = c.Harbor().Create(id, params)
 		if err != nil {
 			return makeError(err)
@@ -227,7 +235,7 @@ func (c *Client) Create(id, ownerID string, deploymentCreate *body.DeploymentCre
 		}
 	}
 
-	d, err = c.Refresh(id)
+	deployment, err = c.Refresh(id)
 	if err != nil {
 		return makeError(err)
 	}
