@@ -33,8 +33,23 @@ type App struct {
 
 	CustomDomain *CustomDomain `bson:"customDomain"`
 
+	// ReplicaStatus is a group of fields that describe the status of the replicas.
+	// It is only set for apps that has status update.
+	ReplicaStatus *ReplicaStatus `bson:"replicaStatus,omitempty"`
+
 	PingPath   string `bson:"pingPath"`
 	PingResult int    `bson:"pingResult"`
+}
+
+type ReplicaStatus struct {
+	// DesiredReplicas is the number of replicas that the deployment should have.
+	DesiredReplicas int `bson:"desiredReplicas"`
+	// ReadyReplicas is the number of replicas that are ready.
+	ReadyReplicas int `bson:"readyReplicas"`
+	// AvailableReplicas is the number of replicas that are available.
+	AvailableReplicas int `bson:"availableReplicas"`
+	// UnavailableReplicas is the number of replicas that are unavailable.
+	UnavailableReplicas int `bson:"unavailableReplicas"`
 }
 
 type Log struct {

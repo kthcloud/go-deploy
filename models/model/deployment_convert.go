@@ -90,6 +90,16 @@ func (deployment *Deployment) ToDTO(smURL *string, teams []string) body.Deployme
 		status = deployment.Error.Reason
 	}
 
+	var replicaStatus *body.ReplicaStatus
+	if app.ReplicaStatus != nil {
+		replicaStatus = &body.ReplicaStatus{
+			DesiredReplicas:     app.ReplicaStatus.DesiredReplicas,
+			ReadyReplicas:       app.ReplicaStatus.ReadyReplicas,
+			AvailableReplicas:   app.ReplicaStatus.AvailableReplicas,
+			UnavailableReplicas: app.ReplicaStatus.UnavailableReplicas,
+		}
+	}
+
 	return body.DeploymentRead{
 		ID:      deployment.ID,
 		Name:    deployment.Name,
@@ -118,9 +128,10 @@ func (deployment *Deployment) ToDTO(smURL *string, teams []string) body.Deployme
 		CustomDomainSecret: customDomainSecret,
 		CustomDomainStatus: customDomainStatus,
 
-		Status:     status,
-		Error:      deploymentError,
-		PingResult: pingResult,
+		Status:        status,
+		Error:         deploymentError,
+		ReplicaStatus: replicaStatus,
+		PingResult:    pingResult,
 
 		Integrations: make([]string, 0),
 

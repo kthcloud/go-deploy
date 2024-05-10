@@ -30,9 +30,10 @@ type DeploymentRead struct {
 	CustomDomainStatus *string `json:"customDomainStatus,omitempty"`
 	CustomDomainSecret *string `json:"customDomainSecret,omitempty"`
 
-	Status     string  `json:"status"`
-	Error      *string `json:"error,omitempty"`
-	PingResult *int    `json:"pingResult,omitempty"`
+	Status        string         `json:"status"`
+	Error         *string        `json:"error,omitempty"`
+	ReplicaStatus *ReplicaStatus `json:"replicaStatus,omitempty"`
+	PingResult    *int           `json:"pingResult,omitempty"`
 
 	// Integrations are currently not used, but could be used if we wanted to add a list of integrations to the deployment
 	//
@@ -91,6 +92,17 @@ type DeploymentBuild struct {
 	Tag       string `bson:"tag"`
 	Branch    string `bson:"branch"`
 	ImportURL string `bson:"importUrl"`
+}
+
+type ReplicaStatus struct {
+	// DesiredReplicas is the number of replicas that the deployment should have.
+	DesiredReplicas int `json:"desiredReplicas"`
+	// ReadyReplicas is the number of replicas that are ready.
+	ReadyReplicas int `json:"readyReplicas"`
+	// AvailableReplicas is the number of replicas that are available.
+	AvailableReplicas int `json:"availableReplicas"`
+	// UnavailableReplicas is the number of replicas that are unavailable.
+	UnavailableReplicas int `json:"unavailableReplicas"`
 }
 
 type DeploymentCreated struct {
