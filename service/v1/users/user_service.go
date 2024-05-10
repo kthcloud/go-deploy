@@ -163,11 +163,12 @@ func (c *Client) Discover(opts ...opts.DiscoverOpts) ([]body.UserReadDiscovery, 
 		}
 
 		usersRead = append(usersRead, body.UserReadDiscovery{
-			ID:        user.ID,
-			Username:  user.Username,
-			FirstName: user.FirstName,
-			LastName:  user.LastName,
-			Email:     user.Email,
+			ID:          user.ID,
+			Username:    user.Username,
+			FirstName:   user.FirstName,
+			LastName:    user.LastName,
+			Email:       user.Email,
+			GravatarURL: user.Gravatar.URL,
 		})
 	}
 
