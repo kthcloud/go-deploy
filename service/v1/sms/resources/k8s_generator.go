@@ -67,13 +67,13 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 	}
 
 	defaultLimits := models.Limits{
-		CPU:    config.Config.Deployment.Resources.Limits.CPU,
-		Memory: config.Config.Deployment.Resources.Limits.Memory,
+		CPU:    fmt.Sprintf("%.2fm", config.Config.Deployment.Resources.Limits.CPU),
+		Memory: fmt.Sprintf("%.2fGi", config.Config.Deployment.Resources.Limits.RAM),
 	}
 
 	defaultRequests := models.Requests{
-		CPU:    config.Config.Deployment.Resources.Requests.CPU,
-		Memory: config.Config.Deployment.Resources.Requests.Memory,
+		CPU:    fmt.Sprintf("%.2fm", config.Config.Deployment.Resources.Requests.CPU),
+		Memory: fmt.Sprintf("%.2fGi", config.Config.Deployment.Resources.Requests.RAM),
 	}
 
 	// Filebrowser
@@ -262,7 +262,7 @@ func (kg *K8sGenerator) PVs() []models.PvPublic {
 	for _, v := range allVolumes {
 		res = append(res, models.PvPublic{
 			Name:      smPvName(kg.sm.OwnerID, v.Name),
-			Capacity:  config.Config.Deployment.Resources.Limits.Storage,
+			Capacity:  fmt.Sprintf("%.2fGi", config.Config.Deployment.Resources.Limits.Storage),
 			NfsServer: kg.zone.Storage.NfsServer,
 			NfsPath:   path.Join(kg.zone.Storage.Paths.ParentDeployment, v.ServerPath),
 			Released:  false,
@@ -291,7 +291,7 @@ func (kg *K8sGenerator) PVCs() []models.PvcPublic {
 		res = append(res, models.PvcPublic{
 			Name:      smPvcName(kg.sm.OwnerID, volume.Name),
 			Namespace: kg.namespace,
-			Capacity:  config.Config.Deployment.Resources.Limits.Storage,
+			Capacity:  fmt.Sprintf("%.2fGi", config.Config.Deployment.Resources.Limits.Storage),
 			PvName:    smPvName(kg.sm.OwnerID, volume.Name),
 		})
 	}

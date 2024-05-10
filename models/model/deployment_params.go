@@ -4,6 +4,10 @@ type DeploymentCreateParams struct {
 	Name string
 	Type string
 
+	CpuCores float64
+	RAM      float64
+	Replicas int
+
 	Image        string
 	InternalPort int
 	Private      bool
@@ -13,14 +17,17 @@ type DeploymentCreateParams struct {
 	Args         []string
 	PingPath     string
 	CustomDomain *string
-	Replicas     *int
 
 	Zone string
 }
 
 type DeploymentUpdateParams struct {
-	Name         *string
-	OwnerID      *string
+	Name    *string
+	OwnerID *string
+
+	CpuCores *float64
+	RAM      *float64
+
 	Private      *bool
 	Envs         *[]DeploymentEnv
 	InternalPort *int

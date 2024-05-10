@@ -29,7 +29,7 @@ type VM struct {
 	Activities   map[string]Activity `bson:"activities"`
 
 	Subsystems Subsystems `bson:"subsystems"`
-	Specs      Specs      `bson:"specs"`
+	Specs      VmSpecs    `bson:"specs"`
 
 	// StatusCode
 	// Deprecated: use Status instead
@@ -42,7 +42,7 @@ type VM struct {
 	Status string `bson:"status"`
 }
 
-type Specs struct {
+type VmSpecs struct {
 	CpuCores int `json:"cpuCores"`
 	RAM      int `json:"ram"`
 	DiskSize int `json:"diskSize"`

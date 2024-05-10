@@ -14,6 +14,10 @@ type DeploymentRead struct {
 	RepairedAt  *time.Time `json:"repairedAt,omitempty"`
 	RestartedAt *time.Time `json:"restartedAt,omitempty"`
 
+	CpuCores float64 `json:"cpuCores"`
+	RAM      float64 `json:"ram"`
+	Replicas int     `json:"replicas"`
+
 	URL             *string  `json:"url,omitempty"`
 	Envs            []Env    `json:"envs"`
 	Volumes         []Volume `json:"volumes"`
@@ -23,16 +27,16 @@ type DeploymentRead struct {
 	InternalPort    int      `json:"internalPort"`
 	Image           *string  `json:"image,omitempty"`
 	HealthCheckPath *string  `json:"healthCheckPath,omitempty"`
-	Replicas        int      `json:"replicas"`
 
 	CustomDomain       *string `json:"customDomain,omitempty"`
 	CustomDomainURL    *string `json:"customDomainUrl,omitempty"`
 	CustomDomainStatus *string `json:"customDomainStatus,omitempty"`
 	CustomDomainSecret *string `json:"customDomainSecret,omitempty"`
 
-	Status     string  `json:"status"`
-	Error      *string `json:"error,omitempty"`
-	PingResult *int    `json:"pingResult,omitempty"`
+	Status        string         `json:"status"`
+	Error         *string        `json:"error,omitempty"`
+	ReplicaStatus *ReplicaStatus `json:"replicaStatus,omitempty"`
+	PingResult    *int           `json:"pingResult,omitempty"`
 
 	// Integrations are currently not used, but could be used if we wanted to add a list of integrations to the deployment
 	//
@@ -46,33 +50,45 @@ type DeploymentRead struct {
 type DeploymentCreate struct {
 	Name string `json:"name" bson:"name" binding:"required,rfc1035,min=3,max=30"`
 
-	Image           *string  `json:"image,omitempty" bson:"image,omitempty" binding:"omitempty,min=1,max=1000"`
-	Private         bool     `json:"private" bson:"private" binding:"omitempty,boolean"`
-	Envs            []Env    `json:"envs" bson:"envs" binding:"omitempty,env_list,min=0,max=1000,dive"`
-	Volumes         []Volume `json:"volumes" bson:"volumes" binding:"omitempty,min=0,max=100,dive"`
-	InitCommands    []string `json:"initCommands" bson:"initCommands" binding:"omitempty,min=0,max=100,dive,min=0,max=100"`
-	Args            []string `json:"args" bson:"args" binding:"omitempty,min=0,max=100,dive,min=0,max=100"`
-	HealthCheckPath *string  `json:"healthCheckPath" bson:"healthCheckPath,omitempty" binding:"omitempty,min=0,max=1000,health_check_path"`
-	// CustomDomain is the domain that the deployment will be available on.
-	// The max length is set to 243 to allow for a sub domain when confirming the domain.
-	CustomDomain *string `json:"customDomain,omitempty" bson:"customDomain,omitempty" binding:"omitempty,domain_name"`
-	Replicas     *int    `json:"replicas" bson:"replicas,omitempty" binding:"omitempty,min=0,max=100"`
+	CpuCores *float64 `json:"cpuCores,omitempty" bson:"cpuCores,omitempty" binding:"omitempty,min=0.1"`
+	RAM      *float64 `json:"ram,omitempty" bson:"ram,omitempty" binding:"omitempty,min=0.1"`
+	Replicas *int     `json:"replicas,omitempty" bson:"replicas,omitempty" binding:"omitempty,min=0,max=100"`
 
+	Private      bool     `json:"private" bson:"private" binding:"omitempty,boolean"`
+	Envs         []Env    `json:"envs" bson:"envs" binding:"omitempty,env_list,min=0,max=1000,dive"`
+	Volumes      []Volume `json:"volumes" bson:"volumes" binding:"omitempty,min=0,max=100,dive"`
+	InitCommands []string `json:"initCommands" bson:"initCommands" binding:"omitempty,min=0,max=100,dive,min=0,max=100"`
+	Args         []string `json:"args" bson:"args" binding:"omitempty,min=0,max=100,dive,min=0,max=100"`
+
+	Image           *string `json:"image,omitempty" bson:"image,omitempty" binding:"omitempty,min=1,max=1000"`
+	HealthCheckPath *string `json:"healthCheckPath" bson:"healthCheckPath,omitempty" binding:"omitempty,min=0,max=1000,health_check_path"`
+	// CustomDomain is the domain that the deployment will be available on.
+	// The max length is set to 243 to allow for a subdomain when confirming the domain.
+	CustomDomain *string `json:"customDomain,omitempty" bson:"customDomain,omitempty" binding:"omitempty,domain_name"`
+
+	// Zone is the zone that the deployment will be created in.
+	// If the zone is not set, the deployment will be created in the default zone.
 	Zone *string `json:"zone" bson:"zone,omitempty" binding:"omitempty"`
 }
 
 type DeploymentUpdate struct {
-	// update
-	Name            *string   `json:"name,omitempty" bson:"name,omitempty" binding:"omitempty,required,rfc1035,min=3,max=30"`
-	Private         *bool     `json:"private,omitempty" bson:"private,omitempty" binding:"omitempty,boolean"`
-	Envs            *[]Env    `json:"envs,omitempty" bson:"envs,omitempty" binding:"omitempty,env_list,min=0,max=1000,dive"`
-	Volumes         *[]Volume `json:"volumes,omitempty" bson:"volumes,omitempty" binding:"omitempty,min=0,max=100,dive"`
-	InitCommands    *[]string `json:"initCommands,omitempty" bson:"initCommands,omitempty" binding:"omitempty,min=0,max=100,dive,min=0,max=100"`
-	Args            *[]string `json:"args,omitempty" bson:"args,omitempty" binding:"omitempty,min=0,max=100,dive,min=0,max=100"`
-	CustomDomain    *string   `json:"customDomain,omitempty" bson:"customDomain,omitempty" binding:"omitempty,domain_name,min=0,max=253"`
-	Image           *string   `json:"image,omitempty,omitempty" bson:"image,omitempty" binding:"omitempty,min=1,max=1000"`
-	HealthCheckPath *string   `json:"healthCheckPath,omitempty" bson:"healthCheckPath,omitempty" binding:"omitempty,min=0,max=1000,health_check_path"`
-	Replicas        *int      `json:"replicas,omitempty" bson:"replicas,omitempty" binding:"omitempty,min=0,max=100"`
+	Name *string `json:"name,omitempty" bson:"name,omitempty" binding:"omitempty,required,rfc1035,min=3,max=30"`
+
+	CpuCores *float64 `json:"cpuCores,omitempty" bson:"cpuCores,omitempty" binding:"omitempty,min=0.1"`
+	RAM      *float64 `json:"ram,omitempty" bson:"ram,omitempty" binding:"omitempty,min=0.1"`
+	Replicas *int     `json:"replicas,omitempty" bson:"replicas,omitempty" binding:"omitempty,min=0,max=100"`
+
+	Private      *bool     `json:"private,omitempty" bson:"private,omitempty" binding:"omitempty,boolean"`
+	Envs         *[]Env    `json:"envs,omitempty" bson:"envs,omitempty" binding:"omitempty,env_list,min=0,max=1000,dive"`
+	Volumes      *[]Volume `json:"volumes,omitempty" bson:"volumes,omitempty" binding:"omitempty,min=0,max=100,dive"`
+	InitCommands *[]string `json:"initCommands,omitempty" bson:"initCommands,omitempty" binding:"omitempty,min=0,max=100,dive,min=0,max=100"`
+	Args         *[]string `json:"args,omitempty" bson:"args,omitempty" binding:"omitempty,min=0,max=100,dive,min=0,max=100"`
+
+	Image           *string `json:"image,omitempty,omitempty" bson:"image,omitempty" binding:"omitempty,min=1,max=1000"`
+	HealthCheckPath *string `json:"healthCheckPath,omitempty" bson:"healthCheckPath,omitempty" binding:"omitempty,min=0,max=1000,health_check_path"`
+	// CustomDomain is the domain that the deployment will be available on.
+	// The max length is set to 243 to allow for a subdomain when confirming the domain.
+	CustomDomain *string `json:"customDomain,omitempty" bson:"customDomain,omitempty" binding:"omitempty,domain_name"`
 }
 
 type Env struct {
@@ -91,6 +107,17 @@ type DeploymentBuild struct {
 	Tag       string `bson:"tag"`
 	Branch    string `bson:"branch"`
 	ImportURL string `bson:"importUrl"`
+}
+
+type ReplicaStatus struct {
+	// DesiredReplicas is the number of replicas that the deployment should have.
+	DesiredReplicas int `json:"desiredReplicas"`
+	// ReadyReplicas is the number of replicas that are ready.
+	ReadyReplicas int `json:"readyReplicas"`
+	// AvailableReplicas is the number of replicas that are available.
+	AvailableReplicas int `json:"availableReplicas"`
+	// UnavailableReplicas is the number of replicas that are unavailable.
+	UnavailableReplicas int `json:"unavailableReplicas"`
 }
 
 type DeploymentCreated struct {

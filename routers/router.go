@@ -47,7 +47,7 @@ func NewRouter() *gin.Engine {
 	// Index routes
 	router.StaticFile("static/favicon.ico", "index/static/favicon.ico")
 	router.StaticFile("static/style.css", "index/static/style.css")
-	router.StaticFile("static/logo.png", "index/static/logo.png")
+	router.StaticFile("static/logo.svg", "index/static/logo.svg")
 	router.StaticFile("static/script.js", "index/static/script.js")
 	router.LoadHTMLFiles("index/index.html")
 	router.GET("/", func(c *gin.Context) {
