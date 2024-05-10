@@ -2770,8 +2770,12 @@ const docTemplateV1 = `{
                         "type": "string"
                     }
                 },
+                "cpuCores": {
+                    "type": "number",
+                    "minimum": 0.1
+                },
                 "customDomain": {
-                    "description": "CustomDomain is the domain that the deployment will be available on.\nThe max length is set to 243 to allow for a sub domain when confirming the domain.",
+                    "description": "CustomDomain is the domain that the deployment will be available on.\nThe max length is set to 243 to allow for a subdomain when confirming the domain.",
                     "type": "string"
                 },
                 "envs": {
@@ -2808,6 +2812,10 @@ const docTemplateV1 = `{
                 "private": {
                     "type": "boolean"
                 },
+                "ram": {
+                    "type": "number",
+                    "minimum": 0.1
+                },
                 "replicas": {
                     "type": "integer",
                     "maximum": 100,
@@ -2822,6 +2830,7 @@ const docTemplateV1 = `{
                     }
                 },
                 "zone": {
+                    "description": "Zone is the zone that the deployment will be created in.\nIf the zone is not set, the deployment will be created in the default zone.",
                     "type": "string"
                 }
             }
@@ -2845,6 +2854,9 @@ const docTemplateV1 = `{
                     "items": {
                         "type": "string"
                     }
+                },
+                "cpuCores": {
+                    "type": "number"
                 },
                 "createdAt": {
                     "type": "string"
@@ -2907,8 +2919,14 @@ const docTemplateV1 = `{
                 "private": {
                     "type": "boolean"
                 },
+                "ram": {
+                    "type": "number"
+                },
                 "repairedAt": {
                     "type": "string"
+                },
+                "replicaStatus": {
+                    "$ref": "#/definitions/body.ReplicaStatus"
                 },
                 "replicas": {
                     "type": "integer"
@@ -2962,10 +2980,13 @@ const docTemplateV1 = `{
                         "type": "string"
                     }
                 },
+                "cpuCores": {
+                    "type": "number",
+                    "minimum": 0.1
+                },
                 "customDomain": {
-                    "type": "string",
-                    "maxLength": 253,
-                    "minLength": 0
+                    "description": "CustomDomain is the domain that the deployment will be available on.\nThe max length is set to 243 to allow for a subdomain when confirming the domain.",
+                    "type": "string"
                 },
                 "envs": {
                     "type": "array",
@@ -2994,13 +3015,16 @@ const docTemplateV1 = `{
                     }
                 },
                 "name": {
-                    "description": "update",
                     "type": "string",
                     "maxLength": 30,
                     "minLength": 3
                 },
                 "private": {
                     "type": "boolean"
+                },
+                "ram": {
+                    "type": "number",
+                    "minimum": 0.1
                 },
                 "replicas": {
                     "type": "integer",
@@ -3255,22 +3279,40 @@ const docTemplateV1 = `{
             "type": "object",
             "properties": {
                 "cpuCores": {
-                    "type": "integer"
-                },
-                "deployments": {
-                    "type": "integer"
+                    "type": "number"
                 },
                 "diskSize": {
-                    "type": "integer"
+                    "type": "number"
                 },
                 "gpuLeaseDuration": {
                     "description": "in hours",
                     "type": "number"
                 },
                 "ram": {
-                    "type": "integer"
+                    "type": "number"
                 },
                 "snapshots": {
+                    "type": "integer"
+                }
+            }
+        },
+        "body.ReplicaStatus": {
+            "type": "object",
+            "properties": {
+                "availableReplicas": {
+                    "description": "AvailableReplicas is the number of replicas that are available.",
+                    "type": "integer"
+                },
+                "desiredReplicas": {
+                    "description": "DesiredReplicas is the number of replicas that the deployment should have.",
+                    "type": "integer"
+                },
+                "readyReplicas": {
+                    "description": "ReadyReplicas is the number of replicas that are ready.",
+                    "type": "integer"
+                },
+                "unavailableReplicas": {
+                    "description": "UnavailableReplicas is the number of replicas that are unavailable.",
                     "type": "integer"
                 }
             }
@@ -3669,16 +3711,13 @@ const docTemplateV1 = `{
             "type": "object",
             "properties": {
                 "cpuCores": {
-                    "type": "integer"
-                },
-                "deployments": {
-                    "type": "integer"
+                    "type": "number"
                 },
                 "diskSize": {
-                    "type": "integer"
+                    "type": "number"
                 },
                 "ram": {
-                    "type": "integer"
+                    "type": "number"
                 },
                 "snapshots": {
                     "type": "integer"

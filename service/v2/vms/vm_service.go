@@ -607,9 +607,9 @@ func (c *Client) CheckQuota(id, userID string, quota *model.Quotas, opts ...opts
 	}
 
 	if o.Create != nil {
-		totalCpuCores := usage.CpuCores + o.Create.CpuCores
-		totalRam := usage.RAM + o.Create.RAM
-		totalDiskSize := usage.DiskSize + o.Create.DiskSize
+		totalCpuCores := float64(usage.CpuCores + o.Create.CpuCores)
+		totalRam := float64(usage.RAM + o.Create.RAM)
+		totalDiskSize := float64(usage.DiskSize + o.Create.DiskSize)
 
 		if totalCpuCores > quota.CpuCores {
 			return sErrors.NewQuotaExceededError(fmt.Sprintf("CPU cores quota exceeded. Current: %d, Quota: %d", totalCpuCores, quota.CpuCores))
@@ -637,9 +637,9 @@ func (c *Client) CheckQuota(id, userID string, quota *model.Quotas, opts ...opts
 		}
 
 		if o.Update.CpuCores != nil {
-			totalCpuCores := usage.CpuCores
+			totalCpuCores := float64(usage.CpuCores)
 			if o.Update.CpuCores != nil {
-				totalCpuCores += *o.Update.CpuCores - vm.Specs.CpuCores
+				totalCpuCores += float64(*o.Update.CpuCores - vm.Specs.CpuCores)
 			}
 
 			if totalCpuCores > quota.CpuCores {
@@ -648,9 +648,9 @@ func (c *Client) CheckQuota(id, userID string, quota *model.Quotas, opts ...opts
 		}
 
 		if o.Update.RAM != nil {
-			totalRam := usage.RAM
+			totalRam := float64(usage.RAM)
 			if o.Update.RAM != nil {
-				totalRam += *o.Update.RAM - vm.Specs.RAM
+				totalRam += float64(*o.Update.RAM - vm.Specs.RAM)
 			}
 
 			if totalRam > quota.RAM {

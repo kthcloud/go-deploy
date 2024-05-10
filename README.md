@@ -1,5 +1,5 @@
 <p align="center">
-  <img width=40% src="https://github.com/kthcloud/go-deploy/assets/26722370/f0e0729f-224a-4ac8-a88b-a6ed98760edd" />
+  <img width=50% src="index/static/logo.svg" />
 </p>
 
 <div align="center">

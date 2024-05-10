@@ -2006,11 +2006,14 @@ components:
           type: array
           items:
             type: string
+        cpuCores:
+          minimum: 0.1
+          type: number
         customDomain:
           type: string
           description: |-
             CustomDomain is the domain that the deployment will be available on.
-            The max length is set to 243 to allow for a sub domain when confirming the domain.
+            The max length is set to 243 to allow for a subdomain when confirming the domain.
         envs:
           maxItems: 1000
           minItems: 0
@@ -2037,6 +2040,9 @@ components:
           type: string
         private:
           type: boolean
+        ram:
+          minimum: 0.1
+          type: number
         replicas:
           maximum: 100
           minimum: 0
@@ -2049,6 +2055,9 @@ components:
             $ref: '#/components/schemas/body.Volume'
         zone:
           type: string
+          description: |-
+            Zone is the zone that the deployment will be created in.
+            If the zone is not set, the deployment will be created in the default zone.
     body.DeploymentCreated:
       type: object
       properties:
@@ -2063,6 +2072,8 @@ components:
           type: array
           items:
             type: string
+        cpuCores:
+          type: number
         createdAt:
           type: string
         customDomain:
@@ -2107,8 +2118,12 @@ components:
           type: integer
         private:
           type: boolean
+        ram:
+          type: number
         repairedAt:
           type: string
+        replicaStatus:
+          $ref: '#/components/schemas/body.ReplicaStatus'
         replicas:
           type: integer
         restartedAt:
@@ -2144,10 +2159,14 @@ components:
           type: array
           items:
             type: string
+        cpuCores:
+          minimum: 0.1
+          type: number
         customDomain:
-          maxLength: 253
-          minLength: 0
           type: string
+          description: |-
+            CustomDomain is the domain that the deployment will be available on.
+            The max length is set to 243 to allow for a subdomain when confirming the domain.
         envs:
           maxItems: 1000
           minItems: 0
@@ -2172,9 +2191,11 @@ components:
           maxLength: 30
           minLength: 3
           type: string
-          description: update
         private:
           type: boolean
+        ram:
+          minimum: 0.1
+          type: number
         replicas:
           maximum: 100
           minimum: 0
@@ -2345,18 +2366,32 @@ components:
       type: object
       properties:
         cpuCores:
-          type: integer
-        deployments:
-          type: integer
+          type: number
         diskSize:
-          type: integer
+          type: number
         gpuLeaseDuration:
           type: number
           description: in hours
         ram:
-          type: integer
+          type: number
         snapshots:
           type: integer
+    body.ReplicaStatus:
+      type: object
+      properties:
+        availableReplicas:
+          type: integer
+          description: AvailableReplicas is the number of replicas that are available.
+        desiredReplicas:
+          type: integer
+          description: DesiredReplicas is the number of replicas that the deployment
+            should have.
+        readyReplicas:
+          type: integer
+          description: ReadyReplicas is the number of replicas that are ready.
+        unavailableReplicas:
+          type: integer
+          description: UnavailableReplicas is the number of replicas that are unavailable.
     body.ResourceMigrationCreate:
       required:
       - resourceID
@@ -2625,13 +2660,11 @@ components:
       type: object
       properties:
         cpuCores:
-          type: integer
-        deployments:
-          type: integer
+          type: number
         diskSize:
-          type: integer
+          type: number
         ram:
-          type: integer
+          type: number
         snapshots:
           type: integer
     body.UserData:

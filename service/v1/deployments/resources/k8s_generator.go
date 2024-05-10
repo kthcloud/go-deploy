@@ -79,14 +79,14 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		Value: fmt.Sprintf("%d", mainApp.InternalPort),
 	})
 
-	defaultLimits := models.Limits{
-		CPU:    config.Config.Deployment.Resources.Limits.CPU,
-		Memory: config.Config.Deployment.Resources.Limits.Memory,
+	limits := models.Limits{
+		CPU:    fmt.Sprintf("%.2f", mainApp.CpuCores),
+		Memory: fmt.Sprintf("%.2fGi", mainApp.RAM),
 	}
 
-	defaultRequests := models.Requests{
-		CPU:    config.Config.Deployment.Resources.Requests.CPU,
-		Memory: config.Config.Deployment.Resources.Requests.Memory,
+	requests := models.Requests{
+		CPU:    fmt.Sprintf("%.2f", math.Min(config.Config.Deployment.Resources.Requests.CPU, mainApp.CpuCores)),
+		Memory: fmt.Sprintf("%.2fGi", math.Min(config.Config.Deployment.Resources.Requests.RAM, mainApp.RAM)),
 	}
 
 	k8sVolumes := make([]models.Volume, len(mainApp.Volumes))
@@ -120,8 +120,8 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		ImagePullSecrets: imagePullSecrets,
 		EnvVars:          k8sEnvs,
 		Resources: models.Resources{
-			Limits:   defaultLimits,
-			Requests: defaultRequests,
+			Limits:   limits,
+			Requests: requests,
 		},
 		Command:        make([]string, 0),
 		Args:           mainApp.Args,
@@ -219,7 +219,7 @@ func (kg *K8sGenerator) PVs() []models.PvPublic {
 	for _, v := range volumes {
 		res = append(res, models.PvPublic{
 			Name:      deploymentPvName(kg.deployment, v.Name),
-			Capacity:  config.Config.Deployment.Resources.Limits.Storage,
+			Capacity:  fmt.Sprintf("%.2fGi", config.Config.Deployment.Resources.Limits.Storage),
 			NfsServer: kg.zone.Storage.NfsServer,
 			NfsPath:   path.Join(kg.zone.Storage.Paths.ParentDeployment, kg.deployment.OwnerID, "user", v.ServerPath),
 			Released:  false,
@@ -229,7 +229,7 @@ func (kg *K8sGenerator) PVs() []models.PvPublic {
 	// Add volume to root that can be used to create storage paths
 	res = append(res, models.PvPublic{
 		Name:      deploymentRootPvName(kg.deployment),
-		Capacity:  config.Config.Deployment.Resources.Limits.Storage,
+		Capacity:  fmt.Sprintf("%.2fGi", config.Config.Deployment.Resources.Limits.Storage),
 		NfsServer: kg.zone.Storage.NfsServer,
 		NfsPath:   path.Join(kg.zone.Storage.Paths.ParentDeployment, kg.deployment.OwnerID, "user"),
 		Released:  false,
@@ -259,7 +259,7 @@ func (kg *K8sGenerator) PVCs() []models.PvcPublic {
 		res = append(res, models.PvcPublic{
 			Name:      deploymentPvcName(kg.deployment, volume.Name),
 			Namespace: kg.namespace,
-			Capacity:  config.Config.Deployment.Resources.Limits.Storage,
+			Capacity:  fmt.Sprintf("%.2fGi", config.Config.Deployment.Resources.Limits.Storage),
 			PvName:    deploymentPvName(kg.deployment, volume.Name),
 		})
 	}
@@ -268,7 +268,7 @@ func (kg *K8sGenerator) PVCs() []models.PvcPublic {
 	res = append(res, models.PvcPublic{
 		Name:      deploymentRootPvcName(kg.deployment),
 		Namespace: kg.namespace,
-		Capacity:  config.Config.Deployment.Resources.Limits.Storage,
+		Capacity:  fmt.Sprintf("%.2fGi", config.Config.Deployment.Resources.Limits.Storage),
 		PvName:    deploymentRootPvName(kg.deployment),
 	})
 

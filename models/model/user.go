@@ -50,11 +50,10 @@ type UserData struct {
 }
 
 type UserUsage struct {
-	Deployments int `bson:"deployments"`
-	CpuCores    int `bson:"cpuCores"`
-	RAM         int `bson:"ram"`
-	DiskSize    int `bson:"diskSize"`
-	Snapshots   int `bson:"snapshots"`
+	CpuCores  float64 `bson:"cpuCores"`
+	RAM       float64 `bson:"ram"`
+	DiskSize  float64 `bson:"diskSize"`
+	Snapshots int     `bson:"snapshots"`
 }
 
 type EffectiveRole struct {

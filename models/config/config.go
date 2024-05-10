@@ -171,13 +171,18 @@ type Deployment struct {
 			MemoryThreshold int `yaml:"memoryThreshold"`
 		} `yaml:"autoScale"`
 		Limits struct {
-			CPU     string `yaml:"cpu"`
-			Memory  string `yaml:"memory"`
-			Storage string `yaml:"storage"`
+			// CPU in cores (0.5 for 500m)
+			CPU float64 `yaml:"cpu"`
+			// RAM in GB (0.5 for 500Mi)
+			RAM float64 `yaml:"memory"`
+			// Storage in GB (0.5 for 500Mi)
+			Storage float64 `yaml:"storage"`
 		} `yaml:"limits"`
 		Requests struct {
-			CPU    string `yaml:"cpu"`
-			Memory string `yaml:"memory"`
+			// CPU in cores (0.5 for 500m)
+			CPU float64 `yaml:"cpu"`
+			// RAM in GB (0.5 for 500Mi)
+			RAM float64 `yaml:"memory"`
 		} `yaml:"requests"`
 	} `yaml:"resources"`
 }

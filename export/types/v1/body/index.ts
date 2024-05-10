@@ -27,6 +27,9 @@ export interface DeploymentRead {
   updatedAt?: string;
   repairedAt?: string;
   restartedAt?: string;
+  cpuCores: number /* float64 */;
+  ram: number /* float64 */;
+  replicas: number /* int */;
   url?: string;
   envs: Env[];
   volumes: Volume[];
@@ -36,13 +39,13 @@ export interface DeploymentRead {
   internalPort: number /* int */;
   image?: string;
   healthCheckPath?: string;
-  replicas: number /* int */;
   customDomain?: string;
   customDomainUrl?: string;
   customDomainStatus?: string;
   customDomainSecret?: string;
   status: string;
   error?: string;
+  replicaStatus?: ReplicaStatus;
   pingResult?: number /* int */;
   /**
    * Integrations are currently not used, but could be used if we wanted to add a list of integrations to the deployment
@@ -54,35 +57,44 @@ export interface DeploymentRead {
 }
 export interface DeploymentCreate {
   name: string;
-  image?: string;
+  cpuCores?: number /* float64 */;
+  ram?: number /* float64 */;
+  replicas?: number /* int */;
   private: boolean;
   envs: Env[];
   volumes: Volume[];
   initCommands: string[];
   args: string[];
+  image?: string;
   healthCheckPath?: string;
   /**
    * CustomDomain is the domain that the deployment will be available on.
-   * The max length is set to 243 to allow for a sub domain when confirming the domain.
+   * The max length is set to 243 to allow for a subdomain when confirming the domain.
    */
   customDomain?: string;
-  replicas?: number /* int */;
+  /**
+   * Zone is the zone that the deployment will be created in.
+   * If the zone is not set, the deployment will be created in the default zone.
+   */
   zone?: string;
 }
 export interface DeploymentUpdate {
-  /**
-   * update
-   */
   name?: string;
+  cpuCores?: number /* float64 */;
+  ram?: number /* float64 */;
+  replicas?: number /* int */;
   private?: boolean;
   envs?: Env[];
   volumes?: Volume[];
   initCommands?: string[];
   args?: string[];
-  customDomain?: string;
   image?: string;
   healthCheckPath?: string;
-  replicas?: number /* int */;
+  /**
+   * CustomDomain is the domain that the deployment will be available on.
+   * The max length is set to 243 to allow for a subdomain when confirming the domain.
+   */
+  customDomain?: string;
 }
 export interface Env {
   name: string;
@@ -98,6 +110,24 @@ export interface DeploymentBuild {
   Tag: string;
   Branch: string;
   ImportURL: string;
+}
+export interface ReplicaStatus {
+  /**
+   * DesiredReplicas is the number of replicas that the deployment should have.
+   */
+  desiredReplicas: number /* int */;
+  /**
+   * ReadyReplicas is the number of replicas that are ready.
+   */
+  readyReplicas: number /* int */;
+  /**
+   * AvailableReplicas is the number of replicas that are available.
+   */
+  availableReplicas: number /* int */;
+  /**
+   * UnavailableReplicas is the number of replicas that are unavailable.
+   */
+  unavailableReplicas: number /* int */;
 }
 export interface DeploymentCreated {
   id: string;
@@ -372,26 +402,17 @@ export interface ApiKey {
   expiresAt: string;
 }
 export interface Quota {
-  deployments: number /* int */;
-  cpuCores: number /* int */;
-  ram: number /* int */;
-  diskSize: number /* int */;
+  cpuCores: number /* float64 */;
+  ram: number /* float64 */;
+  diskSize: number /* float64 */;
   snapshots: number /* int */;
   gpuLeaseDuration: number /* float64 */; // in hours
 }
 export interface Usage {
-  deployments: number /* int */;
-  cpuCores: number /* int */;
-  ram: number /* int */;
-  diskSize: number /* int */;
+  cpuCores: number /* float64 */;
+  ram: number /* float64 */;
+  diskSize: number /* float64 */;
   snapshots: number /* int */;
-}
-export interface SmallUserRead {
-  id: string;
-  username: string;
-  firstName: string;
-  lastName: string;
-  email: string;
 }
 
 //////////

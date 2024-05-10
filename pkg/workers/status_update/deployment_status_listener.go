@@ -32,6 +32,17 @@ func DeploymentStatusListener(ctx context.Context) error {
 					return
 				}
 
+				err = deployment_repo.New().SetReplicaStatusByName(name, "main", &model.ReplicaStatus{
+					DesiredReplicas:     status.DesiredReplicas,
+					ReadyReplicas:       status.ReadyReplicas,
+					AvailableReplicas:   status.AvailableReplicas,
+					UnavailableReplicas: status.UnavailableReplicas,
+				})
+				if err != nil {
+					log.Println("Failed to set replica status for deployment", name, "details:", err)
+					return
+				}
+
 				// If the status is running, we unset the errorStatus, since it no longer applies
 				if deploymentStatus == status_codes.GetMsg(status_codes.ResourceRunning) {
 					err = deployment_repo.New().UnsetErrorByName(name)
