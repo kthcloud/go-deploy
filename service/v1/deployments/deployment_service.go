@@ -557,20 +557,25 @@ func (c *Client) CheckQuota(id string, opts *opts.QuotaOptions) error {
 	quota := c.V1.Auth().GetEffectiveRole().Quotas
 
 	if opts.Create != nil {
-		add := 1
-		if opts.Create.Replicas != nil {
-			add = *opts.Create.Replicas
+		cpuCores := usage.CpuCores
+		if opts.Create.CpuCores != nil {
+			cpuCores += *opts.Create.CpuCores
+		} else {
+			cpuCores += config.Config.Deployment.Resources.Limits.CPU
+		}
+		ram := usage.RAM
+		if opts.Create.RAM != nil {
+			ram += *opts.Create.RAM
+		} else {
+			ram += config.Config.Deployment.Resources.Limits.RAM
 		}
 
-		// Ensure that users do not create infinite deployments with 0 replicas
-		if add == 0 {
-			add = 1
+		if cpuCores > quota.CpuCores {
+			return sErrors.NewQuotaExceededError(fmt.Sprintf("CPU quota exceeded. Current: %.2f, Quota: %.2f", cpuCores, quota.CpuCores))
 		}
 
-		totalCount := usage.Replicas + add
-
-		if totalCount > quota.Deployments {
-			return sErrors.NewQuotaExceededError(fmt.Sprintf("Deployment quota exceeded. Current: %d, Quota: %d", totalCount, quota.Deployments))
+		if ram > quota.RAM {
+			return sErrors.NewQuotaExceededError(fmt.Sprintf("RAM quota exceeded. Current: %.2f, Quota: %.2f", ram, quota.RAM))
 		}
 
 		return nil
@@ -584,21 +589,17 @@ func (c *Client) CheckQuota(id string, opts *opts.QuotaOptions) error {
 			return sErrors.DeploymentNotFoundErr
 		}
 
-		if opts.Update.Replicas != nil {
-			totalBefore := usage.Replicas
-			replicasReq := *opts.Update.Replicas
-
-			// Ensure that users do not create infinite deployments with 0 replicas
-			if replicasReq == 0 {
-				replicasReq = 1
+		if opts.Update.CpuCores != nil {
+			cpuCores := usage.CpuCores - d.GetMainApp().CpuCores + *opts.Update.CpuCores
+			if cpuCores > quota.CpuCores {
+				return sErrors.NewQuotaExceededError(fmt.Sprintf("CPU quota exceeded. Current: %.2f, Quota: %.2f", cpuCores, quota.CpuCores))
 			}
+		}
 
-			add := replicasReq - d.GetMainApp().Replicas
-
-			totalAfter := totalBefore + add
-
-			if totalAfter > quota.Deployments {
-				return sErrors.NewQuotaExceededError(fmt.Sprintf("Deployment quota exceeded. Current: %d, Quota: %d", totalAfter, quota.Deployments))
+		if opts.Update.RAM != nil {
+			ram := usage.RAM - d.GetMainApp().RAM + *opts.Update.RAM
+			if ram > quota.RAM {
+				return sErrors.NewQuotaExceededError(fmt.Sprintf("RAM quota exceeded. Current: %.2f, Quota: %.2f", ram, quota.RAM))
 			}
 		}
 

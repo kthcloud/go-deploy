@@ -236,6 +236,8 @@ func (client *Client) GetUsage() (*model.DeploymentUsage, error) {
 	projection := bson.D{
 		{"_id", 0},
 		{"apps.main.replicas", 1},
+		{"apps.main.cpuCores", 1},
+		{"apps.main.ram", 1},
 	}
 
 	deployments, err := client.ListWithFilterAndProjection(bson.D{}, projection)
@@ -243,13 +245,12 @@ func (client *Client) GetUsage() (*model.DeploymentUsage, error) {
 		return nil, err
 	}
 
-	usage := &model.DeploymentUsage{
-		Replicas: 0,
-	}
+	usage := &model.DeploymentUsage{}
 
 	for _, deployment := range deployments {
 		for _, app := range deployment.Apps {
-			usage.Replicas += app.Replicas
+			usage.CpuCores += app.CpuCores * float64(app.Replicas)
+			usage.RAM += app.RAM * float64(app.Replicas)
 		}
 	}
 

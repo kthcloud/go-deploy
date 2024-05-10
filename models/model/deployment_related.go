@@ -75,7 +75,8 @@ type DeploymentVolume struct {
 }
 
 type DeploymentUsage struct {
-	Replicas int
+	CpuCores float64
+	RAM      float64
 }
 
 type DeploymentError struct {
