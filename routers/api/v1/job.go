@@ -21,9 +21,14 @@ import (
 // @Tags Job
 // @Accept  json
 // @Produce  json
+// @Security ApiKeyAuth
 // @Param jobId path string true "Job ID"
 // @Success 200 {object} body.JobRead
-// @Router /v1/jobs/{id} [get]
+// @Failure 400 {object} sys.ErrorResponse
+// @Failure 401 {object} sys.ErrorResponse
+// @Failure 404 {object} sys.ErrorResponse
+// @Failure 500 {object} sys.ErrorResponse
+// @Router /v1/jobs/{jobId} [get]
 func GetJob(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -59,8 +64,9 @@ func GetJob(c *gin.Context) {
 // @Tags Job
 // @Accept  json
 // @Produce  json
-// @Param all query bool false "GetJob all"
-// @Param userId query string false "Filter by user id"
+// @Security ApiKeyAuth
+// @Param all query bool false "List all"
+// @Param userId query string false "Filter by user ID"
 // @Param type query string false "Filter by type"
 // @Param status query string false "Filter by status"
 // @Param page query int false "Page number"
@@ -112,14 +118,15 @@ func ListJobs(c *gin.Context) {
 
 // UpdateJob
 // @Summary Update job
-// @Description Update job
+// @Description Update job. Only allowed for admins.
 // @Tags Job
 // @Accept  json
 // @Produce  json
+// @Security ApiKeyAuth
 // @Param jobId path string true "Job ID"
 // @Param body body body.JobUpdate true "Job update"
 // @Success 200 {object} body.JobRead
-// @Router /v1/jobs/{id} [post]
+// @Router /v1/jobs/{jobId} [post]
 func UpdateJob(c *gin.Context) {
 	context := sys.NewContext(c)
 

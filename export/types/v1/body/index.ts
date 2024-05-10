@@ -271,7 +271,7 @@ export interface SmRead {
 export interface WorkerStatusRead {
   name: string;
   status: string;
-  reported_at: string;
+  reportedAt: string;
 }
 
 //////////

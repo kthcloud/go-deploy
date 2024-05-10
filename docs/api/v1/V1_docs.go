@@ -9,7 +9,15 @@ const docTemplateV1 = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "contact": {},
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "Support",
+            "url": "https://github.com/kthcloud/go-deploy"
+        },
+        "license": {
+            "name": "MIT License",
+            "url": "https://github.com/kthcloud/go-deploy?tab=MIT-1-ov-file#readme"
+        },
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
@@ -17,6 +25,11 @@ const docTemplateV1 = `{
     "paths": {
         "/v1/deployments": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "List deployments",
                 "consumes": [
                     "application/json"
@@ -30,21 +43,14 @@ const docTemplateV1 = `{
                 "summary": "List deployments",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Bearer token",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
                         "type": "boolean",
-                        "description": "GetDeployment all",
+                        "description": "List all",
                         "name": "all",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Filter by user id",
+                        "description": "Filter by user ID",
                         "name": "userId",
                         "in": "query"
                     },
@@ -92,6 +98,11 @@ const docTemplateV1 = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Create deployment",
                 "consumes": [
                     "application/json"
@@ -104,13 +115,6 @@ const docTemplateV1 = `{
                 ],
                 "summary": "Create deployment",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer token",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
                     {
                         "description": "Deployment body",
                         "name": "body",
@@ -144,7 +148,59 @@ const docTemplateV1 = `{
             }
         },
         "/v1/deployments/{deploymentId}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get deployment",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Deployment"
+                ],
+                "summary": "Get deployment",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Deployment ID",
+                        "name": "deploymentId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.DeploymentRead"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Update deployment",
                 "consumes": [
                     "application/json"
@@ -157,13 +213,6 @@ const docTemplateV1 = `{
                 ],
                 "summary": "Update deployment",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer token",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
                     {
                         "type": "string",
                         "description": "Deployment ID",
@@ -203,6 +252,11 @@ const docTemplateV1 = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Delete deployment",
                 "consumes": [
                     "application/json"
@@ -215,13 +269,6 @@ const docTemplateV1 = `{
                 ],
                 "summary": "Delete deployment",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer token",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
                     {
                         "type": "string",
                         "description": "Deployment ID",
@@ -266,6 +313,11 @@ const docTemplateV1 = `{
         },
         "/v1/deployments/{deploymentId}/ciConfig": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Get CI config",
                 "consumes": [
                     "application/json"
@@ -310,6 +362,11 @@ const docTemplateV1 = `{
         },
         "/v1/deployments/{deploymentId}/command": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Do command",
                 "consumes": [
                     "application/json"
@@ -340,11 +397,8 @@ const docTemplateV1 = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "empty"
-                        }
+                    "204": {
+                        "description": "No Content"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -375,6 +429,11 @@ const docTemplateV1 = `{
         },
         "/v1/deployments/{deploymentId}/logs": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Get logs using Server-Sent Events",
                 "consumes": [
                     "application/json"
@@ -410,57 +469,6 @@ const docTemplateV1 = `{
                     },
                     "404": {
                         "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/deployments/{deployment_id}": {
-            "get": {
-                "description": "Get deployment",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Deployment"
-                ],
-                "summary": "Get deployment",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer token",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Deployment ID",
-                        "name": "deploymentId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/body.DeploymentRead"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/sys.ErrorResponse"
                         }
@@ -566,6 +574,11 @@ const docTemplateV1 = `{
         },
         "/v1/jobs": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "List jobs",
                 "consumes": [
                     "application/json"
@@ -580,13 +593,13 @@ const docTemplateV1 = `{
                 "parameters": [
                     {
                         "type": "boolean",
-                        "description": "GetJob all",
+                        "description": "List all",
                         "name": "all",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Filter by user id",
+                        "description": "Filter by user ID",
                         "name": "userId",
                         "in": "query"
                     },
@@ -628,8 +641,13 @@ const docTemplateV1 = `{
                 }
             }
         },
-        "/v1/jobs/{id}": {
+        "/v1/jobs/{jobId}": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "GetJob job by id",
                 "consumes": [
                     "application/json"
@@ -656,11 +674,40 @@ const docTemplateV1 = `{
                         "schema": {
                             "$ref": "#/definitions/body.JobRead"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
                     }
                 }
             },
             "post": {
-                "description": "Update job",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Update job. Only allowed for admins.",
                 "consumes": [
                     "application/json"
                 ],
@@ -730,6 +777,11 @@ const docTemplateV1 = `{
         },
         "/v1/notifications": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "List notifications",
                 "consumes": [
                     "application/json"
@@ -744,13 +796,13 @@ const docTemplateV1 = `{
                 "parameters": [
                     {
                         "type": "boolean",
-                        "description": "GetNotification all notifications",
+                        "description": "List all notifications",
                         "name": "all",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "GetNotification notifications by user id",
+                        "description": "Filter by user ID",
                         "name": "userId",
                         "in": "query"
                     },
@@ -788,6 +840,11 @@ const docTemplateV1 = `{
         },
         "/v1/notifications/{notificationId}": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Get notification",
                 "consumes": [
                     "application/json"
@@ -824,6 +881,11 @@ const docTemplateV1 = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Update notification",
                 "consumes": [
                     "application/json"
@@ -866,6 +928,11 @@ const docTemplateV1 = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Delete notification",
                 "consumes": [
                     "application/json"
@@ -901,6 +968,11 @@ const docTemplateV1 = `{
         },
         "/v1/resourceMigrations": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "List resource migrations",
                 "consumes": [
                     "application/json"
@@ -912,6 +984,20 @@ const docTemplateV1 = `{
                     "ResourceMigration"
                 ],
                 "summary": "List resource migrations",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -943,6 +1029,11 @@ const docTemplateV1 = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Create resource migration",
                 "consumes": [
                     "application/json"
@@ -995,6 +1086,11 @@ const docTemplateV1 = `{
         },
         "/v1/resourceMigrations/{resourceMigrationId}": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Get resource migration",
                 "consumes": [
                     "application/json"
@@ -1043,6 +1139,11 @@ const docTemplateV1 = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Update resource migration",
                 "consumes": [
                     "application/json"
@@ -1100,6 +1201,11 @@ const docTemplateV1 = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Delete resource migration",
                 "consumes": [
                     "application/json"
@@ -1185,6 +1291,11 @@ const docTemplateV1 = `{
         },
         "/v1/storageManagers": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Get storage manager list",
                 "consumes": [
                     "application/json"
@@ -1198,11 +1309,22 @@ const docTemplateV1 = `{
                 "summary": "Get storage manager list",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Bearer token",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
+                        "type": "boolean",
+                        "description": "List all",
+                        "name": "all",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page",
+                        "name": "pageSize",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1238,6 +1360,11 @@ const docTemplateV1 = `{
         },
         "/v1/storageManagers/{storageManagerId}": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Delete storage manager",
                 "consumes": [
                     "application/json"
@@ -1250,13 +1377,6 @@ const docTemplateV1 = `{
                 ],
                 "summary": "Delete storage manager",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer token",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
                     {
                         "type": "string",
                         "description": "Storage manager ID",
@@ -1301,6 +1421,11 @@ const docTemplateV1 = `{
         },
         "/v1/teams": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "List teams",
                 "consumes": [
                     "application/json"
@@ -1315,25 +1440,25 @@ const docTemplateV1 = `{
                 "parameters": [
                     {
                         "type": "boolean",
-                        "description": "All teams",
+                        "description": "List all",
                         "name": "all",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "User ID",
+                        "description": "Filter by user ID",
                         "name": "userId",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Page",
+                        "description": "Page number",
                         "name": "page",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Page Size",
+                        "description": "Number of items per page",
                         "name": "pageSize",
                         "in": "query"
                     }
@@ -1363,6 +1488,11 @@ const docTemplateV1 = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Create team",
                 "consumes": [
                     "application/json"
@@ -1409,6 +1539,11 @@ const docTemplateV1 = `{
         },
         "/v1/teams/{teamId}": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Get team",
                 "consumes": [
                     "application/json"
@@ -1451,6 +1586,11 @@ const docTemplateV1 = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Update team",
                 "consumes": [
                     "application/json"
@@ -1502,6 +1642,11 @@ const docTemplateV1 = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Delete team",
                 "consumes": [
                     "application/json"
@@ -1543,6 +1688,11 @@ const docTemplateV1 = `{
         },
         "/v1/users": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "List users",
                 "consumes": [
                     "application/json"
@@ -1557,8 +1707,32 @@ const docTemplateV1 = `{
                 "parameters": [
                     {
                         "type": "boolean",
-                        "description": "Want all users",
+                        "description": "List all",
                         "name": "all",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Discovery mode",
+                        "name": "discover",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page",
+                        "name": "pageSize",
                         "in": "query"
                     }
                 ],
@@ -1589,6 +1763,11 @@ const docTemplateV1 = `{
         },
         "/v1/users/{userId}": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Get user",
                 "consumes": [
                     "application/json"
@@ -1631,6 +1810,11 @@ const docTemplateV1 = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Update user",
                 "consumes": [
                     "application/json"
@@ -1684,6 +1868,11 @@ const docTemplateV1 = `{
         },
         "/v1/users/{userId}/apiKeys": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Create API key",
                 "consumes": [
                     "application/json"
@@ -1737,6 +1926,11 @@ const docTemplateV1 = `{
         },
         "/v1/vms": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "List VMs",
                 "consumes": [
                     "application/json"
@@ -1751,13 +1945,13 @@ const docTemplateV1 = `{
                 "parameters": [
                     {
                         "type": "boolean",
-                        "description": "GetVM all",
+                        "description": "List all",
                         "name": "all",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Filter by user id",
+                        "description": "Filter by user ID",
                         "name": "userId",
                         "in": "query"
                     },
@@ -1793,6 +1987,11 @@ const docTemplateV1 = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Create VM",
                 "consumes": [
                     "application/json"
@@ -1857,6 +2056,11 @@ const docTemplateV1 = `{
         },
         "/v1/vms/gpus": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Get list of GPUs",
                 "consumes": [
                     "application/json"
@@ -1915,6 +2119,11 @@ const docTemplateV1 = `{
         },
         "/v1/vms/{vmId}": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Get VM",
                 "consumes": [
                     "application/json"
@@ -1963,6 +2172,11 @@ const docTemplateV1 = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "UpdateVM VM",
                 "consumes": [
                     "application/json"
@@ -1975,13 +2189,6 @@ const docTemplateV1 = `{
                 ],
                 "summary": "UpdateVM VM",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer token",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
                     {
                         "type": "string",
                         "description": "VM ID",
@@ -2039,6 +2246,11 @@ const docTemplateV1 = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "DeleteVM VM",
                 "consumes": [
                     "application/json"
@@ -2101,6 +2313,11 @@ const docTemplateV1 = `{
         },
         "/v1/vms/{vmId}/command": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Do command",
                 "consumes": [
                     "application/json"
@@ -2131,11 +2348,8 @@ const docTemplateV1 = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "empty"
-                        }
+                    "204": {
+                        "description": "No Content"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -2166,6 +2380,11 @@ const docTemplateV1 = `{
         },
         "/v1/vms/{vmId}/snapshot/{snapshotId}": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Get snapshot",
                 "consumes": [
                     "application/json"
@@ -2178,13 +2397,6 @@ const docTemplateV1 = `{
                 ],
                 "summary": "Get snapshot",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer token",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
                     {
                         "type": "string",
                         "description": "VM ID",
@@ -2228,6 +2440,11 @@ const docTemplateV1 = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Delete snapshot",
                 "consumes": [
                     "application/json"
@@ -2240,13 +2457,6 @@ const docTemplateV1 = `{
                 ],
                 "summary": "Delete snapshot",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer token",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
                     {
                         "type": "string",
                         "description": "VM ID",
@@ -2292,6 +2502,11 @@ const docTemplateV1 = `{
         },
         "/v1/vms/{vmId}/snapshots": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "List snapshots",
                 "consumes": [
                     "application/json"
@@ -2306,17 +2521,22 @@ const docTemplateV1 = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Bearer token",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
                         "description": "VM ID",
                         "name": "vmId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page",
+                        "name": "pageSize",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -2356,6 +2576,11 @@ const docTemplateV1 = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Create snapshot",
                 "consumes": [
                     "application/json"
@@ -2368,13 +2593,6 @@ const docTemplateV1 = `{
                 ],
                 "summary": "Create snapshot",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer token",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
                     {
                         "type": "string",
                         "description": "VM ID",
@@ -2413,6 +2631,11 @@ const docTemplateV1 = `{
         },
         "/v1/zones": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "List zones",
                 "consumes": [
                     "application/json"
@@ -2424,14 +2647,6 @@ const docTemplateV1 = `{
                     "Zone"
                 ],
                 "summary": "List zones",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Zone type",
-                        "name": "type",
-                        "in": "query"
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -3285,7 +3500,7 @@ const docTemplateV1 = `{
                 },
                 "members": {
                     "type": "array",
-                    "maxItems": 10,
+                    "maxItems": 100,
                     "minItems": 0,
                     "items": {
                         "$ref": "#/definitions/body.TeamMemberCreate"
@@ -3298,7 +3513,7 @@ const docTemplateV1 = `{
                 },
                 "resources": {
                     "type": "array",
-                    "maxItems": 10,
+                    "maxItems": 100,
                     "minItems": 0,
                     "items": {
                         "type": "string"
@@ -3429,7 +3644,7 @@ const docTemplateV1 = `{
                 },
                 "members": {
                     "type": "array",
-                    "maxItems": 10,
+                    "maxItems": 100,
                     "minItems": 0,
                     "items": {
                         "$ref": "#/definitions/body.TeamMemberUpdate"
@@ -3442,7 +3657,7 @@ const docTemplateV1 = `{
                 },
                 "resources": {
                     "type": "array",
-                    "maxItems": 10,
+                    "maxItems": 100,
                     "minItems": 0,
                     "items": {
                         "type": "string"
@@ -3622,7 +3837,7 @@ const docTemplateV1 = `{
                 "name": {
                     "type": "string"
                 },
-                "reported_at": {
+                "reportedAt": {
                     "type": "string"
                 },
                 "status": {
@@ -4069,17 +4284,24 @@ const docTemplateV1 = `{
                 }
             }
         }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "X-Api-Key",
+            "in": "header"
+        }
     }
 }`
 
 // SwaggerInfoV1 holds exported Swagger Info so clients can modify it
 var SwaggerInfoV1 = &swag.Spec{
-	Version:          "",
+	Version:          "1.0",
 	Host:             "",
 	BasePath:         "",
 	Schemes:          []string{},
-	Title:            "",
-	Description:      "",
+	Title:            "go-deploy API",
+	Description:      "This is the API explorer for the go-deploy API. You can use it as a reference for the API endpoints.",
 	InfoInstanceName: "V1",
 	SwaggerTemplate:  docTemplateV1,
 	LeftDelim:        "{{",

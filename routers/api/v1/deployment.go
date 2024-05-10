@@ -24,12 +24,12 @@ import (
 // @Tags Deployment
 // @Accept  json
 // @Produce  json
-// @Param Authorization header string true "Bearer token"
+// @Security ApiKeyAuth
 // @Param deploymentId path string true "Deployment ID"
 // @Success 200 {object} body.DeploymentRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v1/deployments/{deployment_id} [get]
+// @Router /v1/deployments/{deploymentId} [get]
 func GetDeployment(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -80,9 +80,9 @@ func GetDeployment(c *gin.Context) {
 // @Tags Deployment
 // @Accept  json
 // @Produce  json
-// @Param Authorization header string true "Bearer token"
-// @Param all query bool false "GetDeployment all"
-// @Param userId query string false "Filter by user id"
+// @Security ApiKeyAuth
+// @Param all query bool false "List all"
+// @Param userId query string false "Filter by user ID"
 // @Param shared query bool false "Include shared"
 // @Param page query int false "Page number"
 // @Param pageSize query int false "Number of items per page"
@@ -144,7 +144,7 @@ func ListDeployments(c *gin.Context) {
 // @Tags Deployment
 // @Accept  json
 // @Produce  json
-// @Param Authorization header string true "Bearer token"
+// @Security ApiKeyAuth
 // @Param body body body.DeploymentCreate true "Deployment body"
 // @Success 200 {object} body.DeploymentRead
 // @Failure 400 {object} sys.ErrorResponse
@@ -250,7 +250,7 @@ func CreateDeployment(c *gin.Context) {
 // @Tags Deployment
 // @Accept  json
 // @Produce  json
-// @Param Authorization header string true "Bearer token"
+// @Security ApiKeyAuth
 // @Param deploymentId path string true "Deployment ID"
 // @Success 200 {object} body.DeploymentCreated
 // @Failure 400 {object} sys.ErrorResponse
@@ -331,7 +331,7 @@ func DeleteDeployment(c *gin.Context) {
 // @Tags Deployment
 // @Accept  json
 // @Produce  json
-// @Param Authorization header string true "Bearer token"
+// @Security ApiKeyAuth
 // @Param deploymentId path string true "Deployment ID"
 // @Param body body body.DeploymentUpdate true "Deployment update"
 // @Success 200 {object} body.DeploymentUpdated

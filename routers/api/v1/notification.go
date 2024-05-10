@@ -20,6 +20,7 @@ import (
 // @Tags Notification
 // @Accept  json
 // @Produce  json
+// @Security ApiKeyAuth
 // @Param notificationId path string true "Notification ID"
 // @Success 200 {object} body.NotificationRead
 // @Failure 400 {object} sys.ErrorResponse
@@ -54,8 +55,9 @@ func GetNotification(c *gin.Context) {
 // @Tags Notification
 // @Accept  json
 // @Produce  json
-// @Param all query bool false "GetNotification all notifications"
-// @Param userId query string false "GetNotification notifications by user id"
+// @Security ApiKeyAuth
+// @Param all query bool false "List all notifications"
+// @Param userId query string false "Filter by user ID"
 // @Param page query int false "Page number"
 // @Param pageSize query int false "Number of items per page"
 // @Success 200 {array} body.NotificationRead
@@ -106,6 +108,7 @@ func ListNotifications(c *gin.Context) {
 // @Tags Notification
 // @Accept  json
 // @Produce  json
+// @Security ApiKeyAuth
 // @Param notificationId path string true "Notification ID"
 // @Param body body body.NotificationUpdate true "Notification update"
 // @Success 200
@@ -152,6 +155,7 @@ func UpdateNotification(c *gin.Context) {
 // @Tags Notification
 // @Accept  json
 // @Produce  json
+// @Security ApiKeyAuth
 // @Param notificationId path string true "Notification ID"
 // @Success 200
 // @Failure 400 {object} sys.ErrorResponse

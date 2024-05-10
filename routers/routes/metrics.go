@@ -30,6 +30,12 @@ func MetricsRoutes() *MetricsRoutingGroup {
 			req.URL.Scheme = "http"
 			req.URL.Host = target
 		}
+
+		// To prevent duplicate headers, we need to clear CORS headers
+		c.Writer.Header().Del("Access-Control-Allow-Origin")
+		c.Writer.Header().Del("Access-Control-Allow-Methods")
+		c.Writer.Header().Del("Access-Control-Allow-Credentials")
+
 		proxy := &httputil.ReverseProxy{Director: director}
 		proxy.ServeHTTP(c.Writer, c.Request)
 	}

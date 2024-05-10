@@ -31,8 +31,8 @@ type TeamMemberUpdate struct {
 type TeamCreate struct {
 	Name        string             `json:"name" binding:"required,min=1,max=100"`
 	Description string             `json:"description" binding:"omitempty,max=1000"`
-	Resources   []string           `json:"resources" binding:"omitempty,team_resource_list,min=0,max=10,dive,uuid4"`
-	Members     []TeamMemberCreate `json:"members" binding:"omitempty,team_member_list,min=0,max=10,dive"`
+	Resources   []string           `json:"resources" binding:"omitempty,team_resource_list,min=0,max=100,dive,uuid4"`
+	Members     []TeamMemberCreate `json:"members" binding:"omitempty,team_member_list,min=0,max=100,dive"`
 }
 
 type TeamJoin struct {
@@ -42,8 +42,8 @@ type TeamJoin struct {
 type TeamUpdate struct {
 	Name        *string             `json:"name,omitempty" binding:"omitempty,min=1,max=100"`
 	Description *string             `json:"description,omitempty" binding:"omitempty,max=1000"`
-	Resources   *[]string           `json:"resources,omitempty" binding:"omitempty,team_resource_list,min=0,max=10,dive,uuid4"`
-	Members     *[]TeamMemberUpdate `json:"members,omitempty" binding:"omitempty,team_member_list,min=0,max=10,dive"`
+	Resources   *[]string           `json:"resources,omitempty" binding:"omitempty,team_resource_list,min=0,max=100,dive,uuid4"`
+	Members     *[]TeamMemberUpdate `json:"members,omitempty" binding:"omitempty,team_member_list,min=0,max=100,dive"`
 }
 
 type TeamRead struct {

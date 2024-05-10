@@ -127,5 +127,4 @@ export interface VmSnapshotList {
 // source: zone.go
 
 export interface ZoneList {
-  Type?: string;
 }

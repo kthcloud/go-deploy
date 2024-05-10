@@ -19,6 +19,7 @@ import (
 // @Tags VmAction
 // @Accept  json
 // @Produce  json
+// @Security ApiKeyAuth
 // @Param vmId path string true "VM ID"
 // @Param body body body.VmActionCreate true "actions body"
 // @Success 200 {object} body.VmActionCreated

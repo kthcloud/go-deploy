@@ -20,6 +20,7 @@ import (
 // @Tags Deployment
 // @Accept  json
 // @Produce  json
+// @Security ApiKeyAuth
 // @Param deploymentId path string true "Deployment ID"
 // @Success 200 {string} string
 // @Failure 400 {object} sys.ErrorResponse

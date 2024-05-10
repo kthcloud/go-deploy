@@ -29,6 +29,7 @@ import (
 // @Tags Team
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param teamId path string true "Team ID"
 // @Success 200 {object} body.TeamRead
 // @Failure 400 {object} body.BindingError
@@ -64,10 +65,11 @@ func GetTeam(c *gin.Context) {
 // @Tags Team
 // @Accept json
 // @Produce json
-// @Param all query bool false "All teams"
-// @Param userId query string false "User ID"
-// @Param page query int false "Page"
-// @Param pageSize query int false "Page Size"
+// @Security ApiKeyAuth
+// @Param all query bool false "List all"
+// @Param userId query string false "Filter by user ID"
+// @Param page query int false "Page number"
+// @Param pageSize query int false "Number of items per page"
 // @Success 200 {array} body.TeamRead
 // @Failure 400 {object} body.BindingError
 // @Failure 500 {object} sys.ErrorResponse
@@ -117,6 +119,7 @@ func ListTeams(c *gin.Context) {
 // @Tags Team
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param body body body.TeamCreate true "Team"
 // @Success 200 {object} body.TeamRead
 // @Failure 400 {object} body.BindingError
@@ -157,6 +160,7 @@ func CreateTeam(c *gin.Context) {
 // @Tags Team
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param teamId path string true "Team ID"
 // @Param body body body.TeamUpdate true "Team"
 // @Success 200 {object} body.TeamRead
@@ -215,6 +219,7 @@ func UpdateTeam(c *gin.Context) {
 // @Tags Team
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param teamId path string true "Team ID"
 // @Success 204 "No Content"
 // @Failure 400 {object} body.BindingError

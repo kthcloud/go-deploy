@@ -9,6 +9,7 @@ import (
 	"go-deploy/service/v1/deployments/opts"
 	"go-deploy/utils/subsystemutils"
 	"gopkg.in/yaml.v3"
+	"strings"
 )
 
 // GetCiConfig returns the CI config for the deployment.
@@ -44,7 +45,10 @@ func (c *Client) GetCiConfig(id string) (*body.CiConfig, error) {
 
 	githubCiConfig := model.GithubActionConfig{
 		Name: "kthcloud-ci",
-		On:   model.On{Push: model.Push{Branches: []string{"main"}}},
+		On: model.On{
+			Push:             model.Push{Branches: []string{"main"}},
+			WorkflowDispatch: struct{}{},
+		},
 		Jobs: model.Jobs{Docker: model.Docker{
 			RunsOn: "ubuntu-latest",
 			Steps: []model.Steps{
@@ -75,5 +79,9 @@ func (c *Client) GetCiConfig(id string) (*body.CiConfig, error) {
 	}
 
 	ciConfig := body.CiConfig{Config: string(marshalledConfig)}
+
+	// We replace workflow_dispatch: {} with workflow_dispatch: for nicer readability.
+	ciConfig.Config = strings.ReplaceAll(ciConfig.Config, "workflow_dispatch: {}\n", "workflow_dispatch:\n")
+
 	return &ciConfig, nil
 }
