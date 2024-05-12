@@ -38,7 +38,7 @@ func deploymentLogger(ctx context.Context) error {
 			})
 
 			if err != nil {
-				utils.PrettyPrintError(fmt.Errorf("failed to setup log stream for zone %s. details: %w", zone.Name, err))
+				utils.PrettyPrintError(fmt.Errorf("failed to set up log stream for zone %s. details: %w", zone.Name, err))
 				return
 			}
 		}()

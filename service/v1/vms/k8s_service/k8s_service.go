@@ -23,7 +23,7 @@ func (c *Client) Create(id string, params *model.VmCreateParams) error {
 	log.Println("Setting up K8s for", params.Name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup k8s for deployment %s. details: %w", params.Name, err)
+		return fmt.Errorf("failed to set up k8s for deployment %s. details: %w", params.Name, err)
 	}
 
 	_, kc, g, err := c.Get(OptsAll(id))

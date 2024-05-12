@@ -30,7 +30,7 @@ type CollectionDefinition struct {
 // It should be called once at the start of the application.
 func (dbCtx *Context) setupMongo() error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup mongodb. details: %w", err)
+		return fmt.Errorf("failed to set up mongodb. details: %w", err)
 	}
 
 	log.Println("Setting up MongoDB")

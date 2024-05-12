@@ -20,7 +20,7 @@ func (c *Client) Create(id string, params *model.DeploymentCreateParams) error {
 	log.Println("Setting up harbor for", params.Name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup harbor for deployment %s. details: %w", params.Name, err)
+		return fmt.Errorf("failed to set up harbor for deployment %s. details: %w", params.Name, err)
 	}
 
 	_, hc, g, err := c.Get(OptsAll(id))
@@ -78,7 +78,7 @@ func (c *Client) CreatePlaceholder(id string) error {
 	log.Println("Setting up placeholder harbor")
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup placeholder harbor. details: %w", err)
+		return fmt.Errorf("failed to set up placeholder harbor. details: %w", err)
 	}
 
 	err := resources.SsPlaceholderCreator().WithDbFunc(dbFunc(id, "placeholder")).Exec()
