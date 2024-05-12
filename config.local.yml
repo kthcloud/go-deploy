@@ -1,7 +1,5 @@
-version: 1.0.0
-
+externalUrl: deploy.localhost:9080
 port: 8080
-externalUrl: localhost
 mode: dev
 
 timer:
@@ -32,29 +30,30 @@ zones:
       vm: deploy-vms
       system: deploy-system
     configSource:
-      type: kubeconfig
-      filepath: ./local.kubeconfig
-    ingressNamespace: ingress-nginx
-    loadBalancerIp: 127.0.0.1
+      type: localPath
+      path: ./kube/go-deploy-dev.yml
+    ingressNamespace: kube-system
   capabilities:
     - deployment
     - vm
   domains:
-    parentVm: vm.local
-    parentSm: storage.local
-    parentVmApp: vm-app.local
+    parentApp: app.deploy.localhost:9080
+    parentSm: storage.deploy.localhost:9080
+    parentVm: vm.deploy.localhost:9080
+    parentVmApp: vm-app.deploy.localhost:9080
   storage:
-    nfsServer: localhost
+    nfsServer: nfs-server.nfs-server.svc.cluster.local
     paths:
-      parentVm: /mnt/cloud/apps/sys/deploy/vms
+      parentApp: 
+      parentVm: 
   portRange:
     start: 29000
-    end: 29899
+    end: 30000
 
 registry:
-  url: localhost:11080
-  placeholderImage: library/go-deploy-placeholder:latest
-  vmHttpProxyImage: library/go-deploy-placeholder:latest
+  url: harbor.harbor.svc.cluster.local:9081
+  placeholderImage: harbor.harbor.svc.cluster.local:9081/library/go-deploy-placeholder:latest
+  vmHttpProxyImage: harbor.harbor.svc.cluster.local:9081/library/go-deploy-placeholder:latest
 
 gpu:
   privilegedGpus:
@@ -68,24 +67,21 @@ deployment:
   wildcardCertSecretName: deploy-wildcard-secret
   customDomainTxtRecordSubdomain: _kthcloud
   ingressClass: traefik
-  repairInterval: 60
-  pingInterval: 30
   resources:
     autoScale:
       cpuThreshold: 50
       memoryThreshold: 50
     limits:
-      cpu: 100m
-      memory: 500Mi
-      storage: 1Gi
+      cpu: 0.2
+      memory: 0.5
+      storage: 1
     requests:
-      cpu: 50m
-      memory: 100Mi
+      cpu: 0.1
+      memory: 0.1
 
 vm:
-  adminSshPublicKey:
-  repairInterval:
-  zones:
+  adminSshPublicKey: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC3ktpoOPJP6v79i3IyY2+vd5julRDLBrMLpCAe8d4UDH09BN9PLYRAeYbox1UcHH3G+qWuf6iIY5/oxhsZlEmCbJE1wr3rVHvutuP17mcXcdVdJlQ7QOsTqI9rUTFm8XUB83CGIC36rxada3q7ndr/RhpwUtVghYK8AT57NjUjR5PI6TayKBIqlxgzamPJPcklCWoFhMzMm/8C15J1FJTejBeLuLeC6y+jtlxUGO7WDsLRS68uzpGGiS9exDkABrnb7jSU8o6rzQpIJnipIoM75530MV3Lp7sxNEgp8psaETdyPorfPv7u1nCcQV9B3RhH3SLGqzcepwt9zXixxcniVokAYvHLzpxcRg6bSoqWvJHM97fe8hDwa36Jck6hdfSGDxVon49E1qfG4FB4JYwwX2ehnuc3zW/bP+VuwFC+Fr/9zJMXiSGKSnIQKrMWqWbUse3r7kzUCLJ3PACCjGRR74LmhPODzPv3Zc5sz5cGFzOR2bNgUEUB1NK0Cw7GaO8= emil@home
+  image: https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
 
 roles:
   - name: default
@@ -98,7 +94,6 @@ roles:
       useGpus: false
       usePrivilegedGpus: false
     quotas:
-      deployments: 5
       cpuCores: 2
       ram: 4
       diskSize: 20
@@ -114,7 +109,6 @@ roles:
       useGpus: true
       usePrivilegedGpus: false
     quotas:
-      deployments: 5
       cpuCores: 4
       ram: 16
       diskSize: 50
@@ -130,7 +124,6 @@ roles:
       useGpus: true
       usePrivilegedGpus: true
     quotas:
-      deployments: 15
       cpuCores: 40
       ram: 160
       diskSize: 2000
@@ -138,30 +131,20 @@ roles:
       gpuLeaseDuration: 168
 
 keycloak:
-  url: http://localhost:12080
+  url: http://keycloak.deploy.localhost:9080
   realm: master
   adminGroup: admin
   storageClient:
-    clientId: 
-    clientSecret: 
+    clientId: go-deploy-storage
+    clientSecret: secret
 
 mongodb:
-  url: mongodb://root:root@mongodb.mongodb.svc.cluster.local:27017
+  url: mongodb://admin:admin@localhost:9027
   name: deploy
 
 redis:
-  url: redis://redis.redis.svc.cluster.local:6379
+  url: redis://localhost:6379
   password: 
-
-cs:
-  url: 
-  apiKey: 
-  secret: 
-
-rancher:
-  url: 
-  apiKey: 
-  secret: 
 
 sys-api:
   url: 
@@ -171,7 +154,7 @@ sys-api:
   useMock: true
 
 harbor:
-  url: http://localhost:11080
+  url: http://harbor.deploy.localhost:9080
   user: admin
-  password: admin
+  password: Harbor12345
   webhookSecret: secret

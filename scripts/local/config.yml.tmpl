@@ -1,7 +1,5 @@
-version: 1.0.0
-
+externalUrl: $external_url
 port: $port
-externalUrl: localhost
 mode: $mode
 
 timer:
@@ -32,24 +30,25 @@ zones:
       vm: deploy-vms
       system: deploy-system
     configSource:
-      type: kubeconfig
-      filepath: ./local.kubeconfig
-    ingressNamespace: ingress-nginx
-    loadBalancerIp: 127.0.0.1
+      type: localPath
+      path: $kubeconfig_path
+    ingressNamespace: kube-system
   capabilities:
     - deployment
     - vm
   domains:
-    parentVm: vm.local
-    parentSm: storage.local
-    parentVmApp: vm-app.local
+    parentApp: app.$external_url
+    parentSm: storage.$external_url
+    parentVm: vm.$external_url
+    parentVmApp: vm-app.$external_url
   storage:
-    nfsServer: localhost
+    nfsServer: $nfs_server
     paths:
-      parentVm: /mnt/cloud/apps/sys/deploy/vms
+      parentApp: $nfs_parent_app
+      parentVm: $nfs_parent_vm
   portRange:
-    start: 29000
-    end: 29899
+    start: $port_range_start
+    end: $port_range_end
 
 registry:
   url: $registry_url
@@ -68,24 +67,21 @@ deployment:
   wildcardCertSecretName: deploy-wildcard-secret
   customDomainTxtRecordSubdomain: _kthcloud
   ingressClass: traefik
-  repairInterval: 60
-  pingInterval: 30
   resources:
     autoScale:
       cpuThreshold: 50
       memoryThreshold: 50
     limits:
-      cpu: 100m
-      memory: 500Mi
-      storage: 1Gi
+      cpu: 0.2
+      memory: 0.5
+      storage: 1
     requests:
-      cpu: 50m
-      memory: 100Mi
+      cpu: 0.1
+      memory: 0.1
 
 vm:
-  adminSshPublicKey:
-  repairInterval:
-  zones:
+  adminSshPublicKey: $admin_ssh_public_key
+  image: $vm_image
 
 roles:
   - name: default
@@ -98,7 +94,6 @@ roles:
       useGpus: false
       usePrivilegedGpus: false
     quotas:
-      deployments: 5
       cpuCores: 2
       ram: 4
       diskSize: 20
@@ -114,7 +109,6 @@ roles:
       useGpus: true
       usePrivilegedGpus: false
     quotas:
-      deployments: 5
       cpuCores: 4
       ram: 16
       diskSize: 50
@@ -130,7 +124,6 @@ roles:
       useGpus: true
       usePrivilegedGpus: true
     quotas:
-      deployments: 15
       cpuCores: 40
       ram: 160
       diskSize: 2000
@@ -142,8 +135,8 @@ keycloak:
   realm: $keycloak_realm
   adminGroup: $keycloak_admin_group
   storageClient:
-    clientId: $keycloak_storage_client
-    clientSecret: $keycloak_storage_secret
+    clientId: $keycloak_storage_client_id
+    clientSecret: $keycloak_storage_client_secret
 
 mongodb:
   url: $mongodb_url
@@ -152,16 +145,6 @@ mongodb:
 redis:
   url: $redis_url
   password: $redis_password
-
-cs:
-  url: 
-  apiKey: 
-  secret: 
-
-rancher:
-  url: 
-  apiKey: 
-  secret: 
 
 sys-api:
   url: 

@@ -1,13 +1,20 @@
 # https://github.com/goharbor/harbor-helm
-externalURL: "http://harbor.deploy.localhost:9080"
+# externalURL: "http://harbor.deploy.localhost:9080"
+# Setting up Harbor by DNS name does not work when using Windows and WSL
+# So for now we use localhost and custom port
+externalURL: http://localhost:9081
 harborAdminPassword: "Harbor12345"
 
 expose:
+  type: loadBalancer
+  loadBalancer:
+    ports:
+      httpPort: 9081
   tls:
     enabled: false
-  ingress:
-    hosts:
-      core: harbor.deploy.localhost
+  # ingress:
+  #   hosts:
+  #     core: harbor.deploy.localhost
 
 internalTLS:
   enabled: false
