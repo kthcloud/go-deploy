@@ -101,7 +101,7 @@ func setupK8sClusters() error {
 		log.Printf(" - Setting up K8s cluster for zone %s (%d/%d)", zone.Name, idx+1, len(Config.Zones))
 
 		switch configType {
-		case "local-path":
+		case "localPath":
 			{
 				var zoneConfig config.LocalPathConfigSource
 				err := mapstructure.Decode(sourceType, &zoneConfig)

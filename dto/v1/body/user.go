@@ -57,26 +57,16 @@ type ApiKey struct {
 }
 
 type Quota struct {
-	Deployments      int     `json:"deployments"`
-	CpuCores         int     `json:"cpuCores"`
-	RAM              int     `json:"ram"`
-	DiskSize         int     `json:"diskSize"`
+	CpuCores         float64 `json:"cpuCores"`
+	RAM              float64 `json:"ram"`
+	DiskSize         float64 `json:"diskSize"`
 	Snapshots        int     `json:"snapshots"`
 	GpuLeaseDuration float64 `json:"gpuLeaseDuration"` // in hours
 }
 
 type Usage struct {
-	Deployments int `json:"deployments"`
-	CpuCores    int `json:"cpuCores"`
-	RAM         int `json:"ram"`
-	DiskSize    int `json:"diskSize"`
-	Snapshots   int `json:"snapshots"`
-}
-
-type SmallUserRead struct {
-	ID        string `json:"id"`
-	Username  string `json:"username"`
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
-	Email     string `json:"email"`
+	CpuCores  float64 `json:"cpuCores"`
+	RAM       float64 `json:"ram"`
+	DiskSize  float64 `json:"diskSize"`
+	Snapshots int     `json:"snapshots"`
 }

@@ -25,10 +25,6 @@ var (
 // It will return a NonUniqueFieldErr any unique index was violated.
 func (client *Client) Create(id, ownerID string, params *model.DeploymentCreateParams) (*model.Deployment, error) {
 	appName := "main"
-	replicas := 1
-	if params.Replicas != nil {
-		replicas = *params.Replicas
-	}
 
 	var customDomain *model.CustomDomain
 	if params.CustomDomain != nil {
@@ -40,7 +36,12 @@ func (client *Client) Create(id, ownerID string, params *model.DeploymentCreateP
 	}
 
 	mainApp := model.App{
-		Name:         appName,
+		Name: appName,
+
+		CpuCores: params.CpuCores,
+		RAM:      params.RAM,
+		Replicas: params.Replicas,
+
 		Image:        params.Image,
 		InternalPort: params.InternalPort,
 		Private:      params.Private,
@@ -51,7 +52,6 @@ func (client *Client) Create(id, ownerID string, params *model.DeploymentCreateP
 		CustomDomain: customDomain,
 		PingResult:   0,
 		PingPath:     params.PingPath,
-		Replicas:     replicas,
 	}
 
 	deployment := model.Deployment{
@@ -131,6 +131,8 @@ func (client *Client) UpdateWithParams(id string, params *model.DeploymentUpdate
 	db.AddIfNotNil(&setUpdate, "apps.main.customDomain", customDomain)
 	db.AddIfNotNil(&setUpdate, "apps.main.image", params.Image)
 	db.AddIfNotNil(&setUpdate, "apps.main.pingPath", params.PingPath)
+	db.AddIfNotNil(&setUpdate, "apps.main.cpuCores", params.CpuCores)
+	db.AddIfNotNil(&setUpdate, "apps.main.ram", params.RAM)
 	db.AddIfNotNil(&setUpdate, "apps.main.replicas", params.Replicas)
 
 	err = client.UpdateWithBsonByID(id,
@@ -234,6 +236,8 @@ func (client *Client) GetUsage() (*model.DeploymentUsage, error) {
 	projection := bson.D{
 		{"_id", 0},
 		{"apps.main.replicas", 1},
+		{"apps.main.cpuCores", 1},
+		{"apps.main.ram", 1},
 	}
 
 	deployments, err := client.ListWithFilterAndProjection(bson.D{}, projection)
@@ -241,13 +245,12 @@ func (client *Client) GetUsage() (*model.DeploymentUsage, error) {
 		return nil, err
 	}
 
-	usage := &model.DeploymentUsage{
-		Replicas: 0,
-	}
+	usage := &model.DeploymentUsage{}
 
 	for _, deployment := range deployments {
 		for _, app := range deployment.Apps {
-			usage.Replicas += app.Replicas
+			usage.CpuCores += app.CpuCores * float64(app.Replicas)
+			usage.RAM += app.RAM * float64(app.Replicas)
 		}
 	}
 
@@ -257,6 +260,11 @@ func (client *Client) GetUsage() (*model.DeploymentUsage, error) {
 // SetStatusByName sets the status of a deployment.
 func (client *Client) SetStatusByName(name, status string) error {
 	return client.SetWithBsonByName(name, bson.D{{"status", status}})
+}
+
+// SetReplicaStatusByName sets the replica status of a deployment.
+func (client *Client) SetReplicaStatusByName(name, app string, status *model.ReplicaStatus) error {
+	return client.SetWithBsonByName(name, bson.D{{fmt.Sprintf("apps.%s.replicaStatus", app), status}})
 }
 
 // SetErrorByName sets the error of a deployment.

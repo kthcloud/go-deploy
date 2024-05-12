@@ -184,11 +184,6 @@ func CreateDeployment(c *gin.Context) {
 		return
 	}
 
-	if effectiveRole.Quotas.Deployments <= 0 {
-		context.Forbidden("User is not allowed to create deployments")
-		return
-	}
-
 	if requestBody.Zone != nil {
 		zone := deployV1.Zones().Get(*requestBody.Zone)
 		if zone == nil {

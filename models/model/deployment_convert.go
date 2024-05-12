@@ -90,6 +90,16 @@ func (deployment *Deployment) ToDTO(smURL *string, teams []string) body.Deployme
 		status = deployment.Error.Reason
 	}
 
+	var replicaStatus *body.ReplicaStatus
+	if app.ReplicaStatus != nil {
+		replicaStatus = &body.ReplicaStatus{
+			DesiredReplicas:     app.ReplicaStatus.DesiredReplicas,
+			ReadyReplicas:       app.ReplicaStatus.ReadyReplicas,
+			AvailableReplicas:   app.ReplicaStatus.AvailableReplicas,
+			UnavailableReplicas: app.ReplicaStatus.UnavailableReplicas,
+		}
+	}
+
 	return body.DeploymentRead{
 		ID:      deployment.ID,
 		Name:    deployment.Name,
@@ -102,6 +112,10 @@ func (deployment *Deployment) ToDTO(smURL *string, teams []string) body.Deployme
 		RepairedAt:  utils.NonZeroOrNil(deployment.RepairedAt),
 		RestartedAt: utils.NonZeroOrNil(deployment.RestartedAt),
 
+		CpuCores: app.CpuCores,
+		RAM:      app.RAM,
+		Replicas: app.Replicas,
+
 		URL:             deployment.GetURL(),
 		Envs:            envs,
 		Volumes:         volumes,
@@ -111,16 +125,16 @@ func (deployment *Deployment) ToDTO(smURL *string, teams []string) body.Deployme
 		InternalPort:    app.InternalPort,
 		Image:           image,
 		HealthCheckPath: healthCheckPath,
-		Replicas:        app.Replicas,
 
 		CustomDomain:       customDomain,
 		CustomDomainURL:    deployment.GetCustomDomainURL(),
 		CustomDomainSecret: customDomainSecret,
 		CustomDomainStatus: customDomainStatus,
 
-		Status:     status,
-		Error:      deploymentError,
-		PingResult: pingResult,
+		Status:        status,
+		Error:         deploymentError,
+		ReplicaStatus: replicaStatus,
+		PingResult:    pingResult,
 
 		Integrations: make([]string, 0),
 
@@ -139,6 +153,14 @@ func (p *DeploymentCreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZon
 	} else {
 		p.Image = *dto.Image
 		p.Type = DeploymentTypePrebuilt
+	}
+
+	if dto.CpuCores != nil {
+		p.CpuCores = *dto.CpuCores
+	}
+
+	if dto.RAM != nil {
+		p.RAM = *dto.RAM
 	}
 
 	p.Private = dto.Private
@@ -187,7 +209,10 @@ func (p *DeploymentCreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZon
 		}
 	}
 
-	p.Replicas = dto.Replicas
+	p.Replicas = 1
+	if dto.Replicas != nil {
+		p.Replicas = *dto.Replicas
+	}
 
 	if dto.Zone != nil {
 		p.Zone = *dto.Zone
@@ -242,6 +267,8 @@ func (p *DeploymentUpdateParams) FromDTO(dto *body.DeploymentUpdate, deploymentT
 	}
 
 	p.Name = dto.Name
+	p.CpuCores = dto.CpuCores
+	p.RAM = dto.RAM
 	p.Private = dto.Private
 	p.InitCommands = dto.InitCommands
 	p.Args = dto.Args

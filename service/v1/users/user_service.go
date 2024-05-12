@@ -43,10 +43,9 @@ func (c *Client) GetUsage(userID string) (*model.UserUsage, error) {
 	}
 
 	usage := &model.UserUsage{
-		Deployments: deploymentUsage.Replicas,
-		CpuCores:    vmUsage.CpuCores,
-		RAM:         vmUsage.RAM,
-		DiskSize:    vmUsage.DiskSize,
+		CpuCores: float64(vmUsage.CpuCores) + deploymentUsage.CpuCores,
+		RAM:      float64(vmUsage.RAM) + deploymentUsage.RAM,
+		DiskSize: float64(vmUsage.DiskSize),
 	}
 
 	return usage, nil
@@ -163,11 +162,12 @@ func (c *Client) Discover(opts ...opts.DiscoverOpts) ([]body.UserReadDiscovery, 
 		}
 
 		usersRead = append(usersRead, body.UserReadDiscovery{
-			ID:        user.ID,
-			Username:  user.Username,
-			FirstName: user.FirstName,
-			LastName:  user.LastName,
-			Email:     user.Email,
+			ID:          user.ID,
+			Username:    user.Username,
+			FirstName:   user.FirstName,
+			LastName:    user.LastName,
+			Email:       user.Email,
+			GravatarURL: user.Gravatar.URL,
 		})
 	}
 

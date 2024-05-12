@@ -102,20 +102,6 @@ func DeleteVM(job *model.Job) error {
 		}
 	}
 
-	// Check if deleted, otherwise mark as failed and return to queue for retry
-	vm, err := vm_repo.New().GetByID(id)
-	if err != nil {
-		return jErrors.MakeFailedError(err)
-	}
-
-	if vm != nil {
-		if confirm.VmDeleted(vm) {
-			return nil
-		}
-
-		return jErrors.MakeFailedError(fmt.Errorf("vm not deleted"))
-	}
-
 	return nil
 }
 

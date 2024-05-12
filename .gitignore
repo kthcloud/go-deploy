@@ -36,3 +36,7 @@ config-local.yml
 
 # Caches kubeconfig
 cache/
+
+
+# KubeConfig dir
+kube/

@@ -19,11 +19,7 @@ func getSmDeletedConfirmers() []func(*model.SM) (bool, error) {
 
 // getVmDeletedConfirmers gets the confirmers for VM deletion.
 func getVmDeletedConfirmers() []func(*model.VM) (bool, error) {
-	return []func(*model.VM) (bool, error){
-		gpuCleared,
-		portsCleared,
-		k8sDeletedVM,
-	}
+	return []func(*model.VM) (bool, error){}
 }
 
 // DeploymentDeleted checks if the deployment is deleted by checking all confirmers.

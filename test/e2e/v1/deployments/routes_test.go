@@ -191,6 +191,25 @@ func TestCreateShared(t *testing.T) {
 	assert.True(t, hasDeployment, "deployment was not found in other user's deployments")
 }
 
+func TestCreateWithCustomSpecs(t *testing.T) {
+	t.Parallel()
+
+	cpuCores := 1.1
+	ram := 1.1
+
+	requestBody := body.DeploymentCreate{
+		Name:     e2e.GenName(),
+		Private:  false,
+		CpuCores: &cpuCores,
+		RAM:      &ram,
+	}
+
+	d, _ := v1.WithDeployment(t, requestBody)
+
+	assert.Greater(t, d.CpuCores, 1.0, "cpu cores were not set")
+	assert.Greater(t, d.RAM, 1.0, "ram was not set")
+}
+
 func TestUpdate(t *testing.T) {
 	t.Parallel()
 

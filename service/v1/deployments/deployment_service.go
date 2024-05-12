@@ -198,11 +198,19 @@ func (c *Client) Create(id, ownerID string, deploymentCreate *body.DeploymentCre
 	params := &model.DeploymentCreateParams{}
 	params.FromDTO(deploymentCreate, fallbackZone, fallbackImage, fallbackPort)
 
+	if params.CpuCores == 0 {
+		params.CpuCores = config.Config.Deployment.Resources.Limits.CPU
+	}
+
+	if params.RAM == 0 {
+		params.RAM = config.Config.Deployment.Resources.Limits.RAM
+	}
+
 	if !c.V1.Zones().HasCapability(params.Zone, configModels.ZoneCapabilityDeployment) {
 		return sErrors.NewZoneCapabilityMissingError(params.Zone, configModels.ZoneCapabilityDeployment)
 	}
 
-	d, err := deployment_repo.New().Create(id, ownerID, params)
+	deployment, err := deployment_repo.New().Create(id, ownerID, params)
 	if err != nil {
 		if errors.Is(err, deployment_repo.NonUniqueFieldErr) {
 			return sErrors.NonUniqueFieldErr
@@ -211,11 +219,11 @@ func (c *Client) Create(id, ownerID string, deploymentCreate *body.DeploymentCre
 		return makeError(err)
 	}
 
-	if d == nil {
+	if deployment == nil {
 		return makeError(fmt.Errorf("deployment already exists for another user"))
 	}
 
-	if d.Type == model.DeploymentTypeCustom {
+	if deployment.Type == model.DeploymentTypeCustom {
 		err = c.Harbor().Create(id, params)
 		if err != nil {
 			return makeError(err)
@@ -227,7 +235,7 @@ func (c *Client) Create(id, ownerID string, deploymentCreate *body.DeploymentCre
 		}
 	}
 
-	d, err = c.Refresh(id)
+	deployment, err = c.Refresh(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -549,20 +557,25 @@ func (c *Client) CheckQuota(id string, opts *opts.QuotaOptions) error {
 	quota := c.V1.Auth().GetEffectiveRole().Quotas
 
 	if opts.Create != nil {
-		add := 1
-		if opts.Create.Replicas != nil {
-			add = *opts.Create.Replicas
+		cpuCores := usage.CpuCores
+		if opts.Create.CpuCores != nil {
+			cpuCores += *opts.Create.CpuCores
+		} else {
+			cpuCores += config.Config.Deployment.Resources.Limits.CPU
+		}
+		ram := usage.RAM
+		if opts.Create.RAM != nil {
+			ram += *opts.Create.RAM
+		} else {
+			ram += config.Config.Deployment.Resources.Limits.RAM
 		}
 
-		// Ensure that users do not create infinite deployments with 0 replicas
-		if add == 0 {
-			add = 1
+		if cpuCores > quota.CpuCores {
+			return sErrors.NewQuotaExceededError(fmt.Sprintf("CPU quota exceeded. Current: %.2f, Quota: %.2f", cpuCores, quota.CpuCores))
 		}
 
-		totalCount := usage.Replicas + add
-
-		if totalCount > quota.Deployments {
-			return sErrors.NewQuotaExceededError(fmt.Sprintf("Deployment quota exceeded. Current: %d, Quota: %d", totalCount, quota.Deployments))
+		if ram > quota.RAM {
+			return sErrors.NewQuotaExceededError(fmt.Sprintf("RAM quota exceeded. Current: %.2f, Quota: %.2f", ram, quota.RAM))
 		}
 
 		return nil
@@ -576,21 +589,17 @@ func (c *Client) CheckQuota(id string, opts *opts.QuotaOptions) error {
 			return sErrors.DeploymentNotFoundErr
 		}
 
-		if opts.Update.Replicas != nil {
-			totalBefore := usage.Replicas
-			replicasReq := *opts.Update.Replicas
-
-			// Ensure that users do not create infinite deployments with 0 replicas
-			if replicasReq == 0 {
-				replicasReq = 1
+		if opts.Update.CpuCores != nil {
+			cpuCores := usage.CpuCores - d.GetMainApp().CpuCores + *opts.Update.CpuCores
+			if cpuCores > quota.CpuCores {
+				return sErrors.NewQuotaExceededError(fmt.Sprintf("CPU quota exceeded. Current: %.2f, Quota: %.2f", cpuCores, quota.CpuCores))
 			}
+		}
 
-			add := replicasReq - d.GetMainApp().Replicas
-
-			totalAfter := totalBefore + add
-
-			if totalAfter > quota.Deployments {
-				return sErrors.NewQuotaExceededError(fmt.Sprintf("Deployment quota exceeded. Current: %d, Quota: %d", totalAfter, quota.Deployments))
+		if opts.Update.RAM != nil {
+			ram := usage.RAM - d.GetMainApp().RAM + *opts.Update.RAM
+			if ram > quota.RAM {
+				return sErrors.NewQuotaExceededError(fmt.Sprintf("RAM quota exceeded. Current: %.2f, Quota: %.2f", ram, quota.RAM))
 			}
 		}
 
