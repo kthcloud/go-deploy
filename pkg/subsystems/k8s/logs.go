@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems/k8s/keys"
+	"go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/utils"
 	"golang.org/x/exp/maps"
 	"io"
@@ -60,7 +61,7 @@ func (client *Client) getPodNames(namespace, deploymentName string) ([]string, e
 // SetupLogStream sets up a log stream for the entire namespace
 //
 // This should only be called once per cluster
-func (client *Client) SetupLogStream(ctx context.Context, allowedNames []string, handler func(string, string, int, time.Time)) error {
+func (client *Client) SetupLogStream(ctx context.Context, allowedNames []string, handler func(name string, lines []models.LogLine)) error {
 	_ = func(err error) error {
 		return fmt.Errorf("failed to create k8s log stream. details: %w", err)
 	}
@@ -230,7 +231,7 @@ func (client *Client) SetupLogStream(ctx context.Context, allowedNames []string,
 
 // readLogs reads logs from a pod and sends them to the handler
 // It listens to the PodEventType channel to know when to stop, and emits a PodEventStop event when it stops
-func (client *Client) readLogs(ctx context.Context, podNumber int, namespace, deploymentName, podName string, start time.Time, eventChan chan PodEventType, handler func(string, string, int, time.Time)) {
+func (client *Client) readLogs(ctx context.Context, podNumber int, namespace, deploymentName, podName string, start time.Time, eventChan chan PodEventType, handler func(name string, lines []models.LogLine)) {
 	defer func() {
 		if r := recover(); r != nil {
 			if err, ok := r.(error); ok {
@@ -260,7 +261,8 @@ func (client *Client) readLogs(ctx context.Context, podNumber int, namespace, de
 
 	reader := bufio.NewScanner(logStream)
 
-	var line string
+	lines := make([]models.LogLine, 0, 10)
+	lastPush := time.Now()
 	for {
 		select {
 		case <-ctx.Done():
@@ -271,15 +273,31 @@ func (client *Client) readLogs(ctx context.Context, podNumber int, namespace, de
 					break
 				}
 
-				line = reader.Text()
+				line := reader.Text()
 				if isExitLine(line) {
+					if len(lines) > 0 {
+						handler(deploymentName, lines)
+						lines = nil
+					}
+
 					break
 				}
 
-				handler(line, deploymentName, podNumber, time.Now())
+				lines = append(lines, models.LogLine{
+					Line:      line,
+					PodNumber: podNumber,
+					CreatedAt: time.Now(),
+				})
+
+				// Push logs every 5 seconds or when the buffer is full (10 lines)
+				if time.Since(lastPush) > 5*time.Second || len(lines) >= 10 {
+					handler(deploymentName, lines)
+					lines = nil
+					lastPush = time.Now()
+				}
 			}
 
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(1000 * time.Millisecond)
 		}
 	}
 }

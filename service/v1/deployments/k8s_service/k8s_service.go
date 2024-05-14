@@ -18,7 +18,6 @@ import (
 	"go-deploy/service/v1/deployments/opts"
 	"go-deploy/utils"
 	"slices"
-	"time"
 )
 
 // Create sets up K8s for the deployment.
@@ -629,7 +628,7 @@ func (c *Client) Repair(id string) error {
 //
 // It sets up a log stream for all the pods in the deployment.
 // The handler function is called for each log line.
-func (c *Client) SetupLogStream(ctx context.Context, zone *config.Zone, allowedNames []string, handler func(string, string, int, time.Time)) error {
+func (c *Client) SetupLogStream(ctx context.Context, zone *config.Zone, allowedNames []string, handler func(name string, lines []model.Log)) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to set up log stream for zone %s. details: %w", zone.Name, err)
 	}
@@ -639,7 +638,19 @@ func (c *Client) SetupLogStream(ctx context.Context, zone *config.Zone, allowedN
 		return makeError(err)
 	}
 
-	err = kc.SetupLogStream(ctx, allowedNames, handler)
+	err = kc.SetupLogStream(ctx, allowedNames, func(name string, k8sLines []k8sModels.LogLine) {
+		lines := make([]model.Log, 0, len(k8sLines))
+		for _, line := range k8sLines {
+			lines = append(lines, model.Log{
+				Source:    model.LogSourcePod,
+				Prefix:    fmt.Sprintf("[pod %d]", line.PodNumber),
+				Line:      line.Line,
+				CreatedAt: line.CreatedAt,
+			})
+		}
+
+		handler(name, lines)
+	})
 	if err != nil {
 		return makeError(err)
 	}
