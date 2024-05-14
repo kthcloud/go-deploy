@@ -715,8 +715,8 @@ export vm_image="$vm_image"
 
 
 # Registry
-export registry_url="harbor.harbor.svc.cluster.local:$harbor_port"
-export placeholder_image="$registry_url/library/go-deploy-placeholder:latest"
+export registry_url="localhost:$harbor_port"
+export placeholder_image="$registry_url/library/go-deploy-placeholder"
 
 # Keycloak
 export keycloak_url="http://keycloak.deploy.localhost:$keycloak_port"

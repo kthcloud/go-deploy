@@ -1,4 +1,4 @@
-externalUrl: deploy.localhost:9080
+externalUrl: deploy.localhost:32158
 port: 8080
 mode: dev
 
@@ -37,23 +37,23 @@ zones:
     - deployment
     - vm
   domains:
-    parentApp: app.deploy.localhost:9080
-    parentSm: storage.deploy.localhost:9080
-    parentVm: vm.deploy.localhost:9080
-    parentVmApp: vm-app.deploy.localhost:9080
+    parentDeployment: app.deploy.localhost:32158
+    parentSm: storage.deploy.localhost:32158
+    parentVm: vm.deploy.localhost:32158
+    parentVmApp: vm-app.deploy.localhost:32158
   storage:
     nfsServer: nfs-server.nfs-server.svc.cluster.local
     paths:
       parentApp: 
       parentVm: 
   portRange:
-    start: 29000
-    end: 30000
+    start: 30242
+    end: 30267
 
 registry:
-  url: harbor.harbor.svc.cluster.local:9081
-  placeholderImage: harbor.harbor.svc.cluster.local:9081/library/go-deploy-placeholder:latest
-  vmHttpProxyImage: harbor.harbor.svc.cluster.local:9081/library/go-deploy-placeholder:latest
+  url: localhost:31200
+  placeholderImage: localhost:31200/library/go-deploy-placeholder
+  vmHttpProxyImage: localhost:31200/library/go-deploy-placeholder
 
 gpu:
   privilegedGpus:
@@ -61,12 +61,13 @@ gpu:
   excludedGpus:
 
 deployment:
+  defaultZone: local
   port: 8080
   prefix: deploy-
-  wildcardCertSecretNamespace: ingress-nginx
-  wildcardCertSecretName: deploy-wildcard-secret
+  wildcardCertSecretNamespace: cert-manager
+  wildcardCertSecretName: go-deploy-wildcard-secret
   customDomainTxtRecordSubdomain: _kthcloud
-  ingressClass: traefik
+  ingressClass: nginx
   resources:
     autoScale:
       cpuThreshold: 50
@@ -80,6 +81,7 @@ deployment:
       memory: 0.1
 
 vm:
+  defaultZone: local
   adminSshPublicKey: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC3ktpoOPJP6v79i3IyY2+vd5julRDLBrMLpCAe8d4UDH09BN9PLYRAeYbox1UcHH3G+qWuf6iIY5/oxhsZlEmCbJE1wr3rVHvutuP17mcXcdVdJlQ7QOsTqI9rUTFm8XUB83CGIC36rxada3q7ndr/RhpwUtVghYK8AT57NjUjR5PI6TayKBIqlxgzamPJPcklCWoFhMzMm/8C15J1FJTejBeLuLeC6y+jtlxUGO7WDsLRS68uzpGGiS9exDkABrnb7jSU8o6rzQpIJnipIoM75530MV3Lp7sxNEgp8psaETdyPorfPv7u1nCcQV9B3RhH3SLGqzcepwt9zXixxcniVokAYvHLzpxcRg6bSoqWvJHM97fe8hDwa36Jck6hdfSGDxVon49E1qfG4FB4JYwwX2ehnuc3zW/bP+VuwFC+Fr/9zJMXiSGKSnIQKrMWqWbUse3r7kzUCLJ3PACCjGRR74LmhPODzPv3Zc5sz5cGFzOR2bNgUEUB1NK0Cw7GaO8= emil@home
   image: https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
 
@@ -131,19 +133,19 @@ roles:
       gpuLeaseDuration: 168
 
 keycloak:
-  url: http://keycloak.deploy.localhost:9080
+  url: http://keycloak.deploy.localhost:31451
   realm: master
   adminGroup: admin
   storageClient:
     clientId: go-deploy-storage
-    clientSecret: secret
+    clientSecret: IZGwysAA6b16aOT2jcj7tiUECajmxp9S
 
 mongodb:
-  url: mongodb://admin:admin@localhost:9027
+  url: mongodb://admin:admin@localhost:30638
   name: deploy
 
 redis:
-  url: redis://localhost:6379
+  url: localhost:32040
   password: 
 
 sys-api:
@@ -154,7 +156,7 @@ sys-api:
   useMock: true
 
 harbor:
-  url: http://harbor.deploy.localhost:9080
+  url: http://harbor.deploy.localhost:31200
   user: admin
   password: Harbor12345
   webhookSecret: secret

@@ -10,7 +10,7 @@ import (
 )
 
 // ToDTO converts a Deployment to a body.DeploymentRead DTO.
-func (deployment *Deployment) ToDTO(smURL *string, teams []string) body.DeploymentRead {
+func (deployment *Deployment) ToDTO(smURL *string, externalPort int, teams []string) body.DeploymentRead {
 	app := deployment.GetMainApp()
 	if app == nil {
 		log.Println("Main app not found in deployment", deployment.ID)
@@ -116,7 +116,7 @@ func (deployment *Deployment) ToDTO(smURL *string, teams []string) body.Deployme
 		RAM:      app.RAM,
 		Replicas: app.Replicas,
 
-		URL:             deployment.GetURL(),
+		URL:             deployment.GetURL(externalPort),
 		Envs:            envs,
 		Volumes:         volumes,
 		InitCommands:    app.InitCommands,

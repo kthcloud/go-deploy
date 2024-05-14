@@ -2,8 +2,7 @@ package harbor
 
 import (
 	"fmt"
-	"github.com/mittwald/goharbor-client/v5/apiv2"
-	"github.com/mittwald/goharbor-client/v5/apiv2/pkg/config"
+	"go-deploy/pkg/imp/harbor/harbor"
 )
 
 // Client is a wrapper around the Harbor API client.
@@ -13,7 +12,7 @@ type Client struct {
 	password string
 
 	Project      string
-	HarborClient *apiv2.RESTClient
+	HarborClient *harbor.ClientSet
 }
 
 // ClientConf is a configuration struct for the Harbor client.
@@ -47,12 +46,18 @@ func New(config *ClientConf) (*Client, error) {
 }
 
 // createHarborClient is a helper function to create a Harbor client.
-func createHarborClient(apiUrl, username, password string) (*apiv2.RESTClient, error) {
+func createHarborClient(apiUrl, username, password string) (*harbor.ClientSet, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create harbor client. details: %w", err)
 	}
 
-	client, err := apiv2.NewRESTClientForHost(apiUrl, username, password, &config.Options{})
+	client, err := harbor.NewClientSet(&harbor.ClientSetConfig{
+		URL:      apiUrl,
+		Insecure: true,
+		Username: username,
+		Password: password,
+	})
+
 	if err != nil {
 		return nil, makeError(err)
 	}

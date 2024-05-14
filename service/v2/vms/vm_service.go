@@ -187,7 +187,7 @@ func (c *Client) Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
 		return fmt.Errorf("failed to create vm. details: %w", err)
 	}
 
-	fallbackZone := "se-flem-2"
+	fallbackZone := config.Config.VM.DefaultZone
 	params := model.VmCreateParams{}.FromDTOv2(dtoVmCreate, &fallbackZone)
 
 	if !c.V1.Zones().HasCapability(params.Zone, configModels.ZoneCapabilityVM) {

@@ -10,6 +10,7 @@ import (
 	configModels "go-deploy/models/config"
 	"go-deploy/models/model"
 	"go-deploy/models/version"
+	"go-deploy/pkg/config"
 	"go-deploy/pkg/sys"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
@@ -71,7 +72,7 @@ func GetDeployment(c *gin.Context) {
 	}
 
 	teamIDs, _ := deployV1.Teams().ListIDs(teamOpts.ListOpts{ResourceID: deployment.ID})
-	context.Ok(deployment.ToDTO(deployV1.SMs().GetUrlByUserID(deployment.OwnerID), teamIDs))
+	context.Ok(deployment.ToDTO(deployV1.SMs().GetUrlByUserID(deployment.OwnerID), config.Config.ExternalPort, teamIDs))
 }
 
 // ListDeployments
@@ -132,7 +133,7 @@ func ListDeployments(c *gin.Context) {
 	dtoDeployments := make([]body.DeploymentRead, len(deployments))
 	for i, deployment := range deployments {
 		teamIDs, _ := deployV1.Teams().ListIDs(teamOpts.ListOpts{ResourceID: deployment.ID})
-		dtoDeployments[i] = deployment.ToDTO(deployV1.SMs().GetUrlByUserID(deployment.OwnerID), teamIDs)
+		dtoDeployments[i] = deployment.ToDTO(deployV1.SMs().GetUrlByUserID(deployment.OwnerID), config.Config.ExternalPort, teamIDs)
 	}
 
 	context.JSONResponse(200, dtoDeployments)

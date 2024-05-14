@@ -15,6 +15,7 @@ import (
 	"gopkg.in/yaml.v3"
 	v1 "k8s.io/api/core/v1"
 	"slices"
+	"strings"
 	"time"
 )
 
@@ -192,7 +193,7 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 			ServiceName:  vmProxyServiceName(kg.vm, vmPfrName(port.Port, port.Protocol)),
 			ServicePort:  8080,
 			IngressClass: config.Config.Deployment.IngressClass,
-			Hosts:        []string{vmProxyExternalURL(port.HttpProxy.Name, kg.zone)},
+			Hosts:        []string{getExternalProxyURL(port.HttpProxy.Name, kg.zone)},
 			TlsSecret:    &tlsSecret,
 			CustomCert:   nil,
 			Placeholder:  false,
@@ -376,9 +377,19 @@ func vmProxyCustomDomainIngressName(vm *model.VM, portName string) string {
 	return fmt.Sprintf("%s-%s-custom-domain", vm.Name, portName)
 }
 
-// vmProxyExternalURL returns the external URL for a VM proxy
-func vmProxyExternalURL(portName string, zone *configModels.Zone) string {
-	return fmt.Sprintf("%s.%s", portName, zone.Domains.ParentVmApp)
+// getExternalProxyURL returns the external URL for a VM proxy
+func getExternalProxyURL(portName string, zone *configModels.Zone) string {
+	// Remove protocol:// and :port from the zone.Domains.ParentVmApp
+	var fqdn = zone.Domains.ParentVmApp
+
+	split := strings.Split(zone.Domains.ParentVmApp, "://")
+	if len(split) > 1 {
+		fqdn = split[1]
+	}
+
+	fqdn = strings.Split(fqdn, ":")[0]
+
+	return fmt.Sprintf("%s.%s", portName, fqdn)
 }
 
 // vmNetworkPolicyName returns the network policy name for a VM or Deployment

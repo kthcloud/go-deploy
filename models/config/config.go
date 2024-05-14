@@ -16,9 +16,10 @@ const (
 )
 
 type ConfigType struct {
-	Port        int    `yaml:"port"`
-	ExternalUrl string `yaml:"externalUrl"`
-	Mode        string `yaml:"mode"`
+	Port         int    `yaml:"port"`
+	ExternalUrl  string `yaml:"externalUrl"`
+	ExternalPort int
+	Mode         string `yaml:"mode"`
 	// Filepath is the path to the configuration file
 	// It is set by the SetupEnvironment function when the configuration is loaded
 	Filepath string
@@ -135,6 +136,7 @@ type CloudStackConfigSource struct {
 }
 
 type VM struct {
+	DefaultZone       string `yaml:"defaultZone"`
 	AdminSshPublicKey string `yaml:"adminSshPublicKey"`
 	Image             string `yaml:"image"`
 
@@ -163,6 +165,7 @@ type LegacyZone struct {
 }
 
 type Deployment struct {
+	DefaultZone                    string `yaml:"defaultZone"`
 	Port                           int    `yaml:"port"`
 	Prefix                         string `yaml:"prefix"`
 	WildcardCertSecretNamespace    string `yaml:"wildcardCertSecretNamespace"`

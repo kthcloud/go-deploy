@@ -6,19 +6,17 @@ import (
 	"testing"
 )
 
-const kubevirtZone = "se-flem-2"
-
 func TestCreateVM(t *testing.T) {
 	t.Parallel()
 
-	c, _ := withContext(t, kubevirtZone)
+	c, _ := withContext(t)
 	withDefaultVM(t, c)
 }
 
 func TestUpdateVM(t *testing.T) {
 	t.Parallel()
 
-	c, _ := withContext(t, kubevirtZone)
+	c, _ := withContext(t)
 	vm := withDefaultVM(t, c)
 
 	vm.CpuCores = 2

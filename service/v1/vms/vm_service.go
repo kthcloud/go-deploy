@@ -168,9 +168,8 @@ func (c *Client) Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
 		return fmt.Errorf("failed to create vm. details: %w", err)
 	}
 
-	// Temporary hard-coded fallback
-	fallback := "se-flem"
-	deploymentZone := "se-flem-2"
+	fallback := config.Config.VM.DefaultZone
+	deploymentZone := config.Config.Deployment.DefaultZone
 
 	params := model.VmCreateParams{}.FromDTOv1(dtoVmCreate, &fallback, &deploymentZone)
 

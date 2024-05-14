@@ -14,6 +14,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -49,6 +50,18 @@ func SetupEnvironment(mode string) error {
 
 	log.Println("go-deploy", version.AppVersion)
 
+	// Fetch externalPort from externalUrl
+	split := strings.Split(Config.ExternalUrl, ":")
+	if len(split) > 1 {
+		Config.ExternalPort, err = strconv.Atoi(split[1])
+		if err != nil {
+			return makeError(err)
+		}
+	} else {
+		Config.ExternalPort = 443
+	}
+
+	// Fetch the roles from the config
 	if len(Config.Roles) == 0 {
 		log.Println("WARNING: no roles found in config")
 	} else {
@@ -71,6 +84,11 @@ func SetupEnvironment(mode string) error {
 	err = setupK8sClusters()
 	if err != nil {
 		return makeError(err)
+	}
+
+	err = validateConfig()
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -287,4 +305,31 @@ func createK8sClients(configData []byte) (*kubernetes.Clientset, *kubevirt.Clien
 	}
 
 	return k8sClient, kubeVirtClient, nil
+}
+
+// validateConfig validates the config and throws an error if it is invalid.
+// It is only concerned with static validation, and does not check for dynamic issues.
+func validateConfig() error {
+	// Ensure there is a default zone
+	foundDefaultDeployment := false
+	foundDefaultVM := false
+	for _, zone := range Config.Zones {
+		if zone.Name == Config.VM.DefaultZone {
+			foundDefaultVM = true
+		}
+
+		if zone.Name == Config.Deployment.DefaultZone {
+			foundDefaultDeployment = true
+		}
+	}
+
+	if !foundDefaultDeployment {
+		return fmt.Errorf("no default deployment zone found")
+	}
+
+	if !foundDefaultVM {
+		return fmt.Errorf("no default VM zone found")
+	}
+
+	return nil
 }
