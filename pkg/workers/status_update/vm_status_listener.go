@@ -63,7 +63,7 @@ func VmStatusListener(ctx context.Context) error {
 		})
 
 		if err != nil {
-			return fmt.Errorf("failed to setup vm status watcher for zone %s. details: %w", zone.Name, err)
+			return fmt.Errorf("failed to set up vm status watcher for zone %s. details: %w", zone.Name, err)
 		}
 	}
 

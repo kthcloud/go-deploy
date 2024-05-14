@@ -3,6 +3,20 @@ kind: Namespace
 metadata:
   name: mongodb
 ---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pvc-mongodb
+  namespace: mongodb
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: local-path
+  volumeMode: Filesystem
+---  
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -19,22 +33,21 @@ spec:
     spec:
       containers:
       - name: mongodb
-        image: mongo:4.4
+        image: mongo:6.0
         ports:
         - containerPort: 27017
         env:
         - name: MONGO_INITDB_ROOT_USERNAME
-          value: root
+          value: admin
         - name: MONGO_INITDB_ROOT_PASSWORD
-          value: root
+          value: admin
         volumeMounts:
-        - name: mongodb-data
+        - name: vol-mongodb
           mountPath: /data/db
       volumes:
-      - name: mongodb-data
-        hostPath:
-          path: /mnt/nfs/mongodb
-          type: DirectoryOrCreate
+        - name: vol-mongodb
+          persistentVolumeClaim:
+            claimName: pvc-mongodb
 ---
 apiVersion: v1
 kind: Service

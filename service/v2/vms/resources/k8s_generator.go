@@ -97,7 +97,7 @@ func (kg *K8sGenerator) VMs() []models.VmPublic {
 		GPUs:      make([]string, 0),
 		CloudInit: createCloudInitString(&cloudInit),
 		// Temporary image URL
-		Image:     "docker://registry.cloud.cbh.kth.se/images/ubuntu:24.04",
+		Image:     config.Config.VM.Image,
 		Running:   true,
 		CreatedAt: time.Time{},
 	}
@@ -129,7 +129,7 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 			Selector: map[string]string{
 				keys.LabelDeployName: vmName(kg.vm),
 			},
-			LoadBalancerIP: &kg.zone.K8s.LoadBalancerIP,
+			LoadBalancerIP: kg.zone.K8s.LoadBalancerIP,
 		})
 
 		if port.HttpProxy != nil {

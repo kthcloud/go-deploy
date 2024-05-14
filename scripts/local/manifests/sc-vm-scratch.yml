@@ -3,7 +3,7 @@ kind: StorageClass
 metadata:
   name: deploy-vm-scratch
 parameters:
-  server: nfs-server.nfs-server.svc.cluster.local
-  share: /mnt/nfs/scratch
+  server: $nfs_server
+  share: $nfs_share
 provisioner: nfs.csi.k8s.io
 reclaimPolicy: Delete

@@ -53,7 +53,7 @@ func DeploymentStatusListener(ctx context.Context) error {
 			}
 		})
 		if err != nil {
-			return fmt.Errorf("failed to setup deployment status watcher for zone %s. details: %w", zone.Name, err)
+			return fmt.Errorf("failed to set up deployment status watcher for zone %s. details: %w", zone.Name, err)
 		}
 	}
 
@@ -95,7 +95,7 @@ func DeploymentEventListener(ctx context.Context) error {
 			}
 		})
 		if err != nil {
-			return fmt.Errorf("failed to setup deployment event status watcher for zone %s. details: %w", zone.Name, err)
+			return fmt.Errorf("failed to set up deployment event status watcher for zone %s. details: %w", zone.Name, err)
 		}
 	}
 

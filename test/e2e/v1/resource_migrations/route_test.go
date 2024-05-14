@@ -9,6 +9,7 @@ import (
 	v1 "go-deploy/test/e2e/v1"
 	v2 "go-deploy/test/e2e/v2"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -152,4 +153,21 @@ func TestCreateOwnerUpdateAsAdmin(t *testing.T) {
 	assert.Equal(t, e2e.DefaultUserID, resource1.OwnerID, "deployment owner not updated")
 	resource2 = v2.GetVM(t, resource2.ID, e2e.DefaultUserID)
 	assert.Equal(t, e2e.DefaultUserID, resource2.OwnerID, "vm owner not updated")
+
+	// Ensure resource are accessible by the new owner
+	v1.WaitForDeploymentRunning(t, resource1.ID, func(d *body.DeploymentRead) bool {
+		if d.URL != nil {
+			return v1.CheckUpURL(t, *d.URL)
+		}
+		return false
+	})
+	v2.WaitForVmRunning(t, resource2.ID, func(vm *bodyV2.VmRead) bool {
+		if vm.SshConnectionString != nil {
+			res := v2.DoSshCommand(t, *vm.SshConnectionString, "echo 'hello world'")
+			if strings.Contains(res, "hello world") {
+				return true
+			}
+		}
+		return false
+	})
 }

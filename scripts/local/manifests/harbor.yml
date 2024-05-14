@@ -1,28 +1,18 @@
----
-apiVersion: traefik.containo.us/v1alpha1
-kind: IngressRoute
+# Ingress that points to harbor.harbor
+apiVersion: networking.k8s.io/v1
+kind: Ingress
 metadata:
   name: harbor
   namespace: harbor
 spec:
-  entryPoints:
-    - websecure
-  routes:
-  - match: Host(`harbor.deploy.localhost`)
-    kind: Rule
-    services:
-    - name: harbor-harbor-portal
-      namespace: harbor
-      port: 80
-  - match: Host(`harbor.deploy.localhost`) && PathPrefix(`/api/`, `/service/`, `/v2/`, `/chartrepo/`, `/c/`)
-    kind: Rule
-    services:
-    - name: harbor-harbor-core
-      namespace: harbor
-      port: 80
-  tls:
-    certResolver: default
-    domains:
-    - main: '*.harbor.deploy.localhost'
-      sans:
-      - 'harbor.deploy.localhost'
+  rules:
+  - host: harbor.$domain
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: harbor
+            port:
+              number: $harbor_port

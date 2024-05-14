@@ -135,8 +135,12 @@ type CloudStackConfigSource struct {
 }
 
 type VM struct {
-	AdminSshPublicKey string       `yaml:"adminSshPublicKey"`
-	Zones             []LegacyZone `yaml:"zones"`
+	AdminSshPublicKey string `yaml:"adminSshPublicKey"`
+	Image             string `yaml:"image"`
+
+	// Zones is a list of zones that are used for VM v1
+	// Deprecated: Use Zone instead
+	Zones []LegacyZone `yaml:"zones"`
 }
 
 // LegacyZone is a zone that is used for VM v1
@@ -204,8 +208,9 @@ type Zone struct {
 		// IngressNamespace is the namespace where the ingress resources are created, e.g. "ingress-nginx"
 		IngressNamespace string `yaml:"ingressNamespace"`
 		// LoadBalancerIP is the IP of the load balancer that is used for the ingress resources
-		LoadBalancerIP string `yaml:"loadBalancerIp"`
-		ClusterIssuer  string `yaml:"clusterIssuer"`
+		// It is only set if the cluster sets dynamic load balancer IPs to ensure that the IP is always the same
+		LoadBalancerIP *string `yaml:"loadBalancerIp"`
+		ClusterIssuer  string  `yaml:"clusterIssuer"`
 		// Client is the Kubernetes client for the zone created by querying the ConfigSource
 		Client *kubernetes.Clientset
 		// KubeVirtClient is the KubeVirt client for the zone created by querying the ConfigSource
