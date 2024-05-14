@@ -9,7 +9,6 @@ import (
 	"go-deploy/pkg/log"
 	"go-deploy/service/v1/deployments/k8s_service"
 	"go-deploy/utils"
-	"time"
 )
 
 // deploymentLogger is a worker that logs deployments.
@@ -24,13 +23,8 @@ func deploymentLogger(ctx context.Context) error {
 		dZone := zone
 		log.Println("Setting up log stream for zone", zone.Name)
 		go func() {
-			err = k8s_service.New().SetupLogStream(ctx, &dZone, allowedNames, func(line string, name string, podNumber int, createdAt time.Time) {
-				err = deployment_repo.New().AddLogsByName(name, model.Log{
-					Source:    model.LogSourcePod,
-					Prefix:    fmt.Sprintf("[pod %d]", podNumber),
-					Line:      line,
-					CreatedAt: createdAt,
-				})
+			err = k8s_service.New().SetupLogStream(ctx, &dZone, allowedNames, func(name string, lines []model.Log) {
+				err = deployment_repo.New().AddLogsByName(name, lines...)
 				if err != nil {
 					utils.PrettyPrintError(fmt.Errorf("failed to add k8s logs for deployment %s. details: %w", name, err))
 					return
@@ -38,7 +32,7 @@ func deploymentLogger(ctx context.Context) error {
 			})
 
 			if err != nil {
-				utils.PrettyPrintError(fmt.Errorf("failed to set up log stream for zone %s. details: %w", zone.Name, err))
+				utils.PrettyPrintError(fmt.Errorf("failed to set up log stream for zone %s. details: %w", dZone.Name, err))
 				return
 			}
 		}()
