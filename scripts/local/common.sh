@@ -1,14 +1,21 @@
 #!/bin/bash
 
-GREEN_CHECK="\033[32;1m✔\033[0m"
-RED_CROSS="\033[31;1m✗\033[0m"
+RESET="\033[0m"
+
+GREEN_BOLD="\033[32;1m"
+RED_BOLD="\033[31;1m"
+TEAL_BOLD="\033[36;1m"
+BLUE_BOLD="\033[34;1m"
+ORANGE_BOLD="\033[33;1m"
+
+PINK_BOLD="\033[95;1m"
 
 spinner() {
     local pid=$!
     local delay=0.07
     local spinstr='⠇⠋⠙⠸⠴⠦'
-    local green_check='\033[32;1m✔\033[0m'
-    local red_cross='\033[31;1m✘\033[0m'
+    local green_check="${GREEN_BOLD}✔${RESET}"
+    local red_cross="${RED_BOLD}✘${RESET}"
     local temp_file=$(mktemp)
 
     local task_name=$1

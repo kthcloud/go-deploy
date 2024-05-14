@@ -48,6 +48,7 @@ spec:
     - name: nfs
       port: 2049
       targetPort: 2049
+      nodePort: ${nfs_port}
     - name: mountd
       port: 20048
       targetPort: 20048
@@ -56,4 +57,4 @@ spec:
       targetPort: 111
   selector:
     app: nfs-server
-  type: ClusterIP
+  type: NodePort

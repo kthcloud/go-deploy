@@ -37,7 +37,7 @@ zones:
     - deployment
     - vm
   domains:
-    parentApp: app.$external_url
+    parentDeployment: app.$external_url
     parentSm: storage.$external_url
     parentVm: vm.$external_url
     parentVmApp: vm-app.$external_url
@@ -61,12 +61,13 @@ gpu:
   excludedGpus:
 
 deployment:
+  defaultZone: local
   port: 8080
   prefix: deploy-
-  wildcardCertSecretNamespace: ingress-nginx
-  wildcardCertSecretName: deploy-wildcard-secret
+  wildcardCertSecretNamespace: cert-manager
+  wildcardCertSecretName: go-deploy-wildcard-secret
   customDomainTxtRecordSubdomain: _kthcloud
-  ingressClass: traefik
+  ingressClass: nginx
   resources:
     autoScale:
       cpuThreshold: 50
@@ -80,6 +81,7 @@ deployment:
       memory: 0.1
 
 vm:
+  defaultZone: local
   adminSshPublicKey: $admin_ssh_public_key
   image: $vm_image
 

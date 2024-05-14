@@ -1,5 +1,7 @@
 #!/bin/bash
 
+
+
 # Ensure this script is run from the script folder by checking if the parent folder contains mod.go
 if [ ! -f "../../go.mod" ]; then
   echo "$RED_CROSS Please run this script from the scripts folder"
@@ -8,53 +10,32 @@ fi
 
 source ./common.sh
 
-domain="deploy.localhost"
 
-cluster_name="go-deploy-dev"
-kubeconfig_output_path="../../kube"
+function check_dependencies() {
+  # Check if Docker is installed, if not exit
+  if ! [ -x "$(command -v docker)" ]; then
+    echo -e "$RED_CROSS Docker is not installed. Please install Docker"
+    exit 1
+  fi
 
-placeholder_git_repo="https://github.com/kthcloud/go-deploy-placeholder.git"
-vm_image="https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
-nfs_base_path="/mnt/nfs"
+  # Check if Helm is installed, if not exit
+  if ! [ -x "$(command -v helm)" ]; then
+    echo -e "$RED_CROSS Helm is not installed. Please install Helm"
+    exit 1
+  fi
 
-# Ports
-ingress_http_port=9080
-ingress_https_port=9443
-mongo_db_port=9027
-redis_port=9079
-nfs_port=9049
-harbor_port=9081
-port_range_start=29000
-port_range_end=30000
+  # Check if dnsmasq is installed, if not exit
+  if ! [ -x "$(command -v dnsmasq)" ]; then
+    echo -e "$RED_CROSS dnsmasq is not installed. Please install dnsmasq"
+    exit 1
+  fi
 
-# Dynamic variables
-keycloak_deploy_secret=""
-keycloak_deploy_storage_secret=""
-
-
-# Check if Docker is installed, if not exit
-if ! [ -x "$(command -v docker)" ]; then
-  echo -e "$RED_CROSS Docker is not installed. Please install Docker"
-  exit 1
-fi
-
-# Check if Helm is installed, if not exit
-if ! [ -x "$(command -v helm)" ]; then
-  echo -e "$RED_CROSS Helm is not installed. Please install Helm"
-  exit 1
-fi
-
-# Check if dnsmasq is installed, if not exit
-if ! [ -x "$(command -v dnsmasq)" ]; then
-  echo -e "$RED_CROSS dnsmasq is not installed. Please install dnsmasq"
-  exit 1
-fi
-
-# Check if /etc/dnsqmasq.d exists, if not exit
-if ! [ -d "/etc/dnsmasq.d" ]; then
-  echo -e "$RED_CROSS /etc/dnsmasq.d does not exist. This is usually caused by dnsmasq not being installed correctly"
-  exit 1
-fi
+  # Check if /etc/dnsqmasq.d exists, if not exit
+  if ! [ -d "/etc/dnsmasq.d" ]; then
+    echo -e "$RED_CROSS /etc/dnsmasq.d does not exist. This is usually caused by dnsmasq not being installed correctly"
+    exit 1
+  fi
+}
 
 function configure_local_dns() {
   # If file /etc/dnsmasq.d/50-go-deploy-dev.conf does not exist, create it
@@ -79,21 +60,124 @@ function install_k3d() {
   fi
 }
 
-function create_k3d_cluster() {
-  local current=$(k3d cluster list | grep -c $cluster_name)
+function generate_cluster_config() {
+  ingress_http_port=$((RANDOM % 2768 + 30000))
+  ingress_https_port=$((RANDOM % 2768 + 30000))
+  mongo_db_port=$((RANDOM % 2768 + 30000))
+  redis_port=$((RANDOM % 2768 + 30000))
+  nfs_port=$((RANDOM % 2768 + 30000))
+  harbor_port=$((RANDOM % 2768 + 30000))
+  keycloak_port=$((RANDOM % 2768 + 30000))
+
+  # Use 25 ports for the range starting at a random port in range 30000-32767
+  port_range_start=$((RANDOM % 2768 + 30000))
+  port_range_end=$((port_range_start + 25))
+ 
+  # Write to cluster-config.rc
+  echo -e "#!/bin/bash
+# Cluster configuration
+export cluster_name=go-deploy-dev
+export kubeconfig_output_path=../../kube
+
+# Domain configuration
+export domain=deploy.localhost
+
+# Placeholder git repo
+export placeholder_git_repo="https://github.com/kthcloud/go-deploy-placeholder.git"
+export vm_image="https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
+
+# NFS configuration
+export nfs_base_path="/mnt/nfs"
+
+# IAM configuration
+export keycloak_deploy_secret=
+export keycloak_deploy_storage_secret=
+
+# Ports configuration
+export ingress_http_port=$ingress_http_port
+export ingress_https_port=$ingress_https_port
+export mongo_db_port=$mongo_db_port
+export redis_port=$redis_port
+export nfs_port=$nfs_port
+export harbor_port=$harbor_port
+export keycloak_port=$keycloak_port
+export port_range_start=$port_range_start
+export port_range_end=$port_range_end" > ./cluster-config.rc  
+}
+
+function read_cluster_config() {
+  source ./cluster-config.rc
+}
+
+function generate_kind_cluster_config() {
+  read_cluster_config
+
+  # Generate kind config with correct ports
+  config="kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+- role: control-plane
+  extraPortMappings:"
+
+  # Add port mappings for all services that need to be exposed
+  config="$config
+  - containerPort: $ingress_http_port
+    hostPort: $ingress_http_port
+    listenAddress: 0.0.0.0
+    protocol: TCP
+  - containerPort: $ingress_https_port
+    hostPort: $ingress_https_port
+    listenAddress: 0.0.0.0
+    protocol: TCP
+  - containerPort: $mongo_db_port
+    hostPort: $mongo_db_port
+    listenAddress: 0.0.0.0
+    protocol: TCP
+  - containerPort: $redis_port
+    hostPort: $redis_port
+    listenAddress: 0.0.0.0
+    protocol: TCP
+  - containerPort: $nfs_port
+    hostPort: $nfs_port
+    listenAddress: 0.0.0.0
+    protocol: TCP
+  - containerPort: $harbor_port
+    hostPort: $harbor_port
+    listenAddress: 0.0.0.0
+    protocol: TCP
+  - containerPort: $keycloak_port
+    hostPort: $keycloak_port
+    listenAddress: 0.0.0.0
+    protocol: TCP"
+
+  for port in $(seq $port_range_start $port_range_end); do
+    config="$config
+  - containerPort: $port
+    hostPort: $port
+    listenAddress: 0.0.0.0
+    protocol: TCP
+  - containerPort: $port
+    hostPort: $port
+    listenAddress: 0.0.0.0
+    protocol: UDP"
+  done
+  
+  echo "$config" > ./manifests/kind-config.yml
+}
+
+function create_kind_cluster() {
+  read_cluster_config
+
+  local current=$(kind get clusters 2> /dev/stdout | grep -c $cluster_name)
   if [ "$current" -eq 0 ]; then
-    k3d cluster create $cluster_name --agents 2 \
-      -p "$ingress_http_port:80@loadbalancer" \
-      -p "$ingress_https_port:443@loadbalancer" \
-      -p "$port_range_start-$port_range_end,:29000-30000@server:0" \
-      -p "$redis_port:6379@server:0" \
-      -p "$mongo_db_port:27017@server:0" \
-      -p "$nfs_port:2049@server:0" \
-      -p "$harbor_port:9081@server:0"
+    generate_kind_cluster_config
+    kind create cluster --name $cluster_name --config ./manifests/kind-config.yml --quiet
   fi
 
+  read_cluster_config
+
   # Wait for kubeconfig to change
-  while [ "$(kubectl config current-context)" != "k3d-$cluster_name" ]; do
+  while [ "$(kubectl config current-context)" != "kind-$cluster_name" ]; do
     sleep 5
   done
 
@@ -107,36 +191,74 @@ function create_k3d_cluster() {
     rm -f "$kubeconfig_output_path/$cluster_name.yml"
   fi
 
-  k3d kubeconfig get $cluster_name > "$kubeconfig_output_path/$cluster_name.yml"
+  kind get kubeconfig --name $cluster_name > "$kubeconfig_output_path/$cluster_name.yml"
+}
+
+function install_local_path_provisioner() {
+  # If namespace local-path-storage already exists, skip
+  res=$(kubectl get ns | grep -c local-path-storage)
+  if [ $res -eq 0 ]; then
+    kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.26/deploy/local-path-storage.yaml
+  fi
+}
+
+function install_ingress_nginx() {
+  read_cluster_config
+
+  # If release 'ingress-nginx' in namespace 'ingress-nginx' already exists, skip
+  res=$(helm list -n ingress-nginx | grep -c ingress-nginx)
+  if [ $res -eq 0 ]; then
+    helm upgrade --install ingress-nginx ingress-nginx \
+      --repo https://kubernetes.github.io/ingress-nginx \
+      --namespace ingress-nginx --create-namespace \
+      --set controller.service.nodePorts.http=$ingress_http_port \
+      --set controller.service.nodePorts.https=$ingress_https_port
+  fi
+
+  # Wait for ingress-nginx to be up
+  # while [ "$(kubectl get pod -n ingress-nginx -l app.kubernetes.io/name=ingress-nginx -o jsonpath="{.items[0].status.phase}")" != "Running" ]; do
+  #   sleep 5
+  # done
 }
 
 function install_harbor() {
+  read_cluster_config
+
   # If helm release 'harbor' in namespace 'harbor' already exists, skip
   res=$(helm list -n harbor | grep -c harbor)
   if [ $res -eq 0 ]; then
+    harbor_values_subst=$(mktemp)
+    envsubst < ./helmvalues/harbor.values.yml > $harbor_values_subst
+
     helm install harbor harbor \
       --repo https://helm.goharbor.io \
       --namespace harbor \
       --create-namespace \
-      --values ./helmvalues/harbor.values.yml
+      --values - < $harbor_values_subst
+
+    # Allow namespace to be created
+    sleep 5
   fi
 
   # Setup an ingress for Harbor
   res=$(kubectl get ingress -n harbor -o yaml | grep -c harbor)
-  export domain=$domain
-  export harbor_port=$harbor_port
   if [ $res -eq 0 ]; then
-    envsubst < ./manifests/harbor.yml | kubectl apply -f -
+    export domain=$domain
+    export harbor_port=$harbor_port
+    harbor_subst=$(mktemp)
+    envsubst < ./manifests/harbor.yml > $harbor_subst
+    kubectl apply -f $harbor_subst
   fi
 
   # Wait for Harbor to be up
   while [ "$(curl -s -o /dev/null -w "%{http_code}" http://harbor.$domain:$ingress_http_port)" != "200" ]; do
     sleep 5
   done
-
 }
 
 function seed_harbor_with_images() {
+  read_cluster_config
+
   # local url="http://harbor.$domain:$ingress_http_port"
   local url="http://localhost:$harbor_port"
   local domain="localhost:$harbor_port"
@@ -154,53 +276,66 @@ function seed_harbor_with_images() {
 
   # Download repo and build the image
   if [ ! -d "go-deploy-placeholder" ]; then
-    git clone $placeholder_git_repo
+    git clone $placeholder_git_repo --quiet
   fi
 
   # Use 'library' so we don't need to create our own (library is the default namespace in Harbor)
-  docker build go-deploy-placeholder/ -t $domain/library/go-deploy-placeholder:latest
-  docker login $domain -u $robot_user -p $robot_password
-  docker push $domain/library/go-deploy-placeholder:latest
+  docker build go-deploy-placeholder/ -t $domain/library/go-deploy-placeholder:latest 2> /dev/null
+  docker login $domain -u $robot_user -p $robot_password 2> /dev/null
+  docker push $domain/library/go-deploy-placeholder:latest 2> /dev/null
 
   # Remove the placeholder repo
   rm -rf go-deploy-placeholder
 }
 
 function install_mongodb() {
+  read_cluster_config
+
   # If namespace 'mongodb' already exists, skip
   res=$(kubectl get ns | grep -c mongodb)
   if [ $res -eq 0 ]; then
-    kubectl apply -f ./manifests/mongodb.yml
+    mongodb_values_subst=$(mktemp)
+    envsubst < ./manifests/mongodb.yml > $mongodb_values_subst
+    kubectl apply -f $mongodb_values_subst
   fi
 }
 
 function install_redis() {
+  read_cluster_config
+  
   # If namespace 'redis' already exists, skip
   res=$(kubectl get ns | grep -c redis)
   if [ $res -eq 0 ]; then
-    kubectl apply -f ./manifests/redis.yml
+    redis_values_subst=$(mktemp)
+    envsubst < ./manifests/redis.yml > $redis_values_subst
+    kubectl apply -f $redis_values_subst
   fi
 }
 
 function install_keycloak() {
+  read_cluster_config
+
   # If namespace 'keycloak' already exists, skip
   res=$(kubectl get ns | grep -c keycloak)
   if [ $res -eq 0 ]; then
-    kubectl apply -f ./manifests/keycloak.yml
+    keycloak_values_subst=$(mktemp)
+    envsubst < ./manifests/keycloak.yml > $keycloak_values_subst
+    kubectl apply -f $keycloak_values_subst
   fi
 
   rm -f keycloak.values.yml
 
   # Wait for Keycloak to be up
-  while [ "$(curl -s -o /dev/null -w "%{http_code}" http://keycloak.$domain:$ingress_http_port/health/ready)" != "200" ]; do
+  while [ "$(curl -s -o /dev/null -w "%{http_code}" http://keycloak.$domain:$keycloak_port/health/ready)" != "200" ]; do
     sleep 5
   done
 
+  # Fetch admin token
   local token=$(curl -s \
     -X POST \
     -H "Content-Type: application/x-www-form-urlencoded" \
     -d "client_id=admin-cli&username=admin&password=admin&grant_type=password" \
-    http://keycloak.$domain:$ingress_http_port/realms/master/protocol/openid-connect/token \
+    http://keycloak.$domain:$keycloak_port/realms/master/protocol/openid-connect/token \
     | jq -r '.access_token')
   
   # Check if go-deploy client exists, if not create it
@@ -208,7 +343,7 @@ function install_keycloak() {
     -H "Content-Type: application/json" \
     -H \"Accept: application/json\" \
     -H "Authorization: Bearer $token" \
-    -X GET http://keycloak.$domain:$ingress_http_port/admin/realms/master/clients?clientId=go-deploy)
+    -X GET http://keycloak.$domain:$keycloak_port/admin/realms/master/clients?clientId=go-deploy)
   local exists=$(echo $check_exists | jq -r '.[] | select(.clientId=="go-deploy") | .clientId')
   if [ "$exists" != "go-deploy" ]; then
     local payload='{
@@ -227,13 +362,13 @@ function install_keycloak() {
       "alwaysDisplayInConsole":false,
       "rootUrl":"",
       "baseUrl":"",
-      "redirectUris":["http://*"]
+      "redirectUris":["http://*", "https://*"]
       }'
     curl -s \
       -H "Content-Type: application/json" \
       -H "Accept: application/json" \
       -H "Authorization: Bearer $token" \
-      -X POST http://keycloak.$domain:$ingress_http_port/admin/realms/master/clients -d "$payload"
+      -X POST http://keycloak.$domain:$keycloak_port/admin/realms/master/clients -d "$payload"
   fi
 
   # Fetch created client's secret
@@ -241,17 +376,15 @@ function install_keycloak() {
     -H "Content-Type: application/json" \
     -H "Accept: application/json" \
     -H "Authorization: Bearer $token" \
-    -X GET http://keycloak.$domain:$ingress_http_port/admin/realms/master/clients?clientId=go-deploy \
-    | jq -r '.[0].clientSecret')
-
-
+    -X GET http://keycloak.$domain:$keycloak_port/admin/realms/master/clients?clientId=go-deploy \
+    | jq -r '.[0].secret')
 
   # Check if go-deploy-storage client exists, if not create it
   local check_exists=$(curl -s \
     -H "Content-Type: application/json" \
     -H \"Accept: application/json\" \
     -H "Authorization: Bearer $token" \
-    -X GET http://keycloak.$domain:$ingress_http_port/admin/realms/master/clients?clientId=go-deploy-storage)
+    -X GET http://keycloak.$domain:$keycloak_port/admin/realms/master/clients?clientId=go-deploy-storage)
   local exists=$(echo $check_exists | jq -r '.[] | select(.clientId=="go-deploy-storage") | .clientId')
   if [ "$exists" != "go-deploy-storage" ]; then
     local payload='{
@@ -276,7 +409,7 @@ function install_keycloak() {
       -H "Content-Type: application/json" \
       -H "Accept: application/json" \
       -H "Authorization: Bearer $token" \
-      -X POST http://keycloak.$domain:$ingress_http_port/admin/realms/master/clients -d "$payload"
+      -X POST http://keycloak.$domain:$keycloak_port/admin/realms/master/clients -d "$payload"
   fi
 
   # Fetch created client's secret
@@ -284,14 +417,82 @@ function install_keycloak() {
     -H "Content-Type: application/json" \
     -H "Accept: application/json" \
     -H "Authorization: Bearer $token" \
-    -X GET http://keycloak.$domain:$ingress_http_port/admin/realms/master/clients?clientId=go-deploy-storage \
-    | jq -r '.[0].clientSecret')
+    -X GET http://keycloak.$domain:$keycloak_port/admin/realms/master/clients?clientId=go-deploy-storage \
+    | jq -r '.[0].secret')
+
+  # Create necessary groups
+  groups=("admin" "base" "power")
+  for group in "${groups[@]}"; do
+    local check_exists=$(curl -s \
+      -H "Content-Type: application/json" \
+      -H "Accept: application/json" \
+      -H "Authorization: Bearer $token" \
+      -X GET http://keycloak.$domain:$keycloak_port/admin/realms/master/groups?search=$group)
+    local exists=$(echo $check_exists | jq -r '.[] | select(.name=="'$group'") | .name')
+    if [ "$exists" != "$group" ]; then
+      local payload='{"name":"'$group'"}'
+      curl -s \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        -H "Authorization: Bearer $token" \
+        -X POST http://keycloak.$domain:$keycloak_port/admin/realms/master/groups -d "$payload"
+    fi
+  done
+
+  # Create an admin user, base user and power user
+  users=("admin" "base" "power")
+  for user in "${users[@]}"; do
+    local check_exists=$(curl -s \
+      -H "Content-Type: application/json" \
+      -H "Accept: application/json" \
+      -H "Authorization: Bearer $token" \
+      -X GET http://keycloak.$domain:$keycloak_port/admin/realms/master/users?search=$user)
+    local exists=$(echo $check_exists | jq -r '.[] | select(.username=="'$user'") | .username')
+    if [ "$exists" != "$user" ]; then
+      local payload='{"username":"'$user'","enabled":true,"emailVerified":true,"firstName":"'$user'","lastName":"'$user'","email":"'$user'@'$domain'","credentials":[{"type":"password","value":"'$user'","temporary":false}]}'
+      curl -s \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        -H "Authorization: Bearer $token" \
+        -X POST http://keycloak.$domain:$keycloak_port/admin/realms/master/users -d "$payload"
+    fi
+    
+    # Add user to group
+    local user_id=$(curl -s \
+      -H "Content-Type: application/json" \
+      -H "Accept: application/json" \
+      -H "Authorization: Bearer $token" \
+      -X GET http://keycloak.$domain:$keycloak_port/admin/realms/master/users?search=$user \
+      | jq -r '.[0].id')
+
+    local group_id=$(curl -s \
+      -H "Content-Type: application/json" \
+      -H "Accept: application/json" \
+      -H "Authorization: Bearer $token" \
+      -X GET http://keycloak.$domain:$keycloak_port/admin/realms/master/groups?search=$user \
+      | jq -r '.[0].id')
+
+    curl -s \
+      -H "Content-Type: application/json" \
+      -H "Accept: application/json" \
+      -H "Authorization: Bearer $token" \
+      -X PUT http://keycloak.$domain:$keycloak_port/admin/realms/master/users/$user_id/groups/$group_id
+  done
+
+  # Write keycloak_deploy_secret and keycloak_deploy_storage_secret to cluster-config.rc
+  # Overwrite if the row already exists
+  sed -i "/export keycloak_deploy_secret=/c\export keycloak_deploy_secret=$keycloak_deploy_secret" ./cluster-config.rc
+  sed -i "/export keycloak_deploy_storage_secret=/c\export keycloak_deploy_storage_secret=$keycloak_deploy_storage_secret" ./cluster-config.rc
 }
 
 function install_nfs_server() {
+  read_cluster_config
+
   res=$(kubectl get ns | grep -c nfs-server)
   if [ $res -eq 0 ]; then
-    kubectl apply -f ./manifests/nfs-server.yml
+    nfs_server_values_subst=$(mktemp)
+    envsubst < ./manifests/nfs-server.yml > $nfs_server_values_subst
+    kubectl apply -f $nfs_server_values_subst
   fi
 
   # Wait for NFS server to be up
@@ -305,8 +506,10 @@ function install_nfs_server() {
 }
 
 function install_cert_manager() {
-  # If cert-manager namespace already exists, skip
-  res=$(kubectl get ns | grep -c cert-manager)
+  read_cluster_config
+
+  # If release 'cert-manager' in namespace 'cert-manager' already exists, skip
+  res=$(helm list -n cert-manager | grep -c cert-manager)
   if [ $res -eq 0 ]; then
     helm upgrade --install \
       cert-manager \
@@ -317,17 +520,25 @@ function install_cert_manager() {
       --version v1.14.4 \
       --set 'extraArgs={--dns01-recursive-nameservers-only,--dns01-recursive-nameservers=8.8.8.8:53\,1.1.1.1:53}' \
       --set installCRDs=true
+  fi
 
-    # Wait for cert-manager to be up
-    while [ "$(kubectl get pod -n cert-manager -l app=cert-manager -o jsonpath="{.items[0].status.phase}")" != "Running" ]; do
-      sleep 5
-    done
+  # Wait for cert-manager to be up
+  while [ "$(kubectl get pod -n cert-manager -l app=cert-manager -o jsonpath="{.items[0].status.phase}")" != "Running" ]; do
+    sleep 5
+  done
   
-    kubectl apply -f ./manifests/cert.yml
+  # If clusterIssuer go-deploy-cluster-issuer already exists, skip
+  res=$(kubectl get clusterissuer 2>/dev/stdout | grep -c go-deploy-cluster-issuer)
+  if [ $res -eq 0 ]; then
+    cert_manager_subst=$(mktemp)
+    envsubst < ./manifests/cert-manager.yml > $cert_manager_subst
+    kubectl apply -f $cert_manager_subst
   fi
 }
 
 function install_hairpin_proxy() {
+  read_cluster_config
+
   # If namespace 'hairpin-proxy' already exists, skip
   res=$(kubectl get ns | grep -c hairpin-proxy)
   if [ $res -eq 0 ]; then
@@ -336,6 +547,8 @@ function install_hairpin_proxy() {
 }
 
 function install_nfs_csi() {
+  read_cluster_config
+
   # If deployment 'csi-nfs-controller' in namespace 'kube-system' already exists, skip
   res=$(kubectl get deploy -n kube-system | grep -c csi-nfs-controller)
   if [ $res -eq 0 ]; then
@@ -347,6 +560,8 @@ function install_nfs_csi() {
 }
 
 function install_storage_classes() {
+  read_cluster_config
+
   # Install CRDs if not already installed, we assume if one does not exist, none of them do
   res=$(kubectl get crd | grep -c volumesnapshots.snapshot.storage.k8s.io)
   if [ $res -eq 0 ]; then
@@ -382,6 +597,8 @@ function install_storage_classes() {
 }
 
 function install_kubevirt() {
+  read_cluster_config
+
   # If namespace 'kubevirt' already exists, skip
   res=$(kubectl get ns | grep -c kubevirt)
   if [ $res -eq 0 ]; then
@@ -409,6 +626,8 @@ function install_kubevirt() {
 }
 
 function install_cdi() {
+  read_cluster_config
+
   # If namespace 'cdi' already exists, skip
   res=$(kubectl get ns | grep -c cdi)
   if [ $res -eq 0 ]; then
@@ -424,17 +643,28 @@ function install_cdi() {
   fi
 }
 
+check_dependencies
+if [ ! -f "./cluster-config.rc" ]; then
+  generate_cluster_config
+fi
+
+# Pre-requisites
 run_with_spinner "Configuring local DNS" configure_local_dns
 run_with_spinner "Waiting for DNS" wait_for_dns
 
-run_with_spinner "Install k3d" install_k3d
-run_with_spinner "Set up k3d cluster" create_k3d_cluster
+# Base
+run_with_spinner "Set up kind cluster" create_kind_cluster
+run_with_spinner "Install Local-path-provisioner" install_local_path_provisioner
 
+# Apps
+run_with_spinner "Install Ingress Nginx" install_ingress_nginx
 run_with_spinner "Install Harbor" install_harbor
 run_with_spinner "Install MongoDB" install_mongodb
 run_with_spinner "Install Redis" install_redis
 run_with_spinner "Install Keycloak" install_keycloak
 run_with_spinner "Install NFS Server" install_nfs_server
+
+# Dependencies
 run_with_spinner "Install Cert Manager" install_cert_manager
 run_with_spinner "Install Hairpin Proxy" install_hairpin_proxy
 run_with_spinner "Install NFS CSI" install_nfs_csi
@@ -442,12 +672,14 @@ run_with_spinner "Install Storage Classes" install_storage_classes
 run_with_spinner "Install KubeVirt" install_kubevirt
 run_with_spinner "Install CDI" install_cdi
 
+# Post-install
 run_with_spinner "Seed Harbor with images" seed_harbor_with_images
 
 
 
 # If exists ../../config.local.yml, ask if user want to replace it
 if [ -f "../../config.local.yml" ]; then
+  echo ""
   read -p "config.local.yml already exists. Do you want to replace it? [y/n]: " -n 1 -r
   echo
   if [[ ! $REPLY =~ ^[Yy]$ ]]; then
@@ -458,10 +690,12 @@ fi
 
 
 echo "Generating config.local.yml"
+
+read_cluster_config
 cp config.yml.tmpl ../../config.local.yml
 
 # Core
-export external_url="$domain:$ingress_http_port"
+export external_url="$domain:$ingress_https_port"
 export port="8080"
 export mode="dev"
 
@@ -485,47 +719,50 @@ export registry_url="harbor.harbor.svc.cluster.local:$harbor_port"
 export placeholder_image="$registry_url/library/go-deploy-placeholder:latest"
 
 # Keycloak
-export keycloak_url="http://keycloak.deploy.localhost:$ingress_http_port"
+export keycloak_url="http://keycloak.deploy.localhost:$keycloak_port"
 export keycloak_realm="master"
 export keycloak_admin_group="admin"
 export keycloak_storage_client_id="go-deploy-storage"
-export keycloak_storage_client_secret="secret"
+export keycloak_storage_client_secret=$keycloak_deploy_storage_secret
 
 # MongoDB
 export mongodb_url="mongodb://admin:admin@localhost:$mongo_db_port"
 export mongodb_name="deploy"
 
 # Redis
-export redis_url="redis://localhost:6379"
+export redis_url="localhost:$redis_port"
 export redis_password=
 
 # Harbor
-export harbor_url="http://harbor.deploy.localhost:$ingress_http_port"
+export harbor_url="http://harbor.deploy.localhost:$harbor_port"
 export harbor_user="admin"
 export harbor_password="Harbor12345"
 export harbor_webhook_secret="secret"
 
 envsubst < config.yml.tmpl > ../../config.local.yml
 
-echo ""
-echo ""
+echo -e ""
+echo -e ""
 echo -e "$GREEN_CHECK config.local.yml generated"
-echo ""
-echo "The following services are now available:"
-echo " - Harbor: http://harbor.$domain:$ingress_http_port (admin:Harbor12345)"
-echo " - Keycloak: http://keycloak.$domain:$ingress_http_port (admin:admin)"
-echo " - MongoDB: mongodb://admin:admin@localhost:$mongo_db_port"
-echo " - Redis: redis://redis.localhost:$redis_port"
-echo ""
-echo "dnsmasq is used to allow the names to resolve. See the following guides for help configuring it:"
-echo " - WSL2 (Windows): https://github.com/absolunet/pleaz/blob/production/documentation/installation/wsl2/dnsmasq.md"
-echo " - systemd-resolved (Linux): https://gist.github.com/frank-dspeed/6b6f1f720dd5e1c57eec8f1fdb2276df"
-echo ""
-echo "Please review the generated config.local.yml file and make any necessary changes"
-echo ""
-echo "To start the application, go the the top directory and run the following command:"
-echo ""
-echo -e "\033[1mDEPLOY_CONFIG_FILE=config.local.yml go run main.go\033[0m"
-echo ""
+echo -e ""
+echo -e "dnsmasq is used to allow the names to resolve. See the following guides for help configuring it:"
+echo -e " - WSL2 (Windows): https://github.com/absolunet/pleaz/blob/production/documentation/installation/wsl2/dnsmasq.md"
+echo -e " - systemd-resolved (Linux): https://gist.github.com/frank-dspeed/6b6f1f720dd5e1c57eec8f1fdb2276df"
+echo -e ""
+echo -e "The following services are now available:"
+echo -e " - ${BLUE_BOLD}Harbor${RESET}: http://harbor.$domain:$harbor_port (admin:Harbor12345)"
+echo -e " - ${TEAL_BOLD}Keycloak${RESET}: http://keycloak.$domain:$keycloak_port (admin:admin)" 
+echo -e "      Users: admin:admin, base:base, power:power"
+echo -e "      Clients: go-deploy:$keycloak_deploy_secret, go-deploy-storage:$keycloak_deploy_storage_secret"
+echo -e " - ${GREEN_BOLD}MongoDB${RESET}: mongodb://admin:admin@localhost:$mongo_db_port"
+echo -e " - ${RED_BOLD}Redis${RESET}: redis://localhost:$redis_port"
+echo -e " - ${ORANGE_BOLD}NFS${RESET}: nfs://localhost:$nfs_port"
+echo -e ""
+echo -e "To start the application, go the the top directory and run the following command:"
+echo -e ""
+echo -e "    \033[1mDEPLOY_CONFIG_FILE=config.local.yml go run main.go\033[0m"
+echo -e ""
+echo -e "Happy coding! 🚀"
+echo -e ""
 
 

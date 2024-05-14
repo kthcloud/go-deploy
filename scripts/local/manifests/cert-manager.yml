@@ -9,18 +9,18 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: go-deploy-wildcard
-  namespace: kube-system
+  namespace: cert-manager
 spec:
   secretName: go-deploy-wildcard-secret
   secretTemplate:
     labels:
-      app.kubernetes.io/deploy-name: deploy-wildcard-secret
+      app.kubernetes.io/deploy-name: go-deploy-wildcard-secret
   issuerRef: 
     kind: ClusterIssuer
     name: go-deploy-cluster-issuer
   commonName: ""
   dnsNames:
-    - "*.deploy.localhost"
-    - "*.apps.deploy.localhost"
-    - "*.vm-app.deploy.localhost"
-    - "*.storage.deploy.localhost"
+    - "*.${domain}"
+    - "*.app.${domain}"
+    - "*.vm-app.${domain}"
+    - "*.storage.${domain}"
