@@ -81,12 +81,12 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 
 	limits := models.Limits{
 		CPU:    fmt.Sprintf("%.1f", mainApp.CpuCores),
-		Memory: fmt.Sprintf("%.1fGi", mainApp.RAM),
+		Memory: fmt.Sprintf("%dMi", int(mainApp.RAM*1000)),
 	}
 
 	requests := models.Requests{
 		CPU:    fmt.Sprintf("%.1f", math.Min(config.Config.Deployment.Resources.Requests.CPU, mainApp.CpuCores)),
-		Memory: fmt.Sprintf("%.1fGi", math.Min(config.Config.Deployment.Resources.Requests.RAM, mainApp.RAM)),
+		Memory: fmt.Sprintf("%dMi", int(math.Min(config.Config.Deployment.Resources.Requests.RAM, mainApp.RAM)*1000)),
 	}
 
 	k8sVolumes := make([]models.Volume, len(mainApp.Volumes))
