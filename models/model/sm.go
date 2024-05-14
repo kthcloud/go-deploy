@@ -15,6 +15,8 @@ type SM struct {
 	RepairedAt time.Time `bson:"repairedAt"`
 	DeletedAt  time.Time `bson:"deletedAt"`
 
+	Activities map[string]Activity `bson:"activities"`
+
 	Subsystems SmSubsystems `bson:"subsystems"`
 }
 
@@ -33,4 +35,14 @@ func (sm *SM) GetURL() *string {
 	}
 
 	return nil
+}
+
+// DoingActivity returns true if the deployment is doing the given activity.
+func (sm *SM) DoingActivity(activity string) bool {
+	for _, a := range sm.Activities {
+		if a.Name == activity {
+			return true
+		}
+	}
+	return false
 }

@@ -61,7 +61,7 @@ func (c *Client) Create(id string, params *model.SmCreateParams) error {
 		}
 	}
 
-	// Job
+	// OneShotJob
 	// These are run without saving to the database, as they will be deleted when completed
 	for _, jobPublic := range g.OneShotJobs() {
 		err = kc.CreateOneShotJob(&jobPublic)
@@ -182,17 +182,29 @@ func (c *Client) Delete(id string) error {
 
 	// Secret
 	for mapName, secret := range sm.Subsystems.K8s.SecretMap {
-		var deleteFunc func(interface{}) error
+		var deleteFunc func(string) error
 		if mapName == constants.WildcardCertSecretName {
-			deleteFunc = func(interface{}) error { return nil }
+			deleteFunc = func(string) error { return nil }
 		} else {
-			deleteFunc = dbFunc(id, "secretMap."+mapName)
+			deleteFunc = kc.DeleteSecret
 		}
 
-		err = resources.SsDeleter(kc.DeleteSecret).
+		err = resources.SsDeleter(deleteFunc).
 			WithResourceID(secret.Name).
-			WithDbFunc(deleteFunc).
+			WithDbFunc(dbFunc(id, "secretMap."+mapName)).
 			Exec()
+		if err != nil {
+			return makeError(err)
+		}
+	}
+
+	// Namespace
+	err = resources.SsDeleter(func(string) error { return nil }).
+		WithResourceID(sm.Subsystems.K8s.Namespace.Name).
+		WithDbFunc(dbFunc(id, "namespace")).
+		Exec()
+	if err != nil {
+		return makeError(err)
 	}
 
 	return nil

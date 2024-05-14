@@ -44,8 +44,7 @@ zones:
   storage:
     nfsServer: $nfs_server
     paths:
-      parentApp: $nfs_parent_app
-      parentVm: $nfs_parent_vm
+      parentDeployment: $nfs_parent_path_app
   portRange:
     start: $port_range_start
     end: $port_range_end
@@ -101,9 +100,9 @@ roles:
       diskSize: 20
       snapshots: 1
       gpuLeaseDuration:
-  - name: bronze
-    description: Bronze
-    iamGroup: bronze
+  - name: base
+    description: base
+    iamGroup: base
     permissions:
       chooseZone: false
       chooseGpu: false
@@ -116,9 +115,9 @@ roles:
       diskSize: 50
       snapshots: 5
       gpuLeaseDuration: 5
-  - name: platinum
-    description: Platinum
-    iamGroup: platinum
+  - name: power
+    description: power
+    iamGroup: power
     permissions:
       chooseZone: true
       chooseGpu: true

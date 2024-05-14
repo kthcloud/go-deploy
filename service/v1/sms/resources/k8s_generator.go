@@ -409,7 +409,7 @@ func smVolumes(ownerID string) ([]model.SmVolume, []model.SmVolume) {
 func smJobs(userID string) []model.SmJob {
 	return []model.SmJob{
 		{
-			Name:    "init",
+			Name:    fmt.Sprintf("init-%s", userID),
 			Image:   "busybox",
 			Command: []string{"/bin/mkdir"},
 			Args: []string{

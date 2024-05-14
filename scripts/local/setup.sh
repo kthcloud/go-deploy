@@ -1,7 +1,5 @@
 #!/bin/bash
 
-
-
 # Ensure this script is run from the script folder by checking if the parent folder contains mod.go
 if [ ! -f "../../go.mod" ]; then
   echo "$RED_CROSS Please run this script from the scripts folder"
@@ -87,7 +85,8 @@ export placeholder_git_repo="https://github.com/kthcloud/go-deploy-placeholder.g
 export vm_image="https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
 
 # NFS configuration
-export nfs_base_path="/mnt/nfs"
+export nfs_base_path="/nfs"
+export nfs_cluster_ip="10.0.200.2"
 
 # IAM configuration
 export keycloak_deploy_secret=
@@ -161,6 +160,14 @@ nodes:
     listenAddress: 0.0.0.0
     protocol: UDP"
   done
+
+  mkdir -p "./data"
+
+  # Add NFS mount container /mnt/nfs to ./data
+  config="$config
+  extraMounts:
+  - hostPath: "./data"
+    containerPath: /mnt/nfs"
   
   echo "$config" > ./manifests/kind-config.yml
 }
@@ -194,12 +201,60 @@ function create_kind_cluster() {
   kind get kubeconfig --name $cluster_name > "$kubeconfig_output_path/$cluster_name.yml"
 }
 
-function install_local_path_provisioner() {
-  # If namespace local-path-storage already exists, skip
-  res=$(kubectl get ns | grep -c local-path-storage)
+function install_nfs_server() {
+  read_cluster_config
+
+  res=$(kubectl get ns | grep -c nfs-server)
   if [ $res -eq 0 ]; then
-    kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.26/deploy/local-path-storage.yaml
+    nfs_server_values_subst=$(mktemp)
+    export nfs_cluster_ip=$nfs_cluster_ip
+    envsubst < ./manifests/nfs-server.yml > $nfs_server_values_subst
+    kubectl apply -f $nfs_server_values_subst
   fi
+
+  # Wait for NFS server to be up
+  while [ "$(kubectl get pod -n nfs-server -l app=nfs-server -o jsonpath="{.items[0].status.phase}" 2> /dev/stdout)" != "Running" ]; do
+    sleep 5
+  done
+
+  # Create subfolders deployments, vms, scratch and snapshots
+  pod=$(kubectl get pod -n nfs-server -l app=nfs-server -o jsonpath="{.items[0].metadata.name}")
+  kubectl exec -n nfs-server $pod -- mkdir -p  /exports/$nfs_base_path/deployments /exports/$nfs_base_path/vms /exports/$nfs_base_path/scratch /exports/$nfs_base_path/snapshots /exports/$nfs_base_path/misc
+}
+
+function install_nfs_csi() {
+  read_cluster_config
+
+  # If deployment 'csi-nfs-controller' in namespace 'kube-system' already exists, skip
+  res=$(kubectl get deploy -n kube-system | grep -c csi-nfs-controller)
+  if [ $res -eq 0 ]; then
+    helm install csi-driver-nfs csi-driver-nfs \
+      --repo https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/master/charts \
+      --namespace kube-system \
+      --version v4.6.0 \
+      --set controller.dnsPolicy=ClusterFirstWithHostNet \
+      --set node.dnsPolicy=ClusterFirstWithHostNet
+  fi
+
+  # If deploy-misc already exists, skip
+  res=$(kubectl get deploy > /dev/stdout 2>&1 | grep -c deploy-misc)
+  if [ $res -eq 0 ]; then
+    sc_subst=$(mktemp)
+    export nfs_server="nfs-server.nfs-server.svc.cluster.local"
+    export nfs_share="$nfs_base_path/misc"
+    envsubst < ./manifests/sc-misc.yml > $sc_subst
+    kubectl apply -f $sc_subst
+  fi
+
+  # Ensure that the storage class 'deploy-misc' is set as the default storage class
+  # First check if there is a default storage class, and unset it
+  default_sc=$(kubectl get sc | grep -c "(default)")
+  if [ $default_sc -ne 0 ]; then
+    kubectl patch storageclass $(kubectl get sc | grep "(default)" | awk '{print $1}') -p '{"metadata": {"annotations": {"storageclass.kubernetes.io/is-default-class": "false"}}}'
+  fi
+
+  # Then set the new default storage class
+  kubectl patch storageclass deploy-misc -p '{"metadata": {"annotations": {"storageclass.kubernetes.io/is-default-class": "true"}}}'
 }
 
 function install_ingress_nginx() {
@@ -485,26 +540,6 @@ function install_keycloak() {
   sed -i "/export keycloak_deploy_storage_secret=/c\export keycloak_deploy_storage_secret=$keycloak_deploy_storage_secret" ./cluster-config.rc
 }
 
-function install_nfs_server() {
-  read_cluster_config
-
-  res=$(kubectl get ns | grep -c nfs-server)
-  if [ $res -eq 0 ]; then
-    nfs_server_values_subst=$(mktemp)
-    envsubst < ./manifests/nfs-server.yml > $nfs_server_values_subst
-    kubectl apply -f $nfs_server_values_subst
-  fi
-
-  # Wait for NFS server to be up
-  while [ "$(kubectl get pod -n nfs-server -l app=nfs-server -o jsonpath="{.items[0].status.phase}")" != "Running" ]; do
-    sleep 5
-  done
-
-  # Create subfolders deployments, vms, scratch and snapshots
-  pod=$(kubectl get pod -n nfs-server -l app=nfs-server -o jsonpath="{.items[0].metadata.name}")
-  kubectl exec -n nfs-server $pod -- mkdir -p  $nfs_base_path/deployments $nfs_base_path/vms $nfs_base_path/scratch $nfs_base_path/snapshots
-}
-
 function install_cert_manager() {
   read_cluster_config
 
@@ -546,19 +581,6 @@ function install_hairpin_proxy() {
   fi
 }
 
-function install_nfs_csi() {
-  read_cluster_config
-
-  # If deployment 'csi-nfs-controller' in namespace 'kube-system' already exists, skip
-  res=$(kubectl get deploy -n kube-system | grep -c csi-nfs-controller)
-  if [ $res -eq 0 ]; then
-    helm install csi-driver-nfs csi-driver-nfs \
-      --repo https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/master/charts \
-      --namespace kube-system \
-      --version v4.6.0
-  fi
-}
-
 function install_storage_classes() {
   read_cluster_config
 
@@ -576,21 +598,21 @@ function install_storage_classes() {
 
   # If storage class 'deploy-vm-disks' does not exist, create it
   export nfs_share="$nfs_base_path/vms"
-  res=$(kubectl get sc 2>/dev/null | grep -c nfs)
+  res=$(kubectl get sc 2>/dev/null | grep -c "deploy-vm-disks")
   if [ $res -eq 0 ]; then
     envsubst < ./manifests/sc-vm-disks.yml | kubectl apply -f -
   fi
 
   # If storage class 'deploy-vm-scratch' does not exist, create it
   export nfs_share="$nfs_base_path/scratch"
-  res=$(kubectl get sc 2>/dev/null | grep -c scratch)
+  res=$(kubectl get sc 2>/dev/null | grep -c "deploy-vm-scratch")
   if [ $res -eq 0 ]; then
     envsubst < ./manifests/sc-vm-scratch.yml | kubectl apply -f -
   fi
 
   # If volume snapshot class 'deploy-vm-snapshots' does not exist, create it
   export nfs_share="$nfs_base_path/snapshots"
-  res=$(kubectl get volumesnapshotclass 2>/dev/null | grep -c deploy-vm-snapshots)
+  res=$(kubectl get volumesnapshotclass 2>/dev/null | grep -c "deploy-vm-snapshots")
   if [ $res -eq 0 ]; then
     envsubst < ./manifests/vsc-vm-snapshots.yml | kubectl apply -f -
   fi
@@ -654,7 +676,8 @@ run_with_spinner "Waiting for DNS" wait_for_dns
 
 # Base
 run_with_spinner "Set up kind cluster" create_kind_cluster
-run_with_spinner "Install Local-path-provisioner" install_local_path_provisioner
+run_with_spinner "Install NFS Server" install_nfs_server
+run_with_spinner "Install NFS CSI" install_nfs_csi
 
 # Apps
 run_with_spinner "Install Ingress Nginx" install_ingress_nginx
@@ -662,12 +685,10 @@ run_with_spinner "Install Harbor" install_harbor
 run_with_spinner "Install MongoDB" install_mongodb
 run_with_spinner "Install Redis" install_redis
 run_with_spinner "Install Keycloak" install_keycloak
-run_with_spinner "Install NFS Server" install_nfs_server
 
 # Dependencies
 run_with_spinner "Install Cert Manager" install_cert_manager
 run_with_spinner "Install Hairpin Proxy" install_hairpin_proxy
-run_with_spinner "Install NFS CSI" install_nfs_csi
 run_with_spinner "Install Storage Classes" install_storage_classes
 run_with_spinner "Install KubeVirt" install_kubevirt
 run_with_spinner "Install CDI" install_cdi
@@ -701,9 +722,9 @@ export mode="dev"
 
 # Zone
 export kubeconfig_path="./kube/$cluster_name.yml"
-export nfs_server="nfs-server.nfs-server.svc.cluster.local"
-export nfs_parent_app_path="$nfs_base_path/deployments"
-export nfs_path_vm="$nfs_base_path/vms"
+export nfs_server=$nfs_cluster_ip
+export nfs_parent_path_app="$nfs_base_path/deployments"
+export nfs_parent_path_vm="$nfs_base_path/vms"
 export port_range_start="$port_range_start"
 export port_range_end="$port_range_end"
 
@@ -760,7 +781,7 @@ echo -e " - ${ORANGE_BOLD}NFS${RESET}: nfs://localhost:$nfs_port"
 echo -e ""
 echo -e "To start the application, go the the top directory and run the following command:"
 echo -e ""
-echo -e "    \033[1mDEPLOY_CONFIG_FILE=config.local.yml go run main.go\033[0m"
+echo -e "    ${WHITE_BOLD}DEPLOY_CONFIG_FILE=config.local.yml go run main.go${RESET}"
 echo -e ""
 echo -e "Happy coding! 🚀"
 echo -e ""

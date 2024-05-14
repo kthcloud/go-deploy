@@ -16,15 +16,6 @@ func (client *Client) insertPlaceholder(public *models.RepositoryPublic) error {
 		return fmt.Errorf("failed to insert placeholder repository %d. details: %w", public.ID, err)
 	}
 
-	//artifact, err := client.HarborClient.V2().Artifact.GetArtifact(context.TODO(), &artifactModels.GetArtifactParams{
-	//	ProjectName:    public.Placeholder.ProjectName,
-	//	Reference:      "latest",
-	//	RepositoryName: public.Placeholder.RepositoryName,
-	//})
-	//if err != nil {
-	//	return makeError(err)
-	//}
-
 	_, err := client.HarborClient.V2().Artifact.CopyArtifact(context.TODO(), &artifactModels.CopyArtifactParams{
 		From:           fmt.Sprintf("%s/%s:latest", public.Placeholder.ProjectName, public.Placeholder.RepositoryName),
 		ProjectName:    client.Project,

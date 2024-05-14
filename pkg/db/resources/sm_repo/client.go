@@ -10,6 +10,7 @@ import (
 // Client is used to manage storage managers in the database.
 type Client struct {
 	base_clients.ResourceClient[model.SM]
+	base_clients.ActivityResourceClient[model.SM]
 }
 
 // New returns a new storage manager client.
@@ -19,29 +20,38 @@ func New() *Client {
 			Collection:     db.DB.GetCollection("storageManagers"),
 			IncludeDeleted: false,
 		},
+		ActivityResourceClient: base_clients.ActivityResourceClient[model.SM]{
+			Collection: db.DB.GetCollection("storageManagers"),
+		},
 	}
 }
 
 // WithPagination adds pagination to the client.
 func (client *Client) WithPagination(page, pageSize int) *Client {
-	client.ResourceClient.Pagination = &db.Pagination{
+	pagination := &db.Pagination{
 		Page:     page,
 		PageSize: pageSize,
 	}
+
+	client.ResourceClient.Pagination = pagination
+	client.ActivityResourceClient.Pagination = pagination
 
 	return client
 }
 
 // IncludeDeletedResources makes the client include deleted storage managers.
 func (client *Client) IncludeDeletedResources() *Client {
-	client.IncludeDeleted = true
+	client.ResourceClient.IncludeDeleted = true
 
 	return client
 }
 
 // WithOwnerID adds a filter to the client to only include storage managers with the given owner ID.
 func (client *Client) WithOwnerID(ownerID string) *Client {
-	client.ResourceClient.AddExtraFilter(bson.D{{"ownerId", ownerID}})
+	filter := bson.D{{"ownerId", ownerID}}
+
+	client.ResourceClient.AddExtraFilter(filter)
+	client.ActivityResourceClient.AddExtraFilter(filter)
 
 	return client
 }
@@ -64,6 +74,7 @@ func (client *Client) WithActivities(activities ...string) *Client {
 	}}
 
 	client.ResourceClient.AddExtraFilter(filter)
+	client.ActivityResourceClient.AddExtraFilter(filter)
 
 	return client
 }
@@ -77,13 +88,17 @@ func (client *Client) WithNoActivities() *Client {
 	}}
 
 	client.ResourceClient.AddExtraFilter(filter)
+	client.ActivityResourceClient.AddExtraFilter(filter)
 
 	return client
 }
 
 // WithZone adds a filter to the client to only include storage managers with the given zone.
 func (client *Client) WithZone(zone string) *Client {
-	client.ResourceClient.AddExtraFilter(bson.D{{"zone", zone}})
+	filter := bson.D{{"zone", zone}}
+
+	client.ResourceClient.AddExtraFilter(filter)
+	client.ActivityResourceClient.AddExtraFilter(filter)
 
 	return client
 }

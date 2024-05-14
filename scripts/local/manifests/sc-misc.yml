@@ -1,0 +1,9 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: deploy-misc
+parameters:
+  server: $nfs_server
+  share: $nfs_share
+provisioner: nfs.csi.k8s.io
+reclaimPolicy: Delete

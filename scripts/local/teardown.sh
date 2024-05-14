@@ -19,7 +19,6 @@ function delete_kind_cluster() {
     kind delete cluster --name $name > /dev/null 2>&1
   fi
 
-  rm -f cluster-config.rc
   rm -f ./manifests/kind-config.yml
 }
 

@@ -231,7 +231,6 @@ type Zone struct {
 		NfsServer string `yaml:"nfsServer"`
 		Paths     struct {
 			ParentDeployment string `yaml:"parentDeployment"`
-			ParentVM         string `yaml:"parentVm"`
 		} `yaml:"paths"`
 	} `yaml:"storage"`
 	NetworkPolicies []struct {

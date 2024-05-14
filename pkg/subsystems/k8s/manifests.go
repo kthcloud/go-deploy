@@ -297,6 +297,7 @@ func CreatePvManifest(public *models.PvPublic) *apiv1.PersistentVolume {
 			},
 		},
 		Spec: apiv1.PersistentVolumeSpec{
+			StorageClassName: "deploy-managed",
 			AccessModes: []apiv1.PersistentVolumeAccessMode{
 				apiv1.ReadWriteMany,
 			},
@@ -316,6 +317,8 @@ func CreatePvManifest(public *models.PvPublic) *apiv1.PersistentVolume {
 
 // CreatePvcManifest creates a Kubernetes PersistentVolumeClaim manifest from a models.PvcPublic.
 func CreatePvcManifest(public *models.PvcPublic) *apiv1.PersistentVolumeClaim {
+	storageClass := "deploy-managed"
+
 	return &apiv1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      public.Name,
@@ -328,6 +331,7 @@ func CreatePvcManifest(public *models.PvcPublic) *apiv1.PersistentVolumeClaim {
 			},
 		},
 		Spec: apiv1.PersistentVolumeClaimSpec{
+			StorageClassName: &storageClass,
 			AccessModes: []apiv1.PersistentVolumeAccessMode{
 				apiv1.ReadWriteMany,
 			},

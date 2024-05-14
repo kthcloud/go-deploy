@@ -1,4 +1,4 @@
-externalUrl: deploy.localhost:32158
+externalUrl: deploy.localhost:32191
 port: 8080
 mode: dev
 
@@ -37,23 +37,22 @@ zones:
     - deployment
     - vm
   domains:
-    parentDeployment: app.deploy.localhost:32158
-    parentSm: storage.deploy.localhost:32158
-    parentVm: vm.deploy.localhost:32158
-    parentVmApp: vm-app.deploy.localhost:32158
+    parentDeployment: app.deploy.localhost:32191
+    parentSm: storage.deploy.localhost:32191
+    parentVm: vm.deploy.localhost:32191
+    parentVmApp: vm-app.deploy.localhost:32191
   storage:
-    nfsServer: nfs-server.nfs-server.svc.cluster.local
+    nfsServer: localhost #nfs-server.nfs-server.svc.cluster.local
     paths:
-      parentApp: 
-      parentVm: 
+      parentDeployment: /nfs/deployments
   portRange:
-    start: 30242
-    end: 30267
+    start: 32385
+    end: 32410
 
 registry:
-  url: localhost:31200
-  placeholderImage: localhost:31200/library/go-deploy-placeholder
-  vmHttpProxyImage: localhost:31200/library/go-deploy-placeholder
+  url: localhost:32011
+  placeholderImage: localhost:32011/library/go-deploy-placeholder
+  vmHttpProxyImage: localhost:32011/library/go-deploy-placeholder
 
 gpu:
   privilegedGpus:
@@ -101,9 +100,9 @@ roles:
       diskSize: 20
       snapshots: 1
       gpuLeaseDuration:
-  - name: bronze
-    description: Bronze
-    iamGroup: bronze
+  - name: base
+    description: base
+    iamGroup: base
     permissions:
       chooseZone: false
       chooseGpu: false
@@ -116,9 +115,9 @@ roles:
       diskSize: 50
       snapshots: 5
       gpuLeaseDuration: 5
-  - name: platinum
-    description: Platinum
-    iamGroup: platinum
+  - name: power
+    description: power
+    iamGroup: power
     permissions:
       chooseZone: true
       chooseGpu: true
@@ -133,19 +132,19 @@ roles:
       gpuLeaseDuration: 168
 
 keycloak:
-  url: http://keycloak.deploy.localhost:31451
+  url: http://keycloak.deploy.localhost:32454
   realm: master
   adminGroup: admin
   storageClient:
     clientId: go-deploy-storage
-    clientSecret: IZGwysAA6b16aOT2jcj7tiUECajmxp9S
+    clientSecret: OJJRDZ0tj63URIeZjIi9oiNQ4NjUZ0Fg
 
 mongodb:
-  url: mongodb://admin:admin@localhost:30638
+  url: mongodb://admin:admin@localhost:31334
   name: deploy
 
 redis:
-  url: localhost:32040
+  url: localhost:31879
   password: 
 
 sys-api:
@@ -156,7 +155,7 @@ sys-api:
   useMock: true
 
 harbor:
-  url: http://harbor.deploy.localhost:31200
+  url: http://harbor.deploy.localhost:32011
   user: admin
   password: Harbor12345
   webhookSecret: secret

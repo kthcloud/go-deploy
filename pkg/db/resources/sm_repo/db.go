@@ -23,6 +23,8 @@ func (client *Client) Create(id, ownerID string, params *model.SmCreateParams) (
 		Zone:       params.Zone,
 		CreatedAt:  time.Now(),
 		RepairedAt: time.Time{},
+		DeletedAt:  time.Time{},
+		Activities: make(map[string]model.Activity),
 		Subsystems: model.SmSubsystems{},
 	}
 
@@ -81,7 +83,7 @@ func (client *Client) MarkRepaired(id string) error {
 		{"$unset", bson.D{{"activities.repairing", ""}}},
 	}
 
-	_, err := client.Collection.UpdateOne(context.TODO(), filter, update)
+	_, err := client.ResourceClient.Collection.UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		return err
 	}
