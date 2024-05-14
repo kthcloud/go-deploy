@@ -1,5 +1,8 @@
 #!/bin/bash
 
+GREEN_CHECK="\033[32;1m✔\033[0m"
+RED_CROSS="\033[31;1m✗\033[0m"
+
 spinner() {
     local pid=$!
     local delay=0.07

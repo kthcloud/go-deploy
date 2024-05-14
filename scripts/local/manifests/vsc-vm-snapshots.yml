@@ -4,6 +4,6 @@ kind: VolumeSnapshotClass
 metadata:
   name: deploy-vm-snapshots
 parameters:
-  server: nfs-server.nfs-server.svc.cluster.local
-  share: /mnt/nfs/snapshots
+  server: $nfs_server
+  share: $nfs_share
 deletionPolicy: Delete

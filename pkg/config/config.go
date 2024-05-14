@@ -25,7 +25,7 @@ var Config config.ConfigType
 // SetupEnvironment loads the configuration from the config file and sets up the environment.
 func SetupEnvironment(mode string) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup environment. details: %w", err)
+		return fmt.Errorf("failed to set up environment. details: %w", err)
 	}
 
 	filepath, found := os.LookupEnv("DEPLOY_CONFIG_FILE")
@@ -84,7 +84,7 @@ func checkConfig() error {
 // setupK8sClusters sets up the k8s clusters.
 func setupK8sClusters() error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup k8s clusters. details: %w", err)
+		return fmt.Errorf("failed to set up k8s clusters. details: %w", err)
 	}
 
 	for idx, zone := range Config.Zones {

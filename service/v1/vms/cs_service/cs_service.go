@@ -28,7 +28,7 @@ func (c *Client) Create(id string, params *model.VmCreateParams) error {
 	log.Println("Setting up cs for", params.Name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup cs for vm %s. details: %w", params.Name, err)
+		return fmt.Errorf("failed to set up cs for vm %s. details: %w", params.Name, err)
 	}
 
 	vm, csc, g, err := c.Get(OptsAll(id))

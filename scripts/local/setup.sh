@@ -8,22 +8,26 @@ fi
 
 source ./common.sh
 
-GREEN_CHECK="\033[32;1m✔\033[0m"
-RED_CROSS="\033[31;1m✗\033[0m"
+domain="deploy.localhost"
 
-PLACEHOLDER_GIT_REPO="https://github.com/kthcloud/go-deploy-placeholder.git"
+cluster_name="go-deploy-dev"
+kubeconfig_output_path="../../kube"
 
-BASE_URL="deploy.localhost:9080"
+placeholder_git_repo="https://github.com/kthcloud/go-deploy-placeholder.git"
+vm_image="https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
+nfs_base_path="/mnt/nfs"
 
-LOADBALANCER_HTTP_PORT=9080
-LOADBALANCER_HTTPS_PORT=9443
-VM_PORT_START=29000
-VM_PORT_END=30000
-MONGO_DB_PORT=9027
-REDIS_PORT=9079
-NFS_PORT=9049
+# Ports
+ingress_http_port=9080
+ingress_https_port=9443
+mongo_db_port=9027
+redis_port=9079
+nfs_port=9049
+harbor_port=9081
+port_range_start=29000
+port_range_end=30000
 
-# Context variables
+# Dynamic variables
 keycloak_deploy_secret=""
 keycloak_deploy_storage_secret=""
 
@@ -76,22 +80,34 @@ function install_k3d() {
 }
 
 function create_k3d_cluster() {
-  name="go-deploy-dev"
-  current=$(k3d cluster list | grep -c $name)
+  local current=$(k3d cluster list | grep -c $cluster_name)
   if [ "$current" -eq 0 ]; then
-    k3d cluster create $name --agents 2 \
-      -p "$LOADBALANCER_HTTP_PORT:80@loadbalancer" \
-      -p "$LOADBALANCER_HTTPS_PORT:443@loadbalancer" \
-      -p "$VM_PORT_START-$VM_PORT_END:29000-30000@server:0" \
-      -p "$REDIS_PORT:6379@server:0" \
-      -p "$MONGO_DB_PORT:27017@server:0" \
-      -p "$NFS_PORT:2049@server:0"
+    k3d cluster create $cluster_name --agents 2 \
+      -p "$ingress_http_port:80@loadbalancer" \
+      -p "$ingress_https_port:443@loadbalancer" \
+      -p "$port_range_start-$port_range_end,:29000-30000@server:0" \
+      -p "$redis_port:6379@server:0" \
+      -p "$mongo_db_port:27017@server:0" \
+      -p "$nfs_port:2049@server:0" \
+      -p "$harbor_port:9081@server:0"
   fi
 
   # Wait for kubeconfig to change
-  while [ "$(kubectl config current-context)" != "k3d-$name" ]; do
+  while [ "$(kubectl config current-context)" != "k3d-$cluster_name" ]; do
     sleep 5
   done
+
+  # Copy kubeconfig to local folder
+  if [ ! -d $kubeconfig_output_path ]; then
+    mkdir -p $kubeconfig_output_path
+  fi
+
+  # If already exists, remove it
+  if [ -f "$kubeconfig_output_path/$cluster_name.yml" ]; then
+    rm -f "$kubeconfig_output_path/$cluster_name.yml"
+  fi
+
+  k3d kubeconfig get $cluster_name > "$kubeconfig_output_path/$cluster_name.yml"
 }
 
 function install_harbor() {
@@ -105,20 +121,30 @@ function install_harbor() {
       --values ./helmvalues/harbor.values.yml
   fi
 
+  # Setup an ingress for Harbor
+  res=$(kubectl get ingress -n harbor -o yaml | grep -c harbor)
+  export domain=$domain
+  export harbor_port=$harbor_port
+  if [ $res -eq 0 ]; then
+    envsubst < ./manifests/harbor.yml | kubectl apply -f -
+  fi
+
   # Wait for Harbor to be up
-  while [ "$(curl -s -o /dev/null -w "%{http_code}" http://harbor.$BASE_URL)" != "200" ]; do
+  while [ "$(curl -s -o /dev/null -w "%{http_code}" http://harbor.$domain:$ingress_http_port)" != "200" ]; do
     sleep 5
   done
+
 }
 
-function seed_harbor_with_placeholder_images() {
-  local url="http://harbor.$BASE_URL"
-  local domain="harbor.$BASE_URL"
+function seed_harbor_with_images() {
+  # local url="http://harbor.$domain:$ingress_http_port"
+  local url="http://localhost:$harbor_port"
+  local domain="localhost:$harbor_port"
   local user="admin"
   local password="Harbor12345"
 
-  local robot_user="robot\$library+test"
-  local robot_password="qf6ywPgO0ek55iyeLWC39WXHWAOO68QX"
+  local robot_user="$user"
+  local robot_password="$password"
 
   # If repository "go-deploy-placeholder" in project "library" already exists, skip
   res=$(curl -s -u $user:$password -X GET $url/api/v2.0/projects/library/repositories | jq -r '.[] | select(.name=="library/go-deploy-placeholder") | .name')
@@ -128,7 +154,7 @@ function seed_harbor_with_placeholder_images() {
 
   # Download repo and build the image
   if [ ! -d "go-deploy-placeholder" ]; then
-    git clone $PLACEHOLDER_GIT_REPO
+    git clone $placeholder_git_repo
   fi
 
   # Use 'library' so we don't need to create our own (library is the default namespace in Harbor)
@@ -166,7 +192,7 @@ function install_keycloak() {
   rm -f keycloak.values.yml
 
   # Wait for Keycloak to be up
-  while [ "$(curl -s -o /dev/null -w "%{http_code}" http://keycloak.$BASE_URL/health/ready)" != "200" ]; do
+  while [ "$(curl -s -o /dev/null -w "%{http_code}" http://keycloak.$domain:$ingress_http_port/health/ready)" != "200" ]; do
     sleep 5
   done
 
@@ -174,7 +200,7 @@ function install_keycloak() {
     -X POST \
     -H "Content-Type: application/x-www-form-urlencoded" \
     -d "client_id=admin-cli&username=admin&password=admin&grant_type=password" \
-    http://keycloak.$BASE_URL/realms/master/protocol/openid-connect/token \
+    http://keycloak.$domain:$ingress_http_port/realms/master/protocol/openid-connect/token \
     | jq -r '.access_token')
   
   # Check if go-deploy client exists, if not create it
@@ -182,7 +208,7 @@ function install_keycloak() {
     -H "Content-Type: application/json" \
     -H \"Accept: application/json\" \
     -H "Authorization: Bearer $token" \
-    -X GET http://keycloak.$BASE_URL/admin/realms/master/clients?clientId=go-deploy)
+    -X GET http://keycloak.$domain:$ingress_http_port/admin/realms/master/clients?clientId=go-deploy)
   local exists=$(echo $check_exists | jq -r '.[] | select(.clientId=="go-deploy") | .clientId')
   if [ "$exists" != "go-deploy" ]; then
     local payload='{
@@ -207,7 +233,7 @@ function install_keycloak() {
       -H "Content-Type: application/json" \
       -H "Accept: application/json" \
       -H "Authorization: Bearer $token" \
-      -X POST http://keycloak.$BASE_URL/admin/realms/master/clients -d "$payload"
+      -X POST http://keycloak.$domain:$ingress_http_port/admin/realms/master/clients -d "$payload"
   fi
 
   # Fetch created client's secret
@@ -215,7 +241,7 @@ function install_keycloak() {
     -H "Content-Type: application/json" \
     -H "Accept: application/json" \
     -H "Authorization: Bearer $token" \
-    -X GET http://keycloak.$BASE_URL/admin/realms/master/clients?clientId=go-deploy \
+    -X GET http://keycloak.$domain:$ingress_http_port/admin/realms/master/clients?clientId=go-deploy \
     | jq -r '.[0].clientSecret')
 
 
@@ -225,7 +251,7 @@ function install_keycloak() {
     -H "Content-Type: application/json" \
     -H \"Accept: application/json\" \
     -H "Authorization: Bearer $token" \
-    -X GET http://keycloak.$BASE_URL/admin/realms/master/clients?clientId=go-deploy-storage)
+    -X GET http://keycloak.$domain:$ingress_http_port/admin/realms/master/clients?clientId=go-deploy-storage)
   local exists=$(echo $check_exists | jq -r '.[] | select(.clientId=="go-deploy-storage") | .clientId')
   if [ "$exists" != "go-deploy-storage" ]; then
     local payload='{
@@ -250,7 +276,7 @@ function install_keycloak() {
       -H "Content-Type: application/json" \
       -H "Accept: application/json" \
       -H "Authorization: Bearer $token" \
-      -X POST http://keycloak.$BASE_URL/admin/realms/master/clients -d "$payload"
+      -X POST http://keycloak.$domain:$ingress_http_port/admin/realms/master/clients -d "$payload"
   fi
 
   # Fetch created client's secret
@@ -258,7 +284,7 @@ function install_keycloak() {
     -H "Content-Type: application/json" \
     -H "Accept: application/json" \
     -H "Authorization: Bearer $token" \
-    -X GET http://keycloak.$BASE_URL/admin/realms/master/clients?clientId=go-deploy-storage \
+    -X GET http://keycloak.$domain:$ingress_http_port/admin/realms/master/clients?clientId=go-deploy-storage \
     | jq -r '.[0].clientSecret')
 }
 
@@ -268,11 +294,14 @@ function install_nfs_server() {
     kubectl apply -f ./manifests/nfs-server.yml
   fi
 
-  sleep 10
+  # Wait for NFS server to be up
+  while [ "$(kubectl get pod -n nfs-server -l app=nfs-server -o jsonpath="{.items[0].status.phase}")" != "Running" ]; do
+    sleep 5
+  done
 
   # Create subfolders deployments, vms, scratch and snapshots
   pod=$(kubectl get pod -n nfs-server -l app=nfs-server -o jsonpath="{.items[0].metadata.name}")
-  kubectl exec -n nfs-server $pod -- mkdir -p /mnt/nfs/deployments /mnt/nfs/vms /mnt/nfs/scratch /mnt/nfs/snapshots
+  kubectl exec -n nfs-server $pod -- mkdir -p  $nfs_base_path/deployments $nfs_base_path/vms $nfs_base_path/scratch $nfs_base_path/snapshots
 }
 
 function install_cert_manager() {
@@ -289,8 +318,10 @@ function install_cert_manager() {
       --set 'extraArgs={--dns01-recursive-nameservers-only,--dns01-recursive-nameservers=8.8.8.8:53\,1.1.1.1:53}' \
       --set installCRDs=true
 
-    # Ensure CRD installation finishes
-    sleep 10
+    # Wait for cert-manager to be up
+    while [ "$(kubectl get pod -n cert-manager -l app=cert-manager -o jsonpath="{.items[0].status.phase}")" != "Running" ]; do
+      sleep 5
+    done
   
     kubectl apply -f ./manifests/cert.yml
   fi
@@ -326,22 +357,27 @@ function install_storage_classes() {
     kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/master/deploy/kubernetes/snapshot-controller/setup-snapshot-controller.yaml
   fi
 
+  export nfs_server="nfs-server.nfs-server.svc.cluster.local"
+
   # If storage class 'deploy-vm-disks' does not exist, create it
+  export nfs_share="$nfs_base_path/vms"
   res=$(kubectl get sc 2>/dev/null | grep -c nfs)
   if [ $res -eq 0 ]; then
-    kubectl apply -f ./manifests/sc-vm-disks.yml
+    envsubst < ./manifests/sc-vm-disks.yml | kubectl apply -f -
   fi
 
   # If storage class 'deploy-vm-scratch' does not exist, create it
+  export nfs_share="$nfs_base_path/scratch"
   res=$(kubectl get sc 2>/dev/null | grep -c scratch)
   if [ $res -eq 0 ]; then
-    kubectl apply -f ./manifests/sc-vm-scratch.yml
+    envsubst < ./manifests/sc-vm-scratch.yml | kubectl apply -f -
   fi
 
   # If volume snapshot class 'deploy-vm-snapshots' does not exist, create it
+  export nfs_share="$nfs_base_path/snapshots"
   res=$(kubectl get volumesnapshotclass 2>/dev/null | grep -c deploy-vm-snapshots)
   if [ $res -eq 0 ]; then
-    kubectl apply -f ./manifests/sc-vm-snapshots.yml
+    envsubst < ./manifests/vsc-vm-snapshots.yml | kubectl apply -f -
   fi
 }
 
@@ -349,9 +385,9 @@ function install_kubevirt() {
   # If namespace 'kubevirt' already exists, skip
   res=$(kubectl get ns | grep -c kubevirt)
   if [ $res -eq 0 ]; then
-    export VERSION=$(curl -s https://storage.googleapis.com/kubevirt-prow/release/kubevirt/kubevirt/stable.txt)
-    kubectl create -f https://github.com/kubevirt/kubevirt/releases/download/$VERSION/kubevirt-operator.yaml
-    kubectl create -f https://github.com/kubevirt/kubevirt/releases/download/$VERSION/kubevirt-cr.yaml
+    export version=$(curl -s https://storage.googleapis.com/kubevirt-prow/release/kubevirt/kubevirt/stable.txt)
+    kubectl create -f https://github.com/kubevirt/kubevirt/releases/download/$version/kubevirt-operator.yaml
+    kubectl create -f https://github.com/kubevirt/kubevirt/releases/download/$version/kubevirt-cr.yaml
   fi
   
   while [ "$(kubectl get kubevirt.kubevirt.io/kubevirt -n kubevirt -o=jsonpath="{.status.phase}")" != "Deployed" ]; do
@@ -376,10 +412,10 @@ function install_cdi() {
   # If namespace 'cdi' already exists, skip
   res=$(kubectl get ns | grep -c cdi)
   if [ $res -eq 0 ]; then
-    export TAG=$(curl -s -w %{redirect_url} https://github.com/kubevirt/containerized-data-importer/releases/latest)
-    export VERSION=$(echo ${TAG##*/})
-    kubectl apply -f https://github.com/kubevirt/containerized-data-importer/releases/download/$VERSION/cdi-operator.yaml
-    kubectl apply -f https://github.com/kubevirt/containerized-data-importer/releases/download/$VERSION/cdi-cr.yaml
+    export tag=$(curl -s -w %{redirect_url} https://github.com/kubevirt/containerized-data-importer/releases/latest)
+    export version=$(echo ${tag##*/})
+    kubectl apply -f https://github.com/kubevirt/containerized-data-importer/releases/download/$version/cdi-operator.yaml
+    kubectl apply -f https://github.com/kubevirt/containerized-data-importer/releases/download/$version/cdi-cr.yaml
   fi
 
   # Ensure that spec.config.scratchSpaceStorageClass: deploy-vm-scratch, if not set it
@@ -406,7 +442,7 @@ run_with_spinner "Install Storage Classes" install_storage_classes
 run_with_spinner "Install KubeVirt" install_kubevirt
 run_with_spinner "Install CDI" install_cdi
 
-run_with_spinner "Seed Harbor with placeholder images" seed_harbor_with_placeholder_images
+run_with_spinner "Seed Harbor with images" seed_harbor_with_images
 
 
 
@@ -424,40 +460,62 @@ fi
 echo "Generating config.local.yml"
 cp config.yml.tmpl ../../config.local.yml
 
-export port=8080
-export mode=dev
+# Core
+export external_url="$domain:$ingress_http_port"
+export port="8080"
+export mode="dev"
 
-export registry_url=localhost:11080
-export placeholder_image=library/go-deploy-placeholder:latest
+# Zone
+export kubeconfig_path="./kube/$cluster_name.yml"
+export nfs_server="nfs-server.nfs-server.svc.cluster.local"
+export nfs_parent_app_path="$nfs_base_path/deployments"
+export nfs_path_vm="$nfs_base_path/vms"
+export port_range_start="$port_range_start"
+export port_range_end="$port_range_end"
 
-export keycloak_url=http://localhost:12080
-export keycloak_realm=master
-export keycloak_admin_group=admin
-export keycloak_storage_client_id=go-deploy-storage
-export keycloak_storage_client_secret=secret
+# VM
+export admin_ssh_public_key=$(cat ~/.ssh/id_rsa.pub)
+export vm_image="$vm_image"
 
-export mongodb_url=mongodb://root:root@mongodb.mongodb.svc.cluster.local:27017
-export mongodb_name=deploy
+# Deployment
 
-export redis_url=redis://redis.redis.svc.cluster.local:6379
+
+# Registry
+export registry_url="harbor.harbor.svc.cluster.local:$harbor_port"
+export placeholder_image="$registry_url/library/go-deploy-placeholder:latest"
+
+# Keycloak
+export keycloak_url="http://keycloak.deploy.localhost:$ingress_http_port"
+export keycloak_realm="master"
+export keycloak_admin_group="admin"
+export keycloak_storage_client_id="go-deploy-storage"
+export keycloak_storage_client_secret="secret"
+
+# MongoDB
+export mongodb_url="mongodb://admin:admin@localhost:$mongo_db_port"
+export mongodb_name="deploy"
+
+# Redis
+export redis_url="redis://localhost:6379"
 export redis_password=
 
-export harbor_url=http://localhost:11080
-export harbor_user=admin
-export harbor_password=admin
-export harbor_webhook_secret=secret
+# Harbor
+export harbor_url="http://harbor.deploy.localhost:$ingress_http_port"
+export harbor_user="admin"
+export harbor_password="Harbor12345"
+export harbor_webhook_secret="secret"
 
 envsubst < config.yml.tmpl > ../../config.local.yml
 
 echo ""
 echo ""
-echo -e "[$GREEN_CHECK] config.local.yml generated"
+echo -e "$GREEN_CHECK config.local.yml generated"
 echo ""
 echo "The following services are now available:"
-echo " - Harbor: http://localhost:11080 (admin:admin)"
-echo " - Keycloak: http://localhost:12080 (admin:admin)"
-echo " - MongoDB: mongodb://root:root@localhost:13017"
-echo " - Redis: redis://localhost:13017"
+echo " - Harbor: http://harbor.$domain:$ingress_http_port (admin:Harbor12345)"
+echo " - Keycloak: http://keycloak.$domain:$ingress_http_port (admin:admin)"
+echo " - MongoDB: mongodb://admin:admin@localhost:$mongo_db_port"
+echo " - Redis: redis://redis.localhost:$redis_port"
 echo ""
 echo "dnsmasq is used to allow the names to resolve. See the following guides for help configuring it:"
 echo " - WSL2 (Windows): https://github.com/absolunet/pleaz/blob/production/documentation/installation/wsl2/dnsmasq.md"

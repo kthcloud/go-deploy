@@ -28,7 +28,7 @@ func (c *Client) Create(id string, params *model.DeploymentCreateParams) error {
 	log.Println("Setting up K8s for", params.Name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup k8s for deployment %s. details: %w", params.Name, err)
+		return fmt.Errorf("failed to set up k8s for deployment %s. details: %w", params.Name, err)
 	}
 
 	_, kc, g, err := c.Get(OptsAll(id))
@@ -333,16 +333,13 @@ func (c *Client) EnsureOwner(id string, oldOwnerID string) error {
 		return fmt.Errorf("failed to update k8s owner for deployment %s. details: %w", id, err)
 	}
 
-	// Since ownership is determined by the namespace, and the namespace owns everything,
-	// We need to recreate everything
-
-	// Delete everything related to the deployment in the old namespace
+	// Delete everything related to the deployment
 	err := c.Delete(id, oldOwnerID)
 	if err != nil {
 		return makeError(err)
 	}
 
-	// Create everything related to the deployment in the new namespace
+	// Create everything related to the deployment
 	err = c.Repair(id)
 	if err != nil {
 		return makeError(err)
@@ -634,7 +631,7 @@ func (c *Client) Repair(id string) error {
 // The handler function is called for each log line.
 func (c *Client) SetupLogStream(ctx context.Context, zone *config.Zone, allowedNames []string, handler func(string, string, int, time.Time)) error {
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup log stream for zone %s. details: %w", zone.Name, err)
+		return fmt.Errorf("failed to set up log stream for zone %s. details: %w", zone.Name, err)
 	}
 
 	_, kc, _, err := c.Get(OptsOnlyClient(zone))

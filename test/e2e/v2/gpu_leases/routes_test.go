@@ -32,7 +32,8 @@ func TestGetGpuLease(t *testing.T) {
 }
 
 func TestCreateGpuLease(t *testing.T) {
-	t.Parallel()
+	// Can't be run in parallel because a user may only have one GPU lease at the same time at the moment
+	// t.Parallel()
 
 	gpuGroup := v2.GetAnyAvailableGpuGroup(t)
 	if gpuGroup == nil {
@@ -44,7 +45,8 @@ func TestCreateGpuLease(t *testing.T) {
 }
 
 func TestActivateGpuLease(t *testing.T) {
-	t.Parallel()
+	// Can't be run in parallel because a user may only have one GPU lease at the same time at the moment
+	// t.Parallel()
 
 	// We don't want to hog a GPU group only for tests
 	// so we will only test if there is a GPU group specified manually

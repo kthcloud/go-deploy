@@ -20,7 +20,7 @@ func (c *Client) Create(id string, params *model.DeploymentCreateParams) error {
 	log.Println("Setting up harbor for", params.Name)
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup harbor for deployment %s. details: %w", params.Name, err)
+		return fmt.Errorf("failed to set up harbor for deployment %s. details: %w", params.Name, err)
 	}
 
 	_, hc, g, err := c.Get(OptsAll(id))
@@ -78,7 +78,7 @@ func (c *Client) CreatePlaceholder(id string) error {
 	log.Println("Setting up placeholder harbor")
 
 	makeError := func(err error) error {
-		return fmt.Errorf("failed to setup placeholder harbor. details: %w", err)
+		return fmt.Errorf("failed to set up placeholder harbor. details: %w", err)
 	}
 
 	err := resources.SsPlaceholderCreator().WithDbFunc(dbFunc(id, "placeholder")).Exec()
@@ -159,20 +159,21 @@ func (c *Client) Update(id string, params *model.DeploymentUpdateParams) error {
 	}
 
 	if params.Name != nil {
-		// updating the name requires moving the repository, since it is a persistent storage
-		// we do this by creating a new repository with its "placeholder" being the first repository
+		// Updating the name requires moving the repository, since it is a persistent storage.
+		// We do this by creating a new repository with its "placeholder" being the old repository
 
 		newRepository := g.Repository()
 		oldRepository := d.Subsystems.Harbor.Repository
 
-		if oldRepository.Name != newRepository.Name &&
-			subsystems.Created(&d.Subsystems.Harbor.Project) &&
-			subsystems.Created(&oldRepository) &&
-			subsystems.NotCreated(newRepository) {
-
+		if oldRepository.Name != newRepository.Name && oldRepository.ID == newRepository.ID {
+			newRepository.ID = 0
+			newRepository.CreatedAt = time.Time{}
+			newRepository.Seeded = false
 			newRepository.Placeholder.RepositoryName = oldRepository.Name
 			newRepository.Placeholder.ProjectName = d.Subsystems.Harbor.Project.Name
+		}
 
+		if subsystems.Created(&d.Subsystems.Harbor.Project) && subsystems.NotCreated(newRepository) {
 			err = resources.SsCreator(hc.CreateRepository).
 				WithDbFunc(dbFunc(id, "repository")).
 				WithPublic(newRepository).
@@ -193,7 +194,12 @@ func (c *Client) Update(id string, params *model.DeploymentUpdateParams) error {
 		newRobot := g.Robot()
 		oldRobot := d.Subsystems.Harbor.Robot
 
-		if oldRobot.Name != newRobot.Name {
+		if oldRobot.Name != newRobot.Name && oldRobot.ID == newRobot.ID {
+			newRobot.ID = 0
+			newRobot.CreatedAt = time.Time{}
+		}
+
+		if subsystems.NotCreated(newRobot) {
 			err = resources.SsCreator(hc.CreateRobot).
 				WithDbFunc(dbFunc(id, "robot")).
 				WithPublic(newRobot).
@@ -298,6 +304,7 @@ func (c *Client) EnsureOwner(id string, oldOwnerID string) error {
 		return makeError(err)
 	}
 
+	// Webhooks are per-user, so we don't delete them here
 	err = resources.SsDeleter(func(int) error { return nil }).
 		WithResourceID(d.Subsystems.Harbor.Webhook.ID).
 		WithDbFunc(dbFunc(id, "webhook")).
