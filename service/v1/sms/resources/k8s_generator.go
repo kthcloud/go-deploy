@@ -68,12 +68,12 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 
 	defaultLimits := models.Limits{
 		CPU:    fmt.Sprintf("%.1f", config.Config.Deployment.Resources.Limits.CPU),
-		Memory: fmt.Sprintf("%.1fGi", config.Config.Deployment.Resources.Limits.RAM),
+		Memory: fmt.Sprintf("%dMi", int(config.Config.Deployment.Resources.Limits.RAM*1000)),
 	}
 
 	defaultRequests := models.Requests{
 		CPU:    fmt.Sprintf("%.1f", config.Config.Deployment.Resources.Requests.CPU),
-		Memory: fmt.Sprintf("%.1fGi", config.Config.Deployment.Resources.Requests.RAM),
+		Memory: fmt.Sprintf("%dMi", int(config.Config.Deployment.Resources.Requests.RAM*1000)),
 	}
 
 	// Filebrowser
