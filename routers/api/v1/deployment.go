@@ -17,6 +17,8 @@ import (
 	"go-deploy/service/v1/deployments/opts"
 	teamOpts "go-deploy/service/v1/teams/opts"
 	v12 "go-deploy/service/v1/utils"
+	"strconv"
+	"strings"
 )
 
 // GetDeployment
@@ -72,7 +74,7 @@ func GetDeployment(c *gin.Context) {
 	}
 
 	teamIDs, _ := deployV1.Teams().ListIDs(teamOpts.ListOpts{ResourceID: deployment.ID})
-	context.Ok(deployment.ToDTO(deployV1.SMs().GetUrlByUserID(deployment.OwnerID), config.Config.ExternalPort, teamIDs))
+	context.Ok(deployment.ToDTO(deployV1.SMs().GetUrlByUserID(deployment.OwnerID), getExternalPort(deployment.Zone), teamIDs))
 }
 
 // ListDeployments
@@ -133,7 +135,7 @@ func ListDeployments(c *gin.Context) {
 	dtoDeployments := make([]body.DeploymentRead, len(deployments))
 	for i, deployment := range deployments {
 		teamIDs, _ := deployV1.Teams().ListIDs(teamOpts.ListOpts{ResourceID: deployment.ID})
-		dtoDeployments[i] = deployment.ToDTO(deployV1.SMs().GetUrlByUserID(deployment.OwnerID), config.Config.ExternalPort, teamIDs)
+		dtoDeployments[i] = deployment.ToDTO(deployV1.SMs().GetUrlByUserID(deployment.OwnerID), getExternalPort(deployment.Zone), teamIDs)
 	}
 
 	context.JSONResponse(200, dtoDeployments)
@@ -414,4 +416,23 @@ func UpdateDeployment(c *gin.Context) {
 		ID:    deployment.ID,
 		JobID: &jobID,
 	})
+}
+
+func getExternalPort(zoneName string) *int {
+	zone := config.Config.GetZone(zoneName)
+	if zone == nil {
+		return nil
+	}
+
+	split := strings.Split(zone.Domains.ParentDeployment, ":")
+	if len(split) > 1 {
+		port, err := strconv.Atoi(split[1])
+		if err != nil {
+			return nil
+		}
+
+		return &port
+	}
+
+	return nil
 }

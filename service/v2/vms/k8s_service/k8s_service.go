@@ -119,7 +119,6 @@ func (c *Client) Create(id string, params *model.VmCreateParams) error {
 			WithDbFunc(dbFunc(id, "serviceMap."+servicePublic.Name)).
 			WithPublic(&servicePublic).
 			Exec()
-
 		if err != nil {
 			return makeError(err)
 		}

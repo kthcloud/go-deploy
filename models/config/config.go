@@ -16,10 +16,9 @@ const (
 )
 
 type ConfigType struct {
-	Port         int    `yaml:"port"`
-	ExternalUrl  string `yaml:"externalUrl"`
-	ExternalPort int
-	Mode         string `yaml:"mode"`
+	Port        int    `yaml:"port"`
+	ExternalUrl string `yaml:"externalUrl"`
+	Mode        string `yaml:"mode"`
 	// Filepath is the path to the configuration file
 	// It is set by the SetupEnvironment function when the configuration is loaded
 	Filepath string

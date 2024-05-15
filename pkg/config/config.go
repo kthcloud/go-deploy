@@ -14,7 +14,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"os"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -49,17 +48,6 @@ func SetupEnvironment(mode string) error {
 	config.LastRoleReload = time.Now()
 
 	log.Println("go-deploy", version.AppVersion)
-
-	// Fetch externalPort from externalUrl
-	split := strings.Split(Config.ExternalUrl, ":")
-	if len(split) > 1 {
-		Config.ExternalPort, err = strconv.Atoi(split[1])
-		if err != nil {
-			return makeError(err)
-		}
-	} else {
-		Config.ExternalPort = 443
-	}
 
 	// Fetch the roles from the config
 	if len(Config.Roles) == 0 {
