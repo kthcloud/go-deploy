@@ -35,6 +35,16 @@ func (s *ServicePublic) GetFQDN() string {
 	return fmt.Sprintf("%s.%s.svc.cluster.local", s.Name, s.Namespace)
 }
 
+func (s *ServicePublic) IsNodePort() bool {
+	for _, port := range s.Ports {
+		if port.Port > 30000 && port.Port < 32767 {
+			return true
+		}
+	}
+
+	return false
+}
+
 // CreateServicePublicFromRead creates a ServicePublic from a v1.Service.
 func CreateServicePublicFromRead(service *v1.Service) *ServicePublic {
 	var selector map[string]string

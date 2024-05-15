@@ -42,7 +42,7 @@ zones:
     parentVm: vm.deploy.localhost:32191
     parentVmApp: vm-app.deploy.localhost:32191
   storage:
-    nfsServer: localhost #nfs-server.nfs-server.svc.cluster.local
+    nfsServer: 10.0.200.2
     paths:
       parentDeployment: /nfs/deployments
   portRange:
@@ -137,7 +137,7 @@ keycloak:
   adminGroup: admin
   storageClient:
     clientId: go-deploy-storage
-    clientSecret: OJJRDZ0tj63URIeZjIi9oiNQ4NjUZ0Fg
+    clientSecret: q761JQZ2EhdQB5rQWmULWnGESlJ82o9K
 
 mongodb:
   url: mongodb://admin:admin@localhost:31334
