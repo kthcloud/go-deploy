@@ -3,10 +3,12 @@ package harbor
 import (
 	"context"
 	"fmt"
-	modelv2 "github.com/mittwald/goharbor-client/v5/apiv2/model"
+	projectModels "go-deploy/pkg/imp/harbor/sdk/v2.0/client/project"
+	webhookModels "go-deploy/pkg/imp/harbor/sdk/v2.0/client/webhook"
+	harborModels "go-deploy/pkg/imp/harbor/sdk/v2.0/models"
 	"go-deploy/pkg/log"
 	models "go-deploy/pkg/subsystems/harbor/models"
-	"strings"
+	"strconv"
 )
 
 // ReadWebhook reads a webhook from Harbor.
@@ -15,30 +17,40 @@ func (client *Client) ReadWebhook(id int) (*models.WebhookPublic, error) {
 		return fmt.Errorf("failed to read webhook for %d. details: %w", id, err)
 	}
 
-	project, err := client.HarborClient.GetProject(context.TODO(), client.Project)
+	project, err := client.HarborClient.V2().Project.GetProject(context.TODO(), &projectModels.GetProjectParams{ProjectNameOrID: client.Project})
 	if err != nil {
-		if strings.Contains(err.Error(), "project not found on server side") {
-			log.Println("Project", client.Project, "not found when deleting webhook. Assuming it was deleted")
+		if IsNotFoundErr(err) {
 			return nil, nil
 		}
 
 		return nil, makeError(err)
 	}
 
-	webhookPolicies, err := client.HarborClient.ListProjectWebhookPolicies(context.TODO(), int(project.ProjectID))
+	webhookPolicies, err := client.HarborClient.V2().Webhook.ListWebhookPoliciesOfProject(context.TODO(), &webhookModels.ListWebhookPoliciesOfProjectParams{
+		ProjectNameOrID: strconv.Itoa(int(project.Payload.ProjectID)),
+	})
 	if err != nil {
+		if IsNotFoundErr(err) {
+			return nil, nil
+		}
+
 		return nil, makeError(err)
 	}
 
-	for _, policy := range webhookPolicies {
+	for _, policy := range webhookPolicies.Payload {
 		if int(policy.ID) == id {
-
-			project, err := client.HarborClient.GetProject(context.TODO(), client.Project)
+			project, err = client.HarborClient.V2().Project.GetProject(context.TODO(), &projectModels.GetProjectParams{
+				ProjectNameOrID: strconv.Itoa(int(policy.ProjectID)),
+			})
 			if err != nil {
+				if IsNotFoundErr(err) {
+					return nil, nil
+				}
+
 				return nil, makeError(err)
 			}
 
-			public := models.CreateWebhookPublicFromGet(policy, project)
+			public := models.CreateWebhookPublicFromGet(policy, project.Payload)
 
 			return public, nil
 		}
@@ -52,25 +64,30 @@ func (client *Client) CreateWebhook(public *models.WebhookPublic) (*models.Webho
 		return fmt.Errorf("failed to create webhook for %s. details: %w", public.Name, err)
 	}
 
-	project, err := client.HarborClient.GetProject(context.TODO(), client.Project)
+	project, err := client.HarborClient.V2().Project.GetProject(context.TODO(), &projectModels.GetProjectParams{ProjectNameOrID: client.Project})
 	if err != nil {
-		if strings.Contains(err.Error(), "project not found on server side") {
-			log.Println("Project", client.Project, "not found when deleting webhook. Assuming it was deleted")
+		if IsNotFoundErr(err) {
 			return nil, nil
 		}
 
 		return nil, makeError(err)
 	}
 
-	webhookPolicies, err := client.HarborClient.ListProjectWebhookPolicies(context.TODO(), int(project.ProjectID))
+	webhookPolicies, err := client.HarborClient.V2().Webhook.ListWebhookPoliciesOfProject(context.TODO(), &webhookModels.ListWebhookPoliciesOfProjectParams{
+		ProjectNameOrID: strconv.Itoa(int(project.Payload.ProjectID)),
+	})
 	if err != nil {
-		return nil, makeError(err)
+		if !IsNotFoundErr(err) {
+			return nil, makeError(err)
+		}
 	}
 
-	var webhookPolicy *modelv2.WebhookPolicy
-	for _, policy := range webhookPolicies {
-		if len(policy.Targets) > 0 && policy.Targets[0].Address == public.Target {
-			webhookPolicy = policy
+	var webhookPolicy *harborModels.WebhookPolicy
+	if webhookPolicies != nil {
+		for _, policy := range webhookPolicies.Payload {
+			if len(policy.Targets) > 0 && policy.Targets[0].Address == public.Target {
+				webhookPolicy = policy
+			}
 		}
 	}
 
@@ -79,19 +96,34 @@ func (client *Client) CreateWebhook(public *models.WebhookPublic) (*models.Webho
 	}
 
 	requestBody := models.CreateWebhookParamsFromPublic(public)
-	err = client.HarborClient.AddProjectWebhookPolicy(context.TODO(), int(project.ProjectID), requestBody)
+	_, err = client.HarborClient.V2().Webhook.CreateWebhookPolicyOfProject(context.TODO(), &webhookModels.CreateWebhookPolicyOfProjectParams{
+		Policy:          requestBody,
+		ProjectNameOrID: strconv.Itoa(int(project.Payload.ProjectID)),
+	})
 	if err != nil {
+		if IsNotFoundErr(err) {
+			return nil, nil
+		}
+
 		return nil, makeError(err)
 	}
 
-	webhookPolicies, err = client.HarborClient.ListProjectWebhookPolicies(context.TODO(), int(project.ProjectID))
+	webhookPolicies, err = client.HarborClient.V2().Webhook.ListWebhookPoliciesOfProject(context.TODO(), &webhookModels.ListWebhookPoliciesOfProjectParams{
+		ProjectNameOrID: strconv.Itoa(int(project.Payload.ProjectID)),
+	})
 	if err != nil {
+		if IsNotFoundErr(err) {
+			return nil, nil
+		}
+
 		return nil, makeError(err)
 	}
 
-	for _, policy := range webhookPolicies {
-		if policy.Name == public.Name {
-			return models.CreateWebhookPublicFromGet(policy, nil), nil
+	if webhookPolicies != nil {
+		for _, policy := range webhookPolicies.Payload {
+			if policy.Name == public.Name {
+				return models.CreateWebhookPublicFromGet(policy, nil), nil
+			}
 		}
 	}
 
@@ -104,25 +136,32 @@ func (client *Client) UpdateWebhook(public *models.WebhookPublic) (*models.Webho
 		return fmt.Errorf("failed to update webhook for %d. details: %w", public.ID, err)
 	}
 
-	project, err := client.HarborClient.GetProject(context.TODO(), client.Project)
+	project, err := client.HarborClient.V2().Project.GetProject(context.TODO(), &projectModels.GetProjectParams{ProjectNameOrID: client.Project})
 	if err != nil {
-		if strings.Contains(err.Error(), "project not found on server side") {
-			log.Println("Project", client.Project, "not found when deleting webhook. Assuming it was deleted")
+		if IsNotFoundErr(err) {
 			return nil, nil
 		}
 
 		return nil, makeError(err)
 	}
 
-	webhookPolicies, err := client.HarborClient.ListProjectWebhookPolicies(context.TODO(), int(project.ProjectID))
+	webhookPolicies, err := client.HarborClient.V2().Webhook.ListWebhookPoliciesOfProject(context.TODO(), &webhookModels.ListWebhookPoliciesOfProjectParams{
+		ProjectNameOrID: strconv.Itoa(int(project.Payload.ProjectID)),
+	})
 	if err != nil {
+		if IsNotFoundErr(err) {
+			return nil, nil
+		}
+
 		return nil, makeError(err)
 	}
 
-	var webhookPolicy *modelv2.WebhookPolicy
-	for _, policy := range webhookPolicies {
-		if int(policy.ID) == public.ID {
-			webhookPolicy = policy
+	var webhookPolicy *harborModels.WebhookPolicy
+	if webhookPolicies != nil {
+		for _, policy := range webhookPolicies.Payload {
+			if int(policy.ID) == public.ID {
+				webhookPolicy = policy
+			}
 		}
 	}
 
@@ -132,19 +171,35 @@ func (client *Client) UpdateWebhook(public *models.WebhookPublic) (*models.Webho
 	}
 
 	params := models.CreateWebhookUpdateParamsFromPublic(public, webhookPolicy)
-	err = client.HarborClient.UpdateProjectWebhookPolicy(context.TODO(), int(project.ProjectID), params)
+	_, err = client.HarborClient.V2().Webhook.UpdateWebhookPolicyOfProject(context.TODO(), &webhookModels.UpdateWebhookPolicyOfProjectParams{
+		Policy:          params,
+		ProjectNameOrID: strconv.Itoa(int(project.Payload.ProjectID)),
+		WebhookPolicyID: int64(public.ID),
+	})
 	if err != nil {
+		if IsNotFoundErr(err) {
+			return nil, nil
+		}
+
 		return nil, makeError(err)
 	}
 
-	webhookPolicies, err = client.HarborClient.ListProjectWebhookPolicies(context.TODO(), int(project.ProjectID))
+	webhookPolicies, err = client.HarborClient.V2().Webhook.ListWebhookPoliciesOfProject(context.TODO(), &webhookModels.ListWebhookPoliciesOfProjectParams{
+		ProjectNameOrID: strconv.Itoa(int(project.Payload.ProjectID)),
+	})
 	if err != nil {
+		if IsNotFoundErr(err) {
+			return nil, nil
+		}
+
 		return nil, makeError(err)
 	}
 
-	for _, policy := range webhookPolicies {
-		if policy.Name == public.Name {
-			return models.CreateWebhookPublicFromGet(policy, nil), nil
+	if webhookPolicies != nil {
+		for _, policy := range webhookPolicies.Payload {
+			if policy.Name == public.Name {
+				return models.CreateWebhookPublicFromGet(policy, nil), nil
+			}
 		}
 	}
 
@@ -162,20 +217,21 @@ func (client *Client) DeleteWebhook(id int) error {
 		return nil
 	}
 
-	project, err := client.HarborClient.GetProject(context.TODO(), client.Project)
+	project, err := client.HarborClient.V2().Project.GetProject(context.TODO(), &projectModels.GetProjectParams{ProjectNameOrID: client.Project})
 	if err != nil {
-		if strings.Contains(err.Error(), "project not found on server side") {
-			log.Println("Project", client.Project, "not found when deleting webhook. Assuming it was deleted")
+		if IsNotFoundErr(err) {
 			return nil
 		}
 
 		return makeError(err)
 	}
 
-	err = client.HarborClient.DeleteProjectWebhookPolicy(context.TODO(), int(project.ProjectID), int64(id))
+	_, err = client.HarborClient.V2().Webhook.DeleteWebhookPolicyOfProject(context.TODO(), &webhookModels.DeleteWebhookPolicyOfProjectParams{
+		ProjectNameOrID: strconv.Itoa(int(project.Payload.ProjectID)),
+		WebhookPolicyID: int64(id),
+	})
 	if err != nil {
-		errMsg := err.Error()
-		if strings.Contains(errMsg, "[404] deleteWebhookPolicyOfProjectNotFound") {
+		if IsNotFoundErr(err) {
 			return nil
 		}
 

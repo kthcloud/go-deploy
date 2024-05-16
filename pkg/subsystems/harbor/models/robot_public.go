@@ -1,7 +1,7 @@
 package models
 
 import (
-	modelv2 "github.com/mittwald/goharbor-client/v5/apiv2/model"
+	"go-deploy/pkg/imp/harbor/sdk/v2.0/models"
 	"strings"
 	"time"
 )
@@ -24,7 +24,7 @@ func (r *RobotPublic) IsPlaceholder() bool {
 }
 
 // CreateRobotPublicFromGet converts a modelv2.Robot to a RobotPublic.
-func CreateRobotPublicFromGet(robot *modelv2.Robot) *RobotPublic {
+func CreateRobotPublicFromGet(robot *models.Robot) *RobotPublic {
 	return &RobotPublic{
 		ID:         int(robot.ID),
 		Name:       extractRobotRealName(robot.Name),

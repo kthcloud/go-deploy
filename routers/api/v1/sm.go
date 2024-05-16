@@ -9,11 +9,14 @@ import (
 	"go-deploy/models/model"
 	"go-deploy/models/version"
 	"go-deploy/pkg/app/status_codes"
+	"go-deploy/pkg/config"
 	"go-deploy/pkg/sys"
 	"go-deploy/service"
 	"go-deploy/service/v1/sms/opts"
 	v12 "go-deploy/service/v1/utils"
 	"net/http"
+	"strconv"
+	"strings"
 )
 
 // GetSM
@@ -56,7 +59,7 @@ func GetSM(c *gin.Context) {
 		return
 	}
 
-	context.Ok(sm.ToDTO())
+	context.Ok(sm.ToDTO(getSmExternalPort(sm.Zone)))
 }
 
 // ListSMs
@@ -106,7 +109,7 @@ func ListSMs(c *gin.Context) {
 
 	var smDTOs []body.SmRead
 	for _, sm := range smList {
-		smDTOs = append(smDTOs, sm.ToDTO())
+		smDTOs = append(smDTOs, sm.ToDTO(getSmExternalPort(sm.Zone)))
 	}
 
 	context.Ok(smDTOs)
@@ -168,4 +171,23 @@ func DeleteSM(c *gin.Context) {
 		ID:    sm.ID,
 		JobID: jobID,
 	})
+}
+
+func getSmExternalPort(zoneName string) *int {
+	zone := config.Config.GetZone(zoneName)
+	if zone == nil {
+		return nil
+	}
+
+	split := strings.Split(zone.Domains.ParentSM, ":")
+	if len(split) > 1 {
+		port, err := strconv.Atoi(split[1])
+		if err != nil {
+			return nil
+		}
+
+		return &port
+	}
+
+	return nil
 }

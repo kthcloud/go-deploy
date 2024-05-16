@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"go-deploy/models/model"
 	"go-deploy/models/version"
+	"go-deploy/pkg/config"
 	"go-deploy/pkg/sys"
 	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
@@ -39,7 +40,7 @@ func CreateSM() gin.HandlerFunc {
 				"id":     smID,
 				"userId": auth.User.ID,
 				"params": model.SmCreateParams{
-					Zone: "se-flem-2",
+					Zone: config.Config.Deployment.DefaultZone,
 				},
 				"authInfo": auth,
 			})

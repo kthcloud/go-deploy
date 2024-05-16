@@ -1,7 +1,7 @@
 package models
 
 import (
-	modelv2 "github.com/mittwald/goharbor-client/v5/apiv2/model"
+	"go-deploy/pkg/imp/harbor/sdk/v2.0/models"
 	"strings"
 	"time"
 )
@@ -23,7 +23,7 @@ func (r *RepositoryPublic) IsPlaceholder() bool {
 }
 
 // CreateRepositoryPublicFromGet converts a modelv2.Repository to a RepositoryPublic.
-func CreateRepositoryPublicFromGet(repository *modelv2.Repository) *RepositoryPublic {
+func CreateRepositoryPublicFromGet(repository *models.Repository) *RepositoryPublic {
 	var createdAt time.Time
 	if repository.CreationTime != nil {
 		createdAt = time.Time(*repository.CreationTime)

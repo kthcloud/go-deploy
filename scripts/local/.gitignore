@@ -1,0 +1,3 @@
+manifests/kind-config.yml
+cluster-config.rc
+data/

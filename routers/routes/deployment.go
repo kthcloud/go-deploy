@@ -24,8 +24,7 @@ func (group *DeploymentRoutingGroup) PrivateRoutes() []Route {
 		{Method: "GET", Pattern: DeploymentsPath, HandlerFunc: v1.ListDeployments},
 
 		{Method: "GET", Pattern: DeploymentPath, HandlerFunc: v1.GetDeployment},
-		{Method: "POST", Pattern: DeploymentsPath, HandlerFunc: v1.CreateDeployment,
-			Middleware: []gin.HandlerFunc{middleware.CreateSM()}},
+		{Method: "POST", Pattern: DeploymentsPath, HandlerFunc: v1.CreateDeployment, Middleware: []gin.HandlerFunc{middleware.CreateSM()}},
 		{Method: "POST", Pattern: DeploymentPath, HandlerFunc: v1.UpdateDeployment},
 		{Method: "DELETE", Pattern: DeploymentPath, HandlerFunc: v1.DeleteDeployment},
 

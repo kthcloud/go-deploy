@@ -190,8 +190,7 @@ func (c *Client) Create(id, ownerID string, deploymentCreate *body.DeploymentCre
 		return fmt.Errorf("failed to create deployment. details: %w", err)
 	}
 
-	// temporary hard-coded fallback
-	fallbackZone := "se-flem-2"
+	fallbackZone := config.Config.Deployment.DefaultZone
 	fallbackImage := createImagePath(ownerID, deploymentCreate.Name)
 	fallbackPort := config.Config.Deployment.Port
 

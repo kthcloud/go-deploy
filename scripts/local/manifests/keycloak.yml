@@ -15,7 +15,6 @@ spec:
   resources:
     requests:
       storage: 1Gi
-  storageClassName: local-path
   volumeMode: Filesystem
 ---
 apiVersion: apps/v1
@@ -91,7 +90,7 @@ spec:
               value: edge
 
             - name: KC_HOSTNAME_URL
-              value: http://keycloak.deploy.localhost:9080
+              value: http://keycloak.deploy.localhost:${keycloak_port}
 
             - name: KC_HTTP_ENABLED
               value: "true"
@@ -151,9 +150,11 @@ metadata:
   labels: 
     app.kubernetes.io/name: keycloak
 spec:
+  type: NodePort
   ports: 
     - port: 8080
       targetPort: 8080
+      nodePort: ${keycloak_port}
   selector: 
     app.kubernetes.io/name: keycloak
 ---
@@ -163,7 +164,7 @@ metadata:
   name: keycloak
   namespace: keycloak
 spec:
-  ingressClassName: traefik
+  ingressClassName: nginx
   rules:
     - host: keycloak.deploy.localhost
       http:

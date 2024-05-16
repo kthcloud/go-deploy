@@ -135,6 +135,7 @@ type CloudStackConfigSource struct {
 }
 
 type VM struct {
+	DefaultZone       string `yaml:"defaultZone"`
 	AdminSshPublicKey string `yaml:"adminSshPublicKey"`
 	Image             string `yaml:"image"`
 
@@ -163,6 +164,7 @@ type LegacyZone struct {
 }
 
 type Deployment struct {
+	DefaultZone                    string `yaml:"defaultZone"`
 	Port                           int    `yaml:"port"`
 	Prefix                         string `yaml:"prefix"`
 	WildcardCertSecretNamespace    string `yaml:"wildcardCertSecretNamespace"`
@@ -228,7 +230,6 @@ type Zone struct {
 		NfsServer string `yaml:"nfsServer"`
 		Paths     struct {
 			ParentDeployment string `yaml:"parentDeployment"`
-			ParentVM         string `yaml:"parentVm"`
 		} `yaml:"paths"`
 	} `yaml:"storage"`
 	NetworkPolicies []struct {

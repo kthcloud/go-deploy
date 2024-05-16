@@ -23,6 +23,7 @@ import (
 	"go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"sort"
+	"strings"
 )
 
 // Get gets an existing deployment.
@@ -187,7 +188,7 @@ func (c *Client) Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
 		return fmt.Errorf("failed to create vm. details: %w", err)
 	}
 
-	fallbackZone := "se-flem-2"
+	fallbackZone := config.Config.VM.DefaultZone
 	params := model.VmCreateParams{}.FromDTOv2(dtoVmCreate, &fallbackZone)
 
 	if !c.V1.Zones().HasCapability(params.Zone, configModels.ZoneCapabilityVM) {
@@ -572,7 +573,7 @@ func (c *Client) SshConnectionString(id string) (*string, error) {
 	if service := vm.Subsystems.K8s.GetService(fmt.Sprintf("%s-priv-22-prot-tcp", vm.Name)); service != nil {
 		for _, port := range service.Ports {
 			if port.TargetPort == 22 {
-				sshConnectionString = utils.StrPtr(fmt.Sprintf("ssh root@%s -p %d", zone.Domains.ParentVM, port.Port))
+				sshConnectionString = utils.StrPtr(fmt.Sprintf("ssh root@%s -p %d", strings.Split(zone.Domains.ParentVM, ":")[0], port.Port))
 			}
 		}
 	}

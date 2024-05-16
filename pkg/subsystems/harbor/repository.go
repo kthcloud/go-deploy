@@ -3,10 +3,10 @@ package harbor
 import (
 	"context"
 	"fmt"
-	"github.com/mittwald/goharbor-client/v5/apiv2/pkg/clients/artifact"
+	artifactModels "go-deploy/pkg/imp/harbor/sdk/v2.0/client/artifact"
+	repositoryModels "go-deploy/pkg/imp/harbor/sdk/v2.0/client/repository"
 	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems/harbor/models"
-	"strings"
 )
 
 // insertPlaceholder inserts a placeholder artifact into a repository.
@@ -16,19 +16,11 @@ func (client *Client) insertPlaceholder(public *models.RepositoryPublic) error {
 		return fmt.Errorf("failed to insert placeholder repository %d. details: %w", public.ID, err)
 	}
 
-	fromArtifact, err := client.HarborClient.GetArtifact(context.TODO(), public.Placeholder.ProjectName, public.Placeholder.RepositoryName, "latest")
-	if err != nil {
-		return makeError(err)
-	}
-
-	copyRef := &artifact.CopyReference{
-		ProjectName:    public.Placeholder.ProjectName,
-		RepositoryName: public.Placeholder.RepositoryName,
-		Tag:            "latest",
-		Digest:         fromArtifact.Digest,
-	}
-
-	err = client.HarborClient.CopyArtifact(context.TODO(), copyRef, client.Project, public.Name)
+	_, err := client.HarborClient.V2().Artifact.CopyArtifact(context.TODO(), &artifactModels.CopyArtifactParams{
+		From:           fmt.Sprintf("%s/%s:latest", public.Placeholder.ProjectName, public.Placeholder.RepositoryName),
+		ProjectName:    client.Project,
+		RepositoryName: public.Name,
+	})
 	if err != nil {
 		return makeError(err)
 	}
@@ -47,17 +39,21 @@ func (client *Client) ReadRepository(name string) (*models.RepositoryPublic, err
 		return nil, nil
 	}
 
-	repository, err := client.HarborClient.GetRepository(context.TODO(), client.Project, name)
+	repository, err := client.HarborClient.V2().Repository.GetRepository(context.TODO(), &repositoryModels.GetRepositoryParams{
+		ProjectName:    client.Project,
+		RepositoryName: name,
+	})
 	if err != nil {
-		errStr := fmt.Sprintf("%s", err)
-		if !strings.Contains(errStr, "NotFound") {
-			return nil, makeError(err)
+		if IsNotFoundErr(err) {
+			return nil, nil
 		}
+
+		return nil, makeError(err)
 	}
 
 	var public *models.RepositoryPublic
 	if repository != nil {
-		public = models.CreateRepositoryPublicFromGet(repository)
+		public = models.CreateRepositoryPublicFromGet(repository.Payload)
 	}
 
 	return public, nil
@@ -69,16 +65,18 @@ func (client *Client) CreateRepository(public *models.RepositoryPublic) (*models
 		return fmt.Errorf("failed to create harbor repository %s. details: %w", public.Name, err)
 	}
 
-	repository, err := client.HarborClient.GetRepository(context.TODO(), client.Project, public.Name)
+	repository, err := client.HarborClient.V2().Repository.GetRepository(context.TODO(), &repositoryModels.GetRepositoryParams{
+		ProjectName:    client.Project,
+		RepositoryName: public.Name,
+	})
 	if err != nil {
-		errStr := fmt.Sprintf("%s", err)
-		if !strings.Contains(errStr, "getRepositoryNotFound") {
+		if !IsNotFoundErr(err) {
 			return nil, makeError(err)
 		}
 	}
 
 	if repository != nil {
-		return models.CreateRepositoryPublicFromGet(repository), nil
+		return models.CreateRepositoryPublicFromGet(repository.Payload), nil
 	}
 
 	if public.Placeholder != nil {
@@ -88,42 +86,45 @@ func (client *Client) CreateRepository(public *models.RepositoryPublic) (*models
 		}
 	}
 
-	repository, err = client.HarborClient.GetRepository(context.TODO(), client.Project, public.Name)
-	if err != nil {
-		return nil, makeError(err)
-	}
-
-	return models.CreateRepositoryPublicFromGet(repository), nil
+	return client.ReadRepository(public.Name)
 }
 
 // UpdateRepository updates a repository in Harbor.
 func (client *Client) UpdateRepository(public *models.RepositoryPublic) (*models.RepositoryPublic, error) {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to update harbor repository %d. details: %w", public.ID, err)
-	}
+	// This does not actually update the repository, but the code is kept in case any field could be updated in the future
+	return public, nil
 
-	if public.ID == 0 {
-		log.Println("ID not supplied when updating harbor repository. Assuming it was deleted")
-		return nil, nil
-	}
+	//makeError := func(err error) error {
+	//	return fmt.Errorf("failed to update harbor repository %d. details: %w", public.ID, err)
+	//}
 
-	repository, err := client.HarborClient.GetRepository(context.TODO(), client.Project, public.Name)
-	if err != nil {
-		return nil, makeError(err)
-	}
-
-	if repository == nil {
-		return nil, makeError(fmt.Errorf("repository %s not found", public.Name))
-	}
-
-	// this doesn't actually do anything, but the code here is kept in case any field could be updated in the future
-
-	err = client.HarborClient.UpdateRepository(context.TODO(), client.Project, public.Name, repository)
-	if err != nil {
-		return nil, makeError(err)
-	}
-
-	return client.ReadRepository(public.Name)
+	//if public.ID == 0 {
+	//	log.Println("ID not supplied when updating harbor repository. Assuming it was deleted")
+	//	return nil, nil
+	//}
+	//
+	//repository, err := client.HarborClient.V2().Repository.GetRepository(context.Background(), &repositoryModels.GetRepositoryParams{
+	//	ProjectName:    client.Project,
+	//	RepositoryName: public.Name,
+	//})
+	//if err != nil {
+	//	return nil, makeError(err)
+	//}
+	//
+	//_, err = client.HarborClient.V2().Repository.UpdateRepository(context.Background(), &repositoryModels.UpdateRepositoryParams{
+	//	ProjectName:    client.Project,
+	//	Repository:     repository.Payload,
+	//	RepositoryName: public.Name,
+	//})
+	//if err != nil {
+	//	if IsNotFoundErr(err) {
+	//		return nil, nil
+	//	}
+	//
+	//	return nil, makeError(err)
+	//}
+	//
+	//return client.ReadRepository(public.Name)
 }
 
 // DeleteRepository deletes a repository from Harbor.
@@ -137,12 +138,16 @@ func (client *Client) DeleteRepository(name string) error {
 		return nil
 	}
 
-	err := client.HarborClient.DeleteRepository(context.TODO(), client.Project, name)
+	_, err := client.HarborClient.V2().Repository.DeleteRepository(context.TODO(), &repositoryModels.DeleteRepositoryParams{
+		ProjectName:    client.Project,
+		RepositoryName: name,
+	})
 	if err != nil {
-		errStr := fmt.Sprintf("%s", err)
-		if !strings.Contains(errStr, "deleteRepositoryNotFound") {
-			return makeError(err)
+		if IsNotFoundErr(err) {
+			return nil
 		}
+
+		return makeError(err)
 	}
 
 	return nil

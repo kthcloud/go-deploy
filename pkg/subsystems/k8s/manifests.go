@@ -188,17 +188,25 @@ func CreateServiceManifest(public *models.ServicePublic) *apiv1.Service {
 		serviceType = apiv1.ServiceTypeLoadBalancer
 		annotations[keys.AnnotationExternalIP] = *public.LoadBalancerIP
 		annotations[keys.AnnotationSharedIP] = "go-deploy"
+	} else if public.IsNodePort() {
+		serviceType = apiv1.ServiceTypeNodePort
 	} else {
 		serviceType = apiv1.ServiceTypeClusterIP
 	}
 
 	var ports []apiv1.ServicePort
 	for _, port := range public.Ports {
+		var nodePort int32
+		if serviceType == apiv1.ServiceTypeNodePort {
+			nodePort = int32(port.Port)
+		}
+
 		ports = append(ports, apiv1.ServicePort{
 			Name:       port.Name,
 			Protocol:   apiv1.Protocol(strings.ToUpper(port.Protocol)),
 			Port:       int32(port.Port),
 			TargetPort: intstr.FromInt32(int32(port.TargetPort)),
+			NodePort:   nodePort,
 		})
 	}
 
@@ -297,6 +305,7 @@ func CreatePvManifest(public *models.PvPublic) *apiv1.PersistentVolume {
 			},
 		},
 		Spec: apiv1.PersistentVolumeSpec{
+			StorageClassName: "deploy-managed",
 			AccessModes: []apiv1.PersistentVolumeAccessMode{
 				apiv1.ReadWriteMany,
 			},
@@ -316,6 +325,8 @@ func CreatePvManifest(public *models.PvPublic) *apiv1.PersistentVolume {
 
 // CreatePvcManifest creates a Kubernetes PersistentVolumeClaim manifest from a models.PvcPublic.
 func CreatePvcManifest(public *models.PvcPublic) *apiv1.PersistentVolumeClaim {
+	storageClass := "deploy-managed"
+
 	return &apiv1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      public.Name,
@@ -328,6 +339,7 @@ func CreatePvcManifest(public *models.PvcPublic) *apiv1.PersistentVolumeClaim {
 			},
 		},
 		Spec: apiv1.PersistentVolumeClaimSpec{
+			StorageClassName: &storageClass,
 			AccessModes: []apiv1.PersistentVolumeAccessMode{
 				apiv1.ReadWriteMany,
 			},

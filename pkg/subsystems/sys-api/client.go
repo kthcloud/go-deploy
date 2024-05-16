@@ -32,6 +32,12 @@ func New(config *ClientConf) (*Client, error) {
 		return fmt.Errorf("failed to create sys-api oauth2 client. details: %w", err)
 	}
 
+	if config.UseMock {
+		return &Client{
+			useMock: true,
+		}, nil
+	}
+
 	kcClient := gocloak.NewClient(config.OidcProvider)
 
 	jwt, err := kcClient.Login(context.TODO(), config.OidcClientID, "", config.OidcRealm, config.Username, config.Password)
@@ -40,9 +46,8 @@ func New(config *ClientConf) (*Client, error) {
 	}
 
 	client := &Client{
-		url:     config.URL,
-		jwt:     jwt,
-		useMock: config.UseMock,
+		url: config.URL,
+		jwt: jwt,
 	}
 
 	return client, nil

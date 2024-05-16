@@ -16,6 +16,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"path"
 	"slices"
+	"strings"
 )
 
 type K8sGenerator struct {
@@ -241,7 +242,7 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 		ServiceName:  smAuthName(kg.sm.OwnerID),
 		ServicePort:  4180,
 		IngressClass: config.Config.Deployment.IngressClass,
-		Hosts:        []string{storageExternalFQDN(kg.sm.OwnerID, kg.zone)},
+		Hosts:        []string{getExternalFQDN(kg.sm.OwnerID, kg.zone)},
 		TlsSecret:    &tlsSecret,
 	}
 
@@ -408,7 +409,7 @@ func smVolumes(ownerID string) ([]model.SmVolume, []model.SmVolume) {
 func smJobs(userID string) []model.SmJob {
 	return []model.SmJob{
 		{
-			Name:    "init",
+			Name:    fmt.Sprintf("init-%s", userID),
 			Image:   "busybox",
 			Command: []string{"/bin/mkdir"},
 			Args: []string{
@@ -440,7 +441,17 @@ func smPvName(ownerID, volumeName string) string {
 	return fmt.Sprintf("sm-%s-%s", volumeName, ownerID)
 }
 
-// storageExternalFQDN returns the external FQDN for a storage manager in a given zone
-func storageExternalFQDN(name string, zone *configModels.Zone) string {
-	return fmt.Sprintf("%s.%s", name, zone.Domains.ParentSM)
+// getExternalFQDN returns the external FQDN for a storage manager in a given zone
+func getExternalFQDN(name string, zone *configModels.Zone) string {
+	// Remove protocol:// and :port from the zone.Domains.ParentSM
+	var fqdn = zone.Domains.ParentSM
+
+	split := strings.Split(zone.Domains.ParentSM, "://")
+	if len(split) > 1 {
+		fqdn = split[1]
+	}
+
+	fqdn = strings.Split(fqdn, ":")[0]
+
+	return fmt.Sprintf("%s.%s", name, fqdn)
 }

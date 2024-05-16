@@ -2,15 +2,42 @@ package harbor
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	harborModelsV2 "github.com/mittwald/goharbor-client/v5/apiv2/model"
-	harborErrors "github.com/mittwald/goharbor-client/v5/apiv2/pkg/errors"
+	"github.com/go-openapi/strfmt"
+	robotModels "go-deploy/pkg/imp/harbor/sdk/v2.0/client/robot"
+	"go-deploy/pkg/imp/harbor/sdk/v2.0/client/robotv1"
+	harborModels "go-deploy/pkg/imp/harbor/sdk/v2.0/models"
 	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems/harbor/models"
-	"strings"
 	"unicode"
 )
+
+func robotPermissions(project string) []*harborModels.RobotPermission {
+	return []*harborModels.RobotPermission{
+		{
+			Access: []*harborModels.Access{
+				{
+					Action:   "list",
+					Resource: "repository",
+				},
+				{
+					Action:   "pull",
+					Resource: "repository",
+				},
+				{
+					Action:   "push",
+					Resource: "repository",
+				},
+				{
+					Action:   "create",
+					Resource: "tag",
+				},
+			},
+			Kind:      "project",
+			Namespace: project,
+		},
+	}
+}
 
 // ReadRobot reads a robot from Harbor.
 func (client *Client) ReadRobot(id int) (*models.RobotPublic, error) {
@@ -23,17 +50,20 @@ func (client *Client) ReadRobot(id int) (*models.RobotPublic, error) {
 		return nil, nil
 	}
 
-	robot, err := client.HarborClient.GetRobotAccountByID(context.TODO(), int64(id))
+	robot, err := client.HarborClient.V2().Robot.GetRobotByID(context.TODO(), &robotModels.GetRobotByIDParams{
+		RobotID: int64(id),
+	})
 	if err != nil {
-		errStr := fmt.Sprintf("%s", err)
-		if !strings.Contains(errStr, "NotFound") {
-			return nil, makeError(err)
+		if IsNotFoundErr(err) {
+			return nil, nil
 		}
+
+		return nil, makeError(err)
 	}
 
 	var public *models.RobotPublic
 	if robot != nil {
-		public = models.CreateRobotPublicFromGet(robot)
+		public = models.CreateRobotPublicFromGet(robot.Payload)
 	}
 
 	return public, nil
@@ -45,32 +75,52 @@ func (client *Client) CreateRobot(public *models.RobotPublic) (*models.RobotPubl
 		return fmt.Errorf("failed to create robot %s. details: %w", public.Name, err)
 	}
 
-	robots, err := client.HarborClient.ListProjectRobotsV1(context.TODO(), client.Project)
+	robots, err := client.HarborClient.V2().Robotv1.ListRobotV1(context.TODO(), &robotv1.ListRobotV1Params{
+		ProjectNameOrID: client.Project,
+	})
 	if err != nil {
-		return nil, makeError(err)
+		if !IsNotFoundErr(err) {
+			return nil, makeError(err)
+		}
 	}
 
-	var robot *harborModelsV2.Robot
-	for _, r := range robots {
-		if r.Name == getRobotFullName(client.Project, public.Name) {
-			robot = r
-			break
+	var robot *harborModels.Robot
+	if robots != nil {
+		for _, r := range robots.Payload {
+			if r.Name == getRobotFullName(client.Project, public.Name) {
+				robot = r
+				break
+			}
 		}
 	}
 
 	var appliedSecret string
 	if robot == nil {
-		created, err := client.createHarborRobot(public)
+		robotCreated, err := client.HarborClient.V2().Robot.CreateRobot(context.TODO(), &robotModels.CreateRobotParams{
+			Robot: &harborModels.RobotCreate{
+				Description: "",
+				Disable:     false,
+				Duration:    -1,
+				Level:       "project",
+				Name:        public.Name,
+				Permissions: robotPermissions(client.Project),
+				Secret:      public.Secret,
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		r, err := client.HarborClient.V2().Robotv1.GetRobotByIDV1(context.TODO(), &robotv1.GetRobotByIDV1Params{
+			RobotID:         robotCreated.Payload.ID,
+			ProjectNameOrID: client.Project,
+		})
 		if err != nil {
 			return nil, makeError(err)
 		}
+		robot = r.Payload
 
-		appliedSecret = created.Secret
-
-		robot, err = client.HarborClient.GetRobotAccountByID(context.TODO(), created.ID)
-		if err != nil {
-			return nil, makeError(err)
-		}
+		appliedSecret = robotCreated.Payload.Secret
 	}
 
 	if public.Secret != "" {
@@ -96,24 +146,47 @@ func (client *Client) UpdateRobot(public *models.RobotPublic) (*models.RobotPubl
 		return nil, nil
 	}
 
-	err := client.HarborClient.UpdateRobotAccount(context.TODO(), models.CreateRobotUpdateBody(public, client.Project))
+	_, err := client.HarborClient.V2().Robot.UpdateRobot(context.TODO(), &robotModels.UpdateRobotParams{
+		Robot: &harborModels.Robot{
+			CreationTime: strfmt.DateTime{},
+			Description:  "",
+			Disable:      false,
+			Duration:     -1,
+			Editable:     false,
+			ExpiresAt:    -1,
+			ID:           int64(public.ID),
+			Level:        "project",
+			Name:         public.Name,
+			Permissions:  robotPermissions(client.Project),
+			Secret:       "",
+			UpdateTime:   strfmt.DateTime{},
+		},
+		RobotID: int64(public.ID),
+	})
 	if err != nil {
-		var targetErr *harborErrors.ErrRobotAccountUnknownResource
-		if !errors.As(err, &targetErr) {
-			return nil, makeError(err)
+		if IsNotFoundErr(err) {
+			return nil, nil
 		}
-	}
 
-	robots, err := client.HarborClient.ListProjectRobotsV1(context.TODO(), client.Project)
-	if err != nil {
 		return nil, makeError(err)
 	}
 
-	var robot *harborModelsV2.Robot
-	for _, r := range robots {
-		if r.ID == int64(public.ID) {
-			robot = r
-			break
+	robots, err := client.HarborClient.V2().Robotv1.ListRobotV1(context.TODO(), &robotv1.ListRobotV1Params{ProjectNameOrID: client.Project})
+	if err != nil {
+		if IsNotFoundErr(err) {
+			return nil, nil
+		}
+
+		return nil, makeError(err)
+	}
+
+	var robot *harborModels.Robot
+	if robots != nil {
+		for _, r := range robots.Payload {
+			if r.ID == int64(public.ID) {
+				robot = r
+				break
+			}
 		}
 	}
 
@@ -141,14 +214,15 @@ func (client *Client) DeleteRobot(id int) error {
 		return nil
 	}
 
-	err := client.HarborClient.DeleteRobotAccountByID(context.TODO(), int64(id))
+	_, err := client.HarborClient.V2().Robot.DeleteRobot(context.TODO(), &robotModels.DeleteRobotParams{
+		RobotID: int64(id),
+	})
 	if err != nil {
-		if err != nil {
-			targetErr := &harborErrors.ErrRobotAccountUnknownResource{}
-			if !errors.As(err, &targetErr) && !strings.Contains(err.Error(), "[404] deleteRobotNotFound") {
-				return makeError(err)
-			}
+		if IsNotFoundErr(err) {
+			return nil
 		}
+
+		return makeError(err)
 	}
 
 	return nil
@@ -157,18 +231,34 @@ func (client *Client) DeleteRobot(id int) error {
 // assertCorrectRobotSecret asserts that the robot secret is correct.
 // This is needed since the installed Harbor client does not return credentials.
 // We use the description field to store the secret (which is arguably a hack, but it works).
-func (client *Client) assertCorrectRobotSecret(robot *harborModelsV2.Robot, secret string) error {
+func (client *Client) assertCorrectRobotSecret(robot *harborModels.Robot, secret string) error {
 	if robot.Description != secret && isValidHarborRobotSecret(secret) {
 		robot.Description = secret
 		robot.Secret = secret
 
-		_, err := client.HarborClient.RefreshRobotAccountSecretByID(context.TODO(), robot.ID, secret)
+		_, err := client.HarborClient.V2().Robot.RefreshSec(context.TODO(), &robotModels.RefreshSecParams{
+			RobotSec: &harborModels.RobotSec{
+				Secret: secret,
+			},
+			RobotID: robot.ID,
+		})
 		if err != nil {
+			if IsNotFoundErr(err) {
+				return nil
+			}
+
 			return err
 		}
 
-		err = client.HarborClient.UpdateRobotAccount(context.TODO(), robot)
+		_, err = client.HarborClient.V2().Robot.UpdateRobot(context.TODO(), &robotModels.UpdateRobotParams{
+			Robot:   robot,
+			RobotID: robot.ID,
+		})
 		if err != nil {
+			if IsNotFoundErr(err) {
+				return nil
+			}
+
 			return err
 		}
 	}

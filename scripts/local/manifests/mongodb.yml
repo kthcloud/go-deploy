@@ -14,7 +14,6 @@ spec:
   resources:
     requests:
       storage: 1Gi
-  storageClassName: local-path
   volumeMode: Filesystem
 ---  
 apiVersion: apps/v1
@@ -58,6 +57,7 @@ spec:
   ports:
     - port: 27017
       targetPort: 27017
+      nodePort: ${mongo_db_port}
   selector:
     app: mongodb
-  type: LoadBalancer
+  type: NodePort
