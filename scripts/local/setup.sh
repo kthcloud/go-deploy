@@ -86,7 +86,7 @@ export vm_image="https://cloud-images.ubuntu.com/noble/current/noble-server-clou
 
 # NFS configuration
 export nfs_base_path="/nfs"
-export nfs_cluster_ip="10.0.200.2"
+export nfs_cluster_ip="10.96.200.2"
 
 # IAM configuration
 export keycloak_deploy_secret=
@@ -271,9 +271,9 @@ function install_ingress_nginx() {
   fi
 
   # Wait for ingress-nginx to be up
-  # while [ "$(kubectl get pod -n ingress-nginx -l app.kubernetes.io/name=ingress-nginx -o jsonpath="{.items[0].status.phase}")" != "Running" ]; do
-  #   sleep 5
-  # done
+  while [ "$(kubectl get pod -n ingress-nginx -l app.kubernetes.io/name=ingress-nginx -o jsonpath="{.items[0].status.phase}" 2> /dev/stdout)" != "Running" ]; do
+    sleep 5
+  done
 }
 
 function install_harbor() {
@@ -306,7 +306,7 @@ function install_harbor() {
   fi
 
   # Wait for Harbor to be up
-  while [ "$(curl -s -o /dev/null -w "%{http_code}" http://harbor.$domain:$ingress_http_port)" != "200" ]; do
+  while [ "$(curl -s -o /dev/null -w "%{http_code}" http://harbor.$domain:$harbor_port)" != "200" ]; do
     sleep 5
   done
 }

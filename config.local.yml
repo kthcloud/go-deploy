@@ -1,10 +1,10 @@
-externalUrl: deploy.localhost:32191
+externalUrl: deploy.localhost:30291
 port: 8080
 mode: dev
 
 timer:
-  gpuSynchronize: 5s
-  gpuLeaseSynchronize: 5s
+  gpuSynchronize: 5m
+  gpuLeaseSynchronize: 15s
   vmStatusUpdate: 20s
   vmSnapshotUpdate: 30s
   deploymentStatusUpdate: 5s 
@@ -37,22 +37,22 @@ zones:
     - deployment
     - vm
   domains:
-    parentDeployment: app.deploy.localhost:32191
-    parentSm: storage.deploy.localhost:32191
-    parentVm: vm.deploy.localhost:32191
-    parentVmApp: vm-app.deploy.localhost:32191
+    parentDeployment: app.deploy.localhost:30291
+    parentSm: storage.deploy.localhost:30291
+    parentVm: vm.deploy.localhost:30291
+    parentVmApp: vm-app.deploy.localhost:30291
   storage:
-    nfsServer: 10.0.200.2
+    nfsServer: 10.96.200.2
     paths:
       parentDeployment: /nfs/deployments
   portRange:
-    start: 32385
-    end: 32410
+    start: 30083
+    end: 30108
 
 registry:
-  url: localhost:32011
-  placeholderImage: localhost:32011/library/go-deploy-placeholder
-  vmHttpProxyImage: localhost:32011/library/go-deploy-placeholder
+  url: localhost:30722
+  placeholderImage: localhost:30722/library/go-deploy-placeholder
+  vmHttpProxyImage: localhost:30722/library/go-deploy-placeholder
 
 gpu:
   privilegedGpus:
@@ -132,19 +132,19 @@ roles:
       gpuLeaseDuration: 168
 
 keycloak:
-  url: http://keycloak.deploy.localhost:32454
+  url: http://keycloak.deploy.localhost:31133
   realm: master
   adminGroup: admin
   storageClient:
     clientId: go-deploy-storage
-    clientSecret: q761JQZ2EhdQB5rQWmULWnGESlJ82o9K
+    clientSecret: I6qfVJPv2NBkpStihOYO6SOS8mh8VKSU
 
 mongodb:
-  url: mongodb://admin:admin@localhost:31334
+  url: mongodb://admin:admin@localhost:31961
   name: deploy
 
 redis:
-  url: localhost:31879
+  url: localhost:31871
   password: 
 
 sys-api:
@@ -155,7 +155,7 @@ sys-api:
   useMock: true
 
 harbor:
-  url: http://harbor.deploy.localhost:32011
+  url: http://harbor.deploy.localhost:30722
   user: admin
   password: Harbor12345
   webhookSecret: secret

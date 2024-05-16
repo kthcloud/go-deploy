@@ -54,11 +54,7 @@ func SetupEnvironment(mode string) error {
 		log.Println("WARNING: no roles found in config")
 	} else {
 		var roles []string
-		for idx, role := range Config.Roles {
-			if idx == len(Config.Roles)-1 {
-				log.Printf("%s", role.Name)
-				break
-			}
+		for _, role := range Config.Roles {
 			roles = append(roles, role.Name)
 		}
 		log.Printf("Roles (in order): " + strings.Join(roles, "->"))
@@ -104,7 +100,7 @@ func setupK8sClusters() error {
 			return makeError(fmt.Errorf("failed to parse type of config source for zone %s", zone.Name))
 		}
 
-		log.Printf(" - Setting up K8s cluster for zone %s (%d/%d)", zone.Name, idx+1, len(Config.Zones))
+		log.Printf("Setting up K8s cluster for zone %s (%d/%d)", zone.Name, idx+1, len(Config.Zones))
 
 		switch configType {
 		case "localPath":
