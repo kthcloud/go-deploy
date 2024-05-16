@@ -432,15 +432,15 @@ func (c *Client) Repair(id string) error {
 		return nil
 	}
 
-	err = c.K8s().Repair(id)
-	if err != nil {
-		if errors.Is(err, sErrors.IngressHostInUseErr) {
-			// The user should fix this error, so we don't return an error here
-			utils.PrettyPrintError(err)
-		} else {
-			return makeError(err)
-		}
-	}
+	//err = c.K8s().Repair(id)
+	//if err != nil {
+	//	if errors.Is(err, sErrors.IngressHostInUseErr) {
+	//		// The user should fix this error, so we don't return an error here
+	//		utils.PrettyPrintError(err)
+	//	} else {
+	//		return makeError(err)
+	//	}
+	//}
 
 	if !d.Subsystems.Harbor.Placeholder {
 		err = c.Harbor().Repair(id)
