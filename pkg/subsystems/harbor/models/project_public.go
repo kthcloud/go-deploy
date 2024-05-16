@@ -1,7 +1,7 @@
 package models
 
 import (
-	modelv2 "github.com/mittwald/goharbor-client/v5/apiv2/model"
+	"go-deploy/pkg/imp/harbor/sdk/v2.0/models"
 	"strconv"
 	"time"
 )
@@ -22,18 +22,16 @@ func (p *ProjectPublic) IsPlaceholder() bool {
 }
 
 // CreateProjectUpdateParamsFromPublic creates a body used for update a project in the Harbor API.
-func CreateProjectUpdateParamsFromPublic(public *ProjectPublic) *modelv2.Project {
-	return &modelv2.Project{
-		ProjectID: int32(public.ID),
-		Name:      public.Name,
-		Metadata: &modelv2.ProjectMetadata{
+func CreateProjectUpdateParamsFromPublic(public *ProjectPublic) *models.ProjectReq {
+	return &models.ProjectReq{
+		Metadata: &models.ProjectMetadata{
 			Public: strconv.FormatBool(public.Public),
 		},
 	}
 }
 
 // CreateProjectPublicFromGet converts a modelv2.Project to a ProjectPublic.
-func CreateProjectPublicFromGet(project *modelv2.Project) *ProjectPublic {
+func CreateProjectPublicFromGet(project *models.Project) *ProjectPublic {
 	return &ProjectPublic{
 		ID:        int(project.ProjectID),
 		Name:      project.Name,

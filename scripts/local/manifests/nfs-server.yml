@@ -31,7 +31,7 @@ spec:
           privileged: true
         volumeMounts:
         - name: storage
-          mountPath: /mnt/nfs
+          mountPath: /exports
       volumes:
       - name: storage
         hostPath:
@@ -44,10 +44,12 @@ metadata:
   name: nfs-server
   namespace: nfs-server
 spec:
+  clusterIP: ${nfs_cluster_ip}
   ports: 
     - name: nfs
       port: 2049
       targetPort: 2049
+      nodePort: ${nfs_port}
     - name: mountd
       port: 20048
       targetPort: 20048
@@ -56,4 +58,4 @@ spec:
       targetPort: 111
   selector:
     app: nfs-server
-  type: ClusterIP
+  type: NodePort

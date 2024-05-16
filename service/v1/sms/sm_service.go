@@ -13,11 +13,11 @@ import (
 	"go-deploy/service/v1/sms/k8s_service"
 	"go-deploy/service/v1/sms/opts"
 	"sort"
+	"strconv"
+	"strings"
 )
 
-// Get gets an existing storage manager.
-//
-// It supports service.AuthInfo, and will restrict the result to ensure the user has access to the model.
+// Get gets an existing storage manager
 func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.SM, error) {
 	_ = utils.GetFirstOrDefault(opts)
 
@@ -30,9 +30,7 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.SM, error) {
 	return c.SM(id, "", sClient)
 }
 
-// GetByUserID gets an existing storage by user ID.
-//
-// It supports service.AuthInfo, and will restrict the result to ensure the user has access to the model.
+// GetByUserID gets an existing storage by user ID
 func (c *Client) GetByUserID(userID string, opts ...opts.GetOpts) (*model.SM, error) {
 	_ = utils.GetFirstOrDefault(opts)
 
@@ -47,9 +45,7 @@ func (c *Client) GetByUserID(userID string, opts ...opts.GetOpts) (*model.SM, er
 	return c.SM("", userID, sClient)
 }
 
-// List lists existing storage managers.
-//
-// It supports service.AuthInfo, and will restrict the result to ensure the user has access to the model.
+// List lists existing storage managers
 func (c *Client) List(opts ...opts.ListOpts) ([]model.SM, error) {
 	o := utils.GetFirstOrDefault(opts)
 
@@ -76,8 +72,6 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.SM, error) {
 }
 
 // Create creates a new storage manager
-//
-// It returns an error if the storage manager already exists (user ID clash).
 func (c *Client) Create(id, userID string, params *model.SmCreateParams) error {
 	makeErr := func(err error) error {
 		return fmt.Errorf("failed to create storage manager. details: %w", err)
@@ -100,9 +94,7 @@ func (c *Client) Create(id, userID string, params *model.SmCreateParams) error {
 	return nil
 }
 
-// Delete deletes an existing storage manager.
-//
-// It returns an error if the storage manager is not found.
+// Delete deletes an existing storage manager
 func (c *Client) Delete(id string) error {
 	makeErr := func(err error) error {
 		return fmt.Errorf("failed to delete storage manager. details: %w", err)
@@ -118,9 +110,7 @@ func (c *Client) Delete(id string) error {
 	return nil
 }
 
-// Repair repairs an existing storage manager.
-//
-// Trigger repair jobs for every subsystem.
+// Repair repairs an existing storage manager
 func (c *Client) Repair(id string) error {
 	makeErr := func(err error) error {
 		return fmt.Errorf("failed to repair storage manager %s. details: %w", id, err)
@@ -146,25 +136,44 @@ func (c *Client) Repair(id string) error {
 	return nil
 }
 
-// Exists checks if a storage manager exists.
+// Exists checks if a storage manager exists
 func (c *Client) Exists(userID string) (bool, error) {
 	return sm_repo.New().WithOwnerID(userID).ExistsAny()
 }
 
-// GetZone returns the deployment zone for the storage manager.
+// GetZone returns the deployment zone for the storage manager
 func (c *Client) GetZone() *configModels.Zone {
-	// Currently, the storage-manager is hosted in se-flem for all users
-	zone := "se-flem-2"
+	// Currently, the storage-manager is hosted in the default zone for all users
+	zone := config.Config.Deployment.DefaultZone
 
 	return config.Config.GetZone(zone)
 }
 
-// GetUrlByUserID returns the URL for the storage manager.
+// GetUrlByUserID returns the URL for the storage manager
 func (c *Client) GetUrlByUserID(userID string) *string {
-	url, err := sm_repo.New().WithOwnerID(userID).GetURL()
+	url, err := sm_repo.New().WithOwnerID(userID).GetURL(getSmExternalPort(c.GetZone().Name))
 	if err != nil {
 		return nil
 	}
 
 	return url
+}
+
+func getSmExternalPort(zoneName string) *int {
+	zone := config.Config.GetZone(zoneName)
+	if zone == nil {
+		return nil
+	}
+
+	split := strings.Split(zone.Domains.ParentSM, ":")
+	if len(split) > 1 {
+		port, err := strconv.Atoi(split[1])
+		if err != nil {
+			return nil
+		}
+
+		return &port
+	}
+
+	return nil
 }

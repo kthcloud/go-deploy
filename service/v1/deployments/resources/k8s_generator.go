@@ -534,5 +534,15 @@ func encodeDockerConfig(registry, username, password string) []byte {
 
 // getExternalFQDN returns the external FQDN for a deployment in a given zone
 func getExternalFQDN(name string, zone *configModels.Zone) string {
-	return fmt.Sprintf("%s.%s", name, zone.Domains.ParentDeployment)
+	// Remove protocol:// and :port from the zone.Domains.ParentDeployment
+	var fqdn = zone.Domains.ParentDeployment
+
+	split := strings.Split(zone.Domains.ParentDeployment, "://")
+	if len(split) > 1 {
+		fqdn = split[1]
+	}
+
+	fqdn = strings.Split(fqdn, ":")[0]
+
+	return fmt.Sprintf("%s.%s", name, fqdn)
 }

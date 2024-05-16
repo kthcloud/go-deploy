@@ -1,0 +1,26 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: go-deploy-cluster-issuer
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: go-deploy-wildcard
+  namespace: cert-manager
+spec:
+  secretName: go-deploy-wildcard-secret
+  secretTemplate:
+    labels:
+      app.kubernetes.io/deploy-name: go-deploy-wildcard-secret
+  issuerRef: 
+    kind: ClusterIssuer
+    name: go-deploy-cluster-issuer
+  commonName: ""
+  dnsNames:
+    - "*.${domain}"
+    - "*.app.${domain}"
+    - "*.vm-app.${domain}"
+    - "*.storage.${domain}"

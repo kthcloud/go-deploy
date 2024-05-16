@@ -32,6 +32,7 @@ spec:
   ports:
     - port: 6379
       targetPort: 6379
+      nodePort: ${redis_port}
   selector:
     app: redis
-  type: LoadBalancer
+  type: NodePort

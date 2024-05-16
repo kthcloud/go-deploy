@@ -3,7 +3,7 @@ package models
 import (
 	"encoding/base64"
 	"fmt"
-	modelv2 "github.com/mittwald/goharbor-client/v5/apiv2/model"
+	"go-deploy/pkg/imp/harbor/sdk/v2.0/models"
 	"strings"
 	"time"
 )
@@ -25,12 +25,12 @@ func (w *WebhookPublic) IsPlaceholder() bool {
 }
 
 // CreateWebhookParamsFromPublic creates a body used for creating a webhook in the Harbor API.
-func CreateWebhookParamsFromPublic(public *WebhookPublic) *modelv2.WebhookPolicy {
-	return &modelv2.WebhookPolicy{
+func CreateWebhookParamsFromPublic(public *WebhookPublic) *models.WebhookPolicy {
+	return &models.WebhookPolicy{
 		Enabled:    true,
 		EventTypes: getWebhookEventTypes(),
 		Name:       public.Name,
-		Targets: []*modelv2.WebhookTargetObject{
+		Targets: []*models.WebhookTargetObject{
 			{
 				Address:        public.Target,
 				AuthHeader:     createWebhookAuthHeader(public.Token),
@@ -42,12 +42,12 @@ func CreateWebhookParamsFromPublic(public *WebhookPublic) *modelv2.WebhookPolicy
 }
 
 // CreateWebhookUpdateParamsFromPublic creates a body used for updating a webhook in the Harbor API.
-func CreateWebhookUpdateParamsFromPublic(public *WebhookPublic, current *modelv2.WebhookPolicy) *modelv2.WebhookPolicy {
+func CreateWebhookUpdateParamsFromPublic(public *WebhookPublic, current *models.WebhookPolicy) *models.WebhookPolicy {
 	update := *current
 	update.Enabled = true
 	update.Name = public.Name
 	update.EventTypes = getWebhookEventTypes()
-	update.Targets = []*modelv2.WebhookTargetObject{
+	update.Targets = []*models.WebhookTargetObject{
 		{
 			Address:        public.Target,
 			AuthHeader:     createWebhookAuthHeader(public.Token),
@@ -60,7 +60,7 @@ func CreateWebhookUpdateParamsFromPublic(public *WebhookPublic, current *modelv2
 }
 
 // CreateWebhookPublicFromGet converts a modelv2.WebhookPolicy to a WebhookPublic.
-func CreateWebhookPublicFromGet(webhookPolicy *modelv2.WebhookPolicy, project *modelv2.Project) *WebhookPublic {
+func CreateWebhookPublicFromGet(webhookPolicy *models.WebhookPolicy, project *models.Project) *WebhookPublic {
 	token := getTokenFromAuthHeader(webhookPolicy.Targets[0].AuthHeader)
 
 	return &WebhookPublic{

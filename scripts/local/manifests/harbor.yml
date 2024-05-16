@@ -5,6 +5,7 @@ metadata:
   name: harbor
   namespace: harbor
 spec:
+  ingressClassName: nginx
   rules:
   - host: harbor.$domain
     http:
@@ -15,4 +16,4 @@ spec:
           service:
             name: harbor
             port:
-              number: $harbor_port
+              number: ${harbor_port}

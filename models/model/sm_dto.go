@@ -5,12 +5,12 @@ import (
 )
 
 // ToDTO converts an SM to a body.SmRead DTO.
-func (sm *SM) ToDTO() body.SmRead {
+func (sm *SM) ToDTO(externalPort *int) body.SmRead {
 	return body.SmRead{
 		ID:        sm.ID,
 		OwnerID:   sm.OwnerID,
 		CreatedAt: sm.CreatedAt,
 		Zone:      sm.Zone,
-		URL:       sm.GetURL(),
+		URL:       sm.GetURL(externalPort),
 	}
 }

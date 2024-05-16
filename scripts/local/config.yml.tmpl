@@ -3,8 +3,8 @@ port: $port
 mode: $mode
 
 timer:
-  gpuSynchronize: 5s
-  gpuLeaseSynchronize: 5s
+  gpuSynchronize: 5m
+  gpuLeaseSynchronize: 15s
   vmStatusUpdate: 20s
   vmSnapshotUpdate: 30s
   deploymentStatusUpdate: 5s 
@@ -37,15 +37,14 @@ zones:
     - deployment
     - vm
   domains:
-    parentApp: app.$external_url
+    parentDeployment: app.$external_url
     parentSm: storage.$external_url
     parentVm: vm.$external_url
     parentVmApp: vm-app.$external_url
   storage:
     nfsServer: $nfs_server
     paths:
-      parentApp: $nfs_parent_app
-      parentVm: $nfs_parent_vm
+      parentDeployment: $nfs_parent_path_app
   portRange:
     start: $port_range_start
     end: $port_range_end
@@ -61,12 +60,13 @@ gpu:
   excludedGpus:
 
 deployment:
+  defaultZone: local
   port: 8080
   prefix: deploy-
-  wildcardCertSecretNamespace: ingress-nginx
-  wildcardCertSecretName: deploy-wildcard-secret
+  wildcardCertSecretNamespace: cert-manager
+  wildcardCertSecretName: go-deploy-wildcard-secret
   customDomainTxtRecordSubdomain: _kthcloud
-  ingressClass: traefik
+  ingressClass: nginx
   resources:
     autoScale:
       cpuThreshold: 50
@@ -80,6 +80,7 @@ deployment:
       memory: 0.1
 
 vm:
+  defaultZone: local
   adminSshPublicKey: $admin_ssh_public_key
   image: $vm_image
 
@@ -99,9 +100,9 @@ roles:
       diskSize: 20
       snapshots: 1
       gpuLeaseDuration:
-  - name: bronze
-    description: Bronze
-    iamGroup: bronze
+  - name: base
+    description: base
+    iamGroup: base
     permissions:
       chooseZone: false
       chooseGpu: false
@@ -114,9 +115,9 @@ roles:
       diskSize: 50
       snapshots: 5
       gpuLeaseDuration: 5
-  - name: platinum
-    description: Platinum
-    iamGroup: platinum
+  - name: power
+    description: power
+    iamGroup: power
     permissions:
       chooseZone: true
       chooseGpu: true

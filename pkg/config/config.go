@@ -49,15 +49,12 @@ func SetupEnvironment(mode string) error {
 
 	log.Println("go-deploy", version.AppVersion)
 
+	// Fetch the roles from the config
 	if len(Config.Roles) == 0 {
 		log.Println("WARNING: no roles found in config")
 	} else {
 		var roles []string
-		for idx, role := range Config.Roles {
-			if idx == len(Config.Roles)-1 {
-				log.Printf("%s", role.Name)
-				break
-			}
+		for _, role := range Config.Roles {
 			roles = append(roles, role.Name)
 		}
 		log.Printf("Roles (in order): " + strings.Join(roles, "->"))
@@ -71,6 +68,11 @@ func SetupEnvironment(mode string) error {
 	err = setupK8sClusters()
 	if err != nil {
 		return makeError(err)
+	}
+
+	err = validateConfig()
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -98,7 +100,7 @@ func setupK8sClusters() error {
 			return makeError(fmt.Errorf("failed to parse type of config source for zone %s", zone.Name))
 		}
 
-		log.Printf(" - Setting up K8s cluster for zone %s (%d/%d)", zone.Name, idx+1, len(Config.Zones))
+		log.Printf("Setting up K8s cluster for zone %s (%d/%d)", zone.Name, idx+1, len(Config.Zones))
 
 		switch configType {
 		case "localPath":
@@ -287,4 +289,31 @@ func createK8sClients(configData []byte) (*kubernetes.Clientset, *kubevirt.Clien
 	}
 
 	return k8sClient, kubeVirtClient, nil
+}
+
+// validateConfig validates the config and throws an error if it is invalid.
+// It is only concerned with static validation, and does not check for dynamic issues.
+func validateConfig() error {
+	// Ensure there is a default zone
+	foundDefaultDeployment := false
+	foundDefaultVM := false
+	for _, zone := range Config.Zones {
+		if zone.Name == Config.VM.DefaultZone {
+			foundDefaultVM = true
+		}
+
+		if zone.Name == Config.Deployment.DefaultZone {
+			foundDefaultDeployment = true
+		}
+	}
+
+	if !foundDefaultDeployment {
+		return fmt.Errorf("no default deployment zone found")
+	}
+
+	if !foundDefaultVM {
+		return fmt.Errorf("no default VM zone found")
+	}
+
+	return nil
 }

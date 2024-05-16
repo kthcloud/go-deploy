@@ -2,19 +2,18 @@
 # externalURL: "http://harbor.deploy.localhost:9080"
 # Setting up Harbor by DNS name does not work when using Windows and WSL
 # So for now we use localhost and custom port
-externalURL: http://localhost:9081
+externalURL: http://localhost:${harbor_port}
 harborAdminPassword: "Harbor12345"
 
 expose:
-  type: loadBalancer
-  loadBalancer:
+  type: nodePort
+  nodePort:
     ports:
-      httpPort: 9081
+      http:
+        port: ${harbor_port}
+        nodePort: ${harbor_port}
   tls:
     enabled: false
-  # ingress:
-  #   hosts:
-  #     core: harbor.deploy.localhost
 
 internalTLS:
   enabled: false

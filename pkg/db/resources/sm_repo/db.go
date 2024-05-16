@@ -23,6 +23,8 @@ func (client *Client) Create(id, ownerID string, params *model.SmCreateParams) (
 		Zone:       params.Zone,
 		CreatedAt:  time.Now(),
 		RepairedAt: time.Time{},
+		DeletedAt:  time.Time{},
+		Activities: make(map[string]model.Activity),
 		Subsystems: model.SmSubsystems{},
 	}
 
@@ -45,7 +47,7 @@ func (client *Client) Create(id, ownerID string, params *model.SmCreateParams) (
 
 // GetURL returns the URL of the storage manager.
 // It uses projection to only fetch the URL.
-func (client *Client) GetURL() (*string, error) {
+func (client *Client) GetURL(externalPort *int) (*string, error) {
 	sm, err := client.GetWithFilterAndProjection(bson.D{}, bson.D{{"ownerId", 1}, {"subsystems.k8s.ingressMap", 1}})
 	if err != nil {
 		return nil, err
@@ -55,7 +57,7 @@ func (client *Client) GetURL() (*string, error) {
 		return nil, nil
 	}
 
-	return sm.GetURL(), nil
+	return sm.GetURL(externalPort), nil
 }
 
 // DeleteSubsystem deletes a subsystem from a storage manager.
@@ -81,7 +83,7 @@ func (client *Client) MarkRepaired(id string) error {
 		{"$unset", bson.D{{"activities.repairing", ""}}},
 	}
 
-	_, err := client.Collection.UpdateOne(context.TODO(), filter, update)
+	_, err := client.ResourceClient.Collection.UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		return err
 	}

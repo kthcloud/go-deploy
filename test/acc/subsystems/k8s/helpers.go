@@ -17,7 +17,7 @@ func withContext(t *testing.T, zoneName ...string) (*k8s.Client, *models.Namespa
 }
 
 func withClient(t *testing.T, namespace string, zoneName ...string) *k8s.Client {
-	zName := "se-flem-2"
+	zName := config.Config.VM.DefaultZone
 	if len(zoneName) > 0 {
 		zName = zoneName[0]
 	}

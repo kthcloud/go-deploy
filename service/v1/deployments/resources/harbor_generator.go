@@ -57,7 +57,6 @@ func (hg *HarborGenerator) Robot() *models.RobotPublic {
 			ro.HarborName = r.HarborName
 			ro.Secret = r.Secret
 			ro.CreatedAt = r.CreatedAt
-
 		}
 
 		return &ro

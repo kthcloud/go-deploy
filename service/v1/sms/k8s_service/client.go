@@ -101,6 +101,10 @@ func (c *Client) Get(opts *opts.Opts) (*model.SM, *k8s.Client, generators.K8sGen
 			zone = config.Config.GetZone(sm.Zone)
 		}
 
+		if zone == nil {
+			return nil, nil, nil, sErrors.ZoneNotFoundErr
+		}
+
 		k8sClient, err = c.Client(userID, zone)
 		if err != nil {
 			return nil, nil, nil, err
