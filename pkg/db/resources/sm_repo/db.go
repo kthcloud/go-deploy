@@ -47,7 +47,7 @@ func (client *Client) Create(id, ownerID string, params *model.SmCreateParams) (
 
 // GetURL returns the URL of the storage manager.
 // It uses projection to only fetch the URL.
-func (client *Client) GetURL() (*string, error) {
+func (client *Client) GetURL(externalPort *int) (*string, error) {
 	sm, err := client.GetWithFilterAndProjection(bson.D{}, bson.D{{"ownerId", 1}, {"subsystems.k8s.ingressMap", 1}})
 	if err != nil {
 		return nil, err
@@ -57,7 +57,7 @@ func (client *Client) GetURL() (*string, error) {
 		return nil, nil
 	}
 
-	return sm.GetURL(), nil
+	return sm.GetURL(externalPort), nil
 }
 
 // DeleteSubsystem deletes a subsystem from a storage manager.

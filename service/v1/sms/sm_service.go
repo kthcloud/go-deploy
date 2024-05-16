@@ -13,6 +13,8 @@ import (
 	"go-deploy/service/v1/sms/k8s_service"
 	"go-deploy/service/v1/sms/opts"
 	"sort"
+	"strconv"
+	"strings"
 )
 
 // Get gets an existing storage manager
@@ -149,10 +151,29 @@ func (c *Client) GetZone() *configModels.Zone {
 
 // GetUrlByUserID returns the URL for the storage manager
 func (c *Client) GetUrlByUserID(userID string) *string {
-	url, err := sm_repo.New().WithOwnerID(userID).GetURL()
+	url, err := sm_repo.New().WithOwnerID(userID).GetURL(getSmExternalPort(c.GetZone().Name))
 	if err != nil {
 		return nil
 	}
 
 	return url
+}
+
+func getSmExternalPort(zoneName string) *int {
+	zone := config.Config.GetZone(zoneName)
+	if zone == nil {
+		return nil
+	}
+
+	split := strings.Split(zone.Domains.ParentSM, ":")
+	if len(split) > 1 {
+		port, err := strconv.Atoi(split[1])
+		if err != nil {
+			return nil
+		}
+
+		return &port
+	}
+
+	return nil
 }

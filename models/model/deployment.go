@@ -56,11 +56,6 @@ func (deployment *Deployment) SetMainApp(app *App) {
 // GetURL returns the URL of the deployment.
 // If the K8s ingress does not exist, it will return nil, or if the ingress does not have a host, it will return nil.
 func (deployment *Deployment) GetURL(externalPort *int) *string {
-	app := deployment.GetMainApp()
-	if app == nil {
-		return nil
-	}
-
 	ingress := deployment.Subsystems.K8s.GetIngress(deployment.Name)
 	if ingress == nil || !ingress.Created() {
 		return nil

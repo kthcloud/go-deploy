@@ -74,7 +74,7 @@ func GetDeployment(c *gin.Context) {
 	}
 
 	teamIDs, _ := deployV1.Teams().ListIDs(teamOpts.ListOpts{ResourceID: deployment.ID})
-	context.Ok(deployment.ToDTO(deployV1.SMs().GetUrlByUserID(deployment.OwnerID), getExternalPort(deployment.Zone), teamIDs))
+	context.Ok(deployment.ToDTO(deployV1.SMs().GetUrlByUserID(deployment.OwnerID), getDeploymentExternalPort(deployment.Zone), teamIDs))
 }
 
 // ListDeployments
@@ -135,7 +135,7 @@ func ListDeployments(c *gin.Context) {
 	dtoDeployments := make([]body.DeploymentRead, len(deployments))
 	for i, deployment := range deployments {
 		teamIDs, _ := deployV1.Teams().ListIDs(teamOpts.ListOpts{ResourceID: deployment.ID})
-		dtoDeployments[i] = deployment.ToDTO(deployV1.SMs().GetUrlByUserID(deployment.OwnerID), getExternalPort(deployment.Zone), teamIDs)
+		dtoDeployments[i] = deployment.ToDTO(deployV1.SMs().GetUrlByUserID(deployment.OwnerID), getDeploymentExternalPort(deployment.Zone), teamIDs)
 	}
 
 	context.JSONResponse(200, dtoDeployments)
@@ -418,7 +418,7 @@ func UpdateDeployment(c *gin.Context) {
 	})
 }
 
-func getExternalPort(zoneName string) *int {
+func getDeploymentExternalPort(zoneName string) *int {
 	zone := config.Config.GetZone(zoneName)
 	if zone == nil {
 		return nil
