@@ -10,7 +10,6 @@ import (
 	"go-deploy/models/version"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/db/resources/gpu_lease_repo"
-	"go-deploy/pkg/db/resources/gpu_repo"
 	"go-deploy/pkg/db/resources/notification_repo"
 	"go-deploy/pkg/db/resources/resource_migration_repo"
 	"go-deploy/pkg/db/resources/team_repo"
@@ -305,11 +304,6 @@ func (c *Client) Delete(id string) error {
 	}
 
 	err = c.K8s().Delete(id)
-	if err != nil {
-		return makeError(err)
-	}
-
-	err = gpu_repo.New().Detach(vm.ID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -659,9 +653,7 @@ func (c *Client) CheckQuota(id, userID string, quota *model.Quotas, opts ...opts
 			}
 		}
 	} else if o.CreateSnapshot != nil {
-		if usage.Snapshots >= quota.Snapshots {
-			return sErrors.NewQuotaExceededError(fmt.Sprintf("Snapshot count quota exceeded. Current: %d, Quota: %d", usage.Snapshots, quota.Snapshots))
-		}
+		// This is reserved for future use when snapshots are implemented
 	}
 
 	return nil

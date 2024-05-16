@@ -27,27 +27,5 @@ func (z *Zone) ToDTO() body.ZoneRead {
 		Endpoints:    endpoints,
 		Legacy:       false,
 		Enabled:      z.Enabled,
-
-		// Deprecated fields
-		Interface: &z.Domains.ParentDeployment,
-		Type:      "deployment",
-	}
-}
-
-// ToDTO converts a LegacyZone to a body.ZoneRead DTO.
-func (z *LegacyZone) ToDTO() body.ZoneRead {
-	return body.ZoneRead{
-		Name:         z.Name,
-		Description:  z.Description,
-		Capabilities: []string{ZoneCapabilityVM},
-		Endpoints: body.ZoneEndpoints{
-			VM: z.ParentDomain,
-		},
-		Legacy:  true,
-		Enabled: false,
-
-		// Deprecated fields
-		Interface: &z.ParentDomain,
-		Type:      "vm",
 	}
 }

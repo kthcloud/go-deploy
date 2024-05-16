@@ -31,11 +31,8 @@ type ConfigType struct {
 	Timer struct {
 		GpuSynchronize            time.Duration `yaml:"gpuSynchronize"`
 		GpuLeaseSynchronize       time.Duration `yaml:"gpuLeaseSynchronize"`
-		VmStatusUpdate            time.Duration `yaml:"vmStatusUpdate"`
-		VmSnapshotUpdate          time.Duration `yaml:"vmSnapshotUpdate"`
 		DeploymentStatusUpdate    time.Duration `yaml:"deploymentStatusUpdate"`
 		DeploymentPingUpdate      time.Duration `yaml:"deploymentPingUpdate"`
-		Snapshot                  time.Duration `yaml:"snapshot"`
 		DeploymentRepair          time.Duration `yaml:"deploymentRepair"`
 		VmRepair                  time.Duration `yaml:"vmRepair"`
 		SmRepair                  time.Duration `yaml:"smRepair"`
@@ -86,14 +83,6 @@ type ConfigType struct {
 		Password string `yaml:"password"`
 	}
 
-	// CS is the CloudStack configuration
-	// Deprecated: CloudStack will no longer be used
-	CS struct {
-		URL    string `yaml:"url"`
-		ApiKey string `yaml:"apiKey"`
-		Secret string `yaml:"secret"`
-	} `yaml:"cs"`
-
 	SysApi struct {
 		URL      string `yaml:"url"`
 		User     string `yaml:"user"`
@@ -127,40 +116,10 @@ type KubeConfigSource struct {
 	Filepath string `yaml:"filepath"`
 }
 
-// CloudStackConfigSource
-// Deprecated: Use RancherConfigSource or KubeConfigSource instead
-type CloudStackConfigSource struct {
-	ClusterID   string `yaml:"clusterId"`
-	ExternalURL string `yaml:"externalUrl"`
-}
-
 type VM struct {
 	DefaultZone       string `yaml:"defaultZone"`
 	AdminSshPublicKey string `yaml:"adminSshPublicKey"`
 	Image             string `yaml:"image"`
-
-	// Zones is a list of zones that are used for VM v1
-	// Deprecated: Use Zone instead
-	Zones []LegacyZone `yaml:"zones"`
-}
-
-// LegacyZone is a zone that is used for VM v1
-// Deprecated: User Zone instead
-type LegacyZone struct {
-	Name         string `yaml:"name"`
-	Description  string `yaml:"description"`
-	ParentDomain string `yaml:"parentDomain"`
-	PortRange    struct {
-		Start int `yaml:"start"`
-		End   int `yaml:"end"`
-	} `yaml:"portRange"`
-
-	// CloudStack IDs
-	ZoneID      string `yaml:"zoneId"`
-	ProjectID   string `yaml:"projectId"`
-	NetworkID   string `yaml:"networkId"`
-	IpAddressID string `yaml:"ipAddressId"`
-	TemplateID  string `yaml:"templateId"`
 }
 
 type Deployment struct {

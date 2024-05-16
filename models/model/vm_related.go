@@ -17,21 +17,11 @@ type Port struct {
 }
 
 type Subsystems struct {
-	CS  VmCS  `bson:"cs"`
 	K8s VmK8s `bson:"k8s"`
 }
 
 type VmUsage struct {
-	CpuCores  int `bson:"cpuCores"`
-	RAM       int `bson:"ram"`
-	DiskSize  int `bson:"diskSize"`
-	Snapshots int `bson:"snapshots"`
-}
-
-type CloudStackHostCapabilities struct {
-	CpuCoresTotal int
-	CpuCoresUsed  int
-	RamTotal      int
-	RamUsed       int
-	RamAllocated  int
+	CpuCores int `bson:"cpuCores"`
+	RAM      int `bson:"ram"`
+	DiskSize int `bson:"diskSize"`
 }

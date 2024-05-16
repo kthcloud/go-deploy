@@ -7,7 +7,6 @@ import (
 	"go-deploy/pkg/workers/logger"
 	metricsWorker "go-deploy/pkg/workers/metrics_update"
 	"go-deploy/pkg/workers/repair"
-	"go-deploy/pkg/workers/snapshot"
 	"go-deploy/pkg/workers/status_update"
 	"go-deploy/pkg/workers/synchronize"
 )
@@ -132,16 +131,6 @@ func GetFlags() FlagDefinitionList {
 			DefaultValue: false,
 			Run: func(ctx context.Context, _ context.CancelFunc) {
 				repair.Setup(ctx)
-			},
-		},
-		{
-			Name:         "snapshotter",
-			ValueType:    "bool",
-			FlagType:     "worker",
-			Description:  "Start snapshotter",
-			DefaultValue: false,
-			Run: func(ctx context.Context, _ context.CancelFunc) {
-				snapshot.Setup(ctx)
 			},
 		},
 		{

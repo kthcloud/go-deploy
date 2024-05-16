@@ -7,7 +7,6 @@ import "go-deploy/models/model"
 type Cache struct {
 	deploymentStore   map[string]*model.Deployment
 	vmStore           map[string]*model.VM
-	gpuStore          map[string]*model.GPU
 	gpuLeaseStore     map[string]*model.GpuLease
 	smStore           map[string]*model.SM
 	userStore         map[string]*model.User
@@ -23,7 +22,6 @@ func NewCache() *Cache {
 	return &Cache{
 		deploymentStore:   make(map[string]*model.Deployment),
 		vmStore:           make(map[string]*model.VM),
-		gpuStore:          make(map[string]*model.GPU),
 		gpuLeaseStore:     make(map[string]*model.GpuLease),
 		smStore:           make(map[string]*model.SM),
 		userStore:         make(map[string]*model.User),
@@ -103,29 +101,6 @@ func (c *Cache) StoreVM(vm *model.VM) {
 // It returns nil if the VM is not in the cache.
 func (c *Cache) GetVM(id string) *model.VM {
 	r, ok := c.vmStore[id]
-	if !ok {
-		return nil
-	}
-
-	return r
-}
-
-// StoreGPU stores a GPU in the cache.
-// It only stores the GPU if it is not nil.
-func (c *Cache) StoreGPU(gpu *model.GPU) {
-	if gpu != nil {
-		if g, ok := c.gpuStore[gpu.ID]; ok {
-			*g = *gpu
-		} else {
-			c.gpuStore[gpu.ID] = gpu
-		}
-	}
-}
-
-// GetGPU gets a GPU from the cache.
-// It returns nil if the GPU is not in the cache.
-func (c *Cache) GetGPU(id string) *model.GPU {
-	r, ok := c.gpuStore[id]
 	if !ok {
 		return nil
 	}

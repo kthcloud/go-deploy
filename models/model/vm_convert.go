@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"go-deploy/dto/v2/body"
 	"go-deploy/models/version"
 	"go-deploy/pkg/subsystems"
@@ -220,4 +221,9 @@ func fromPortUpdateDTOv2(port *body.PortUpdate) PortUpdateParams {
 		Protocol:  port.Protocol,
 		HttpProxy: httpProxy,
 	}
+}
+
+// portName returns the name of a port used as a key in the port map in the database.
+func portName(privatePort int, protocol string) string {
+	return fmt.Sprintf("priv-%d-prot-%s", privatePort, protocol)
 }

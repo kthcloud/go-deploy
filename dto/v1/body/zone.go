@@ -14,12 +14,4 @@ type ZoneRead struct {
 	Endpoints    ZoneEndpoints `json:"endpoints"`
 	Legacy       bool          `json:"legacy"`
 	Enabled      bool          `json:"enabled"`
-
-	// Interface
-	// Deprecated: use Endpoints instead
-	Interface *string `json:"interface"`
-
-	// Type
-	// Deprecated: use Capabilities instead
-	Type string `json:"type"`
 }

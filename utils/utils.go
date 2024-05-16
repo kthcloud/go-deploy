@@ -2,7 +2,6 @@ package utils
 
 import (
 	"crypto/sha256"
-	"crypto/sha512"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -131,18 +130,6 @@ func GenerateSalt() string {
 		salt[i] = alphabet[rand.Intn(len(alphabet))]
 	}
 	return string(salt)
-}
-
-// HashPassword hashes the password in CloudStack.
-func HashPassword(password, salt string) string {
-	rounds := 4096
-	hash := sha512.New()
-	for i := 0; i < rounds; i++ {
-		hash.Write([]byte(salt + password))
-	}
-	hashSum := hash.Sum(nil)
-	encodedHash := base64.StdEncoding.EncodeToString(hashSum)
-	return fmt.Sprintf("$6$rounds=%d$%s$%s", rounds, salt, encodedHash)
 }
 
 // StrPtr converts a string to a pointer

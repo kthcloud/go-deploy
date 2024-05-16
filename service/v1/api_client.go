@@ -14,7 +14,6 @@ import (
 	"go-deploy/service/v1/status"
 	"go-deploy/service/v1/teams"
 	"go-deploy/service/v1/users"
-	"go-deploy/service/v1/vms"
 	"go-deploy/service/v1/zones"
 )
 
@@ -80,10 +79,6 @@ func (c *Client) Teams() api.Teams {
 
 func (c *Client) Users() api.Users {
 	return users.New(c, c.V2, c.cache)
-}
-
-func (c *Client) VMs() api.VMs {
-	return vms.New(c, c.cache)
 }
 
 func (c *Client) Zones() api.Zones {

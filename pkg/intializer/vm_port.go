@@ -8,12 +8,9 @@ import (
 	"strconv"
 )
 
-// SynchronizeVmPorts synchronizes the VM ports from the database to the database.
+// SynchronizeVmPorts synchronizes the VM ports from the config with the database.
 // This includes deleting ports that are not in the config and creating ports that are in the config but not in the database.
 func SynchronizeVmPorts() error {
-
-	// Method synchronizes the port in both VM zones and Deployment zones
-	// This is a temporary solution while we support both CloudStack VMs (v1) and KubeVirt VMs (v2)
 
 	summary := make(map[string]int)
 
@@ -23,13 +20,6 @@ func SynchronizeVmPorts() error {
 	}
 
 	ranges := make(map[string]PortRange)
-
-	for _, zone := range config.Config.VM.Zones {
-		ranges[zone.Name] = PortRange{
-			Start: zone.PortRange.Start,
-			End:   zone.PortRange.End,
-		}
-	}
 
 	for _, zone := range config.Config.Zones {
 		if zone.PortRange.End != 0 {

@@ -71,9 +71,7 @@ func (client *Client) Create(id, owner string, params *model.VmCreateParams) (*m
 			DiskSize: params.DiskSize,
 		},
 
-		Status:        status_codes.GetMsg(status_codes.ResourceCreating),
-		StatusCode:    status_codes.ResourceCreating,
-		StatusMessage: status_codes.GetMsg(status_codes.ResourceCreating),
+		Status: status_codes.GetMsg(status_codes.ResourceCreating),
 	}
 
 	_, err := client.Collection.InsertOne(context.TODO(), vm)
@@ -235,10 +233,9 @@ func (client *Client) GetUsage() (*model.VmUsage, error) {
 	}
 
 	usage := &model.VmUsage{
-		CpuCores:  0,
-		RAM:       0,
-		DiskSize:  0,
-		Snapshots: 0,
+		CpuCores: 0,
+		RAM:      0,
+		DiskSize: 0,
 	}
 
 	for _, vm := range vms {
