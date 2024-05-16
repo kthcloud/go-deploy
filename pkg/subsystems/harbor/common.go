@@ -5,8 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-openapi/runtime"
+	"go-deploy/pkg/imp/harbor/sdk/v2.0/client/project"
 	"go-deploy/pkg/imp/harbor/sdk/v2.0/client/repository"
+	"go-deploy/pkg/imp/harbor/sdk/v2.0/client/robot"
 	"go-deploy/pkg/imp/harbor/sdk/v2.0/client/robotv1"
+	"go-deploy/pkg/imp/harbor/sdk/v2.0/client/webhook"
 	"go-deploy/utils/requestutils"
 	"net/http"
 	"strings"
@@ -19,17 +22,108 @@ func IsNotFoundErr(err error) bool {
 		return apiErr.Code == http.StatusNotFound
 	}
 
-	var robotNotFoundErr *robotv1.ListRobotV1NotFound
-	if errors.As(err, &robotNotFoundErr) {
+	// Robot V1
+	var listRobotV1NotFoundErr *robotv1.ListRobotV1NotFound
+	if errors.As(err, &listRobotV1NotFoundErr) {
 		return true
 	}
 
+	var getRobotV1NotFoundErr *robotv1.GetRobotByIDV1NotFound
+	if errors.As(err, &getRobotV1NotFoundErr) {
+		return true
+	}
+
+	var createRobotV1NotFoundErr *robotv1.CreateRobotV1NotFound
+	if errors.As(err, &createRobotV1NotFoundErr) {
+		return true
+	}
+
+	var updateRobotV1NotFoundErr *robotv1.UpdateRobotV1NotFound
+	if errors.As(err, &updateRobotV1NotFoundErr) {
+		return true
+	}
+
+	var deleteRobotV1NotFoundErr *robotv1.DeleteRobotV1NotFound
+	if errors.As(err, &deleteRobotV1NotFoundErr) {
+		return true
+	}
+
+	// Robot V2
+	var getRobotByIdNotFoundErr *robot.GetRobotByIDNotFound
+	if errors.As(err, &getRobotByIdNotFoundErr) {
+		return true
+	}
+
+	var listRobotNotFoundErr *robot.ListRobotNotFound
+	if errors.As(err, &listRobotNotFoundErr) {
+		return true
+	}
+
+	var createRobotNotFoundErr *robot.CreateRobotNotFound
+	if errors.As(err, &createRobotNotFoundErr) {
+		return true
+	}
+
+	var updateRobotNotFoundErr *robot.UpdateRobotNotFound
+	if errors.As(err, &updateRobotNotFoundErr) {
+		return true
+	}
+
+	var deleteRobotNotFoundErr *robot.DeleteRobotNotFound
+	if errors.As(err, &deleteRobotNotFoundErr) {
+		return true
+	}
+
+	// Repository
 	var getRepositoryNotFoundErr *repository.GetRepositoryNotFound
 	if errors.As(err, &getRepositoryNotFoundErr) {
 		return true
 	}
 
-	if strings.Contains(strings.ToLower(err.Error()), "not found") {
+	var listRepositoryNotFoundErr *repository.ListRepositoriesNotFound
+	if errors.As(err, &listRepositoryNotFoundErr) {
+		return true
+	}
+
+	var updateRepositoryNotFoundErr *repository.UpdateRepositoryNotFound
+	if errors.As(err, &updateRepositoryNotFoundErr) {
+		return true
+	}
+
+	var deleteRepositoryNotFoundErr *repository.DeleteRepositoryNotFound
+	if errors.As(err, &deleteRepositoryNotFoundErr) {
+		return true
+	}
+
+	// Webhook
+	var getPoliciesProjectNotFoundErr *webhook.GetWebhookPolicyOfProjectNotFound
+	if errors.As(err, &getPoliciesProjectNotFoundErr) {
+		return true
+	}
+
+	var updatePoliciesProjectNotFoundErr *webhook.UpdateWebhookPolicyOfProjectNotFound
+	if errors.As(err, &updatePoliciesProjectNotFoundErr) {
+		return true
+	}
+
+	var deletePoliciesProjectNotFoundErr *webhook.DeleteWebhookPolicyOfProjectNotFound
+	if errors.As(err, &deletePoliciesProjectNotFoundErr) {
+		return true
+	}
+
+	// Project
+	var updateProjectNotFoundErr *project.UpdateProjectNotFound
+	if errors.As(err, &updateProjectNotFoundErr) {
+		return true
+	}
+
+	var deleteProjectNotFoundErr *project.DeleteProjectNotFound
+	if errors.As(err, &deleteProjectNotFoundErr) {
+		return true
+	}
+
+	// Fallback
+	if strings.Contains(strings.ToLower(err.Error()), "not found") || strings.Contains(strings.ToLower(err.Error()), "404") {
 		return true
 	}
 
