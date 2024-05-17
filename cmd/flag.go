@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"go-deploy/pkg/workers/cleaner"
 	"go-deploy/pkg/workers/confirm"
 	"go-deploy/pkg/workers/job_execute"
 	"go-deploy/pkg/workers/logger"
@@ -151,6 +152,16 @@ func GetFlags() FlagDefinitionList {
 			DefaultValue: false,
 			Run: func(ctx context.Context, _ context.CancelFunc) {
 				logger.Setup(ctx)
+			},
+		},
+		{
+			Name:         "cleaner",
+			ValueType:    "bool",
+			FlagType:     "worker",
+			Description:  "Start cleaner",
+			DefaultValue: false,
+			Run: func(ctx context.Context, cancel context.CancelFunc) {
+				cleaner.Setup(ctx)
 			},
 		},
 		{

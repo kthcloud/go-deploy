@@ -43,6 +43,7 @@ type ConfigType struct {
 		VmDeletionConfirm         time.Duration `yaml:"vmDeletionConfirm"`
 		SmDeletionConfirm         time.Duration `yaml:"smDeletionConfirm"`
 		CustomDomainConfirm       time.Duration `yaml:"customDomainConfirm"`
+		StaleResourceCleanup      time.Duration `yaml:"staleResourceCleanup"`
 	}
 
 	GPU struct {
@@ -117,15 +118,17 @@ type KubeConfigSource struct {
 }
 
 type VM struct {
-	DefaultZone       string `yaml:"defaultZone"`
-	AdminSshPublicKey string `yaml:"adminSshPublicKey"`
-	Image             string `yaml:"image"`
+	DefaultZone       string        `yaml:"defaultZone"`
+	Lifetime          time.Duration `yaml:"lifetime"`
+	AdminSshPublicKey string        `yaml:"adminSshPublicKey"`
+	Image             string        `yaml:"image"`
 }
 
 type Deployment struct {
-	DefaultZone string `yaml:"defaultZone"`
-	Port        int    `yaml:"port"`
-	Prefix      string `yaml:"prefix"`
+	DefaultZone string        `yaml:"defaultZone"`
+	Port        int           `yaml:"port"`
+	Prefix      string        `yaml:"prefix"`
+	Lifetime    time.Duration `yaml:"lifetime"`
 	Fallback    struct {
 		// Disabled is the name of the fallback deployment that other deployments can reference
 		// The fallback deployment can be created with go-deploy, or it can be created manually

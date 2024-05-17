@@ -20,6 +20,7 @@ timer:
   vmDeletionConfirm: 5s
   smDeletionConfirm: 5s
   customDomainConfirm: 30m
+  staleResourceCleanup: 1h
 
 zones:
 - name: local
@@ -62,6 +63,7 @@ gpu:
 deployment:
   defaultZone: local
   port: 8080
+  lifetime: 2160h # 90d
   prefix: deploy-
   fallback:
     disabled:
@@ -87,6 +89,7 @@ deployment:
 
 vm:
   defaultZone: local
+  lifetime: 2160h # 90d
   adminSshPublicKey: $admin_ssh_public_key
   image: $vm_image
 

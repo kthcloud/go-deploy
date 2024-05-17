@@ -9,14 +9,8 @@ type VM struct {
 	ID      string `bson:"id"`
 	Name    string `bson:"name"`
 	Version string `bson:"version"`
-
-	OwnerID   string `bson:"ownerId"`
-	ManagedBy string `bson:"managedBy"`
-	Host      *Host  `bson:"host,omitempty"`
-
-	Zone string `bson:"zone"`
-	// used for port http proxy, set in most cases, but kept as optional if no k8s is available
-	DeploymentZone *string `bson:"deploymentZone"`
+	Zone    string `bson:"zone"`
+	OwnerID string `bson:"ownerId"`
 
 	CreatedAt  time.Time `bson:"createdAt"`
 	UpdatedAt  time.Time `bson:"updatedAt,omitempty"`
@@ -24,14 +18,16 @@ type VM struct {
 	DeletedAt  time.Time `bson:"deletedAt,omitempty"`
 	AccessedAt time.Time `bson:"accessedAt"`
 
-	NetworkID    string              `bson:"networkId"`
-	SshPublicKey string              `bson:"sshPublicKey"`
-	PortMap      map[string]Port     `bson:"portMap"`
-	Activities   map[string]Activity `bson:"activities"`
+	SshPublicKey string          `bson:"sshPublicKey"`
+	PortMap      map[string]Port `bson:"portMap"`
+	Specs        VmSpecs         `bson:"specs"`
 
-	Subsystems Subsystems `bson:"subsystems"`
-	Specs      VmSpecs    `bson:"specs"`
+	Subsystems Subsystems          `bson:"subsystems"`
+	Activities map[string]Activity `bson:"activities"`
 
+	// Host is the host where the VM is running
+	// It is set by the status updater worker
+	Host *Host `bson:"host,omitempty"`
 	// Status is the current status of a VM instance
 	// It is set by the status updater worker
 	Status string `bson:"status"`

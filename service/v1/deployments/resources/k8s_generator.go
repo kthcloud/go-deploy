@@ -361,9 +361,10 @@ func (kg *K8sGenerator) HPAs() []models.HpaPublic {
 	minReplicas := 1
 	maxReplicas := mainApp.Replicas
 
+	// If replicas == 0, it should point to the fallback-disabled deployment
+	// This means we can delete the HPA
 	if mainApp.Replicas == 0 {
-		minReplicas = 0
-		maxReplicas = 0
+		return res
 	}
 
 	hpa := models.HpaPublic{

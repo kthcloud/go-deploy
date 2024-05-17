@@ -8,13 +8,8 @@ const (
 )
 
 type VmCreateParams struct {
-	Name    string
-	Version string
-
-	Zone           string
-	DeploymentZone *string
-
-	NetworkID *string
+	Name string
+	Zone string
 
 	SshPublicKey string
 	PortMap      map[string]PortCreateParams

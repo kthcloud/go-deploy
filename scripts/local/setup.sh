@@ -761,6 +761,11 @@ export port="8080"
 export mode="dev"
 
 # Zone
+export deployment_domain="app.$domain"
+export sm_domain="storage.$domain"
+export vm_domain="vm.$domain"
+export vm_app_domain="vm-app.$domain"
+
 export kubeconfig_path="./kube/$cluster_name.yml"
 export nfs_server=$nfs_cluster_ip
 export nfs_parent_path_app="$nfs_base_path/deployments"

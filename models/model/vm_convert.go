@@ -3,7 +3,6 @@ package model
 import (
 	"fmt"
 	"go-deploy/dto/v2/body"
-	"go-deploy/models/version"
 	"go-deploy/pkg/subsystems"
 	"go-deploy/utils"
 	"time"
@@ -104,7 +103,6 @@ func (p VmCreateParams) FromDTOv2(dto *body.VmCreate, fallbackZone *string) VmCr
 	p.RAM = dto.RAM
 	p.DiskSize = dto.DiskSize
 	p.PortMap = make(map[string]PortCreateParams)
-	p.Version = version.V2
 
 	if dto.Zone == nil {
 		p.Zone = *fallbackZone
