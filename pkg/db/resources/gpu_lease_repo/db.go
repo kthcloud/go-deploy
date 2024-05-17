@@ -23,7 +23,7 @@ func (client *Client) Create(id, userID, groupName string, leaseDuration float64
 	}
 
 	// Right now we only allow one lease per user. We assume there is a unique index set up for this.
-	err := client.CreateIfUnique(id, &lease, bson.D{{"id", id}, {"userId", userID}})
+	err := client.CreateIfUnique(id, &lease, bson.D{{"userId", userID}})
 	if err != nil {
 		if errors.Is(err, db.UniqueConstraintErr) {
 			return GpuLeaseAlreadyExistsErr
