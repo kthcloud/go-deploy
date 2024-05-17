@@ -11,7 +11,9 @@ import (
 	"go-deploy/pkg/log"
 	"go-deploy/service/core"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/exp/slices"
+	"reflect"
 	"time"
 )
 
@@ -29,10 +31,6 @@ func AssertParameters(job *model.Job, params []string) error {
 // GetAuthInfo returns the auth info from the job.
 // AuthInfo is not always available in the job, so it might be nil.
 func GetAuthInfo(job *model.Job) *core.AuthInfo {
-	if job.Args["authInfo"] == nil {
-		return nil
-	}
-
 	if job.Args == nil {
 		return nil
 	}
@@ -41,8 +39,33 @@ func GetAuthInfo(job *model.Job) *core.AuthInfo {
 		return nil
 	}
 
+	toTimeHookFunc := func() mapstructure.DecodeHookFunc {
+		return func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
+			if t != reflect.TypeOf(time.Time{}) {
+				return data, nil
+			}
+
+			switch f.Kind() {
+			case reflect.Int64:
+				return time.Unix(0, int64(data.(primitive.DateTime))*int64(time.Millisecond)), nil
+			default:
+				return data, nil
+			}
+		}
+	}
+
 	authInfo := &core.AuthInfo{}
-	err := mapstructure.Decode(job.Args["authInfo"].(map[string]interface{}), authInfo)
+	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		Metadata: nil,
+		DecodeHook: mapstructure.ComposeDecodeHookFunc(
+			toTimeHookFunc()),
+		Result: &authInfo,
+	})
+	if err != nil {
+		return nil
+	}
+
+	err = decoder.Decode(job.Args["authInfo"].(map[string]interface{}))
 	if err != nil {
 		return nil
 	}
