@@ -167,12 +167,12 @@ nodes:
     protocol: UDP"
   done
 
-  mkdir -p "./data"
+  data_dir="${HOME}/go-deploy-data/${cluster_name}"
+  mkdir -p $data_dir
 
-  # Add NFS mount container /mnt/nfs to ./data
   config="$config
   extraMounts:
-  - hostPath: "./data"
+  - hostPath: "$data_dir"
     containerPath: /mnt/nfs"
   
   echo "$config" > ./manifests/kind-config.yml
