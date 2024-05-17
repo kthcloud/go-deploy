@@ -38,10 +38,10 @@ zones:
     - deployment
     - vm
   domains:
-    parentDeployment: app.$external_url
-    parentSm: storage.$external_url
-    parentVm: vm.$external_url
-    parentVmApp: vm-app.$external_url
+    parentDeployment: $deployment_domain:$ingress_https_port
+    parentSm: $sm_domain:$ingress_https_port
+    parentVm: $vm_domain
+    parentVmApp: $vm_app_domain:$ingress_https_port
   storage:
     nfsServer: $nfs_server
     paths:

@@ -1,4 +1,4 @@
-externalUrl: deploy.localhost:32275
+externalUrl: http://localhost:8080
 port: 8080
 mode: dev
 

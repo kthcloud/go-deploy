@@ -756,7 +756,7 @@ read_cluster_config
 cp config.yml.tmpl ../../config.local.yml
 
 # Core
-export external_url="$domain:$ingress_https_port"
+export external_url="http://localhost:8080"
 export port="8080"
 export mode="dev"
 
