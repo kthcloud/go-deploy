@@ -41,7 +41,16 @@ func (client *Client) UpdateWithParams(id string, params *model.GpuLeaseUpdatePa
 	db.AddIfNotNil(&update, "activatedAt", params.ActivatedAt)
 	db.AddIfNotNil(&update, "vmId", params.VmID)
 
-	return client.SetWithBsonByID(id, update)
+	err := client.SetWithBsonByID(id, update)
+	if err != nil {
+		if errors.Is(err, db.UniqueConstraintErr) {
+			return VmAlreadyAttachedErr
+		}
+
+		return err
+	}
+
+	return nil
 }
 
 func (client *Client) Release() error {

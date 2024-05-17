@@ -93,6 +93,9 @@ var (
 	// GpuLeaseNotFoundErr is returned when the GPU lease is not found.
 	GpuLeaseNotFoundErr = fmt.Errorf("gpu lease not found")
 
+	// VmAlreadyAttachedErr is returned when a VM is already attached to a GPU lease.
+	VmAlreadyAttachedErr = fmt.Errorf("vm already attached")
+
 	// GpuGroupNotFoundErr is returned when the GPU group is not found.
 	GpuGroupNotFoundErr = fmt.Errorf("gpu group not found")
 

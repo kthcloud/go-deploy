@@ -208,6 +208,8 @@ func UpdateGpuLease(job *model.Job) error {
 			return jErrors.MakeTerminatedError(err)
 		case errors.Is(err, sErrors.GpuLeaseNotAssignedErr):
 			return jErrors.MakeTerminatedError(err)
+		case errors.Is(err, sErrors.VmAlreadyAttachedErr):
+			return jErrors.MakeTerminatedError(err)
 		}
 
 		return jErrors.MakeFailedError(err)

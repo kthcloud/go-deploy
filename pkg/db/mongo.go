@@ -182,9 +182,9 @@ func getCollectionDefinitions() map[string]CollectionDefinition {
 		},
 		"gpuLeases": {
 			Name:    "gpuLeases",
-			Indexes: []string{"groupName", "vmId", "createdAt"},
+			Indexes: []string{"groupName", "createdAt"},
 			// Right now we only allow a single lease per user, this might change in the future
-			UniqueIndexes:        [][]string{{"userId"}},
+			UniqueIndexes:        [][]string{{"userId", "vmId"}},
 			TotallyUniqueIndexes: [][]string{{"id"}},
 		},
 		"jobs": {
