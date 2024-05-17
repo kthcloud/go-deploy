@@ -63,10 +63,16 @@ deployment:
   defaultZone: local
   port: 8080
   prefix: deploy-
+  fallback:
+    disabled:
+        name: deploy-fallback
+
   wildcardCertSecretNamespace: cert-manager
   wildcardCertSecretName: go-deploy-wildcard-secret
   customDomainTxtRecordSubdomain: _kthcloud
+
   ingressClass: nginx
+
   resources:
     autoScale:
       cpuThreshold: 50
