@@ -16,15 +16,13 @@ import (
 	statusOpts "go-deploy/service/v1/status/opts"
 	teamOpts "go-deploy/service/v1/teams/opts"
 	userOpts "go-deploy/service/v1/users/opts"
-	"go-deploy/service/v1/vms/cs_service"
-	vmK8sService "go-deploy/service/v1/vms/k8s_service"
-	vmOpts "go-deploy/service/v1/vms/opts"
 	zoneOpts "go-deploy/service/v1/zones/opts"
 	"time"
 )
 
 type Deployments interface {
 	Get(id string, opts ...dOpts.GetOpts) (*model.Deployment, error)
+	GetByName(name string, opts ...dOpts.GetOpts) (*model.Deployment, error)
 	List(opts ...dOpts.ListOpts) ([]model.Deployment, error)
 	Create(id, userID string, dtoDeploymentCreate *body.DeploymentCreate) error
 	Update(id string, dtoDeploymentUpdate *body.DeploymentUpdate) error
@@ -125,56 +123,9 @@ type Teams interface {
 	CheckResourceAccess(userID, resourceID string) (bool, error)
 }
 
-type VMs interface {
-	Get(id string, opts ...vmOpts.GetOpts) (*model.VM, error)
-	List(opts ...vmOpts.ListOpts) ([]model.VM, error)
-	Create(id, ownerID string, dtoVmCreate *body.VmCreate) error
-	Update(id string, dtoVmUpdate *body.VmUpdate) error
-	Delete(id string) error
-	Repair(id string) error
-
-	GetSnapshot(vmID string, id string, opts ...vmOpts.GetSnapshotOpts) (*model.Snapshot, error)
-	GetSnapshotByName(vmID string, name string, opts ...vmOpts.GetSnapshotOpts) (*model.Snapshot, error)
-	ListSnapshots(vmID string, opts ...vmOpts.ListSnapshotOpts) ([]model.Snapshot, error)
-	CreateSnapshot(id string, params *vmOpts.CreateSnapshotOpts) error
-	DeleteSnapshot(id, snapshotID string) error
-	ApplySnapshot(id, snapshotID string) error
-
-	UpdateOwner(id string, params *body.VmUpdateOwner) error
-
-	GetConnectionString(id string) (*string, error)
-	GetExternalPortMapper(vmID string) (map[string]int, error)
-	DoCommand(id, command string)
-
-	GetHost(vmID string) (*model.Host, error)
-	GetCloudStackHostCapabilities(hostName string, zoneName string) (*model.CloudStackHostCapabilities, error)
-
-	StartActivity(id, activity string) error
-	CanAddActivity(vmID, activity string) (bool, string, error)
-	NameAvailable(name string) (bool, error)
-	HttpProxyNameAvailable(id, name string) (bool, error)
-
-	CheckQuota(id, userID string, quota *model.Quotas, opts ...vmOpts.QuotaOpts) error
-	GetUsage(userID string) (*model.VmUsage, error)
-
-	GetGPU(id string, opts ...vmOpts.GetGpuOpts) (*model.GPU, error)
-	GetGpuByVM(vmID string) (*model.GPU, error)
-	ListGPUs(opts ...vmOpts.ListGpuOpts) ([]model.GPU, error)
-	AttachGPU(id string, gpuIDs []string, leaseDuration float64) error
-	DetachGPU(id string) error
-	IsGpuPrivileged(id string) (bool, error)
-	CheckGpuHardwareAvailable(gpuID string) error
-	CheckSuitableHost(id, hostName, zoneName string) error
-
-	CS() *cs_service.Client
-	K8s() *vmK8sService.Client
-}
-
 type Zones interface {
 	Get(name string) *configModels.Zone
-	GetLegacy(name string) *configModels.LegacyZone
 	List(opts ...zoneOpts.ListOpts) ([]configModels.Zone, error)
-	ListLegacy(opts ...zoneOpts.ListOpts) ([]configModels.LegacyZone, error)
 	HasCapability(zoneName, capability string) bool
 }
 

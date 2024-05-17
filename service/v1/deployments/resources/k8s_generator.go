@@ -100,23 +100,11 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		}
 	}
 
-	var image string
-	if mainApp.Replicas > 0 {
-		image = mainApp.Image
-	} else {
-		image = config.Config.Registry.PlaceholderImage
-
-		k8sEnvs = append(k8sEnvs, models.EnvVar{
-			Name:  "TYPE",
-			Value: "disabled",
-		})
-	}
-
 	dep := models.DeploymentPublic{
 		Name:             kg.deployment.Name,
 		Namespace:        kg.namespace,
 		Labels:           map[string]string{"owner-id": kg.deployment.OwnerID},
-		Image:            image,
+		Image:            mainApp.Image,
 		ImagePullSecrets: imagePullSecrets,
 		EnvVars:          k8sEnvs,
 		Resources: models.Resources{
@@ -128,6 +116,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		InitCommands:   mainApp.InitCommands,
 		InitContainers: make([]models.InitContainer, 0),
 		Volumes:        k8sVolumes,
+		Disabled:       mainApp.Replicas == 0,
 	}
 
 	if d := kg.deployment.Subsystems.K8s.GetDeployment(kg.deployment.Name); subsystems.Created(d) {
@@ -164,12 +153,23 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 		return res
 	}
 
+	// If replicas == 0, it should point to the fallback-disabled deployment
+	var serviceName string
+	var servicePort int
+	if mainApp.Replicas == 0 {
+		serviceName = config.Config.Deployment.Fallback.Disabled.Name
+		servicePort = config.Config.Deployment.Port
+	} else {
+		serviceName = kg.deployment.Name
+		servicePort = mainApp.InternalPort
+	}
+
 	tlsSecret := constants.WildcardCertSecretName
 	in := models.IngressPublic{
 		Name:         kg.deployment.Name,
 		Namespace:    kg.namespace,
-		ServiceName:  kg.deployment.Name,
-		ServicePort:  kg.deployment.GetMainApp().InternalPort,
+		ServiceName:  serviceName,
+		ServicePort:  servicePort,
 		IngressClass: config.Config.Deployment.IngressClass,
 		Hosts:        []string{getExternalFQDN(kg.deployment.Name, kg.zone)},
 		Placeholder:  false,
@@ -359,7 +359,13 @@ func (kg *K8sGenerator) HPAs() []models.HpaPublic {
 	mainApp := kg.deployment.GetMainApp()
 
 	minReplicas := 1
-	maxReplicas := int(math.Max(float64(mainApp.Replicas), float64(minReplicas)))
+	maxReplicas := mainApp.Replicas
+
+	// If replicas == 0, it should point to the fallback-disabled deployment
+	// This means we can delete the HPA
+	if mainApp.Replicas == 0 {
+		return res
+	}
 
 	hpa := models.HpaPublic{
 		Name:        kg.deployment.Name,

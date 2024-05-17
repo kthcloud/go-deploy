@@ -111,6 +111,7 @@ func (deployment *Deployment) ToDTO(smURL *string, externalPort *int, teams []st
 		UpdatedAt:   utils.NonZeroOrNil(deployment.UpdatedAt),
 		RepairedAt:  utils.NonZeroOrNil(deployment.RepairedAt),
 		RestartedAt: utils.NonZeroOrNil(deployment.RestartedAt),
+		AccessedAt:  deployment.AccessedAt,
 
 		CpuCores: app.CpuCores,
 		RAM:      app.RAM,

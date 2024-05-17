@@ -65,8 +65,7 @@ type Quota struct {
 }
 
 type Usage struct {
-	CpuCores  float64 `json:"cpuCores"`
-	RAM       float64 `json:"ram"`
-	DiskSize  float64 `json:"diskSize"`
-	Snapshots int     `json:"snapshots"`
+	CpuCores float64 `json:"cpuCores"`
+	RAM      float64 `json:"ram"`
+	DiskSize int     `json:"diskSize"`
 }

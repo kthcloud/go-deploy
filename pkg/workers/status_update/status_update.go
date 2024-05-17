@@ -8,7 +8,7 @@ import (
 )
 
 // Setup starts the status updaters.
-// Status updaters are workers that periodically updates the status of external services, such as CloudStack.
+// Status updaters are workers that listen for status updates from external services and update the database accordingly.
 func Setup(ctx context.Context) {
 	log.Println("Starting status updaters")
 	go workers.Worker(ctx, "vmStatusListener", VmStatusListener)

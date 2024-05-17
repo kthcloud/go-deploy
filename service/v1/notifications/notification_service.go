@@ -77,7 +77,7 @@ func (c *Client) Update(id string, dtoNotificationUpdate *body.NotificationUpdat
 		return nil, nil
 	}
 
-	if dtoNotificationUpdate.Read && !notification.ReadAt.IsZero() {
+	if dtoNotificationUpdate.Read && notification.ReadAt.IsZero() {
 		err = nmc.MarkReadByID(id)
 		if err != nil {
 			return nil, err

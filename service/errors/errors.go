@@ -34,21 +34,6 @@ func NewFailedToStartActivityError(reason string) FailedToStartActivityError {
 	return FailedToStartActivityError{reason: reason}
 }
 
-// PortInUseErr is returned when the port is already in use.
-type PortInUseErr struct {
-	Port int
-}
-
-// Error returns the reason for the port in use error.
-func (e PortInUseErr) Error() string {
-	return fmt.Sprintf("port %d is already in use", e.Port)
-}
-
-// NewPortInUseError creates a new PortInUseErr.
-func NewPortInUseError(port int) PortInUseErr {
-	return PortInUseErr{Port: port}
-}
-
 // ZoneCapabilityMissingErr is returned when the zone capability is missing.
 type ZoneCapabilityMissingErr struct {
 	Zone       string
@@ -93,14 +78,8 @@ var (
 	// This is most likely caused by a race-condition between a some model call and a deletion call.
 	VmNotFoundErr = fmt.Errorf("vm not found")
 
-	// VmNotCreatedErr is returned when the vm is not created.
-	VmNotCreatedErr = fmt.Errorf("vm not created")
-
 	// GpuNotFoundErr is returned when the gpu is not found.
 	GpuNotFoundErr = fmt.Errorf("gpu not found")
-
-	// GpuAlreadyAttachedErr is returned when the GPU is already attached to another VM.
-	GpuAlreadyAttachedErr = fmt.Errorf("gpu already attached")
 
 	// GpuLeaseAlreadyExistsErr is returned when a GPU lease already exists for a user.
 	GpuLeaseAlreadyExistsErr = fmt.Errorf("gpu lease already exists")
@@ -114,19 +93,14 @@ var (
 	// GpuLeaseNotFoundErr is returned when the GPU lease is not found.
 	GpuLeaseNotFoundErr = fmt.Errorf("gpu lease not found")
 
+	// VmAlreadyAttachedErr is returned when a VM is already attached to a GPU lease.
+	VmAlreadyAttachedErr = fmt.Errorf("vm already attached")
+
 	// GpuGroupNotFoundErr is returned when the GPU group is not found.
 	GpuGroupNotFoundErr = fmt.Errorf("gpu group not found")
 
-	// VmTooLargeErr is returned when the VM is too large to be started on a specific host.
-	// Something that is required when using GPUs.
-	VmTooLargeErr = fmt.Errorf("vm too large")
-
 	// NoPortsAvailableErr is returned when there are no ports available.
 	NoPortsAvailableErr = fmt.Errorf("no ports available")
-
-	// HostNotAvailableErr is returned when the host is not available.
-	// This is usually caused by the host being in maintenance or disabled mode.
-	HostNotAvailableErr = fmt.Errorf("host not available")
 
 	// ZoneNotFoundErr is returned when the zone is not found.
 	// This could be caused by stale data in the database.
@@ -134,14 +108,6 @@ var (
 
 	// SnapshotNotFoundErr is returned when the snapshot is not found.
 	SnapshotNotFoundErr = fmt.Errorf("snapshot not found")
-
-	// SnapshotAlreadyExistsErr is returned when the snapshot already exists.
-	// This is normally caused by not specifying the "overwrite" flag and a snapshot with the same name already exists.
-	SnapshotAlreadyExistsErr = fmt.Errorf("already exists")
-
-	// BadStateErr is returned when the state is bad.
-	// For example, if a VM has a GPU attached when creating a snapshot or if a deployment is not ready to set up a log stream.
-	BadStateErr = fmt.Errorf("bad state")
 
 	// NonUniqueFieldErr is returned when a field is not unique, such as the name of a deployment.
 	NonUniqueFieldErr = fmt.Errorf("non unique field")

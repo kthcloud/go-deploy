@@ -6,7 +6,6 @@ import (
 	"go-deploy/models/model"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/db/resources/gpu_group_repo"
-	"go-deploy/pkg/db/resources/gpu_repo"
 	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems/sys-api"
 	"go-deploy/pkg/subsystems/sys-api/models"
@@ -16,24 +15,18 @@ import (
 	"strings"
 )
 
-// gpuSynchronizer synchronizes the GPUs in the database with the sys-api page.
+// GpuSynchronizer synchronizes the GPUs in the database with the sys-api page.
 // Whenever a GPU is added or removed from a machine, the sys-api is updated, and this
 // worker will synchronize the database with the sys-api
-func gpuSynchronizer() error {
+func GpuSynchronizer() error {
 	// Fetch GPUs
 	gpuInfo, err := fetchGPUs()
 	if err != nil {
 		return err
 	}
 
-	// Synchronize GPUs v1
-	err = synchronizeGpusV1(gpuInfo)
-	if err != nil {
-		return err
-	}
-
 	// Synchronize GPUs v2
-	err = synchronizeGpusV2(gpuInfo)
+	err = synchronizeGpus(gpuInfo)
 	if err != nil {
 		return err
 	}
@@ -41,81 +34,7 @@ func gpuSynchronizer() error {
 	return nil
 }
 
-func synchronizeGpusV1(gpuInfo *models.GpuInfoRead) error {
-	ids := make([]string, 0)
-	for _, host := range gpuInfo.GpuInfo.Hosts {
-		for _, gpu := range host.GPUs {
-			ids = append(ids, createGpuID(host.Name, gpu.Name, gpu.Slot))
-		}
-	}
-
-	// Delete GPUs without a lease to sync with the sys-api
-	err := gpu_repo.New().WithoutLease().ExcludeIDs(ids...).Erase()
-	if err != nil {
-		return err
-	}
-
-	// Update stale GPUs
-	err = gpu_repo.New().ExcludeIDs(ids...).SetWithBSON(bson.D{{"stale", true}})
-	if err != nil {
-		return err
-	}
-
-	// Warn if there are any stale GPUs
-	staleGPUs, err := gpu_repo.New().WithStale().List()
-	if err != nil {
-		return err
-	}
-
-	if len(staleGPUs) > 0 {
-		printString := "Stale GPUs detected: \n"
-		for _, gpu := range staleGPUs {
-			printString += "\t- " + gpu.ID + "\n"
-		}
-		printString = strings.TrimSuffix(printString, ", ")
-		printString += "Detach them from the VMs to prevent unexpected behavior."
-		log.Println(printString)
-	}
-
-	// Add GPUs to the database
-	for _, host := range gpuInfo.GpuInfo.Hosts {
-		for _, gpu := range host.GPUs {
-			gpuID := createGpuID(host.Name, gpu.Name, gpu.Slot)
-			exists, err := gpu_repo.New().ExistsByID(gpuID)
-			if err != nil {
-				utils.PrettyPrintError(fmt.Errorf("failed to fetch gpu by id. details: %w", err))
-				continue
-			}
-
-			if exists {
-				continue
-			}
-
-			zone := config.Config.VM.GetLegacyZone(host.Zone)
-			if zone == nil {
-				log.Println("GPU zone", host.Zone, "not found. Skipping GPU", gpuID)
-				continue
-			}
-
-			err = gpu_repo.New().Create(gpuID, host.Name, model.GpuData{
-				Name:     gpu.Name,
-				Slot:     gpu.Slot,
-				Vendor:   gpu.Vendor,
-				VendorID: gpu.VendorID,
-				Bus:      gpu.Bus,
-				DeviceID: gpu.DeviceID,
-			}, zone.Name)
-
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-func synchronizeGpusV2(gpuInfo *models.GpuInfoRead) error {
+func synchronizeGpus(gpuInfo *models.GpuInfoRead) error {
 	// Determine groups
 	groups := make(map[string]map[string]model.GpuGroup)
 	for _, host := range gpuInfo.GpuInfo.Hosts {

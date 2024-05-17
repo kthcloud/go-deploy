@@ -3,6 +3,7 @@ package model
 import (
 	"go-deploy/dto/v1/body"
 	"go-deploy/pkg/log"
+	"math"
 )
 
 // ToDTO converts a User to a body.UserRead DTO.
@@ -71,10 +72,9 @@ func (user *User) ToDTO(effectiveRole *Role, usage *UserUsage, storageURL *strin
 // ToDTO converts a Usage to a body.Usage DTO.
 func (usage *UserUsage) ToDTO() body.Usage {
 	return body.Usage{
-		CpuCores:  usage.CpuCores,
-		RAM:       usage.RAM,
-		DiskSize:  usage.DiskSize,
-		Snapshots: usage.Snapshots,
+		CpuCores: math.Round(usage.CpuCores*10) / 10,
+		RAM:      math.Round(usage.RAM*10) / 10,
+		DiskSize: usage.DiskSize,
 	}
 }
 

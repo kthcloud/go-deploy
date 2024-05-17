@@ -105,29 +105,3 @@ func (z *Zone) HasCapability(capability string) bool {
 	}
 	return false
 }
-
-// GetLegacyZone returns the VM zone with the given name.
-// If the zone is not found, nil is returned.
-// All zones are loaded locally by the configuration file
-// Deprecated: Use ConfigType.GetZone instead
-func (v *VM) GetLegacyZone(name string) *LegacyZone {
-	for _, zone := range v.Zones {
-		if zone.Name == name {
-			return &zone
-		}
-	}
-	return nil
-}
-
-// GetLegacyZoneByID returns the VM zone with the given ID.
-// If the zone is not found, nil is returned.
-// All zones are loaded locally by the configuration file
-// Deprecated: Use ConfigType.GetZone instead
-func (v *VM) GetLegacyZoneByID(id string) *LegacyZone {
-	for _, zone := range v.Zones {
-		if zone.ZoneID == id {
-			return &zone
-		}
-	}
-	return nil
-}

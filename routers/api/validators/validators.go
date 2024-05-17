@@ -40,7 +40,7 @@ func SshPublicKey(fl validator.FieldLevel) bool {
 }
 
 // EnvName is a validator for environment variable names
-// It ensure the name is valid for use in the environment
+// It ensures the name is valid for use in the environment
 func EnvName(fl validator.FieldLevel) bool {
 	name, ok := fl.Field().Interface().(string)
 	if !ok {
@@ -75,10 +75,10 @@ func EnvList(fl validator.FieldLevel) bool {
 func PortListNames(fl validator.FieldLevel) bool {
 	// We need to try with both PortCreate and PortUpdate
 
-	portListCreateV1, ok := fl.Field().Interface().([]bodyV1.PortCreate)
+	portListCreate, ok := fl.Field().Interface().([]bodyV2.PortCreate)
 	if ok {
 		names := make(map[string]bool)
-		for _, port := range portListCreateV1 {
+		for _, port := range portListCreate {
 			if _, exists := names[port.Name]; exists {
 				return false
 			}
@@ -88,36 +88,10 @@ func PortListNames(fl validator.FieldLevel) bool {
 		return true
 	}
 
-	portListUpdateV1, ok := fl.Field().Interface().([]bodyV1.PortUpdate)
+	portListUpdate, ok := fl.Field().Interface().([]bodyV2.PortUpdate)
 	if ok {
 		names := make(map[string]bool)
-		for _, port := range portListUpdateV1 {
-			if _, exists := names[port.Name]; exists {
-				return false
-			}
-			names[port.Name] = true
-		}
-
-		return true
-	}
-
-	portListCreateV2, ok := fl.Field().Interface().([]bodyV2.PortCreate)
-	if ok {
-		names := make(map[string]bool)
-		for _, port := range portListCreateV2 {
-			if _, exists := names[port.Name]; exists {
-				return false
-			}
-			names[port.Name] = true
-		}
-
-		return true
-	}
-
-	portListUpdateV2, ok := fl.Field().Interface().([]bodyV2.PortUpdate)
-	if ok {
-		names := make(map[string]bool)
-		for _, port := range portListUpdateV2 {
+		for _, port := range portListUpdate {
 			if _, exists := names[port.Name]; exists {
 				return false
 			}
@@ -135,10 +109,10 @@ func PortListNames(fl validator.FieldLevel) bool {
 func PortListNumbers(fl validator.FieldLevel) bool {
 	// We need to try with both PortCreate and PortUpdate
 
-	portListCreateV1, ok := fl.Field().Interface().([]bodyV1.PortCreate)
+	portListCreate, ok := fl.Field().Interface().([]bodyV2.PortCreate)
 	if ok {
 		numbers := make(map[int]bool)
-		for _, port := range portListCreateV1 {
+		for _, port := range portListCreate {
 			if _, exists := numbers[port.Port]; exists {
 				return false
 			}
@@ -148,36 +122,10 @@ func PortListNumbers(fl validator.FieldLevel) bool {
 		return true
 	}
 
-	portListUpdateV1, ok := fl.Field().Interface().([]bodyV1.PortUpdate)
+	portListUpdate, ok := fl.Field().Interface().([]bodyV2.PortUpdate)
 	if ok {
 		numbers := make(map[int]bool)
-		for _, port := range portListUpdateV1 {
-			if _, exists := numbers[port.Port]; exists {
-				return false
-			}
-			numbers[port.Port] = true
-		}
-
-		return true
-	}
-
-	portListCreateV2, ok := fl.Field().Interface().([]bodyV2.PortCreate)
-	if ok {
-		numbers := make(map[int]bool)
-		for _, port := range portListCreateV2 {
-			if _, exists := numbers[port.Port]; exists {
-				return false
-			}
-			numbers[port.Port] = true
-		}
-
-		return true
-	}
-
-	portListUpdateV2, ok := fl.Field().Interface().([]bodyV2.PortUpdate)
-	if ok {
-		numbers := make(map[int]bool)
-		for _, port := range portListUpdateV2 {
+		for _, port := range portListUpdate {
 			if _, exists := numbers[port.Port]; exists {
 				return false
 			}
@@ -195,10 +143,10 @@ func PortListNumbers(fl validator.FieldLevel) bool {
 func PortListHttpProxies(fl validator.FieldLevel) bool {
 	// We need to try with both PortCreate and PortUpdate
 
-	portListCreateV1, ok := fl.Field().Interface().([]bodyV1.PortCreate)
+	portListCreate, ok := fl.Field().Interface().([]bodyV2.PortCreate)
 	if ok {
 		names := make(map[string]bool)
-		for _, port := range portListCreateV1 {
+		for _, port := range portListCreate {
 			if port.HttpProxy != nil {
 				if _, exists := names[port.HttpProxy.Name]; exists {
 					return false
@@ -210,40 +158,10 @@ func PortListHttpProxies(fl validator.FieldLevel) bool {
 		return true
 	}
 
-	portListUpdateV1, ok := fl.Field().Interface().([]bodyV1.PortUpdate)
+	portListUpdate, ok := fl.Field().Interface().([]bodyV2.PortUpdate)
 	if ok {
 		names := make(map[string]bool)
-		for _, port := range portListUpdateV1 {
-			if port.HttpProxy != nil {
-				if _, exists := names[port.HttpProxy.Name]; exists {
-					return false
-				}
-				names[port.HttpProxy.Name] = true
-			}
-		}
-
-		return true
-	}
-
-	portListCreateV2, ok := fl.Field().Interface().([]bodyV2.PortCreate)
-	if ok {
-		names := make(map[string]bool)
-		for _, port := range portListCreateV2 {
-			if port.HttpProxy != nil {
-				if _, exists := names[port.HttpProxy.Name]; exists {
-					return false
-				}
-				names[port.HttpProxy.Name] = true
-			}
-		}
-
-		return true
-	}
-
-	portListUpdateV2, ok := fl.Field().Interface().([]bodyV2.PortUpdate)
-	if ok {
-		names := make(map[string]bool)
-		for _, port := range portListUpdateV2 {
+		for _, port := range portListUpdate {
 			if port.HttpProxy != nil {
 				if _, exists := names[port.HttpProxy.Name]; exists {
 					return false

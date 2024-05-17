@@ -23,7 +23,7 @@ func (client *Client) Create(id, userID, groupName string, leaseDuration float64
 	}
 
 	// Right now we only allow one lease per user. We assume there is a unique index set up for this.
-	err := client.CreateIfUnique(id, &lease, bson.D{{"id", id}, {"userId", userID}})
+	err := client.CreateIfUnique(id, &lease, bson.D{{"userId", userID}})
 	if err != nil {
 		if errors.Is(err, db.UniqueConstraintErr) {
 			return GpuLeaseAlreadyExistsErr
@@ -41,7 +41,16 @@ func (client *Client) UpdateWithParams(id string, params *model.GpuLeaseUpdatePa
 	db.AddIfNotNil(&update, "activatedAt", params.ActivatedAt)
 	db.AddIfNotNil(&update, "vmId", params.VmID)
 
-	return client.SetWithBsonByID(id, update)
+	err := client.SetWithBsonByID(id, update)
+	if err != nil {
+		if errors.Is(err, db.UniqueConstraintErr) {
+			return VmAlreadyAttachedErr
+		}
+
+		return err
+	}
+
+	return nil
 }
 
 func (client *Client) Release() error {

@@ -3,7 +3,7 @@ package snapshots
 import (
 	"go-deploy/service/clients"
 	"go-deploy/service/core"
-	"go-deploy/service/v1/vms/client"
+	"go-deploy/service/v2/vms/client"
 )
 
 type Client struct {

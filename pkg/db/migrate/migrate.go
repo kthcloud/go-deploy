@@ -2,8 +2,8 @@ package migrator
 
 import (
 	"fmt"
-	"go-deploy/pkg/config"
 	"go-deploy/pkg/db/resources/deployment_repo"
+	"go-deploy/pkg/db/resources/vm_repo"
 	"go-deploy/pkg/log"
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -36,34 +36,60 @@ func Migrate() error {
 // add a date to the migration name to make it easier to identify.
 func getMigrations() map[string]func() error {
 	return map[string]func() error{
-		"addSpecsToDeploymentWithoutSpecs_2024_05_10": addSpecsToDeploymentWithoutSpecs_2024_05_10,
+		"addAccessedAt_2024_05_17": addAccessedAt_2024_05_17,
 	}
 }
 
-func addSpecsToDeploymentWithoutSpecs_2024_05_10() error {
+func addAccessedAt_2024_05_17() error {
 	deployments, err := deployment_repo.New().List()
 	if err != nil {
 		return err
 	}
 
+	vms, err := vm_repo.New().List()
+	if err != nil {
+		return err
+	}
+
 	for _, deployment := range deployments {
-		for _, app := range deployment.Apps {
-			anyUpdated := false
+		if deployment.AccessedAt.IsZero() {
+			// Set to the greatest of:
+			//UpdatedAt   time.Time `bson:"updatedAt"`
+			//RepairedAt  time.Time `bson:"repairedAt"`
+			//RestartedAt time.Time `bson:"restartedAt"`
 
-			if app.CpuCores == 0 {
-				app.CpuCores = config.Config.Deployment.Resources.Limits.CPU
-				anyUpdated = true
-			}
-			if app.RAM == 0 {
-				app.RAM = config.Config.Deployment.Resources.Limits.RAM
-				anyUpdated = true
+			// Find the greatest time
+			greatestTime := deployment.UpdatedAt
+			if deployment.RepairedAt.After(greatestTime) {
+				greatestTime = deployment.RepairedAt
 			}
 
-			if anyUpdated {
-				err = deployment_repo.New().SetWithBsonByID(deployment.ID, bson.D{{"apps." + app.Name, app}})
-				if err != nil {
-					return err
-				}
+			if deployment.RestartedAt.After(greatestTime) {
+				greatestTime = deployment.RestartedAt
+			}
+
+			deployment.AccessedAt = greatestTime
+
+			err = deployment_repo.New().SetWithBsonByID(deployment.ID, bson.D{{"accessedAt", deployment.AccessedAt}})
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	for _, vm := range vms {
+		if vm.AccessedAt.IsZero() {
+			// Find the greatest time
+			greatestTime := vm.UpdatedAt
+			if vm.RepairedAt.After(greatestTime) {
+				greatestTime = vm.RepairedAt
+			}
+
+			vm.AccessedAt = greatestTime
+
+			err = vm_repo.New().SetWithBsonByID(vm.ID, bson.D{{"accessedAt", vm.AccessedAt}})
+			if err != nil {
+				return err
 			}
 		}
 	}

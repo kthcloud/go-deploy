@@ -2,12 +2,12 @@ package cmd
 
 import (
 	"context"
+	"go-deploy/pkg/workers/cleaner"
 	"go-deploy/pkg/workers/confirm"
 	"go-deploy/pkg/workers/job_execute"
 	"go-deploy/pkg/workers/logger"
 	metricsWorker "go-deploy/pkg/workers/metrics_update"
 	"go-deploy/pkg/workers/repair"
-	"go-deploy/pkg/workers/snapshot"
 	"go-deploy/pkg/workers/status_update"
 	"go-deploy/pkg/workers/synchronize"
 )
@@ -135,16 +135,6 @@ func GetFlags() FlagDefinitionList {
 			},
 		},
 		{
-			Name:         "snapshotter",
-			ValueType:    "bool",
-			FlagType:     "worker",
-			Description:  "Start snapshotter",
-			DefaultValue: false,
-			Run: func(ctx context.Context, _ context.CancelFunc) {
-				snapshot.Setup(ctx)
-			},
-		},
-		{
 			Name:         "metrics-updater",
 			ValueType:    "bool",
 			FlagType:     "worker",
@@ -162,6 +152,16 @@ func GetFlags() FlagDefinitionList {
 			DefaultValue: false,
 			Run: func(ctx context.Context, _ context.CancelFunc) {
 				logger.Setup(ctx)
+			},
+		},
+		{
+			Name:         "cleaner",
+			ValueType:    "bool",
+			FlagType:     "worker",
+			Description:  "Start cleaner",
+			DefaultValue: false,
+			Run: func(ctx context.Context, cancel context.CancelFunc) {
+				cleaner.Setup(ctx)
 			},
 		},
 		{

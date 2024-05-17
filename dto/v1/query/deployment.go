@@ -15,7 +15,7 @@ type DeploymentList struct {
 	*Pagination
 
 	All    bool    `form:"all" binding:"omitempty,boolean"`
-	UserID *string `form:"userId" binding:"omitempty,uuid4"`
+	UserID *string `form:"userId" binding:"omitempty"`
 }
 
 type DeploymentUpdate struct {

@@ -5,7 +5,6 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"go-deploy/models/config"
 	"go-deploy/models/version"
-	"go-deploy/pkg/imp/cloudstack"
 	"go-deploy/pkg/imp/kubevirt/kubevirt"
 	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems/rancher"
@@ -13,7 +12,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"os"
-	"regexp"
 	"strings"
 	"time"
 )
@@ -135,22 +133,6 @@ func setupK8sClusters() error {
 				Config.Zones[idx].K8s.Client = k8sClient
 				Config.Zones[idx].K8s.KubeVirtClient = kubevirtClient
 			}
-		case "cloudstack":
-			{
-				var zoneConfig config.CloudStackConfigSource
-				err := mapstructure.Decode(sourceType, &zoneConfig)
-				if err != nil {
-					return makeError(fmt.Errorf("failed to parse cloudstack config source for zone %s. details: %w", zone.Name, err))
-				}
-
-				k8sClient, kubevirtClient, err := createClientFromCloudStackConfig(zone.Name, &zoneConfig)
-				if err != nil {
-					return makeError(err)
-				}
-
-				Config.Zones[idx].K8s.Client = k8sClient
-				Config.Zones[idx].K8s.KubeVirtClient = kubevirtClient
-			}
 		}
 	}
 
@@ -221,50 +203,6 @@ func createClientFromRancherConfig(zoneName string, config *config.RancherConfig
 	}
 
 	return createK8sClients(kubeConfig)
-}
-
-// createClientFromCloudStackConfig creates a k8s client from a cloudstack config.
-func createClientFromCloudStackConfig(name string, config *config.CloudStackConfigSource) (*kubernetes.Clientset, *kubevirt.Clientset, error) {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to create k8s client from cloudstack config. details: %w", err)
-	}
-
-	csClient := cloudstack.NewAsyncClient(
-		Config.CS.URL,
-		Config.CS.ApiKey,
-		Config.CS.Secret,
-		true,
-	)
-
-	listClusterParams := csClient.Kubernetes.NewListKubernetesClustersParams()
-	listClusterParams.SetListall(true)
-	listClusterParams.SetId(config.ClusterID)
-	clusters, err := csClient.Kubernetes.ListKubernetesClusters(listClusterParams)
-	if err != nil {
-		return nil, nil, makeError(err)
-	}
-
-	if len(clusters.KubernetesClusters) == 0 {
-		return nil, nil, makeError(fmt.Errorf("cluster with name %s not found", name))
-	}
-
-	if len(clusters.KubernetesClusters) > 1 {
-		return nil, nil, makeError(fmt.Errorf("multiple clusters found for name %s", name))
-	}
-
-	params := csClient.Kubernetes.NewGetKubernetesClusterConfigParams()
-	params.SetId(clusters.KubernetesClusters[0].Id)
-
-	clusterConfig, err := csClient.Kubernetes.GetKubernetesClusterConfig(params)
-	if err != nil {
-		return nil, nil, makeError(err)
-	}
-
-	// use regex to replace the private ip in config.ConfigData 172.31.1.* with the public ip
-	regex := regexp.MustCompile(`https://172.[0-9]+.[0-9]+.[0-9]+:6443`)
-	clusterConfig.Configdata = regex.ReplaceAllString(clusterConfig.Configdata, config.ExternalURL)
-
-	return createK8sClients([]byte(clusterConfig.Configdata))
 }
 
 // createK8sClients creates a k8s client from config data.

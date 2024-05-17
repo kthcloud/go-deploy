@@ -1,16 +1,8 @@
 package model
 
 import (
-	csModels "go-deploy/pkg/subsystems/cs/models"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 )
-
-// VmCS is only used in V1
-type VmCS struct {
-	VM                    csModels.VmPublic                            `bson:"vm"`
-	PortForwardingRuleMap map[string]csModels.PortForwardingRulePublic `bson:"portForwardingRuleMap,omitempty"`
-	SnapshotMap           map[string]csModels.SnapshotPublic           `bson:"snapshotMap,omitempty"`
-}
 
 type VmK8s struct {
 	Namespace        k8sModels.NamespacePublic                `bson:"namespace"`
@@ -232,64 +224,4 @@ func (k8s *VmK8s) GetVmSnapshotByID(id string) *k8sModels.VmSnapshotPublic {
 	}
 
 	return nil
-}
-
-func (cs *VmCS) GetPortForwardingRuleMap() map[string]csModels.PortForwardingRulePublic {
-	if cs.PortForwardingRuleMap == nil {
-		cs.PortForwardingRuleMap = make(map[string]csModels.PortForwardingRulePublic)
-	}
-
-	return cs.PortForwardingRuleMap
-}
-
-func (cs *VmCS) GetSnapshotMap() map[string]csModels.SnapshotPublic {
-	if cs.SnapshotMap == nil {
-		cs.SnapshotMap = make(map[string]csModels.SnapshotPublic)
-	}
-
-	return cs.SnapshotMap
-}
-
-func (cs *VmCS) GetPortForwardingRule(name string) *csModels.PortForwardingRulePublic {
-	resource, ok := cs.GetPortForwardingRuleMap()[name]
-	if !ok {
-		return nil
-	}
-
-	return &resource
-}
-
-func (cs *VmCS) GetSnapshotByID(id string) *csModels.SnapshotPublic {
-	resource, ok := cs.GetSnapshotMap()[id]
-	if !ok {
-		return nil
-	}
-
-	return &resource
-}
-
-func (cs *VmCS) GetSnapshotByName(name string) *csModels.SnapshotPublic {
-	for _, resource := range cs.GetSnapshotMap() {
-		if resource.Name == name {
-			return &resource
-		}
-	}
-
-	return nil
-}
-
-func (cs *VmCS) SetSnapshot(name string, resource csModels.SnapshotPublic) {
-	cs.GetSnapshotMap()[name] = resource
-}
-
-func (cs *VmCS) SetPortForwardingRule(name string, resource csModels.PortForwardingRulePublic) {
-	cs.GetPortForwardingRuleMap()[name] = resource
-}
-
-func (cs *VmCS) DeleteSnapshot(name string) {
-	delete(cs.GetSnapshotMap(), name)
-}
-
-func (cs *VmCS) DeletePortForwardingRule(name string) {
-	delete(cs.GetPortForwardingRuleMap(), name)
 }

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"go-deploy/models/model"
 	"go-deploy/pkg/config"
-	"go-deploy/pkg/db/resources/gpu_repo"
 	"go-deploy/pkg/db/resources/vm_port_repo"
 	"net"
 )
@@ -130,23 +129,6 @@ func k8sDeletedSM(sm *model.SM) (bool, error) {
 	return !k8s.Namespace.Created(), nil
 }
 
-// csDeleted checks if the CS setup for the given VM is deleted.
-func csDeleted(vm *model.VM) (bool, error) {
-	cs := &vm.Subsystems.CS
-
-	for _, rule := range cs.PortForwardingRuleMap {
-		if rule.Created() {
-			return false, nil
-		}
-	}
-
-	if cs.VM.Created() {
-		return false, nil
-	}
-
-	return true, nil
-}
-
 // k8sDeleted checks if the K8s setup for the given VM is deleted.
 func k8sDeletedVM(vm *model.VM) (bool, error) {
 	k8s := &vm.Subsystems.K8s
@@ -180,16 +162,6 @@ func k8sDeletedVM(vm *model.VM) (bool, error) {
 	}
 
 	return !k8s.Namespace.Created(), nil
-}
-
-// gpuCleared checks if the GPU setup for the given VM is cleared.
-func gpuCleared(vm *model.VM) (bool, error) {
-	exists, err := gpu_repo.New().WithVM(vm.ID).ExistsAny()
-	if err != nil {
-		return false, err
-	}
-
-	return !exists, nil
 }
 
 // portsCleared checks if the ports setup for the given VM is cleared.

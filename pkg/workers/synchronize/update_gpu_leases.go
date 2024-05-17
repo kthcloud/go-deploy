@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func gpuLeaseSynchronizer() error {
+func GpuLeaseSynchronizer() error {
 	gpuGroups, err := gpu_group_repo.New().List()
 	if err != nil {
 		return err

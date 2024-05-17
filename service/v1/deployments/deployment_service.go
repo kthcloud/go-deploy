@@ -24,12 +24,11 @@ import (
 
 // Get gets an existing deployment.
 //
-// It can be fetched in multiple ways including ID, name, transfer code, and Harbor webhook.
-// It supports service.AuthInfo, and will restrict the result to ensure the user has access to the model.
+// It can be fetched in multiple ways including ID, transfer code, and Harbor webhook.
 func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.Deployment, error) {
 	o := sUtils.GetFirstOrDefault(opts)
 
-	dmc := deployment_repo.New()
+	drc := deployment_repo.New()
 
 	if o.MigrationCode != nil {
 		rmc := resource_migration_repo.New().
@@ -46,7 +45,7 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.Deployment, error)
 			return nil, nil
 		}
 
-		return c.Deployment(migration.ResourceID, dmc)
+		return c.Deployment(migration.ResourceID, drc)
 	}
 
 	var effectiveUserID string
@@ -68,26 +67,65 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.Deployment, error)
 	}
 
 	if !teamCheck && effectiveUserID != "" {
-		dmc.WithOwner(effectiveUserID)
+		drc.WithOwner(effectiveUserID)
 	}
 
 	if o.HarborWebhook != nil {
-		return dmc.GetByName(o.HarborWebhook.EventData.Repository.Name)
+		return drc.GetByName(o.HarborWebhook.EventData.Repository.Name)
 	}
 
-	return c.Deployment(id, dmc)
+	deployment, err := c.Deployment(id, drc)
+	if err != nil {
+		return nil, err
+	}
+
+	if deployment == nil {
+		return nil, nil
+	}
+
+	c.markAccessedIfOwner(deployment, drc)
+
+	return deployment, nil
+}
+
+// GetByName gets an existing deployment by name.
+// This does not support shared deployments.
+func (c *Client) GetByName(name string, opts ...opts.GetOpts) (*model.Deployment, error) {
+	_ = sUtils.GetFirstOrDefault(opts)
+
+	drc := deployment_repo.New()
+
+	var effectiveUserID string
+	if c.V1.Auth() != nil && !c.V1.Auth().User.IsAdmin {
+		effectiveUserID = c.V1.Auth().User.ID
+	}
+
+	if effectiveUserID != "" {
+		drc.WithOwner(effectiveUserID)
+	}
+
+	deployment, err := drc.GetByName(name)
+	if err != nil {
+		return nil, err
+	}
+
+	if deployment == nil {
+		return nil, nil
+	}
+
+	c.markAccessedIfOwner(deployment, drc)
+
+	return deployment, nil
 }
 
 // List lists existing deployments.
-//
-// It supports service.AuthInfo, and will restrict the result to ensure the user has access to the model.
 func (c *Client) List(opts ...opts.ListOpts) ([]model.Deployment, error) {
 	o := sUtils.GetFirstOrDefault(opts)
 
-	dmc := deployment_repo.New()
+	drc := deployment_repo.New()
 
 	if o.Pagination != nil {
-		dmc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
+		drc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
 	}
 
 	var effectiveUserID string
@@ -107,18 +145,18 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.Deployment, error) {
 	}
 
 	if effectiveUserID != "" {
-		dmc.WithOwner(effectiveUserID)
+		drc.WithOwner(effectiveUserID)
 	}
 
-	resources, err := c.Deployments(dmc)
+	deployments, err := c.Deployments(drc)
 	if err != nil {
 		return nil, err
 	}
 
 	// Can only view shared if we are listing resources for a specific user
 	if o.Shared && effectiveUserID != "" {
-		skipIDs := make([]string, len(resources))
-		for i, resource := range resources {
+		skipIDs := make([]string, len(deployments))
+		for i, resource := range deployments {
 			skipIDs[i] = resource.ID
 		}
 
@@ -156,35 +194,37 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.Deployment, error) {
 				}
 
 				if deployment != nil {
-					resources = append(resources, *deployment)
+					deployments = append(deployments, *deployment)
 				}
 			}
 		}
 
-		sort.Slice(resources, func(i, j int) bool {
-			return resources[i].CreatedAt.After(resources[j].CreatedAt)
+		sort.Slice(deployments, func(i, j int) bool {
+			return deployments[i].CreatedAt.After(deployments[j].CreatedAt)
 		})
 
 		// Since we fetched from two collections, we need to do pagination manually
 		if o.Pagination != nil {
-			resources = utils.GetPage(resources, o.Pagination.PageSize, o.Pagination.Page)
+			deployments = utils.GetPage(deployments, o.Pagination.PageSize, o.Pagination.Page)
 		}
 
 	} else {
 		// Sort by createdAt
-		sort.Slice(resources, func(i, j int) bool {
-			return resources[i].CreatedAt.After(resources[j].CreatedAt)
+		sort.Slice(deployments, func(i, j int) bool {
+			return deployments[i].CreatedAt.After(deployments[j].CreatedAt)
 		})
 	}
 
-	return resources, nil
+	for _, deployment := range deployments {
+		c.markAccessedIfOwner(&deployment, drc)
+	}
+
+	return deployments, nil
 }
 
 // Create creates a new deployment.
 //
 // It returns an error if the deployment already exists (name clash).
-//
-// If GitHub is requested, it will also manually trigger a build to the latest commit.
 func (c *Client) Create(id, ownerID string, deploymentCreate *body.DeploymentCreate) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to create deployment. details: %w", err)
@@ -255,7 +295,7 @@ func (c *Client) Update(id string, dtoUpdate *body.DeploymentUpdate) error {
 		return fmt.Errorf("failed to update deployment. details: %w", err)
 	}
 
-	d, err := c.Deployment(id, nil)
+	d, err := c.Get(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -321,7 +361,7 @@ func (c *Client) UpdateOwner(id string, params *model.DeploymentUpdateOwnerParam
 		return fmt.Errorf("failed to update deployment owner. details: %w", err)
 	}
 
-	d, err := c.Deployment(id, nil)
+	d, err := c.Get(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -377,7 +417,7 @@ func (c *Client) Delete(id string) error {
 		return fmt.Errorf("failed to delete deployment. details: %w", err)
 	}
 
-	d, err := c.Deployment(id, nil)
+	d, err := c.Get(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -418,7 +458,7 @@ func (c *Client) Repair(id string) error {
 		return fmt.Errorf("failed to repair deployment %s. details: %w", id, err)
 	}
 
-	d, err := c.Deployment(id, nil)
+	d, err := c.Get(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -461,7 +501,7 @@ func (c *Client) Restart(id string) error {
 		return fmt.Errorf("failed to restart deployment. details: %w", err)
 	}
 
-	d, err := c.Deployment(id, nil)
+	d, err := c.Get(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -556,50 +596,78 @@ func (c *Client) CheckQuota(id string, opts *opts.QuotaOptions) error {
 	quota := c.V1.Auth().GetEffectiveRole().Quotas
 
 	if opts.Create != nil {
-		cpuCores := usage.CpuCores
-		if opts.Create.CpuCores != nil {
-			cpuCores += *opts.Create.CpuCores
+		var replicas int
+		var cpu float64
+		var ram float64
+
+		if opts.Create.Replicas != nil {
+			replicas = *opts.Create.Replicas
 		} else {
-			cpuCores += config.Config.Deployment.Resources.Limits.CPU
-		}
-		ram := usage.RAM
-		if opts.Create.RAM != nil {
-			ram += *opts.Create.RAM
-		} else {
-			ram += config.Config.Deployment.Resources.Limits.RAM
+			replicas = 1
 		}
 
-		if cpuCores > quota.CpuCores {
-			return sErrors.NewQuotaExceededError(fmt.Sprintf("CPU quota exceeded. Current: %.2f, Quota: %.2f", cpuCores, quota.CpuCores))
+		if opts.Create.CpuCores != nil {
+			cpu = usage.CpuCores + *opts.Create.CpuCores*float64(replicas)
+		} else {
+			cpu = usage.CpuCores + config.Config.Deployment.Resources.Limits.CPU*float64(replicas)
+		}
+
+		if opts.Create.RAM != nil {
+			ram = usage.RAM + *opts.Create.RAM*float64(replicas)
+		} else {
+			ram = usage.RAM + config.Config.Deployment.Resources.Limits.RAM*float64(replicas)
+		}
+
+		if cpu > quota.CpuCores {
+			return sErrors.NewQuotaExceededError(fmt.Sprintf("CPU quota exceeded. Current: %.1f, Quota: %.1f", cpu, quota.CpuCores))
 		}
 
 		if ram > quota.RAM {
-			return sErrors.NewQuotaExceededError(fmt.Sprintf("RAM quota exceeded. Current: %.2f, Quota: %.2f", ram, quota.RAM))
+			return sErrors.NewQuotaExceededError(fmt.Sprintf("RAM quota exceeded. Current: %.1f, Quota: %.1f", ram, quota.RAM))
 		}
 
 		return nil
 	} else if opts.Update != nil {
-		d, err := c.Deployment(id, nil)
+		deployment, err := c.Get(id)
 		if err != nil {
 			return makeError(err)
 		}
 
-		if d == nil {
+		if deployment == nil {
 			return sErrors.DeploymentNotFoundErr
 		}
 
+		replicasBefore := deployment.GetMainApp().Replicas
+		cpuBefore := deployment.GetMainApp().CpuCores * float64(replicasBefore)
+		ramBefore := deployment.GetMainApp().RAM * float64(replicasBefore)
+
+		var replicasAfter int
+		var cpuAfter float64
+		var ramAfter float64
+
+		if opts.Update.Replicas != nil {
+			replicasAfter = *opts.Update.Replicas
+		} else {
+			replicasAfter = replicasBefore
+		}
+
 		if opts.Update.CpuCores != nil {
-			cpuCores := usage.CpuCores - d.GetMainApp().CpuCores + *opts.Update.CpuCores
-			if cpuCores > quota.CpuCores {
-				return sErrors.NewQuotaExceededError(fmt.Sprintf("CPU quota exceeded. Current: %.2f, Quota: %.2f", cpuCores, quota.CpuCores))
-			}
+			cpuAfter = usage.CpuCores + *opts.Update.CpuCores*float64(replicasAfter) - cpuBefore
+		} else {
+			cpuAfter = usage.CpuCores + deployment.GetMainApp().CpuCores*float64(replicasAfter) - cpuBefore
 		}
 
 		if opts.Update.RAM != nil {
-			ram := usage.RAM - d.GetMainApp().RAM + *opts.Update.RAM
-			if ram > quota.RAM {
-				return sErrors.NewQuotaExceededError(fmt.Sprintf("RAM quota exceeded. Current: %.2f, Quota: %.2f", ram, quota.RAM))
-			}
+			ramAfter = usage.RAM + *opts.Update.RAM*float64(replicasAfter) - ramBefore
+		} else {
+			ramAfter = usage.RAM + deployment.GetMainApp().RAM*float64(replicasAfter) - ramBefore
+		}
+
+		if cpuAfter > quota.CpuCores {
+			return sErrors.NewQuotaExceededError(fmt.Sprintf("CPU quota exceeded. Current: %.1f, Quota: %.1f", cpuAfter, quota.CpuCores))
+		}
+		if ramAfter > quota.RAM {
+			return sErrors.NewQuotaExceededError(fmt.Sprintf("RAM quota exceeded. Current: %.1f, Quota: %.1f", ramAfter, quota.RAM))
 		}
 
 		return nil
@@ -676,6 +744,13 @@ func (c *Client) NameAvailable(name string) (bool, error) {
 	}
 
 	return !exists, nil
+}
+
+// markAccessedIfOwner marks a deployment as accessed if the request is from the owner.
+func (c *Client) markAccessedIfOwner(deployment *model.Deployment, drc *deployment_repo.Client) {
+	if c.V1.HasAuth() && c.V1.Auth().User.ID == deployment.OwnerID {
+		_ = drc.MarkAccessed(deployment.ID)
+	}
 }
 
 // createImagePath creates a complete container image path that can be pulled from.

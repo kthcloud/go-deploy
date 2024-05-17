@@ -17,9 +17,8 @@ require (
 	github.com/go-openapi/validate v0.22.4
 	github.com/go-playground/validator/v10 v10.19.0
 	github.com/golang/glog v1.0.0
-	github.com/golang/mock v1.6.0
 	github.com/google/go-cmp v0.6.0
-	github.com/google/uuid v1.4.0
+	github.com/google/uuid v1.6.0
 	github.com/helloyi/go-sshclient v1.2.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible

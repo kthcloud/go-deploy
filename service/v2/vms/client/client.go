@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"go-deploy/models/model"
 	"go-deploy/models/version"
-	"go-deploy/pkg/db/resources/gpu_lease_repo"
-	"go-deploy/pkg/db/resources/gpu_repo"
 	"go-deploy/pkg/db/resources/vm_repo"
 	"go-deploy/service/core"
 )
@@ -49,35 +47,6 @@ func (c *BaseClient[parent]) VM(id string, vmc *vm_repo.Client) (*model.VM, erro
 func (c *BaseClient[parent]) VMs(vmc *vm_repo.Client) ([]model.VM, error) {
 	// Right now we don't have a way to skip fetching when requesting a list of resources
 	return c.fetchVMs(vmc)
-}
-
-// GPU returns the GPU with the given ID.
-// After a successful fetch, the GPU will be cached.
-func (c *BaseClient[parent]) GPU(id string, gmc *gpu_repo.Client) (*model.GPU, error) {
-	gpu := c.Cache.GetGPU(id)
-	if gpu == nil {
-		return c.fetchGPU(id, gmc)
-	}
-
-	return gpu, nil
-}
-
-// GPUs returns a list of GPUs.
-// After a successful fetch, the GPUs will be cached.
-func (c *BaseClient[parent]) GPUs(gmc *gpu_repo.Client) ([]model.GPU, error) {
-	// Right now we don't have a way to skip fetching when requesting a list of resources
-	return c.fetchGPUs(gmc)
-}
-
-// GpuLease returns the GPU lease with the given ID.
-// After a successful fetch, the GPU lease will be cached.
-func (c *BaseClient[parent]) GpuLease(id string, glc *gpu_lease_repo.Client) (*model.GpuLease, error) {
-	gpuLease := c.Cache.GetGpuLease(id)
-	if gpuLease == nil {
-		return c.fetchGpuLease(id, glc)
-	}
-
-	return gpuLease, nil
 }
 
 // Refresh refreshes the VM with the given ID.
@@ -142,98 +111,4 @@ func (c *BaseClient[parent]) fetchVMs(vmc *vm_repo.Client) ([]model.VM, error) {
 	}
 
 	return vms, nil
-}
-
-// fetchGPU fetches a GPU by ID.
-// After a successful fetch, the GPU will be cached.
-func (c *BaseClient[parent]) fetchGPU(id string, gmc *gpu_repo.Client) (*model.GPU, error) {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to fetch gpu in service client: %w", err)
-	}
-
-	if gmc == nil {
-		gmc = gpu_repo.New()
-	}
-
-	gpu, err := gmc.GetByID(id)
-	if err != nil {
-		return nil, makeError(err)
-	}
-
-	if gpu == nil {
-		return nil, nil
-	}
-
-	c.Cache.StoreGPU(gpu)
-	return gpu, nil
-}
-
-// fetchGPUs fetches all GPUs according to the given gmc.
-// After a successful fetch, the GPUs will be cached.
-func (c *BaseClient[parent]) fetchGPUs(gmc *gpu_repo.Client) ([]model.GPU, error) {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to fetch gpus in service client: %w", err)
-	}
-
-	if gmc == nil {
-		gmc = gpu_repo.New()
-	}
-
-	gpus, err := gmc.List()
-	if err != nil {
-		return nil, makeError(err)
-	}
-
-	for _, gpu := range gpus {
-		c.Cache.StoreGPU(&gpu)
-	}
-
-	return gpus, nil
-}
-
-// fetchGpuLease fetches a GPU lease by ID.
-// After a successful fetch, the GPU lease will be cached.
-func (c *BaseClient[parent]) fetchGpuLease(id string, glc *gpu_lease_repo.Client) (*model.GpuLease, error) {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to fetch gpu lease in service client: %w", err)
-	}
-
-	if glc == nil {
-		glc = gpu_lease_repo.New()
-	}
-
-	gpuLease, err := glc.GetByID(id)
-	if err != nil {
-		return nil, makeError(err)
-	}
-
-	if gpuLease == nil {
-		return nil, nil
-	}
-
-	c.Cache.StoreGpuLease(gpuLease)
-	return gpuLease, nil
-}
-
-// fetchGpuLeases fetches all GPU leases according to the given glc.
-// After a successful fetch, the GPU leases will be cached.
-func (c *BaseClient[parent]) fetchGpuLeases(glc *gpu_lease_repo.Client) ([]model.GpuLease, error) {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to fetch gpu leases in service client: %w", err)
-	}
-
-	if glc == nil {
-		glc = gpu_lease_repo.New()
-	}
-
-	gpuLeases, err := glc.List()
-	if err != nil {
-		return nil, makeError(err)
-	}
-
-	for _, gpuLease := range gpuLeases {
-		c.Cache.StoreGpuLease(&gpuLease)
-	}
-
-	return gpuLeases, nil
 }

@@ -65,7 +65,18 @@ func (client *Client) CreateProject(public *models.ProjectPublic) (*models.Proje
 		return nil, makeError(err)
 	}
 
-	return client.ReadProject(public.ID)
+	project, err = client.HarborClient.V2().Project.GetProject(context.TODO(), &projectModels.GetProjectParams{
+		ProjectNameOrID: public.Name,
+	})
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	if project == nil {
+		return nil, makeError(fmt.Errorf("project not found after creation"))
+	}
+
+	return models.CreateProjectPublicFromGet(project.Payload), nil
 }
 
 // UpdateProject updates a project in Harbor.

@@ -26,7 +26,6 @@ type VMs interface {
 	DoAction(id string, action *body.VmActionCreate) error
 
 	Snapshots() Snapshots
-	GPUs() GPUs
 	GpuLeases() GpuLeases
 	GpuGroups() GpuGroups
 

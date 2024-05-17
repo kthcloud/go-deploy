@@ -1,6 +1,8 @@
 package body
 
-import "time"
+import (
+	"time"
+)
 
 type DeploymentRead struct {
 	ID      string `json:"id"`
@@ -13,6 +15,7 @@ type DeploymentRead struct {
 	UpdatedAt   *time.Time `json:"updatedAt,omitempty"`
 	RepairedAt  *time.Time `json:"repairedAt,omitempty"`
 	RestartedAt *time.Time `json:"restartedAt,omitempty"`
+	AccessedAt  time.Time  `json:"accessedAt"`
 
 	CpuCores float64 `json:"cpuCores"`
 	RAM      float64 `json:"ram"`
