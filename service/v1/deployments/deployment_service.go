@@ -579,26 +579,40 @@ func (c *Client) CheckQuota(id string, opts *opts.QuotaOptions) error {
 
 		return nil
 	} else if opts.Update != nil {
-		d, err := c.Deployment(id, nil)
+		deployment, err := c.Get(id)
 		if err != nil {
 			return makeError(err)
 		}
 
-		if d == nil {
+		if deployment == nil {
 			return sErrors.DeploymentNotFoundErr
 		}
 
+		replicasBefore := deployment.GetMainApp().Replicas
+		var replicasAfter int
+		if opts.Update.Replicas != nil {
+			replicasAfter = *opts.Update.Replicas
+		} else {
+			replicasAfter = replicasBefore
+		}
+
 		if opts.Update.CpuCores != nil {
-			cpuCores := usage.CpuCores - d.GetMainApp().CpuCores + *opts.Update.CpuCores
+			beforeUpdate := usage.CpuCores * float64(replicasBefore)
+			afterUpdate := *opts.Update.CpuCores * float64(replicasAfter)
+
+			cpuCores := afterUpdate - beforeUpdate
 			if cpuCores > quota.CpuCores {
-				return sErrors.NewQuotaExceededError(fmt.Sprintf("CPU quota exceeded. Current: %.2f, Quota: %.2f", cpuCores, quota.CpuCores))
+				return sErrors.NewQuotaExceededError(fmt.Sprintf("CPU quota exceeded. Current: %.1f, Quota: %.1f", cpuCores, quota.CpuCores))
 			}
 		}
 
 		if opts.Update.RAM != nil {
-			ram := usage.RAM - d.GetMainApp().RAM + *opts.Update.RAM
+			beforeUpdate := usage.RAM * float64(replicasBefore)
+			afterUpdate := *opts.Update.RAM * float64(replicasAfter)
+
+			ram := afterUpdate - beforeUpdate
 			if ram > quota.RAM {
-				return sErrors.NewQuotaExceededError(fmt.Sprintf("RAM quota exceeded. Current: %.2f, Quota: %.2f", ram, quota.RAM))
+				return sErrors.NewQuotaExceededError(fmt.Sprintf("RAM quota exceeded. Current: %.1f, Quota: %.1f", ram, quota.RAM))
 			}
 		}
 

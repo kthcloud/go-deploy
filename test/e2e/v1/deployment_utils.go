@@ -195,9 +195,9 @@ func WithDeployment(t *testing.T, requestBody body.DeploymentCreate, userID ...s
 	return deploymentRead, deploymentCreated.JobID
 }
 
-func WithAssumedFailedDeployment(t *testing.T, requestBody body.DeploymentCreate) {
-	resp := e2e.DoPostRequest(t, DeploymentsPath, requestBody)
-	if resp.StatusCode == http.StatusBadRequest {
+func WithAssumedFailedDeployment(t *testing.T, requestBody body.DeploymentCreate, userID ...string) {
+	resp := e2e.DoPostRequest(t, DeploymentsPath, requestBody, userID...)
+	if e2e.IsUserError(resp.StatusCode) {
 		return
 	}
 
@@ -217,13 +217,9 @@ func CleanUpDeployment(t *testing.T, id string) {
 	}
 
 	if resp.StatusCode == http.StatusOK {
-		var vmDeleted body.VmDeleted
-		err := e2e.ReadResponseBody(t, resp, &vmDeleted)
-		assert.NoError(t, err, "deleted body was not read")
-		assert.Equal(t, id, vmDeleted.ID)
-
-		WaitForJobFinished(t, vmDeleted.JobID, nil)
-		WaitForDeploymentDeleted(t, vmDeleted.ID, nil)
+		deploymentDeleted := e2e.MustParse[body.DeploymentDeleted](t, resp)
+		WaitForJobFinished(t, deploymentDeleted.JobID, nil)
+		WaitForDeploymentDeleted(t, deploymentDeleted.ID, nil)
 
 		return
 	}
