@@ -1,6 +1,6 @@
 {
     "name": "@kthcloud/go-deploy-types",
-    "version": "1.0.10",
+    "version": "1.0.11",
     "description": "Types for the go-deploy API of kthcloud",
     "main": "index.ts",
     "repository": {
