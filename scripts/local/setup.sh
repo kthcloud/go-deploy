@@ -22,6 +22,12 @@ function check_dependencies() {
     exit 1
   fi
 
+  # Check if kind is installed, if not exit
+  if ! [ -x "$(command -v kind)" ]; then
+    echo -e "$RED_CROSS kind is not installed. Please install kind"
+    exit 1
+  fi
+
   # Check if dnsmasq is installed, if not exit
   if ! [ -x "$(command -v dnsmasq)" ]; then
     echo -e "$RED_CROSS dnsmasq is not installed. Please install dnsmasq"
@@ -285,11 +291,12 @@ function install_harbor() {
     harbor_values_subst=$(mktemp)
     envsubst < ./helmvalues/harbor.values.yml > $harbor_values_subst
 
-    helm install harbor harbor \
-      --repo https://helm.goharbor.io \
+    helm repo add harbor https://helm.goharbor.io
+    helm install harbor harbor/harbor \
       --namespace harbor \
       --create-namespace \
-      --values - < $harbor_values_subst
+      --version v1.14.2 \
+      --values $harbor_values_subst
 
     # Allow namespace to be created
     sleep 5

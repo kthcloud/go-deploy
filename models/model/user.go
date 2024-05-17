@@ -52,7 +52,7 @@ type UserData struct {
 type UserUsage struct {
 	CpuCores  float64 `bson:"cpuCores"`
 	RAM       float64 `bson:"ram"`
-	DiskSize  float64 `bson:"diskSize"`
+	DiskSize  int     `bson:"diskSize"`
 	Snapshots int     `bson:"snapshots"`
 }
 

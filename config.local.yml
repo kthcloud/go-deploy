@@ -1,4 +1,4 @@
-externalUrl: deploy.localhost:30291
+externalUrl: deploy.localhost:32275
 port: 8080
 mode: dev
 
@@ -37,22 +37,22 @@ zones:
     - deployment
     - vm
   domains:
-    parentDeployment: app.deploy.localhost:30291
-    parentSm: storage.deploy.localhost:30291
-    parentVm: vm.deploy.localhost:30291
-    parentVmApp: vm-app.deploy.localhost:30291
+    parentDeployment: app.deploy.localhost:32275
+    parentSm: storage.deploy.localhost:32275
+    parentVm: vm.deploy.localhost:32275
+    parentVmApp: vm-app.deploy.localhost:32275
   storage:
     nfsServer: 10.96.200.2
     paths:
       parentDeployment: /nfs/deployments
   portRange:
-    start: 30083
-    end: 30108
+    start: 31401
+    end: 31426
 
 registry:
-  url: localhost:30722
-  placeholderImage: localhost:30722/library/go-deploy-placeholder
-  vmHttpProxyImage: localhost:30722/library/go-deploy-placeholder
+  url: localhost:31276
+  placeholderImage: localhost:31276/library/go-deploy-placeholder
+  vmHttpProxyImage: localhost:31276/library/go-deploy-placeholder
 
 gpu:
   privilegedGpus:
@@ -81,7 +81,7 @@ deployment:
 
 vm:
   defaultZone: local
-  adminSshPublicKey: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC3ktpoOPJP6v79i3IyY2+vd5julRDLBrMLpCAe8d4UDH09BN9PLYRAeYbox1UcHH3G+qWuf6iIY5/oxhsZlEmCbJE1wr3rVHvutuP17mcXcdVdJlQ7QOsTqI9rUTFm8XUB83CGIC36rxada3q7ndr/RhpwUtVghYK8AT57NjUjR5PI6TayKBIqlxgzamPJPcklCWoFhMzMm/8C15J1FJTejBeLuLeC6y+jtlxUGO7WDsLRS68uzpGGiS9exDkABrnb7jSU8o6rzQpIJnipIoM75530MV3Lp7sxNEgp8psaETdyPorfPv7u1nCcQV9B3RhH3SLGqzcepwt9zXixxcniVokAYvHLzpxcRg6bSoqWvJHM97fe8hDwa36Jck6hdfSGDxVon49E1qfG4FB4JYwwX2ehnuc3zW/bP+VuwFC+Fr/9zJMXiSGKSnIQKrMWqWbUse3r7kzUCLJ3PACCjGRR74LmhPODzPv3Zc5sz5cGFzOR2bNgUEUB1NK0Cw7GaO8= emil@home
+  adminSshPublicKey: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC3ktpoOPJP6v79i3IyY2+vd5julRDLBrMLpCAe8d4UDH09BN9PLYRAeYbox1UcHH3G+qWuf6iIY5/oxhsZlEmCbJE1wr3rVHvutuP17mcXcdVdJlQ7QOsTqI9rUTFm8XUB83CGIC36rxada3q7ndr/RhpwUtVghYK8AT57NjUjR5PI6TayKBIqlxgzamPJPcklCWoFhMzMm/8C15J1FJTejBeLuLeC6y+jtlxUGO7WDsLRS68uzpGGiS9exDkABrnb7jSU8o6rzQpIJnipIoM75530MV3Lp7sxNEgp8psaETdyPorfPv7u1nCcQV9B3RhH3SLGqzcepwt9zXixxcniVokAYvHLzpxcRg6bSoqWvJHM97fe8hDwa36Jck6hdfSGDxVon49E1qfG4FB4JYwwX2ehnuc3zW/bP+VuwFC+Fr/9zJMXiSGKSnIQKrMWqWbUse3r7kzUCLJ3PACCjGRR74LmhPODzPv3Zc5sz5cGFzOR2bNgUEUB1NK0Cw7GaO8= emil@thinkpad
   image: https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
 
 roles:
@@ -132,19 +132,19 @@ roles:
       gpuLeaseDuration: 168
 
 keycloak:
-  url: http://keycloak.deploy.localhost:31133
+  url: http://keycloak.deploy.localhost:31125
   realm: master
   adminGroup: admin
   storageClient:
     clientId: go-deploy-storage
-    clientSecret: I6qfVJPv2NBkpStihOYO6SOS8mh8VKSU
+    clientSecret: THjQn1Ck7BwwqjjoucuSlyd95e6obGYZ
 
 mongodb:
-  url: mongodb://admin:admin@localhost:31961
+  url: mongodb://admin:admin@localhost:31536
   name: deploy
 
 redis:
-  url: localhost:31871
+  url: localhost:30702
   password: 
 
 sys-api:
@@ -155,7 +155,7 @@ sys-api:
   useMock: true
 
 harbor:
-  url: http://harbor.deploy.localhost:30722
+  url: http://harbor.deploy.localhost:31276
   user: admin
   password: Harbor12345
   webhookSecret: secret
