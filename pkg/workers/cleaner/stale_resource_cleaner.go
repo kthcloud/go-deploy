@@ -7,6 +7,7 @@ import (
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/db/resources/deployment_repo"
 	"go-deploy/pkg/db/resources/vm_repo"
+	"go-deploy/pkg/log"
 	"go-deploy/service"
 	"time"
 )
@@ -23,6 +24,8 @@ func staleResourceCleaner() error {
 		if deployment.GetMainApp().Replicas == 0 {
 			continue
 		}
+
+		log.Printf("Disabling deployment %s due to inactivity", deployment.ID)
 
 		// Set its replicas to 0
 		replicas := 0
@@ -43,6 +46,8 @@ func staleResourceCleaner() error {
 		if vm.Subsystems.K8s.GetVM(vm.Name).Running == false {
 			continue
 		}
+
+		log.Printf("Disabling VM %s due to inactivity", vm.Name)
 
 		// Stop the VM
 		err = service.V2().VMs().DoAction(vm.ID, &bodyV2.VmActionCreate{
