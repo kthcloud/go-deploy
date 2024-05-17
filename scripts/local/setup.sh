@@ -95,7 +95,6 @@ export nfs_base_path="/nfs"
 export nfs_cluster_ip="10.96.200.2"
 
 # IAM configuration
-export keycloak_deploy_secret=
 export keycloak_deploy_storage_secret=
 
 # Ports configuration
@@ -413,7 +412,7 @@ function install_keycloak() {
       "clientId":"go-deploy",
       "name":"go-deploy",
       "description":"go-deploy",
-      "publicClient":false,
+      "publicClient":true,
       "authorizationServicesEnabled":false,
       "serviceAccountsEnabled":true,
       "implicitFlowEnabled":false,
@@ -432,14 +431,6 @@ function install_keycloak() {
       -H "Authorization: Bearer $token" \
       -X POST http://keycloak.$domain:$keycloak_port/admin/realms/master/clients -d "$payload"
   fi
-
-  # Fetch created client's secret
-  keycloak_deploy_secret=$(curl -s \
-    -H "Content-Type: application/json" \
-    -H "Accept: application/json" \
-    -H "Authorization: Bearer $token" \
-    -X GET http://keycloak.$domain:$keycloak_port/admin/realms/master/clients?clientId=go-deploy \
-    | jq -r '.[0].secret')
 
   # Check if go-deploy-storage client exists, if not create it
   local check_exists=$(curl -s \
@@ -541,9 +532,51 @@ function install_keycloak() {
       -X PUT http://keycloak.$domain:$keycloak_port/admin/realms/master/users/$user_id/groups/$group_id
   done
 
-  # Write keycloak_deploy_secret and keycloak_deploy_storage_secret to cluster-config.rc
+  # Add "groups" protocol mapper to clients
+
+  local deploy_client_id=$(curl -s \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json" \
+    -H "Authorization: Bearer $token" \
+    -X GET http://keycloak.$domain:$keycloak_port/admin/realms/master/clients?clientId=go-deploy \
+    | jq -r '.[0].id')
+
+  local deploy_storage_client_id=$(curl -s \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json" \
+    -H "Authorization: Bearer $token" \
+    -X GET http://keycloak.$domain:$keycloak_port/admin/realms/master/clients?clientId=go-deploy-storage \
+    | jq -r '.[0].id')
+
+  # Create groups mapping using: http://keycloak.deploy.localhost:31125/admin/realms/master/clients/b829f2ad-eb13-45f4-bf03-320fdd14ffe9/protocol-mappers/models
+  local groups_mapping='{
+    "name": "groups",
+    "protocol": "openid-connect",
+    "protocolMapper": "oidc-group-membership-mapper",
+    "consentRequired": false,
+    "config": {
+      "access.token.claim": "true",
+      "claim.name": "groups",
+      "full.path": "false",
+      "id.token.claim": "true",
+      "introspection.token.claim": "true",
+      "lightweight.claims": "false",
+      "userinfo.token.claim": "true"
+    }
+  }'
+  curl -s \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json" \
+    -H "Authorization: Bearer $token" \
+    -X POST http://keycloak.$domain:$keycloak_port/admin/realms/master/clients/$deploy_client_id/protocol-mappers/models -d "$groups_mapping"
+  curl -s \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json" \
+    -H "Authorization: Bearer $token" \
+    -X POST http://keycloak.$domain:$keycloak_port/admin/realms/master/clients/$deploy_storage_client_id/protocol-mappers/models -d "$groups_mapping"
+
+  # Write keycloak_deploy_storage_secret to cluster-config.rc
   # Overwrite if the row already exists
-  sed -i "/export keycloak_deploy_secret=/c\export keycloak_deploy_secret=$keycloak_deploy_secret" ./cluster-config.rc
   sed -i "/export keycloak_deploy_storage_secret=/c\export keycloak_deploy_storage_secret=$keycloak_deploy_storage_secret" ./cluster-config.rc
 }
 
@@ -781,7 +814,7 @@ echo -e "The following services are now available:"
 echo -e " - ${BLUE_BOLD}Harbor${RESET}: http://harbor.$domain:$harbor_port (admin:Harbor12345)"
 echo -e " - ${TEAL_BOLD}Keycloak${RESET}: http://keycloak.$domain:$keycloak_port (admin:admin)" 
 echo -e "      Users: admin:admin, base:base, power:power"
-echo -e "      Clients: go-deploy:$keycloak_deploy_secret, go-deploy-storage:$keycloak_deploy_storage_secret"
+echo -e "      Clients: go-deploy:(no secret), go-deploy-storage:$keycloak_deploy_storage_secret"
 echo -e " - ${GREEN_BOLD}MongoDB${RESET}: mongodb://admin:admin@localhost:$mongo_db_port"
 echo -e " - ${RED_BOLD}Redis${RESET}: redis://localhost:$redis_port"
 echo -e " - ${ORANGE_BOLD}NFS${RESET}: nfs://localhost:$nfs_port"
