@@ -21,6 +21,7 @@ type Deployment struct {
 	RepairedAt  time.Time `bson:"repairedAt"`
 	RestartedAt time.Time `bson:"restartedAt"`
 	DeletedAt   time.Time `bson:"deletedAt"`
+	AccessedAt  time.Time `bson:"accessedAt"`
 
 	Activities map[string]Activity `bson:"activities"`
 

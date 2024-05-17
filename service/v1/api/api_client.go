@@ -22,6 +22,7 @@ import (
 
 type Deployments interface {
 	Get(id string, opts ...dOpts.GetOpts) (*model.Deployment, error)
+	GetByName(name string, opts ...dOpts.GetOpts) (*model.Deployment, error)
 	List(opts ...dOpts.ListOpts) ([]model.Deployment, error)
 	Create(id, userID string, dtoDeploymentCreate *body.DeploymentCreate) error
 	Update(id string, dtoDeploymentUpdate *body.DeploymentUpdate) error

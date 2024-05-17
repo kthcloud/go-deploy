@@ -9,5 +9,5 @@ type JobList struct {
 	ExcludeStatus []string `form:"excludeStatus" binding:"omitempty"`
 	Types         []string `form:"type" binding:"omitempty"`
 	ExcludeTypes  []string `form:"excludeType" binding:"omitempty"`
-	UserID        *string  `form:"userId" binding:"omitempty,uuid4"`
+	UserID        *string  `form:"userId" binding:"omitempty"`
 }

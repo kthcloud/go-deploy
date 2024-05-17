@@ -60,6 +60,7 @@ func (client *Client) Create(id, owner string, params *model.VmCreateParams) (*m
 		UpdatedAt:  time.Time{},
 		RepairedAt: time.Time{},
 		DeletedAt:  time.Time{},
+		AccessedAt: time.Now(),
 
 		SshPublicKey: params.SshPublicKey,
 		PortMap:      portMap,
@@ -302,6 +303,11 @@ func (client *Client) MarkUpdated(id string) error {
 	}
 
 	return nil
+}
+
+// MarkAccessed marks a deployment as accessed to the current time.
+func (client *Client) MarkAccessed(id string) error {
+	return client.SetWithBsonByID(id, bson.D{{"accessedAt", time.Now()}})
 }
 
 // generateCustomDomainSecret generates a random alphanumeric string.

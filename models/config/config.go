@@ -123,14 +123,25 @@ type VM struct {
 }
 
 type Deployment struct {
-	DefaultZone                    string `yaml:"defaultZone"`
-	Port                           int    `yaml:"port"`
-	Prefix                         string `yaml:"prefix"`
+	DefaultZone string `yaml:"defaultZone"`
+	Port        int    `yaml:"port"`
+	Prefix      string `yaml:"prefix"`
+	Fallback    struct {
+		// Disabled is the name of the fallback deployment that other deployments can reference
+		// The fallback deployment can be created with go-deploy, or it can be created manually
+		Disabled struct {
+			// Name is the name of the fallback deployment
+			Name string `yaml:"name"`
+		} `yaml:"disabled"`
+	} `yaml:"fallback"`
+
 	WildcardCertSecretNamespace    string `yaml:"wildcardCertSecretNamespace"`
 	WildcardCertSecretName         string `yaml:"wildcardCertSecretName"`
 	CustomDomainTxtRecordSubdomain string `yaml:"customDomainTxtRecordSubdomain"`
-	IngressClass                   string `yaml:"ingressClass"`
-	Resources                      struct {
+
+	IngressClass string `yaml:"ingressClass"`
+
+	Resources struct {
 		AutoScale struct {
 			CpuThreshold    int `yaml:"cpuThreshold"`
 			MemoryThreshold int `yaml:"memoryThreshold"`

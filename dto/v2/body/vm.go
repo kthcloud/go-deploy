@@ -13,6 +13,7 @@ type VmRead struct {
 	CreatedAt  time.Time  `json:"createdAt"`
 	UpdatedAt  *time.Time `json:"updatedAt,omitempty"`
 	RepairedAt *time.Time `json:"repairedAt,omitempty"`
+	AccessedAt time.Time  `json:"accessedAt"`
 
 	Specs        Specs       `json:"specs,omitempty"`
 	Ports        []PortRead  `json:"ports"`

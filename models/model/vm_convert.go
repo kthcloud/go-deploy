@@ -76,9 +76,12 @@ func (vm *VM) ToDTOv2(gpuLease *GpuLease, teams []string, sshConnectionString *s
 		OwnerID:      vm.OwnerID,
 		Zone:         vm.Zone,
 		Host:         host,
-		CreatedAt:    vm.CreatedAt,
-		UpdatedAt:    utils.NonZeroOrNil(vm.UpdatedAt),
-		RepairedAt:   utils.NonZeroOrNil(vm.RepairedAt),
+
+		CreatedAt:  vm.CreatedAt,
+		UpdatedAt:  utils.NonZeroOrNil(vm.UpdatedAt),
+		RepairedAt: utils.NonZeroOrNil(vm.RepairedAt),
+		AccessedAt: vm.AccessedAt,
+
 		Specs: body.Specs{
 			CpuCores: vm.Specs.CpuCores,
 			RAM:      vm.Specs.RAM,

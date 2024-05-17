@@ -63,10 +63,16 @@ deployment:
   defaultZone: local
   port: 8080
   prefix: deploy-
+  fallback:
+    disabled:
+        name: deploy-fallback
+
   wildcardCertSecretNamespace: cert-manager
   wildcardCertSecretName: go-deploy-wildcard-secret
   customDomainTxtRecordSubdomain: _kthcloud
+
   ingressClass: nginx
+
   resources:
     autoScale:
       cpuThreshold: 50
@@ -81,7 +87,7 @@ deployment:
 
 vm:
   defaultZone: local
-  adminSshPublicKey: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC3ktpoOPJP6v79i3IyY2+vd5julRDLBrMLpCAe8d4UDH09BN9PLYRAeYbox1UcHH3G+qWuf6iIY5/oxhsZlEmCbJE1wr3rVHvutuP17mcXcdVdJlQ7QOsTqI9rUTFm8XUB83CGIC36rxada3q7ndr/RhpwUtVghYK8AT57NjUjR5PI6TayKBIqlxgzamPJPcklCWoFhMzMm/8C15J1FJTejBeLuLeC6y+jtlxUGO7WDsLRS68uzpGGiS9exDkABrnb7jSU8o6rzQpIJnipIoM75530MV3Lp7sxNEgp8psaETdyPorfPv7u1nCcQV9B3RhH3SLGqzcepwt9zXixxcniVokAYvHLzpxcRg6bSoqWvJHM97fe8hDwa36Jck6hdfSGDxVon49E1qfG4FB4JYwwX2ehnuc3zW/bP+VuwFC+Fr/9zJMXiSGKSnIQKrMWqWbUse3r7kzUCLJ3PACCjGRR74LmhPODzPv3Zc5sz5cGFzOR2bNgUEUB1NK0Cw7GaO8= emil@thinkpad
+  adminSshPublicKey: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC3ktpoOPJP6v79i3IyY2+vd5julRDLBrMLpCAe8d4UDH09BN9PLYRAeYbox1UcHH3G+qWuf6iIY5/oxhsZlEmCbJE1wr3rVHvutuP17mcXcdVdJlQ7QOsTqI9rUTFm8XUB83CGIC36rxada3q7ndr/RhpwUtVghYK8AT57NjUjR5PI6TayKBIqlxgzamPJPcklCWoFhMzMm/8C15J1FJTejBeLuLeC6y+jtlxUGO7WDsLRS68uzpGGiS9exDkABrnb7jSU8o6rzQpIJnipIoM75530MV3Lp7sxNEgp8psaETdyPorfPv7u1nCcQV9B3RhH3SLGqzcepwt9zXixxcniVokAYvHLzpxcRg6bSoqWvJHM97fe8hDwa36Jck6hdfSGDxVon49E1qfG4FB4JYwwX2ehnuc3zW/bP+VuwFC+Fr/9zJMXiSGKSnIQKrMWqWbUse3r7kzUCLJ3PACCjGRR74LmhPODzPv3Zc5sz5cGFzOR2bNgUEUB1NK0Cw7GaO8= emil@home
   image: https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
 
 roles:
@@ -137,7 +143,7 @@ keycloak:
   adminGroup: admin
   storageClient:
     clientId: go-deploy-storage
-    clientSecret: YyPyCOQ2qoU9Vh8EgA87HO30rOJkoAdH
+    clientSecret: CHy186Qo2tLScpN5s5tarVjb24Phizgm
 
 mongodb:
   url: mongodb://admin:admin@localhost:31536

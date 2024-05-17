@@ -55,21 +55,24 @@ func (client *Client) Create(id, ownerID string, params *model.DeploymentCreateP
 	}
 
 	deployment := model.Deployment{
-		ID:          id,
-		Name:        params.Name,
-		Type:        params.Type,
-		OwnerID:     ownerID,
-		Zone:        params.Zone,
+		ID:      id,
+		Name:    params.Name,
+		Type:    params.Type,
+		OwnerID: ownerID,
+		Zone:    params.Zone,
+		
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Time{},
 		RepairedAt:  time.Time{},
 		RestartedAt: time.Time{},
 		DeletedAt:   time.Time{},
-		Activities:  map[string]model.Activity{model.ActivityBeingCreated: {model.ActivityBeingCreated, time.Now()}},
-		Apps:        map[string]model.App{appName: mainApp},
-		Subsystems:  model.DeploymentSubsystems{},
-		Logs:        make([]model.Log, 0),
-		Status:      status_codes.GetMsg(status_codes.ResourceCreating),
+		AccessedAt:  time.Now(),
+
+		Activities: map[string]model.Activity{model.ActivityBeingCreated: {model.ActivityBeingCreated, time.Now()}},
+		Apps:       map[string]model.App{appName: mainApp},
+		Subsystems: model.DeploymentSubsystems{},
+		Logs:       make([]model.Log, 0),
+		Status:     status_codes.GetMsg(status_codes.ResourceCreating),
 	}
 
 	_, err := client.Collection.InsertOne(context.TODO(), deployment)
@@ -323,6 +326,11 @@ func (client *Client) MarkUpdated(id string) error {
 	}
 
 	return nil
+}
+
+// MarkAccessed marks a deployment as accessed to the current time.
+func (client *Client) MarkAccessed(id string) error {
+	return client.SetWithBsonByID(id, bson.D{{"accessedAt", time.Now()}})
 }
 
 // UpdateCustomDomainStatus updates the status of a custom domain, such as
