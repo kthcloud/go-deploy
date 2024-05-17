@@ -302,6 +302,11 @@ function install_harbor() {
     sleep 5
   fi
 
+  # Wait for Harbor to be up
+  while [ "$(curl -s -o /dev/null -w "%{http_code}" http://harbor.$domain:$harbor_port)" != "200" ]; do
+    sleep 5
+  done
+
   # Setup an ingress for Harbor
   res=$(kubectl get ingress -n harbor -o yaml | grep -c harbor)
   if [ $res -eq 0 ]; then
@@ -311,11 +316,6 @@ function install_harbor() {
     envsubst < ./manifests/harbor.yml > $harbor_subst
     kubectl apply -f $harbor_subst
   fi
-
-  # Wait for Harbor to be up
-  while [ "$(curl -s -o /dev/null -w "%{http_code}" http://harbor.$domain:$harbor_port)" != "200" ]; do
-    sleep 5
-  done
 }
 
 function seed_harbor_with_images() {
