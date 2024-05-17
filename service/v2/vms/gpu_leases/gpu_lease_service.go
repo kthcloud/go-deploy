@@ -223,7 +223,7 @@ func (c *Client) Update(id string, dtoGpuLeaseUpdate *body.GpuLeaseUpdate) error
 
 	params := model.GpuLeaseUpdateParams{}.FromDTO(dtoGpuLeaseUpdate)
 
-	// Ensure we active the lease if it is the first time attaching a VM
+	// Ensure we activate the lease if it is the first time attaching a VM
 	if params.VmID != nil && lease.ActivatedAt == nil {
 		now := time.Now()
 		params.ActivatedAt = &now
@@ -234,7 +234,7 @@ func (c *Client) Update(id string, dtoGpuLeaseUpdate *body.GpuLeaseUpdate) error
 		return makeError(sErrors.GpuLeaseNotAssignedErr)
 	}
 
-	// If the lease is trying to update to the same VM, ignore the attach
+	// If the lease is trying to update to the same VM, ignore the attaching
 	if lease.VmID != nil && params.VmID != nil && *lease.VmID == *params.VmID {
 		params.VmID = nil
 		params.ActivatedAt = nil
@@ -242,6 +242,10 @@ func (c *Client) Update(id string, dtoGpuLeaseUpdate *body.GpuLeaseUpdate) error
 
 	err = gpu_lease_repo.New().UpdateWithParams(id, params)
 	if err != nil {
+		if errors.Is(err, gpu_lease_repo.VmAlreadyAttachedErr) {
+			return makeError(sErrors.VmAlreadyAttachedErr)
+		}
+
 		return makeError(err)
 	}
 

@@ -36,15 +36,6 @@ export interface DeploymentUpdate {
 }
 
 //////////
-// source: gpu.go
-
-export interface GpuList {
-  OnlyShowAvailable: boolean;
-  Zone?: string;
-  Pagination?: Pagination;
-}
-
-//////////
 // source: job.go
 
 export interface JobList {
@@ -105,22 +96,6 @@ export interface UserList {
   All: boolean;
   Search?: string;
   Discover: boolean;
-}
-
-//////////
-// source: vm.go
-
-export interface VmList {
-  Pagination?: Pagination;
-  All: boolean;
-  UserID?: string;
-}
-
-//////////
-// source: vm_snapshot.go
-
-export interface VmSnapshotList {
-  Pagination?: Pagination;
 }
 
 //////////

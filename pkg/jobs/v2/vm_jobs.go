@@ -146,11 +146,6 @@ func UpdateVM(job *model.Job) error {
 			return jErrors.MakeTerminatedError(err)
 		}
 
-		var portInUseErr sErrors.PortInUseErr
-		if errors.As(err, &portInUseErr) {
-			return jErrors.MakeTerminatedError(err)
-		}
-
 		return jErrors.MakeFailedError(err)
 	}
 
@@ -212,6 +207,8 @@ func UpdateGpuLease(job *model.Job) error {
 		case errors.Is(err, sErrors.GpuLeaseNotFoundErr):
 			return jErrors.MakeTerminatedError(err)
 		case errors.Is(err, sErrors.GpuLeaseNotAssignedErr):
+			return jErrors.MakeTerminatedError(err)
+		case errors.Is(err, sErrors.VmAlreadyAttachedErr):
 			return jErrors.MakeTerminatedError(err)
 		}
 

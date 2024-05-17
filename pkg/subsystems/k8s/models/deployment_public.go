@@ -20,6 +20,11 @@ type DeploymentPublic struct {
 	InitContainers   []InitContainer `bson:"initContainers"`
 	Volumes          []Volume        `bson:"volumes"`
 	CreatedAt        time.Time       `bson:"createdAt"`
+
+	// Disabled is a flag that can be set to true to disable the deployment.
+	// This is useful for deployments that should not be running, but should still exist.
+	// A disabled deployment has replicas set to 0.
+	Disabled bool `bson:"disabled"`
 }
 
 func (d *DeploymentPublic) Created() bool {

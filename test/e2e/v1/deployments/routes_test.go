@@ -164,6 +164,36 @@ func TestCreateWithInvalidBody(t *testing.T) {
 	v1.WithAssumedFailedDeployment(t, tooManyInitCommands)
 }
 
+func TestCreateTooBig(t *testing.T) {
+	t.Parallel()
+
+	// Use the Default user for a minimal quota
+
+	// Fetch the quota for the user
+	quota := v1.GetUser(t, e2e.DefaultUserID).Quota
+
+	// Create a deployment that is too big CPU-wise
+	cpuCores := quota.CpuCores / 2
+	replicas := 3
+
+	v1.WithAssumedFailedDeployment(t, body.DeploymentCreate{
+		Name:     e2e.GenName(),
+		Replicas: &replicas,
+		CpuCores: &cpuCores,
+	}, e2e.DefaultUserID)
+
+	// Create a deployment that is too big RAM-wise
+	ram := quota.RAM / 2
+	replicas = 3
+
+	v1.WithAssumedFailedDeployment(t, body.DeploymentCreate{
+		Name:     e2e.GenName(),
+		Replicas: &replicas,
+		RAM:      &ram,
+	}, e2e.DefaultUserID)
+
+}
+
 func TestCreateShared(t *testing.T) {
 	t.Parallel()
 

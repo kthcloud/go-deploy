@@ -11,10 +11,6 @@ const (
 	JobUpdateVM = "updateVm"
 	// JobUpdateVmOwner is used when updating a VM's owner.
 	JobUpdateVmOwner = "updateVmOwner"
-	// JobAttachGPU is used when attaching a GPU to a VM.
-	JobAttachGPU = "attachGpu"
-	// JobDetachGPU is used when detaching a GPU from a VM.
-	JobDetachGPU = "detachGpu"
 	// JobRepairVM is used when repairing a VM.
 	JobRepairVM = "repairVm"
 	// JobCreateGpuLease is used when creating a GPU lease for a VM.

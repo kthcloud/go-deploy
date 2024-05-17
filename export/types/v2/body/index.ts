@@ -117,6 +117,7 @@ export interface VmRead {
   createdAt: string;
   updatedAt?: string;
   repairedAt?: string;
+  accessedAt: string;
   specs?: Specs;
   ports: PortRead[];
   gpu?: VmGpuLease;

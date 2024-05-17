@@ -153,3 +153,13 @@ func (client *Client) OlderThan(timestamp time.Time) *Client {
 
 	return client
 }
+
+// LastAccessedBefore adds a filter to the client to only return VMs that were last accessed before the given timestamp.
+func (client *Client) LastAccessedBefore(timestamp time.Time) *Client {
+	filter := bson.D{{"accessedAt", bson.D{{"$lt", timestamp}}}}
+
+	client.ResourceClient.AddExtraFilter(filter)
+	client.ActivityResourceClient.AddExtraFilter(filter)
+
+	return client
+}

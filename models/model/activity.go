@@ -23,12 +23,6 @@ const (
 	// ActivityBuilding is used when a model is being built.
 	ActivityBuilding = "building"
 
-	// ActivityAttachingGPU is used for when a model is attaching a GPU.
-	ActivityAttachingGPU = "attachingGpu"
-
-	// ActivityDetachingGPU is used when a model is detaching a GPU.
-	ActivityDetachingGPU = "detachingGpu"
-
 	// ActivityRepairing is used when a model is being repaired.
 	ActivityRepairing = "repairing"
 )

@@ -95,50 +95,6 @@ export interface ApiKeyCreate {
 }
 
 //////////
-// source: vm.go
-
-export interface VmGet {
-  VmID: string;
-}
-export interface VmDelete {
-  VmID: string;
-}
-export interface VmUpdate {
-  VmID: string;
-}
-export interface GpuAttach {
-  VmID: string;
-  GpuID: string;
-}
-export interface GpuDetach {
-  VmID: string;
-}
-export interface GpuGet {
-  GpuID: string;
-}
-export interface VmCommand {
-  VmID: string;
-}
-
-//////////
-// source: vm_snapshot.go
-
-export interface VmSnapshotCreate {
-  VmID: string;
-}
-export interface VmSnapshotList {
-  VmID: string;
-}
-export interface VmSnapshotGet {
-  VmID: string;
-  SnapshotID: string;
-}
-export interface VmSnapshotDelete {
-  VmID: string;
-  SnapshotID: string;
-}
-
-//////////
 // source: zone.go
 
 export interface ZoneGet {

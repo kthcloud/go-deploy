@@ -20,6 +20,7 @@ timer:
   vmDeletionConfirm: 5s
   smDeletionConfirm: 5s
   customDomainConfirm: 30m
+  staleResourceCleanup: 1h
 
 zones:
 - name: local
@@ -37,10 +38,10 @@ zones:
     - deployment
     - vm
   domains:
-    parentDeployment: app.$external_url
-    parentSm: storage.$external_url
-    parentVm: vm.$external_url
-    parentVmApp: vm-app.$external_url
+    parentDeployment: $deployment_domain:$ingress_https_port
+    parentSm: $sm_domain:$ingress_https_port
+    parentVm: $vm_domain
+    parentVmApp: $vm_app_domain:$ingress_https_port
   storage:
     nfsServer: $nfs_server
     paths:
@@ -62,11 +63,18 @@ gpu:
 deployment:
   defaultZone: local
   port: 8080
+  lifetime: 2160h # 90d
   prefix: deploy-
+  fallback:
+    disabled:
+        name: deploy-fallback
+
   wildcardCertSecretNamespace: cert-manager
   wildcardCertSecretName: go-deploy-wildcard-secret
   customDomainTxtRecordSubdomain: _kthcloud
+
   ingressClass: nginx
+
   resources:
     autoScale:
       cpuThreshold: 50
@@ -81,6 +89,7 @@ deployment:
 
 vm:
   defaultZone: local
+  lifetime: 2160h # 90d
   adminSshPublicKey: $admin_ssh_public_key
   image: $vm_image
 

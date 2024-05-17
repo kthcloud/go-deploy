@@ -27,6 +27,7 @@ export interface DeploymentRead {
   updatedAt?: string;
   repairedAt?: string;
   restartedAt?: string;
+  accessedAt: string;
   cpuCores: number /* float64 */;
   ram: number /* float64 */;
   replicas: number /* int */;
@@ -170,30 +171,6 @@ export interface BindingError {
 }
 
 //////////
-// source: gpu.go
-
-export interface GpuAttached {
-  id: string;
-  jobId: string;
-}
-export interface GpuDetached {
-  id: string;
-  jobId: string;
-}
-export interface Lease {
-  vmId?: string;
-  user?: string;
-  end: string;
-  expired: boolean;
-}
-export interface GpuRead {
-  id: string;
-  name: string;
-  zone: string;
-  lease?: Lease;
-}
-
-//////////
 // source: job.go
 
 export interface JobRead {
@@ -232,11 +209,37 @@ export interface NotificationUpdate {
 
 export interface ResourceMigrationRead {
   id: string;
+  /**
+   * ResourceID is the ID of the resource that is being migrated.
+   * This can be a VM ID, deployment ID, etc. depending on the type of the migration.
+   */
   resourceId: string;
+  /**
+   * UserID is the ID of the user who initiated the migration.
+   */
   userId: string;
+  /**
+   * Type is the type of the resource migration.
+   * Possible values:
+   * - updateOwner
+   */
   type: string;
+  /**
+   * ResourceType is the type of the resource that is being migrated.
+   * Possible values:
+   * - vm
+   * - deployment
+   */
   resourceType: string;
+  /**
+   * Status is the status of the resource migration.
+   * When this field is set to 'accepted', the migration will take place and then automatically be deleted.
+   */
   status: string;
+  /**
+   * UpdateOwner is the set of parameters that are required for the updateOwner migration type.
+   * It is empty if the migration type is not updateOwner.
+   */
   updateOwner?: {
     ownerId: string;
   };
@@ -244,28 +247,61 @@ export interface ResourceMigrationRead {
   deletedAt?: string;
 }
 export interface ResourceMigrationCreate {
+  /**
+   * Type is the type of the resource migration.
+   * Possible values:
+   * - updateOwner
+   */
   type: string;
-  resourceID: string;
+  /**
+   * ResourceID is the ID of the resource that is being migrated.
+   * This can be a VM ID, deployment ID, etc. depending on the type of the migration.
+   */
+  resourceId: string;
+  /**
+   * Status is the status of the resource migration.
+   * It is used by privileged admins to directly accept or reject a migration.
+   * The field is ignored by non-admins.
+   * Possible values:
+   * - accepted
+   * - pending
+   */
   status?: string;
+  /**
+   * UpdateOwner is the set of parameters that are required for the updateOwner migration type.
+   * It is ignored if the migration type is not updateOwner.
+   */
   updateOwner?: {
     ownerId: string;
   };
 }
 export interface ResourceMigrationUpdate {
+  /**
+   * Status is the status of the resource migration.
+   * It is used to accept a migration by setting the status to 'accepted'.
+   * If the acceptor is not an admin, a Code must be provided.
+   * Possible values:
+   * - accepted
+   * - pending
+   */
   status: string;
+  /**
+   * Code is a token required when accepting a migration if the acceptor is not an admin.
+   * It is sent to the acceptor using the notification API
+   */
   code?: string;
 }
 export interface ResourceMigrationCreated extends ResourceMigrationRead {
   /**
    * JobID is the ID of the job that was created for the resource migration.
-   * Only if the migration was created with status 'accepted' a job will be created.
+   * It will only be set if the migration was created with status 'accepted'.
    */
   jobId?: string;
 }
 export interface ResourceMigrationUpdated extends ResourceMigrationRead {
   /**
    * JobID is the ID of the job that was created for the resource migration.
-   * Only if the migration was updated with status 'accepted' a job will be created.
+   * It will only be set if the migration was updated with status 'accepted'.
    */
   jobId?: string;
 }
@@ -411,145 +447,7 @@ export interface Quota {
 export interface Usage {
   cpuCores: number /* float64 */;
   ram: number /* float64 */;
-  diskSize: number /* float64 */;
-  snapshots: number /* int */;
-}
-
-//////////
-// source: vm.go
-
-export interface VmRead {
-  id: string;
-  name: string;
-  ownerId: string;
-  zone: string;
-  host?: string;
-  createdAt: string;
-  updatedAt?: string;
-  repairedAt?: string;
-  specs?: Specs;
-  ports: PortRead[];
-  gpu?: VmGpuLease;
-  sshPublicKey: string;
-  teams: string[];
-  status: string;
-  connectionString?: string;
-}
-export interface VmCreate {
-  name: string;
-  sshPublicKey: string;
-  ports: PortCreate[];
-  cpuCores: number /* int */;
-  ram: number /* int */;
   diskSize: number /* int */;
-  zone?: string;
-}
-export interface VmUpdate {
-  name?: string;
-  snapshotId?: string;
-  ports?: PortUpdate[];
-  cpuCores?: number /* int */;
-  ram?: number /* int */;
-  gpuId?: string;
-  noLeaseEnd?: boolean;
-}
-export interface VmUpdateOwner {
-  newOwnerId: string;
-  oldOwnerId: string;
-  transferCode?: string;
-}
-export interface VmGpuLease {
-  id: string;
-  name: string;
-  leaseEnd: string;
-  expired: boolean;
-}
-export interface Specs {
-  cpuCores?: number /* int */;
-  ram?: number /* int */;
-  diskSize?: number /* int */;
-}
-export interface VmCreated {
-  id: string;
-  jobId: string;
-}
-export interface VmDeleted {
-  id: string;
-  jobId: string;
-}
-export interface VmUpdated {
-  id: string;
-  jobId?: string;
-}
-
-//////////
-// source: vm_command.go
-
-export interface VmCommand {
-  command: string;
-}
-
-//////////
-// source: vm_port.go
-
-export interface PortRead {
-  name?: string;
-  port?: number /* int */;
-  externalPort?: number /* int */;
-  protocol?: string;
-  httpProxy?: HttpProxyRead;
-}
-export interface PortCreate {
-  name: string;
-  port: number /* int */;
-  protocol: string;
-  httpProxy?: HttpProxyCreate;
-}
-export interface PortUpdate {
-  name?: string;
-  port?: number /* int */;
-  protocol?: string;
-  httpProxy?: HttpProxyUpdate;
-}
-export interface HttpProxyRead {
-  name: string;
-  url?: string;
-  customDomain?: string;
-  customDomainUrl?: string;
-  customDomainStatus?: string;
-  customDomainSecret?: string;
-}
-export interface HttpProxyCreate {
-  name: string;
-  customDomain?: string;
-}
-export interface HttpProxyUpdate {
-  name?: string;
-  customDomain?: string;
-}
-
-//////////
-// source: vm_snapshot.go
-
-export interface VmSnapshotRead {
-  id: string;
-  vmId: string;
-  displayName: string;
-  parentName?: string;
-  created: string;
-  state: string;
-  current: boolean;
-}
-export interface VmSnapshotCreate {
-  name: string;
-}
-export interface VmSnapshotCreated {
-  id: string;
-  jobId: string;
-}
-export interface VmSnapshotDeleted {
-  id: string;
-  jobId: string;
 }
 
 //////////
@@ -591,14 +489,4 @@ export interface ZoneRead {
   endpoints: ZoneEndpoints;
   legacy: boolean;
   enabled: boolean;
-  /**
-   * Interface
-   * Deprecated: use Endpoints instead
-   */
-  interface?: string;
-  /**
-   * Type
-   * Deprecated: use Capabilities instead
-   */
-  type: string;
 }

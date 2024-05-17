@@ -1924,711 +1924,6 @@ const docTemplateV1 = `{
                 }
             }
         },
-        "/v1/vms": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "List VMs",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "VM"
-                ],
-                "summary": "List VMs",
-                "parameters": [
-                    {
-                        "type": "boolean",
-                        "description": "List all",
-                        "name": "all",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by user ID",
-                        "name": "userId",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Page number",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Number of items per page",
-                        "name": "pageSize",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/go-deploy_dto_v1_body.VmRead"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Create VM",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "VM"
-                ],
-                "summary": "Create VM",
-                "parameters": [
-                    {
-                        "description": "VM body",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/go-deploy_dto_v1_body.VmCreate"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/go-deploy_dto_v1_body.VmCreated"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "423": {
-                        "description": "Locked",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/vms/gpus": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Get list of GPUs",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "VM"
-                ],
-                "summary": "Get list of GPUs",
-                "parameters": [
-                    {
-                        "type": "boolean",
-                        "description": "Only show available GPUs",
-                        "name": "available",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/body.GpuRead"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "423": {
-                        "description": "Locked",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/vms/{vmId}": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Get VM",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "VM"
-                ],
-                "summary": "Get VM",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "VM ID",
-                        "name": "vmId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/go-deploy_dto_v1_body.VmRead"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "UpdateVM VM",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "VM"
-                ],
-                "summary": "UpdateVM VM",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "VM ID",
-                        "name": "vmId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "VM update",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/go-deploy_dto_v1_body.VmUpdate"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/go-deploy_dto_v1_body.VmUpdated"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "423": {
-                        "description": "Locked",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "DeleteVM VM",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "VM"
-                ],
-                "summary": "DeleteVM VM",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "VM ID",
-                        "name": "vmId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/go-deploy_dto_v1_body.VmDeleted"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "423": {
-                        "description": "Locked",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/vms/{vmId}/command": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Do command",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "VM"
-                ],
-                "summary": "Do command",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "VM ID",
-                        "name": "vmId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Command body",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/body.VmCommand"
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content"
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "423": {
-                        "description": "Locked",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/vms/{vmId}/snapshot/{snapshotId}": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Get snapshot",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "VM"
-                ],
-                "summary": "Get snapshot",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "VM ID",
-                        "name": "vmId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Snapshot ID",
-                        "name": "snapshotId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/go-deploy_dto_v1_body.VmSnapshotRead"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Delete snapshot",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "VM"
-                ],
-                "summary": "Delete snapshot",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "VM ID",
-                        "name": "vmId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Snapshot ID",
-                        "name": "snapshotId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/go-deploy_dto_v1_body.VmSnapshotRead"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/vms/{vmId}/snapshots": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "List snapshots",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "VM"
-                ],
-                "summary": "List snapshots",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "VM ID",
-                        "name": "vmId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Page number",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Number of items per page",
-                        "name": "pageSize",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/go-deploy_dto_v1_body.VmSnapshotRead"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "423": {
-                        "description": "Locked",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Create snapshot",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "VM"
-                ],
-                "summary": "Create snapshot",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "VM ID",
-                        "name": "vmId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/go-deploy_dto_v1_body.VmSnapshotRead"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/v1/zones": {
             "get": {
                 "security": [
@@ -2849,6 +2144,9 @@ const docTemplateV1 = `{
         "body.DeploymentRead": {
             "type": "object",
             "properties": {
+                "accessedAt": {
+                    "type": "string"
+                },
                 "args": {
                     "type": "array",
                     "items": {
@@ -3085,23 +2383,6 @@ const docTemplateV1 = `{
                 }
             }
         },
-        "body.GpuRead": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string"
-                },
-                "lease": {
-                    "$ref": "#/definitions/body.Lease"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "zone": {
-                    "type": "string"
-                }
-            }
-        },
         "body.HarborWebhook": {
             "type": "object",
             "properties": {
@@ -3206,23 +2487,6 @@ const docTemplateV1 = `{
                 }
             }
         },
-        "body.Lease": {
-            "type": "object",
-            "properties": {
-                "end": {
-                    "type": "string"
-                },
-                "expired": {
-                    "type": "boolean"
-                },
-                "user": {
-                    "type": "string"
-                },
-                "vmId": {
-                    "type": "string"
-                }
-            }
-        },
         "body.NotificationRead": {
             "type": "object",
             "properties": {
@@ -3320,20 +2584,27 @@ const docTemplateV1 = `{
         "body.ResourceMigrationCreate": {
             "type": "object",
             "required": [
-                "resourceID",
+                "resourceId",
                 "type"
             ],
             "properties": {
-                "resourceID": {
+                "resourceId": {
+                    "description": "ResourceID is the ID of the resource that is being migrated.\nThis can be a VM ID, deployment ID, etc. depending on the type of the migration.",
                     "type": "string"
                 },
                 "status": {
+                    "description": "Status is the status of the resource migration.\nIt is used by privileged admins to directly accept or reject a migration.\nThe field is ignored by non-admins.\n\nPossible values:\n- accepted\n- pending",
                     "type": "string"
                 },
                 "type": {
-                    "type": "string"
+                    "description": "Type is the type of the resource migration.\n\nPossible values:\n- updateOwner",
+                    "type": "string",
+                    "enum": [
+                        "updateOwner"
+                    ]
                 },
                 "updateOwner": {
+                    "description": "UpdateOwner is the set of parameters that are required for the updateOwner migration type.\nIt is ignored if the migration type is not updateOwner.",
                     "type": "object",
                     "required": [
                         "ownerId"
@@ -3359,22 +2630,27 @@ const docTemplateV1 = `{
                     "type": "string"
                 },
                 "jobId": {
-                    "description": "JobID is the ID of the job that was created for the resource migration.\nOnly if the migration was created with status 'accepted' a job will be created.",
+                    "description": "JobID is the ID of the job that was created for the resource migration.\nIt will only be set if the migration was created with status 'accepted'.",
                     "type": "string"
                 },
                 "resourceId": {
+                    "description": "ResourceID is the ID of the resource that is being migrated.\nThis can be a VM ID, deployment ID, etc. depending on the type of the migration.",
                     "type": "string"
                 },
                 "resourceType": {
+                    "description": "ResourceType is the type of the resource that is being migrated.\n\nPossible values:\n- vm\n- deployment",
                     "type": "string"
                 },
                 "status": {
+                    "description": "Status is the status of the resource migration.\nWhen this field is set to 'accepted', the migration will take place and then automatically be deleted.",
                     "type": "string"
                 },
                 "type": {
+                    "description": "Type is the type of the resource migration.\n\nPossible values:\n- updateOwner",
                     "type": "string"
                 },
                 "updateOwner": {
+                    "description": "UpdateOwner is the set of parameters that are required for the updateOwner migration type.\nIt is empty if the migration type is not updateOwner.",
                     "type": "object",
                     "properties": {
                         "ownerId": {
@@ -3383,6 +2659,7 @@ const docTemplateV1 = `{
                     }
                 },
                 "userId": {
+                    "description": "UserID is the ID of the user who initiated the migration.",
                     "type": "string"
                 }
             }
@@ -3400,18 +2677,23 @@ const docTemplateV1 = `{
                     "type": "string"
                 },
                 "resourceId": {
+                    "description": "ResourceID is the ID of the resource that is being migrated.\nThis can be a VM ID, deployment ID, etc. depending on the type of the migration.",
                     "type": "string"
                 },
                 "resourceType": {
+                    "description": "ResourceType is the type of the resource that is being migrated.\n\nPossible values:\n- vm\n- deployment",
                     "type": "string"
                 },
                 "status": {
+                    "description": "Status is the status of the resource migration.\nWhen this field is set to 'accepted', the migration will take place and then automatically be deleted.",
                     "type": "string"
                 },
                 "type": {
+                    "description": "Type is the type of the resource migration.\n\nPossible values:\n- updateOwner",
                     "type": "string"
                 },
                 "updateOwner": {
+                    "description": "UpdateOwner is the set of parameters that are required for the updateOwner migration type.\nIt is empty if the migration type is not updateOwner.",
                     "type": "object",
                     "properties": {
                         "ownerId": {
@@ -3420,6 +2702,7 @@ const docTemplateV1 = `{
                     }
                 },
                 "userId": {
+                    "description": "UserID is the ID of the user who initiated the migration.",
                     "type": "string"
                 }
             }
@@ -3431,9 +2714,11 @@ const docTemplateV1 = `{
             ],
             "properties": {
                 "code": {
+                    "description": "Code is a token required when accepting a migration if the acceptor is not an admin.\nIt is sent to the acceptor using the notification API",
                     "type": "string"
                 },
                 "status": {
+                    "description": "Status is the status of the resource migration.\nIt is used to accept a migration by setting the status to 'accepted'.\nIf the acceptor is not an admin, a Code must be provided.\n\nPossible values:\n- accepted\n- pending",
                     "type": "string"
                 }
             }
@@ -3451,22 +2736,27 @@ const docTemplateV1 = `{
                     "type": "string"
                 },
                 "jobId": {
-                    "description": "JobID is the ID of the job that was created for the resource migration.\nOnly if the migration was updated with status 'accepted' a job will be created.",
+                    "description": "JobID is the ID of the job that was created for the resource migration.\nIt will only be set if the migration was updated with status 'accepted'.",
                     "type": "string"
                 },
                 "resourceId": {
+                    "description": "ResourceID is the ID of the resource that is being migrated.\nThis can be a VM ID, deployment ID, etc. depending on the type of the migration.",
                     "type": "string"
                 },
                 "resourceType": {
+                    "description": "ResourceType is the type of the resource that is being migrated.\n\nPossible values:\n- vm\n- deployment",
                     "type": "string"
                 },
                 "status": {
+                    "description": "Status is the status of the resource migration.\nWhen this field is set to 'accepted', the migration will take place and then automatically be deleted.",
                     "type": "string"
                 },
                 "type": {
+                    "description": "Type is the type of the resource migration.\n\nPossible values:\n- updateOwner",
                     "type": "string"
                 },
                 "updateOwner": {
+                    "description": "UpdateOwner is the set of parameters that are required for the updateOwner migration type.\nIt is empty if the migration type is not updateOwner.",
                     "type": "object",
                     "properties": {
                         "ownerId": {
@@ -3475,6 +2765,7 @@ const docTemplateV1 = `{
                     }
                 },
                 "userId": {
+                    "description": "UserID is the ID of the user who initiated the migration.",
                     "type": "string"
                 }
             }
@@ -3714,13 +3005,10 @@ const docTemplateV1 = `{
                     "type": "number"
                 },
                 "diskSize": {
-                    "type": "number"
+                    "type": "integer"
                 },
                 "ram": {
                     "type": "number"
-                },
-                "snapshots": {
-                    "type": "integer"
                 }
             }
         },
@@ -3829,22 +3117,6 @@ const docTemplateV1 = `{
                 }
             }
         },
-        "body.VmCommand": {
-            "type": "object",
-            "required": [
-                "command"
-            ],
-            "properties": {
-                "command": {
-                    "type": "string",
-                    "enum": [
-                        "start",
-                        "stop",
-                        "reboot"
-                    ]
-                }
-            }
-        },
         "body.Volume": {
             "type": "object",
             "required": [
@@ -3919,384 +3191,10 @@ const docTemplateV1 = `{
                 "endpoints": {
                     "$ref": "#/definitions/body.ZoneEndpoints"
                 },
-                "interface": {
-                    "description": "Interface\nDeprecated: use Endpoints instead",
-                    "type": "string"
-                },
                 "legacy": {
                     "type": "boolean"
                 },
                 "name": {
-                    "type": "string"
-                },
-                "type": {
-                    "description": "Type\nDeprecated: use Capabilities instead",
-                    "type": "string"
-                }
-            }
-        },
-        "go-deploy_dto_v1_body.HttpProxyCreate": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "customDomain": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 30,
-                    "minLength": 3
-                }
-            }
-        },
-        "go-deploy_dto_v1_body.HttpProxyRead": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "customDomain": {
-                    "type": "string"
-                },
-                "customDomainSecret": {
-                    "type": "string"
-                },
-                "customDomainStatus": {
-                    "type": "string"
-                },
-                "customDomainUrl": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 30,
-                    "minLength": 3
-                },
-                "url": {
-                    "type": "string"
-                }
-            }
-        },
-        "go-deploy_dto_v1_body.HttpProxyUpdate": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "customDomain": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 30,
-                    "minLength": 3
-                }
-            }
-        },
-        "go-deploy_dto_v1_body.PortCreate": {
-            "type": "object",
-            "required": [
-                "name",
-                "port",
-                "protocol"
-            ],
-            "properties": {
-                "httpProxy": {
-                    "$ref": "#/definitions/go-deploy_dto_v1_body.HttpProxyCreate"
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 100,
-                    "minLength": 1
-                },
-                "port": {
-                    "type": "integer",
-                    "maximum": 65535,
-                    "minimum": 1
-                },
-                "protocol": {
-                    "type": "string",
-                    "enum": [
-                        "tcp",
-                        "udp"
-                    ]
-                }
-            }
-        },
-        "go-deploy_dto_v1_body.PortRead": {
-            "type": "object",
-            "properties": {
-                "externalPort": {
-                    "type": "integer"
-                },
-                "httpProxy": {
-                    "$ref": "#/definitions/go-deploy_dto_v1_body.HttpProxyRead"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "port": {
-                    "type": "integer"
-                },
-                "protocol": {
-                    "type": "string"
-                }
-            }
-        },
-        "go-deploy_dto_v1_body.PortUpdate": {
-            "type": "object",
-            "required": [
-                "name",
-                "port",
-                "protocol"
-            ],
-            "properties": {
-                "httpProxy": {
-                    "$ref": "#/definitions/go-deploy_dto_v1_body.HttpProxyUpdate"
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 100,
-                    "minLength": 1
-                },
-                "port": {
-                    "type": "integer",
-                    "maximum": 65535,
-                    "minimum": 1
-                },
-                "protocol": {
-                    "type": "string",
-                    "enum": [
-                        "tcp",
-                        "udp"
-                    ]
-                }
-            }
-        },
-        "go-deploy_dto_v1_body.Specs": {
-            "type": "object",
-            "properties": {
-                "cpuCores": {
-                    "type": "integer"
-                },
-                "diskSize": {
-                    "type": "integer"
-                },
-                "ram": {
-                    "type": "integer"
-                }
-            }
-        },
-        "go-deploy_dto_v1_body.VmCreate": {
-            "type": "object",
-            "required": [
-                "cpuCores",
-                "diskSize",
-                "name",
-                "ram",
-                "sshPublicKey"
-            ],
-            "properties": {
-                "cpuCores": {
-                    "type": "integer",
-                    "minimum": 2
-                },
-                "diskSize": {
-                    "type": "integer",
-                    "minimum": 20
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 30,
-                    "minLength": 3
-                },
-                "ports": {
-                    "type": "array",
-                    "maxItems": 10,
-                    "minItems": 0,
-                    "items": {
-                        "$ref": "#/definitions/go-deploy_dto_v1_body.PortCreate"
-                    }
-                },
-                "ram": {
-                    "type": "integer",
-                    "minimum": 1
-                },
-                "sshPublicKey": {
-                    "type": "string"
-                },
-                "zone": {
-                    "type": "string"
-                }
-            }
-        },
-        "go-deploy_dto_v1_body.VmCreated": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string"
-                },
-                "jobId": {
-                    "type": "string"
-                }
-            }
-        },
-        "go-deploy_dto_v1_body.VmDeleted": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string"
-                },
-                "jobId": {
-                    "type": "string"
-                }
-            }
-        },
-        "go-deploy_dto_v1_body.VmGpuLease": {
-            "type": "object",
-            "properties": {
-                "expired": {
-                    "type": "boolean"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "leaseEnd": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "go-deploy_dto_v1_body.VmRead": {
-            "type": "object",
-            "properties": {
-                "connectionString": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "gpu": {
-                    "$ref": "#/definitions/go-deploy_dto_v1_body.VmGpuLease"
-                },
-                "host": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "ownerId": {
-                    "type": "string"
-                },
-                "ports": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/go-deploy_dto_v1_body.PortRead"
-                    }
-                },
-                "repairedAt": {
-                    "type": "string"
-                },
-                "specs": {
-                    "$ref": "#/definitions/go-deploy_dto_v1_body.Specs"
-                },
-                "sshPublicKey": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "teams": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "zone": {
-                    "type": "string"
-                }
-            }
-        },
-        "go-deploy_dto_v1_body.VmSnapshotRead": {
-            "type": "object",
-            "properties": {
-                "created": {
-                    "type": "string"
-                },
-                "current": {
-                    "type": "boolean"
-                },
-                "displayName": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "parentName": {
-                    "type": "string"
-                },
-                "state": {
-                    "type": "string"
-                },
-                "vmId": {
-                    "type": "string"
-                }
-            }
-        },
-        "go-deploy_dto_v1_body.VmUpdate": {
-            "type": "object",
-            "properties": {
-                "cpuCores": {
-                    "type": "integer",
-                    "minimum": 1
-                },
-                "gpuId": {
-                    "type": "string",
-                    "maxLength": 100,
-                    "minLength": 0
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 30,
-                    "minLength": 3
-                },
-                "noLeaseEnd": {
-                    "type": "boolean"
-                },
-                "ports": {
-                    "type": "array",
-                    "maxItems": 10,
-                    "minItems": 0,
-                    "items": {
-                        "$ref": "#/definitions/go-deploy_dto_v1_body.PortUpdate"
-                    }
-                },
-                "ram": {
-                    "type": "integer",
-                    "minimum": 1
-                },
-                "snapshotId": {
-                    "type": "string"
-                }
-            }
-        },
-        "go-deploy_dto_v1_body.VmUpdated": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string"
-                },
-                "jobId": {
                     "type": "string"
                 }
             }

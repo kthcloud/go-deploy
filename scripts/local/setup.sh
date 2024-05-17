@@ -22,6 +22,12 @@ function check_dependencies() {
     exit 1
   fi
 
+  # Check if kind is installed, if not exit
+  if ! [ -x "$(command -v kind)" ]; then
+    echo -e "$RED_CROSS kind is not installed. Please install kind"
+    exit 1
+  fi
+
   # Check if dnsmasq is installed, if not exit
   if ! [ -x "$(command -v dnsmasq)" ]; then
     echo -e "$RED_CROSS dnsmasq is not installed. Please install dnsmasq"
@@ -89,7 +95,6 @@ export nfs_base_path="/nfs"
 export nfs_cluster_ip="10.96.200.2"
 
 # IAM configuration
-export keycloak_deploy_secret=
 export keycloak_deploy_storage_secret=
 
 # Ports configuration
@@ -161,12 +166,12 @@ nodes:
     protocol: UDP"
   done
 
-  mkdir -p "./data"
+  data_dir="${HOME}/go-deploy-data/${cluster_name}"
+  mkdir -p $data_dir
 
-  # Add NFS mount container /mnt/nfs to ./data
   config="$config
   extraMounts:
-  - hostPath: "./data"
+  - hostPath: "$data_dir"
     containerPath: /mnt/nfs"
   
   echo "$config" > ./manifests/kind-config.yml
@@ -285,15 +290,21 @@ function install_harbor() {
     harbor_values_subst=$(mktemp)
     envsubst < ./helmvalues/harbor.values.yml > $harbor_values_subst
 
-    helm install harbor harbor \
-      --repo https://helm.goharbor.io \
+    helm repo add harbor https://helm.goharbor.io
+    helm install harbor harbor/harbor \
       --namespace harbor \
       --create-namespace \
-      --values - < $harbor_values_subst
+      --version v1.14.2 \
+      --values $harbor_values_subst
 
     # Allow namespace to be created
     sleep 5
   fi
+
+  # Wait for Harbor to be up
+  while [ "$(curl -s -o /dev/null -w "%{http_code}" http://harbor.$domain:$harbor_port)" != "200" ]; do
+    sleep 5
+  done
 
   # Setup an ingress for Harbor
   res=$(kubectl get ingress -n harbor -o yaml | grep -c harbor)
@@ -304,11 +315,6 @@ function install_harbor() {
     envsubst < ./manifests/harbor.yml > $harbor_subst
     kubectl apply -f $harbor_subst
   fi
-
-  # Wait for Harbor to be up
-  while [ "$(curl -s -o /dev/null -w "%{http_code}" http://harbor.$domain:$harbor_port)" != "200" ]; do
-    sleep 5
-  done
 }
 
 function seed_harbor_with_images() {
@@ -406,7 +412,7 @@ function install_keycloak() {
       "clientId":"go-deploy",
       "name":"go-deploy",
       "description":"go-deploy",
-      "publicClient":false,
+      "publicClient":true,
       "authorizationServicesEnabled":false,
       "serviceAccountsEnabled":true,
       "implicitFlowEnabled":false,
@@ -425,14 +431,6 @@ function install_keycloak() {
       -H "Authorization: Bearer $token" \
       -X POST http://keycloak.$domain:$keycloak_port/admin/realms/master/clients -d "$payload"
   fi
-
-  # Fetch created client's secret
-  keycloak_deploy_secret=$(curl -s \
-    -H "Content-Type: application/json" \
-    -H "Accept: application/json" \
-    -H "Authorization: Bearer $token" \
-    -X GET http://keycloak.$domain:$keycloak_port/admin/realms/master/clients?clientId=go-deploy \
-    | jq -r '.[0].secret')
 
   # Check if go-deploy-storage client exists, if not create it
   local check_exists=$(curl -s \
@@ -534,9 +532,51 @@ function install_keycloak() {
       -X PUT http://keycloak.$domain:$keycloak_port/admin/realms/master/users/$user_id/groups/$group_id
   done
 
-  # Write keycloak_deploy_secret and keycloak_deploy_storage_secret to cluster-config.rc
+  # Add "groups" protocol mapper to clients
+
+  local deploy_client_id=$(curl -s \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json" \
+    -H "Authorization: Bearer $token" \
+    -X GET http://keycloak.$domain:$keycloak_port/admin/realms/master/clients?clientId=go-deploy \
+    | jq -r '.[0].id')
+
+  local deploy_storage_client_id=$(curl -s \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json" \
+    -H "Authorization: Bearer $token" \
+    -X GET http://keycloak.$domain:$keycloak_port/admin/realms/master/clients?clientId=go-deploy-storage \
+    | jq -r '.[0].id')
+
+  # Create groups mapping using: http://keycloak.deploy.localhost:31125/admin/realms/master/clients/b829f2ad-eb13-45f4-bf03-320fdd14ffe9/protocol-mappers/models
+  local groups_mapping='{
+    "name": "groups",
+    "protocol": "openid-connect",
+    "protocolMapper": "oidc-group-membership-mapper",
+    "consentRequired": false,
+    "config": {
+      "access.token.claim": "true",
+      "claim.name": "groups",
+      "full.path": "false",
+      "id.token.claim": "true",
+      "introspection.token.claim": "true",
+      "lightweight.claims": "false",
+      "userinfo.token.claim": "true"
+    }
+  }'
+  curl -s \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json" \
+    -H "Authorization: Bearer $token" \
+    -X POST http://keycloak.$domain:$keycloak_port/admin/realms/master/clients/$deploy_client_id/protocol-mappers/models -d "$groups_mapping"
+  curl -s \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json" \
+    -H "Authorization: Bearer $token" \
+    -X POST http://keycloak.$domain:$keycloak_port/admin/realms/master/clients/$deploy_storage_client_id/protocol-mappers/models -d "$groups_mapping"
+
+  # Write keycloak_deploy_storage_secret to cluster-config.rc
   # Overwrite if the row already exists
-  sed -i "/export keycloak_deploy_secret=/c\export keycloak_deploy_secret=$keycloak_deploy_secret" ./cluster-config.rc
   sed -i "/export keycloak_deploy_storage_secret=/c\export keycloak_deploy_storage_secret=$keycloak_deploy_storage_secret" ./cluster-config.rc
 }
 
@@ -716,11 +756,16 @@ read_cluster_config
 cp config.yml.tmpl ../../config.local.yml
 
 # Core
-export external_url="$domain:$ingress_https_port"
+export external_url="http://localhost:8080"
 export port="8080"
 export mode="dev"
 
 # Zone
+export deployment_domain="app.$domain"
+export sm_domain="storage.$domain"
+export vm_domain="vm.$domain"
+export vm_app_domain="vm-app.$domain"
+
 export kubeconfig_path="./kube/$cluster_name.yml"
 export nfs_server=$nfs_cluster_ip
 export nfs_parent_path_app="$nfs_base_path/deployments"
@@ -774,7 +819,7 @@ echo -e "The following services are now available:"
 echo -e " - ${BLUE_BOLD}Harbor${RESET}: http://harbor.$domain:$harbor_port (admin:Harbor12345)"
 echo -e " - ${TEAL_BOLD}Keycloak${RESET}: http://keycloak.$domain:$keycloak_port (admin:admin)" 
 echo -e "      Users: admin:admin, base:base, power:power"
-echo -e "      Clients: go-deploy:$keycloak_deploy_secret, go-deploy-storage:$keycloak_deploy_storage_secret"
+echo -e "      Clients: go-deploy:(no secret), go-deploy-storage:$keycloak_deploy_storage_secret"
 echo -e " - ${GREEN_BOLD}MongoDB${RESET}: mongodb://admin:admin@localhost:$mongo_db_port"
 echo -e " - ${RED_BOLD}Redis${RESET}: redis://localhost:$redis_port"
 echo -e " - ${ORANGE_BOLD}NFS${RESET}: nfs://localhost:$nfs_port"

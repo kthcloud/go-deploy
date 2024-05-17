@@ -510,7 +510,7 @@ const docTemplateV2 = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/go-deploy_dto_v2_body.VmSnapshotRead"
+                                "$ref": "#/definitions/body.VmSnapshotRead"
                             }
                         }
                     },
@@ -570,7 +570,7 @@ const docTemplateV2 = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/go-deploy_dto_v2_body.VmSnapshotCreated"
+                            "$ref": "#/definitions/body.VmSnapshotCreated"
                         }
                     },
                     "400": {
@@ -708,7 +708,7 @@ const docTemplateV2 = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/go-deploy_dto_v2_body.VmRead"
+                                "$ref": "#/definitions/body.VmRead"
                             }
                         }
                     },
@@ -762,7 +762,7 @@ const docTemplateV2 = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/go-deploy_dto_v2_body.VmCreate"
+                            "$ref": "#/definitions/body.VmCreate"
                         }
                     }
                 ],
@@ -770,7 +770,7 @@ const docTemplateV2 = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/go-deploy_dto_v2_body.VmCreated"
+                            "$ref": "#/definitions/body.VmCreated"
                         }
                     },
                     "400": {
@@ -831,7 +831,7 @@ const docTemplateV2 = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/go-deploy_dto_v2_body.VmRead"
+                            "$ref": "#/definitions/body.VmRead"
                         }
                     },
                     "400": {
@@ -885,7 +885,7 @@ const docTemplateV2 = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/go-deploy_dto_v2_body.VmUpdate"
+                            "$ref": "#/definitions/body.VmUpdate"
                         }
                     }
                 ],
@@ -893,7 +893,7 @@ const docTemplateV2 = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/go-deploy_dto_v2_body.VmUpdated"
+                            "$ref": "#/definitions/body.VmUpdated"
                         }
                     },
                     "400": {
@@ -952,7 +952,7 @@ const docTemplateV2 = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/go-deploy_dto_v2_body.VmDeleted"
+                            "$ref": "#/definitions/body.VmDeleted"
                         }
                     },
                     "400": {
@@ -1020,7 +1020,7 @@ const docTemplateV2 = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/go-deploy_dto_v2_body.VmSnapshotRead"
+                            "$ref": "#/definitions/body.VmSnapshotRead"
                         }
                     },
                     "400": {
@@ -1080,7 +1080,7 @@ const docTemplateV2 = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/go-deploy_dto_v2_body.VmSnapshotDeleted"
+                            "$ref": "#/definitions/body.VmSnapshotDeleted"
                         }
                     },
                     "400": {
@@ -1252,6 +1252,153 @@ const docTemplateV2 = `{
                 }
             }
         },
+        "body.HttpProxyCreate": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "customDomain": {
+                    "description": "CustomDomain is the domain that the deployment will be available on.\nThe max length is set to 243 to allow for a sub domain when confirming the domain.",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 30,
+                    "minLength": 3
+                }
+            }
+        },
+        "body.HttpProxyRead": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "customDomain": {
+                    "$ref": "#/definitions/body.CustomDomainRead"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 30,
+                    "minLength": 3
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.HttpProxyUpdate": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "customDomain": {
+                    "description": "CustomDomain is the domain that the deployment will be available on.\nThe max length is set to 243 to allow for a sub domain when confirming the domain.",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 30,
+                    "minLength": 3
+                }
+            }
+        },
+        "body.PortCreate": {
+            "type": "object",
+            "required": [
+                "name",
+                "port",
+                "protocol"
+            ],
+            "properties": {
+                "httpProxy": {
+                    "$ref": "#/definitions/body.HttpProxyCreate"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                },
+                "port": {
+                    "type": "integer",
+                    "maximum": 65535,
+                    "minimum": 1
+                },
+                "protocol": {
+                    "type": "string",
+                    "enum": [
+                        "tcp",
+                        "udp"
+                    ]
+                }
+            }
+        },
+        "body.PortRead": {
+            "type": "object",
+            "properties": {
+                "externalPort": {
+                    "type": "integer"
+                },
+                "httpProxy": {
+                    "$ref": "#/definitions/body.HttpProxyRead"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "port": {
+                    "type": "integer"
+                },
+                "protocol": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.PortUpdate": {
+            "type": "object",
+            "required": [
+                "name",
+                "port",
+                "protocol"
+            ],
+            "properties": {
+                "httpProxy": {
+                    "$ref": "#/definitions/body.HttpProxyUpdate"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                },
+                "port": {
+                    "type": "integer",
+                    "maximum": 65535,
+                    "minimum": 1
+                },
+                "protocol": {
+                    "type": "string",
+                    "enum": [
+                        "tcp",
+                        "udp"
+                    ]
+                }
+            }
+        },
+        "body.Specs": {
+            "type": "object",
+            "properties": {
+                "cpuCores": {
+                    "type": "integer"
+                },
+                "diskSize": {
+                    "type": "integer"
+                },
+                "ram": {
+                    "type": "integer"
+                }
+            }
+        },
         "body.VmActionCreate": {
             "type": "object",
             "required": [
@@ -1280,154 +1427,7 @@ const docTemplateV2 = `{
                 }
             }
         },
-        "go-deploy_dto_v2_body.HttpProxyCreate": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "customDomain": {
-                    "description": "CustomDomain is the domain that the deployment will be available on.\nThe max length is set to 243 to allow for a sub domain when confirming the domain.",
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 30,
-                    "minLength": 3
-                }
-            }
-        },
-        "go-deploy_dto_v2_body.HttpProxyRead": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "customDomain": {
-                    "$ref": "#/definitions/body.CustomDomainRead"
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 30,
-                    "minLength": 3
-                },
-                "url": {
-                    "type": "string"
-                }
-            }
-        },
-        "go-deploy_dto_v2_body.HttpProxyUpdate": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "customDomain": {
-                    "description": "CustomDomain is the domain that the deployment will be available on.\nThe max length is set to 243 to allow for a sub domain when confirming the domain.",
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 30,
-                    "minLength": 3
-                }
-            }
-        },
-        "go-deploy_dto_v2_body.PortCreate": {
-            "type": "object",
-            "required": [
-                "name",
-                "port",
-                "protocol"
-            ],
-            "properties": {
-                "httpProxy": {
-                    "$ref": "#/definitions/go-deploy_dto_v2_body.HttpProxyCreate"
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 100,
-                    "minLength": 1
-                },
-                "port": {
-                    "type": "integer",
-                    "maximum": 65535,
-                    "minimum": 1
-                },
-                "protocol": {
-                    "type": "string",
-                    "enum": [
-                        "tcp",
-                        "udp"
-                    ]
-                }
-            }
-        },
-        "go-deploy_dto_v2_body.PortRead": {
-            "type": "object",
-            "properties": {
-                "externalPort": {
-                    "type": "integer"
-                },
-                "httpProxy": {
-                    "$ref": "#/definitions/go-deploy_dto_v2_body.HttpProxyRead"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "port": {
-                    "type": "integer"
-                },
-                "protocol": {
-                    "type": "string"
-                }
-            }
-        },
-        "go-deploy_dto_v2_body.PortUpdate": {
-            "type": "object",
-            "required": [
-                "name",
-                "port",
-                "protocol"
-            ],
-            "properties": {
-                "httpProxy": {
-                    "$ref": "#/definitions/go-deploy_dto_v2_body.HttpProxyUpdate"
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 100,
-                    "minLength": 1
-                },
-                "port": {
-                    "type": "integer",
-                    "maximum": 65535,
-                    "minimum": 1
-                },
-                "protocol": {
-                    "type": "string",
-                    "enum": [
-                        "tcp",
-                        "udp"
-                    ]
-                }
-            }
-        },
-        "go-deploy_dto_v2_body.Specs": {
-            "type": "object",
-            "properties": {
-                "cpuCores": {
-                    "type": "integer"
-                },
-                "diskSize": {
-                    "type": "integer"
-                },
-                "ram": {
-                    "type": "integer"
-                }
-            }
-        },
-        "go-deploy_dto_v2_body.VmCreate": {
+        "body.VmCreate": {
             "type": "object",
             "required": [
                 "cpuCores",
@@ -1455,7 +1455,7 @@ const docTemplateV2 = `{
                     "maxItems": 10,
                     "minItems": 0,
                     "items": {
-                        "$ref": "#/definitions/go-deploy_dto_v2_body.PortCreate"
+                        "$ref": "#/definitions/body.PortCreate"
                     }
                 },
                 "ram": {
@@ -1470,7 +1470,7 @@ const docTemplateV2 = `{
                 }
             }
         },
-        "go-deploy_dto_v2_body.VmCreated": {
+        "body.VmCreated": {
             "type": "object",
             "properties": {
                 "id": {
@@ -1481,7 +1481,7 @@ const docTemplateV2 = `{
                 }
             }
         },
-        "go-deploy_dto_v2_body.VmDeleted": {
+        "body.VmDeleted": {
             "type": "object",
             "properties": {
                 "id": {
@@ -1492,7 +1492,7 @@ const docTemplateV2 = `{
                 }
             }
         },
-        "go-deploy_dto_v2_body.VmGpuLease": {
+        "body.VmGpuLease": {
             "type": "object",
             "properties": {
                 "activatedAt": {
@@ -1525,14 +1525,17 @@ const docTemplateV2 = `{
                 }
             }
         },
-        "go-deploy_dto_v2_body.VmRead": {
+        "body.VmRead": {
             "type": "object",
             "properties": {
+                "accessedAt": {
+                    "type": "string"
+                },
                 "createdAt": {
                     "type": "string"
                 },
                 "gpu": {
-                    "$ref": "#/definitions/go-deploy_dto_v2_body.VmGpuLease"
+                    "$ref": "#/definitions/body.VmGpuLease"
                 },
                 "host": {
                     "type": "string"
@@ -1552,14 +1555,14 @@ const docTemplateV2 = `{
                 "ports": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/go-deploy_dto_v2_body.PortRead"
+                        "$ref": "#/definitions/body.PortRead"
                     }
                 },
                 "repairedAt": {
                     "type": "string"
                 },
                 "specs": {
-                    "$ref": "#/definitions/go-deploy_dto_v2_body.Specs"
+                    "$ref": "#/definitions/body.Specs"
                 },
                 "sshConnectionString": {
                     "type": "string"
@@ -1584,7 +1587,7 @@ const docTemplateV2 = `{
                 }
             }
         },
-        "go-deploy_dto_v2_body.VmSnapshotCreated": {
+        "body.VmSnapshotCreated": {
             "type": "object",
             "properties": {
                 "id": {
@@ -1595,7 +1598,7 @@ const docTemplateV2 = `{
                 }
             }
         },
-        "go-deploy_dto_v2_body.VmSnapshotDeleted": {
+        "body.VmSnapshotDeleted": {
             "type": "object",
             "properties": {
                 "id": {
@@ -1606,7 +1609,7 @@ const docTemplateV2 = `{
                 }
             }
         },
-        "go-deploy_dto_v2_body.VmSnapshotRead": {
+        "body.VmSnapshotRead": {
             "type": "object",
             "properties": {
                 "created": {
@@ -1623,7 +1626,7 @@ const docTemplateV2 = `{
                 }
             }
         },
-        "go-deploy_dto_v2_body.VmUpdate": {
+        "body.VmUpdate": {
             "type": "object",
             "properties": {
                 "cpuCores": {
@@ -1645,7 +1648,7 @@ const docTemplateV2 = `{
                     "maxItems": 10,
                     "minItems": 0,
                     "items": {
-                        "$ref": "#/definitions/go-deploy_dto_v2_body.PortUpdate"
+                        "$ref": "#/definitions/body.PortUpdate"
                     }
                 },
                 "ram": {
@@ -1654,7 +1657,7 @@ const docTemplateV2 = `{
                 }
             }
         },
-        "go-deploy_dto_v2_body.VmUpdated": {
+        "body.VmUpdated": {
             "type": "object",
             "properties": {
                 "id": {

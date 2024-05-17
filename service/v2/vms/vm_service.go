@@ -3,14 +3,12 @@ package vms
 import (
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
 	"go-deploy/dto/v2/body"
 	configModels "go-deploy/models/config"
 	"go-deploy/models/model"
 	"go-deploy/models/version"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/db/resources/gpu_lease_repo"
-	"go-deploy/pkg/db/resources/gpu_repo"
 	"go-deploy/pkg/db/resources/notification_repo"
 	"go-deploy/pkg/db/resources/resource_migration_repo"
 	"go-deploy/pkg/db/resources/team_repo"
@@ -33,7 +31,7 @@ import (
 func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.VM, error) {
 	o := serviceUtils.GetFirstOrDefault(opts)
 
-	vmc := vm_repo.New(version.V2)
+	vrc := vm_repo.New(version.V2)
 
 	if o.MigrationCode != nil {
 		rmc := resource_migration_repo.New().
@@ -50,7 +48,7 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.VM, error) {
 			return nil, nil
 		}
 
-		return c.VM(migration.ResourceID, vmc)
+		return c.VM(migration.ResourceID, vrc)
 	}
 
 	var effectiveUserID string
@@ -72,10 +70,23 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.VM, error) {
 	}
 
 	if !teamCheck && effectiveUserID != "" {
-		vmc.WithOwner(effectiveUserID)
+		vrc.WithOwner(effectiveUserID)
 	}
 
-	return c.VM(id, vmc)
+	vm, err := c.VM(id, vrc)
+	if err != nil {
+		return nil, err
+
+	}
+
+	if vm == nil {
+		return nil, nil
+
+	}
+
+	c.markAccessedIfOwner(vm, vrc)
+
+	return vm, nil
 }
 
 // List lists VMs.
@@ -84,10 +95,10 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.VM, error) {
 func (c *Client) List(opts ...opts.ListOpts) ([]model.VM, error) {
 	o := serviceUtils.GetFirstOrDefault(opts)
 
-	vmc := vm_repo.New(version.V2)
+	vrc := vm_repo.New(version.V2)
 
 	if o.Pagination != nil {
-		vmc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
+		vrc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
 	}
 
 	var effectiveUserID string
@@ -107,10 +118,10 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.VM, error) {
 	}
 
 	if effectiveUserID != "" {
-		vmc.WithOwner(effectiveUserID)
+		vrc.WithOwner(effectiveUserID)
 	}
 
-	vms, err := c.VMs(vmc)
+	vms, err := c.VMs(vrc)
 	if err != nil {
 		return nil, err
 	}
@@ -175,6 +186,10 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.VM, error) {
 		sort.Slice(vms, func(i, j int) bool {
 			return vms[i].CreatedAt.After(vms[j].CreatedAt)
 		})
+	}
+
+	for _, vm := range vms {
+		c.markAccessedIfOwner(&vm, vrc)
 	}
 
 	return vms, nil
@@ -305,11 +320,6 @@ func (c *Client) Delete(id string) error {
 	}
 
 	err = c.K8s().Delete(id)
-	if err != nil {
-		return makeError(err)
-	}
-
-	err = gpu_repo.New().Detach(vm.ID)
 	if err != nil {
 		return makeError(err)
 	}
@@ -659,9 +669,7 @@ func (c *Client) CheckQuota(id, userID string, quota *model.Quotas, opts ...opts
 			}
 		}
 	} else if o.CreateSnapshot != nil {
-		if usage.Snapshots >= quota.Snapshots {
-			return sErrors.NewQuotaExceededError(fmt.Sprintf("Snapshot count quota exceeded. Current: %d, Quota: %d", usage.Snapshots, quota.Snapshots))
-		}
+		// This is reserved for future use when snapshots are implemented
 	}
 
 	return nil
@@ -683,12 +691,9 @@ func (c *Client) GetHost(vmID string) (*model.Host, error) {
 	return nil, makeError(errors.New("not implemented"))
 }
 
-// createTransferCode creates a transfer code.
-func createTransferCode() string {
-	return utils.HashStringAlphanumeric(uuid.NewString())
-}
-
-// portName returns the name of a port used as a key in the port map in the database.
-func portName(privatePort int, protocol string) string {
-	return fmt.Sprintf("priv-%d-prot-%s", privatePort, protocol)
+// markAccessedIfOwner marks a deployment as accessed if the request is from the owner.
+func (c *Client) markAccessedIfOwner(vm *model.VM, vrc *vm_repo.Client) {
+	if c.V1.HasAuth() && c.V1.Auth().User.ID == vm.OwnerID {
+		_ = vrc.MarkAccessed(vm.ID)
+	}
 }

@@ -1379,538 +1379,6 @@ paths:
       security:
       - ApiKeyAuth: []
       x-codegen-request-body-name: body
-  /v1/vms:
-    get:
-      tags:
-      - VM
-      summary: List VMs
-      description: List VMs
-      parameters:
-      - name: all
-        in: query
-        description: List all
-        schema:
-          type: boolean
-      - name: userId
-        in: query
-        description: Filter by user ID
-        schema:
-          type: string
-      - name: page
-        in: query
-        description: Page number
-        schema:
-          type: integer
-      - name: pageSize
-        in: query
-        description: Number of items per page
-        schema:
-          type: integer
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/go-deploy_dto_v1_body.VmRead'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-    post:
-      tags:
-      - VM
-      summary: Create VM
-      description: Create VM
-      requestBody:
-        description: VM body
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/go-deploy_dto_v1_body.VmCreate'
-        required: true
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/go-deploy_dto_v1_body.VmCreated'
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "423":
-          description: Locked
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      x-codegen-request-body-name: body
-  /v1/vms/{vmId}:
-    get:
-      tags:
-      - VM
-      summary: Get VM
-      description: Get VM
-      parameters:
-      - name: vmId
-        in: path
-        description: VM ID
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/go-deploy_dto_v1_body.VmRead'
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-    post:
-      tags:
-      - VM
-      summary: UpdateVM VM
-      description: UpdateVM VM
-      parameters:
-      - name: vmId
-        in: path
-        description: VM ID
-        required: true
-        schema:
-          type: string
-      requestBody:
-        description: VM update
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/go-deploy_dto_v1_body.VmUpdate'
-        required: true
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/go-deploy_dto_v1_body.VmUpdated'
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "423":
-          description: Locked
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      x-codegen-request-body-name: body
-    delete:
-      tags:
-      - VM
-      summary: DeleteVM VM
-      description: DeleteVM VM
-      parameters:
-      - name: vmId
-        in: path
-        description: VM ID
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/go-deploy_dto_v1_body.VmDeleted'
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "423":
-          description: Locked
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-  /v1/vms/{vmId}/command:
-    post:
-      tags:
-      - VM
-      summary: Do command
-      description: Do command
-      parameters:
-      - name: vmId
-        in: path
-        description: VM ID
-        required: true
-        schema:
-          type: string
-      requestBody:
-        description: Command body
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/body.VmCommand'
-        required: true
-      responses:
-        "204":
-          description: No Content
-          content: {}
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "423":
-          description: Locked
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      x-codegen-request-body-name: body
-  /v1/vms/{vmId}/snapshot/{snapshotId}:
-    post:
-      tags:
-      - VM
-      summary: Get snapshot
-      description: Get snapshot
-      parameters:
-      - name: vmId
-        in: path
-        description: VM ID
-        required: true
-        schema:
-          type: string
-      - name: snapshotId
-        in: path
-        description: Snapshot ID
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/go-deploy_dto_v1_body.VmSnapshotRead'
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-    delete:
-      tags:
-      - VM
-      summary: Delete snapshot
-      description: Delete snapshot
-      parameters:
-      - name: vmId
-        in: path
-        description: VM ID
-        required: true
-        schema:
-          type: string
-      - name: snapshotId
-        in: path
-        description: Snapshot ID
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/go-deploy_dto_v1_body.VmSnapshotRead'
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-  /v1/vms/{vmId}/snapshots:
-    get:
-      tags:
-      - VM
-      summary: List snapshots
-      description: List snapshots
-      parameters:
-      - name: vmId
-        in: path
-        description: VM ID
-        required: true
-        schema:
-          type: string
-      - name: page
-        in: query
-        description: Page number
-        schema:
-          type: integer
-      - name: pageSize
-        in: query
-        description: Number of items per page
-        schema:
-          type: integer
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/go-deploy_dto_v1_body.VmSnapshotRead'
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "423":
-          description: Locked
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-    post:
-      tags:
-      - VM
-      summary: Create snapshot
-      description: Create snapshot
-      parameters:
-      - name: vmId
-        in: path
-        description: VM ID
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/go-deploy_dto_v1_body.VmSnapshotRead'
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-  /v1/vms/gpus:
-    get:
-      tags:
-      - VM
-      summary: Get list of GPUs
-      description: Get list of GPUs
-      parameters:
-      - name: available
-        in: query
-        description: Only show available GPUs
-        schema:
-          type: boolean
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/body.GpuRead'
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "423":
-          description: Locked
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-      security:
-      - ApiKeyAuth: []
   /v1/zones:
     get:
       tags:
@@ -2068,6 +1536,8 @@ components:
     body.DeploymentRead:
       type: object
       properties:
+        accessedAt:
+          type: string
         args:
           type: array
           items:
@@ -2236,17 +1706,6 @@ components:
           maxLength: 10000
           minLength: 1
           type: string
-    body.GpuRead:
-      type: object
-      properties:
-        id:
-          type: string
-        lease:
-          $ref: '#/components/schemas/body.Lease'
-        name:
-          type: string
-        zone:
-          type: string
     body.HarborWebhook:
       type: object
       properties:
@@ -2316,17 +1775,6 @@ components:
           - terminated
           - finished
           - completed
-    body.Lease:
-      type: object
-      properties:
-        end:
-          type: string
-        expired:
-          type: boolean
-        user:
-          type: string
-        vmId:
-          type: string
     body.NotificationRead:
       type: object
       properties:
@@ -2394,16 +1842,34 @@ components:
           description: UnavailableReplicas is the number of replicas that are unavailable.
     body.ResourceMigrationCreate:
       required:
-      - resourceID
+      - resourceId
       - type
       type: object
       properties:
-        resourceID:
+        resourceId:
           type: string
+          description: |-
+            ResourceID is the ID of the resource that is being migrated.
+            This can be a VM ID, deployment ID, etc. depending on the type of the migration.
         status:
           type: string
+          description: |-
+            Status is the status of the resource migration.
+            It is used by privileged admins to directly accept or reject a migration.
+            The field is ignored by non-admins.
+
+            Possible values:
+            - accepted
+            - pending
         type:
           type: string
+          description: |-
+            Type is the type of the resource migration.
+
+            Possible values:
+            - updateOwner
+          enum:
+          - updateOwner
         updateOwner:
           required:
           - ownerId
@@ -2411,6 +1877,9 @@ components:
           properties:
             ownerId:
               type: string
+          description: |-
+            UpdateOwner is the set of parameters that are required for the updateOwner migration type.
+            It is ignored if the migration type is not updateOwner.
     body.ResourceMigrationCreated:
       type: object
       properties:
@@ -2424,22 +1893,43 @@ components:
           type: string
           description: |-
             JobID is the ID of the job that was created for the resource migration.
-            Only if the migration was created with status 'accepted' a job will be created.
+            It will only be set if the migration was created with status 'accepted'.
         resourceId:
           type: string
+          description: |-
+            ResourceID is the ID of the resource that is being migrated.
+            This can be a VM ID, deployment ID, etc. depending on the type of the migration.
         resourceType:
           type: string
+          description: |-
+            ResourceType is the type of the resource that is being migrated.
+
+            Possible values:
+            - vm
+            - deployment
         status:
           type: string
+          description: |-
+            Status is the status of the resource migration.
+            When this field is set to 'accepted', the migration will take place and then automatically be deleted.
         type:
           type: string
+          description: |-
+            Type is the type of the resource migration.
+
+            Possible values:
+            - updateOwner
         updateOwner:
           type: object
           properties:
             ownerId:
               type: string
+          description: |-
+            UpdateOwner is the set of parameters that are required for the updateOwner migration type.
+            It is empty if the migration type is not updateOwner.
         userId:
           type: string
+          description: UserID is the ID of the user who initiated the migration.
     body.ResourceMigrationRead:
       type: object
       properties:
@@ -2451,19 +1941,40 @@ components:
           type: string
         resourceId:
           type: string
+          description: |-
+            ResourceID is the ID of the resource that is being migrated.
+            This can be a VM ID, deployment ID, etc. depending on the type of the migration.
         resourceType:
           type: string
+          description: |-
+            ResourceType is the type of the resource that is being migrated.
+
+            Possible values:
+            - vm
+            - deployment
         status:
           type: string
+          description: |-
+            Status is the status of the resource migration.
+            When this field is set to 'accepted', the migration will take place and then automatically be deleted.
         type:
           type: string
+          description: |-
+            Type is the type of the resource migration.
+
+            Possible values:
+            - updateOwner
         updateOwner:
           type: object
           properties:
             ownerId:
               type: string
+          description: |-
+            UpdateOwner is the set of parameters that are required for the updateOwner migration type.
+            It is empty if the migration type is not updateOwner.
         userId:
           type: string
+          description: UserID is the ID of the user who initiated the migration.
     body.ResourceMigrationUpdate:
       required:
       - status
@@ -2471,8 +1982,19 @@ components:
       properties:
         code:
           type: string
+          description: |-
+            Code is a token required when accepting a migration if the acceptor is not an admin.
+            It is sent to the acceptor using the notification API
         status:
           type: string
+          description: |-
+            Status is the status of the resource migration.
+            It is used to accept a migration by setting the status to 'accepted'.
+            If the acceptor is not an admin, a Code must be provided.
+
+            Possible values:
+            - accepted
+            - pending
     body.ResourceMigrationUpdated:
       type: object
       properties:
@@ -2486,22 +2008,43 @@ components:
           type: string
           description: |-
             JobID is the ID of the job that was created for the resource migration.
-            Only if the migration was updated with status 'accepted' a job will be created.
+            It will only be set if the migration was updated with status 'accepted'.
         resourceId:
           type: string
+          description: |-
+            ResourceID is the ID of the resource that is being migrated.
+            This can be a VM ID, deployment ID, etc. depending on the type of the migration.
         resourceType:
           type: string
+          description: |-
+            ResourceType is the type of the resource that is being migrated.
+
+            Possible values:
+            - vm
+            - deployment
         status:
           type: string
+          description: |-
+            Status is the status of the resource migration.
+            When this field is set to 'accepted', the migration will take place and then automatically be deleted.
         type:
           type: string
+          description: |-
+            Type is the type of the resource migration.
+
+            Possible values:
+            - updateOwner
         updateOwner:
           type: object
           properties:
             ownerId:
               type: string
+          description: |-
+            UpdateOwner is the set of parameters that are required for the updateOwner migration type.
+            It is empty if the migration type is not updateOwner.
         userId:
           type: string
+          description: UserID is the ID of the user who initiated the migration.
     body.Role:
       type: object
       properties:
@@ -2662,11 +2205,9 @@ components:
         cpuCores:
           type: number
         diskSize:
-          type: number
+          type: integer
         ram:
           type: number
-        snapshots:
-          type: integer
     body.UserData:
       required:
       - key
@@ -2742,17 +2283,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/body.UserData'
-    body.VmCommand:
-      required:
-      - command
-      type: object
-      properties:
-        command:
-          type: string
-          enum:
-          - start
-          - stop
-          - reboot
     body.Volume:
       required:
       - appPath
@@ -2805,271 +2335,9 @@ components:
           type: boolean
         endpoints:
           $ref: '#/components/schemas/body.ZoneEndpoints'
-        interface:
-          type: string
-          description: |-
-            Interface
-            Deprecated: use Endpoints instead
         legacy:
           type: boolean
         name:
-          type: string
-        type:
-          type: string
-          description: |-
-            Type
-            Deprecated: use Capabilities instead
-    go-deploy_dto_v1_body.HttpProxyCreate:
-      required:
-      - name
-      type: object
-      properties:
-        customDomain:
-          type: string
-        name:
-          maxLength: 30
-          minLength: 3
-          type: string
-    go-deploy_dto_v1_body.HttpProxyRead:
-      required:
-      - name
-      type: object
-      properties:
-        customDomain:
-          type: string
-        customDomainSecret:
-          type: string
-        customDomainStatus:
-          type: string
-        customDomainUrl:
-          type: string
-        name:
-          maxLength: 30
-          minLength: 3
-          type: string
-        url:
-          type: string
-    go-deploy_dto_v1_body.HttpProxyUpdate:
-      required:
-      - name
-      type: object
-      properties:
-        customDomain:
-          type: string
-        name:
-          maxLength: 30
-          minLength: 3
-          type: string
-    go-deploy_dto_v1_body.PortCreate:
-      required:
-      - name
-      - port
-      - protocol
-      type: object
-      properties:
-        httpProxy:
-          $ref: '#/components/schemas/go-deploy_dto_v1_body.HttpProxyCreate'
-        name:
-          maxLength: 100
-          minLength: 1
-          type: string
-        port:
-          maximum: 65535
-          minimum: 1
-          type: integer
-        protocol:
-          type: string
-          enum:
-          - tcp
-          - udp
-    go-deploy_dto_v1_body.PortRead:
-      type: object
-      properties:
-        externalPort:
-          type: integer
-        httpProxy:
-          $ref: '#/components/schemas/go-deploy_dto_v1_body.HttpProxyRead'
-        name:
-          type: string
-        port:
-          type: integer
-        protocol:
-          type: string
-    go-deploy_dto_v1_body.PortUpdate:
-      required:
-      - name
-      - port
-      - protocol
-      type: object
-      properties:
-        httpProxy:
-          $ref: '#/components/schemas/go-deploy_dto_v1_body.HttpProxyUpdate'
-        name:
-          maxLength: 100
-          minLength: 1
-          type: string
-        port:
-          maximum: 65535
-          minimum: 1
-          type: integer
-        protocol:
-          type: string
-          enum:
-          - tcp
-          - udp
-    go-deploy_dto_v1_body.Specs:
-      type: object
-      properties:
-        cpuCores:
-          type: integer
-        diskSize:
-          type: integer
-        ram:
-          type: integer
-    go-deploy_dto_v1_body.VmCreate:
-      required:
-      - cpuCores
-      - diskSize
-      - name
-      - ram
-      - sshPublicKey
-      type: object
-      properties:
-        cpuCores:
-          minimum: 2
-          type: integer
-        diskSize:
-          minimum: 20
-          type: integer
-        name:
-          maxLength: 30
-          minLength: 3
-          type: string
-        ports:
-          maxItems: 10
-          minItems: 0
-          type: array
-          items:
-            $ref: '#/components/schemas/go-deploy_dto_v1_body.PortCreate'
-        ram:
-          minimum: 1
-          type: integer
-        sshPublicKey:
-          type: string
-        zone:
-          type: string
-    go-deploy_dto_v1_body.VmCreated:
-      type: object
-      properties:
-        id:
-          type: string
-        jobId:
-          type: string
-    go-deploy_dto_v1_body.VmDeleted:
-      type: object
-      properties:
-        id:
-          type: string
-        jobId:
-          type: string
-    go-deploy_dto_v1_body.VmGpuLease:
-      type: object
-      properties:
-        expired:
-          type: boolean
-        id:
-          type: string
-        leaseEnd:
-          type: string
-        name:
-          type: string
-    go-deploy_dto_v1_body.VmRead:
-      type: object
-      properties:
-        connectionString:
-          type: string
-        createdAt:
-          type: string
-        gpu:
-          $ref: '#/components/schemas/go-deploy_dto_v1_body.VmGpuLease'
-        host:
-          type: string
-        id:
-          type: string
-        name:
-          type: string
-        ownerId:
-          type: string
-        ports:
-          type: array
-          items:
-            $ref: '#/components/schemas/go-deploy_dto_v1_body.PortRead'
-        repairedAt:
-          type: string
-        specs:
-          $ref: '#/components/schemas/go-deploy_dto_v1_body.Specs'
-        sshPublicKey:
-          type: string
-        status:
-          type: string
-        teams:
-          type: array
-          items:
-            type: string
-        updatedAt:
-          type: string
-        zone:
-          type: string
-    go-deploy_dto_v1_body.VmSnapshotRead:
-      type: object
-      properties:
-        created:
-          type: string
-        current:
-          type: boolean
-        displayName:
-          type: string
-        id:
-          type: string
-        parentName:
-          type: string
-        state:
-          type: string
-        vmId:
-          type: string
-    go-deploy_dto_v1_body.VmUpdate:
-      type: object
-      properties:
-        cpuCores:
-          minimum: 1
-          type: integer
-        gpuId:
-          maxLength: 100
-          minLength: 0
-          type: string
-        name:
-          maxLength: 30
-          minLength: 3
-          type: string
-        noLeaseEnd:
-          type: boolean
-        ports:
-          maxItems: 10
-          minItems: 0
-          type: array
-          items:
-            $ref: '#/components/schemas/go-deploy_dto_v1_body.PortUpdate'
-        ram:
-          minimum: 1
-          type: integer
-        snapshotId:
-          type: string
-    go-deploy_dto_v1_body.VmUpdated:
-      type: object
-      properties:
-        id:
-          type: string
-        jobId:
           type: string
     sys.Error:
       type: object

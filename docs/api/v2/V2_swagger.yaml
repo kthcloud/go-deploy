@@ -377,7 +377,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/go-deploy_dto_v2_body.VmSnapshotRead'
+                  $ref: '#/components/schemas/body.VmSnapshotRead'
         "400":
           description: Bad Request
           content:
@@ -422,7 +422,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/go-deploy_dto_v2_body.VmSnapshotCreated'
+                $ref: '#/components/schemas/body.VmSnapshotCreated'
         "400":
           description: Bad Request
           content:
@@ -526,7 +526,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/go-deploy_dto_v2_body.VmRead'
+                  $ref: '#/components/schemas/body.VmRead'
         "400":
           description: Bad Request
           content:
@@ -563,7 +563,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/go-deploy_dto_v2_body.VmCreate'
+              $ref: '#/components/schemas/body.VmCreate'
         required: true
       responses:
         "200":
@@ -571,7 +571,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/go-deploy_dto_v2_body.VmCreated'
+                $ref: '#/components/schemas/body.VmCreated'
         "400":
           description: Bad Request
           content:
@@ -618,7 +618,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/go-deploy_dto_v2_body.VmRead'
+                $ref: '#/components/schemas/body.VmRead'
         "400":
           description: Bad Request
           content:
@@ -656,7 +656,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/go-deploy_dto_v2_body.VmUpdate'
+              $ref: '#/components/schemas/body.VmUpdate'
         required: true
       responses:
         "200":
@@ -664,7 +664,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/go-deploy_dto_v2_body.VmUpdated'
+                $ref: '#/components/schemas/body.VmUpdated'
         "400":
           description: Bad Request
           content:
@@ -710,7 +710,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/go-deploy_dto_v2_body.VmDeleted'
+                $ref: '#/components/schemas/body.VmDeleted'
         "400":
           description: Bad Request
           content:
@@ -762,7 +762,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/go-deploy_dto_v2_body.VmSnapshotRead'
+                $ref: '#/components/schemas/body.VmSnapshotRead'
         "400":
           description: Bad Request
           content:
@@ -807,7 +807,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/go-deploy_dto_v2_body.VmSnapshotDeleted'
+                $ref: '#/components/schemas/body.VmSnapshotDeleted'
         "400":
           description: Bad Request
           content:
@@ -944,6 +944,113 @@ components:
           type: string
         jobId:
           type: string
+    body.HttpProxyCreate:
+      required:
+      - name
+      type: object
+      properties:
+        customDomain:
+          type: string
+          description: |-
+            CustomDomain is the domain that the deployment will be available on.
+            The max length is set to 243 to allow for a sub domain when confirming the domain.
+        name:
+          maxLength: 30
+          minLength: 3
+          type: string
+    body.HttpProxyRead:
+      required:
+      - name
+      type: object
+      properties:
+        customDomain:
+          $ref: '#/components/schemas/body.CustomDomainRead'
+        name:
+          maxLength: 30
+          minLength: 3
+          type: string
+        url:
+          type: string
+    body.HttpProxyUpdate:
+      required:
+      - name
+      type: object
+      properties:
+        customDomain:
+          type: string
+          description: |-
+            CustomDomain is the domain that the deployment will be available on.
+            The max length is set to 243 to allow for a sub domain when confirming the domain.
+        name:
+          maxLength: 30
+          minLength: 3
+          type: string
+    body.PortCreate:
+      required:
+      - name
+      - port
+      - protocol
+      type: object
+      properties:
+        httpProxy:
+          $ref: '#/components/schemas/body.HttpProxyCreate'
+        name:
+          maxLength: 100
+          minLength: 1
+          type: string
+        port:
+          maximum: 65535
+          minimum: 1
+          type: integer
+        protocol:
+          type: string
+          enum:
+          - tcp
+          - udp
+    body.PortRead:
+      type: object
+      properties:
+        externalPort:
+          type: integer
+        httpProxy:
+          $ref: '#/components/schemas/body.HttpProxyRead'
+        name:
+          type: string
+        port:
+          type: integer
+        protocol:
+          type: string
+    body.PortUpdate:
+      required:
+      - name
+      - port
+      - protocol
+      type: object
+      properties:
+        httpProxy:
+          $ref: '#/components/schemas/body.HttpProxyUpdate'
+        name:
+          maxLength: 100
+          minLength: 1
+          type: string
+        port:
+          maximum: 65535
+          minimum: 1
+          type: integer
+        protocol:
+          type: string
+          enum:
+          - tcp
+          - udp
+    body.Specs:
+      type: object
+      properties:
+        cpuCores:
+          type: integer
+        diskSize:
+          type: integer
+        ram:
+          type: integer
     body.VmActionCreate:
       required:
       - action
@@ -963,114 +1070,7 @@ components:
           type: string
         jobId:
           type: string
-    go-deploy_dto_v2_body.HttpProxyCreate:
-      required:
-      - name
-      type: object
-      properties:
-        customDomain:
-          type: string
-          description: |-
-            CustomDomain is the domain that the deployment will be available on.
-            The max length is set to 243 to allow for a sub domain when confirming the domain.
-        name:
-          maxLength: 30
-          minLength: 3
-          type: string
-    go-deploy_dto_v2_body.HttpProxyRead:
-      required:
-      - name
-      type: object
-      properties:
-        customDomain:
-          $ref: '#/components/schemas/body.CustomDomainRead'
-        name:
-          maxLength: 30
-          minLength: 3
-          type: string
-        url:
-          type: string
-    go-deploy_dto_v2_body.HttpProxyUpdate:
-      required:
-      - name
-      type: object
-      properties:
-        customDomain:
-          type: string
-          description: |-
-            CustomDomain is the domain that the deployment will be available on.
-            The max length is set to 243 to allow for a sub domain when confirming the domain.
-        name:
-          maxLength: 30
-          minLength: 3
-          type: string
-    go-deploy_dto_v2_body.PortCreate:
-      required:
-      - name
-      - port
-      - protocol
-      type: object
-      properties:
-        httpProxy:
-          $ref: '#/components/schemas/go-deploy_dto_v2_body.HttpProxyCreate'
-        name:
-          maxLength: 100
-          minLength: 1
-          type: string
-        port:
-          maximum: 65535
-          minimum: 1
-          type: integer
-        protocol:
-          type: string
-          enum:
-          - tcp
-          - udp
-    go-deploy_dto_v2_body.PortRead:
-      type: object
-      properties:
-        externalPort:
-          type: integer
-        httpProxy:
-          $ref: '#/components/schemas/go-deploy_dto_v2_body.HttpProxyRead'
-        name:
-          type: string
-        port:
-          type: integer
-        protocol:
-          type: string
-    go-deploy_dto_v2_body.PortUpdate:
-      required:
-      - name
-      - port
-      - protocol
-      type: object
-      properties:
-        httpProxy:
-          $ref: '#/components/schemas/go-deploy_dto_v2_body.HttpProxyUpdate'
-        name:
-          maxLength: 100
-          minLength: 1
-          type: string
-        port:
-          maximum: 65535
-          minimum: 1
-          type: integer
-        protocol:
-          type: string
-          enum:
-          - tcp
-          - udp
-    go-deploy_dto_v2_body.Specs:
-      type: object
-      properties:
-        cpuCores:
-          type: integer
-        diskSize:
-          type: integer
-        ram:
-          type: integer
-    go-deploy_dto_v2_body.VmCreate:
+    body.VmCreate:
       required:
       - cpuCores
       - diskSize
@@ -1094,7 +1094,7 @@ components:
           minItems: 0
           type: array
           items:
-            $ref: '#/components/schemas/go-deploy_dto_v2_body.PortCreate'
+            $ref: '#/components/schemas/body.PortCreate'
         ram:
           minimum: 1
           type: integer
@@ -1102,21 +1102,21 @@ components:
           type: string
         zone:
           type: string
-    go-deploy_dto_v2_body.VmCreated:
+    body.VmCreated:
       type: object
       properties:
         id:
           type: string
         jobId:
           type: string
-    go-deploy_dto_v2_body.VmDeleted:
+    body.VmDeleted:
       type: object
       properties:
         id:
           type: string
         jobId:
           type: string
-    go-deploy_dto_v2_body.VmGpuLease:
+    body.VmGpuLease:
       type: object
       properties:
         activatedAt:
@@ -1146,13 +1146,15 @@ components:
           type: string
         leaseDuration:
           type: number
-    go-deploy_dto_v2_body.VmRead:
+    body.VmRead:
       type: object
       properties:
+        accessedAt:
+          type: string
         createdAt:
           type: string
         gpu:
-          $ref: '#/components/schemas/go-deploy_dto_v2_body.VmGpuLease'
+          $ref: '#/components/schemas/body.VmGpuLease'
         host:
           type: string
         id:
@@ -1166,11 +1168,11 @@ components:
         ports:
           type: array
           items:
-            $ref: '#/components/schemas/go-deploy_dto_v2_body.PortRead'
+            $ref: '#/components/schemas/body.PortRead'
         repairedAt:
           type: string
         specs:
-          $ref: '#/components/schemas/go-deploy_dto_v2_body.Specs'
+          $ref: '#/components/schemas/body.Specs'
         sshConnectionString:
           type: string
         sshPublicKey:
@@ -1185,21 +1187,21 @@ components:
           type: string
         zone:
           type: string
-    go-deploy_dto_v2_body.VmSnapshotCreated:
+    body.VmSnapshotCreated:
       type: object
       properties:
         id:
           type: string
         jobId:
           type: string
-    go-deploy_dto_v2_body.VmSnapshotDeleted:
+    body.VmSnapshotDeleted:
       type: object
       properties:
         id:
           type: string
         jobId:
           type: string
-    go-deploy_dto_v2_body.VmSnapshotRead:
+    body.VmSnapshotRead:
       type: object
       properties:
         created:
@@ -1210,7 +1212,7 @@ components:
           type: string
         status:
           type: string
-    go-deploy_dto_v2_body.VmUpdate:
+    body.VmUpdate:
       type: object
       properties:
         cpuCores:
@@ -1234,11 +1236,11 @@ components:
           minItems: 0
           type: array
           items:
-            $ref: '#/components/schemas/go-deploy_dto_v2_body.PortUpdate'
+            $ref: '#/components/schemas/body.PortUpdate'
         ram:
           minimum: 1
           type: integer
-    go-deploy_dto_v2_body.VmUpdated:
+    body.VmUpdated:
       type: object
       properties:
         id:

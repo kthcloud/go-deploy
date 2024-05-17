@@ -31,11 +31,8 @@ type ConfigType struct {
 	Timer struct {
 		GpuSynchronize            time.Duration `yaml:"gpuSynchronize"`
 		GpuLeaseSynchronize       time.Duration `yaml:"gpuLeaseSynchronize"`
-		VmStatusUpdate            time.Duration `yaml:"vmStatusUpdate"`
-		VmSnapshotUpdate          time.Duration `yaml:"vmSnapshotUpdate"`
 		DeploymentStatusUpdate    time.Duration `yaml:"deploymentStatusUpdate"`
 		DeploymentPingUpdate      time.Duration `yaml:"deploymentPingUpdate"`
-		Snapshot                  time.Duration `yaml:"snapshot"`
 		DeploymentRepair          time.Duration `yaml:"deploymentRepair"`
 		VmRepair                  time.Duration `yaml:"vmRepair"`
 		SmRepair                  time.Duration `yaml:"smRepair"`
@@ -46,6 +43,7 @@ type ConfigType struct {
 		VmDeletionConfirm         time.Duration `yaml:"vmDeletionConfirm"`
 		SmDeletionConfirm         time.Duration `yaml:"smDeletionConfirm"`
 		CustomDomainConfirm       time.Duration `yaml:"customDomainConfirm"`
+		StaleResourceCleanup      time.Duration `yaml:"staleResourceCleanup"`
 	}
 
 	GPU struct {
@@ -86,14 +84,6 @@ type ConfigType struct {
 		Password string `yaml:"password"`
 	}
 
-	// CS is the CloudStack configuration
-	// Deprecated: CloudStack will no longer be used
-	CS struct {
-		URL    string `yaml:"url"`
-		ApiKey string `yaml:"apiKey"`
-		Secret string `yaml:"secret"`
-	} `yaml:"cs"`
-
 	SysApi struct {
 		URL      string `yaml:"url"`
 		User     string `yaml:"user"`
@@ -127,51 +117,34 @@ type KubeConfigSource struct {
 	Filepath string `yaml:"filepath"`
 }
 
-// CloudStackConfigSource
-// Deprecated: Use RancherConfigSource or KubeConfigSource instead
-type CloudStackConfigSource struct {
-	ClusterID   string `yaml:"clusterId"`
-	ExternalURL string `yaml:"externalUrl"`
-}
-
 type VM struct {
-	DefaultZone       string `yaml:"defaultZone"`
-	AdminSshPublicKey string `yaml:"adminSshPublicKey"`
-	Image             string `yaml:"image"`
-
-	// Zones is a list of zones that are used for VM v1
-	// Deprecated: Use Zone instead
-	Zones []LegacyZone `yaml:"zones"`
-}
-
-// LegacyZone is a zone that is used for VM v1
-// Deprecated: User Zone instead
-type LegacyZone struct {
-	Name         string `yaml:"name"`
-	Description  string `yaml:"description"`
-	ParentDomain string `yaml:"parentDomain"`
-	PortRange    struct {
-		Start int `yaml:"start"`
-		End   int `yaml:"end"`
-	} `yaml:"portRange"`
-
-	// CloudStack IDs
-	ZoneID      string `yaml:"zoneId"`
-	ProjectID   string `yaml:"projectId"`
-	NetworkID   string `yaml:"networkId"`
-	IpAddressID string `yaml:"ipAddressId"`
-	TemplateID  string `yaml:"templateId"`
+	DefaultZone       string        `yaml:"defaultZone"`
+	Lifetime          time.Duration `yaml:"lifetime"`
+	AdminSshPublicKey string        `yaml:"adminSshPublicKey"`
+	Image             string        `yaml:"image"`
 }
 
 type Deployment struct {
-	DefaultZone                    string `yaml:"defaultZone"`
-	Port                           int    `yaml:"port"`
-	Prefix                         string `yaml:"prefix"`
+	DefaultZone string        `yaml:"defaultZone"`
+	Port        int           `yaml:"port"`
+	Prefix      string        `yaml:"prefix"`
+	Lifetime    time.Duration `yaml:"lifetime"`
+	Fallback    struct {
+		// Disabled is the name of the fallback deployment that other deployments can reference
+		// The fallback deployment can be created with go-deploy, or it can be created manually
+		Disabled struct {
+			// Name is the name of the fallback deployment
+			Name string `yaml:"name"`
+		} `yaml:"disabled"`
+	} `yaml:"fallback"`
+
 	WildcardCertSecretNamespace    string `yaml:"wildcardCertSecretNamespace"`
 	WildcardCertSecretName         string `yaml:"wildcardCertSecretName"`
 	CustomDomainTxtRecordSubdomain string `yaml:"customDomainTxtRecordSubdomain"`
-	IngressClass                   string `yaml:"ingressClass"`
-	Resources                      struct {
+
+	IngressClass string `yaml:"ingressClass"`
+
+	Resources struct {
 		AutoScale struct {
 			CpuThreshold    int `yaml:"cpuThreshold"`
 			MemoryThreshold int `yaml:"memoryThreshold"`

@@ -4,7 +4,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go-deploy/dto/v1/body"
 	"go-deploy/test/e2e"
-	"net/http"
 	"testing"
 )
 
@@ -15,22 +14,21 @@ const (
 
 func GetNotification(t *testing.T, id string, userID ...string) body.NotificationRead {
 	resp := e2e.DoGetRequest(t, NotificationPath+id, userID...)
-	assert.Equal(t, http.StatusOK, resp.StatusCode, "notification was not fetched")
-
-	var notificationRead body.NotificationRead
-	err := e2e.ReadResponseBody(t, resp, &notificationRead)
-	assert.NoError(t, err, "notification was not fetched")
-
-	return notificationRead
+	return e2e.MustParse[body.NotificationRead](t, resp)
 }
 
 func ListNotifications(t *testing.T, query string, userID ...string) []body.NotificationRead {
 	resp := e2e.DoGetRequest(t, NotificationsPath+query, userID...)
-	assert.Equal(t, http.StatusOK, resp.StatusCode, "notifications were not fetched")
+	return e2e.MustParse[[]body.NotificationRead](t, resp)
+}
 
-	var notifications []body.NotificationRead
-	err := e2e.ReadResponseBody(t, resp, &notifications)
-	assert.NoError(t, err, "notifications were not fetched")
+func UpdateNotification(t *testing.T, id string, update body.NotificationUpdate, userID ...string) body.NotificationRead {
+	resp := e2e.DoPostRequest(t, NotificationPath+id, update, userID...)
+	updatedNotification := e2e.MustParse[body.NotificationRead](t, resp)
 
-	return notifications
+	if update.Read {
+		assert.NotNil(t, updatedNotification.ReadAt)
+	}
+
+	return updatedNotification
 }

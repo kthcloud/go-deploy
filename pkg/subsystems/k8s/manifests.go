@@ -129,6 +129,13 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 	}
 	labels[keys.LabelDeployName] = public.Name
 
+	var replicas int32
+	if public.Disabled {
+		replicas = 0
+	} else {
+		replicas = 1
+	}
+
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      public.Name,
@@ -139,7 +146,7 @@ func CreateDeploymentManifest(public *models.DeploymentPublic) *appsv1.Deploymen
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: intToInt32Ptr(1),
+			Replicas: &replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					keys.LabelDeployName: public.Name,

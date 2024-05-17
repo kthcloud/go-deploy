@@ -231,3 +231,7 @@ func MustParse[okType any](t *testing.T, resp *http.Response) okType {
 
 	return okResp
 }
+
+func IsUserError(code int) bool {
+	return code >= 400 && code < 500
+}

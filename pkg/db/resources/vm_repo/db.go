@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"go-deploy/models/model"
+	"go-deploy/models/version"
 	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/db"
 	"go-deploy/utils"
@@ -49,31 +50,29 @@ func (client *Client) Create(id, owner string, params *model.VmCreateParams) (*m
 	vm := model.VM{
 		ID:      id,
 		Name:    params.Name,
-		Version: params.Version,
-
+		Version: version.V2,
+		Zone:    params.Zone,
 		OwnerID: owner,
-
-		Zone:           params.Zone,
-		DeploymentZone: params.DeploymentZone,
 
 		CreatedAt:  time.Now(),
 		UpdatedAt:  time.Time{},
 		RepairedAt: time.Time{},
 		DeletedAt:  time.Time{},
+		AccessedAt: time.Now(),
 
 		SshPublicKey: params.SshPublicKey,
 		PortMap:      portMap,
-		Activities:   map[string]model.Activity{model.ActivityBeingCreated: {model.ActivityBeingCreated, time.Now()}},
-		Subsystems:   model.Subsystems{},
 		Specs: model.VmSpecs{
 			CpuCores: params.CpuCores,
 			RAM:      params.RAM,
 			DiskSize: params.DiskSize,
 		},
 
-		Status:        status_codes.GetMsg(status_codes.ResourceCreating),
-		StatusCode:    status_codes.ResourceCreating,
-		StatusMessage: status_codes.GetMsg(status_codes.ResourceCreating),
+		Subsystems: model.Subsystems{},
+		Activities: map[string]model.Activity{model.ActivityBeingCreated: {model.ActivityBeingCreated, time.Now()}},
+
+		Host:   nil,
+		Status: status_codes.GetMsg(status_codes.ResourceCreating),
 	}
 
 	_, err := client.Collection.InsertOne(context.TODO(), vm)
@@ -235,10 +234,9 @@ func (client *Client) GetUsage() (*model.VmUsage, error) {
 	}
 
 	usage := &model.VmUsage{
-		CpuCores:  0,
-		RAM:       0,
-		DiskSize:  0,
-		Snapshots: 0,
+		CpuCores: 0,
+		RAM:      0,
+		DiskSize: 0,
 	}
 
 	for _, vm := range vms {
@@ -305,6 +303,11 @@ func (client *Client) MarkUpdated(id string) error {
 	}
 
 	return nil
+}
+
+// MarkAccessed marks a deployment as accessed to the current time.
+func (client *Client) MarkAccessed(id string) error {
+	return client.SetWithBsonByID(id, bson.D{{"accessedAt", time.Now()}})
 }
 
 // generateCustomDomainSecret generates a random alphanumeric string.
