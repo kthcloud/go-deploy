@@ -5,11 +5,7 @@ mode: $mode
 timer:
   gpuSynchronize: 5m
   gpuLeaseSynchronize: 15s
-  vmStatusUpdate: 20s
-  vmSnapshotUpdate: 30s
-  deploymentStatusUpdate: 5s 
   deploymentPingUpdate: 15s
-  snapshot: 1h
   deploymentRepair: 30m 
   vmRepair: 30m
   smRepair: 30m
@@ -107,7 +103,6 @@ roles:
       cpuCores: 2
       ram: 4
       diskSize: 20
-      snapshots: 1
       gpuLeaseDuration:
   - name: base
     description: base
@@ -122,7 +117,6 @@ roles:
       cpuCores: 4
       ram: 16
       diskSize: 50
-      snapshots: 5
       gpuLeaseDuration: 5
   - name: power
     description: power
