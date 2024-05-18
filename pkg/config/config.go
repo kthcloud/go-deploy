@@ -11,6 +11,7 @@ import (
 	"gopkg.in/yaml.v3"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/flowcontrol"
 	"os"
 	"strings"
 	"time"
@@ -215,6 +216,8 @@ func createK8sClients(configData []byte) (*kubernetes.Clientset, *kubevirt.Clien
 	if err != nil {
 		return nil, nil, makeError(err)
 	}
+
+	kubeConfig.RateLimiter = flowcontrol.NewFakeAlwaysRateLimiter()
 
 	k8sClient, err := kubernetes.NewForConfig(kubeConfig)
 	if err != nil {
