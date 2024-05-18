@@ -11,6 +11,6 @@ import (
 // Synchronizers are workers that periodically synchronize resources, such as GPUs.
 func Setup(ctx context.Context) {
 	log.Println("Starting synchronizers")
-	go workers.PeriodicWorker(ctx, "GpuSynchronizer", GpuSynchronizer, config.Config.Timer.GpuSynchronize)
-	go workers.PeriodicWorker(ctx, "GpuLeaseSynchronizer", GpuLeaseSynchronizer, config.Config.Timer.GpuLeaseSynchronize)
+	go workers.PeriodicWorker(ctx, "gpuSynchronizer", GpuSynchronizer, config.Config.Timer.GpuSynchronize)
+	go workers.PeriodicWorker(ctx, "gpuLeaseSynchronizer", GpuLeaseSynchronizer, config.Config.Timer.GpuLeaseSynchronize)
 }
