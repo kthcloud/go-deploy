@@ -9,7 +9,6 @@ timer:
   vmSnapshotUpdate: 30s
   deploymentStatusUpdate: 5s 
   deploymentPingUpdate: 15s
-  snapshot: 1h
   deploymentRepair: 30m 
   vmRepair: 30m
   smRepair: 30m

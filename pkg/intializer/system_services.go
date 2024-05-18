@@ -12,7 +12,12 @@ import (
 // EnsureSystemDeploymentsExists ensures that the deployments related to the system are created.
 // This includes the fallback deployment, which is used by other deployments.
 func EnsureSystemDeploymentsExists() error {
-	for _, zone := range config.Config.Zones { // Fallback-disabled deployment
+	// Fallback-disabled deployment
+	for _, zone := range config.Config.Zones {
+		if config.Config.Deployment.Fallback.Disabled.Name == "" {
+			return errors.New("fallback deployment name not set")
+		}
+
 		err := service.V1().Deployments().Create(uuid.NewString(), "system", &body.DeploymentCreate{
 			Name:     config.Config.Deployment.Fallback.Disabled.Name,
 			CpuCores: floatPtr(1),
