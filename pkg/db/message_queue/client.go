@@ -55,7 +55,6 @@ func (client *Client) Consume(queueName string, handler func(data []byte) error)
 			err := handler([]byte(msg.Payload))
 			if err != nil {
 				log.Println("Failed to handle queue message. Details: " + err.Error())
-				return
 			}
 		}
 	}()
