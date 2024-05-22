@@ -82,6 +82,21 @@ func (c *ConfigType) GetRolesByIamGroups(iamGroups []string) []model.Role {
 	return roles
 }
 
+// EnabledZones returns all zones that are enabled.
+// If no zones are found, an empty slice is returned.
+// All zones are loaded locally by the configuration file
+func (c *ConfigType) EnabledZones() []Zone {
+	var zones []Zone
+
+	for _, zone := range c.Zones {
+		if zone.Enabled {
+			zones = append(zones, zone)
+		}
+	}
+
+	return zones
+}
+
 // GetZone returns the Zone with the given name.
 // If the zone is not found, nil is returned.
 // All zones are loaded locally by the configuration file
