@@ -56,6 +56,8 @@ func OnPodEvent(ctx context.Context, zone *configModels.Zone, cancelFuncs map[st
 				return nil
 			}
 
+			log.Println("Setting up log stream for pod", logEvent.PodName)
+
 			lastLogged := LastLogged(kvc, logEvent.PodName)
 			onLog := func(deploymentName string, lines []model.Log) {
 				err = deployment_repo.New().AddLogsByName(deploymentName, lines...)
@@ -100,6 +102,8 @@ func OnPodEvent(ctx context.Context, zone *configModels.Zone, cancelFuncs map[st
 
 			return nil
 		case k8s.PodEventDeleted:
+			log.Println("Removing log stream for pod", logEvent.PodName)
+
 			cancelFuncs[logEvent.PodName]()
 			delete(cancelFuncs, logEvent.PodName)
 		}
