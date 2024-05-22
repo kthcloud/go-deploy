@@ -53,6 +53,10 @@ func addAccessedAt_2024_05_17() error {
 	}
 
 	for _, deployment := range deployments {
+		if deployment.OwnerID == "system" {
+			continue
+		}
+
 		user, err := user_repo.New().GetByID(deployment.OwnerID)
 		if err != nil {
 			return err
@@ -69,6 +73,10 @@ func addAccessedAt_2024_05_17() error {
 	}
 
 	for _, vm := range vms {
+		if vm.OwnerID == "system" {
+			continue
+		}
+
 		user, err := user_repo.New().GetByID(vm.OwnerID)
 		if err != nil {
 			return err
