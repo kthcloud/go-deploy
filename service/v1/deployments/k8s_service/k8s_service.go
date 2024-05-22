@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go-deploy/models/config"
 	configModels "go-deploy/models/config"
 	"go-deploy/models/model"
 	"go-deploy/pkg/db/resources/deployment_repo"
@@ -18,6 +17,7 @@ import (
 	"go-deploy/service/v1/deployments/opts"
 	"go-deploy/utils"
 	"slices"
+	"time"
 )
 
 // Create sets up K8s for the deployment.
@@ -624,38 +624,39 @@ func (c *Client) Repair(id string) error {
 	return nil
 }
 
-// SetupLogStream sets up a log stream for the deployment.
-//
-// It sets up a log stream for all the pods in the deployment.
-// The handler function is called for each log line.
-func (c *Client) SetupLogStream(ctx context.Context, zone *config.Zone, allowedNames []string, handler func(name string, lines []model.Log)) error {
-	makeError := func(err error) error {
-		return fmt.Errorf("failed to set up log stream for zone %s. details: %w", zone.Name, err)
-	}
-
+// SetupPodLogStream sets up a log stream for a pod.
+func (c *Client) SetupPodLogStream(ctx context.Context, zone *configModels.Zone, podName string, from time.Time, onLog func(deploymentName string, lines []model.Log)) error {
 	_, kc, _, err := c.Get(OptsOnlyClient(zone))
 	if err != nil {
-		return makeError(err)
+		return err
 	}
 
-	err = kc.SetupLogStream(ctx, allowedNames, func(name string, k8sLines []k8sModels.LogLine) {
+	handler := func(deploymentName string, k8sLines []k8sModels.LogLine) {
 		lines := make([]model.Log, 0, len(k8sLines))
 		for _, line := range k8sLines {
 			lines = append(lines, model.Log{
 				Source:    model.LogSourcePod,
-				Prefix:    fmt.Sprintf("[pod %d]", line.PodNumber),
+				Prefix:    fmt.Sprintf("[pod %d]", 0),
 				Line:      line.Line,
 				CreatedAt: line.CreatedAt,
 			})
 		}
 
-		handler(name, lines)
-	})
-	if err != nil {
-		return makeError(err)
+		onLog(deploymentName, lines)
 	}
 
-	return nil
+	return kc.SetupLogStream(ctx, podName, from, handler)
+}
+
+// SetupPodWatcher sets up a pod watcher for the deployment.
+// For every pod change, it triggers the callback.
+func (c *Client) SetupPodWatcher(ctx context.Context, zone *configModels.Zone, callback func(podName, event string)) error {
+	_, kc, _, err := c.Get(OptsOnlyClient(zone))
+	if err != nil {
+		return err
+	}
+
+	return kc.SetupPodWatcher(ctx, callback)
 }
 
 // SetupStatusWatcher sets up a status watcher for a zone.
@@ -666,7 +667,7 @@ func (c *Client) SetupStatusWatcher(ctx context.Context, zone *configModels.Zone
 		return err
 	}
 
-	return kc.SetupWatcher(ctx, resourceType, callback)
+	return kc.SetupStatusWatcher(ctx, resourceType, callback)
 }
 
 // recreatePvPvcDeployments recreates the pv, pvc and deployment for the deployment.

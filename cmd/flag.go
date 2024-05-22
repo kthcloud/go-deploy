@@ -2,14 +2,14 @@ package cmd
 
 import (
 	"context"
-	"go-deploy/pkg/workers/cleaner"
-	"go-deploy/pkg/workers/confirm"
-	"go-deploy/pkg/workers/job_execute"
-	"go-deploy/pkg/workers/logger"
-	metricsWorker "go-deploy/pkg/workers/metrics_update"
-	"go-deploy/pkg/workers/repair"
-	"go-deploy/pkg/workers/status_update"
-	"go-deploy/pkg/workers/synchronize"
+	"go-deploy/pkg/services/cleaner"
+	"go-deploy/pkg/services/confirm"
+	"go-deploy/pkg/services/job_execute"
+	"go-deploy/pkg/services/logger"
+	metricsWorker "go-deploy/pkg/services/metrics_update"
+	"go-deploy/pkg/services/repair"
+	"go-deploy/pkg/services/status_update"
+	"go-deploy/pkg/services/synchronize"
 )
 
 // FlagDefinition represents a definition for a flag that is passed to the program's executable.
@@ -145,13 +145,23 @@ func GetFlags() FlagDefinitionList {
 			},
 		},
 		{
-			Name:         "logger",
+			Name:         "logger-control",
 			ValueType:    "bool",
 			FlagType:     "worker",
-			Description:  "Start logger",
+			Description:  "Start logger control",
 			DefaultValue: false,
 			Run: func(ctx context.Context, _ context.CancelFunc) {
-				logger.Setup(ctx)
+				logger.Setup(ctx, []logger.LogRole{logger.LogRoleControl})
+			},
+		},
+		{
+			Name:         "logger-worker",
+			ValueType:    "bool",
+			FlagType:     "worker",
+			Description:  "Start logger worker",
+			DefaultValue: false,
+			Run: func(ctx context.Context, _ context.CancelFunc) {
+				logger.Setup(ctx, []logger.LogRole{logger.LogRoleWorker})
 			},
 		},
 		{

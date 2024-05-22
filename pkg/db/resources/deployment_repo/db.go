@@ -60,7 +60,7 @@ func (client *Client) Create(id, ownerID string, params *model.DeploymentCreateP
 		Type:    params.Type,
 		OwnerID: ownerID,
 		Zone:    params.Zone,
-		
+
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Time{},
 		RepairedAt:  time.Time{},

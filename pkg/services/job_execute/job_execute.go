@@ -4,7 +4,7 @@ import (
 	"context"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/log"
-	"go-deploy/pkg/workers"
+	"go-deploy/pkg/services"
 )
 
 // Setup starts the job workers.
@@ -12,6 +12,6 @@ import (
 func Setup(ctx context.Context) {
 	log.Println("Starting job workers")
 
-	go workers.PeriodicWorker(ctx, "jobFetcher", jobFetcher, config.Config.Timer.JobFetch)
-	go workers.PeriodicWorker(ctx, "failedJobFetcher", failedJobFetcher, config.Config.Timer.FailedJobFetch)
+	go services.PeriodicWorker(ctx, "jobFetcher", jobFetcher, config.Config.Timer.JobFetch)
+	go services.PeriodicWorker(ctx, "failedJobFetcher", failedJobFetcher, config.Config.Timer.FailedJobFetch)
 }

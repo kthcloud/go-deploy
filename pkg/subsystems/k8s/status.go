@@ -16,10 +16,10 @@ import (
 	"time"
 )
 
-// SetupWatcher sets up a status watcher for a given resource type in a namespace
+// SetupStatusWatcher sets up a status watcher for a given resource type in a namespace
 //
 // This should only be called once per cluster
-func (client *Client) SetupWatcher(ctx context.Context, resourceType string, handler func(string, interface{}), opts ...opts.WatcherOpts) error {
+func (client *Client) SetupStatusWatcher(ctx context.Context, resourceType string, handler func(string, interface{}), opts ...opts.WatcherOpts) error {
 	switch resourceType {
 	case "deployment":
 		return client.deploymentStatusWatcher(ctx, handler, opts...)
