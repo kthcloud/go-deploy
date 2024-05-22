@@ -13,7 +13,6 @@ import (
 )
 
 func staleResourceCleaner() error {
-
 	// Fetch all resources that have not been accessed in 3 months and disable them
 	deployments, err := deployment_repo.New().LastAccessedBefore(time.Now().Add(-config.Config.Deployment.Lifetime)).List()
 	if err != nil {
