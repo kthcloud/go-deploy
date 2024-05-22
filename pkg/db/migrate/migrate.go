@@ -3,6 +3,7 @@ package migrator
 import (
 	"fmt"
 	"go-deploy/pkg/db/resources/deployment_repo"
+	"go-deploy/pkg/db/resources/user_repo"
 	"go-deploy/pkg/db/resources/vm_repo"
 	"go-deploy/pkg/log"
 	"go.mongodb.org/mongo-driver/bson"
@@ -52,45 +53,34 @@ func addAccessedAt_2024_05_17() error {
 	}
 
 	for _, deployment := range deployments {
-		if deployment.AccessedAt.IsZero() {
-			// Set to the greatest of:
-			//UpdatedAt   time.Time `bson:"updatedAt"`
-			//RepairedAt  time.Time `bson:"repairedAt"`
-			//RestartedAt time.Time `bson:"restartedAt"`
+		user, err := user_repo.New().GetByID(deployment.OwnerID)
+		if err != nil {
+			return err
+		}
 
-			// Find the greatest time
-			greatestTime := deployment.UpdatedAt
-			if deployment.RepairedAt.After(greatestTime) {
-				greatestTime = deployment.RepairedAt
-			}
+		if user == nil {
+			return fmt.Errorf("user not found for deployment %s", deployment.ID)
+		}
 
-			if deployment.RestartedAt.After(greatestTime) {
-				greatestTime = deployment.RestartedAt
-			}
-
-			deployment.AccessedAt = greatestTime
-
-			err = deployment_repo.New().SetWithBsonByID(deployment.ID, bson.D{{"accessedAt", deployment.AccessedAt}})
-			if err != nil {
-				return err
-			}
+		err = deployment_repo.New().SetWithBsonByID(deployment.ID, bson.D{{"accessedAt", user.LastAuthenticatedAt}})
+		if err != nil {
+			return err
 		}
 	}
 
 	for _, vm := range vms {
-		if vm.AccessedAt.IsZero() {
-			// Find the greatest time
-			greatestTime := vm.UpdatedAt
-			if vm.RepairedAt.After(greatestTime) {
-				greatestTime = vm.RepairedAt
-			}
+		user, err := user_repo.New().GetByID(vm.OwnerID)
+		if err != nil {
+			return err
+		}
 
-			vm.AccessedAt = greatestTime
+		if user == nil {
+			return fmt.Errorf("user not found for vm %s", vm.ID)
+		}
 
-			err = vm_repo.New().SetWithBsonByID(vm.ID, bson.D{{"accessedAt", vm.AccessedAt}})
-			if err != nil {
-				return err
-			}
+		err = vm_repo.New().SetWithBsonByID(vm.ID, bson.D{{"accessedAt", user.LastAuthenticatedAt}})
+		if err != nil {
+			return err
 		}
 	}
 

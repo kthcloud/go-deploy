@@ -74,12 +74,13 @@ func OnPodEvent(ctx context.Context, zone *configModels.Zone, cancelFuncs map[st
 			}
 
 			loggerCtx, cancelFunc := context.WithCancel(context.Background())
-			cancelFuncs[logEvent.PodName] = cancelFunc
-
 			err = service.V1().Deployments().K8s().SetupPodLogStream(loggerCtx, zone, logEvent.PodName, lastLogged, onLog)
 			if err != nil {
+				cancelFunc()
 				return err
 			}
+
+			cancelFuncs[logEvent.PodName] = cancelFunc
 
 			// Set up a loop to update ownership of pod name
 			go func(ctx, loggerCtx context.Context) {
