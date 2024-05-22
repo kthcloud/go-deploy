@@ -19,7 +19,7 @@ import (
 
 // DeploymentLogger is a worker that logs deployments.
 func DeploymentLogger(ctx context.Context) error {
-	for _, zone := range config.Config.Zones {
+	for _, zone := range config.Config.EnabledZones() {
 		log.Println("Setting up log stream for zone", zone.Name)
 
 		dZone := zone
@@ -55,6 +55,8 @@ func OnPodEvent(ctx context.Context, zone *configModels.Zone, cancelFuncs map[st
 				log.Printf("Pod %s is already being logged", logEvent.PodName)
 				return nil
 			}
+
+			log.Println("Setting up log stream for pod", logEvent.PodName)
 
 			lastLogged := LastLogged(kvc, logEvent.PodName)
 			onLog := func(deploymentName string, lines []model.Log) {
@@ -97,9 +99,9 @@ func OnPodEvent(ctx context.Context, zone *configModels.Zone, cancelFuncs map[st
 					}
 				}
 			}(ctx, loggerCtx)
-
-			return nil
 		case k8s.PodEventDeleted:
+			log.Println("Removing log stream for pod", logEvent.PodName)
+
 			cancelFuncs[logEvent.PodName]()
 			delete(cancelFuncs, logEvent.PodName)
 		}
