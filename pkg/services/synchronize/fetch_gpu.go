@@ -131,6 +131,10 @@ func synchronizeGpus(gpuInfo *models.GpuInfoRead) error {
 			continue
 		}
 
+		if !zone.Enabled {
+			continue
+		}
+
 		err = deployV2.VMs().K8s().Synchronize(zoneName, groups)
 		if err != nil {
 			return err

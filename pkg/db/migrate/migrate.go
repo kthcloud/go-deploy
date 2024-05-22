@@ -2,11 +2,7 @@ package migrator
 
 import (
 	"fmt"
-	"go-deploy/pkg/db/resources/deployment_repo"
-	"go-deploy/pkg/db/resources/user_repo"
-	"go-deploy/pkg/db/resources/vm_repo"
 	"go-deploy/pkg/log"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 // Migrate runs every migration specified in the getMigrations function.
@@ -36,61 +32,5 @@ func Migrate() error {
 //
 // add a date to the migration name to make it easier to identify.
 func getMigrations() map[string]func() error {
-	return map[string]func() error{
-		"addAccessedAt_2024_05_17": addAccessedAt_2024_05_17,
-	}
-}
-
-func addAccessedAt_2024_05_17() error {
-	deployments, err := deployment_repo.New().List()
-	if err != nil {
-		return err
-	}
-
-	vms, err := vm_repo.New().List()
-	if err != nil {
-		return err
-	}
-
-	for _, deployment := range deployments {
-		if deployment.OwnerID == "system" {
-			continue
-		}
-
-		user, err := user_repo.New().GetByID(deployment.OwnerID)
-		if err != nil {
-			return err
-		}
-
-		if user == nil {
-			return fmt.Errorf("user not found for deployment %s", deployment.ID)
-		}
-
-		err = deployment_repo.New().SetWithBsonByID(deployment.ID, bson.D{{"accessedAt", user.LastAuthenticatedAt}})
-		if err != nil {
-			return err
-		}
-	}
-
-	for _, vm := range vms {
-		if vm.OwnerID == "system" {
-			continue
-		}
-
-		user, err := user_repo.New().GetByID(vm.OwnerID)
-		if err != nil {
-			return err
-		}
-
-		if user == nil {
-			return fmt.Errorf("user not found for vm %s", vm.ID)
-		}
-
-		err = vm_repo.New().SetWithBsonByID(vm.ID, bson.D{{"accessedAt", user.LastAuthenticatedAt}})
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return map[string]func() error{}
 }

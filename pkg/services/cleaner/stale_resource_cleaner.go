@@ -13,7 +13,6 @@ import (
 )
 
 func staleResourceCleaner() error {
-
 	// Fetch all resources that have not been accessed in 3 months and disable them
 	deployments, err := deployment_repo.New().LastAccessedBefore(time.Now().Add(-config.Config.Deployment.Lifetime)).List()
 	if err != nil {
@@ -22,6 +21,16 @@ func staleResourceCleaner() error {
 
 	for _, deployment := range deployments {
 		if deployment.GetMainApp().Replicas == 0 {
+			continue
+		}
+
+		zone := config.Config.GetZone(deployment.Zone)
+		if zone == nil {
+			log.Printf("Zone %s not found", deployment.Zone)
+			continue
+		}
+
+		if !zone.Enabled {
 			continue
 		}
 
