@@ -107,6 +107,8 @@ func (client *Client) SetupLogStream(ctx context.Context, podName string, from t
 						lastPush = time.Now()
 					}
 				}
+
+				time.Sleep(1 * time.Second)
 			}
 		}
 	}()

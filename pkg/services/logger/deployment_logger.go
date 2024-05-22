@@ -24,7 +24,7 @@ func DeploymentLogger(ctx context.Context) error {
 
 		dZone := zone
 		cancelFuncs := make(map[string]context.CancelFunc)
-		err := message_queue.New().Consume(LogQueueKey(zone.Name), OnPodEvent(ctx, &dZone, cancelFuncs))
+		err := message_queue.New().Consume(ctx, LogQueueKey(zone.Name), OnPodEvent(ctx, &dZone, cancelFuncs))
 		if err != nil {
 			return err
 		}
@@ -98,6 +98,7 @@ func OnPodEvent(ctx context.Context, zone *configModels.Zone, cancelFuncs map[st
 							return
 						}
 					}
+					time.Sleep(1 * time.Second)
 				}
 			}(ctx, loggerCtx)
 		case k8s.PodEventDeleted:

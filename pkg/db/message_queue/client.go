@@ -39,7 +39,7 @@ func (client *Client) Publish(queueName string, jsonData interface{}) error {
 
 // Consume starts consuming messages from the given queue.
 // It is non-blocking and will run in a separate goroutine.
-func (client *Client) Consume(queueName string, handler func(data []byte) error) error {
+func (client *Client) Consume(ctx context.Context, queueName string, handler func(data []byte) error) error {
 	go func() {
 		pubSub := client.RedisClient.Subscribe(context.TODO(), queueName)
 		defer func(channel *redis.PubSub) {
@@ -51,10 +51,16 @@ func (client *Client) Consume(queueName string, handler func(data []byte) error)
 		}(pubSub)
 
 		channel := pubSub.Channel()
-		for msg := range channel {
-			err := handler([]byte(msg.Payload))
-			if err != nil {
-				log.Println("Failed to handle queue message. Details: " + err.Error())
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case msg := <-channel:
+				err := handler([]byte(msg.Payload))
+				if err != nil {
+					log.Println("Failed to handle message. Details: " + err.Error())
+					continue
+				}
 			}
 		}
 	}()
