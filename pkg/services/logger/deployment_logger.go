@@ -102,9 +102,10 @@ func OnPodEvent(ctx context.Context, zone *configModels.Zone, cancelFuncs map[st
 			}(ctx, loggerCtx)
 		case k8s.PodEventDeleted:
 			log.Println("Removing log stream for pod", logEvent.PodName)
-
-			cancelFuncs[logEvent.PodName]()
-			delete(cancelFuncs, logEvent.PodName)
+			if cancelFunc, ok := cancelFuncs[logEvent.PodName]; ok {
+				cancelFunc()
+				delete(cancelFuncs, logEvent.PodName)
+			}
 		}
 
 		return nil

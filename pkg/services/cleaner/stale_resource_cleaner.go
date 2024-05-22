@@ -4,6 +4,7 @@ import (
 	bodyV1 "go-deploy/dto/v1/body"
 	bodyV2 "go-deploy/dto/v2/body"
 	"go-deploy/models/model"
+	"go-deploy/models/version"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/db/resources/deployment_repo"
 	"go-deploy/pkg/db/resources/vm_repo"
@@ -34,7 +35,7 @@ func staleResourceCleaner() error {
 			continue
 		}
 
-		log.Printf("Disabling deployment %s due to inactivity", deployment.ID)
+		log.Printf("Disabling deployment %s due to inactivity", deployment.Name)
 
 		// Set its replicas to 0
 		replicas := 0
@@ -46,7 +47,7 @@ func staleResourceCleaner() error {
 		}
 	}
 
-	vms, err := vm_repo.New().LastAccessedBefore(time.Now().Add(-config.Config.VM.Lifetime)).List()
+	vms, err := vm_repo.New(version.V2).LastAccessedBefore(time.Now().Add(-config.Config.VM.Lifetime)).List()
 	if err != nil {
 		return err
 	}
