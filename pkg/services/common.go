@@ -1,4 +1,4 @@
-package workers
+package services
 
 import (
 	"go-deploy/pkg/db/resources/worker_status_repo"
