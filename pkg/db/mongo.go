@@ -49,7 +49,7 @@ func (dbCtx *Context) setupMongo() error {
 	// Find collections
 	DB.CollectionMap = make(map[string]*mongo.Collection)
 
-	DB.CollectionDefinitionMap = getCollectionDefinitions()
+	DB.CollectionDefinitionMap = GetCollectionDefinitions()
 
 	for _, def := range DB.CollectionDefinitionMap {
 		DB.CollectionMap[def.Name] = dbCtx.MongoClient.Database(config.Config.MongoDB.Name).Collection(def.Name)
@@ -159,9 +159,9 @@ func (dbCtx *Context) shutdownMongo() error {
 	return nil
 }
 
-// getCollectionDefinitions returns a map of all collections and their definitions,
+// GetCollectionDefinitions returns a map of all collections and their definitions,
 // including any indexes that should be created on the collection.
-func getCollectionDefinitions() map[string]CollectionDefinition {
+func GetCollectionDefinitions() map[string]CollectionDefinition {
 	return map[string]CollectionDefinition{
 		"deployments": {
 			Name:                 "deployments",

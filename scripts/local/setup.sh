@@ -186,7 +186,8 @@ function create_kind_cluster() {
     kind create cluster --name $cluster_name --config ./manifests/kind-config.yml --quiet
   fi
 
-  read_cluster_config
+  # Ensure that context is set to the correct cluster
+  kubectl config use-context kind-$cluster_name
 
   # Wait for kubeconfig to change
   while [ "$(kubectl config current-context)" != "kind-$cluster_name" ]; do
@@ -705,6 +706,31 @@ function install_cdi() {
   fi
 }
 
+function print_result() {
+  read_cluster_config
+
+  echo -e ""
+  echo -e "dnsmasq is used to allow the names to resolve. See the following guides for help configuring it:"
+  echo -e " - WSL2 (Windows): https://github.com/absolunet/pleaz/blob/production/documentation/installation/wsl2/dnsmasq.md"
+  echo -e " - systemd-resolved (Linux): https://gist.github.com/frank-dspeed/6b6f1f720dd5e1c57eec8f1fdb2276df"
+  echo -e ""
+  echo -e "The following services are now available:"
+  echo -e " - ${BLUE_BOLD}Harbor${RESET}: http://harbor.$domain:$harbor_port (admin:Harbor12345)"
+  echo -e " - ${TEAL_BOLD}Keycloak${RESET}: http://keycloak.$domain:$keycloak_port (admin:admin)"
+  echo -e "      Users: admin:admin, base:base, power:power"
+  echo -e "      Clients: go-deploy:(no secret), go-deploy-storage:$keycloak_deploy_storage_secret"
+  echo -e " - ${GREEN_BOLD}MongoDB${RESET}: mongodb://admin:admin@localhost:$mongo_db_port"
+  echo -e " - ${RED_BOLD}Redis${RESET}: redis://localhost:$redis_port"
+  echo -e " - ${ORANGE_BOLD}NFS${RESET}: nfs://localhost:$nfs_port"
+  echo -e ""
+  echo -e "To start the application, go the the top directory and run the following command:"
+  echo -e ""
+  echo -e "    ${WHITE_BOLD}DEPLOY_CONFIG_FILE=config.local.yml go run main.go${RESET}"
+  echo -e ""
+  echo -e "Happy coding! 🚀"
+  echo -e ""
+}
+
 check_dependencies
 if [ ! -f "./cluster-config.rc" ]; then
   generate_cluster_config
@@ -739,96 +765,77 @@ run_with_spinner "Seed Harbor with images" seed_harbor_with_images
 
 
 # If exists ../../config.local.yml, ask if user want to replace it
+read_cluster_config
 if [ -f "../../config.local.yml" ]; then
   echo ""
   read -p "config.local.yml already exists. Do you want to replace it? [y/n]: " -n 1 -r
   echo
   if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     echo "Skipping config.local.yml generation"
-    exit 0
+  else
+    echo "Generating config.local.yml"
+    cp config.yml.tmpl ../../config.local.yml
+
+    # Core
+    export external_url="http://localhost:8080"
+    export port="8080"
+    export mode="dev"
+
+    # Zone
+    export deployment_domain="app.$domain"
+    export sm_domain="storage.$domain"
+    export vm_domain="vm.$domain"
+    export vm_app_domain="vm-app.$domain"
+
+    export kubeconfig_path="./kube/$cluster_name.yml"
+    export nfs_server=$nfs_cluster_ip
+    export nfs_parent_path_app="$nfs_base_path/deployments"
+    export nfs_parent_path_vm="$nfs_base_path/vms"
+    export port_range_start="$port_range_start"
+    export port_range_end="$port_range_end"
+
+    # VM
+    export admin_ssh_public_key=$(cat ~/.ssh/id_rsa.pub)
+    export vm_image="$vm_image"
+
+    # Deployment
+
+
+    # Registry
+    export registry_url="localhost:$harbor_port"
+    export placeholder_image="$registry_url/library/go-deploy-placeholder"
+
+    # Keycloak
+    export keycloak_url="http://keycloak.deploy.localhost:$keycloak_port"
+    export keycloak_realm="master"
+    export keycloak_admin_group="admin"
+    export keycloak_storage_client_id="go-deploy-storage"
+    export keycloak_storage_client_secret=$keycloak_deploy_storage_secret
+
+    # MongoDB
+    export mongodb_url="mongodb://admin:admin@localhost:$mongo_db_port"
+    export mongodb_name="deploy"
+
+    # Redis
+    export redis_url="localhost:$redis_port"
+    export redis_password=
+
+    # Harbor
+    export harbor_url="http://harbor.deploy.localhost:$harbor_port"
+    export harbor_user="admin"
+    export harbor_password="Harbor12345"
+    export harbor_webhook_secret="secret"
+
+    envsubst < config.yml.tmpl > ../../config.local.yml
+
+    echo -e ""
+    echo -e ""
+    echo -e "$GREEN_CHECK config.local.yml generated"
   fi
 fi
 
-
-echo "Generating config.local.yml"
-
-read_cluster_config
-cp config.yml.tmpl ../../config.local.yml
-
-# Core
-export external_url="http://localhost:8080"
-export port="8080"
-export mode="dev"
-
-# Zone
-export deployment_domain="app.$domain"
-export sm_domain="storage.$domain"
-export vm_domain="vm.$domain"
-export vm_app_domain="vm-app.$domain"
-
-export kubeconfig_path="./kube/$cluster_name.yml"
-export nfs_server=$nfs_cluster_ip
-export nfs_parent_path_app="$nfs_base_path/deployments"
-export nfs_parent_path_vm="$nfs_base_path/vms"
-export port_range_start="$port_range_start"
-export port_range_end="$port_range_end"
-
-# VM
-export admin_ssh_public_key=$(cat ~/.ssh/id_rsa.pub)
-export vm_image="$vm_image"
-
-# Deployment
+print_result
 
 
-# Registry
-export registry_url="localhost:$harbor_port"
-export placeholder_image="$registry_url/library/go-deploy-placeholder"
-
-# Keycloak
-export keycloak_url="http://keycloak.deploy.localhost:$keycloak_port"
-export keycloak_realm="master"
-export keycloak_admin_group="admin"
-export keycloak_storage_client_id="go-deploy-storage"
-export keycloak_storage_client_secret=$keycloak_deploy_storage_secret
-
-# MongoDB
-export mongodb_url="mongodb://admin:admin@localhost:$mongo_db_port"
-export mongodb_name="deploy"
-
-# Redis
-export redis_url="localhost:$redis_port"
-export redis_password=
-
-# Harbor
-export harbor_url="http://harbor.deploy.localhost:$harbor_port"
-export harbor_user="admin"
-export harbor_password="Harbor12345"
-export harbor_webhook_secret="secret"
-
-envsubst < config.yml.tmpl > ../../config.local.yml
-
-echo -e ""
-echo -e ""
-echo -e "$GREEN_CHECK config.local.yml generated"
-echo -e ""
-echo -e "dnsmasq is used to allow the names to resolve. See the following guides for help configuring it:"
-echo -e " - WSL2 (Windows): https://github.com/absolunet/pleaz/blob/production/documentation/installation/wsl2/dnsmasq.md"
-echo -e " - systemd-resolved (Linux): https://gist.github.com/frank-dspeed/6b6f1f720dd5e1c57eec8f1fdb2276df"
-echo -e ""
-echo -e "The following services are now available:"
-echo -e " - ${BLUE_BOLD}Harbor${RESET}: http://harbor.$domain:$harbor_port (admin:Harbor12345)"
-echo -e " - ${TEAL_BOLD}Keycloak${RESET}: http://keycloak.$domain:$keycloak_port (admin:admin)" 
-echo -e "      Users: admin:admin, base:base, power:power"
-echo -e "      Clients: go-deploy:(no secret), go-deploy-storage:$keycloak_deploy_storage_secret"
-echo -e " - ${GREEN_BOLD}MongoDB${RESET}: mongodb://admin:admin@localhost:$mongo_db_port"
-echo -e " - ${RED_BOLD}Redis${RESET}: redis://localhost:$redis_port"
-echo -e " - ${ORANGE_BOLD}NFS${RESET}: nfs://localhost:$nfs_port"
-echo -e ""
-echo -e "To start the application, go the the top directory and run the following command:"
-echo -e ""
-echo -e "    ${WHITE_BOLD}DEPLOY_CONFIG_FILE=config.local.yml go run main.go${RESET}"
-echo -e ""
-echo -e "Happy coding! 🚀"
-echo -e ""
 
 

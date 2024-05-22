@@ -5,9 +5,6 @@ mode: dev
 timer:
   gpuSynchronize: 5m
   gpuLeaseSynchronize: 15s
-  vmStatusUpdate: 20s
-  vmSnapshotUpdate: 30s
-  deploymentStatusUpdate: 5s 
   deploymentPingUpdate: 15s
   deploymentRepair: 30m 
   vmRepair: 30m
@@ -106,7 +103,6 @@ roles:
       cpuCores: 2
       ram: 4
       diskSize: 20
-      snapshots: 1
       gpuLeaseDuration:
   - name: base
     description: base
@@ -121,7 +117,6 @@ roles:
       cpuCores: 4
       ram: 16
       diskSize: 50
-      snapshots: 5
       gpuLeaseDuration: 5
   - name: power
     description: power
@@ -145,7 +140,7 @@ keycloak:
   adminGroup: admin
   storageClient:
     clientId: go-deploy-storage
-    clientSecret: CHy186Qo2tLScpN5s5tarVjb24Phizgm
+    clientSecret: GidjqFbKzg0pQ4a350hdg8EBXRa519xL
 
 mongodb:
   url: mongodb://admin:admin@localhost:31536

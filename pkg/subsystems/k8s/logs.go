@@ -7,35 +7,14 @@ import (
 	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems/k8s/keys"
 	"go-deploy/pkg/subsystems/k8s/models"
-	"go-deploy/utils"
 	"golang.org/x/exp/maps"
 	"io"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/informers"
-	"k8s.io/client-go/tools/cache"
 	"sort"
 	"strings"
 	"time"
 )
-
-const (
-	// PodEventStart is emitted when a pod starts
-	PodEventStart = "start"
-	// PodEventStop is emitted when a pod stops
-	PodEventStop = "stop"
-)
-
-type PodEventType struct {
-	deploymentName string
-	podName        string
-	event          string
-	startTime      time.Time
-}
-
-func PodEvent(deploymentName, podName, event string, startTime time.Time) PodEventType {
-	return PodEventType{deploymentName: deploymentName, podName: podName, event: event, startTime: startTime}
-}
 
 // getPodNames gets the names of all pods for a deployment
 // This is used when setting up a log stream for a deployment
@@ -58,168 +37,74 @@ func (client *Client) getPodNames(namespace, deploymentName string) ([]string, e
 	return podNames, nil
 }
 
-// SetupLogStream sets up a log stream for the entire namespace
-//
-// This should only be called once per cluster
-func (client *Client) SetupLogStream(ctx context.Context, allowedNames []string, handler func(name string, lines []models.LogLine)) error {
-	_ = func(err error) error {
-		return fmt.Errorf("failed to create k8s log stream. details: %w", err)
+// SetupLogStream reads logs from a pod and sends them to the callback function
+func (client *Client) SetupLogStream(ctx context.Context, podName string, from time.Time, onLog func(deploymentName string, lines []models.LogLine)) error {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to set up log stream for pod %s. details: %w", podName, err)
+	}
+
+	deploymentName := client.getDeploymentName(podName)
+	if deploymentName == "" {
+		return makeError(fmt.Errorf("deployment name not found for pod %s", podName))
+	}
+
+	logStream, err := client.getPodLogStream(ctx, client.Namespace, podName, from)
+	if err != nil {
+		if IsNotFoundErr(err) {
+			// Pod got deleted for some reason, so we just stop the log stream
+			return nil
+		}
+
+		return makeError(err)
 	}
 
 	go func() {
-		// activeStreams is a map of active log streams structured as map[deploymentName]map[podName]podNumber
-		activeStreams := make(map[string]map[string]int)
-		cancelFuncs := make(map[string]map[string]context.CancelFunc)
-		podChannel := make(chan PodEventType, 100)
+		defer log.Println("Log stream for pod", podName, "stopped")
 
-		// Convert allowedNames to a map for faster lookups
-		allowedNamesMap := make(map[string]struct{})
-		for _, name := range allowedNames {
-			allowedNamesMap[name] = struct{}{}
-		}
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithCancel(ctx)
+		defer cancel()
 
-		factory := informers.NewSharedInformerFactoryWithOptions(client.K8sClient, 0, informers.WithNamespace(client.Namespace))
-		podInformer := factory.Core().V1().Pods().Informer()
-
-		// Returns the name of the deployment, when it was created and whether the pod is allowed
-		allowedPod := func(pod *v1.Pod) (string, bool) {
-			var deploymentName string
-			var ok bool
-
-			if deploymentName, ok = pod.Labels[keys.LabelDeployName]; !ok {
-				return "", false
+		defer func(logStream io.ReadCloser) {
+			if logStream != nil {
+				_ = logStream.Close()
 			}
+		}(logStream)
 
-			if _, ok = allowedNamesMap[deploymentName]; !ok {
-				return "", false
-			}
+		reader := bufio.NewScanner(logStream)
 
-			allowedStatuses := []v1.PodPhase{
-				v1.PodRunning,
-				v1.PodFailed,
-			}
-
-			allowed := false
-			for _, status := range allowedStatuses {
-				if pod.Status.Phase == status {
-					allowed = true
-					break
-				}
-			}
-
-			if !allowed {
-				return "", false
-			}
-
-			return deploymentName, true
-		}
-
-		_, err := podInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-			AddFunc: func(obj interface{}) {
-				pod, ok := obj.(*v1.Pod)
-				if !ok {
-					return
-				}
-
-				deploymentName, ok := allowedPod(pod)
-				if !ok {
-					return
-				}
-
-				// 10 seconds prior are to fetch logs that were created between the time the watcher noticed the pod, and the time the pod was created
-				// Increasing this too much could cause duplicate logs if the logger is restarted
-				podChannel <- PodEvent(deploymentName, pod.Name, PodEventStart, time.Now().Add(-10*time.Second))
-			},
-			UpdateFunc: func(oldObj, newObj interface{}) {
-				pod, ok := newObj.(*v1.Pod)
-				if !ok {
-					return
-				}
-
-				deploymentName, ok := allowedPod(pod)
-				if !ok {
-					return
-				}
-
-				// 10 seconds prior are to fetch logs that were created between the time the watcher noticed the pod, and the time the pod was created
-				// Increasing this too much could cause duplicate logs if the logger is restarted
-				podChannel <- PodEvent(deploymentName, pod.Name, PodEventStart, time.Now().Add(-10*time.Second))
-			},
-			DeleteFunc: func(obj interface{}) {
-				pod, ok := obj.(*v1.Pod)
-				if !ok {
-					return
-				}
-
-				var deploymentName string
-				if deploymentName, ok = pod.Labels[keys.LabelDeployName]; !ok {
-					return
-				}
-
-				if _, ok = allowedNamesMap[deploymentName]; !ok {
-					return
-				}
-
-				podChannel <- PodEvent(deploymentName, pod.Name, PodEventStop, time.Time{})
-			},
-		})
-		if err != nil {
-			return
-		}
-
-		factory.Start(ctx.Done())
-		factory.WaitForCacheSync(ctx.Done())
-
+		lines := make([]models.LogLine, 0, 10)
+		lastPush := time.Now()
 		for {
 			select {
 			case <-ctx.Done():
-				for _, cancelFuncMap := range cancelFuncs {
-					for _, cancelFunc := range cancelFuncMap {
-						cancelFunc()
-					}
-				}
 				return
-			case e := <-podChannel:
-				switch e.event {
-				case PodEventStart:
-					// Create deployment map if it does not exist
-					if _, ok := activeStreams[e.deploymentName]; !ok {
-						activeStreams[e.deploymentName] = make(map[string]int)
+			default:
+				for reader.Scan() {
+					if ctx.Err() != nil {
+						return
 					}
 
-					// Create cancel func map if it does not exist
-					if _, ok := cancelFuncs[e.deploymentName]; !ok {
-						cancelFuncs[e.deploymentName] = make(map[string]context.CancelFunc)
+					line := reader.Text()
+					if isExitLine(line) {
+						if len(lines) > 0 {
+							onLog(deploymentName, lines)
+							lines = nil
+						}
+
+						return
 					}
 
-					// Check if pod is already being streamed
-					if _, ok := activeStreams[e.deploymentName][e.podName]; ok {
-						continue
-					}
+					lines = append(lines, models.LogLine{
+						Line:      line,
+						CreatedAt: time.Now(),
+					})
 
-					// Add pod to deployment map
-					idx := getFreePodNumber(activeStreams[e.deploymentName])
-					activeStreams[e.deploymentName][e.podName] = idx
-
-					cancelCtx, cancelFunc := context.WithCancel(ctx)
-					cancelFuncs[e.deploymentName][e.podName] = cancelFunc
-
-					log.Println("Starting logger for pod", e.podName, "with idx", idx)
-
-					go func() {
-						client.readLogs(cancelCtx, idx, client.Namespace, e.deploymentName, e.podName, e.startTime, podChannel, handler)
-					}()
-
-				case PodEventStop:
-					// Stop the log stream for the pod
-					cancelFunc, ok := cancelFuncs[e.deploymentName][e.podName]
-					if ok {
-						log.Println("Stopping logger for", e.podName)
-
-						cancelFunc()
-						delete(cancelFuncs[e.deploymentName], e.podName)
-
-						delete(activeStreams[e.deploymentName], e.podName)
+					// Push logs every 5 seconds or when the buffer is full (10 lines)
+					if time.Since(lastPush) > 5*time.Second || len(lines) >= 10 {
+						onLog(deploymentName, lines)
+						lines = nil
+						lastPush = time.Now()
 					}
 				}
 			}
@@ -229,81 +114,23 @@ func (client *Client) SetupLogStream(ctx context.Context, allowedNames []string,
 	return nil
 }
 
-// readLogs reads logs from a pod and sends them to the handler
-// It listens to the PodEventType channel to know when to stop, and emits a PodEventStop event when it stops
-func (client *Client) readLogs(ctx context.Context, podNumber int, namespace, deploymentName, podName string, start time.Time, eventChan chan PodEventType, handler func(name string, lines []models.LogLine)) {
-	defer func() {
-		if r := recover(); r != nil {
-			if err, ok := r.(error); ok {
-				utils.PrettyPrintError(fmt.Errorf("failed to read logs for pod %s (err). details: %w", podName, err))
-			} else {
-				utils.PrettyPrintError(fmt.Errorf("failed to read logs for pod %s (panic). details: %v", podName, r))
-			}
-			eventChan <- PodEventType{event: PodEventStop, podName: podName}
-		}
-	}()
-
-	logStream, err := getK8sLogStream(client, namespace, podName, start)
+// getDeploymentName gets the name of a deployment from a pod
+func (client *Client) getDeploymentName(podName string) string {
+	pod, err := client.K8sClient.CoreV1().Pods(client.Namespace).Get(context.TODO(), podName, metav1.GetOptions{})
 	if err != nil {
-		if IsNotFoundErr(err) {
-			// Pod got deleted for some reason, so we just stop the log stream
-			return
-		}
-
-		utils.PrettyPrintError(fmt.Errorf("failed to create k8s log stream for pod %s. details: %w", podName, err))
-		return
+		return ""
 	}
-	defer func(logStream io.ReadCloser) {
-		if logStream != nil {
-			_ = logStream.Close()
-		}
-	}(logStream)
 
-	reader := bufio.NewScanner(logStream)
-
-	lines := make([]models.LogLine, 0, 10)
-	lastPush := time.Now()
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-			for reader.Scan() {
-				if ctx.Err() != nil {
-					break
-				}
-
-				line := reader.Text()
-				if isExitLine(line) {
-					if len(lines) > 0 {
-						handler(deploymentName, lines)
-						lines = nil
-					}
-
-					break
-				}
-
-				lines = append(lines, models.LogLine{
-					Line:      line,
-					PodNumber: podNumber,
-					CreatedAt: time.Now(),
-				})
-
-				// Push logs every 5 seconds or when the buffer is full (10 lines)
-				if time.Since(lastPush) > 5*time.Second || len(lines) >= 10 {
-					handler(deploymentName, lines)
-					lines = nil
-					lastPush = time.Now()
-				}
-			}
-
-			time.Sleep(1000 * time.Millisecond)
-		}
+	deploymentName, ok := pod.Labels[keys.LabelDeployName]
+	if !ok {
+		return ""
 	}
+
+	return deploymentName
 }
 
-// getK8sLogStream gets a log stream for a pod in Kubernetes
-func getK8sLogStream(client *Client, namespace, podName string, since time.Time) (io.ReadCloser, error) {
+// getPodLogStream gets a log stream for a pod in Kubernetes
+func (client *Client) getPodLogStream(ctx context.Context, namespace, podName string, since time.Time) (io.ReadCloser, error) {
 	var t *metav1.Time
 	if !since.IsZero() {
 		t = &metav1.Time{Time: since}
@@ -314,7 +141,7 @@ func getK8sLogStream(client *Client, namespace, podName string, since time.Time)
 		SinceTime: t,
 	})
 
-	logStream, err := podLogsConnection.Stream(context.Background())
+	logStream, err := podLogsConnection.Stream(ctx)
 	if err != nil {
 		return nil, err
 	}

@@ -1,0 +1,108 @@
+package k8s
+
+import (
+	"context"
+	"go-deploy/pkg/subsystems/k8s/keys"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/informers"
+	"k8s.io/client-go/tools/cache"
+)
+
+const (
+	// PodEventAdded is emitted when a pod is added
+	PodEventAdded = "added"
+	// PodEventDeleted is emitted when a pod is deleted
+	PodEventDeleted = "deleted"
+	// PodEventUpdated is emitted when a pod is updated
+	PodEventUpdated = "updated"
+)
+
+type PodEventType struct {
+	DeploymentName string
+	PodName        string
+	Event          string
+}
+
+func PodEvent(deploymentName, podName, event string) PodEventType {
+	return PodEventType{DeploymentName: deploymentName, PodName: podName, Event: event}
+}
+
+// SetupPodWatcher is a function that sets up a pod watcher with a callback.
+// It triggers the callback when a pod event occurs.
+func (client *Client) SetupPodWatcher(ctx context.Context, callback func(podName, event string)) error {
+	factory := informers.NewSharedInformerFactoryWithOptions(client.K8sClient, 0, informers.WithNamespace(client.Namespace))
+	podInformer := factory.Core().V1().Pods().Informer()
+
+	// Returns the name of the deployment, when it was created and whether the pod is allowed
+	allowedPod := func(pod *v1.Pod) bool {
+		if _, ok := pod.Labels[keys.LabelDeployName]; !ok {
+			return false
+		}
+
+		allowedStatuses := []v1.PodPhase{
+			v1.PodRunning,
+			v1.PodFailed,
+		}
+
+		allowed := false
+		for _, status := range allowedStatuses {
+			if pod.Status.Phase == status {
+				allowed = true
+				break
+			}
+		}
+
+		if !allowed {
+			return false
+		}
+
+		return true
+	}
+
+	_, err := podInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			pod, ok := obj.(*v1.Pod)
+			if !ok {
+				return
+			}
+
+			if !allowedPod(pod) {
+				return
+			}
+
+			callback(pod.Name, PodEventAdded)
+		},
+		UpdateFunc: func(oldObj, newObj interface{}) {
+			pod, ok := newObj.(*v1.Pod)
+			if !ok {
+				return
+			}
+
+			if !allowedPod(pod) {
+				return
+			}
+
+			callback(pod.Name, PodEventUpdated)
+		},
+		DeleteFunc: func(obj interface{}) {
+			pod, ok := obj.(*v1.Pod)
+			if !ok {
+				return
+			}
+
+			if _, ok = pod.Labels[keys.LabelDeployName]; !ok {
+				return
+			}
+
+			callback(pod.Name, PodEventDeleted)
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	factory.Start(ctx.Done())
+	factory.WaitForCacheSync(ctx.Done())
+
+	return nil
+}
