@@ -52,7 +52,7 @@ func staleResourceCleaner() error {
 	}
 
 	for _, vm := range vms {
-		if vm.Subsystems.K8s.GetVM(vm.Name).Running == false {
+		if k8sVM := vm.Subsystems.K8s.GetVM(vm.Name); k8sVM != nil && !k8sVM.Running {
 			continue
 		}
 
