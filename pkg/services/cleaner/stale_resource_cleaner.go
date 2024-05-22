@@ -24,6 +24,16 @@ func staleResourceCleaner() error {
 			continue
 		}
 
+		zone := config.Config.GetZone(deployment.Zone)
+		if zone == nil {
+			log.Printf("Zone %s not found", deployment.Zone)
+			continue
+		}
+
+		if !zone.Enabled {
+			continue
+		}
+
 		log.Printf("Disabling deployment %s due to inactivity", deployment.ID)
 
 		// Set its replicas to 0
