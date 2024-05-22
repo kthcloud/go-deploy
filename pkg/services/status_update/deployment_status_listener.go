@@ -14,7 +14,7 @@ import (
 )
 
 func DeploymentStatusListener(ctx context.Context) error {
-	for _, zone := range config.Config.Zones {
+	for _, zone := range config.Config.EnabledZones() {
 		if !zone.HasCapability(configModels.ZoneCapabilityDeployment) {
 			continue
 		}
