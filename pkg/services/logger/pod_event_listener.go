@@ -31,9 +31,9 @@ func PodEventListener(ctx context.Context) error {
 		kvc := key_value.New()
 		kvc.RedisClient.ConfigSet(ctx, "notify-keyspace-events", "Ex")
 
-		// Set up a listener for expired key events for every key beginning with "logs-"
+		// Set up a listener for expired key events for every key that matches "logs:[a-z0-9-]"
 		// This is used to ensure that a new logger is created for a pod if the previous one fails
-		err := kvc.SetUpExpirationListener(LogsKey, func(key string) error {
+		err := kvc.SetUpExpirationListener(ctx, "^logs:[a-zA-Z0-9-]+$", func(key string) error {
 			podName := PodNameFromLogKey(key)
 
 			// Reset the expired key so that it can be used again
