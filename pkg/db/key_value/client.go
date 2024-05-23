@@ -52,6 +52,21 @@ func (client *Client) SetNX(key string, value interface{}, expiration time.Durat
 	return client.RedisClient.SetNX(context.TODO(), key, value, expiration).Result()
 }
 
+// SetXX sets the value of the given key if it exists.
+func (client *Client) SetXX(key string, value interface{}, expiration time.Duration) (bool, error) {
+	return client.RedisClient.SetXX(context.TODO(), key, value, expiration).Result()
+}
+
+// IsSet checks if the given key is set.
+func (client *Client) IsSet(key string) (bool, error) {
+	res, err := client.RedisClient.Exists(context.TODO(), key).Result()
+	if err != nil {
+		return false, err
+	}
+
+	return res > 0, nil
+}
+
 // Incr increments the value of the given key.
 func (client *Client) Incr(key string) error {
 	return client.RedisClient.Incr(context.Background(), key).Err()

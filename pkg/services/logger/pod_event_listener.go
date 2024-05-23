@@ -36,6 +36,12 @@ func PodEventListener(ctx context.Context) error {
 		err := kvc.SetUpExpirationListener(LogsKey, func(key string) error {
 			podName := PodNameFromLogKey(key)
 
+			// Reset the expired key so that it can be used again
+			_, err := kvc.SetNX(key, false, LoggerLifetime)
+			if err != nil {
+				return err
+			}
+
 			// Check if there are any active listeners, otherwise mark this pod as being processed
 			count, err := mqc.GetListeners(LogQueueKey(zone.Name))
 			if err != nil {
@@ -44,12 +50,16 @@ func PodEventListener(ctx context.Context) error {
 
 			if count == 0 {
 				log.Printf("No logger listeners active for zone %s. Retrying in %s (Pod: %s)", zone.Name, LoggerLifetime.String(), podName)
+				return nil
+			}
 
-				_, err = kvc.SetNX(key, false, LoggerLifetime)
-				if err != nil {
-					return err
-				}
+			// If n non-expired owner key exists, then the logger is still active
+			isSet, err := kvc.IsSet(OwnerLogKey(podName))
+			if err != nil {
+				return err
+			}
 
+			if isSet {
 				return nil
 			}
 
@@ -75,6 +85,7 @@ func PodEventListener(ctx context.Context) error {
 				// Clean up the keys
 				_ = kvc.Del(LogKey(podName))
 				_ = kvc.Del(LastLogKey(podName))
+				_ = kvc.Del(OwnerLogKey(podName))
 				_ = mqc.Publish(LogQueueKey(zone.Name), LogEvent{
 					PodName:  podName,
 					PodEvent: k8s.PodEventDeleted,

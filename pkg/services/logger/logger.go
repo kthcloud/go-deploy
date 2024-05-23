@@ -28,6 +28,10 @@ func LastLogKey(podName string) string {
 	return LogsKey + ":" + podName + ":last"
 }
 
+func OwnerLogKey(podName string) string {
+	return LogsKey + ":" + podName + ":owner"
+}
+
 func LogKey(podName string) string {
 	return LogsKey + ":" + podName
 }
