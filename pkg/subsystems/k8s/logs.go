@@ -7,6 +7,7 @@ import (
 	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems/k8s/keys"
 	"go-deploy/pkg/subsystems/k8s/models"
+	"go-deploy/service/errors"
 	"golang.org/x/exp/maps"
 	"io"
 	v1 "k8s.io/api/core/v1"
@@ -37,22 +38,21 @@ func (client *Client) getPodNames(namespace, deploymentName string) ([]string, e
 	return podNames, nil
 }
 
-// SetupLogStream reads logs from a pod and sends them to the callback function
-func (client *Client) SetupLogStream(ctx context.Context, podName string, from time.Time, onLog func(deploymentName string, lines []models.LogLine)) error {
+// SetupPodLogStream reads logs from a pod and sends them to the callback function
+func (client *Client) SetupPodLogStream(ctx context.Context, podName string, from time.Time, onLog func(deploymentName string, lines []models.LogLine)) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to set up log stream for pod %s. details: %w", podName, err)
 	}
 
 	deploymentName := client.getDeploymentName(podName)
 	if deploymentName == "" {
-		return makeError(fmt.Errorf("deployment name not found for pod %s", podName))
+		return makeError(errors.ResourceNotFoundErr)
 	}
 
 	logStream, err := client.getPodLogStream(ctx, client.Namespace, podName, from)
 	if err != nil {
 		if IsNotFoundErr(err) {
-			// Pod got deleted for some reason, so we just stop the log stream
-			return nil
+			return makeError(errors.ResourceNotFoundErr)
 		}
 
 		return makeError(err)
@@ -75,6 +75,16 @@ func (client *Client) SetupLogStream(ctx context.Context, podName string, from t
 
 		lines := make([]models.LogLine, 0, 10)
 		lastPush := time.Now()
+
+		// Push logs every 1 seconds or when the buffer is full (10 lines)
+		pushIfFull := func() {
+			if len(lines) > 0 || time.Since(lastPush) > 1*time.Second {
+				onLog(deploymentName, lines)
+				lines = nil
+				lastPush = time.Now()
+			}
+		}
+
 		for {
 			select {
 			case <-ctx.Done():
@@ -100,13 +110,10 @@ func (client *Client) SetupLogStream(ctx context.Context, podName string, from t
 						CreatedAt: time.Now(),
 					})
 
-					// Push logs every 5 seconds or when the buffer is full (10 lines)
-					if time.Since(lastPush) > 5*time.Second || len(lines) >= 10 {
-						onLog(deploymentName, lines)
-						lines = nil
-						lastPush = time.Now()
-					}
+					pushIfFull()
 				}
+
+				pushIfFull()
 
 				time.Sleep(1 * time.Second)
 			}
