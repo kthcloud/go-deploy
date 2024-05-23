@@ -20,6 +20,7 @@ timer:
 
 zones:
 - name: local
+  enabled: true
   description: Local development zone
   k8s:
     namespaces:
