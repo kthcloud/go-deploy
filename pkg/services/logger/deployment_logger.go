@@ -3,6 +3,7 @@ package logger
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	configModels "go-deploy/models/config"
 	"go-deploy/models/model"
@@ -13,6 +14,7 @@ import (
 	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems/k8s"
 	"go-deploy/service"
+	sErrors "go-deploy/service/errors"
 	"go-deploy/utils"
 	"os"
 	"time"
@@ -83,6 +85,10 @@ func OnPodEvent(ctx context.Context, zone *configModels.Zone, cancelFuncs map[st
 			err = service.V1().Deployments().K8s().SetupPodLogStream(loggerCtx, zone, logEvent.PodName, lastLogged, onLog)
 			if err != nil {
 				cancelFunc()
+				if errors.Is(err, sErrors.DeploymentNotFoundErr) {
+					return nil
+				}
+
 				return err
 			}
 

@@ -28,6 +28,11 @@ func (dbCtx *Context) setupRedis() error {
 		return makeError(err)
 	}
 
+	err = dbCtx.RedisClient.ConfigSet(context.TODO(), "notify-keyspace-events", "Ex").Err()
+	if err != nil {
+		return makeError(err)
+	}
+
 	return nil
 }
 
