@@ -4,6 +4,7 @@ import (
 	"context"
 	"go-deploy/pkg/subsystems/k8s/keys"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/tools/cache"
 )
@@ -17,14 +18,18 @@ const (
 	PodEventUpdated = "updated"
 )
 
-type PodEventType struct {
-	DeploymentName string
-	PodName        string
-	Event          string
-}
+// PodExists checks if a pod exists in the cluster.
+func (client *Client) PodExists(podName string) (bool, error) {
+	_, err := client.K8sClient.CoreV1().Pods(client.Namespace).Get(context.TODO(), podName, metav1.GetOptions{})
+	if err != nil {
+		if IsNotFoundErr(err) {
+			return false, nil
+		}
 
-func PodEvent(deploymentName, podName, event string) PodEventType {
-	return PodEventType{DeploymentName: deploymentName, PodName: podName, Event: event}
+		return false, err
+	}
+
+	return true, nil
 }
 
 // SetupPodWatcher is a function that sets up a pod watcher with a callback.

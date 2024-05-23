@@ -624,6 +624,16 @@ func (c *Client) Repair(id string) error {
 	return nil
 }
 
+// PodExists checks if a pod exists in the cluster.
+func (c *Client) PodExists(zone *configModels.Zone, podName string) (bool, error) {
+	_, kc, _, err := c.Get(OptsOnlyClient(zone))
+	if err != nil {
+		return false, err
+	}
+
+	return kc.PodExists(podName)
+}
+
 // SetupPodLogStream sets up a log stream for a pod.
 func (c *Client) SetupPodLogStream(ctx context.Context, zone *configModels.Zone, podName string, from time.Time, onLog func(deploymentName string, lines []model.Log)) error {
 	_, kc, _, err := c.Get(OptsOnlyClient(zone))
@@ -645,7 +655,16 @@ func (c *Client) SetupPodLogStream(ctx context.Context, zone *configModels.Zone,
 		onLog(deploymentName, lines)
 	}
 
-	return kc.SetupLogStream(ctx, podName, from, handler)
+	err = kc.SetupPodLogStream(ctx, podName, from, handler)
+	if err != nil {
+		if errors.Is(err, kErrors.NotFoundErr) {
+			return sErrors.DeploymentNotFoundErr
+		}
+
+		return err
+	}
+
+	return nil
 }
 
 // SetupPodWatcher sets up a pod watcher for the deployment.
