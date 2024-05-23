@@ -14,6 +14,7 @@ import (
 	"go-deploy/pkg/subsystems/k8s"
 	"go-deploy/service"
 	"go-deploy/utils"
+	"os"
 	"time"
 )
 
@@ -37,8 +38,13 @@ func OnPodEvent(ctx context.Context, zone *configModels.Zone, cancelFuncs map[st
 	return func(bytes []byte) error {
 		kvc := key_value.New()
 
+		name, err := os.Hostname()
+		if err != nil {
+			return err
+		}
+
 		var logEvent LogEvent
-		err := json.Unmarshal(bytes, &logEvent)
+		err = json.Unmarshal(bytes, &logEvent)
 		if err != nil {
 			return err
 		}
@@ -46,7 +52,7 @@ func OnPodEvent(ctx context.Context, zone *configModels.Zone, cancelFuncs map[st
 		switch logEvent.PodEvent {
 		case k8s.PodEventAdded:
 			// We initially use a 2x lifetime to ensure that the logger is not removed while it is being set up
-			didSet, err := kvc.SetNX(logEvent.PodName, true, LoggerLifetime*2)
+			didSet, err := kvc.SetNX(OwnerLogKey(logEvent.PodName), name, LoggerLifetime*2)
 			if err != nil {
 				return err
 			}
@@ -92,9 +98,18 @@ func OnPodEvent(ctx context.Context, zone *configModels.Zone, cancelFuncs map[st
 					case <-loggerCtx.Done():
 						return
 					case <-tick:
-						err = kvc.Set(logEvent.PodName, true, LoggerLifetime)
+						didSet, err := kvc.SetXX(OwnerLogKey(logEvent.PodName), name, LoggerLifetime)
 						if err != nil {
 							utils.PrettyPrintError(fmt.Errorf("failed to update ownership of pod %s. details: %w", logEvent.PodName, err))
+							return
+						}
+
+						if !didSet {
+							log.Printf("Logger no longer owns pod %s. Cancelling", logEvent.PodName)
+							if cancelFunc, ok := cancelFuncs[logEvent.PodName]; ok {
+								cancelFunc()
+								delete(cancelFuncs, logEvent.PodName)
+							}
 							return
 						}
 					}
