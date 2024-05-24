@@ -19,6 +19,7 @@ func Worker(ctx context.Context, name string, work func(context.Context) error) 
 		err := work(internalCtx)
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("%s failed: %w", name, err))
+			cancel()
 		}
 	}()
 
