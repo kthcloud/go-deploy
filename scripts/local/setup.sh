@@ -265,6 +265,9 @@ function create_kind_cluster() {
     sleep 5
   done
 
+  version=$(kubectl version --output=json 2> /dev/stdout | jq -r '.serverVersion.gitVersion' 2> /dev/null)
+  echo -e "Cluster $cluster_name created (version: $version)"
+
   # Copy kubeconfig to local folder
   if [ ! -d $kubeconfig_output_path ]; then
     mkdir -p $kubeconfig_output_path
@@ -726,7 +729,7 @@ function install_cert_manager() {
   fi
 
   # Wait for cert-manager to be up
-  while [ "$(kubectl get pod -n cert-manager -l app=cert-manager -o jsonpath="{.items[0].status.phase}")" != "Running" ]; do
+  while [ "$(kubectl get pod -n cert-manager -l app=cert-manager -o jsonpath="{.items[0].status.phase}" 2> /dev/stdout)" != "Running" ]; do
     echo -e "Waiting for cert-manager to be up"
     echo -e ""
     kubectl get pod -n cert-manager
