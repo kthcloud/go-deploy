@@ -3,20 +3,27 @@ port: 8080
 mode: dev
 
 timer:
+  deploymentStatusUpdate: 30s
+  deploymentPingUpdate: 15s
+  deploymentDeletionConfirm: 5s
+  deploymentRepair: 30m
+
+  smDeletionConfirm: 5s
+  smRepair: 30m
+
+  vmStatusUpdate: 30s
+  vmDeletionConfirm: 5s
+  vmRepair: 30m
+
   gpuSynchronize: 5m
   gpuLeaseSynchronize: 15s
-  deploymentPingUpdate: 15s
-  deploymentRepair: 30m 
-  vmRepair: 30m
-  smRepair: 30m
-  metricsUpdate: 1m 
-  jobFetch: 1s
-  failedJobFetch: 1s 
-  deploymentDeletionConfirm: 5s 
-  vmDeletionConfirm: 5s
-  smDeletionConfirm: 5s
+
+  metricsUpdate: 1m
   customDomainConfirm: 30m
   staleResourceCleanup: 1h
+
+  jobFetch: 1s
+  failedJobFetch: 1s
 
 zones:
 - name: local

@@ -25,3 +25,13 @@ type VmUsage struct {
 	RAM      int `bson:"ram"`
 	DiskSize int `bson:"diskSize"`
 }
+
+type VmStatus struct {
+	Name            string `bson:"name"`
+	PrintableStatus string `bson:"printableStatus"`
+}
+
+type VmiStatus struct {
+	Name string  `bson:"name"`
+	Host *string `bson:"host,omitempty"`
+}

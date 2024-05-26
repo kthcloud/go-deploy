@@ -693,7 +693,69 @@ func (c *Client) SetupStatusWatcher(ctx context.Context, zone *configModels.Zone
 		return err
 	}
 
-	return kc.SetupStatusWatcher(ctx, resourceType, callback)
+	handler := func(name string, incomingStatus interface{}) {
+		if vmStatus, ok := incomingStatus.(*k8sModels.VmStatus); ok {
+			callback(name, &model.VmStatus{
+				Name:            vmStatus.Name,
+				PrintableStatus: vmStatus.PrintableStatus,
+			})
+		}
+
+		if vmiStatus, ok := incomingStatus.(*k8sModels.VmiStatus); ok {
+			callback(name, &model.VmiStatus{
+				Name: vmiStatus.Name,
+				Host: vmiStatus.Host,
+			})
+		}
+	}
+
+	return kc.SetupStatusWatcher(ctx, resourceType, handler)
+}
+
+// ListVmStatus lists the status of all VMs in a zone.
+func (c *Client) ListVmStatus(zone *configModels.Zone) ([]model.VmStatus, error) {
+	_, kc, _, err := c.Get(OptsOnlyClient(zone.Name))
+	if err != nil {
+		return nil, err
+	}
+
+	k8sVmStatus, err := kc.ListVmStatus()
+	if err != nil {
+		return nil, err
+	}
+
+	vmStatus := make([]model.VmStatus, 0, len(k8sVmStatus))
+	for _, status := range k8sVmStatus {
+		vmStatus = append(vmStatus, model.VmStatus{
+			Name:            status.Name,
+			PrintableStatus: status.PrintableStatus,
+		})
+	}
+
+	return vmStatus, nil
+}
+
+// ListVmiStatus lists the status of all VMIs in a zone.
+func (c *Client) ListVmiStatus(zone *configModels.Zone) ([]model.VmiStatus, error) {
+	_, kc, _, err := c.Get(OptsOnlyClient(zone.Name))
+	if err != nil {
+		return nil, err
+	}
+
+	k8sVmiStatus, err := kc.ListVmiStatus()
+	if err != nil {
+		return nil, err
+	}
+
+	vmiStatus := make([]model.VmiStatus, 0, len(k8sVmiStatus))
+	for _, status := range k8sVmiStatus {
+		vmiStatus = append(vmiStatus, model.VmiStatus{
+			Name: status.Name,
+			Host: status.Host,
+		})
+	}
+
+	return vmiStatus, nil
 }
 
 // dbFunc returns a function that updates the K8s subsystem.

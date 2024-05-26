@@ -680,13 +680,64 @@ func (c *Client) SetupPodWatcher(ctx context.Context, zone *configModels.Zone, c
 
 // SetupStatusWatcher sets up a status watcher for a zone.
 // For every status change, it triggers the callback.
-func (c *Client) SetupStatusWatcher(ctx context.Context, zone *configModels.Zone, resourceType string, callback func(string, interface{})) error {
+func (c *Client) SetupStatusWatcher(ctx context.Context, zone *configModels.Zone, resourceType string, callback func(name string, status interface{})) error {
 	_, kc, _, err := c.Get(OptsOnlyClient(zone))
 	if err != nil {
 		return err
 	}
 
-	return kc.SetupStatusWatcher(ctx, resourceType, callback)
+	handler := func(name string, status interface{}) {
+		if ds, ok := status.(*k8sModels.DeploymentStatus); ok {
+			callback(name, &model.DeploymentStatus{
+				Name:                ds.Name,
+				Generation:          ds.Generation,
+				DesiredReplicas:     ds.DesiredReplicas,
+				ReadyReplicas:       ds.ReadyReplicas,
+				AvailableReplicas:   ds.AvailableReplicas,
+				UnavailableReplicas: ds.UnavailableReplicas,
+			})
+			return
+		}
+
+		if event, ok := status.(*k8sModels.Event); ok {
+			callback(name, &model.DeploymentEvent{
+				Name:        event.Name,
+				Type:        event.Type,
+				Reason:      event.Reason,
+				Description: event.Description,
+				ObjectKind:  event.ObjectKind,
+			})
+			return
+		}
+	}
+
+	return kc.SetupStatusWatcher(ctx, resourceType, handler)
+}
+
+// ListDeploymentStatus lists the status of all deployments in the cluster.
+func (c *Client) ListDeploymentStatus(zone *configModels.Zone) ([]model.DeploymentStatus, error) {
+	_, kc, _, err := c.Get(OptsOnlyClient(zone))
+	if err != nil {
+		return nil, err
+	}
+
+	k8sDeploymentStatus, err := kc.ListDeploymentStatus()
+	if err != nil {
+		return nil, err
+	}
+
+	deploymentStatus := make([]model.DeploymentStatus, 0, len(k8sDeploymentStatus))
+	for _, status := range k8sDeploymentStatus {
+		deploymentStatus = append(deploymentStatus, model.DeploymentStatus{
+			Name:                status.Name,
+			DesiredReplicas:     status.DesiredReplicas,
+			ReadyReplicas:       status.ReadyReplicas,
+			AvailableReplicas:   status.AvailableReplicas,
+			UnavailableReplicas: status.UnavailableReplicas,
+		})
+	}
+
+	return deploymentStatus, nil
 }
 
 // recreatePvPvcDeployments recreates the pv, pvc and deployment for the deployment.

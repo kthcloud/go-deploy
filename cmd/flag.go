@@ -5,9 +5,9 @@ import (
 	"go-deploy/pkg/services/cleaner"
 	"go-deploy/pkg/services/confirm"
 	"go-deploy/pkg/services/job_execute"
+	"go-deploy/pkg/services/job_scheduler"
 	"go-deploy/pkg/services/logger"
 	metricsWorker "go-deploy/pkg/services/metrics_update"
-	"go-deploy/pkg/services/repair"
 	"go-deploy/pkg/services/status_update"
 	"go-deploy/pkg/services/synchronize"
 )
@@ -131,7 +131,7 @@ func GetFlags() FlagDefinitionList {
 			Description:  "Start repairer",
 			DefaultValue: false,
 			Run: func(ctx context.Context, _ context.CancelFunc) {
-				repair.Setup(ctx)
+				job_scheduler.Setup(ctx)
 			},
 		},
 		{

@@ -97,6 +97,19 @@ func (c *ConfigType) EnabledZones() []Zone {
 	return zones
 }
 
+// EnabledZoneNames returns the names of all zones that are enabled.
+// If no zones are found, an empty slice is returned.
+// All zones are loaded locally by the configuration file
+func (c *ConfigType) EnabledZoneNames() []string {
+	var names []string
+
+	for _, zone := range c.EnabledZones() {
+		names = append(names, zone.Name)
+	}
+
+	return names
+}
+
 // GetZone returns the Zone with the given name.
 // If the zone is not found, nil is returned.
 // All zones are loaded locally by the configuration file
