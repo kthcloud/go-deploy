@@ -178,6 +178,13 @@ function install_dnsmaq() {
   update_default_dnsmasq
 
   sudo systemctl restart dnsmasq
+  sleep 5
+  sudo systemctl restart dnsmasq
+  sleep 5
+  sudo systemctl restart dnsmasq
+  sleep 5
+  sudo systemctl status dnsmasq
+  sleep 5
 
   echo -e "${GREEN_CHECK} dnsmasq installed"
 }
