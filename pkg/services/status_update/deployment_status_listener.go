@@ -23,7 +23,7 @@ func DeploymentStatusListener(ctx context.Context) error {
 
 		z := zone
 		err := k8s_service.New().SetupStatusWatcher(ctx, &z, "deployment", func(name string, incomingStatus interface{}) {
-			if status, ok := incomingStatus.(*models.DeploymentStatus); ok {
+			if status, ok := incomingStatus.(*model.DeploymentStatus); ok {
 				deploymentStatus := parseDeploymentStatus(status)
 
 				err := deployment_repo.New().SetStatusByName(name, deploymentStatus)
@@ -70,7 +70,7 @@ func DeploymentEventListener(ctx context.Context) error {
 
 		z := zone
 		err := k8s_service.New().SetupStatusWatcher(ctx, &z, "event", func(name string, incomingStatus interface{}) {
-			if event, ok := incomingStatus.(*models.Event); ok {
+			if event, ok := incomingStatus.(*model.DeploymentEvent); ok {
 				if event.Type != models.EventTypeWarning {
 					return
 				}
@@ -117,9 +117,11 @@ func deploymentPingUpdater() error {
 	return nil
 }
 
-func parseDeploymentStatus(status *models.DeploymentStatus) string {
+func parseDeploymentStatus(status *model.DeploymentStatus) string {
 	var statusCode int
-	if status.ReadyReplicas == status.DesiredReplicas {
+	if status.DesiredReplicas == 0 && status.ReadyReplicas == 0 && status.AvailableReplicas == 0 && status.UnavailableReplicas == 0 {
+		statusCode = status_codes.ResourceDisabled
+	} else if status.ReadyReplicas == status.DesiredReplicas {
 		statusCode = status_codes.ResourceRunning
 	} else if status.Generation <= 1 && (status.ReadyReplicas != status.DesiredReplicas || status.UnavailableReplicas > 0) {
 		statusCode = status_codes.ResourceCreating
@@ -134,7 +136,7 @@ func parseDeploymentStatus(status *models.DeploymentStatus) string {
 	return status_codes.GetMsg(statusCode)
 }
 
-func parseDeploymentErrorStatus(status *models.Event) string {
+func parseDeploymentErrorStatus(status *model.DeploymentEvent) string {
 	switch status.Reason {
 	case models.EventReasonMountFailed:
 		return status_codes.GetMsg(status_codes.ResourceMountFailed)

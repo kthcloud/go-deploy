@@ -472,6 +472,16 @@ func (c *Client) Repair(id string) error {
 		return nil
 	}
 
+	// Remove activity if it has been restarting for more than 5 minutes
+	now := time.Now()
+	if now.Sub(d.RestartedAt) > 5*time.Minute {
+		log.Printf("Removing restarting activity from deployment %s\n", d.Name)
+		err = deployment_repo.New().RemoveActivity(d.ID, model.ActivityRestarting)
+		if err != nil {
+			return err
+		}
+	}
+
 	err = c.K8s().Repair(id)
 	if err != nil {
 		if errors.Is(err, sErrors.IngressHostInUseErr) {

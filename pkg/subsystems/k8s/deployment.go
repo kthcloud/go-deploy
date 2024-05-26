@@ -143,3 +143,22 @@ func (client *Client) RestartDeployment(name string) error {
 
 	return nil
 }
+
+// ListDeploymentStatus returns a list of deployment statuses in Kubernetes.
+func (client *Client) ListDeploymentStatus() ([]*models.DeploymentStatus, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to list k8s deployment status. details: %w", err)
+	}
+
+	res, err := client.K8sClient.AppsV1().Deployments(client.Namespace).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	var statuses []*models.DeploymentStatus
+	for _, deployment := range res.Items {
+		statuses = append(statuses, models.CreateDeploymentStatusFromRead(&deployment))
+	}
+
+	return statuses, nil
+}

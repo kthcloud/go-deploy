@@ -148,6 +148,44 @@ func (client *Client) DeleteVMIs(vmID string) error {
 	return nil
 }
 
+// ListVmStatus returns the statuses of all VMs.
+func (client *Client) ListVmStatus() ([]*models.VmStatus, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to list k8s vm statuses. details: %w", err)
+	}
+
+	vms, err := client.KubeVirtK8sClient.KubevirtV1().VirtualMachines(client.Namespace).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	statuses := make([]*models.VmStatus, 0)
+	for _, vm := range vms.Items {
+		statuses = append(statuses, models.CreateVmStatusFromRead(&vm))
+	}
+
+	return statuses, nil
+}
+
+// ListVmiStatus returns the statuses of all VMIs.
+func (client *Client) ListVmiStatus() ([]*models.VmiStatus, error) {
+	makeError := func(err error) error {
+		return fmt.Errorf("failed to list k8s vmi statuses. details: %w", err)
+	}
+
+	vmis, err := client.KubeVirtK8sClient.KubevirtV1().VirtualMachineInstances(client.Namespace).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return nil, makeError(err)
+	}
+
+	statuses := make([]*models.VmiStatus, 0)
+	for _, vmi := range vmis.Items {
+		statuses = append(statuses, models.CreateVmiStatusFromRead(&vmi))
+	}
+
+	return statuses, nil
+}
+
 func (client *Client) waitVmDeleted(id string) error {
 	maxWait := 120
 	for i := 0; i < maxWait; i++ {

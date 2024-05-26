@@ -271,6 +271,21 @@ func (client *Client) UpdateCustomDomainStatus(id, portName, status string) erro
 	return client.UpdateWithBsonByID(id, update)
 }
 
+// SetStatusByName sets the status of a deployment.
+func (client *Client) SetStatusByName(name, status string) error {
+	return client.SetWithBsonByName(name, bson.D{{"status", status}})
+}
+
+// SetCurrentHost sets the current host of a VM.
+func (client *Client) SetCurrentHost(name string, host *model.Host) error {
+	return client.SetWithBsonByName(name, bson.D{{"host", host}})
+}
+
+// UnsetCurrentHost unsets the current host of a VM.
+func (client *Client) UnsetCurrentHost(name string) error {
+	return client.UnsetByName(name, "host")
+}
+
 // MarkRepaired marks a VM as repaired.
 // It sets RepairedAt and unsets the repairing activity.
 func (client *Client) MarkRepaired(id string) error {

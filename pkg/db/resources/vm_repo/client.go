@@ -144,6 +144,16 @@ func (client *Client) WithNameRegex(name string) *Client {
 	return client
 }
 
+// WithZone adds a filter to the client to only return VMs in the given zone.
+func (client *Client) WithZone(zone ...string) *Client {
+	filter := bson.D{{"zone", bson.D{{"$in", zone}}}}
+
+	client.ResourceClient.AddExtraFilter(filter)
+	client.ActivityResourceClient.AddExtraFilter(filter)
+
+	return client
+}
+
 // OlderThan adds a filter to the client to only return VMs created before the given timestamp.
 func (client *Client) OlderThan(timestamp time.Time) *Client {
 	filter := bson.D{{"createdAt", bson.D{{"$lt", timestamp}}}}

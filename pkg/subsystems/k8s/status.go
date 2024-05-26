@@ -133,14 +133,8 @@ func (client *Client) vmStatusWatcher(ctx context.Context, handler func(string, 
 			case event := <-resultsChan:
 				if event.Type == watch.Added || event.Type == watch.Modified {
 					vm := event.Object.(*kubevirtv1.VirtualMachine)
-
-					// Fetch deploy name from label LabelDeployName
-					deployName, ok := vm.Labels[keys.LabelDeployName]
-					if ok {
-						handler(deployName, &models.VmStatus{
-							PrintableStatus: string(vm.Status.PrintableStatus),
-						})
-					}
+					vmStatus := models.CreateVmStatusFromRead(vm)
+					handler(vmStatus.Name, vmStatus)
 				}
 			case <-recreateInterval:
 				watcher.Stop()
@@ -190,20 +184,8 @@ func (client *Client) vmiStatusWatcher(ctx context.Context, handler func(string,
 			case event := <-resultsChan:
 				if event.Type == watch.Added || event.Type == watch.Modified {
 					vmi := event.Object.(*kubevirtv1.VirtualMachineInstance)
-
-					// Fetch deploy name from label LabelDeployName
-					deployName, ok := vmi.Labels[keys.LabelDeployName]
-					if ok {
-						vmiStatus := &models.VmiStatus{}
-
-						// Get the host name from the label "kubevirt.io/nodeName"
-						host, ok := vmi.Labels["kubevirt.io/nodeName"]
-						if ok {
-							vmiStatus.Host = &host
-						}
-
-						handler(deployName, vmiStatus)
-					}
+					vmiStatus := models.CreateVmiStatusFromRead(vmi)
+					handler(vmiStatus.Name, vmiStatus)
 				}
 			case <-recreateInterval:
 				watcher.Stop()
@@ -345,6 +327,7 @@ func (client *Client) eventWatcher(ctx context.Context, handler func(string, int
 
 						// Fetch deploy name from label LabelDeployName
 						handler(deployName, &models.Event{
+							Name:        deployName,
 							Type:        eventType,
 							Reason:      reason,
 							Description: description,

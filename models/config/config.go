@@ -29,21 +29,28 @@ type ConfigType struct {
 	Zones []Zone `yaml:"zones"`
 
 	Timer struct {
-		GpuSynchronize            time.Duration `yaml:"gpuSynchronize"`
-		GpuLeaseSynchronize       time.Duration `yaml:"gpuLeaseSynchronize"`
 		DeploymentStatusUpdate    time.Duration `yaml:"deploymentStatusUpdate"`
 		DeploymentPingUpdate      time.Duration `yaml:"deploymentPingUpdate"`
 		DeploymentRepair          time.Duration `yaml:"deploymentRepair"`
-		VmRepair                  time.Duration `yaml:"vmRepair"`
-		SmRepair                  time.Duration `yaml:"smRepair"`
-		MetricsUpdate             time.Duration `yaml:"metricsUpdate"`
-		JobFetch                  time.Duration `yaml:"jobFetch"`
-		FailedJobFetch            time.Duration `yaml:"failedJobFetch"`
 		DeploymentDeletionConfirm time.Duration `yaml:"deploymentDeletionConfirm"`
-		VmDeletionConfirm         time.Duration `yaml:"vmDeletionConfirm"`
-		SmDeletionConfirm         time.Duration `yaml:"smDeletionConfirm"`
-		CustomDomainConfirm       time.Duration `yaml:"customDomainConfirm"`
-		StaleResourceCleanup      time.Duration `yaml:"staleResourceCleanup"`
+
+		SmRepair          time.Duration `yaml:"smRepair"`
+		SmDeletionConfirm time.Duration `yaml:"smDeletionConfirm"`
+
+		VmStatusUpdate    time.Duration `yaml:"vmStatusUpdate"`
+		VmRepair          time.Duration `yaml:"vmRepair"`
+		VmDeletionConfirm time.Duration `yaml:"vmDeletionConfirm"`
+
+		GpuSynchronize      time.Duration `yaml:"gpuSynchronize"`
+		GpuLeaseSynchronize time.Duration `yaml:"gpuLeaseSynchronize"`
+
+		CustomDomainConfirm  time.Duration `yaml:"customDomainConfirm"`
+		StaleResourceCleanup time.Duration `yaml:"staleResourceCleanup"`
+
+		MetricsUpdate time.Duration `yaml:"metricsUpdate"`
+
+		JobFetch       time.Duration `yaml:"jobFetch"`
+		FailedJobFetch time.Duration `yaml:"failedJobFetch"`
 	}
 
 	GPU struct {

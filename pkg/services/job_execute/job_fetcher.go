@@ -5,8 +5,8 @@ import (
 	"go-deploy/pkg/jobs"
 )
 
-// jobFetcher is a worker that fetches new jobs from the database and runs them.
-func jobFetcher() error {
+// JobFetcher is a worker that fetches new jobs from the database and runs them.
+func JobFetcher() error {
 	job, err := job_repo.New().GetNext()
 	if err != nil {
 		return err
@@ -21,8 +21,8 @@ func jobFetcher() error {
 	return nil
 }
 
-// failedJobFetcher is a worker that fetches failed jobs from the database and runs them.
-func failedJobFetcher() error {
+// FailedJobFetcher is a worker that fetches failed jobs from the database and runs them.
+func FailedJobFetcher() error {
 	job, err := job_repo.New().GetNextFailed()
 	if err != nil {
 		return err

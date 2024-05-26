@@ -89,3 +89,20 @@ type DeploymentError struct {
 	Reason      string `bson:"reason"`
 	Description string `bson:"description"`
 }
+
+type DeploymentStatus struct {
+	Name                string `bson:"name"`
+	Generation          int    `bson:"generation"`
+	DesiredReplicas     int    `bson:"desiredReplicas"`
+	ReadyReplicas       int    `bson:"readyReplicas"`
+	AvailableReplicas   int    `bson:"availableReplicas"`
+	UnavailableReplicas int    `bson:"unavailableReplicas"`
+}
+
+type DeploymentEvent struct {
+	Name        string `json:"name"`
+	Type        string `json:"type"`
+	Reason      string `json:"reason"`
+	Description string `json:"description"`
+	ObjectKind  string `json:"objectKind"`
+}
