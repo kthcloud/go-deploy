@@ -13,8 +13,34 @@ on:
       - '.github/workflows/run-tests.yml'
 
 jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      cache-key: ${{ steps.cache-key.outputs.cache_key }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: '>=1.21.0'
+
+      - name: Cache Go modules
+        id: cache-key
+        run: |
+          echo "cache_key=go-mod-${{ hashFiles('**/go.sum') }}" >> $GITHUB_ENV
+
+      - name: Install local environment
+        id: setup-local
+        run: |
+          cd scripts/local
+          chmod +x ./gh-action-setup.sh && ./gh-action-setup.sh
+          chmod +x ./setup.sh && ./setup.sh
+
   acc:
     runs-on: ubuntu-latest
+    needs: setup
 
     steps:
       - name: Check out code
@@ -23,29 +49,26 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: '>=1.20.0'
+          go-version: '>=1.21.0'
 
-      - name: Create config directory
-        run: sudo mkdir -p /etc/deploy && sudo chown $USER /etc/deploy
-
-      - name: Create config file from secret
-        run: |
-          echo "${{ vars.CONFIG_FILE }}" | sudo tee /etc/deploy/config.yaml > /dev/null
+      - name: Restore cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ needs.setup.outputs.cache-key }}
+          restore-keys: |
+            go-mod-
 
       - name: Export configuration file path
-        run: echo "DEPLOY_CONFIG_FILE=/etc/deploy/config.yaml" >> $GITHUB_ENV
+        run: echo "DEPLOY_CONFIG_FILE=config.local.yml" >> $GITHUB_ENV
 
       - name: Run acceptance tests
         run: go test -timeout 30m ./test/acc/...
   e2e:
     runs-on: ubuntu-latest
-
-    # This assumes that the configuration file connects to Redis at localhost:6379
-    services:
-      redis:
-        image: redis
-        ports:
-          - 6379:6379
+    needs: setup
 
     steps:
       - name: Check out code
@@ -54,17 +77,20 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: '>=1.20.0'
+          go-version: '>=1.21.0'
 
-      - name: Create config directory
-        run: sudo mkdir -p /etc/deploy && sudo chown $USER /etc/deploy
-
-      - name: Create config file from secret
-        run: |
-          echo "${{ vars.CONFIG_FILE }}" | sudo tee /etc/deploy/config.yaml > /dev/null
+      - name: Restore cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ needs.setup.outputs.cache-key }}
+          restore-keys: |
+            go-mod-
 
       - name: Export configuration file path
-        run: echo "DEPLOY_CONFIG_FILE=/etc/deploy/config.yaml" >> $GITHUB_ENV
+        run: echo "DEPLOY_CONFIG_FILE=config.local.yml" >> $GITHUB_ENV
 
       - name: Start main program
         run: |
@@ -79,4 +105,4 @@ jobs:
 
       - name: Run e2e tests
         run: go test -timeout 30m ./test/e2e/...
-
+        
