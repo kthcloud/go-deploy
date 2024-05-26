@@ -164,7 +164,7 @@ function install_dnsmaq() {
   sudo systemctl restart systemd-resolved
 
   # Install dnsmasq, we ignore error here since it doesn't matter (it will fail because port 53 is already in use)
-  sudo apt-get install dnsmasq -y 2> /dev/null
+  sudo apt-get install dnsmasq -y > /dev/null 2>&1
   
   # Make dnsmasq fallback to 127.0.0.2:53
   update_dnsmasq_conf
