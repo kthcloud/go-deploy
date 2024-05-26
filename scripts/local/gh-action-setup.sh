@@ -113,17 +113,17 @@ function install_kind() {
 
 function install_dnsmaq() {
   echo -e "Installing dnsmasq..."
+  update_resolved_conf
   sudo apt-get install dnsmasq -y
+  update_dnsmasq_conf
+  update_default_dnsmasq
+  systemctl restart systemd-resolved
+  systemctl restart dnsmasq
   echo -e "${GREEN_CHECK} dnsmasq installed"
 }
 
 function configure_dns() {
   echo -e "Configuring DNS..."
-  update_resolved_conf
-  update_dnsmasq_conf
-  update_default_dnsmasq
-  systemctl restart systemd-resolved
-  systemctl restart dnsmasq
   echo -e "${GREEN_CHECK} DNS configured"
 }
 
@@ -132,4 +132,3 @@ install_kubectl
 install_helm
 install_kind
 install_dnsmaq
-configure_dns
