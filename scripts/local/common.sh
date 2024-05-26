@@ -11,12 +11,13 @@ WHITE_BOLD="\033[37;1m"
 
 PINK_BOLD="\033[95;1m"
 
+RED_CROSS="${RED_BOLD}✘${RESET}"
+GREEN_CHECK="${GREEN_BOLD}✔${RESET}"
+
 spinner() {
     local pid=$!
     local delay=0.07
     local spinstr='⠇⠋⠙⠸⠴⠦'
-    local green_check="${GREEN_BOLD}✔${RESET}"
-    local red_cross="${RED_BOLD}✘${RESET}"
     local temp_file=$(mktemp)
 
     local task_name=$1
@@ -42,11 +43,11 @@ spinner() {
     local elapsed=$(ps -p $pid -o etimes=)
 
     if [ $exit_code -ne 0 ]; then
-        echo -e "${clean_line}$red_cross $task_name ${duration_seconds}s"
+        echo -e "${clean_line}$RED_CROSS $task_name ${duration_seconds}s"
         exit $exit_code
     fi
 
-    echo -e "${clean_line}$green_check $task_name ${duration_seconds}s"
+    echo -e "${clean_line}$GREEN_CHECK $task_name ${duration_seconds}s"
 
     rm "$temp_file"
     return $exit_code
@@ -62,10 +63,10 @@ run_with_spinner() {
 
     # Check if any content in the error file
     if [ -s $err_file ]; then
-        local red_cross='\033[31;1m✘\033[0m'
+        local RED_CROSS='\033[31;1m✘\033[0m'
         echo ""
         echo ""
-        echo -e "$red_cross Failed to run $task_name"
+        echo -e "$RED_CROSS Failed to run $task_name"
         echo ""
         echo -e "Error: $(cat $err_file)"
         exit 1

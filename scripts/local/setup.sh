@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#version="${3?missing argument: version}"
+#admin_password="${ADMIN_PASSWORD:-neti1234}"
+
+
 # Ensure this script is run from the script folder by checking if the parent folder contains mod.go
 if [ ! -f "../../go.mod" ]; then
   echo "$RED_CROSS Please run this script from the scripts folder"
@@ -7,6 +11,51 @@ if [ ! -f "../../go.mod" ]; then
 fi
 
 source ./common.sh
+
+function print_usage() {
+  echo -e "Usage: $0 [options]"
+  echo -e "Options:"
+  echo -e "  -h, --help\t\t\tPrint this help message"
+  echo -e "  -y, --yes\t\t\tSkip confirmations. Default: false"
+  echo -e "  --name [name]\t\t\tName of the cluster to create. Default: go-deploy-dev"
+  echo -e "  --kubeconfig [path]\t\tPath to kubeconfig file that a new context will be added to. Default: ~/.kube/config"
+}
+
+function parse_flags() {
+  local args=("$@")
+  local index=0
+
+  CLUSTER_NAME="go-deploy-dev"
+  KUBECONFIG_PATH="${HOME}/.kube/config"  
+
+  while [[ $index -lt ${#args[@]} ]]; do
+    case "${args[$index]}" in
+      -h|--help)
+        print_usage
+        exit 0
+        ;;
+      -y|--yes)
+        SKIP_CONFIRMATIONS=true
+        ((index++))
+        ;;
+      --name)
+        ((index++))
+        CLUSTER_NAME="${args[$index]}"
+        ((index++))
+        ;;
+      --kubeconfig)
+        ((index++))
+        KUBECONFIG_PATH="${args[$index]}"
+        ((index++))
+        ;;
+      *)
+        echo "Error: Unrecognized argument: ${args[$index]}"
+        print_usage
+        exit 1
+        ;;
+    esac
+  done
+}
 
 
 function check_dependencies() {
@@ -80,7 +129,7 @@ function generate_cluster_config() {
   # Write to cluster-config.rc
   echo -e "#!/bin/bash
 # Cluster configuration
-export cluster_name=go-deploy-dev
+export cluster_name=$CLUSTER_NAME
 export kubeconfig_output_path=../../kube
 
 # Domain configuration
@@ -183,6 +232,8 @@ function create_kind_cluster() {
   local current=$(kind get clusters 2> /dev/stdout | grep -c $cluster_name)
   if [ "$current" -eq 0 ]; then
     generate_kind_cluster_config
+
+    export KUBECONFIG=$KUBECONFIG_PATH
     kind create cluster --name $cluster_name --config ./manifests/kind-config.yml --quiet
   fi
 
@@ -731,9 +782,18 @@ function print_result() {
   echo -e ""
 }
 
+parse_flags $@
+
 check_dependencies
+
 if [ ! -f "./cluster-config.rc" ]; then
   generate_cluster_config
+fi
+
+read_cluster_config
+if [ "$cluster_name" != "$CLUSTER_NAME" ]; then
+  echo -e "$RED_CROSS Another local cluster is already running, and multiple local clusters are not yet supported"
+  exit 1
 fi
 
 # Pre-requisites
@@ -767,9 +827,14 @@ run_with_spinner "Seed Harbor with images" seed_harbor_with_images
 # If exists ../../config.local.yml, ask if user want to replace it
 read_cluster_config
 if [ -f "../../config.local.yml" ]; then
-  echo ""
-  read -p "config.local.yml already exists. Do you want to replace it? [y/n]: " -n 1 -r
-  echo
+  if [ ! $SKIP_CONFIRMATIONS ]; then
+    echo ""
+    read -p "config.local.yml already exists. Do you want to replace it? [y/n]: " -n 1 -r
+    echo
+  else
+    REPLY="y"
+  fi
+
   if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     echo "Skipping config.local.yml generation"
   else
