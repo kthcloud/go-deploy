@@ -37,6 +37,8 @@ jobs:
           cd scripts/local
           chmod +x ./gh-action-setup.sh && ./gh-action-setup.sh
           chmod +x ./setup.sh && ./setup.sh --non-interactive
+          cd ../..
+          ls -la
 
   acc:
     runs-on: ubuntu-latest
