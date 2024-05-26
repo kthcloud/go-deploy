@@ -19,6 +19,10 @@ function print_usage() {
   echo -e "  -y, --yes\t\t\tSkip confirmations. Default: false"
   echo -e "  --name [name]\t\t\tName of the cluster to create. Default: go-deploy-dev"
   echo -e "  --kubeconfig [path]\t\tPath to kubeconfig file that a new context will be added to. Default: ~/.kube/config"
+  echo -e ""
+  echo -e "dnsmasq is used to allow the names to resolve. See the following guides for help configuring it:"
+  echo -e " - WSL2 (Windows): https://github.com/absolunet/pleaz/blob/production/documentation/installation/wsl2/dnsmasq.md"
+  echo -e " - systemd-resolved (Linux): https://gist.github.com/frank-dspeed/6b6f1f720dd5e1c57eec8f1fdb2276df"
 }
 
 function parse_flags() {
@@ -80,6 +84,11 @@ function check_dependencies() {
   # Check if dnsmasq is installed, if not exit
   if ! [ -x "$(command -v dnsmasq)" ]; then
     echo -e "$RED_CROSS dnsmasq is not installed. Please install dnsmasq"
+    echo -e ""
+    echo -e "dnsmasq is used to allow the names to resolve. See the following guides for help configuring it:"
+    echo -e " - WSL2 (Windows): https://github.com/absolunet/pleaz/blob/production/documentation/installation/wsl2/dnsmasq.md"
+    echo -e " - systemd-resolved (Linux): https://gist.github.com/frank-dspeed/6b6f1f720dd5e1c57eec8f1fdb2276df"
+    
     exit 1
   fi
 
