@@ -69,6 +69,12 @@ function check_dependencies() {
     exit 1
   fi
 
+  # Check if kubectl is installed, if not exit
+  if ! [ -x "$(command -v kubectl)" ]; then
+    echo -e "$RED_CROSS kubectl is not installed. Please install kubectl"
+    exit 1
+  fi
+
   # Check if Helm is installed, if not exit
   if ! [ -x "$(command -v helm)" ]; then
     echo -e "$RED_CROSS Helm is not installed. Please install Helm"
