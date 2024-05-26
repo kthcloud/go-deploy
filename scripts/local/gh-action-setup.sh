@@ -20,8 +20,8 @@ update_resolved_conf() {
         return
     fi
 
-    if ! grep -q "^$DNS_LINE" $RESOLVED_CONF; then
-        sed -i "/^\[Resolve\]/a $DNS_LINE" $RESOLVED_CONF
+    if ! sudo grep -q "^$DNS_LINE" $RESOLVED_CONF; then
+        sudo sed -i "/^\[Resolve\]/a $DNS_LINE" $RESOLVED_CONF
     fi
 }
 
@@ -36,12 +36,12 @@ update_dnsmasq_conf() {
         return
     fi
 
-    if ! grep -q "^$LISTEN_ADDRESS" $DNSMASQ_CONF; then
-        echo "$LISTEN_ADDRESS" >> $DNSMASQ_CONF
+    if ! sudo grep -q "^$LISTEN_ADDRESS" $DNSMASQ_CONF; then
+        echo "$LISTEN_ADDRESS" | sudo tee -a $DNSMASQ_CONF > /dev/null
     fi
 
-    if ! grep -q "^$BIND_INTERFACES" $DNSMASQ_CONF; then
-        echo "$BIND_INTERFACES" >> $DNSMASQ_CONF
+    if ! sudo grep -q "^$BIND_INTERFACES" $DNSMASQ_CONF; then
+        echo "$BIND_INTERFACES" | sudo tee -a $DNSMASQ_CONF > /dev/null
     fi
 }
 
@@ -56,12 +56,12 @@ update_default_dnsmasq() {
         return
     fi
 
-    if ! grep -q "^$IGNORE_RESOLVCONF" $DEFAULT_DNSMASQ; then
-        echo "$IGNORE_RESOLVCONF" >> $DEFAULT_DNSMASQ
+    if ! sudo grep -q "^$IGNORE_RESOLVCONF" $DEFAULT_DNSMASQ; then
+        echo "$IGNORE_RESOLVCONF" | sudo tee -a $DEFAULT_DNSMASQ > /dev/null
     fi
 
-    if ! grep -q "^$ENABLED" $DEFAULT_DNSMASQ; then
-        echo "$ENABLED" >> $DEFAULT_DNSMASQ
+    if ! sudo grep -q "^$ENABLED" $DEFAULT_DNSMASQ; then
+        echo "$ENABLED" | sudo tee -a $DEFAULT_DNSMASQ > /dev/null
     fi
 }
 
@@ -117,8 +117,8 @@ function install_dnsmaq() {
   sudo apt-get install dnsmasq -y
   update_dnsmasq_conf
   update_default_dnsmasq
-  systemctl restart systemd-resolved
-  systemctl restart dnsmasq
+  sudo systemctl restart systemd-resolved
+  sudo systemctl restart dnsmasq
   echo -e "${GREEN_CHECK} dnsmasq installed"
 }
 
