@@ -1,9 +1,5 @@
 #!/bin/bash
 
-#version="${3?missing argument: version}"
-#admin_password="${ADMIN_PASSWORD:-neti1234}"
-
-
 # Ensure this script is run from the script folder by checking if the parent folder contains mod.go
 if [ ! -f "../../go.mod" ]; then
   echo "$RED_CROSS Please run this script from the scripts folder"
@@ -426,6 +422,11 @@ function install_mongodb() {
     envsubst < ./manifests/mongodb.yml > $mongodb_values_subst
     kubectl apply -f $mongodb_values_subst
   fi
+
+  # Wait for MongoDB to be up
+  while [ "$(kubectl get pod -n mongodb -l app=mongodb -o jsonpath="{.items[0].status.phase}" 2> /dev/stdout)" != "Running" ]; do
+    sleep 5
+  done
 }
 
 function install_redis() {
@@ -438,6 +439,11 @@ function install_redis() {
     envsubst < ./manifests/redis.yml > $redis_values_subst
     kubectl apply -f $redis_values_subst
   fi
+
+  # Wait for Redis to be up
+  while [ "$(kubectl get pod -n redis -l app=redis -o jsonpath="{.items[0].status.phase}" 2> /dev/stdout)" != "Running" ]; do
+    sleep 5
+  done
 }
 
 function install_keycloak() {
