@@ -162,8 +162,8 @@ func (client *Client) WithPendingCustomDomain() *Client {
 }
 
 // WithZone adds a filter to the client to only include deployments in the given zone.
-func (client *Client) WithZone(zone string) *Client {
-	filter := bson.D{{"zone", zone}}
+func (client *Client) WithZone(zone ...string) *Client {
+	filter := bson.D{{"zone", bson.D{{"$in", zone}}}}
 
 	client.ResourceClient.AddExtraFilter(filter)
 	client.ActivityResourceClient.AddExtraFilter(filter)
@@ -177,6 +177,24 @@ func (client *Client) LastAccessedBefore(timestamp time.Time) *Client {
 
 	client.ResourceClient.AddExtraFilter(filter)
 	client.ActivityResourceClient.AddExtraFilter(filter)
+
+	return client
+}
+
+// Enabled adds a filter to the client to only include deployments that are enabled.
+func (client *Client) Enabled() *Client {
+	filter := bson.D{{"apps.main.replicas", bson.D{{"$gt", 0}}}}
+
+	client.ResourceClient.AddExtraFilter(filter)
+
+	return client
+}
+
+// Disabled adds a filter to the client to only include deployments that are disabled.
+func (client *Client) Disabled() *Client {
+	filter := bson.D{{"apps.main.replicas", 0}}
+
+	client.ResourceClient.AddExtraFilter(filter)
 
 	return client
 }

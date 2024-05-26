@@ -12,6 +12,7 @@ const (
 )
 
 type Event struct {
+	Name        string `json:"name"`
 	Type        string `json:"type"`
 	Reason      string `json:"reason"`
 	Description string `json:"description"`

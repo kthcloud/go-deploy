@@ -24,8 +24,8 @@ var metricsFuncMap = map[string]func() error{
 	"jobs-completed":       jobMetrics(metrics.KeyJobsCompleted, strPtr(model.JobStatusCompleted)),
 }
 
-// metricsUpdater is a worker that updates metrics.
-func metricsUpdater() error {
+// MetricsUpdater is a worker that updates metrics.
+func MetricsUpdater() error {
 	for metricGroupName, metric := range metricsFuncMap {
 		if err := metric(); err != nil {
 			utils.PrettyPrintError(fmt.Errorf("error computing metric %s, skipping. details: %w", metricGroupName, err))

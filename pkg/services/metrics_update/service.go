@@ -11,5 +11,5 @@ import (
 // Metrics updaters are workers that periodically moves metrics into the key-value store.
 func Setup(ctx context.Context) {
 	log.Println("Starting metrics updaters")
-	go services.PeriodicWorker(ctx, "metricsUpdater", metricsUpdater, config.Config.Timer.MetricsUpdate)
+	go services.PeriodicWorker(ctx, "metricsUpdater", MetricsUpdater, config.Config.Timer.MetricsUpdate)
 }

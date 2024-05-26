@@ -118,7 +118,7 @@ export interface VmRead {
   updatedAt?: string;
   repairedAt?: string;
   accessedAt: string;
-  specs?: Specs;
+  specs: Specs;
   ports: PortRead[];
   gpu?: VmGpuLease;
   sshPublicKey: string;
