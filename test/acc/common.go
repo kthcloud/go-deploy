@@ -2,12 +2,13 @@ package acc
 
 import (
 	"fmt"
-	"github.com/google/uuid"
 	"go-deploy/models/mode"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/log"
 	"os"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 func Setup() {
@@ -26,6 +27,10 @@ func Setup() {
 	err := log.SetupLogger(mode.Test)
 	if err != nil {
 		panic(fmt.Sprintf("Failed to setup logger. details: %s", err.Error()))
+	}
+
+	if err := os.Chdir("../../../.."); err != nil {
+		log.Fatalf("Failed to change working directory: %v", err)
 	}
 
 	_, result := os.LookupEnv("DEPLOY_CONFIG_FILE")
