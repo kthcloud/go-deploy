@@ -3,11 +3,15 @@
 GREEN="\033[92m"
 RED="\033[91m"
 RESET="\033[0m"
+BLUE="\033[94m"
+
 CHECK="\u2713"
 CROSS="\u2717"
+RIGHT_ARROW="\u27A1"
 
 GREEN_CHECK="${GREEN}${CHECK}${RESET}"
 RED_CROSS="${RED}${CROSS}${RESET}"
+BLUE_RIGHT_ARROW="${BLUE}${RIGHT_ARROW}${RESET}"
 
 # Function to update /etc/systemd/resolved.conf
 update_resolved_conf() {
@@ -66,6 +70,8 @@ update_default_dnsmasq() {
 }
 
 increase_files() {
+  echo -e "${BLUE_RIGHT_ARROW} Increasing inotify file watch limits..."
+
   # System defaults for comparison
   default_max_user_instances=128
   default_max_queued_events=16384
@@ -83,10 +89,12 @@ increase_files() {
   sudo sysctl -w fs.inotify.max_user_watches=$((memory_per_unit * default_max_user_watches))
   sudo sysctl -w fs.inotify.max_user_instances=$((memory_per_unit * default_max_user_instances))
   sudo sysctl -w fs.inotify.max_queued_events=$((memory_per_unit * default_max_queued_events))
+
+  echo -e "${GREEN_CHECK} Increased inotify file watch limits"
 }
 
 function install_kubectl() {
-  echo -e "Installing kubectl..."
+  echo -e "${BLUE_RIGHT_ARROW} Installing kubectl..."
   curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
   chmod +x kubectl
   sudo mv kubectl /usr/local/bin/kubectl
@@ -94,7 +102,7 @@ function install_kubectl() {
 }
 
 function install_helm() {
-  echo -e "Installing Helm..."
+  echo -e "${BLUE_RIGHT_ARROW} Installing Helm..."
   curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
   sudo apt-get install apt-transport-https --yes
   echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list > /dev/null
@@ -104,7 +112,7 @@ function install_helm() {
 }
 
 function install_kind() {
-  echo -e "Installing kind..."
+  echo -e "${BLUE_RIGHT_ARROW} Installing kind..."
   curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.11.1/kind-linux-amd64
   chmod +x ./kind
   sudo mv ./kind /usr/local/bin/kind
@@ -112,7 +120,7 @@ function install_kind() {
 }
 
 function install_dnsmaq() {
-  echo -e "Installing dnsmasq..."
+  echo -e "${BLUE_RIGHT_ARROW} Installing dnsmasq..."
 
   # Make systemd-resolved no longer listen on 127.0.0.1:53
   update_resolved_conf
@@ -125,13 +133,8 @@ function install_dnsmaq() {
   update_dnsmasq_conf
   update_default_dnsmasq
   sudo systemctl restart dnsmasq
-  
-  echo -e "${GREEN_CHECK} dnsmasq installed"
-}
 
-function configure_dns() {
-  echo -e "Configuring DNS..."
-  echo -e "${GREEN_CHECK} DNS configured"
+  echo -e "${GREEN_CHECK} dnsmasq installed"
 }
 
 increase_files
