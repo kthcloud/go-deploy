@@ -13,10 +13,8 @@ on:
       - '.github/workflows/run-tests.yml'
 
 jobs:
-  setup:
+  tests:
     runs-on: ubuntu-latest
-    outputs:
-      cache-key: ${{ steps.cache-key.outputs.cache_key }}
     steps:
       - name: Check out code
         uses: actions/checkout@v3
@@ -25,11 +23,6 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: '>=1.21.0'
-
-      - name: Cache Go modules
-        id: cache-key
-        run: |
-          echo "cache_key=go-mod-${{ hashFiles('**/go.sum') }}" >> $GITHUB_ENV
 
       - name: Install local environment
         id: setup-local
@@ -40,59 +33,11 @@ jobs:
           cd ../..
           ls -la
 
-  acc:
-    runs-on: ubuntu-latest
-    needs: setup
-
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v3
-
-      - name: Set up Go
-        uses: actions/setup-go@v3
-        with:
-          go-version: '>=1.21.0'
-
-      - name: Restore cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/go/pkg/mod
-            ~/.cache/go-build
-          key: ${{ needs.setup.outputs.cache-key }}
-          restore-keys: |
-            go-mod-
-
       - name: Export configuration file path
         run: echo "DEPLOY_CONFIG_FILE=config.local.yml" >> $GITHUB_ENV
 
       - name: Run acceptance tests
         run: go test -timeout 30m ./test/acc/...
-  e2e:
-    runs-on: ubuntu-latest
-    needs: setup
-
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v3
-
-      - name: Set up Go
-        uses: actions/setup-go@v3
-        with:
-          go-version: '>=1.21.0'
-
-      - name: Restore cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/go/pkg/mod
-            ~/.cache/go-build
-          key: ${{ needs.setup.outputs.cache-key }}
-          restore-keys: |
-            go-mod-
-
-      - name: Export configuration file path
-        run: echo "DEPLOY_CONFIG_FILE=config.local.yml" >> $GITHUB_ENV
 
       - name: Start main program
         run: |
