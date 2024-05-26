@@ -36,6 +36,7 @@ update_resolved_conf() {
     fi
 
     sudo cat $RESOLVED_CONF
+    sudo cat /etc/resolv.conf
 
     echo -e "${GREEN_CHECK} Updated /etc/systemd/resolved.conf"
 }
@@ -71,6 +72,8 @@ update_dnsmasq_conf() {
         fi
     fi
 
+    sudo cat $DNSMASQ_CONF
+
     echo -e "${GREEN_CHECK} Updated /etc/dnsmasq.conf"
 }
 
@@ -104,6 +107,8 @@ update_default_dnsmasq() {
             echo -e "WARNING: Could not add $ENABLED to $DEFAULT_DNSMASQ"
         fi
     fi
+
+    sudo cat $DEFAULT_DNSMASQ
 
     echo -e "${GREEN_CHECK} Updated /etc/default/dnsmasq"
 }
