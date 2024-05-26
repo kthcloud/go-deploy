@@ -35,6 +35,8 @@ update_resolved_conf() {
         fi
     fi
 
+    sudo cat $RESOLVED_CONF
+
     echo -e "${GREEN_CHECK} Updated /etc/systemd/resolved.conf"
 }
 
