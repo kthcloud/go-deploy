@@ -261,13 +261,13 @@ func (client *Client) GetUsage() (*model.DeploymentUsage, error) {
 }
 
 // SetStatusByName sets the status of a deployment.
-func (client *Client) SetStatusByName(name, status string) error {
-	return client.SetWithBsonByName(name, bson.D{{"status", status}})
-}
+func (client *Client) SetStatusByName(name, status string, replicaStatus *model.ReplicaStatus) error {
+	update := bson.D{
+		{"status", status},
+		{"apps.main.replicaStatus", replicaStatus},
+	}
 
-// SetReplicaStatusByName sets the replica status of a deployment.
-func (client *Client) SetReplicaStatusByName(name, app string, status *model.ReplicaStatus) error {
-	return client.SetWithBsonByName(name, bson.D{{fmt.Sprintf("apps.%s.replicaStatus", app), status}})
+	return client.SetWithBsonByName(name, update)
 }
 
 // SetErrorByName sets the error of a deployment.
