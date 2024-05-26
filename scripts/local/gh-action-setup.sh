@@ -35,9 +35,6 @@ update_resolved_conf() {
         fi
     fi
 
-    sudo cat $RESOLVED_CONF
-    sudo cat /etc/resolv.conf
-
     echo -e "${GREEN_CHECK} Updated /etc/systemd/resolved.conf"
 }
 
@@ -72,8 +69,6 @@ update_dnsmasq_conf() {
         fi
     fi
 
-    sudo cat $DNSMASQ_CONF
-
     echo -e "${GREEN_CHECK} Updated /etc/dnsmasq.conf"
 }
 
@@ -107,8 +102,6 @@ update_default_dnsmasq() {
             echo -e "WARNING: Could not add $ENABLED to $DEFAULT_DNSMASQ"
         fi
     fi
-
-    sudo cat $DEFAULT_DNSMASQ
 
     echo -e "${GREEN_CHECK} Updated /etc/default/dnsmasq"
 }
@@ -170,21 +163,14 @@ function install_dnsmaq() {
   update_resolved_conf
   sudo systemctl restart systemd-resolved
 
-  # Install dnsmasq
-  sudo apt-get install dnsmasq -y
+  # Install dnsmasq, we ignore error here since it doesn't matter (it will fail because port 53 is already in use)
+  sudo apt-get install dnsmasq -y 2> /dev/null
   
   # Make dnsmasq fallback to 127.0.0.2:53
   update_dnsmasq_conf
   update_default_dnsmasq
 
   sudo systemctl restart dnsmasq
-  sleep 5
-  sudo systemctl restart dnsmasq
-  sleep 5
-  sudo systemctl restart dnsmasq
-  sleep 5
-  sudo systemctl status dnsmasq
-  sleep 5
 
   echo -e "${GREEN_CHECK} dnsmasq installed"
 }
