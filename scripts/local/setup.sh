@@ -1,5 +1,7 @@
 #!/bin/bash
 
+WAIT_SLEEP=10
+
 # Ensure this script is run from the script folder by checking if the parent folder contains mod.go
 if [ ! -f "../../go.mod" ]; then
   echo "$RED_CROSS Please run this script from the scripts folder"
@@ -15,6 +17,7 @@ function print_usage() {
   echo -e "  -y, --yes\t\t\tSkip confirmations. Default: false"
   echo -e "  --name [name]\t\t\tName of the cluster to create. Default: go-deploy-dev"
   echo -e "  --kubeconfig [path]\t\tPath to kubeconfig file that a new context will be added to. Default: ~/.kube/config"
+  echo -e "  --non-interactive\t\tSkip all user input and fancy output. Default: false"
   echo -e ""
   echo -e "dnsmasq is used to allow the names to resolve. See the following guides for help configuring it:"
   echo -e " - WSL2 (Windows): https://github.com/absolunet/pleaz/blob/production/documentation/installation/wsl2/dnsmasq.md"
@@ -25,8 +28,10 @@ function parse_flags() {
   local args=("$@")
   local index=0
 
+  SKIP_CONFIRMATIONS=false
   CLUSTER_NAME="go-deploy-dev"
   KUBECONFIG_PATH="${HOME}/.kube/config"  
+  NON_INTERACTIVE=false
 
   while [[ $index -lt ${#args[@]} ]]; do
     case "${args[$index]}" in
@@ -46,6 +51,10 @@ function parse_flags() {
       --kubeconfig)
         ((index++))
         KUBECONFIG_PATH="${args[$index]}"
+        ((index++))
+        ;;
+      --non-interactive)
+        NON_INTERACTIVE=true
         ((index++))
         ;;
       *)
@@ -282,7 +291,10 @@ function install_nfs_server() {
 
   # Wait for NFS server to be up
   while [ "$(kubectl get pod -n nfs-server -l app=nfs-server -o jsonpath="{.items[0].status.phase}" 2> /dev/stdout)" != "Running" ]; do
-    sleep 5
+    echo -e "Waiting for NFS server to be up"
+    echo -e ""
+    kubectl get pod -n nfs-server
+    sleep $WAIT_SLEEP
   done
 
   # Create subfolders deployments, vms, scratch and snapshots
@@ -323,6 +335,14 @@ function install_nfs_csi() {
 
   # Then set the new default storage class
   kubectl patch storageclass deploy-misc -p '{"metadata": {"annotations": {"storageclass.kubernetes.io/is-default-class": "true"}}}'
+
+  # Wait for NFS CSI to be up
+  while [ "$(kubectl get pod -n kube-system -l app=csi-nfs-controller -o jsonpath="{.items[0].status.phase}" 2> /dev/stdout)" != "Running" ]; do
+    echo -e "Waiting for NFS CSI to be up"
+    echo -e ""
+    kubectl get pod -n kube-system
+    sleep $WAIT_SLEEP
+  done
 }
 
 function install_ingress_nginx() {
@@ -340,7 +360,10 @@ function install_ingress_nginx() {
 
   # Wait for ingress-nginx to be up
   while [ "$(kubectl get pod -n ingress-nginx -l app.kubernetes.io/name=ingress-nginx -o jsonpath="{.items[0].status.phase}" 2> /dev/stdout)" != "Running" ]; do
-    sleep 5
+    echo -e "Waiting for ingress-nginx to be up"
+    echo -e ""
+    kubectl get pod -n ingress-nginx
+    sleep $WAIT_SLEEP
   done
 }
 
@@ -366,7 +389,10 @@ function install_harbor() {
 
   # Wait for Harbor to be up
   while [ "$(curl -s -o /dev/null -w "%{http_code}" http://harbor.$domain:$harbor_port)" != "200" ]; do
-    sleep 5
+    echo -e "Waiting for Harbor to be up"
+    echo -e ""
+    kubectl get pod -n harbor
+    sleep $WAIT_SLEEP
   done
 
   # Setup an ingress for Harbor
@@ -425,7 +451,10 @@ function install_mongodb() {
 
   # Wait for MongoDB to be up
   while [ "$(kubectl get pod -n mongodb -l app=mongodb -o jsonpath="{.items[0].status.phase}" 2> /dev/stdout)" != "Running" ]; do
-    sleep 5
+    echo -e "Waiting for MongoDB to be up"
+    echo -e ""
+    kubectl get pod -n mongodb
+    sleep $WAIT_SLEEP
   done
 }
 
@@ -442,7 +471,10 @@ function install_redis() {
 
   # Wait for Redis to be up
   while [ "$(kubectl get pod -n redis -l app=redis -o jsonpath="{.items[0].status.phase}" 2> /dev/stdout)" != "Running" ]; do
-    sleep 5
+    echo -e "Waiting for Redis to be up"
+    echo -e ""
+    kubectl get pod -n redis
+    sleep $WAIT_SLEEP
   done
 }
 
@@ -461,7 +493,10 @@ function install_keycloak() {
 
   # Wait for Keycloak to be up
   while [ "$(curl -s -o /dev/null -w "%{http_code}" http://keycloak.$domain:$keycloak_port/health/ready)" != "200" ]; do
-    sleep 5
+    echo -e "Waiting for Keycloak to be up"
+    echo -e ""
+    kubectl get pod -n keycloak
+    sleep $WAIT_SLEEP
   done
 
   # Fetch admin token
@@ -637,17 +672,37 @@ function install_keycloak() {
       "userinfo.token.claim": "true"
     }
   }'
-  curl -s \
-    -H "Content-Type: application/json" \
-    -H "Accept: application/json" \
-    -H "Authorization: Bearer $token" \
-    -X POST http://keycloak.$domain:$keycloak_port/admin/realms/master/clients/$deploy_client_id/protocol-mappers/models -d "$groups_mapping"
-  curl -s \
-    -H "Content-Type: application/json" \
-    -H "Accept: application/json" \
-    -H "Authorization: Bearer $token" \
-    -X POST http://keycloak.$domain:$keycloak_port/admin/realms/master/clients/$deploy_storage_client_id/protocol-mappers/models -d "$groups_mapping"
 
+  # Fetch protocol mappers for deploy client from http://keycloak.deploy.localhost:31125/admin/realms/master/clients/e7adf649-8bd2-473b-a19b-a74ce3a7abca
+
+  local res=$(curl -s \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json" \
+    -H "Authorization: Bearer $token" \
+    -X GET http://keycloak.$domain:$keycloak_port/admin/realms/master/clients/$deploy_client_id \
+    | jq -r '.protocolMappers[] | select(.name=="groups") | .name' | grep -c groups)
+  if [ $res -eq 0 ]; then
+    curl -s \
+      -H "Content-Type: application/json" \
+      -H "Accept: application/json" \
+      -H "Authorization: Bearer $token" \
+      -X POST http://keycloak.$domain:$keycloak_port/admin/realms/master/clients/$deploy_client_id/protocol-mappers/models -d "$groups_mapping"
+  fi
+
+  local res=$(curl -s \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json" \
+    -H "Authorization: Bearer $token" \
+    -X GET http://keycloak.$domain:$keycloak_port/admin/realms/master/clients/$deploy_storage_client_id \
+    | jq -r '.protocolMappers[] | select(.name=="groups") | .name' | grep -c groups)
+  if [ $res -eq 0 ]; then
+    curl -s \
+      -H "Content-Type: application/json" \
+      -H "Accept: application/json" \
+      -H "Authorization: Bearer $token" \
+      -X POST http://keycloak.$domain:$keycloak_port/admin/realms/master/clients/$deploy_storage_client_id/protocol-mappers/models -d "$groups_mapping"
+  fi
+  
   # Write keycloak_deploy_storage_secret to cluster-config.rc
   # Overwrite if the row already exists
   sed -i "/export keycloak_deploy_storage_secret=/c\export keycloak_deploy_storage_secret=$keycloak_deploy_storage_secret" ./cluster-config.rc
@@ -672,7 +727,10 @@ function install_cert_manager() {
 
   # Wait for cert-manager to be up
   while [ "$(kubectl get pod -n cert-manager -l app=cert-manager -o jsonpath="{.items[0].status.phase}")" != "Running" ]; do
-    sleep 5
+    echo -e "Waiting for cert-manager to be up"
+    echo -e ""
+    kubectl get pod -n cert-manager
+    sleep $WAIT_SLEEP
   done
   
   # If clusterIssuer go-deploy-cluster-issuer already exists, skip
@@ -743,7 +801,10 @@ function install_kubevirt() {
   fi
   
   while [ "$(kubectl get kubevirt.kubevirt.io/kubevirt -n kubevirt -o=jsonpath="{.status.phase}")" != "Deployed" ]; do
-    sleep 5
+    echo -e "Waiting for KubeVirt to be up"
+    echo -e ""
+    kubectl get pod -n kubevirt
+    sleep $WAIT_SLEEP
   done
 
   # Add feature gates DateVolumes, LiveMigration, GPU and Snapshot (spec.configuration.developerConfiguration.featureGates)
@@ -818,30 +879,30 @@ if [ "$cluster_name" != "$CLUSTER_NAME" ]; then
 fi
 
 # Pre-requisites
-run_with_spinner "Configuring local DNS" configure_local_dns
-run_with_spinner "Waiting for DNS" wait_for_dns
+run_task "Configuring local DNS" configure_local_dns
+run_task "Waiting for DNS" wait_for_dns
 
 # Base
-run_with_spinner "Set up kind cluster" create_kind_cluster
-run_with_spinner "Install NFS Server" install_nfs_server
-run_with_spinner "Install NFS CSI" install_nfs_csi
+run_task "Set up kind cluster" create_kind_cluster
+run_task "Install NFS Server" install_nfs_server
+run_task "Install NFS CSI" install_nfs_csi
 
 # Apps
-run_with_spinner "Install Ingress Nginx" install_ingress_nginx
-run_with_spinner "Install Harbor" install_harbor
-run_with_spinner "Install MongoDB" install_mongodb
-run_with_spinner "Install Redis" install_redis
-run_with_spinner "Install Keycloak" install_keycloak
+run_task "Install Ingress Nginx" install_ingress_nginx
+run_task "Install Harbor" install_harbor
+run_task "Install MongoDB" install_mongodb
+run_task "Install Redis" install_redis
+run_task "Install Keycloak" install_keycloak
 
 # Dependencies
-run_with_spinner "Install Cert Manager" install_cert_manager
-run_with_spinner "Install Hairpin Proxy" install_hairpin_proxy
-run_with_spinner "Install Storage Classes" install_storage_classes
-run_with_spinner "Install KubeVirt" install_kubevirt
-run_with_spinner "Install CDI" install_cdi
+run_task "Install Cert Manager" install_cert_manager
+run_task "Install Hairpin Proxy" install_hairpin_proxy
+run_task "Install Storage Classes" install_storage_classes
+run_task "Install KubeVirt" install_kubevirt
+run_task "Install CDI" install_cdi
 
 # Post-install
-run_with_spinner "Seed Harbor with images" seed_harbor_with_images
+run_task "Seed Harbor with images" seed_harbor_with_images
 
 
 
