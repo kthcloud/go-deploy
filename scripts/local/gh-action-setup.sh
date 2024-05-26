@@ -15,6 +15,8 @@ BLUE_RIGHT_ARROW="${BLUE}${RIGHT_ARROW}${RESET}"
 
 # Function to update /etc/systemd/resolved.conf
 update_resolved_conf() {
+    echo -e "${BLUE_RIGHT_ARROW} Updating /etc/systemd/resolved.conf..."
+
     RESOLVED_CONF="/etc/systemd/resolved.conf"
     DNS_LINE="DNS=127.0.0.2"
 
@@ -26,11 +28,20 @@ update_resolved_conf() {
 
     if ! sudo grep -q "^$DNS_LINE" $RESOLVED_CONF; then
         sudo sed -i "/^\[Resolve\]/a $DNS_LINE" $RESOLVED_CONF
+
+        # Print a warning if the DNS line was not added
+        if ! sudo grep -q "^$DNS_LINE" $RESOLVED_CONF; then
+            echo -e "WARNING: Could not add $DNS_LINE to $RESOLVED_CONF"
+        fi
     fi
+
+    echo -e "${GREEN_CHECK} Updated /etc/systemd/resolved.conf"
 }
 
 # Function to update /etc/dnsmasq.conf
 update_dnsmasq_conf() {
+    echo -e "${BLUE_RIGHT_ARROW} Updating /etc/dnsmasq.conf..."
+
     DNSMASQ_CONF="/etc/dnsmasq.conf"
     LISTEN_ADDRESS="listen-address=127.0.0.2"
     BIND_INTERFACES="bind-interfaces"
@@ -42,15 +53,29 @@ update_dnsmasq_conf() {
 
     if ! sudo grep -q "^$LISTEN_ADDRESS" $DNSMASQ_CONF; then
         echo "$LISTEN_ADDRESS" | sudo tee -a $DNSMASQ_CONF > /dev/null
+
+        # Print a warning if the listen-address line was not added
+        if ! sudo grep -q "^$LISTEN_ADDRESS" $DNSMASQ_CONF; then
+            echo -e "WARNING: Could not add $LISTEN_ADDRESS to $DNSMASQ_CONF"
+        fi
     fi
 
     if ! sudo grep -q "^$BIND_INTERFACES" $DNSMASQ_CONF; then
         echo "$BIND_INTERFACES" | sudo tee -a $DNSMASQ_CONF > /dev/null
+
+        # Print a warning if the bind-interfaces line was not added
+        if ! sudo grep -q "^$BIND_INTERFACES" $DNSMASQ_CONF; then
+            echo -e "WARNING: Could not add $BIND_INTERFACES to $DNSMASQ_CONF"
+        fi
     fi
+
+    echo -e "${GREEN_CHECK} Updated /etc/dnsmasq.conf"
 }
 
 # Function to update /etc/default/dnsmasq
 update_default_dnsmasq() {
+    echo -e "${BLUE_RIGHT_ARROW} Updating /etc/default/dnsmasq..."
+
     DEFAULT_DNSMASQ="/etc/default/dnsmasq"
     IGNORE_RESOLVCONF="IGNORE_RESOLVCONF=yes"
     ENABLED="ENABLED=1"
@@ -62,11 +87,23 @@ update_default_dnsmasq() {
 
     if ! sudo grep -q "^$IGNORE_RESOLVCONF" $DEFAULT_DNSMASQ; then
         echo "$IGNORE_RESOLVCONF" | sudo tee -a $DEFAULT_DNSMASQ > /dev/null
+
+        # Print a warning if the IGNORE_RESOLVCONF line was not added
+        if ! sudo grep -q "^$IGNORE_RESOLVCONF" $DEFAULT_DNSMASQ; then
+            echo -e "WARNING: Could not add $IGNORE_RESOLVCONF to $DEFAULT_DNSMASQ"
+        fi
     fi
 
     if ! sudo grep -q "^$ENABLED" $DEFAULT_DNSMASQ; then
         echo "$ENABLED" | sudo tee -a $DEFAULT_DNSMASQ > /dev/null
+
+        # Print a warning if the ENABLED line was not added
+        if ! sudo grep -q "^$ENABLED" $DEFAULT_DNSMASQ; then
+            echo -e "WARNING: Could not add $ENABLED to $DEFAULT_DNSMASQ"
+        fi
     fi
+
+    echo -e "${GREEN_CHECK} Updated /etc/default/dnsmasq"
 }
 
 increase_files() {
@@ -132,6 +169,7 @@ function install_dnsmaq() {
   # Make dnsmasq fallback to 127.0.0.2:53
   update_dnsmasq_conf
   update_default_dnsmasq
+
   sudo systemctl restart dnsmasq
 
   echo -e "${GREEN_CHECK} dnsmasq installed"
