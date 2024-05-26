@@ -113,12 +113,19 @@ function install_kind() {
 
 function install_dnsmaq() {
   echo -e "Installing dnsmasq..."
+
+  # Make systemd-resolved no longer listen on 127.0.0.1:53
   update_resolved_conf
+  sudo systemctl restart systemd-resolved
+
+  # Install dnsmasq
   sudo apt-get install dnsmasq -y
+  
+  # Make dnsmasq fallback to 127.0.0.2:53
   update_dnsmasq_conf
   update_default_dnsmasq
-  sudo systemctl restart systemd-resolved
   sudo systemctl restart dnsmasq
+  
   echo -e "${GREEN_CHECK} dnsmasq installed"
 }
 
