@@ -817,49 +817,31 @@ if [ "$cluster_name" != "$CLUSTER_NAME" ]; then
   exit 1
 fi
 
-# # Pre-requisites
-# run_with_spinner "Configuring local DNS"        
-# run_with_spinner "Waiting for DNS"              
+# Pre-requisites
+run_with_spinner "Configuring local DNS" configure_local_dns
+run_with_spinner "Waiting for DNS" wait_for_dns
 
-# # Base
-# run_with_spinner "Set up kind cluster"          
-# run_with_spinner "Install NFS Server"           
-# run_with_spinner "Install NFS CSI"              
+# Base
+run_with_spinner "Set up kind cluster" create_kind_cluster
+run_with_spinner "Install NFS Server" install_nfs_server
+run_with_spinner "Install NFS CSI" install_nfs_csi
 
-# # Apps
-# run_with_spinner "Install Ingress Nginx"        
-# run_with_spinner "Install Harbor"               
-# run_with_spinner "Install MongoDB"              
-# run_with_spinner "Install Redis"                
-# run_with_spinner "Install Keycloak"             
+# Apps
+run_with_spinner "Install Ingress Nginx" install_ingress_nginx
+run_with_spinner "Install Harbor" install_harbor
+run_with_spinner "Install MongoDB" install_mongodb
+run_with_spinner "Install Redis" install_redis
+run_with_spinner "Install Keycloak" install_keycloak
 
-# # Dependencies
-# run_with_spinner "Install Cert Manager"         
-# run_with_spinner "Install Hairpin Proxy"        
-# run_with_spinner "Install Storage Classes"      
-# run_with_spinner "Install KubeVirt"             
-# run_with_spinner "Install CDI"        
+# Dependencies
+run_with_spinner "Install Cert Manager" install_cert_manager
+run_with_spinner "Install Hairpin Proxy" install_hairpin_proxy
+run_with_spinner "Install Storage Classes" install_storage_classes
+run_with_spinner "Install KubeVirt" install_kubevirt
+run_with_spinner "Install CDI" install_cdi
 
-# # Post-install
-# run_with_spinner "Seed Harbor with images"     
-
-
-configure_local_dns
-wait_for_dns
-create_kind_cluster
-install_nfs_server
-install_nfs_csi
-install_ingress_nginx
-install_harbor
-install_mongodb
-install_redis
-install_keycloak
-install_cert_manager
-install_hairpin_proxy
-install_storage_classes
-install_kubevirt
-install_cdi
-seed_harbor_with_images
+# Post-install
+run_with_spinner "Seed Harbor with images" seed_harbor_with_images
 
 
 
