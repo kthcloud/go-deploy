@@ -14,6 +14,12 @@ update_resolved_conf() {
     RESOLVED_CONF="/etc/systemd/resolved.conf"
     DNS_LINE="DNS=127.0.0.2"
 
+    # Check if RESOLVED_CONF exists
+    if [ ! -f $RESOLVED_CONF ]; then
+        echo -e "WARNING: $RESOLVED_CONF does not exist. Is systemd-resolved installed?"
+        return
+    fi
+
     if ! grep -q "^$DNS_LINE" $RESOLVED_CONF; then
         sed -i "/^\[Resolve\]/a $DNS_LINE" $RESOLVED_CONF
     fi
@@ -24,6 +30,11 @@ update_dnsmasq_conf() {
     DNSMASQ_CONF="/etc/dnsmasq.conf"
     LISTEN_ADDRESS="listen-address=127.0.0.2"
     BIND_INTERFACES="bind-interfaces"
+
+    if [ ! -f $DNSMASQ_CONF ]; then
+        echo -e "WARNING: $DNSMASQ_CONF does not exist. Is dnsmasq installed?"
+        return
+    fi
 
     if ! grep -q "^$LISTEN_ADDRESS" $DNSMASQ_CONF; then
         echo "$LISTEN_ADDRESS" >> $DNSMASQ_CONF
@@ -39,6 +50,11 @@ update_default_dnsmasq() {
     DEFAULT_DNSMASQ="/etc/default/dnsmasq"
     IGNORE_RESOLVCONF="IGNORE_RESOLVCONF=yes"
     ENABLED="ENABLED=1"
+
+    if [ ! -f $DEFAULT_DNSMASQ ]; then
+        echo -e "WARNING: $DEFAULT_DNSMASQ does not exist. Is dnsmasq installed?"
+        return
+    fi
 
     if ! grep -q "^$IGNORE_RESOLVCONF" $DEFAULT_DNSMASQ; then
         echo "$IGNORE_RESOLVCONF" >> $DEFAULT_DNSMASQ
@@ -69,34 +85,51 @@ increase_files() {
   sudo sysctl -w fs.inotify.max_queued_events=$((memory_per_unit * default_max_queued_events))
 }
 
-# Increase files
+function install_kubectl() {
+  echo -e "Installing kubectl..."
+  curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+  chmod +x kubectl
+  sudo mv kubectl /usr/local/bin/kubectl
+  echo -e "${GREEN_CHECK} kubectl installed"
+}
+
+function install_helm() {
+  echo -e "Installing Helm..."
+  curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
+  sudo apt-get install apt-transport-https --yes
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list > /dev/null
+  sudo apt-get update
+  sudo apt-get install helm -y
+  echo -e "${GREEN_CHECK} Helm installed"
+}
+
+function install_kind() {
+  echo -e "Installing kind..."
+  curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.11.1/kind-linux-amd64
+  chmod +x ./kind
+  sudo mv ./kind /usr/local/bin/kind
+  echo -e "${GREEN_CHECK} kind installed"
+}
+
+function install_dnsmaq() {
+  echo -e "Installing dnsmasq..."
+  sudo apt-get install dnsmasq -y
+  echo -e "${GREEN_CHECK} dnsmasq installed"
+}
+
+function configure_dns() {
+  echo -e "Configuring DNS..."
+  update_resolved_conf
+  update_dnsmasq_conf
+  update_default_dnsmasq
+  systemctl restart systemd-resolved
+  systemctl restart dnsmasq
+  echo -e "${GREEN_CHECK} DNS configured"
+}
+
 increase_files
-
-# Install kubectl
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-chmod +x kubectl
-sudo mv kubectl /usr/local/bin/kubectl
-
-# Install Helm
-curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
-sudo apt-get install apt-transport-https --yes
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list > /dev/null
-sudo apt-get update
-sudo apt-get install helm -y
-
-# Install Kind
-if [ "$(uname -m)" = "x86_64" ]; then
-    curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.23.0/kind-linux-amd64
-    chmod +x ./kind
-    sudo mv ./kind /usr/local/bin/kind
-fi
-
-# Install dnsmasq
-sudo apt-get install dnsmasq -y
-
-update_resolved_conf
-update_dnsmasq_conf
-update_default_dnsmasq
-
-systemctl restart systemd-resolved
-systemctl restart dnsmasq
+install_kubectl
+install_helm
+install_kind
+install_dnsmaq
+configure_dns
