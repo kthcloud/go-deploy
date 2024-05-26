@@ -185,7 +185,7 @@ echo -e ""
 
 sudo apt install -y htop
 # View one frame of htop to ensure it is installed
-timeout 5 htop
+htop
 
 echo -e ""
 echo -e "${GREEN_CHECK} All checks passed and local environment can begin to install."
