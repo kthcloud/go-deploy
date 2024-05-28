@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"github.com/stretchr/testify/assert"
 	"go-deploy/dto/v1/body"
 	"go-deploy/test/e2e"
 	"net/http"
@@ -25,10 +24,7 @@ func ListSMs(t *testing.T, query string) []body.SmRead {
 
 func WaitForSmRunning(t *testing.T, id string, callback func(read *body.SmRead) bool) {
 	e2e.FetchUntil(t, SmPath+id, func(resp *http.Response) bool {
-		var smRead body.SmRead
-		err := e2e.ReadResponseBody(t, resp, &smRead)
-		assert.NoError(t, err, "storage manager was not fetched")
-
+		smRead := e2e.MustParse[body.SmRead](t, resp)
 		if callback == nil {
 			return true
 		}

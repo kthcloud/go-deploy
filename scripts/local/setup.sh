@@ -489,7 +489,16 @@ function install_redis() {
   while [ "$(kubectl get pod -n redis -l app=redis -o jsonpath="{.items[0].status.phase}" 2> /dev/stdout)" != "Running" ]; do
     echo -e "Waiting for Redis to be up"
     echo -e ""
-    kubectl get pod -n redis
+    res=$(kubectl get pod -n redis)
+    
+    # If ErrImagePull or ImagePullBackOff in the status, do kubectl describe deployment redis
+    if [ "$(echo $res | grep -c ErrImagePull)" -ne 0 ] || [ "$(echo $res | grep -c ImagePullBackOff)" -ne 0 ]; then
+      echo -e ""
+      kubectl describe deployment redis -n redis
+    fi
+
+    echo -e ""
+
     sleep $WAIT_SLEEP
   done
 }
