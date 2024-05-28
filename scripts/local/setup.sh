@@ -18,6 +18,7 @@ function print_usage() {
   echo -e "  --name [name]\t\t\tName of the cluster to create. Default: go-deploy-dev"
   echo -e "  --kubeconfig [path]\t\tPath to kubeconfig file that a new context will be added to. Default: ~/.kube/config"
   echo -e "  --non-interactive\t\tSkip all user input and fancy output. Default: false"
+  echo -e "  --mode [mode]\t\t\tMode of the API, one of 'dev', 'test' or 'prod'. Default: dev"
   echo -e ""
   echo -e "dnsmasq is used to allow the names to resolve. See the following guides for help configuring it:"
   echo -e " - WSL2 (Windows): https://github.com/absolunet/pleaz/blob/production/documentation/installation/wsl2/dnsmasq.md"
@@ -32,6 +33,7 @@ function parse_flags() {
   CLUSTER_NAME="go-deploy-dev"
   KUBECONFIG_PATH="${HOME}/.kube/config"  
   NON_INTERACTIVE=false
+  MODE="dev"
 
   while [[ $index -lt ${#args[@]} ]]; do
     case "${args[$index]}" in
@@ -57,6 +59,11 @@ function parse_flags() {
         NON_INTERACTIVE=true
         ((index++))
         ;;
+      --mode)
+        ((index++))
+        MODE="${args[$index]}"
+        ((index++))
+        ;;
       *)
         echo "Error: Unrecognized argument: ${args[$index]}"
         print_usage
@@ -64,6 +71,12 @@ function parse_flags() {
         ;;
     esac
   done
+
+  # Make sure mode is one of 'dev', 'test' or 'prod'
+  if [ "$MODE" != "dev" ] && [ "$MODE" != "test" ] && [ "$MODE" != "prod" ]; then
+    echo -e "$RED_CROSS Mode must be one of 'dev', 'test' or 'prod'"
+    exit 1
+  fi
 }
 
 
@@ -926,11 +939,12 @@ run_task "Install CDI" install_cdi
 run_task "Seed Harbor with images" seed_harbor_with_images
 
 
-
 # If exists ../../config.local.yml, ask if user want to replace it
 read_cluster_config
 if [ -f "../../config.local.yml" ]; then
-  if [ ! $SKIP_CONFIRMATIONS ]; then
+
+  # Check if SKIP_CONFIRMATIONS
+  if [ "$SKIP_CONFIRMATIONS" == "false" ]; then
     echo ""
     read -p "config.local.yml already exists. Do you want to replace it? [y/n]: " -n 1 -r
     echo
@@ -938,16 +952,15 @@ if [ -f "../../config.local.yml" ]; then
     REPLY="y"
   fi
 
-  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo "Skipping config.local.yml generation"
-  else
+  # If reply is either y or Y, generate config.local.yml
+  if [[ "$REPLY" =~ ^[Yy]$ ]]; then
     echo "Generating config.local.yml"
     cp config.yml.tmpl ../../config.local.yml
 
     # Core
     export external_url="http://localhost:8080"
     export port="8080"
-    export mode="dev"
+    export mode=$MODE
 
     # Zone
     export deployment_domain="app.$domain"
@@ -999,6 +1012,8 @@ if [ -f "../../config.local.yml" ]; then
     echo -e ""
     echo -e ""
     echo -e "$GREEN_CHECK config.local.yml generated"
+  else
+    echo "Skipping config.local.yml generation"
   fi
 fi
 
