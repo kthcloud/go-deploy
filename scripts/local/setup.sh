@@ -460,7 +460,7 @@ function seed_harbor_with_images() {
 
 
   kubectl get pods -n harbor
-  
+
   # Remove the placeholder repo
   rm -rf go-deploy-placeholder
 }
@@ -1023,7 +1023,7 @@ if [ -f "../../config.local.yml" ]; then
 
     # Harbor
 #    export harbor_url="http://harbor.deploy.localhost:$harbor_port"
-    export harbor_url="http://127.0.0.1:$harbor_port"
+    export harbor_url="http://231.5.5.5:$harbor_port"
     export harbor_user="admin"
     export harbor_password="Harbor12345"
     export harbor_webhook_secret="secret"
