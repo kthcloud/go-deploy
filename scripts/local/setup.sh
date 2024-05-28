@@ -425,6 +425,8 @@ function install_harbor() {
 function seed_harbor_with_images() {
   read_cluster_config
 
+  kubectl get pods -n harbor
+
   # local url="http://harbor.$domain:$ingress_http_port"
   local url="http://localhost:$harbor_port"
   local domain="localhost:$harbor_port"
@@ -440,16 +442,25 @@ function seed_harbor_with_images() {
     return
   fi
 
+
+  kubectl get pods -n harbor
+
   # Download repo and build the image
   if [ ! -d "go-deploy-placeholder" ]; then
     git clone $placeholder_git_repo --quiet
   fi
+
+
+  kubectl get pods -n harbor
 
   # Use 'library' so we don't need to create our own (library is the default namespace in Harbor)
   docker build go-deploy-placeholder/ -t $domain/library/go-deploy-placeholder:latest 2> /dev/null
   docker login $domain -u $robot_user -p $robot_password 2> /dev/null
   docker push $domain/library/go-deploy-placeholder:latest 2> /dev/null
 
+
+  kubectl get pods -n harbor
+  
   # Remove the placeholder repo
   rm -rf go-deploy-placeholder
 }
