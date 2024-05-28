@@ -709,6 +709,24 @@ function install_keycloak() {
   # Write keycloak_deploy_storage_secret to cluster-config.rc
   # Overwrite if the row already exists
   sed -i "/export keycloak_deploy_storage_secret=/c\export keycloak_deploy_storage_secret=$keycloak_deploy_storage_secret" ./cluster-config.rc
+
+
+  # Finally, we need to add a DNS record that points the keycloak name to the node's IP
+  # This is required since the name can't be resolved properly inside the cluster (and we use a NodePort)
+  dns_record="rewrite name keycloak.$domain $cluster_name-control-plane"
+  configmap=$(kubectl get configmap coredns -n kube-system -o json)
+
+  echo -e $configmap
+
+  if ! echo "${configmap}" | grep -q "${dns_record}"; then
+    echo -e "Adding DNS record for keycloak.$domain -> $cluster_name-control-plane"
+    corefile=$(echo "${configmap}" | jq -r '.data.Corefile')
+    new_corefile=$(echo "${corefile}" | sed "/^\\s*forward/ i \    ${dns_record}")
+    kubectl patch configmap coredns -n kube-system --type merge -p "$(jq -n --arg corefile "${new_corefile}" '{data: {Corefile: $corefile}}')"
+
+    # Restart coredns
+    kubectl rollout restart deployment coredns -n kube-system
+  fi
 }
 
 function install_cert_manager() {
