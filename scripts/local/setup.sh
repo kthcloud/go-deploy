@@ -404,7 +404,7 @@ function install_harbor() {
   fi
 
   # Wait for Harbor to be up
-  while [ "$(curl -s -o /dev/null -w "%{http_code}" http://harbor.$domain:$harbor_port)" != "200" ]; do
+  while [ "$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:$harbor_port)" != "200" ]; do
     echo -e "Waiting for Harbor to be up"
     echo -e ""
     kubectl get pod -n harbor
@@ -902,7 +902,7 @@ function print_result() {
   echo -e " - systemd-resolved (Linux): https://gist.github.com/frank-dspeed/6b6f1f720dd5e1c57eec8f1fdb2276df"
   echo -e ""
   echo -e "The following services are now available:"
-  echo -e " - ${BLUE_BOLD}Harbor${RESET}: http://harbor.$domain:$harbor_port (admin:Harbor12345)"
+  echo -e " - ${BLUE_BOLD}Harbor${RESET}: http://127.0.0.1:$harbor_port (admin:Harbor12345)"
   echo -e " - ${TEAL_BOLD}Keycloak${RESET}: http://keycloak.$domain:$keycloak_port (admin:admin)"
   echo -e "      Users: admin:admin, base:base, power:power"
   echo -e "      Clients: go-deploy:(no secret), go-deploy-storage:$keycloak_deploy_storage_secret"
@@ -1023,7 +1023,7 @@ if [ -f "../../config.local.yml" ]; then
 
     # Harbor
 #    export harbor_url="http://harbor.deploy.localhost:$harbor_port"
-    export harbor_url="http://231.5.5.5:$harbor_port"
+    export harbor_url="http://127.0.0.1:$harbor_port"
     export harbor_user="admin"
     export harbor_password="Harbor12345"
     export harbor_webhook_secret="secret"
