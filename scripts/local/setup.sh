@@ -268,6 +268,14 @@ function create_kind_cluster() {
 
     export KUBECONFIG=$KUBECONFIG_PATH
     kind create cluster --name $cluster_name --config ./manifests/kind-config.yml --quiet
+  
+    # Wait for cluster to be up
+    while [ "$(kubectl get nodes 2> /dev/stdout | grep -c Ready)" -lt 1 ]; do
+      echo -e "Waiting for cluster to be up"
+      echo -e ""
+      kubectl get nodes
+      sleep $WAIT_SLEEP
+    done
   fi
 
   # Ensure that context is set to the correct cluster
