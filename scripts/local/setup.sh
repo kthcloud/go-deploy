@@ -1022,7 +1022,8 @@ if [ -f "../../config.local.yml" ]; then
     export redis_password=
 
     # Harbor
-    export harbor_url="http://harbor.deploy.localhost:$harbor_port"
+#    export harbor_url="http://harbor.deploy.localhost:$harbor_port"
+    export harbor_url="http://127.0.0.1:$harbor_port"
     export harbor_user="admin"
     export harbor_password="Harbor12345"
     export harbor_webhook_secret="secret"
