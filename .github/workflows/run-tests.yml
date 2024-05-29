@@ -38,7 +38,6 @@ jobs:
 
       - name: Run acceptance tests
         run: |
-          kubectl get pods -n harbor
           cat config.local.yml
           go test -timeout 30m ./test/acc/...
 
