@@ -436,7 +436,7 @@ function install_harbor() {
   fi
 
   # Wait for Harbor to be up
-  while [ "$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:$harbor_port)" != "200" ]; do
+  while [ "$(curl -s -o /dev/null -w "%{http_code}" http://$domain:$harbor_port)" != "200" ]; do
     echo -e "Waiting for Harbor to be up"
     echo -e ""
     kubectl get pod -n harbor
@@ -1064,7 +1064,7 @@ if [[ "$REPLY" =~ ^[Yy]$ ]]; then
 
   # Harbor
 #    export harbor_url="http://harbor.deploy.localhost:$harbor_port"
-  export harbor_url="http://127.0.0.1:$harbor_port"
+  export harbor_url="http://$domain:$harbor_port"
   export harbor_user="admin"
   export harbor_password="Harbor12345"
   export harbor_webhook_secret="secret"
