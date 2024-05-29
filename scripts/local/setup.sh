@@ -18,6 +18,7 @@ function print_usage() {
   echo -e "  --name [name]\t\t\tName of the cluster to create. Default: go-deploy-dev"
   echo -e "  --kubeconfig [path]\t\tPath to kubeconfig file that a new context will be added to. Default: ~/.kube/config"
   echo -e "  --non-interactive\t\tSkip all user input and fancy output. Default: false"
+  echo -e "  --mode [mode]\t\t\tMode of the API, one of 'dev', 'test' or 'prod'. Default: dev"
   echo -e ""
   echo -e "dnsmasq is used to allow the names to resolve. See the following guides for help configuring it:"
   echo -e " - WSL2 (Windows): https://github.com/absolunet/pleaz/blob/production/documentation/installation/wsl2/dnsmasq.md"
@@ -32,6 +33,7 @@ function parse_flags() {
   CLUSTER_NAME="go-deploy-dev"
   KUBECONFIG_PATH="${HOME}/.kube/config"  
   NON_INTERACTIVE=false
+  MODE="dev"
 
   while [[ $index -lt ${#args[@]} ]]; do
     case "${args[$index]}" in
@@ -57,6 +59,11 @@ function parse_flags() {
         NON_INTERACTIVE=true
         ((index++))
         ;;
+      --mode)
+        ((index++))
+        MODE="${args[$index]}"
+        ((index++))
+        ;;
       *)
         echo "Error: Unrecognized argument: ${args[$index]}"
         print_usage
@@ -64,6 +71,12 @@ function parse_flags() {
         ;;
     esac
   done
+
+  # Make sure mode is one of 'dev', 'test' or 'prod'
+  if [ "$MODE" != "dev" ] && [ "$MODE" != "test" ] && [ "$MODE" != "prod" ]; then
+    echo -e "$RED_CROSS Mode must be one of 'dev', 'test' or 'prod'"
+    exit 1
+  fi
 }
 
 
@@ -269,6 +282,14 @@ function create_kind_cluster() {
 
     export KUBECONFIG=$KUBECONFIG_PATH
     kind create cluster --name $cluster_name --config ./manifests/kind-config.yml --quiet
+  
+    # Wait for cluster to be up
+    while [ "$(kubectl get nodes 2> /dev/stdout | grep -c Ready)" -lt 1 ]; do
+      echo -e "Waiting for cluster to be up"
+      echo -e ""
+      kubectl get nodes
+      sleep $WAIT_SLEEP
+    done
   fi
 
   # Ensure that context is set to the correct cluster
@@ -410,7 +431,7 @@ function install_harbor() {
   fi
 
   # Wait for Harbor to be up
-  while [ "$(curl -s -o /dev/null -w "%{http_code}" http://harbor.$domain:$harbor_port)" != "200" ]; do
+  while [ "$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:$harbor_port)" != "200" ]; do
     echo -e "Waiting for Harbor to be up"
     echo -e ""
     kubectl get pod -n harbor
@@ -432,6 +453,8 @@ function install_harbor() {
 function seed_harbor_with_images() {
   read_cluster_config
 
+  kubectl get pods -n harbor
+
   # local url="http://harbor.$domain:$ingress_http_port"
   local url="http://localhost:$harbor_port"
   local domain="localhost:$harbor_port"
@@ -447,15 +470,24 @@ function seed_harbor_with_images() {
     return
   fi
 
+
+  kubectl get pods -n harbor
+
   # Download repo and build the image
   if [ ! -d "go-deploy-placeholder" ]; then
     git clone $placeholder_git_repo --quiet
   fi
 
+
+  kubectl get pods -n harbor
+
   # Use 'library' so we don't need to create our own (library is the default namespace in Harbor)
   docker build go-deploy-placeholder/ -t $domain/library/go-deploy-placeholder:latest 2> /dev/null
   docker login $domain -u $robot_user -p $robot_password 2> /dev/null
   docker push $domain/library/go-deploy-placeholder:latest 2> /dev/null
+
+
+  kubectl get pods -n harbor
 
   # Remove the placeholder repo
   rm -rf go-deploy-placeholder
@@ -499,6 +531,15 @@ function install_redis() {
     echo -e ""
     kubectl get pod -n redis
     echo -e ""
+
+    # If ErrImagePull or ImagePullBackOff in the status, do kubectl describe deployment redis
+    res=$(kubectl get pod -n redis)
+    if [ "$(echo $res | grep -c ErrImagePull)" -ne 0 ] || [ "$(echo $res | grep -c ImagePullBackOff)" -ne 0 ]; then
+      echo -e ""
+      kubectl describe deployment redis -n redis
+      echo -e ""
+    fi
+
     sleep $WAIT_SLEEP
   done
 }
@@ -732,6 +773,24 @@ function install_keycloak() {
   # Write keycloak_deploy_storage_secret to cluster-config.rc
   # Overwrite if the row already exists
   sed -i "/export keycloak_deploy_storage_secret=/c\export keycloak_deploy_storage_secret=$keycloak_deploy_storage_secret" ./cluster-config.rc
+
+
+  # Finally, we need to add a DNS record that points the keycloak name to the node's IP
+  # This is required since the name can't be resolved properly inside the cluster (and we use a NodePort)
+  dns_record="rewrite name keycloak.$domain $cluster_name-control-plane"
+  configmap=$(kubectl get configmap coredns -n kube-system -o json)
+
+  echo -e $configmap
+
+  if ! echo "${configmap}" | grep -q "${dns_record}"; then
+    echo -e "Adding DNS record for keycloak.$domain -> $cluster_name-control-plane"
+    corefile=$(echo "${configmap}" | jq -r '.data.Corefile')
+    new_corefile=$(echo "${corefile}" | sed "/^\\s*forward/ i \    ${dns_record}")
+    kubectl patch configmap coredns -n kube-system --type merge -p "$(jq -n --arg corefile "${new_corefile}" '{data: {Corefile: $corefile}}')"
+
+    # Restart coredns
+    kubectl rollout restart deployment coredns -n kube-system
+  fi
 }
 
 function install_cert_manager() {
@@ -876,7 +935,7 @@ function print_result() {
   echo -e " - systemd-resolved (Linux): https://gist.github.com/frank-dspeed/6b6f1f720dd5e1c57eec8f1fdb2276df"
   echo -e ""
   echo -e "The following services are now available:"
-  echo -e " - ${BLUE_BOLD}Harbor${RESET}: http://harbor.$domain:$harbor_port (admin:Harbor12345)"
+  echo -e " - ${BLUE_BOLD}Harbor${RESET}: http://127.0.0.1:$harbor_port (admin:Harbor12345)"
   echo -e " - ${TEAL_BOLD}Keycloak${RESET}: http://keycloak.$domain:$keycloak_port (admin:admin)"
   echo -e "      Users: admin:admin, base:base, power:power"
   echo -e "      Clients: go-deploy:(no secret), go-deploy-storage:$keycloak_deploy_storage_secret"
@@ -933,11 +992,12 @@ run_task "Install CDI" install_cdi
 run_task "Seed Harbor with images" seed_harbor_with_images
 
 
-
 # If exists ../../config.local.yml, ask if user want to replace it
 read_cluster_config
 if [ -f "../../config.local.yml" ]; then
-  if [ ! $SKIP_CONFIRMATIONS ]; then
+
+  # Check if SKIP_CONFIRMATIONS
+  if [ "$SKIP_CONFIRMATIONS" == "false" ]; then
     echo ""
     read -p "config.local.yml already exists. Do you want to replace it? [y/n]: " -n 1 -r
     echo
@@ -945,16 +1005,15 @@ if [ -f "../../config.local.yml" ]; then
     REPLY="y"
   fi
 
-  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo "Skipping config.local.yml generation"
-  else
+  # If reply is either y or Y, generate config.local.yml
+  if [[ "$REPLY" =~ ^[Yy]$ ]]; then
     echo "Generating config.local.yml"
     cp config.yml.tmpl ../../config.local.yml
 
     # Core
     export external_url="http://localhost:8080"
     export port="8080"
-    export mode="dev"
+    export mode=$MODE
 
     # Zone
     export deployment_domain="app.$domain"
@@ -996,7 +1055,8 @@ if [ -f "../../config.local.yml" ]; then
     export redis_password=
 
     # Harbor
-    export harbor_url="http://harbor.deploy.localhost:$harbor_port"
+#    export harbor_url="http://harbor.deploy.localhost:$harbor_port"
+    export harbor_url="http://127.0.0.1:$harbor_port"
     export harbor_user="admin"
     export harbor_password="Harbor12345"
     export harbor_webhook_secret="secret"
@@ -1006,6 +1066,8 @@ if [ -f "../../config.local.yml" ]; then
     echo -e ""
     echo -e ""
     echo -e "$GREEN_CHECK config.local.yml generated"
+  else
+    echo "Skipping config.local.yml generation"
   fi
 fi
 

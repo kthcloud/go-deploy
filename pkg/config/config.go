@@ -27,9 +27,9 @@ func SetupEnvironment(mode string) error {
 		return fmt.Errorf("failed to set up environment. details: %w", err)
 	}
 
-	filepath, found := os.LookupEnv("DEPLOY_CONFIG_FILE")
-	if !found {
-		return makeError(fmt.Errorf("config file not found. please set DEPLOY_CONFIG_FILE environment variable"))
+	filepath, ok := os.LookupEnv("DEPLOY_CONFIG_FILE")
+	if !ok || filepath == "" {
+		filepath = "config.local.yml"
 	}
 
 	yamlFile, err := os.ReadFile(filepath)

@@ -12,18 +12,6 @@ import (
 )
 
 func Setup() {
-
-	requiredEnvs := []string{
-		"DEPLOY_CONFIG_FILE",
-	}
-
-	for _, env := range requiredEnvs {
-		_, result := os.LookupEnv(env)
-		if !result {
-			log.Fatalln("Required environment variable not set: " + env)
-		}
-	}
-
 	err := log.SetupLogger(mode.Test)
 	if err != nil {
 		panic(fmt.Sprintf("Failed to setup logger. details: %s", err.Error()))
@@ -33,12 +21,9 @@ func Setup() {
 		log.Fatalf("Failed to change working directory: %v", err)
 	}
 
-	_, result := os.LookupEnv("DEPLOY_CONFIG_FILE")
-	if result {
-		err := config.SetupEnvironment(mode.Test)
-		if err != nil {
-			log.Fatalln(err)
-		}
+	err = config.SetupEnvironment(mode.Test)
+	if err != nil {
+		log.Fatalln(err)
 	}
 
 	config.Config.MongoDB.Name = config.Config.MongoDB.Name + "-test"

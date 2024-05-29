@@ -9,6 +9,7 @@ import (
 	harborModels "go-deploy/pkg/imp/harbor/sdk/v2.0/models"
 	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems/harbor/models"
+	"time"
 	"unicode"
 )
 
@@ -148,18 +149,15 @@ func (client *Client) UpdateRobot(public *models.RobotPublic) (*models.RobotPubl
 
 	_, err := client.HarborClient.V2().Robot.UpdateRobot(context.TODO(), &robotModels.UpdateRobotParams{
 		Robot: &harborModels.Robot{
-			CreationTime: strfmt.DateTime{},
-			Description:  "",
-			Disable:      false,
-			Duration:     -1,
-			Editable:     false,
-			ExpiresAt:    -1,
-			ID:           int64(public.ID),
-			Level:        "project",
-			Name:         public.Name,
-			Permissions:  robotPermissions(client.Project),
-			Secret:       "",
-			UpdateTime:   strfmt.DateTime{},
+			Disable:     public.Disable,
+			Editable:    true,
+			Duration:    -1,
+			ExpiresAt:   -1,
+			ID:          int64(public.ID),
+			Level:       "project",
+			Name:        public.HarborName,
+			Permissions: robotPermissions(client.Project),
+			UpdateTime:  strfmt.DateTime(time.Now()),
 		},
 		RobotID: int64(public.ID),
 	})

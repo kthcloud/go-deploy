@@ -32,7 +32,7 @@ jobs:
           rm -rf config.local.yml
           rm -rf scripts/local/config.yml.tmpl
           chmod +x ./gh-action-setup.sh && ./gh-action-setup.sh
-          chmod +x ./setup.sh && ./setup.sh --non-interactive
+          chmod +x ./setup.sh && ./setup.sh --non-interactive --mode test
           cd ../..
           ls -la
 
@@ -40,7 +40,9 @@ jobs:
         run: echo "DEPLOY_CONFIG_FILE=config.local.yml" >> $GITHUB_ENV
 
       - name: Run acceptance tests
-        run: go test -timeout 30m ./test/acc/...
+        run: |
+          kubectl get pods -n harbor
+          go test -timeout 30m ./test/acc/...
 
       - name: Start main program
         run: |
