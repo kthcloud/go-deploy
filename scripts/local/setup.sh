@@ -1009,72 +1009,75 @@ if [ -f "../../config.local.yml" ]; then
   else
     REPLY="y"
   fi
-
-  # If reply is either y or Y, generate config.local.yml
-  if [[ "$REPLY" =~ ^[Yy]$ ]]; then
-    echo "Generating config.local.yml"
-    cp config.yml.tmpl ../../config.local.yml
-
-    # Core
-    export external_url="http://localhost:8080"
-    export port="8080"
-    export mode=$MODE
-
-    # Zone
-    export deployment_domain="app.$domain"
-    export sm_domain="storage.$domain"
-    export vm_domain="vm.$domain"
-    export vm_app_domain="vm-app.$domain"
-
-    export kubeconfig_path="./kube/$cluster_name.yml"
-    export nfs_server=$nfs_cluster_ip
-    export nfs_parent_path_app="$nfs_base_path/deployments"
-    export nfs_parent_path_vm="$nfs_base_path/vms"
-    export port_range_start="$port_range_start"
-    export port_range_end="$port_range_end"
-
-    # VM
-    export admin_ssh_public_key=$(cat ~/.ssh/id_rsa.pub)
-    export vm_image="$vm_image"
-
-    # Deployment
-
-
-    # Registry
-    export registry_url="localhost:$harbor_port"
-    export placeholder_image="$registry_url/library/go-deploy-placeholder"
-
-    # Keycloak
-    export keycloak_url="http://keycloak.deploy.localhost:$keycloak_port"
-    export keycloak_realm="master"
-    export keycloak_admin_group="admin"
-    export keycloak_storage_client_id="go-deploy-storage"
-    export keycloak_storage_client_secret=$keycloak_deploy_storage_secret
-
-    # MongoDB
-    export mongodb_url="mongodb://admin:admin@localhost:$mongo_db_port"
-    export mongodb_name="deploy"
-
-    # Redis
-    export redis_url="localhost:$redis_port"
-    export redis_password=
-
-    # Harbor
-#    export harbor_url="http://harbor.deploy.localhost:$harbor_port"
-    export harbor_url="http://127.0.0.1:$harbor_port"
-    export harbor_user="admin"
-    export harbor_password="Harbor12345"
-    export harbor_webhook_secret="secret"
-
-    envsubst < config.yml.tmpl > ../../config.local.yml
-
-    echo -e ""
-    echo -e ""
-    echo -e "$GREEN_CHECK config.local.yml generated"
-  else
-    echo "Skipping config.local.yml generation"
-  fi
+else
+  REPLY="y"
 fi
+
+# If reply is either y or Y, generate config.local.yml
+if [[ "$REPLY" =~ ^[Yy]$ ]]; then
+  echo "Generating config.local.yml"
+  cp config.yml.tmpl ../../config.local.yml
+
+  # Core
+  export external_url="http://localhost:8080"
+  export port="8080"
+  export mode=$MODE
+
+  # Zone
+  export deployment_domain="app.$domain"
+  export sm_domain="storage.$domain"
+  export vm_domain="vm.$domain"
+  export vm_app_domain="vm-app.$domain"
+
+  export kubeconfig_path="./kube/$cluster_name.yml"
+  export nfs_server=$nfs_cluster_ip
+  export nfs_parent_path_app="$nfs_base_path/deployments"
+  export nfs_parent_path_vm="$nfs_base_path/vms"
+  export port_range_start="$port_range_start"
+  export port_range_end="$port_range_end"
+
+  # VM
+  export admin_ssh_public_key=$(cat ~/.ssh/id_rsa.pub)
+  export vm_image="$vm_image"
+
+  # Deployment
+
+
+  # Registry
+  export registry_url="localhost:$harbor_port"
+  export placeholder_image="$registry_url/library/go-deploy-placeholder"
+
+  # Keycloak
+  export keycloak_url="http://keycloak.deploy.localhost:$keycloak_port"
+  export keycloak_realm="master"
+  export keycloak_admin_group="admin"
+  export keycloak_storage_client_id="go-deploy-storage"
+  export keycloak_storage_client_secret=$keycloak_deploy_storage_secret
+
+  # MongoDB
+  export mongodb_url="mongodb://admin:admin@localhost:$mongo_db_port"
+  export mongodb_name="deploy"
+
+  # Redis
+  export redis_url="localhost:$redis_port"
+  export redis_password=
+
+  # Harbor
+#    export harbor_url="http://harbor.deploy.localhost:$harbor_port"
+  export harbor_url="http://127.0.0.1:$harbor_port"
+  export harbor_user="admin"
+  export harbor_password="Harbor12345"
+  export harbor_webhook_secret="secret"
+
+  envsubst < config.yml.tmpl > ../../config.local.yml
+
+  echo -e ""
+  echo -e ""
+  echo -e "$GREEN_CHECK config.local.yml generated"
+else
+  echo "Skipping config.local.yml generation"
+fi
+
 
 print_result
 
