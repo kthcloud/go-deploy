@@ -27,9 +27,6 @@ jobs:
       - name: Install local environment
         id: setup-local
         run: |
-          rm -rf kube
-          rm -rf config.local.yml
-          rm -rf scripts/local/config.yml.tmpl
           cd scripts/local
           chmod +x ./gh-action-setup.sh && ./gh-action-setup.sh
           chmod +x ./setup.sh && ./setup.sh --non-interactive --mode test
