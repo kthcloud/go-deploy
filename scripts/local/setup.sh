@@ -70,25 +70,39 @@ function parse_flags() {
 function check_dependencies() {
   # Check if Docker is installed, if not exit
   if ! [ -x "$(command -v docker)" ]; then
-    echo -e "$RED_CROSS Docker is not installed. Please install Docker"
+    echo -e "$RED_CROSS Docker is not installed. Please install Docker (https://docs.docker.com/engine/install)"
+    exit 1
+  fi
+
+  # Check if Docker daemon is running, if not exit
+  local res=$(docker info > /dev/stdout 2>&1 | grep -c "Cannot connect to the Docker daemon")
+  if [ $res -ne 0 ]; then
+    echo -e "$RED_CROSS Docker daemon is not running. Please start the Docker daemon"
     exit 1
   fi
 
   # Check if kubectl is installed, if not exit
   if ! [ -x "$(command -v kubectl)" ]; then
-    echo -e "$RED_CROSS kubectl is not installed. Please install kubectl"
+    echo -e "$RED_CROSS kubectl is not installed. Please install kubectl (https://kubernetes.io/docs/tasks/tools)"
+    exit 1
+  fi
+
+  # Check if "permission denied" is in the output, if so, the user does not have permission to run docker
+  local res=$(docker info > /dev/stdout 2>&1 | grep -c "permission denied")
+  if [ $res -ne 0 ]; then
+    echo -e "$RED_CROSS User does not have permission to run Docker. Please add the user to the docker group"
     exit 1
   fi
 
   # Check if Helm is installed, if not exit
   if ! [ -x "$(command -v helm)" ]; then
-    echo -e "$RED_CROSS Helm is not installed. Please install Helm"
+    echo -e "$RED_CROSS Helm is not installed. Please install Helm (https://helm.sh/docs/intro/install)"
     exit 1
   fi
 
   # Check if kind is installed, if not exit
   if ! [ -x "$(command -v kind)" ]; then
-    echo -e "$RED_CROSS kind is not installed. Please install kind"
+    echo -e "$RED_CROSS kind is not installed. Please install kind (https://kind.sigs.k8s.io/docs/user/quick-start/#installing-with-a-package-manager)"
     exit 1
   fi
 
@@ -284,12 +298,14 @@ function create_kind_cluster() {
 function install_nfs_server() {
   read_cluster_config
 
-  res=$(kubectl get ns | grep -c nfs-server)
+  res=$(kubectl get ns 2> /dev/stdout | grep -c nfs-server)
   if [ $res -eq 0 ]; then
     nfs_server_values_subst=$(mktemp)
     export nfs_cluster_ip=$nfs_cluster_ip
     envsubst < ./manifests/nfs-server.yml > $nfs_server_values_subst
     kubectl apply -f $nfs_server_values_subst
+
+    sleep 3
   fi
 
   # Wait for NFS server to be up
@@ -297,6 +313,7 @@ function install_nfs_server() {
     echo -e "Waiting for NFS server to be up"
     echo -e ""
     kubectl get pod -n nfs-server
+    echo -e ""
     sleep $WAIT_SLEEP
   done
 
@@ -344,6 +361,7 @@ function install_nfs_csi() {
     echo -e "Waiting for NFS CSI to be up"
     echo -e ""
     kubectl get pod -n kube-system
+    echo -e ""
     sleep $WAIT_SLEEP
   done
 }
@@ -366,6 +384,7 @@ function install_ingress_nginx() {
     echo -e "Waiting for ingress-nginx to be up"
     echo -e ""
     kubectl get pod -n ingress-nginx
+    echo -e ""
     sleep $WAIT_SLEEP
   done
 }
@@ -395,6 +414,7 @@ function install_harbor() {
     echo -e "Waiting for Harbor to be up"
     echo -e ""
     kubectl get pod -n harbor
+    echo -e ""
     sleep $WAIT_SLEEP
   done
 
@@ -457,6 +477,7 @@ function install_mongodb() {
     echo -e "Waiting for MongoDB to be up"
     echo -e ""
     kubectl get pod -n mongodb
+    echo -e ""
     sleep $WAIT_SLEEP
   done
 }
@@ -477,6 +498,7 @@ function install_redis() {
     echo -e "Waiting for Redis to be up"
     echo -e ""
     kubectl get pod -n redis
+    echo -e ""
     sleep $WAIT_SLEEP
   done
 }
@@ -499,6 +521,7 @@ function install_keycloak() {
     echo -e "Waiting for Keycloak to be up"
     echo -e ""
     kubectl get pod -n keycloak
+    echo -e ""
     sleep $WAIT_SLEEP
   done
 
@@ -733,6 +756,7 @@ function install_cert_manager() {
     echo -e "Waiting for cert-manager to be up"
     echo -e ""
     kubectl get pod -n cert-manager
+    echo -e ""
     sleep $WAIT_SLEEP
   done
   
@@ -807,6 +831,7 @@ function install_kubevirt() {
     echo -e "Waiting for KubeVirt to be up"
     echo -e ""
     kubectl get pod -n kubevirt
+    echo -e ""
     sleep $WAIT_SLEEP
   done
 

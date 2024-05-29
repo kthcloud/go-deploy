@@ -28,6 +28,9 @@ jobs:
         id: setup-local
         run: |
           cd scripts/local
+          rm -rf kube
+          rm -rf config.local.yml
+          rm -rf scripts/local/config.yml.tmpl
           chmod +x ./gh-action-setup.sh && ./gh-action-setup.sh
           chmod +x ./setup.sh && ./setup.sh --non-interactive
           cd ../..
