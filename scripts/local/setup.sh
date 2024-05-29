@@ -77,6 +77,11 @@ function parse_flags() {
     echo -e "$RED_CROSS Mode must be one of 'dev', 'test' or 'prod'"
     exit 1
   fi
+
+  # If NON_INTERACTIVE is set, skip all confirmations
+  if [ "$NON_INTERACTIVE" = true ]; then
+    SKIP_CONFIRMATIONS=true
+  fi
 }
 
 
