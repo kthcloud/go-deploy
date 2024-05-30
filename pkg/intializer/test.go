@@ -14,6 +14,7 @@ import (
 	"go-deploy/pkg/db/resources/team_repo"
 	"go-deploy/pkg/db/resources/user_repo"
 	"go-deploy/pkg/db/resources/vm_repo"
+	"go-deploy/pkg/log"
 	"go-deploy/service"
 	"time"
 )
@@ -79,6 +80,8 @@ func EnsureTestUsersExist() error {
 	}
 
 	for _, user := range users {
+		log.Println("Adding test user", user.Username)
+
 		_, err = user_repo.New().Synchronize(user.ID, &model.UserSynchronizeParams{
 			Username:      user.Username,
 			FirstName:     user.FirstName,
