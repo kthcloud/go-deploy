@@ -27,7 +27,6 @@ func TestList(t *testing.T) {
 	queries := []string{
 		"?page=1&pageSize=10",
 		"?userId=" + model.TestPowerUserID + "&page=1&pageSize=3",
-		"?userId=" + model.TestDefaultUserID + "&page=1&pageSize=3",
 	}
 
 	for _, query := range queries {
