@@ -1153,13 +1153,10 @@ if [ "$cluster_name" != "$CLUSTER_NAME" ]; then
 fi
 
 # Pre-requisites
-
-# If CONFIGURE_DNS is true, configure dnsmasq
+run_task "Increase max file watchers" increase_max_file_watchers
 if [ "$CONFIGURE_DNS" == "true" ]; then
   run_task "Install and configure dnsmasq" install_and_configure_dnsmasq
 fi
-
-run_task "Increase max file watchers" increase_max_file_watchers
 run_task "Install kubectl" install_kubectl
 run_task "Install helm" install_helm
 run_task "Install kind" install_kind

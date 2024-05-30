@@ -28,7 +28,7 @@ jobs:
         id: setup-local
         run: |
           cd scripts/local
-          chmod +x ./setup.sh && ./setup.sh -y
+          chmod +x ./setup.sh && ./setup.sh -y --configure-dns
           cd ../..
           ls -la
 
