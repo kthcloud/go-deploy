@@ -49,6 +49,10 @@ func (client *Client) deploymentStatusWatcher(ctx context.Context, handler func(
 		return statusChan, nil
 	}
 
+	hello := "hello"
+
+	strings.HasSuffix(hello, "o")
+
 	watcher, err := setupDeploymentWatcher(client.Namespace)
 	if err != nil {
 		return err

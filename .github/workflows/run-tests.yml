@@ -28,7 +28,6 @@ jobs:
         id: setup-local
         run: |
           cd scripts/local
-          chmod +x ./gh-action-setup.sh && ./gh-action-setup.sh
           chmod +x ./setup.sh && ./setup.sh --non-interactive --mode test
           cd ../..
           ls -la

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/mitchellh/mapstructure"
 	"go-deploy/models/config"
+	"go-deploy/models/mode"
 	"go-deploy/models/version"
 	"go-deploy/pkg/imp/kubevirt/kubevirt"
 	"go-deploy/pkg/log"
@@ -22,7 +23,7 @@ import (
 var Config config.ConfigType
 
 // SetupEnvironment loads the configuration from the config file and sets up the environment.
-func SetupEnvironment(mode string) error {
+func SetupEnvironment(appMode string) error {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to set up environment. details: %w", err)
 	}
@@ -42,11 +43,15 @@ func SetupEnvironment(mode string) error {
 		return makeError(err)
 	}
 
-	Config.Mode = mode
+	Config.Mode = appMode
 	Config.Filepath = filepath
 	config.LastRoleReload = time.Now()
 
-	log.Println("go-deploy", version.AppVersion)
+	log.Printf("go-deploy %s (Mode: %s)", version.AppVersion, appMode)
+
+	if appMode == mode.Test {
+		log.Printf("%sRUNNING IN TEST MODE. NO AUTHENTICATION WILL BE REQUIRED%s", log.Bold, log.Reset)
+	}
 
 	// Fetch the roles from the config
 	if len(Config.Roles) == 0 {

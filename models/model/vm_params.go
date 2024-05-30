@@ -29,8 +29,9 @@ type VmUpdateParams struct {
 }
 
 type VmUpdateOwnerParams struct {
-	NewOwnerID string
-	OldOwnerID string
+	NewOwnerID    string
+	OldOwnerID    string
+	MigrationCode *string
 }
 
 type VmActionParams struct {

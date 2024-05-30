@@ -34,7 +34,7 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.Deployment, error)
 		rmc := resource_migration_repo.New().
 			WithType(model.ResourceMigrationTypeUpdateOwner).
 			WithResourceType(model.ResourceMigrationResourceTypeDeployment).
-			WithTransferCode(*o.MigrationCode)
+			WithCode(*o.MigrationCode)
 
 		migration, err := rmc.Get()
 		if err != nil {
@@ -343,6 +343,11 @@ func (c *Client) Update(id string, dtoUpdate *body.DeploymentUpdate) error {
 		}
 	}
 
+	d, err = c.Refresh(id)
+	if err != nil {
+		return makeError(err)
+	}
+
 	err = c.K8s().Update(id, params)
 	if err != nil {
 		return makeError(err)
@@ -361,7 +366,7 @@ func (c *Client) UpdateOwner(id string, params *model.DeploymentUpdateOwnerParam
 		return fmt.Errorf("failed to update deployment owner. details: %w", err)
 	}
 
-	d, err := c.Get(id)
+	d, err := c.Get(id, opts.GetOpts{MigrationCode: params.MigrationCode})
 	if err != nil {
 		return makeError(err)
 	}
@@ -394,13 +399,17 @@ func (c *Client) UpdateOwner(id string, params *model.DeploymentUpdateOwnerParam
 		return makeError(err)
 	}
 
+	d, err = c.Refresh(id)
+	if err != nil {
+		return makeError(err)
+	}
+
 	err = c.K8s().EnsureOwner(id, params.OldOwnerID)
 	if err != nil {
 		return makeError(err)
 	}
 
-	nmc := notification_repo.New().WithUserID(params.NewOwnerID).FilterContent("id", id).WithType(model.NotificationDeploymentTransfer)
-	err = nmc.MarkReadAndCompleted()
+	err = notification_repo.New().FilterContent("id", id).WithType(model.NotificationDeploymentTransfer).MarkReadAndCompleted()
 	if err != nil {
 		return makeError(err)
 	}
@@ -426,8 +435,12 @@ func (c *Client) Delete(id string) error {
 		return sErrors.DeploymentNotFoundErr
 	}
 
-	nmc := notification_repo.New().FilterContent("id", id)
-	err = nmc.Delete()
+	err = notification_repo.New().FilterContent("id", id).Delete()
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = resource_migration_repo.New().WithResourceID(id).Delete()
 	if err != nil {
 		return makeError(err)
 	}

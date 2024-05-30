@@ -17,9 +17,9 @@ import (
 // Some E2E tests may fail and leave resources behind.
 func CleanUpOldTests() error {
 	now := time.Now()
-	oneHourAgo := now.Add(-1 * time.Second)
+	oldTestThreshold := now.Add(-1 * time.Second)
 
-	oldE2eDeployments, err := deployment_repo.New().OlderThan(oneHourAgo).WithNameRegex("e2e-*").List()
+	oldE2eDeployments, err := deployment_repo.New().OlderThan(oldTestThreshold).WithNameRegex("e2e-*").List()
 	if err != nil {
 		return fmt.Errorf("failed to list old e2e deployments: %w", err)
 	}
@@ -30,7 +30,7 @@ func CleanUpOldTests() error {
 		})
 	}
 
-	oldE2eVms, err := vm_repo.New().OlderThan(oneHourAgo).WithNameRegex("e2e-*").List()
+	oldE2eVms, err := vm_repo.New().OlderThan(oldTestThreshold).WithNameRegex("e2e-*").List()
 	if err != nil {
 		return fmt.Errorf("failed to list old e2e vms: %w", err)
 	}
@@ -47,7 +47,7 @@ func CleanUpOldTests() error {
 		}
 	}
 
-	oldE2eTeams, err := team_repo.New().OlderThan(oneHourAgo).WithNameRegex("e2e-*").List()
+	oldE2eTeams, err := team_repo.New().OlderThan(oldTestThreshold).WithNameRegex("e2e-*").List()
 	if err != nil {
 		return fmt.Errorf("failed to list old e2e teams: %w", err)
 	}

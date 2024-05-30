@@ -1,16 +1,45 @@
 #!/bin/bash
 
+source "./common.sh"
+
 # Ensure this script is run from the script folder by checking if the parent folder contains mod.go
 if [ ! -f "../../go.mod" ]; then
   echo "$RED_CROSS Please run this script from the scripts folder"
   exit 1
 fi
 
-source "./common.sh"
+function print_usage() {
+  echo -e "Usage: $0 [options]"
+  echo -e "Options:"
+  echo -e "  -h, --help\t\t\tPrint this help message"
+  echo -e "  --non-interactive\t\tSkip all user input and fancy output. Default: false"
+}
 
-GREEN_CHECK="\033[32;1m✔\033[0m"
-RED_CROSS="\033[31;1m✗\033[0m"
-DIR=$(pwd)
+function parse_flags() {
+  local args=("$@")
+  local index=0
+
+  NON_INTERACTIVE=false
+
+  while [[ $index -lt ${#args[@]} ]]; do
+    case "${args[$index]}" in
+      -h|--help)
+        print_usage
+        exit 0
+        ;;
+      --non-interactive)
+        NON_INTERACTIVE=true
+        ((index++))
+        ;;
+      *)
+        echo "Error: Unrecognized argument: ${args[$index]}"
+        print_usage
+        exit 1
+        ;;
+    esac
+  done
+}
+
 
 function delete_kind_cluster() {
   name="go-deploy-dev"
@@ -26,5 +55,7 @@ function delete_local_dns_record() {
   sudo rm -f /etc/dnsmasq.d/50-go-deploy-dev.conf
 }
 
-run_with_spinner "Delete Kind cluster" delete_kind_cluster
-run_with_spinner "Delete local DNS record" delete_local_dns_record
+parse_flags "$@"
+
+run_task "Delete Kind cluster" delete_kind_cluster
+run_task "Delete local DNS record" delete_local_dns_record

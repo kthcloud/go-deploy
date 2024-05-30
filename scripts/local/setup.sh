@@ -2,13 +2,13 @@
 
 WAIT_SLEEP=10
 
+source ./common.sh
+
 # Ensure this script is run from the script folder by checking if the parent folder contains mod.go
 if [ ! -f "../../go.mod" ]; then
   echo "$RED_CROSS Please run this script from the scripts folder"
   exit 1
 fi
-
-source ./common.sh
 
 function print_usage() {
   echo -e "Usage: $0 [options]"
@@ -18,7 +18,7 @@ function print_usage() {
   echo -e "  --name [name]\t\t\tName of the cluster to create. Default: go-deploy-dev"
   echo -e "  --kubeconfig [path]\t\tPath to kubeconfig file that a new context will be added to. Default: ~/.kube/config"
   echo -e "  --non-interactive\t\tSkip all user input and fancy output. Default: false"
-  echo -e "  --mode [mode]\t\t\tMode of the API, one of 'dev', 'test' or 'prod'. Default: dev"
+  echo -e "  --configure-dns\t\tConfigure dnsmasq. This will override your local DNS settings and fallback to systemd-resolved. Default: false"
   echo -e ""
   echo -e "dnsmasq is used to allow the names to resolve. See the following guides for help configuring it:"
   echo -e " - WSL2 (Windows): https://github.com/absolunet/pleaz/blob/production/documentation/installation/wsl2/dnsmasq.md"
@@ -32,8 +32,7 @@ function parse_flags() {
   SKIP_CONFIRMATIONS=false
   CLUSTER_NAME="go-deploy-dev"
   KUBECONFIG_PATH="${HOME}/.kube/config"  
-  NON_INTERACTIVE=false
-  MODE="dev"
+  CONFIGURE_DNS=false
 
   while [[ $index -lt ${#args[@]} ]]; do
     case "${args[$index]}" in
@@ -55,14 +54,9 @@ function parse_flags() {
         KUBECONFIG_PATH="${args[$index]}"
         ((index++))
         ;;
-      --non-interactive)
-        NON_INTERACTIVE=true
+      --configure-dns)
         ((index++))
-        ;;
-      --mode)
-        ((index++))
-        MODE="${args[$index]}"
-        ((index++))
+        CONFIGURE_DNS=true
         ;;
       *)
         echo "Error: Unrecognized argument: ${args[$index]}"
@@ -71,12 +65,6 @@ function parse_flags() {
         ;;
     esac
   done
-
-  # Make sure mode is one of 'dev', 'test' or 'prod'
-  if [ "$MODE" != "dev" ] && [ "$MODE" != "test" ] && [ "$MODE" != "prod" ]; then
-    echo -e "$RED_CROSS Mode must be one of 'dev', 'test' or 'prod'"
-    exit 1
-  fi
 
   # If NON_INTERACTIVE is set, skip all confirmations
   if [ "$NON_INTERACTIVE" = true ]; then
@@ -142,7 +130,191 @@ function check_dependencies() {
   fi
 }
 
-function configure_local_dns() {
+# Function to update /etc/systemd/resolved.conf
+function update_resolved_conf() {
+    echo -e "${BLUE_RIGHT_ARROW} Updating /etc/systemd/resolved.conf..."
+
+    RESOLVED_CONF="/etc/systemd/resolved.conf"
+    DNS_LINE="DNS=127.0.0.2"
+
+    # Check if RESOLVED_CONF exists
+    if [ ! -f $RESOLVED_CONF ]; then
+        echo -e "WARNING: $RESOLVED_CONF does not exist. Is systemd-resolved installed?"
+        return
+    fi
+
+    if ! sudo grep -q "^$DNS_LINE" $RESOLVED_CONF; then
+        sudo sed -i "/^\[Resolve\]/a $DNS_LINE" $RESOLVED_CONF
+
+        # Print a warning if the DNS line was not added
+        if ! sudo grep -q "^$DNS_LINE" $RESOLVED_CONF; then
+            echo -e "WARNING: Could not add $DNS_LINE to $RESOLVED_CONF"
+        fi
+    fi
+
+    echo -e "${GREEN_CHECK} Updated /etc/systemd/resolved.conf"
+}
+
+# Function to update /etc/dnsmasq.conf
+function update_dnsmasq_conf() {
+    echo -e "${BLUE_RIGHT_ARROW} Updating /etc/dnsmasq.conf..."
+
+    DNSMASQ_CONF="/etc/dnsmasq.conf"
+    LISTEN_ADDRESS="listen-address=127.0.0.2"
+    BIND_INTERFACES="bind-interfaces"
+
+    if [ ! -f $DNSMASQ_CONF ]; then
+        echo -e "WARNING: $DNSMASQ_CONF does not exist. Is dnsmasq installed?"
+        return
+    fi
+
+    if ! sudo grep -q "^$LISTEN_ADDRESS" $DNSMASQ_CONF; then
+        echo "$LISTEN_ADDRESS" | sudo tee -a $DNSMASQ_CONF > /dev/null
+
+        # Print a warning if the listen-address line was not added
+        if ! sudo grep -q "^$LISTEN_ADDRESS" $DNSMASQ_CONF; then
+            echo -e "WARNING: Could not add $LISTEN_ADDRESS to $DNSMASQ_CONF"
+        fi
+    fi
+
+    if ! sudo grep -q "^$BIND_INTERFACES" $DNSMASQ_CONF; then
+        echo "$BIND_INTERFACES" | sudo tee -a $DNSMASQ_CONF > /dev/null
+
+        # Print a warning if the bind-interfaces line was not added
+        if ! sudo grep -q "^$BIND_INTERFACES" $DNSMASQ_CONF; then
+            echo -e "WARNING: Could not add $BIND_INTERFACES to $DNSMASQ_CONF"
+        fi
+    fi
+
+    echo -e "${GREEN_CHECK} Updated /etc/dnsmasq.conf"
+}
+
+# Function to update /etc/default/dnsmasq
+function update_default_dnsmasq() {
+    echo -e "${BLUE_RIGHT_ARROW} Updating /etc/default/dnsmasq..."
+
+    DEFAULT_DNSMASQ="/etc/default/dnsmasq"
+    IGNORE_RESOLVCONF="IGNORE_RESOLVCONF=yes"
+    ENABLED="ENABLED=1"
+
+    if [ ! -f $DEFAULT_DNSMASQ ]; then
+        echo -e "WARNING: $DEFAULT_DNSMASQ does not exist. Is dnsmasq installed?"
+        return
+    fi
+
+    if ! sudo grep -q "^$IGNORE_RESOLVCONF" $DEFAULT_DNSMASQ; then
+        echo "$IGNORE_RESOLVCONF" | sudo tee -a $DEFAULT_DNSMASQ > /dev/null
+
+        # Print a warning if the IGNORE_RESOLVCONF line was not added
+        if ! sudo grep -q "^$IGNORE_RESOLVCONF" $DEFAULT_DNSMASQ; then
+            echo -e "WARNING: Could not add $IGNORE_RESOLVCONF to $DEFAULT_DNSMASQ"
+        fi
+    fi
+
+    if ! sudo grep -q "^$ENABLED" $DEFAULT_DNSMASQ; then
+        echo "$ENABLED" | sudo tee -a $DEFAULT_DNSMASQ > /dev/null
+
+        # Print a warning if the ENABLED line was not added
+        if ! sudo grep -q "^$ENABLED" $DEFAULT_DNSMASQ; then
+            echo -e "WARNING: Could not add $ENABLED to $DEFAULT_DNSMASQ"
+        fi
+    fi
+
+    echo -e "${GREEN_CHECK} Updated /etc/default/dnsmasq"
+}
+
+function increase_max_file_watchers() {
+  # System defaults for comparison
+  default_max_user_instances=128
+  default_max_queued_events=16384
+  default_max_user_watches=8192
+
+  # Total available memory in KB for the inotify settings
+  available_memory_kb=$((2 * 1024 * 1024))  # 2 GB in KB
+
+  # Calculate the total "weight" based on default values to keep the same ratio
+  total_weight=$((default_max_user_watches + default_max_user_watches + default_max_user_watches))
+
+  # Calculate how much memory each "unit" represents
+  memory_per_unit=$((available_memory_kb / total_weight))
+
+  sudo sysctl -w fs.inotify.max_user_watches=$((memory_per_unit * default_max_user_watches))
+  sudo sysctl -w fs.inotify.max_user_instances=$((memory_per_unit * default_max_user_instances))
+  sudo sysctl -w fs.inotify.max_queued_events=$((memory_per_unit * default_max_queued_events))
+}
+
+function install_kubectl() {
+  if [ -x "$(command -v kubectl)" ]; then
+    return
+  fi
+
+  curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+  chmod +x kubectl
+  sudo mv kubectl /usr/local/bin/kubectl
+}
+
+function install_helm() {
+  if [ -x "$(command -v helm)" ]; then
+    return
+  fi
+
+  local tmp_file=$(mktemp)
+
+  curl -fsSL -o $tmp_file https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+  chmod 700 $tmp_file
+  $tmp_file
+  rm $tmp_file
+}
+
+function install_kind() {
+  # If Kind is not installed, install it
+  if [ -x "$(command -v kind)" ]; then
+    return
+  fi
+
+  if [ $(uname -m) = x86_64 ]; then
+    url="https://kind.sigs.k8s.io/dl/v0.23.0/kind-linux-amd64"
+  elif [ $(uname -m) = arm64 ]; then
+    url="https://kind.sigs.k8s.io/dl/v0.23.0/kind-linux-arm64"
+  fi
+
+  [ $(uname -m) = x86_64 ] && curl -Lo ./kind $url
+  chmod +x ./kind
+  sudo mv ./kind /usr/local/bin/kind
+}
+
+function install_jq() {
+  if [ -x "$(command -v jq)" ]; then
+    return
+  fi
+
+  if [ -x "$(command -v apt-get)" ]; then
+    sudo apt-get install jq -y
+  elif [ -x "$(command -v dnf)" ]; then
+    sudo dnf install jq -y
+  fi
+}
+
+function install_and_configure_dnsmasq() {
+  # Make systemd-resolved no longer listen on 127.0.0.1:53
+  update_resolved_conf
+  sudo systemctl restart systemd-resolved
+
+  # Install dnsmasq, we ignore error here since it doesn't matter (it will fail because port 53 is already in use)
+  if [ -x "$(command -v apt-get)" ]; then
+    sudo apt-get install dnsmasq -y > /dev/null 2>&1
+  elif [ -x "$(command -v dnf)" ]; then
+    sudo dnf install dnsmasq -y > /dev/null 2>&1
+  fi  
+  
+  # Make dnsmasq fallback to 127.0.0.2:53
+  update_dnsmasq_conf
+  update_default_dnsmasq
+
+  sudo systemctl restart dnsmasq
+}
+
+function add_dns_masq_entry() {
   # If file /etc/dnsmasq.d/50-go-deploy-dev.conf does not exist, create it
   if ! [ -f "/etc/dnsmasq.d/50-go-deploy-dev.conf" ]; then
     echo "address=/deploy.localhost/127.0.0.1" | sudo tee -a /etc/dnsmasq.d/50-go-deploy-dev.conf
@@ -155,14 +327,6 @@ function wait_for_dns() {
   while [ "$(dig +short deploy.localhost)" == "" ]; do
     sleep 5
   done
-}
-
-# If not exists, install k3d
-function install_k3d() {
-  k3s_install_path="curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | bash"
-  if ! [ -x "$(command -v k3d)" ]; then
-    eval $k3s_install_path
-  fi
 }
 
 function generate_cluster_config() {
@@ -402,7 +566,17 @@ function install_ingress_nginx() {
       --repo https://kubernetes.github.io/ingress-nginx \
       --namespace ingress-nginx --create-namespace \
       --set controller.service.nodePorts.http=$ingress_http_port \
-      --set controller.service.nodePorts.https=$ingress_https_port
+      --set controller.service.nodePorts.https=$ingress_https_port \
+      --values - <<EOF
+controller:
+  ingressClassResource:
+    default: "true"
+  config:
+    allow-snippet-annotations: "true"
+    proxy-buffering: "on"
+    proxy-buffers: 4 "512k"
+    proxy-buffer-size: "256k"
+EOF
   fi
 
   # Wait for ingress-nginx to be up
@@ -636,7 +810,7 @@ function install_keycloak() {
       "alwaysDisplayInConsole":false,
       "rootUrl":"",
       "baseUrl":"",
-      "redirectUris":["http://*"]
+      "redirectUris":["http://*", "https://*"]
       }'
     curl -s \
       -H "Content-Type: application/json" \
@@ -931,6 +1105,20 @@ function install_cdi() {
   fi
 }
 
+function install_kubemacpool() {
+  # If namespace 'kubemacpool-system' already exists, skip
+  res=$(kubectl get ns | grep -c kubemacpool-system)
+  if [ $res -eq 0 ]; then
+    local tmp_file=$(mktemp)
+    wget https://raw.githubusercontent.com/k8snetworkplumbingwg/kubemacpool/master/config/release/kubemacpool.yaml -O $tmp_file
+    sed -i "s/02:00:00:00:00:00/02:5e:6c:00:00:00/" $tmp_file
+    sed -i "s/02:FF:FF:FF:FF:FF/02:5e:6c:FF:FF:FF/" $tmp_file
+
+    kubectl apply -f $tmp_file
+    rm -f $tmp_file
+  fi
+}
+
 function print_result() {
   read_cluster_config
 
@@ -950,7 +1138,7 @@ function print_result() {
   echo -e ""
   echo -e "To start the application, go the the top directory and run the following command:"
   echo -e ""
-  echo -e "    ${WHITE_BOLD}DEPLOY_CONFIG_FILE=config.local.yml go run main.go${RESET}"
+  echo -e "    ${WHITE_BOLD}DEPLOY_CONFIG_FILE=config.local.yml go run main.go [--mode dev|test|prod] [--<worker name>]${RESET}"
   echo -e ""
   echo -e "Happy coding! 🚀"
   echo -e ""
@@ -971,7 +1159,18 @@ if [ "$cluster_name" != "$CLUSTER_NAME" ]; then
 fi
 
 # Pre-requisites
-run_task "Configuring local DNS" configure_local_dns
+
+# If CONFIGURE_DNS is true, configure dnsmasq
+if [ "$CONFIGURE_DNS" == "true" ]; then
+  run_task "Install and configure dnsmasq" install_and_configure_dnsmasq
+fi
+
+run_task "Increase max file watchers" increase_max_file_watchers
+run_task "Install kubectl" install_kubectl
+run_task "Install helm" install_helm
+run_task "Install kind" install_kind
+run_task "Install jq" install_jq
+run_task "Add dnsmasq entry" add_dns_masq_entry
 run_task "Waiting for DNS" wait_for_dns
 
 # Base
@@ -992,6 +1191,7 @@ run_task "Install Hairpin Proxy" install_hairpin_proxy
 run_task "Install Storage Classes" install_storage_classes
 run_task "Install KubeVirt" install_kubevirt
 run_task "Install CDI" install_cdi
+run_task "Install kubemacpool" install_kubemacpool
 
 # Post-install
 run_task "Seed Harbor with images" seed_harbor_with_images
@@ -1021,7 +1221,6 @@ if [[ "$REPLY" =~ ^[Yy]$ ]]; then
   # Core
   export external_url="http://localhost:8080"
   export port="8080"
-  export mode=$MODE
 
   # Zone
   export deployment_domain="app.$domain"

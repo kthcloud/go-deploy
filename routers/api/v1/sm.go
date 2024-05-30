@@ -54,7 +54,7 @@ func GetSM(c *gin.Context) {
 		return
 	}
 
-	if sm == nil || sm.OwnerID != auth.User.ID {
+	if sm == nil {
 		context.NotFound("Storage manager not found")
 		return
 	}

@@ -14,8 +14,8 @@ const (
 	JobsPath = "/v1/jobs"
 )
 
-func GetJob(t *testing.T, id string, userID ...string) body.JobRead {
-	resp := e2e.DoGetRequest(t, JobPath+id, userID...)
+func GetJob(t *testing.T, id string, user ...string) body.JobRead {
+	resp := e2e.DoGetRequest(t, JobPath+id, user...)
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "job was not fetched")
 
 	var jobRead body.JobRead
@@ -25,8 +25,8 @@ func GetJob(t *testing.T, id string, userID ...string) body.JobRead {
 	return jobRead
 }
 
-func ListJobs(t *testing.T, query string, userID ...string) []body.JobRead {
-	resp := e2e.DoGetRequest(t, JobsPath+query, userID...)
+func ListJobs(t *testing.T, query string, user ...string) []body.JobRead {
+	resp := e2e.DoGetRequest(t, JobsPath+query, user...)
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "jobs were not fetched")
 
 	var jobs []body.JobRead
@@ -36,8 +36,8 @@ func ListJobs(t *testing.T, query string, userID ...string) []body.JobRead {
 	return jobs
 }
 
-func UpdateJob(t *testing.T, id string, requestBody body.JobUpdate, userID ...string) body.JobRead {
-	resp := e2e.DoPostRequest(t, JobPath+id, requestBody, userID...)
+func UpdateJob(t *testing.T, id string, requestBody body.JobUpdate, user ...string) body.JobRead {
+	resp := e2e.DoPostRequest(t, JobPath+id, requestBody, user...)
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "job was not updated")
 
 	var job body.JobRead
