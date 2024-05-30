@@ -80,8 +80,6 @@ func EnsureTestUsersExist() error {
 	}
 
 	for _, user := range users {
-		log.Println("Adding test user", user.Username)
-
 		_, err = user_repo.New().Synchronize(user.ID, &model.UserSynchronizeParams{
 			Username:      user.Username,
 			FirstName:     user.FirstName,
@@ -101,6 +99,13 @@ func EnsureTestUsersExist() error {
 		if err != nil {
 			return fmt.Errorf("failed to update user %s: %w", user.ID, err)
 		}
+
+		u, err := user_repo.New().GetByID(user.ID)
+		if err != nil {
+			return fmt.Errorf("failed to get user %s: %w", user.ID, err)
+		}
+
+		log.Printf("Added test user %s (API-key: %s)", u.Username, u.ApiKeys[0].Key)
 	}
 
 	return nil
