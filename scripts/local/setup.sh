@@ -122,12 +122,6 @@ function check_dependencies() {
     
     exit 1
   fi
-
-  # Check if /etc/dnsqmasq.d exists, if not exit
-  if ! [ -d "/etc/dnsmasq.d" ]; then
-    echo -e "$RED_CROSS /etc/dnsmasq.d does not exist. This is usually caused by dnsmasq not being installed correctly"
-    exit 1
-  fi
 }
 
 # Function to update /etc/systemd/resolved.conf
