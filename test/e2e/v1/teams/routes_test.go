@@ -44,7 +44,7 @@ func TestCreateWithMembers(t *testing.T) {
 	}
 
 	// Create team
-	_ = v1.WithTeam(t, requestBody)
+	_ = v1.WithTeam(t, requestBody, e2e.PowerUser)
 
 	// Fetch TestUser2's teams
 	teams := v1.ListTeams(t, "?userId="+model.TestDefaultUserID, e2e.DefaultUser)

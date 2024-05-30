@@ -62,7 +62,7 @@ func TestDiscover(t *testing.T) {
 }
 
 func TestUpdatePublicKeys(t *testing.T) {
-	t.Parallel()
+	// Since public keys are updated as a whole, we can't run this in parallel
 
 	publicKeys := []body.PublicKey{
 		{
@@ -85,7 +85,7 @@ func TestUpdatePublicKeys(t *testing.T) {
 }
 
 func TestUpdateUserData(t *testing.T) {
-	t.Parallel()
+	// Since user data is updated as a whole, we can't run this in parallel
 
 	userData := []body.UserData{
 		{

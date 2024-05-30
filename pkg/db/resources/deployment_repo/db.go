@@ -9,16 +9,13 @@ import (
 	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/db"
 	"go-deploy/pkg/log"
+	rErrors "go-deploy/service/errors"
 	"go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"sort"
 	"time"
-)
-
-var (
-	NonUniqueFieldErr = fmt.Errorf("non unique field")
 )
 
 // Create creates a new deployment with the given params.
@@ -78,7 +75,7 @@ func (client *Client) Create(id, ownerID string, params *model.DeploymentCreateP
 	_, err := client.Collection.InsertOne(context.TODO(), deployment)
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {
-			return nil, NonUniqueFieldErr
+			return nil, rErrors.NonUniqueFieldErr
 		}
 
 		return nil, fmt.Errorf("failed to create deployment. details: %w", err)
@@ -146,7 +143,7 @@ func (client *Client) UpdateWithParams(id string, params *model.DeploymentUpdate
 	)
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {
-			return NonUniqueFieldErr
+			return rErrors.NonUniqueFieldErr
 		}
 
 		return fmt.Errorf("failed to update deployment %s. details: %w", id, err)

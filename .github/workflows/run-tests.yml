@@ -28,7 +28,7 @@ jobs:
         id: setup-local
         run: |
           cd scripts/local
-          chmod +x ./setup.sh && ./setup.sh -y --mode test
+          chmod +x ./setup.sh && ./setup.sh -y
           cd ../..
           ls -la
 

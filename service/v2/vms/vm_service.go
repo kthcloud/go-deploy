@@ -8,6 +8,7 @@ import (
 	"go-deploy/models/model"
 	"go-deploy/models/version"
 	"go-deploy/pkg/config"
+	rErrors "go-deploy/pkg/db/resources/errors"
 	"go-deploy/pkg/db/resources/gpu_lease_repo"
 	"go-deploy/pkg/db/resources/notification_repo"
 	"go-deploy/pkg/db/resources/resource_migration_repo"
@@ -211,7 +212,7 @@ func (c *Client) Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
 
 	_, err := vm_repo.New(version.V2).Create(id, ownerID, &params)
 	if err != nil {
-		if errors.Is(err, vm_repo.NonUniqueFieldErr) {
+		if errors.Is(err, rErrors.NonUniqueFieldErr) {
 			return sErrors.NonUniqueFieldErr
 		}
 
@@ -270,7 +271,7 @@ func (c *Client) Update(id string, dtoVmUpdate *body.VmUpdate) error {
 
 	err := vm_repo.New(version.V2).UpdateWithParams(id, &vmUpdate)
 	if err != nil {
-		if errors.Is(err, vm_repo.NonUniqueFieldErr) {
+		if errors.Is(err, rErrors.NonUniqueFieldErr) {
 			return sErrors.NonUniqueFieldErr
 		}
 

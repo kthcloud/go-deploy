@@ -8,6 +8,7 @@ import (
 	"go-deploy/models/model"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/db/resources/deployment_repo"
+	rErrors "go-deploy/pkg/db/resources/errors"
 	"go-deploy/pkg/db/resources/notification_repo"
 	"go-deploy/pkg/db/resources/resource_migration_repo"
 	"go-deploy/pkg/db/resources/team_repo"
@@ -251,7 +252,7 @@ func (c *Client) Create(id, ownerID string, deploymentCreate *body.DeploymentCre
 
 	deployment, err := deployment_repo.New().Create(id, ownerID, params)
 	if err != nil {
-		if errors.Is(err, deployment_repo.NonUniqueFieldErr) {
+		if errors.Is(err, rErrors.NonUniqueFieldErr) {
 			return sErrors.NonUniqueFieldErr
 		}
 
@@ -324,7 +325,7 @@ func (c *Client) Update(id string, dtoUpdate *body.DeploymentUpdate) error {
 
 	err = deployment_repo.New().UpdateWithParams(id, params)
 	if err != nil {
-		if errors.Is(err, deployment_repo.NonUniqueFieldErr) {
+		if errors.Is(err, rErrors.NonUniqueFieldErr) {
 			return sErrors.NonUniqueFieldErr
 		}
 

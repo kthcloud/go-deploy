@@ -1,13 +1,18 @@
 package intializer
 
 import (
+	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"go-deploy/models/mode"
 	"go-deploy/models/model"
 	"go-deploy/models/version"
+	"go-deploy/pkg/config"
 	"go-deploy/pkg/db/resources/deployment_repo"
+	rErrors "go-deploy/pkg/db/resources/errors"
 	"go-deploy/pkg/db/resources/job_repo"
 	"go-deploy/pkg/db/resources/team_repo"
+	"go-deploy/pkg/db/resources/user_repo"
 	"go-deploy/pkg/db/resources/vm_repo"
 	"go-deploy/service"
 	"time"
@@ -56,6 +61,42 @@ func CleanUpOldTests() error {
 		err := service.V1().Teams().Delete(team.ID)
 		if err != nil {
 			return fmt.Errorf("failed to delete team %s: %w", team.ID, err)
+		}
+	}
+
+	return nil
+}
+
+// EnsureTestUsersExist ensures that the test users are created.
+func EnsureTestUsersExist() error {
+	if config.Config.Mode != mode.Test {
+		return nil
+	}
+
+	users, err := service.V1().Users().ListTestUsers()
+	if err != nil {
+		return fmt.Errorf("failed to list test users: %w", err)
+	}
+
+	for _, user := range users {
+		_, err = user_repo.New().Synchronize(user.ID, &model.UserSynchronizeParams{
+			Username:      user.Username,
+			FirstName:     user.FirstName,
+			LastName:      user.LastName,
+			Email:         user.Email,
+			IsAdmin:       user.IsAdmin,
+			EffectiveRole: &user.EffectiveRole,
+		})
+		if err != nil && !errors.Is(err, rErrors.NonUniqueFieldErr) {
+			return fmt.Errorf("failed to synchronize user %s: %w", user.ID, err)
+		}
+
+		// Ensure test user's API key matches
+		err = user_repo.New().UpdateWithParams(user.ID, &model.UserUpdateParams{
+			ApiKeys: &user.ApiKeys,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to update user %s: %w", user.ID, err)
 		}
 	}
 

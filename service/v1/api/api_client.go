@@ -98,6 +98,7 @@ type Users interface {
 	GetByApiKey(apiKey string) (*model.User, error)
 	GetUsage(userID string) (*model.UserUsage, error)
 	List(opts ...userOpts.ListOpts) ([]model.User, error)
+	ListTestUsers() ([]model.User, error)
 	Synchronize(authParams *model.AuthParams) (*model.User, error)
 	Update(userID string, dtoUserUpdate *body.UserUpdate) (*model.User, error)
 	Exists(id string) (bool, error)

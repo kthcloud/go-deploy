@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"go-deploy/dto/v1/body"
-	"go-deploy/models/mode"
 	"go-deploy/models/model"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/db/resources/user_repo"
@@ -29,29 +28,6 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.User, error) {
 
 // GetByApiKey gets a user by their API key
 func (c *Client) GetByApiKey(apiKey string) (*model.User, error) {
-	if config.Config.Mode == mode.Test {
-		res, err := c.UserByTestApiKey(apiKey)
-		if err != nil {
-			return nil, err
-		}
-
-		if res != nil {
-			_, err = user_repo.New().Synchronize(res.ID, &model.UserSynchronizeParams{
-				Username:      res.Username,
-				FirstName:     res.FirstName,
-				LastName:      res.LastName,
-				Email:         res.Email,
-				IsAdmin:       res.IsAdmin,
-				EffectiveRole: &res.EffectiveRole,
-			})
-			if err != nil {
-				return nil, err
-			}
-
-			return res, nil
-		}
-	}
-
 	return user_repo.New().WithApiKey(apiKey).Get()
 }
 
@@ -222,7 +198,7 @@ func (c *Client) Update(userID string, dtoUserUpdate *body.UserUpdate) (*model.U
 	return c.RefreshUser(userID, umc)
 }
 
-// FetchGravatar checks if the user has a gravatar image and fetches it if it exists
+// FetchGravatar checks if the user has a gravatar image and fetches it if it exists.
 // If the user does not have a gravatar image, it returns nil
 func (c *Client) FetchGravatar(userID string) (*string, error) {
 	umc := user_repo.New()
@@ -257,56 +233,72 @@ func (c *Client) FetchGravatar(userID string) (*string, error) {
 	return &gravatarURL, nil
 }
 
-func (c *Client) UserByTestApiKey(apiKey string) (*model.User, error) {
-	if config.Config.Mode == mode.Test {
-		switch apiKey {
-		case model.TestDefaultUserApiKey:
-			return &model.User{
-				ID:        model.TestDefaultUserID,
-				Username:  "tester-default",
-				FirstName: "tester-default-first",
-				LastName:  "tester-default-last",
-				Email:     "tester-default@test.com",
-				IsAdmin:   false,
-				EffectiveRole: model.EffectiveRole{
-					Name:        getStrongestRole().Name,
-					Description: getStrongestRole().Description,
+func (c *Client) ListTestUsers() ([]model.User, error) {
+	return []model.User{
+		{
+			ID:        model.TestAdminUserID,
+			Username:  "tester-admin",
+			FirstName: "tester-admin-first",
+			LastName:  "tester-admin-last",
+			Email:     "tester-admin@test.com",
+			IsAdmin:   true,
+			EffectiveRole: model.EffectiveRole{
+				Name:        getStrongestRole().Name,
+				Description: getStrongestRole().Description,
+			},
+			LastAuthenticatedAt: time.Now(),
+			ApiKeys: []model.ApiKey{
+				{
+					Name:      "test-api-key-admin",
+					Key:       model.TestAdminUserApiKey,
+					CreatedAt: time.Now(),
+					ExpiresAt: time.Now().AddDate(100, 0, 0),
 				},
-				LastAuthenticatedAt: time.Now(),
-			}, nil
-		case model.TestPowerUserApiKey:
-			return &model.User{
-				ID:        model.TestPowerUserID,
-				Username:  "tester-power",
-				FirstName: "tester-power-first",
-				LastName:  "tester-power-last",
-				Email:     "tester-power@test.com",
-				IsAdmin:   false,
-				EffectiveRole: model.EffectiveRole{
-					Name:        getStrongestRole().Name,
-					Description: getStrongestRole().Description,
+			},
+		},
+		{
+			ID:        model.TestPowerUserID,
+			Username:  "tester-power",
+			FirstName: "tester-power-first",
+			LastName:  "tester-power-last",
+			Email:     "tester-power@test.com",
+			IsAdmin:   false,
+			EffectiveRole: model.EffectiveRole{
+				Name:        getStrongestRole().Name,
+				Description: getStrongestRole().Description,
+			},
+			LastAuthenticatedAt: time.Now(),
+			ApiKeys: []model.ApiKey{
+				{
+					Name:      "test-api-key-power",
+					Key:       model.TestPowerUserApiKey,
+					CreatedAt: time.Now(),
+					ExpiresAt: time.Now().AddDate(100, 0, 0),
 				},
-				LastAuthenticatedAt: time.Now(),
-			}, nil
-		case model.TestAdminUserApiKey:
-			return &model.User{
-				ID:        model.TestAdminUserID,
-				Username:  "tester-admin",
-				FirstName: "tester-admin-first",
-				LastName:  "tester-admin-last",
-				Email:     "tester-admin@test.com",
-				IsAdmin:   true,
-				EffectiveRole: model.EffectiveRole{
-					Name:        getStrongestRole().Name,
-					Description: getStrongestRole().Description,
+			},
+		},
+		{
+			ID:        model.TestDefaultUserID,
+			Username:  "tester-default",
+			FirstName: "tester-default-first",
+			LastName:  "tester-default-last",
+			Email:     "tester-default@test.com",
+			IsAdmin:   false,
+			EffectiveRole: model.EffectiveRole{
+				Name:        getStrongestRole().Name,
+				Description: getStrongestRole().Description,
+			},
+			LastAuthenticatedAt: time.Now(),
+			ApiKeys: []model.ApiKey{
+				{
+					Name:      "test-api-key-default",
+					Key:       model.TestDefaultUserApiKey,
+					CreatedAt: time.Now(),
+					ExpiresAt: time.Now().AddDate(100, 0, 0),
 				},
-				LastAuthenticatedAt: time.Now(),
-			}, nil
-		}
-
-	}
-
-	return nil, nil
+			},
+		},
+	}, nil
 }
 
 func getStrongestRole() *model.Role {

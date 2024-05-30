@@ -61,6 +61,7 @@ func Create(opts *Options) *App {
 		{Name: "Run migrations", Task: migrator.Migrate},
 		{Name: "Reset running jobs", Task: func() error { return job_repo.New().ResetRunning() }},
 		{Name: "Ensure system deployments exists", Task: intializer.EnsureSystemDeploymentsExists},
+		{Name: "Ensure test users exist", Task: intializer.EnsureTestUsersExist},
 	}
 
 	for idx, task := range initTasks {

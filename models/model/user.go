@@ -32,9 +32,9 @@ type User struct {
 	IsAdmin       bool          `bson:"isAdmin"`
 	EffectiveRole EffectiveRole `bson:"effectiveRole"`
 
-	PublicKeys []PublicKey `bson:"publicKeys"`
-	ApiKeys    []ApiKey    `bson:"apiKeys"`
-	UserData   []UserData  `bson:"userData"`
+	PublicKeys []PublicKey `bson:"publicKeys,omitempty"`
+	ApiKeys    []ApiKey    `bson:"apiKeys,omitempty"`
+	UserData   []UserData  `bson:"userData,omitempty"`
 
 	LastAuthenticatedAt time.Time `bson:"lastAuthenticatedAt"`
 }
