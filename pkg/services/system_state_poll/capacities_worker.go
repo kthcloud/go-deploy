@@ -156,7 +156,7 @@ func CapacitiesWorker() error {
 		collected.CpuCore.Total += cluster.CpuCore.Total
 	}
 
-	return system_capacities_repo.New().Save(&body.TimestampedSystemCapacities{
+	return system_capacities_repo.New(500).Save(&body.TimestampedSystemCapacities{
 		Capacities: collected,
 		Timestamp:  time.Now(),
 	})

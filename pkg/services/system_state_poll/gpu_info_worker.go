@@ -63,7 +63,7 @@ func GpuInfoWorker() error {
 		return wErrors.NoHostsErr
 	}
 
-	return system_gpu_info_repo.New().Save(&body.TimestampedSystemGpuInfo{
+	return system_gpu_info_repo.New(500).Save(&body.TimestampedSystemGpuInfo{
 		GpuInfo: body.SystemGpuInfo{
 			HostGpuInfo: hostGpuInfo,
 		},

@@ -67,7 +67,7 @@ func StatusWorker() error {
 		Hosts: hostStatuses,
 	}
 
-	return system_status_repo.New().Save(&body.TimestampedSystemStatus{
+	return system_status_repo.New(500).Save(&body.TimestampedSystemStatus{
 		Status:    status,
 		Timestamp: time.Now(),
 	})

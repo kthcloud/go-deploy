@@ -70,7 +70,7 @@ func StatsWorker() error {
 		collected.K8sStats.PodCount += cluster.PodCount
 	}
 
-	return system_stats_repo.New().Save(&body.TimestampedSystemStats{
+	return system_stats_repo.New(500).Save(&body.TimestampedSystemStats{
 		Stats:     collected,
 		Timestamp: time.Now(),
 	})
