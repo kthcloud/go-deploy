@@ -1549,7 +1549,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/body.TimestampedSystemCapacities'
+                  $ref: '#/components/schemas/body.TimestampedSystemStats'
         "400":
           description: Bad Request
           content:
@@ -1582,7 +1582,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/body.TimestampedSystemCapacities'
+                  $ref: '#/components/schemas/body.TimestampedSystemStatus'
         "400":
           description: Bad Request
           content:
@@ -2416,6 +2416,13 @@ components:
       properties:
         config:
           type: string
+    body.ClusterStats:
+      type: object
+      properties:
+        cluster:
+          type: string
+        podCount:
+          type: integer
     body.CpuCoreCapacities:
       type: object
       properties:
@@ -2857,6 +2864,69 @@ components:
         zone:
           type: string
           description: Zone is the name of the zone where the host is located.
+    body.HostStatus:
+      type: object
+      properties:
+        cpu:
+          type: object
+          properties:
+            load:
+              type: object
+              properties:
+                cores:
+                  type: array
+                  items:
+                    type: integer
+                main:
+                  type: number
+                max:
+                  type: number
+            temp:
+              type: object
+              properties:
+                cores:
+                  type: array
+                  items:
+                    type: integer
+                main:
+                  type: number
+                max:
+                  type: number
+        displayName:
+          type: string
+        gpu:
+          type: object
+          properties:
+            temp:
+              type: array
+              items:
+                type: object
+                properties:
+                  main:
+                    type: number
+        name:
+          type: string
+        network:
+          type: object
+          properties:
+            usage:
+              type: object
+              properties:
+                receiveRate:
+                  type: integer
+                transmitRate:
+                  type: integer
+        ram:
+          type: object
+          properties:
+            load:
+              type: object
+              properties:
+                main:
+                  type: number
+        zone:
+          type: string
+          description: Zone is the name of the zone where the host is located.
     body.HttpProxyCreate:
       required:
       - name
@@ -2931,6 +3001,15 @@ components:
           - terminated
           - finished
           - completed
+    body.K8sStats:
+      type: object
+      properties:
+        clusters:
+          type: array
+          items:
+            $ref: '#/components/schemas/body.ClusterStats'
+        podCount:
+          type: integer
     body.NotificationRead:
       type: object
       properties:
@@ -3309,6 +3388,18 @@ components:
             $ref: '#/components/schemas/body.HostCapacities'
         ram:
           $ref: '#/components/schemas/body.RamCapacities'
+    body.SystemStats:
+      type: object
+      properties:
+        k8s:
+          $ref: '#/components/schemas/body.K8sStats'
+    body.SystemStatus:
+      type: object
+      properties:
+        hosts:
+          type: array
+          items:
+            $ref: '#/components/schemas/body.HostStatus'
     body.TeamCreate:
       required:
       - name
@@ -3435,6 +3526,20 @@ components:
       properties:
         capacities:
           $ref: '#/components/schemas/body.SystemCapacities'
+        timestamp:
+          type: string
+    body.TimestampedSystemStats:
+      type: object
+      properties:
+        stats:
+          $ref: '#/components/schemas/body.SystemStats'
+        timestamp:
+          type: string
+    body.TimestampedSystemStatus:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/body.SystemStatus'
         timestamp:
           type: string
     body.Usage:

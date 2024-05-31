@@ -1,7 +1,6 @@
 package v2
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"go-deploy/dto/v2/query"
 	"go-deploy/pkg/sys"
@@ -31,7 +30,7 @@ func ListSystemCapacities(c *gin.Context) {
 
 	capacities, err := service.V2().System().ListCapacities(requestQuery.N)
 	if err != nil {
-		context.ServerError(err, fmt.Errorf("failed to fetch capacities"))
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -50,7 +49,7 @@ func ListSystemCapacities(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param n query int false "n"
-// @Success 200 {array} body.TimestampedSystemCapacities
+// @Success 200 {array} body.TimestampedSystemStats
 // @Failure 400 {object} body.BindingError
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /v2/systemStats [get]
@@ -63,18 +62,18 @@ func ListSystemStats(c *gin.Context) {
 		return
 	}
 
-	capacities, err := service.V2().System().ListCapacities(requestQuery.N)
+	stats, err := service.V2().System().ListStats(requestQuery.N)
 	if err != nil {
-		context.ServerError(err, fmt.Errorf("failed to fetch capacities"))
+		context.ServerError(err, InternalError)
 		return
 	}
 
-	if capacities == nil {
+	if stats == nil {
 		context.JSONResponse(200, make([]interface{}, 0))
 		return
 	}
 
-	context.JSONResponse(200, capacities)
+	context.JSONResponse(200, stats)
 }
 
 // ListSystemStatus
@@ -84,7 +83,7 @@ func ListSystemStats(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param n query int false "n"
-// @Success 200 {array} body.TimestampedSystemCapacities
+// @Success 200 {array} body.TimestampedSystemStatus
 // @Failure 400 {object} body.BindingError
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /v2/systemStatus [get]
@@ -97,16 +96,16 @@ func ListSystemStatus(c *gin.Context) {
 		return
 	}
 
-	capacities, err := service.V2().System().ListCapacities(requestQuery.N)
+	status, err := service.V2().System().ListStatus(requestQuery.N)
 	if err != nil {
-		context.ServerError(err, fmt.Errorf("failed to fetch capacities"))
+		context.ServerError(err, InternalError)
 		return
 	}
 
-	if capacities == nil {
+	if status == nil {
 		context.JSONResponse(200, make([]interface{}, 0))
 		return
 	}
 
-	context.JSONResponse(200, capacities)
+	context.JSONResponse(200, status)
 }

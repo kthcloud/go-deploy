@@ -2133,7 +2133,7 @@ const docTemplateV2 = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/body.TimestampedSystemCapacities"
+                                "$ref": "#/definitions/body.TimestampedSystemStats"
                             }
                         }
                     },
@@ -2179,7 +2179,7 @@ const docTemplateV2 = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/body.TimestampedSystemCapacities"
+                                "$ref": "#/definitions/body.TimestampedSystemStatus"
                             }
                         }
                     },
@@ -3326,6 +3326,17 @@ const docTemplateV2 = `{
                 }
             }
         },
+        "body.ClusterStats": {
+            "type": "object",
+            "properties": {
+                "cluster": {
+                    "type": "string"
+                },
+                "podCount": {
+                    "type": "integer"
+                }
+            }
+        },
         "body.CpuCoreCapacities": {
             "type": "object",
             "properties": {
@@ -3935,6 +3946,105 @@ const docTemplateV2 = `{
                 }
             }
         },
+        "body.HostStatus": {
+            "type": "object",
+            "properties": {
+                "cpu": {
+                    "type": "object",
+                    "properties": {
+                        "load": {
+                            "type": "object",
+                            "properties": {
+                                "cores": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "integer"
+                                    }
+                                },
+                                "main": {
+                                    "type": "number"
+                                },
+                                "max": {
+                                    "type": "number"
+                                }
+                            }
+                        },
+                        "temp": {
+                            "type": "object",
+                            "properties": {
+                                "cores": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "integer"
+                                    }
+                                },
+                                "main": {
+                                    "type": "number"
+                                },
+                                "max": {
+                                    "type": "number"
+                                }
+                            }
+                        }
+                    }
+                },
+                "displayName": {
+                    "type": "string"
+                },
+                "gpu": {
+                    "type": "object",
+                    "properties": {
+                        "temp": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "main": {
+                                        "type": "number"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "network": {
+                    "type": "object",
+                    "properties": {
+                        "usage": {
+                            "type": "object",
+                            "properties": {
+                                "receiveRate": {
+                                    "type": "integer"
+                                },
+                                "transmitRate": {
+                                    "type": "integer"
+                                }
+                            }
+                        }
+                    }
+                },
+                "ram": {
+                    "type": "object",
+                    "properties": {
+                        "load": {
+                            "type": "object",
+                            "properties": {
+                                "main": {
+                                    "type": "number"
+                                }
+                            }
+                        }
+                    }
+                },
+                "zone": {
+                    "description": "Zone is the name of the zone where the host is located.",
+                    "type": "string"
+                }
+            }
+        },
         "body.HttpProxyCreate": {
             "type": "object",
             "required": [
@@ -4033,6 +4143,20 @@ const docTemplateV2 = `{
                         "finished",
                         "completed"
                     ]
+                }
+            }
+        },
+        "body.K8sStats": {
+            "type": "object",
+            "properties": {
+                "clusters": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/body.ClusterStats"
+                    }
+                },
+                "podCount": {
+                    "type": "integer"
                 }
             }
         },
@@ -4478,6 +4602,25 @@ const docTemplateV2 = `{
                 }
             }
         },
+        "body.SystemStats": {
+            "type": "object",
+            "properties": {
+                "k8s": {
+                    "$ref": "#/definitions/body.K8sStats"
+                }
+            }
+        },
+        "body.SystemStatus": {
+            "type": "object",
+            "properties": {
+                "hosts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/body.HostStatus"
+                    }
+                }
+            }
+        },
         "body.TeamCreate": {
             "type": "object",
             "required": [
@@ -4660,6 +4803,28 @@ const docTemplateV2 = `{
             "properties": {
                 "capacities": {
                     "$ref": "#/definitions/body.SystemCapacities"
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.TimestampedSystemStats": {
+            "type": "object",
+            "properties": {
+                "stats": {
+                    "$ref": "#/definitions/body.SystemStats"
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.TimestampedSystemStatus": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "$ref": "#/definitions/body.SystemStatus"
                 },
                 "timestamp": {
                     "type": "string"

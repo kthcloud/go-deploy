@@ -561,7 +561,7 @@ export interface SystemStatus {
   hosts: HostStatus[];
 }
 export interface TimestampedSystemStatus {
-  systemStatus: SystemStatus;
+  status: SystemStatus;
   timestamp: string;
 }
 export interface HostStatus extends HostBase, host_api.Status {
