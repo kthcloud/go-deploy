@@ -37,7 +37,7 @@ func PodEventListener(ctx context.Context) error {
 			podName := PodNameFromLogKey(key)
 
 			// Check if Pod still exists
-			exists, err := service.V1().Deployments().K8s().PodExists(&z, podName)
+			exists, err := service.V2().Deployments().K8s().PodExists(&z, podName)
 			if err != nil {
 				return err
 			}
@@ -93,7 +93,7 @@ func PodEventListener(ctx context.Context) error {
 			return nil
 		})
 
-		err = service.V1().Deployments().K8s().SetupPodWatcher(ctx, &z, func(podName string, event string) {
+		err = service.V2().Deployments().K8s().SetupPodWatcher(ctx, &z, func(podName string, event string) {
 			switch event {
 			case k8s.PodEventAdded:
 			case k8s.PodEventUpdated:

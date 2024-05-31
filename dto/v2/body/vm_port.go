@@ -24,7 +24,7 @@ type PortUpdate struct {
 
 type CustomDomainRead struct {
 	Domain string `json:"domain"`
-	Url    string `json:"url"`
+	URL    string `json:"url"`
 	Status string `json:"status"`
 	Secret string `json:"secret"`
 }

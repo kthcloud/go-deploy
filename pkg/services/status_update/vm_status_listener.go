@@ -51,7 +51,7 @@ func VmStatusListener(ctx context.Context) error {
 						return
 					}
 				} else {
-					err = vm_repo.New(version.V2).SetCurrentHost(name, &model.Host{Name: *status.Host})
+					err = vm_repo.New(version.V2).SetCurrentHost(name, &model.VmHost{Name: *status.Host})
 					if err != nil {
 						log.Printf("Failed to set host for VM instance %s. details: %s", name, err.Error())
 						return

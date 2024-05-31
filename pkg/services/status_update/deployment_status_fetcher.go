@@ -17,7 +17,7 @@ func DeploymentStatusFetcher() error {
 
 	for _, zone := range config.Config.EnabledZones() {
 		z := zone
-		statuses, err := service.V1().Deployments().K8s().ListDeploymentStatus(&z)
+		statuses, err := service.V2().Deployments().K8s().ListDeploymentStatus(&z)
 		if err != nil {
 			return err
 		}

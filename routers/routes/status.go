@@ -1,9 +1,9 @@
 package routes
 
-import v1 "go-deploy/routers/api/v1"
+import v2 "go-deploy/routers/api/v2"
 
 const (
-	StatusPath = "/v1/status"
+	StatusPath = "/v2/status"
 )
 
 type StatusRoutingGroup struct{ RoutingGroupBase }
@@ -14,6 +14,6 @@ func StatusRoutes() *StatusRoutingGroup {
 
 func (group *StatusRoutingGroup) PublicRoutes() []Route {
 	return []Route{
-		{Method: "GET", Pattern: StatusPath, HandlerFunc: v1.ListWorkerStatus},
+		{Method: "GET", Pattern: StatusPath, HandlerFunc: v2.ListWorkerStatus},
 	}
 }

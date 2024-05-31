@@ -1,7 +1,7 @@
 package model
 
 import (
-	"go-deploy/dto/v1/body"
+	"go-deploy/dto/v2/body"
 	"go-deploy/utils"
 )
 

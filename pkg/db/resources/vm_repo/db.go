@@ -273,7 +273,7 @@ func (client *Client) SetStatusByName(name, status string) error {
 }
 
 // SetCurrentHost sets the current host of a VM.
-func (client *Client) SetCurrentHost(name string, host *model.Host) error {
+func (client *Client) SetCurrentHost(name string, host *model.VmHost) error {
 	return client.SetWithBsonByName(name, bson.D{{"host", host}})
 }
 

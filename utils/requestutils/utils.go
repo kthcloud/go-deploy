@@ -68,6 +68,20 @@ func addParams(req *http.Request, params map[string]string) {
 	req.URL.RawQuery = values.Encode()
 }
 
+func DoJsonGetRequest[T any](url string, params map[string]string) (*T, error) {
+	res, err := DoRequest("GET", url, nil, params)
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := ParseBody[T](res.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return body, nil
+}
+
 // DoRequest is a helper function that does a request with the given method, url, request body and params
 func DoRequest(method string, url string, requestBody []byte, params map[string]string) (*http.Response, error) {
 	// prepare request
@@ -102,19 +116,19 @@ func DoRequestBasicAuth(method string, url string, requestBody []byte, params ma
 }
 
 // ParseBody is a helper function that parses the body of a response into the given out object
-func ParseBody[T any](closer io.ReadCloser, out *T) error {
+func ParseBody[T any](closer io.ReadCloser) (*T, error) {
 	body, err := ReadBody(closer)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer CloseBody(closer)
 
-	err = ParseJson(body, out)
+	res, err := ParseJson[T](body)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return res, nil
 }
 
 // CloseBody is a helper function that closes the body of a response
@@ -137,11 +151,11 @@ func ReadBody(responseBody io.ReadCloser) ([]byte, error) {
 }
 
 // ParseJson is a helper function that parses json data into the given out object
-func ParseJson[T any](data []byte, out *T) error {
-	err := json.Unmarshal(data, out)
+func ParseJson[T any](data []byte) (*T, error) {
+	var out T
+	err := json.Unmarshal(data, &out)
 	if err != nil {
-		err = fmt.Errorf("failed to parse json data. details: %w", err)
-		return err
+		return nil, fmt.Errorf("failed to parse json data. details: %s", err)
 	}
-	return nil
+	return &out, nil
 }

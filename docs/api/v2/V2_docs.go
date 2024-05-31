@@ -23,6 +23,494 @@ const docTemplateV2 = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/v2/deployments": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List deployments",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Deployment"
+                ],
+                "summary": "List deployments",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "List all",
+                        "name": "all",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by user ID",
+                        "name": "userId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Include shared",
+                        "name": "shared",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/body.DeploymentRead"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create deployment",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Deployment"
+                ],
+                "summary": "Create deployment",
+                "parameters": [
+                    {
+                        "description": "Deployment body",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/body.DeploymentCreate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.DeploymentRead"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v2/deployments/{deploymentId}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get deployment",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Deployment"
+                ],
+                "summary": "Get deployment",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Deployment ID",
+                        "name": "deploymentId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.DeploymentRead"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Update deployment",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Deployment"
+                ],
+                "summary": "Update deployment",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Deployment ID",
+                        "name": "deploymentId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Deployment update",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/body.DeploymentUpdate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.DeploymentUpdated"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Delete deployment",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Deployment"
+                ],
+                "summary": "Delete deployment",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Deployment ID",
+                        "name": "deploymentId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.DeploymentCreated"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v2/deployments/{deploymentId}/ciConfig": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get CI config",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Deployment"
+                ],
+                "summary": "Get CI config",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Deployment ID",
+                        "name": "deploymentId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.CiConfig"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v2/deployments/{deploymentId}/command": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Do command",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Deployment"
+                ],
+                "summary": "Do command",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Deployment ID",
+                        "name": "deploymentId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Command body",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/body.DeploymentCommand"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "423": {
+                        "description": "Locked",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v2/deployments/{deploymentId}/logs": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get logs using Server-Sent Events",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Deployment"
+                ],
+                "summary": "Get logs using Server-Sent Events",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Deployment ID",
+                        "name": "deploymentId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v2/discover": {
+            "get": {
+                "description": "Discover",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Discover"
+                ],
+                "summary": "Discover",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.DiscoverRead"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v2/gpuGroups": {
             "get": {
                 "security": [
@@ -465,6 +953,816 @@ const docTemplateV2 = `{
                 }
             }
         },
+        "/v2/hooks/harbor": {
+            "post": {
+                "description": "Handle Harbor hook",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Deployment"
+                ],
+                "summary": "Handle Harbor hook",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Basic auth token",
+                        "name": "Authorization",
+                        "in": "header"
+                    },
+                    {
+                        "description": "Harbor webhook body",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/body.HarborWebhook"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v2/hosts": {
+            "get": {
+                "description": "List Hosts",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Host"
+                ],
+                "summary": "List Hosts",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/body.HostRead"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v2/jobs": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List jobs",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Job"
+                ],
+                "summary": "List jobs",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "List all",
+                        "name": "all",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by user ID",
+                        "name": "userId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by type",
+                        "name": "type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/body.JobRead"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v2/jobs/{jobId}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "GetJob job by id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Job"
+                ],
+                "summary": "GetJob job by id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Job ID",
+                        "name": "jobId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.JobRead"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Update job. Only allowed for admins.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Job"
+                ],
+                "summary": "Update job",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Job ID",
+                        "name": "jobId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Job update",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/body.JobUpdate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.JobRead"
+                        }
+                    }
+                }
+            }
+        },
+        "/v2/metrics": {
+            "get": {
+                "description": "Get metrics",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Metrics"
+                ],
+                "summary": "Get metrics",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v2/notifications": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List notifications",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Notification"
+                ],
+                "summary": "List notifications",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "List all notifications",
+                        "name": "all",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by user ID",
+                        "name": "userId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/body.NotificationRead"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v2/notifications/{notificationId}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get notification",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Notification"
+                ],
+                "summary": "Get notification",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Notification ID",
+                        "name": "notificationId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.NotificationRead"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Update notification",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Notification"
+                ],
+                "summary": "Update notification",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Notification ID",
+                        "name": "notificationId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Notification update",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/body.NotificationUpdate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Delete notification",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Notification"
+                ],
+                "summary": "Delete notification",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Notification ID",
+                        "name": "notificationId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v2/register": {
+            "get": {
+                "description": "Register resource",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Register"
+                ],
+                "summary": "Register resource",
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v2/resourceMigrations": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List resource migrations",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ResourceMigration"
+                ],
+                "summary": "List resource migrations",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/body.ResourceMigrationRead"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create resource migration",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ResourceMigration"
+                ],
+                "summary": "Create resource migration",
+                "parameters": [
+                    {
+                        "description": "Resource Migration Create",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/body.ResourceMigrationCreate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.ResourceMigrationCreated"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v2/resourceMigrations/{resourceMigrationId}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get resource migration",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ResourceMigration"
+                ],
+                "summary": "Get resource migration",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Resource Migration ID",
+                        "name": "resourceMigrationId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.ResourceMigrationRead"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Update resource migration",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ResourceMigration"
+                ],
+                "summary": "Update resource migration",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Resource Migration ID",
+                        "name": "resourceMigrationId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Resource Migration Update",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/body.ResourceMigrationUpdate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.ResourceMigrationUpdated"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Delete resource migration",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ResourceMigration"
+                ],
+                "summary": "Delete resource migration",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Resource Migration ID",
+                        "name": "resourceMigrationId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v2/snapshots": {
             "get": {
                 "security": [
@@ -510,7 +1808,7 @@ const docTemplateV2 = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/go-deploy_dto_v2_body.VmSnapshotRead"
+                                "$ref": "#/definitions/body.VmSnapshotRead"
                             }
                         }
                     },
@@ -570,7 +1868,7 @@ const docTemplateV2 = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/go-deploy_dto_v2_body.VmSnapshotCreated"
+                            "$ref": "#/definitions/body.VmSnapshotCreated"
                         }
                     },
                     "400": {
@@ -581,6 +1879,817 @@ const docTemplateV2 = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v2/status": {
+            "get": {
+                "description": "List of worker status",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Status"
+                ],
+                "summary": "List worker status",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/body.WorkerStatusRead"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v2/storageManagers": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get storage manager list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "StorageManager"
+                ],
+                "summary": "Get storage manager list",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "List all",
+                        "name": "all",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/body.SmRead"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v2/storageManagers/{storageManagerId}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Delete storage manager",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "StorageManager"
+                ],
+                "summary": "Delete storage manager",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Storage manager ID",
+                        "name": "storageManagerId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.SmDeleted"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v2/systemCapacities": {
+            "get": {
+                "description": "List system capacities",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "System"
+                ],
+                "summary": "List system capacities",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "n",
+                        "name": "n",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/body.TimestampedSystemCapacities"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/body.BindingError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v2/systemStats": {
+            "get": {
+                "description": "List system stats",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "System"
+                ],
+                "summary": "List system stats",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "n",
+                        "name": "n",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/body.TimestampedSystemCapacities"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/body.BindingError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v2/systemStatus": {
+            "get": {
+                "description": "List system stats",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "System"
+                ],
+                "summary": "List system stats",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "n",
+                        "name": "n",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/body.TimestampedSystemCapacities"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/body.BindingError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v2/teams": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List teams",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Team"
+                ],
+                "summary": "List teams",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "List all",
+                        "name": "all",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by user ID",
+                        "name": "userId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/body.TeamRead"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/body.BindingError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create team",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Team"
+                ],
+                "summary": "Create team",
+                "parameters": [
+                    {
+                        "description": "Team",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/body.TeamCreate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.TeamRead"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/body.BindingError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v2/teams/{teamId}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get team",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Team"
+                ],
+                "summary": "Get team",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Team ID",
+                        "name": "teamId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.TeamRead"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/body.BindingError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Update team",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Team"
+                ],
+                "summary": "Update team",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Team ID",
+                        "name": "teamId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Team",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/body.TeamUpdate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.TeamRead"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/body.BindingError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Delete team",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Team"
+                ],
+                "summary": "Delete team",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Team ID",
+                        "name": "teamId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/body.BindingError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v2/users": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List users",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "List users",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "List all",
+                        "name": "all",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Discovery mode",
+                        "name": "discover",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/body.UserRead"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v2/users/{userId}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Get user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.UserRead"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Update user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Update user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "User update",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/body.UserUpdate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.UserRead"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v2/users/{userId}/apiKeys": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create API key",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Create API key",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "API key create body",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/body.ApiKeyCreate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/body.ApiKeyCreated"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/sys.ErrorResponse"
                         }
@@ -708,7 +2817,7 @@ const docTemplateV2 = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/go-deploy_dto_v2_body.VmRead"
+                                "$ref": "#/definitions/body.VmRead"
                             }
                         }
                     },
@@ -762,7 +2871,7 @@ const docTemplateV2 = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/go-deploy_dto_v2_body.VmCreate"
+                            "$ref": "#/definitions/body.VmCreate"
                         }
                     }
                 ],
@@ -770,7 +2879,7 @@ const docTemplateV2 = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/go-deploy_dto_v2_body.VmCreated"
+                            "$ref": "#/definitions/body.VmCreated"
                         }
                     },
                     "400": {
@@ -831,7 +2940,7 @@ const docTemplateV2 = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/go-deploy_dto_v2_body.VmRead"
+                            "$ref": "#/definitions/body.VmRead"
                         }
                     },
                     "400": {
@@ -885,7 +2994,7 @@ const docTemplateV2 = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/go-deploy_dto_v2_body.VmUpdate"
+                            "$ref": "#/definitions/body.VmUpdate"
                         }
                     }
                 ],
@@ -893,7 +3002,7 @@ const docTemplateV2 = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/go-deploy_dto_v2_body.VmUpdated"
+                            "$ref": "#/definitions/body.VmUpdated"
                         }
                     },
                     "400": {
@@ -952,7 +3061,7 @@ const docTemplateV2 = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/go-deploy_dto_v2_body.VmDeleted"
+                            "$ref": "#/definitions/body.VmDeleted"
                         }
                     },
                     "400": {
@@ -1020,7 +3129,7 @@ const docTemplateV2 = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/go-deploy_dto_v2_body.VmSnapshotRead"
+                            "$ref": "#/definitions/body.VmSnapshotRead"
                         }
                     },
                     "400": {
@@ -1080,7 +3189,7 @@ const docTemplateV2 = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/go-deploy_dto_v2_body.VmSnapshotDeleted"
+                            "$ref": "#/definitions/body.VmSnapshotDeleted"
                         }
                     },
                     "400": {
@@ -1103,9 +3212,128 @@ const docTemplateV2 = `{
                     }
                 }
             }
+        },
+        "/v2/zones": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List zones",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Zone"
+                ],
+                "summary": "List zones",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/body.ZoneRead"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "body.ApiKey": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.ApiKeyCreate": {
+            "type": "object",
+            "required": [
+                "expiresAt",
+                "name"
+            ],
+            "properties": {
+                "expiresAt": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.ApiKeyCreated": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.BindingError": {
+            "type": "object",
+            "properties": {
+                "validationErrors": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "body.CiConfig": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.CpuCoreCapacities": {
+            "type": "object",
+            "properties": {
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
         "body.CustomDomainRead": {
             "type": "object",
             "properties": {
@@ -1120,6 +3348,359 @@ const docTemplateV2 = `{
                 },
                 "url": {
                     "type": "string"
+                }
+            }
+        },
+        "body.DeploymentCommand": {
+            "type": "object",
+            "required": [
+                "command"
+            ],
+            "properties": {
+                "command": {
+                    "type": "string",
+                    "enum": [
+                        "restart"
+                    ]
+                }
+            }
+        },
+        "body.DeploymentCreate": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "args": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "minItems": 0,
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "cpuCores": {
+                    "type": "number",
+                    "minimum": 0.1
+                },
+                "customDomain": {
+                    "description": "CustomDomain is the domain that the deployment will be available on.\nThe max length is set to 243 to allow for a subdomain when confirming the domain.",
+                    "type": "string"
+                },
+                "envs": {
+                    "type": "array",
+                    "maxItems": 1000,
+                    "minItems": 0,
+                    "items": {
+                        "$ref": "#/definitions/body.Env"
+                    }
+                },
+                "healthCheckPath": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "minLength": 0
+                },
+                "image": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "minLength": 1
+                },
+                "initCommands": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "minItems": 0,
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 30,
+                    "minLength": 3
+                },
+                "private": {
+                    "type": "boolean"
+                },
+                "ram": {
+                    "type": "number",
+                    "minimum": 0.1
+                },
+                "replicas": {
+                    "type": "integer",
+                    "maximum": 100,
+                    "minimum": 0
+                },
+                "volumes": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "minItems": 0,
+                    "items": {
+                        "$ref": "#/definitions/body.Volume"
+                    }
+                },
+                "zone": {
+                    "description": "Zone is the zone that the deployment will be created in.\nIf the zone is not set, the deployment will be created in the default zone.",
+                    "type": "string"
+                }
+            }
+        },
+        "body.DeploymentCreated": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "jobId": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.DeploymentRead": {
+            "type": "object",
+            "properties": {
+                "accessedAt": {
+                    "type": "string"
+                },
+                "args": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "customDomain": {
+                    "$ref": "#/definitions/body.CustomDomainRead"
+                },
+                "envs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/body.Env"
+                    }
+                },
+                "error": {
+                    "type": "string"
+                },
+                "healthCheckPath": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "initCommands": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "integrations": {
+                    "description": "Integrations are currently not used, but could be used if we wanted to add a list of integrations to the deployment\n\nFor example GitHub",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "internalPort": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "ownerId": {
+                    "type": "string"
+                },
+                "pingResult": {
+                    "type": "integer"
+                },
+                "private": {
+                    "type": "boolean"
+                },
+                "repairedAt": {
+                    "type": "string"
+                },
+                "replicaStatus": {
+                    "$ref": "#/definitions/body.ReplicaStatus"
+                },
+                "restartedAt": {
+                    "type": "string"
+                },
+                "specs": {
+                    "$ref": "#/definitions/body.DeploymentSpecs"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "storageUrl": {
+                    "type": "string"
+                },
+                "teams": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "type": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                },
+                "volumes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/body.Volume"
+                    }
+                },
+                "zone": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.DeploymentSpecs": {
+            "type": "object",
+            "properties": {
+                "cpuCores": {
+                    "type": "number"
+                },
+                "ram": {
+                    "type": "number"
+                },
+                "replicas": {
+                    "type": "integer"
+                }
+            }
+        },
+        "body.DeploymentUpdate": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "args": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "minItems": 0,
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "cpuCores": {
+                    "type": "number",
+                    "minimum": 0.1
+                },
+                "customDomain": {
+                    "description": "CustomDomain is the domain that the deployment will be available on.\nThe max length is set to 243 to allow for a subdomain when confirming the domain.",
+                    "type": "string"
+                },
+                "envs": {
+                    "type": "array",
+                    "maxItems": 1000,
+                    "minItems": 0,
+                    "items": {
+                        "$ref": "#/definitions/body.Env"
+                    }
+                },
+                "healthCheckPath": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "minLength": 0
+                },
+                "image": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "minLength": 1
+                },
+                "initCommands": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "minItems": 0,
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 30,
+                    "minLength": 3
+                },
+                "private": {
+                    "type": "boolean"
+                },
+                "ram": {
+                    "type": "number",
+                    "minimum": 0.1
+                },
+                "replicas": {
+                    "type": "integer",
+                    "maximum": 100,
+                    "minimum": 0
+                },
+                "volumes": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "minItems": 0,
+                    "items": {
+                        "$ref": "#/definitions/body.Volume"
+                    }
+                }
+            }
+        },
+        "body.DeploymentUpdated": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "jobId": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.DiscoverRead": {
+            "type": "object",
+            "properties": {
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/body.Role"
+                    }
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.Env": {
+            "type": "object",
+            "required": [
+                "name",
+                "value"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                },
+                "value": {
+                    "type": "string",
+                    "maxLength": 10000,
+                    "minLength": 1
+                }
+            }
+        },
+        "body.GpuCapacities": {
+            "type": "object",
+            "properties": {
+                "total": {
+                    "type": "integer"
                 }
             }
         },
@@ -1252,6 +3833,958 @@ const docTemplateV2 = `{
                 }
             }
         },
+        "body.HarborWebhook": {
+            "type": "object",
+            "properties": {
+                "event_data": {
+                    "type": "object",
+                    "properties": {
+                        "repository": {
+                            "type": "object",
+                            "properties": {
+                                "date_created": {
+                                    "type": "integer"
+                                },
+                                "name": {
+                                    "type": "string"
+                                },
+                                "namespace": {
+                                    "type": "string"
+                                },
+                                "repo_full_name": {
+                                    "type": "string"
+                                },
+                                "repo_type": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "resources": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "digest": {
+                                        "type": "string"
+                                    },
+                                    "resource_url": {
+                                        "type": "string"
+                                    },
+                                    "tag": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "occur_at": {
+                    "type": "integer"
+                },
+                "operator": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.HostCapacities": {
+            "type": "object",
+            "properties": {
+                "displayName": {
+                    "type": "string"
+                },
+                "gpu": {
+                    "type": "object",
+                    "properties": {
+                        "count": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "ram": {
+                    "type": "object",
+                    "properties": {
+                        "total": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "zone": {
+                    "description": "Zone is the name of the zone where the host is located.",
+                    "type": "string"
+                }
+            }
+        },
+        "body.HostRead": {
+            "type": "object",
+            "properties": {
+                "displayName": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "zone": {
+                    "description": "Zone is the name of the zone where the host is located.",
+                    "type": "string"
+                }
+            }
+        },
+        "body.HttpProxyCreate": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "customDomain": {
+                    "description": "CustomDomain is the domain that the deployment will be available on.\nThe max length is set to 243 to allow for a sub domain when confirming the domain.",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 30,
+                    "minLength": 3
+                }
+            }
+        },
+        "body.HttpProxyRead": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "customDomain": {
+                    "$ref": "#/definitions/body.CustomDomainRead"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 30,
+                    "minLength": 3
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.HttpProxyUpdate": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "customDomain": {
+                    "description": "CustomDomain is the domain that the deployment will be available on.\nThe max length is set to 243 to allow for a sub domain when confirming the domain.",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 30,
+                    "minLength": 3
+                }
+            }
+        },
+        "body.JobRead": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "finishedAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lastError": {
+                    "type": "string"
+                },
+                "lastRunAt": {
+                    "type": "string"
+                },
+                "runAfter": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "userId": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.JobUpdate": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "pending",
+                        "running",
+                        "failed",
+                        "terminated",
+                        "finished",
+                        "completed"
+                    ]
+                }
+            }
+        },
+        "body.NotificationRead": {
+            "type": "object",
+            "properties": {
+                "completedAt": {
+                    "type": "string"
+                },
+                "content": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "readAt": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "userId": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.NotificationUpdate": {
+            "type": "object",
+            "properties": {
+                "read": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "body.PortCreate": {
+            "type": "object",
+            "required": [
+                "name",
+                "port",
+                "protocol"
+            ],
+            "properties": {
+                "httpProxy": {
+                    "$ref": "#/definitions/body.HttpProxyCreate"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                },
+                "port": {
+                    "type": "integer",
+                    "maximum": 65535,
+                    "minimum": 1
+                },
+                "protocol": {
+                    "type": "string",
+                    "enum": [
+                        "tcp",
+                        "udp"
+                    ]
+                }
+            }
+        },
+        "body.PortRead": {
+            "type": "object",
+            "properties": {
+                "externalPort": {
+                    "type": "integer"
+                },
+                "httpProxy": {
+                    "$ref": "#/definitions/body.HttpProxyRead"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "port": {
+                    "type": "integer"
+                },
+                "protocol": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.PortUpdate": {
+            "type": "object",
+            "required": [
+                "name",
+                "port",
+                "protocol"
+            ],
+            "properties": {
+                "httpProxy": {
+                    "$ref": "#/definitions/body.HttpProxyUpdate"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                },
+                "port": {
+                    "type": "integer",
+                    "maximum": 65535,
+                    "minimum": 1
+                },
+                "protocol": {
+                    "type": "string",
+                    "enum": [
+                        "tcp",
+                        "udp"
+                    ]
+                }
+            }
+        },
+        "body.PublicKey": {
+            "type": "object",
+            "required": [
+                "key",
+                "name"
+            ],
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 30,
+                    "minLength": 1
+                }
+            }
+        },
+        "body.Quota": {
+            "type": "object",
+            "properties": {
+                "cpuCores": {
+                    "type": "number"
+                },
+                "diskSize": {
+                    "type": "number"
+                },
+                "gpuLeaseDuration": {
+                    "description": "in hours",
+                    "type": "number"
+                },
+                "ram": {
+                    "type": "number"
+                },
+                "snapshots": {
+                    "type": "integer"
+                }
+            }
+        },
+        "body.RamCapacities": {
+            "type": "object",
+            "properties": {
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "body.ReplicaStatus": {
+            "type": "object",
+            "properties": {
+                "availableReplicas": {
+                    "description": "AvailableReplicas is the number of replicas that are available.",
+                    "type": "integer"
+                },
+                "desiredReplicas": {
+                    "description": "DesiredReplicas is the number of replicas that the deployment should have.",
+                    "type": "integer"
+                },
+                "readyReplicas": {
+                    "description": "ReadyReplicas is the number of replicas that are ready.",
+                    "type": "integer"
+                },
+                "unavailableReplicas": {
+                    "description": "UnavailableReplicas is the number of replicas that are unavailable.",
+                    "type": "integer"
+                }
+            }
+        },
+        "body.ResourceMigrationCreate": {
+            "type": "object",
+            "required": [
+                "resourceId",
+                "type"
+            ],
+            "properties": {
+                "resourceId": {
+                    "description": "ResourceID is the ID of the resource that is being migrated.\nThis can be a VM ID, deployment ID, etc. depending on the type of the migration.",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Status is the status of the resource migration.\nIt is used by privileged admins to directly accept or reject a migration.\nThe field is ignored by non-admins.\n\nPossible values:\n- accepted\n- pending",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "Type is the type of the resource migration.\n\nPossible values:\n- updateOwner",
+                    "type": "string",
+                    "enum": [
+                        "updateOwner"
+                    ]
+                },
+                "updateOwner": {
+                    "description": "UpdateOwner is the set of parameters that are required for the updateOwner migration type.\nIt is ignored if the migration type is not updateOwner.",
+                    "type": "object",
+                    "required": [
+                        "ownerId"
+                    ],
+                    "properties": {
+                        "ownerId": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "body.ResourceMigrationCreated": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "jobId": {
+                    "description": "JobID is the ID of the job that was created for the resource migration.\nIt will only be set if the migration was created with status 'accepted'.",
+                    "type": "string"
+                },
+                "resourceId": {
+                    "description": "ResourceID is the ID of the resource that is being migrated.\nThis can be a VM ID, deployment ID, etc. depending on the type of the migration.",
+                    "type": "string"
+                },
+                "resourceType": {
+                    "description": "ResourceType is the type of the resource that is being migrated.\n\nPossible values:\n- vm\n- deployment",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Status is the status of the resource migration.\nWhen this field is set to 'accepted', the migration will take place and then automatically be deleted.",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "Type is the type of the resource migration.\n\nPossible values:\n- updateOwner",
+                    "type": "string"
+                },
+                "updateOwner": {
+                    "description": "UpdateOwner is the set of parameters that are required for the updateOwner migration type.\nIt is empty if the migration type is not updateOwner.",
+                    "type": "object",
+                    "properties": {
+                        "ownerId": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "userId": {
+                    "description": "UserID is the ID of the user who initiated the migration.",
+                    "type": "string"
+                }
+            }
+        },
+        "body.ResourceMigrationRead": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "resourceId": {
+                    "description": "ResourceID is the ID of the resource that is being migrated.\nThis can be a VM ID, deployment ID, etc. depending on the type of the migration.",
+                    "type": "string"
+                },
+                "resourceType": {
+                    "description": "ResourceType is the type of the resource that is being migrated.\n\nPossible values:\n- vm\n- deployment",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Status is the status of the resource migration.\nWhen this field is set to 'accepted', the migration will take place and then automatically be deleted.",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "Type is the type of the resource migration.\n\nPossible values:\n- updateOwner",
+                    "type": "string"
+                },
+                "updateOwner": {
+                    "description": "UpdateOwner is the set of parameters that are required for the updateOwner migration type.\nIt is empty if the migration type is not updateOwner.",
+                    "type": "object",
+                    "properties": {
+                        "ownerId": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "userId": {
+                    "description": "UserID is the ID of the user who initiated the migration.",
+                    "type": "string"
+                }
+            }
+        },
+        "body.ResourceMigrationUpdate": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "code": {
+                    "description": "Code is a token required when accepting a migration if the acceptor is not an admin.\nIt is sent to the acceptor using the notification API",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Status is the status of the resource migration.\nIt is used to accept a migration by setting the status to 'accepted'.\nIf the acceptor is not an admin, a Code must be provided.\n\nPossible values:\n- accepted\n- pending",
+                    "type": "string"
+                }
+            }
+        },
+        "body.ResourceMigrationUpdated": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "jobId": {
+                    "description": "JobID is the ID of the job that was created for the resource migration.\nIt will only be set if the migration was updated with status 'accepted'.",
+                    "type": "string"
+                },
+                "resourceId": {
+                    "description": "ResourceID is the ID of the resource that is being migrated.\nThis can be a VM ID, deployment ID, etc. depending on the type of the migration.",
+                    "type": "string"
+                },
+                "resourceType": {
+                    "description": "ResourceType is the type of the resource that is being migrated.\n\nPossible values:\n- vm\n- deployment",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Status is the status of the resource migration.\nWhen this field is set to 'accepted', the migration will take place and then automatically be deleted.",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "Type is the type of the resource migration.\n\nPossible values:\n- updateOwner",
+                    "type": "string"
+                },
+                "updateOwner": {
+                    "description": "UpdateOwner is the set of parameters that are required for the updateOwner migration type.\nIt is empty if the migration type is not updateOwner.",
+                    "type": "object",
+                    "properties": {
+                        "ownerId": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "userId": {
+                    "description": "UserID is the ID of the user who initiated the migration.",
+                    "type": "string"
+                }
+            }
+        },
+        "body.Role": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "permissions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "quota": {
+                    "$ref": "#/definitions/body.Quota"
+                }
+            }
+        },
+        "body.SmDeleted": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "jobId": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.SmRead": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "ownerId": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                },
+                "zone": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.SystemCapacities": {
+            "type": "object",
+            "properties": {
+                "cpuCore": {
+                    "$ref": "#/definitions/body.CpuCoreCapacities"
+                },
+                "gpu": {
+                    "$ref": "#/definitions/body.GpuCapacities"
+                },
+                "hosts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/body.HostCapacities"
+                    }
+                },
+                "ram": {
+                    "$ref": "#/definitions/body.RamCapacities"
+                }
+            }
+        },
+        "body.TeamCreate": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 1000
+                },
+                "members": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "minItems": 0,
+                    "items": {
+                        "$ref": "#/definitions/body.TeamMemberCreate"
+                    }
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                },
+                "resources": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "minItems": 0,
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "body.TeamMember": {
+            "type": "object",
+            "properties": {
+                "addedAt": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "firstName": {
+                    "type": "string"
+                },
+                "gravatarUrl": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "joinedAt": {
+                    "type": "string"
+                },
+                "lastName": {
+                    "type": "string"
+                },
+                "memberStatus": {
+                    "type": "string"
+                },
+                "teamRole": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.TeamMemberCreate": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "teamRole": {
+                    "description": "default to MemberRoleAdmin right now",
+                    "type": "string"
+                }
+            }
+        },
+        "body.TeamMemberUpdate": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "teamRole": {
+                    "description": "default to MemberRoleAdmin right now",
+                    "type": "string"
+                }
+            }
+        },
+        "body.TeamRead": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "members": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/body.TeamMember"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "ownerId": {
+                    "type": "string"
+                },
+                "resources": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/body.TeamResource"
+                    }
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.TeamResource": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.TeamUpdate": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 1000
+                },
+                "members": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "minItems": 0,
+                    "items": {
+                        "$ref": "#/definitions/body.TeamMemberUpdate"
+                    }
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                },
+                "resources": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "minItems": 0,
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "body.TimestampedSystemCapacities": {
+            "type": "object",
+            "properties": {
+                "capacities": {
+                    "$ref": "#/definitions/body.SystemCapacities"
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.Usage": {
+            "type": "object",
+            "properties": {
+                "cpuCores": {
+                    "type": "number"
+                },
+                "diskSize": {
+                    "type": "integer"
+                },
+                "ram": {
+                    "type": "number"
+                }
+            }
+        },
+        "body.UserData": {
+            "type": "object",
+            "required": [
+                "key",
+                "value"
+            ],
+            "properties": {
+                "key": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                },
+                "value": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                }
+            }
+        },
+        "body.UserRead": {
+            "type": "object",
+            "properties": {
+                "admin": {
+                    "type": "boolean"
+                },
+                "apiKeys": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/body.ApiKey"
+                    }
+                },
+                "email": {
+                    "type": "string"
+                },
+                "firstName": {
+                    "type": "string"
+                },
+                "gravatarUrl": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lastName": {
+                    "type": "string"
+                },
+                "publicKeys": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/body.PublicKey"
+                    }
+                },
+                "quota": {
+                    "$ref": "#/definitions/body.Quota"
+                },
+                "role": {
+                    "$ref": "#/definitions/body.Role"
+                },
+                "storageUrl": {
+                    "type": "string"
+                },
+                "usage": {
+                    "$ref": "#/definitions/body.Usage"
+                },
+                "userData": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/body.UserData"
+                    }
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.UserUpdate": {
+            "type": "object",
+            "properties": {
+                "apiKeys": {
+                    "description": "ApiKeys specifies the API keys that should remain. If an API key is not in this list, it will be deleted.\nHowever, API keys cannot be created, use /apiKeys endpoint to create new API keys.",
+                    "type": "array",
+                    "maxItems": 100,
+                    "minItems": 0,
+                    "items": {
+                        "$ref": "#/definitions/body.ApiKey"
+                    }
+                },
+                "publicKeys": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "minItems": 0,
+                    "items": {
+                        "$ref": "#/definitions/body.PublicKey"
+                    }
+                },
+                "userData": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "minItems": 0,
+                    "items": {
+                        "$ref": "#/definitions/body.UserData"
+                    }
+                }
+            }
+        },
         "body.VmActionCreate": {
             "type": "object",
             "required": [
@@ -1280,154 +4813,7 @@ const docTemplateV2 = `{
                 }
             }
         },
-        "go-deploy_dto_v2_body.HttpProxyCreate": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "customDomain": {
-                    "description": "CustomDomain is the domain that the deployment will be available on.\nThe max length is set to 243 to allow for a sub domain when confirming the domain.",
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 30,
-                    "minLength": 3
-                }
-            }
-        },
-        "go-deploy_dto_v2_body.HttpProxyRead": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "customDomain": {
-                    "$ref": "#/definitions/body.CustomDomainRead"
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 30,
-                    "minLength": 3
-                },
-                "url": {
-                    "type": "string"
-                }
-            }
-        },
-        "go-deploy_dto_v2_body.HttpProxyUpdate": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "customDomain": {
-                    "description": "CustomDomain is the domain that the deployment will be available on.\nThe max length is set to 243 to allow for a sub domain when confirming the domain.",
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 30,
-                    "minLength": 3
-                }
-            }
-        },
-        "go-deploy_dto_v2_body.PortCreate": {
-            "type": "object",
-            "required": [
-                "name",
-                "port",
-                "protocol"
-            ],
-            "properties": {
-                "httpProxy": {
-                    "$ref": "#/definitions/go-deploy_dto_v2_body.HttpProxyCreate"
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 100,
-                    "minLength": 1
-                },
-                "port": {
-                    "type": "integer",
-                    "maximum": 65535,
-                    "minimum": 1
-                },
-                "protocol": {
-                    "type": "string",
-                    "enum": [
-                        "tcp",
-                        "udp"
-                    ]
-                }
-            }
-        },
-        "go-deploy_dto_v2_body.PortRead": {
-            "type": "object",
-            "properties": {
-                "externalPort": {
-                    "type": "integer"
-                },
-                "httpProxy": {
-                    "$ref": "#/definitions/go-deploy_dto_v2_body.HttpProxyRead"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "port": {
-                    "type": "integer"
-                },
-                "protocol": {
-                    "type": "string"
-                }
-            }
-        },
-        "go-deploy_dto_v2_body.PortUpdate": {
-            "type": "object",
-            "required": [
-                "name",
-                "port",
-                "protocol"
-            ],
-            "properties": {
-                "httpProxy": {
-                    "$ref": "#/definitions/go-deploy_dto_v2_body.HttpProxyUpdate"
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 100,
-                    "minLength": 1
-                },
-                "port": {
-                    "type": "integer",
-                    "maximum": 65535,
-                    "minimum": 1
-                },
-                "protocol": {
-                    "type": "string",
-                    "enum": [
-                        "tcp",
-                        "udp"
-                    ]
-                }
-            }
-        },
-        "go-deploy_dto_v2_body.Specs": {
-            "type": "object",
-            "properties": {
-                "cpuCores": {
-                    "type": "integer"
-                },
-                "diskSize": {
-                    "type": "integer"
-                },
-                "ram": {
-                    "type": "integer"
-                }
-            }
-        },
-        "go-deploy_dto_v2_body.VmCreate": {
+        "body.VmCreate": {
             "type": "object",
             "required": [
                 "cpuCores",
@@ -1455,7 +4841,7 @@ const docTemplateV2 = `{
                     "maxItems": 10,
                     "minItems": 0,
                     "items": {
-                        "$ref": "#/definitions/go-deploy_dto_v2_body.PortCreate"
+                        "$ref": "#/definitions/body.PortCreate"
                     }
                 },
                 "ram": {
@@ -1470,7 +4856,7 @@ const docTemplateV2 = `{
                 }
             }
         },
-        "go-deploy_dto_v2_body.VmCreated": {
+        "body.VmCreated": {
             "type": "object",
             "properties": {
                 "id": {
@@ -1481,7 +4867,7 @@ const docTemplateV2 = `{
                 }
             }
         },
-        "go-deploy_dto_v2_body.VmDeleted": {
+        "body.VmDeleted": {
             "type": "object",
             "properties": {
                 "id": {
@@ -1492,7 +4878,7 @@ const docTemplateV2 = `{
                 }
             }
         },
-        "go-deploy_dto_v2_body.VmGpuLease": {
+        "body.VmGpuLease": {
             "type": "object",
             "properties": {
                 "activatedAt": {
@@ -1525,14 +4911,17 @@ const docTemplateV2 = `{
                 }
             }
         },
-        "go-deploy_dto_v2_body.VmRead": {
+        "body.VmRead": {
             "type": "object",
             "properties": {
+                "accessedAt": {
+                    "type": "string"
+                },
                 "createdAt": {
                     "type": "string"
                 },
                 "gpu": {
-                    "$ref": "#/definitions/go-deploy_dto_v2_body.VmGpuLease"
+                    "$ref": "#/definitions/body.VmGpuLease"
                 },
                 "host": {
                     "type": "string"
@@ -1552,14 +4941,14 @@ const docTemplateV2 = `{
                 "ports": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/go-deploy_dto_v2_body.PortRead"
+                        "$ref": "#/definitions/body.PortRead"
                     }
                 },
                 "repairedAt": {
                     "type": "string"
                 },
                 "specs": {
-                    "$ref": "#/definitions/go-deploy_dto_v2_body.Specs"
+                    "$ref": "#/definitions/body.VmSpecs"
                 },
                 "sshConnectionString": {
                     "type": "string"
@@ -1584,7 +4973,7 @@ const docTemplateV2 = `{
                 }
             }
         },
-        "go-deploy_dto_v2_body.VmSnapshotCreated": {
+        "body.VmSnapshotCreated": {
             "type": "object",
             "properties": {
                 "id": {
@@ -1595,7 +4984,7 @@ const docTemplateV2 = `{
                 }
             }
         },
-        "go-deploy_dto_v2_body.VmSnapshotDeleted": {
+        "body.VmSnapshotDeleted": {
             "type": "object",
             "properties": {
                 "id": {
@@ -1606,7 +4995,7 @@ const docTemplateV2 = `{
                 }
             }
         },
-        "go-deploy_dto_v2_body.VmSnapshotRead": {
+        "body.VmSnapshotRead": {
             "type": "object",
             "properties": {
                 "created": {
@@ -1623,7 +5012,21 @@ const docTemplateV2 = `{
                 }
             }
         },
-        "go-deploy_dto_v2_body.VmUpdate": {
+        "body.VmSpecs": {
+            "type": "object",
+            "properties": {
+                "cpuCores": {
+                    "type": "integer"
+                },
+                "diskSize": {
+                    "type": "integer"
+                },
+                "ram": {
+                    "type": "integer"
+                }
+            }
+        },
+        "body.VmUpdate": {
             "type": "object",
             "properties": {
                 "cpuCores": {
@@ -1645,7 +5048,7 @@ const docTemplateV2 = `{
                     "maxItems": 10,
                     "minItems": 0,
                     "items": {
-                        "$ref": "#/definitions/go-deploy_dto_v2_body.PortUpdate"
+                        "$ref": "#/definitions/body.PortUpdate"
                     }
                 },
                 "ram": {
@@ -1654,13 +5057,95 @@ const docTemplateV2 = `{
                 }
             }
         },
-        "go-deploy_dto_v2_body.VmUpdated": {
+        "body.VmUpdated": {
             "type": "object",
             "properties": {
                 "id": {
                     "type": "string"
                 },
                 "jobId": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.Volume": {
+            "type": "object",
+            "required": [
+                "appPath",
+                "name",
+                "serverPath"
+            ],
+            "properties": {
+                "appPath": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 30,
+                    "minLength": 3
+                },
+                "serverPath": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                }
+            }
+        },
+        "body.WorkerStatusRead": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "reportedAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.ZoneEndpoints": {
+            "type": "object",
+            "properties": {
+                "deployment": {
+                    "type": "string"
+                },
+                "storage": {
+                    "type": "string"
+                },
+                "vm": {
+                    "type": "string"
+                },
+                "vmApp": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.ZoneRead": {
+            "type": "object",
+            "properties": {
+                "capabilities": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "endpoints": {
+                    "$ref": "#/definitions/body.ZoneEndpoints"
+                },
+                "legacy": {
+                    "type": "boolean"
+                },
+                "name": {
                     "type": "string"
                 }
             }

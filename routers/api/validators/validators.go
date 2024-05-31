@@ -2,7 +2,6 @@ package validators
 
 import (
 	"github.com/go-playground/validator/v10"
-	bodyV1 "go-deploy/dto/v1/body"
 	bodyV2 "go-deploy/dto/v2/body"
 	"go-deploy/pkg/config"
 	"golang.org/x/crypto/ssh"
@@ -55,7 +54,7 @@ func EnvName(fl validator.FieldLevel) bool {
 // EnvList is a validator for environment variable lists.
 // It ensures that every environment variable name is unique
 func EnvList(fl validator.FieldLevel) bool {
-	envList, ok := fl.Field().Interface().([]bodyV1.Env)
+	envList, ok := fl.Field().Interface().([]bodyV2.Env)
 	if !ok {
 		return false
 	}
@@ -256,7 +255,7 @@ func TeamName(fl validator.FieldLevel) bool {
 // TeamMemberList is a validator for team member lists.
 // It ensures that every team member is unique
 func TeamMemberList(fl validator.FieldLevel) bool {
-	if memberListUpdate, ok := fl.Field().Interface().([]bodyV1.TeamMemberUpdate); ok {
+	if memberListUpdate, ok := fl.Field().Interface().([]bodyV2.TeamMemberUpdate); ok {
 		id := make(map[string]bool)
 		for _, member := range memberListUpdate {
 			if _, ok := id[member.ID]; ok {
@@ -266,7 +265,7 @@ func TeamMemberList(fl validator.FieldLevel) bool {
 		}
 
 		return true
-	} else if memberListCreate, ok := fl.Field().Interface().([]bodyV1.TeamMemberCreate); ok {
+	} else if memberListCreate, ok := fl.Field().Interface().([]bodyV2.TeamMemberCreate); ok {
 		id := make(map[string]bool)
 		for _, member := range memberListCreate {
 			if _, ok := id[member.ID]; ok {

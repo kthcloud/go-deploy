@@ -1,6 +1,6 @@
 package model
 
-type Host struct {
+type VmHost struct {
 	Name string `bson:"name"`
 }
 

@@ -1,9 +1,9 @@
 package routes
 
-import v1 "go-deploy/routers/api/v1"
+import v2 "go-deploy/routers/api/v2"
 
 const (
-	ZonesPath = "/v1/zones"
+	ZonesPath = "/v2/zones"
 	// TODO:
 	//ZonePath  = "/zones/:id"
 )
@@ -16,6 +16,6 @@ func ZoneRoutes() *ZoneRoutingGroup {
 
 func (group *ZoneRoutingGroup) PrivateRoutes() []Route {
 	return []Route{
-		{Method: "GET", Pattern: ZonesPath, HandlerFunc: v1.ListZones},
+		{Method: "GET", Pattern: ZonesPath, HandlerFunc: v2.ListZones},
 	}
 }

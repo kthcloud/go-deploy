@@ -347,7 +347,7 @@ func UpdateVmOwner(job *model.Job) error {
 
 	if job.HasArg("resourceMigrationId") {
 		resourceMigrationID := job.Args["resourceMigrationId"].(string)
-		err = service.V1().ResourceMigrations().Delete(resourceMigrationID)
+		err = service.V2().ResourceMigrations().Delete(resourceMigrationID)
 		if err != nil {
 			return jErrors.MakeTerminatedError(err)
 		}

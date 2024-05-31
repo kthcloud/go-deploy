@@ -10,7 +10,7 @@ import (
 	"go-deploy/pkg/db/resources/deployment_repo"
 	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems/k8s/models"
-	"go-deploy/service/v1/deployments/k8s_service"
+	"go-deploy/service/v2/deployments/k8s_service"
 )
 
 func DeploymentStatusListener(ctx context.Context) error {

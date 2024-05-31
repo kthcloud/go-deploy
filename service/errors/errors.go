@@ -54,6 +54,9 @@ var (
 	// AuthInfoNotAvailableErr is returned when the auth info is not available
 	AuthInfoNotAvailableErr = fmt.Errorf("auth info not available")
 
+	// BadDiscoveryTokenErr is returned when the discovery token is invalid.
+	BadDiscoveryTokenErr = fmt.Errorf("bad discovery token")
+
 	// DeploymentNotFoundErr is returned when the deployment is not found.
 	// This is most likely caused by a race-condition between a some model call and a deletion call.
 	DeploymentNotFoundErr = fmt.Errorf("deployment not found")

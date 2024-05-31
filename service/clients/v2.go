@@ -9,5 +9,16 @@ type V2 interface {
 	Auth() *core.AuthInfo
 	HasAuth() bool
 
+	Deployments() apiV2.Deployments
+	Discovery() apiV2.Discovery
+	Events() apiV2.Events
+	Jobs() apiV2.Jobs
+	Notifications() apiV2.Notifications
+	SMs() apiV2.SMs
+	Status() apiV2.Status
+	Teams() apiV2.Teams
+	Users() apiV2.Users
+	ResourceMigrations() apiV2.ResourceMigrations
+	System() apiV2.System
 	VMs() apiV2.VMs
 }

@@ -3,11 +3,9 @@ package vms
 import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	bodyV1 "go-deploy/dto/v1/body"
 	"go-deploy/dto/v2/body"
 	"go-deploy/models/model"
 	"go-deploy/test/e2e"
-	"go-deploy/test/e2e/v1"
 	"go-deploy/test/e2e/v2"
 	"net/http"
 	"os"
@@ -251,10 +249,10 @@ func TestCreateShared(t *testing.T) {
 	t.Parallel()
 
 	vm := v2.WithDefaultVM(t)
-	team := v1.WithTeam(t, bodyV1.TeamCreate{
+	team := v2.WithTeam(t, body.TeamCreate{
 		Name:      e2e.GenName(),
 		Resources: []string{vm.ID},
-		Members:   []bodyV1.TeamMemberCreate{{ID: model.TestDefaultUserID}},
+		Members:   []body.TeamMemberCreate{{ID: model.TestDefaultUserID}},
 	}, e2e.PowerUser)
 
 	vmRead := v2.GetVM(t, vm.ID)

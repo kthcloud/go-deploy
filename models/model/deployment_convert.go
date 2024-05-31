@@ -2,7 +2,7 @@ package model
 
 import (
 	"fmt"
-	"go-deploy/dto/v1/body"
+	"go-deploy/dto/v2/body"
 	"go-deploy/pkg/log"
 	"go-deploy/utils"
 	"golang.org/x/net/idna"
@@ -63,21 +63,6 @@ func (deployment *Deployment) ToDTO(smURL *string, externalPort *int, teams []st
 		healthCheckPath = &app.PingPath
 	}
 
-	var customDomain *string
-	if app.CustomDomain != nil {
-		customDomain = &app.CustomDomain.Domain
-	}
-
-	var customDomainSecret *string
-	if app.CustomDomain != nil {
-		customDomainSecret = &app.CustomDomain.Secret
-	}
-
-	var customDomainStatus *string
-	if app.CustomDomain != nil {
-		customDomainStatus = &app.CustomDomain.Status
-	}
-
 	var deploymentError *string
 	if deployment.Error != nil {
 		deploymentError = &deployment.Error.Description
@@ -100,6 +85,16 @@ func (deployment *Deployment) ToDTO(smURL *string, externalPort *int, teams []st
 		}
 	}
 
+	var customDomain *body.CustomDomainRead
+	if app.CustomDomain != nil {
+		customDomain = &body.CustomDomainRead{
+			Domain: app.CustomDomain.Domain,
+			URL:    fmt.Sprintf("https://%s", app.CustomDomain.Domain),
+			Status: app.CustomDomain.Status,
+			Secret: app.CustomDomain.Secret,
+		}
+	}
+
 	return body.DeploymentRead{
 		ID:      deployment.ID,
 		Name:    deployment.Name,
@@ -113,11 +108,13 @@ func (deployment *Deployment) ToDTO(smURL *string, externalPort *int, teams []st
 		RestartedAt: utils.NonZeroOrNil(deployment.RestartedAt),
 		AccessedAt:  deployment.AccessedAt,
 
-		CpuCores: app.CpuCores,
-		RAM:      app.RAM,
-		Replicas: app.Replicas,
+		URL: deployment.GetURL(externalPort),
+		Specs: body.DeploymentSpecs{
+			CpuCores: app.CpuCores,
+			RAM:      app.RAM,
+			Replicas: app.Replicas,
+		},
 
-		URL:             deployment.GetURL(externalPort),
 		Envs:            envs,
 		Volumes:         volumes,
 		InitCommands:    app.InitCommands,
@@ -126,11 +123,7 @@ func (deployment *Deployment) ToDTO(smURL *string, externalPort *int, teams []st
 		InternalPort:    app.InternalPort,
 		Image:           image,
 		HealthCheckPath: healthCheckPath,
-
-		CustomDomain:       customDomain,
-		CustomDomainURL:    deployment.GetCustomDomainURL(),
-		CustomDomainSecret: customDomainSecret,
-		CustomDomainStatus: customDomainStatus,
+		CustomDomain:    customDomain,
 
 		Status:        status,
 		Error:         deploymentError,

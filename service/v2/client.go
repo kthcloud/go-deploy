@@ -1,27 +1,34 @@
 package v2
 
 import (
-	"go-deploy/service/clients"
 	"go-deploy/service/core"
 	"go-deploy/service/v2/api"
+	"go-deploy/service/v2/deployments"
+	"go-deploy/service/v2/discovery"
+	"go-deploy/service/v2/events"
+	"go-deploy/service/v2/jobs"
+	"go-deploy/service/v2/notifications"
+	"go-deploy/service/v2/resource_migrations"
+	"go-deploy/service/v2/sms"
+	"go-deploy/service/v2/status"
+	"go-deploy/service/v2/system"
+	"go-deploy/service/v2/teams"
+	"go-deploy/service/v2/users"
 	"go-deploy/service/v2/vms"
 )
 
 type Client struct {
-	V1 clients.V1
-
 	auth  *core.AuthInfo
 	cache *core.Cache
 }
 
-func New(v1 clients.V1, authInfo ...*core.AuthInfo) *Client {
+func New(authInfo ...*core.AuthInfo) *Client {
 	var auth *core.AuthInfo
 	if len(authInfo) > 0 {
 		auth = authInfo[0]
 	}
 
 	return &Client{
-		V1:    v1,
 		auth:  auth,
 		cache: core.NewCache(),
 	}
@@ -35,6 +42,50 @@ func (c *Client) HasAuth() bool {
 	return c.auth != nil
 }
 
+func (c *Client) Deployments() api.Deployments {
+	return deployments.New(c, c.cache)
+}
+
+func (c *Client) Discovery() api.Discovery {
+	return discovery.New(c, c.cache)
+}
+
+func (c *Client) Events() api.Events {
+	return events.New(c, c.cache)
+}
+
+func (c *Client) Jobs() api.Jobs {
+	return jobs.New(c, c.cache)
+}
+
+func (c *Client) Notifications() api.Notifications {
+	return notifications.New(c, c.cache)
+}
+
+func (c *Client) ResourceMigrations() api.ResourceMigrations {
+	return resource_migrations.New(c, c.cache)
+}
+
+func (c *Client) SMs() api.SMs {
+	return sms.New(c, c.cache)
+}
+
+func (c *Client) Status() api.Status {
+	return status.New(c, c.cache)
+}
+
+func (c *Client) System() api.System {
+	return system.New(c, c.cache)
+}
+
+func (c *Client) Teams() api.Teams {
+	return teams.New(c, c.cache)
+}
+
+func (c *Client) Users() api.Users {
+	return users.New(c, c.cache)
+}
+
 func (c *Client) VMs() api.VMs {
-	return vms.New(c.V1, c, c.cache)
+	return vms.New(c, c.cache)
 }

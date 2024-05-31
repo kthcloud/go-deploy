@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	MetricsPath = "/v1/metrics"
+	MetricsPath = "/v2/metrics"
 )
 
 type MetricsRoutingGroup struct {

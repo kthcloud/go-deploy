@@ -1,1267 +1,3516 @@
-openapi: 3.0.1
+definitions:
+  body.ApiKey:
+    properties:
+      createdAt:
+        type: string
+      expiresAt:
+        type: string
+      name:
+        type: string
+    type: object
+  body.ApiKeyCreate:
+    properties:
+      expiresAt:
+        type: string
+      name:
+        type: string
+    required:
+    - expiresAt
+    - name
+    type: object
+  body.ApiKeyCreated:
+    properties:
+      createdAt:
+        type: string
+      expiresAt:
+        type: string
+      key:
+        type: string
+      name:
+        type: string
+    type: object
+  body.BindingError:
+    properties:
+      validationErrors:
+        additionalProperties:
+          items:
+            type: string
+          type: array
+        type: object
+    type: object
+  body.CiConfig:
+    properties:
+      config:
+        type: string
+    type: object
+  body.CpuCoreCapacities:
+    properties:
+      total:
+        type: integer
+    type: object
+  body.CustomDomainRead:
+    properties:
+      domain:
+        type: string
+      secret:
+        type: string
+      status:
+        type: string
+      url:
+        type: string
+    type: object
+  body.DeploymentCommand:
+    properties:
+      command:
+        enum:
+        - restart
+        type: string
+    required:
+    - command
+    type: object
+  body.DeploymentCreate:
+    properties:
+      args:
+        items:
+          type: string
+        maxItems: 100
+        minItems: 0
+        type: array
+      cpuCores:
+        minimum: 0.1
+        type: number
+      customDomain:
+        description: |-
+          CustomDomain is the domain that the deployment will be available on.
+          The max length is set to 243 to allow for a subdomain when confirming the domain.
+        type: string
+      envs:
+        items:
+          $ref: '#/definitions/body.Env'
+        maxItems: 1000
+        minItems: 0
+        type: array
+      healthCheckPath:
+        maxLength: 1000
+        minLength: 0
+        type: string
+      image:
+        maxLength: 1000
+        minLength: 1
+        type: string
+      initCommands:
+        items:
+          type: string
+        maxItems: 100
+        minItems: 0
+        type: array
+      name:
+        maxLength: 30
+        minLength: 3
+        type: string
+      private:
+        type: boolean
+      ram:
+        minimum: 0.1
+        type: number
+      replicas:
+        maximum: 100
+        minimum: 0
+        type: integer
+      volumes:
+        items:
+          $ref: '#/definitions/body.Volume'
+        maxItems: 100
+        minItems: 0
+        type: array
+      zone:
+        description: |-
+          Zone is the zone that the deployment will be created in.
+          If the zone is not set, the deployment will be created in the default zone.
+        type: string
+    required:
+    - name
+    type: object
+  body.DeploymentCreated:
+    properties:
+      id:
+        type: string
+      jobId:
+        type: string
+    type: object
+  body.DeploymentRead:
+    properties:
+      accessedAt:
+        type: string
+      args:
+        items:
+          type: string
+        type: array
+      createdAt:
+        type: string
+      customDomain:
+        $ref: '#/definitions/body.CustomDomainRead'
+      envs:
+        items:
+          $ref: '#/definitions/body.Env'
+        type: array
+      error:
+        type: string
+      healthCheckPath:
+        type: string
+      id:
+        type: string
+      image:
+        type: string
+      initCommands:
+        items:
+          type: string
+        type: array
+      integrations:
+        description: |-
+          Integrations are currently not used, but could be used if we wanted to add a list of integrations to the deployment
+
+          For example GitHub
+        items:
+          type: string
+        type: array
+      internalPort:
+        type: integer
+      name:
+        type: string
+      ownerId:
+        type: string
+      pingResult:
+        type: integer
+      private:
+        type: boolean
+      repairedAt:
+        type: string
+      replicaStatus:
+        $ref: '#/definitions/body.ReplicaStatus'
+      restartedAt:
+        type: string
+      specs:
+        $ref: '#/definitions/body.DeploymentSpecs'
+      status:
+        type: string
+      storageUrl:
+        type: string
+      teams:
+        items:
+          type: string
+        type: array
+      type:
+        type: string
+      updatedAt:
+        type: string
+      url:
+        type: string
+      volumes:
+        items:
+          $ref: '#/definitions/body.Volume'
+        type: array
+      zone:
+        type: string
+    type: object
+  body.DeploymentSpecs:
+    properties:
+      cpuCores:
+        type: number
+      ram:
+        type: number
+      replicas:
+        type: integer
+    type: object
+  body.DeploymentUpdate:
+    properties:
+      args:
+        items:
+          type: string
+        maxItems: 100
+        minItems: 0
+        type: array
+      cpuCores:
+        minimum: 0.1
+        type: number
+      customDomain:
+        description: |-
+          CustomDomain is the domain that the deployment will be available on.
+          The max length is set to 243 to allow for a subdomain when confirming the domain.
+        type: string
+      envs:
+        items:
+          $ref: '#/definitions/body.Env'
+        maxItems: 1000
+        minItems: 0
+        type: array
+      healthCheckPath:
+        maxLength: 1000
+        minLength: 0
+        type: string
+      image:
+        maxLength: 1000
+        minLength: 1
+        type: string
+      initCommands:
+        items:
+          type: string
+        maxItems: 100
+        minItems: 0
+        type: array
+      name:
+        maxLength: 30
+        minLength: 3
+        type: string
+      private:
+        type: boolean
+      ram:
+        minimum: 0.1
+        type: number
+      replicas:
+        maximum: 100
+        minimum: 0
+        type: integer
+      volumes:
+        items:
+          $ref: '#/definitions/body.Volume'
+        maxItems: 100
+        minItems: 0
+        type: array
+    required:
+    - name
+    type: object
+  body.DeploymentUpdated:
+    properties:
+      id:
+        type: string
+      jobId:
+        type: string
+    type: object
+  body.DiscoverRead:
+    properties:
+      roles:
+        items:
+          $ref: '#/definitions/body.Role'
+        type: array
+      version:
+        type: string
+    type: object
+  body.Env:
+    properties:
+      name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      value:
+        maxLength: 10000
+        minLength: 1
+        type: string
+    required:
+    - name
+    - value
+    type: object
+  body.GpuCapacities:
+    properties:
+      total:
+        type: integer
+    type: object
+  body.GpuGroupRead:
+    properties:
+      available:
+        type: integer
+      displayName:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      total:
+        type: integer
+      vendor:
+        type: string
+      zone:
+        type: string
+    type: object
+  body.GpuLeaseCreate:
+    properties:
+      gpuGroupId:
+        description: |-
+          GpuGroupID is used to specify the GPU to lease.
+          As such, the lease does not specify which specific GPU to lease, but rather the type of GPU to lease.
+        type: string
+      leaseForever:
+        description: LeaseForever is used to specify whether the lease should be created
+          forever.
+        type: boolean
+    required:
+    - gpuGroupId
+    type: object
+  body.GpuLeaseCreated:
+    properties:
+      id:
+        type: string
+      jobId:
+        type: string
+    type: object
+  body.GpuLeaseDeleted:
+    properties:
+      id:
+        type: string
+      jobId:
+        type: string
+    type: object
+  body.GpuLeaseRead:
+    properties:
+      activatedAt:
+        description: |-
+          ActivatedAt specifies the time when the lease was activated. This is the time the user first attached the GPU
+          or 1 day after the lease was created if the user did not attach the GPU.
+        type: string
+      active:
+        type: boolean
+      assignedAt:
+        description: AssignedAt specifies the time when the lease was assigned to
+          the user.
+        type: string
+      createdAt:
+        type: string
+      expiredAt:
+        type: string
+      expiresAt:
+        description: |-
+          ExpiresAt specifies the time when the lease will expire.
+          This is only present if the lease is active.
+        type: string
+      gpuGroupId:
+        type: string
+      id:
+        type: string
+      leaseDuration:
+        type: number
+      queuePosition:
+        type: integer
+      userId:
+        type: string
+      vmId:
+        description: VmID is set when the lease is attached to a VM.
+        type: string
+    type: object
+  body.GpuLeaseUpdate:
+    properties:
+      vmId:
+        description: |-
+          VmID is used to specify the VM to attach the lease to.
+
+          - If specified, the lease will be attached to the VM.
+
+          - If the lease is already attached to a VM, it will be detached from the current VM and attached to the new VM.
+
+          - If the lease is not active, specifying a VM will activate the lease.
+
+          - If the lease is not assigned, an error will be returned.
+        type: string
+    type: object
+  body.GpuLeaseUpdated:
+    properties:
+      id:
+        type: string
+      jobId:
+        type: string
+    type: object
+  body.HarborWebhook:
+    properties:
+      event_data:
+        properties:
+          repository:
+            properties:
+              date_created:
+                type: integer
+              name:
+                type: string
+              namespace:
+                type: string
+              repo_full_name:
+                type: string
+              repo_type:
+                type: string
+            type: object
+          resources:
+            items:
+              properties:
+                digest:
+                  type: string
+                resource_url:
+                  type: string
+                tag:
+                  type: string
+              type: object
+            type: array
+        type: object
+      occur_at:
+        type: integer
+      operator:
+        type: string
+      type:
+        type: string
+    type: object
+  body.HostCapacities:
+    properties:
+      displayName:
+        type: string
+      gpu:
+        properties:
+          count:
+            type: integer
+        type: object
+      name:
+        type: string
+      ram:
+        properties:
+          total:
+            type: integer
+        type: object
+      zone:
+        description: Zone is the name of the zone where the host is located.
+        type: string
+    type: object
+  body.HostRead:
+    properties:
+      displayName:
+        type: string
+      name:
+        type: string
+      zone:
+        description: Zone is the name of the zone where the host is located.
+        type: string
+    type: object
+  body.HttpProxyCreate:
+    properties:
+      customDomain:
+        description: |-
+          CustomDomain is the domain that the deployment will be available on.
+          The max length is set to 243 to allow for a sub domain when confirming the domain.
+        type: string
+      name:
+        maxLength: 30
+        minLength: 3
+        type: string
+    required:
+    - name
+    type: object
+  body.HttpProxyRead:
+    properties:
+      customDomain:
+        $ref: '#/definitions/body.CustomDomainRead'
+      name:
+        maxLength: 30
+        minLength: 3
+        type: string
+      url:
+        type: string
+    required:
+    - name
+    type: object
+  body.HttpProxyUpdate:
+    properties:
+      customDomain:
+        description: |-
+          CustomDomain is the domain that the deployment will be available on.
+          The max length is set to 243 to allow for a sub domain when confirming the domain.
+        type: string
+      name:
+        maxLength: 30
+        minLength: 3
+        type: string
+    required:
+    - name
+    type: object
+  body.JobRead:
+    properties:
+      createdAt:
+        type: string
+      finishedAt:
+        type: string
+      id:
+        type: string
+      lastError:
+        type: string
+      lastRunAt:
+        type: string
+      runAfter:
+        type: string
+      status:
+        type: string
+      type:
+        type: string
+      userId:
+        type: string
+    type: object
+  body.JobUpdate:
+    properties:
+      status:
+        enum:
+        - pending
+        - running
+        - failed
+        - terminated
+        - finished
+        - completed
+        type: string
+    type: object
+  body.NotificationRead:
+    properties:
+      completedAt:
+        type: string
+      content:
+        additionalProperties: true
+        type: object
+      createdAt:
+        type: string
+      id:
+        type: string
+      readAt:
+        type: string
+      type:
+        type: string
+      userId:
+        type: string
+    type: object
+  body.NotificationUpdate:
+    properties:
+      read:
+        type: boolean
+    type: object
+  body.PortCreate:
+    properties:
+      httpProxy:
+        $ref: '#/definitions/body.HttpProxyCreate'
+      name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      port:
+        maximum: 65535
+        minimum: 1
+        type: integer
+      protocol:
+        enum:
+        - tcp
+        - udp
+        type: string
+    required:
+    - name
+    - port
+    - protocol
+    type: object
+  body.PortRead:
+    properties:
+      externalPort:
+        type: integer
+      httpProxy:
+        $ref: '#/definitions/body.HttpProxyRead'
+      name:
+        type: string
+      port:
+        type: integer
+      protocol:
+        type: string
+    type: object
+  body.PortUpdate:
+    properties:
+      httpProxy:
+        $ref: '#/definitions/body.HttpProxyUpdate'
+      name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      port:
+        maximum: 65535
+        minimum: 1
+        type: integer
+      protocol:
+        enum:
+        - tcp
+        - udp
+        type: string
+    required:
+    - name
+    - port
+    - protocol
+    type: object
+  body.PublicKey:
+    properties:
+      key:
+        type: string
+      name:
+        maxLength: 30
+        minLength: 1
+        type: string
+    required:
+    - key
+    - name
+    type: object
+  body.Quota:
+    properties:
+      cpuCores:
+        type: number
+      diskSize:
+        type: number
+      gpuLeaseDuration:
+        description: in hours
+        type: number
+      ram:
+        type: number
+      snapshots:
+        type: integer
+    type: object
+  body.RamCapacities:
+    properties:
+      total:
+        type: integer
+    type: object
+  body.ReplicaStatus:
+    properties:
+      availableReplicas:
+        description: AvailableReplicas is the number of replicas that are available.
+        type: integer
+      desiredReplicas:
+        description: DesiredReplicas is the number of replicas that the deployment
+          should have.
+        type: integer
+      readyReplicas:
+        description: ReadyReplicas is the number of replicas that are ready.
+        type: integer
+      unavailableReplicas:
+        description: UnavailableReplicas is the number of replicas that are unavailable.
+        type: integer
+    type: object
+  body.ResourceMigrationCreate:
+    properties:
+      resourceId:
+        description: |-
+          ResourceID is the ID of the resource that is being migrated.
+          This can be a VM ID, deployment ID, etc. depending on the type of the migration.
+        type: string
+      status:
+        description: |-
+          Status is the status of the resource migration.
+          It is used by privileged admins to directly accept or reject a migration.
+          The field is ignored by non-admins.
+
+          Possible values:
+          - accepted
+          - pending
+        type: string
+      type:
+        description: |-
+          Type is the type of the resource migration.
+
+          Possible values:
+          - updateOwner
+        enum:
+        - updateOwner
+        type: string
+      updateOwner:
+        description: |-
+          UpdateOwner is the set of parameters that are required for the updateOwner migration type.
+          It is ignored if the migration type is not updateOwner.
+        properties:
+          ownerId:
+            type: string
+        required:
+        - ownerId
+        type: object
+    required:
+    - resourceId
+    - type
+    type: object
+  body.ResourceMigrationCreated:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        type: string
+      id:
+        type: string
+      jobId:
+        description: |-
+          JobID is the ID of the job that was created for the resource migration.
+          It will only be set if the migration was created with status 'accepted'.
+        type: string
+      resourceId:
+        description: |-
+          ResourceID is the ID of the resource that is being migrated.
+          This can be a VM ID, deployment ID, etc. depending on the type of the migration.
+        type: string
+      resourceType:
+        description: |-
+          ResourceType is the type of the resource that is being migrated.
+
+          Possible values:
+          - vm
+          - deployment
+        type: string
+      status:
+        description: |-
+          Status is the status of the resource migration.
+          When this field is set to 'accepted', the migration will take place and then automatically be deleted.
+        type: string
+      type:
+        description: |-
+          Type is the type of the resource migration.
+
+          Possible values:
+          - updateOwner
+        type: string
+      updateOwner:
+        description: |-
+          UpdateOwner is the set of parameters that are required for the updateOwner migration type.
+          It is empty if the migration type is not updateOwner.
+        properties:
+          ownerId:
+            type: string
+        type: object
+      userId:
+        description: UserID is the ID of the user who initiated the migration.
+        type: string
+    type: object
+  body.ResourceMigrationRead:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        type: string
+      id:
+        type: string
+      resourceId:
+        description: |-
+          ResourceID is the ID of the resource that is being migrated.
+          This can be a VM ID, deployment ID, etc. depending on the type of the migration.
+        type: string
+      resourceType:
+        description: |-
+          ResourceType is the type of the resource that is being migrated.
+
+          Possible values:
+          - vm
+          - deployment
+        type: string
+      status:
+        description: |-
+          Status is the status of the resource migration.
+          When this field is set to 'accepted', the migration will take place and then automatically be deleted.
+        type: string
+      type:
+        description: |-
+          Type is the type of the resource migration.
+
+          Possible values:
+          - updateOwner
+        type: string
+      updateOwner:
+        description: |-
+          UpdateOwner is the set of parameters that are required for the updateOwner migration type.
+          It is empty if the migration type is not updateOwner.
+        properties:
+          ownerId:
+            type: string
+        type: object
+      userId:
+        description: UserID is the ID of the user who initiated the migration.
+        type: string
+    type: object
+  body.ResourceMigrationUpdate:
+    properties:
+      code:
+        description: |-
+          Code is a token required when accepting a migration if the acceptor is not an admin.
+          It is sent to the acceptor using the notification API
+        type: string
+      status:
+        description: |-
+          Status is the status of the resource migration.
+          It is used to accept a migration by setting the status to 'accepted'.
+          If the acceptor is not an admin, a Code must be provided.
+
+          Possible values:
+          - accepted
+          - pending
+        type: string
+    required:
+    - status
+    type: object
+  body.ResourceMigrationUpdated:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        type: string
+      id:
+        type: string
+      jobId:
+        description: |-
+          JobID is the ID of the job that was created for the resource migration.
+          It will only be set if the migration was updated with status 'accepted'.
+        type: string
+      resourceId:
+        description: |-
+          ResourceID is the ID of the resource that is being migrated.
+          This can be a VM ID, deployment ID, etc. depending on the type of the migration.
+        type: string
+      resourceType:
+        description: |-
+          ResourceType is the type of the resource that is being migrated.
+
+          Possible values:
+          - vm
+          - deployment
+        type: string
+      status:
+        description: |-
+          Status is the status of the resource migration.
+          When this field is set to 'accepted', the migration will take place and then automatically be deleted.
+        type: string
+      type:
+        description: |-
+          Type is the type of the resource migration.
+
+          Possible values:
+          - updateOwner
+        type: string
+      updateOwner:
+        description: |-
+          UpdateOwner is the set of parameters that are required for the updateOwner migration type.
+          It is empty if the migration type is not updateOwner.
+        properties:
+          ownerId:
+            type: string
+        type: object
+      userId:
+        description: UserID is the ID of the user who initiated the migration.
+        type: string
+    type: object
+  body.Role:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      permissions:
+        items:
+          type: string
+        type: array
+      quota:
+        $ref: '#/definitions/body.Quota'
+    type: object
+  body.SmDeleted:
+    properties:
+      id:
+        type: string
+      jobId:
+        type: string
+    type: object
+  body.SmRead:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: string
+      ownerId:
+        type: string
+      url:
+        type: string
+      zone:
+        type: string
+    type: object
+  body.SystemCapacities:
+    properties:
+      cpuCore:
+        $ref: '#/definitions/body.CpuCoreCapacities'
+      gpu:
+        $ref: '#/definitions/body.GpuCapacities'
+      hosts:
+        items:
+          $ref: '#/definitions/body.HostCapacities'
+        type: array
+      ram:
+        $ref: '#/definitions/body.RamCapacities'
+    type: object
+  body.TeamCreate:
+    properties:
+      description:
+        maxLength: 1000
+        type: string
+      members:
+        items:
+          $ref: '#/definitions/body.TeamMemberCreate'
+        maxItems: 100
+        minItems: 0
+        type: array
+      name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      resources:
+        items:
+          type: string
+        maxItems: 100
+        minItems: 0
+        type: array
+    required:
+    - name
+    type: object
+  body.TeamMember:
+    properties:
+      addedAt:
+        type: string
+      email:
+        type: string
+      firstName:
+        type: string
+      gravatarUrl:
+        type: string
+      id:
+        type: string
+      joinedAt:
+        type: string
+      lastName:
+        type: string
+      memberStatus:
+        type: string
+      teamRole:
+        type: string
+      username:
+        type: string
+    type: object
+  body.TeamMemberCreate:
+    properties:
+      id:
+        type: string
+      teamRole:
+        description: default to MemberRoleAdmin right now
+        type: string
+    required:
+    - id
+    type: object
+  body.TeamMemberUpdate:
+    properties:
+      id:
+        type: string
+      teamRole:
+        description: default to MemberRoleAdmin right now
+        type: string
+    required:
+    - id
+    type: object
+  body.TeamRead:
+    properties:
+      createdAt:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      members:
+        items:
+          $ref: '#/definitions/body.TeamMember'
+        type: array
+      name:
+        type: string
+      ownerId:
+        type: string
+      resources:
+        items:
+          $ref: '#/definitions/body.TeamResource'
+        type: array
+      updatedAt:
+        type: string
+    type: object
+  body.TeamResource:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      type:
+        type: string
+    type: object
+  body.TeamUpdate:
+    properties:
+      description:
+        maxLength: 1000
+        type: string
+      members:
+        items:
+          $ref: '#/definitions/body.TeamMemberUpdate'
+        maxItems: 100
+        minItems: 0
+        type: array
+      name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      resources:
+        items:
+          type: string
+        maxItems: 100
+        minItems: 0
+        type: array
+    type: object
+  body.TimestampedSystemCapacities:
+    properties:
+      capacities:
+        $ref: '#/definitions/body.SystemCapacities'
+      timestamp:
+        type: string
+    type: object
+  body.Usage:
+    properties:
+      cpuCores:
+        type: number
+      diskSize:
+        type: integer
+      ram:
+        type: number
+    type: object
+  body.UserData:
+    properties:
+      key:
+        maxLength: 255
+        minLength: 1
+        type: string
+      value:
+        maxLength: 255
+        minLength: 1
+        type: string
+    required:
+    - key
+    - value
+    type: object
+  body.UserRead:
+    properties:
+      admin:
+        type: boolean
+      apiKeys:
+        items:
+          $ref: '#/definitions/body.ApiKey'
+        type: array
+      email:
+        type: string
+      firstName:
+        type: string
+      gravatarUrl:
+        type: string
+      id:
+        type: string
+      lastName:
+        type: string
+      publicKeys:
+        items:
+          $ref: '#/definitions/body.PublicKey'
+        type: array
+      quota:
+        $ref: '#/definitions/body.Quota'
+      role:
+        $ref: '#/definitions/body.Role'
+      storageUrl:
+        type: string
+      usage:
+        $ref: '#/definitions/body.Usage'
+      userData:
+        items:
+          $ref: '#/definitions/body.UserData'
+        type: array
+      username:
+        type: string
+    type: object
+  body.UserUpdate:
+    properties:
+      apiKeys:
+        description: |-
+          ApiKeys specifies the API keys that should remain. If an API key is not in this list, it will be deleted.
+          However, API keys cannot be created, use /apiKeys endpoint to create new API keys.
+        items:
+          $ref: '#/definitions/body.ApiKey'
+        maxItems: 100
+        minItems: 0
+        type: array
+      publicKeys:
+        items:
+          $ref: '#/definitions/body.PublicKey'
+        maxItems: 100
+        minItems: 0
+        type: array
+      userData:
+        items:
+          $ref: '#/definitions/body.UserData'
+        maxItems: 100
+        minItems: 0
+        type: array
+    type: object
+  body.VmActionCreate:
+    properties:
+      action:
+        enum:
+        - start
+        - stop
+        - restart
+        - repair
+        type: string
+    required:
+    - action
+    type: object
+  body.VmActionCreated:
+    properties:
+      id:
+        type: string
+      jobId:
+        type: string
+    type: object
+  body.VmCreate:
+    properties:
+      cpuCores:
+        minimum: 1
+        type: integer
+      diskSize:
+        minimum: 10
+        type: integer
+      name:
+        maxLength: 30
+        minLength: 3
+        type: string
+      ports:
+        items:
+          $ref: '#/definitions/body.PortCreate'
+        maxItems: 10
+        minItems: 0
+        type: array
+      ram:
+        minimum: 1
+        type: integer
+      sshPublicKey:
+        type: string
+      zone:
+        type: string
+    required:
+    - cpuCores
+    - diskSize
+    - name
+    - ram
+    - sshPublicKey
+    type: object
+  body.VmCreated:
+    properties:
+      id:
+        type: string
+      jobId:
+        type: string
+    type: object
+  body.VmDeleted:
+    properties:
+      id:
+        type: string
+      jobId:
+        type: string
+    type: object
+  body.VmGpuLease:
+    properties:
+      activatedAt:
+        description: |-
+          ActivatedAt specifies the time when the lease was activated. This is the time the user first attached the GPU
+          or 1 day after the lease was created if the user did not attach the GPU.
+        type: string
+      assignedAt:
+        description: AssignedAt specifies the time when the lease was assigned to
+          the user.
+        type: string
+      createdAt:
+        type: string
+      expiredAt:
+        description: |-
+          ExpiredAt specifies the time when the lease expired.
+          This is only present if the lease is expired.
+        type: string
+      expiresAt:
+        description: |-
+          ExpiresAt specifies the time when the lease will expire.
+          This is only present if the lease is active.
+        type: string
+      gpuGroupId:
+        type: string
+      id:
+        type: string
+      leaseDuration:
+        type: number
+    type: object
+  body.VmRead:
+    properties:
+      accessedAt:
+        type: string
+      createdAt:
+        type: string
+      gpu:
+        $ref: '#/definitions/body.VmGpuLease'
+      host:
+        type: string
+      id:
+        type: string
+      internalName:
+        type: string
+      name:
+        type: string
+      ownerId:
+        type: string
+      ports:
+        items:
+          $ref: '#/definitions/body.PortRead'
+        type: array
+      repairedAt:
+        type: string
+      specs:
+        $ref: '#/definitions/body.VmSpecs'
+      sshConnectionString:
+        type: string
+      sshPublicKey:
+        type: string
+      status:
+        type: string
+      teams:
+        items:
+          type: string
+        type: array
+      updatedAt:
+        type: string
+      zone:
+        type: string
+    type: object
+  body.VmSnapshotCreated:
+    properties:
+      id:
+        type: string
+      jobId:
+        type: string
+    type: object
+  body.VmSnapshotDeleted:
+    properties:
+      id:
+        type: string
+      jobId:
+        type: string
+    type: object
+  body.VmSnapshotRead:
+    properties:
+      created:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      status:
+        type: string
+    type: object
+  body.VmSpecs:
+    properties:
+      cpuCores:
+        type: integer
+      diskSize:
+        type: integer
+      ram:
+        type: integer
+    type: object
+  body.VmUpdate:
+    properties:
+      cpuCores:
+        minimum: 1
+        type: integer
+      name:
+        description: |-
+          Name is used to rename a VM.
+          If specified, only name will be updated.
+        maxLength: 30
+        minLength: 3
+        type: string
+      ownerId:
+        description: |-
+          OwnerID is used to initiate transfer a VM to another user.
+          If specified, only the transfer will happen.
+          If specified but empty, the transfer will be canceled.
+        type: string
+      ports:
+        items:
+          $ref: '#/definitions/body.PortUpdate'
+        maxItems: 10
+        minItems: 0
+        type: array
+      ram:
+        minimum: 1
+        type: integer
+    type: object
+  body.VmUpdated:
+    properties:
+      id:
+        type: string
+      jobId:
+        type: string
+    type: object
+  body.Volume:
+    properties:
+      appPath:
+        maxLength: 255
+        minLength: 1
+        type: string
+      name:
+        maxLength: 30
+        minLength: 3
+        type: string
+      serverPath:
+        maxLength: 255
+        minLength: 1
+        type: string
+    required:
+    - appPath
+    - name
+    - serverPath
+    type: object
+  body.WorkerStatusRead:
+    properties:
+      name:
+        type: string
+      reportedAt:
+        type: string
+      status:
+        type: string
+    type: object
+  body.ZoneEndpoints:
+    properties:
+      deployment:
+        type: string
+      storage:
+        type: string
+      vm:
+        type: string
+      vmApp:
+        type: string
+    type: object
+  body.ZoneRead:
+    properties:
+      capabilities:
+        items:
+          type: string
+        type: array
+      description:
+        type: string
+      enabled:
+        type: boolean
+      endpoints:
+        $ref: '#/definitions/body.ZoneEndpoints'
+      legacy:
+        type: boolean
+      name:
+        type: string
+    type: object
+  sys.Error:
+    properties:
+      code:
+        type: string
+      msg:
+        type: string
+    type: object
+  sys.ErrorResponse:
+    properties:
+      errors:
+        items:
+          $ref: '#/definitions/sys.Error'
+        type: array
+    type: object
 info:
-  title: go-deploy API
-  description: This is the API explorer for the go-deploy API. You can use it as a
-    reference for the API endpoints.
-  termsOfService: http://swagger.io/terms/
   contact:
     name: Support
     url: https://github.com/kthcloud/go-deploy
+  description: This is the API explorer for the go-deploy API. You can use it as a
+    reference for the API endpoints.
   license:
     name: MIT License
     url: https://github.com/kthcloud/go-deploy?tab=MIT-1-ov-file#readme
+  termsOfService: http://swagger.io/terms/
+  title: go-deploy API
   version: "1.0"
-servers:
-- url: /
 paths:
+  /v2/deployments:
+    get:
+      consumes:
+      - application/json
+      description: List deployments
+      parameters:
+      - description: List all
+        in: query
+        name: all
+        type: boolean
+      - description: Filter by user ID
+        in: query
+        name: userId
+        type: string
+      - description: Include shared
+        in: query
+        name: shared
+        type: boolean
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/body.DeploymentRead'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: List deployments
+      tags:
+      - Deployment
+    post:
+      consumes:
+      - application/json
+      description: Create deployment
+      parameters:
+      - description: Deployment body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/body.DeploymentCreate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.DeploymentRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create deployment
+      tags:
+      - Deployment
+  /v2/deployments/{deploymentId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete deployment
+      parameters:
+      - description: Deployment ID
+        in: path
+        name: deploymentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.DeploymentCreated'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete deployment
+      tags:
+      - Deployment
+    get:
+      consumes:
+      - application/json
+      description: Get deployment
+      parameters:
+      - description: Deployment ID
+        in: path
+        name: deploymentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.DeploymentRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get deployment
+      tags:
+      - Deployment
+    post:
+      consumes:
+      - application/json
+      description: Update deployment
+      parameters:
+      - description: Deployment ID
+        in: path
+        name: deploymentId
+        required: true
+        type: string
+      - description: Deployment update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/body.DeploymentUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.DeploymentUpdated'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update deployment
+      tags:
+      - Deployment
+  /v2/deployments/{deploymentId}/ciConfig:
+    get:
+      consumes:
+      - application/json
+      description: Get CI config
+      parameters:
+      - description: Deployment ID
+        in: path
+        name: deploymentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.CiConfig'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get CI config
+      tags:
+      - Deployment
+  /v2/deployments/{deploymentId}/command:
+    post:
+      consumes:
+      - application/json
+      description: Do command
+      parameters:
+      - description: Deployment ID
+        in: path
+        name: deploymentId
+        required: true
+        type: string
+      - description: Command body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/body.DeploymentCommand'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "423":
+          description: Locked
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Do command
+      tags:
+      - Deployment
+  /v2/deployments/{deploymentId}/logs:
+    get:
+      consumes:
+      - application/json
+      description: Get logs using Server-Sent Events
+      parameters:
+      - description: Deployment ID
+        in: path
+        name: deploymentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get logs using Server-Sent Events
+      tags:
+      - Deployment
+  /v2/discover:
+    get:
+      consumes:
+      - application/json
+      description: Discover
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.DiscoverRead'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: Discover
+      tags:
+      - Discover
   /v2/gpuGroups:
     get:
-      tags:
-      - GpuGroup
-      summary: List GPU groups
+      consumes:
+      - application/json
       description: List GPU groups
       parameters:
-      - name: page
+      - description: Page number
         in: query
-        description: Page number
-        schema:
-          type: integer
-      - name: pageSize
+        name: page
+        type: integer
+      - description: Number of items per page
         in: query
-        description: Number of items per page
-        schema:
-          type: integer
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
       responses:
         "200":
           description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/body.GpuGroupRead'
+          schema:
+            items:
+              $ref: '#/definitions/body.GpuGroupRead'
+            type: array
         "400":
           description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
         "404":
           description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
         "423":
           description: Locked
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
         "500":
           description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
       security:
       - ApiKeyAuth: []
-  /v2/gpuGroups/{gpuGroupId}:
-    get:
+      summary: List GPU groups
       tags:
       - GpuGroup
-      summary: Get GPU group
+  /v2/gpuGroups/{gpuGroupId}:
+    get:
+      consumes:
+      - application/json
       description: Get GPU group
       parameters:
-      - name: gpuGroupId
+      - description: GPU group ID
         in: path
-        description: GPU group ID
+        name: gpuGroupId
         required: true
-        schema:
-          type: string
+        type: string
+      produces:
+      - application/json
       responses:
         "200":
           description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/body.GpuGroupRead'
+          schema:
+            $ref: '#/definitions/body.GpuGroupRead'
         "400":
           description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
         "404":
           description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
         "423":
           description: Locked
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
         "500":
           description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
       security:
       - ApiKeyAuth: []
+      summary: Get GPU group
+      tags:
+      - GpuGroup
   /v2/gpuLeases:
     get:
-      tags:
-      - GpuLease
-      summary: List GPU leases
+      consumes:
+      - application/json
       description: List GPU leases
       parameters:
-      - name: all
+      - description: List all
         in: query
-        description: List all
-        schema:
-          type: boolean
-      - name: vmId
+        name: all
+        type: boolean
+      - description: Filter by VM ID
         in: query
-        description: Filter by VM ID
-        schema:
-          type: string
-      - name: page
+        name: vmId
+        type: string
+      - description: Page number
         in: query
-        description: Page number
-        schema:
-          type: integer
-      - name: pageSize
+        name: page
+        type: integer
+      - description: Number of items per page
         in: query
-        description: Number of items per page
-        schema:
-          type: integer
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
       responses:
         "200":
           description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/body.GpuLeaseRead'
+          schema:
+            items:
+              $ref: '#/definitions/body.GpuLeaseRead'
+            type: array
         "400":
           description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
         "404":
           description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
         "423":
           description: Locked
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
         "500":
           description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
       security:
       - ApiKeyAuth: []
-    post:
+      summary: List GPU leases
       tags:
       - GpuLease
-      summary: Create GPU Lease
+    post:
+      consumes:
+      - application/json
       description: Create GPU lease
-      requestBody:
-        description: GPU lease
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/body.GpuLeaseCreate'
+      parameters:
+      - description: GPU lease
+        in: body
+        name: body
         required: true
+        schema:
+          $ref: '#/definitions/body.GpuLeaseCreate'
+      produces:
+      - application/json
       responses:
         "200":
           description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/body.GpuLeaseCreated'
+          schema:
+            $ref: '#/definitions/body.GpuLeaseCreated'
         "400":
           description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
         "404":
           description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
         "500":
           description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
       security:
       - ApiKeyAuth: []
-      x-codegen-request-body-name: body
+      summary: Create GPU Lease
+      tags:
+      - GpuLease
   /v2/gpuLeases/{gpuLeaseId}:
-    get:
-      tags:
-      - GpuLease
-      summary: Get GPU lease
-      description: Get GPU lease
-      parameters:
-      - name: gpuLeaseId
-        in: path
-        description: GPU lease ID
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/body.GpuLeaseRead'
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "423":
-          description: Locked
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-    post:
-      tags:
-      - GpuLease
-      summary: Update GPU lease
-      description: Update GPU lease
-      parameters:
-      - name: gpuLeaseId
-        in: path
-        description: GPU lease ID
-        required: true
-        schema:
-          type: string
-      requestBody:
-        description: GPU lease
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/body.GpuLeaseUpdate'
-        required: true
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/body.GpuLeaseUpdated'
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      x-codegen-request-body-name: body
     delete:
-      tags:
-      - GpuLease
-      summary: Delete GPU lease
+      consumes:
+      - application/json
       description: Delete GPU lease
       parameters:
-      - name: gpuLeaseId
+      - description: GPU lease ID
         in: path
-        description: GPU lease ID
+        name: gpuLeaseId
         required: true
-        schema:
-          type: string
+        type: string
+      produces:
+      - application/json
       responses:
         "200":
           description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/body.GpuLeaseDeleted'
+          schema:
+            $ref: '#/definitions/body.GpuLeaseDeleted'
         "400":
           description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
         "404":
           description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
         "500":
           description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
       security:
       - ApiKeyAuth: []
-  /v2/snapshots:
-    get:
+      summary: Delete GPU lease
       tags:
-      - Snapshot
-      summary: List snapshots
-      description: List snapshots
+      - GpuLease
+    get:
+      consumes:
+      - application/json
+      description: Get GPU lease
       parameters:
-      - name: vmId
+      - description: GPU lease ID
         in: path
-        description: Filter by VM ID
+        name: gpuLeaseId
         required: true
-        schema:
-          type: string
-      - name: page
-        in: query
-        description: Page number
-        schema:
-          type: integer
-      - name: pageSize
-        in: query
-        description: Number of items per page
-        schema:
-          type: integer
+        type: string
+      produces:
+      - application/json
       responses:
         "200":
           description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/go-deploy_dto_v2_body.VmSnapshotRead'
+          schema:
+            $ref: '#/definitions/body.GpuLeaseRead'
         "400":
           description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
         "404":
           description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
         "423":
           description: Locked
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
         "500":
           description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
       security:
       - ApiKeyAuth: []
+      summary: Get GPU lease
+      tags:
+      - GpuLease
     post:
+      consumes:
+      - application/json
+      description: Update GPU lease
+      parameters:
+      - description: GPU lease ID
+        in: path
+        name: gpuLeaseId
+        required: true
+        type: string
+      - description: GPU lease
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/body.GpuLeaseUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.GpuLeaseUpdated'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update GPU lease
+      tags:
+      - GpuLease
+  /v2/hooks/harbor:
+    post:
+      consumes:
+      - application/json
+      description: Handle Harbor hook
+      parameters:
+      - description: Basic auth token
+        in: header
+        name: Authorization
+        type: string
+      - description: Harbor webhook body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/body.HarborWebhook'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: Handle Harbor hook
+      tags:
+      - Deployment
+  /v2/hosts:
+    get:
+      consumes:
+      - application/json
+      description: List Hosts
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/body.HostRead'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: List Hosts
+      tags:
+      - Host
+  /v2/jobs:
+    get:
+      consumes:
+      - application/json
+      description: List jobs
+      parameters:
+      - description: List all
+        in: query
+        name: all
+        type: boolean
+      - description: Filter by user ID
+        in: query
+        name: userId
+        type: string
+      - description: Filter by type
+        in: query
+        name: type
+        type: string
+      - description: Filter by status
+        in: query
+        name: status
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/body.JobRead'
+            type: array
+      security:
+      - ApiKeyAuth: []
+      summary: List jobs
+      tags:
+      - Job
+  /v2/jobs/{jobId}:
+    get:
+      consumes:
+      - application/json
+      description: GetJob job by id
+      parameters:
+      - description: Job ID
+        in: path
+        name: jobId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.JobRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: GetJob job by id
+      tags:
+      - Job
+    post:
+      consumes:
+      - application/json
+      description: Update job. Only allowed for admins.
+      parameters:
+      - description: Job ID
+        in: path
+        name: jobId
+        required: true
+        type: string
+      - description: Job update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/body.JobUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.JobRead'
+      security:
+      - ApiKeyAuth: []
+      summary: Update job
+      tags:
+      - Job
+  /v2/metrics:
+    get:
+      consumes:
+      - application/json
+      description: Get metrics
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: Get metrics
+      tags:
+      - Metrics
+  /v2/notifications:
+    get:
+      consumes:
+      - application/json
+      description: List notifications
+      parameters:
+      - description: List all notifications
+        in: query
+        name: all
+        type: boolean
+      - description: Filter by user ID
+        in: query
+        name: userId
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/body.NotificationRead'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: List notifications
+      tags:
+      - Notification
+  /v2/notifications/{notificationId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete notification
+      parameters:
+      - description: Notification ID
+        in: path
+        name: notificationId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete notification
+      tags:
+      - Notification
+    get:
+      consumes:
+      - application/json
+      description: Get notification
+      parameters:
+      - description: Notification ID
+        in: path
+        name: notificationId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.NotificationRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get notification
+      tags:
+      - Notification
+    post:
+      consumes:
+      - application/json
+      description: Update notification
+      parameters:
+      - description: Notification ID
+        in: path
+        name: notificationId
+        required: true
+        type: string
+      - description: Notification update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/body.NotificationUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update notification
+      tags:
+      - Notification
+  /v2/register:
+    get:
+      consumes:
+      - application/json
+      description: Register resource
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: Register resource
+      tags:
+      - Register
+  /v2/resourceMigrations:
+    get:
+      consumes:
+      - application/json
+      description: List resource migrations
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/body.ResourceMigrationRead'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: List resource migrations
+      tags:
+      - ResourceMigration
+    post:
+      consumes:
+      - application/json
+      description: Create resource migration
+      parameters:
+      - description: Resource Migration Create
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/body.ResourceMigrationCreate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.ResourceMigrationCreated'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create resource migration
+      tags:
+      - ResourceMigration
+  /v2/resourceMigrations/{resourceMigrationId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete resource migration
+      parameters:
+      - description: Resource Migration ID
+        in: path
+        name: resourceMigrationId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete resource migration
+      tags:
+      - ResourceMigration
+    get:
+      consumes:
+      - application/json
+      description: Get resource migration
+      parameters:
+      - description: Resource Migration ID
+        in: path
+        name: resourceMigrationId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.ResourceMigrationRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get resource migration
+      tags:
+      - ResourceMigration
+    post:
+      consumes:
+      - application/json
+      description: Update resource migration
+      parameters:
+      - description: Resource Migration ID
+        in: path
+        name: resourceMigrationId
+        required: true
+        type: string
+      - description: Resource Migration Update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/body.ResourceMigrationUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.ResourceMigrationUpdated'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update resource migration
+      tags:
+      - ResourceMigration
+  /v2/snapshots:
+    get:
+      consumes:
+      - application/json
+      description: List snapshots
+      parameters:
+      - description: Filter by VM ID
+        in: path
+        name: vmId
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/body.VmSnapshotRead'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "423":
+          description: Locked
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: List snapshots
       tags:
       - Snapshot
-      summary: Create snapshot
+    post:
+      consumes:
+      - application/json
       description: Create snapshot
       parameters:
-      - name: vmId
+      - description: VM ID
         in: path
-        description: VM ID
+        name: vmId
         required: true
-        schema:
-          type: string
+        type: string
+      produces:
+      - application/json
       responses:
         "200":
           description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/go-deploy_dto_v2_body.VmSnapshotCreated'
+          schema:
+            $ref: '#/definitions/body.VmSnapshotCreated'
         "400":
           description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
         "404":
           description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
         "500":
           description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
       security:
       - ApiKeyAuth: []
+      summary: Create snapshot
+      tags:
+      - Snapshot
+  /v2/status:
+    get:
+      consumes:
+      - application/json
+      description: List of worker status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/body.WorkerStatusRead'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: List worker status
+      tags:
+      - Status
+  /v2/storageManagers:
+    get:
+      consumes:
+      - application/json
+      description: Get storage manager list
+      parameters:
+      - description: List all
+        in: query
+        name: all
+        type: boolean
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/body.SmRead'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get storage manager list
+      tags:
+      - StorageManager
+  /v2/storageManagers/{storageManagerId}:
+    get:
+      consumes:
+      - application/json
+      description: Delete storage manager
+      parameters:
+      - description: Storage manager ID
+        in: path
+        name: storageManagerId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.SmDeleted'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete storage manager
+      tags:
+      - StorageManager
+  /v2/systemCapacities:
+    get:
+      consumes:
+      - application/json
+      description: List system capacities
+      parameters:
+      - description: "n"
+        in: query
+        name: "n"
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/body.TimestampedSystemCapacities'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/body.BindingError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: List system capacities
+      tags:
+      - System
+  /v2/systemStats:
+    get:
+      consumes:
+      - application/json
+      description: List system stats
+      parameters:
+      - description: "n"
+        in: query
+        name: "n"
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/body.TimestampedSystemCapacities'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/body.BindingError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: List system stats
+      tags:
+      - System
+  /v2/systemStatus:
+    get:
+      consumes:
+      - application/json
+      description: List system stats
+      parameters:
+      - description: "n"
+        in: query
+        name: "n"
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/body.TimestampedSystemCapacities'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/body.BindingError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      summary: List system stats
+      tags:
+      - System
+  /v2/teams:
+    get:
+      consumes:
+      - application/json
+      description: List teams
+      parameters:
+      - description: List all
+        in: query
+        name: all
+        type: boolean
+      - description: Filter by user ID
+        in: query
+        name: userId
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/body.TeamRead'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/body.BindingError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: List teams
+      tags:
+      - Team
+    post:
+      consumes:
+      - application/json
+      description: Create team
+      parameters:
+      - description: Team
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/body.TeamCreate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.TeamRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/body.BindingError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create team
+      tags:
+      - Team
+  /v2/teams/{teamId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete team
+      parameters:
+      - description: Team ID
+        in: path
+        name: teamId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/body.BindingError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete team
+      tags:
+      - Team
+    get:
+      consumes:
+      - application/json
+      description: Get team
+      parameters:
+      - description: Team ID
+        in: path
+        name: teamId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.TeamRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/body.BindingError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get team
+      tags:
+      - Team
+    post:
+      consumes:
+      - application/json
+      description: Update team
+      parameters:
+      - description: Team ID
+        in: path
+        name: teamId
+        required: true
+        type: string
+      - description: Team
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/body.TeamUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.TeamRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/body.BindingError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update team
+      tags:
+      - Team
+  /v2/users:
+    get:
+      consumes:
+      - application/json
+      description: List users
+      parameters:
+      - description: List all
+        in: query
+        name: all
+        type: boolean
+      - description: Discovery mode
+        in: query
+        name: discover
+        type: boolean
+      - description: Search query
+        in: query
+        name: search
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/body.UserRead'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: List users
+      tags:
+      - User
+  /v2/users/{userId}:
+    get:
+      consumes:
+      - application/json
+      description: Get user
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.UserRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get user
+      tags:
+      - User
+    post:
+      consumes:
+      - application/json
+      description: Update user
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: User update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/body.UserUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.UserRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update user
+      tags:
+      - User
+  /v2/users/{userId}/apiKeys:
+    post:
+      consumes:
+      - application/json
+      description: Create API key
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: API key create body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/body.ApiKeyCreate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.ApiKeyCreated'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create API key
+      tags:
+      - User
   /v2/vmActions:
     post:
-      tags:
-      - VmAction
-      summary: Creates a new action
+      consumes:
+      - application/json
       description: Creates a new action
       parameters:
-      - name: vmId
+      - description: VM ID
         in: path
-        description: VM ID
+        name: vmId
+        required: true
+        type: string
+      - description: actions body
+        in: body
+        name: body
         required: true
         schema:
-          type: string
-      requestBody:
-        description: actions body
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/body.VmActionCreate'
-        required: true
+          $ref: '#/definitions/body.VmActionCreate'
+      produces:
+      - application/json
       responses:
         "200":
           description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/body.VmActionCreated'
+          schema:
+            $ref: '#/definitions/body.VmActionCreated'
         "400":
           description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
         "404":
           description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
         "500":
           description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
       security:
       - ApiKeyAuth: []
-      x-codegen-request-body-name: body
+      summary: Creates a new action
+      tags:
+      - VmAction
   /v2/vms:
     get:
-      tags:
-      - VM
-      summary: List VMs
+      consumes:
+      - application/json
       description: List VMs
       parameters:
-      - name: all
+      - description: List all
         in: query
-        description: List all
-        schema:
-          type: boolean
-      - name: userId
+        name: all
+        type: boolean
+      - description: Filter by user ID
         in: query
-        description: Filter by user ID
-        schema:
-          type: string
-      - name: page
+        name: userId
+        type: string
+      - description: Page number
         in: query
-        description: Page number
-        schema:
-          type: integer
-      - name: pageSize
+        name: page
+        type: integer
+      - description: Number of items per page
         in: query
-        description: Number of items per page
-        schema:
-          type: integer
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
       responses:
         "200":
           description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/go-deploy_dto_v2_body.VmRead'
+          schema:
+            items:
+              $ref: '#/definitions/body.VmRead'
+            type: array
         "400":
           description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
         "401":
           description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
         "404":
           description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
         "500":
           description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
       security:
       - ApiKeyAuth: []
-    post:
+      summary: List VMs
       tags:
       - VM
-      summary: Create VM
+    post:
+      consumes:
+      - application/json
       description: Create VM
-      requestBody:
-        description: VM body
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/go-deploy_dto_v2_body.VmCreate'
+      parameters:
+      - description: VM body
+        in: body
+        name: body
         required: true
+        schema:
+          $ref: '#/definitions/body.VmCreate'
+      produces:
+      - application/json
       responses:
         "200":
           description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/go-deploy_dto_v2_body.VmCreated'
+          schema:
+            $ref: '#/definitions/body.VmCreated'
         "400":
           description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
         "401":
           description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
         "404":
           description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
         "500":
           description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
       security:
       - ApiKeyAuth: []
-      x-codegen-request-body-name: body
+      summary: Create VM
+      tags:
+      - VM
   /v2/vms/{vmId}:
-    get:
-      tags:
-      - VM
-      summary: Get VM
-      description: Get VM
-      parameters:
-      - name: vmId
-        in: path
-        description: VM ID
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/go-deploy_dto_v2_body.VmRead'
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-    post:
-      tags:
-      - VM
-      summary: Update VM
-      description: Update VM
-      parameters:
-      - name: vmId
-        in: path
-        description: VM ID
-        required: true
-        schema:
-          type: string
-      requestBody:
-        description: VM update
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/go-deploy_dto_v2_body.VmUpdate'
-        required: true
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/go-deploy_dto_v2_body.VmUpdated'
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      x-codegen-request-body-name: body
     delete:
-      tags:
-      - VM
-      summary: Delete VM
+      consumes:
+      - application/json
       description: Delete VM
       parameters:
-      - name: vmId
+      - description: VM ID
         in: path
-        description: VM ID
+        name: vmId
         required: true
-        schema:
-          type: string
+        type: string
+      produces:
+      - application/json
       responses:
         "200":
           description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/go-deploy_dto_v2_body.VmDeleted'
+          schema:
+            $ref: '#/definitions/body.VmDeleted'
         "400":
           description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
         "401":
           description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
         "404":
           description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
         "500":
           description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
       security:
       - ApiKeyAuth: []
-  /v2/vms/{vmId}/snapshot/{snapshotId}:
-    post:
+      summary: Delete VM
       tags:
-      - Snapshot
-      summary: Get snapshot
-      description: Get snapshot
+      - VM
+    get:
+      consumes:
+      - application/json
+      description: Get VM
       parameters:
-      - name: vmId
+      - description: VM ID
         in: path
-        description: VM ID
+        name: vmId
         required: true
-        schema:
-          type: string
-      - name: snapshotId
-        in: path
-        description: Snapshot ID
-        required: true
-        schema:
-          type: string
+        type: string
+      produces:
+      - application/json
       responses:
         "200":
           description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/go-deploy_dto_v2_body.VmSnapshotRead'
+          schema:
+            $ref: '#/definitions/body.VmRead'
         "400":
           description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
         "404":
           description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
         "500":
           description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
       security:
       - ApiKeyAuth: []
-    delete:
+      summary: Get VM
       tags:
-      - Snapshot
-      summary: Delete snapshot
+      - VM
+    post:
+      consumes:
+      - application/json
+      description: Update VM
+      parameters:
+      - description: VM ID
+        in: path
+        name: vmId
+        required: true
+        type: string
+      - description: VM update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/body.VmUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.VmUpdated'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update VM
+      tags:
+      - VM
+  /v2/vms/{vmId}/snapshot/{snapshotId}:
+    delete:
+      consumes:
+      - application/json
       description: Delete snapshot
       parameters:
-      - name: vmId
+      - description: VM ID
         in: path
-        description: VM ID
+        name: vmId
         required: true
-        schema:
-          type: string
-      - name: snapshotId
+        type: string
+      - description: Snapshot ID
         in: path
-        description: Snapshot ID
+        name: snapshotId
         required: true
-        schema:
-          type: string
+        type: string
+      produces:
+      - application/json
       responses:
         "200":
           description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/go-deploy_dto_v2_body.VmSnapshotDeleted'
+          schema:
+            $ref: '#/definitions/body.VmSnapshotDeleted'
         "400":
           description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
         "404":
           description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
         "500":
           description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
       security:
       - ApiKeyAuth: []
-components:
-  schemas:
-    body.CustomDomainRead:
-      type: object
-      properties:
-        domain:
-          type: string
-        secret:
-          type: string
-        status:
-          type: string
-        url:
-          type: string
-    body.GpuGroupRead:
-      type: object
-      properties:
-        available:
-          type: integer
-        displayName:
-          type: string
-        id:
-          type: string
-        name:
-          type: string
-        total:
-          type: integer
-        vendor:
-          type: string
-        zone:
-          type: string
-    body.GpuLeaseCreate:
-      required:
-      - gpuGroupId
-      type: object
-      properties:
-        gpuGroupId:
-          type: string
-          description: |-
-            GpuGroupID is used to specify the GPU to lease.
-            As such, the lease does not specify which specific GPU to lease, but rather the type of GPU to lease.
-        leaseForever:
-          type: boolean
-          description: LeaseForever is used to specify whether the lease should be
-            created forever.
-    body.GpuLeaseCreated:
-      type: object
-      properties:
-        id:
-          type: string
-        jobId:
-          type: string
-    body.GpuLeaseDeleted:
-      type: object
-      properties:
-        id:
-          type: string
-        jobId:
-          type: string
-    body.GpuLeaseRead:
-      type: object
-      properties:
-        activatedAt:
-          type: string
-          description: |-
-            ActivatedAt specifies the time when the lease was activated. This is the time the user first attached the GPU
-            or 1 day after the lease was created if the user did not attach the GPU.
-        active:
-          type: boolean
-        assignedAt:
-          type: string
-          description: AssignedAt specifies the time when the lease was assigned to
-            the user.
-        createdAt:
-          type: string
-        expiredAt:
-          type: string
-        expiresAt:
-          type: string
-          description: |-
-            ExpiresAt specifies the time when the lease will expire.
-            This is only present if the lease is active.
-        gpuGroupId:
-          type: string
-        id:
-          type: string
-        leaseDuration:
-          type: number
-        queuePosition:
-          type: integer
-        userId:
-          type: string
-        vmId:
-          type: string
-          description: VmID is set when the lease is attached to a VM.
-    body.GpuLeaseUpdate:
-      type: object
-      properties:
-        vmId:
-          type: string
-          description: |-
-            VmID is used to specify the VM to attach the lease to.
-
-            - If specified, the lease will be attached to the VM.
-
-            - If the lease is already attached to a VM, it will be detached from the current VM and attached to the new VM.
-
-            - If the lease is not active, specifying a VM will activate the lease.
-
-            - If the lease is not assigned, an error will be returned.
-    body.GpuLeaseUpdated:
-      type: object
-      properties:
-        id:
-          type: string
-        jobId:
-          type: string
-    body.VmActionCreate:
-      required:
-      - action
-      type: object
-      properties:
-        action:
-          type: string
-          enum:
-          - start
-          - stop
-          - restart
-          - repair
-    body.VmActionCreated:
-      type: object
-      properties:
-        id:
-          type: string
-        jobId:
-          type: string
-    go-deploy_dto_v2_body.HttpProxyCreate:
-      required:
-      - name
-      type: object
-      properties:
-        customDomain:
-          type: string
-          description: |-
-            CustomDomain is the domain that the deployment will be available on.
-            The max length is set to 243 to allow for a sub domain when confirming the domain.
-        name:
-          maxLength: 30
-          minLength: 3
-          type: string
-    go-deploy_dto_v2_body.HttpProxyRead:
-      required:
-      - name
-      type: object
-      properties:
-        customDomain:
-          $ref: '#/components/schemas/body.CustomDomainRead'
-        name:
-          maxLength: 30
-          minLength: 3
-          type: string
-        url:
-          type: string
-    go-deploy_dto_v2_body.HttpProxyUpdate:
-      required:
-      - name
-      type: object
-      properties:
-        customDomain:
-          type: string
-          description: |-
-            CustomDomain is the domain that the deployment will be available on.
-            The max length is set to 243 to allow for a sub domain when confirming the domain.
-        name:
-          maxLength: 30
-          minLength: 3
-          type: string
-    go-deploy_dto_v2_body.PortCreate:
-      required:
-      - name
-      - port
-      - protocol
-      type: object
-      properties:
-        httpProxy:
-          $ref: '#/components/schemas/go-deploy_dto_v2_body.HttpProxyCreate'
-        name:
-          maxLength: 100
-          minLength: 1
-          type: string
-        port:
-          maximum: 65535
-          minimum: 1
-          type: integer
-        protocol:
-          type: string
-          enum:
-          - tcp
-          - udp
-    go-deploy_dto_v2_body.PortRead:
-      type: object
-      properties:
-        externalPort:
-          type: integer
-        httpProxy:
-          $ref: '#/components/schemas/go-deploy_dto_v2_body.HttpProxyRead'
-        name:
-          type: string
-        port:
-          type: integer
-        protocol:
-          type: string
-    go-deploy_dto_v2_body.PortUpdate:
-      required:
-      - name
-      - port
-      - protocol
-      type: object
-      properties:
-        httpProxy:
-          $ref: '#/components/schemas/go-deploy_dto_v2_body.HttpProxyUpdate'
-        name:
-          maxLength: 100
-          minLength: 1
-          type: string
-        port:
-          maximum: 65535
-          minimum: 1
-          type: integer
-        protocol:
-          type: string
-          enum:
-          - tcp
-          - udp
-    go-deploy_dto_v2_body.Specs:
-      type: object
-      properties:
-        cpuCores:
-          type: integer
-        diskSize:
-          type: integer
-        ram:
-          type: integer
-    go-deploy_dto_v2_body.VmCreate:
-      required:
-      - cpuCores
-      - diskSize
-      - name
-      - ram
-      - sshPublicKey
-      type: object
-      properties:
-        cpuCores:
-          minimum: 1
-          type: integer
-        diskSize:
-          minimum: 10
-          type: integer
-        name:
-          maxLength: 30
-          minLength: 3
-          type: string
-        ports:
-          maxItems: 10
-          minItems: 0
-          type: array
-          items:
-            $ref: '#/components/schemas/go-deploy_dto_v2_body.PortCreate'
-        ram:
-          minimum: 1
-          type: integer
-        sshPublicKey:
-          type: string
-        zone:
-          type: string
-    go-deploy_dto_v2_body.VmCreated:
-      type: object
-      properties:
-        id:
-          type: string
-        jobId:
-          type: string
-    go-deploy_dto_v2_body.VmDeleted:
-      type: object
-      properties:
-        id:
-          type: string
-        jobId:
-          type: string
-    go-deploy_dto_v2_body.VmGpuLease:
-      type: object
-      properties:
-        activatedAt:
-          type: string
-          description: |-
-            ActivatedAt specifies the time when the lease was activated. This is the time the user first attached the GPU
-            or 1 day after the lease was created if the user did not attach the GPU.
-        assignedAt:
-          type: string
-          description: AssignedAt specifies the time when the lease was assigned to
-            the user.
-        createdAt:
-          type: string
-        expiredAt:
-          type: string
-          description: |-
-            ExpiredAt specifies the time when the lease expired.
-            This is only present if the lease is expired.
-        expiresAt:
-          type: string
-          description: |-
-            ExpiresAt specifies the time when the lease will expire.
-            This is only present if the lease is active.
-        gpuGroupId:
-          type: string
-        id:
-          type: string
-        leaseDuration:
-          type: number
-    go-deploy_dto_v2_body.VmRead:
-      type: object
-      properties:
-        createdAt:
-          type: string
-        gpu:
-          $ref: '#/components/schemas/go-deploy_dto_v2_body.VmGpuLease'
-        host:
-          type: string
-        id:
-          type: string
-        internalName:
-          type: string
-        name:
-          type: string
-        ownerId:
-          type: string
-        ports:
-          type: array
-          items:
-            $ref: '#/components/schemas/go-deploy_dto_v2_body.PortRead'
-        repairedAt:
-          type: string
-        specs:
-          $ref: '#/components/schemas/go-deploy_dto_v2_body.Specs'
-        sshConnectionString:
-          type: string
-        sshPublicKey:
-          type: string
-        status:
-          type: string
-        teams:
-          type: array
-          items:
-            type: string
-        updatedAt:
-          type: string
-        zone:
-          type: string
-    go-deploy_dto_v2_body.VmSnapshotCreated:
-      type: object
-      properties:
-        id:
-          type: string
-        jobId:
-          type: string
-    go-deploy_dto_v2_body.VmSnapshotDeleted:
-      type: object
-      properties:
-        id:
-          type: string
-        jobId:
-          type: string
-    go-deploy_dto_v2_body.VmSnapshotRead:
-      type: object
-      properties:
-        created:
-          type: string
-        id:
-          type: string
-        name:
-          type: string
-        status:
-          type: string
-    go-deploy_dto_v2_body.VmUpdate:
-      type: object
-      properties:
-        cpuCores:
-          minimum: 1
-          type: integer
-        name:
-          maxLength: 30
-          minLength: 3
-          type: string
-          description: |-
-            Name is used to rename a VM.
-            If specified, only name will be updated.
-        ownerId:
-          type: string
-          description: |-
-            OwnerID is used to initiate transfer a VM to another user.
-            If specified, only the transfer will happen.
-            If specified but empty, the transfer will be canceled.
-        ports:
-          maxItems: 10
-          minItems: 0
-          type: array
-          items:
-            $ref: '#/components/schemas/go-deploy_dto_v2_body.PortUpdate'
-        ram:
-          minimum: 1
-          type: integer
-    go-deploy_dto_v2_body.VmUpdated:
-      type: object
-      properties:
-        id:
-          type: string
-        jobId:
-          type: string
-    sys.Error:
-      type: object
-      properties:
-        code:
-          type: string
-        msg:
-          type: string
-    sys.ErrorResponse:
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/sys.Error'
-  securitySchemes:
-    ApiKeyAuth:
-      type: apiKey
-      name: X-Api-Key
-      in: header
-x-original-swagger-version: "2.0"
+      summary: Delete snapshot
+      tags:
+      - Snapshot
+    post:
+      consumes:
+      - application/json
+      description: Get snapshot
+      parameters:
+      - description: VM ID
+        in: path
+        name: vmId
+        required: true
+        type: string
+      - description: Snapshot ID
+        in: path
+        name: snapshotId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/body.VmSnapshotRead'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get snapshot
+      tags:
+      - Snapshot
+  /v2/zones:
+    get:
+      consumes:
+      - application/json
+      description: List zones
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/body.ZoneRead'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/sys.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: List zones
+      tags:
+      - Zone
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: X-Api-Key
+    type: apiKey
+swagger: "2.0"
