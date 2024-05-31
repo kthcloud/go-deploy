@@ -1,6 +1,8 @@
 package model
 
-import "go-deploy/dto/v1/body"
+import (
+	"go-deploy/dto/v2/body"
+)
 
 type Quotas struct {
 	CpuCores         float64 `yaml:"cpuCores" structs:"cpuCores"`

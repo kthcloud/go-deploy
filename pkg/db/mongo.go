@@ -187,6 +187,11 @@ func GetCollectionDefinitions() map[string]CollectionDefinition {
 			UniqueIndexes:        [][]string{{"userId", "vmId"}},
 			TotallyUniqueIndexes: [][]string{{"id"}},
 		},
+		"hosts": {
+			Name:          "hosts",
+			Indexes:       []string{"enabled", "deactivatedUntil"},
+			UniqueIndexes: [][]string{{"name", "zone"}},
+		},
 		"jobs": {
 			Name:                 "jobs",
 			Indexes:              []string{"userId", "type", "args.id", "status", "createdAt", "runAfter"},
@@ -206,6 +211,22 @@ func GetCollectionDefinitions() map[string]CollectionDefinition {
 			Name:                 "storageManagers",
 			Indexes:              []string{"ownerId", "createdAt", "deletedAt", "repairedAt", "zone"},
 			TotallyUniqueIndexes: [][]string{{"id"}},
+		},
+		"systemCapacities": {
+			Name:    "systemCapacities",
+			Indexes: []string{"timestamp"},
+		},
+		"systemGpuInfo": {
+			Name:    "systemGpuInfo",
+			Indexes: []string{"timestamp"},
+		},
+		"systemStats": {
+			Name:    "systemStats",
+			Indexes: []string{"timestamp"},
+		},
+		"systemStatus": {
+			Name:    "systemStatus",
+			Indexes: []string{"timestamp"},
 		},
 		"teams": {
 			Name:                 "teams",

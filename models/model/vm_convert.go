@@ -46,6 +46,7 @@ func (vm *VM) ToDTOv2(gpuLease *GpuLease, teams []string, sshConnectionString *s
 			if port.HttpProxy.CustomDomain != nil {
 				customDomain = &body.CustomDomainRead{
 					Domain: port.HttpProxy.CustomDomain.Domain,
+					URL:    fmt.Sprintf("https://%s", port.HttpProxy.CustomDomain.Domain),
 					Secret: port.HttpProxy.CustomDomain.Secret,
 					Status: port.HttpProxy.CustomDomain.Status,
 				}
@@ -81,7 +82,7 @@ func (vm *VM) ToDTOv2(gpuLease *GpuLease, teams []string, sshConnectionString *s
 		RepairedAt: utils.NonZeroOrNil(vm.RepairedAt),
 		AccessedAt: vm.AccessedAt,
 
-		Specs: body.Specs{
+		Specs: body.VmSpecs{
 			CpuCores: vm.Specs.CpuCores,
 			RAM:      vm.Specs.RAM,
 			DiskSize: vm.Specs.DiskSize,

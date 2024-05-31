@@ -2,7 +2,9 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	wErrors "go-deploy/pkg/services/errors"
 	"go-deploy/utils"
 	"time"
 )
@@ -58,7 +60,10 @@ func PeriodicWorker(ctx context.Context, name string, work func() error, interva
 			ReportUp(name)
 		case <-tick:
 			if err := work(); err != nil {
-				utils.PrettyPrintError(fmt.Errorf("%s failed (sleeping for extra %s): %w", name, errorSleep.String(), err))
+				// It's too verbose to print when no hosts or clusters are available, so we skip that
+				if !errors.Is(err, wErrors.NoClustersErr) && !errors.Is(err, wErrors.NoHostsErr) {
+					utils.PrettyPrintError(fmt.Errorf("%s failed (sleeping for extra %s): %w", name, errorSleep.String(), err))
+				}
 				time.Sleep(errorSleep)
 				errorSleep *= 2
 			} else {

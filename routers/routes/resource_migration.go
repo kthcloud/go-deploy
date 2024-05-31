@@ -1,10 +1,10 @@
 package routes
 
-import v1 "go-deploy/routers/api/v1"
+import v2 "go-deploy/routers/api/v2"
 
 const (
-	ResourceMigrationsPath = "/v1/resourceMigrations"
-	ResourceMigrationPath  = "/v1/resourceMigrations/:resourceMigrationId"
+	ResourceMigrationsPath = "/v2/resourceMigrations"
+	ResourceMigrationPath  = "/v2/resourceMigrations/:resourceMigrationId"
 )
 
 type ResourceMigrationRoutingGroup struct{ RoutingGroupBase }
@@ -15,10 +15,10 @@ func ResourceMigrationRoutes() *ResourceMigrationRoutingGroup {
 
 func (group *ResourceMigrationRoutingGroup) PrivateRoutes() []Route {
 	return []Route{
-		{Method: "GET", Pattern: ResourceMigrationsPath, HandlerFunc: v1.ListResourceMigrations},
-		{Method: "GET", Pattern: ResourceMigrationPath, HandlerFunc: v1.GetResourceMigration},
-		{Method: "POST", Pattern: ResourceMigrationsPath, HandlerFunc: v1.CreateResourceMigration},
-		{Method: "POST", Pattern: ResourceMigrationPath, HandlerFunc: v1.UpdateResourceMigration},
-		{Method: "DELETE", Pattern: ResourceMigrationPath, HandlerFunc: v1.DeleteResourceMigration},
+		{Method: "GET", Pattern: ResourceMigrationsPath, HandlerFunc: v2.ListResourceMigrations},
+		{Method: "GET", Pattern: ResourceMigrationPath, HandlerFunc: v2.GetResourceMigration},
+		{Method: "POST", Pattern: ResourceMigrationsPath, HandlerFunc: v2.CreateResourceMigration},
+		{Method: "POST", Pattern: ResourceMigrationPath, HandlerFunc: v2.UpdateResourceMigration},
+		{Method: "DELETE", Pattern: ResourceMigrationPath, HandlerFunc: v2.DeleteResourceMigration},
 	}
 }

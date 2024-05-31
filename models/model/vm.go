@@ -27,7 +27,7 @@ type VM struct {
 
 	// Host is the host where the VM is running
 	// It is set by the status updater worker
-	Host *Host `bson:"host,omitempty"`
+	Host *VmHost `bson:"host,omitempty"`
 	// Status is the current status of a VM instance
 	// It is set by the status updater worker
 	Status string `bson:"status"`

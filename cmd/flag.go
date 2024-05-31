@@ -5,11 +5,12 @@ import (
 	"go-deploy/pkg/services/cleaner"
 	"go-deploy/pkg/services/confirm"
 	"go-deploy/pkg/services/job_execute"
-	"go-deploy/pkg/services/job_scheduler"
+	"go-deploy/pkg/services/job_schedule"
 	"go-deploy/pkg/services/logger"
 	metricsWorker "go-deploy/pkg/services/metrics_update"
 	"go-deploy/pkg/services/status_update"
 	"go-deploy/pkg/services/synchronize"
+	"go-deploy/pkg/services/system_state_poll"
 )
 
 // FlagDefinition represents a definition for a flag that is passed to the program's executable.
@@ -131,7 +132,7 @@ func GetFlags() FlagDefinitionList {
 			Description:  "Start repairer",
 			DefaultValue: false,
 			Run: func(ctx context.Context, _ context.CancelFunc) {
-				job_scheduler.Setup(ctx)
+				job_schedule.Setup(ctx)
 			},
 		},
 		{
@@ -172,6 +173,16 @@ func GetFlags() FlagDefinitionList {
 			DefaultValue: false,
 			Run: func(ctx context.Context, cancel context.CancelFunc) {
 				cleaner.Setup(ctx)
+			},
+		},
+		{
+			Name:         "system-state-poller",
+			ValueType:    "bool",
+			FlagType:     "worker",
+			Description:  "Start system state poller",
+			DefaultValue: false,
+			Run: func(ctx context.Context, cancel context.CancelFunc) {
+				system_state_poll.Setup(ctx)
 			},
 		},
 		{

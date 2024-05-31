@@ -8,7 +8,6 @@ import (
 	"go-deploy/models/model"
 	"go-deploy/models/version"
 	"go-deploy/pkg/sys"
-	v1 "go-deploy/routers/api/v1"
 	"go-deploy/service"
 	"go-deploy/service/v2/vms/opts"
 )
@@ -32,28 +31,27 @@ func CreateVmAction(c *gin.Context) {
 
 	var requestQuery query.VmActionCreate
 	if err := context.GinContext.ShouldBindQuery(&requestQuery); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
 	var requestBody body.VmActionCreate
 	if err := context.GinContext.ShouldBindJSON(&requestBody); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
-	deployV1 := service.V1(auth)
 	deployV2 := service.V2(auth)
 
 	vm, err := deployV2.VMs().Get(requestQuery.VmID, opts.GetOpts{Shared: true})
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -68,14 +66,14 @@ func CreateVmAction(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.User.ID, model.JobDoVmAction, version.V2, map[string]interface{}{
+	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobDoVmAction, version.V2, map[string]interface{}{
 		"id":       vm.ID,
 		"params":   requestBody,
 		"authInfo": auth,
 	})
 
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 

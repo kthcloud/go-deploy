@@ -4,8 +4,7 @@ import (
 	"go-deploy/models/model"
 	"go-deploy/models/version"
 	"go-deploy/pkg/jobs/utils"
-	"go-deploy/pkg/jobs/v1"
-	v2 "go-deploy/pkg/jobs/v2"
+	"go-deploy/pkg/jobs/v2"
 )
 
 // JobDefinition is a definition of a job.
@@ -41,32 +40,32 @@ func jobMapper() map[string]map[string]JobDefinition {
 	coreJobDeployment := Builder().Add(utils.DeploymentDeleted)
 	leafJobDeployment := Builder().Add(utils.DeploymentDeleted).Add(utils.UpdatingOwner)
 
-	v1Defs := map[string]JobDefinition{
+	v2Defs := map[string]JobDefinition{
 		// Deployment
 		model.JobCreateDeployment: {
-			JobFunc:       v1.CreateDeployment,
+			JobFunc:       v2.CreateDeployment,
 			TerminateFunc: coreJobDeployment.Build(),
 			EntryFunc:     utils.DAddActivity(model.ActivityBeingCreated),
 			ExitFunc:      utils.DRemActivity(model.ActivityBeingCreated),
 		},
 		model.JobDeleteDeployment: {
-			JobFunc:   v1.DeleteDeployment,
+			JobFunc:   v2.DeleteDeployment,
 			EntryFunc: utils.DAddActivity(model.ActivityBeingDeleted),
 		},
 		model.JobUpdateDeployment: {
-			JobFunc:       v1.UpdateDeployment,
+			JobFunc:       v2.UpdateDeployment,
 			TerminateFunc: leafJobDeployment.Build(),
 			EntryFunc:     utils.DAddActivity(model.ActivityUpdating),
 			ExitFunc:      utils.DRemActivity(model.ActivityUpdating),
 		},
 		model.JobUpdateDeploymentOwner: {
-			JobFunc:       v1.UpdateDeploymentOwner,
+			JobFunc:       v2.UpdateDeploymentOwner,
 			TerminateFunc: coreJobDeployment.Build(),
 			EntryFunc:     utils.DAddActivity(model.ActivityUpdating),
 			ExitFunc:      utils.DRemActivity(model.ActivityUpdating),
 		},
 		model.JobRepairDeployment: {
-			JobFunc:       v1.RepairDeployment,
+			JobFunc:       v2.RepairDeployment,
 			TerminateFunc: leafJobDeployment.Build(),
 			EntryFunc:     utils.DAddActivity(model.ActivityRepairing),
 			ExitFunc:      utils.DRemActivity(model.ActivityRepairing),
@@ -74,17 +73,15 @@ func jobMapper() map[string]map[string]JobDefinition {
 
 		// SM
 		model.JobCreateSM: {
-			JobFunc: v1.CreateSM,
+			JobFunc: v2.CreateSM,
 		},
 		model.JobDeleteSM: {
-			JobFunc: v1.DeleteSM,
+			JobFunc: v2.DeleteSM,
 		},
 		model.JobRepairSM: {
-			JobFunc: v1.RepairSM,
+			JobFunc: v2.RepairSM,
 		},
-	}
 
-	v2Defs := map[string]JobDefinition{
 		// VM
 		model.JobCreateVM: {
 			JobFunc:       v2.CreateVM,
@@ -141,7 +138,6 @@ func jobMapper() map[string]map[string]JobDefinition {
 	}
 
 	return map[string]map[string]JobDefinition{
-		version.V1: v1Defs,
 		version.V2: v2Defs,
 	}
 }

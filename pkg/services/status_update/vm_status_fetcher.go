@@ -44,7 +44,7 @@ func VmStatusFetcher() error {
 				return err
 			}
 		} else {
-			err := vrc.SetCurrentHost(status.Name, &model.Host{Name: *status.Host})
+			err := vrc.SetCurrentHost(status.Name, &model.VmHost{Name: *status.Host})
 			if err != nil {
 				return err
 			}

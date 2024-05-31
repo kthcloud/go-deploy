@@ -2,13 +2,14 @@ package synchronize
 
 import (
 	"fmt"
+	"go-deploy/dto/v2/body"
 	configModels "go-deploy/models/config"
 	"go-deploy/models/model"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/db/resources/gpu_group_repo"
+	"go-deploy/pkg/db/resources/system_gpu_info_repo"
 	"go-deploy/pkg/log"
-	"go-deploy/pkg/subsystems/sys-api"
-	"go-deploy/pkg/subsystems/sys-api/models"
+	"go-deploy/pkg/subsystems/host_api"
 	"go-deploy/service"
 	"go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
@@ -19,14 +20,16 @@ import (
 // Whenever a GPU is added or removed from a machine, the sys-api is updated, and this
 // worker will synchronize the database with the sys-api
 func GpuSynchronizer() error {
-	// Fetch GPUs
-	gpuInfo, err := fetchGPUs()
+	gpuInfo, err := listLatestGPUs()
 	if err != nil {
 		return err
 	}
 
-	// Synchronize GPUs v2
-	err = synchronizeGpus(gpuInfo)
+	if gpuInfo == nil {
+		return nil
+	}
+
+	err = synchronizeGPUs(gpuInfo)
 	if err != nil {
 		return err
 	}
@@ -34,10 +37,10 @@ func GpuSynchronizer() error {
 	return nil
 }
 
-func synchronizeGpus(gpuInfo *models.GpuInfoRead) error {
+func synchronizeGPUs(gpuInfo *body.SystemGpuInfo) error {
 	// Determine groups
 	groups := make(map[string]map[string]model.GpuGroup)
-	for _, host := range gpuInfo.GpuInfo.Hosts {
+	for _, host := range gpuInfo.HostGpuInfo {
 		for _, gpu := range host.GPUs {
 			groupName := createGpuGroupName(&gpu)
 			if groupName == nil {
@@ -144,41 +147,24 @@ func synchronizeGpus(gpuInfo *models.GpuInfoRead) error {
 	return nil
 }
 
-func fetchGPUs() (*models.GpuInfoRead, error) {
+func listLatestGPUs() (*body.SystemGpuInfo, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("error fetching gpus: %w", err)
 	}
 
-	client, err := sys_api.New(&sys_api.ClientConf{
-		URL:      config.Config.SysApi.URL,
-		Username: config.Config.SysApi.User,
-		Password: config.Config.SysApi.Password,
-
-		OidcProvider: config.Config.Keycloak.Url,
-		OidcClientID: config.Config.SysApi.ClientID,
-		OidcRealm:    config.Config.Keycloak.Realm,
-
-		UseMock: config.Config.SysApi.UseMock,
-	})
-
+	systemGpuInfo, err := system_gpu_info_repo.New().List()
 	if err != nil {
 		return nil, makeError(err)
 	}
 
-	gpuInfo, err := client.ReadGpuInfo()
-	if err != nil {
-		return nil, makeError(err)
+	if len(systemGpuInfo) > 0 {
+		return &systemGpuInfo[0].GpuInfo, nil
 	}
 
-	return gpuInfo, nil
+	return nil, nil
 }
 
-func createGpuID(host, gpuName, slot string) string {
-	gpuName = strings.Replace(gpuName, " ", "_", -1)
-	return fmt.Sprintf("%s-%s-%s", host, gpuName, slot)
-}
-
-func createGpuGroupName(gpu *models.GPU) *string {
+func createGpuGroupName(gpu *host_api.GpuInfo) *string {
 	vendor := strings.ToLower(gpu.Vendor)
 
 	if strings.Contains(vendor, "nvidia") {

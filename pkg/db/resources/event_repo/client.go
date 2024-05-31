@@ -1,7 +1,7 @@
 package event_repo
 
 import (
-	resource2 "go-deploy/models/model"
+	"go-deploy/models/model"
 	"go-deploy/pkg/db"
 	"go-deploy/pkg/db/resources/base_clients"
 	"go.mongodb.org/mongo-driver/bson"
@@ -10,13 +10,13 @@ import (
 // Client is the client for the event model.
 // It is used to query the database for events, and extends model.ResourceClient.
 type Client struct {
-	base_clients.ResourceClient[resource2.Event]
+	base_clients.ResourceClient[model.Event]
 }
 
 // New returns a new event client.
 func New() *Client {
 	return &Client{
-		ResourceClient: base_clients.ResourceClient[resource2.Event]{
+		ResourceClient: base_clients.ResourceClient[model.Event]{
 			Collection:     db.DB.GetCollection("events"),
 			IncludeDeleted: false,
 			Pagination:     nil,

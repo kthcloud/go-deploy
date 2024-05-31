@@ -22,22 +22,24 @@ type RoutingGroup interface {
 // RoutingGroups returns a list of all routing groups that should be registered in the router
 func RoutingGroups() []RoutingGroup {
 	return []RoutingGroup{
+		DiscoverRoutes(),
 		DeploymentRoutes(),
 		GpuGroupRoutes(),
 		GpuLeaseRoutes(),
+		HostRoutes(),
 		JobRoutes(),
 		MetricsRoutes(),
 		NotificationRoutes(),
+		ResourceMigrationRoutes(),
 		SmRoutes(),
+		SnapshotRoutes(),
+		StatusRoutes(),
+		SystemRoutes(),
 		TeamRoutes(),
 		UserRoutes(),
-		VmRoutes(),
 		VmActionRoutes(),
-		SnapshotRoutes(),
+		VmRoutes(),
 		ZoneRoutes(),
-		DiscoverRoutes(),
-		StatusRoutes(),
-		ResourceMigrationRoutes(),
 	}
 }
 
