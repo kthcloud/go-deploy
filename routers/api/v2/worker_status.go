@@ -6,7 +6,7 @@ import (
 	"go-deploy/dto/v2/query"
 	"go-deploy/pkg/sys"
 	"go-deploy/service"
-	"go-deploy/service/v1/status/opts"
+	"go-deploy/service/v2/status/opts"
 )
 
 // ListWorkerStatus
@@ -18,7 +18,7 @@ import (
 // @Success 200 {array} body.WorkerStatusRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v1/status [get]
+// @Router /v2/status [get]
 func ListWorkerStatus(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -28,7 +28,7 @@ func ListWorkerStatus(c *gin.Context) {
 		return
 	}
 
-	workerStatus, err := service.V1().Status().ListWorkerStatus(opts.ListWorkerStatusOpts{})
+	workerStatus, err := service.V2().Status().ListWorkerStatus(opts.ListWorkerStatusOpts{})
 	if err != nil {
 		context.ServerError(err, InternalError)
 		return

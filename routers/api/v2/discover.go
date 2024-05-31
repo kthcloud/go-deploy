@@ -14,11 +14,11 @@ import (
 // @Produce  json
 // @Success 200 {object} body.DiscoverRead
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v1/discover [get]
+// @Router /v2/discover [get]
 func Discover(c *gin.Context) {
 	context := sys.NewContext(c)
 
-	discover, err := service.V1().Discovery().Discover()
+	discover, err := service.V2().Discovery().Discover()
 	if err != nil {
 		context.ServerError(err, InternalError)
 		return

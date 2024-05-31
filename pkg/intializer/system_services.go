@@ -18,7 +18,7 @@ func EnsureSystemDeploymentsExists() error {
 			return errors.New("fallback deployment name not set")
 		}
 
-		err := service.V1().Deployments().Create(uuid.NewString(), "system", &body.DeploymentCreate{
+		err := service.V2().Deployments().Create(uuid.NewString(), "system", &body.DeploymentCreate{
 			Name:     config.Config.Deployment.Fallback.Disabled.Name,
 			CpuCores: floatPtr(1),
 			RAM:      floatPtr(1),
@@ -41,7 +41,7 @@ func EnsureSystemDeploymentsExists() error {
 
 		// Deployment either already exists or was created
 		// Ensure the owner is "system"
-		deployment, err := service.V1().Deployments().GetByName(config.Config.Deployment.Fallback.Disabled.Name)
+		deployment, err := service.V2().Deployments().GetByName(config.Config.Deployment.Fallback.Disabled.Name)
 		if err != nil {
 			return err
 		}

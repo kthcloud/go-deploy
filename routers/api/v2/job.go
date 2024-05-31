@@ -11,8 +11,8 @@ import (
 	"go-deploy/pkg/sys"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
-	"go-deploy/service/v1/jobs/opts"
-	v12 "go-deploy/service/v1/utils"
+	"go-deploy/service/v2/jobs/opts"
+	v12 "go-deploy/service/v2/utils"
 )
 
 // GetJob
@@ -28,7 +28,7 @@ import (
 // @Failure 401 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v1/jobs/{jobId} [get]
+// @Router /v2/jobs/{jobId} [get]
 func GetJob(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -44,7 +44,7 @@ func GetJob(c *gin.Context) {
 		return
 	}
 
-	job, err := service.V1(auth).Jobs().Get(requestURI.JobID)
+	job, err := service.V2(auth).Jobs().Get(requestURI.JobID)
 	if err != nil {
 		context.ServerError(err, InternalError)
 		return
@@ -72,7 +72,7 @@ func GetJob(c *gin.Context) {
 // @Param page query int false "Page number"
 // @Param pageSize query int false "Number of items per page"
 // @Success 200 {array} body.JobRead
-// @Router /v1/jobs [get]
+// @Router /v2/jobs [get]
 func ListJobs(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -88,7 +88,7 @@ func ListJobs(c *gin.Context) {
 		return
 	}
 
-	jobList, err := service.V1(auth).Jobs().List(opts.ListOpts{
+	jobList, err := service.V2(auth).Jobs().List(opts.ListOpts{
 		Pagination:      v12.GetOrDefaultPagination(requestQuery.Pagination),
 		SortBy:          v12.GetOrDefaultSortBy(requestQuery.SortBy),
 		UserID:          requestQuery.UserID,
@@ -126,7 +126,7 @@ func ListJobs(c *gin.Context) {
 // @Param jobId path string true "Job ID"
 // @Param body body body.JobUpdate true "Job update"
 // @Success 200 {object} body.JobRead
-// @Router /v1/jobs/{jobId} [post]
+// @Router /v2/jobs/{jobId} [post]
 func UpdateJob(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -148,7 +148,7 @@ func UpdateJob(c *gin.Context) {
 		return
 	}
 
-	updated, err := service.V1(auth).Jobs().Update(requestURI.JobID, &request)
+	updated, err := service.V2(auth).Jobs().Update(requestURI.JobID, &request)
 	if err != nil {
 		if errors.Is(err, sErrors.ForbiddenErr) {
 			context.Forbidden("User is not allowed to update jobs")

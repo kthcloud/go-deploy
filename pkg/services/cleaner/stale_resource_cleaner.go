@@ -38,7 +38,7 @@ func staleResourceCleaner() error {
 
 		// Set its replicas to 0
 		replicas := 0
-		err = service.V1().Deployments().Update(deployment.ID, &bodyV2.DeploymentUpdate{
+		err = service.V2().Deployments().Update(deployment.ID, &bodyV2.DeploymentUpdate{
 			Replicas: &replicas,
 		})
 		if err != nil {

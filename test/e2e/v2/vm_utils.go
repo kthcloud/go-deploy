@@ -7,7 +7,6 @@ import (
 	"go-deploy/dto/v2/body"
 	"go-deploy/pkg/app/status_codes"
 	"go-deploy/test/e2e"
-	v1 "go-deploy/test/e2e/v1"
 	"net/http"
 	"os"
 	"strings"
@@ -36,7 +35,7 @@ func UpdateVM(t *testing.T, id string, requestBody body.VmUpdate, user ...string
 	vmUpdated := e2e.MustParse[body.VmUpdated](t, resp)
 
 	if vmUpdated.JobID != nil {
-		v1.WaitForJobFinished(t, *vmUpdated.JobID, nil)
+		WaitForJobFinished(t, *vmUpdated.JobID, nil)
 	}
 	WaitForVmRunning(t, id, func(vmRead *body.VmRead) bool {
 		// Make sure it is accessible
@@ -53,7 +52,7 @@ func DoVmAction(t *testing.T, vmID string, requestBody body.VmActionCreate, user
 	resp := e2e.DoPostRequest(t, VmActionsPath+"?vmId="+vmID, requestBody, user...)
 	vmActionCreated := e2e.MustParse[body.VmActionCreated](t, resp)
 
-	v1.WaitForJobFinished(t, vmActionCreated.JobID, nil)
+	WaitForJobFinished(t, vmActionCreated.JobID, nil)
 
 	return vmActionCreated
 }
@@ -74,7 +73,7 @@ func WithVM(t *testing.T, requestBody body.VmCreate, user ...string) body.VmRead
 
 	t.Cleanup(func() { cleanUpVm(t, vmCreated.ID) })
 
-	v1.WaitForJobFinished(t, vmCreated.JobID, nil)
+	WaitForJobFinished(t, vmCreated.JobID, nil)
 	WaitForVmRunning(t, vmCreated.ID, func(vmRead *body.VmRead) bool {
 		// Make sure it is accessible
 		if vmRead.SshConnectionString != nil {
@@ -213,7 +212,7 @@ func cleanUpVm(t *testing.T, id string) {
 		assert.NoError(t, err, "deleted body was not read")
 		assert.Equal(t, id, vmDeleted.ID)
 
-		v1.WaitForJobFinished(t, vmDeleted.JobID, nil)
+		WaitForJobFinished(t, vmDeleted.JobID, nil)
 		WaitForVmDeleted(t, vmDeleted.ID, nil)
 
 		return

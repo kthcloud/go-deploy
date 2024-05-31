@@ -13,7 +13,7 @@ import (
 	"go-deploy/pkg/sys"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
-	teamOpts "go-deploy/service/v1/teams/opts"
+	teamOpts "go-deploy/service/v2/teams/opts"
 	v2Utils "go-deploy/service/v2/utils"
 	"go-deploy/service/v2/vms/opts"
 )
@@ -52,7 +52,6 @@ func GetVM(c *gin.Context) {
 		return
 	}
 
-	deployV1 := service.V1(auth)
 	deployV2 := service.V2(auth)
 
 	var vm *model.VM
@@ -72,7 +71,7 @@ func GetVM(c *gin.Context) {
 		return
 	}
 
-	teamIDs, _ := deployV1.Teams().ListIDs(teamOpts.ListOpts{ResourceID: vm.ID})
+	teamIDs, _ := deployV2.Teams().ListIDs(teamOpts.ListOpts{ResourceID: vm.ID})
 	sshConnectionString, _ := deployV2.VMs().SshConnectionString(vm.ID)
 
 	lease, _ := deployV2.VMs().GpuLeases().GetByVmID(vm.ID)
@@ -111,7 +110,6 @@ func ListVMs(c *gin.Context) {
 		return
 	}
 
-	deployV1 := service.V1(auth)
 	deployV2 := service.V2(auth)
 
 	var userID string
@@ -138,7 +136,7 @@ func ListVMs(c *gin.Context) {
 
 	dtoVMs := make([]body.VmRead, len(vms))
 	for i, vm := range vms {
-		teamIDs, _ := deployV1.Teams().ListIDs(teamOpts.ListOpts{ResourceID: vm.ID})
+		teamIDs, _ := deployV2.Teams().ListIDs(teamOpts.ListOpts{ResourceID: vm.ID})
 		sshConnectionString, _ := deployV2.VMs().SshConnectionString(vm.ID)
 		lease, _ := deployV2.VMs().GpuLeases().GetByVmID(vm.ID)
 		dtoVMs[i] = vm.ToDTOv2(lease, teamIDs, sshConnectionString)
@@ -176,7 +174,6 @@ func CreateVM(c *gin.Context) {
 		return
 	}
 
-	deployV1 := service.V1(auth)
 	deployV2 := service.V2(auth)
 
 	unique, err := deployV2.VMs().NameAvailable(requestBody.Name)
@@ -191,7 +188,7 @@ func CreateVM(c *gin.Context) {
 	}
 
 	if requestBody.Zone != nil {
-		zone := deployV1.Zones().Get(*requestBody.Zone)
+		zone := deployV2.System().GetZone(*requestBody.Zone)
 		if zone == nil {
 			context.NotFound("Zone not found")
 			return
@@ -202,7 +199,7 @@ func CreateVM(c *gin.Context) {
 			return
 		}
 
-		if !deployV1.Zones().HasCapability(*requestBody.Zone, configModels.ZoneCapabilityVM) {
+		if !deployV2.System().ZoneHasCapability(*requestBody.Zone, configModels.ZoneCapabilityVM) {
 			context.Forbidden("Zone does not have VM capability")
 			return
 		}
@@ -222,7 +219,7 @@ func CreateVM(c *gin.Context) {
 
 	vmID := uuid.New().String()
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.User.ID, model.JobCreateVM, version.V2, map[string]interface{}{
+	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobCreateVM, version.V2, map[string]interface{}{
 		"id":       vmID,
 		"ownerId":  auth.User.ID,
 		"params":   requestBody,
@@ -268,7 +265,6 @@ func DeleteVM(c *gin.Context) {
 		return
 	}
 
-	deployV1 := service.V1(auth)
 	deployV2 := service.V2(auth)
 
 	vm, err := deployV2.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
@@ -288,7 +284,7 @@ func DeleteVM(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.User.ID, model.JobDeleteVM, version.V2, map[string]interface{}{
+	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobDeleteVM, version.V2, map[string]interface{}{
 		"id":       vm.ID,
 		"authInfo": auth,
 	})
@@ -339,7 +335,6 @@ func UpdateVM(c *gin.Context) {
 		return
 	}
 
-	deployV1 := service.V1(auth)
 	deployV2 := service.V2(auth)
 
 	vm, err := deployV2.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
@@ -397,7 +392,7 @@ func UpdateVM(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.User.ID, model.JobUpdateVM, version.V2, map[string]interface{}{
+	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobUpdateVM, version.V2, map[string]interface{}{
 		"id":       vm.ID,
 		"params":   requestBody,
 		"authInfo": auth,

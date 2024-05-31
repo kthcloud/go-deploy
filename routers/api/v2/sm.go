@@ -12,8 +12,8 @@ import (
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/sys"
 	"go-deploy/service"
-	"go-deploy/service/v1/sms/opts"
-	v12 "go-deploy/service/v1/utils"
+	"go-deploy/service/v2/sms/opts"
+	v12 "go-deploy/service/v2/utils"
 	"net/http"
 	"strconv"
 	"strings"
@@ -32,7 +32,7 @@ import (
 // @Failure 401 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v1/storageManagers/{storageManagerId} [get]
+// @Router /v2/storageManagers/{storageManagerId} [get]
 func GetSM(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -48,7 +48,7 @@ func GetSM(c *gin.Context) {
 		return
 	}
 
-	sm, err := service.V1(auth).SMs().Get(requestURI.SmID)
+	sm, err := service.V2(auth).SMs().Get(requestURI.SmID)
 	if err != nil {
 		context.ErrorResponse(http.StatusInternalServerError, status_codes.ResourceValidationFailed, "Failed to validate")
 		return
@@ -76,7 +76,7 @@ func GetSM(c *gin.Context) {
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 401 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v1/storageManagers [get]storageManager
+// @Router /v2/storageManagers [get]storageManager
 func ListSMs(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -92,7 +92,7 @@ func ListSMs(c *gin.Context) {
 		return
 	}
 
-	smList, err := service.V1(auth).SMs().List(opts.ListOpts{
+	smList, err := service.V2(auth).SMs().List(opts.ListOpts{
 		Pagination: v12.GetOrDefaultPagination(requestQuery.Pagination),
 		All:        requestQuery.All,
 	})
@@ -128,7 +128,7 @@ func ListSMs(c *gin.Context) {
 // @Failure 401 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v1/storageManagers/{storageManagerId} [get]
+// @Router /v2/storageManagers/{storageManagerId} [get]
 func DeleteSM(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -144,9 +144,9 @@ func DeleteSM(c *gin.Context) {
 		return
 	}
 
-	deployV1 := service.V1(auth)
+	deployV2 := service.V2(auth)
 
-	sm, err := deployV1.SMs().Get(requestURI.SmID)
+	sm, err := deployV2.SMs().Get(requestURI.SmID)
 	if err != nil {
 		context.ServerError(err, InternalError)
 		return
@@ -158,7 +158,7 @@ func DeleteSM(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.User.ID, model.JobDeleteSM, version.V1, map[string]interface{}{
+	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobDeleteSM, version.V2, map[string]interface{}{
 		"id":      sm.ID,
 		"ownerId": sm.OwnerID,
 	})

@@ -31,7 +31,7 @@ func CleanUpOldTests() error {
 	}
 
 	for _, deployment := range oldE2eDeployments {
-		_ = job_repo.New().Create(uuid.NewString(), "system", model.JobDeleteDeployment, version.V1, map[string]interface{}{
+		_ = job_repo.New().Create(uuid.NewString(), "system", model.JobDeleteDeployment, version.V2, map[string]interface{}{
 			"id": deployment.ID,
 		})
 	}
@@ -42,11 +42,7 @@ func CleanUpOldTests() error {
 	}
 
 	for _, vm := range oldE2eVms {
-		if vm.Version == version.V1 {
-			_ = job_repo.New().Create(uuid.NewString(), "system", model.JobDeleteVM, version.V1, map[string]interface{}{
-				"id": vm.ID,
-			})
-		} else if vm.Version == version.V2 {
+		if vm.Version == version.V2 {
 			_ = job_repo.New().Create(uuid.NewString(), "system", model.JobDeleteVM, version.V2, map[string]interface{}{
 				"id": vm.ID,
 			})
@@ -59,7 +55,7 @@ func CleanUpOldTests() error {
 	}
 
 	for _, team := range oldE2eTeams {
-		err := service.V1().Teams().Delete(team.ID)
+		err := service.V2().Teams().Delete(team.ID)
 		if err != nil {
 			return fmt.Errorf("failed to delete team %s: %w", team.ID, err)
 		}
@@ -74,7 +70,7 @@ func EnsureTestUsersExist() error {
 		return nil
 	}
 
-	users, err := service.V1().Users().ListTestUsers()
+	users, err := service.V2().Users().ListTestUsers()
 	if err != nil {
 		return fmt.Errorf("failed to list test users: %w", err)
 	}

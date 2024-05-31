@@ -85,6 +85,16 @@ func (deployment *Deployment) ToDTO(smURL *string, externalPort *int, teams []st
 		}
 	}
 
+	var customDomain *body.CustomDomainRead
+	if app.CustomDomain != nil {
+		customDomain = &body.CustomDomainRead{
+			Domain: app.CustomDomain.Domain,
+			URL:    fmt.Sprintf("https://%s", app.CustomDomain.Domain),
+			Status: app.CustomDomain.Status,
+			Secret: app.CustomDomain.Secret,
+		}
+	}
+
 	return body.DeploymentRead{
 		ID:      deployment.ID,
 		Name:    deployment.Name,
@@ -113,13 +123,7 @@ func (deployment *Deployment) ToDTO(smURL *string, externalPort *int, teams []st
 		InternalPort:    app.InternalPort,
 		Image:           image,
 		HealthCheckPath: healthCheckPath,
-
-		CustomDomain: &body.CustomDomainRead{
-			Domain: app.CustomDomain.Domain,
-			URL:    fmt.Sprintf("https://%s", app.CustomDomain.Domain),
-			Status: app.CustomDomain.Status,
-			Secret: app.CustomDomain.Secret,
-		},
+		CustomDomain:    customDomain,
 
 		Status:        status,
 		Error:         deploymentError,

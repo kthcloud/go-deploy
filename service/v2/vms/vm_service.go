@@ -206,7 +206,7 @@ func (c *Client) Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
 	fallbackZone := config.Config.VM.DefaultZone
 	params := model.VmCreateParams{}.FromDTOv2(dtoVmCreate, &fallbackZone)
 
-	if !c.V1.Zones().HasCapability(params.Zone, configModels.ZoneCapabilityVM) {
+	if !c.V2.System().ZoneHasCapability(params.Zone, configModels.ZoneCapabilityVM) {
 		return sErrors.NewZoneCapabilityMissingError(fallbackZone, configModels.ZoneCapabilityVM)
 	}
 
@@ -318,7 +318,7 @@ func (c *Client) Delete(id string) error {
 		return makeError(err)
 	}
 
-	err = c.V1.Teams().CleanResource(id)
+	err = c.V2.Teams().CleanResource(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -377,7 +377,7 @@ func (c *Client) IsAccessible(id string) (bool, error) {
 		}
 
 		// 3. User has access through a team
-		teamAccess, err := c.V1.Teams().CheckResourceAccess(c.V2.Auth().User.ID, id)
+		teamAccess, err := c.V2.Teams().CheckResourceAccess(c.V2.Auth().User.ID, id)
 		if err != nil {
 			return false, makeError(err)
 		}
@@ -681,7 +681,7 @@ func (c *Client) GetUsage(userID string) (*model.VmUsage, error) {
 // GetHost gets the host for the VM.
 //
 // It returns an error if the VM is not found.
-func (c *Client) GetHost(vmID string) (*model.Host, error) {
+func (c *Client) GetHost(vmID string) (*model.VmHost, error) {
 	makeError := func(err error) error {
 		return fmt.Errorf("failed to get host for vm %s. details: %w", vmID, err)
 	}

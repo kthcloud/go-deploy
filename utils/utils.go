@@ -132,6 +132,16 @@ func GenerateSalt() string {
 	return string(salt)
 }
 
+func WithoutNils[T any](slice []*T) []T {
+	var result []T
+	for _, item := range slice {
+		if item != nil {
+			result = append(result, *item)
+		}
+	}
+	return result
+}
+
 // StrPtr converts a string to a pointer
 func StrPtr(s string) *string {
 	return &s

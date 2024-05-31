@@ -179,7 +179,6 @@ func CreateGpuLease(c *gin.Context) {
 		return
 	}
 
-	deployV1 := service.V1(auth)
 	deployV2 := service.V2(auth)
 
 	allowedToLease := auth.GetEffectiveRole().Permissions.UseGPUs
@@ -216,7 +215,7 @@ func CreateGpuLease(c *gin.Context) {
 
 	gpuLeaseID := uuid.New().String()
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.User.ID, model.JobCreateGpuLease, version.V2, map[string]interface{}{
+	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobCreateGpuLease, version.V2, map[string]interface{}{
 		"id":       gpuLeaseID,
 		"userId":   auth.User.ID,
 		"params":   requestBody,
@@ -268,7 +267,6 @@ func UpdateGpuLease(c *gin.Context) {
 		return
 	}
 
-	deployV1 := service.V1(auth)
 	deployV2 := service.V2(auth)
 
 	gpuLease, err := deployV2.VMs().GpuLeases().Get(requestURI.GpuLeaseID)
@@ -289,7 +287,7 @@ func UpdateGpuLease(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.User.ID, model.JobUpdateGpuLease, version.V2, map[string]interface{}{
+	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobUpdateGpuLease, version.V2, map[string]interface{}{
 		"id":       gpuLease.ID,
 		"params":   requestBody,
 		"authInfo": auth,
@@ -333,7 +331,6 @@ func DeleteGpuLease(c *gin.Context) {
 		return
 	}
 
-	deployV1 := service.V1(auth)
 	deployV2 := service.V2(auth)
 
 	gpuLease, err := deployV2.VMs().GpuLeases().Get(requestURI.GpuLeaseID)
@@ -348,7 +345,7 @@ func DeleteGpuLease(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.User.ID, model.JobDeleteGpuLease, version.V2, map[string]interface{}{
+	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobDeleteGpuLease, version.V2, map[string]interface{}{
 		"id":       gpuLease.ID,
 		"authInfo": auth,
 	})

@@ -11,8 +11,8 @@ import (
 	"go-deploy/pkg/sys"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
-	"go-deploy/service/v1/users/opts"
-	sUtils "go-deploy/service/v1/utils"
+	"go-deploy/service/v2/users/opts"
+	sUtils "go-deploy/service/v2/utils"
 )
 
 // GetUser
@@ -26,7 +26,7 @@ import (
 // @Success 200 {object}  body.UserRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v1/users/{userId} [get]
+// @Router /v2/users/{userId} [get]
 func GetUser(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -49,9 +49,9 @@ func GetUser(c *gin.Context) {
 	var effectiveRole *model.Role
 	var user *model.User
 
-	deployV1 := service.V1(auth)
+	deployV2 := service.V2(auth)
 
-	user, err = deployV1.Users().Get(requestURI.UserID)
+	user, err = deployV2.Users().Get(requestURI.UserID)
 	if err != nil {
 		context.ServerError(err, InternalError)
 		return
@@ -67,8 +67,8 @@ func GetUser(c *gin.Context) {
 		effectiveRole = &model.Role{}
 	}
 
-	usage, _ := deployV1.Users().GetUsage(user.ID)
-	context.JSONResponse(200, user.ToDTO(effectiveRole, usage, deployV1.SMs().GetUrlByUserID(user.ID)))
+	usage, _ := deployV2.Users().GetUsage(user.ID)
+	context.JSONResponse(200, user.ToDTO(effectiveRole, usage, deployV2.SMs().GetUrlByUserID(user.ID)))
 }
 
 // ListUsers
@@ -86,7 +86,7 @@ func GetUser(c *gin.Context) {
 // @Success 200 {array}  body.UserRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v1/users [get]
+// @Router /v2/users [get]
 func ListUsers(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -102,10 +102,10 @@ func ListUsers(c *gin.Context) {
 		return
 	}
 
-	deployV1 := service.V1(auth)
+	deployV2 := service.V2(auth)
 
 	if requestQuery.Discover {
-		userList, err := deployV1.Users().Discover(opts.DiscoverOpts{
+		userList, err := deployV2.Users().Discover(opts.DiscoverOpts{
 			Search:     requestQuery.Search,
 			Pagination: sUtils.GetOrDefaultPagination(requestQuery.Pagination),
 		})
@@ -123,7 +123,7 @@ func ListUsers(c *gin.Context) {
 		return
 	}
 
-	userList, err := deployV1.Users().List(opts.ListOpts{
+	userList, err := deployV2.Users().List(opts.ListOpts{
 		Pagination: sUtils.GetOrDefaultPagination(requestQuery.Pagination),
 		Search:     requestQuery.Search,
 		All:        requestQuery.All,
@@ -136,8 +136,8 @@ func ListUsers(c *gin.Context) {
 	usersDto := make([]body.UserRead, 0)
 	for _, user := range userList {
 		role := config.Config.GetRole(user.EffectiveRole.Name)
-		usage, _ := deployV1.Users().GetUsage(user.ID)
-		usersDto = append(usersDto, user.ToDTO(role, usage, deployV1.SMs().GetUrlByUserID(user.ID)))
+		usage, _ := deployV2.Users().GetUsage(user.ID)
+		usersDto = append(usersDto, user.ToDTO(role, usage, deployV2.SMs().GetUrlByUserID(user.ID)))
 	}
 
 	context.Ok(usersDto)
@@ -155,7 +155,7 @@ func ListUsers(c *gin.Context) {
 // @Success 200 {object} body.UserRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v1/users/{userId} [post]
+// @Router /v2/users/{userId} [post]
 func UpdateUser(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -183,9 +183,9 @@ func UpdateUser(c *gin.Context) {
 
 	var effectiveRole *model.Role
 
-	deployV1 := service.V1(auth)
+	deployV2 := service.V2(auth)
 
-	updated, err := deployV1.Users().Update(requestURI.UserID, &userUpdate)
+	updated, err := deployV2.Users().Update(requestURI.UserID, &userUpdate)
 	if err != nil {
 		switch {
 		case errors.Is(err, sErrors.UserNotFoundErr):
@@ -201,6 +201,6 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	usage, err := deployV1.Users().GetUsage(updated.ID)
-	context.JSONResponse(200, updated.ToDTO(effectiveRole, usage, deployV1.SMs().GetUrlByUserID(updated.ID)))
+	usage, err := deployV2.Users().GetUsage(updated.ID)
+	context.JSONResponse(200, updated.ToDTO(effectiveRole, usage, deployV2.SMs().GetUrlByUserID(updated.ID)))
 }

@@ -27,6 +27,9 @@ type ConfigType struct {
 
 	Deployment Deployment `yaml:"deployment"`
 	VM         VM         `yaml:"vm"`
+	Discovery  struct {
+		Token string `yaml:"token"`
+	} `yaml:"discovery"`
 
 	Zones []Zone `yaml:"zones"`
 
@@ -53,6 +56,11 @@ type ConfigType struct {
 
 		JobFetch       time.Duration `yaml:"jobFetch"`
 		FailedJobFetch time.Duration `yaml:"failedJobFetch"`
+
+		FetchSystemStats      time.Duration `yaml:"fetchSystemStats"`
+		FetchSystemCapacities time.Duration `yaml:"fetchSystemCapacities"`
+		FetchSystemStatus     time.Duration `yaml:"fetchSystemStatus"`
+		FetchSystemGpuInfo    time.Duration `yaml:"fetchSystemGpuInfo"`
 	}
 
 	GPU struct {

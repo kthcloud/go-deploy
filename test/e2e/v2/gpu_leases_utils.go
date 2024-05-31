@@ -4,7 +4,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go-deploy/dto/v2/body"
 	"go-deploy/test/e2e"
-	v1 "go-deploy/test/e2e/v1"
 	"testing"
 )
 
@@ -27,7 +26,7 @@ func UpdateGpuLease(t *testing.T, id string, requestBody body.GpuLeaseUpdate, us
 	resp := e2e.DoPostRequest(t, GpuLeasePath+id, requestBody, userID...)
 	gpuLeaseUpdated := e2e.MustParse[body.GpuLeaseUpdated](t, resp)
 
-	v1.WaitForJobFinished(t, gpuLeaseUpdated.JobID, nil)
+	WaitForJobFinished(t, gpuLeaseUpdated.JobID, nil)
 
 	gpuLease := GetGpuLease(t, id, userID...)
 	assert.Equal(t, requestBody.VmID, gpuLease.VmID)
@@ -50,7 +49,7 @@ func WithGpuLease(t *testing.T, requestBody body.GpuLeaseCreate, userID ...strin
 
 	t.Cleanup(func() { cleanUpGpuLease(t, gpuLeaseCreated.ID) })
 
-	v1.WaitForJobFinished(t, gpuLeaseCreated.JobID, nil)
+	WaitForJobFinished(t, gpuLeaseCreated.JobID, nil)
 
 	gpuLeaseRead := GetGpuLease(t, gpuLeaseCreated.ID, userID...)
 
@@ -66,5 +65,5 @@ func WithGpuLease(t *testing.T, requestBody body.GpuLeaseCreate, userID ...strin
 
 func cleanUpGpuLease(t *testing.T, id string) {
 	resp := e2e.DoDeleteRequest(t, GpuLeasePath+id, e2e.AdminUser)
-	v1.WaitForJobFinished(t, e2e.MustParse[body.GpuLeaseDeleted](t, resp).JobID, nil)
+	WaitForJobFinished(t, e2e.MustParse[body.GpuLeaseDeleted](t, resp).JobID, nil)
 }

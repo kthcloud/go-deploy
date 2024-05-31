@@ -9,7 +9,7 @@ import (
 	"go-deploy/pkg/sys"
 	"go-deploy/service"
 	errors2 "go-deploy/service/errors"
-	"go-deploy/service/v1/deployments"
+	"go-deploy/service/v2/deployments"
 	"io"
 	"time"
 )
@@ -26,7 +26,7 @@ import (
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v1/deployments/{deploymentId}/logs [get]
+// @Router /v2/deployments/{deploymentId}/logs [get]
 func GetLogs(c *gin.Context) {
 	sysContext := sys.NewContext(c)
 
@@ -58,9 +58,9 @@ func GetLogs(c *gin.Context) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	deployV1 := service.V1(auth)
+	deployV2 := service.V2(auth)
 
-	err = deployV1.Deployments().SetupLogStream(requestURI.DeploymentID, ctx, handler, 25)
+	err = deployV2.Deployments().SetupLogStream(requestURI.DeploymentID, ctx, handler, 25)
 	if err != nil {
 		if errors.Is(err, errors2.DeploymentNotFoundErr) {
 			sysContext.NotFound("Deployment not found")

@@ -6,7 +6,6 @@ import (
 	"go-deploy/dto/v2/body"
 	"go-deploy/models/model"
 	"go-deploy/test/e2e"
-	"go-deploy/test/e2e/v1"
 	"go-deploy/test/e2e/v2"
 	"net/http"
 	"os"
@@ -250,7 +249,7 @@ func TestCreateShared(t *testing.T) {
 	t.Parallel()
 
 	vm := v2.WithDefaultVM(t)
-	team := v1.WithTeam(t, body.TeamCreate{
+	team := v2.WithTeam(t, body.TeamCreate{
 		Name:      e2e.GenName(),
 		Resources: []string{vm.ID},
 		Members:   []body.TeamMemberCreate{{ID: model.TestDefaultUserID}},

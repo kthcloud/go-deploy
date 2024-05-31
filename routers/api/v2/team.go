@@ -6,16 +6,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/google/uuid"
-	body2 "go-deploy/dto/v2/body"
+	"go-deploy/dto/v2/body"
 	"go-deploy/dto/v2/query"
 	"go-deploy/dto/v2/uri"
 	"go-deploy/models/model"
 	"go-deploy/pkg/sys"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
-	deploymentOpts "go-deploy/service/v1/deployments/opts"
-	"go-deploy/service/v1/teams/opts"
-	v12 "go-deploy/service/v1/utils"
+	deploymentOpts "go-deploy/service/v2/deployments/opts"
+	"go-deploy/service/v2/teams/opts"
+	v12 "go-deploy/service/v2/utils"
 	vmOpts "go-deploy/service/v2/vms/opts"
 	"go-deploy/utils"
 	"net/http"
@@ -33,7 +33,7 @@ import (
 // @Success 200 {object} body.TeamRead
 // @Failure 400 {object} body.BindingError
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v1/teams/{teamId} [get]
+// @Router /v2/teams/{teamId} [get]
 func GetTeam(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -49,7 +49,7 @@ func GetTeam(c *gin.Context) {
 		return
 	}
 
-	team, err := service.V1(auth).Teams().Get(requestURI.TeamID)
+	team, err := service.V2(auth).Teams().Get(requestURI.TeamID)
 	if err != nil {
 		context.ServerError(err, InternalError)
 		return
@@ -72,7 +72,7 @@ func GetTeam(c *gin.Context) {
 // @Success 200 {array} body.TeamRead
 // @Failure 400 {object} body.BindingError
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v1/teams [get]
+// @Router /v2/teams [get]
 func ListTeams(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -95,7 +95,7 @@ func ListTeams(c *gin.Context) {
 		userID = auth.User.ID
 	}
 
-	teamList, err := service.V1(auth).Teams().List(opts.ListOpts{
+	teamList, err := service.V2(auth).Teams().List(opts.ListOpts{
 		Pagination: v12.GetOrDefaultPagination(requestQuery.Pagination),
 		UserID:     userID,
 	})
@@ -104,7 +104,7 @@ func ListTeams(c *gin.Context) {
 		return
 	}
 
-	teamListDTO := make([]body2.TeamRead, len(teamList))
+	teamListDTO := make([]body.TeamRead, len(teamList))
 	for i, team := range teamList {
 		teamListDTO[i] = team.ToDTO(getMember, getResourceName)
 	}
@@ -123,11 +123,11 @@ func ListTeams(c *gin.Context) {
 // @Success 200 {object} body.TeamRead
 // @Failure 400 {object} body.BindingError
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v1/teams [post]
+// @Router /v2/teams [post]
 func CreateTeam(c *gin.Context) {
 	context := sys.NewContext(c)
 
-	var requestQuery body2.TeamCreate
+	var requestQuery body.TeamCreate
 	if err := context.GinContext.ShouldBindJSON(&requestQuery); err != nil {
 		context.BindingError(CreateBindingError(err))
 		return
@@ -139,7 +139,7 @@ func CreateTeam(c *gin.Context) {
 		return
 	}
 
-	team, err := service.V1(auth).Teams().Create(uuid.NewString(), auth.User.ID, &requestQuery)
+	team, err := service.V2(auth).Teams().Create(uuid.NewString(), auth.User.ID, &requestQuery)
 	if err != nil {
 		if errors.Is(err, sErrors.TeamNameTakenErr) {
 			context.UserError("Team name is taken")
@@ -165,7 +165,7 @@ func CreateTeam(c *gin.Context) {
 // @Success 200 {object} body.TeamRead
 // @Failure 400 {object} body.BindingError
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v1/teams/{teamId} [post]
+// @Router /v2/teams/{teamId} [post]
 func UpdateTeam(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -175,13 +175,13 @@ func UpdateTeam(c *gin.Context) {
 		return
 	}
 
-	var requestQueryJoin body2.TeamJoin
+	var requestQueryJoin body.TeamJoin
 	if err := context.GinContext.ShouldBindBodyWith(&requestQueryJoin, binding.JSON); err == nil {
 		joinTeam(context, requestURI.TeamID, &requestQueryJoin)
 		return
 	}
 
-	var requestQuery body2.TeamUpdate
+	var requestQuery body.TeamUpdate
 	if err := context.GinContext.ShouldBindBodyWith(&requestQuery, binding.JSON); err != nil {
 		context.BindingError(CreateBindingError(err))
 		return
@@ -193,7 +193,7 @@ func UpdateTeam(c *gin.Context) {
 		return
 	}
 
-	updated, err := service.V1(auth).Teams().Update(requestURI.TeamID, &requestQuery)
+	updated, err := service.V2(auth).Teams().Update(requestURI.TeamID, &requestQuery)
 	if err != nil {
 		if errors.Is(err, sErrors.TeamNameTakenErr) {
 			context.UserError("Team name is taken")
@@ -223,7 +223,7 @@ func UpdateTeam(c *gin.Context) {
 // @Success 204 "No Content"
 // @Failure 400 {object} body.BindingError
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v1/teams/{teamId} [delete]
+// @Router /v2/teams/{teamId} [delete]
 func DeleteTeam(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -239,7 +239,7 @@ func DeleteTeam(c *gin.Context) {
 		return
 	}
 
-	err = service.V1(auth).Teams().Delete(requestURI.TeamID)
+	err = service.V2(auth).Teams().Delete(requestURI.TeamID)
 	if err != nil {
 		if errors.Is(err, sErrors.TeamNotFoundErr) {
 			context.NotFound("Team not found")
@@ -255,13 +255,13 @@ func DeleteTeam(c *gin.Context) {
 
 // joinTeam is an alternate entrypoint for UpdateTeam that allows a user to join a team
 // It is called if a body.TeamJoin is passed in the request body, instead of a body.TeamUpdate
-func joinTeam(context sys.ClientContext, id string, requestBody *body2.TeamJoin) {
+func joinTeam(context sys.ClientContext, id string, requestBody *body.TeamJoin) {
 	auth, err := WithAuth(&context)
 	if err != nil {
 		context.ServerError(err, AuthInfoNotAvailableErr)
 	}
 
-	team, err := service.V1(auth).Teams().Join(id, requestBody)
+	team, err := service.V2(auth).Teams().Join(id, requestBody)
 	if err != nil {
 		if errors.Is(err, sErrors.NotInvitedErr) {
 			context.UserError("User not invited to team")
@@ -286,8 +286,8 @@ func joinTeam(context sys.ClientContext, id string, requestBody *body2.TeamJoin)
 }
 
 // getMember is a helper function for converting a team member to a team member DTO
-func getMember(member *model.TeamMember) *body2.TeamMember {
-	user, err := service.V1().Users().Get(member.ID)
+func getMember(member *model.TeamMember) *body.TeamMember {
+	user, err := service.V2().Users().Get(member.ID)
 	if err != nil {
 		utils.PrettyPrintError(fmt.Errorf("failed to get user when getting team member for team: %s", err))
 		return nil
@@ -307,8 +307,8 @@ func getMember(member *model.TeamMember) *body2.TeamMember {
 		addedAt = &member.AddedAt
 	}
 
-	return &body2.TeamMember{
-		UserReadDiscovery: body2.UserReadDiscovery{
+	return &body.TeamMember{
+		UserReadDiscovery: body.UserReadDiscovery{
 			ID:          user.ID,
 			Username:    user.Username,
 			Email:       user.Email,
@@ -330,12 +330,11 @@ func getResourceName(resource *model.TeamResource) *string {
 		return nil
 	}
 
-	deployV1 := service.V1()
 	deployV2 := service.V2()
 
 	switch resource.Type {
 	case model.TeamResourceDeployment:
-		d, err := deployV1.Deployments().Get(resource.ID, deploymentOpts.GetOpts{Shared: true})
+		d, err := deployV2.Deployments().Get(resource.ID, deploymentOpts.GetOpts{Shared: true})
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to get deployment when getting team model name: %s", err))
 			return nil

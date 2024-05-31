@@ -21,7 +21,7 @@ import (
 // @Success 200 {object} body.CiConfig
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v1/deployments/{deploymentId}/ciConfig [get]
+// @Router /v2/deployments/{deploymentId}/ciConfig [get]
 func GetCiConfig(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -37,7 +37,7 @@ func GetCiConfig(c *gin.Context) {
 		return
 	}
 
-	config, err := service.V1(auth).Deployments().GetCiConfig(requestURI.DeploymentID)
+	config, err := service.V2(auth).Deployments().GetCiConfig(requestURI.DeploymentID)
 	if err != nil {
 		if errors.Is(err, dErrors.DeploymentNotFoundErr) {
 			context.NotFound("Deployment not found")

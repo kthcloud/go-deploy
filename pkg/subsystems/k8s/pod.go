@@ -18,6 +18,16 @@ const (
 	PodEventUpdated = "updated"
 )
 
+// CountPods returns a list of pods in the cluster.
+func (client *Client) CountPods() (int, error) {
+	pods, err := client.K8sClient.CoreV1().Pods(client.Namespace).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return 0, err
+	}
+
+	return len(pods.Items), nil
+}
+
 // PodExists checks if a pod exists in the cluster.
 func (client *Client) PodExists(podName string) (bool, error) {
 	_, err := client.K8sClient.CoreV1().Pods(client.Namespace).Get(context.TODO(), podName, metav1.GetOptions{})

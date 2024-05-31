@@ -14,5 +14,5 @@ import "github.com/gin-gonic/gin"
 // @Produce  json
 // @Success 200 {object}  string
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v1/metrics [get]
+// @Router /v2/metrics [get]
 func Metrics(c *gin.Context) {}

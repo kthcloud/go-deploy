@@ -18,7 +18,7 @@ import (
 // @Success 200 {array} body.ZoneRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v1/zones [get]
+// @Router /v2/zones [get]
 func ListZones(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -34,7 +34,7 @@ func ListZones(c *gin.Context) {
 		return
 	}
 
-	zoneList, err := service.V1(auth).Zones().List()
+	zoneList, err := service.V2(auth).System().ListZones()
 	if err != nil {
 		context.ServerError(err, InternalError)
 		return

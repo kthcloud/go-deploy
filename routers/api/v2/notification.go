@@ -9,8 +9,8 @@ import (
 	"go-deploy/pkg/sys"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
-	"go-deploy/service/v1/notifications/opts"
-	v12 "go-deploy/service/v1/utils"
+	"go-deploy/service/v2/notifications/opts"
+	v12 "go-deploy/service/v2/utils"
 	"net/http"
 )
 
@@ -24,7 +24,7 @@ import (
 // @Param notificationId path string true "Notification ID"
 // @Success 200 {object} body.NotificationRead
 // @Failure 400 {object} sys.ErrorResponse
-// @Router /v1/notifications/{notificationId} [get]
+// @Router /v2/notifications/{notificationId} [get]
 func GetNotification(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -40,7 +40,7 @@ func GetNotification(c *gin.Context) {
 		return
 	}
 
-	notification, err := service.V1(auth).Notifications().Get(requestQuery.NotificationID)
+	notification, err := service.V2(auth).Notifications().Get(requestQuery.NotificationID)
 	if err != nil {
 		context.ServerError(err, InternalError)
 		return
@@ -62,7 +62,7 @@ func GetNotification(c *gin.Context) {
 // @Param pageSize query int false "Number of items per page"
 // @Success 200 {array} body.NotificationRead
 // @Failure 400 {object} sys.ErrorResponse
-// @Router /v1/notifications [get]
+// @Router /v2/notifications [get]
 func ListNotifications(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -85,7 +85,7 @@ func ListNotifications(c *gin.Context) {
 		userID = &auth.User.ID
 	}
 
-	notificationList, err := service.V1(auth).Notifications().List(opts.ListOpts{
+	notificationList, err := service.V2(auth).Notifications().List(opts.ListOpts{
 		Pagination: v12.GetOrDefaultPagination(requestQuery.Pagination),
 		UserID:     userID,
 	})
@@ -113,7 +113,7 @@ func ListNotifications(c *gin.Context) {
 // @Param body body body.NotificationUpdate true "Notification update"
 // @Success 200
 // @Failure 400 {object} sys.ErrorResponse
-// @Router /v1/notifications/{notificationId} [post]
+// @Router /v2/notifications/{notificationId} [post]
 func UpdateNotification(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -135,7 +135,7 @@ func UpdateNotification(c *gin.Context) {
 		return
 	}
 
-	updated, err := service.V1(auth).Notifications().Update(requestQuery.NotificationID, &requestBody)
+	updated, err := service.V2(auth).Notifications().Update(requestQuery.NotificationID, &requestBody)
 	if err != nil {
 		context.ServerError(err, InternalError)
 		return
@@ -159,7 +159,7 @@ func UpdateNotification(c *gin.Context) {
 // @Param notificationId path string true "Notification ID"
 // @Success 200
 // @Failure 400 {object} sys.ErrorResponse
-// @Router /v1/notifications/{notificationId} [delete]
+// @Router /v2/notifications/{notificationId} [delete]
 func DeleteNotification(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -175,7 +175,7 @@ func DeleteNotification(c *gin.Context) {
 		return
 	}
 
-	err = service.V1(auth).Notifications().Delete(requestQuery.NotificationID)
+	err = service.V2(auth).Notifications().Delete(requestQuery.NotificationID)
 	if err != nil {
 		if errors.Is(err, sErrors.NotificationNotFoundErr) {
 			context.NotFound("Notification not found")

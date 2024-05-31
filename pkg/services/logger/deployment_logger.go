@@ -82,7 +82,7 @@ func OnPodEvent(ctx context.Context, zone *configModels.Zone, cancelFuncs map[st
 			}
 
 			loggerCtx, cancelFunc := context.WithCancel(context.Background())
-			err = service.V1().Deployments().K8s().SetupPodLogStream(loggerCtx, zone, logEvent.PodName, lastLogged, onLog)
+			err = service.V2().Deployments().K8s().SetupPodLogStream(loggerCtx, zone, logEvent.PodName, lastLogged, onLog)
 			if err != nil {
 				cancelFunc()
 				if errors.Is(err, sErrors.DeploymentNotFoundErr) {

@@ -22,7 +22,7 @@ import (
 // @Success 200 {object}  body.ApiKeyCreated
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v1/users/{userId}/apiKeys [post]
+// @Router /v2/users/{userId}/apiKeys [post]
 func CreateApiKey(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -48,9 +48,9 @@ func CreateApiKey(c *gin.Context) {
 		requestURI.UserID = auth.User.ID
 	}
 
-	deployV1 := service.V1(auth)
+	deployV2 := service.V2(auth)
 
-	apiKey, err := deployV1.Users().ApiKeys().Create(requestURI.UserID, &requestBody)
+	apiKey, err := deployV2.Users().ApiKeys().Create(requestURI.UserID, &requestBody)
 	if err != nil {
 		switch {
 		case errors.Is(err, sErrors.UserNotFoundErr):

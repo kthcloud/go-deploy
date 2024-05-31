@@ -6,7 +6,7 @@ import (
 	"go-deploy/dto/v2/uri"
 	"go-deploy/pkg/sys"
 	"go-deploy/service"
-	"go-deploy/service/v1/deployments/opts"
+	"go-deploy/service/v2/deployments/opts"
 )
 
 // DoDeploymentCommand
@@ -23,7 +23,7 @@ import (
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 423 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v1/deployments/{deploymentId}/command [post]
+// @Router /v2/deployments/{deploymentId}/command [post]
 func DoDeploymentCommand(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -45,9 +45,9 @@ func DoDeploymentCommand(c *gin.Context) {
 		return
 	}
 
-	deployV1 := service.V1(auth)
+	deployV2 := service.V2(auth)
 
-	deployment, err := deployV1.Deployments().Get(requestURI.DeploymentID, opts.GetOpts{Shared: true})
+	deployment, err := deployV2.Deployments().Get(requestURI.DeploymentID, opts.GetOpts{Shared: true})
 	if err != nil {
 		context.ServerError(err, InternalError)
 		return
@@ -63,7 +63,7 @@ func DoDeploymentCommand(c *gin.Context) {
 		return
 	}
 
-	deployV1.Deployments().DoCommand(requestURI.DeploymentID, requestBody.Command)
+	deployV2.Deployments().DoCommand(requestURI.DeploymentID, requestBody.Command)
 
 	context.OkNoContent()
 }

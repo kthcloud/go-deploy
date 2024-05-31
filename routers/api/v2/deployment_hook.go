@@ -10,7 +10,7 @@ import (
 	"go-deploy/pkg/sys"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
-	"go-deploy/service/v1/deployments/opts"
+	"go-deploy/service/v2/deployments/opts"
 	"strings"
 	"time"
 )
@@ -28,7 +28,7 @@ import (
 // @Failure 401 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v1/hooks/harbor [post]
+// @Router /v2/hooks/harbor [post]
 func HandleHarborHook(c *gin.Context) {
 	context := sys.NewContext(c)
 
@@ -44,15 +44,10 @@ func HandleHarborHook(c *gin.Context) {
 		return
 	}
 
-	deployV1 := service.V1()
+	deployV2 := service.V2()
 
-	if !deployV1.Deployments().ValidateHarborToken(token) {
+	if !deployV2.Deployments().ValidateHarborToken(token) {
 		context.Unauthorized("Invalid token")
-		return
-	}
-
-	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -63,7 +58,7 @@ func HandleHarborHook(c *gin.Context) {
 		return
 	}
 
-	deployment, err := deployV1.Deployments().Get("", opts.GetOpts{HarborWebhook: &webhook})
+	deployment, err := deployV2.Deployments().Get("", opts.GetOpts{HarborWebhook: &webhook})
 	if err != nil {
 		context.ServerError(err, InternalError)
 		return
@@ -83,9 +78,9 @@ func HandleHarborHook(c *gin.Context) {
 			CreatedAt: time.Now(),
 		}
 
-		deployV1.Deployments().AddLogs(deployment.ID, newLog)
+		deployV2.Deployments().AddLogs(deployment.ID, newLog)
 
-		err = deployV1.Deployments().Restart(deployment.ID)
+		err = deployV2.Deployments().Restart(deployment.ID)
 		if err != nil {
 			var failedToStartActivityErr *sErrors.FailedToStartActivityError
 			if errors.As(err, &failedToStartActivityErr) {

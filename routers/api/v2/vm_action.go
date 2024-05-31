@@ -47,7 +47,6 @@ func CreateVmAction(c *gin.Context) {
 		return
 	}
 
-	deployV1 := service.V1(auth)
 	deployV2 := service.V2(auth)
 
 	vm, err := deployV2.VMs().Get(requestQuery.VmID, opts.GetOpts{Shared: true})
@@ -67,7 +66,7 @@ func CreateVmAction(c *gin.Context) {
 	}
 
 	jobID := uuid.New().String()
-	err = deployV1.Jobs().Create(jobID, auth.User.ID, model.JobDoVmAction, version.V2, map[string]interface{}{
+	err = deployV2.Jobs().Create(jobID, auth.User.ID, model.JobDoVmAction, version.V2, map[string]interface{}{
 		"id":       vm.ID,
 		"params":   requestBody,
 		"authInfo": auth,
