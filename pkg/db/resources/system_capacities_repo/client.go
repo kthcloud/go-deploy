@@ -4,7 +4,6 @@ import (
 	"go-deploy/dto/v2/body"
 	"go-deploy/pkg/db"
 	"go-deploy/pkg/db/resources/base_clients"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 // Client is the client for the system capacities model.
@@ -26,11 +25,4 @@ func New(n ...int) *Client {
 			MaxDocuments: maxDocs,
 		},
 	}
-}
-
-// AddExtraFilter adds an extra custom filter to the client.
-func (client *Client) AddExtraFilter(filter bson.D) *Client {
-	client.AddExtraFilter(filter)
-
-	return client
 }

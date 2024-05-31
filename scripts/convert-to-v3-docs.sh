@@ -23,7 +23,6 @@ function convert_to_v3() {
   echo "$v3_res_json" >"$base_filepath.json"
 }
 
-convert_to_v3 "../docs/api/v1/V1_swagger"
 convert_to_v3 '../docs/api/v2/V2_swagger'
 
 

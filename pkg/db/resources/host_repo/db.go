@@ -37,7 +37,7 @@ func (client *Client) Register(host *model.Host) error {
 		{"lastSeenAt", time.Now()},
 	}
 
-	err = client.UpdateWithBsonByName(host.Name, update)
+	err = client.SetWithBsonByName(host.Name, update)
 	if err != nil {
 		return fmt.Errorf("failed to update host %s. details: %w", host.Name, err)
 	}
@@ -53,5 +53,5 @@ func (client *Client) DeactivateHost(name string, until ...time.Time) error {
 		deactivatedUntil = time.Now().AddDate(1000, 0, 0) // 1000 years is sort of forever ;)
 	}
 
-	return client.UpdateWithBsonByName(name, bson.D{{"deactivatedUntil", deactivatedUntil}})
+	return client.SetWithBsonByName(name, bson.D{{"deactivatedUntil", deactivatedUntil}})
 }
