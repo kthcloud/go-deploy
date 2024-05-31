@@ -5,6 +5,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	bodyV1 "go-deploy/dto/v1/body"
 	"go-deploy/dto/v2/body"
+	"go-deploy/models/model"
 	"go-deploy/test/e2e"
 	"go-deploy/test/e2e/v1"
 	"go-deploy/test/e2e/v2"
@@ -29,8 +30,8 @@ func TestList(t *testing.T) {
 
 	queries := []string{
 		"?page=1&pageSize=10",
-		"?userId=" + e2e.PowerUserID + "&page=1&pageSize=3",
-		"?userId=" + e2e.DefaultUserID + "&page=1&pageSize=3",
+		"?userId=" + model.TestDefaultUserID + "&page=1&pageSize=3",
+		"?userId=" + model.TestPowerUserID + "&page=1&pageSize=3",
 	}
 
 	for _, query := range queries {
@@ -253,14 +254,14 @@ func TestCreateShared(t *testing.T) {
 	team := v1.WithTeam(t, bodyV1.TeamCreate{
 		Name:      e2e.GenName(),
 		Resources: []string{vm.ID},
-		Members:   []bodyV1.TeamMemberCreate{{ID: e2e.DefaultUserID}},
-	}, e2e.PowerUserID)
+		Members:   []bodyV1.TeamMemberCreate{{ID: model.TestDefaultUserID}},
+	}, e2e.PowerUser)
 
 	vmRead := v2.GetVM(t, vm.ID)
 	assert.Equal(t, []string{team.ID}, vmRead.Teams, "invalid teams on vm")
 
 	// Fetch team members vms
-	vms := v2.ListVMs(t, "?userId="+e2e.DefaultUserID, e2e.DefaultUserID)
+	vms := v2.ListVMs(t, "?userId="+model.TestDefaultUserID, e2e.DefaultUser)
 	assert.NotEmpty(t, vms, "user has no vms")
 
 	hasVM := false

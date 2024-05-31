@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"go-deploy/dto/v1/body"
 	"go-deploy/models/model"
+	"go-deploy/pkg/config"
 	"go-deploy/pkg/db/resources/user_repo"
 	sErrors "go-deploy/service/errors"
 	"go-deploy/service/utils"
@@ -197,7 +198,7 @@ func (c *Client) Update(userID string, dtoUserUpdate *body.UserUpdate) (*model.U
 	return c.RefreshUser(userID, umc)
 }
 
-// FetchGravatar checks if the user has a gravatar image and fetches it if it exists
+// FetchGravatar checks if the user has a gravatar image and fetches it if it exists.
 // If the user does not have a gravatar image, it returns nil
 func (c *Client) FetchGravatar(userID string) (*string, error) {
 	umc := user_repo.New()
@@ -230,4 +231,76 @@ func (c *Client) FetchGravatar(userID string) (*string, error) {
 	gravatarURL = gravatarURL[:strings.Index(gravatarURL, "?")]
 
 	return &gravatarURL, nil
+}
+
+func (c *Client) ListTestUsers() ([]model.User, error) {
+	return []model.User{
+		{
+			ID:        model.TestAdminUserID,
+			Username:  "tester-admin",
+			FirstName: "tester-admin-first",
+			LastName:  "tester-admin-last",
+			Email:     "tester-admin@test.com",
+			IsAdmin:   true,
+			EffectiveRole: model.EffectiveRole{
+				Name:        getStrongestRole().Name,
+				Description: getStrongestRole().Description,
+			},
+			LastAuthenticatedAt: time.Now(),
+			ApiKeys: []model.ApiKey{
+				{
+					Name:      "test-api-key-admin",
+					Key:       model.TestAdminUserApiKey,
+					CreatedAt: time.Now(),
+					ExpiresAt: time.Now().AddDate(100, 0, 0),
+				},
+			},
+		},
+		{
+			ID:        model.TestPowerUserID,
+			Username:  "tester-power",
+			FirstName: "tester-power-first",
+			LastName:  "tester-power-last",
+			Email:     "tester-power@test.com",
+			IsAdmin:   false,
+			EffectiveRole: model.EffectiveRole{
+				Name:        getStrongestRole().Name,
+				Description: getStrongestRole().Description,
+			},
+			LastAuthenticatedAt: time.Now(),
+			ApiKeys: []model.ApiKey{
+				{
+					Name:      "test-api-key-power",
+					Key:       model.TestPowerUserApiKey,
+					CreatedAt: time.Now(),
+					ExpiresAt: time.Now().AddDate(100, 0, 0),
+				},
+			},
+		},
+		{
+			ID:        model.TestDefaultUserID,
+			Username:  "tester-default",
+			FirstName: "tester-default-first",
+			LastName:  "tester-default-last",
+			Email:     "tester-default@test.com",
+			IsAdmin:   false,
+			EffectiveRole: model.EffectiveRole{
+				Name:        getStrongestRole().Name,
+				Description: getStrongestRole().Description,
+			},
+			LastAuthenticatedAt: time.Now(),
+			ApiKeys: []model.ApiKey{
+				{
+					Name:      "test-api-key-default",
+					Key:       model.TestDefaultUserApiKey,
+					CreatedAt: time.Now(),
+					ExpiresAt: time.Now().AddDate(100, 0, 0),
+				},
+			},
+		},
+	}, nil
+}
+
+func getStrongestRole() *model.Role {
+	return &config.Config.Roles[len(config.Config.Roles)-1]
 }

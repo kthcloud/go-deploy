@@ -26,20 +26,14 @@ func DeploymentStatusListener(ctx context.Context) error {
 			if status, ok := incomingStatus.(*model.DeploymentStatus); ok {
 				deploymentStatus := parseDeploymentStatus(status)
 
-				err := deployment_repo.New().SetStatusByName(name, deploymentStatus)
-				if err != nil {
-					log.Println("Failed to set status for deployment", name, "details:", err)
-					return
-				}
-
-				err = deployment_repo.New().SetReplicaStatusByName(name, "main", &model.ReplicaStatus{
+				err := deployment_repo.New().SetStatusByName(name, deploymentStatus, &model.ReplicaStatus{
 					DesiredReplicas:     status.DesiredReplicas,
 					ReadyReplicas:       status.ReadyReplicas,
 					AvailableReplicas:   status.AvailableReplicas,
 					UnavailableReplicas: status.UnavailableReplicas,
 				})
 				if err != nil {
-					log.Println("Failed to set replica status for deployment", name, "details:", err)
+					log.Println("Failed to set status for deployment", name, "details:", err)
 					return
 				}
 

@@ -4,6 +4,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"go-deploy/dto/v1/body"
+	"go-deploy/models/model"
 	"go-deploy/test/e2e"
 	"go-deploy/test/e2e/v1"
 	"net/http"
@@ -25,8 +26,7 @@ func TestList(t *testing.T) {
 
 	queries := []string{
 		"?page=1&pageSize=10",
-		"?userId=" + e2e.PowerUserID + "&page=1&pageSize=3",
-		"?userId=" + e2e.DefaultUserID + "&page=1&pageSize=3",
+		"?userId=" + model.TestPowerUserID + "&page=1&pageSize=3",
 	}
 
 	for _, query := range queries {
@@ -167,10 +167,8 @@ func TestCreateWithInvalidBody(t *testing.T) {
 func TestCreateTooBig(t *testing.T) {
 	t.Parallel()
 
-	// Use the Default user for a minimal quota
-
 	// Fetch the quota for the user
-	quota := v1.GetUser(t, e2e.DefaultUserID).Quota
+	quota := v1.GetUser(t, model.TestPowerUserID).Quota
 
 	// Create a deployment that is too big CPU-wise
 	cpuCores := quota.CpuCores / 2
@@ -180,7 +178,7 @@ func TestCreateTooBig(t *testing.T) {
 		Name:     e2e.GenName(),
 		Replicas: &replicas,
 		CpuCores: &cpuCores,
-	}, e2e.DefaultUserID)
+	}, e2e.PowerUser)
 
 	// Create a deployment that is too big RAM-wise
 	ram := quota.RAM / 2
@@ -190,8 +188,7 @@ func TestCreateTooBig(t *testing.T) {
 		Name:     e2e.GenName(),
 		Replicas: &replicas,
 		RAM:      &ram,
-	}, e2e.DefaultUserID)
-
+	}, e2e.PowerUser)
 }
 
 func TestCreateShared(t *testing.T) {
@@ -201,14 +198,14 @@ func TestCreateShared(t *testing.T) {
 	team := v1.WithTeam(t, body.TeamCreate{
 		Name:      e2e.GenName(),
 		Resources: []string{deployment.ID},
-		Members:   []body.TeamMemberCreate{{ID: e2e.DefaultUserID}},
-	}, e2e.PowerUserID)
+		Members:   []body.TeamMemberCreate{{ID: model.TestDefaultUserID}},
+	}, e2e.PowerUser)
 
 	deploymentRead := v1.GetDeployment(t, deployment.ID)
 	assert.Equal(t, []string{team.ID}, deploymentRead.Teams, "invalid teams on deployment")
 
 	// Fetch team members deployments
-	deployments := v1.ListDeployments(t, "?userId="+e2e.DefaultUserID, e2e.DefaultUserID)
+	deployments := v1.ListDeployments(t, "?userId="+model.TestDefaultUserID, e2e.DefaultUser)
 	assert.NotEmpty(t, deployments, "user has no deployments")
 
 	hasDeployment := false
@@ -327,7 +324,6 @@ func TestUpdateName(t *testing.T) {
 	deployment, _ := v1.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
 
 	newName := e2e.GenName()
-
 	deploymentUpdate := body.DeploymentUpdate{
 		Name: &newName,
 	}

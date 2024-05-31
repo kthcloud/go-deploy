@@ -21,18 +21,18 @@ const (
 	VmActionsPath = "/v2/vmActions"
 )
 
-func GetVM(t *testing.T, id string, userID ...string) body.VmRead {
-	resp := e2e.DoGetRequest(t, VmPath+id, userID...)
+func GetVM(t *testing.T, id string, user ...string) body.VmRead {
+	resp := e2e.DoGetRequest(t, VmPath+id, user...)
 	return e2e.MustParse[body.VmRead](t, resp)
 }
 
-func ListVMs(t *testing.T, query string, userID ...string) []body.VmRead {
-	resp := e2e.DoGetRequest(t, VmsPath+query, userID...)
+func ListVMs(t *testing.T, query string, user ...string) []body.VmRead {
+	resp := e2e.DoGetRequest(t, VmsPath+query, user...)
 	return e2e.MustParse[[]body.VmRead](t, resp)
 }
 
-func UpdateVM(t *testing.T, id string, requestBody body.VmUpdate, userID ...string) body.VmRead {
-	resp := e2e.DoPostRequest(t, VmPath+id, requestBody, userID...)
+func UpdateVM(t *testing.T, id string, requestBody body.VmUpdate, user ...string) body.VmRead {
+	resp := e2e.DoPostRequest(t, VmPath+id, requestBody, user...)
 	vmUpdated := e2e.MustParse[body.VmUpdated](t, resp)
 
 	if vmUpdated.JobID != nil {
@@ -46,11 +46,11 @@ func UpdateVM(t *testing.T, id string, requestBody body.VmUpdate, userID ...stri
 		return false
 	})
 
-	return GetVM(t, id, userID...)
+	return GetVM(t, id, user...)
 }
 
-func DoVmAction(t *testing.T, vmID string, requestBody body.VmActionCreate, userID ...string) body.VmActionCreated {
-	resp := e2e.DoPostRequest(t, VmActionsPath+"?vmId="+vmID, requestBody, userID...)
+func DoVmAction(t *testing.T, vmID string, requestBody body.VmActionCreate, user ...string) body.VmActionCreated {
+	resp := e2e.DoPostRequest(t, VmActionsPath+"?vmId="+vmID, requestBody, user...)
 	vmActionCreated := e2e.MustParse[body.VmActionCreated](t, resp)
 
 	v1.WaitForJobFinished(t, vmActionCreated.JobID, nil)
@@ -68,8 +68,8 @@ func WithDefaultVM(t *testing.T, userID ...string) body.VmRead {
 	}, userID...)
 }
 
-func WithVM(t *testing.T, requestBody body.VmCreate, userID ...string) body.VmRead {
-	resp := e2e.DoPostRequest(t, VmsPath, requestBody, userID...)
+func WithVM(t *testing.T, requestBody body.VmCreate, user ...string) body.VmRead {
+	resp := e2e.DoPostRequest(t, VmsPath, requestBody, user...)
 	vmCreated := e2e.MustParse[body.VmCreated](t, resp)
 
 	t.Cleanup(func() { cleanUpVm(t, vmCreated.ID) })
@@ -83,7 +83,7 @@ func WithVM(t *testing.T, requestBody body.VmCreate, userID ...string) body.VmRe
 		return false
 	})
 
-	vmRead := GetVM(t, vmCreated.ID, userID...)
+	vmRead := GetVM(t, vmCreated.ID, user...)
 
 	assert.NotEmpty(t, vmRead.ID)
 	assert.Equal(t, requestBody.Name, vmRead.Name)
@@ -202,7 +202,7 @@ func checkUpVM(t *testing.T, connectionString string) bool {
 }
 
 func cleanUpVm(t *testing.T, id string) {
-	resp := e2e.DoDeleteRequest(t, VmPath+id, e2e.AdminUserID)
+	resp := e2e.DoDeleteRequest(t, VmPath+id, e2e.AdminUser)
 	if resp.StatusCode == http.StatusNotFound {
 		return
 	}

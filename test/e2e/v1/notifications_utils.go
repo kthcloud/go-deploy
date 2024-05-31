@@ -12,18 +12,18 @@ const (
 	NotificationsPath = "/v1/notifications"
 )
 
-func GetNotification(t *testing.T, id string, userID ...string) body.NotificationRead {
-	resp := e2e.DoGetRequest(t, NotificationPath+id, userID...)
+func GetNotification(t *testing.T, id string, user ...string) body.NotificationRead {
+	resp := e2e.DoGetRequest(t, NotificationPath+id, user...)
 	return e2e.MustParse[body.NotificationRead](t, resp)
 }
 
-func ListNotifications(t *testing.T, query string, userID ...string) []body.NotificationRead {
-	resp := e2e.DoGetRequest(t, NotificationsPath+query, userID...)
+func ListNotifications(t *testing.T, query string, user ...string) []body.NotificationRead {
+	resp := e2e.DoGetRequest(t, NotificationsPath+query, user...)
 	return e2e.MustParse[[]body.NotificationRead](t, resp)
 }
 
-func UpdateNotification(t *testing.T, id string, update body.NotificationUpdate, userID ...string) body.NotificationRead {
-	resp := e2e.DoPostRequest(t, NotificationPath+id, update, userID...)
+func UpdateNotification(t *testing.T, id string, update body.NotificationUpdate, user ...string) body.NotificationRead {
+	resp := e2e.DoPostRequest(t, NotificationPath+id, update, user...)
 	updatedNotification := e2e.MustParse[body.NotificationRead](t, resp)
 
 	if update.Read {

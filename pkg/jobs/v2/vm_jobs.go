@@ -338,6 +338,10 @@ func UpdateVmOwner(job *model.Job) error {
 
 	err = service.V2(utils.GetAuthInfo(job)).VMs().UpdateOwner(id, &params)
 	if err != nil {
+		if errors.Is(err, sErrors.VmNotFoundErr) {
+			return jErrors.MakeTerminatedError(err)
+		}
+
 		return jErrors.MakeFailedError(err)
 	}
 

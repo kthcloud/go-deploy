@@ -8,6 +8,7 @@ import (
 	"go-deploy/models/model"
 	"go-deploy/models/version"
 	"go-deploy/pkg/config"
+	rErrors "go-deploy/pkg/db/resources/errors"
 	"go-deploy/pkg/db/resources/gpu_lease_repo"
 	"go-deploy/pkg/db/resources/notification_repo"
 	"go-deploy/pkg/db/resources/resource_migration_repo"
@@ -24,7 +25,7 @@ import (
 	"strings"
 )
 
-// Get gets an existing deployment.
+// Get gets an existing VM.
 //
 // It can be fetched in multiple ways including ID, name, transfer code, and Harbor webhook.
 // It supports service.AuthInfo, and will restrict the result to ensure the user has access to the model.
@@ -36,8 +37,8 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.VM, error) {
 	if o.MigrationCode != nil {
 		rmc := resource_migration_repo.New().
 			WithType(model.ResourceMigrationTypeUpdateOwner).
-			WithResourceType(model.ResourceMigrationResourceTypeDeployment).
-			WithTransferCode(*o.MigrationCode)
+			WithResourceType(model.ResourceMigrationResourceTypeVM).
+			WithCode(*o.MigrationCode)
 
 		migration, err := rmc.Get()
 		if err != nil {
@@ -81,7 +82,6 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.VM, error) {
 
 	if vm == nil {
 		return nil, nil
-
 	}
 
 	c.markAccessedIfOwner(vm, vrc)
@@ -212,7 +212,7 @@ func (c *Client) Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
 
 	_, err := vm_repo.New(version.V2).Create(id, ownerID, &params)
 	if err != nil {
-		if errors.Is(err, vm_repo.NonUniqueFieldErr) {
+		if errors.Is(err, rErrors.NonUniqueFieldErr) {
 			return sErrors.NonUniqueFieldErr
 		}
 
@@ -271,7 +271,7 @@ func (c *Client) Update(id string, dtoVmUpdate *body.VmUpdate) error {
 
 	err := vm_repo.New(version.V2).UpdateWithParams(id, &vmUpdate)
 	if err != nil {
-		if errors.Is(err, vm_repo.NonUniqueFieldErr) {
+		if errors.Is(err, rErrors.NonUniqueFieldErr) {
 			return sErrors.NonUniqueFieldErr
 		}
 
@@ -308,8 +308,12 @@ func (c *Client) Delete(id string) error {
 		return sErrors.VmNotFoundErr
 	}
 
-	nmc := notification_repo.New().FilterContent("id", id)
-	err = nmc.Delete()
+	err = notification_repo.New().FilterContent("id", id).Delete()
+	if err != nil {
+		return makeError(err)
+	}
+
+	err = resource_migration_repo.New().WithResourceID(id).Delete()
 	if err != nil {
 		return makeError(err)
 	}
@@ -389,7 +393,7 @@ func (c *Client) IsAccessible(id string) (bool, error) {
 	return true, nil
 }
 
-// Repair repairs an existing deployment.
+// Repair repairs an existing VM.
 //
 // Trigger repair jobs for every subsystem.
 func (c *Client) Repair(id string) error {
@@ -453,18 +457,13 @@ func (c *Client) UpdateOwner(id string, params *model.VmUpdateOwnerParams) error
 		return fmt.Errorf("failed to update vm owner. details: %w", err)
 	}
 
-	vm, err := c.VM(id, nil)
+	vm, err := c.Get(id, opts.GetOpts{MigrationCode: params.MigrationCode})
 	if err != nil {
 		return makeError(err)
 	}
 
 	if vm == nil {
 		return sErrors.VmNotFoundErr
-	}
-
-	if vm == nil {
-		log.Println("VM", id, "not found when updating owner. Assuming it was deleted")
-		return nil
 	}
 
 	err = vm_repo.New(version.V2).UpdateWithParams(id, &model.VmUpdateParams{
@@ -495,8 +494,7 @@ func (c *Client) UpdateOwner(id string, params *model.VmUpdateOwnerParams) error
 		return makeError(err)
 	}
 
-	nmc := notification_repo.New().FilterContent("id", id).WithType(model.NotificationVmTransfer)
-	err = nmc.MarkReadAndCompleted()
+	err = notification_repo.New().FilterContent("id", id).WithType(model.NotificationVmTransfer).MarkReadAndCompleted()
 	if err != nil {
 		return makeError(err)
 	}
@@ -591,7 +589,7 @@ func (c *Client) SshConnectionString(id string) (*string, error) {
 	return sshConnectionString, nil
 }
 
-// CheckQuota checks if the user has enough quota to create or update a deployment.
+// CheckQuota checks if the user has enough quota to create or update a VM.
 //
 // Make sure to specify either opts.Create or opts.Update in the options (opts.Create takes priority).
 // When checking quota for opts.Create and opts.CreateSnapshot, id is not used.
@@ -623,15 +621,15 @@ func (c *Client) CheckQuota(id, userID string, quota *model.Quotas, opts ...opts
 		totalDiskSize := float64(usage.DiskSize + o.Create.DiskSize)
 
 		if totalCpuCores > quota.CpuCores {
-			return sErrors.NewQuotaExceededError(fmt.Sprintf("CPU cores quota exceeded. Current: %d, Quota: %d", totalCpuCores, quota.CpuCores))
+			return sErrors.NewQuotaExceededError(fmt.Sprintf("CPU cores quota exceeded. Current: %f, Quota: %f", totalCpuCores, quota.CpuCores))
 		}
 
 		if totalRam > quota.RAM {
-			return sErrors.NewQuotaExceededError(fmt.Sprintf("RAM quota exceeded. Current: %d, Quota: %d", totalRam, quota.RAM))
+			return sErrors.NewQuotaExceededError(fmt.Sprintf("RAM quota exceeded. Current: %f, Quota: %f", totalRam, quota.RAM))
 		}
 
 		if totalDiskSize > quota.DiskSize {
-			return sErrors.NewQuotaExceededError(fmt.Sprintf("Disk size quota exceeded. Current: %d, Quota: %d", totalDiskSize, quota.DiskSize))
+			return sErrors.NewQuotaExceededError(fmt.Sprintf("Disk size quota exceeded. Current: %f, Quota: %f", totalDiskSize, quota.DiskSize))
 		}
 	} else if o.Update != nil {
 		if o.Update.CpuCores == nil && o.Update.RAM == nil {
@@ -654,7 +652,7 @@ func (c *Client) CheckQuota(id, userID string, quota *model.Quotas, opts ...opts
 			}
 
 			if totalCpuCores > quota.CpuCores {
-				return sErrors.NewQuotaExceededError(fmt.Sprintf("CPU cores quota exceeded. Current: %d, Quota: %d", totalCpuCores, quota.CpuCores))
+				return sErrors.NewQuotaExceededError(fmt.Sprintf("CPU cores quota exceeded. Current: %f, Quota: %f", totalCpuCores, quota.CpuCores))
 			}
 		}
 
@@ -665,7 +663,7 @@ func (c *Client) CheckQuota(id, userID string, quota *model.Quotas, opts ...opts
 			}
 
 			if totalRam > quota.RAM {
-				return sErrors.NewQuotaExceededError(fmt.Sprintf("RAM quota exceeded. Current: %d, Quota: %d", totalRam, quota.RAM))
+				return sErrors.NewQuotaExceededError(fmt.Sprintf("RAM quota exceeded. Current: %f, Quota: %f", totalRam, quota.RAM))
 			}
 		}
 	} else if o.CreateSnapshot != nil {
@@ -691,9 +689,9 @@ func (c *Client) GetHost(vmID string) (*model.Host, error) {
 	return nil, makeError(errors.New("not implemented"))
 }
 
-// markAccessedIfOwner marks a deployment as accessed if the request is from the owner.
+// markAccessedIfOwner marks a VM as accessed if the request is from the owner.
 func (c *Client) markAccessedIfOwner(vm *model.VM, vrc *vm_repo.Client) {
-	if c.V1.HasAuth() && c.V1.Auth().User.ID == vm.OwnerID {
+	if c.V2.HasAuth() && c.V2.Auth().User.ID == vm.OwnerID {
 		_ = vrc.MarkAccessed(vm.ID)
 	}
 }

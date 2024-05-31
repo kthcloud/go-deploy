@@ -11,6 +11,16 @@ var (
 	FetchGravatarInterval = 10 * time.Minute
 )
 
+const (
+	TestAdminUserID   = "955f0f87-37fd-4792-90eb-9bf6989e698a"
+	TestPowerUserID   = "955f0f87-37fd-4792-90eb-9bf6989e698b"
+	TestDefaultUserID = "955f0f87-37fd-4792-90eb-9bf6989e698c"
+
+	TestAdminUserApiKey   = "test-api-key-admin"
+	TestPowerUserApiKey   = "test-api-key-power"
+	TestDefaultUserApiKey = "test-api-key-default"
+)
+
 type User struct {
 	ID        string   `bson:"id"`
 	Username  string   `bson:"username"`
@@ -22,9 +32,9 @@ type User struct {
 	IsAdmin       bool          `bson:"isAdmin"`
 	EffectiveRole EffectiveRole `bson:"effectiveRole"`
 
-	PublicKeys []PublicKey `bson:"publicKeys"`
-	ApiKeys    []ApiKey    `bson:"apiKeys"`
-	UserData   []UserData  `bson:"userData"`
+	PublicKeys []PublicKey `bson:"publicKeys,omitempty"`
+	ApiKeys    []ApiKey    `bson:"apiKeys,omitempty"`
+	UserData   []UserData  `bson:"userData,omitempty"`
 
 	LastAuthenticatedAt time.Time `bson:"lastAuthenticatedAt"`
 }

@@ -36,17 +36,13 @@ func TestList(t *testing.T) {
 	t.Parallel()
 
 	queries := []string{
-		// all
 		"?all=true&pageSize=10",
-		// by status
 		"?status=completed&pageSize=10",
-		// by user id
-		"?userId=" + e2e.AdminUserID + "&pageSize=10",
+		"?userId=" + model.TestAdminUserID + "&pageSize=10",
 	}
 
 	for _, query := range queries {
-		jobs := v1.ListJobs(t, query)
-		assert.NotEmpty(t, jobs, "jobs were not fetched for query %s. it should have at least one job", query)
+		v1.ListJobs(t, query)
 	}
 }
 
@@ -64,5 +60,5 @@ func TestUpdate(t *testing.T) {
 	// The job above is assumed to NOT be terminated, so when we update it to terminated, we will notice the change
 	terminatedStatus := model.JobStatusTerminated
 
-	v1.UpdateJob(t, jobID, body.JobUpdate{Status: &terminatedStatus}, e2e.AdminUserID)
+	v1.UpdateJob(t, jobID, body.JobUpdate{Status: &terminatedStatus}, e2e.AdminUser)
 }

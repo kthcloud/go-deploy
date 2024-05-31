@@ -57,14 +57,6 @@ func (c *Client) WithUserID(userID string) *Client {
 	return c
 }
 
-// WithTransferCode adds a filter to the client to only include resource migrations with the given transfer code.
-// This is only applicable to migrations with the type model.ResourceMigrationTypeUpdateOwner
-func (c *Client) WithTransferCode(transferCode string) *Client {
-	c.ResourceClient.AddExtraFilter(bson.D{{"params.transferCode", transferCode}})
-
-	return c
-}
-
 // WithStatus adds a filter to the client to only include resource migrations with the given status.
 func (c *Client) WithStatus(status string) *Client {
 	c.ResourceClient.AddExtraFilter(bson.D{{"status", status}})

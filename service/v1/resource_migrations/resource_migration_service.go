@@ -321,22 +321,34 @@ func (c *Client) acceptOwnerUpdate(resourceMigration *model.ResourceMigration) (
 		return nil, nil
 	}
 
-	args := map[string]interface{}{
-		"id":                  resourceMigration.ResourceID,
-		"resourceMigrationId": resourceMigration.ID,
-		"params": model.VmUpdateOwnerParams{
-			NewOwnerID: resourceMigration.UpdateOwner.NewOwnerID,
-			OldOwnerID: resourceMigration.UpdateOwner.OldOwnerID,
-		},
-		"authInfo": c.V1.Auth(),
-	}
-
 	jobID := uuid.NewString()
 	var err error
 	switch resourceMigration.ResourceType {
 	case model.ResourceMigrationResourceTypeDeployment:
+		args := map[string]interface{}{
+			"id":                  resourceMigration.ResourceID,
+			"resourceMigrationId": resourceMigration.ID,
+			"params": model.DeploymentUpdateOwnerParams{
+				NewOwnerID:    resourceMigration.UpdateOwner.NewOwnerID,
+				OldOwnerID:    resourceMigration.UpdateOwner.OldOwnerID,
+				MigrationCode: resourceMigration.Code,
+			},
+			"authInfo": c.V1.Auth(),
+		}
+
 		err = c.V1.Jobs().Create(jobID, resourceMigration.UserID, model.JobUpdateDeploymentOwner, version.V1, args)
 	case model.ResourceMigrationResourceTypeVM:
+		args := map[string]interface{}{
+			"id":                  resourceMigration.ResourceID,
+			"resourceMigrationId": resourceMigration.ID,
+			"params": model.VmUpdateOwnerParams{
+				NewOwnerID:    resourceMigration.UpdateOwner.NewOwnerID,
+				OldOwnerID:    resourceMigration.UpdateOwner.OldOwnerID,
+				MigrationCode: resourceMigration.Code,
+			},
+			"authInfo": c.V1.Auth(),
+		}
+
 		err = c.V1.Jobs().Create(jobID, resourceMigration.UserID, model.JobUpdateVmOwner, version.V2, args)
 	}
 	if err != nil {

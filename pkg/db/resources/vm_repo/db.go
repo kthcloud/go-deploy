@@ -9,15 +9,11 @@ import (
 	"go-deploy/models/version"
 	"go-deploy/pkg/app/status_codes"
 	"go-deploy/pkg/db"
+	rErrors "go-deploy/service/errors"
 	"go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"time"
-)
-
-var (
-	// NonUniqueFieldErr is returned when a unique index in the database is violated.
-	NonUniqueFieldErr = fmt.Errorf("non unique field")
 )
 
 // Create creates a new VM.
@@ -78,7 +74,7 @@ func (client *Client) Create(id, owner string, params *model.VmCreateParams) (*m
 	_, err := client.Collection.InsertOne(context.TODO(), vm)
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {
-			return nil, NonUniqueFieldErr
+			return nil, rErrors.NonUniqueFieldErr
 		}
 
 		return nil, fmt.Errorf("failed to create vm %s. details: %w", id, err)
@@ -146,7 +142,7 @@ func (client *Client) UpdateWithParams(id string, params *model.VmUpdateParams) 
 				}
 
 				if existAny {
-					return NonUniqueFieldErr
+					return rErrors.NonUniqueFieldErr
 				}
 			}
 		}
@@ -210,7 +206,7 @@ func (client *Client) UpdateWithParams(id string, params *model.VmUpdateParams) 
 	)
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {
-			return NonUniqueFieldErr
+			return rErrors.NonUniqueFieldErr
 		}
 
 		return fmt.Errorf("failed to update vm %s. details: %w", id, err)
