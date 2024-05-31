@@ -30,6 +30,7 @@ func RoutingGroups() []RoutingGroup {
 		JobRoutes(),
 		MetricsRoutes(),
 		NotificationRoutes(),
+		RegisterRoutes(),
 		ResourceMigrationRoutes(),
 		SmRoutes(),
 		SnapshotRoutes(),
