@@ -2,7 +2,6 @@ package resource_migrations
 
 import (
 	"github.com/stretchr/testify/assert"
-	"go-deploy/dto/v1/body"
 	bodyV2 "go-deploy/dto/v2/body"
 	"go-deploy/models/model"
 	"go-deploy/test/e2e"
@@ -36,13 +35,13 @@ func TestList(t *testing.T) {
 func TestUpdateDeploymentOwnerNonAdmin(t *testing.T) {
 	t.Parallel()
 
-	resource1, _ := v1.WithDeployment(t, body.DeploymentCreate{
+	resource1, _ := v1.WithDeployment(t, bodyV2.DeploymentCreate{
 		Name:    e2e.GenName(),
 		Private: false,
 	}, e2e.PowerUser)
 
 	// Create as default user
-	resourceMigration1 := v1.WithResourceMigration(t, body.ResourceMigrationCreate{
+	resourceMigration1 := v1.WithResourceMigration(t, bodyV2.ResourceMigrationCreate{
 		Type:       model.ResourceMigrationTypeUpdateOwner,
 		ResourceID: resource1.ID,
 		UpdateOwner: &struct {
@@ -54,7 +53,7 @@ func TestUpdateDeploymentOwnerNonAdmin(t *testing.T) {
 
 	// They generate notifications for the receiver, find them
 	notifications := v1.ListNotifications(t, "", e2e.DefaultUser)
-	var notification1 *body.NotificationRead
+	var notification1 *bodyV2.NotificationRead
 	//var notification2 *body.NotificationRead
 	for _, n := range notifications {
 		no := n
@@ -70,7 +69,7 @@ func TestUpdateDeploymentOwnerNonAdmin(t *testing.T) {
 	assert.True(t, ok, "code1 not found")
 
 	// Accept the migrations by updating their status to accepted
-	v1.UpdateResourceMigration(t, resourceMigration1.ID, body.ResourceMigrationUpdate{
+	v1.UpdateResourceMigration(t, resourceMigration1.ID, bodyV2.ResourceMigrationUpdate{
 		Status: model.ResourceMigrationStatusAccepted,
 		Code:   &code1,
 	}, e2e.DefaultUser)
@@ -80,7 +79,7 @@ func TestUpdateDeploymentOwnerNonAdmin(t *testing.T) {
 	assert.Equal(t, model.TestDefaultUserID, resource1.OwnerID, "deployment owner not updated")
 
 	// Ensure resources are running
-	v1.WaitForDeploymentRunning(t, resource1.ID, func(d *body.DeploymentRead) bool {
+	v1.WaitForDeploymentRunning(t, resource1.ID, func(d *bodyV2.DeploymentRead) bool {
 		if d.URL != nil {
 			return v1.CheckUpURL(t, *d.URL)
 		}
@@ -100,7 +99,7 @@ func TestUpdateVmOwnerNonAdmin(t *testing.T) {
 	}, e2e.PowerUser)
 
 	// Create as default user
-	resourceMigration2 := v1.WithResourceMigration(t, body.ResourceMigrationCreate{
+	resourceMigration2 := v1.WithResourceMigration(t, bodyV2.ResourceMigrationCreate{
 		Type:       model.ResourceMigrationTypeUpdateOwner,
 		ResourceID: resource2.ID,
 		UpdateOwner: &struct {
@@ -112,7 +111,7 @@ func TestUpdateVmOwnerNonAdmin(t *testing.T) {
 
 	// They generate notifications for the receiver, find them
 	notifications := v1.ListNotifications(t, "", e2e.DefaultUser)
-	var notification2 *body.NotificationRead
+	var notification2 *bodyV2.NotificationRead
 	for _, n := range notifications {
 		no := n
 		if n.Content["id"] == resourceMigration2.ResourceID {
@@ -127,7 +126,7 @@ func TestUpdateVmOwnerNonAdmin(t *testing.T) {
 	assert.True(t, ok, "code2 not found")
 
 	// Accept the migrations by updating their status to accepted
-	v1.UpdateResourceMigration(t, resourceMigration2.ID, body.ResourceMigrationUpdate{
+	v1.UpdateResourceMigration(t, resourceMigration2.ID, bodyV2.ResourceMigrationUpdate{
 		Status: model.ResourceMigrationStatusAccepted,
 		Code:   &code2,
 	}, e2e.DefaultUser)
@@ -151,14 +150,14 @@ func TestUpdateVmOwnerNonAdmin(t *testing.T) {
 func TestUpdateDeploymentOwnerAsAdmin(t *testing.T) {
 	t.Parallel()
 
-	resource1, _ := v1.WithDeployment(t, body.DeploymentCreate{
+	resource1, _ := v1.WithDeployment(t, bodyV2.DeploymentCreate{
 		Name:    e2e.GenName(),
 		Private: false,
 	}, e2e.PowerUser)
 
 	// Create as default user
 	s := model.ResourceMigrationStatusAccepted
-	v1.WithResourceMigration(t, body.ResourceMigrationCreate{
+	v1.WithResourceMigration(t, bodyV2.ResourceMigrationCreate{
 		Type:       model.ResourceMigrationTypeUpdateOwner,
 		ResourceID: resource1.ID,
 		Status:     &s,
@@ -174,7 +173,7 @@ func TestUpdateDeploymentOwnerAsAdmin(t *testing.T) {
 	assert.Equal(t, model.TestDefaultUserID, resource1.OwnerID, "deployment owner not updated")
 
 	// Ensure resource are accessible by the new owner
-	v1.WaitForDeploymentRunning(t, resource1.ID, func(d *body.DeploymentRead) bool {
+	v1.WaitForDeploymentRunning(t, resource1.ID, func(d *bodyV2.DeploymentRead) bool {
 		if d.URL != nil {
 			return v1.CheckUpURL(t, *d.URL)
 		}
@@ -195,7 +194,7 @@ func TestUpdateVmOwnerAsAdmin(t *testing.T) {
 
 	// Create as default user
 	s := model.ResourceMigrationStatusAccepted
-	v1.WithResourceMigration(t, body.ResourceMigrationCreate{
+	v1.WithResourceMigration(t, bodyV2.ResourceMigrationCreate{
 		Type:       model.ResourceMigrationTypeUpdateOwner,
 		ResourceID: resource2.ID,
 		Status:     &s,

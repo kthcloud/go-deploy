@@ -1,11 +1,11 @@
-package v1
+package v2
 
 import (
 	"encoding/base64"
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"go-deploy/dto/v1/body"
+	"go-deploy/dto/v2/body"
 	"go-deploy/models/model"
 	"go-deploy/pkg/sys"
 	"go-deploy/service"

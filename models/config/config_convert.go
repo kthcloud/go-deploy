@@ -1,6 +1,8 @@
 package config
 
-import "go-deploy/dto/v1/body"
+import (
+	"go-deploy/dto/v2/body"
+)
 
 // ToDTO converts a Zone to a body.ZoneRead DTO.
 func (z *Zone) ToDTO() body.ZoneRead {

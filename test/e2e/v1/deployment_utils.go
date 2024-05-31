@@ -3,7 +3,7 @@ package v1
 import (
 	"crypto/tls"
 	"github.com/stretchr/testify/assert"
-	"go-deploy/dto/v1/body"
+	"go-deploy/dto/v2/body"
 	"go-deploy/pkg/app/status_codes"
 	"go-deploy/test"
 	"go-deploy/test/e2e"

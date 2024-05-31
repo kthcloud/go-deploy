@@ -2,7 +2,7 @@ package v1
 
 import (
 	"github.com/stretchr/testify/assert"
-	"go-deploy/dto/v1/body"
+	"go-deploy/dto/v2/body"
 	"go-deploy/test/e2e"
 	"testing"
 )

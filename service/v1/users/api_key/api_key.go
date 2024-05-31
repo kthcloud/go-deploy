@@ -1,7 +1,7 @@
 package api_key
 
 import (
-	"go-deploy/dto/v1/body"
+	"go-deploy/dto/v2/body"
 	"go-deploy/models/model"
 	"go-deploy/pkg/db/resources/user_repo"
 	sErrors "go-deploy/service/errors"

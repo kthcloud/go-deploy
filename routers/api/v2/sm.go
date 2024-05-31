@@ -1,11 +1,11 @@
-package v1
+package v2
 
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"go-deploy/dto/v1/body"
-	"go-deploy/dto/v1/query"
-	"go-deploy/dto/v1/uri"
+	"go-deploy/dto/v2/body"
+	"go-deploy/dto/v2/query"
+	"go-deploy/dto/v2/uri"
 	"go-deploy/models/model"
 	"go-deploy/models/version"
 	"go-deploy/pkg/app/status_codes"

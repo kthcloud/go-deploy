@@ -6,7 +6,7 @@ import (
 	"go-deploy/models/model"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/sys"
-	v1 "go-deploy/routers/api/v1"
+	v2 "go-deploy/routers/api/v2"
 	"go-deploy/service"
 )
 
@@ -26,14 +26,14 @@ func SetupAuthUser(c *gin.Context) {
 	case context.HasApiKey():
 		apiKey, err := context.GetApiKey()
 		if err != nil {
-			context.ServerError(err, v1.AuthInfoSetupFailedErr)
+			context.ServerError(err, v2.AuthInfoSetupFailedErr)
 			c.Abort()
 			return
 		}
 
 		user, err = service.V1().Users().GetByApiKey(apiKey)
 		if err != nil {
-			context.ServerError(err, v1.AuthInfoSetupFailedErr)
+			context.ServerError(err, v2.AuthInfoSetupFailedErr)
 			c.Abort()
 			return
 		}
@@ -46,7 +46,7 @@ func SetupAuthUser(c *gin.Context) {
 	case context.HasKeycloakToken():
 		jwtToken, err := context.GetKeycloakToken()
 		if err != nil {
-			context.ServerError(err, v1.InternalError)
+			context.ServerError(err, v2.InternalError)
 			c.Abort()
 			return
 		}
@@ -71,20 +71,20 @@ func SetupAuthUser(c *gin.Context) {
 
 		user, err = service.V1().Users().Synchronize(authParams)
 		if err != nil {
-			context.ServerError(err, v1.AuthInfoSetupFailedErr)
+			context.ServerError(err, v2.AuthInfoSetupFailedErr)
 			c.Abort()
 			return
 		}
 
 		if user == nil {
-			context.ServerError(fmt.Errorf("failed to synchronize auth user"), v1.AuthInfoSetupFailedErr)
+			context.ServerError(fmt.Errorf("failed to synchronize auth user"), v2.AuthInfoSetupFailedErr)
 			c.Abort()
 			return
 		}
 	}
 
 	if user == nil {
-		context.ServerError(fmt.Errorf("failed to synchronize auth user"), v1.AuthInfoSetupFailedErr)
+		context.ServerError(fmt.Errorf("failed to synchronize auth user"), v2.AuthInfoSetupFailedErr)
 		c.Abort()
 		return
 	}

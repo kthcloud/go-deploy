@@ -2,7 +2,7 @@ package api
 
 import (
 	"context"
-	"go-deploy/dto/v1/body"
+	body2 "go-deploy/dto/v2/body"
 	configModels "go-deploy/models/config"
 	"go-deploy/models/model"
 	"go-deploy/service/v1/deployments/harbor_service"
@@ -24,8 +24,8 @@ type Deployments interface {
 	Get(id string, opts ...dOpts.GetOpts) (*model.Deployment, error)
 	GetByName(name string, opts ...dOpts.GetOpts) (*model.Deployment, error)
 	List(opts ...dOpts.ListOpts) ([]model.Deployment, error)
-	Create(id, userID string, dtoDeploymentCreate *body.DeploymentCreate) error
-	Update(id string, dtoDeploymentUpdate *body.DeploymentUpdate) error
+	Create(id, userID string, dtoDeploymentCreate *body2.DeploymentCreate) error
+	Update(id string, dtoDeploymentUpdate *body2.DeploymentUpdate) error
 	UpdateOwner(id string, params *model.DeploymentUpdateOwnerParams) error
 	Delete(id string) error
 	Repair(id string) error
@@ -33,7 +33,7 @@ type Deployments interface {
 	Restart(id string) error
 	DoCommand(id string, command string)
 
-	GetCiConfig(id string) (*body.CiConfig, error)
+	GetCiConfig(id string) (*body2.CiConfig, error)
 
 	SetupLogStream(id string, ctx context.Context, handler func(string, string, string, time.Time), history int) error
 	AddLogs(id string, logs ...model.Log)
@@ -63,14 +63,14 @@ type Jobs interface {
 	Get(id string, opts ...jobOpts.GetOpts) (*model.Job, error)
 	List(opts ...jobOpts.ListOpts) ([]model.Job, error)
 	Create(id, userID, jobType, version string, args map[string]interface{}) error
-	Update(id string, jobUpdateDTO *body.JobUpdate) (*model.Job, error)
+	Update(id string, jobUpdateDTO *body2.JobUpdate) (*model.Job, error)
 }
 
 type Notifications interface {
 	Get(id string, opts ...nOpts.GetOpts) (*model.Notification, error)
 	List(opts ...nOpts.ListOpts) ([]model.Notification, error)
 	Create(id, userID string, params *model.NotificationCreateParams) (*model.Notification, error)
-	Update(id string, dtoNotificationUpdate *body.NotificationUpdate) (*model.Notification, error)
+	Update(id string, dtoNotificationUpdate *body2.NotificationUpdate) (*model.Notification, error)
 	Delete(id string) error
 }
 
@@ -100,27 +100,27 @@ type Users interface {
 	List(opts ...userOpts.ListOpts) ([]model.User, error)
 	ListTestUsers() ([]model.User, error)
 	Synchronize(authParams *model.AuthParams) (*model.User, error)
-	Update(userID string, dtoUserUpdate *body.UserUpdate) (*model.User, error)
+	Update(userID string, dtoUserUpdate *body2.UserUpdate) (*model.User, error)
 	Exists(id string) (bool, error)
 
-	Discover(opts ...userOpts.DiscoverOpts) ([]body.UserReadDiscovery, error)
+	Discover(opts ...userOpts.DiscoverOpts) ([]body2.UserReadDiscovery, error)
 
 	ApiKeys() ApiKeys
 }
 
 type ApiKeys interface {
-	Create(userID string, dtoApiKeyCreate *body.ApiKeyCreate) (*model.ApiKey, error)
+	Create(userID string, dtoApiKeyCreate *body2.ApiKeyCreate) (*model.ApiKey, error)
 }
 
 type Teams interface {
 	Get(id string, opts ...teamOpts.GetOpts) (*model.Team, error)
 	List(opts ...teamOpts.ListOpts) ([]model.Team, error)
 	ListIDs(opts ...teamOpts.ListOpts) ([]string, error)
-	Create(id, ownerID string, dtoCreateTeam *body.TeamCreate) (*model.Team, error)
-	Update(id string, dtoUpdateTeam *body.TeamUpdate) (*model.Team, error)
+	Create(id, ownerID string, dtoCreateTeam *body2.TeamCreate) (*model.Team, error)
+	Update(id string, dtoUpdateTeam *body2.TeamUpdate) (*model.Team, error)
 	Delete(id string) error
 	CleanResource(id string) error
-	Join(id string, dtoTeamJoin *body.TeamJoin) (*model.Team, error)
+	Join(id string, dtoTeamJoin *body2.TeamJoin) (*model.Team, error)
 	CheckResourceAccess(userID, resourceID string) (bool, error)
 }
 
@@ -133,7 +133,7 @@ type Zones interface {
 type ResourceMigrations interface {
 	Get(id string, opts ...resourceMigrationOpts.GetOpts) (*model.ResourceMigration, error)
 	List(opts ...resourceMigrationOpts.ListOpts) ([]model.ResourceMigration, error)
-	Create(id, userID string, migrationCreate *body.ResourceMigrationCreate) (*model.ResourceMigration, *string, error)
-	Update(id string, migrationUpdate *body.ResourceMigrationUpdate, opts ...resourceMigrationOpts.UpdateOpts) (*model.ResourceMigration, *string, error)
+	Create(id, userID string, migrationCreate *body2.ResourceMigrationCreate) (*model.ResourceMigration, *string, error)
+	Update(id string, migrationUpdate *body2.ResourceMigrationUpdate, opts ...resourceMigrationOpts.UpdateOpts) (*model.ResourceMigration, *string, error)
 	Delete(id string) error
 }

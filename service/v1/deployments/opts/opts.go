@@ -1,7 +1,7 @@
 package opts
 
 import (
-	"go-deploy/dto/v1/body"
+	body2 "go-deploy/dto/v2/body"
 	configModels "go-deploy/models/config"
 	v1 "go-deploy/service/v1/utils"
 )
@@ -34,12 +34,12 @@ type ListOpts struct {
 // GetOpts is used to specify the options when getting a deployment.
 type GetOpts struct {
 	MigrationCode *string
-	HarborWebhook *body.HarborWebhook
+	HarborWebhook *body2.HarborWebhook
 	Shared        bool
 }
 
 // QuotaOptions is used to specify the options when getting a deployment's quota.
 type QuotaOptions struct {
-	Create *body.DeploymentCreate
-	Update *body.DeploymentUpdate
+	Create *body2.DeploymentCreate
+	Update *body2.DeploymentUpdate
 }

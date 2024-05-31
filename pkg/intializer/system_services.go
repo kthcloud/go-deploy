@@ -3,7 +3,7 @@ package intializer
 import (
 	"errors"
 	"github.com/google/uuid"
-	"go-deploy/dto/v1/body"
+	"go-deploy/dto/v2/body"
 	"go-deploy/pkg/config"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"

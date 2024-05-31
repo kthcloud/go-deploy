@@ -1,10 +1,10 @@
-package v1
+package v2
 
 import (
 	"errors"
 	"github.com/gin-gonic/gin"
-	"go-deploy/dto/v1/body"
-	"go-deploy/dto/v1/uri"
+	"go-deploy/dto/v2/body"
+	"go-deploy/dto/v2/uri"
 	"go-deploy/pkg/sys"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"

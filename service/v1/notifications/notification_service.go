@@ -1,7 +1,7 @@
 package notifications
 
 import (
-	"go-deploy/dto/v1/body"
+	"go-deploy/dto/v2/body"
 	"go-deploy/models/model"
 	"go-deploy/pkg/db/resources/notification_repo"
 	sErrors "go-deploy/service/errors"

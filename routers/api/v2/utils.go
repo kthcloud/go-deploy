@@ -1,18 +1,18 @@
-package v1
+package v2
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/go-playground/validator/v10"
-	"go-deploy/dto/v1/body"
+	"go-deploy/dto/v2/body"
 	"go-deploy/pkg/sys"
 	"go-deploy/service/core"
 	"reflect"
 )
 
 // WithAuth returns the auth info for the current request.
-// This include all user info necessary to perform authorization checks
+// This includes all user info necessary to perform authorization checks
 func WithAuth(context *sys.ClientContext) (*core.AuthInfo, error) {
 	makeError := func(error) error {
 		return errors.New("failed to get auth info")

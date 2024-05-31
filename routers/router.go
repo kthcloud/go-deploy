@@ -16,7 +16,7 @@ import (
 	"go-deploy/pkg/log"
 	"go-deploy/pkg/metrics"
 	"go-deploy/pkg/sys"
-	"go-deploy/routers/api/v1/middleware"
+	"go-deploy/routers/api/v2/middleware"
 	"go-deploy/routers/api/validators"
 	"go-deploy/routers/routes"
 	"net/http"

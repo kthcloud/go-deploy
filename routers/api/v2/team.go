@@ -1,4 +1,4 @@
-package v1
+package v2
 
 import (
 	"errors"
@@ -6,9 +6,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/google/uuid"
-	"go-deploy/dto/v1/body"
-	"go-deploy/dto/v1/query"
-	"go-deploy/dto/v1/uri"
+	body2 "go-deploy/dto/v2/body"
+	"go-deploy/dto/v2/query"
+	"go-deploy/dto/v2/uri"
 	"go-deploy/models/model"
 	"go-deploy/pkg/sys"
 	"go-deploy/service"
@@ -104,7 +104,7 @@ func ListTeams(c *gin.Context) {
 		return
 	}
 
-	teamListDTO := make([]body.TeamRead, len(teamList))
+	teamListDTO := make([]body2.TeamRead, len(teamList))
 	for i, team := range teamList {
 		teamListDTO[i] = team.ToDTO(getMember, getResourceName)
 	}
@@ -127,7 +127,7 @@ func ListTeams(c *gin.Context) {
 func CreateTeam(c *gin.Context) {
 	context := sys.NewContext(c)
 
-	var requestQuery body.TeamCreate
+	var requestQuery body2.TeamCreate
 	if err := context.GinContext.ShouldBindJSON(&requestQuery); err != nil {
 		context.BindingError(CreateBindingError(err))
 		return
@@ -175,13 +175,13 @@ func UpdateTeam(c *gin.Context) {
 		return
 	}
 
-	var requestQueryJoin body.TeamJoin
+	var requestQueryJoin body2.TeamJoin
 	if err := context.GinContext.ShouldBindBodyWith(&requestQueryJoin, binding.JSON); err == nil {
 		joinTeam(context, requestURI.TeamID, &requestQueryJoin)
 		return
 	}
 
-	var requestQuery body.TeamUpdate
+	var requestQuery body2.TeamUpdate
 	if err := context.GinContext.ShouldBindBodyWith(&requestQuery, binding.JSON); err != nil {
 		context.BindingError(CreateBindingError(err))
 		return
@@ -255,7 +255,7 @@ func DeleteTeam(c *gin.Context) {
 
 // joinTeam is an alternate entrypoint for UpdateTeam that allows a user to join a team
 // It is called if a body.TeamJoin is passed in the request body, instead of a body.TeamUpdate
-func joinTeam(context sys.ClientContext, id string, requestBody *body.TeamJoin) {
+func joinTeam(context sys.ClientContext, id string, requestBody *body2.TeamJoin) {
 	auth, err := WithAuth(&context)
 	if err != nil {
 		context.ServerError(err, AuthInfoNotAvailableErr)
@@ -286,7 +286,7 @@ func joinTeam(context sys.ClientContext, id string, requestBody *body.TeamJoin) 
 }
 
 // getMember is a helper function for converting a team member to a team member DTO
-func getMember(member *model.TeamMember) *body.TeamMember {
+func getMember(member *model.TeamMember) *body2.TeamMember {
 	user, err := service.V1().Users().Get(member.ID)
 	if err != nil {
 		utils.PrettyPrintError(fmt.Errorf("failed to get user when getting team member for team: %s", err))
@@ -307,8 +307,8 @@ func getMember(member *model.TeamMember) *body.TeamMember {
 		addedAt = &member.AddedAt
 	}
 
-	return &body.TeamMember{
-		UserReadDiscovery: body.UserReadDiscovery{
+	return &body2.TeamMember{
+		UserReadDiscovery: body2.UserReadDiscovery{
 			ID:          user.ID,
 			Username:    user.Username,
 			Email:       user.Email,

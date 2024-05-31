@@ -6,7 +6,6 @@ import (
 	"go-deploy/dto/v2/query"
 	"go-deploy/dto/v2/uri"
 	"go-deploy/pkg/sys"
-	"go-deploy/routers/api/v1"
 	"go-deploy/service"
 	"go-deploy/service/v2/utils"
 	"go-deploy/service/v2/vms/opts"
@@ -31,13 +30,13 @@ func GetGpuGroup(c *gin.Context) {
 
 	var requestURI uri.GpuGroupGet
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -45,7 +44,7 @@ func GetGpuGroup(c *gin.Context) {
 
 	gpuGroup, err := deployV2.VMs().GpuGroups().Get(requestURI.GpuGroupID)
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -58,7 +57,7 @@ func GetGpuGroup(c *gin.Context) {
 		GpuGroupID: &gpuGroup.ID,
 	})
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -85,19 +84,19 @@ func ListGpuGroups(c *gin.Context) {
 
 	var requestQuery query.GpuGroupList
 	if err := context.GinContext.ShouldBind(&requestQuery); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
 	var requestURI uri.GpuGroupList
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
-		context.BindingError(v1.CreateBindingError(err))
+		context.BindingError(CreateBindingError(err))
 		return
 	}
 
-	auth, err := v1.WithAuth(&context)
+	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, v1.AuthInfoNotAvailableErr)
+		context.ServerError(err, AuthInfoNotAvailableErr)
 		return
 	}
 
@@ -107,7 +106,7 @@ func ListGpuGroups(c *gin.Context) {
 		Pagination: utils.GetOrDefaultPagination(requestQuery.Pagination),
 	})
 	if err != nil {
-		context.ServerError(err, v1.InternalError)
+		context.ServerError(err, InternalError)
 		return
 	}
 
@@ -122,7 +121,7 @@ func ListGpuGroups(c *gin.Context) {
 			GpuGroupID: &gpuGroup.ID,
 		})
 		if err != nil {
-			context.ServerError(err, v1.InternalError)
+			context.ServerError(err, InternalError)
 			return
 		}
 

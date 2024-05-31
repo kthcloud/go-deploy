@@ -1,7 +1,6 @@
 package cleaner
 
 import (
-	bodyV1 "go-deploy/dto/v1/body"
 	bodyV2 "go-deploy/dto/v2/body"
 	"go-deploy/models/model"
 	"go-deploy/models/version"
@@ -39,7 +38,7 @@ func staleResourceCleaner() error {
 
 		// Set its replicas to 0
 		replicas := 0
-		err = service.V1().Deployments().Update(deployment.ID, &bodyV1.DeploymentUpdate{
+		err = service.V1().Deployments().Update(deployment.ID, &bodyV2.DeploymentUpdate{
 			Replicas: &replicas,
 		})
 		if err != nil {

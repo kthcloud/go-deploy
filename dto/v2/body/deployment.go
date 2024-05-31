@@ -17,24 +17,18 @@ type DeploymentRead struct {
 	RestartedAt *time.Time `json:"restartedAt,omitempty"`
 	AccessedAt  time.Time  `json:"accessedAt"`
 
-	CpuCores float64 `json:"cpuCores"`
-	RAM      float64 `json:"ram"`
-	Replicas int     `json:"replicas"`
+	URL   *string         `json:"url,omitempty"`
+	Specs DeploymentSpecs `json:"specs"`
 
-	URL             *string  `json:"url,omitempty"`
-	Envs            []Env    `json:"envs"`
-	Volumes         []Volume `json:"volumes"`
-	InitCommands    []string `json:"initCommands"`
-	Args            []string `json:"args"`
-	Private         bool     `json:"private"`
-	InternalPort    int      `json:"internalPort"`
-	Image           *string  `json:"image,omitempty"`
-	HealthCheckPath *string  `json:"healthCheckPath,omitempty"`
-
-	CustomDomain       *string `json:"customDomain,omitempty"`
-	CustomDomainURL    *string `json:"customDomainUrl,omitempty"`
-	CustomDomainStatus *string `json:"customDomainStatus,omitempty"`
-	CustomDomainSecret *string `json:"customDomainSecret,omitempty"`
+	Envs            []Env             `json:"envs"`
+	Volumes         []Volume          `json:"volumes"`
+	InitCommands    []string          `json:"initCommands"`
+	Args            []string          `json:"args"`
+	Private         bool              `json:"private"`
+	InternalPort    int               `json:"internalPort"`
+	Image           *string           `json:"image,omitempty"`
+	HealthCheckPath *string           `json:"healthCheckPath,omitempty"`
+	CustomDomain    *CustomDomainRead `json:"customDomain,omitempty"`
 
 	Status        string         `json:"status"`
 	Error         *string        `json:"error,omitempty"`
@@ -136,6 +130,12 @@ type DeploymentDeleted struct {
 type DeploymentUpdated struct {
 	ID    string  `json:"id"`
 	JobID *string `json:"jobId,omitempty"`
+}
+
+type DeploymentSpecs struct {
+	CpuCores float64 `json:"cpuCores"`
+	RAM      float64 `json:"ram"`
+	Replicas int     `json:"replicas"`
 }
 
 type CiConfig struct {

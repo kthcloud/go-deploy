@@ -2,7 +2,7 @@ package users
 
 import (
 	"github.com/stretchr/testify/assert"
-	"go-deploy/dto/v1/body"
+	body2 "go-deploy/dto/v2/body"
 	"go-deploy/models/model"
 	"go-deploy/test/e2e"
 	"go-deploy/test/e2e/v1"
@@ -64,7 +64,7 @@ func TestDiscover(t *testing.T) {
 func TestUpdatePublicKeys(t *testing.T) {
 	// Since public keys are updated as a whole, we can't run this in parallel
 
-	publicKeys := []body.PublicKey{
+	publicKeys := []body2.PublicKey{
 		{
 			Name: "test-key",
 			Key:  "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCjWQF3Wz/DEKVZ+0pTBBGi5XZFWjz3WURwUf9/7zdl/KNO1UNHoaUm6nox0FLFygeI0H1wHsVXYs2L/lYOk9dCerNTWDmxSrvG0hIrwXxrg+xEFoCfOdVX/ItmWkWvIHH4Nk+AnCfO1KacISqWWOX702P0EvEN3E4fTNQmOOJO36VoWk+Hd81/DTJ9ahUhslQWJhGgsUtTIDPdeoL8KuwaQYucBSJrSHK57MXf0REuvybTNL88PX02g02z8du8dV5Sje+7soQY1TblBkAdU15IEYwEd6p8m3/r8ZU56LLp4yG+GvFZBh0HNm7W/3V119fo2qivjM/3JpxR7zoigEHy7AH7gBbtlCjlHIcwHKtaWbTk+J8JvjVv2tI7ug/7C4r224mOx7K/qbOoTUjvRgVKK5jrwSz8EBm0Q12JN0Un6Nf3vw3w0dONYZUVaVnDC49LwIdSBlVYghMVCn7jveN2pe4Sox1DbqffYFsg8HkJnK478+aiNemLLWyL7wEFy90= test-key",
@@ -75,7 +75,7 @@ func TestUpdatePublicKeys(t *testing.T) {
 		},
 	}
 
-	update := body.UserUpdate{
+	update := body2.UserUpdate{
 		PublicKeys: &publicKeys,
 	}
 
@@ -87,7 +87,7 @@ func TestUpdatePublicKeys(t *testing.T) {
 func TestUpdateUserData(t *testing.T) {
 	// Since user data is updated as a whole, we can't run this in parallel
 
-	userData := []body.UserData{
+	userData := []body2.UserData{
 		{
 			Key:   "test-key-1",
 			Value: "test-value-1",
@@ -98,7 +98,7 @@ func TestUpdateUserData(t *testing.T) {
 		},
 	}
 
-	update := body.UserUpdate{
+	update := body2.UserUpdate{
 		UserData: &userData,
 	}
 
@@ -111,8 +111,8 @@ func TestCreateApiKey(t *testing.T) {
 	// Since this edit the user's API keys, we can't run this in parallel
 
 	t.Cleanup(func() {
-		v1.UpdateUser(t, model.TestPowerUserID, body.UserUpdate{
-			ApiKeys: &[]body.ApiKey{},
+		v1.UpdateUser(t, model.TestPowerUserID, body2.UserUpdate{
+			ApiKeys: &[]body2.ApiKey{},
 		})
 	})
 
@@ -125,7 +125,7 @@ func TestCreateApiKey(t *testing.T) {
 	}
 
 	for _, name := range names {
-		v1.CreateApiKey(t, model.TestPowerUserID, body.ApiKeyCreate{
+		v1.CreateApiKey(t, model.TestPowerUserID, body2.ApiKeyCreate{
 			Name:      name,
 			ExpiresAt: time.Now().Add(24 * time.Hour),
 		})
@@ -147,7 +147,7 @@ func TestCreateApiKey(t *testing.T) {
 	namesWithoutFirstTwo := names[2:]
 	apiKeysWithoutFirstTwo := user.ApiKeys[2:]
 
-	user = v1.UpdateUser(t, model.TestPowerUserID, body.UserUpdate{
+	user = v1.UpdateUser(t, model.TestPowerUserID, body2.UserUpdate{
 		ApiKeys: &apiKeysWithoutFirstTwo,
 	})
 
@@ -163,8 +163,8 @@ func TestCreateApiKey(t *testing.T) {
 	}
 
 	// 2. Clean up the rest
-	emptyApiKeys := make([]body.ApiKey, 0)
-	user = v1.UpdateUser(t, model.TestPowerUserID, body.UserUpdate{
+	emptyApiKeys := make([]body2.ApiKey, 0)
+	user = v1.UpdateUser(t, model.TestPowerUserID, body2.UserUpdate{
 		ApiKeys: &emptyApiKeys,
 	})
 
@@ -175,8 +175,8 @@ func TestMalformedDelete(t *testing.T) {
 	// Since this edit the user's API keys, we can't run this in parallel
 
 	t.Cleanup(func() {
-		v1.UpdateUser(t, model.TestPowerUserID, body.UserUpdate{
-			ApiKeys: &[]body.ApiKey{},
+		v1.UpdateUser(t, model.TestPowerUserID, body2.UserUpdate{
+			ApiKeys: &[]body2.ApiKey{},
 		})
 	})
 
@@ -187,7 +187,7 @@ func TestMalformedDelete(t *testing.T) {
 	}
 
 	for _, name := range names {
-		v1.CreateApiKey(t, model.TestPowerUserID, body.ApiKeyCreate{
+		v1.CreateApiKey(t, model.TestPowerUserID, body2.ApiKeyCreate{
 			Name:      name,
 			ExpiresAt: time.Now().Add(24 * time.Hour),
 		})
@@ -208,7 +208,7 @@ func TestMalformedDelete(t *testing.T) {
 	// Update with test-key-1, test-key-2 and unknown-key
 	// This should skip the unknown-key and delete test-key-3
 	culprit := e2e.GenName("unknown-key")
-	newKeys := []body.ApiKey{
+	newKeys := []body2.ApiKey{
 		{
 			Name: names[0],
 		},
@@ -220,7 +220,7 @@ func TestMalformedDelete(t *testing.T) {
 		},
 	}
 
-	user = v1.UpdateUser(t, model.TestPowerUserID, body.UserUpdate{
+	user = v1.UpdateUser(t, model.TestPowerUserID, body2.UserUpdate{
 		ApiKeys: &newKeys,
 	})
 

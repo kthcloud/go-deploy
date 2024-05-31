@@ -1,9 +1,9 @@
-package v1
+package v2
 
 import (
 	"github.com/gin-gonic/gin"
-	"go-deploy/dto/v1/body"
-	"go-deploy/dto/v1/query"
+	"go-deploy/dto/v2/body"
+	"go-deploy/dto/v2/query"
 	"go-deploy/pkg/sys"
 	"go-deploy/service"
 	"go-deploy/service/v1/status/opts"

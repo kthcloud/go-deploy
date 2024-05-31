@@ -2,7 +2,7 @@ package notifications
 
 import (
 	"github.com/stretchr/testify/assert"
-	"go-deploy/dto/v1/body"
+	body2 "go-deploy/dto/v2/body"
 	"go-deploy/models/model"
 	"go-deploy/test/e2e"
 	v1 "go-deploy/test/e2e/v1"
@@ -37,11 +37,11 @@ func TestMarkRead(t *testing.T) {
 	justBefore := time.Now()
 
 	// Create a team and invite a user
-	v1.WithTeam(t, body.TeamCreate{
+	v1.WithTeam(t, body2.TeamCreate{
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
 		Resources:   nil,
-		Members: []body.TeamMemberCreate{
+		Members: []body2.TeamMemberCreate{
 			{
 				ID: model.TestDefaultUserID,
 			},
@@ -55,7 +55,7 @@ func TestMarkRead(t *testing.T) {
 	justAfter := time.Now()
 
 	// Get the notification
-	var notification body.NotificationRead
+	var notification body2.NotificationRead
 	for _, n := range notifications {
 		if n.Type == model.NotificationTeamInvite && n.CreatedAt.After(justBefore) && n.CreatedAt.Before(justAfter) {
 			notification = n
@@ -64,7 +64,7 @@ func TestMarkRead(t *testing.T) {
 	}
 
 	// Mark the notification as read
-	v1.UpdateNotification(t, notification.ID, body.NotificationUpdate{
+	v1.UpdateNotification(t, notification.ID, body2.NotificationUpdate{
 		Read: true,
 	}, e2e.DefaultUser)
 }

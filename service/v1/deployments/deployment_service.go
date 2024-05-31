@@ -3,7 +3,7 @@ package deployments
 import (
 	"errors"
 	"fmt"
-	"go-deploy/dto/v1/body"
+	"go-deploy/dto/v2/body"
 	configModels "go-deploy/models/config"
 	"go-deploy/models/model"
 	"go-deploy/pkg/config"

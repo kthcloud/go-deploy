@@ -1,6 +1,8 @@
 package model
 
-import "go-deploy/dto/v1/body"
+import (
+	"go-deploy/dto/v2/body"
+)
 
 type ResourceMigrationCreateParams struct {
 	Type         string      `bson:"type"`

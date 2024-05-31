@@ -1,7 +1,7 @@
 package v1
 
 import (
-	"go-deploy/dto/v1/body"
+	"go-deploy/dto/v2/body"
 	"go-deploy/test/e2e"
 	"net/http"
 	"testing"

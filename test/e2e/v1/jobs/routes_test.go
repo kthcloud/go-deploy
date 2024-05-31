@@ -2,7 +2,7 @@ package jobs
 
 import (
 	"github.com/stretchr/testify/assert"
-	"go-deploy/dto/v1/body"
+	body2 "go-deploy/dto/v2/body"
 	"go-deploy/models/model"
 	"go-deploy/test/e2e"
 	"go-deploy/test/e2e/v1"
@@ -23,7 +23,7 @@ func TestGet(t *testing.T) {
 	// We can't create a job with the API, so we need to trigger a job
 	// The simplest way is to create a deployment
 
-	deployment, jobID := v1.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
+	deployment, jobID := v1.WithDeployment(t, body2.DeploymentCreate{Name: e2e.GenName()})
 
 	job := v1.GetJob(t, jobID)
 
@@ -54,11 +54,11 @@ func TestUpdate(t *testing.T) {
 	// We can't create a job with the API, so we need to trigger a job
 	// The simplest way is to just create a deployment
 
-	_, jobID := v1.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName()})
+	_, jobID := v1.WithDeployment(t, body2.DeploymentCreate{Name: e2e.GenName()})
 	v1.WaitForJobFinished(t, jobID, nil)
 
 	// The job above is assumed to NOT be terminated, so when we update it to terminated, we will notice the change
 	terminatedStatus := model.JobStatusTerminated
 
-	v1.UpdateJob(t, jobID, body.JobUpdate{Status: &terminatedStatus}, e2e.AdminUser)
+	v1.UpdateJob(t, jobID, body2.JobUpdate{Status: &terminatedStatus}, e2e.AdminUser)
 }

@@ -2,7 +2,7 @@ package teams
 
 import (
 	"github.com/stretchr/testify/assert"
-	"go-deploy/dto/v1/body"
+	body2 "go-deploy/dto/v2/body"
 	"go-deploy/models/model"
 	"go-deploy/test/e2e"
 	"go-deploy/test/e2e/v1"
@@ -21,7 +21,7 @@ func TestMain(m *testing.M) {
 func TestCreateEmptyTeam(t *testing.T) {
 	t.Parallel()
 
-	requestBody := body.TeamCreate{
+	requestBody := body2.TeamCreate{
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
 		Resources:   nil,
@@ -34,11 +34,11 @@ func TestCreateEmptyTeam(t *testing.T) {
 func TestCreateWithMembers(t *testing.T) {
 	t.Parallel()
 
-	requestBody := body.TeamCreate{
+	requestBody := body2.TeamCreate{
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
 		Resources:   nil,
-		Members: []body.TeamMemberCreate{
+		Members: []body2.TeamMemberCreate{
 			{ID: model.TestDefaultUserID, TeamRole: model.TeamMemberRoleAdmin},
 		},
 	}
@@ -61,11 +61,11 @@ func TestCreateWithMembers(t *testing.T) {
 func TestCreateWithResources(t *testing.T) {
 	t.Parallel()
 
-	resource, _ := v1.WithDeployment(t, body.DeploymentCreate{
+	resource, _ := v1.WithDeployment(t, body2.DeploymentCreate{
 		Name: e2e.GenName(),
 	})
 
-	requestBody := body.TeamCreate{
+	requestBody := body2.TeamCreate{
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
 		Resources:   []string{resource.ID},
@@ -83,15 +83,15 @@ func TestCreateWithResources(t *testing.T) {
 func TestCreateFull(t *testing.T) {
 	t.Parallel()
 
-	resource, _ := v1.WithDeployment(t, body.DeploymentCreate{
+	resource, _ := v1.WithDeployment(t, body2.DeploymentCreate{
 		Name: e2e.GenName(),
 	})
 
-	requestBody := body.TeamCreate{
+	requestBody := body2.TeamCreate{
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
 		Resources:   []string{resource.ID},
-		Members:     []body.TeamMemberCreate{{ID: model.TestDefaultUserID, TeamRole: model.TeamMemberRoleAdmin}},
+		Members:     []body2.TeamMemberCreate{{ID: model.TestDefaultUserID, TeamRole: model.TeamMemberRoleAdmin}},
 	}
 
 	// Create team
@@ -109,11 +109,11 @@ func TestCreateFull(t *testing.T) {
 func TestCreateWithInvitation(t *testing.T) {
 	t.Parallel()
 
-	team := v1.WithTeam(t, body.TeamCreate{
+	team := v1.WithTeam(t, body2.TeamCreate{
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
 		Resources:   nil,
-		Members:     []body.TeamMemberCreate{{ID: model.TestDefaultUserID, TeamRole: model.TeamMemberRoleAdmin}},
+		Members:     []body2.TeamMemberCreate{{ID: model.TestDefaultUserID, TeamRole: model.TeamMemberRoleAdmin}},
 	}, e2e.PowerUser)
 
 	assert.Equal(t, 2, len(team.Members), "invalid number of members")
@@ -153,11 +153,11 @@ func TestCreateWithInvitation(t *testing.T) {
 func TestJoin(t *testing.T) {
 	t.Parallel()
 
-	team := v1.WithTeam(t, body.TeamCreate{
+	team := v1.WithTeam(t, body2.TeamCreate{
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
 		Resources:   nil,
-		Members:     []body.TeamMemberCreate{{ID: model.TestDefaultUserID, TeamRole: model.TeamMemberRoleAdmin}},
+		Members:     []body2.TeamMemberCreate{{ID: model.TestDefaultUserID, TeamRole: model.TeamMemberRoleAdmin}},
 	}, e2e.PowerUser)
 
 	notifications := v1.ListNotifications(t, "?userId="+model.TestDefaultUserID, e2e.DefaultUser)
@@ -180,28 +180,28 @@ func TestJoin(t *testing.T) {
 func TestJoinWithBadCode(t *testing.T) {
 	t.Parallel()
 
-	team := v1.WithTeam(t, body.TeamCreate{
+	team := v1.WithTeam(t, body2.TeamCreate{
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
 		Resources:   nil,
-		Members:     []body.TeamMemberCreate{{ID: model.TestDefaultUserID, TeamRole: model.TeamMemberRoleAdmin}},
+		Members:     []body2.TeamMemberCreate{{ID: model.TestDefaultUserID, TeamRole: model.TeamMemberRoleAdmin}},
 	}, e2e.PowerUser)
 
-	resp := e2e.DoPostRequest(t, v1.TeamPath+team.ID, body.TeamJoin{InvitationCode: "bad-code"}, e2e.DefaultUser)
+	resp := e2e.DoPostRequest(t, v1.TeamPath+team.ID, body2.TeamJoin{InvitationCode: "bad-code"}, e2e.DefaultUser)
 	assert.Equal(t, http.StatusForbidden, resp.StatusCode, "bad code was not detected")
 }
 
 func TestUpdate(t *testing.T) {
 	t.Parallel()
 
-	team := v1.WithTeam(t, body.TeamCreate{
+	team := v1.WithTeam(t, body2.TeamCreate{
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
 		Resources:   nil,
 		Members:     nil,
 	})
 
-	requestBody := body.TeamUpdate{
+	requestBody := body2.TeamUpdate{
 		Name:        e2e.StrPtr(e2e.GenName("new-team")),
 		Description: e2e.StrPtr(e2e.GenName("new-description")),
 		Resources:   nil,
@@ -214,18 +214,18 @@ func TestUpdate(t *testing.T) {
 func TestUpdateResources(t *testing.T) {
 	t.Parallel()
 
-	team := v1.WithTeam(t, body.TeamCreate{
+	team := v1.WithTeam(t, body2.TeamCreate{
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
 		Resources:   nil,
 		Members:     nil,
 	})
 
-	resource, _ := v1.WithDeployment(t, body.DeploymentCreate{
+	resource, _ := v1.WithDeployment(t, body2.DeploymentCreate{
 		Name: e2e.GenName("deployment"),
 	})
 
-	requestBody := body.TeamUpdate{
+	requestBody := body2.TeamUpdate{
 		Name:        nil,
 		Description: nil,
 		Resources:   &[]string{resource.ID},
@@ -242,18 +242,18 @@ func TestUpdateResources(t *testing.T) {
 func TestUpdateMembers(t *testing.T) {
 	t.Parallel()
 
-	team := v1.WithTeam(t, body.TeamCreate{
+	team := v1.WithTeam(t, body2.TeamCreate{
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
 		Resources:   nil,
 		Members:     nil,
 	})
 
-	requestBody := body.TeamUpdate{
+	requestBody := body2.TeamUpdate{
 		Name:        nil,
 		Description: nil,
 		Resources:   nil,
-		Members:     &[]body.TeamMemberUpdate{{ID: model.TestDefaultUserID, TeamRole: model.TeamMemberRoleAdmin}},
+		Members:     &[]body2.TeamMemberUpdate{{ID: model.TestDefaultUserID, TeamRole: model.TeamMemberRoleAdmin}},
 	}
 
 	v1.UpdateTeam(t, team.ID, requestBody, e2e.PowerUser)
@@ -266,7 +266,7 @@ func TestUpdateMembers(t *testing.T) {
 func TestDelete(t *testing.T) {
 	t.Parallel()
 
-	team := v1.WithTeam(t, body.TeamCreate{
+	team := v1.WithTeam(t, body2.TeamCreate{
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
 		Resources:   nil,
@@ -279,7 +279,7 @@ func TestDelete(t *testing.T) {
 func TestDeleteAsNonOwner(t *testing.T) {
 	t.Parallel()
 
-	team := v1.WithTeam(t, body.TeamCreate{
+	team := v1.WithTeam(t, body2.TeamCreate{
 		Name:        e2e.GenName(),
 		Description: e2e.GenName(),
 		Resources:   nil,

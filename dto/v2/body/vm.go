@@ -15,7 +15,7 @@ type VmRead struct {
 	RepairedAt *time.Time `json:"repairedAt,omitempty"`
 	AccessedAt time.Time  `json:"accessedAt"`
 
-	Specs        Specs       `json:"specs"`
+	Specs        VmSpecs     `json:"specs"`
 	Ports        []PortRead  `json:"ports"`
 	GPU          *VmGpuLease `json:"gpu,omitempty"`
 	SshPublicKey string      `json:"sshPublicKey"`
@@ -76,7 +76,7 @@ type VmGpuLease struct {
 	ExpiredAt *time.Time `json:"expiredAt,omitempty"`
 }
 
-type Specs struct {
+type VmSpecs struct {
 	CpuCores int `json:"cpuCores,omitempty"`
 	RAM      int `json:"ram,omitempty"`
 	DiskSize int `json:"diskSize,omitempty"`

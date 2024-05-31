@@ -2,7 +2,7 @@ package model
 
 import (
 	"github.com/fatih/structs"
-	"go-deploy/dto/v1/body"
+	body2 "go-deploy/dto/v2/body"
 	"sort"
 )
 
@@ -15,7 +15,7 @@ type Role struct {
 }
 
 // ToDTO converts a Role to a body.Role DTO.
-func (r *Role) ToDTO(includeQuota bool) body.Role {
+func (r *Role) ToDTO(includeQuota bool) body2.Role {
 	permissionsStructMap := structs.Map(r.Permissions)
 	permissions := make([]string, 0)
 	for name, value := range permissionsStructMap {
@@ -25,7 +25,7 @@ func (r *Role) ToDTO(includeQuota bool) body.Role {
 		}
 	}
 
-	var quota *body.Quota
+	var quota *body2.Quota
 	if includeQuota {
 		dto := r.Quotas.ToDTO()
 		quota = &dto
@@ -35,7 +35,7 @@ func (r *Role) ToDTO(includeQuota bool) body.Role {
 		return permissions[i] < permissions[j]
 	})
 
-	return body.Role{
+	return body2.Role{
 		Name:        r.Name,
 		Description: r.Description,
 		Permissions: permissions,

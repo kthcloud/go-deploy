@@ -1,11 +1,11 @@
-package v1
+package v2
 
 import (
 	"errors"
 	"github.com/gin-gonic/gin"
-	"go-deploy/dto/v1/body"
-	"go-deploy/dto/v1/query"
-	"go-deploy/dto/v1/uri"
+	"go-deploy/dto/v2/body"
+	"go-deploy/dto/v2/query"
+	"go-deploy/dto/v2/uri"
 	"go-deploy/models/model"
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/sys"
