@@ -56,7 +56,7 @@ func (client *Client) WithApiKey(apiKey string) *Client {
 	client.AddExtraFilter(bson.D{{"apiKeys", bson.D{{"$elemMatch",
 		bson.D{
 			{"key", apiKey},
-			//{"expiresAt", bson.D{{"$gt", time.Now()}}},
+			{"expiresAt", bson.D{{"$gt", time.Now()}}},
 		},
 	}}}})
 
