@@ -1,14 +1,14 @@
 package body
 
 type HostRead struct {
-	HostBase `json:",inline"`
+	HostBase `json:",inline" tstype:",extends"`
 }
 
 type HostBase struct {
 	Name        string `json:"name"`
 	DisplayName string `json:"displayName"`
 	// Zone is the name of the zone where the host is located.
-	Zone string `json:"zone,omitempty"`
+	Zone string `json:"zone"`
 }
 
 type HostRegisterParams struct {
