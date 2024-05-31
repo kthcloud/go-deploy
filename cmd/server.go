@@ -55,13 +55,13 @@ func Create(opts *Options) *App {
 		{Name: "Validate application", Task: func() error { return validateApp(opts) }},
 		{Name: "Setup environment", Task: func() error { return config.SetupEnvironment(opts.Mode) }},
 		{Name: "Setup metrics", Task: metrics.Setup},
-		{Name: "Enable test mode if requested", Task: enableTestIfRequested},
 		{Name: "Setup database", Task: db.Setup},
 		{Name: "Clean up old tests", Task: intializer.CleanUpOldTests},
 		{Name: "Synchronize VM ports", Task: intializer.SynchronizeVmPorts},
 		{Name: "Run migrations", Task: migrator.Migrate},
 		{Name: "Reset running jobs", Task: func() error { return job_repo.New().ResetRunning() }},
 		{Name: "Ensure system deployments exists", Task: intializer.EnsureSystemDeploymentsExists},
+		{Name: "Ensure test users exist", Task: intializer.EnsureTestUsersExist},
 	}
 
 	for idx, task := range initTasks {
@@ -191,15 +191,6 @@ func validateApp(options *Options) error {
 				options.Flags.SetPassedValue(flag.Name, true)
 			}
 		}
-	}
-
-	return nil
-}
-
-func enableTestIfRequested() error {
-	if config.Config.Mode == mode.Test {
-		log.Printf("%sRUNNING IN TEST MODE. NO AUTHENTICATION WILL BE REQUIRED%s", log.Bold, log.Reset)
-		config.Config.MongoDB.Name = config.Config.MongoDB.Name + "-test"
 	}
 
 	return nil

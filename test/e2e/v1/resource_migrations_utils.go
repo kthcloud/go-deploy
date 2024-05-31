@@ -14,23 +14,23 @@ const (
 	ResourceMigrationsPath = "/v1/resourceMigrations"
 )
 
-func GetResourceMigration(t *testing.T, id string, userID ...string) body.ResourceMigrationRead {
-	resp := e2e.DoGetRequest(t, ResourceMigrationPath+id, userID...)
+func GetResourceMigration(t *testing.T, id string, user ...string) body.ResourceMigrationRead {
+	resp := e2e.DoGetRequest(t, ResourceMigrationPath+id, user...)
 	return e2e.MustParse[body.ResourceMigrationRead](t, resp)
 }
 
-func ResourceMigrationExists(t *testing.T, id string, userID ...string) bool {
-	resp := e2e.DoGetRequest(t, ResourceMigrationPath+id, userID...)
+func ResourceMigrationExists(t *testing.T, id string, user ...string) bool {
+	resp := e2e.DoGetRequest(t, ResourceMigrationPath+id, user...)
 	return resp.StatusCode == http.StatusOK
 }
 
-func ListResourceMigrations(t *testing.T, query string, userID ...string) []body.ResourceMigrationRead {
-	resp := e2e.DoGetRequest(t, ResourceMigrationsPath+query, userID...)
+func ListResourceMigrations(t *testing.T, query string, user ...string) []body.ResourceMigrationRead {
+	resp := e2e.DoGetRequest(t, ResourceMigrationsPath+query, user...)
 	return e2e.MustParse[[]body.ResourceMigrationRead](t, resp)
 }
 
-func UpdateResourceMigration(t *testing.T, id string, requestBody body.ResourceMigrationUpdate, userID ...string) body.ResourceMigrationRead {
-	resp := e2e.DoPostRequest(t, ResourceMigrationPath+id, requestBody, userID...)
+func UpdateResourceMigration(t *testing.T, id string, requestBody body.ResourceMigrationUpdate, user ...string) body.ResourceMigrationRead {
+	resp := e2e.DoPostRequest(t, ResourceMigrationPath+id, requestBody, user...)
 	resourceMigrationUpdated := e2e.MustParse[body.ResourceMigrationUpdated](t, resp)
 
 	// It is either done immediately or has a job
@@ -43,12 +43,12 @@ func UpdateResourceMigration(t *testing.T, id string, requestBody body.ResourceM
 	return resourceMigrationUpdated.ResourceMigrationRead
 }
 
-func DeleteResourceMigration(t *testing.T, id string, userID ...string) {
-	e2e.DoDeleteRequest(t, ResourceMigrationPath+id, userID...)
+func DeleteResourceMigration(t *testing.T, id string, user ...string) {
+	e2e.DoDeleteRequest(t, ResourceMigrationPath+id, user...)
 }
 
-func WithResourceMigration(t *testing.T, requestBody body.ResourceMigrationCreate, userID ...string) body.ResourceMigrationRead {
-	resp := e2e.DoPostRequest(t, ResourceMigrationsPath, requestBody, userID...)
+func WithResourceMigration(t *testing.T, requestBody body.ResourceMigrationCreate, user ...string) body.ResourceMigrationRead {
+	resp := e2e.DoPostRequest(t, ResourceMigrationsPath, requestBody, user...)
 	resourceMigrationCreated := e2e.MustParse[body.ResourceMigrationCreated](t, resp)
 	t.Cleanup(func() {
 		CleanUpResourceMigration(t, resourceMigrationCreated.ID)
@@ -75,7 +75,7 @@ func WithResourceMigration(t *testing.T, requestBody body.ResourceMigrationCreat
 }
 
 func CleanUpResourceMigration(t *testing.T, id string) {
-	resp := e2e.DoDeleteRequest(t, ResourceMigrationPath+id, e2e.AdminUserID)
+	resp := e2e.DoDeleteRequest(t, ResourceMigrationPath+id, e2e.AdminUser)
 	if resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusNoContent {
 		return
 	}

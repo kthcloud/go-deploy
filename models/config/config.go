@@ -18,7 +18,9 @@ const (
 type ConfigType struct {
 	Port        int    `yaml:"port"`
 	ExternalUrl string `yaml:"externalUrl"`
-	Mode        string `yaml:"mode"`
+	// Mode is the mode in which the application is running
+	// It is set using the command line flag --mode
+	Mode string
 	// Filepath is the path to the configuration file
 	// It is set by the SetupEnvironment function when the configuration is loaded
 	Filepath string

@@ -2,6 +2,7 @@ package gpu_leases
 
 import (
 	"go-deploy/dto/v2/body"
+	"go-deploy/models/model"
 	"go-deploy/test/e2e"
 	v2 "go-deploy/test/e2e/v2"
 	"os"
@@ -22,8 +23,8 @@ func TestGetGpuLease(t *testing.T) {
 
 	queries := []string{
 		"?page=1&pageSize=10",
-		"?userId=" + e2e.PowerUserID + "&page=1&pageSize=3",
-		"?userId=" + e2e.DefaultUserID + "&page=1&pageSize=3",
+		"?userId=" + model.TestPowerUserID + "&page=1&pageSize=3",
+		"?userId=" + model.TestPowerUserID + "&page=1&pageSize=3",
 	}
 
 	for _, query := range queries {

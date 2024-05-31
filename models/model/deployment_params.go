@@ -41,6 +41,7 @@ type DeploymentUpdateParams struct {
 }
 
 type DeploymentUpdateOwnerParams struct {
-	NewOwnerID string
-	OldOwnerID string
+	NewOwnerID    string
+	OldOwnerID    string
+	MigrationCode *string
 }

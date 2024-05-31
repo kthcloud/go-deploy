@@ -38,18 +38,18 @@ func TestMarkRead(t *testing.T) {
 
 	// Create a team and invite a user
 	v1.WithTeam(t, body.TeamCreate{
-		Name:        "",
-		Description: "",
+		Name:        e2e.GenName(),
+		Description: e2e.GenName(),
 		Resources:   nil,
 		Members: []body.TeamMemberCreate{
 			{
-				ID: e2e.DefaultUserID,
+				ID: model.TestDefaultUserID,
 			},
 		},
-	}, e2e.PowerUserID)
+	}, e2e.PowerUser)
 
 	// List notifications for the user
-	notifications := v1.ListNotifications(t, "?page=1&pageSize=10", e2e.DefaultUserID)
+	notifications := v1.ListNotifications(t, "?page=0&pageSize=100", e2e.DefaultUser)
 	assert.NotEmpty(t, notifications, "no notifications found")
 
 	justAfter := time.Now()
@@ -66,5 +66,5 @@ func TestMarkRead(t *testing.T) {
 	// Mark the notification as read
 	v1.UpdateNotification(t, notification.ID, body.NotificationUpdate{
 		Read: true,
-	}, e2e.DefaultUserID)
+	}, e2e.DefaultUser)
 }

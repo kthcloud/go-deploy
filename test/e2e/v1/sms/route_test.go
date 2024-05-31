@@ -3,6 +3,7 @@ package sms
 import (
 	"github.com/stretchr/testify/assert"
 	"go-deploy/dto/v1/body"
+	"go-deploy/models/model"
 	"go-deploy/test/e2e"
 	"go-deploy/test/e2e/v1"
 	"os"
@@ -35,7 +36,7 @@ func TestCreate(t *testing.T) {
 	v1.ListDeployments(t, "?all=true")
 
 	// Make sure the storage manager has time to be created
-	time.Sleep(30 * time.Second)
+	time.Sleep(5 * time.Second)
 
 	storageManagers := v1.ListSMs(t, "?all=false")
 	assert.NotEmpty(t, storageManagers, "storage managers were empty")
@@ -54,6 +55,6 @@ func TestCreate(t *testing.T) {
 	})
 
 	// Ensure the User has the storage url
-	user := v1.GetUser(t, e2e.PowerUserID)
+	user := v1.GetUser(t, model.TestPowerUserID)
 	assert.NotEmpty(t, user.StorageURL, "storage url was empty")
 }

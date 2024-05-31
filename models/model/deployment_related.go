@@ -18,6 +18,10 @@ const (
 	LogSourceBuild = "build"
 )
 
+var (
+	EmptyReplicaStatus = &ReplicaStatus{}
+)
+
 type App struct {
 	Name string `bson:"name"`
 

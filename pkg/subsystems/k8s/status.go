@@ -49,6 +49,10 @@ func (client *Client) deploymentStatusWatcher(ctx context.Context, handler func(
 		return statusChan, nil
 	}
 
+	hello := "hello"
+
+	strings.HasSuffix(hello, "o")
+
 	watcher, err := setupDeploymentWatcher(client.Namespace)
 	if err != nil {
 		return err
@@ -91,7 +95,7 @@ func (client *Client) deploymentStatusWatcher(ctx context.Context, handler func(
 				if err != nil {
 					log.Println("Failed to restart Deployment status watcher, sleeping for 10 seconds before retrying")
 					time.Sleep(10 * time.Second)
-					return
+					continue
 				}
 				resultsChan = watcher.ResultChan()
 			case <-ctx.Done():
@@ -142,7 +146,7 @@ func (client *Client) vmStatusWatcher(ctx context.Context, handler func(string, 
 				if err != nil {
 					log.Println("Failed to restart VM status watcher, sleeping for 10 seconds before retrying")
 					time.Sleep(10 * time.Second)
-					return
+					continue
 				}
 				resultsChan = watcher.ResultChan()
 			case <-ctx.Done():
@@ -193,7 +197,7 @@ func (client *Client) vmiStatusWatcher(ctx context.Context, handler func(string,
 				if err != nil {
 					log.Println("Failed to restart VM instance status watcher, sleeping for 10 seconds before retrying")
 					time.Sleep(10 * time.Second)
-					return
+					continue
 				}
 				resultsChan = watcher.ResultChan()
 			case <-ctx.Done():
@@ -341,7 +345,7 @@ func (client *Client) eventWatcher(ctx context.Context, handler func(string, int
 				if err != nil {
 					log.Println("Failed to restart Event status watcher, sleeping for 10 seconds before retrying")
 					time.Sleep(10 * time.Second)
-					return
+					continue
 				}
 				resultsChan = watcher.ResultChan()
 			case <-ctx.Done():

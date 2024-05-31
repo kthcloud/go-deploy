@@ -1,10 +1,11 @@
 package user_repo
 
 import (
-	"context"
+	"errors"
 	"fmt"
 	"go-deploy/models/model"
 	"go-deploy/pkg/db"
+	rErrors "go-deploy/pkg/db/resources/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"time"
 )
@@ -43,7 +44,7 @@ func (client *Client) Synchronize(id string, params *model.UserSynchronizeParams
 		return client.GetByID(id)
 	}
 
-	_, err = client.Collection.InsertOne(context.TODO(), model.User{
+	err = client.CreateIfUnique(id, &model.User{
 		ID:                  id,
 		Username:            params.Username,
 		FirstName:           params.FirstName,
@@ -54,10 +55,14 @@ func (client *Client) Synchronize(id string, params *model.UserSynchronizeParams
 		EffectiveRole:       *params.EffectiveRole,
 		PublicKeys:          []model.PublicKey{},
 		LastAuthenticatedAt: time.Now(),
-	})
+	}, bson.D{{"id", id}})
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to create user info for %s. details: %w", id, err)
+		if errors.Is(err, db.UniqueConstraintErr) {
+			return nil, rErrors.NonUniqueFieldErr
+		}
+
+		return nil, fmt.Errorf("failed to create user for %s. details: %w", id, err)
 	}
 
 	return client.GetByID(id)

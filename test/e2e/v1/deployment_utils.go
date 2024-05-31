@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"crypto/tls"
 	"github.com/stretchr/testify/assert"
 	"go-deploy/dto/v1/body"
 	"go-deploy/pkg/app/status_codes"
@@ -20,7 +21,14 @@ const (
 func CheckUpURL(t *testing.T, url string) bool {
 	t.Helper()
 
-	resp, err := http.Get(url)
+	tr := &http.Transport{
+		// Local environments does not have valid certificates
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+
+	client := &http.Client{Transport: tr}
+
+	resp, err := client.Get(url)
 	if err == nil {
 		if resp.StatusCode == http.StatusOK {
 			return true
@@ -30,18 +38,18 @@ func CheckUpURL(t *testing.T, url string) bool {
 	return false
 }
 
-func GetDeployment(t *testing.T, id string, userID ...string) body.DeploymentRead {
-	resp := e2e.DoGetRequest(t, DeploymentPath+id, userID...)
+func GetDeployment(t *testing.T, id string, user ...string) body.DeploymentRead {
+	resp := e2e.DoGetRequest(t, DeploymentPath+id, user...)
 	return e2e.MustParse[body.DeploymentRead](t, resp)
 }
 
-func ListDeployments(t *testing.T, query string, userID ...string) []body.DeploymentRead {
-	resp := e2e.DoGetRequest(t, DeploymentsPath+query, userID...)
+func ListDeployments(t *testing.T, query string, user ...string) []body.DeploymentRead {
+	resp := e2e.DoGetRequest(t, DeploymentsPath+query, user...)
 	return e2e.MustParse[[]body.DeploymentRead](t, resp)
 }
 
-func UpdateDeployment(t *testing.T, id string, requestBody body.DeploymentUpdate, userID ...string) body.DeploymentRead {
-	resp := e2e.DoPostRequest(t, DeploymentPath+id, requestBody, userID...)
+func UpdateDeployment(t *testing.T, id string, requestBody body.DeploymentUpdate, user ...string) body.DeploymentRead {
+	resp := e2e.DoPostRequest(t, DeploymentPath+id, requestBody, user...)
 	deploymentUpdated := e2e.MustParse[body.DeploymentUpdated](t, resp)
 
 	if deploymentUpdated.JobID != nil {
@@ -59,7 +67,7 @@ func UpdateDeployment(t *testing.T, id string, requestBody body.DeploymentUpdate
 		return false
 	})
 
-	updated := GetDeployment(t, id, userID...)
+	updated := GetDeployment(t, id, user...)
 
 	if requestBody.CustomDomain != nil {
 		punyEncoded, err := idna.New().ToASCII("https://" + *requestBody.CustomDomain)
@@ -115,8 +123,8 @@ func UpdateDeployment(t *testing.T, id string, requestBody body.DeploymentUpdate
 	return updated
 }
 
-func WithDeployment(t *testing.T, requestBody body.DeploymentCreate, userID ...string) (body.DeploymentRead, string) {
-	resp := e2e.DoPostRequest(t, DeploymentsPath, requestBody, userID...)
+func WithDeployment(t *testing.T, requestBody body.DeploymentCreate, user ...string) (body.DeploymentRead, string) {
+	resp := e2e.DoPostRequest(t, DeploymentsPath, requestBody, user...)
 	deploymentCreated := e2e.MustParse[body.DeploymentCreated](t, resp)
 	t.Cleanup(func() {
 		CleanUpDeployment(t, deploymentCreated.ID)
@@ -195,8 +203,8 @@ func WithDeployment(t *testing.T, requestBody body.DeploymentCreate, userID ...s
 	return deploymentRead, deploymentCreated.JobID
 }
 
-func WithAssumedFailedDeployment(t *testing.T, requestBody body.DeploymentCreate, userID ...string) {
-	resp := e2e.DoPostRequest(t, DeploymentsPath, requestBody, userID...)
+func WithAssumedFailedDeployment(t *testing.T, requestBody body.DeploymentCreate, user ...string) {
+	resp := e2e.DoPostRequest(t, DeploymentsPath, requestBody, user...)
 	if e2e.IsUserError(resp.StatusCode) {
 		return
 	}
@@ -211,7 +219,7 @@ func WithAssumedFailedDeployment(t *testing.T, requestBody body.DeploymentCreate
 }
 
 func CleanUpDeployment(t *testing.T, id string) {
-	resp := e2e.DoDeleteRequest(t, DeploymentPath+id, e2e.AdminUserID)
+	resp := e2e.DoDeleteRequest(t, DeploymentPath+id, e2e.AdminUser)
 	if resp.StatusCode == http.StatusNotFound {
 		return
 	}

@@ -3,6 +3,7 @@ package v1
 import (
 	"github.com/stretchr/testify/assert"
 	"go-deploy/dto/v1/body"
+	"go-deploy/models/model"
 	"go-deploy/test"
 	"go-deploy/test/e2e"
 	"net/http"
@@ -14,18 +15,18 @@ const (
 	TeamsPath = "/v1/teams"
 )
 
-func GetTeam(t *testing.T, id string, userID ...string) body.TeamRead {
-	resp := e2e.DoGetRequest(t, TeamPath+id, userID...)
+func GetTeam(t *testing.T, id string, user ...string) body.TeamRead {
+	resp := e2e.DoGetRequest(t, TeamPath+id, user...)
 	return e2e.MustParse[body.TeamRead](t, resp)
 }
 
-func ListTeams(t *testing.T, query string, userID ...string) []body.TeamRead {
-	resp := e2e.DoGetRequest(t, TeamsPath+query, userID...)
+func ListTeams(t *testing.T, query string, user ...string) []body.TeamRead {
+	resp := e2e.DoGetRequest(t, TeamsPath+query, user...)
 	return e2e.MustParse[[]body.TeamRead](t, resp)
 }
 
-func UpdateTeam(t *testing.T, id string, teamUpdate body.TeamUpdate, userID ...string) body.TeamRead {
-	resp := e2e.DoPostRequest(t, TeamPath+id, teamUpdate, userID...)
+func UpdateTeam(t *testing.T, id string, teamUpdate body.TeamUpdate, user ...string) body.TeamRead {
+	resp := e2e.DoPostRequest(t, TeamPath+id, teamUpdate, user...)
 	var teamRead body.TeamRead
 	err := e2e.ReadResponseBody(t, resp, &teamRead)
 	assert.NoError(t, err, "team was not updated")
@@ -57,14 +58,14 @@ func UpdateTeam(t *testing.T, id string, teamUpdate body.TeamUpdate, userID ...s
 		var requested []string
 		var result []string
 
-		if len(userID) > 0 {
-			requested = append(requested, userID[0])
+		if len(user) > 0 {
+			requested = append(requested, e2e.GetUserID(user[0]))
 		} else {
-			requested = append(requested, e2e.AdminUserID)
+			requested = append(requested, model.TestAdminUserID)
 		}
 
 		for _, member := range *teamUpdate.Members {
-			if member.ID == e2e.AdminUserID {
+			if member.ID == model.TestAdminUserID {
 				continue
 			}
 
@@ -81,32 +82,32 @@ func UpdateTeam(t *testing.T, id string, teamUpdate body.TeamUpdate, userID ...s
 	return teamRead
 }
 
-func DeleteTeam(t *testing.T, id string, userID ...string) {
-	resp := e2e.DoDeleteRequest(t, TeamPath+id, userID...)
+func DeleteTeam(t *testing.T, id string, user ...string) {
+	resp := e2e.DoDeleteRequest(t, TeamPath+id, user...)
 	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusNotFound {
 		t.Errorf("team was not deleted")
 	}
 }
 
-func JoinTeam(t *testing.T, id string, invitationCode string, userID ...string) {
+func JoinTeam(t *testing.T, id string, invitationCode string, user ...string) {
 	teamJoin := body.TeamJoin{
 		InvitationCode: invitationCode,
 	}
 
-	resp := e2e.DoPostRequest(t, TeamPath+id, teamJoin, userID...)
+	resp := e2e.DoPostRequest(t, TeamPath+id, teamJoin, user...)
 	_ = e2e.MustParse[struct{}](t, resp)
 }
 
-func WithTeam(t *testing.T, teamCreate body.TeamCreate, userID ...string) body.TeamRead {
+func WithTeam(t *testing.T, teamCreate body.TeamCreate, user ...string) body.TeamRead {
 	var requestedMembers []string
-	if len(userID) > 0 {
-		requestedMembers = append(requestedMembers, userID[0])
+	if len(user) > 0 {
+		requestedMembers = append(requestedMembers, e2e.GetUserID(user[0]))
 	} else {
-		requestedMembers = append(requestedMembers, e2e.PowerUserID)
+		requestedMembers = append(requestedMembers, model.TestPowerUserID)
 	}
 
 	for _, member := range teamCreate.Members {
-		if member.ID == e2e.PowerUserID {
+		if member.ID == model.TestPowerUserID {
 			continue
 		}
 
@@ -117,7 +118,7 @@ func WithTeam(t *testing.T, teamCreate body.TeamCreate, userID ...string) body.T
 	var createdMembers []string
 	var createdResources []string
 
-	resp := e2e.DoPostRequest(t, TeamsPath, teamCreate, userID...)
+	resp := e2e.DoPostRequest(t, TeamsPath, teamCreate, user...)
 	teamRead := e2e.MustParse[body.TeamRead](t, resp)
 
 	assert.Equal(t, teamCreate.Name, teamRead.Name, "invalid team name")

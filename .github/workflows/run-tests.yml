@@ -13,9 +13,8 @@ on:
       - '.github/workflows/run-tests.yml'
 
 jobs:
-  acc:
+  tests:
     runs-on: ubuntu-latest
-
     steps:
       - name: Check out code
         uses: actions/checkout@v3
@@ -23,48 +22,22 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: '>=1.20.0'
+          go-version: '>=1.21.0'
 
-      - name: Create config directory
-        run: sudo mkdir -p /etc/deploy && sudo chown $USER /etc/deploy
-
-      - name: Create config file from secret
+      - name: Install local environment
+        id: setup-local
         run: |
-          echo "${{ vars.CONFIG_FILE }}" | sudo tee /etc/deploy/config.yaml > /dev/null
+          cd scripts/local
+          chmod +x ./setup.sh && ./setup.sh -y --configure-dns
+          cd ../..
+          ls -la
 
       - name: Export configuration file path
-        run: echo "DEPLOY_CONFIG_FILE=/etc/deploy/config.yaml" >> $GITHUB_ENV
+        run: echo "DEPLOY_CONFIG_FILE=config.local.yml" >> $GITHUB_ENV
 
       - name: Run acceptance tests
-        run: go test -timeout 30m ./test/acc/...
-  e2e:
-    runs-on: ubuntu-latest
-
-    # This assumes that the configuration file connects to Redis at localhost:6379
-    services:
-      redis:
-        image: redis
-        ports:
-          - 6379:6379
-
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v3
-
-      - name: Set up Go
-        uses: actions/setup-go@v3
-        with:
-          go-version: '>=1.20.0'
-
-      - name: Create config directory
-        run: sudo mkdir -p /etc/deploy && sudo chown $USER /etc/deploy
-
-      - name: Create config file from secret
         run: |
-          echo "${{ vars.CONFIG_FILE }}" | sudo tee /etc/deploy/config.yaml > /dev/null
-
-      - name: Export configuration file path
-        run: echo "DEPLOY_CONFIG_FILE=/etc/deploy/config.yaml" >> $GITHUB_ENV
+          go test -timeout 30m ./test/acc/...
 
       - name: Start main program
         run: |
@@ -79,4 +52,4 @@ jobs:
 
       - name: Run e2e tests
         run: go test -timeout 30m ./test/e2e/...
-
+        

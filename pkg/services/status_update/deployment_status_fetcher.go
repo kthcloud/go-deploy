@@ -26,12 +26,7 @@ func DeploymentStatusFetcher() error {
 	}
 
 	for _, status := range allStatus {
-		err := drc.SetStatusByName(status.Name, parseDeploymentStatus(&status))
-		if err != nil {
-			return err
-		}
-
-		err = drc.SetReplicaStatusByName(status.Name, "main", &model.ReplicaStatus{
+		err := drc.SetStatusByName(status.Name, parseDeploymentStatus(&status), &model.ReplicaStatus{
 			DesiredReplicas:     status.DesiredReplicas,
 			ReadyReplicas:       status.ReadyReplicas,
 			AvailableReplicas:   status.AvailableReplicas,
@@ -49,7 +44,7 @@ func DeploymentStatusFetcher() error {
 	}
 
 	for _, deployment := range disabledDeployments {
-		err = drc.SetStatusByName(deployment.Name, status_codes.GetMsg(status_codes.ResourceDisabled))
+		err = drc.SetStatusByName(deployment.Name, status_codes.GetMsg(status_codes.ResourceDisabled), model.EmptyReplicaStatus)
 		if err != nil {
 			return err
 		}
