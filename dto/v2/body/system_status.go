@@ -15,6 +15,6 @@ type TimestampedSystemStatus struct {
 }
 
 type HostStatus struct {
-	HostBase        `json:",inline" bson:",inline"`
-	host_api.Status `json:",inline" bson:",inline"`
+	HostBase        `json:",inline" bson:",inline" tstype:",extends"`
+	host_api.Status `json:",inline" bson:",inline" tstype:",extends"`
 }

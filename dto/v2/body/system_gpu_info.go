@@ -15,6 +15,6 @@ type TimestampedSystemGpuInfo struct {
 }
 
 type HostGpuInfo struct {
-	HostBase `json:",inline" bson:",inline"`
+	HostBase `json:",inline" bson:",inline" tstype:",extends"`
 	GPUs     []host_api.GpuInfo `bson:"gpus" json:"gpus"`
 }

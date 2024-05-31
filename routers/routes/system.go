@@ -14,7 +14,7 @@ func SystemRoutes() *SystemRoutingGroup {
 	return &SystemRoutingGroup{}
 }
 
-func (group *SystemRoutingGroup) PrivateRoutes() []Route {
+func (group *SystemRoutingGroup) PublicRoutes() []Route {
 	return []Route{
 		{Method: "GET", Pattern: SystemCapacitiesPath, HandlerFunc: v2.ListSystemCapacities},
 		{Method: "GET", Pattern: SystemStatsPath, HandlerFunc: v2.ListSystemStats},
