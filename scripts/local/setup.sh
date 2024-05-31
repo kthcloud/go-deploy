@@ -1122,7 +1122,7 @@ function print_result() {
   echo -e " - systemd-resolved (Linux): https://gist.github.com/frank-dspeed/6b6f1f720dd5e1c57eec8f1fdb2276df"
   echo -e ""
   echo -e "The following services are now available:"
-  echo -e " - ${BLUE_BOLD}Harbor${RESET}: http://127.0.0.1:$harbor_port (admin:Harbor12345)"
+  echo -e " - ${BLUE_BOLD}Harbor${RESET}: http://harbor.$domain:$harbor_port (admin:Harbor12345)"
   echo -e " - ${TEAL_BOLD}Keycloak${RESET}: http://keycloak.$domain:$keycloak_port (admin:admin)"
   echo -e "      Users: admin:admin, base:base, power:power"
   echo -e "      Clients: go-deploy:(no secret), go-deploy-storage:$keycloak_deploy_storage_secret"
