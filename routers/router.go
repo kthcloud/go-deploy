@@ -8,7 +8,6 @@ import (
 	"github.com/penglongli/gin-metrics/ginmetrics"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	docsV1 "go-deploy/docs/api/v1"
 	docsV2 "go-deploy/docs/api/v2"
 	"go-deploy/models/mode"
 	"go-deploy/pkg/auth"
@@ -66,10 +65,6 @@ func NewRouter() *gin.Engine {
 	public := router.Group("/")
 
 	//// Swagger routes
-	// v1
-	docsV1.SwaggerInfoV1.BasePath = basePath
-	public.GET("/v1/docs/*any", ginSwagger.WrapHandler(swaggerfiles.Handler, ginSwagger.InstanceName("V1")))
-
 	// v2
 	docsV2.SwaggerInfoV2.BasePath = basePath
 	public.GET("/v2/docs/*any", ginSwagger.WrapHandler(swaggerfiles.Handler, ginSwagger.InstanceName("V2")))
