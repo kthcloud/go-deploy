@@ -12,7 +12,7 @@ func RegisterRoutes() *RegisterRoutingGroup {
 	return &RegisterRoutingGroup{}
 }
 
-func (group *RegisterRoutingGroup) PrivateRoutes() []Route {
+func (group *RegisterRoutingGroup) PublicRoutes() []Route {
 	return []Route{
 		{Method: "POST", Pattern: RegisterPath, HandlerFunc: v2.Register},
 	}
