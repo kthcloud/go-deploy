@@ -262,8 +262,7 @@ export interface GpuLeaseDeleted {
 //////////
 // source: host.go
 
-export interface HostRead {
-  HostBase: HostBase;
+export interface HostRead extends HostBase {
 }
 export interface HostBase {
   name: string;
@@ -271,7 +270,7 @@ export interface HostBase {
   /**
    * Zone is the name of the zone where the host is located.
    */
-  zone?: string;
+  zone: string;
 }
 export interface HostRegisterParams {
   /**
@@ -510,9 +509,7 @@ export interface HostGpuCapacities {
 export interface HostRamCapacities {
   total: number /* int */;
 }
-export interface HostCapacities {
-  HostBase: HostBase;
-  Capacities: any /* host_api.Capacities */;
+export interface HostCapacities extends HostBase, host_api.Capacities {
 }
 export interface RamCapacities {
   total: number /* int */;
@@ -534,8 +531,7 @@ export interface TimestampedSystemGpuInfo {
   gpuInfo: SystemGpuInfo;
   timestamp: string;
 }
-export interface HostGpuInfo {
-  HostBase: HostBase;
+export interface HostGpuInfo extends HostBase {
   gpus: any /* host_api.GpuInfo */[];
 }
 
@@ -568,9 +564,7 @@ export interface TimestampedSystemStatus {
   systemStatus: SystemStatus;
   timestamp: string;
 }
-export interface HostStatus {
-  HostBase: HostBase;
-  Status: any /* host_api.Status */;
+export interface HostStatus extends HostBase, host_api.Status {
 }
 
 //////////
