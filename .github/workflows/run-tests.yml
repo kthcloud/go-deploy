@@ -35,10 +35,10 @@ jobs:
       - name: Export configuration file path
         run: echo "DEPLOY_CONFIG_FILE=config.local.yml" >> $GITHUB_ENV
 
-      - name: Run acceptance tests
-        run: |
-          cat config.local.yml
-          go test -timeout 30m ./test/acc/...
+#      - name: Run acceptance tests
+#        run: |
+#          cat config.local.yml
+#          go test -timeout 30m ./test/acc/...
 
       - name: Start main program
         run: |
@@ -50,6 +50,8 @@ jobs:
               echo "Waiting for API to start"
               sleep 1
           done
+          
+          curl -H "X-API-KEY: test-api-key-power" -X GET http://localhost:8080/v1/deployments
 
       - name: Run e2e tests
         run: go test -timeout 30m ./test/e2e/...

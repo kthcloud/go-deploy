@@ -113,6 +113,8 @@ func DoGetRequest(t *testing.T, subPath string, user ...string) *http.Response {
 	}
 	req.Header.Set("X-API-KEY", effectiveUser)
 
+	t.Log("API-KEY: ", effectiveUser)
+
 	return doRequest(t, req)
 }
 
@@ -135,6 +137,8 @@ func DoPostRequest(t *testing.T, subPath string, body interface{}, user ...strin
 	}
 	req.Header.Set("X-API-KEY", effectiveUser)
 
+	t.Log("API-KEY: ", effectiveUser)
+
 	return doRequest(t, req)
 }
 
@@ -150,6 +154,8 @@ func DoDeleteRequest(t *testing.T, subPath string, user ...string) *http.Respons
 		effectiveUser = user[0]
 	}
 	req.Header.Set("X-API-KEY", effectiveUser)
+
+	t.Log("API-KEY: ", effectiveUser)
 
 	return doRequest(t, req)
 }
