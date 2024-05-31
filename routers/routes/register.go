@@ -14,6 +14,6 @@ func RegisterRoutes() *RegisterRoutingGroup {
 
 func (group *RegisterRoutingGroup) PrivateRoutes() []Route {
 	return []Route{
-		{Method: "GET", Pattern: RegisterPath, HandlerFunc: v2.Register},
+		{Method: "POST", Pattern: RegisterPath, HandlerFunc: v2.Register},
 	}
 }
