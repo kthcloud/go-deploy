@@ -10,7 +10,7 @@ type SystemStatus struct {
 }
 
 type TimestampedSystemStatus struct {
-	Status    SystemStatus `json:"systemStatus" bson:"systemStatus"`
+	Status    SystemStatus `json:"status" bson:"status"`
 	Timestamp time.Time    `json:"timestamp" bson:"timestamp"`
 }
 
