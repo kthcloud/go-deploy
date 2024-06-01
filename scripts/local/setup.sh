@@ -559,6 +559,7 @@ function install_ingress_nginx() {
     helm upgrade --install ingress-nginx ingress-nginx \
       --repo https://kubernetes.github.io/ingress-nginx \
       --namespace ingress-nginx --create-namespace \
+      --version 4.10.1 \
       --set controller.service.nodePorts.http=$ingress_http_port \
       --set controller.service.nodePorts.https=$ingress_https_port \
       --values - <<EOF
