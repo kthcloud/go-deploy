@@ -7,52 +7,59 @@
   <img src="https://github.com/kthcloud/go-deploy/actions/workflows/build-and-push-image.yml/badge.svg"\>
 </div>
 
-go-deploy is a simple API to create deployments similar to Heroku and spin up virtual machines built on top of kthcloud.
+go-deploy is an API that is used to create websites and virtual machines built on top of kthcloud using Kubernetes with [KubeVirt](https://kubevirt.io/).
 
-It is publically hosted at [https://api.cloud.cbh.kth.se/deploy/v1](https://api.cloud.cbh.kth.se/deploy/v1) or view
-its [status page](https://api.cloud.cbh.kth.se/deploy).
+It is hosted at [https://api.cloud.cbh.kth.se/deploy/v2](https://api.cloud.cbh.kth.se/deploy/v2) using kthcloud authentication.
 
-See our wiki for more information about [go-deploy](https://wiki.cloud.cbh.kth.se/index.php/Deploy).
+## 🛠️ Local environment
+
+go-deploy can be hosted locally using the `setup.sh` script found under the `scripts/local` directory. The script will set up an enitre local environment with every sevice installed in a Kind Kubernetes cluster on your local machine. 
+
+Refer to the [local environment documentation](scripts/local/README.md) for more information.
+
+## 🤝 Contributing
+
+Contributions, issues, and feature requests are welcome!\
+You can install a local development environment by following the [local environment documentation](scripts/local/README.md). 
+
+Remember to run the tests before creating a pull request.
+
+#### Acceptance Tests
+```bash
+go test ./acc/...
+```
+#### End-to-End Tests
+```bash
+go build -o go-deploy .     # Build
+./go-deploy --mode=test     # Start
+
+# Wait for the API to return 200 on /healthz
+until $(curl --output /dev/null --silent --head --fail http://localhost:8080/healthz); do
+    echo "Waiting for API to start"
+    sleep 1
+done
+go test ./e2e/...          # Run e2e tests
+```
 
 ## 📚 Docs
 
-go-deploy is documented using godoc. You can view the documentation by running the documentation server locally.
+### Codebase
+The code base is documented using godoc. You can view the documentation by running the documentation server locally.
 
 1. Install godoc `go install golang.org/x/tools/cmd/godoc`
 2. Run godoc `godoc -http=:6060`
 3. Visit [http://localhost:6060/pkg/go-deploy/](http://localhost:6060/pkg/go-deploy/)
 
+
 ### API
+The API is documented using OpenAPI 3.0 specification and is available at [https://api.cloud.cbh.kth.se/deploy/v2/docs/index.html](https://api.cloud.cbh.kth.se/deploy/v2/docs/index.html).
 
-The API is documented using Swagger.
-You can view the API documentation by running go-deploy locally.
+You can also run the API locally by [setting up the local environment](scripts/local/README.md) and visiting [http://localhost:8080/v2/docs/index.html](http://localhost:8080/v2/docs/index.html).
 
-1. Install go.mod dependencies `go mod download`
-2. Set the config environment variable `export DEPLOY_CONFIG_FILE=/path/to/config/file`
-3. Run go-deploy `go run main.go`
-4. Visit [http://localhost:8080/v1/docs](http://localhost:8080/deploy/v1/docs).
 
-If you are unable to run the API locally, you can try it out using the deployed API.
-Go to [https://api.cloud.cbh.kth.se/deploy/v1/docs/index.html](https://api.cloud.cbh.kth.se/deploy/v1/docs/index.html).
+Contributions, issues, and feature requests are welcome!
 
-## 🤝 Contributing
-
-Thank you for considering contributing to go-deploy!
-
-Right now we don't support running go-deploy outside of kthcloud, so you would need to setup a Kubernetes cluster,
-CloudStack enviroment, Harbor service and a GitLab instance.
-
-If you are part of the development team at kthcloud you will find the current configuration file with the required
-secrets in our private admin repository.
-
-## 🚀 Getting Started
-
-1. Clone the repository: `git clone https://github.com/kthcloud/go-deploy`
-2. Clone the admin repository to get access to the configuration file.
-3. Set up a local Redis instance and make sure the credentials in the configuration file match.
-4. Build and run the project using your Go executable, and make sure the DEPLOY_CONFIG_FILE environment variables are
-   set to the configuration file path.
-5. The API is by default available at [http://localhost:8080/v1](http://localhost:8080/v1)
+If you have any questions or feedback, open an Issue or join [Discord channel](https://discord.gg/MuHQd6QEtM).
 
 ## 📝 License
 
