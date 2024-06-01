@@ -1,9 +1,9 @@
-package status
+package system
 
 import (
 	"go-deploy/models/model"
 	"go-deploy/pkg/db/resources/worker_status_repo"
-	"go-deploy/service/v2/status/opts"
+	"go-deploy/service/v2/system/opts"
 	"time"
 )
 

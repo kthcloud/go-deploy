@@ -15,7 +15,6 @@ type V2 interface {
 	Jobs() apiV2.Jobs
 	Notifications() apiV2.Notifications
 	SMs() apiV2.SMs
-	Status() apiV2.Status
 	Teams() apiV2.Teams
 	Users() apiV2.Users
 	ResourceMigrations() apiV2.ResourceMigrations
