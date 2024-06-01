@@ -38,7 +38,7 @@ func TestCreate(t *testing.T) {
 	// Make sure the storage manager has time to be created
 	time.Sleep(30 * time.Second)
 
-	storageManagers := v2.ListSMs(t, "?all=false")
+	storageManagers := v2.ListSMs(t, "?all=false", e2e.PowerUser)
 	e2e.MustNotEmpty(t, storageManagers, "storage managers were empty")
 
 	storageManager := storageManagers[0]
@@ -54,6 +54,6 @@ func TestCreate(t *testing.T) {
 	})
 
 	// Ensure the User has the storage url
-	user := v2.GetUser(t, model.TestPowerUserID)
+	user := v2.GetUser(t, model.TestPowerUserID, e2e.PowerUser)
 	assert.NotEmpty(t, user.StorageURL, "storage url was empty")
 }
