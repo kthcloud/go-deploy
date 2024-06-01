@@ -52,7 +52,7 @@ func NewRouter() *gin.Engine {
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", gin.H{
 			"staticFolder": basePath + "/static",
-			"apiUrl":       config.Config.ExternalUrl + "/v1/status",
+			"apiUrl":       config.Config.ExternalUrl + "/v2/workerStatus",
 		})
 	})
 

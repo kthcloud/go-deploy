@@ -1372,33 +1372,6 @@ paths:
                 $ref: '#/components/schemas/sys.ErrorResponse'
       security:
       - ApiKeyAuth: []
-  /v2/status:
-    get:
-      tags:
-      - Status
-      summary: List worker status
-      description: List of worker status
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/body.WorkerStatusRead'
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/sys.ErrorResponse'
   /v2/storageManagers:
     get:
       tags:
@@ -2341,6 +2314,33 @@ paths:
                 $ref: '#/components/schemas/sys.ErrorResponse'
       security:
       - ApiKeyAuth: []
+  /v2/workerStatus:
+    get:
+      tags:
+      - Status
+      summary: List worker status
+      description: List of worker status
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/body.WorkerStatusRead'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/sys.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/sys.ErrorResponse'
   /v2/zones:
     get:
       tags:

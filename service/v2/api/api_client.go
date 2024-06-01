@@ -13,8 +13,7 @@ import (
 	resourceMigrationOpts "go-deploy/service/v2/resource_migrations/opts"
 	smK8sService "go-deploy/service/v2/sms/k8s_service"
 	smOpts "go-deploy/service/v2/sms/opts"
-	statusOpts "go-deploy/service/v2/status/opts"
-	zoneOpts "go-deploy/service/v2/system/opts"
+	systemOpts "go-deploy/service/v2/system/opts"
 	teamOpts "go-deploy/service/v2/teams/opts"
 	userOpts "go-deploy/service/v2/users/opts"
 	vmK8sService "go-deploy/service/v2/vms/k8s_service"
@@ -89,10 +88,6 @@ type SMs interface {
 	GetUrlByUserID(userID string) *string
 
 	K8s() *smK8sService.Client
-}
-
-type Status interface {
-	ListWorkerStatus(opts ...statusOpts.ListWorkerStatusOpts) ([]model.WorkerStatus, error)
 }
 
 type Users interface {
@@ -195,11 +190,13 @@ type System interface {
 	ListStats(n int) ([]body.TimestampedSystemStats, error)
 	ListStatus(n int) ([]body.TimestampedSystemStatus, error)
 
+	ListWorkerStatus(opts ...systemOpts.ListWorkerStatusOpts) ([]model.WorkerStatus, error)
+
 	RegisterNode(params *body.HostRegisterParams) error
 
 	ListHosts() ([]model.Host, error)
 
 	GetZone(name string) *configModels.Zone
-	ListZones(opts ...zoneOpts.ListOpts) ([]configModels.Zone, error)
+	ListZones(opts ...systemOpts.ListOpts) ([]configModels.Zone, error)
 	ZoneHasCapability(zoneName, capability string) bool
 }

@@ -7,3 +7,7 @@ type GetOpts struct {
 // ListOpts is used to pass options to the List method
 type ListOpts struct {
 }
+
+// ListWorkerStatusOpts is used to pass options to the List method
+type ListWorkerStatusOpts struct {
+}

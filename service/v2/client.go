@@ -10,7 +10,6 @@ import (
 	"go-deploy/service/v2/notifications"
 	"go-deploy/service/v2/resource_migrations"
 	"go-deploy/service/v2/sms"
-	"go-deploy/service/v2/status"
 	"go-deploy/service/v2/system"
 	"go-deploy/service/v2/teams"
 	"go-deploy/service/v2/users"
@@ -68,10 +67,6 @@ func (c *Client) ResourceMigrations() api.ResourceMigrations {
 
 func (c *Client) SMs() api.SMs {
 	return sms.New(c, c.cache)
-}
-
-func (c *Client) Status() api.Status {
-	return status.New(c, c.cache)
 }
 
 func (c *Client) System() api.System {

@@ -34,7 +34,6 @@ func RoutingGroups() []RoutingGroup {
 		ResourceMigrationRoutes(),
 		SmRoutes(),
 		SnapshotRoutes(),
-		StatusRoutes(),
 		SystemRoutes(),
 		TeamRoutes(),
 		UserRoutes(),
