@@ -55,7 +55,7 @@ The following storage classes are created:
 | `deploy-vm-scratch` | Storage class scratch space for VMs |
 
 ### Port Configuration
-The setup scripts generates a `cluster-config.rc` with random prots in the NodePort range `30000-32767`. The ports are used to expose the services in the Kubernetes cluster and VM ports in go-deploy.
+The setup script generates a `cluster-config.rc` with random ports in the NodePort range `30000-32767`. The ports are used to expose the services in the Kubernetes cluster and VM ports in go-deploy.
 
 ## `teardown.sh`
 
