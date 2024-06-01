@@ -13,7 +13,7 @@ It is hosted at [https://api.cloud.cbh.kth.se/deploy/v2](https://api.cloud.cbh.k
 
 ## 🛠️ Local environment
 
-go-deploy can be hosted locally using the `setup.sh` script found under the `scripts/local` directory. The script will set up an enitre local environment with every sevice installed in a Kind Kubernetes cluster on your local machine. 
+go-deploy can be hosted locally using the `setup.sh` script found under the `scripts/local` directory. The script will set up an entire local environment with every service installed in a Kind Kubernetes cluster on your local machine. 
 
 Refer to the [local environment documentation](scripts/local/README.md) for more information.
 
