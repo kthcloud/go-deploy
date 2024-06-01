@@ -253,6 +253,12 @@ func MustNotNil(t *testing.T, obj interface{}, msg string) {
 	}
 }
 
+func MustNotEmpty[T any](t *testing.T, slice []T, msg string) {
+	if len(slice) == 0 {
+		assert.FailNow(t, msg)
+	}
+}
+
 func IsUserError(code int) bool {
 	return code >= 400 && code < 500
 }
