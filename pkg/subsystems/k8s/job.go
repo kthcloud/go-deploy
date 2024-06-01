@@ -95,7 +95,7 @@ func (client *Client) CreateOneShotJob(public *models.JobPublic) error {
 	}
 
 	// Wait for the job to complete.
-	maxIter := 60
+	maxIter := 600
 	iter := 0
 	for {
 		k8sJob, err := client.K8sClient.BatchV1().Jobs(public.Namespace).Get(context.TODO(), public.Name, metav1.GetOptions{})

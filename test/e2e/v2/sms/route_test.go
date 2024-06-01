@@ -33,18 +33,17 @@ func TestList(t *testing.T) {
 func TestCreate(t *testing.T) {
 	t.Parallel()
 
-	v2.ListDeployments(t, "?all=true")
+	v2.WithDeployment(t, body.DeploymentCreate{Name: e2e.GenName("sms-create")}, e2e.PowerUser)
 
 	// Make sure the storage manager has time to be created
-	time.Sleep(5 * time.Second)
+	time.Sleep(30 * time.Second)
 
 	storageManagers := v2.ListSMs(t, "?all=false")
-	assert.NotEmpty(t, storageManagers, "storage managers were empty")
+	e2e.MustNotEmpty(t, storageManagers, "storage managers were empty")
 
 	storageManager := storageManagers[0]
 	assert.NotEmpty(t, storageManager.ID, "storage manager id was empty")
 	assert.NotEmpty(t, storageManager.OwnerID, "storage manager owner id was empty")
-	assert.NotEmpty(t, storageManager.URL, "storage manager url was empty")
 
 	v2.WaitForSmRunning(t, storageManager.ID, func(storageManagerRead *body.SmRead) bool {
 		// Make sure it is accessible

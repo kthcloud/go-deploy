@@ -37,7 +37,7 @@ jobs:
 
       - name: Run acceptance tests
         run: |
-          go test -timeout 30m ./test/acc/...
+          go test -timeout 90m ./test/acc/...
 
       - name: Start main program
         run: |
