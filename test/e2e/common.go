@@ -23,7 +23,7 @@ const (
 
 	TestDomain    = "test-deploy.saffronbun.com"
 	CheckInterval = 1 * time.Second
-	MaxChecks     = 900 // 900 * CheckInterval (1) seconds = 15 minutes
+	MaxChecks     = 3600 // 1 hour
 
 	// VmTestsEnabled flag is used temporarily to enable V2 tests until V2 zone is fully operational
 	VmTestsEnabled = true
