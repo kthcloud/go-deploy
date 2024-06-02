@@ -80,12 +80,12 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 	})
 
 	limits := models.Limits{
-		CPU:    fmt.Sprintf("%.1f", mainApp.CpuCores),
+		CPU:    formatCpuString(mainApp.CpuCores),
 		Memory: fmt.Sprintf("%dMi", int(mainApp.RAM*1000)),
 	}
 
 	requests := models.Requests{
-		CPU:    fmt.Sprintf("%.1f", math.Min(config.Config.Deployment.Resources.Requests.CPU, mainApp.CpuCores)),
+		CPU:    formatCpuString(math.Min(config.Config.Deployment.Resources.Requests.CPU, mainApp.CpuCores)),
 		Memory: fmt.Sprintf("%dMi", int(math.Min(config.Config.Deployment.Resources.Requests.RAM, mainApp.RAM)*1000)),
 	}
 
@@ -551,4 +551,19 @@ func getExternalFQDN(name string, zone *configModels.Zone) string {
 	fqdn = strings.Split(fqdn, ":")[0]
 
 	return fmt.Sprintf("%s.%s", name, fqdn)
+}
+
+// formatCpuString formats the CPU string.
+// It ensures the same is returned by K8s after creation.
+func formatCpuString(cpus float64) string {
+	// Round to one decimal, e.g. 0.12 -> 0.1, 0.16 -> 0.2
+	oneDec := math.Round(cpus*10) / 10
+
+	// If whole number, return as int, e.g. 1.0 -> 1
+	if oneDec == float64(int(oneDec)) {
+		return fmt.Sprintf("%d", int(oneDec))
+	}
+
+	// Otherwise, return as milli CPU, e.g. 0.1 -> 100m
+	return fmt.Sprintf("%dm", int(oneDec*1000))
 }
