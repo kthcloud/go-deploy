@@ -10,12 +10,15 @@ import (
 	configModels "go-deploy/models/config"
 	"go-deploy/models/model"
 	"go-deploy/models/version"
+	"go-deploy/pkg/config"
 	"go-deploy/pkg/sys"
 	"go-deploy/service"
 	sErrors "go-deploy/service/errors"
 	teamOpts "go-deploy/service/v2/teams/opts"
 	v2Utils "go-deploy/service/v2/utils"
 	"go-deploy/service/v2/vms/opts"
+	"strconv"
+	"strings"
 )
 
 // GetVM
@@ -75,7 +78,7 @@ func GetVM(c *gin.Context) {
 	sshConnectionString, _ := deployV2.VMs().SshConnectionString(vm.ID)
 
 	lease, _ := deployV2.VMs().GpuLeases().GetByVmID(vm.ID)
-	context.Ok(vm.ToDTOv2(lease, teamIDs, sshConnectionString))
+	context.Ok(vm.ToDTOv2(lease, teamIDs, getVmAppExternalPort(vm.Zone), sshConnectionString))
 }
 
 // ListVMs
@@ -139,7 +142,7 @@ func ListVMs(c *gin.Context) {
 		teamIDs, _ := deployV2.Teams().ListIDs(teamOpts.ListOpts{ResourceID: vm.ID})
 		sshConnectionString, _ := deployV2.VMs().SshConnectionString(vm.ID)
 		lease, _ := deployV2.VMs().GpuLeases().GetByVmID(vm.ID)
-		dtoVMs[i] = vm.ToDTOv2(lease, teamIDs, sshConnectionString)
+		dtoVMs[i] = vm.ToDTOv2(lease, teamIDs, getVmAppExternalPort(vm.Zone), sshConnectionString)
 	}
 
 	context.Ok(dtoVMs)
@@ -407,4 +410,23 @@ func UpdateVM(c *gin.Context) {
 		ID:    vm.ID,
 		JobID: &jobID,
 	})
+}
+
+func getVmAppExternalPort(zoneName string) *int {
+	zone := config.Config.GetZone(zoneName)
+	if zone == nil {
+		return nil
+	}
+
+	split := strings.Split(zone.Domains.ParentVmApp, ":")
+	if len(split) > 1 {
+		port, err := strconv.Atoi(split[1])
+		if err != nil {
+			return nil
+		}
+
+		return &port
+	}
+
+	return nil
 }

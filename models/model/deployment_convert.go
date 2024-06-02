@@ -87,9 +87,13 @@ func (deployment *Deployment) ToDTO(smURL *string, externalPort *int, teams []st
 
 	var customDomain *body.CustomDomainRead
 	if app.CustomDomain != nil {
+		extPortStr := ""
+		if externalPort != nil && *externalPort != 443 {
+			extPortStr = fmt.Sprintf(":%d", *externalPort)
+		}
 		customDomain = &body.CustomDomainRead{
 			Domain: app.CustomDomain.Domain,
-			URL:    fmt.Sprintf("https://%s", app.CustomDomain.Domain),
+			URL:    fmt.Sprintf("https://%s%s", app.CustomDomain.Domain, extPortStr),
 			Status: app.CustomDomain.Status,
 			Secret: app.CustomDomain.Secret,
 		}
