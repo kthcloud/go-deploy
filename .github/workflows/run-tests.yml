@@ -50,6 +50,20 @@ jobs:
               sleep 1
           done
 
-      - name: Run e2e tests
-        run: go test -timeout 90m ./test/e2e/...
-        
+      - name: Run e2e tests (VMs)
+        run: go test -timeout 90m ./test/e2e/v2/gpu_groups ./test/e2e/v2/gpu_leases
+
+      - name: Run e2e tests (Deployments)
+        run: go test -timeout 90m ./test/e2e/v2/deployments
+
+      - name: Run e2e tests (SMs)
+        run: go test -timeout 90m ./test/e2e/v2/sms
+
+      - name: Run e2e tests (Jobs)
+        run: go test -timeout 90m ./test/e2e/v2/jobs ./test/e2e/v2/resource_migrations
+
+      - name: Run e2e tests (Users)
+        run: go test -timeout 90m ./test/e2e/v2/users ./test/e2e/v2/teams ./test/e2e/v2/notifications
+
+      - name: Run e2e tests (System)
+        run: go test -timeout 90m ./test/e2e/v2/zones
