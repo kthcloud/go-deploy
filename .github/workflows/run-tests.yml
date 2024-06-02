@@ -51,7 +51,7 @@ jobs:
           done
 
       - name: Run e2e tests (VMs)
-        run: go test -timeout 90m ./test/e2e/v2/gpu_groups ./test/e2e/v2/gpu_leases
+        run: go test -timeout 90m ./test/e2e/v2/gpu_groups ./test/e2e/v2/gpu_leases ./test/e2e/v2/vms
 
       - name: Run e2e tests (Deployments)
         run: go test -timeout 90m ./test/e2e/v2/deployments
@@ -60,7 +60,10 @@ jobs:
         run: go test -timeout 90m ./test/e2e/v2/sms
 
       - name: Run e2e tests (Jobs)
-        run: go test -timeout 90m ./test/e2e/v2/jobs ./test/e2e/v2/resource_migrations
+        run: go test -timeout 90m ./test/e2e/v2/jobs
+
+      - name: Run e2e tests (Resource Migrations)
+        run: go test -timeout 90m ./test/e2e/v2/resource_migrations
 
       - name: Run e2e tests (Users)
         run: go test -timeout 90m ./test/e2e/v2/users ./test/e2e/v2/teams ./test/e2e/v2/notifications
