@@ -90,7 +90,9 @@ func (client *Client) deploymentStatusWatcher(ctx context.Context, handler func(
 					}
 				}
 			case <-recreateInterval:
-				watcher.Stop()
+				if watcher != nil {
+					watcher.Stop()
+				}
 				watcher, err = setupDeploymentWatcher(client.Namespace)
 				if err != nil {
 					log.Println("Failed to restart Deployment status watcher, sleeping for 10 seconds before retrying")
@@ -141,7 +143,9 @@ func (client *Client) vmStatusWatcher(ctx context.Context, handler func(string, 
 					handler(vmStatus.Name, vmStatus)
 				}
 			case <-recreateInterval:
-				watcher.Stop()
+				if watcher != nil {
+					watcher.Stop()
+				}
 				watcher, err = setupVmWatcher(client.Namespace)
 				if err != nil {
 					log.Println("Failed to restart VM status watcher, sleeping for 10 seconds before retrying")
@@ -192,7 +196,9 @@ func (client *Client) vmiStatusWatcher(ctx context.Context, handler func(string,
 					handler(vmiStatus.Name, vmiStatus)
 				}
 			case <-recreateInterval:
-				watcher.Stop()
+				if watcher != nil {
+					watcher.Stop()
+				}
 				watcher, err = setupVmWatcher(client.Namespace)
 				if err != nil {
 					log.Println("Failed to restart VM instance status watcher, sleeping for 10 seconds before retrying")
@@ -340,7 +346,9 @@ func (client *Client) eventWatcher(ctx context.Context, handler func(string, int
 					}(e)
 				}
 			case <-recreateInterval:
-				watcher.Stop()
+				if watcher != nil {
+					watcher.Stop()
+				}
 				watcher, err = setupEventWatcher(client.Namespace)
 				if err != nil {
 					log.Println("Failed to restart Event status watcher, sleeping for 10 seconds before retrying")
