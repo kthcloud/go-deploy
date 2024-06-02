@@ -25,8 +25,8 @@ const (
 	CheckInterval = 1 * time.Second
 	MaxChecks     = 900 // 900 * CheckInterval (1) seconds = 15 minutes
 
-	// V2TestsEnabled flag is used temporarily to enable V2 tests until V2 zone is fully operational
-	V2TestsEnabled = true
+	// VmTestsEnabled flag is used temporarily to enable V2 tests until V2 zone is fully operational
+	VmTestsEnabled = true
 )
 
 func GetUserID(user string) string {
