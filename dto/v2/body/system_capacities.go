@@ -1,7 +1,6 @@
 package body
 
 import (
-	"go-deploy/pkg/subsystems/host_api"
 	"time"
 )
 
@@ -18,9 +17,9 @@ type SystemCapacities struct {
 }
 
 type ClusterCapacities struct {
-	Name    string `json:"cluster" bson:"cluster"`
-	RAM     RamCapacities
-	CpuCore CpuCoreCapacities
+	Name    string            `json:"cluster" bson:"cluster"`
+	RAM     RamCapacities     `json:"ram" bson:"ram"`
+	CpuCore CpuCoreCapacities `json:"cpuCore" bson:"cpuCore"`
 }
 
 type HostGpuCapacities struct {
@@ -32,8 +31,10 @@ type HostRamCapacities struct {
 }
 
 type HostCapacities struct {
-	HostBase            `json:",inline" bson:",inline" tstype:",extends"`
-	host_api.Capacities `json:",inline" bson:",inline" tstype:",extends"`
+	HostBase `json:",inline" bson:",inline" tstype:",extends"`
+	CpuCore  CpuCoreCapacities `json:"cpuCore" bson:"cpuCore"`
+	RAM      HostRamCapacities `json:"ram" bson:"ram"`
+	GPU      HostGpuCapacities `json:"gpu" bson:"gpu"`
 }
 
 type RamCapacities struct {

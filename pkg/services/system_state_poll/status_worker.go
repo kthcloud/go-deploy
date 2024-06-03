@@ -29,13 +29,33 @@ func GetHostStatuses() ([]body.HostStatus, error) {
 
 		client := host_api.NewClient(host.ApiURL())
 
-		status, err := client.GetStatus()
+		hostApiStatus, err := client.GetStatus()
 		if err != nil {
 			return makeError(err)
 		}
 
+		var gpuStatus *body.GpuStatus
+		if hostApiStatus.GPU != nil {
+			var temps []body.GpuStatusTemp
+			for _, temp := range hostApiStatus.GPU.Temp {
+				temps = append(temps, body.GpuStatusTemp{
+					Main: temp.Main,
+				})
+			}
+
+			gpuStatus = &body.GpuStatus{
+				Temp: temps,
+			}
+		}
+
 		hostStatus := body.HostStatus{
-			Status: *status,
+			CPU: body.CpuStatus{
+				Load: hostApiStatus.CPU.Load,
+			},
+			RAM: body.RamStatus{
+				Load: hostApiStatus.RAM.Load,
+			},
+			GPU: gpuStatus,
 			HostBase: body.HostBase{
 				Name:        host.Name,
 				DisplayName: host.DisplayName,
