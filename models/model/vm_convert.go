@@ -9,7 +9,7 @@ import (
 )
 
 // ToDTOv2 converts a VM to a body.VmRead.
-func (vm *VM) ToDTOv2(gpuLease *GpuLease, teams []string, sshConnectionString *string) body.VmRead {
+func (vm *VM) ToDTOv2(gpuLease *GpuLease, teams []string, externalPort *int, sshConnectionString *string) body.VmRead {
 	var host *string
 	if vm.Host != nil {
 		host = &vm.Host.Name
@@ -42,17 +42,26 @@ func (vm *VM) ToDTOv2(gpuLease *GpuLease, teams []string, sshConnectionString *s
 
 		var httpProxy *body.HttpProxyRead
 		if port.HttpProxy != nil {
+			extPortStr := ""
+			if externalPort != nil && *externalPort != 443 {
+				extPortStr = fmt.Sprintf(":%d", *externalPort)
+			}
+
 			var customDomain *body.CustomDomainRead
 			if port.HttpProxy.CustomDomain != nil {
 				customDomain = &body.CustomDomainRead{
 					Domain: port.HttpProxy.CustomDomain.Domain,
-					URL:    fmt.Sprintf("https://%s", port.HttpProxy.CustomDomain.Domain),
+					URL:    fmt.Sprintf("https://%s%s", port.HttpProxy.CustomDomain.Domain, extPortStr),
 					Secret: port.HttpProxy.CustomDomain.Secret,
 					Status: port.HttpProxy.CustomDomain.Status,
 				}
 			}
 
-			httpProxy = &body.HttpProxyRead{Name: port.HttpProxy.Name, CustomDomain: customDomain}
+			httpProxy = &body.HttpProxyRead{
+				Name:         port.HttpProxy.Name,
+				URL:          vm.GetHttpProxyURL(port.HttpProxy.Name, externalPort),
+				CustomDomain: customDomain,
+			}
 		}
 
 		ports = append(ports, body.PortRead{

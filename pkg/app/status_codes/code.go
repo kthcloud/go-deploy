@@ -21,6 +21,7 @@ const (
 	ResourceMountFailed      = 10040
 	ResourceImagePullFailed  = 10041
 	ResourceDisabled         = 10042
+	ResourceUnschedulable    = 10043
 
 	JobPending    = 10140
 	JobFinished   = 10141
@@ -56,6 +57,7 @@ var MsgFlags = map[int]string{
 	ResourceMountFailed:      "resourceMountFailed",
 	ResourceImagePullFailed:  "resourceImagePullFailed",
 	ResourceDisabled:         "resourceDisabled",
+	ResourceUnschedulable:    "resourceUnschedulable",
 
 	JobPending:    "pending",
 	JobRunning:    "running",

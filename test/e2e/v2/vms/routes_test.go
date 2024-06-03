@@ -15,7 +15,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	if e2e.V2TestsEnabled {
+	if e2e.VmTestsEnabled {
 		e2e.Setup()
 		code := m.Run()
 		e2e.Shutdown()
@@ -24,7 +24,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestList(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 
 	queries := []string{
 		"?page=1&pageSize=10",
@@ -38,7 +38,7 @@ func TestList(t *testing.T) {
 }
 
 func TestCreate(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 
 	requestBody := body.VmCreate{
 		Name:         e2e.GenName(),
@@ -60,7 +60,7 @@ func TestCreate(t *testing.T) {
 }
 
 func TestCreateWithInvalidBody(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 
 	longName := body.VmCreate{
 		Name:     "e2e-",
@@ -199,7 +199,7 @@ func TestCreateWithInvalidBody(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 
 	vm := v2.WithDefaultVM(t)
 
@@ -246,7 +246,7 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestCreateShared(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 
 	vm := v2.WithDefaultVM(t)
 	team := v2.WithTeam(t, body.TeamCreate{
@@ -273,7 +273,7 @@ func TestCreateShared(t *testing.T) {
 }
 
 func TestAction(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 
 	actions := []string{"stop", "start", "restart"}
 	vm := v2.WithDefaultVM(t)
@@ -285,7 +285,7 @@ func TestAction(t *testing.T) {
 }
 
 func TestInvalidAction(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 
 	actions := []string{"some command", "invalid"}
 

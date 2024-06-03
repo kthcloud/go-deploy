@@ -2942,15 +2942,11 @@ components:
           minLength: 3
           type: string
     body.HttpProxyRead:
-      required:
-      - name
       type: object
       properties:
         customDomain:
           $ref: '#/components/schemas/body.CustomDomainRead'
         name:
-          maxLength: 30
-          minLength: 3
           type: string
         url:
           type: string

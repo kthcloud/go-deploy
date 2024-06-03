@@ -10,7 +10,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	if e2e.V2TestsEnabled {
+	if e2e.VmTestsEnabled {
 		e2e.Setup()
 		code := m.Run()
 		e2e.Shutdown()

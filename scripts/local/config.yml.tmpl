@@ -70,6 +70,7 @@ gpu:
   privilegedGpus:
   excludedHosts:
   excludedGpus:
+  addMock: true
 
 deployment:
   defaultZone: local
@@ -164,13 +165,6 @@ mongodb:
 redis:
   url: $redis_url
   password: $redis_password
-
-sys-api:
-  url: 
-  user: 
-  password: 
-  clientId: 
-  useMock: true
 
 harbor:
   url: $harbor_url

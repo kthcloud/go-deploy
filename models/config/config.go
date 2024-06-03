@@ -67,6 +67,7 @@ type ConfigType struct {
 		PrivilegedGPUs []string `yaml:"privilegedGpus"`
 		ExcludedHosts  []string `yaml:"excludedHosts"`
 		ExcludedGPUs   []string `yaml:"excludedGpus"`
+		AddMock        bool     `yaml:"addMock"`
 	} `yaml:"gpu"`
 
 	Registry struct {
@@ -100,16 +101,6 @@ type ConfigType struct {
 		URL      string `yaml:"url"`
 		Password string `yaml:"password"`
 	}
-
-	SysApi struct {
-		URL      string `yaml:"url"`
-		User     string `yaml:"user"`
-		Password string `yaml:"password"`
-		ClientID string `yaml:"clientId"`
-		// UseMock is a flag that indicates whether the sys-api should be mocked
-		// This is useful for testing purposes, since the sys-api cannot be run locally
-		UseMock bool `yaml:"useMock"`
-	} `yaml:"sys-api"`
 
 	Harbor struct {
 		URL           string `yaml:"url"`

@@ -4064,17 +4064,12 @@ const docTemplateV2 = `{
         },
         "body.HttpProxyRead": {
             "type": "object",
-            "required": [
-                "name"
-            ],
             "properties": {
                 "customDomain": {
                     "$ref": "#/definitions/body.CustomDomainRead"
                 },
                 "name": {
-                    "type": "string",
-                    "maxLength": 30,
-                    "minLength": 3
+                    "type": "string"
                 },
                 "url": {
                     "type": "string"
