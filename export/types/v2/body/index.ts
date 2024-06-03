@@ -500,8 +500,8 @@ export interface SystemCapacities {
 }
 export interface ClusterCapacities {
   cluster: string;
-  RAM: RamCapacities;
-  CpuCore: CpuCoreCapacities;
+  ram: RamCapacities;
+  cpuCore: CpuCoreCapacities;
 }
 export interface HostGpuCapacities {
   count: number /* int */;
@@ -509,7 +509,10 @@ export interface HostGpuCapacities {
 export interface HostRamCapacities {
   total: number /* int */;
 }
-export interface HostCapacities extends HostBase, host_api.Capacities {
+export interface HostCapacities extends HostBase {
+  cpuCore: CpuCoreCapacities;
+  ram: HostRamCapacities;
+  gpu: HostGpuCapacities;
 }
 export interface RamCapacities {
   total: number /* int */;
@@ -532,7 +535,16 @@ export interface TimestampedSystemGpuInfo {
   timestamp: string;
 }
 export interface HostGpuInfo extends HostBase {
-  gpus: any /* host_api.GpuInfo */[];
+  gpus: GpuInfo[];
+}
+export interface GpuInfo {
+  name: string;
+  slot: string;
+  vendor: string;
+  vendorId: string;
+  bus: string;
+  deviceId: string;
+  passthrough: boolean;
 }
 
 //////////
@@ -564,7 +576,36 @@ export interface TimestampedSystemStatus {
   status: SystemStatus;
   timestamp: string;
 }
-export interface HostStatus extends HostBase, host_api.Status {
+export interface HostStatus extends HostBase {
+  cpu: CpuStatus;
+  ram: RamStatus;
+  gpu?: GpuStatus;
+}
+export interface CpuStatus {
+  temp: CpuStatusTemp;
+  load: CpuStatusLoad;
+}
+export interface CpuStatusTemp {
+  main: number /* float64 */;
+  cores: number /* int */[];
+  max: number /* float64 */;
+}
+export interface CpuStatusLoad {
+  main: number /* float64 */;
+  cores: number /* int */[];
+  max: number /* float64 */;
+}
+export interface RamStatus {
+  load: RamStatusLoad;
+}
+export interface RamStatusLoad {
+  main: number /* float64 */;
+}
+export interface GpuStatus {
+  temp: GpuStatusTemp[];
+}
+export interface GpuStatusTemp {
+  main: number /* float64 */;
 }
 
 //////////
@@ -819,7 +860,7 @@ export interface HttpProxyCreate {
   name: string;
   /**
    * CustomDomain is the domain that the deployment will be available on.
-   * The max length is set to 243 to allow for a sub domain when confirming the domain.
+   * The max length is set to 243 to allow for a subdomain when confirming the domain.
    */
   customDomain?: string;
 }
@@ -827,7 +868,7 @@ export interface HttpProxyUpdate {
   name?: string;
   /**
    * CustomDomain is the domain that the deployment will be available on.
-   * The max length is set to 243 to allow for a sub domain when confirming the domain.
+   * The max length is set to 243 to allow for a subdomain when confirming the domain.
    */
   customDomain?: string;
 }

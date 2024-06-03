@@ -29,9 +29,22 @@ func GetHostGpuInfo() ([]body.HostGpuInfo, error) {
 
 		client := host_api.NewClient(host.ApiURL())
 
-		gpuInfo, err := client.GetGpuInfo()
+		hostApiGpus, err := client.GetGpuInfo()
 		if err != nil {
 			return makeError(err)
+		}
+
+		var gpuInfo []body.GpuInfo
+		for _, gpu := range hostApiGpus {
+			gpuInfo = append(gpuInfo, body.GpuInfo{
+				Name:        gpu.Name,
+				Slot:        gpu.Slot,
+				Vendor:      gpu.Vendor,
+				VendorID:    gpu.VendorID,
+				Bus:         gpu.Bus,
+				DeviceID:    gpu.DeviceID,
+				Passthrough: gpu.Passthrough,
+			})
 		}
 
 		hostCapacities := body.HostGpuInfo{

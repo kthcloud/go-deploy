@@ -88,13 +88,15 @@ func GetHostCapacities() ([]body.HostCapacities, error) {
 
 		client := host_api.NewClient(host.ApiURL())
 
-		capacities, err := client.GetCapacities()
+		hostApiCapacities, err := client.GetCapacities()
 		if err != nil {
 			return makeError(err)
 		}
 
 		hostCapacities := body.HostCapacities{
-			Capacities: *capacities,
+			CpuCore: body.CpuCoreCapacities{
+				Total: hostApiCapacities.CPU.Cores,
+			},
 			HostBase: body.HostBase{
 				Name:        host.Name,
 				DisplayName: host.DisplayName,

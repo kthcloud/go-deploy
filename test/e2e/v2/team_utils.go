@@ -136,7 +136,7 @@ func WithTeam(t *testing.T, teamCreate body.TeamCreate, user ...string) body.Tea
 	test.EqualOrEmpty(t, requestedResources, createdResources, "invalid team resources")
 
 	t.Cleanup(func() {
-		e2e.DoDeleteRequest(t, TeamPath+teamRead.ID)
+		e2e.DoDeleteRequest(t, TeamPath+teamRead.ID, user...)
 	})
 
 	return teamRead

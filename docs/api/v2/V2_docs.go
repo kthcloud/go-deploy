@@ -3345,6 +3345,51 @@ const docTemplateV2 = `{
                 }
             }
         },
+        "body.CpuStatus": {
+            "type": "object",
+            "properties": {
+                "load": {
+                    "$ref": "#/definitions/body.CpuStatusLoad"
+                },
+                "temp": {
+                    "$ref": "#/definitions/body.CpuStatusTemp"
+                }
+            }
+        },
+        "body.CpuStatusLoad": {
+            "type": "object",
+            "properties": {
+                "cores": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "main": {
+                    "type": "number"
+                },
+                "max": {
+                    "type": "number"
+                }
+            }
+        },
+        "body.CpuStatusTemp": {
+            "type": "object",
+            "properties": {
+                "cores": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "main": {
+                    "type": "number"
+                },
+                "max": {
+                    "type": "number"
+                }
+            }
+        },
         "body.CustomDomainRead": {
             "type": "object",
             "properties": {
@@ -3844,6 +3889,25 @@ const docTemplateV2 = `{
                 }
             }
         },
+        "body.GpuStatus": {
+            "type": "object",
+            "properties": {
+                "temp": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/body.GpuStatusTemp"
+                    }
+                }
+            }
+        },
+        "body.GpuStatusTemp": {
+            "type": "object",
+            "properties": {
+                "main": {
+                    "type": "number"
+                }
+            }
+        },
         "body.HarborWebhook": {
             "type": "object",
             "properties": {
@@ -3903,31 +3967,40 @@ const docTemplateV2 = `{
         "body.HostCapacities": {
             "type": "object",
             "properties": {
+                "cpuCore": {
+                    "$ref": "#/definitions/body.CpuCoreCapacities"
+                },
                 "displayName": {
                     "type": "string"
                 },
                 "gpu": {
-                    "type": "object",
-                    "properties": {
-                        "count": {
-                            "type": "integer"
-                        }
-                    }
+                    "$ref": "#/definitions/body.HostGpuCapacities"
                 },
                 "name": {
                     "type": "string"
                 },
                 "ram": {
-                    "type": "object",
-                    "properties": {
-                        "total": {
-                            "type": "integer"
-                        }
-                    }
+                    "$ref": "#/definitions/body.HostRamCapacities"
                 },
                 "zone": {
                     "description": "Zone is the name of the zone where the host is located.",
                     "type": "string"
+                }
+            }
+        },
+        "body.HostGpuCapacities": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "body.HostRamCapacities": {
+            "type": "object",
+            "properties": {
+                "total": {
+                    "type": "integer"
                 }
             }
         },
@@ -3950,94 +4023,19 @@ const docTemplateV2 = `{
             "type": "object",
             "properties": {
                 "cpu": {
-                    "type": "object",
-                    "properties": {
-                        "load": {
-                            "type": "object",
-                            "properties": {
-                                "cores": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "integer"
-                                    }
-                                },
-                                "main": {
-                                    "type": "number"
-                                },
-                                "max": {
-                                    "type": "number"
-                                }
-                            }
-                        },
-                        "temp": {
-                            "type": "object",
-                            "properties": {
-                                "cores": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "integer"
-                                    }
-                                },
-                                "main": {
-                                    "type": "number"
-                                },
-                                "max": {
-                                    "type": "number"
-                                }
-                            }
-                        }
-                    }
+                    "$ref": "#/definitions/body.CpuStatus"
                 },
                 "displayName": {
                     "type": "string"
                 },
                 "gpu": {
-                    "type": "object",
-                    "properties": {
-                        "temp": {
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "main": {
-                                        "type": "number"
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    "$ref": "#/definitions/body.GpuStatus"
                 },
                 "name": {
                     "type": "string"
                 },
-                "network": {
-                    "type": "object",
-                    "properties": {
-                        "usage": {
-                            "type": "object",
-                            "properties": {
-                                "receiveRate": {
-                                    "type": "integer"
-                                },
-                                "transmitRate": {
-                                    "type": "integer"
-                                }
-                            }
-                        }
-                    }
-                },
                 "ram": {
-                    "type": "object",
-                    "properties": {
-                        "load": {
-                            "type": "object",
-                            "properties": {
-                                "main": {
-                                    "type": "number"
-                                }
-                            }
-                        }
-                    }
+                    "$ref": "#/definitions/body.RamStatus"
                 },
                 "zone": {
                     "description": "Zone is the name of the zone where the host is located.",
@@ -4052,7 +4050,7 @@ const docTemplateV2 = `{
             ],
             "properties": {
                 "customDomain": {
-                    "description": "CustomDomain is the domain that the deployment will be available on.\nThe max length is set to 243 to allow for a sub domain when confirming the domain.",
+                    "description": "CustomDomain is the domain that the deployment will be available on.\nThe max length is set to 243 to allow for a subdomain when confirming the domain.",
                     "type": "string"
                 },
                 "name": {
@@ -4083,7 +4081,7 @@ const docTemplateV2 = `{
             ],
             "properties": {
                 "customDomain": {
-                    "description": "CustomDomain is the domain that the deployment will be available on.\nThe max length is set to 243 to allow for a sub domain when confirming the domain.",
+                    "description": "CustomDomain is the domain that the deployment will be available on.\nThe max length is set to 243 to allow for a subdomain when confirming the domain.",
                     "type": "string"
                 },
                 "name": {
@@ -4313,6 +4311,22 @@ const docTemplateV2 = `{
             "properties": {
                 "total": {
                     "type": "integer"
+                }
+            }
+        },
+        "body.RamStatus": {
+            "type": "object",
+            "properties": {
+                "load": {
+                    "$ref": "#/definitions/body.RamStatusLoad"
+                }
+            }
+        },
+        "body.RamStatusLoad": {
+            "type": "object",
+            "properties": {
+                "main": {
+                    "type": "number"
                 }
             }
         },
