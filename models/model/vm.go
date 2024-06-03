@@ -69,6 +69,28 @@ func (vm *VM) BeingDeleted() bool {
 	return vm.DoingActivity(ActivityBeingDeleted)
 }
 
+// GetHttpProxyURL returns the URL of a VM's HTTP proxy.
+// If the K8s ingress does not exist, it will return nil, or if the ingress does not have a host, it will return nil.
+func (vm *VM) GetHttpProxyURL(name string, externalPort *int) *string {
+	ingress := vm.Subsystems.K8s.GetIngress(fmt.Sprintf("%s-%s", vm.Name, name))
+	if ingress == nil || !ingress.Created() {
+		return nil
+	}
+
+	if len(ingress.Hosts) > 0 && len(ingress.Hosts[0]) > 0 {
+		url := fmt.Sprintf("https://%s", ingress.Hosts[0])
+
+		// If we have a custom port, we need to append it to the URL
+		if externalPort != nil && *externalPort != 443 {
+			url = fmt.Sprintf("%s:%d", url, *externalPort)
+		}
+
+		return &url
+	}
+
+	return nil
+}
+
 func (vm *VM) GetExternalPort(privatePort int, protocol string) *int {
 	pfrName := fmt.Sprintf("priv-%d-prot-%s", privatePort, protocol)
 	service := vm.Subsystems.K8s.GetService(fmt.Sprintf("%s-%s", vm.Name, pfrName))

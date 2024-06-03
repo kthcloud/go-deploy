@@ -107,7 +107,7 @@ func (client *Client) SetUpExpirationListener(ctx context.Context, pattern strin
 				err := handler(msg.Payload)
 				if err != nil {
 					utils.PrettyPrintError(fmt.Errorf("failed to handle expired key event for key %s. details: %w", msg.Payload, err))
-					return
+					continue
 				}
 			}
 		}

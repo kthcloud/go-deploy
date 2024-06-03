@@ -41,8 +41,8 @@ func (c *Client) Get(id string, opts ...opts.GetGpuLeaseOpts) (*model.GpuLease, 
 			return nil, makeError(err)
 		}
 
-		if leaseByUserID == nil {
-			return nil, nil
+		if leaseByUserID != nil {
+			return leaseByUserID, nil
 		}
 
 		// 3. User has access to the parent VM through a team

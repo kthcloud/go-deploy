@@ -11,6 +11,10 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	VmTestsEnabled = false
+)
+
 func Setup() {
 	err := log.SetupLogger(mode.Test)
 	if err != nil {

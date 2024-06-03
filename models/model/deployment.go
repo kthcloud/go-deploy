@@ -76,24 +76,6 @@ func (deployment *Deployment) GetURL(externalPort *int) *string {
 	return nil
 }
 
-// GetCustomDomainURL returns the custom domain URL of the deployment.
-// If the app does not have a custom domain, it will return nil.
-// This method does not check whether the custom domain is active, and does
-// not check if the ingress exists.
-func (deployment *Deployment) GetCustomDomainURL() *string {
-	app := deployment.GetMainApp()
-	if app == nil {
-		return nil
-	}
-
-	if app.CustomDomain != nil && len(app.CustomDomain.Domain) > 0 {
-		url := fmt.Sprintf("https://%s", app.CustomDomain.Domain)
-		return &url
-	}
-
-	return nil
-}
-
 // Ready returns true if the deployment is not being created or deleted.
 func (deployment *Deployment) Ready() bool {
 	return !deployment.DoingActivity(ActivityBeingCreated) && !deployment.DoingActivity(ActivityBeingDeleted)

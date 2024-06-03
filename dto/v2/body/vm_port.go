@@ -30,8 +30,8 @@ type CustomDomainRead struct {
 }
 
 type HttpProxyRead struct {
-	Name         string            `json:"name" bson:"name,omitempty" binding:"required,rfc1035,min=3,max=30"`
-	URL          *string           `json:"url,omitempty,omitempty"`
+	Name         string            `json:"name" bson:"name"`
+	URL          *string           `json:"url,omitempty" bson:"url,omitempty"`
 	CustomDomain *CustomDomainRead `json:"customDomain,omitempty" bson:"customDomain,omitempty"`
 }
 
