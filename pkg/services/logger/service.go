@@ -4,6 +4,7 @@ import (
 	"context"
 	"go-deploy/pkg/log"
 	"go-deploy/pkg/services"
+	"strings"
 	"time"
 )
 
@@ -24,24 +25,30 @@ var (
 	LoggerUpdate   = time.Second * 5
 )
 
-func LastLogKey(podName string) string {
-	return LogsKey + ":" + podName + ":last"
+func LastLogKey(podName, zoneName string) string {
+	return LogsKey + ":" + zoneName + ":" + podName + ":last"
 }
 
-func OwnerLogKey(podName string) string {
-	return LogsKey + ":" + podName + ":owner"
+func OwnerLogKey(podName, zoneName string) string {
+	return LogsKey + ":" + zoneName + ":" + podName + ":owner"
 }
 
-func LogKey(podName string) string {
-	return LogsKey + ":" + podName
+func LogKey(podName, zoneName string) string {
+	return LogsKey + ":" + zoneName + ":" + podName
 }
 
 func LogQueueKey(zoneName string) string {
 	return "queue:" + LogsKey + ":" + zoneName
 }
 
-func PodNameFromLogKey(key string) string {
-	return key[len(LogsKey)+1:]
+func PodAndZoneNameFromLogKey(key string) (podName, zoneName string) {
+	// Extract logs:zone:podName
+	splits := strings.Split(key, ":")
+	if len(splits) > 2 {
+		return splits[2], splits[1]
+	}
+
+	return "", ""
 }
 
 // Setup starts the loggers.
