@@ -26,7 +26,7 @@ Remember to run the tests before creating a pull request.
 
 #### Acceptance Tests
 ```bash
-go test ./acc/...
+go test ./test/acc/...
 ```
 #### End-to-End Tests
 ```bash
@@ -38,7 +38,7 @@ until $(curl --output /dev/null --silent --head --fail http://localhost:8080/hea
     echo "Waiting for API to start"
     sleep 1
 done
-go test ./e2e/...          # Run e2e tests
+go test ./test/e2e/...          # Run e2e tests
 ```
 
 ## 📚 Docs
