@@ -29,11 +29,12 @@ func PodEventListener(ctx context.Context) error {
 
 		mqc := message_queue.New()
 		kvc := key_value.New()
-		z := zone
 
 		// Set up a listener for expired key events for every key that matches "logs:[a-z0-9-]"
 		// This is used to ensure that a new logger is created for a pod if the previous one fails
 		err := kvc.SetUpExpirationListener(ctx, "^logs:[a-zA-Z0-9-]+$", func(key string) error {
+			z := zone
+
 			podName := PodNameFromLogKey(key)
 
 			// Check if Pod still exists
