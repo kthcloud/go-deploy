@@ -44,6 +44,7 @@ func PodEventListener(ctx context.Context) error {
 
 			if !exists {
 				// Clean up the keys
+				log.Printf("Pod %s not longer exists. Cleaning up keys", podName)
 				_ = kvc.Del(LogKey(podName))
 				_ = kvc.Del(LastLogKey(podName))
 				_ = kvc.Del(OwnerLogKey(podName))
