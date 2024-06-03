@@ -95,6 +95,7 @@ func PodEventListener(ctx context.Context) error {
 			return nil
 		})
 
+		z := zone
 		err = service.V2().Deployments().K8s().SetupPodWatcher(ctx, &z, func(podName string, event string) {
 			switch event {
 			case k8s.PodEventAdded:
