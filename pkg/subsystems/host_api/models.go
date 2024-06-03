@@ -15,6 +15,10 @@ type GPU struct {
 }
 
 type Capacities struct {
+	CPU struct {
+		Cores  int    `json:"cores" bson:"cores"`
+		Vendor string `json:"vendor" bson:"vendor"`
+	} `json:"cpu" bson:"cpu"`
 	RAM struct {
 		Total int `json:"total" bson:"total"`
 	} `json:"ram" bson:"ram"`
@@ -41,12 +45,6 @@ type Status struct {
 			Main float64 `json:"main" bson:"main"`
 		} `json:"load" bson:"load"`
 	} `json:"ram" bson:"ram"`
-	Network struct {
-		Usage struct {
-			ReceiveRate  int `json:"receiveRate" bson:"receiveRate"`
-			TransmitRate int `json:"transmitRate" bson:"transmitRate"`
-		} `json:"usage" bson:"usage"`
-	} `json:"network" bson:"network"`
 
 	GPU *struct {
 		Temp []struct {

@@ -1,7 +1,6 @@
 package body
 
 import (
-	"go-deploy/pkg/subsystems/host_api"
 	"time"
 )
 
@@ -16,5 +15,15 @@ type TimestampedSystemGpuInfo struct {
 
 type HostGpuInfo struct {
 	HostBase `json:",inline" bson:",inline" tstype:",extends"`
-	GPUs     []host_api.GpuInfo `bson:"gpus" json:"gpus"`
+	GPUs     []GpuInfo `bson:"gpus" json:"gpus"`
+}
+
+type GpuInfo struct {
+	Name        string `bson:"name" json:"name"`
+	Slot        string `bson:"slot" json:"slot"`
+	Vendor      string `bson:"vendor" json:"vendor"`
+	VendorID    string `bson:"vendorId" json:"vendorId"`
+	Bus         string `bson:"bus" json:"bus"`
+	DeviceID    string `bson:"deviceId" json:"deviceId"`
+	Passthrough bool   `bson:"passthrough" json:"passthrough"`
 }

@@ -9,7 +9,6 @@ import (
 	"go-deploy/pkg/db/resources/gpu_group_repo"
 	"go-deploy/pkg/db/resources/system_gpu_info_repo"
 	"go-deploy/pkg/log"
-	"go-deploy/pkg/subsystems/host_api"
 	"go-deploy/service"
 	"go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
@@ -175,7 +174,7 @@ func listLatestGPUs() (*body.SystemGpuInfo, error) {
 					DisplayName: "Mock Host 1",
 					Zone:        zone.Name,
 				},
-				GPUs: []host_api.GpuInfo{{
+				GPUs: []body.GpuInfo{{
 					Name:     "Mock GPU 1",
 					Vendor:   "NVIDIA",
 					VendorID: "10de",
@@ -194,7 +193,7 @@ func listLatestGPUs() (*body.SystemGpuInfo, error) {
 					DisplayName: "Mock Host 2",
 					Zone:        zone.Name,
 				},
-				GPUs: []host_api.GpuInfo{{
+				GPUs: []body.GpuInfo{{
 					Name:     "Mock GPU 1",
 					Vendor:   "NVIDIA",
 					VendorID: "10de",
@@ -207,7 +206,7 @@ func listLatestGPUs() (*body.SystemGpuInfo, error) {
 	return result, nil
 }
 
-func createGpuGroupName(gpu *host_api.GpuInfo) *string {
+func createGpuGroupName(gpu *body.GpuInfo) *string {
 	vendor := strings.ToLower(gpu.Vendor)
 
 	if strings.Contains(vendor, "nvidia") {
