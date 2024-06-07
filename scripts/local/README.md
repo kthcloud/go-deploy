@@ -43,7 +43,7 @@ The following services will be installed in the Kubernetes cluster:
 
 
 ### Storage
-The setup script creates a local directory `$HOME/go-deploy-storage/go-deploy-dev` to store the data for the NFS server.
+The setup script creates a local directory `$HOME/go-deploy-data/go-deploy-dev` to store the data for the NFS server.
 
 This is done using a mix of manually provisioning the storage and using the NFS CSI driver to create a PersistentVolumeClaim.
 
