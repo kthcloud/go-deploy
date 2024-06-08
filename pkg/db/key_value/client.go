@@ -37,6 +37,16 @@ func (client *Client) Get(key string) (string, error) {
 	return res, err
 }
 
+// List returns all keys that match the given pattern.
+func (client *Client) List(pattern string) ([]string, error) {
+	keys, err := client.RedisClient.Keys(context.Background(), pattern).Result()
+	if err != nil {
+		return nil, err
+	}
+
+	return keys, nil
+}
+
 // Set sets the value of the given key.
 func (client *Client) Set(key string, value interface{}, expiration time.Duration) error {
 	return client.RedisClient.Set(context.TODO(), key, value, expiration).Err()

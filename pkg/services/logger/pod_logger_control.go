@@ -131,6 +131,56 @@ func PodLoggerControl(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("failed to set up deployment status watcher for zone %s. details: %w", zone.Name, err)
 		}
+
+		// Synchronize the existing pods with the loggers at an interval
+		go func(ctx context.Context) {
+			ticker := time.Tick(LoggerSynchronize)
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-ticker:
+					pods, err := service.V2().Deployments().K8s().Pods(&z)
+					if err != nil {
+						utils.PrettyPrintError(fmt.Errorf("failed to get pods for zone %s. details: %w", z.Name, err))
+						continue
+					}
+
+					activePods, err := ActivePods(kvc, z.Name)
+					if err != nil {
+						utils.PrettyPrintError(fmt.Errorf("failed to get active pods for zone %s. details: %w", z.Name, err))
+						continue
+					}
+
+					for _, pod := range pods {
+						// If exists in active pods, skip
+						if _, ok := activePods[pod.Name]; ok {
+							delete(activePods, pod.Name)
+							continue
+						}
+
+						// If not, mark it as added
+						_, err := kvc.SetNX(LogKey(pod.Name, z.Name), false, LoggerLifetime)
+						if err != nil {
+							utils.PrettyPrintError(fmt.Errorf("failed to set log key for pod %s. details: %w", pod.Name, err))
+							continue
+						}
+						delete(activePods, pod.Name)
+					}
+
+					// If there are any active pods left, mark them as deleted
+					for podName := range activePods {
+						_ = kvc.Del(LogKey(podName, z.Name))
+						_ = kvc.Del(LastLogKey(podName, z.Name))
+						_ = kvc.Del(OwnerLogKey(podName, z.Name))
+						_ = mqc.Publish(LogQueueKey(z.Name), LogEvent{
+							PodName:  podName,
+							PodEvent: k8s.PodEventDeleted,
+						})
+					}
+				}
+			}
+		}(ctx)
 	}
 
 	return nil
