@@ -19,7 +19,7 @@ type LogEvent struct {
 	PodEvent string
 }
 
-func PodEventListener(ctx context.Context) error {
+func PodLoggerControl(ctx context.Context) error {
 	for _, zone := range config.Config.EnabledZones() {
 		if !zone.HasCapability(configModels.ZoneCapabilityDeployment) {
 			continue
@@ -47,7 +47,7 @@ func PodEventListener(ctx context.Context) error {
 			// Check if Pod still exists
 			exists, err := service.V2().Deployments().K8s().PodExists(&z, podName)
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to check if pod %s exists. details: %w", podName, err)
 			}
 
 			if !exists {
@@ -66,10 +66,9 @@ func PodEventListener(ctx context.Context) error {
 			// Reset the expired key so that it can be used again
 			_, err = kvc.SetNX(key, false, LoggerLifetime)
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to reset expired key for pod %s. details: %w", podName, err)
 			}
 
-			// Check if there are any active listeners, otherwise mark this pod as being processed
 			count, err := mqc.GetListeners(LogQueueKey(zone.Name))
 			if err != nil {
 				return err
@@ -80,10 +79,10 @@ func PodEventListener(ctx context.Context) error {
 				return nil
 			}
 
-			// If n non-expired owner key exists, then the logger is still active
+			// If a non-expired owner key exists, then the logger is still active
 			isSet, err := kvc.IsSet(OwnerLogKey(podName, z.Name))
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to check if owner key is set for pod %s. details: %w", podName, err)
 			}
 
 			if isSet {
@@ -96,12 +95,13 @@ func PodEventListener(ctx context.Context) error {
 				PodEvent: k8s.PodEventAdded,
 			})
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to publish pod event for pod %s. details: %w", podName, err)
 			}
 
 			return nil
 		})
 
+		// Listen to pod events to set up loggers
 		err = service.V2().Deployments().K8s().SetupPodWatcher(ctx, &z, func(podName string, event string) {
 			switch event {
 			case k8s.PodEventAdded:

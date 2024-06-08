@@ -20,8 +20,8 @@ import (
 	"time"
 )
 
-// DeploymentLogger is a worker that logs deployments.
-func DeploymentLogger(ctx context.Context) error {
+// PodLogger is a worker that logs deployments.
+func PodLogger(ctx context.Context) error {
 	for _, zone := range config.Config.EnabledZones() {
 		log.Println("Setting up log stream for zone", zone.Name)
 
@@ -64,10 +64,10 @@ func OnPodEvent(ctx context.Context, zone *configModels.Zone, cancelFuncs map[st
 				return nil
 			}
 
-			log.Println("Setting up log stream for pod", logEvent.PodName)
-
-			lastLogged := LastLogged(kvc, logEvent.PodName, zone.Name)
 			onLog := func(deploymentName string, lines []model.Log) {
+
+				log.Printf("Adding %d logs for deployment %s", len(lines), deploymentName)
+
 				err = deployment_repo.New().AddLogsByName(deploymentName, lines...)
 				if err != nil {
 					utils.PrettyPrintError(fmt.Errorf("failed to add k8s logs for deployment %s. details: %w", logEvent.PodName, err))
@@ -81,6 +81,8 @@ func OnPodEvent(ctx context.Context, zone *configModels.Zone, cancelFuncs map[st
 				}
 			}
 
+			log.Println("Setting up log stream for pod", logEvent.PodName)
+			lastLogged := LastLogged(kvc, logEvent.PodName, zone.Name)
 			loggerCtx, cancelFunc := context.WithCancel(context.Background())
 			err = service.V2().Deployments().K8s().SetupPodLogStream(loggerCtx, zone, logEvent.PodName, lastLogged, onLog)
 			if err != nil {
@@ -152,6 +154,8 @@ func LastLogged(kvc *key_value.Client, podName, zoneName string) time.Time {
 }
 
 func SetLastLogged(kvc *key_value.Client, podName, zoneName string, t time.Time) error {
+	log.Printf("Setting last logged time for pod %s in zone %s to %s", podName, zoneName, t.Format(time.RFC3339))
+
 	// Keep the entry for a week, so it clears up after a while
 	return kvc.Set(LastLogKey(podName, zoneName), t.Format(time.RFC3339), time.Hour*24*7)
 }
