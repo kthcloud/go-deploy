@@ -137,7 +137,7 @@ func k8sDeletedVM(vm *model.VM) (bool, error) {
 		return false, nil
 	}
 
-	if len(k8s.VmMap) > 0 {
+	if k8s.VM.Created() {
 		return false, nil
 	}
 

@@ -187,6 +187,10 @@ func TestUpdateDeploymentOwnerAsAdmin(t *testing.T) {
 func TestUpdateVmOwnerAsAdmin(t *testing.T) {
 	t.Parallel()
 
+	if !e2e.VmTestsEnabled {
+		t.Skip("vm tests are disabled")
+	}
+
 	resource2 := v2.WithVM(t, bodyV2.VmCreate{
 		Name:         e2e.GenName(),
 		SshPublicKey: v2.WithSshPublicKey(t),

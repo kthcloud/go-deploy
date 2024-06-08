@@ -74,7 +74,7 @@ func (vm *VM) ToDTOv2(gpuLease *GpuLease, teams []string, externalPort *int, ssh
 	}
 
 	var internalName *string
-	if k8sVM := vm.Subsystems.K8s.GetVM(vm.Name); subsystems.Created(k8sVM) {
+	if k8sVM := vm.Subsystems.K8s.VM; subsystems.Created(&k8sVM) {
 		internalName = &k8sVM.ID
 	}
 

@@ -237,17 +237,6 @@ func (c *Client) Update(id string, dtoVmUpdate *body.VmUpdate) error {
 
 	vmUpdate := model.VmUpdateParams{}.FromDTOv2(dtoVmUpdate)
 
-	// We don't allow both applying a snapshot and updating the VM at the same time.
-	// So, if a snapshot ID is specified, apply it
-	//if vmUpdate.SnapshotID != nil {
-	//	err := c.ApplySnapshot(id, *vmUpdate.SnapshotID)
-	//	if err != nil {
-	//		return makeError(err)
-	//	}
-	//
-	//	return nil
-	//}
-
 	// Otherwise, update the VM as usual
 	if vmUpdate.PortMap != nil {
 		// We don't want to give new secrets for the same custom domains
@@ -284,6 +273,12 @@ func (c *Client) Update(id string, dtoVmUpdate *body.VmUpdate) error {
 	}
 
 	err = c.K8s().Repair(id)
+	if err != nil {
+		return makeError(err)
+	}
+
+	// Restart VM to ensure possibly new specs are applied
+	err = c.K8s().DoAction(id, &model.VmActionParams{Action: model.ActionRestart})
 	if err != nil {
 		return makeError(err)
 	}

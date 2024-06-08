@@ -8,6 +8,7 @@ import (
 	"go-deploy/pkg/db/resources/deployment_repo"
 	"go-deploy/pkg/db/resources/vm_repo"
 	"go-deploy/pkg/log"
+	"go-deploy/pkg/subsystems"
 	"go-deploy/service"
 	"time"
 )
@@ -52,7 +53,7 @@ func staleResourceCleaner() error {
 	}
 
 	for _, vm := range vms {
-		if k8sVM := vm.Subsystems.K8s.GetVM(vm.Name); k8sVM != nil && !k8sVM.Running {
+		if k8sVM := &vm.Subsystems.K8s.VM; subsystems.NotCreated(k8sVM) || !k8sVM.Running {
 			continue
 		}
 

@@ -2,7 +2,11 @@ package migrator
 
 import (
 	"fmt"
+	"go-deploy/models/version"
+	"go-deploy/pkg/db/resources/vm_repo"
 	"go-deploy/pkg/log"
+	"go-deploy/pkg/subsystems/k8s/models"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // Migrate runs every migration specified in the getMigrations function.
@@ -32,5 +36,35 @@ func Migrate() error {
 //
 // add a date to the migration name to make it easier to identify.
 func getMigrations() map[string]func() error {
-	return map[string]func() error{}
+	return map[string]func() error{
+		"moveKubeVirtVmMapToSingleVM": moveKubeVirtVmMapToSingleVM,
+	}
+}
+
+func moveKubeVirtVmMapToSingleVM() error {
+	vms, err := vm_repo.New(version.V2).List()
+	if err != nil {
+		return fmt.Errorf("failed to list vms: %w", err)
+	}
+
+	for _, vm := range vms {
+		if vm.Subsystems.K8s.VM.ID != "" {
+			continue
+		}
+
+		var k8sVM *models.VmPublic
+		for _, k8sVmInMap := range vm.Subsystems.K8s.VmMap {
+			k8sVM = &k8sVmInMap
+			break
+		}
+
+		err = vm_repo.New(version.V2).SetWithBsonByID(vm.ID, bson.D{
+			{"subsystems.k8s.vm", k8sVM},
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

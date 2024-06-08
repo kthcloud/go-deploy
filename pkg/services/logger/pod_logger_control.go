@@ -34,8 +34,6 @@ func PodLoggerControl(ctx context.Context) error {
 
 		// Set up a listener for expired key events for every key that matches "logs:[a-z0-9-]"
 		// This is used to ensure that a new logger is created for a pod if the previous one fails
-		pattern := fmt.Sprintf("^logs:%s:[a-zA-Z0-9-]+$", zone.Name)
-		println("Setting up expiration listener for pattern", pattern)
 		err := kvc.SetUpExpirationListener(ctx, fmt.Sprintf("^logs:%s:[a-zA-Z0-9-]+$", zone.Name), func(key string) error {
 
 			podName, zoneName := PodAndZoneNameFromLogKey(key)
