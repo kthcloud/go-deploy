@@ -634,6 +634,16 @@ func (c *Client) PodExists(zone *configModels.Zone, podName string) (bool, error
 	return kc.PodExists(podName)
 }
 
+// Pods lists all pods in the cluster.
+func (c *Client) Pods(zone *configModels.Zone) ([]k8sModels.PodPublic, error) {
+	_, kc, _, err := c.Get(OptsOnlyClient(zone))
+	if err != nil {
+		return nil, err
+	}
+
+	return kc.ListPods()
+}
+
 // SetupPodLogStream sets up a log stream for a pod.
 func (c *Client) SetupPodLogStream(ctx context.Context, zone *configModels.Zone, podName string, from time.Time, onLog func(deploymentName string, lines []model.Log)) error {
 	_, kc, _, err := c.Get(OptsOnlyClient(zone))

@@ -2,6 +2,7 @@ package logger
 
 import (
 	"context"
+	"go-deploy/pkg/db/key_value"
 	"go-deploy/pkg/log"
 	"go-deploy/pkg/services"
 	"strings"
@@ -21,8 +22,9 @@ const (
 )
 
 var (
-	LoggerLifetime = time.Second * 10
-	LoggerUpdate   = time.Second * 5
+	LoggerLifetime    = time.Second * 10
+	LoggerUpdate      = time.Second * 5
+	LoggerSynchronize = time.Second * 30
 )
 
 func LastLogKey(podName, zoneName string) string {
@@ -49,6 +51,25 @@ func PodAndZoneNameFromLogKey(key string) (podName, zoneName string) {
 	}
 
 	return "", ""
+}
+
+// ActivePods returns a list of active pods.
+//
+// It captures all keys that match the logs key, including:
+// logs:zone:podName, logs:zone:podName:last, logs:zone:podName:owner
+func ActivePods(kvc *key_value.Client, zoneName string) (map[string]bool, error) {
+	keys, err := kvc.List(LogsKey + ":" + zoneName + ":*")
+	if err != nil {
+		return nil, err
+	}
+
+	pods := make(map[string]bool)
+	for _, key := range keys {
+		podName, _ := PodAndZoneNameFromLogKey(key)
+		pods[podName] = true
+	}
+
+	return pods, nil
 }
 
 // Setup starts the loggers.
