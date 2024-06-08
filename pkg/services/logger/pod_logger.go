@@ -65,9 +65,6 @@ func OnPodEvent(ctx context.Context, zone *configModels.Zone, cancelFuncs map[st
 			}
 
 			onLog := func(deploymentName string, lines []model.Log) {
-
-				log.Printf("Adding %d logs for deployment %s", len(lines), deploymentName)
-
 				err = deployment_repo.New().AddLogsByName(deploymentName, lines...)
 				if err != nil {
 					utils.PrettyPrintError(fmt.Errorf("failed to add k8s logs for deployment %s. details: %w", logEvent.PodName, err))
@@ -154,8 +151,6 @@ func LastLogged(kvc *key_value.Client, podName, zoneName string) time.Time {
 }
 
 func SetLastLogged(kvc *key_value.Client, podName, zoneName string, t time.Time) error {
-	log.Printf("Setting last logged time for pod %s in zone %s to %s", podName, zoneName, t.Format(time.RFC3339))
-
 	// Keep the entry for a week, so it clears up after a while
 	return kvc.Set(LastLogKey(podName, zoneName), t.Format(time.RFC3339), time.Hour*24*7)
 }
