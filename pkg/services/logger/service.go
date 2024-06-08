@@ -65,9 +65,9 @@ func Setup(ctx context.Context, roles []LogRole) {
 	for _, role := range roles {
 		switch role {
 		case LogRoleControl:
-			go services.Worker(ctx, "deploymentLoggerControl", PodEventListener)
+			go services.Worker(ctx, "deploymentLoggerControl", PodLoggerControl)
 		case LogRoleWorker:
-			go services.Worker(ctx, "deploymentLoggerWorker", DeploymentLogger)
+			go services.Worker(ctx, "deploymentLoggerWorker", PodLogger)
 		}
 	}
 
