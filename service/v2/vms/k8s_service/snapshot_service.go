@@ -3,6 +3,7 @@ package k8s_service
 import (
 	"fmt"
 	"go-deploy/models/model"
+	"go-deploy/pkg/subsystems"
 	"go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/service/resources"
 )
@@ -26,17 +27,14 @@ func (c *Client) CreateVmSnapshot(vmID string, params *model.CreateSnapshotParam
 		return nil, err
 	}
 
-	var k8sVmID string
-	if k8sVM := vm.Subsystems.K8s.GetVM(vm.Name); k8sVM != nil {
-		k8sVmID = k8sVM.ID
-	} else {
-		return nil, nil
+	if !subsystems.Created(&vm.Subsystems.K8s.VM) {
+		return nil, fmt.Errorf("failed to create snapshot for k8s vm %s. details: vm not found", vmID)
 	}
 
 	snapshotPublic := &models.VmSnapshotPublic{
 		Name:      params.Name,
 		Namespace: kc.Namespace,
-		VmID:      k8sVmID,
+		VmID:      vm.Subsystems.K8s.VM.ID,
 	}
 
 	err = resources.SsCreator(kc.CreateVmSnapshot).
