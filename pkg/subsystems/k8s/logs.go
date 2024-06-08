@@ -74,14 +74,13 @@ func (client *Client) SetupPodLogStream(ctx context.Context, podName string, fro
 		reader := bufio.NewScanner(logStream)
 
 		lines := make([]models.LogLine, 0, 10)
-		lastPush := time.Now()
 
-		// Push logs every 1 seconds or when the buffer is full (10 lines)
+		// This function is reserved to change the log stream to only push after N lines
+		// However, right not it is set to push if the log stream has any lines
 		pushIfFull := func() {
-			if len(lines) > 0 || time.Since(lastPush) > 1*time.Second {
+			if len(lines) > 0 {
 				onLog(deploymentName, lines)
 				lines = nil
-				lastPush = time.Now()
 			}
 		}
 
@@ -112,8 +111,6 @@ func (client *Client) SetupPodLogStream(ctx context.Context, podName string, fro
 
 					pushIfFull()
 				}
-
-				pushIfFull()
 
 				time.Sleep(1 * time.Second)
 			}
