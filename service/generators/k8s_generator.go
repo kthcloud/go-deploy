@@ -13,8 +13,8 @@ type K8sGenerator interface {
 	// Deployments returns a list of models.DeploymentPublic that should be created
 	Deployments() []models.DeploymentPublic
 
-	// VMs returns a list of models.VmPublic that should be created
-	VMs() []models.VmPublic
+	// VM returns a models.VmPublic that should be created
+	VM() *models.VmPublic
 
 	// Services returns a list of models.ServicePublic that should be created
 	Services() []models.ServicePublic

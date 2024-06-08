@@ -68,7 +68,7 @@ func (kg *K8sGenerator) Namespace() *models.NamespacePublic {
 	return &ns
 }
 
-func (kg *K8sGenerator) VMs() []models.VmPublic {
+func (kg *K8sGenerator) VM() *models.VmPublic {
 	sshPublicKeys := make([]string, len(kg.extraAuthorizedKeys)+1)
 	sshPublicKeys[0] = kg.vm.SshPublicKey
 	copy(sshPublicKeys[1:], kg.extraAuthorizedKeys)
@@ -103,13 +103,13 @@ func (kg *K8sGenerator) VMs() []models.VmPublic {
 		CreatedAt: time.Time{},
 	}
 
-	if vm := kg.vm.Subsystems.K8s.GetVM(vmName(kg.vm)); subsystems.Created(vm) {
+	if vm := &kg.vm.Subsystems.K8s.VM; subsystems.Created(vm) {
 		vmPublic.ID = vm.ID
 		vmPublic.Running = vm.Running
 		vmPublic.CreatedAt = vm.CreatedAt
 	}
 
-	return []models.VmPublic{vmPublic}
+	return &vmPublic
 }
 
 func (kg *K8sGenerator) Services() []models.ServicePublic {
