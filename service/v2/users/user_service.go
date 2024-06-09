@@ -31,7 +31,7 @@ func (c *Client) GetByApiKey(apiKey string) (*model.User, error) {
 	return user_repo.New().WithApiKey(apiKey).Get()
 }
 
-// GetUsage gets the usage of a user, such as number of deployments and CPU cores used.
+// GetUsage gets the usage of a user, such as number of deployments and CPU cores used
 func (c *Client) GetUsage(userID string) (*model.UserUsage, error) {
 	vmUsage, err := c.V2.VMs().GetUsage(userID)
 	if err != nil {
@@ -86,9 +86,9 @@ func (c *Client) Exists(id string) (bool, error) {
 }
 
 // Synchronize creates a user or updates an existing user.
-// It does nothing if no auth info is provided
+// It does nothing if no auth info is provided.
 //
-// It does not use AuthInfo as it is meant to be used by the auth service
+// It does not use AuthInfo as it is meant to be used by the auth service.
 func (c *Client) Synchronize(authParams *model.AuthParams) (*model.User, error) {
 	var effectiveRole *model.EffectiveRole
 	if len(authParams.Roles) > 0 {
@@ -136,9 +136,10 @@ func (c *Client) Synchronize(authParams *model.AuthParams) (*model.User, error) 
 	return user, nil
 }
 
-// Discover returns a list of users that the requesting user has access to
+// Discover returns a list of users that the requesting user has access to.
 //
-// It uses search param to enable searching in multiple fields
+// It uses search param to enable searching in multiple fields.
+// If UserID is provided, it returns a single user.
 func (c *Client) Discover(opts ...opts.DiscoverOpts) ([]body.UserReadDiscovery, error) {
 	o := utils.GetFirstOrDefault(opts)
 	umc := user_repo.New()
@@ -151,6 +152,32 @@ func (c *Client) Discover(opts ...opts.DiscoverOpts) ([]body.UserReadDiscovery, 
 		umc.WithPagination(o.Pagination.Page, o.Pagination.PageSize)
 	}
 
+	// Single user is requested
+	if o.UserID != nil {
+		user, err := c.User(*o.UserID, umc)
+		if err != nil {
+			return nil, err
+		}
+
+		if user == nil {
+			return nil, nil
+		}
+
+		usersRead := []body.UserReadDiscovery{
+			{
+				ID:          user.ID,
+				Username:    user.Username,
+				FirstName:   user.FirstName,
+				LastName:    user.LastName,
+				Email:       user.Email,
+				GravatarURL: user.Gravatar.URL,
+			},
+		}
+
+		return usersRead, nil
+	}
+
+	// Multiple users are requested
 	users, err := c.Users(umc)
 	if err != nil {
 		return nil, err
@@ -199,7 +226,7 @@ func (c *Client) Update(userID string, dtoUserUpdate *body.UserUpdate) (*model.U
 }
 
 // FetchGravatar checks if the user has a gravatar image and fetches it if it exists.
-// If the user does not have a gravatar image, it returns nil
+// If the user does not have a gravatar image, it returns nil.
 func (c *Client) FetchGravatar(userID string) (*string, error) {
 	umc := user_repo.New()
 

@@ -1,5 +1,9 @@
 package query
 
+type UserGet struct {
+	Discover bool `form:"discover" binding:"omitempty,boolean"`
+}
+
 type UserList struct {
 	*Pagination
 
