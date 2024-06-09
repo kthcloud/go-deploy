@@ -170,6 +170,15 @@ func (c *Client) CreateMigrationUpdateOwner(id, userID, resourceID, resourceType
 			"code":         code,
 		}
 
+		if c.V2.HasAuth() {
+			content["userId"] = c.V2.Auth().User.ID
+		} else {
+			user, _ := c.V2.Users().Get(userID)
+			if user != nil {
+				content["userId"] = user.ID
+			}
+		}
+
 		_, err = c.V2.Notifications().Create(uuid.NewString(), params.NewOwnerID, &model.NotificationCreateParams{
 			Type:    model.NotificationResourceTransfer,
 			Content: content,
