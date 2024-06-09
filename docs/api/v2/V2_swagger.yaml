@@ -1825,6 +1825,11 @@ paths:
         required: true
         schema:
           type: string
+      - name: discover
+        in: query
+        description: Discovery mode
+        schema:
+          type: boolean
       responses:
         "200":
           description: OK
@@ -2416,6 +2421,17 @@ components:
       properties:
         config:
           type: string
+    body.ClusterCapacities:
+      type: object
+      properties:
+        cluster:
+          type: string
+        cpuCore:
+          $ref: '#/components/schemas/body.CpuCoreCapacities'
+        gpu:
+          $ref: '#/components/schemas/body.GpuCapacities'
+        ram:
+          $ref: '#/components/schemas/body.RamCapacities'
     body.ClusterStats:
       type: object
       properties:
@@ -2883,24 +2899,14 @@ components:
         displayName:
           type: string
         gpu:
-          $ref: '#/components/schemas/body.HostGpuCapacities'
+          $ref: '#/components/schemas/body.GpuCapacities'
         name:
           type: string
         ram:
-          $ref: '#/components/schemas/body.HostRamCapacities'
+          $ref: '#/components/schemas/body.RamCapacities'
         zone:
           type: string
           description: Zone is the name of the zone where the host is located.
-    body.HostGpuCapacities:
-      type: object
-      properties:
-        count:
-          type: integer
-    body.HostRamCapacities:
-      type: object
-      properties:
-        total:
-          type: integer
     body.HostRead:
       type: object
       properties:
@@ -3384,12 +3390,21 @@ components:
     body.SystemCapacities:
       type: object
       properties:
+        clusters:
+          type: array
+          description: Per Cluster
+          items:
+            $ref: '#/components/schemas/body.ClusterCapacities'
         cpuCore:
-          $ref: '#/components/schemas/body.CpuCoreCapacities'
+          type: object
+          description: Total
+          allOf:
+          - $ref: '#/components/schemas/body.CpuCoreCapacities'
         gpu:
           $ref: '#/components/schemas/body.GpuCapacities'
         hosts:
           type: array
+          description: Per Host
           items:
             $ref: '#/components/schemas/body.HostCapacities'
         ram:

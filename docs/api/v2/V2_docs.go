@@ -2527,6 +2527,12 @@ const docTemplateV2 = `{
                         "name": "userId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Discovery mode",
+                        "name": "discover",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -3326,6 +3332,23 @@ const docTemplateV2 = `{
                 }
             }
         },
+        "body.ClusterCapacities": {
+            "type": "object",
+            "properties": {
+                "cluster": {
+                    "type": "string"
+                },
+                "cpuCore": {
+                    "$ref": "#/definitions/body.CpuCoreCapacities"
+                },
+                "gpu": {
+                    "$ref": "#/definitions/body.GpuCapacities"
+                },
+                "ram": {
+                    "$ref": "#/definitions/body.RamCapacities"
+                }
+            }
+        },
         "body.ClusterStats": {
             "type": "object",
             "properties": {
@@ -3974,33 +3997,17 @@ const docTemplateV2 = `{
                     "type": "string"
                 },
                 "gpu": {
-                    "$ref": "#/definitions/body.HostGpuCapacities"
+                    "$ref": "#/definitions/body.GpuCapacities"
                 },
                 "name": {
                     "type": "string"
                 },
                 "ram": {
-                    "$ref": "#/definitions/body.HostRamCapacities"
+                    "$ref": "#/definitions/body.RamCapacities"
                 },
                 "zone": {
                     "description": "Zone is the name of the zone where the host is located.",
                     "type": "string"
-                }
-            }
-        },
-        "body.HostGpuCapacities": {
-            "type": "object",
-            "properties": {
-                "count": {
-                    "type": "integer"
-                }
-            }
-        },
-        "body.HostRamCapacities": {
-            "type": "object",
-            "properties": {
-                "total": {
-                    "type": "integer"
                 }
             }
         },
@@ -4594,13 +4601,26 @@ const docTemplateV2 = `{
         "body.SystemCapacities": {
             "type": "object",
             "properties": {
+                "clusters": {
+                    "description": "Per Cluster",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/body.ClusterCapacities"
+                    }
+                },
                 "cpuCore": {
-                    "$ref": "#/definitions/body.CpuCoreCapacities"
+                    "description": "Total",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/body.CpuCoreCapacities"
+                        }
+                    ]
                 },
                 "gpu": {
                     "$ref": "#/definitions/body.GpuCapacities"
                 },
                 "hosts": {
+                    "description": "Per Host",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/body.HostCapacities"

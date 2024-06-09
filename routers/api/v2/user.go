@@ -23,6 +23,7 @@ import (
 // @Produce  json
 // @Security ApiKeyAuth
 // @Param userId path string true "User ID"
+// @Param discover query bool false "Discovery mode"
 // @Success 200 {object}  body.UserRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse

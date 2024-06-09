@@ -493,31 +493,36 @@ export interface TimestampedSystemCapacities {
   timestamp: string;
 }
 export interface SystemCapacities {
+  /**
+   * Total
+   */
   cpuCore: CpuCoreCapacities;
   ram: RamCapacities;
   gpu: GpuCapacities;
+  /**
+   * Per Host
+   */
   hosts: HostCapacities[];
+  /**
+   * Per Cluster
+   */
+  clusters: ClusterCapacities[];
 }
 export interface ClusterCapacities {
   cluster: string;
-  ram: RamCapacities;
   cpuCore: CpuCoreCapacities;
-}
-export interface HostGpuCapacities {
-  count: number /* int */;
-}
-export interface HostRamCapacities {
-  total: number /* int */;
+  ram: RamCapacities;
+  gpu: GpuCapacities;
 }
 export interface HostCapacities extends HostBase {
   cpuCore: CpuCoreCapacities;
-  ram: HostRamCapacities;
-  gpu: HostGpuCapacities;
-}
-export interface RamCapacities {
-  total: number /* int */;
+  ram: RamCapacities;
+  gpu: GpuCapacities;
 }
 export interface CpuCoreCapacities {
+  total: number /* int */;
+}
+export interface RamCapacities {
   total: number /* int */;
 }
 export interface GpuCapacities {
