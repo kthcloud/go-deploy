@@ -37,7 +37,7 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.VM, error) {
 	if o.MigrationCode != nil {
 		rmc := resource_migration_repo.New().
 			WithType(model.ResourceMigrationTypeUpdateOwner).
-			WithResourceType(model.ResourceMigrationResourceTypeVM).
+			WithResourceType(model.ResourceTypeVM).
 			WithCode(*o.MigrationCode)
 
 		migration, err := rmc.Get()
@@ -145,7 +145,7 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.VM, error) {
 
 		for _, team := range teams {
 			for _, resource := range team.GetResourceMap() {
-				if resource.Type != model.TeamResourceVM {
+				if resource.Type != model.ResourceTypeVM {
 					continue
 				}
 
@@ -489,7 +489,7 @@ func (c *Client) UpdateOwner(id string, params *model.VmUpdateOwnerParams) error
 		return makeError(err)
 	}
 
-	err = notification_repo.New().FilterContent("id", id).WithType(model.NotificationVmTransfer).MarkReadAndCompleted()
+	err = notification_repo.New().FilterContent("id", id).WithType(model.NotificationResourceTransfer).MarkReadAndCompleted()
 	if err != nil {
 		return makeError(err)
 	}

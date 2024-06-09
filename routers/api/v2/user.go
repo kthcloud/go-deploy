@@ -36,6 +36,13 @@ func GetUser(c *gin.Context) {
 		return
 	}
 
+	var requestQuery query.UserGet
+	if err := context.GinContext.ShouldBind(&requestQuery); err != nil {
+		context.BindingError(CreateBindingError(err))
+		return
+
+	}
+
 	auth, err := WithAuth(&context)
 	if err != nil {
 		context.ServerError(err, AuthInfoNotAvailableErr)
@@ -46,12 +53,27 @@ func GetUser(c *gin.Context) {
 		requestURI.UserID = auth.User.ID
 	}
 
-	var effectiveRole *model.Role
-	var user *model.User
-
 	deployV2 := service.V2(auth)
 
-	user, err = deployV2.Users().Get(requestURI.UserID)
+	if requestQuery.Discover {
+		discover, err := deployV2.Users().Discover(opts.DiscoverOpts{
+			UserID: &requestURI.UserID,
+		})
+		if err != nil {
+			context.ServerError(err, InternalError)
+			return
+		}
+
+		if len(discover) == 0 {
+			context.NotFound("User not found")
+			return
+		}
+
+		context.JSONResponse(200, discover[0])
+		return
+	}
+
+	user, err := deployV2.Users().Get(requestURI.UserID)
 	if err != nil {
 		context.ServerError(err, InternalError)
 		return
@@ -62,7 +84,7 @@ func GetUser(c *gin.Context) {
 		return
 	}
 
-	effectiveRole = config.Config.GetRole(user.EffectiveRole.Name)
+	effectiveRole := config.Config.GetRole(user.EffectiveRole.Name)
 	if effectiveRole == nil {
 		effectiveRole = &model.Role{}
 	}

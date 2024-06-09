@@ -338,7 +338,7 @@ func (c *Client) getResourceIfAccessible(resourceID string) *model.TeamResource 
 	if isOwner {
 		return &model.TeamResource{
 			ID:      resourceID,
-			Type:    model.TeamResourceDeployment,
+			Type:    model.ResourceTypeDeployment,
 			AddedAt: time.Now(),
 		}
 	}
@@ -353,7 +353,7 @@ func (c *Client) getResourceIfAccessible(resourceID string) *model.TeamResource 
 	if isOwner {
 		return &model.TeamResource{
 			ID:      resourceID,
-			Type:    model.TeamResourceVM,
+			Type:    model.ResourceTypeVM,
 			AddedAt: time.Now(),
 		}
 	}

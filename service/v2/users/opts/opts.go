@@ -16,6 +16,7 @@ type ListOpts struct {
 }
 
 type DiscoverOpts struct {
+	UserID     *string
 	Pagination *utils.Pagination
 	Search     *string
 }
