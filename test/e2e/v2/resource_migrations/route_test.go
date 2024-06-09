@@ -34,15 +34,15 @@ func TestList(t *testing.T) {
 func TestUpdateDeploymentOwnerNonAdmin(t *testing.T) {
 	t.Parallel()
 
-	resource1, _ := v2.WithDeployment(t, bodyV2.DeploymentCreate{
+	resource, _ := v2.WithDeployment(t, bodyV2.DeploymentCreate{
 		Name:    e2e.GenName(),
 		Private: false,
 	}, e2e.PowerUser)
 
 	// Create as default user
-	resourceMigration1 := v2.WithResourceMigration(t, bodyV2.ResourceMigrationCreate{
+	_ = v2.WithResourceMigration(t, bodyV2.ResourceMigrationCreate{
 		Type:       model.ResourceMigrationTypeUpdateOwner,
-		ResourceID: resource1.ID,
+		ResourceID: resource.ID,
 		UpdateOwner: &struct {
 			OwnerID string `json:"ownerId" binding:"required,uuid4"`
 		}{
@@ -52,33 +52,32 @@ func TestUpdateDeploymentOwnerNonAdmin(t *testing.T) {
 
 	// They generate notifications for the receiver, find them
 	notifications := v2.ListNotifications(t, "", e2e.DefaultUser)
-	var notification1 *bodyV2.NotificationRead
-	//var notification2 *body.NotificationRead
+	var notification *bodyV2.NotificationRead
 	for _, n := range notifications {
 		no := n
-		if n.Content["id"] == resourceMigration1.ResourceID {
-			notification1 = &no
+		if n.Content["resourceId"] == resource.ID && n.Type == model.NotificationResourceTransfer {
+			notification = &no
 		}
 	}
 
-	e2e.MustNotNil(t, notification1, "notification1 not found")
+	e2e.MustNotNil(t, notification, "notification not found")
 
 	// Get the codes
-	code1, ok := notification1.Content["code"].(string)
-	assert.True(t, ok, "code1 not found")
+	code, ok := notification.Content["code"].(string)
+	assert.True(t, ok, "code not found")
 
 	// Accept the migrations by updating their status to accepted
-	v2.UpdateResourceMigration(t, resourceMigration1.ID, bodyV2.ResourceMigrationUpdate{
+	v2.UpdateResourceMigration(t, notification.Content["id"].(string), bodyV2.ResourceMigrationUpdate{
 		Status: model.ResourceMigrationStatusAccepted,
-		Code:   &code1,
+		Code:   &code,
 	}, e2e.DefaultUser)
 
 	// Check if the owner was updated
-	resource1 = v2.GetDeployment(t, resource1.ID, e2e.DefaultUser)
-	assert.Equal(t, model.TestDefaultUserID, resource1.OwnerID, "deployment owner not updated")
+	resource = v2.GetDeployment(t, resource.ID, e2e.DefaultUser)
+	assert.Equal(t, model.TestDefaultUserID, resource.OwnerID, "deployment owner not updated")
 
 	// Ensure resources are running
-	v2.WaitForDeploymentRunning(t, resource1.ID, func(d *bodyV2.DeploymentRead) bool {
+	v2.WaitForDeploymentRunning(t, resource.ID, func(d *bodyV2.DeploymentRead) bool {
 		if d.URL != nil {
 			return v2.CheckUpURL(t, *d.URL)
 		}
@@ -93,7 +92,7 @@ func TestUpdateVmOwnerNonAdmin(t *testing.T) {
 		t.Skip("vm tests are disabled")
 	}
 
-	resource2 := v2.WithVM(t, bodyV2.VmCreate{
+	resource := v2.WithVM(t, bodyV2.VmCreate{
 		Name:         e2e.GenName(),
 		SshPublicKey: v2.WithSshPublicKey(t),
 		CpuCores:     1,
@@ -102,9 +101,9 @@ func TestUpdateVmOwnerNonAdmin(t *testing.T) {
 	}, e2e.PowerUser)
 
 	// Create as default user
-	resourceMigration2 := v2.WithResourceMigration(t, bodyV2.ResourceMigrationCreate{
+	_ = v2.WithResourceMigration(t, bodyV2.ResourceMigrationCreate{
 		Type:       model.ResourceMigrationTypeUpdateOwner,
-		ResourceID: resource2.ID,
+		ResourceID: resource.ID,
 		UpdateOwner: &struct {
 			OwnerID string `json:"ownerId" binding:"required,uuid4"`
 		}{
@@ -114,32 +113,32 @@ func TestUpdateVmOwnerNonAdmin(t *testing.T) {
 
 	// They generate notifications for the receiver, find them
 	notifications := v2.ListNotifications(t, "", e2e.DefaultUser)
-	var notification2 *bodyV2.NotificationRead
+	var notification *bodyV2.NotificationRead
 	for _, n := range notifications {
 		no := n
-		if n.Content["id"] == resourceMigration2.ResourceID {
-			notification2 = &no
+		if n.Content["resourceId"] == resource.ID && n.Type == model.NotificationResourceTransfer {
+			notification = &no
 		}
 	}
 
-	e2e.MustNotNil(t, notification2, "notification2 not found")
+	e2e.MustNotNil(t, notification, "notification not found")
 
 	// Get the codes
-	code2, ok := notification2.Content["code"].(string)
-	assert.True(t, ok, "code2 not found")
+	code, ok := notification.Content["code"].(string)
+	assert.True(t, ok, "code not found")
 
 	// Accept the migrations by updating their status to accepted
-	v2.UpdateResourceMigration(t, resourceMigration2.ID, bodyV2.ResourceMigrationUpdate{
+	v2.UpdateResourceMigration(t, notification.Content["id"].(string), bodyV2.ResourceMigrationUpdate{
 		Status: model.ResourceMigrationStatusAccepted,
-		Code:   &code2,
+		Code:   &code,
 	}, e2e.DefaultUser)
 
 	// Check if the owner was updated
-	resource2 = v2.GetVM(t, resource2.ID, e2e.DefaultUser)
-	assert.Equal(t, model.TestDefaultUserID, resource2.OwnerID, "vm owner not updated")
+	resource = v2.GetVM(t, resource.ID, e2e.DefaultUser)
+	assert.Equal(t, model.TestDefaultUserID, resource.OwnerID, "vm owner not updated")
 
 	// Ensure resources are running
-	v2.WaitForVmRunning(t, resource2.ID, func(vm *bodyV2.VmRead) bool {
+	v2.WaitForVmRunning(t, resource.ID, func(vm *bodyV2.VmRead) bool {
 		if vm.SshConnectionString != nil {
 			res := v2.DoSshCommand(t, *vm.SshConnectionString, "echo 'hello world'")
 			if strings.Contains(res, "hello world") {

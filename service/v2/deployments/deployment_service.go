@@ -34,7 +34,7 @@ func (c *Client) Get(id string, opts ...opts.GetOpts) (*model.Deployment, error)
 	if o.MigrationCode != nil {
 		rmc := resource_migration_repo.New().
 			WithType(model.ResourceMigrationTypeUpdateOwner).
-			WithResourceType(model.ResourceMigrationResourceTypeDeployment).
+			WithResourceType(model.ResourceTypeDeployment).
 			WithCode(*o.MigrationCode)
 
 		migration, err := rmc.Get()
@@ -173,7 +173,7 @@ func (c *Client) List(opts ...opts.ListOpts) ([]model.Deployment, error) {
 
 		for _, team := range teams {
 			for _, resource := range team.GetResourceMap() {
-				if resource.Type != model.TeamResourceDeployment {
+				if resource.Type != model.ResourceTypeDeployment {
 					continue
 				}
 
@@ -410,7 +410,7 @@ func (c *Client) UpdateOwner(id string, params *model.DeploymentUpdateOwnerParam
 		return makeError(err)
 	}
 
-	err = notification_repo.New().FilterContent("id", id).WithType(model.NotificationDeploymentTransfer).MarkReadAndCompleted()
+	err = notification_repo.New().FilterContent("id", id).WithType(model.NotificationResourceTransfer).MarkReadAndCompleted()
 	if err != nil {
 		return makeError(err)
 	}

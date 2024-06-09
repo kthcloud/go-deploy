@@ -333,7 +333,7 @@ func getResourceName(resource *model.TeamResource) *string {
 	deployV2 := service.V2()
 
 	switch resource.Type {
-	case model.TeamResourceDeployment:
+	case model.ResourceTypeDeployment:
 		d, err := deployV2.Deployments().Get(resource.ID, deploymentOpts.GetOpts{Shared: true})
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to get deployment when getting team model name: %s", err))
@@ -345,7 +345,7 @@ func getResourceName(resource *model.TeamResource) *string {
 		}
 
 		return &d.Name
-	case model.TeamResourceVM:
+	case model.ResourceTypeVM:
 		vm, err := deployV2.VMs().Get(resource.ID, vmOpts.GetOpts{Shared: true})
 		if err != nil {
 			utils.PrettyPrintError(fmt.Errorf("failed to get vm when getting team model name: %s", err))

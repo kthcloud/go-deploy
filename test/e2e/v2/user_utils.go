@@ -23,12 +23,19 @@ func ListUsers(t *testing.T, query string) []body.UserRead {
 	return e2e.MustParse[[]body.UserRead](t, resp)
 }
 
-func ListUsersDiscovery(t *testing.T, query string) []body.UserReadDiscovery {
+func GetUserDiscovery(t *testing.T, id string, user ...string) body.UserReadDiscovery {
+	resp := e2e.DoGetRequest(t, UserPath+id+"?discover=true", user...)
+	return e2e.MustParse[body.UserReadDiscovery](t, resp)
+}
+
+func ListUsersDiscovery(t *testing.T, query string, userID ...string) []body.UserReadDiscovery {
 	if query == "" {
 		query = "?"
+	} else {
+		query += "&"
 	}
 
-	resp := e2e.DoGetRequest(t, UsersPath+query+"&discovery=true")
+	resp := e2e.DoGetRequest(t, UsersPath+query+"discover=true", userID...)
 	return e2e.MustParse[[]body.UserReadDiscovery](t, resp)
 }
 

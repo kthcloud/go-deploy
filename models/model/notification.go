@@ -8,10 +8,8 @@ import (
 const (
 	// NotificationTeamInvite is used for team invite notifications.
 	NotificationTeamInvite = "teamInvite"
-	// NotificationDeploymentTransfer is used for deployment transfer notifications.
-	NotificationDeploymentTransfer = "deploymentTransfer"
-	// NotificationVmTransfer is used for vm transfer notifications.
-	NotificationVmTransfer = "vmTransfer"
+	// NotificationResourceTransfer is used for resource migration notifications.
+	NotificationResourceTransfer = "resourceTransfer"
 )
 
 type Notification struct {
