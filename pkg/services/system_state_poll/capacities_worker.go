@@ -7,70 +7,11 @@ import (
 	"go-deploy/pkg/config"
 	"go-deploy/pkg/db/resources/host_repo"
 	"go-deploy/pkg/db/resources/system_capacities_repo"
-	wErrors "go-deploy/pkg/services/errors"
 	"go-deploy/pkg/subsystems/host_api"
-	"go-deploy/pkg/subsystems/k8s"
 	"go-deploy/utils"
-	"k8s.io/client-go/kubernetes"
-	"log"
 	"sync"
 	"time"
 )
-
-func GetClusterCapacities() ([]body.ClusterCapacities, error) {
-	clients := make(map[string]kubernetes.Clientset)
-	for _, zone := range config.Config.EnabledZones() {
-		if zone.K8s.Client == nil {
-			continue
-		}
-
-		clients[zone.Name] = *zone.K8s.Client
-		break
-	}
-
-	outputs := make([]*body.ClusterCapacities, len(clients))
-	mu := sync.Mutex{}
-
-	ForEachCluster("fetch-k8s-stats", clients, func(worker int, name string, cluster *kubernetes.Clientset) error {
-		makeError := func(err error) error {
-			return fmt.Errorf("failed to list pods from cluster %s. details: %s", name, err)
-		}
-
-		client, err := k8s.New(&k8s.ClientConf{
-			K8sClient: cluster,
-		})
-
-		if err != nil {
-			log.Println(makeError(err))
-			return nil
-		}
-
-		nodes, err := client.ListNodes()
-		if err != nil {
-			log.Println(makeError(err))
-			return nil
-		}
-
-		clusterCapacities := body.ClusterCapacities{
-			Name:    name,
-			RAM:     body.RamCapacities{},
-			CpuCore: body.CpuCoreCapacities{},
-		}
-
-		for _, node := range nodes {
-			clusterCapacities.RAM.Total += node.RAM.Total
-			clusterCapacities.CpuCore.Total += node.CPU.Total
-		}
-
-		mu.Lock()
-		outputs[worker] = &clusterCapacities
-		mu.Unlock()
-
-		return nil
-	})
-
-	return utils.WithoutNils(outputs), nil
-}
 
 func GetHostCapacities() ([]body.HostCapacities, error) {
 	allHosts, err := host_repo.New().Activated().List()
@@ -97,6 +38,12 @@ func GetHostCapacities() ([]body.HostCapacities, error) {
 			CpuCore: body.CpuCoreCapacities{
 				Total: hostApiCapacities.CPU.Cores,
 			},
+			RAM: body.RamCapacities{
+				Total: hostApiCapacities.RAM.Total,
+			},
+			GPU: body.GpuCapacities{
+				Total: hostApiCapacities.GPU.Count,
+			},
 			HostBase: body.HostBase{
 				Name:        host.Name,
 				DisplayName: host.DisplayName,
@@ -115,16 +62,6 @@ func GetHostCapacities() ([]body.HostCapacities, error) {
 }
 
 func CapacitiesWorker() error {
-	// Cluster
-	clusterCapacities, err := GetClusterCapacities()
-	if err != nil {
-		return err
-	}
-
-	if clusterCapacities == nil {
-		clusterCapacities = make([]body.ClusterCapacities, 0)
-	}
-
 	// Hosts
 	hostCapacities, err := GetHostCapacities()
 	if err != nil {
@@ -135,27 +72,54 @@ func CapacitiesWorker() error {
 		hostCapacities = make([]body.HostCapacities, 0)
 	}
 
-	if len(hostCapacities) == 0 && clusterCapacities == nil {
-		return wErrors.NoHostsErr
+	cpuCoreTotal := 0
+	ramTotal := 0
+	gpuTotal := 0
+
+	clusters := make([]body.ClusterCapacities, 0)
+	// Add empty cluster capacities for each zone
+	for _, zone := range config.Config.EnabledZones() {
+		clusters = append(clusters, body.ClusterCapacities{
+			Name: zone.Name,
+			CpuCore: body.CpuCoreCapacities{
+				Total: 0,
+			},
+			RAM: body.RamCapacities{
+				Total: 0,
+			},
+			GPU: body.GpuCapacities{
+				Total: 0,
+			},
+		})
 	}
 
-	gpuTotal := 0
 	for _, host := range hostCapacities {
-		gpuTotal += host.GPU.Count
+		cpuCoreTotal += host.CpuCore.Total
+		ramTotal += host.RAM.Total
+		gpuTotal += host.GPU.Total
+
+		// Add host capacities to the corresponding cluster
+		for i, cluster := range clusters {
+			if cluster.Name == host.Zone {
+				clusters[i].CpuCore.Total += host.CpuCore.Total
+				clusters[i].RAM.Total += host.RAM.Total
+				clusters[i].GPU.Total += host.GPU.Total
+				break
+			}
+		}
 	}
 
 	collected := body.SystemCapacities{
-		RAM:     body.RamCapacities{},
-		CpuCore: body.CpuCoreCapacities{},
+		RAM: body.RamCapacities{
+			Total: ramTotal,
+		},
+		CpuCore: body.CpuCoreCapacities{
+			Total: cpuCoreTotal,
+		},
 		GPU: body.GpuCapacities{
 			Total: gpuTotal,
 		},
 		Hosts: hostCapacities,
-	}
-
-	for _, cluster := range clusterCapacities {
-		collected.RAM.Total += cluster.RAM.Total
-		collected.CpuCore.Total += cluster.CpuCore.Total
 	}
 
 	return system_capacities_repo.New(500).Save(&body.TimestampedSystemCapacities{

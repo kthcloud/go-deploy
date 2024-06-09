@@ -10,38 +10,37 @@ type TimestampedSystemCapacities struct {
 }
 
 type SystemCapacities struct {
+	// Total
 	CpuCore CpuCoreCapacities `json:"cpuCore" bson:"cpuCore"`
 	RAM     RamCapacities     `json:"ram" bson:"ram"`
 	GPU     GpuCapacities     `json:"gpu" bson:"gpu"`
-	Hosts   []HostCapacities  `json:"hosts" bson:"hosts"`
+
+	// Per Host
+	Hosts []HostCapacities `json:"hosts" bson:"hosts"`
+
+	// Per Cluster
+	Clusters []ClusterCapacities `json:"clusters" bson:"clusters"`
 }
 
 type ClusterCapacities struct {
 	Name    string            `json:"cluster" bson:"cluster"`
-	RAM     RamCapacities     `json:"ram" bson:"ram"`
 	CpuCore CpuCoreCapacities `json:"cpuCore" bson:"cpuCore"`
-}
-
-type HostGpuCapacities struct {
-	Count int `json:"count" bson:"count"`
-}
-
-type HostRamCapacities struct {
-	Total int `json:"total" bson:"total"`
+	RAM     RamCapacities     `json:"ram" bson:"ram"`
+	GPU     GpuCapacities     `json:"gpu" bson:"gpu"`
 }
 
 type HostCapacities struct {
 	HostBase `json:",inline" bson:",inline" tstype:",extends"`
 	CpuCore  CpuCoreCapacities `json:"cpuCore" bson:"cpuCore"`
-	RAM      HostRamCapacities `json:"ram" bson:"ram"`
-	GPU      HostGpuCapacities `json:"gpu" bson:"gpu"`
-}
-
-type RamCapacities struct {
-	Total int `json:"total" bson:"total"`
+	RAM      RamCapacities     `json:"ram" bson:"ram"`
+	GPU      GpuCapacities     `json:"gpu" bson:"gpu"`
 }
 
 type CpuCoreCapacities struct {
+	Total int `json:"total" bson:"total"`
+}
+
+type RamCapacities struct {
 	Total int `json:"total" bson:"total"`
 }
 
