@@ -2,7 +2,7 @@ package system_state_poll
 
 import (
 	"go-deploy/models/model"
-	errors2 "go-deploy/pkg/services/errors"
+	wErrors "go-deploy/pkg/services/errors"
 	"k8s.io/client-go/kubernetes"
 	"log"
 	"sync"
@@ -35,7 +35,7 @@ func ForEachHost(taskName string, hosts []model.Host, job func(worker int, host 
 	wg.Wait()
 
 	if len(failedHosts) > 0 {
-		return errors2.NewFailedTaskErr(failedHosts)
+		return wErrors.NewHostsFailedErr(failedHosts)
 	}
 
 	return nil
