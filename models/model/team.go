@@ -3,11 +3,6 @@ package model
 import "time"
 
 const (
-	// TeamResourceDeployment is the type used for deployment resources in a team.
-	TeamResourceDeployment = "deployment"
-	// TeamResourceVM is the type used for VM resources in a team.
-	TeamResourceVM = "vm"
-
 	// TeamMemberRoleAdmin is the role used for admin members in a team.
 	// This is currently not used, and every member is an admin.
 	TeamMemberRoleAdmin = "admin"
