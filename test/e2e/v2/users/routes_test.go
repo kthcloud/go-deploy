@@ -56,7 +56,7 @@ func TestDiscover(t *testing.T) {
 	}
 
 	for _, query := range queries {
-		users := v2.ListUsersDiscovery(t, query)
+		users := v2.ListUsersDiscovery(t, query, e2e.DefaultUser)
 		assert.NotEmpty(t, users, "users were not fetched. it should have at least one user")
 	}
 }
