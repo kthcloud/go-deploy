@@ -1002,16 +1002,6 @@ function install_cert_manager() {
   fi
 }
 
-function install_hairpin_proxy() {
-  read_cluster_config
-
-  # If namespace 'hairpin-proxy' already exists, skip
-  res=$(kubectl get ns | grep -c hairpin-proxy)
-  if [ $res -eq 0 ]; then
-    kubectl apply -f https://raw.githubusercontent.com/compumike/hairpin-proxy/v0.2.1/deploy.yml
-  fi
-}
-
 function install_storage_classes() {
   read_cluster_config
 
@@ -1179,7 +1169,6 @@ run_task "Install Keycloak" install_keycloak
 
 # Dependencies
 run_task "Install Cert Manager" install_cert_manager
-run_task "Install Hairpin Proxy" install_hairpin_proxy
 run_task "Install Storage Classes" install_storage_classes
 run_task "Install KubeVirt" install_kubevirt
 run_task "Install CDI" install_cdi
