@@ -10,5 +10,5 @@
     "noEmit": true,
     "forceConsistentCasingInFileNames": true
   },
-  "files": ["index.ts", "types/**/*.ts"]
+  "include": ["index.ts", "types/**/*.ts"]
 }

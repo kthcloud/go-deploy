@@ -14,6 +14,14 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v1
+
+    - name: Check for TS errors
+      run: |
+        cd export
+        bun run tsc
+
     - name: Build types
       run: |       
         cd scripts

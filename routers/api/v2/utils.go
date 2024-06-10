@@ -93,6 +93,12 @@ func msgForTag(fe validator.FieldError) string {
 		return "Must be a valid volume name, ex. my-volume, my-volume-123, my volume"
 	case "domain_name":
 		return "Must be a valid domain name that can be puny-encoded and is less than 243 characters"
+	case "deployment_name":
+		return "Must not end with -custom-domain or -auth-proxy"
+	case "vm_name":
+		return "Must not end with"
+	case "vm_port_name":
+		return "Must not end with -custom-domain or -proxy"
 	}
 	return fe.Error()
 }

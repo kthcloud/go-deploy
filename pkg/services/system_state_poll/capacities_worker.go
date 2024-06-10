@@ -119,7 +119,8 @@ func CapacitiesWorker() error {
 		GPU: body.GpuCapacities{
 			Total: gpuTotal,
 		},
-		Hosts: hostCapacities,
+		Hosts:    hostCapacities,
+		Clusters: clusters,
 	}
 
 	return system_capacities_repo.New(500).Save(&body.TimestampedSystemCapacities{

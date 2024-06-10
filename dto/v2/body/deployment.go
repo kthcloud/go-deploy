@@ -24,11 +24,14 @@ type DeploymentRead struct {
 	Volumes         []Volume          `json:"volumes"`
 	InitCommands    []string          `json:"initCommands"`
 	Args            []string          `json:"args"`
-	Private         bool              `json:"private"`
 	InternalPort    int               `json:"internalPort"`
 	Image           *string           `json:"image,omitempty"`
 	HealthCheckPath *string           `json:"healthCheckPath,omitempty"`
 	CustomDomain    *CustomDomainRead `json:"customDomain,omitempty"`
+	Visibility      string            `json:"visibility"`
+
+	// Deprecated: Use Visibility instead.
+	Private bool `json:"private"`
 
 	Status        string         `json:"status"`
 	Error         *string        `json:"error,omitempty"`
@@ -45,17 +48,20 @@ type DeploymentRead struct {
 }
 
 type DeploymentCreate struct {
-	Name string `json:"name" bson:"name" binding:"required,rfc1035,min=3,max=30"`
+	Name string `json:"name" bson:"name" binding:"required,rfc1035,min=3,max=30,deployment_name"`
 
 	CpuCores *float64 `json:"cpuCores,omitempty" bson:"cpuCores,omitempty" binding:"omitempty,min=0.1"`
 	RAM      *float64 `json:"ram,omitempty" bson:"ram,omitempty" binding:"omitempty,min=0.1"`
 	Replicas *int     `json:"replicas,omitempty" bson:"replicas,omitempty" binding:"omitempty,min=0,max=100"`
 
-	Private      bool     `json:"private" bson:"private" binding:"omitempty,boolean"`
 	Envs         []Env    `json:"envs" bson:"envs" binding:"omitempty,env_list,min=0,max=1000,dive"`
 	Volumes      []Volume `json:"volumes" bson:"volumes" binding:"omitempty,min=0,max=100,dive"`
 	InitCommands []string `json:"initCommands" bson:"initCommands" binding:"omitempty,min=0,max=100,dive,min=0,max=100"`
 	Args         []string `json:"args" bson:"args" binding:"omitempty,min=0,max=100,dive,min=0,max=100"`
+	Visibility   string   `json:"visibility" bson:"visibility" binding:"omitempty,oneof=public private auth"`
+
+	// Deprecated: Use Visibility instead.
+	Private bool `json:"private" bson:"private" binding:"omitempty,boolean"`
 
 	Image           *string `json:"image,omitempty" bson:"image,omitempty" binding:"omitempty,min=1,max=1000"`
 	HealthCheckPath *string `json:"healthCheckPath" bson:"healthCheckPath,omitempty" binding:"omitempty,min=0,max=1000,health_check_path"`
@@ -69,17 +75,20 @@ type DeploymentCreate struct {
 }
 
 type DeploymentUpdate struct {
-	Name *string `json:"name,omitempty" bson:"name,omitempty" binding:"omitempty,required,rfc1035,min=3,max=30"`
+	Name *string `json:"name,omitempty" bson:"name,omitempty" binding:"omitempty,required,rfc1035,min=3,max=30,deployment_name"`
 
 	CpuCores *float64 `json:"cpuCores,omitempty" bson:"cpuCores,omitempty" binding:"omitempty,min=0.1"`
 	RAM      *float64 `json:"ram,omitempty" bson:"ram,omitempty" binding:"omitempty,min=0.1"`
 	Replicas *int     `json:"replicas,omitempty" bson:"replicas,omitempty" binding:"omitempty,min=0,max=100"`
 
-	Private      *bool     `json:"private,omitempty" bson:"private,omitempty" binding:"omitempty,boolean"`
 	Envs         *[]Env    `json:"envs,omitempty" bson:"envs,omitempty" binding:"omitempty,env_list,min=0,max=1000,dive"`
 	Volumes      *[]Volume `json:"volumes,omitempty" bson:"volumes,omitempty" binding:"omitempty,min=0,max=100,dive"`
 	InitCommands *[]string `json:"initCommands,omitempty" bson:"initCommands,omitempty" binding:"omitempty,min=0,max=100,dive,min=0,max=100"`
 	Args         *[]string `json:"args,omitempty" bson:"args,omitempty" binding:"omitempty,min=0,max=100,dive,min=0,max=100"`
+	Visibility   *string   `json:"visibility" bson:"visibility" binding:"omitempty,oneof=public private auth"`
+
+	// Deprecated: Use Visibility instead.
+	Private *bool `json:"private,omitempty" bson:"private,omitempty" binding:"omitempty,boolean"`
 
 	Image           *string `json:"image,omitempty,omitempty" bson:"image,omitempty" binding:"omitempty,min=1,max=1000"`
 	HealthCheckPath *string `json:"healthCheckPath,omitempty" bson:"healthCheckPath,omitempty" binding:"omitempty,min=0,max=1000,health_check_path"`

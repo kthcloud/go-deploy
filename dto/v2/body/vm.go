@@ -27,7 +27,7 @@ type VmRead struct {
 }
 
 type VmCreate struct {
-	Name         string       `json:"name" bson:"name" binding:"required,rfc1035,min=3,max=30"`
+	Name         string       `json:"name" bson:"name" binding:"required,rfc1035,min=3,max=30,vm_name"`
 	SshPublicKey string       `json:"sshPublicKey" bson:"sshPublicKey" binding:"required,ssh_public_key"`
 	Ports        []PortCreate `json:"ports" bson:"ports" binding:"omitempty,port_list_names,port_list_numbers,port_list_http_proxies,min=0,max=10,dive"`
 
@@ -39,18 +39,10 @@ type VmCreate struct {
 }
 
 type VmUpdate struct {
+	Name     *string       `json:"name,omitempty" bson:"name,omitempty" binding:"omitempty,rfc1035,min=3,max=30,vm_name"`
 	Ports    *[]PortUpdate `json:"ports,omitempty" bson:"ports,omitempty" binding:"omitempty,port_list_names,port_list_numbers,port_list_http_proxies,min=0,max=10,dive"`
 	CpuCores *int          `json:"cpuCores,omitempty" bson:"cpuCores,omitempty" binding:"omitempty,min=1"`
 	RAM      *int          `json:"ram,omitempty" bson:"ram,omitempty" binding:"omitempty,min=1"`
-
-	// Name is used to rename a VM.
-	// If specified, only name will be updated.
-	Name *string `json:"name,omitempty" bson:"name,omitempty" binding:"omitempty,rfc1035,min=3,max=30"`
-
-	// OwnerID is used to initiate transfer a VM to another user.
-	// If specified, only the transfer will happen.
-	// If specified but empty, the transfer will be canceled.
-	OwnerID *string `json:"ownerId,omitempty" bson:"ownerId,omitempty" binding:"omitempty"`
 }
 
 type VmUpdateOwner struct {

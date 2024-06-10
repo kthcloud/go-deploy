@@ -141,6 +141,9 @@ func registerCustomValidators() {
 			"team_resource_list":     validators.TeamResourceList,
 			"time_in_future":         validators.TimeInFuture,
 			"volume_name":            validators.VolumeName,
+			"deployment_name":        validators.DeploymentName,
+			"vm_name":                validators.VmName,
+			"vm_port_name":           validators.VmPortName,
 		}
 
 		for tag, fn := range registrations {
