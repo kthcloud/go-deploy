@@ -12,16 +12,13 @@ type VmK8s struct {
 	SecretMap        map[string]k8sModels.SecretPublic        `bson:"secretMap,omitempty"`
 	NetworkPolicyMap map[string]k8sModels.NetworkPolicyPublic `bson:"networkPolicyMap,omitempty"`
 
-	// VmMap only exists in version 2
+	// Deprecated: VmMap is deprecated and will be removed in a future release
+	// Use the VM field instead
 	VmMap map[string]k8sModels.VmPublic `bson:"vmMap,omitempty"`
 
-	// PvcMap only exists in version 2
-	PvcMap map[string]k8sModels.PvcPublic `bson:"pvcMap,omitempty"`
-
-	// PvMap only exists in version 2
-	PvMap map[string]k8sModels.PvPublic `bson:"pvMap,omitempty"`
-
-	// SnapshotMap only exists in version 2
+	VM            k8sModels.VmPublic                    `bson:"vm"`
+	PvcMap        map[string]k8sModels.PvcPublic        `bson:"pvcMap,omitempty"`
+	PvMap         map[string]k8sModels.PvPublic         `bson:"pvMap,omitempty"`
 	VmSnapshotMap map[string]k8sModels.VmSnapshotPublic `bson:"vmSnapshotMap,omitempty"`
 }
 
@@ -33,16 +30,6 @@ func (k8s *VmK8s) GetDeploymentMap() map[string]k8sModels.DeploymentPublic {
 	}
 
 	return k8s.DeploymentMap
-}
-
-// GetVmMap returns the vm map of the VM.
-// If the map is nil, it will be initialized before returning
-func (k8s *VmK8s) GetVmMap() map[string]k8sModels.VmPublic {
-	if k8s.VmMap == nil {
-		k8s.VmMap = make(map[string]k8sModels.VmPublic)
-	}
-
-	return k8s.VmMap
 }
 
 // GetVmSnapshotMap returns the vm snapshot map of the VM.
@@ -119,17 +106,6 @@ func (k8s *VmK8s) GetPvMap() map[string]k8sModels.PvPublic {
 // If the deployment does not exist, nil is returned
 func (k8s *VmK8s) GetDeployment(name string) *k8sModels.DeploymentPublic {
 	resources, ok := k8s.GetDeploymentMap()[name]
-	if !ok {
-		return nil
-	}
-
-	return &resources
-}
-
-// GetVM returns the vm of the VM.
-// If the vm does not exist, nil is returned
-func (k8s *VmK8s) GetVM(name string) *k8sModels.VmPublic {
-	resources, ok := k8s.GetVmMap()[name]
 	if !ok {
 		return nil
 	}

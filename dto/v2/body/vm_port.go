@@ -30,21 +30,21 @@ type CustomDomainRead struct {
 }
 
 type HttpProxyRead struct {
-	Name         string            `json:"name" bson:"name,omitempty" binding:"required,rfc1035,min=3,max=30"`
-	URL          *string           `json:"url,omitempty,omitempty"`
+	Name         string            `json:"name" bson:"name"`
+	URL          *string           `json:"url,omitempty" bson:"url,omitempty"`
 	CustomDomain *CustomDomainRead `json:"customDomain,omitempty" bson:"customDomain,omitempty"`
 }
 
 type HttpProxyCreate struct {
 	Name string `json:"name" bson:"name,omitempty" binding:"required,rfc1035,min=3,max=30"`
 	// CustomDomain is the domain that the deployment will be available on.
-	// The max length is set to 243 to allow for a sub domain when confirming the domain.
+	// The max length is set to 243 to allow for a subdomain when confirming the domain.
 	CustomDomain *string `json:"customDomain,omitempty" bson:"customDomain,omitempty" binding:"omitempty,domain_name"`
 }
 
 type HttpProxyUpdate struct {
 	Name string `json:"name,omitempty" bson:"name,omitempty" binding:"required,rfc1035,min=3,max=30"`
 	// CustomDomain is the domain that the deployment will be available on.
-	// The max length is set to 243 to allow for a sub domain when confirming the domain.
+	// The max length is set to 243 to allow for a subdomain when confirming the domain.
 	CustomDomain *string `json:"customDomain,omitempty" bson:"customDomain,omitempty" binding:"omitempty,domain_name"`
 }

@@ -51,14 +51,22 @@ func TestDiscover(t *testing.T) {
 	t.Parallel()
 
 	queries := []string{
-		// search
-		"?search=tester&page=1&pageSize=3",
+		// Search for the Power user
+		"?search=power&page=0&pageSize=3",
 	}
 
 	for _, query := range queries {
 		users := v2.ListUsersDiscovery(t, query)
 		assert.NotEmpty(t, users, "users were not fetched. it should have at least one user")
 	}
+}
+
+func TestDiscoverByID(t *testing.T) {
+	t.Parallel()
+
+	user := v2.GetUserDiscovery(t, model.TestPowerUserID, e2e.DefaultUser)
+	assert.NotEmpty(t, user, "user was not fetched")
+	assert.Equal(t, model.TestPowerUserID, user.ID, "user id does not match")
 }
 
 func TestUpdatePublicKeys(t *testing.T) {

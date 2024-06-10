@@ -3,6 +3,7 @@ package k8s
 import (
 	"context"
 	"go-deploy/pkg/subsystems/k8s/keys"
+	"go-deploy/pkg/subsystems/k8s/models"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers"
@@ -26,6 +27,21 @@ func (client *Client) CountPods() (int, error) {
 	}
 
 	return len(pods.Items), nil
+}
+
+// ListPods returns a list of pods in the cluster.
+func (client *Client) ListPods() ([]models.PodPublic, error) {
+	pods, err := client.K8sClient.CoreV1().Pods(client.Namespace).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	var res []models.PodPublic
+	for _, pod := range pods.Items {
+		res = append(res, models.CreatePodPublicFromRead(pod))
+	}
+
+	return res, nil
 }
 
 // PodExists checks if a pod exists in the cluster.

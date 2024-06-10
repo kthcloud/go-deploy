@@ -9,7 +9,6 @@ import (
 	"go-deploy/pkg/db/resources/gpu_group_repo"
 	"go-deploy/pkg/db/resources/system_gpu_info_repo"
 	"go-deploy/pkg/log"
-	"go-deploy/pkg/subsystems/host_api"
 	"go-deploy/service"
 	"go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
@@ -157,14 +156,57 @@ func listLatestGPUs() (*body.SystemGpuInfo, error) {
 		return nil, makeError(err)
 	}
 
+	var result *body.SystemGpuInfo
 	if len(systemGpuInfo) > 0 {
-		return &systemGpuInfo[0].GpuInfo, nil
+		result = &systemGpuInfo[0].GpuInfo
 	}
 
-	return nil, nil
+	if config.Config.GPU.AddMock {
+		// Add one mock GPUs in each zone
+		for _, zone := range config.Config.EnabledZones() {
+			if result == nil {
+				result = &body.SystemGpuInfo{}
+			}
+
+			result.HostGpuInfo = append(result.HostGpuInfo, body.HostGpuInfo{
+				HostBase: body.HostBase{
+					Name:        "Mock Host 1",
+					DisplayName: "Mock Host 1",
+					Zone:        zone.Name,
+				},
+				GPUs: []body.GpuInfo{{
+					Name:     "Mock GPU 1",
+					Vendor:   "NVIDIA",
+					VendorID: "10de",
+					DeviceID: "1eb0",
+				}, {
+					Name:     "Mock GPU 2",
+					Vendor:   "NVIDIA",
+					VendorID: "10de",
+					DeviceID: "2230",
+				}},
+			})
+
+			result.HostGpuInfo = append(result.HostGpuInfo, body.HostGpuInfo{
+				HostBase: body.HostBase{
+					Name:        "Mock Host 2",
+					DisplayName: "Mock Host 2",
+					Zone:        zone.Name,
+				},
+				GPUs: []body.GpuInfo{{
+					Name:     "Mock GPU 1",
+					Vendor:   "NVIDIA",
+					VendorID: "10de",
+					DeviceID: "1eb0",
+				}},
+			})
+		}
+	}
+
+	return result, nil
 }
 
-func createGpuGroupName(gpu *host_api.GpuInfo) *string {
+func createGpuGroupName(gpu *body.GpuInfo) *string {
 	vendor := strings.ToLower(gpu.Vendor)
 
 	if strings.Contains(vendor, "nvidia") {

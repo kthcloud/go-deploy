@@ -2,8 +2,10 @@ package logger
 
 import (
 	"context"
+	"go-deploy/pkg/db/key_value"
 	"go-deploy/pkg/log"
 	"go-deploy/pkg/services"
+	"strings"
 	"time"
 )
 
@@ -20,28 +22,54 @@ const (
 )
 
 var (
-	LoggerLifetime = time.Second * 10
-	LoggerUpdate   = time.Second * 5
+	LoggerLifetime    = time.Second * 10
+	LoggerUpdate      = time.Second * 5
+	LoggerSynchronize = time.Second * 30
 )
 
-func LastLogKey(podName string) string {
-	return LogsKey + ":" + podName + ":last"
+func LastLogKey(podName, zoneName string) string {
+	return LogsKey + ":" + zoneName + ":" + podName + ":last"
 }
 
-func OwnerLogKey(podName string) string {
-	return LogsKey + ":" + podName + ":owner"
+func OwnerLogKey(podName, zoneName string) string {
+	return LogsKey + ":" + zoneName + ":" + podName + ":owner"
 }
 
-func LogKey(podName string) string {
-	return LogsKey + ":" + podName
+func LogKey(podName, zoneName string) string {
+	return LogsKey + ":" + zoneName + ":" + podName
 }
 
 func LogQueueKey(zoneName string) string {
 	return "queue:" + LogsKey + ":" + zoneName
 }
 
-func PodNameFromLogKey(key string) string {
-	return key[len(LogsKey)+1:]
+func PodAndZoneNameFromLogKey(key string) (podName, zoneName string) {
+	// Extract logs:zone:podName
+	splits := strings.Split(key, ":")
+	if len(splits) > 2 {
+		return splits[2], splits[1]
+	}
+
+	return "", ""
+}
+
+// ActivePods returns a list of active pods.
+//
+// It captures all keys that match the logs key, including:
+// logs:zone:podName, logs:zone:podName:last, logs:zone:podName:owner
+func ActivePods(kvc *key_value.Client, zoneName string) (map[string]bool, error) {
+	keys, err := kvc.List(LogsKey + ":" + zoneName + ":*")
+	if err != nil {
+		return nil, err
+	}
+
+	pods := make(map[string]bool)
+	for _, key := range keys {
+		podName, _ := PodAndZoneNameFromLogKey(key)
+		pods[podName] = true
+	}
+
+	return pods, nil
 }
 
 // Setup starts the loggers.
@@ -58,9 +86,9 @@ func Setup(ctx context.Context, roles []LogRole) {
 	for _, role := range roles {
 		switch role {
 		case LogRoleControl:
-			go services.Worker(ctx, "deploymentLoggerControl", PodEventListener)
+			go services.Worker(ctx, "deploymentLoggerControl", PodLoggerControl)
 		case LogRoleWorker:
-			go services.Worker(ctx, "deploymentLoggerWorker", DeploymentLogger)
+			go services.Worker(ctx, "deploymentLoggerWorker", PodLogger)
 		}
 	}
 

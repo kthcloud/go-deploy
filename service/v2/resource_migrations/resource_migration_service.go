@@ -164,24 +164,23 @@ func (c *Client) CreateMigrationUpdateOwner(id, userID, resourceID, resourceType
 		}
 
 		content := map[string]interface{}{
-			"id":   resourceID,
-			"name": *name,
-			"code": code,
+			"id":           resourceMigration.ID,
+			"resourceId":   resourceID,
+			"resourceName": *name,
+			"code":         code,
 		}
 
 		if c.V2.HasAuth() {
-			content["user"] = c.V2.Auth().User.ID
-			content["email"] = c.V2.Auth().User.Email
+			content["userId"] = c.V2.Auth().User.ID
 		} else {
 			user, _ := c.V2.Users().Get(userID)
 			if user != nil {
-				content["user"] = user.ID
-				content["email"] = user.Email
+				content["userId"] = user.ID
 			}
 		}
 
 		_, err = c.V2.Notifications().Create(uuid.NewString(), params.NewOwnerID, &model.NotificationCreateParams{
-			Type:    model.NotificationDeploymentTransfer,
+			Type:    model.NotificationResourceTransfer,
 			Content: content,
 		})
 
@@ -201,9 +200,9 @@ func (c *Client) CreateMigrationUpdateOwner(id, userID, resourceID, resourceType
 		}
 
 		switch resourceType {
-		case model.ResourceMigrationResourceTypeDeployment:
+		case model.ResourceTypeDeployment:
 			err = c.V2.Jobs().Create(jobID, userID, model.JobUpdateDeploymentOwner, version.V2, args)
-		case model.ResourceMigrationResourceTypeVM:
+		case model.ResourceTypeVM:
 			err = c.V2.Jobs().Create(jobID, userID, model.JobUpdateVmOwner, version.V2, args)
 		}
 		if err != nil {
@@ -324,7 +323,7 @@ func (c *Client) acceptOwnerUpdate(resourceMigration *model.ResourceMigration) (
 	jobID := uuid.NewString()
 	var err error
 	switch resourceMigration.ResourceType {
-	case model.ResourceMigrationResourceTypeDeployment:
+	case model.ResourceTypeDeployment:
 		args := map[string]interface{}{
 			"id":                  resourceMigration.ResourceID,
 			"resourceMigrationId": resourceMigration.ID,
@@ -337,7 +336,7 @@ func (c *Client) acceptOwnerUpdate(resourceMigration *model.ResourceMigration) (
 		}
 
 		err = c.V2.Jobs().Create(jobID, resourceMigration.UserID, model.JobUpdateDeploymentOwner, version.V2, args)
-	case model.ResourceMigrationResourceTypeVM:
+	case model.ResourceTypeVM:
 		args := map[string]interface{}{
 			"id":                  resourceMigration.ResourceID,
 			"resourceMigrationId": resourceMigration.ID,
@@ -364,7 +363,7 @@ func (c *Client) canAccessResource(id string, resourceType string) (bool, error)
 	}
 
 	switch resourceType {
-	case model.ResourceMigrationResourceTypeVM:
+	case model.ResourceTypeVM:
 		vm, err := c.V2.VMs().Get(id)
 		if err != nil {
 			return false, err
@@ -373,7 +372,7 @@ func (c *Client) canAccessResource(id string, resourceType string) (bool, error)
 		if vm == nil {
 			return false, nil
 		}
-	case model.ResourceMigrationResourceTypeDeployment:
+	case model.ResourceTypeDeployment:
 		deployment, err := c.V2.Deployments().Get(id)
 		if err != nil {
 			return false, err
@@ -389,9 +388,9 @@ func (c *Client) canAccessResource(id string, resourceType string) (bool, error)
 
 func (c *Client) getResourceName(id string, resourceType string) (*string, error) {
 	switch resourceType {
-	case model.ResourceMigrationResourceTypeVM:
+	case model.ResourceTypeVM:
 		return vm_repo.New(version.V2).GetName(id)
-	case model.ResourceMigrationResourceTypeDeployment:
+	case model.ResourceTypeDeployment:
 		return deployment_repo.New().GetName(id)
 	default:
 		return nil, sErrors.BadResourceMigrationResourceTypeErr
@@ -405,7 +404,7 @@ func (c *Client) getResourceType(id string) (*string, error) {
 	}
 
 	if exists {
-		t := model.ResourceMigrationResourceTypeVM
+		t := model.ResourceTypeVM
 		return &t, nil
 	}
 
@@ -415,7 +414,7 @@ func (c *Client) getResourceType(id string) (*string, error) {
 	}
 
 	if exists {
-		t := model.ResourceMigrationResourceTypeDeployment
+		t := model.ResourceTypeDeployment
 		return &t, nil
 	}
 
@@ -424,7 +423,7 @@ func (c *Client) getResourceType(id string) (*string, error) {
 
 func (c *Client) getOwnerID(id string, resourceType string) (*string, error) {
 	switch resourceType {
-	case model.ResourceMigrationResourceTypeVM:
+	case model.ResourceTypeVM:
 		vm, err := vm_repo.New(version.V2).GetByID(id)
 		if err != nil {
 			return nil, err
@@ -435,7 +434,7 @@ func (c *Client) getOwnerID(id string, resourceType string) (*string, error) {
 		}
 
 		return &vm.OwnerID, nil
-	case model.ResourceMigrationResourceTypeDeployment:
+	case model.ResourceTypeDeployment:
 		deployment, err := deployment_repo.New().GetByID(id)
 		if err != nil {
 			return nil, err

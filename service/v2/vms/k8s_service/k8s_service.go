@@ -11,6 +11,7 @@ import (
 	"go-deploy/pkg/db/resources/vm_port_repo"
 	"go-deploy/pkg/db/resources/vm_repo"
 	"go-deploy/pkg/log"
+	"go-deploy/pkg/subsystems"
 	kErrors "go-deploy/pkg/subsystems/k8s/errors"
 	k8sModels "go-deploy/pkg/subsystems/k8s/models"
 	"go-deploy/service/constants"
@@ -87,15 +88,13 @@ func (c *Client) Create(id string, params *model.VmCreateParams) error {
 	}
 
 	// VM
-	for _, vmPublic := range g.VMs() {
-		err = resources.SsCreator(kc.CreateVM).
-			WithDbFunc(dbFunc(id, "vmMap."+vmPublic.Name)).
-			WithPublic(&vmPublic).
-			Exec()
+	err = resources.SsCreator(kc.CreateVM).
+		WithDbFunc(dbFunc(id, "vm")).
+		WithPublic(g.VM()).
+		Exec()
 
-		if err != nil {
-			return makeError(err)
-		}
+	if err != nil {
+		return makeError(err)
 	}
 
 	// Service
@@ -215,15 +214,12 @@ func (c *Client) Delete(id string, overwriteUserID ...string) error {
 	}
 
 	// VM
-	for mapName, k8sVm := range vm.Subsystems.K8s.VmMap {
-		err = resources.SsDeleter(kc.DeleteVM).
-			WithResourceID(k8sVm.ID).
-			WithDbFunc(dbFunc(id, "vmMap."+mapName)).
-			Exec()
-
-		if err != nil {
-			return makeError(err)
-		}
+	err = resources.SsDeleter(kc.DeleteVM).
+		WithResourceID(vm.Subsystems.K8s.VM.ID).
+		WithDbFunc(dbFunc(id, "vm")).
+		Exec()
+	if err != nil {
+		return makeError(err)
 	}
 
 	// Secret
@@ -324,28 +320,22 @@ func (c *Client) Repair(id string) error {
 		}
 	}
 
-	vms := g.VMs()
-	for mapName, k8sVm := range vm.Subsystems.K8s.VmMap {
-		idx := slices.IndexFunc(vms, func(v k8sModels.VmPublic) bool { return v.Name == mapName })
-		if idx == -1 {
-			err = resources.SsDeleter(kc.DeleteVM).
-				WithResourceID(k8sVm.ID).
-				WithDbFunc(dbFunc(id, "vmMap."+mapName)).
-				Exec()
-
-			if err != nil {
-				return makeError(err)
-			}
-		}
-	}
-
-	for _, public := range vms {
+	if k8sVM := &vm.Subsystems.K8s.VM; subsystems.Created(k8sVM) {
 		err = resources.SsRepairer(
 			kc.ReadVM,
 			kc.CreateVM,
 			kc.UpdateVM,
 			func(string) error { return nil },
-		).WithResourceID(public.ID).WithDbFunc(dbFunc(id, "vmMap."+public.Name)).WithGenPublic(&public).Exec()
+		).WithResourceID(k8sVM.ID).WithDbFunc(dbFunc(id, "vm")).WithGenPublic(g.VM()).Exec()
+
+		if err != nil {
+			return makeError(err)
+		}
+	} else {
+		err = resources.SsCreator(kc.CreateVM).
+			WithDbFunc(dbFunc(id, "vm")).
+			WithPublic(g.VM()).
+			Exec()
 
 		if err != nil {
 			return makeError(err)
@@ -495,13 +485,11 @@ func (c *Client) AttachGPU(vmID, groupName string) error {
 	}
 
 	// Set the GPU to the VM
-	k8sVM := vm.Subsystems.K8s.VmMap[vm.Name]
-	k8sVM.GPUs = []string{groupName}
-	vm.Subsystems.K8s.VmMap[vm.Name] = k8sVM
+	vm.Subsystems.K8s.VM.GPUs = []string{groupName}
 
 	err = resources.SsUpdater(kc.UpdateVM).
-		WithDbFunc(dbFunc(vmID, "vmMap."+vm.Name)).
-		WithPublic(&k8sVM).
+		WithDbFunc(dbFunc(vmID, "vm")).
+		WithPublic(&vm.Subsystems.K8s.VM).
 		Exec()
 	if err != nil {
 		return makeError(err)
@@ -528,13 +516,11 @@ func (c *Client) DetachGPU(vmID string) error {
 	}
 
 	// Remove the GPU from the VM
-	k8sVM := vm.Subsystems.K8s.VmMap[vm.Name]
-	k8sVM.GPUs = []string{}
-	vm.Subsystems.K8s.VmMap[vm.Name] = k8sVM
+	vm.Subsystems.K8s.VM.GPUs = []string{}
 
 	err = resources.SsUpdater(kc.UpdateVM).
-		WithDbFunc(dbFunc(vmID, "vmMap."+vm.Name)).
-		WithPublic(&k8sVM).
+		WithDbFunc(dbFunc(vmID, "vm")).
+		WithPublic(&vm.Subsystems.K8s.VM).
 		Exec()
 	if err != nil {
 		return makeError(err)
@@ -555,7 +541,7 @@ func (c *Client) DoAction(id string, action *model.VmActionParams) error {
 		return fmt.Errorf("failed to perform action %s on vm %s. details: %w", action.Action, id, err)
 	}
 
-	_, kc, g, err := c.Get(OptsAll(id))
+	vm, kc, _, err := c.Get(OptsAll(id))
 	if err != nil {
 		if errors.Is(err, sErrors.VmNotFoundErr) {
 			log.Println("VM not found when performing action", action.Action, "on", id, ". Assuming it was deleted")
@@ -565,66 +551,65 @@ func (c *Client) DoAction(id string, action *model.VmActionParams) error {
 		return makeError(err)
 	}
 
-	for _, k8sVM := range g.VMs() {
-		switch action.Action {
-		case model.ActionStart:
-			if k8sVM.Running {
-				continue
-			}
-
-			k8sVM.Running = true
-			err = resources.SsUpdater(kc.UpdateVM).
-				WithDbFunc(dbFunc(id, "vmMap."+k8sVM.Name)).
-				WithPublic(&k8sVM).
-				Exec()
-			if err != nil {
-				return makeError(err)
-			}
-
-		case model.ActionStop:
-			if !k8sVM.Running {
-				continue
-			}
-
-			k8sVM.Running = false
-			err = resources.SsUpdater(kc.UpdateVM).
-				WithDbFunc(dbFunc(id, "vmMap."+k8sVM.Name)).
-				WithPublic(&k8sVM).
-				Exec()
-			if err != nil {
-				return makeError(err)
-			}
-
-		case model.ActionRestart:
-			// This case must be handled separately, as a Restart in KubeVirt is done by first deleting any
-			// VirtualMachineInstances, and then ensuring Running is set to true.
-
-			// 1. Delete all VirtualMachineInstances
-			err = kc.DeleteVMIs(k8sVM.ID)
-			if err != nil {
-				return makeError(err)
-			}
-
-			// 2. Ensure Running is set to true
-			if k8sVM.Running {
-				continue
-			}
-
-			k8sVM.Running = true
-			err = resources.SsUpdater(kc.UpdateVM).
-				WithDbFunc(dbFunc(id, "vmMap."+k8sVM.Name)).
-				WithPublic(&k8sVM).
-				Exec()
-			if err != nil {
-				return makeError(err)
-			}
-		case model.ActionRestartIfRunning:
-			if !k8sVM.Running {
-				continue
-			}
-
-			return c.DoAction(id, &model.VmActionParams{Action: model.ActionRestart})
+	k8sVM := vm.Subsystems.K8s.VM
+	switch action.Action {
+	case model.ActionStart:
+		if k8sVM.Running {
+			return nil
 		}
+
+		k8sVM.Running = true
+		err = resources.SsUpdater(kc.UpdateVM).
+			WithDbFunc(dbFunc(id, "vm")).
+			WithPublic(&k8sVM).
+			Exec()
+		if err != nil {
+			return makeError(err)
+		}
+
+	case model.ActionStop:
+		if !k8sVM.Running {
+			return nil
+		}
+
+		k8sVM.Running = false
+		err = resources.SsUpdater(kc.UpdateVM).
+			WithDbFunc(dbFunc(id, "vm")).
+			WithPublic(&k8sVM).
+			Exec()
+		if err != nil {
+			return makeError(err)
+		}
+
+	case model.ActionRestart:
+		// This case must be handled separately, as a Restart in KubeVirt is done by first deleting any
+		// VirtualMachineInstances, and then ensuring Running is set to true.
+
+		// 1. Delete all VirtualMachineInstances
+		err = kc.DeleteVMIs(k8sVM.ID)
+		if err != nil {
+			return makeError(err)
+		}
+
+		// 2. Ensure Running is set to true
+		if k8sVM.Running {
+			return nil
+		}
+
+		k8sVM.Running = true
+		err = resources.SsUpdater(kc.UpdateVM).
+			WithDbFunc(dbFunc(id, "vm")).
+			WithPublic(&k8sVM).
+			Exec()
+		if err != nil {
+			return makeError(err)
+		}
+	case model.ActionRestartIfRunning:
+		if !k8sVM.Running {
+			return nil
+		}
+
+		return c.DoAction(id, &model.VmActionParams{Action: model.ActionRestart})
 	}
 
 	return nil

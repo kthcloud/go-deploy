@@ -3,10 +3,15 @@ package k8s
 import (
 	"github.com/stretchr/testify/assert"
 	"go-deploy/test"
+	"go-deploy/test/acc"
 	"testing"
 )
 
 func TestCreateVM(t *testing.T) {
+	if !acc.VmTestsEnabled {
+		t.Skip("vm tests are disabled")
+	}
+
 	t.Parallel()
 
 	c, _ := withContext(t)
@@ -14,6 +19,10 @@ func TestCreateVM(t *testing.T) {
 }
 
 func TestUpdateVM(t *testing.T) {
+	if !acc.VmTestsEnabled {
+		t.Skip("vm tests are disabled")
+	}
+
 	t.Parallel()
 
 	c, _ := withContext(t)

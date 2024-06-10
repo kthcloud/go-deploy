@@ -91,7 +91,7 @@ func (hg *HarborGenerator) Repository() *models.RepositoryPublic {
 // Webhook returns a models.WebhookPublic that should be created
 func (hg *HarborGenerator) Webhook() *models.WebhookPublic {
 	if hg.deployment != nil {
-		webhookTarget := fmt.Sprintf("%s/v1/hooks/deployments/harbor", config.Config.ExternalUrl)
+		webhookTarget := fmt.Sprintf("%s/v2/hooks/deployments/harbor", config.Config.ExternalUrl)
 
 		we := models.WebhookPublic{
 			// "Name" does not matter and will be imported from Harbor if "Target" matches with existing webhook

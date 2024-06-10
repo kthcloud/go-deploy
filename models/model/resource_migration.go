@@ -8,9 +8,6 @@ import (
 const (
 	ResourceMigrationTypeUpdateOwner = "updateOwner"
 
-	ResourceMigrationResourceTypeVM         = "vm"
-	ResourceMigrationResourceTypeDeployment = "deployment"
-
 	ResourceMigrationStatusPending  = "pending"
 	ResourceMigrationStatusAccepted = "accepted"
 )

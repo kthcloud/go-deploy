@@ -1,7 +1,6 @@
 package body
 
 import (
-	"go-deploy/pkg/subsystems/host_api"
 	"time"
 )
 
@@ -11,36 +10,37 @@ type TimestampedSystemCapacities struct {
 }
 
 type SystemCapacities struct {
+	// Total
 	CpuCore CpuCoreCapacities `json:"cpuCore" bson:"cpuCore"`
 	RAM     RamCapacities     `json:"ram" bson:"ram"`
 	GPU     GpuCapacities     `json:"gpu" bson:"gpu"`
-	Hosts   []HostCapacities  `json:"hosts" bson:"hosts"`
+
+	// Per Host
+	Hosts []HostCapacities `json:"hosts" bson:"hosts"`
+
+	// Per Cluster
+	Clusters []ClusterCapacities `json:"clusters" bson:"clusters"`
 }
 
 type ClusterCapacities struct {
-	Name    string `json:"cluster" bson:"cluster"`
-	RAM     RamCapacities
-	CpuCore CpuCoreCapacities
-}
-
-type HostGpuCapacities struct {
-	Count int `json:"count" bson:"count"`
-}
-
-type HostRamCapacities struct {
-	Total int `json:"total" bson:"total"`
+	Name    string            `json:"cluster" bson:"cluster"`
+	CpuCore CpuCoreCapacities `json:"cpuCore" bson:"cpuCore"`
+	RAM     RamCapacities     `json:"ram" bson:"ram"`
+	GPU     GpuCapacities     `json:"gpu" bson:"gpu"`
 }
 
 type HostCapacities struct {
-	HostBase            `json:",inline" bson:",inline" tstype:",extends"`
-	host_api.Capacities `json:",inline" bson:",inline" tstype:",extends"`
-}
-
-type RamCapacities struct {
-	Total int `json:"total" bson:"total"`
+	HostBase `json:",inline" bson:",inline" tstype:",extends"`
+	CpuCore  CpuCoreCapacities `json:"cpuCore" bson:"cpuCore"`
+	RAM      RamCapacities     `json:"ram" bson:"ram"`
+	GPU      GpuCapacities     `json:"gpu" bson:"gpu"`
 }
 
 type CpuCoreCapacities struct {
+	Total int `json:"total" bson:"total"`
+}
+
+type RamCapacities struct {
 	Total int `json:"total" bson:"total"`
 }
 

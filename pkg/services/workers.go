@@ -4,8 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go-deploy/pkg/db/resources/host_repo"
+	"go-deploy/pkg/log"
 	wErrors "go-deploy/pkg/services/errors"
 	"go-deploy/utils"
+	"strings"
 	"time"
 )
 
@@ -60,6 +63,17 @@ func PeriodicWorker(ctx context.Context, name string, work func() error, interva
 			ReportUp(name)
 		case <-tick:
 			if err := work(); err != nil {
+				// If errors is HostsFailedErr, disable the hosts
+				var hostsFailedErr *wErrors.HostsFailedErr
+				if errors.As(err, &hostsFailedErr) {
+					deactivateDuration := 30 * time.Minute
+					log.Printf("Hosts [%s] failed. Deactivating them for %s", strings.Join(hostsFailedErr.Hosts, ", "), deactivateDuration.String())
+					deactivationErr := DeactivateHosts(hostsFailedErr.Hosts, time.Now().Add(deactivateDuration))
+					if deactivationErr != nil {
+						utils.PrettyPrintError(fmt.Errorf("failed to disable hosts: %w", deactivationErr))
+					}
+				}
+
 				// It's too verbose to print when no hosts or clusters are available, so we skip that
 				if !errors.Is(err, wErrors.NoClustersErr) && !errors.Is(err, wErrors.NoHostsErr) {
 					utils.PrettyPrintError(fmt.Errorf("%s failed (sleeping for extra %s): %w", name, errorSleep.String(), err))
@@ -73,4 +87,15 @@ func PeriodicWorker(ctx context.Context, name string, work func() error, interva
 			return
 		}
 	}
+}
+
+func DeactivateHosts(hosts []string, until time.Time) error {
+	for _, host := range hosts {
+		err := host_repo.New().DeactivateHost(host, until)
+		if err != nil {
+			return fmt.Errorf("failed to deactivate host %s: %w", host, err)
+		}
+	}
+
+	return nil
 }

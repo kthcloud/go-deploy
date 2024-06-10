@@ -60,11 +60,10 @@ type ReplicaStatus struct {
 }
 
 type Log struct {
-	DeploymentName string    `bson:"deploymentName"`
-	Source         string    `bson:"source"`
-	Prefix         string    `bson:"prefix"`
-	Line           string    `bson:"line"`
-	CreatedAt      time.Time `bson:"createdAt"`
+	Source    string    `bson:"source"`
+	Prefix    string    `bson:"prefix"`
+	Line      string    `bson:"line"`
+	CreatedAt time.Time `bson:"createdAt"`
 }
 
 type PodDeleted struct {
