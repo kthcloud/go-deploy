@@ -48,7 +48,7 @@ type DeploymentRead struct {
 }
 
 type DeploymentCreate struct {
-	Name string `json:"name" bson:"name" binding:"required,rfc1035,min=3,max=30"`
+	Name string `json:"name" bson:"name" binding:"required,rfc1035,min=3,max=30,deployment_name"`
 
 	CpuCores *float64 `json:"cpuCores,omitempty" bson:"cpuCores,omitempty" binding:"omitempty,min=0.1"`
 	RAM      *float64 `json:"ram,omitempty" bson:"ram,omitempty" binding:"omitempty,min=0.1"`
@@ -75,7 +75,7 @@ type DeploymentCreate struct {
 }
 
 type DeploymentUpdate struct {
-	Name *string `json:"name,omitempty" bson:"name,omitempty" binding:"omitempty,required,rfc1035,min=3,max=30"`
+	Name *string `json:"name,omitempty" bson:"name,omitempty" binding:"omitempty,required,rfc1035,min=3,max=30,deployment_name"`
 
 	CpuCores *float64 `json:"cpuCores,omitempty" bson:"cpuCores,omitempty" binding:"omitempty,min=0.1"`
 	RAM      *float64 `json:"ram,omitempty" bson:"ram,omitempty" binding:"omitempty,min=0.1"`
