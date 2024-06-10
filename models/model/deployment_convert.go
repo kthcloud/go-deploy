@@ -217,7 +217,11 @@ func (p *DeploymentCreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZon
 		p.Zone = fallbackZone
 	}
 
-	p.Visibility = dto.Visibility
+	if dto.Visibility == "" {
+		p.Visibility = VisibilityPublic
+	} else {
+		p.Visibility = dto.Visibility
+	}
 }
 
 // FromDTO converts body.DeploymentUpdate DTO to DeploymentUpdateParams.
