@@ -83,13 +83,13 @@ type ConfigType struct {
 	} `yaml:"metrics"`
 
 	Keycloak struct {
-		Url           string `yaml:"url"`
-		Realm         string `yaml:"realm"`
-		AdminGroup    string `yaml:"adminGroup"`
-		StorageClient struct {
+		Url        string `yaml:"url"`
+		Realm      string `yaml:"realm"`
+		AdminGroup string `yaml:"adminGroup"`
+		UserClient struct {
 			ClientID     string `yaml:"clientId"`
 			ClientSecret string `yaml:"clientSecret"`
-		} `yaml:"storageClient"`
+		} `yaml:"userClient"`
 	} `yaml:"keycloak"`
 
 	MongoDB struct {

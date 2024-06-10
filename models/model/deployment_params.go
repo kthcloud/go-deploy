@@ -10,13 +10,13 @@ type DeploymentCreateParams struct {
 
 	Image        string
 	InternalPort int
-	Private      bool
 	Envs         []DeploymentEnv
 	Volumes      []DeploymentVolume
 	InitCommands []string
 	Args         []string
 	PingPath     string
 	CustomDomain *string
+	Visibility   string
 
 	Zone string
 }
@@ -28,7 +28,6 @@ type DeploymentUpdateParams struct {
 	CpuCores *float64
 	RAM      *float64
 
-	Private      *bool
 	Envs         *[]DeploymentEnv
 	InternalPort *int
 	Volumes      *[]DeploymentVolume
@@ -38,6 +37,7 @@ type DeploymentUpdateParams struct {
 	Image        *string
 	PingPath     *string
 	Replicas     *int
+	Visibility   *string
 }
 
 type DeploymentUpdateOwnerParams struct {

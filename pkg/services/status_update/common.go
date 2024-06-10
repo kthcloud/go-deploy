@@ -22,7 +22,7 @@ func pingDeployment(deployment *model.Deployment) {
 	}
 
 	baseURL := deployment.GetURL(nil)
-	if mainApp.Private || mainApp.PingPath == "" || baseURL == nil {
+	if mainApp.Visibility != model.VisibilityPublic || mainApp.PingPath == "" || baseURL == nil {
 		go resetPing(*deployment)
 		return
 	}

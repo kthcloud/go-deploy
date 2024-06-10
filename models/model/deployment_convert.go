@@ -123,11 +123,11 @@ func (deployment *Deployment) ToDTO(smURL *string, externalPort *int, teams []st
 		Volumes:         volumes,
 		InitCommands:    app.InitCommands,
 		Args:            app.Args,
-		Private:         app.Private,
 		InternalPort:    app.InternalPort,
 		Image:           image,
 		HealthCheckPath: healthCheckPath,
 		CustomDomain:    customDomain,
+		Visibility:      app.Visibility,
 
 		Status:        status,
 		Error:         deploymentError,
@@ -161,7 +161,6 @@ func (p *DeploymentCreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZon
 		p.RAM = *dto.RAM
 	}
 
-	p.Private = dto.Private
 	p.Envs = make([]DeploymentEnv, 0)
 	for _, env := range dto.Envs {
 		if env.Name == "PORT" {
@@ -217,6 +216,12 @@ func (p *DeploymentCreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZon
 	} else {
 		p.Zone = fallbackZone
 	}
+
+	if dto.Visibility == "" {
+		p.Visibility = VisibilityPublic
+	} else {
+		p.Visibility = dto.Visibility
+	}
 }
 
 // FromDTO converts body.DeploymentUpdate DTO to DeploymentUpdateParams.
@@ -267,9 +272,9 @@ func (p *DeploymentUpdateParams) FromDTO(dto *body.DeploymentUpdate, deploymentT
 	p.Name = dto.Name
 	p.CpuCores = dto.CpuCores
 	p.RAM = dto.RAM
-	p.Private = dto.Private
 	p.InitCommands = dto.InitCommands
 	p.Args = dto.Args
 	p.PingPath = dto.HealthCheckPath
 	p.Replicas = dto.Replicas
+	p.Visibility = dto.Visibility
 }

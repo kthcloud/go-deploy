@@ -3498,6 +3498,7 @@ const docTemplateV2 = `{
                     "minLength": 3
                 },
                 "private": {
+                    "description": "Deprecated: Use Visibility instead.",
                     "type": "boolean"
                 },
                 "ram": {
@@ -3508,6 +3509,14 @@ const docTemplateV2 = `{
                     "type": "integer",
                     "maximum": 100,
                     "minimum": 0
+                },
+                "visibility": {
+                    "type": "string",
+                    "enum": [
+                        "public",
+                        "private",
+                        "auth"
+                    ]
                 },
                 "volumes": {
                     "type": "array",
@@ -3596,6 +3605,7 @@ const docTemplateV2 = `{
                     "type": "integer"
                 },
                 "private": {
+                    "description": "Deprecated: Use Visibility instead.",
                     "type": "boolean"
                 },
                 "repairedAt": {
@@ -3629,6 +3639,9 @@ const docTemplateV2 = `{
                     "type": "string"
                 },
                 "url": {
+                    "type": "string"
+                },
+                "visibility": {
                     "type": "string"
                 },
                 "volumes": {
@@ -3710,6 +3723,7 @@ const docTemplateV2 = `{
                     "minLength": 3
                 },
                 "private": {
+                    "description": "Deprecated: Use Visibility instead.",
                     "type": "boolean"
                 },
                 "ram": {
@@ -3720,6 +3734,14 @@ const docTemplateV2 = `{
                     "type": "integer",
                     "maximum": 100,
                     "minimum": 0
+                },
+                "visibility": {
+                    "type": "string",
+                    "enum": [
+                        "public",
+                        "private",
+                        "auth"
+                    ]
                 },
                 "volumes": {
                     "type": "array",
@@ -5228,14 +5250,9 @@ const docTemplateV2 = `{
                     "minimum": 1
                 },
                 "name": {
-                    "description": "Name is used to rename a VM.\nIf specified, only name will be updated.",
                     "type": "string",
                     "maxLength": 30,
                     "minLength": 3
-                },
-                "ownerId": {
-                    "description": "OwnerID is used to initiate transfer a VM to another user.\nIf specified, only the transfer will happen.\nIf specified but empty, the transfer will be canceled.",
-                    "type": "string"
                 },
                 "ports": {
                     "type": "array",

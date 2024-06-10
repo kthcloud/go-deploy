@@ -2538,6 +2538,7 @@ components:
           type: string
         private:
           type: boolean
+          description: "Deprecated: Use Visibility instead."
         ram:
           minimum: 0.1
           type: number
@@ -2545,6 +2546,12 @@ components:
           maximum: 100
           minimum: 0
           type: integer
+        visibility:
+          type: string
+          enum:
+          - public
+          - private
+          - auth
         volumes:
           maxItems: 100
           minItems: 0
@@ -2610,6 +2617,7 @@ components:
           type: integer
         private:
           type: boolean
+          description: "Deprecated: Use Visibility instead."
         repairedAt:
           type: string
         replicaStatus:
@@ -2631,6 +2639,8 @@ components:
         updatedAt:
           type: string
         url:
+          type: string
+        visibility:
           type: string
         volumes:
           type: array
@@ -2692,6 +2702,7 @@ components:
           type: string
         private:
           type: boolean
+          description: "Deprecated: Use Visibility instead."
         ram:
           minimum: 0.1
           type: number
@@ -2699,6 +2710,12 @@ components:
           maximum: 100
           minimum: 0
           type: integer
+        visibility:
+          type: string
+          enum:
+          - public
+          - private
+          - auth
         volumes:
           maxItems: 100
           minItems: 0
@@ -3827,15 +3844,6 @@ components:
           maxLength: 30
           minLength: 3
           type: string
-          description: |-
-            Name is used to rename a VM.
-            If specified, only name will be updated.
-        ownerId:
-          type: string
-          description: |-
-            OwnerID is used to initiate transfer a VM to another user.
-            If specified, only the transfer will happen.
-            If specified but empty, the transfer will be canceled.
         ports:
           maxItems: 10
           minItems: 0

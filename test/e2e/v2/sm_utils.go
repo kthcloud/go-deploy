@@ -17,8 +17,8 @@ func GetSM(t *testing.T, id string) body.SmRead {
 	return e2e.MustParse[body.SmRead](t, resp)
 }
 
-func ListSMs(t *testing.T, query string) []body.SmRead {
-	resp := e2e.DoGetRequest(t, SmsPath+query)
+func ListSMs(t *testing.T, query string, userID ...string) []body.SmRead {
+	resp := e2e.DoGetRequest(t, SmsPath+query, userID...)
 	return e2e.MustParse[[]body.SmRead](t, resp)
 }
 

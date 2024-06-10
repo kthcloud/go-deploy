@@ -38,8 +38,7 @@ func TestCreate(t *testing.T) {
 	t.Parallel()
 
 	requestBody := body.DeploymentCreate{
-		Name:    e2e.GenName(),
-		Private: false,
+		Name: e2e.GenName(),
 		Envs: []body.Env{
 			{
 				Name:  e2e.GenName(),
@@ -58,8 +57,7 @@ func TestCreateWithCustomPort(t *testing.T) {
 	customPort := 8081
 
 	requestBody := body.DeploymentCreate{
-		Name:    e2e.GenName(),
-		Private: false,
+		Name: e2e.GenName(),
 		Envs: []body.Env{
 			{
 				Name:  "PORT",
@@ -79,8 +77,7 @@ func TestCreateWithCustomImage(t *testing.T) {
 	customPort := 80
 
 	requestBody := body.DeploymentCreate{
-		Name:    e2e.GenName(),
-		Private: false,
+		Name: e2e.GenName(),
 		Envs: []body.Env{
 			{
 				Name:  "PORT",
@@ -100,7 +97,6 @@ func TestCreateWithCustomDomain(t *testing.T) {
 
 	requestBody := body.DeploymentCreate{
 		Name:         e2e.GenName(),
-		Private:      false,
 		CustomDomain: &customDomain,
 	}
 
@@ -226,7 +222,6 @@ func TestCreateWithCustomSpecs(t *testing.T) {
 
 	requestBody := body.DeploymentCreate{
 		Name:     e2e.GenName(),
-		Private:  false,
 		CpuCores: &cpuCores,
 		RAM:      &ram,
 	}
@@ -243,8 +238,8 @@ func TestUpdate(t *testing.T) {
 	envValue := uuid.NewString()
 
 	deploymentRead, _ := v2.WithDeployment(t, body.DeploymentCreate{
-		Name:    e2e.GenName(),
-		Private: false,
+		Name:       e2e.GenName(),
+		Visibility: model.VisibilityPublic,
 		Envs: []body.Env{
 			{
 				Name:  "e2e",
@@ -254,7 +249,7 @@ func TestUpdate(t *testing.T) {
 	})
 
 	// Update deployment
-	newPrivateValue := !deploymentRead.Private
+	newVisibility := model.VisibilityPrivate
 	deploymentUpdate := body.DeploymentUpdate{
 		Envs: &[]body.Env{
 			{
@@ -262,7 +257,7 @@ func TestUpdate(t *testing.T) {
 				Value: uuid.NewString(),
 			},
 		},
-		Private: &newPrivateValue,
+		Visibility: &newVisibility,
 		Volumes: &[]body.Volume{
 			{
 				Name:       "e2e-test",

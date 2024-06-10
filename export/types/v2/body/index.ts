@@ -40,11 +40,15 @@ export interface DeploymentRead {
   volumes: Volume[];
   initCommands: string[];
   args: string[];
-  private: boolean;
   internalPort: number /* int */;
   image?: string;
   healthCheckPath?: string;
   customDomain?: CustomDomainRead;
+  visibility: string;
+  /**
+   * Deprecated: Use Visibility instead.
+   */
+  private: boolean;
   status: string;
   error?: string;
   replicaStatus?: ReplicaStatus;
@@ -62,11 +66,15 @@ export interface DeploymentCreate {
   cpuCores?: number /* float64 */;
   ram?: number /* float64 */;
   replicas?: number /* int */;
-  private: boolean;
   envs: Env[];
   volumes: Volume[];
   initCommands: string[];
   args: string[];
+  visibility: string;
+  /**
+   * Deprecated: Use Visibility instead.
+   */
+  private: boolean;
   image?: string;
   healthCheckPath?: string;
   /**
@@ -85,11 +93,15 @@ export interface DeploymentUpdate {
   cpuCores?: number /* float64 */;
   ram?: number /* float64 */;
   replicas?: number /* int */;
-  private?: boolean;
   envs?: Env[];
   volumes?: Volume[];
   initCommands?: string[];
   args?: string[];
+  visibility?: string;
+  /**
+   * Deprecated: Use Visibility instead.
+   */
+  private?: boolean;
   image?: string;
   healthCheckPath?: string;
   /**
@@ -755,20 +767,10 @@ export interface VmCreate {
   zone?: string;
 }
 export interface VmUpdate {
+  name?: string;
   ports?: PortUpdate[];
   cpuCores?: number /* int */;
   ram?: number /* int */;
-  /**
-   * Name is used to rename a VM.
-   * If specified, only name will be updated.
-   */
-  name?: string;
-  /**
-   * OwnerID is used to initiate transfer a VM to another user.
-   * If specified, only the transfer will happen.
-   * If specified but empty, the transfer will be canceled.
-   */
-  ownerId?: string;
 }
 export interface VmUpdateOwner {
   newOwnerId: string;

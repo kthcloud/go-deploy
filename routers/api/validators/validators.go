@@ -330,6 +330,60 @@ func VolumeName(fl validator.FieldLevel) bool {
 	return match
 }
 
+// DeploymentName is a validator for deployment names.
+// It ensures that the name is valid according to some reserved internal names and suffixes
+func DeploymentName(fl validator.FieldLevel) bool {
+	name, ok := fl.Field().Interface().(string)
+	if !ok {
+		return false
+	}
+
+	illegalSuffixes := []string{"-auth-proxy", "-custom-domain"}
+	for _, suffix := range illegalSuffixes {
+		if strings.HasSuffix(name, suffix) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// VmName is a validator for VM names.
+// It ensures that the name is valid according to some reserved internal names and suffixes
+func VmName(fl validator.FieldLevel) bool {
+	name, ok := fl.Field().Interface().(string)
+	if !ok {
+		return false
+	}
+
+	illegalSuffixes := []string{}
+	for _, suffix := range illegalSuffixes {
+		if strings.HasSuffix(name, suffix) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// VmPortName is a validator for VM port names.
+// It ensures that the name is valid according to some reserved internal names and suffixes
+func VmPortName(fl validator.FieldLevel) bool {
+	name, ok := fl.Field().Interface().(string)
+	if !ok {
+		return false
+	}
+
+	illegalSuffixes := []string{"-custom-domain", "-proxy"}
+	for _, suffix := range illegalSuffixes {
+		if strings.HasSuffix(name, suffix) {
+			return false
+		}
+	}
+
+	return true
+}
+
 // goodURL is a helper function that checks if a URL is valid according to RFC 3986
 func goodURL(url string) bool {
 	rfc3986Characters := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~:/?#[]@!$&'()*+,;="

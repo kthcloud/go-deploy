@@ -7,7 +7,7 @@
   <img src="https://github.com/kthcloud/go-deploy/actions/workflows/build-and-push-image.yml/badge.svg"\>
 </div>
 
-go-deploy is an API that is used to create websites and virtual machines built on top of kthcloud using Kubernetes with [KubeVirt](https://kubevirt.io/).
+go-deploy is an API that is used to create container applications and virtual machines built on top of kthcloud using Kubernetes with [KubeVirt](https://kubevirt.io/).
 
 It is hosted at [https://api.cloud.cbh.kth.se/deploy/v2](https://api.cloud.cbh.kth.se/deploy/v2) using kthcloud authentication.
 

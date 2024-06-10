@@ -7,6 +7,8 @@ import (
 	configModels "go-deploy/models/config"
 	"go-deploy/models/model"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/db/resources/team_repo"
+	"go-deploy/pkg/db/resources/user_repo"
 	"go-deploy/pkg/subsystems"
 	"go-deploy/pkg/subsystems/k8s"
 	"go-deploy/pkg/subsystems/k8s/keys"
@@ -79,16 +81,6 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		Value: fmt.Sprintf("%d", mainApp.InternalPort),
 	})
 
-	limits := models.Limits{
-		CPU:    formatCpuString(mainApp.CpuCores),
-		Memory: fmt.Sprintf("%dMi", int(mainApp.RAM*1000)),
-	}
-
-	requests := models.Requests{
-		CPU:    formatCpuString(math.Min(config.Config.Deployment.Resources.Requests.CPU, mainApp.CpuCores)),
-		Memory: fmt.Sprintf("%dMi", int(math.Min(config.Config.Deployment.Resources.Requests.RAM, mainApp.RAM)*1000)),
-	}
-
 	k8sVolumes := make([]models.Volume, len(mainApp.Volumes))
 	for i, volume := range mainApp.Volumes {
 		pvcName := fmt.Sprintf("%s-%s", kg.deployment.Name, makeValidK8sName(volume.Name))
@@ -100,6 +92,8 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		}
 	}
 
+	res := make([]models.DeploymentPublic, 0)
+
 	dep := models.DeploymentPublic{
 		Name:             kg.deployment.Name,
 		Namespace:        kg.namespace,
@@ -108,8 +102,14 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		ImagePullSecrets: imagePullSecrets,
 		EnvVars:          k8sEnvs,
 		Resources: models.Resources{
-			Limits:   limits,
-			Requests: requests,
+			Limits: models.Limits{
+				CPU:    formatCpuString(mainApp.CpuCores),
+				Memory: fmt.Sprintf("%dMi", int(mainApp.RAM*1000)),
+			},
+			Requests: models.Requests{
+				CPU:    formatCpuString(math.Min(config.Config.Deployment.Resources.Requests.CPU, mainApp.CpuCores)),
+				Memory: fmt.Sprintf("%dMi", int(math.Min(config.Config.Deployment.Resources.Requests.RAM, mainApp.RAM)*1000)),
+			},
 		},
 		Command:        make([]string, 0),
 		Args:           mainApp.Args,
@@ -123,11 +123,138 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		dep.CreatedAt = d.CreatedAt
 	}
 
-	return []models.DeploymentPublic{dep}
+	res = append(res, dep)
+
+	if mainApp.Visibility == model.VisibilityAuth && mainApp.Replicas > 0 {
+
+		generateAuthProxy := func() (*models.DeploymentPublic, error) {
+			// Auth proxy
+
+			//// Find users that should be able to access the resource
+			teamIDs, err := team_repo.New().WithResourceID(kg.deployment.ID).ListIDs()
+			if err != nil {
+				return nil, err
+			}
+
+			memberIDs, err := team_repo.New().ListMemberIDs(teamIDs...)
+			if err != nil {
+				return nil, err
+			}
+
+			userEmailMap, err := user_repo.New().ListEmails(memberIDs...)
+			if err != nil {
+				return nil, err
+			}
+
+			// Ensure owner is included
+			if ownerEmail, err := user_repo.New().GetEmail(kg.deployment.OwnerID); err == nil {
+				userEmailMap[kg.deployment.OwnerID] = ownerEmail
+			}
+
+			command := "mkdir -p /mnt/config && echo \""
+			for _, email := range userEmailMap {
+				command += email + "\n"
+			}
+			command += "\" > /mnt/config/authenticated-emails-list"
+
+			var redirectURL string
+			if mainApp.CustomDomain != nil {
+				redirectURL = fmt.Sprintf("https://%s/oauth2/callback", mainApp.CustomDomain.Domain)
+			} else {
+				redirectURL = fmt.Sprintf("https://%s.%s/oauth2/callback", kg.deployment.Name, kg.zone.Domains.ParentDeployment)
+			}
+
+			oauthProxy := models.DeploymentPublic{
+				Name:             authProxyName(kg.deployment.Name),
+				Namespace:        kg.namespace,
+				Labels:           map[string]string{"owner-id": kg.deployment.OwnerID},
+				Image:            "quay.io/oauth2-proxy/oauth2-proxy:latest",
+				ImagePullSecrets: make([]string, 0),
+				EnvVars:          make([]models.EnvVar, 0),
+				Resources: models.Resources{
+					Limits: models.Limits{
+						CPU:    formatCpuString(config.Config.Deployment.Resources.Limits.CPU),
+						Memory: fmt.Sprintf("%dMi", int(config.Config.Deployment.Resources.Limits.RAM*1000)),
+					},
+					Requests: models.Requests{
+						CPU:    formatCpuString(config.Config.Deployment.Resources.Requests.CPU),
+						Memory: fmt.Sprintf("%dMi", int(config.Config.Deployment.Resources.Requests.RAM*1000)),
+					},
+				},
+				Command: make([]string, 0),
+				Args: []string{
+					"--http-address=0.0.0.0:4180",
+					"--reverse-proxy=true",
+					"--provider=oidc",
+					"--redirect-url=" + redirectURL,
+					"--oidc-issuer-url=" + config.Config.Keycloak.Url + "/realms/" + config.Config.Keycloak.Realm,
+					"--cookie-expire=168h",
+					"--cookie-refresh=1h",
+					"--pass-authorization-header=true",
+					"--scope=openid email",
+					"--upstream=" + fmt.Sprintf("http://%s:%d", kg.deployment.Name, mainApp.InternalPort),
+					"--client-id=" + config.Config.Keycloak.UserClient.ClientID,
+					"--client-secret=" + config.Config.Keycloak.UserClient.ClientSecret,
+					"--cookie-secret=qHKgjlAFQBZOnGcdH5jIKV0Auzx5r8jzZenxhJnlZJg=",
+					"--cookie-secure=true",
+					"--ssl-insecure-skip-verify=true",
+					"--insecure-oidc-allow-unverified-email=true",
+					"--skip-provider-button=true",
+					"--pass-authorization-header=true",
+					"--ssl-upstream-insecure-skip-verify=true",
+					"--code-challenge-method=S256",
+					"--authenticated-emails-file=/mnt/authenticated-emails-list",
+				},
+				InitCommands: make([]string, 0),
+				InitContainers: []models.InitContainer{{
+					Name:    "oauth-proxy-config-init",
+					Image:   "busybox",
+					Command: []string{"sh", "-c", command},
+					Args:    nil,
+				}},
+				Volumes: []models.Volume{
+					{
+						Name:      "oauth-proxy-config",
+						MountPath: "/mnt",
+						Init:      false,
+					},
+					{
+						Name:      "oauth-proxy-config",
+						MountPath: "/mnt/config",
+						Init:      true,
+					},
+				},
+			}
+
+			if op := kg.deployment.Subsystems.K8s.GetDeployment(authProxyName(kg.deployment.Name)); subsystems.Created(op) {
+				oauthProxy.CreatedAt = op.CreatedAt
+			}
+
+			return &oauthProxy, nil
+		}
+
+		authProxy, err := generateAuthProxy()
+		if err != nil {
+			utils.PrettyPrintError(fmt.Errorf("failed to generate auth proxy for deployment %s. details: %w", kg.deployment.Name, err))
+		} else {
+			res = append(res, *authProxy)
+		}
+	}
+
+	return res
 }
 
 func (kg *K8sGenerator) Services() []models.ServicePublic {
 	mainApp := kg.deployment.GetMainApp()
+
+	// If replicas == 0, it should not create a service
+	// If visibility == auth, it should create both a service for the deployment and the auth proxy
+
+	if mainApp.Replicas == 0 {
+		return make([]models.ServicePublic, 0)
+	}
+
+	res := make([]models.ServicePublic, 0)
 
 	se := models.ServicePublic{
 		Name:      kg.deployment.Name,
@@ -142,23 +269,49 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 		se.CreatedAt = k8sService.CreatedAt
 	}
 
-	return []models.ServicePublic{se}
+	res = append(res, se)
+
+	if mainApp.Visibility == model.VisibilityAuth {
+		authSe := models.ServicePublic{
+			Name:      authProxyName(kg.deployment.Name),
+			Namespace: kg.namespace,
+			Ports:     []models.Port{{Name: "http", Protocol: "tcp", Port: 80, TargetPort: 4180}},
+			Selector: map[string]string{
+				keys.LabelDeployName: authProxyName(kg.deployment.Name),
+			},
+		}
+
+		if k8sService := kg.deployment.Subsystems.K8s.GetService(authProxyName(kg.deployment.Name)); subsystems.Created(k8sService) {
+			authSe.CreatedAt = k8sService.CreatedAt
+		}
+
+		res = append(res, authSe)
+	}
+
+	return res
 }
 
 func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 	var res []models.IngressPublic
 
 	mainApp := kg.deployment.GetMainApp()
-	if mainApp.Private {
+	if mainApp.Visibility == model.VisibilityPrivate {
 		return res
 	}
 
-	// If replicas == 0, it should point to the fallback-disabled deployment
 	var serviceName string
 	var servicePort int
+
+	// If replicas == 0, it should point to the fallback-disabled deployment
+	// If visibility == auth, it should point to the auth proxy
+	// Otherwise, it should point to the deployment itself
+
 	if mainApp.Replicas == 0 {
 		serviceName = config.Config.Deployment.Fallback.Disabled.Name
 		servicePort = config.Config.Deployment.Port
+	} else if mainApp.Visibility == model.VisibilityAuth {
+		serviceName = authProxyName(kg.deployment.Name)
+		servicePort = 4180
 	} else {
 		serviceName = kg.deployment.Name
 		servicePort = mainApp.InternalPort
@@ -187,8 +340,8 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 		customIn := models.IngressPublic{
 			Name:         fmt.Sprintf(constants.WithCustomDomainSuffix(kg.deployment.Name)),
 			Namespace:    kg.namespace,
-			ServiceName:  kg.deployment.Name,
-			ServicePort:  mainApp.InternalPort,
+			ServiceName:  serviceName,
+			ServicePort:  servicePort,
 			IngressClass: config.Config.Deployment.IngressClass,
 			Hosts:        []string{mainApp.CustomDomain.Domain},
 			CustomCert: &models.CustomCert{
@@ -516,6 +669,11 @@ func deploymentRootPvcName(deployment *model.Deployment) string {
 // deploymentNetworkPolicyName returns the network policy name for a VM or Deployment
 func deploymentNetworkPolicyName(name, egressRuleName string) string {
 	return fmt.Sprintf("%s-%s", name, egressRuleName)
+}
+
+// authProxyName returns the name of the auth proxy for a deployment
+func authProxyName(name string) string {
+	return fmt.Sprintf("%s-auth-proxy", name)
 }
 
 // encodeDockerConfig encodes docker config to json to be able to use it as a secret

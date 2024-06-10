@@ -16,6 +16,13 @@ const (
 	LogSourceDeployment = "deployment"
 	// LogSourceBuild is a log source for a build in GitLab CI.
 	LogSourceBuild = "build"
+
+	// VisibilityPublic is a public app.
+	VisibilityPublic = "public"
+	// VisibilityPrivate is a private app.
+	VisibilityPrivate = "private"
+	// VisibilityAuth is an app that requires authentication.
+	VisibilityAuth = "auth"
 )
 
 var (
@@ -31,9 +38,12 @@ type App struct {
 
 	Image        string             `bson:"image"`
 	InternalPort int                `bson:"internalPort"`
-	Private      bool               `bson:"private"`
 	Envs         []DeploymentEnv    `bson:"envs"`
 	Volumes      []DeploymentVolume `bson:"volumes"`
+	Visibility   string             `bson:"visibility"`
+
+	// Deprecated: use Visibility instead.
+	Private bool `bson:"private"`
 
 	Args         []string `bson:"args"`
 	InitCommands []string `bson:"initCommands"`

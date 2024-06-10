@@ -296,7 +296,7 @@ func (c *Client) Update(id string, dtoUpdate *body.DeploymentUpdate) error {
 		return fmt.Errorf("failed to update deployment. details: %w", err)
 	}
 
-	d, err := c.Get(id)
+	d, err := c.Get(id, opts.GetOpts{Shared: true})
 	if err != nil {
 		return makeError(err)
 	}
