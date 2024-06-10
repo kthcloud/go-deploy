@@ -2,7 +2,10 @@ package migrator
 
 import (
 	"fmt"
+	"go-deploy/models/model"
+	"go-deploy/pkg/db/resources/deployment_repo"
 	"go-deploy/pkg/log"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // Migrate runs every migration specified in the getMigrations function.
@@ -32,5 +35,31 @@ func Migrate() error {
 //
 // add a date to the migration name to make it easier to identify.
 func getMigrations() map[string]func() error {
-	return map[string]func() error{}
+	return map[string]func() error{
+		"migratePrivateBooleanToVisibilityEnum_2024_06_10": migratePrivateBooleanToVisibilityEnum_2024_06_10,
+	}
+}
+
+func migratePrivateBooleanToVisibilityEnum_2024_06_10() error {
+	deployments, err := deployment_repo.New().List()
+	if err != nil {
+		return err
+	}
+
+	for _, deployment := range deployments {
+		mainApp := deployment.GetMainApp()
+
+		if mainApp.Private {
+			mainApp.Visibility = model.VisibilityPrivate
+		} else {
+			mainApp.Visibility = model.VisibilityPublic
+		}
+
+		err = deployment_repo.New().SetWithBsonByID(deployment.ID, bson.D{{"apps.main.visibility", mainApp.Visibility}})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

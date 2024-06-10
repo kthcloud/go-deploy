@@ -123,7 +123,6 @@ func (deployment *Deployment) ToDTO(smURL *string, externalPort *int, teams []st
 		Volumes:         volumes,
 		InitCommands:    app.InitCommands,
 		Args:            app.Args,
-		Private:         app.Private,
 		InternalPort:    app.InternalPort,
 		Image:           image,
 		HealthCheckPath: healthCheckPath,
@@ -161,7 +160,6 @@ func (p *DeploymentCreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZon
 		p.RAM = *dto.RAM
 	}
 
-	p.Private = dto.Private
 	p.Envs = make([]DeploymentEnv, 0)
 	for _, env := range dto.Envs {
 		if env.Name == "PORT" {
@@ -267,7 +265,6 @@ func (p *DeploymentUpdateParams) FromDTO(dto *body.DeploymentUpdate, deploymentT
 	p.Name = dto.Name
 	p.CpuCores = dto.CpuCores
 	p.RAM = dto.RAM
-	p.Private = dto.Private
 	p.InitCommands = dto.InitCommands
 	p.Args = dto.Args
 	p.PingPath = dto.HealthCheckPath

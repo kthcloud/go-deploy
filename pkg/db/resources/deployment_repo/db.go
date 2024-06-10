@@ -41,14 +41,17 @@ func (client *Client) Create(id, ownerID string, params *model.DeploymentCreateP
 
 		Image:        params.Image,
 		InternalPort: params.InternalPort,
-		Private:      params.Private,
 		Envs:         params.Envs,
 		Volumes:      params.Volumes,
-		InitCommands: params.InitCommands,
+		Visibility:   params.Visibility,
+
 		Args:         params.Args,
+		InitCommands: params.InitCommands,
 		CustomDomain: customDomain,
-		PingResult:   0,
-		PingPath:     params.PingPath,
+
+		ReplicaStatus: nil,
+		PingPath:      params.PingPath,
+		PingResult:    0,
 	}
 
 	deployment := model.Deployment{
@@ -124,7 +127,6 @@ func (client *Client) UpdateWithParams(id string, params *model.DeploymentUpdate
 	db.AddIfNotNil(&setUpdate, "ownerId", params.OwnerID)
 	db.AddIfNotNil(&setUpdate, "apps.main.internalPort", params.InternalPort)
 	db.AddIfNotNil(&setUpdate, "apps.main.envs", params.Envs)
-	db.AddIfNotNil(&setUpdate, "apps.main.private", params.Private)
 	db.AddIfNotNil(&setUpdate, "apps.main.volumes", params.Volumes)
 	db.AddIfNotNil(&setUpdate, "apps.main.initCommands", params.InitCommands)
 	db.AddIfNotNil(&setUpdate, "apps.main.args", params.Args)

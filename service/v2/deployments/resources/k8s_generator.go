@@ -149,7 +149,7 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 	var res []models.IngressPublic
 
 	mainApp := kg.deployment.GetMainApp()
-	if mainApp.Private {
+	if mainApp.Visibility == model.VisibilityPrivate {
 		return res
 	}
 
