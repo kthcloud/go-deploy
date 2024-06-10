@@ -127,6 +127,7 @@ func (deployment *Deployment) ToDTO(smURL *string, externalPort *int, teams []st
 		Image:           image,
 		HealthCheckPath: healthCheckPath,
 		CustomDomain:    customDomain,
+		Visibility:      app.Visibility,
 
 		Status:        status,
 		Error:         deploymentError,
@@ -215,6 +216,8 @@ func (p *DeploymentCreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZon
 	} else {
 		p.Zone = fallbackZone
 	}
+
+	p.Visibility = dto.Visibility
 }
 
 // FromDTO converts body.DeploymentUpdate DTO to DeploymentUpdateParams.
@@ -269,4 +272,5 @@ func (p *DeploymentUpdateParams) FromDTO(dto *body.DeploymentUpdate, deploymentT
 	p.Args = dto.Args
 	p.PingPath = dto.HealthCheckPath
 	p.Replicas = dto.Replicas
+	p.Visibility = dto.Visibility
 }

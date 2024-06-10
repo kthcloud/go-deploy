@@ -354,7 +354,7 @@ export nfs_base_path="/nfs"
 export nfs_cluster_ip="10.96.200.2"
 
 # IAM configuration
-export keycloak_deploy_storage_secret=
+export keycloak_deploy_user_secret=
 
 # Ports configuration
 export ingress_http_port=$ingress_http_port
@@ -781,19 +781,19 @@ function install_keycloak() {
       -X POST http://keycloak.$domain:$keycloak_port/admin/realms/master/clients -d "$payload"
   fi
 
-  # Check if go-deploy-storage client exists, if not create it
+  # Check if go-deploy-user client exists, if not create it
   local check_exists=$(curl -s \
     -H "Content-Type: application/json" \
     -H \"Accept: application/json\" \
     -H "Authorization: Bearer $token" \
-    -X GET http://keycloak.$domain:$keycloak_port/admin/realms/master/clients?clientId=go-deploy-storage)
-  local exists=$(echo $check_exists | jq -r '.[] | select(.clientId=="go-deploy-storage") | .clientId')
-  if [ "$exists" != "go-deploy-storage" ]; then
+    -X GET http://keycloak.$domain:$keycloak_port/admin/realms/master/clients?clientId=go-deploy-user)
+  local exists=$(echo $check_exists | jq -r '.[] | select(.clientId=="go-deploy-user") | .clientId')
+  if [ "$exists" != "go-deploy-user" ]; then
     local payload='{
       "protocol":"openid-connect",
-      "clientId":"go-deploy-storage",
-      "name":"go-deploy-storage",
-      "description":"go-deploy-storage",
+      "clientId":"go-deploy-user",
+      "name":"go-deploy-user",
+      "description":"go-deploy-user",
       "publicClient":false,
       "authorizationServicesEnabled":false,
       "serviceAccountsEnabled":true,
@@ -815,11 +815,11 @@ function install_keycloak() {
   fi
 
   # Fetch created client's secret
-  keycloak_deploy_storage_secret=$(curl -s \
+  keycloak_deploy_user_secret=$(curl -s \
     -H "Content-Type: application/json" \
     -H "Accept: application/json" \
     -H "Authorization: Bearer $token" \
-    -X GET http://keycloak.$domain:$keycloak_port/admin/realms/master/clients?clientId=go-deploy-storage \
+    -X GET http://keycloak.$domain:$keycloak_port/admin/realms/master/clients?clientId=go-deploy-user \
     | jq -r '.[0].secret')
 
   # Create necessary groups
@@ -890,11 +890,11 @@ function install_keycloak() {
     -X GET http://keycloak.$domain:$keycloak_port/admin/realms/master/clients?clientId=go-deploy \
     | jq -r '.[0].id')
 
-  local deploy_storage_client_id=$(curl -s \
+  local deploy_user_client_id=$(curl -s \
     -H "Content-Type: application/json" \
     -H "Accept: application/json" \
     -H "Authorization: Bearer $token" \
-    -X GET http://keycloak.$domain:$keycloak_port/admin/realms/master/clients?clientId=go-deploy-storage \
+    -X GET http://keycloak.$domain:$keycloak_port/admin/realms/master/clients?clientId=go-deploy-user \
     | jq -r '.[0].id')
 
   # Create groups mapping using: http://keycloak.deploy.localhost:31125/admin/realms/master/clients/b829f2ad-eb13-45f4-bf03-320fdd14ffe9/protocol-mappers/models
@@ -934,19 +934,19 @@ function install_keycloak() {
     -H "Content-Type: application/json" \
     -H "Accept: application/json" \
     -H "Authorization: Bearer $token" \
-    -X GET http://keycloak.$domain:$keycloak_port/admin/realms/master/clients/$deploy_storage_client_id \
+    -X GET http://keycloak.$domain:$keycloak_port/admin/realms/master/clients/$deploy_user_client_id \
     | jq -r '.protocolMappers[] | select(.name=="groups") | .name' | grep -c groups)
   if [ $res -eq 0 ]; then
     curl -s \
       -H "Content-Type: application/json" \
       -H "Accept: application/json" \
       -H "Authorization: Bearer $token" \
-      -X POST http://keycloak.$domain:$keycloak_port/admin/realms/master/clients/$deploy_storage_client_id/protocol-mappers/models -d "$groups_mapping"
+      -X POST http://keycloak.$domain:$keycloak_port/admin/realms/master/clients/$deploy_user_client_id/protocol-mappers/models -d "$groups_mapping"
   fi
   
-  # Write keycloak_deploy_storage_secret to cluster-config.rc
+  # Write keycloak_deploy_user_secret to cluster-config.rc
   # Overwrite if the row already exists
-  sed -i "/export keycloak_deploy_storage_secret=/c\export keycloak_deploy_storage_secret=$keycloak_deploy_storage_secret" ./cluster-config.rc
+  sed -i "/export keycloak_deploy_user_secret=/c\export keycloak_deploy_user_secret=$keycloak_deploy_user_secret" ./cluster-config.rc
 
 
   # Finally, we need to add a DNS record that points the keycloak name to the node's IP
@@ -1116,7 +1116,7 @@ function print_result() {
   echo -e " - ${BLUE_BOLD}Harbor${RESET}: http://harbor.$domain:$harbor_port (admin:Harbor12345)"
   echo -e " - ${TEAL_BOLD}Keycloak${RESET}: http://keycloak.$domain:$keycloak_port (admin:admin)"
   echo -e "      Users: admin:admin, base:base, power:power"
-  echo -e "      Clients: go-deploy:(no secret), go-deploy-storage:$keycloak_deploy_storage_secret"
+  echo -e "      Clients: go-deploy:(no secret), go-deploy-user:$keycloak_deploy_user_secret"
   echo -e " - ${GREEN_BOLD}MongoDB${RESET}: mongodb://admin:admin@localhost:$mongo_db_port"
   echo -e " - ${RED_BOLD}Redis${RESET}: redis://localhost:$redis_port"
   echo -e " - ${ORANGE_BOLD}NFS${RESET}: nfs://localhost:$nfs_port"
@@ -1231,8 +1231,8 @@ if [[ "$REPLY" =~ ^[Yy]$ ]]; then
   export keycloak_url="http://keycloak.deploy.localhost:$keycloak_port"
   export keycloak_realm="master"
   export keycloak_admin_group="admin"
-  export keycloak_storage_client_id="go-deploy-storage"
-  export keycloak_storage_client_secret=$keycloak_deploy_storage_secret
+  export keycloak_user_client_id="go-deploy-user"
+  export keycloak_user_client_secret=$keycloak_deploy_user_secret
 
   # MongoDB
   export mongodb_url="mongodb://admin:admin@localhost:$mongo_db_port"

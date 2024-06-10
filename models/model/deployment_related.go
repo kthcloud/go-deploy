@@ -18,18 +18,16 @@ const (
 	LogSourceBuild = "build"
 
 	// VisibilityPublic is a public app.
-	VisibilityPublic = Visibility("public")
+	VisibilityPublic = "public"
 	// VisibilityPrivate is a private app.
-	VisibilityPrivate = Visibility("private")
+	VisibilityPrivate = "private"
 	// VisibilityAuth is an app that requires authentication.
-	VisibilityAuth = Visibility("auth")
+	VisibilityAuth = "auth"
 )
 
 var (
 	EmptyReplicaStatus = &ReplicaStatus{}
 )
-
-type Visibility string
 
 type App struct {
 	Name string `bson:"name"`
@@ -42,7 +40,7 @@ type App struct {
 	InternalPort int                `bson:"internalPort"`
 	Envs         []DeploymentEnv    `bson:"envs"`
 	Volumes      []DeploymentVolume `bson:"volumes"`
-	Visibility   Visibility         `bson:"visibility"`
+	Visibility   string             `bson:"visibility"`
 
 	// Deprecated: use Visibility instead.
 	Private bool `bson:"private"`

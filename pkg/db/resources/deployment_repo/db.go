@@ -136,6 +136,7 @@ func (client *Client) UpdateWithParams(id string, params *model.DeploymentUpdate
 	db.AddIfNotNil(&setUpdate, "apps.main.cpuCores", params.CpuCores)
 	db.AddIfNotNil(&setUpdate, "apps.main.ram", params.RAM)
 	db.AddIfNotNil(&setUpdate, "apps.main.replicas", params.Replicas)
+	db.AddIfNotNil(&setUpdate, "apps.main.visibility", params.Visibility)
 
 	err = client.UpdateWithBsonByID(id,
 		bson.D{

@@ -16,7 +16,7 @@ type DeploymentCreateParams struct {
 	Args         []string
 	PingPath     string
 	CustomDomain *string
-	Visibility   Visibility
+	Visibility   string
 
 	Zone string
 }
@@ -37,6 +37,7 @@ type DeploymentUpdateParams struct {
 	Image        *string
 	PingPath     *string
 	Replicas     *int
+	Visibility   *string
 }
 
 type DeploymentUpdateOwnerParams struct {

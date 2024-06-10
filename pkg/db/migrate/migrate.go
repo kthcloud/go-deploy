@@ -49,6 +49,10 @@ func migratePrivateBooleanToVisibilityEnum_2024_06_10() error {
 	for _, deployment := range deployments {
 		mainApp := deployment.GetMainApp()
 
+		if mainApp.Visibility != "" {
+			continue
+		}
+
 		if mainApp.Private {
 			mainApp.Visibility = model.VisibilityPrivate
 		} else {
