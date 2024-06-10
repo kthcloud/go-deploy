@@ -7,6 +7,7 @@ import (
 	configModels "go-deploy/models/config"
 	"go-deploy/models/model"
 	"go-deploy/pkg/config"
+	"go-deploy/pkg/db/resources/team_repo"
 	"go-deploy/pkg/db/resources/user_repo"
 	"go-deploy/pkg/subsystems"
 	"go-deploy/pkg/subsystems/k8s"
@@ -125,26 +126,36 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 	res = append(res, dep)
 
 	if mainApp.Visibility == model.VisibilityAuth && mainApp.Replicas > 0 {
-		// Oauth2-proxy
-		user, err := user_repo.New().GetByID(kg.deployment.OwnerID)
-		if err != nil {
-			utils.PrettyPrintError(fmt.Errorf("failed to get user by id when creating oauth proxy deployment public. details: %w", err))
-			return nil
-		}
 
-		if user != nil {
-			volumes := []models.Volume{
-				{
-					Name:      "oauth-proxy-config",
-					MountPath: "/mnt",
-					Init:      false,
-				},
-				{
-					Name:      "oauth-proxy-config",
-					MountPath: "/mnt/config",
-					Init:      true,
-				},
+		generateAuthProxy := func() (*models.DeploymentPublic, error) {
+			// Auth proxy
+
+			//// Find users that should be able to access the resource
+			teamIDs, err := team_repo.New().WithResourceID(kg.deployment.ID).ListIDs()
+			if err != nil {
+				return nil, err
 			}
+
+			memberIDs, err := team_repo.New().ListMemberIDs(teamIDs...)
+			if err != nil {
+				return nil, err
+			}
+
+			userEmailMap, err := user_repo.New().ListEmails(memberIDs...)
+			if err != nil {
+				return nil, err
+			}
+
+			// Ensure owner is included
+			if ownerEmail, err := user_repo.New().GetEmail(kg.deployment.OwnerID); err == nil {
+				userEmailMap[kg.deployment.OwnerID] = ownerEmail
+			}
+
+			command := "mkdir -p /mnt/config && echo \""
+			for _, email := range userEmailMap {
+				command += email + "\n"
+			}
+			command += "\" > /mnt/config/authenticated-emails-list"
 
 			var redirectURL string
 			if mainApp.CustomDomain != nil {
@@ -198,17 +209,35 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 				InitContainers: []models.InitContainer{{
 					Name:    "oauth-proxy-config-init",
 					Image:   "busybox",
-					Command: []string{"sh", "-c", fmt.Sprintf("mkdir -p /mnt/config && echo %s > /mnt/config/authenticated-emails-list", user.Email)},
+					Command: []string{"sh", "-c", command},
 					Args:    nil,
 				}},
-				Volumes: volumes,
+				Volumes: []models.Volume{
+					{
+						Name:      "oauth-proxy-config",
+						MountPath: "/mnt",
+						Init:      false,
+					},
+					{
+						Name:      "oauth-proxy-config",
+						MountPath: "/mnt/config",
+						Init:      true,
+					},
+				},
 			}
 
 			if op := kg.deployment.Subsystems.K8s.GetDeployment(authProxyName(kg.deployment.Name)); subsystems.Created(op) {
 				oauthProxy.CreatedAt = op.CreatedAt
 			}
 
-			res = append(res, oauthProxy)
+			return &oauthProxy, nil
+		}
+
+		authProxy, err := generateAuthProxy()
+		if err != nil {
+			utils.PrettyPrintError(fmt.Errorf("failed to generate auth proxy for deployment %s. details: %w", kg.deployment.Name, err))
+		} else {
+			res = append(res, *authProxy)
 		}
 	}
 

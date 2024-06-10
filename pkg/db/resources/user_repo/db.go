@@ -68,6 +68,31 @@ func (client *Client) Synchronize(id string, params *model.UserSynchronizeParams
 	return client.GetByID(id)
 }
 
+// GetEmail returns the email for the given user ID.
+func (client *Client) GetEmail(id string) (string, error) {
+	user, err := client.GetWithFilterAndProjection(bson.D{{"id", id}}, bson.D{{"email", 1}})
+	if err != nil {
+		return "", err
+	}
+
+	return user.Email, nil
+}
+
+// ListEmails returns a list of emails for the given user IDs.
+func (client *Client) ListEmails(ids ...string) (map[string]string, error) {
+	users, err := client.ListWithFilterAndProjection(bson.D{{"id", bson.D{{"$in", ids}}}}, bson.D{{"id", 1}, {"email", 1}})
+	if err != nil {
+		return nil, err
+	}
+
+	emails := make(map[string]string)
+	for _, user := range users {
+		emails[user.ID] = user.Email
+	}
+
+	return emails, nil
+}
+
 // UpdateWithParams updates the user with the given params.
 func (client *Client) UpdateWithParams(id string, params *model.UserUpdateParams) error {
 	updateData := bson.D{}

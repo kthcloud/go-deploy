@@ -41,6 +41,29 @@ func (client *Client) Create(id, ownerID string, params *model.TeamCreateParams)
 	return fetched, nil
 }
 
+func (client *Client) ListMemberIDs(ids ...string) ([]string, error) {
+	teams, err := client.ListWithFilterAndProjection(bson.D{{"id", bson.D{{"$in", ids}}}}, bson.D{{"memberMap", 1}})
+	if err != nil {
+		return nil, err
+	}
+
+	memberIDs := make(map[string]bool, 0)
+	for _, team := range teams {
+		for memberID := range team.MemberMap {
+			if _, ok := memberIDs[memberID]; !ok {
+				memberIDs[memberID] = true
+			}
+		}
+	}
+
+	result := make([]string, 0, len(memberIDs))
+	for memberID := range memberIDs {
+		result = append(result, memberID)
+	}
+
+	return result, nil
+}
+
 func (client *Client) UpdateWithParams(id string, params *model.TeamUpdateParams) error {
 	updateData := bson.D{
 		{"updatedAt", time.Now()},
