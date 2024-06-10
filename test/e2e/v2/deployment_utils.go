@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"github.com/stretchr/testify/assert"
 	"go-deploy/dto/v2/body"
+	"go-deploy/models/model"
 	"go-deploy/pkg/app/status_codes"
 	"go-deploy/test"
 	"go-deploy/test/e2e"
@@ -56,7 +57,7 @@ func UpdateDeployment(t *testing.T, id string, requestBody body.DeploymentUpdate
 		WaitForJobFinished(t, *deploymentUpdated.JobID, nil)
 	}
 	WaitForDeploymentRunning(t, id, func(read *body.DeploymentRead) bool {
-		if read.Private {
+		if read.Visibility == model.VisibilityPrivate {
 			return true
 		}
 
@@ -108,8 +109,8 @@ func UpdateDeployment(t *testing.T, id string, requestBody body.DeploymentUpdate
 		test.EqualOrEmpty(t, *requestBody.Volumes, updated.Volumes)
 	}
 
-	if requestBody.Private != nil {
-		assert.Equal(t, *requestBody.Private, updated.Private)
+	if requestBody.Visibility != nil {
+		assert.Equal(t, *requestBody.Visibility, updated.Visibility)
 	}
 
 	if requestBody.HealthCheckPath != nil {
@@ -142,7 +143,12 @@ func WithDeployment(t *testing.T, requestBody body.DeploymentCreate, user ...str
 	deploymentRead := GetDeployment(t, deploymentCreated.ID)
 	assert.NotEmpty(t, deploymentRead.ID)
 	assert.Equal(t, requestBody.Name, deploymentRead.Name)
-	assert.Equal(t, requestBody.Private, deploymentRead.Private)
+
+	// Default is public
+	if requestBody.Visibility == "" {
+		requestBody.Visibility = model.VisibilityPublic
+	}
+	assert.Equal(t, requestBody.Visibility, deploymentRead.Visibility)
 
 	if requestBody.Zone == nil {
 		// Some zone is set by default
