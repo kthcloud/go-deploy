@@ -13,7 +13,7 @@ func HostRoutes() *HostRoutingGroup {
 	return &HostRoutingGroup{}
 }
 
-func (group *HostRoutingGroup) PrivateRoutes() []Route {
+func (group *HostRoutingGroup) PublicRoutes() []Route {
 	return []Route{
 		{Method: "GET", Pattern: HostsPath, HandlerFunc: v2.ListHosts},
 	}
