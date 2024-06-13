@@ -67,7 +67,7 @@ func PeriodicWorker(ctx context.Context, name string, work func() error, interva
 				var hostsFailedErr *wErrors.HostsFailedErr
 				if errors.As(err, &hostsFailedErr) {
 					deactivateDuration := 30 * time.Minute
-					log.Printf("Hosts [%s] failed. Deactivating them for %s", strings.Join(hostsFailedErr.Hosts, ", "), deactivateDuration.String())
+					log.Printf("Hosts [%s] failed when running %s. Deactivating them for %s", strings.Join(hostsFailedErr.Hosts, ", "), name, deactivateDuration.String())
 					deactivationErr := DeactivateHosts(hostsFailedErr.Hosts, time.Now().Add(deactivateDuration))
 					if deactivationErr != nil {
 						utils.PrettyPrintError(fmt.Errorf("failed to disable hosts: %w", deactivationErr))

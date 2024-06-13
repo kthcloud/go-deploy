@@ -51,6 +51,7 @@ func GetHostStatuses() ([]body.HostStatus, error) {
 		hostStatus := body.HostStatus{
 			CPU: body.CpuStatus{
 				Load: hostApiStatus.CPU.Load,
+				Temp: hostApiStatus.CPU.Temp,
 			},
 			RAM: body.RamStatus{
 				Load: hostApiStatus.RAM.Load,
