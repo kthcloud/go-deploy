@@ -50,7 +50,7 @@ func SetupEnvironment(appMode string) error {
 	log.Printf("go-deploy %s (Mode: %s)", version.AppVersion, appMode)
 
 	if appMode == mode.Test {
-		log.Printf("%sRUNNING IN TEST MODE. NO AUTHENTICATION WILL BE REQUIRED%s", log.Bold, log.Reset)
+		log.Printf("%sRUNNING IN TEST MODE. BACKDOOR TEST USERS ARE ADDED%s", log.Bold, log.Reset)
 	}
 
 	// Fetch the roles from the config

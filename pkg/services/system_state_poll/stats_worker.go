@@ -22,7 +22,6 @@ func GetClusterStats() ([]body.ClusterStats, error) {
 		}
 
 		clients[zone.Name] = *zone.K8s.Client
-		break
 	}
 
 	outputs := make([]*body.ClusterStats, len(clients))
