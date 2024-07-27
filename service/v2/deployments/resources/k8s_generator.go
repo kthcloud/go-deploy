@@ -372,7 +372,7 @@ func (kg *K8sGenerator) PVs() []models.PvPublic {
 	for _, v := range volumes {
 		res = append(res, models.PvPublic{
 			Name:      deploymentPvName(kg.deployment, v.Name),
-			Capacity:  fmt.Sprintf("%.1fGi", config.Config.Deployment.Resources.Limits.Storage),
+			Capacity:  fmt.Sprintf("%dGi", config.Config.Deployment.Resources.Limits.Storage),
 			NfsServer: kg.zone.Storage.NfsServer,
 			NfsPath:   path.Join(kg.zone.Storage.Paths.ParentDeployment, kg.deployment.OwnerID, "user", v.ServerPath),
 			Released:  false,
@@ -382,7 +382,7 @@ func (kg *K8sGenerator) PVs() []models.PvPublic {
 	// Add volume to root that can be used to create storage paths
 	res = append(res, models.PvPublic{
 		Name:      deploymentRootPvName(kg.deployment),
-		Capacity:  fmt.Sprintf("%.1fGi", config.Config.Deployment.Resources.Limits.Storage),
+		Capacity:  fmt.Sprintf("%dGi", config.Config.Deployment.Resources.Limits.Storage),
 		NfsServer: kg.zone.Storage.NfsServer,
 		NfsPath:   path.Join(kg.zone.Storage.Paths.ParentDeployment, kg.deployment.OwnerID, "user"),
 		Released:  false,
@@ -412,7 +412,7 @@ func (kg *K8sGenerator) PVCs() []models.PvcPublic {
 		res = append(res, models.PvcPublic{
 			Name:      deploymentPvcName(kg.deployment, volume.Name),
 			Namespace: kg.namespace,
-			Capacity:  fmt.Sprintf("%.1fGi", config.Config.Deployment.Resources.Limits.Storage),
+			Capacity:  fmt.Sprintf("%dGi", config.Config.Deployment.Resources.Limits.Storage),
 			PvName:    deploymentPvName(kg.deployment, volume.Name),
 		})
 	}
@@ -421,7 +421,7 @@ func (kg *K8sGenerator) PVCs() []models.PvcPublic {
 	res = append(res, models.PvcPublic{
 		Name:      deploymentRootPvcName(kg.deployment),
 		Namespace: kg.namespace,
-		Capacity:  fmt.Sprintf("%.1fGi", config.Config.Deployment.Resources.Limits.Storage),
+		Capacity:  fmt.Sprintf("%dGi", config.Config.Deployment.Resources.Limits.Storage),
 		PvName:    deploymentRootPvName(kg.deployment),
 	})
 

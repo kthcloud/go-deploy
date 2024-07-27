@@ -84,6 +84,13 @@ func (c *Client) Update(id string, dtoNotificationUpdate *body.NotificationUpdat
 		}
 	}
 
+	if dtoNotificationUpdate.Toasted && notification.ToastedAt.IsZero() {
+		err = nmc.MarkToastedByID(id)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return c.RefreshNotification(id, nmc)
 }
 

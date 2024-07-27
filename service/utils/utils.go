@@ -3,6 +3,7 @@ package utils
 import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"go-deploy/pkg/log"
 	"go-deploy/pkg/subsystems"
 	"reflect"
 	"time"
@@ -115,6 +116,8 @@ func UpdateIfDiff[T subsystems.SsResource](dbResource T, fetchFunc func() (T, er
 
 		if timeEqual && restEqual {
 			return nil
+		} else {
+			log.Debugln("Resources are not equal, updating")
 		}
 	}
 
@@ -131,6 +134,8 @@ func UpdateIfDiff[T subsystems.SsResource](dbResource T, fetchFunc func() (T, er
 
 		if subsystems.NotNil(liveResource) && timeEqual && restEqual {
 			return nil
+		} else {
+			log.Debugln("Resources are not equal after update, recreating")
 		}
 	}
 

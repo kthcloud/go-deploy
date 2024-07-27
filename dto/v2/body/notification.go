@@ -9,9 +9,11 @@ type NotificationRead struct {
 	Content     map[string]interface{} `json:"content"`
 	CreatedAt   time.Time              `json:"createdAt"`
 	ReadAt      *time.Time             `json:"readAt,omitempty"`
+	ToastedAt   *time.Time             `json:"toastedAt,omitempty"`
 	CompletedAt *time.Time             `json:"completedAt,omitempty"`
 }
 
 type NotificationUpdate struct {
-	Read bool `json:"read"`
+	Read    bool `json:"read"`
+	Toasted bool `json:"toasted"`
 }

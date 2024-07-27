@@ -24,4 +24,9 @@ type HostRegisterParams struct {
 
 	// Token is the discovery token validated against the config
 	Token string `json:"token" binding:"required"`
+
+	// Enabled is the flag to enable or disable the node
+	Enabled bool `json:"enabled"`
+	// Schedulable is the flag to enable or disable scheduling on the node
+	Schedulable bool `json:"schedulable"`
 }

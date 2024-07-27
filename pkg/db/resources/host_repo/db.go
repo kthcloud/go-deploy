@@ -32,9 +32,14 @@ func (client *Client) Register(host *model.Host) error {
 	update := bson.D{
 		{"displayName", host.DisplayName},
 		{"zone", host.Zone},
+
 		{"ip", host.IP},
 		{"port", host.Port},
+
 		{"lastSeenAt", time.Now()},
+
+		{"enabled", host.Enabled},
+		{"schedulable", host.Schedulable},
 	}
 
 	err = client.SetWithBsonByName(host.Name, update)
@@ -43,6 +48,10 @@ func (client *Client) Register(host *model.Host) error {
 	}
 
 	return nil
+}
+
+func (client *Client) MarkSchedulable(name string, schedulable bool) error {
+	return client.SetWithBsonByName(name, bson.D{{"schedulable", schedulable}})
 }
 
 func (client *Client) DeactivateHost(name string, until ...time.Time) error {
