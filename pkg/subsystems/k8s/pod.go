@@ -38,7 +38,7 @@ func (client *Client) ListPods() ([]models.PodPublic, error) {
 
 	var res []models.PodPublic
 	for _, pod := range pods.Items {
-		res = append(res, models.CreatePodPublicFromRead(pod))
+		res = append(res, *models.CreatePodPublicFromRead(pod))
 	}
 
 	return res, nil

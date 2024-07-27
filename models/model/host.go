@@ -15,6 +15,10 @@ type Host struct {
 	Port int    `json:"port" bson:"port"`
 
 	Enabled bool `json:"enabled" bson:"enabled"`
+	// Schedulable is used to determine if a host is available for scheduling.
+	// If a host is not schedulable, it will not be used for scheduling and if it has any GPUs, they won't be synchronized.
+	// It is merely a synchronized state with the Kubernetes cluster to respect the host's state, such as when cordoning a node.
+	Schedulable bool `json:"schedulable" bson:"schedulable"`
 
 	DeactivatedUntil *time.Time `json:"deactivatedUntil,omitempty" bson:"deactivatedUntil,omitempty"`
 	LastSeenAt       time.Time  `json:"lastSeenAt" bson:"lastSeenAt"`
@@ -41,7 +45,9 @@ func NewHostByParams(params *body.HostRegisterParams) *Host {
 		Zone:        params.Zone,
 		IP:          params.IP,
 		Port:        params.Port,
-		Enabled:     true,
+
+		Enabled:     params.Enabled,
+		Schedulable: params.Schedulable,
 
 		// These are set to the current time to simplify database queries
 		LastSeenAt:   time.Now(),

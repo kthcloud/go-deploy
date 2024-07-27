@@ -14,6 +14,7 @@ import (
 	"go-deploy/service/generators"
 	"go-deploy/utils"
 	v1 "k8s.io/api/core/v1"
+	"math"
 	"path"
 	"slices"
 	"strings"
@@ -68,12 +69,12 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 	}
 
 	defaultLimits := models.Limits{
-		CPU:    fmt.Sprintf("%.1f", config.Config.Deployment.Resources.Limits.CPU),
+		CPU:    formatCpuString(config.Config.Deployment.Resources.Limits.CPU),
 		Memory: fmt.Sprintf("%dMi", int(config.Config.Deployment.Resources.Limits.RAM*1000)),
 	}
 
 	defaultRequests := models.Requests{
-		CPU:    fmt.Sprintf("%.1f", config.Config.Deployment.Resources.Requests.CPU),
+		CPU:    formatCpuString(config.Config.Deployment.Resources.Requests.CPU),
 		Memory: fmt.Sprintf("%dMi", int(config.Config.Deployment.Resources.Requests.RAM*1000)),
 	}
 
@@ -263,7 +264,7 @@ func (kg *K8sGenerator) PVs() []models.PvPublic {
 	for _, v := range allVolumes {
 		res = append(res, models.PvPublic{
 			Name:      smPvName(kg.sm.OwnerID, v.Name),
-			Capacity:  fmt.Sprintf("%.1fGi", config.Config.Deployment.Resources.Limits.Storage),
+			Capacity:  fmt.Sprintf("%dGi", config.Config.Deployment.Resources.Limits.Storage),
 			NfsServer: kg.zone.Storage.NfsServer,
 			NfsPath:   path.Join(kg.zone.Storage.Paths.ParentDeployment, v.ServerPath),
 			Released:  false,
@@ -292,7 +293,7 @@ func (kg *K8sGenerator) PVCs() []models.PvcPublic {
 		res = append(res, models.PvcPublic{
 			Name:      smPvcName(kg.sm.OwnerID, volume.Name),
 			Namespace: kg.namespace,
-			Capacity:  fmt.Sprintf("%.1fGi", config.Config.Deployment.Resources.Limits.Storage),
+			Capacity:  fmt.Sprintf("%dGi", config.Config.Deployment.Resources.Limits.Storage),
 			PvName:    smPvName(kg.sm.OwnerID, volume.Name),
 		})
 	}
@@ -454,4 +455,19 @@ func getExternalFQDN(name string, zone *configModels.Zone) string {
 	fqdn = strings.Split(fqdn, ":")[0]
 
 	return fmt.Sprintf("%s.%s", name, fqdn)
+}
+
+// formatCpuString formats the CPU string.
+// It ensures the same is returned by K8s after creation.
+func formatCpuString(cpus float64) string {
+	// Round to one decimal, e.g. 0.12 -> 0.1, 0.16 -> 0.2
+	oneDec := math.Round(cpus*10) / 10
+
+	// If whole number, return as int, e.g. 1.0 -> 1
+	if oneDec == float64(int(oneDec)) {
+		return fmt.Sprintf("%d", int(oneDec))
+	}
+
+	// Otherwise, return as milli CPU, e.g. 0.1 -> 100m
+	return fmt.Sprintf("%dm", int(oneDec*1000))
 }

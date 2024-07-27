@@ -3043,6 +3043,8 @@ components:
           type: string
         readAt:
           type: string
+        toastedAt:
+          type: string
         type:
           type: string
         userId:
@@ -3051,6 +3053,8 @@ components:
       type: object
       properties:
         read:
+          type: boolean
+        toasted:
           type: boolean
     body.PortCreate:
       required:

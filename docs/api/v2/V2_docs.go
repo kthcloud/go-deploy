@@ -4201,6 +4201,9 @@ const docTemplateV2 = `{
                 "readAt": {
                     "type": "string"
                 },
+                "toastedAt": {
+                    "type": "string"
+                },
                 "type": {
                     "type": "string"
                 },
@@ -4213,6 +4216,9 @@ const docTemplateV2 = `{
             "type": "object",
             "properties": {
                 "read": {
+                    "type": "boolean"
+                },
+                "toasted": {
                     "type": "boolean"
                 }
             }

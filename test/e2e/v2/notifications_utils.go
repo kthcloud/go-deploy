@@ -30,5 +30,9 @@ func UpdateNotification(t *testing.T, id string, update body.NotificationUpdate,
 		assert.NotNil(t, updatedNotification.ReadAt)
 	}
 
+	if update.Toasted {
+		assert.NotNil(t, updatedNotification.ToastedAt)
+	}
+
 	return updatedNotification
 }

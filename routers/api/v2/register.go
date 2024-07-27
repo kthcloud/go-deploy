@@ -30,8 +30,15 @@ func Register(c *gin.Context) {
 	if err := context.GinContext.ShouldBindBodyWith(&requestQueryJoin, binding.JSON); err == nil {
 		err = service.V2().System().RegisterNode(&requestQueryJoin)
 		if err != nil {
-			if errors.Is(err, sErrors.BadDiscoveryTokenErr) {
+			switch {
+			case errors.Is(err, sErrors.BadDiscoveryTokenErr):
 				context.UserError("Invalid token")
+				return
+			case errors.Is(err, sErrors.ZoneNotFoundErr):
+				context.NotFound("Zone not found")
+				return
+			case errors.Is(err, sErrors.HostNotFoundErr):
+				context.NotFound("Host not found")
 				return
 			}
 

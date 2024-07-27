@@ -18,8 +18,33 @@ func (c *Client) RegisterNode(params *body.HostRegisterParams) error {
 		params.DisplayName = params.Name
 	}
 
+	// We don't have any mechanism to enable/disable nodes right now
+	params.Enabled = true
+
+	// Check if node is schedulable
+	zone := config.Config.GetZone(params.Zone)
+	if zone == nil {
+		return sErrors.ZoneNotFoundErr
+	}
+
+	k8sClient, err := c.V2.Deployments().K8s().Client(zone)
+	if err != nil {
+		return err
+	}
+
+	k8sNode, err := k8sClient.ReadNode(params.Name)
+	if err != nil {
+		return err
+	}
+
+	if k8sNode == nil {
+		return sErrors.HostNotFoundErr
+	}
+
+	params.Schedulable = k8sNode.Schedulable
+
 	// Register node
-	err := host_repo.New().Register(model.NewHostByParams(params))
+	err = host_repo.New().Register(model.NewHostByParams(params))
 	if err != nil {
 		return err
 	}

@@ -175,15 +175,17 @@ func listLatestGPUs() (*body.SystemGpuInfo, error) {
 					Zone:        zone.Name,
 				},
 				GPUs: []body.GpuInfo{{
-					Name:     "Mock GPU 1",
-					Vendor:   "NVIDIA",
-					VendorID: "10de",
-					DeviceID: "1eb0",
+					Name:        "Mock GPU 1",
+					Vendor:      "NVIDIA",
+					VendorID:    "10de",
+					DeviceID:    "1eb0",
+					Passthrough: true,
 				}, {
-					Name:     "Mock GPU 2",
-					Vendor:   "NVIDIA",
-					VendorID: "10de",
-					DeviceID: "2230",
+					Name:        "Mock GPU 2",
+					Vendor:      "NVIDIA",
+					VendorID:    "10de",
+					DeviceID:    "2230",
+					Passthrough: true,
 				}},
 			})
 
@@ -194,10 +196,11 @@ func listLatestGPUs() (*body.SystemGpuInfo, error) {
 					Zone:        zone.Name,
 				},
 				GPUs: []body.GpuInfo{{
-					Name:     "Mock GPU 1",
-					Vendor:   "NVIDIA",
-					VendorID: "10de",
-					DeviceID: "1eb0",
+					Name:        "Mock GPU 1",
+					Vendor:      "NVIDIA",
+					VendorID:    "10de",
+					DeviceID:    "1eb0",
+					Passthrough: true,
 				}},
 			})
 		}

@@ -304,6 +304,14 @@ export interface HostRegisterParams {
    * Token is the discovery token validated against the config
    */
   token: string;
+  /**
+   * Enabled is the flag to enable or disable the node
+   */
+  enabled: boolean;
+  /**
+   * Schedulable is the flag to enable or disable scheduling on the node
+   */
+  schedulable: boolean;
 }
 
 //////////
@@ -334,10 +342,12 @@ export interface NotificationRead {
   content: { [key: string]: any};
   createdAt: string;
   readAt?: string;
+  toastedAt?: string;
   completedAt?: string;
 }
 export interface NotificationUpdate {
   read: boolean;
+  toasted: boolean;
 }
 
 //////////
