@@ -20,6 +20,7 @@ type Notification struct {
 
 	CreatedAt   time.Time `bson:"createdAt"`
 	ReadAt      time.Time `bson:"readAt,omitempty"`
+	ToastedAt   time.Time `bson:"toastedAt,omitempty"`
 	CompletedAt time.Time `bson:"completedAt,omitempty"`
 	DeletedAt   time.Time `bson:"deletedAt,omitempty"`
 }
@@ -36,6 +37,11 @@ func (notification *Notification) ToDTO() body.NotificationRead {
 		readAt = &notification.ReadAt
 	}
 
+	var toastedAt *time.Time
+	if !notification.ToastedAt.IsZero() {
+		toastedAt = &notification.ToastedAt
+	}
+
 	var completedAt *time.Time
 	if !notification.CompletedAt.IsZero() {
 		completedAt = &notification.CompletedAt
@@ -48,6 +54,7 @@ func (notification *Notification) ToDTO() body.NotificationRead {
 		Content:     notification.Content,
 		CreatedAt:   notification.CreatedAt,
 		ReadAt:      readAt,
+		ToastedAt:   toastedAt,
 		CompletedAt: completedAt,
 	}
 }

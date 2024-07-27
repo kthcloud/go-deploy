@@ -36,6 +36,10 @@ func (client *Client) MarkReadByID(id string) error {
 	return client.SetWithBsonByID(id, bson.D{{"readAt", time.Now()}})
 }
 
+func (client *Client) MarkToastedByID(id string) error {
+	return client.SetWithBsonByID(id, bson.D{{"toastedAt", time.Now()}})
+}
+
 func (client *Client) MarkReadAndCompleted() error {
 	return client.SetWithBSON(bson.D{{"readAt", time.Now()}, {"completedAt", time.Now()}})
 }
