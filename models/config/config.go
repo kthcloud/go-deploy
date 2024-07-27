@@ -162,8 +162,8 @@ type Deployment struct {
 			CPU float64 `yaml:"cpu"`
 			// RAM in GB (0.5 for 500Mi)
 			RAM float64 `yaml:"memory"`
-			// Storage in GB (0.5 for 500Mi)
-			Storage float64 `yaml:"storage"`
+			// Storage in GB (1 for 1Gi, no decimal)
+			Storage int `yaml:"storage"`
 		} `yaml:"limits"`
 		Requests struct {
 			// CPU in cores (0.5 for 500m)
