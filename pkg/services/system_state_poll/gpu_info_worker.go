@@ -36,6 +36,12 @@ func GetHostGpuInfo() ([]body.HostGpuInfo, error) {
 
 		var gpuInfo []body.GpuInfo
 		for _, gpu := range hostApiGpus {
+			// Right now go-deploy only supports GPUs that are passthrough.
+			// In the future it could be extended to support non-passthrough GPUs to, for example, allow GPUs in deployments
+			if !gpu.Passthrough {
+				continue
+			}
+
 			gpuInfo = append(gpuInfo, body.GpuInfo{
 				Name:        gpu.Name,
 				Slot:        gpu.Slot,
