@@ -15,7 +15,7 @@ func Migrate() error {
 
 	if len(migrations) > 0 {
 		for name, migration := range migrations {
-			log.Printf("- %s (%d/%d)\n", name, 1, len(migrations))
+			log.Printf("- %s (%d/%d)", name, 1, len(migrations))
 			if err := migration(); err != nil {
 				return fmt.Errorf("migration %s failed. details: %w", name, err)
 			}

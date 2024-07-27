@@ -7,8 +7,8 @@ type PodPublic struct {
 	Namespace string `json:"namespace"`
 }
 
-func CreatePodPublicFromRead(pod v1.Pod) PodPublic {
-	return PodPublic{
+func CreatePodPublicFromRead(pod v1.Pod) *PodPublic {
+	return &PodPublic{
 		Name:      pod.Name,
 		Namespace: pod.Namespace,
 	}

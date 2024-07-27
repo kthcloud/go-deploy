@@ -109,6 +109,10 @@ var (
 	// This could be caused by stale data in the database.
 	ZoneNotFoundErr = fmt.Errorf("zone not found")
 
+	// HostNotFoundErr is returned when the host is not found.
+	// This could be caused by stale data in the database or inconsistent state of the system/cluster.
+	HostNotFoundErr = fmt.Errorf("host not found")
+
 	// SnapshotNotFoundErr is returned when the snapshot is not found.
 	SnapshotNotFoundErr = fmt.Errorf("snapshot not found")
 

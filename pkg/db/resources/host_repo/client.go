@@ -46,3 +46,12 @@ func (client *Client) Activated() *Client {
 
 	return client
 }
+
+// Schedulable adds a filter to only return hosts that are schedulable
+func (client *Client) Schedulable() *Client {
+	filter := bson.D{{"schedulable", true}}
+
+	client.AddExtraFilter(filter)
+
+	return client
+}

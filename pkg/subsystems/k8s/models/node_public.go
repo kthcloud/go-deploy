@@ -10,10 +10,11 @@ type NodePublic struct {
 	RAM struct {
 		Total int `json:"total"`
 	} `json:"ram"`
+	Schedulable bool `json:"schedulable"`
 }
 
-func CreateNodePublicFromGet(node *corev1.Node) NodePublic {
-	return NodePublic{
+func CreateNodePublicFromGet(node *corev1.Node) *NodePublic {
+	return &NodePublic{
 		Name: node.Name,
 		CPU: struct {
 			Total int `json:"total"`
@@ -25,5 +26,6 @@ func CreateNodePublicFromGet(node *corev1.Node) NodePublic {
 		}{
 			Total: int(float64(node.Status.Capacity.Memory().Value() / 1024 / 1024 / 1024)),
 		},
+		Schedulable: !node.Spec.Unschedulable,
 	}
 }

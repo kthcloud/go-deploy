@@ -14,7 +14,9 @@ import (
 )
 
 func GetHostGpuInfo() ([]body.HostGpuInfo, error) {
-	allHosts, err := host_repo.New().Activated().List()
+	// By using Schedulable, we ensure that only hosts that can accepts VMs are returned.
+	// Otherwise, VMs would get stuck in the pending state.
+	allHosts, err := host_repo.New().Activated().Schedulable().List()
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch hosts. details: %s", err)
 	}
@@ -37,7 +39,7 @@ func GetHostGpuInfo() ([]body.HostGpuInfo, error) {
 		var gpuInfo []body.GpuInfo
 		for _, gpu := range hostApiGpus {
 			// Right now go-deploy only supports GPUs that are passthrough.
-			// In the future it could be extended to support non-passthrough GPUs to, for example, allow GPUs in deployments
+			// In the future it could be extended to support non-passthrough GPUs to, for example, allow GPUs in deployments.
 			if !gpu.Passthrough {
 				continue
 			}
