@@ -2,9 +2,9 @@ package v2
 
 import (
 	"github.com/gin-gonic/gin"
-	"go-deploy/dto/v2/query"
-	"go-deploy/pkg/sys"
-	"go-deploy/service"
+	"github.com/kthcloud/go-deploy/dto/v2/query"
+	"github.com/kthcloud/go-deploy/pkg/sys"
+	"github.com/kthcloud/go-deploy/service"
 	"net/http"
 )
 

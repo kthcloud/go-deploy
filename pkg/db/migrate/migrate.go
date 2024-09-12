@@ -2,9 +2,9 @@ package migrator
 
 import (
 	"fmt"
-	"go-deploy/models/model"
-	"go-deploy/pkg/db/resources/deployment_repo"
-	"go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/deployment_repo"
+	"github.com/kthcloud/go-deploy/pkg/log"
 	"go.mongodb.org/mongo-driver/bson"
 )
 

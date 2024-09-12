@@ -2,9 +2,9 @@ package k8s
 
 import (
 	"fmt"
-	"go-deploy/pkg/subsystems/k8s/keys"
-	"go-deploy/pkg/subsystems/k8s/models"
-	"go-deploy/utils"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/keys"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
+	"github.com/kthcloud/go-deploy/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/batch/v1"

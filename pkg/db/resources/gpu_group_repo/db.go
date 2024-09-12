@@ -3,9 +3,9 @@ package gpu_group_repo
 import (
 	"errors"
 	"fmt"
-	"go-deploy/models/model"
-	"go-deploy/pkg/db"
-	"go-deploy/utils"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db"
+	"github.com/kthcloud/go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
 )
 

@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/redis/go-redis/v9"
-	"go-deploy/pkg/db"
-	"go-deploy/utils"
+	"github.com/kthcloud/go-deploy/pkg/db"
+	"github.com/kthcloud/go-deploy/utils"
 	"regexp"
 	"time"
 )

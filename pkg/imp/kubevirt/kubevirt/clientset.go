@@ -4,8 +4,8 @@ package kubevirt
 
 import (
 	"fmt"
-	kubevirtv1 "go-deploy/pkg/imp/kubevirt/kubevirt/typed/core/v1"
-	snapshotv1alpha1 "go-deploy/pkg/imp/kubevirt/kubevirt/typed/snapshot/v1alpha1"
+	kubevirtv1 "github.com/kthcloud/go-deploy/pkg/imp/kubevirt/kubevirt/typed/core/v1"
+	snapshotv1alpha1 "github.com/kthcloud/go-deploy/pkg/imp/kubevirt/kubevirt/typed/snapshot/v1alpha1"
 	"net/http"
 
 	discovery "k8s.io/client-go/discovery"

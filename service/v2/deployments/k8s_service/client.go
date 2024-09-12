@@ -1,16 +1,16 @@
 package k8s_service
 
 import (
-	configModels "go-deploy/models/config"
-	"go-deploy/models/model"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/subsystems/k8s"
-	"go-deploy/service/core"
-	sErrors "go-deploy/service/errors"
-	"go-deploy/service/generators"
-	"go-deploy/service/v2/deployments/client"
-	"go-deploy/service/v2/deployments/opts"
-	"go-deploy/service/v2/deployments/resources"
+	configModels "github.com/kthcloud/go-deploy/models/config"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s"
+	"github.com/kthcloud/go-deploy/service/core"
+	sErrors "github.com/kthcloud/go-deploy/service/errors"
+	"github.com/kthcloud/go-deploy/service/generators"
+	"github.com/kthcloud/go-deploy/service/v2/deployments/client"
+	"github.com/kthcloud/go-deploy/service/v2/deployments/opts"
+	"github.com/kthcloud/go-deploy/service/v2/deployments/resources"
 )
 
 func OptsAll(deploymentID string, overwriteOps ...opts.ExtraOpts) *opts.Opts {

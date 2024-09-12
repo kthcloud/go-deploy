@@ -3,8 +3,8 @@ package db
 import (
 	"context"
 	"fmt"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"

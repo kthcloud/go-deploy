@@ -1,12 +1,12 @@
 package notifications
 
 import (
-	"go-deploy/dto/v2/body"
-	"go-deploy/models/model"
-	"go-deploy/pkg/db/resources/notification_repo"
-	sErrors "go-deploy/service/errors"
-	"go-deploy/service/utils"
-	"go-deploy/service/v2/notifications/opts"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/notification_repo"
+	sErrors "github.com/kthcloud/go-deploy/service/errors"
+	"github.com/kthcloud/go-deploy/service/utils"
+	"github.com/kthcloud/go-deploy/service/v2/notifications/opts"
 )
 
 // Get retrieves a notification by ID.

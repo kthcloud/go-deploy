@@ -1,16 +1,16 @@
 package k8s_service
 
 import (
-	configModels "go-deploy/models/config"
-	"go-deploy/models/model"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/subsystems/k8s"
-	"go-deploy/service/core"
-	sErrors "go-deploy/service/errors"
-	"go-deploy/service/generators"
-	"go-deploy/service/v2/sms/client"
-	"go-deploy/service/v2/sms/opts"
-	"go-deploy/service/v2/sms/resources"
+	configModels "github.com/kthcloud/go-deploy/models/config"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s"
+	"github.com/kthcloud/go-deploy/service/core"
+	sErrors "github.com/kthcloud/go-deploy/service/errors"
+	"github.com/kthcloud/go-deploy/service/generators"
+	"github.com/kthcloud/go-deploy/service/v2/sms/client"
+	"github.com/kthcloud/go-deploy/service/v2/sms/opts"
+	"github.com/kthcloud/go-deploy/service/v2/sms/resources"
 )
 
 // OptsAll returns the options required to get all the service tools, ie. SM, client, and generator.

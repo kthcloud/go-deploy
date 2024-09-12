@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
-	"go-deploy/dto/v2/body"
-	"go-deploy/pkg/sys"
-	"go-deploy/service"
-	sErrors "go-deploy/service/errors"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/pkg/sys"
+	"github.com/kthcloud/go-deploy/service"
+	sErrors "github.com/kthcloud/go-deploy/service/errors"
 )
 
 // Register

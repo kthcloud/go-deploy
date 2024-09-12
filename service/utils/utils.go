@@ -3,8 +3,8 @@ package utils
 import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"go-deploy/pkg/log"
-	"go-deploy/pkg/subsystems"
+	"github.com/kthcloud/go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/pkg/subsystems"
 	"reflect"
 	"time"
 )

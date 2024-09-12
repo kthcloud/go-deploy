@@ -2,8 +2,8 @@ package validators
 
 import (
 	"github.com/go-playground/validator/v10"
-	bodyV2 "go-deploy/dto/v2/body"
-	"go-deploy/pkg/config"
+	bodyV2 "github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/pkg/config"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/idna"
 	"regexp"

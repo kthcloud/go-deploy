@@ -2,7 +2,7 @@ package host_api
 
 import (
 	"fmt"
-	"go-deploy/utils/requestutils"
+	"github.com/kthcloud/go-deploy/utils/requestutils"
 )
 
 func (c *Client) GetStatus() (*Status, error) {

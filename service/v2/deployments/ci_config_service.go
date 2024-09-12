@@ -2,12 +2,12 @@ package deployments
 
 import (
 	"fmt"
-	"go-deploy/dto/v2/body"
-	"go-deploy/models/model"
-	"go-deploy/pkg/config"
-	"go-deploy/service/errors"
-	"go-deploy/service/v2/deployments/opts"
-	"go-deploy/utils/subsystemutils"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/service/errors"
+	"github.com/kthcloud/go-deploy/service/v2/deployments/opts"
+	"github.com/kthcloud/go-deploy/utils/subsystemutils"
 	"gopkg.in/yaml.v3"
 	"strings"
 )

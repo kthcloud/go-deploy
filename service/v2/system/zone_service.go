@@ -1,10 +1,10 @@
 package system
 
 import (
-	configModels "go-deploy/models/config"
-	"go-deploy/pkg/config"
-	"go-deploy/service/utils"
-	"go-deploy/service/v2/system/opts"
+	configModels "github.com/kthcloud/go-deploy/models/config"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/service/utils"
+	"github.com/kthcloud/go-deploy/service/v2/system/opts"
 )
 
 // GetZone gets a zone by name and type

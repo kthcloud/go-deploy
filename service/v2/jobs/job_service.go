@@ -1,12 +1,12 @@
 package jobs
 
 import (
-	"go-deploy/dto/v2/body"
-	"go-deploy/models/model"
-	"go-deploy/pkg/db/resources/job_repo"
-	sErrors "go-deploy/service/errors"
-	"go-deploy/service/utils"
-	"go-deploy/service/v2/jobs/opts"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/job_repo"
+	sErrors "github.com/kthcloud/go-deploy/service/errors"
+	"github.com/kthcloud/go-deploy/service/utils"
+	"github.com/kthcloud/go-deploy/service/v2/jobs/opts"
 )
 
 // Get retrieves a job by ID.

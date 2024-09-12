@@ -3,14 +3,14 @@ package status_update
 import (
 	"context"
 	"fmt"
-	configModels "go-deploy/models/config"
-	"go-deploy/models/model"
-	"go-deploy/models/version"
-	"go-deploy/pkg/app/status_codes"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/db/resources/vm_repo"
-	"go-deploy/pkg/log"
-	"go-deploy/service/v2/vms/k8s_service"
+	configModels "github.com/kthcloud/go-deploy/models/config"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/models/version"
+	"github.com/kthcloud/go-deploy/pkg/app/status_codes"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/vm_repo"
+	"github.com/kthcloud/go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/service/v2/vms/k8s_service"
 	"go.mongodb.org/mongo-driver/bson"
 )
 

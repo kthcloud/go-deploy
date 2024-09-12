@@ -2,7 +2,7 @@ package db
 
 import (
 	"github.com/redis/go-redis/v9"
-	"go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/pkg/log"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 

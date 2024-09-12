@@ -3,7 +3,7 @@ package vm_port_repo
 import (
 	"context"
 	"errors"
-	"go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/models/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"

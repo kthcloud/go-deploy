@@ -1,8 +1,8 @@
 package core
 
 import (
-	"go-deploy/models/model"
-	"go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/config"
 )
 
 // AuthInfo is used to pass auth info to services

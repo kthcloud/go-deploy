@@ -1,10 +1,10 @@
 package vm_repo
 
 import (
-	"go-deploy/models/model"
-	"go-deploy/pkg/db"
-	"go-deploy/pkg/db/resources/base_clients"
-	"go-deploy/service/utils"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/base_clients"
+	"github.com/kthcloud/go-deploy/service/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"time"

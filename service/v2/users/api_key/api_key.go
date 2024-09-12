@@ -1,11 +1,11 @@
 package api_key
 
 import (
-	"go-deploy/dto/v2/body"
-	"go-deploy/models/model"
-	"go-deploy/pkg/db/resources/user_repo"
-	sErrors "go-deploy/service/errors"
-	"go-deploy/utils"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/user_repo"
+	sErrors "github.com/kthcloud/go-deploy/service/errors"
+	"github.com/kthcloud/go-deploy/utils"
 	"time"
 )
 

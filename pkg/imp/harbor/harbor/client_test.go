@@ -8,10 +8,10 @@ import (
 
 	"github.com/go-openapi/runtime"
 	"github.com/stretchr/testify/assert"
-	"go-deploy/pkg/imp/harbor/harbor"
-	"go-deploy/pkg/imp/harbor/harbor/test"
-	v2client "go-deploy/pkg/imp/harbor/sdk/v2.0/client"
-	"go-deploy/pkg/imp/harbor/sdk/v2.0/client/health"
+	"github.com/kthcloud/go-deploy/pkg/imp/harbor/harbor"
+	"github.com/kthcloud/go-deploy/pkg/imp/harbor/harbor/test"
+	v2client "github.com/kthcloud/go-deploy/pkg/imp/harbor/sdk/v2.0/client"
+	"github.com/kthcloud/go-deploy/pkg/imp/harbor/sdk/v2.0/client/health"
 )
 
 var (

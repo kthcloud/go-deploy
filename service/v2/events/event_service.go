@@ -1,8 +1,8 @@
 package events
 
 import (
-	"go-deploy/models/model"
-	"go-deploy/pkg/db/resources/event_repo"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/event_repo"
 )
 
 // Create creates a new event.

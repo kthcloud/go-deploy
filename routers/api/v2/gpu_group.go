@@ -2,13 +2,13 @@ package v2
 
 import (
 	"github.com/gin-gonic/gin"
-	"go-deploy/dto/v2/body"
-	"go-deploy/dto/v2/query"
-	"go-deploy/dto/v2/uri"
-	"go-deploy/pkg/sys"
-	"go-deploy/service"
-	"go-deploy/service/v2/utils"
-	"go-deploy/service/v2/vms/opts"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/dto/v2/query"
+	"github.com/kthcloud/go-deploy/dto/v2/uri"
+	"github.com/kthcloud/go-deploy/pkg/sys"
+	"github.com/kthcloud/go-deploy/service"
+	"github.com/kthcloud/go-deploy/service/v2/utils"
+	"github.com/kthcloud/go-deploy/service/v2/vms/opts"
 )
 
 // GetGpuGroup

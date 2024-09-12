@@ -2,10 +2,10 @@ package jobs
 
 import (
 	"github.com/stretchr/testify/assert"
-	"go-deploy/dto/v2/body"
-	"go-deploy/models/model"
-	"go-deploy/test/e2e"
-	"go-deploy/test/e2e/v2"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/test/e2e"
+	"github.com/kthcloud/go-deploy/test/e2e/v2"
 	"os"
 	"testing"
 )

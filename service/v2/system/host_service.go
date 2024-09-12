@@ -1,8 +1,8 @@
 package system
 
 import (
-	"go-deploy/models/model"
-	"go-deploy/pkg/db/resources/host_repo"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/host_repo"
 )
 
 // ListHosts gets a list of hosts

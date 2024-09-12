@@ -2,9 +2,9 @@ package status_update
 
 import (
 	"fmt"
-	"go-deploy/models/model"
-	"go-deploy/pkg/db/resources/deployment_repo"
-	"go-deploy/utils"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/deployment_repo"
+	"github.com/kthcloud/go-deploy/utils"
 	"net/http"
 	"strings"
 )

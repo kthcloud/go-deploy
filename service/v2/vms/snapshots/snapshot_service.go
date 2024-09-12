@@ -2,10 +2,10 @@ package snapshots
 
 import (
 	"fmt"
-	"go-deploy/models/model"
-	"go-deploy/pkg/log"
-	"go-deploy/service/utils"
-	"go-deploy/service/v2/vms/opts"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/service/utils"
+	"github.com/kthcloud/go-deploy/service/v2/vms/opts"
 	"sort"
 )
 

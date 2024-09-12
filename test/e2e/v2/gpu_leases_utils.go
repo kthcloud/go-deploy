@@ -2,8 +2,8 @@ package v2
 
 import (
 	"github.com/stretchr/testify/assert"
-	"go-deploy/dto/v2/body"
-	"go-deploy/test/e2e"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/test/e2e"
 	"testing"
 )
 

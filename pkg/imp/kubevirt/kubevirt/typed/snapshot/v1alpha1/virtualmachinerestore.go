@@ -4,7 +4,7 @@ package v1alpha1
 
 import (
 	"context"
-	scheme "go-deploy/pkg/imp/kubevirt/kubevirt/scheme"
+	scheme "github.com/kthcloud/go-deploy/pkg/imp/kubevirt/kubevirt/scheme"
 	"time"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"

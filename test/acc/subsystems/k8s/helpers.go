@@ -2,11 +2,11 @@ package k8s
 
 import (
 	"github.com/stretchr/testify/assert"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/subsystems/k8s"
-	"go-deploy/pkg/subsystems/k8s/models"
-	"go-deploy/test"
-	"go-deploy/test/acc"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
+	"github.com/kthcloud/go-deploy/test"
+	"github.com/kthcloud/go-deploy/test/acc"
 	v1 "k8s.io/api/core/v1"
 	"testing"
 )

@@ -3,16 +3,16 @@ package v2
 import (
 	"errors"
 	"github.com/gin-gonic/gin"
-	"go-deploy/dto/v2/body"
-	"go-deploy/dto/v2/query"
-	"go-deploy/dto/v2/uri"
-	"go-deploy/models/model"
-	"go-deploy/pkg/app/status_codes"
-	"go-deploy/pkg/sys"
-	"go-deploy/service"
-	sErrors "go-deploy/service/errors"
-	"go-deploy/service/v2/jobs/opts"
-	v12 "go-deploy/service/v2/utils"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/dto/v2/query"
+	"github.com/kthcloud/go-deploy/dto/v2/uri"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/app/status_codes"
+	"github.com/kthcloud/go-deploy/pkg/sys"
+	"github.com/kthcloud/go-deploy/service"
+	sErrors "github.com/kthcloud/go-deploy/service/errors"
+	"github.com/kthcloud/go-deploy/service/v2/jobs/opts"
+	v12 "github.com/kthcloud/go-deploy/service/v2/utils"
 )
 
 // GetJob

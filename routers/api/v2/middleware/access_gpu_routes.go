@@ -2,9 +2,9 @@ package middleware
 
 import (
 	"github.com/gin-gonic/gin"
-	"go-deploy/pkg/app/status_codes"
-	"go-deploy/pkg/sys"
-	v2 "go-deploy/routers/api/v2"
+	"github.com/kthcloud/go-deploy/pkg/app/status_codes"
+	"github.com/kthcloud/go-deploy/pkg/sys"
+	v2 "github.com/kthcloud/go-deploy/routers/api/v2"
 	"net/http"
 )
 

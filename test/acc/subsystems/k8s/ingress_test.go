@@ -2,8 +2,8 @@ package k8s
 
 import (
 	"github.com/stretchr/testify/assert"
-	"go-deploy/test"
-	"go-deploy/test/acc"
+	"github.com/kthcloud/go-deploy/test"
+	"github.com/kthcloud/go-deploy/test/acc"
 	"testing"
 )
 

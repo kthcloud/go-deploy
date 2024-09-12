@@ -3,12 +3,12 @@ package gpu_leases
 import (
 	"errors"
 	"fmt"
-	"go-deploy/dto/v2/body"
-	"go-deploy/models/model"
-	"go-deploy/pkg/db/resources/gpu_lease_repo"
-	sErrors "go-deploy/service/errors"
-	sUtils "go-deploy/service/utils"
-	"go-deploy/service/v2/vms/opts"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/gpu_lease_repo"
+	sErrors "github.com/kthcloud/go-deploy/service/errors"
+	sUtils "github.com/kthcloud/go-deploy/service/utils"
+	"github.com/kthcloud/go-deploy/service/v2/vms/opts"
 	"time"
 )
 

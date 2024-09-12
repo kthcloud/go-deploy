@@ -3,10 +3,10 @@ package v2
 import (
 	"errors"
 	"github.com/gin-gonic/gin"
-	"go-deploy/dto/v2/uri"
-	"go-deploy/pkg/sys"
-	"go-deploy/service"
-	dErrors "go-deploy/service/errors"
+	"github.com/kthcloud/go-deploy/dto/v2/uri"
+	"github.com/kthcloud/go-deploy/pkg/sys"
+	"github.com/kthcloud/go-deploy/service"
+	dErrors "github.com/kthcloud/go-deploy/service/errors"
 	"net/http"
 )
 

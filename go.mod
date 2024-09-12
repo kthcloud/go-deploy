@@ -1,4 +1,4 @@
-module go-deploy
+module github.com/kthcloud/go-deploy
 
 go 1.22.0
 

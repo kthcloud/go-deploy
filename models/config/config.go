@@ -1,8 +1,8 @@
 package config
 
 import (
-	"go-deploy/models/model"
-	"go-deploy/pkg/imp/kubevirt/kubevirt"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/imp/kubevirt/kubevirt"
 	"k8s.io/client-go/kubernetes"
 	"time"
 )

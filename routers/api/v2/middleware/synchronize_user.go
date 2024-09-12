@@ -3,11 +3,11 @@ package middleware
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"go-deploy/models/model"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/sys"
-	v2 "go-deploy/routers/api/v2"
-	"go-deploy/service"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/sys"
+	v2 "github.com/kthcloud/go-deploy/routers/api/v2"
+	"github.com/kthcloud/go-deploy/service"
 )
 
 // SetupAuthUser is a middleware that sets up the authenticated user in the context.

@@ -3,9 +3,9 @@ package harbor
 import (
 	"context"
 	"fmt"
-	projectModels "go-deploy/pkg/imp/harbor/sdk/v2.0/client/project"
-	"go-deploy/pkg/log"
-	"go-deploy/pkg/subsystems/harbor/models"
+	projectModels "github.com/kthcloud/go-deploy/pkg/imp/harbor/sdk/v2.0/client/project"
+	"github.com/kthcloud/go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/harbor/models"
 	"strconv"
 )
 

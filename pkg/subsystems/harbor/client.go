@@ -2,7 +2,7 @@ package harbor
 
 import (
 	"fmt"
-	"go-deploy/pkg/imp/harbor/harbor"
+	"github.com/kthcloud/go-deploy/pkg/imp/harbor/harbor"
 )
 
 // Client is a wrapper around the Harbor API client.

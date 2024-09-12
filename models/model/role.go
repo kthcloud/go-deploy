@@ -2,7 +2,7 @@ package model
 
 import (
 	"github.com/fatih/structs"
-	body2 "go-deploy/dto/v2/body"
+	body2 "github.com/kthcloud/go-deploy/dto/v2/body"
 	"sort"
 )
 

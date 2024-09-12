@@ -1,11 +1,11 @@
 package system
 
 import (
-	"go-deploy/dto/v2/body"
-	"go-deploy/models/model"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/db/resources/host_repo"
-	sErrors "go-deploy/service/errors"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/host_repo"
+	sErrors "github.com/kthcloud/go-deploy/service/errors"
 )
 
 func (c *Client) RegisterNode(params *body.HostRegisterParams) error {

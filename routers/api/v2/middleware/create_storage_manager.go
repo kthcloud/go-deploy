@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"go-deploy/models/model"
-	"go-deploy/models/version"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/sys"
-	v2 "go-deploy/routers/api/v2"
-	"go-deploy/service"
-	"go-deploy/utils"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/models/version"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/sys"
+	v2 "github.com/kthcloud/go-deploy/routers/api/v2"
+	"github.com/kthcloud/go-deploy/service"
+	"github.com/kthcloud/go-deploy/utils"
 )
 
 // CreateSM is a middleware that creates a storage manager for the user if it does not exist.

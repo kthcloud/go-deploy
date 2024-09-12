@@ -3,11 +3,11 @@ package deployments
 import (
 	"context"
 	"fmt"
-	"go-deploy/pkg/db/resources/deployment_repo"
-	"go-deploy/pkg/log"
-	"go-deploy/service/errors"
-	"go-deploy/service/v2/deployments/opts"
-	"go-deploy/utils"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/deployment_repo"
+	"github.com/kthcloud/go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/service/errors"
+	"github.com/kthcloud/go-deploy/service/v2/deployments/opts"
+	"github.com/kthcloud/go-deploy/utils"
 	"time"
 )
 

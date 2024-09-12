@@ -5,7 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/pkg/log"
 	"math/rand"
 	"strings"
 	"time"

@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/redis/go-redis/v9"
-	"go-deploy/pkg/db"
-	"go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/pkg/db"
+	"github.com/kthcloud/go-deploy/pkg/log"
 )
 
 var (

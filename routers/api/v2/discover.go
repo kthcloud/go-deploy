@@ -2,8 +2,8 @@ package v2
 
 import (
 	"github.com/gin-gonic/gin"
-	"go-deploy/pkg/sys"
-	"go-deploy/service"
+	"github.com/kthcloud/go-deploy/pkg/sys"
+	"github.com/kthcloud/go-deploy/service"
 )
 
 // Discover

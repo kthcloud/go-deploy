@@ -1,8 +1,8 @@
 package job_execute
 
 import (
-	"go-deploy/pkg/db/resources/job_repo"
-	"go-deploy/pkg/jobs"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/job_repo"
+	"github.com/kthcloud/go-deploy/pkg/jobs"
 )
 
 // JobFetcher is a worker that fetches new jobs from the database and runs them.

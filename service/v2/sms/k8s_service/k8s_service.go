@@ -3,14 +3,14 @@ package k8s_service
 import (
 	"errors"
 	"fmt"
-	"go-deploy/models/model"
-	"go-deploy/pkg/db/resources/sm_repo"
-	"go-deploy/pkg/log"
-	kErrors "go-deploy/pkg/subsystems/k8s/errors"
-	k8sModels "go-deploy/pkg/subsystems/k8s/models"
-	"go-deploy/service/constants"
-	sErrors "go-deploy/service/errors"
-	"go-deploy/service/resources"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/sm_repo"
+	"github.com/kthcloud/go-deploy/pkg/log"
+	kErrors "github.com/kthcloud/go-deploy/pkg/subsystems/k8s/errors"
+	k8sModels "github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
+	"github.com/kthcloud/go-deploy/service/constants"
+	sErrors "github.com/kthcloud/go-deploy/service/errors"
+	"github.com/kthcloud/go-deploy/service/resources"
 	"golang.org/x/exp/slices"
 )
 

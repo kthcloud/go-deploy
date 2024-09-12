@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
 
-	"go-deploy/pkg/imp/harbor/sdk/v2.0/models"
+	"github.com/kthcloud/go-deploy/pkg/imp/harbor/sdk/v2.0/models"
 )
 
 // UpdateUserGroupReader is a Reader for the UpdateUserGroup structure.

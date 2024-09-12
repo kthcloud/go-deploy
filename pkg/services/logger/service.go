@@ -2,9 +2,9 @@ package logger
 
 import (
 	"context"
-	"go-deploy/pkg/db/key_value"
-	"go-deploy/pkg/log"
-	"go-deploy/pkg/services"
+	"github.com/kthcloud/go-deploy/pkg/db/key_value"
+	"github.com/kthcloud/go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/pkg/services"
 	"strings"
 	"time"
 )

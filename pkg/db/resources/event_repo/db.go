@@ -2,7 +2,7 @@ package event_repo
 
 import (
 	"context"
-	"go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/models/model"
 	"time"
 )
 

@@ -3,9 +3,9 @@ package user_repo
 import (
 	"errors"
 	"fmt"
-	"go-deploy/models/model"
-	"go-deploy/pkg/db"
-	rErrors "go-deploy/pkg/db/resources/errors"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db"
+	rErrors "github.com/kthcloud/go-deploy/pkg/db/resources/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"time"
 )

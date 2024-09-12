@@ -2,12 +2,12 @@ package system_state_poll
 
 import (
 	"fmt"
-	"go-deploy/dto/v2/body"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/db/resources/system_stats_repo"
-	wErrors "go-deploy/pkg/services/errors"
-	"go-deploy/pkg/subsystems/k8s"
-	"go-deploy/utils"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/system_stats_repo"
+	wErrors "github.com/kthcloud/go-deploy/pkg/services/errors"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s"
+	"github.com/kthcloud/go-deploy/utils"
 	"k8s.io/client-go/kubernetes"
 	"log"
 	"sync"

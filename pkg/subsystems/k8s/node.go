@@ -3,7 +3,7 @@ package k8s
 import (
 	"context"
 	"fmt"
-	"go-deploy/pkg/subsystems/k8s/models"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

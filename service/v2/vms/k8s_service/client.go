@@ -2,16 +2,16 @@ package k8s_service
 
 import (
 	"fmt"
-	configModels "go-deploy/models/config"
-	"go-deploy/models/model"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/subsystems/k8s"
-	"go-deploy/service/core"
-	sErrors "go-deploy/service/errors"
-	"go-deploy/service/generators"
-	"go-deploy/service/v2/vms/client"
-	"go-deploy/service/v2/vms/opts"
-	"go-deploy/service/v2/vms/resources"
+	configModels "github.com/kthcloud/go-deploy/models/config"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s"
+	"github.com/kthcloud/go-deploy/service/core"
+	sErrors "github.com/kthcloud/go-deploy/service/errors"
+	"github.com/kthcloud/go-deploy/service/generators"
+	"github.com/kthcloud/go-deploy/service/v2/vms/client"
+	"github.com/kthcloud/go-deploy/service/v2/vms/opts"
+	"github.com/kthcloud/go-deploy/service/v2/vms/resources"
 )
 
 // OptsAll returns the options required to get all the service tools, ie. VM, client and generator.

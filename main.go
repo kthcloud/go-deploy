@@ -1,7 +1,7 @@
 package main
 
 import (
-	"go-deploy/cmd"
+	"github.com/kthcloud/go-deploy/cmd"
 	"os"
 )
 

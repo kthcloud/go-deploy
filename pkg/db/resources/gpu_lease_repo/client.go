@@ -1,9 +1,9 @@
 package gpu_lease_repo
 
 import (
-	"go-deploy/models/model"
-	"go-deploy/pkg/db"
-	"go-deploy/pkg/db/resources/base_clients"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/base_clients"
 	"go.mongodb.org/mongo-driver/bson"
 	"time"
 )

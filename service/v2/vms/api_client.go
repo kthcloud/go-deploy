@@ -1,14 +1,14 @@
 package vms
 
 import (
-	"go-deploy/service/clients"
-	"go-deploy/service/core"
-	"go-deploy/service/v2/api"
-	"go-deploy/service/v2/vms/client"
-	"go-deploy/service/v2/vms/gpu_groups"
-	"go-deploy/service/v2/vms/gpu_leases"
-	"go-deploy/service/v2/vms/k8s_service"
-	"go-deploy/service/v2/vms/snapshots"
+	"github.com/kthcloud/go-deploy/service/clients"
+	"github.com/kthcloud/go-deploy/service/core"
+	"github.com/kthcloud/go-deploy/service/v2/api"
+	"github.com/kthcloud/go-deploy/service/v2/vms/client"
+	"github.com/kthcloud/go-deploy/service/v2/vms/gpu_groups"
+	"github.com/kthcloud/go-deploy/service/v2/vms/gpu_leases"
+	"github.com/kthcloud/go-deploy/service/v2/vms/k8s_service"
+	"github.com/kthcloud/go-deploy/service/v2/vms/snapshots"
 )
 
 // Client is the client for the Deployment service.

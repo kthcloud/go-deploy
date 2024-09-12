@@ -1,11 +1,11 @@
 package teams
 
 import (
-	"go-deploy/models/model"
-	"go-deploy/pkg/db/resources/team_repo"
-	"go-deploy/pkg/db/resources/user_repo"
-	"go-deploy/service/clients"
-	"go-deploy/service/core"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/team_repo"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/user_repo"
+	"github.com/kthcloud/go-deploy/service/clients"
+	"github.com/kthcloud/go-deploy/service/core"
 	"sort"
 )
 

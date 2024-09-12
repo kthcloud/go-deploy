@@ -1,15 +1,15 @@
 package cleaner
 
 import (
-	bodyV2 "go-deploy/dto/v2/body"
-	"go-deploy/models/model"
-	"go-deploy/models/version"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/db/resources/deployment_repo"
-	"go-deploy/pkg/db/resources/vm_repo"
-	"go-deploy/pkg/log"
-	"go-deploy/pkg/subsystems"
-	"go-deploy/service"
+	bodyV2 "github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/models/version"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/deployment_repo"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/vm_repo"
+	"github.com/kthcloud/go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/pkg/subsystems"
+	"github.com/kthcloud/go-deploy/service"
 	"time"
 )
 

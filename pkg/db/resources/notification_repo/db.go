@@ -3,7 +3,7 @@ package notification_repo
 import (
 	"context"
 	"fmt"
-	"go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/models/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"time"
 )

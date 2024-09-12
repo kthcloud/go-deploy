@@ -2,10 +2,10 @@ package client
 
 import (
 	"fmt"
-	"go-deploy/models/model"
-	"go-deploy/models/version"
-	"go-deploy/pkg/db/resources/vm_repo"
-	"go-deploy/service/core"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/models/version"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/vm_repo"
+	"github.com/kthcloud/go-deploy/service/core"
 )
 
 // BaseClient is the base client for all the subsystems client for VMs and GPUs.

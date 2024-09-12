@@ -3,14 +3,14 @@ package logger
 import (
 	"context"
 	"fmt"
-	configModels "go-deploy/models/config"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/db/key_value"
-	"go-deploy/pkg/db/message_queue"
-	"go-deploy/pkg/log"
-	"go-deploy/pkg/subsystems/k8s"
-	"go-deploy/service"
-	"go-deploy/utils"
+	configModels "github.com/kthcloud/go-deploy/models/config"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/db/key_value"
+	"github.com/kthcloud/go-deploy/pkg/db/message_queue"
+	"github.com/kthcloud/go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s"
+	"github.com/kthcloud/go-deploy/service"
+	"github.com/kthcloud/go-deploy/utils"
 	"time"
 )
 

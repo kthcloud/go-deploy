@@ -3,8 +3,8 @@ package team_repo
 import (
 	"errors"
 	"fmt"
-	"go-deploy/models/model"
-	"go-deploy/pkg/db"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db"
 	"go.mongodb.org/mongo-driver/bson"
 	"time"
 )
