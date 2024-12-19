@@ -16,11 +16,13 @@ type On struct {
 }
 
 type With struct {
-	Registry string `yaml:"registry,omitempty"`
-	Username string `yaml:"username,omitempty"`
-	Password string `yaml:"password,omitempty"`
-	Push     bool   `yaml:"push,omitempty"`
-	Tags     string `yaml:"tags,omitempty"`
+	Registry  string `yaml:"registry,omitempty"`
+	Username  string `yaml:"username,omitempty"`
+	Password  string `yaml:"password,omitempty"`
+	Push      bool   `yaml:"push,omitempty"`
+	Tags      string `yaml:"tags,omitempty"`
+	CacheTo   string `yaml:"cache-to,omitempty"`
+	CacheFrom string `yaml:"cache-from,omitempty"`
 }
 
 type Steps struct {

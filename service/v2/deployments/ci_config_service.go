@@ -8,8 +8,9 @@ import (
 	"go-deploy/service/errors"
 	"go-deploy/service/v2/deployments/opts"
 	"go-deploy/utils/subsystemutils"
-	"gopkg.in/yaml.v3"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
 // GetCiConfig returns the CI config for the deployment.
@@ -65,8 +66,10 @@ func (c *Client) GetCiConfig(id string) (*body.CiConfig, error) {
 					Name: "Build and push",
 					Uses: "docker/build-push-action@v5",
 					With: model.With{
-						Push: true,
-						Tags: tag,
+						Push:      true,
+						Tags:      tag,
+						CacheFrom: "gha",
+						CacheTo:   "type=gha,mode=max",
 					},
 				},
 			},
