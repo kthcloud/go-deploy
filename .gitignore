@@ -42,6 +42,7 @@ cache/
 kube/
 
 # binary
+bin
 go-deploy
 go-deploy.exe
 
