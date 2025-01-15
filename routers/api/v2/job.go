@@ -2,6 +2,7 @@ package v2
 
 import (
 	"errors"
+
 	"github.com/gin-gonic/gin"
 	"github.com/kthcloud/go-deploy/dto/v2/body"
 	"github.com/kthcloud/go-deploy/dto/v2/query"
@@ -22,6 +23,7 @@ import (
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param jobId path string true "Job ID"
 // @Success 200 {object} body.JobRead
 // @Failure 400 {object} sys.ErrorResponse
@@ -65,6 +67,7 @@ func GetJob(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param all query bool false "List all"
 // @Param userId query string false "Filter by user ID"
 // @Param type query string false "Filter by type"
@@ -123,6 +126,7 @@ func ListJobs(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param jobId path string true "Job ID"
 // @Param body body body.JobUpdate true "Job update"
 // @Success 200 {object} body.JobRead

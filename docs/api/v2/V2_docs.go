@@ -28,6 +28,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "List deployments",
@@ -101,6 +104,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Create deployment",
@@ -152,6 +158,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Get deployment",
@@ -199,6 +208,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Update deployment",
@@ -255,6 +267,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Delete deployment",
@@ -316,6 +331,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Get CI config",
@@ -365,6 +383,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Do command",
@@ -432,6 +453,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Get logs using Server-Sent Events",
@@ -516,6 +540,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "List GPU groups",
@@ -585,6 +612,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Get GPU group",
@@ -646,6 +676,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "List GPU leases",
@@ -725,6 +758,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Create GPU lease",
@@ -782,6 +818,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Get GPU lease",
@@ -841,6 +880,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Update GPU lease",
@@ -903,6 +945,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Delete GPU lease",
@@ -1051,6 +1096,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "List jobs",
@@ -1120,6 +1168,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "GetJob job by id",
@@ -1179,6 +1230,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Update job. Only allowed for admins.",
@@ -1254,6 +1308,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "List notifications",
@@ -1317,6 +1374,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Get notification",
@@ -1358,6 +1418,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Update notification",
@@ -1405,6 +1468,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Delete notification",
@@ -1483,6 +1549,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "List resource migrations",
@@ -1544,6 +1613,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Create resource migration",
@@ -1601,6 +1673,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Get resource migration",
@@ -1654,6 +1729,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Update resource migration",
@@ -1716,6 +1794,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Delete resource migration",
@@ -1768,6 +1849,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "List snapshots",
@@ -1842,6 +1926,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Create snapshot",
@@ -1892,49 +1979,14 @@ const docTemplateV2 = `{
                 }
             }
         },
-        "/v2/status": {
-            "get": {
-                "description": "List of worker status",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Status"
-                ],
-                "summary": "List worker status",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/body.WorkerStatusRead"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/sys.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/v2/storageManagers": {
             "get": {
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Get storage manager list",
@@ -2004,6 +2056,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Delete storage manager",
@@ -2133,7 +2188,7 @@ const docTemplateV2 = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/body.TimestampedSystemCapacities"
+                                "$ref": "#/definitions/body.TimestampedSystemStats"
                             }
                         }
                     },
@@ -2179,7 +2234,7 @@ const docTemplateV2 = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/body.TimestampedSystemCapacities"
+                                "$ref": "#/definitions/body.TimestampedSystemStatus"
                             }
                         }
                     },
@@ -2203,6 +2258,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "List teams",
@@ -2270,6 +2328,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Create team",
@@ -2321,6 +2382,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Get team",
@@ -2368,6 +2432,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Update team",
@@ -2424,6 +2491,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Delete team",
@@ -2470,6 +2540,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "List users",
@@ -2545,6 +2618,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Get user",
@@ -2565,6 +2641,12 @@ const docTemplateV2 = `{
                         "name": "userId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Discovery mode",
+                        "name": "discover",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -2592,6 +2674,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Update user",
@@ -2650,6 +2735,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Create API key",
@@ -2708,6 +2796,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Creates a new action",
@@ -2772,6 +2863,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "List VMs",
@@ -2851,6 +2945,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Create VM",
@@ -2914,6 +3011,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Get VM",
@@ -2967,6 +3067,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Update VM",
@@ -3035,6 +3138,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Delete VM",
@@ -3096,6 +3202,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Get snapshot",
@@ -3156,6 +3265,9 @@ const docTemplateV2 = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "Delete snapshot",
@@ -3213,11 +3325,52 @@ const docTemplateV2 = `{
                 }
             }
         },
+        "/v2/workerStatus": {
+            "get": {
+                "description": "List of worker status",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Status"
+                ],
+                "summary": "List worker status",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/body.WorkerStatusRead"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/sys.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v2/zones": {
             "get": {
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "KeycloakOAuth": []
                     }
                 ],
                 "description": "List zones",
@@ -3326,11 +3479,84 @@ const docTemplateV2 = `{
                 }
             }
         },
+        "body.ClusterCapacities": {
+            "type": "object",
+            "properties": {
+                "cluster": {
+                    "type": "string"
+                },
+                "cpuCore": {
+                    "$ref": "#/definitions/body.CpuCoreCapacities"
+                },
+                "gpu": {
+                    "$ref": "#/definitions/body.GpuCapacities"
+                },
+                "ram": {
+                    "$ref": "#/definitions/body.RamCapacities"
+                }
+            }
+        },
+        "body.ClusterStats": {
+            "type": "object",
+            "properties": {
+                "cluster": {
+                    "type": "string"
+                },
+                "podCount": {
+                    "type": "integer"
+                }
+            }
+        },
         "body.CpuCoreCapacities": {
             "type": "object",
             "properties": {
                 "total": {
                     "type": "integer"
+                }
+            }
+        },
+        "body.CpuStatus": {
+            "type": "object",
+            "properties": {
+                "load": {
+                    "$ref": "#/definitions/body.CpuStatusLoad"
+                },
+                "temp": {
+                    "$ref": "#/definitions/body.CpuStatusTemp"
+                }
+            }
+        },
+        "body.CpuStatusLoad": {
+            "type": "object",
+            "properties": {
+                "cores": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "main": {
+                    "type": "number"
+                },
+                "max": {
+                    "type": "number"
+                }
+            }
+        },
+        "body.CpuStatusTemp": {
+            "type": "object",
+            "properties": {
+                "cores": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "main": {
+                    "type": "number"
+                },
+                "max": {
+                    "type": "number"
                 }
             }
         },
@@ -3419,6 +3645,7 @@ const docTemplateV2 = `{
                     "minLength": 3
                 },
                 "private": {
+                    "description": "Deprecated: Use Visibility instead.",
                     "type": "boolean"
                 },
                 "ram": {
@@ -3429,6 +3656,14 @@ const docTemplateV2 = `{
                     "type": "integer",
                     "maximum": 100,
                     "minimum": 0
+                },
+                "visibility": {
+                    "type": "string",
+                    "enum": [
+                        "public",
+                        "private",
+                        "auth"
+                    ]
                 },
                 "volumes": {
                     "type": "array",
@@ -3517,6 +3752,7 @@ const docTemplateV2 = `{
                     "type": "integer"
                 },
                 "private": {
+                    "description": "Deprecated: Use Visibility instead.",
                     "type": "boolean"
                 },
                 "repairedAt": {
@@ -3550,6 +3786,9 @@ const docTemplateV2 = `{
                     "type": "string"
                 },
                 "url": {
+                    "type": "string"
+                },
+                "visibility": {
                     "type": "string"
                 },
                 "volumes": {
@@ -3631,6 +3870,7 @@ const docTemplateV2 = `{
                     "minLength": 3
                 },
                 "private": {
+                    "description": "Deprecated: Use Visibility instead.",
                     "type": "boolean"
                 },
                 "ram": {
@@ -3641,6 +3881,14 @@ const docTemplateV2 = `{
                     "type": "integer",
                     "maximum": 100,
                     "minimum": 0
+                },
+                "visibility": {
+                    "type": "string",
+                    "enum": [
+                        "public",
+                        "private",
+                        "auth"
+                    ]
                 },
                 "volumes": {
                     "type": "array",
@@ -3833,6 +4081,25 @@ const docTemplateV2 = `{
                 }
             }
         },
+        "body.GpuStatus": {
+            "type": "object",
+            "properties": {
+                "temp": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/body.GpuStatusTemp"
+                    }
+                }
+            }
+        },
+        "body.GpuStatusTemp": {
+            "type": "object",
+            "properties": {
+                "main": {
+                    "type": "number"
+                }
+            }
+        },
         "body.HarborWebhook": {
             "type": "object",
             "properties": {
@@ -3892,27 +4159,20 @@ const docTemplateV2 = `{
         "body.HostCapacities": {
             "type": "object",
             "properties": {
+                "cpuCore": {
+                    "$ref": "#/definitions/body.CpuCoreCapacities"
+                },
                 "displayName": {
                     "type": "string"
                 },
                 "gpu": {
-                    "type": "object",
-                    "properties": {
-                        "count": {
-                            "type": "integer"
-                        }
-                    }
+                    "$ref": "#/definitions/body.GpuCapacities"
                 },
                 "name": {
                     "type": "string"
                 },
                 "ram": {
-                    "type": "object",
-                    "properties": {
-                        "total": {
-                            "type": "integer"
-                        }
-                    }
+                    "$ref": "#/definitions/body.RamCapacities"
                 },
                 "zone": {
                     "description": "Zone is the name of the zone where the host is located.",
@@ -3935,6 +4195,30 @@ const docTemplateV2 = `{
                 }
             }
         },
+        "body.HostStatus": {
+            "type": "object",
+            "properties": {
+                "cpu": {
+                    "$ref": "#/definitions/body.CpuStatus"
+                },
+                "displayName": {
+                    "type": "string"
+                },
+                "gpu": {
+                    "$ref": "#/definitions/body.GpuStatus"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "ram": {
+                    "$ref": "#/definitions/body.RamStatus"
+                },
+                "zone": {
+                    "description": "Zone is the name of the zone where the host is located.",
+                    "type": "string"
+                }
+            }
+        },
         "body.HttpProxyCreate": {
             "type": "object",
             "required": [
@@ -3942,7 +4226,7 @@ const docTemplateV2 = `{
             ],
             "properties": {
                 "customDomain": {
-                    "description": "CustomDomain is the domain that the deployment will be available on.\nThe max length is set to 243 to allow for a sub domain when confirming the domain.",
+                    "description": "CustomDomain is the domain that the deployment will be available on.\nThe max length is set to 243 to allow for a subdomain when confirming the domain.",
                     "type": "string"
                 },
                 "name": {
@@ -3954,17 +4238,12 @@ const docTemplateV2 = `{
         },
         "body.HttpProxyRead": {
             "type": "object",
-            "required": [
-                "name"
-            ],
             "properties": {
                 "customDomain": {
                     "$ref": "#/definitions/body.CustomDomainRead"
                 },
                 "name": {
-                    "type": "string",
-                    "maxLength": 30,
-                    "minLength": 3
+                    "type": "string"
                 },
                 "url": {
                     "type": "string"
@@ -3978,7 +4257,7 @@ const docTemplateV2 = `{
             ],
             "properties": {
                 "customDomain": {
-                    "description": "CustomDomain is the domain that the deployment will be available on.\nThe max length is set to 243 to allow for a sub domain when confirming the domain.",
+                    "description": "CustomDomain is the domain that the deployment will be available on.\nThe max length is set to 243 to allow for a subdomain when confirming the domain.",
                     "type": "string"
                 },
                 "name": {
@@ -4036,6 +4315,20 @@ const docTemplateV2 = `{
                 }
             }
         },
+        "body.K8sStats": {
+            "type": "object",
+            "properties": {
+                "clusters": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/body.ClusterStats"
+                    }
+                },
+                "podCount": {
+                    "type": "integer"
+                }
+            }
+        },
         "body.NotificationRead": {
             "type": "object",
             "properties": {
@@ -4055,6 +4348,9 @@ const docTemplateV2 = `{
                 "readAt": {
                     "type": "string"
                 },
+                "toastedAt": {
+                    "type": "string"
+                },
                 "type": {
                     "type": "string"
                 },
@@ -4067,6 +4363,9 @@ const docTemplateV2 = `{
             "type": "object",
             "properties": {
                 "read": {
+                    "type": "boolean"
+                },
+                "toasted": {
                     "type": "boolean"
                 }
             }
@@ -4194,6 +4493,22 @@ const docTemplateV2 = `{
             "properties": {
                 "total": {
                     "type": "integer"
+                }
+            }
+        },
+        "body.RamStatus": {
+            "type": "object",
+            "properties": {
+                "load": {
+                    "$ref": "#/definitions/body.RamStatusLoad"
+                }
+            }
+        },
+        "body.RamStatusLoad": {
+            "type": "object",
+            "properties": {
+                "main": {
+                    "type": "number"
                 }
             }
         },
@@ -4461,13 +4776,26 @@ const docTemplateV2 = `{
         "body.SystemCapacities": {
             "type": "object",
             "properties": {
+                "clusters": {
+                    "description": "Per Cluster",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/body.ClusterCapacities"
+                    }
+                },
                 "cpuCore": {
-                    "$ref": "#/definitions/body.CpuCoreCapacities"
+                    "description": "Total",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/body.CpuCoreCapacities"
+                        }
+                    ]
                 },
                 "gpu": {
                     "$ref": "#/definitions/body.GpuCapacities"
                 },
                 "hosts": {
+                    "description": "Per Host",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/body.HostCapacities"
@@ -4475,6 +4803,25 @@ const docTemplateV2 = `{
                 },
                 "ram": {
                     "$ref": "#/definitions/body.RamCapacities"
+                }
+            }
+        },
+        "body.SystemStats": {
+            "type": "object",
+            "properties": {
+                "k8s": {
+                    "$ref": "#/definitions/body.K8sStats"
+                }
+            }
+        },
+        "body.SystemStatus": {
+            "type": "object",
+            "properties": {
+                "hosts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/body.HostStatus"
+                    }
                 }
             }
         },
@@ -4660,6 +5007,28 @@ const docTemplateV2 = `{
             "properties": {
                 "capacities": {
                     "$ref": "#/definitions/body.SystemCapacities"
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.TimestampedSystemStats": {
+            "type": "object",
+            "properties": {
+                "stats": {
+                    "$ref": "#/definitions/body.SystemStats"
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "body.TimestampedSystemStatus": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "$ref": "#/definitions/body.SystemStatus"
                 },
                 "timestamp": {
                     "type": "string"
@@ -5034,14 +5403,9 @@ const docTemplateV2 = `{
                     "minimum": 1
                 },
                 "name": {
-                    "description": "Name is used to rename a VM.\nIf specified, only name will be updated.",
                     "type": "string",
                     "maxLength": 30,
                     "minLength": 3
-                },
-                "ownerId": {
-                    "description": "OwnerID is used to initiate transfer a VM to another user.\nIf specified, only the transfer will happen.\nIf specified but empty, the transfer will be canceled.",
-                    "type": "string"
                 },
                 "ports": {
                     "type": "array",
@@ -5178,6 +5542,17 @@ const docTemplateV2 = `{
             "type": "apiKey",
             "name": "X-Api-Key",
             "in": "header"
+        },
+        "KeycloakOAuth": {
+            "type": "oauth2",
+            "flow": "accessCode",
+            "authorizationUrl": "https://iam.cloud.cbh.kth.se/realms/cloud/protocol/openid-connect/auth",
+            "tokenUrl": "https://iam.cloud.cbh.kth.se/realms/cloud/protocol/openid-connect/token",
+            "scopes": {
+                "email": "email",
+                "openid": "openid",
+                "profile": "profile"
+            }
         }
     }
 }`

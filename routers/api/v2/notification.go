@@ -2,6 +2,8 @@ package v2
 
 import (
 	"errors"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/kthcloud/go-deploy/dto/v2/body"
 	"github.com/kthcloud/go-deploy/dto/v2/query"
@@ -11,7 +13,6 @@ import (
 	sErrors "github.com/kthcloud/go-deploy/service/errors"
 	"github.com/kthcloud/go-deploy/service/v2/notifications/opts"
 	v12 "github.com/kthcloud/go-deploy/service/v2/utils"
-	"net/http"
 )
 
 // GetNotification godoc
@@ -21,6 +22,7 @@ import (
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param notificationId path string true "Notification ID"
 // @Success 200 {object} body.NotificationRead
 // @Failure 400 {object} sys.ErrorResponse
@@ -56,6 +58,7 @@ func GetNotification(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param all query bool false "List all notifications"
 // @Param userId query string false "Filter by user ID"
 // @Param page query int false "Page number"
@@ -109,6 +112,7 @@ func ListNotifications(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param notificationId path string true "Notification ID"
 // @Param body body body.NotificationUpdate true "Notification update"
 // @Success 200
@@ -156,6 +160,7 @@ func UpdateNotification(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param notificationId path string true "Notification ID"
 // @Success 200
 // @Failure 400 {object} sys.ErrorResponse

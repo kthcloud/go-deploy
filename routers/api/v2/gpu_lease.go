@@ -2,6 +2,7 @@ package v2
 
 import (
 	"errors"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/kthcloud/go-deploy/dto/v2/body"
@@ -23,6 +24,7 @@ import (
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param gpuLeaseId path string true "GPU lease ID"
 // @Success 200 {object} body.GpuLeaseRead
 // @Failure 400 {object} sys.ErrorResponse
@@ -75,6 +77,7 @@ func GetGpuLease(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param all query bool false "List all"
 // @Param vmId query string false "Filter by VM ID"
 // @Param page query int false "Page number"
@@ -152,6 +155,7 @@ func ListGpuLeases(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param body body body.GpuLeaseCreate true "GPU lease"
 // @Success 200 {object} body.GpuLeaseCreated
 // @Failure 400 {object} sys.ErrorResponse
@@ -239,6 +243,7 @@ func CreateGpuLease(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param gpuLeaseId path string true "GPU lease ID"
 // @Param body body body.GpuLeaseUpdate true "GPU lease"
 // @Success 200 {object} body.GpuLeaseUpdated
@@ -310,6 +315,7 @@ func UpdateGpuLease(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param gpuLeaseId path string true "GPU lease ID"
 // @Success 200 {object} body.GpuLeaseDeleted
 // @Failure 400 {object} sys.ErrorResponse

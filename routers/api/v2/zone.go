@@ -15,6 +15,7 @@ import (
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Success 200 {array} body.ZoneRead
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse

@@ -3,6 +3,9 @@ package v2
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/google/uuid"
@@ -18,8 +21,6 @@ import (
 	v12 "github.com/kthcloud/go-deploy/service/v2/utils"
 	vmOpts "github.com/kthcloud/go-deploy/service/v2/vms/opts"
 	"github.com/kthcloud/go-deploy/utils"
-	"net/http"
-	"time"
 )
 
 // GetTeam
@@ -29,6 +30,7 @@ import (
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param teamId path string true "Team ID"
 // @Success 200 {object} body.TeamRead
 // @Failure 400 {object} body.BindingError
@@ -65,6 +67,7 @@ func GetTeam(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param all query bool false "List all"
 // @Param userId query string false "Filter by user ID"
 // @Param page query int false "Page number"
@@ -119,6 +122,7 @@ func ListTeams(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param body body body.TeamCreate true "Team"
 // @Success 200 {object} body.TeamRead
 // @Failure 400 {object} body.BindingError
@@ -160,6 +164,7 @@ func CreateTeam(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param teamId path string true "Team ID"
 // @Param body body body.TeamUpdate true "Team"
 // @Success 200 {object} body.TeamRead
@@ -219,6 +224,7 @@ func UpdateTeam(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param teamId path string true "Team ID"
 // @Success 204 "No Content"
 // @Failure 400 {object} body.BindingError

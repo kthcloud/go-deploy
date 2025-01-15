@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/kthcloud/go-deploy/cmd"
 	"os"
+
+	"github.com/kthcloud/go-deploy/cmd"
 )
 
 // @Title go-deploy API
@@ -16,6 +17,12 @@ import (
 // @SecurityDefinitions.apikey ApiKeyAuth
 // @In header
 // @Name X-Api-Key
+// @SecurityDefinitions.oauth2.accessCode KeycloakOAuth
+// @authorizationUrl https://iam.cloud.cbh.kth.se/realms/cloud/protocol/openid-connect/auth
+// @tokenUrl https://iam.cloud.cbh.kth.se/realms/cloud/protocol/openid-connect/token
+// @scope.openid openid
+// @scope.profile profile
+// @scope.email email
 func main() {
 	options := cmd.ParseFlags()
 

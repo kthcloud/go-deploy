@@ -2,6 +2,7 @@ package v2
 
 import (
 	"errors"
+
 	"github.com/gin-gonic/gin"
 	"github.com/kthcloud/go-deploy/dto/v2/body"
 	"github.com/kthcloud/go-deploy/dto/v2/query"
@@ -22,6 +23,7 @@ import (
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param userId path string true "User ID"
 // @Param discover query bool false "Discovery mode"
 // @Success 200 {object}  body.UserRead
@@ -101,6 +103,7 @@ func GetUser(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param all query bool false "List all"
 // @Param discover query bool false "Discovery mode"
 // @Param search query string false "Search query"
@@ -173,6 +176,7 @@ func ListUsers(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param userId path string true "User ID"
 // @Param body body body.UserUpdate true "User update"
 // @Success 200 {object} body.UserRead

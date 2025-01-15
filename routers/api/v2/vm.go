@@ -2,6 +2,9 @@ package v2
 
 import (
 	"errors"
+	"strconv"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/kthcloud/go-deploy/dto/v2/body"
@@ -17,8 +20,6 @@ import (
 	teamOpts "github.com/kthcloud/go-deploy/service/v2/teams/opts"
 	v2Utils "github.com/kthcloud/go-deploy/service/v2/utils"
 	"github.com/kthcloud/go-deploy/service/v2/vms/opts"
-	"strconv"
-	"strings"
 )
 
 // GetVM
@@ -28,6 +29,7 @@ import (
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param vmId path string true "VM ID"
 // @Success 200 {object} body.VmRead
 // @Failure 400 {object} sys.ErrorResponse
@@ -88,6 +90,7 @@ func GetVM(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param all query bool false "List all"
 // @Param userId query string false "Filter by user ID"
 // @Param page query int false "Page number"
@@ -155,6 +158,7 @@ func ListVMs(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param body body body.VmCreate true "VM body"
 // @Success 200 {object} body.VmCreated
 // @Failure 400 {object} sys.ErrorResponse
@@ -246,6 +250,7 @@ func CreateVM(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param vmId path string true "VM ID"
 // @Success 200 {object} body.VmDeleted
 // @Failure 400 {object} sys.ErrorResponse
@@ -309,6 +314,7 @@ func DeleteVM(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param vmId path string true "VM ID"
 // @Param body body body.VmUpdate true "VM update"
 // @Success 200 {object} body.VmUpdated

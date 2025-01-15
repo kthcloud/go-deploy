@@ -40,3 +40,10 @@ cache/
 
 # KubeConfig dir
 kube/
+
+# binary
+go-deploy
+go-deploy.exe
+
+# export package-lock.json
+export/package-lock.json

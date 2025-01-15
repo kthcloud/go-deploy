@@ -18,6 +18,7 @@ import (
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param gpuGroupId path string true "GPU group ID"
 // @Success 200 {object} body.GpuGroupRead
 // @Failure 400 {object} sys.ErrorResponse
@@ -71,6 +72,7 @@ func GetGpuGroup(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param page query int false "Page number"
 // @Param pageSize query int false "Number of items per page"
 // @Success 200 {array} body.GpuGroupRead
