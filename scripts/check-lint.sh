@@ -6,7 +6,7 @@ YELLOW='\033[0;33m'
 NC='\033[0m' # No Color
 
 function get_git_root() {
-    git rev-parse --show-toplevel 2>/dev/null || { echo -e "${RED}This is not a git repository. Please run this script from within a Git repository.${NC}"; exit 1; }
+    git rev-parse --show-toplevel 2>/dev/null || { echo -e "${RED}This is not a git repository. Please run this script from within the Git repository.${NC}"; exit 1; }
 }
 
 function check_gofmt() {
@@ -41,7 +41,7 @@ function run_gofmt() {
 function run_go_vet() {
     echo -e "${YELLOW}Running go vet check...${NC}"
     # Run go vet to analyze code for potential issues
-    go_vet_output=$(go vet ./...)
+    go_vet_output=$(go vet ./... 2>&1)
     if [ -n "$go_vet_output" ]; then
         echo -e "${RED}go vet found the following issues:${NC}"
         echo "$go_vet_output"
