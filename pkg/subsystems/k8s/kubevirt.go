@@ -2,7 +2,7 @@ package k8s
 
 import (
 	"context"
-	"go-deploy/pkg/subsystems/k8s/models"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "kubevirt.io/api/core/v1"
 )

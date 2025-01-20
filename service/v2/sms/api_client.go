@@ -1,10 +1,10 @@
 package sms
 
 import (
-	"go-deploy/service/clients"
-	"go-deploy/service/core"
-	"go-deploy/service/v2/sms/client"
-	"go-deploy/service/v2/sms/k8s_service"
+	"github.com/kthcloud/go-deploy/service/clients"
+	"github.com/kthcloud/go-deploy/service/core"
+	"github.com/kthcloud/go-deploy/service/v2/sms/client"
+	"github.com/kthcloud/go-deploy/service/v2/sms/k8s_service"
 )
 
 // Client is the client for the Deployment service.

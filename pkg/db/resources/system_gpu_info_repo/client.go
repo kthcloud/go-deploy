@@ -1,9 +1,9 @@
 package system_gpu_info_repo
 
 import (
-	"go-deploy/dto/v2/body"
-	"go-deploy/pkg/db"
-	"go-deploy/pkg/db/resources/base_clients"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/pkg/db"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/base_clients"
 )
 
 // Client is the client for the system GPU info model.

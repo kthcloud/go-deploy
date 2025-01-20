@@ -1,8 +1,8 @@
 package zones
 
 import (
-	"go-deploy/test/e2e"
-	v1 "go-deploy/test/e2e/v2"
+	"github.com/kthcloud/go-deploy/test/e2e"
+	v1 "github.com/kthcloud/go-deploy/test/e2e/v2"
 	"os"
 	"testing"
 )

@@ -3,8 +3,8 @@ package routes
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/metrics"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/metrics"
 	"net/http"
 	"net/http/httputil"
 )

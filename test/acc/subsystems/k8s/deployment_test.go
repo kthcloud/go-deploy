@@ -1,9 +1,9 @@
 package k8s
 
 import (
-	"go-deploy/pkg/subsystems/k8s/models"
-	"go-deploy/test"
-	"go-deploy/test/acc"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
+	"github.com/kthcloud/go-deploy/test"
+	"github.com/kthcloud/go-deploy/test/acc"
 	"testing"
 )
 

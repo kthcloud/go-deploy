@@ -1,9 +1,9 @@
 package gpu_leases
 
 import (
-	"go-deploy/service/clients"
-	"go-deploy/service/core"
-	"go-deploy/service/v2/vms/client"
+	"github.com/kthcloud/go-deploy/service/clients"
+	"github.com/kthcloud/go-deploy/service/core"
+	"github.com/kthcloud/go-deploy/service/v2/vms/client"
 )
 
 type Client struct {

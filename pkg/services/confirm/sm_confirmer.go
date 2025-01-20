@@ -1,10 +1,10 @@
 package confirm
 
 import (
-	"go-deploy/models/model"
-	"go-deploy/pkg/db/resources/job_repo"
-	"go-deploy/pkg/db/resources/sm_repo"
-	"go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/job_repo"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/sm_repo"
+	"github.com/kthcloud/go-deploy/pkg/log"
 	"golang.org/x/exp/slices"
 )
 

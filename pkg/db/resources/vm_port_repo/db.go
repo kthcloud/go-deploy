@@ -3,18 +3,19 @@ package vm_port_repo
 import (
 	"context"
 	"errors"
-	"go-deploy/models/model"
+
+	"github.com/kthcloud/go-deploy/models/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var (
-	// PortNotFoundErr is returned when a port is not found.
-	PortNotFoundErr = errors.New("port not found")
-	// NoPortsAvailableErr is returned when no ports are available.
+	// ErrPortNotFound is returned when a port is not found.
+	ErrPortNotFound = errors.New("port not found")
+	// ErrNoPortsAvailable is returned when no ports are available.
 	// This is likely due to the port range being full.
-	NoPortsAvailableErr = errors.New("port not found")
+	ErrNoPortsAvailable = errors.New("port not found")
 )
 
 // CreateIfNotExists creates the given port range if it does not already exist.
@@ -48,12 +49,12 @@ func (client *Client) CreateIfNotExists(publicPortStart, publicPortEnd int, zone
 // Lease leases a port for the given VM.
 func (client *Client) Lease(publicPort, privatePort int, vmID, zone string) (*model.VmPort, error) {
 	filter := bson.D{
-		{"publicPort", publicPort},
-		{"zone", zone},
-		{"lease", nil},
+		{Key: "publicPort", Value: publicPort},
+		{Key: "zone", Value: zone},
+		{Key: "lease", Value: nil},
 	}
 
-	update := bson.D{{"$set", bson.D{{"lease", model.VmPortLease{
+	update := bson.D{{Key: "$set", Value: bson.D{{Key: "lease", Value: model.VmPortLease{
 		VmID:        vmID,
 		PrivatePort: privatePort,
 	}}}}}
@@ -61,7 +62,7 @@ func (client *Client) Lease(publicPort, privatePort int, vmID, zone string) (*mo
 	res := client.Collection.FindOneAndUpdate(context.Background(), filter, update)
 	if res.Err() != nil {
 		if errors.Is(res.Err(), mongo.ErrNoDocuments) {
-			return nil, PortNotFoundErr
+			return nil, ErrPortNotFound
 		}
 
 		return nil, res.Err()
@@ -80,8 +81,8 @@ func (client *Client) Lease(publicPort, privatePort int, vmID, zone string) (*mo
 func (client *Client) GetOrLeaseAny(privatePort int, vmID, zone string) (*model.VmPort, error) {
 	// First check if the lease already exists
 	filter := bson.D{
-		{"lease.vmId", vmID},
-		{"lease.privatePort", privatePort},
+		{Key: "lease.vmId", Value: vmID},
+		{Key: "lease.privatePort", Value: privatePort},
 	}
 
 	vmPort, err := client.GetWithFilterAndProjection(filter, nil)
@@ -95,14 +96,14 @@ func (client *Client) GetOrLeaseAny(privatePort int, vmID, zone string) (*model.
 
 	// Fetch a port that is not leased
 	filter = bson.D{
-		{"zone", zone},
-		{"lease", nil},
+		{Key: "zone", Value: zone},
+		{Key: "lease", Value: nil},
 	}
 
 	update := bson.D{
 		{
-			"$set", bson.D{
-				{"lease", model.VmPortLease{
+			Key: "$set", Value: bson.D{
+				{Key: "lease", Value: model.VmPortLease{
 					VmID:        vmID,
 					PrivatePort: privatePort,
 				}},
@@ -113,7 +114,7 @@ func (client *Client) GetOrLeaseAny(privatePort int, vmID, zone string) (*model.
 	res := client.Collection.FindOneAndUpdate(context.Background(), filter, update, options.FindOneAndUpdate().SetReturnDocument(options.After))
 	if res.Err() != nil {
 		if errors.Is(res.Err(), mongo.ErrNoDocuments) {
-			return nil, NoPortsAvailableErr
+			return nil, ErrNoPortsAvailable
 		}
 
 		return nil, res.Err()
@@ -131,13 +132,13 @@ func (client *Client) GetOrLeaseAny(privatePort int, vmID, zone string) (*model.
 // ReleaseAll releases all ports leased by the given VM.
 func (client *Client) ReleaseAll(vmID string) error {
 	filter := bson.D{
-		{"lease.vmId", vmID},
+		{Key: "lease.vmId", Value: vmID},
 	}
 
 	update := bson.D{
 		{
-			"$set", bson.D{
-				{"lease", nil},
+			Key: "$set", Value: bson.D{
+				{Key: "lease", Value: nil},
 			},
 		},
 	}
@@ -154,8 +155,8 @@ func (client *Client) ReleaseAll(vmID string) error {
 // This removes the port from the database entirely.
 func (client *Client) Erase(publicPort int, zone string) error {
 	filter := bson.D{
-		{"publicPort", publicPort},
-		{"zone", zone},
+		{Key: "publicPort", Value: publicPort},
+		{Key: "zone", Value: zone},
 	}
 
 	_, err := client.Collection.DeleteOne(context.TODO(), filter)

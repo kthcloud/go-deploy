@@ -2,9 +2,9 @@ package acc
 
 import (
 	"fmt"
-	"go-deploy/models/mode"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/models/mode"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/log"
 	"os"
 	"strings"
 

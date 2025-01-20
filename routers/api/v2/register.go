@@ -3,19 +3,19 @@ package v2
 import (
 	"errors"
 	"fmt"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
-	"go-deploy/dto/v2/body"
-	"go-deploy/pkg/sys"
-	"go-deploy/service"
-	sErrors "go-deploy/service/errors"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/pkg/sys"
+	"github.com/kthcloud/go-deploy/service"
+	sErrors "github.com/kthcloud/go-deploy/service/errors"
 )
 
 // Register
 // @Summary Register resource
 // @Description Register resource
 // @Tags Register
-// @Accept  json
 // @Produce  json
 // @Success 204
 // @Failure 400 {object} sys.ErrorResponse
@@ -31,13 +31,13 @@ func Register(c *gin.Context) {
 		err = service.V2().System().RegisterNode(&requestQueryJoin)
 		if err != nil {
 			switch {
-			case errors.Is(err, sErrors.BadDiscoveryTokenErr):
+			case errors.Is(err, sErrors.ErrBadDiscoveryToken):
 				context.UserError("Invalid token")
 				return
-			case errors.Is(err, sErrors.ZoneNotFoundErr):
+			case errors.Is(err, sErrors.ErrZoneNotFound):
 				context.NotFound("Zone not found")
 				return
-			case errors.Is(err, sErrors.HostNotFoundErr):
+			case errors.Is(err, sErrors.ErrHostNotFound):
 				context.NotFound("Host not found")
 				return
 			}

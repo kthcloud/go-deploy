@@ -1,17 +1,17 @@
 package harbor_service
 
 import (
-	configModels "go-deploy/models/config"
-	"go-deploy/models/model"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/subsystems/harbor"
-	"go-deploy/service/core"
-	sErrors "go-deploy/service/errors"
-	"go-deploy/service/generators"
-	"go-deploy/service/v2/deployments/client"
-	"go-deploy/service/v2/deployments/opts"
-	"go-deploy/service/v2/deployments/resources"
-	"go-deploy/utils/subsystemutils"
+	configModels "github.com/kthcloud/go-deploy/models/config"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/harbor"
+	"github.com/kthcloud/go-deploy/service/core"
+	sErrors "github.com/kthcloud/go-deploy/service/errors"
+	"github.com/kthcloud/go-deploy/service/generators"
+	"github.com/kthcloud/go-deploy/service/v2/deployments/client"
+	"github.com/kthcloud/go-deploy/service/v2/deployments/opts"
+	"github.com/kthcloud/go-deploy/service/v2/deployments/resources"
+	"github.com/kthcloud/go-deploy/utils/subsystemutils"
 )
 
 // OptsAll returns the options required to get all the service tools, ie. deployment, client, and generator.
@@ -74,7 +74,7 @@ func (c *Client) Get(opts *opts.Opts) (*model.Deployment, *harbor.Client, genera
 		}
 
 		if deployment == nil {
-			return nil, nil, nil, sErrors.DeploymentNotFoundErr
+			return nil, nil, nil, sErrors.ErrDeploymentNotFound
 		}
 	}
 
@@ -92,7 +92,7 @@ func (c *Client) Get(opts *opts.Opts) (*model.Deployment, *harbor.Client, genera
 		}
 
 		if harborClient == nil {
-			return nil, nil, nil, sErrors.DeploymentNotFoundErr
+			return nil, nil, nil, sErrors.ErrDeploymentNotFound
 		}
 	}
 
@@ -113,7 +113,7 @@ func (c *Client) Get(opts *opts.Opts) (*model.Deployment, *harbor.Client, genera
 
 		harborGenerator = c.Generator(deployment, userID, zone)
 		if harborGenerator == nil {
-			return nil, nil, nil, sErrors.DeploymentNotFoundErr
+			return nil, nil, nil, sErrors.ErrDeploymentNotFound
 		}
 	}
 

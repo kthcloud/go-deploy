@@ -1,8 +1,8 @@
 package system_state_poll
 
 import (
-	"go-deploy/models/model"
-	wErrors "go-deploy/pkg/services/errors"
+	"github.com/kthcloud/go-deploy/models/model"
+	wErrors "github.com/kthcloud/go-deploy/pkg/services/errors"
 	"k8s.io/client-go/kubernetes"
 	"log"
 	"sync"

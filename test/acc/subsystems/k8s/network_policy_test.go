@@ -1,8 +1,8 @@
 package k8s
 
 import (
+	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
 	"github.com/stretchr/testify/assert"
-	"go-deploy/pkg/subsystems/k8s/models"
 	"testing"
 )
 

@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-playground/validator/v10"
-	"go-deploy/dto/v2/body"
-	"go-deploy/pkg/sys"
-	"go-deploy/service/core"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/pkg/sys"
+	"github.com/kthcloud/go-deploy/service/core"
 	"reflect"
 )
 

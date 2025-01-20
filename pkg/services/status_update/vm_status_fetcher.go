@@ -1,10 +1,10 @@
 package status_update
 
 import (
-	"go-deploy/models/model"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/db/resources/vm_repo"
-	"go-deploy/service"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/vm_repo"
+	"github.com/kthcloud/go-deploy/service"
 )
 
 func VmStatusFetcher() error {

@@ -3,23 +3,24 @@ package v2
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/google/uuid"
-	"go-deploy/dto/v2/body"
-	"go-deploy/dto/v2/query"
-	"go-deploy/dto/v2/uri"
-	"go-deploy/models/model"
-	"go-deploy/pkg/sys"
-	"go-deploy/service"
-	sErrors "go-deploy/service/errors"
-	deploymentOpts "go-deploy/service/v2/deployments/opts"
-	"go-deploy/service/v2/teams/opts"
-	v12 "go-deploy/service/v2/utils"
-	vmOpts "go-deploy/service/v2/vms/opts"
-	"go-deploy/utils"
-	"net/http"
-	"time"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/dto/v2/query"
+	"github.com/kthcloud/go-deploy/dto/v2/uri"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/sys"
+	"github.com/kthcloud/go-deploy/service"
+	sErrors "github.com/kthcloud/go-deploy/service/errors"
+	deploymentOpts "github.com/kthcloud/go-deploy/service/v2/deployments/opts"
+	"github.com/kthcloud/go-deploy/service/v2/teams/opts"
+	v12 "github.com/kthcloud/go-deploy/service/v2/utils"
+	vmOpts "github.com/kthcloud/go-deploy/service/v2/vms/opts"
+	"github.com/kthcloud/go-deploy/utils"
 )
 
 // GetTeam
@@ -29,6 +30,7 @@ import (
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param teamId path string true "Team ID"
 // @Success 200 {object} body.TeamRead
 // @Failure 400 {object} body.BindingError
@@ -45,13 +47,13 @@ func GetTeam(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
 	team, err := service.V2(auth).Teams().Get(requestURI.TeamID)
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -65,6 +67,7 @@ func GetTeam(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param all query bool false "List all"
 // @Param userId query string false "Filter by user ID"
 // @Param page query int false "Page number"
@@ -84,7 +87,7 @@ func ListTeams(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -100,7 +103,7 @@ func ListTeams(c *gin.Context) {
 		UserID:     userID,
 	})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -119,6 +122,7 @@ func ListTeams(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param body body body.TeamCreate true "Team"
 // @Success 200 {object} body.TeamRead
 // @Failure 400 {object} body.BindingError
@@ -135,18 +139,18 @@ func CreateTeam(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
 	team, err := service.V2(auth).Teams().Create(uuid.NewString(), auth.User.ID, &requestQuery)
 	if err != nil {
-		if errors.Is(err, sErrors.TeamNameTakenErr) {
+		if errors.Is(err, sErrors.ErrTeamNameTaken) {
 			context.UserError("Team name is taken")
 			return
 		}
 
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -160,6 +164,7 @@ func CreateTeam(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param teamId path string true "Team ID"
 // @Param body body body.TeamUpdate true "Team"
 // @Success 200 {object} body.TeamRead
@@ -189,18 +194,18 @@ func UpdateTeam(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
 	updated, err := service.V2(auth).Teams().Update(requestURI.TeamID, &requestQuery)
 	if err != nil {
-		if errors.Is(err, sErrors.TeamNameTakenErr) {
+		if errors.Is(err, sErrors.ErrTeamNameTaken) {
 			context.UserError("Team name is taken")
 			return
 		}
 
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -219,6 +224,7 @@ func UpdateTeam(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param teamId path string true "Team ID"
 // @Success 204 "No Content"
 // @Failure 400 {object} body.BindingError
@@ -235,18 +241,18 @@ func DeleteTeam(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
 	err = service.V2(auth).Teams().Delete(requestURI.TeamID)
 	if err != nil {
-		if errors.Is(err, sErrors.TeamNotFoundErr) {
+		if errors.Is(err, sErrors.ErrTeamNotFound) {
 			context.NotFound("Team not found")
 			return
 		}
 
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -258,22 +264,22 @@ func DeleteTeam(c *gin.Context) {
 func joinTeam(context sys.ClientContext, id string, requestBody *body.TeamJoin) {
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 	}
 
 	team, err := service.V2(auth).Teams().Join(id, requestBody)
 	if err != nil {
-		if errors.Is(err, sErrors.NotInvitedErr) {
+		if errors.Is(err, sErrors.ErrNotInvited) {
 			context.UserError("User not invited to team")
 			return
 		}
 
-		if errors.Is(err, sErrors.BadInviteCodeErr) {
+		if errors.Is(err, sErrors.ErrBadInviteCode) {
 			context.Forbidden("Bad invite code")
 			return
 		}
 
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 

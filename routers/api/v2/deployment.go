@@ -2,32 +2,33 @@ package v2
 
 import (
 	"errors"
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
-	"go-deploy/dto/v2/body"
-	"go-deploy/dto/v2/query"
-	"go-deploy/dto/v2/uri"
-	configModels "go-deploy/models/config"
-	"go-deploy/models/model"
-	"go-deploy/models/version"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/sys"
-	"go-deploy/service"
-	sErrors "go-deploy/service/errors"
-	"go-deploy/service/v2/deployments/opts"
-	teamOpts "go-deploy/service/v2/teams/opts"
-	v12 "go-deploy/service/v2/utils"
 	"strconv"
 	"strings"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/dto/v2/query"
+	"github.com/kthcloud/go-deploy/dto/v2/uri"
+	configModels "github.com/kthcloud/go-deploy/models/config"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/models/version"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/sys"
+	"github.com/kthcloud/go-deploy/service"
+	sErrors "github.com/kthcloud/go-deploy/service/errors"
+	"github.com/kthcloud/go-deploy/service/v2/deployments/opts"
+	teamOpts "github.com/kthcloud/go-deploy/service/v2/teams/opts"
+	v12 "github.com/kthcloud/go-deploy/service/v2/utils"
 )
 
 // GetDeployment
 // @Summary Get deployment
 // @Description Get deployment
 // @Tags Deployment
-// @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param deploymentId path string true "Deployment ID"
 // @Success 200 {object} body.DeploymentRead
 // @Failure 400 {object} sys.ErrorResponse
@@ -50,7 +51,7 @@ func GetDeployment(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -64,7 +65,7 @@ func GetDeployment(c *gin.Context) {
 	}
 
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -81,9 +82,9 @@ func GetDeployment(c *gin.Context) {
 // @Summary List deployments
 // @Description List deployments
 // @Tags Deployment
-// @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param all query bool false "List all"
 // @Param userId query string false "Filter by user ID"
 // @Param shared query bool false "Include shared"
@@ -104,7 +105,7 @@ func ListDeployments(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -123,7 +124,7 @@ func ListDeployments(c *gin.Context) {
 		Shared:     true,
 	})
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -148,6 +149,7 @@ func ListDeployments(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param body body body.DeploymentCreate true "Deployment body"
 // @Success 200 {object} body.DeploymentRead
 // @Failure 400 {object} sys.ErrorResponse
@@ -164,13 +166,13 @@ func CreateDeployment(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
 	effectiveRole := auth.GetEffectiveRole()
 	if effectiveRole == nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -178,7 +180,7 @@ func CreateDeployment(c *gin.Context) {
 
 	doesNotAlreadyExists, err := deployV2.Deployments().NameAvailable(requestBody.Name)
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -218,7 +220,7 @@ func CreateDeployment(c *gin.Context) {
 			return
 		}
 
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -232,7 +234,7 @@ func CreateDeployment(c *gin.Context) {
 	})
 
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -249,6 +251,7 @@ func CreateDeployment(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param deploymentId path string true "Deployment ID"
 // @Success 200 {object} body.DeploymentCreated
 // @Failure 400 {object} sys.ErrorResponse
@@ -267,7 +270,7 @@ func DeleteDeployment(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -275,7 +278,7 @@ func DeleteDeployment(c *gin.Context) {
 
 	currentDeployment, err := deployV2.Deployments().Get(requestURI.DeploymentID)
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -297,12 +300,12 @@ func DeleteDeployment(c *gin.Context) {
 			return
 		}
 
-		if errors.Is(err, sErrors.DeploymentNotFoundErr) {
+		if errors.Is(err, sErrors.ErrDeploymentNotFound) {
 			context.NotFound("Deployment not found")
 			return
 		}
 
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -313,7 +316,7 @@ func DeleteDeployment(c *gin.Context) {
 		"authInfo": auth,
 	})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -330,6 +333,7 @@ func DeleteDeployment(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param deploymentId path string true "Deployment ID"
 // @Param body body body.DeploymentUpdate true "Deployment update"
 // @Success 200 {object} body.DeploymentUpdated
@@ -353,7 +357,7 @@ func UpdateDeployment(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -361,7 +365,7 @@ func UpdateDeployment(c *gin.Context) {
 
 	deployment, err := deployV2.Deployments().Get(requestURI.DeploymentID, opts.GetOpts{Shared: true})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 	if deployment == nil {
@@ -372,7 +376,7 @@ func UpdateDeployment(c *gin.Context) {
 	if requestBody.Name != nil {
 		available, err := deployV2.Deployments().NameAvailable(*requestBody.Name)
 		if err != nil {
-			context.ServerError(err, InternalError)
+			context.ServerError(err, ErrInternal)
 			return
 		}
 
@@ -390,7 +394,7 @@ func UpdateDeployment(c *gin.Context) {
 			return
 		}
 
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -408,7 +412,7 @@ func UpdateDeployment(c *gin.Context) {
 	})
 
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 

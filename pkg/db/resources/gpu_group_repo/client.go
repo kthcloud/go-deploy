@@ -1,9 +1,9 @@
 package gpu_group_repo
 
 import (
-	"go-deploy/models/model"
-	"go-deploy/pkg/db"
-	"go-deploy/pkg/db/resources/base_clients"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/base_clients"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -33,7 +33,7 @@ func (client *Client) WithPagination(page, pageSize int) *Client {
 
 // WithZone adds a filter to the client to only include groups with the given zone.
 func (client *Client) WithZone(zone string) *Client {
-	client.ResourceClient.AddExtraFilter(bson.D{{"zone", zone}})
+	client.ResourceClient.AddExtraFilter(bson.D{{Key: "zone", Value: zone}})
 
 	return client
 }

@@ -1,8 +1,8 @@
 package clients
 
 import (
-	"go-deploy/service/core"
-	apiV2 "go-deploy/service/v2/api"
+	"github.com/kthcloud/go-deploy/service/core"
+	apiV2 "github.com/kthcloud/go-deploy/service/v2/api"
 )
 
 type V2 interface {

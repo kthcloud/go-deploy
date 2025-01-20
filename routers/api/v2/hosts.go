@@ -2,17 +2,17 @@ package v2
 
 import (
 	"fmt"
+
 	"github.com/gin-gonic/gin"
-	"go-deploy/dto/v2/body"
-	"go-deploy/pkg/sys"
-	"go-deploy/service"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/pkg/sys"
+	"github.com/kthcloud/go-deploy/service"
 )
 
 // ListHosts
 // @Summary List Hosts
 // @Description List Hosts
 // @Tags Host
-// @Accept  json
 // @Produce  json
 // @Success 200 {array} body.HostRead
 // @Failure 500 {object} sys.ErrorResponse

@@ -3,7 +3,7 @@ package base_clients
 import (
 	"context"
 	"errors"
-	"go-deploy/pkg/db"
+	"github.com/kthcloud/go-deploy/pkg/db"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"

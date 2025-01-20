@@ -1,8 +1,8 @@
 package v2
 
 import (
-	"go-deploy/dto/v2/body"
-	"go-deploy/test/e2e"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/test/e2e"
 	"net/http"
 	"testing"
 )

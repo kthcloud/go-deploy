@@ -2,17 +2,18 @@ package v2
 
 import (
 	"errors"
+
 	"github.com/gin-gonic/gin"
-	"go-deploy/dto/v2/body"
-	"go-deploy/dto/v2/query"
-	"go-deploy/dto/v2/uri"
-	"go-deploy/models/model"
-	"go-deploy/pkg/app/status_codes"
-	"go-deploy/pkg/sys"
-	"go-deploy/service"
-	sErrors "go-deploy/service/errors"
-	"go-deploy/service/v2/jobs/opts"
-	v12 "go-deploy/service/v2/utils"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/dto/v2/query"
+	"github.com/kthcloud/go-deploy/dto/v2/uri"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/app/status_codes"
+	"github.com/kthcloud/go-deploy/pkg/sys"
+	"github.com/kthcloud/go-deploy/service"
+	sErrors "github.com/kthcloud/go-deploy/service/errors"
+	"github.com/kthcloud/go-deploy/service/v2/jobs/opts"
+	v12 "github.com/kthcloud/go-deploy/service/v2/utils"
 )
 
 // GetJob
@@ -22,6 +23,7 @@ import (
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param jobId path string true "Job ID"
 // @Success 200 {object} body.JobRead
 // @Failure 400 {object} sys.ErrorResponse
@@ -40,13 +42,13 @@ func GetJob(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
 	job, err := service.V2(auth).Jobs().Get(requestURI.JobID)
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -65,6 +67,7 @@ func GetJob(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param all query bool false "List all"
 // @Param userId query string false "Filter by user ID"
 // @Param type query string false "Filter by type"
@@ -84,7 +87,7 @@ func ListJobs(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -99,7 +102,7 @@ func ListJobs(c *gin.Context) {
 		ExcludeStatus:   requestQuery.ExcludeStatus,
 	})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -123,6 +126,7 @@ func ListJobs(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param jobId path string true "Job ID"
 // @Param body body body.JobUpdate true "Job update"
 // @Success 200 {object} body.JobRead
@@ -144,23 +148,23 @@ func UpdateJob(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
 	updated, err := service.V2(auth).Jobs().Update(requestURI.JobID, &request)
 	if err != nil {
-		if errors.Is(err, sErrors.ForbiddenErr) {
+		if errors.Is(err, sErrors.ErrForbidden) {
 			context.Forbidden("User is not allowed to update jobs")
 			return
 		}
 
-		if errors.Is(err, sErrors.JobNotFoundErr) {
+		if errors.Is(err, sErrors.ErrJobNotFound) {
 			context.NotFound("Job not found")
 			return
 		}
 
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 

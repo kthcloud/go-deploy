@@ -4,25 +4,26 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	configModels "go-deploy/models/config"
-	"go-deploy/models/model"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/db/resources/team_repo"
-	"go-deploy/pkg/db/resources/user_repo"
-	"go-deploy/pkg/subsystems"
-	"go-deploy/pkg/subsystems/k8s"
-	"go-deploy/pkg/subsystems/k8s/keys"
-	"go-deploy/pkg/subsystems/k8s/models"
-	"go-deploy/service/constants"
-	"go-deploy/service/generators"
-	"go-deploy/utils"
-	v1 "k8s.io/api/core/v1"
 	"math"
 	"path"
 	"regexp"
 	"slices"
 	"strings"
 	"time"
+
+	configModels "github.com/kthcloud/go-deploy/models/config"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/team_repo"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/user_repo"
+	"github.com/kthcloud/go-deploy/pkg/subsystems"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/keys"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
+	"github.com/kthcloud/go-deploy/service/constants"
+	"github.com/kthcloud/go-deploy/service/generators"
+	"github.com/kthcloud/go-deploy/utils"
+	v1 "k8s.io/api/core/v1"
 )
 
 type K8sGenerator struct {
@@ -338,7 +339,7 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 
 	if mainApp.CustomDomain != nil && mainApp.CustomDomain.Status == model.CustomDomainStatusActive {
 		customIn := models.IngressPublic{
-			Name:         fmt.Sprintf(constants.WithCustomDomainSuffix(kg.deployment.Name)),
+			Name:         fmt.Sprint(constants.WithCustomDomainSuffix(kg.deployment.Name)),
 			Namespace:    kg.namespace,
 			ServiceName:  serviceName,
 			ServicePort:  servicePort,

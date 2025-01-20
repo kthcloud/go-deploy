@@ -3,11 +3,11 @@ package harbor
 import (
 	"context"
 	"fmt"
-	projectModels "go-deploy/pkg/imp/harbor/sdk/v2.0/client/project"
-	webhookModels "go-deploy/pkg/imp/harbor/sdk/v2.0/client/webhook"
-	harborModels "go-deploy/pkg/imp/harbor/sdk/v2.0/models"
-	"go-deploy/pkg/log"
-	models "go-deploy/pkg/subsystems/harbor/models"
+	projectModels "github.com/kthcloud/go-deploy/pkg/imp/harbor/sdk/v2.0/client/project"
+	webhookModels "github.com/kthcloud/go-deploy/pkg/imp/harbor/sdk/v2.0/client/webhook"
+	harborModels "github.com/kthcloud/go-deploy/pkg/imp/harbor/sdk/v2.0/models"
+	"github.com/kthcloud/go-deploy/pkg/log"
+	models "github.com/kthcloud/go-deploy/pkg/subsystems/harbor/models"
 	"strconv"
 )
 

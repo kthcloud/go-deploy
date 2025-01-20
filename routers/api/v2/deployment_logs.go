@@ -3,24 +3,25 @@ package v2
 import (
 	"context"
 	"errors"
-	"github.com/gin-gonic/gin"
-	"go-deploy/dto/v2/body"
-	"go-deploy/dto/v2/uri"
-	"go-deploy/pkg/sys"
-	"go-deploy/service"
-	errors2 "go-deploy/service/errors"
-	"go-deploy/service/v2/deployments"
 	"io"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/dto/v2/uri"
+	"github.com/kthcloud/go-deploy/pkg/sys"
+	"github.com/kthcloud/go-deploy/service"
+	errors2 "github.com/kthcloud/go-deploy/service/errors"
+	"github.com/kthcloud/go-deploy/service/v2/deployments"
 )
 
 // GetLogs
 // @Summary Get logs using Server-Sent Events
 // @Description Get logs using Server-Sent Events
 // @Tags Deployment
-// @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param deploymentId path string true "Deployment ID"
 // @Success 200 {string} string
 // @Failure 400 {object} sys.ErrorResponse
@@ -38,7 +39,7 @@ func GetLogs(c *gin.Context) {
 
 	auth, err := WithAuth(&sysContext)
 	if err != nil {
-		sysContext.ServerError(err, AuthInfoNotAvailableErr)
+		sysContext.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -62,12 +63,12 @@ func GetLogs(c *gin.Context) {
 
 	err = deployV2.Deployments().SetupLogStream(requestURI.DeploymentID, ctx, handler, 25)
 	if err != nil {
-		if errors.Is(err, errors2.DeploymentNotFoundErr) {
+		if errors.Is(err, errors2.ErrDeploymentNotFound) {
 			sysContext.NotFound("Deployment not found")
 			return
 		}
 
-		sysContext.ServerError(err, InternalError)
+		sysContext.ServerError(err, ErrInternal)
 		return
 	}
 

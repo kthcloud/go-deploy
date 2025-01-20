@@ -2,12 +2,13 @@ package v2
 
 import (
 	"errors"
+
 	"github.com/gin-gonic/gin"
-	"go-deploy/dto/v2/body"
-	"go-deploy/dto/v2/uri"
-	"go-deploy/pkg/sys"
-	"go-deploy/service"
-	sErrors "go-deploy/service/errors"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/dto/v2/uri"
+	"github.com/kthcloud/go-deploy/pkg/sys"
+	"github.com/kthcloud/go-deploy/service"
+	sErrors "github.com/kthcloud/go-deploy/service/errors"
 )
 
 // CreateApiKey
@@ -17,6 +18,7 @@ import (
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param userId path string true "User ID"
 // @Param body body body.ApiKeyCreate true "API key create body"
 // @Success 200 {object}  body.ApiKeyCreated
@@ -40,7 +42,7 @@ func CreateApiKey(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -53,12 +55,12 @@ func CreateApiKey(c *gin.Context) {
 	apiKey, err := deployV2.Users().ApiKeys().Create(requestURI.UserID, &requestBody)
 	if err != nil {
 		switch {
-		case errors.Is(err, sErrors.UserNotFoundErr):
+		case errors.Is(err, sErrors.ErrUserNotFound):
 			context.NotFound("User not found")
-		case errors.Is(err, sErrors.ApiKeyNameTakenErr):
+		case errors.Is(err, sErrors.ErrApiKeyNameTaken):
 			context.UserError("API key name already taken")
 		default:
-			context.ServerError(err, InternalError)
+			context.ServerError(err, ErrInternal)
 		}
 		return
 	}

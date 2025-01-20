@@ -1,7 +1,7 @@
 package model
 
 import (
-	"go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
 )
 
 type Quotas struct {

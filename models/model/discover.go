@@ -1,7 +1,7 @@
 package model
 
 import (
-	body2 "go-deploy/dto/v2/body"
+	body2 "github.com/kthcloud/go-deploy/dto/v2/body"
 )
 
 type Discover struct {

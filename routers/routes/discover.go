@@ -1,6 +1,6 @@
 package routes
 
-import v2 "go-deploy/routers/api/v2"
+import v2 "github.com/kthcloud/go-deploy/routers/api/v2"
 
 const (
 	DiscoverPath = "/v2/discover"

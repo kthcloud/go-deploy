@@ -1,11 +1,12 @@
 package host_repo
 
 import (
-	"go-deploy/models/model"
-	"go-deploy/pkg/db"
-	"go-deploy/pkg/db/resources/base_clients"
-	"go.mongodb.org/mongo-driver/bson"
 	"time"
+
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/base_clients"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // Client is the client for the host model.
@@ -37,9 +38,9 @@ func (client *Client) WithPagination(page, pageSize int) *Client {
 
 // Activated adds a filter to only return activated hosts
 func (client *Client) Activated() *Client {
-	filter := bson.D{{"$or", bson.A{
-		bson.D{{"deactivatedUntil", bson.D{{"$lt", time.Now()}}}},
-		bson.D{{"deactivatedUntil", bson.D{{"$exists", false}}}},
+	filter := bson.D{{Key: "$or", Value: bson.A{
+		bson.D{{Key: "deactivatedUntil", Value: bson.D{{Key: "$lt", Value: time.Now()}}}},
+		bson.D{{Key: "deactivatedUntil", Value: bson.D{{Key: "$exists", Value: false}}}},
 	}}}
 
 	client.AddExtraFilter(filter)
@@ -49,7 +50,7 @@ func (client *Client) Activated() *Client {
 
 // Schedulable adds a filter to only return hosts that are schedulable
 func (client *Client) Schedulable() *Client {
-	filter := bson.D{{"schedulable", true}}
+	filter := bson.D{{Key: "schedulable", Value: true}}
 
 	client.AddExtraFilter(filter)
 

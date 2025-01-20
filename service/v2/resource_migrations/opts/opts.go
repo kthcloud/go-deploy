@@ -1,6 +1,6 @@
 package opts
 
-import v1 "go-deploy/service/v2/utils"
+import v1 "github.com/kthcloud/go-deploy/service/v2/utils"
 
 // GetOpts is used to specify the options when getting a resource migration.
 type GetOpts struct {

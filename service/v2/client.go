@@ -1,19 +1,19 @@
 package v2
 
 import (
-	"go-deploy/service/core"
-	"go-deploy/service/v2/api"
-	"go-deploy/service/v2/deployments"
-	"go-deploy/service/v2/discovery"
-	"go-deploy/service/v2/events"
-	"go-deploy/service/v2/jobs"
-	"go-deploy/service/v2/notifications"
-	"go-deploy/service/v2/resource_migrations"
-	"go-deploy/service/v2/sms"
-	"go-deploy/service/v2/system"
-	"go-deploy/service/v2/teams"
-	"go-deploy/service/v2/users"
-	"go-deploy/service/v2/vms"
+	"github.com/kthcloud/go-deploy/service/core"
+	"github.com/kthcloud/go-deploy/service/v2/api"
+	"github.com/kthcloud/go-deploy/service/v2/deployments"
+	"github.com/kthcloud/go-deploy/service/v2/discovery"
+	"github.com/kthcloud/go-deploy/service/v2/events"
+	"github.com/kthcloud/go-deploy/service/v2/jobs"
+	"github.com/kthcloud/go-deploy/service/v2/notifications"
+	"github.com/kthcloud/go-deploy/service/v2/resource_migrations"
+	"github.com/kthcloud/go-deploy/service/v2/sms"
+	"github.com/kthcloud/go-deploy/service/v2/system"
+	"github.com/kthcloud/go-deploy/service/v2/teams"
+	"github.com/kthcloud/go-deploy/service/v2/users"
+	"github.com/kthcloud/go-deploy/service/v2/vms"
 )
 
 type Client struct {

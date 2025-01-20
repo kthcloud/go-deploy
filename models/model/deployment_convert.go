@@ -2,9 +2,9 @@ package model
 
 import (
 	"fmt"
-	"go-deploy/dto/v2/body"
-	"go-deploy/pkg/log"
-	"go-deploy/utils"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/utils"
 	"golang.org/x/net/idna"
 	"strconv"
 )

@@ -1,8 +1,8 @@
 package gpu_groups
 
 import (
-	"go-deploy/test/e2e"
-	v2 "go-deploy/test/e2e/v2"
+	"github.com/kthcloud/go-deploy/test/e2e"
+	v2 "github.com/kthcloud/go-deploy/test/e2e/v2"
 	"os"
 	"testing"
 )

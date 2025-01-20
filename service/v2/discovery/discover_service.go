@@ -1,9 +1,9 @@
 package discovery
 
 import (
-	"go-deploy/models/model"
-	"go-deploy/models/version"
-	"go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/models/version"
+	"github.com/kthcloud/go-deploy/pkg/config"
 )
 
 // Discover returns the discover information.

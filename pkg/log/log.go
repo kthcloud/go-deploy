@@ -1,7 +1,7 @@
 package log
 
 import (
-	"go-deploy/models/mode"
+	"github.com/kthcloud/go-deploy/models/mode"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )

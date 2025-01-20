@@ -1,7 +1,7 @@
 package models
 
 import (
-	"go-deploy/pkg/imp/harbor/sdk/v2.0/models"
+	"github.com/kthcloud/go-deploy/pkg/imp/harbor/sdk/v2.0/models"
 	"strings"
 	"time"
 )

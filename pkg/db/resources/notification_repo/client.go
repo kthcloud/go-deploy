@@ -1,9 +1,9 @@
 package notification_repo
 
 import (
-	"go-deploy/models/model"
-	"go-deploy/pkg/db"
-	"go-deploy/pkg/db/resources/base_clients"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/base_clients"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -40,7 +40,7 @@ func (client *Client) WithPagination(page, pageSize int) *Client {
 
 // WithUserID adds a filter to the client to only include notifications with the given user ID.
 func (client *Client) WithUserID(ownerID string) *Client {
-	client.ResourceClient.AddExtraFilter(bson.D{{"userId", ownerID}})
+	client.ResourceClient.AddExtraFilter(bson.D{{Key: "userId", Value: ownerID}})
 	client.RestrictUserID = &ownerID
 
 	return client
@@ -48,14 +48,14 @@ func (client *Client) WithUserID(ownerID string) *Client {
 
 // WithType adds a filter to the client to only include notifications with the given type.
 func (client *Client) WithType(notificationType string) *Client {
-	client.ResourceClient.AddExtraFilter(bson.D{{"type", notificationType}})
+	client.ResourceClient.AddExtraFilter(bson.D{{Key: "type", Value: notificationType}})
 
 	return client
 }
 
 // FilterContent adds a filter to the client to only include notifications with the given content.
 func (client *Client) FilterContent(contentName string, filter interface{}) *Client {
-	client.AddExtraFilter(bson.D{{"content." + contentName, filter}})
+	client.AddExtraFilter(bson.D{{Key: "content." + contentName, Value: filter}})
 
 	return client
 }

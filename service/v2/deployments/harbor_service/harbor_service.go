@@ -2,14 +2,14 @@ package harbor_service
 
 import (
 	"fmt"
-	"go-deploy/models/model"
-	"go-deploy/pkg/db/resources/deployment_repo"
-	"go-deploy/pkg/log"
-	"go-deploy/pkg/subsystems"
-	"go-deploy/pkg/subsystems/harbor/models"
-	"go-deploy/service/resources"
-	"go-deploy/service/v2/deployments/opts"
-	"go-deploy/utils/subsystemutils"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/deployment_repo"
+	"github.com/kthcloud/go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/pkg/subsystems"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/harbor/models"
+	"github.com/kthcloud/go-deploy/service/resources"
+	"github.com/kthcloud/go-deploy/service/v2/deployments/opts"
+	"github.com/kthcloud/go-deploy/utils/subsystemutils"
 	"time"
 )
 

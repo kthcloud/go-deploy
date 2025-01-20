@@ -1,7 +1,7 @@
 package e2e
 
 import (
-	"go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/pkg/log"
 	"os"
 )
 

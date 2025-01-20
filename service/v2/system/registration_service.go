@@ -1,17 +1,17 @@
 package system
 
 import (
-	"go-deploy/dto/v2/body"
-	"go-deploy/models/model"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/db/resources/host_repo"
-	sErrors "go-deploy/service/errors"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/host_repo"
+	sErrors "github.com/kthcloud/go-deploy/service/errors"
 )
 
 func (c *Client) RegisterNode(params *body.HostRegisterParams) error {
 	// Validate token
 	if params.Token != config.Config.Discovery.Token {
-		return sErrors.BadDiscoveryTokenErr
+		return sErrors.ErrBadDiscoveryToken
 	}
 
 	if params.DisplayName == "" {
@@ -24,7 +24,7 @@ func (c *Client) RegisterNode(params *body.HostRegisterParams) error {
 	// Check if node is schedulable
 	zone := config.Config.GetZone(params.Zone)
 	if zone == nil {
-		return sErrors.ZoneNotFoundErr
+		return sErrors.ErrZoneNotFound
 	}
 
 	k8sClient, err := c.V2.Deployments().K8s().Client(zone)
@@ -38,7 +38,7 @@ func (c *Client) RegisterNode(params *body.HostRegisterParams) error {
 	}
 
 	if k8sNode == nil {
-		return sErrors.HostNotFoundErr
+		return sErrors.ErrHostNotFound
 	}
 
 	params.Schedulable = k8sNode.Schedulable

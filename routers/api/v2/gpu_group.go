@@ -2,22 +2,22 @@ package v2
 
 import (
 	"github.com/gin-gonic/gin"
-	"go-deploy/dto/v2/body"
-	"go-deploy/dto/v2/query"
-	"go-deploy/dto/v2/uri"
-	"go-deploy/pkg/sys"
-	"go-deploy/service"
-	"go-deploy/service/v2/utils"
-	"go-deploy/service/v2/vms/opts"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/dto/v2/query"
+	"github.com/kthcloud/go-deploy/dto/v2/uri"
+	"github.com/kthcloud/go-deploy/pkg/sys"
+	"github.com/kthcloud/go-deploy/service"
+	"github.com/kthcloud/go-deploy/service/v2/utils"
+	"github.com/kthcloud/go-deploy/service/v2/vms/opts"
 )
 
 // GetGpuGroup
 // @Summary Get GPU group
 // @Description Get GPU group
 // @Tags GpuGroup
-// @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param gpuGroupId path string true "GPU group ID"
 // @Success 200 {object} body.GpuGroupRead
 // @Failure 400 {object} sys.ErrorResponse
@@ -36,7 +36,7 @@ func GetGpuGroup(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -44,7 +44,7 @@ func GetGpuGroup(c *gin.Context) {
 
 	gpuGroup, err := deployV2.VMs().GpuGroups().Get(requestURI.GpuGroupID)
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -57,7 +57,7 @@ func GetGpuGroup(c *gin.Context) {
 		GpuGroupID: &gpuGroup.ID,
 	})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -68,9 +68,9 @@ func GetGpuGroup(c *gin.Context) {
 // @Summary List GPU groups
 // @Description List GPU groups
 // @Tags GpuGroup
-// @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param page query int false "Page number"
 // @Param pageSize query int false "Number of items per page"
 // @Success 200 {array} body.GpuGroupRead
@@ -96,7 +96,7 @@ func ListGpuGroups(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -106,7 +106,7 @@ func ListGpuGroups(c *gin.Context) {
 		Pagination: utils.GetOrDefaultPagination(requestQuery.Pagination),
 	})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -121,7 +121,7 @@ func ListGpuGroups(c *gin.Context) {
 			GpuGroupID: &gpuGroup.ID,
 		})
 		if err != nil {
-			context.ServerError(err, InternalError)
+			context.ServerError(err, ErrInternal)
 			return
 		}
 

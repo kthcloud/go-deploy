@@ -1,6 +1,6 @@
 package utils
 
-import "go-deploy/dto/v2/query"
+import "github.com/kthcloud/go-deploy/dto/v2/query"
 
 type Pagination struct {
 	Page     int
