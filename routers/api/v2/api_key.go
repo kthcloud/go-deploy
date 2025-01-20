@@ -2,6 +2,7 @@ package v2
 
 import (
 	"errors"
+
 	"github.com/gin-gonic/gin"
 	"github.com/kthcloud/go-deploy/dto/v2/body"
 	"github.com/kthcloud/go-deploy/dto/v2/uri"
@@ -17,6 +18,7 @@ import (
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param userId path string true "User ID"
 // @Param body body body.ApiKeyCreate true "API key create body"
 // @Success 200 {object}  body.ApiKeyCreated

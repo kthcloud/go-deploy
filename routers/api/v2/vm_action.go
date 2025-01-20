@@ -19,6 +19,7 @@ import (
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param vmId path string true "VM ID"
 // @Param body body body.VmActionCreate true "actions body"
 // @Success 200 {object} body.VmActionCreated

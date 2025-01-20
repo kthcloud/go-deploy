@@ -1,6 +1,10 @@
 package v2
 
 import (
+	"net/http"
+	"strconv"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/kthcloud/go-deploy/dto/v2/body"
@@ -14,18 +18,15 @@ import (
 	"github.com/kthcloud/go-deploy/service"
 	"github.com/kthcloud/go-deploy/service/v2/sms/opts"
 	v12 "github.com/kthcloud/go-deploy/service/v2/utils"
-	"net/http"
-	"strconv"
-	"strings"
 )
 
 // GetSM
 // @Summary Get storage manager
 // @Description Get storage manager
 // @Tags StorageManager
-// @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param storageManagerId path string true "Storage manager ID"
 // @Success 200 {object} body.SmDeleted
 // @Failure 400 {object} sys.ErrorResponse
@@ -66,9 +67,9 @@ func GetSM(c *gin.Context) {
 // @Summary Get storage manager list
 // @Description Get storage manager list
 // @Tags StorageManager
-// @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param all query bool false "List all"
 // @Param page query int false "Page number"
 // @Param pageSize query int false "Number of items per page"
@@ -119,9 +120,9 @@ func ListSMs(c *gin.Context) {
 // @Summary Delete storage manager
 // @Description Delete storage manager
 // @Tags StorageManager
-// @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param storageManagerId path string true "Storage manager ID"
 // @Success 200 {object} body.SmDeleted
 // @Failure 400 {object} sys.ErrorResponse

@@ -2,6 +2,8 @@ package v2
 
 import (
 	"errors"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/kthcloud/go-deploy/dto/v2/body"
@@ -11,16 +13,15 @@ import (
 	"github.com/kthcloud/go-deploy/service"
 	sErrors "github.com/kthcloud/go-deploy/service/errors"
 	"github.com/kthcloud/go-deploy/service/v2/resource_migrations/opts"
-	"net/http"
 )
 
 // GetResourceMigration
 // @Summary Get resource migration
 // @Description Get resource migration
 // @Tags ResourceMigration
-// @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param resourceMigrationId path string true "Resource Migration ID"
 // @Success 200 {object} body.ResourceMigrationRead
 // @Failure 400 {object} sys.ErrorResponse
@@ -60,9 +61,9 @@ func GetResourceMigration(c *gin.Context) {
 // @Summary List resource migrations
 // @Description List resource migrations
 // @Tags ResourceMigration
-// @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param page query int false "Page number"
 // @Param pageSize query int false "Number of items per page"
 // @Success 200 {array} body.ResourceMigrationRead
@@ -111,6 +112,7 @@ func ListResourceMigrations(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param body body body.ResourceMigrationCreate true "Resource Migration Create"
 // @Success 200 {object} body.ResourceMigrationCreated
 // @Failure 400 {object} sys.ErrorResponse
@@ -177,6 +179,7 @@ func CreateResourceMigration(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param resourceMigrationId path string true "Resource Migration ID"
 // @Param body body body.ResourceMigrationUpdate true "Resource Migration Update"
 // @Success 200 {object} body.ResourceMigrationUpdated
@@ -277,6 +280,7 @@ func UpdateResourceMigration(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param resourceMigrationId path string true "Resource Migration ID"
 // @Success 204 "No Content"
 // @Failure 400 {object} sys.ErrorResponse

@@ -1,14 +1,18 @@
 package routers
 
 import (
+	"net/http"
+	"net/url"
+	"reflect"
+	"strings"
+	"time"
+
 	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
-	"github.com/penglongli/gin-metrics/ginmetrics"
-	swaggerfiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 	docsV2 "github.com/kthcloud/go-deploy/docs/api/v2"
+	docsV2Handlers "github.com/kthcloud/go-deploy/docs/api/v2/handlers"
 	"github.com/kthcloud/go-deploy/models/mode"
 	"github.com/kthcloud/go-deploy/pkg/auth"
 	"github.com/kthcloud/go-deploy/pkg/config"
@@ -18,11 +22,7 @@ import (
 	"github.com/kthcloud/go-deploy/routers/api/v2/middleware"
 	"github.com/kthcloud/go-deploy/routers/api/validators"
 	"github.com/kthcloud/go-deploy/routers/routes"
-	"net/http"
-	"net/url"
-	"reflect"
-	"strings"
-	"time"
+	"github.com/penglongli/gin-metrics/ginmetrics"
 )
 
 // NewRouter creates a new router
@@ -67,8 +67,11 @@ func NewRouter() *gin.Engine {
 	//// Swagger routes
 	// v2
 	docsV2.SwaggerInfoV2.BasePath = basePath
-	public.GET("/v2/docs/*any", ginSwagger.WrapHandler(swaggerfiles.Handler, ginSwagger.InstanceName("V2")))
+	docsV2.SwaggerInfoV2.Host = ""
+	docsV2.SwaggerInfoV2.Schemes = []string{"http", "https"}
 
+	//public.GET("/v2/docs/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+	public.GET("/v2/docs/*any", docsV2Handlers.ServeDocs(basePath+"/v2/docs"))
 	//// Health check routes
 	public.Any("/healthz", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})

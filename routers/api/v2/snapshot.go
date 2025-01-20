@@ -2,6 +2,7 @@ package v2
 
 import (
 	"errors"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/kthcloud/go-deploy/dto/v2/body"
@@ -23,6 +24,7 @@ import (
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param vmId path string true "VM ID"
 // @Param snapshotId path string true "Snapshot ID"
 // @Success 200 {object} body.VmSnapshotRead
@@ -80,9 +82,9 @@ func GetSnapshot(c *gin.Context) {
 // @Summary List snapshots
 // @Description List snapshots
 // @Tags Snapshot
-// @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param vmId path string true "Filter by VM ID"
 // @Param page query int false "Page number"
 // @Param pageSize query int false "Number of items per page"
@@ -139,6 +141,7 @@ func ListSnapshots(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param vmId path string true "VM ID"
 // @Success 200 {object} body.VmSnapshotCreated
 // @Failure 400 {object} sys.ErrorResponse
@@ -240,6 +243,7 @@ func CreateSnapshot(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param vmId path string true "VM ID"
 // @Param snapshotId path string true "Snapshot ID"
 // @Success 200 {object} body.VmSnapshotDeleted

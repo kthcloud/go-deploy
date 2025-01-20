@@ -16,6 +16,7 @@ import (
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param deploymentId path string true "Deployment ID"
 // @Param body body body.DeploymentCommand true "Command body"
 // @Success 204 "No Content"

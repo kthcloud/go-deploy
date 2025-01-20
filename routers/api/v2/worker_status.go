@@ -13,7 +13,6 @@ import (
 // @Summary List worker status
 // @Description List of worker status
 // @Tags Status
-// @Accept json
 // @Produce json
 // @Success 200 {array} body.WorkerStatusRead
 // @Failure 400 {object} sys.ErrorResponse

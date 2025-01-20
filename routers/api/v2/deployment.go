@@ -2,6 +2,9 @@ package v2
 
 import (
 	"errors"
+	"strconv"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/kthcloud/go-deploy/dto/v2/body"
@@ -17,17 +20,15 @@ import (
 	"github.com/kthcloud/go-deploy/service/v2/deployments/opts"
 	teamOpts "github.com/kthcloud/go-deploy/service/v2/teams/opts"
 	v12 "github.com/kthcloud/go-deploy/service/v2/utils"
-	"strconv"
-	"strings"
 )
 
 // GetDeployment
 // @Summary Get deployment
 // @Description Get deployment
 // @Tags Deployment
-// @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param deploymentId path string true "Deployment ID"
 // @Success 200 {object} body.DeploymentRead
 // @Failure 400 {object} sys.ErrorResponse
@@ -81,9 +82,9 @@ func GetDeployment(c *gin.Context) {
 // @Summary List deployments
 // @Description List deployments
 // @Tags Deployment
-// @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param all query bool false "List all"
 // @Param userId query string false "Filter by user ID"
 // @Param shared query bool false "Include shared"
@@ -148,6 +149,7 @@ func ListDeployments(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param body body body.DeploymentCreate true "Deployment body"
 // @Success 200 {object} body.DeploymentRead
 // @Failure 400 {object} sys.ErrorResponse
@@ -249,6 +251,7 @@ func CreateDeployment(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param deploymentId path string true "Deployment ID"
 // @Success 200 {object} body.DeploymentCreated
 // @Failure 400 {object} sys.ErrorResponse
@@ -330,6 +333,7 @@ func DeleteDeployment(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param deploymentId path string true "Deployment ID"
 // @Param body body body.DeploymentUpdate true "Deployment update"
 // @Success 200 {object} body.DeploymentUpdated

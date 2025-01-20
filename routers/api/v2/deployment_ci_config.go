@@ -2,21 +2,22 @@ package v2
 
 import (
 	"errors"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/kthcloud/go-deploy/dto/v2/uri"
 	"github.com/kthcloud/go-deploy/pkg/sys"
 	"github.com/kthcloud/go-deploy/service"
 	dErrors "github.com/kthcloud/go-deploy/service/errors"
-	"net/http"
 )
 
 // GetCiConfig
 // @Summary Get CI config
 // @Description Get CI config
 // @Tags Deployment
-// @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param deploymentId path string true "Deployment ID"
 // @Success 200 {object} body.CiConfig
 // @Failure 400 {object} sys.ErrorResponse

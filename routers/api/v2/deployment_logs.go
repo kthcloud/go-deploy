@@ -3,6 +3,9 @@ package v2
 import (
 	"context"
 	"errors"
+	"io"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/kthcloud/go-deploy/dto/v2/body"
 	"github.com/kthcloud/go-deploy/dto/v2/uri"
@@ -10,17 +13,15 @@ import (
 	"github.com/kthcloud/go-deploy/service"
 	errors2 "github.com/kthcloud/go-deploy/service/errors"
 	"github.com/kthcloud/go-deploy/service/v2/deployments"
-	"io"
-	"time"
 )
 
 // GetLogs
 // @Summary Get logs using Server-Sent Events
 // @Description Get logs using Server-Sent Events
 // @Tags Deployment
-// @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param deploymentId path string true "Deployment ID"
 // @Success 200 {string} string
 // @Failure 400 {object} sys.ErrorResponse
