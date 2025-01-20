@@ -3,6 +3,7 @@ package gpu_group_repo
 import (
 	"errors"
 	"fmt"
+
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/db"
 	"github.com/kthcloud/go-deploy/utils"
@@ -24,10 +25,10 @@ func (client *Client) Create(name, displayName, zone, vendor, deviceID, vendorID
 	}
 
 	// We assume there is a unique constraint on name + zone
-	err := client.CreateIfUnique(id, &group, bson.D{{"id", id}, {"zone", zone}})
+	err := client.CreateIfUnique(id, &group, bson.D{{Key: "id", Value: id}, {Key: "zone", Value: zone}})
 	if err != nil {
-		if errors.Is(err, db.UniqueConstraintErr) {
-			return GpuLeaseAlreadyExistsErr
+		if errors.Is(err, db.ErrUniqueConstraint) {
+			return ErrGpuLeaseAlreadyExists
 		}
 
 		return err

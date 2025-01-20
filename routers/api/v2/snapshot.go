@@ -1,20 +1,8 @@
 package v2
 
 import (
-	"errors"
-
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
-	"github.com/kthcloud/go-deploy/dto/v2/body"
-	"github.com/kthcloud/go-deploy/dto/v2/query"
-	"github.com/kthcloud/go-deploy/dto/v2/uri"
-	"github.com/kthcloud/go-deploy/models/model"
-	"github.com/kthcloud/go-deploy/models/version"
 	"github.com/kthcloud/go-deploy/pkg/sys"
-	"github.com/kthcloud/go-deploy/service"
-	sErrors "github.com/kthcloud/go-deploy/service/errors"
-	"github.com/kthcloud/go-deploy/service/v2/utils"
-	"github.com/kthcloud/go-deploy/service/v2/vms/opts"
 )
 
 // GetSnapshot
@@ -37,9 +25,8 @@ func GetSnapshot(c *gin.Context) {
 
 	// Not yet implemented
 	context.NotImplemented()
-	return
 
-	var requestURI uri.VmSnapshotGet
+	/*var requestURI uri.VmSnapshotGet
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
 		context.BindingError(CreateBindingError(err))
 		return
@@ -75,7 +62,7 @@ func GetSnapshot(c *gin.Context) {
 		return
 	}
 
-	context.Ok(snapshot.ToDTOv2())
+	context.Ok(snapshot.ToDTOv2())*/
 }
 
 // ListSnapshots
@@ -99,9 +86,8 @@ func ListSnapshots(c *gin.Context) {
 
 	// Not yet implemented
 	context.NotImplemented()
-	return
 
-	var requestQuery query.VmSnapshotList
+	/*var requestQuery query.VmSnapshotList
 	if err := context.GinContext.ShouldBind(&requestQuery); err != nil {
 		context.BindingError(CreateBindingError(err))
 		return
@@ -131,7 +117,7 @@ func ListSnapshots(c *gin.Context) {
 		dtoSnapshots[i] = snapshot.ToDTOv2()
 	}
 
-	context.Ok(dtoSnapshots)
+	context.Ok(dtoSnapshots)*/
 }
 
 // CreateSnapshot
@@ -153,9 +139,8 @@ func CreateSnapshot(c *gin.Context) {
 
 	// Not yet implemented
 	context.NotImplemented()
-	return
 
-	var requestURI uri.VmSnapshotCreate
+	/*var requestURI uri.VmSnapshotCreate
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
 		context.BindingError(CreateBindingError(err))
 		return
@@ -233,7 +218,7 @@ func CreateSnapshot(c *gin.Context) {
 	context.Ok(body.VmSnapshotCreated{
 		ID:    vm.ID,
 		JobID: jobID,
-	})
+	})*/
 }
 
 // DeleteSnapshot
@@ -256,9 +241,8 @@ func DeleteSnapshot(c *gin.Context) {
 
 	// Not yet implemented
 	context.NotImplemented()
-	return
 
-	var requestURI uri.VmSnapshotDelete
+	/*var requestURI uri.VmSnapshotDelete
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
 		context.BindingError(CreateBindingError(err))
 		return
@@ -309,5 +293,5 @@ func DeleteSnapshot(c *gin.Context) {
 	context.Ok(body.VmSnapshotDeleted{
 		ID:    vm.ID,
 		JobID: jobID,
-	})
+	})*/
 }

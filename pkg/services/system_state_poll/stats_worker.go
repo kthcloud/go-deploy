@@ -2,6 +2,10 @@ package system_state_poll
 
 import (
 	"fmt"
+	"log"
+	"sync"
+	"time"
+
 	"github.com/kthcloud/go-deploy/dto/v2/body"
 	"github.com/kthcloud/go-deploy/pkg/config"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/system_stats_repo"
@@ -9,9 +13,6 @@ import (
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s"
 	"github.com/kthcloud/go-deploy/utils"
 	"k8s.io/client-go/kubernetes"
-	"log"
-	"sync"
-	"time"
 )
 
 func GetClusterStats() ([]body.ClusterStats, error) {
@@ -61,7 +62,7 @@ func StatsWorker() error {
 	}
 
 	if clusterStats == nil {
-		return wErrors.NoClustersErr
+		return wErrors.ErrNoClusters
 	}
 
 	collected := body.SystemStats{K8sStats: body.K8sStats{PodCount: 0, Clusters: clusterStats}}

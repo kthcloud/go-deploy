@@ -31,13 +31,13 @@ func Register(c *gin.Context) {
 		err = service.V2().System().RegisterNode(&requestQueryJoin)
 		if err != nil {
 			switch {
-			case errors.Is(err, sErrors.BadDiscoveryTokenErr):
+			case errors.Is(err, sErrors.ErrBadDiscoveryToken):
 				context.UserError("Invalid token")
 				return
-			case errors.Is(err, sErrors.ZoneNotFoundErr):
+			case errors.Is(err, sErrors.ErrZoneNotFound):
 				context.NotFound("Zone not found")
 				return
-			case errors.Is(err, sErrors.HostNotFoundErr):
+			case errors.Is(err, sErrors.ErrHostNotFound):
 				context.NotFound("Host not found")
 				return
 			}

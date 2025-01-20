@@ -3,6 +3,9 @@ package vms
 import (
 	"errors"
 	"fmt"
+	"sort"
+	"strings"
+
 	"github.com/kthcloud/go-deploy/dto/v2/body"
 	configModels "github.com/kthcloud/go-deploy/models/config"
 	"github.com/kthcloud/go-deploy/models/model"
@@ -21,8 +24,6 @@ import (
 	"github.com/kthcloud/go-deploy/service/v2/vms/opts"
 	"github.com/kthcloud/go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
-	"sort"
-	"strings"
 )
 
 // Get gets an existing VM.
@@ -212,8 +213,8 @@ func (c *Client) Create(id, ownerID string, dtoVmCreate *body.VmCreate) error {
 
 	_, err := vm_repo.New(version.V2).Create(id, ownerID, &params)
 	if err != nil {
-		if errors.Is(err, rErrors.NonUniqueFieldErr) {
-			return sErrors.NonUniqueFieldErr
+		if errors.Is(err, rErrors.ErrNonUniqueField) {
+			return sErrors.ErrNonUniqueField
 		}
 
 		return makeError(err)
@@ -260,8 +261,8 @@ func (c *Client) Update(id string, dtoVmUpdate *body.VmUpdate) error {
 
 	err := vm_repo.New(version.V2).UpdateWithParams(id, &vmUpdate)
 	if err != nil {
-		if errors.Is(err, rErrors.NonUniqueFieldErr) {
-			return sErrors.NonUniqueFieldErr
+		if errors.Is(err, rErrors.ErrNonUniqueField) {
+			return sErrors.ErrNonUniqueField
 		}
 
 		return makeError(err)
@@ -300,7 +301,7 @@ func (c *Client) Delete(id string) error {
 	}
 
 	if vm == nil {
-		return sErrors.VmNotFoundErr
+		return sErrors.ErrVmNotFound
 	}
 
 	err = notification_repo.New().FilterContent("id", id).Delete()
@@ -352,7 +353,7 @@ func (c *Client) IsAccessible(id string) (bool, error) {
 	}
 
 	if !exists {
-		return false, makeError(sErrors.VmNotFoundErr)
+		return false, makeError(sErrors.ErrVmNotFound)
 	}
 
 	if c.V2.HasAuth() {
@@ -458,7 +459,7 @@ func (c *Client) UpdateOwner(id string, params *model.VmUpdateOwnerParams) error
 	}
 
 	if vm == nil {
-		return sErrors.VmNotFoundErr
+		return sErrors.ErrVmNotFound
 	}
 
 	err = vm_repo.New(version.V2).UpdateWithParams(id, &model.VmUpdateParams{
@@ -538,8 +539,8 @@ func (c *Client) NameAvailable(name string) (bool, error) {
 // HttpProxyNameAvailable checks if the given name is available for an HTTP proxy.
 func (c *Client) HttpProxyNameAvailable(id, name string) (bool, error) {
 	filter := bson.D{
-		{"id", bson.D{{"$ne", id}}},
-		{"portMap.httpProxy.name", name},
+		{Key: "id", Value: bson.D{{Key: "$ne", Value: id}}},
+		{Key: "portMap.httpProxy.name", Value: name},
 	}
 
 	exists, err := vm_repo.New().WithCustomFilter(filter).ExistsAny()
@@ -569,7 +570,7 @@ func (c *Client) SshConnectionString(id string) (*string, error) {
 
 	zone := config.Config.GetZone(vm.Zone)
 	if zone == nil {
-		return nil, makeError(sErrors.ZoneNotFoundErr)
+		return nil, makeError(sErrors.ErrZoneNotFound)
 	}
 
 	var sshConnectionString *string
@@ -637,7 +638,7 @@ func (c *Client) CheckQuota(id, userID string, quota *model.Quotas, opts ...opts
 		}
 
 		if vm == nil {
-			return makeError(sErrors.VmNotFoundErr)
+			return makeError(sErrors.ErrVmNotFound)
 		}
 
 		if o.Update.CpuCores != nil {

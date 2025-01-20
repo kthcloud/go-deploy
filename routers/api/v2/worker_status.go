@@ -29,7 +29,7 @@ func ListWorkerStatus(c *gin.Context) {
 
 	workerStatus, err := service.V2().System().ListWorkerStatus(opts.ListWorkerStatusOpts{})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 

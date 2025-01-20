@@ -3,6 +3,7 @@ package status_update
 import (
 	"context"
 	"fmt"
+
 	configModels "github.com/kthcloud/go-deploy/models/config"
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/models/version"
@@ -26,7 +27,7 @@ func VmStatusListener(ctx context.Context) error {
 		err := k8s_service.New().SetupStatusWatcher(ctx, &z, "vm", func(name string, incomingStatus interface{}) {
 			if status, ok := incomingStatus.(*model.VmStatus); ok {
 				kubeVirtStatus := parseVmStatus(status)
-				err := vm_repo.New(version.V2).SetWithBsonByName(name, bson.D{{"status", kubeVirtStatus}})
+				err := vm_repo.New(version.V2).SetWithBsonByName(name, bson.D{{Key: "status", Value: kubeVirtStatus}})
 				if err != nil {
 					log.Printf("Failed to update VM status for %s. details: %s", name, err.Error())
 					return

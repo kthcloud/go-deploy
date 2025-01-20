@@ -2,6 +2,7 @@ package k8s_service
 
 import (
 	"fmt"
+
 	configModels "github.com/kthcloud/go-deploy/models/config"
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/config"
@@ -95,14 +96,14 @@ func (c *Client) Get(opts *opts.Opts) (*model.VM, *k8s.Client, generators.K8sGen
 		}
 
 		if vm == nil {
-			return nil, nil, nil, sErrors.VmNotFoundErr
+			return nil, nil, nil, sErrors.ErrVmNotFound
 		}
 	}
 
 	if opts.Client {
 		zone := getZone(opts, vm)
 		if zone == nil {
-			return nil, nil, nil, sErrors.ZoneNotFoundErr
+			return nil, nil, nil, sErrors.ErrZoneNotFound
 		}
 
 		kc, err = c.Client(zone)
@@ -111,19 +112,19 @@ func (c *Client) Get(opts *opts.Opts) (*model.VM, *k8s.Client, generators.K8sGen
 		}
 
 		if kc == nil {
-			return nil, nil, nil, sErrors.VmNotFoundErr
+			return nil, nil, nil, sErrors.ErrVmNotFound
 		}
 	}
 
 	if opts.Generator {
 		zone := getZone(opts, vm)
 		if zone == nil {
-			return nil, nil, nil, sErrors.ZoneNotFoundErr
+			return nil, nil, nil, sErrors.ErrZoneNotFound
 		}
 
 		g = c.Generator(vm, kc, zone, opts.ExtraOpts.ExtraSshKeys)
 		if g == nil {
-			return nil, nil, nil, sErrors.VmNotFoundErr
+			return nil, nil, nil, sErrors.ErrVmNotFound
 		}
 	}
 

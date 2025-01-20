@@ -7,15 +7,16 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"github.com/kthcloud/go-deploy/models/mode"
-	"github.com/kthcloud/go-deploy/pkg/config"
-	"io/ioutil"
+	"io"
 	"math/big"
 	"net/http"
 	"net/url"
 	"path"
 	"strings"
 	"time"
+
+	"github.com/kthcloud/go-deploy/models/mode"
+	"github.com/kthcloud/go-deploy/pkg/config"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang/glog"
@@ -133,7 +134,7 @@ func getPublicKeyFromCacheOrBackend(keyId string, config KeycloakConfig) (KeyEnt
 		return KeyEntry{}, err
 	}
 	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 
 	var certs Certs
 	err = json.Unmarshal(body, &certs)
@@ -262,7 +263,6 @@ func authChain(kcConfig KeycloakConfig, accessCheckFunctions ...AccessCheckFunct
 			}
 			_ = ctx.AbortWithError(http.StatusForbidden, errors.New("access to the Resource is forbidden"))
 			varianceControl <- false
-			return
 		}()
 
 		select {

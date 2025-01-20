@@ -42,13 +42,13 @@ func GetJob(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
 	job, err := service.V2(auth).Jobs().Get(requestURI.JobID)
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -87,7 +87,7 @@ func ListJobs(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -102,7 +102,7 @@ func ListJobs(c *gin.Context) {
 		ExcludeStatus:   requestQuery.ExcludeStatus,
 	})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -148,23 +148,23 @@ func UpdateJob(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
 	updated, err := service.V2(auth).Jobs().Update(requestURI.JobID, &request)
 	if err != nil {
-		if errors.Is(err, sErrors.ForbiddenErr) {
+		if errors.Is(err, sErrors.ErrForbidden) {
 			context.Forbidden("User is not allowed to update jobs")
 			return
 		}
 
-		if errors.Is(err, sErrors.JobNotFoundErr) {
+		if errors.Is(err, sErrors.ErrJobNotFound) {
 			context.NotFound("Job not found")
 			return
 		}
 
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 

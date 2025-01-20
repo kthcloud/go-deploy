@@ -7,11 +7,11 @@ import (
 	"testing"
 
 	"github.com/go-openapi/runtime"
-	"github.com/stretchr/testify/assert"
 	"github.com/kthcloud/go-deploy/pkg/imp/harbor/harbor"
 	"github.com/kthcloud/go-deploy/pkg/imp/harbor/harbor/test"
 	v2client "github.com/kthcloud/go-deploy/pkg/imp/harbor/sdk/v2.0/client"
 	"github.com/kthcloud/go-deploy/pkg/imp/harbor/sdk/v2.0/client/health"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -116,8 +116,8 @@ func TestClientSet(t *testing.T) {
 }
 
 var (
-	result   = "yes"
-	v        = "1.2"
+	result = "yes"
+	// v        = "1.2"
 	username = "a"
 	password = "b"
 )

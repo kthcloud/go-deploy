@@ -19,7 +19,7 @@ func Discover(c *gin.Context) {
 
 	discover, err := service.V2().Discovery().Discover()
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 

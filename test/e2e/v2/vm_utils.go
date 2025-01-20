@@ -3,10 +3,10 @@ package v2
 import (
 	"fmt"
 	"github.com/helloyi/go-sshclient"
-	"github.com/stretchr/testify/assert"
 	"github.com/kthcloud/go-deploy/dto/v2/body"
 	"github.com/kthcloud/go-deploy/pkg/app/status_codes"
 	"github.com/kthcloud/go-deploy/test/e2e"
+	"github.com/stretchr/testify/assert"
 	"net/http"
 	"os"
 	"strings"

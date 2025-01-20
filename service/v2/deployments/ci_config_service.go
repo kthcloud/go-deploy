@@ -2,6 +2,8 @@ package deployments
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/kthcloud/go-deploy/dto/v2/body"
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/config"
@@ -9,7 +11,6 @@ import (
 	"github.com/kthcloud/go-deploy/service/v2/deployments/opts"
 	"github.com/kthcloud/go-deploy/utils/subsystemutils"
 	"gopkg.in/yaml.v3"
-	"strings"
 )
 
 // GetCiConfig returns the CI config for the deployment.
@@ -23,7 +24,7 @@ func (c *Client) GetCiConfig(id string) (*body.CiConfig, error) {
 	}
 
 	if deployment == nil {
-		return nil, errors.DeploymentNotFoundErr
+		return nil, errors.ErrDeploymentNotFound
 	}
 
 	if !deployment.Ready() {
@@ -31,7 +32,7 @@ func (c *Client) GetCiConfig(id string) (*body.CiConfig, error) {
 	}
 
 	if deployment.Type != model.DeploymentTypeCustom {
-		return nil, errors.DeploymentHasNotCiConfigErr
+		return nil, errors.ErrDeploymentHasNoCiConfig
 	}
 
 	tag := fmt.Sprintf("%s/%s/%s",

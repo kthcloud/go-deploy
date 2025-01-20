@@ -52,7 +52,7 @@ func GetVM(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -66,7 +66,7 @@ func GetVM(c *gin.Context) {
 	}
 
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -110,7 +110,7 @@ func ListVMs(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -129,7 +129,7 @@ func ListVMs(c *gin.Context) {
 		Shared:     true,
 	})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -175,7 +175,7 @@ func CreateVM(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -183,7 +183,7 @@ func CreateVM(c *gin.Context) {
 
 	unique, err := deployV2.VMs().NameAvailable(requestBody.Name)
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -218,7 +218,7 @@ func CreateVM(c *gin.Context) {
 			return
 		}
 
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -231,7 +231,7 @@ func CreateVM(c *gin.Context) {
 		"authInfo": auth,
 	})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -267,7 +267,7 @@ func DeleteVM(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -275,7 +275,7 @@ func DeleteVM(c *gin.Context) {
 
 	vm, err := deployV2.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -295,7 +295,7 @@ func DeleteVM(c *gin.Context) {
 		"authInfo": auth,
 	})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -338,7 +338,7 @@ func UpdateVM(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -346,7 +346,7 @@ func UpdateVM(c *gin.Context) {
 
 	vm, err := deployV2.VMs().Get(requestURI.VmID, opts.GetOpts{Shared: true})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -358,7 +358,7 @@ func UpdateVM(c *gin.Context) {
 	if requestBody.Name != nil {
 		available, err := deployV2.VMs().NameAvailable(*requestBody.Name)
 		if err != nil {
-			context.ServerError(err, InternalError)
+			context.ServerError(err, ErrInternal)
 			return
 		}
 
@@ -394,7 +394,7 @@ func UpdateVM(c *gin.Context) {
 			return
 		}
 
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -406,7 +406,7 @@ func UpdateVM(c *gin.Context) {
 	})
 
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 

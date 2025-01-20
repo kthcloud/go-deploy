@@ -2,10 +2,11 @@ package gpu_lease_repo
 
 import (
 	"errors"
+	"time"
+
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/db"
 	"go.mongodb.org/mongo-driver/bson"
-	"time"
 )
 
 func (client *Client) Create(id, userID, groupName string, leaseDuration float64) error {
@@ -23,10 +24,10 @@ func (client *Client) Create(id, userID, groupName string, leaseDuration float64
 	}
 
 	// Right now we only allow one lease per user. We assume there is a unique index set up for this.
-	err := client.CreateIfUnique(id, &lease, bson.D{{"userId", userID}})
+	err := client.CreateIfUnique(id, &lease, bson.D{{Key: "userId", Value: userID}})
 	if err != nil {
-		if errors.Is(err, db.UniqueConstraintErr) {
-			return GpuLeaseAlreadyExistsErr
+		if errors.Is(err, db.ErrUniqueConstraint) {
+			return ErrGpuLeaseAlreadyExists
 		}
 
 		return err
@@ -43,8 +44,8 @@ func (client *Client) UpdateWithParams(id string, params *model.GpuLeaseUpdatePa
 
 	err := client.SetWithBsonByID(id, update)
 	if err != nil {
-		if errors.Is(err, db.UniqueConstraintErr) {
-			return VmAlreadyAttachedErr
+		if errors.Is(err, db.ErrUniqueConstraint) {
+			return ErrVmAlreadyAttached
 		}
 
 		return err
@@ -54,25 +55,25 @@ func (client *Client) UpdateWithParams(id string, params *model.GpuLeaseUpdatePa
 }
 
 func (client *Client) Release() error {
-	return client.SetWithBSON(bson.D{{"vmId", nil}})
+	return client.SetWithBSON(bson.D{{Key: "vmId", Value: nil}})
 }
 
 func (client *Client) ReleaseByID(id string) error {
-	return client.SetWithBsonByID(id, bson.D{{"vmId", nil}})
+	return client.SetWithBsonByID(id, bson.D{{Key: "vmId", Value: nil}})
 }
 
 func (client *Client) SetExpiry(id string, expiresAt time.Time) error {
-	return client.SetWithBsonByID(id, bson.D{{"expiresAt", expiresAt}})
+	return client.SetWithBsonByID(id, bson.D{{Key: "expiresAt", Value: expiresAt}})
 }
 
 func (client *Client) MarkExpired(id string) error {
-	return client.SetWithBsonByID(id, bson.D{{"expiredAt", time.Now()}})
+	return client.SetWithBsonByID(id, bson.D{{Key: "expiredAt", Value: time.Now()}})
 }
 
 func (client *Client) MarkAssigned(id string) error {
-	return client.SetWithBsonByID(id, bson.D{{"assignedAt", time.Now()}})
+	return client.SetWithBsonByID(id, bson.D{{Key: "assignedAt", Value: time.Now()}})
 }
 
 func (client *Client) MarkActivated(id string) error {
-	return client.SetWithBsonByID(id, bson.D{{"activatedAt", time.Now()}})
+	return client.SetWithBsonByID(id, bson.D{{Key: "activatedAt", Value: time.Now()}})
 }

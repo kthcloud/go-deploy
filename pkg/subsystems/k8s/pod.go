@@ -2,6 +2,7 @@ package k8s
 
 import (
 	"context"
+
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/keys"
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
 	v1 "k8s.io/api/core/v1"
@@ -83,11 +84,7 @@ func (client *Client) SetupPodWatcher(ctx context.Context, callback func(podName
 			}
 		}
 
-		if !allowed {
-			return false
-		}
-
-		return true
+		return allowed
 	}
 
 	_, err := podInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{

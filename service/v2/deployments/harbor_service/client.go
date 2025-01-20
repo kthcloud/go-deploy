@@ -74,7 +74,7 @@ func (c *Client) Get(opts *opts.Opts) (*model.Deployment, *harbor.Client, genera
 		}
 
 		if deployment == nil {
-			return nil, nil, nil, sErrors.DeploymentNotFoundErr
+			return nil, nil, nil, sErrors.ErrDeploymentNotFound
 		}
 	}
 
@@ -92,7 +92,7 @@ func (c *Client) Get(opts *opts.Opts) (*model.Deployment, *harbor.Client, genera
 		}
 
 		if harborClient == nil {
-			return nil, nil, nil, sErrors.DeploymentNotFoundErr
+			return nil, nil, nil, sErrors.ErrDeploymentNotFound
 		}
 	}
 
@@ -113,7 +113,7 @@ func (c *Client) Get(opts *opts.Opts) (*model.Deployment, *harbor.Client, genera
 
 		harborGenerator = c.Generator(deployment, userID, zone)
 		if harborGenerator == nil {
-			return nil, nil, nil, sErrors.DeploymentNotFoundErr
+			return nil, nil, nil, sErrors.ErrDeploymentNotFound
 		}
 	}
 

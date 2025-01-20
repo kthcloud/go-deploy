@@ -4,6 +4,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"math"
+	"path"
+	"regexp"
+	"slices"
+	"strings"
+	"time"
+
 	configModels "github.com/kthcloud/go-deploy/models/config"
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/config"
@@ -17,12 +24,6 @@ import (
 	"github.com/kthcloud/go-deploy/service/generators"
 	"github.com/kthcloud/go-deploy/utils"
 	v1 "k8s.io/api/core/v1"
-	"math"
-	"path"
-	"regexp"
-	"slices"
-	"strings"
-	"time"
 )
 
 type K8sGenerator struct {
@@ -338,7 +339,7 @@ func (kg *K8sGenerator) Ingresses() []models.IngressPublic {
 
 	if mainApp.CustomDomain != nil && mainApp.CustomDomain.Status == model.CustomDomainStatusActive {
 		customIn := models.IngressPublic{
-			Name:         fmt.Sprintf(constants.WithCustomDomainSuffix(kg.deployment.Name)),
+			Name:         fmt.Sprint(constants.WithCustomDomainSuffix(kg.deployment.Name)),
 			Namespace:    kg.namespace,
 			ServiceName:  serviceName,
 			ServicePort:  servicePort,

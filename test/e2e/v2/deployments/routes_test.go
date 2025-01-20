@@ -2,11 +2,11 @@ package deployments
 
 import (
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
 	"github.com/kthcloud/go-deploy/dto/v2/body"
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/test/e2e"
 	"github.com/kthcloud/go-deploy/test/e2e/v2"
+	"github.com/stretchr/testify/assert"
 	"net/http"
 	"os"
 	"strconv"

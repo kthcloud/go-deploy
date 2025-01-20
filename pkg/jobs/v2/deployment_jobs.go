@@ -4,7 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/mitchellh/mapstructure"
+	"time"
+
 	"github.com/kthcloud/go-deploy/dto/v2/body"
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/deployment_repo"
@@ -15,7 +16,7 @@ import (
 	"github.com/kthcloud/go-deploy/pkg/services/confirm"
 	"github.com/kthcloud/go-deploy/service"
 	sErrors "github.com/kthcloud/go-deploy/service/errors"
-	"time"
+	"github.com/mitchellh/mapstructure"
 )
 
 func CreateDeployment(job *model.Job) error {
@@ -39,7 +40,7 @@ func CreateDeployment(job *model.Job) error {
 			return jErrors.MakeTerminatedError(err)
 		}
 
-		// If there was some error, we trigger a repair, since rerunning it would cause a NonUniqueFieldErr
+		// If there was some error, we trigger a repair, since rerunning it would cause a ErrNonUniqueField
 		_ = service.V2(utils.GetAuthInfo(job)).Deployments().Repair(id)
 		return jErrors.MakeTerminatedError(err)
 	}
@@ -100,7 +101,7 @@ func DeleteDeployment(job *model.Job) error {
 
 	err = service.V2(utils.GetAuthInfo(job)).Deployments().Delete(id)
 	if err != nil {
-		if !errors.Is(err, sErrors.DeploymentNotFoundErr) {
+		if !errors.Is(err, sErrors.ErrDeploymentNotFound) {
 			return jErrors.MakeFailedError(err)
 		}
 	}
@@ -138,11 +139,11 @@ func UpdateDeployment(job *model.Job) error {
 	err = service.V2(utils.GetAuthInfo(job)).Deployments().Update(id, &update)
 	if err != nil {
 		switch {
-		case errors.Is(err, sErrors.DeploymentNotFoundErr):
+		case errors.Is(err, sErrors.ErrDeploymentNotFound):
 			return jErrors.MakeTerminatedError(err)
-		case errors.Is(err, sErrors.NonUniqueFieldErr):
+		case errors.Is(err, sErrors.ErrNonUniqueField):
 			return jErrors.MakeTerminatedError(err)
-		case errors.Is(err, sErrors.IngressHostInUseErr):
+		case errors.Is(err, sErrors.ErrIngressHostInUse):
 			return jErrors.MakeTerminatedError(err)
 		}
 
@@ -172,7 +173,7 @@ func UpdateDeploymentOwner(job *model.Job) error {
 
 	err = service.V2(utils.GetAuthInfo(job)).Deployments().UpdateOwner(id, &params)
 	if err != nil {
-		if errors.Is(err, sErrors.DeploymentNotFoundErr) {
+		if errors.Is(err, sErrors.ErrDeploymentNotFound) {
 			return jErrors.MakeTerminatedError(err)
 		}
 

@@ -90,7 +90,7 @@ type DeploymentUpdate struct {
 	// Deprecated: Use Visibility instead.
 	Private *bool `json:"private,omitempty" bson:"private,omitempty" binding:"omitempty,boolean"`
 
-	Image           *string `json:"image,omitempty,omitempty" bson:"image,omitempty" binding:"omitempty,min=1,max=1000"`
+	Image           *string `json:"image,omitempty" bson:"image,omitempty" binding:"omitempty,min=1,max=1000"`
 	HealthCheckPath *string `json:"healthCheckPath,omitempty" bson:"healthCheckPath,omitempty" binding:"omitempty,min=0,max=1000,health_check_path"`
 	// CustomDomain is the domain that the deployment will be available on.
 	// The max length is set to 243 to allow for a subdomain when confirming the domain.

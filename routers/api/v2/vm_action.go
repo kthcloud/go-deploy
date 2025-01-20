@@ -44,7 +44,7 @@ func CreateVmAction(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -52,7 +52,7 @@ func CreateVmAction(c *gin.Context) {
 
 	vm, err := deployV2.VMs().Get(requestQuery.VmID, opts.GetOpts{Shared: true})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -74,7 +74,7 @@ func CreateVmAction(c *gin.Context) {
 	})
 
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 

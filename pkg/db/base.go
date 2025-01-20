@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
+	"time"
+
 	"github.com/kthcloud/go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"reflect"
-	"time"
 )
 
 type Resource interface {
@@ -19,7 +20,7 @@ type onlyID struct {
 	ID string `bson:"id"`
 }
 
-var UniqueConstraintErr = errors.New("unique constraint error")
+var ErrUniqueConstraint = errors.New("unique constraint error")
 
 func AddIfNotNil(data *bson.D, key string, value interface{}) {
 	if value == nil || (reflect.ValueOf(value).Kind() == reflect.Ptr && reflect.ValueOf(value).IsNil()) {
@@ -40,7 +41,7 @@ func GroupFilters(filter bson.D, extraFilter bson.M, searchParams *SearchParams,
 
 	// extra filter
 	if extraFilter != nil {
-		filter = bson.D{{"$and", bson.A{filter, extraFilter}}}
+		filter = bson.D{{Key: "$and", Value: bson.A{filter, extraFilter}}}
 	}
 
 	// search filter
@@ -51,7 +52,7 @@ func GroupFilters(filter bson.D, extraFilter bson.M, searchParams *SearchParams,
 			searchFilter = append(searchFilter, bson.M{field: bson.M{"$regex": pattern, "$options": "i"}})
 		}
 
-		return bson.D{{"$and", bson.A{filter, bson.D{{"$or", searchFilter}}}}}
+		return bson.D{{Key: "$and", Value: bson.A{filter, bson.D{{Key: "$or", Value: searchFilter}}}}}
 	} else {
 		return filter
 	}
@@ -60,7 +61,7 @@ func GroupFilters(filter bson.D, extraFilter bson.M, searchParams *SearchParams,
 func AddExcludeDeletedFilter(filter bson.D) bson.D {
 	newFilter := filter
 
-	newFilter = append(newFilter, bson.E{Key: "deletedAt", Value: bson.D{{"$in", bson.A{nil, time.Time{}}}}})
+	newFilter = append(newFilter, bson.E{Key: "deletedAt", Value: bson.D{{Key: "$in", Value: bson.A{nil, time.Time{}}}}})
 
 	return newFilter
 }
@@ -98,7 +99,7 @@ func ListResources[T any](collection *mongo.Collection, filter bson.D, projectio
 	}
 
 	if sortBy != nil {
-		findOptions.SetSort(bson.D{{sortBy.Field, sortBy.Order}})
+		findOptions.SetSort(bson.D{{Key: sortBy.Field, Value: sortBy.Order}})
 	}
 
 	if projection != nil {
@@ -144,11 +145,11 @@ func CountDistinctResources(collection *mongo.Collection, field string, filter b
 
 func CreateIfUniqueResource[T Resource](collection *mongo.Collection, id string, data *T, filter bson.D) error {
 	result, err := collection.UpdateOne(context.TODO(), filter, bson.D{
-		{"$setOnInsert", data},
+		{Key: "$setOnInsert", Value: data},
 	}, options.Update().SetUpsert(true))
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {
-			return UniqueConstraintErr
+			return ErrUniqueConstraint
 		}
 
 		return fmt.Errorf("failed to create unique model. details: %w", err)
@@ -171,7 +172,7 @@ func CreateIfUniqueResource[T Resource](collection *mongo.Collection, id string,
 			}
 		}
 
-		return UniqueConstraintErr
+		return ErrUniqueConstraint
 	}
 
 	return nil

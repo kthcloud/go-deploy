@@ -18,9 +18,9 @@ func NewHostsFailedErr(hosts []string) error {
 }
 
 var (
-	// NoHostsErr is returned when no hosts are found
-	NoHostsErr = fmt.Errorf("no hosts found")
+	// ErrNoHosts is returned when no hosts are found
+	ErrNoHosts = fmt.Errorf("no hosts found")
 
-	// NoClustersErr is returned when no clusters are found
-	NoClustersErr = fmt.Errorf("no clusters found")
+	// ErrNoClusters is returned when no clusters are found
+	ErrNoClusters = fmt.Errorf("no clusters found")
 )

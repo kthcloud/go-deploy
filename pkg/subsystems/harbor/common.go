@@ -1,18 +1,16 @@
 package harbor
 
 import (
-	"encoding/json"
 	"errors"
-	"fmt"
+	"net/http"
+	"strings"
+
 	"github.com/go-openapi/runtime"
 	"github.com/kthcloud/go-deploy/pkg/imp/harbor/sdk/v2.0/client/project"
 	"github.com/kthcloud/go-deploy/pkg/imp/harbor/sdk/v2.0/client/repository"
 	"github.com/kthcloud/go-deploy/pkg/imp/harbor/sdk/v2.0/client/robot"
 	"github.com/kthcloud/go-deploy/pkg/imp/harbor/sdk/v2.0/client/robotv1"
 	"github.com/kthcloud/go-deploy/pkg/imp/harbor/sdk/v2.0/client/webhook"
-	"github.com/kthcloud/go-deploy/utils/requestutils"
-	"net/http"
-	"strings"
 )
 
 // IsNotFoundErr checks if the error is a not found error.
@@ -131,15 +129,15 @@ func IsNotFoundErr(err error) bool {
 }
 
 // doJSONRequest is a helper function to do a JSON request to the Harbor API.
-func (client *Client) doJSONRequest(method string, relativePath string, requestBody interface{}) (*http.Response, error) {
-	jsonBody, err := json.Marshal(requestBody)
-	if err != nil {
-		return nil, err
-	}
+// func (client *Client) doJSONRequest(method string, relativePath string, requestBody interface{}) (*http.Response, error) {
+// 	jsonBody, err := json.Marshal(requestBody)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	fullURL := fmt.Sprintf("%s%s", client.url, relativePath)
-	return requestutils.DoRequestBasicAuth(method, fullURL, jsonBody, nil, client.username, client.password)
-}
+// 	fullURL := fmt.Sprintf("%s%s", client.url, relativePath)
+// 	return requestutils.DoRequestBasicAuth(method, fullURL, jsonBody, nil, client.username, client.password)
+// }
 
 // createProject creates a project in Harbor.
 // Needed since the installed Harbor client does not return credentials.

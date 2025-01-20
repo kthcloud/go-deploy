@@ -35,7 +35,21 @@ release: docs
 	@echo "Build complete."
 
 test: clean build
-	@go test ./...
+	@go test ./test/acc/...
+	@echo "Starting go-deploy in test mode..."
+	@./$(BUILD_DIR)/$(BINARY_NAME)$(EXT) --mode=test & echo $$! > go_deploy.pid
+	@echo "Waiting for API to become ready..."
+	@until curl --output /dev/null --silent --head --fail http://localhost:8080/healthz; do \
+		echo "Waiting for API to start"; \
+		sleep 1; \
+	done
+	@echo "API is ready!"
+	@echo "Running e2e tests..."
+	@go test ./test/e2e/...
+	@if [ -f go_deploy.pid ]; then \
+		echo "Stopping go-deploy..."; \
+		kill $$(cat go_deploy.pid) && rm -f go_deploy.pid; \
+	fi
 
 acc: clean build
 	@go test ./test/acc/...

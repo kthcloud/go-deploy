@@ -83,7 +83,7 @@ func (c *Client) Create(id, userID, jobType, version string, args map[string]int
 // Update updates a job.
 func (c *Client) Update(id string, jobUpdateDTO *body.JobUpdate) (*model.Job, error) {
 	if c.V2.Auth() != nil && !c.V2.Auth().User.IsAdmin {
-		return nil, sErrors.ForbiddenErr
+		return nil, sErrors.ErrForbidden
 	}
 
 	var params model.JobUpdateParams

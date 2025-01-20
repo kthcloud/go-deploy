@@ -3,9 +3,10 @@ package host_repo
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/kthcloud/go-deploy/models/model"
 	"go.mongodb.org/mongo-driver/bson"
-	"time"
 )
 
 func (client *Client) Register(host *model.Host) error {
@@ -30,16 +31,16 @@ func (client *Client) Register(host *model.Host) error {
 
 	// Host exists, update it
 	update := bson.D{
-		{"displayName", host.DisplayName},
-		{"zone", host.Zone},
+		{Key: "displayName", Value: host.DisplayName},
+		{Key: "zone", Value: host.Zone},
 
-		{"ip", host.IP},
-		{"port", host.Port},
+		{Key: "ip", Value: host.IP},
+		{Key: "port", Value: host.Port},
 
-		{"lastSeenAt", time.Now()},
+		{Key: "lastSeenAt", Value: time.Now()},
 
-		{"enabled", host.Enabled},
-		{"schedulable", host.Schedulable},
+		{Key: "enabled", Value: host.Enabled},
+		{Key: "schedulable", Value: host.Schedulable},
 	}
 
 	err = client.SetWithBsonByName(host.Name, update)
@@ -51,7 +52,7 @@ func (client *Client) Register(host *model.Host) error {
 }
 
 func (client *Client) MarkSchedulable(name string, schedulable bool) error {
-	return client.SetWithBsonByName(name, bson.D{{"schedulable", schedulable}})
+	return client.SetWithBsonByName(name, bson.D{{Key: "schedulable", Value: schedulable}})
 }
 
 func (client *Client) DeactivateHost(name string, until ...time.Time) error {
@@ -62,5 +63,5 @@ func (client *Client) DeactivateHost(name string, until ...time.Time) error {
 		deactivatedUntil = time.Now().AddDate(1000, 0, 0) // 1000 years is sort of forever ;)
 	}
 
-	return client.SetWithBsonByName(name, bson.D{{"deactivatedUntil", deactivatedUntil}})
+	return client.SetWithBsonByName(name, bson.D{{Key: "deactivatedUntil", Value: deactivatedUntil}})
 }

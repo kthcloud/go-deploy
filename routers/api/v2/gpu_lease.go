@@ -42,13 +42,13 @@ func GetGpuLease(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
 	gpuLease, err := service.V2(auth).VMs().GpuLeases().Get(requestURI.GpuLeaseID)
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -59,11 +59,11 @@ func GetGpuLease(c *gin.Context) {
 
 	position, err := service.V2(auth).VMs().GpuLeases().GetQueuePosition(gpuLease.ID)
 	if err != nil {
-		if errors.Is(err, sErrors.GpuLeaseNotFoundErr) {
+		if errors.Is(err, sErrors.ErrGpuLeaseNotFound) {
 			position = -1
 		}
 
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 	}
 
 	context.Ok(gpuLease.ToDTO(position))
@@ -103,7 +103,7 @@ func ListGpuLeases(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -117,7 +117,7 @@ func ListGpuLeases(c *gin.Context) {
 		UserID:     userID,
 	})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -131,9 +131,9 @@ func ListGpuLeases(c *gin.Context) {
 		queuePosition, err := service.V2(auth).VMs().GpuLeases().GetQueuePosition(gpuLease.ID)
 		if err != nil {
 			switch {
-			case errors.Is(err, sErrors.GpuLeaseNotFoundErr):
+			case errors.Is(err, sErrors.ErrGpuLeaseNotFound):
 				continue
-			case errors.Is(err, sErrors.GpuGroupNotFoundErr):
+			case errors.Is(err, sErrors.ErrGpuGroupNotFound):
 				continue
 			}
 
@@ -177,7 +177,7 @@ func CreateGpuLease(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -191,7 +191,7 @@ func CreateGpuLease(c *gin.Context) {
 
 	groupExists, err := deployV2.VMs().GpuGroups().Exists(requestBody.GpuGroupID)
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -206,7 +206,7 @@ func CreateGpuLease(c *gin.Context) {
 	})
 
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -224,7 +224,7 @@ func CreateGpuLease(c *gin.Context) {
 		"authInfo": auth,
 	})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -266,7 +266,7 @@ func UpdateGpuLease(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -274,7 +274,7 @@ func UpdateGpuLease(c *gin.Context) {
 
 	gpuLease, err := deployV2.VMs().GpuLeases().Get(requestURI.GpuLeaseID)
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -296,7 +296,7 @@ func UpdateGpuLease(c *gin.Context) {
 		"authInfo": auth,
 	})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -331,7 +331,7 @@ func DeleteGpuLease(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -339,7 +339,7 @@ func DeleteGpuLease(c *gin.Context) {
 
 	gpuLease, err := deployV2.VMs().GpuLeases().Get(requestURI.GpuLeaseID)
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -354,7 +354,7 @@ func DeleteGpuLease(c *gin.Context) {
 		"authInfo": auth,
 	})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 

@@ -30,7 +30,7 @@ func ListSystemCapacities(c *gin.Context) {
 
 	capacities, err := service.V2().System().ListCapacities(requestQuery.N)
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -63,7 +63,7 @@ func ListSystemStats(c *gin.Context) {
 
 	stats, err := service.V2().System().ListStats(requestQuery.N)
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -96,7 +96,7 @@ func ListSystemStatus(c *gin.Context) {
 
 	status, err := service.V2().System().ListStatus(requestQuery.N)
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 

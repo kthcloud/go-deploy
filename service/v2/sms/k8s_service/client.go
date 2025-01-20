@@ -82,7 +82,7 @@ func (c *Client) Get(opts *opts.Opts) (*model.SM, *k8s.Client, generators.K8sGen
 		}
 
 		if sm == nil {
-			return nil, nil, nil, sErrors.SmNotFoundErr
+			return nil, nil, nil, sErrors.ErrSmNotFound
 		}
 	}
 
@@ -102,7 +102,7 @@ func (c *Client) Get(opts *opts.Opts) (*model.SM, *k8s.Client, generators.K8sGen
 		}
 
 		if zone == nil {
-			return nil, nil, nil, sErrors.ZoneNotFoundErr
+			return nil, nil, nil, sErrors.ErrZoneNotFound
 		}
 
 		k8sClient, err = c.Client(userID, zone)
@@ -111,7 +111,7 @@ func (c *Client) Get(opts *opts.Opts) (*model.SM, *k8s.Client, generators.K8sGen
 		}
 
 		if k8sClient == nil {
-			return nil, nil, nil, sErrors.SmNotFoundErr
+			return nil, nil, nil, sErrors.ErrSmNotFound
 		}
 	}
 
@@ -125,7 +125,7 @@ func (c *Client) Get(opts *opts.Opts) (*model.SM, *k8s.Client, generators.K8sGen
 
 		k8sGenerator = c.Generator(sm, k8sClient, zone)
 		if k8sGenerator == nil {
-			return nil, nil, nil, sErrors.SmNotFoundErr
+			return nil, nil, nil, sErrors.ErrSmNotFound
 		}
 	}
 

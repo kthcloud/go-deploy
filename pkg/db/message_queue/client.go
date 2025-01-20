@@ -4,14 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/redis/go-redis/v9"
+
 	"github.com/kthcloud/go-deploy/pkg/db"
 	"github.com/kthcloud/go-deploy/pkg/log"
+	"github.com/redis/go-redis/v9"
 )
 
 var (
-	// QueueNotFoundErr is returned when a queue is not found.
-	QueueNotFoundErr = fmt.Errorf("queue not found")
+	// ErrQueueNotFound is returned when a queue is not found.
+	ErrQueueNotFound = fmt.Errorf("queue not found")
 )
 
 // Client is used to manage key-value pairs in Redis.

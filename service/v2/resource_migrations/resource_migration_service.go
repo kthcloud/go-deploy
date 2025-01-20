@@ -3,6 +3,7 @@ package resource_migrations
 import (
 	"errors"
 	"fmt"
+
 	"github.com/google/uuid"
 	"github.com/kthcloud/go-deploy/dto/v2/body"
 	"github.com/kthcloud/go-deploy/models/model"
@@ -81,7 +82,7 @@ func (c *Client) Create(id, userID string, migrationCreate *body.ResourceMigrati
 	}
 
 	if resourceType == nil {
-		return nil, nil, sErrors.ResourceNotFoundErr
+		return nil, nil, sErrors.ErrResourceNotFound
 	}
 
 	canAccess, err := c.canAccessResource(migrationCreate.ResourceID, *resourceType)
@@ -90,13 +91,13 @@ func (c *Client) Create(id, userID string, migrationCreate *body.ResourceMigrati
 	}
 
 	if !canAccess {
-		return nil, nil, sErrors.ResourceNotFoundErr
+		return nil, nil, sErrors.ErrResourceNotFound
 	}
 
 	switch migrationCreate.Type {
 	case model.ResourceMigrationTypeUpdateOwner:
 		if migrationCreate.UpdateOwner == nil {
-			return nil, nil, sErrors.BadResourceMigrationParamsErr
+			return nil, nil, sErrors.ErrBadResourceMigrationParams
 		}
 
 		ownerID, err := c.getOwnerID(migrationCreate.ResourceID, *resourceType)
@@ -105,11 +106,11 @@ func (c *Client) Create(id, userID string, migrationCreate *body.ResourceMigrati
 		}
 
 		if ownerID == nil {
-			return nil, nil, sErrors.ResourceNotFoundErr
+			return nil, nil, sErrors.ErrResourceNotFound
 		}
 
 		if *ownerID == migrationCreate.UpdateOwner.OwnerID {
-			return nil, nil, sErrors.AlreadyMigratedErr
+			return nil, nil, sErrors.ErrAlreadyMigrated
 		}
 
 		var status string
@@ -124,7 +125,7 @@ func (c *Client) Create(id, userID string, migrationCreate *body.ResourceMigrati
 			OldOwnerID: *ownerID,
 		})
 	default:
-		return nil, nil, sErrors.BadResourceMigrationTypeErr
+		return nil, nil, sErrors.ErrBadResourceMigrationType
 	}
 }
 
@@ -143,8 +144,8 @@ func (c *Client) CreateMigrationUpdateOwner(id, userID, resourceID, resourceType
 	rmc := resource_migration_repo.New()
 	resourceMigration, err := rmc.Create(id, userID, resourceID, model.ResourceMigrationTypeUpdateOwner, resourceType, &code, status, params)
 	if err != nil {
-		if errors.Is(err, db.UniqueConstraintErr) {
-			return nil, nil, sErrors.ResourceMigrationAlreadyExistsErr
+		if errors.Is(err, db.ErrUniqueConstraint) {
+			return nil, nil, sErrors.ErrResourceMigrationAlreadyExists
 		}
 
 		return nil, nil, makeError(err)
@@ -211,7 +212,7 @@ func (c *Client) CreateMigrationUpdateOwner(id, userID, resourceID, resourceType
 
 		return resourceMigration, &jobID, nil
 	default:
-		return nil, nil, sErrors.BadResourceMigrationStatusErr
+		return nil, nil, sErrors.ErrBadResourceMigrationStatus
 	}
 }
 
@@ -235,12 +236,12 @@ func (c *Client) Update(id string, migrationUpdate *body.ResourceMigrationUpdate
 	}
 
 	if resourceMigration == nil {
-		return nil, nil, sErrors.ResourceMigrationNotFoundErr
+		return nil, nil, sErrors.ErrResourceMigrationNotFound
 	}
 
 	if migrationUpdate.Status == model.ResourceMigrationStatusAccepted {
 		if resourceMigration.Status == model.ResourceMigrationStatusAccepted {
-			return nil, nil, sErrors.AlreadyAcceptedErr
+			return nil, nil, sErrors.ErrAlreadyAccepted
 		}
 
 		canDoUpdate := false
@@ -248,7 +249,7 @@ func (c *Client) Update(id string, migrationUpdate *body.ResourceMigrationUpdate
 		requireCodeCheck := c.V2.HasAuth() && !c.V2.Auth().User.IsAdmin
 		if requireCodeCheck {
 			if migrationUpdate.Code == nil {
-				return nil, nil, sErrors.BadMigrationCodeErr
+				return nil, nil, sErrors.ErrBadMigrationCode
 			}
 
 			if resourceMigration.Code == nil || *migrationUpdate.Code == *resourceMigration.Code {
@@ -259,7 +260,7 @@ func (c *Client) Update(id string, migrationUpdate *body.ResourceMigrationUpdate
 		}
 
 		if !canDoUpdate {
-			return nil, nil, sErrors.BadMigrationCodeErr
+			return nil, nil, sErrors.ErrBadMigrationCode
 		}
 
 		updateParams := model.ResourceMigrationUpdateParams{}.FromDTO(migrationUpdate)
@@ -283,12 +284,12 @@ func (c *Client) Update(id string, migrationUpdate *body.ResourceMigrationUpdate
 		}
 
 		if resourceMigration == nil {
-			return nil, nil, sErrors.ResourceMigrationNotFoundErr
+			return nil, nil, sErrors.ErrResourceMigrationNotFound
 		}
 
 		return resourceMigration, jobID, nil
 	} else {
-		return nil, nil, sErrors.BadResourceMigrationStatusErr
+		return nil, nil, sErrors.ErrBadResourceMigrationStatus
 	}
 }
 
@@ -393,7 +394,7 @@ func (c *Client) getResourceName(id string, resourceType string) (*string, error
 	case model.ResourceTypeDeployment:
 		return deployment_repo.New().GetName(id)
 	default:
-		return nil, sErrors.BadResourceMigrationResourceTypeErr
+		return nil, sErrors.ErrBadResourceMigrationResourceType
 	}
 }
 
@@ -430,7 +431,7 @@ func (c *Client) getOwnerID(id string, resourceType string) (*string, error) {
 		}
 
 		if vm == nil {
-			return nil, sErrors.ResourceNotFoundErr
+			return nil, sErrors.ErrResourceNotFound
 		}
 
 		return &vm.OwnerID, nil
@@ -441,11 +442,11 @@ func (c *Client) getOwnerID(id string, resourceType string) (*string, error) {
 		}
 
 		if deployment == nil {
-			return nil, sErrors.ResourceNotFoundErr
+			return nil, sErrors.ErrResourceNotFound
 		}
 
 		return &deployment.OwnerID, nil
 	}
 
-	return nil, sErrors.BadResourceMigrationResourceTypeErr
+	return nil, sErrors.ErrBadResourceMigrationResourceType
 }

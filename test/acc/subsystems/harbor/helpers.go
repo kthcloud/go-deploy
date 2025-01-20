@@ -1,12 +1,12 @@
 package harbor
 
 import (
-	"github.com/stretchr/testify/assert"
 	"github.com/kthcloud/go-deploy/pkg/config"
 	"github.com/kthcloud/go-deploy/pkg/subsystems/harbor"
 	"github.com/kthcloud/go-deploy/pkg/subsystems/harbor/models"
 	"github.com/kthcloud/go-deploy/test"
 	"github.com/kthcloud/go-deploy/test/acc"
+	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
 )

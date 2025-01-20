@@ -5,19 +5,20 @@ import (
 	"errors"
 	argFlag "flag"
 	"fmt"
+	"net/http"
+	"os"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/kthcloud/go-deploy/models/mode"
 	"github.com/kthcloud/go-deploy/pkg/config"
 	"github.com/kthcloud/go-deploy/pkg/db"
-	"github.com/kthcloud/go-deploy/pkg/db/migrate"
+	migrator "github.com/kthcloud/go-deploy/pkg/db/migrate"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/job_repo"
 	"github.com/kthcloud/go-deploy/pkg/intializer"
 	"github.com/kthcloud/go-deploy/pkg/log"
 	"github.com/kthcloud/go-deploy/pkg/metrics"
 	"github.com/kthcloud/go-deploy/routers"
-	"net/http"
-	"os"
-	"time"
 )
 
 type Options struct {
@@ -128,10 +129,8 @@ func (app *App) Stop() {
 			log.Fatalln(fmt.Errorf("failed to shutdown server. details: %w", err))
 		}
 
-		select {
-		case <-ctx.Done():
-			log.Println("Saiting for http server to shutdown...")
-		}
+		<-ctx.Done()
+		log.Println("Saiting for http server to shutdown...")
 	}
 
 	shutdown()

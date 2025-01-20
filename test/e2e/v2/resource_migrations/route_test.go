@@ -1,11 +1,11 @@
 package resource_migrations
 
 import (
-	"github.com/stretchr/testify/assert"
 	bodyV2 "github.com/kthcloud/go-deploy/dto/v2/body"
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/test/e2e"
 	v2 "github.com/kthcloud/go-deploy/test/e2e/v2"
+	"github.com/stretchr/testify/assert"
 	"os"
 	"strings"
 	"testing"
