@@ -3,6 +3,7 @@ package v2
 import (
 	"errors"
 	"fmt"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/kthcloud/go-deploy/dto/v2/body"
@@ -15,7 +16,6 @@ import (
 // @Summary Register resource
 // @Description Register resource
 // @Tags Register
-// @Accept  json
 // @Produce  json
 // @Success 204
 // @Failure 400 {object} sys.ErrorResponse

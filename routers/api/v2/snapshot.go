@@ -82,7 +82,6 @@ func GetSnapshot(c *gin.Context) {
 // @Summary List snapshots
 // @Description List snapshots
 // @Tags Snapshot
-// @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth

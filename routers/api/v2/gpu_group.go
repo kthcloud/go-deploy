@@ -15,7 +15,6 @@ import (
 // @Summary Get GPU group
 // @Description Get GPU group
 // @Tags GpuGroup
-// @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
@@ -69,7 +68,6 @@ func GetGpuGroup(c *gin.Context) {
 // @Summary List GPU groups
 // @Description List GPU groups
 // @Tags GpuGroup
-// @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth

@@ -19,7 +19,6 @@ import (
 // @Summary Get resource migration
 // @Description Get resource migration
 // @Tags ResourceMigration
-// @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
@@ -62,7 +61,6 @@ func GetResourceMigration(c *gin.Context) {
 // @Summary List resource migrations
 // @Description List resource migrations
 // @Tags ResourceMigration
-// @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth

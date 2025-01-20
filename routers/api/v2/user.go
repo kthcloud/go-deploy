@@ -20,7 +20,6 @@ import (
 // @Summary Get user
 // @Description Get user
 // @Tags User
-// @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
@@ -100,7 +99,6 @@ func GetUser(c *gin.Context) {
 // @Summary List users
 // @Description List users
 // @Tags User
-// @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth

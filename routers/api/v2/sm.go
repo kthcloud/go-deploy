@@ -24,7 +24,6 @@ import (
 // @Summary Get storage manager
 // @Description Get storage manager
 // @Tags StorageManager
-// @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
@@ -68,7 +67,6 @@ func GetSM(c *gin.Context) {
 // @Summary Get storage manager list
 // @Description Get storage manager list
 // @Tags StorageManager
-// @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
@@ -122,7 +120,6 @@ func ListSMs(c *gin.Context) {
 // @Summary Delete storage manager
 // @Description Delete storage manager
 // @Tags StorageManager
-// @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth

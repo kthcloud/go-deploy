@@ -21,7 +21,6 @@ import (
 // @Summary Get GPU lease
 // @Description Get GPU lease
 // @Tags GpuLease
-// @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
@@ -74,7 +73,6 @@ func GetGpuLease(c *gin.Context) {
 // @Summary List GPU leases
 // @Description List GPU leases
 // @Tags GpuLease
-// @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth

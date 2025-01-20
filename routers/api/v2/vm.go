@@ -26,7 +26,6 @@ import (
 // @Summary Get VM
 // @Description Get VM
 // @Tags VM
-// @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
@@ -87,7 +86,6 @@ func GetVM(c *gin.Context) {
 // @Summary List VMs
 // @Description List VMs
 // @Tags VM
-// @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth

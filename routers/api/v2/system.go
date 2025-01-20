@@ -1,18 +1,18 @@
 package v2
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/kthcloud/go-deploy/dto/v2/query"
 	"github.com/kthcloud/go-deploy/pkg/sys"
 	"github.com/kthcloud/go-deploy/service"
-	"net/http"
 )
 
 // ListSystemCapacities
 // @Summary List system capacities
 // @Description List system capacities
 // @Tags System
-// @Accept  json
 // @Produce  json
 // @Param n query int false "n"
 // @Success 200 {array} body.TimestampedSystemCapacities
@@ -46,7 +46,6 @@ func ListSystemCapacities(c *gin.Context) {
 // @Summary List system stats
 // @Description List system stats
 // @Tags System
-// @Accept  json
 // @Produce  json
 // @Param n query int false "n"
 // @Success 200 {array} body.TimestampedSystemStats
@@ -80,7 +79,6 @@ func ListSystemStats(c *gin.Context) {
 // @Summary List system stats
 // @Description List system stats
 // @Tags System
-// @Accept  json
 // @Produce  json
 // @Param n query int false "n"
 // @Success 200 {array} body.TimestampedSystemStatus

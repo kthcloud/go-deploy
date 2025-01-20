@@ -12,7 +12,6 @@ import (
 // @Summary List zones
 // @Description List zones
 // @Tags Zone
-// @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth

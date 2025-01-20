@@ -26,7 +26,6 @@ import (
 // @Summary Get deployment
 // @Description Get deployment
 // @Tags Deployment
-// @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
@@ -83,7 +82,6 @@ func GetDeployment(c *gin.Context) {
 // @Summary List deployments
 // @Description List deployments
 // @Tags Deployment
-// @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth

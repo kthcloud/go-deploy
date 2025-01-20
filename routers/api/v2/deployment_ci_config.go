@@ -15,7 +15,6 @@ import (
 // @Summary Get CI config
 // @Description Get CI config
 // @Tags Deployment
-// @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth

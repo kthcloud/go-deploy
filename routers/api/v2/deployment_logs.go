@@ -19,7 +19,6 @@ import (
 // @Summary Get logs using Server-Sent Events
 // @Description Get logs using Server-Sent Events
 // @Tags Deployment
-// @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
 // @Security KeycloakOAuth
