@@ -3099,7 +3099,7 @@ paths:
       tags:
       - StorageManager
   /v2/storageManagers/{storageManagerId}:
-    get:
+    delete:
       description: Delete storage manager
       parameters:
       - description: Storage manager ID
@@ -3143,6 +3143,52 @@ paths:
       - ApiKeyAuth: []
       - KeycloakOAuth: []
       summary: Delete storage manager
+      tags:
+      - StorageManager
+    get:
+      description: Get storage manager
+      parameters:
+      - description: Storage manager ID
+        in: path
+        name: storageManagerId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/body.SmDeleted'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/sys.ErrorResponse'
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/sys.ErrorResponse'
+          description: Unauthorized
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/sys.ErrorResponse'
+          description: Not Found
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/sys.ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: Get storage manager
       tags:
       - StorageManager
   /v2/systemCapacities:

@@ -129,7 +129,7 @@ func ListSMs(c *gin.Context) {
 // @Failure 401 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
-// @Router /v2/storageManagers/{storageManagerId} [get]
+// @Router /v2/storageManagers/{storageManagerId} [delete]
 func DeleteSM(c *gin.Context) {
 	context := sys.NewContext(c)
 
