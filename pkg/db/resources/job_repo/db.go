@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go-deploy/models/model"
-	"go-deploy/pkg/db"
+	"time"
+
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"time"
 )
 
 // Create creates a new job in the database.
@@ -53,11 +54,11 @@ func (client *Client) CreateScheduled(id, userID, jobType, version string, runAf
 func (client *Client) GetNext() (*model.Job, error) {
 	now := time.Now()
 	filter := bson.D{
-		{"status", model.JobStatusPending},
-		{"runAfter", bson.D{{"$lte", now}}},
+		{Key: "status", Value: model.JobStatusPending},
+		{Key: "runAfter", Value: bson.D{{Key: "$lte", Value: now}}},
 	}
-	opts := options.FindOneAndUpdate().SetSort(bson.D{{"createdAt", -1}})
-	update := bson.D{{"$set", bson.D{{"status", model.JobStatusRunning}, {"lastRunAt", time.Now()}}}}
+	opts := options.FindOneAndUpdate().SetSort(bson.D{{Key: "createdAt", Value: -1}})
+	update := bson.D{{Key: "$set", Value: bson.D{{Key: "status", Value: model.JobStatusRunning}, {Key: "lastRunAt", Value: time.Now()}}}}
 
 	var job model.Job
 	err := client.Collection.FindOneAndUpdate(context.TODO(), filter, update, opts).Decode(&job)
@@ -76,11 +77,11 @@ func (client *Client) GetNext() (*model.Job, error) {
 func (client *Client) GetNextFailed() (*model.Job, error) {
 	now := time.Now()
 	filter := bson.D{
-		{"status", model.JobStatusFailed},
-		{"runAfter", bson.D{{"$lte", now}}},
+		{Key: "status", Value: model.JobStatusFailed},
+		{Key: "runAfter", Value: bson.D{{Key: "$lte", Value: now}}},
 	}
-	opts := options.FindOneAndUpdate().SetSort(bson.D{{"createdAt", -1}})
-	update := bson.D{{"$set", bson.D{{"status", model.JobStatusRunning}, {"lastRunAt", time.Now()}}}}
+	opts := options.FindOneAndUpdate().SetSort(bson.D{{Key: "createdAt", Value: -1}})
+	update := bson.D{{Key: "$set", Value: bson.D{{Key: "status", Value: model.JobStatusRunning}, {Key: "lastRunAt", Value: time.Now()}}}}
 
 	var job model.Job
 	err := client.Collection.FindOneAndUpdate(context.TODO(), filter, update, opts).Decode(&job)
@@ -97,14 +98,14 @@ func (client *Client) GetNextFailed() (*model.Job, error) {
 
 // MarkCompleted marks a job as completed.
 func (client *Client) MarkCompleted(jobID string) error {
-	filter := bson.D{{"id", jobID}}
+	filter := bson.D{{Key: "id", Value: jobID}}
 
 	// update status and finishedAt
 	update := bson.D{
-		{"$set",
-			bson.D{
-				{"status", model.JobStatusCompleted},
-				{"finishedAt", time.Now()},
+		{Key: "$set",
+			Value: bson.D{
+				{Key: "status", Value: model.JobStatusCompleted},
+				{Key: "finishedAt", Value: time.Now()},
 			},
 		},
 	}
@@ -120,19 +121,19 @@ func (client *Client) MarkCompleted(jobID string) error {
 // MarkFailed marks a job as failed, meaning it should be retried.
 func (client *Client) MarkFailed(jobID string, runAfter time.Time, attempts int, reason string) error {
 	filter := bson.D{
-		{"id", jobID},
+		{Key: "id", Value: jobID},
 	}
 	update := bson.D{
-		{"$set",
-			bson.D{
-				{"status", model.JobStatusFailed},
-				{"finishedAt", time.Now()},
-				{"attempts", attempts},
-				{"runAfter", runAfter},
+		{Key: "$set",
+			Value: bson.D{
+				{Key: "status", Value: model.JobStatusFailed},
+				{Key: "finishedAt", Value: time.Now()},
+				{Key: "attempts", Value: attempts},
+				{Key: "runAfter", Value: runAfter},
 			},
 		},
-		{"$push",
-			bson.D{{"errorLogs", reason}},
+		{Key: "$push",
+			Value: bson.D{{Key: "errorLogs", Value: reason}},
 		},
 	}
 
@@ -147,17 +148,17 @@ func (client *Client) MarkFailed(jobID string, runAfter time.Time, attempts int,
 // MarkTerminated marks a job as terminated, meaning it should not be retried.
 func (client *Client) MarkTerminated(jobID string, reason string) error {
 	filter := bson.D{
-		{"id", jobID},
+		{Key: "id", Value: jobID},
 	}
 	update := bson.D{
-		{"$set",
-			bson.D{
-				{"status", model.JobStatusTerminated},
-				{"finishedAt", time.Now()},
+		{Key: "$set",
+			Value: bson.D{
+				{Key: "status", Value: model.JobStatusTerminated},
+				{Key: "finishedAt", Value: time.Now()},
 			},
 		},
-		{"$push",
-			bson.D{{"errorLogs", reason}},
+		{Key: "$push",
+			Value: bson.D{{Key: "errorLogs", Value: reason}},
 		},
 	}
 
@@ -172,8 +173,8 @@ func (client *Client) MarkTerminated(jobID string, reason string) error {
 // ResetRunning resets all running jobs to pending.
 // This is used when the application is restarted to prevent jobs from being stuck in running state.
 func (client *Client) ResetRunning() error {
-	filter := bson.D{{"status", model.JobStatusRunning}}
-	update := bson.D{{"$set", bson.D{{"status", model.JobStatusPending}}}}
+	filter := bson.D{{Key: "status", Value: model.JobStatusRunning}}
+	update := bson.D{{Key: "$set", Value: bson.D{{Key: "status", Value: model.JobStatusPending}}}}
 
 	_, err := client.Collection.UpdateMany(context.Background(), filter, update)
 	if err != nil {

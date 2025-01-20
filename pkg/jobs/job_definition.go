@@ -1,10 +1,10 @@
 package jobs
 
 import (
-	"go-deploy/models/model"
-	"go-deploy/models/version"
-	"go-deploy/pkg/jobs/utils"
-	"go-deploy/pkg/jobs/v2"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/models/version"
+	"github.com/kthcloud/go-deploy/pkg/jobs/utils"
+	"github.com/kthcloud/go-deploy/pkg/jobs/v2"
 )
 
 // JobDefinition is a definition of a job.

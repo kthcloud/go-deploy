@@ -3,8 +3,8 @@ package sys
 import (
 	"encoding/json"
 	"fmt"
-	"go-deploy/pkg/auth"
-	"go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/auth"
+	"github.com/kthcloud/go-deploy/pkg/config"
 )
 
 // HasApiKey checks if the request has an api key.

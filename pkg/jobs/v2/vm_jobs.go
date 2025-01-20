@@ -4,19 +4,20 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/mitchellh/mapstructure"
-	"go-deploy/dto/v2/body"
-	"go-deploy/models/model"
-	"go-deploy/pkg/db/resources/job_repo"
-	"go-deploy/pkg/db/resources/vm_repo"
-	jErrors "go-deploy/pkg/jobs/errors"
-	"go-deploy/pkg/jobs/utils"
-	"go-deploy/pkg/log"
-	"go-deploy/pkg/services/confirm"
-	"go-deploy/service"
-	sErrors "go-deploy/service/errors"
-	"go-deploy/service/v2/vms/opts"
 	"time"
+
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/job_repo"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/vm_repo"
+	jErrors "github.com/kthcloud/go-deploy/pkg/jobs/errors"
+	"github.com/kthcloud/go-deploy/pkg/jobs/utils"
+	"github.com/kthcloud/go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/pkg/services/confirm"
+	"github.com/kthcloud/go-deploy/service"
+	sErrors "github.com/kthcloud/go-deploy/service/errors"
+	"github.com/kthcloud/go-deploy/service/v2/vms/opts"
+	"github.com/mitchellh/mapstructure"
 )
 
 func CreateVM(job *model.Job) error {
@@ -35,7 +36,7 @@ func CreateVM(job *model.Job) error {
 
 	err = service.V2(utils.GetAuthInfo(job)).VMs().Create(id, ownerID, &params)
 	if err != nil {
-		// If there was some error, we trigger a repair, since rerunning it would cause a NonUniqueFieldErr
+		// If there was some error, we trigger a repair, since rerunning it would cause a ErrNonUniqueField
 		_ = service.V2(utils.GetAuthInfo(job)).VMs().Repair(id)
 		return jErrors.MakeTerminatedError(err)
 	}
@@ -96,7 +97,7 @@ func DeleteVM(job *model.Job) error {
 
 	err = service.V2(utils.GetAuthInfo(job)).VMs().Delete(id)
 	if err != nil {
-		if !errors.Is(err, sErrors.VmNotFoundErr) {
+		if !errors.Is(err, sErrors.ErrVmNotFound) {
 			return jErrors.MakeFailedError(err)
 		}
 	}
@@ -134,15 +135,15 @@ func UpdateVM(job *model.Job) error {
 	err = service.V2(utils.GetAuthInfo(job)).VMs().Update(id, &update)
 	if err != nil {
 		switch {
-		case errors.Is(err, sErrors.VmNotFoundErr):
+		case errors.Is(err, sErrors.ErrVmNotFound):
 			return jErrors.MakeTerminatedError(err)
-		case errors.Is(err, sErrors.NonUniqueFieldErr):
+		case errors.Is(err, sErrors.ErrNonUniqueField):
 			return jErrors.MakeTerminatedError(err)
-		case errors.Is(err, sErrors.IngressHostInUseErr):
+		case errors.Is(err, sErrors.ErrIngressHostInUse):
 			return jErrors.MakeTerminatedError(err)
-		case errors.Is(err, sErrors.NoPortsAvailableErr):
+		case errors.Is(err, sErrors.ErrNoPortsAvailable):
 			return jErrors.MakeTerminatedError(err)
-		case errors.Is(err, sErrors.SnapshotNotFoundErr):
+		case errors.Is(err, sErrors.ErrSnapshotNotFound):
 			return jErrors.MakeTerminatedError(err)
 		}
 
@@ -174,11 +175,11 @@ func CreateGpuLease(job *model.Job) error {
 	err = service.V2(utils.GetAuthInfo(job)).VMs().GpuLeases().Create(id, userID, &params)
 	if err != nil {
 		switch {
-		case errors.Is(err, sErrors.VmNotFoundErr):
+		case errors.Is(err, sErrors.ErrVmNotFound):
 			return jErrors.MakeTerminatedError(err)
-		case errors.Is(err, sErrors.GpuLeaseAlreadyExistsErr):
+		case errors.Is(err, sErrors.ErrGpuLeaseAlreadyExists):
 			return jErrors.MakeTerminatedError(err)
-		case errors.Is(err, sErrors.GpuNotFoundErr):
+		case errors.Is(err, sErrors.ErrGpuNotFound):
 			return jErrors.MakeTerminatedError(err)
 		}
 
@@ -204,11 +205,11 @@ func UpdateGpuLease(job *model.Job) error {
 	err = service.V2(utils.GetAuthInfo(job)).VMs().GpuLeases().Update(id, &params)
 	if err != nil {
 		switch {
-		case errors.Is(err, sErrors.GpuLeaseNotFoundErr):
+		case errors.Is(err, sErrors.ErrGpuLeaseNotFound):
 			return jErrors.MakeTerminatedError(err)
-		case errors.Is(err, sErrors.GpuLeaseNotAssignedErr):
+		case errors.Is(err, sErrors.ErrGpuLeaseNotAssigned):
 			return jErrors.MakeTerminatedError(err)
-		case errors.Is(err, sErrors.VmAlreadyAttachedErr):
+		case errors.Is(err, sErrors.ErrVmAlreadyAttached):
 			return jErrors.MakeTerminatedError(err)
 		}
 
@@ -229,7 +230,7 @@ func DeleteGpuLease(job *model.Job) error {
 	err = service.V2(utils.GetAuthInfo(job)).VMs().GpuLeases().Delete(id)
 	if err != nil {
 		switch {
-		case errors.Is(err, sErrors.GpuNotFoundErr):
+		case errors.Is(err, sErrors.ErrGpuNotFound):
 			return jErrors.MakeTerminatedError(err)
 		}
 
@@ -338,7 +339,7 @@ func UpdateVmOwner(job *model.Job) error {
 
 	err = service.V2(utils.GetAuthInfo(job)).VMs().UpdateOwner(id, &params)
 	if err != nil {
-		if errors.Is(err, sErrors.VmNotFoundErr) {
+		if errors.Is(err, sErrors.ErrVmNotFound) {
 			return jErrors.MakeTerminatedError(err)
 		}
 

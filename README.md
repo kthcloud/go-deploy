@@ -24,21 +24,11 @@ You can install a local development environment by following the [local environm
 
 Remember to run the tests before creating a pull request.
 
-#### Acceptance Tests
 ```bash
-go test ./test/acc/...
-```
-#### End-to-End Tests
-```bash
-go build -o go-deploy .     # Build
-./go-deploy --mode=test     # Start
-
-# Wait for the API to return 200 on /healthz
-until $(curl --output /dev/null --silent --head --fail http://localhost:8080/healthz); do
-    echo "Waiting for API to start"
-    sleep 1
-done
-go test ./test/e2e/...          # Run e2e tests
+make test
+# or
+# make acc
+# make e2e
 ```
 
 ## 📚 Docs
@@ -46,13 +36,13 @@ go test ./test/e2e/...          # Run e2e tests
 ### Codebase
 The code base is documented using godoc. You can view the documentation by running the documentation server locally.
 
-1. Install godoc `go install golang.org/x/tools/cmd/godoc`
+1. Install godoc `go install golang.org/x/tools/cmd/godoc@latest`
 2. Run godoc `godoc -http=:6060`
 3. Visit [http://localhost:6060/pkg/go-deploy/](http://localhost:6060/pkg/go-deploy/)
 
 
 ### API
-The API is documented using OpenAPI 3.0 specification and is available at [https://api.cloud.cbh.kth.se/deploy/v2/docs/index.html](https://api.cloud.cbh.kth.se/deploy/v2/docs/index.html).
+The API is documented using OpenAPI 3.1.0 specification and is available at [https://api.cloud.cbh.kth.se/deploy/v2/docs/index.html](https://api.cloud.cbh.kth.se/deploy/v2/docs/index.html).
 
 You can also run the API locally by [setting up the local environment](scripts/local/README.md) and visiting [http://localhost:8080/v2/docs/index.html](http://localhost:8080/v2/docs/index.html).
 

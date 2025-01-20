@@ -1,10 +1,10 @@
 package opts
 
 import (
-	"go-deploy/dto/v2/body"
-	configModels "go-deploy/models/config"
-	"go-deploy/models/model"
-	"go-deploy/service/v2/utils"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	configModels "github.com/kthcloud/go-deploy/models/config"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/service/v2/utils"
 	"time"
 )
 

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
-	"go-deploy/pkg/subsystems/k8s/keys"
-	"go-deploy/pkg/subsystems/k8s/models"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/keys"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
 )

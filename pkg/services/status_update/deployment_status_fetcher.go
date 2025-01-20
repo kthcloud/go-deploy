@@ -1,11 +1,11 @@
 package status_update
 
 import (
-	"go-deploy/models/model"
-	"go-deploy/pkg/app/status_codes"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/db/resources/deployment_repo"
-	"go-deploy/service"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/app/status_codes"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/deployment_repo"
+	"github.com/kthcloud/go-deploy/service"
 )
 
 func DeploymentStatusFetcher() error {

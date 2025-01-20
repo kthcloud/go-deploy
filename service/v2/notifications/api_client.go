@@ -1,10 +1,10 @@
 package notifications
 
 import (
-	"go-deploy/models/model"
-	"go-deploy/pkg/db/resources/notification_repo"
-	"go-deploy/service/clients"
-	"go-deploy/service/core"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/notification_repo"
+	"github.com/kthcloud/go-deploy/service/clients"
+	"github.com/kthcloud/go-deploy/service/core"
 	"sort"
 )
 

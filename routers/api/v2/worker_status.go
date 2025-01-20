@@ -2,18 +2,17 @@ package v2
 
 import (
 	"github.com/gin-gonic/gin"
-	"go-deploy/dto/v2/body"
-	"go-deploy/dto/v2/query"
-	"go-deploy/pkg/sys"
-	"go-deploy/service"
-	"go-deploy/service/v2/system/opts"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/dto/v2/query"
+	"github.com/kthcloud/go-deploy/pkg/sys"
+	"github.com/kthcloud/go-deploy/service"
+	"github.com/kthcloud/go-deploy/service/v2/system/opts"
 )
 
 // ListWorkerStatus
 // @Summary List worker status
 // @Description List of worker status
 // @Tags Status
-// @Accept json
 // @Produce json
 // @Success 200 {array} body.WorkerStatusRead
 // @Failure 400 {object} sys.ErrorResponse
@@ -30,7 +29,7 @@ func ListWorkerStatus(c *gin.Context) {
 
 	workerStatus, err := service.V2().System().ListWorkerStatus(opts.ListWorkerStatusOpts{})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 

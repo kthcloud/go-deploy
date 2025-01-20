@@ -4,15 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go-deploy/models/model"
-	"go-deploy/pkg/db"
-	"go.mongodb.org/mongo-driver/bson"
 	"time"
+
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 var (
-	// AlreadyExistsErr is returned when a storage manager already exists for a user.
-	AlreadyExistsErr = fmt.Errorf("storage manager already exists for user")
+	// ErrAlreadyExists is returned when a storage manager already exists for a user.
+	ErrAlreadyExists = fmt.Errorf("storage manager already exists for user")
 )
 
 // Create creates a new storage manager.
@@ -28,10 +29,10 @@ func (client *Client) Create(id, ownerID string, params *model.SmCreateParams) (
 		Subsystems: model.SmSubsystems{},
 	}
 
-	err := client.CreateIfUnique(id, sm, bson.D{{"ownerId", ownerID}})
+	err := client.CreateIfUnique(id, sm, bson.D{{Key: "ownerId", Value: ownerID}})
 	if err != nil {
-		if errors.Is(err, db.UniqueConstraintErr) {
-			return nil, AlreadyExistsErr
+		if errors.Is(err, db.ErrUniqueConstraint) {
+			return nil, ErrAlreadyExists
 		} else {
 			return nil, err
 		}
@@ -48,7 +49,7 @@ func (client *Client) Create(id, ownerID string, params *model.SmCreateParams) (
 // GetURL returns the URL of the storage manager.
 // It uses projection to only fetch the URL.
 func (client *Client) GetURL(externalPort *int) (*string, error) {
-	sm, err := client.GetWithFilterAndProjection(bson.D{}, bson.D{{"ownerId", 1}, {"subsystems.k8s.ingressMap", 1}})
+	sm, err := client.GetWithFilterAndProjection(bson.D{}, bson.D{{Key: "ownerId", Value: 1}, {Key: "subsystems.k8s.ingressMap", Value: 1}})
 	if err != nil {
 		return nil, err
 	}
@@ -64,23 +65,23 @@ func (client *Client) GetURL(externalPort *int) (*string, error) {
 // It prepends the key with `subsystems` and unsets it.
 func (client *Client) DeleteSubsystem(id, key string) error {
 	subsystemKey := fmt.Sprintf("subsystems.%s", key)
-	return client.UpdateWithBsonByID(id, bson.D{{"$unset", bson.D{{subsystemKey, ""}}}})
+	return client.UpdateWithBsonByID(id, bson.D{{Key: "$unset", Value: bson.D{{Key: subsystemKey, Value: ""}}}})
 }
 
 // SetSubsystem sets a subsystem in a storage manager.
 // It prepends the key with `subsystems` and sets it.
 func (client *Client) SetSubsystem(id, key string, update interface{}) error {
 	subsystemKey := fmt.Sprintf("subsystems.%s", key)
-	return client.SetWithBsonByID(id, bson.D{{subsystemKey, update}})
+	return client.SetWithBsonByID(id, bson.D{{Key: subsystemKey, Value: update}})
 }
 
 // MarkRepaired marks a storage manager as repaired.
 // It sets RepairedAt and unsets the repairing activity.
 func (client *Client) MarkRepaired(id string) error {
-	filter := bson.D{{"id", id}}
+	filter := bson.D{{Key: "id", Value: id}}
 	update := bson.D{
-		{"$set", bson.D{{"repairedAt", time.Now()}}},
-		{"$unset", bson.D{{"activities.repairing", ""}}},
+		{Key: "$set", Value: bson.D{{Key: "repairedAt", Value: time.Now()}}},
+		{Key: "$unset", Value: bson.D{{Key: "activities.repairing", Value: ""}}},
 	}
 
 	_, err := client.ResourceClient.Collection.UpdateOne(context.TODO(), filter, update)

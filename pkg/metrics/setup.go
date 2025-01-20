@@ -2,9 +2,9 @@ package metrics
 
 import (
 	"fmt"
+	"github.com/kthcloud/go-deploy/pkg/db/key_value"
+	"github.com/kthcloud/go-deploy/utils"
 	"github.com/penglongli/gin-metrics/ginmetrics"
-	"go-deploy/pkg/db/key_value"
-	"go-deploy/utils"
 	"strconv"
 )
 

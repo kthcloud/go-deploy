@@ -1,8 +1,8 @@
 package discovery
 
 import (
-	"go-deploy/service/clients"
-	"go-deploy/service/core"
+	"github.com/kthcloud/go-deploy/service/clients"
+	"github.com/kthcloud/go-deploy/service/core"
 )
 
 type Client struct {

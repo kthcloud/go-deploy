@@ -1,6 +1,6 @@
 package confirm
 
-import "go-deploy/models/model"
+import "github.com/kthcloud/go-deploy/models/model"
 
 // getDeploymentDeletedConfirmers gets the confirmers for deployment deletion.
 func getDeploymentDeletedConfirmers() []func(*model.Deployment) (bool, error) {

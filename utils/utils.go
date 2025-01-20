@@ -5,10 +5,11 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"go-deploy/pkg/log"
 	"math/rand"
 	"strings"
 	"time"
+
+	"github.com/kthcloud/go-deploy/pkg/log"
 )
 
 // HashString hashes a string using sha256 and returns the base64 encoded string
@@ -123,11 +124,12 @@ const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789
 
 // GenerateSalt generates the salt that can be used when hashing a password
 func GenerateSalt() string {
-	//goland:noinspection GoDeprecation
-	rand.Seed(time.Now().UnixNano())
+	src := rand.NewSource(time.Now().UnixNano())
+	rng := rand.New(src)
+
 	salt := make([]byte, 16)
 	for i := range salt {
-		salt[i] = alphabet[rand.Intn(len(alphabet))]
+		salt[i] = alphabet[rng.Intn(len(alphabet))]
 	}
 	return string(salt)
 }

@@ -3,18 +3,19 @@ package utils
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"time"
+
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/deployment_repo"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/job_repo"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/vm_repo"
+	"github.com/kthcloud/go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/service/core"
 	"github.com/mitchellh/mapstructure"
-	"go-deploy/models/model"
-	"go-deploy/pkg/db/resources/deployment_repo"
-	"go-deploy/pkg/db/resources/job_repo"
-	"go-deploy/pkg/db/resources/vm_repo"
-	"go-deploy/pkg/log"
-	"go-deploy/service/core"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/exp/slices"
-	"reflect"
-	"time"
 )
 
 // AssertParameters asserts that the job has all the required parameters.
@@ -258,9 +259,9 @@ func UpdatingOwner(job *model.Job) (bool, error) {
 	id := job.Args["id"].(string)
 
 	filter := bson.D{
-		{"args.id", id},
-		{"type", model.JobUpdateVmOwner},
-		{"status", bson.D{{"$nin", []string{model.JobStatusCompleted, model.JobStatusTerminated}}}},
+		{Key: "args.id", Value: id},
+		{Key: "type", Value: model.JobUpdateVmOwner},
+		{Key: "status", Value: bson.D{{Key: "$nin", Value: []string{model.JobStatusCompleted, model.JobStatusTerminated}}}},
 	}
 
 	anyUpdatingOwnerJob, err := job_repo.New().AddFilter(filter).ExistsAny()

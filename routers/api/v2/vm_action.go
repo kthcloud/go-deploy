@@ -3,13 +3,13 @@ package v2
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"go-deploy/dto/v2/body"
-	"go-deploy/dto/v2/query"
-	"go-deploy/models/model"
-	"go-deploy/models/version"
-	"go-deploy/pkg/sys"
-	"go-deploy/service"
-	"go-deploy/service/v2/vms/opts"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/dto/v2/query"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/models/version"
+	"github.com/kthcloud/go-deploy/pkg/sys"
+	"github.com/kthcloud/go-deploy/service"
+	"github.com/kthcloud/go-deploy/service/v2/vms/opts"
 )
 
 // CreateVmAction
@@ -19,6 +19,7 @@ import (
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param vmId path string true "VM ID"
 // @Param body body body.VmActionCreate true "actions body"
 // @Success 200 {object} body.VmActionCreated
@@ -43,7 +44,7 @@ func CreateVmAction(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -51,7 +52,7 @@ func CreateVmAction(c *gin.Context) {
 
 	vm, err := deployV2.VMs().Get(requestQuery.VmID, opts.GetOpts{Shared: true})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -73,7 +74,7 @@ func CreateVmAction(c *gin.Context) {
 	})
 
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 

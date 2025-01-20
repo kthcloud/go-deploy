@@ -3,10 +3,10 @@ package harbor
 import (
 	"context"
 	"fmt"
-	artifactModels "go-deploy/pkg/imp/harbor/sdk/v2.0/client/artifact"
-	repositoryModels "go-deploy/pkg/imp/harbor/sdk/v2.0/client/repository"
-	"go-deploy/pkg/log"
-	"go-deploy/pkg/subsystems/harbor/models"
+	artifactModels "github.com/kthcloud/go-deploy/pkg/imp/harbor/sdk/v2.0/client/artifact"
+	repositoryModels "github.com/kthcloud/go-deploy/pkg/imp/harbor/sdk/v2.0/client/repository"
+	"github.com/kthcloud/go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/harbor/models"
 )
 
 // insertPlaceholder inserts a placeholder artifact into a repository.

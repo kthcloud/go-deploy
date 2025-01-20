@@ -2,11 +2,12 @@ package intializer
 
 import (
 	"errors"
+
 	"github.com/google/uuid"
-	"go-deploy/dto/v2/body"
-	"go-deploy/pkg/config"
-	"go-deploy/service"
-	sErrors "go-deploy/service/errors"
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/service"
+	sErrors "github.com/kthcloud/go-deploy/service/errors"
 )
 
 // EnsureSystemDeploymentsExists ensures that the deployments related to the system are created.
@@ -34,7 +35,7 @@ func EnsureSystemDeploymentsExists() error {
 			Zone:            strPtr(zone.Name),
 		})
 		if err != nil {
-			if !errors.Is(err, sErrors.NonUniqueFieldErr) {
+			if !errors.Is(err, sErrors.ErrNonUniqueField) {
 				return err
 			}
 		}

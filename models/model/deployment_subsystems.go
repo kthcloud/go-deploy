@@ -1,8 +1,8 @@
 package model
 
 import (
-	harborModels "go-deploy/pkg/subsystems/harbor/models"
-	k8sModels "go-deploy/pkg/subsystems/k8s/models"
+	harborModels "github.com/kthcloud/go-deploy/pkg/subsystems/harbor/models"
+	k8sModels "github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
 )
 
 type DeploymentSubsystems struct {

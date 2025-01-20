@@ -2,17 +2,18 @@ package synchronize
 
 import (
 	"fmt"
-	"go-deploy/dto/v2/body"
-	configModels "go-deploy/models/config"
-	"go-deploy/models/model"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/db/resources/gpu_group_repo"
-	"go-deploy/pkg/db/resources/system_gpu_info_repo"
-	"go-deploy/pkg/log"
-	"go-deploy/service"
-	"go-deploy/utils"
-	"go.mongodb.org/mongo-driver/bson"
 	"strings"
+
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	configModels "github.com/kthcloud/go-deploy/models/config"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/gpu_group_repo"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/system_gpu_info_repo"
+	"github.com/kthcloud/go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/service"
+	"github.com/kthcloud/go-deploy/utils"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // GpuSynchronizer synchronizes the GPUs in the database with the sys-api page.
@@ -85,12 +86,12 @@ func synchronizeGPUs(gpuInfo *body.SystemGpuInfo) error {
 				}
 			} else {
 				err = gpu_group_repo.New().WithZone(zone).SetWithBsonByID(group.ID, bson.D{
-					{"name", group.Name},
-					{"displayName", group.DisplayName},
-					{"total", group.Total},
-					{"vendor", group.Vendor},
-					{"vendorId", group.VendorID},
-					{"deviceId", group.DeviceID},
+					{Key: "name", Value: group.Name},
+					{Key: "displayName", Value: group.DisplayName},
+					{Key: "total", Value: group.Total},
+					{Key: "vendor", Value: group.Vendor},
+					{Key: "vendorId", Value: group.VendorID},
+					{Key: "deviceId", Value: group.DeviceID},
 				})
 				if err != nil {
 					return err

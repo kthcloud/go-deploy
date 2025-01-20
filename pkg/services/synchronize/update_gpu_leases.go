@@ -1,11 +1,11 @@
 package synchronize
 
 import (
-	"go-deploy/models/model"
-	"go-deploy/pkg/db/resources/gpu_group_repo"
-	"go-deploy/pkg/db/resources/gpu_lease_repo"
-	"go-deploy/pkg/log"
-	"go-deploy/service"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/gpu_group_repo"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/gpu_lease_repo"
+	"github.com/kthcloud/go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/service"
 	"sort"
 	"time"
 )

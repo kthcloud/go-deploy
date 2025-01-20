@@ -1,12 +1,13 @@
 package api_key
 
 import (
-	"go-deploy/dto/v2/body"
-	"go-deploy/models/model"
-	"go-deploy/pkg/db/resources/user_repo"
-	sErrors "go-deploy/service/errors"
-	"go-deploy/utils"
 	"time"
+
+	"github.com/kthcloud/go-deploy/dto/v2/body"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/user_repo"
+	sErrors "github.com/kthcloud/go-deploy/service/errors"
+	"github.com/kthcloud/go-deploy/utils"
 )
 
 // Create generates a new API key for the user.
@@ -19,7 +20,7 @@ func (c *Client) Create(userID string, dtoApiKeyCreate *body.ApiKeyCreate) (*mod
 	}
 
 	if user == nil {
-		return nil, sErrors.UserNotFoundErr
+		return nil, sErrors.ErrUserNotFound
 	}
 
 	params := model.ApiKeyCreateParams{}.FromDTO(dtoApiKeyCreate, key)
@@ -34,7 +35,7 @@ func (c *Client) Create(userID string, dtoApiKeyCreate *body.ApiKeyCreate) (*mod
 	// Check duplicate name for the API key
 	for _, k := range user.ApiKeys {
 		if k.Name == apiKey.Name {
-			return nil, sErrors.ApiKeyNameTakenErr
+			return nil, sErrors.ErrApiKeyNameTaken
 		}
 	}
 
@@ -55,7 +56,7 @@ func (c *Client) List(userID string) ([]model.ApiKey, error) {
 	}
 
 	if user == nil {
-		return nil, sErrors.UserNotFoundErr
+		return nil, sErrors.ErrUserNotFound
 	}
 
 	return user.ApiKeys, nil
@@ -69,7 +70,7 @@ func (c *Client) Delete(userID string, name string) error {
 	}
 
 	if user == nil {
-		return sErrors.UserNotFoundErr
+		return sErrors.ErrUserNotFound
 	}
 
 	apiKeys := make([]model.ApiKey, 0)

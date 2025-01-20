@@ -1,19 +1,8 @@
 package v2
 
 import (
-	"errors"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
-	"go-deploy/dto/v2/body"
-	"go-deploy/dto/v2/query"
-	"go-deploy/dto/v2/uri"
-	"go-deploy/models/model"
-	"go-deploy/models/version"
-	"go-deploy/pkg/sys"
-	"go-deploy/service"
-	sErrors "go-deploy/service/errors"
-	"go-deploy/service/v2/utils"
-	"go-deploy/service/v2/vms/opts"
+	"github.com/kthcloud/go-deploy/pkg/sys"
 )
 
 // GetSnapshot
@@ -23,6 +12,7 @@ import (
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param vmId path string true "VM ID"
 // @Param snapshotId path string true "Snapshot ID"
 // @Success 200 {object} body.VmSnapshotRead
@@ -35,9 +25,8 @@ func GetSnapshot(c *gin.Context) {
 
 	// Not yet implemented
 	context.NotImplemented()
-	return
 
-	var requestURI uri.VmSnapshotGet
+	/*var requestURI uri.VmSnapshotGet
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
 		context.BindingError(CreateBindingError(err))
 		return
@@ -73,16 +62,16 @@ func GetSnapshot(c *gin.Context) {
 		return
 	}
 
-	context.Ok(snapshot.ToDTOv2())
+	context.Ok(snapshot.ToDTOv2())*/
 }
 
 // ListSnapshots
 // @Summary List snapshots
 // @Description List snapshots
 // @Tags Snapshot
-// @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param vmId path string true "Filter by VM ID"
 // @Param page query int false "Page number"
 // @Param pageSize query int false "Number of items per page"
@@ -97,9 +86,8 @@ func ListSnapshots(c *gin.Context) {
 
 	// Not yet implemented
 	context.NotImplemented()
-	return
 
-	var requestQuery query.VmSnapshotList
+	/*var requestQuery query.VmSnapshotList
 	if err := context.GinContext.ShouldBind(&requestQuery); err != nil {
 		context.BindingError(CreateBindingError(err))
 		return
@@ -129,7 +117,7 @@ func ListSnapshots(c *gin.Context) {
 		dtoSnapshots[i] = snapshot.ToDTOv2()
 	}
 
-	context.Ok(dtoSnapshots)
+	context.Ok(dtoSnapshots)*/
 }
 
 // CreateSnapshot
@@ -139,6 +127,7 @@ func ListSnapshots(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param vmId path string true "VM ID"
 // @Success 200 {object} body.VmSnapshotCreated
 // @Failure 400 {object} sys.ErrorResponse
@@ -150,9 +139,8 @@ func CreateSnapshot(c *gin.Context) {
 
 	// Not yet implemented
 	context.NotImplemented()
-	return
 
-	var requestURI uri.VmSnapshotCreate
+	/*var requestURI uri.VmSnapshotCreate
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
 		context.BindingError(CreateBindingError(err))
 		return
@@ -230,7 +218,7 @@ func CreateSnapshot(c *gin.Context) {
 	context.Ok(body.VmSnapshotCreated{
 		ID:    vm.ID,
 		JobID: jobID,
-	})
+	})*/
 }
 
 // DeleteSnapshot
@@ -240,6 +228,7 @@ func CreateSnapshot(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param vmId path string true "VM ID"
 // @Param snapshotId path string true "Snapshot ID"
 // @Success 200 {object} body.VmSnapshotDeleted
@@ -252,9 +241,8 @@ func DeleteSnapshot(c *gin.Context) {
 
 	// Not yet implemented
 	context.NotImplemented()
-	return
 
-	var requestURI uri.VmSnapshotDelete
+	/*var requestURI uri.VmSnapshotDelete
 	if err := context.GinContext.ShouldBindUri(&requestURI); err != nil {
 		context.BindingError(CreateBindingError(err))
 		return
@@ -305,5 +293,5 @@ func DeleteSnapshot(c *gin.Context) {
 	context.Ok(body.VmSnapshotDeleted{
 		ID:    vm.ID,
 		JobID: jobID,
-	})
+	})*/
 }

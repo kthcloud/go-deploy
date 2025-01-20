@@ -3,14 +3,15 @@ package team_repo
 import (
 	"errors"
 	"fmt"
-	"go-deploy/models/model"
-	"go-deploy/pkg/db"
-	"go.mongodb.org/mongo-driver/bson"
 	"time"
+
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 var (
-	NameTakenErr = fmt.Errorf("team name taken")
+	ErrNameTaken = fmt.Errorf("team name taken")
 )
 
 // Create creates a new team.
@@ -25,10 +26,10 @@ func (client *Client) Create(id, ownerID string, params *model.TeamCreateParams)
 		MemberMap:   params.MemberMap,
 	}
 
-	err := client.CreateIfUnique(id, team, bson.D{{"name", params.Name}})
+	err := client.CreateIfUnique(id, team, bson.D{{Key: "name", Value: params.Name}})
 	if err != nil {
-		if errors.Is(err, db.UniqueConstraintErr) {
-			return nil, NameTakenErr
+		if errors.Is(err, db.ErrUniqueConstraint) {
+			return nil, ErrNameTaken
 		}
 		return nil, err
 	}
@@ -42,7 +43,7 @@ func (client *Client) Create(id, ownerID string, params *model.TeamCreateParams)
 }
 
 func (client *Client) ListMemberIDs(ids ...string) ([]string, error) {
-	teams, err := client.ListWithFilterAndProjection(bson.D{{"id", bson.D{{"$in", ids}}}}, bson.D{{"memberMap", 1}})
+	teams, err := client.ListWithFilterAndProjection(bson.D{{Key: "id", Value: bson.D{{Key: "$in", Value: ids}}}}, bson.D{{Key: "memberMap", Value: 1}})
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +67,7 @@ func (client *Client) ListMemberIDs(ids ...string) ([]string, error) {
 
 func (client *Client) UpdateWithParams(id string, params *model.TeamUpdateParams) error {
 	updateData := bson.D{
-		{"updatedAt", time.Now()},
+		{Key: "updatedAt", Value: time.Now()},
 	}
 
 	db.AddIfNotNil(&updateData, "name", params.Name)
@@ -83,7 +84,7 @@ func (client *Client) UpdateWithParams(id string, params *model.TeamUpdateParams
 
 func (client *Client) UpdateMember(id string, memberID string, member *model.TeamMember) error {
 	updateData := bson.D{
-		{"updatedAt", time.Now()},
+		{Key: "updatedAt", Value: time.Now()},
 	}
 
 	db.AddIfNotNil(&updateData, "memberMap."+memberID, member)

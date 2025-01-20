@@ -4,20 +4,21 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	configModels "go-deploy/models/config"
-	"go-deploy/models/model"
-	"go-deploy/pkg/db/resources/deployment_repo"
-	"go-deploy/pkg/log"
-	"go-deploy/pkg/subsystems"
-	kErrors "go-deploy/pkg/subsystems/k8s/errors"
-	k8sModels "go-deploy/pkg/subsystems/k8s/models"
-	"go-deploy/service/constants"
-	sErrors "go-deploy/service/errors"
-	"go-deploy/service/resources"
-	"go-deploy/service/v2/deployments/opts"
-	"go-deploy/utils"
 	"slices"
 	"time"
+
+	configModels "github.com/kthcloud/go-deploy/models/config"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/deployment_repo"
+	"github.com/kthcloud/go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/pkg/subsystems"
+	kErrors "github.com/kthcloud/go-deploy/pkg/subsystems/k8s/errors"
+	k8sModels "github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
+	"github.com/kthcloud/go-deploy/service/constants"
+	sErrors "github.com/kthcloud/go-deploy/service/errors"
+	"github.com/kthcloud/go-deploy/service/resources"
+	"github.com/kthcloud/go-deploy/service/v2/deployments/opts"
+	"github.com/kthcloud/go-deploy/utils"
 )
 
 // Create sets up K8s for the deployment.
@@ -124,8 +125,8 @@ func (c *Client) Create(id string, params *model.DeploymentCreateParams) error {
 			Exec()
 
 		if err != nil {
-			if errors.Is(err, kErrors.IngressHostInUseErr) {
-				return makeError(sErrors.IngressHostInUseErr)
+			if errors.Is(err, kErrors.ErrIngressHostInUse) {
+				return makeError(sErrors.ErrIngressHostInUse)
 			}
 
 			return makeError(err)
@@ -499,8 +500,8 @@ func (c *Client) Repair(id string) error {
 		).WithResourceID(public.Name).WithDbFunc(dbFunc(id, "ingressMap."+public.Name)).WithGenPublic(&public).Exec()
 
 		if err != nil {
-			if errors.Is(err, kErrors.IngressHostInUseErr) {
-				return makeError(sErrors.IngressHostInUseErr)
+			if errors.Is(err, kErrors.ErrIngressHostInUse) {
+				return makeError(sErrors.ErrIngressHostInUse)
 			}
 
 			return makeError(err)
@@ -567,7 +568,7 @@ func (c *Client) Repair(id string) error {
 	anyMismatch := false
 
 	pvcs := g.PVCs()
-	for mapName, _ := range d.Subsystems.K8s.PvcMap {
+	for mapName := range d.Subsystems.K8s.PvcMap {
 		idx := slices.IndexFunc(pvcs, func(s k8sModels.PvcPublic) bool { return s.Name == mapName })
 		if idx == -1 {
 			anyMismatch = true
@@ -588,7 +589,7 @@ func (c *Client) Repair(id string) error {
 	}
 
 	pvs := g.PVs()
-	for mapName, _ := range d.Subsystems.K8s.PvMap {
+	for mapName := range d.Subsystems.K8s.PvMap {
 		idx := slices.IndexFunc(pvs, func(s k8sModels.PvPublic) bool { return s.Name == mapName })
 		if idx == -1 {
 			anyMismatch = true
@@ -667,8 +668,8 @@ func (c *Client) SetupPodLogStream(ctx context.Context, zone *configModels.Zone,
 
 	err = kc.SetupPodLogStream(ctx, podName, from, handler)
 	if err != nil {
-		if errors.Is(err, kErrors.NotFoundErr) {
-			return sErrors.DeploymentNotFoundErr
+		if errors.Is(err, kErrors.ErrNotFound) {
+			return sErrors.ErrDeploymentNotFound
 		}
 
 		return err
@@ -798,7 +799,7 @@ func (c *Client) recreatePvPvcDeployments(id string) error {
 
 	d, err = c.Refresh(id)
 	if err != nil {
-		if errors.Is(err, sErrors.DeploymentNotFoundErr) {
+		if errors.Is(err, sErrors.ErrDeploymentNotFound) {
 			return nil
 		}
 

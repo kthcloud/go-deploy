@@ -1,9 +1,9 @@
 package opts
 
 import (
-	body2 "go-deploy/dto/v2/body"
-	configModels "go-deploy/models/config"
-	v1 "go-deploy/service/v2/utils"
+	body2 "github.com/kthcloud/go-deploy/dto/v2/body"
+	configModels "github.com/kthcloud/go-deploy/models/config"
+	v1 "github.com/kthcloud/go-deploy/service/v2/utils"
 )
 
 // Opts is used to specify which resources to get.

@@ -2,15 +2,15 @@ package cmd
 
 import (
 	"context"
-	"go-deploy/pkg/services/cleaner"
-	"go-deploy/pkg/services/confirm"
-	"go-deploy/pkg/services/job_execute"
-	"go-deploy/pkg/services/job_schedule"
-	"go-deploy/pkg/services/logger"
-	metricsWorker "go-deploy/pkg/services/metrics_update"
-	"go-deploy/pkg/services/status_update"
-	"go-deploy/pkg/services/synchronize"
-	"go-deploy/pkg/services/system_state_poll"
+	"github.com/kthcloud/go-deploy/pkg/services/cleaner"
+	"github.com/kthcloud/go-deploy/pkg/services/confirm"
+	"github.com/kthcloud/go-deploy/pkg/services/job_execute"
+	"github.com/kthcloud/go-deploy/pkg/services/job_schedule"
+	"github.com/kthcloud/go-deploy/pkg/services/logger"
+	metricsWorker "github.com/kthcloud/go-deploy/pkg/services/metrics_update"
+	"github.com/kthcloud/go-deploy/pkg/services/status_update"
+	"github.com/kthcloud/go-deploy/pkg/services/synchronize"
+	"github.com/kthcloud/go-deploy/pkg/services/system_state_poll"
 )
 
 // FlagDefinition represents a definition for a flag that is passed to the program's executable.

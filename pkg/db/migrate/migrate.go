@@ -1,10 +1,12 @@
+//lint:file-ignore // Ignore (SA1019) since we want to migrate deprecated.
 package migrator
 
 import (
 	"fmt"
-	"go-deploy/models/model"
-	"go-deploy/pkg/db/resources/deployment_repo"
-	"go-deploy/pkg/log"
+
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/deployment_repo"
+	"github.com/kthcloud/go-deploy/pkg/log"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -59,7 +61,7 @@ func migratePrivateBooleanToVisibilityEnum_2024_06_10() error {
 			mainApp.Visibility = model.VisibilityPublic
 		}
 
-		err = deployment_repo.New().SetWithBsonByID(deployment.ID, bson.D{{"apps.main.visibility", mainApp.Visibility}})
+		err = deployment_repo.New().SetWithBsonByID(deployment.ID, bson.D{{Key: "apps.main.visibility", Value: mainApp.Visibility}})
 		if err != nil {
 			return err
 		}

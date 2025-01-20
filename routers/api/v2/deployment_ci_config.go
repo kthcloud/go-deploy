@@ -2,21 +2,22 @@ package v2
 
 import (
 	"errors"
-	"github.com/gin-gonic/gin"
-	"go-deploy/dto/v2/uri"
-	"go-deploy/pkg/sys"
-	"go-deploy/service"
-	dErrors "go-deploy/service/errors"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/kthcloud/go-deploy/dto/v2/uri"
+	"github.com/kthcloud/go-deploy/pkg/sys"
+	"github.com/kthcloud/go-deploy/service"
+	dErrors "github.com/kthcloud/go-deploy/service/errors"
 )
 
 // GetCiConfig
 // @Summary Get CI config
 // @Description Get CI config
 // @Tags Deployment
-// @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
+// @Security KeycloakOAuth
 // @Param deploymentId path string true "Deployment ID"
 // @Success 200 {object} body.CiConfig
 // @Failure 400 {object} sys.ErrorResponse
@@ -33,23 +34,23 @@ func GetCiConfig(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
 	config, err := service.V2(auth).Deployments().GetCiConfig(requestURI.DeploymentID)
 	if err != nil {
-		if errors.Is(err, dErrors.DeploymentNotFoundErr) {
+		if errors.Is(err, dErrors.ErrDeploymentNotFound) {
 			context.NotFound("Deployment not found")
 			return
 		}
 
-		if errors.Is(err, dErrors.DeploymentHasNotCiConfigErr) {
+		if errors.Is(err, dErrors.ErrDeploymentHasNoCiConfig) {
 			context.UserError("Deployment has not CI config (not a custom deployment)")
 			return
 		}
 
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 

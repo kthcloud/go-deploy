@@ -14,7 +14,7 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 
-	"go-deploy/pkg/imp/harbor/sdk/v2.0/models"
+	"github.com/kthcloud/go-deploy/pkg/imp/harbor/sdk/v2.0/models"
 )
 
 // ListArtifactsReader is a Reader for the ListArtifacts structure.

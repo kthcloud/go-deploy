@@ -1,7 +1,7 @@
 package model
 
 import (
-	k8sModels "go-deploy/pkg/subsystems/k8s/models"
+	k8sModels "github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
 )
 
 type SmSubsystems struct {

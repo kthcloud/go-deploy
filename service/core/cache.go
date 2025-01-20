@@ -1,6 +1,6 @@
 package core
 
-import "go-deploy/models/model"
+import "github.com/kthcloud/go-deploy/models/model"
 
 // Cache is a cache for all resources fetched inside the service.
 // This is used to avoid fetching the same model multiple times.

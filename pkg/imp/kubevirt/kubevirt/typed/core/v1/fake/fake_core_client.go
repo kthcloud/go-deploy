@@ -3,7 +3,7 @@
 package fake
 
 import (
-	v1 "go-deploy/pkg/imp/kubevirt/kubevirt/typed/core/v1"
+	v1 "github.com/kthcloud/go-deploy/pkg/imp/kubevirt/kubevirt/typed/core/v1"
 
 	rest "k8s.io/client-go/rest"
 	testing "k8s.io/client-go/testing"

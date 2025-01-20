@@ -1,10 +1,10 @@
 package jobs
 
 import (
-	"go-deploy/models/model"
-	"go-deploy/pkg/db/resources/job_repo"
-	"go-deploy/service/clients"
-	"go-deploy/service/core"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/job_repo"
+	"github.com/kthcloud/go-deploy/service/clients"
+	"github.com/kthcloud/go-deploy/service/core"
 )
 
 // Client is the client for the Job service.

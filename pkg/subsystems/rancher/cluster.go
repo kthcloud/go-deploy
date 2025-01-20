@@ -3,7 +3,7 @@ package rancher
 import (
 	"encoding/json"
 	"fmt"
-	"go-deploy/pkg/subsystems/rancher/models"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/rancher/models"
 	"io"
 	"net/http"
 	"strings"

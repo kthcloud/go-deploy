@@ -2,8 +2,8 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
-	v2 "go-deploy/routers/api/v2"
-	"go-deploy/routers/api/v2/middleware"
+	v2 "github.com/kthcloud/go-deploy/routers/api/v2"
+	"github.com/kthcloud/go-deploy/routers/api/v2/middleware"
 )
 
 const (

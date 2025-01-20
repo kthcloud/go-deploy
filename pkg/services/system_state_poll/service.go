@@ -2,9 +2,9 @@ package system_state_poll
 
 import (
 	"context"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/log"
-	"go-deploy/pkg/services"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/log"
+	"github.com/kthcloud/go-deploy/pkg/services"
 )
 
 func Setup(ctx context.Context) {

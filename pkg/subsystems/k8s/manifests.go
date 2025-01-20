@@ -2,9 +2,12 @@ package k8s
 
 import (
 	"fmt"
-	"go-deploy/pkg/subsystems/k8s/keys"
-	"go-deploy/pkg/subsystems/k8s/models"
-	"go-deploy/utils"
+	"strings"
+	"time"
+
+	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/keys"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
+	"github.com/kthcloud/go-deploy/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/batch/v1"
@@ -16,8 +19,6 @@ import (
 	kubevirtv1 "kubevirt.io/api/core/v1"
 	snapshotalpha1 "kubevirt.io/api/snapshot/v1alpha1"
 	cdibetav1 "kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1"
-	"strings"
-	"time"
 )
 
 const (
@@ -611,7 +612,7 @@ func CreateVmManifest(public *models.VmPublic, resourceVersion ...string) *kubev
 						Resources: kubevirtv1.ResourceRequirements{
 							Requests: apiv1.ResourceList{
 								apiv1.ResourceMemory: resource.MustParse(fmt.Sprintf("%dGi", public.RAM)),
-								apiv1.ResourceCPU:    resource.MustParse(fmt.Sprintf("250m")),
+								apiv1.ResourceCPU:    resource.MustParse("250m"),
 							},
 							Limits: apiv1.ResourceList{
 								apiv1.ResourceMemory: resource.MustParse(fmt.Sprintf("%dGi", public.RAM)),

@@ -1,11 +1,12 @@
 package user_repo
 
 import (
-	"go-deploy/models/model"
-	"go-deploy/pkg/db"
-	"go-deploy/pkg/db/resources/base_clients"
-	"go.mongodb.org/mongo-driver/bson"
 	"time"
+
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/db"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/base_clients"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // Client is used to manage users in the database.
@@ -46,17 +47,17 @@ func (client *Client) WithPagination(page, pageSize int) *Client {
 
 // LastAuthenticatedAfter filters the users to only those who have authenticated after the given time.
 func (client *Client) LastAuthenticatedAfter(lastAuthenticatedAt time.Time) *Client {
-	client.AddExtraFilter(bson.D{{"lastAuthenticatedAt", bson.D{{"$gt", lastAuthenticatedAt}}}})
+	client.AddExtraFilter(bson.D{{Key: "lastAuthenticatedAt", Value: bson.D{{Key: "$gt", Value: lastAuthenticatedAt}}}})
 
 	return client
 }
 
 // WithApiKey filters the users to only those with the given API key.
 func (client *Client) WithApiKey(apiKey string) *Client {
-	client.AddExtraFilter(bson.D{{"apiKeys", bson.D{{"$elemMatch",
-		bson.D{
-			{"key", apiKey},
-			{"expiresAt", bson.D{{"$gt", time.Now()}}},
+	client.AddExtraFilter(bson.D{{Key: "apiKeys", Value: bson.D{{Key: "$elemMatch",
+		Value: bson.D{
+			{Key: "key", Value: apiKey},
+			{Key: "expiresAt", Value: bson.D{{Key: "$gt", Value: time.Now()}}},
 		},
 	}}}})
 

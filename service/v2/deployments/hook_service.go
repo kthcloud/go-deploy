@@ -1,7 +1,7 @@
 package deployments
 
 import (
-	"go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/config"
 )
 
 // ValidateHarborToken validates the Harbor token.

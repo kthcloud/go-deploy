@@ -3,18 +3,19 @@ package sms
 import (
 	"errors"
 	"fmt"
-	configModels "go-deploy/models/config"
-	"go-deploy/models/model"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/db/resources/sm_repo"
-	"go-deploy/pkg/log"
-	sErrors "go-deploy/service/errors"
-	"go-deploy/service/utils"
-	"go-deploy/service/v2/sms/k8s_service"
-	"go-deploy/service/v2/sms/opts"
 	"sort"
 	"strconv"
 	"strings"
+
+	configModels "github.com/kthcloud/go-deploy/models/config"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/db/resources/sm_repo"
+	"github.com/kthcloud/go-deploy/pkg/log"
+	sErrors "github.com/kthcloud/go-deploy/service/errors"
+	"github.com/kthcloud/go-deploy/service/utils"
+	"github.com/kthcloud/go-deploy/service/v2/sms/k8s_service"
+	"github.com/kthcloud/go-deploy/service/v2/sms/opts"
 )
 
 // Get gets an existing storage manager
@@ -79,8 +80,8 @@ func (c *Client) Create(id, userID string, params *model.SmCreateParams) error {
 
 	_, err := sm_repo.New().Create(id, userID, params)
 	if err != nil {
-		if errors.Is(err, sm_repo.AlreadyExistsErr) {
-			return sErrors.SmAlreadyExistsErr
+		if errors.Is(err, sm_repo.ErrAlreadyExists) {
+			return sErrors.ErrSmAlreadyExists
 		}
 
 		return makeErr(err)

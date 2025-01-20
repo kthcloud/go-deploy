@@ -3,12 +3,12 @@ package resources
 import (
 	"fmt"
 	"github.com/google/uuid"
-	configModels "go-deploy/models/config"
-	"go-deploy/models/model"
-	"go-deploy/pkg/config"
-	"go-deploy/pkg/subsystems"
-	"go-deploy/pkg/subsystems/harbor/models"
-	"go-deploy/service/generators"
+	configModels "github.com/kthcloud/go-deploy/models/config"
+	"github.com/kthcloud/go-deploy/models/model"
+	"github.com/kthcloud/go-deploy/pkg/config"
+	"github.com/kthcloud/go-deploy/pkg/subsystems"
+	"github.com/kthcloud/go-deploy/pkg/subsystems/harbor/models"
+	"github.com/kthcloud/go-deploy/service/generators"
 	"strings"
 )
 
