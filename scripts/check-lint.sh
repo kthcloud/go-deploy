@@ -18,7 +18,7 @@ function check_go_vet() {
 }
 
 function check_go_cyclo() {
-    command -v go-cyclo >/dev/null 2>&1 || { echo -e "${YELLOW}go-cyclo is not installed. Installing...${NC}"; go install github.com/fzipp/gocyclo/cmd/gocyclo@latest; }
+    command -v gocyclo >/dev/null 2>&1 || { echo -e "${YELLOW}go-cyclo is not installed. Installing...${NC}"; go install github.com/fzipp/gocyclo/cmd/gocyclo@latest; }
 }
 
 function check_ineffassign() {
