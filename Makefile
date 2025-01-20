@@ -6,7 +6,7 @@ BUILDTIMESTAMP=$(shell date -u +%Y%m%d%H%M%S)
 EXT=$(if $(filter windows,$(GOOS)),.exe,)
 
 # Targets
-.PHONY: all clean build run clean docs release test acc e2e
+.PHONY: all clean build run clean docs release test acc e2e lint
 
 all: build
 
@@ -69,3 +69,6 @@ e2e: clean build
 		echo "Stopping go-deploy..."; \
 		kill $$(cat go_deploy.pid) && rm -f go_deploy.pid; \
 	fi
+
+lint: 
+	@./scripts/check-lint.sh
