@@ -12,12 +12,18 @@ COPY go.mod go.sum ./
 
 # Fetch dependencies and build the binary
 ENV GO111MODULE=on
-RUN go mod download
+RUN --mount=type=cache,target=/go/pkg/mod/ \
+    --mount=type=bind,source=go.sum,target=go.sum \
+    --mount=type=bind,source=go.mod,target=go.mod \
+    go mod download -x
 
 # Copy the rest of the project to ensure code changes doesnt trigger re-download of all deps
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$GOARCH go build -a -installsuffix cgo -o main .
+ENV GOCACHE=/root/.cache/go-build
+RUN --mount=type=cache,target=/go/pkg/mod/ \
+    --mount=type=cache,target="/root/.cache/go-build" \
+    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$GOARCH go build -a -installsuffix cgo -o main .
 
 
 ############################
