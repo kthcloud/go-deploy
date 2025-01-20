@@ -33,6 +33,8 @@ function run_gofmt() {
         echo -e "${RED}gofmt found the following issues:${NC}"
         echo "$gofmt_output"
         gofmt_error=1
+    else
+        echo -e "${GREEN}passed gofmt.${NC}"
     fi
 }
 
@@ -44,6 +46,8 @@ function run_go_vet() {
         echo -e "${RED}go vet found the following issues:${NC}"
         echo "$go_vet_output"
         go_vet_error=1
+    else
+        echo -e "${GREEN}passed go vet.${NC}"
     fi
 }
 
@@ -52,9 +56,11 @@ function run_go_cyclo() {
     # Check for cyclomatic complexity
     go_cyclo_output=$(gocyclo -over 15 .)
     if [ -n "$go_cyclo_output" ]; then
-        echo -e "${RED}go-cyclo found the following issues:${NC}"
+        echo -e "${RED}gocyclo found the following issues:${NC}"
         echo "$go_cyclo_output"
         go_cyclo_error=1
+    else
+        echo -e "${GREEN}passed gocyclo -over 15.${NC}"
     fi
 }
 
@@ -66,6 +72,8 @@ function run_ineffassign() {
         echo -e "${RED}ineffassign found the following issues:${NC}"
         echo "$ineffassign_output"
         ineffassign_error=1
+    else
+        echo -e "${GREEN}passed ineffassign.${NC}"
     fi
 }
 

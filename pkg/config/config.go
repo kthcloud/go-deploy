@@ -2,13 +2,13 @@ package config
 
 import (
 	"fmt"
-	"github.com/mitchellh/mapstructure"
 	"github.com/kthcloud/go-deploy/models/config"
 	"github.com/kthcloud/go-deploy/models/mode"
 	"github.com/kthcloud/go-deploy/models/version"
 	"github.com/kthcloud/go-deploy/pkg/imp/kubevirt/kubevirt"
 	"github.com/kthcloud/go-deploy/pkg/log"
 	"github.com/kthcloud/go-deploy/pkg/subsystems/rancher"
+	"github.com/mitchellh/mapstructure"
 	"gopkg.in/yaml.v3"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/mitchellh/mapstructure"
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/job_repo"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/sm_repo"
@@ -13,6 +12,7 @@ import (
 	"github.com/kthcloud/go-deploy/pkg/log"
 	"github.com/kthcloud/go-deploy/service"
 	sErrors "github.com/kthcloud/go-deploy/service/errors"
+	"github.com/mitchellh/mapstructure"
 	"time"
 )
 

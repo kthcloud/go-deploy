@@ -3,9 +3,9 @@ package db
 import (
 	"context"
 	"fmt"
-	"github.com/redis/go-redis/v9"
 	"github.com/kthcloud/go-deploy/pkg/config"
 	"github.com/kthcloud/go-deploy/pkg/log"
+	"github.com/redis/go-redis/v9"
 )
 
 // setupRedis initializes the Redis connection.
