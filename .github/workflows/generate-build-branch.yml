@@ -23,9 +23,7 @@ jobs:
         chmod +x ./generate-types.sh
         ./generate-types.sh
         chmod +x ./generate-docs.sh
-        ./generate-docs.sh        
-        chmod +x ./convert-to-v3-docs.sh
-        ./convert-to-v3-docs.sh
+        ./generate-docs.sh 
         cd ..
         
         echo "Cloning build branch"
