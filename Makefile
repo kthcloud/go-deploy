@@ -26,7 +26,7 @@ clean:
 	@echo "Clean complete."
 
 docs:
-	@cd scripts && ./generate-docs.sh && ./convert-to-v3-docs.sh && ./generate-types.sh
+	@cd scripts && ./generate-docs.sh && ./generate-types.sh
 
 release: docs
 	@echo "Building the application..."

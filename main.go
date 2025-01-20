@@ -17,12 +17,15 @@ import (
 // @SecurityDefinitions.apikey ApiKeyAuth
 // @In header
 // @Name X-Api-Key
+
 // @SecurityDefinitions.oauth2.accessCode KeycloakOAuth
 // @authorizationUrl https://iam.cloud.cbh.kth.se/realms/cloud/protocol/openid-connect/auth
 // @tokenUrl https://iam.cloud.cbh.kth.se/realms/cloud/protocol/openid-connect/token
 // @scope.openid openid
 // @scope.profile profile
 // @scope.email email
+// @In header
+// @Name Authorization
 func main() {
 	options := cmd.ParseFlags()
 
