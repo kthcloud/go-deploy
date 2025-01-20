@@ -1,11 +1,12 @@
 package team_repo
 
 import (
+	"time"
+
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/db"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/base_clients"
 	"go.mongodb.org/mongo-driver/bson"
-	"time"
 )
 
 // Client is used to manage teams in the database.
@@ -35,9 +36,9 @@ func (client *Client) WithPagination(page, pageSize int) *Client {
 
 // WithUserID adds a filter to the client to only include teams with the given user ID.
 func (client *Client) WithUserID(userID string) *Client {
-	client.AddExtraFilter(bson.D{{"$or", bson.A{
-		bson.D{{"ownerId", userID}},
-		bson.D{{"memberMap." + userID, bson.D{{"$exists", true}}}},
+	client.AddExtraFilter(bson.D{{Key: "$or", Value: bson.A{
+		bson.D{{Key: "ownerId", Value: userID}},
+		bson.D{{Key: "memberMap." + userID, Value: bson.D{{Key: "$exists", Value: true}}}},
 	}}})
 
 	return client
@@ -45,21 +46,21 @@ func (client *Client) WithUserID(userID string) *Client {
 
 // WithOwnerID adds a filter to the client to only include teams with the given owner ID.
 func (client *Client) WithOwnerID(ownerID string) *Client {
-	client.AddExtraFilter(bson.D{{"ownerId", ownerID}})
+	client.AddExtraFilter(bson.D{{Key: "ownerId", Value: ownerID}})
 
 	return client
 }
 
 // WithResourceID adds a filter to the client to only include teams with the given model ID.
 func (client *Client) WithResourceID(resourceID string) *Client {
-	client.AddExtraFilter(bson.D{{"resourceMap." + resourceID, bson.D{{"$exists", true}}}})
+	client.AddExtraFilter(bson.D{{Key: "resourceMap." + resourceID, Value: bson.D{{Key: "$exists", Value: true}}}})
 
 	return client
 }
 
 // WithNameRegex adds a filter to the client to only include teams with a name matching the given regex.
 func (client *Client) WithNameRegex(name string) *Client {
-	filter := bson.D{{"name", bson.D{{"$regex", name}}}}
+	filter := bson.D{{Key: "name", Value: bson.D{{Key: "$regex", Value: name}}}}
 	client.ResourceClient.AddExtraFilter(filter)
 
 	return client
@@ -67,7 +68,7 @@ func (client *Client) WithNameRegex(name string) *Client {
 
 // OlderThan adds a filter to the client to only include teams older than the given timestamp.
 func (client *Client) OlderThan(timestamp time.Time) *Client {
-	filter := bson.D{{"createdAt", bson.D{{"$lt", timestamp}}}}
+	filter := bson.D{{Key: "createdAt", Value: bson.D{{Key: "$lt", Value: timestamp}}}}
 	client.ResourceClient.AddExtraFilter(filter)
 
 	return client

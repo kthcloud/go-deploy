@@ -3,6 +3,8 @@ package teams
 import (
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/kthcloud/go-deploy/dto/v2/body"
 	"github.com/kthcloud/go-deploy/models/model"
@@ -15,7 +17,6 @@ import (
 	"github.com/kthcloud/go-deploy/service/v2/teams/opts"
 	"github.com/kthcloud/go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
-	"time"
 )
 
 // Get gets a team by ID
@@ -132,7 +133,7 @@ func (c *Client) Create(id, ownerID string, dtoCreateTeam *body.TeamCreate) (*mo
 
 	team, err := team_repo.New().Create(id, ownerID, params)
 	if err != nil {
-		if errors.Is(err, team_repo.NameTakenErr) {
+		if errors.Is(err, team_repo.ErrNameTaken) {
 			return nil, sErrors.TeamNameTakenErr
 		}
 
@@ -258,7 +259,7 @@ func (c *Client) CleanResource(resourceID string) error {
 
 	for _, team := range teams {
 		delete(team.GetResourceMap(), resourceID)
-		err = tmc.UpdateWithBsonByID(team.ID, bson.D{{"$set", bson.D{{"resourceMap", team.ResourceMap}}}})
+		err = tmc.UpdateWithBsonByID(team.ID, bson.D{{Key: "$set", Value: bson.D{{Key: "resourceMap", Value: team.ResourceMap}}}})
 		if err != nil {
 			return err
 		}

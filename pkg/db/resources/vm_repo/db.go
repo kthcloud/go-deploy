@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/models/version"
@@ -13,7 +15,6 @@ import (
 	"github.com/kthcloud/go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"time"
 )
 
 // Create creates a new VM.
@@ -65,7 +66,7 @@ func (client *Client) Create(id, owner string, params *model.VmCreateParams) (*m
 		},
 
 		Subsystems: model.Subsystems{},
-		Activities: map[string]model.Activity{model.ActivityBeingCreated: {model.ActivityBeingCreated, time.Now()}},
+		Activities: map[string]model.Activity{model.ActivityBeingCreated: {Name: model.ActivityBeingCreated, CreatedAt: time.Now()}},
 
 		Host:   nil,
 		Status: status_codes.GetMsg(status_codes.ResourceCreating),
@@ -87,8 +88,30 @@ func (client *Client) Create(id, owner string, params *model.VmCreateParams) (*m
 // It uses aggregation to do this, so it is not very efficient.
 func (client *Client) ListWithAnyPendingCustomDomain() ([]model.VM, error) {
 	pipeline := mongo.Pipeline{
-		{{"$addFields", bson.D{{"portMapArray", bson.D{{"$objectToArray", "$portMap"}}}}}},
-		{{"$match", bson.D{{"portMapArray", bson.D{{"$elemMatch", bson.D{{"v.httpProxy.customDomain.status", bson.D{{"$in", []string{model.CustomDomainStatusPending, model.CustomDomainStatusVerificationFailed}}}}}}}}}}},
+		{{Key: "$addFields",
+			Value: bson.D{{
+				Key: "portMapArray",
+				Value: bson.D{{
+					Key:   "$objectToArray",
+					Value: "$portMap",
+				}},
+			}},
+		}},
+		{{Key: "$match",
+			Value: bson.D{{
+				Key: "portMapArray",
+				Value: bson.D{{
+					Key: "$elemMatch",
+					Value: bson.D{{
+						Key: "v.httpProxy.customDomain.status",
+						Value: bson.D{{
+							Key:   "$in",
+							Value: []string{model.CustomDomainStatusPending, model.CustomDomainStatusVerificationFailed},
+						}},
+					}},
+				}},
+			}},
+		}},
 	}
 
 	cursor, err := client.Collection.Aggregate(context.Background(), pipeline)
@@ -132,8 +155,8 @@ func (client *Client) UpdateWithParams(id string, params *model.VmUpdateParams) 
 		for _, port := range *params.PortMap {
 			if port.HttpProxy != nil {
 				filter := bson.D{
-					{"id", bson.D{{"$ne", id}}},
-					{"ports.httpProxy.name", port.HttpProxy.Name},
+					{Key: "id", Value: bson.D{{Key: "$ne", Value: id}}},
+					{Key: "ports.httpProxy.name", Value: port.HttpProxy.Name},
 				}
 
 				existAny, err := client.ResourceClient.ExistsWithFilter(filter)
@@ -151,7 +174,7 @@ func (client *Client) UpdateWithParams(id string, params *model.VmUpdateParams) 
 	// Updating ports requires some extra love!
 	// (since we delete custom domains by setting them to "")
 	if params.PortMap != nil {
-		onlyPorts, err := client.GetWithFilterAndProjection(bson.D{{"id", id}}, bson.D{{"portMap", 1}})
+		onlyPorts, err := client.GetWithFilterAndProjection(bson.D{{Key: "id", Value: id}}, bson.D{{Key: "portMap", Value: 1}})
 		if err != nil {
 			return err
 		}
@@ -200,8 +223,8 @@ func (client *Client) UpdateWithParams(id string, params *model.VmUpdateParams) 
 
 	err := client.UpdateWithBsonByID(id,
 		bson.D{
-			{"$set", setUpdate},
-			{"$unset", unsetUpdate},
+			{Key: "$set", Value: setUpdate},
+			{Key: "$unset", Value: unsetUpdate},
 		},
 	)
 	if err != nil {
@@ -218,10 +241,10 @@ func (client *Client) UpdateWithParams(id string, params *model.VmUpdateParams) 
 // GetUsage returns the usage in CPU cores, RAM, disk size and snapshots.
 func (client *Client) GetUsage() (*model.VmUsage, error) {
 	projection := bson.D{
-		{"_id", 0},
-		{"id", 1},
-		{"name", 1},
-		{"specs", 1},
+		{Key: "_id", Value: 0},
+		{Key: "id", Value: 1},
+		{Key: "name", Value: 1},
+		{Key: "specs", Value: 1},
 	}
 
 	vms, err := client.ListWithFilterAndProjection(bson.D{}, projection)
@@ -248,20 +271,20 @@ func (client *Client) GetUsage() (*model.VmUsage, error) {
 // It prepends the key with `subsystems` and unsets it.
 func (client *Client) DeleteSubsystem(id, key string) error {
 	subsystemKey := fmt.Sprintf("subsystems.%s", key)
-	return client.UpdateWithBsonByID(id, bson.D{{"$unset", bson.D{{subsystemKey, ""}}}})
+	return client.UpdateWithBsonByID(id, bson.D{{Key: "$unset", Value: bson.D{{Key: subsystemKey, Value: ""}}}})
 }
 
 // SetSubsystem sets a subsystem in a VM.
 // It prepends the key with `subsystems` and sets it.
 func (client *Client) SetSubsystem(id, key string, update interface{}) error {
 	subsystemKey := fmt.Sprintf("subsystems.%s", key)
-	return client.SetWithBsonByID(id, bson.D{{subsystemKey, update}})
+	return client.SetWithBsonByID(id, bson.D{{Key: subsystemKey, Value: update}})
 }
 
 // UpdateCustomDomainStatus updates the status of a custom domain for a given port.
 func (client *Client) UpdateCustomDomainStatus(id, portName, status string) error {
 	update := bson.D{
-		{"$set", bson.D{{"portMap." + portName + ".httpProxy.customDomain.status", status}}},
+		{Key: "$set", Value: bson.D{{Key: "portMap." + portName + ".httpProxy.customDomain.status", Value: status}}},
 	}
 
 	return client.UpdateWithBsonByID(id, update)
@@ -269,12 +292,12 @@ func (client *Client) UpdateCustomDomainStatus(id, portName, status string) erro
 
 // SetStatusByName sets the status of a deployment.
 func (client *Client) SetStatusByName(name, status string) error {
-	return client.SetWithBsonByName(name, bson.D{{"status", status}})
+	return client.SetWithBsonByName(name, bson.D{{Key: "status", Value: status}})
 }
 
 // SetCurrentHost sets the current host of a VM.
 func (client *Client) SetCurrentHost(name string, host *model.VmHost) error {
-	return client.SetWithBsonByName(name, bson.D{{"host", host}})
+	return client.SetWithBsonByName(name, bson.D{{Key: "host", Value: host}})
 }
 
 // UnsetCurrentHost unsets the current host of a VM.
@@ -285,10 +308,10 @@ func (client *Client) UnsetCurrentHost(name string) error {
 // MarkRepaired marks a VM as repaired.
 // It sets RepairedAt and unsets the repairing activity.
 func (client *Client) MarkRepaired(id string) error {
-	filter := bson.D{{"id", id}}
+	filter := bson.D{{Key: "id", Value: id}}
 	update := bson.D{
-		{"$set", bson.D{{"repairedAt", time.Now()}}},
-		{"$unset", bson.D{{"activities.repairing", ""}}},
+		{Key: "$set", Value: bson.D{{Key: "repairedAt", Value: time.Now()}}},
+		{Key: "$unset", Value: bson.D{{Key: "activities.repairing", Value: ""}}},
 	}
 
 	_, err := client.Collection.UpdateOne(context.TODO(), filter, update)
@@ -302,10 +325,10 @@ func (client *Client) MarkRepaired(id string) error {
 // MarkUpdated marks a VM as updated.
 // It sets UpdatedAt and unsets the updating activity.
 func (client *Client) MarkUpdated(id string) error {
-	filter := bson.D{{"id", id}}
+	filter := bson.D{{Key: "id", Value: id}}
 	update := bson.D{
-		{"$set", bson.D{{"updatedAt", time.Now()}}},
-		{"$unset", bson.D{{"activities.updating", ""}}},
+		{Key: "$set", Value: bson.D{{Key: "updatedAt", Value: time.Now()}}},
+		{Key: "$unset", Value: bson.D{{Key: "activities.updating", Value: ""}}},
 	}
 
 	_, err := client.Collection.UpdateOne(context.TODO(), filter, update)
@@ -318,7 +341,7 @@ func (client *Client) MarkUpdated(id string) error {
 
 // MarkAccessed marks a deployment as accessed to the current time.
 func (client *Client) MarkAccessed(id string) error {
-	return client.SetWithBsonByID(id, bson.D{{"accessedAt", time.Now()}})
+	return client.SetWithBsonByID(id, bson.D{{Key: "accessedAt", Value: time.Now()}})
 }
 
 // generateCustomDomainSecret generates a random alphanumeric string.

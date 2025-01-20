@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	configModels "github.com/kthcloud/go-deploy/models/config"
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/models/version"
@@ -103,7 +104,7 @@ func (c *Client) Create(id string, params *model.VmCreateParams) error {
 			if port.Port == 0 {
 				vmPort, err := vm_port_repo.New().GetOrLeaseAny(port.TargetPort, vm.ID, vm.Zone)
 				if err != nil {
-					if errors.Is(err, vm_port_repo.NoPortsAvailableErr) {
+					if errors.Is(err, vm_port_repo.ErrNoPortsAvailable) {
 						return makeError(sErrors.NoPortsAvailableErr)
 					}
 
@@ -388,7 +389,7 @@ func (c *Client) Repair(id string) error {
 			if port.Port == 0 {
 				vmPort, err := vm_port_repo.New().GetOrLeaseAny(port.TargetPort, vm.ID, vm.Zone)
 				if err != nil {
-					if errors.Is(err, vm_port_repo.NoPortsAvailableErr) {
+					if errors.Is(err, vm_port_repo.ErrNoPortsAvailable) {
 						return makeError(sErrors.NoPortsAvailableErr)
 					}
 

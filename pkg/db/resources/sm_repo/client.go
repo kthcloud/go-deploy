@@ -48,7 +48,7 @@ func (client *Client) IncludeDeletedResources() *Client {
 
 // WithOwnerID adds a filter to the client to only include storage managers with the given owner ID.
 func (client *Client) WithOwnerID(ownerID string) *Client {
-	filter := bson.D{{"ownerId", ownerID}}
+	filter := bson.D{{Key: "ownerId", Value: ownerID}}
 
 	client.ResourceClient.AddExtraFilter(filter)
 	client.ActivityResourceClient.AddExtraFilter(filter)
@@ -70,7 +70,7 @@ func (client *Client) WithActivities(activities ...string) *Client {
 	}
 
 	filter := bson.D{{
-		"$or", orFilter,
+		Key: "$or", Value: orFilter,
 	}}
 
 	client.ResourceClient.AddExtraFilter(filter)
@@ -82,7 +82,7 @@ func (client *Client) WithActivities(activities ...string) *Client {
 // WithNoActivities adds a filter to the client to only include storage managers without any activities.
 func (client *Client) WithNoActivities() *Client {
 	filter := bson.D{{
-		"activities", bson.M{
+		Key: "activities", Value: bson.M{
 			"$gte": bson.M{},
 		},
 	}}
@@ -95,7 +95,7 @@ func (client *Client) WithNoActivities() *Client {
 
 // WithZone adds a filter to the client to only include storage managers with the given zone.
 func (client *Client) WithZone(zone string) *Client {
-	filter := bson.D{{"zone", zone}}
+	filter := bson.D{{Key: "zone", Value: zone}}
 
 	client.ResourceClient.AddExtraFilter(filter)
 	client.ActivityResourceClient.AddExtraFilter(filter)

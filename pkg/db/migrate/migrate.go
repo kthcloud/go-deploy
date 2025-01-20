@@ -2,6 +2,7 @@ package migrator
 
 import (
 	"fmt"
+
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/deployment_repo"
 	"github.com/kthcloud/go-deploy/pkg/log"
@@ -59,7 +60,7 @@ func migratePrivateBooleanToVisibilityEnum_2024_06_10() error {
 			mainApp.Visibility = model.VisibilityPublic
 		}
 
-		err = deployment_repo.New().SetWithBsonByID(deployment.ID, bson.D{{"apps.main.visibility", mainApp.Visibility}})
+		err = deployment_repo.New().SetWithBsonByID(deployment.ID, bson.D{{Key: "apps.main.visibility", Value: mainApp.Visibility}})
 		if err != nil {
 			return err
 		}

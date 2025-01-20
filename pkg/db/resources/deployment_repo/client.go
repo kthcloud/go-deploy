@@ -1,12 +1,13 @@
 package deployment_repo
 
 import (
+	"time"
+
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/db"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/base_clients"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"time"
 )
 
 // Client is used to manage deployments in the database.
@@ -51,8 +52,8 @@ func (client *Client) WithPagination(page, pageSize int) *Client {
 
 // ExcludeIDs adds a filter to the client to exclude the given IDs.
 func (client *Client) ExcludeIDs(ids ...string) *Client {
-	client.ResourceClient.AddExtraFilter(bson.D{{"id", bson.D{{"$nin", ids}}}})
-	client.ActivityResourceClient.AddExtraFilter(bson.D{{"id", bson.D{{"$nin", ids}}}})
+	client.ResourceClient.AddExtraFilter(bson.D{{Key: "id", Value: bson.D{{Key: "$nin", Value: ids}}}})
+	client.ActivityResourceClient.AddExtraFilter(bson.D{{Key: "id", Value: bson.D{{Key: "$nin", Value: ids}}}})
 
 	return client
 }
@@ -66,7 +67,7 @@ func (client *Client) IncludeDeletedResources() *Client {
 
 // WithOwner adds a filter to the client to only include deployments with the given owner ID.
 func (client *Client) WithOwner(ownerID string) *Client {
-	client.ResourceClient.AddExtraFilter(bson.D{{"ownerId", ownerID}})
+	client.ResourceClient.AddExtraFilter(bson.D{{Key: "ownerId", Value: ownerID}})
 	client.ActivityResourceClient.ExtraFilter = client.ResourceClient.ExtraFilter
 	client.RestrictUserID = &ownerID
 
@@ -86,7 +87,7 @@ func (client *Client) WithActivities(activities ...string) *Client {
 	}
 
 	filter := bson.D{{
-		"$or", andFilter,
+		Key: "$or", Value: andFilter,
 	}}
 
 	client.ResourceClient.AddExtraFilter(filter)
@@ -108,7 +109,7 @@ func (client *Client) WithoutActivities(activities ...string) *Client {
 	}
 
 	filter := bson.D{{
-		"$and", andFilter,
+		Key: "$and", Value: andFilter,
 	}}
 
 	client.ResourceClient.AddExtraFilter(filter)
@@ -120,7 +121,7 @@ func (client *Client) WithoutActivities(activities ...string) *Client {
 // WithNoActivities adds a filter to the client to only include deployments without any activities.
 func (client *Client) WithNoActivities() *Client {
 	filter := bson.D{{
-		"activities", bson.M{
+		Key: "activities", Value: bson.M{
 			"$gte": bson.M{},
 		},
 	}}
@@ -133,7 +134,7 @@ func (client *Client) WithNoActivities() *Client {
 
 // WithNameRegex adds a filter to the client to only include deployments with a name matching the given regex.
 func (client *Client) WithNameRegex(name string) *Client {
-	filter := bson.D{{"name", bson.D{{"$regex", name}}}}
+	filter := bson.D{{Key: "name", Value: bson.D{{Key: "$regex", Value: name}}}}
 
 	client.ResourceClient.AddExtraFilter(filter)
 	client.ActivityResourceClient.AddExtraFilter(filter)
@@ -143,7 +144,7 @@ func (client *Client) WithNameRegex(name string) *Client {
 
 // OlderThan adds a filter to the client to only include deployments created before the given timestamp.
 func (client *Client) OlderThan(timestamp time.Time) *Client {
-	filter := bson.D{{"createdAt", bson.D{{"$lt", timestamp}}}}
+	filter := bson.D{{Key: "createdAt", Value: bson.D{{Key: "$lt", Value: timestamp}}}}
 
 	client.ResourceClient.AddExtraFilter(filter)
 	client.ActivityResourceClient.AddExtraFilter(filter)
@@ -153,7 +154,7 @@ func (client *Client) OlderThan(timestamp time.Time) *Client {
 
 // WithPendingCustomDomain adds a filter to the client to only include deployments with a pending custom domain.
 func (client *Client) WithPendingCustomDomain() *Client {
-	filter := bson.D{{"apps.main.customDomain.status", bson.D{{"$ne", model.CustomDomainStatusActive}}}}
+	filter := bson.D{{Key: "apps.main.customDomain.status", Value: bson.D{{Key: "$ne", Value: model.CustomDomainStatusActive}}}}
 
 	client.ResourceClient.AddExtraFilter(filter)
 	client.ActivityResourceClient.AddExtraFilter(filter)
@@ -163,7 +164,7 @@ func (client *Client) WithPendingCustomDomain() *Client {
 
 // WithZone adds a filter to the client to only include deployments in the given zone.
 func (client *Client) WithZone(zone ...string) *Client {
-	filter := bson.D{{"zone", bson.D{{"$in", zone}}}}
+	filter := bson.D{{Key: "zone", Value: bson.D{{Key: "$in", Value: zone}}}}
 
 	client.ResourceClient.AddExtraFilter(filter)
 	client.ActivityResourceClient.AddExtraFilter(filter)
@@ -173,7 +174,7 @@ func (client *Client) WithZone(zone ...string) *Client {
 
 // LastAccessedBefore adds a filter to the client to only include deployments that were last accessed before the given timestamp.
 func (client *Client) LastAccessedBefore(timestamp time.Time) *Client {
-	filter := bson.D{{"accessedAt", bson.D{{"$lt", timestamp}}}}
+	filter := bson.D{{Key: "accessedAt", Value: bson.D{{Key: "$lt", Value: timestamp}}}}
 
 	client.ResourceClient.AddExtraFilter(filter)
 	client.ActivityResourceClient.AddExtraFilter(filter)
@@ -183,7 +184,7 @@ func (client *Client) LastAccessedBefore(timestamp time.Time) *Client {
 
 // Enabled adds a filter to the client to only include deployments that are enabled.
 func (client *Client) Enabled() *Client {
-	filter := bson.D{{"apps.main.replicas", bson.D{{"$gt", 0}}}}
+	filter := bson.D{{Key: "apps.main.replicas", Value: bson.D{{Key: "$gt", Value: 0}}}}
 
 	client.ResourceClient.AddExtraFilter(filter)
 
@@ -192,7 +193,7 @@ func (client *Client) Enabled() *Client {
 
 // Disabled adds a filter to the client to only include deployments that are disabled.
 func (client *Client) Disabled() *Client {
-	filter := bson.D{{"apps.main.replicas", 0}}
+	filter := bson.D{{Key: "apps.main.replicas", Value: 0}}
 
 	client.ResourceClient.AddExtraFilter(filter)
 

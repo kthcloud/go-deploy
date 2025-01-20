@@ -3,6 +3,9 @@ package deployments
 import (
 	"errors"
 	"fmt"
+	"sort"
+	"time"
+
 	"github.com/kthcloud/go-deploy/dto/v2/body"
 	configModels "github.com/kthcloud/go-deploy/models/config"
 	"github.com/kthcloud/go-deploy/models/model"
@@ -19,8 +22,6 @@ import (
 	"github.com/kthcloud/go-deploy/utils"
 	"github.com/kthcloud/go-deploy/utils/subsystemutils"
 	"go.mongodb.org/mongo-driver/bson"
-	"sort"
-	"time"
 )
 
 // Get gets an existing deployment.
@@ -542,7 +543,7 @@ func (c *Client) Restart(id string) error {
 		CreatedAt: time.Now(),
 	})
 
-	err = deployment_repo.New().SetWithBsonByID(id, bson.D{{"restartedAt", time.Now()}})
+	err = deployment_repo.New().SetWithBsonByID(id, bson.D{{Key: "restartedAt", Value: time.Now()}})
 	if err != nil {
 		return makeError(err)
 	}

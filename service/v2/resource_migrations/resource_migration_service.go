@@ -3,6 +3,7 @@ package resource_migrations
 import (
 	"errors"
 	"fmt"
+
 	"github.com/google/uuid"
 	"github.com/kthcloud/go-deploy/dto/v2/body"
 	"github.com/kthcloud/go-deploy/models/model"
@@ -143,7 +144,7 @@ func (c *Client) CreateMigrationUpdateOwner(id, userID, resourceID, resourceType
 	rmc := resource_migration_repo.New()
 	resourceMigration, err := rmc.Create(id, userID, resourceID, model.ResourceMigrationTypeUpdateOwner, resourceType, &code, status, params)
 	if err != nil {
-		if errors.Is(err, db.UniqueConstraintErr) {
+		if errors.Is(err, db.ErrUniqueConstraint) {
 			return nil, nil, sErrors.ResourceMigrationAlreadyExistsErr
 		}
 

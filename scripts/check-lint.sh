@@ -25,6 +25,10 @@ function check_ineffassign() {
     command -v ineffassign >/dev/null 2>&1 || { echo -e "${YELLOW}ineffassign is not installed. Installing...${NC}"; go install github.com/gordonklaus/ineffassign@latest; }
 }
 
+function check_staticcheck() {
+    command -v staticcheck >/dev/null 2>&1 || { echo -e "${YELLOW}go-staticcheck is not installed. Installing...${NC}"; go install honnef.co/go/tools/cmd/staticcheck@latest; }
+}
+
 function run_gofmt() {
     echo -e "${YELLOW}Running gofmt check...${NC}"
     # Check for formatting issues
@@ -77,6 +81,19 @@ function run_ineffassign() {
     fi
 }
 
+function run_staticcheck() {
+    echo -e "${YELLOW}Running go-staticcheck check...${NC}"
+    # Run staticcheck to analyze code for potential issues
+    staticcheck_output=$(staticcheck ./...)
+    if [ -n "$staticcheck_output" ]; then
+        echo -e "${RED}go-staticcheck found the following issues:${NC}"
+        echo "$staticcheck_output"
+        staticcheck_error=1
+    else
+        echo -e "${GREEN}passed go-staticcheck.${NC}"
+    fi
+}
+
 # Get the git root, to make sure the scripts are run in the correct location
 git_root=$(get_git_root)
 
@@ -88,21 +105,24 @@ check_gofmt
 check_go_vet
 check_go_cyclo
 check_ineffassign
+check_staticcheck
 
 # Initialize error flags
 gofmt_error=0
 go_vet_error=0
 go_cyclo_error=0
 ineffassign_error=0
+staticcheck_error=0
 
 # Execute checks
 run_gofmt
 run_go_vet
 run_go_cyclo
 run_ineffassign
+run_staticcheck
 
 # Print a summary and exit with failure if there were any errors
-if [ $gofmt_error -eq 1 ] || [ $go_vet_error -eq 1 ] || [ $go_cyclo_error -eq 1 ] || [ $ineffassign_error -eq 1 ]; then
+if [ $gofmt_error -eq 1 ] || [ $go_vet_error -eq 1 ] || [ $go_cyclo_error -eq 1 ] || [ $ineffassign_error -eq 1 ] || [ $staticcheck_error -eq 1 ]; then
     echo -e "${RED}SUMMARY: Please resolve the above issues.${NC}"
     exit 1
 else

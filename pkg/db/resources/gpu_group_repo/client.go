@@ -33,7 +33,7 @@ func (client *Client) WithPagination(page, pageSize int) *Client {
 
 // WithZone adds a filter to the client to only include groups with the given zone.
 func (client *Client) WithZone(zone string) *Client {
-	client.ResourceClient.AddExtraFilter(bson.D{{"zone", zone}})
+	client.ResourceClient.AddExtraFilter(bson.D{{Key: "zone", Value: zone}})
 
 	return client
 }

@@ -3,9 +3,10 @@ package notification_repo
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/kthcloud/go-deploy/models/model"
 	"go.mongodb.org/mongo-driver/bson"
-	"time"
 )
 
 func (client *Client) Create(id string, userID string, params *model.NotificationCreateParams) (*model.Notification, error) {
@@ -29,17 +30,17 @@ func (client *Client) Create(id string, userID string, params *model.Notificatio
 }
 
 func (client *Client) MarkCompletedByID(id string) error {
-	return client.SetWithBsonByID(id, bson.D{{"completedAt", time.Now()}})
+	return client.SetWithBsonByID(id, bson.D{{Key: "completedAt", Value: time.Now()}})
 }
 
 func (client *Client) MarkReadByID(id string) error {
-	return client.SetWithBsonByID(id, bson.D{{"readAt", time.Now()}})
+	return client.SetWithBsonByID(id, bson.D{{Key: "readAt", Value: time.Now()}})
 }
 
 func (client *Client) MarkToastedByID(id string) error {
-	return client.SetWithBsonByID(id, bson.D{{"toastedAt", time.Now()}})
+	return client.SetWithBsonByID(id, bson.D{{Key: "toastedAt", Value: time.Now()}})
 }
 
 func (client *Client) MarkReadAndCompleted() error {
-	return client.SetWithBSON(bson.D{{"readAt", time.Now()}, {"completedAt", time.Now()}})
+	return client.SetWithBSON(bson.D{{Key: "readAt", Value: time.Now()}, {Key: "completedAt", Value: time.Now()}})
 }

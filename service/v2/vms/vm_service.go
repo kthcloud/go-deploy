@@ -3,6 +3,9 @@ package vms
 import (
 	"errors"
 	"fmt"
+	"sort"
+	"strings"
+
 	"github.com/kthcloud/go-deploy/dto/v2/body"
 	configModels "github.com/kthcloud/go-deploy/models/config"
 	"github.com/kthcloud/go-deploy/models/model"
@@ -21,8 +24,6 @@ import (
 	"github.com/kthcloud/go-deploy/service/v2/vms/opts"
 	"github.com/kthcloud/go-deploy/utils"
 	"go.mongodb.org/mongo-driver/bson"
-	"sort"
-	"strings"
 )
 
 // Get gets an existing VM.
@@ -538,8 +539,8 @@ func (c *Client) NameAvailable(name string) (bool, error) {
 // HttpProxyNameAvailable checks if the given name is available for an HTTP proxy.
 func (c *Client) HttpProxyNameAvailable(id, name string) (bool, error) {
 	filter := bson.D{
-		{"id", bson.D{{"$ne", id}}},
-		{"portMap.httpProxy.name", name},
+		{Key: "id", Value: bson.D{{Key: "$ne", Value: id}}},
+		{Key: "portMap.httpProxy.name", Value: name},
 	}
 
 	exists, err := vm_repo.New().WithCustomFilter(filter).ExistsAny()
