@@ -20,7 +20,7 @@ import (
 )
 
 // Create creates a new deployment with the given params.
-// It will return a NonUniqueFieldErr any unique index was violated.
+// It will return a ErrNonUniqueField any unique index was violated.
 func (client *Client) Create(id, ownerID string, params *model.DeploymentCreateParams) (*model.Deployment, error) {
 	appName := "main"
 
@@ -82,7 +82,7 @@ func (client *Client) Create(id, ownerID string, params *model.DeploymentCreateP
 	_, err := client.Collection.InsertOne(context.TODO(), deployment)
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {
-			return nil, rErrors.NonUniqueFieldErr
+			return nil, rErrors.ErrNonUniqueField
 		}
 
 		return nil, fmt.Errorf("failed to create deployment. details: %w", err)
@@ -92,7 +92,7 @@ func (client *Client) Create(id, ownerID string, params *model.DeploymentCreateP
 }
 
 // UpdateWithParams updates a deployment with the given update params.
-// It will return a NonUniqueFieldErr any unique index was violated.
+// It will return a ErrNonUniqueField any unique index was violated.
 func (client *Client) UpdateWithParams(id string, params *model.DeploymentUpdateParams) error {
 	deployment, err := client.GetByID(id)
 	if err != nil {
@@ -150,7 +150,7 @@ func (client *Client) UpdateWithParams(id string, params *model.DeploymentUpdate
 	)
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {
-			return rErrors.NonUniqueFieldErr
+			return rErrors.ErrNonUniqueField
 		}
 
 		return fmt.Errorf("failed to update deployment %s. details: %w", id, err)

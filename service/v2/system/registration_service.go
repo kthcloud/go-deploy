@@ -11,7 +11,7 @@ import (
 func (c *Client) RegisterNode(params *body.HostRegisterParams) error {
 	// Validate token
 	if params.Token != config.Config.Discovery.Token {
-		return sErrors.BadDiscoveryTokenErr
+		return sErrors.ErrBadDiscoveryToken
 	}
 
 	if params.DisplayName == "" {
@@ -24,7 +24,7 @@ func (c *Client) RegisterNode(params *body.HostRegisterParams) error {
 	// Check if node is schedulable
 	zone := config.Config.GetZone(params.Zone)
 	if zone == nil {
-		return sErrors.ZoneNotFoundErr
+		return sErrors.ErrZoneNotFound
 	}
 
 	k8sClient, err := c.V2.Deployments().K8s().Client(zone)
@@ -38,7 +38,7 @@ func (c *Client) RegisterNode(params *body.HostRegisterParams) error {
 	}
 
 	if k8sNode == nil {
-		return sErrors.HostNotFoundErr
+		return sErrors.ErrHostNotFound
 	}
 
 	params.Schedulable = k8sNode.Schedulable

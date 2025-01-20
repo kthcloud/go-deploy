@@ -27,7 +27,7 @@ func (client *Client) Create(id, userID, groupName string, leaseDuration float64
 	err := client.CreateIfUnique(id, &lease, bson.D{{Key: "userId", Value: userID}})
 	if err != nil {
 		if errors.Is(err, db.ErrUniqueConstraint) {
-			return GpuLeaseAlreadyExistsErr
+			return ErrGpuLeaseAlreadyExists
 		}
 
 		return err
@@ -45,7 +45,7 @@ func (client *Client) UpdateWithParams(id string, params *model.GpuLeaseUpdatePa
 	err := client.SetWithBsonByID(id, update)
 	if err != nil {
 		if errors.Is(err, db.ErrUniqueConstraint) {
-			return VmAlreadyAttachedErr
+			return ErrVmAlreadyAttached
 		}
 
 		return err

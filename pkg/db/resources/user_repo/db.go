@@ -60,7 +60,7 @@ func (client *Client) Synchronize(id string, params *model.UserSynchronizeParams
 
 	if err != nil {
 		if errors.Is(err, db.ErrUniqueConstraint) {
-			return nil, rErrors.NonUniqueFieldErr
+			return nil, rErrors.ErrNonUniqueField
 		}
 
 		return nil, fmt.Errorf("failed to create user for %s. details: %w", id, err)

@@ -28,7 +28,7 @@ func (client *Client) Create(name, displayName, zone, vendor, deviceID, vendorID
 	err := client.CreateIfUnique(id, &group, bson.D{{Key: "id", Value: id}, {Key: "zone", Value: zone}})
 	if err != nil {
 		if errors.Is(err, db.ErrUniqueConstraint) {
-			return GpuLeaseAlreadyExistsErr
+			return ErrGpuLeaseAlreadyExists
 		}
 
 		return err

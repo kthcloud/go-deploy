@@ -39,7 +39,7 @@ func GetLogs(c *gin.Context) {
 
 	auth, err := WithAuth(&sysContext)
 	if err != nil {
-		sysContext.ServerError(err, AuthInfoNotAvailableErr)
+		sysContext.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -63,12 +63,12 @@ func GetLogs(c *gin.Context) {
 
 	err = deployV2.Deployments().SetupLogStream(requestURI.DeploymentID, ctx, handler, 25)
 	if err != nil {
-		if errors.Is(err, errors2.DeploymentNotFoundErr) {
+		if errors.Is(err, errors2.ErrDeploymentNotFound) {
 			sysContext.NotFound("Deployment not found")
 			return
 		}
 
-		sysContext.ServerError(err, InternalError)
+		sysContext.ServerError(err, ErrInternal)
 		return
 	}
 

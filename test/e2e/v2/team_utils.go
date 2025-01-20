@@ -1,13 +1,14 @@
 package v2
 
 import (
+	"net/http"
+	"testing"
+
 	"github.com/kthcloud/go-deploy/dto/v2/body"
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/test"
 	"github.com/kthcloud/go-deploy/test/e2e"
 	"github.com/stretchr/testify/assert"
-	"net/http"
-	"testing"
 )
 
 const (
@@ -43,9 +44,7 @@ func UpdateTeam(t *testing.T, id string, teamUpdate body.TeamUpdate, user ...str
 		var requested []string
 		var result []string
 
-		for _, resource := range *teamUpdate.Resources {
-			requested = append(requested, resource)
-		}
+		requested = append(requested, *teamUpdate.Resources...)
 
 		for _, resource := range teamRead.Resources {
 			result = append(result, resource.ID)

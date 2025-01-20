@@ -58,7 +58,7 @@ function run_go_vet() {
 function run_go_cyclo() {
     echo -e "${YELLOW}Running go-cyclo check...${NC}"
     # Check for cyclomatic complexity
-    go_cyclo_output=$(gocyclo -over 15 .)
+    go_cyclo_output=$(find . -path ./pkg/imp -prune -o -type f -name "*.go" -exec gocyclo -over 15 {} +)
     if [ -n "$go_cyclo_output" ]; then
         echo -e "${RED}gocyclo found the following issues:${NC}"
         echo "$go_cyclo_output"

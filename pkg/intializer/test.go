@@ -3,6 +3,8 @@ package intializer
 import (
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/kthcloud/go-deploy/models/mode"
 	"github.com/kthcloud/go-deploy/models/model"
@@ -16,7 +18,6 @@ import (
 	"github.com/kthcloud/go-deploy/pkg/db/resources/vm_repo"
 	"github.com/kthcloud/go-deploy/pkg/log"
 	"github.com/kthcloud/go-deploy/service"
-	"time"
 )
 
 // CleanUpOldTests cleans up old E2E tests.
@@ -84,7 +85,7 @@ func EnsureTestUsersExist() error {
 			IsAdmin:       user.IsAdmin,
 			EffectiveRole: &user.EffectiveRole,
 		})
-		if err != nil && !errors.Is(err, rErrors.NonUniqueFieldErr) {
+		if err != nil && !errors.Is(err, rErrors.ErrNonUniqueField) {
 			return fmt.Errorf("failed to synchronize user %s: %w", user.ID, err)
 		}
 

@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"time"
+
 	configModels "github.com/kthcloud/go-deploy/models/config"
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/config"
@@ -16,8 +19,6 @@ import (
 	"github.com/kthcloud/go-deploy/service"
 	sErrors "github.com/kthcloud/go-deploy/service/errors"
 	"github.com/kthcloud/go-deploy/utils"
-	"os"
-	"time"
 )
 
 // PodLogger is a worker that logs deployments.
@@ -84,7 +85,7 @@ func OnPodEvent(ctx context.Context, zone *configModels.Zone, cancelFuncs map[st
 			err = service.V2().Deployments().K8s().SetupPodLogStream(loggerCtx, zone, logEvent.PodName, lastLogged, onLog)
 			if err != nil {
 				cancelFunc()
-				if errors.Is(err, sErrors.DeploymentNotFoundErr) {
+				if errors.Is(err, sErrors.ErrDeploymentNotFound) {
 					return nil
 				}
 
@@ -95,14 +96,14 @@ func OnPodEvent(ctx context.Context, zone *configModels.Zone, cancelFuncs map[st
 
 			// Set up a loop to update ownership of pod name
 			go func(ctx, loggerCtx context.Context) {
-				tick := time.Tick(LoggerUpdate)
+				tick := time.NewTicker(LoggerUpdate)
 				for {
 					select {
 					case <-ctx.Done():
 						return
 					case <-loggerCtx.Done():
 						return
-					case <-tick:
+					case <-tick.C:
 						didSet, err := kvc.SetXX(OwnerLogKey(logEvent.PodName, zone.Name), name, LoggerLifetime)
 						if err != nil {
 							utils.PrettyPrintError(fmt.Errorf("failed to update ownership of pod %s. details: %w", logEvent.PodName, err))

@@ -4,6 +4,9 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/kthcloud/go-deploy/dto/v2/body"
 	"github.com/kthcloud/go-deploy/models/model"
@@ -11,8 +14,6 @@ import (
 	"github.com/kthcloud/go-deploy/service"
 	sErrors "github.com/kthcloud/go-deploy/service/errors"
 	"github.com/kthcloud/go-deploy/service/v2/deployments/opts"
-	"strings"
-	"time"
 )
 
 // HandleHarborHook
@@ -35,7 +36,7 @@ func HandleHarborHook(c *gin.Context) {
 	token, err := getHarborTokenFromAuthHeader(context)
 
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -60,7 +61,7 @@ func HandleHarborHook(c *gin.Context) {
 
 	deployment, err := deployV2.Deployments().Get("", opts.GetOpts{HarborWebhook: &webhook})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -88,12 +89,12 @@ func HandleHarborHook(c *gin.Context) {
 				return
 			}
 
-			if errors.Is(err, sErrors.DeploymentNotFoundErr) {
+			if errors.Is(err, sErrors.ErrDeploymentNotFound) {
 				context.NotFound("Deployment not found")
 				return
 			}
 
-			context.ServerError(err, InternalError)
+			context.ServerError(err, ErrInternal)
 			return
 		}
 	}

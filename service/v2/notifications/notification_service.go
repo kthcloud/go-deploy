@@ -108,7 +108,7 @@ func (c *Client) Delete(id string) error {
 	}
 
 	if !exists {
-		return sErrors.NotificationNotFoundErr
+		return sErrors.ErrNotificationNotFound
 	}
 
 	return client.DeleteByID(id)

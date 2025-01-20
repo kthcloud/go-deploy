@@ -34,23 +34,23 @@ func GetCiConfig(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
 	config, err := service.V2(auth).Deployments().GetCiConfig(requestURI.DeploymentID)
 	if err != nil {
-		if errors.Is(err, dErrors.DeploymentNotFoundErr) {
+		if errors.Is(err, dErrors.ErrDeploymentNotFound) {
 			context.NotFound("Deployment not found")
 			return
 		}
 
-		if errors.Is(err, dErrors.DeploymentHasNotCiConfigErr) {
+		if errors.Is(err, dErrors.ErrDeploymentHasNoCiConfig) {
 			context.UserError("Deployment has not CI config (not a custom deployment)")
 			return
 		}
 
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 

@@ -1,3 +1,4 @@
+//lint:file-ignore // Ignore (SA1019) since we want to migrate deprecated.
 package migrator
 
 import (

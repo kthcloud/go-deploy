@@ -2,6 +2,7 @@ package intializer
 
 import (
 	"errors"
+
 	"github.com/google/uuid"
 	"github.com/kthcloud/go-deploy/dto/v2/body"
 	"github.com/kthcloud/go-deploy/pkg/config"
@@ -34,7 +35,7 @@ func EnsureSystemDeploymentsExists() error {
 			Zone:            strPtr(zone.Name),
 		})
 		if err != nil {
-			if !errors.Is(err, sErrors.NonUniqueFieldErr) {
+			if !errors.Is(err, sErrors.ErrNonUniqueField) {
 				return err
 			}
 		}

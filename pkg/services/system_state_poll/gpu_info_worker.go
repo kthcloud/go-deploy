@@ -2,6 +2,9 @@ package system_state_poll
 
 import (
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/kthcloud/go-deploy/dto/v2/body"
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/host_repo"
@@ -9,8 +12,6 @@ import (
 	wErrors "github.com/kthcloud/go-deploy/pkg/services/errors"
 	"github.com/kthcloud/go-deploy/pkg/subsystems/host_api"
 	"github.com/kthcloud/go-deploy/utils"
-	"sync"
-	"time"
 )
 
 func GetHostGpuInfo() ([]body.HostGpuInfo, error) {
@@ -81,7 +82,7 @@ func GpuInfoWorker() error {
 	}
 
 	if len(hostGpuInfo) == 0 {
-		return wErrors.NoHostsErr
+		return wErrors.ErrNoHosts
 	}
 
 	return system_gpu_info_repo.New(500).Save(&body.TimestampedSystemGpuInfo{

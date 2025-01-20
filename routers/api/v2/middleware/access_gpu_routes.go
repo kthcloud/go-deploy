@@ -1,11 +1,12 @@
 package middleware
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/kthcloud/go-deploy/pkg/app/status_codes"
 	"github.com/kthcloud/go-deploy/pkg/sys"
 	v2 "github.com/kthcloud/go-deploy/routers/api/v2"
-	"net/http"
 )
 
 // AccessGpuRoutes is a middleware that checks if the user has access to the GPU routes.
@@ -16,7 +17,7 @@ func AccessGpuRoutes() func(c *gin.Context) {
 
 		auth, err := v2.WithAuth(&context)
 		if err != nil {
-			context.ServerError(err, v2.AuthInfoNotAvailableErr)
+			context.ServerError(err, v2.ErrAuthInfoNotAvailable)
 			c.Abort()
 		}
 

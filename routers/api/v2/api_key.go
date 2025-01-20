@@ -42,7 +42,7 @@ func CreateApiKey(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -55,12 +55,12 @@ func CreateApiKey(c *gin.Context) {
 	apiKey, err := deployV2.Users().ApiKeys().Create(requestURI.UserID, &requestBody)
 	if err != nil {
 		switch {
-		case errors.Is(err, sErrors.UserNotFoundErr):
+		case errors.Is(err, sErrors.ErrUserNotFound):
 			context.NotFound("User not found")
-		case errors.Is(err, sErrors.ApiKeyNameTakenErr):
+		case errors.Is(err, sErrors.ErrApiKeyNameTaken):
 			context.UserError("API key name already taken")
 		default:
-			context.ServerError(err, InternalError)
+			context.ServerError(err, ErrInternal)
 		}
 		return
 	}

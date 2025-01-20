@@ -3,6 +3,8 @@ package logger
 import (
 	"context"
 	"fmt"
+	"time"
+
 	configModels "github.com/kthcloud/go-deploy/models/config"
 	"github.com/kthcloud/go-deploy/pkg/config"
 	"github.com/kthcloud/go-deploy/pkg/db/key_value"
@@ -11,7 +13,6 @@ import (
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s"
 	"github.com/kthcloud/go-deploy/service"
 	"github.com/kthcloud/go-deploy/utils"
-	"time"
 )
 
 type LogEvent struct {
@@ -124,7 +125,6 @@ func PodLoggerControl(ctx context.Context) error {
 				return
 			}
 
-			return
 		})
 		if err != nil {
 			return fmt.Errorf("failed to set up deployment status watcher for zone %s. details: %w", zone.Name, err)
@@ -132,12 +132,12 @@ func PodLoggerControl(ctx context.Context) error {
 
 		// Synchronize the existing pods with the loggers at an interval
 		go func(ctx context.Context) {
-			ticker := time.Tick(LoggerSynchronize)
+			ticker := time.NewTicker(LoggerSynchronize)
 			for {
 				select {
 				case <-ctx.Done():
 					return
-				case <-ticker:
+				case <-ticker.C:
 					pods, err := service.V2().Deployments().K8s().Pods(&z)
 					if err != nil {
 						utils.PrettyPrintError(fmt.Errorf("failed to get pods for zone %s. details: %w", z.Name, err))

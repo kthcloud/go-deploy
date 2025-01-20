@@ -116,8 +116,8 @@ func TestClientSet(t *testing.T) {
 }
 
 var (
-	result   = "yes"
-	v        = "1.2"
+	result = "yes"
+	// v        = "1.2"
 	username = "a"
 	password = "b"
 )

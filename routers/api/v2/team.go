@@ -47,13 +47,13 @@ func GetTeam(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
 	team, err := service.V2(auth).Teams().Get(requestURI.TeamID)
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -87,7 +87,7 @@ func ListTeams(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -103,7 +103,7 @@ func ListTeams(c *gin.Context) {
 		UserID:     userID,
 	})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -139,18 +139,18 @@ func CreateTeam(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
 	team, err := service.V2(auth).Teams().Create(uuid.NewString(), auth.User.ID, &requestQuery)
 	if err != nil {
-		if errors.Is(err, sErrors.TeamNameTakenErr) {
+		if errors.Is(err, sErrors.ErrTeamNameTaken) {
 			context.UserError("Team name is taken")
 			return
 		}
 
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -194,18 +194,18 @@ func UpdateTeam(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
 	updated, err := service.V2(auth).Teams().Update(requestURI.TeamID, &requestQuery)
 	if err != nil {
-		if errors.Is(err, sErrors.TeamNameTakenErr) {
+		if errors.Is(err, sErrors.ErrTeamNameTaken) {
 			context.UserError("Team name is taken")
 			return
 		}
 
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -241,18 +241,18 @@ func DeleteTeam(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
 	err = service.V2(auth).Teams().Delete(requestURI.TeamID)
 	if err != nil {
-		if errors.Is(err, sErrors.TeamNotFoundErr) {
+		if errors.Is(err, sErrors.ErrTeamNotFound) {
 			context.NotFound("Team not found")
 			return
 		}
 
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -264,22 +264,22 @@ func DeleteTeam(c *gin.Context) {
 func joinTeam(context sys.ClientContext, id string, requestBody *body.TeamJoin) {
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 	}
 
 	team, err := service.V2(auth).Teams().Join(id, requestBody)
 	if err != nil {
-		if errors.Is(err, sErrors.NotInvitedErr) {
+		if errors.Is(err, sErrors.ErrNotInvited) {
 			context.UserError("User not invited to team")
 			return
 		}
 
-		if errors.Is(err, sErrors.BadInviteCodeErr) {
+		if errors.Is(err, sErrors.ErrBadInviteCode) {
 			context.Forbidden("Bad invite code")
 			return
 		}
 
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 

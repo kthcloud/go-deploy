@@ -3,6 +3,7 @@ package k8s_service
 import (
 	"errors"
 	"fmt"
+
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/db/resources/sm_repo"
 	"github.com/kthcloud/go-deploy/pkg/log"
@@ -114,8 +115,8 @@ func (c *Client) Create(id string, params *model.SmCreateParams) error {
 			Exec()
 
 		if err != nil {
-			if errors.Is(err, kErrors.IngressHostInUseErr) {
-				return makeError(sErrors.IngressHostInUseErr)
+			if errors.Is(err, kErrors.ErrIngressHostInUse) {
+				return makeError(sErrors.ErrIngressHostInUse)
 			}
 
 			return makeError(err)
@@ -312,8 +313,8 @@ func (c *Client) Repair(id string) error {
 		).WithResourceID(public.Name).WithDbFunc(dbFunc(id, "ingressMap."+public.Name)).WithGenPublic(&public).Exec()
 
 		if err != nil {
-			if errors.Is(err, kErrors.IngressHostInUseErr) {
-				return makeError(sErrors.IngressHostInUseErr)
+			if errors.Is(err, kErrors.ErrIngressHostInUse) {
+				return makeError(sErrors.ErrIngressHostInUse)
 			}
 
 			return makeError(err)
@@ -353,7 +354,7 @@ func (c *Client) Repair(id string) error {
 	anyMismatch := false
 
 	pvcs := g.PVCs()
-	for mapName, _ := range sm.Subsystems.K8s.PvcMap {
+	for mapName := range sm.Subsystems.K8s.PvcMap {
 		idx := slices.IndexFunc(pvcs, func(s k8sModels.PvcPublic) bool { return s.Name == mapName })
 		if idx == -1 {
 			anyMismatch = true
@@ -374,7 +375,7 @@ func (c *Client) Repair(id string) error {
 	}
 
 	pvs := g.PVs()
-	for mapName, _ := range sm.Subsystems.K8s.PvMap {
+	for mapName := range sm.Subsystems.K8s.PvMap {
 		idx := slices.IndexFunc(pvs, func(s k8sModels.PvPublic) bool { return s.Name == mapName })
 		if idx == -1 {
 			anyMismatch = true
@@ -449,7 +450,7 @@ func (c *Client) recreatePvPvcDeployments(id string) error {
 
 	sm, err = c.Refresh(id)
 	if err != nil {
-		if errors.Is(err, sErrors.SmNotFoundErr) {
+		if errors.Is(err, sErrors.ErrSmNotFound) {
 			return nil
 		}
 

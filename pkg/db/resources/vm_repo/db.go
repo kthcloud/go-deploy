@@ -75,7 +75,7 @@ func (client *Client) Create(id, owner string, params *model.VmCreateParams) (*m
 	_, err := client.Collection.InsertOne(context.TODO(), vm)
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {
-			return nil, rErrors.NonUniqueFieldErr
+			return nil, rErrors.ErrNonUniqueField
 		}
 
 		return nil, fmt.Errorf("failed to create vm %s. details: %w", id, err)
@@ -165,7 +165,7 @@ func (client *Client) UpdateWithParams(id string, params *model.VmUpdateParams) 
 				}
 
 				if existAny {
-					return rErrors.NonUniqueFieldErr
+					return rErrors.ErrNonUniqueField
 				}
 			}
 		}
@@ -229,7 +229,7 @@ func (client *Client) UpdateWithParams(id string, params *model.VmUpdateParams) 
 	)
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {
-			return rErrors.NonUniqueFieldErr
+			return rErrors.ErrNonUniqueField
 		}
 
 		return fmt.Errorf("failed to update vm %s. details: %w", id, err)

@@ -39,13 +39,13 @@ func GetResourceMigration(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
 	resourceMigration, err := service.V2(auth).ResourceMigrations().Get(requestQuery.ResourceMigrationID)
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -82,13 +82,13 @@ func ListResourceMigrations(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
 	resourceMigrations, err := service.V2(auth).ResourceMigrations().List()
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -130,7 +130,7 @@ func CreateResourceMigration(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -139,30 +139,30 @@ func CreateResourceMigration(c *gin.Context) {
 	resourceMigration, jobID, err := deployV2.ResourceMigrations().Create(uuid.New().String(), auth.User.ID, &requestBody)
 	if err != nil {
 		switch {
-		case errors.Is(err, sErrors.ResourceMigrationAlreadyExistsErr):
+		case errors.Is(err, sErrors.ErrResourceMigrationAlreadyExists):
 			context.UserError("Resource migration already exists")
 			return
-		case errors.Is(err, sErrors.BadResourceMigrationParamsErr):
+		case errors.Is(err, sErrors.ErrBadResourceMigrationParams):
 			context.UserError("Bad resource migration params")
 			return
-		case errors.Is(err, sErrors.BadResourceMigrationStatusErr):
+		case errors.Is(err, sErrors.ErrBadResourceMigrationStatus):
 			context.UserError("Bad resource migration status")
 			return
-		case errors.Is(err, sErrors.BadResourceMigrationTypeErr):
+		case errors.Is(err, sErrors.ErrBadResourceMigrationType):
 			context.UserError("Bad resource migration type")
 			return
-		case errors.Is(err, sErrors.BadResourceMigrationResourceTypeErr):
+		case errors.Is(err, sErrors.ErrBadResourceMigrationResourceType):
 			context.UserError("Bad resource migration resource type")
 			return
-		case errors.Is(err, sErrors.ResourceNotFoundErr):
+		case errors.Is(err, sErrors.ErrResourceNotFound):
 			context.UserError("Resource not found")
 			return
-		case errors.Is(err, sErrors.AlreadyMigratedErr):
+		case errors.Is(err, sErrors.ErrAlreadyMigrated):
 			context.UserError("Resource already migrated")
 			return
 		}
 
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -204,7 +204,7 @@ func UpdateResourceMigration(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -214,7 +214,7 @@ func UpdateResourceMigration(c *gin.Context) {
 		MigrationCode: requestBody.Code,
 	})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -229,36 +229,36 @@ func UpdateResourceMigration(c *gin.Context) {
 	})
 	if err != nil {
 		switch {
-		case errors.Is(err, sErrors.ResourceMigrationNotFoundErr):
+		case errors.Is(err, sErrors.ErrResourceMigrationNotFound):
 			context.NotFound("Resource migration not found")
 			return
-		case errors.Is(err, sErrors.AlreadyAcceptedErr):
+		case errors.Is(err, sErrors.ErrAlreadyAccepted):
 			context.UserError("Resource migration already accepted")
 			return
-		case errors.Is(err, sErrors.AlreadyMigratedErr):
+		case errors.Is(err, sErrors.ErrAlreadyMigrated):
 			context.UserError("Resource already migrated")
 			return
-		case errors.Is(err, sErrors.BadResourceMigrationParamsErr):
+		case errors.Is(err, sErrors.ErrBadResourceMigrationParams):
 			context.UserError("Bad resource migration params")
 			return
-		case errors.Is(err, sErrors.BadResourceMigrationStatusErr):
+		case errors.Is(err, sErrors.ErrBadResourceMigrationStatus):
 			context.UserError("Bad resource migration status")
 			return
-		case errors.Is(err, sErrors.BadResourceMigrationTypeErr):
+		case errors.Is(err, sErrors.ErrBadResourceMigrationType):
 			context.UserError("Bad resource migration type")
 			return
-		case errors.Is(err, sErrors.BadResourceMigrationResourceTypeErr):
+		case errors.Is(err, sErrors.ErrBadResourceMigrationResourceType):
 			context.UserError("Bad resource migration resource type")
 			return
-		case errors.Is(err, sErrors.ResourceNotFoundErr):
+		case errors.Is(err, sErrors.ErrResourceNotFound):
 			context.UserError("Resource not found")
 			return
-		case errors.Is(err, sErrors.BadMigrationCodeErr):
+		case errors.Is(err, sErrors.ErrBadMigrationCode):
 			context.UserError("Bad migration code")
 			return
 		}
 
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -298,7 +298,7 @@ func DeleteResourceMigration(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -306,7 +306,7 @@ func DeleteResourceMigration(c *gin.Context) {
 
 	resourceMigration, err := deployV2.ResourceMigrations().Get(requestQuery.ResourceMigrationID)
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -317,12 +317,12 @@ func DeleteResourceMigration(c *gin.Context) {
 
 	err = deployV2.ResourceMigrations().Delete(resourceMigration.ID)
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 

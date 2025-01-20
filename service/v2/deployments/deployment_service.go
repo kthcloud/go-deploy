@@ -253,8 +253,8 @@ func (c *Client) Create(id, ownerID string, deploymentCreate *body.DeploymentCre
 
 	deployment, err := deployment_repo.New().Create(id, ownerID, params)
 	if err != nil {
-		if errors.Is(err, rErrors.NonUniqueFieldErr) {
-			return sErrors.NonUniqueFieldErr
+		if errors.Is(err, rErrors.ErrNonUniqueField) {
+			return sErrors.ErrNonUniqueField
 		}
 
 		return makeError(err)
@@ -276,7 +276,7 @@ func (c *Client) Create(id, ownerID string, deploymentCreate *body.DeploymentCre
 		}
 	}
 
-	deployment, err = c.Refresh(id)
+	_, err = c.Refresh(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -303,12 +303,12 @@ func (c *Client) Update(id string, dtoUpdate *body.DeploymentUpdate) error {
 	}
 
 	if d == nil {
-		return sErrors.DeploymentNotFoundErr
+		return sErrors.ErrDeploymentNotFound
 	}
 
 	mainApp := d.GetMainApp()
 	if mainApp == nil {
-		return makeError(sErrors.MainAppNotFoundErr)
+		return makeError(sErrors.ErrMainAppNotFound)
 	}
 
 	params := &model.DeploymentUpdateParams{}
@@ -326,8 +326,8 @@ func (c *Client) Update(id string, dtoUpdate *body.DeploymentUpdate) error {
 
 	err = deployment_repo.New().UpdateWithParams(id, params)
 	if err != nil {
-		if errors.Is(err, rErrors.NonUniqueFieldErr) {
-			return sErrors.NonUniqueFieldErr
+		if errors.Is(err, rErrors.ErrNonUniqueField) {
+			return sErrors.ErrNonUniqueField
 		}
 
 		return makeError(err)
@@ -345,7 +345,7 @@ func (c *Client) Update(id string, dtoUpdate *body.DeploymentUpdate) error {
 		}
 	}
 
-	d, err = c.Refresh(id)
+	_, err = c.Refresh(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -374,7 +374,7 @@ func (c *Client) UpdateOwner(id string, params *model.DeploymentUpdateOwnerParam
 	}
 
 	if d == nil {
-		return sErrors.DeploymentNotFoundErr
+		return sErrors.ErrDeploymentNotFound
 	}
 
 	var newImage *string
@@ -391,7 +391,7 @@ func (c *Client) UpdateOwner(id string, params *model.DeploymentUpdateOwnerParam
 		return makeError(err)
 	}
 
-	d, err = c.Refresh(id)
+	_, err = c.Refresh(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -401,7 +401,7 @@ func (c *Client) UpdateOwner(id string, params *model.DeploymentUpdateOwnerParam
 		return makeError(err)
 	}
 
-	d, err = c.Refresh(id)
+	_, err = c.Refresh(id)
 	if err != nil {
 		return makeError(err)
 	}
@@ -434,7 +434,7 @@ func (c *Client) Delete(id string) error {
 	}
 
 	if d == nil {
-		return sErrors.DeploymentNotFoundErr
+		return sErrors.ErrDeploymentNotFound
 	}
 
 	err = notification_repo.New().FilterContent("id", id).Delete()
@@ -479,7 +479,7 @@ func (c *Client) Repair(id string) error {
 	}
 
 	if d == nil {
-		return sErrors.DeploymentNotFoundErr
+		return sErrors.ErrDeploymentNotFound
 	}
 
 	if !d.Ready() {
@@ -499,7 +499,7 @@ func (c *Client) Repair(id string) error {
 
 	err = c.K8s().Repair(id)
 	if err != nil {
-		if errors.Is(err, sErrors.IngressHostInUseErr) {
+		if errors.Is(err, sErrors.ErrIngressHostInUse) {
 			// The user should fix this error, so we don't return an error here
 			utils.PrettyPrintError(err)
 		} else {
@@ -532,7 +532,7 @@ func (c *Client) Restart(id string) error {
 	}
 
 	if d == nil {
-		return sErrors.DeploymentNotFoundErr
+		return sErrors.ErrDeploymentNotFound
 	}
 
 	c.AddLogs(id, model.Log{
@@ -659,7 +659,7 @@ func (c *Client) CheckQuota(id string, opts *opts.QuotaOptions) error {
 		}
 
 		if deployment == nil {
-			return sErrors.DeploymentNotFoundErr
+			return sErrors.ErrDeploymentNotFound
 		}
 
 		replicasBefore := deployment.GetMainApp().Replicas
@@ -711,7 +711,7 @@ func (c *Client) StartActivity(id string, activity string) error {
 	canAdd, reason := c.CanAddActivity(id, activity)
 	if !canAdd {
 		if reason == "Deployment not found" {
-			return sErrors.DeploymentNotFoundErr
+			return sErrors.ErrDeploymentNotFound
 		}
 
 		return sErrors.NewFailedToStartActivityError(reason)

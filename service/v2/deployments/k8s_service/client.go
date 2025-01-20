@@ -84,14 +84,14 @@ func (c *Client) Get(opts *opts.Opts) (*model.Deployment, *k8s.Client, generator
 		}
 
 		if deployment == nil {
-			return nil, nil, nil, sErrors.DeploymentNotFoundErr
+			return nil, nil, nil, sErrors.ErrDeploymentNotFound
 		}
 	}
 
 	if opts.Client {
 		zone := getZone(opts, deployment)
 		if zone == nil {
-			return nil, nil, nil, sErrors.ZoneNotFoundErr
+			return nil, nil, nil, sErrors.ErrZoneNotFound
 		}
 
 		k8sClient, err = c.Client(zone)
@@ -100,19 +100,19 @@ func (c *Client) Get(opts *opts.Opts) (*model.Deployment, *k8s.Client, generator
 		}
 
 		if k8sClient == nil {
-			return nil, nil, nil, sErrors.DeploymentNotFoundErr
+			return nil, nil, nil, sErrors.ErrDeploymentNotFound
 		}
 	}
 
 	if opts.Generator {
 		zone := getZone(opts, deployment)
 		if zone == nil {
-			return nil, nil, nil, sErrors.ZoneNotFoundErr
+			return nil, nil, nil, sErrors.ErrZoneNotFound
 		}
 
 		k8sGenerator = c.Generator(deployment, k8sClient, zone)
 		if k8sGenerator == nil {
-			return nil, nil, nil, sErrors.DeploymentNotFoundErr
+			return nil, nil, nil, sErrors.ErrDeploymentNotFound
 		}
 	}
 

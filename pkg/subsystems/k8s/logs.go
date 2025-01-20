@@ -4,39 +4,38 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"io"
+	"strings"
+	"time"
+
 	"github.com/kthcloud/go-deploy/pkg/log"
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/keys"
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
 	"github.com/kthcloud/go-deploy/service/errors"
-	"golang.org/x/exp/maps"
-	"io"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sort"
-	"strings"
-	"time"
 )
 
 // getPodNames gets the names of all pods for a deployment
 // This is used when setting up a log stream for a deployment
-func (client *Client) getPodNames(namespace, deploymentName string) ([]string, error) {
-	pods, err := client.K8sClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", keys.LabelDeployName, deploymentName),
-	})
-	if err != nil {
-		return nil, err
-	}
+// func (client *Client) getPodNames(namespace, deploymentName string) ([]string, error) {
+// 	pods, err := client.K8sClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
+// 		LabelSelector: fmt.Sprintf("%s=%s", keys.LabelDeployName, deploymentName),
+// 	})
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	podNames := make([]string, 0)
-	for _, pod := range pods.Items {
-		if pod.Status.Phase != v1.PodRunning {
-			continue
-		}
-		podNames = append(podNames, pod.Name)
-	}
+// 	podNames := make([]string, 0)
+// 	for _, pod := range pods.Items {
+// 		if pod.Status.Phase != v1.PodRunning {
+// 			continue
+// 		}
+// 		podNames = append(podNames, pod.Name)
+// 	}
 
-	return podNames, nil
-}
+// 	return podNames, nil
+// }
 
 // SetupPodLogStream reads logs from a pod and sends them to the callback function
 func (client *Client) SetupPodLogStream(ctx context.Context, podName string, from time.Time, onLog func(deploymentName string, lines []models.LogLine)) error {
@@ -46,13 +45,13 @@ func (client *Client) SetupPodLogStream(ctx context.Context, podName string, fro
 
 	deploymentName := client.getDeploymentName(podName)
 	if deploymentName == "" {
-		return makeError(errors.ResourceNotFoundErr)
+		return makeError(errors.ErrResourceNotFound)
 	}
 
 	logStream, err := client.getPodLogStream(ctx, client.Namespace, podName, from)
 	if err != nil {
 		if IsNotFoundErr(err) {
-			return makeError(errors.ResourceNotFoundErr)
+			return makeError(errors.ErrResourceNotFound)
 		}
 
 		return makeError(err)
@@ -172,18 +171,18 @@ func isExitLine(line string) bool {
 
 // getFreePodNumber is a helper function that gets the next free pod number for a deployment
 // The number is used as a unique nice-to-read identifier for a pod.
-func getFreePodNumber(activeStreams map[string]int) int {
-	values := maps.Values(activeStreams)
+// func getFreePodNumber(activeStreams map[string]int) int {
+// 	values := maps.Values(activeStreams)
 
-	sort.Slice(values, func(i, j int) bool {
-		return values[i] < values[j]
-	})
+// 	sort.Slice(values, func(i, j int) bool {
+// 		return values[i] < values[j]
+// 	})
 
-	for i := 0; i < len(values); i++ {
-		if i != values[i] {
-			return i
-		}
-	}
+// 	for i := 0; i < len(values); i++ {
+// 		if i != values[i] {
+// 			return i
+// 		}
+// 	}
 
-	return len(values)
-}
+// 	return len(values)
+// }

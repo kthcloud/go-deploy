@@ -81,7 +81,7 @@ func (c *Client) Create(id, userID string, params *model.SmCreateParams) error {
 	_, err := sm_repo.New().Create(id, userID, params)
 	if err != nil {
 		if errors.Is(err, sm_repo.ErrAlreadyExists) {
-			return sErrors.SmAlreadyExistsErr
+			return sErrors.ErrSmAlreadyExists
 		}
 
 		return makeErr(err)

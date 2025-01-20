@@ -47,7 +47,7 @@ func GetUser(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -62,7 +62,7 @@ func GetUser(c *gin.Context) {
 			UserID: &requestURI.UserID,
 		})
 		if err != nil {
-			context.ServerError(err, InternalError)
+			context.ServerError(err, ErrInternal)
 			return
 		}
 
@@ -77,7 +77,7 @@ func GetUser(c *gin.Context) {
 
 	user, err := deployV2.Users().Get(requestURI.UserID)
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -122,7 +122,7 @@ func ListUsers(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -134,7 +134,7 @@ func ListUsers(c *gin.Context) {
 			Pagination: sUtils.GetOrDefaultPagination(requestQuery.Pagination),
 		})
 		if err != nil {
-			context.ServerError(err, InternalError)
+			context.ServerError(err, ErrInternal)
 			return
 		}
 
@@ -153,7 +153,7 @@ func ListUsers(c *gin.Context) {
 		All:        requestQuery.All,
 	})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -198,7 +198,7 @@ func UpdateUser(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -213,11 +213,11 @@ func UpdateUser(c *gin.Context) {
 	updated, err := deployV2.Users().Update(requestURI.UserID, &userUpdate)
 	if err != nil {
 		switch {
-		case errors.Is(err, sErrors.UserNotFoundErr):
+		case errors.Is(err, sErrors.ErrUserNotFound):
 			context.NotFound("User not found")
 		}
 
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -226,6 +226,6 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	usage, err := deployV2.Users().GetUsage(updated.ID)
+	usage, _ := deployV2.Users().GetUsage(updated.ID)
 	context.JSONResponse(200, updated.ToDTO(effectiveRole, usage, deployV2.SMs().GetUrlByUserID(updated.ID)))
 }

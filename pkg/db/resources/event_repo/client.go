@@ -35,8 +35,9 @@ func (client *Client) WithPagination(page, pageSize int) *Client {
 }
 
 // AddExtraFilter adds an extra custom filter to the client.
-func (client *Client) AddExtraFilter(filter bson.D) *Client {
-	client.AddExtraFilter(filter)
-
+func (client *Client) AddExtraFilter(filters bson.D) *Client {
+	for _, filter := range filters {
+		client.ExtraFilter[filter.Key] = filter.Value
+	}
 	return client
 }

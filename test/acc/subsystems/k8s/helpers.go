@@ -1,6 +1,8 @@
 package k8s
 
 import (
+	"testing"
+
 	"github.com/kthcloud/go-deploy/pkg/config"
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s"
 	"github.com/kthcloud/go-deploy/pkg/subsystems/k8s/models"
@@ -8,7 +10,6 @@ import (
 	"github.com/kthcloud/go-deploy/test/acc"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
-	"testing"
 )
 
 func withContext(t *testing.T, zoneName ...string) (*k8s.Client, *models.NamespacePublic) {
@@ -33,7 +34,7 @@ func withClient(t *testing.T, namespace string, zoneName ...string) *k8s.Client 
 		Namespace:         namespace,
 	})
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 
 	return client

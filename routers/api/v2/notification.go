@@ -38,13 +38,13 @@ func GetNotification(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
 	notification, err := service.V2(auth).Notifications().Get(requestQuery.NotificationID)
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -77,7 +77,7 @@ func ListNotifications(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -93,7 +93,7 @@ func ListNotifications(c *gin.Context) {
 		UserID:     userID,
 	})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -135,13 +135,13 @@ func UpdateNotification(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
 	updated, err := service.V2(auth).Notifications().Update(requestQuery.NotificationID, &requestBody)
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -176,18 +176,18 @@ func DeleteNotification(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
 	err = service.V2(auth).Notifications().Delete(requestQuery.NotificationID)
 	if err != nil {
-		if errors.Is(err, sErrors.NotificationNotFoundErr) {
+		if errors.Is(err, sErrors.ErrNotificationNotFound) {
 			context.NotFound("Notification not found")
 			return
 		}
 
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 

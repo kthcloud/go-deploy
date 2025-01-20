@@ -172,9 +172,7 @@ func getUrlBasePath() string {
 	res = u.Path
 
 	// Remove trailing slash
-	if strings.HasSuffix(res, "/") {
-		res = strings.TrimSuffix(res, "/")
-	}
+	res = strings.TrimSuffix(res, "/")
 
 	return res
 }

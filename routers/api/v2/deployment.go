@@ -51,7 +51,7 @@ func GetDeployment(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -65,7 +65,7 @@ func GetDeployment(c *gin.Context) {
 	}
 
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -105,7 +105,7 @@ func ListDeployments(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -124,7 +124,7 @@ func ListDeployments(c *gin.Context) {
 		Shared:     true,
 	})
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -166,13 +166,13 @@ func CreateDeployment(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
 	effectiveRole := auth.GetEffectiveRole()
 	if effectiveRole == nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -180,7 +180,7 @@ func CreateDeployment(c *gin.Context) {
 
 	doesNotAlreadyExists, err := deployV2.Deployments().NameAvailable(requestBody.Name)
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -220,7 +220,7 @@ func CreateDeployment(c *gin.Context) {
 			return
 		}
 
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -234,7 +234,7 @@ func CreateDeployment(c *gin.Context) {
 	})
 
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -270,7 +270,7 @@ func DeleteDeployment(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -278,7 +278,7 @@ func DeleteDeployment(c *gin.Context) {
 
 	currentDeployment, err := deployV2.Deployments().Get(requestURI.DeploymentID)
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -300,12 +300,12 @@ func DeleteDeployment(c *gin.Context) {
 			return
 		}
 
-		if errors.Is(err, sErrors.DeploymentNotFoundErr) {
+		if errors.Is(err, sErrors.ErrDeploymentNotFound) {
 			context.NotFound("Deployment not found")
 			return
 		}
 
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -316,7 +316,7 @@ func DeleteDeployment(c *gin.Context) {
 		"authInfo": auth,
 	})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -357,7 +357,7 @@ func UpdateDeployment(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -365,7 +365,7 @@ func UpdateDeployment(c *gin.Context) {
 
 	deployment, err := deployV2.Deployments().Get(requestURI.DeploymentID, opts.GetOpts{Shared: true})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 	if deployment == nil {
@@ -376,7 +376,7 @@ func UpdateDeployment(c *gin.Context) {
 	if requestBody.Name != nil {
 		available, err := deployV2.Deployments().NameAvailable(*requestBody.Name)
 		if err != nil {
-			context.ServerError(err, InternalError)
+			context.ServerError(err, ErrInternal)
 			return
 		}
 
@@ -394,7 +394,7 @@ func UpdateDeployment(c *gin.Context) {
 			return
 		}
 
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -412,7 +412,7 @@ func UpdateDeployment(c *gin.Context) {
 	})
 
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 

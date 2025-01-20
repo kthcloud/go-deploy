@@ -3,12 +3,13 @@ package deployments
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/kthcloud/go-deploy/pkg/db/resources/deployment_repo"
 	"github.com/kthcloud/go-deploy/pkg/log"
 	"github.com/kthcloud/go-deploy/service/errors"
 	"github.com/kthcloud/go-deploy/service/v2/deployments/opts"
 	"github.com/kthcloud/go-deploy/utils"
-	"time"
 )
 
 const (
@@ -35,7 +36,7 @@ func (c *Client) SetupLogStream(id string, ctx context.Context, handler func(str
 	}
 
 	if deployment == nil {
-		return errors.DeploymentNotFoundErr
+		return errors.ErrDeploymentNotFound
 	}
 
 	if deployment.BeingDeleted() {
@@ -65,13 +66,13 @@ func (c *Client) SetupLogStream(id string, ctx context.Context, handler func(str
 		}
 
 		// Keep-alive packet every 30 seconds
-		ticker := time.Tick(30 * time.Second)
+		ticker := time.NewTicker(30 * time.Second)
 
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			case <-ticker:
+			case <-ticker.C:
 				handler(MessageSourceKeepAlive, "[keep-alive]", "keep-alive", time.Now())
 			default:
 				time.Sleep(FetchPeriod)

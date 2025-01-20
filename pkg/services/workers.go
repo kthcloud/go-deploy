@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/kthcloud/go-deploy/pkg/db/resources/host_repo"
 	"github.com/kthcloud/go-deploy/pkg/log"
 	wErrors "github.com/kthcloud/go-deploy/pkg/services/errors"
 	"github.com/kthcloud/go-deploy/utils"
-	"strings"
-	"time"
 )
 
 // Worker is a wrapper for a worker main function and reports the workers status every second.
@@ -28,14 +29,14 @@ func Worker(ctx context.Context, name string, work func(context.Context) error) 
 		}
 	}()
 
-	reportTick := time.Tick(1 * time.Second)
-	cleanUpTick := time.Tick(300 * time.Second)
+	reportTick := time.NewTicker(1 * time.Second)
+	cleanUpTick := time.NewTicker(300 * time.Second)
 
 	for {
 		select {
-		case <-reportTick:
+		case <-reportTick.C:
 			ReportUp(name)
-		case <-cleanUpTick:
+		case <-cleanUpTick.C:
 			CleanUp()
 		case <-internalCtx.Done():
 			return
@@ -52,16 +53,16 @@ func Worker(ctx context.Context, name string, work func(context.Context) error) 
 func PeriodicWorker(ctx context.Context, name string, work func() error, interval time.Duration) {
 	defer OnStop(name)
 
-	reportTick := time.Tick(1 * time.Second)
-	tick := time.Tick(interval)
+	reportTick := time.NewTicker(1 * time.Second)
+	tick := time.NewTicker(interval)
 
 	errorSleep := interval
 
 	for {
 		select {
-		case <-reportTick:
+		case <-reportTick.C:
 			ReportUp(name)
-		case <-tick:
+		case <-tick.C:
 			if err := work(); err != nil {
 				// If errors is HostsFailedErr, disable the hosts
 				var hostsFailedErr *wErrors.HostsFailedErr
@@ -75,7 +76,7 @@ func PeriodicWorker(ctx context.Context, name string, work func() error, interva
 				}
 
 				// It's too verbose to print when no hosts or clusters are available, so we skip that
-				if !errors.Is(err, wErrors.NoClustersErr) && !errors.Is(err, wErrors.NoHostsErr) {
+				if !errors.Is(err, wErrors.ErrNoClusters) && !errors.Is(err, wErrors.ErrNoHosts) {
 					utils.PrettyPrintError(fmt.Errorf("%s failed (sleeping for extra %s): %w", name, errorSleep.String(), err))
 				}
 				time.Sleep(errorSleep)

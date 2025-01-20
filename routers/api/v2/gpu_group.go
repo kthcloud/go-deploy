@@ -36,7 +36,7 @@ func GetGpuGroup(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -44,7 +44,7 @@ func GetGpuGroup(c *gin.Context) {
 
 	gpuGroup, err := deployV2.VMs().GpuGroups().Get(requestURI.GpuGroupID)
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -57,7 +57,7 @@ func GetGpuGroup(c *gin.Context) {
 		GpuGroupID: &gpuGroup.ID,
 	})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -96,7 +96,7 @@ func ListGpuGroups(c *gin.Context) {
 
 	auth, err := WithAuth(&context)
 	if err != nil {
-		context.ServerError(err, AuthInfoNotAvailableErr)
+		context.ServerError(err, ErrAuthInfoNotAvailable)
 		return
 	}
 
@@ -106,7 +106,7 @@ func ListGpuGroups(c *gin.Context) {
 		Pagination: utils.GetOrDefaultPagination(requestQuery.Pagination),
 	})
 	if err != nil {
-		context.ServerError(err, InternalError)
+		context.ServerError(err, ErrInternal)
 		return
 	}
 
@@ -121,7 +121,7 @@ func ListGpuGroups(c *gin.Context) {
 			GpuGroupID: &gpuGroup.ID,
 		})
 		if err != nil {
-			context.ServerError(err, InternalError)
+			context.ServerError(err, ErrInternal)
 			return
 		}
 
