@@ -13,6 +13,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	docsV2 "github.com/kthcloud/go-deploy/docs/api/v2"
 	docsV2Handlers "github.com/kthcloud/go-deploy/docs/api/v2/handlers"
+	docsV2ServerUtil "github.com/kthcloud/go-deploy/docs/api/v2/util"
 	"github.com/kthcloud/go-deploy/models/mode"
 	"github.com/kthcloud/go-deploy/pkg/auth"
 	"github.com/kthcloud/go-deploy/pkg/config"
@@ -69,6 +70,11 @@ func NewRouter() *gin.Engine {
 	docsV2.SwaggerInfoV2.BasePath = basePath
 	docsV2.SwaggerInfoV2.Host = ""
 	docsV2.SwaggerInfoV2.Schemes = []string{"http", "https"}
+
+	// Update openapi spec to have the correct basepath, since openapi 3.+ doesnt use basepath and uses servers instead
+	if err := docsV2ServerUtil.UpdateSwaggerServers(basePath); err != nil {
+		log.Fatalln(err)
+	}
 
 	//public.GET("/v2/docs/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	public.GET("/v2/docs/*any", docsV2Handlers.ServeDocs(basePath+"/v2/docs"))

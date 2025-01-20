@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/swaggo/swag/v2"
+	v2 "github.com/kthcloud/go-deploy/docs/api/v2"
 
 	swaggerfiles "github.com/swaggo/files/v2"
 )
@@ -40,11 +40,7 @@ func ServeDocs(basePath string) func(ctx *gin.Context) {
 		}
 
 		if strings.TrimPrefix(filePath, "/") == "doc.json" {
-			doc, err := swag.ReadDoc("V2")
-			if err != nil {
-				ctx.String(http.StatusInternalServerError, "Failed to load documentation")
-				return
-			}
+			doc := v2.SwaggerInfoV2.ReadDoc()
 			ctx.Header("Cache-Control", "public, max-age=3600")
 			ctx.Data(http.StatusOK, "application/json", []byte(doc))
 			return
