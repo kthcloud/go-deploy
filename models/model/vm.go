@@ -18,6 +18,8 @@ type VM struct {
 	DeletedAt  time.Time `bson:"deletedAt,omitempty"`
 	AccessedAt time.Time `bson:"accessedAt"`
 
+	NeverStale bool `bson:"neverStale"`
+
 	SshPublicKey string          `bson:"sshPublicKey"`
 	PortMap      map[string]Port `bson:"portMap"`
 	Specs        VmSpecs         `bson:"specs"`

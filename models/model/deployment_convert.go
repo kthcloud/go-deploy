@@ -2,11 +2,12 @@ package model
 
 import (
 	"fmt"
+	"strconv"
+
 	"github.com/kthcloud/go-deploy/dto/v2/body"
 	"github.com/kthcloud/go-deploy/pkg/log"
 	"github.com/kthcloud/go-deploy/utils"
 	"golang.org/x/net/idna"
-	"strconv"
 )
 
 // ToDTO converts a Deployment to a body.DeploymentRead DTO.
@@ -129,6 +130,8 @@ func (deployment *Deployment) ToDTO(smURL *string, externalPort *int, teams []st
 		CustomDomain:    customDomain,
 		Visibility:      app.Visibility,
 
+		NeverStale: deployment.NeverStale,
+
 		Status:        status,
 		Error:         deploymentError,
 		ReplicaStatus: replicaStatus,
@@ -222,6 +225,8 @@ func (p *DeploymentCreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZon
 	} else {
 		p.Visibility = dto.Visibility
 	}
+
+	p.NeverStale = dto.NeverStale
 }
 
 // FromDTO converts body.DeploymentUpdate DTO to DeploymentUpdateParams.
@@ -277,4 +282,5 @@ func (p *DeploymentUpdateParams) FromDTO(dto *body.DeploymentUpdate, deploymentT
 	p.PingPath = dto.HealthCheckPath
 	p.Replicas = dto.Replicas
 	p.Visibility = dto.Visibility
+	p.NeverStale = dto.NeverStale
 }

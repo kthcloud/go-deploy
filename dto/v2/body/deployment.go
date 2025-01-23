@@ -30,6 +30,8 @@ type DeploymentRead struct {
 	CustomDomain    *CustomDomainRead `json:"customDomain,omitempty"`
 	Visibility      string            `json:"visibility"`
 
+	NeverStale bool `json:"neverStale" bson:"neverStale" binding:"omitempty,boolean"`
+
 	// Deprecated: Use Visibility instead.
 	Private bool `json:"private"`
 
@@ -60,6 +62,9 @@ type DeploymentCreate struct {
 	Args         []string `json:"args" bson:"args" binding:"omitempty,min=0,max=100,dive,min=0,max=100"`
 	Visibility   string   `json:"visibility" bson:"visibility" binding:"omitempty,oneof=public private auth"`
 
+	// Boolean to make deployment never get disabled, despite being stale
+	NeverStale bool `json:"neverStale" bson:"neverStale" binding:"omitempty,boolean"`
+
 	// Deprecated: Use Visibility instead.
 	Private bool `json:"private" bson:"private" binding:"omitempty,boolean"`
 
@@ -86,6 +91,8 @@ type DeploymentUpdate struct {
 	InitCommands *[]string `json:"initCommands,omitempty" bson:"initCommands,omitempty" binding:"omitempty,min=0,max=100,dive,min=0,max=100"`
 	Args         *[]string `json:"args,omitempty" bson:"args,omitempty" binding:"omitempty,min=0,max=100,dive,min=0,max=100"`
 	Visibility   *string   `json:"visibility" bson:"visibility" binding:"omitempty,oneof=public private auth"`
+
+	NeverStale *bool `json:"neverStale,omitempty" bson:"neverStale" binding:"omitempty,boolean"`
 
 	// Deprecated: Use Visibility instead.
 	Private *bool `json:"private,omitempty" bson:"private,omitempty" binding:"omitempty,boolean"`

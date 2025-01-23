@@ -1,6 +1,8 @@
 package cleaner
 
 import (
+	"time"
+
 	bodyV2 "github.com/kthcloud/go-deploy/dto/v2/body"
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/models/version"
@@ -10,7 +12,6 @@ import (
 	"github.com/kthcloud/go-deploy/pkg/log"
 	"github.com/kthcloud/go-deploy/pkg/subsystems"
 	"github.com/kthcloud/go-deploy/service"
-	"time"
 )
 
 func staleResourceCleaner() error {
@@ -21,7 +22,7 @@ func staleResourceCleaner() error {
 	}
 
 	for _, deployment := range deployments {
-		if deployment.GetMainApp().Replicas == 0 {
+		if deployment.NeverStale || deployment.GetMainApp().Replicas == 0 {
 			continue
 		}
 
@@ -53,7 +54,7 @@ func staleResourceCleaner() error {
 	}
 
 	for _, vm := range vms {
-		if k8sVM := &vm.Subsystems.K8s.VM; subsystems.NotCreated(k8sVM) || !k8sVM.Running {
+		if k8sVM := &vm.Subsystems.K8s.VM; vm.NeverStale || subsystems.NotCreated(k8sVM) || !k8sVM.Running {
 			continue
 		}
 
