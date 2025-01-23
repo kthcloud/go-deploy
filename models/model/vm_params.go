@@ -17,6 +17,8 @@ type VmCreateParams struct {
 	CpuCores int
 	RAM      int
 	DiskSize int
+
+	NeverStale bool
 }
 
 type VmUpdateParams struct {
@@ -26,6 +28,7 @@ type VmUpdateParams struct {
 	PortMap    *map[string]PortUpdateParams
 	CpuCores   *int
 	RAM        *int
+	NeverStale *bool
 }
 
 type VmUpdateOwnerParams struct {

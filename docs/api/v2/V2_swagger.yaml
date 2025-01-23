@@ -161,6 +161,10 @@ components:
           maxLength: 30
           minLength: 3
           type: string
+        neverStale:
+          description: Boolean to make deployment never get disabled, despite being
+            stale
+          type: boolean
         private:
           description: 'Deprecated: Use Visibility instead.'
           type: boolean
@@ -242,6 +246,8 @@ components:
           type: integer
         name:
           type: string
+        neverStale:
+          type: boolean
         ownerId:
           type: string
         pingResult:
@@ -333,6 +339,8 @@ components:
           maxLength: 30
           minLength: 3
           type: string
+        neverStale:
+          type: boolean
         private:
           description: 'Deprecated: Use Visibility instead.'
           type: boolean
@@ -1352,6 +1360,8 @@ components:
           maxLength: 30
           minLength: 3
           type: string
+        neverStale:
+          type: boolean
         ports:
           items:
             $ref: '#/components/schemas/body.PortCreate'
@@ -1433,6 +1443,8 @@ components:
           type: string
         name:
           type: string
+        neverStale:
+          type: boolean
         ownerId:
           type: string
         ports:
@@ -1503,6 +1515,8 @@ components:
           maxLength: 30
           minLength: 3
           type: string
+        neverStale:
+          type: boolean
         ports:
           items:
             $ref: '#/components/schemas/body.PortUpdate'
@@ -1700,6 +1714,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/sys.ErrorResponse'
           description: Bad Request
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/sys.ErrorResponse'
+          description: Forbidden
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/sys.ErrorResponse'
+          description: Not Found
         "500":
           content:
             application/json:
@@ -1746,6 +1772,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/sys.ErrorResponse'
           description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/sys.ErrorResponse'
+          description: Forbidden
         "404":
           content:
             application/json:
@@ -1827,6 +1859,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/sys.ErrorResponse'
           description: Bad Request
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/sys.ErrorResponse'
+          description: Forbidden
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/sys.ErrorResponse'
+          description: Not Found
         "500":
           content:
             application/json:
@@ -3814,6 +3858,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/sys.ErrorResponse'
           description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/sys.ErrorResponse'
+          description: Forbidden
         "404":
           content:
             application/json:
@@ -3959,6 +4009,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/sys.ErrorResponse'
           description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/sys.ErrorResponse'
+          description: Forbidden
         "404":
           content:
             application/json:

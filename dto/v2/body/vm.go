@@ -15,6 +15,8 @@ type VmRead struct {
 	RepairedAt *time.Time `json:"repairedAt,omitempty"`
 	AccessedAt time.Time  `json:"accessedAt"`
 
+	NeverStale bool `json:"neverStale"`
+
 	Specs        VmSpecs     `json:"specs"`
 	Ports        []PortRead  `json:"ports"`
 	GPU          *VmGpuLease `json:"gpu,omitempty"`
@@ -36,13 +38,16 @@ type VmCreate struct {
 	DiskSize int `json:"diskSize" bson:"diskSize" binding:"required,min=10"`
 
 	Zone *string `json:"zone,omitempty" bson:"zone,omitempty" binding:"omitempty"`
+
+	NeverStale bool `json:"neverStale" bson:"neverStale" binding:"omitempty,boolean"`
 }
 
 type VmUpdate struct {
-	Name     *string       `json:"name,omitempty" bson:"name,omitempty" binding:"omitempty,rfc1035,min=3,max=30,vm_name"`
-	Ports    *[]PortUpdate `json:"ports,omitempty" bson:"ports,omitempty" binding:"omitempty,port_list_names,port_list_numbers,port_list_http_proxies,min=0,max=10,dive"`
-	CpuCores *int          `json:"cpuCores,omitempty" bson:"cpuCores,omitempty" binding:"omitempty,min=1"`
-	RAM      *int          `json:"ram,omitempty" bson:"ram,omitempty" binding:"omitempty,min=1"`
+	Name       *string       `json:"name,omitempty" bson:"name,omitempty" binding:"omitempty,rfc1035,min=3,max=30,vm_name"`
+	Ports      *[]PortUpdate `json:"ports,omitempty" bson:"ports,omitempty" binding:"omitempty,port_list_names,port_list_numbers,port_list_http_proxies,min=0,max=10,dive"`
+	CpuCores   *int          `json:"cpuCores,omitempty" bson:"cpuCores,omitempty" binding:"omitempty,min=1"`
+	RAM        *int          `json:"ram,omitempty" bson:"ram,omitempty" binding:"omitempty,min=1"`
+	NeverStale *bool         `json:"neverStale,omitempty" bson:"neverStale" binding:"omitempty,boolean"`
 }
 
 type VmUpdateOwner struct {

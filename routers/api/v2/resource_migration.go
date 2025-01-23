@@ -321,10 +321,5 @@ func DeleteResourceMigration(c *gin.Context) {
 		return
 	}
 
-	if err != nil {
-		context.ServerError(err, ErrInternal)
-		return
-	}
-
 	context.OkNoContent()
 }

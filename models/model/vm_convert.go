@@ -2,10 +2,11 @@ package model
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/kthcloud/go-deploy/dto/v2/body"
 	"github.com/kthcloud/go-deploy/pkg/subsystems"
 	"github.com/kthcloud/go-deploy/utils"
-	"time"
 )
 
 // ToDTOv2 converts a VM to a body.VmRead.
@@ -91,6 +92,8 @@ func (vm *VM) ToDTOv2(gpuLease *GpuLease, teams []string, externalPort *int, ssh
 		RepairedAt: utils.NonZeroOrNil(vm.RepairedAt),
 		AccessedAt: vm.AccessedAt,
 
+		NeverStale: vm.NeverStale,
+
 		Specs: body.VmSpecs{
 			CpuCores: vm.Specs.CpuCores,
 			RAM:      vm.Specs.RAM,
@@ -113,6 +116,7 @@ func (p VmCreateParams) FromDTOv2(dto *body.VmCreate, fallbackZone *string) VmCr
 	p.RAM = dto.RAM
 	p.DiskSize = dto.DiskSize
 	p.PortMap = make(map[string]PortCreateParams)
+	p.NeverStale = dto.NeverStale
 
 	if dto.Zone == nil {
 		p.Zone = *fallbackZone
@@ -147,6 +151,7 @@ func (p VmUpdateParams) FromDTOv2(dto *body.VmUpdate) VmUpdateParams {
 	p.Name = dto.Name
 	p.CpuCores = dto.CpuCores
 	p.RAM = dto.RAM
+	p.NeverStale = dto.NeverStale
 
 	if dto.Ports != nil {
 		portMap := make(map[string]PortUpdateParams)

@@ -45,6 +45,7 @@ export interface DeploymentRead {
   healthCheckPath?: string;
   customDomain?: CustomDomainRead;
   visibility: string;
+  neverStale: boolean;
   /**
    * Deprecated: Use Visibility instead.
    */
@@ -72,6 +73,10 @@ export interface DeploymentCreate {
   args: string[];
   visibility: string;
   /**
+   * Boolean to make deployment never get disabled, despite being stale
+   */
+  neverStale: boolean;
+  /**
    * Deprecated: Use Visibility instead.
    */
   private: boolean;
@@ -98,6 +103,7 @@ export interface DeploymentUpdate {
   initCommands?: string[];
   args?: string[];
   visibility?: string;
+  neverStale?: boolean;
   /**
    * Deprecated: Use Visibility instead.
    */
@@ -759,6 +765,7 @@ export interface VmRead {
   updatedAt?: string;
   repairedAt?: string;
   accessedAt: string;
+  neverStale: boolean;
   specs: VmSpecs;
   ports: PortRead[];
   gpu?: VmGpuLease;
@@ -775,12 +782,14 @@ export interface VmCreate {
   ram: number /* int */;
   diskSize: number /* int */;
   zone?: string;
+  neverStale: boolean;
 }
 export interface VmUpdate {
   name?: string;
   ports?: PortUpdate[];
   cpuCores?: number /* int */;
   ram?: number /* int */;
+  neverStale?: boolean;
 }
 export interface VmUpdateOwner {
   newOwnerId: string;
