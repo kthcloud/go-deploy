@@ -282,6 +282,15 @@ export interface GpuLeaseDeleted {
 
 export interface HostRead extends HostBase {
 }
+export interface HostVerboseRead extends HostBase {
+  ip: string;
+  port: number /* int */;
+  enabled: boolean;
+  schedulable: boolean;
+  deactivatedUntil?: string;
+  lastSeenAt: string;
+  registeredAt: string;
+}
 export interface HostBase {
   name: string;
   displayName: string;
