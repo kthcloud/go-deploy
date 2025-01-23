@@ -2,8 +2,9 @@ package model
 
 import (
 	"fmt"
-	"github.com/kthcloud/go-deploy/dto/v2/body"
 	"time"
+
+	"github.com/kthcloud/go-deploy/dto/v2/body"
 )
 
 type Host struct {
@@ -36,6 +37,21 @@ func (host *Host) ToDTO() body.HostRead {
 			DisplayName: host.DisplayName,
 			Zone:        host.Zone,
 		},
+	}
+}
+func (host *Host) ToVerboseDTO() body.HostVerboseRead {
+	return body.HostVerboseRead{
+		HostBase: body.HostBase{
+			Name:        host.Name,
+			DisplayName: host.DisplayName,
+			Zone:        host.Zone,
+		},
+		IP:               host.IP,
+		Port:             host.Port,
+		Enabled:          host.Enabled,
+		Schedulable:      host.Schedulable,
+		DeactivatedUntil: host.DeactivatedUntil,
+		RegisteredAt:     host.RegisteredAt,
 	}
 }
 func NewHostByParams(params *body.HostRegisterParams) *Host {
