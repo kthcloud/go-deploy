@@ -1,7 +1,20 @@
 package body
 
+import "time"
+
 type HostRead struct {
 	HostBase `json:",inline" tstype:",extends"`
+}
+
+type HostVerboseRead struct {
+	HostBase         `json:",inline" tstype:",extends"`
+	IP               string     `json:"ip"`
+	Port             int        `json:"port"`
+	Enabled          bool       `json:"enabled"`
+	Schedulable      bool       `json:"schedulable"`
+	DeactivatedUntil *time.Time `json:"deactivatedUntil,omitempty"`
+	LastSeenAt       time.Time  `json:"lastSeenAt"`
+	RegisteredAt     time.Time  `json:"registeredAt"`
 }
 
 type HostBase struct {

@@ -597,6 +597,30 @@ components:
           description: Zone is the name of the zone where the host is located.
           type: string
       type: object
+    body.HostVerboseRead:
+      properties:
+        deactivatedUntil:
+          type: string
+        displayName:
+          type: string
+        enabled:
+          type: boolean
+        ip:
+          type: string
+        lastSeenAt:
+          type: string
+        name:
+          type: string
+        port:
+          type: integer
+        registeredAt:
+          type: string
+        schedulable:
+          type: boolean
+        zone:
+          description: Zone is the name of the zone where the host is located.
+          type: string
+      type: object
     body.HttpProxyCreate:
       properties:
         customDomain:
@@ -2435,6 +2459,36 @@ paths:
                 $ref: '#/components/schemas/sys.ErrorResponse'
           description: Internal Server Error
       summary: List Hosts
+      tags:
+      - Host
+  /v2/hosts/verbose:
+    get:
+      description: List Hosts verbose
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/body.HostVerboseRead'
+                type: array
+          description: OK
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/sys.ErrorResponse'
+          description: Forbidden
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/sys.ErrorResponse'
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      - KeycloakOAuth: []
+      summary: List Hosts verbose
       tags:
       - Host
   /v2/jobs:
