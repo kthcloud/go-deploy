@@ -153,6 +153,8 @@ func ListDeployments(c *gin.Context) {
 // @Param body body body.DeploymentCreate true "Deployment body"
 // @Success 200 {object} body.DeploymentRead
 // @Failure 400 {object} sys.ErrorResponse
+// @Failure 404 {object} sys.ErrorResponse
+// @Failure 403 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /v2/deployments [post]
 func CreateDeployment(c *gin.Context) {
@@ -212,6 +214,11 @@ func CreateDeployment(c *gin.Context) {
 		return
 	}
 
+	if requestBody.NeverStale && !auth.User.IsAdmin {
+		context.Forbidden("User is not allowed to create deployment with neverStale attribute set as true")
+		return
+	}
+
 	err = deployV2.Deployments().CheckQuota("", &opts.QuotaOptions{Create: &requestBody})
 	if err != nil {
 		var quotaExceededErr sErrors.QuotaExceededError
@@ -257,6 +264,7 @@ func CreateDeployment(c *gin.Context) {
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 401 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
+// @Failure 403 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /v2/deployments/{deploymentId} [delete]
 func DeleteDeployment(c *gin.Context) {
@@ -338,6 +346,8 @@ func DeleteDeployment(c *gin.Context) {
 // @Param body body body.DeploymentUpdate true "Deployment update"
 // @Success 200 {object} body.DeploymentUpdated
 // @Failure 400 {object} sys.ErrorResponse
+// @Failure 404 {object} sys.ErrorResponse
+// @Failure 403 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /v2/deployments/{deploymentId} [post]
 func UpdateDeployment(c *gin.Context) {
@@ -384,6 +394,11 @@ func UpdateDeployment(c *gin.Context) {
 			context.UserError("Name already taken")
 			return
 		}
+	}
+
+	if requestBody.NeverStale != nil && !auth.User.IsAdmin {
+		context.Forbidden("User is not allowed to modify the neverStale value")
+		return
 	}
 
 	err = deployV2.Deployments().CheckQuota(requestURI.DeploymentID, &opts.QuotaOptions{Update: &requestBody})

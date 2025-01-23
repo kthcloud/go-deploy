@@ -161,6 +161,7 @@ func ListVMs(c *gin.Context) {
 // @Success 200 {object} body.VmCreated
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 401 {object} sys.ErrorResponse
+// @Failure 403 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /v2/vms [post]
@@ -208,6 +209,11 @@ func CreateVM(c *gin.Context) {
 			context.Forbidden("Zone does not have VM capability")
 			return
 		}
+	}
+
+	if requestBody.NeverStale && !auth.User.IsAdmin {
+		context.Forbidden("User is not allowed to create VM with neverStale attribute set as true")
+		return
 	}
 
 	err = deployV2.VMs().CheckQuota("", auth.User.ID, &auth.GetEffectiveRole().Quotas, opts.QuotaOpts{Create: &requestBody})
@@ -318,6 +324,7 @@ func DeleteVM(c *gin.Context) {
 // @Success 200 {object} body.VmUpdated
 // @Failure 400 {object} sys.ErrorResponse
 // @Failure 401 {object} sys.ErrorResponse
+// @Failure 403 {object} sys.ErrorResponse
 // @Failure 404 {object} sys.ErrorResponse
 // @Failure 500 {object} sys.ErrorResponse
 // @Router /v2/vms/{vmId} [post]
@@ -384,6 +391,11 @@ func UpdateVM(c *gin.Context) {
 				//}
 			}
 		}
+	}
+
+	if requestBody.NeverStale != nil && !auth.User.IsAdmin {
+		context.Forbidden("User is not allowed to modify the neverStale value")
+		return
 	}
 
 	err = deployV2.VMs().CheckQuota(vm.ID, auth.User.ID, &auth.GetEffectiveRole().Quotas, opts.QuotaOpts{Update: &requestBody})

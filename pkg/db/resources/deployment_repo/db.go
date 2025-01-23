@@ -69,6 +69,8 @@ func (client *Client) Create(id, ownerID string, params *model.DeploymentCreateP
 		DeletedAt:   time.Time{},
 		AccessedAt:  time.Now(),
 
+		NeverStale: params.NeverStale,
+
 		Activities: map[string]model.Activity{model.ActivityBeingCreated: {
 			Name:      model.ActivityBeingCreated,
 			CreatedAt: time.Now(),
@@ -141,6 +143,7 @@ func (client *Client) UpdateWithParams(id string, params *model.DeploymentUpdate
 	db.AddIfNotNil(&setUpdate, "apps.main.ram", params.RAM)
 	db.AddIfNotNil(&setUpdate, "apps.main.replicas", params.Replicas)
 	db.AddIfNotNil(&setUpdate, "apps.main.visibility", params.Visibility)
+	db.AddIfNotNil(&setUpdate, "neverStale", params.NeverStale)
 
 	err = client.UpdateWithBsonByID(id,
 		bson.D{

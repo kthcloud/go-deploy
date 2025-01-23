@@ -57,6 +57,8 @@ func (client *Client) Create(id, owner string, params *model.VmCreateParams) (*m
 		DeletedAt:  time.Time{},
 		AccessedAt: time.Now(),
 
+		NeverStale: params.NeverStale,
+
 		SshPublicKey: params.SshPublicKey,
 		PortMap:      portMap,
 		Specs: model.VmSpecs{
@@ -220,6 +222,7 @@ func (client *Client) UpdateWithParams(id string, params *model.VmUpdateParams) 
 	db.AddIfNotNil(&setUpdate, "ownerId", params.OwnerID)
 	db.AddIfNotNil(&setUpdate, "specs.cpuCores", params.CpuCores)
 	db.AddIfNotNil(&setUpdate, "specs.ram", params.RAM)
+	db.AddIfNotNil(&setUpdate, "neverStale", params.NeverStale)
 
 	err := client.UpdateWithBsonByID(id,
 		bson.D{

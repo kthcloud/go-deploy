@@ -23,6 +23,8 @@ type Deployment struct {
 	DeletedAt   time.Time `bson:"deletedAt"`
 	AccessedAt  time.Time `bson:"accessedAt"`
 
+	NeverStale bool `bson:"neverStale"`
+
 	Activities map[string]Activity `bson:"activities"`
 
 	Apps       map[string]App       `bson:"apps"`

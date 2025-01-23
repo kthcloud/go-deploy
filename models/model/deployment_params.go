@@ -18,6 +18,8 @@ type DeploymentCreateParams struct {
 	CustomDomain *string
 	Visibility   string
 
+	NeverStale bool
+
 	Zone string
 }
 
@@ -38,6 +40,8 @@ type DeploymentUpdateParams struct {
 	PingPath     *string
 	Replicas     *int
 	Visibility   *string
+
+	NeverStale *bool
 }
 
 type DeploymentUpdateOwnerParams struct {
