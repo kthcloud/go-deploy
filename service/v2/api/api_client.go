@@ -2,6 +2,8 @@ package api
 
 import (
 	"context"
+	"time"
+
 	"github.com/kthcloud/go-deploy/dto/v2/body"
 	configModels "github.com/kthcloud/go-deploy/models/config"
 	"github.com/kthcloud/go-deploy/models/model"
@@ -18,7 +20,6 @@ import (
 	userOpts "github.com/kthcloud/go-deploy/service/v2/users/opts"
 	vmK8sService "github.com/kthcloud/go-deploy/service/v2/vms/k8s_service"
 	vmOpts "github.com/kthcloud/go-deploy/service/v2/vms/opts"
-	"time"
 )
 
 type Deployments interface {
@@ -195,6 +196,7 @@ type System interface {
 	RegisterNode(params *body.HostRegisterParams) error
 
 	ListHosts() ([]model.Host, error)
+	ListAllHosts() ([]model.Host, error)
 
 	GetZone(name string) *configModels.Zone
 	ListZones(opts ...systemOpts.ListOpts) ([]configModels.Zone, error)

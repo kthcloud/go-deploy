@@ -56,7 +56,7 @@ func VerboseListHosts(c *gin.Context) {
 		return
 	}
 
-	hostInfo, err := service.V2().System().ListHosts()
+	hostInfo, err := service.V2().System().ListAllHosts()
 	if err != nil {
 		context.ServerError(err, fmt.Errorf("failed to get host info"))
 	}

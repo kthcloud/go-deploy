@@ -14,3 +14,13 @@ func (c *Client) ListHosts() ([]model.Host, error) {
 
 	return hosts, nil
 }
+
+// ListAllHosts gets a list of all hosts
+func (c *Client) ListAllHosts() ([]model.Host, error) {
+	hosts, err := host_repo.New().List()
+	if err != nil {
+		return nil, err
+	}
+
+	return hosts, nil
+}
