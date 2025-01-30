@@ -51,6 +51,7 @@ func (host *Host) ToVerboseDTO() body.HostVerboseRead {
 		Enabled:          host.Enabled,
 		Schedulable:      host.Schedulable,
 		DeactivatedUntil: host.DeactivatedUntil,
+		LastSeenAt:       host.LastSeenAt,
 		RegisteredAt:     host.RegisteredAt,
 	}
 }
