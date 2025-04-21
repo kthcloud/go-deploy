@@ -8,6 +8,7 @@ import (
 	"path"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -67,7 +68,7 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 
 	k8sEnvs := make([]models.EnvVar, len(mainApp.Envs))
 	for i, env := range mainApp.Envs {
-		if env.Name == "PORT" {
+		if env.Name == "PORT" || env.Name == "INTERNAL_PORTS" {
 			continue
 		}
 
@@ -80,6 +81,16 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 	k8sEnvs = append(k8sEnvs, models.EnvVar{
 		Name:  "PORT",
 		Value: fmt.Sprintf("%d", mainApp.InternalPort),
+	})
+
+	portsStr := make([]string, len(mainApp.InternallPorts))
+	for i, port := range mainApp.InternallPorts {
+		portsStr[i] = strconv.Itoa(port)
+	}
+
+	k8sEnvs = append(k8sEnvs, models.EnvVar{
+		Name:  "INTERNAL_PORTS",
+		Value: strings.Join(portsStr, ","),
 	})
 
 	k8sVolumes := make([]models.Volume, len(mainApp.Volumes))
@@ -257,10 +268,34 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 
 	res := make([]models.ServicePublic, 0)
 
+	// Add the base http port
+	ports := []models.Port{
+		{
+			Name:       "http",
+			Protocol:   "tcp",
+			Port:       mainApp.InternalPort,
+			TargetPort: mainApp.InternalPort,
+		},
+	}
+
+	// add all internalPorts to expose to the with the service
+	for _, p := range mainApp.InternallPorts {
+		if p == mainApp.InternalPort {
+			continue
+		}
+
+		ports = append(ports, models.Port{
+			Name:       fmt.Sprintf("port-%d", p),
+			Protocol:   "tcp",
+			Port:       p,
+			TargetPort: p,
+		})
+	}
+
 	se := models.ServicePublic{
 		Name:      kg.deployment.Name,
 		Namespace: kg.namespace,
-		Ports:     []models.Port{{Name: "http", Protocol: "tcp", Port: mainApp.InternalPort, TargetPort: mainApp.InternalPort}},
+		Ports:     ports,
 		Selector: map[string]string{
 			keys.LabelDeployName: kg.deployment.Name,
 		},

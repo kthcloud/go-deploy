@@ -3,6 +3,7 @@ package model
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/kthcloud/go-deploy/dto/v2/body"
 	"github.com/kthcloud/go-deploy/pkg/log"
@@ -23,6 +24,16 @@ func (deployment *Deployment) ToDTO(smURL *string, externalPort *int, teams []st
 	envs = append(envs, body.Env{
 		Name:  "PORT",
 		Value: fmt.Sprintf("%d", app.InternalPort),
+	})
+
+	portsStr := make([]string, len(app.InternallPorts))
+	for i, port := range app.InternallPorts {
+		portsStr[i] = strconv.Itoa(port)
+	}
+
+	envs = append(envs, body.Env{
+		Name:  "INTERNAL_PORTS",
+		Value: strings.Join(portsStr, ","),
 	})
 
 	for i, env := range app.Envs {
@@ -171,6 +182,18 @@ func (p *DeploymentCreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZon
 			p.InternalPort = port
 			continue
 		}
+		if env.Name == "INTERNAL_PORTS" {
+			portsStr := strings.Split(env.Value, ",")
+			var internalPorts []int
+			for _, prt := range portsStr {
+				prt = strings.TrimSpace(prt)
+				if port, err := strconv.Atoi(prt); err == nil {
+					internalPorts = append(internalPorts, port)
+				}
+			}
+			p.InternalPorts = internalPorts
+			continue
+		}
 
 		p.Envs = append(p.Envs, DeploymentEnv{
 			Name:  env.Name,
@@ -237,6 +260,19 @@ func (p *DeploymentUpdateParams) FromDTO(dto *body.DeploymentUpdate, deploymentT
 			if env.Name == "PORT" {
 				port, _ := strconv.Atoi(env.Value)
 				p.InternalPort = &port
+				continue
+			}
+
+			if env.Name == "INTERNAL_PORTS" {
+				portsStr := strings.Split(env.Value, ",")
+				var internalPorts []int
+				for _, prt := range portsStr {
+					prt = strings.TrimSpace(prt)
+					if port, err := strconv.Atoi(prt); err == nil {
+						internalPorts = append(internalPorts, port)
+					}
+				}
+				p.InternalPorts = &internalPorts
 				continue
 			}
 
