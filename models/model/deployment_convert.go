@@ -2,7 +2,9 @@ package model
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/kthcloud/go-deploy/dto/v2/body"
 	"github.com/kthcloud/go-deploy/pkg/log"
@@ -20,16 +22,56 @@ func (deployment *Deployment) ToDTO(smURL *string, externalPort *int, teams []st
 
 	envs := make([]body.Env, len(app.Envs))
 
-	envs = append(envs, body.Env{
-		Name:  "PORT",
-		Value: fmt.Sprintf("%d", app.InternalPort),
-	})
-
+	portIndex := -1
+	internalPortIndex := -1
 	for i, env := range app.Envs {
+		if env.Name == "PORT" {
+			portIndex = i
+			continue
+		} else if env.Name == "INTERNAL_PORTS" {
+			internalPortIndex = i
+			continue
+		}
 		envs[i] = body.Env{
 			Name:  env.Name,
 			Value: env.Value,
 		}
+	}
+
+	if portIndex == -1 {
+		envs = append(envs, body.Env{
+			Name:  "PORT",
+			Value: fmt.Sprintf("%d", app.InternalPort),
+		})
+	} else {
+		envs[portIndex] = body.Env{
+			Name:  "PORT",
+			Value: fmt.Sprintf("%d", app.InternalPort),
+		}
+	}
+	if internalPortIndex == -1 {
+		if len(app.InternalPorts) > 0 {
+			portsStr := make([]string, len(app.InternalPorts))
+			for i, port := range app.InternalPorts {
+				portsStr[i] = fmt.Sprintf("%d", port)
+			}
+
+			envs = append(envs, body.Env{
+				Name:  "INTERNAL_PORTS",
+				Value: strings.Join(portsStr, ","),
+			})
+		}
+	} else if len(app.InternalPorts) > 0 {
+		portsStr := make([]string, len(app.InternalPorts))
+		for i, port := range app.InternalPorts {
+			portsStr[i] = fmt.Sprintf("%d", port)
+		}
+		envs[internalPortIndex] = body.Env{
+			Name:  "INTERNAL_PORTS",
+			Value: strings.Join(portsStr, ","),
+		}
+	} else {
+		envs = slices.Delete(envs, internalPortIndex, internalPortIndex+1)
 	}
 
 	volumes := make([]body.Volume, len(app.Volumes))
@@ -125,6 +167,7 @@ func (deployment *Deployment) ToDTO(smURL *string, externalPort *int, teams []st
 		InitCommands:    app.InitCommands,
 		Args:            app.Args,
 		InternalPort:    app.InternalPort,
+		InternalPorts:   app.InternalPorts,
 		Image:           image,
 		HealthCheckPath: healthCheckPath,
 		CustomDomain:    customDomain,
@@ -169,6 +212,18 @@ func (p *DeploymentCreateParams) FromDTO(dto *body.DeploymentCreate, fallbackZon
 		if env.Name == "PORT" {
 			port, _ := strconv.Atoi(env.Value)
 			p.InternalPort = port
+			continue
+		}
+		if env.Name == "INTERNAL_PORTS" {
+			portsStr := strings.Split(env.Value, ",")
+			var internalPorts []int
+			for _, prt := range portsStr {
+				prt = strings.TrimSpace(prt)
+				if port, err := strconv.Atoi(prt); err == nil {
+					internalPorts = append(internalPorts, port)
+				}
+			}
+			p.InternalPorts = internalPorts
 			continue
 		}
 
@@ -237,6 +292,19 @@ func (p *DeploymentUpdateParams) FromDTO(dto *body.DeploymentUpdate, deploymentT
 			if env.Name == "PORT" {
 				port, _ := strconv.Atoi(env.Value)
 				p.InternalPort = &port
+				continue
+			}
+
+			if env.Name == "INTERNAL_PORTS" {
+				portsStr := strings.Split(env.Value, ",")
+				var internalPorts []int
+				for _, prt := range portsStr {
+					prt = strings.TrimSpace(prt)
+					if port, err := strconv.Atoi(prt); err == nil {
+						internalPorts = append(internalPorts, port)
+					}
+				}
+				p.InternalPorts = &internalPorts
 				continue
 			}
 

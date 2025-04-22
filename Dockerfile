@@ -17,7 +17,7 @@ RUN go mod download
 # Copy the rest of the project to ensure code changes doesnt trigger re-download of all deps
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$GOARCH go build -a -installsuffix cgo -o main .
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -a -installsuffix cgo -o main .
 
 
 ############################

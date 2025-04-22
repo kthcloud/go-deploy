@@ -244,6 +244,11 @@ components:
           uniqueItems: false
         internalPort:
           type: integer
+        internalPorts:
+          items:
+            type: integer
+          type: array
+          uniqueItems: false
         name:
           type: string
         neverStale:

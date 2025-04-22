@@ -40,11 +40,12 @@ func (client *Client) Create(id, ownerID string, params *model.DeploymentCreateP
 		RAM:      params.RAM,
 		Replicas: params.Replicas,
 
-		Image:        params.Image,
-		InternalPort: params.InternalPort,
-		Envs:         params.Envs,
-		Volumes:      params.Volumes,
-		Visibility:   params.Visibility,
+		Image:         params.Image,
+		InternalPort:  params.InternalPort,
+		InternalPorts: params.InternalPorts,
+		Envs:          params.Envs,
+		Volumes:       params.Volumes,
+		Visibility:    params.Visibility,
 
 		Args:         params.Args,
 		InitCommands: params.InitCommands,
@@ -132,6 +133,7 @@ func (client *Client) UpdateWithParams(id string, params *model.DeploymentUpdate
 	db.AddIfNotNil(&setUpdate, "name", params.Name)
 	db.AddIfNotNil(&setUpdate, "ownerId", params.OwnerID)
 	db.AddIfNotNil(&setUpdate, "apps.main.internalPort", params.InternalPort)
+	db.AddIfNotNil(&setUpdate, "apps.main.internalPorts", params.InternalPorts)
 	db.AddIfNotNil(&setUpdate, "apps.main.envs", params.Envs)
 	db.AddIfNotNil(&setUpdate, "apps.main.volumes", params.Volumes)
 	db.AddIfNotNil(&setUpdate, "apps.main.initCommands", params.InitCommands)
