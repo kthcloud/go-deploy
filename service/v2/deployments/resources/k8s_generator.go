@@ -83,15 +83,17 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		Value: fmt.Sprintf("%d", mainApp.InternalPort),
 	})
 
-	portsStr := make([]string, len(mainApp.InternalPorts))
-	for i, port := range mainApp.InternalPorts {
-		portsStr[i] = strconv.Itoa(port)
-	}
+	if len(mainApp.InternalPorts) > 0 {
+		portsStr := make([]string, len(mainApp.InternalPorts))
+		for i, port := range mainApp.InternalPorts {
+			portsStr[i] = strconv.Itoa(port)
+		}
 
-	k8sEnvs = append(k8sEnvs, models.EnvVar{
-		Name:  "INTERNAL_PORTS",
-		Value: strings.Join(portsStr, ","),
-	})
+		k8sEnvs = append(k8sEnvs, models.EnvVar{
+			Name:  "INTERNAL_PORTS",
+			Value: strings.Join(portsStr, ","),
+		})
+	}
 
 	k8sVolumes := make([]models.Volume, len(mainApp.Volumes))
 	for i, volume := range mainApp.Volumes {
