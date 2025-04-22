@@ -25,6 +25,7 @@ type DeploymentRead struct {
 	InitCommands    []string          `json:"initCommands"`
 	Args            []string          `json:"args"`
 	InternalPort    int               `json:"internalPort"`
+	InternalPorts   []int             `json:"internalPorts"`
 	Image           *string           `json:"image,omitempty"`
 	HealthCheckPath *string           `json:"healthCheckPath,omitempty"`
 	CustomDomain    *CustomDomainRead `json:"customDomain,omitempty"`

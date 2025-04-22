@@ -83,8 +83,8 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		Value: fmt.Sprintf("%d", mainApp.InternalPort),
 	})
 
-	portsStr := make([]string, len(mainApp.InternallPorts))
-	for i, port := range mainApp.InternallPorts {
+	portsStr := make([]string, len(mainApp.InternalPorts))
+	for i, port := range mainApp.InternalPorts {
 		portsStr[i] = strconv.Itoa(port)
 	}
 
@@ -279,8 +279,8 @@ func (kg *K8sGenerator) Services() []models.ServicePublic {
 	}
 
 	// add all internalPorts to expose to the with the service
-	for _, p := range mainApp.InternallPorts {
-		if p == mainApp.InternalPort {
+	for _, p := range mainApp.InternalPorts {
+		if p == mainApp.InternalPort || p == 0 {
 			continue
 		}
 

@@ -26,8 +26,8 @@ func (deployment *Deployment) ToDTO(smURL *string, externalPort *int, teams []st
 		Value: fmt.Sprintf("%d", app.InternalPort),
 	})
 
-	portsStr := make([]string, len(app.InternallPorts))
-	for i, port := range app.InternallPorts {
+	portsStr := make([]string, len(app.InternalPorts))
+	for i, port := range app.InternalPorts {
 		portsStr[i] = strconv.Itoa(port)
 	}
 
@@ -136,6 +136,7 @@ func (deployment *Deployment) ToDTO(smURL *string, externalPort *int, teams []st
 		InitCommands:    app.InitCommands,
 		Args:            app.Args,
 		InternalPort:    app.InternalPort,
+		InternalPorts:   app.InternalPorts,
 		Image:           image,
 		HealthCheckPath: healthCheckPath,
 		CustomDomain:    customDomain,
