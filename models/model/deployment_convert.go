@@ -26,15 +26,17 @@ func (deployment *Deployment) ToDTO(smURL *string, externalPort *int, teams []st
 		Value: fmt.Sprintf("%d", app.InternalPort),
 	})
 
-	portsStr := make([]string, len(app.InternalPorts))
-	for i, port := range app.InternalPorts {
-		portsStr[i] = strconv.Itoa(port)
-	}
+	if len(app.InternalPorts) > 0 {
+		portsStr := make([]string, len(app.InternalPorts))
+		for i, port := range app.InternalPorts {
+			portsStr[i] = strconv.Itoa(port)
+		}
 
-	envs = append(envs, body.Env{
-		Name:  "INTERNAL_PORTS",
-		Value: strings.Join(portsStr, ","),
-	})
+		envs = append(envs, body.Env{
+			Name:  "INTERNAL_PORTS",
+			Value: strings.Join(portsStr, ","),
+		})
+	}
 
 	for i, env := range app.Envs {
 		envs[i] = body.Env{
