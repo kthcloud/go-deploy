@@ -41,6 +41,7 @@ export interface DeploymentRead {
   initCommands: string[];
   args: string[];
   internalPort: number /* int */;
+  internalPorts: number /* int */[];
   image?: string;
   healthCheckPath?: string;
   customDomain?: CustomDomainRead;
