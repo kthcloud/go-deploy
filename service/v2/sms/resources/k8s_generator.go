@@ -2,6 +2,11 @@ package resources
 
 import (
 	"fmt"
+	"math"
+	"path"
+	"slices"
+	"strings"
+
 	configModels "github.com/kthcloud/go-deploy/models/config"
 	"github.com/kthcloud/go-deploy/models/model"
 	"github.com/kthcloud/go-deploy/pkg/config"
@@ -14,15 +19,14 @@ import (
 	"github.com/kthcloud/go-deploy/service/generators"
 	"github.com/kthcloud/go-deploy/utils"
 	v1 "k8s.io/api/core/v1"
-	"math"
-	"path"
-	"slices"
-	"strings"
 )
+
+const DefaultFilebrowserImage = "filebrowser/filebrowser:v2.32.3"
 
 type K8sGenerator struct {
 	generators.K8sGeneratorBase
 
+	image     *string
 	namespace string
 	client    *k8s.Client
 
@@ -30,13 +34,27 @@ type K8sGenerator struct {
 	zone *configModels.Zone
 }
 
-func K8s(sm *model.SM, zone *configModels.Zone, client *k8s.Client, namespace string) *K8sGenerator {
-	return &K8sGenerator{
+type K8SGeneratorOption func(kg *K8sGenerator)
+
+func WithImage(image string) K8SGeneratorOption {
+	return func(kg *K8sGenerator) {
+		kg.image = utils.StrPtr(image)
+	}
+}
+
+func K8s(sm *model.SM, zone *configModels.Zone, client *k8s.Client, namespace string, opts ...K8SGeneratorOption) *K8sGenerator {
+	kg := &K8sGenerator{
 		namespace: namespace,
 		client:    client,
 		sm:        sm,
 		zone:      zone,
 	}
+
+	for _, opt := range opts {
+		opt(kg)
+	}
+
+	return kg
 }
 
 func (kg *K8sGenerator) Namespace() *models.NamespacePublic {
@@ -86,11 +104,18 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		"--port=80",
 	}
 
+	image := func() string {
+		if kg.image != nil {
+			return *kg.image
+		}
+		return DefaultFilebrowserImage
+	}()
+
 	filebrowser := models.DeploymentPublic{
 		Name:             smName(kg.sm.OwnerID),
 		Namespace:        kg.namespace,
 		Labels:           map[string]string{"owner-id": kg.sm.OwnerID},
-		Image:            "filebrowser/filebrowser",
+		Image:            image,
 		ImagePullSecrets: make([]string, 0),
 		EnvVars:          make([]models.EnvVar, 0),
 		Resources: models.Resources{
