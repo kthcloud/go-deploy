@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"os/signal"
 
 	"github.com/kthcloud/go-deploy/cmd"
 )
@@ -35,6 +36,7 @@ func main() {
 	}
 	defer deployApp.Stop()
 
-	quit := make(chan os.Signal)
-	<-quit
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, os.Interrupt)
+	<-done
 }

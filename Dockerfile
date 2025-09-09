@@ -1,47 +1,69 @@
-############################
-# STEP 1 build executable binary
-############################
-FROM --platform=$BUILDPLATFORM golang:alpine AS builder
-# Install git.
-RUN apk update && apk add --no-cache git=~2
+##
+## Provider stages:
+##
 
-# Set up working directory
+# Provide ca-certificates
+FROM alpine:latest AS ca-cert-provider
+
+RUN apk add --no-cache ca-certificates
+
+##
+## Builder stages
+##
+
+# Download dependencies stage:
+FROM --platform=$BUILDPLATFORM golang:latest AS builder-1
+
 WORKDIR /app
-# Copy go.mod and go.sum separately so we only invalidate the downloading layers if we need to
-COPY go.mod go.sum ./
 
-# Fetch dependencies and build the binary
-ENV GO111MODULE=on
-RUN go mod download
+COPY go.* ./
 
-# Copy the rest of the project to ensure code changes doesnt trigger re-download of all deps
+RUN --mount=type=cache,target=/go/pkg/mod/ \
+    go mod download -x
+
+# Copy source code stage:
+FROM --platform=$BUILDPLATFORM builder-1 AS builder-2
+
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -a -installsuffix cgo -o main .
+# Compilation stage:
+#   This is a separate stage since it asks for the TARGETOS and TARGETARCH
+#   hence docker will run this stage for every TARGETOS and TARGETARCH
+#   We want the previous stage (the download stage) to be separate so we
+#   dont run it multiple times, since that would be unneccesary
+FROM --platform=$BUILDPLATFORM builder-2 AS builder-3
 
+ARG TARGETARCH
+ARG TARGETOS
 
-############################
-# STEP 2 build a small image
-############################
-FROM alpine:3
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build \
+    -ldflags="-w -s" \
+    -trimpath \
+    -o go-deploy_${TARGETOS}_${TARGETARCH} \
+    .
 
-# Set up the working directory
-WORKDIR /go
+##
+## Runner stage
+##
 
-# Copy the binary from the builder stage
-COPY --from=builder /app/main .
+FROM scratch AS runner
 
-# Copy the "index" folder
-COPY --from=builder /app/index index
+ARG TARGETARCH
+ARG TARGETOS
 
-# Copy the "docs" folder
-COPY --from=builder /app/docs docs
+WORKDIR /opt/go-deploy
 
-# Set environment variables and expose necessary port
+COPY --from=ca-cert-provider /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=builder-3 /app/index index
+COPY --from=builder-3 /app/docs docs
+
+COPY --from=builder-3 --chmod=755 /app/go-deploy_${TARGETOS}_${TARGETARCH} /usr/bin/go-deploy
+
 ENV PORT=8080
 ENV GIN_MODE=release
+
 EXPOSE 8080
 
-# Run the Go Gin binary
-ENTRYPOINT ["./main"]
-
+ENTRYPOINT [ "/usr/bin/go-deploy" ]
