@@ -22,13 +22,15 @@ import (
 )
 
 const DefaultFilebrowserImage = "filebrowser/filebrowser:v2.32.3"
+const DefaultOauth2ProxyImage = "quay.io/oauth2-proxy/oauth2-proxy:latest"
 
 type K8sGenerator struct {
 	generators.K8sGeneratorBase
 
-	image     *string
-	namespace string
-	client    *k8s.Client
+	filebrowserImage *string
+	oauth2ProxyImage *string
+	namespace        string
+	client           *k8s.Client
 
 	sm   *model.SM
 	zone *configModels.Zone
@@ -36,9 +38,15 @@ type K8sGenerator struct {
 
 type K8SGeneratorOption func(kg *K8sGenerator)
 
-func WithImage(image string) K8SGeneratorOption {
+func WithFilebrowserImage(image string) K8SGeneratorOption {
 	return func(kg *K8sGenerator) {
-		kg.image = utils.StrPtr(image)
+		kg.filebrowserImage = utils.StrPtr(image)
+	}
+}
+
+func WithOauth2ProxyImage(image string) K8SGeneratorOption {
+	return func(kg *K8sGenerator) {
+		kg.oauth2ProxyImage = utils.StrPtr(image)
 	}
 }
 
@@ -105,8 +113,8 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 	}
 
 	image := func() string {
-		if kg.image != nil {
-			return *kg.image
+		if kg.filebrowserImage != nil {
+			return *kg.filebrowserImage
 		}
 		return DefaultFilebrowserImage
 	}()
@@ -187,11 +195,18 @@ func (kg *K8sGenerator) Deployments() []models.DeploymentPublic {
 		"--authenticated-emails-file=/mnt/authenticated-emails-list",
 	}
 
+	oauth2ProxyImage := func() string {
+		if kg.oauth2ProxyImage != nil {
+			return *kg.oauth2ProxyImage
+		}
+		return DefaultOauth2ProxyImage
+	}()
+
 	oauthProxy := models.DeploymentPublic{
 		Name:             smAuthName(kg.sm.OwnerID),
 		Namespace:        kg.namespace,
 		Labels:           map[string]string{"owner-id": kg.sm.OwnerID},
-		Image:            "quay.io/oauth2-proxy/oauth2-proxy:latest",
+		Image:            oauth2ProxyImage,
 		ImagePullSecrets: make([]string, 0),
 		EnvVars:          make([]models.EnvVar, 0),
 		Resources: models.Resources{
